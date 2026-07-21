@@ -445,6 +445,72 @@ def minimize_area(V, T, fixed, outer_iters=30, cg_tol=1e-8, cg_iters=400,
     return V
 
 
+def relax_normal_flow(V, T, fixed, iters=60, lam=0.4):
+    """Mean-curvature flow restricted to the surface normal: pulls a
+    (slightly perturbed) net back toward the minimal surface without
+    tangential sliding, so a fair control net stays fair. Only suitable
+    as a polish -- it cannot perform global reorganization."""
+    free = ~fixed
+    n = len(V)
+    for _ in range(iters):
+        E, W = _cotan_weights(V, T)
+        lap = np.zeros((n, 3))
+        d = V[E[:, 1]] - V[E[:, 0]]
+        np.add.at(lap, E[:, 0], W[:, None] * d)
+        np.add.at(lap, E[:, 1], -W[:, None] * d)
+        wsum = np.zeros(n)
+        np.add.at(wsum, E[:, 0], W)
+        np.add.at(wsum, E[:, 1], W)
+        umb = lap / np.maximum(wsum, 1e-12)[:, None]
+        fn = np.cross(V[T[:, 1]] - V[T[:, 0]], V[T[:, 2]] - V[T[:, 0]])
+        vn = np.zeros((n, 3))
+        np.add.at(vn, T[:, 0], fn)
+        np.add.at(vn, T[:, 1], fn)
+        np.add.at(vn, T[:, 2], fn)
+        vn /= np.maximum(np.linalg.norm(vn, axis=1, keepdims=True), 1e-12)
+        move = np.sum(umb * vn, axis=1, keepdims=True) * vn
+        V[free] += lam * move[free]
+    return V
+
+
+def fair_grid_2d(G, iters=8, step=0.5):
+    """Light Laplacian fairing of an (rows, m, 3) net, cyclic in m,
+    end rows pinned. Restores row/column coherence after per-column
+    resampling; follow with relax_normal_flow to restore minimality."""
+    G = G.copy()
+    for _ in range(iters):
+        up = np.roll(G, 1, axis=0)
+        dn = np.roll(G, -1, axis=0)
+        up[0] = G[0]
+        dn[-1] = G[-1]
+        lt = np.roll(G, 1, axis=1)
+        rt = np.roll(G, -1, axis=1)
+        avg = (up + dn + lt + rt) / 4.0
+        G[1:-1] += step * (avg[1:-1] - G[1:-1])
+    return G
+
+
+def fair_grid_columns(G):
+    """Re-sample every column (axis 0) of an (rows, m, 3) grid uniformly
+    by arc length. Points stay on their column polylines -- i.e. on the
+    solved surface -- but the severe bunching/shear the area solver
+    introduces (which makes a NURBS control net ring) is equalized."""
+    rows, m, _ = G.shape
+    out = np.empty_like(G)
+    for i in range(m):
+        P = G[:, i, :]
+        seg = np.linalg.norm(np.diff(P, axis=0), axis=1)
+        s = np.concatenate([[0.0], np.cumsum(seg)])
+        total = s[-1]
+        if total < 1e-12:
+            out[:, i, :] = P
+            continue
+        t = np.linspace(0.0, total, rows)
+        for a in range(3):
+            out[:, i, a] = np.interp(t, s, P[:, a])
+    return out
+
+
 def mesh_area(V, T):
     n = np.cross(V[T[:, 1]] - V[T[:, 0]], V[T[:, 2]] - V[T[:, 0]])
     return 0.5 * float(np.sum(np.linalg.norm(n, axis=1)))
@@ -555,19 +621,30 @@ if _IN_BLENDER:
         bpy.ops.curve.make_segment()
         bpy.ops.object.mode_set(mode='OBJECT')
         sp = su.splines[0]
-        # make_segment decides which axis is which; map our flags onto it
-        if sp.point_count_u == nv and sp.point_count_v == nu:
-            cu, cv = cyclic_v, cyclic_u
-        else:
+        # make_segment chains the selected splines in an arbitrary
+        # (geometry-dependent) order, so only the resulting GRID
+        # STRUCTURE is trustworthy. Rewrite every control point into the
+        # intended layout (storage is u-fastest: flat = v*pu + u).
+        pu, pv = sp.point_count_u, sp.point_count_v
+        if (pu, pv) == (nu, nv):
+            ordered = grid.transpose(1, 0, 2)   # S[v][u] = grid[u][v]
             cu, cv = cyclic_u, cyclic_v
+        else:                                   # (pu, pv) == (nv, nu)
+            ordered = grid                      # S[v][u] = grid[v][u]
+            cu, cv = cyclic_v, cyclic_u
+        flat = np.concatenate(
+            [ordered.reshape(-1, 3), np.ones((pu * pv, 1))],
+            axis=1).ravel()
+        sp.points.foreach_set('co', flat)
         sp.use_cyclic_u = cu
         sp.use_cyclic_v = cv
         sp.use_endpoint_u = not cu
         sp.use_endpoint_v = not cv
-        sp.order_u = min(order, sp.point_count_u)
-        sp.order_v = min(order, sp.point_count_v)
+        sp.order_u = min(order, pu)
+        sp.order_v = min(order, pv)
         sp.resolution_u = 6
         sp.resolution_v = 6
+        su.update_tag()
         obj.location = context.scene.cursor.location
         return obj
 
@@ -788,6 +865,10 @@ if _IN_BLENDER:
             T = _quads_to_tris(quads)
             minimize_area(V, T, fixed, outer_iters=self.iterations)
             if self.output_nurbs:
+                G = fair_grid_columns(V[:rows * m].reshape(rows, m, 3))
+                G = fair_grid_2d(G)
+                V[:rows * m] = G.reshape(-1, 3)
+                relax_normal_flow(V, T, fixed)
                 G = V[:rows * m].reshape(rows, m, 3)
                 if len(loops) == 1:   # close the pole with the center point
                     cen = np.tile(V[-1], (1, m, 1))
@@ -845,6 +926,10 @@ if _IN_BLENDER:
             minimize_area(V, T, fixed, outer_iters=self.iterations)
             name = f"Knot({self.p},{self.q})Span"
             if self.output_nurbs:
+                G = fair_grid_columns(V.reshape(self.rings + 1, m, 3))
+                G = fair_grid_2d(G)
+                V = G.reshape(-1, 3).copy()
+                relax_normal_flow(V, T, fixed)
                 G = V.reshape(self.rings + 1, m, 3)
                 obj = _nurbs_grid_object(context, name, G,
                                          cyclic_u=False, cyclic_v=True)

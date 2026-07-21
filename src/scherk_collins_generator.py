@@ -648,7 +648,19 @@ if _IN_BLENDER:
         view = bpy.context.view_layer
         prev_active = view.objects.active
         view.objects.active = obj
+
+        def _grid_fps():
+            fps = []
+            for sp in su.splines:
+                if sp.point_count_u > 1 and sp.point_count_v > 1:
+                    c0 = sp.points[0].co
+                    fps.append((sp.point_count_u, sp.point_count_v,
+                                round(c0[0], 4), round(c0[1], 4),
+                                round(c0[2], 4)))
+            return fps
+
         for patch in _nurbs_patches(p):
+            prev_fps = _grid_fps()
             for sp in su.splines:
                 for pt in sp.points:
                     pt.select = False
@@ -664,6 +676,36 @@ if _IN_BLENDER:
             bpy.ops.object.mode_set(mode='EDIT')
             bpy.ops.curve.make_segment()
             bpy.ops.object.mode_set(mode='OBJECT')
+            # make_segment chains rows in an arbitrary order: find the
+            # newly created grid spline and rewrite its control points
+            # into the intended row-major layout
+            remaining = list(prev_fps)
+            new_sp = None
+            for sp in su.splines:
+                if sp.point_count_u > 1 and sp.point_count_v > 1:
+                    c0 = sp.points[0].co
+                    fp = (sp.point_count_u, sp.point_count_v,
+                          round(c0[0], 4), round(c0[1], 4), round(c0[2], 4))
+                    if fp in remaining:
+                        remaining.remove(fp)
+                    else:
+                        new_sp = sp
+            if new_sp is not None:
+                pu, pv = new_sp.point_count_u, new_sp.point_count_v
+                nrows, ncols = len(patch), len(patch[0])
+                flat = []
+                if (pu, pv) == (nrows, ncols):
+                    # storage is u-fastest: S[v][u] = patch[u][v]
+                    for vv in range(pv):
+                        for uu in range(pu):
+                            x, y, z = patch[uu][vv]
+                            flat.extend((x, y, z, 1.0))
+                else:
+                    for vv in range(pv):
+                        for uu in range(pu):
+                            x, y, z = patch[vv][uu]
+                            flat.extend((x, y, z, 1.0))
+                new_sp.points.foreach_set('co', flat)
             for sp in su.splines:
                 if sp.point_count_u > 1 and sp.point_count_v > 1:
                     sp.order_u = min(4, sp.point_count_u)
@@ -672,6 +714,7 @@ if _IN_BLENDER:
                     sp.use_endpoint_v = True
                     sp.resolution_u = 4
                     sp.resolution_v = 4
+        su.update_tag()
         if prev_active is not None:
             view.objects.active = prev_active
 

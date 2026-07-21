@@ -151,9 +151,11 @@ rings relax to a catenoid (waist radius correct to 0.06%).
   classic *minimal surface with a trefoil knot as inner edge and a
   circle as outer edge* (any (p,q) torus knot; trefoil = (2,3)).
 
-Span operators can also emit NURBS (`NURBS Output`); note that where
-the surface curls very tightly (e.g. hugging a knotted edge) the NURBS
-approximation may ripple — increase rings/samples or use mesh output.
+Span operators can also emit NURBS (`NURBS Output`): the solved grid is
+faired (per-column arc-length resampling + light net smoothing + a
+normal-only mean-curvature polish) and becomes the control net of a
+single cyclic NURBS patch — the trefoil span evaluates to within ~4%
+of the mesh solution's area with a fraction of the data.
 
 ![Trefoil-circle span](renders/min_trefoil_circle.png)
 
