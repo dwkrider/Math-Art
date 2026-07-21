@@ -604,11 +604,12 @@ except ImportError:
 if _IN_BLENDER:
 
     def _params_from_props(st):
+        detail = st.nurbs_detail if st.output_nurbs else st.detail
         return Params(branches=st.branches, storeys=st.storeys,
                       height=st.height, flange=st.flange,
                       thickness=st.thickness, rim_bulge=st.rim_bulge,
                       twist=st.twist, azimuth=st.azimuth, warp=st.warp,
-                      detail=st.detail, scale_x=st.scale_x,
+                      detail=detail, scale_x=st.scale_x,
                       scale_y=st.scale_y, scale_z=st.scale_z,
                       global_scale=st.global_scale)
 
@@ -677,7 +678,8 @@ if _IN_BLENDER:
     _PROP_COPY_KEYS = ('is_scherk', 'auto_update', 'branches', 'storeys',
                        'height', 'flange', 'thickness', 'rim_bulge', 'twist',
                        'azimuth', 'warp', 'detail', 'scale_x', 'scale_y',
-                       'scale_z', 'global_scale', 'output_nurbs')
+                       'scale_z', 'global_scale', 'output_nurbs',
+                       'nurbs_detail')
 
     def _swap_object_type(old_obj, to_surface):
         """Mesh <-> Surface object types cannot be changed in place;
@@ -804,9 +806,13 @@ if _IN_BLENDER:
         output_nurbs: BoolProperty(
             name="NURBS Output", default=False,
             description="Output a compact NURBS surface (mid-surface only; "
-                        "thickness and rim bulge do not apply). Lower "
-                        "Detail for fewer control points",
+                        "thickness and rim bulge do not apply)",
             update=_prop_update)
+        nurbs_detail: IntProperty(
+            name="NURBS Detail",
+            description="Control-point density used for NURBS output "
+                        "(the NURBS surface stays smooth at low values)",
+            default=2, min=1, max=16, update=_prop_update)
 
     def _apply_param_dict(st, d):
         st.auto_update, saved = False, st.auto_update
@@ -865,6 +871,9 @@ if _IN_BLENDER:
             name="NURBS Output", default=False,
             description="Compact NURBS surface instead of a mesh "
                         "(mid-surface only; no thickness/rims)")
+        nurbs_detail: IntProperty(
+            name="NURBS Detail", default=2, min=1, max=16,
+            description="Control-point density used for NURBS output")
         # set once the preset values have been copied into the sliders,
         # so redo-panel tweaks are not overwritten on re-execute
         preset_applied: BoolProperty(default=False, options={'HIDDEN'})
@@ -872,7 +881,7 @@ if _IN_BLENDER:
         _PARAM_KEYS = ('branches', 'storeys', 'height', 'flange',
                        'thickness', 'rim_bulge', 'twist', 'azimuth', 'warp',
                        'detail', 'scale_x', 'scale_y', 'scale_z',
-                       'global_scale', 'output_nurbs')
+                       'global_scale', 'output_nurbs', 'nurbs_detail')
 
         def execute(self, context):
             # menu/scripted invocation sets `preset` without firing its
@@ -899,8 +908,10 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, "preset")
             col = lay.column(align=True)
+            skip = 'detail' if self.output_nurbs else 'nurbs_detail'
             for k in self._PARAM_KEYS:
-                col.prop(self, k)
+                if k != skip:
+                    col.prop(self, k)
 
     class SCHERK_OT_regenerate(bpy.types.Operator):
         """Rebuild the sculpture mesh from its parameters"""
@@ -995,7 +1006,7 @@ if _IN_BLENDER:
             col.prop(st, "azimuth")
             col.prop(st, "warp")
             col.separator()
-            col.prop(st, "detail")
+            col.prop(st, "nurbs_detail" if st.output_nurbs else "detail")
             col.prop(st, "scale_x")
             col.prop(st, "scale_y")
             col.prop(st, "scale_z")

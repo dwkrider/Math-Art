@@ -87,14 +87,16 @@ print(f"[scherk toggle back] type={obj.type} verts={len(obj.data.vertices)} "
 if obj.type != 'MESH':
     fails.append('scherk-toggle')
 
-# low-detail NURBS (few control points)
+# default NURBS detail should be 2 (few control points)
 clear_objects()
-bpy.ops.mesh.scherk_collins_add(preset='HEX', output_nurbs=True, detail=3)
+bpy.ops.mesh.scherk_collins_add(preset='HEX', output_nurbs=True)
 obj = bpy.context.object
 ngrids, npts = surf_stats(obj)
-print(f"[scherk nurbs hex d3] patches={ngrids} ctrl_pts={npts} "
-      f"{'OK' if obj.type == 'SURFACE' and npts < 4000 else 'FAIL'}")
-if obj.type != 'SURFACE':
+st = obj.scherk_collins
+ok = (obj.type == 'SURFACE' and st.nurbs_detail == 2 and npts < 1500)
+print(f"[scherk nurbs hex default] nurbs_detail={st.nurbs_detail} "
+      f"patches={ngrids} ctrl_pts={npts} {'OK' if ok else 'FAIL'}")
+if not ok:
     fails.append('scherk-nurbs-hex')
 render_object(obj, os.path.join(OUT, 'nurbs_hex_d3.png'))
 
