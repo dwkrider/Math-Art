@@ -1,6 +1,6 @@
 # Math Art — Blender Add-ons
 
-Three single-file Blender add-ons for mathematical sculpture:
+Single-file Blender add-ons for mathematical sculpture:
 
 1. **Scherk-Collins Sculpture Generator**
    (`src/scherk_collins_generator.py`) — a re-implementation of the
@@ -12,6 +12,32 @@ Three single-file Blender add-ons for mathematical sculpture:
 3. **Seifert Surface Generator**
    (`src/seifert_surface_generator.py`) — Seifert surfaces for knots
    and links from braid words, after van Wijk & Cohen's *SeifertView*.
+4. **Polyhedron suite**, after Adrian Rossiter's
+   [Antiprism](https://www.antiprism.com) tools — five independent
+   add-ons:
+   - `src/conway_operators.py` — **Conway notation** (`dkC`, `taD`,
+     `k3sT`…) with seeds T C O D I / Pn / An / Yn, operators
+     d a k g c r + t j e o b m s n z, and Hart-style
+     **canonicalization** (edges tangent to the sphere). Verified
+     against 17 textbook polyhedra (snub cube 24/38, truncated
+     icosahedron 60/32, …).
+   - `src/zonohedra_generator.py` — **zonohedra** from vector stars
+     (rhombic dodeca/triaconta/enneacontahedron, random stars), plus
+     **polar zonohedra** and Russell Towle's **rhombic
+     spirallohedra** via a direct port of Antiprism's
+     `make_polar_zonohedron` (the preset equals `zono -P 12,4`).
+   - `src/waterman_generator.py` — **Waterman polyhedra** (hulls of
+     FCC lattice points; W1 = cuboctahedron, high roots approach a
+     sphere).
+   - `src/rotegrity_generator.py` — **rotegrity / nexorade** strap
+     spheres over Platonic and geodesic seeds (twist + extension
+     sliders).
+   - `src/weave_generator.py` — **woven-strand spheres**: strands are
+     the straight-ahead circuits of the seed's medial graph (cube → 4
+     hexagonal strands, icosahedron → 6 decagons, geodesic seeds give
+     dense triaxial weaves), with over/under alternation.
+
+![Weave](renders/poly_weave.png)
 
 Only **geometry** is generated. Materials, textures and rendering are
 left to Blender. Both add-ons can emit dense meshes or compact NURBS
