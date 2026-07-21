@@ -902,10 +902,10 @@ if _IN_BLENDER:
         knot_scale: FloatProperty(
             name="Knot Scale", default=1.0, min=0.1, max=5.0)
         samples: IntProperty(
-            name="Boundary Samples", default=192, min=32, max=512)
-        rings: IntProperty(name="Interior Rings", default=28, min=4, max=128)
+            name="Boundary Samples", default=96, min=32, max=512)
+        rings: IntProperty(name="Interior Rings", default=16, min=4, max=128)
         iterations: IntProperty(
-            name="Solver Iterations", default=50, min=1, max=200)
+            name="Solver Iterations", default=30, min=1, max=200)
         output_nurbs: BoolProperty(
             name="NURBS Output", default=False,
             description="Emit a compact NURBS surface (control grid = the "
