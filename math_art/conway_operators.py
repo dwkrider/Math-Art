@@ -557,12 +557,16 @@ if _IN_BLENDER:
     def _menu_func(self, context):
         self.layout.operator("mesh.conway_add", icon='MESH_ICOSPHERE')
 
+    ADD_MENU = True   # the Math Art extension menu sets this False
+
     def register():
         bpy.utils.register_class(MESH_OT_conway_add)
-        bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
-        bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         bpy.utils.unregister_class(MESH_OT_conway_add)
 
 

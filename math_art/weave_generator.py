@@ -346,7 +346,17 @@ def weave_circuits(V, F, pat):
                 clean.append(q)
         if len(clean) >= 3:
             circuits.append(clean)
-    return circuits
+    # drop geometric duplicates (the same circuit reached from a
+    # different flag state, e.g. traversed in the opposite direction)
+    seen_sets = set()
+    unique = []
+    for c in circuits:
+        key = frozenset((round(p[0], 6), round(p[1], 6), round(p[2], 6))
+                        for p in c)
+        if key not in seen_sets:
+            seen_sets.add(key)
+            unique.append(c)
+    return unique
 
 
 # ---- ribbon sweep --------------------------------------------------------
@@ -435,7 +445,9 @@ if _IN_BLENDER:
 
     PATTERNS = [
         ('CUSTOM', "Custom", ""),
-        ('FEV', "Weave (FEV)", "default weave through edge centres"),
+        ('vfe', "Classic Weave (vfe)",
+         "straight-ahead weave: cube 4 hexagons, icosa 6 decagons"),
+        ('FEV', "Corner Weave (FEV)", "circuits turning around vertices"),
         ('1,1,1V', "Vertex Rings (1,1,1V)", "circuits around vertices"),
         ('1,1,1F', "Face Rings (1,1,1F)", "circuits around faces"),
         ('1,1,1FFE', "Face Pairs (1,1,1FFE)", "squares on a cube"),
@@ -469,10 +481,10 @@ if _IN_BLENDER:
             name="Geodesic Frequency", default=1, min=1, max=6,
             description="Subdivision of triangular seeds")
         pattern_preset: EnumProperty(name="Pattern Preset", items=PATTERNS,
-                                     default='FEV',
+                                     default='vfe',
                                      update=_pattern_chosen)
         pattern: StringProperty(
-            name="Pattern", default="FEV",
+            name="Pattern", default="vfe",
             description="[C|L][bV,bE,bF][:up,side,along...]steps[tl|tr|tb]"
                         " -- steps from V E F v e f R -")
         width: FloatProperty(name="Strand Width", default=0.10,
@@ -530,12 +542,16 @@ if _IN_BLENDER:
     def _menu_func(self, context):
         self.layout.operator("mesh.poly_weave_add", icon='MOD_LATTICE')
 
+    ADD_MENU = True   # the Math Art extension menu sets this False
+
     def register():
         bpy.utils.register_class(MESH_OT_weave_add)
-        bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
-        bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         bpy.utils.unregister_class(MESH_OT_weave_add)
 
 

@@ -979,13 +979,17 @@ if _IN_BLENDER:
                 OBJECT_OT_minimal_span, MESH_OT_knot_span_add,
                 VIEW3D_PT_minimal_surfaces, VIEW3D_MT_minimal_add)
 
+    ADD_MENU = True   # the Math Art extension menu sets this False
+
     def register():
         for c in _classes:
             bpy.utils.register_class(c)
-        bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
-        bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         for c in reversed(_classes):
             bpy.utils.unregister_class(c)
 

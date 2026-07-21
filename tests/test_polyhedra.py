@@ -9,7 +9,7 @@ import bpy
 import bmesh
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(PROJ, 'src'))
+sys.path.insert(0, os.path.join(PROJ, 'math_art'))
 import conway_operators as co  # noqa: E402
 import zonohedra_generator as zo  # noqa: E402
 import waterman_generator as wa  # noqa: E402

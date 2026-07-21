@@ -1086,15 +1086,19 @@ if _IN_BLENDER:
                 SCHERK_OT_regenerate, SCHERK_OT_load_spec,
                 SCHERK_OT_save_spec, VIEW3D_PT_scherk_collins)
 
+    ADD_MENU = True   # the Math Art extension menu sets this False
+
     def register():
         for c in _classes:
             bpy.utils.register_class(c)
         bpy.types.Object.scherk_collins = PointerProperty(
             type=ScherkCollinsProps)
-        bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
-        bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         del bpy.types.Object.scherk_collins
         for c in reversed(_classes):
             bpy.utils.unregister_class(c)

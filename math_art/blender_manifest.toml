@@ -1,0 +1,17 @@
+schema_version = "1.0.0"
+
+id = "math_art"
+version = "1.0.0"
+name = "Math Art"
+tagline = "Mathematical sculpture: minimal surfaces, polyhedra, knots"
+maintainer = "David Krider <dkrider@gmail.com>"
+type = "add-on"
+
+tags = ["Add Mesh"]
+
+blender_version_min = "4.2.0"
+
+license = ["SPDX:GPL-3.0-or-later"]
+
+[build]
+paths_exclude_pattern = ["__pycache__/", "*.pyc"]

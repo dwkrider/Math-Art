@@ -7,7 +7,7 @@ import math
 import bpy
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(PROJ, 'src'))
+sys.path.insert(0, os.path.join(PROJ, 'math_art'))
 import scherk_collins_generator as scg  # noqa: E402
 import minimal_surface_toolkit as mst  # noqa: E402
 

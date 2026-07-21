@@ -1,38 +1,55 @@
-# Math Art — Blender Add-ons
+# Math Art — Blender Extension
 
-Single-file Blender add-ons for mathematical sculpture:
+Mathematical sculpture generators for Blender, packaged as a single
+modern **extension** (Blender 4.2+):
+
+**Install:** build the zip (below) or grab `dist/math_art-*.zip`, then
+in Blender: `Edit > Preferences > Get Extensions > ⌄ (top-right) >
+Install from Disk…` — or just drag the zip into the Blender window.
+Everything appears under **Add > Mesh > Math Art** plus the Scherk /
+MinSurf N-panel tabs. (If you previously installed the individual
+files as legacy add-ons, remove those first.)
+
+**Build the extension:**
+
+    blender --command extension build --source-dir math_art --output-filepath dist/math_art-1.0.0.zip
+
+Each module in `math_art/` is also still installable on its own as a
+classic single-file add-on via `Install from Disk`.
+
+The modules:
 
 1. **Scherk-Collins Sculpture Generator**
-   (`src/scherk_collins_generator.py`) — a re-implementation of the
+   (`math_art/scherk_collins_generator.py`) — a re-implementation of the
    geometry engine of Carlo Séquin's *Sculpture Generator I*.
 2. **Minimal Surface Toolkit**
-   (`src/minimal_surface_toolkit.py`) — classic parametric minimal
+   (`math_art/minimal_surface_toolkit.py`) — classic parametric minimal
    surfaces, triply-periodic minimal surfaces, and a Plateau solver
    that spans minimal surfaces across arbitrary curves.
 3. **Seifert Surface Generator**
-   (`src/seifert_surface_generator.py`) — Seifert surfaces for knots
+   (`math_art/seifert_surface_generator.py`) — Seifert surfaces for knots
    and links from braid words, after van Wijk & Cohen's *SeifertView*.
 4. **Polyhedron suite**, after Adrian Rossiter's
    [Antiprism](https://www.antiprism.com) tools — five independent
    add-ons:
-   - `src/conway_operators.py` — **Conway notation** (`dkC`, `taD`,
+   - `math_art/conway_operators.py` — **Conway notation** (`dkC`, `taD`,
      `k3sT`…) with seeds T C O D I / Pn / An / Yn, operators
      d a k g c r + t j e o b m s n z, and Hart-style
      **canonicalization** (edges tangent to the sphere). Verified
      against 17 textbook polyhedra (snub cube 24/38, truncated
      icosahedron 60/32, …).
-   - `src/zonohedra_generator.py` — **zonohedra** from vector stars
+   - `math_art/zonohedra_generator.py` — **zonohedra** from vector stars
      (rhombic dodeca/triaconta/enneacontahedron, random stars), plus
      **polar zonohedra** and Russell Towle's **rhombic
      spirallohedra** via a direct port of Antiprism's
      `make_polar_zonohedron` (the preset equals `zono -P 12,4`).
-   - `src/waterman_generator.py` — **Waterman polyhedra** (hulls of
+   - `math_art/waterman_generator.py` — **Waterman polyhedra** (hulls of
      FCC lattice points; W1 = cuboctahedron, high roots approach a
      sphere).
-   - `src/rotegrity_generator.py` — **rotegrity / nexorade** strap
+   - `math_art/rotegrity_generator.py` — **rotegrity / nexorade** strap
      spheres over Platonic and geodesic seeds (twist + extension
      sliders).
-   - `src/weave_generator.py` — **woven-strand models** driven by
+   - `math_art/weave_generator.py` — **woven-strand models** driven by
      poly_weave's **pattern language**: a program
      `[C|L][bV,bE,bF][:up,side,along…]steps[tl|tr|tb]` walked over the
      seed's flag triangles (steps `V E F` pivot, `v e f` cross, `R`
@@ -61,7 +78,7 @@ Scherk-Collins saddle-chain sculptures created with Brent Collins —
 ## Install
 
 1. Blender → `Edit > Preferences > Add-ons > Install from Disk…`
-2. Pick `src/scherk_collins_generator.py`
+2. Pick `math_art/scherk_collins_generator.py`
 3. Enable **"Scherk-Collins Sculpture Generator"**
 
 Tested on Blender 5.1 (needs ≥ 4.2).
@@ -143,7 +160,7 @@ not apply (convert to mesh and add Solidify if needed).
 
 ![Gyroid lattice](renders/min_tpms_g_2cells.png)
 
-Install `src/minimal_surface_toolkit.py` the same way. Everything is
+Install `math_art/minimal_surface_toolkit.py` the same way. Everything is
 under `Add > Mesh > Minimal Surfaces` and the N-panel **MinSurf** tab.
 
 ## Classic parametric surfaces
@@ -195,7 +212,7 @@ of the mesh solution's area with a fraction of the data.
 
 ![Borromean rings Seifert surface](renders/seifert_borromean.png)
 
-Install `src/seifert_surface_generator.py`; find it under
+Install `math_art/seifert_surface_generator.py`; find it under
 `Add > Mesh > Seifert Surface` and in the **MinSurf** N-panel tab.
 
 Enter a knot or link as a **braid word** — letters (`a` = σ₁,
@@ -234,12 +251,12 @@ Minimal Surface Toolkit (soft dependency):
 
 ## Files
 
-- `src/scherk_collins_generator.py` — Scherk-Collins add-on (the
+- `math_art/scherk_collins_generator.py` — Scherk-Collins add-on (the
   geometry core also runs standalone:
-  `python src/scherk_collins_generator.py` prints a smoke test)
-- `src/minimal_surface_toolkit.py` — Minimal Surface Toolkit add-on
+  `python math_art/scherk_collins_generator.py` prints a smoke test)
+- `math_art/minimal_surface_toolkit.py` — Minimal Surface Toolkit add-on
   (standalone run validates the Plateau solver; needs numpy)
-- `src/seifert_surface_generator.py` — Seifert Surface Generator
+- `math_art/seifert_surface_generator.py` — Seifert Surface Generator
   (standalone run checks Euler characteristics of all presets)
 - `tests/test_scherk.py`, `tests/test_minimal.py`, `tests/test_nurbs.py`,
   `tests/test_seifert.py` — headless tests, e.g.
@@ -248,14 +265,54 @@ Minimal Surface Toolkit (soft dependency):
   and render to `renders/`
 - `renders/` — sample renders
 
-## References
+## References & Attribution
 
-- [Scherk-Collins Sculpture Generator](https://people.eecs.berkeley.edu/~sequin/SCULPTS/scherk.html) (C. H. Séquin)
+This project re-implements, ports, or draws on the following prior
+work. All credit for the underlying mathematics, algorithms and
+original software belongs to their authors.
+
+**Scherk-Collins sculptures** — Carlo H. Séquin & Brent Collins
+
+- [Scherk-Collins Sculpture Generator](https://people.eecs.berkeley.edu/~sequin/SCULPTS/scherk.html), C. H. Séquin, UC Berkeley
 - C. H. Séquin, *Virtual Prototyping of Scherk-Collins Saddle Rings*, Leonardo 30(2), 1997
-- C. H. Séquin, H. Meshkin, L. Downs, *Interactive Generation of Scherk-Collins Sculptures*, I3D '97
+- C. H. Séquin, H. Meshkin, L. Downs, *Interactive Generation of Scherk-Collins Sculptures*, Proc. I3D '97
 - C. H. Séquin, *15 Years of Scherk-Collins Saddle Chains*, UCB/EECS-2010-41
-- [Ken Brakke — Triply Periodic Minimal Surfaces](https://kenbrakke.com/evolver/examples/periodic/periodic.html) and the [Surface Evolver](https://kenbrakke.com/evolver/evolver.html)
-- [Jürgen Meier — Minimal surface gallery](http://www.3d-meier.de/tut25/Seite0.html)
-- [Mathematica SE #69131 — minimal surface with trefoil knot inner edge](https://mathematica.stackexchange.com/questions/69131/)
-- U. Pinkall, K. Polthier, *Computing Discrete Minimal Surfaces and Their Conjugates*, Exp. Math. 2(1), 1993
-- [SeifertView](https://vanwijk.win.tue.nl/seifertview/) — J. J. van Wijk, A. M. Cohen, *Visualization of Seifert Surfaces*, IEEE TVCG 12(4), 2006
+- Parameter semantics validated against the demo files shipped with the original *Sculpture Generator* Windows program
+
+**Minimal surfaces**
+
+- [Ken Brakke — Triply Periodic Minimal Surfaces](https://kenbrakke.com/evolver/examples/periodic/periodic.html) and the [Surface Evolver](https://kenbrakke.com/evolver/evolver.html) (the Plateau solver here is a lightweight in-Blender analogue); see also [SE-FIT](https://www.se-fit.com/)
+- [Jürgen Meier — parametric surface gallery](http://www.3d-meier.de/tut25/Seite0.html) (the classic parametric surface inventory)
+- U. Pinkall, K. Polthier, *Computing Discrete Minimal Surfaces and Their Conjugates*, Experimental Math. 2(1), 1993 (the area-minimization algorithm)
+- [Paul Nylander — Scherk-Collins surface notes](https://nylander.wordpress.com/2009/02/10/scherk-collins-surface/) (twist/warp transformations)
+- [Mathematica SE #69131](https://mathematica.stackexchange.com/questions/69131/) — the circle-to-trefoil-knot minimal surface construction
+- Nodal TPMS approximations after H. G. von Schnering & R. Nesper and subsequent literature
+- [xyzdims — TPMS 3D-printing experiments](https://xyzdims.com/tag/triply-periodic-minimal-surface/) (printable-lattice inspiration)
+
+**Seifert surfaces**
+
+- [SeifertView](https://vanwijk.win.tue.nl/seifertview/) — J. J. van Wijk & A. M. Cohen, *Visualization of Seifert Surfaces*, IEEE TVCG 12(4), 2006 (braid-word input, wedding-cake layout, relaxed presentation)
+- H. Seifert, *Über das Geschlecht von Knoten*, Math. Annalen 110, 1934 (the algorithm itself)
+
+**Polyhedra** — after [Antiprism](https://www.antiprism.com) by Adrian
+Rossiter ([source](https://github.com/antiprism/antiprism), GPL):
+
+- `conway` — Conway polyhedron notation: J. H. Conway's operator
+  notation, extended and popularized by
+  [George W. Hart](https://www.georgehart.com/virtual-polyhedra/conway_notation.html);
+  canonicalization after G. Hart, *Calculating Canonical Polyhedra*,
+  Mathematica in Educ. & Research 6(3), 1997
+- `zono` — zonohedra; polar zonohedra & **rhombic spirallohedra**
+  after [Russell Towle](http://www.zonohedra.com/) (the spirallohedron
+  builder is a direct port of Antiprism's `make_polar_zonohedron`,
+  `base/zonohedron.cc`)
+- `waterman` — [Waterman polyhedra](http://watermanpolyhedron.com/)
+  by Steve Waterman
+- `rotegrity` — rotegrity / nexorade strap spheres (Antiprism's
+  `rotegrity` program; terminology after Dick Fischbeck and the
+  nexorade work of O. Baverel et al.)
+- `poly_weave` — polyhedral weaves and the weave **pattern language**
+  ([examples](https://www.antiprism.com/examples/200_programs/700_poly_weave/imagelist.html))
+
+Thanks also to the Blender Foundation — everything here builds on the
+Blender Python API and the 4.2+ extensions platform.

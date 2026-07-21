@@ -271,7 +271,10 @@ if _IN_BLENDER:
         Surface Toolkit (soft dependency)."""
         try:
             import numpy as np
-            import minimal_surface_toolkit as mst
+            try:
+                from . import minimal_surface_toolkit as mst
+            except ImportError:
+                import minimal_surface_toolkit as mst
         except ImportError:
             return None
         V = np.array(me_verts, dtype=np.float64)
@@ -328,7 +331,10 @@ if _IN_BLENDER:
         each round. Returns new verts or None if numpy/toolkit absent."""
         try:
             import numpy as np
-            import minimal_surface_toolkit as mst
+            try:
+                from . import minimal_surface_toolkit as mst
+            except ImportError:
+                import minimal_surface_toolkit as mst
         except ImportError:
             return None
         V = np.array(me_verts, dtype=np.float64)
@@ -613,13 +619,17 @@ if _IN_BLENDER:
 
     _classes = (MESH_OT_seifert_add, VIEW3D_PT_seifert)
 
+    ADD_MENU = True   # the Math Art extension menu sets this False
+
     def register():
         for c in _classes:
             bpy.utils.register_class(c)
-        bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
-        bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         for c in reversed(_classes):
             bpy.utils.unregister_class(c)
 
