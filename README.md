@@ -1,6 +1,6 @@
 # Math Art — Blender Add-ons
 
-Two single-file Blender add-ons for mathematical sculpture:
+Three single-file Blender add-ons for mathematical sculpture:
 
 1. **Scherk-Collins Sculpture Generator**
    (`src/scherk_collins_generator.py`) — a re-implementation of the
@@ -9,6 +9,9 @@ Two single-file Blender add-ons for mathematical sculpture:
    (`src/minimal_surface_toolkit.py`) — classic parametric minimal
    surfaces, triply-periodic minimal surfaces, and a Plateau solver
    that spans minimal surfaces across arbitrary curves.
+3. **Seifert Surface Generator**
+   (`src/seifert_surface_generator.py`) — Seifert surfaces for knots
+   and links from braid words, after van Wijk & Cohen's *SeifertView*.
 
 Only **geometry** is generated. Materials, textures and rendering are
 left to Blender. Both add-ons can emit dense meshes or compact NURBS
@@ -154,6 +157,35 @@ approximation may ripple — increase rings/samples or use mesh output.
 
 ![Trefoil-circle span](renders/min_trefoil_circle.png)
 
+---
+
+# 3. Seifert Surface Generator
+
+![Borromean rings Seifert surface](renders/seifert_borromean.png)
+
+Install `src/seifert_surface_generator.py`; find it under
+`Add > Mesh > Seifert Surface` and in the **MinSurf** N-panel tab.
+
+Enter a knot or link as a **braid word** — letters (`a` = σ₁,
+`A` = σ₁⁻¹, `aBaB` = figure-8) or integers (`1 -2 1 -2`) — or pick a
+preset: trefoil, figure-8, cinquefoil, granny & square knots, Hopf
+link, Solomon's link, Borromean rings, or any (p,q) torus knot.
+Seifert's algorithm on the braid closure gives one disk per strand and
+one half-twisted band per crossing; the add-on stacks the disks like a
+wedding cake and joins their rims with twisted ribbons — the classic
+SeifertView presentation. The surface boundary *is* the knot, and is
+optionally emitted as a bevelled tube curve.
+
+The operator reports (and stores on the object) the braid, strand and
+crossing counts, number of link components, and the surface **genus**
+(from χ = strands − crossings). The headless tests verify that the
+generated mesh's Euler characteristic and boundary-loop count match
+the braid combinatorics exactly for every preset.
+
+*Relax Iterations* smooths the surface with the Plateau solver from
+the Minimal Surface Toolkit (soft dependency), pinning the knot — a
+soap-film look while keeping the correct topology.
+
 ## Files
 
 - `src/scherk_collins_generator.py` — Scherk-Collins add-on (the
@@ -161,8 +193,10 @@ approximation may ripple — increase rings/samples or use mesh output.
   `python src/scherk_collins_generator.py` prints a smoke test)
 - `src/minimal_surface_toolkit.py` — Minimal Surface Toolkit add-on
   (standalone run validates the Plateau solver; needs numpy)
-- `tests/test_scherk.py`, `tests/test_minimal.py`, `tests/test_nurbs.py`
-  — headless tests, e.g.
+- `src/seifert_surface_generator.py` — Seifert Surface Generator
+  (standalone run checks Euler characteristics of all presets)
+- `tests/test_scherk.py`, `tests/test_minimal.py`, `tests/test_nurbs.py`,
+  `tests/test_seifert.py` — headless tests, e.g.
   `blender --background --factory-startup --python tests/test_scherk.py`;
   they check mesh integrity (watertight/manifold), validate the solver,
   and render to `renders/`
@@ -178,3 +212,4 @@ approximation may ripple — increase rings/samples or use mesh output.
 - [Jürgen Meier — Minimal surface gallery](http://www.3d-meier.de/tut25/Seite0.html)
 - [Mathematica SE #69131 — minimal surface with trefoil knot inner edge](https://mathematica.stackexchange.com/questions/69131/)
 - U. Pinkall, K. Polthier, *Computing Discrete Minimal Surfaces and Their Conjugates*, Exp. Math. 2(1), 1993
+- [SeifertView](https://vanwijk.win.tue.nl/seifertview/) — J. J. van Wijk, A. M. Cohen, *Visualization of Seifert Surfaces*, IEEE TVCG 12(4), 2006
