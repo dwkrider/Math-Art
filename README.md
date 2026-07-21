@@ -1,12 +1,27 @@
-# Scherk-Collins Sculpture Generator — Blender Add-on
+# Math Art — Blender Add-ons
+
+Two single-file Blender add-ons for mathematical sculpture:
+
+1. **Scherk-Collins Sculpture Generator**
+   (`src/scherk_collins_generator.py`) — a re-implementation of the
+   geometry engine of Carlo Séquin's *Sculpture Generator I*.
+2. **Minimal Surface Toolkit**
+   (`src/minimal_surface_toolkit.py`) — classic parametric minimal
+   surfaces, triply-periodic minimal surfaces, and a Plateau solver
+   that spans minimal surfaces across arbitrary curves.
+
+Only **geometry** is generated. Materials, textures and rendering are
+left to Blender. Both add-ons can emit dense meshes or compact NURBS
+surfaces.
+
+---
+
+# 1. Scherk-Collins Sculpture Generator
 
 A Blender re-implementation of the geometry engine of Carlo Séquin's
 **Sculpture Generator I** (the 1996/97 program that designed the
 Scherk-Collins saddle-chain sculptures created with Brent Collins —
 *Hyperbolic Hexagon II*, *Heptoroid*, the *Minimal Trefoil*, etc.).
-
-Only the sculpture **geometry** is reproduced. Materials, textures,
-backgrounds and rendering are left to Blender.
 
 ![Hyperbolic Hexagon](renders/preset_hex.png)
 
@@ -83,16 +98,75 @@ after the affine stretch). Storey-joint creases are C1 like the
 original's; add a Subdivision Surface modifier if you want extra
 smoothness.
 
+**NURBS output**: enable *NURBS Output* to get a compact NURBS surface
+instead of a mesh — one clamped patch per half-wedge of each storey,
+with far fewer control points (lower *Detail* for even fewer). NURBS
+mode outputs the smooth mid-surface only: thickness and rim bulge do
+not apply (convert to mesh and add Solidify if needed).
+
+---
+
+# 2. Minimal Surface Toolkit
+
+![Gyroid lattice](renders/min_tpms_g_2cells.png)
+
+Install `src/minimal_surface_toolkit.py` the same way. Everything is
+under `Add > Mesh > Minimal Surfaces` and the N-panel **MinSurf** tab.
+
+## Classic parametric surfaces
+
+Enneper (any order), Catenoid, Helicoid, Henneberg, Catalan, Bour,
+Richmond, and Scherk's doubly-periodic surface — after Jürgen Meier's
+gallery (3d-meier.de, tut25). Output as mesh or as a single NURBS
+patch (`Output: NURBS`, ~24×24 control points instead of ~10k
+vertices), with correct periodic closure (catenoid seam etc.).
+
+## Triply-periodic minimal surfaces (TPMS)
+
+Schwarz P & D, the Gyroid, Neovius, Schoen's I-WP & F-RD, the
+Lidinoid, Split P, and the singly-periodic Scherk tower — the members
+of Brakke's TPMS inventory that have standard nodal (level-set)
+approximations. Meshed by a vectorized marching-tetrahedra extractor
+with gradient-oriented winding; choose cells per axis, resolution and
+an optional Solidify thickness for 3D-printable lattices (mesh output
+only — an implicit surface has no NURBS parametrization).
+
+## Plateau solver ("Span Minimal Surface")
+
+A lightweight, in-Blender take on what Ken Brakke's **Surface
+Evolver** does: pin boundary curves, minimize area. The solver is the
+Pinkall-Polthier cotangent-Laplacian iteration with a conjugate-
+gradient core (numpy), validated against exact solutions — a planar
+circle relaxes to a flat disk (area π to 0.07%), and two parallel
+rings relax to a catenoid (waist radius correct to 0.06%).
+
+- Select **one closed curve** (Curve object or closed mesh edge loop)
+  → disk-type minimal surface spanning it.
+- Select **two closed curves** → annulus-type minimal surface between
+  them (loops are auto-aligned).
+- `Add > Mesh > Minimal Surfaces > Circle to Torus Knot` builds the
+  classic *minimal surface with a trefoil knot as inner edge and a
+  circle as outer edge* (any (p,q) torus knot; trefoil = (2,3)).
+
+Span operators can also emit NURBS (`NURBS Output`); note that where
+the surface curls very tightly (e.g. hugging a knotted edge) the NURBS
+approximation may ripple — increase rings/samples or use mesh output.
+
+![Trefoil-circle span](renders/min_trefoil_circle.png)
+
 ## Files
 
-- `src/scherk_collins_generator.py` — the add-on (single file; the
+- `src/scherk_collins_generator.py` — Scherk-Collins add-on (the
   geometry core also runs standalone:
   `python src/scherk_collins_generator.py` prints a smoke test)
-- `tests/test_scherk.py` — headless test:
-  `blender --background --factory-startup --python tests/test_scherk.py`
-  builds presets + original demo files, checks watertightness, and
-  renders to `renders/`
-- `renders/` — sample renders of the presets and demo files
+- `src/minimal_surface_toolkit.py` — Minimal Surface Toolkit add-on
+  (standalone run validates the Plateau solver; needs numpy)
+- `tests/test_scherk.py`, `tests/test_minimal.py`, `tests/test_nurbs.py`
+  — headless tests, e.g.
+  `blender --background --factory-startup --python tests/test_scherk.py`;
+  they check mesh integrity (watertight/manifold), validate the solver,
+  and render to `renders/`
+- `renders/` — sample renders
 
 ## References
 
@@ -100,3 +174,7 @@ smoothness.
 - C. H. Séquin, *Virtual Prototyping of Scherk-Collins Saddle Rings*, Leonardo 30(2), 1997
 - C. H. Séquin, H. Meshkin, L. Downs, *Interactive Generation of Scherk-Collins Sculptures*, I3D '97
 - C. H. Séquin, *15 Years of Scherk-Collins Saddle Chains*, UCB/EECS-2010-41
+- [Ken Brakke — Triply Periodic Minimal Surfaces](https://kenbrakke.com/evolver/examples/periodic/periodic.html) and the [Surface Evolver](https://kenbrakke.com/evolver/evolver.html)
+- [Jürgen Meier — Minimal surface gallery](http://www.3d-meier.de/tut25/Seite0.html)
+- [Mathematica SE #69131 — minimal surface with trefoil knot inner edge](https://mathematica.stackexchange.com/questions/69131/)
+- U. Pinkall, K. Polthier, *Computing Discrete Minimal Surfaces and Their Conjugates*, Exp. Math. 2(1), 1993

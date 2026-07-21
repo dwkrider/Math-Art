@@ -96,9 +96,14 @@ def _v_norm(a):
     return (a[0] / l, a[1] / l, a[2] / l)
 
 
-def generate_sculpture(p):
+def generate_sculpture(p, return_grids=False):
     """Build the sculpture mesh. Returns (verts, faces) with faces as
-    index tuples (already cleaned of degenerate entries)."""
+    index tuples (already cleaned of degenerate entries).
+
+    With return_grids=True, stops after the mid-surface grids are built
+    and returns (grids, R, m): grids maps (storey, branch) to a list of
+    R+1 rows, each a list of m points or None (opened hole) -- the raw
+    material for NURBS patch output (no thickness/rims)."""
     b = p.branches
     S = p.storeys
     W = p.flange
@@ -188,6 +193,9 @@ def generate_sculpture(p):
                     row.append(xform(rad * cos(ang), rad * sin(ang), z_ex))
                 rows.append(row)
             grids[(s, j)] = rows
+
+    if return_grids:
+        return grids, R, m
 
     # ---- parametric normals per grid ----------------------------------
     normals = {}
@@ -604,9 +612,110 @@ if _IN_BLENDER:
                       scale_y=st.scale_y, scale_z=st.scale_z,
                       global_scale=st.global_scale)
 
+    def _nurbs_patches(p):
+        """Contiguous mid-surface row blocks -> NURBS control patches.
+        Each block is split at the wedge bisector column so that patch
+        edges coincide with single vane legs; adjacent storeys' patches
+        then share identical edge control sequences and join cleanly."""
+        grids, R, m = generate_sculpture(p, return_grids=True)
+        mid = (m - 1) // 2
+        patches = []
+        for key in sorted(grids.keys()):
+            block = []
+            for row in grids[key] + [None]:
+                if row is not None:
+                    block.append(row)
+                    continue
+                if len(block) >= 2:
+                    patches.append([r[:mid + 1] for r in block])
+                    patches.append([r[mid:] for r in block])
+                block = []
+        return patches
+
+    def _build_nurbs_data(obj, p):
+        """Replace obj's data with a NURBS surface (one clamped patch per
+        storey/branch grid; thickness and rims do not apply)."""
+        su = bpy.data.curves.new("ScherkCollins", 'SURFACE')
+        su.dimensions = '3D'
+        old = obj.data
+        obj.data = su
+        if old is not None and old.users == 0:
+            if isinstance(old, bpy.types.Mesh):
+                bpy.data.meshes.remove(old)
+            else:
+                bpy.data.curves.remove(old)
+        view = bpy.context.view_layer
+        prev_active = view.objects.active
+        view.objects.active = obj
+        for patch in _nurbs_patches(p):
+            for sp in su.splines:
+                for pt in sp.points:
+                    pt.select = False
+            for row in patch:
+                sp = su.splines.new('NURBS')
+                sp.points.add(len(row) - 1)
+                flat = []
+                for (x, y, z) in row:
+                    flat.extend((x, y, z, 1.0))
+                sp.points.foreach_set('co', flat)
+                for pt in sp.points:
+                    pt.select = True
+            bpy.ops.object.mode_set(mode='EDIT')
+            bpy.ops.curve.make_segment()
+            bpy.ops.object.mode_set(mode='OBJECT')
+            for sp in su.splines:
+                if sp.point_count_u > 1 and sp.point_count_v > 1:
+                    sp.order_u = min(4, sp.point_count_u)
+                    sp.order_v = min(4, sp.point_count_v)
+                    sp.use_endpoint_u = True
+                    sp.use_endpoint_v = True
+                    sp.resolution_u = 4
+                    sp.resolution_v = 4
+        if prev_active is not None:
+            view.objects.active = prev_active
+
+    _PROP_COPY_KEYS = ('is_scherk', 'auto_update', 'branches', 'storeys',
+                       'height', 'flange', 'thickness', 'rim_bulge', 'twist',
+                       'azimuth', 'warp', 'detail', 'scale_x', 'scale_y',
+                       'scale_z', 'global_scale', 'output_nurbs')
+
+    def _swap_object_type(old_obj, to_surface):
+        """Mesh <-> Surface object types cannot be changed in place;
+        recreate the object, carrying over transform and parameters."""
+        name = old_obj.name
+        saved = {k: getattr(old_obj.scherk_collins, k)
+                 for k in _PROP_COPY_KEYS}
+        mw = old_obj.matrix_world.copy()
+        colls = list(old_obj.users_collection)
+        if to_surface:
+            data = bpy.data.curves.new(name, 'SURFACE')
+            data.dimensions = '3D'
+        else:
+            data = bpy.data.meshes.new(name)
+        bpy.data.objects.remove(old_obj, do_unlink=True)
+        new_obj = bpy.data.objects.new(name, data)
+        for coll in (colls or [bpy.context.collection]):
+            coll.objects.link(new_obj)
+        new_obj.matrix_world = mw
+        st = new_obj.scherk_collins
+        st.auto_update = False
+        for k in saved:
+            if k != 'auto_update':
+                setattr(st, k, saved[k])
+        st.auto_update = saved['auto_update']
+        new_obj.select_set(True)
+        bpy.context.view_layer.objects.active = new_obj
+        return new_obj
+
     def rebuild_object(obj):
         st = obj.scherk_collins
         p = _params_from_props(st)
+        if st.output_nurbs != (obj.type == 'SURFACE'):
+            obj = _swap_object_type(obj, st.output_nurbs)
+            st = obj.scherk_collins
+        if st.output_nurbs:
+            _build_nurbs_data(obj, p)
+            return obj
         verts, faces = generate_sculpture(p)
         me = bpy.data.meshes.new(obj.data.name if obj.data else "ScherkCollins")
         me.from_pydata(verts, [], faces)
@@ -626,12 +735,25 @@ if _IN_BLENDER:
         obj.data = me
         if old and old.users == 0:
             bpy.data.meshes.remove(old)
+        return obj
 
     def _prop_update(self, context):
         if not self.auto_update or not self.is_scherk:
             return
         obj = self.id_data
-        if obj is not None:
+        if obj is None:
+            return
+        if self.output_nurbs or obj.type == 'SURFACE':
+            # NURBS rebuilds use edit-mode operators and may replace the
+            # object; defer out of the property-update callback
+            name = obj.name
+            def _deferred():
+                o = bpy.data.objects.get(name)
+                if o is not None and o.scherk_collins.is_scherk:
+                    rebuild_object(o)
+                return None
+            bpy.app.timers.register(_deferred, first_interval=0.05)
+        else:
             rebuild_object(obj)
 
     class ScherkCollinsProps(bpy.types.PropertyGroup):
@@ -678,6 +800,12 @@ if _IN_BLENDER:
             name="Stretch Z", default=1.0, min=0.2, max=5.0, update=_prop_update)
         global_scale: FloatProperty(
             name="Overall Scale", default=1.0, min=0.05, max=10.0,
+            update=_prop_update)
+        output_nurbs: BoolProperty(
+            name="NURBS Output", default=False,
+            description="Output a compact NURBS surface (mid-surface only; "
+                        "thickness and rim bulge do not apply). Lower "
+                        "Detail for fewer control points",
             update=_prop_update)
 
     def _apply_param_dict(st, d):
@@ -733,6 +861,10 @@ if _IN_BLENDER:
                                min=0.2, max=5.0)
         global_scale: FloatProperty(name="Overall Scale", default=1.0,
                                     min=0.05, max=10.0)
+        output_nurbs: BoolProperty(
+            name="NURBS Output", default=False,
+            description="Compact NURBS surface instead of a mesh "
+                        "(mid-surface only; no thickness/rims)")
         # set once the preset values have been copied into the sliders,
         # so redo-panel tweaks are not overwritten on re-execute
         preset_applied: BoolProperty(default=False, options={'HIDDEN'})
@@ -740,7 +872,7 @@ if _IN_BLENDER:
         _PARAM_KEYS = ('branches', 'storeys', 'height', 'flange',
                        'thickness', 'rim_bulge', 'twist', 'azimuth', 'warp',
                        'detail', 'scale_x', 'scale_y', 'scale_z',
-                       'global_scale')
+                       'global_scale', 'output_nurbs')
 
         def execute(self, context):
             # menu/scripted invocation sets `preset` without firing its
@@ -868,6 +1000,10 @@ if _IN_BLENDER:
             col.prop(st, "scale_y")
             col.prop(st, "scale_z")
             col.prop(st, "global_scale")
+            col.prop(st, "output_nurbs")
+            if st.output_nurbs:
+                col.label(text="NURBS: thickness/rims not applied",
+                          icon='INFO')
             p = _params_from_props(st)
             if p.warp > 0:
                 if ring_closes(p):
