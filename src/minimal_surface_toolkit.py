@@ -388,9 +388,13 @@ def _cotan_weights(V, T):
     return np.concatenate(E), np.concatenate(W)
 
 
-def minimize_area(V, T, fixed, outer_iters=30, cg_tol=1e-8, cg_iters=400):
+def minimize_area(V, T, fixed, outer_iters=30, cg_tol=1e-8, cg_iters=400,
+                  uniform=False):
     """Pinkall-Polthier: repeatedly solve the cotan-Laplace equation for
-    the interior vertices (boundary pinned). V modified in place."""
+    the interior vertices (boundary pinned). V modified in place.
+    With uniform=True, unit weights are used instead of cotangents --
+    a Tutte-style fairing solve that untangles folded regions (at the
+    cost of exact minimality; follow with a cotan pass)."""
     n = len(V)
     free = ~fixed
     nfree = int(np.sum(free))
@@ -398,6 +402,8 @@ def minimize_area(V, T, fixed, outer_iters=30, cg_tol=1e-8, cg_iters=400):
         return V
     for _ in range(outer_iters):
         E, W = _cotan_weights(V, T)
+        if uniform:
+            W = np.ones_like(W)
         deg = np.zeros(n)
         np.add.at(deg, E[:, 0], W)
         np.add.at(deg, E[:, 1], W)

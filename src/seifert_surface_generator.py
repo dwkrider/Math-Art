@@ -287,6 +287,124 @@ if _IN_BLENDER:
         mst.minimize_area(V, T, fx, outer_iters=iterations)
         return [tuple(v) for v in V]
 
+    def _boundary_loops_from_faces(faces):
+        """Ordered boundary vertex loops from a face list."""
+        count = {}
+        for vs in faces:
+            for a in range(len(vs)):
+                e = tuple(sorted((vs[a], vs[(a + 1) % len(vs)])))
+                count[e] = count.get(e, 0) + 1
+        adj = {}
+        for (a, b), c in count.items():
+            if c == 1:
+                adj.setdefault(a, []).append(b)
+                adj.setdefault(b, []).append(a)
+        loops = []
+        unvisited = set(adj.keys())
+        while unvisited:
+            start = unvisited.pop()
+            loop = [start]
+            prev = None
+            cur = start
+            while True:
+                nxts = [v for v in adj[cur] if v != prev and v in unvisited] \
+                    or [v for v in adj[cur] if v != prev]
+                if not nxts:
+                    break
+                prev, cur = cur, nxts[0]
+                if cur == start:
+                    break
+                loop.append(cur)
+                unvisited.discard(cur)
+            loops.append(loop)
+        return loops
+
+    def _relax_free(me_verts, faces, fixed, rounds, surf_iters=6,
+                    step=0.22):
+        """Whole-shape relaxation: the knot boundary evolves like an
+        elastic curve (Laplacian smoothing at constant total length,
+        with self-repulsion so strands cannot pass through each other),
+        while the surface interior re-relaxes to the moving boundary
+        each round. Returns new verts or None if numpy/toolkit absent."""
+        try:
+            import numpy as np
+            import minimal_surface_toolkit as mst
+        except ImportError:
+            return None
+        V = np.array(me_verts, dtype=np.float64)
+        T = []
+        for f in faces:
+            if len(f) == 4:
+                T.append((f[0], f[1], f[2]))
+                T.append((f[0], f[2], f[3]))
+            else:
+                T.append(tuple(f))
+        T = np.array(T, dtype=np.int64)
+        fx = np.array(fixed, dtype=bool)
+        loops = _boundary_loops_from_faces(faces)
+        loop_idx = [np.array(lp, dtype=np.int64) for lp in loops]
+        ball = np.concatenate(loop_idx)
+        # arc positions for excluding near-neighbours from repulsion
+        arc_id = np.concatenate([np.full(len(lp), li)
+                                 for li, lp in enumerate(loop_idx)])
+        arc_pos = np.concatenate([np.arange(len(lp)) for lp in loop_idx])
+        loop_len = {li: len(lp) for li, lp in enumerate(loop_idx)}
+
+        def total_length(P):
+            tot = 0.0
+            o = 0
+            for lp in loop_idx:
+                Q = P[o:o + len(lp)]
+                tot += float(np.sum(np.linalg.norm(
+                    np.roll(Q, -1, axis=0) - Q, axis=1)))
+                o += len(lp)
+            return tot
+
+        B = V[ball]
+        len0 = total_length(B)
+        seg0 = len0 / len(ball)
+        d0 = 4.0 * seg0            # repulsion range
+        for _ in range(rounds):
+            B = V[ball]
+            # curve Laplacian smoothing per loop
+            newB = B.copy()
+            o = 0
+            for lp in loop_idx:
+                Q = B[o:o + len(lp)]
+                lap = 0.5 * (np.roll(Q, 1, axis=0)
+                             + np.roll(Q, -1, axis=0)) - Q
+                newB[o:o + len(lp)] = Q + step * lap
+                o += len(lp)
+            # self-repulsion (all boundary pairs, skipping arc-neighbours)
+            D = newB[:, None, :] - newB[None, :, :]
+            dist = np.linalg.norm(D, axis=2)
+            near = dist < d0
+            same = arc_id[:, None] == arc_id[None, :]
+            gap = np.abs(arc_pos[:, None] - arc_pos[None, :])
+            wrap = np.array([loop_len[a] for a in arc_id])
+            gap = np.minimum(gap, wrap[:, None] - gap)
+            near &= ~(same & (gap <= 4))
+            np.fill_diagonal(near, False)
+            ii, jj = np.nonzero(near)
+            if len(ii):
+                d = np.maximum(dist[ii, jj], 1e-9)
+                push = (D[ii, jj].T / d * (d0 - d) / d0).T
+                acc = np.zeros_like(newB)
+                np.add.at(acc, ii, push)
+                newB += (0.5 * step * seg0) * \
+                    (acc / np.maximum(np.linalg.norm(acc, axis=1,
+                                                     keepdims=True), 1e-9)) \
+                    * (np.linalg.norm(acc, axis=1, keepdims=True) > 1e-9)
+            # rescale about the centroid to preserve total length
+            cen = newB.mean(axis=0)
+            cur_len = total_length(newB)
+            if cur_len > 1e-9:
+                newB = cen + (newB - cen) * (len0 / cur_len)
+            V[ball] = newB
+            # surface follows the moved boundary
+            mst.minimize_area(V, T, fx, outer_iters=surf_iters)
+        return [tuple(v) for v in V]
+
     def _boundary_loops(me):
         """Ordered boundary vertex loops of a mesh."""
         count = {}
@@ -366,6 +484,13 @@ if _IN_BLENDER:
             description="Smooth the surface with the Plateau solver "
                         "(needs the Minimal Surface Toolkit add-on), "
                         "keeping the knot boundary pinned")
+        shape_relax: IntProperty(
+            name="Shape Relax Rounds", default=0, min=0, max=200,
+            description="Relax the WHOLE shape: the knot boundary evolves "
+                        "as an elastic curve (constant length, with "
+                        "self-repulsion so strands cannot cross) while the "
+                        "surface re-relaxes each round. Needs the Minimal "
+                        "Surface Toolkit add-on")
         add_knot_curve: BoolProperty(
             name="Add Knot Curve", default=True,
             description="Also create a bevelled curve along the "
@@ -390,6 +515,15 @@ if _IN_BLENDER:
                 band_rows=self.band_rows, radius=self.radius,
                 taper=self.taper, spacing=self.spacing,
                 band_width=self.band_width)
+            if self.shape_relax > 0:
+                relaxed = _relax_free(verts, faces, fixedm,
+                                      self.shape_relax)
+                if relaxed is None:
+                    self.report({'WARNING'},
+                                "Shape relax needs the Minimal Surface "
+                                "Toolkit add-on (numpy) -- skipped")
+                else:
+                    verts = relaxed
             if self.relax > 0:
                 relaxed = _relax(verts, faces, fixedm, self.relax)
                 if relaxed is None:
@@ -451,8 +585,8 @@ if _IN_BLENDER:
             else:
                 lay.prop(self, 'braid')
             for k in ('radius', 'taper', 'spacing', 'band_width',
-                      'resolution', 'rings', 'band_rows', 'relax',
-                      'add_knot_curve', 'knot_radius'):
+                      'resolution', 'rings', 'band_rows', 'shape_relax',
+                      'relax', 'add_knot_curve', 'knot_radius'):
                 lay.prop(self, k)
 
     class VIEW3D_PT_seifert(bpy.types.Panel):

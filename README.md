@@ -182,9 +182,23 @@ crossing counts, number of link components, and the surface **genus**
 generated mesh's Euler characteristic and boundary-loop count match
 the braid combinatorics exactly for every preset.
 
-*Relax Iterations* smooths the surface with the Plateau solver from
-the Minimal Surface Toolkit (soft dependency), pinning the knot — a
-soap-film look while keeping the correct topology.
+**Smoothing.** Two sliders, both using the Plateau solver from the
+Minimal Surface Toolkit (soft dependency):
+
+- *Relax Iterations* — pins the knot exactly where the schematic
+  construction put it and relaxes only the membrane (soap film on the
+  cake-shaped knot).
+- *Shape Relax Rounds* — relaxes the **whole shape**: each round the
+  knot boundary evolves as an elastic curve (Laplacian smoothing at
+  constant total length, with self-repulsion so strands cannot pass
+  through each other, which preserves the knot type), then the surface
+  re-relaxes to the moved boundary. 40–80 rounds turn the wedding cake
+  into the organic, rounded form (see
+  `renders/seifert_trefoil_shaped_top.png`). The dark slits at the
+  crossings are the genuine twist tunnels of the surface, not defects.
+  Note: with large *Band Width* the disks' rims are mostly band
+  chords, and the relaxed shape correctly stays plate-like — use the
+  default band width for the organic look.
 
 ## Files
 
