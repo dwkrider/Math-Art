@@ -32,10 +32,14 @@ Single-file Blender add-ons for mathematical sculpture:
    - `src/rotegrity_generator.py` — **rotegrity / nexorade** strap
      spheres over Platonic and geodesic seeds (twist + extension
      sliders).
-   - `src/weave_generator.py` — **woven-strand spheres**: strands are
-     the straight-ahead circuits of the seed's medial graph (cube → 4
-     hexagonal strands, icosahedron → 6 decagons, geodesic seeds give
-     dense triaxial weaves), with over/under alternation.
+   - `src/weave_generator.py` — **woven-strand models** driven by
+     poly_weave's **pattern language**: a program
+     `[C|L][bV,bE,bF][:up,side,along…]steps[tl|tr|tb]` walked over the
+     seed's flag triangles (steps `V E F` pivot, `v e f` cross, `R`
+     reverse, `-` stay). Presets include the classic weave (`FEV` — an
+     icosahedron gives 12 interwoven pentagons), vertex/face rings,
+     raised and wavy variants; barycentric start point and
+     intermediate-point offsets are free parameters.
 
 ![Weave](renders/poly_weave.png)
 

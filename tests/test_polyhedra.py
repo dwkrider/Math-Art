@@ -151,17 +151,29 @@ if not ok:
 render(os.path.join(OUT, 'poly_rotegrity.png'))
 
 # ---- Weave ---------------------------------------------------------------
-for kind, freq, nstr in (('CUBE', 1, 4), ('ICOSA', 2, 12)):
+for kind, freq, pattern in (('CUBE', 1, 'FEV'), ('ICOSA', 1, 'FEV'),
+                            ('ICOSA', 2, 'FEV'),
+                            ('CUBE', 1, '1,1,1V'),
+                            ('CUBE', 1, '1,1,1FFE'),
+                            ('DODECA', 1, '0,1,0:0.12FEV')):
     clear()
-    bpy.ops.mesh.poly_weave_add(kind=kind, freq=freq)
+    bpy.ops.mesh.poly_weave_add(kind=kind, freq=freq,
+                                pattern_preset='CUSTOM', pattern=pattern)
     obj = bpy.context.object
     nv, nf, nb, nm, chi = stats(obj)
     ok = nb == 0 and nm == 0 and chi == 0   # closed tori strips: chi=0 each
-    print(f"[weave {kind} f{freq}] V={nv} F={nf} chi={chi} "
+    print(f"[weave {kind} f{freq} '{pattern}'] V={nv} F={nf} chi={chi} "
           f"{'OK' if ok else 'FAIL'}")
     if not ok:
-        fails.append(f'weave-{kind}')
+        fails.append(f'weave-{kind}-{pattern}')
+clear()
+bpy.ops.mesh.poly_weave_add(kind='ICOSA', freq=2, pattern_preset='CUSTOM',
+                            pattern='FEV', width=0.07)
 render(os.path.join(OUT, 'poly_weave.png'))
+clear()
+bpy.ops.mesh.poly_weave_add(kind='ICOSA', freq=1, pattern_preset='CUSTOM',
+                            pattern='FEV', width=0.12)
+render(os.path.join(OUT, 'poly_weave_pentagons.png'))
 
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")
 print("RENDERS ->", OUT)
