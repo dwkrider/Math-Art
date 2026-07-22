@@ -554,8 +554,11 @@ if _IN_BLENDER:
                 bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
                 bm.to_mesh(me)
                 bm.free()
-            me.polygons.foreach_set('use_smooth',
-                                    [True] * len(me.polygons))
+            # struts shade smooth; flat panels must stay flat, or the
+            # interpolated normals balloon around the sharp edges
+            me.polygons.foreach_set(
+                'use_smooth',
+                [self.render != 'LEONARDO'] * len(me.polygons))
             me.update()
             obj = bpy.data.objects.new("Polytope4D", me)
             context.collection.objects.link(obj)
