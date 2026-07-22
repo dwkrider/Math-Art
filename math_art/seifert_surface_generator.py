@@ -595,6 +595,106 @@ if _IN_BLENDER:
                       'relax', 'add_knot_curve', 'knot_radius'):
                 lay.prop(self, k)
 
+    class MESH_OT_seifert_minimize(bpy.types.Operator):
+        """Minimize the active Seifert surface (one click, tuned
+        defaults): the knot boundary evolves as an elastic curve of
+        constant length with self-repulsion, the membrane re-relaxes
+        each round (Pinkall-Polthier area minimization, the solver
+        validated on the flat disk and catenoid), then a final pinned
+        polish. Click again to continue minimizing"""
+        bl_idname = "mesh.seifert_minimize"
+        bl_label = "Minimize Surface"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        rounds: IntProperty(
+            name="Evolve Boundary Rounds", default=0, min=0, max=400,
+            description="Gentle boundary evolution rounds (0 keeps "
+                        "the knot fixed and only relaxes the "
+                        "membrane)")
+        polish: IntProperty(
+            name="Polish Iterations", default=60, min=0, max=300,
+            description="Final area-minimization with the boundary "
+                        "pinned")
+
+        @classmethod
+        def poll(cls, context):
+            o = context.object
+            return (o is not None and o.type == 'MESH'
+                    and "braid" in o)
+
+        @staticmethod
+        def _area(verts, faces):
+            import numpy as np
+            V = np.asarray(verts)
+            tot = 0.0
+            for f in faces:
+                for i in range(1, len(f) - 1):
+                    a = V[f[0]]
+                    b = V[f[i]]
+                    c = V[f[i + 1]]
+                    tot += 0.5 * float(np.linalg.norm(
+                        np.cross(b - a, c - a)))
+            return tot
+
+        def execute(self, context):
+            obj = context.object
+            me = obj.data
+            verts = [tuple(v.co) for v in me.vertices]
+            faces = [list(p.vertices) for p in me.polygons]
+            # boundary verts = ends of edges used by a single face
+            cnt = {}
+            for f in faces:
+                for i in range(len(f)):
+                    e = tuple(sorted((f[i], f[(i + 1) % len(f)])))
+                    cnt[e] = cnt.get(e, 0) + 1
+            fixed = [False] * len(verts)
+            for (a, b), c in cnt.items():
+                if c == 1:
+                    fixed[a] = True
+                    fixed[b] = True
+            a0 = None
+            try:
+                a0 = self._area(verts, faces)
+            except ImportError:
+                pass
+            if self.rounds > 0:
+                out = _relax_free(verts, faces, fixed, self.rounds,
+                                  surf_iters=12, step=0.12)
+            else:
+                out = _relax(verts, faces, fixed, 1)
+            if out is None:
+                self.report({'ERROR'},
+                            "minimization needs numpy (Minimal "
+                            "Surface Toolkit)")
+                return {'CANCELLED'}
+            if self.polish > 0:
+                polished = _relax(out, faces, fixed, self.polish)
+                if polished is not None:
+                    out = polished
+            flat = [c for v in out for c in v]
+            me.vertices.foreach_set('co', flat)
+            me.update()
+            # keep the bevelled knot curve child in sync
+            for ch in obj.children:
+                if ch.type == 'CURVE':
+                    loops = _boundary_loops(me)
+                    if len(loops) == len(ch.data.splines):
+                        for sp, loop in zip(ch.data.splines, loops):
+                            if len(sp.points) != len(loop):
+                                continue
+                            fl = []
+                            for vi in loop:
+                                x, y, z = out[vi]
+                                fl.extend((x, y, z, 1.0))
+                            sp.points.foreach_set('co', fl)
+                    ch.data.update_tag()
+            if a0:
+                a1 = self._area(out, faces)
+                self.report({'INFO'},
+                            f"area {a0:.3f} -> {a1:.3f} "
+                            f"({100 * (1 - a1 / a0):.1f}% less)")
+            return {'FINISHED'}
+
     class VIEW3D_PT_seifert(bpy.types.Panel):
         bl_label = "Seifert Surfaces"
         bl_space_type = 'VIEW_3D'
@@ -606,6 +706,8 @@ if _IN_BLENDER:
             lay.operator("mesh.seifert_surface_add", icon='MOD_SIMPLIFY')
             obj = context.object
             if obj is not None and "braid" in obj:
+                lay.operator("mesh.seifert_minimize",
+                             icon='MOD_SMOOTH')
                 box = lay.box()
                 box.label(text=f"Braid: {obj['braid']}")
                 box.label(text=f"Strands {obj['strands']}, "
@@ -617,7 +719,8 @@ if _IN_BLENDER:
         self.layout.operator("mesh.seifert_surface_add",
                              icon='MOD_SIMPLIFY')
 
-    _classes = (MESH_OT_seifert_add, VIEW3D_PT_seifert)
+    _classes = (MESH_OT_seifert_add, MESH_OT_seifert_minimize,
+                VIEW3D_PT_seifert)
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
