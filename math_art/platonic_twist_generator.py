@@ -138,12 +138,18 @@ def _rot(p, ax, ang):
 
 def build_platonic_twist(kind='CUBE', shrink=0.55, push=0.35,
                          half_twists=1, band_rows=16, edge_cols=6,
-                         bulge=0.35, scale=1.0):
+                         bulge=0.35, smooth_joins=True, scale=1.0):
     """Shrunken face plates + twisted connecting ribbons, exactly
-    welded (band end columns reuse the face edge vertices)."""
+    welded (band end columns reuse the face edge vertices).
+
+    With smooth_joins the ribbon centreline is a Hermite curve whose
+    end tangents lie in the plate planes, so the ribbon meets each
+    plate C1-continuously (no crease); otherwise the older smoothstep
+    path is used (creased joins, marked sharp by the operator)."""
     V, F = seed_poly(kind)
     verts = []
     faces = []
+    plate_center = {}
     # shrunken faces, with each edge subdivided into edge_cols segments
     face_edge_vids = {}    # (face index, edge position) -> [vert ids]
     for fi, f in enumerate(F):
@@ -152,6 +158,7 @@ def build_platonic_twist(kind='CUBE', shrink=0.55, push=0.35,
         n = _unit(c)
         cl = math.sqrt(sum(x * x for x in c))
         cen = [n[k] * (cl + push) for k in range(3)]
+        plate_center[fi] = list(cen)
         corner = []
         for i in f:
             corner.append(tuple(cen[k] + (V[i][k] - c[k]) * shrink
@@ -208,17 +215,36 @@ def build_platonic_twist(kind='CUBE', shrink=0.55, push=0.35,
         out = _unit(tuple(mid1[k] + mid2[k] for k in range(3)))
         ax, full_ang = _slerp_rot(n1, n2, 1.0)
         ncols = len(P1)
+        # in-plane outward directions at the two plate edges
+        pc1 = plate_center[f1]
+        pc2 = plate_center[f2]
+        o1 = _unit(tuple(mid1[k] - pc1[k] for k in range(3)))
+        o2 = _unit(tuple(mid2[k] - pc2[k] for k in range(3)))
+        L = math.dist(mid1, mid2)
+        tm = L * (0.3 + 0.8 * bulge)    # Hermite tangent magnitude
         rows = [ids1]
+        spine = _unit(tuple(mid2[k] - mid1[k] for k in range(3)))
         for r in range(1, band_rows):
             t = r / band_rows
             sm = t * t * (3 - 2 * t)
-            # center path with outward bulge
-            cen = [mid1[k] + (mid2[k] - mid1[k]) * sm for k in range(3)]
-            bg = bulge * 4 * sm * (1 - sm)
-            cen = [cen[k] + out[k] * bg for k in range(3)]
+            if smooth_joins:
+                # Hermite centreline: leaves plate 1 within its plane,
+                # arrives at plate 2 within its plane -> C1 joins
+                h00 = 2 * t ** 3 - 3 * t * t + 1
+                h10 = t ** 3 - 2 * t * t + t
+                h01 = -2 * t ** 3 + 3 * t * t
+                h11 = t ** 3 - t * t
+                cen = [h00 * mid1[k] + h10 * tm * o1[k]
+                       + h01 * mid2[k] - h11 * tm * o2[k]
+                       for k in range(3)]
+            else:
+                cen = [mid1[k] + (mid2[k] - mid1[k]) * sm
+                       for k in range(3)]
+                bg = bulge * 4 * sm * (1 - sm)
+                cen = [cen[k] + out[k] * bg for k in range(3)]
             # frame: bend n1 toward n2, plus the extra half twists
+            # (smoothstepped angles: zero end derivatives keep C1)
             row = []
-            spine = _unit(tuple(mid2[k] - mid1[k] for k in range(3)))
             for i2 in range(ncols):
                 q0 = tuple(P1[i2][k] - mid1[k] for k in range(3))
                 q = _rot(q0, ax, full_ang * sm)
@@ -246,7 +272,8 @@ def build_platonic_twist(kind='CUBE', shrink=0.55, push=0.35,
 
 try:
     import bpy
-    from bpy.props import (FloatProperty, EnumProperty, IntProperty)
+    from bpy.props import (FloatProperty, EnumProperty, IntProperty,
+                           BoolProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -278,6 +305,11 @@ if _IN_BLENDER:
             description="Half turns of each connecting ribbon")
         bulge: FloatProperty(name="Ribbon Bulge", default=0.35,
                              min=0.0, max=1.5)
+        smooth_joins: BoolProperty(
+            name="Smooth Joins (C1)", default=True,
+            description="Ribbons leave and arrive within the plate "
+                        "planes (tangent-continuous, no crease); off "
+                        "reverts to creased joins with sharp edges")
         band_rows: IntProperty(name="Ribbon Rows", default=16,
                                min=4, max=64)
         edge_cols: IntProperty(name="Ribbon Columns", default=6,
@@ -291,7 +323,8 @@ if _IN_BLENDER:
         def execute(self, context):
             verts, faces, ne, rim = build_platonic_twist(
                 self.kind, self.shrink, self.push, self.half_twists,
-                self.band_rows, self.edge_cols, self.bulge, self.scale)
+                self.band_rows, self.edge_cols, self.bulge,
+                self.smooth_joins, self.scale)
             me = bpy.data.meshes.new("PlatonicTwist")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
@@ -303,11 +336,12 @@ if _IN_BLENDER:
             bm.free()
             me.polygons.foreach_set('use_smooth',
                                     [True] * len(me.polygons))
-            # plate-ribbon junctions are physical creases: mark them
-            # sharp so the flat plates are not shaded with ribbon normals
-            sharp = [(e.vertices[0] in rim and e.vertices[1] in rim)
-                     for e in me.edges]
-            me.edges.foreach_set('use_edge_sharp', sharp)
+            if not self.smooth_joins:
+                # creased joins: mark them sharp so the flat plates are
+                # not shaded with ribbon normals
+                sharp = [(e.vertices[0] in rim and e.vertices[1] in rim)
+                         for e in me.edges]
+                me.edges.foreach_set('use_edge_sharp', sharp)
             me.update()
             obj = bpy.data.objects.new("PlatonicTwist", me)
             context.collection.objects.link(obj)
@@ -330,7 +364,8 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             for k in ('kind', 'shrink', 'push', 'half_twists', 'bulge',
-                      'band_rows', 'edge_cols', 'thickness', 'scale'):
+                      'smooth_joins', 'band_rows', 'edge_cols',
+                      'thickness', 'scale'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):

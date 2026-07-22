@@ -181,15 +181,27 @@ clear()
 bpy.ops.mesh.twisted_torus_add(n=3, twist_steps=1, shrink=0.75)
 render(os.path.join(OUT, 'form_torus_sheets.png'))
 
-# ---- platonic twist sharp rims ------------------------------------------
+# ---- platonic twist join modes ------------------------------------------
 clear()
-bpy.ops.mesh.platonic_twist_add(kind='CUBE', thickness=0.0)
+bpy.ops.mesh.platonic_twist_add(kind='CUBE', thickness=0.0,
+                                smooth_joins=False)
 obj = bpy.context.object
 sharp = sum(1 for e in obj.data.edges if e.use_edge_sharp)
 ok = sharp > 0
-print(f"[twist sharp rims] sharp_edges={sharp} {'OK' if ok else 'FAIL'}")
+print(f"[twist creased joins] sharp_edges={sharp} {'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('twist-sharp')
+clear()
+bpy.ops.mesh.platonic_twist_add(kind='CUBE', thickness=0.0,
+                                smooth_joins=True)
+obj = bpy.context.object
+nv, nf, nb, nm, chi = stats(obj)
+sharp = sum(1 for e in obj.data.edges if e.use_edge_sharp)
+ok = sharp == 0 and nm == 0 and nf > 50
+print(f"[twist C1 joins] sharp_edges={sharp} nm={nm} "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('twist-c1')
 
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")
 print("RENDERS ->", OUT)
