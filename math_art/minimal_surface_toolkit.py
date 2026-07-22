@@ -753,8 +753,8 @@ if _IN_BLENDER:
                    ('NURBS', "NURBS", "Compact NURBS surface patch "
                                       "(control grid = Resolution U x V)")],
             default='MESH')
-        res_u: IntProperty(name="Resolution U", default=96, min=8, max=512)
-        res_v: IntProperty(name="Resolution V", default=96, min=8, max=512)
+        res_u: IntProperty(name="Resolution U", default=48, min=8, max=512)
+        res_v: IntProperty(name="Resolution V", default=48, min=8, max=512)
         ctrl_u: IntProperty(
             name="Control Points U", default=24, min=6, max=128,
             description="NURBS control grid size in U")
