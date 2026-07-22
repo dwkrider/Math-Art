@@ -391,7 +391,7 @@ if _IN_BLENDER:
             name="Arc Segments", default=12, min=1, max=48,
             description="Samples per edge (curved edges and tapering)")
         radius: FloatProperty(name="Strut Radius", default=0.03,
-                              min=0.002, max=0.5)
+                              min=0.002, max=0.5, step=1, precision=3)
         sides: IntProperty(name="Strut Sides", default=6, min=3, max=16)
         taper: BoolProperty(
             name="Taper With Projection", default=True,
