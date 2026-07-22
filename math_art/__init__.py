@@ -75,8 +75,9 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.operator("mesh.polytope4d_add", icon='MESH_CUBE')
         lay.operator("mesh.tangle_add", icon='MOD_BOOLEAN')
         lay.separator()
-        lay.operator("object.symmetric_sculpture_add",
-                     icon='MOD_MIRROR')
+        lay.operator_menu_enum("object.symmetric_sculpture_add",
+                               "preset", text="Symmetric Sculpture",
+                               icon='MOD_MIRROR')
 
 
 def _menu_func(self, context):

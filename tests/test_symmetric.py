@@ -48,7 +48,8 @@ if not ok:
 
 # operator: creates motif + guides + GN sculpture, 60 live copies
 clear()
-bpy.ops.object.symmetric_sculpture_add(group='ICOSA', family='P3')
+bpy.ops.object.symmetric_sculpture_add(preset='CUSTOM', group='ICOSA',
+                                       family='P3')
 objs = {o.name.split('.')[0]: o for o in bpy.data.objects}
 ok = {'SymSculpt', 'SymSculpt Motif', 'SymSculpt Guides'} <= set(objs)
 print(f"[objects] {'OK' if ok else 'FAIL'}")
@@ -88,8 +89,8 @@ if not moved:
 for g, f, n in (('ICOSA', 'P2', 60), ('OCTA', 'P4', 24),
                 ('TETRA', 'P3', 12)):
     clear()
-    bpy.ops.object.symmetric_sculpture_add(group=g, family=f,
-                                           shell=0.0)
+    bpy.ops.object.symmetric_sculpture_add(preset='CUSTOM', group=g,
+                                           family=f, shell=0.0)
     so = bpy.context.object
     mv = len([o for o in bpy.data.objects
               if o.name.startswith('SymSculpt Motif')
@@ -101,5 +102,24 @@ for g, f, n in (('ICOSA', 'P2', 60), ('OCTA', 'P4', 24),
           f"{'OK' if ok else 'FAIL'}")
     if not ok:
         fails.append(f'flat-{g}')
+
+# sculpture presets set the right plane family; Frabjous halves weld
+for preset, fam, merged in (('TWISTED_RIVERS', 'P3', 0),
+                            ('TUMBLEWEED', 'P5', 0),
+                            ('FRABJOUS', 'P2', 60)):
+    clear()
+    bpy.ops.object.symmetric_sculpture_add(preset=preset, shell=0.0)
+    so = bpy.context.object
+    mv = len([o for o in bpy.data.objects
+              if o.name.startswith('SymSculpt Motif')
+              ][0].data.vertices)
+    deps = bpy.context.evaluated_depsgraph_get()
+    ev = so.evaluated_get(deps).to_mesh()
+    want = 60 * mv - merged
+    ok = len(ev.vertices) == want
+    print(f"[preset {preset}] verts={len(ev.vertices)}({want}) "
+          f"{'OK' if ok else 'FAIL'}")
+    if not ok:
+        fails.append(f'preset-{preset}')
 
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")

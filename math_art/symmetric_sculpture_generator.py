@@ -185,27 +185,92 @@ def stellation_lines(kind, family, d=1.0, extent=3.0):
     return segs
 
 
-def demo_motif(d=1.0):
-    """Default motif: a flat C-shaped ribbon arc (verts, faces) in
-    the local xy plane, reminiscent of the curved arms in Twisted
-    Rivers / Tumbleweed."""
-    r_mid = 0.52 * d
-    half_w = 0.075 * d
-    a0, a1 = math.radians(15), math.radians(200)
-    steps = 28
+def _ribbon(path, widths):
+    """Flat quad-strip mesh (verts, faces) along a 2D centerline
+    with per-point half-widths."""
     verts = []
     faces = []
-    for i in range(steps + 1):
-        t = i / steps
-        ang = a0 + (a1 - a0) * t
-        # taper the ribbon toward its ends
-        w = half_w * (0.25 + 0.75 * sin(pi * t))
-        for r in (r_mid - w, r_mid + w):
-            verts.append((r * cos(ang), r * sin(ang), 0.0))
-    for i in range(steps):
+    n = len(path)
+    for i, (x, y) in enumerate(path):
+        x0, y0 = path[max(i - 1, 0)]
+        x1, y1 = path[min(i + 1, n - 1)]
+        tx, ty = x1 - x0, y1 - y0
+        l = math.hypot(tx, ty) or 1.0
+        nx, ny = -ty / l, tx / l
+        w = widths[i]
+        verts.append((x - nx * w, y - ny * w, 0.0))
+        verts.append((x + nx * w, y + ny * w, 0.0))
+    for i in range(n - 1):
         k = 2 * i
         faces.append([k, k + 2, k + 3, k + 1])
     return verts, faces
+
+
+def demo_motif(d=1.0):
+    """Default motif: a flat C-shaped ribbon arc in the local xy
+    plane -- with 3-fold in-plane replication this gives the curved
+    'rivers' of Hart's Twisted Rivers, Knotted Sea."""
+    r_mid = 0.52 * d
+    a0, a1 = math.radians(15), math.radians(200)
+    steps = 28
+    path = []
+    widths = []
+    for i in range(steps + 1):
+        t = i / steps
+        ang = a0 + (a1 - a0) * t
+        path.append((r_mid * cos(ang), r_mid * sin(ang)))
+        widths.append(0.075 * d * (0.25 + 0.75 * sin(pi * t)))
+    return _ribbon(path, widths)
+
+
+def tumbleweed_motif(d=1.0):
+    """One swirling pinwheel arm; the 5-fold symmetry of the
+    dodecahedral planes turns it into the flower of Hart's
+    Tumbleweed (12 planes x 5 arms)."""
+    steps = 32
+    a0 = math.radians(-25)
+    sweep = math.radians(150)
+    path = []
+    widths = []
+    for i in range(steps + 1):
+        t = i / steps
+        ang = a0 + sweep * t ** 1.15    # curl tightens outward
+        r = d * (0.12 + 0.63 * t ** 0.9)
+        path.append((r * cos(ang), r * sin(ang)))
+        widths.append(d * (0.02 + 0.055 * sin(pi * t) ** 0.7))
+    return _ribbon(path, widths)
+
+
+def frabjous_motif(d=1.0):
+    """Half of an S-shaped part, starting at the plane centre. The
+    2-fold in-plane symmetry of the triacontahedral planes adds the
+    180-degree copy, welding into the 30 S-curves of Hart's
+    Frabjous."""
+    p0, p1 = (0.0, 0.0), (0.34 * d, 0.30 * d)
+    p2, p3 = (0.56 * d, -0.26 * d), (0.80 * d, 0.22 * d)
+    steps = 26
+    path = []
+    widths = []
+    for i in range(steps + 1):
+        t = i / steps
+        s = 1 - t
+        x = (s * s * s * p0[0] + 3 * s * s * t * p1[0]
+             + 3 * s * t * t * p2[0] + t * t * t * p3[0])
+        y = (s * s * s * p0[1] + 3 * s * s * t * p1[1]
+             + 3 * s * t * t * p2[1] + t * t * t * p3[1])
+        path.append((x, y))
+        # full width at the centre join, tapering to the tip
+        widths.append(d * (0.022 + 0.062 * sin(pi / 2 + pi / 2 * t)
+                           ** 1.5))
+    return _ribbon(path, widths)
+
+
+# preset -> (group, plane family, motif builder)
+PRESETS = {
+    'TWISTED_RIVERS': ('ICOSA', 'P3', demo_motif),
+    'TUMBLEWEED': ('ICOSA', 'P5', tumbleweed_motif),
+    'FRABJOUS': ('ICOSA', 'P2', frabjous_motif),
+}
 
 
 try:
@@ -298,6 +363,25 @@ if _IN_BLENDER:
         bl_label = "Symmetric Sculpture"
         bl_options = {'REGISTER', 'UNDO'}
 
+        preset: EnumProperty(
+            name="Preset",
+            items=[('TWISTED_RIVERS', "Twisted Rivers",
+                    "After Twisted Rivers, Knotted Sea (2001): "
+                    "C-shaped rivers in the 20 icosahedral planes, "
+                    "three per plane"),
+                   ('TUMBLEWEED', "Tumbleweed",
+                    "After Tumbleweed (2006): swirling five-armed "
+                    "pinwheels in the 12 dodecahedral planes"),
+                   ('FRABJOUS', "Frabjous",
+                    "After Frabjous (2003): 30 S-shaped parts in the "
+                    "triacontahedral planes, each S assembled from "
+                    "two half-arms by the in-plane 2-fold symmetry"),
+                   ('CUSTOM', "Custom",
+                    "Choose the group and plane family yourself; "
+                    "starts from the demo arc motif")],
+            default='TWISTED_RIVERS',
+            description="Sculpture setups after Hart's pieces; the "
+                        "motif stays editable afterwards")
         group: EnumProperty(
             name="Symmetry Group",
             items=[('ICOSA', "Icosahedral (60)",
@@ -343,6 +427,10 @@ if _IN_BLENDER:
                         "local XY plane)")
 
         def execute(self, context):
+            motif_builder = demo_motif
+            if self.preset in PRESETS:
+                g, f, motif_builder = PRESETS[self.preset]
+                self.group, self.family = g, f
             kind, family = self.group, self.family
             if (kind, family) not in _AXES:
                 family = 'P3'
@@ -364,7 +452,7 @@ if _IN_BLENDER:
                                 "No active mesh object -- created "
                                 "the demo motif instead")
             if motif is None:
-                verts, faces = demo_motif(d)
+                verts, faces = motif_builder(d)
                 me = bpy.data.meshes.new("SymSculpt Motif")
                 me.from_pydata(verts, [], faces)
                 me.validate()
@@ -438,13 +526,18 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for k in ('group', 'family', 'distance', 'shell',
-                      'guide_extent', 'use_active'):
+            lay.prop(self, 'preset')
+            for k in ('group', 'family'):
+                if self.preset == 'CUSTOM':
+                    lay.prop(self, k)
+            for k in ('distance', 'shell', 'guide_extent',
+                      'use_active'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
-        self.layout.operator("object.symmetric_sculpture_add",
-                             icon='MOD_MIRROR')
+        self.layout.operator_menu_enum(
+            "object.symmetric_sculpture_add", "preset",
+            text="Symmetric Sculpture", icon='MOD_MIRROR')
 
     ADD_MENU = True
 
