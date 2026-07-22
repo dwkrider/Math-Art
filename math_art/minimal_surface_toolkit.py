@@ -28,7 +28,7 @@ bl_info = {
     "author": "David Krider (Math Art project)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
-    "location": "View3D > Add > Mesh > Minimal Surfaces / N-panel 'MinSurf'",
+    "location": "View3D > Add > Mesh > Minimal Surfaces / N-panel 'Minimal Surfaces'",
     "description": "Parametric & triply-periodic minimal surfaces, and a "
                    "Plateau solver spanning minimal surfaces on curves",
     "category": "Add Mesh",
@@ -979,7 +979,7 @@ if _IN_BLENDER:
         bl_label = "Minimal Surfaces"
         bl_space_type = 'VIEW_3D'
         bl_region_type = 'UI'
-        bl_category = "MinSurf"
+        bl_category = "Minimal Surfaces"
 
         def draw(self, context):
             lay = self.layout

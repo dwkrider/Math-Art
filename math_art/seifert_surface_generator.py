@@ -26,7 +26,7 @@ bl_info = {
     "author": "David Krider (Math Art project)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
-    "location": "View3D > Add > Mesh > Seifert Surface / N-panel 'MinSurf'",
+    "location": "View3D > Add > Mesh > Seifert Surface / N-panel 'Minimal Surfaces'",
     "description": "Seifert surfaces for knots and links from braid words",
     "category": "Add Mesh",
 }
@@ -599,7 +599,7 @@ if _IN_BLENDER:
         bl_label = "Seifert Surfaces"
         bl_space_type = 'VIEW_3D'
         bl_region_type = 'UI'
-        bl_category = "MinSurf"
+        bl_category = "Minimal Surfaces"
 
         def draw(self, context):
             lay = self.layout

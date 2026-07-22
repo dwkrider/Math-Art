@@ -7,7 +7,7 @@ modern **extension** (Blender 4.2+):
 in Blender: `Edit > Preferences > Get Extensions > ⌄ (top-right) >
 Install from Disk…` — or just drag the zip into the Blender window.
 Everything appears under **Add > Mesh > Math Art** plus the Scherk /
-MinSurf N-panel tabs. (If you previously installed the individual
+Minimal Surfaces N-panel tabs. (If you previously installed the individual
 files as legacy add-ons, remove those first.)
 
 **Build the extension:**
