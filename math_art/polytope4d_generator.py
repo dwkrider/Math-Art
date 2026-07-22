@@ -161,12 +161,34 @@ def _slerp4(a, b, t):
 
 
 def project_point(v, dist):
-    """(x,y,z,w) -> R^3 by perspective from w = dist. Also the
-    stereographic projection when the point lies on the unit sphere
-    and dist ~ 1. Returns (point3, local_scale)."""
-    denom = max(dist - v[3], 0.08)
+    """(x,y,z,w) -> R^3 by central projection from (0,0,0,dist).
+    With dist = 1 and v on the unit 3-sphere this is the exact
+    stereographic projection (injective, arcs -> circles).
+    Returns (point3, local_scale)."""
+    denom = max(dist - v[3], 0.02)
     s = 1.0 / denom
     return (v[0] * s, v[1] * s, v[2] * s), s
+
+
+def clear_pole(V):
+    """If any vertex sits near the stereographic pole (w ~ 1), apply a
+    deterministic extra 4D rotation that moves every vertex away from
+    it (otherwise that vertex would project to infinity)."""
+    def max_w(vs):
+        return max(v[3] for v in vs)
+    if max_w(V) < 0.93:
+        return V, False
+    best = None
+    best_w = 2.0
+    for k in range(1, 80):
+        cand = rotate4(V, k * 1.7, k * 1.1, 0.0, 0.0)
+        w = max_w(cand)
+        if w < best_w:
+            best_w = w
+            best = cand
+        if w < 0.9:
+            break
+    return best, True
 
 
 # --------------------------------------------------------------------------
@@ -256,18 +278,24 @@ def add_sphere(verts, faces, center, radius, seg=8, rings=6):
 # Build
 # --------------------------------------------------------------------------
 
-def build_polytope(kind='CELL8', style='CURVED', proj_dist=1.25,
-                   rot_xw=10.0, rot_yw=7.0, rot_zw=3.0, rot_xy=0.0,
+def build_polytope(kind='CELL8', style='CURVED', proj_dist=3.0,
+                   rot_xw=0.0, rot_yw=0.0, rot_zw=0.0, rot_xy=0.0,
                    arc_segments=12, radius=0.03, sides=6, taper=True,
                    vertex_spheres=True, sphere_factor=1.6, scale=1.0):
     V4 = polytope_vertices(kind)
     E = polytope_edges(V4)
     V4 = rotate4(V4, rot_xw, rot_yw, rot_zw, rot_xy)
+    if style == 'CURVED':
+        # exact stereographic projection: pole ON the unit 3-sphere
+        dist = 1.0
+        V4, _nudged = clear_pole(V4)
+    else:
+        dist = max(proj_dist, 1.05)
     verts = []
     faces = []
     proj = {}
     for i, v in enumerate(V4):
-        p, s = project_point(v, proj_dist)
+        p, s = project_point(v, dist)
         proj[i] = (tuple(c * scale for c in p), s)
     for (i, j) in E:
         if style == 'CURVED':
@@ -276,7 +304,7 @@ def build_polytope(kind='CELL8', style='CURVED', proj_dist=1.25,
             for k in range(arc_segments + 1):
                 t = k / arc_segments
                 q = _slerp4(V4[i], V4[j], t)
-                p, s = project_point(q, proj_dist)
+                p, s = project_point(q, dist)
                 pts.append(tuple(c * scale for c in p))
                 scls.append(s)
         else:
@@ -345,14 +373,16 @@ if _IN_BLENDER:
                     "approaches a Schlegel diagram")],
             default='CURVED')
         proj_dist: FloatProperty(
-            name="Projection Distance", default=1.25, min=1.01, max=10.0,
-            description="Distance of the projection pole/eye along w; "
-                        "closer to 1 = more dramatic stereographic view")
-        rot_xw: FloatProperty(name="Rotate XW", default=10.0,
+            name="Projection Distance", default=3.0, min=1.05, max=10.0,
+            description="Eye distance along w for STRAIGHT edges (small "
+                        "= Schlegel-like). Curved mode always uses the "
+                        "exact stereographic projection (pole on the "
+                        "3-sphere)")
+        rot_xw: FloatProperty(name="Rotate XW", default=0.0,
                               min=-180.0, max=180.0)
-        rot_yw: FloatProperty(name="Rotate YW", default=7.0,
+        rot_yw: FloatProperty(name="Rotate YW", default=0.0,
                               min=-180.0, max=180.0)
-        rot_zw: FloatProperty(name="Rotate ZW", default=3.0,
+        rot_zw: FloatProperty(name="Rotate ZW", default=0.0,
                               min=-180.0, max=180.0)
         rot_xy: FloatProperty(name="Rotate XY", default=0.0,
                               min=-180.0, max=180.0)
@@ -400,7 +430,8 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'kind')
             lay.prop(self, 'style')
-            lay.prop(self, 'proj_dist')
+            if self.style == 'STRAIGHT':
+                lay.prop(self, 'proj_dist')
             col = lay.column(align=True)
             for k in ('rot_xw', 'rot_yw', 'rot_zw', 'rot_xy'):
                 col.prop(self, k)
