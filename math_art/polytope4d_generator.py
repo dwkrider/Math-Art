@@ -385,18 +385,78 @@ def _leonardo_panels(F2, proj, origin, border, panel_thickness,
             for k in range(3):
                 s[k] += n[k]
             vcnt[i] = vcnt.get(i, 0) + 1
-    # shared per-vertex inward offset (mitre): direction = mean of
-    # the adjacent panel normals; length corrected for the angle so
-    # the slabs keep roughly even thickness
+    # shared per-vertex inward offset (mitre): least-squares solve of
+    # m . n_f = thickness over all panels at the vertex -- exact at
+    # corners where three planes meet, balanced elsewhere, and the
+    # offset point stays inside the local face wedge (no flaps)
+    vnormals = {}
+    for (cyc, poly, n) in faces_o:
+        for i in cyc:
+            vnormals.setdefault(i, []).append(n)
     voff = {}
-    for i, s in vsum.items():
-        ln = math.sqrt(sum(t * t for t in s)) or 1.0
-        d = [t / ln for t in s]
-        mean_dot = max(0.35, min(1.0, ln / vcnt[i]))
+    for i, ns in vnormals.items():
         th = panel_thickness * scale * (proj[i][1] if taper else 1.0)
-        voff[i] = [d[k] * th / mean_dot for k in range(3)]
+        M = [[0.0] * 3 for _ in range(3)]
+        b = [0.0, 0.0, 0.0]
+        for n in ns:
+            for r in range(3):
+                b[r] += n[r] * th
+                for c in range(3):
+                    M[r][c] += n[r] * n[c]
+        lam = 1e-6 * (M[0][0] + M[1][1] + M[2][2] + 1e-12)
+        for r in range(3):
+            M[r][r] += lam
+        det = (M[0][0] * (M[1][1] * M[2][2] - M[1][2] * M[2][1])
+               - M[0][1] * (M[1][0] * M[2][2] - M[1][2] * M[2][0])
+               + M[0][2] * (M[1][0] * M[2][1] - M[1][1] * M[2][0]))
+        if abs(det) < 1e-12:
+            s = vsum[i]
+            ln = math.sqrt(sum(t * t for t in s)) or 1.0
+            voff[i] = [s[k] / ln * th for k in range(3)]
+            continue
+        m = []
+        for c in range(3):
+            Mc = [row[:] for row in M]
+            for r in range(3):
+                Mc[r][c] = b[r]
+            dc = (Mc[0][0] * (Mc[1][1] * Mc[2][2]
+                              - Mc[1][2] * Mc[2][1])
+                  - Mc[0][1] * (Mc[1][0] * Mc[2][2]
+                                - Mc[1][2] * Mc[2][0])
+                  + Mc[0][2] * (Mc[1][0] * Mc[2][1]
+                                - Mc[1][1] * Mc[2][0]))
+            m.append(dc / det)
+        # guard against runaway mitres at very shallow wedges
+        ln = math.sqrt(sum(t * t for t in m))
+        cap = 3.0 * th
+        if ln > cap:
+            m = [t * cap / ln for t in m]
+        voff[i] = m
     verts = []
     faces = []
+
+    def _tri_n(a, b, c):
+        u = [verts[b][k] - verts[a][k] for k in range(3)]
+        v = [verts[c][k] - verts[a][k] for k in range(3)]
+        n = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2],
+             u[0] * v[1] - u[1] * v[0])
+        ln = math.sqrt(sum(t * t for t in n)) or 1.0
+        return [t / ln for t in n]
+
+    def quad_tri(i0, i1, i2, i3):
+        """Split a (possibly non-planar) quad along the diagonal
+        whose two triangles fold the least, keeping the winding."""
+        fold_a = sum(x * y for x, y in zip(_tri_n(i0, i1, i2),
+                                           _tri_n(i0, i2, i3)))
+        fold_b = sum(x * y for x, y in zip(_tri_n(i0, i1, i3),
+                                           _tri_n(i1, i2, i3)))
+        if fold_a >= fold_b:
+            faces.append([i0, i1, i2])
+            faces.append([i0, i2, i3])
+        else:
+            faces.append([i0, i1, i3])
+            faces.append([i1, i2, i3])
+
     OUT = {}
     INN = {}
     for i in vsum:
@@ -409,25 +469,28 @@ def _leonardo_panels(F2, proj, origin, border, panel_thickness,
     for (cyc, poly, n) in faces_o:
         m = len(cyc)
         c = [sum(p[k] for p in poly) / m for k in range(3)]
+        avg = sum(proj[i][1] for i in cyc) / m
+        th_f = panel_thickness * scale * (avg if taper else 1.0)
         HO = len(verts)
         for p in poly:
             verts.append(tuple(c[k] + (p[k] - c[k]) * (1 - border)
                                for k in range(3)))
+        # the hole ring is not shared with any neighbour, so it can
+        # follow the face normal exactly: planar hole walls
         HI = len(verts)
-        for j, p in enumerate(poly):
-            off = voff[cyc[j]]
+        for p in poly:
             verts.append(tuple(c[k] + (p[k] - c[k]) * (1 - border)
-                               - off[k] for k in range(3)))
+                               - n[k] * th_f for k in range(3)))
         for i in range(m):
             j = (i + 1) % m
             a, b = cyc[i], cyc[j]
             faces.append([OUT[a], OUT[b], HO + j, HO + i])
-            faces.append([HI + i, HI + j, INN[b], INN[a]])
+            quad_tri(HI + i, HI + j, INN[b], INN[a])
             faces.append([HO + j, HO + i, HI + i, HI + j])
             key = (min(a, b), max(a, b))
             if key not in rim_done:
                 rim_done.add(key)
-                faces.append([OUT[b], OUT[a], INN[a], INN[b]])
+                quad_tri(OUT[b], OUT[a], INN[a], INN[b])
     return verts, faces
 
 
