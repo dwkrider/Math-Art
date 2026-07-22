@@ -40,6 +40,7 @@ OPS = [
         generations=3)),
     ("symmetrohedron", lambda: bpy.ops.mesh.symmetrohedron_add()),
     ("twisted torus", lambda: bpy.ops.mesh.twisted_torus_add()),
+    ("tangle", lambda: bpy.ops.mesh.tangle_add(kind='T5')),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):

@@ -82,7 +82,13 @@ The modules:
      midpoint and emits **one mesh object per helical band** (solid
      ribbons with sharp border edges) so bands can be coloured
      independently; at 1 the classic contiguous tube is produced.
-6. **4D polytopes** (`math_art/polytope4d_generator.py`) — all six
+6. **Polyhedral tangles** (math_art/tangle_generator.py) — compounds
+   of interwoven polyhedron frames: 2/5/10 tetrahedra (the classic
+   *Tetra Tangle*), 3 and 5 cubes, 5 octahedra — as hollow-face
+   frames (Hart style) or edge struts (Lang polypolyhedra style),
+   with per-component rotation for Lang-style variants,
+   per-component colouring and a `component_index` face attribute.
+7. **4D polytopes** (`math_art/polytope4d_generator.py`) — all six
    regular convex 4-polytopes (5-cell, tesseract, 16-cell, 24-cell,
    600-cell, 120-cell) as strut-and-sphere edge frameworks. Edges are
    **straight** (4D perspective; small distances approach a Schlegel

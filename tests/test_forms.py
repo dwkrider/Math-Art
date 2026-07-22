@@ -16,8 +16,9 @@ import fractal_polyhedron_generator as fp  # noqa: E402
 import symmetrohedron_generator as sy  # noqa: E402
 import twisted_torus_generator as tt  # noqa: E402
 import polytope4d_generator as p4  # noqa: E402
+import tangle_generator as tg  # noqa: E402
 
-for m in (pl, pt, fp, sy, tt, p4):
+for m in (pl, pt, fp, sy, tt, p4, tg):
     m.register()
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
@@ -240,6 +241,30 @@ clear()
 bpy.ops.mesh.polytope4d_add(kind='CELL120', style='CURVED',
                             arc_segments=8, sides=5, radius=0.02)
 render(os.path.join(OUT, 'form_120cell.png'))
+
+# ---- Tangles: closed manifold frames, per-component materials -----------
+for kind, style, ncomp, rings in (('T5', 'FACES', 5, 20),
+                                  ('T2', 'FACES', 2, 8),
+                                  ('C5', 'EDGES', 5, 60),
+                                  ('C3', 'FACES', 3, 18)):
+    clear()
+    bpy.ops.mesh.tangle_add(kind=kind, style=style)
+    obj = bpy.context.object
+    nv, nf, nb, nm, chi = stats(obj)
+    # FACES rings are tori (chi 0); EDGES struts are boxes (chi 2)
+    chi_exp = 0 if style == 'FACES' else 2 * rings
+    ok = (nb == 0 and nm == 0 and chi == chi_exp
+          and len(obj.data.materials) == ncomp
+          and obj.data.attributes.get('component_index') is not None)
+    print(f"[tangle {kind} {style}] chi={chi}({chi_exp}) "
+          f"mats={len(obj.data.materials)}({ncomp}) "
+          f"{'OK' if ok else 'FAIL'}")
+    if not ok:
+        fails.append(f'tangle-{kind}')
+clear()
+bpy.ops.mesh.tangle_add(kind='T5')
+render(os.path.join(OUT, 'form_tangle_t5.png'),
+       view_dir=(0.35, -0.6, 0.72))
 
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")
 print("RENDERS ->", OUT)
