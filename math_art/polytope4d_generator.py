@@ -347,10 +347,12 @@ def add_sphere(verts, faces, center, radius, seg=8, rings=6):
 # Build
 # --------------------------------------------------------------------------
 
-def _add_panel(verts, faces, poly, border, th):
+def _add_panel(verts, faces, poly, border, th, origin=(0.0, 0.0, 0.0)):
     """Closed da Vinci panel for one flat polygon: ring between the
-    polygon and its inset, thickened along the polygon normal.
-    Winding is unimportant (normals recalculated by the caller)."""
+    polygon and its inset. The outer surface lies exactly on the face
+    plane -- so panels sharing a polytope edge join flush along it --
+    and the thickness projects inward, toward origin. Winding is
+    unimportant (normals recalculated by the caller)."""
     m = len(poly)
     c = [sum(p[k] for p in poly) / m for k in range(3)]
     # Newell normal
@@ -362,10 +364,12 @@ def _add_panel(verts, faces, poly, border, th):
         n[2] += (p[0] - q[0]) * (p[1] + q[1])
     ln = math.sqrt(sum(t * t for t in n)) or 1.0
     n = [t / ln for t in n]
+    if sum(n[k] * (c[k] - origin[k]) for k in range(3)) < 0:
+        n = [-t for t in n]               # n now points outward
     hole = [[c[k] + (p[k] - c[k]) * (1 - border) for k in range(3)]
             for p in poly]
     base = len(verts)
-    for layer in (th / 2, -th / 2):
+    for layer in (0.0, -th):
         for p in poly:
             verts.append(tuple(p[k] + n[k] * layer for k in range(3)))
         for p in hole:
@@ -405,11 +409,14 @@ def build_polytope(kind='CELL8', style='CURVED', proj_dist=1.05,
         # flat panels per 2D face: stereographic projection maps the
         # circle through a face's vertices to a circle in R^3, so
         # every projected face is planar in both styles
+        nvp = len(V4)
+        O = tuple(sum(proj[i][0][k] for i in range(nvp)) / nvp
+                  for k in range(3))
         for cyc in F2:
             poly = [proj[i][0] for i in cyc]
             avg = sum(proj[i][1] for i in cyc) / len(cyc)
             th = panel_thickness * scale * (avg if taper else 1.0)
-            _add_panel(verts, faces, poly, border, th)
+            _add_panel(verts, faces, poly, border, th, O)
         return verts, faces, len(V4), len(E)
     for (i, j) in E:
         if style == 'CURVED':
