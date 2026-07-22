@@ -43,6 +43,9 @@ The modules:
      **polar zonohedra** and Russell Towle's **rhombic
      spirallohedra** via a direct port of Antiprism's
      `make_polar_zonohedron` (the preset equals `zono -P 12,4`).
+     Styles: **Solid**, **Leonardo (da Vinci)** open-faced panels
+     (via the shared Leonardo Style modifier below), or
+     **Wireframe** edge struts.
    - `math_art/waterman_generator.py` — **Waterman polyhedra** (hulls of
      FCC lattice points; W1 = cuboctahedron, high roots approach a
      sphere).
@@ -88,10 +91,16 @@ The modules:
      attributes are always written.
 6. **Polyhedral tangles** (math_art/tangle_generator.py) — compounds
    of interwoven polyhedron frames: 2/5/10 tetrahedra (the classic
-   *Tetra Tangle*), 3 and 5 cubes, 5 octahedra — as hollow-face
-   frames (Hart style) or edge struts (Lang polypolyhedra style),
-   with per-component rotation for Lang-style variants,
-   per-component colouring and a `component_index` face attribute.
+   *Tetra Tangle*), 3 and 5 cubes, 5 octahedra. Default style is
+   **Hollow Faces (da Vinci)**: solid face panels with openings,
+   built as the shell between the polyhedron scaled out and in by
+   half the thickness so panels share the scaled polyhedron
+   vertices — joints along edges and at vertices are exact,
+   watertight mitres, as in Leonardo's *De divina proportione*
+   models. **Edge Struts** (Lang polypolyhedra style) are square
+   sticks trimmed back from each vertex with flat caps and a faceted
+   convex-hull knuckle filling every joint. Per-component rotation,
+   colouring and a `component_index` face attribute.
 7. **4D polytopes** (`math_art/polytope4d_generator.py`) — all six
    regular convex 4-polytopes (5-cell, tesseract, 16-cell, 24-cell,
    600-cell, 120-cell) as strut-and-sphere edge frameworks. Edges are
@@ -133,10 +142,23 @@ The modules:
    extrusion, planarity-preserving) for a printable solid; **Weld**
    merges copies that meet exactly on the plane-intersection lines.
    A `copy_index` attribute distinguishes copies for shading.
+9. **Leonardo Style modifier** (`math_art/leonardo_style.py`) — a
+   reusable Geometry Nodes group (applied by *Object > Leonardo
+   Style* or the Math Art menu) that turns **any closed mesh** into
+   a Leonardo da Vinci open-faced model, as in his polyhedron
+   illustrations for Pacioli's *De divina proportione*: every face
+   is inset individually, the centre is cut out, and the frame
+   surface is extruded into a solid shell. Border and Thickness are
+   live modifier inputs; the zonohedron generator's Leonardo style
+   uses the same shared node group.
 
 ![120-cell](renders/form_120cell.png)
 
 ![Symmetric sculpture](renders/form_symmetric_sculpture.png)
+
+![Tetra tangle, da Vinci style](renders/form_tangle_t5.png)
+
+![Zonohedron, Leonardo style](renders/form_zonohedron_leonardo.png)
 
 ![Tumbleweed preset](renders/form_symsculpt_tumbleweed.png)
 
@@ -416,6 +438,10 @@ Rossiter ([source](https://github.com/antiprism/antiprism), GPL):
   ([PDF](https://www.georgehart.com/sculpture/Symmetric-Sculpture.pdf))
   — the plane-family replication, stellation-pattern guides and
   radial extrusion are modelled on the software described there
+- Leonardo style: after Leonardo da Vinci's open-faced ("vacuus")
+  polyhedron illustrations for Luca Pacioli's *De divina
+  proportione* (1509); see also G. W. Hart,
+  [Leonardo da Vinci's Polyhedra](https://www.georgehart.com/virtual-polyhedra/leonardo.html)
 
 Thanks also to the Blender Foundation — everything here builds on the
 Blender Python API and the 4.2+ extensions platform.

@@ -29,6 +29,7 @@ from . import twisted_torus_generator
 from . import polytope4d_generator
 from . import tangle_generator
 from . import symmetric_sculpture_generator
+from . import leonardo_style
 
 import bpy
 
@@ -39,7 +40,8 @@ _MODULES = (scherk_collins_generator, minimal_surface_toolkit,
             polylinks_generator, platonic_twist_generator,
             fractal_polyhedron_generator, symmetrohedron_generator,
             twisted_torus_generator, polytope4d_generator,
-            tangle_generator, symmetric_sculpture_generator)
+            tangle_generator, symmetric_sculpture_generator,
+            leonardo_style)
 
 
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
@@ -78,6 +80,7 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.operator_menu_enum("object.symmetric_sculpture_add",
                                "preset", text="Symmetric Sculpture",
                                icon='MOD_MIRROR')
+        lay.operator("object.leonardo_add", icon='MESH_ICOSPHERE')
 
 
 def _menu_func(self, context):

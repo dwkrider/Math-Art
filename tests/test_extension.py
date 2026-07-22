@@ -44,6 +44,13 @@ OPS = [
     ("symmetric sculpture",
      lambda: bpy.ops.object.symmetric_sculpture_add(
          preset='TWISTED_RIVERS')),
+    ("tangle struts", lambda: bpy.ops.mesh.tangle_add(
+        kind='T5', style='EDGES')),
+    ("zonohedron leonardo", lambda: bpy.ops.mesh.zonohedron_add(
+        kind='TRIACONTA', style='LEONARDO')),
+    ("leonardo modifier",
+     lambda: (bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1),
+              bpy.ops.object.leonardo_add())[-1]),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):

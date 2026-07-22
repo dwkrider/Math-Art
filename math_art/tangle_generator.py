@@ -115,68 +115,106 @@ def compound(kind):
 
 def _emit_face_rings(verts, faces, face_comp, ci, V, F, width,
                      thickness, scale):
+    """Leonardo da Vinci style: the panel shell between the
+    polyhedron scaled out and in by half the thickness, with a hole
+    inset in every face. Adjacent panels share the scaled polyhedron
+    vertices, so the joints along edges and at vertices are exact
+    (watertight mitres), as in the models Leonardo drew for Pacioli's
+    De divina proportione."""
+    k_out = 1.0 + thickness / 2
+    k_in = max(0.05, 1.0 - thickness / 2)
+    inner = 1.0 - width
+    base_o = len(verts)
+    verts.extend(tuple(x * k_out * scale for x in v) for v in V)
+    base_i = len(verts)
+    verts.extend(tuple(x * k_in * scale for x in v) for v in V)
     for f in F:
         m = len(f)
         c = [sum(V[i][k] for i in f) / m for k in range(3)]
-        n = _unit(c)
-        ring = [[V[i][k] - c[k] for k in range(3)] for i in f]
-        base = len(verts)
-        inner = 1.0 - width
-        for layer in (thickness / 2, -thickness / 2):
-            for r in ring:
-                verts.append(tuple((c[k] + r[k] + n[k] * layer)
-                                   * scale for k in range(3)))
-            for r in ring:
-                verts.append(tuple((c[k] + r[k] * inner
-                                    + n[k] * layer) * scale
-                                   for k in range(3)))
-        TO, TI, BO, BI = base, base + m, base + 2 * m, base + 3 * m
+        hole = [[c[k] + (V[i][k] - c[k]) * inner for k in range(3)]
+                for i in f]
+        HO = len(verts)
+        verts.extend(tuple(p[k] * k_out * scale for k in range(3))
+                     for p in hole)
+        HI = len(verts)
+        verts.extend(tuple(p[k] * k_in * scale for k in range(3))
+                     for p in hole)
         for i in range(m):
             j = (i + 1) % m
-            faces.append([TO + i, TO + j, TI + j, TI + i])
-            faces.append([BI + i, BI + j, BO + j, BO + i])
-            faces.append([TO + j, TO + i, BO + i, BO + j])
-            faces.append([TI + i, TI + j, BI + j, BI + i])
-            face_comp.extend([ci] * 4)
+            a, b = f[i], f[j]
+            faces.append([base_o + a, base_o + b, HO + j, HO + i])
+            faces.append([HI + i, HI + j, base_i + b, base_i + a])
+            faces.append([HO + j, HO + i, HI + i, HI + j])
+            face_comp.extend([ci] * 3)
+
+
+try:
+    from .conway_operators import _hull_faces
+except ImportError:
+    try:
+        from conway_operators import _hull_faces
+    except ImportError:
+        _hull_faces = None
 
 
 def _emit_edge_struts(verts, faces, face_comp, ci, V, F, thickness,
-                      scale):
-    done = set()
+                      scale, cap_size=1.0):
+    """Square struts trimmed back from the vertices and closed with
+    flat caps; each vertex gets a faceted knuckle (the convex hull of
+    the surrounding strut caps) so the joints are clean."""
+    h = thickness / 2
+    edges = set()
     for f in F:
         m = len(f)
         for i in range(m):
             a, b = f[i], f[(i + 1) % m]
-            key = (min(a, b), max(a, b))
-            if key in done:
-                continue
-            done.add(key)
-            A, B = V[a], V[b]
-            t = _unit(tuple(B[k] - A[k] for k in range(3)))
-            ref = (0, 0, 1) if abs(t[2]) < 0.9 else (1, 0, 0)
-            u = _unit((t[1] * ref[2] - t[2] * ref[1],
-                       t[2] * ref[0] - t[0] * ref[2],
-                       t[0] * ref[1] - t[1] * ref[0]))
-            w = (t[1] * u[2] - t[2] * u[1], t[2] * u[0] - t[0] * u[2],
-                 t[0] * u[1] - t[1] * u[0])
-            h = thickness / 2
-            base = len(verts)
-            for P in (A, B):
-                for (su, sw) in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
-                    verts.append(tuple(
-                        (P[k] + (u[k] * su + w[k] * sw) * h) * scale
-                        for k in range(3)))
-            for i2 in range(4):
-                j2 = (i2 + 1) % 4
-                faces.append([base + i2, base + j2, base + 4 + j2,
-                              base + 4 + i2])
-            faces.append([base + 3, base + 2, base + 1, base + 0])
-            faces.append([base + 4, base + 5, base + 6, base + 7])
-            face_comp.extend([ci] * 6)
+            edges.add((min(a, b), max(a, b)))
+    vertex_rings = {}          # vertex index -> knuckle corner points
+    for a, b in edges:
+        A, B = V[a], V[b]
+        t = _unit(tuple(B[k] - A[k] for k in range(3)))
+        elen = math.sqrt(sum((B[k] - A[k]) ** 2 for k in range(3)))
+        s = min(thickness * cap_size, 0.35 * elen)
+        ref = (0, 0, 1) if abs(t[2]) < 0.9 else (1, 0, 0)
+        u = _unit((t[1] * ref[2] - t[2] * ref[1],
+                   t[2] * ref[0] - t[0] * ref[2],
+                   t[0] * ref[1] - t[1] * ref[0]))
+        w = (t[1] * u[2] - t[2] * u[1], t[2] * u[0] - t[0] * u[2],
+             t[0] * u[1] - t[1] * u[0])
+        A2 = tuple(A[k] + t[k] * s for k in range(3))
+        B2 = tuple(B[k] - t[k] * s for k in range(3))
+        base = len(verts)
+        for P, vi in ((A2, a), (B2, b)):
+            ring = []
+            for (su, sw) in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
+                p = tuple((P[k] + (u[k] * su + w[k] * sw) * h) * scale
+                          for k in range(3))
+                verts.append(p)
+                ring.append(p)
+            vertex_rings.setdefault(vi, []).extend(ring)
+        for i2 in range(4):
+            j2 = (i2 + 1) % 4
+            faces.append([base + i2, base + j2, base + 4 + j2,
+                          base + 4 + i2])
+        faces.append([base + 3, base + 2, base + 1, base + 0])
+        faces.append([base + 4, base + 5, base + 6, base + 7])
+        face_comp.extend([ci] * 6)
+    if _hull_faces is None:
+        return
+    for vi, pts in vertex_rings.items():
+        c = [sum(p[k] for p in pts) / len(pts) for k in range(3)]
+        local = [tuple(p[k] - c[k] for k in range(3)) for p in pts]
+        base = len(verts)
+        verts.extend(tuple(p[k] + c[k] for k in range(3))
+                     for p in local)
+        for hf in _hull_faces(local):
+            faces.append([base + i for i in hf])
+            face_comp.append(ci)
 
 
 def build_tangle(kind='T5', style='FACES', width=0.22, thickness=0.10,
-                 size=1.0, comp_rot=0.0, spin=0.0, scale=1.0):
+                 size=1.0, comp_rot=0.0, spin=0.0, scale=1.0,
+                 cap_size=1.0):
     """Frames for every component of the compound: hollow faces or
     edge struts. comp_rot rotates each component about its own
     symmetry axis (Lang-style variants).
@@ -197,7 +235,7 @@ def build_tangle(kind='T5', style='FACES', width=0.22, thickness=0.10,
         V = [tuple(x * size for x in v) for v in V]
         if style == 'EDGES':
             _emit_edge_struts(verts, faces, face_comp, ci, V, F,
-                              thickness, scale)
+                              thickness, scale, cap_size)
         else:
             _emit_face_rings(verts, faces, face_comp, ci, V, F, width,
                              thickness, scale)
@@ -231,11 +269,13 @@ if _IN_BLENDER:
             default='T5')
         style: EnumProperty(
             name="Style",
-            items=[('FACES', "Hollow Faces",
-                    "Each face a mitred ring; rings overlap along "
-                    "edges into ribbed struts (Hart style)"),
+            items=[('FACES', "Hollow Faces (da Vinci)",
+                    "Leonardo da Vinci style: solid face panels with "
+                    "openings, mitred exactly along the shared edges "
+                    "and vertices (as in De divina proportione)"),
                    ('EDGES', "Edge Struts",
-                    "Square sticks along the edges (Lang "
+                    "Square sticks along the edges with flat caps "
+                    "and faceted knuckles at the vertices (Lang "
                     "polypolyhedra style)")],
             default='FACES')
         width: FloatProperty(
@@ -243,6 +283,11 @@ if _IN_BLENDER:
             description="Hollow-face ring width (fraction of the face)")
         thickness: FloatProperty(name="Frame Thickness", default=0.10,
                                  min=0.01, max=1.0)
+        cap_size: FloatProperty(
+            name="Cap Size", default=1.0, min=0.3, max=3.0,
+            description="How far the edge struts stop short of each "
+                        "vertex (in strut thicknesses); the faceted "
+                        "knuckle fills the joint")
         comp_rot: FloatProperty(
             name="Component Rotation", default=0.0, min=-180.0,
             max=180.0,
@@ -293,7 +338,8 @@ if _IN_BLENDER:
         def execute(self, context):
             verts, faces, nc, face_comp = build_tangle(
                 self.kind, self.style, self.width, self.thickness,
-                self.size, self.comp_rot, self.spin, self.scale)
+                self.size, self.comp_rot, self.spin, self.scale,
+                self.cap_size)
             me = bpy.data.meshes.new("Tangle")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
@@ -318,9 +364,12 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for k in ('kind', 'style', 'width', 'thickness', 'size',
-                      'comp_rot', 'spin', 'coloring', 'scale'):
+            for k in ('kind', 'style', 'width', 'thickness',
+                      'cap_size', 'size', 'comp_rot', 'spin',
+                      'coloring', 'scale'):
                 if k == 'width' and self.style == 'EDGES':
+                    continue
+                if k == 'cap_size' and self.style != 'EDGES':
                     continue
                 lay.prop(self, k)
 
@@ -344,8 +393,29 @@ if __name__ == "__main__":
     if _IN_BLENDER:
         register()
     else:
+        def _check(v, f):
+            """closed 2-manifold with outward normals?"""
+            from collections import Counter
+            cnt = Counter()
+            for fc_ in f:
+                for i in range(len(fc_)):
+                    a, b = fc_[i], fc_[(i + 1) % len(fc_)]
+                    cnt[(min(a, b), max(a, b))] += 1
+            manifold = all(c == 2 for c in cnt.values())
+            vol = 0.0
+            for fc_ in f:
+                for i in range(1, len(fc_) - 1):
+                    p, q, r = v[fc_[0]], v[fc_[i]], v[fc_[i + 1]]
+                    vol += (p[0] * (q[1] * r[2] - q[2] * r[1])
+                            - p[1] * (q[0] * r[2] - q[2] * r[0])
+                            + p[2] * (q[0] * r[1] - q[1] * r[0])) / 6
+            return manifold, vol
         for kind, n in (('T2', 2), ('T5', 5), ('T10', 10), ('C5', 5),
                         ('O5', 5), ('C3', 3)):
-            v, f, nc, fc = build_tangle(kind)
-            print(f"{kind:4s}: components={nc}({n}) verts={len(v)} "
-                  f"faces={len(f)} {'OK' if nc == n else 'BAD'}")
+            for style in ('FACES', 'EDGES'):
+                v, f, nc, fc = build_tangle(kind, style)
+                man, vol = _check(v, f)
+                ok = nc == n and man and vol > 0
+                print(f"{kind:4s}/{style}: comps={nc}({n}) "
+                      f"manifold={man} vol={vol:+.3f} "
+                      f"{'OK' if ok else 'BAD'}")

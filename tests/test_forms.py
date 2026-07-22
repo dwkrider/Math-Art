@@ -243,16 +243,18 @@ bpy.ops.mesh.polytope4d_add(kind='CELL120', style='CURVED',
 render(os.path.join(OUT, 'form_120cell.png'))
 
 # ---- Tangles: closed manifold frames, per-component materials -----------
-for kind, style, ncomp, rings in (('T5', 'FACES', 5, 20),
-                                  ('T2', 'FACES', 2, 8),
-                                  ('C5', 'EDGES', 5, 60),
-                                  ('C3', 'FACES', 3, 18)):
+# FACES (da Vinci) shells: a polyhedron with F faces gives a genus
+# F-1 surface, chi = 4 - 2F per component. EDGES: closed strut boxes
+# plus one knuckle hull per vertex, chi = 2 per solid.
+for kind, style, ncomp, chi_exp in (
+        ('T5', 'FACES', 5, 5 * (4 - 2 * 4)),
+        ('T2', 'FACES', 2, 2 * (4 - 2 * 4)),
+        ('C5', 'EDGES', 5, 2 * 5 * (12 + 8)),
+        ('C3', 'FACES', 3, 3 * (4 - 2 * 6))):
     clear()
     bpy.ops.mesh.tangle_add(kind=kind, style=style)
     obj = bpy.context.object
     nv, nf, nb, nm, chi = stats(obj)
-    # FACES rings are tori (chi 0); EDGES struts are boxes (chi 2)
-    chi_exp = 0 if style == 'FACES' else 2 * rings
     ok = (nb == 0 and nm == 0 and chi == chi_exp
           and len(obj.data.materials) == ncomp
           and obj.data.attributes.get('component_index') is not None)
