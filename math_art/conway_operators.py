@@ -496,7 +496,7 @@ def canonicalize(V, F, iters=200, lam_t=0.3, lam_p=0.5):
 try:
     import bpy
     from bpy.props import (StringProperty, EnumProperty, IntProperty,
-                           FloatProperty)
+                           FloatProperty, BoolProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -547,7 +547,46 @@ if _IN_BLENDER:
                                 min=5, max=2000)
         kis_height: FloatProperty(name="Kis Height", default=0.25,
                                   min=-1.0, max=2.0)
+        coloring: EnumProperty(
+            name="Coloring",
+            items=[('SIDES', "Colored (by face sides)",
+                    "One material per face size, as in Hart's 'colored' "
+                    "display (view with Material Preview or Solid "
+                    "shading set to Material color)"),
+                   ('NONE', "None", "No materials")],
+            default='SIDES')
+        uv_map: BoolProperty(
+            name="Spherical UV Map", default=True,
+            description="Smooth equirectangular UVs projected from the "
+                        "centre (seam-corrected per face)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+
+        # Hart-style palette per face size; golden-angle HSV fallback
+        _PALETTE = {3: (0.90, 0.36, 0.23), 4: (0.27, 0.52, 0.79),
+                    5: (0.30, 0.69, 0.42), 6: (0.95, 0.77, 0.29),
+                    7: (0.62, 0.40, 0.75), 8: (0.25, 0.72, 0.72),
+                    9: (0.91, 0.56, 0.71), 10: (0.55, 0.60, 0.29),
+                    12: (0.52, 0.45, 0.40)}
+
+        @classmethod
+        def _material_for(cls, n):
+            name = f"Conway {n}-gon"
+            mat = bpy.data.materials.get(name)
+            if mat is None:
+                mat = bpy.data.materials.new(name)
+                if n in cls._PALETTE:
+                    rgb = cls._PALETTE[n]
+                else:
+                    import colorsys
+                    rgb = colorsys.hsv_to_rgb((n * 0.618034) % 1.0,
+                                              0.55, 0.8)
+                mat.diffuse_color = (*rgb, 1.0)
+                mat.use_nodes = True
+                bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                if bsdf is not None:
+                    bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+                    bsdf.inputs["Roughness"].default_value = 0.55
+            return mat
 
         def execute(self, context):
             try:
@@ -565,6 +604,45 @@ if _IN_BLENDER:
             me.from_pydata([tuple(c * self.scale for c in v) for v in V],
                            [], [tuple(f) for f in F])
             me.validate(clean_customdata=True)
+            if self.coloring == 'SIDES' and len(me.polygons) == len(F):
+                sides = sorted({len(f) for f in F})
+                slot = {n: i for i, n in enumerate(sides)}
+                for n in sides:
+                    me.materials.append(self._material_for(n))
+                me.polygons.foreach_set(
+                    'material_index', [slot[len(f)] for f in F])
+            # face metadata: number of sides, usable in shaders (the
+            # Attribute node) and Geometry Nodes
+            if len(me.polygons) == len(F):
+                attr = me.attributes.new("ngon_sides", 'INT', 'FACE')
+                attr.data.foreach_set('value', [len(f) for f in F])
+            if self.uv_map:
+                uvl = me.uv_layers.new(name="UVMap")
+                two_pi = 2 * math.pi
+                for poly in me.polygons:
+                    uvs = []
+                    for li in poly.loop_indices:
+                        vi = me.loops[li].vertex_index
+                        x, y, z = me.vertices[vi].co
+                        r = math.sqrt(x * x + y * y + z * z) or 1.0
+                        u = math.atan2(y, x) / two_pi + 0.5
+                        vv = math.asin(max(-1.0, min(1.0, z / r))) \
+                            / math.pi + 0.5
+                        uvs.append([u, vv, abs(z / r) > 0.999])
+                    us = [u for u, vv, pole in uvs if not pole]
+                    if us:                               # seam wrap
+                        ref = max(us)
+                        for q in uvs:
+                            if not q[2] and ref - q[0] > 0.5:
+                                q[0] += 1.0
+                        us = [q[0] for q in uvs if not q[2]]
+                    if us:                               # poles: average u
+                        um = sum(us) / len(us)
+                        for q in uvs:
+                            if q[2]:
+                                q[0] = um
+                    for li, q in zip(poly.loop_indices, uvs):
+                        uvl.data[li].uv = (q[0], q[1])
             me.update()
             obj = bpy.data.objects.new(f"Conway {self.notation}", me)
             context.collection.objects.link(obj)
@@ -586,6 +664,8 @@ if _IN_BLENDER:
             if self.post == 'CANON':
                 lay.prop(self, 'iterations')
             lay.prop(self, 'kis_height')
+            lay.prop(self, 'coloring')
+            lay.prop(self, 'uv_map')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
