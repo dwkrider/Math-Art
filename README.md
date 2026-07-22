@@ -182,7 +182,25 @@ The modules:
     Wallace's *ruled Möbius strip* posts — including his true
     one-edged Möbius surface (χ = 0, single boundary loop,
     verified).
-13. **Prime knots** (`math_art/prime_knot_generator.py`) — **all
+13. **Regular solids** (`math_art/regular_solids_generator.py`) — a
+    complete *Add Regular Solid*, organised by family: the 5
+    **Platonic** solids; the 4 **Kepler–Poinsot** star polyhedra as
+    true intersecting faces (pentagrams star-triangulated; the
+    great stellated dodecahedron's pentagram points are the second
+    ring of each dodecahedron face); all 13 **Archimedean** and all
+    13 **Catalan** solids via Conway notation + canonicalization
+    (V/F counts verified for all 26); uniform **prisms and
+    antiprisms**; and the **Johnson solids J1–J48** — every
+    pyramid/cupola/rotunda solid and their elongated,
+    gyroelongated and bi- (ortho/gyro) combinations, composed with
+    exact unit-edge coordinates (all 47 verified to machine
+    precision, ortho/gyro pairings confirmed by like-meets-like
+    contact tests; the augmented/diminished J49+ are not included).
+    Options: generic **stellation** (pyramid to the intersection of
+    neighbour planes — octahedron → stella octangula), Solid /
+    Leonardo (da Vinci) / Wireframe styles, and coloring by face
+    size.
+14. **Prime knots** (`math_art/prime_knot_generator.py`) — **all
     249 prime knots up to 10 crossings** (Rolfsen table) from the
     minimum braid words of T. Gittings. The braid closure is laid
     around a circle and relaxed with smoothing + self-repulsion
@@ -204,6 +222,10 @@ The modules:
 ![Knot 8_18](renders/form_knot_8_18.png)
 
 ![Tetra tangle, da Vinci style](renders/form_tangle_t5.png)
+
+![Great stellated dodecahedron](renders/form_gsd.png)
+
+![Snub dodecahedron](renders/form_snub_dodecahedron.png)
 
 ![Zonohedron, Leonardo style](renders/form_zonohedron_leonardo.png)
 
@@ -458,6 +480,13 @@ original software belongs to their authors.
   numbering)
 - Relaxed rope presentation inspired by R. Scharein's
   [KnotPlot](https://knotplot.com/)
+
+**Regular solids**
+
+- N. W. Johnson, *Convex Polyhedra with Regular Faces*, Canad. J.
+  Math. 18 (1966) - the Johnson solid enumeration
+- Conway/Hart operator notation and canonicalization as in the
+  Conway generator above
 
 **Polyhedra** — after [Antiprism](https://www.antiprism.com) by Adrian
 Rossiter ([source](https://github.com/antiprism/antiprism), GPL):

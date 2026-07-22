@@ -67,6 +67,14 @@ OPS = [
         knot='6_2', iters=60)),
     ("prime knot tube", lambda: bpy.ops.curve.prime_knot_add(
         knot='8_18', output='MESH', iters=60)),
+    ("solid archimedean", lambda: bpy.ops.mesh.regular_solid_add(
+        family='ARCHIMEDEAN', solid='SD')),
+    ("solid johnson", lambda: bpy.ops.mesh.regular_solid_add(
+        family='JOHNSON', solid='J46')),
+    ("solid kepler", lambda: bpy.ops.mesh.regular_solid_add(
+        family='KEPLER', solid='GSD')),
+    ("solid stellated", lambda: bpy.ops.mesh.regular_solid_add(
+        family='PLATONIC', solid='DODECA', stellated=True)),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):
