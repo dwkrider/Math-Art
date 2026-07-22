@@ -347,40 +347,88 @@ def add_sphere(verts, faces, center, radius, seg=8, rings=6):
 # Build
 # --------------------------------------------------------------------------
 
-def _add_panel(verts, faces, poly, border, th, origin=(0.0, 0.0, 0.0)):
-    """Closed da Vinci panel for one flat polygon: ring between the
-    polygon and its inset. The outer surface lies exactly on the face
-    plane -- so panels sharing a polytope edge join flush along it --
-    and the thickness projects inward, toward origin. Winding is
-    unimportant (normals recalculated by the caller)."""
-    m = len(poly)
-    c = [sum(p[k] for p in poly) / m for k in range(3)]
-    # Newell normal
+def _newell(poly):
     n = [0.0, 0.0, 0.0]
+    m = len(poly)
     for i in range(m):
         p, q = poly[i], poly[(i + 1) % m]
         n[0] += (p[1] - q[1]) * (p[2] + q[2])
         n[1] += (p[2] - q[2]) * (p[0] + q[0])
         n[2] += (p[0] - q[0]) * (p[1] + q[1])
     ln = math.sqrt(sum(t * t for t in n)) or 1.0
-    n = [t / ln for t in n]
-    if sum(n[k] * (c[k] - origin[k]) for k in range(3)) < 0:
-        n = [-t for t in n]               # n now points outward
-    hole = [[c[k] + (p[k] - c[k]) * (1 - border) for k in range(3)]
-            for p in poly]
-    base = len(verts)
-    for layer in (0.0, -th):
+    return [t / ln for t in n]
+
+
+def _leonardo_panels(F2, proj, origin, border, panel_thickness,
+                     taper, scale):
+    """Mitered da Vinci panels for the projected 2D faces. Every
+    polytope vertex is offset once, along the average normal of all
+    panels meeting there (even-thickness corrected), so the inner
+    boundaries of adjacent panels share their vertices: joints along
+    edges and at corners are exact. Rim walls are emitted once per
+    polytope edge. Windings are consistent by construction (outer
+    face CCW seen from outside)."""
+    faces_o = []                          # (cyc, poly, n) oriented
+    vsum = {}
+    vcnt = {}
+    for cyc in F2:
+        poly = [proj[i][0] for i in cyc]
+        n = _newell(poly)
+        c = [sum(p[k] for p in poly) / len(poly) for k in range(3)]
+        if sum(n[k] * (c[k] - origin[k]) for k in range(3)) < 0:
+            cyc = list(reversed(cyc))
+            poly = list(reversed(poly))
+            n = [-t for t in n]
+        faces_o.append((cyc, poly, n))
+        for i in cyc:
+            s = vsum.setdefault(i, [0.0, 0.0, 0.0])
+            for k in range(3):
+                s[k] += n[k]
+            vcnt[i] = vcnt.get(i, 0) + 1
+    # shared per-vertex inward offset (mitre): direction = mean of
+    # the adjacent panel normals; length corrected for the angle so
+    # the slabs keep roughly even thickness
+    voff = {}
+    for i, s in vsum.items():
+        ln = math.sqrt(sum(t * t for t in s)) or 1.0
+        d = [t / ln for t in s]
+        mean_dot = max(0.35, min(1.0, ln / vcnt[i]))
+        th = panel_thickness * scale * (proj[i][1] if taper else 1.0)
+        voff[i] = [d[k] * th / mean_dot for k in range(3)]
+    verts = []
+    faces = []
+    OUT = {}
+    INN = {}
+    for i in vsum:
+        OUT[i] = len(verts)
+        verts.append(proj[i][0])
+        INN[i] = len(verts)
+        verts.append(tuple(proj[i][0][k] - voff[i][k]
+                           for k in range(3)))
+    rim_done = set()
+    for (cyc, poly, n) in faces_o:
+        m = len(cyc)
+        c = [sum(p[k] for p in poly) / m for k in range(3)]
+        HO = len(verts)
         for p in poly:
-            verts.append(tuple(p[k] + n[k] * layer for k in range(3)))
-        for p in hole:
-            verts.append(tuple(p[k] + n[k] * layer for k in range(3)))
-    TO, TH_, BO, BH = base, base + m, base + 2 * m, base + 3 * m
-    for i in range(m):
-        j = (i + 1) % m
-        faces.append([TO + i, TO + j, TH_ + j, TH_ + i])
-        faces.append([BH + i, BH + j, BO + j, BO + i])
-        faces.append([TO + j, TO + i, BO + i, BO + j])
-        faces.append([TH_ + i, TH_ + j, BH + j, BH + i])
+            verts.append(tuple(c[k] + (p[k] - c[k]) * (1 - border)
+                               for k in range(3)))
+        HI = len(verts)
+        for j, p in enumerate(poly):
+            off = voff[cyc[j]]
+            verts.append(tuple(c[k] + (p[k] - c[k]) * (1 - border)
+                               - off[k] for k in range(3)))
+        for i in range(m):
+            j = (i + 1) % m
+            a, b = cyc[i], cyc[j]
+            faces.append([OUT[a], OUT[b], HO + j, HO + i])
+            faces.append([HI + i, HI + j, INN[b], INN[a]])
+            faces.append([HO + j, HO + i, HI + i, HI + j])
+            key = (min(a, b), max(a, b))
+            if key not in rim_done:
+                rim_done.add(key)
+                faces.append([OUT[b], OUT[a], INN[a], INN[b]])
+    return verts, faces
 
 
 def build_polytope(kind='CELL8', style='CURVED', proj_dist=1.05,
@@ -412,11 +460,9 @@ def build_polytope(kind='CELL8', style='CURVED', proj_dist=1.05,
         nvp = len(V4)
         O = tuple(sum(proj[i][0][k] for i in range(nvp)) / nvp
                   for k in range(3))
-        for cyc in F2:
-            poly = [proj[i][0] for i in cyc]
-            avg = sum(proj[i][1] for i in cyc) / len(cyc)
-            th = panel_thickness * scale * (avg if taper else 1.0)
-            _add_panel(verts, faces, poly, border, th, O)
+        verts, faces = _leonardo_panels(F2, proj, O, border,
+                                        panel_thickness, taper,
+                                        scale)
         return verts, faces, len(V4), len(E)
     for (i, j) in E:
         if style == 'CURVED':
@@ -553,16 +599,10 @@ if _IN_BLENDER:
             me = bpy.data.meshes.new("Polytope4D")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
-            if self.render == 'LEONARDO':
-                # panel windings follow arbitrary face-cycle
-                # directions; make normals consistent
-                bm = bmesh.new()
-                bm.from_mesh(me)
-                bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-                bm.to_mesh(me)
-                bm.free()
-            # struts shade smooth; flat panels must stay flat, or the
-            # interpolated normals balloon around the sharp edges
+            # Leonardo panels are wound consistently by construction
+            # (the mitred joints share rim walls between panels, so
+            # a normal recalc would be unreliable there); struts
+            # shade smooth, flat panels must stay flat
             me.polygons.foreach_set(
                 'use_smooth',
                 [self.render != 'LEONARDO'] * len(me.polygons))
