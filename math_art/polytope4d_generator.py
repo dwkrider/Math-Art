@@ -278,7 +278,7 @@ def add_sphere(verts, faces, center, radius, seg=8, rings=6):
 # Build
 # --------------------------------------------------------------------------
 
-def build_polytope(kind='CELL8', style='CURVED', proj_dist=3.0,
+def build_polytope(kind='CELL8', style='CURVED', proj_dist=1.05,
                    rot_xw=0.0, rot_yw=0.0, rot_zw=0.0, rot_xy=0.0,
                    arc_segments=12, radius=0.03, sides=6, taper=True,
                    vertex_spheres=True, sphere_factor=1.6, scale=1.0):
@@ -290,7 +290,7 @@ def build_polytope(kind='CELL8', style='CURVED', proj_dist=3.0,
         dist = 1.0
         V4, _nudged = clear_pole(V4)
     else:
-        dist = max(proj_dist, 1.05)
+        dist = max(proj_dist, 1.001)
     verts = []
     faces = []
     proj = {}
@@ -356,12 +356,12 @@ if _IN_BLENDER:
 
         kind: EnumProperty(
             name="Polytope",
-            items=[('CELL8', "Tesseract (8-cell)", "16 vertices, 32 edges"),
-                   ('CELL5', "5-cell", "4-simplex: 5 vertices, 10 edges"),
+            items=[('CELL5', "5-cell", "4-simplex: 5 vertices, 10 edges"),
+                   ('CELL8', "Tesseract (8-cell)", "16 vertices, 32 edges"),
                    ('CELL16', "16-cell", "8 vertices, 24 edges"),
                    ('CELL24', "24-cell", "24 vertices, 96 edges"),
-                   ('CELL600', "600-cell", "120 vertices, 720 edges"),
-                   ('CELL120', "120-cell", "600 vertices, 1200 edges")],
+                   ('CELL120', "120-cell", "600 vertices, 1200 edges"),
+                   ('CELL600', "600-cell", "120 vertices, 720 edges")],
             default='CELL8')
         style: EnumProperty(
             name="Edges",
@@ -373,11 +373,12 @@ if _IN_BLENDER:
                     "approaches a Schlegel diagram")],
             default='CURVED')
         proj_dist: FloatProperty(
-            name="Projection Distance", default=3.0, min=1.05, max=10.0,
-            description="Eye distance along w for STRAIGHT edges (small "
-                        "= Schlegel-like). Curved mode always uses the "
-                        "exact stereographic projection (pole on the "
-                        "3-sphere)")
+            name="Projection Distance", default=1.05, min=1.001, max=10.0,
+            description="Eye distance along w for STRAIGHT edges (near 1 "
+                        "= Schlegel diagram; for the 5/16/600-cell a "
+                        "vertex sits at w=1, so rotate a little or back "
+                        "off the distance). Curved mode always uses the "
+                        "exact stereographic projection")
         rot_xw: FloatProperty(name="Rotate XW", default=0.0,
                               min=-180.0, max=180.0)
         rot_yw: FloatProperty(name="Rotate YW", default=0.0,
