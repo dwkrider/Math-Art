@@ -7,7 +7,7 @@
 #
 # Seeds:      T C O D I  (Platonics),  Pn prism, An antiprism, Yn pyramid
 # Primitive:  d dual, a ambo, k kis (kN: only N-gon faces), g gyro,
-#             c chamfer, r reflect
+#             c chamfer, r reflect, p propellor
 # Derived:    t truncate (=dkd, tN=dkNd), j join (=da), e expand (=aa),
 #             o ortho (=jj), b bevel (=ta), m meta (=kj), s snub (=dg),
 #             n needle (=kd), z zip (=dk)
@@ -294,6 +294,29 @@ def op_gyro(V, F):
     return NV, NF
 
 
+def op_propellor(V, F):
+    """Hart's propellor: each n-gon becomes a smaller rotated n-gon
+    surrounded by n quadrilaterals (chiral; dp = pd, pa = ap)."""
+    NV = [list(v) for v in V]
+    pid = {}
+    for fi, f in enumerate(F):
+        m = len(f)
+        for i in range(m):
+            a, b = f[i], f[(i + 1) % m]
+            if (a, b) not in pid:
+                pid[(a, b)] = len(NV)
+                NV.append([V[a][c] + (V[b][c] - V[a][c]) / 3
+                           for c in range(3)])
+    NF = []
+    for fi, f in enumerate(F):
+        m = len(f)
+        NF.append([pid[(f[i], f[(i + 1) % m])] for i in range(m)])
+        for i in range(m):
+            v1, v2, v3 = f[i], f[(i + 1) % m], f[(i + 2) % m]
+            NF.append([pid[(v1, v2)], pid[(v2, v1)], v2, pid[(v2, v3)]])
+    return NV, NF
+
+
 def op_chamfer(V, F, t=0.35):
     e2f, nxt = _edge_face_maps(F)
     NV = [list(v) for v in V]
@@ -334,7 +357,7 @@ def op_reflect(V, F):
 
 DERIVED = {'t': 'dk{n}d', 'j': 'da', 'e': 'aa', 'o': 'dada', 'b': 'dk{n}da',
            'm': 'k{n}da', 's': 'dg', 'n': 'k{n}d', 'z': 'dk{n}'}
-PRIMS = set('dakgcr')
+PRIMS = set('dakgcrp')
 SEEDS = set('TCODIPAY')
 
 
@@ -385,6 +408,8 @@ def apply_conway(text, kis_height=0.25, chamfer_t=0.35):
             V, F = op_gyro(V, F)
         elif ch == 'c':
             V, F = op_chamfer(V, F, t=chamfer_t)
+        elif ch == 'p':
+            V, F = op_propellor(V, F)
         elif ch == 'r':
             V, F = op_reflect(V, F)
         V, F = orient_outward(V, F)
@@ -405,9 +430,10 @@ def spherize(V, F, iters=0):
     return out
 
 
-def canonicalize(V, F, iters=80, lam_t=0.3, lam_p=0.5):
+def canonicalize(V, F, iters=200, lam_t=0.3, lam_p=0.5):
     """George Hart's canonicalization: iterate edge-tangency to the unit
-    sphere, recentering, and face planarization."""
+    sphere, recentering on the edge tangency points, and face
+    planarization, until converged (or iters)."""
     if np is None:
         return V
     P = np.array(V, dtype=np.float64)
@@ -421,7 +447,8 @@ def canonicalize(V, F, iters=80, lam_t=0.3, lam_p=0.5):
             edges.add((min(a, b), max(a, b)))
     E = np.array(sorted(edges))
     Fi = [np.array(f) for f in F]
-    for _ in range(iters):
+    for it in range(iters):
+        prev = P.copy()
         A = P[E[:, 0]]
         B = P[E[:, 1]]
         d = B - A
@@ -429,6 +456,10 @@ def canonicalize(V, F, iters=80, lam_t=0.3, lam_p=0.5):
             np.einsum('ij,ij->i', d, d), 1e-12)
         t = np.clip(t, 0.0, 1.0)
         C = A + t[:, None] * d
+        # recentre on the edge tangency points (Hart), then push edges
+        # to tangency with the unit sphere
+        P -= C.mean(axis=0)
+        C -= C.mean(axis=0)
         cl = np.linalg.norm(C, axis=1, keepdims=True)
         corr = C / np.maximum(cl, 1e-9) * (1.0 - cl)
         adj = np.zeros_like(P)
@@ -438,7 +469,6 @@ def canonicalize(V, F, iters=80, lam_t=0.3, lam_p=0.5):
         np.add.at(cnt, E[:, 0], 1)
         np.add.at(cnt, E[:, 1], 1)
         P += lam_t * adj / np.maximum(cnt, 1)[:, None]
-        P -= P.mean(axis=0)
         for f in Fi:
             Q = P[f]
             c = Q.mean(axis=0)
@@ -454,6 +484,8 @@ def canonicalize(V, F, iters=80, lam_t=0.3, lam_p=0.5):
             nrm /= ln
             dist = Qc @ nrm
             P[f] -= lam_p * dist[:, None] * nrm
+        if np.max(np.linalg.norm(P - prev, axis=1)) < 1e-7:
+            break
     return [list(map(float, p)) for p in P]
 
 
@@ -480,6 +512,8 @@ if _IN_BLENDER:
         ('bT', "Bevelled Tetrahedron (bT)", ""),
         ('gD', "Pentagonal Hexecontahedron (gD)", ""),
         ('cC', "Chamfered Cube (cC)", ""),
+        ('pC', "Propellor Cube (pC)", "chiral"),
+        ('pkD', "Propellor Pentakis (pkD)", ""),
         ('dkt5daD', "Ornate (dkt5daD)", ""),
         ('kD', "Pentakis Dodecahedron (kD)", ""),
         ('tkD', "Truncated Pentakis (tkD)", ""),
@@ -509,8 +543,8 @@ if _IN_BLENDER:
                    ('SPHERE', "Spherized", "Project vertices to a sphere"),
                    ('RAW', "Raw", "Whatever the operators produce")],
             default='CANON')
-        iterations: IntProperty(name="Canonical Iterations", default=80,
-                                min=5, max=500)
+        iterations: IntProperty(name="Canonical Iterations", default=200,
+                                min=5, max=2000)
         kis_height: FloatProperty(name="Kis Height", default=0.25,
                                   min=-1.0, max=2.0)
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
@@ -587,6 +621,9 @@ if __name__ == "__main__":
                           ("cC", (32, 18)), ("eD", (60, 62)),
                           ("jC", (14, 12)), ("mC", (26, 48)),
                           ("bC", (48, 26)), ("kD", (32, 60)),
+                          ("pC", (32, 30)), ("pT", (16, 16)),
+                          ("pD", (80, 72)), ("dpC", (30, 32)),
+                          ("pdC", (30, 32)),
                           ("P6", (12, 8)), ("A5", (10, 12)),
                           ("dA5", (12, 10)), ("Y4", (5, 5))]:
             V, F = apply_conway(s)

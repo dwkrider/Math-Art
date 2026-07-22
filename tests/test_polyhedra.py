@@ -81,7 +81,8 @@ setup_render()
 # ---- Conway --------------------------------------------------------------
 for notation, (ev, ef) in [("tI", (60, 32)), ("sD", (60, 92)),
                            ("eC", (24, 26)), ("gD", (92, 60)),
-                           ("cC", (32, 18)), ("dkt5daD", (240, 122))]:
+                           ("cC", (32, 18)), ("dkt5daD", (240, 122)),
+                           ("pC", (32, 30)), ("pkD", (212, 240))]:
     clear()
     bpy.ops.mesh.conway_add(example='CUSTOM', notation=notation)
     obj = bpy.context.object
