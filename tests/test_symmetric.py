@@ -19,6 +19,16 @@ def clear():
         bpy.data.objects.remove(o, do_unlink=True)
 
 
+def set_full(obj, val):
+    """Toggle the modifier's Full Sculpture input."""
+    mod = obj.modifiers[0]
+    for it in mod.node_group.interface.items_tree:
+        if it.name == 'Full Sculpture' and it.in_out == 'INPUT':
+            mod[it.identifier] = val
+    obj.update_tag()
+    bpy.context.view_layer.update()
+
+
 # pure math: group orders and plane-family counts
 for kind, order in ss._ORDER.items():
     got = len(ss.group_rotations(kind))
@@ -66,14 +76,31 @@ print(f"[points] {len(sc_obj.data.vertices)}(60) "
 if not ok:
     fails.append('points')
 
-# default shell 0.04: radial extrusion doubles each copy's verts
+# design view: the motif's own copy is dropped (59 ghosts), shell
+# 0.04 doubles each copy's verts; ghost material on the copies
 deps = bpy.context.evaluated_depsgraph_get()
 ev = sc_obj.evaluated_get(deps).to_mesh()
-ok = len(ev.vertices) == 60 * mv * 2
-print(f"[gn shell] {len(ev.vertices)}({60 * mv * 2}) "
+ok = len(ev.vertices) == 59 * mv * 2 \
+    and any(m and m.name == 'SymSculpt Copies' for m in ev.materials)
+print(f"[design view] {len(ev.vertices)}({59 * mv * 2}) ghost mat "
       f"{'OK' if ok else 'FAIL'}")
 if not ok:
-    fails.append('gn-shell')
+    fails.append('design')
+
+# Full Sculpture: all 60 copies, motif's own material
+set_full(sc_obj, True)
+deps = bpy.context.evaluated_depsgraph_get()
+ev = sc_obj.evaluated_get(deps).to_mesh()
+ok = len(ev.vertices) == 60 * mv * 2 \
+    and not any(m and m.name == 'SymSculpt Copies'
+                for m in ev.materials)
+print(f"[full sculpture] {len(ev.vertices)}({60 * mv * 2}) "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('full')
+set_full(sc_obj, False)
+deps = bpy.context.evaluated_depsgraph_get()
+ev = sc_obj.evaluated_get(deps).to_mesh()
 
 # live: moving the motif object must move the replicated copies
 before = ev.vertices[0].co.copy()
@@ -95,6 +122,7 @@ for g, f, n in (('ICOSA', 'P2', 60), ('OCTA', 'P4', 24),
     mv = len([o for o in bpy.data.objects
               if o.name.startswith('SymSculpt Motif')
               ][0].data.vertices)
+    set_full(so, True)
     deps = bpy.context.evaluated_depsgraph_get()
     ev = so.evaluated_get(deps).to_mesh()
     ok = len(ev.vertices) == n * mv
@@ -113,6 +141,7 @@ for preset, fam, merged in (('TWISTED_RIVERS', 'P3', 0),
     mv = len([o for o in bpy.data.objects
               if o.name.startswith('SymSculpt Motif')
               ][0].data.vertices)
+    set_full(so, True)
     deps = bpy.context.evaluated_depsgraph_get()
     ev = so.evaluated_get(deps).to_mesh()
     want = 60 * mv - merged

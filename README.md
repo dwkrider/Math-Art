@@ -122,8 +122,13 @@ The modules:
    background), and a **SymSculpt** object whose Geometry Nodes
    modifier instances the motif under every rotation of the group.
    Edit the motif in edit mode — or grab/rotate the whole motif
-   object — and all 60 copies update **live**, exactly Hart's
-   workflow. The modifier's **Shell** input radially extrudes the
+   object — and all copies update **live**, exactly Hart's
+   workflow. In the default **design view** the motif is opaque
+   (orange) while the replicated copies are ghosted with a shared
+   translucent material (and the copy coinciding with the motif is
+   hidden), so the editable part always stands out; tick the
+   modifier's **Full Sculpture** checkbox to show all copies with
+   the motif's own material for export or final rendering. The modifier's **Shell** input radially extrudes the
    result by a fraction of its distance from the origin (Hart's ~4%
    extrusion, planarity-preserving) for a printable solid; **Weld**
    merges copies that meet exactly on the plane-intersection lines.

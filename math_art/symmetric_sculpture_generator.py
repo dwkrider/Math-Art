@@ -286,13 +286,54 @@ if _IN_BLENDER:
 
     _NG_NAME = "Math Art Symmetric Sculpture"
 
+    def _ghost_material():
+        """Shared translucent material for the replicated copies, so
+        the editable motif stands out from the full sculpture."""
+        name = "SymSculpt Copies"
+        mat = bpy.data.materials.get(name)
+        if mat is not None:
+            return mat
+        mat = bpy.data.materials.new(name)
+        rgba = (0.55, 0.66, 0.78, 0.16)
+        mat.diffuse_color = rgba          # solid-view translucency
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf is not None:
+            bsdf.inputs["Base Color"].default_value = (*rgba[:3], 1.0)
+            bsdf.inputs["Alpha"].default_value = rgba[3]
+            bsdf.inputs["Roughness"].default_value = 0.4
+        if hasattr(mat, 'surface_render_method'):    # EEVEE Next
+            mat.surface_render_method = 'BLENDED'
+        elif hasattr(mat, 'blend_method'):           # legacy EEVEE
+            mat.blend_method = 'BLEND'
+        return mat
+
+    def _motif_material():
+        name = "SymSculpt Motif"
+        mat = bpy.data.materials.get(name)
+        if mat is not None:
+            return mat
+        mat = bpy.data.materials.new(name)
+        rgb = (0.9, 0.45, 0.15)
+        mat.diffuse_color = (*rgb, 1.0)
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf is not None:
+            bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+            bsdf.inputs["Roughness"].default_value = 0.45
+        return mat
+
     def _node_group():
         """Get or build the replicator node group: instance the motif
-        object on the rotation points, realize, weld, and optionally
-        extrude radially from the origin (preserves planarity)."""
-        ng = bpy.data.node_groups.get(_NG_NAME)
-        if ng is not None:
-            return ng
+        object on the rotation points, ghost the copies (unless Full
+        Sculpture), realize, weld, and optionally extrude radially
+        from the origin (preserves planarity)."""
+        for ng in bpy.data.node_groups:
+            if (ng.name.startswith(_NG_NAME)
+                    and ng.type == 'GEOMETRY'
+                    and any(it.name == 'Copy Material'
+                            for it in ng.interface.items_tree)):
+                return ng
         ng = bpy.data.node_groups.new(_NG_NAME, 'GeometryNodeTree')
         face = ng.interface.new_socket
         face("Geometry", in_out='INPUT',
@@ -305,11 +346,34 @@ if _IN_BLENDER:
         s = face("Weld", in_out='INPUT', socket_type='NodeSocketFloat')
         s.default_value, s.min_value, s.max_value = 1e-4, 0.0, 0.1
         s.description = "Merge distance where copies meet exactly"
+        s = face("Full Sculpture", in_out='INPUT',
+                 socket_type='NodeSocketBool')
+        s.default_value = False
+        s.description = "Show all copies with the motif's own " \
+                        "material (for export/render); off = design " \
+                        "view with translucent copies and the " \
+                        "motif's own copy hidden"
+        s = face("Copy Material", in_out='INPUT',
+                 socket_type='NodeSocketMaterial')
+        s.default_value = _ghost_material()
+        s.description = "Material for the replicated copies in " \
+                        "design view"
         face("Geometry", in_out='OUTPUT',
              socket_type='NodeSocketGeometry')
 
         n = ng.nodes.new
         gi = n('NodeGroupInput')
+        # design view: drop the point whose copy coincides with the
+        # editable motif object (is_motif AND NOT Full Sculpture)
+        nam = n('GeometryNodeInputNamedAttribute')
+        nam.data_type = 'BOOLEAN'
+        nam.inputs['Name'].default_value = "is_motif"
+        bnot = n('FunctionNodeBooleanMath')
+        bnot.operation = 'NOT'
+        band = n('FunctionNodeBooleanMath')
+        band.operation = 'AND'
+        dg = n('GeometryNodeDeleteGeometry')
+        dg.domain = 'POINT'
         oi = n('GeometryNodeObjectInfo')
         oi.transform_space = 'RELATIVE'
         oi.inputs['As Instance'].default_value = True
@@ -317,6 +381,9 @@ if _IN_BLENDER:
         na.data_type = 'FLOAT_VECTOR'
         na.inputs['Name'].default_value = "sym_rot"
         iop = n('GeometryNodeInstanceOnPoints')
+        sm = n('GeometryNodeSetMaterial')
+        smw = n('GeometryNodeSwitch')     # ghosts vs real materials
+        smw.input_type = 'GEOMETRY'
         ri = n('GeometryNodeRealizeInstances')
         md = n('GeometryNodeMergeByDistance')
         pos = n('GeometryNodeInputPosition')
@@ -334,11 +401,21 @@ if _IN_BLENDER:
         go = n('NodeGroupOutput')
 
         ln = ng.links.new
-        ln(gi.outputs['Geometry'], iop.inputs['Points'])
+        ln(gi.outputs['Full Sculpture'], bnot.inputs[0])
+        ln(nam.outputs['Attribute'], band.inputs[0])
+        ln(bnot.outputs['Boolean'], band.inputs[1])
+        ln(gi.outputs['Geometry'], dg.inputs['Geometry'])
+        ln(band.outputs['Boolean'], dg.inputs['Selection'])
+        ln(dg.outputs['Geometry'], iop.inputs['Points'])
         ln(gi.outputs['Motif'], oi.inputs['Object'])
         ln(oi.outputs['Geometry'], iop.inputs['Instance'])
         ln(na.outputs['Attribute'], iop.inputs['Rotation'])
-        ln(iop.outputs['Instances'], ri.inputs['Geometry'])
+        ln(iop.outputs['Instances'], sm.inputs['Geometry'])
+        ln(gi.outputs['Copy Material'], sm.inputs['Material'])
+        ln(gi.outputs['Full Sculpture'], smw.inputs['Switch'])
+        ln(sm.outputs['Geometry'], smw.inputs['False'])
+        ln(iop.outputs['Instances'], smw.inputs['True'])
+        ln(smw.outputs['Output'], ri.inputs['Geometry'])
         ln(ri.outputs['Geometry'], md.inputs['Geometry'])
         ln(gi.outputs['Weld'], md.inputs['Distance'])
         ln(pos.outputs['Position'], off.inputs[0])
@@ -350,9 +427,10 @@ if _IN_BLENDER:
         ln(md.outputs['Geometry'], sw.inputs['False'])
         ln(ex.outputs['Mesh'], sw.inputs['True'])
         ln(sw.outputs['Output'], go.inputs['Geometry'])
-        for i, node in enumerate((gi, oi, na, iop, ri, md,
+        for i, node in enumerate((gi, nam, bnot, band, dg, oi,
+                                  na, iop, sm, smw, ri, md,
                                   pos, off, ex, cmp, sw, go)):
-            node.location = (200 * (i % 6), -220 * (i // 6))
+            node.location = (200 * (i % 6), -240 * (i // 6))
         return ng
 
     class OBJECT_OT_symmetric_sculpture_add(bpy.types.Operator):
@@ -465,6 +543,8 @@ if _IN_BLENDER:
                 (u[2], v[2], a[2], d * a[2]),
                 (0.0, 0.0, 0.0, 1.0)))
             motif.matrix_world = plane
+            if not motif.data.materials:
+                motif.data.materials.append(_motif_material())
 
             # guide pattern (stellation diagram) in the same plane
             segs = stellation_lines(kind, family, d, self.guide_extent)
@@ -494,6 +574,12 @@ if _IN_BLENDER:
             attr.data.foreach_set('vector', eulers)
             attr = pts.attributes.new("copy_index", 'INT', 'POINT')
             attr.data.foreach_set('value', list(range(len(rots))))
+            attr = pts.attributes.new("is_motif", 'BOOLEAN', 'POINT')
+            attr.data.foreach_set(
+                'value',
+                [all(abs(R[i][j] - (1.0 if i == j else 0.0)) < 1e-9
+                     for i in range(3) for j in range(3))
+                 for R in rots])
             obj = bpy.data.objects.new("SymSculpt", pts)
             context.collection.objects.link(obj)
 
