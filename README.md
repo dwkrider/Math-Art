@@ -53,10 +53,33 @@ The modules:
      poly_weave's **pattern language**: a program
      `[C|L][bV,bE,bF][:up,side,along…]steps[tl|tr|tb]` walked over the
      seed's flag triangles (steps `V E F` pivot, `v e f` cross, `R`
-     reverse, `-` stay). Presets include the classic weave (`FEV` — an
-     icosahedron gives 12 interwoven pentagons), vertex/face rings,
-     raised and wavy variants; barycentric start point and
-     intermediate-point offsets are free parameters.
+     reverse, `-` stay). The default `vfe` is the classic
+     straight-ahead weave (cube → 4 hexagons, icosahedron → 6
+     decagons); `FEV` gives corner circuits (icosahedron → 12
+     interwoven pentagons), plus vertex/face rings and raised/wavy
+     variants.
+5. **Sculptural forms**, after constructions on George W. Hart's
+   pages — five more modules:
+   - `math_art/polylinks_generator.py` — **regular polylinks**:
+     interlocked polygon frames on Platonic face planes (presets for
+     the classic 4-triangle, 6-square, 6/12-pentagon and 20-triangle
+     tangles; size/rotation/offset sliders control the linking).
+   - `math_art/platonic_twist_generator.py` — **Platonic twist
+     sculptures**: shrunken, separated faces reconnected by ribbons
+     with any number of half twists (exactly welded surface; optional
+     Solidify thickness).
+   - `math_art/fractal_polyhedron_generator.py` — **fractal
+     polyhedra**: recursive copies at vertices/faces/edges (vertex
+     mode at scale ½ on a tetrahedron = the Sierpinski tetrahedron).
+   - `math_art/symmetrohedron_generator.py` — **symmetrohedra** after
+     Kaplan & Hart: regular m·(axis order)-gons placed covariantly on
+     the T/O/I symmetry axes (inscribed in the unit sphere), convex
+     hull filling the gaps; per-class multiplier/size/phase sliders.
+   - `math_art/twisted_torus_generator.py` — **twisted torus**: an
+     n-gon revolving around a ring while twisting in exact 360/n
+     steps, giving gcd(n, steps) helical bands; corner-rounding slider.
+
+![Platonic twist](renders/form_platonic_twist.png)
 
 ![Weave](renders/poly_weave.png)
 
@@ -313,6 +336,18 @@ Rossiter ([source](https://github.com/antiprism/antiprism), GPL):
   nexorade work of O. Baverel et al.)
 - `poly_weave` — polyhedral weaves and the weave **pattern language**
   ([examples](https://www.antiprism.com/examples/200_programs/700_poly_weave/imagelist.html))
+
+**Sculptural forms** — after constructions by
+[George W. Hart](https://www.georgehart.com/) (see his
+[vibe-coded program examples](https://www.georgehart.com/vibecode/)):
+
+- Regular polylinks: G. Hart, *Orderly Tangles Revisited*
+  ([georgehart.com](https://www.georgehart.com/orderly-tangles-revisited/tangles.htm)),
+  building on Alan Holden's *Orderly Tangles* (1983)
+- Platonic twist sculptures, fractal polyhedra and the twisted torus:
+  after the generators on Hart's vibecode page
+- Symmetrohedra: C. S. Kaplan & G. W. Hart, *Symmetrohedra: Polyhedra
+  from Symmetric Placement of Regular Polygons*, Bridges 2001
 
 Thanks also to the Blender Foundation — everything here builds on the
 Blender Python API and the 4.2+ extensions platform.

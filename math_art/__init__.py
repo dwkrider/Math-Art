@@ -21,13 +21,21 @@ from . import zonohedra_generator
 from . import waterman_generator
 from . import rotegrity_generator
 from . import weave_generator
+from . import polylinks_generator
+from . import platonic_twist_generator
+from . import fractal_polyhedron_generator
+from . import symmetrohedron_generator
+from . import twisted_torus_generator
 
 import bpy
 
 _MODULES = (scherk_collins_generator, minimal_surface_toolkit,
             seifert_surface_generator, conway_operators,
             zonohedra_generator, waterman_generator,
-            rotegrity_generator, weave_generator)
+            rotegrity_generator, weave_generator,
+            polylinks_generator, platonic_twist_generator,
+            fractal_polyhedron_generator, symmetrohedron_generator,
+            twisted_torus_generator)
 
 
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
@@ -53,6 +61,13 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.operator("mesh.waterman_add", icon='MESH_ICOSPHERE')
         lay.operator("mesh.rotegrity_add", icon='SPHERE')
         lay.operator("mesh.poly_weave_add", icon='MOD_LATTICE')
+        lay.separator()
+        lay.operator("mesh.polylinks_add", icon='MESH_CIRCLE')
+        lay.operator("mesh.platonic_twist_add", icon='MOD_SCREW')
+        lay.operator("mesh.fractal_polyhedron_add",
+                     icon='OUTLINER_OB_POINTCLOUD')
+        lay.operator("mesh.symmetrohedron_add", icon='MESH_ICOSPHERE')
+        lay.operator("mesh.twisted_torus_add", icon='MESH_TORUS')
 
 
 def _menu_func(self, context):

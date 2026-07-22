@@ -33,6 +33,13 @@ OPS = [
     ("waterman", lambda: bpy.ops.mesh.waterman_add(root=20)),
     ("rotegrity", lambda: bpy.ops.mesh.rotegrity_add(kind='ICOSA', freq=1)),
     ("weave", lambda: bpy.ops.mesh.poly_weave_add(kind='CUBE')),
+    ("polylinks", lambda: bpy.ops.mesh.polylinks_add(preset='T4')),
+    ("platonic twist", lambda: bpy.ops.mesh.platonic_twist_add(
+        kind='CUBE')),
+    ("fractal", lambda: bpy.ops.mesh.fractal_polyhedron_add(
+        generations=3)),
+    ("symmetrohedron", lambda: bpy.ops.mesh.symmetrohedron_add()),
+    ("twisted torus", lambda: bpy.ops.mesh.twisted_torus_add()),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):
