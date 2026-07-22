@@ -63,6 +63,10 @@ OPS = [
         kind='MOORE3D', order=3)),
     ("oloid", lambda: bpy.ops.mesh.oloid_add(kind='OLOID')),
     ("oloid roller", lambda: bpy.ops.mesh.oloid_add(kind='ROLLER')),
+    ("prime knot", lambda: bpy.ops.curve.prime_knot_add(
+        knot='6_2', iters=60)),
+    ("prime knot tube", lambda: bpy.ops.curve.prime_knot_add(
+        knot='8_18', output='MESH', iters=60)),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):
@@ -73,7 +77,9 @@ for name, op in OPS:
         if hasattr(obj.data, 'vertices'):
             n_elem = len(obj.data.vertices)
         else:                              # curve output
-            n_elem = len(obj.data.splines[0].points)
+            sp = obj.data.splines[0]
+            n_elem = (len(sp.bezier_points) if sp.type == 'BEZIER'
+                      else len(sp.points))
         ok = result == {'FINISHED'} and obj is not None and n_elem > 0
     except Exception as e:
         ok = False

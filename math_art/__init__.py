@@ -33,6 +33,7 @@ from . import leonardo_style
 from . import sponge_generator
 from . import space_curve_generator
 from . import oloid_generator
+from . import prime_knot_generator
 
 import bpy
 
@@ -45,7 +46,7 @@ _MODULES = (scherk_collins_generator, minimal_surface_toolkit,
             twisted_torus_generator, polytope4d_generator,
             tangle_generator, symmetric_sculpture_generator,
             leonardo_style, sponge_generator, space_curve_generator,
-            oloid_generator)
+            oloid_generator, prime_knot_generator)
 
 
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
@@ -83,6 +84,7 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.operator("mesh.sponge_add", icon='MESH_CUBE')
         lay.operator("curve.space_filling_add", icon='CURVE_DATA')
         lay.operator("mesh.oloid_add", icon='MESH_CAPSULE')
+        lay.operator("curve.prime_knot_add", icon='FORCE_VORTEX')
         lay.separator()
         lay.operator_menu_enum("object.symmetric_sculpture_add",
                                "preset", text="Symmetric Sculpture",

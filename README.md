@@ -182,12 +182,26 @@ The modules:
     Wallace's *ruled Möbius strip* posts — including his true
     one-edged Möbius surface (χ = 0, single boundary loop,
     verified).
+13. **Prime knots** (`math_art/prime_knot_generator.py`) — **all
+    249 prime knots up to 10 crossings** (Rolfsen table) from the
+    minimum braid words of T. Gittings. The braid closure is laid
+    around a circle and relaxed with smoothing + self-repulsion
+    into a rounded rope presentation. Every braid word is verified
+    programmatically: single-component closure, and the Alexander
+    polynomial (computed via the reduced Burau representation)
+    matches Gittings' published value at t=10 for all 249 entries.
+    Output styles as in *Torus Knot +*: Bézier / Poly / NURBS curve
+    with bevel radius, or a mesh tube (seam-corrected
+    parallel-transport frames); custom braid words, mirror option,
+    relax controls.
 
 ![120-cell](renders/form_120cell.png)
 
 ![120-cell, Leonardo style](renders/form_120cell_leonardo.png)
 
 ![Symmetric sculpture](renders/form_symmetric_sculpture.png)
+
+![Knot 8_18](renders/form_knot_8_18.png)
 
 ![Tetra tangle, da Vinci style](renders/form_tangle_t5.png)
 
@@ -434,6 +448,16 @@ original software belongs to their authors.
 
 - [SeifertView](https://vanwijk.win.tue.nl/seifertview/) — J. J. van Wijk & A. M. Cohen, *Visualization of Seifert Surfaces*, IEEE TVCG 12(4), 2006 (braid-word input, wedding-cake layout, relaxed presentation)
 - H. Seifert, *Über das Geschlecht von Knoten*, Math. Annalen 110, 1934 (the algorithm itself)
+
+**Prime knots**
+
+- T. A. Gittings, *Minimum Braids: A Complete Invariant of Knots and
+  Links*, [arXiv:math/0401051](https://arxiv.org/abs/math/0401051)
+  (Table 1: the minimum braid words for all knots to 10 crossings)
+- D. Rolfsen, *Knots and Links*, Publish or Perish 1976 (the knot
+  numbering)
+- Relaxed rope presentation inspired by R. Scharein's
+  [KnotPlot](https://knotplot.com/)
 
 **Polyhedra** — after [Antiprism](https://www.antiprism.com) by Adrian
 Rossiter ([source](https://github.com/antiprism/antiprism), GPL):
