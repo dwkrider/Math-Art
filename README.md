@@ -82,6 +82,17 @@ The modules:
      midpoint and emits **one mesh object per helical band** (solid
      ribbons with sharp border edges) so bands can be coloured
      independently; at 1 the classic contiguous tube is produced.
+6. **4D polytopes** (`math_art/polytope4d_generator.py`) — all six
+   regular convex 4-polytopes (5-cell, tesseract, 16-cell, 24-cell,
+   600-cell, 120-cell) as strut-and-sphere edge frameworks. Edges are
+   **straight** (4D perspective; small distances approach a Schlegel
+   diagram) or **curved**: vertices on the 3-sphere, edges as
+   great-circle arcs, stereographically projected so every edge is a
+   circular arc. 4D rotation sliders (XW/YW/ZW/XY), and struts can
+   taper with the local projection scale. Vertex/edge counts verified
+   (120-cell: 600 vertices, 1200 edges).
+
+![120-cell](renders/form_120cell.png)
 
 ![Platonic twist](renders/form_platonic_twist.png)
 

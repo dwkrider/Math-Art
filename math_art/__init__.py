@@ -26,6 +26,7 @@ from . import platonic_twist_generator
 from . import fractal_polyhedron_generator
 from . import symmetrohedron_generator
 from . import twisted_torus_generator
+from . import polytope4d_generator
 
 import bpy
 
@@ -35,7 +36,7 @@ _MODULES = (scherk_collins_generator, minimal_surface_toolkit,
             rotegrity_generator, weave_generator,
             polylinks_generator, platonic_twist_generator,
             fractal_polyhedron_generator, symmetrohedron_generator,
-            twisted_torus_generator)
+            twisted_torus_generator, polytope4d_generator)
 
 
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
@@ -68,6 +69,7 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
                      icon='OUTLINER_OB_POINTCLOUD')
         lay.operator("mesh.symmetrohedron_add", icon='MESH_ICOSPHERE')
         lay.operator("mesh.twisted_torus_add", icon='MESH_TORUS')
+        lay.operator("mesh.polytope4d_add", icon='MESH_CUBE')
 
 
 def _menu_func(self, context):

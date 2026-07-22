@@ -15,8 +15,9 @@ import platonic_twist_generator as pt  # noqa: E402
 import fractal_polyhedron_generator as fp  # noqa: E402
 import symmetrohedron_generator as sy  # noqa: E402
 import twisted_torus_generator as tt  # noqa: E402
+import polytope4d_generator as p4  # noqa: E402
 
-for m in (pl, pt, fp, sy, tt):
+for m in (pl, pt, fp, sy, tt, p4):
     m.register()
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
@@ -202,6 +203,30 @@ print(f"[twist C1 joins] sharp_edges={sharp} nm={nm} "
       f"{'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('twist-c1')
+
+# ---- 4D polytopes -------------------------------------------------------
+# each strut and sphere is a closed manifold component: total chi =
+# 2 * (edges + vertices) with spheres on
+for kind, style, (env, ene) in (('CELL8', 'CURVED', (16, 32)),
+                                ('CELL24', 'STRAIGHT', (24, 96)),
+                                ('CELL600', 'CURVED', (120, 720))):
+    clear()
+    bpy.ops.mesh.polytope4d_add(kind=kind, style=style, arc_segments=6,
+                                sides=5)
+    obj = bpy.context.object
+    nv, nf, nb, nm, chi = stats(obj)
+    ok = nb == 0 and nm == 0 and chi == 2 * (env + ene)
+    print(f"[4d {kind} {style}] chi={chi} (exp {2 * (env + ene)}) "
+          f"{'OK' if ok else 'FAIL'}")
+    if not ok:
+        fails.append(f'4d-{kind}')
+clear()
+bpy.ops.mesh.polytope4d_add(kind='CELL8', style='CURVED')
+render(os.path.join(OUT, 'form_tesseract.png'))
+clear()
+bpy.ops.mesh.polytope4d_add(kind='CELL120', style='CURVED',
+                            arc_segments=8, sides=5, radius=0.02)
+render(os.path.join(OUT, 'form_120cell.png'))
 
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")
 print("RENDERS ->", OUT)
