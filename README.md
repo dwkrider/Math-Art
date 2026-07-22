@@ -77,7 +77,11 @@ The modules:
      hull filling the gaps; per-class multiplier/size/phase sliders.
    - `math_art/twisted_torus_generator.py` — **twisted torus**: an
      n-gon revolving around a ring while twisting in exact 360/n
-     steps, giving gcd(n, steps) helical bands; corner-rounding slider.
+     steps, giving gcd(n, steps) helical bands; corner-rounding
+     slider. *Triangle Shrink* < 1 shrinks each side about its
+     midpoint and emits **one mesh object per helical band** (solid
+     ribbons with sharp border edges) so bands can be coloured
+     independently; at 1 the classic contiguous tube is produced.
 
 ![Platonic twist](renders/form_platonic_twist.png)
 

@@ -233,9 +233,15 @@ def build_platonic_twist(kind='CUBE', shrink=0.55, push=0.35,
         rows.append(end)
         for r in range(band_rows):
             for i2 in range(ncols - 1):
-                faces.append([rows[r][i2], rows[r][i2 + 1],
-                              rows[r + 1][i2 + 1], rows[r + 1][i2]])
-    return verts, faces, len(done)
+                # wound opposite to the plate fans so the shared start
+                # edge is traversed in the opposite direction (consistent
+                # orientation across the junction)
+                faces.append([rows[r][i2 + 1], rows[r][i2],
+                              rows[r + 1][i2], rows[r + 1][i2 + 1]])
+    rim = set()
+    for ids in face_edge_vids.values():
+        rim.update(ids)
+    return verts, faces, len(done), rim
 
 
 try:
@@ -283,22 +289,36 @@ if _IN_BLENDER:
                              max=100.0)
 
         def execute(self, context):
-            verts, faces, ne = build_platonic_twist(
+            verts, faces, ne, rim = build_platonic_twist(
                 self.kind, self.shrink, self.push, self.half_twists,
                 self.band_rows, self.edge_cols, self.bulge, self.scale)
             me = bpy.data.meshes.new("PlatonicTwist")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
+            import bmesh
+            bm = bmesh.new()
+            bm.from_mesh(me)
+            bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+            bm.to_mesh(me)
+            bm.free()
             me.polygons.foreach_set('use_smooth',
                                     [True] * len(me.polygons))
+            # plate-ribbon junctions are physical creases: mark them
+            # sharp so the flat plates are not shaded with ribbon normals
+            sharp = [(e.vertices[0] in rim and e.vertices[1] in rim)
+                     for e in me.edges]
+            me.edges.foreach_set('use_edge_sharp', sharp)
             me.update()
             obj = bpy.data.objects.new("PlatonicTwist", me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
             if self.thickness > 0:
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
+                # complex mode handles the Moebius-like (non-orientable)
+                # surfaces made by odd numbers of half twists
+                mod.solidify_mode = 'NON_MANIFOLD'
+                mod.nonmanifold_thickness_mode = 'FIXED'
                 mod.thickness = self.thickness
-                mod.offset = 0.0
             for o in context.selected_objects:
                 o.select_set(False)
             obj.select_set(True)

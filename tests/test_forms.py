@@ -160,5 +160,36 @@ clear()
 bpy.ops.mesh.twisted_torus_add(n=3, twist_steps=1, rounding=0.15)
 render(os.path.join(OUT, 'form_twisted_torus.png'))
 
+# ---- twisted torus sheets (Triangle Shrink < 1): one object per band ----
+for n, tw, shrink, nobjs in ((3, 1, 0.8, 1), (6, 2, 0.7, 2),
+                             (4, 0, 0.75, 4)):
+    clear()
+    bpy.ops.mesh.twisted_torus_add(n=n, twist_steps=tw, shrink=shrink,
+                                   segments=96)
+    objs = [o for o in bpy.data.objects if o.type == 'MESH']
+    ok = len(objs) == nobjs
+    for o in objs:
+        nv, nf, nb, nm, chi = stats(o)
+        ok = ok and nb == 0 and nm == 0 and chi == 0
+        sharp = sum(1 for e in o.data.edges if e.use_edge_sharp)
+        ok = ok and sharp > 0
+    print(f"[torus sheets n={n} tw={tw}] objects={len(objs)}({nobjs}) "
+          f"{'OK' if ok else 'FAIL'}")
+    if not ok:
+        fails.append(f'sheets-{n}-{tw}')
+clear()
+bpy.ops.mesh.twisted_torus_add(n=3, twist_steps=1, shrink=0.75)
+render(os.path.join(OUT, 'form_torus_sheets.png'))
+
+# ---- platonic twist sharp rims ------------------------------------------
+clear()
+bpy.ops.mesh.platonic_twist_add(kind='CUBE', thickness=0.0)
+obj = bpy.context.object
+sharp = sum(1 for e in obj.data.edges if e.use_edge_sharp)
+ok = sharp > 0
+print(f"[twist sharp rims] sharp_edges={sharp} {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('twist-sharp')
+
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")
 print("RENDERS ->", OUT)

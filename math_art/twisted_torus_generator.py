@@ -23,6 +23,102 @@ import math
 from math import cos, sin, pi, gcd
 
 
+def _profile_points(n, minor, rounding, m):
+    """m points around the (optionally rounded) n-gon, plus outward
+    2D normals per point."""
+    pts = []
+    for i in range(m):
+        t = i / m * n
+        k = int(t)
+        f = t - k
+        a0 = 2 * pi * k / n
+        a1 = 2 * pi * (k + 1) / n
+        p0 = (cos(a0), sin(a0))
+        p1 = (cos(a1), sin(a1))
+        edge = (p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f)
+        ang = a0 + (a1 - a0) * f
+        circ = (cos(ang), sin(ang))
+        r = rounding
+        pts.append(((edge[0] * (1 - r) + circ[0] * r) * minor,
+                    (edge[1] * (1 - r) + circ[1] * r) * minor))
+    nrms = []
+    for i in range(m):
+        a = pts[i - 1]
+        b = pts[(i + 1) % m]
+        tx, ty = b[0] - a[0], b[1] - a[1]
+        l = math.sqrt(tx * tx + ty * ty) or 1.0
+        nrms.append((ty / l, -tx / l))     # outward for CCW profile
+    return pts, nrms
+
+
+def build_twisted_torus_sheets(n=3, major=1.6, minor=0.55, twist_steps=1,
+                               segments=192, rounding=0.0, profile_res=2,
+                               shrink=0.8, sheet_thickness=0.06,
+                               scale=1.0):
+    """Each polygon side, shrunk about its midpoint, sweeps a solid
+    ribbon; ribbons chain across the twist seam into gcd(n, steps)
+    closed bands. Returns a list of (verts, faces) per band."""
+    pr = max(1, profile_res)
+    m = n * pr
+    pts, nrms = _profile_points(n, minor, rounding, m)
+    # per-side samples (pr+1 points, endpoints included), shrunk
+    sides = []
+    for k in range(n):
+        idx = [k * pr + i for i in range(pr)] + [((k + 1) * pr) % m]
+        P = [pts[i] for i in idx]
+        N = [nrms[i] for i in idx]
+        mid = (sum(p[0] for p in P) / len(P), sum(p[1] for p in P) / len(P))
+        P = [(mid[0] + (p[0] - mid[0]) * shrink,
+              mid[1] + (p[1] - mid[1]) * shrink) for p in P]
+        sides.append((P, N))
+    # a band is ONE side swept continuously; it closes after
+    # n/gcd(n, twist) revolutions, when the accumulated twist is a
+    # whole number of turns. gcd(n, twist) distinct bands result.
+    t_eff = twist_steps % n
+    g = gcd(n, t_eff) if t_eff else n
+    per = n // g if t_eff else 1
+    th = sheet_thickness / 2.0
+    out = []
+    for b in range(g if t_eff else n):
+        P, N = sides[b]
+        verts = []
+        faces = []
+        corners = set()    # ribbon border verts (sharp edges)
+        rows = []          # each row: [out ids], [in ids]
+        R = per * segments
+        for ridx in range(R):
+            sweep = 2 * pi * ridx / segments
+            tw = 2 * pi * twist_steps / n * ridx / segments
+            cu, su = cos(sweep), sin(sweep)
+            c2, s2 = cos(tw), sin(tw)
+            ro = []
+            ri = []
+            for (px, py), (nx2, ny2) in zip(P, N):
+                for sign, acc in ((1, ro), (-1, ri)):
+                    qx = px + nx2 * th * sign
+                    qy = py + ny2 * th * sign
+                    x = qx * c2 - qy * s2
+                    y = qx * s2 + qy * c2
+                    verts.append((((major + x) * cu) * scale,
+                                  ((major + x) * su) * scale,
+                                  y * scale))
+                    acc.append(len(verts) - 1)
+            corners.update((ro[0], ro[-1], ri[0], ri[-1]))
+            rows.append((ro, ri))
+        w = len(sides[0][0])
+        for r in range(R):
+            r2 = (r + 1) % R
+            ro, ri = rows[r]
+            qo, qi = rows[r2]
+            for i in range(w - 1):
+                faces.append([ro[i], ro[i + 1], qo[i + 1], qo[i]])
+                faces.append([qi[i], qi[i + 1], ri[i + 1], ri[i]])
+            faces.append([ro[0], qo[0], qi[0], ri[0]])
+            faces.append([qo[w - 1], ro[w - 1], ri[w - 1], qi[w - 1]])
+        out.append((verts, faces, corners))
+    return out
+
+
 def build_twisted_torus(n=3, major=1.6, minor=0.55, twist_steps=1,
                         segments=192, rounding=0.0, profile_res=1,
                         scale=1.0):
@@ -95,6 +191,15 @@ if _IN_BLENDER:
             name="Twist Steps", default=1, min=-8, max=8,
             description="Total twist in units of 360/n degrees; "
                         "gcd(n, steps) helical bands result")
+        shrink: FloatProperty(
+            name="Triangle Shrink", default=1.0, min=0.3, max=1.0,
+            description="Shrink of each polygon side about its midpoint. "
+                        "1 = sides share edges (one contiguous mesh); "
+                        "less than 1 separates the swept sheets into one "
+                        "mesh object per helical band")
+        sheet_thickness: FloatProperty(
+            name="Sheet Thickness", default=0.06, min=0.005, max=0.5,
+            description="Thickness of the separated sheets (shrink < 1)")
         major: FloatProperty(name="Ring Radius", default=1.6,
                              min=0.2, max=20.0)
         minor: FloatProperty(name="Profile Radius", default=0.55,
@@ -110,32 +215,78 @@ if _IN_BLENDER:
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
-        def execute(self, context):
-            verts, faces, nb = build_twisted_torus(
-                self.n, self.major, self.minor, self.twist_steps,
-                self.segments, self.rounding, self.profile_res,
-                self.scale)
-            me = bpy.data.meshes.new("TwistedTorus")
+        @staticmethod
+        def _make_mesh(name, verts, faces, sharp_verts):
+            """Mesh with smooth polygons; edges whose both ends are in
+            sharp_verts are marked sharp so normals do not interpolate
+            across sheet joins."""
+            me = bpy.data.meshes.new(name)
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
             me.polygons.foreach_set('use_smooth',
                                     [True] * len(me.polygons))
+            if sharp_verts:
+                sharp = [(e.vertices[0] in sharp_verts
+                          and e.vertices[1] in sharp_verts)
+                         for e in me.edges]
+                me.edges.foreach_set('use_edge_sharp', sharp)
             me.update()
-            obj = bpy.data.objects.new("TwistedTorus", me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
+            return me
+
+        def execute(self, context):
             for o in context.selected_objects:
                 o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            self.report({'INFO'}, f"{nb} helical band(s)")
+            cursor = context.scene.cursor.location
+            if self.shrink >= 0.999:
+                verts, faces, nb = build_twisted_torus(
+                    self.n, self.major, self.minor, self.twist_steps,
+                    self.segments, self.rounding, self.profile_res,
+                    self.scale)
+                # corner verts: profile index multiple of profile_res
+                m = self.n * max(1, self.profile_res)
+                pr = max(1, self.profile_res)
+                sharp = set()
+                for s in range(self.segments):
+                    for k in range(self.n):
+                        sharp.add(s * m + k * pr)
+                me = self._make_mesh("TwistedTorus", verts, faces, sharp)
+                obj = bpy.data.objects.new("TwistedTorus", me)
+                context.collection.objects.link(obj)
+                obj.location = cursor
+                obj.select_set(True)
+                context.view_layer.objects.active = obj
+                self.report({'INFO'},
+                            f"{nb} helical band(s), contiguous mesh")
+            else:
+                bands = build_twisted_torus_sheets(
+                    self.n, self.major, self.minor, self.twist_steps,
+                    self.segments, self.rounding,
+                    max(2, self.profile_res), self.shrink,
+                    self.sheet_thickness, self.scale)
+                first = None
+                for bi, (verts, faces, corners) in enumerate(bands):
+                    me = self._make_mesh(f"TwistedTorusBand{bi + 1}",
+                                         verts, faces, corners)
+                    obj = bpy.data.objects.new(
+                        f"TwistedTorusBand{bi + 1}", me)
+                    context.collection.objects.link(obj)
+                    obj.location = cursor
+                    obj.select_set(True)
+                    if first is None:
+                        first = obj
+                context.view_layer.objects.active = first
+                self.report({'INFO'},
+                            f"{len(bands)} separate band mesh(es)")
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for k in ('n', 'twist_steps', 'major', 'minor', 'rounding',
-                      'segments', 'profile_res', 'scale'):
+            for k in ('n', 'twist_steps', 'shrink', 'sheet_thickness',
+                      'major', 'minor', 'rounding', 'segments',
+                      'profile_res', 'scale'):
+                if k == 'sheet_thickness' and self.shrink >= 0.999:
+                    continue
                 lay.prop(self, k)
 
     def _menu_func(self, context):
