@@ -181,5 +181,3 @@ def unregister():
         bpy.utils.unregister_class(c)
     for m in reversed(_MODULES):
         m.unregister()
-    for m in reversed(_MODULES):
-        m.unregister()
