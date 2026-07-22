@@ -214,13 +214,17 @@ if _IN_BLENDER:
             description="Points per polygon side")
         coloring: EnumProperty(
             name="Coloring",
-            items=[('BAND', "Per Band",
-                    "One material per helical band -- works in both the "
-                    "contiguous mesh and separated sheets (view with "
-                    "Material Preview or Solid shading set to Material "
-                    "colour)"),
+            items=[('STRIP', "Per Strip",
+                    "One material per visible helical strip (n colours). "
+                    "Strips that spiral into each other change colour "
+                    "where they cross the seam ring"),
+                   ('BAND', "Per Band",
+                    "One material per topologically connected band -- "
+                    "gcd(sides, twist) colours; when sides and twist are "
+                    "coprime every strip joins into a single band and "
+                    "the whole torus is one colour"),
                    ('NONE', "None", "No materials")],
-            default='BAND')
+            default='STRIP')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -230,8 +234,8 @@ if _IN_BLENDER:
                     (0.91, 0.56, 0.71), (0.55, 0.60, 0.29)]
 
         @classmethod
-        def _material_for(cls, i):
-            name = f"Torus Band {i + 1}"
+        def _material_for(cls, i, kind="Band"):
+            name = f"Torus {kind} {i + 1}"
             mat = bpy.data.materials.get(name)
             if mat is None:
                 mat = bpy.data.materials.new(name)
@@ -284,13 +288,22 @@ if _IN_BLENDER:
                 # across the twist seam by construction
                 t_eff = self.twist_steps % self.n
                 g = gcd(self.n, t_eff) if t_eff else self.n
-                face_band = [((i // pr) % g)
-                             for s in range(self.segments)
-                             for i in range(m)]
+                face_strip = [(i // pr)
+                              for s in range(self.segments)
+                              for i in range(m)]
+                face_band = [fs % g for fs in face_strip]
                 if len(me.polygons) == len(face_band):
                     attr = me.attributes.new("band_index", 'INT', 'FACE')
                     attr.data.foreach_set('value', face_band)
-                    if self.coloring == 'BAND':
+                    attr = me.attributes.new("strip_index", 'INT', 'FACE')
+                    attr.data.foreach_set('value', face_strip)
+                    if self.coloring == 'STRIP':
+                        for i in range(self.n):
+                            me.materials.append(
+                                self._material_for(i, "Strip"))
+                        me.polygons.foreach_set('material_index',
+                                                face_strip)
+                    elif self.coloring == 'BAND':
                         for i in range(g):
                             me.materials.append(self._material_for(i))
                         me.polygons.foreach_set('material_index',
@@ -308,13 +321,36 @@ if _IN_BLENDER:
                     self.segments, self.rounding,
                     max(2, self.profile_res), self.shrink,
                     self.sheet_thickness, self.scale)
+                t_eff = self.twist_steps % self.n
+                g = gcd(self.n, t_eff) if t_eff else self.n
+                per = self.n // g if t_eff else 1
+                w = max(2, self.profile_res) + 1
                 first = None
                 for bi, (verts, faces, corners) in enumerate(bands):
                     me = self._make_mesh(f"TwistedTorusBand{bi + 1}",
                                          verts, faces, corners)
+                    # revolution index per face ring; the ribbon sits in
+                    # the angular slot of strip (bi + rev * twist) mod n
+                    face_strip = [(bi + (r // self.segments) * t_eff)
+                                  % self.n
+                                  for r in range(per * self.segments)
+                                  for _ in range(2 * w)]
                     attr = me.attributes.new("band_index", 'INT', 'FACE')
                     attr.data.foreach_set('value',
                                           [bi] * len(me.polygons))
+                    if len(face_strip) == len(me.polygons):
+                        attr = me.attributes.new("strip_index", 'INT',
+                                                 'FACE')
+                        attr.data.foreach_set('value', face_strip)
+                        if self.coloring == 'STRIP':
+                            slots = sorted(set(face_strip))
+                            for si in slots:
+                                me.materials.append(
+                                    self._material_for(si, "Strip"))
+                            lut = {si: k for k, si in enumerate(slots)}
+                            me.polygons.foreach_set(
+                                'material_index',
+                                [lut[fs] for fs in face_strip])
                     if self.coloring == 'BAND':
                         me.materials.append(self._material_for(bi))
                     obj = bpy.data.objects.new(
