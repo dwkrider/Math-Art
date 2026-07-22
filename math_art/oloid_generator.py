@@ -126,6 +126,33 @@ def build_ruled(segments=96, separation=1.0, incline=0.0, phase=0.0,
     return m.verts, m.faces
 
 
+def build_antioloid(segments=128, phase=0.0, scale=1.0):
+    """The anti-oloid (cf. the Matter Collection piece): the ruled
+    band between the same two circles as the oloid -- perpendicular
+    planes, each centre on the other's circumference -- but with
+    rulings connecting points travelling around the FULL circles in
+    step, sweeping through the interior. Unlike a Mobius strip it is
+    two-sided, and unlike the oloid it is not developable."""
+    m = _Mesh()
+    n = segments
+
+    def A(t):
+        return (sin(t) * scale, (-0.5 - cos(t)) * scale, 0.0)
+
+    def B(t):
+        return (0.0, (0.5 + cos(t)) * scale, sin(t) * scale)
+
+    # the canonical anti-oloid pairs each point with the half-turn
+    # opposite point on the other circle (phase 0 here); other phases
+    # give crossed variants
+    p = 2 * pi * phase + pi
+    for i in range(n):
+        t0 = 2 * pi * i / n
+        t1 = 2 * pi * (i + 1) / n
+        m.quad(A(t0), A(t1), B(t1 + p), B(t0 + p))
+    return m.verts, m.faces
+
+
 def build_mobius(segments=192, scale=1.0):
     """Kit Wallace's true one-edged ruled Mobius strip: rulings
     f(x) -> f(x + 1/2) along a double-loop edge curve."""
@@ -173,6 +200,11 @@ if _IN_BLENDER:
                    ('ROLLER', "Two-Circle Roller",
                     "Circle centres sqrt(2) apart: rolls with its "
                     "centre of mass at constant height"),
+                   ('ANTIOLOID', "Anti-Oloid",
+                    "Ruled band between the oloid's two circles, "
+                    "sweeping through the interior: two-sided and "
+                    "non-developable (after the Matter Collection "
+                    "piece)"),
                    ('RULED', "Ruled Circle Strip",
                     "Straight rulings between two perpendicular "
                     "circles (after Kit Wallace); separation, "
@@ -200,6 +232,9 @@ if _IN_BLENDER:
         def execute(self, context):
             if self.kind == 'OLOID':
                 verts, faces = build_oloid(self.segments, self.scale)
+            elif self.kind == 'ANTIOLOID':
+                verts, faces = build_antioloid(self.segments,
+                                               self.phase, self.scale)
             elif self.kind == 'RULED':
                 verts, faces = build_ruled(self.segments,
                                            self.separation,
@@ -252,6 +287,8 @@ if _IN_BLENDER:
             if self.kind == 'RULED':
                 for k in ('separation', 'incline', 'phase'):
                     lay.prop(self, k)
+            elif self.kind == 'ANTIOLOID':
+                lay.prop(self, 'phase')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
