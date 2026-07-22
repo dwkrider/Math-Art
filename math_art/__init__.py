@@ -69,6 +69,7 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         lay.operator("mesh.minimal_knot_span_add", icon='MESH_TORUS')
         lay.operator("object.minimal_span",
                      icon='OUTLINER_OB_SURFACE')
+        lay.operator("mesh.seifert_surface_add", icon='MOD_SIMPLIFY')
 
 
 class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
@@ -105,7 +106,6 @@ class VIEW3D_MT_math_art_knots(bpy.types.Menu):
     def draw(self, context):
         lay = self.layout
         lay.operator("curve.prime_knot_add", icon='FORCE_VORTEX')
-        lay.operator("mesh.seifert_surface_add", icon='MOD_SIMPLIFY')
         lay.operator_menu_enum("curve.attractor_add", "preset",
                                text="Strange Attractor",
                                icon='RNDCURVE')
