@@ -48,6 +48,12 @@ OPS = [
         kind='T5', style='EDGES')),
     ("zonohedron leonardo", lambda: bpy.ops.mesh.zonohedron_add(
         kind='TRIACONTA', style='LEONARDO')),
+    ("conway leonardo", lambda: bpy.ops.mesh.conway_add(
+        example='CUSTOM', notation='I', style='LEONARDO')),
+    ("waterman leonardo", lambda: bpy.ops.mesh.waterman_add(
+        root=20, style='LEONARDO')),
+    ("polytope leonardo", lambda: bpy.ops.mesh.polytope4d_add(
+        kind='CELL8', render='LEONARDO')),
     ("leonardo modifier",
      lambda: (bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1),
               bpy.ops.object.leonardo_add())[-1]),

@@ -37,7 +37,7 @@ def fcc_points(root):
 try:
     import bpy
     import bmesh
-    from bpy.props import IntProperty, FloatProperty
+    from bpy.props import IntProperty, FloatProperty, EnumProperty
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -55,6 +55,24 @@ if _IN_BLENDER:
         root: IntProperty(
             name="Root", default=10, min=1, max=1000,
             description="Radius^2 / 2 of the ball of FCC points")
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "Plain closed polyhedron"),
+                   ('LEONARDO', "Leonardo (da Vinci)",
+                    "Open-faced panels via the shared Leonardo Style "
+                    "Geometry Nodes modifier (Border and Thickness "
+                    "stay editable on the modifier)"),
+                   ('WIRE', "Wireframe",
+                    "Struts along the edges (Wireframe modifier)")],
+            default='SOLID')
+        border: FloatProperty(
+            name="Border", default=0.3, min=0.02, max=0.95,
+            description="Leonardo face frame width (fraction of "
+                        "the face)")
+        thickness: FloatProperty(
+            name="Thickness", default=0.05, min=0.001, max=1.0,
+            description="Panel / strut thickness for the Leonardo "
+                        "and Wireframe styles")
         scale: FloatProperty(name="Scale", default=1.0, min=0.001,
                              max=100.0)
 
@@ -84,6 +102,17 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
+            if self.style == 'LEONARDO':
+                try:
+                    from . import leonardo_style
+                except ImportError:
+                    import leonardo_style
+                leonardo_style.add_modifier(obj, self.border,
+                                            self.thickness)
+            elif self.style == 'WIRE':
+                mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
+                mod.thickness = self.thickness
+                mod.use_even_offset = False
             self.report({'INFO'},
                         f"W{self.root}: V={len(me.vertices)} "
                         f"F={len(me.polygons)}")
@@ -93,6 +122,11 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'root')
+            lay.prop(self, 'style')
+            if self.style == 'LEONARDO':
+                lay.prop(self, 'border')
+            if self.style != 'SOLID':
+                lay.prop(self, 'thickness')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):

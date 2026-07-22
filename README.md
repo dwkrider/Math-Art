@@ -37,7 +37,8 @@ The modules:
      d a k g c r + t j e o b m s n z, and Hart-style
      **canonicalization** (edges tangent to the sphere). Verified
      against 17 textbook polyhedra (snub cube 24/38, truncated
-     icosahedron 60/32, …).
+     icosahedron 60/32, …). Styles: Solid, Leonardo (da Vinci)
+     open-faced panels, or Wireframe.
    - `math_art/zonohedra_generator.py` — **zonohedra** from vector stars
      (rhombic dodeca/triaconta/enneacontahedron, random stars), plus
      **polar zonohedra** and Russell Towle's **rhombic
@@ -48,10 +49,12 @@ The modules:
      **Wireframe** edge struts.
    - `math_art/waterman_generator.py` — **Waterman polyhedra** (hulls of
      FCC lattice points; W1 = cuboctahedron, high roots approach a
-     sphere).
+     sphere). Styles: Solid, Leonardo (da Vinci), or Wireframe.
    - `math_art/rotegrity_generator.py` — **rotegrity / nexorade** strap
      spheres over Platonic and geodesic seeds (twist + extension
-     sliders).
+     sliders). Coloring **by strap length class** (as in physical
+     rotegrity kits; default), per strap, or none — with
+     `strap_index` / `length_class` face attributes.
    - `math_art/weave_generator.py` — **woven-strand models** driven by
      poly_weave's **pattern language**: a program
      `[C|L][bV,bE,bF][:up,side,along…]steps[tl|tr|tb]` walked over the
@@ -60,7 +63,8 @@ The modules:
      straight-ahead weave (cube → 4 hexagons, icosahedron → 6
      decagons); `FEV` gives corner circuits (icosahedron → 12
      interwoven pentagons), plus vertex/face rings and raised/wavy
-     variants.
+     variants. Strands are coloured individually by default
+     (`strand_index` face attribute; Coloring = None to disable).
 5. **Sculptural forms**, after constructions on George W. Hart's
    pages — five more modules:
    - `math_art/polylinks_generator.py` — **regular polylinks**:
@@ -109,7 +113,12 @@ The modules:
    great-circle arcs, stereographically projected so every edge is a
    circular arc. 4D rotation sliders (XW/YW/ZW/XY), and struts can
    taper with the local projection scale. Vertex/edge counts verified
-   (120-cell: 600 vertices, 1200 edges).
+   (120-cell: 600 vertices, 1200 edges). A **Leonardo (da Vinci)**
+   style renders one flat open panel per 2D face of the polytope
+   instead of edge struts — projected faces are planar even in
+   curved mode, because stereographic projection maps the circle
+   through a face's vertices to a circle in space (face counts
+   verified: 10/24/32/96/720/1200).
 8. **Symmetric Sculpture designer**
    (`math_art/symmetric_sculpture_generator.py`) — an interactive
    Blender adaptation of George Hart's sculpture design software
@@ -153,6 +162,8 @@ The modules:
    uses the same shared node group.
 
 ![120-cell](renders/form_120cell.png)
+
+![120-cell, Leonardo style](renders/form_120cell_leonardo.png)
 
 ![Symmetric sculpture](renders/form_symmetric_sculpture.png)
 

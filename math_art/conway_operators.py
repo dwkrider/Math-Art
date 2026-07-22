@@ -559,6 +559,24 @@ if _IN_BLENDER:
             name="Spherical UV Map", default=True,
             description="Smooth equirectangular UVs projected from the "
                         "centre (seam-corrected per face)")
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "Plain closed polyhedron"),
+                   ('LEONARDO', "Leonardo (da Vinci)",
+                    "Open-faced panels via the shared Leonardo Style "
+                    "Geometry Nodes modifier (Border and Thickness "
+                    "stay editable on the modifier)"),
+                   ('WIRE', "Wireframe",
+                    "Struts along the edges (Wireframe modifier)")],
+            default='SOLID')
+        border: FloatProperty(
+            name="Border", default=0.3, min=0.02, max=0.95,
+            description="Leonardo face frame width (fraction of "
+                        "the face)")
+        thickness: FloatProperty(
+            name="Thickness", default=0.05, min=0.001, max=1.0,
+            description="Panel / strut thickness for the Leonardo "
+                        "and Wireframe styles")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         # Hart-style palette per face size; golden-angle HSV fallback
@@ -651,6 +669,17 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
+            if self.style == 'LEONARDO':
+                try:
+                    from . import leonardo_style
+                except ImportError:
+                    import leonardo_style
+                leonardo_style.add_modifier(obj, self.border,
+                                            self.thickness)
+            elif self.style == 'WIRE':
+                mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
+                mod.thickness = self.thickness
+                mod.use_even_offset = False
             self.report({'INFO'},
                         f"{self.notation}: V={len(V)} F={len(F)}")
             return {'FINISHED'}
@@ -666,6 +695,11 @@ if _IN_BLENDER:
             lay.prop(self, 'kis_height')
             lay.prop(self, 'coloring')
             lay.prop(self, 'uv_map')
+            lay.prop(self, 'style')
+            if self.style == 'LEONARDO':
+                lay.prop(self, 'border')
+            if self.style != 'SOLID':
+                lay.prop(self, 'thickness')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):

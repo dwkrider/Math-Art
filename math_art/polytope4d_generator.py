@@ -108,6 +108,75 @@ def polytope_vertices(kind):
     return out
 
 
+def _in_flat(u, v, w, x, tol=1e-6):
+    """Is x in the 2-flat of R^4 through u, v, w?"""
+    a = [v[k] - u[k] for k in range(4)]
+    b = [w[k] - u[k] for k in range(4)]
+    c = [x[k] - u[k] for k in range(4)]
+    # Gram-Schmidt: remove span(a, b) from c
+    la = math.sqrt(sum(t * t for t in a)) or 1.0
+    a = [t / la for t in a]
+    d = sum(b[k] * a[k] for k in range(4))
+    b = [b[k] - d * a[k] for k in range(4)]
+    lb = math.sqrt(sum(t * t for t in b)) or 1.0
+    b = [t / lb for t in b]
+    for e in (a, b):
+        d = sum(c[k] * e[k] for k in range(4))
+        c = [c[k] - d * e[k] for k in range(4)]
+    return math.sqrt(sum(t * t for t in c)) < tol
+
+
+_FACE_CACHE = {}
+
+# every regular 4-polytope has one face type; filtering on its size
+# rejects other planar edge cycles (equators, vertex figures)
+_FACE_SIZE = {'CELL5': 3, 'CELL8': 4, 'CELL16': 3, 'CELL24': 3,
+              'CELL120': 5, 'CELL600': 3}
+
+
+def polytope_faces(kind, V, E):
+    """The 2D faces (polygon vertex cycles) of the polytope: walks
+    along edges staying inside a common 2-flat."""
+    if kind in _FACE_CACHE:
+        return _FACE_CACHE[kind]
+    want = _FACE_SIZE[kind]
+    from collections import defaultdict
+    adj = defaultdict(set)
+    for i, j in E:
+        adj[i].add(j)
+        adj[j].add(i)
+    seen = set()
+    faces = []
+    for u in sorted(adj):
+        for v in adj[u]:
+            for w in adj[v]:
+                if w == u:
+                    continue
+                cyc = [u, v, w]
+                closed = False
+                while len(cyc) <= want:
+                    prev, cur = cyc[-2], cyc[-1]
+                    nxt = None
+                    for x in adj[cur]:
+                        if x != prev and _in_flat(V[u], V[v], V[w],
+                                                  V[x]):
+                            nxt = x
+                            break
+                    if nxt is None:
+                        break
+                    if nxt == u:
+                        closed = True
+                        break
+                    cyc.append(nxt)
+                if closed and len(cyc) == want:
+                    key = frozenset(cyc)
+                    if key not in seen:
+                        seen.add(key)
+                        faces.append(cyc)
+    _FACE_CACHE[kind] = faces
+    return faces
+
+
 def polytope_edges(V):
     """Edges = vertex pairs at the minimal nonzero distance."""
     n = len(V)
@@ -278,12 +347,47 @@ def add_sphere(verts, faces, center, radius, seg=8, rings=6):
 # Build
 # --------------------------------------------------------------------------
 
+def _add_panel(verts, faces, poly, border, th):
+    """Closed da Vinci panel for one flat polygon: ring between the
+    polygon and its inset, thickened along the polygon normal.
+    Winding is unimportant (normals recalculated by the caller)."""
+    m = len(poly)
+    c = [sum(p[k] for p in poly) / m for k in range(3)]
+    # Newell normal
+    n = [0.0, 0.0, 0.0]
+    for i in range(m):
+        p, q = poly[i], poly[(i + 1) % m]
+        n[0] += (p[1] - q[1]) * (p[2] + q[2])
+        n[1] += (p[2] - q[2]) * (p[0] + q[0])
+        n[2] += (p[0] - q[0]) * (p[1] + q[1])
+    ln = math.sqrt(sum(t * t for t in n)) or 1.0
+    n = [t / ln for t in n]
+    hole = [[c[k] + (p[k] - c[k]) * (1 - border) for k in range(3)]
+            for p in poly]
+    base = len(verts)
+    for layer in (th / 2, -th / 2):
+        for p in poly:
+            verts.append(tuple(p[k] + n[k] * layer for k in range(3)))
+        for p in hole:
+            verts.append(tuple(p[k] + n[k] * layer for k in range(3)))
+    TO, TH_, BO, BH = base, base + m, base + 2 * m, base + 3 * m
+    for i in range(m):
+        j = (i + 1) % m
+        faces.append([TO + i, TO + j, TH_ + j, TH_ + i])
+        faces.append([BH + i, BH + j, BO + j, BO + i])
+        faces.append([TO + j, TO + i, BO + i, BO + j])
+        faces.append([TH_ + i, TH_ + j, BH + j, BH + i])
+
+
 def build_polytope(kind='CELL8', style='CURVED', proj_dist=1.05,
                    rot_xw=0.0, rot_yw=0.0, rot_zw=0.0, rot_xy=0.0,
                    arc_segments=12, radius=0.03, sides=6, taper=True,
-                   vertex_spheres=True, sphere_factor=1.6, scale=1.0):
+                   vertex_spheres=True, sphere_factor=1.6, scale=1.0,
+                   render='EDGES', border=0.35, panel_thickness=0.03):
     V4 = polytope_vertices(kind)
     E = polytope_edges(V4)
+    F2 = (polytope_faces(kind, V4, E) if render == 'LEONARDO'
+          else None)
     V4 = rotate4(V4, rot_xw, rot_yw, rot_zw, rot_xy)
     if style == 'CURVED':
         # exact stereographic projection: pole ON the unit 3-sphere
@@ -297,6 +401,16 @@ def build_polytope(kind='CELL8', style='CURVED', proj_dist=1.05,
     for i, v in enumerate(V4):
         p, s = project_point(v, dist)
         proj[i] = (tuple(c * scale for c in p), s)
+    if render == 'LEONARDO':
+        # flat panels per 2D face: stereographic projection maps the
+        # circle through a face's vertices to a circle in R^3, so
+        # every projected face is planar in both styles
+        for cyc in F2:
+            poly = [proj[i][0] for i in cyc]
+            avg = sum(proj[i][1] for i in cyc) / len(cyc)
+            th = panel_thickness * scale * (avg if taper else 1.0)
+            _add_panel(verts, faces, poly, border, th)
+        return verts, faces, len(V4), len(E)
     for (i, j) in E:
         if style == 'CURVED':
             pts = []
@@ -340,6 +454,7 @@ try:
     import bpy
     from bpy.props import (FloatProperty, EnumProperty, IntProperty,
                            BoolProperty)
+    import bmesh
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -400,6 +515,24 @@ if _IN_BLENDER:
         vertex_spheres: BoolProperty(name="Vertex Spheres", default=True)
         sphere_factor: FloatProperty(name="Sphere Size", default=1.6,
                                      min=1.0, max=4.0)
+        render: EnumProperty(
+            name="Style",
+            items=[('EDGES', "Edge Struts",
+                    "Struts along the projected edges"),
+                   ('LEONARDO', "Leonardo (da Vinci)",
+                    "A flat open panel per 2D face of the polytope "
+                    "(projected faces are planar in both edge "
+                    "styles, since stereographic projection maps "
+                    "the circle through a face's vertices to a "
+                    "circle)")],
+            default='EDGES')
+        border: FloatProperty(
+            name="Border", default=0.35, min=0.02, max=0.95,
+            description="Leonardo panel frame width (fraction of "
+                        "the face)")
+        panel_thickness: FloatProperty(
+            name="Panel Thickness", default=0.03, min=0.002, max=0.5,
+            step=1, precision=3)
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -408,10 +541,19 @@ if _IN_BLENDER:
                 self.kind, self.style, self.proj_dist, self.rot_xw,
                 self.rot_yw, self.rot_zw, self.rot_xy,
                 self.arc_segments, self.radius, self.sides, self.taper,
-                self.vertex_spheres, self.sphere_factor, self.scale)
+                self.vertex_spheres, self.sphere_factor, self.scale,
+                self.render, self.border, self.panel_thickness)
             me = bpy.data.meshes.new("Polytope4D")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
+            if self.render == 'LEONARDO':
+                # panel windings follow arbitrary face-cycle
+                # directions; make normals consistent
+                bm = bmesh.new()
+                bm.from_mesh(me)
+                bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+                bm.to_mesh(me)
+                bm.free()
             me.polygons.foreach_set('use_smooth',
                                     [True] * len(me.polygons))
             me.update()
@@ -436,9 +578,15 @@ if _IN_BLENDER:
             col = lay.column(align=True)
             for k in ('rot_xw', 'rot_yw', 'rot_zw', 'rot_xy'):
                 col.prop(self, k)
-            for k in ('arc_segments', 'radius', 'sides', 'taper',
-                      'vertex_spheres', 'sphere_factor', 'scale'):
-                lay.prop(self, k)
+            lay.prop(self, 'render')
+            if self.render == 'LEONARDO':
+                for k in ('border', 'panel_thickness', 'taper',
+                          'scale'):
+                    lay.prop(self, k)
+            else:
+                for k in ('arc_segments', 'radius', 'sides', 'taper',
+                          'vertex_spheres', 'sphere_factor', 'scale'):
+                    lay.prop(self, k)
 
     def _menu_func(self, context):
         self.layout.operator("mesh.polytope4d_add", icon='MESH_CUBE')

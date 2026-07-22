@@ -365,7 +365,8 @@ def sweep_ribbons(circuits, width, thickness, amplitude, subdiv,
                   smooth_rounds, scale, curve=True):
     verts = []
     faces = []
-    for pts in circuits:
+    face_strand = []          # strand (circuit) index per face
+    for si, pts in enumerate(circuits):
         L = len(pts)
         path = []
         for i in range(L):
@@ -413,7 +414,8 @@ def sweep_ribbons(circuits, width, thickness, amplitude, subdiv,
                               base_i + 4 * i + (j + 1) % 4,
                               base_i + 4 * i2 + (j + 1) % 4,
                               base_i + 4 * i2 + j])
-    return verts, faces
+            face_strand.extend([si] * 4)
+    return verts, faces, face_strand
 
 
 def build_weave(kind='CUBE', freq=1, pattern='FEV', width=0.10,
@@ -424,10 +426,10 @@ def build_weave(kind='CUBE', freq=1, pattern='FEV', width=0.10,
         V, F = geodesic(V, F, freq)
     pat = parse_pattern(pattern)
     circuits = weave_circuits(V, F, pat)
-    verts, faces = sweep_ribbons(circuits, width, thickness, amplitude,
-                                 subdiv, smooth_rounds, scale,
-                                 curve=pat.curve)
-    return verts, faces, len(circuits)
+    verts, faces, face_strand = sweep_ribbons(
+        circuits, width, thickness, amplitude, subdiv, smooth_rounds,
+        scale, curve=pat.curve)
+    return verts, faces, len(circuits), face_strand
 
 
 # ---- Blender layer -------------------------------------------------------
@@ -499,12 +501,43 @@ if _IN_BLENDER:
                             min=1, max=24)
         smooth_rounds: IntProperty(name="Smoothing", default=2,
                                    min=0, max=10)
+        coloring: EnumProperty(
+            name="Coloring",
+            items=[('STRAND', "Per Strand",
+                    "One material per woven strand (view with "
+                    "Material Preview or Solid shading set to "
+                    "Material colour)"),
+                   ('NONE', "None", "No materials")],
+            default='STRAND')
         scale: FloatProperty(name="Radius", default=1.0, min=0.01,
                              max=100.0)
 
+        _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
+                    (0.95, 0.77, 0.29), (0.30, 0.69, 0.42),
+                    (0.62, 0.40, 0.75), (0.25, 0.72, 0.72),
+                    (0.91, 0.56, 0.71), (0.55, 0.60, 0.29),
+                    (0.45, 0.45, 0.85), (0.80, 0.50, 0.30),
+                    (0.35, 0.60, 0.55), (0.75, 0.35, 0.45)]
+
+        @classmethod
+        def _material_for(cls, i):
+            name = f"Weave Strand {i + 1}"
+            mat = bpy.data.materials.get(name)
+            if mat is None:
+                mat = bpy.data.materials.new(name)
+                rgb = cls._PALETTE[i % len(cls._PALETTE)]
+                mat.diffuse_color = (*rgb, 1.0)
+                mat.use_nodes = True
+                bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                if bsdf is not None:
+                    bsdf.inputs["Base Color"].default_value = (*rgb,
+                                                               1.0)
+                    bsdf.inputs["Roughness"].default_value = 0.45
+            return mat
+
         def execute(self, context):
             try:
-                verts, faces, ns = build_weave(
+                verts, faces, ns, face_strand = build_weave(
                     self.kind, self.freq, self.pattern, self.width,
                     self.thickness, self.amplitude, self.subdiv,
                     self.smooth_rounds, self.scale)
@@ -516,6 +549,15 @@ if _IN_BLENDER:
             me.validate(clean_customdata=True)
             me.polygons.foreach_set('use_smooth',
                                     [True] * len(me.polygons))
+            if len(me.polygons) == len(face_strand):
+                attr = me.attributes.new("strand_index", 'INT',
+                                         'FACE')
+                attr.data.foreach_set('value', face_strand)
+                if self.coloring == 'STRAND':
+                    for i in range(ns):
+                        me.materials.append(self._material_for(i))
+                    me.polygons.foreach_set('material_index',
+                                            face_strand)
             me.update()
             obj = bpy.data.objects.new("Weave", me)
             context.collection.objects.link(obj)
@@ -536,7 +578,7 @@ if _IN_BLENDER:
             lay.prop(self, 'pattern_preset')
             lay.prop(self, 'pattern')
             for k in ('width', 'thickness', 'amplitude', 'subdiv',
-                      'smooth_rounds', 'scale'):
+                      'smooth_rounds', 'coloring', 'scale'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):

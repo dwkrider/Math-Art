@@ -189,9 +189,13 @@ def build_rotegrity(kind='ICOSA', freq=2, twist=18.0, extension=0.35,
             edges.add((min(a, b), max(a, b)))
     verts = []
     faces = []
+    face_strap = []           # strap index per face
+    strap_len = []            # arc length per strap (for classing)
     tw = math.radians(twist)
-    for (a, b) in sorted(edges):
+    for si, (a, b) in enumerate(sorted(edges)):
         A, B = _unit(V[a]), _unit(V[b])
+        strap_len.append(math.acos(max(-1.0, min(1.0,
+            sum(A[k] * B[k] for k in range(3))))))
         mid = _unit(tuple(A[k] + B[k] for k in range(3)))
         A2 = _rodrigues(A, mid, tw)
         B2 = _rodrigues(B, mid, tw)
@@ -221,9 +225,11 @@ def build_rotegrity(kind='ICOSA', freq=2, twist=18.0, extension=0.35,
             for j in range(4):
                 faces.append([r0[j], r0[(j + 1) % 4],
                               r1[(j + 1) % 4], r1[j]])
+            face_strap.extend([si] * 4)
         faces.append([ring[0][3], ring[0][2], ring[0][1], ring[0][0]])
         faces.append(list(ring[-1]))
-    return verts, faces, len(edges)
+        face_strap.extend([si] * 2)
+    return verts, faces, len(edges), face_strap, strap_len
 
 
 # ---- Blender layer -------------------------------------------------------
@@ -264,11 +270,45 @@ if _IN_BLENDER:
         thickness: FloatProperty(name="Strap Thickness", default=0.025,
                                  min=0.002, max=0.2)
         segments: IntProperty(name="Segments", default=12, min=4, max=64)
+        coloring: EnumProperty(
+            name="Coloring",
+            items=[('LENGTH', "By Strap Length",
+                    "One material per strap length class -- geodesic "
+                    "breakdowns give a few distinct lengths, coloured "
+                    "as in physical rotegrity kits (view with "
+                    "Material Preview or Solid shading set to "
+                    "Material colour)"),
+                   ('STRAP', "Per Strap",
+                    "Cycle the palette strap by strap"),
+                   ('NONE', "None", "No materials")],
+            default='LENGTH')
         scale: FloatProperty(name="Radius", default=1.0, min=0.01,
                              max=100.0)
 
+        _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
+                    (0.95, 0.77, 0.29), (0.30, 0.69, 0.42),
+                    (0.62, 0.40, 0.75), (0.25, 0.72, 0.72),
+                    (0.91, 0.56, 0.71), (0.55, 0.60, 0.29),
+                    (0.45, 0.45, 0.85), (0.80, 0.50, 0.30)]
+
+        @classmethod
+        def _material_for(cls, i, kind="Strap"):
+            name = f"Rotegrity {kind} {i + 1}"
+            mat = bpy.data.materials.get(name)
+            if mat is None:
+                mat = bpy.data.materials.new(name)
+                rgb = cls._PALETTE[i % len(cls._PALETTE)]
+                mat.diffuse_color = (*rgb, 1.0)
+                mat.use_nodes = True
+                bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                if bsdf is not None:
+                    bsdf.inputs["Base Color"].default_value = (*rgb,
+                                                               1.0)
+                    bsdf.inputs["Roughness"].default_value = 0.45
+            return mat
+
         def execute(self, context):
-            verts, faces, ne = build_rotegrity(
+            verts, faces, ne, face_strap, strap_len = build_rotegrity(
                 self.kind, self.freq, self.twist, self.extension,
                 self.width, self.thickness, self.segments, self.scale)
             me = bpy.data.meshes.new("Rotegrity")
@@ -276,6 +316,30 @@ if _IN_BLENDER:
             me.validate(clean_customdata=True)
             me.polygons.foreach_set('use_smooth',
                                     [True] * len(me.polygons))
+            if len(me.polygons) == len(face_strap):
+                classes = sorted(set(round(l, 5) for l in strap_len))
+                strap_cls = [classes.index(round(l, 5))
+                             for l in strap_len]
+                attr = me.attributes.new("strap_index", 'INT', 'FACE')
+                attr.data.foreach_set('value', face_strap)
+                attr = me.attributes.new("length_class", 'INT',
+                                         'FACE')
+                attr.data.foreach_set(
+                    'value', [strap_cls[s] for s in face_strap])
+                if self.coloring == 'LENGTH':
+                    for i in range(len(classes)):
+                        me.materials.append(
+                            self._material_for(i, "Length"))
+                    me.polygons.foreach_set(
+                        'material_index',
+                        [strap_cls[s] for s in face_strap])
+                elif self.coloring == 'STRAP':
+                    nmat = min(ne, len(self._PALETTE))
+                    for i in range(nmat):
+                        me.materials.append(self._material_for(i))
+                    me.polygons.foreach_set(
+                        'material_index',
+                        [s % nmat for s in face_strap])
             me.update()
             obj = bpy.data.objects.new("Rotegrity", me)
             context.collection.objects.link(obj)
@@ -291,7 +355,7 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             for k in ('kind', 'freq', 'twist', 'extension', 'width',
-                      'thickness', 'segments', 'scale'):
+                      'thickness', 'segments', 'coloring', 'scale'):
                 if k == 'freq' and self.kind in ('CUBE', 'DODECA'):
                     continue
                 lay.prop(self, k)
@@ -318,6 +382,6 @@ if __name__ == "__main__":
     else:
         for kind, freq in (('ICOSA', 1), ('ICOSA', 2), ('CUBE', 1),
                            ('DODECA', 1)):
-            v, f, ne = build_rotegrity(kind, freq)
+            v, f, ne, fs, sl = build_rotegrity(kind, freq)
             print(f"{kind} f{freq}: straps={ne} verts={len(v)} "
                   f"faces={len(f)}")
