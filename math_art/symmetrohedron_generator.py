@@ -173,8 +173,59 @@ if _IN_BLENDER:
                            min=-90.0, max=90.0)
         ph3: FloatProperty(name="Axis-3 Phase", default=0.0,
                            min=-90.0, max=90.0)
+        coloring: EnumProperty(
+            name="Coloring",
+            items=[('SIDES', "By Face Size",
+                    "One material per face size, shared with the "
+                    "Conway generator's palette (view with Material "
+                    "Preview or Solid shading set to Material "
+                    "colour)"),
+                   ('NONE', "None", "No materials")],
+            default='SIDES')
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "Plain closed polyhedron"),
+                   ('LEONARDO', "Leonardo (da Vinci)",
+                    "Open-faced panels via the shared Leonardo "
+                    "Style Geometry Nodes modifier (Border and "
+                    "Thickness stay editable on the modifier)"),
+                   ('WIRE', "Wireframe",
+                    "Struts along the edges (Wireframe modifier)")],
+            default='SOLID')
+        border: FloatProperty(
+            name="Border", default=0.3, min=0.02, max=0.95,
+            description="Leonardo face frame width (fraction of "
+                        "the face)")
+        thickness: FloatProperty(
+            name="Thickness", default=0.05, min=0.001, max=1.0,
+            description="Panel / strut thickness for the Leonardo "
+                        "and Wireframe styles")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
+
+        _PALETTE = {3: (0.90, 0.36, 0.23), 4: (0.27, 0.52, 0.79),
+                    5: (0.30, 0.69, 0.42), 6: (0.95, 0.77, 0.29),
+                    7: (0.62, 0.40, 0.75), 8: (0.25, 0.72, 0.72),
+                    9: (0.91, 0.56, 0.71), 10: (0.55, 0.60, 0.29),
+                    12: (0.52, 0.45, 0.40)}
+
+        @classmethod
+        def _material_for(cls, n):
+            name = f"Conway {n}-gon"
+            mat = bpy.data.materials.get(name)
+            if mat is None:
+                mat = bpy.data.materials.new(name)
+                rgb = cls._PALETTE.get(
+                    n, (0.5 + 0.5 * math.sin(n), 0.55,
+                        0.5 + 0.5 * math.cos(n)))
+                mat.diffuse_color = (*rgb, 1.0)
+                mat.use_nodes = True
+                bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                if bsdf is not None:
+                    bsdf.inputs["Base Color"].default_value = (*rgb,
+                                                               1.0)
+                    bsdf.inputs["Roughness"].default_value = 0.5
+            return mat
 
         def execute(self, context):
             mults = (self.mult1, self.mult2, self.mult3)
@@ -200,6 +251,16 @@ if _IN_BLENDER:
             me = bpy.data.meshes.new("Symmetrohedron")
             bm.to_mesh(me)
             bm.free()
+            fsz = [len(p.vertices) for p in me.polygons]
+            attr = me.attributes.new("ngon_sides", 'INT', 'FACE')
+            attr.data.foreach_set('value', fsz)
+            if self.coloring == 'SIDES':
+                lut = {}
+                for n in sorted(set(fsz)):
+                    lut[n] = len(me.materials)
+                    me.materials.append(self._material_for(n))
+                me.polygons.foreach_set('material_index',
+                                        [lut[s] for s in fsz])
             me.update()
             obj = bpy.data.objects.new("Symmetrohedron", me)
             context.collection.objects.link(obj)
@@ -208,6 +269,17 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
+            if self.style == 'LEONARDO':
+                try:
+                    from . import leonardo_style
+                except ImportError:
+                    import leonardo_style
+                leonardo_style.add_modifier(obj, self.border,
+                                            self.thickness)
+            elif self.style == 'WIRE':
+                mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
+                mod.thickness = self.thickness
+                mod.use_even_offset = False
             sizes = {}
             for p in me.polygons:
                 sizes[len(p.vertices)] = sizes.get(len(p.vertices), 0) + 1
@@ -230,6 +302,12 @@ if _IN_BLENDER:
             col = lay.column(align=True)
             for k in ('mult3', 'r3', 'ph3'):
                 col.prop(self, k)
+            lay.prop(self, 'coloring')
+            lay.prop(self, 'style')
+            if self.style == 'LEONARDO':
+                lay.prop(self, 'border')
+            if self.style != 'SOLID':
+                lay.prop(self, 'thickness')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
