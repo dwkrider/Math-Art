@@ -101,7 +101,7 @@ class VIEW3D_MT_math_art_fractals(bpy.types.Menu):
 
 class VIEW3D_MT_math_art_knots(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_math_art_knots"
-    bl_label = "Knots && Curves"
+    bl_label = "Knots & Curves"
 
     def draw(self, context):
         lay = self.layout
@@ -114,7 +114,7 @@ class VIEW3D_MT_math_art_knots(bpy.types.Menu):
 
 class VIEW3D_MT_math_art_weaves(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_math_art_weaves"
-    bl_label = "Weaves && Tangles"
+    bl_label = "Weaves & Tangles"
 
     def draw(self, context):
         lay = self.layout
@@ -124,18 +124,23 @@ class VIEW3D_MT_math_art_weaves(bpy.types.Menu):
         lay.operator("mesh.rotegrity_add", icon='SPHERE')
 
 
-class VIEW3D_MT_math_art_sculpture(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_sculpture"
-    bl_label = "Sculpture"
+class VIEW3D_MT_math_art_odds(bpy.types.Menu):
+    bl_idname = "VIEW3D_MT_math_art_odds"
+    bl_label = "Odds & Ends"
 
     def draw(self, context):
         lay = self.layout
         lay.operator("mesh.platonic_twist_add", icon='MOD_SCREW')
         lay.operator("mesh.twisted_torus_add", icon='MESH_TORUS')
         lay.operator("mesh.oloid_add", icon='MESH_CAPSULE')
-        lay.operator_menu_enum("object.symmetric_sculpture_add",
-                               "preset", text="Symmetric Sculpture",
-                               icon='MOD_MIRROR')
+
+
+class VIEW3D_MT_math_art_styles(bpy.types.Menu):
+    bl_idname = "VIEW3D_MT_math_art_styles"
+    bl_label = "Styles"
+
+    def draw(self, context):
+        lay = self.layout
         lay.operator("object.leonardo_add", icon='MESH_ICOSPHERE')
 
 
@@ -152,13 +157,18 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.menu("VIEW3D_MT_math_art_fractals", icon='MESH_CUBE')
         lay.menu("VIEW3D_MT_math_art_knots", icon='FORCE_VORTEX')
         lay.menu("VIEW3D_MT_math_art_weaves", icon='MOD_LATTICE')
-        lay.menu("VIEW3D_MT_math_art_sculpture", icon='MOD_MIRROR')
+        lay.menu("VIEW3D_MT_math_art_odds", icon='MESH_TORUS')
+        lay.separator()
+        lay.operator_menu_enum("object.symmetric_sculpture_add",
+                               "preset", text="Symmetric Sculpture",
+                               icon='MOD_MIRROR')
+        lay.menu("VIEW3D_MT_math_art_styles", icon='MOD_SOLIDIFY')
 
 
 _MENUS = (VIEW3D_MT_math_art_minimal, VIEW3D_MT_math_art_polyhedra,
           VIEW3D_MT_math_art_fractals, VIEW3D_MT_math_art_knots,
-          VIEW3D_MT_math_art_weaves, VIEW3D_MT_math_art_sculpture,
-          VIEW3D_MT_math_art_add)
+          VIEW3D_MT_math_art_weaves, VIEW3D_MT_math_art_odds,
+          VIEW3D_MT_math_art_styles, VIEW3D_MT_math_art_add)
 
 
 def _menu_func(self, context):
