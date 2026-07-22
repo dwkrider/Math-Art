@@ -126,11 +126,14 @@ def build_polylinks(kind='TETRA', size=1.35, rotation=25.0, offset=-0.2,
         F = keep
     verts = []
     faces = []
+    face_frame = []      # frame index per emitted mesh face
+    frame_dirs = []      # frame normal per frame (for pair grouping)
     rot = math.radians(rotation)
-    for f in F:
+    for fidx, f in enumerate(F):
         m = len(f)
         c = [sum(V[i][k] for i in f) / m for k in range(3)]
         n = _unit(c)                      # Platonic: normal is radial
+        frame_dirs.append(n)
         cl = math.sqrt(sum(x * x for x in c))
         cen = [n[k] * (cl + offset) for k in range(3)]
         ring = []
@@ -159,7 +162,8 @@ def build_polylinks(kind='TETRA', size=1.35, rotation=25.0, offset=-0.2,
             faces.append([BI + i, BI + j, BO + j, BO + i])   # bottom
             faces.append([TO + j, TO + i, BO + i, BO + j])   # outer wall
             faces.append([TI + i, TI + j, BI + j, BI + i])   # inner wall
-    return verts, faces, len(F)
+            face_frame.extend([fidx] * 4)
+    return verts, faces, len(F), face_frame, frame_dirs
 
 
 try:
@@ -226,18 +230,78 @@ if _IN_BLENDER:
         antipodal: BoolProperty(
             name="Antipodal Half", default=False,
             description="Use only one face of each antipodal pair")
+        coloring: EnumProperty(
+            name="Coloring",
+            items=[('FRAME', "Per Link", "One material per frame, for "
+                    "visibility (view with Material Preview or Solid "
+                    "shading set to Material colour)"),
+                   ('PAIR', "Per Parallel Pair",
+                    "Iso-colour parallel (antipodal) frames, as in "
+                    "Hart's paper models: 6 squares in 3 colours"),
+                   ('NONE', "None", "No materials")],
+            default='FRAME')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
+
+        _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
+                    (0.95, 0.77, 0.29), (0.30, 0.69, 0.42),
+                    (0.62, 0.40, 0.75), (0.25, 0.72, 0.72),
+                    (0.91, 0.56, 0.71), (0.55, 0.60, 0.29),
+                    (0.80, 0.50, 0.30), (0.45, 0.45, 0.85)]
+
+        @classmethod
+        def _material_for(cls, i):
+            name = f"Polylink {i + 1}"
+            mat = bpy.data.materials.get(name)
+            if mat is None:
+                mat = bpy.data.materials.new(name)
+                if i < len(cls._PALETTE):
+                    rgb = cls._PALETTE[i]
+                else:
+                    import colorsys
+                    rgb = colorsys.hsv_to_rgb((i * 0.618034) % 1.0,
+                                              0.6, 0.8)
+                mat.diffuse_color = (*rgb, 1.0)
+                mat.use_nodes = True
+                bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                if bsdf is not None:
+                    bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+                    bsdf.inputs["Roughness"].default_value = 0.5
+            return mat
 
         def execute(self, context):
             if self.preset != 'CUSTOM':
                 self._preset_chosen(context)
-            verts, faces, nf = build_polylinks(
+            verts, faces, nf, face_frame, frame_dirs = build_polylinks(
                 self.kind, self.size, self.rotation, self.offset,
                 self.width, self.thickness, self.antipodal, self.scale)
             me = bpy.data.meshes.new("Polylinks")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
+            if len(me.polygons) == len(faces):
+                # frame membership as face metadata (Geometry Nodes /
+                # shader Attribute node: "link_index")
+                attr = me.attributes.new("link_index", 'INT', 'FACE')
+                attr.data.foreach_set('value', face_frame)
+                if self.coloring != 'NONE':
+                    if self.coloring == 'PAIR':
+                        group = {}
+                        gid = []
+                        for d in frame_dirs:
+                            dd = d if tuple(d) >= tuple(-x for x in d) \
+                                else tuple(-x for x in d)
+                            key = tuple(round(x, 5) for x in dd)
+                            if key not in group:
+                                group[key] = len(group)
+                            gid.append(group[key])
+                    else:
+                        gid = list(range(nf))
+                    nmats = max(gid) + 1
+                    for i in range(nmats):
+                        me.materials.append(self._material_for(i))
+                    me.polygons.foreach_set(
+                        'material_index',
+                        [gid[face_frame[i]] for i in range(len(faces))])
             me.update()
             obj = bpy.data.objects.new("Polylinks", me)
             context.collection.objects.link(obj)
@@ -254,7 +318,7 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'preset')
             for k in ('kind', 'size', 'rotation', 'offset', 'width',
-                      'thickness', 'antipodal', 'scale'):
+                      'thickness', 'antipodal', 'coloring', 'scale'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
