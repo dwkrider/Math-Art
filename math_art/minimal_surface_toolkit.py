@@ -228,6 +228,38 @@ _TWO = {3: ((0, 1), (2, 3)), 5: ((0, 2), (1, 3)), 9: ((0, 3), (1, 2)),
         6: ((1, 2), (0, 3)), 10: ((1, 3), (0, 2)), 12: ((2, 3), (0, 1))}
 
 
+def _orientation_flags():
+    """Whether each (tet, sign-case) emits triangles wound against
+    the field gradient. Calibrated on an exact linear field, where
+    the crossing polygon is exactly perpendicular to the gradient --
+    so the flags are combinatorial and immune to sliver triangles."""
+    flags = {}
+    cube = np.array(_CUBE, dtype=float)
+    for ti, tet in enumerate(_TETS):
+        P = cube[list(tet)]                       # (4,3) corners
+        M = P[1:] - P[0]                          # for gradient solve
+        for cd in list(_ONE) + list(_TWO):
+            f = np.where([cd >> i & 1 for i in range(4)], -1.0, 1.0)
+            g = np.linalg.solve(M, f[1:] - f[0])  # exact gradient
+
+            def x(ci, cj):
+                t = f[ci] / (f[ci] - f[cj])
+                return P[ci] + t * (P[cj] - P[ci])
+
+            if cd in _ONE:
+                lone, (o0, o1, o2) = _ONE[cd]
+                p0, p1, p2 = x(lone, o0), x(lone, o1), x(lone, o2)
+            else:
+                (n0, n1), (q0, q1) = _TWO[cd]
+                p0, p1, p2 = x(n0, q0), x(n0, q1), x(n1, q1)
+            n = np.cross(p1 - p0, p2 - p0)
+            flags[(ti, cd)] = float(np.dot(n, g)) < 0.0
+    return flags
+
+
+_ORIENT = None
+
+
 def marching_tets(field, box_min, box_max, res):
     """Extract the zero level set of `field` on a res[0]xres[1]xres[2]
     sample grid over the box. Returns (verts (n,3), tris (m,3)) with
@@ -238,6 +270,9 @@ def marching_tets(field, box_min, box_max, res):
     zs = np.linspace(box_min[2], box_max[2], nz)
     X, Y, Z = np.meshgrid(xs, ys, zs, indexing='ij')
     vals = field(X, Y, Z).ravel()
+    # samples landing exactly on the surface (e.g. Schwarz P at the
+    # lattice points) produce degenerate crossings; nudge them off
+    vals = np.where(np.abs(vals) < 1e-9, 1e-9, vals)
     pos = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=-1)
 
     ii, jj, kk = np.meshgrid(np.arange(nx - 1), np.arange(ny - 1),
@@ -249,8 +284,12 @@ def marching_tets(field, box_min, box_max, res):
 
     corner = [flat(ii + o[0], jj + o[1], kk + o[2]) for o in _CUBE]
 
+    global _ORIENT
+    if _ORIENT is None:
+        _ORIENT = _orientation_flags()
+
     tri_pts = []          # list of (3, ntri, 3) blocks
-    for (a, b, c, d) in _TETS:
+    for ti, (a, b, c, d) in enumerate(_TETS):
         A, B, C, D = corner[a], corner[b], corner[c], corner[d]
         fa, fb, fc, fd = vals[A], vals[B], vals[C], vals[D]
         code = ((fa < 0).astype(np.int8) | ((fb < 0) << 1)
@@ -270,6 +309,8 @@ def marching_tets(field, box_min, box_max, res):
             p0 = interp(sel, lone, others[0])
             p1 = interp(sel, lone, others[1])
             p2 = interp(sel, lone, others[2])
+            if _ORIENT[(ti, cd)]:
+                p1, p2 = p2, p1
             tri_pts.append(np.stack([p0, p1, p2], axis=1))
         for cd, ((n0, n1), (pp0, pp1)) in _TWO.items():
             sel = np.nonzero(code == cd)[0]
@@ -279,6 +320,8 @@ def marching_tets(field, box_min, box_max, res):
             q1 = interp(sel, n0, pp1)
             q2 = interp(sel, n1, pp1)
             q3 = interp(sel, n1, pp0)
+            if _ORIENT[(ti, cd)]:
+                q1, q3 = q3, q1
             tri_pts.append(np.stack([q0, q1, q2], axis=1))
             tri_pts.append(np.stack([q0, q2, q3], axis=1))
 
@@ -300,19 +343,6 @@ def marching_tets(field, box_min, box_max, res):
             & (tris[:, 0] != tris[:, 2]))
     tris = tris[good]
 
-    # orient consistently along the field gradient
-    cen = verts[tris].mean(axis=1)
-    e = eps * 100
-    gx = field(cen[:, 0] + e, cen[:, 1], cen[:, 2]) - \
-        field(cen[:, 0] - e, cen[:, 1], cen[:, 2])
-    gy = field(cen[:, 0], cen[:, 1] + e, cen[:, 2]) - \
-        field(cen[:, 0], cen[:, 1] - e, cen[:, 2])
-    gz = field(cen[:, 0], cen[:, 1], cen[:, 2] + e) - \
-        field(cen[:, 0], cen[:, 1], cen[:, 2] - e)
-    n = np.cross(verts[tris[:, 1]] - verts[tris[:, 0]],
-                 verts[tris[:, 2]] - verts[tris[:, 0]])
-    flip = (n[:, 0] * gx + n[:, 1] * gy + n[:, 2] * gz) < 0
-    tris[flip] = tris[flip][:, ::-1]
     return verts, tris
 
 
