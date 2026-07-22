@@ -160,6 +160,28 @@ The modules:
    surface is extruded into a solid shell. Border and Thickness are
    live modifier inputs; the zonohedron generator's Leonardo style
    uses the same shared node group.
+10. **Fractal sponges** (`math_art/sponge_generator.py`) — Menger
+    sponge, Vicsek fractal and Sierpinski carpet as single
+    watertight exterior surfaces (only faces between solid and
+    empty cells are emitted), plus the Sierpinski tetrahedron and
+    octahedron as point-contact solids. Replication counts and
+    manifoldness verified per level.
+11. **Space-filling curves**
+    (`math_art/space_curve_generator.py`) — Hilbert and Moore
+    curves in 2D and 3D (after the Wolfram *Hilbert and Moore 3D
+    Fractal Curves* demonstration). Hilbert points via Skilling's
+    transpose algorithm; the Moore loop chains 4 / 8 rotated
+    Hilbert blocks around a Gray-code ring into a single closed
+    circuit (unit-step continuity and closure verified for every
+    order). Output is a poly curve with bevel radius and optional
+    Chaikin corner rounding.
+12. **Oloid & ruled surfaces** (`math_art/oloid_generator.py`) —
+    the oloid from the exact Dirnböck–Stachel ruling (every ruling
+    has length √3; watertight), the two-circle roller (hull), and
+    ruled strips between two perpendicular circles after Kit
+    Wallace's *ruled Möbius strip* posts — including his true
+    one-edged Möbius surface (χ = 0, single boundary loop,
+    verified).
 
 ![120-cell](renders/form_120cell.png)
 

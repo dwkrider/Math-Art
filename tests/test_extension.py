@@ -57,6 +57,12 @@ OPS = [
     ("leonardo modifier",
      lambda: (bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1),
               bpy.ops.object.leonardo_add())[-1]),
+    ("sponge", lambda: bpy.ops.mesh.sponge_add(kind='MENGER',
+                                               level=2)),
+    ("space curve", lambda: bpy.ops.curve.space_filling_add(
+        kind='MOORE3D', order=3)),
+    ("oloid", lambda: bpy.ops.mesh.oloid_add(kind='OLOID')),
+    ("oloid roller", lambda: bpy.ops.mesh.oloid_add(kind='ROLLER')),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):
@@ -64,8 +70,11 @@ for name, op in OPS:
     try:
         result = op()
         obj = bpy.context.object
-        ok = result == {'FINISHED'} and obj is not None \
-            and len(obj.data.vertices) > 0
+        if hasattr(obj.data, 'vertices'):
+            n_elem = len(obj.data.vertices)
+        else:                              # curve output
+            n_elem = len(obj.data.splines[0].points)
+        ok = result == {'FINISHED'} and obj is not None and n_elem > 0
     except Exception as e:
         ok = False
         print("   ", e)
