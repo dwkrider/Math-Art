@@ -685,6 +685,29 @@ _NOTATION = {sid: (label, nota) for cat in (PLATONIC, ARCHIMEDEAN,
                                             CATALAN)
              for (sid, label, nota) in cat}
 
+_STELLATE_OK = {}
+
+
+def can_stellate(family, sid, n=6):
+    """Whether the stellation option is usable for this solid (some
+    faces have all neighbour planes parallel to one axis -- cube,
+    prisms, flat-capped elongated Johnson solids). Lazily computed
+    and cached for the cheap families; the canonicalized families
+    are never rank-deficient."""
+    if family == 'KEPLER':
+        return False
+    if family in ('ARCHIMEDEAN', 'CATALAN'):
+        return True
+    key = (family, sid, n if family == 'PRISM' else 0)
+    if key not in _STELLATE_OK:
+        try:
+            V, F, _sizes = build_solid(family, sid, n, 1.0)
+            stellate(V, F)
+            _STELLATE_OK[key] = True
+        except Exception:
+            _STELLATE_OK[key] = False
+    return _STELLATE_OK[key]
+
 
 def build_solid(family, sid, n=6, scale=1.0):
     """Returns (V, F, face_sizes or None)."""
@@ -824,12 +847,8 @@ if _IN_BLENDER:
             try:
                 V, F, sizes = build_solid(self.family, self.solid,
                                           self.n, self.scale)
-                if self.stellated:
-                    if self.family == 'KEPLER':
-                        self.report({'WARNING'},
-                                    "star polyhedra are already "
-                                    "stellations")
-                    else:
+                if self.stellated and self.family != 'KEPLER':
+                    try:
                         V, F, resid = stellate(V, F)
                         sizes = None
                         if resid > 1e-4 * self.scale:
@@ -837,6 +856,11 @@ if _IN_BLENDER:
                                 {'WARNING'},
                                 "approximate stellation (neighbour "
                                 "planes do not meet at a point)")
+                    except ValueError:
+                        self.report({'WARNING'},
+                                    "this solid cannot be stellated "
+                                    "(parallel neighbour planes) -- "
+                                    "left unstellated")
             except (ValueError, KeyError, StopIteration) as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -889,7 +913,10 @@ if _IN_BLENDER:
             if self.family == 'PRISM':
                 lay.prop(self, 'n')
             if self.family != 'KEPLER':
-                lay.prop(self, 'stellated')
+                row = lay.row()
+                row.enabled = can_stellate(self.family, self.solid,
+                                           self.n)
+                row.prop(self, 'stellated')
             lay.prop(self, 'style')
             if self.style == 'LEONARDO':
                 lay.prop(self, 'border')
