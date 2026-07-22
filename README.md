@@ -212,6 +212,23 @@ The modules:
     with bevel radius, or a mesh tube (seam-corrected
     parallel-transport frames); custom braid words, mirror option,
     relax controls.
+15. **Strange attractors** (`math_art/attractor_generator.py`) —
+    **all 38 chaotic attractors of Chaotic Atmospheres' *MATHRULES*
+    series** (Lorenz, Aizawa, Thomas, Halvorsen, Dadras, Burke-Shaw,
+    Chua, Dequan Li, the three-scroll unified systems, …, plus
+    Zhou-Chen as a bonus), each a preset with the ODE system and
+    parameters after Jürgen Meier's 3d-meier.de compilation — the
+    artist's stated source — transcribed from the original formula
+    sheets and posters. The 4D systems (Qi, Lorenz-Stenflo) and the
+    6D coupled Lorenz pair are drawn as 3D projections. Fixed-step
+    RK4 integration (Euler for Lorenz Mod 1, whose reference render
+    depends on Euler's numerical dissipation) with the transient
+    discarded, emitted as a Poly/Bézier curve with bevel; options:
+    even arc-length resampling, speed-based taper (slow flow
+    thickens the tube, the look of the original renders), and a
+    polygonal cross-section profile for printable tubes. Every
+    preset is verified by the module's self-test to stay bounded
+    without collapsing to a fixed point.
 
 ![120-cell](renders/form_120cell.png)
 

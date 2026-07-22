@@ -75,6 +75,15 @@ OPS = [
         family='KEPLER', solid='GSD')),
     ("solid stellated", lambda: bpy.ops.mesh.regular_solid_add(
         family='PLATONIC', solid='DODECA', stellated=True)),
+    ("dual helix", lambda: bpy.ops.curve.dual_helix_add()),
+    ("attractor lorenz", lambda: bpy.ops.curve.attractor_add(
+        preset='LORENZ', steps=4000)),
+    ("attractor aizawa taper", lambda: bpy.ops.curve.attractor_add(
+        preset='AIZAWA', steps=4000, taper=0.5)),
+    ("attractor pentagon profile",
+     lambda: bpy.ops.curve.attractor_add(
+         preset='THOMAS', steps=4000, profile_sides=5,
+         samples=1500, spline='BEZIER')),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):

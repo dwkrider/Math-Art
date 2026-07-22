@@ -35,6 +35,8 @@ from . import space_curve_generator
 from . import oloid_generator
 from . import prime_knot_generator
 from . import regular_solids_generator
+from . import dual_helix_generator
+from . import attractor_generator
 
 import bpy
 
@@ -48,7 +50,8 @@ _MODULES = (scherk_collins_generator, minimal_surface_toolkit,
             tangle_generator, symmetric_sculpture_generator,
             leonardo_style, sponge_generator, space_curve_generator,
             oloid_generator, prime_knot_generator,
-            regular_solids_generator)
+            regular_solids_generator, attractor_generator,
+            dual_helix_generator)
 
 
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
@@ -88,6 +91,10 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.operator("mesh.oloid_add", icon='MESH_CAPSULE')
         lay.operator("curve.prime_knot_add", icon='FORCE_VORTEX')
         lay.operator("mesh.regular_solid_add", icon='MESH_ICOSPHERE')
+        lay.operator("curve.dual_helix_add", icon='MOD_SCREW')
+        lay.operator_menu_enum("curve.attractor_add", "preset",
+                               text="Strange Attractor",
+                               icon='RNDCURVE')
         lay.separator()
         lay.operator_menu_enum("object.symmetric_sculpture_add",
                                "preset", text="Symmetric Sculpture",
