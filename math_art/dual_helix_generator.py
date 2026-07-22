@@ -115,12 +115,22 @@ if _IN_BLENDER:
                    ('POLY', "Poly", ""),
                    ('BEZIER', "Bezier", "auto handles")],
             default='NURBS')
-        radius: FloatProperty(
-            name="Tube Radius", default=0.06, min=0.0, max=2.0,
+        tube_major: FloatProperty(
+            name="Tube Major Axis", default=0.09, min=0.0, max=2.0,
             step=1, precision=3,
-            description="Curve bevel depth (0 = wire only)")
-        resolution: IntProperty(name="Bevel Resolution", default=6,
-                                min=1, max=16)
+            description="Half-width of the elliptical tube profile "
+                        "(0 = wire only)")
+        tube_minor: FloatProperty(
+            name="Tube Minor Axis", default=0.045, min=0.0, max=2.0,
+            step=1, precision=3,
+            description="Half-height of the elliptical tube profile")
+        tube_rotation: FloatProperty(
+            name="Profile Rotation", default=0.0, min=-90.0,
+            max=90.0,
+            description="Rotation of the ellipse in the tube "
+                        "cross-section (degrees)")
+        resolution: IntProperty(name="Profile Resolution", default=6,
+                                min=1, max=32)
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -157,13 +167,46 @@ if _IN_BLENDER:
                 if self.spline_type == 'NURBS':
                     sp.order_u = 4
             sp.use_cyclic_u = closed
-            cu.bevel_depth = self.radius
-            cu.bevel_resolution = self.resolution
-            if self.radius > 0 and not closed:
-                cu.use_fill_caps = True
             obj = bpy.data.objects.new("DualHelix", cu)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
+            if self.tube_major > 0 and self.tube_minor > 0:
+                # elliptical sweep profile as a bevel object (as in
+                # the original file's scaled bevel circle)
+                prof = bpy.data.curves.new("DualHelixProfile",
+                                           'CURVE')
+                prof.dimensions = '2D'
+                prof.resolution_u = self.resolution
+                psp = prof.splines.new('BEZIER')
+                psp.bezier_points.add(3)
+                a, b = self.tube_major, self.tube_minor
+                k = 0.5522847                # circle handle factor
+                rot = math.radians(self.tube_rotation)
+                cr, sr = cos(rot), sin(rot)
+
+                def rot2(x, y):
+                    return (x * cr - y * sr, x * sr + y * cr, 0.0)
+
+                data = [((a, 0), (a, -k * b), (a, k * b)),
+                        ((0, b), (k * a, b), (-k * a, b)),
+                        ((-a, 0), (-a, k * b), (-a, -k * b)),
+                        ((0, -b), (-k * a, -b), (k * a, -b))]
+                for bp, (co, hl, hr) in zip(psp.bezier_points, data):
+                    bp.co = rot2(*co)
+                    bp.handle_left = rot2(*hl)
+                    bp.handle_right = rot2(*hr)
+                    bp.handle_left_type = 'FREE'
+                    bp.handle_right_type = 'FREE'
+                psp.use_cyclic_u = True
+                prof_obj = bpy.data.objects.new("DualHelixProfile",
+                                                prof)
+                context.collection.objects.link(prof_obj)
+                prof_obj.parent = obj
+                prof_obj.hide_render = True
+                cu.bevel_mode = 'OBJECT'
+                cu.bevel_object = prof_obj
+                if not closed:
+                    cu.use_fill_caps = True
             for o in context.selected_objects:
                 o.select_set(False)
             obj.select_set(True)
@@ -179,7 +222,8 @@ if _IN_BLENDER:
             for k in ('outer_radius', 'inner_radius', 'join_radius',
                       'half_height', 'outer_turns', 'inner_turns',
                       'auto_close', 'z_shape', 'seg_per_turn',
-                      'spline_type', 'radius', 'resolution', 'scale'):
+                      'spline_type', 'tube_major', 'tube_minor',
+                      'tube_rotation', 'resolution', 'scale'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
