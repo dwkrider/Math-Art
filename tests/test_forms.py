@@ -115,7 +115,8 @@ render(os.path.join(OUT, 'form_platonic_twist.png'))
 # ---- Fractal: Sierpinski counts ----------------------------------------
 clear()
 bpy.ops.mesh.fractal_polyhedron_add(kind='TETRA', mode='VERTS',
-                                    generations=4, child_scale=0.5)
+                                    generations=4, child_scale=0.5,
+                                    spread=1.0, keep_parents=False)
 obj = bpy.context.object
 nv = len(obj.data.vertices)
 ok = nv == 4 ** 4 * 4     # 256 copies x 4 verts
@@ -124,6 +125,18 @@ print(f"[fractal sierpinski g4] verts={nv} (exp 1024) "
 if not ok:
     fails.append('fractal')
 render(os.path.join(OUT, 'form_sierpinski.png'))
+# default cube fractal: per-generation materials + attribute
+clear()
+bpy.ops.mesh.fractal_polyhedron_add()
+obj = bpy.context.object
+nmats = len(obj.data.materials)
+attr = obj.data.attributes.get('generation')
+ok = nmats == 4 and attr is not None   # gens 0..3 with keep_parents
+print(f"[fractal default coloring] materials={nmats}(4) "
+      f"attr={'yes' if attr else 'NO'} {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('fractal-color')
+render(os.path.join(OUT, 'form_fractal_cube.png'))
 clear()
 bpy.ops.mesh.fractal_polyhedron_add(kind='ICOSA', mode='FACES',
                                     generations=2, child_scale=0.35,

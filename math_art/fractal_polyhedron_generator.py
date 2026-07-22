@@ -132,22 +132,63 @@ def _anchors(V, F, mode):
 MAX_COPIES = 30000
 
 
-def build_fractal(kind='TETRA', mode='VERTS', generations=3,
-                  child_scale=0.5, spread=1.0, keep_parents=False,
+def _mat_mul(A, B):
+    return tuple(tuple(sum(A[i][k] * B[k][j] for k in range(3))
+                       for j in range(3)) for i in range(3))
+
+
+def _mat_vec(A, v):
+    return tuple(sum(A[i][k] * v[k] for k in range(3)) for i in range(3))
+
+
+def _axis_rot(axis, ang):
+    x, y, z = axis
+    c, s = math.cos(ang), math.sin(ang)
+    C = 1 - c
+    return ((c + x * x * C, x * y * C - z * s, x * z * C + y * s),
+            (y * x * C + z * s, c + y * y * C, y * z * C - x * s),
+            (z * x * C - y * s, z * y * C + x * s, c + z * z * C))
+
+
+_ID3 = ((1.0, 0, 0), (0, 1.0, 0), (0, 0, 1.0))
+
+
+def _euler_rot(rx, ry, rz):
+    R = _axis_rot((1, 0, 0), math.radians(rx))
+    R = _mat_mul(_axis_rot((0, 1, 0), math.radians(ry)), R)
+    return _mat_mul(_axis_rot((0, 0, 1), math.radians(rz)), R)
+
+
+def build_fractal(kind='CUBE', mode='VERTS', generations=3,
+                  child_scale=0.5, spread=1.27, keep_parents=True,
+                  push=0.0, twist=0.0, rot_x=0.0, rot_y=0.0, rot_z=0.0,
                   scale=1.0):
-    """Returns (verts, faces, n_copies). Each copy is (origin, size);
-    children sit at anchors of their parent, scaled by child_scale."""
+    """Returns (verts, faces, n_copies, face_gen). Each copy carries
+    (origin, size, orientation, generation). Children sit at the
+    anchors of their parent (scaled by spread, shifted radially by
+    push), rotated by `twist` about the anchor direction plus an
+    XYZ rotation -- all cumulative across generations."""
     V, F = seed_poly(kind)
     anchors = _anchors(V, F, mode)
-    copies = [((0.0, 0.0, 0.0), 1.0)]
+    Re = _euler_rot(rot_x, rot_y, rot_z)
+    tw = math.radians(twist)
+    copies = [((0.0, 0.0, 0.0), 1.0, _ID3, 0)]
     all_copies = list(copies) if keep_parents else []
     for g in range(generations):
         nxt = []
-        for (o, s) in copies:
+        for (o, s, R, _gen) in copies:
             for a in anchors:
-                nxt.append((tuple(o[k] + a[k] * s * spread
-                                  for k in range(3)),
-                            s * child_scale))
+                al = math.sqrt(sum(x * x for x in a)) or 1.0
+                adir = tuple(x / al for x in a)
+                dir_w = _mat_vec(R, adir)
+                pos = tuple(o[k]
+                            + _mat_vec(R, a)[k] * s * spread
+                            + dir_w[k] * push * s for k in range(3))
+                Rc = R
+                if abs(tw) > 1e-12:
+                    Rc = _mat_mul(_axis_rot(dir_w, tw), Rc)
+                Rc = _mat_mul(Rc, Re)
+                nxt.append((pos, s * child_scale, Rc, g + 1))
         copies = nxt
         if keep_parents:
             all_copies.extend(copies)
@@ -159,14 +200,17 @@ def build_fractal(kind='TETRA', mode='VERTS', generations=3,
         raise ValueError(f"too many copies ({len(final)})")
     verts = []
     faces = []
-    for (o, s) in final:
+    face_gen = []
+    for (o, s, R, gen) in final:
         base = len(verts)
         for v in V:
-            verts.append(tuple((o[k] + v[k] * s) * scale
+            p = _mat_vec(R, v)
+            verts.append(tuple((o[k] + p[k] * s) * scale
                                for k in range(3)))
         for f in F:
             faces.append([base + i for i in f])
-    return verts, faces, len(final)
+            face_gen.append(gen)
+    return verts, faces, len(final), face_gen
 
 
 try:
@@ -193,7 +237,7 @@ if _IN_BLENDER:
                    ('OCTA', "Octahedron", ""),
                    ('DODECA', "Dodecahedron", ""),
                    ('ICOSA', "Icosahedron", "")],
-            default='TETRA')
+            default='CUBE')
         mode: EnumProperty(
             name="Anchors",
             items=[('VERTS', "Vertices", "children at vertices"),
@@ -205,27 +249,80 @@ if _IN_BLENDER:
         child_scale: FloatProperty(name="Child Scale", default=0.5,
                                    min=0.1, max=0.9)
         spread: FloatProperty(
-            name="Spread", default=1.0, min=0.5, max=3.0,
+            name="Spread", default=1.27, min=0.5, max=3.0,
             description="Distance multiplier from parent to children")
         keep_parents: BoolProperty(
-            name="Keep Parents", default=False,
+            name="Keep Parents", default=True,
             description="Keep every generation (off = only the last, "
                         "e.g. the Sierpinski gasket)")
+        push: FloatProperty(
+            name="Push", default=0.0, min=-1.0, max=2.0,
+            description="Extra shift of each child along its anchor "
+                        "direction (in parent-size units)")
+        twist: FloatProperty(
+            name="Twist", default=0.0, min=-180.0, max=180.0,
+            description="Rotation of each child about its anchor "
+                        "direction (cumulative per generation)")
+        rot_x: FloatProperty(name="Child Rotate X", default=0.0,
+                             min=-180.0, max=180.0)
+        rot_y: FloatProperty(name="Child Rotate Y", default=0.0,
+                             min=-180.0, max=180.0)
+        rot_z: FloatProperty(name="Child Rotate Z", default=0.0,
+                             min=-180.0, max=180.0)
+        coloring: EnumProperty(
+            name="Coloring",
+            items=[('GEN', "Per Generation",
+                    "One material per generation (view with Material "
+                    "Preview or Solid shading set to Material colour)"),
+                   ('NONE', "None", "No materials")],
+            default='GEN')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
+        _PALETTE = [(0.85, 0.82, 0.75), (0.90, 0.36, 0.23),
+                    (0.27, 0.52, 0.79), (0.95, 0.77, 0.29),
+                    (0.30, 0.69, 0.42), (0.62, 0.40, 0.75),
+                    (0.25, 0.72, 0.72), (0.91, 0.56, 0.71)]
+
+        @classmethod
+        def _material_for(cls, g):
+            name = f"Fractal Gen {g}"
+            mat = bpy.data.materials.get(name)
+            if mat is None:
+                mat = bpy.data.materials.new(name)
+                rgb = cls._PALETTE[g % len(cls._PALETTE)]
+                mat.diffuse_color = (*rgb, 1.0)
+                mat.use_nodes = True
+                bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                if bsdf is not None:
+                    bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+                    bsdf.inputs["Roughness"].default_value = 0.55
+            return mat
+
         def execute(self, context):
             try:
-                verts, faces, nc = build_fractal(
+                verts, faces, nc, face_gen = build_fractal(
                     self.kind, self.mode, self.generations,
                     self.child_scale, self.spread, self.keep_parents,
-                    self.scale)
+                    self.push, self.twist, self.rot_x, self.rot_y,
+                    self.rot_z, self.scale)
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
             me = bpy.data.meshes.new("FractalPolyhedron")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
+            if len(me.polygons) == len(faces):
+                attr = me.attributes.new("generation", 'INT', 'FACE')
+                attr.data.foreach_set('value', face_gen)
+                if self.coloring == 'GEN':
+                    gens = sorted(set(face_gen))
+                    slot = {g: i for i, g in enumerate(gens)}
+                    for g in gens:
+                        me.materials.append(self._material_for(g))
+                    me.polygons.foreach_set(
+                        'material_index',
+                        [slot[g] for g in face_gen])
             me.update()
             obj = bpy.data.objects.new("FractalPolyhedron", me)
             context.collection.objects.link(obj)
@@ -241,8 +338,13 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             for k in ('kind', 'mode', 'generations', 'child_scale',
-                      'spread', 'keep_parents', 'scale'):
+                      'spread', 'keep_parents'):
                 lay.prop(self, k)
+            col = lay.column(align=True)
+            for k in ('push', 'twist', 'rot_x', 'rot_y', 'rot_z'):
+                col.prop(self, k)
+            lay.prop(self, 'coloring')
+            lay.prop(self, 'scale')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.fractal_polyhedron_add",
@@ -270,6 +372,8 @@ if __name__ == "__main__":
                 ('TETRA', 'VERTS', 4, 0.5, False),
                 ('CUBE', 'FACES', 3, 0.45, True),
                 ('ICOSA', 'VERTS', 2, 0.4, True)):
-            v, f, n = build_fractal(kind, mode, gen, cs,
-                                    keep_parents=keep)
-            print(f"{kind} {mode} g{gen}: copies={n} verts={len(v)}")
+            v, f, n, fg = build_fractal(kind, mode, gen, cs, spread=1.0,
+                                        keep_parents=keep, twist=15,
+                                        rot_z=10)
+            print(f"{kind} {mode} g{gen}: copies={n} verts={len(v)} "
+                  f"gens={sorted(set(fg))}")

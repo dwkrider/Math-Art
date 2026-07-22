@@ -82,11 +82,11 @@ def register():
         m.ADD_MENU = False       # entries live in the Math Art submenu
         m.register()
     bpy.utils.register_class(VIEW3D_MT_math_art_add)
-    bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
+    bpy.types.VIEW3D_MT_add.append(_menu_func)
 
 
 def unregister():
-    bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+    bpy.types.VIEW3D_MT_add.remove(_menu_func)
     bpy.utils.unregister_class(VIEW3D_MT_math_art_add)
     for m in reversed(_MODULES):
         m.unregister()
