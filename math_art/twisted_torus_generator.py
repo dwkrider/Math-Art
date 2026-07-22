@@ -171,7 +171,7 @@ def build_twisted_torus(n=3, major=1.6, minor=0.55, twist_steps=1,
 
 try:
     import bpy
-    from bpy.props import (FloatProperty, IntProperty)
+    from bpy.props import (FloatProperty, IntProperty, EnumProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -212,8 +212,37 @@ if _IN_BLENDER:
         profile_res: IntProperty(
             name="Profile Subdivision", default=2, min=1, max=16,
             description="Points per polygon side")
+        coloring: EnumProperty(
+            name="Coloring",
+            items=[('BAND', "Per Band",
+                    "One material per helical band -- works in both the "
+                    "contiguous mesh and separated sheets (view with "
+                    "Material Preview or Solid shading set to Material "
+                    "colour)"),
+                   ('NONE', "None", "No materials")],
+            default='BAND')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
+
+        _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
+                    (0.95, 0.77, 0.29), (0.30, 0.69, 0.42),
+                    (0.62, 0.40, 0.75), (0.25, 0.72, 0.72),
+                    (0.91, 0.56, 0.71), (0.55, 0.60, 0.29)]
+
+        @classmethod
+        def _material_for(cls, i):
+            name = f"Torus Band {i + 1}"
+            mat = bpy.data.materials.get(name)
+            if mat is None:
+                mat = bpy.data.materials.new(name)
+                rgb = cls._PALETTE[i % len(cls._PALETTE)]
+                mat.diffuse_color = (*rgb, 1.0)
+                mat.use_nodes = True
+                bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                if bsdf is not None:
+                    bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+                    bsdf.inputs["Roughness"].default_value = 0.45
+            return mat
 
         @staticmethod
         def _make_mesh(name, verts, faces, sharp_verts):
@@ -250,6 +279,22 @@ if _IN_BLENDER:
                     for k in range(self.n):
                         sharp.add(s * m + k * pr)
                 me = self._make_mesh("TwistedTorus", verts, faces, sharp)
+                # helical band id per face: the side index (mod the band
+                # count) of the face's profile position; continuous
+                # across the twist seam by construction
+                t_eff = self.twist_steps % self.n
+                g = gcd(self.n, t_eff) if t_eff else self.n
+                face_band = [((i // pr) % g)
+                             for s in range(self.segments)
+                             for i in range(m)]
+                if len(me.polygons) == len(face_band):
+                    attr = me.attributes.new("band_index", 'INT', 'FACE')
+                    attr.data.foreach_set('value', face_band)
+                    if self.coloring == 'BAND':
+                        for i in range(g):
+                            me.materials.append(self._material_for(i))
+                        me.polygons.foreach_set('material_index',
+                                                face_band)
                 obj = bpy.data.objects.new("TwistedTorus", me)
                 context.collection.objects.link(obj)
                 obj.location = cursor
@@ -267,6 +312,11 @@ if _IN_BLENDER:
                 for bi, (verts, faces, corners) in enumerate(bands):
                     me = self._make_mesh(f"TwistedTorusBand{bi + 1}",
                                          verts, faces, corners)
+                    attr = me.attributes.new("band_index", 'INT', 'FACE')
+                    attr.data.foreach_set('value',
+                                          [bi] * len(me.polygons))
+                    if self.coloring == 'BAND':
+                        me.materials.append(self._material_for(bi))
                     obj = bpy.data.objects.new(
                         f"TwistedTorusBand{bi + 1}", me)
                     context.collection.objects.link(obj)
@@ -284,7 +334,7 @@ if _IN_BLENDER:
             lay.use_property_split = True
             for k in ('n', 'twist_steps', 'shrink', 'sheet_thickness',
                       'major', 'minor', 'rounding', 'segments',
-                      'profile_res', 'scale'):
+                      'profile_res', 'coloring', 'scale'):
                 if k == 'sheet_thickness' and self.shrink >= 0.999:
                     continue
                 lay.prop(self, k)
