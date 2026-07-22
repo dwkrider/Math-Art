@@ -28,6 +28,7 @@ from . import symmetrohedron_generator
 from . import twisted_torus_generator
 from . import polytope4d_generator
 from . import tangle_generator
+from . import symmetric_sculpture_generator
 
 import bpy
 
@@ -38,7 +39,7 @@ _MODULES = (scherk_collins_generator, minimal_surface_toolkit,
             polylinks_generator, platonic_twist_generator,
             fractal_polyhedron_generator, symmetrohedron_generator,
             twisted_torus_generator, polytope4d_generator,
-            tangle_generator)
+            tangle_generator, symmetric_sculpture_generator)
 
 
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
@@ -73,6 +74,9 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.operator("mesh.twisted_torus_add", icon='MESH_TORUS')
         lay.operator("mesh.polytope4d_add", icon='MESH_CUBE')
         lay.operator("mesh.tangle_add", icon='MOD_BOOLEAN')
+        lay.separator()
+        lay.operator("object.symmetric_sculpture_add",
+                     icon='MOD_MIRROR')
 
 
 def _menu_func(self, context):

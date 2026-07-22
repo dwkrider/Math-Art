@@ -41,6 +41,9 @@ OPS = [
     ("symmetrohedron", lambda: bpy.ops.mesh.symmetrohedron_add()),
     ("twisted torus", lambda: bpy.ops.mesh.twisted_torus_add()),
     ("tangle", lambda: bpy.ops.mesh.tangle_add(kind='T5')),
+    ("symmetric sculpture",
+     lambda: bpy.ops.object.symmetric_sculpture_add(group='ICOSA',
+                                                    family='P3')),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):

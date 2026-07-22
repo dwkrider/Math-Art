@@ -80,8 +80,12 @@ The modules:
      steps, giving gcd(n, steps) helical bands; corner-rounding
      slider. *Triangle Shrink* < 1 shrinks each side about its
      midpoint and emits **one mesh object per helical band** (solid
-     ribbons with sharp border edges) so bands can be coloured
-     independently; at 1 the classic contiguous tube is produced.
+     ribbons with sharp border edges); at 1 the classic contiguous
+     tube is produced. Coloring: **Per Strip** (default) gives each
+     of the n visible helical strips its own material; **Per Band**
+     colours by connected band — gcd(n, twist) of them, so coprime
+     twists give a single colour; `strip_index` / `band_index` face
+     attributes are always written.
 6. **Polyhedral tangles** (math_art/tangle_generator.py) — compounds
    of interwoven polyhedron frames: 2/5/10 tetrahedra (the classic
    *Tetra Tangle*), 3 and 5 cubes, 5 octahedra — as hollow-face
@@ -97,8 +101,32 @@ The modules:
    circular arc. 4D rotation sliders (XW/YW/ZW/XY), and struts can
    taper with the local projection scale. Vertex/edge counts verified
    (120-cell: 600 vertices, 1200 edges).
+8. **Symmetric Sculpture designer**
+   (`math_art/symmetric_sculpture_generator.py`) — an interactive
+   Blender adaptation of George Hart's sculpture design software
+   (*Symmetric Sculpture*, J. of Mathematics and the Arts 1(1), 2007
+   — the tool behind *Twisted Rivers*, *Tumbleweed*, *Frabjous*,
+   *Spaghetti Code*). Pick a symmetry group (icosahedral 60 /
+   octahedral 24 / tetrahedral 12) and a **plane family** — the
+   extended face planes of an icosahedron (20×3-fold), dodecahedron
+   (12×5-fold), rhombic triacontahedron (30×2-fold) or
+   hexecontahedron (60×1). The operator creates three linked
+   objects: a flat **Motif** mesh in one representative plane, a
+   wireframe **Guides** object showing the stellation pattern (the
+   lines where the other planes cut this one — Hart's 2D editor
+   background), and a **SymSculpt** object whose Geometry Nodes
+   modifier instances the motif under every rotation of the group.
+   Edit the motif in edit mode — or grab/rotate the whole motif
+   object — and all 60 copies update **live**, exactly Hart's
+   workflow. The modifier's **Shell** input radially extrudes the
+   result by a fraction of its distance from the origin (Hart's ~4%
+   extrusion, planarity-preserving) for a printable solid; **Weld**
+   merges copies that meet exactly on the plane-intersection lines.
+   A `copy_index` attribute distinguishes copies for shading.
 
 ![120-cell](renders/form_120cell.png)
+
+![Symmetric sculpture](renders/form_symmetric_sculpture.png)
 
 ![Platonic twist](renders/form_platonic_twist.png)
 
@@ -369,6 +397,11 @@ Rossiter ([source](https://github.com/antiprism/antiprism), GPL):
   after the generators on Hart's vibecode page
 - Symmetrohedra: C. S. Kaplan & G. W. Hart, *Symmetrohedra: Polyhedra
   from Symmetric Placement of Regular Polygons*, Bridges 2001
+- Symmetric Sculpture designer: G. W. Hart, *Symmetric sculpture*,
+  Journal of Mathematics and the Arts 1(1), 2007, pp. 21–28
+  ([PDF](https://www.georgehart.com/sculpture/Symmetric-Sculpture.pdf))
+  — the plane-family replication, stellation-pattern guides and
+  radial extrusion are modelled on the software described there
 
 Thanks also to the Blender Foundation — everything here builds on the
 Blender Python API and the 4.2+ extensions platform.
