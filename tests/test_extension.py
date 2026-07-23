@@ -185,6 +185,10 @@ OPS = [
         surface='TRIHYPERBOLOID', resolution=32)),
     ("curiosity paper bag", lambda: bpy.ops.mesh.curiosity_surface_add(
         surface='PAPERBAG', resolution=32)),
+    ("rolling knot", lambda: bpy.ops.mesh.rolling_knot_add(
+        p=3, samples=256, sides=10)),
+    ("rolling knot morton", lambda: bpy.ops.mesh.rolling_knot_add(
+        p=5, mode='MORTON', samples=256, sides=8)),
     ("minimal poly active",
      lambda: (bpy.ops.mesh.conway_add(example='CUSTOM',
                                       notation='sC'),

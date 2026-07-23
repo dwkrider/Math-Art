@@ -421,6 +421,25 @@ The modules:
     the three coordinate hyperboloids, enclosed volume 8·ln 2 —
     the mesh volume is verified against it in the self-tests).
 
+39. **Rolling Knot** (`math_art/rolling_knot_generator.py`) —
+    smooth-rolling knots after Brodeur, Vidulis, Dandy & Pauly
+    (*Smooth-Rolling Knots*, Bridges 2025): Morton's (p,2)
+    torus knots stretched and morphed so their two exterior
+    lobes lie on the ellipses of a smooth-rolling **Two-Disk
+    Roller** (γ² = 4α² − 2β², Engelhardt & Ucke) — the centre
+    of mass then stays at constant height while the knot rolls
+    (ρ ≈ 10⁻⁴ from a raw ρ ≈ 0.2, verified over the exact
+    bitangent contact band). Uniquely, the optimization is
+    **thickness-aware**: for a circular tube the support
+    function offsets uniformly (Minkowski) and a closed tube's
+    centre of mass is exactly the curve's arc-length centroid,
+    so the ideal solution survives thickening *until strands
+    fuse* — the generator integrates the fused-volume mass
+    exactly and rebalances the interior so the printed solid,
+    not just the ideal curve, rolls smoothly (reported as
+    ρ_thick and overlap %% in the operator info). Modes:
+    Morton / Stretched / Smooth-Rolling; p = 3–9.
+
 ![120-cell](renders/form_120cell.png)
 
 ![120-cell, Leonardo style](renders/form_120cell_leonardo.png)
@@ -740,6 +759,20 @@ Rossiter ([source](https://github.com/antiprism/antiprism), GPL):
   polyhedron illustrations for Luca Pacioli's *De divina
   proportione* (1509); see also G. W. Hart,
   [Leonardo da Vinci's Polyhedra](https://www.georgehart.com/virtual-polyhedra/leonardo.html)
+
+**Rolling knots**
+
+- M. Brodeur, M. Vidulis, L.-J. Dandy, M. Pauly,
+  *Smooth-Rolling Knots*, Bridges 2025 Conference Proceedings
+  ([code](https://github.com/EPFL-LGG/smooth_rolling_knots)) —
+  the TDR construction reimplemented here, extended with the
+  tube-thickness-aware balance stage
+- H. R. Morton, *Trefoil Knots without Tritangent Planes*,
+  Bull. London Math. Soc. 23(1), 1991
+- A. Eget, S. Lucas, L. Taalman, *Optimizing Morton's
+  Tritangentless Knots for Rolling*, Bridges 2020
+- C. Engelhardt, C. Ucke, *The Two-Disc-Roller — a Combination
+  of Physics, Art and Mathematics*, 2017
 
 **Mathematical sculpture** — inspired by works of
 [Robert Fathauer](https://www.robertfathauer.com/):

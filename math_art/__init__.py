@@ -61,6 +61,7 @@ _MODULE_NAMES = [
     'bubble_generator',
     'helical_surface_generator',
     'curiosity_surface_generator',
+    'rolling_knot_generator',
 ]
 
 _MODULES = []
@@ -151,6 +152,7 @@ class VIEW3D_MT_math_art_knots(bpy.types.Menu):
                                    text="Strange Attractor",
                                    icon='RNDCURVE')
         _op(lay, "curve.dual_helix_add", icon='MOD_SCREW')
+        _op(lay, "mesh.rolling_knot_add", icon='PHYSICS')
 
 
 class VIEW3D_MT_math_art_weaves(bpy.types.Menu):

@@ -366,7 +366,7 @@ if _IN_BLENDER:
                         "than the wall cuts comma-shaped holes "
                         "right through the shell")
         motif_size: FloatProperty(
-            name="Motif Size", default=0.3, min=0.01, max=10.0,
+            name="Motif Size", default=0.25, min=0.01, max=10.0,
             description="Overall size of the comma motif")
         relief: FloatProperty(
             name="Motif Relief", default=-0.05, min=-10.0, max=10.0,
