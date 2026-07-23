@@ -337,6 +337,111 @@ def _field_shell(R, t, thetas, phis, gfun, has_north=True):
                     [tuple(v) for v in verts_i], faces)
 
 
+def _plane_marching_shell(R, t, Rmax, Rrim, field, step, bowl):
+    """Marching-squares shell for plane-defined patterns, meshed on
+    a uniform Cartesian grid in the plane so features are equally
+    resolved everywhere (a polar grid starves small features far
+    from the centre).  `field(x, y)` is the signed pattern field
+    (material < 0); the solid band r in [Rmax, Rrim] and, for
+    bowls, the open trim at Rrim are folded into the field so the
+    boundaries come out as smooth level sets."""
+    A = Rrim if bowl else Rmax
+    n = max(8, int(math.ceil(2.0 * A / step)))
+    n = min(n, 360)
+    xs = np.linspace(-A, A, n + 1)
+    if not bowl:                      # solid skirt out to the cap
+        ext = []
+        v = A
+        while v < 8.0 * Rmax:
+            v *= 1.6
+            ext.append(min(v, 8.0 * Rmax))
+        xs = np.concatenate([-np.array(ext[::-1]), xs,
+                             np.array(ext)])
+    ys = xs.copy()
+    nx, ny = len(xs), len(ys)
+    X, Y = np.meshgrid(xs, ys, indexing='ij')
+    RP = np.hypot(X, Y)
+    G = np.minimum(field(X, Y), Rmax - RP)
+    if bowl:
+        G = np.maximum(G, RP - Rrim)
+    G[G == 0.0] = 1e-12
+
+    verts_o = []
+    verts_i = []
+    C = np.array((0.0, 0.0, R))
+
+    def emit_xy(x, y):
+        r = math.hypot(x, y)
+        th = 2.0 * math.atan2(2.0 * R, r) if r > 1e-12 else pi
+        ph = math.atan2(y, x)
+        d = np.array((math.sin(th) * math.cos(ph),
+                      math.sin(th) * math.sin(ph), math.cos(th)))
+        verts_o.append(tuple(C + (R + 0.5 * t) * d))
+        verts_i.append(tuple(C + (R - 0.5 * t) * d))
+        return len(verts_o) - 1
+
+    vid = {}
+
+    def gv(i, j):
+        if (i, j) not in vid:
+            vid[(i, j)] = emit_xy(xs[i], ys[j])
+        return vid[(i, j)]
+
+    xing = {}
+
+    def crossing(a, b):
+        key = (a, b) if a < b else (b, a)
+        if key in xing:
+            return xing[key]
+        (ia, ja), (ib, jb) = a, b
+        ga, gb = G[ia, ja], G[ib, jb]
+        u = ga / (ga - gb)
+        idx = emit_xy(xs[ia] + u * (xs[ib] - xs[ia]),
+                      ys[ja] + u * (ys[jb] - ys[ja]))
+        xing[key] = idx
+        return idx
+
+    faces = []
+    for i in range(nx - 1):
+        for j in range(ny - 1):
+            cs = [(i, j), (i + 1, j), (i + 1, j + 1), (i, j + 1)]
+            gs = [G[c] for c in cs]
+            if all(g < 0 for g in gs):
+                faces.append([gv(*c) for c in cs])
+                continue
+            if not any(g < 0 for g in gs):
+                continue
+            poly = []
+            for k in range(4):
+                if gs[k] < 0:
+                    poly.append(gv(*cs[k]))
+                if (gs[k] < 0) != (gs[(k + 1) % 4] < 0):
+                    poly.append(crossing(cs[k], cs[(k + 1) % 4]))
+            if len(poly) >= 3:
+                faces.append(poly)
+    if not bowl:
+        # close the far square boundary with a fan to the pole
+        pole = emit_xy(0.0, 0.0)
+        verts_o[pole] = (0.0, 0.0, 2.0 * R + 0.5 * t)
+        verts_i[pole] = (0.0, 0.0, 2.0 * R - 0.5 * t)
+        ring = ([gv(i, 0) for i in range(nx)]
+                + [gv(nx - 1, j) for j in range(1, ny)]
+                + [gv(i, ny - 1) for i in range(nx - 2, -1, -1)]
+                + [gv(0, j) for j in range(ny - 2, 0, -1)])
+        for k in range(len(ring)):
+            faces.append([pole, ring[k],
+                          ring[(k + 1) % len(ring)]])
+    Vo = np.asarray(verts_o)
+    vol = 0.0
+    for f in faces[:200]:
+        P = Vo[f] - C
+        for k in range(1, len(f) - 1):
+            vol += float(np.dot(P[0], np.cross(P[k], P[k + 1])))
+    if vol < 0:
+        faces = [list(reversed(f)) for f in faces]
+    return _thicken(verts_o, verts_i, faces)
+
+
 def _flower_field(x, y, s, petals, width):
     """Signed field of the flower lattice: petal-shaped holes
     (ellipses radiating from hexagonal lattice points); material
@@ -411,26 +516,15 @@ def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
                 gp = _arc_dist_min(D, edges).reshape(TH.shape) - hw
                 return np.minimum(gp, TH - th_min)
         else:
-            if bowl:
-                rr = np.concatenate([
-                    np.linspace(Rrim, Rmax, n_cap + 1)[:-1],
-                    np.linspace(Rmax, 0.0, res + 1)])
-                thetas = 2.0 * np.arctan2(2.0 * R, rr)
-            else:
-                rr = np.linspace(Rmax, 0.0, res + 1)
-                thetas = np.concatenate([
-                    np.linspace(0.0, th_min, n_cap + 1)[:-1],
-                    2.0 * np.arctan2(2.0 * R, rr)])
+            # plane-defined fields march on a Cartesian grid with
+            # a feature-sized step, so the pattern is equally
+            # resolved everywhere in the plane
             s = spacing * R
             if pattern == 'GRID':
                 ghw = 0.5 * width * s
                 half = 0.5 * s - ghw
 
-                def gfun(TH, PH):
-                    r = 2.0 * R / np.tan(
-                        np.maximum(TH, 1e-9) / 2.0)
-                    x = r * np.cos(PH)
-                    y = r * np.sin(PH)
+                def pfield(x, y):
                     dx = np.abs(x - s * np.round(x / s))
                     dy = np.abs(y - s * np.round(y / s))
                     gp = np.minimum(dx, dy) - ghw
@@ -439,18 +533,16 @@ def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
                     hy = s * (np.floor(y / s) + 0.5)
                     far = np.hypot(np.abs(hx) + half,
                                    np.abs(hy) + half)
-                    gp = np.where((gp > 0) & (far >= Rmax),
-                                  -ghw, gp)
-                    return np.minimum(gp, Rmax - r)
+                    return np.where((gp > 0) & (far >= Rmax),
+                                    -ghw, gp)
+                step = min(2.0 * Rmax / res, s / 12.0)
             else:                     # FLOWER
 
-                def gfun(TH, PH):
-                    r = 2.0 * R / np.tan(
-                        np.maximum(TH, 1e-9) / 2.0)
-                    x = r * np.cos(PH)
-                    y = r * np.sin(PH)
-                    gp = _flower_field(x, y, s, petals, width)
-                    return np.minimum(gp, Rmax - r)
+                def pfield(x, y):
+                    return _flower_field(x, y, s, petals, width)
+                step = min(2.0 * Rmax / res, s / 16.0)
+            return _plane_marching_shell(R, t, Rmax, Rrim, pfield,
+                                         step, bowl)
         return _field_shell(R, t, thetas, phis, gfun,
                             has_north=not bowl)
 
