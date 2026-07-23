@@ -945,6 +945,12 @@ if _IN_BLENDER:
             description="Shift the inner boundary up or down; with "
                         "two circles this makes a catenoid-style "
                         "span")
+        inner_rotation: FloatProperty(
+            name="Inner Rotation", default=0.0,
+            min=-2.0 * math.pi, max=2.0 * math.pi, subtype='ANGLE',
+            description="Rotate the inner boundary about the "
+                        "vertical axis relative to the outer one, "
+                        "twisting the ruling between them")
         samples: IntProperty(
             name="Boundary Samples", default=96, min=32, max=512)
         rings: IntProperty(name="Interior Rings", default=16, min=4, max=128)
@@ -991,6 +997,12 @@ if _IN_BLENDER:
             knot = torus_knot(self.p, self.q, m, scale=self.knot_scale)
             knot[:, 2] *= self.inner_height
             knot[:, 2] += self.inner_lift
+            if self.inner_rotation != 0.0:
+                ca = math.cos(self.inner_rotation)
+                sa = math.sin(self.inner_rotation)
+                knot[:, :2] = np.stack(
+                    [knot[:, 0] * ca - knot[:, 1] * sa,
+                     knot[:, 0] * sa + knot[:, 1] * ca], axis=1)
             t = np.linspace(0, TAU, m, endpoint=False)
             po = self.outer_p or self.p
             if self.outer_q > 0:
@@ -1064,7 +1076,7 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             for k in ('p', 'q', 'knot_scale', 'inner_height',
-                      'inner_lift', 'outer_q'):
+                      'inner_lift', 'inner_rotation', 'outer_q'):
                 lay.prop(self, k)
             if self.outer_q > 0:
                 lay.prop(self, 'outer_p')
