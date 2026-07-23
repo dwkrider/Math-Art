@@ -481,7 +481,7 @@ if _IN_BLENDER:
         for ng in bpy.data.node_groups:
             if (ng.name.startswith(_NG_NAME)
                     and ng.type == 'GEOMETRY'
-                    and any(it.name == 'Copy Material'
+                    and any(it.name == 'Plane Offset'
                             for it in ng.interface.items_tree)):
                 return ng
         ng = bpy.data.node_groups.new(_NG_NAME, 'GeometryNodeTree')
@@ -508,6 +508,14 @@ if _IN_BLENDER:
         s.default_value = _ghost_material()
         s.description = "Material for the replicated copies in " \
                         "design view"
+        s = face("Plane Rotation", in_out='INPUT',
+                 socket_type='NodeSocketVector')
+        s.description = "Euler rotation mapping the motif's XY " \
+                        "plane onto the representative plane"
+        s = face("Plane Offset", in_out='INPUT',
+                 socket_type='NodeSocketVector')
+        s.description = "Translation of the representative plane " \
+                        "(distance x axis)"
         face("Geometry", in_out='OUTPUT',
              socket_type='NodeSocketGeometry')
 
@@ -527,6 +535,7 @@ if _IN_BLENDER:
         oi = n('GeometryNodeObjectInfo')
         oi.transform_space = 'RELATIVE'
         oi.inputs['As Instance'].default_value = True
+        tg = n('GeometryNodeTransform')
         na = n('GeometryNodeInputNamedAttribute')
         na.data_type = 'FLOAT_VECTOR'
         na.inputs['Name'].default_value = "sym_rot"
@@ -558,7 +567,10 @@ if _IN_BLENDER:
         ln(band.outputs['Boolean'], dg.inputs['Selection'])
         ln(dg.outputs['Geometry'], iop.inputs['Points'])
         ln(gi.outputs['Motif'], oi.inputs['Object'])
-        ln(oi.outputs['Geometry'], iop.inputs['Instance'])
+        ln(oi.outputs['Geometry'], tg.inputs['Geometry'])
+        ln(gi.outputs['Plane Rotation'], tg.inputs['Rotation'])
+        ln(gi.outputs['Plane Offset'], tg.inputs['Translation'])
+        ln(tg.outputs['Geometry'], iop.inputs['Instance'])
         ln(na.outputs['Attribute'], iop.inputs['Rotation'])
         ln(iop.outputs['Instances'], sm.inputs['Geometry'])
         ln(gi.outputs['Copy Material'], sm.inputs['Material'])
@@ -578,7 +590,7 @@ if _IN_BLENDER:
         ln(ex.outputs['Mesh'], sw.inputs['True'])
         ln(sw.outputs['Output'], go.inputs['Geometry'])
         for i, node in enumerate((gi, nam, bnot, band, dg, oi,
-                                  na, iop, sm, smw, ri, md,
+                                  tg, na, iop, sm, smw, ri, md,
                                   pos, off, ex, cmp, sw, go)):
             node.location = (200 * (i % 6), -240 * (i // 6))
         return ng
@@ -696,12 +708,15 @@ if _IN_BLENDER:
                 me.update()
                 motif = bpy.data.objects.new("SymSculpt Motif", me)
                 context.collection.objects.link(motif)
-            plane = Matrix((
-                (u[0], v[0], a[0], d * a[0]),
-                (u[1], v[1], a[1], d * a[1]),
-                (u[2], v[2], a[2], d * a[2]),
-                (0.0, 0.0, 0.0, 1.0)))
-            motif.matrix_world = plane
+            # the motif is authored and edited flat on the world
+            # XY plane; the node group maps it onto the
+            # representative plane with this rotation + offset
+            plane_rot = Matrix((
+                (u[0], v[0], a[0]),
+                (u[1], v[1], a[1]),
+                (u[2], v[2], a[2]))).to_euler()
+            plane_off = (d * a[0], d * a[1], d * a[2])
+            motif.matrix_world = Matrix.Identity(4)
             if not motif.data.materials:
                 motif.data.materials.append(_motif_material())
 
@@ -718,7 +733,7 @@ if _IN_BLENDER:
             gme.update()
             guides = bpy.data.objects.new("SymSculpt Guides", gme)
             context.collection.objects.link(guides)
-            guides.matrix_world = plane
+            guides.matrix_world = Matrix.Identity(4)
             guides.display_type = 'WIRE'
             guides.hide_render = True
 
@@ -746,10 +761,16 @@ if _IN_BLENDER:
             ng = _node_group()
             mod.node_group = ng
             for item in ng.interface.items_tree:
-                if item.name == 'Motif' and item.in_out == 'INPUT':
+                if item.in_out != 'INPUT':
+                    continue
+                if item.name == 'Motif':
                     mod[item.identifier] = motif
-                elif item.name == 'Shell' and item.in_out == 'INPUT':
+                elif item.name == 'Shell':
                     mod[item.identifier] = self.shell
+                elif item.name == 'Plane Rotation':
+                    mod[item.identifier] = list(plane_rot)
+                elif item.name == 'Plane Offset':
+                    mod[item.identifier] = list(plane_off)
 
             motif.parent = obj
             motif.matrix_parent_inverse = Matrix.Identity(4)
