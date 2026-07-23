@@ -243,9 +243,8 @@ if _IN_BLENDER:
                             "spiral width must not be a multiple of n")
                     verts, faces = make_polar_zonohedron(star, 1, w)
                     me = bpy.data.meshes.new("Zonohedron")
-                    me.from_pydata(
-                        [tuple(c * self.scale for c in v) for v in verts],
-                        [], [tuple(f) for f in faces])
+                    me.from_pydata([tuple(v) for v in verts],
+                                   [], [tuple(f) for f in faces])
                     me.validate(clean_customdata=True)
                     bm = bmesh.new()
                     bm.from_mesh(me)
@@ -263,8 +262,7 @@ if _IN_BLENDER:
                     pts = subset_sums(star)
                     me = bpy.data.meshes.new("Zonohedron")
                     bm = bmesh.new()
-                    vlist = [bm.verts.new(
-                        tuple(c * self.scale for c in p)) for p in pts]
+                    vlist = [bm.verts.new(tuple(p)) for p in pts]
                     out = bmesh.ops.convex_hull(bm, input=vlist)
                     inner = [v for v in bm.verts
                              if v not in set(out["geom"])
@@ -280,6 +278,18 @@ if _IN_BLENDER:
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
+            # normalize: centre on the origin and fit (roughly)
+            # within a 2 x scale cube, whatever the star produced
+            lo = [min(v.co[k] for v in me.vertices)
+                  for k in range(3)]
+            hi = [max(v.co[k] for v in me.vertices)
+                  for k in range(3)]
+            half = max((hi[k] - lo[k]) / 2.0
+                       for k in range(3)) or 1.0
+            f = self.scale / half
+            for v in me.vertices:
+                v.co = [(v.co[k] - (lo[k] + hi[k]) / 2.0) * f
+                        for k in range(3)]
             me.polygons.foreach_set('use_smooth',
                                     [False] * len(me.polygons))
             me.update()
