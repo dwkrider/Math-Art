@@ -208,7 +208,7 @@ if _IN_BLENDER:
             name="Spiral Width", default=4, min=1, max=31,
             description="Spirallohedron spiral width (zono -P n,w)")
         pitch: FloatProperty(
-            name="Pitch", default=45.0, min=5.0, max=85.0,
+            name="Pitch", default=55.0, min=5.0, max=85.0,
             description="Polar star pitch angle from the axis (degrees)")
         rand_seed: IntProperty(name="Random Seed", default=1, min=0)
         style: EnumProperty(

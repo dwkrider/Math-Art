@@ -258,7 +258,10 @@ The modules:
     polynomials.
 20. **Space-filling solids** (`math_art/spacefill_generator.py`) —
     honeycomb blocks of space-fillers: cubic, octet truss
-    (tet+oct), truncated octahedra, rhombic dodecahedra.
+    (tet+oct), truncated octahedra, rhombic dodecahedra, and
+    Russell Towle's rhombic spirallohedra (3- and 4-armed), whose
+    translation-tiling lattice is derived from the cell's own
+    face pairing and verified at build time.
 21. **Links & connect sums** (`math_art/link_generator.py`) —
     Hopf, Borromean, Whitehead, torus links, chains and connect
     sums as tube curves.

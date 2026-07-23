@@ -94,6 +94,10 @@ OPS = [
     ("algebraic surface", lambda: bpy.ops.mesh.algebraic_surface_add(
         preset='CLEBSCH', resolution=48)),
     ("spacefill", lambda: bpy.ops.mesh.spacefill_add(kind='OCTET')),
+    ("spacefill spiral3", lambda: bpy.ops.mesh.spacefill_add(
+        kind='SPIRAL3', nx=2, ny=2, nz=2)),
+    ("spacefill spiral4", lambda: bpy.ops.mesh.spacefill_add(
+        kind='SPIRAL4', nx=2, ny=2, nz=2)),
     ("math link", lambda: bpy.ops.curve.math_link_add(
         preset='BORROMEAN')),
     ("hyperbolic tiling",

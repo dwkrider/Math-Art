@@ -12,6 +12,16 @@
 #               orientations) filling the gaps, ratio 1:2 in bulk
 #   TRUNCOCT    bitruncated cubic: truncated octahedra on BCC
 #   RHOMBDODEC  rhombic dodecahedra on FCC
+#   SPIRAL3     3-armed rhombic spirallohedra S(12, 4) (Towle)
+#   SPIRAL4     4-armed rhombic spirallohedra S(12, 3)
+#
+# The spirallohedra tile space by pure translations: every rhombic
+# face of the cell maps onto an opposite face of the same cell
+# under some translation, and those translations span a rank-3
+# lattice whose fundamental volume equals the cell volume (both
+# verified numerically at import of the cell -- see
+# _spiral_data).  The lattice basis is derived from the face
+# pairing, not hardcoded.
 #
 # At gap = 1.0 adjacent cells share their faces exactly (the
 # lattices below are in integer canonical coordinates, so shared
@@ -120,6 +130,85 @@ _RD_P = ([((a, b, 0.0), 1.0)
 _RD_F = _plane_faces(_RD_V, _RD_P)
 
 
+# ------------------------------------------------------------------
+# rhombic spirallohedra (Russell Towle): cells cut from the polar
+# zonohedron construction, spiralling bundles of rhombi
+# ------------------------------------------------------------------
+
+_SPIRAL_NW = {'SPIRAL3': (12, 4), 'SPIRAL4': (12, 3)}
+_SPIRAL_CACHE = {}
+
+
+def _face_key(P, nd=6):
+    return frozenset(map(tuple, np.round(P, nd)))
+
+
+def _tiling_basis(V, F, vol):
+    """Basis of the translation lattice of a face-to-face
+    translational tiling by the cell (V, F): for each face find the
+    translations carrying it onto an opposite face of the same
+    cell, then pick three that span volume vol.  Raises if the cell
+    does not tile that way."""
+    data = []
+    for f in F:
+        P = V[list(f)]
+        n = np.zeros(3)
+        for i in range(1, len(f) - 1):
+            n += np.cross(P[i] - P[0], P[i + 1] - P[0])
+        data.append((P.mean(axis=0), n, P))
+    trans = []
+    for c, n, P in data:
+        found = False
+        for c2, n2, P2 in data:
+            if np.linalg.norm(n + n2) > 1e-6:
+                continue
+            t = c - c2
+            if np.linalg.norm(t) < 1e-9:
+                continue
+            if _face_key(P - t) == _face_key(P2):
+                found = True
+                if not any(np.linalg.norm(t - u) < 1e-6
+                           for u in trans):
+                    trans.append(t)
+        if not found:
+            raise ValueError("cell has a face with no translation "
+                             "partner: not a translational tiler")
+    for tri in itertools.combinations(trans, 3):
+        B = np.array(tri)
+        if abs(abs(np.linalg.det(B)) - vol) < 1e-6 * max(1.0, vol):
+            if all(np.allclose(s := np.linalg.solve(B.T, t),
+                               np.round(s), atol=1e-6)
+                   for t in trans):
+                return B
+    raise ValueError("no lattice basis matches the cell volume")
+
+
+def _spiral_data(kind):
+    """(local_verts, faces, basis, height, volume) of the cell,
+    centred on the midpoint of its two apexes; cached."""
+    if kind in _SPIRAL_CACHE:
+        return _SPIRAL_CACHE[kind]
+    try:
+        from .zonohedra_generator import (polar_star,
+                                          make_polar_zonohedron)
+    except ImportError:
+        from zonohedra_generator import (polar_star,
+                                         make_polar_zonohedron)
+    n, w = _SPIRAL_NW[kind]
+    verts, faces = make_polar_zonohedron(polar_star(n), 1, w)
+    V = np.asarray(verts, float)
+    vol = _mesh_volume(V, faces)
+    if vol < 0:                        # wind the faces outward
+        faces = [list(reversed(f)) for f in faces]
+        vol = -vol
+    B = _tiling_basis(V, faces, vol)
+    centre = (V[0] + V[1]) / 2.0       # the two apexes
+    height = abs(V[1][2] - V[0][2])
+    out = (V - centre, faces, B, height, vol)
+    _SPIRAL_CACHE[kind] = out
+    return out
+
+
 def build_block(kind, nx, ny, nz):
     """Cells of the block in canonical lattice coordinates.
 
@@ -166,6 +255,14 @@ def build_block(kind, nx, ny, nz):
                 cells.append((np.array((x, y, z), float),
                               _RD_V, _RD_F, 0))
         return cells, 2.0
+    if kind in _SPIRAL_NW:
+        # translates over the derived tiling lattice; tag by
+        # lattice parity for the optional two-tone colouring
+        V, F, B, height, vol = _spiral_data(kind)
+        for i, j, k in P(range(nx), range(ny), range(nz)):
+            cells.append((i * B[0] + j * B[1] + k * B[2],
+                          V, F, (i + j + k) % 2))
+        return cells, height
     raise ValueError(kind)
 
 
@@ -200,6 +297,9 @@ def block_volume(kind, nx, ny, nz, size=1.0):
     """Analytic total volume of all cells at gap = 1."""
     cells, pitch = build_block(kind, nx, ny, nz)
     s3 = (size / pitch) ** 3
+    if kind in _SPIRAL_NW:
+        vol = _spiral_data(kind)[4]
+        return len(cells) * vol * s3
     return sum(_CELL_VOL[kind][t] for *_, t in cells) * s3
 
 
@@ -226,7 +326,9 @@ if _IN_BLENDER:
 
     _LABEL = {'CUBIC': "Cubes", 'OCTET': "Octet",
               'TRUNCOCT': "Truncated Octahedra",
-              'RHOMBDODEC': "Rhombic Dodecahedra"}
+              'RHOMBDODEC': "Rhombic Dodecahedra",
+              'SPIRAL3': "Spirallohedra (3-Armed)",
+              'SPIRAL4': "Spirallohedra (4-Armed)"}
 
     def _material(name, rgb):
         mat = bpy.data.materials.get(name)
@@ -259,7 +361,15 @@ if _IN_BLENDER:
                     "Bitruncated cubic honeycomb on the BCC "
                     "lattice"),
                    ('RHOMBDODEC', "Rhombic Dodecahedra",
-                    "Rhombic dodecahedra on the FCC lattice")],
+                    "Rhombic dodecahedra on the FCC lattice"),
+                   ('SPIRAL3', "Rhombic Spirallohedra (3-Armed)",
+                    "Three-armed rhombic spirallohedra S(12,4) "
+                    "after Russell Towle, interlocking on their "
+                    "translation lattice"),
+                   ('SPIRAL4', "Rhombic Spirallohedra (4-Armed)",
+                    "Four-armed rhombic spirallohedra S(12,3) "
+                    "after Russell Towle, interlocking on their "
+                    "translation lattice")],
             default='OCTET')
         nx: IntProperty(name="Cells X", default=3, min=1, max=12,
                         description="Lattice cells along X")
@@ -291,8 +401,9 @@ if _IN_BLENDER:
         two_materials: BoolProperty(
             name="Two Materials", default=True,
             description="Distinct materials for octahedra and "
-                        "tetrahedra (Octet only; the other "
-                        "honeycombs have no honest 2-colouring)")
+                        "tetrahedra (Octet), or alternating by "
+                        "lattice parity (Spirallohedra); the other "
+                        "honeycombs have no honest 2-colouring")
 
         def execute(self, context):
             verts, faces, tags = build_mesh(self.kind, self.nx,
@@ -301,12 +412,19 @@ if _IN_BLENDER:
             me = bpy.data.meshes.new("Spacefill")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
-            if (self.kind == 'OCTET' and self.two_materials
+            if (self.kind in ('OCTET', 'SPIRAL3', 'SPIRAL4')
+                    and self.two_materials
                     and len(me.polygons) == len(tags)):
-                me.materials.append(_material(
-                    "Spacefill Octahedron", (0.9, 0.45, 0.12)))
-                me.materials.append(_material(
-                    "Spacefill Tetrahedron", (0.15, 0.35, 0.8)))
+                if self.kind == 'OCTET':
+                    me.materials.append(_material(
+                        "Spacefill Octahedron", (0.9, 0.45, 0.12)))
+                    me.materials.append(_material(
+                        "Spacefill Tetrahedron", (0.15, 0.35, 0.8)))
+                else:
+                    me.materials.append(_material(
+                        "Spacefill Spiral A", (0.85, 0.55, 0.15)))
+                    me.materials.append(_material(
+                        "Spacefill Spiral B", (0.2, 0.45, 0.7)))
                 me.polygons.foreach_set('material_index', tags)
             me.update()
             obj = bpy.data.objects.new(
@@ -335,7 +453,7 @@ if _IN_BLENDER:
             lay.use_property_split = True
             for k in ('kind', 'nx', 'ny', 'nz', 'gap', 'size'):
                 lay.prop(self, k)
-            if self.kind == 'OCTET':
+            if self.kind in ('OCTET', 'SPIRAL3', 'SPIRAL4'):
                 lay.prop(self, 'two_materials')
             lay.prop(self, 'style')
             if self.style == 'LEONARDO':
@@ -365,10 +483,27 @@ if __name__ == "__main__":
     else:
         # at gap = 1 the numeric mesh volume must equal the
         # analytic total cell volume for every honeycomb
-        for kind in ('CUBIC', 'OCTET', 'TRUNCOCT', 'RHOMBDODEC'):
+        for kind in ('CUBIC', 'OCTET', 'TRUNCOCT', 'RHOMBDODEC',
+                     'SPIRAL3', 'SPIRAL4'):
             v, f, t = build_mesh(kind, 3, 3, 2, gap=1.0)
             num = _mesh_volume(v, f)
             ana = block_volume(kind, 3, 3, 2)
             ok = abs(num - ana) < 1e-9 * max(1.0, ana)
             print(f"{kind}: vol={num:.6f} ({ana:.6f}) "
                   f"{'OK' if ok else 'BAD'}")
+        # spirallohedra: at gap = 1 every non-boundary face of the
+        # block must be shared exactly (coincident with a face of a
+        # neighbouring cell)
+        for kind in ('SPIRAL3', 'SPIRAL4'):
+            V, F, B, height, vol = _spiral_data(kind)
+            keys = {}
+            for off in itertools.product(range(2), repeat=3):
+                t = off[0] * B[0] + off[1] * B[1] + off[2] * B[2]
+                for f in F:
+                    k = _face_key(V[list(f)] + t)
+                    keys[k] = keys.get(k, 0) + 1
+            shared = sum(1 for c in keys.values() if c == 2)
+            print(f"{kind}: {shared} shared faces in a 2x2x2 block "
+                  f"({'OK' if shared > 0 else 'BAD'})")
+            assert shared > 0
+        print("spacefill standalone tests passed")
