@@ -321,7 +321,7 @@ The modules:
     at the smoothed iso-contour of the distance-to-cell-boundary
     field, and a Solidify modifier supplies the thickness. Open
     surfaces keep their boundary as a solid frame.
-30. **Saddle Polyhedron**
+30. **Saddle Polyhedron & Minimal Surface Form**
     (`math_art/saddle_polyhedron_generator.py`) — saddle
     membranes spanning the **Petrie polygons** of a polyhedron
     (Peter Pearce's saddle-polyhedra territory): every edge lies
@@ -333,6 +333,15 @@ The modules:
     pass through each other (they all meet at the cube form's
     centre). Works on the built-in seeds or the active mesh
     object; optional per-patch coloring and Solidify thickness.
+    The default **Diagonal Caps** construction reproduces Norman
+    Carlberg's *Minimal Surface Form 6*: the six face diagonals
+    of an inscribed tetrahedron (fitted to a scan of the
+    sculpture, including its handedness) cut the cube surface
+    into four corner caps, and each is replaced by a Plateau
+    membrane pinned on the diagonal frame and a small corner tip
+    -- giving the sculpture's flat basins, corner funnels,
+    straight ridges and eight corner tips (bulge / tip-size /
+    mirror controls).
 31. **Minimal Surface Polyhedron**
     (`math_art/minimal_polyhedron_generator.py`) — pierced,
     membrane-relaxed polyhedra: faces are subdivided, opened near

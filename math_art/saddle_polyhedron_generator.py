@@ -211,6 +211,90 @@ def build_saddle(V, F, m=10, rings=8, iterations=150):
     return verts, faces, pids, len(circuits)
 
 
+def build_diagonal_caps(n=24, bulge=1.0, mirror=False, tip=0.12,
+                        iterations=30):
+    """The Carlberg Form 6 construction.  The six face diagonals
+    of one inscribed regular tetrahedron cut the cube's surface
+    into four bent triangular caps of three half-faces each, each
+    cap wrapping one corner of the OTHER tetrad.  Over the
+    tetra-face triangle (A, B, C) in barycentric coordinates the
+    bent cap is EXACTLY the lift k = 3 min(a, b, c) toward the
+    wrapped corner D (each median maps onto a cube edge, the
+    centre onto D).  Form 6 is the MINIMAL SURFACE version: the
+    membrane is pinned on the triangle frame and on a small
+    corner tip of the bent cap (fraction `tip` around D) and
+    Plateau-relaxed, giving the flat basins, corner funnels and
+    straight diagonal ridges of the sculpture.  A tetrad
+    fitted against the sculpture's scan sets the handedness;
+    `mirror` picks the other one, `bulge` scales the lift."""
+    even = [np.array(v, float) for v in
+            ((1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1))]
+    if not mirror:                     # the scan's handedness
+        even = [v * np.array((-1.0, 1.0, 1.0)) for v in even]
+    verts = []
+    faces = []
+    pids = []
+    vid = {}
+
+    def emit(p):
+        key = tuple(np.round(p, 9))
+        if key not in vid:
+            vid[key] = len(verts)
+            verts.append(tuple(p))
+        return vid[key]
+
+    try:
+        try:
+            from .minimal_surface_toolkit import minimize_area
+        except ImportError:
+            from minimal_surface_toolkit import minimize_area
+    except Exception:
+        minimize_area = None
+
+    for pi in range(4):
+        A, B, C = [even[j] for j in range(4) if j != pi]
+        # the odd corner wrapped by this cap: the cube corner on
+        # the 3-fold axis through the triangle's centroid
+        G = (A + B + C) / 3.0
+        D = np.sign(G)
+        # consistent outward winding: the frame normal must point
+        # toward the wrapped corner
+        if np.dot(np.cross(B - A, C - A), D - G) < 0:
+            B, C = C, B
+        amp = bulge * (D - G)
+        P = []
+        pin = []
+        idx = {}
+        for i in range(n + 1):
+            for j in range(n + 1 - i):
+                a = i / n
+                b = j / n
+                c = 1.0 - a - b
+                m = 3.0 * min(a, b, c)
+                P.append(a * A + b * B + c * C + m * amp)
+                pin.append(m < 1e-9 or m > 1.0 - tip)
+                idx[(i, j)] = len(P) - 1
+        P = np.array(P)
+        tris = []
+        for i in range(n):
+            for j in range(n - i):
+                tris.append((idx[(i, j)], idx[(i + 1, j)],
+                             idx[(i, j + 1)]))
+                if j < n - i - 1:
+                    tris.append((idx[(i + 1, j)],
+                                 idx[(i + 1, j + 1)],
+                                 idx[(i, j + 1)]))
+        fixed = np.array(pin)
+        if minimize_area is not None and iterations > 0:
+            minimize_area(P, np.array(tris), fixed,
+                          outer_iters=iterations)
+        local = [emit(p) for p in P]
+        for t in tris:
+            faces.append([local[i] for i in t])
+            pids.append(pi)
+    return verts, faces, pids, 4
+
+
 def _seed(name):
     try:
         from . import spiked_polyhedron_generator as sp
@@ -249,10 +333,35 @@ if _IN_BLENDER:
         bl_label = "Saddle Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
+        style: EnumProperty(
+            name="Construction",
+            items=[('CAPS', "Diagonal Caps (Form 6)",
+                    "Four smooth caps on the inscribed "
+                    "tetrahedron's face-diagonal frame, each "
+                    "bulging to a cube corner -- Norman "
+                    "Carlberg's Minimal Surface Form 6"),
+                   ('PETRIE', "Petrie Membranes",
+                    "Plateau membranes spanning the Petrie "
+                    "polygons of the seed polyhedron")],
+            default='CAPS')
+        bulge: FloatProperty(
+            name="Bulge", default=1.0, min=0.0, max=2.0,
+            description="Diagonal Caps: how far each cap reaches "
+                        "toward its cube corner (1 = touches the "
+                        "corner, 0 = flat tetrahedron)")
+        mirror: BoolProperty(
+            name="Mirrored", default=False,
+            description="Diagonal Caps: use the other inscribed "
+                        "tetrad (the opposite handedness)")
+        tip: FloatProperty(
+            name="Tip Size", default=0.12, min=0.02, max=0.5,
+            description="Diagonal Caps: fraction of each cap held "
+                        "as the bare cube-corner tip that the "
+                        "membrane hangs from")
         seed: EnumProperty(
             name="Seed",
             items=[('CUBE', "Cube",
-                    "4 saddle hexagons -- the Form 6 family"),
+                    "4 saddle hexagons"),
                    ('TETRA', "Tetrahedron", "3 saddle quads"),
                    ('OCTA', "Octahedron", "4 saddle hexagons"),
                    ('DODECA', "Dodecahedron", "6 saddle decagons"),
@@ -284,6 +393,14 @@ if _IN_BLENDER:
                              max=100.0)
 
         def execute(self, context):
+            if self.style == 'CAPS':
+                n = max(8, self.side_segments * 2)
+                verts, faces, pids, npat = build_diagonal_caps(
+                    n, self.bulge, self.mirror, self.tip,
+                    self.iterations)
+                name = "Minimal Surface Form"
+                return self._emit(context, name, verts, faces,
+                                  pids, npat)
             if self.seed == 'ACTIVE':
                 src = context.active_object
                 if src is None or src.type != 'MESH':
@@ -307,6 +424,10 @@ if _IN_BLENDER:
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
+            return self._emit(context, name, verts, faces, pids,
+                              npat)
+
+        def _emit(self, context, name, verts, faces, pids, npat):
             # fit (roughly) within a 2 x scale cube at the origin
             lo = [min(v[k] for v in verts) for k in range(3)]
             hi = [max(v[k] for v in verts) for k in range(3)]
@@ -350,9 +471,19 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for k in ('seed', 'side_segments', 'rings',
-                      'iterations', 'color_patches', 'thickness',
-                      'smooth', 'scale'):
+            lay.prop(self, 'style')
+            if self.style == 'CAPS':
+                lay.prop(self, 'bulge')
+                lay.prop(self, 'tip')
+                lay.prop(self, 'mirror')
+                lay.prop(self, 'side_segments')
+                lay.prop(self, 'iterations')
+            else:
+                for k in ('seed', 'side_segments', 'rings',
+                          'iterations'):
+                    lay.prop(self, k)
+            for k in ('color_patches', 'thickness', 'smooth',
+                      'scale'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
