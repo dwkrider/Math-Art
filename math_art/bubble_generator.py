@@ -378,21 +378,15 @@ def build_bubble_solid(ci, ri, cons, subdiv=2):
         key = (a, b) if a < b else (b, a)
         if key in cache:
             return cache[key]
-        la, lb = labs[a], labs[b]
+        # walk the direction arc to where vertex a's surface
+        # stops being the nearest -- lands exactly on a crease
+        # even when a third surface intrudes between a and b
+        la = labs[a]
         p, q = dirs[a].copy(), dirs[b].copy()
-        big = 10.0 * ri
-
-        def h(v):
-            ta = min(_ray_t_one(ci, v, ri, cons, la), big)
-            tb = min(_ray_t_one(ci, v, ri, cons, lb), big)
-            return ta - tb
-        # h(p) <= 0 <= h(q)
-        if h(p) > 0:
-            p, q = q, p
         for _ in range(30):
             m = p + q
             m /= np.linalg.norm(m)
-            if h(m) <= 0:
+            if _ray_t(ci, m, ri, cons)[1] == la:
                 p = m
             else:
                 q = m
@@ -440,6 +434,83 @@ def build_bubble_solid(ci, ri, cons, subdiv=2):
         tlabs.append(lb)
         tris.append((pab, c, pca))
         tlabs.append(lb)
+    # repair pass: a crease can cross a triangle without
+    # changing its vertex labels, leaving a flap assigned to the
+    # wrong surface.  Faces whose centroid ray lands on a
+    # different surface are split at the centroid (conforming --
+    # no edges touched) and the children relabelled by their own
+    # centroid rays, iterated so flaps shrink geometrically.
+    def _cen_label(t):
+        cen = (np.asarray(verts[t[0]]) + verts[t[1]]
+               + verts[t[2]]) / 3.0
+        v = cen - ci
+        nv = np.linalg.norm(v)
+        if nv < 1e-12:
+            return None
+        v /= nv
+        t_hit, lab = _ray_t(ci, v, ri, cons)
+        return t_hit, lab, v
+
+    for _ in range(3):
+        changed = False
+        nt, nl = [], []
+        for t, l in zip(tris, tlabs):
+            hit = _cen_label(t)
+            if hit is None or hit[1] == l:
+                nt.append(t)
+                nl.append(l)
+                continue
+            changed = True
+            t_hit, lab, v = hit
+            J = len(verts)
+            verts.append(ci + t_hit * v)
+            for sub in ((t[0], t[1], J), (t[1], t[2], J),
+                        (t[2], t[0], J)):
+                h2 = _cen_label(sub)
+                nt.append(sub)
+                nl.append(h2[1] if h2 else l)
+        tris, tlabs = nt, nl
+        if not changed:
+            break
+
+    # snap every vertex exactly onto all the surfaces its
+    # facets lie on (alternating projection): plain verts onto
+    # their surface, crease verts onto both -- the rim curve --
+    # and junction verts onto all three, so each facet is
+    # exactly planar / spherical up to its edges
+    vlabs = [set() for _ in verts]
+    for t, l in zip(tris, tlabs):
+        for k in t:
+            vlabs[k].add(l)
+
+    def _proj(p, l):
+        if l == 0:
+            d = p - ci
+            return ci + ri * d / (np.linalg.norm(d) or 1.0)
+        pr, _ = cons[l - 1]
+        if pr['kind'] == 'P':
+            return p - np.dot(p - pr['q'], pr['u']) * pr['u']
+        d = p - pr['cf']
+        return pr['cf'] + pr['rf'] * d / (np.linalg.norm(d)
+                                          or 1.0)
+    for k, ls in enumerate(vlabs):
+        if not ls:
+            continue
+        p = np.asarray(verts[k], float)
+        for _ in range(1 if len(ls) == 1 else 30):
+            for l in sorted(ls):
+                p = _proj(p, l)
+        verts[k] = p
+
+    # orient every facet outward (valid because the solid is
+    # star-shaped around the centre) so crease slivers cannot
+    # end up with inverted normals
+    A = np.array(verts)
+    for k, t in enumerate(tris):
+        nrm = np.cross(A[t[1]] - A[t[0]], A[t[2]] - A[t[0]])
+        cen = (A[t[0]] + A[t[1]] + A[t[2]]) / 3.0 - ci
+        if np.dot(nrm, cen) < 0:
+            tris[k] = (t[0], t[2], t[1])
     return ([tuple(p) for p in verts], tris, tlabs)
 
 
@@ -704,6 +775,33 @@ if _IN_BLENDER:
                 sm = self.smooth and not pname.startswith("Cell")
                 me.polygons.foreach_set(
                     'use_smooth', [sm] * len(me.polygons))
+                # analytic normals: radial on the caps, the
+                # film's own normal on the films -- perfectly
+                # smooth surfaces, perfectly sharp creases
+                if sm and len(me.polygons) == len(ids) \
+                        and min(ids, default=-1) >= 0:
+                    keys_l = list(pairs)
+                    loops = []
+                    for poly, d in zip(me.polygons, ids):
+                        for vi in poly.vertices:
+                            p = np.asarray(V[vi], float)
+                            if d < n:
+                                nn = p - Pa[d]
+                            else:
+                                key = keys_l[d - n]
+                                pr = pairs[key]
+                                sb = (bi if bi is not None
+                                      else key[0])
+                                sg = -pr['sign'][sb]
+                                if pr['kind'] == 'P':
+                                    nn = sg * pr['u']
+                                else:
+                                    nn = sg * (p - pr['cf'])
+                            ln = np.linalg.norm(nn)
+                            nn = (nn / ln if ln > 1e-12
+                                  else np.array((0.0, 0.0, 1.0)))
+                            loops.append(tuple(nn))
+                    me.normals_split_custom_set(loops)
                 attr = me.attributes.new("bubble_index", 'INT',
                                          'FACE')
                 if len(me.polygons) == len(ids):
@@ -881,6 +979,34 @@ if __name__ == "__main__":
                 print(f"bubble solid: V={len(sv)} F={len(sf)} "
                       f"closed, vol={vol:.4f}, "
                       f"{onboth} crease verts on both surfaces")
+        # deep overlap (factor 0.8): every film-label facet of
+        # the solid must be exactly planar -- all its vertices
+        # on the film plane, including the crease rim
+        Rd = bubble_radii(Pc, [], factor=0.8)
+        pairs_d = _interfaces(Pc, Rd)
+        cons = [(pairs_d[k], pairs_d[k]['sign'][0])
+                for k in pairs_d if 0 in k]
+        sv, sf, sl = build_bubble_solid(Pc[0], Rd[0], cons,
+                                        subdiv=3)
+        A = np.array(sv)
+        worst = 0.0
+        for f, l in zip(sf, sl):
+            if l == 0:
+                continue
+            pr, sgn = cons[l - 1]
+            for k in f:
+                worst = max(worst,
+                            abs(np.dot(A[k] - pr['q'],
+                                       pr['u'])))
+        ec = {}
+        for f in sf:
+            for k in range(3):
+                e = frozenset((f[k], f[(k + 1) % 3]))
+                ec[e] = ec.get(e, 0) + 1
+        closed = all(c == 2 for c in ec.values())
+        print(f"deep-overlap solid: facet planarity residual "
+              f"{worst:.2e}, closed={closed}")
+        assert worst < 1e-6 and closed
         # BCC: a centre bubble surrounded by the 8 corners is
         # enclosed -- its film planes (normal to the body
         # diagonals) bound an octahedron
