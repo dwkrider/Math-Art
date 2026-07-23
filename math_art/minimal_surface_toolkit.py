@@ -926,11 +926,25 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         p: IntProperty(name="Knot p", default=2, min=1, max=8)
-        q: IntProperty(name="Knot q", default=3, min=1, max=9)
+        q: IntProperty(
+            name="Knot q", default=3, min=0, max=9,
+            description="q of the inner torus knot; 0 degenerates "
+                        "it to a flat circle (radius 3 x Knot "
+                        "Scale) wound p times")
         circle_radius: FloatProperty(
             name="Circle Radius", default=4.5, min=1.0, max=20.0)
         knot_scale: FloatProperty(
             name="Knot Scale", default=1.0, min=0.1, max=5.0)
+        inner_height: FloatProperty(
+            name="Inner Height", default=1.0, min=0.0, max=5.0,
+            description="Scale of the inner boundary's vertical "
+                        "oscillation, independent of its radius "
+                        "(0 flattens it into a wavy-radius ring)")
+        inner_lift: FloatProperty(
+            name="Inner Lift", default=0.0, min=-10.0, max=10.0,
+            description="Shift the inner boundary up or down; with "
+                        "two circles this makes a catenoid-style "
+                        "span")
         samples: IntProperty(
             name="Boundary Samples", default=96, min=32, max=512)
         rings: IntProperty(name="Interior Rings", default=16, min=4, max=128)
@@ -970,6 +984,8 @@ if _IN_BLENDER:
             if self.split_sheets and self.p > 1:
                 m = max(self.p * 8, (m // self.p) * self.p)
             knot = torus_knot(self.p, self.q, m, scale=self.knot_scale)
+            knot[:, 2] *= self.inner_height
+            knot[:, 2] += self.inner_lift
             t = np.linspace(0, TAU, m, endpoint=False)
             po = self.outer_p or self.p
             if self.outer_q > 0:
@@ -1041,7 +1057,8 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for k in ('p', 'q', 'knot_scale', 'outer_q'):
+            for k in ('p', 'q', 'knot_scale', 'inner_height',
+                      'inner_lift', 'outer_q'):
                 lay.prop(self, k)
             if self.outer_q > 0:
                 lay.prop(self, 'outer_p')
