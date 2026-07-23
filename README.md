@@ -343,7 +343,8 @@ The modules:
     depth, pattern flip, and solver controls; seeds: cube,
     rhombic dodecahedron, truncated octahedron, hexagonal prism,
     or the active mesh object.
-32. **Vertex Vortices** (`math_art/vortex_generator.py`) —
+32. **Polyhedron Vertex Vortices**
+    (`math_art/vortex_generator.py`) —
     inspired by Robert Fathauer's *Vertices Vortices* sculpture:
     each face of a Platonic seed is divided by centre-to-vertex
     spokes, the spokes bend within the face plane with equal
@@ -708,7 +709,8 @@ Rossiter ([source](https://github.com/antiprism/antiprism), GPL):
 - Polyhedron Squeeze Surface: inspired by the *Cubic Squeeze*
   sculpture (edges bowing inward in alternating pairs, minimal
   surfaces spanning the bent frames)
-- Vertex Vortices: inspired by the *Vertices Vortices* sculpture
+- Polyhedron Vertex Vortices: inspired by the *Vertices Vortices*
+  sculpture
   (pinwheel-bent face spokes with membranes over the deleted
   edges)
 

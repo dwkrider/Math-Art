@@ -1,5 +1,5 @@
 
-# Vertex Vortices generator for Blender, inspired by Robert
+# Polyhedron Vertex Vortices generator for Blender, inspired by Robert
 # Fathauer's "Vertices Vortices" sculpture: each face of a
 # polyhedron is divided by spokes from its centre to each of its
 # vertices, the spokes are bent within the face plane with equal
@@ -14,7 +14,7 @@
 # with swirling vortices meeting at the polyhedron's vertices.
 
 bl_info = {
-    "name": "Vertex Vortices",
+    "name": "Polyhedron Vertex Vortices",
     "author": "Math Art project (after Robert Fathauer)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
@@ -188,7 +188,7 @@ if _IN_BLENDER:
         surface over the four spokes around each edge (after
         Robert Fathauer's Vertices Vortices)"""
         bl_idname = "mesh.vertex_vortices_add"
-        bl_label = "Vertex Vortices"
+        bl_label = "Polyhedron Vertex Vortices"
         bl_options = {'REGISTER', 'UNDO'}
 
         seed: EnumProperty(
