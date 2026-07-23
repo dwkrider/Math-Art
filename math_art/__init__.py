@@ -54,6 +54,7 @@ _MODULE_NAMES = [
     'celtic_knot_generator',
     'voronoi_openwork',
     'torus_knot_generator',
+    'organic_wireframe',
 ]
 
 _MODULES = []
@@ -178,6 +179,8 @@ class VIEW3D_MT_math_art_styles(bpy.types.Menu):
             icon='COLORSET_01_VEC')
         _op(lay, "object.voronoi_openwork_add",
             icon='MOD_REMESH')
+        _op(lay, "object.organic_wireframe_add",
+            icon='MOD_WIREFRAME')
 
 
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
