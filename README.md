@@ -303,7 +303,17 @@ The modules:
     The 4D polytope generator also gained **half cutaways, dual
     compounds, and Hopf-fibration cell rings** (`rings` /
     `rings_only`) from the same batch.
-28. **Spiked & hyperbolic polyhedra**
+28. **Celtic knots** (`math_art/celtic_knot_generator.py`) — a
+    port of Adam Newgas's
+    [celtic-knot](https://github.com/BorisTheBrave/celtic-knot)
+    add-on (MIT): strands weaving over and under along the edges
+    of a framework mesh — a built-in Platonic seed or the active
+    mesh object. Celtic (plain) and twill (over-two-under-two,
+    after Akleman et al. 2011) weaves, edge-subdivide / medial
+    remeshing, bezier / pipe / ribbon outputs, per-strand or
+    per-braid coloring. The strand walk was verified
+    point-for-point against the original add-on.
+29. **Spiked & hyperbolic polyhedra**
     (`math_art/spiked_polyhedron_generator.py`) — pyramid-
     augmented Platonic solids (the icosahedron at height √6/3
     gives a 60-face deltahedron of regular tetrahedra — verified),

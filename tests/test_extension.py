@@ -113,6 +113,11 @@ OPS = [
         preset='RHOMBIC')),
     ("gilbert 3d", lambda: bpy.ops.curve.space_filling_add(
         kind='GILBERT3D', gw=12, gh=8, gd=4)),
+    ("celtic knot", lambda: bpy.ops.curve.celtic_knot_add(
+        source='ICOSA')),
+    ("celtic twill ribbon", lambda: bpy.ops.curve.celtic_knot_add(
+        source='DODECA', weave_type='TWILL',
+        remesh_type='MEDIAL', output='RIBBON')),
     ("gilbert 2d", lambda: bpy.ops.curve.space_filling_add(
         kind='GILBERT2D', gw=13, gh=7)),
     ("spacefill spiral4", lambda: bpy.ops.mesh.spacefill_add(

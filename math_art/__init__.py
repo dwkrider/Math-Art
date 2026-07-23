@@ -51,6 +51,7 @@ _MODULE_NAMES = [
     'orbifold_sphere_generator',
     'fractal_tree_generator',
     'spiked_polyhedron_generator',
+    'celtic_knot_generator',
 ]
 
 _MODULES = []
@@ -146,6 +147,7 @@ class VIEW3D_MT_math_art_weaves(bpy.types.Menu):
         _op(lay, "mesh.poly_weave_add", icon='MOD_LATTICE')
         _op(lay, "mesh.rotegrity_add", icon='SPHERE')
         _op(lay, "mesh.stellated_weave_add", icon='MOD_LATTICE')
+        _op(lay, "curve.celtic_knot_add", icon='MOD_LATTICE')
 
 
 class VIEW3D_MT_math_art_odds(bpy.types.Menu):
