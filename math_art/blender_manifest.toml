@@ -4,7 +4,7 @@ id = "math_art"
 version = "1.9.0"
 name = "Math Art"
 tagline = "Mathematical sculpture: minimal surfaces, polyhedra, knots"
-maintainer = "David Krider <dkrider@gmail.com>"
+maintainer = "David Krider"
 type = "add-on"
 
 tags = ["Add Mesh"]
