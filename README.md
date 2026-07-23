@@ -236,6 +236,55 @@ The modules:
     polygonal cross-section profile for printable tubes. Every
     preset is verified by the module's self-test to stay bounded
     without collapsing to a fixed point.
+16. **Stellated Surface Weave**
+    (`math_art/stellated_weave_generator.py`) — twelve folded
+    strips interlocking along the pentagram planes of a small
+    stellated dodecahedron, a faithful port of Shengyi Wang's
+    construction (exactly 2-manifold at every strip width;
+    per-strip coloring).
+17. **Stereographic projection spheres**
+    (`math_art/stereographic_projection_generator.py`) — Segerman-
+    style shadow spheres: a pattern (grid / polar / tiling /
+    beachball) on the sphere, projected from the north pole so a
+    point light there casts the flat pattern as its shadow.
+18. **Hyperbolic honeycombs**
+    (`math_art/hyperbolic_honeycomb_generator.py`) — {p,q,r}
+    honeycombs (including paracompact ones) drawn in the Poincaré
+    ball, edges as geodesic arcs.
+19. **Algebraic surfaces**
+    (`math_art/algebraic_surface_generator.py`) — classical
+    nodal/smooth algebraic surfaces (Clebsch cubic, Cayley, Kummer,
+    Barth sextic, Togliatti, …) via marching cubes on their
+    polynomials.
+20. **Space-filling solids** (`math_art/spacefill_generator.py`) —
+    honeycomb blocks of space-fillers: cubic, octet truss
+    (tet+oct), truncated octahedra, rhombic dodecahedra.
+21. **Links & connect sums** (`math_art/link_generator.py`) —
+    Hopf, Borromean, Whitehead, torus links, chains and connect
+    sums as tube curves.
+22. **Topological surfaces**
+    (`math_art/topological_surface_generator.py`) — Klein bottles
+    (classic and figure-8), Boy's and Roman surfaces, cross-cap,
+    genus-g handlebodies and twisted strips (χ = 2−2g verified).
+23. **Hyperbolic tilings**
+    (`math_art/hyperbolic_tiling_generator.py`) — {p,q} tilings on
+    the Poincaré disk, hemisphere, or pseudosphere.
+24. **Geodesic spheres & domes**
+    (`math_art/geodesic_generator.py`) — Class I/II geodesic
+    subdivisions with dome cuts and four render styles.
+25. **Orbifold symmetry spheres**
+    (`math_art/orbifold_sphere_generator.py`) — all 14 spherical
+    symmetry types as decorated spheres (Conway orbifold
+    notation).
+26. **Fractal trees & mobiles**
+    (`math_art/fractal_tree_generator.py`) — recursive branching
+    trees and Calder-style hanging mobiles as curve skeletons.
+27. **Curvature Color** (`math_art/curvature_color.py`) — a Styles
+    operator coloring any mesh by discrete Gaussian curvature
+    (angle defect), saddle regions vs caps.
+    The 4D polytope generator also gained **half cutaways, dual
+    compounds, and Hopf-fibration cell rings** (`rings` /
+    `rings_only`) from the same batch.
 
 ![120-cell](renders/form_120cell.png)
 

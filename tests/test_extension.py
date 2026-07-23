@@ -85,6 +85,36 @@ OPS = [
      lambda: bpy.ops.curve.attractor_add(
          preset='THOMAS', steps=4000, profile_sides=5,
          samples=1500, spline='BEZIER')),
+    ("solid split", lambda: bpy.ops.mesh.regular_solid_add(
+        family='PLATONIC', solid='ICOSA', pieces=5)),
+    ("stereographic", lambda: bpy.ops.mesh.stereographic_add(
+        pattern='GRID')),
+    ("hyperbolic honeycomb",
+     lambda: bpy.ops.mesh.hyperbolic_honeycomb_add()),
+    ("algebraic surface", lambda: bpy.ops.mesh.algebraic_surface_add(
+        preset='CLEBSCH', resolution=48)),
+    ("spacefill", lambda: bpy.ops.mesh.spacefill_add(kind='OCTET')),
+    ("math link", lambda: bpy.ops.curve.math_link_add(
+        preset='BORROMEAN')),
+    ("hyperbolic tiling",
+     lambda: bpy.ops.mesh.hyperbolic_tiling_add()),
+    ("geodesic", lambda: bpy.ops.mesh.geodesic_add()),
+    ("curvature color",
+     lambda: (bpy.ops.mesh.primitive_torus_add(),
+              bpy.ops.object.curvature_color_add())[-1]),
+    ("orbifold sphere", lambda: bpy.ops.mesh.orbifold_sphere_add()),
+    ("fractal tree", lambda: bpy.ops.curve.fractal_tree_add(
+        mode='TREE')),
+    ("fractal mobile", lambda: bpy.ops.curve.fractal_tree_add(
+        mode='MOBILE')),
+    ("topological surface",
+     lambda: bpy.ops.mesh.topological_surface_add(preset='KLEIN')),
+    ("polytope half", lambda: bpy.ops.mesh.polytope4d_add(
+        kind='CELL24', half=True)),
+    ("polytope dual compound", lambda: bpy.ops.mesh.polytope4d_add(
+        kind='CELL8', dual_compound=True)),
+    ("polytope rings", lambda: bpy.ops.mesh.polytope4d_add(
+        kind='CELL120', rings=2, rings_only=True)),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):
