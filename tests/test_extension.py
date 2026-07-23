@@ -98,13 +98,13 @@ OPS = [
         kind='SPIRAL3', nx=2, ny=2, nz=2)),
     ("solid snub cube left", lambda: bpy.ops.mesh.regular_solid_add(
         family='ARCHIMEDEAN', solid='SC', handedness='LEFT')),
-    ("spikey modern", lambda: bpy.ops.mesh.spikey_add(
+    ("spiked modern", lambda: bpy.ops.mesh.spiked_polyhedron_add(
         preset='MODERN', coloring='GROUP')),
-    ("spikey hyperbolic", lambda: bpy.ops.mesh.spikey_add(
+    ("spiked hyperbolic", lambda: bpy.ops.mesh.spiked_polyhedron_add(
         preset='HYPER', resolution=8)),
-    ("spikey 1988", lambda: bpy.ops.mesh.spikey_add(
+    ("spiked icosa", lambda: bpy.ops.mesh.spiked_polyhedron_add(
         preset='SPIKED')),
-    ("spikey rhombic hex", lambda: bpy.ops.mesh.spikey_add(
+    ("spiked rhombic hex", lambda: bpy.ops.mesh.spiked_polyhedron_add(
         preset='RHOMBIC')),
     ("gilbert 3d", lambda: bpy.ops.curve.space_filling_add(
         kind='GILBERT3D', gw=12, gh=8, gd=4)),

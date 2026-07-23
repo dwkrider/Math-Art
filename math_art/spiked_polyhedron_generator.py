@@ -1,37 +1,33 @@
 
-# "Spikey" generator for Blender: the Mathematica / Wolfram logo
-# family and its generalizations.
+# Spiked & Hyperbolic Polyhedra generator for Blender.
 #
-#   SPIKED    Version 1 (1988) Spikey: an icosahedron augmented
-#             with a pyramid on every face.  At the default height
-#             sqrt(6)/3 x edge the pyramids are regular tetrahedra
-#             and the result is the 60-face deltahedron of the
-#             original logo.  Generalized to any Platonic seed and
-#             any height.
-#   HYPER     Versions 2-5 Spikey: the "hyperbolic dodecahedron" --
-#             faces sag toward the centre while the vertices spike
-#             outward.  Generalized to any Platonic seed with
-#             sharpness / spike-length / resolution controls.
-#   MODERN    Version 6+ Spikey: the rhombic-hexecontahedron
-#             family.  Each icosahedron face carries a tent whose
-#             mid vertices sit along a+b and whose top sits along
-#             a+b+c (a, b, c the face's icosahedral vertex
-#             vectors); at mid = top = 1 the 120 triangles fuse in
-#             pairs into the 60 golden rhombi of the rhombic
-#             hexecontahedron, and lifting the tops (~5%) gives
-#             the current logo's gently folded look.
-#   RHOMBIC   The flat rhombic hexecontahedron itself (the
-#             Wolfram|Alpha logo), emitted as 60 planar golden
-#             rhombi -- the union of 20 acute golden rhombohedra
-#             sharing the centre.
+#   SPIKED    an icosahedron (or any Platonic seed) augmented with
+#             a pyramid on every face.  At the default height
+#             sqrt(6)/3 x edge the pyramids on the icosahedron are
+#             regular tetrahedra and the result is a 60-face
+#             deltahedron.
+#   HYPER     hyperbolic polyhedra: faces sag toward the centre
+#             while the vertices spike outward.  Any Platonic seed
+#             with sharpness / spike-length / resolution controls.
+#   MODERN    the folded rhombic-hexecontahedron family.  Each
+#             icosahedron face carries a tent whose mid vertices
+#             sit along a+b and whose top sits along a+b+c (a, b,
+#             c the face's icosahedral vertex vectors); at
+#             mid = top = 1 the 120 triangles fuse in pairs into
+#             the 60 golden rhombi of the rhombic hexecontahedron,
+#             and lifting the tops (~5%) folds each rhombus gently
+#             along its long diagonal.
+#   RHOMBIC   the flat rhombic hexecontahedron itself, emitted as
+#             60 planar golden rhombi -- the union of 20 acute
+#             golden rhombohedra sharing the centre.
 
 bl_info = {
-    "name": "Spikey (Wolfram logo family)",
+    "name": "Spiked & Hyperbolic Polyhedra",
     "author": "David Krider (Math Art project)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
-    "location": "View3D > Add > Mesh > Spikey",
-    "description": "Mathematica Spikey logos and generalizations",
+    "location": "View3D > Add > Mesh > Spiked & Hyperbolic",
+    "description": "Spiked, hyperbolic and rhombic polyhedra",
     "category": "Add Mesh",
 }
 
@@ -125,10 +121,9 @@ def _seed(name):
 # ---------------------------------------------------------------- #
 
 def build_spiked(seed='ICOSA', height=sqrt(6.0) / 3.0):
-    """Version 1 Spikey (and generalizations): every face of the
-    seed replaced by a pyramid of the given height (in units of the
-    edge length).  ICOSA at sqrt(6)/3 gives the original 1988 logo,
-    a 60-face deltahedron of regular tetrahedra."""
+    """Every face of the seed replaced by a pyramid of the given
+    height (in units of the edge length).  ICOSA at sqrt(6)/3
+    gives a 60-face deltahedron of regular tetrahedra."""
     V, F = _seed(seed)
     verts = [tuple(v) for v in V]
     faces = []
@@ -147,12 +142,11 @@ def build_spiked(seed='ICOSA', height=sqrt(6.0) / 3.0):
 
 
 def build_hyper(seed='DODECA', spike=1.5, sharpness=3.0, res=12):
-    """Versions 2-5 Spikey (and generalizations): the hyperbolic
-    polyhedron.  The flat surface is subdivided and every point is
-    pushed radially by a factor that stays near 1 over the face
-    interiors and rises to `spike` at the vertices, with
-    `sharpness` controlling how abruptly the spikes rise (1 =
-    nearly the flat solid)."""
+    """Hyperbolic polyhedron: the flat surface is subdivided and
+    every point is pushed radially by a factor that stays near 1
+    over the face interiors and rises to `spike` at the vertices,
+    with `sharpness` controlling how abruptly the spikes rise
+    (1 = nearly the flat solid)."""
     V, F = _seed(seed)
     # distance from centre to the face planes (the inradius)
     rmin = min(abs(np.dot(V[f[0]],
@@ -207,15 +201,15 @@ def build_hyper(seed='DODECA', spike=1.5, sharpness=3.0, res=12):
 
 
 def build_modern(mid=1.0, top=1.05, quads=False):
-    """Version 6+ Spikey and the rhombic hexecontahedron.  Per
+    """The rhombic hexecontahedron and its folded family.  Per
     icosahedron face with vertex vectors a, b, c: rhombi
     (a, a+b, a+b+c, a+c) with the mid vertices (a+b) scaled by
     `mid` and the tops (a+b+c) by `top`.  mid = top = 1 is exactly
     the rhombic hexecontahedron (60 planar golden rhombi, the
     union of 20 acute golden rhombohedra); top > 1 folds each
-    rhombus along its long diagonal into the two slightly
-    non-planar triangles of the modern logo.  quads=True emits
-    rhombi as quads (only sensible when they are planar)."""
+    rhombus along its long diagonal into two slightly non-planar
+    triangles.  quads=True emits rhombi as quads (only sensible
+    when they are planar)."""
     V, F = _icosa()
     vid = {}
     verts = []
@@ -295,7 +289,7 @@ if _IN_BLENDER:
                 (0.68, 0.68, 0.68), (0.52, 0.45, 0.40)]
 
     def _material(idx):
-        name = f"Spikey Group {idx}"
+        name = f"Spiked Group {idx}"
         mat = bpy.data.materials.get(name)
         if mat is None:
             mat = bpy.data.materials.new(name)
@@ -309,29 +303,30 @@ if _IN_BLENDER:
                 bsdf.inputs["Roughness"].default_value = 0.5
         return mat
 
-    class MESH_OT_spikey_add(bpy.types.Operator):
-        """Add a Mathematica "Spikey" logo solid: the 1988 spiked
-        icosahedron, the hyperbolic-dodecahedron era, the modern
-        rhombic-hexecontahedron form, or their generalizations"""
-        bl_idname = "mesh.spikey_add"
-        bl_label = "Spikey"
+    class MESH_OT_spiked_polyhedron_add(bpy.types.Operator):
+        """Add a spiked, hyperbolic or rhombic polyhedron: pyramid-
+        augmented Platonic solids, hyperbolic polyhedra with spiked
+        vertices, or the rhombic hexecontahedron and its folded
+        variant"""
+        bl_idname = "mesh.spiked_polyhedron_add"
+        bl_label = "Spiked & Hyperbolic"
         bl_options = {'REGISTER', 'UNDO'}
 
         preset: EnumProperty(
-            name="Spikey",
-            items=[('SPIKED', "Spiked Polyhedron (1988)",
-                    "Pyramid on every face; icosahedron at height "
-                    "sqrt(6)/3 is the original Version 1 logo"),
-                   ('HYPER', "Hyperbolic Polyhedron (1991-2007)",
-                    "Concave faces, spiked vertices: the "
-                    "hyperbolic dodecahedron of Versions 2-5, "
-                    "generalized to any Platonic seed"),
-                   ('MODERN', "Modern Spikey (2007+)",
-                    "The rhombic hexecontahedron family with "
-                    "gently folded rhombi -- today's logo"),
+            name="Form",
+            items=[('SPIKED', "Spiked Polyhedron",
+                    "Pyramid on every face; the icosahedron at "
+                    "height sqrt(6)/3 gives a 60-face deltahedron "
+                    "of regular tetrahedra"),
+                   ('HYPER', "Hyperbolic Polyhedron",
+                    "Concave faces, spiked vertices, any Platonic "
+                    "seed"),
+                   ('MODERN', "Folded Rhombic Hexecontahedron",
+                    "Each golden rhombus gently folded along its "
+                    "long diagonal (adjustable mid / tip scales)"),
                    ('RHOMBIC', "Rhombic Hexecontahedron",
-                    "The flat 60-golden-rhombus solid (the "
-                    "Wolfram|Alpha logo)")],
+                    "The flat 60-golden-rhombus solid, a "
+                    "stellation of the rhombic triacontahedron")],
             default='MODERN')
         seed: EnumProperty(name="Seed", items=SEED_ITEMS,
                            default='ICOSA',
@@ -363,7 +358,7 @@ if _IN_BLENDER:
             name="Top Scale", default=1.05, min=0.5, max=2.0,
             description="Radial scale of the rhombus tips; 1 is "
                         "the flat rhombic hexecontahedron, ~1.05 "
-                        "the current logo's gentle fold")
+                        "a gentle fold")
         coloring: EnumProperty(
             name="Coloring",
             items=[('GROUP', "By Face Group",
@@ -393,19 +388,16 @@ if _IN_BLENDER:
             if p == 'SPIKED':
                 verts, faces, groups = build_spiked(self.seed,
                                                     self.height)
-                name = ("Spikey 1988" if self.seed == 'ICOSA'
-                        else f"Spiked {self.seed.title()}")
+                name = f"Spiked {self.seed.title()}"
             elif p == 'HYPER':
                 verts, faces, groups = build_hyper(
                     self.hyper_seed, self.spike, self.sharpness,
                     self.resolution)
-                name = ("Hyperbolic Dodecahedron"
-                        if self.hyper_seed == 'DODECA'
-                        else f"Hyperbolic {self.hyper_seed.title()}")
+                name = f"Hyperbolic {self.hyper_seed.title()}"
             elif p == 'MODERN':
                 verts, faces, groups = build_modern(self.mid,
                                                     self.top)
-                name = "Spikey"
+                name = "Folded Rhombic Hexecontahedron"
             else:
                 verts, faces, groups = build_modern(1.0, 1.0,
                                                     quads=True)
@@ -479,11 +471,12 @@ if _IN_BLENDER:
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
-        self.layout.operator_menu_enum("mesh.spikey_add", "preset",
-                                       text="Spikey",
+        self.layout.operator_menu_enum("mesh.spiked_polyhedron_add",
+                                       "preset",
+                                       text="Spiked & Hyperbolic",
                                        icon='LIGHT_SUN')
 
-    _classes = (MESH_OT_spikey_add,)
+    _classes = (MESH_OT_spiked_polyhedron_add,)
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
@@ -504,7 +497,8 @@ if __name__ == "__main__":
     if _IN_BLENDER:
         register()
     else:
-        # V1: 60-face deltahedron of regular tetrahedra
+        # spiked icosahedron: 60-face deltahedron of regular
+        # tetrahedra
         V, F, G = build_spiked('ICOSA')
         E = [np.linalg.norm(np.array(V[f[i]])
                             - np.array(V[f[(i + 1) % 3]]))
@@ -512,7 +506,7 @@ if __name__ == "__main__":
         spread = (max(E) - min(E)) / max(E)
         cnt = edge_face_counts(F)
         closed = all(c == 2 for c in cnt.values())
-        print(f"V1 spiked icosa: {len(F)} faces, edge spread "
+        print(f"spiked icosa: {len(F)} faces, edge spread "
               f"{spread:.2e} (deltahedron), closed={closed}")
         assert len(F) == 60 and spread < 1e-9 and closed
 
@@ -539,12 +533,12 @@ if __name__ == "__main__":
         assert (len(F) == 60 and ok_planar and ok_golden
                 and closed and chi == 2)
 
-        # modern Spikey: 120 triangles, closed, chi = 2
+        # folded hexecontahedron: 120 triangles, closed, chi = 2
         V, F, G = build_modern(1.0, 1.05)
         cnt = edge_face_counts(F)
         closed = all(c == 2 for c in cnt.values())
         chi = len(V) - len(cnt) + len(F)
-        print(f"modern Spikey: {len(F)} triangles, "
+        print(f"folded hexecontahedron: {len(F)} triangles, "
               f"closed={closed} chi={chi}")
         assert len(F) == 120 and closed and chi == 2
 

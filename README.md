@@ -296,17 +296,16 @@ The modules:
     The 4D polytope generator also gained **half cutaways, dual
     compounds, and Hopf-fibration cell rings** (`rings` /
     `rings_only`) from the same batch.
-28. **Spikey** (`math_art/spikey_generator.py`) — the Mathematica /
-    Wolfram logo family: the 1988 spiked icosahedron (regular
-    tetrahedra at height √6/3, a 60-face deltahedron — verified),
-    the hyperbolic dodecahedron of Versions 2–5 (generalized to
-    any Platonic seed with spike-length / sharpness / resolution
-    controls), the modern folded Spikey, and the flat rhombic
-    hexecontahedron (the Wolfram|Alpha logo, 60 exactly planar
+28. **Spiked & hyperbolic polyhedra**
+    (`math_art/spiked_polyhedron_generator.py`) — pyramid-
+    augmented Platonic solids (the icosahedron at height √6/3
+    gives a 60-face deltahedron of regular tetrahedra — verified),
+    hyperbolic polyhedra (concave faces, spiked vertices, any
+    Platonic seed with spike-length / sharpness / resolution
+    controls), and the rhombic hexecontahedron (60 exactly planar
     golden rhombi built as the union of 20 acute golden
-    rhombohedra). The modern form exposes the mid / top radial
-    scales, so the whole rhombic-hexecontahedron family is a two-
-    slider space.
+    rhombohedra) with a folded variant whose mid / tip radial
+    scales make the whole family a two-slider space.
 
 ![120-cell](renders/form_120cell.png)
 
