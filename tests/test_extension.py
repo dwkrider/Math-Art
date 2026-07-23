@@ -98,6 +98,18 @@ OPS = [
         kind='SPIRAL3', nx=2, ny=2, nz=2)),
     ("solid snub cube left", lambda: bpy.ops.mesh.regular_solid_add(
         family='ARCHIMEDEAN', solid='SC', handedness='LEFT')),
+    ("spikey modern", lambda: bpy.ops.mesh.spikey_add(
+        preset='MODERN', coloring='GROUP')),
+    ("spikey hyperbolic", lambda: bpy.ops.mesh.spikey_add(
+        preset='HYPER', resolution=8)),
+    ("spikey 1988", lambda: bpy.ops.mesh.spikey_add(
+        preset='SPIKED')),
+    ("spikey rhombic hex", lambda: bpy.ops.mesh.spikey_add(
+        preset='RHOMBIC')),
+    ("gilbert 3d", lambda: bpy.ops.curve.space_filling_add(
+        kind='GILBERT3D', gw=12, gh=8, gd=4)),
+    ("gilbert 2d", lambda: bpy.ops.curve.space_filling_add(
+        kind='GILBERT2D', gw=13, gh=7)),
     ("spacefill spiral4", lambda: bpy.ops.mesh.spacefill_add(
         kind='SPIRAL4', nx=2, ny=2, nz=2)),
     ("math link", lambda: bpy.ops.curve.math_link_add(

@@ -173,8 +173,13 @@ The modules:
     transpose algorithm; the Moore loop chains 4 / 8 rotated
     Hilbert blocks around a Gray-code ring into a single closed
     circuit (unit-step continuity and closure verified for every
-    order). Output is a poly curve with bevel radius and optional
-    Chaikin corner rounding.
+    order). Also the **Gilbert** curve — Jakub Červený's
+    generalized Hilbert curve filling arbitrary W×H (2D) and
+    W×H×D (3D) boxes, ported from
+    [jakubcerveny/gilbert](https://github.com/jakubcerveny/gilbert)
+    and verified cell-for-cell against the reference. Output is a
+    poly curve with bevel radius and optional Chaikin corner
+    rounding.
 12. **Oloid & ruled surfaces** (`math_art/oloid_generator.py`) —
     the oloid from the exact Dirnböck–Stachel ruling (every ruling
     has length √3; watertight), the two-circle roller (hull), and
@@ -291,6 +296,17 @@ The modules:
     The 4D polytope generator also gained **half cutaways, dual
     compounds, and Hopf-fibration cell rings** (`rings` /
     `rings_only`) from the same batch.
+28. **Spikey** (`math_art/spikey_generator.py`) — the Mathematica /
+    Wolfram logo family: the 1988 spiked icosahedron (regular
+    tetrahedra at height √6/3, a 60-face deltahedron — verified),
+    the hyperbolic dodecahedron of Versions 2–5 (generalized to
+    any Platonic seed with spike-length / sharpness / resolution
+    controls), the modern folded Spikey, and the flat rhombic
+    hexecontahedron (the Wolfram|Alpha logo, 60 exactly planar
+    golden rhombi built as the union of 20 acute golden
+    rhombohedra). The modern form exposes the mid / top radial
+    scales, so the whole rhombic-hexecontahedron family is a two-
+    slider space.
 
 ![120-cell](renders/form_120cell.png)
 
