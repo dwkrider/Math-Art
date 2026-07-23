@@ -135,8 +135,15 @@ _RD_F = _plane_faces(_RD_V, _RD_P)
 # zonohedron construction, spiralling bundles of rhombi
 # ------------------------------------------------------------------
 
-_SPIRAL_NW = {'SPIRAL3': (12, 4), 'SPIRAL4': (12, 3)}
+_SPIRAL_ARMS = {'SPIRAL3': 3, 'SPIRAL4': 4}
 _SPIRAL_CACHE = {}
+
+
+def spiral_n(kind, segments):
+    """Usable polar-star size: segments rounded down to a multiple
+    of the arm count (at least two rhombi per arm turn)."""
+    arms = _SPIRAL_ARMS[kind]
+    return max(2 * arms, (segments // arms) * arms)
 
 
 def _face_key(P, nd=6):
@@ -183,19 +190,22 @@ def _tiling_basis(V, F, vol):
     raise ValueError("no lattice basis matches the cell volume")
 
 
-def _spiral_data(kind):
-    """(local_verts, faces, basis, height, volume) of the cell,
-    centred on the midpoint of its two apexes; cached."""
-    if kind in _SPIRAL_CACHE:
-        return _SPIRAL_CACHE[kind]
+def _spiral_data(kind, segments=12, pitch=55.0):
+    """(local_verts, faces, basis, height, volume) of the
+    S(n, n/arms) cell, centred on the midpoint of its two apexes;
+    cached per (kind, n, pitch)."""
+    n = spiral_n(kind, segments)
+    key = (kind, n, round(pitch, 4))
+    if key in _SPIRAL_CACHE:
+        return _SPIRAL_CACHE[key]
     try:
         from .zonohedra_generator import (polar_star,
                                           make_polar_zonohedron)
     except ImportError:
         from zonohedra_generator import (polar_star,
                                          make_polar_zonohedron)
-    n, w = _SPIRAL_NW[kind]
-    verts, faces = make_polar_zonohedron(polar_star(n), 1, w)
+    w = n // _SPIRAL_ARMS[kind]
+    verts, faces = make_polar_zonohedron(polar_star(n, pitch), 1, w)
     V = np.asarray(verts, float)
     vol = _mesh_volume(V, faces)
     if vol < 0:                        # wind the faces outward
@@ -205,11 +215,12 @@ def _spiral_data(kind):
     centre = (V[0] + V[1]) / 2.0       # the two apexes
     height = abs(V[1][2] - V[0][2])
     out = (V - centre, faces, B, height, vol)
-    _SPIRAL_CACHE[kind] = out
+    _SPIRAL_CACHE[key] = out
     return out
 
 
-def build_block(kind, nx, ny, nz):
+def build_block(kind, nx, ny, nz, spiral_segments=12,
+                spiral_pitch=55.0):
     """Cells of the block in canonical lattice coordinates.
 
     Returns (cells, pitch): cells is a list of tuples
@@ -255,10 +266,11 @@ def build_block(kind, nx, ny, nz):
                 cells.append((np.array((x, y, z), float),
                               _RD_V, _RD_F, 0))
         return cells, 2.0
-    if kind in _SPIRAL_NW:
+    if kind in _SPIRAL_ARMS:
         # translates over the derived tiling lattice; tag by
         # lattice parity for the optional two-tone colouring
-        V, F, B, height, vol = _spiral_data(kind)
+        V, F, B, height, vol = _spiral_data(kind, spiral_segments,
+                                            spiral_pitch)
         for i, j, k in P(range(nx), range(ny), range(nz)):
             cells.append((i * B[0] + j * B[1] + k * B[2],
                           V, F, (i + j + k) % 2))
@@ -266,11 +278,13 @@ def build_block(kind, nx, ny, nz):
     raise ValueError(kind)
 
 
-def build_mesh(kind='OCTET', nx=3, ny=3, nz=2, gap=0.92, size=1.0):
+def build_mesh(kind='OCTET', nx=3, ny=3, nz=2, gap=0.92, size=1.0,
+               spiral_segments=12, spiral_pitch=55.0):
     """Whole block as (verts, faces, face_tags), centred at the
     origin; gap scales every cell about its own centroid and size
     scales one lattice step to that length."""
-    cells, pitch = build_block(kind, nx, ny, nz)
+    cells, pitch = build_block(kind, nx, ny, nz, spiral_segments,
+                               spiral_pitch)
     s = size / pitch
     lo = np.full(3, np.inf)
     hi = -lo
@@ -293,12 +307,14 @@ _CELL_VOL = {'CUBIC': {0: 1.0},               # per canonical cell
              'RHOMBDODEC': {0: 2.0}}
 
 
-def block_volume(kind, nx, ny, nz, size=1.0):
+def block_volume(kind, nx, ny, nz, size=1.0, spiral_segments=12,
+                 spiral_pitch=55.0):
     """Analytic total volume of all cells at gap = 1."""
-    cells, pitch = build_block(kind, nx, ny, nz)
+    cells, pitch = build_block(kind, nx, ny, nz, spiral_segments,
+                               spiral_pitch)
     s3 = (size / pitch) ** 3
-    if kind in _SPIRAL_NW:
-        vol = _spiral_data(kind)[4]
+    if kind in _SPIRAL_ARMS:
+        vol = _spiral_data(kind, spiral_segments, spiral_pitch)[4]
         return len(cells) * vol * s3
     return sum(_CELL_VOL[kind][t] for *_, t in cells) * s3
 
@@ -404,11 +420,27 @@ if _IN_BLENDER:
                         "tetrahedra (Octet), or alternating by "
                         "lattice parity (Spirallohedra); the other "
                         "honeycombs have no honest 2-colouring")
+        spiral_segments: IntProperty(
+            name="Spiral Segments", default=12, min=6, max=24,
+            description="Star vectors of the spirallohedron cell, "
+                        "rounded down to a multiple of the arm "
+                        "count; more segments give finer, longer "
+                        "spiral cells")
+        spiral_pitch: FloatProperty(
+            name="Spiral Pitch", default=55.0, min=5.0, max=85.0,
+            description="Polar star pitch angle from the axis "
+                        "(degrees); higher is squatter, wider "
+                        "spiral cells")
 
         def execute(self, context):
-            verts, faces, tags = build_mesh(self.kind, self.nx,
-                                            self.ny, self.nz,
-                                            self.gap, self.size)
+            try:
+                verts, faces, tags = build_mesh(
+                    self.kind, self.nx, self.ny, self.nz,
+                    self.gap, self.size, self.spiral_segments,
+                    self.spiral_pitch)
+            except ValueError as e:
+                self.report({'ERROR'}, str(e))
+                return {'CANCELLED'}
             me = bpy.data.meshes.new("Spacefill")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
@@ -453,6 +485,9 @@ if _IN_BLENDER:
             lay.use_property_split = True
             for k in ('kind', 'nx', 'ny', 'nz', 'gap', 'size'):
                 lay.prop(self, k)
+            if self.kind in ('SPIRAL3', 'SPIRAL4'):
+                lay.prop(self, 'spiral_segments')
+                lay.prop(self, 'spiral_pitch')
             if self.kind in ('OCTET', 'SPIRAL3', 'SPIRAL4'):
                 lay.prop(self, 'two_materials')
             lay.prop(self, 'style')
@@ -491,19 +526,28 @@ if __name__ == "__main__":
             ok = abs(num - ana) < 1e-9 * max(1.0, ana)
             print(f"{kind}: vol={num:.6f} ({ana:.6f}) "
                   f"{'OK' if ok else 'BAD'}")
-        # spirallohedra: at gap = 1 every non-boundary face of the
-        # block must be shared exactly (coincident with a face of a
-        # neighbouring cell)
+        # spirallohedra: the tiling-basis derivation must succeed
+        # (it raises when the cell is not a translational tiler)
+        # and at gap = 1 non-boundary faces of a block must be
+        # shared exactly, for a sweep of segment counts and pitches
         for kind in ('SPIRAL3', 'SPIRAL4'):
-            V, F, B, height, vol = _spiral_data(kind)
-            keys = {}
-            for off in itertools.product(range(2), repeat=3):
-                t = off[0] * B[0] + off[1] * B[1] + off[2] * B[2]
-                for f in F:
-                    k = _face_key(V[list(f)] + t)
-                    keys[k] = keys.get(k, 0) + 1
-            shared = sum(1 for c in keys.values() if c == 2)
-            print(f"{kind}: {shared} shared faces in a 2x2x2 block "
-                  f"({'OK' if shared > 0 else 'BAD'})")
-            assert shared > 0
+            for segs in (6, 8, 9, 12, 15, 16, 20, 24):
+                if spiral_n(kind, segs) != segs:
+                    continue
+                for pitch in (35.0, 45.0, 55.0, 70.0):
+                    V, F, B, height, vol = _spiral_data(kind, segs,
+                                                        pitch)
+                    keys = {}
+                    for off in itertools.product(range(2),
+                                                 repeat=3):
+                        t = (off[0] * B[0] + off[1] * B[1]
+                             + off[2] * B[2])
+                        for f in F:
+                            k = _face_key(V[list(f)] + t)
+                            keys[k] = keys.get(k, 0) + 1
+                    shared = sum(1 for c in keys.values()
+                                 if c == 2)
+                    assert shared > 0, (kind, segs, pitch)
+                print(f"{kind} n={segs}: tiles at all pitches, "
+                      f"shared faces OK")
         print("spacefill standalone tests passed")
