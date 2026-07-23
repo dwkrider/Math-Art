@@ -1197,9 +1197,6 @@ if _IN_BLENDER:
             try:
                 V, F, sizes = build_solid(self.family, self.solid,
                                           self.n, self.scale)
-                if (self.handedness == 'LEFT'
-                        and (self.family, self.solid) in CHIRAL):
-                    V, F = mirror_solid(V, F)
                 if self.stellated and self.family != 'KEPLER':
                     try:
                         V, F, resid = stellate(V, F)
@@ -1235,6 +1232,14 @@ if _IN_BLENDER:
                           for j in range(self.pieces)]
             else:
                 groups = [list(range(len(F)))]
+            # mirror AFTER the split: the domain search is not
+            # mirror-symmetric, and equal-score optima differ in
+            # shape, so the left form takes exactly the mirrored
+            # right-handed split (mirror_solid keeps face order,
+            # so the assignment carries over unchanged)
+            if (self.handedness == 'LEFT'
+                    and (self.family, self.solid) in CHIRAL):
+                V, F = mirror_solid(V, F)
             for o in context.selected_objects:
                 o.select_set(False)
             first = None
