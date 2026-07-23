@@ -1012,9 +1012,12 @@ if _IN_BLENDER:
                 circ[:, 2] *= self.outer_height
             else:
                 # circle wound p times so the ruling lines up
+                # (outer_p is ignored while the outer boundary is
+                # a circle -- it is hidden in the UI then, and a
+                # stale value must not change the winding)
                 circ = np.stack(
-                    [self.circle_radius * np.cos(po * t),
-                     self.circle_radius * np.sin(po * t),
+                    [self.circle_radius * np.cos(self.p * t),
+                     self.circle_radius * np.sin(self.p * t),
                      np.zeros(m)], axis=1)
             V, quads, fixed = build_annulus_grid(knot, circ, self.rings)
             T = _quads_to_tris(quads)
