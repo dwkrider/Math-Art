@@ -490,6 +490,13 @@ if _IN_BLENDER:
                 obj = self._make_curve(name, comps)
             if self.color_components:
                 self._add_materials(obj, len(comps), name)
+                if self.output != 'MESH':
+                    # spline.material_index is CLAMPED to the
+                    # material count at assignment time, so the
+                    # values set while the curve had no materials
+                    # all collapsed to 0 -- set them again now
+                    for k, sp in enumerate(obj.data.splines):
+                        sp.material_index = k
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
             for o in context.selected_objects:
