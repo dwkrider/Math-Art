@@ -24,8 +24,6 @@ OPS = [
     ("tpms", lambda: bpy.ops.mesh.tpms_add(surface='G', resolution=16)),
     ("knot span", lambda: bpy.ops.mesh.minimal_knot_span_add(
         samples=64, rings=8, iterations=10)),
-    ("knot span embedded", lambda: bpy.ops.mesh.minimal_knot_span_add(
-        samples=64, rings=8, iterations=10, split='EMBEDDED')),
     ("seifert", lambda: bpy.ops.mesh.seifert_surface_add(
         preset='TREFOIL', relax=5)),
     ("seifert membrane free-boundary",
