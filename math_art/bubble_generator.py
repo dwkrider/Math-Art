@@ -708,6 +708,18 @@ if _IN_BLENDER:
                                          'FACE')
                 if len(me.polygons) == len(ids):
                     attr.data.foreach_set('value', ids)
+                    # crease edges (cap-film and film-film
+                    # boundaries) stay sharp under smooth
+                    # shading: mark edges whose two faces lie
+                    # on different surfaces
+                    eids = {}
+                    for poly, d in zip(me.polygons, ids):
+                        for ek in poly.edge_keys:
+                            eids.setdefault(ek, set()).add(d)
+                    me.edges.foreach_set(
+                        'use_edge_sharp',
+                        [len(eids.get(e.key, ())) > 1
+                         for e in me.edges])
                 if self.color:
                     if bi is not None:
                         me.materials.append(_color_mat(bi))
