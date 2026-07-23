@@ -53,6 +53,7 @@ _MODULE_NAMES = [
     'spiked_polyhedron_generator',
     'celtic_knot_generator',
     'voronoi_openwork',
+    'torus_knot_generator',
 ]
 
 _MODULES = []
@@ -129,6 +130,7 @@ class VIEW3D_MT_math_art_knots(bpy.types.Menu):
     def draw(self, context):
         lay = self.layout
         _op(lay, "curve.prime_knot_add", icon='FORCE_VORTEX')
+        _op(lay, "curve.torus_knot_add", icon='FORCE_VORTEX')
         _op(lay, "curve.math_link_add", icon='LINKED')
         if hasattr(bpy.types, 'CURVE_OT_attractor_add'):
             lay.operator_menu_enum("curve.attractor_add", "preset",

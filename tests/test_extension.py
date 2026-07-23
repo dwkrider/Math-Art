@@ -69,6 +69,9 @@ OPS = [
     ("oloid roller", lambda: bpy.ops.mesh.oloid_add(kind='ROLLER')),
     ("prime knot", lambda: bpy.ops.curve.prime_knot_add(
         knot='6_2', iters=60)),
+    ("torus knot", lambda: bpy.ops.curve.torus_knot_add(p=3, q=5)),
+    ("torus link mesh", lambda: bpy.ops.curve.torus_knot_add(
+        p=4, q=6, output='MESH')),
     ("prime knot tube", lambda: bpy.ops.curve.prime_knot_add(
         knot='8_18', output='MESH', iters=60)),
     ("solid archimedean", lambda: bpy.ops.mesh.regular_solid_add(
