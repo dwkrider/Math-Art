@@ -415,27 +415,46 @@ def build_rolling_knot(p=3, a=0.5, mode='SMOOTH', rt=0.05,
         need.append((cm_a + rel.min(), cm_a + rel.max()))
 
     # ----- stage 2: pin grown lobes onto the contact arcs by
-    # arc length, then morph the interior
+    # arc length.  Only the CORE of each zone (covering the
+    # contact range) is clamped; hinge zones at both ends stay
+    # free with targets continuing along the ellipse and a
+    # tapering data weight, so the curve peels off the ellipse
+    # smoothly instead of kinking at the junction.
     K2 = K.copy()
     runs2 = []
+    wdat = np.ones(n)
     for side, r in enumerate(runs):
         lo, ln = r[0], len(r)
         grow = ln // 2
         lo = (lo - grow) % n
         ln = min(ln + 2 * grow, n // 2 - 8)
+        hl = max(4, ln // 6)
         idx = np.array([(lo + k) % n for k in range(ln)])
-        ta = need[side][0] - 0.15
-        tb = need[side][1] + 0.15
+        ta = need[side][0] - 0.05
+        tb = need[side][1] + 0.05
         Pr = K[idx]
         s = np.concatenate([[0.0], np.cumsum(
             np.linalg.norm(np.diff(Pr, axis=0), axis=1))])
         s /= s[-1]
-        th_map = ta + (tb - ta) * s
+        # core maps onto [ta, tb]; hinges continue beyond
+        th_map = ta + (tb - ta) * ((s - s[hl])
+                                   / (s[ln - hl - 1] - s[hl]))
         q_f = tdr.point(side, th_map)
         q_b = tdr.point(side, th_map[::-1])
         K2[idx] = (q_f if np.sum((q_f - Pr) ** 2)
                    <= np.sum((q_b - Pr) ** 2) else q_b)
-        runs2.append(idx)
+        runs2.append(idx[hl:ln - hl])
+        # data-weight taper: ellipse-hugging next to the core,
+        # fading to the knot target across the hinge and the
+        # first interior stretch
+        for kk in range(hl):
+            f = (kk + 1.0) / (hl + 1.0)
+            wdat[idx[hl - 1 - kk]] = 1.0 - f
+            wdat[idx[ln - hl + kk]] = 1.0 - f
+        for kk in range(hl):
+            f = (kk + 1.0) / (hl + 1.0)
+            wdat[(idx[0] - 1 - kk) % n] = f
+            wdat[(idx[-1] + 1 + kk) % n] = f
 
     ext = np.zeros(n, bool)
     for r in runs2:
@@ -445,7 +464,7 @@ def build_rolling_knot(p=3, a=0.5, mode='SMOOTH', rt=0.05,
         D[i, i] = -2
         D[i, (i + 1) % n] = 1
         D[i, (i - 1) % n] = 1
-    A0 = np.eye(n) + w_lap * (D.T @ D)
+    A0 = np.diag(wdat) + w_lap * (D.T @ D)
     fix = np.where(ext)[0]
     q0 = K2.copy()
 
@@ -458,7 +477,7 @@ def build_rolling_knot(p=3, a=0.5, mode='SMOOTH', rt=0.05,
         Am = A0 + w_b * np.outer(w, w)
         for dim in range(3):
             Af = Am.copy()
-            bf = q0[:, dim] + w_b * target[dim] * w
+            bf = wdat * q0[:, dim] + w_b * target[dim] * w
             for i in fix:
                 Af[i, :] = 0
                 Af[i, i] = 1
@@ -685,13 +704,21 @@ if __name__ == "__main__":
         for p in (3, 5):
             K, info = build_rolling_knot(p, 0.5, 'SMOOTH',
                                          rt=0.06, n=512)
+            # kink check: worst turning angle between
+            # consecutive segments must stay gentle
+            T = np.roll(K, -1, 0) - K
+            T /= np.linalg.norm(T, axis=1, keepdims=True)
+            turn = np.degrees(np.arccos(np.clip(
+                (T * np.roll(T, 1, 0)).sum(1), -1, 1)))
             print(f"p={p}: rho raw={info['rho_raw']:.4f} -> "
                   f"curve={info['rho']:.5f} "
                   f"thick={info['rho_thick']:.5f} "
-                  f"overlap={100 * info['overlap']:.2f}%")
+                  f"overlap={100 * info['overlap']:.2f}% "
+                  f"max turn={turn.max():.1f}deg")
             assert info['rho_raw'] > 0.05
             assert info['rho'] < 0.01
             assert info['rho_thick'] < 0.02
+            assert turn.max() < 12.0, turn.max()
         # tube mesh is closed
         verts, faces = tube_mesh(K, 0.05, sides=8)
         cnt = {}
