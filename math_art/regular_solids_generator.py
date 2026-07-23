@@ -907,12 +907,24 @@ def _piece0_connected(assign, adj, want):
     return len(seen) == want
 
 
+def _partition_score(assign, adj, pairs, pen):
+    """Jaggedness of a partition: total cut perimeter plus a
+    penalty per hinge face (a face with at most one same-piece
+    neighbour -- the protruding flaps).  Lower is smoother."""
+    cut = sum(l for a, b, l in pairs if assign[a] != assign[b])
+    hinges = sum(1 for f in range(len(assign))
+                 if sum(1 for g in adj[f]
+                        if assign[g] == assign[f]) <= 1)
+    return cut + pen * hinges
+
+
 def _smooth_partition(F, subgroup, assign, adj, pairs):
     """De-jag a fundamental-domain partition: hill-climb over the
     face orbits, re-choosing which group copy of each orbit lands in
-    which piece whenever that shortens the total cut perimeter and
-    keeps piece 0 (hence, by symmetry, every piece) connected.
-    Mutates and returns assign, plus the final cut length."""
+    which piece whenever that lowers the jaggedness score (cut
+    perimeter + hinge-face penalty) and keeps piece 0 (hence, by
+    symmetry, every piece) connected.  Mutates and returns assign,
+    plus the final score."""
     nf = len(F)
     n = len(subgroup)
     seen = set()
@@ -922,18 +934,13 @@ def _smooth_partition(F, subgroup, assign, adj, pairs):
             orb = sorted({p[f] for p in subgroup})
             seen.update(orb)
             orbits.append(orb)
-    inc = [[] for _ in range(nf)]
-    for i, (a, b, l) in enumerate(pairs):
-        inc[a].append(i)
-        inc[b].append(i)
     want = nf // n
+    pen = 1.5 * sum(l for _, _, l in pairs) / max(1, len(pairs))
+    score = _partition_score(assign, adj, pairs, pen)
     for _ in range(60):                 # passes until stable
         improved = False
         for orb in orbits:
-            affected = sorted({i for x in orb for i in inc[x]})
-            base = sum(pairs[i][2] for i in affected
-                       if assign[pairs[i][0]] != assign[pairs[i][1]])
-            best_delta = -1e-9
+            best_score = score - 1e-9
             best_map = None
             for r in orb:
                 amap = {p[r]: j for j, p in enumerate(subgroup)}
@@ -942,23 +949,21 @@ def _smooth_partition(F, subgroup, assign, adj, pairs):
                 old = [assign[x] for x in orb]
                 for x in orb:
                     assign[x] = amap[x]
-                cut = sum(pairs[i][2] for i in affected
-                          if assign[pairs[i][0]]
-                          != assign[pairs[i][1]])
-                if (cut - base < best_delta
+                s = _partition_score(assign, adj, pairs, pen)
+                if (s < best_score
                         and _piece0_connected(assign, adj, want)):
-                    best_delta = cut - base
+                    best_score = s
                     best_map = amap
                 for x, o in zip(orb, old):
                     assign[x] = o
             if best_map is not None:
                 for x, v in best_map.items():
                     assign[x] = v
+                score = best_score
                 improved = True
         if not improved:
             break
-    total = sum(l for a, b, l in pairs if assign[a] != assign[b])
-    return assign, total
+    return assign, score
 
 
 def split_congruent(V, F, n):
