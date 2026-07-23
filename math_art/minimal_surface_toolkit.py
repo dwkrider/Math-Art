@@ -970,6 +970,11 @@ if _IN_BLENDER:
             name="Outer Knot Scale", default=2.0, min=0.1, max=10.0,
             description="Scale of the outer torus knot (its radii "
                         "are ~1-3 x this)")
+        outer_height: FloatProperty(
+            name="Outer Height", default=1.0, min=0.0, max=5.0,
+            description="Scale of the outer knot's vertical "
+                        "oscillation, independent of its radius "
+                        "(0 flattens it into a wavy-radius ring)")
         split_sheets: BoolProperty(
             name="Split Sheets", default=False,
             description="The span winds its outer boundary p times "
@@ -992,6 +997,7 @@ if _IN_BLENDER:
                 # outer boundary: another torus knot
                 circ = torus_knot(po, self.outer_q, m,
                                   scale=self.outer_scale)
+                circ[:, 2] *= self.outer_height
             else:
                 # circle wound p times so the ruling lines up
                 circ = np.stack(
@@ -1063,6 +1069,7 @@ if _IN_BLENDER:
             if self.outer_q > 0:
                 lay.prop(self, 'outer_p')
                 lay.prop(self, 'outer_scale')
+                lay.prop(self, 'outer_height')
             else:
                 lay.prop(self, 'circle_radius')
             for k in ('samples', 'rings', 'iterations',
