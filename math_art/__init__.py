@@ -36,6 +36,7 @@ from . import oloid_generator
 from . import prime_knot_generator
 from . import regular_solids_generator
 from . import dual_helix_generator
+from . import stellated_weave_generator
 from . import attractor_generator
 
 import bpy
@@ -51,7 +52,7 @@ _MODULES = (scherk_collins_generator, minimal_surface_toolkit,
             leonardo_style, sponge_generator, space_curve_generator,
             oloid_generator, prime_knot_generator,
             regular_solids_generator, attractor_generator,
-            dual_helix_generator)
+            dual_helix_generator, stellated_weave_generator)
 
 
 class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
@@ -122,6 +123,7 @@ class VIEW3D_MT_math_art_weaves(bpy.types.Menu):
         lay.operator("mesh.tangle_add", icon='MOD_BOOLEAN')
         lay.operator("mesh.poly_weave_add", icon='MOD_LATTICE')
         lay.operator("mesh.rotegrity_add", icon='SPHERE')
+        lay.operator("mesh.stellated_weave_add", icon='MOD_LATTICE')
 
 
 class VIEW3D_MT_math_art_odds(bpy.types.Menu):

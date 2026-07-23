@@ -76,6 +76,7 @@ OPS = [
     ("solid stellated", lambda: bpy.ops.mesh.regular_solid_add(
         family='PLATONIC', solid='DODECA', stellated=True)),
     ("dual helix", lambda: bpy.ops.curve.dual_helix_add()),
+    ("stellated weave", lambda: bpy.ops.mesh.stellated_weave_add()),
     ("attractor lorenz", lambda: bpy.ops.curve.attractor_add(
         preset='LORENZ', steps=4000)),
     ("attractor aizawa taper", lambda: bpy.ops.curve.attractor_add(
