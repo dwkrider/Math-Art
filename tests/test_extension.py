@@ -130,6 +130,10 @@ OPS = [
     ("curvature color",
      lambda: (bpy.ops.mesh.primitive_torus_add(),
               bpy.ops.object.curvature_color_add())[-1]),
+    ("voronoi openwork",
+     lambda: (bpy.ops.mesh.primitive_uv_sphere_add(),
+              bpy.ops.object.voronoi_openwork_add(
+                  holes=16, subdiv=0))[-1]),
     ("orbifold sphere", lambda: bpy.ops.mesh.orbifold_sphere_add()),
     ("fractal tree", lambda: bpy.ops.curve.fractal_tree_add(
         mode='TREE')),

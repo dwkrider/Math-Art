@@ -52,6 +52,7 @@ _MODULE_NAMES = [
     'fractal_tree_generator',
     'spiked_polyhedron_generator',
     'celtic_knot_generator',
+    'voronoi_openwork',
 ]
 
 _MODULES = []
@@ -173,6 +174,8 @@ class VIEW3D_MT_math_art_styles(bpy.types.Menu):
         _op(lay, "object.leonardo_add", icon='MESH_ICOSPHERE')
         _op(lay, "object.curvature_color_add",
             icon='COLORSET_01_VEC')
+        _op(lay, "object.voronoi_openwork_add",
+            icon='MOD_REMESH')
 
 
 class VIEW3D_MT_math_art_add(bpy.types.Menu):

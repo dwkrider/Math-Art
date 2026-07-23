@@ -303,7 +303,17 @@ The modules:
     The 4D polytope generator also gained **half cutaways, dual
     compounds, and Hopf-fibration cell rings** (`rings` /
     `rings_only`) from the same batch.
-28. **Celtic knots** (`math_art/celtic_knot_generator.py`) — a
+28. **Voronoi Openwork** (`math_art/voronoi_openwork.py`) — a
+    Styles operator that perforates the active mesh with organic
+    Voronoi-cell holes, inspired by
+    [gabr42/voronoizer](https://github.com/gabr42/voronoizer) but
+    boolean-free: seeds are spread by farthest-point sampling in
+    **graph-geodesic** distance (so holes never leak between
+    nearby sheets of a minimal surface), each triangle is clipped
+    at the smoothed iso-contour of the distance-to-cell-boundary
+    field, and a Solidify modifier supplies the thickness. Open
+    surfaces keep their boundary as a solid frame.
+29. **Celtic knots** (`math_art/celtic_knot_generator.py`) — a
     port of Adam Newgas's
     [celtic-knot](https://github.com/BorisTheBrave/celtic-knot)
     add-on (MIT): strands weaving over and under along the edges
@@ -313,7 +323,7 @@ The modules:
     remeshing, bezier / pipe / ribbon outputs, per-strand or
     per-braid coloring. The strand walk was verified
     point-for-point against the original add-on.
-29. **Spiked & hyperbolic polyhedra**
+30. **Spiked & hyperbolic polyhedra**
     (`math_art/spiked_polyhedron_generator.py`) — pyramid-
     augmented Platonic solids (the icosahedron at height √6/3
     gives a 60-face deltahedron of regular tetrahedra — verified),
