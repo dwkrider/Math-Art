@@ -211,8 +211,8 @@ def build_saddle(V, F, m=10, rings=8, iterations=150):
     return verts, faces, pids, len(circuits)
 
 
-def build_diagonal_caps(n=24, bulge=1.0, mirror=False, tip=0.12,
-                        iterations=30):
+def build_diagonal_caps(n=24, bulge=1.0, mirror=False, tip=2.4,
+                        iterations=6):
     """The Carlberg Form 6 construction.  The six face diagonals
     of one inscribed regular tetrahedron cut the cube's surface
     into four bent triangular caps of three half-faces each, each
@@ -271,8 +271,13 @@ def build_diagonal_caps(n=24, bulge=1.0, mirror=False, tip=0.12,
                 b = j / n
                 c = 1.0 - a - b
                 m = 3.0 * min(a, b, c)
-                P.append(a * A + b * B + c * C + m * amp)
-                pin.append(m < 1e-9 or m > 1.0 - tip)
+                # the lift blends from the flat tetrahedron face
+                # (basins) up the bent-cap tent into the corner
+                # horn; the exponent was fitted against a scan of
+                # the sculpture (~2.4)
+                k = m ** tip
+                P.append(a * A + b * B + c * C + k * amp)
+                pin.append(m < 1e-9 or m > 1.0 - 1e-9)
                 idx[(i, j)] = len(P) - 1
         P = np.array(P)
         tris = []
@@ -284,10 +289,22 @@ def build_diagonal_caps(n=24, bulge=1.0, mirror=False, tip=0.12,
                     tris.append((idx[(i + 1, j)],
                                  idx[(i + 1, j + 1)],
                                  idx[(i, j + 1)]))
-        fixed = np.array(pin)
-        if minimize_area is not None and iterations > 0:
-            minimize_area(P, np.array(tris), fixed,
-                          outer_iters=iterations)
+        # light smoothing (frame and apex pinned) rounds the fin
+        # creases along the medians near the horns
+        if iterations > 0:
+            fixed = np.array(pin)
+            nbrs = [set() for _ in range(len(P))]
+            for t in tris:
+                for q in range(3):
+                    aq, bq = t[q], t[(q + 1) % 3]
+                    nbrs[aq].add(bq)
+                    nbrs[bq].add(aq)
+            nbl = [sorted(s) for s in nbrs]
+            for _ in range(iterations):
+                Q = np.empty_like(P)
+                for vi, s in enumerate(nbl):
+                    Q[vi] = P[s].mean(axis=0)
+                P[~fixed] += 0.5 * (Q[~fixed] - P[~fixed])
         local = [emit(p) for p in P]
         for t in tris:
             faces.append([local[i] for i in t])
@@ -354,10 +371,12 @@ if _IN_BLENDER:
             description="Diagonal Caps: use the other inscribed "
                         "tetrad (the opposite handedness)")
         tip: FloatProperty(
-            name="Tip Size", default=0.12, min=0.02, max=0.5,
-            description="Diagonal Caps: fraction of each cap held "
-                        "as the bare cube-corner tip that the "
-                        "membrane hangs from")
+            name="Funnel Exponent", default=2.4, min=1.0, max=6.0,
+            description="Diagonal Caps: how the sheets blend from "
+                        "the flat basins up into the corner "
+                        "horns; 1 = the bare bent cube caps, "
+                        "higher = flatter basins with sharper "
+                        "horns (2.4 fits the sculpture)")
         seed: EnumProperty(
             name="Seed",
             items=[('CUBE', "Cube",
