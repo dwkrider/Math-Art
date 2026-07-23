@@ -310,7 +310,8 @@ def com_thick(K, rt):
 
 
 def build_rolling_knot(p=3, a=0.5, mode='SMOOTH', rt=0.05,
-                       thick_aware=True, n=512, w_lap=200.0,
+                       thick_aware=True, n=512, w_lap=600.0,
+                       int_weight=0.4, clearance=0.0,
                        balance_iters=4):
     """(K, info): the optimized closed centreline and a dict of
     diagnostics (rho values, TDR parameters, overlap)."""
@@ -422,7 +423,7 @@ def build_rolling_knot(p=3, a=0.5, mode='SMOOTH', rt=0.05,
     # smoothly instead of kinking at the junction.
     K2 = K.copy()
     runs2 = []
-    wdat = np.ones(n)
+    wdat = np.full(n, int_weight)
     for side, r in enumerate(runs):
         lo, ln = r[0], len(r)
         grow = ln // 2
@@ -464,24 +465,25 @@ def build_rolling_knot(p=3, a=0.5, mode='SMOOTH', rt=0.05,
         D[i, i] = -2
         D[i, (i + 1) % n] = 1
         D[i, (i - 1) % n] = 1
-    A0 = np.diag(wdat) + w_lap * (D.T @ D)
+    DTD = D.T @ D
     fix = np.where(ext)[0]
     q0 = K2.copy()
 
-    def solve(target):
+    def solve(target, q0v, wvec):
         Kn = K2.copy()
         seg = np.linalg.norm(np.roll(Kn, -1, 0) - Kn, axis=1)
         w = (seg + np.roll(seg, 1)) / 2
         w = w / w.sum()
         w_b = 1e6
-        Am = A0 + w_b * np.outer(w, w)
+        Am = (np.diag(wvec) + w_lap * DTD
+              + w_b * np.outer(w, w))
         for dim in range(3):
             Af = Am.copy()
-            bf = wdat * q0[:, dim] + w_b * target[dim] * w
+            bf = wvec * q0v[:, dim] + w_b * target[dim] * w
             for i in fix:
                 Af[i, :] = 0
                 Af[i, i] = 1
-                bf[i] = q0[i, dim]
+                bf[i] = q0v[i, dim]
             Kn[:, dim] = np.linalg.solve(Af, bf)
         return Kn
 
@@ -504,7 +506,63 @@ def build_rolling_knot(p=3, a=0.5, mode='SMOOTH', rt=0.05,
                 Kn[i] -= viol[j, i] * U[j]
         return Kn
 
-    K2 = clamp(solve(np.zeros(3)))
+    K2 = clamp(solve(np.zeros(3), q0, wdat))
+
+    # ----- minimum intraknot clearance: distant strands must
+    # keep min_d = 2 rt + clearance between centrelines
+    # (surface-to-surface gap = clearance).  Rope-style
+    # relaxation: full-strength repulsion of violating pairs
+    # alternated with light local fairing, anchored by the
+    # pinned cores; the balance solves afterwards hold the
+    # separated shape with boosted data weights.
+    gap_par = max(4, n // 12)
+    idxn = np.arange(n)
+    circ = np.abs(idxn[:, None] - idxn[None, :])
+    circ = np.minimum(circ, n - circ)
+    far = circ > gap_par
+    min_d = (2 * rt + clearance) if clearance > 0 else 0.0
+
+    def repel(Kn):
+        """Each free point steps once toward resolving its
+        worst violating pair (stable, no cumulative
+        overshoot)."""
+        Dm = np.linalg.norm(Kn[:, None, :] - Kn[None, :, :],
+                            axis=2)
+        Dv = np.where(far & (Dm < min_d), Dm, np.inf)
+        dmin = Dv.min(1)
+        viol = np.isfinite(dmin) & (~ext)
+        if not viol.any():
+            return False
+        j_star = Dv.argmin(1)
+        disp = np.zeros_like(Kn)
+        for i in np.where(viol)[0]:
+            j = j_star[i]
+            d = max(dmin[i], 1e-9)
+            u = (Kn[i] - Kn[j]) / d
+            disp[i] = u * 0.5 * (min_d - d)
+        Kn += disp
+        return True
+
+    def relax_clearance(Kn, iters, ref):
+        for it in range(iters):
+            moved = repel(Kn)
+            avg = 0.5 * (np.roll(Kn, -1, 0)
+                         + np.roll(Kn, 1, 0))
+            Kn[~ext] += (0.25 * (avg[~ext] - Kn[~ext])
+                         + 0.10 * (ref[~ext] - Kn[~ext]))
+            if it % 10 == 9:
+                Kn = clamp(Kn)
+            if not moved and it > 20:
+                break
+        return clamp(Kn)
+
+    w_bal = wdat
+    if min_d > 0:
+        ref0 = K2.copy()
+        K2 = relax_clearance(K2, 80, ref0)
+        q0 = K2.copy()          # hold the separated shape
+        w_bal = np.where(ext, wdat, 2.0)
+
     # ----- balance: drive the (thick) COM to the rolling
     # centre; with thick_aware the fused-strand mass counts once
     Tb = np.zeros(3)
@@ -514,12 +572,17 @@ def build_rolling_knot(p=3, a=0.5, mode='SMOOTH', rt=0.05,
         if np.linalg.norm(cm) < 1e-5 * size:
             break
         Tb = Tb - cm
-        K2 = clamp(solve(Tb))
+        K2 = clamp(solve(Tb, q0, w_bal))
+        if min_d > 0:
+            K2 = relax_clearance(K2, 15, q0)
     cmc, _ = com_thick(K2, 0)
     info['rho'] = rho_eval(K2, cmc, runs2)[0]
     cm, ov = com_thick(K2, rt)
     info['rho_thick'] = rho_eval(K2, cm, runs2, rt)[0]
     info['overlap'] = ov
+    Df = np.linalg.norm(K2[:, None, :] - K2[None, :, :],
+                        axis=2)
+    info['gap'] = Df[far].min() - 2 * rt
     return K2, info
 
 
@@ -609,6 +672,17 @@ if _IN_BLENDER:
                         "solid's centre of mass (fused strands "
                         "weigh once) sits at the rolling "
                         "centre")
+        clearance: FloatProperty(
+            name="Min Gap", default=0.02, min=0.0, max=0.5,
+            description="Minimum surface-to-surface gap "
+                        "between strands of the thick knot "
+                        "(0 = strands may touch and fuse)")
+        smoothing: FloatProperty(
+            name="Smoothness", default=600.0, min=50.0,
+            max=5000.0,
+            description="Interior fairing weight: higher gives "
+                        "wider, calmer interior curves at the "
+                        "cost of knot-shape fidelity")
         samples: IntProperty(
             name="Curve Samples", default=512, min=128,
             max=1024)
@@ -623,7 +697,9 @@ if _IN_BLENDER:
             p = self.p - (1 - self.p % 2)   # force odd
             K, info = build_rolling_knot(
                 p, self.a, self.mode, self.rt,
-                self.thick_aware, self.samples)
+                self.thick_aware, self.samples,
+                w_lap=self.smoothing,
+                clearance=self.clearance)
             verts, faces = tube_mesh(K, self.rt, self.sides)
             name = f"Rolling Knot ({p},2)"
             # fit (roughly) within a 2 x scale cube at origin
@@ -651,7 +727,8 @@ if _IN_BLENDER:
             msg = (f"{name}: rho raw={info['rho_raw']:.4f}"
                    f" curve={info.get('rho', 0):.4f}"
                    f" thick={info.get('rho_thick', 0):.4f}"
-                   f" overlap={100 * info.get('overlap', 0):.1f}%")
+                   f" overlap={100 * info.get('overlap', 0):.1f}%"
+                   f" gap={info.get('gap', 0):.3f}")
             self.report({'INFO'}, msg)
             print("Rolling Knot:", msg)
             return {'FINISHED'}
@@ -660,7 +737,8 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             for k in ('p', 'a', 'mode', 'rt', 'thick_aware',
-                      'samples', 'sides', 'smooth', 'scale'):
+                      'clearance', 'smoothing', 'samples',
+                      'sides', 'smooth', 'scale'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
@@ -719,6 +797,15 @@ if __name__ == "__main__":
             assert info['rho'] < 0.01
             assert info['rho_thick'] < 0.02
             assert turn.max() < 12.0, turn.max()
+        # minimum clearance: fat tube with a requested gap
+        K, info = build_rolling_knot(3, 0.5, 'SMOOTH',
+                                     rt=0.09, n=512,
+                                     clearance=0.05)
+        print(f"clearance run: gap={info['gap']:.4f} "
+              f"(want >= 0.04) rho={info['rho']:.5f} "
+              f"thick={info['rho_thick']:.5f}")
+        assert info['gap'] >= 0.04
+        assert info['rho'] < 0.01 and info['rho_thick'] < 0.01
         # tube mesh is closed
         verts, faces = tube_mesh(K, 0.05, sides=8)
         cnt = {}
