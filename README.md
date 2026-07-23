@@ -198,8 +198,15 @@ The modules:
     contact tests; the augmented/diminished J49+ are not included).
     Options: generic **stellation** (pyramid to the intersection of
     neighbour planes — octahedron → stella octangula), Solid /
-    Leonardo (da Vinci) / Wireframe styles, and coloring by face
-    size.
+    Leonardo (da Vinci) / Wireframe styles, coloring by face
+    size, and **Congruent Pieces**: split the shell into N
+    congruent, connected pieces (rotated copies of one another,
+    one object each, for printing and reassembly). The rotation
+    group is derived from the mesh itself; a free subgroup of
+    order N supplies the pieces, grown as compact connected
+    fundamental domains (icosahedron → 2/4/5/10, cube → 2/3/6,
+    rhombic triacontahedron → 3/5, …); an Explode slider
+    separates them visually.
 14. **Prime knots** (`math_art/prime_knot_generator.py`) — **all
     249 prime knots up to 10 crossings** (Rolfsen table) from the
     minimum braid words of T. Gittings. The braid closure is laid

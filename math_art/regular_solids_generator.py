@@ -685,6 +685,222 @@ _NOTATION = {sid: (label, nota) for cat in (PLATONIC, ARCHIMEDEAN,
                                             CATALAN)
              for (sid, label, nota) in cat}
 
+# ---------------------------------------------------------------- #
+#  congruent shell splitting                                       #
+# ---------------------------------------------------------------- #
+
+try:
+    from .symmetric_sculpture_generator import group_rotations
+except ImportError:
+    try:
+        from symmetric_sculpture_generator import group_rotations
+    except ImportError:
+        group_rotations = None
+
+
+def _face_centroids(V, F):
+    return [tuple(sum(V[i][k] for i in f) / len(f) for k in range(3))
+            for f in F]
+
+
+def _detect_face_perms(V, F):
+    """Face permutations induced by the solid's own rotation group,
+    derived from the mesh: candidate rotations align face 0's frame
+    with every same-size face at every cyclic offset, and are kept
+    when they map the whole centroid set onto itself. Returns a list
+    of permutation tuples (identity included) or None."""
+    cents = _face_centroids(V, F)
+    scale_ref = max(max(abs(c) for c in p) for p in cents) or 1.0
+    tol = 5e-3 * scale_ref
+
+    cell = 2 * tol
+    grid = {}
+    for i, c in enumerate(cents):
+        grid.setdefault(tuple(int(math.floor(x / cell))
+                              for x in c), []).append(i)
+
+    def find(c):
+        kx, ky, kz = (int(math.floor(x / cell)) for x in c)
+        best, bd = None, tol
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for dz in (-1, 0, 1):
+                    for j in grid.get((kx + dx, ky + dy, kz + dz),
+                                      ()):
+                        d = max(abs(cents[j][k] - c[k])
+                                for k in range(3))
+                        if d < bd:
+                            best, bd = j, d
+        return best
+
+    def frame(fi, k0):
+        f = F[fi]
+        c = cents[fi]
+        n = cw._newell(V, f)
+        ln = sqrt(sum(t * t for t in n)) or 1.0
+        n = [t / ln for t in n]
+        if sum(n[k] * c[k] for k in range(3)) < 0:
+            n = [-t for t in n]
+        w = [V[f[k0]][k] - c[k] for k in range(3)]
+        d = sum(w[k] * n[k] for k in range(3))
+        w = [w[k] - d * n[k] for k in range(3)]
+        lw = sqrt(sum(t * t for t in w)) or 1.0
+        u = [t / lw for t in w]
+        v = [n[1] * u[2] - n[2] * u[1], n[2] * u[0] - n[0] * u[2],
+             n[0] * u[1] - n[1] * u[0]]
+        return u, v, n
+
+    m0 = len(F[0])
+    u0, v0, n0 = frame(0, 0)
+    B0 = (u0, v0, n0)
+    perms = set()
+    for fj in range(len(F)):
+        if len(F[fj]) != m0:
+            continue
+        for k0 in range(len(F[fj])):
+            Bj = frame(fj, k0)
+            # R = Bj^T-composed rotation taking B0 to Bj
+            R = [[sum(Bj[a][r] * B0[a][c] for a in range(3))
+                  for c in range(3)] for r in range(3)]
+            perm = []
+            ok = True
+            for i, c in enumerate(cents):
+                rc = tuple(sum(R[r][k] * c[k] for k in range(3))
+                           for r in range(3))
+                t = find(rc)
+                if t is None or len(F[t]) != len(F[i]):
+                    ok = False
+                    break
+                perm.append(t)
+            if ok and len(set(perm)) == len(F):
+                perms.add(tuple(perm))
+    return sorted(perms) if len(perms) > 1 else None
+
+
+def _perm_mul(a, b):
+    return tuple(a[b[i]] for i in range(len(a)))
+
+
+def _closure(gens, cap):
+    ident = tuple(range(len(gens[0])))
+    seen = {ident}
+    frontier = [ident]
+    while frontier:
+        nxt = []
+        for a in frontier:
+            for g in gens:
+                c = _perm_mul(g, a)
+                if c not in seen:
+                    if len(seen) >= cap:
+                        return None
+                    seen.add(c)
+                    nxt.append(c)
+        frontier = nxt
+    return seen
+
+
+def _free_subgroups(perms, n):
+    """Distinct subgroups of order n of the face-permutation group
+    whose nontrivial elements fix no face."""
+    ident = tuple(range(len(perms[0])))
+    subs = set()
+    for g in perms:
+        s = _closure([g], n + 1)
+        if s and len(s) == n:
+            subs.add(frozenset(s))
+    if n <= 12:
+        small = [g for g in perms if g != ident]
+        for i in range(len(small)):
+            for j in range(i + 1, len(small)):
+                s = _closure([small[i], small[j]], n + 1)
+                if s and len(s) == n:
+                    subs.add(frozenset(s))
+    out = []
+    for s in subs:
+        if all(p == ident or all(p[i] != i for i in range(len(p)))
+               for p in s):
+            out.append(sorted(s))
+    return out
+
+
+def _grow_partition(V, F, subgroup, seed):
+    """Greedy connected, compact fundamental domain for the (free)
+    subgroup action; pieces are its translates. Returns assignment
+    list or None if growth stalls."""
+    nf = len(F)
+    n = len(subgroup)
+    cents = _face_centroids(V, F)
+    # shared-edge adjacency
+    edges = {}
+    for fi, f in enumerate(F):
+        for i in range(len(f)):
+            e = (min(f[i], f[(i + 1) % len(f)]),
+                 max(f[i], f[(i + 1) % len(f)]))
+            edges.setdefault(e, []).append(fi)
+    adj = [set() for _ in range(nf)]
+    for fs in edges.values():
+        for a in fs:
+            for b in fs:
+                if a != b:
+                    adj[a].add(b)
+    assign = [-1] * nf
+    piece0 = []
+    csum = [0.0, 0.0, 0.0]
+
+    def take(f):
+        for j, p in enumerate(subgroup):
+            assign[p[f]] = j
+        piece0.append(f)
+        for k in range(3):
+            csum[k] += cents[f][k]
+
+    take(seed)
+    target = nf // n
+    while len(piece0) < target:
+        cen = [csum[k] / len(piece0) for k in range(3)]
+        cand = set()
+        for f in piece0:
+            for g in adj[f]:
+                if assign[g] == -1:
+                    cand.add(g)
+        if not cand:
+            return None, None
+        best = min(cand, key=lambda g: sum(
+            (cents[g][k] - cen[k]) ** 2 for k in range(3)))
+        take(best)
+    # compactness score: spread of piece 0
+    cen = [csum[k] / len(piece0) for k in range(3)]
+    score = max(sum((cents[f][k] - cen[k]) ** 2 for k in range(3))
+                for f in piece0)
+    return assign, score
+
+
+def split_congruent(V, F, n):
+    """Partition faces into n congruent connected pieces (rotated
+    copies of one another). Returns (assignment, valid_counts);
+    assignment None if impossible, valid_counts lists workable n."""
+    perms = _detect_face_perms(V, F)
+    if perms is None:
+        return None, []
+    valid = set()
+    for d in range(2, min(len(F), len(perms)) + 1):
+        if len(F) % d == 0 and _free_subgroups(perms, d):
+            valid.add(d)
+    if len(F) % n != 0:
+        return None, sorted(valid)
+    best = None
+    best_score = None
+    for sub in _free_subgroups(perms, n):
+        ident = tuple(range(len(F)))
+        ordered = [ident] + [p for p in sub if p != ident]
+        for seed in range(len(F)):
+            assign, score = _grow_partition(V, F, ordered, seed)
+            if assign is not None and (best_score is None
+                                       or score < best_score):
+                best, best_score = assign, score
+    return best, sorted(valid)
+
+
 _STELLATE_OK = {}
 
 
@@ -816,6 +1032,17 @@ if _IN_BLENDER:
                     "or Solid shading set to Material colour)"),
                    ('NONE', "None", "")],
             default='SIDES')
+        pieces: IntProperty(
+            name="Congruent Pieces", default=1, min=1, max=60,
+            description="Split the shell into this many congruent, "
+                        "connected pieces (rotated copies of one "
+                        "another; each is a separate object for "
+                        "printing and reassembly). 1 = single "
+                        "object")
+        explode: FloatProperty(
+            name="Explode", default=0.0, min=0.0, max=5.0,
+            description="Move each piece outward along its centroid "
+                        "direction so the split is visible")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -864,45 +1091,89 @@ if _IN_BLENDER:
             except (ValueError, KeyError, StopIteration) as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
-            me = bpy.data.meshes.new("Solid")
-            me.from_pydata(V, [], [list(f) for f in F])
-            me.validate(clean_customdata=True)
             fsz = sizes if sizes else [len(f) for f in F]
-            if len(me.polygons) == len(fsz):
-                attr = me.attributes.new("ngon_sides", 'INT', 'FACE')
-                attr.data.foreach_set('value', fsz)
-                if self.coloring == 'SIDES':
-                    kinds = sorted(set(fsz))
-                    lut = {}
-                    for nn in kinds:
-                        lut[nn] = len(me.materials)
-                        me.materials.append(self._material_for(nn))
-                    me.polygons.foreach_set(
-                        'material_index', [lut[s] for s in fsz])
-            me.update()
             label = dict((i[0], i[1]) for i in
                          _solid_items(self, context))[self.solid]
-            obj = bpy.data.objects.new(label, me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
+            if self.pieces > 1:
+                assign, valid = split_congruent(V, F, self.pieces)
+                if assign is None:
+                    opts = ", ".join(map(str, valid)) or "none"
+                    self.report(
+                        {'ERROR'},
+                        f"cannot split this solid into "
+                        f"{self.pieces} congruent connected pieces "
+                        f"(available: {opts})")
+                    return {'CANCELLED'}
+                groups = [[i for i in range(len(F))
+                           if assign[i] == j]
+                          for j in range(self.pieces)]
+            else:
+                groups = [list(range(len(F)))]
             for o in context.selected_objects:
                 o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            if self.style == 'LEONARDO':
-                try:
-                    from . import leonardo_style
-                except ImportError:
-                    import leonardo_style
-                leonardo_style.add_modifier(obj, self.border,
-                                            self.thickness)
-            elif self.style == 'WIRE':
-                mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
-                mod.thickness = self.thickness
-                mod.use_even_offset = False
+            first = None
+            for j, gf in enumerate(groups):
+                remap = {}
+                pv = []
+                pf = []
+                for fi in gf:
+                    face = []
+                    for i in F[fi]:
+                        if i not in remap:
+                            remap[i] = len(pv)
+                            pv.append(V[i])
+                        face.append(remap[i])
+                    pf.append(face)
+                psz = [fsz[fi] for fi in gf]
+                me = bpy.data.meshes.new("Solid")
+                me.from_pydata(pv, [], pf)
+                me.validate(clean_customdata=True)
+                if len(me.polygons) == len(psz):
+                    attr = me.attributes.new("ngon_sides", 'INT',
+                                             'FACE')
+                    attr.data.foreach_set('value', psz)
+                    if self.coloring == 'SIDES':
+                        lut = {}
+                        for nn in sorted(set(psz)):
+                            lut[nn] = len(me.materials)
+                            me.materials.append(
+                                self._material_for(nn))
+                        me.polygons.foreach_set(
+                            'material_index', [lut[s] for s in psz])
+                me.update()
+                name = (label if len(groups) == 1
+                        else f"{label} {j + 1}of{len(groups)}")
+                obj = bpy.data.objects.new(name, me)
+                context.collection.objects.link(obj)
+                off = (0.0, 0.0, 0.0)
+                if self.explode > 0 and len(groups) > 1:
+                    c = [0.0, 0.0, 0.0]
+                    for p in pv:
+                        for k in range(3):
+                            c[k] += p[k] / len(pv)
+                    ln = sqrt(sum(t * t for t in c)) or 1.0
+                    off = tuple(self.explode * t / ln for t in c)
+                cur = context.scene.cursor.location
+                obj.location = (cur[0] + off[0], cur[1] + off[1],
+                                cur[2] + off[2])
+                obj.select_set(True)
+                if first is None:
+                    first = obj
+                if self.style == 'LEONARDO':
+                    try:
+                        from . import leonardo_style
+                    except ImportError:
+                        import leonardo_style
+                    leonardo_style.add_modifier(obj, self.border,
+                                                self.thickness)
+                elif self.style == 'WIRE':
+                    mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
+                    mod.thickness = self.thickness
+                    mod.use_even_offset = False
+            context.view_layer.objects.active = first
             self.report({'INFO'},
-                        f"{label}: V={len(me.vertices)} "
-                        f"F={len(me.polygons)}")
+                        f"{label}: {len(groups)} piece(s), "
+                        f"{len(F)} faces")
             return {'FINISHED'}
 
         def draw(self, context):
@@ -923,6 +1194,9 @@ if _IN_BLENDER:
             if self.style != 'SOLID':
                 lay.prop(self, 'thickness')
             lay.prop(self, 'coloring')
+            lay.prop(self, 'pieces')
+            if self.pieces > 1:
+                lay.prop(self, 'explode')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
