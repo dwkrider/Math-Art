@@ -332,13 +332,23 @@ The modules:
     the form keeps reading as its polyhedron; Solidify supplies
     the slab thickness. Works on the Platonic seeds or the
     **active mesh object**.
-31. **Organic Wireframe** (`math_art/organic_wireframe.py`) — the
+31. **Squeeze Surface** (`math_art/squeeze_generator.py`) — after
+    Robert Fathauer's *Cubic Squeeze*: every edge of the seed
+    bows inward along exactly one of its two faces (toward that
+    face's centre, in its plane), claims alternating around each
+    face — solved by parity propagation, which is why every face
+    needs an **even** number of edges — and each face is spanned
+    by a Plateau minimal surface over its bent frame. Bend
+    depth, pattern flip, and solver controls; seeds: cube,
+    rhombic dodecahedron, truncated octahedron, hexagonal prism,
+    or the active mesh object.
+32. **Organic Wireframe** (`math_art/organic_wireframe.py`) — the
     classic "parametric Voronoi" style as a live, non-destructive
     modifier stack on the active mesh (Triangulate → Decimate
     collapse → Wireframe → Subdivision), fully adjustable in the
     modifier panel afterwards; works on any mesh including open
     minimal-surface patches (their rims are kept).
-32. **Celtic knots** (`math_art/celtic_knot_generator.py`) — a
+33. **Celtic knots** (`math_art/celtic_knot_generator.py`) — a
     port of Adam Newgas's
     [celtic-knot](https://github.com/BorisTheBrave/celtic-knot)
     add-on (MIT): strands weaving over and under along the edges
@@ -348,7 +358,7 @@ The modules:
     remeshing, bezier / pipe / ribbon outputs, per-strand or
     per-braid coloring. The strand walk was verified
     point-for-point against the original add-on.
-33. **Spiked & hyperbolic polyhedra**
+34. **Spiked & hyperbolic polyhedra**
     (`math_art/spiked_polyhedron_generator.py`) — pyramid-
     augmented Platonic solids (the icosahedron at height √6/3
     gives a 60-face deltahedron of regular tetrahedra — verified),

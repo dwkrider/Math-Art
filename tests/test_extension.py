@@ -158,6 +158,10 @@ OPS = [
      lambda: bpy.ops.mesh.minimal_surface_polyhedron_add(
         seed='DODECA', mode='SADDLE', depth=0.8, levels=2,
         iterations=15)),
+    ("cubic squeeze", lambda: bpy.ops.mesh.squeeze_add(
+        seed='CUBE', samples=8, rings=6, iterations=10)),
+    ("squeeze truncoct", lambda: bpy.ops.mesh.squeeze_add(
+        seed='TRUNCOCT', samples=6, rings=5, iterations=8)),
     ("minimal poly active",
      lambda: (bpy.ops.mesh.conway_add(example='CUSTOM',
                                       notation='sC'),

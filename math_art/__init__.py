@@ -56,6 +56,7 @@ _MODULE_NAMES = [
     'torus_knot_generator',
     'organic_wireframe',
     'minimal_polyhedron_generator',
+    'squeeze_generator',
 ]
 
 _MODULES = []
@@ -94,6 +95,7 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.topological_surface_add", icon='MESH_TORUS')
         _op(lay, "mesh.minimal_surface_polyhedron_add",
             icon='MESH_UVSPHERE')
+        _op(lay, "mesh.squeeze_add", icon='MOD_SIMPLEDEFORM')
 
 
 class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
