@@ -384,8 +384,15 @@ The modules:
     1/r = 1/r₁ − 1/r₂ bulging into the larger bubble; outer
     surfaces are trimmed to each bubble's cell and the interior
     films are trimmed where a third bubble takes over, giving
-    natural triple junctions. Configurable icosphere
-    subdivisions; interior films can be toggled off.
+    natural triple junctions. By default each bubble is its own
+    mesh object (outer cap plus its films — the complete
+    compressed bubble), parented under one empty; optionally
+    merged into a single mesh, per-bubble colored, and each
+    bubble fully enclosed by films (an interior lattice point)
+    can emit its flat-walled foam-cell polyhedron as a separate
+    mesh — a BCC-style centre bubble yields the octahedron.
+    Configurable icosphere subdivisions; interior films can be
+    toggled off.
 36. **Spiked & hyperbolic polyhedra**
     (`math_art/spiked_polyhedron_generator.py`) — pyramid-
     augmented Platonic solids (the icosahedron at height √6/3

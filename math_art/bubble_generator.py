@@ -24,6 +24,7 @@ bl_info = {
     "category": "Add Mesh",
 }
 
+import colorsys
 import math
 from math import sqrt
 
@@ -252,26 +253,15 @@ def _film_mesh(pr, h):
     return V, tris
 
 
-def build_bubbles(P, R, subdiv=3, films=True):
-    """(verts, faces, ids): the bubble cluster.  ids: bubble
-    index for outer caps, n + pair-index for interior films."""
+def build_parts(P, R, subdiv=2, films=True):
+    """(caps, filmparts, pairs): one (verts, tris) cap mesh per
+    bubble, and one per overlapping pair (keyed (i, j)) when
+    `films`."""
     P = np.asarray(P, float)
     R = np.asarray(R, float)
     pairs = _interfaces(P, R)
     SV, SF = _icosphere(subdiv)
-    verts = []
-    faces = []
-    ids = []
-
-    def emit(v, f, idx):
-        base = len(verts)
-        verts.extend(tuple(p) for p in v)
-        used = set()
-        for t in f:
-            faces.append([base + i for i in t])
-            ids.append(idx)
-            used.update(t)
-
+    caps = []
     for i in range(len(P)):
         prs = [(pr, pr['sign'][i]) for key, pr in pairs.items()
                if i in key]
@@ -284,11 +274,12 @@ def build_bubbles(P, R, subdiv=3, films=True):
             V1, F1 = _clip(V0, SF, prs, proj)
         else:
             V1, F1 = V0, SF
-        emit(V1, F1, i)
+        caps.append((V1, F1))
 
-    if films:
+    filmparts = {}
+    if films and pairs:
         h = 1.0515 * R.min() / (2 ** subdiv)
-        for pi, ((i, j), pr) in enumerate(pairs.items()):
+        for (i, j), pr in pairs.items():
             V0, F0 = _film_mesh(pr, h)
             prs = ([(p2, p2['sign'][i]) for key, p2
                     in pairs.items() if i in key and p2 is not pr]
@@ -307,8 +298,104 @@ def build_bubbles(P, R, subdiv=3, films=True):
             else:
                 V1, F1 = V0, F0
             if F1:
-                emit(V1, F1, len(P) + pi)
+                filmparts[(i, j)] = (V1, F1)
+    return caps, filmparts, pairs
+
+
+def build_bubbles(P, R, subdiv=2, films=True):
+    """(verts, faces, ids): the merged bubble cluster.  ids:
+    bubble index for outer caps, n + pair-index for films."""
+    caps, filmparts, pairs = build_parts(P, R, subdiv, films)
+    pi_of = {k: idx for idx, k in enumerate(pairs)}
+    verts = []
+    faces = []
+    ids = []
+
+    def emit(v, f, idx):
+        base = len(verts)
+        verts.extend(tuple(p) for p in v)
+        for t in f:
+            faces.append([base + i for i in t])
+            ids.append(idx)
+
+    for i, (V, F) in enumerate(caps):
+        emit(V, F, i)
+    for key, (V, F) in filmparts.items():
+        emit(V, F, len(caps) + pi_of[key])
     return verts, faces, ids
+
+
+def film_cell(P, R, i, pairs=None):
+    """The polyhedron bounded by bubble i's film planes (each
+    film's intersection-circle plane): (verts, faces), or None
+    when bubble i is not fully enclosed by films.  Only interior
+    bubbles -- surrounded on all sides by neighbours -- close
+    up; their cells are the flat-walled foam cells."""
+    P = np.asarray(P, float)
+    R = np.asarray(R, float)
+    if pairs is None:
+        pairs = _interfaces(P, R)
+    C = P[i]
+    planes = []
+    for (a, b), pr in pairs.items():
+        if i not in (a, b):
+            continue
+        nrm = np.array(pr['u'])    # points a -> b
+        if i == b:
+            nrm = -nrm             # outward from bubble i
+        planes.append((np.array(pr['q']), nrm))
+    if len(planes) < 4 or len(planes) > 60:
+        return None
+    big = 10.0 * (np.linalg.norm(P - C, axis=1).max() + R.max())
+    tol = 1e-7 * big
+    pts = []
+    m = len(planes)
+    for a in range(m):
+        for b in range(a + 1, m):
+            for c in range(b + 1, m):
+                A = np.array([planes[a][1], planes[b][1],
+                              planes[c][1]])
+                if abs(np.linalg.det(A)) < 1e-9:
+                    continue
+                rhs = [np.dot(pl[1], pl[0])
+                       for pl in (planes[a], planes[b],
+                                  planes[c])]
+                x = np.linalg.solve(A, rhs)
+                if np.linalg.norm(x - C) > big:
+                    continue
+                if all(np.dot(x - q, nn) <= tol
+                       for q, nn in planes):
+                    pts.append(x)
+    uniq = []
+    for p in pts:
+        if not any(np.linalg.norm(p - u) < 10 * tol
+                   for u in uniq):
+            uniq.append(p)
+    if len(uniq) < 4:
+        return None
+    faces = []
+    for q, nrm in planes:
+        on = [k for k, p in enumerate(uniq)
+              if abs(np.dot(p - q, nrm)) < 10 * tol]
+        if len(on) < 3:
+            continue
+        fc = np.mean([uniq[k] for k in on], axis=0)
+        e1 = uniq[on[0]] - fc
+        e1 -= np.dot(e1, nrm) * nrm
+        e1 /= np.linalg.norm(e1) or 1.0
+        e2 = np.cross(nrm, e1)
+        on.sort(key=lambda k: math.atan2(
+            np.dot(uniq[k] - fc, e2),
+            np.dot(uniq[k] - fc, e1)))
+        faces.append(on)
+    cnt = {}
+    for f in faces:
+        for k in range(len(f)):
+            e = frozenset((f[k], f[(k + 1) % len(f)]))
+            cnt[e] = cnt.get(e, 0) + 1
+    if not cnt or any(v != 2 for v in cnt.values()):
+        return None                # open: films don't close up
+    return [tuple(p) for p in uniq], faces
 
 
 def _seed(name):
@@ -326,6 +413,24 @@ def _seed(name):
 
 
 if _IN_BLENDER:
+
+    def _mat(name, col):
+        mat = bpy.data.materials.new(name)
+        mat.use_nodes = True
+        bsdf = next(nd for nd in mat.node_tree.nodes
+                    if nd.type == 'BSDF_PRINCIPLED')
+        bsdf.inputs["Base Color"].default_value = col
+        mat.diffuse_color = col
+        return mat
+
+    def _color_mat(i):
+        hue = (i * 0.61803398875) % 1.0
+        return _mat(f"Bubble {i + 1:03d}",
+                    colorsys.hsv_to_rgb(hue, 0.55, 0.9)
+                    + (1.0,))
+
+    def _plain_mat():
+        return _mat("Bubble Films", (0.8, 0.8, 0.8, 1.0))
 
     class MESH_OT_bubble_cluster_add(bpy.types.Operator):
         """Cluster of soap bubbles at the points of a seed mesh,
@@ -360,12 +465,28 @@ if _IN_BLENDER:
                         "mean neighbour distance (above 0.5 "
                         "neighbouring bubbles merge)")
         subdiv: IntProperty(
-            name="Subdivisions", default=3, min=1, max=5,
+            name="Subdivisions", default=2, min=1, max=5,
             description="Icosphere subdivisions per bubble")
         films: BoolProperty(
             name="Interior Films", default=True,
             description="Include the soap films between "
                         "touching bubbles")
+        separate: BoolProperty(
+            name="Separate Bubble Meshes", default=True,
+            description="One mesh object per bubble (its outer "
+                        "cap plus its films), parented to an "
+                        "empty")
+        color: BoolProperty(
+            name="Color Bubbles", default=False,
+            description="Give each bubble its own material "
+                        "color")
+        cell: BoolProperty(
+            name="Intersection Polyhedra", default=False,
+            description="For every bubble fully enclosed by "
+                        "films, add its flat-walled cell "
+                        "polyhedron as a separate mesh (needs "
+                        "interior points, e.g. a lattice seed "
+                        "via Active Object)")
         smooth: BoolProperty(name="Smooth Shading", default=True)
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
@@ -392,44 +513,120 @@ if _IN_BLENDER:
                 return {'CANCELLED'}
             R = bubble_radii(P, edges, self.factor,
                              self.radius_mode == 'UNIFORM')
-            verts, faces, ids = build_bubbles(
+            caps, filmparts, pairs = build_parts(
                 P, R, self.subdiv, self.films)
+            n = len(caps)
+            pi_of = {k: idx for idx, k in enumerate(pairs)}
+            Pa = np.asarray(P, float)
+            # (name, verts, faces, ids, origin, bubble idx)
+            parts = []
+            if self.separate:
+                for i in range(n):
+                    V = [tuple(p) for p in caps[i][0]]
+                    F = [list(f) for f in caps[i][1]]
+                    ids = [i] * len(F)
+                    for key, (fv, ff) in filmparts.items():
+                        if i in key:
+                            base = len(V)
+                            V += [tuple(p) for p in fv]
+                            F += [[base + q for q in f]
+                                  for f in ff]
+                            ids += [n + pi_of[key]] * len(ff)
+                    parts.append([f"Bubble {i + 1:03d}", V, F,
+                                  ids, Pa[i], i])
+            else:
+                verts, faces, ids = build_bubbles(
+                    P, R, self.subdiv, self.films)
+                parts.append([name, verts, faces, ids,
+                              None, None])
+            if self.cell:
+                found = 0
+                for i in range(n):
+                    cm = film_cell(P, R, i, pairs)
+                    if cm is None:
+                        continue
+                    found += 1
+                    parts.append([f"Cell {i + 1:03d}", cm[0],
+                                  [list(f) for f in cm[1]],
+                                  [-1] * len(cm[1]),
+                                  Pa[i], None])
+                if not found:
+                    self.report({'WARNING'},
+                                "no bubble is fully enclosed "
+                                "by films, so they bound no "
+                                "polyhedron (interior points "
+                                "are needed)")
             # fit (roughly) within a 2 x scale cube at the origin
-            lo = [min(v[k] for v in verts) for k in range(3)]
-            hi = [max(v[k] for v in verts) for k in range(3)]
+            allv = [v for p in parts for v in p[1]]
+            lo = [min(v[k] for v in allv) for k in range(3)]
+            hi = [max(v[k] for v in allv) for k in range(3)]
+            ctr = [(lo[k] + hi[k]) / 2.0 for k in range(3)]
             half = max((hi[k] - lo[k]) / 2.0 for k in range(3)) \
                 or 1.0
             s = self.scale / half
-            verts = [tuple((v[k] - (lo[k] + hi[k]) / 2.0) * s
-                           for k in range(3)) for v in verts]
-            me = bpy.data.meshes.new(name)
-            me.from_pydata(verts, [], faces)
-            me.validate(clean_customdata=True)
-            me.polygons.foreach_set(
-                'use_smooth', [self.smooth] * len(me.polygons))
-            attr = me.attributes.new("bubble_index", 'INT',
-                                     'FACE')
-            if len(me.polygons) == len(ids):
-                attr.data.foreach_set('value', ids)
-            me.update()
-            obj = bpy.data.objects.new(name, me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
+            cur = context.scene.cursor.location
             for o in context.selected_objects:
                 o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
+            films_mat = None
+            objs = []
+            for pname, V, F, ids, origin, bi in parts:
+                off = ([0.0, 0.0, 0.0] if origin is None
+                       else [(origin[k] - ctr[k]) * s
+                             for k in range(3)])
+                Vt = [tuple((v[k] - ctr[k]) * s - off[k]
+                            for k in range(3)) for v in V]
+                me = bpy.data.meshes.new(pname)
+                me.from_pydata(Vt, [], F)
+                me.validate(clean_customdata=True)
+                sm = self.smooth and not pname.startswith("Cell")
+                me.polygons.foreach_set(
+                    'use_smooth', [sm] * len(me.polygons))
+                attr = me.attributes.new("bubble_index", 'INT',
+                                         'FACE')
+                if len(me.polygons) == len(ids):
+                    attr.data.foreach_set('value', ids)
+                if self.color:
+                    if bi is not None:
+                        me.materials.append(_color_mat(bi))
+                    elif pname == "Intersection Cell":
+                        me.materials.append(_plain_mat())
+                    else:
+                        for i in range(n):
+                            me.materials.append(_color_mat(i))
+                        me.materials.append(_plain_mat())
+                        if len(me.polygons) == len(ids):
+                            me.polygons.foreach_set(
+                                'material_index',
+                                [min(d, n) for d in ids])
+                me.update()
+                obj = bpy.data.objects.new(pname, me)
+                context.collection.objects.link(obj)
+                obj.location = off
+                obj.select_set(True)
+                objs.append(obj)
+            if len(objs) > 1:
+                root = bpy.data.objects.new(name, None)
+                root.empty_display_size = 0.2
+                context.collection.objects.link(root)
+                root.location = cur
+                for obj in objs:
+                    obj.parent = root
+                root.select_set(True)
+            else:
+                objs[0].location = cur
+            context.view_layer.objects.active = objs[0]
             self.report({'INFO'},
-                        f"{name}: {len(P)} bubbles "
-                        f"V={len(me.vertices)} "
-                        f"F={len(me.polygons)}")
+                        f"{name}: {n} bubbles, "
+                        f"{len(filmparts)} films, "
+                        f"{len(objs)} object(s)")
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             for k in ('seed', 'radius_mode', 'factor', 'subdiv',
-                      'films', 'smooth', 'scale'):
+                      'films', 'separate', 'color', 'cell',
+                      'smooth', 'scale'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
@@ -513,4 +710,18 @@ if __name__ == "__main__":
                            if d == i for k in f})
             g = _side_min(prs, Vc[idxs])
             assert g.min() > -1e-6, g.min()
+        # corner bubbles are not enclosed: no cell polyhedra
+        assert all(film_cell(Pc, Rc, i) is None for i in range(8))
+        # BCC: a centre bubble surrounded by the 8 corners is
+        # enclosed -- its film planes (normal to the body
+        # diagonals) bound an octahedron
+        Pb = np.vstack([[[0.5, 0.5, 0.5]], Pc])
+        Rb = np.full(9, 0.62)
+        cellm = film_cell(Pb, Rb, 0)
+        assert cellm is not None
+        cv, cfs = cellm
+        print(f"BCC centre cell: V={len(cv)} F={len(cfs)} "
+              f"(want the octahedron: 6/8)")
+        assert len(cv) == 6 and len(cfs) == 8
+        assert film_cell(Pb, Rb, 1) is None
         print("bubble standalone tests passed")

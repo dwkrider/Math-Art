@@ -172,6 +172,8 @@ OPS = [
         seed='CUBE', subdiv=2)),
     ("bubble cluster local", lambda: bpy.ops.mesh.bubble_cluster_add(
         seed='TETRA', radius_mode='LOCAL', factor=0.7, subdiv=2)),
+    ("bubble merged colored", lambda: bpy.ops.mesh.bubble_cluster_add(
+        seed='ICOSA', separate=False, color=True, subdiv=1)),
     ("minimal poly active",
      lambda: (bpy.ops.mesh.conway_add(example='CUSTOM',
                                       notation='sC'),
