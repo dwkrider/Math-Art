@@ -949,7 +949,7 @@ if _IN_BLENDER:
             name="Boundary Samples", default=96, min=32, max=512)
         rings: IntProperty(name="Interior Rings", default=16, min=4, max=128)
         iterations: IntProperty(
-            name="Solver Iterations", default=30, min=1, max=200)
+            name="Solver Iterations", default=2, min=1, max=200)
         output_nurbs: BoolProperty(
             name="NURBS Output", default=False,
             description="Emit a compact NURBS surface (control grid = the "
