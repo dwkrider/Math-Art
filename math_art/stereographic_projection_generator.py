@@ -327,6 +327,13 @@ if _IN_BLENDER:
             description="Add a small point light at the north "
                         "pole to preview the shadow (Cycles or "
                         "Eevee with shadows)")
+        add_floor: BoolProperty(
+            name="Add Floor Plane", default=False,
+            description="Large plane under the sphere so the "
+                        "projected shadow pattern is visible")
+        floor_size: FloatProperty(
+            name="Floor Size", default=40.0, min=4.0, max=400.0,
+            description="Floor plane side length, in sphere radii")
 
         def execute(self, context):
             pq = _valid_pq(self.tile_p, self.tile_q)
@@ -373,6 +380,18 @@ if _IN_BLENDER:
                 lo.parent = obj
                 lo.location = (0.0, 0.0, 2.0 * self.radius -
                                min(self.thickness, self.radius))
+            if self.add_floor:
+                s = self.floor_size * self.radius / 2.0
+                fme = bpy.data.meshes.new("Stereographic Floor")
+                fme.from_pydata(
+                    [(-s, -s, 0.0), (s, -s, 0.0), (s, s, 0.0),
+                     (-s, s, 0.0)], [], [[0, 1, 2, 3]])
+                fme.update()
+                fo = bpy.data.objects.new("Stereographic Floor",
+                                          fme)
+                context.collection.objects.link(fo)
+                fo.parent = obj
+                fo.location = (0.0, 0.0, 0.0)
             self.report({'INFO'},
                         "V=%d F=%d" % (len(me.vertices),
                                        len(me.polygons)))
@@ -398,6 +417,9 @@ if _IN_BLENDER:
                 lay.prop(self, 'gores')
             lay.prop(self, 'res')
             lay.prop(self, 'add_light')
+            lay.prop(self, 'add_floor')
+            if self.add_floor:
+                lay.prop(self, 'floor_size')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.stereographic_add",
