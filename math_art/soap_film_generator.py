@@ -1,8 +1,9 @@
 
-# Minimal Surface Form generator for Blender, after Norman
-# Carlberg's "Minimal Surface Form" sculpture series (e.g. Form 6,
-# 1960, Hirshhorn): a polyhedron whose faces are pierced and
-# relaxed into a smooth soap-film-like slab.
+# Soap Film Polyhedron generator for Blender: a polyhedron whose
+# faces are pierced and relaxed into a smooth soap-film-like
+# membrane stretched over the (softly held) edge frame.  Inspired
+# by the modular-constructivist soap-film aesthetic of Norman
+# Carlberg''s sculpture.
 #
 # The construction generalizes the classic cube tutorial to any
 # polyhedron:
@@ -21,13 +22,13 @@
 # the same way.
 
 bl_info = {
-    "name": "Minimal Surface Form",
-    "author": "Math Art project (after Norman Carlberg)",
+    "name": "Soap Film Polyhedron",
+    "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Math Art > Surfaces",
-    "description": "Pierced, soap-film-relaxed polyhedra after "
-                   "Carlberg's Minimal Surface Form series",
+    "description": "Pierced, soap-film-relaxed polyhedra on a "
+                   "held edge frame",
     "category": "Add Mesh",
 }
 
@@ -196,13 +197,12 @@ def _seed(name):
 
 if _IN_BLENDER:
 
-    class MESH_OT_minimal_form_add(bpy.types.Operator):
-        """Pierce and soap-film-relax a polyhedron into a smooth
-        sculptural form (after Norman Carlberg's Minimal Surface
-        Form series); works on the built-in seeds or the active
-        mesh object"""
-        bl_idname = "mesh.minimal_form_add"
-        bl_label = "Minimal Surface Form"
+    class MESH_OT_soap_film_polyhedron_add(bpy.types.Operator):
+        """Pierce a polyhedron's faces and relax the surface like
+        a soap film stretched on its edge frame; works on the
+        built-in seeds or the active mesh object"""
+        bl_idname = "mesh.soap_film_polyhedron_add"
+        bl_label = "Soap Film Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
         seed: EnumProperty(
@@ -273,11 +273,11 @@ if _IN_BLENDER:
                 V = [tuple(v.co) for v in me0.vertices]
                 F = [list(p.vertices) for p in me0.polygons]
                 src.evaluated_get(deps).to_mesh_clear()
-                name = f"{src.name} Form"
+                name = f"{src.name} Soap Film"
             else:
                 V, F = _seed(self.seed)
                 V = [tuple(c) for c in V]
-                name = f"Minimal Form ({self.seed.title()})"
+                name = f"Soap Film ({self.seed.title()})"
             try:
                 verts, faces = build_form(
                     V, F, self.levels, self.hole, self.pattern,
@@ -329,20 +329,20 @@ if _IN_BLENDER:
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
-        self.layout.operator("mesh.minimal_form_add",
+        self.layout.operator("mesh.soap_film_polyhedron_add",
                              icon='MESH_UVSPHERE')
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
     def register():
-        bpy.utils.register_class(MESH_OT_minimal_form_add)
+        bpy.utils.register_class(MESH_OT_soap_film_polyhedron_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
-        bpy.utils.unregister_class(MESH_OT_minimal_form_add)
+        bpy.utils.unregister_class(MESH_OT_soap_film_polyhedron_add)
 
 
 if __name__ == "__main__":
@@ -391,4 +391,4 @@ if __name__ == "__main__":
             print(f"{name}: V={len(verts)} F={len(faces)} "
                   f"holes={loops} (want {holes}) finite={finite}")
             assert loops == holes and finite
-        print("minimal form standalone tests passed")
+        print("soap film standalone tests passed")

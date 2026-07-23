@@ -321,16 +321,15 @@ The modules:
     at the smoothed iso-contour of the distance-to-cell-boundary
     field, and a Solidify modifier supplies the thickness. Open
     surfaces keep their boundary as a solid frame.
-30. **Minimal Surface Form**
-    (`math_art/minimal_form_generator.py`) — pierced, soap-film-
-    relaxed polyhedra after Norman Carlberg's *Minimal Surface
-    Form* series (e.g. Form 6, 1960): faces are linearly
-    subdivided, opened near their centres, and Laplacian-relaxed
-    with the seed's edge frame (or just its corners) softly held,
-    so the hole rims tighten like soap film while the form keeps
-    reading as its polyhedron; Solidify supplies the slab
-    thickness. Works on the Platonic seeds or the **active mesh
-    object**, so any polyhedron can be pierced the same way.
+30. **Soap Film Polyhedron**
+    (`math_art/soap_film_generator.py`) — pierced, soap-film-
+    relaxed polyhedra: faces are linearly subdivided, opened near
+    their centres, and Laplacian-relaxed with the seed's edge
+    frame (or just its corners) softly held, so the hole rims
+    tighten like soap film while the form keeps reading as its
+    polyhedron; Solidify supplies the slab thickness. Works on
+    the Platonic seeds or the **active mesh object**, so any
+    polyhedron can be pierced the same way.
 31. **Organic Wireframe** (`math_art/organic_wireframe.py`) — the
     classic "parametric Voronoi" style as a live, non-destructive
     modifier stack on the active mesh (Triangulate → Decimate

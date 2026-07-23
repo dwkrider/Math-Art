@@ -151,12 +151,12 @@ OPS = [
         mode='MOBILE')),
     ("topological surface",
      lambda: bpy.ops.mesh.topological_surface_add(preset='KLEIN')),
-    ("minimal form cube", lambda: bpy.ops.mesh.minimal_form_add(
+    ("soap film cube", lambda: bpy.ops.mesh.soap_film_polyhedron_add(
         seed='CUBE')),
-    ("minimal form active",
+    ("soap film active",
      lambda: (bpy.ops.mesh.conway_add(example='CUSTOM',
                                       notation='sC'),
-              bpy.ops.mesh.minimal_form_add(
+              bpy.ops.mesh.soap_film_polyhedron_add(
                   seed='ACTIVE', levels=2, iterations=15))[-1]),
     ("polytope half", lambda: bpy.ops.mesh.polytope4d_add(
         kind='CELL24', half=True)),
