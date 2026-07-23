@@ -59,6 +59,8 @@ _MODULE_NAMES = [
     'squeeze_generator',
     'vortex_generator',
     'bubble_generator',
+    'helical_surface_generator',
+    'curiosity_surface_generator',
 ]
 
 _MODULES = []
@@ -99,6 +101,9 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
             icon='MESH_UVSPHERE')
         _op(lay, "mesh.squeeze_add", icon='MOD_SIMPLEDEFORM')
         _op(lay, "mesh.vertex_vortices_add", icon='FORCE_VORTEX')
+        _op(lay, "mesh.helical_surface_add", icon='MOD_SCREW')
+        _op(lay, "mesh.curiosity_surface_add",
+            icon='SURFACE_DATA')
 
 
 class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):

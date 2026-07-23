@@ -404,6 +404,23 @@ The modules:
     rhombohedra) with a folded variant whose mid / tip radial
     scales make the whole family a two-slider space.
 
+37. **Helical Surfaces**
+    (`math_art/helical_surface_generator.py`) — three classic
+    helical parametric surfaces: the **hyperbolic helicoid**
+    (torsion and extent controls), the parametric **seashell**
+    (whorls, tube aspect, height, opening), and the
+    **corkscrew surface** (a twisted sphere; radius and twist
+    rise). Exact seam welding, apex closure on the seashell,
+    optional Solidify thickness.
+38. **Curiosity Surfaces**
+    (`math_art/curiosity_surface_generator.py`) — **Fresnel's
+    elasticity surface** (the quartic
+    (x²+y²+z²)² = a²x²+b²y²+c²z², watertight radial mesh with
+    configurable semi-axes), the crimped **paper bag surface**,
+    and the **trihyperboloid** (boundary of the intersection of
+    the three coordinate hyperboloids, enclosed volume 8·ln 2 —
+    the mesh volume is verified against it in the self-tests).
+
 ![120-cell](renders/form_120cell.png)
 
 ![120-cell, Leonardo style](renders/form_120cell_leonardo.png)

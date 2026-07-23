@@ -174,6 +174,17 @@ OPS = [
         seed='TETRA', radius_mode='LOCAL', factor=0.7, subdiv=2)),
     ("bubble merged colored", lambda: bpy.ops.mesh.bubble_cluster_add(
         seed='ICOSA', separate=False, color=True, subdiv=1)),
+    ("helical helicoid", lambda: bpy.ops.mesh.helical_surface_add(
+        surface='HYPERBOLIC_HELICOID', resolution=48)),
+    ("helical seashell", lambda: bpy.ops.mesh.helical_surface_add(
+        surface='SEASHELL', resolution=48)),
+    ("curiosity fresnel", lambda: bpy.ops.mesh.curiosity_surface_add(
+        surface='FRESNEL', resolution=32)),
+    ("curiosity trihyperboloid",
+     lambda: bpy.ops.mesh.curiosity_surface_add(
+        surface='TRIHYPERBOLOID', resolution=32)),
+    ("curiosity paper bag", lambda: bpy.ops.mesh.curiosity_surface_add(
+        surface='PAPERBAG', resolution=32)),
     ("minimal poly active",
      lambda: (bpy.ops.mesh.conway_add(example='CUSTOM',
                                       notation='sC'),

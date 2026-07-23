@@ -160,7 +160,7 @@ def _rp2_quotient(nu, nv, fn, theta_offset):
 
 
 def _crosscap_pt(th, ph):
-    """Standard cross-cap immersion of RP^2 (MathWorld form); antipodes
+    """Standard cross-cap immersion of RP^2; antipodes
     of the sphere (th, ph latitude) map to the same point."""
     st, ct = np.sin(th), np.cos(th)
     return (0.5 * st * np.sin(2 * ph) + 0 * th,
