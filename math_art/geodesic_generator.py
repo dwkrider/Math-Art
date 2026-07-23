@@ -442,7 +442,9 @@ if _IN_BLENDER:
             loops = (boundary_loops(F)
                      if zmin is not None and self.base_ring else [])
 
-            smooth = True
+            # only round struts/nodes shade smooth; the flat facets
+            # of shells and panels must stay flat or the edges blur
+            smooth = self.style == 'STRUTS'
             if self.style in ('SHELL', 'LEONARDO'):
                 verts = list(V)
                 faces = [list(f) for f in F]
