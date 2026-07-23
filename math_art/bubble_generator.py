@@ -325,6 +325,124 @@ def build_bubbles(P, R, subdiv=2, films=True):
     return verts, faces, ids
 
 
+def _ray_t_one(ci, v, ri, cons, lab):
+    """Distance along the ray ci + t v to constraint `lab`
+    (0 = the bubble's own sphere, else film lab-1); inf when
+    the ray never leaves the cell through it."""
+    if lab == 0:
+        return ri
+    pr, sgn = cons[lab - 1]
+    if pr['kind'] == 'P':
+        du = np.dot(v, pr['u'])
+        if sgn * du >= -1e-15:
+            return np.inf
+        t = -np.dot(ci - pr['q'], pr['u']) / du
+        return t if t > 0 else np.inf
+    w = ci - pr['cf']
+    b = np.dot(v, w)
+    disc = b * b - (np.dot(w, w) - pr['rf'] ** 2)
+    if sgn < 0:                    # inside the film ball: exit
+        return -b + sqrt(max(disc, 0.0))
+    if disc <= 0 or b >= 0:        # outside: may enter
+        return np.inf
+    t = -b - sqrt(disc)
+    return t if t > 0 else np.inf
+
+
+def _ray_t(ci, v, ri, cons):
+    """(t, label) of the nearest boundary along the ray."""
+    best, lab = ri, 0
+    for k in range(len(cons)):
+        t = _ray_t_one(ci, v, ri, cons, k + 1)
+        if t < best:
+            best, lab = t, k + 1
+    return best, lab
+
+
+def build_bubble_solid(ci, ri, cons, subdiv=2):
+    """One bubble as a CLOSED mesh: the cell is star-shaped
+    around the centre, so an icosphere is displaced radially to
+    the nearest boundary (own sphere or a film), and triangles
+    whose vertices lie on different surfaces are split at the
+    crease so every facet sits on one surface.  Returns (verts,
+    tris, labels): label 0 = spherical cap, k = film cons[k-1]."""
+    ci = np.asarray(ci, float)
+    SV, SF = _icosphere(subdiv)
+    tl = [_ray_t(ci, v, ri, cons) for v in SV]
+    verts = [ci + t * v for (t, _), v in zip(tl, SV)]
+    labs = [l for _, l in tl]
+    dirs = list(SV)
+    cache = {}
+
+    def crossing(a, b):
+        key = (a, b) if a < b else (b, a)
+        if key in cache:
+            return cache[key]
+        la, lb = labs[a], labs[b]
+        p, q = dirs[a].copy(), dirs[b].copy()
+        big = 10.0 * ri
+
+        def h(v):
+            ta = min(_ray_t_one(ci, v, ri, cons, la), big)
+            tb = min(_ray_t_one(ci, v, ri, cons, lb), big)
+            return ta - tb
+        # h(p) <= 0 <= h(q)
+        if h(p) > 0:
+            p, q = q, p
+        for _ in range(30):
+            m = p + q
+            m /= np.linalg.norm(m)
+            if h(m) <= 0:
+                p = m
+            else:
+                q = m
+        v = p + q
+        v /= np.linalg.norm(v)
+        t, _ = _ray_t(ci, v, ri, cons)
+        cache[key] = len(verts)
+        verts.append(ci + t * v)
+        dirs.append(v)
+        return cache[key]
+
+    tris = []
+    tlabs = []
+    for a, b, c in SF:
+        la, lb, lc = labs[a], labs[b], labs[c]
+        if la == lb == lc:
+            tris.append((a, b, c))
+            tlabs.append(la)
+            continue
+        if la != lb and lb != lc and lc != la:
+            pab, pbc, pca = (crossing(a, b), crossing(b, c),
+                             crossing(c, a))
+            vj = dirs[pab] + dirs[pbc] + dirs[pca]
+            vj /= np.linalg.norm(vj)
+            tj, _ = _ray_t(ci, vj, ri, cons)
+            J = len(verts)
+            verts.append(ci + tj * vj)
+            dirs.append(vj)
+            for t3, l3 in (((a, pab, J), la), ((pab, b, J), lb),
+                           ((b, pbc, J), lb), ((pbc, c, J), lc),
+                           ((c, pca, J), lc), ((pca, a, J), la)):
+                tris.append(t3)
+                tlabs.append(l3)
+            continue
+        # exactly two labels: rotate the lone vertex first
+        if lb != la and lb != lc:
+            a, b, c = b, c, a
+        elif lc != la and lc != lb:
+            a, b, c = c, a, b
+        la, lb = labs[a], labs[b]
+        pab, pca = crossing(a, b), crossing(c, a)
+        tris.append((a, pab, pca))
+        tlabs.append(la)
+        tris.append((pab, b, c))
+        tlabs.append(lb)
+        tris.append((pab, c, pca))
+        tlabs.append(lb)
+    return ([tuple(p) for p in verts], tris, tlabs)
+
+
 def film_cell(P, R, i, pairs=None):
     """The polyhedron bounded by bubble i's film planes (each
     film's intersection-circle plane): (verts, faces), or None
@@ -470,7 +588,9 @@ if _IN_BLENDER:
         films: BoolProperty(
             name="Interior Films", default=True,
             description="Include the soap films between "
-                        "touching bubbles")
+                        "touching bubbles (merged mesh only; "
+                        "separate bubbles always carry their "
+                        "walls, keeping each one closed)")
         separate: BoolProperty(
             name="Separate Bubble Meshes", default=True,
             description="One mesh object per bubble (its outer "
@@ -513,27 +633,30 @@ if _IN_BLENDER:
                 return {'CANCELLED'}
             R = bubble_radii(P, edges, self.factor,
                              self.radius_mode == 'UNIFORM')
-            caps, filmparts, pairs = build_parts(
-                P, R, self.subdiv, self.films)
-            n = len(caps)
-            pi_of = {k: idx for idx, k in enumerate(pairs)}
+            n = len(P)
             Pa = np.asarray(P, float)
+            pairs = _interfaces(Pa, np.asarray(R, float))
+            pi_of = {k: idx for idx, k in enumerate(pairs)}
             # (name, verts, faces, ids, origin, bubble idx)
             parts = []
             if self.separate:
+                # each bubble is one CLOSED solid: its sphere
+                # radially capped by its films
                 for i in range(n):
-                    V = [tuple(p) for p in caps[i][0]]
-                    F = [list(f) for f in caps[i][1]]
-                    ids = [i] * len(F)
-                    for key, (fv, ff) in filmparts.items():
+                    cons = []
+                    consk = []
+                    for key, pr in pairs.items():
                         if i in key:
-                            base = len(V)
-                            V += [tuple(p) for p in fv]
-                            F += [[base + q for q in f]
-                                  for f in ff]
-                            ids += [n + pi_of[key]] * len(ff)
-                    parts.append([f"Bubble {i + 1:03d}", V, F,
-                                  ids, Pa[i], i])
+                            cons.append((pr, pr['sign'][i]))
+                            consk.append(key)
+                    V, F, labs = build_bubble_solid(
+                        Pa[i], R[i], cons, self.subdiv)
+                    ids = [i if l == 0
+                           else n + pi_of[consk[l - 1]]
+                           for l in labs]
+                    parts.append([f"Bubble {i + 1:03d}", V,
+                                  [list(f) for f in F], ids,
+                                  Pa[i], i])
             else:
                 verts, faces, ids = build_bubbles(
                     P, R, self.subdiv, self.films)
@@ -617,7 +740,7 @@ if _IN_BLENDER:
             context.view_layer.objects.active = objs[0]
             self.report({'INFO'},
                         f"{name}: {n} bubbles, "
-                        f"{len(filmparts)} films, "
+                        f"{len(pairs)} films, "
                         f"{len(objs)} object(s)")
             return {'FINISHED'}
 
@@ -712,6 +835,40 @@ if __name__ == "__main__":
             assert g.min() > -1e-6, g.min()
         # corner bubbles are not enclosed: no cell polyhedra
         assert all(film_cell(Pc, Rc, i) is None for i in range(8))
+        # separate solids: every bubble mesh must be CLOSED
+        # (each edge in exactly two triangles), finite, with
+        # positive volume, and its crease vertices must sit on
+        # both surfaces (sphere and film)
+        pairs_k = list(pairs_c)
+        for i in range(8):
+            cons = [(pairs_c[k], pairs_c[k]['sign'][i])
+                    for k in pairs_k if i in k]
+            sv, sf, sl = build_bubble_solid(Pc[i], Rc[i], cons,
+                                            subdiv=2)
+            ec = {}
+            for f in sf:
+                for k in range(3):
+                    e = frozenset((f[k], f[(k + 1) % 3]))
+                    ec[e] = ec.get(e, 0) + 1
+            assert all(c == 2 for c in ec.values()), \
+                f"bubble {i} not closed"
+            A = np.array(sv)
+            vol = sum(np.dot(A[f[0]],
+                             np.cross(A[f[1]], A[f[2]]))
+                      for f in sf) / 6.0
+            assert vol > 0 and np.isfinite(A).all()
+            if i == 0:
+                onboth = 0
+                for k, p in enumerate(A):
+                    rs = abs(np.linalg.norm(p - Pc[0]) - Rc[0])
+                    rq = min(abs(sgn * _raw(pr, p[None, :])[0])
+                             for pr, sgn in cons)
+                    if rs < 1e-5 and rq < 1e-5:
+                        onboth += 1
+                assert onboth > 10, onboth   # crease verts exist
+                print(f"bubble solid: V={len(sv)} F={len(sf)} "
+                      f"closed, vol={vol:.4f}, "
+                      f"{onboth} crease verts on both surfaces")
         # BCC: a centre bubble surrounded by the 8 corners is
         # enclosed -- its film planes (normal to the body
         # diagonals) bound an octahedron
