@@ -83,9 +83,13 @@ def linear_subdivide(V, F, origin=None):
 
 def build_form(V, F, levels=3, hole=0.55, pattern='ALL',
                iterations=40, pin='EDGES', smooth_lambda=0.5,
-               corner_soft=0.35):
-    """Pierced and relaxed form from seed polyhedron (V, F).
-    Returns (verts, faces)."""
+               corner_soft=0.35, mode='HOLES', depth=0.5):
+    """Membrane-relaxed form from seed polyhedron (V, F): HOLES
+    mode pierces the faces near their centres, SADDLE mode leaves
+    them closed and dents each face inward by a smooth membrane
+    profile of the given depth (fraction of the face inradius),
+    anchored only on the face's own rim -- never at the
+    polyhedron centre.  Returns (verts, faces)."""
     V0 = [tuple(v) for v in V]
     n_corner = len(V0)
     # original face data for the hole test
@@ -121,7 +125,7 @@ def build_form(V, F, levels=3, hole=0.55, pattern='ALL',
 
     keep = []
     korig = []
-    if hole > 0:
+    if mode == 'HOLES' and hole > 0:
         Va = np.asarray(verts)
         for f, o in zip(faces, origin):
             c = Va[f].mean(axis=0)
@@ -177,6 +181,42 @@ def build_form(V, F, levels=3, hole=0.55, pattern='ALL',
             nb[a].add(b)
             nb[b].add(a)
     nbl = [sorted(s) for s in nb]
+
+    if mode == 'SADDLE' and depth > 0:
+        # dent every face inward BEFORE relaxing: each vertex
+        # interior to exactly one seed face moves along that
+        # face's inward normal by depth x inradius x a smoothstep
+        # of its distance to the face's own rim.  Rim and corner
+        # vertices (shared between faces) stay put, so the sheets
+        # hang from the edge frame -- nothing is anchored at the
+        # polyhedron centre.  The relaxation below then smooths
+        # the profile (and its medial-axis creases) into a
+        # membrane.
+        C0 = np.array(V0, float)
+        vert_faces = [set() for _ in range(len(P))]
+        for f, o in zip(faces, korig if korig else origin):
+            for i in f:
+                vert_faces[i].add(o)
+        for i, fs in enumerate(vert_faces):
+            if len(fs) != 1:
+                continue
+            o = next(iter(fs))
+            fc, nrm, rin = fdat[o]
+            poly = [C0[j] for j in F[o]]
+            dmin = np.inf
+            for k in range(len(poly)):
+                A = poly[k]
+                B = poly[(k + 1) % len(poly)]
+                AB = B - A
+                L2 = float(AB @ AB) or 1.0
+                u = min(1.0, max(0.0,
+                                 float((P[i] - A) @ AB) / L2))
+                dmin = min(dmin, float(np.linalg.norm(
+                    P[i] - (A + u * AB))))
+            w = min(1.0, dmin / max(rin, 1e-9))
+            w = w * w * (3.0 - 2.0 * w)       # smoothstep
+            P[i] = P[i] - nrm * (depth * rin * w)
+
     lam = smooth_lambda * weight[:, None]
     for _ in range(iterations):
         Q = np.empty_like(P)
@@ -214,6 +254,22 @@ if _IN_BLENDER:
                    ('ACTIVE', "Active Object",
                     "Pierce the active mesh object's faces")],
             default='CUBE')
+        mode: EnumProperty(
+            name="Mode",
+            items=[('HOLES', "Face Openings",
+                    "Pierce each face near its centre; the hole "
+                    "rims tighten as the membrane relaxes"),
+                   ('SADDLE', "Inward Bulge",
+                    "Keep the faces closed and dent each one "
+                    "inward with a smooth membrane profile, "
+                    "hanging from its own rim (saddle ridges "
+                    "along the edge frame; nothing anchored at "
+                    "the centre)")],
+            default='HOLES')
+        depth: FloatProperty(
+            name="Bulge Depth", default=0.5, min=0.0, max=2.0,
+            description="Inward Bulge: how deep each face dents, "
+                        "as a fraction of its inradius")
         levels: IntProperty(
             name="Subdivisions", default=3, min=1, max=5,
             description="Linear face subdivisions before piercing")
@@ -256,6 +312,7 @@ if _IN_BLENDER:
             name="Thickness", default=0.08, min=0.0, max=1.0,
             description="Solidify modifier thickness (0 = raw "
                         "surface)")
+        smooth: BoolProperty(name="Smooth Shading", default=False)
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -281,7 +338,8 @@ if _IN_BLENDER:
                 verts, faces = build_form(
                     V, F, self.levels, self.hole, self.pattern,
                     self.iterations, self.pin,
-                    corner_soft=self.corner_soft)
+                    corner_soft=self.corner_soft,
+                    mode=self.mode, depth=self.depth)
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -297,7 +355,8 @@ if _IN_BLENDER:
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
             me.polygons.foreach_set('use_smooth',
-                                    [True] * len(me.polygons))
+                                    [self.smooth]
+                                    * len(me.polygons))
             me.update()
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
@@ -319,12 +378,20 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for k in ('seed', 'levels', 'hole', 'pattern',
-                      'iterations', 'pin'):
-                lay.prop(self, k)
+            lay.prop(self, 'seed')
+            lay.prop(self, 'mode')
+            lay.prop(self, 'levels')
+            if self.mode == 'HOLES':
+                lay.prop(self, 'hole')
+                lay.prop(self, 'pattern')
+            else:
+                lay.prop(self, 'depth')
+            lay.prop(self, 'iterations')
+            lay.prop(self, 'pin')
             if self.pin != 'NONE':
                 lay.prop(self, 'corner_soft')
             lay.prop(self, 'thickness')
+            lay.prop(self, 'smooth')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):

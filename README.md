@@ -321,43 +321,24 @@ The modules:
     at the smoothed iso-contour of the distance-to-cell-boundary
     field, and a Solidify modifier supplies the thickness. Open
     surfaces keep their boundary as a solid frame.
-30. **Saddle Polyhedron & Minimal Surface Form**
-    (`math_art/saddle_polyhedron_generator.py`) — saddle
-    membranes spanning the **Petrie polygons** of a polyhedron
-    (Peter Pearce's saddle-polyhedra territory): every edge lies
-    in exactly two Petrie circuits, so Plateau-solved patches on
-    them always close into a watertight saddle solid (verified:
-    cube/octa → 4 skew hexagons, tetra → 3 skew quads,
-    dodeca/icosa → 6 skew decagons). Patch seams weld exactly
-    along the seed's edges into crisp ridges; interior sheets may
-    pass through each other (they all meet at the cube form's
-    centre). Works on the built-in seeds or the active mesh
-    object; optional per-patch coloring and Solidify thickness.
-    The default **Diagonal Caps** construction reproduces Norman
-    Carlberg's *Minimal Surface Form 6*: the six face diagonals
-    of an inscribed tetrahedron (fitted to a scan of the
-    sculpture, including its handedness) cut the cube surface
-    into four corner caps, and each is replaced by a Plateau
-    membrane pinned on the diagonal frame and a small corner tip
-    -- giving the sculpture's flat basins, corner funnels,
-    straight ridges and eight corner tips (bulge / tip-size /
-    mirror controls).
-31. **Minimal Surface Polyhedron**
-    (`math_art/minimal_polyhedron_generator.py`) — pierced,
-    membrane-relaxed polyhedra: faces are subdivided, opened near
-    their centres, and Laplacian-relaxed with the seed's edge
-    frame (or just its corners) softly held, so the hole rims
-    tighten as they relax while the form keeps reading as its
-    polyhedron; Solidify supplies the slab thickness. Works on
-    the Platonic seeds or the **active mesh object**, so any
-    polyhedron can be pierced the same way.
-32. **Organic Wireframe** (`math_art/organic_wireframe.py`) — the
+30. **Minimal Surface Polyhedron**
+    (`math_art/minimal_polyhedron_generator.py`) — membrane-
+    relaxed polyhedra with two modes: **Face Openings** pierces
+    each face near its centre so the hole rims tighten as they
+    relax, and **Inward Bulge** dents each face inward with a
+    smooth membrane profile of configurable depth (saddle ridges
+    along the held edge frame, no anchoring at the centre). The
+    seed's edge frame (or just its corners) is softly held so
+    the form keeps reading as its polyhedron; Solidify supplies
+    the slab thickness. Works on the Platonic seeds or the
+    **active mesh object**.
+31. **Organic Wireframe** (`math_art/organic_wireframe.py`) — the
     classic "parametric Voronoi" style as a live, non-destructive
     modifier stack on the active mesh (Triangulate → Decimate
     collapse → Wireframe → Subdivision), fully adjustable in the
     modifier panel afterwards; works on any mesh including open
     minimal-surface patches (their rims are kept).
-33. **Celtic knots** (`math_art/celtic_knot_generator.py`) — a
+32. **Celtic knots** (`math_art/celtic_knot_generator.py`) — a
     port of Adam Newgas's
     [celtic-knot](https://github.com/BorisTheBrave/celtic-knot)
     add-on (MIT): strands weaving over and under along the edges
@@ -367,7 +348,7 @@ The modules:
     remeshing, bezier / pipe / ribbon outputs, per-strand or
     per-braid coloring. The strand walk was verified
     point-for-point against the original add-on.
-34. **Spiked & hyperbolic polyhedra**
+33. **Spiked & hyperbolic polyhedra**
     (`math_art/spiked_polyhedron_generator.py`) — pyramid-
     augmented Platonic solids (the icosahedron at height √6/3
     gives a 60-face deltahedron of regular tetrahedra — verified),
