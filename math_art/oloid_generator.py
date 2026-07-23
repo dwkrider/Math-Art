@@ -19,7 +19,7 @@
 
 bl_info = {
     "name": "Oloid & Ruled Surfaces",
-    "author": "David Krider (Math Art project, after Schatz / Dirnboeck & "
+    "author": "Math Art project (after Schatz / Dirnboeck & "
               "Stachel / Kit Wallace)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),

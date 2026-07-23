@@ -19,7 +19,7 @@
 
 bl_info = {
     "name": "Strange Attractors",
-    "author": "David Krider (Math Art project, systems after Juergen Meier "
+    "author": "Math Art project (systems after Juergen Meier "
               "and Chaotic Atmospheres)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),

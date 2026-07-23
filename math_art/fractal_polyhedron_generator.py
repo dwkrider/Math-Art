@@ -10,7 +10,7 @@
 
 bl_info = {
     "name": "Fractal Polyhedra",
-    "author": "David Krider (Math Art project, after George W. Hart)",
+    "author": "Math Art project (after George W. Hart)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Fractal Polyhedron",

@@ -16,7 +16,7 @@
 
 bl_info = {
     "name": "Celtic Knot (Math Art)",
-    "author": "Adam Newgas (original), David Krider (Math Art port)",
+    "author": "Adam Newgas (original), Math Art project (port)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Curve > Celtic Knot",

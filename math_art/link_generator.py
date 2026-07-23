@@ -25,7 +25,7 @@
 
 bl_info = {
     "name": "Links & Connect Sums",
-    "author": "David Krider (Math Art project, after Henry Segerman's "
+    "author": "Math Art project (after Henry Segerman's "
               "'Visualizing Mathematics with 3D Printing')",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),

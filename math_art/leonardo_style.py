@@ -19,7 +19,7 @@
 
 bl_info = {
     "name": "Leonardo Style",
-    "author": "David Krider (Math Art project, after Leonardo da Vinci)",
+    "author": "Math Art project (after Leonardo da Vinci)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Object > Leonardo Style",

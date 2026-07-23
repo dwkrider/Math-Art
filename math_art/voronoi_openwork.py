@@ -24,7 +24,7 @@
 
 bl_info = {
     "name": "Voronoi Openwork",
-    "author": "David Krider (Math Art project, after gabr42/voronoizer)",
+    "author": "Math Art project (after gabr42/voronoizer)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Styles > Voronoi Openwork",

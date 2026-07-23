@@ -27,7 +27,7 @@
 
 bl_info = {
     "name": "Topological Surface Generator",
-    "author": "David Krider (Math Art project)",
+    "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Topological Surface",

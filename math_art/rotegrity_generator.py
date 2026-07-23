@@ -9,7 +9,7 @@
 
 bl_info = {
     "name": "Rotegrity Generator",
-    "author": "David Krider (Math Art project, after Antiprism's rotegrity)",
+    "author": "Math Art project (after Antiprism's rotegrity)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Rotegrity",

@@ -19,7 +19,7 @@
 
 bl_info = {
     "name": "Prime Knots",
-    "author": "David Krider (Math Art project, braid table after Thomas "
+    "author": "Math Art project (braid table after Thomas "
               "Gittings)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),

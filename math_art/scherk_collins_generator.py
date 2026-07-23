@@ -28,7 +28,7 @@
 
 bl_info = {
     "name": "Scherk-Collins Sculpture Generator",
-    "author": "David Krider (after Carlo H. Sequin's Sculpture Generator I)",
+    "author": "Math Art project (after Carlo H. Sequin's Sculpture Generator I)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Scherk-Collins Sculpture / N-panel 'Scherk'",

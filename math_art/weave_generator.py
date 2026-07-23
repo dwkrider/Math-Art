@@ -26,7 +26,7 @@
 
 bl_info = {
     "name": "Polyhedral Weave Generator",
-    "author": "David Krider (Math Art project, after Antiprism's poly_weave)",
+    "author": "Math Art project (after Antiprism's poly_weave)",
     "version": (1, 1, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Polyhedral Weave",

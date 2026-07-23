@@ -18,7 +18,7 @@
 
 bl_info = {
     "name": "Stellated Surface Weave",
-    "author": "David Krider (Math Art project, after Shengyi Wang / "
+    "author": "Math Art project (after Shengyi Wang / "
               "txyyss)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),

@@ -27,7 +27,7 @@
 
 bl_info = {
     "name": "Curvature Color",
-    "author": "David Krider (Math Art project, after Henry Segerman)",
+    "author": "Math Art project (after Henry Segerman)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Object > Curvature Color",

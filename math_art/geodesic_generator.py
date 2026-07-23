@@ -11,7 +11,7 @@
 
 bl_info = {
     "name": "Geodesic Sphere / Dome Generator",
-    "author": "David Krider (Math Art project, after Segerman figs 4-5, 4-6)",
+    "author": "Math Art project (after Segerman figs 4-5, 4-6)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Geodesic Sphere / Dome",
