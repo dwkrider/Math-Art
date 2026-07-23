@@ -678,6 +678,59 @@ if _IN_BLENDER:
         obj.location = context.scene.cursor.location
         return obj
 
+    def _conflict_partition(V, faces):
+        """Partition faces into connected pieces such that no piece
+        contains two faces that geometrically intersect.  Conflicts
+        come from a BVH self-overlap (face pairs sharing a vertex are
+        neighbors, not intersections); pieces are grown breadth-first
+        from low-conflict seeds and refuse any face conflicting with
+        a face already in the piece, so each output piece is free of
+        self-intersections by construction."""
+        from mathutils.bvhtree import BVHTree
+        from collections import deque
+        polys = [list(f) for f in faces]
+        tree = BVHTree.FromPolygons(
+            [tuple(v) for v in np.asarray(V)], polys,
+            all_triangles=False)
+        conflicts = [set() for _ in polys]
+        for a, b in tree.overlap(tree):
+            if a == b or set(polys[a]) & set(polys[b]):
+                continue
+            conflicts[a].add(b)
+            conflicts[b].add(a)
+        edge_faces = {}
+        for fi, f in enumerate(polys):
+            for i in range(len(f)):
+                e = frozenset((f[i], f[(i + 1) % len(f)]))
+                edge_faces.setdefault(e, []).append(fi)
+        adj = [set() for _ in polys]
+        for fs in edge_faces.values():
+            for a in fs:
+                for b in fs:
+                    if a != b:
+                        adj[a].add(b)
+        assigned = [-1] * len(polys)
+        order = sorted(range(len(polys)),
+                       key=lambda f: len(conflicts[f]))
+        pieces = []
+        for seed in order:
+            if assigned[seed] >= 0:
+                continue
+            pid = len(pieces)
+            members = set()
+            queue = deque([seed])
+            while queue:
+                f = queue.popleft()
+                if assigned[f] >= 0 or conflicts[f] & members:
+                    continue
+                assigned[f] = pid
+                members.add(f)
+                for g in adj[f]:
+                    if assigned[g] < 0:
+                        queue.append(g)
+            pieces.append(sorted(members))
+        return pieces
+
     def _new_object(context, name, verts, faces, weld=0.0, smooth=True):
         me = bpy.data.meshes.new(name)
         me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
@@ -942,25 +995,106 @@ if _IN_BLENDER:
                         "solver grid) instead of a dense mesh. Where the "
                         "surface curls tightly (e.g. near a knot) the NURBS "
                         "may ripple; raise rings/samples or use mesh output")
+        split: EnumProperty(
+            name="Split",
+            items=[('NONE', "Single Surface",
+                    "One object (self-intersecting: the span winds "
+                    "the circle p times and folds at the knot "
+                    "crossings)"),
+                   ('SHEETS', "By Winding",
+                    "p sheet objects, one per winding of the "
+                    "circle (the big sheet-through-sheet crossings "
+                    "go away, but each sheet still folds through "
+                    "itself near the knot's crossing zones)"),
+                   ('EMBEDDED', "Embedded Parts",
+                    "As many connected parts as needed so that NO "
+                    "part intersects itself: intersecting face "
+                    "pairs are found with a BVH and pieces are "
+                    "grown so they never contain both faces of a "
+                    "pair (mesh output only)")],
+            default='NONE',
+            description="Divide the self-intersecting span into "
+                        "separate surface objects")
 
         def execute(self, context):
+            p = self.p
             m = self.samples
-            knot = torus_knot(self.p, self.q, m, scale=self.knot_scale)
+            if self.split == 'SHEETS' and p > 1:
+                m = max(p * 8, (m // p) * p)   # sheets need p | m
+            knot = torus_knot(p, self.q, m, scale=self.knot_scale)
             t = np.linspace(0, TAU, m, endpoint=False)
             # circle wound p times so the ruling lines up with the knot
-            circ = np.stack([self.circle_radius * np.cos(self.p * t),
-                             self.circle_radius * np.sin(self.p * t),
+            circ = np.stack([self.circle_radius * np.cos(p * t),
+                             self.circle_radius * np.sin(p * t),
                              np.zeros(m)], axis=1)
             V, quads, fixed = build_annulus_grid(knot, circ, self.rings)
             T = _quads_to_tris(quads)
             minimize_area(V, T, fixed, outer_iters=self.iterations)
-            name = f"Knot({self.p},{self.q})Span"
+            name = f"Knot({p},{self.q})Span"
             if self.output_nurbs:
                 G = fair_grid_columns(V.reshape(self.rings + 1, m, 3))
                 G = fair_grid_2d(G)
                 V = G.reshape(-1, 3).copy()
                 relax_normal_flow(V, T, fixed)
-                G = V.reshape(self.rings + 1, m, 3)
+            G = V.reshape(self.rings + 1, m, 3)
+            if self.split == 'EMBEDDED':
+                pieces = _conflict_partition(V, quads)
+                made = []
+                for k, pf in enumerate(pieces):
+                    remap = {}
+                    pv = []
+                    fk = []
+                    for fi in pf:
+                        nf = []
+                        for vi in quads[fi]:
+                            if vi not in remap:
+                                remap[vi] = len(pv)
+                                pv.append(V[vi])
+                            nf.append(remap[vi])
+                        fk.append(nf)
+                    made.append(_new_object(
+                        context,
+                        f"{name} Part {k + 1}of{len(pieces)}",
+                        np.asarray(pv), fk))
+                for o in made:
+                    o.select_set(True)
+                if self.output_nurbs:
+                    self.report({'WARNING'},
+                                "embedded parts are mesh-only; "
+                                "NURBS output ignored")
+                self.report({'INFO'},
+                            f"{len(pieces)} embedded parts, area "
+                            f"= {mesh_area(V, T):.4f}")
+                return {'FINISHED'}
+            if self.split == 'SHEETS' and p > 1:
+                # one object per winding of the circle: columns
+                # [k w, (k+1) w] of the solver grid (seam columns
+                # shared), each an embedded open sheet
+                w = m // p
+                made = []
+                for k in range(p):
+                    cols = [(k * w + j) % m for j in range(w + 1)]
+                    sheet_name = f"{name} Sheet {k + 1}of{p}"
+                    if self.output_nurbs:
+                        made.append(_nurbs_grid_object(
+                            context, sheet_name, G[:, cols],
+                            cyclic_u=False, cyclic_v=False))
+                    else:
+                        Vk = G[:, cols, :].reshape(-1, 3)
+                        qk = [(r * (w + 1) + j, r * (w + 1) + j + 1,
+                               (r + 1) * (w + 1) + j + 1,
+                               (r + 1) * (w + 1) + j)
+                              for r in range(self.rings)
+                              for j in range(w)]
+                        made.append(_new_object(context, sheet_name,
+                                                Vk, qk))
+                for o in made:
+                    o.select_set(True)
+                self.report({'INFO'},
+                            f"{p} sheets, area = "
+                            f"{mesh_area(V, T):.4f}")
+                return {'FINISHED'}
+            if self.output_nurbs:
                 obj = _nurbs_grid_object(context, name, G,
                                          cyclic_u=False, cyclic_v=True)
             else:
@@ -974,6 +1108,7 @@ if _IN_BLENDER:
             for k in ('p', 'q', 'circle_radius', 'knot_scale', 'samples',
                       'rings', 'iterations', 'output_nurbs'):
                 lay.prop(self, k)
+            lay.prop(self, 'split')
 
     class VIEW3D_PT_minimal_surfaces(bpy.types.Panel):
         bl_label = "Minimal Surfaces"
