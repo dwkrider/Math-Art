@@ -201,7 +201,7 @@ if _IN_BLENDER:
                    ('ICOSA', "Icosahedron", "")],
             default='DODECA')
         bend: FloatProperty(
-            name="Bend", default=0.11, min=0.0, max=0.6,
+            name="Bend", default=0.2, min=0.0, max=0.6,
             description="Sideways bend of each spoke, as a "
                         "fraction of its length (about 0.11 in "
                         "the original sculpture)")
