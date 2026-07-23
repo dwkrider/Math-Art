@@ -162,6 +162,10 @@ OPS = [
         seed='CUBE', samples=8, rings=6, iterations=10)),
     ("squeeze truncoct", lambda: bpy.ops.mesh.squeeze_add(
         seed='TRUNCOCT', samples=6, rings=5, iterations=8)),
+    ("vertex vortices", lambda: bpy.ops.mesh.vertex_vortices_add(
+        seed='DODECA', samples=6, iterations=8)),
+    ("vortices tetra", lambda: bpy.ops.mesh.vertex_vortices_add(
+        seed='TETRA', samples=8, iterations=10, reverse=True)),
     ("minimal poly active",
      lambda: (bpy.ops.mesh.conway_add(example='CUSTOM',
                                       notation='sC'),

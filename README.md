@@ -332,8 +332,9 @@ The modules:
     the form keeps reading as its polyhedron; Solidify supplies
     the slab thickness. Works on the Platonic seeds or the
     **active mesh object**.
-31. **Squeeze Surface** (`math_art/squeeze_generator.py`) — after
-    Robert Fathauer's *Cubic Squeeze*: every edge of the seed
+31. **Polyhedron Squeeze Surface**
+    (`math_art/squeeze_generator.py`) — inspired by Robert
+    Fathauer's *Cubic Squeeze* sculpture: every edge of the seed
     bows inward along exactly one of its two faces (toward that
     face's centre, in its plane), claims alternating around each
     face — solved by parity propagation, which is why every face
@@ -342,13 +343,25 @@ The modules:
     depth, pattern flip, and solver controls; seeds: cube,
     rhombic dodecahedron, truncated octahedron, hexagonal prism,
     or the active mesh object.
-32. **Organic Wireframe** (`math_art/organic_wireframe.py`) — the
+32. **Vertex Vortices** (`math_art/vortex_generator.py`) —
+    inspired by Robert Fathauer's *Vertices Vortices* sculpture:
+    each face of a Platonic seed is divided by centre-to-vertex
+    spokes, the spokes bend within the face plane with equal
+    chirality (a pinwheel — the bend profile and default depth
+    were measured from the sculpture's geometry), the original
+    edges are deleted, and each group of four bent spokes around
+    a deleted edge is spanned by a membrane (a Coons patch
+    relaxed to minimal area). Every spoke borders exactly two
+    patches, so the result is a closed surface with swirling
+    vortices meeting at the vertices; bend, swirl mirror, and
+    solver controls.
+33. **Organic Wireframe** (`math_art/organic_wireframe.py`) — the
     classic "parametric Voronoi" style as a live, non-destructive
     modifier stack on the active mesh (Triangulate → Decimate
     collapse → Wireframe → Subdivision), fully adjustable in the
     modifier panel afterwards; works on any mesh including open
     minimal-surface patches (their rims are kept).
-33. **Celtic knots** (`math_art/celtic_knot_generator.py`) — a
+34. **Celtic knots** (`math_art/celtic_knot_generator.py`) — a
     port of Adam Newgas's
     [celtic-knot](https://github.com/BorisTheBrave/celtic-knot)
     add-on (MIT): strands weaving over and under along the edges
@@ -358,7 +371,7 @@ The modules:
     remeshing, bezier / pipe / ribbon outputs, per-strand or
     per-braid coloring. The strand walk was verified
     point-for-point against the original add-on.
-34. **Spiked & hyperbolic polyhedra**
+35. **Spiked & hyperbolic polyhedra**
     (`math_art/spiked_polyhedron_generator.py`) — pyramid-
     augmented Platonic solids (the icosahedron at height √6/3
     gives a 60-face deltahedron of regular tetrahedra — verified),
@@ -688,6 +701,16 @@ Rossiter ([source](https://github.com/antiprism/antiprism), GPL):
   polyhedron illustrations for Luca Pacioli's *De divina
   proportione* (1509); see also G. W. Hart,
   [Leonardo da Vinci's Polyhedra](https://www.georgehart.com/virtual-polyhedra/leonardo.html)
+
+**Mathematical sculpture** — inspired by works of
+[Robert Fathauer](https://www.robertfathauer.com/):
+
+- Polyhedron Squeeze Surface: inspired by the *Cubic Squeeze*
+  sculpture (edges bowing inward in alternating pairs, minimal
+  surfaces spanning the bent frames)
+- Vertex Vortices: inspired by the *Vertices Vortices* sculpture
+  (pinwheel-bent face spokes with membranes over the deleted
+  edges)
 
 Thanks also to the Blender Foundation — everything here builds on the
 Blender Python API and the 4.2+ extensions platform.

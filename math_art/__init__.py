@@ -57,6 +57,7 @@ _MODULE_NAMES = [
     'organic_wireframe',
     'minimal_polyhedron_generator',
     'squeeze_generator',
+    'vortex_generator',
 ]
 
 _MODULES = []
@@ -96,6 +97,7 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.minimal_surface_polyhedron_add",
             icon='MESH_UVSPHERE')
         _op(lay, "mesh.squeeze_add", icon='MOD_SIMPLEDEFORM')
+        _op(lay, "mesh.vertex_vortices_add", icon='FORCE_VORTEX')
 
 
 class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):

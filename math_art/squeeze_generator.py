@@ -1,8 +1,8 @@
 
-# Squeeze Surface generator for Blender, after Robert Fathauer's
-# "Cubic Squeeze" sculpture: a polyhedron whose edges are
-# replaced by curves bending inward along one of their two faces,
-# with minimal surfaces spanning the bent frames.
+# Polyhedron Squeeze Surface generator for Blender, inspired by
+# Robert Fathauer's "Cubic Squeeze" sculpture: a polyhedron whose
+# edges are replaced by curves bending inward along one of their
+# two faces, with minimal surfaces spanning the bent frames.
 #
 # The bend pattern: every edge is claimed by exactly ONE of its
 # two adjacent faces and bows toward that face's centre, in that
@@ -22,7 +22,7 @@
 # edges.
 
 bl_info = {
-    "name": "Squeeze Surface",
+    "name": "Polyhedron Squeeze Surface",
     "author": "Math Art project (after Robert Fathauer)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
@@ -236,11 +236,12 @@ if _IN_BLENDER:
 
     class MESH_OT_squeeze_add(bpy.types.Operator):
         """Squeeze a polyhedron: every edge bows inward along one
-        of its faces (alternating around each face, as in Robert
-        Fathauer's Cubic Squeeze) and minimal surfaces span the
-        bent frames; needs faces with an even number of edges"""
+        of its faces (alternating around each face, inspired by
+        Robert Fathauer's Cubic Squeeze) and minimal surfaces
+        span the bent frames; needs faces with an even number of
+        edges"""
         bl_idname = "mesh.squeeze_add"
-        bl_label = "Squeeze Surface"
+        bl_label = "Polyhedron Squeeze Surface"
         bl_options = {'REGISTER', 'UNDO'}
 
         seed: EnumProperty(
