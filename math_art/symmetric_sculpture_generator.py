@@ -115,7 +115,10 @@ _AXES = {
     ('ICOSA', 'P5'): (0.0, 1.0, PHI),      # 12 planes, 5-fold each
     ('ICOSA', 'P3'): (1.0, 1.0, 1.0),      # 20 planes, 3-fold
     ('ICOSA', 'P2'): (0.0, 0.0, 1.0),      # 30 planes, 2-fold
-    ('ICOSA', 'P1'): (0.21, 0.45, 1.0),    # 60 planes, no symmetry
+    # 60 planes, no in-plane symmetry; the axis is a snub
+    # dodecahedron vertex direction, so these are the face
+    # planes of the pentagonal hexecontahedron (Hart's Whimsy)
+    ('ICOSA', 'P1'): (0.089963, -0.816073, -0.570904),
     ('OCTA', 'P4'): (0.0, 0.0, 1.0),       # 6 planes (cube), 4-fold
     ('OCTA', 'P3'): (1.0, 1.0, 1.0),       # 8 planes, 3-fold
     ('OCTA', 'P2'): (1.0, 1.0, 0.0),       # 12 planes, 2-fold
@@ -241,28 +244,174 @@ def tumbleweed_motif(d=1.0):
     return _ribbon(path, widths)
 
 
+def _spline(pts, m):
+    """Catmull-Rom resample of a 2D control polyline."""
+    pts = [pts[0]] + list(pts) + [pts[-1]]
+    out = []
+    segs = len(pts) - 3
+    for i in range(segs):
+        p0, p1, p2, p3 = pts[i], pts[i + 1], pts[i + 2], pts[i + 3]
+        steps = m if i < segs - 1 else m + 1
+        for k in range(steps):
+            t = k / m
+            t2, t3 = t * t, t * t * t
+            out.append(tuple(
+                0.5 * ((2 * p1[j]) + (-p0[j] + p2[j]) * t
+                       + (2 * p0[j] - 5 * p1[j] + 4 * p2[j]
+                          - p3[j]) * t2
+                       + (-p0[j] + 3 * p1[j] - 3 * p2[j]
+                          + p3[j]) * t3)
+                for j in range(2)))
+    return out
+
+
+def _earclip(poly):
+    """Triangulate a simple 2D polygon (list of (x, y), CCW)."""
+    idx = list(range(len(poly)))
+    area2 = sum(poly[i][0] * poly[(i + 1) % len(poly)][1]
+                - poly[(i + 1) % len(poly)][0] * poly[i][1]
+                for i in range(len(poly)))
+    if area2 < 0:
+        idx.reverse()
+    tris = []
+    guard = 0
+    while len(idx) > 3 and guard < 10000:
+        guard += 1
+        n = len(idx)
+        for k in range(n):
+            a, b, c = idx[k - 1], idx[k], idx[(k + 1) % n]
+            ax, ay = poly[a]
+            bx, by = poly[b]
+            cx, cy = poly[c]
+            cross = (bx - ax) * (cy - ay) - (by - ay) * (cx - ax)
+            if cross <= 1e-12:
+                continue
+            ok = True
+            for j in idx:
+                if j in (a, b, c):
+                    continue
+                px, py = poly[j]
+                d1 = (bx - ax) * (py - ay) - (by - ay) * (px - ax)
+                d2 = (cx - bx) * (py - by) - (cy - by) * (px - bx)
+                d3 = (ax - cx) * (py - cy) - (ay - cy) * (px - cx)
+                if d1 >= -1e-12 and d2 >= -1e-12 and d3 >= -1e-12:
+                    ok = False
+                    break
+            if ok:
+                tris.append((a, b, c))
+                idx.pop(k)
+                break
+        else:
+            break
+    if len(idx) == 3:
+        tris.append(tuple(idx))
+    return tris
+
+
 def frabjous_motif(d=1.0):
-    """Half of an S-shaped part, starting at the plane centre. The
-    2-fold in-plane symmetry of the triacontahedral planes adds the
-    180-degree copy, welding into the 30 S-curves of Hart's
-    Frabjous."""
-    p0, p1 = (0.0, 0.0), (0.34 * d, 0.30 * d)
-    p2, p3 = (0.56 * d, -0.26 * d), (0.80 * d, 0.22 * d)
-    steps = 26
-    path = []
-    widths = []
-    for i in range(steps + 1):
-        t = i / steps
-        s = 1 - t
-        x = (s * s * s * p0[0] + 3 * s * s * t * p1[0]
-             + 3 * s * t * t * p2[0] + t * t * t * p3[0])
-        y = (s * s * s * p0[1] + 3 * s * s * t * p1[1]
-             + 3 * s * t * t * p2[1] + t * t * t * p3[1])
-        path.append((x, y))
-        # full width at the centre join, tapering to the tip
-        widths.append(d * (0.022 + 0.062 * sin(pi / 2 + pi / 2 * t)
-                           ** 1.5))
-    return _ribbon(path, widths)
+    """Half of one of the thirty S-shaped parts of Hart's
+    Frabjous, drawn in a face plane of the GREAT rhombic
+    triacontahedron: the plane at distance d perpendicular to a
+    2-fold axis, with the rhombus corners at the piercings of
+    the neighbouring 3-fold axes (+-phi^2 d on the local x axis,
+    where the pointed ends of three parts meet) and 5-fold axes
+    (+-phi d on the local y axis, the vortex openings the parts
+    swirl around).  The in-plane 2-fold symmetry adds the other
+    half of the S; the teardrop opening near the tip follows
+    Hart's template."""
+    PHI2 = PHI * PHI
+    cl = _spline([(0.0, 0.0), (0.45 * d, 0.20 * d),
+                  (0.95 * d, 0.35 * d), (1.45 * d, 0.44 * d),
+                  (1.90 * d, 0.44 * d), (2.25 * d, 0.33 * d),
+                  (2.50 * d, 0.16 * d), (PHI2 * d, 0.01 * d)],
+                 6)
+    wl = _spline([(0.0, 0.200 * d), (1.0, 0.190 * d),
+                  (2.0, 0.180 * d), (3.0, 0.170 * d),
+                  (4.0, 0.155 * d), (5.0, 0.130 * d),
+                  (6.0, 0.080 * d), (7.0, 0.012 * d)], 6)
+    n = len(cl)
+    verts = []
+    faces = []
+    rows = []
+    for i, (x, y) in enumerate(cl):
+        x0, y0 = cl[max(i - 1, 0)]
+        x1, y1 = cl[min(i + 1, n - 1)]
+        tx, ty = x1 - x0, y1 - y0
+        ln = math.hypot(tx, ty) or 1.0
+        nx, ny = -ty / ln, tx / ln
+        w = wl[i][1]
+        t = i / (n - 1)
+        # teardrop opening near the tip: outer band stays
+        # thick, a thin sliver remains on the inner side
+        if 0.52 < t < 0.94:
+            s = math.sin(math.pi * (t - 0.52) / 0.42)
+            hole = 0.5 * (s ** 0.8)
+        else:
+            hole = 0.0
+        f_out = 0.40
+        o_edge = (x + nx * w, y + ny * w)
+        h1 = (x + nx * w * (1 - 2 * f_out),
+              y + ny * w * (1 - 2 * f_out))
+        h2 = (x + nx * w * (1 - 2 * f_out - 2 * hole),
+              y + ny * w * (1 - 2 * f_out - 2 * hole))
+        i_edge = (x - nx * w, y - ny * w)
+        base = len(verts)
+        for px, py in (o_edge, h1, h2, i_edge):
+            verts.append((px, py, 0.0))
+        rows.append(base)
+    for i in range(n - 1):
+        b0, b1 = rows[i], rows[i + 1]
+        faces.append([b0, b1, b1 + 1, b0 + 1])
+        faces.append([b0 + 2, b1 + 2, b1 + 3, b0 + 3])
+    return verts, faces
+
+
+def whimsy_motif(d=1.0):
+    """One of the sixty flat parts of Hart's Whimsy, drawn in a
+    face plane of the pentagonal hexecontahedron (the snub
+    dodecahedron's dual).  The pieces are openwork: a web of
+    constant-width curved ribbons -- straight along the long
+    mating edge at the 5-fold hub, following the pentagon rim
+    to the 3-fold corner where three modules meet, with
+    swooping interior ribs -- leaving the large swirling
+    negative spaces of the sculpture.  Corner coordinates are
+    the exact face-pentagon corners in units of the plane
+    distance."""
+    P5 = (-0.06298 * d, -0.43738 * d)   # 5-fold apex
+    G1 = (+0.26728 * d, -0.06800 * d)
+    G2 = (+0.18165 * d, +0.20753 * d)
+    T3 = (-0.10596 * d, +0.24549 * d)   # 3-fold corner
+    G3 = (-0.27561 * d, +0.01017 * d)
+
+    def lerp(A, B, t):
+        return (A[0] + (B[0] - A[0]) * t,
+                A[1] + (B[1] - A[1]) * t)
+
+    strips = [
+        # straight mating ribbon on the long edge P5-G1
+        ([P5, lerp(P5, G1, 0.5), G1], 0.036),
+        # rim ribbon G1 -> G2 -> T3
+        ([G1, (G2[0] * 1.04, G2[1] * 1.04), T3], 0.032),
+        # rim ribbon T3 -> G3 -> P5
+        ([T3, (G3[0] * 1.04, G3[1] * 1.04), P5], 0.032),
+        # interior rib: from the mating edge swooping to the
+        # 3-fold corner
+        ([lerp(P5, G1, 0.45), (0.05 * d, 0.01 * d), T3],
+         0.030),
+        # interior rib: hub apex arcing out to the rim
+        ([P5, (0.09 * d, -0.17 * d),
+          lerp(G1, G2, 0.55)], 0.028),
+    ]
+    verts = []
+    faces = []
+    for ctrl, hw in strips:
+        path = _spline(ctrl, 10)
+        w = [hw * d] * len(path)
+        sv, sf = _ribbon(path, w)
+        base = len(verts)
+        verts.extend(sv)
+        faces.extend([[base + i for i in f] for f in sf])
+    return verts, faces
 
 
 # preset -> (group, plane family, motif builder)
@@ -270,6 +419,7 @@ PRESETS = {
     'TWISTED_RIVERS': ('ICOSA', 'P3', demo_motif),
     'TUMBLEWEED': ('ICOSA', 'P5', tumbleweed_motif),
     'FRABJOUS': ('ICOSA', 'P2', frabjous_motif),
+    'WHIMSY': ('ICOSA', 'P1', whimsy_motif),
 }
 
 
@@ -451,9 +601,18 @@ if _IN_BLENDER:
                     "After Tumbleweed (2006): swirling five-armed "
                     "pinwheels in the 12 dodecahedral planes"),
                    ('FRABJOUS', "Frabjous",
-                    "After Frabjous (2003): 30 S-shaped parts in the "
-                    "triacontahedral planes, each S assembled from "
-                    "two half-arms by the in-plane 2-fold symmetry"),
+                    "After Frabjous (2006): 30 S-shaped parts in "
+                    "the face planes of the GREAT rhombic "
+                    "triacontahedron -- ends meeting in threes at "
+                    "the 3-fold corners (phi^2 x the plane "
+                    "distance), five-fold vortices at the 5-fold "
+                    "corners (phi x)"),
+                   ('WHIMSY', "Whimsy",
+                    "After Whimsy (2014): 60 flat blades in the "
+                    "face planes of the pentagonal "
+                    "hexecontahedron (snub dodecahedron dual), "
+                    "five to a hub, meeting in threes at the "
+                    "3-fold corners"),
                    ('CUSTOM', "Custom",
                     "Choose the group and plane family yourself; "
                     "starts from the demo arc motif")],

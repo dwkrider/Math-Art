@@ -48,6 +48,12 @@ OPS = [
     ("symmetric sculpture",
      lambda: bpy.ops.object.symmetric_sculpture_add(
          preset='TWISTED_RIVERS')),
+    ("symmetric frabjous",
+     lambda: bpy.ops.object.symmetric_sculpture_add(
+         preset='FRABJOUS')),
+    ("symmetric whimsy",
+     lambda: bpy.ops.object.symmetric_sculpture_add(
+         preset='WHIMSY')),
     ("tangle struts", lambda: bpy.ops.mesh.tangle_add(
         kind='T5', style='EDGES')),
     ("zonohedron leonardo", lambda: bpy.ops.mesh.zonohedron_add(

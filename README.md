@@ -128,13 +128,18 @@ The modules:
    octahedral 24 / tetrahedral 12) and a **plane family** — the
    extended face planes of an icosahedron (20×3-fold), dodecahedron
    (12×5-fold), rhombic triacontahedron (30×2-fold) or
-   hexecontahedron (60×1). Presets reproduce the setups of three of
+   hexecontahedron (60×1). Presets reproduce the setups of four of
    Hart's pieces — **Twisted Rivers** (C-shaped rivers, 20 icosahedral
    planes), **Tumbleweed** (five-armed pinwheels, 12 dodecahedral
-   planes) and **Frabjous** (30 S-shaped parts in the triacontahedral
-   planes, each S welded from two half-arms by the in-plane 2-fold
-   symmetry) — or pick **Custom** to choose the group and family
-   yourself. The operator creates three linked objects: a flat **Motif** mesh in one representative plane, a
+   planes), **Frabjous** (30 S-shaped parts in the face planes of the
+   **great rhombic triacontahedron**: pointed ends meeting in threes
+   at the 3-fold piercings φ²·d out, five-fold vortices swirling
+   around the 5-fold piercings at φ·d, teardrop openings per Hart's
+   template) and **Whimsy** (60 openwork ribbon blades in the face
+   planes of the **pentagonal hexecontahedron**, the snub
+   dodecahedron's dual — five to a hub, meeting in threes at the
+   3-fold corners) — or pick **Custom** to choose the group and
+   family yourself. The operator creates three linked objects: a flat **Motif** mesh in one representative plane, a
    wireframe **Guides** object showing the stellation pattern (the
    lines where the other planes cut this one — Hart's 2D editor
    background), and a **SymSculpt** object whose Geometry Nodes
@@ -459,6 +464,8 @@ The modules:
 ![Tumbleweed preset](renders/form_symsculpt_tumbleweed.png)
 
 ![Frabjous preset](renders/form_symsculpt_frabjous.png)
+
+![Whimsy preset](renders/form_symsculpt_whimsy.png)
 
 ![Platonic twist](renders/form_platonic_twist.png)
 
