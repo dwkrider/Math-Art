@@ -96,6 +96,8 @@ OPS = [
     ("spacefill", lambda: bpy.ops.mesh.spacefill_add(kind='OCTET')),
     ("spacefill spiral3", lambda: bpy.ops.mesh.spacefill_add(
         kind='SPIRAL3', nx=2, ny=2, nz=2)),
+    ("solid snub cube left", lambda: bpy.ops.mesh.regular_solid_add(
+        family='ARCHIMEDEAN', solid='SC', handedness='LEFT')),
     ("spacefill spiral4", lambda: bpy.ops.mesh.spacefill_add(
         kind='SPIRAL4', nx=2, ny=2, nz=2)),
     ("math link", lambda: bpy.ops.curve.math_link_add(

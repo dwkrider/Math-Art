@@ -194,6 +194,24 @@ _J_BY_NUM = {num: (top, mid, bot, tw)
              for (num, _n, top, mid, bot, tw) in _J}
 
 
+# the chiral solids -- their mirror images are genuinely different
+# shapes: the two snubs, their Catalan duals, and the
+# gyroelongated Johnson bicupolas / cupolarotunda / birotunda
+CHIRAL = {('ARCHIMEDEAN', 'SC'), ('ARCHIMEDEAN', 'SD'),
+          ('CATALAN', 'PIT'), ('CATALAN', 'PHX'),
+          ('JOHNSON', 'J44'), ('JOHNSON', 'J45'),
+          ('JOHNSON', 'J46'), ('JOHNSON', 'J47'),
+          ('JOHNSON', 'J48')}
+
+
+def mirror_solid(V, F):
+    """The enantiomorph: reflect through the yz-plane and reverse
+    the windings so faces stay outward."""
+    V2 = [(-float(v[0]), float(v[1]), float(v[2])) for v in V]
+    F2 = [list(reversed(f)) for f in F]
+    return V2, F2
+
+
 # ---------------------------------------------------------------- #
 #  exact unit-edge construction kit (Johnson / prisms)             #
 # ---------------------------------------------------------------- #
@@ -1102,6 +1120,14 @@ if _IN_BLENDER:
         solid: EnumProperty(name="Solid", items=_solid_items)
         n: IntProperty(name="Sides", default=6, min=3, max=32,
                        description="Prism / antiprism base sides")
+        handedness: EnumProperty(
+            name="Handedness",
+            items=[('RIGHT', "Right-Handed", "As constructed"),
+                   ('LEFT', "Left-Handed",
+                    "Mirror image (the other enantiomorph)")],
+            default='RIGHT',
+            description="Which of the two mirror forms of this "
+                        "chiral solid to build")
         stellated: BoolProperty(
             name="Stellated", default=False,
             description="Replace each face with a pyramid to the "
@@ -1171,6 +1197,9 @@ if _IN_BLENDER:
             try:
                 V, F, sizes = build_solid(self.family, self.solid,
                                           self.n, self.scale)
+                if (self.handedness == 'LEFT'
+                        and (self.family, self.solid) in CHIRAL):
+                    V, F = mirror_solid(V, F)
                 if self.stellated and self.family != 'KEPLER':
                     try:
                         V, F, resid = stellate(V, F)
@@ -1280,6 +1309,8 @@ if _IN_BLENDER:
             lay.prop(self, 'solid')
             if self.family == 'PRISM':
                 lay.prop(self, 'n')
+            if (self.family, self.solid) in CHIRAL:
+                lay.prop(self, 'handedness')
             if self.family != 'KEPLER':
                 row = lay.row()
                 row.enabled = can_stellate(self.family, self.solid,

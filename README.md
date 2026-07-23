@@ -199,7 +199,10 @@ The modules:
     Options: generic **stellation** (pyramid to the intersection of
     neighbour planes — octahedron → stella octangula), Solid /
     Leonardo (da Vinci) / Wireframe styles, coloring by face
-    size, and **Congruent Pieces**: split the shell into N
+    size, **Handedness** for the nine chiral solids (both snubs,
+    their Catalan duals, and the gyroelongated Johnson solids
+    J44–J48 each come in left- and right-handed forms), and
+    **Congruent Pieces**: split the shell into N
     congruent, connected pieces (rotated copies of one another,
     one object each, for printing and reassembly). The rotation
     group is derived from the mesh itself; a free subgroup of
