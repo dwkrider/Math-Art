@@ -70,7 +70,7 @@ def _op(lay, idname, **kw):
 
 class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_math_art_minimal"
-    bl_label = "Minimal Surfaces"
+    bl_label = "Surfaces"
 
     def draw(self, context):
         lay = self.layout

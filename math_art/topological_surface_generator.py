@@ -69,10 +69,15 @@ def euler_characteristic(nverts, faces):
 def build_klein_bottle(nu, nv):
     """The iconic bottle-shaped Klein immersion (the standard smooth
     closed-form parametrization, u in [0, pi], v in [0, 2pi]). The
-    u = pi rim coincides with the u = 0 rim under v -> pi - v; the
-    gluing is made by index, so nv must be even (forced here)."""
+    u = pi rim coincides with the u = 0 rim under v -> pi - v.  The
+    seam is left SPLIT (coincident duplicate vertices, no index
+    gluing): welding it makes the winding flip there, and averaged
+    smooth normals then degenerate into a dark shading crease.  Split,
+    each side shades smoothly and the renderer's double-sided normal
+    flip hides the join.  Cut along that rim the surface is an
+    orientable cylinder, so chi is still 0."""
     nv += nv % 2
-    u = math.pi * np.arange(nu)[:, None] / nu
+    u = math.pi * np.arange(nu + 1)[:, None] / nu
     v = TAU * np.arange(nv)[None, :] / nv
     cu, su = np.cos(u), np.sin(u)
     cv, sv = np.cos(v), np.sin(v)
@@ -90,21 +95,19 @@ def build_klein_bottle(nu, nv):
     for i in range(nu):
         for j in range(nv):
             j2 = (j + 1) % nv
-            if i < nu - 1:
-                a, b = (i + 1) * nv + j, (i + 1) * nv + j2
-            else:                      # glue to row 0 with v -> pi - v
-                a = (nv // 2 - j) % nv
-                b = (nv // 2 - j2) % nv
-            faces.append((i * nv + j, i * nv + j2, b, a))
+            faces.append((i * nv + j, i * nv + j2,
+                          (i + 1) * nv + j2, (i + 1) * nv + j))
     return V, faces
 
 
 def build_klein_figure8(nu, nv, radius=2.0):
     """Figure-8 (twisted-torus) Klein immersion: the cross-section is a
-    figure-8 that makes a half-turn per revolution. The u = 2pi seam is
-    glued to u = 0 with v -> -v; v samples sit at half-steps so no
-    column lands on the figure-8 crossing point."""
-    u = TAU * np.arange(nu)[:, None] / nu
+    figure-8 that makes a half-turn per revolution. The u = 2pi seam
+    coincides with u = 0 under v -> -v but is left SPLIT (coincident
+    duplicate vertices) -- see build_klein_bottle for why.  v samples
+    sit at half-steps so no column lands on the figure-8 crossing
+    point."""
+    u = TAU * np.arange(nu + 1)[:, None] / nu
     v = TAU * (np.arange(nv)[None, :] + 0.5) / nv
     c2, s2 = np.cos(u / 2), np.sin(u / 2)
     sv, s2v = np.sin(v), np.sin(2 * v)
@@ -117,12 +120,8 @@ def build_klein_figure8(nu, nv, radius=2.0):
     for i in range(nu):
         for j in range(nv):
             j2 = (j + 1) % nv
-            if i < nu - 1:
-                a, b = (i + 1) * nv + j, (i + 1) * nv + j2
-            else:                      # glue to row 0 with v -> -v
-                a = (nv - 1 - j) % nv
-                b = (nv - 1 - j2) % nv
-            faces.append((i * nv + j, i * nv + j2, b, a))
+            faces.append((i * nv + j, i * nv + j2,
+                          (i + 1) * nv + j2, (i + 1) * nv + j))
     return V, faces
 
 
@@ -506,19 +505,22 @@ if __name__ == "__main__":
         register()
     else:
         # standalone smoke tests of the numeric core
-        def stats(name, V, F, chi_want):
+        def stats(name, V, F, chi_want, nbound_want=0):
             cnt = edge_face_counts(F)
             chi = len(V) - len(cnt) + len(F)
             nbound = sum(1 for c in cnt.values() if c == 1)
             print(f"{name:10s}: {len(V):6d} verts {len(F):6d} faces "
                   f"chi = {chi:3d} (want {chi_want:3d}) "
                   f"boundary edges = {nbound}")
-            assert chi == chi_want and nbound == 0, name
+            assert chi == chi_want and nbound == nbound_want, name
 
+        # the Klein seams are split (2 coincident rims of nv edges
+        # each), so cut open they are orientable cylinders: chi = 0
+        # with 2*nv boundary edges
         V, F = build_klein_bottle(64, 32)
-        stats("klein", V, F, 0)
+        stats("klein", V, F, 0, nbound_want=64)
         V, F = build_klein_figure8(64, 32)
-        stats("klein8", V, F, 0)
+        stats("klein8", V, F, 0, nbound_want=64)
         V, F = build_crosscap(64, 24)
         stats("crosscap", V, F, 1)
         V, F = build_roman(64, 24)
