@@ -241,6 +241,38 @@ _GENERIC_THETA = radians(63.0)
 _GENERIC_PHI = radians(21.0)
 
 
+def _signed_volume(verts, faces):
+    """Signed volume of a closed triangulable mesh; positive when
+    the faces wind outward."""
+    V = np.asarray(verts, float)
+    tot = 0.0
+    for f in faces:
+        for i in range(1, len(f) - 1):
+            tot += np.dot(V[f[0]], np.cross(V[f[i]], V[f[i + 1]]))
+    return tot / 6.0
+
+
+def sphere_shell(R, thickness, segs, rings):
+    """(verts, faces) of a hollow spherical shell solid: outer
+    sphere wound outward, inner sphere (radius R - thickness) wound
+    inward toward the cavity.  thickness <= 0 gives the solid
+    ball (outer sphere only)."""
+    sv, sf = uv_sphere(R, segs, rings)
+    outward = _signed_volume(sv, sf) > 0
+    if not outward:
+        sf = [list(reversed(f)) for f in sf]
+    verts = list(sv)
+    faces = [list(f) for f in sf]
+    if thickness > 0:
+        iv, iff = uv_sphere(R - thickness, segs, rings)
+        if outward:
+            iff = [list(reversed(f)) for f in iff]
+        off = len(verts)
+        verts.extend(iv)
+        faces.extend([off + i for i in f] for f in iff)
+    return verts, faces
+
+
 try:
     import bpy
     import bmesh
@@ -327,6 +359,12 @@ if _IN_BLENDER:
         resolution: IntProperty(
             name="Sphere Resolution", default=48, min=8, max=256,
             description="Longitudinal segments of the sphere shell")
+        thickness: FloatProperty(
+            name="Shell Thickness", default=0.03, min=0.0, max=10.0,
+            description="Wall thickness of the hollow sphere "
+                        "(0 = solid ball); negative relief deeper "
+                        "than the wall cuts comma-shaped holes "
+                        "right through the shell")
         motif_size: FloatProperty(
             name="Motif Size", default=0.3, min=0.01, max=10.0,
             description="Overall size of the comma motif")
@@ -380,8 +418,8 @@ if _IN_BLENDER:
                 # cutter solids: from below the carve depth up to
                 # just above the surface, removed by boolean
                 depth = min(-h, 0.9 * R)
-                base = np.vstack((dirs * (R - depth),
-                                  dirs * (R * 1.001 + 0.1 * depth)))
+                lo, hi = R - depth, R * 1.001 + 0.1 * depth
+                base = None
             else:
                 base = np.vstack((dirs * R, dirs * (R + h)))
             bump_faces = []
@@ -398,12 +436,22 @@ if _IN_BLENDER:
             faces = []
             mats = []
             n_mirror = 0
-            for M in G:
+            for k, M in enumerate(G):
                 A = np.array(M)
                 mirror = _det(M) < 0
                 n_mirror += mirror
                 off = len(verts)
-                verts.extend(map(tuple, base @ A.T))
+                if carve:
+                    # tiny per-copy radial jitter: where commas
+                    # overlap, identical floor/cap radii would make
+                    # their boundary surfaces exactly coincident,
+                    # which degenerates the exact boolean
+                    eps = 1e-4 * (k + 1) / len(G)
+                    bk = np.vstack((dirs * (lo * (1.0 - eps)),
+                                    dirs * (hi * (1.0 + eps))))
+                else:
+                    bk = base
+                verts.extend(map(tuple, bk @ A.T))
                 if mirror:
                     fs = [tuple(off + i for i in reversed(f))
                           for f in bump_faces]
@@ -415,18 +463,18 @@ if _IN_BLENDER:
                              else 0] * len(fs))
             n_bump = len(faces)
 
+            thick = min(self.thickness, 0.9 * R)
             if carve:
-                # sphere object minus the comma cutters
-                sv, sf = uv_sphere(R, self.resolution,
-                                   max(4, self.resolution // 2))
+                # hollow shell (or solid ball at thickness 0)
+                # minus the comma cutters; relief deeper than the
+                # wall pierces right through.  The windings are set
+                # by construction -- a blanket recalc would flip
+                # the inner wall away from the cavity.
+                sv, sf = sphere_shell(R, thick, self.resolution,
+                                      max(4, self.resolution // 2))
                 me = bpy.data.meshes.new("Symmetry Sphere")
                 me.from_pydata(sv, [], sf)
                 me.validate(clean_customdata=True)
-                sbm = bmesh.new()
-                sbm.from_mesh(me)
-                bmesh.ops.recalc_face_normals(sbm, faces=sbm.faces)
-                sbm.to_mesh(me)
-                sbm.free()
                 me.materials.append(
                     _material("Symmetry Sphere", (0.85, 0.82, 0.75)))
                 me.polygons.foreach_set(
@@ -453,16 +501,62 @@ if _IN_BLENDER:
                 context.collection.objects.link(obj)
                 cutter = bpy.data.objects.new("SymmetryCutter", cme)
                 context.collection.objects.link(cutter)
+
+                # In the larger reflective groups adjacent commas
+                # overlap, and a difference against overlapping
+                # solids drops the doubly-covered regions (even-odd
+                # rule) or leaks.  So first resolve the cutter into
+                # one clean solid: a self-union (use_self) against a
+                # far-away dummy cube.  The dummy never touches the
+                # sphere, so it can stay in the cutter.
+                dme = bpy.data.meshes.new("SymmetryDummy")
+                dme.from_pydata(
+                    [(50.0 + x, 50.0 + y, 50.0 + z)
+                     for x in (0, 1) for y in (0, 1)
+                     for z in (0, 1)], [],
+                    [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1),
+                     (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)])
+                dummy = bpy.data.objects.new("SymmetryDummy", dme)
+                context.collection.objects.link(dummy)
+                um = cutter.modifiers.new("SelfUnion", 'BOOLEAN')
+                um.operation = 'UNION'
+                um.object = dummy
+                try:
+                    um.solver = 'EXACT'
+                    um.use_self = True
+                except (TypeError, AttributeError):
+                    pass
+                deps = context.evaluated_depsgraph_get()
+                clean = bpy.data.meshes.new_from_object(
+                    cutter.evaluated_get(deps))
+                cutter.modifiers.remove(um)
+                cutter.data = clean
+                bpy.data.meshes.remove(cme)
+                cme = clean
+                bpy.data.objects.remove(dummy, do_unlink=True)
+                bpy.data.meshes.remove(dme)
+
                 mod = obj.modifiers.new("Carve", 'BOOLEAN')
                 mod.operation = 'DIFFERENCE'
                 mod.object = cutter
-                # In the larger reflective groups adjacent comma
-                # cutters overlap; plain EXACT then yields an empty
-                # mesh.  EXACT with use_self resolves the cutter's
-                # self-intersections; FLOAT is the last resort.
+                # With the cutter resolved, plain EXACT handles
+                # every signature; keep the cascade as a safety
+                # net, accepting the first watertight non-empty
+                # result and a leaky one only as a last resort.
+                def _open_edges(mesh):
+                    cnt = {}
+                    for p in mesh.polygons:
+                        vs = p.vertices
+                        for i in range(len(vs)):
+                            a, b = vs[i], vs[(i + 1) % len(vs)]
+                            k = (a, b) if a < b else (b, a)
+                            cnt[k] = cnt.get(k, 0) + 1
+                    return sum(1 for c in cnt.values() if c == 1)
+
                 carved = None
-                for solver, self_x in (('EXACT', True),
-                                       ('EXACT', False),
+                fallback = None
+                for solver, self_x in (('EXACT', False),
+                                       ('EXACT', True),
                                        ('FLOAT', False)):
                     try:
                         mod.solver = solver
@@ -472,10 +566,20 @@ if _IN_BLENDER:
                     deps = context.evaluated_depsgraph_get()
                     ev = obj.evaluated_get(deps)
                     result = bpy.data.meshes.new_from_object(ev)
-                    if len(result.polygons):
+                    if len(result.polygons) == 0:
+                        bpy.data.meshes.remove(result)
+                    elif _open_edges(result) == 0:
                         carved = result
                         break
-                    bpy.data.meshes.remove(result)
+                    elif fallback is None:
+                        fallback = result
+                    else:
+                        bpy.data.meshes.remove(result)
+                if carved is None and fallback is not None:
+                    carved = fallback
+                    fallback = None
+                if fallback is not None:
+                    bpy.data.meshes.remove(fallback)
                 if carved is None:      # give back the plain sphere
                     self.report(
                         {'WARNING'},
@@ -489,14 +593,18 @@ if _IN_BLENDER:
                 bpy.data.meshes.remove(cme)
                 me = obj.data
             else:
-                # merge with the sphere shell (overlapping union)
-                sv, sf = uv_sphere(R, self.resolution,
-                                   max(4, self.resolution // 2))
+                # merge with the sphere shell (overlapping union);
+                # the inner wall goes in last so it can be re-flipped
+                # toward the cavity after the normal recalc
+                sv, sf = sphere_shell(R, thick, self.resolution,
+                                      max(4, self.resolution // 2))
+                n_outer = (len(sf) + 1) // 2 if thick > 0 else len(sf)
                 off = len(verts)
                 verts.extend(sv)
                 faces.extend([tuple(off + i for i in f)
                               for f in sf])
                 mats.extend([0] * len(sf))
+                n_inner = len(sf) - n_outer
 
                 me = bpy.data.meshes.new("Symmetry Sphere")
                 me.from_pydata(verts, [], faces)
@@ -504,6 +612,12 @@ if _IN_BLENDER:
                 bm = bmesh.new()
                 bm.from_mesh(me)
                 bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+                if n_inner:
+                    bm.faces.ensure_lookup_table()
+                    bmesh.ops.reverse_faces(
+                        bm, faces=[bm.faces[i] for i in
+                                   range(len(faces) - n_inner,
+                                         len(faces))])
                 bm.to_mesh(me)
                 bm.free()
                 if len(me.polygons) == len(mats):
@@ -539,8 +653,8 @@ if _IN_BLENDER:
             lay.prop(self, 'signature')
             if self.signature in _FAMILIES:
                 lay.prop(self, 'n')
-            for k in ('radius', 'resolution', 'motif_size',
-                      'relief', 'color_reflected'):
+            for k in ('radius', 'resolution', 'thickness',
+                      'motif_size', 'relief', 'color_reflected'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
