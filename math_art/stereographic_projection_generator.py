@@ -119,6 +119,120 @@ def _arc_dist_min(D, edges):
     return best
 
 
+def _fill_divisions(edges, lo, hi, step):
+    """Sorted division points of [lo, hi] containing every edge in
+    `edges`, with each gap filled uniformly at roughly `step`."""
+    pts = sorted({lo, hi, *(e for e in edges if lo < e < hi)})
+    out = []
+    for a, b in zip(pts[:-1], pts[1:]):
+        n = max(1, int(math.ceil((b - a) / step - 1e-9)))
+        out.extend(a + (b - a) * k / n for k in range(n))
+    out.append(hi)
+    return out
+
+
+def _thicken(verts_outer, verts_inner, faces):
+    """Closed solid from an open pattern surface: outer faces +
+    reversed inner faces + side walls on every boundary edge."""
+    n = len(verts_outer)
+    ecnt = {}
+    for f in faces:
+        for k in range(len(f)):
+            a, b = f[k], f[(k + 1) % len(f)]
+            key = (a, b) if a < b else (b, a)
+            ecnt[key] = None if key in ecnt else (a, b)
+    out = [list(f) for f in faces]
+    out += [[v + n for v in reversed(f)] for f in faces]
+    out += [[e[1], e[0], e[0] + n, e[1] + n]
+            for e in ecnt.values() if e is not None]
+    return list(verts_outer) + list(verts_inner), out
+
+
+def _grid_shell(R, t, width, spacing, Rmax, res):
+    """Exact square-grid shell: the plane is meshed on a Cartesian
+    grid whose division lines lie exactly on the strip edges, so
+    every cell is entirely material or entirely hole and the hole
+    boundaries are exact (no staircase).  The domain extends well
+    past the pattern disc as solid cells (their image crowds the
+    north pole), and the last gap is closed with a fan to the
+    pole."""
+    s = spacing * R
+    hw = 0.5 * width * s
+    step = 2.0 * Rmax / max(res, 8)
+    kmax = int(math.floor((Rmax + s) / s))
+    edges = []
+    for k in range(-kmax, kmax + 1):
+        edges += [k * s - hw, k * s + hw]
+    A = 8.0 * Rmax
+    div = _fill_divisions(edges, -Rmax, Rmax, step)
+    ext = []
+    v = Rmax
+    while v < A:
+        v *= 1.6
+        ext.append(min(v, A))
+    xs = [-e for e in reversed(ext)] + div + ext
+    ys = list(xs)
+    nx, ny = len(xs), len(ys)
+
+    def on_strip(a, b):
+        m = 0.5 * (a + b)
+        return abs(m - s * round(m / s)) < hw
+
+    verts_o = []
+    verts_i = []
+    C = np.array((0.0, 0.0, R))
+
+    def emit(x, y):
+        r = math.hypot(x, y)
+        th = 2.0 * math.atan2(2.0 * R, r) if r > 1e-12 else pi
+        ph = math.atan2(y, x)
+        d = np.array((math.sin(th) * math.cos(ph),
+                      math.sin(th) * math.sin(ph), math.cos(th)))
+        verts_o.append(tuple(C + (R + 0.5 * t) * d))
+        verts_i.append(tuple(C + (R - 0.5 * t) * d))
+        return len(verts_o) - 1
+
+    vid = [[emit(x, y) for y in ys] for x in xs]
+    faces = []
+    for i in range(nx - 1):
+        for j in range(ny - 1):
+            cx = 0.5 * (xs[i] + xs[i + 1])
+            cy = 0.5 * (ys[j] + ys[j + 1])
+            if not (on_strip(xs[i], xs[i + 1])
+                    or on_strip(ys[j], ys[j + 1])):
+                # part of a hole square: open it only when the
+                # WHOLE square sits inside the pattern disc, so
+                # rim holes are complete squares or nothing
+                hx = s * (math.floor(cx / s) + 0.5)
+                hy = s * (math.floor(cy / s) + 0.5)
+                half = 0.5 * s - hw
+                far = math.hypot(abs(hx) + half, abs(hy) + half)
+                if far < Rmax:
+                    continue                 # open hole cell
+            faces.append([vid[i][j], vid[i + 1][j],
+                          vid[i + 1][j + 1], vid[i][j + 1]])
+    # close the far square boundary with a fan to the north pole
+    pole = emit(0.0, 0.0)
+    verts_o[pole] = (0.0, 0.0, 2.0 * R + 0.5 * t)
+    verts_i[pole] = (0.0, 0.0, 2.0 * R - 0.5 * t)
+    ring = ([vid[i][0] for i in range(nx)]
+            + [vid[nx - 1][j] for j in range(1, ny)]
+            + [vid[i][ny - 1] for i in range(nx - 2, -1, -1)]
+            + [vid[0][j] for j in range(ny - 2, 0, -1)])
+    for k in range(len(ring)):
+        faces.append([pole, ring[k], ring[(k + 1) % len(ring)]])
+    # orient outward (positive volume about the sphere centre)
+    Vo = np.asarray(verts_o)
+    vol = 0.0
+    for f in faces[:200]:
+        P = Vo[f] - C
+        for k in range(1, len(f) - 1):
+            vol += float(np.dot(P[0], np.cross(P[k], P[k + 1])))
+    if vol < 0:
+        faces = [list(reversed(f)) for f in faces]
+    return _thicken(verts_o, verts_i, faces)
+
+
 def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
                 width=0.35, extent=3.0, spacing=0.6, rings=4,
                 rays=8, p=4, q=3, gores=8, res=48):
@@ -129,16 +243,48 @@ def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
     R = radius
     t = min(thickness, R)
     Rmax = extent * R
+    if pattern == 'GRID':
+        # exact Cartesian construction: division lines on the
+        # strip edges, no staircase
+        return _grid_shell(R, t, width, spacing, Rmax, res)
     th_min = 2.0 * math.atan2(2.0 * R, Rmax)
     n_cap = max(4, res // 6)
     L = max(12, 3 * res)              # longitudes
 
+    # longitude divisions: aligned to the pattern's angular edges
+    # (ray / lune boundaries) so those edges are exact
+    pedges = []
+    if pattern == 'POLAR':
+        nr = max(1, rays)
+        ha = 0.5 * width * (2.0 * pi / nr)
+        for k in range(nr):
+            pedges += [(2.0 * pi * k / nr - ha) % (2.0 * pi),
+                       (2.0 * pi * k / nr + ha) % (2.0 * pi)]
+    elif pattern == 'BEACHBALL':
+        wc = np.clip(width, 0.05, 0.95)
+        for k in range(gores):
+            pedges += [2.0 * pi * k / gores,
+                       2.0 * pi * (k + wc) / gores]
+    phis = np.array(_fill_divisions(sorted(set(pedges)), 0.0,
+                                    2.0 * pi, 2.0 * pi / L)[:-1])
+    L = len(phis)
+    phic = np.empty(L)
+    phic[:-1] = 0.5 * (phis[:-1] + phis[1:])
+    phic[-1] = 0.5 * (phis[-1] + 2.0 * pi + phis[0])
+
     # ring latitudes: cap rows, then pattern rows (uniform in the
-    # plane radius r for the plane-defined patterns, uniform in th
-    # for the sphere-defined ones); ends at the south pole th = pi
+    # plane radius r for POLAR -- aligned to its ring edges -- and
+    # uniform in th for the sphere-defined ones); ends at the
+    # south pole th = pi
     th_cap = np.linspace(0.0, th_min, n_cap + 1)
-    if pattern in ('GRID', 'POLAR'):
-        rs = np.linspace(Rmax, 0.0, res + 1)[1:]
+    if pattern == 'POLAR':
+        dr = Rmax / (rings + 1)
+        hw = 0.5 * width * dr
+        redges = [2.0 * hw]
+        for k in range(1, rings + 2):
+            redges += [k * dr - hw, k * dr + hw]
+        rs = np.array(_fill_divisions(redges, 0.0, Rmax,
+                                      Rmax / res)[::-1][1:])
         th_pat = 2.0 * np.arctan2(2.0 * R, rs)
     else:
         th_pat = np.linspace(th_min, pi, res + 1)[1:]
@@ -147,19 +293,10 @@ def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
 
     # face-centre coordinates and their plane projection
     thc = 0.5 * (thetas[:-1] + thetas[1:])
-    TH, PH = np.meshgrid(thc, 2.0 * pi * (np.arange(L) + 0.5) / L,
-                         indexing='ij')
+    TH, PH = np.meshgrid(thc, phic, indexing='ij')
     rp = 2.0 * R / np.tan(0.5 * TH)
 
-    if pattern == 'GRID':
-        # material = strips of width w on the lines x = k s, y = k s
-        s = spacing * R
-        hw = 0.5 * width * s
-        x = rp * np.cos(PH)
-        y = rp * np.sin(PH)
-        M = ((np.abs(x - s * np.round(x / s)) < hw) |
-             (np.abs(y - s * np.round(y / s)) < hw))
-    elif pattern == 'POLAR':
+    if pattern == 'POLAR':
         # concentric rings every dr (k = 0 doubles as a hub disc,
         # keeping the converging rays joined) plus radial rays
         dr = Rmax / (rings + 1)
@@ -228,7 +365,7 @@ def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
     setv(Vg - 1, thetas[F], 0.0)
     for i in range(1, F):
         for j in range(L):
-            setv(vid(i, j), thetas[i], 2.0 * pi * j / L)
+            setv(vid(i, j), thetas[i], phis[j])
 
     # outer faces of the kept region + boundary edge census
     faces = []
