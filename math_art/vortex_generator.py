@@ -171,7 +171,20 @@ def build_vortex(V, F, bend=0.11, m=12, iterations=30,
     return verts, faces, eids
 
 
+_EXTRA_SEEDS = {'CO': 'ARCHIMEDEAN', 'TO': 'ARCHIMEDEAN',
+                'SC': 'ARCHIMEDEAN', 'ID': 'ARCHIMEDEAN',
+                'TI': 'ARCHIMEDEAN', 'RD': 'CATALAN',
+                'RT': 'CATALAN'}
+
+
 def _seed(name):
+    if name in _EXTRA_SEEDS:
+        try:
+            from . import regular_solids_generator as rs
+        except ImportError:
+            import regular_solids_generator as rs
+        V, F, _ = rs.build_solid(_EXTRA_SEEDS[name], name)
+        return [tuple(v) for v in V], [list(f) for f in F]
     try:
         from . import spiked_polyhedron_generator as sp
     except ImportError:
@@ -198,7 +211,15 @@ if _IN_BLENDER:
                    ('OCTA', "Octahedron", ""),
                    ('DODECA', "Dodecahedron",
                     "the Vertices Vortices"),
-                   ('ICOSA', "Icosahedron", "")],
+                   ('ICOSA', "Icosahedron", ""),
+                   ('CO', "Cuboctahedron", ""),
+                   ('TO', "Truncated Octahedron", ""),
+                   ('SC', "Snub Cube", ""),
+                   ('ID', "Icosidodecahedron", ""),
+                   ('TI', "Truncated Icosahedron",
+                    "the soccer ball"),
+                   ('RD', "Rhombic Dodecahedron", ""),
+                   ('RT', "Rhombic Triacontahedron", "")],
             default='DODECA')
         bend: FloatProperty(
             name="Bend", default=0.2, min=0.0, max=0.6,
@@ -232,8 +253,16 @@ if _IN_BLENDER:
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
+            labels = {'CO': "Cuboctahedron",
+                      'TO': "Truncated Octahedron",
+                      'SC': "Snub Cube",
+                      'ID': "Icosidodecahedron",
+                      'TI': "Truncated Icosahedron",
+                      'RD': "Rhombic Dodecahedron",
+                      'RT': "Rhombic Triacontahedron"}
+            label = labels.get(self.seed, self.seed.title())
             name = ("Vertices Vortices" if self.seed == 'DODECA'
-                    else f"Vortices ({self.seed.title()})")
+                    else f"Vortices ({label})")
             # fit (roughly) within a 2 x scale cube at the origin
             lo = [min(v[k] for v in verts) for k in range(3)]
             hi = [max(v[k] for v in verts) for k in range(3)]

@@ -346,8 +346,10 @@ The modules:
 32. **Polyhedron Vertex Vortices**
     (`math_art/vortex_generator.py`) —
     inspired by Robert Fathauer's *Vertices Vortices* sculpture:
-    each face of a Platonic seed is divided by centre-to-vertex
-    spokes, the spokes bend within the face plane with equal
+    each face of the seed (the Platonics plus popular
+    Archimedean and Catalan solids — cuboctahedron, snub cube,
+    truncated icosahedron, rhombic dodecahedron and more) is
+    divided by centre-to-vertex spokes, the spokes bend within the face plane with equal
     chirality (a pinwheel — the bend profile and default depth
     were measured from the sculpture's geometry), the original
     edges are deleted, and each group of four bent spokes around
@@ -372,7 +374,19 @@ The modules:
     remeshing, bezier / pipe / ribbon outputs, per-strand or
     per-braid coloring. The strand walk was verified
     point-for-point against the original add-on.
-35. **Spiked & hyperbolic polyhedra**
+35. **Bubble Cluster** (`math_art/bubble_generator.py`) — a
+    soap-bubble cluster with one bubble at every vertex of a
+    seed mesh (Platonic solids, or any mesh via Active Object).
+    Radii are uniform or follow each point's mean neighbour
+    distance. Intersections obey soap-film physics
+    (Young–Laplace): equal bubbles meet on a **planar** film,
+    unequal ones on a spherical film of curvature
+    1/r = 1/r₁ − 1/r₂ bulging into the larger bubble; outer
+    surfaces are trimmed to each bubble's cell and the interior
+    films are trimmed where a third bubble takes over, giving
+    natural triple junctions. Configurable icosphere
+    subdivisions; interior films can be toggled off.
+36. **Spiked & hyperbolic polyhedra**
     (`math_art/spiked_polyhedron_generator.py`) — pyramid-
     augmented Platonic solids (the icosahedron at height √6/3
     gives a 60-face deltahedron of regular tetrahedra — verified),

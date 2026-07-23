@@ -166,6 +166,12 @@ OPS = [
         seed='DODECA', samples=6, iterations=8)),
     ("vortices tetra", lambda: bpy.ops.mesh.vertex_vortices_add(
         seed='TETRA', samples=8, iterations=10, reverse=True)),
+    ("vortices snub cube", lambda: bpy.ops.mesh.vertex_vortices_add(
+        seed='SC', samples=6, iterations=8)),
+    ("bubble cluster", lambda: bpy.ops.mesh.bubble_cluster_add(
+        seed='CUBE', subdiv=2)),
+    ("bubble cluster local", lambda: bpy.ops.mesh.bubble_cluster_add(
+        seed='TETRA', radius_mode='LOCAL', factor=0.7, subdiv=2)),
     ("minimal poly active",
      lambda: (bpy.ops.mesh.conway_add(example='CUSTOM',
                                       notation='sC'),

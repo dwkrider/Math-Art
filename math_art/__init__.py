@@ -58,6 +58,7 @@ _MODULE_NAMES = [
     'minimal_polyhedron_generator',
     'squeeze_generator',
     'vortex_generator',
+    'bubble_generator',
 ]
 
 _MODULES = []
@@ -173,6 +174,7 @@ class VIEW3D_MT_math_art_odds(bpy.types.Menu):
         _op(lay, "mesh.stereographic_add", icon='LIGHT_POINT')
         _op(lay, "mesh.hyperbolic_tiling_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.orbifold_sphere_add", icon='MOD_MIRROR')
+        _op(lay, "mesh.bubble_cluster_add", icon='SPHERE')
 
 
 class VIEW3D_MT_math_art_styles(bpy.types.Menu):
