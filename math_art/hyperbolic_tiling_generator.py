@@ -203,7 +203,7 @@ def _slab(verts, faces, mats, radius, height, mat, seg=128):
 
 def build_tiling(p, q, model='DISK', depth=8, max_tiles=4000,
                  subdiv=2, relief=0.05, base=0.1, thickness=0.08,
-                 y_cap=6.0):
+                 y_cap=6.0, include_base=True):
     """Build the relief mesh.  Returns (verts, faces, mat_ids)
     with mat_ids 0 (raised parity) / 1 (other parity or base) per
     face.  Every emitted tile is its own watertight closed shell;
@@ -231,9 +231,10 @@ def build_tiling(p, q, model='DISK', depth=8, max_tiles=4000,
             if np.max(D[:, 0] ** 2 + D[:, 1] ** 2) > 0.995 ** 2:
                 continue             # sub-sliver boundary tiles
             top = np.column_stack([D, np.full(len(D), relief)])
-            # sink prism bottoms into the slab for a solid union
-            bot = np.column_stack([D, np.full(len(D),
-                                              -0.45 * base)])
+            # sink prism bottoms into the slab for a solid union;
+            # without the slab they sit flat on z = 0
+            zbot = -0.45 * base if include_base else 0.0
+            bot = np.column_stack([D, np.full(len(D), zbot)])
         elif model == 'HEMI':
             K = H[:, :2] / H[:, 2:3]        # Klein coordinates
             zz = np.sqrt(np.maximum(
@@ -254,7 +255,7 @@ def build_tiling(p, q, model='DISK', depth=8, max_tiles=4000,
             bot = S - N * thickness
         _prism(verts, faces, mats, top, bot, gtris, gloop, par)
 
-    if model == 'DISK':
+    if model == 'DISK' and include_base:
         _slab(verts, faces, mats, 0.999, base, 1)
     return verts, faces, mats
 
@@ -336,6 +337,11 @@ if _IN_BLENDER:
             name="Cusp Cap", default=6.0, min=1.5, max=50.0,
             description="Clip the pseudosphere cusp at UHP "
                         "height y (the horn gets thin)")
+        include_base: bpy.props.BoolProperty(
+            name="Include Base Disk", default=True,
+            description="Backing slab under the raised tiles (disk "
+                        "plaque); off = only the raised tiles, flat "
+                        "on z=0")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -344,7 +350,8 @@ if _IN_BLENDER:
                 verts, faces, mats = build_tiling(
                     self.p, self.q, self.model, self.depth,
                     self.max_tiles, self.subdiv, self.relief,
-                    self.base, self.thickness, self.y_cap)
+                    self.base, self.thickness, self.y_cap,
+                    self.include_base)
             except ValueError as err:
                 self.report({'ERROR'}, str(err))
                 return {'CANCELLED'}
@@ -395,7 +402,9 @@ if _IN_BLENDER:
             lay.prop(self, 'subdiv')
             lay.prop(self, 'relief')
             if self.model == 'DISK':
-                lay.prop(self, 'base')
+                lay.prop(self, 'include_base')
+                if self.include_base:
+                    lay.prop(self, 'base')
             else:
                 lay.prop(self, 'thickness')
             if self.model == 'PSEUDO':
