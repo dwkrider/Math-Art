@@ -151,6 +151,10 @@ OPS = [
         mode='MOBILE')),
     ("topological surface",
      lambda: bpy.ops.mesh.topological_surface_add(preset='KLEIN')),
+    ("saddle cube", lambda: bpy.ops.mesh.saddle_polyhedron_add(
+        seed='CUBE', side_segments=6, rings=5, iterations=15)),
+    ("saddle icosa", lambda: bpy.ops.mesh.saddle_polyhedron_add(
+        seed='ICOSA', side_segments=4, rings=4, iterations=10)),
     ("minimal poly cube",
      lambda: bpy.ops.mesh.minimal_surface_polyhedron_add(
         seed='CUBE')),

@@ -56,6 +56,7 @@ _MODULE_NAMES = [
     'torus_knot_generator',
     'organic_wireframe',
     'minimal_polyhedron_generator',
+    'saddle_polyhedron_generator',
 ]
 
 _MODULES = []
@@ -111,6 +112,8 @@ class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
         _op(lay, "mesh.hyperbolic_honeycomb_add", icon='META_BALL')
         _op(lay, "mesh.spacefill_add", icon='SNAP_VOLUME')
         _op(lay, "mesh.geodesic_add", icon='MESH_UVSPHERE')
+        _op(lay, "mesh.saddle_polyhedron_add",
+            icon='SURFACE_DATA')
         _op(lay, "mesh.spiked_polyhedron_add", icon='LIGHT_SUN')
 
 
