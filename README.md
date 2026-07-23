@@ -321,13 +321,23 @@ The modules:
     at the smoothed iso-contour of the distance-to-cell-boundary
     field, and a Solidify modifier supplies the thickness. Open
     surfaces keep their boundary as a solid frame.
-30. **Organic Wireframe** (`math_art/organic_wireframe.py`) — the
+30. **Minimal Surface Form**
+    (`math_art/minimal_form_generator.py`) — pierced, soap-film-
+    relaxed polyhedra after Norman Carlberg's *Minimal Surface
+    Form* series (e.g. Form 6, 1960): faces are linearly
+    subdivided, opened near their centres, and Laplacian-relaxed
+    with the seed's edge frame (or just its corners) softly held,
+    so the hole rims tighten like soap film while the form keeps
+    reading as its polyhedron; Solidify supplies the slab
+    thickness. Works on the Platonic seeds or the **active mesh
+    object**, so any polyhedron can be pierced the same way.
+31. **Organic Wireframe** (`math_art/organic_wireframe.py`) — the
     classic "parametric Voronoi" style as a live, non-destructive
     modifier stack on the active mesh (Triangulate → Decimate
     collapse → Wireframe → Subdivision), fully adjustable in the
     modifier panel afterwards; works on any mesh including open
     minimal-surface patches (their rims are kept).
-31. **Celtic knots** (`math_art/celtic_knot_generator.py`) — a
+32. **Celtic knots** (`math_art/celtic_knot_generator.py`) — a
     port of Adam Newgas's
     [celtic-knot](https://github.com/BorisTheBrave/celtic-knot)
     add-on (MIT): strands weaving over and under along the edges
@@ -337,7 +347,7 @@ The modules:
     remeshing, bezier / pipe / ribbon outputs, per-strand or
     per-braid coloring. The strand walk was verified
     point-for-point against the original add-on.
-32. **Spiked & hyperbolic polyhedra**
+33. **Spiked & hyperbolic polyhedra**
     (`math_art/spiked_polyhedron_generator.py`) — pyramid-
     augmented Platonic solids (the icosahedron at height √6/3
     gives a 60-face deltahedron of regular tetrahedra — verified),
