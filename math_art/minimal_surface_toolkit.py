@@ -942,19 +942,89 @@ if _IN_BLENDER:
                         "solver grid) instead of a dense mesh. Where the "
                         "surface curls tightly (e.g. near a knot) the NURBS "
                         "may ripple; raise rings/samples or use mesh output")
+        outer_q: IntProperty(
+            name="Outer Knot q", default=0, min=0, max=9,
+            description="The outer boundary as a (p, q) torus knot; "
+                        "0 keeps the flat round circle (a circle is "
+                        "the degenerate q = 0 knot)")
+        outer_p: IntProperty(
+            name="Outer Knot p", default=0, min=0, max=8,
+            description="p of the outer boundary; 0 matches the "
+                        "inner knot's p (which keeps the ruling "
+                        "lined up)")
+        outer_scale: FloatProperty(
+            name="Outer Knot Scale", default=2.0, min=0.1, max=10.0,
+            description="Scale of the outer torus knot (its radii "
+                        "are ~1-3 x this)")
+        split_sheets: BoolProperty(
+            name="Split Sheets", default=False,
+            description="The span winds its outer boundary p times "
+                        "and the sheets pass through one another; "
+                        "this outputs p separate one-winding sheet "
+                        "objects instead (they share their seam "
+                        "edges, so together they still form the "
+                        "whole span)")
 
         def execute(self, context):
             m = self.samples
+            if self.split_sheets and self.p > 1:
+                m = max(self.p * 8, (m // self.p) * self.p)
             knot = torus_knot(self.p, self.q, m, scale=self.knot_scale)
             t = np.linspace(0, TAU, m, endpoint=False)
-            # circle wound p times so the ruling lines up with the knot
-            circ = np.stack([self.circle_radius * np.cos(self.p * t),
-                             self.circle_radius * np.sin(self.p * t),
-                             np.zeros(m)], axis=1)
+            po = self.outer_p or self.p
+            if self.outer_q > 0:
+                # outer boundary: another torus knot
+                circ = torus_knot(po, self.outer_q, m,
+                                  scale=self.outer_scale)
+            else:
+                # circle wound p times so the ruling lines up
+                circ = np.stack(
+                    [self.circle_radius * np.cos(po * t),
+                     self.circle_radius * np.sin(po * t),
+                     np.zeros(m)], axis=1)
             V, quads, fixed = build_annulus_grid(knot, circ, self.rings)
             T = _quads_to_tris(quads)
             minimize_area(V, T, fixed, outer_iters=self.iterations)
-            name = f"Knot({self.p},{self.q})Span"
+            name = (f"Knot({self.p},{self.q})Span" if self.outer_q == 0
+                    else f"Knot({self.p},{self.q})-"
+                         f"({po},{self.outer_q})Span")
+            if self.split_sheets and self.p > 1:
+                # one object per winding: columns [k w, (k+1) w] of
+                # the solver grid, seam columns shared between
+                # neighboring sheets
+                w = m // self.p
+                R = self.rings + 1
+                if self.output_nurbs:
+                    Gs = fair_grid_columns(V.reshape(R, m, 3))
+                    Gs = fair_grid_2d(Gs)
+                    V2 = Gs.reshape(-1, 3).copy()
+                    relax_normal_flow(V2, T, fixed)
+                    Gs = V2.reshape(R, m, 3)
+                else:
+                    Gs = V.reshape(R, m, 3)
+                made = []
+                for k in range(self.p):
+                    cols = [(k * w + j) % m for j in range(w + 1)]
+                    nm = f"{name} Sheet {k + 1}of{self.p}"
+                    if self.output_nurbs:
+                        made.append(_nurbs_grid_object(
+                            context, nm, Gs[:, cols],
+                            cyclic_u=False, cyclic_v=False))
+                    else:
+                        Vk = Gs[:, cols, :].reshape(-1, 3)
+                        qk = [(r * (w + 1) + j,
+                               r * (w + 1) + j + 1,
+                               (r + 1) * (w + 1) + j + 1,
+                               (r + 1) * (w + 1) + j)
+                              for r in range(self.rings)
+                              for j in range(w)]
+                        made.append(_new_object(context, nm, Vk, qk))
+                for o in made:
+                    o.select_set(True)
+                self.report({'INFO'},
+                            f"{self.p} sheets, area = "
+                            f"{mesh_area(V, T):.4f}")
+                return {'FINISHED'}
             if self.output_nurbs:
                 G = fair_grid_columns(V.reshape(self.rings + 1, m, 3))
                 G = fair_grid_2d(G)
@@ -971,9 +1041,18 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for k in ('p', 'q', 'circle_radius', 'knot_scale', 'samples',
-                      'rings', 'iterations', 'output_nurbs'):
+            for k in ('p', 'q', 'knot_scale', 'outer_q'):
                 lay.prop(self, k)
+            if self.outer_q > 0:
+                lay.prop(self, 'outer_p')
+                lay.prop(self, 'outer_scale')
+            else:
+                lay.prop(self, 'circle_radius')
+            for k in ('samples', 'rings', 'iterations',
+                      'output_nurbs'):
+                lay.prop(self, k)
+            if self.p > 1:
+                lay.prop(self, 'split_sheets')
 
     class VIEW3D_PT_minimal_surfaces(bpy.types.Panel):
         bl_label = "Minimal Surfaces"
