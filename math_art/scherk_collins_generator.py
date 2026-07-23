@@ -570,19 +570,19 @@ def spec_text_from(p):
 PRESETS = {
     'HEX': ("Hyperbolic Hexagon", dict(branches=2, storeys=6, height=1.2,
             flange=1.1, thickness=0.07, rim_bulge=1.06, twist=0, azimuth=45,
-            warp=360, detail=16)),
+            warp=360)),
     'TREFOIL': ("Minimal Trefoil", dict(branches=2, storeys=3, height=1.5,
             flange=1.3, thickness=0.06, rim_bulge=1.06, twist=270, azimuth=45,
-            warp=360, detail=8)),
+            warp=360)),
     'MONKEY': ("Monkey-Saddle Trefoil", dict(branches=3, storeys=3, height=1.75,
             flange=1.5, thickness=0.05, rim_bulge=1.0, twist=180, azimuth=0,
-            warp=360, detail=8)),
+            warp=360)),
     'HEPTOROID': ("Heptoroid", dict(branches=4, storeys=7, height=1.5,
             flange=1.0, thickness=0.10, rim_bulge=0.0, twist=135, azimuth=0,
-            warp=360, detail=5)),
+            warp=360)),
     'TOWER': ("Scherk Tower (straight)", dict(branches=2, storeys=5, height=1.5,
             flange=1.5, thickness=0.1, rim_bulge=1.0, twist=0, azimuth=0,
-            warp=0, detail=6)),
+            warp=0)),
 }
 
 
