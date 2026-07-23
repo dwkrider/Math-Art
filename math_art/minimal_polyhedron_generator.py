@@ -1,9 +1,8 @@
 
-# Soap Film Polyhedron generator for Blender: a polyhedron whose
-# faces are pierced and relaxed into a smooth soap-film-like
-# membrane stretched over the (softly held) edge frame.  Inspired
-# by the modular-constructivist soap-film aesthetic of Norman
-# Carlberg''s sculpture.
+# Minimal Surface Polyhedron generator for Blender: a polyhedron
+# whose faces are pierced and relaxed into a smooth minimal-
+# surface-like membrane stretched over the (softly held) edge
+# frame.
 #
 # The construction generalizes the classic cube tutorial to any
 # polyhedron:
@@ -12,7 +11,7 @@
 #   2. open a hole in each selected original face by deleting the
 #      sub-faces near its centre;
 #   3. relax with Laplacian smoothing: the free hole rims tighten
-#      like a soap film with free edges, while the original corner
+#      like a stretched membrane with free edges, while the corner
 #      vertices can stay pinned so the form keeps reading as its
 #      polyhedron;
 #   4. a live Solidify modifier gives the sculptural thickness.
@@ -22,12 +21,12 @@
 # the same way.
 
 bl_info = {
-    "name": "Soap Film Polyhedron",
+    "name": "Minimal Surface Polyhedron",
     "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Math Art > Surfaces",
-    "description": "Pierced, soap-film-relaxed polyhedra on a "
+    "description": "Pierced, membrane-relaxed polyhedra on a "
                    "held edge frame",
     "category": "Add Mesh",
 }
@@ -197,12 +196,12 @@ def _seed(name):
 
 if _IN_BLENDER:
 
-    class MESH_OT_soap_film_polyhedron_add(bpy.types.Operator):
-        """Pierce a polyhedron's faces and relax the surface like
-        a soap film stretched on its edge frame; works on the
-        built-in seeds or the active mesh object"""
-        bl_idname = "mesh.soap_film_polyhedron_add"
-        bl_label = "Soap Film Polyhedron"
+    class MESH_OT_minimal_surface_polyhedron_add(bpy.types.Operator):
+        """Pierce a polyhedron's faces and relax the surface into
+        a minimal-surface-like membrane on its edge frame; works
+        on the built-in seeds or the active mesh object"""
+        bl_idname = "mesh.minimal_surface_polyhedron_add"
+        bl_label = "Minimal Surface Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
         seed: EnumProperty(
@@ -230,7 +229,7 @@ if _IN_BLENDER:
             default='ALL')
         iterations: IntProperty(
             name="Relax Iterations", default=40, min=0, max=400,
-            description="Laplacian soap-film relaxation steps; "
+            description="Laplacian membrane relaxation steps; "
                         "hole rims tighten as they smooth")
         pin: EnumProperty(
             name="Hold",
@@ -273,11 +272,11 @@ if _IN_BLENDER:
                 V = [tuple(v.co) for v in me0.vertices]
                 F = [list(p.vertices) for p in me0.polygons]
                 src.evaluated_get(deps).to_mesh_clear()
-                name = f"{src.name} Soap Film"
+                name = f"{src.name} Minimal Surface"
             else:
                 V, F = _seed(self.seed)
                 V = [tuple(c) for c in V]
-                name = f"Soap Film ({self.seed.title()})"
+                name = f"Minimal Surface ({self.seed.title()})"
             try:
                 verts, faces = build_form(
                     V, F, self.levels, self.hole, self.pattern,
@@ -329,20 +328,20 @@ if _IN_BLENDER:
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
-        self.layout.operator("mesh.soap_film_polyhedron_add",
+        self.layout.operator("mesh.minimal_surface_polyhedron_add",
                              icon='MESH_UVSPHERE')
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
     def register():
-        bpy.utils.register_class(MESH_OT_soap_film_polyhedron_add)
+        bpy.utils.register_class(MESH_OT_minimal_surface_polyhedron_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
-        bpy.utils.unregister_class(MESH_OT_soap_film_polyhedron_add)
+        bpy.utils.unregister_class(MESH_OT_minimal_surface_polyhedron_add)
 
 
 if __name__ == "__main__":
@@ -391,4 +390,4 @@ if __name__ == "__main__":
             print(f"{name}: V={len(verts)} F={len(faces)} "
                   f"holes={loops} (want {holes}) finite={finite}")
             assert loops == holes and finite
-        print("soap film standalone tests passed")
+        print("minimal surface polyhedron tests passed")

@@ -321,12 +321,12 @@ The modules:
     at the smoothed iso-contour of the distance-to-cell-boundary
     field, and a Solidify modifier supplies the thickness. Open
     surfaces keep their boundary as a solid frame.
-30. **Soap Film Polyhedron**
-    (`math_art/soap_film_generator.py`) — pierced, soap-film-
-    relaxed polyhedra: faces are linearly subdivided, opened near
+30. **Minimal Surface Polyhedron**
+    (`math_art/minimal_polyhedron_generator.py`) — pierced,
+    membrane-relaxed polyhedra: faces are subdivided, opened near
     their centres, and Laplacian-relaxed with the seed's edge
     frame (or just its corners) softly held, so the hole rims
-    tighten like soap film while the form keeps reading as its
+    tighten as they relax while the form keeps reading as its
     polyhedron; Solidify supplies the slab thickness. Works on
     the Platonic seeds or the **active mesh object**, so any
     polyhedron can be pierced the same way.

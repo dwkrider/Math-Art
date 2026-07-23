@@ -55,7 +55,7 @@ _MODULE_NAMES = [
     'voronoi_openwork',
     'torus_knot_generator',
     'organic_wireframe',
-    'soap_film_generator',
+    'minimal_polyhedron_generator',
 ]
 
 _MODULES = []
@@ -92,7 +92,8 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.algebraic_surface_add",
             icon='SURFACE_NSURFACE')
         _op(lay, "mesh.topological_surface_add", icon='MESH_TORUS')
-        _op(lay, "mesh.soap_film_polyhedron_add", icon='MESH_UVSPHERE')
+        _op(lay, "mesh.minimal_surface_polyhedron_add",
+            icon='MESH_UVSPHERE')
 
 
 class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
