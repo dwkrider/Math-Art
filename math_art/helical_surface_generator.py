@@ -185,19 +185,19 @@ if _IN_BLENDER:
             name="Whorls", default=2, min=1, max=8,
             description="Number of turns of the shell spiral")
         aspect: FloatProperty(
-            name="Tube Aspect", default=0.2, min=0.0, max=2.0,
+            name="Tube Aspect", default=1.0, min=0.0, max=2.0,
             description="Vertical stretch of the tube "
                         "cross-section (a)")
         height: FloatProperty(
-            name="Height", default=1.0, min=0.0, max=10.0,
+            name="Height", default=4.0, min=0.0, max=10.0,
             description="Total rise of the shell from mouth "
                         "to apex (b)")
         opening: FloatProperty(
-            name="Opening", default=0.1, min=0.0, max=2.0,
+            name="Opening", default=0.37, min=0.0, max=2.0,
             description="Offset radius that keeps the shell "
                         "mouth open (c)")
         cork_a: FloatProperty(
-            name="Sphere Radius", default=1.0, min=0.01,
+            name="Sphere Radius", default=0.5, min=0.01,
             max=10.0,
             description="Radius a of the twisted sphere")
         cork_b: FloatProperty(
