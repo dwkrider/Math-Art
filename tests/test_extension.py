@@ -89,6 +89,11 @@ OPS = [
         family='PLATONIC', solid='ICOSA', pieces=5)),
     ("stereographic", lambda: bpy.ops.mesh.stereographic_add(
         pattern='GRID')),
+    ("stereographic tiling", lambda: bpy.ops.mesh.stereographic_add(
+        pattern='TILING', tile_p=5, tile_q=3, res=32)),
+    ("stereographic flower bowl",
+     lambda: bpy.ops.mesh.stereographic_add(
+         pattern='FLOWER', bowl=True, res=32)),
     ("hyperbolic honeycomb",
      lambda: bpy.ops.mesh.hyperbolic_honeycomb_add()),
     ("algebraic surface", lambda: bpy.ops.mesh.algebraic_surface_add(

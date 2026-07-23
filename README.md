@@ -252,9 +252,16 @@ The modules:
     per-strip coloring).
 17. **Stereographic projection spheres**
     (`math_art/stereographic_projection_generator.py`) — Segerman-
-    style shadow spheres: a pattern (grid / polar / tiling /
-    beachball) on the sphere, projected from the north pole so a
-    point light there casts the flat pattern as its shadow.
+    style shadow spheres: a pattern (grid / polar / {p,q} tiling /
+    beachball / flower lattice) on the sphere, projected from the
+    north pole so a point light there casts the flat pattern as
+    its shadow. Pattern boundaries are exact: the square grid is
+    meshed on strip-aligned Cartesian divisions, polar and
+    beachball on aligned ring/ray/lune divisions, and the tiling
+    and flower patterns by marching squares on their signed
+    fields — no staircasing at any resolution. A **Bowl** option
+    stops the shell just above the pattern with a solid rim band
+    and an open top.
 18. **Hyperbolic honeycombs**
     (`math_art/hyperbolic_honeycomb_generator.py`) — {p,q,r}
     honeycombs (including paracompact ones) drawn in the Poincaré

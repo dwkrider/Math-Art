@@ -233,9 +233,144 @@ def _grid_shell(R, t, width, spacing, Rmax, res):
     return _thicken(verts_o, verts_i, faces)
 
 
+def _field_shell(R, t, thetas, phis, gfun, has_north=True):
+    """Marching-squares shell over the lat-long grid: gfun(TH, PH)
+    is a signed field (material < 0).  Cells fully material become
+    quads; mixed cells are clipped at zero crossings interpolated
+    along the grid edges, so pattern boundaries are smooth curves
+    limited only by the resolution, never staircased."""
+    F = len(thetas) - 1
+    L = len(phis)
+    C = np.array((0.0, 0.0, R))
+    verts_o = []
+    verts_i = []
+    thof = []
+    phof = []
+    gof = []
+
+    def emit(th, ph, g):
+        d = np.array((math.sin(th) * math.cos(ph),
+                      math.sin(th) * math.sin(ph), math.cos(th)))
+        verts_o.append(C + (R + 0.5 * t) * d)
+        verts_i.append(C + (R - 0.5 * t) * d)
+        thof.append(th)
+        phof.append(ph)
+        gof.append(g)
+        return len(verts_o) - 1
+
+    def geval(th, ph):
+        g = float(gfun(np.array([[th]]), np.array([[ph]]))[0, 0])
+        return g if g != 0.0 else 1e-12
+
+    lo = 1 if has_north else 0
+    TH, PH = np.meshgrid(thetas[lo:F], phis, indexing='ij')
+    G = gfun(TH, PH)
+    G[G == 0.0] = 1e-12
+    rid = {}
+    for ii, i in enumerate(range(lo, F)):
+        for j in range(L):
+            rid[(i, j)] = emit(thetas[i], phis[j], G[ii, j])
+    north = emit(0.0, 0.0, geval(1e-9, 0.0)) if has_north else None
+    south = emit(pi, 0.0, geval(pi, 0.0))
+
+    def vid(i, j):
+        if has_north and i == 0:
+            return north
+        if i == F:
+            return south
+        return rid[(i, j % L)]
+
+    xing = {}
+
+    def crossing(a, b):
+        key = (a, b) if a < b else (b, a)
+        if key in xing:
+            return xing[key]
+        ga, gb = gof[a], gof[b]
+        u = ga / (ga - gb)
+        pha, phb = phof[a], phof[b]
+        if a in (north, south):
+            pha = phb
+        if b in (north, south):
+            phb = pha
+        dph = (phb - pha + pi) % (2.0 * pi) - pi
+        idx = emit(thof[a] + u * (thof[b] - thof[a]),
+                   pha + u * dph, 0.0)
+        xing[key] = idx
+        return idx
+
+    faces = []
+    for i in range(F):
+        for j in range(L):
+            cs = []
+            for v in (vid(i, j), vid(i + 1, j),
+                      vid(i + 1, j + 1), vid(i, j + 1)):
+                if v not in cs:
+                    cs.append(v)
+            if len(cs) < 3:
+                continue
+            gs = [gof[c] for c in cs]
+            if all(g < 0 for g in gs):
+                faces.append(cs)
+                continue
+            if not any(g < 0 for g in gs):
+                continue
+            poly = []
+            n = len(cs)
+            for k in range(n):
+                if gs[k] < 0:
+                    poly.append(cs[k])
+                if (gs[k] < 0) != (gs[(k + 1) % n] < 0):
+                    poly.append(crossing(cs[k], cs[(k + 1) % n]))
+            if len(poly) >= 3:
+                faces.append(poly)
+    # orient outward
+    Vo = np.asarray(verts_o)
+    vol = 0.0
+    for f in faces[:200]:
+        P = Vo[f] - C
+        for k in range(1, len(f) - 1):
+            vol += float(np.dot(P[0], np.cross(P[k], P[k + 1])))
+    if vol < 0:
+        faces = [list(reversed(f)) for f in faces]
+    return _thicken([tuple(v) for v in verts_o],
+                    [tuple(v) for v in verts_i], faces)
+
+
+def _flower_field(x, y, s, petals, width):
+    """Signed field of the flower lattice: petal-shaped holes
+    (ellipses radiating from hexagonal lattice points); material
+    (< 0) is the web between petals."""
+    r0 = 0.10 * s
+    plen = 0.38 * s
+    pw = min(0.9, max(0.1, width)) * plen
+    hy = s * sqrt(3.0) / 2.0
+    jj = np.round(y / hy)
+    emin = np.full(x.shape, np.inf)
+    for dj in (-1.0, 0.0, 1.0):
+        j = jj + dj
+        off = 0.5 * s * np.mod(j, 2.0)
+        ii = np.round((x - off) / s)
+        for di in (-1.0, 0.0, 1.0):
+            cx = (ii + di) * s + off
+            cy = j * hy
+            ux = x - cx
+            uy = y - cy
+            for k in range(petals):
+                a = 2.0 * pi * k / petals
+                ca, sa = math.cos(a), math.sin(a)
+                ual = ux * ca + uy * sa - (r0 + 0.5 * plen)
+                upe = -ux * sa + uy * ca
+                e = ((ual / (0.5 * plen)) ** 2
+                     + (upe / (0.5 * pw)) ** 2)
+                emin = np.minimum(emin, e)
+    return 1.0 - emin
+
+
 def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
                 width=0.35, extent=3.0, spacing=0.6, rings=4,
-                rays=8, p=4, q=3, gores=8, res=48):
+                rays=8, p=4, q=3, gores=8, res=48, bowl=False,
+                petals=8):
     """Return (verts, faces) of the watertight perforated shell.
     'spacing' and 'extent' are in units of the sphere radius;
     'width' is the strip width as a fraction of the pattern cell
@@ -243,13 +378,81 @@ def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
     R = radius
     t = min(thickness, R)
     Rmax = extent * R
-    if pattern == 'GRID':
+    if pattern == 'GRID' and not bowl:
         # exact Cartesian construction: division lines on the
-        # strip edges, no staircase
+        # strip edges, no staircase (bowls go through the field
+        # path below, which trims cleanly at the rim circle)
         return _grid_shell(R, t, width, spacing, Rmax, res)
     th_min = 2.0 * math.atan2(2.0 * R, Rmax)
-    n_cap = max(4, res // 6)
+    Rrim = 1.15 * Rmax                # bowl rim band outer radius
+    th_top = 2.0 * math.atan2(2.0 * R, Rrim) if bowl else 0.0
+    n_cap = max(2, res // 10) if bowl else max(4, res // 6)
     L = max(12, 3 * res)              # longitudes
+
+    if pattern in ('TILING', 'FLOWER') or (pattern == 'GRID'
+                                           and bowl):
+        # marching-squares field path: smooth clipped boundaries
+        phis = 2.0 * pi * np.arange(L) / L
+        if pattern == 'TILING':
+            if bowl:
+                thetas = np.linspace(th_top, pi, res + n_cap + 1)
+            else:
+                thetas = np.concatenate([
+                    np.linspace(0.0, th_min, n_cap + 1)[:-1],
+                    np.linspace(th_min, pi, res + 1)])
+            p, q = _valid_pq(p, q)
+            edges, elen = _tiling_edges(p, q)
+            hw = 0.5 * width * elen
+
+            def gfun(TH, PH):
+                D = np.stack((np.sin(TH) * np.cos(PH),
+                              np.sin(TH) * np.sin(PH),
+                              np.cos(TH)), axis=-1).reshape(-1, 3)
+                gp = _arc_dist_min(D, edges).reshape(TH.shape) - hw
+                return np.minimum(gp, TH - th_min)
+        else:
+            if bowl:
+                rr = np.concatenate([
+                    np.linspace(Rrim, Rmax, n_cap + 1)[:-1],
+                    np.linspace(Rmax, 0.0, res + 1)])
+                thetas = 2.0 * np.arctan2(2.0 * R, rr)
+            else:
+                rr = np.linspace(Rmax, 0.0, res + 1)
+                thetas = np.concatenate([
+                    np.linspace(0.0, th_min, n_cap + 1)[:-1],
+                    2.0 * np.arctan2(2.0 * R, rr)])
+            s = spacing * R
+            if pattern == 'GRID':
+                ghw = 0.5 * width * s
+                half = 0.5 * s - ghw
+
+                def gfun(TH, PH):
+                    r = 2.0 * R / np.tan(
+                        np.maximum(TH, 1e-9) / 2.0)
+                    x = r * np.cos(PH)
+                    y = r * np.sin(PH)
+                    dx = np.abs(x - s * np.round(x / s))
+                    dy = np.abs(y - s * np.round(y / s))
+                    gp = np.minimum(dx, dy) - ghw
+                    # rim holes are whole squares or nothing
+                    hx = s * (np.floor(x / s) + 0.5)
+                    hy = s * (np.floor(y / s) + 0.5)
+                    far = np.hypot(np.abs(hx) + half,
+                                   np.abs(hy) + half)
+                    gp = np.where((gp > 0) & (far >= Rmax),
+                                  -ghw, gp)
+                    return np.minimum(gp, Rmax - r)
+            else:                     # FLOWER
+
+                def gfun(TH, PH):
+                    r = 2.0 * R / np.tan(
+                        np.maximum(TH, 1e-9) / 2.0)
+                    x = r * np.cos(PH)
+                    y = r * np.sin(PH)
+                    gp = _flower_field(x, y, s, petals, width)
+                    return np.minimum(gp, Rmax - r)
+        return _field_shell(R, t, thetas, phis, gfun,
+                            has_north=not bowl)
 
     # longitude divisions: aligned to the pattern's angular edges
     # (ray / lune boundaries) so those edges are exact
@@ -272,11 +475,10 @@ def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
     phic[:-1] = 0.5 * (phis[:-1] + phis[1:])
     phic[-1] = 0.5 * (phis[-1] + 2.0 * pi + phis[0])
 
-    # ring latitudes: cap rows, then pattern rows (uniform in the
-    # plane radius r for POLAR -- aligned to its ring edges -- and
-    # uniform in th for the sphere-defined ones); ends at the
-    # south pole th = pi
-    th_cap = np.linspace(0.0, th_min, n_cap + 1)
+    # ring latitudes: cap / rim-band rows, then pattern rows
+    # (uniform in the plane radius r for POLAR -- aligned to its
+    # ring edges); ends at the south pole th = pi
+    th_cap = np.linspace(th_top, th_min, n_cap + 1)
     if pattern == 'POLAR':
         dr = Rmax / (rings + 1)
         hw = 0.5 * width * dr
@@ -286,7 +488,7 @@ def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
         rs = np.array(_fill_divisions(redges, 0.0, Rmax,
                                       Rmax / res)[::-1][1:])
         th_pat = 2.0 * np.arctan2(2.0 * R, rs)
-    else:
+    else:                             # BEACHBALL
         th_pat = np.linspace(th_min, pi, res + 1)[1:]
     thetas = np.concatenate([th_cap, th_pat])
     F = len(thetas) - 1               # face rows
@@ -307,25 +509,14 @@ def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
         angd = np.abs(u - np.round(u)) * (2.0 * pi / nr)
         M = ((np.abs(rp - dr * np.round(rp / dr)) < hw) |
              (angd < ha) | (rp < 2.0 * hw))
-    elif pattern == 'BEACHBALL':
+    else:                             # BEACHBALL
         # n solid lunes, each 'width' of its 2 pi / n slot; a small
         # solid cap at the south pole keeps the gore tips joined
         u = (PH * gores / (2.0 * pi)) % 1.0
         M = u < np.clip(width, 0.05, 0.95)
         M |= TH > 0.9 * pi
-    else:                             # TILING
-        p, q = _valid_pq(p, q)
-        edges, elen = _tiling_edges(p, q)
-        D = np.stack((np.sin(TH) * np.cos(PH),
-                      np.sin(TH) * np.sin(PH),
-                      np.cos(TH)), axis=-1).reshape(-1, 3)
-        M = (_arc_dist_min(D, edges).reshape(F, L) <
-             0.5 * width * elen)
 
-    M[:n_cap] = True                  # solid cap at the north pole
-    if pattern == 'TILING':           # uniform south fan row
-        edist = _arc_dist_min(np.array([[0.0, 0.0, -1.0]]), edges)
-        M[-1, :] = edist[0] < 0.5 * width * elen
+    M[:n_cap] = True                  # solid cap / rim band
     if M[-1].any() and not M[-1].all():
         M[-1, :] = True               # pole fans must be uniform
 
@@ -342,15 +533,17 @@ def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
         Nr[bad_a] = True
         Sr[bad_b] = True
 
-    # grid vertex ids: north pole, interior rings, south pole
-    Vg = 2 + (F - 1) * L
+    # grid vertex ids: (north pole unless bowl), rings, south pole
+    has_north = not bowl
+    lo = 1 if has_north else 0
+    Vg = (2 if has_north else 1) + (F - lo) * L
 
     def vid(i, j):
-        if i == 0:
+        if has_north and i == 0:
             return 0
         if i == F:
             return Vg - 1
-        return 1 + (i - 1) * L + (j % L)
+        return (1 if has_north else 0) + (i - lo) * L + (j % L)
 
     verts = np.empty((2 * Vg, 3))     # outer 0..Vg-1, inner rest
 
@@ -361,9 +554,10 @@ def build_shell(pattern='GRID', radius=1.0, thickness=0.05,
         verts[idx] = c + (R + 0.5 * t) * d
         verts[idx + Vg] = c + (R - 0.5 * t) * d
 
-    setv(0, thetas[0], 0.0)
+    if has_north:
+        setv(0, thetas[0], 0.0)
     setv(Vg - 1, thetas[F], 0.0)
-    for i in range(1, F):
+    for i in range(lo, F):
         for j in range(L):
             setv(vid(i, j), thetas[i], phis[j])
 
@@ -423,8 +617,20 @@ if _IN_BLENDER:
                     "{p,q} tiling (Platonic edge graph; p = 2 "
                     "gives q meridians)"),
                    ('BEACHBALL', "Beach Ball",
-                    "Alternating open and solid lune gores")],
+                    "Alternating open and solid lune gores"),
+                   ('FLOWER', "Flower Lattice",
+                    "Hexagonal lattice of flowers with petal-"
+                    "shaped holes; the shadow is a field of "
+                    "daisies")],
             default='GRID')
+        bowl: BoolProperty(
+            name="Bowl", default=False,
+            description="Open bowl instead of a full sphere: the "
+                        "shell stops just above the pattern with "
+                        "a solid rim band and an open top")
+        petals: IntProperty(
+            name="Petals", default=8, min=3, max=16,
+            description="Petals per flower (Flower Lattice)")
         radius: FloatProperty(name="Sphere Radius", default=1.0,
                               min=0.05, max=100.0)
         thickness: FloatProperty(
@@ -483,7 +689,8 @@ if _IN_BLENDER:
             verts, faces = build_shell(
                 self.pattern, self.radius, self.thickness,
                 self.width, self.extent, self.spacing, self.rings,
-                self.rays, *pq, self.gores, self.res)
+                self.rays, *pq, self.gores, self.res, self.bowl,
+                self.petals)
             me = bpy.data.meshes.new("Stereographic")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
@@ -538,12 +745,15 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'pattern')
+            lay.prop(self, 'bowl')
             lay.prop(self, 'radius')
             lay.prop(self, 'thickness')
             lay.prop(self, 'width')
             lay.prop(self, 'extent')
-            if self.pattern == 'GRID':
+            if self.pattern in ('GRID', 'FLOWER'):
                 lay.prop(self, 'spacing')
+            if self.pattern == 'FLOWER':
+                lay.prop(self, 'petals')
             elif self.pattern == 'POLAR':
                 lay.prop(self, 'rings')
                 lay.prop(self, 'rays')
@@ -580,14 +790,21 @@ if __name__ == "__main__":
         register()
     else:
         from collections import Counter
-        for pat in ('GRID', 'POLAR', 'TILING', 'BEACHBALL'):
-            v, f = build_shell(pat, res=32)
-            cnt = Counter()
-            for fc in f:
-                for i in range(len(fc)):
-                    a, b = fc[i], fc[(i + 1) % len(fc)]
-                    cnt[(min(a, b), max(a, b))] += 1
-            man = all(c == 2 for c in cnt.values())
-            print("%-9s verts=%d faces=%d watertight=%s %s"
-                  % (pat, len(v), len(f), man,
-                     'OK' if man else 'BAD'))
+        ok_all = True
+        for pat in ('GRID', 'POLAR', 'TILING', 'BEACHBALL',
+                    'FLOWER'):
+            for bowl in (False, True):
+                v, f = build_shell(pat, res=32, bowl=bowl)
+                cnt = Counter()
+                for fc in f:
+                    for i in range(len(fc)):
+                        a, b = fc[i], fc[(i + 1) % len(fc)]
+                        cnt[(min(a, b), max(a, b))] += 1
+                man = all(c == 2 for c in cnt.values())
+                ok_all = ok_all and man
+                print("%-9s bowl=%d verts=%d faces=%d "
+                      "watertight=%s %s"
+                      % (pat, bowl, len(v), len(f), man,
+                         'OK' if man else 'BAD'))
+        assert ok_all
+        print("stereographic standalone tests passed")
