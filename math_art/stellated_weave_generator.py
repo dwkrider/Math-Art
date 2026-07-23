@@ -478,6 +478,17 @@ if _IN_BLENDER:
             me = bpy.data.meshes.new("StellatedWeave")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
+            # fit (roughly) within a 2 x scale cube at the origin
+            lo = [min(v.co[k] for v in me.vertices)
+                  for k in range(3)]
+            hi = [max(v.co[k] for v in me.vertices)
+                  for k in range(3)]
+            half = max((hi[k] - lo[k]) / 2.0
+                       for k in range(3)) or 1.0
+            f = self.scale / half
+            for v in me.vertices:
+                v.co = [(v.co[k] - (lo[k] + hi[k]) / 2.0) * f
+                        for k in range(3)]
             bm = bmesh.new()
             bm.from_mesh(me)
             bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
