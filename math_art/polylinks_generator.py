@@ -19,7 +19,7 @@ bl_info = {
 }
 
 import math
-from math import cos, sin
+from math import cos, sin, pi
 
 PHI = (1 + 5 ** 0.5) / 2
 
@@ -109,9 +109,77 @@ def seed_poly(kind):
     return [list(v) for v in V], [list(f) for f in F]
 
 
+def _closed_tube(pts, tube_r, sides, verts, faces, face_tag, fidx):
+    """Sweep a circular tube along a closed centerline using
+    rotation-minimizing frames (double reflection) with the closure
+    twist distributed along the loop (after Wang's polylink
+    add-on)."""
+    n = len(pts)
+    tang = []
+    for i in range(n):
+        a = pts[(i - 1) % n]
+        b = pts[(i + 1) % n]
+        tang.append(_unit([b[k] - a[k] for k in range(3)]))
+    # initial normal: anything perpendicular to tang[0]
+    t0 = tang[0]
+    ref = (0.0, 0.0, 1.0) if abs(t0[2]) < 0.9 else (1.0, 0.0, 0.0)
+    r = _unit([t0[1] * ref[2] - t0[2] * ref[1],
+               t0[2] * ref[0] - t0[0] * ref[2],
+               t0[0] * ref[1] - t0[1] * ref[0]])
+    frames = [r]
+    for i in range(n):
+        j = (i + 1) % n
+        v1 = [pts[j][k] - pts[i][k] for k in range(3)]
+        c1 = sum(t * t for t in v1) or 1e-12
+        d = sum(v1[k] * frames[-1][k] for k in range(3))
+        rl = [frames[-1][k] - 2 / c1 * d * v1[k] for k in range(3)]
+        dt = sum(v1[k] * tang[i][k] for k in range(3))
+        tl = [tang[i][k] - 2 / c1 * dt * v1[k] for k in range(3)]
+        v2 = [tang[j][k] - tl[k] for k in range(3)]
+        c2 = sum(t * t for t in v2) or 1e-12
+        dr = sum(v2[k] * rl[k] for k in range(3))
+        frames.append([rl[k] - 2 / c2 * dr * v2[k] for k in range(3)])
+    # distribute the closure twist
+    last = frames[n]
+    cx = (last[1] * r[2] - last[2] * r[1],
+          last[2] * r[0] - last[0] * r[2],
+          last[0] * r[1] - last[1] * r[0])
+    sgn = 1.0 if sum(cx[k] * tang[0][k] for k in range(3)) > 0 else -1.0
+    dotr = max(-1.0, min(1.0, sum(last[k] * r[k] for k in range(3))))
+    ang = sgn * math.acos(dotr)
+    base = len(verts)
+    for i in range(n):
+        corr = -ang * i / n
+        N = frames[i]
+        T = tang[i]
+        B = (T[1] * N[2] - T[2] * N[1], T[2] * N[0] - T[0] * N[2],
+             T[0] * N[1] - T[1] * N[0])
+        ca, sa = cos(corr), sin(corr)
+        Nc = [N[k] * ca + B[k] * sa for k in range(3)]
+        Bc = [-N[k] * sa + B[k] * ca for k in range(3)]
+        for s in range(sides):
+            a = 2 * pi * s / sides
+            verts.append(tuple(
+                pts[i][k] + tube_r * (cos(a) * Nc[k] + sin(a) * Bc[k])
+                for k in range(3)))
+    for i in range(n):
+        i2 = (i + 1) % n
+        for s in range(sides):
+            s2 = (s + 1) % sides
+            faces.append([base + i * sides + s, base + i * sides + s2,
+                          base + i2 * sides + s2, base + i2 * sides + s])
+            face_tag.append(fidx)
+
+
 def build_polylinks(kind='TETRA', size=1.35, rotation=25.0, offset=-0.2,
-                    width=0.14, thickness=0.10, antipodal=False, scale=1.0):
-    """One solid polygon frame per (selected) face of the solid."""
+                    width=0.14, thickness=0.10, antipodal=False, scale=1.0,
+                    link_shape='POLYGON', amplitude=0.35, wave_factor=1,
+                    knot_p=1, knot_q_factor=1, tube_sides=8,
+                    segments=128):
+    """One link per (selected) face of the solid: a flat polygon
+    frame (classic), a radius-modulated wavy circle, or a torus
+    knot about the face axis (the latter two after Shengyi Wang's
+    polylink add-on)."""
     V, F = seed_poly(kind)
     if antipodal:
         keep = []
@@ -136,6 +204,46 @@ def build_polylinks(kind='TETRA', size=1.35, rotation=25.0, offset=-0.2,
         frame_dirs.append(n)
         cl = math.sqrt(sum(x * x for x in c))
         cen = [n[k] * (cl + offset) for k in range(3)]
+        if link_shape in ('WAVE', 'KNOT'):
+            d0 = [V[f[0]][k] - c[k] for k in range(3)]
+            rad = math.sqrt(sum(x * x for x in d0)) * size
+            rot0 = math.radians(rotation)
+            xr = _unit(d0)
+            # rotate xr about n by rotation (Rodrigues)
+            dd = sum(xr[k] * n[k] for k in range(3))
+            cr = (n[1] * xr[2] - n[2] * xr[1],
+                  n[2] * xr[0] - n[0] * xr[2],
+                  n[0] * xr[1] - n[1] * xr[0])
+            xN = [xr[k] * cos(rot0) + cr[k] * sin(rot0)
+                  + n[k] * dd * (1 - cos(rot0)) for k in range(3)]
+            yN = (n[1] * xN[2] - n[2] * xN[1],
+                  n[2] * xN[0] - n[0] * xN[2],
+                  n[0] * xN[1] - n[1] * xN[0])
+            pts = []
+            if link_shape == 'WAVE':
+                frq = max(1, wave_factor) * m
+                for i in range(segments):
+                    t = 2 * pi * i / segments
+                    rr = rad + amplitude * cos(frq * t)
+                    pts.append(tuple(
+                        (cen[k] + rr * (cos(t) * xN[k]
+                                        + sin(t) * yN[k])) * scale
+                        for k in range(3)))
+            else:
+                q = max(1, knot_q_factor) * m
+                p = max(1, knot_p)
+                r2 = amplitude
+                for i in range(segments):
+                    t = 2 * pi * i / segments
+                    pts.append(tuple(
+                        (cen[k]
+                         + (rad + r2 * cos(q * t))
+                         * (cos(p * t) * xN[k] + sin(p * t) * yN[k])
+                         + r2 * sin(q * t) * n[k]) * scale
+                        for k in range(3)))
+            _closed_tube(pts, thickness / 2 * scale, tube_sides,
+                         verts, faces, face_frame, fidx)
+            continue
         ring = []
         for i in f:
             d = [V[i][k] - c[k] for k in range(3)]
@@ -223,6 +331,37 @@ if _IN_BLENDER:
             name="Plane Offset", default=-0.45, min=-2.0, max=2.0,
             description="Push of each frame along its normal "
                         "(negative = toward the centre)")
+        link_shape: EnumProperty(
+            name="Link Shape",
+            items=[('POLYGON', "Polygon Frame",
+                    "Flat polygon frames (Hart's polylinks)"),
+                   ('WAVE', "Wavy Circle",
+                    "Radius-modulated circles: round rings that "
+                    "weave through each other (after Shengyi "
+                    "Wang's polylink add-on)"),
+                   ('KNOT', "Torus Knot",
+                    "A (p, q x sides) torus knot about each face "
+                    "axis, swept with rotation-minimizing frames")],
+            default='POLYGON')
+        amplitude: FloatProperty(
+            name="Wave Amplitude", default=0.35, min=0.0, max=2.0,
+            description="Radial wave amplitude (wavy circle) or "
+                        "knot minor radius")
+        wave_factor: bpy.props.IntProperty(
+            name="Wave Factor", default=1, min=1, max=8,
+            description="Wave frequency in multiples of the face "
+                        "side count")
+        knot_p: bpy.props.IntProperty(
+            name="Knot p", default=2, min=1, max=8,
+            description="Windings around the face axis")
+        knot_q_factor: bpy.props.IntProperty(
+            name="Knot q Factor", default=1, min=1, max=8,
+            description="q = factor x face side count")
+        tube_sides: bpy.props.IntProperty(name="Tube Sides",
+                                          default=8, min=3, max=24)
+        segments: bpy.props.IntProperty(
+            name="Link Segments", default=128, min=24, max=512,
+            description="Samples along wavy / knot centerlines")
         width: FloatProperty(name="Frame Width", default=0.14,
                              min=0.02, max=0.9)
         thickness: FloatProperty(name="Frame Thickness", default=0.10,
@@ -274,7 +413,10 @@ if _IN_BLENDER:
                 self._preset_chosen(context)
             verts, faces, nf, face_frame, frame_dirs = build_polylinks(
                 self.kind, self.size, self.rotation, self.offset,
-                self.width, self.thickness, self.antipodal, self.scale)
+                self.width, self.thickness, self.antipodal, self.scale,
+                self.link_shape, self.amplitude, self.wave_factor,
+                self.knot_p, self.knot_q_factor, self.tube_sides,
+                self.segments)
             me = bpy.data.meshes.new("Polylinks")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
@@ -317,8 +459,19 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'preset')
-            for k in ('kind', 'size', 'rotation', 'offset', 'width',
-                      'thickness', 'antipodal', 'coloring', 'scale'):
+            lay.prop(self, 'link_shape')
+            keys = ['kind', 'size', 'rotation', 'offset']
+            if self.link_shape == 'POLYGON':
+                keys += ['width', 'thickness']
+            else:
+                keys += ['thickness', 'amplitude']
+                if self.link_shape == 'WAVE':
+                    keys += ['wave_factor']
+                else:
+                    keys += ['knot_p', 'knot_q_factor']
+                keys += ['tube_sides', 'segments']
+            keys += ['antipodal', 'coloring', 'scale']
+            for k in keys:
                 lay.prop(self, k)
 
     def _menu_func(self, context):

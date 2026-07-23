@@ -1,11 +1,14 @@
 
 # Strange Attractor Generator for Blender
 #
-# The strange attractors of Chaotic Atmospheres' "MATHRULES" art
-# series (chaoticatmospheres.com/mathrules-strange-attractors), each
-# as a preset: the ODE systems and parameter values follow Juergen
-# Meier's compilation (3d-meier.de, Tutorial 19), the artist's stated
-# source. The system is integrated with fixed-step RK4, the transient
+# All 38 strange attractors of Chaotic Atmospheres' "MATHRULES" art
+# series (chaoticatmospheres.com/mathrules-strange-attractors) as
+# presets (plus Zhou-Chen from the same collection): the ODE systems
+# and parameter values follow Juergen Meier's compilation
+# (3d-meier.de, Tutorial 19), the artist's stated source, with
+# Lorenz / Roessler / Chua transcribed from the posters themselves.
+# The 4D systems (Qi, Lorenz-Stenflo) and the 6D coupled Lorenz pair
+# are drawn as their (x, y, z) projection. The system is integrated with fixed-step RK4, the transient
 # discarded, and the trajectory emitted as a curve -- optionally
 # resampled to even arc length, with the tube radius modulated by the
 # local speed (slow regions thicken, the look of the original
@@ -21,8 +24,8 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Curve > Strange Attractor",
-    "description": "Chaotic attractor curves: Lorenz, Aizawa, Thomas, "
-                   "Halvorsen and 30+ more",
+    "description": "Chaotic attractor curves: the 38 systems of the "
+                   "Chaotic Atmospheres MATHRULES series",
     "category": "Add Curve",
 }
 
@@ -30,10 +33,14 @@ import math
 
 
 # ---- the systems -------------------------------------------------------
-# Each entry: key -> (label, rhs(x, y, z, p) -> (dx, dy, dz),
-#                     params dict, x0, dt, steps, transient)
-# dt/steps are tuned so one preset draws the attractor's familiar
-# shape; all values verified by the __main__ self-test.
+# Each entry: key -> (label, rhs(*state, p) -> dstate,
+#                     params dict, x0, dt, steps, transient, method)
+# The state may have more than 3 components (Qi and Lorenz-Stenflo
+# are 4D, the coupled Lorenz pair is 6D); the first three are the
+# plotted projection. dt/steps are tuned so each preset draws the
+# attractor's familiar shape; all values verified by the __main__
+# self-test. method is 'RK4' except where the reference renders
+# depend on Euler's numerical dissipation (see Lorenz Mod 1).
 
 
 def _presets():
@@ -45,8 +52,9 @@ def _presets():
     P = {}
 
     def A(key, label, rhs, params, x0, dt, steps=10000,
-          transient=500):
-        P[key] = (label, rhs, params, x0, dt, steps, transient)
+          transient=500, method='RK4'):
+        P[key] = (label, rhs, params, x0, dt, steps, transient,
+                  method)
 
     A('LORENZ', "Lorenz",
       lambda x, y, z, p: (p['a'] * (y - x),
@@ -65,11 +73,11 @@ def _presets():
       (0.1, 0.0, 0.0), 0.01)
 
     A('ANISHCHENKO', "Anishchenko-Astakhov",
-      lambda x, y, z, p: (p['a'] * x + y - x * z,
+      lambda x, y, z, p: (p['m'] * x + y - x * z,
                           -x,
-                          -p['b'] * z + p['b'] * (x > 0) * x * x),
-      {'a': 1.2, 'b': 0.5},
-      (0.1, 0.0, 0.0), 0.01, 20000)
+                          -p['g'] * z + p['g'] * (x > 0) * x * x),
+      {'m': 1.2, 'g': 0.5},
+      (1.0, 1.0, 1.0), 0.01, 20000)
 
     A('ARNEODO', "Arneodo",
       lambda x, y, z, p: (y, z,
@@ -83,14 +91,14 @@ def _presets():
                           -y * (1 - x * x),
                           -x * (1.5 - p['s'] * z) - 0.05 * z),
       {'a': 0.3, 's': 1.0},
-      (0.3, 1.0, 0.2), 0.005, 20000)
+      (1.0, 0.1, 0.1), 0.006, 20000)
 
     A('BURKESHAW', "Burke-Shaw",
       lambda x, y, z, p: (-p['s'] * (x + y),
                           -y - p['s'] * x * z,
                           p['s'] * x * y + p['v']),
       {'s': 10.0, 'v': 4.272},
-      (0.6, 0.0, 0.0), 0.003)
+      (1.0, 0.0, 0.0), 0.003)
 
     A('CHENCELIKOVSKY', "Chen-Celikovsky",
       lambda x, y, z, p: (p['a'] * (y - x),
@@ -106,19 +114,34 @@ def _presets():
       {'a': 5.0, 'b': -10.0, 'c': -0.38},
       (1.0, 0.0, 4.5), 0.003, 15000)
 
+    # Chua diode in the poster's form G = eps*x + (delta+eps)
+    # * (|x+1| - |x-1|). The poster prints delta=-1, eps=0, which
+    # provably decays to a fixed point; these values are the
+    # canonical diode slopes (inner -8/7, outer -5/7) that give the
+    # double scroll the render shows.
+    A('CHUA', "Chua",
+      lambda x, y, z, p: (p['alpha'] * (y - x - (
+          p['eps'] * x + (p['delta'] + p['eps'])
+          * (abs(x + 1) - abs(x - 1)))),
+                          p['beta'] * (x - y + z),
+                          -p['gamma'] * y),
+      {'alpha': 15.6, 'beta': 1.0, 'gamma': 25.58, 'delta': 0.5,
+       'eps': -5.0 / 7.0},
+      (0.7, 0.0, 0.0), 0.01, 20000)
+
     A('COULLET', "Coullet",
       lambda x, y, z, p: (y, z,
                           p['a'] * x + p['b'] * y + p['c'] * z
                           + p['d'] * x ** 3),
       {'a': 0.8, 'b': -1.1, 'c': -0.45, 'd': -1.0},
-      (0.1, 0.0, 0.0), 0.02, 15000)
+      (0.1, 0.41, 0.31), 0.02, 15000)
 
     A('DADRAS', "Dadras",
-      lambda x, y, z, p: (y - p['a'] * x + p['b'] * y * z,
-                          p['c'] * y - x * z + z,
-                          p['d'] * x * y - p['e'] * z),
-      {'a': 3.0, 'b': 2.7, 'c': 1.7, 'd': 2.0, 'e': 9.0},
-      (0.1, 0.03, 0.0), 0.005, 15000)
+      lambda x, y, z, p: (y - p['p'] * x + p['q'] * y * z,
+                          p['r'] * y - x * z + z,
+                          p['s'] * x * y - p['e'] * z),
+      {'p': 3.0, 'q': 2.7, 'r': 1.7, 's': 2.0, 'e': 9.0},
+      (0.1, 0.1, 0.1), 0.005, 15000)
 
     A('DEQUANLI', "Dequan Li",
       lambda x, y, z, p: (p['a'] * (y - x) + p['d'] * x * z,
@@ -126,21 +149,28 @@ def _presets():
                           p['c'] * z + x * y - p['e'] * x * x),
       {'a': 40.0, 'c': 1.833, 'd': 0.16, 'e': 0.65, 'k': 55.0,
        'f': 20.0},
-      (0.01, 0.0, 0.0), 0.0004, 20000)
+      (0.349, 0.0, -0.16), 0.0004, 20000)
 
     A('FINANCE', "Finance",
       lambda x, y, z, p: ((1.0 / p['b'] - p['a']) * x + z + x * y,
                           -p['b'] * y - x * x,
                           -x - p['c'] * z),
       {'a': 0.001, 'b': 0.2, 'c': 1.1},
-      (0.1, 0.2, 0.3), 0.01, 30000)
+      (0.1, 0.0, 0.0), 0.03, 15000)
+
+    A('FOURWING', "Four-Wing",
+      lambda x, y, z, p: (p['a'] * x - p['b'] * y * z,
+                          -p['c'] * y + x * z,
+                          p['k'] * x - p['d'] * z + x * y),
+      {'a': 4.0, 'b': 6.0, 'c': 10.0, 'd': 5.0, 'k': 1.0},
+      (0.1, 0.1, 0.1), 0.005, 20000)
 
     A('GENESIOTESI', "Genesio-Tesi",
       lambda x, y, z, p: (y, z,
                           -p['c'] * x - p['b'] * y - p['a'] * z
                           + x * x),
       {'a': 0.44, 'b': 1.1, 'c': 1.0},
-      (0.1, 0.0, 0.0), 0.02, 15000)
+      (0.1, 0.1, 0.1), 0.02, 15000)
 
     A('HADLEY', "Hadley",
       lambda x, y, z, p: (-y * y - z * z - p['a'] * x
@@ -155,7 +185,7 @@ def _presets():
                           -p['a'] * y - 4 * z - 4 * x - z * z,
                           -p['a'] * z - 4 * x - 4 * y - x * x),
       {'a': 1.4},
-      (-5.0, 0.0, 0.0), 0.005)
+      (1.0, 0.0, 0.0), 0.005)
 
     A('LIUCHEN', "Liu-Chen",
       lambda x, y, z, p: (p['a'] * y + p['b'] * x + p['c'] * y * z,
@@ -165,13 +195,19 @@ def _presets():
        'f': 5.58, 'g': -1.0},
       (1.0, 3.0, 5.0), 0.002, 20000)
 
+    # dz really is +z here (verified against both Meier's formula
+    # sheet and the artist's poster); Mod 2 is the -z variant. The
+    # exact +z system escapes to infinity at t ~ 16-22 -- the
+    # reference render exists only because the Cinema 4D plugin
+    # integrated with Euler, whose numerical dissipation keeps the
+    # trajectory bounded. Reproduced faithfully: Euler method.
     A('LORENZMOD1', "Lorenz Mod 1",
       lambda x, y, z, p: (-p['a'] * x + y * y - z * z
                           + p['a'] * p['c'],
                           x * (y - p['b'] * z) + p['d'],
                           z + x * (p['b'] * y + z)),
       {'a': 0.1, 'b': 4.0, 'c': 14.0, 'd': 0.08},
-      (0.1, 0.0, 0.0), 0.003, 15000)
+      (0.1, 0.1, 0.1), 0.005, 20000, 500, 'EULER')
 
     A('LORENZMOD2', "Lorenz Mod 2",
       lambda x, y, z, p: (-p['a'] * x + y * y - z * z
@@ -179,7 +215,30 @@ def _presets():
                           x * (y - p['b'] * z) + p['d'],
                           -z + x * (p['b'] * y + z)),
       {'a': 0.9, 'b': 5.0, 'c': 9.9, 'd': 1.0},
-      (0.1, 0.0, 0.0), 0.003, 15000)
+      (1.0, 1.0, 1.0), 0.003, 15000)
+
+    # 4D system; the curve is the (x, y, z) projection
+    A('LORENZSTENFLO', "Lorenz-Stenflo",
+      lambda x, y, z, w, p: (p['a'] * (y - x) + p['d'] * w,
+                             x * (p['c'] - z) - y,
+                             x * y - p['b'] * z,
+                             -x - p['a'] * w),
+      {'a': 2.0, 'b': 0.7, 'c': 26.0, 'd': 1.5},
+      (-1.0, 1.0, -1.0, 0.0), 0.01, 20000)
+
+    # two coupled Lorenz systems (6D); the plotted projection is the
+    # driven subsystem (x2, y2, z2), which carries the coupling
+    A('COUPLEDLORENZ', "Coupled Lorenz",
+      lambda x2, y2, z2, x1, y1, z1, p: (
+          p['o'] * (y2 - x2) + p['e'] * (x1 - x2),
+          p['r2'] * x2 - y2 - x2 * z2,
+          -p['b'] * z2 + x2 * y2,
+          p['o'] * (y1 - x1),
+          p['r1'] * x1 - y1 - x1 * z1,
+          -p['b'] * z1 + x1 * y1),
+      {'b': 8.0 / 3.0, 'o': 10.0, 'r1': 35.0, 'r2': 1.15,
+       'e': 2.85},
+      (0.1, 0.1, 0.1, 0.1, 0.1, 0.1), 0.004, 20000)
 
     A('LUCHEN', "Lu-Chen",
       lambda x, y, z, p: (-p['a'] * p['b'] * x / (p['a'] + p['b'])
@@ -187,35 +246,46 @@ def _presets():
                           p['a'] * y + x * z,
                           p['b'] * z + x * y),
       {'a': -10.0, 'b': -4.0, 'c': 18.1},
-      (0.1, 0.3, -0.6), 0.003, 15000)
+      (0.0, 0.0, 2.0), 0.005, 15000)
 
     A('NEWTONLEIPNIK', "Newton-Leipnik",
       lambda x, y, z, p: (-p['a'] * x + y + 10 * y * z,
                           -x - 0.4 * y + 5 * x * z,
                           p['b'] * z - 5 * x * y),
       {'a': 0.4, 'b': 0.175},
-      (0.349, 0.0, -0.16), 0.01, 30000)
+      (0.349, 0.0, -0.16), 0.02, 15000)
 
     A('NOSEHOOVER', "Nose-Hoover",
       lambda x, y, z, p: (y,
                           -x + y * z,
                           p['a'] - y * y),
       {'a': 1.5},
-      (0.1, 0.0, 0.0), 0.01, 20000)
+      (1.0, 0.0, 0.0), 0.01, 20000)
+
+    # 4D system; the curve is the (x, y, z) projection
+    A('QI', "Qi",
+      lambda x, y, z, w, p: (p['a'] * (y - x) + y * z * w,
+                             p['b'] * (x + y) - x * z * w,
+                             -p['c'] * z + x * y * w,
+                             -p['d'] * w + x * y * z),
+      {'a': 30.0, 'b': 10.0, 'c': 1.0, 'd': 10.0},
+      (1.0, 0.5, 7.0, 5.0), 0.0004, 20000)
 
     A('QICHEN', "Qi-Chen",
       lambda x, y, z, p: (p['a'] * (y - x) + y * z,
                           p['c'] * x + y - x * z,
                           x * y - p['b'] * z),
       {'a': 38.0, 'b': 8.0 / 3.0, 'c': 80.0},
-      (3.0, -1.0, 2.0), 0.0015)
+      (3.0, -4.0, 3.0), 0.0015)
 
+    # r=12 is below the chaotic regime -- the reference render shows
+    # the decaying double spiral, so keep the transient (transient=0)
     A('RAYLEIGHBENARD', "Rayleigh-Benard",
       lambda x, y, z, p: (-p['a'] * (x - y),
                           p['r'] * x - y - x * z,
                           x * y - p['b'] * z),
       {'a': 9.0, 'r': 12.0, 'b': 5.0},
-      (0.1, 0.0, 0.0), 0.01, 15000)
+      (0.1, 0.0, 0.0), 0.01, 8000, 0)
 
     A('ROSSLER', "Roessler",
       lambda x, y, z, p: (-y - z,
@@ -229,14 +299,14 @@ def _presets():
                           x,
                           -z + y * y),
       {'k': 2.0, 'a': 6.7},
-      (1.0, 0.0, 4.5), 0.01, 15000)
+      (1.0, 0.0, 0.0), 0.01, 15000)
 
     A('SAKARYA', "Sakarya",
       lambda x, y, z, p: (-x + y + y * z,
                           -x - y + p['a'] * x * z,
                           z - p['b'] * x * y),
       {'a': 0.4, 'b': 0.3},
-      (1.0, -1.0, 1.0), 0.005, 15000)
+      (1.0, -1.0, 1.0), 0.01, 15000)
 
     A('SHIMIZUMORIOKA', "Shimizu-Morioka",
       lambda x, y, z, p: (y,
@@ -254,10 +324,10 @@ def _presets():
 
     A('TSUCS1', "Three-Scroll Unified 1",
       lambda x, y, z, p: (p['a'] * (y - x) + p['d'] * x * z,
-                          p['b'] * y - x * z,
+                          p['f'] * y - x * z,
                           p['c'] * z + x * y - p['e'] * x * x),
-      {'a': 40.0, 'b': 0.833, 'c': 20.0, 'd': 0.5, 'e': 0.65},
-      (0.01, 0.0, 0.0), 0.001, 20000)
+      {'a': 40.0, 'c': 0.833, 'd': 0.5, 'e': 0.65, 'f': 20.0},
+      (0.1, 1.0, -0.1), 0.001, 20000)
 
     A('TSUCS2', "Three-Scroll Unified 2",
       lambda x, y, z, p: (p['a'] * (y - x) + p['d'] * x * z,
@@ -265,7 +335,7 @@ def _presets():
                           p['c'] * z + x * y - p['e'] * x * x),
       {'a': 40.0, 'b': 55.0, 'c': 1.833, 'd': 0.16, 'e': 0.65,
        'f': 20.0},
-      (0.01, 0.0, 0.0), 0.0004, 20000)
+      (0.1, 1.0, -0.1), 0.0004, 20000)
 
     A('WANGSUN', "Wang-Sun",
       lambda x, y, z, p: (x * p['a'] + p['c'] * y * z,
@@ -273,21 +343,21 @@ def _presets():
                           p['e'] * z + p['f'] * x * y),
       {'a': 0.2, 'b': -0.01, 'c': 1.0, 'd': -0.4, 'e': -1.0,
        'f': -1.0},
-      (0.5, 0.1, 0.1), 0.02, 30000)
+      (0.3, 0.1, 1.0), 0.02, 30000)
 
     A('WIMOLBANLUE', "Wimol-Banlue",
       lambda x, y, z, p: (y - x,
                           -z * T(x),
                           -p['a'] + x * y + abs(y)),
       {'a': 2.0},
-      (1.0, 0.0, 0.0), 0.02, 20000)
+      (1.0, 1.0, 1.0), 0.02, 20000)
 
     A('YUWANG', "Yu-Wang",
       lambda x, y, z, p: (p['a'] * (y - x),
                           p['b'] * x - p['c'] * x * z,
                           math.e ** (x * y) - p['d'] * z),
       {'a': 10.0, 'b': 40.0, 'c': 2.0, 'd': 2.5},
-      (0.1, 0.0, 0.0), 0.002, 15000)
+      (2.2, 2.4, 28.0), 0.002, 15000)
 
     A('ZHOUCHEN', "Zhou-Chen",
       lambda x, y, z, p: (p['a'] * x + p['b'] * y + y * z,
@@ -305,26 +375,34 @@ _ORDER = sorted(PRESETS, key=lambda k: PRESETS[k][0])
 
 # ---- integration -------------------------------------------------------
 
-def integrate(rhs, params, x0, dt, steps, transient):
-    """Fixed-step RK4; returns the trajectory after the transient.
+def integrate(rhs, params, x0, dt, steps, transient,
+              method='RK4'):
+    """Fixed-step RK4 (or Euler) in any dimension; returns the
+    trajectory (first three state components) after the transient.
     Raises OverflowError/ValueError if the system escapes."""
-    x, y, z = x0
+    s = list(x0)
+    n = len(s)
+    rng = range(n)
+    euler = method == 'EULER'
     pts = []
     for i in range(steps + transient):
-        k1 = rhs(x, y, z, params)
-        k2 = rhs(x + 0.5 * dt * k1[0], y + 0.5 * dt * k1[1],
-                 z + 0.5 * dt * k1[2], params)
-        k3 = rhs(x + 0.5 * dt * k2[0], y + 0.5 * dt * k2[1],
-                 z + 0.5 * dt * k2[2], params)
-        k4 = rhs(x + dt * k3[0], y + dt * k3[1], z + dt * k3[2],
-                 params)
-        x += dt / 6.0 * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0])
-        y += dt / 6.0 * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])
-        z += dt / 6.0 * (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2])
-        if abs(x) > 1e6 or abs(y) > 1e6 or abs(z) > 1e6:
+        k1 = rhs(*s, params)
+        if euler:
+            for j in rng:
+                s[j] += dt * k1[j]
+        else:
+            k2 = rhs(*(s[j] + 0.5 * dt * k1[j] for j in rng),
+                     params)
+            k3 = rhs(*(s[j] + 0.5 * dt * k2[j] for j in rng),
+                     params)
+            k4 = rhs(*(s[j] + dt * k3[j] for j in rng), params)
+            for j in rng:
+                s[j] += dt / 6.0 * (k1[j] + 2 * k2[j] + 2 * k3[j]
+                                    + k4[j])
+        if any(abs(v) > 1e6 for v in s):
             raise OverflowError("trajectory escaped")
         if i >= transient:
-            pts.append((x, y, z))
+            pts.append((s[0], s[1], s[2]))
     return pts
 
 
@@ -381,12 +459,14 @@ def build_attractor(key, size=10.0, dt_scale=1.0, steps=0,
     """Integrate preset `key`; returns (points, speed01) where
     speed01 is the per-point speed normalized to 0..1 (empty when
     resampling, which evens out the spacing)."""
-    label, rhs, dparams, x0, dt, dsteps, transient = PRESETS[key]
+    (label, rhs, dparams, x0, dt, dsteps, transient,
+     method) = PRESETS[key]
     p = dict(dparams)
     if params:
         p.update(params)
     n = steps or dsteps
-    pts = integrate(rhs, p, x0, dt * dt_scale, n, transient)
+    pts = integrate(rhs, p, x0, dt * dt_scale, n, transient,
+                    method)
     spd = speeds(pts)
     pts = normalize(pts, size)
     if samples:
@@ -417,7 +497,7 @@ if _IN_BLENDER:
     def _preset_items():
         items = []
         for k in _ORDER:
-            label, rhs, params, x0, dt, steps, tr = PRESETS[k]
+            label, rhs, params = PRESETS[k][:3]
             desc = ", ".join(f"{n}={v:g}"
                              for n, v in sorted(params.items()))
             items.append((k, label, f"parameters: {desc}"))
@@ -434,7 +514,7 @@ if _IN_BLENDER:
                              items=_preset_items(),
                              default='LORENZ')
         steps: IntProperty(
-            name="Steps", default=0, min=0, max=200000,
+            name="Steps", default=0, min=0, max=200000, step=1000,
             description="Integration steps (0 = preset default)")
         dt_scale: FloatProperty(
             name="Time Step Scale", default=1.0, min=0.05, max=10.0,
@@ -579,7 +659,7 @@ if __name__ == "__main__":
     else:
         fails = []
         for key in _ORDER:
-            label, rhs, params, x0, dt, steps, tr = PRESETS[key]
+            label = PRESETS[key][0]
             try:
                 pts, spd = build_attractor(key)
                 lo = [min(p[k] for p in pts) for k in range(3)]
@@ -593,7 +673,8 @@ if __name__ == "__main__":
                 tlo = [min(p[k] for p in tail) for k in range(3)]
                 thi = [max(p[k] for p in tail) for k in range(3)]
                 text = max(thi[k] - tlo[k] for k in range(3))
-                stuck = text < 0.5
+                # Rayleigh-Benard is a deliberate transient spiral
+                stuck = text < 0.5 and key != 'RAYLEIGHBENARD'
                 bad = ([] + (["flat"] if flat else [])
                        + (["stuck"] if stuck else []))
                 print(f"{label:28s} {len(pts):6d} pts  "

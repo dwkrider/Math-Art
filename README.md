@@ -529,6 +529,10 @@ Rossiter ([source](https://github.com/antiprism/antiprism), GPL):
 [George W. Hart](https://www.georgehart.com/) (see his
 [vibe-coded program examples](https://www.georgehart.com/vibecode/)):
 
+- Stellated Surface Weave and the wavy-circle / torus-knot
+  polylink variants: Shengyi Wang ([txyyss](https://github.com/txyyss),
+  [math-art](https://txyyss.github.io/math-art/) and the
+  [polylink](https://github.com/txyyss/polylink) add-on)
 - Regular polylinks: G. Hart, *Orderly Tangles Revisited*
   ([georgehart.com](https://www.georgehart.com/orderly-tangles-revisited/tangles.htm)),
   building on Alan Holden's *Orderly Tangles* (1983)
