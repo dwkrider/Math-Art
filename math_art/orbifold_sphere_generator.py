@@ -331,9 +331,10 @@ if _IN_BLENDER:
             name="Motif Size", default=0.3, min=0.01, max=10.0,
             description="Overall size of the comma motif")
         relief: FloatProperty(
-            name="Motif Relief", default=0.05, min=0.0, max=10.0,
-            description="Height of the raised comma above the "
-                        "sphere surface")
+            name="Motif Relief", default=-0.05, min=-10.0, max=10.0,
+            description="Negative carves the commas into the "
+                        "sphere (boolean difference); positive "
+                        "raises them above the surface")
         color_reflected: BoolProperty(
             name="Color Reflected Copies", default=False,
             description="Second material on the mirror-image "
@@ -374,7 +375,15 @@ if _IN_BLENDER:
             pts = R * p0 + np.outer(xy[:, 0], eu) \
                 + np.outer(xy[:, 1], ev)
             dirs = pts / np.linalg.norm(pts, axis=1, keepdims=True)
-            base = np.vstack((dirs * R, dirs * (R + h)))
+            carve = h < 0
+            if carve:
+                # cutter solids: from below the carve depth up to
+                # just above the surface, removed by boolean
+                depth = min(-h, 0.9 * R)
+                base = np.vstack((dirs * (R - depth),
+                                  dirs * (R * 1.001 + 0.1 * depth)))
+            else:
+                base = np.vstack((dirs * R, dirs * (R + h)))
             bump_faces = []
             for a, b, c in tris:
                 bump_faces.append((m + a, m + b, m + c))  # top cap
@@ -406,37 +415,113 @@ if _IN_BLENDER:
                              else 0] * len(fs))
             n_bump = len(faces)
 
-            # merge with the sphere shell
-            sv, sf = uv_sphere(R, self.resolution,
-                               max(4, self.resolution // 2))
-            off = len(verts)
-            verts.extend(sv)
-            faces.extend([tuple(off + i for i in f) for f in sf])
-            mats.extend([0] * len(sf))
+            if carve:
+                # sphere object minus the comma cutters
+                sv, sf = uv_sphere(R, self.resolution,
+                                   max(4, self.resolution // 2))
+                me = bpy.data.meshes.new("Symmetry Sphere")
+                me.from_pydata(sv, [], sf)
+                me.validate(clean_customdata=True)
+                sbm = bmesh.new()
+                sbm.from_mesh(me)
+                bmesh.ops.recalc_face_normals(sbm, faces=sbm.faces)
+                sbm.to_mesh(me)
+                sbm.free()
+                me.materials.append(
+                    _material("Symmetry Sphere", (0.85, 0.82, 0.75)))
+                me.polygons.foreach_set(
+                    'use_smooth', [True] * len(me.polygons))
+                me.update()
+                cme = bpy.data.meshes.new("SymmetryCutter")
+                cme.from_pydata(verts, [], faces)
+                cme.validate(clean_customdata=True)
+                cbm = bmesh.new()
+                cbm.from_mesh(cme)
+                bmesh.ops.recalc_face_normals(cbm, faces=cbm.faces)
+                cbm.to_mesh(cme)
+                cbm.free()
+                cme.materials.append(
+                    _material("Symmetry Sphere", (0.85, 0.82, 0.75)))
+                cme.materials.append(
+                    _material("Symmetry Sphere Mirror",
+                              (0.75, 0.30, 0.20)))
+                if self.color_reflected \
+                        and len(cme.polygons) == len(mats):
+                    cme.polygons.foreach_set('material_index', mats)
+                cme.update()
+                obj = bpy.data.objects.new("Symmetry Sphere", me)
+                context.collection.objects.link(obj)
+                cutter = bpy.data.objects.new("SymmetryCutter", cme)
+                context.collection.objects.link(cutter)
+                mod = obj.modifiers.new("Carve", 'BOOLEAN')
+                mod.operation = 'DIFFERENCE'
+                mod.object = cutter
+                # In the larger reflective groups adjacent comma
+                # cutters overlap; plain EXACT then yields an empty
+                # mesh.  EXACT with use_self resolves the cutter's
+                # self-intersections; FLOAT is the last resort.
+                carved = None
+                for solver, self_x in (('EXACT', True),
+                                       ('EXACT', False),
+                                       ('FLOAT', False)):
+                    try:
+                        mod.solver = solver
+                        mod.use_self = self_x
+                    except (TypeError, AttributeError):
+                        pass
+                    deps = context.evaluated_depsgraph_get()
+                    ev = obj.evaluated_get(deps)
+                    result = bpy.data.meshes.new_from_object(ev)
+                    if len(result.polygons):
+                        carved = result
+                        break
+                    bpy.data.meshes.remove(result)
+                if carved is None:      # give back the plain sphere
+                    self.report(
+                        {'WARNING'},
+                        "Boolean carve failed; sphere left uncut")
+                    carved = me.copy()
+                obj.modifiers.remove(mod)
+                old = obj.data
+                obj.data = carved
+                bpy.data.meshes.remove(old)
+                bpy.data.objects.remove(cutter, do_unlink=True)
+                bpy.data.meshes.remove(cme)
+                me = obj.data
+            else:
+                # merge with the sphere shell (overlapping union)
+                sv, sf = uv_sphere(R, self.resolution,
+                                   max(4, self.resolution // 2))
+                off = len(verts)
+                verts.extend(sv)
+                faces.extend([tuple(off + i for i in f)
+                              for f in sf])
+                mats.extend([0] * len(sf))
 
-            me = bpy.data.meshes.new("Symmetry Sphere")
-            me.from_pydata(verts, [], faces)
-            me.validate(clean_customdata=True)
-            bm = bmesh.new()
-            bm.from_mesh(me)
-            bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-            bm.to_mesh(me)
-            bm.free()
-            if len(me.polygons) == len(mats):
-                if self.color_reflected:
-                    me.materials.append(
-                        _material("Symmetry Sphere",
-                                  (0.85, 0.82, 0.75)))
-                    me.materials.append(
-                        _material("Symmetry Sphere Mirror",
-                                  (0.75, 0.30, 0.20)))
-                    me.polygons.foreach_set('material_index', mats)
-                smooth = ([False] * n_bump
-                          + [True] * (len(mats) - n_bump))
-                me.polygons.foreach_set('use_smooth', smooth)
-            me.update()
-            obj = bpy.data.objects.new("Symmetry Sphere", me)
-            context.collection.objects.link(obj)
+                me = bpy.data.meshes.new("Symmetry Sphere")
+                me.from_pydata(verts, [], faces)
+                me.validate(clean_customdata=True)
+                bm = bmesh.new()
+                bm.from_mesh(me)
+                bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+                bm.to_mesh(me)
+                bm.free()
+                if len(me.polygons) == len(mats):
+                    if self.color_reflected:
+                        me.materials.append(
+                            _material("Symmetry Sphere",
+                                      (0.85, 0.82, 0.75)))
+                        me.materials.append(
+                            _material("Symmetry Sphere Mirror",
+                                      (0.75, 0.30, 0.20)))
+                        me.polygons.foreach_set('material_index',
+                                                mats)
+                    smooth = ([False] * n_bump
+                              + [True] * (len(mats) - n_bump))
+                    me.polygons.foreach_set('use_smooth', smooth)
+                me.update()
+                obj = bpy.data.objects.new("Symmetry Sphere", me)
+                context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
             for o in context.selected_objects:
                 o.select_set(False)
