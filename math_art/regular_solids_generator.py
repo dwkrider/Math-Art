@@ -868,11 +868,97 @@ def _grow_partition(V, F, subgroup, seed):
         best = min(cand, key=lambda g: sum(
             (cents[g][k] - cen[k]) ** 2 for k in range(3)))
         take(best)
-    # compactness score: spread of piece 0
-    cen = [csum[k] / len(piece0) for k in range(3)]
-    score = max(sum((cents[f][k] - cen[k]) ** 2 for k in range(3))
-                for f in piece0)
-    return assign, score
+    return assign, None
+
+
+def _cut_pairs(V, F):
+    """(adj, pairs): face adjacency sets and one (a, b, length)
+    triple per shared edge, for boundary-length accounting."""
+    edges = {}
+    for fi, f in enumerate(F):
+        for i in range(len(f)):
+            e = (min(f[i], f[(i + 1) % len(f)]),
+                 max(f[i], f[(i + 1) % len(f)]))
+            edges.setdefault(e, []).append(fi)
+    adj = [set() for _ in range(len(F))]
+    pairs = []
+    for (va, vb), fs in edges.items():
+        if len(fs) == 2 and fs[0] != fs[1]:
+            adj[fs[0]].add(fs[1])
+            adj[fs[1]].add(fs[0])
+            l = math.dist(V[va], V[vb])
+            pairs.append((fs[0], fs[1], l))
+    return adj, pairs
+
+
+def _piece0_connected(assign, adj, want):
+    """Is the set of faces assigned to piece 0 edge-connected?"""
+    start = next((f for f, a in enumerate(assign) if a == 0), None)
+    if start is None:
+        return False
+    seen = {start}
+    stack = [start]
+    while stack:
+        f = stack.pop()
+        for g in adj[f]:
+            if assign[g] == 0 and g not in seen:
+                seen.add(g)
+                stack.append(g)
+    return len(seen) == want
+
+
+def _smooth_partition(F, subgroup, assign, adj, pairs):
+    """De-jag a fundamental-domain partition: hill-climb over the
+    face orbits, re-choosing which group copy of each orbit lands in
+    which piece whenever that shortens the total cut perimeter and
+    keeps piece 0 (hence, by symmetry, every piece) connected.
+    Mutates and returns assign, plus the final cut length."""
+    nf = len(F)
+    n = len(subgroup)
+    seen = set()
+    orbits = []
+    for f in range(nf):
+        if f not in seen:
+            orb = sorted({p[f] for p in subgroup})
+            seen.update(orb)
+            orbits.append(orb)
+    inc = [[] for _ in range(nf)]
+    for i, (a, b, l) in enumerate(pairs):
+        inc[a].append(i)
+        inc[b].append(i)
+    want = nf // n
+    for _ in range(60):                 # passes until stable
+        improved = False
+        for orb in orbits:
+            affected = sorted({i for x in orb for i in inc[x]})
+            base = sum(pairs[i][2] for i in affected
+                       if assign[pairs[i][0]] != assign[pairs[i][1]])
+            best_delta = -1e-9
+            best_map = None
+            for r in orb:
+                amap = {p[r]: j for j, p in enumerate(subgroup)}
+                if all(amap[x] == assign[x] for x in orb):
+                    continue
+                old = [assign[x] for x in orb]
+                for x in orb:
+                    assign[x] = amap[x]
+                cut = sum(pairs[i][2] for i in affected
+                          if assign[pairs[i][0]]
+                          != assign[pairs[i][1]])
+                if (cut - base < best_delta
+                        and _piece0_connected(assign, adj, want)):
+                    best_delta = cut - base
+                    best_map = amap
+                for x, o in zip(orb, old):
+                    assign[x] = o
+            if best_map is not None:
+                for x, v in best_map.items():
+                    assign[x] = v
+                improved = True
+        if not improved:
+            break
+    total = sum(l for a, b, l in pairs if assign[a] != assign[b])
+    return assign, total
 
 
 def split_congruent(V, F, n):
@@ -890,13 +976,19 @@ def split_congruent(V, F, n):
         return None, sorted(valid)
     best = None
     best_score = None
+    adj, pairs = _cut_pairs(V, F)
     for sub in _free_subgroups(perms, n):
         ident = tuple(range(len(F)))
         ordered = [ident] + [p for p in sub if p != ident]
         for seed in range(len(F)):
-            assign, score = _grow_partition(V, F, ordered, seed)
-            if assign is not None and (best_score is None
-                                       or score < best_score):
+            assign, _ = _grow_partition(V, F, ordered, seed)
+            if assign is None:
+                continue
+            # score = cut perimeter after de-jagging: shorter
+            # boundaries = smoother, more coherent shells
+            assign, score = _smooth_partition(F, ordered, assign,
+                                              adj, pairs)
+            if best_score is None or score < best_score:
                 best, best_score = assign, score
     return best, sorted(valid)
 
