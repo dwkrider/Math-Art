@@ -127,6 +127,14 @@ OPS = [
     ("woven polyhedron", lambda: bpy.ops.mesh.woven_polyhedron_add()),
     ("woven polyhedron flat", lambda: bpy.ops.mesh.woven_polyhedron_add(
         pen_curve=0.0, thickness=0.0, smooth_level=0)),
+    ("woven tetra", lambda: bpy.ops.mesh.woven_polyhedron_add(
+        solid='TETRA')),
+    ("woven cube", lambda: bpy.ops.mesh.woven_polyhedron_add(
+        solid='CUBE')),
+    ("woven octa", lambda: bpy.ops.mesh.woven_polyhedron_add(
+        solid='OCTA')),
+    ("woven icosa", lambda: bpy.ops.mesh.woven_polyhedron_add(
+        solid='ICOSA')),
     ("gilbert 3d", lambda: bpy.ops.curve.space_filling_add(
         kind='GILBERT3D', gw=12, gh=8, gd=4)),
     ("celtic knot", lambda: bpy.ops.curve.celtic_knot_add(

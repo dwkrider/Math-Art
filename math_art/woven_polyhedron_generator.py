@@ -1,29 +1,41 @@
 
 # Woven Polyhedron generator for Blender.
 #
-# A dual-polyhedron sculpture: an inset pentagon sits on every face
-# of a dodecahedron and an inset triangle on every face of its dual
-# icosahedron (the icosahedron built as the exact dual, so its faces
-# align with the dodecahedron's vertices).  A twisted bezier ribbon
-# bridges each pentagon edge to one triangle edge, and the whole
-# thing is welded into ONE closed shell so a Solidify + Subdivision
-# pair can thicken it and round the corners.
+# A dual-polyhedron sculpture generalized to any Platonic solid: an
+# inset polygon sits on every face of the chosen OUTER solid, and an
+# inset polygon on every face of its dual INNER solid (built as the
+# exact dual, so the inner faces align with the outer solid's
+# vertices).  A twisted bezier ribbon bridges each outer-polygon edge
+# to one inner-polygon edge, and the whole thing is welded into ONE
+# closed shell so a Solidify + Subdivision pair can thicken it and
+# round the corners.
 #
-# Each pentagon fans out five ribbons that swirl to the surrounding
-# triangles; the pentagon/triangle spins, sizes, curvatures and the
-# ribbon width profile are all adjustable.  The ribbon-to-triangle
-# edge pairing is topological (rotation-proof) and folds with the
-# triangle's 120-degree symmetry, so the weave stays consistent at
-# any spin angle.
+#   OUTER      INNER (dual)   outer faces   inner polygons (vertex
+#   solid                     (n-gons)      degree m)
+#   ------     ------------   -----------   ---------------------
+#   tetra      tetrahedron    triangles     triangles (m=3)
+#   cube       octahedron     squares       triangles (m=3)
+#   octa       cube           triangles     squares    (m=4)
+#   dodeca     icosahedron    pentagons     triangles  (m=3)
+#   icosa      dodecahedron   triangles     pentagons  (m=5)
+#
+# Each outer polygon fans out one ribbon per edge that swirls to a
+# neighbouring inner polygon.  The outer-edge -> inner-edge pairing is
+# topological (rotation-proof): outer face f edge (v_i -> v_i+1) binds
+# to the inner polygon at the forward vertex v_i+1, at edge index
+# (j + step) % m, where j is f's position in the ring of faces around
+# that vertex and step = round(inner_spin / (360/m)) folds the pairing
+# with the inner polygon's m-fold symmetry.  This is a clean bijection
+# (every inner edge receives exactly one ribbon) for every solid and
+# at every spin angle.
 
 bl_info = {
     "name": "Woven Polyhedron",
     "author": "Math Art project",
-    "version": (1, 0, 0),
+    "version": (1, 1, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Woven Polyhedron",
-    "description": "Ribbons weaving a dodecahedron to its dual "
-                   "icosahedron",
+    "description": "Ribbons weaving a Platonic solid to its dual",
     "category": "Add Mesh",
 }
 
@@ -33,21 +45,16 @@ try:
     import bpy
     import bmesh
     from mathutils import Vector, Matrix
-    from bpy.props import (FloatProperty, IntProperty, BoolProperty)
+    from bpy.props import (FloatProperty, IntProperty, BoolProperty,
+                           EnumProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
 
 
 PHI = (1 + 5 ** 0.5) / 2
-R_DOD = 1.0
 
-
-# ---------------------------------------------------------------- #
-#  parameter-independent base data (icosahedron + its dual)        #
-# ---------------------------------------------------------------- #
-
-# icosahedron verts / faces (the seed) ...
+# icosahedron (seed for the icosa / dodeca pair) ...
 IV = [(-1, PHI, 0), (1, PHI, 0), (-1, -PHI, 0), (1, -PHI, 0),
       (0, -1, PHI), (0, 1, PHI), (0, -1, -PHI), (0, 1, -PHI),
       (PHI, 0, -1), (PHI, 0, 1), (-PHI, 0, -1), (-PHI, 0, 1)]
@@ -56,42 +63,142 @@ IF = [(0, 11, 5), (0, 5, 1), (0, 1, 7), (0, 7, 10), (0, 10, 11),
       (3, 9, 4), (3, 4, 2), (3, 2, 6), (3, 6, 8), (3, 8, 9),
       (4, 9, 5), (2, 4, 11), (6, 2, 10), (8, 6, 7), (9, 8, 1)]
 
+SOLID_ITEMS = [
+    ('TETRA', "Tetrahedron", "Self-dual: triangles woven to "
+                             "triangles"),
+    ('CUBE', "Cube", "Cube woven to its dual octahedron"),
+    ('OCTA', "Octahedron", "Octahedron woven to its dual cube"),
+    ('DODECA', "Dodecahedron", "Dodecahedron woven to its dual "
+                               "icosahedron"),
+    ('ICOSA', "Icosahedron", "Icosahedron woven to its dual "
+                             "dodecahedron"),
+]
 
-if _IN_BLENDER:
-    IVv = [Vector(v) for v in IV]
-    ICIRC = IVv[0].length
-    # dodecahedron vertices are the icosahedron's face centroids
-    # (unit sphere); its faces are the centroids around each icosa
-    # vertex ordered by angle -> exact dual, faces meet the
-    # icosahedron's vertices.
-    CENT = [((IVv[a] + IVv[b] + IVv[c]) / 3.0) for a, b, c in IF]
-    CDIR = [c.normalized() for c in CENT]
-    DOD_VERTS = [d * R_DOD for d in CDIR]
-    DOD_FACES = []
-    for _vi in range(12):
-        _ring = [fi for fi, f in enumerate(IF) if _vi in f]
-        _n = IVv[_vi].normalized()
-        _ref = Vector((0, 0, 1)) if abs(_n.z) < 0.9 \
-            else Vector((1, 0, 0))
-        _u = _n.cross(_ref).normalized()
-        _w = _n.cross(_u)
-        _ring.sort(key=lambda fi: math.atan2(CDIR[fi].dot(_w),
-                                             CDIR[fi].dot(_u)))
-        DOD_FACES.append(_ring)
+# Per-solid default parameters, loaded when the Outer Solid selector
+# changes.  Each solid's few large or many small faces want their own
+# sizes / spins / curvature, so one shared default cannot suit them
+# all.  DODECA also supplies the operator's property defaults (below).
+_PRESETS = {
+    'TETRA': dict(tri_rot=90.0, pen_rot=-31.29, pen_inset=0.12,
+                  tri_inset=0.12, r_ico=0.64, pen_curve=0.06,
+                  tri_curve=0.0, handle_pen=1.86, handle_tri=0.40,
+                  mid_width=0.29, width_pen=50.65, width_tri=0.0,
+                  rib_samples=14),
+    'CUBE': dict(tri_rot=90.0, pen_rot=-31.29, pen_inset=0.12,
+                 tri_inset=0.21, r_ico=0.64, pen_curve=1.00,
+                 tri_curve=0.0, handle_pen=1.86, handle_tri=0.40,
+                 mid_width=0.25, width_pen=50.65, width_tri=0.0,
+                 rib_samples=14),
+    'OCTA': dict(tri_rot=67.98, pen_rot=-30.00, pen_inset=0.12,
+                 tri_inset=0.38, r_ico=0.55, pen_curve=0.40,
+                 tri_curve=0.0, handle_pen=1.86, handle_tri=0.40,
+                 mid_width=0.25, width_pen=50.65, width_tri=0.0,
+                 rib_samples=14),
+    'DODECA': dict(tri_rot=90.0, pen_rot=-18.66, pen_inset=0.32,
+                   tri_inset=0.15, r_ico=0.76, pen_curve=1.05,
+                   tri_curve=0.0, handle_pen=1.5, handle_tri=0.40,
+                   mid_width=0.29, width_pen=50.65, width_tri=0.0,
+                   rib_samples=14),
+    'ICOSA': dict(tri_rot=67.98, pen_rot=-23.85, pen_inset=0.21,
+                  tri_inset=0.38, r_ico=0.55, pen_curve=0.40,
+                  tri_curve=0.0, handle_pen=1.71, handle_tri=0.40,
+                  mid_width=0.25, width_pen=50.65, width_tri=0.0,
+                  rib_samples=14),
+}
+
+
+# ---------------------------------------------------------------- #
+#  polyhedron + dual construction                                  #
+# ---------------------------------------------------------------- #
+
+def _orient_faces(V, F):
+    """Reorder each face's vertices CCW as seen from outside (the
+    face normal is the outward centroid direction), so edge traversal
+    and the swirl are consistent everywhere."""
+    out = []
+    for f in F:
+        pts = [V[i] for i in f]
+        c = sum(pts, Vector()) / len(pts)
+        n = c.normalized() if c.length > 1e-9 else Vector((0, 0, 1))
+        ref = V[f[0]] - c
+        ref = (ref - n * ref.dot(n)).normalized()
+        sid = n.cross(ref)
+        idx = sorted(f, key=lambda i: math.atan2(
+            (V[i] - c).dot(sid), (V[i] - c).dot(ref)))
+        out.append(tuple(idx))
+    return out
+
+
+def _dual_data(V, F):
+    """Dual of the (normalized) solid (V, F): one dual vertex per
+    face (the unit face centroid) and, per solid vertex, the ring of
+    incident faces ordered CCW -- that ring is the dual face sitting
+    at the vertex."""
+    Vd = [(sum((V[i] for i in f), Vector()) / len(f)).normalized()
+          for f in F]
+    rings = []
+    for v in range(len(V)):
+        inc = [fi for fi, f in enumerate(F) if v in f]
+        n = V[v].normalized()
+        ref = Vd[inc[0]] - n * Vd[inc[0]].dot(n)
+        ref = ref.normalized()
+        sid = n.cross(ref)
+        inc.sort(key=lambda fi: math.atan2(Vd[fi].dot(sid),
+                                           Vd[fi].dot(ref)))
+        rings.append(inc)
+    return Vd, rings
+
+
+def _base(name):
+    """Raw (verts, faces) for a Platonic solid, centered at the
+    origin (faces as index tuples, winding fixed later)."""
+    if name == 'ICOSA':
+        return [Vector(v) for v in IV], [tuple(f) for f in IF]
+    if name == 'DODECA':
+        Vp = [Vector(v).normalized() for v in IV]
+        Fp = _orient_faces(Vp, [tuple(f) for f in IF])
+        Vd, rings = _dual_data(Vp, Fp)
+        return [v.copy() for v in Vd], [tuple(r) for r in rings]
+    if name == 'TETRA':
+        V = [Vector(v) for v in ((1, 1, 1), (1, -1, -1),
+                                 (-1, 1, -1), (-1, -1, 1))]
+        return V, [(0, 1, 2), (0, 1, 3), (0, 2, 3), (1, 2, 3)]
+    if name == 'CUBE':
+        V = [Vector((x, y, z)) for x in (-1, 1) for y in (-1, 1)
+             for z in (-1, 1)]
+        F = [tuple(i for i, v in enumerate(V) if v[ax] == sg)
+             for ax in range(3) for sg in (-1, 1)]
+        return V, F
+    if name == 'OCTA':
+        V = [Vector(v) for v in ((1, 0, 0), (-1, 0, 0), (0, 1, 0),
+                                 (0, -1, 0), (0, 0, 1), (0, 0, -1))]
+        F = [(0 if sx > 0 else 1, 2 if sy > 0 else 3,
+              4 if sz > 0 else 5)
+             for sx in (1, -1) for sy in (1, -1) for sz in (1, -1)]
+        return V, F
+    raise ValueError(name)
+
+
+def solid(name):
+    """(Vp, Fp, Vd, rings, m) for the chosen outer solid: unit-radius
+    verts, CCW faces, dual verts (one per face), vertex rings (the
+    dual faces) and the vertex degree m (= inner-polygon sides)."""
+    V, F = _base(name)
+    Vp = [v.normalized() for v in V]
+    Fp = _orient_faces(Vp, F)
+    Vd, rings = _dual_data(Vp, Fp)
+    return Vp, Fp, Vd, rings, len(rings[0])
 
 
 # ---------------------------------------------------------------- #
 #  geometry helpers                                                #
 # ---------------------------------------------------------------- #
 
-def poly_data(verts, faces):
-    out = []
-    for f in faces:
-        vs = [Vector(verts[i]) for i in f]
-        c = sum(vs, Vector()) / len(vs)
-        nrm = (vs[1] - vs[0]).cross(vs[2] - vs[0]).normalized()
-        out.append({"verts": vs, "center": c, "normal": nrm})
-    return out
+def _fd(vs):
+    """face-data dict {verts, center, normal} for a polygon."""
+    c = sum(vs, Vector()) / len(vs)
+    nrm = (vs[1] - vs[0]).cross(vs[2] - vs[0]).normalized()
+    return {"verts": list(vs), "center": c, "normal": nrm}
 
 
 def inset_faces(faces, factor):
@@ -130,10 +237,10 @@ def wprofile(w0, w1, mid, ap, at, t):
     Endpoints stay exact."""
     wmid = mid * (w0 + w1)
     if t <= 0.5:
-        s = 2.0 * t                        # 0..1 over pentagon half
+        s = 2.0 * t                        # 0..1 over the outer half
         we, k = w0, ap
     else:
-        s = 2.0 * (1.0 - t)                # 1..0 over triangle half
+        s = 2.0 * (1.0 - t)                # 1..0 over the inner half
         we, k = w1, at
     e = 1.0 - max(0.0, 1.0 - s) ** (1.0 + k)   # ease: linear at k=0
     return max(0.0, we + (wmid - we) * e)
@@ -193,43 +300,32 @@ def _edge_tangents(fd, curve):
     return out
 
 
-def pent_edges(faces, corner_idx, curve):
-    out = []
-    for fi, fd in enumerate(faces):
-        vs = fd["verts"]
-        et = _edge_tangents(fd, curve)
-        for i in range(len(vs)):
-            m, t, nsurf = et[i]
-            out.append({"m": m, "t": t, "n": nsurf,
-                        "left": corner_idx[fi][(i + 1) % len(vs)],
-                        "a": vs[i], "b": vs[(i + 1) % len(vs)],
-                        "pent": fi})
-    return out
-
-
-def tri_face_edges(faces, curve):
-    per = []
-    for fd in faces:
-        vs = fd["verts"]
-        et = _edge_tangents(fd, curve)
-        es = [{"m": et[i][0], "t": et[i][1], "n": et[i][2],
-               "a": vs[i], "b": vs[(i + 1) % len(vs)]}
-              for i in range(len(vs))]
-        per.append(es)
-    return per
+def _poly_edges(fd, curve):
+    """list of {m, t, n, a, b} edge records for a capped face."""
+    vs = fd["verts"]
+    et = _edge_tangents(fd, curve)
+    return [{"m": et[i][0], "t": et[i][1], "n": et[i][2],
+             "a": vs[i], "b": vs[(i + 1) % len(vs)]}
+            for i in range(len(vs))]
 
 
 def build(p):
-    """Return (verts, faces) for the woven sculpture described by the
-    parameter bag `p`.  Everything accumulates into ONE welded vertex
-    pool: the ribbon ends coincide with the pentagon / triangle edge
-    verts, so they fuse and the Subdivision Surface smooths across the
-    junctions instead of treating the parts as loose pieces."""
-    ico_verts = [v * (p.r_ico / ICIRC) for v in IVv]
-    pen = inset_faces(poly_data(DOD_VERTS, DOD_FACES), p.pen_inset)
-    tri = inset_faces(poly_data(ico_verts, IF), p.tri_inset)
-    spin_faces(tri, p.tri_rot)          # + = CCW
-    spin_faces(pen, -p.pen_rot)         # pen_rot + = CW
+    """Return (verts, faces) for the woven sculpture.  Everything
+    accumulates into ONE welded vertex pool: the ribbon ends coincide
+    with the outer / inner polygon edge verts, so they fuse and the
+    Subdivision Surface smooths across the junctions instead of
+    treating the parts as loose pieces."""
+    Vp, Fp, Vd, rings, m = solid(p.solid)
+    r_in = p.r_ico
+    # outer inset polygons, one per face; inner inset polygons, one
+    # per vertex (the dual face there = the ring of face-centroids)
+    outer = inset_faces([_fd([Vp[i] for i in f]) for f in Fp],
+                        p.pen_inset)
+    inner = inset_faces([_fd([Vd[fi] * r_in for fi in rings[v]])
+                         for v in range(len(Vp))], p.tri_inset)
+    spin_faces(inner, p.tri_rot)        # + = CCW
+    spin_faces(outer, -p.pen_rot)       # outer spin + = CW
+
     verts, faces = [], []
     vid = {}
 
@@ -242,65 +338,69 @@ def build(p):
             verts.append((v[0], v[1], v[2]))
         return i
 
-    for fd in pen:
+    for fd in outer:
         cv, tr = cap_faces(fd, p.pen_curve)
         idx = [add(v) for v in cv]
         for f in tr:
             faces.append([idx[i] for i in f])
-    for fd in tri:
+    for fd in inner:
         cv, tr = cap_faces(fd, p.tri_curve)
         idx = [add(v) for v in cv]
         for f in tr:
             faces.append([idx[i] for i in f])
 
-    pen_ed = pent_edges(pen, DOD_FACES, p.pen_curve)
-    tri_per = tri_face_edges(tri, p.tri_curve)
+    inner_edges = [_poly_edges(inner[v], p.tri_curve)
+                   for v in range(len(Vp))]
     N = p.rib_samples
-    # the triangle is 120-symmetric, so the target edge index folds
-    # by the number of 120 turns: default spin 90 reproduces the
-    # confirmed layout (edge shift -1, verified numerically) and each
-    # extra 120 steps it by one -> correct at any angle.
-    step = -1 + round((p.tri_rot - 90.0) / 120.0)
-    for pe in pen_ed:
-        k = pe["left"]
-        j = IF[k].index(pe["pent"])
-        te = tri_per[k][(j - 1 + step) % 3]
-        p0, tp = pe["m"], pe["t"]
-        q, tq = te["m"], te["t"]
-        if tq.dot(p0 - q) < 0:
-            tq = -tq
-        span = (q - p0).length
-        Hp = p.handle_pen * span
-        Ht = p.handle_tri * span
-        pa, pb = pe["a"], pe["b"]
-        qa, qb = te["a"], te["b"]
-        if ((pa - qa).length + (pb - qb).length
-                > (pa - qb).length + (pb - qa).length):
-            qa, qb = qb, qa
-        cpA = [pa, pa + Hp * tp, qa + Ht * tq, qa]
-        cpB = [pb, pb + Hp * tp, qb + Ht * tq, qb]
-        # keep the centreline + twist from the two rails, but drive
-        # the half-width by its own profile (endpoints stay pinned)
-        Wp = (pa - pb).length / 2.0
-        Wq = (qa - qb).length / 2.0
-        rows = []
-        for s in range(N + 1):
-            t = s / N
-            A = bez(cpA, t)
-            B = bez(cpB, t)
-            d = B - A
-            dl = d.length
-            if dl > 1e-9:
-                c = (A + B) / 2.0
-                w = wprofile(Wp, Wq, p.mid_width,
-                             p.width_pen, p.width_tri, t)
-                A = c - w * (d / dl)
-                B = c + w * (d / dl)
-            rows.append((add(A), add(B)))
-        for s in range(N):
-            a0, b0 = rows[s]
-            a1, b1 = rows[s + 1]
-            faces.append([a0, b0, b1, a1])
+    # the inner polygon is m-fold symmetric, so the target edge index
+    # folds by the number of full turns: step = 0 binds each outer
+    # edge to the dual edge directly below it, and each 360/m of inner
+    # spin steps it by one -> a flip-free bijection at any angle.
+    step = round(p.tri_rot / (360.0 / m))
+    for fidx, f in enumerate(Fp):
+        oe = _poly_edges(outer[fidx], p.pen_curve)
+        n = len(f)
+        for i in range(n):
+            vb = f[(i + 1) % n]                 # forward vertex
+            j = rings[vb].index(fidx)
+            te = inner_edges[vb][(j + step) % m]
+            pe = oe[i]
+            p0, tp = pe["m"], pe["t"]
+            q, tq = te["m"], te["t"]
+            if tq.dot(p0 - q) < 0:
+                tq = -tq
+            span = (q - p0).length
+            Hp = p.handle_pen * span
+            Ht = p.handle_tri * span
+            pa, pb = pe["a"], pe["b"]
+            qa, qb = te["a"], te["b"]
+            if ((pa - qa).length + (pb - qb).length
+                    > (pa - qb).length + (pb - qa).length):
+                qa, qb = qb, qa
+            cpA = [pa, pa + Hp * tp, qa + Ht * tq, qa]
+            cpB = [pb, pb + Hp * tp, qb + Ht * tq, qb]
+            # keep the centreline + twist from the two rails, but
+            # drive the half-width by its profile (endpoints pinned)
+            Wp = (pa - pb).length / 2.0
+            Wq = (qa - qb).length / 2.0
+            rows = []
+            for s in range(N + 1):
+                t = s / N
+                A = bez(cpA, t)
+                B = bez(cpB, t)
+                d = B - A
+                dl = d.length
+                if dl > 1e-9:
+                    c = (A + B) / 2.0
+                    w = wprofile(Wp, Wq, p.mid_width,
+                                 p.width_pen, p.width_tri, t)
+                    A = c - w * (d / dl)
+                    B = c + w * (d / dl)
+                rows.append((add(A), add(B)))
+            for s in range(N):
+                a0, b0 = rows[s]
+                a1, b1 = rows[s + 1]
+                faces.append([a0, b0, b1, a1])
     return verts, faces
 
 
@@ -310,76 +410,79 @@ def build(p):
 
 if _IN_BLENDER:
 
-    class _Bag:
-        """lightweight parameter bag so build() is decoupled from the
-        operator (also handy for headless tests)."""
-        def __init__(self, **kw):
-            self.__dict__.update(kw)
+    def _load_preset(self, context):
+        """Adjust-Last-Operation callback: load a solid's default
+        parameters when the Outer Solid selector changes."""
+        preset = _PRESETS.get(self.solid)
+        if preset:
+            for key, val in preset.items():
+                setattr(self, key, val)
 
     class MESH_OT_woven_polyhedron_add(bpy.types.Operator):
         """Add a woven polyhedron: twisted ribbons bridging the inset
-        pentagons of a dodecahedron to the inset triangles of its dual
-        icosahedron, welded into one shell with Solidify + Subdivision
-        so it can be thickened and smoothed"""
+        faces of a Platonic solid to the inset faces of its dual,
+        welded into one shell with Solidify + Subdivision so it can be
+        thickened and smoothed"""
         bl_idname = "mesh.woven_polyhedron_add"
         bl_label = "Woven Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
+        solid: EnumProperty(
+            name="Outer Solid", items=SOLID_ITEMS, default='DODECA',
+            update=_load_preset,
+            description="Platonic solid on the outside; its dual is "
+                        "woven on the inside (switching loads that "
+                        "solid's default parameters)")
         tri_rot: FloatProperty(
-            name="Triangle Spin", default=90.0, min=-720, max=720,
-            description="Spin of every triangle about its face "
-                        "normal (degrees); folds with the triangle's "
-                        "120-degree symmetry")
+            name="Inner Spin", default=90.0, min=-720, max=720,
+            description="Spin of every inner polygon about its face "
+                        "normal (degrees); folds with the inner "
+                        "polygon's rotational symmetry")
         pen_rot: FloatProperty(
-            name="Pentagon Spin", default=-18.66, min=-720, max=720,
-            description="Spin of every pentagon about its face "
+            name="Outer Spin", default=-18.66, min=-720, max=720,
+            description="Spin of every outer polygon about its face "
                         "normal (degrees)")
         pen_inset: FloatProperty(
-            name="Pentagon Size", default=0.32, min=0.05, max=1.0,
-            description="Inset pentagon size as a fraction of the "
-                        "dodecahedron face")
+            name="Outer Size", default=0.32, min=0.05, max=1.0,
+            description="Inset outer polygon size as a fraction of "
+                        "its face")
         tri_inset: FloatProperty(
-            name="Triangle Size", default=0.15, min=0.05, max=1.0,
-            description="Inset triangle size as a fraction of the "
-                        "icosahedron face")
+            name="Inner Size", default=0.15, min=0.05, max=1.0,
+            description="Inset inner polygon size as a fraction of "
+                        "its face")
         r_ico: FloatProperty(
-            name="Icosahedron Size", default=0.76, min=0.2, max=2.5,
-            description="Icosahedron circumradius (dodecahedron is "
-                        "fixed at 1)")
+            name="Inner Scale", default=0.76, min=0.2, max=2.5,
+            description="Radius of the inner (dual) solid; the outer "
+                        "solid is fixed at 1")
         pen_curve: FloatProperty(
-            name="Pentagon Curvature", default=1.05, min=0.0,
-            max=2.0,
-            description="Dome each pentagon toward a sphere through "
-                        "its corners (0 = flat)")
+            name="Outer Curvature", default=1.05, min=0.0, max=2.0,
+            description="Dome each outer polygon toward a sphere "
+                        "through its corners (0 = flat)")
         tri_curve: FloatProperty(
-            name="Triangle Curvature", default=0.0, min=0.0,
-            max=2.0,
-            description="Dome each triangle toward a sphere (0 = "
-                        "flat)")
+            name="Inner Curvature", default=0.0, min=0.0, max=2.0,
+            description="Dome each inner polygon toward a sphere "
+                        "(0 = flat)")
         handle_pen: FloatProperty(
-            name="Stiffness (Pentagon)", default=1.5, min=0.0,
-            max=3.0,
+            name="Stiffness (Outer)", default=1.5, min=0.0, max=3.0,
             description="Length of the bezier handle leaving the "
-                        "pentagon edge (higher = straighter exit)")
+                        "outer edge (higher = straighter exit)")
         handle_tri: FloatProperty(
-            name="Stiffness (Triangle)", default=0.4, min=0.0,
-            max=3.0,
+            name="Stiffness (Inner)", default=0.4, min=0.0, max=3.0,
             description="Length of the bezier handle leaving the "
-                        "triangle edge")
+                        "inner edge")
         mid_width: FloatProperty(
             name="Middle Width", default=0.29, min=0.0, max=1.5,
             description="Ribbon width at the middle as a fraction of "
                         "the endpoint sum (0.5 = linear midpoint, "
                         "less = a waist)")
         width_pen: FloatProperty(
-            name="Taper (Pentagon)", default=50.65, min=0.0,
-            max=100.0,
-            description="How fast the pentagon half reaches the "
-                        "middle width (0 = linear)")
+            name="Taper (Outer)", default=50.65, min=0.0, max=100.0,
+            description="How fast the outer half reaches the middle "
+                        "width (0 = linear)")
         width_tri: FloatProperty(
-            name="Taper (Triangle)", default=0.0, min=0.0, max=100.0,
-            description="How fast the triangle half reaches the "
-                        "middle width (0 = linear)")
+            name="Taper (Inner)", default=0.0, min=0.0, max=100.0,
+            description="How fast the inner half reaches the middle "
+                        "width (0 = linear)")
         rib_samples: IntProperty(
             name="Ribbon Segments", default=14, min=2, max=40,
             description="Lengthwise segments per ribbon")
@@ -433,13 +536,15 @@ if _IN_BLENDER:
                 sub.levels = self.smooth_level
                 sub.render_levels = self.smooth_level
             self.report({'INFO'},
-                        f"Woven Polyhedron: V={len(me.vertices)} "
-                        f"F={len(me.polygons)}")
+                        f"Woven {self.solid.title()}: "
+                        f"V={len(me.vertices)} F={len(me.polygons)}")
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
+            lay.prop(self, "solid")
+            lay.separator()
             for prop in ("tri_rot", "pen_rot", "pen_inset",
                          "tri_inset", "r_ico", "pen_curve",
                          "tri_curve", "handle_pen", "handle_tri",
