@@ -1,0 +1,35 @@
+# Organic Wireframe
+
+![Organic Wireframe](../images/organic_wireframe.png)
+
+## Overview
+
+Organic Wireframe is a **Styles operator applied to a selected existing object**, not a standalone add-mesh generator: with a mesh active, it gives that mesh the classic "parametric Voronoi sphere" look as a live, non-destructive modifier stack (Triangulate → Decimate collapse → Wireframe → Subdivision). The render image was produced by applying the style to a base shape. Everything stays editable in the modifier stack afterwards — the operator only builds the stack and sets smooth shading — and it works on any mesh, including open minimal-surface patches, whose rims are kept.
+
+## Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| Cell Coarseness | 0.12 | Decimate collapse ratio: lower keeps fewer, larger cells; range 0.005–1.0 |
+| Strut Thickness | 0.04 | Wireframe strut thickness; range 0.001–1.0 |
+| Smoothing Levels | 2 | Subdivision levels rounding the struts; range 0–4 |
+| Triangulate First | On | Triangulate before decimating, so quad grids melt into irregular cells rather than stripes |
+| Even Thickness | On | Maintain strut thickness at sharp corners (Wireframe even offset) |
+
+## How it works
+
+The whole effect is a chain of four standard Blender modifiers stacked on the active object; nothing is baked, so each stage stays adjustable in the modifier panel.
+
+1. **Triangulate** (optional, on by default, with `min_vertices = 4`). Converts faces to triangles first, so a regular quad grid melts into irregular cells under the collapse instead of collapsing into stripes.
+
+2. **Decimate — Collapse** at ratio $r$ = **Cell Coarseness**. Collapsing the even triangulation at a low ratio merges vertices unevenly, producing irregular, Voronoi-looking cells. Lower $r$ keeps fewer, larger cells; higher $r$ keeps a finer mesh.
+
+3. **Wireframe** with thickness = **Strut Thickness**, `use_replace` on (faces are replaced by the lattice), `use_boundary` on (open surfaces keep their rim), and `use_even_offset` = **Even Thickness** (keeps strut width uniform at sharp corners). This replaces each cell face with a frame of struts along the cell edges.
+
+4. **Subdivision Surface** at levels = **Smoothing Levels** (render levels are at least 2). Catmull–Clark subdivision rounds the angular lattice into smooth, organic branches. Finally every polygon is set to smooth shading.
+
+Because the cell layout comes from a *Decimate collapse* of the triangulated mesh rather than a true Voronoi diagram, the cells are only Voronoi-*looking*; the appeal is that the entire pipeline is procedural and live — tune any slider, or apply the stack to make it permanent.
+
+## References
+
+- The "parametric Voronoi sphere" modifier stack (Triangulate → Decimate → Wireframe → Subdivision Surface) is a well-known Blender community technique; this operator packages it as a one-click, adjustable style. No single external source is cited in the module.

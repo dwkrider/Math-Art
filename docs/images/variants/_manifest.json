@@ -1,0 +1,766 @@
+{
+ "curiosity_surface": [
+  [
+   "FRESNEL",
+   "Fresnel Elasticity"
+  ],
+  [
+   "PAPERBAG",
+   "Paper Bag"
+  ],
+  [
+   "TRIHYPERBOLOID",
+   "Trihyperboloid"
+  ]
+ ],
+ "geodesic": [
+  [
+   "ICOSA",
+   "Icosahedron"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "GOLDBERG",
+   "Goldberg Dual"
+  ]
+ ],
+ "scherk_collins": [
+  [
+   "HEX",
+   "Hyperbolic Hexagon"
+  ],
+  [
+   "TREFOIL",
+   "Minimal Trefoil"
+  ],
+  [
+   "MONKEY",
+   "Monkey-Saddle Trefoil"
+  ],
+  [
+   "HEPTOROID",
+   "Heptoroid"
+  ],
+  [
+   "TOWER",
+   "Scherk Tower"
+  ]
+ ],
+ "parametric_minimal": [
+  [
+   "ENNEPER",
+   "Enneper"
+  ],
+  [
+   "CATENOID",
+   "Catenoid"
+  ],
+  [
+   "HELICOID",
+   "Helicoid"
+  ],
+  [
+   "HENNEBERG",
+   "Henneberg"
+  ],
+  [
+   "CATALAN",
+   "Catalan"
+  ],
+  [
+   "BOUR",
+   "Bour"
+  ],
+  [
+   "RICHMOND",
+   "Richmond"
+  ],
+  [
+   "SCHERK1",
+   "Scherk"
+  ],
+  [
+   "COSTA",
+   "Costa"
+  ],
+  [
+   "COSTA_HM",
+   "Costa-Hoffman-Meeks (genus 3)"
+  ],
+  [
+   "CHEN_GACK",
+   "Chen-Gackstatter"
+  ],
+  [
+   "KNOID",
+   "Jorge-Meeks k-noid"
+  ],
+  [
+   "CATHEL",
+   "Catenoid-Helicoid"
+  ]
+ ],
+ "tpms": [
+  [
+   "P",
+   "Schwarz P"
+  ],
+  [
+   "D",
+   "Schwarz D"
+  ],
+  [
+   "G",
+   "Gyroid"
+  ],
+  [
+   "NEOVIUS",
+   "Neovius"
+  ],
+  [
+   "IWP",
+   "Schoen I-WP"
+  ],
+  [
+   "FRD",
+   "Schoen F-RD"
+  ],
+  [
+   "LIDINOID",
+   "Lidinoid"
+  ],
+  [
+   "SPLITP",
+   "Split P"
+  ],
+  [
+   "SCHERKT",
+   "Scherk Tower"
+  ]
+ ],
+ "seifert": [
+  [
+   "TREFOIL",
+   "Trefoil (3_1)"
+  ],
+  [
+   "FIGURE8",
+   "Figure-8 (4_1)"
+  ],
+  [
+   "CINQUEFOIL",
+   "Cinquefoil (5_1)"
+  ],
+  [
+   "GRANNY",
+   "Granny"
+  ],
+  [
+   "SQUARE",
+   "Square"
+  ],
+  [
+   "HOPF",
+   "Hopf link"
+  ],
+  [
+   "SOLOMON",
+   "Solomon's link"
+  ],
+  [
+   "BORROMEAN",
+   "Borromean rings"
+  ],
+  [
+   "TORUS",
+   "Torus knot"
+  ]
+ ],
+ "algebraic": [
+  [
+   "CLEBSCH",
+   "Clebsch Cubic"
+  ],
+  [
+   "CAYLEY",
+   "Cayley Nodal Cubic"
+  ],
+  [
+   "KUMMER",
+   "Kummer Quartic"
+  ],
+  [
+   "BARTH",
+   "Barth Sextic"
+  ],
+  [
+   "TOGLIATTI",
+   "Togliatti Quintic"
+  ],
+  [
+   "HEART",
+   "Taubin Heart"
+  ],
+  [
+   "DINGDONG",
+   "Ding-dong"
+  ],
+  [
+   "CHMUTOV",
+   "Chmutov Sextic"
+  ],
+  [
+   "TANGLE",
+   "Tangle Cube"
+  ]
+ ],
+ "topological": [
+  [
+   "KLEIN",
+   "Klein Bottle"
+  ],
+  [
+   "KLEIN8",
+   "Klein Bottle (Fig-8)"
+  ],
+  [
+   "CROSSCAP",
+   "Cross-Cap"
+  ],
+  [
+   "ROMAN",
+   "Roman Surface"
+  ],
+  [
+   "BOY",
+   "Boy's Surface"
+  ],
+  [
+   "GENUS",
+   "Genus-g Surface"
+  ],
+  [
+   "TWIST_STRIP",
+   "Twisted Strip"
+  ]
+ ],
+ "regular_solids": [
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "ICOSA",
+   "Icosahedron"
+  ]
+ ],
+ "zonohedra": [
+  [
+   "POLAR",
+   "Polar Zonohedron"
+  ],
+  [
+   "SPIRAL",
+   "Rhombic Spirallohedron"
+  ],
+  [
+   "RHOMBIC_DODECA",
+   "Rhombic Dodecahedron"
+  ],
+  [
+   "TRIACONTA",
+   "Rhombic Triacontahedron"
+  ],
+  [
+   "ENNEACONTA",
+   "Rhombic Enneacontahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ]
+ ],
+ "polytope4d": [
+  [
+   "CELL5",
+   "5-cell"
+  ],
+  [
+   "CELL8",
+   "Tesseract"
+  ],
+  [
+   "CELL16",
+   "16-cell"
+  ],
+  [
+   "CELL24",
+   "24-cell"
+  ],
+  [
+   "CELL120",
+   "120-cell"
+  ],
+  [
+   "CELL600",
+   "600-cell"
+  ]
+ ],
+ "spiked_polyhedron": [
+  [
+   "SPIKED",
+   "Spiked"
+  ],
+  [
+   "HYPER",
+   "Hyperbolic"
+  ],
+  [
+   "MODERN",
+   "Folded Rhombic Hexecontahedron"
+  ],
+  [
+   "RHOMBIC",
+   "Rhombic Hexecontahedron"
+  ]
+ ],
+ "hyperbolic_honeycomb": [
+  [
+   "H435",
+   "{4,3,5}"
+  ],
+  [
+   "H534",
+   "{5,3,4}"
+  ],
+  [
+   "H353",
+   "{3,5,3}"
+  ],
+  [
+   "H535",
+   "{5,3,5}"
+  ],
+  [
+   "H633",
+   "{6,3,3}"
+  ],
+  [
+   "H336",
+   "{3,3,6}"
+  ]
+ ],
+ "spacefill_solids": [
+  [
+   "CUBIC",
+   "Cubes"
+  ],
+  [
+   "OCTET",
+   "Octahedra + Tetrahedra"
+  ],
+  [
+   "TRUNCOCT",
+   "Truncated Octahedra"
+  ],
+  [
+   "RHOMBDODEC",
+   "Rhombic Dodecahedra"
+  ],
+  [
+   "SPIRAL3",
+   "Spirallohedra (3-arm)"
+  ],
+  [
+   "SPIRAL4",
+   "Spirallohedra (4-arm)"
+  ]
+ ],
+ "attractor": [
+  [
+   "LORENZ",
+   "Lorenz"
+  ],
+  [
+   "ROSSLER",
+   "Rossler"
+  ],
+  [
+   "THOMAS",
+   "Thomas"
+  ],
+  [
+   "AIZAWA",
+   "Aizawa"
+  ],
+  [
+   "HALVORSEN",
+   "Halvorsen"
+  ],
+  [
+   "DADRAS",
+   "Dadras"
+  ],
+  [
+   "CHENLEE",
+   "Chen-Lee"
+  ],
+  [
+   "FOURWING",
+   "Four-Wing"
+  ],
+  [
+   "NOSEHOOVER",
+   "Nose-Hoover"
+  ],
+  [
+   "ARNEODO",
+   "Arneodo"
+  ]
+ ],
+ "link": [
+  [
+   "HOPF",
+   "Hopf Link"
+  ],
+  [
+   "SOLOMON",
+   "Solomon's Link"
+  ],
+  [
+   "WHITEHEAD",
+   "Whitehead Link"
+  ],
+  [
+   "BORROMEAN",
+   "Borromean Rings"
+  ],
+  [
+   "BORROMEAN_CREST",
+   "Borromean Crest"
+  ],
+  [
+   "TORUS",
+   "Torus Link"
+  ],
+  [
+   "CHAIN",
+   "Chain"
+  ],
+  [
+   "CONNECT_SUM",
+   "Connect Sum"
+  ]
+ ],
+ "polylinks": [
+  [
+   "T4",
+   "4 Triangles"
+  ],
+  [
+   "C6",
+   "6 Squares"
+  ],
+  [
+   "O8",
+   "8 Triangles"
+  ],
+  [
+   "D6",
+   "6 Pentagons"
+  ],
+  [
+   "D12",
+   "12 Pentagons"
+  ],
+  [
+   "I20",
+   "20 Triangles"
+  ]
+ ],
+ "tangle": [
+  [
+   "T5",
+   "5 Tetrahedra"
+  ],
+  [
+   "T2",
+   "2 Tetrahedra"
+  ],
+  [
+   "T10",
+   "10 Tetrahedra"
+  ],
+  [
+   "C3",
+   "3 Cubes"
+  ],
+  [
+   "C5",
+   "5 Cubes"
+  ],
+  [
+   "O5",
+   "5 Octahedra"
+  ]
+ ],
+ "weave": [
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "ICOSA",
+   "Icosahedron"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ]
+ ],
+ "rotegrity": [
+  [
+   "ICOSA",
+   "Icosahedron"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ]
+ ],
+ "twisted_polyhedron": [
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "ICOSA",
+   "Icosahedron"
+  ],
+  [
+   "TT",
+   "Truncated Tetrahedron"
+  ],
+  [
+   "CO",
+   "Cuboctahedron"
+  ],
+  [
+   "TC",
+   "Truncated Cube"
+  ],
+  [
+   "TO",
+   "Truncated Octahedron"
+  ],
+  [
+   "RCO",
+   "Rhombicuboctahedron"
+  ],
+  [
+   "TCO",
+   "Truncated Cuboctahedron"
+  ],
+  [
+   "SC",
+   "Snub Cube"
+  ],
+  [
+   "ID",
+   "Icosidodecahedron"
+  ],
+  [
+   "TD",
+   "Truncated Dodecahedron"
+  ],
+  [
+   "TI",
+   "Truncated Icosahedron"
+  ],
+  [
+   "RID",
+   "Rhombicosidodecahedron"
+  ],
+  [
+   "TID",
+   "Truncated Icosidodecahedron"
+  ],
+  [
+   "SD",
+   "Snub Dodecahedron"
+  ],
+  [
+   "GEODESIC",
+   "Geodesic Sphere"
+  ]
+ ],
+ "symmetric_sculpture": [
+  [
+   "TWISTED_RIVERS",
+   "Twisted Rivers"
+  ],
+  [
+   "TUMBLEWEED",
+   "Tumbleweed"
+  ],
+  [
+   "FRABJOUS",
+   "Frabjous"
+  ],
+  [
+   "WHIMSY",
+   "Whimsy"
+  ]
+ ],
+ "oloid": [
+  [
+   "OLOID",
+   "Oloid"
+  ],
+  [
+   "ROLLER",
+   "Two-Circle Roller"
+  ],
+  [
+   "ANTIOLOID",
+   "Anti-Oloid"
+  ],
+  [
+   "RULED",
+   "Ruled Circle Strip"
+  ],
+  [
+   "MOBIUS",
+   "Ruled Mobius Strip"
+  ]
+ ],
+ "hyperbolic_tiling": [
+  [
+   "DISK",
+   "Poincare Disk"
+  ],
+  [
+   "HEMI",
+   "Hemisphere"
+  ],
+  [
+   "PSEUDO",
+   "Pseudosphere"
+  ]
+ ],
+ "conway": [
+  [
+   "tI",
+   "Truncated Icosahedron"
+  ],
+  [
+   "sC",
+   "Snub Cube"
+  ],
+  [
+   "eD",
+   "Rhombicosidodecahedron"
+  ],
+  [
+   "bT",
+   "Bevelled Tetrahedron"
+  ],
+  [
+   "gD",
+   "Pentagonal Hexecontahedron"
+  ],
+  [
+   "cC",
+   "Chamfered Cube"
+  ],
+  [
+   "pC",
+   "Propellor Cube"
+  ],
+  [
+   "pkD",
+   "Propellor Pentakis"
+  ],
+  [
+   "dkt5daD",
+   "Ornate"
+  ],
+  [
+   "kD",
+   "Pentakis Dodecahedron"
+  ],
+  [
+   "tkD",
+   "Truncated Pentakis"
+  ],
+  [
+   "ccO",
+   "Twice-Chamfered Octahedron"
+  ]
+ ],
+ "symmetrohedron": [
+  [
+   "I",
+   "Icosahedral"
+  ],
+  [
+   "O",
+   "Octahedral"
+  ],
+  [
+   "T",
+   "Tetrahedral"
+  ]
+ ]
+}

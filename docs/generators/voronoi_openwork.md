@@ -1,0 +1,46 @@
+# Voronoi Openwork
+
+![Voronoi Openwork](../images/voronoi_openwork.png)
+
+## Overview
+
+Voronoi Openwork is a **Styles operator applied to a selected existing object**, not a standalone add-mesh generator: with a mesh active, it perforates that mesh with organic Voronoi-cell holes, inspired by Primož Gabrijelčič's *voronoizer* but reworked as an in-Blender, boolean-free operator that runs on arbitrary surfaces — including open ones such as minimal surfaces and TPMS patches. The render image was produced by applying the operator to a base surface. Seeds are spread by farthest-point sampling in **graph-geodesic** distance (so holes never leak between nearby sheets of a minimal surface), each triangle is clipped at the smoothed iso-contour of the distance-to-cell-boundary field, and a live Solidify modifier supplies the thickness. The result is a new object; the mesh's own open boundary can be kept as a solid frame.
+
+## Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| Holes | 40 | Number of Voronoi cells (one hole each); range 2–400 |
+| Strut Width | 0.35 | Strut width as a fraction of the mean cell radius; range 0.02–0.95 |
+| Subdivisions | 2 | Refinement of the surface before clipping (smoother hole rims); range 0–4 |
+| Thickness | 0.03 | Solidify modifier thickness (0 = raw surface); range 0.0–1.0 |
+| Keep Boundary Frame | On | Treat the mesh's own open boundary as strut material, keeping a solid frame around open surfaces |
+| Random Seed | 1 | Seed for the farthest-point sampling |
+| Smooth Shading | On | Set the output faces to smooth shading |
+
+## How it works
+
+The construction is boolean-free and geodesic throughout:
+
+**1. Triangulate and subdivide.** The evaluated source surface is copied into a bmesh, triangulated, and subdivided `Subdivisions` times (each pass followed by re-triangulation) to give smooth clipping later.
+
+**2. Build the edge graph.** Every vertex becomes a node; every edge an undirected link weighted by its Euclidean length $w = \lVert \mathbf p_a - \mathbf p_b\rVert$.
+
+**3. Farthest-point seed sampling (graph-geodesic).** Starting from one random vertex, distances are found with **Dijkstra** over the edge graph. Repeatedly, the vertex currently farthest (in graph distance) from all chosen seeds is added, and the distance field is updated as $d(v) \leftarrow \min(d(v),\ d_{\text{new seed}}(v))$. Using graph-geodesic rather than straight-line distance is what keeps cells from leaking between two sheets of a minimal surface that are close in space but far along the surface.
+
+**4. Geodesic Voronoi labels.** A single multi-source Dijkstra from all seeds labels each vertex with its nearest seed, giving a geodesic Voronoi tessellation. Cell radius statistics come from this same distance field $d_{\text{seed}}$.
+
+**5. Distance to the cell boundary.** Cell boundaries are the edges whose two endpoints carry different seed labels; each such endpoint is given a head start of half the edge length as a Dijkstra source (starting "half an edge in"). If **Keep Boundary Frame** is on, vertices on the mesh's own open boundary (edges with a single incident face) are added as sources at distance 0, so the rim is treated as strut material. A multi-source Dijkstra then gives $d_b(v)$, the geodesic distance from every vertex to the nearest cell boundary.
+
+**6. Strut field and iso-contour clip.** The strut half-width is a fraction of the mean cell radius,
+
+$$h = \text{StrutWidth} \times \overline{d_{\text{seed}}}, \qquad g(v) = d_b(v) - h.$$
+
+Material is kept where $g < 0$ (within a strut half-width of a boundary). Because the graph metric is jagged, $g$ is relaxed with a few Laplacian passes ($g \leftarrow \tfrac12 g + \tfrac12 \bar g_{\text{nbr}}$) so hole rims come out smooth. Each triangle is then clipped at the interpolated zero-contour of $g$: fully-inside triangles are kept whole, fully-outside ones dropped, and crossing triangles are cut, inserting a new vertex on each straddling edge at the linear crossing $t = g_a/(g_a - g_b)$. This is the same field-clipping the project's stereographic shells use.
+
+**7. Thickness.** The clipped openwork surface becomes a new mesh; if **Thickness** > 0 a live Solidify modifier (centred offset) gives it a wall thickness. Smooth shading is set per the option, and the new object inherits the source's world transform.
+
+## References
+
+- Primož Gabrijelčič, *voronoizer* — <https://github.com/gabr42/voronoizer> (the Voronoi-perforation idea this operator reworks, boolean-free and geodesic).
+- E. W. Dijkstra, *A Note on Two Problems in Connexion with Graphs*, Numerische Mathematik 1, 1959 (the shortest-path algorithm used for the geodesic distances and farthest-point sampling).

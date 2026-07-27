@@ -1,0 +1,90 @@
+# Conway Operators
+
+![Conway Operators](../images/conway.png)
+
+## Overview
+
+Build a polyhedron by applying a string of **Conway/Hart operators** to a seed solid — `dkC`, `taD`, `k3sT`, `eP5`, and so on — in the spirit of George Hart's notation and Antiprism's `conway` program. Seeds are the five Platonic solids plus parametric prisms, antiprisms and pyramids; operators (dual, ambo, kis, gyro, chamfer, reflect, propellor, and the derived truncate / join / expand / ortho / bevel / meta / snub / needle / zip) transform them combinatorially. Optional Hart-style **canonicalization** or spherization cleans up the geometry, with per-face-size coloring, spherical UVs, and Solid / Leonardo / Wireframe styles.
+
+## Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| Example | Truncated Icosahedron (tI) | Pick a ready-made notation (the football, snub cube, propellor cube, ornate `dkt5daD`, …) to fill the Notation field, or Custom to type your own. |
+| Notation | tI | The operator string: operators then a seed, applied right to left (e.g. `dkC`, `taD`, `k3sT`, `eP5`). |
+| Geometry | Canonical | Post-processing: Canonical (edges tangent to the sphere, planar faces — Hart), Spherized (project vertices to a sphere), or Raw (whatever the operators produce). |
+| Canonical Iterations | 200 | Maximum canonicalization iterations (min 5, max 2000). |
+| Kis Height | 0.25 | Height of the pyramids raised by the kis operator, relative to face edge length (min -1.0, max 2.0). |
+| Coloring | Colored (by face sides) | One material per face size (Hart's "colored" display), or None. |
+| Spherical UV Map | On | Smooth equirectangular UVs projected from the centre, with per-face seam correction. |
+| Style | Solid | Plain closed polyhedron, Leonardo (da Vinci) open-faced panels, or Wireframe struts. |
+| Border | 0.3 | Leonardo face-frame width, as a fraction of the face (min 0.02, max 0.95). |
+| Thickness | 0.05 | Panel / strut thickness for the Leonardo and Wireframe styles (min 0.001, max 1.0). |
+| Scale | 1.0 | Uniform output scale (min 0.01, max 100.0). |
+
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/conway__tI.png" width="200"><br><sub>Truncated Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/conway__sC.png" width="200"><br><sub>Snub Cube</sub></td>
+<td align="center"><img src="../images/variants/conway__eD.png" width="200"><br><sub>Rhombicosidodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/conway__bT.png" width="200"><br><sub>Bevelled Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/conway__gD.png" width="200"><br><sub>Pentagonal Hexecontahedron</sub></td>
+<td align="center"><img src="../images/variants/conway__cC.png" width="200"><br><sub>Chamfered Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/conway__pC.png" width="200"><br><sub>Propellor Cube</sub></td>
+<td align="center"><img src="../images/variants/conway__pkD.png" width="200"><br><sub>Propellor Pentakis</sub></td>
+<td align="center"><img src="../images/variants/conway__dkt5daD.png" width="200"><br><sub>Ornate</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/conway__kD.png" width="200"><br><sub>Pentakis Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/conway__tkD.png" width="200"><br><sub>Truncated Pentakis</sub></td>
+<td align="center"><img src="../images/variants/conway__ccO.png" width="200"><br><sub>Twice-Chamfered Octahedron</sub></td>
+</tr>
+</table>
+
+## How it works
+
+A notation string is parsed right-to-left as *operators, then a seed with an optional number*: `dkC` = dual of kis of cube, `k3sT` = kis (on 3-gons only) of snub tetrahedron. Seeds are
+
+- `T C O D I` — the Platonic solids (built from exact coordinates; the icosahedron and dodecahedron use $\varphi = \tfrac{1+\sqrt5}{2}$);
+- `Pn`, `An`, `Yn` — the $n$-gonal prism, antiprism and pyramid.
+
+Each **operator** rewrites the vertex/face structure:
+
+- **dual** ($d$) — a vertex at every face centroid; new faces walk the faces around each old vertex.
+- **ambo** ($a$) — a vertex at every edge midpoint; the dual pair $(dd = e{-}$style rectification).
+- **kis** ($k$, optionally $kN$ restricted to $N$-gons) — raise a pyramid on each face, apex offset along the Newell normal by `Kis Height` × mean edge length.
+- **gyro** ($g$) — the chiral operator that turns each $n$-gon into $n$ pentagons, using edge points one-third along each directed edge plus a face centroid.
+- **chamfer** ($c$) — shrink each face toward its centroid and bridge the gaps with hexagons along the old edges.
+- **propellor** ($p$) — a smaller rotated copy of each $n$-gon surrounded by $n$ quadrilaterals (chiral; $dp = pd$).
+- **reflect** ($r$) — mirror through the $x=0$ plane and reverse windings.
+
+**Derived operators** expand into primitives before application:
+
+$$t = dk\,d,\quad j = da,\quad e = aa,\quad o = dada,\quad b = dk\,da,\quad m = k\,da,\quad s = dg,\quad n = kd,\quad z = dk.$$
+
+(A number attached to $t$, $b$, $m$, $n$, $z$ passes through to the internal $k$, e.g. $tN = dk_Nd$.) After every operator the faces are re-oriented outward by flipping any whose Newell normal points toward the solid's centroid.
+
+**Canonicalization** (Hart) then finds the canonical form in which all edges are tangent to a common unit sphere and all faces are planar. Each iteration:
+
+1. For every edge $AB$ finds the closest point $C$ to the origin on the segment, recentres the whole solid on the mean of these tangent points, and nudges each edge so its tangent point moves toward the unit sphere by the correction $C\,(1 - \lVert C\rVert)/\lVert C\rVert$, applied with relaxation $\lambda_t = 0.3$ and averaged per vertex.
+2. Planarizes each face by projecting its vertices onto their best-fit plane (normal from the Newell sum), with relaxation $\lambda_p = 0.5$.
+
+Iteration stops when the largest vertex move falls below $10^{-7}$ or the iteration cap is reached. **Spherized** geometry instead simply projects every vertex to the unit sphere about the centroid.
+
+Faces are colored by side count using Hart's palette (triangle red, square blue, pentagon green, hexagon gold, …), with a golden-angle HSV fallback for uncommon sizes, and the side count is also written as an `ngon_sides` face attribute usable in shaders and Geometry Nodes. Correctness is verified against 17 textbook polyhedra (cube 8/6, ambo cube 12/14, snub cube 24/38, truncated icosahedron 60/32, rhombicosidodecahedron 60/62, propellor duals `dpC = pdC`, …).
+
+## References
+
+- J. H. Conway, H. Burgiel, C. Goodman-Strauss, *The Symmetries of Things*, A K Peters, 2008 (Conway's operator notation).
+- G. W. Hart, *Conway Notation for Polyhedra* — <https://www.georgehart.com/virtual-polyhedra/conway_notation.html> (the extended operator set, including propellor).
+- G. W. Hart, *Calculating Canonical Polyhedra*, Mathematica in Education and Research 6(3), pp. 5–10, 1997 (the canonicalization algorithm).
+- Adrian Rossiter, *Antiprism* and its `conway` program — <https://www.antiprism.com>, <https://github.com/antiprism/antiprism> (GPL; the reference implementation this follows).

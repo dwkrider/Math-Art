@@ -1,0 +1,46 @@
+# Minimal Surface Polyhedron
+
+![Minimal Surface Polyhedron](../images/minimal_polyhedron.png)
+
+## Overview
+A polyhedron whose faces are pierced and relaxed into a smooth minimal-surface-like membrane stretched over a softly held edge frame. It generalizes the classic pierced-cube tutorial to any polyhedron: subdivide the faces, open a hole (or dent them inward), then relax with Laplacian smoothing while pinning the seed skeleton so the form still reads as its polyhedron. Works on the built-in Platonic seeds or the active mesh object.
+
+## Options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| Seed | Cube | Base polyhedron: Cube, Tetrahedron, Octahedron, Dodecahedron, Icosahedron, or Active Object (pierce the active mesh's faces). |
+| Mode | Face Openings | Face Openings (HOLES): pierce each face near its centre; or Inward Bulge (SADDLE): keep faces closed and dent each inward with a smooth membrane profile hung from its own rim. |
+| Bulge Depth | 0.5 | Inward Bulge mode: how deep each face dents, as a fraction of its inradius. Range 0-2. |
+| Subdivisions | 3 | Linear face subdivisions before piercing. Range 1-5. |
+| Hole Size | 0.55 | Opening radius as a fraction of each face's inradius (0 = no holes). Range 0-0.95. |
+| Openings | Every Face | Which faces to open: Every Face, Every Other Face, or None (just relax the solid). |
+| Relax Iterations | 40 | Laplacian membrane relaxation steps; hole rims tighten as they smooth. Range 0-400. |
+| Hold | Edge Frame | What stays fixed while the surface relaxes: Edge Frame (cast-in-the-mold look), Corners Only (spiky points), or Nothing (form slumps toward a blob). |
+| Corner Softness | 0.35 | Radius (in edge lengths) over which relaxation fades toward the pinned skeleton: small = sharp points, large = rounded tips. Range 0.02-1.5. |
+| Thickness | 0.08 | Solidify modifier thickness (0 = raw surface). Range 0-1. |
+| Smooth Shading | Off | Shade the mesh smooth. |
+| Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |
+
+## How it works
+
+The construction has four stages.
+
+**1. Subdivide.** Every face is linearly split into quads `levels` times by `linear_subdivide`: each $n$-gon becomes $n$ quads of the form (corner, edge-midpoint, face-centre, edge-midpoint). This is Catmull-Clark topology *without* the smoothing -- the geometry stays exactly on the seed polyhedron. Each descendant sub-face remembers which original seed face it came from.
+
+**2. Open holes** (HOLES mode). For a sub-face whose centroid $c$ lies within $\text{hole}\times r_{\text{in}}$ of the face centre $f_c$ (measured in-plane, projecting out the face normal $\hat n$), the sub-face is deleted, leaving a hole. Here $r_{\text{in}}$ is the face inradius, approximated as the minimum distance from the centre to an edge. The pattern selects all faces, alternating faces, or none.
+
+**3. Dent inward** (SADDLE mode). Instead of piercing, each vertex interior to exactly one seed face is displaced along that face's inward normal by
+$$\Delta = \text{depth}\cdot r_{\text{in}}\cdot s(w),\qquad w=\min\!\left(1,\frac{d_{\text{rim}}}{r_{\text{in}}}\right),\quad s(w)=w^2(3-2w)$$
+a smoothstep of its distance $d_{\text{rim}}$ to the face's own rim. Rim and corner vertices (shared between faces) stay put, so the sheets hang from the edge frame and nothing is anchored at the polyhedron centre.
+
+**4. Relax.** A **soft pin weight** $w_i\in[0,1]$ ramps from 0 on the pinned skeleton to 1 over a fraction of the mean edge length. With `pin='CORNERS'` the skeleton is the seed vertices; with `pin='EDGES'` it is the whole seed edge frame (distance to the nearest edge segment), which gives the "cast in the mold" look. Then uniform **Laplacian smoothing** with free boundaries is iterated:
+$$P_i \leftarrow P_i + \lambda\, w_i\,\big(\overline{P}_{\mathcal N(i)} - P_i\big),$$
+where $\overline{P}_{\mathcal N(i)}$ is the average of vertex $i$'s neighbours and $\lambda$ is `smooth_lambda`. Free hole rims tighten like a stretched membrane with free edges. Finally the mesh is centered, fit within a $2\times\text{scale}$ cube, and given a Solidify shell if Thickness > 0.
+
+## References
+
+- J. Carlberg / classic "minimal surface cube" 3D-printing form (the cast-in-the-mold pierced-cube tutorial this generalizes).
+- U. Pinkall and K. Polthier, "Computing Discrete Minimal Surfaces and Their Conjugates," *Experimental Mathematics* 2(1), 1993, pp. 15-36 (discrete membrane relaxation / cotangent Laplacian).
+- M. Desbrun, M. Meyer, P. Schröder, A. Barr, "Implicit Fairing of Irregular Meshes using Diffusion and Curvature Flow," *SIGGRAPH* 1999 (Laplacian mesh smoothing).
+- E. Catmull and J. Clark, "Recursively generated B-spline surfaces on arbitrary topological meshes," *Computer-Aided Design* 10(6), 1978 (the quad-split topology).

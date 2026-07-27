@@ -1,0 +1,38 @@
+# Span Minimal Surface
+
+This operator works on **1 or 2 selected closed curves** (Curve objects or closed mesh edge loops) rather than adding a new primitive: with one curve selected it spans a disk-type minimal surface across it, and with two it spans an annulus-type minimal surface between them.
+
+## Overview
+
+The Span operator solves the **Plateau problem** in Blender: given one or two closed boundary curves, it finds the minimal surface (soap film) that spans them. It is a lightweight in-Blender analogue of Ken Brakke's Surface Evolver — pin the boundary, minimize area. The solver has been validated against exact solutions: a planar circle relaxes to a flat disk (area $\pi$ to 0.07%), and two parallel rings relax to a catenoid (waist radius correct to 0.06%).
+
+## Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| Boundary Samples | 128 | Number of samples taken around each boundary loop |
+| Interior Rings | 24 | Number of interior rings between the boundary and the centre (disk) or between the two loops (annulus) |
+| Solver Iterations | 40 | Pinkall-Polthier area-minimization outer iterations |
+| NURBS Output | Off | Emit a compact NURBS surface (control grid = the solver grid) instead of a dense mesh; where the surface curls tightly it may ripple — raise rings/samples or use mesh output |
+
+## How it works
+
+Each selected curve or mesh object is first traced into an ordered closed polyline (every point must join exactly two segments — a single closed loop) in world space, then **resampled by uniform arc length** to *Boundary Samples* points.
+
+**One curve → a disk.** An initial spanning disk is built as concentric rings shrinking from the boundary toward its centroid, with the boundary ring pinned and the interior free.
+
+**Two curves → an annulus.** The second loop is cyclically shifted and optionally reversed to best match the first (minimizing $\sum_i \lVert A_i - B_i\rVert^2$), then an initial ruled surface is built by linear interpolation across *Interior Rings* rows, with both boundary loops pinned.
+
+The initial surface is then relaxed toward minimal area by the **Pinkall-Polthier** cotangent-Laplacian iteration. Each outer iteration recomputes per-edge cotangent weights
+
+$$w_{ij} = \tfrac12\cot\theta_{ij}$$
+
+(clamped positive so the system stays positive-definite and the CG solve cannot blow up on degenerate fans), assembles the discrete Laplacian, and solves $L\,x = 0$ for the free vertices with the boundary pinned, using a conjugate-gradient core (numpy required). Because the cotangent Laplacian is the gradient of discrete surface area, iterating this pin-and-solve step converges to a discrete minimal surface. The operator reports the final mesh area.
+
+**NURBS output** fairs the solved grid — per-column arc-length resampling (points stay on the solved surface but the solver's severe shear is equalized), light 2D net smoothing, and a normal-only mean-curvature polish to restore minimality — then uses the grid as the control net of a single NURBS patch (cyclic across the boundary direction; the disk case caps the pole with the centre point).
+
+## References
+
+- U. Pinkall, K. Polthier, *Computing Discrete Minimal Surfaces and Their Conjugates*, Experimental Mathematics 2(1), 1993 (the area-minimization algorithm).
+- Ken Brakke, *Surface Evolver* — <https://kenbrakke.com/evolver/evolver.html> (the reference Plateau-problem solver this is a lightweight in-Blender analogue of); see also SE-FIT — <https://www.se-fit.com/>
+- J. Plateau, *Statique expérimentale et théorique des liquides soumis aux seules forces moléculaires*, 1873 (the physical minimal-surface problem).

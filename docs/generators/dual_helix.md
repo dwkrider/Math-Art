@@ -1,0 +1,51 @@
+# Dual Helix
+
+![Dual Helix](../images/dual_helix.png)
+
+## Overview
+
+This generator builds a sculpture of two nested counter-rotating helices joined into one closed loop. An outer helix (radius blending join → outer → join) spirals down while an inner helix (join → inner → join) spirals back up, both with a cosine height profile, so the two ends meet exactly at the top and bottom. The loop closes whenever the two turn counts sum to a whole number of turns (auto-snapped by default). The form is inspired by Tom Lawton's *[Wonder](https://tomlawton.medium.com/tom-lawtons-wonder-d517d4d479b5)* — an endlessly flowing ribbon that spirals up and down like a torus of moving water — and the curve can be swept with an elliptical tube profile.
+
+## Options
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| Outer Radius | 1.0 | Radius of the outer helix at its widest |
+| Inner Radius | 0.35 | Radius of the inner helix at its narrowest |
+| Join Radius | 0.75 | Radius where the two helices meet at the top and bottom |
+| Half Height | 2π/5 | Half the vertical extent of the sculpture |
+| Outer Turns | 1.5 | Turns of the outer helix |
+| Inner Turns | 2.5 | Turns of the inner helix; snapped so the turn counts sum to a whole number when Auto Close is on |
+| Auto Close | On | Adjust the inner turns so the loop closes exactly (outer + inner turns must be a whole number) |
+| Height Profile | 1.0 | Exponent of the cosine height profile (1 = the original; higher flattens the middle, lower sharpens it) |
+| Segments Per Turn | 120 | Polyline resolution per turn |
+| Spline | NURBS | NURBS (smooth, as in the original), Poly, or Bezier (auto handles) |
+| Tube Major Axis | 0.09 | Half-width of the elliptical tube profile (0 = wire only) |
+| Tube Minor Axis | 0.045 | Half-height of the elliptical tube profile |
+| Profile Rotation | 0.0 | Rotation of the ellipse in the tube cross-section (degrees) |
+| Profile Resolution | 6 | Resolution of the swept profile |
+| Scale | 1.0 | Overall size multiplier |
+
+## How it works
+
+The sculpture is one closed curve made of two arcs. Along the **outer** arc, parameter $t\in[0,1]$, the radius blends between the *join* radius (at the ends) and the *outer* radius (at the middle) with a raised-cosine weight, the azimuth advances through the outer turn count, and the height follows a signed power of a cosine:
+
+$$w(t) = \tfrac{1 + \cos 2\pi t}{2},\qquad
+r(t) = w\,r_{\text{join}} + (1-w)\,r_{\text{outer}},$$
+$$\theta(t) = 2\pi\,N_{\text{outer}}\,t,\qquad
+z(t) = h\;\operatorname{sgn}(c)\,|c|^{\,\kappa},\;\; c=\cos\pi t,$$
+
+giving points $\big(r\cos\theta,\; r\sin\theta,\; z\big)$. Here $h$ is the half-height and $\kappa$ the height-profile exponent ($\kappa=1$ recovers the plain cosine; larger flattens the middle, smaller sharpens it). The **inner** arc, parameter $s\in(0,1]$, does the mirror image: radius blends join → inner → join, azimuth continues from where the outer arc ended ($\theta_0 = 2\pi N_{\text{outer}}$) through the inner turn count, and the height is negated so the inner helix climbs back up:
+
+$$z(s) = -h\;\operatorname{sgn}(\cos\pi s)\,|\cos\pi s|^{\,\kappa}.$$
+
+At the join points ($t=0$ and $t=1$) both arcs are at radius $r_{\text{join}}$ and height $z=\pm h$ (the extremes of the profile), so the outer arc's bottom join meets the inner arc's start and the two form one continuous curve.
+
+**Closure.** The inner helix arrives back at the outer start only when the total winding $N_{\text{outer}} + N_{\text{inner}}$ is a whole number of turns; the code detects this (modulo 1 within tolerance) and, if so, drops the duplicated final point and marks the spline cyclic. **Auto Close** rounds the sum to the nearest integer and snaps the inner turns to $\max(0.5,\ \text{round}(N_{\text{outer}}+N_{\text{inner}}) - N_{\text{outer}})$ so the loop always closes.
+
+**Tube.** The curve is a NURBS (or Poly/Bezier) spline. When both tube axes are positive an **elliptical** Bézier profile of half-axes (major, minor), optionally rotated in the cross-section plane, is created as a bevel object and swept along the curve — reproducing the scaled bevel-circle of the original file.
+
+## References
+
+- **Tom Lawton**, *[Wonder](https://tomlawton.medium.com/tom-lawtons-wonder-d517d4d479b5)* — the sculpture that inspired this generator. Lawton's *Wonder* is a copper-and-bronze kinetic ribbon that flows endlessly up and down like a torus, permanently installed inside Malmesbury Abbey, Wiltshire, England (a tabletop "Baby Wonder" edition also exists). The dual counter-rotating helix construction here abstracts that endlessly-flowing loop into an adjustable parametric curve.
+- The parametrization (raised-cosine radius blend, signed-power cosine height profile, whole-turn closure condition) is original to the Math Art project and is documented in the module and on this page.
