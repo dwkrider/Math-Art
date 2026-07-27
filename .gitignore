@@ -4,3 +4,5 @@ __pycache__/
 *.blend1
 *.stl
 dist/
+TODO.md
+renders/**
