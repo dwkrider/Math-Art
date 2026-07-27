@@ -25,6 +25,7 @@ Build a polyhedron by applying a string of **Conway/Hart operators** to a seed s
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

@@ -95,7 +95,8 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.tpms_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.minimal_knot_span_add", icon='MESH_TORUS')
         _op(lay, "object.minimal_span", icon='OUTLINER_OB_SURFACE')
-        _op(lay, "mesh.seifert_surface_add", icon='MOD_SIMPLIFY')
+        _op(lay, "mesh.seifert_surface_add",
+            text="Seifert Surface (Experimental)", icon='MOD_SIMPLIFY')
         _op(lay, "mesh.algebraic_surface_add",
             icon='SURFACE_NSURFACE')
         _op(lay, "mesh.topological_surface_add", icon='MESH_TORUS')
@@ -196,7 +197,7 @@ class VIEW3D_MT_math_art_styles(bpy.types.Menu):
         _op(lay, "object.curvature_color_add",
             icon='COLORSET_01_VEC')
         _op(lay, "object.voronoi_openwork_add",
-            icon='MOD_REMESH')
+            text="Voronoi Openwork (Experimental)", icon='MOD_REMESH')
         _op(lay, "object.organic_wireframe_add",
             icon='MOD_WIREFRAME')
 

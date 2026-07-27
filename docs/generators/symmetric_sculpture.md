@@ -36,6 +36,7 @@ The Geometry Nodes modifier exposes further live inputs on the result object: **
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

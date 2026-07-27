@@ -24,6 +24,7 @@ This generator draws the trajectory of a chaotic dynamical system as a curve. It
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

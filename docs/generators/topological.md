@@ -24,6 +24,7 @@ The classic topology menagerie: Klein bottles, the two RP² immersions (cross-ca
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

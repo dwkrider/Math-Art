@@ -19,6 +19,7 @@ A small family of surfaces built from two perpendicular circles. The **oloid** (
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

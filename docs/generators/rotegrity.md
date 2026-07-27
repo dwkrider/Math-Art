@@ -23,6 +23,7 @@ Rotegrity (also **nexorade**) sphere models, after Antiprism's `rotegrity`: ever
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

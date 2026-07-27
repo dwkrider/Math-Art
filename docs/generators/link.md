@@ -32,6 +32,7 @@ This generator builds multi-component links and knot connected sums as rope curv
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

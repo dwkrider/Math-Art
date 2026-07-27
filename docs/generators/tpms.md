@@ -19,6 +19,7 @@ This generator builds triply-periodic minimal surfaces (TPMS) — the space-fill
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

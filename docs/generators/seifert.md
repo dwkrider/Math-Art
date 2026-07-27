@@ -1,5 +1,8 @@
 # Seifert Surface
 
+> ⚠️ **Experimental.** This generator is a work in progress — its
+> options and output may change in future versions.
+
 ![Seifert Surface](../images/seifert.png)
 
 ## Overview
@@ -25,6 +28,7 @@ The Seifert generator builds the orientable spanning surface (Seifert surface) o
 | Relax Iterations | 0 | Smooth the surface with the Plateau solver, keeping the knot boundary pinned (needs the Minimal Surface Toolkit add-on) |
 | Add Knot Curve | On | Also create a bevelled curve along the knot/link (the surface boundary) |
 | Knot Tube Radius | 0.04 | Bevel radius of the knot curve |
+
 
 
 

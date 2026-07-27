@@ -20,6 +20,7 @@ Classical algebraic surfaces -- celebrated cubics, quartics, quintics and sextic
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

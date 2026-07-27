@@ -28,6 +28,7 @@ Geodesic spheres and domes built by subdividing a triangular Platonic seed (icos
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

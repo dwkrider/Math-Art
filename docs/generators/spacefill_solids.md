@@ -26,6 +26,7 @@ Blocks of the classical space-filling honeycombs, with every cell shrunk by a ga
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

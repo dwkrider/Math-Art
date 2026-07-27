@@ -33,6 +33,7 @@ A dual-polyhedron sculpture: an inset polygon sits on every face of a chosen **o
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

@@ -1445,5 +1445,27 @@
    "FLOWER",
    "Flower Lattice"
   ]
+ ],
+ "minimal_polyhedron": [
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "ICOSA",
+   "Icosahedron"
+  ]
  ]
 }

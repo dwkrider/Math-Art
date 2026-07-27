@@ -29,6 +29,7 @@ Symmetrohedra, introduced by Craig Kaplan and George Hart, are polyhedra assembl
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

@@ -33,6 +33,7 @@ The six regular convex 4-polytopes — the 5-cell, tesseract (8-cell), 16-cell, 
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

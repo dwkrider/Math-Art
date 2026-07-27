@@ -25,6 +25,7 @@ Regular $\{p,q\}$ tilings of the hyperbolic plane -- $q$ regular $p$-gons meetin
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

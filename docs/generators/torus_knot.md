@@ -23,6 +23,7 @@ This generator builds the $(p,q)$ torus knots and links as rope curves lying on 
 | Scale | 1.0 | Overall size multiplier |
 
 
+
 ## Variants
 
 Renders of each selectable option:

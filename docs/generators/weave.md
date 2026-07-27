@@ -25,6 +25,7 @@ Woven-strand spheres built from a seed polyhedron, a Blender take on Antiprism's
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

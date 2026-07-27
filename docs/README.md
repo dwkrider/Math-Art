@@ -10,7 +10,7 @@ Each shape is generated centered on the origin fitting a 2 m cube, and shown w
 | | | |
 |:--:|:--:|:--:|
 | [<img src="images/scherk_collins.png" width="240">](generators/scherk_collins.md)<br>**[Scherk-Collins Sculpture](generators/scherk_collins.md)** | [<img src="images/parametric_minimal.png" width="240">](generators/parametric_minimal.md)<br>**[Classic Minimal Surface](generators/parametric_minimal.md)** | [<img src="images/tpms.png" width="240">](generators/tpms.md)<br>**[Periodic Minimal Surface (TPMS)](generators/tpms.md)** |
-| [<img src="images/knot_span.png" width="240">](generators/knot_span.md)<br>**[Minimal Surface: Circle to Knot](generators/knot_span.md)** | [<img src="images/seifert.png" width="240">](generators/seifert.md)<br>**[Seifert Surface](generators/seifert.md)** | [<img src="images/algebraic.png" width="240">](generators/algebraic.md)<br>**[Algebraic Surface](generators/algebraic.md)** |
+| [<img src="images/knot_span.png" width="240">](generators/knot_span.md)<br>**[Knot to Knot Surface](generators/knot_span.md)** | [<img src="images/seifert.png" width="240">](generators/seifert.md)<br>**[Seifert Surface](generators/seifert.md)** _(experimental)_ | [<img src="images/algebraic.png" width="240">](generators/algebraic.md)<br>**[Algebraic Surface](generators/algebraic.md)** |
 | [<img src="images/topological.png" width="240">](generators/topological.md)<br>**[Topological Surface](generators/topological.md)** | [<img src="images/minimal_polyhedron.png" width="240">](generators/minimal_polyhedron.md)<br>**[Minimal Surface Polyhedron](generators/minimal_polyhedron.md)** | [<img src="images/squeeze.png" width="240">](generators/squeeze.md)<br>**[Squeeze Surface](generators/squeeze.md)** |
 | [<img src="images/vertex_vortices.png" width="240">](generators/vertex_vortices.md)<br>**[Vertex Vortices](generators/vertex_vortices.md)** | [<img src="images/helical_surface.png" width="240">](generators/helical_surface.md)<br>**[Helical Surface](generators/helical_surface.md)** | [<img src="images/curiosity_surface.png" width="240">](generators/curiosity_surface.md)<br>**[Curiosity Surface](generators/curiosity_surface.md)** |
 | **[Span Minimal Surface](generators/minimal_span.md)**<br><sub>operates on selected curves</sub> |  |  |
@@ -59,7 +59,7 @@ Each shape is generated centered on the origin fitting a 2 m cube, and shown w
 | | | |
 |:--:|:--:|:--:|
 | [<img src="images/symmetric_sculpture.png" width="240">](generators/symmetric_sculpture.md)<br>**[Symmetric Sculpture](generators/symmetric_sculpture.md)** _(experimental)_ | [<img src="images/leonardo.png" width="240">](generators/leonardo.md)<br>**[Leonardo Style](generators/leonardo.md)** | [<img src="images/curvature_color.png" width="240">](generators/curvature_color.md)<br>**[Curvature Color](generators/curvature_color.md)** |
-| [<img src="images/voronoi_openwork.png" width="240">](generators/voronoi_openwork.md)<br>**[Voronoi Openwork](generators/voronoi_openwork.md)** | [<img src="images/organic_wireframe.png" width="240">](generators/organic_wireframe.md)<br>**[Organic Wireframe](generators/organic_wireframe.md)** |  |
+| [<img src="images/voronoi_openwork.png" width="240">](generators/voronoi_openwork.md)<br>**[Voronoi Openwork](generators/voronoi_openwork.md)** _(experimental)_ | [<img src="images/organic_wireframe.png" width="240">](generators/organic_wireframe.md)<br>**[Organic Wireframe](generators/organic_wireframe.md)** |  |
 
 ---
 

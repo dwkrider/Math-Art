@@ -26,6 +26,7 @@ A complete *Add Regular Solid* organised by family: the five **Platonic** solids
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

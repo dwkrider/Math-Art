@@ -1474,7 +1474,7 @@ if _IN_BLENDER:
         """Minimal surface between a circle and a (p,q) torus knot
         (trefoil by default) -- the classic Plateau demonstration"""
         bl_idname = "mesh.minimal_knot_span_add"
-        bl_label = "Minimal Surface: Circle to Torus Knot"
+        bl_label = "Knot to Knot Surface"
         bl_options = {'REGISTER', 'UNDO'}
 
         p: IntProperty(name="Knot p", default=2, min=1, max=8)

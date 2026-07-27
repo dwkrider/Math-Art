@@ -204,7 +204,8 @@ TASKS = {
     "seifert": O("mesh.seifert_surface_add", preset='TREFOIL'),
     "algebraic": O("mesh.algebraic_surface_add", preset='CLEBSCH'),
     "topological": O("mesh.topological_surface_add", preset='KLEIN'),
-    "minimal_polyhedron": O("mesh.minimal_surface_polyhedron_add"),
+    "minimal_polyhedron": O("mesh.minimal_surface_polyhedron_add",
+                            mode='SADDLE'),
     "squeeze": O("mesh.squeeze_add"),
     "vertex_vortices": O("mesh.vertex_vortices_add"),
     "helical_surface": O("mesh.helical_surface_add"),
@@ -607,6 +608,10 @@ VARIANTS = {
     "stereographic": ("mesh.stereographic_add", _V("pattern",
         "GRID=Square Grid;POLAR=Polar Grid;TILING={p,q} Tiling;"
         "BEACHBALL=Beach Ball;FLOWER=Flower Lattice")),
+    "minimal_polyhedron": ("mesh.minimal_surface_polyhedron_add",
+        _V("seed",
+           "CUBE=Cube;TETRA=Tetrahedron;OCTA=Octahedron;"
+           "DODECA=Dodecahedron;ICOSA=Icosahedron", mode="SADDLE")),
 }
 
 

@@ -31,6 +31,7 @@ The Scherk-Collins generator builds the saddle-chain toroid sculptures that Carl
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

@@ -23,6 +23,7 @@ Three classic surfaces from the geometry literature: Fresnel's elasticity surfac
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

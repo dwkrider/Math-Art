@@ -24,6 +24,7 @@ This generator produces the classic gallery of parametric minimal surfaces — E
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

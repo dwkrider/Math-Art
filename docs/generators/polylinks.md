@@ -31,6 +31,7 @@ Orderly tangles of regular polygons, after George W. Hart's **regular polylinks*
 
 
 
+
 ## Variants
 
 Renders of each selectable option:

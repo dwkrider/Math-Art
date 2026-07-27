@@ -28,6 +28,7 @@ After Henry Segerman's stereographic-projection sculptures: a perforated spheric
 | Floor Size | 40.0 | Floor plane side length, in sphere radii. Range 4-400. |
 
 
+
 ## Variants
 
 Renders of each selectable option:

@@ -22,6 +22,22 @@ A polyhedron whose faces are pierced and relaxed into a smooth minimal-surface-l
 | Smooth Shading | Off | Shade the mesh smooth. |
 | Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/minimal_polyhedron__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/minimal_polyhedron__TETRA.png" width="200"><br><sub>Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/minimal_polyhedron__OCTA.png" width="200"><br><sub>Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/minimal_polyhedron__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/minimal_polyhedron__ICOSA.png" width="200"><br><sub>Icosahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 The construction has four stages.

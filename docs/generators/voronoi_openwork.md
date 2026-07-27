@@ -1,5 +1,8 @@
 # Voronoi Openwork
 
+> ⚠️ **Experimental.** This generator is a work in progress — its
+> options and output may change in future versions.
+
 ![Voronoi Openwork](../images/voronoi_openwork.png)
 
 ## Overview

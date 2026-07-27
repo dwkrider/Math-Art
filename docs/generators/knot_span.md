@@ -1,6 +1,6 @@
-# Minimal Surface: Circle to Torus Knot
+# Knot to Knot Surface
 
-![Minimal Surface: Circle to Torus Knot](../images/knot_span.png)
+![Knot to Knot Surface](../images/knot_span.png)
 
 ## Overview
 

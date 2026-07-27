@@ -20,6 +20,7 @@ A polyhedron whose edges are replaced by curves bending inward along one of thei
 | Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |
 
 
+
 ## Variants
 
 Renders of each selectable option:

@@ -25,6 +25,7 @@ Recursive clusters of Platonic solids, after the fractal-polyhedron construction
 | Scale | 1.0 | Overall size (the cluster is fit to a 2 m cube then scaled) |
 
 
+
 ## Variants
 
 Renders of each selectable option:

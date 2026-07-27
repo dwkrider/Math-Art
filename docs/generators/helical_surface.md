@@ -24,6 +24,7 @@ Three classic helical / spiral parametric surfaces: the hyperbolic helicoid (a t
 | Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |
 
 
+
 ## Variants
 
 Renders of each selectable option:

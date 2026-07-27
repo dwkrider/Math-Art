@@ -23,6 +23,7 @@ Zonohedra are convex polyhedra whose faces are all centrally symmetric — the M
 
 
 
+
 ## Variants
 
 Renders of each selectable option:
