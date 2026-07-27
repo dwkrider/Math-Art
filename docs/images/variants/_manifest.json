@@ -254,23 +254,428 @@
  "regular_solids": [
   [
    "TETRA",
-   "Tetrahedron"
+   "Tetrahedron",
+   "Platonic"
   ],
   [
    "CUBE",
-   "Cube"
+   "Cube",
+   "Platonic"
   ],
   [
    "OCTA",
-   "Octahedron"
+   "Octahedron",
+   "Platonic"
   ],
   [
    "DODECA",
-   "Dodecahedron"
+   "Dodecahedron",
+   "Platonic"
   ],
   [
    "ICOSA",
-   "Icosahedron"
+   "Icosahedron",
+   "Platonic"
+  ],
+  [
+   "TT",
+   "Truncated Tetrahedron",
+   "Archimedean"
+  ],
+  [
+   "CO",
+   "Cuboctahedron",
+   "Archimedean"
+  ],
+  [
+   "TC",
+   "Truncated Cube",
+   "Archimedean"
+  ],
+  [
+   "TO",
+   "Truncated Octahedron",
+   "Archimedean"
+  ],
+  [
+   "RCO",
+   "Rhombicuboctahedron",
+   "Archimedean"
+  ],
+  [
+   "TCO",
+   "Truncated Cuboctahedron",
+   "Archimedean"
+  ],
+  [
+   "SC",
+   "Snub Cube",
+   "Archimedean"
+  ],
+  [
+   "ID",
+   "Icosidodecahedron",
+   "Archimedean"
+  ],
+  [
+   "TD",
+   "Truncated Dodecahedron",
+   "Archimedean"
+  ],
+  [
+   "TI",
+   "Truncated Icosahedron",
+   "Archimedean"
+  ],
+  [
+   "RID",
+   "Rhombicosidodecahedron",
+   "Archimedean"
+  ],
+  [
+   "TID",
+   "Truncated Icosidodecahedron",
+   "Archimedean"
+  ],
+  [
+   "SD",
+   "Snub Dodecahedron",
+   "Archimedean"
+  ],
+  [
+   "KTT",
+   "Triakis Tetrahedron",
+   "Catalan"
+  ],
+  [
+   "RD",
+   "Rhombic Dodecahedron",
+   "Catalan"
+  ],
+  [
+   "KTC",
+   "Triakis Octahedron",
+   "Catalan"
+  ],
+  [
+   "KTO",
+   "Tetrakis Hexahedron",
+   "Catalan"
+  ],
+  [
+   "DIT",
+   "Deltoidal Icositetrahedron",
+   "Catalan"
+  ],
+  [
+   "DDD",
+   "Disdyakis Dodecahedron",
+   "Catalan"
+  ],
+  [
+   "PIT",
+   "Pentagonal Icositetrahedron",
+   "Catalan"
+  ],
+  [
+   "RT",
+   "Rhombic Triacontahedron",
+   "Catalan"
+  ],
+  [
+   "KTD",
+   "Triakis Icosahedron",
+   "Catalan"
+  ],
+  [
+   "PKD",
+   "Pentakis Dodecahedron",
+   "Catalan"
+  ],
+  [
+   "DHX",
+   "Deltoidal Hexecontahedron",
+   "Catalan"
+  ],
+  [
+   "DDT",
+   "Disdyakis Triacontahedron",
+   "Catalan"
+  ],
+  [
+   "PHX",
+   "Pentagonal Hexecontahedron",
+   "Catalan"
+  ],
+  [
+   "SSD",
+   "Small Stellated Dodecahedron",
+   "Kepler-Poinsot"
+  ],
+  [
+   "GD",
+   "Great Dodecahedron",
+   "Kepler-Poinsot"
+  ],
+  [
+   "GSD",
+   "Great Stellated Dodecahedron",
+   "Kepler-Poinsot"
+  ],
+  [
+   "GI",
+   "Great Icosahedron",
+   "Kepler-Poinsot"
+  ],
+  [
+   "PRISM",
+   "Hexagonal Prism",
+   "Prisms & Antiprisms"
+  ],
+  [
+   "ANTIPRISM",
+   "Hexagonal Antiprism",
+   "Prisms & Antiprisms"
+  ],
+  [
+   "J1",
+   "Square Pyramid (J1)",
+   "Johnson"
+  ],
+  [
+   "J2",
+   "Pentagonal Pyramid (J2)",
+   "Johnson"
+  ],
+  [
+   "J3",
+   "Triangular Cupola (J3)",
+   "Johnson"
+  ],
+  [
+   "J4",
+   "Square Cupola (J4)",
+   "Johnson"
+  ],
+  [
+   "J5",
+   "Pentagonal Cupola (J5)",
+   "Johnson"
+  ],
+  [
+   "J6",
+   "Pentagonal Rotunda (J6)",
+   "Johnson"
+  ],
+  [
+   "J7",
+   "Elongated Triangular Pyramid (J7)",
+   "Johnson"
+  ],
+  [
+   "J8",
+   "Elongated Square Pyramid (J8)",
+   "Johnson"
+  ],
+  [
+   "J9",
+   "Elongated Pentagonal Pyramid (J9)",
+   "Johnson"
+  ],
+  [
+   "J10",
+   "Gyroelongated Square Pyramid (J10)",
+   "Johnson"
+  ],
+  [
+   "J11",
+   "Gyroelongated Pentagonal Pyramid (J11)",
+   "Johnson"
+  ],
+  [
+   "J12",
+   "Triangular Bipyramid (J12)",
+   "Johnson"
+  ],
+  [
+   "J13",
+   "Pentagonal Bipyramid (J13)",
+   "Johnson"
+  ],
+  [
+   "J14",
+   "Elongated Triangular Bipyramid (J14)",
+   "Johnson"
+  ],
+  [
+   "J15",
+   "Elongated Square Bipyramid (J15)",
+   "Johnson"
+  ],
+  [
+   "J16",
+   "Elongated Pentagonal Bipyramid (J16)",
+   "Johnson"
+  ],
+  [
+   "J17",
+   "Gyroelongated Square Bipyramid (J17)",
+   "Johnson"
+  ],
+  [
+   "J18",
+   "Elongated Triangular Cupola (J18)",
+   "Johnson"
+  ],
+  [
+   "J19",
+   "Elongated Square Cupola (J19)",
+   "Johnson"
+  ],
+  [
+   "J20",
+   "Elongated Pentagonal Cupola (J20)",
+   "Johnson"
+  ],
+  [
+   "J21",
+   "Elongated Pentagonal Rotunda (J21)",
+   "Johnson"
+  ],
+  [
+   "J22",
+   "Gyroelongated Triangular Cupola (J22)",
+   "Johnson"
+  ],
+  [
+   "J23",
+   "Gyroelongated Square Cupola (J23)",
+   "Johnson"
+  ],
+  [
+   "J24",
+   "Gyroelongated Pentagonal Cupola (J24)",
+   "Johnson"
+  ],
+  [
+   "J25",
+   "Gyroelongated Pentagonal Rotunda (J25)",
+   "Johnson"
+  ],
+  [
+   "J26",
+   "Gyrobifastigium (J26)",
+   "Johnson"
+  ],
+  [
+   "J27",
+   "Triangular Orthobicupola (J27)",
+   "Johnson"
+  ],
+  [
+   "J28",
+   "Square Orthobicupola (J28)",
+   "Johnson"
+  ],
+  [
+   "J29",
+   "Square Gyrobicupola (J29)",
+   "Johnson"
+  ],
+  [
+   "J30",
+   "Pentagonal Orthobicupola (J30)",
+   "Johnson"
+  ],
+  [
+   "J31",
+   "Pentagonal Gyrobicupola (J31)",
+   "Johnson"
+  ],
+  [
+   "J32",
+   "Pentagonal Orthocupolarotunda (J32)",
+   "Johnson"
+  ],
+  [
+   "J33",
+   "Pentagonal Gyrocupolarotunda (J33)",
+   "Johnson"
+  ],
+  [
+   "J34",
+   "Pentagonal Orthobirotunda (J34)",
+   "Johnson"
+  ],
+  [
+   "J35",
+   "Elongated Triangular Orthobicupola (J35)",
+   "Johnson"
+  ],
+  [
+   "J36",
+   "Elongated Triangular Gyrobicupola (J36)",
+   "Johnson"
+  ],
+  [
+   "J37",
+   "Elongated Square Gyrobicupola (J37)",
+   "Johnson"
+  ],
+  [
+   "J38",
+   "Elongated Pentagonal Orthobicupola (J38)",
+   "Johnson"
+  ],
+  [
+   "J39",
+   "Elongated Pentagonal Gyrobicupola (J39)",
+   "Johnson"
+  ],
+  [
+   "J40",
+   "Elongated Pentagonal Orthocupolarotunda (J40)",
+   "Johnson"
+  ],
+  [
+   "J41",
+   "Elongated Pentagonal Gyrocupolarotunda (J41)",
+   "Johnson"
+  ],
+  [
+   "J42",
+   "Elongated Pentagonal Orthobirotunda (J42)",
+   "Johnson"
+  ],
+  [
+   "J43",
+   "Elongated Pentagonal Gyrobirotunda (J43)",
+   "Johnson"
+  ],
+  [
+   "J44",
+   "Gyroelongated Triangular Bicupola (J44)",
+   "Johnson"
+  ],
+  [
+   "J45",
+   "Gyroelongated Square Bicupola (J45)",
+   "Johnson"
+  ],
+  [
+   "J46",
+   "Gyroelongated Pentagonal Bicupola (J46)",
+   "Johnson"
+  ],
+  [
+   "J47",
+   "Gyroelongated Pentagonal Cupolarotunda (J47)",
+   "Johnson"
+  ],
+  [
+   "J48",
+   "Gyroelongated Pentagonal Birotunda (J48)",
+   "Johnson"
   ]
  ],
  "zonohedra": [
@@ -761,6 +1166,284 @@
   [
    "T",
    "Tetrahedral"
+  ]
+ ],
+ "space_filling_curve": [
+  [
+   "HILBERT3D",
+   "Hilbert 3D"
+  ],
+  [
+   "MOORE3D",
+   "Moore 3D"
+  ],
+  [
+   "HILBERT2D",
+   "Hilbert 2D"
+  ],
+  [
+   "MOORE2D",
+   "Moore 2D"
+  ],
+  [
+   "GILBERT3D",
+   "Gilbert 3D"
+  ],
+  [
+   "GILBERT2D",
+   "Gilbert 2D"
+  ]
+ ],
+ "prime_knot": [
+  [
+   "3_1",
+   "Trefoil (3.1)"
+  ],
+  [
+   "4_1",
+   "Figure-Eight (4.1)"
+  ],
+  [
+   "5_1",
+   "Cinquefoil (5.1)"
+  ],
+  [
+   "5_2",
+   "Knot 5.2"
+  ],
+  [
+   "6_1",
+   "Knot 6.1"
+  ],
+  [
+   "6_2",
+   "Knot 6.2"
+  ],
+  [
+   "6_3",
+   "Knot 6.3"
+  ],
+  [
+   "7_1",
+   "Knot 7.1"
+  ]
+ ],
+ "squeeze": [
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "RHOMBIC",
+   "Rhombic Dodecahedron"
+  ],
+  [
+   "TRUNCOCT",
+   "Truncated Octahedron"
+  ],
+  [
+   "HEXPRISM",
+   "Hexagonal Prism"
+  ]
+ ],
+ "vertex_vortices": [
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "ICOSA",
+   "Icosahedron"
+  ],
+  [
+   "CO",
+   "Cuboctahedron"
+  ],
+  [
+   "TO",
+   "Truncated Octahedron"
+  ],
+  [
+   "SC",
+   "Snub Cube"
+  ],
+  [
+   "ID",
+   "Icosidodecahedron"
+  ],
+  [
+   "TI",
+   "Truncated Icosahedron"
+  ],
+  [
+   "RD",
+   "Rhombic Dodecahedron"
+  ],
+  [
+   "RT",
+   "Rhombic Triacontahedron"
+  ]
+ ],
+ "helical_surface": [
+  [
+   "HYPERBOLIC_HELICOID",
+   "Hyperbolic Helicoid"
+  ],
+  [
+   "SEASHELL",
+   "Seashell"
+  ],
+  [
+   "CORKSCREW",
+   "Corkscrew"
+  ]
+ ],
+ "sponge": [
+  [
+   "MENGER",
+   "Menger Sponge"
+  ],
+  [
+   "TETRA",
+   "Sierpinski Tetrahedron"
+  ],
+  [
+   "OCTA",
+   "Sierpinski Octahedron"
+  ],
+  [
+   "VICSEK",
+   "Vicsek Fractal"
+  ],
+  [
+   "CARPET",
+   "Sierpinski Carpet"
+  ]
+ ],
+ "fractal_polyhedron": [
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "ICOSA",
+   "Icosahedron"
+  ]
+ ],
+ "torus_knot": [
+  [
+   "2_3",
+   "Trefoil (2, 3)"
+  ],
+  [
+   "2_5",
+   "Cinquefoil (2, 5)"
+  ],
+  [
+   "2_7",
+   "(2, 7)"
+  ],
+  [
+   "3_4",
+   "(3, 4)"
+  ],
+  [
+   "3_5",
+   "(3, 5)"
+  ],
+  [
+   "5_2",
+   "(5, 2)"
+  ]
+ ],
+ "celtic_knot": [
+  [
+   "ICOSA",
+   "Icosahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "TETRA",
+   "Tetrahedron"
+  ]
+ ],
+ "platonic_twist": [
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "ICOSA",
+   "Icosahedron"
+  ]
+ ],
+ "stereographic": [
+  [
+   "GRID",
+   "Square Grid"
+  ],
+  [
+   "POLAR",
+   "Polar Grid"
+  ],
+  [
+   "TILING",
+   "{p,q} Tiling"
+  ],
+  [
+   "BEACHBALL",
+   "Beach Ball"
+  ],
+  [
+   "FLOWER",
+   "Flower Lattice"
   ]
  ]
 }

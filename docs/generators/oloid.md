@@ -17,6 +17,8 @@ A small family of surfaces built from two perpendicular circles. The **oloid** (
 | Scale | 1.0 | Output is centred and fitted so its largest extent is $2\,\text{m}\times$ Scale. Range 0.01-100. |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

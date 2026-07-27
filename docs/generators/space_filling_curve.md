@@ -20,6 +20,24 @@ This generator builds space-filling curves in 2D and 3D: the open **Hilbert** cu
 | Bevel Resolution | 4 | Bevel profile resolution |
 | Size | 2.0 | Overall size of the curve |
 
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/space_filling_curve__HILBERT3D.png" width="200"><br><sub>Hilbert 3D</sub></td>
+<td align="center"><img src="../images/variants/space_filling_curve__MOORE3D.png" width="200"><br><sub>Moore 3D</sub></td>
+<td align="center"><img src="../images/variants/space_filling_curve__HILBERT2D.png" width="200"><br><sub>Hilbert 2D</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/space_filling_curve__MOORE2D.png" width="200"><br><sub>Moore 2D</sub></td>
+<td align="center"><img src="../images/variants/space_filling_curve__GILBERT3D.png" width="200"><br><sub>Gilbert 3D</sub></td>
+<td align="center"><img src="../images/variants/space_filling_curve__GILBERT2D.png" width="200"><br><sub>Gilbert 2D</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 A space-filling curve is a single path through every cell of a discrete grid, adjacent cells differing by one unit step. On a grid of side $2^k$ in $d$ dimensions the path has $2^{kd}$ points.

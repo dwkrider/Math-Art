@@ -1,5 +1,8 @@
 # Symmetric Sculpture
 
+> ⚠️ **Experimental.** This generator is a work in progress — its
+> presets, options and output may change in future versions.
+
 ![Symmetric Sculpture](../images/symmetric_sculpture.png)
 
 ## Overview
@@ -29,6 +32,8 @@ A Blender adaptation of George W. Hart's sculpture design program (the tool behi
 | Use Active Object as Motif | Off | Place the active mesh object into the representative plane instead of building the demo arc motif (draw it flat in its local XY plane) |
 
 The Geometry Nodes modifier exposes further live inputs on the result object: **Shell** (radial extrusion fraction), **Weld** (merge distance where copies meet, default $10^{-4}$), **Full Sculpture** (show all copies with the motif's real material for export/render, off = translucent design view), **Copy Material**, and the **Plane Rotation** / **Plane Offset** vectors that map the motif's XY plane onto the representative plane.
+
+
 
 
 ## Variants

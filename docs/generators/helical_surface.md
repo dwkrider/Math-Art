@@ -23,6 +23,19 @@ Three classic helical / spiral parametric surfaces: the hyperbolic helicoid (a t
 | Thickness | 0.0 | Solidify modifier thickness (0 = raw surface). Range 0-1. |
 | Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |
 
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/helical_surface__HYPERBOLIC_HELICOID.png" width="200"><br><sub>Hyperbolic Helicoid</sub></td>
+<td align="center"><img src="../images/variants/helical_surface__SEASHELL.png" width="200"><br><sub>Seashell</sub></td>
+<td align="center"><img src="../images/variants/helical_surface__CORKSCREW.png" width="200"><br><sub>Corkscrew</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 Each surface is a direct parametric mesh over a $u,v$ grid.

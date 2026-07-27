@@ -17,6 +17,8 @@ This generator builds triply-periodic minimal surfaces (TPMS) — the space-fill
 | Thickness | 0.0 | If > 0, add a Solidify modifier with this thickness |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

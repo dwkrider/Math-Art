@@ -31,6 +31,8 @@ A dual-polyhedron sculpture: an inset polygon sits on every face of a chosen **o
 | Scale | 1.0 | Uniform output scale (min 0.01, max 100.0). |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

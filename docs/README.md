@@ -58,7 +58,7 @@ Each shape is generated centered on the origin fitting a 2 m cube, and shown w
 
 | | | |
 |:--:|:--:|:--:|
-| [<img src="images/symmetric_sculpture.png" width="240">](generators/symmetric_sculpture.md)<br>**[Symmetric Sculpture](generators/symmetric_sculpture.md)** | [<img src="images/leonardo.png" width="240">](generators/leonardo.md)<br>**[Leonardo Style](generators/leonardo.md)** | [<img src="images/curvature_color.png" width="240">](generators/curvature_color.md)<br>**[Curvature Color](generators/curvature_color.md)** |
+| [<img src="images/symmetric_sculpture.png" width="240">](generators/symmetric_sculpture.md)<br>**[Symmetric Sculpture](generators/symmetric_sculpture.md)** _(experimental)_ | [<img src="images/leonardo.png" width="240">](generators/leonardo.md)<br>**[Leonardo Style](generators/leonardo.md)** | [<img src="images/curvature_color.png" width="240">](generators/curvature_color.md)<br>**[Curvature Color](generators/curvature_color.md)** |
 | [<img src="images/voronoi_openwork.png" width="240">](generators/voronoi_openwork.md)<br>**[Voronoi Openwork](generators/voronoi_openwork.md)** | [<img src="images/organic_wireframe.png" width="240">](generators/organic_wireframe.md)<br>**[Organic Wireframe](generators/organic_wireframe.md)** |  |
 
 ---

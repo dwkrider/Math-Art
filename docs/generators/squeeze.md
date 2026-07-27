@@ -19,6 +19,22 @@ A polyhedron whose edges are replaced by curves bending inward along one of thei
 | Thickness | 0.0 | Solidify modifier thickness (0 = raw surface). Range 0-1. |
 | Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |
 
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/squeeze__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/squeeze__RHOMBIC.png" width="200"><br><sub>Rhombic Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/squeeze__TRUNCOCT.png" width="200"><br><sub>Truncated Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/squeeze__HEXPRISM.png" width="200"><br><sub>Hexagonal Prism</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **Parity assignment.** The core problem is choosing, for each edge, which of its two faces claims it, so that (a) every edge is claimed exactly once and (b) claims alternate around every face. The generator assigns each face a phase $p_f\in\{0,1\}$ and declares slot $i$ claimed iff $(i+p_f)$ is even. For an edge shared by slot $i$ of face $f$ and slot $j$ of face $g$, "claimed once" requires

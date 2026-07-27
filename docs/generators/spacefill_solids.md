@@ -24,6 +24,8 @@ Blocks of the classical space-filling honeycombs, with every cell shrunk by a ga
 | Spiral Pitch | 55.0 | Polar-star pitch angle from the axis (degrees); higher is squatter, wider spiral cells |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

@@ -27,6 +27,23 @@ Strands weaving over and under along the edges of a framework mesh — a port of
 | Coloring | Per Strand | Per Strand (a distinct material per strand), Per Braid (fewest materials with no two crossing strands sharing one), or None. |
 | Scale | 1.0 | Built-in frameworks only: half-size of the bounding cube (min 0.01, max 100.0). |
 
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/celtic_knot__ICOSA.png" width="200"><br><sub>Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot__CUBE.png" width="200"><br><sub>Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/celtic_knot__OCTA.png" width="200"><br><sub>Octahedron</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot__TETRA.png" width="200"><br><sub>Tetrahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 The knot is a **midpoint weave** over a framework mesh. Every strand threads from edge midpoint to edge midpoint, and at each edge it either passes straight or twists (crosses over/under its neighbour). The whole pattern is produced by walking the mesh's **half-edge loops**.

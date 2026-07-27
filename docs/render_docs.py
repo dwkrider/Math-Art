@@ -363,6 +363,18 @@ def _V(prop, s, **common):
     return out
 
 
+def _RSV(fam_id, fam_label, s):
+    """Regular-solids variants for one family: 'ID=Name;...' into
+    4-tuples (id, name, {family, solid}, family_label) so the gallery
+    can group them by family."""
+    out = []
+    for part in s.split(";"):
+        vid, name = part.split("=", 1)
+        out.append((vid, name,
+                    {"family": fam_id, "solid": vid}, fam_label))
+    return out
+
+
 VARIANTS = {
     "scherk_collins": ("mesh.scherk_collins_add", _V("preset",
         "HEX=Hyperbolic Hexagon;TREFOIL=Minimal Trefoil;"
@@ -397,11 +409,82 @@ VARIANTS = {
         "KLEIN=Klein Bottle;KLEIN8=Klein Bottle (Fig-8);"
         "CROSSCAP=Cross-Cap;ROMAN=Roman Surface;BOY=Boy's Surface;"
         "GENUS=Genus-g Surface;TWIST_STRIP=Twisted Strip")),
-    "regular_solids": ("mesh.regular_solid_add", [
-        (i, n, {"family": "PLATONIC", "solid": i}) for i, n in
-        [("TETRA", "Tetrahedron"), ("CUBE", "Cube"),
-         ("OCTA", "Octahedron"), ("DODECA", "Dodecahedron"),
-         ("ICOSA", "Icosahedron")]]),
+    "regular_solids": ("mesh.regular_solid_add",
+        _RSV("PLATONIC", "Platonic",
+             "TETRA=Tetrahedron;CUBE=Cube;OCTA=Octahedron;"
+             "DODECA=Dodecahedron;ICOSA=Icosahedron")
+        + _RSV("ARCHIMEDEAN", "Archimedean",
+               "TT=Truncated Tetrahedron;CO=Cuboctahedron;"
+               "TC=Truncated Cube;TO=Truncated Octahedron;"
+               "RCO=Rhombicuboctahedron;TCO=Truncated Cuboctahedron;"
+               "SC=Snub Cube;ID=Icosidodecahedron;"
+               "TD=Truncated Dodecahedron;TI=Truncated Icosahedron;"
+               "RID=Rhombicosidodecahedron;"
+               "TID=Truncated Icosidodecahedron;SD=Snub Dodecahedron")
+        + _RSV("CATALAN", "Catalan",
+               "KTT=Triakis Tetrahedron;RD=Rhombic Dodecahedron;"
+               "KTC=Triakis Octahedron;KTO=Tetrakis Hexahedron;"
+               "DIT=Deltoidal Icositetrahedron;"
+               "DDD=Disdyakis Dodecahedron;"
+               "PIT=Pentagonal Icositetrahedron;"
+               "RT=Rhombic Triacontahedron;KTD=Triakis Icosahedron;"
+               "PKD=Pentakis Dodecahedron;"
+               "DHX=Deltoidal Hexecontahedron;"
+               "DDT=Disdyakis Triacontahedron;"
+               "PHX=Pentagonal Hexecontahedron")
+        + _RSV("KEPLER", "Kepler-Poinsot",
+               "SSD=Small Stellated Dodecahedron;"
+               "GD=Great Dodecahedron;"
+               "GSD=Great Stellated Dodecahedron;"
+               "GI=Great Icosahedron")
+        + _RSV("PRISM", "Prisms & Antiprisms",
+               "PRISM=Hexagonal Prism;ANTIPRISM=Hexagonal Antiprism")
+        + _RSV("JOHNSON", "Johnson",
+               "J1=Square Pyramid (J1);J2=Pentagonal Pyramid (J2);"
+               "J3=Triangular Cupola (J3);J4=Square Cupola (J4);"
+               "J5=Pentagonal Cupola (J5);J6=Pentagonal Rotunda (J6);"
+               "J7=Elongated Triangular Pyramid (J7);"
+               "J8=Elongated Square Pyramid (J8);"
+               "J9=Elongated Pentagonal Pyramid (J9);"
+               "J10=Gyroelongated Square Pyramid (J10);"
+               "J11=Gyroelongated Pentagonal Pyramid (J11);"
+               "J12=Triangular Bipyramid (J12);"
+               "J13=Pentagonal Bipyramid (J13);"
+               "J14=Elongated Triangular Bipyramid (J14);"
+               "J15=Elongated Square Bipyramid (J15);"
+               "J16=Elongated Pentagonal Bipyramid (J16);"
+               "J17=Gyroelongated Square Bipyramid (J17);"
+               "J18=Elongated Triangular Cupola (J18);"
+               "J19=Elongated Square Cupola (J19);"
+               "J20=Elongated Pentagonal Cupola (J20);"
+               "J21=Elongated Pentagonal Rotunda (J21);"
+               "J22=Gyroelongated Triangular Cupola (J22);"
+               "J23=Gyroelongated Square Cupola (J23);"
+               "J24=Gyroelongated Pentagonal Cupola (J24);"
+               "J25=Gyroelongated Pentagonal Rotunda (J25);"
+               "J26=Gyrobifastigium (J26);"
+               "J27=Triangular Orthobicupola (J27);"
+               "J28=Square Orthobicupola (J28);"
+               "J29=Square Gyrobicupola (J29);"
+               "J30=Pentagonal Orthobicupola (J30);"
+               "J31=Pentagonal Gyrobicupola (J31);"
+               "J32=Pentagonal Orthocupolarotunda (J32);"
+               "J33=Pentagonal Gyrocupolarotunda (J33);"
+               "J34=Pentagonal Orthobirotunda (J34);"
+               "J35=Elongated Triangular Orthobicupola (J35);"
+               "J36=Elongated Triangular Gyrobicupola (J36);"
+               "J37=Elongated Square Gyrobicupola (J37);"
+               "J38=Elongated Pentagonal Orthobicupola (J38);"
+               "J39=Elongated Pentagonal Gyrobicupola (J39);"
+               "J40=Elongated Pentagonal Orthocupolarotunda (J40);"
+               "J41=Elongated Pentagonal Gyrocupolarotunda (J41);"
+               "J42=Elongated Pentagonal Orthobirotunda (J42);"
+               "J43=Elongated Pentagonal Gyrobirotunda (J43);"
+               "J44=Gyroelongated Triangular Bicupola (J44);"
+               "J45=Gyroelongated Square Bicupola (J45);"
+               "J46=Gyroelongated Pentagonal Bicupola (J46);"
+               "J47=Gyroelongated Pentagonal Cupolarotunda (J47);"
+               "J48=Gyroelongated Pentagonal Birotunda (J48)")),
     "zonohedra": ("mesh.zonohedron_add", _V("kind",
         "POLAR=Polar Zonohedron;SPIRAL=Rhombic Spirallohedron;"
         "RHOMBIC_DODECA=Rhombic Dodecahedron;"
@@ -478,6 +561,52 @@ VARIANTS = {
         ("GOLDBERG", "Goldberg Dual", {"base": "ICOSA", "dual": True})]),
     "symmetrohedron": ("mesh.symmetrohedron_add", _V("group",
         "I=Icosahedral;O=Octahedral;T=Tetrahedral")),
+    "space_filling_curve": ("curve.space_filling_add", _V("kind",
+        "HILBERT3D=Hilbert 3D;MOORE3D=Moore 3D;HILBERT2D=Hilbert 2D;"
+        "MOORE2D=Moore 2D;GILBERT3D=Gilbert 3D;GILBERT2D=Gilbert 2D")),
+    "prime_knot": ("curve.prime_knot_add", _V("knot",
+        "3_1=Trefoil (3.1);4_1=Figure-Eight (4.1);"
+        "5_1=Cinquefoil (5.1);5_2=Knot 5.2;6_1=Knot 6.1;"
+        "6_2=Knot 6.2;6_3=Knot 6.3;7_1=Knot 7.1")),
+    "squeeze": ("mesh.squeeze_add", _V("seed",
+        "CUBE=Cube;RHOMBIC=Rhombic Dodecahedron;"
+        "TRUNCOCT=Truncated Octahedron;HEXPRISM=Hexagonal Prism")),
+    "vertex_vortices": ("mesh.vertex_vortices_add", _V("seed",
+        "TETRA=Tetrahedron;CUBE=Cube;OCTA=Octahedron;"
+        "DODECA=Dodecahedron;ICOSA=Icosahedron;CO=Cuboctahedron;"
+        "TO=Truncated Octahedron;SC=Snub Cube;"
+        "ID=Icosidodecahedron;TI=Truncated Icosahedron;"
+        "RD=Rhombic Dodecahedron;RT=Rhombic Triacontahedron")),
+    "helical_surface": ("mesh.helical_surface_add", _V("surface",
+        "HYPERBOLIC_HELICOID=Hyperbolic Helicoid;SEASHELL=Seashell;"
+        "CORKSCREW=Corkscrew")),
+    "sponge": ("mesh.sponge_add", _V("kind",
+        "MENGER=Menger Sponge;TETRA=Sierpinski Tetrahedron;"
+        "OCTA=Sierpinski Octahedron;VICSEK=Vicsek Fractal;"
+        "CARPET=Sierpinski Carpet")),
+    "fractal_polyhedron": ("mesh.fractal_polyhedron_add", [
+        ("TETRA", "Tetrahedron", {"kind": "TETRA"}),
+        ("CUBE", "Cube", {"kind": "CUBE"}),
+        ("OCTA", "Octahedron", {"kind": "OCTA"}),
+        # 20 vertices -> 20^3 exceeds the copy cap; use 2 generations
+        ("DODECA", "Dodecahedron", {"kind": "DODECA", "generations": 2}),
+        ("ICOSA", "Icosahedron", {"kind": "ICOSA"})]),
+    "torus_knot": ("curve.torus_knot_add", [
+        ("2_3", "Trefoil (2, 3)", {"p": 2, "q": 3}),
+        ("2_5", "Cinquefoil (2, 5)", {"p": 2, "q": 5}),
+        ("2_7", "(2, 7)", {"p": 2, "q": 7}),
+        ("3_4", "(3, 4)", {"p": 3, "q": 4}),
+        ("3_5", "(3, 5)", {"p": 3, "q": 5}),
+        ("5_2", "(5, 2)", {"p": 5, "q": 2})]),
+    "celtic_knot": ("curve.celtic_knot_add", _V("source",
+        "ICOSA=Icosahedron;DODECA=Dodecahedron;CUBE=Cube;"
+        "OCTA=Octahedron;TETRA=Tetrahedron")),
+    "platonic_twist": ("mesh.platonic_twist_add", _V("kind",
+        "TETRA=Tetrahedron;CUBE=Cube;OCTA=Octahedron;"
+        "DODECA=Dodecahedron;ICOSA=Icosahedron")),
+    "stereographic": ("mesh.stereographic_add", _V("pattern",
+        "GRID=Square Grid;POLAR=Polar Grid;TILING={p,q} Tiling;"
+        "BEACHBALL=Beach Ball;FLOWER=Flower Lattice")),
 }
 
 
@@ -496,9 +625,11 @@ def render_variants(only=None):
     for slug, (op, vs) in VARIANTS.items():
         if only and slug not in only:
             continue
-        manifest[slug] = [[vid, name] for vid, name, _ in vs]
+        manifest[slug] = [([e[0], e[1], e[3]] if len(e) > 3
+                           else [e[0], e[1]]) for e in vs]
         json.dump(manifest, open(mpath, "w"), indent=1)
-        for vid, name, kw in vs:
+        for e in vs:
+            vid, name, kw = e[0], e[1], e[2]
             clear_sculpts()
             try:
                 O(op, **kw)()

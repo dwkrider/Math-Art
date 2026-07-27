@@ -20,21 +20,43 @@ PER_ROW = 3
 THUMB = 200
 
 
-def build_section(slug, variants):
-    lines = ["## Variants", "",
-             "Renders of each selectable option:", ""]
-    lines.append("<table>")
+def _grid(slug, variants):
+    """One <table> grid for a flat list of [vid, label, ...] entries."""
+    lines = ["<table>"]
     for i in range(0, len(variants), PER_ROW):
-        row = variants[i:i + PER_ROW]
         lines.append("<tr>")
-        for vid, label in row:
+        for v in variants[i:i + PER_ROW]:
+            vid, label = v[0], v[1]
             img = f"../images/variants/{slug}__{vid}.png"
             lines.append(
                 f'<td align="center"><img src="{img}" width="{THUMB}">'
                 f'<br><sub>{label}</sub></td>')
         lines.append("</tr>")
     lines.append("</table>")
-    lines.append("")
+    return lines
+
+
+def build_section(slug, variants):
+    lines = ["## Variants", "",
+             "Renders of each selectable option:", ""]
+    # grouped when entries carry a third field (the group label)
+    grouped = any(len(v) > 2 for v in variants)
+    if grouped:
+        order, byg = [], {}
+        for v in variants:
+            g = v[2] if len(v) > 2 else "Other"
+            if g not in byg:
+                byg[g] = []
+                order.append(g)
+            byg[g].append(v)
+        for g in order:
+            lines.append(f"### {g}")
+            lines.append("")
+            lines.extend(_grid(slug, byg[g]))
+            lines.append("")
+    else:
+        lines.extend(_grid(slug, variants))
+        lines.append("")
     return "\n".join(lines)
 
 

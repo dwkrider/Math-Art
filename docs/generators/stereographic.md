@@ -27,6 +27,23 @@ After Henry Segerman's stereographic-projection sculptures: a perforated spheric
 | Add Floor Plane | Off | Large plane under the sphere so the projected shadow is visible. |
 | Floor Size | 40.0 | Floor plane side length, in sphere radii. Range 4-400. |
 
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/stereographic__GRID.png" width="200"><br><sub>Square Grid</sub></td>
+<td align="center"><img src="../images/variants/stereographic__POLAR.png" width="200"><br><sub>Polar Grid</sub></td>
+<td align="center"><img src="../images/variants/stereographic__TILING.png" width="200"><br><sub>{p,q} Tiling</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/stereographic__BEACHBALL.png" width="200"><br><sub>Beach Ball</sub></td>
+<td align="center"><img src="../images/variants/stereographic__FLOWER.png" width="200"><br><sub>Flower Lattice</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **Stereographic projection $S^2\to$ plane.** The sphere of radius $R$ rests with its south pole at the origin, so its centre is $C=(0,0,R)$ and its north pole (the projection point) is $N=(0,0,2R)$. Stereographic projection from $N$ onto the plane $z=0$ sends a sphere point at polar angle $\theta$ (measured from $N$) to plane radius

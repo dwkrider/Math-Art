@@ -27,6 +27,8 @@ A family of augmented and folded Platonic sculptures. **Spiked** raises a pyrami
 | Scale | 1.0 | Overall size multiplier |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

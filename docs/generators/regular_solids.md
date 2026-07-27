@@ -24,9 +24,13 @@ A complete *Add Regular Solid* organised by family: the five **Platonic** solids
 | Scale | 1.0 | Uniform output scale (min 0.01, max 100.0). |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:
+
+### Platonic
 
 <table>
 <tr>
@@ -37,6 +41,169 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/regular_solids__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
 <td align="center"><img src="../images/variants/regular_solids__ICOSA.png" width="200"><br><sub>Icosahedron</sub></td>
+</tr>
+</table>
+
+### Archimedean
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__TT.png" width="200"><br><sub>Truncated Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__CO.png" width="200"><br><sub>Cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__TC.png" width="200"><br><sub>Truncated Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__TO.png" width="200"><br><sub>Truncated Octahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__RCO.png" width="200"><br><sub>Rhombicuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__TCO.png" width="200"><br><sub>Truncated Cuboctahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__SC.png" width="200"><br><sub>Snub Cube</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__ID.png" width="200"><br><sub>Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__TD.png" width="200"><br><sub>Truncated Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__TI.png" width="200"><br><sub>Truncated Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__RID.png" width="200"><br><sub>Rhombicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__TID.png" width="200"><br><sub>Truncated Icosidodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__SD.png" width="200"><br><sub>Snub Dodecahedron</sub></td>
+</tr>
+</table>
+
+### Catalan
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__KTT.png" width="200"><br><sub>Triakis Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__RD.png" width="200"><br><sub>Rhombic Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__KTC.png" width="200"><br><sub>Triakis Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__KTO.png" width="200"><br><sub>Tetrakis Hexahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__DIT.png" width="200"><br><sub>Deltoidal Icositetrahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__DDD.png" width="200"><br><sub>Disdyakis Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__PIT.png" width="200"><br><sub>Pentagonal Icositetrahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__RT.png" width="200"><br><sub>Rhombic Triacontahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__KTD.png" width="200"><br><sub>Triakis Icosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__PKD.png" width="200"><br><sub>Pentakis Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__DHX.png" width="200"><br><sub>Deltoidal Hexecontahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__DDT.png" width="200"><br><sub>Disdyakis Triacontahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__PHX.png" width="200"><br><sub>Pentagonal Hexecontahedron</sub></td>
+</tr>
+</table>
+
+### Kepler-Poinsot
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__SSD.png" width="200"><br><sub>Small Stellated Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__GD.png" width="200"><br><sub>Great Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__GSD.png" width="200"><br><sub>Great Stellated Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__GI.png" width="200"><br><sub>Great Icosahedron</sub></td>
+</tr>
+</table>
+
+### Prisms & Antiprisms
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__PRISM.png" width="200"><br><sub>Hexagonal Prism</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__ANTIPRISM.png" width="200"><br><sub>Hexagonal Antiprism</sub></td>
+</tr>
+</table>
+
+### Johnson
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J1.png" width="200"><br><sub>Square Pyramid (J1)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J2.png" width="200"><br><sub>Pentagonal Pyramid (J2)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J3.png" width="200"><br><sub>Triangular Cupola (J3)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J4.png" width="200"><br><sub>Square Cupola (J4)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J5.png" width="200"><br><sub>Pentagonal Cupola (J5)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J6.png" width="200"><br><sub>Pentagonal Rotunda (J6)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J7.png" width="200"><br><sub>Elongated Triangular Pyramid (J7)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J8.png" width="200"><br><sub>Elongated Square Pyramid (J8)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J9.png" width="200"><br><sub>Elongated Pentagonal Pyramid (J9)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J10.png" width="200"><br><sub>Gyroelongated Square Pyramid (J10)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J11.png" width="200"><br><sub>Gyroelongated Pentagonal Pyramid (J11)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J12.png" width="200"><br><sub>Triangular Bipyramid (J12)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J13.png" width="200"><br><sub>Pentagonal Bipyramid (J13)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J14.png" width="200"><br><sub>Elongated Triangular Bipyramid (J14)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J15.png" width="200"><br><sub>Elongated Square Bipyramid (J15)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J16.png" width="200"><br><sub>Elongated Pentagonal Bipyramid (J16)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J17.png" width="200"><br><sub>Gyroelongated Square Bipyramid (J17)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J18.png" width="200"><br><sub>Elongated Triangular Cupola (J18)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J19.png" width="200"><br><sub>Elongated Square Cupola (J19)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J20.png" width="200"><br><sub>Elongated Pentagonal Cupola (J20)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J21.png" width="200"><br><sub>Elongated Pentagonal Rotunda (J21)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J22.png" width="200"><br><sub>Gyroelongated Triangular Cupola (J22)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J23.png" width="200"><br><sub>Gyroelongated Square Cupola (J23)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J24.png" width="200"><br><sub>Gyroelongated Pentagonal Cupola (J24)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J25.png" width="200"><br><sub>Gyroelongated Pentagonal Rotunda (J25)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J26.png" width="200"><br><sub>Gyrobifastigium (J26)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J27.png" width="200"><br><sub>Triangular Orthobicupola (J27)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J28.png" width="200"><br><sub>Square Orthobicupola (J28)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J29.png" width="200"><br><sub>Square Gyrobicupola (J29)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J30.png" width="200"><br><sub>Pentagonal Orthobicupola (J30)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J31.png" width="200"><br><sub>Pentagonal Gyrobicupola (J31)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J32.png" width="200"><br><sub>Pentagonal Orthocupolarotunda (J32)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J33.png" width="200"><br><sub>Pentagonal Gyrocupolarotunda (J33)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J34.png" width="200"><br><sub>Pentagonal Orthobirotunda (J34)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J35.png" width="200"><br><sub>Elongated Triangular Orthobicupola (J35)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J36.png" width="200"><br><sub>Elongated Triangular Gyrobicupola (J36)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J37.png" width="200"><br><sub>Elongated Square Gyrobicupola (J37)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J38.png" width="200"><br><sub>Elongated Pentagonal Orthobicupola (J38)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J39.png" width="200"><br><sub>Elongated Pentagonal Gyrobicupola (J39)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J40.png" width="200"><br><sub>Elongated Pentagonal Orthocupolarotunda (J40)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J41.png" width="200"><br><sub>Elongated Pentagonal Gyrocupolarotunda (J41)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J42.png" width="200"><br><sub>Elongated Pentagonal Orthobirotunda (J42)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J43.png" width="200"><br><sub>Elongated Pentagonal Gyrobirotunda (J43)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J44.png" width="200"><br><sub>Gyroelongated Triangular Bicupola (J44)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J45.png" width="200"><br><sub>Gyroelongated Square Bicupola (J45)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J46.png" width="200"><br><sub>Gyroelongated Pentagonal Bicupola (J46)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J47.png" width="200"><br><sub>Gyroelongated Pentagonal Cupolarotunda (J47)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J48.png" width="200"><br><sub>Gyroelongated Pentagonal Birotunda (J48)</sub></td>
 </tr>
 </table>
 

@@ -29,6 +29,8 @@ The Scherk-Collins generator builds the saddle-chain toroid sculptures that Carl
 | NURBS Detail | 2 | Control-point density used for NURBS output (stays smooth at low values) |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

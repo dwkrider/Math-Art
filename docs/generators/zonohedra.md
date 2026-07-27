@@ -21,6 +21,8 @@ Zonohedra are convex polyhedra whose faces are all centrally symmetric — the M
 | Scale | 1.0 | Uniform output scale (min 0.01, max 100.0). |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

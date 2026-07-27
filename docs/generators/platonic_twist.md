@@ -20,6 +20,23 @@ After George W. Hart's *Platonic Twist* construction: the faces of a Platonic so
 | Thickness | 0.04 | Solidify modifier thickness (0 = pure surface). Range 0.0-0.5. |
 | Scale | 1.0 | Output is centred and fitted so its largest extent is $2\,\text{m}\times$ Scale. Range 0.01-100. |
 
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/platonic_twist__TETRA.png" width="200"><br><sub>Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/platonic_twist__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/platonic_twist__OCTA.png" width="200"><br><sub>Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/platonic_twist__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/platonic_twist__ICOSA.png" width="200"><br><sub>Icosahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **Seed and plates.** Each Platonic solid is generated from exact coordinates (the icosahedron from the golden-ratio $\varphi=(1+\sqrt5)/2$ cyclic triples; the dodecahedron as the dual of the icosahedron, its vertices the icosa face centroids ordered by angle). For a face with vertex centroid $\mathbf c$ and unit normal $\mathbf n=\mathbf c/\lVert\mathbf c\rVert$, the plate centre is pushed out radially,

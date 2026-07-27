@@ -31,6 +31,8 @@ The six regular convex 4-polytopes — the 5-cell, tesseract (8-cell), 16-cell, 
 | Rings Only | Off | Drop the edge framework and show just the rings of solid cells (the printable, fig. 3-29 look). |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

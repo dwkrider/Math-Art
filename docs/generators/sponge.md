@@ -16,6 +16,23 @@ Subtractive volume fractals: the Menger sponge and its relatives, built by recur
 
 *Per-kind level caps: Menger 4, Vicsek 5, Carpet 6, Tetra 6, Octa 5.*
 
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/sponge__MENGER.png" width="200"><br><sub>Menger Sponge</sub></td>
+<td align="center"><img src="../images/variants/sponge__TETRA.png" width="200"><br><sub>Sierpinski Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/sponge__OCTA.png" width="200"><br><sub>Sierpinski Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/sponge__VICSEK.png" width="200"><br><sub>Vicsek Fractal</sub></td>
+<td align="center"><img src="../images/variants/sponge__CARPET.png" width="200"><br><sub>Sierpinski Carpet</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **Grid sponges (Menger / Vicsek / carpet).** A unit cube is divided into a $3\times3\times3$ grid and a fixed rule decides which of the 27 subcells survive one step; the rule is applied recursively, each surviving cell subdividing into its own $3\times3\times3$ block. Writing $\text{mid}=(x{=}1,\,y{=}1,\,z{=}1)$ for whether each coordinate is central,

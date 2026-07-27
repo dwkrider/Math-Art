@@ -27,6 +27,8 @@ Symmetrohedra, introduced by Craig Kaplan and George Hart, are polyhedra assembl
 | Scale | 1.0 | Uniform output scale (min 0.01, max 100.0). |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

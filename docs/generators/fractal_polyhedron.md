@@ -24,6 +24,23 @@ Recursive clusters of Platonic solids, after the fractal-polyhedron construction
 | Coloring | Per Generation | One material per generation, or None |
 | Scale | 1.0 | Overall size (the cluster is fit to a 2 m cube then scaled) |
 
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/fractal_polyhedron__TETRA.png" width="200"><br><sub>Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/fractal_polyhedron__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/fractal_polyhedron__OCTA.png" width="200"><br><sub>Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/fractal_polyhedron__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/fractal_polyhedron__ICOSA.png" width="200"><br><sub>Icosahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **Seeds and anchors.** The five Platonic solids are generated at unit scale (the dodecahedron as the dual of the icosahedron — a vertex at each icosahedral face centroid, faces ordered around each icosahedral vertex). The chosen anchor mode gives the set of local points where children are attached:

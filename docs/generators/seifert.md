@@ -27,6 +27,8 @@ The Seifert generator builds the orientable spanning surface (Seifert surface) o
 | Knot Tube Radius | 0.04 | Bevel radius of the knot curve |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

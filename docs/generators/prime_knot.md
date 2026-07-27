@@ -22,6 +22,28 @@ This generator builds all 249 prime knots with up to 10 crossings (the Rolfsen t
 | Tube Sides | 12 | Cross-section sides (mesh output) |
 | Scale | 1.0 | Overall size (max extent = 2.0 × Scale) |
 
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__3_1.png" width="200"><br><sub>Trefoil (3.1)</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__4_1.png" width="200"><br><sub>Figure-Eight (4.1)</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__5_1.png" width="200"><br><sub>Cinquefoil (5.1)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__5_2.png" width="200"><br><sub>Knot 5.2</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__6_1.png" width="200"><br><sub>Knot 6.1</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__6_2.png" width="200"><br><sub>Knot 6.2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__6_3.png" width="200"><br><sub>Knot 6.3</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__7_1.png" width="200"><br><sub>Knot 7.1</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **Braid words.** A braid on $n$ strands is a word in the Artin generators $\sigma_1,\dots,\sigma_{n-1}$ and their inverses; Gittings' letter notation uses `a..z` for $\sigma_i$ and `A..Z` for $\sigma_i^{-1}$. The **closure** of a braid joins each strand's top to its bottom, producing a knot or link. The closure is a knot (one component) iff the induced permutation — the product of transpositions $(i\,\;i{+}1)$ for each generator $\sigma_i^{\pm}$ — is a single $n$-cycle; the generator rejects words whose closure is a link.

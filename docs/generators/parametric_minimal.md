@@ -22,6 +22,8 @@ This generator produces the classic gallery of parametric minimal surfaces — E
 | Scale | 1.0 | Multiplier on the normalized size (1.0 = a 2 m cube centered on the origin) |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

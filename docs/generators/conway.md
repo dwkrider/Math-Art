@@ -23,6 +23,8 @@ Build a polyhedron by applying a string of **Conway/Hart operators** to a seed s
 | Scale | 1.0 | Uniform output scale (min 0.01, max 100.0). |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

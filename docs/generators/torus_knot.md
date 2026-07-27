@@ -22,6 +22,24 @@ This generator builds the $(p,q)$ torus knots and links as rope curves lying on 
 | Color Components | On | One material with a distinct color per link component (links only) |
 | Scale | 1.0 | Overall size multiplier |
 
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/torus_knot__2_3.png" width="200"><br><sub>Trefoil (2, 3)</sub></td>
+<td align="center"><img src="../images/variants/torus_knot__2_5.png" width="200"><br><sub>Cinquefoil (2, 5)</sub></td>
+<td align="center"><img src="../images/variants/torus_knot__2_7.png" width="200"><br><sub>(2, 7)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/torus_knot__3_4.png" width="200"><br><sub>(3, 4)</sub></td>
+<td align="center"><img src="../images/variants/torus_knot__3_5.png" width="200"><br><sub>(3, 5)</sub></td>
+<td align="center"><img src="../images/variants/torus_knot__5_2.png" width="200"><br><sub>(5, 2)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 A $(p,q)$ torus knot lies on the surface of a torus of major radius $R$ and minor radius $r$, winding $p$ times the long way (around the axis) and $q$ times the short way (through the hole). It is parametrized by

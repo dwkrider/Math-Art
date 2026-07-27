@@ -22,6 +22,8 @@ The classic topology menagerie: Klein bottles, the two RP² immersions (cross-ca
 | Smooth Shading | On | Shade the mesh smooth. |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:

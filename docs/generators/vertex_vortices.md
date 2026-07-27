@@ -18,6 +18,34 @@ Each face of a polyhedron is divided by spokes from its centre to each vertex, t
 | Thickness | 0.0 | Solidify modifier thickness (0 = raw surface). Range 0-1. |
 | Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |
 
+
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/vertex_vortices__TETRA.png" width="200"><br><sub>Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/vertex_vortices__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/vertex_vortices__OCTA.png" width="200"><br><sub>Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/vertex_vortices__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/vertex_vortices__ICOSA.png" width="200"><br><sub>Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/vertex_vortices__CO.png" width="200"><br><sub>Cuboctahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/vertex_vortices__TO.png" width="200"><br><sub>Truncated Octahedron</sub></td>
+<td align="center"><img src="../images/variants/vertex_vortices__SC.png" width="200"><br><sub>Snub Cube</sub></td>
+<td align="center"><img src="../images/variants/vertex_vortices__ID.png" width="200"><br><sub>Icosidodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/vertex_vortices__TI.png" width="200"><br><sub>Truncated Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/vertex_vortices__RD.png" width="200"><br><sub>Rhombic Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/vertex_vortices__RT.png" width="200"><br><sub>Rhombic Triacontahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **Bent spokes.** For each face, its outward Newell normal $\hat n$ and centroid $C$ are computed. Each vertex $v$ of the face defines a spoke $C\!\to\!v$ with direction $\mathbf d = V_v - C$ of length $L$. The spoke is bent sideways in the face plane, along the perpendicular $\hat p = \hat n \times \hat{\mathbf d}\cdot\text{sgn}$ (sgn flips with `Reverse Swirl`), by a $4t(1-t)$ profile:

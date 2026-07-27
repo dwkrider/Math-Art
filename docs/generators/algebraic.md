@@ -18,6 +18,8 @@ Classical algebraic surfaces -- celebrated cubics, quartics, quintics and sextic
 | Smooth Shading | On | Shade the mesh smooth. |
 
 
+
+
 ## Variants
 
 Renders of each selectable option:
