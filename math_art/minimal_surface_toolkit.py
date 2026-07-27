@@ -257,44 +257,41 @@ def _chen_gackstatter(nu, nv, order, radius, theta=0.0):
 
 def _knoid(nu, nv, order, radius, theta=0.0):
     """Jorge-Meeks k-noid: genus 0 with `order` catenoid ends (n >= 3),
-    the n-fold-symmetric generalization of the catenoid. Built by numeric
-    Weierstrass-Enneper integration on the unit disk (ends sit at the n-th
-    roots of unity on |z| = 1). `radius` in (0,1) sets how close to the
-    ends the disk reaches; `theta` is ignored."""
+    the n-fold-symmetric generalization of the catenoid. WE data
+    g = z^(n-1), dh = z^(n-1)/(z^n-1)^2 dz. The n ends sit at the n-th
+    roots of unity on |z| = 1; the surface runs from the bottom point
+    z = 0 across the equator to the top point z = infinity, so the domain
+    spans BOTH sides of |z| = 1. Built by radial WE integration from z = 0
+    (a pole-free base point), with disks around the ends removed.
+    `radius` scales the top cap's reach past the equator; `theta` unused."""
     n = int(max(3, min(order, 12)))
-    rmax = 0.80 + 0.12 * min(max(radius / 1.2, 0.0), 1.4)   # ~0.80..0.94
-    rmax = min(rmax, 0.94)
-    R, TH = _grid(nu, nv, 1e-3, rmax, 0.0, TAU)
+    r_out = 1.35 + 0.5 * min(max(radius / 1.2, 0.0), 1.6)   # spans past 1
+    u = np.linspace(1e-3, r_out, nu)
+    # offset theta by half a step so no radial ray lands exactly on an end
+    # (a root of unity), which would otherwise integrate through a pole
+    dth = TAU / nv
+    v = np.linspace(0.5 * dth, TAU + 0.5 * dth, nv, endpoint=False)
+    R, TH = np.meshgrid(u, v, indexing='ij')
     z = R * np.exp(1j * TH)
     den = (z ** n - 1.0) ** 2
-    zn1 = z ** (n - 1)
+    zm = z ** (n - 1)
     f1 = 0.5 * (1.0 - z ** (2 * (n - 1))) / den        # phi1 integrand / dz
     f2 = 0.5j * (1.0 + z ** (2 * (n - 1))) / den
-    f3 = zn1 / den
-    # Path-independent integral on the (pole-free) open disk: integrate
-    # angularly at the innermost ring, then radially outward per column.
+    f3 = zm / den
     ez = np.exp(1j * TH)                               # dz = ez dr (radial)
     Xr = np.stack([np.real(f * ez) for f in (f1, f2, f3)], axis=-1)
-    # cumulative radial integral (axis 0 = r), trapezoidal
+    # Radial rays from z ~ 0 (all columns share that base point, so no
+    # angular term is needed). A loose cap only kills true numerical
+    # garbage from a ray grazing a pole; it is high enough not to flatten
+    # the (tall, near-vertical) catenoid ends. The ends are trimmed by the
+    # object-space radius clip in build_parametric.
+    cap = 400.0 * float(np.median(np.abs(Xr)))
+    Xr = np.clip(Xr, -cap, cap)
     dr = np.diff(R, axis=0)[..., None]
-    radial = np.concatenate(
+    XYZ = np.concatenate(
         [np.zeros((1, nv, 3)),
          np.cumsum(0.5 * (Xr[1:] + Xr[:-1]) * dr, axis=0)], axis=0)
-    # angular integral along the inner ring r = R[0]  (dz = i z dtheta)
-    r0 = R[0, 0]
-    zt = r0 * ez[0]
-    dent = (zt ** n - 1.0) ** 2
-    zt1 = zt ** (n - 1)
-    a1 = 0.5 * (1.0 - zt ** (2 * (n - 1))) / dent
-    a2 = 0.5j * (1.0 + zt ** (2 * (n - 1))) / dent
-    a3 = zt1 / dent
-    At = np.stack([np.real(a * 1j * zt) for a in (a1, a2, a3)], axis=-1)
-    dth = np.diff(TH[0])[0]
-    ang = np.concatenate(
-        [np.zeros((1, 3)),
-         np.cumsum(0.5 * (At[1:] + At[:-1]) * dth, axis=0)], axis=0)
-    XYZ = radial + ang[None, :, :]
-    return XYZ[..., 0], XYZ[..., 1], XYZ[..., 2], False, True, False
+    return XYZ[..., 0], XYZ[..., 1], XYZ[..., 2], False, True, True
 
 
 def _cathel(nu, nv, order, radius, theta=0.0):
@@ -464,8 +461,7 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0):
         remap[used] = np.arange(len(used))
         V = V[used]
         quads = [tuple(int(remap[i]) for i in qd) for qd in quads]
-        if valid is not None:            # smooth the staircase end rims
-            V = _smooth_boundary(V, quads)
+        V = _smooth_boundary(V, quads)   # smooth staircase/clip end rims
         ref = V
 
     V = _center_fit(V, scale, ref)
