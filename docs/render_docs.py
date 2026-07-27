@@ -612,6 +612,11 @@ VARIANTS = {
         _V("seed",
            "CUBE=Cube;TETRA=Tetrahedron;OCTA=Octahedron;"
            "DODECA=Dodecahedron;ICOSA=Icosahedron", mode="SADDLE")),
+    "bubble_cluster": ("mesh.bubble_cluster_add",
+        _V("seed",
+           "TETRA=Tetrahedron;CUBE=Cube;OCTA=Octahedron;"
+           "DODECA=Dodecahedron;ICOSA=Icosahedron",
+           separate=True, color=True)),
 }
 
 

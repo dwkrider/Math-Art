@@ -20,6 +20,22 @@ A soap-bubble cluster with one bubble at every vertex of a seed mesh (the Platon
 | Smooth Shading | On | Shade the bubble caps and films smooth (analytic normals; creases stay sharp). |
 | Scale | 1.0 | The seed polyhedron is fitted roughly within a $2\times$ Scale cube at the origin. Range 0.01-100. |
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/bubble_cluster__TETRA.png" width="200"><br><sub>Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/bubble_cluster__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/bubble_cluster__OCTA.png" width="200"><br><sub>Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/bubble_cluster__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/bubble_cluster__ICOSA.png" width="200"><br><sub>Icosahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **Radii.** Each point's local scale is its mean edge length to its mesh neighbours (or, with no edges, its nearest-point distance). *Same Radius* uses the global mean; *From Neighbour Distance* uses the per-point value. The radius is `factor` times that scale -- above $0.62$-ish, neighbours overlap enough to merge.

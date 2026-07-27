@@ -1467,5 +1467,27 @@
    "ICOSA",
    "Icosahedron"
   ]
+ ],
+ "bubble_cluster": [
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "ICOSA",
+   "Icosahedron"
+  ]
  ]
 }
