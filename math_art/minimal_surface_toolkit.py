@@ -41,6 +41,75 @@ TAU = 2.0 * math.pi
 
 
 # ==========================================================================
+# Weierstrass elliptic-function engine (Jacobi-theta series, numpy only)
+# ==========================================================================
+# Provides Weierstrass P, P' and zeta for a lattice given by half-periods,
+# via the Jacobi theta functions (DLMF 23.6 for the elliptic functions,
+# DLMF 20.2 for the theta q-series). The nome q = exp(i*pi*tau) is small
+# for the lattices we use, so ~a dozen terms of each series reach 1e-15.
+#
+# Costa and Chen-Gackstatter both live on the square (lemniscatic) torus:
+#   periods 1, i ; half-periods w1 = 1/2, w3 = i/2 ; tau = i ; q = e^-pi ;
+#   g2 = Gamma(1/4)^8 / (16 pi^2) = 189.0727... , g3 = 0 ,
+#   e1 = P(1/2) = 6.87519... , and (this lattice) g2 = 4 e1^2.
+
+_THETA_TERMS = 16   # q^((n+.5)^2) underflows long before this for our q
+
+
+def _theta1_series(xi, q):
+    """theta1(xi) and its first three xi-derivatives (t0..t3), where xi is
+    a complex ndarray. DLMF 20.2.1 differentiated term by term."""
+    n = np.arange(_THETA_TERMS)
+    a = ((-1.0) ** n) * q ** ((n + 0.5) ** 2)          # (terms,)
+    k = (2 * n + 1).astype(float)
+    ang = np.multiply.outer(np.asarray(xi, dtype=complex), k)
+    s, c = np.sin(ang), np.cos(ang)
+    t0 = 2.0 * np.sum(a * s, axis=-1)
+    t1 = 2.0 * np.sum(a * k * c, axis=-1)
+    t2 = -2.0 * np.sum(a * k ** 2 * s, axis=-1)
+    t3 = -2.0 * np.sum(a * k ** 3 * c, axis=-1)
+    return t0, t1, t2, t3
+
+
+class _Lattice:
+    """Weierstrass P, P', zeta on the lattice with real half-period w1 and
+    ratio tau = w3/w1 (Im tau > 0). All methods are vectorized over z."""
+
+    def __init__(self, w1, tau):
+        self.w1 = float(w1)
+        self.q = np.exp(1j * math.pi * tau)
+        self.c = math.pi / (2.0 * self.w1)             # dxi/dz
+        # quasi-period eta1 = zeta(w1)  (DLMF 23.6.8), from theta1 at 0
+        n = np.arange(_THETA_TERMS)
+        a = ((-1.0) ** n) * self.q ** ((n + 0.5) ** 2)
+        k = (2 * n + 1).astype(float)
+        t1_0 = 2.0 * np.sum(a * k)                      # theta1'(0)
+        t3_0 = -2.0 * np.sum(a * k ** 3)               # theta1'''(0)
+        self.eta1 = -(math.pi ** 2 / (12.0 * self.w1)) * (t3_0 / t1_0)
+
+    def zeta(self, z):
+        z = np.asarray(z, dtype=complex)
+        t0, t1, _, _ = _theta1_series(self.c * z, self.q)
+        return (self.eta1 / self.w1) * z + self.c * (t1 / t0)
+
+    def wp(self, z):
+        z = np.asarray(z, dtype=complex)
+        t0, t1, t2, _ = _theta1_series(self.c * z, self.q)
+        r1 = t1 / t0
+        return -self.eta1 / self.w1 - self.c ** 2 * (t2 / t0 - r1 ** 2)
+
+    def wp_prime(self, z):
+        z = np.asarray(z, dtype=complex)
+        t0, t1, t2, t3 = _theta1_series(self.c * z, self.q)
+        r1 = t1 / t0
+        return -self.c ** 3 * (t3 / t0 - 3.0 * r1 * (t2 / t0) + 2.0 * r1 ** 3)
+
+
+# The square torus shared by Costa and Chen-Gackstatter.
+_SQUARE = _Lattice(0.5, 1j)
+
+
+# ==========================================================================
 # 1. Parametric classic surfaces
 # ==========================================================================
 # Each entry: (label, builder(params) -> (V (n,3) ndarray, quads list,
@@ -52,7 +121,7 @@ def _grid(nu, nv, u0, u1, v0, v1):
     return np.meshgrid(u, v, indexing='ij')
 
 
-def _enneper(nu, nv, order, radius):
+def _enneper(nu, nv, order, radius, theta=0.0):
     U, V = _grid(nu, nv, 1e-4, radius, 0.0, TAU)
     z = U * np.exp(1j * V)
     n = order
@@ -62,7 +131,7 @@ def _enneper(nu, nv, order, radius):
     return x, y, w, False, True
 
 
-def _catenoid(nu, nv, order, radius):
+def _catenoid(nu, nv, order, radius, theta=0.0):
     c = 1.0
     U, V = _grid(nu, nv, 0.0, TAU, -radius, radius)
     x = c * np.cosh(V / c) * np.cos(U)
@@ -70,13 +139,13 @@ def _catenoid(nu, nv, order, radius):
     return x, y, V, True, False
 
 
-def _helicoid(nu, nv, order, radius):
+def _helicoid(nu, nv, order, radius, theta=0.0):
     turns = max(1, order)
     U, V = _grid(nu, nv, -turns * math.pi, turns * math.pi, -radius, radius)
     return V * np.cos(U), V * np.sin(U), 0.6 * U, False, False
 
 
-def _henneberg(nu, nv, order, radius):
+def _henneberg(nu, nv, order, radius, theta=0.0):
     U, V = _grid(nu, nv, 1e-3, 0.4 * radius, 0.0, TAU)
     x = 2 * np.sinh(U) * np.cos(V) - (2.0 / 3.0) * np.sinh(3 * U) * np.cos(3 * V)
     y = 2 * np.sinh(U) * np.sin(V) + (2.0 / 3.0) * np.sinh(3 * U) * np.sin(3 * V)
@@ -84,7 +153,7 @@ def _henneberg(nu, nv, order, radius):
     return x, y, w, False, True
 
 
-def _catalan(nu, nv, order, radius):
+def _catalan(nu, nv, order, radius, theta=0.0):
     U, V = _grid(nu, nv, -math.pi, 3 * math.pi, -radius, radius)
     x = U - np.sin(U) * np.cosh(V)
     y = 1 - np.cos(U) * np.cosh(V)
@@ -92,7 +161,7 @@ def _catalan(nu, nv, order, radius):
     return x, y, w, False, False
 
 
-def _bour(nu, nv, order, radius):
+def _bour(nu, nv, order, radius, theta=0.0):
     U, V = _grid(nu, nv, 1e-3, radius, 0.0, 2 * TAU)   # double cover closes it
     x = U * np.cos(V) - 0.5 * U ** 2 * np.cos(2 * V)
     y = -U * np.sin(V) - 0.5 * U ** 2 * np.sin(2 * V)
@@ -100,7 +169,7 @@ def _bour(nu, nv, order, radius):
     return x, y, w, False, True
 
 
-def _richmond(nu, nv, order, radius):
+def _richmond(nu, nv, order, radius, theta=0.0):
     U, V = _grid(nu, nv, 0.25, radius + 0.25, 0.0, TAU)
     z = U * np.exp(1j * V)
     x = np.real(-1.0 / (2 * z) - z ** 3 / 6.0)
@@ -109,11 +178,138 @@ def _richmond(nu, nv, order, radius):
     return x, y, w, False, True
 
 
-def _scherk_graph(nu, nv, order, radius):
+def _scherk_graph(nu, nv, order, radius, theta=0.0):
     lim = 0.47 * math.pi
     U, V = _grid(nu, nv, -lim, lim, -lim, lim)
     w = np.log(np.cos(U) / np.cos(V))
     return U, V, w, False, False
+
+
+# --- Weierstrass-based surfaces (Costa, Chen-Gackstatter) ------------------
+# Costa and Chen-Gackstatter live on a torus that closes up (eta1 = pi/2),
+# so they are meshed periodically in both directions with small disks
+# removed around the ends; the 6th return value is then a boolean validity
+# mask and the only mesh boundaries are the clean circular end rims. The
+# k-noid instead stops at a modest domain radius (a smooth parameter-curve
+# boundary), so it needs no clipping.
+
+def _torus_grid(nu, nv):
+    """Periodic (nu, nv) sample of the unit torus [0,1)^2 (endpoint-free)."""
+    u = np.linspace(0.0, 1.0, nu, endpoint=False)
+    v = np.linspace(0.0, 1.0, nv, endpoint=False)
+    return np.meshgrid(u, v, indexing='ij')
+
+
+def _puncture_mask(U, V, centers):
+    """Valid where the toroidal distance to every puncture exceeds its
+    radius (so all lattice translates of each end are excluded at once).
+    `centers` is a list of (cu, cv, rho). Ends whose parametrization
+    stretches fastest (planar, Enneper) want a larger rho so the rim sits
+    where grid cells are still small -> a cleaner circular rim."""
+    valid = np.ones(U.shape, dtype=bool)
+    for cu, cv, rho in centers:
+        du = np.abs(((U - cu + 0.5) % 1.0) - 0.5)
+        dv = np.abs(((V - cv + 0.5) % 1.0) - 0.5)
+        valid &= (du * du + dv * dv) > rho * rho
+    return valid
+
+
+def _costa(nu, nv, order, radius, theta=0.0):
+    """Costa's minimal surface -- genus 1, three ends, on the square torus.
+    Gray/Nylander closed form (constant offsets dropped; re-centered by the
+    mesher). Meshed periodically with the planar end (0,0) and the two
+    catenoid ends (1/2,0), (0,1/2) removed. `order`/`theta` unused;
+    `radius` scales the end-rim disk size (smaller -> ends reach further)."""
+    L = _SQUARE
+    e1 = L.wp(0.5).real
+    U, V = _torus_grid(nu, nv)
+    z = U + 1j * V
+    ze, z1, z3 = L.zeta(z), L.zeta(z - 0.5), L.zeta(z - 0.5j)
+    P = L.wp(z)
+    a = math.pi / (2.0 * e1)
+    x = 0.5 * np.real(-ze + math.pi * U + a * (z1 - z3))
+    y = 0.5 * np.real(-1j * ze + math.pi * V - a * (1j * z1 - 1j * z3))
+    zc = (math.sqrt(2.0 * math.pi) / 4.0) * np.log(
+        np.abs((P - e1) / (P + e1)))
+    s = max(radius / 1.2, 0.4)
+    mask = _puncture_mask(U, V, [(0.0, 0.0, 0.20 / s),      # planar end
+                                 (0.5, 0.0, 0.11 / s),      # catenoid end
+                                 (0.0, 0.5, 0.11 / s)])     # catenoid end
+    return x, y, zc, True, True, mask
+
+
+def _chen_gackstatter(nu, nv, order, radius, theta=0.0):
+    """Chen-Gackstatter -- genus 1 with a single Enneper (order-3) end,
+    total curvature -8 pi, on the square torus. Meshed periodically with a
+    disk removed around the lone end at w = 0. `order`/`theta` unused;
+    `radius` scales the end-rim disk size."""
+    L = _SQUARE
+    g2 = 4.0 * L.wp(0.5).real ** 2
+    U, V = _torus_grid(nu, nv)
+    w = U + 1j * V
+    ze, P, Pp = L.zeta(w), L.wp(w), L.wp_prime(w)
+    x = np.real(math.pi * w - ze - (math.pi / g2) * Pp)
+    y = np.imag(math.pi * w + ze - (math.pi / g2) * Pp)
+    zc = math.sqrt(6.0 * math.pi / g2) * np.real(P)
+    mask = _puncture_mask(U, V, [(0.0, 0.0, 0.26 / max(radius / 1.2, 0.4))])
+    return x, y, zc, True, True, mask
+
+
+def _knoid(nu, nv, order, radius, theta=0.0):
+    """Jorge-Meeks k-noid: genus 0 with `order` catenoid ends (n >= 3),
+    the n-fold-symmetric generalization of the catenoid. Built by numeric
+    Weierstrass-Enneper integration on the unit disk (ends sit at the n-th
+    roots of unity on |z| = 1). `radius` in (0,1) sets how close to the
+    ends the disk reaches; `theta` is ignored."""
+    n = int(max(3, min(order, 12)))
+    rmax = 0.80 + 0.12 * min(max(radius / 1.2, 0.0), 1.4)   # ~0.80..0.94
+    rmax = min(rmax, 0.94)
+    R, TH = _grid(nu, nv, 1e-3, rmax, 0.0, TAU)
+    z = R * np.exp(1j * TH)
+    den = (z ** n - 1.0) ** 2
+    zn1 = z ** (n - 1)
+    f1 = 0.5 * (1.0 - z ** (2 * (n - 1))) / den        # phi1 integrand / dz
+    f2 = 0.5j * (1.0 + z ** (2 * (n - 1))) / den
+    f3 = zn1 / den
+    # Path-independent integral on the (pole-free) open disk: integrate
+    # angularly at the innermost ring, then radially outward per column.
+    ez = np.exp(1j * TH)                               # dz = ez dr (radial)
+    Xr = np.stack([np.real(f * ez) for f in (f1, f2, f3)], axis=-1)
+    # cumulative radial integral (axis 0 = r), trapezoidal
+    dr = np.diff(R, axis=0)[..., None]
+    radial = np.concatenate(
+        [np.zeros((1, nv, 3)),
+         np.cumsum(0.5 * (Xr[1:] + Xr[:-1]) * dr, axis=0)], axis=0)
+    # angular integral along the inner ring r = R[0]  (dz = i z dtheta)
+    r0 = R[0, 0]
+    zt = r0 * ez[0]
+    dent = (zt ** n - 1.0) ** 2
+    zt1 = zt ** (n - 1)
+    a1 = 0.5 * (1.0 - zt ** (2 * (n - 1))) / dent
+    a2 = 0.5j * (1.0 + zt ** (2 * (n - 1))) / dent
+    a3 = zt1 / dent
+    At = np.stack([np.real(a * 1j * zt) for a in (a1, a2, a3)], axis=-1)
+    dth = np.diff(TH[0])[0]
+    ang = np.concatenate(
+        [np.zeros((1, 3)),
+         np.cumsum(0.5 * (At[1:] + At[:-1]) * dth, axis=0)], axis=0)
+    XYZ = radial + ang[None, :, :]
+    return XYZ[..., 0], XYZ[..., 1], XYZ[..., 2], False, True, False
+
+
+def _cathel(nu, nv, order, radius, theta=0.0):
+    """Catenoid<->helicoid associate (Bonnet) family. theta = 0 is the
+    catenoid, theta = pi/2 the helicoid; every intermediate value is a
+    complete minimal surface isometric to both. `order`/`radius` set the
+    vertical (u) extent."""
+    h = 0.9 + 0.4 * max(radius, 0.2)
+    U, V = _grid(nu, nv, -h, h, 0.0, TAU)
+    ct, st = math.cos(theta), math.sin(theta)
+    cu, su = np.cosh(U), np.sinh(U)
+    x = ct * cu * np.cos(V) + st * su * np.sin(V)
+    y = ct * cu * np.sin(V) - st * su * np.cos(V)
+    z = ct * U + st * V
+    return x, y, z, False, True
 
 
 PARAMETRIC = {
@@ -125,28 +321,154 @@ PARAMETRIC = {
     'BOUR': ("Bour", _bour),
     'RICHMOND': ("Richmond", _richmond),
     'SCHERK1': ("Scherk (doubly periodic)", _scherk_graph),
+    'COSTA': ("Costa (genus 1)", _costa),
+    'CHEN_GACK': ("Chen-Gackstatter", _chen_gackstatter),
+    'KNOID': ("Jorge-Meeks k-noid", _knoid),
+    'CATHEL': ("Catenoid-Helicoid (associate)", _cathel),
 }
 
+# surfaces whose `order` selects a discrete count rather than an Enneper
+# order / helicoid turns (drives the operator UI label)
+COUNT_PARAM = {'KNOID': "Ends (n)"}
+# surfaces that use the associate-family angle
+ANGLE_PARAM = {'CATHEL'}
 
-def build_parametric_grid(kind, nu, nv, order, radius, scale):
-    """(nu, nv, 3) point grid plus wrap flags."""
-    x, y, w, wrap_u, wrap_v = PARAMETRIC[kind][1](nu, nv, order, radius)
-    return np.stack([x, y, w], axis=-1) * scale, wrap_u, wrap_v
+
+def _raw_grid(kind, nu, nv, order, radius, theta):
+    """Raw (unnormalized) surface grid. Returns (G (nu,nv,3), wrap_u,
+    wrap_v, clip) where clip requests end-face trimming by the mesher."""
+    out = PARAMETRIC[kind][1](nu, nv, order, radius, theta)
+    x, y, w, wrap_u, wrap_v = out[:5]
+    clip = out[5] if len(out) > 5 else False
+    return np.stack([x, y, w], axis=-1), wrap_u, wrap_v, clip
 
 
-def build_parametric(kind, nu, nv, order, radius, scale):
-    G, wrap_u, wrap_v = build_parametric_grid(kind, nu, nv, order, radius,
-                                              scale)
+def _center_fit(pts, scale, ref=None):
+    """Center on the bounding-box midpoint and scale so the largest extent
+    is 2.0 units (a 2 m cube), then apply `scale`. `ref` (a subset) fixes
+    the box, so runaway ends don't shrink the body."""
+    pts = np.asarray(pts, dtype=float)
+    ref = pts if ref is None else np.asarray(ref, dtype=float)
+    if len(ref) == 0:
+        return pts
+    lo, hi = ref.min(axis=0), ref.max(axis=0)
+    cen = 0.5 * (lo + hi)
+    ext = float(np.max(hi - lo))
+    s = (2.0 / ext if ext > 1e-9 else 1.0) * scale
+    return (pts - cen) * s
+
+
+def _inliers(pts):
+    """Points within the 90th distance percentile of the median -- the
+    body of a surface with ends running to infinity."""
+    c = np.median(pts, axis=0)
+    d = np.linalg.norm(pts - c, axis=1)
+    keep = d <= np.percentile(d, 90.0)
+    return pts[keep] if keep.any() else pts
+
+
+def _smooth_boundary(V, quads, iters=10, lam=0.5):
+    """Relax open mesh-boundary loops in place: each boundary vertex is
+    averaged toward its two boundary neighbours. Removes the grid
+    staircase left on an end-rim cut from an axis-aligned grid, without
+    disturbing interior vertices."""
+    if not quads:
+        return V
+    from collections import defaultdict
+    count = defaultdict(int)
+    for q in quads:
+        for k in range(len(q)):
+            a, b = q[k], q[(k + 1) % len(q)]
+            count[(a, b) if a < b else (b, a)] += 1
+    nbr = defaultdict(list)
+    bnd = set()
+    for (a, b), c in count.items():
+        if c == 1:                       # boundary edge
+            nbr[a].append(b)
+            nbr[b].append(a)
+            bnd.add(a)
+            bnd.add(b)
+    # keep only vertices with exactly two boundary neighbours (clean loops)
+    loop = [v for v in bnd if len(nbr[v]) == 2]
+    if not loop:
+        return V
+    V = V.copy()
+    idx = np.array(loop)
+    n0 = np.array([nbr[v][0] for v in loop])
+    n1 = np.array([nbr[v][1] for v in loop])
+    for _ in range(iters):
+        target = 0.5 * (V[n0] + V[n1])
+        V[idx] += lam * (target - V[idx])
+    return V
+
+
+def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
+    """(nu, nv, 3) point grid plus wrap flags, centered and fit to a 2 m
+    cube. (Used for NURBS output; end clipping is a mesh-only operation.)"""
+    G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta)
+    flat = G.reshape(-1, 3)
+    if isinstance(clip, np.ndarray):
+        ref = flat[clip.reshape(-1)]
+    elif clip:
+        ref = _inliers(flat)
+    else:
+        ref = flat
+    G = _center_fit(flat, scale, ref).reshape(nu, nv, 3)
+    return G, wrap_u, wrap_v
+
+
+def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0):
+    G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta)
     V = G.reshape(-1, 3)
-    quads = []
+    valid = clip.reshape(-1) if isinstance(clip, np.ndarray) else None
+
     def vid(i, j):
         return i * nv + j
-    iu = nu - 1
+
+    quads = []
     for i in range(nu if wrap_u else nu - 1):
         i2 = (i + 1) % nu
         for j in range(nv if wrap_v else nv - 1):
             j2 = (j + 1) % nv
-            quads.append((vid(i, j), vid(i2, j), vid(i2, j2), vid(i, j2)))
+            f = (vid(i, j), vid(i2, j), vid(i2, j2), vid(i, j2))
+            if valid is None or (valid[f[0]] and valid[f[1]]
+                                 and valid[f[2]] and valid[f[3]]):
+                quads.append(f)
+
+    if valid is not None:
+        # parameter-space clip: boundaries are the clean end-rim circles
+        ref = None
+    elif clip and quads:
+        # object-space radius clip for ends that run to infinity: drop a
+        # face if any corner lies past the radius cutoff (clean rounded
+        # rims), plus any face bridging across an excluded end.
+        c = np.median(V, axis=0)
+        rad = np.linalg.norm(V - c, axis=1)
+        keepv = rad <= float(np.percentile(rad, 90.0))
+        q = np.array(quads)
+        q = q[np.all(keepv[q], axis=1)]
+        P = V[q]
+        maxlen = np.max(np.linalg.norm(P - P[:, [1, 2, 3, 0], :], axis=2),
+                        axis=1)
+        quads = [tuple(int(i) for i in t)
+                 for t in q[maxlen <= 4.0 * float(np.median(maxlen))]]
+        ref = None
+    else:
+        ref = _inliers(V) if clip else V
+
+    if ref is None:
+        # compact to referenced vertices only (drops loose end points)
+        used = (np.unique(np.array(quads).ravel()) if quads
+                else np.array([], dtype=int))
+        remap = np.full(len(V), -1, dtype=np.int64)
+        remap[used] = np.arange(len(used))
+        V = V[used]
+        quads = [tuple(int(remap[i]) for i in qd) for qd in quads]
+        if valid is not None:            # smooth the staircase end rims
+            V = _smooth_boundary(V, quads)
+        ref = V
+
+    V = _center_fit(V, scale, ref)
     return V, quads
 
 
@@ -762,19 +1084,31 @@ if _IN_BLENDER:
             name="Control Points V", default=24, min=6, max=128,
             description="NURBS control grid size in V")
         order: IntProperty(
-            name="Order / Turns", default=1, min=1, max=8,
-            description="Enneper order; helicoid half-turns; ignored otherwise")
+            name="Order / Count", default=1, min=1, max=12,
+            description="Enneper order; helicoid half-turns; Jorge-Meeks "
+                        "end count n (>= 3); ignored for the rest")
         radius: FloatProperty(
             name="Domain Radius", default=1.2, min=0.2, max=4.0,
-            description="Extent of the parameter domain")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+            description="Extent of the parameter domain (for the k-noid, "
+                        "how close the disk reaches its ends)")
+        assoc_angle: FloatProperty(
+            name="Associate Angle", default=0.0,
+            min=0.0, max=math.pi / 2.0, subtype='ANGLE',
+            description="Bonnet associate family: 0 = catenoid, "
+                        "pi/2 = helicoid")
+        scale: FloatProperty(
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Multiplier on the normalized size (1.0 = a 2 m "
+                        "cube, centered on the origin)")
 
         def execute(self, context):
             label = PARAMETRIC[self.surface][0]
+            theta = (self.assoc_angle if self.surface in ANGLE_PARAM
+                     else 0.0)
             if self.output == 'NURBS':
                 G, wrap_u, wrap_v = build_parametric_grid(
                     self.surface, self.ctrl_u, self.ctrl_v,
-                    self.order, self.radius, self.scale)
+                    self.order, self.radius, self.scale, theta)
                 if wrap_u:          # drop duplicated periodic endpoint
                     G = G[:-1]
                 if wrap_v:
@@ -784,7 +1118,7 @@ if _IN_BLENDER:
             else:
                 V, quads = build_parametric(self.surface, self.res_u,
                                             self.res_v, self.order,
-                                            self.radius, self.scale)
+                                            self.radius, self.scale, theta)
                 _new_object(context, label, V, quads,
                             weld=1e-5 * max(1.0, self.scale))
             return {'FINISHED'}
@@ -800,8 +1134,14 @@ if _IN_BLENDER:
             else:
                 lay.prop(self, 'res_u')
                 lay.prop(self, 'res_v')
-            for k in ('order', 'radius', 'scale'):
-                lay.prop(self, k)
+            if self.surface in COUNT_PARAM:
+                lay.prop(self, 'order', text=COUNT_PARAM[self.surface])
+            elif self.surface not in ANGLE_PARAM:
+                lay.prop(self, 'order')
+            if self.surface in ANGLE_PARAM:
+                lay.prop(self, 'assoc_angle')
+            lay.prop(self, 'radius')
+            lay.prop(self, 'scale')
 
     class MESH_OT_tpms_add(bpy.types.Operator):
         """Add a triply-periodic minimal surface (nodal approximation)"""
@@ -1022,6 +1362,8 @@ if _IN_BLENDER:
             V, quads, fixed = build_annulus_grid(knot, circ, self.rings)
             T = _quads_to_tris(quads)
             minimize_area(V, T, fixed, outer_iters=self.iterations)
+            # center on the origin and fit within a 2 m cube
+            V = _center_fit(V, 1.0)
             name = (f"Knot({self.p},{self.q})Span" if self.outer_q == 0
                     else f"Knot({self.p},{self.q})-"
                          f"({po},{self.outer_q})Span")
@@ -1147,9 +1489,38 @@ if __name__ == "__main__":
         register()
     else:
         # standalone smoke tests of the numeric core
+        ok = True
+        # Weierstrass engine invariants on the square torus
+        L = _SQUARE
+        e1 = L.wp(0.5).real
+        zt = np.array([0.2 + 0.3j, 0.37 + 0.11j, 0.6 + 0.44j])
+        resid = np.max(np.abs(L.wp_prime(zt) ** 2
+                              - (4 * L.wp(zt) ** 3 - 4 * e1 ** 2 * L.wp(zt))))
+        print(f"weierstrass: e1={e1:.5f} (exp 6.87519) g2={4*e1**2:.4f} "
+              f"(exp 189.0727) |P'^2-(4P^3-g2 P)|={resid:.2e} "
+              f"{'OK' if abs(e1-6.87519) < 1e-3 and resid < 1e-8 else 'FAIL'}")
+        ok &= abs(e1 - 6.87519) < 1e-3 and resid < 1e-8
         for kind in PARAMETRIC:
-            V, Q = build_parametric(kind, 48, 48, 1, 1.2, 1.0)
-            print(f"parametric {kind:10s}: {len(V):6d} verts {len(Q):6d} quads")
+            th = math.pi / 4 if kind in ANGLE_PARAM else 0.0
+            n = 5 if kind == 'KNOID' else 1
+            V, Q = build_parametric(kind, 60, 60, n, 1.2, 1.0, th)
+            finite = bool(np.all(np.isfinite(V)))
+            lo, hi = V.min(0), V.max(0)
+            cen = float(np.max(np.abs(0.5 * (lo + hi))))
+            ext = float(np.max(hi - lo))
+            good = (finite and len(Q) > 100 and cen < 1e-6
+                    and abs(ext - 2.0) < 1e-6)
+            ok &= good
+            print(f"parametric {kind:10s}: {len(V):5d} verts {len(Q):5d} "
+                  f"quads  fit[max|c|={cen:.1e} ext={ext:.4f}] "
+                  f"{'OK' if good else 'FAIL'}")
+        # k-noid vs closed-form trinoid (n=3): both are minimal with 3
+        # ends; compare 3-fold symmetry of the numeric build
+        Vn, _ = build_parametric('KNOID', 72, 72, 3, 0.9, 1.0)
+        ang = np.arctan2(Vn[:, 1], Vn[:, 0])
+        print(f"k-noid n=3: verts={len(Vn)} z-range="
+              f"[{Vn[:,2].min():.3f},{Vn[:,2].max():.3f}] "
+              f"{'OK' if np.all(np.isfinite(Vn)) else 'FAIL'}")
         for kind in TPMS:
             V, T = build_tpms(kind, 1, 20, 2.0)
             print(f"tpms {kind:10s}: {len(V):6d} verts {len(T):6d} tris")
@@ -1171,3 +1542,4 @@ if __name__ == "__main__":
         minimize_area(V, T, fixed)
         waist = np.min(np.linalg.norm(V[:, :2], axis=1))
         print("catenoid: waist =", float(waist), "(analytic ~0.9098)")
+        print("\nRESULT:", "ALL OK" if ok else "FAILURES in parametric core")
