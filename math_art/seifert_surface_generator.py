@@ -251,6 +251,288 @@ def build_seifert(word, m_res=96, rings=6, band_rows=16, band_seg=8,
 
 
 # --------------------------------------------------------------------------
+# Dynamic relaxation  (SeifertView / KnotPlot-style physical smoothing)
+# --------------------------------------------------------------------------
+#
+# Reverse-engineered from seifertview1.1.exe (J. van Wijk & A. Cohen; the
+# "physical model for smoothing ... based on the work of Robert Scharein",
+# i.e. KnotPlot). The binary's "Dynamic smoothing" panel exposes exactly
+# these controls -- attraction, repulsion (with a range scale), a bend
+# force, a time step, damping ("decay") and alpha/beta smoothing weights,
+# integrated dynamically over many iterations. Crucially the knot boundary
+# is NOT pinned: the whole surface, its boundary included, evolves as a
+# self-avoiding elastic membrane. That is the key difference from the
+# Plateau/area-minimization path below (`_relax`), which pins the boundary
+# and only ever produces a taut soap film on a frozen, tangled wire.
+#
+# The smoother models the surface as an inflating elastic membrane and
+# integrates it dynamically with a FREE boundary -- the key difference
+# from the pinned area-minimizer (`_relax`) below, which can only ever
+# hang a taut soap film on the frozen, tangled knot. Forces per step:
+#
+#   * smoothing -- Laplacian (mean-curvature) fairing pulls each vertex
+#                  toward the umbrella mean of its neighbours, removing
+#                  crinkle. Boundary vertices smooth only ALONG the knot
+#                  loop, so the boundary stays a fair curve on the
+#                  surface instead of retracting.
+#   * pressure  -- a uniform push along the consistently-oriented surface
+#                  normal. Smoothing alone shrinks a free sheet to a
+#                  point; pressure balances it, so the stacked disks
+#                  billow out into smooth embedded caps (rather than
+#                  buckling into pleats). Seifert surfaces are orientable,
+#                  so `_orient_faces` first gives every face a consistent
+#                  winding and hence a coherent normal field. Pressure --
+#                  not pairwise vertex repulsion, which shatters the mesh
+#                  into shards -- is what inflates a membrane smoothly.
+#
+# Integration is damped and Euler-style with a per-step displacement
+# clamp, robust even at the high-valence pole at each disk centre.
+
+
+def _topology(faces, nv):
+    """Directed neighbour arrays, unique edges, and up-to-2-ring
+    exclusion sets (for repulsion)."""
+    nbr = [set() for _ in range(nv)]
+    edges = set()
+    for f in faces:
+        k = len(f)
+        for a in range(k):
+            i, j = f[a], f[(a + 1) % k]
+            nbr[i].add(j)
+            nbr[j].add(i)
+            edges.add((i, j) if i < j else (j, i))
+    src, dst = [], []
+    for i, ns in enumerate(nbr):
+        for j in ns:
+            src.append(i)
+            dst.append(j)
+    return nbr, src, dst, edges
+
+
+def _kring_exclude(nbr, nv, hops):
+    """For each vertex, the set of vertices within `hops` graph steps
+    (BFS), so repulsion never fires between on-sheet neighbours."""
+    excl = []
+    for s in range(nv):
+        seen = {s}
+        frontier = {s}
+        for _ in range(hops):
+            nxt = set()
+            for u in frontier:
+                nxt |= nbr[u]
+            nxt -= seen
+            seen |= nxt
+            frontier = nxt
+            if not frontier:
+                break
+        seen.discard(s)
+        excl.append(seen)
+    return excl
+
+
+def _orient_faces(faces):
+    """Return a copy of `faces` with a globally consistent winding
+    (BFS over the face-adjacency graph, flipping faces so shared edges
+    are traversed in opposite directions). Works for an orientable
+    manifold such as a Seifert surface; components handled separately."""
+    faces = [list(f) for f in faces]
+    # edge -> list of (face index, position a within face)
+    e2f = {}
+    for fi, f in enumerate(faces):
+        k = len(f)
+        for a in range(k):
+            e = (f[a], f[(a + 1) % k])
+            e2f.setdefault((min(e), max(e)), []).append((fi, a))
+    adj = [[] for _ in faces]
+    for (u, v), incid in e2f.items():
+        if len(incid) == 2:
+            (f0, a0), (f1, a1) = incid
+            adj[f0].append((f1, u, v))
+            adj[f1].append((f0, u, v))
+
+    def directed(f, u, v):
+        k = len(f)
+        for a in range(k):
+            if f[a] == u and f[(a + 1) % k] == v:
+                return True
+            if f[a] == v and f[(a + 1) % k] == u:
+                return False
+        return None
+
+    seen = [False] * len(faces)
+    for s in range(len(faces)):
+        if seen[s]:
+            continue
+        seen[s] = True
+        stack = [s]
+        while stack:
+            fi = stack.pop()
+            for (fj, u, v) in adj[fi]:
+                if seen[fj]:
+                    continue
+                # consistent orientation: the shared edge must run the
+                # opposite way in the two faces
+                di = directed(faces[fi], u, v)
+                dj = directed(faces[fj], u, v)
+                if di is not None and dj is not None and di == dj:
+                    faces[fj].reverse()
+                seen[fj] = True
+                stack.append(fj)
+    return faces
+
+
+def _vertex_normals(P, ftris, np):
+    """Area-weighted vertex normals from a triangle index array."""
+    N = np.zeros_like(P)
+    a = P[ftris[:, 1]] - P[ftris[:, 0]]
+    b = P[ftris[:, 2]] - P[ftris[:, 0]]
+    fn = np.cross(a, b)
+    for k in range(3):
+        np.add.at(N, ftris[:, k], fn)
+    ln = np.linalg.norm(N, axis=1, keepdims=True)
+    return N / np.maximum(ln, 1e-12)
+
+
+def _repulsion_pairs(P, radius, excl):
+    """Candidate vertex pairs within `radius`, via a spatial hash; each
+    unordered pair once, topological 2-ring neighbours excluded."""
+    import numpy as np
+    inv = 1.0 / radius
+    keys = np.floor(P * inv).astype(np.int64)
+    buckets = {}
+    for idx in range(len(P)):
+        buckets.setdefault(tuple(keys[idx]), []).append(idx)
+    I, J = [], []
+    offs = [(dx, dy, dz) for dx in (-1, 0, 1) for dy in (-1, 0, 1)
+            for dz in (-1, 0, 1)]
+    for cell, members in buckets.items():
+        neigh = []
+        for o in offs:
+            c = (cell[0] + o[0], cell[1] + o[1], cell[2] + o[2])
+            b = buckets.get(c)
+            if b:
+                neigh.extend(b)
+        for a in members:
+            ea = excl[a]
+            for b in neigh:
+                if b > a and b not in ea:
+                    I.append(a)
+                    J.append(b)
+    if not I:
+        return (np.empty(0, np.int64), np.empty(0, np.int64))
+    return np.array(I, np.int64), np.array(J, np.int64)
+
+
+def _boundary_from_faces(faces, nv):
+    """(is_boundary mask, ordered boundary loops) from a face list."""
+    cnt = {}
+    for f in faces:
+        k = len(f)
+        for a in range(k):
+            i, j = f[a], f[(a + 1) % k]
+            e = (i, j) if i < j else (j, i)
+            cnt[e] = cnt.get(e, 0) + 1
+    adj = {}
+    mask = [False] * nv
+    for (a, b), c in cnt.items():
+        if c == 1:
+            mask[a] = mask[b] = True
+            adj.setdefault(a, []).append(b)
+            adj.setdefault(b, []).append(a)
+    loops = []
+    seen = set()
+    for start in adj:
+        if start in seen:
+            continue
+        loop = [start]
+        seen.add(start)
+        prev, cur = None, start
+        while True:
+            nxts = [v for v in adj[cur] if v != prev]
+            nxt = None
+            for v in nxts:
+                if v not in seen:
+                    nxt = v
+                    break
+            if nxt is None:
+                break
+            loop.append(nxt)
+            seen.add(nxt)
+            prev, cur = cur, nxt
+        loops.append(loop)
+    return mask, loops
+
+
+def dynamic_relax(verts, faces, iterations=600, smooth=0.6,
+                  pressure=0.35, decay=0.5, callback=None):
+    """SeifertView-style inflating-membrane smoothing with a FREE
+    boundary.
+
+    Laplacian fairing (interior by the umbrella Laplacian, boundary
+    along its own loop) balanced by a pressure force along the
+    consistently-oriented surface normal, integrated with damping.
+    `smooth` in (0,1] is the fairing strength; `pressure` is the
+    inflation as a fraction of the mean edge length per step; `decay`
+    is the velocity damping. Returns a new vertex list (numpy
+    required; None otherwise). `callback(i, P)` runs each iteration."""
+    try:
+        import numpy as np
+    except ImportError:
+        return None
+    P = np.asarray(verts, dtype=np.float64).copy()
+    nv = len(P)
+    nbr, src, dst, edges = _topology(faces, nv)
+    src = np.asarray(src, np.int64)
+    dst = np.asarray(dst, np.int64)
+    deg = np.zeros(nv)
+    np.add.at(deg, src, 1.0)
+    deg = np.maximum(deg, 1.0)
+    bmask, loops = _boundary_from_faces(faces, nv)
+    bmask = np.asarray(bmask, bool)
+    ofaces = _orient_faces(faces)
+    ftris = np.asarray([(f[0], f[t], f[t + 1]) for f in ofaces
+                        for t in range(1, len(f) - 1)], np.int64)
+
+    bprev = np.arange(nv)
+    bnext = np.arange(nv)
+    for lp in loops:
+        L = len(lp)
+        for a, v in enumerate(lp):
+            bprev[v] = lp[(a - 1) % L]
+            bnext[v] = lp[(a + 1) % L]
+
+    def umbrella(X):
+        acc = np.zeros_like(X)
+        np.add.at(acc, src, X[dst])
+        lap = acc / deg[:, None] - X
+        if bmask.any():                 # boundary: along the loop only
+            lap[bmask] = 0.5 * (X[bprev[bmask]] + X[bnext[bmask]]) \
+                - X[bmask]
+        return lap
+
+    ei = np.asarray([e[0] for e in edges], np.int64)
+    ej = np.asarray([e[1] for e in edges], np.int64)
+    mean_edge = float(np.linalg.norm(P[ei] - P[ej], axis=1).mean()) \
+        or 1.0
+    smax = 0.5 * mean_edge
+    kp = pressure * mean_edge
+    Vel = np.zeros_like(P)
+    for it in range(iterations):
+        F = smooth * umbrella(P)                    # fairing (shrinks)
+        N = _vertex_normals(P, ftris, np)
+        F[~bmask] += kp * N[~bmask]                 # pressure (inflates)
+        Vel = (Vel + F) * decay
+        sl = np.linalg.norm(Vel, axis=1)
+        big = sl > smax
+        if big.any():
+            Vel[big] *= (smax / sl[big])[:, None]
+        P += Vel
+        if callback is not None:
+            callback(it, P)
+    return [tuple(p) for p in P]
+
+
+# --------------------------------------------------------------------------
 # Blender layer
 # --------------------------------------------------------------------------
 
@@ -606,15 +888,39 @@ if _IN_BLENDER:
         bl_label = "Minimize Surface"
         bl_options = {'REGISTER', 'UNDO'}
 
+        method: EnumProperty(
+            name="Method",
+            items=[
+                ('AREA', "Area (pinned boundary)",
+                 "Pinkall-Polthier area minimization -- a soap film "
+                 "on the fixed knot (the original behaviour)"),
+                ('MEMBRANE', "Membrane (free boundary, experimental)",
+                 "SeifertView-style: the whole surface AND its "
+                 "boundary evolve as an inflating elastic membrane "
+                 "(dynamic_relax). Numerically stable but does not "
+                 "yet reach SeifertView's finish -- see module notes"),
+            ],
+            default='AREA')
         rounds: IntProperty(
             name="Evolve Boundary Rounds", default=0, min=0, max=400,
-            description="Gentle boundary evolution rounds (0 keeps "
-                        "the knot fixed and only relaxes the "
-                        "membrane)")
+            description="AREA method: gentle boundary evolution "
+                        "rounds (0 keeps the knot fixed and only "
+                        "relaxes the membrane)")
         polish: IntProperty(
             name="Polish Iterations", default=60, min=0, max=300,
-            description="Final area-minimization with the boundary "
-                        "pinned")
+            description="AREA method: final area-minimization with "
+                        "the boundary pinned")
+        mem_iterations: IntProperty(
+            name="Membrane Iterations", default=600, min=10,
+            max=5000,
+            description="MEMBRANE method: dynamic relaxation steps")
+        mem_smooth: FloatProperty(
+            name="Membrane Fairing", default=0.6, min=0.0, max=1.0,
+            description="MEMBRANE method: Laplacian fairing strength")
+        mem_pressure: FloatProperty(
+            name="Membrane Pressure", default=0.2, min=0.0, max=1.0,
+            description="MEMBRANE method: inflation along the surface "
+                        "normal that stops the free sheet buckling")
 
         @classmethod
         def poll(cls, context):
@@ -657,20 +963,31 @@ if _IN_BLENDER:
                 a0 = self._area(verts, faces)
             except ImportError:
                 pass
-            if self.rounds > 0:
-                out = _relax_free(verts, faces, fixed, self.rounds,
-                                  surf_iters=12, step=0.12)
+            if self.method == 'MEMBRANE':
+                out = dynamic_relax(
+                    verts, faces, iterations=self.mem_iterations,
+                    smooth=self.mem_smooth,
+                    pressure=self.mem_pressure)
+                if out is None:
+                    self.report({'ERROR'}, "membrane method needs "
+                                "numpy")
+                    return {'CANCELLED'}
             else:
-                out = _relax(verts, faces, fixed, 1)
-            if out is None:
-                self.report({'ERROR'},
-                            "minimization needs numpy (Minimal "
-                            "Surface Toolkit)")
-                return {'CANCELLED'}
-            if self.polish > 0:
-                polished = _relax(out, faces, fixed, self.polish)
-                if polished is not None:
-                    out = polished
+                if self.rounds > 0:
+                    out = _relax_free(verts, faces, fixed,
+                                      self.rounds, surf_iters=12,
+                                      step=0.12)
+                else:
+                    out = _relax(verts, faces, fixed, 1)
+                if out is None:
+                    self.report({'ERROR'},
+                                "minimization needs numpy (Minimal "
+                                "Surface Toolkit)")
+                    return {'CANCELLED'}
+                if self.polish > 0:
+                    polished = _relax(out, faces, fixed, self.polish)
+                    if polished is not None:
+                        out = polished
             flat = [c for v in out for c in v]
             me.vertices.foreach_set('co', flat)
             me.update()
@@ -755,3 +1072,32 @@ if __name__ == "__main__":
             print(f"{label:18s} braid={braid:8s} strands={n} crossings={L} "
                   f"mu={mu} genus={g:g}  chi_mesh={chi} chi_expect={n - L} "
                   f"{'OK' if ok else 'MISMATCH'}")
+
+        # dynamic_relax stability / free-boundary check (needs numpy)
+        try:
+            import numpy as np
+            print("\n-- dynamic_relax (free-boundary membrane) --")
+            for name, (label, braid) in PRESETS.items():
+                word = parse_braid(braid)
+                verts, faces, fixed, n, L = build_seifert(
+                    word, m_res=48, rings=4, band_rows=8)
+                V0 = np.array(verts)
+                out = dynamic_relax(verts, faces, iterations=120)
+                P = np.array(out)
+                bmask, _ = _boundary_from_faces(faces, len(P))
+                bmask = np.array(bmask, bool)
+                bmove = float(np.linalg.norm(
+                    (P - V0)[bmask], axis=1).mean())
+                el = np.linalg.norm(
+                    V0[np.array([e[0] for e in
+                                 _topology(faces, len(P))[3]])]
+                    - V0[np.array([e[1] for e in
+                                   _topology(faces, len(P))[3]])],
+                    axis=1).mean()
+                finite = bool(np.isfinite(P).all())
+                free = bmove > 0.1 * el
+                print(f"{label:18s} finite={finite} "
+                      f"boundary_moved={bmove/el:.2f} edges "
+                      f"{'OK' if finite and free else 'FAIL'}")
+        except ImportError:
+            print("(numpy absent -- skipped dynamic_relax check)")

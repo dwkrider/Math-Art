@@ -482,8 +482,18 @@ if _IN_BLENDER:
             except (ValueError, KeyError) as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
-            comps = [np.asarray(c, dtype=float) * self.scale
-                     for c in comps]
+            comps = [np.asarray(c, dtype=float) for c in comps]
+            # Center all components on the origin and uniformly scale
+            # so the combined bounding box spans ~2 m (times Scale),
+            # using ONE bbox shared by every component.
+            pts = np.concatenate(comps) if comps else np.zeros((0, 3))
+            if len(pts):
+                lo = pts.min(0)
+                hi = pts.max(0)
+                cen = (lo + hi) / 2.0
+                ext = float((hi - lo).max())
+                s = (2.0 * self.scale / ext) if ext > 1e-9 else 1.0
+                comps = [(c - cen) * s for c in comps]
             if self.output == 'MESH':
                 obj = self._make_mesh(name, comps)
             else:

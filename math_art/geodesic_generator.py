@@ -184,6 +184,40 @@ def build_sphere(base='ICOSA', freq=3, cls='I'):
     return geodesic(V, F, freq)
 
 
+def _cross(a, b):
+    return (a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
+            a[0] * b[1] - a[1] * b[0])
+
+
+def _dot(a, b):
+    return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+
+def goldberg_dual(V, F):
+    """Dual of a triangulated geodesic sphere: a vertex at each face
+    centroid (on the sphere) and a polygon around each original vertex
+    -- hexagons plus twelve pentagons, i.e. the Goldberg polyhedron."""
+    Vd = [_unit(tuple(sum(V[i][k] for i in f) / len(f)
+                      for k in range(3))) for f in F]
+    inc = [[] for _ in range(len(V))]
+    for fi, f in enumerate(F):
+        for vi in f:
+            inc[vi].append(fi)
+    Fd = []
+    for vi in range(len(V)):
+        ring = inc[vi]
+        if len(ring) < 3:            # boundary vertex: no closed face
+            continue
+        n = _unit(V[vi])
+        ref = (0.0, 0.0, 1.0) if abs(n[2]) < 0.9 else (1.0, 0.0, 0.0)
+        u = _unit(_cross(n, ref))
+        w = _cross(n, u)
+        ring = sorted(ring, key=lambda fi: math.atan2(_dot(Vd[fi], w),
+                                                      _dot(Vd[fi], u)))
+        Fd.append(ring)
+    return Vd, Fd
+
+
 # ---- dome cutting --------------------------------------------------------
 
 CUT_Z = {'FULL': None, 'HEMI': 0.0, 'FIVEEIGHTHS': -0.25}
@@ -384,6 +418,11 @@ if _IN_BLENDER:
             name="Frequency", default=3, min=1, max=16,
             description="Breakdown frequency f: Class I gives the "
                         "(f,0) subdivision, Class II the (f,f)")
+        dual: BoolProperty(
+            name="Dual (Goldberg)", default=False,
+            description="Output the dual polyhedron -- hexagons and "
+                        "twelve pentagons (a Goldberg polyhedron / "
+                        "geodesic's honeycomb) instead of triangles")
         cut: EnumProperty(
             name="Cut",
             items=[('FULL', "Full Sphere", ""),
@@ -434,6 +473,8 @@ if _IN_BLENDER:
         def execute(self, context):
             V, F = build_sphere(self.base, self.frequency,
                                 self.geo_class)
+            if self.dual:
+                V, F = goldberg_dual(V, F)
             zmin = CUT_Z[self.cut]
             if zmin is not None:
                 V, F = cut_faces(V, F, zmin)
@@ -475,8 +516,9 @@ if _IN_BLENDER:
                 add_base_ring(verts, faces, loops, V,
                               self.ring_width * R)
 
-            name = ("Geodesic Sphere" if self.cut == 'FULL'
-                    else "Geodesic Dome")
+            base_name = "Goldberg" if self.dual else "Geodesic"
+            name = ("%s Sphere" % base_name if self.cut == 'FULL'
+                    else "%s Dome" % base_name)
             me = bpy.data.meshes.new(name)
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
@@ -513,6 +555,7 @@ if _IN_BLENDER:
             lay.prop(self, 'base')
             lay.prop(self, 'geo_class')
             lay.prop(self, 'frequency')
+            lay.prop(self, 'dual')
             lay.prop(self, 'cut')
             if self.cut != 'FULL':
                 lay.prop(self, 'base_ring')

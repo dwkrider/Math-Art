@@ -1,14 +1,15 @@
 
 # Woven Polyhedron generator for Blender.
 #
-# A dual-polyhedron sculpture generalized to any Platonic solid: an
-# inset polygon sits on every face of the chosen OUTER solid, and an
-# inset polygon on every face of its dual INNER solid (built as the
-# exact dual, so the inner faces align with the outer solid's
-# vertices).  A twisted bezier ribbon bridges each outer-polygon edge
-# to one inner-polygon edge, and the whole thing is welded into ONE
-# closed shell so a Solidify + Subdivision pair can thicken it and
-# round the corners.
+# A dual-polyhedron sculpture generalized to any Platonic or
+# Archimedean solid: an inset polygon sits on every face of the chosen
+# OUTER solid, and an inset polygon on every face of its dual INNER
+# solid (the dual of a Platonic solid is another Platonic; the dual of
+# an Archimedean solid is its Catalan solid).  The inner faces align
+# with the outer solid's vertices.  A twisted bezier ribbon bridges
+# each outer-polygon edge to one inner-polygon edge, and the whole
+# thing is welded into ONE closed shell so a Solidify + Subdivision
+# pair can thicken it and round the corners.
 #
 #   OUTER      INNER (dual)   outer faces   inner polygons (vertex
 #   solid                     (n-gons)      degree m)
@@ -30,12 +31,13 @@
 # at every spin angle.
 
 bl_info = {
-    "name": "Woven Polyhedron",
+    "name": "Twisted Polyhedron",
     "author": "Math Art project",
     "version": (1, 1, 0),
     "blender": (4, 2, 0),
-    "location": "View3D > Add > Mesh > Woven Polyhedron",
-    "description": "Ribbons weaving a Platonic solid to its dual",
+    "location": "View3D > Add > Mesh > Twisted Polyhedron",
+    "description": "Ribbons weaving a Platonic or Archimedean solid "
+                   "to its dual",
     "category": "Add Mesh",
 }
 
@@ -63,7 +65,7 @@ IF = [(0, 11, 5), (0, 5, 1), (0, 1, 7), (0, 7, 10), (0, 10, 11),
       (3, 9, 4), (3, 4, 2), (3, 2, 6), (3, 6, 8), (3, 8, 9),
       (4, 9, 5), (2, 4, 11), (6, 2, 10), (8, 6, 7), (9, 8, 1)]
 
-SOLID_ITEMS = [
+_PLATONIC_ITEMS = [
     ('TETRA', "Tetrahedron", "Self-dual: triangles woven to "
                              "triangles"),
     ('CUBE', "Cube", "Cube woven to its dual octahedron"),
@@ -73,6 +75,36 @@ SOLID_ITEMS = [
     ('ICOSA', "Icosahedron", "Icosahedron woven to its dual "
                              "dodecahedron"),
 ]
+
+PLATONIC = {sid for sid, _, _ in _PLATONIC_ITEMS}
+
+# the 13 Archimedean solids (id, label); geometry comes from the
+# regular_solids_generator's Conway builder, the dual (inner) solid
+# is the corresponding Catalan solid.  All are vertex-transitive, so
+# every inner polygon has the same number of sides (the vertex
+# degree) and the topological ribbon pairing stays a clean bijection.
+ARCHIMEDEAN = [
+    ('TT', "Truncated Tetrahedron"),
+    ('CO', "Cuboctahedron"),
+    ('TC', "Truncated Cube"),
+    ('TO', "Truncated Octahedron"),
+    ('RCO', "Rhombicuboctahedron"),
+    ('TCO', "Truncated Cuboctahedron"),
+    ('SC', "Snub Cube"),
+    ('ID', "Icosidodecahedron"),
+    ('TD', "Truncated Dodecahedron"),
+    ('TI', "Truncated Icosahedron"),
+    ('RID', "Rhombicosidodecahedron"),
+    ('TID', "Truncated Icosidodecahedron"),
+    ('SD', "Snub Dodecahedron"),
+]
+
+SOLID_ITEMS = _PLATONIC_ITEMS + [
+    (sid, label, "%s woven to its Catalan dual" % label)
+    for sid, label in ARCHIMEDEAN] + [
+    ('GEODESIC', "Geodesic Sphere",
+     "Icosahedral geodesic sphere (set Frequency) woven to its "
+     "Goldberg dual of hexagons and 12 pentagons")]
 
 # Per-solid default parameters, loaded when the Outer Solid selector
 # changes.  Each solid's few large or many small faces want their own
@@ -105,6 +137,95 @@ _PRESETS = {
                   mid_width=0.25, width_pen=50.65, width_tri=0.0,
                   rib_samples=14),
 }
+
+# Archimedean solids share a provisional default (they carry many
+# small faces, so modest insets, low curvature and a slim waist read
+# well); tune per solid the same way as the Platonic ones.
+_ARCH_DEFAULT = dict(tri_rot=67.98, pen_rot=-25.0, pen_inset=0.35,
+                     tri_inset=0.35, r_ico=0.60, pen_curve=0.30,
+                     tri_curve=0.0, handle_pen=1.6, handle_tri=0.40,
+                     mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                     rib_samples=14)
+for _sid, _ in ARCHIMEDEAN:
+    _PRESETS.setdefault(_sid, dict(_ARCH_DEFAULT))
+
+_PRESETS['TT'] = dict(tri_rot=56.49, pen_rot=-21.85, pen_inset=0.35,
+                      tri_inset=0.23, r_ico=0.72, pen_curve=0.0,
+                      tri_curve=0.0, handle_pen=1.60, handle_tri=0.40,
+                      mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                      rib_samples=14)
+_PRESETS['CO'] = dict(tri_rot=67.98, pen_rot=-34.75, pen_inset=0.20,
+                      tri_inset=0.35, r_ico=0.60, pen_curve=0.30,
+                      tri_curve=0.0, handle_pen=1.60, handle_tri=0.40,
+                      mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                      rib_samples=14)
+_PRESETS['TC'] = dict(tri_rot=35.22, pen_rot=-13.42, pen_inset=0.23,
+                      tri_inset=0.14, r_ico=0.87, pen_curve=0.30,
+                      tri_curve=0.0, handle_pen=0.46, handle_tri=0.40,
+                      mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                      rib_samples=14)
+_PRESETS['TO'] = dict(tri_rot=98.34, pen_rot=-13.36, pen_inset=0.35,
+                      tri_inset=0.23, r_ico=0.57, pen_curve=0.30,
+                      tri_curve=0.0, handle_pen=1.54, handle_tri=0.40,
+                      mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                      rib_samples=14)
+_PRESETS['RCO'] = dict(tri_rot=67.98, pen_rot=-25.00, pen_inset=0.35,
+                       tri_inset=0.35, r_ico=0.60, pen_curve=0.30,
+                       tri_curve=0.0, handle_pen=1.06, handle_tri=0.40,
+                       mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                       rib_samples=14)
+_PRESETS['TCO'] = dict(tri_rot=163.98, pen_rot=-17.98, pen_inset=0.20,
+                       tri_inset=0.35, r_ico=0.60, pen_curve=0.30,
+                       tri_curve=0.0, handle_pen=1.00, handle_tri=0.40,
+                       mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                       rib_samples=14)
+_PRESETS['SC'] = dict(tri_rot=-10.00, pen_rot=-20.00, pen_inset=0.22,
+                      tri_inset=0.35, r_ico=0.60, pen_curve=0.03,
+                      tri_curve=0.0, handle_pen=1.24, handle_tri=0.40,
+                      mid_width=0.35, width_pen=50.65, width_tri=0.0,
+                      rib_samples=14)
+_PRESETS['ID'] = dict(tri_rot=70.68, pen_rot=-25.00, pen_inset=0.35,
+                      tri_inset=0.35, r_ico=0.60, pen_curve=0.30,
+                      tri_curve=0.0, handle_pen=0.97, handle_tri=0.40,
+                      mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                      rib_samples=14)
+_PRESETS['TD'] = dict(tri_rot=42.72, pen_rot=-29.26, pen_inset=0.35,
+                      tri_inset=0.35, r_ico=0.60, pen_curve=0.30,
+                      tri_curve=0.0, handle_pen=1.60, handle_tri=0.40,
+                      mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                      rib_samples=14)
+_PRESETS['TI'] = dict(tri_rot=93.39, pen_rot=-52.63, pen_inset=0.35,
+                      tri_inset=0.17, r_ico=0.60, pen_curve=0.30,
+                      tri_curve=0.0, handle_pen=1.27, handle_tri=0.40,
+                      mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                      rib_samples=14)
+_PRESETS['RID'] = dict(tri_rot=72.06, pen_rot=-15.16, pen_inset=0.35,
+                       tri_inset=0.35, r_ico=0.60, pen_curve=0.30,
+                       tri_curve=0.0, handle_pen=0.73, handle_tri=0.40,
+                       mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                       rib_samples=14)
+_PRESETS['TID'] = dict(tri_rot=67.98, pen_rot=-37.00, pen_inset=0.25,
+                       tri_inset=0.35, r_ico=0.60, pen_curve=0.30,
+                       tri_curve=0.0, handle_pen=1.39, handle_tri=0.40,
+                       mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                       rib_samples=14)
+_PRESETS['SD'] = dict(tri_rot=67.98, pen_rot=-30.00, pen_inset=0.20,
+                      tri_inset=0.35, r_ico=0.60, pen_curve=0.30,
+                      tri_curve=0.0, handle_pen=1.60, handle_tri=0.40,
+                      mid_width=0.28, width_pen=50.65, width_tri=0.0,
+                      rib_samples=14)
+
+# geodesic sphere: triangular outer faces with degree-5/6 vertices,
+# so the inner (Goldberg) polygons are pentagons and hexagons.  Small
+# faces at higher frequency want modest insets.
+_PRESETS['GEODESIC'] = dict(frequency=2, tri_rot=67.98,
+                            pen_rot=-25.00, pen_inset=0.27,
+                            tri_inset=0.40, r_ico=1.20,
+                            pen_curve=0.35, tri_curve=0.0,
+                            handle_pen=1.60, handle_tri=0.40,
+                            mid_width=0.28, width_pen=50.65,
+                            width_tri=0.0, rib_samples=14,
+                            smooth_shading=False)
 
 
 # ---------------------------------------------------------------- #
@@ -149,8 +270,8 @@ def _dual_data(V, F):
     return Vd, rings
 
 
-def _base(name):
-    """Raw (verts, faces) for a Platonic solid, centered at the
+def _base(name, freq=2):
+    """Raw (verts, faces) for the chosen outer solid, centered at the
     origin (faces as index tuples, winding fixed later)."""
     if name == 'ICOSA':
         return [Vector(v) for v in IV], [tuple(f) for f in IF]
@@ -176,18 +297,41 @@ def _base(name):
               4 if sz > 0 else 5)
              for sx in (1, -1) for sy in (1, -1) for sz in (1, -1)]
         return V, F
-    raise ValueError(name)
+    if name == 'GEODESIC':
+        # icosahedral Class-I geodesic sphere (triangles); its dual is
+        # the Goldberg solid of hexagons + 12 pentagons
+        try:
+            from . import geodesic_generator as geo
+        except ImportError:
+            import geodesic_generator as geo
+        V, F = geo.build_sphere('ICOSA', max(1, int(freq)), 'I')
+        return [Vector(v) for v in V], [tuple(f) for f in F]
+    # Archimedean: reuse the extension's canonicalized Conway geometry
+    try:
+        from . import regular_solids_generator as rsg
+    except ImportError:
+        import regular_solids_generator as rsg
+    V, F, _ = rsg.build_solid('ARCHIMEDEAN', name)
+    return [Vector(v) for v in V], [tuple(f) for f in F]
 
 
-def solid(name):
-    """(Vp, Fp, Vd, rings, m) for the chosen outer solid: unit-radius
-    verts, CCW faces, dual verts (one per face), vertex rings (the
-    dual faces) and the vertex degree m (= inner-polygon sides)."""
-    V, F = _base(name)
+def solid(name, freq=2):
+    """(Vp, Fp, Vd, rings) for the chosen outer solid: unit-radius
+    verts, CCW faces, dual verts (one per face) and vertex rings (the
+    dual faces).  Vertex degree (= inner-polygon sides) is read per
+    vertex from the ring lengths, so mixed-degree solids (geodesic,
+    Goldberg) also work.  `freq` is the geodesic breakdown."""
+    V, F = _base(name, freq)
     Vp = [v.normalized() for v in V]
+    # scale so the outer solid just fills a 2 m cube centered at the
+    # origin (its extreme vertex touches a cube face: max |coord| = 1)
+    maxc = max(max(abs(c) for c in v) for v in Vp) or 1.0
+    fill = 1.0 / maxc
+    Vp = [v * fill for v in Vp]
     Fp = _orient_faces(Vp, F)
     Vd, rings = _dual_data(Vp, Fp)
-    return Vp, Fp, Vd, rings, len(rings[0])
+    Vd = [v * fill for v in Vd]        # keep the dual in the same scale
+    return Vp, Fp, Vd, rings
 
 
 # ---------------------------------------------------------------- #
@@ -247,10 +391,17 @@ def wprofile(w0, w1, mid, ap, at, t):
 
 
 def cap_faces(fd, curve):
-    """(verts, tris): tessellate a flat inset face into a spherical
-    cap blended by `curve` (0 = flat, 1 = on the sphere through its
-    corners).  Corners stay put so the ribbon weld is preserved --
-    only the interior bulges toward the sphere."""
+    """(verts, faces): fill an inset face with a subdivision-friendly
+    cap that has NO high-valence fan pole (a pole makes Catmull-Clark
+    shade the cap with a seam or pinch).  The interior is blended by
+    `curve` toward the sphere through the corners (0 = flat); the
+    corners stay put so the ribbon weld is preserved.
+
+    A triangle cannot be filled with quads without an extraordinary
+    vertex, so n=3 uses a 3-triangle fan to a domed centre -- a clean
+    valence-3 apex (like a cube corner) that subdivides smoothly.  For
+    n>=4 an outer band of quads around one central n-gon avoids a pole
+    entirely."""
     vs = fd["verts"]
     c = fd["center"]
     n = len(vs)
@@ -259,17 +410,18 @@ def cap_faces(fd, curve):
     def blend(p):
         return p.lerp(p.normalized() * r, curve)
 
-    verts = [blend(v) for v in vs]                  # corners 0..n-1
-    verts += [blend((vs[i] + c) * 0.5) for i in range(n)]   # mids
-    verts.append(blend(c))                          # centre  2n
-    ci = 2 * n
-    tris = []
-    for i in range(n):
-        j = (i + 1) % n
-        tris.append([i, j, n + j])
-        tris.append([i, n + j, n + i])
-        tris.append([n + i, n + j, ci])
-    return verts, tris
+    corners = [blend(v) for v in vs]                     # 0 .. n-1
+    if n == 3:
+        verts = corners + [blend(c)]                     # domed apex
+        return verts, [[i, (i + 1) % 3, 3] for i in range(3)]
+    ring = [blend((vs[i] + c) * 0.5) for i in range(n)]  # n .. 2n-1
+    verts = corners + ring
+    # outer band: one quad per edge (boundary edges stay single, so
+    # the ribbon still welds to them); then one n-gon across the ring
+    faces = [[i, (i + 1) % n, n + (i + 1) % n, n + i]
+             for i in range(n)]
+    faces.append([n + i for i in range(n)])
+    return verts, faces
 
 
 def _edge_tangents(fd, curve):
@@ -309,13 +461,21 @@ def _poly_edges(fd, curve):
             for i in range(len(vs))]
 
 
-def build(p):
+def build(p, swap="dist"):
     """Return (verts, faces) for the woven sculpture.  Everything
     accumulates into ONE welded vertex pool: the ribbon ends coincide
     with the outer / inner polygon edge verts, so they fuse and the
     Subdivision Surface smooths across the junctions instead of
-    treating the parts as loose pieces."""
-    Vp, Fp, Vd, rings, m = solid(p.solid)
+    treating the parts as loose pieces.
+
+    `swap` picks each ribbon's rail pairing: "dist" is the geometric
+    non-crossing choice (looks best, but on a few solids -- truncated
+    tetrahedron, cuboctahedron, icosidodecahedron -- it is globally
+    inconsistent and makes the shell non-orientable); "fwd" is a
+    consistent pairing that is always orientable.  The operator builds
+    with "dist" and only falls back to "fwd" when the result comes out
+    non-orientable, so every other solid keeps the nicer pairing."""
+    Vp, Fp, Vd, rings = solid(p.solid, getattr(p, "frequency", 2))
     r_in = p.r_ico
     # outer inset polygons, one per face; inner inset polygons, one
     # per vertex (the dual face there = the ring of face-centroids)
@@ -352,16 +512,18 @@ def build(p):
     inner_edges = [_poly_edges(inner[v], p.tri_curve)
                    for v in range(len(Vp))]
     N = p.rib_samples
-    # the inner polygon is m-fold symmetric, so the target edge index
+    # the inner polygon (at the forward vertex) has m = that vertex's
+    # degree sides and is m-fold symmetric, so the target edge index
     # folds by the number of full turns: step = 0 binds each outer
     # edge to the dual edge directly below it, and each 360/m of inner
     # spin steps it by one -> a flip-free bijection at any angle.
-    step = round(p.tri_rot / (360.0 / m))
     for fidx, f in enumerate(Fp):
         oe = _poly_edges(outer[fidx], p.pen_curve)
         n = len(f)
         for i in range(n):
             vb = f[(i + 1) % n]                 # forward vertex
+            m = len(rings[vb])
+            step = round(p.tri_rot / (360.0 / m))
             j = rings[vb].index(fidx)
             te = inner_edges[vb][(j + step) % m]
             pe = oe[i]
@@ -374,8 +536,11 @@ def build(p):
             Ht = p.handle_tri * span
             pa, pb = pe["a"], pe["b"]
             qa, qb = te["a"], te["b"]
-            if ((pa - qa).length + (pb - qb).length
-                    > (pa - qb).length + (pb - qa).length):
+            if swap == "dist":
+                if ((pa - qa).length + (pb - qb).length
+                        > (pa - qb).length + (pb - qa).length):
+                    qa, qb = qb, qa
+            elif swap == "rev":
                 qa, qb = qb, qa
             cpA = [pa, pa + Hp * tp, qa + Ht * tq, qa]
             cpB = [pb, pb + Hp * tp, qb + Ht * tq, qb]
@@ -417,6 +582,8 @@ if _IN_BLENDER:
         if preset:
             for key, val in preset.items():
                 setattr(self, key, val)
+            # smooth shading defaults on unless the preset opts out
+            self.smooth_shading = preset.get("smooth_shading", True)
 
     class MESH_OT_woven_polyhedron_add(bpy.types.Operator):
         """Add a woven polyhedron: twisted ribbons bridging the inset
@@ -424,15 +591,19 @@ if _IN_BLENDER:
         welded into one shell with Solidify + Subdivision so it can be
         thickened and smoothed"""
         bl_idname = "mesh.woven_polyhedron_add"
-        bl_label = "Woven Polyhedron"
+        bl_label = "Twisted Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
         solid: EnumProperty(
             name="Outer Solid", items=SOLID_ITEMS, default='DODECA',
             update=_load_preset,
-            description="Platonic solid on the outside; its dual is "
-                        "woven on the inside (switching loads that "
-                        "solid's default parameters)")
+            description="Solid on the outside; its dual is woven on "
+                        "the inside (switching loads that solid's "
+                        "default parameters)")
+        frequency: IntProperty(
+            name="Frequency", default=2, min=1, max=8,
+            description="Geodesic breakdown frequency (Geodesic "
+                        "Sphere only): higher = more, smaller faces")
         tri_rot: FloatProperty(
             name="Inner Spin", default=90.0, min=-720, max=720,
             description="Spin of every inner polygon about its face "
@@ -499,10 +670,12 @@ if _IN_BLENDER:
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
-        def execute(self, context):
-            verts, faces = build(self)
+        def _woven_mesh(self, swap):
+            """Build + weld a woven mesh with the given rail pairing;
+            return (mesh, non-orientable-seam-count)."""
+            verts, faces = build(self, swap)
             s = self.scale
-            me = bpy.data.meshes.new("Woven Polyhedron")
+            me = bpy.data.meshes.new("Twisted Polyhedron")
             me.from_pydata([(x * s, y * s, z * s)
                             for x, y, z in verts], [],
                            [list(f) for f in faces])
@@ -514,13 +687,26 @@ if _IN_BLENDER:
             bmesh.ops.remove_doubles(bm, verts=bm.verts,
                                      dist=1e-5 * s)
             bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+            seams = sum(1 for e in bm.edges
+                        if e.is_manifold and not e.is_contiguous)
             bm.to_mesh(me)
             bm.free()
+            return me, seams
+
+        def execute(self, context):
+            s = self.scale
+            # the geometric ("dist") pairing looks best but is non-
+            # orientable on a few solids; fall back to the consistent
+            # pairing only when it actually comes out non-orientable
+            me, seams = self._woven_mesh("dist")
+            if seams:
+                bpy.data.meshes.remove(me)
+                me, seams = self._woven_mesh("fwd")
             if self.smooth_shading:
                 me.polygons.foreach_set(
                     "use_smooth", [True] * len(me.polygons))
             me.update()
-            obj = bpy.data.objects.new("Woven Polyhedron", me)
+            obj = bpy.data.objects.new("Twisted Polyhedron", me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
             for o in context.selected_objects:
@@ -536,7 +722,7 @@ if _IN_BLENDER:
                 sub.levels = self.smooth_level
                 sub.render_levels = self.smooth_level
             self.report({'INFO'},
-                        f"Woven {self.solid.title()}: "
+                        f"Twisted {self.solid.title()}: "
                         f"V={len(me.vertices)} F={len(me.polygons)}")
             return {'FINISHED'}
 
@@ -544,6 +730,8 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, "solid")
+            if self.solid == 'GEODESIC':
+                lay.prop(self, "frequency")
             lay.separator()
             for prop in ("tri_rot", "pen_rot", "pen_inset",
                          "tri_inset", "r_ico", "pen_curve",

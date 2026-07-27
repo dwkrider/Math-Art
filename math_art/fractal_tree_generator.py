@@ -331,6 +331,41 @@ if _IN_BLENDER:
                            for (x, y, z), _bar_z in weights]
                 name = "Fractal Mobile"
 
+            # Center on the origin and fit within a 2 m cube by
+            # default: bbox over every segment endpoint (and sphere
+            # extent), then translate the midpoint to the origin and
+            # uniformly scale the largest extent to 2.0. fit_scale is
+            # applied to the bevel too so limb thickness stays in
+            # proportion; the object itself keeps an identity transform.
+            fit_scale = 1.0
+            pts = [p for p0, p1, _r0, _r1 in segs for p in (p0, p1)]
+            for (cx, cy, cz), r in spheres:
+                pts.append((cx - r, cy - r, cz - r))
+                pts.append((cx + r, cy + r, cz + r))
+            if pts:
+                xs = [p[0] for p in pts]
+                ys = [p[1] for p in pts]
+                zs = [p[2] for p in pts]
+                cen = ((min(xs) + max(xs)) / 2.0,
+                       (min(ys) + max(ys)) / 2.0,
+                       (min(zs) + max(zs)) / 2.0)
+                ext = max(max(xs) - min(xs), max(ys) - min(ys),
+                          max(zs) - min(zs))
+                fit_scale = 2.0 / ext if ext > 1e-9 else 1.0
+                segs = [(((p0[0] - cen[0]) * fit_scale,
+                          (p0[1] - cen[1]) * fit_scale,
+                          (p0[2] - cen[2]) * fit_scale),
+                         ((p1[0] - cen[0]) * fit_scale,
+                          (p1[1] - cen[1]) * fit_scale,
+                          (p1[2] - cen[2]) * fit_scale),
+                         r0, r1)
+                        for p0, p1, r0, r1 in segs]
+                spheres = [(((cx - cen[0]) * fit_scale,
+                             (cy - cen[1]) * fit_scale,
+                             (cz - cen[2]) * fit_scale),
+                            r * fit_scale)
+                           for (cx, cy, cz), r in spheres]
+
             cu = bpy.data.curves.new(name, 'CURVE')
             cu.dimensions = '3D'
             for p0, p1, r0, r1 in segs:
@@ -340,7 +375,7 @@ if _IN_BLENDER:
                 sp.points[1].co = (p1[0], p1[1], p1[2], 1.0)
                 sp.points[0].radius = r0
                 sp.points[1].radius = r1
-            cu.bevel_depth = self.trunk_radius
+            cu.bevel_depth = self.trunk_radius * fit_scale
             cu.bevel_resolution = 4
             if self.trunk_radius > 0:
                 cu.use_fill_caps = True

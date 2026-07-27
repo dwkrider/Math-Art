@@ -245,9 +245,30 @@ if _IN_BLENDER:
                     max(48, self.segments), self.scale)
             else:
                 verts, faces = None, None
+
+            def _fit(vs):
+                # centre on the bounding-box midpoint and uniformly
+                # scale so the largest extent is 2.0 * self.scale (a
+                # ~2 m cube by default). The shape verts already carry
+                # self.scale; because this is a ratio it divides out,
+                # so scale is not applied twice.
+                if not vs:
+                    return vs
+                xs = [v[0] for v in vs]
+                ys = [v[1] for v in vs]
+                zs = [v[2] for v in vs]
+                cx = 0.5 * (min(xs) + max(xs))
+                cy = 0.5 * (min(ys) + max(ys))
+                cz = 0.5 * (min(zs) + max(zs))
+                ext = max(max(xs) - min(xs), max(ys) - min(ys),
+                          max(zs) - min(zs))
+                s = (2.0 * self.scale / ext) if ext > 1e-9 else 1.0
+                return [((v[0] - cx) * s, (v[1] - cy) * s,
+                         (v[2] - cz) * s) for v in vs]
+
             me = bpy.data.meshes.new("Oloid")
             if self.kind == 'ROLLER':
-                pts = roller_circles(self.segments, self.scale)
+                pts = _fit(roller_circles(self.segments, self.scale))
                 bm = bmesh.new()
                 vs = [bm.verts.new(p) for p in pts]
                 bmesh.ops.convex_hull(bm, input=vs)
@@ -257,7 +278,7 @@ if _IN_BLENDER:
                 bm.to_mesh(me)
                 bm.free()
             else:
-                me.from_pydata(verts, [], faces)
+                me.from_pydata(_fit(verts), [], faces)
                 me.validate(clean_customdata=True)
                 bm = bmesh.new()
                 bm.from_mesh(me)

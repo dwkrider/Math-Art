@@ -998,6 +998,20 @@ if _IN_BLENDER:
                 self.render, self.border, self.panel_thickness,
                 self.half, self.dual_compound, self.rings,
                 self.ring_cell_scale, self.rings_only)
+            # center on the origin and fit within a 2 m cube (times the
+            # Scale property), so the framework fills the cube by default
+            if verts:
+                xs = [v[0] for v in verts]
+                ys = [v[1] for v in verts]
+                zs = [v[2] for v in verts]
+                cen = (0.5 * (min(xs) + max(xs)),
+                       0.5 * (min(ys) + max(ys)),
+                       0.5 * (min(zs) + max(zs)))
+                ext = max(max(xs) - min(xs), max(ys) - min(ys),
+                          max(zs) - min(zs))
+                s = (2.0 * self.scale / ext) if ext > 1e-9 else 1.0
+                verts = [((v[0] - cen[0]) * s, (v[1] - cen[1]) * s,
+                          (v[2] - cen[2]) * s) for v in verts]
             me = bpy.data.meshes.new("Polytope4D")
             me.from_pydata(verts, [], faces)
             n_rings = st['n_rings']

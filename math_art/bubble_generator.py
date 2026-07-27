@@ -750,10 +750,13 @@ if _IN_BLENDER:
                                 "by films, so they bound no "
                                 "polyhedron (interior points "
                                 "are needed)")
-            # fit (roughly) within a 2 x scale cube at the origin
-            allv = [v for p in parts for v in p[1]]
-            lo = [min(v[k] for v in allv) for k in range(3)]
-            hi = [max(v[k] for v in allv) for k in range(3)]
+            # fit the underlying polyhedron -- the bubble centres
+            # (the seed mesh's vertices) -- roughly within a
+            # 2 x scale cube at the origin; the same centre and
+            # scale go to every emitted mesh, so bubbles just bulge
+            # beyond it by their radii, which is fine
+            lo = [float(Pa[:, k].min()) for k in range(3)]
+            hi = [float(Pa[:, k].max()) for k in range(3)]
             ctr = [(lo[k] + hi[k]) / 2.0 for k in range(3)]
             half = max((hi[k] - lo[k]) / 2.0 for k in range(3)) \
                 or 1.0

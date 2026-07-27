@@ -179,6 +179,12 @@ def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0):
         remap[used] = np.arange(len(used))
         verts = verts[used]
         tris = remap[tris]
+    # center on the origin and fit within a 2 m cube, then apply scale
+    if len(verts):
+        lo, hi = verts.min(axis=0), verts.max(axis=0)
+        ext = float((hi - lo).max())
+        verts = (verts - 0.5 * (lo + hi)) * (2.0 / ext if ext > 1e-9
+                                             else 1.0)
     return verts * scale, tris
 
 

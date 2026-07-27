@@ -443,6 +443,11 @@ if _IN_BLENDER:
             if len(F) == 0:
                 self.report({'ERROR'}, "Empty mesh")
                 return {'CANCELLED'}
+            # center on the origin and fit within a 2 m cube, then scale
+            V = np.asarray(V, float)
+            lo, hi = V.min(axis=0), V.max(axis=0)
+            ext = float((hi - lo).max())
+            V = (V - 0.5 * (lo + hi)) * (2.0 / ext if ext > 1e-9 else 1.0)
             obj = _new_object(context, name, V * self.scale, F,
                               smooth=self.smooth)
             if p in _IMMERSIONS and self.thickness > 0:

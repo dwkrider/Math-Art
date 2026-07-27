@@ -519,7 +519,7 @@ if _IN_BLENDER:
         dt_scale: FloatProperty(
             name="Time Step Scale", default=1.0, min=0.05, max=10.0,
             description="Multiplier on the preset's integration step")
-        size: FloatProperty(name="Size", default=10.0, min=0.1,
+        size: FloatProperty(name="Size", default=2.0, min=0.1,
                             max=1000.0,
                             description="Largest bounding-box extent")
         spline: EnumProperty(

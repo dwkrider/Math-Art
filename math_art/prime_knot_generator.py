@@ -533,7 +533,16 @@ def build_knot(braid_text, samples=240, iters=150, repel=0.35,
     P = resample_closed(P, samples)
     if mirror:
         P[:, 2] = -P[:, 2]
-    return P * scale
+    # Center on the origin and fit within a 2 m cube (max extent
+    # 2.0 * scale) so the knot lands framed by default.
+    if len(P):
+        lo = P.min(axis=0)
+        hi = P.max(axis=0)
+        cen = 0.5 * (lo + hi)
+        ext = float((hi - lo).max())
+        s = (2.0 * scale / ext) if ext > 1e-9 else scale
+        P = (P - cen) * s
+    return P
 
 
 # ---- Blender layer -----------------------------------------------------

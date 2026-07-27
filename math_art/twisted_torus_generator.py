@@ -274,7 +274,22 @@ if _IN_BLENDER:
                 verts, faces, nb = build_twisted_torus(
                     self.n, self.major, self.minor, self.twist_steps,
                     self.segments, self.rounding, self.profile_res,
-                    self.scale)
+                    1.0)
+                # center on bbox midpoint and fit into a 2 m cube
+                # (scale=1 -> 2 m); the builder's own scale is left at
+                # 1.0 above so scale is not applied twice
+                if verts:
+                    xs = [v[0] for v in verts]
+                    ys = [v[1] for v in verts]
+                    zs = [v[2] for v in verts]
+                    cen = (0.5 * (min(xs) + max(xs)),
+                           0.5 * (min(ys) + max(ys)),
+                           0.5 * (min(zs) + max(zs)))
+                    ext = max(max(xs) - min(xs), max(ys) - min(ys),
+                              max(zs) - min(zs))
+                    s = (2.0 * self.scale / ext) if ext > 1e-9 else 1.0
+                    verts = [((v[0] - cen[0]) * s, (v[1] - cen[1]) * s,
+                              (v[2] - cen[2]) * s) for v in verts]
                 # corner verts: profile index multiple of profile_res
                 m = self.n * max(1, self.profile_res)
                 pr = max(1, self.profile_res)
@@ -320,7 +335,25 @@ if _IN_BLENDER:
                     self.n, self.major, self.minor, self.twist_steps,
                     self.segments, self.rounding,
                     max(2, self.profile_res), self.shrink,
-                    self.sheet_thickness, self.scale)
+                    self.sheet_thickness, 1.0)
+                # center the whole assembly and fit into a 2 m cube using
+                # the combined bounding box so bands stay coherent
+                # (scale=1 -> 2 m); builder scale left at 1.0 to avoid
+                # applying scale twice
+                allx = [v[0] for verts, _, _ in bands for v in verts]
+                ally = [v[1] for verts, _, _ in bands for v in verts]
+                allz = [v[2] for verts, _, _ in bands for v in verts]
+                if allx:
+                    cen = (0.5 * (min(allx) + max(allx)),
+                           0.5 * (min(ally) + max(ally)),
+                           0.5 * (min(allz) + max(allz)))
+                    ext = max(max(allx) - min(allx), max(ally) - min(ally),
+                              max(allz) - min(allz))
+                    s = (2.0 * self.scale / ext) if ext > 1e-9 else 1.0
+                    bands = [([((v[0] - cen[0]) * s, (v[1] - cen[1]) * s,
+                                (v[2] - cen[2]) * s) for v in verts],
+                              faces, corners)
+                             for verts, faces, corners in bands]
                 t_eff = self.twist_steps % self.n
                 g = gcd(self.n, t_eff) if t_eff else self.n
                 per = self.n // g if t_eff else 1
