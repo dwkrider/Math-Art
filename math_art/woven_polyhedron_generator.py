@@ -210,7 +210,7 @@ _PRESETS['TID'] = dict(tri_rot=67.98, pen_rot=-37.00, pen_inset=0.25,
                        mid_width=0.28, width_pen=50.65, width_tri=0.0,
                        rib_samples=14)
 _PRESETS['SD'] = dict(tri_rot=67.98, pen_rot=-30.00, pen_inset=0.20,
-                      tri_inset=0.35, r_ico=0.60, pen_curve=0.30,
+                      tri_inset=0.35, r_ico=0.60, pen_curve=0.00,
                       tri_curve=0.0, handle_pen=1.60, handle_tri=0.40,
                       mid_width=0.28, width_pen=50.65, width_tri=0.0,
                       rib_samples=14)
