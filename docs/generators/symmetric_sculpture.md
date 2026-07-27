@@ -33,10 +33,6 @@ A Blender adaptation of George W. Hart's sculpture design program (the tool behi
 
 The Geometry Nodes modifier exposes further live inputs on the result object: **Shell** (radial extrusion fraction), **Weld** (merge distance where copies meet, default $10^{-4}$), **Full Sculpture** (show all copies with the motif's real material for export/render, off = translucent design view), **Copy Material**, and the **Plane Rotation** / **Plane Offset** vectors that map the motif's XY plane onto the representative plane.
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

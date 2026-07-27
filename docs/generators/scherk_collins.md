@@ -28,10 +28,6 @@ The Scherk-Collins generator builds the saddle-chain toroid sculptures that Carl
 | NURBS Output | Off | Emit a compact NURBS surface (mid-surface only; thickness and rims do not apply) |
 | NURBS Detail | 2 | Control-point density used for NURBS output (stays smooth at low values) |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

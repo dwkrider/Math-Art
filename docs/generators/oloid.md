@@ -16,10 +16,6 @@ A small family of surfaces built from two perpendicular circles. The **oloid** (
 | Phase | 0.0 | Ruling offset around the second circle as a fraction of a turn (Ruled Circle Strip and Anti-Oloid). Range -0.5 to 0.5. |
 | Scale | 1.0 | Output is centred and fitted so its largest extent is $2\,\text{m}\times$ Scale. Range 0.01-100. |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

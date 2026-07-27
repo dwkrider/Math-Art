@@ -22,10 +22,6 @@ Regular $\{p,q\}$ tilings of the hyperbolic plane -- $q$ regular $p$-gons meetin
 | Include Base Disk | On | Backing slab under the raised tiles (disk plaque); off = only the raised tiles, flat on $z=0$. |
 | Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

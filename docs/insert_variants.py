@@ -61,8 +61,12 @@ def build_section(slug, variants):
 
 
 def strip_existing(text):
-    # remove a prior '## Variants' ... up to the next '## ' heading
-    return re.sub(r"\n## Variants\b.*?(?=\n## )", "\n", text,
+    # Remove a prior '## Variants' block, INCLUDING the blank lines
+    # right before it, up to the next '## ' heading (or end of file),
+    # collapsing to a single '\n'. Consuming the leading blank lines
+    # (\n+) is what keeps this idempotent -- otherwise each re-run
+    # left one extra blank line before the heading.
+    return re.sub(r"\n+## Variants\b.*?(?=\n## |\Z)", "\n", text,
                   flags=re.DOTALL)
 
 

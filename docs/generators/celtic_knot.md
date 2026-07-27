@@ -27,8 +27,6 @@ Strands weaving over and under along the edges of a framework mesh — a port of
 | Coloring | Per Strand | Per Strand (a distinct material per strand), Per Braid (fewest materials with no two crossing strands sharing one), or None. |
 | Scale | 1.0 | Built-in frameworks only: half-size of the bounding cube (min 0.01, max 100.0). |
 
-
-
 ## Variants
 
 Renders of each selectable option:

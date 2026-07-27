@@ -20,10 +20,6 @@ Zonohedra are convex polyhedra whose faces are all centrally symmetric — the M
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Wireframe styles (min 0.001, max 1.0). |
 | Scale | 1.0 | Uniform output scale (min 0.01, max 100.0). |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

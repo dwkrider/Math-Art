@@ -22,8 +22,6 @@ This generator builds all 249 prime knots with up to 10 crossings (the Rolfsen t
 | Tube Sides | 12 | Cross-section sides (mesh output) |
 | Scale | 1.0 | Overall size (max extent = 2.0 × Scale) |
 
-
-
 ## Variants
 
 Renders of each selectable option:

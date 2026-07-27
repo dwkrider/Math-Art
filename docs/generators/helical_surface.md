@@ -23,8 +23,6 @@ Three classic helical / spiral parametric surfaces: the hyperbolic helicoid (a t
 | Thickness | 0.0 | Solidify modifier thickness (0 = raw surface). Range 0-1. |
 | Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |
 
-
-
 ## Variants
 
 Renders of each selectable option:

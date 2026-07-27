@@ -21,10 +21,6 @@ The classic topology menagerie: Klein bottles, the two RP² immersions (cross-ca
 | Thickness | 0.0 | Immersed surfaces only: 0 = raw surface, > 0 = Solidify modifier of this thickness. Range 0-1. |
 | Smooth Shading | On | Shade the mesh smooth. |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

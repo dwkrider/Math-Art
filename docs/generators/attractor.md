@@ -21,10 +21,6 @@ This generator draws the trajectory of a chaotic dynamical system as a curve. It
 | Speed Taper | 0.0 | Thicken the tube where the flow is slow (0 = uniform radius) |
 | Profile Sides | 0 | Polygonal tube cross-section with N flat sides (0 = round; e.g. 5 gives the pentagon profile used in the reference lorentz.blend) |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

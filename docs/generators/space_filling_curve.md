@@ -20,8 +20,6 @@ This generator builds space-filling curves in 2D and 3D: the open **Hilbert** cu
 | Bevel Resolution | 4 | Bevel profile resolution |
 | Size | 2.0 | Overall size of the curve |
 
-
-
 ## Variants
 
 Renders of each selectable option:

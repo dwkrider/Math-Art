@@ -20,8 +20,6 @@ After George W. Hart's *Platonic Twist* construction: the faces of a Platonic so
 | Thickness | 0.04 | Solidify modifier thickness (0 = pure surface). Range 0.0-0.5. |
 | Scale | 1.0 | Output is centred and fitted so its largest extent is $2\,\text{m}\times$ Scale. Range 0.01-100. |
 
-
-
 ## Variants
 
 Renders of each selectable option:

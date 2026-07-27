@@ -29,10 +29,6 @@ This generator builds multi-component links and knot connected sums as rope curv
 | Tube Sides | 12 | Cross-section sides (mesh output) |
 | Scale | 1.0 | Overall size (combined bbox ≈ 2 m × Scale) |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

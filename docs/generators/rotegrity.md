@@ -20,10 +20,6 @@ Rotegrity (also **nexorade**) sphere models, after Antiprism's `rotegrity`: ever
 | Coloring | By Strap Length | By Strap Length (one material per length class, as in kits), Per Strap (cycle the palette), or None. |
 | Radius | 1.0 | Sphere radius; the result is fit within a 2×Radius cube at the origin (min 0.01, max 100.0). |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

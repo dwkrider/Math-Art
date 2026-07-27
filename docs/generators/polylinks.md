@@ -28,10 +28,6 @@ Orderly tangles of regular polygons, after George W. Hart's **regular polylinks*
 | Coloring | Per Link | Per Link (one material per frame), Per Parallel Pair (iso-colour antipodal frames, as in Hart's paper models), or None. |
 | Scale | 1.0 | Uniform output scale; the result is fit within a 2×Scale cube at the origin (min 0.01, max 100.0). |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

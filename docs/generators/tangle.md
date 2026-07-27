@@ -21,10 +21,6 @@ Interwoven compounds of polyhedron frames — "tangles" in the spirit of Alan Ho
 | Coloring | Per Component | Per Component (one material per polyhedron) or None. |
 | Scale | 1.0 | Uniform output scale; the result is fit within a 2×Scale cube at the origin (min 0.01, max 100.0). |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

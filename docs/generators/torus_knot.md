@@ -22,8 +22,6 @@ This generator builds the $(p,q)$ torus knots and links as rope curves lying on 
 | Color Components | On | One material with a distinct color per link component (links only) |
 | Scale | 1.0 | Overall size multiplier |
 
-
-
 ## Variants
 
 Renders of each selectable option:

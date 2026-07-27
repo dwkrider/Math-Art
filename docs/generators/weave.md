@@ -22,10 +22,6 @@ Woven-strand spheres built from a seed polyhedron, a Blender take on Antiprism's
 | Coloring | Per Strand | Per Strand (one material per woven strand) or None. |
 | Radius | 1.0 | Output radius; the result is fit within a 2×Radius cube at the origin (min 0.01, max 100.0). |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

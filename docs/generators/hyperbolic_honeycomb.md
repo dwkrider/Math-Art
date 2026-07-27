@@ -24,10 +24,6 @@ The edge framework of a $\{p,q,r\}$ regular honeycomb of hyperbolic 3-space, ren
 | Sphere Size | 1.6 | Node sphere radius multiplier |
 | Ball Radius | 1.0 | Overall scale: radius of the Poincaré ball |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

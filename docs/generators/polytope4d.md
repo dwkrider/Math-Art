@@ -30,10 +30,6 @@ The six regular convex 4-polytopes — the 5-cell, tesseract (8-cell), 16-cell, 
 | Ring Cell Scale | 0.9 | Shrink factor of each ring cell toward its 4D centroid, so gaps make the rings legible (min 0.1, max 1.0). |
 | Rings Only | Off | Drop the edge framework and show just the rings of solid cells (the printable, fig. 3-29 look). |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

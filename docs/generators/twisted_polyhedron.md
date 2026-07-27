@@ -30,10 +30,6 @@ A dual-polyhedron sculpture: an inset polygon sits on every face of a chosen **o
 | Smooth Shading | On | Shade the mesh smooth. |
 | Scale | 1.0 | Uniform output scale (min 0.01, max 100.0). |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

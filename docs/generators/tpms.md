@@ -16,10 +16,6 @@ This generator builds triply-periodic minimal surfaces (TPMS) — the space-fill
 | Cell Size | 2.0 | Edge length of one unit cell in Blender units |
 | Thickness | 0.0 | If > 0, add a Solidify modifier with this thickness |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

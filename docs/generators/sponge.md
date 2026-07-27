@@ -16,8 +16,6 @@ Subtractive volume fractals: the Menger sponge and its relatives, built by recur
 
 *Per-kind level caps: Menger 4, Vicsek 5, Carpet 6, Tetra 6, Octa 5.*
 
-
-
 ## Variants
 
 Renders of each selectable option:

@@ -17,10 +17,6 @@ Classical algebraic surfaces -- celebrated cubics, quartics, quintics and sextic
 | Thickness | 0.0 | If > 0, add a Solidify modifier with this thickness. Range 0-1. |
 | Smooth Shading | On | Shade the mesh smooth. |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

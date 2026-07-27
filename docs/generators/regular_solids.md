@@ -23,10 +23,6 @@ A complete *Add Regular Solid* organised by family: the five **Platonic** solids
 | Explode | 0.0 | Move each piece outward along its centroid direction so the split is visible (min 0.0, max 5.0). |
 | Scale | 1.0 | Uniform output scale (min 0.01, max 100.0). |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:

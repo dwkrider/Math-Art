@@ -25,10 +25,6 @@ Geodesic spheres and domes built by subdividing a triangular Platonic seed (icos
 | Node Radius | 0.035 | Struts style: node sphere radius |
 | Panel Gap | 0.15 | Panels style: fraction each triangle is shrunk about its centroid |
 
-
-
-
-
 ## Variants
 
 Renders of each selectable option:
