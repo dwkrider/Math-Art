@@ -219,7 +219,8 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         if hasattr(bpy.types, 'OBJECT_OT_symmetric_sculpture_add'):
             lay.operator_menu_enum("object.symmetric_sculpture_add",
                                    "preset",
-                                   text="Symmetric Sculpture",
+                                   text="Symmetric Sculpture "
+                                        "(Experimental)",
                                    icon='MOD_MIRROR')
         lay.menu("VIEW3D_MT_math_art_styles", icon='MOD_SOLIDIFY')
 
@@ -232,7 +233,7 @@ _MENUS = (VIEW3D_MT_math_art_minimal, VIEW3D_MT_math_art_polyhedra,
 
 def _menu_func(self, context):
     self.layout.separator()
-    self.layout.menu("VIEW3D_MT_math_art_add", icon='FUND')
+    self.layout.menu("VIEW3D_MT_math_art_add", icon='MATSHADERBALL')
 
 
 _ACTIVE = []

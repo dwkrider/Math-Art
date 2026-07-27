@@ -1077,10 +1077,10 @@ if _IN_BLENDER:
 
     FAMILIES = [
         ('PLATONIC', "Platonic", "The five regular solids"),
-        ('KEPLER', "Kepler-Poinsot",
-         "The four regular star polyhedra (true intersecting faces)"),
         ('ARCHIMEDEAN', "Archimedean", "All 13 semiregular solids"),
         ('CATALAN', "Catalan", "All 13 Archimedean duals"),
+        ('KEPLER', "Kepler-Poinsot",
+         "The four regular star polyhedra (true intersecting faces)"),
         ('PRISM', "Prisms & Antiprisms", "Uniform n-prisms"),
         ('JOHNSON', "Johnson",
          "J1-J48: pyramid / cupola / rotunda solids and their "
