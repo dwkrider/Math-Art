@@ -52,7 +52,7 @@ Each shape is generated centered on the origin fitting a 2 m cube, and shown w
 |:--:|:--:|:--:|
 | [<img src="images/platonic_twist.png" width="240">](generators/platonic_twist.md)<br>**[Platonic Twist](generators/platonic_twist.md)** | [<img src="images/twisted_torus.png" width="240">](generators/twisted_torus.md)<br>**[Twisted Torus](generators/twisted_torus.md)** | [<img src="images/oloid.png" width="240">](generators/oloid.md)<br>**[Oloid & Ruled Surfaces](generators/oloid.md)** |
 | [<img src="images/stereographic.png" width="240">](generators/stereographic.md)<br>**[Stereographic Sphere](generators/stereographic.md)** | [<img src="images/hyperbolic_tiling.png" width="240">](generators/hyperbolic_tiling.md)<br>**[Hyperbolic Tiling](generators/hyperbolic_tiling.md)** | [<img src="images/orbifold_sphere.png" width="240">](generators/orbifold_sphere.md)<br>**[Orbifold Symmetry Sphere](generators/orbifold_sphere.md)** |
-| [<img src="images/bubble_cluster.png" width="240">](generators/bubble_cluster.md)<br>**[Bubble Cluster](generators/bubble_cluster.md)** |  |  |
+| [<img src="images/bubble_cluster.png" width="240">](generators/bubble_cluster.md)<br>**[Bubble Cluster](generators/bubble_cluster.md)** | [<img src="images/sphericon.png" width="240">](generators/sphericon.md)<br>**[Sphericon](generators/sphericon.md)** |  |
 
 ## Sculpture & Styles
 

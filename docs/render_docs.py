@@ -246,6 +246,7 @@ TASKS = {
     "platonic_twist": O("mesh.platonic_twist_add"),
     "twisted_torus": O("mesh.twisted_torus_add", n=6, twist_steps=6),
     "oloid": O("mesh.oloid_add"),
+    "sphericon": O("mesh.sphericon_add", sides=7, coloring='NONE'),
     # stereographic uses a custom light-projection scene (see SCENES)
     "hyperbolic_tiling": O("mesh.hyperbolic_tiling_add"),
     "orbifold_sphere": O("mesh.orbifold_sphere_add"),
@@ -617,6 +618,13 @@ VARIANTS = {
            "TETRA=Tetrahedron;CUBE=Cube;OCTA=Octahedron;"
            "DODECA=Dodecahedron;ICOSA=Icosahedron",
            separate=True, color=True)),
+    "sphericon": ("mesh.sphericon_add", [
+        ("3", "Triangular (3)", {"sides": 3, "coloring": "NONE"}),
+        ("4", "Sphericon (4)", {"sides": 4, "coloring": "NONE"}),
+        ("5", "Pentagonal (5)", {"sides": 5, "coloring": "NONE"}),
+        ("6", "Hexagonal (6)", {"sides": 6, "coloring": "NONE"}),
+        ("7", "Heptagonal (7)", {"sides": 7, "coloring": "NONE"}),
+        ("8", "Octagonal (8)", {"sides": 8, "coloring": "NONE"})]),
 }
 
 

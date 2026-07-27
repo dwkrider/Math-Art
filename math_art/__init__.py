@@ -34,6 +34,7 @@ _MODULE_NAMES = [
     'sponge_generator',
     'space_curve_generator',
     'oloid_generator',
+    'sphericon_generator',
     'prime_knot_generator',
     'regular_solids_generator',
     'attractor_generator',
@@ -181,6 +182,7 @@ class VIEW3D_MT_math_art_odds(bpy.types.Menu):
         _op(lay, "mesh.platonic_twist_add", icon='MOD_SCREW')
         _op(lay, "mesh.twisted_torus_add", icon='MESH_TORUS')
         _op(lay, "mesh.oloid_add", icon='MESH_CAPSULE')
+        _op(lay, "mesh.sphericon_add", icon='MESH_CAPSULE')
         _op(lay, "mesh.stereographic_add", icon='LIGHT_POINT')
         _op(lay, "mesh.hyperbolic_tiling_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.orbifold_sphere_add", icon='MOD_MIRROR')
