@@ -62,6 +62,7 @@ _MODULE_NAMES = [
     'helical_surface_generator',
     'curiosity_surface_generator',
     'rolling_knot_generator',
+    'woven_polyhedron_generator',
 ]
 
 _MODULES = []
@@ -123,6 +124,7 @@ class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
         _op(lay, "mesh.spacefill_add", icon='SNAP_VOLUME')
         _op(lay, "mesh.geodesic_add", icon='MESH_UVSPHERE')
         _op(lay, "mesh.spiked_polyhedron_add", icon='LIGHT_SUN')
+        _op(lay, "mesh.woven_polyhedron_add", icon='MESH_ICOSPHERE')
 
 
 class VIEW3D_MT_math_art_fractals(bpy.types.Menu):

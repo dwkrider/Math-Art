@@ -124,6 +124,9 @@ OPS = [
         preset='SPIKED')),
     ("spiked rhombic hex", lambda: bpy.ops.mesh.spiked_polyhedron_add(
         preset='RHOMBIC')),
+    ("woven polyhedron", lambda: bpy.ops.mesh.woven_polyhedron_add()),
+    ("woven polyhedron flat", lambda: bpy.ops.mesh.woven_polyhedron_add(
+        pen_curve=0.0, thickness=0.0, smooth_level=0)),
     ("gilbert 3d", lambda: bpy.ops.curve.space_filling_add(
         kind='GILBERT3D', gw=12, gh=8, gd=4)),
     ("celtic knot", lambda: bpy.ops.curve.celtic_knot_add(
