@@ -309,6 +309,212 @@ def _cathel(nu, nv, order, radius, theta=0.0):
     return x, y, z, False, True
 
 
+# --- Costa-Hoffman-Meeks (genus k configurable) ---------------------------
+# The genus-k generalization of Costa: genus k, three ends (two catenoid at
+# z = +-1, one planar at z = infinity), dihedral symmetry of order 4(k+1),
+# on the hyperelliptic curve w^(k+1) = z^k (z^2 - 1). Built by numeric
+# Weierstrass-Enneper integration of ONE fundamental patch (the image of the
+# closed upper half z-plane) which is then rigidly tiled into 2(k+1) copies
+# (k+1 rotations about the vertical axis, each with its mirror) and welded --
+# the deck transformation (z,w) -> (z, e^(2 pi i/(k+1)) w) is exactly a
+# rotation by 2 pi/(k+1). Reduces to the ordinary Costa surface at k = 1.
+# (Plan/derivation cross-checked with fable-5; modulus table verified.)
+
+_CHM_C_CACHE = {}
+
+
+def _chm_w(z, k):
+    """Single-valued branch of (z^k (z^2-1))^(1/(k+1)) on the upper half
+    plane (cuts along [0,1] and (-inf,-1]); DLMF-style principal logs."""
+    return np.exp((k * np.log(z) + np.log(z - 1.0) + np.log(z + 1.0))
+                  / (k + 1))
+
+
+def _chm_modulus(k, n=4096):
+    """Real modulus c fixing the end balance, from the period ratio on an
+    ellipse around the cut [0,1]: c^2 = -Im(A)/Im(B) with A = oint
+    w/(z^2-1) dz, B = oint 1/(w(z^2-1)) dz. (A, B come out imaginary.)"""
+    if k in _CHM_C_CACHE:
+        return _CHM_C_CACHE[k]
+    t = (np.arange(n) + 0.5) * (TAU / n)
+    z = 0.5 + 0.75 * np.cos(t) + 0.35j * np.sin(t)
+    dz = (-0.75 * np.sin(t) + 0.35j * np.cos(t)) * (TAU / n)
+    w = _chm_w(z, k)
+    A = np.sum(w / (z * z - 1.0) * dz)
+    B = np.sum(1.0 / (w * (z * z - 1.0)) * dz)
+    c = math.sqrt(-A.imag / B.imag)
+    _CHM_C_CACHE[k] = c
+    return c
+
+
+def _chm_patch(k, c, n_in, n_out, nv, r_out=12.0):
+    """Integrate the WE 1-forms over the closed upper half plane -> one
+    fundamental patch, as a real (nr, nv, 3) array. Grid: Chebyshev in
+    theta (clustered at the ends theta = 0, pi), graded in r (clustered at
+    the branch point r=0 and the ends r=1)."""
+    nv = nv if nv % 2 else nv + 1                  # odd: a column hits pi/2
+    j = np.arange(nv)
+    th = (math.pi / 2) * (1 - np.cos(math.pi * j / (nv - 1)))
+    s = np.linspace(0.0, 1.0, n_in + 1)[1:]
+    r_in = ((1 - np.cos(math.pi * s)) / 2) ** ((k + 1) / 2)
+    r_o = np.exp(np.linspace(0.0, math.log(r_out), n_out + 1))[1:]
+    r = np.concatenate([[0.0], r_in, r_o])
+    nr = len(r)
+    R, TH = np.meshgrid(r, th, indexing='ij')
+    Z = R * np.exp(1j * TH)
+    Z[0, :] = 0.0
+    with np.errstate(divide='ignore', invalid='ignore'):
+        W = _chm_w(Z, k)
+        d = Z * Z - 1.0
+        F = np.stack([0.5 * (W - c * c / W) / d,
+                      0.5j * (W + c * c / W) / d,
+                      c / d], axis=-1)             # (nr, nv, 3)
+    jm = (nv - 1) // 2                             # spine column theta=pi/2
+    X = np.zeros((nr, nv, 3), dtype=complex)
+    # analytic first spine cell 0 -> z0 = i r[1] (integrand ~ z^-(k/(k+1)))
+    z0 = 1j * r[1]
+    I1 = (c * c / 2) * np.exp(-1j * math.pi / (k + 1)) * (k + 1) \
+        * z0 ** (1.0 / (k + 1))
+    seed = np.array([-I1, -1j * I1, -c * z0])
+    # spine: cumulative along r at column jm (dz = i dr)
+    dr = np.diff(r)[:, None]
+    sp_inc = 0.5 * (F[1:, jm, :] + F[:-1, jm, :]) * (1j * dr)
+    spine = np.concatenate([[np.zeros(3)], [seed],
+                            seed + np.cumsum(sp_inc[1:], axis=0)], axis=0)
+    X[:, jm, :] = spine
+    # arcs: cumulative along theta per row (dz = i z dtheta), from jm out
+    gfac = F * (1j * Z)[..., None]
+    dth = np.diff(th)
+    trap = np.zeros((nr, nv, 3), dtype=complex)
+    trap[:, 1:, :] = 0.5 * (gfac[:, 1:, :] + gfac[:, :-1, :]) \
+        * dth[None, :, None]
+    # Zero non-finite increments (they occur only at the masked end nodes
+    # theta = 0, pi where z = +-1). Otherwise the single cumsum below lets
+    # one bad increment before the spine column poison the whole row.
+    trap = np.where(np.isfinite(trap), trap, 0.0)
+    C = np.cumsum(trap, axis=1)
+    X = X[:, jm, :][:, None, :] + (C - C[:, jm, :][:, None, :])
+    return Z, np.real(X)
+
+
+def _build_chm(nu, nv, order, radius, scale, theta=0.0):
+    """Assemble the full genus-`order` Costa-Hoffman-Meeks mesh: integrate
+    the patch, snap its symmetry seams, tile into 2(k+1) rigid copies, weld,
+    trim the ends, smooth the rims, center and fit a 2 m cube."""
+    k = int(max(1, min(order, 6)))
+    c = _chm_modulus(k)
+    n_in = max(70, int(1.4 * nu))
+    n_out = max(30, int(0.6 * nu))
+    Z, Xr = _chm_patch(k, c, n_in, n_out, nv)
+    nr, nvp, _ = Xr.shape
+    jm = (nvp - 1) // 2
+    Rabs = np.abs(Z)
+    ang = -math.pi / (k + 1)
+    uvec = np.array([math.cos(ang), math.sin(ang)])
+    # Step 4: snap the two boundary columns onto their symmetry planes
+    for jcol, is0 in ((0, True), (nvp - 1, False)):
+        xy = Xr[:, jcol, :2]
+        bank = (Rabs[:, jcol] < 1.0) if is0 else (Rabs[:, jcol] > 1.0)
+        proj = (xy @ uvec)[:, None] * uvec[None, :]         # onto bank line
+        flat = np.stack([xy[:, 0], np.zeros_like(xy[:, 1])], axis=-1)  # y=0
+        Xr[:, jcol, :2] = np.where(bank[:, None], proj, flat)
+    Xr[0, :, :] = 0.0                                       # center vertex
+    rho = 0.09 / max(radius / 1.2, 0.4)
+    valid = (np.abs(Z - 1.0) > rho) & (np.abs(Z + 1.0) > rho)
+    valid[0, :] = True
+    Xr = np.where(np.isfinite(Xr), Xr, 0.0)
+    Xr[~valid] = 0.0                                        # kill near-pole
+    V0 = Xr.reshape(-1, 3)
+    vv = valid.reshape(-1)
+    ii, jj = np.meshgrid(np.arange(nr - 1), np.arange(nvp - 1), indexing='ij')
+    ii, jj = ii.ravel(), jj.ravel()
+    q0 = np.stack([ii * nvp + jj, ii * nvp + jj + 1,
+                   (ii + 1) * nvp + jj + 1, (ii + 1) * nvp + jj], axis=1)
+    q0 = q0[np.all(vv[q0], axis=1)]
+    # tile: k+1 rotations, each with its y-mirror -> 2(k+1) copies
+    M = np.diag([1.0, -1.0, 1.0])
+    Vparts, Fparts, base = [], [], 0
+    for jrot in range(k + 1):
+        a = TAU * jrot / (k + 1)
+        Rj = np.array([[math.cos(a), -math.sin(a), 0.0],
+                       [math.sin(a), math.cos(a), 0.0], [0.0, 0.0, 1.0]])
+        for mir in (False, True):
+            T = Rj @ (M if mir else np.eye(3))
+            Vparts.append(V0 @ T.T)
+            qf = (q0[:, ::-1] if mir else q0) + base       # flip mirror wind
+            Fparts.append(qf)
+            base += len(V0)
+    V = np.concatenate(Vparts, axis=0)
+    faces = np.concatenate(Fparts, axis=0)
+    # weld (quantize + unique). Tolerance is tight: the seam snap already
+    # makes shared vertices coincide to machine epsilon, so a loose weld
+    # only risks fusing distinct sheets near the dense central saddle
+    # (which silently adds handles / breaks the topology).
+    diag = float(np.linalg.norm(V.max(0) - V.min(0)))
+    keyq = np.round(V / (1e-7 * max(diag, 1.0))).astype(np.int64)
+    _, inv = np.unique(keyq, axis=0, return_inverse=True)
+    inv = inv.ravel()
+    Vw = np.zeros((int(inv.max()) + 1, 3))
+    Vw[inv] = V
+    faces = inv[faces]
+    # Collapse welded seam faces: a quad whose two adjacent corners merged
+    # becomes a TRIANGLE (dropping it instead would tear the seam and
+    # disconnect the surface); genuine degenerates are discarded.
+    flist = []
+    for f in faces:
+        g = [int(f[0])]
+        for t in range(1, 4):
+            if int(f[t]) != g[-1]:
+                g.append(int(f[t]))
+        if len(g) >= 3 and g[0] != g[-1] and len(set(g)) == len(g):
+            flist.append(tuple(g))
+    # object-space radius clip to trim the (infinite) ends
+    cen = np.median(Vw, axis=0)
+    rad = np.linalg.norm(Vw - cen, axis=1)
+    thr = float(np.percentile(rad, 93.0))
+    flist = [f for f in flist if all(rad[i] <= thr for i in f)]
+    used = np.unique(np.array([i for f in flist for i in f], dtype=np.int64))
+    remap = np.full(len(Vw), -1, dtype=np.int64)
+    remap[used] = np.arange(len(used))
+    Vf = Vw[used]
+    quads = [tuple(int(remap[i]) for i in f) for f in flist]
+    # the radius clip can shear off small islands; keep the main body only
+    Vf, quads = _largest_component(Vf, quads)
+    Vf = _smooth_boundary(Vf, quads)
+    Vf = _center_fit(Vf, scale, Vf)
+    return Vf, quads
+
+
+def _largest_component(V, quads):
+    """Keep only the face-connected component with the most faces."""
+    parent = list(range(len(V)))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+
+    for f in quads:
+        for i in range(1, len(f)):
+            union(f[0], f[i])
+    from collections import Counter
+    sizes = Counter(find(f[0]) for f in quads)
+    if len(sizes) <= 1:
+        return V, quads
+    keep_root = sizes.most_common(1)[0][0]
+    quads = [f for f in quads if find(f[0]) == keep_root]
+    used = np.unique(np.array([i for f in quads for i in f], dtype=np.int64))
+    remap = np.full(len(V), -1, dtype=np.int64)
+    remap[used] = np.arange(len(used))
+    return V[used], [tuple(int(remap[i]) for i in f) for f in quads]
+
+
 PARAMETRIC = {
     'ENNEPER': ("Enneper", _enneper),
     'CATENOID': ("Catenoid", _catenoid),
@@ -319,14 +525,17 @@ PARAMETRIC = {
     'RICHMOND': ("Richmond", _richmond),
     'SCHERK1': ("Scherk (doubly periodic)", _scherk_graph),
     'COSTA': ("Costa (genus 1)", _costa),
+    'COSTA_HM': ("Costa-Hoffman-Meeks (genus k)", _build_chm),
     'CHEN_GACK': ("Chen-Gackstatter", _chen_gackstatter),
     'KNOID': ("Jorge-Meeks k-noid", _knoid),
     'CATHEL': ("Catenoid-Helicoid (associate)", _cathel),
 }
 
+# surfaces built as a finished (V, quads) mesh rather than a parameter grid
+MESH_PARAM = {'COSTA_HM': _build_chm}
 # surfaces whose `order` selects a discrete count rather than an Enneper
 # order / helicoid turns (drives the operator UI label)
-COUNT_PARAM = {'KNOID': "Ends (n)"}
+COUNT_PARAM = {'KNOID': "Ends (n)", 'COSTA_HM': "Genus (k)"}
 # surfaces that use the associate-family angle
 ANGLE_PARAM = {'CATHEL'}
 
@@ -402,6 +611,8 @@ def _smooth_boundary(V, quads, iters=10, lam=0.5):
 def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
     """(nu, nv, 3) point grid plus wrap flags, centered and fit to a 2 m
     cube. (Used for NURBS output; end clipping is a mesh-only operation.)"""
+    if kind in MESH_PARAM:
+        raise ValueError(f"{kind} has no NURBS/grid form; use mesh output")
     G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta)
     flat = G.reshape(-1, 3)
     if isinstance(clip, np.ndarray):
@@ -415,6 +626,8 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
 
 
 def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0):
+    if kind in MESH_PARAM:
+        return MESH_PARAM[kind](nu, nv, order, radius, scale, theta)
     G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta)
     V = G.reshape(-1, 3)
     valid = clip.reshape(-1) if isinstance(clip, np.ndarray) else None
@@ -1101,7 +1314,8 @@ if _IN_BLENDER:
             label = PARAMETRIC[self.surface][0]
             theta = (self.assoc_angle if self.surface in ANGLE_PARAM
                      else 0.0)
-            if self.output == 'NURBS':
+            # some surfaces are assembled meshes with no NURBS/grid form
+            if self.output == 'NURBS' and self.surface not in MESH_PARAM:
                 G, wrap_u, wrap_v = build_parametric_grid(
                     self.surface, self.ctrl_u, self.ctrl_v,
                     self.order, self.radius, self.scale, theta)
@@ -1123,8 +1337,10 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'surface')
-            lay.prop(self, 'output')
-            if self.output == 'NURBS':
+            mesh_only = self.surface in MESH_PARAM
+            if not mesh_only:
+                lay.prop(self, 'output')
+            if self.output == 'NURBS' and not mesh_only:
                 lay.prop(self, 'ctrl_u')
                 lay.prop(self, 'ctrl_v')
             else:
@@ -1510,6 +1726,28 @@ if __name__ == "__main__":
             print(f"parametric {kind:10s}: {len(V):5d} verts {len(Q):5d} "
                   f"quads  fit[max|c|={cen:.1e} ext={ext:.4f}] "
                   f"{'OK' if good else 'FAIL'}")
+        # Costa-Hoffman-Meeks: modulus table + Euler characteristic gate
+        # (genus k, 3 ends removed -> chi = 2 - 2k - 3 = -(2k+1))
+        cref = {1: 0.955978, 2: 0.988070, 3: 0.995117, 4: 0.997535}
+        cok = all(abs(_chm_modulus(kk) - cref[kk]) < 1e-5 for kk in cref)
+        print(f"CHM modulus: "
+              + " ".join(f"c({kk})={_chm_modulus(kk):.5f}" for kk in cref)
+              + f"  {'OK' if cok else 'FAIL'}")
+        ok &= cok
+        for kk in (1, 2, 3):
+            Vc, Qc = build_parametric('COSTA_HM', 48, 48, kk, 1.2, 1.0)
+            ec = {}
+            for f in Qc:
+                for t in range(len(f)):
+                    a, b = f[t], f[(t + 1) % len(f)]
+                    e = (a, b) if a < b else (b, a)
+                    ec[e] = ec.get(e, 0) + 1
+            chi = len(Vc) - len(ec) + len(Qc)
+            want = -(2 * kk + 1)
+            good = chi == want and np.all(np.isfinite(Vc))
+            ok &= good
+            print(f"CHM genus {kk}: verts={len(Vc)} faces={len(Qc)} "
+                  f"chi={chi} (want {want}) {'OK' if good else 'FAIL'}")
         # k-noid vs closed-form trinoid (n=3): both are minimal with 3
         # ends; compare 3-fold symmetry of the numeric build
         Vn, _ = build_parametric('KNOID', 72, 72, 3, 0.9, 1.0)
