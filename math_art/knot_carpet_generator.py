@@ -39,7 +39,9 @@
 # the flat cut-under interlace or the true 3D weave, relief and
 # backing -- so the carpet is built as continuous ribbons.  A third
 # scaffold closes the carpet over a SPHERE as a finite woven knot
-# ball (see the knot-ball section below).
+# ball (see the knot-ball section below), and a fourth generalizes
+# the lattice to any uniform TILING -- one medallion per tile of a
+# regular, Archimedean or Laves tiling (the tiling-carpet section).
 #
 # References:
 #   Robert G. Scharein, "Interactive Topological Drawing" (PhD
@@ -65,8 +67,9 @@ bl_info = {
     "location": "View3D > Add > Math Art > Patterns",
     "description": "Knot carpets -- a tileable alternating link of "
                    "interlocked unknots (ribbon, woven rope tube, or "
-                   "curve) on a square or triangular lattice, or "
-                   "closed over a geodesic sphere as a knot ball",
+                   "curve) on a square or triangular lattice, on any "
+                   "regular or Archimedean tiling, or closed over a "
+                   "geodesic sphere as a knot ball",
     "category": "Add Mesh",
 }
 
@@ -77,9 +80,11 @@ import numpy as np
 try:
     from . import pattern_common as pc
     from . import islamic_pattern_generator as isl
+    from . import tiling_generator as tg
 except Exception:                       # legacy single-file / CLI use
     import pattern_common as pc
     import islamic_pattern_generator as isl
+    import tiling_generator as tg
 
 
 # --------------------------------------------------------------------
@@ -1296,6 +1301,425 @@ def sphere_loop_paths(freq=2, k=0, amp=0.10, overlap=1.15,
 
 
 # --------------------------------------------------------------------
+# The tiling carpet: medallions on a uniform tiling
+# --------------------------------------------------------------------
+#
+# The same construction with the lattice generalized to any of the
+# regular, Archimedean or Laves (dual) tilings of the shared tiling
+# engine: one rosette medallion is centred on every TILE (at its
+# centroid), with as many lobes as the tile has edge-neighbours, the
+# first lobe aimed at the first neighbour -- so each lobe maximum
+# faces a neighbouring medallion across the shared edge.  On the
+# square tiling this reproduces the SQUARE carpet; mixed tilings
+# such as 3.6.3.6, 4.8.8 or 4.6.12 interleave medallions of
+# different sizes and symmetries.  The radius follows the LONGEST
+# centroid-to-neighbour distance (times the overlap factor, as on
+# the sphere), so the longest incident edge is still overlapped and
+# every adjacent pair of medallions interlocks; crossings are exact
+# planar segment intersections, tested for EVERY pair of loops whose
+# bounding circles meet (crowded tilings put vertex-neighbour
+# medallions in contact too), and the whole field is woven
+# alternating with the same parity union-find as the flat carpet.
+# Unlike the lattice carpets the patch is FINITE -- a general
+# uniform tiling has no single translation cell of medallions -- so
+# the relaxation pins the boundary medallions lightly instead of
+# wrapping a torus.
+#
+# References:
+#   Robert G. Scharein, KnotPlot knot carpets --
+#     https://knotplot.com/carpets (see the header above).
+#   Branko Gruenbaum & G. C. Shephard, "Tilings and Patterns"
+#     (W. H. Freeman, 1987) -- the classification of the uniform
+#     (Archimedean) and Laves tilings the scaffolds come from.
+
+
+def _tiling_scaffold(tiling_name, nx, ny):
+    """The medallion scaffold of a uniform tiling patch.  Returns
+    (centers, polys, adj, degree, interior): the tile centroids, the
+    (M, 2) tile polygons, {tile: sorted edge-neighbour ids},
+    {tile: neighbour count}, and the id set of INTERIOR tiles (every
+    edge shared with another tile).  Neighbours are found through a
+    shared-edge map keyed on the rounded unordered endpoint pair, so
+    tiny arithmetic differences between tile constructions cannot
+    split an edge in two."""
+    polys = [np.asarray(p, float)
+             for p in tg._build_tiling(tiling_name, nx, ny)[0]]
+    centers = [p.mean(axis=0) for p in polys]
+    owners = {}
+    for ti, p in enumerate(polys):
+        m = len(p)
+        for a in range(m):
+            q0 = (round(float(p[a][0]), 6),
+                  round(float(p[a][1]), 6))
+            q1 = (round(float(p[(a + 1) % m][0]), 6),
+                  round(float(p[(a + 1) % m][1]), 6))
+            if q0 == q1:
+                continue
+            key = (q0, q1) if q0 < q1 else (q1, q0)
+            owners.setdefault(key, []).append(ti)
+    adj = {i: set() for i in range(len(polys))}
+    shared = {i: 0 for i in range(len(polys))}
+    for own in owners.values():
+        if len(own) == 2 and own[0] != own[1]:
+            i, j = own
+            adj[i].add(j)
+            adj[j].add(i)
+            shared[i] += 1
+            shared[j] += 1
+    adj = {i: sorted(s) for i, s in adj.items()}
+    degree = {i: len(adj[i]) for i in adj}
+    interior = {i for i in range(len(polys))
+                if shared[i] == len(polys[i])}
+    return centers, polys, adj, degree, interior
+
+
+def build_tiling_carpet(tiling_name='SQUARE', nx=3, ny=3, amp=0.10,
+                        overlap=1.15, samples=192, style='ANGULAR',
+                        subdiv=6):
+    """The full combinatorial tiling carpet.  Same dict shape as
+    build_carpet, one medallion per tile:
+      paths     -- one (S, 2) closed polyline per tile
+      centers   -- the tile centroids; polys / adj / degree -- the
+                   scaffold (see _tiling_scaffold)
+      nn_pairs  -- the edge-adjacent tile pairs (i < j)
+      nn_hits   -- {pair: crossing count} over those pairs
+      crossings, over, per_loop, consistent -- as build_carpet
+      interior  -- tiles with a full neighbour ring
+      spacing   -- mean neighbour-centroid distance (the
+                   loop-spacing unit widths and radii scale by)
+    Each medallion's radius is 0.5 * overlap * (the LARGEST distance
+    from its centroid to a neighbour centroid): mixed tilings pair
+    tiles of different sizes, and the longest incident edge is the
+    one that must still be overlapped, so the max (not the mean)
+    keeps the interlock on every edge.  The radius is then CAPPED so
+    the rosette's lobe minima clear the tile's own vertices: several
+    medallions meet around every tiling vertex, and a loop that
+    swallows a vertex grazes its vertex-neighbours exactly where a
+    third loop passes -- a three-strand bundle whose alternating
+    over/under is cyclic (rock-paper-scissors) and so cannot be
+    realized by any z-ordering.  Keeping the minima inside the
+    vertex circle dissolves those bundles; a floor of just over
+    half the neighbour distance preserves the interlock whenever
+    the cap and the overlap conflict.  The lobe count is AUTO -- as
+    many lobes as the tile has neighbours, the first lobe aimed at
+    the first neighbour.  Crossings are tested for every loop pair
+    whose bounding circles meet (not only edge-adjacent pairs), so
+    vertex-neighbour contacts in crowded tilings stay woven."""
+    centers, polys, adj, degree, interior = _tiling_scaffold(
+        tiling_name, nx, ny)
+    T = len(centers)
+    paths = []
+    for i in range(T):
+        c = centers[i]
+        nb = adj[i]
+        if nb:
+            dmax = max(float(np.linalg.norm(centers[j] - c))
+                       for j in nb)
+            R = 0.5 * float(overlap) * dmax
+            # vertex-clearing cap (see above): lobe minima R(1-amp)
+            # stay inside the nearest tile vertex, floored so the
+            # farthest neighbour is still overlapped
+            dvert = float(np.min(np.linalg.norm(polys[i] - c,
+                                                axis=1)))
+            cap = 0.98 * dvert / max(0.65, 1.0 - float(amp))
+            R = max(min(R, cap), 0.51 * dmax)
+            kv = max(1, degree[i])
+            dv = centers[nb[0]] - c
+            phi = float(np.arctan2(dv[1], dv[0]))
+            av = amp
+        else:                       # isolated tile: a plain circle
+            R = 0.5 * float(overlap) * float(np.max(
+                np.linalg.norm(polys[i] - c, axis=1)))
+            kv, phi, av = 2, 0.0, 0.0
+        p2 = np.asarray(_sample_loop(np.zeros(2), R, kv, av,
+                                     samples, style, subdiv), float)
+        cp, sp = np.cos(phi), np.sin(phi)
+        rot = np.array([[cp, sp], [-sp, cp]])
+        paths.append(c + p2 @ rot)
+    C = np.asarray(centers, float)
+    rad = np.array([float(np.max(np.linalg.norm(paths[i] - C[i],
+                                                axis=1)))
+                    for i in range(T)])
+    nn_pairs = sorted((i, j) for i in adj for j in adj[i] if i < j)
+    nn_set = set(nn_pairs)
+    crossings = []
+    nn_hits = {p: 0 for p in nn_pairs}
+    for i in range(T):
+        d = np.linalg.norm(C - C[i], axis=1)
+        cand = np.nonzero((np.arange(T) > i)
+                          & (d < rad + rad[i] + 1e-9))[0]
+        for j in cand:
+            j = int(j)
+            hits = _seg_cross(paths[i], paths[j])
+            if (i, j) in nn_set:
+                nn_hits[(i, j)] = len(hits)
+            for (fi, fj) in hits:
+                crossings.append((len(crossings), i, j, fi, fj))
+    over, per_loop, consistent = _solve_over(paths, crossings)
+    if nn_pairs:
+        spacing = float(np.mean([np.linalg.norm(C[i] - C[j])
+                                 for (i, j) in nn_pairs]))
+    else:
+        spacing = 1.0
+    return dict(paths=paths, centers=C, polys=polys, adj=adj,
+                degree=degree, nn_pairs=nn_pairs, nn_hits=nn_hits,
+                interior=interior, crossings=crossings, over=over,
+                per_loop=per_loop, consistent=consistent,
+                spacing=spacing)
+
+
+def build_tiling_ribbon_cells(tiling_name='SQUARE', nx=3, ny=3,
+                              amp=0.10, overlap=1.15, samples=192,
+                              cord_width=0.12, style='ANGULAR',
+                              subdiv=6, interlace=True,
+                              interlace_mode='FLAT',
+                              weave_height=0.05, color_by='LOOP',
+                              height=0.0, backing=False, base=0.06):
+    """One merged (verts, faces, mats) cell per medallion, plus an
+    optional backing slab -- the ribbon form of the tiling carpet
+    (flat knotwork or 3D weave via _loop_cell, as build_cells).
+    cord_width / weave_height / height / base are in loop-spacing
+    units (the mean neighbour-centroid distance), matching the
+    planar builders."""
+    carpet = build_tiling_carpet(tiling_name, nx, ny, amp, overlap,
+                                 samples, style, subdiv)
+    signed = loop_signed(carpet)
+    d = carpet['spacing']
+    width = max(0.01, float(cord_width)) * d
+    cells = []
+    all_verts = []
+    for i, path in enumerate(carpet['paths']):
+        pl = [tuple(p) for p in path]
+        sub = _loop_cell(pl, signed[i], width, interlace,
+                         interlace_mode, float(weave_height) * d,
+                         float(height) * d, color_by, i)
+        if not sub:
+            continue
+        cell = pc.merge_cells(sub)
+        if not cell[1]:
+            continue
+        cells.append(cell)
+        all_verts.extend(cell[0])
+    if backing and all_verts:
+        a = np.asarray(all_verts, float)
+        lo = (a[:, 0].min(), a[:, 1].min())
+        hi = (a[:, 0].max(), a[:, 1].max())
+        cv, cf, cm = [], [], []
+        pc.slab(cv, cf, cm, lo, hi, 0.0, -float(base) * d,
+                mat=_BACKING_MAT)
+        cells.append((cv, cf, cm))
+    return cells
+
+
+def build_tiling_tube_cells(tiling_name='SQUARE', nx=3, ny=3,
+                            amp=0.10, overlap=1.15, samples=192,
+                            style='ANGULAR', subdiv=6,
+                            tube_radius=0.04, tube_sides=10,
+                            weave_height=0.06, color_by='LOOP',
+                            backing=False, base=0.06, relax_iters=0,
+                            clearance=0.10, weave_gap=0.10):
+    """One closed round tube per medallion, dipping in z at its
+    crossings -- the rope form of the tiling carpet (as
+    build_tube_cells).  tube_radius / weave_height / clearance /
+    weave_gap are in loop-spacing units; the over/under lift is
+    floored at the tube diameter so the ropes cannot touch.  With
+    relax_iters > 0 the tubes follow the finite-patch tier-2
+    relaxation instead of the flat weave path.  Returns one (verts,
+    faces, mats) cell per medallion (+ an optional backing slab)."""
+    carpet = build_tiling_carpet(tiling_name, nx, ny, amp, overlap,
+                                 samples, style, subdiv)
+    signed = loop_signed(carpet)
+    d = carpet['spacing']
+    tru = max(0.005, float(tube_radius))
+    tr = tru * d
+    # the over/under lift must exceed the tube radius or ropes touch
+    lift = max(float(weave_height), 1.3 * tru) * d
+    sides = max(3, int(tube_sides))
+    relaxed = None
+    if relax_iters > 0:
+        relaxed = relax_tiling_carpet(
+            carpet, iters=int(relax_iters),
+            clearance=max(float(clearance), 2.2 * tru),
+            weave_gap=max(float(weave_gap), 2.2 * tru))
+    cells = []
+    all_verts = []
+    for i, path in enumerate(carpet['paths']):
+        if relaxed is not None:
+            path3d = [tuple(p) for p in relaxed[i]]
+        else:
+            pl2 = [(float(p[0]), float(p[1])) for p in path]
+            zoff = isl._weave_zoff(pl2, True, signed[i], lift)
+            path3d = [(pl2[j][0], pl2[j][1], zoff[j])
+                      for j in range(len(pl2))]
+        verts, faces = _tube_welded(path3d, tr, sides)
+        if not faces:
+            continue
+        mat = (i % len(pc.PALETTE_RGBA)) if color_by == 'LOOP' else 0
+        cells.append((verts, faces, [mat] * len(faces)))
+        all_verts.extend(verts)
+    if backing and all_verts:
+        a = np.asarray(all_verts, float)
+        lo = (a[:, 0].min(), a[:, 1].min())
+        hi = (a[:, 0].max(), a[:, 1].max())
+        cv, cf, cm = [], [], []
+        pc.slab(cv, cf, cm, lo, hi, -tr, -tr - float(base) * d,
+                mat=_BACKING_MAT)
+        cells.append((cv, cf, cm))
+    return cells
+
+
+def relax_tiling_carpet(carpet, iters=120, clearance=0.10,
+                        weave_gap=0.10, flatten=0.5, pin=0.4,
+                        step=0.15, trace=None):
+    """Physically relax the tiling carpet (the KnotPlot bead/stick
+    model of relax_carpet) on the FINITE patch: no torus, no
+    periodic images -- all medallions relax together in plain 3D
+    distance, and the BOUNDARY medallions (incomplete neighbour
+    ring) are lightly pinned to their seed x, y so the patch cannot
+    drift or shear while the interior settles.  clearance /
+    weave_gap are in loop-spacing units.  Per iteration:
+    rest-length edge springs + Laplacian fairing; soft 1/r^4
+    repulsion with cutoff between nearby strands; the over bead
+    kept at least weave_gap above the under bead at every crossing;
+    z pulled toward 0 away from crossings (strength `flatten`); and
+    each step clamped to a fraction of clearance (KnotPlot's d_max),
+    so strands cannot pass through one another.  Returns one (S, 3)
+    centerline per medallion."""
+    d = float(carpet['spacing'])
+    clr = float(clearance) * d
+    gap = float(weave_gap) * d
+    paths = carpet['paths']
+    L = len(paths)
+    S = len(paths[0])
+    signed = loop_signed(carpet)
+    lift = 0.6 * max(gap, clr)
+    P = np.empty((L, S, 3))
+    for i in range(L):
+        p2 = np.asarray(paths[i], float)
+        P[i, :, :2] = p2
+        P[i, :, 2] = isl._weave_zoff([tuple(q) for q in p2], True,
+                                     signed[i], lift)
+    seed_xy = P[:, :, :2].copy()
+    pinned = np.array([0.0 if i in carpet['interior'] else 1.0
+                       for i in range(L)])
+
+    # crossing constraints as flat index arrays (over / under bead)
+    over = carpet['over']
+    ol, ob, ul, ub = [], [], [], []
+    for key, lo, hi, flo, fhi in carpet['crossings']:
+        blo = int(round(flo)) % S
+        bhi = int(round(fhi)) % S
+        o, u = ((lo, blo), (hi, bhi)) if over[key] \
+            else ((hi, bhi), (lo, blo))
+        ol.append(o[0])
+        ob.append(o[1])
+        ul.append(u[0])
+        ub.append(u[1])
+    ol, ob = np.asarray(ol, int), np.asarray(ob, int)
+    ul, ub = np.asarray(ul, int), np.asarray(ub, int)
+    have_cons = len(ol) > 0
+
+    # flatten weight: small at a crossing bead, ramping to 1 within
+    # `win` beads (as relax_carpet's flatten weight)
+    win = max(3, S // 40)
+    wfl = np.ones((L, S))
+    for a in range(len(ol)):
+        for (li, bi) in ((ol[a], ob[a]), (ul[a], ub[a])):
+            for db in range(-win, win + 1):
+                jj = (bi + db) % S
+                wfl[li, jj] = min(wfl[li, jj], abs(db) / float(win))
+    wfl = np.maximum(wfl, 0.15)
+
+    # repulsion pair list: loop pairs whose bead clouds can interact
+    cen = P.mean(axis=1)
+    rad = np.array([np.max(np.linalg.norm(P[a] - cen[a], axis=1))
+                    for a in range(L)])
+    rcut = 1.7 * clr
+    reach = rcut + 0.1 * d
+    pairs = []
+    for a in range(L):
+        for b in range(a, L):
+            if a == b or (np.linalg.norm(cen[a] - cen[b])
+                          <= rad[a] + rad[b] + reach):
+                pairs.append((a, b, a == b))
+    excl = max(2, S // 32)
+    idx = np.arange(S)
+    ring = np.abs(idx[:, None] - idx[None, :])
+    near = np.minimum(ring, S - ring) <= excl
+
+    ks, fair, kr, kw = 1.2, 0.25, 1.0, 3.0
+    rest = np.array([np.mean(np.linalg.norm(
+        np.roll(P[a], -1, 0) - P[a], axis=1)) for a in range(L)])
+    dmax = 0.25 * clr
+    dmin = 0.2 * clr
+    for _it in range(int(iters)):
+        F = np.zeros_like(P)
+        # springs: rest-length edges (even spacing, no shrinkage)
+        e = np.roll(P, -1, 1) - P
+        ln = np.linalg.norm(e, axis=2, keepdims=True)
+        fe = ks * (1.0 - rest[:, None, None] / (ln + 1e-12)) * e
+        F += fe - np.roll(fe, 1, 1)
+        # Laplacian fairing (smoothness)
+        F += fair * (0.5 * (np.roll(P, -1, 1) + np.roll(P, 1, 1))
+                     - P)
+        # electrical repulsion between nearby strands
+        for a, b, intra in pairs:
+            D = P[a][:, None, :] - P[b][None, :, :]
+            dd = np.linalg.norm(D, axis=2)
+            if intra:
+                dd[near] = np.inf
+            act = dd < rcut
+            if not act.any():
+                continue
+            da = np.maximum(dd[act], dmin)
+            mag = np.zeros_like(dd)
+            mag[act] = kr * (clr / da) ** 4 \
+                * (1.0 - dd[act] / rcut)
+            f = D * (mag / (dd + 1e-12))[:, :, None]
+            F[a] += f.sum(axis=1)
+            if not intra:
+                F[b] -= f.sum(axis=0)
+        # weave z-order: over bead >= under bead + weave_gap
+        if have_cons:
+            dz = P[ol, ob, 2] - P[ul, ub, 2]
+            push = kw * np.maximum(0.0, gap - dz)
+            np.add.at(F, (ol, ob, np.full(len(ol), 2)), 0.5 * push)
+            np.add.at(F, (ul, ub, np.full(len(ul), 2)),
+                      -0.5 * push)
+        # planar confinement away from crossings
+        F[:, :, 2] -= flatten * wfl * P[:, :, 2]
+        # light boundary pinning (x, y toward the seed positions)
+        F[:, :, :2] += (pin * pinned)[:, None, None] \
+            * (seed_xy - P[:, :, :2])
+        # damped Euler with the d_max step bound
+        mv = step * F
+        mlen = np.linalg.norm(mv, axis=2, keepdims=True)
+        mv *= np.minimum(1.0, dmax / (mlen + 1e-12))
+        P += mv
+        if trace is not None:
+            trace.append(float(np.mean(np.linalg.norm(mv, axis=2))))
+    return [P[i].copy() for i in range(L)]
+
+
+def tiling_loop_paths(tiling_name='SQUARE', nx=3, ny=3, amp=0.10,
+                      overlap=1.15, samples=192, style='ANGULAR',
+                      subdiv=6, iters=0, clearance=0.10,
+                      weave_gap=0.10):
+    """Tiling-carpet loop centerlines [(points, True)] for the CURVE
+    output: the flat 2D medallions as sampled (iters = 0) or the
+    finite-patch tier-2 relaxation (iters > 0)."""
+    carpet = build_tiling_carpet(tiling_name, nx, ny, amp, overlap,
+                                 samples, style, subdiv)
+    if iters > 0:
+        lines = relax_tiling_carpet(carpet, iters=int(iters),
+                                    clearance=clearance,
+                                    weave_gap=weave_gap)
+        return [([tuple(p) for p in Q], True) for Q in lines]
+    return [([tuple(p) for p in Q], True)
+            for Q in carpet['paths']]
+
+
+# --------------------------------------------------------------------
 # Blender operator
 # --------------------------------------------------------------------
 
@@ -1374,13 +1798,21 @@ if _IN_BLENDER:
                    ('SPHERE', "Sphere",
                     "Loops on a geodesic icosahedron -- a closed "
                     "woven knot ball (6 neighbours, with twelve "
-                    "5-neighbour defects)")],
+                    "5-neighbour defects)"),
+                   ('TILING', "Tiling",
+                    "Medallion loops on a regular/Archimedean "
+                    "tiling -- one woven loop per tile, lobes "
+                    "following the tile's neighbour count")],
             default='SQUARE')
         sphere_freq: IntProperty(
             name="Sphere Frequency", default=2, min=1, max=6,
             description="Geodesic subdivision frequency of the "
                         "icosahedral scaffold (sphere lattice); "
                         "10 x freq^2 + 2 loops")
+        tiling_name: EnumProperty(
+            name="Tiling", items=tg.TILING_ITEMS, default='SQUARE',
+            description="The underlying tiling (one medallion per "
+                        "tile)")
         symmetry: IntProperty(
             name="Symmetry", default=4, min=2, max=12,
             description="k-fold symmetry of each loop (rosette lobes; "
@@ -1534,9 +1966,71 @@ if _IN_BLENDER:
                             (self.sphere_freq, len(cells)))
             return {'FINISHED'}
 
+        def _execute_tiling(self, context):
+            """The tiling carpet.  CURVE emits the loop centerlines;
+            RIBBON builds the interlaced ribbons; TUBE sweeps woven
+            round ropes.  The rosette lobe count is AUTO: each
+            medallion follows its tile's neighbour count, so lobes
+            stay aimed at the adjacent medallions on every tiling."""
+            if self.output == 'CURVE':
+                paths = tiling_loop_paths(
+                    self.tiling_name, self.nx, self.ny,
+                    self.amplitude, self.overlap, self.samples,
+                    self.style, self.smoothness, self.relax_iters,
+                    self.rope_clearance, self.weave_gap)
+                obj = _emit_curve(context, "Knot Carpet (Tiling)",
+                                  paths, operator=self)
+                if obj is None:
+                    self.report({'ERROR'}, "no carpet generated")
+                    return {'CANCELLED'}
+                obj["math_art_pattern"] = True
+                self.report({'INFO'}, "TILING %s %dx%d  %d loops" %
+                            (self.tiling_name, self.nx, self.ny,
+                             len(paths)))
+                return {'FINISHED'}
+            if self.output == 'RIBBON':
+                cells = build_tiling_ribbon_cells(
+                    self.tiling_name, self.nx, self.ny,
+                    self.amplitude, self.overlap, self.samples,
+                    self.cord_width, self.style, self.smoothness,
+                    self.interlace, self.interlace_mode,
+                    self.weave_height, self.color_by, self.height,
+                    self.backing, self.base)
+            else:
+                cells = build_tiling_tube_cells(
+                    self.tiling_name, self.nx, self.ny,
+                    self.amplitude, self.overlap, self.samples,
+                    self.style, self.smoothness, self.tube_radius,
+                    self.tube_sides, self.weave_height,
+                    self.color_by, self.backing, self.base,
+                    self.relax_iters, self.rope_clearance,
+                    self.weave_gap)
+            obj = pc.emit(context, "Knot Carpet (Tiling)", cells,
+                          self.separate, fit=True, operator=self)
+            if obj is None:
+                self.report({'ERROR'}, "no carpet generated")
+                return {'CANCELLED'}
+            obj["math_art_pattern"] = True
+            if self.output == 'TUBE':
+                _shade_smooth(obj)
+            n_loops = len(cells) - (1 if self.backing else 0)
+            if obj.type == 'MESH':
+                self.report({'INFO'},
+                            "TILING %s %dx%d  %d loops  V=%d F=%d"
+                            % (self.tiling_name, self.nx, self.ny,
+                               n_loops, len(obj.data.vertices),
+                               len(obj.data.polygons)))
+            else:
+                self.report({'INFO'}, "TILING %s %dx%d  %d loops" %
+                            (self.tiling_name, self.nx, self.ny,
+                             n_loops))
+            return {'FINISHED'}
+
         def execute(self, context):
             if self.lattice == 'SPHERE':
                 return self._execute_sphere(context)
+            if self.lattice == 'TILING':
+                return self._execute_tiling(context)
             if self.output == 'CURVE':
                 if self.relax_iters > 0:
                     paths = relaxed_paths(
@@ -1601,10 +2095,17 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'lattice')
             sphere = self.lattice == 'SPHERE'
+            tiling = self.lattice == 'TILING'
             if sphere:
                 # lobe count is AUTO on the sphere (follows the
                 # scaffold degree), so symmetry is not shown
                 lay.prop(self, 'sphere_freq')
+            elif tiling:
+                # lobe count is AUTO on a tiling too (each medallion
+                # follows its tile's neighbour count)
+                lay.prop(self, 'tiling_name')
+                lay.prop(self, 'nx')
+                lay.prop(self, 'ny')
             else:
                 lay.prop(self, 'symmetry')
                 lay.prop(self, 'nx')
@@ -1612,12 +2113,42 @@ if _IN_BLENDER:
             lay.prop(self, 'amplitude')
             lay.prop(self, 'overlap')
             lay.prop(self, 'samples')
-            if not sphere:
+            if not (sphere or tiling):
                 lay.prop(self, 'cord_width')
             lay.prop(self, 'style')
             if self.style == 'SMOOTH':
                 lay.prop(self, 'smoothness')
             lay.prop(self, 'output')
+            if tiling:
+                if self.output == 'RIBBON':
+                    lay.prop(self, 'cord_width')
+                    lay.prop(self, 'interlace')
+                    if self.interlace:
+                        lay.prop(self, 'interlace_mode')
+                        if self.interlace_mode == 'WOVEN':
+                            lay.prop(self, 'weave_height')
+                    lay.prop(self, 'color_by')
+                    lay.prop(self, 'height')
+                    lay.prop(self, 'backing')
+                    if self.backing:
+                        lay.prop(self, 'base')
+                    lay.prop(self, 'separate')
+                elif self.output == 'TUBE':
+                    lay.prop(self, 'tube_radius')
+                    lay.prop(self, 'tube_sides')
+                    lay.prop(self, 'weave_height')
+                    lay.prop(self, 'color_by')
+                    lay.prop(self, 'backing')
+                    if self.backing:
+                        lay.prop(self, 'base')
+                    lay.prop(self, 'separate')
+                if self.output in ('TUBE', 'CURVE'):
+                    lay.prop(self, 'relax_iters')
+                    if self.relax_iters > 0:
+                        lay.prop(self, 'rope_clearance')
+                        lay.prop(self, 'weave_gap')
+                lay.prop(self, 'align')
+                return
             if sphere:
                 if self.output == 'RIBBON':
                     lay.prop(self, 'cord_width')
@@ -2059,5 +2590,82 @@ if __name__ == "__main__":
           % (r, st['rdev'], st['band'], st['sep_before'],
              st['sep_after'], st['min_dz'], st['gap'],
              st['mv_early'], st['mv_late']))
+
+    # 12. tiling scaffold + carpet: symmetric adjacency, interior
+    #     degree = side count, >= 2 crossings per adjacent medallion
+    #     pair, one-over-one-under (always)
+    _tiling_ids = [t[0] for t in tg.TILING_ITEMS]
+    assert 'SQUARE' in _tiling_ids
+    for tname in ('SQUARE', 'TRIHEX', 'TRUNCSQ'):
+        centers, polys, adjt, degree, interior = _tiling_scaffold(
+            tname, 4, 4)
+        sym = all(i in adjt[j] for i in adjt for j in adjt[i])
+        intd = all(degree[i] == len(polys[i]) for i in interior)
+        car = build_tiling_carpet(tname, 4, 4, 0.10, 1.15, 160)
+        min_hits = min(car['nn_hits'].values())
+        one = _check_one_over(car)
+        good = (sym and intd and len(interior) > 0
+                and min_hits >= 2 and one)
+        ok = ok and good
+        print("tiling   %-8s : sym=%s interior=%d deg-ok=%s "
+              "min-crossings=%d one-over=%s  (%d crossings, "
+              "consistent=%s) : %s"
+              % (tname, sym, len(interior), intd, min_hits, one,
+                 len(car['crossings']), car['consistent'], good))
+
+    # 13. tiling tubes (finite, non-empty, all quads) and ribbons
+    #     (finite, non-empty)
+    for tname in ('SQUARE', 'TRIHEX', 'TRUNCSQ'):
+        tc = build_tiling_tube_cells(tname, 3, 3, samples=120,
+                                     tube_sides=8)
+        tf = sum(len(c[1]) for c in tc)
+        tfin = all(all(np.isfinite(v).all() for v in c[0])
+                   for c in tc)
+        tq = all(len(f) == 4 for c in tc for f in c[1])
+        rc = build_tiling_ribbon_cells(tname, 3, 3, samples=120)
+        rf = sum(len(c[1]) for c in rc)
+        rfin = all(all(np.isfinite(v).all() for v in c[0])
+                   for c in rc)
+        g = tf > 0 and tfin and tq and rf > 0 and rfin
+        ok = ok and g
+        print("tiling geom %-8s : tube %d faces quads=%s  "
+              "ribbon %d faces : %s" % (tname, tf, tq, rf, g))
+
+    # 14. tiling relaxation: finite, safe separation, weave z-order
+    #     at every INTERIOR-pair crossing (boundary medallions have
+    #     defective lobe counts and stay lightly pinned), convergence
+    for tname in ('TRIHEX', 'TRUNCSQ'):
+        car = build_tiling_carpet(tname, 3, 3, 0.10, 1.15, 120)
+        dsp = car['spacing']
+        clr = 0.10 * dsp
+        gap = 0.10 * dsp
+        seed = relax_tiling_carpet(car, iters=0)
+        trace = []
+        lines = relax_tiling_carpet(car, iters=120, trace=trace)
+        fin = all(np.isfinite(Q).all() for Q in lines)
+        sb = _sphere_min_sep(seed)      # generic min inter-loop sep
+        sa = _sphere_min_sep(lines)
+        sep_ok = (sa >= 0.6 * clr
+                  and (sa >= sb - 1e-9 or sa >= 0.8 * clr))
+        S = len(car['paths'][0])
+        min_dz = np.inf
+        for key, lo, hi, flo, fhi in car['crossings']:
+            if lo not in car['interior'] \
+                    or hi not in car['interior']:
+                continue
+            zlo = float(lines[lo][int(round(flo)) % S][2])
+            zhi = float(lines[hi][int(round(fhi)) % S][2])
+            dz = (zlo - zhi) if car['over'][key] else (zhi - zlo)
+            min_dz = min(min_dz, dz)
+        z_ok = min_dz >= 0.6 * gap
+        tr = np.asarray(trace)
+        conv = (np.isfinite(tr).all() and len(tr) == 120
+                and tr[-10:].mean() < tr[:10].mean())
+        g = fin and sep_ok and z_ok and conv
+        ok = ok and g
+        print("tiling relax %-8s : %s  sep %.4f->%.4f (clr %.4f)  "
+              "interior min_dz=%.4f (gap %.4f)  move %.2e->%.2e"
+              % (tname, g, sb, sa, clr, min_dz, gap,
+                 tr[:10].mean(), tr[-10:].mean()))
 
     print("RESULT:", "OK" if ok else "BAD")
