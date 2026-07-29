@@ -72,7 +72,7 @@ def _join_rings(sa, na, sb, nb):
     return faces
 
 
-def _crochet_mesh(ratio_n, rows, stitch, max_stitches):
+def _crochet_mesh(ratio_n, rows, stitch, max_stitches, seed_scale=1.0):
     """Build the crochet mesh: exponentially growing stitch count per
     row (constant stitch size h), cascade-seeded ruffles, and true
     hyperbolic edge rest lengths."""
@@ -104,7 +104,7 @@ def _crochet_mesh(ratio_n, rows, stitch, max_stitches):
                     break
                 ak = 0.7 * h if k == ks[-1] else 0.35 * h
                 z = z + ak * np.sin(mk * theta)
-        z = z + 0.03 * rho + rng.normal(0.0, 0.02 * h, n)  # conical bias
+        z = seed_scale * z + 0.03 * rho + rng.normal(0.0, 0.02 * h, n)
         for j in range(n):
             P.append([rho * math.cos(theta[j]),
                       rho * math.sin(theta[j]), float(z[j])])
@@ -201,19 +201,31 @@ def _bvh_decollide(P, faces, nbr, thick, strength):
 
 
 def _relax(P, E0, E1, REST, nbr, pin, pin_pos, iters, smooth,
-           repel_r, repel_s, collide_fn=None, collide_every=40):
+           repel_r, repel_s, collide_fn=None, collide_every=40,
+           anneal_L0=None, anneal_frac=0.75, stiff=1.0):
     """Jacobi stitch-length constraints + Laplacian bending + periodic
-    self-repulsion (and optional BVHTree collision); inner ring pinned."""
+    self-repulsion (and optional BVHTree collision); inner ring pinned.
+    With `anneal_L0` (flat starting edge lengths) the target rest grows
+    smoothly from flat to hyperbolic over `anneal_frac` of the run, so
+    the sheet buckles as a continuous deformation; `stiff` damps the
+    compression term to stop compressed edges flinging into spikes.
+    Defaults reproduce the plain relaxation exactly."""
     n = len(P)
     valence = np.zeros(n)
     np.add.at(valence, E0, 1.0)
     np.add.at(valence, E1, 1.0)
     valence = np.maximum(valence, 1.0)[:, None]
     for it in range(iters):
+        if anneal_L0 is not None:
+            t = min(1.0, it / max(1.0, anneal_frac * iters))
+            rest = (1.0 - t) * anneal_L0 + t * REST
+        else:
+            t, rest = 1.0, REST
         d = P[E1] - P[E0]
         L = np.linalg.norm(d, axis=1)
         L = np.where(L < 1e-9, 1e-9, L)
-        corr = (1.0 - REST / L)[:, None] * d
+        ratio = np.clip(1.0 - rest / L, -3.0, 1.0)
+        corr = (stiff * ratio)[:, None] * d
         dP = np.zeros_like(P)
         np.add.at(dP, E0, corr)
         np.add.at(dP, E1, -corr)
@@ -223,25 +235,98 @@ def _relax(P, E0, E1, REST, nbr, pin, pin_pos, iters, smooth,
             np.add.at(nsum, E0, P[E1])
             np.add.at(nsum, E1, P[E0])
             P = P + smooth * (nsum / valence - P)
-        if repel_s > 0.0 and it % 3 == 0 and it > 0:
-            P = P + _repel(P, nbr, repel_r, repel_s)
-        if collide_fn is not None and it > 0 and it % collide_every == 0:
-            P = collide_fn(P)
+        if t > 0.9:
+            if repel_s > 0.0 and it % 3 == 0 and it > 0:
+                P = P + _repel(P, nbr, repel_r, repel_s)
+            if collide_fn is not None and it % collide_every == 0:
+                P = collide_fn(P)
+        P[pin] = pin_pos
+    return P
+
+
+def _pack(P, E0, E1, REST, nbr, faces, pin, pin_pos, iters, pull,
+          stitch, repel_r, smooth=0.12):
+    """Collision-packing: pull every free vertex weakly toward the
+    centroid (a self-weight/gravity that compacts the sheet) while the
+    stitch springs preserve the metric and BVHTree self-collision stops
+    the folds passing through each other -- so the smooth hyperbolic
+    disk folds up into a dense ball, like real crochet gathered in the
+    hand. Blender only (needs the BVHTree collision)."""
+    n = len(P)
+    valence = np.zeros(n)
+    np.add.at(valence, E0, 1.0)
+    np.add.at(valence, E1, 1.0)
+    valence = np.maximum(valence, 1.0)[:, None]
+    free = np.ones(n, dtype=bool)
+    free[pin] = False
+    for it in range(iters):
+        C = P[free].mean(axis=0)
+        P[free] += pull * (C - P[free])           # gravity toward centre
+        for _ in range(3):                        # keep stitch lengths
+            d = P[E1] - P[E0]
+            L = np.linalg.norm(d, axis=1)
+            L = np.where(L < 1e-9, 1e-9, L)
+            corr = np.clip(1.0 - REST / L, -3.0, 1.0)[:, None] * d
+            dP = np.zeros_like(P)
+            np.add.at(dP, E0, corr)
+            np.add.at(dP, E1, -corr)
+            P = P + dP / valence
+            P[pin] = pin_pos
+        if smooth > 0.0:                           # keep the folds smooth
+            nsum = np.zeros_like(P)
+            np.add.at(nsum, E0, P[E1])
+            np.add.at(nsum, E1, P[E0])
+            P = P + smooth * (nsum / valence - P)
+        P = P + _repel(P, nbr, repel_r, 0.5)
+        if _IN_BLENDER:                            # self-collision each step
+            P = _bvh_decollide(P, faces, nbr, 0.9 * stitch, 0.8)
+        P[pin] = pin_pos
+    # final polish: smooth out collision roughness while holding the
+    # stitch lengths, so the ball reads as folded fabric not crumple
+    for _ in range(8):
+        nsum = np.zeros_like(P)
+        np.add.at(nsum, E0, P[E1])
+        np.add.at(nsum, E1, P[E0])
+        P = P + 0.25 * (nsum / valence - P)
+        d = P[E1] - P[E0]
+        L = np.linalg.norm(d, axis=1)
+        L = np.where(L < 1e-9, 1e-9, L)
+        corr = np.clip(1.0 - REST / L, -3.0, 1.0)[:, None] * d
+        dP = np.zeros_like(P)
+        np.add.at(dP, E0, corr)
+        np.add.at(dP, E1, -corr)
+        P = P + dP / valence
         P[pin] = pin_pos
     return P
 
 
 def build_ruffle(ratio_n=4, rows=18, stitch=0.09, max_stitches=600,
-                 iters=340, smooth=0.06, repel=0.5, collide=3):
+                 iters=340, smooth=0.06, repel=0.5, collide=3,
+                 anneal=False, stiff=1.0, pack=0, pack_pull=0.03):
+    # `anneal`/`stiff` grow the curvature smoothly from flat and damp
+    # the springs (needed for the tight-curvature presets to stay
+    # smooth); `pack` folds the relaxed sheet into a ball via gravity +
+    # self-collision. Defaults (all off) reproduce the plain build, so
+    # Wavy/Ruffled are unchanged.
     P, E0, E1, REST, nbr, faces, pin, pin_pos = _crochet_mesh(
-        ratio_n, rows, stitch, max_stitches)
+        ratio_n, rows, stitch, max_stitches,
+        seed_scale=0.2 if anneal else 1.0)
+    L0 = None
+    if anneal:
+        flat = P.copy()
+        flat[:, 2] = 0.0
+        L0 = np.linalg.norm(flat[E1] - flat[E0], axis=1)
     cf = None
     if collide > 0 and _IN_BLENDER:
         cf = lambda pp: _bvh_decollide(pp, faces, nbr,
                                        0.75 * stitch, 0.6)
     ce = max(15, iters // (collide * 4 + 1)) if collide > 0 else 10 ** 9
     P = _relax(P, E0, E1, REST, nbr, pin, pin_pos, iters, smooth,
-               0.4 * stitch, repel, collide_fn=cf, collide_every=ce)
+               0.4 * stitch, repel, collide_fn=cf, collide_every=ce,
+               anneal_L0=L0, stiff=stiff)
+    if pack > 0:
+        P = _pack(P, E0, E1, REST, nbr, faces, pin, pin_pos, pack,
+                  pack_pull, stitch, 0.4 * stitch)
     return _center(P), faces
 
 
@@ -251,10 +336,15 @@ PRESETS = {
                  iters=280, smooth=0.08, repel=0.5, collide=2),
     'RUFFLED': dict(ratio_n=4, rows=18, stitch=0.09, max_stitches=600,
                     iters=340, smooth=0.06, repel=0.5, collide=3),
-    'BENDY': dict(ratio_n=3, rows=22, stitch=0.08, max_stitches=800,
-                  iters=400, smooth=0.045, repel=0.5, collide=4),
-    'TAIMINA': dict(ratio_n=2, rows=20, stitch=0.08, max_stitches=1000,
-                    iters=420, smooth=0.04, repel=0.5, collide=5),
+    # tight-curvature presets: curvature-annealed + damped smooth base
+    # (uncapped so outer rows are not truncated into spikes); Taimina
+    # then collision-PACKS it into a ball.
+    'BENDY': dict(ratio_n=3, rows=16, stitch=0.08, max_stitches=6000,
+                  iters=380, smooth=0.14, repel=0.3, collide=0,
+                  anneal=True, stiff=0.55, pack=45, pack_pull=0.010),
+    'TAIMINA': dict(ratio_n=3, rows=16, stitch=0.08, max_stitches=6000,
+                    iters=360, smooth=0.13, repel=0.3, collide=0,
+                    anneal=True, stiff=0.55, pack=90, pack_pull=0.012),
 }
 
 
@@ -312,26 +402,27 @@ if _IN_BLENDER:
                    ('TAIMINA', "Taimina (ball)", "Densely folded, "
                     "ball-like (slowest)"),
                    ('CUSTOM', "Custom", "Use the parameters below")],
-            default='RUFFLED')
+            default='WAVY')
+        # Custom defaults mirror the WAVY preset
         ratio_n: IntProperty(
-            name="Increase Ratio N", default=4, min=2, max=24,
+            name="Increase Ratio N", default=6, min=2, max=24,
             description="Increase 1 stitch every N. Small N = tight "
                         "curvature, more bend")
         rows: IntProperty(
-            name="Rows", default=18, min=3, max=30,
+            name="Rows", default=14, min=3, max=30,
             description="Crochet rows; more = larger and more folded")
         stitch: FloatProperty(
-            name="Stitch Size", default=0.09, min=0.02, max=0.5,
+            name="Stitch Size", default=0.10, min=0.02, max=0.5,
             description="Size of one (square) stitch")
         max_stitches: IntProperty(
-            name="Max Stitches/Row", default=600, min=24, max=2000,
+            name="Max Stitches/Row", default=400, min=24, max=2000,
             description="Cap on the (growing) stitch count per row; "
                         "raise it at small N so the edge keeps ruffling")
         iters: IntProperty(
-            name="Relax Steps", default=340, min=0, max=3000,
+            name="Relax Steps", default=280, min=0, max=3000,
             description="Buckling relaxation iterations")
         smooth: FloatProperty(
-            name="Bending", default=0.06, min=0.0, max=1.0,
+            name="Bending", default=0.08, min=0.0, max=1.0,
             description="Higher = larger, smoother ruffles; lower = "
                         "finer, crisper folds. Above ~0.5 it strongly "
                         "over-smooths and can shrink the sheet")
@@ -339,9 +430,43 @@ if _IN_BLENDER:
             name="Self-Repulsion", default=0.5, min=0.0, max=1.0,
             description="Push apart ruffles that get too close")
         collide: IntProperty(
-            name="Collision Passes", default=3, min=0, max=10,
+            name="Collision Passes", default=2, min=0, max=10,
             description="BVHTree vertex-triangle self-collision passes "
                         "that stop the fabric passing through itself")
+        physics: EnumProperty(
+            name="Fold By",
+            items=[('PBD', "Built-in Packing",
+                    "Fold with the internal collision-packing"),
+                   ('CLOTH', "Blender Cloth",
+                    "Build the flat sheet and fold it with a Cloth "
+                    "modifier (self-collision + a gather field)")],
+            default='PBD')
+        cloth_bake: IntProperty(
+            name="Cloth Bake Frames", default=60, min=0, max=400,
+            description="Cloth mode: frames to auto-simulate and "
+                        "freeze. 0 = just set up the modifier and let "
+                        "you press Play")
+        cloth_gather: FloatProperty(
+            name="Gather Strength", default=170.0, min=0.0, max=2000.0,
+            description="Cloth mode: inward force that gathers the "
+                        "sheet into a ball. Lower = looser, less "
+                        "tightly folded (0 = drape under gravity)")
+        cloth_prep: IntProperty(
+            name="Sheet Prep Steps", default=40, min=0, max=400,
+            description="Cloth mode: relaxation steps to tidy the "
+                        "procedurally-ruffled sheet before handing it "
+                        "to cloth (the cloth solver does the rest, so "
+                        "this can be small or 0)")
+        cloth_bend: IntProperty(
+            name="Fold Softness", default=12, min=0, max=60,
+            description="Cloth mode: smoothing passes applied after "
+                        "folding, to round the sharp creases. Higher = "
+                        "softer, rounder folds; 0 = raw cloth")
+        cloth_thick: FloatProperty(
+            name="Fabric Thickness", default=0.7, min=0.2, max=2.0,
+            description="Cloth mode: self-collision distance as a "
+                        "fraction of stitch size; higher keeps folds "
+                        "from pinching into sharp seams")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                             max=100.0)
         shade_smooth: BoolProperty(name="Smooth Shading", default=True)
@@ -354,11 +479,19 @@ if _IN_BLENDER:
                          iters=self.iters, smooth=self.smooth,
                          repel=self.repel, collide=self.collide)
             else:
-                p = PRESETS[self.preset]
+                p = dict(PRESETS[self.preset])
+            if self.physics == 'CLOTH':
+                # hand cloth the procedurally-ruffled flat sheet (full
+                # wave seed, no PBD packing/collision) with only a light
+                # cleanup relax; the cloth solver refines + folds it
+                p['pack'] = 0
+                p['anneal'] = False
+                p['collide'] = 0
+                p['iters'] = self.cloth_prep
             verts, faces = build_ruffle(**p)
-            verts = verts * self.scale
+            verts = np.asarray(verts) * self.scale
             me = bpy.data.meshes.new("Crochet")
-            me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
+            me.from_pydata([tuple(v) for v in verts], [],
                            [tuple(int(i) for i in f) for f in faces])
             me.validate(clean_customdata=True)
             if self.shade_smooth:
@@ -372,10 +505,88 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
+            note = ""
+            if self.physics == 'CLOTH':
+                note = self._setup_cloth(context, obj, verts, faces)
             self.report({'INFO'},
                         f"Crochet ({self.preset.title()}): "
-                        f"V={len(me.vertices)} F={len(me.polygons)}")
+                        f"V={len(obj.data.vertices)} "
+                        f"F={len(obj.data.polygons)}{note}")
             return {'FINISHED'}
+
+        def _setup_cloth(self, context, obj, verts, faces):
+            """Attach a Cloth modifier (self-collision + optional inward
+            gather field) that folds the flat sheet into a ball, and
+            optionally bake+freeze it."""
+            V = np.asarray(verts)
+            cen = V.mean(axis=0)
+            k = max(6, len(V) // 150)
+            pin = np.argsort(np.linalg.norm(V[:, :2] - cen[:2],
+                                            axis=1))[:k]
+            vg = obj.vertex_groups.new(name="crochet_pin")
+            vg.add([int(i) for i in pin], 1.0, 'REPLACE')
+            med = float(np.median(
+                [np.linalg.norm(V[f[0]] - V[f[1]]) for f in faces]))
+
+            mod = obj.modifiers.new("Cloth", 'CLOTH')
+            s = mod.settings
+            s.quality = 10
+            s.mass = 0.3
+            s.tension_stiffness = 15.0
+            s.compression_stiffness = 15.0
+            s.shear_stiffness = 5.0
+            try:
+                s.bending_model = 'ANGULAR'
+            except (AttributeError, TypeError):
+                pass
+            s.bending_stiffness = 3.0
+            s.bending_damping = 2.0
+            s.vertex_group_mass = "crochet_pin"     # pin group
+            s.pin_stiffness = 5.0
+            col = mod.collision_settings
+            col.use_self_collision = True
+            col.self_distance_min = min(0.1, max(0.003,
+                                                 self.cloth_thick * med))
+            col.self_impulse_clamp = 0.0
+            col.collision_quality = 5
+
+            fld = None
+            if self.cloth_gather > 0.0:
+                s.effector_weights.gravity = 0.0    # gather, don't droop
+                fld = bpy.data.objects.new("Crochet Gather", None)
+                context.collection.objects.link(fld)
+                fld.location = tuple(float(c) for c in cen)
+                context.view_layer.objects.active = fld
+                bpy.ops.object.forcefield_toggle()  # enables fld.field
+                fld.field.type = 'FORCE'
+                fld.field.strength = -abs(self.cloth_gather)
+                fld.field.falloff_type = 'SPHERE'
+                context.view_layer.objects.active = obj
+
+            # post-fold smoothing rounds the sharp cloth creases
+            sm = None
+            if self.cloth_bend > 0:
+                sm = obj.modifiers.new("Fold Smooth", 'SMOOTH')
+                sm.iterations = int(self.cloth_bend)
+                sm.factor = 0.6
+
+            if self.cloth_bake > 0:
+                scene = context.scene
+                start = scene.frame_start
+                for fnum in range(start, start + self.cloth_bake):
+                    scene.frame_set(fnum)
+                context.view_layer.objects.active = obj
+                try:
+                    bpy.ops.object.modifier_apply(modifier=mod.name)
+                    if sm is not None:
+                        bpy.ops.object.modifier_apply(modifier=sm.name)
+                except RuntimeError:
+                    pass
+                if fld is not None:
+                    bpy.data.objects.remove(fld, do_unlink=True)
+                scene.frame_set(start)
+                return f" (cloth baked {self.cloth_bake}f)"
+            return " (cloth set up -- press Play)"
 
         def draw(self, context):
             lay = self.layout
@@ -385,6 +596,13 @@ if _IN_BLENDER:
                 for k in ('ratio_n', 'rows', 'stitch', 'max_stitches',
                           'iters', 'smooth', 'repel', 'collide'):
                     lay.prop(self, k)
+            lay.prop(self, 'physics')
+            if self.physics == 'CLOTH':
+                lay.prop(self, 'cloth_prep')
+                lay.prop(self, 'cloth_bake')
+                lay.prop(self, 'cloth_gather')
+                lay.prop(self, 'cloth_bend')
+                lay.prop(self, 'cloth_thick')
             lay.prop(self, 'scale')
             lay.prop(self, 'shade_smooth')
 

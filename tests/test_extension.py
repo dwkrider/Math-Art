@@ -108,6 +108,9 @@ OPS = [
      lambda: bpy.ops.mesh.crochet_add(preset='WAVY')),
     ("crochet ruffled",
      lambda: bpy.ops.mesh.crochet_add(preset='RUFFLED')),
+    ("crochet cloth setup",
+     lambda: bpy.ops.mesh.crochet_add(preset='WAVY', physics='CLOTH',
+                                      cloth_bake=0)),
     ("space curve", lambda: bpy.ops.curve.space_filling_add(
         kind='MOORE3D', order=3)),
     ("oloid", lambda: bpy.ops.mesh.oloid_add(kind='OLOID')),
