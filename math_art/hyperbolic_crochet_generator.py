@@ -233,7 +233,7 @@ def _repel(P, nbr, radius, strength):
 
 
 def _relax(P, E0, E1, REST, nbr, pin, pin_pos, iters, smooth,
-           repel_r, repel_s):
+           repel_r, repel_s, collide_fn=None, collide_every=40):
     """Jacobi edge-length constraints + Laplacian bending, with
     periodic self-repulsion; the inner ring is pinned."""
     n = len(P)
@@ -257,16 +257,60 @@ def _relax(P, E0, E1, REST, nbr, pin, pin_pos, iters, smooth,
             P = P + smooth * (nsum / valence - P)
         if repel_s > 0.0 and it % 3 == 0 and it > 0:
             P = P + _repel(P, nbr, repel_r, repel_s)
+        if collide_fn is not None and it > 0 and it % collide_every == 0:
+            P = collide_fn(P)          # co-adapts with the springs
         P[pin] = pin_pos
     return P
 
 
+def _bvh_decollide(P, faces, nbr, thick, strength):
+    """One vertex-triangle self-collision pass using Blender's C-level
+    BVHTree (fast). For every vertex within `thick` of a NON-adjacent
+    triangle, push the vertex out along the separation direction and
+    react on the triangle -- exactly the fabric-interpenetration
+    penalty, resolved efficiently. Blender only (uses mathutils)."""
+    from mathutils import Vector
+    from mathutils.bvhtree import BVHTree
+    verts = [Vector((float(p[0]), float(p[1]), float(p[2])))
+             for p in P]
+    polys = [(int(f[0]), int(f[1]), int(f[2])) for f in faces]
+    tree = BVHTree.FromPolygons(verts, polys, all_triangles=True)
+    dP = np.zeros_like(P)
+    for v in range(len(P)):
+        nv = nbr[v]
+        for loc, nrm, idx, dist in tree.find_nearest_range(verts[v],
+                                                           thick):
+            if dist is None or dist >= thick:
+                continue
+            f = polys[idx]
+            if v in f or f[0] in nv or f[1] in nv or f[2] in nv:
+                continue
+            dvec = P[v] - np.array([loc.x, loc.y, loc.z])
+            L = float(np.linalg.norm(dvec))
+            direction = (dvec / L if L > 1e-9
+                         else np.array([nrm.x, nrm.y, nrm.z]))
+            push = strength * (thick - dist) * direction
+            dP[v] += push
+            dP[f[0]] -= push / 3.0
+            dP[f[1]] -= push / 3.0
+            dP[f[2]] -= push / 3.0
+    return P + 0.5 * dP
+
+
 def build_ruffle(ratio_n=6, rows=16, stitch=0.1, max_stitches=400,
-                 iters=300, smooth=0.06, repel=0.5):
+                 iters=300, smooth=0.06, repel=0.5, collide=2):
     P, E0, E1, REST, nbr, faces, pin, pin_pos = _crochet_mesh(
         ratio_n, rows, stitch, max_stitches)
+    # Blender-only fast vertex-triangle self-collision, applied INSIDE
+    # the relaxation loop so it co-adapts with the stitch springs
+    # (running it separately just lets the springs undo it).
+    cf = None
+    if collide > 0 and _IN_BLENDER:
+        cf = lambda pp: _bvh_decollide(pp, faces, nbr,
+                                       0.75 * stitch, 0.6)
+    ce = max(15, iters // (collide * 4 + 1)) if collide > 0 else 10 ** 9
     P = _relax(P, E0, E1, REST, nbr, pin, pin_pos, iters, smooth,
-               0.4 * stitch, repel)
+               0.4 * stitch, repel, collide_fn=cf, collide_every=ce)
     return _center(P), faces
 
 
@@ -380,6 +424,11 @@ if _IN_BLENDER:
             name="Self-Repulsion", default=0.5, min=0.0, max=1.0,
             description="Push apart ruffles that get too close "
                         "(reduces self-intersection)")
+        collide: IntProperty(
+            name="Collision Passes", default=2, min=0, max=10,
+            description="Vertex-triangle self-collision passes "
+                        "(BVHTree) that stop the fabric passing "
+                        "through itself; 0 disables")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                             max=100.0)
         shade_smooth: BoolProperty(name="Smooth Shading", default=True)
@@ -389,7 +438,7 @@ if _IN_BLENDER:
                 verts, faces = build_ruffle(
                     self.ratio_n, self.rows, self.stitch,
                     self.max_stitches, self.iters, self.smooth,
-                    self.repel)
+                    self.repel, self.collide)
                 name = "Hyperbolic Crochet"
             else:
                 verts, faces = build_exact(self.mode, self.ures,
@@ -422,7 +471,7 @@ if _IN_BLENDER:
             lay.prop(self, 'mode')
             if self.mode == 'RUFFLE':
                 for k in ('ratio_n', 'rows', 'stitch', 'max_stitches',
-                          'iters', 'smooth', 'repel'):
+                          'iters', 'smooth', 'repel', 'collide'):
                     lay.prop(self, k)
             else:
                 lay.prop(self, 'ures')
