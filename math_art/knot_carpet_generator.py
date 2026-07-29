@@ -1077,6 +1077,75 @@ def build_sphere_tube_cells(freq=2, k=0, amp=0.10, overlap=1.15,
     return cells
 
 
+def _sphere_band(path3d, width, thickness):
+    """Sweep a closed flat band (a thin box cross-section) along a 3D
+    loop on the sphere: the width lies TANGENT to the sphere
+    (perpendicular to the loop), the thickness runs RADIALLY -- a woven
+    strap on the ball.  Returns (verts, quad faces)."""
+    P = np.asarray(path3d, float)
+    n = len(P)
+    if n < 3:
+        return [], []
+    hw = 0.5 * float(width)
+    ht = 0.5 * max(float(thickness), 1e-4)
+    verts, faces = [], []
+    for i in range(n):
+        p = P[i]
+        tang = P[(i + 1) % n] - P[(i - 1) % n]
+        tang /= np.linalg.norm(tang) + 1e-12
+        rad = p / (np.linalg.norm(p) + 1e-12)
+        side = np.cross(tang, rad)
+        side /= np.linalg.norm(side) + 1e-12
+        for sw, sr in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
+            verts.append(tuple(p + side * (sw * hw) + rad * (sr * ht)))
+    for i in range(n):
+        j = (i + 1) % n
+        for c in range(4):
+            faces.append([4 * i + c, 4 * i + (c + 1) % 4,
+                          4 * j + (c + 1) % 4, 4 * j + c])
+    return verts, faces
+
+
+def build_sphere_ribbon_cells(freq=2, k=0, amp=0.10, overlap=1.15,
+                              samples=192, style='ANGULAR', subdiv=6,
+                              cord_width=0.12, weave_height=0.06,
+                              height=0.0, color_by='LOOP', relax_iters=0,
+                              clearance=0.10, weave_gap=0.10):
+    """One closed woven flat BAND per sphere loop -- the ribbon form of
+    the knot ball (a woven strap ball).  Same radial over/under weave as
+    the tube builder, but a flat strap tangent to the sphere instead of
+    a round tube.  Returns one (verts, faces, mats) cell per loop."""
+    carpet = build_sphere_carpet(freq, k, amp, overlap, samples,
+                                 style, subdiv)
+    signed = loop_signed(carpet)
+    d = carpet['spacing']
+    cw = max(0.01, float(cord_width))
+    width = cw * d
+    thick = max(0.0, float(height)) * d
+    if thick <= 0.0:
+        thick = 0.12 * width
+    lift = max(float(weave_height), 0.8 * cw) * d
+    relaxed = None
+    if relax_iters > 0:
+        relaxed = relax_sphere_carpet(
+            carpet, iters=int(relax_iters),
+            clearance=max(float(clearance), 2.2 * cw),
+            weave_gap=max(float(weave_gap), 2.2 * cw))
+    cells = []
+    for i, path in enumerate(carpet['paths']):
+        if relaxed is not None:
+            path3d = np.asarray(relaxed[i], float)
+        else:
+            roff = _weave_roff(path, signed[i], lift)
+            path3d = path * (1.0 + roff)[:, None]
+        verts, faces = _sphere_band(path3d, width, thick)
+        if not faces:
+            continue
+        mat = (i % len(pc.PALETTE_RGBA)) if color_by == 'LOOP' else 0
+        cells.append((verts, faces, [mat] * len(faces)))
+    return cells
+
+
 def relax_sphere_carpet(carpet, iters=120, clearance=0.10,
                         weave_gap=0.10, confine=0.5, step=0.15,
                         trace=None):
@@ -1411,12 +1480,11 @@ if _IN_BLENDER:
             description="Output each loop as its own object")
 
         def _execute_sphere(self, context):
-            """The closed knot ball.  Ribbons have no meaning on a
-            sphere, so mesh output (RIBBON included) is always the
-            woven rope tube; CURVE emits the loop centerlines.  The
-            rosette lobe count is AUTO (k = 0): each loop follows
-            its scaffold degree, so lobes stay aligned with the
-            neighbours across the twelve 5-fold defects."""
+            """The closed knot ball.  CURVE emits the loop centerlines;
+            RIBBON sweeps a woven flat strap per loop; TUBE sweeps a
+            woven round rope.  The rosette lobe count is AUTO (k = 0):
+            each loop follows its scaffold degree, so lobes stay aligned
+            with the neighbours across the twelve 5-fold defects."""
             if self.output == 'CURVE':
                 paths = sphere_loop_paths(
                     self.sphere_freq, 0, self.amplitude,
@@ -1432,19 +1500,29 @@ if _IN_BLENDER:
                 self.report({'INFO'}, "SPHERE freq=%d  %d loops" %
                             (self.sphere_freq, len(paths)))
                 return {'FINISHED'}
-            cells = build_sphere_tube_cells(
-                self.sphere_freq, 0, self.amplitude,
-                self.overlap, self.samples, self.style,
-                self.smoothness, self.tube_radius, self.tube_sides,
-                self.weave_height, self.color_by, self.relax_iters,
-                self.rope_clearance, self.weave_gap)
+            if self.output == 'RIBBON':
+                cells = build_sphere_ribbon_cells(
+                    self.sphere_freq, 0, self.amplitude,
+                    self.overlap, self.samples, self.style,
+                    self.smoothness, self.cord_width,
+                    self.weave_height, self.height, self.color_by,
+                    self.relax_iters, self.rope_clearance,
+                    self.weave_gap)
+            else:
+                cells = build_sphere_tube_cells(
+                    self.sphere_freq, 0, self.amplitude,
+                    self.overlap, self.samples, self.style,
+                    self.smoothness, self.tube_radius, self.tube_sides,
+                    self.weave_height, self.color_by, self.relax_iters,
+                    self.rope_clearance, self.weave_gap)
             obj = pc.emit(context, "Knot Ball", cells,
                           self.separate, fit=True, operator=self)
             if obj is None:
                 self.report({'ERROR'}, "no carpet generated")
                 return {'CANCELLED'}
             obj["math_art_pattern"] = True
-            _shade_smooth(obj)
+            if self.output == 'TUBE':
+                _shade_smooth(obj)
             if obj.type == 'MESH':
                 self.report({'INFO'},
                             "SPHERE freq=%d  %d loops  V=%d F=%d"
@@ -1541,8 +1619,13 @@ if _IN_BLENDER:
                 lay.prop(self, 'smoothness')
             lay.prop(self, 'output')
             if sphere:
-                # ribbons fall back to tubes on the closed sphere
-                if self.output != 'CURVE':
+                if self.output == 'RIBBON':
+                    lay.prop(self, 'cord_width')
+                    lay.prop(self, 'weave_height')
+                    lay.prop(self, 'height')
+                    lay.prop(self, 'color_by')
+                    lay.prop(self, 'separate')
+                elif self.output == 'TUBE':
                     lay.prop(self, 'tube_radius')
                     lay.prop(self, 'tube_sides')
                     lay.prop(self, 'weave_height')
@@ -1955,6 +2038,17 @@ if __name__ == "__main__":
     ok = ok and t
     print("sphere tube freq=2 : %s  (%d loops, %d faces)"
           % (t, len(cells), faces))
+
+    # 10b. sphere RIBBON (woven straps) builds valid quad geometry
+    rcells = build_sphere_ribbon_cells(2, 0, samples=120)
+    rfaces = sum(len(c[1]) for c in rcells)
+    rfin = all(all(np.isfinite(v).all() for v in c[0])
+               for c in rcells)
+    rquad = all(len(f) == 4 for c in rcells for f in c[1])
+    rb = rfaces > 0 and rfin and rquad
+    ok = ok and rb
+    print("sphere ribbon freq=2 : %s  (%d loops, %d faces)"
+          % (rb, len(rcells), rfaces))
 
     # 11. sphere relaxation: beads near the sphere, safe separation,
     #     radial over/under order, convergence
