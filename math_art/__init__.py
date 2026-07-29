@@ -32,6 +32,14 @@ _MODULE_NAMES = [
     'symmetric_sculpture_generator',
     'leonardo_style',
     'sponge_generator',
+    'mandelbulb_generator',
+    'snowflake_generator',
+    'fractal_surface_generator',
+    'l_system_generator',
+    'antoine_generator',
+    'fractal_knot_generator',
+    'apollonian_generator',
+    'hyperbolic_crochet_generator',
     'space_curve_generator',
     'oloid_generator',
     'sphericon_generator',
@@ -121,6 +129,7 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.helical_surface_add", icon='MOD_SCREW')
         _op(lay, "mesh.curiosity_surface_add",
             icon='SURFACE_DATA')
+        _op(lay, "mesh.hyperbolic_crochet_add", icon='MOD_CLOTH')
 
 
 class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
@@ -148,9 +157,14 @@ class VIEW3D_MT_math_art_fractals(bpy.types.Menu):
     def draw(self, context):
         lay = self.layout
         _op(lay, "mesh.sponge_add", icon='MESH_CUBE')
+        _op(lay, "mesh.mandelbulb_add", icon='META_BALL')
+        _op(lay, "mesh.snowflake_add", icon='FREEZE')
+        _op(lay, "mesh.fractal_surface_add", icon='RNDCURVE')
+        _op(lay, "mesh.apollonian_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.fractal_polyhedron_add",
             icon='OUTLINER_OB_POINTCLOUD')
         _op(lay, "curve.space_filling_add", icon='CURVE_DATA')
+        _op(lay, "curve.lsystem_add", icon='GRAPH')
         _op(lay, "curve.fractal_tree_add", icon='GRAPH')
 
 
@@ -162,7 +176,9 @@ class VIEW3D_MT_math_art_knots(bpy.types.Menu):
         lay = self.layout
         _op(lay, "curve.prime_knot_add", icon='FORCE_VORTEX')
         _op(lay, "curve.torus_knot_add", icon='FORCE_VORTEX')
+        _op(lay, "curve.fractal_knot_add", icon='FORCE_VORTEX')
         _op(lay, "curve.math_link_add", icon='LINKED')
+        _op(lay, "mesh.antoine_add", icon='LINKED')
         if hasattr(bpy.types, 'CURVE_OT_attractor_add'):
             lay.operator_menu_enum("curve.attractor_add", "preset",
                                    text="Strange Attractor",

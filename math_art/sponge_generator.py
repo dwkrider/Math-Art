@@ -10,6 +10,11 @@
 #   MENGER    3x3x3, drop cells sharing 2+ centre coordinates (20 kept)
 #   VICSEK    3x3x3, keep the centre + 6 face neighbours (3D plus sign)
 #   CARPET    Sierpinski carpet: 3x3 in the plane, one cube thick
+#   MOSELY    Mosely snowflake: 3x3x3, drop the 8 corners (19 kept)
+#   MOSELYL   Mosely snowflake (light): drop the 8 corners AND the
+#             body centre (18 kept), leaving a hollow at each stage
+#   CANTOR    Cantor dust: 3x3x3, keep only the 8 corners (2^3); the
+#             copies never touch, so it is a cloud of separate cubes
 #   TETRA     Sierpinski tetrahedron: 4 half-scale copies at vertices
 #   OCTA      Sierpinski octahedron: 6 half-scale copies at vertices
 #
@@ -20,6 +25,13 @@
 #   Sierpinski, C. R. Acad. Sci. Paris 162, 1916, pp. 629-632.
 # - Vicsek fractal: Tamas Vicsek, "Fractal models for diffusion
 #   controlled aggregation", J. Phys. A 16, 1983, pp. L647-L652.
+# - Mosely snowflake: named for Jeannine Mosely (of business-card
+#   Menger-sponge fame); the Sierpinski-Menger snowflake family is
+#   surveyed in M. Kalinski, "On the variations of the Sierpinski and
+#   Menger sponges and the Mosely snowflake" (2017).
+# - Cantor dust: the 3-fold Cartesian product of Georg Cantor's set,
+#   "Ueber unendliche, lineare Punktmannigfaltigkeiten V", Math. Ann.
+#   21, 1883, pp. 545-591.
 # - Self-similar dimension: Benoit B. Mandelbrot, "The Fractal
 #   Geometry of Nature", W. H. Freeman, 1982.
 
@@ -47,6 +59,12 @@ def _grid_rule(kind):
                     ok = sum(mid) >= 2
                 elif kind == 'CARPET':
                     ok = z == 0 and not (mid[0] and mid[1])
+                elif kind == 'MOSELY':
+                    ok = sum(mid) >= 1          # keep all but 8 corners
+                elif kind == 'MOSELYL':
+                    ok = 1 <= sum(mid) <= 2     # also drop body centre
+                elif kind == 'CANTOR':
+                    ok = sum(mid) == 0          # keep only the corners
                 else:
                     raise ValueError(kind)
                 if ok:
@@ -142,8 +160,10 @@ def build_corner_sponge(kind, level, size=2.0):
     return verts, faces
 
 
-GRID_KINDS = ('MENGER', 'VICSEK', 'CARPET')
+GRID_KINDS = ('MENGER', 'VICSEK', 'CARPET', 'MOSELY', 'MOSELYL',
+              'CANTOR')
 MAX_LEVEL = {'MENGER': 4, 'VICSEK': 5, 'CARPET': 6,
+             'MOSELY': 3, 'MOSELYL': 3, 'CANTOR': 4,
              'TETRA': 6, 'OCTA': 5}
 
 
@@ -181,7 +201,15 @@ if _IN_BLENDER:
                    ('VICSEK', "Vicsek Fractal",
                     "3D plus-sign: centre + 6 face neighbours"),
                    ('CARPET', "Sierpinski Carpet",
-                    "The flat 3x3 carpet, one cell thick")],
+                    "The flat 3x3 carpet, one cell thick"),
+                   ('MOSELY', "Mosely Snowflake",
+                    "3x3x3 with the 8 corners removed (19 kept)"),
+                   ('MOSELYL', "Mosely Snowflake (light)",
+                    "Corners and body centre removed (18 kept, "
+                    "hollow)"),
+                   ('CANTOR', "Cantor Dust",
+                    "Only the 8 corners kept: a cloud of separate "
+                    "cubes")],
             default='MENGER')
         level: IntProperty(
             name="Level", default=3, min=0, max=6,
@@ -241,7 +269,8 @@ if __name__ == "__main__":
     else:
         # cell counts follow the fractal's replication factor
         for kind, factor in (('MENGER', 20), ('VICSEK', 7),
-                             ('CARPET', 8)):
+                             ('CARPET', 8), ('MOSELY', 19),
+                             ('MOSELYL', 18), ('CANTOR', 8)):
             for lv in (1, 2, 3):
                 cells = sponge_cells(kind, lv)
                 ok = len(cells) == factor ** lv
@@ -249,7 +278,8 @@ if __name__ == "__main__":
                       f"({factor ** lv}) {'OK' if ok else 'BAD'}")
         # watertightness: every edge shared by exactly two faces
         from collections import Counter
-        for kind in ('MENGER', 'VICSEK', 'CARPET'):
+        for kind in ('MENGER', 'VICSEK', 'CARPET', 'MOSELY',
+                     'MOSELYL', 'CANTOR'):
             v, f = build_grid_sponge(kind, 2)
             cnt = Counter()
             for fc in f:
