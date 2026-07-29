@@ -919,21 +919,104 @@ def _over_tangents(cords, x, W, H, border, style, subdiv,
     return tan
 
 
-def _revert_spike_caps(left, right, orig, width, limit=1.8):
-    """Undo a flush end-cut that overshot into a spike.  The over-edge
-    flush cut (`isl._angle_cut_piece`) reprojects each cut cap onto the
-    over cord's edge line; at a SHALLOW oblique crossing (the medial
-    tilings have crossings well below 90 degrees) one rail can slide far
-    along the near-parallel edge, stretching the cap into a long spike.
-    Where the recut cap is longer than `limit` cord-widths -- i.e. much
-    longer than the clean ~width/sin(theta) flush cap of a well-conditioned
-    crossing -- restore that end's original (square-cut) rail points, so
-    the cord ends in a clean cap instead of a sliver."""
-    for idx in (0, -1):
-        lx, ly = left[idx]
-        rx, ry = right[idx]
-        if hypot(lx - rx, ly - ry) > limit * width:
-            left[idx], right[idx] = orig[idx]
+# Flush-cut robustness bounds (fractions of the cord width).  A flush cap
+# longer than this, or a rail sliding farther than this, or a cap reaching
+# farther than this along the over edge, is a spike and is rejected.
+_FLUSH_CAP_MAX = 1.5
+# Below this |sin theta| the under and over cords cross too near tangent
+# (e.g. the truncated-hexagonal tiling's ~30-degree crossings) for a flush
+# cut -- the clean ~width/sin(theta) cap would explode, so keep a square cap.
+_FLUSH_SIN_MIN = 0.70
+# A cut piece shorter than this many cord-widths sits on a tiling whose
+# crossings pack closer than the cord is wide (the triangular tiling, and
+# the short pieces of the snub-square tiling): the over cord it tucks under
+# is then too short to cover a reprojected cap, so the cap would poke past
+# it into the background.  Such pieces keep clean perpendicular caps.
+_FLUSH_PIECE_MIN = 3.0
+
+
+def _flush_cap_reproject(cap_l, cap_r, rail_dir, side_pt, X, t_o, n_o,
+                         h_o, gap, width, cap_max):
+    """Bounded flush reprojection of ONE under-band end cap onto the over
+    band's edge line (the tiling analogue of `isl._cut_cap_on_edge`, but
+    spike-proof).  Slides the two rail cap points along `rail_dir` onto the
+    over edge (half-width `h_o` about crossing `X`, tangent `t_o`, normal
+    `n_o`), and ACCEPTS the reprojection only when it is well-conditioned:
+    the cap parallel to the over edge, no longer than `cap_max`, neither
+    rail slid nor the cap reaching farther than `cap_max` along the over
+    edge from `X`, non-degenerate, and winding-preserving.  Otherwise it
+    returns the originals unchanged -- a clean perpendicular cap -- so a
+    near-tangent or over-reaching crossing can never stretch into a spike."""
+    sgn = 1.0 if ((side_pt[0] - X[0]) * n_o[0]
+                  + (side_pt[1] - X[1]) * n_o[1]) >= 0.0 else -1.0
+    qx = X[0] + sgn * (h_o + gap) * n_o[0]
+    qy = X[1] + sgn * (h_o + gap) * n_o[1]
+    q2 = (qx + t_o[0], qy + t_o[1])
+    nl = isl._line_line(cap_l, (cap_l[0] + rail_dir[0], cap_l[1] + rail_dir[1]),
+                        (qx, qy), q2)
+    nr = isl._line_line(cap_r, (cap_r[0] + rail_dir[0], cap_r[1] + rail_dir[1]),
+                        (qx, qy), q2)
+    if nl is None or nr is None:
+        return cap_l, cap_r                       # rails parallel to the edge
+    if (hypot(nl[0] - cap_l[0], nl[1] - cap_l[1]) > cap_max
+            or hypot(nr[0] - cap_r[0], nr[1] - cap_r[1]) > cap_max):
+        return cap_l, cap_r                       # a rail slid into a spike
+    clen = hypot(nr[0] - nl[0], nr[1] - nl[1])
+    if clen > cap_max or clen < 1e-9:
+        return cap_l, cap_r                       # cap too long or degenerate
+    for pt in (nl, nr):                           # cap must not overreach X
+        if abs((pt[0] - X[0]) * t_o[0]
+               + (pt[1] - X[1]) * t_o[1]) > cap_max:
+            return cap_l, cap_r
+    o = (cap_r[0] - cap_l[0], cap_r[1] - cap_l[1])
+    if (nr[0] - nl[0]) * o[0] + (nr[1] - nl[1]) * o[1] <= 0.0:
+        return cap_l, cap_r                       # winding would flip
+    return nl, nr
+
+
+def _tiling_flush_cut(left, right, sp, start_struct, end_struct, ugeo,
+                      h_o, gap, width, maxreach, cut_gate):
+    """FLAT-interlace under-cord end cut for the medial-tiling path, robust
+    at the tilings' acute / near-tangent crossings.  Like
+    `isl._angle_cut_piece` it slides each interlace-cut cap flush ALONG the
+    over cord's edge, but ONLY where the crossing is well-conditioned: the
+    two cords not near tangent (|sin theta| >= `_FLUSH_SIN_MIN`), the piece
+    long enough relative to the cord width (>= `_FLUSH_PIECE_MIN` widths, so
+    the over cord it tucks under is long enough to cover the cap), and the
+    reprojection itself bounded (see `_flush_cap_reproject`).  Every other
+    crossing keeps a clean perpendicular cap.  So HEX / SNUB-square / tri-
+    hexagonal keep their proper flush caps while the triangular and
+    truncated-hexagonal tilings' shallow / packed crossings never spike."""
+    if not ugeo or len(sp) < 2:
+        return
+    cap_max = _FLUSH_CAP_MAX * width
+    plen = 0.0
+    for i in range(1, len(sp)):
+        plen += hypot(sp[i][0] - sp[i - 1][0], sp[i][1] - sp[i - 1][1])
+    if plen < _FLUSH_PIECE_MIN * width:
+        return                                    # packed tiling: square caps
+    ends = [(0, sp[0], isl._unit(sp[1][0] - sp[0][0], sp[1][1] - sp[0][1]),
+             start_struct),
+            (-1, sp[-1], isl._unit(sp[-1][0] - sp[-2][0],
+                                   sp[-1][1] - sp[-2][1]), end_struct)]
+    for idx, P, rd, struct in ends:
+        best = None
+        for X, t_o, n_o in ugeo:
+            dd = hypot(P[0] - X[0], P[1] - X[1])
+            if best is None or dd < best[0]:
+                best = (dd, X, t_o, n_o)
+        if best is None:
+            continue
+        dd, X, t_o, n_o = best
+        if not struct and dd > cut_gate:
+            continue                              # genuine terminus: flat cap
+        if dd > maxreach:
+            continue
+        if abs(rd[0] * t_o[1] - rd[1] * t_o[0]) < _FLUSH_SIN_MIN:
+            continue                              # near tangent: square cap
+        nl, nr = _flush_cap_reproject(left[idx], right[idx], rd, P, X, t_o,
+                                      n_o, h_o, gap, width, cap_max)
+        left[idx], right[idx] = nl, nr
 
 
 def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
@@ -1035,12 +1118,18 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
                 # a closed cord has cuts at both ends of every sub-piece.
                 start_struct = closed or pj != 0
                 end_struct = closed or pj != npieces - 1
-                orig = {0: (left[0], right[0]), -1: (left[-1], right[-1])}
-                isl._angle_cut_piece(left, right, sp, start_struct,
-                                     end_struct, ugeo, h_o, gap,
-                                     maxreach, cut_gate)
                 if oblique_caps:
-                    _revert_spike_caps(left, right, orig, width)
+                    # medial-tiling path: cut flush along the over cord, but
+                    # spike-proof at the tilings' acute / packed crossings
+                    # (near-tangent or short-piece crossings keep a clean
+                    # perpendicular cap; see `_tiling_flush_cut`).
+                    _tiling_flush_cut(left, right, sp, start_struct,
+                                      end_struct, ugeo, h_o, gap, width,
+                                      maxreach, cut_gate)
+                else:
+                    isl._angle_cut_piece(left, right, sp, start_struct,
+                                         end_struct, ugeo, h_o, gap,
+                                         maxreach, cut_gate)
             cv, cf = isl.band_ribbon_faces(left, right, sp_closed, height)
             if cf:
                 sub_cells.append((cv, cf, [matof(0)] * len(cf)))
@@ -2671,18 +2760,24 @@ def _check_historical_preset(name, W, H):
     return (p and c and alt and one and n >= 1 and faces > 0 and finite), n
 
 
-def _check_tiling_flush_cut(substrate, nx=5, ny=5, trim=True):
-    """The FLAT-interlace under-cord endcap on a medial tiling is cut
-    parallel to (flush along) the over-cord's edge.  For every under-
-    crossing whose over-cord tangent is known, the reprojected cap segment
-    (the pair of rail cap points on the cut end) must run parallel to that
-    over tangent -- validating the oblique 60/120-degree tiling cut, for
-    ANGULAR as well as SMOOTH cords."""
+def _check_tiling_flush_cut(substrate, style='ANGULAR', nx=5, ny=5,
+                            trim=True):
+    """The FLAT-interlace under-cord endcaps on a medial tiling are SPIKE-
+    FREE and non-degenerate at the tilings' acute / packed crossings, for
+    ANGULAR as well as SMOOTH cords.  Reproduces the exact build pipeline
+    (`_tiling_flush_cut`) and, for every under-cord piece end, asserts:
+      * no cap exceeds the length bound `_FLUSH_CAP_MAX` cord-widths (a
+        longer cap would be a spike),
+      * neither rail slid farther than that bound (no forward spike),
+      * the reprojected cap runs the SAME winding as its square terminus
+        (no flipped end face) and the end face has non-zero area.
+    Returns (ok, checked, worst_cap_ratio) where worst_cap_ratio is the
+    largest cap-length / cord-width seen -- which must stay under the
+    bound."""
     coords, rings = _tiling_patch(substrate, nx, ny, trim)
     topo = _tiling_topology(coords, rings)
     cords = _tiling_trace_cords(topo, set())
     x = _tiling_solve_over(cords)
-    style = 'ANGULAR'
     subdiv = 8
     over_tan = _tiling_over_tangents(cords, x, style, subdiv)
     width = max(0.02, 0.25 * 1.2)
@@ -2692,13 +2787,23 @@ def _check_tiling_flush_cut(substrate, nx=5, ny=5, trim=True):
     gap = 0.5 * margin
     maxreach = 3.0 * width
     cut_gate = 1.5 * half
+    bound = _FLUSH_CAP_MAX * width + 1e-9
+
     checked = 0
-    parallel = True
+    ok = True
     worst = 0.0
     for rec in cords:
         control, cross, closed = _tiling_render_piece(rec, x)
-        path = control
-        under = [(k, pos) for k, sg, pos in cross if sg < 0]
+        if len(control) < 2:
+            continue
+        smoothed = (style == 'SMOOTH' and len(control) >= 3 and subdiv >= 2)
+        step = subdiv if smoothed else 1
+        if style == 'SMOOTH':
+            path = _smooth_path(control, closed, subdiv, 'ROUNDED', 0.5,
+                                _reflect_indices(len(control), cross))
+        else:
+            path = control
+        under = [(k * step, pos) for k, sg, pos in cross if sg < 0]
         if not under:
             continue
         s, total = isl._arclen(path, closed)
@@ -2711,41 +2816,38 @@ def _check_tiling_flush_cut(substrate, nx=5, ny=5, trim=True):
                 ugeo.append((path[k], t_o, (-t_o[1], t_o[0])))
         if not ugeo:
             continue
-        for sp, sp_closed in pieces:
+        npieces = len(pieces)
+        for pj, (sp, sp_closed) in enumerate(pieces):
             if len(sp) < 2:
                 continue
             left, right = isl.miter_ribbon(sp, width, sp_closed)
             orig = {0: (left[0], right[0]), -1: (left[-1], right[-1])}
-            isl._angle_cut_piece(left, right, sp, True, True, ugeo, h_o,
-                                 gap, maxreach, cut_gate)
-            _revert_spike_caps(left, right, orig, width)
-            # each end cap: no cap is a spike, and every cap that was cut
-            # flush (moved from its square terminus) is parallel to the
-            # nearest over-crossing tangent.
+            start_struct = closed or pj != 0
+            end_struct = closed or pj != npieces - 1
+            _tiling_flush_cut(left, right, sp, start_struct, end_struct,
+                              ugeo, h_o, gap, width, maxreach, cut_gate)
             for idx in (0, -1):
                 cap = (right[idx][0] - left[idx][0],
                        right[idx][1] - left[idx][1])
                 clen = hypot(cap[0], cap[1])
-                if clen > 1.8 * width + 1e-9:
-                    parallel = False          # spike survived
-                if clen < 1e-9:
-                    continue
-                moved = (hypot(left[idx][0] - orig[idx][0][0],
-                               left[idx][1] - orig[idx][0][1]) > 1e-9
-                         or hypot(right[idx][0] - orig[idx][1][0],
-                                  right[idx][1] - orig[idx][1][1]) > 1e-9)
-                if not moved:
-                    continue                  # clean square/perp cap
-                P = sp[idx]
-                best = min(ugeo, key=lambda g: hypot(P[0] - g[0][0],
-                                                     P[1] - g[0][1]))
-                t_o = best[1]
-                cx = abs((cap[0] / clen) * t_o[1] - (cap[1] / clen) * t_o[0])
-                worst = max(worst, cx)
+                worst = max(worst, clen / width)
+                if clen > bound:
+                    ok = False                    # cap spike
+                if clen < 0.5 * width:
+                    ok = False                    # collapsed/degenerate cap
+                lo = orig[idx]
+                dl = hypot(left[idx][0] - lo[0][0], left[idx][1] - lo[0][1])
+                dr = hypot(right[idx][0] - lo[1][0], right[idx][1] - lo[1][1])
+                if dl > bound or dr > bound:
+                    ok = False                    # rail slid into a spike
+                # the cap segment keeps the winding of its square terminus
+                # (no end-to-end flipped cap)
+                oc = (orig[idx][1][0] - orig[idx][0][0],
+                      orig[idx][1][1] - orig[idx][0][1])
+                if cap[0] * oc[0] + cap[1] * oc[1] <= 0.0:
+                    ok = False
                 checked += 1
-                if cx > 0.02:              # ~1.1 degree tolerance
-                    parallel = False
-    return parallel and checked > 0, checked, worst
+    return ok and checked > 0, checked, worst
 
 
 if __name__ == "__main__":
@@ -2950,14 +3052,18 @@ if __name__ == "__main__":
         print("preset %-12s %dx%d : valid closed-cord knot=%s cords=%d"
               % (name, W, H, good, n))
 
-    # 13. FLAT-interlace flush cut on the medial tilings (ANGULAR): the
-    # under-cord endcaps run parallel to the over-cord's edge at the
-    # oblique 60/120-degree crossings
-    print("-- tiling angular flush-cut --")
-    for sub in ('TRIHEX', 'HEX', 'TRIANGLE'):
-        good, nchk, worst = _check_tiling_flush_cut(sub)
-        ok = ok and good
-        print("flush-cut %-11s ANGULAR : caps-parallel=%s checked=%d "
-              "worst_sin=%.4f" % (sub, good, nchk, worst))
+    # 13. FLAT-interlace flush cut on the medial tilings is SPIKE-FREE at
+    # the tilings' acute / packed crossings, for ANGULAR and SMOOTH: no
+    # under-cord endcap exceeds the length bound and every cap is non-
+    # degenerate with consistent winding.  The worst cap-length / cord-
+    # width ratio per substrate must stay under the bound.
+    print("-- tiling flush-cut (spike-free, both styles) --")
+    print("   bound = %.2f x width" % _FLUSH_CAP_MAX)
+    for sub in ('TRIANGLE', 'HEX', 'SNUBSQUARE', 'TRIHEX', 'TRUNCHEX'):
+        for style in ('ANGULAR', 'SMOOTH'):
+            good, nchk, worst = _check_tiling_flush_cut(sub, style)
+            ok = ok and good
+            print("flush-cut %-11s %-8s : no-spike=%s checked=%d "
+                  "worst_cap/width=%.4f" % (sub, style, good, nchk, worst))
 
     print("RESULT:", "OK" if ok else "BAD")

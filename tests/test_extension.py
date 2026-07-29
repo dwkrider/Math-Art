@@ -511,6 +511,14 @@ OPS = [
      lambda: bpy.ops.mesh.celtic_knot_2d_add(
          substrate='TRIHEX', grid_w=5, grid_h=5, trim=True,
          style='ANGULAR', interlace=True, interlace_mode='FLAT')),
+    ("celtic triangle smooth flat",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         substrate='TRIANGLE', grid_w=5, grid_h=5, trim=True,
+         style='SMOOTH', interlace=True, interlace_mode='FLAT')),
+    ("celtic trunchex smooth flat",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         substrate='TRUNCHEX', grid_w=5, grid_h=5, trim=True,
+         style='SMOOTH', interlace=True, interlace_mode='FLAT')),
     ("knot carpet square flat", lambda: bpy.ops.mesh.knot_carpet_add(
         lattice='SQUARE', symmetry=4, nx=3, ny=3,
         interlace_mode='FLAT', color_by='LOOP')),
