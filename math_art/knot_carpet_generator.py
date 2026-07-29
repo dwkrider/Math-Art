@@ -475,6 +475,19 @@ except ImportError:
 
 if _IN_BLENDER:
 
+    def _shade_smooth(obj):
+        """Smooth-shade a tube object (or every mesh child, when the
+        loops are separated) so the round rope reads as curved rather
+        than faceted."""
+        if obj is None:
+            return
+        if obj.type == 'MESH':
+            for p in obj.data.polygons:
+                p.use_smooth = True
+            obj.data.update()
+        for child in obj.children:
+            _shade_smooth(child)
+
     def _emit_curve(context, name, paths, span=2.0, operator=None):
         """Build a curve object whose cyclic POLY splines are the loop
         centerlines, centered and scaled to the span cube."""
@@ -640,6 +653,8 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, "no carpet generated")
                 return {'CANCELLED'}
             obj["math_art_pattern"] = True
+            if self.output == 'TUBE':
+                _shade_smooth(obj)
             n_loops = len(cells) - (1 if self.backing else 0)
             if obj.type == 'MESH':
                 self.report({'INFO'}, "%s %dx%d  %d loops  V=%d F=%d"
