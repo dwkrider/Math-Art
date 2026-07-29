@@ -456,6 +456,10 @@ OPS = [
          grid_w=5, grid_h=5, barriers='PROCEDURAL', wall_spacing=2,
          interlace=True, interlace_mode='WOVEN', weave_height=0.1,
          height=0.05)),
+    ("celtic borderless tileable",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         grid_w=6, grid_h=6, border=False, barriers='PROCEDURAL',
+         wall_spacing=2, color_by='LOOP')),
     ("hyp uniform t73", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
         form='TRUNCATED', p=7, q=3, model='POINCARE')),
     ("hyp uniform r54 klein",

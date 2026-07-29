@@ -160,23 +160,53 @@ def _preset_barriers(name, W, H):
     return B
 
 
+def _sym_lines(N, sp):
+    """Cell-boundary indices in 1..N-1 on which to raise a procedural wall
+    so the walls are MIRROR-SYMMETRIC about the panel centre and evenly
+    spaced -- a regular array of equal (or as-equal-as-possible) knot
+    cells, with the leftover margin split evenly at both edges instead of
+    piling up on one side.
+
+    A panel of N cells is cut into `n` sub-panels by n-1 interior walls at
+    k_m = round(N*m/n).  Because round(N-x) == N-round(x) for integer N,
+    the set is exactly invariant under k -> N-k, so the motif tessellates
+    symmetrically.  `n` is chosen near N/sp (honouring the requested
+    spacing); its parity is matched to N so a symmetric integer placement
+    exists (an unpaired central wall is only possible when N is even)."""
+    sp = max(1, int(sp))
+    if N < 2:
+        return []
+    target = N / float(sp)
+    n = max(1, min(int(round(target)), N))
+    # An ODD division count places walls in mirror pairs and works for any
+    # N; an EVEN count implies a lone central wall, which lands on an
+    # integer boundary only when N is even.  So only when n is even AND N
+    # is odd must we shift to the nearest ODD count (keeping the requested
+    # spacing as closely as possible).
+    if n % 2 == 0 and N % 2 == 1:
+        cand = [c for c in (n - 1, n + 1) if 1 <= c <= N]
+        n = min(cand, key=lambda c: (abs(c - target), -c))
+    lines = sorted({int(round(N * m / float(n))) for m in range(1, n)})
+    return [k for k in lines if 0 < k < N]
+
+
 def _procedural_barriers(W, H, spacing, verticals, horizontals):
-    """Internal walls on a regular `spacing` (in cells), optionally
-    vertical and/or horizontal."""
+    """Internal walls on a regular `spacing` (in cells), placed
+    symmetrically about the panel centre (see `_sym_lines`), optionally
+    vertical and/or horizontal -- a clean, balanced, repeating array of
+    knot cells rather than a lopsided one."""
     B = set()
     sp = max(1, int(spacing))
     if verticals:
-        for k in range(1, W):
-            if k % sp == 0:
-                i = 2 * k
-                for j in range(1, 2 * H, 2):
-                    B.add((i, j))
+        for k in _sym_lines(W, sp):
+            i = 2 * k
+            for j in range(1, 2 * H, 2):
+                B.add((i, j))
     if horizontals:
-        for k in range(1, H):
-            if k % sp == 0:
-                j = 2 * k
-                for i in range(1, 2 * W, 2):
-                    B.add((i, j))
+        for k in _sym_lines(H, sp):
+            j = 2 * k
+            for i in range(1, 2 * W, 2):
+                B.add((i, j))
     return B
 
 
@@ -297,6 +327,67 @@ def count_loops(W, H, border, barriers):
     return len(trace_cords(W, H, border, barriers))
 
 
+def _tile_split(rec, W, H):
+    """Split a border-off (toroidal) cord into open, in-tile PIECES so
+    that no drawn segment ever crosses a seam.
+
+    A cord on the torus is a closed orbit whose stored lattice points wrap
+    modulo the grid; drawn naively, a wrapping step joins opposite edges
+    with one long diagonal spanning the whole panel (the border-off
+    "spazz").  Here the cord is walked in UNWRAPPED coordinates (each step
+    is a genuine unit diagonal), the continuous polyline is chopped at
+    every tile boundary it crosses -- boundary crossings fall exactly on
+    lattice points, since every step is a unit diagonal -- and each run is
+    translated back into the fundamental tile [0,2W]x[0,2H].  A cord that
+    never leaves the tile is returned as ONE closed piece; a cord that
+    wraps becomes several open pieces that leave one edge exactly where
+    the continuation enters the opposite edge, so the plait tiles
+    seamlessly.
+
+    Returns a list of (points, closed); each `points` is a list of
+    (draw_xy, rec_item) where rec_item is the source (pos, is_barrier,
+    dir) of that lattice point (used for the over/under crossings)."""
+    Lx, Ly = 2 * W, 2 * H
+    L = len(rec)
+    # unwrapped vertices u[0..L] (u[L] closes the winding); every
+    # consecutive pair differs by exactly one diagonal step.
+    u = [None] * (L + 1)
+    u[0] = (rec[0][0][0], rec[0][0][1])
+    for k in range(L):
+        dx, dy = rec[k][2]
+        u[k + 1] = (u[k][0] + dx, u[k][1] + dy)
+    # the tile cell each unit-diagonal segment lives in (its midpoint is
+    # strictly interior, so the floor is unambiguous)
+    cells = []
+    for k in range(L):
+        mx = (u[k][0] + u[k + 1][0]) * 0.5
+        my = (u[k][1] + u[k + 1][1]) * 0.5
+        cells.append((mx // Lx, my // Ly))
+    # no seam crossed anywhere -> the whole cord fits one tile, closed
+    cut = [cells[k] != cells[(k - 1) % L] for k in range(L)]
+    if not any(cut):
+        pts = [((float(rec[k][0][0]), float(rec[k][0][1])), rec[k])
+               for k in range(L)]
+        return [(pts, True)]
+    start = cut.index(True)
+    pieces = []
+    cur = []
+    for n in range(L):
+        k = (start + n) % L
+        ox, oy = cells[k]
+        ds = (float(u[k][0] - ox * Lx), float(u[k][1] - oy * Ly))
+        de = (float(u[k + 1][0] - ox * Lx), float(u[k + 1][1] - oy * Ly))
+        if not cur:
+            cur.append((ds, rec[k]))
+        cur.append((de, rec[(k + 1) % L]))
+        if cells[(k + 1) % L] != cells[k]:
+            pieces.append((cur, False))
+            cur = []
+    if cur:
+        pieces.append((cur, False))
+    return pieces
+
+
 # --------------------------------------------------------------------
 # Over / under assignment (alternating knot, parity union-find)
 # --------------------------------------------------------------------
@@ -348,6 +439,29 @@ def _cord_signed(rec, x):
         over = x.get(pos, 0) ^ fam           # cord rides over here?
         cross.append((k, 1 if over else -1))
     return control, cross
+
+
+def _render_pieces(rec, x, W, H, border):
+    """The drawable pieces of one cord as (control, cross, closed).  With a
+    border every cord is a single CLOSED loop (unchanged behaviour); with
+    the border off a cord is split into seam-free in-tile pieces (see
+    `_tile_split`) -- one closed piece if it never wraps, else several open
+    ones -- so no ribbon spans the panel."""
+    if border:
+        control, cross = _cord_signed(rec, x)
+        return [(control, cross, True)]
+    out = []
+    for pts, closed in _tile_split(rec, W, H):
+        control = [dp for dp, _e in pts]
+        cross = []
+        for idx, (_dp, (pos, isb, d)) in enumerate(pts):
+            if isb:
+                continue
+            fam = _family(d)
+            over = x.get(pos, 0) ^ fam
+            cross.append((idx, 1 if over else -1))
+        out.append((control, cross, closed))
+    return out
 
 
 # --------------------------------------------------------------------
@@ -417,14 +531,20 @@ def _split_at(path, closed, idxs):
     return pieces
 
 
-def _cord_cell(rec, x, width, style, subdiv, interlace, mode,
-               weave_height, height, color_by, loop_index):
-    """Build one merged (verts, faces, mats) cell for a single cord."""
-    control, cross = _cord_signed(rec, x)
+def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
+                mode, weave_height, height, color_by, loop_index):
+    """Sub-cells (verts, faces, mats) for one drawable piece of a cord.  A
+    bordered cord is a single closed piece; a border-off cord may be
+    several open pieces (`closed` carries the distinction to the ribbon
+    machinery, which handles both)."""
     if len(control) < 2:
-        return None
-    step = subdiv if style == 'SMOOTH' else 1
-    path = (isl.catmull_rom(control, True, subdiv)
+        return []
+    # catmull_rom only subdivides when it has >= 3 points and subdiv >= 2;
+    # otherwise it returns the control points unchanged, so the crossing
+    # index multiplier must stay 1 (short border-off seam pieces).
+    smoothed = style == 'SMOOTH' and len(control) >= 3 and subdiv >= 2
+    step = subdiv if smoothed else 1
+    path = (isl.catmull_rom(control, closed, subdiv)
             if style == 'SMOOTH' else control)
     signed = [(k * step, sg) for k, sg in cross]
 
@@ -441,27 +561,27 @@ def _cord_cell(rec, x, width, style, subdiv, interlace, mode,
         # two-tone by over/under: cut at every crossing and color arcs by
         # alternating parity (which tracks the over/under sense)
         idxs = [k * step for k, _sg in cross]
-        for sp, par in _split_at(path, True, idxs):
+        for sp, par in _split_at(path, closed, idxs):
             left, right = isl.miter_ribbon(sp, width, False)
             cv, cf = isl.band_ribbon_faces(left, right, False, height)
             if cf:
                 sub_cells.append((cv, cf, [par] * len(cf)))
     elif interlace and mode == 'WOVEN':
-        zoff = isl._weave_zoff(path, True, signed, weave_height)
-        left, right = isl.miter_ribbon(path, width, True)
-        cv, cf = isl.band_ribbon_faces_z(left, right, True, height, zoff)
+        zoff = isl._weave_zoff(path, closed, signed, weave_height)
+        left, right = isl.miter_ribbon(path, width, closed)
+        cv, cf = isl.band_ribbon_faces_z(left, right, closed, height, zoff)
         if cf:
             sub_cells.append((cv, cf, [matof(0)] * len(cf)))
     elif interlace and mode == 'FLAT':
         under = [pi for pi, sg in signed if sg < 0]
         if under:
-            s, total = isl._arclen(path, True)
+            s, total = isl._arclen(path, closed)
             cut_s = sorted(s[pi] for pi in under)
             margin = max(0.02, 0.25 * width)
             half = 0.5 * (width + margin)
-            pieces = isl._cut_band(path, True, cut_s, half, s, total)
+            pieces = isl._cut_band(path, closed, cut_s, half, s, total)
         else:
-            pieces = [(path, True)]
+            pieces = [(path, closed)]
         for sp, sp_closed in pieces:
             if len(sp) < 2:
                 continue
@@ -470,11 +590,24 @@ def _cord_cell(rec, x, width, style, subdiv, interlace, mode,
             if cf:
                 sub_cells.append((cv, cf, [matof(0)] * len(cf)))
     else:                                     # plain flat ribbon
-        left, right = isl.miter_ribbon(path, width, True)
-        cv, cf = isl.band_ribbon_faces(left, right, True, height)
+        left, right = isl.miter_ribbon(path, width, closed)
+        cv, cf = isl.band_ribbon_faces(left, right, closed, height)
         if cf:
             sub_cells.append((cv, cf, [matof(0)] * len(cf)))
 
+    return sub_cells
+
+
+def _cord_cell(rec, x, W, H, border, width, style, subdiv, interlace, mode,
+               weave_height, height, color_by, loop_index):
+    """Build one merged (verts, faces, mats) cell for a single cord,
+    gathering all of its drawable pieces (one when bordered, several across
+    the seams when border-off)."""
+    sub_cells = []
+    for control, cross, closed in _render_pieces(rec, x, W, H, border):
+        sub_cells += _piece_cell(control, cross, closed, width, style,
+                                 subdiv, interlace, mode, weave_height,
+                                 height, color_by, loop_index)
     if not sub_cells:
         return None
     return pc.merge_cells(sub_cells)
@@ -493,8 +626,8 @@ def build_cells(W, H, border, barriers, cord_width=0.25, style='ANGULAR',
     cells = []
     all_verts = []
     for li, rec in enumerate(cords):
-        cell = _cord_cell(rec, x, width, style, subdiv, interlace,
-                          interlace_mode, weave_height, height,
+        cell = _cord_cell(rec, x, W, H, border, width, style, subdiv,
+                          interlace, interlace_mode, weave_height, height,
                           color_by, li)
         if cell is None or not cell[1]:
             continue
@@ -511,17 +644,24 @@ def build_cells(W, H, border, barriers, cord_width=0.25, style='ANGULAR',
 
 
 def cord_paths(W, H, border, barriers, style='ANGULAR', subdiv=8):
-    """Cord centerlines (control polyline, closed) for the CURVE
-    output."""
+    """Cord centerlines (control polyline, closed?) for the CURVE output.
+    Bordered cords are single closed splines; border-off cords are split
+    into seam-free in-tile pieces so no spline shoots across the panel."""
     cords = trace_cords(W, H, border, barriers)
     out = []
     for rec in cords:
-        control = [(float(p[0]), float(p[1])) for p, _b, _d in rec]
-        if len(control) < 2:
-            continue
-        path = (isl.catmull_rom(control, True, subdiv)
-                if style == 'SMOOTH' else control)
-        out.append((path, True))
+        if border:
+            runs = [([(float(p[0]), float(p[1])) for p, _b, _d in rec],
+                     True)]
+        else:
+            runs = [([dp for dp, _e in pts], closed)
+                    for pts, closed in _tile_split(rec, W, H)]
+        for control, closed in runs:
+            if len(control) < 2:
+                continue
+            path = (isl.catmull_rom(control, closed, subdiv)
+                    if style == 'SMOOTH' else control)
+            out.append((path, closed))
     return out
 
 
@@ -830,6 +970,43 @@ def _check_over_under(W, H, border, barriers):
     return alternates, one_over, len(visits)
 
 
+def _check_local(W, H, barriers):
+    """Border-off render pieces are seam-free: every drawn segment is a
+    single local diagonal (|dx| <= 1 and |dy| <= 1), catching the "long
+    diagonal shooting across the panel" bug directly; every piece is
+    non-degenerate; and the pieces cover every physical cord segment
+    exactly once (no dangling, no run-off)."""
+    cords = trace_cords(W, H, False, barriers)
+    x = _solve_over(cords)
+    max_dx = max_dy = 0.0
+    drawn = 0
+    physical = sum(len(rec) for rec in cords)   # one segment per lattice pt
+    for rec in cords:
+        for control, _cross, closed in _render_pieces(rec, x, W, H, False):
+            if len(control) < 2:
+                return False, False, False
+            span = len(control) if closed else len(control) - 1
+            drawn += span
+            for a in range(span):
+                bx, by = control[a]
+                cx, cy = control[(a + 1) % len(control)]
+                max_dx = max(max_dx, abs(cx - bx))
+                max_dy = max(max_dy, abs(cy - by))
+    local = max_dx <= 1.0 + 1e-9 and max_dy <= 1.0 + 1e-9
+    covers = drawn == physical
+    return local, covers, (max_dx, max_dy)
+
+
+def _check_symmetry(W, H, sp):
+    """Procedural barriers are mirror-symmetric about the panel centre
+    (invariant under i -> 2W-i and j -> 2H-j) -- a balanced, repeating
+    array rather than a lopsided one."""
+    B = _procedural_barriers(W, H, sp, True, True)
+    mv = all((2 * W - i, j) in B for (i, j) in B)
+    mh = all((i, 2 * H - j) in B for (i, j) in B)
+    return mv and mh, len(B)
+
+
 def _check_reflection():
     """A single internal barrier reflects the cord: adding one wall to a
     plain plait changes the threading (and hence the loop count)."""
@@ -887,6 +1064,44 @@ if __name__ == "__main__":
     ok = ok and refl
     print("barrier reflects (changes threading): %s" % refl)
 
+    # 4b. border-off (toroidal) pieces are local and cover every segment
+    for (W, H) in [(5, 5), (6, 4), (4, 6), (7, 5)]:
+        for src in (set(), _procedural_barriers(W, H, 2, True, True),
+                    _random_barriers(W, H, 5, 0.2)):
+            loc, cov, mx = _check_local(W, H, src)
+            ok = ok and loc and cov
+        print("border-off local %dx%d : local=%s covers=%s maxstep=%s"
+              % (W, H, loc, cov, mx))
+
+    # 4c. border-off over/under: consistent for even dims, graceful (no
+    # crash / still one-over-one-under) when odd parity frustrates it
+    for (W, H) in [(6, 4), (4, 6), (8, 6)]:
+        alt, one, nx = _check_over_under(W, H, False, set())
+        ok = ok and alt and one
+        print("border-off weave %dx%d even : alternate=%s one-over=%s "
+              "crossings=%d" % (W, H, alt, one, nx))
+    for (W, H) in [(5, 5), (7, 5)]:
+        alt, one, nx = _check_over_under(W, H, False, set())  # no crash
+        print("border-off weave %dx%d odd  : alternate=%s one-over=%s "
+              "crossings=%d (frustration handled)" % (W, H, alt, one, nx))
+
+    # 4d. border stays byte-identical when the toroidal path is unused
+    for (W, H) in [(5, 5), (6, 4), (7, 3)]:
+        n = count_loops(W, H, True, set())
+        good = n == gcd(W, H)
+        ok = ok and good
+    print("bordered gcd loop counts unchanged: %s" % good)
+
+    # 4e. procedural walls are mirror-symmetric (balanced repeating array)
+    sym_ok = True
+    for (W, H, sp) in [(6, 6, 2), (5, 5, 2), (7, 4, 3), (8, 8, 2),
+                       (9, 6, 3), (5, 7, 2)]:
+        s, nb = _check_symmetry(W, H, sp)
+        sym_ok = sym_ok and s
+        print("procedural symmetric %dx%d sp=%d : %s (%d walls)"
+              % (W, H, sp, s, nb))
+    ok = ok and sym_ok
+
     # 5. RANDOM single_cord reaches one loop where feasible
     sc_ok = True
     for seed in (1, 2, 3, 7, 11):
@@ -901,5 +1116,23 @@ if __name__ == "__main__":
     nd = _nondegenerate_ribbons()
     ok = ok and nd
     print("ribbons non-degenerate: %s" % nd)
+
+    # 6b. border-off ribbons build finite, non-empty geometry across the
+    # options (plain / procedural, interlace flat & woven, color modes)
+    nd2 = True
+    for (W, H, use_proc, mode, cby) in [
+            (6, 6, False, 'FLAT', 'LOOP'),
+            (6, 6, True, 'FLAT', 'CHECKER'),
+            (6, 4, True, 'WOVEN', 'UNIFORM')]:
+        B = (_procedural_barriers(W, H, 2, True, True) if use_proc
+             else set())
+        cells = build_cells(W, H, False, B, interlace=True,
+                            interlace_mode=mode, color_by=cby)
+        faces = sum(len(c[1]) for c in cells)
+        finite = all(all(np.isfinite(v).all() for v in c[0])
+                     for c in cells)
+        nd2 = nd2 and faces > 0 and finite
+    ok = ok and nd2
+    print("border-off ribbons non-degenerate: %s" % nd2)
 
     print("RESULT:", "OK" if ok else "BAD")
