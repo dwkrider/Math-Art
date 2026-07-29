@@ -161,16 +161,20 @@ def _triangle_patch(iterations):
 # cell placed at each of the N**k length-k strings forms a polyomino
 # that -- because b carries a rotation -- crinkles toward a fractal
 # reptile as k grows.  N copies compound into a b-times-larger replica
-# (self-similar).  Cells are coloured by their leading (top-level)
-# digit, so the N-fold substitution reads directly, as in Fathauer's
-# figures.
+# (self-similar).  Every cell is the same size, so there is no "shrinking
+# generation" to colour by; instead cells are coloured by their two most
+# significant digits (d0, d1) -> the N-fold substitution nested one level
+# deep (N^2 classes), so the recursive structure reads directly, as in
+# Fathauer's figures.
 # --------------------------------------------------------------------
 
 _UNIT = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
 
 
 def _base_reptile(b, digits, iterations):
-    """(polys, types) for the rep-N reptile of Gaussian base b."""
+    """(polys, types) for the rep-N reptile of Gaussian base b.  The
+    colour index encodes the top two substitution digits (d0*N + d1) so
+    both the outer N copies and the next level of nesting are visible."""
     cells = [(complex(0.0, 0.0), 0)]      # (position, colour)
     n = len(digits)
     for lvl in range(int(iterations)):
@@ -179,7 +183,13 @@ def _base_reptile(b, digits, iterations):
         nxt = []
         for p, col in cells:
             for di, d in enumerate(digits):
-                nxt.append((p * b + d, di if lvl == 0 else col))
+                if lvl == 0:              # most significant digit
+                    ncol = di
+                elif lvl == 1:            # fold in the 2nd digit
+                    ncol = col * n + di
+                else:                     # deeper digits don't recolour
+                    ncol = col
+                nxt.append((p * b + d, ncol))
         cells = nxt
     polys, types = [], []
     for p, col in cells:
@@ -274,8 +284,11 @@ if _IN_BLENDER:
         color_by: EnumProperty(
             name="Color By",
             items=[('TYPE', "By Level",
-                    "Material per generation, revealing the shrinking "
-                    "levels toward the fractal boundary"),
+                    "Right-triangle: a material per generation, "
+                    "revealing the shrinking levels toward the fractal "
+                    "boundary. Reptiles (twindragon, rep-5): a material "
+                    "per pair of top substitution digits, showing the "
+                    "outer copies and their nested sub-copies"),
                    ('UNIFORM', "Uniform", "A single material")],
             default='TYPE')
         margin: FloatProperty(
