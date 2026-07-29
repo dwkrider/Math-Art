@@ -417,6 +417,40 @@ _SQUARE_GROUPS = ('NONE', 'C2', 'C4', 'D2', 'D4')
 _HEX_GROUPS = ('NONE', 'C3', 'C6', 'D3', 'D6')
 _SNUB_GROUPS = ('NONE', 'C2', 'C4')
 
+# --------------------------------------------------------------------
+# Full substrate list (shared canonical tilings + the square grid)
+# --------------------------------------------------------------------
+#
+# The Celtic knot lives on the square GRID (default) or on the medial
+# graph of ANY canonical uniform tiling.  The legacy substrate keys
+# (TRIANGLE, SNUBSQUARE and the shared-name HEX / TRIHEX / TRUNCHEX) are
+# kept verbatim so existing files and outputs are unchanged; every other
+# canonical tiling from `tg.TILING_ITEMS` -- the rest of the Archimedean
+# family AND all eight Laves duals -- is appended as an additional
+# medial-knot substrate, drawn from the same shared source the Islamic
+# and Knot Carpet generators use.
+_CELTIC_SUBSTRATE_ITEMS = [
+    ('SQUARE', "Square Grid",
+     "The classic grid plait (the mirror-curve billiard)"),
+    ('TRIANGLE', "Triangular (3.3.3.3.3.3)",
+     "Medial knot on the triangular tiling"),
+    ('HEX', "Hexagonal (6.6.6)",
+     "Medial knot on the hexagonal tiling"),
+    ('SNUBSQUARE', "Snub Square (3.3.4.3.4)",
+     "Medial knot on the snub-square Archimedean tiling"),
+    ('TRIHEX', "Trihexagonal (3.6.3.6)",
+     "Medial knot on the trihexagonal Archimedean tiling"),
+    ('TRUNCHEX', "Truncated Hexagonal (3.12.12)",
+     "Medial knot on the truncated-hexagonal tiling"),
+]
+# keys already represented above (TRI / SNUBSQ are the canonical names of
+# the legacy TRIANGLE / SNUBSQUARE aliases, so they are not duplicated)
+_CELTIC_HAVE = {k for k, _l, _d in _CELTIC_SUBSTRATE_ITEMS} | {'TRI', 'SNUBSQ'}
+for _ck, _clbl, _cdesc in tg.TILING_ITEMS:
+    if _ck not in _CELTIC_HAVE:
+        _CELTIC_SUBSTRATE_ITEMS.append(
+            (_ck, _clbl, "Medial knot on the %s tiling" % _clbl))
+
 # group name -> (rotation order n, has mirrors)
 _GROUP_SPEC = {'C2': (2, False), 'C3': (3, False), 'C4': (4, False),
                'C6': (6, False), 'D2': (2, True), 'D3': (3, True),
@@ -1368,10 +1402,21 @@ def resolve_barriers(source, W, H, border, preset='PLAIN', wall_spacing=2,
 # every corner-segment into closed cords -- exactly the square grid's
 # invariant, on an arbitrary graph.
 
+# Celtic substrate key -> canonical tiling_generator key.  The legacy
+# Celtic names (TRIANGLE, SNUBSQUARE) are kept as aliases so old files and
+# scripts still resolve; every canonical key from `tg.TILING_ITEMS`
+# (regular, Archimedean AND the Laves duals) is also accepted directly, so
+# the medial-graph knot can be drawn on the FULL shared substrate set.
 _SUBSTRATE_TG = {
+    # legacy Celtic aliases (unchanged targets -- existing outputs intact)
     'TRIANGLE': 'TRI', 'HEX': 'HEX', 'SNUBSQUARE': 'SNUBSQ',
     'TRIHEX': 'TRIHEX', 'TRUNCHEX': 'TRUNCHEX',
 }
+# accept every canonical tiling key by identity (adds the tilings the
+# Celtic knot did not previously offer -- Laves duals included)
+for _k, _lbl, _desc in tg.TILING_ITEMS:
+    if _k != 'SQUARE':                      # SQUARE stays the grid path
+        _SUBSTRATE_TG.setdefault(_k, _k)
 
 
 def _poly_ccw(coords, ring):
@@ -1395,7 +1440,7 @@ def _tiling_patch(substrate, nx, ny, trim, pad=2):
     no polygon is cut and the medial knot stays a set of closed loops."""
     name = _SUBSTRATE_TG[substrate]
     if trim:
-        polys = [p for p, _ in tg._base_iter(name, nx + pad, ny + pad)]
+        polys = tg.substrate_faces(name, nx + pad, ny + pad)
         rect = tg._trim_rect(polys, nx, ny, pad)
         x0, y0, x1, y1 = rect
         kept = [p for p in polys
@@ -1403,7 +1448,7 @@ def _tiling_patch(substrate, nx, ny, trim, pad=2):
                 and y0 <= float(np.asarray(p, float).mean(axis=0)[1]) <= y1]
         polys = kept if kept else polys
     else:
-        polys = [p for p, _ in tg._base_iter(name, nx, ny)]
+        polys = tg.substrate_faces(name, nx, ny)
     coords, rings = tg._weld(polys)
     rings = [_poly_ccw(coords, r) for r in rings]
     return coords, rings
@@ -1819,9 +1864,18 @@ def _tiling_symmetrize(walls, topo, group):
     return out
 
 
+# Tiling substrates whose lattice carries the 90-degree (square-rotation)
+# point groups C2/C4 rather than the 60/120-degree hexagonal groups.  The
+# rotation centre and mirror axis are still found by scanning, so an
+# ill-matched group simply yields no complete orbits (empty walls) rather
+# than an error -- but this classification keeps the offered groups sane.
+_SQUARE_FAMILY_TILINGS = ('SNUBSQUARE', 'SNUBSQ', 'TRUNCSQ', 'TETRAKIS',
+                          'CAIRO', 'ELONGTRI', 'PRISMATIC')
+
+
 def _tiling_groups_for(substrate):
     """The symmetry groups exposed for a tiling substrate."""
-    if substrate == 'SNUBSQUARE':
+    if substrate in _SQUARE_FAMILY_TILINGS:
         return _SNUB_GROUPS
     return _HEX_GROUPS
 
@@ -2186,7 +2240,7 @@ if _IN_BLENDER:
         the (chiral) snub-square tiling."""
         if self.substrate == 'SQUARE':
             return _SYM_ITEMS_SQUARE
-        if self.substrate == 'SNUBSQUARE':
+        if self.substrate in _SQUARE_FAMILY_TILINGS:
             return _SYM_ITEMS_SNUB
         return _SYM_ITEMS_HEX
 
@@ -2230,18 +2284,7 @@ if _IN_BLENDER:
 
         substrate: EnumProperty(
             name="Substrate",
-            items=[('SQUARE', "Square Grid",
-                    "The classic grid plait (the mirror-curve billiard)"),
-                   ('TRIANGLE', "Triangular (3.3.3.3.3.3)",
-                    "Medial knot on the triangular tiling"),
-                   ('HEX', "Hexagonal (6.6.6)",
-                    "Medial knot on the hexagonal tiling"),
-                   ('SNUBSQUARE', "Snub Square (3.3.4.3.4)",
-                    "Medial knot on the snub-square Archimedean tiling"),
-                   ('TRIHEX', "Trihexagonal (3.6.3.6)",
-                    "Medial knot on the trihexagonal Archimedean tiling"),
-                   ('TRUNCHEX', "Truncated Hexagonal (3.12.12)",
-                    "Medial knot on the truncated-hexagonal tiling")],
+            items=_CELTIC_SUBSTRATE_ITEMS,
             default='SQUARE',
             description="The graph the cord lives on: the square grid, or "
                         "a tiling's medial graph (Mercat's knot on any "
@@ -2645,7 +2688,14 @@ def _check_square_byte_identical():
             and c == _SQUARE_FLAT_HASHES['c'])
 
 
-_TILING_SUBSTRATES = ('TRIANGLE', 'HEX', 'SNUBSQUARE', 'TRIHEX', 'TRUNCHEX')
+# The original five substrates plus a representative sample of the newly
+# enabled canonical tilings (more Archimedean tilings and the Laves duals),
+# so the medial-knot invariants are exercised across the full shared set.
+_TILING_SUBSTRATES = ('TRIANGLE', 'HEX', 'SNUBSQUARE', 'TRIHEX', 'TRUNCHEX',
+                      'SNUBHEX', 'RHOMBITRIHEX', 'TRUNCSQ', 'TRUNCTRIHEX',
+                      'ELONGTRI', 'RHOMBILLE', 'CAIRO', 'FLORET',
+                      'PRISMATIC', 'DELTOIDAL', 'TRIAKIS', 'TETRAKIS',
+                      'KISRHOMBILLE')
 
 
 def _check_tiling(substrate, nx=4, ny=4, trim=False, walls=None):

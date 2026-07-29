@@ -290,6 +290,23 @@ def _build_tiling(name, nx, ny):
     return polys, types
 
 
+def substrate_faces(name, nx, ny):
+    """Shared canonical substrate source: the polygon list for ANY of the
+    19 uniform tilings named in `TILING_ITEMS`, including the Laves duals.
+
+    For a regular / Archimedean tiling this is the NX x NY run of unit
+    cells from `_base_iter`; for a Laves dual it is the geometric dual of
+    the matching Archimedean patch (over-built by two cells so the dual
+    has a solid interior).  Returns a list of (M, 2) CCW polygon-vertex
+    arrays -- the same polygons `_build_tiling` produces, without the
+    per-tile type indices -- so every pattern generator can draw its
+    tiling substrate from one canonical set and stay in sync."""
+    if name in LAVES_OF:
+        base = [p for p, _ in _base_iter(LAVES_OF[name], nx + 2, ny + 2)]
+        return _dual(base)
+    return [p for p, _ in _base_iter(name, nx, ny)]
+
+
 # --------------------------------------------------------------------
 # Mesh assembly
 # --------------------------------------------------------------------

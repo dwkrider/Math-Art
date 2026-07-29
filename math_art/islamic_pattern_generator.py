@@ -116,6 +116,16 @@ SUBSTRATE_ITEMS = [
      "Triangular tiling -> 3/6-point stars"),
     ('HEX', "Hexagonal (6.6.6)",
      "Hexagonal tiling -> 6/12-point stars"),
+    ('TRIHEX', "Trihexagonal (3.6.3.6)",
+     "Hexagon-triangle tiling -> 3/6-point stars"),
+    ('SNUBSQ', "Snub Square (3.3.4.3.4)",
+     "Snub-square Archimedean tiling -> mixed 4/8-point stars"),
+    ('SNUBHEX', "Snub Hexagonal (3.3.3.3.6)",
+     "Snub-hexagonal Archimedean tiling -> 6-fold stars"),
+    ('ELONGTRI', "Elongated Triangular (3.3.3.4.4)",
+     "Triangle-square Archimedean tiling"),
+    ('RHOMBITRIHEX', "Rhombitrihexagonal (3.4.6.4)",
+     "Hexagon-square-triangle tiling -> 6/12-point stars"),
     ('TRUNCSQ', "Truncated Square (4.8.8)",
      "Octagon-square tiling -> the iconic 8-point star-and-cross"),
     ('TRUNCHEX', "Truncated Hexagonal (3.12.12)",
@@ -126,21 +136,49 @@ SUBSTRATE_ITEMS = [
      "Irregular rhombi -- needs motif inference"),
     ('CAIRO', "Cairo Pentagonal (dual 3.3.4.3.4)",
      "Irregular pentagons -- star per tile"),
+    ('FLORET', "Floret Pentagonal (dual 3.3.3.3.6)",
+     "Irregular pentagons -- star per tile"),
+    ('PRISMATIC', "Prismatic Pentagonal (dual 3.3.3.4.4)",
+     "Irregular pentagons -- star per tile"),
+    ('DELTOIDAL', "Deltoidal Trihexagonal (dual 3.4.6.4)",
+     "Irregular kites -- vertex stars"),
+    ('TRIAKIS', "Triakis Triangular (dual 3.12.12)",
+     "Irregular triangles -- vertex stars"),
+    ('TETRAKIS', "Tetrakis Square (dual 4.8.8)",
+     "Irregular right triangles -- vertex stars"),
+    ('KISRHOMBILLE', "Kisrhombille (dual 4.6.12)",
+     "Irregular 30-60-90 triangles -- vertex stars"),
     ('GIRIH', "Girih (quasiperiodic 10-fold)",
      "Penrose quasilattice, girih strapwork -> 10-fold stars, no "
      "repeating unit cell (Lu & Steinhardt 2007)"),
 ]
 
-# Substrates whose tiles are irregular polygons (Laves duals): these
-# build star-forming strapwork (per tile for Cairo, per vertex for
-# Rhombille) rather than the regular-polygon PIC/rosette.
-_LAVES_SUBSTRATES = ('RHOMBILLE', 'CAIRO')
+# Substrates whose tiles are irregular polygons (the Laves duals): these
+# build star-forming strapwork rather than the regular-polygon PIC/rosette
+# -- per tile where the tiles are large enough to host a star (the
+# pentagonal duals), per vertex where the tiles are triangles or quads
+# (see `_irregular_motifs`).  Drawn straight from tiling_generator's shared
+# dual construction, so every Laves tiling is available.
+_LAVES_SUBSTRATES = tuple(tg.LAVES_OF.keys())
+
+# The Laves duals whose tiles are 3- or 4-gons (too small to host their own
+# star): their stars sit at the tiling VERTICES instead of per tile.  The
+# pentagonal duals (CAIRO / FLORET / PRISMATIC) host a star per tile.
+_VERTEX_STAR_LAVES = ('RHOMBILLE', 'DELTOIDAL', 'TRIAKIS', 'TETRAKIS',
+                      'KISRHOMBILLE')
 
 # Contact angle (degrees) giving the classic motif for each substrate.
+# Regular / Archimedean substrates not listed here fall back to 30 deg;
+# the irregular (Laves) substrates ignore the contact angle (their star
+# strapwork is anchored on the shared edge midpoints).
 DEFAULT_CONTACT = {
     'SQUARE': 30.0, 'TRI': 30.0, 'HEX': 30.0,
+    'TRIHEX': 30.0, 'SNUBSQ': 30.0, 'SNUBHEX': 30.0,
+    'ELONGTRI': 30.0, 'RHOMBITRIHEX': 30.0,
     'TRUNCSQ': 30.0, 'TRUNCHEX': 30.0, 'TRUNCTRIHEX': 30.0,
-    'RHOMBILLE': 35.0, 'CAIRO': 35.0, 'GIRIH': 72.0,
+    'RHOMBILLE': 35.0, 'CAIRO': 35.0, 'FLORET': 35.0,
+    'PRISMATIC': 35.0, 'DELTOIDAL': 35.0, 'TRIAKIS': 35.0,
+    'TETRAKIS': 35.0, 'KISRHOMBILLE': 35.0, 'GIRIH': 72.0,
 }
 
 # Historical presets: (substrate, contact angle, motif, star_d).
@@ -575,12 +613,14 @@ def _vertex_star_motifs(polys):
 
 def _irregular_motifs(polys, substrate):
     """Star-forming strapwork for an irregular (Laves-dual) substrate.
-    Cairo's pentagons each host a five-point star (per-tile); Rhombille's
-    rhombi are too small, so its stars sit at the tiling vertices.  Both
-    routes emit closed star outlines whose tips land on shared edge
-    midpoints -- authentic star patterns with continuous, stub-free
-    strapwork, unlike the old edge-to-edge inference weave."""
-    if substrate == 'RHOMBILLE':
+    Duals with pentagonal tiles (Cairo / Floret / Prismatic) host a star
+    PER TILE; duals whose tiles are triangles or quads (Rhombille and the
+    kite / triangle duals -- too small to carry their own star) place a
+    star at every tiling VERTEX instead.  Both routes emit closed star
+    outlines whose tips land on shared edge midpoints -- authentic star
+    patterns with continuous, stub-free strapwork, unlike the old edge-to-
+    edge inference weave."""
+    if substrate in _VERTEX_STAR_LAVES:
         return _vertex_star_motifs(polys)
     return _tile_star_motifs(polys)
 

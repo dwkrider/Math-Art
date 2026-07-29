@@ -469,6 +469,15 @@ OPS = [
     ("islamic girih curved", lambda: bpy.ops.mesh.islamic_pattern_add(
         preset='GIRIH10', girih_gens=3, trim=True, curved=True,
         smoothness=8)),
+    ("islamic trihex (shared tiling)",
+     lambda: bpy.ops.mesh.islamic_pattern_add(
+         preset='CUSTOM', substrate='TRIHEX', nx=3, ny=3)),
+    ("islamic deltoidal (shared tiling)",
+     lambda: bpy.ops.mesh.islamic_pattern_add(
+         preset='CUSTOM', substrate='DELTOIDAL', nx=3, ny=3)),
+    ("islamic snubhex (shared tiling)",
+     lambda: bpy.ops.mesh.islamic_pattern_add(
+         preset='CUSTOM', substrate='SNUBHEX', nx=3, ny=3)),
     ("celtic plain plait", lambda: bpy.ops.mesh.celtic_knot_2d_add(
         grid_w=5, grid_h=5, barriers='PRESET', preset='PLAIN')),
     ("celtic crossbreak smooth",
@@ -543,6 +552,15 @@ OPS = [
      lambda: bpy.ops.mesh.celtic_knot_2d_add(
          substrate='TRUNCHEX', grid_w=5, grid_h=5, trim=True,
          style='SMOOTH', interlace=True, interlace_mode='FLAT')),
+    ("celtic rhombitrihex (shared tiling)",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         substrate='RHOMBITRIHEX', grid_w=4, grid_h=4, trim=True)),
+    ("celtic floret laves (shared tiling)",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         substrate='FLORET', grid_w=4, grid_h=4, trim=True)),
+    ("celtic kisrhombille (shared tiling)",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         substrate='KISRHOMBILLE', grid_w=4, grid_h=4, trim=True)),
     ("knot carpet square flat", lambda: bpy.ops.mesh.knot_carpet_add(
         lattice='SQUARE', symmetry=4, nx=3, ny=3,
         interlace_mode='FLAT', color_by='LOOP')),
@@ -562,6 +580,9 @@ OPS = [
      lambda: bpy.ops.mesh.knot_carpet_add(
          lattice='TILING', tiling_name='TRUNCSQ', nx=3, ny=3,
          output='TUBE', tube_radius=0.04, tube_sides=8)),
+    ("knot carpet tiling floret (shared)",
+     lambda: bpy.ops.mesh.knot_carpet_add(
+         lattice='TILING', tiling_name='FLORET', nx=3, ny=3)),
     ("knot ball soccer scaffold",
      lambda: bpy.ops.mesh.knot_carpet_add(
          lattice='SPHERE', sphere_scaffold='TI', output='TUBE',

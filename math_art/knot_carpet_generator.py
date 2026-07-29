@@ -1458,7 +1458,7 @@ def _tiling_scaffold(tiling_name, nx, ny):
     tiny arithmetic differences between tile constructions cannot
     split an edge in two."""
     polys = [np.asarray(p, float)
-             for p in tg._build_tiling(tiling_name, nx, ny)[0]]
+             for p in tg.substrate_faces(tiling_name, nx, ny)]
     centers = [p.mean(axis=0) for p in polys]
     owners = {}
     for ti, p in enumerate(polys):
