@@ -70,6 +70,31 @@
 # flat knotwork, rising and dipping it for the woven 3D surface), so the
 # knot reads as genuine cordage rather than tape.
 #
+# SYMMETRY-GROUP BARRIERS.  A raw procedural or seeded barrier set is
+# rarely balanced.  Replicating that seed under a point group about the
+# panel/lattice centre -- every rotation (and, for the dihedral groups,
+# every mirror) that maps the lattice to itself -- and unioning the
+# complete orbits yields a barrier set that is provably invariant under
+# the group, so the carved knot comes out balanced: C_n gives n-fold
+# rotational symmetry, D_n adds the mirrors.  The square lattice admits
+# the 90-degree groups C2/C4/D2/D4; the triangular / hexagonal family
+# admits the 60/120-degree groups C3/C6/D3/D6.
+#
+# LENTICULAR TURNS.  Where a smoothed cord reflects off a wall it makes a
+# U-turn; the plain Catmull-Rom rounds it into a semicircular cap, but
+# the historical Insular carvers drew a POINTED lenticular (pointed-oval
+# / leaf) turn -- the two rails curving back to meet at a soft point
+# offset from the wall.  The pointed option reshapes the local spline at
+# every reflection vertex to that leaf, tunable from the round cap (the
+# limit) to a sharp tip.
+#
+# HISTORICAL PANELS.  Beyond the plain / cross-break / framed presets, a
+# handful of named classic panels are supplied as fixed barrier layouts
+# on the square grid -- the three-cornered TRIQUETRA (trinity knot), the
+# two-cord JOSEPHINE knot, a repeating KELLS border motif, and a filled
+# CARPET-page repeat -- following the grid-drawing tradition of the Bains
+# and Meehan.
+#
 # References:
 #   George Bain, "Celtic Art: The Methods of Construction" (1951) -- the
 #     grid-and-plait method taught to a century of Celtic artists.
@@ -155,11 +180,48 @@ def _internal_slots(W, H):
     return out
 
 
+def _wall_v(B, col, W, H, r0, r1):
+    """Add a vertical internal wall at cell-column boundary `col`,
+    spanning cell rows r0..r1-1 (a run of edge-midpoints (2col, 2row+1))."""
+    i = 2 * col
+    if not (0 < i < 2 * W):
+        return
+    for row in range(max(0, r0), min(H, r1)):
+        B.add((i, 2 * row + 1))
+
+
+def _wall_h(B, row, W, H, c0, c1):
+    """Add a horizontal internal wall at cell-row boundary `row`, spanning
+    cell columns c0..c1-1 (edge-midpoints (2col+1, 2row))."""
+    j = 2 * row
+    if not (0 < j < 2 * H):
+        return
+    for col in range(max(0, c0), min(W, c1)):
+        B.add((2 * col + 1, j))
+
+
+# Historical panels: recommended grid sizes (grid_w, grid_h) at which the
+# named motif reads best; the barrier layouts below scale/clamp to the
+# user's actual grid.
+_PRESET_HINTS = {
+    'TRIQUETRA': (4, 4), 'JOSEPHINE': (6, 3),
+    'KELLS_BORDER': (8, 3), 'CARPET': (6, 6),
+}
+
+
 def _preset_barriers(name, W, H):
     """Internal barriers for a named preset panel."""
     B = set()
     if name == 'PLAIN':
         return B
+    if name == 'TRIQUETRA':
+        return _triquetra_barriers(W, H)
+    if name == 'JOSEPHINE':
+        return _josephine_barriers(W, H)
+    if name == 'KELLS_BORDER':
+        return _kells_border_barriers(W, H)
+    if name == 'CARPET':
+        return _carpet_barriers(W, H)
     if name == 'CROSSBREAK':
         # a single vertical and horizontal internal break through the
         # centre -- the classic four-panel knot
@@ -185,6 +247,94 @@ def _preset_barriers(name, W, H):
                 B.add((i, j0))
                 B.add((i, j1))
         return B
+    return B
+
+
+# --------------------------------------------------------------------
+# Historical named panels (square-substrate barrier layouts)
+# --------------------------------------------------------------------
+#
+# Each panel is a fixed barrier layout that yields a recognizable classic
+# knot.  The layouts are written for their recommended grid (see
+# _PRESET_HINTS) but scale/clamp to the user's grid_w/grid_h so they stay
+# valid at any size.
+
+def _triquetra_barriers(W, H):
+    """The three-cornered TRINITY knot (triquetra): three lobes about the
+    panel centre.  A true 3-fold figure does not sit on the square
+    lattice, so the three leaves are carved with a downward wedge of
+    walls -- an apex wall up top and two splayed walls below -- giving the
+    familiar three interlaced lobes.  Best on a 4x4 panel."""
+    B = set()
+    W = max(3, W)
+    H = max(3, H)
+    cx = W // 2
+    cy = H // 2
+    # apex leaf: a short horizontal wall above centre with a stem down to it
+    _wall_h(B, min(H - 1, cy + 1), W, H, cx - 1, cx + 1)
+    _wall_v(B, cx, W, H, cy, min(H, cy + 1))
+    # two lower leaves: splayed vertical walls with feet turning inward
+    _wall_v(B, max(1, cx - 1), W, H, max(0, cy - 1), cy + 1)
+    _wall_v(B, min(W - 1, cx + 1), W, H, max(0, cy - 1), cy + 1)
+    _wall_h(B, max(1, cy - 1), W, H, cx - 1, cx + 1)
+    return B
+
+
+def _josephine_barriers(W, H):
+    """The JOSEPHINE / carrick two-cord knot: two loops sitting side by
+    side, linked down the middle.  A central vertical break splits the
+    panel into two knots, and a pair of short horizontal breaks pinch the
+    waist so the two cords read as an interlocked pair.  Best on a wide
+    panel (about 6x3)."""
+    B = set()
+    W = max(4, W)
+    H = max(2, H)
+    mid = W // 2
+    # central vertical divider, but broken at the waist so the two cords
+    # thread through one another rather than sealing into two panels
+    waist = H // 2
+    _wall_v(B, mid, W, H, 0, waist)
+    _wall_v(B, mid, W, H, waist + 1, H)
+    # pinch the waist of each loop
+    _wall_h(B, waist, W, H, 0, mid - 1)
+    _wall_h(B, waist, W, H, mid + 1, W)
+    return B
+
+
+def _kells_border_barriers(W, H):
+    """A repeating KELLS-style border motif: a running plait chained into
+    a row of linked rings around a plain centre.  Horizontal walls fence
+    off a one-cell-deep border band top and bottom, and vertical walls on
+    an alternating spacing chop that band into a chain of rings -- the
+    edge ornament of an illuminated page.  Best on a wide panel."""
+    B = set()
+    W = max(3, W)
+    H = max(3, H)
+    # fence the top and bottom border bands off the central field
+    _wall_h(B, 1, W, H, 0, W)
+    _wall_h(B, H - 1, W, H, 0, W)
+    # chop each band into a chain of rings on an alternating spacing
+    for col in range(2, W - 1, 2):
+        _wall_v(B, col, W, H, 0, 1)
+        _wall_v(B, col, W, H, H - 1, H)
+    # close the central field into its own panel so the border reads apart
+    _wall_v(B, 1, W, H, 1, H - 1)
+    _wall_v(B, W - 1, W, H, 1, H - 1)
+    return B
+
+
+def _carpet_barriers(W, H):
+    """A filled CARPET-page repeat: the panel tiled into a regular field
+    of identical small knots by a lattice of internal walls every two
+    cells (the dense all-over ornament of a carpet page).  Best on a
+    larger panel (6x6 or more)."""
+    B = set()
+    W = max(4, W)
+    H = max(4, H)
+    for col in range(2, W, 2):
+        _wall_v(B, col, W, H, 0, H)
+    for row in range(2, H, 2):
+        _wall_h(B, row, W, H, 0, W)
     return B
 
 
@@ -247,6 +397,84 @@ def _random_barriers(W, H, seed, density):
         if rng.random() < density:
             B.add(slot)
     return B
+
+
+# --------------------------------------------------------------------
+# Symmetry-group barriers (square lattice)
+# --------------------------------------------------------------------
+#
+# The square panel [0, 2W] x [0, 2H] has the point group of the square
+# (D4) about its centre (W, H) ONLY when it is square (W == H); a
+# rectangular panel keeps the rectangle group D2.  A group element is an
+# integer map of the (i, j) lattice that fixes the centre and carries the
+# lattice to itself; the 90-degree elements swap the two axes, so they
+# need W == H.  Symmetrizing a seed barrier set = unioning the COMPLETE
+# orbit of every seed wall under the group (a wall is symmetrized only
+# when its whole orbit lands on valid internal slots), which yields a set
+# provably invariant under the group.
+
+_SQUARE_GROUPS = ('NONE', 'C2', 'C4', 'D2', 'D4')
+_HEX_GROUPS = ('NONE', 'C3', 'C6', 'D3', 'D6')
+_SNUB_GROUPS = ('NONE', 'C2', 'C4')
+
+# group name -> (rotation order n, has mirrors)
+_GROUP_SPEC = {'C2': (2, False), 'C3': (3, False), 'C4': (4, False),
+               'C6': (6, False), 'D2': (2, True), 'D3': (3, True),
+               'D4': (4, True), 'D6': (6, True)}
+
+
+def _square_group_ops(group, W, H):
+    """Integer maps (i, j) -> (i, j) of the point group about the panel
+    centre (W, H).  The 90-degree elements need a square panel (W == H);
+    on a rectangle C4 degrades to C2 and D4 to D2."""
+    if group == 'NONE':
+        return [lambda i, j: (i, j)]
+    square = (W == H)
+    e = lambda i, j: (i, j)
+    r180 = lambda i, j: (2 * W - i, 2 * H - j)
+    mx = lambda i, j: (2 * W - i, j)                  # flip about vert. axis
+    my = lambda i, j: (i, 2 * H - j)                  # flip about horiz. axis
+    r90 = lambda i, j: (W + H - j, H - W + i)         # +90 about centre
+    r270 = lambda i, j: (W - H + j, H + W - i)        # -90 about centre
+    md = lambda i, j: (W - H + j, H - W + i)          # main-diagonal mirror
+    ma = lambda i, j: (W + H - j, H + W - i)          # anti-diagonal mirror
+    if group == 'C2':
+        return [e, r180]
+    if group == 'D2':
+        return [e, r180, mx, my]
+    if group == 'C4':
+        return [e, r90, r180, r270] if square else [e, r180]
+    if group == 'D4':
+        return ([e, r90, r180, r270, mx, my, md, ma] if square
+                else [e, r180, mx, my])
+    return [e]
+
+
+def _square_effective_group(group, W, H):
+    """The group actually applied on a W x H panel (C4/D4 degrade to
+    C2/D2 on a non-square panel)."""
+    if group in ('C4', 'D4') and W != H:
+        return 'C2' if group == 'C4' else 'D2'
+    return group
+
+
+def _valid_slot(i, j, W, H):
+    return (i + j) % 2 == 1 and 0 < i < 2 * W and 0 < j < 2 * H
+
+
+def _symmetrize_square(barriers, group, W, H):
+    """Union the complete group orbit of every seed barrier (skipping any
+    whose orbit strays off the internal slots), giving a barrier set
+    invariant under the point group about the panel centre."""
+    if group == 'NONE':
+        return set(barriers)
+    ops = _square_group_ops(group, W, H)
+    out = set()
+    for (i, j) in barriers:
+        orbit = [op(i, j) for op in ops]
+        if all(_valid_slot(oi, oj, W, H) for (oi, oj) in orbit):
+            out.update(orbit)
+    return out
 
 
 # --------------------------------------------------------------------
@@ -575,13 +803,99 @@ def _path_tangent(path, i, closed):
     return None if d == (0.0, 0.0) else d
 
 
-def _over_tangents(cords, x, W, H, border, style, subdiv):
+# --------------------------------------------------------------------
+# Lenticular (pointed-leaf) reflection turns
+# --------------------------------------------------------------------
+#
+# A smoothed cord makes a U-turn wherever it reflects off a wall; the
+# plain Catmull-Rom rounds that into a semicircular cap.  The historical
+# Celtic turn is instead LENTICULAR -- the two rails curve back to meet
+# at a soft point offset from the wall (a pointed oval / leaf).  We keep
+# the exact Catmull-Rom baseline (so ROUNDED is byte-identical and the
+# crossing sample indices are untouched) and, for POINTED, add a local
+# displacement over the two spline segments adjacent to each reflection
+# vertex that pulls the curve toward two straight rails meeting at a tip.
+# The displacement is scaled by `tightness` and vanishes at tightness 0,
+# so POINTED continuously reduces to the round cap.
+
+def _reflect_indices(ncontrol, cross):
+    """Control indices of a piece that are REFLECTION (U-turn) vertices --
+    every control point that is not a crossing."""
+    cs = set(k for k, _sg, _pos in cross)
+    return [k for k in range(ncontrol) if k not in cs]
+
+
+def _pointed_path(path, control, closed, subdiv, tightness, reflect_idx):
+    """Reshape the Catmull-Rom `path` so each reflection vertex in
+    `reflect_idx` turns as a pointed leaf.  Returns a new list of xy
+    tuples; the sample count and every crossing sample are unchanged."""
+    n = len(path)
+    if (tightness <= 0.0 or subdiv < 2 or len(control) < 3
+            or not reflect_idx or n < 3):
+        return path
+    ncon = len(control)
+    P = [np.asarray(p, float) for p in path]
+    disp = [np.zeros(2) for _ in range(n)]
+
+    def ctrl(k):
+        return np.asarray(control[k % ncon] if closed
+                          else control[min(max(k, 0), ncon - 1)], float)
+
+    for i in reflect_idx:
+        if not closed and (i <= 0 or i >= ncon - 1):
+            continue                              # open-piece terminus
+        A = ctrl(i)
+        prev = ctrl(i - 1)
+        nxt = ctrl(i + 1)
+        mid = 0.5 * (prev + nxt)
+        out = A - mid
+        depth = float(np.hypot(out[0], out[1]))
+        if depth < 1e-9:
+            continue                              # not a genuine U-turn
+        out = out / depth
+        tip = A + out * (tightness * depth)
+        m = (i * subdiv) % n if closed else i * subdiv
+        # incoming half: samples prev-control .. apex (exclude apex)
+        for o in range(subdiv):
+            idx = (m - subdiv + o) % n if closed else (m - subdiv + o)
+            if idx < 0:
+                continue
+            s = o / float(subdiv)
+            target = prev + (tip - prev) * s
+            disp[idx] = disp[idx] + tightness * (target - P[idx])
+        # outgoing half: apex .. next-control (include apex once)
+        for o in range(subdiv + 1):
+            idx = (m + o) % n if closed else (m + o)
+            if idx >= n:
+                continue
+            s = o / float(subdiv)
+            target = tip + (nxt - tip) * s
+            disp[idx] = disp[idx] + tightness * (target - P[idx])
+    return [(float(P[k][0] + disp[k][0]), float(P[k][1] + disp[k][1]))
+            for k in range(n)]
+
+
+def _smooth_path(control, closed, subdiv, corner_style, tightness,
+                 reflect_idx):
+    """The smoothed centerline of one cord piece: the Catmull-Rom spline
+    (corner_style ROUNDED -- byte-identical to the classic path) or the
+    same spline with pointed lenticular reflection turns (POINTED)."""
+    path = isl.catmull_rom(control, closed, subdiv)
+    if corner_style != 'POINTED':
+        return path
+    return _pointed_path(path, control, closed, subdiv, tightness,
+                         reflect_idx)
+
+
+def _over_tangents(cords, x, W, H, border, style, subdiv,
+                   corner_style='ROUNDED', corner_tightness=0.5):
     """Unit tangent of the OVER cord at every crossing lattice point,
     read from the SAME smoothed path the ribbon uses.  Cutting an under
     cord flush along the over cord needs the over cord's LOCAL direction
     at the crossing; in SMOOTH style that deviates from the lattice
-    diagonals near border / break turns, so it must be measured from the
-    Catmull-Rom curve rather than assumed to be a 45-degree diagonal."""
+    diagonals near border / break turns (and near POINTED leaf turns), so
+    it must be measured from the Catmull-Rom curve rather than assumed to
+    be a 45-degree diagonal."""
     tan = {}
     for rec in cords:
         for control, cross, closed in _render_pieces(rec, x, W, H, border):
@@ -590,8 +904,12 @@ def _over_tangents(cords, x, W, H, border, style, subdiv):
             smoothed = (style == 'SMOOTH' and len(control) >= 3
                         and subdiv >= 2)
             step = subdiv if smoothed else 1
-            path = (isl.catmull_rom(control, closed, subdiv)
-                    if style == 'SMOOTH' else control)
+            if style == 'SMOOTH':
+                path = _smooth_path(control, closed, subdiv, corner_style,
+                                    corner_tightness,
+                                    _reflect_indices(len(control), cross))
+            else:
+                path = control
             for k, sg, pos in cross:
                 if sg < 0:
                     continue                      # only the OVER passage
@@ -601,10 +919,28 @@ def _over_tangents(cords, x, W, H, border, style, subdiv):
     return tan
 
 
+def _revert_spike_caps(left, right, orig, width, limit=1.8):
+    """Undo a flush end-cut that overshot into a spike.  The over-edge
+    flush cut (`isl._angle_cut_piece`) reprojects each cut cap onto the
+    over cord's edge line; at a SHALLOW oblique crossing (the medial
+    tilings have crossings well below 90 degrees) one rail can slide far
+    along the near-parallel edge, stretching the cap into a long spike.
+    Where the recut cap is longer than `limit` cord-widths -- i.e. much
+    longer than the clean ~width/sin(theta) flush cap of a well-conditioned
+    crossing -- restore that end's original (square-cut) rail points, so
+    the cord ends in a clean cap instead of a sliver."""
+    for idx in (0, -1):
+        lx, ly = left[idx]
+        rx, ry = right[idx]
+        if hypot(lx - rx, ly - ry) > limit * width:
+            left[idx], right[idx] = orig[idx]
+
+
 def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
                 mode, weave_height, height, color_by, loop_index,
                 over_tan=None, profile='FLAT', tube_sides=8,
-                rope_strands=3, rope_twist=6.0):
+                rope_strands=3, rope_twist=6.0, corner_style='ROUNDED',
+                corner_tightness=0.5, oblique_caps=False):
     """Sub-cells (verts, faces, mats) for one drawable piece of a cord.  A
     bordered cord is a single closed piece; a border-off cord may be
     several open pieces (`closed` carries the distinction to the ribbon
@@ -614,20 +950,28 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
 
     With `profile` != 'FLAT' the flat ribbon is replaced by a swept round
     TUBE or twisted ROPE along the same centerline (see `_profile_cells`);
-    FLAT keeps the exact ribbon geometry (byte-identical)."""
+    FLAT keeps the exact ribbon geometry (byte-identical).  `corner_style`
+    POINTED reshapes the smoothed reflection turns into pointed leaves.
+    `oblique_caps` (set on the medial-tiling path) guards the flush cut
+    against spikes at the tilings' shallow crossings; it is off on the
+    square grid, whose 90-degree crossings never spike, keeping that path
+    byte-identical."""
     if len(control) < 2:
         return []
     if profile != 'FLAT':
         return _profile_cells(control, cross, closed, width, style, subdiv,
                               interlace, mode, weave_height, color_by,
                               loop_index, profile, tube_sides,
-                              rope_strands, rope_twist)
+                              rope_strands, rope_twist, corner_style,
+                              corner_tightness)
     # catmull_rom only subdivides when it has >= 3 points and subdiv >= 2;
     # otherwise it returns the control points unchanged, so the crossing
     # index multiplier must stay 1 (short border-off seam pieces).
     smoothed = style == 'SMOOTH' and len(control) >= 3 and subdiv >= 2
     step = subdiv if smoothed else 1
-    path = (isl.catmull_rom(control, closed, subdiv)
+    path = (_smooth_path(control, closed, subdiv, corner_style,
+                         corner_tightness,
+                         _reflect_indices(len(control), cross))
             if style == 'SMOOTH' else control)
     signed = [(k * step, sg) for k, sg, _pos in cross]
 
@@ -691,9 +1035,12 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
                 # a closed cord has cuts at both ends of every sub-piece.
                 start_struct = closed or pj != 0
                 end_struct = closed or pj != npieces - 1
+                orig = {0: (left[0], right[0]), -1: (left[-1], right[-1])}
                 isl._angle_cut_piece(left, right, sp, start_struct,
                                      end_struct, ugeo, h_o, gap,
                                      maxreach, cut_gate)
+                if oblique_caps:
+                    _revert_spike_caps(left, right, orig, width)
             cv, cf = isl.band_ribbon_faces(left, right, sp_closed, height)
             if cf:
                 sub_cells.append((cv, cf, [matof(0)] * len(cf)))
@@ -709,7 +1056,7 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
 def _cord_cell(rec, x, W, H, border, width, style, subdiv, interlace, mode,
                weave_height, height, color_by, loop_index, over_tan=None,
                profile='FLAT', tube_sides=8, rope_strands=3,
-               rope_twist=6.0):
+               rope_twist=6.0, corner_style='ROUNDED', corner_tightness=0.5):
     """Build one merged (verts, faces, mats) cell for a single cord,
     gathering all of its drawable pieces (one when bordered, several across
     the seams when border-off)."""
@@ -719,7 +1066,7 @@ def _cord_cell(rec, x, W, H, border, width, style, subdiv, interlace, mode,
                                  subdiv, interlace, mode, weave_height,
                                  height, color_by, loop_index, over_tan,
                                  profile, tube_sides, rope_strands,
-                                 rope_twist)
+                                 rope_twist, corner_style, corner_tightness)
     if not sub_cells:
         return None
     return pc.merge_cells(sub_cells)
@@ -729,24 +1076,27 @@ def build_cells(W, H, border, barriers, cord_width=0.25, style='ANGULAR',
                 interlace=True, interlace_mode='FLAT', weave_height=0.06,
                 color_by='CHECKER', height=0.0, backing=False, base=0.08,
                 subdiv=8, substrate='SQUARE', profile='FLAT', tube_sides=8,
-                rope_strands=3, rope_twist=6.0, trim=False):
+                rope_strands=3, rope_twist=6.0, trim=False,
+                corner_style='ROUNDED', corner_tightness=0.5):
     """One merged (verts, faces, mats) cell per cord, plus an optional
     backing slab.  `cord_width` is a fraction of a cell (2 lattice
     units).  `substrate` selects the square grid (default) or a tiling
     medial knot; `profile` selects the flat ribbon (default), a round
-    tube, or a twisted rope."""
+    tube, or a twisted rope; `corner_style` POINTED gives lenticular
+    reflection turns (SMOOTH only)."""
     if substrate != 'SQUARE':
         return _tiling_build_cells(
             substrate, W, H, border, barriers, cord_width, style,
             interlace, interlace_mode, weave_height, color_by, height,
             backing, base, subdiv, profile, tube_sides, rope_strands,
-            rope_twist, trim)
+            rope_twist, trim, corner_style, corner_tightness)
     cords = trace_cords(W, H, border, barriers)
     x = _solve_over(cords)
     width = max(0.02, cord_width * 2.0)
     # Over cord tangents at every crossing, for the flush FLAT-interlace
     # cut (under cord cut ALONG the over cord's edge).
-    over_tan = (_over_tangents(cords, x, W, H, border, style, subdiv)
+    over_tan = (_over_tangents(cords, x, W, H, border, style, subdiv,
+                               corner_style, corner_tightness)
                 if interlace and interlace_mode == 'FLAT' else None)
     cells = []
     all_verts = []
@@ -754,7 +1104,8 @@ def build_cells(W, H, border, barriers, cord_width=0.25, style='ANGULAR',
         cell = _cord_cell(rec, x, W, H, border, width, style, subdiv,
                           interlace, interlace_mode, weave_height, height,
                           color_by, li, over_tan, profile, tube_sides,
-                          rope_strands, rope_twist)
+                          rope_strands, rope_twist, corner_style,
+                          corner_tightness)
         if cell is None or not cell[1]:
             continue
         cells.append(cell)
@@ -770,47 +1121,64 @@ def build_cells(W, H, border, barriers, cord_width=0.25, style='ANGULAR',
 
 
 def cord_paths(W, H, border, barriers, style='ANGULAR', subdiv=8,
-               substrate='SQUARE', trim=False):
+               substrate='SQUARE', trim=False, corner_style='ROUNDED',
+               corner_tightness=0.5):
     """Cord centerlines (control polyline, closed?) for the CURVE output.
     Bordered cords are single closed splines; border-off cords are split
     into seam-free in-tile pieces so no spline shoots across the panel."""
     if substrate != 'SQUARE':
         return _tiling_cord_paths(substrate, W, H, border, barriers,
-                                  style, subdiv, trim)
+                                  style, subdiv, trim, corner_style,
+                                  corner_tightness)
     cords = trace_cords(W, H, border, barriers)
     out = []
     for rec in cords:
         if border:
             runs = [([(float(p[0]), float(p[1])) for p, _b, _d in rec],
+                     [k for k, (_p, isb, _d) in enumerate(rec) if isb],
                      True)]
         else:
-            runs = [([dp for dp, _e in pts], closed)
+            runs = [([dp for dp, _e in pts],
+                     [k for k, (_dp, (_p, isb, _d)) in enumerate(pts)
+                      if isb], closed)
                     for pts, closed in _tile_split(rec, W, H)]
-        for control, closed in runs:
+        for control, reflect_idx, closed in runs:
             if len(control) < 2:
                 continue
-            path = (isl.catmull_rom(control, closed, subdiv)
-                    if style == 'SMOOTH' else control)
+            if style == 'SMOOTH':
+                path = _smooth_path(control, closed, subdiv, corner_style,
+                                    corner_tightness, reflect_idx)
+            else:
+                path = control
             out.append((path, closed))
     return out
 
 
 def resolve_barriers(source, W, H, border, preset='PLAIN', wall_spacing=2,
                      walls_v=True, walls_h=True, seed=0, density=0.25,
-                     single_cord=False):
-    """The internal barrier set for a chosen source, applying the
-    single-cord search when requested.  Returns (barriers, note)."""
+                     single_cord=False, symmetry='NONE'):
+    """The internal barrier set for a chosen source, applying the point-
+    group symmetrization (PROCEDURAL / RANDOM seeds) and the single-cord
+    search when requested.  Returns (barriers, note)."""
+    note = ""
     if source == 'PRESET':
-        B = _preset_barriers(preset, W, H)
-    elif source == 'PROCEDURAL':
+        return _preset_barriers(preset, W, H), note
+    if source == 'PROCEDURAL':
         B = _procedural_barriers(W, H, wall_spacing, walls_v, walls_h)
     else:                                     # RANDOM
         B = _random_barriers(W, H, seed, density)
-    note = ""
+    if symmetry not in _SQUARE_GROUPS:
+        symmetry = 'NONE'
+    if symmetry != 'NONE':
+        eff = _square_effective_group(symmetry, W, H)
+        if eff != symmetry:
+            note = "%s needs a square panel; using %s" % (symmetry, eff)
+        B = _symmetrize_square(B, eff, W, H)
     if source == 'RANDOM' and single_cord:
         B, ok = make_single_cord(W, H, border, B)
         if not ok:
-            note = "single-cord search did not reach 1 loop"
+            note = (note + "; " if note else "") + \
+                "single-cord search did not reach 1 loop"
     return B, note
 
 
@@ -1054,10 +1422,14 @@ def _tiling_render_piece(rec, x):
     return control, cross, True
 
 
-def _tiling_over_tangents(cords, x, style, subdiv):
-    """Over-cord tangent at every crossing (read from the smoothed path),
-    for the flush FLAT-interlace cut -- the tiling analogue of
-    `_over_tangents`."""
+def _tiling_over_tangents(cords, x, style, subdiv, corner_style='ROUNDED',
+                          corner_tightness=0.5):
+    """Over-cord tangent at every crossing (read from the SAME smoothed
+    path the ribbon uses), for the flush FLAT-interlace cut -- the tiling
+    analogue of `_over_tangents`.  Reading the tangent from the drawn path
+    (rather than assuming a lattice direction) is what makes the flush cut
+    correct at the oblique 60/120-degree crossings of the medial tilings,
+    for ANGULAR as well as SMOOTH and POINTED cords."""
     tan = {}
     for rec in cords:
         control, cross, closed = _tiling_render_piece(rec, x)
@@ -1066,8 +1438,12 @@ def _tiling_over_tangents(cords, x, style, subdiv):
         smoothed = (style == 'SMOOTH' and len(control) >= 3
                     and subdiv >= 2)
         step = subdiv if smoothed else 1
-        path = (isl.catmull_rom(control, closed, subdiv)
-                if style == 'SMOOTH' else control)
+        if style == 'SMOOTH':
+            path = _smooth_path(control, closed, subdiv, corner_style,
+                                corner_tightness,
+                                _reflect_indices(len(control), cross))
+        else:
+            path = control
         for k, sg, cid in cross:
             if sg < 0:
                 continue
@@ -1079,14 +1455,16 @@ def _tiling_over_tangents(cords, x, style, subdiv):
 
 def _tiling_cord_cell(rec, x, width, style, subdiv, interlace, mode,
                       weave_height, height, color_by, loop_index, over_tan,
-                      profile, tube_sides, rope_strands, rope_twist):
+                      profile, tube_sides, rope_strands, rope_twist,
+                      corner_style='ROUNDED', corner_tightness=0.5):
     """One merged (verts, faces, mats) cell for a single tiling cord,
     reusing the shared ribbon / tube pipeline (`_piece_cell`)."""
     control, cross, closed = _tiling_render_piece(rec, x)
     sub = _piece_cell(control, cross, closed, width, style, subdiv,
                       interlace, mode, weave_height, height, color_by,
                       loop_index, over_tan, profile, tube_sides,
-                      rope_strands, rope_twist)
+                      rope_strands, rope_twist, corner_style,
+                      corner_tightness, oblique_caps=True)
     if not sub:
         return None
     return pc.merge_cells(sub)
@@ -1159,20 +1537,144 @@ def _tiling_make_single_cord(topo, walls, budget=3000):
     return W, cur == 1
 
 
+# --------------------------------------------------------------------
+# Symmetry-group barriers (tiling substrates)
+# --------------------------------------------------------------------
+#
+# The triangular / hexagonal family carries the 60/120-degree point
+# groups (C3/C6/D3/D6) about a lattice symmetry centre; the snub-square
+# lattice carries the 90-degree rotation groups (C2/C4).  A group element
+# acts on the plane; a wall (an interior edge) maps to the interior edge
+# whose midpoint lands on the image of its midpoint.  The rotation centre
+# (and mirror axis) is chosen by scanning lattice-feature candidates and
+# taking the one that carries the most edge midpoints back onto edge
+# midpoints, so it is a genuine symmetry centre of the patch.  As on the
+# square grid, only COMPLETE orbits are unioned, giving a set provably
+# invariant under the group.
+
+def _tiling_mid_index(topo):
+    """dict rounded(midpoint) -> interior edge key, for symmetry lookups."""
+    idx = {}
+    for key in topo['interior']:
+        mx, my = topo['edge_mid'][key]
+        idx[(round(mx, 3), round(my, 3))] = key
+    return idx
+
+
+def _tiling_lookup_edge(mid_index, p):
+    return mid_index.get((round(float(p[0]), 3), round(float(p[1]), 3)))
+
+
+def _tiling_symmetry_matrices(topo, group):
+    """Point-group transforms for a tiling patch: pick the rotation centre
+    (and, for dihedral groups, the mirror axis) that best maps the patch's
+    edge midpoints onto themselves, and return the list of 3x3 matrices.
+    Returns None for the trivial group."""
+    spec = _GROUP_SPEC.get(group)
+    if spec is None:
+        return None
+    n, mir = spec
+    coords = topo['coords']
+    interior = topo['interior']
+    mids = [topo['edge_mid'][k] for k in interior]
+    if not mids:
+        return None
+    mid_index = _tiling_mid_index(topo)
+    bx = 0.5 * (min(m[0] for m in mids) + max(m[0] for m in mids))
+    by = 0.5 * (min(m[1] for m in mids) + max(m[1] for m in mids))
+    # candidate symmetry centres: face centroids, vertices, edge midpoints
+    cands = []
+    for r in topo['rings']:
+        pts = np.asarray([coords[v] for v in r], float)
+        c = pts.mean(axis=0)
+        cands.append((float(c[0]), float(c[1])))
+    cands += [(float(x), float(y)) for x, y in coords]
+    cands += [(float(m[0]), float(m[1])) for m in mids]
+    ang = 2.0 * pi / n
+
+    def rot_score(cx, cy):
+        M = pc.Rot(ang, cx, cy)
+        q = pc.apply(M, mids)
+        return sum(1 for p in q if _tiling_lookup_edge(mid_index, p))
+
+    best, bestc = -1, (bx, by)
+    for (cx, cy) in cands:
+        sc = rot_score(cx, cy)
+        # prefer higher overlap, then nearer the patch centre
+        d = (cx - bx) ** 2 + (cy - by) ** 2
+        if sc > best or (sc == best
+                         and d < (bestc[0] - bx) ** 2 + (bestc[1] - by) ** 2):
+            best, bestc = sc, (cx, cy)
+    cx, cy = bestc
+    mats = [pc.Rot(ang * k, cx, cy) for k in range(n)]
+    if mir:
+        # choose the mirror axis (through the centre) with the best overlap
+        baxis, bscore = 0.0, -1
+        for t in range(180):
+            a = pi * t / 180.0
+            M = pc.Mir(a, cx, cy)
+            q = pc.apply(M, mids)
+            sc = sum(1 for p in q if _tiling_lookup_edge(mid_index, p))
+            if sc > bscore:
+                bscore, baxis = sc, a
+        mats += [pc.Mir(baxis + pi * k / n, cx, cy) for k in range(n)]
+    return mats
+
+
+def _tiling_symmetrize(walls, topo, group):
+    """Union the complete group orbit of every seed wall (skipping walls
+    whose orbit strays off the interior edges), giving a wall set
+    invariant under the point group of the patch."""
+    if group == 'NONE' or not walls:
+        return set(walls)
+    mats = _tiling_symmetry_matrices(topo, group)
+    if not mats:
+        return set(walls)
+    mid_index = _tiling_mid_index(topo)
+    em = topo['edge_mid']
+    out = set()
+    for key in walls:
+        p0 = em[key]
+        orbit = []
+        ok = True
+        for M in mats:
+            q = pc.apply(M, [p0])[0]
+            k = _tiling_lookup_edge(mid_index, q)
+            if k is None:
+                ok = False
+                break
+            orbit.append(k)
+        if ok:
+            out.update(orbit)
+    return out
+
+
+def _tiling_groups_for(substrate):
+    """The symmetry groups exposed for a tiling substrate."""
+    if substrate == 'SNUBSQUARE':
+        return _SNUB_GROUPS
+    return _HEX_GROUPS
+
+
 def _tiling_resolve_walls(substrate, nx, ny, trim, source, seed, density,
-                          wall_spacing, walls_v, walls_h, single_cord):
+                          wall_spacing, walls_v, walls_h, single_cord,
+                          symmetry='NONE'):
     """The walled-edge set for a tiling knot under a chosen barrier source
     (PRESET -> the plain knot; PROCEDURAL -> regular fault lines; RANDOM ->
-    seeded edge-walls, optionally solved to a single cord).  Returns
-    (walls, note)."""
+    seeded edge-walls, optionally solved to a single cord), symmetrized
+    under the chosen point group.  Returns (walls, note)."""
     coords, rings = _tiling_patch(substrate, nx, ny, trim)
     topo = _tiling_topology(coords, rings)
     note = ""
+    if symmetry not in _tiling_groups_for(substrate):
+        symmetry = 'NONE'
     if source == 'PROCEDURAL':
         walls = _tiling_stripe_walls(topo, wall_spacing, walls_v, walls_h)
+        walls = _tiling_symmetrize(walls, topo, symmetry)
     elif source == 'RANDOM':
         rng = _random.Random(int(seed))
         walls = set(k for k in topo['interior'] if rng.random() < density)
+        walls = _tiling_symmetrize(walls, topo, symmetry)
         if single_cord:
             walls, ok = _tiling_make_single_cord(topo, walls)
             if not ok:
@@ -1191,7 +1693,8 @@ def _tiling_cord_count(substrate, nx, ny, trim, walls):
 def _tiling_build_cells(substrate, nx, ny, border, walls, cord_width,
                         style, interlace, mode, weave_height, color_by,
                         height, backing, base, subdiv, profile, tube_sides,
-                        rope_strands, rope_twist, trim):
+                        rope_strands, rope_twist, trim,
+                        corner_style='ROUNDED', corner_tightness=0.5):
     """One merged (verts, faces, mats) cell per cord of a tiling medial
     knot, plus an optional backing slab -- the tiling analogue of
     `build_cells`, flowing through the same ribbon / tube pipeline."""
@@ -1203,7 +1706,8 @@ def _tiling_build_cells(substrate, nx, ny, border, walls, cord_width,
     # Tiling edges have unit length; scale the cord width to the tile so
     # the ribbon reads the same across substrates.
     width = max(0.02, cord_width * 1.2)
-    over_tan = (_tiling_over_tangents(cords, x, style, subdiv)
+    over_tan = (_tiling_over_tangents(cords, x, style, subdiv, corner_style,
+                                      corner_tightness)
                 if interlace and mode == 'FLAT' and profile == 'FLAT'
                 else None)
     cells = []
@@ -1212,7 +1716,8 @@ def _tiling_build_cells(substrate, nx, ny, border, walls, cord_width,
         cell = _tiling_cord_cell(rec, x, width, style, subdiv, interlace,
                                  mode, weave_height, height, color_by, li,
                                  over_tan, profile, tube_sides,
-                                 rope_strands, rope_twist)
+                                 rope_strands, rope_twist, corner_style,
+                                 corner_tightness)
         if cell is None or not cell[1]:
             continue
         cells.append(cell)
@@ -1228,7 +1733,7 @@ def _tiling_build_cells(substrate, nx, ny, border, walls, cord_width,
 
 
 def _tiling_cord_paths(substrate, nx, ny, border, walls, style, subdiv,
-                       trim):
+                       trim, corner_style='ROUNDED', corner_tightness=0.5):
     """Cord centerlines (path, closed) for the CURVE output on a tiling."""
     coords, rings = _tiling_patch(substrate, nx, ny, trim)
     topo = _tiling_topology(coords, rings)
@@ -1238,8 +1743,12 @@ def _tiling_cord_paths(substrate, nx, ny, border, walls, style, subdiv,
         control = [(float(c[0][0]), float(c[0][1])) for c in rec]
         if len(control) < 2:
             continue
-        path = (isl.catmull_rom(control, True, subdiv)
-                if style == 'SMOOTH' else control)
+        reflect_idx = [k for k, c in enumerate(rec) if c[1]]
+        if style == 'SMOOTH':
+            path = _smooth_path(control, True, subdiv, corner_style,
+                                corner_tightness, reflect_idx)
+        else:
+            path = control
         out.append((path, True))
     return out
 
@@ -1372,14 +1881,17 @@ def _sweep_rope(path3, closed, radius, strands, nseg, twist):
 
 def _profile_cells(control, cross, closed, width, style, subdiv, interlace,
                    mode, weave_height, color_by, loop_index, profile,
-                   tube_sides, rope_strands, rope_twist):
+                   tube_sides, rope_strands, rope_twist,
+                   corner_style='ROUNDED', corner_tightness=0.5):
     """Tube / rope sub-cells for one drawable piece of a cord, mirroring
     the ribbon branches of `_piece_cell`: CHECKER splits at crossings,
     WOVEN rides the weave z-offset, FLAT breaks the under-passages, else a
     continuous swept solid."""
     smoothed = style == 'SMOOTH' and len(control) >= 3 and subdiv >= 2
     step = subdiv if smoothed else 1
-    path = (isl.catmull_rom(control, closed, subdiv)
+    path = (_smooth_path(control, closed, subdiv, corner_style,
+                         corner_tightness,
+                         _reflect_indices(len(control), cross))
             if style == 'SMOOTH' else [tuple(p) for p in control])
     signed = [(k * step, sg) for k, sg, _pos in cross]
     r = 0.5 * width
@@ -1457,10 +1969,53 @@ _PRESET_ITEMS = [
      "A central vertical and horizontal break -- a four-panel knot"),
     ('PANEL', "Framed Panel",
      "An inset rectangular ring of barriers framing a central motif"),
+    ('TRIQUETRA', "Triquetra (Trinity)",
+     "The three-cornered trinity knot -- best on a 4x4 panel"),
+    ('JOSEPHINE', "Josephine Knot",
+     "The two-cord carrick / Josephine knot -- best on a wide 6x3 panel"),
+    ('KELLS_BORDER', "Kells Border",
+     "A repeating illuminated-border plait -- best on a wide panel"),
+    ('CARPET', "Carpet Page",
+     "A filled all-over carpet-page repeat -- best on a 6x6+ panel"),
+]
+
+# Symmetry-group enum items, filtered per substrate by _symmetry_items.
+# Kept at module scope so the dynamic EnumProperty callback returns stable
+# string references (avoiding the Blender enum-GC pitfall).
+_SYM_ITEMS_SQUARE = [
+    ('NONE', "None", "No symmetrization (seed barriers as generated)"),
+    ('C2', "C2 (180 rot)", "Two-fold rotational symmetry"),
+    ('C4', "C4 (90 rot)", "Four-fold rotational symmetry (square panel)"),
+    ('D2', "D2 (rot + mirror)", "Two-fold rotations with mirrors"),
+    ('D4', "D4 (rot + mirror)",
+     "Full square symmetry: 90-deg rotations + mirrors (square panel)"),
+]
+_SYM_ITEMS_HEX = [
+    ('NONE', "None", "No symmetrization (seed barriers as generated)"),
+    ('C3', "C3 (120 rot)", "Three-fold rotational symmetry"),
+    ('C6', "C6 (60 rot)", "Six-fold rotational symmetry"),
+    ('D3', "D3 (rot + mirror)", "Three-fold rotations with mirrors"),
+    ('D6', "D6 (rot + mirror)", "Six-fold rotations with mirrors"),
+]
+_SYM_ITEMS_SNUB = [
+    ('NONE', "None", "No symmetrization (seed barriers as generated)"),
+    ('C2', "C2 (180 rot)", "Two-fold rotational symmetry"),
+    ('C4', "C4 (90 rot)", "Four-fold rotational symmetry"),
 ]
 
 
 if _IN_BLENDER:
+
+    def _symmetry_items(self, context):
+        """Group choices compatible with the current substrate: the
+        square groups on the grid, the 60/120-degree groups on the
+        triangular / hexagonal family, and the square-rotation groups on
+        the (chiral) snub-square tiling."""
+        if self.substrate == 'SQUARE':
+            return _SYM_ITEMS_SQUARE
+        if self.substrate == 'SNUBSQUARE':
+            return _SYM_ITEMS_SNUB
+        return _SYM_ITEMS_HEX
 
     def _emit_curve(context, name, paths, span=2.0, operator=None):
         """Build a curve object whose cyclic POLY splines are the cord
@@ -1554,6 +2109,13 @@ if _IN_BLENDER:
             name="Single Cord", default=False,
             description="Adjust random barriers to weave one continuous "
                         "closed cord where feasible")
+        symmetry: EnumProperty(
+            name="Symmetry",
+            items=_symmetry_items,
+            description="Replicate the procedural / random barrier seed "
+                        "under a point group about the panel centre, so "
+                        "the knot comes out balanced (Cn rotational, Dn "
+                        "rotational + mirror)")
         cord_width: FloatProperty(
             name="Cord Width", default=0.25, min=0.02, max=0.6,
             description="Cord ribbon width as a fraction of a cell")
@@ -1586,6 +2148,20 @@ if _IN_BLENDER:
         smoothness: IntProperty(
             name="Smoothness", default=8, min=2, max=32,
             description="Spline subdivisions per cord segment (smooth)")
+        corner_style: EnumProperty(
+            name="Corner Style",
+            items=[('ROUNDED', "Rounded",
+                    "The classic round Catmull-Rom U-turn"),
+                   ('POINTED', "Pointed (Lenticular)",
+                    "Reflection turns curve back to a soft point -- the "
+                    "authentic Celtic leaf / pointed-oval turn")],
+            default='ROUNDED',
+            description="Shape of the U-turn where a smooth cord reflects "
+                        "off a wall")
+        corner_tightness: FloatProperty(
+            name="Corner Tightness", default=0.5, min=0.0, max=1.0,
+            description="How sharp the pointed leaf turn is (0 = the round "
+                        "cap, 1 = a sharp tip)")
         interlace: BoolProperty(
             name="Interlace (Weave)", default=True,
             description="Weave the cords over and under (alternating "
@@ -1634,18 +2210,21 @@ if _IN_BLENDER:
                 barriers, note = _tiling_resolve_walls(
                     self.substrate, W, H, self.trim, self.barriers,
                     self.seed, self.density, self.wall_spacing,
-                    self.walls_v, self.walls_h, self.single_cord)
+                    self.walls_v, self.walls_h, self.single_cord,
+                    self.symmetry)
             else:
                 barriers, note = resolve_barriers(
                     self.barriers, W, H, self.border, self.preset,
                     self.wall_spacing, self.walls_v, self.walls_h,
-                    self.seed, self.density, self.single_cord)
+                    self.seed, self.density, self.single_cord,
+                    self.symmetry)
             if note:
                 self.report({'WARNING'}, note)
             if self.output == 'CURVE':
                 paths = cord_paths(W, H, self.border, barriers,
                                    self.style, self.smoothness,
-                                   self.substrate, self.trim)
+                                   self.substrate, self.trim,
+                                   self.corner_style, self.corner_tightness)
                 obj = _emit_curve(context, "Celtic Knot 2D", paths,
                                   operator=self)
                 if obj is None:
@@ -1661,7 +2240,8 @@ if _IN_BLENDER:
                 self.weave_height, self.color_by, self.height,
                 self.backing, self.base, self.smoothness,
                 self.substrate, self.profile, self.tube_sides,
-                self.rope_strands, self.rope_twist, self.trim)
+                self.rope_strands, self.rope_twist, self.trim,
+                self.corner_style, self.corner_tightness)
             obj = pc.emit(context, "Celtic Knot 2D", cells,
                           self.separate, fit=True, operator=self)
             if obj is None:
@@ -1702,14 +2282,19 @@ if _IN_BLENDER:
                 lay.prop(self, 'wall_spacing')
                 lay.prop(self, 'walls_v')
                 lay.prop(self, 'walls_h')
+                lay.prop(self, 'symmetry')
             else:                              # RANDOM
                 lay.prop(self, 'seed')
                 lay.prop(self, 'density')
                 lay.prop(self, 'single_cord')
+                lay.prop(self, 'symmetry')
             lay.prop(self, 'cord_width')
             lay.prop(self, 'style')
             if self.style == 'SMOOTH':
                 lay.prop(self, 'smoothness')
+                lay.prop(self, 'corner_style')
+                if self.corner_style == 'POINTED':
+                    lay.prop(self, 'corner_tightness')
             lay.prop(self, 'output')
             if self.output == 'RIBBON':
                 lay.prop(self, 'profile')
@@ -1965,6 +2550,204 @@ def _check_profile_geometry():
     return ok
 
 
+def _check_square_symmetry(group, W, H, seed=3, density=0.3):
+    """A symmetrized square barrier set is invariant under every element of
+    its point group (applying each element leaves the set unchanged), and
+    the resulting knot still partitions into closed cords with a valid
+    over/under."""
+    B = _random_barriers(W, H, seed, density)
+    S = _symmetrize_square(B, group, W, H)
+    ops = _square_group_ops(group, W, H)
+    invariant = all({op(i, j) for (i, j) in S} == S for op in ops)
+    p, c = _check_partition(W, H, True, S)
+    alt, one, _nx = _check_over_under(W, H, True, S)
+    return (invariant and p and c and alt and one), len(S), len(ops)
+
+
+def _check_tiling_symmetry(substrate, group, nx, ny, trim=False):
+    """A symmetrized tiling wall set is invariant under every element of
+    its point group, and yields a valid closed-cord knot.  Symmetrizing
+    the whole interior edge set exercises every orbit and guarantees a
+    non-trivial invariant result."""
+    coords, rings = _tiling_patch(substrate, nx, ny, trim)
+    topo = _tiling_topology(coords, rings)
+    seed_walls = set(topo['interior'])
+    S = _tiling_symmetrize(seed_walls, topo, group)
+    mats = _tiling_symmetry_matrices(topo, group)
+    mid_index = _tiling_mid_index(topo)
+    em = topo['edge_mid']
+    invariant = True
+    for M in mats:
+        mapped = set()
+        good = True
+        for key in S:
+            k = _tiling_lookup_edge(mid_index, pc.apply(M, [em[key]])[0])
+            if k is None:
+                good = False
+                break
+            mapped.add(k)
+        if not good or mapped != S:
+            invariant = False
+            break
+    r = _check_tiling(substrate, nx, ny, trim=trim, walls=S)
+    valid = r['bij'] and r['partition'] and r['one_over']
+    return (invariant and valid and len(S) > 0), len(S), len(mats)
+
+
+def _check_pointed_corner():
+    """POINTED reflection turns: the pointed path has the same sample count
+    as the round one, reduces EXACTLY to the round cap at tightness 0, is
+    finite, and genuinely deviates (non-degenerate) at tightness > 0."""
+    W = H = 5
+    B = _preset_barriers('CROSSBREAK', W, H)
+    cords = trace_cords(W, H, True, B)
+    x = _solve_over(cords)
+    subdiv = 8
+    same = reduces = finite = True
+    max_dev = 0.0
+    tested = 0
+    for rec in cords:
+        for control, cross, closed in _render_pieces(rec, x, W, H, True):
+            reflect = _reflect_indices(len(control), cross)
+            if not reflect or len(control) < 3:
+                continue
+            tested += 1
+            rp = _smooth_path(control, closed, subdiv, 'ROUNDED', 0.5,
+                              reflect)
+            p0 = _smooth_path(control, closed, subdiv, 'POINTED', 0.0,
+                              reflect)
+            pt = _smooth_path(control, closed, subdiv, 'POINTED', 0.6,
+                              reflect)
+            same = same and len(rp) == len(pt) == len(p0)
+            reduces = reduces and all(
+                abs(a[0] - b[0]) < 1e-12 and abs(a[1] - b[1]) < 1e-12
+                for a, b in zip(rp, p0))
+            finite = finite and all(np.isfinite(q).all() for q in pt)
+            for a, b in zip(rp, pt):
+                max_dev = max(max_dev, hypot(a[0] - b[0], a[1] - b[1]))
+    # geometry with pointed turns is non-empty and finite
+    cells = build_cells(W, H, True, B, 0.25, 'SMOOTH', True, 'FLAT', 0.06,
+                        'LOOP', 0.0, False, 0.08, 8, 'SQUARE', 'FLAT', 8,
+                        3, 8.0, False, 'POINTED', 0.6)
+    faces = sum(len(c[1]) for c in cells)
+    geo_ok = faces > 0 and all(all(np.isfinite(v).all() for v in c[0])
+                               for c in cells)
+    return (same and reduces and finite and max_dev > 1e-6 and geo_ok
+            and tested > 0), max_dev
+
+
+def _check_pointed_tiling():
+    """POINTED turns compose with the medial-tiling ribbon (finite, non-
+    empty geometry, and byte-identical to ROUNDED at tightness 0)."""
+    a = _cells_hash(_tiling_build_cells(
+        'TRIHEX', 4, 4, True, set(), 0.25, 'SMOOTH', True, 'FLAT', 0.06,
+        'LOOP', 0.0, False, 0.08, 8, 'FLAT', 8, 3, 8.0, True, 'ROUNDED',
+        0.5))
+    b = _cells_hash(_tiling_build_cells(
+        'TRIHEX', 4, 4, True, set(), 0.25, 'SMOOTH', True, 'FLAT', 0.06,
+        'LOOP', 0.0, False, 0.08, 8, 'FLAT', 8, 3, 8.0, True, 'POINTED',
+        0.0))
+    cells = _tiling_build_cells(
+        'HEX', 4, 4, True, set(), 0.25, 'SMOOTH', True, 'FLAT', 0.06,
+        'LOOP', 0.0, False, 0.08, 8, 'FLAT', 8, 3, 8.0, True, 'POINTED',
+        0.6)
+    faces = sum(len(c[1]) for c in cells)
+    finite = all(all(np.isfinite(v).all() for v in c[0]) for c in cells)
+    return a == b and faces > 0 and finite
+
+
+def _check_historical_preset(name, W, H):
+    """A historical panel preset yields a valid closed-cord knot: the
+    threading partitions into closed cords with a valid alternating
+    over/under, and the ribbon builds finite geometry."""
+    B = _preset_barriers(name, W, H)
+    p, c = _check_partition(W, H, True, B)
+    alt, one, _nx = _check_over_under(W, H, True, B)
+    n = count_loops(W, H, True, B)
+    cells = build_cells(W, H, True, B, interlace=True, interlace_mode='FLAT',
+                        color_by='LOOP', style='SMOOTH')
+    faces = sum(len(c[1]) for c in cells)
+    finite = all(all(np.isfinite(v).all() for v in c[0]) for c in cells)
+    return (p and c and alt and one and n >= 1 and faces > 0 and finite), n
+
+
+def _check_tiling_flush_cut(substrate, nx=5, ny=5, trim=True):
+    """The FLAT-interlace under-cord endcap on a medial tiling is cut
+    parallel to (flush along) the over-cord's edge.  For every under-
+    crossing whose over-cord tangent is known, the reprojected cap segment
+    (the pair of rail cap points on the cut end) must run parallel to that
+    over tangent -- validating the oblique 60/120-degree tiling cut, for
+    ANGULAR as well as SMOOTH cords."""
+    coords, rings = _tiling_patch(substrate, nx, ny, trim)
+    topo = _tiling_topology(coords, rings)
+    cords = _tiling_trace_cords(topo, set())
+    x = _tiling_solve_over(cords)
+    style = 'ANGULAR'
+    subdiv = 8
+    over_tan = _tiling_over_tangents(cords, x, style, subdiv)
+    width = max(0.02, 0.25 * 1.2)
+    margin = max(0.02, 0.25 * width)
+    half = 0.5 * (width + margin)
+    h_o = 0.5 * width
+    gap = 0.5 * margin
+    maxreach = 3.0 * width
+    cut_gate = 1.5 * half
+    checked = 0
+    parallel = True
+    worst = 0.0
+    for rec in cords:
+        control, cross, closed = _tiling_render_piece(rec, x)
+        path = control
+        under = [(k, pos) for k, sg, pos in cross if sg < 0]
+        if not under:
+            continue
+        s, total = isl._arclen(path, closed)
+        cut_s = sorted(s[k] for k, _pos in under)
+        pieces = isl._cut_band(path, closed, cut_s, half, s, total)
+        ugeo = []
+        for k, pos in under:
+            t_o = over_tan.get(pos)
+            if t_o is not None:
+                ugeo.append((path[k], t_o, (-t_o[1], t_o[0])))
+        if not ugeo:
+            continue
+        for sp, sp_closed in pieces:
+            if len(sp) < 2:
+                continue
+            left, right = isl.miter_ribbon(sp, width, sp_closed)
+            orig = {0: (left[0], right[0]), -1: (left[-1], right[-1])}
+            isl._angle_cut_piece(left, right, sp, True, True, ugeo, h_o,
+                                 gap, maxreach, cut_gate)
+            _revert_spike_caps(left, right, orig, width)
+            # each end cap: no cap is a spike, and every cap that was cut
+            # flush (moved from its square terminus) is parallel to the
+            # nearest over-crossing tangent.
+            for idx in (0, -1):
+                cap = (right[idx][0] - left[idx][0],
+                       right[idx][1] - left[idx][1])
+                clen = hypot(cap[0], cap[1])
+                if clen > 1.8 * width + 1e-9:
+                    parallel = False          # spike survived
+                if clen < 1e-9:
+                    continue
+                moved = (hypot(left[idx][0] - orig[idx][0][0],
+                               left[idx][1] - orig[idx][0][1]) > 1e-9
+                         or hypot(right[idx][0] - orig[idx][1][0],
+                                  right[idx][1] - orig[idx][1][1]) > 1e-9)
+                if not moved:
+                    continue                  # clean square/perp cap
+                P = sp[idx]
+                best = min(ugeo, key=lambda g: hypot(P[0] - g[0][0],
+                                                     P[1] - g[0][1]))
+                t_o = best[1]
+                cx = abs((cap[0] / clen) * t_o[1] - (cap[1] / clen) * t_o[0])
+                worst = max(worst, cx)
+                checked += 1
+                if cx > 0.02:              # ~1.1 degree tolerance
+                    parallel = False
+    return parallel and checked > 0, checked, worst
+
+
 if __name__ == "__main__":
     ok = True
 
@@ -2128,5 +2911,53 @@ if __name__ == "__main__":
     pg = _check_profile_geometry()
     ok = ok and pg
     print("square tube/rope profiles non-degenerate: %s" % pg)
+
+    # 10. SYMMETRY-GROUP BARRIERS -- the symmetrized seed is invariant
+    # under every element of its point group and still a valid knot
+    print("-- symmetry-group barriers --")
+    for (grp, W, H) in [('C2', 6, 6), ('C4', 6, 6), ('D2', 6, 6),
+                        ('D4', 6, 6), ('C4', 7, 5), ('D4', 7, 5)]:
+        good, ns, ne = _check_square_symmetry(grp, W, H)
+        ok = ok and good
+        print("square %-3s %dx%d : invariant+valid=%s walls=%d elems=%d"
+              % (grp, W, H, good, ns, ne))
+    for (sub, grp) in [('HEX', 'C6'), ('HEX', 'D6'), ('TRIANGLE', 'C6'),
+                       ('TRIANGLE', 'D3'), ('TRIHEX', 'C6'),
+                       ('TRIHEX', 'C3'), ('SNUBSQUARE', 'C4')]:
+        good, ns, ne = _check_tiling_symmetry(sub, grp, 5, 5, trim=False)
+        ok = ok and good
+        print("tiling %-11s %-3s : invariant+valid=%s walls=%d elems=%d"
+              % (sub, grp, good, ns, ne))
+
+    # 11. LENTICULAR (POINTED) reflection turns: same sample count, reduce
+    # to ROUNDED at the limit, finite, non-degenerate, and compose with
+    # both substrates
+    print("-- lenticular (pointed) turns --")
+    pc_ok, dev = _check_pointed_corner()
+    ok = ok and pc_ok
+    print("square pointed turns : reduces-to-round + non-degenerate=%s "
+          "max_dev=%.4f" % (pc_ok, dev))
+    pt_ok = _check_pointed_tiling()
+    ok = ok and pt_ok
+    print("tiling pointed turns : round-identical@t=0 + geometry ok=%s"
+          % pt_ok)
+
+    # 12. HISTORICAL PANELS -- each named panel is a valid closed-cord knot
+    print("-- historical panels --")
+    for name, (W, H) in _PRESET_HINTS.items():
+        good, n = _check_historical_preset(name, W, H)
+        ok = ok and good
+        print("preset %-12s %dx%d : valid closed-cord knot=%s cords=%d"
+              % (name, W, H, good, n))
+
+    # 13. FLAT-interlace flush cut on the medial tilings (ANGULAR): the
+    # under-cord endcaps run parallel to the over-cord's edge at the
+    # oblique 60/120-degree crossings
+    print("-- tiling angular flush-cut --")
+    for sub in ('TRIHEX', 'HEX', 'TRIANGLE'):
+        good, nchk, worst = _check_tiling_flush_cut(sub)
+        ok = ok and good
+        print("flush-cut %-11s ANGULAR : caps-parallel=%s checked=%d "
+              "worst_sin=%.4f" % (sub, good, nchk, worst))
 
     print("RESULT:", "OK" if ok else "BAD")

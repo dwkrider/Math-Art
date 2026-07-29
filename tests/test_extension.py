@@ -489,6 +489,28 @@ OPS = [
     ("celtic rope", lambda: bpy.ops.mesh.celtic_knot_2d_add(
         substrate='HEX', grid_w=4, grid_h=4, trim=True, profile='ROPE',
         rope_strands=3, rope_twist=9.0, interlace_mode='WOVEN')),
+    ("celtic sym d4", lambda: bpy.ops.mesh.celtic_knot_2d_add(
+        substrate='SQUARE', grid_w=8, grid_h=8, barriers='RANDOM',
+        seed=23, density=0.10, symmetry='D4', style='SMOOTH',
+        color_by='LOOP')),
+    ("celtic sym c6 hex", lambda: bpy.ops.mesh.celtic_knot_2d_add(
+        substrate='HEX', grid_w=7, grid_h=7, trim=True,
+        barriers='RANDOM', seed=4, density=0.42, symmetry='C6',
+        style='SMOOTH', color_by='LOOP')),
+    ("celtic pointed turns",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         grid_w=4, grid_h=4, preset='PLAIN', style='SMOOTH',
+         corner_style='POINTED', corner_tightness=0.7)),
+    ("celtic triquetra", lambda: bpy.ops.mesh.celtic_knot_2d_add(
+        preset='TRIQUETRA', grid_w=4, grid_h=4, style='SMOOTH')),
+    ("celtic josephine", lambda: bpy.ops.mesh.celtic_knot_2d_add(
+        preset='JOSEPHINE', grid_w=6, grid_h=3, style='SMOOTH')),
+    ("celtic carpet", lambda: bpy.ops.mesh.celtic_knot_2d_add(
+        preset='CARPET', grid_w=6, grid_h=6, style='SMOOTH')),
+    ("celtic trihex angular flat",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         substrate='TRIHEX', grid_w=5, grid_h=5, trim=True,
+         style='ANGULAR', interlace=True, interlace_mode='FLAT')),
     ("knot carpet square flat", lambda: bpy.ops.mesh.knot_carpet_add(
         lattice='SQUARE', symmetry=4, nx=3, ny=3,
         interlace_mode='FLAT', color_by='LOOP')),
