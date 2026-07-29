@@ -7,6 +7,14 @@
 # interlock. Classic examples: 4 triangles (tetrahedron), 6 squares
 # (cube), 12 pentagons or 6 pentagons (dodecahedron), 8 triangles
 # (octahedron), 20 triangles (icosahedron).
+#
+# References:
+#   - Alan Holden, "Orderly Tangles: Cloverleafs, Gordian Knots, and
+#     Regular Polylinks" (Columbia University Press, 1983) -- the
+#     symmetric interlocked-polygon arrangements.
+#   - George W. Hart, "Orderly Tangles Revisited",
+#     https://www.georgehart.com/orderly-tangles-revisited/tangles.htm
+#     (the regular polylinks this follows).
 
 bl_info = {
     "name": "Regular Polylinks",
@@ -373,10 +381,10 @@ if _IN_BLENDER:
             name="Coloring",
             items=[('FRAME', "Per Link", "One material per frame, for "
                     "visibility (view with Material Preview or Solid "
-                    "shading set to Material colour)"),
+                    "shading set to Material color)"),
                    ('PAIR', "Per Parallel Pair",
-                    "Iso-colour parallel (antipodal) frames, as in "
-                    "Hart's paper models: 6 squares in 3 colours"),
+                    "Iso-color parallel (antipodal) frames, as in "
+                    "Hart's paper models: 6 squares in 3 colors"),
                    ('NONE', "None", "No materials")],
             default='FRAME')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,

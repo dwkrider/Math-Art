@@ -20,6 +20,14 @@
 #
 # Braid word syntax: letters ("aAbB..": a = s1, A = s1^-1) or integers
 # ("1 -2 1 -2"). Presets cover the classic examples.
+#
+# References:
+# - Seifert's algorithm and the genus of a knot: Herbert Seifert,
+#   "Ueber das Geschlecht von Knoten", Math. Ann. 110, 1934.
+# - Visualization approach after J. J. van Wijk & A. M. Cohen,
+#   "Visualization of Seifert Surfaces", IEEE TVCG 12(4), 2006
+#   (SeifertView; vanwijk.win.tue.nl/seifertview).
+# - Braid generators s_i after Emil Artin (braid groups B_n).
 
 bl_info = {
     "name": "Seifert Surface Generator",

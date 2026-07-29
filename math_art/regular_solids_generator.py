@@ -20,6 +20,17 @@
 # stella octangula, dodecahedron the small stellated dodecahedron),
 # Solid / Leonardo (da Vinci) / Wireframe styles, and coloring by
 # face size (sharing the Conway generator's palette).
+#
+# References:
+# - Platonic solids: Euclid, "Elements" Book XIII (construction
+#   attributed to Theaetetus).
+# - Archimedean solids: Archimedes (work lost); reconstructed by
+#   Johannes Kepler, "Harmonices Mundi" (1619).
+# - Catalan solids (the duals): Eugene Catalan (1865).
+# - Kepler-Poinsot star polyhedra: Johannes Kepler (1619) and Louis
+#   Poinsot, "Memoire sur les polygones et les polyedres" (1810).
+# - Johnson solids: Norman W. Johnson (1966); completeness proved by
+#   Victor Zalgaller (1969).
 
 bl_info = {
     "name": "Regular Solids",
@@ -1152,7 +1163,7 @@ if _IN_BLENDER:
             items=[('SIDES', "By Face Size",
                     "One material per face size (shared with the "
                     "Conway generator; view with Material Preview "
-                    "or Solid shading set to Material colour)"),
+                    "or Solid shading set to Material color)"),
                    ('NONE', "None", "")],
             default='SIDES')
         pieces: IntProperty(

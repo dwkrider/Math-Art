@@ -6,6 +6,17 @@
 # sphere, rotated about its midpoint and lengthened so that strap ends
 # overlap their neighbours in a woven, tensegrity-like arrangement.
 # Twist and extension are free sliders (tune until the ends meet).
+#
+# References:
+#   - Adrian Rossiter, Antiprism and its `rotegrity` program
+#     (https://www.antiprism.com) -- the reference implementation.
+#   - The term "rotegrity" was introduced by Richard (Dick) Boyt,
+#     "Rotegrity" (1970); modern strap-sphere models by Dick
+#     Fischbeck.
+#   - "Tensegrity" is Buckminster Fuller's term for the floating-
+#     compression structures of Kenneth Snelson.
+#   - "Nexorade" / reciprocal-frame terminology after Olivier
+#     Baverel et al., "Nexorades" (mutually supporting members).
 
 bl_info = {
     "name": "Rotegrity Generator",
@@ -274,10 +285,10 @@ if _IN_BLENDER:
             name="Coloring",
             items=[('LENGTH', "By Strap Length",
                     "One material per strap length class -- geodesic "
-                    "breakdowns give a few distinct lengths, coloured "
+                    "breakdowns give a few distinct lengths, colored "
                     "as in physical rotegrity kits (view with "
                     "Material Preview or Solid shading set to "
-                    "Material colour)"),
+                    "Material color)"),
                    ('STRAP', "Per Strap",
                     "Cycle the palette strap by strap"),
                    ('NONE', "None", "No materials")],

@@ -27,6 +27,17 @@
 # lattices below are in integer canonical coordinates, so shared
 # faces coincide to the bit); the default gap < 1 gives the
 # printed-separately look.
+#
+# References:
+# - Henry Segerman, "Visualizing Mathematics with 3D Printing", Johns
+#   Hopkins University Press, 2016 (figs 4-17..4-20, space-filling
+#   solids).
+# - Rhombic spirallohedra S(n,w) via the polar-zonohedron
+#   construction: Russell Towle (Spirallohedra / polar-zonohedron
+#   notebooks).
+# - The alternated cubic (octet) and bitruncated cubic honeycombs and
+#   the Voronoi cells of the cubic, BCC and FCC lattices: H. S. M.
+#   Coxeter, "Regular Polytopes", 3rd ed., Dover, 1973.
 
 bl_info = {
     "name": "Space-Filling Solids",
@@ -268,7 +279,7 @@ def build_block(kind, nx, ny, nz, spiral_segments=12,
         return cells, 2.0
     if kind in _SPIRAL_ARMS:
         # translates over the derived tiling lattice; tag by
-        # lattice parity for the optional two-tone colouring
+        # lattice parity for the optional two-tone coloring
         V, F, B, height, vol = _spiral_data(kind, spiral_segments,
                                             spiral_pitch)
         for i, j, k in P(range(nx), range(ny), range(nz)):
@@ -419,7 +430,7 @@ if _IN_BLENDER:
             description="Distinct materials for octahedra and "
                         "tetrahedra (Octet), or alternating by "
                         "lattice parity (Spirallohedra); the other "
-                        "honeycombs have no honest 2-colouring")
+                        "honeycombs have no honest 2-coloring")
         spiral_segments: IntProperty(
             name="Spiral Segments", default=12, min=6, max=24,
             description="Star vectors of the spirallohedron cell, "

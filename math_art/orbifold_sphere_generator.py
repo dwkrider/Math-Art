@@ -30,6 +30,15 @@
 # Every group is built explicitly as a set of 3x3 orthogonal
 # matrices: generators closed under multiplication with a
 # rounding-dedupe (all orders <= 120).
+#
+# References:
+#   - Henry Segerman, "Visualizing Mathematics with 3D Printing"
+#     (Johns Hopkins University Press, 2016), ch. 1, figs 1.19-1.29
+#     -- the comma symmetry spheres.
+#   - John H. Conway, Heidi Burgiel, Chaim Goodman-Strauss, "The
+#     Symmetries of Things" (A K Peters, 2008) -- Conway-Thurston
+#     orbifold notation, the magic theorem, and the enumeration of
+#     the 14 spherical symmetry types.
 
 bl_info = {
     "name": "Symmetry Sphere (Orbifolds)",

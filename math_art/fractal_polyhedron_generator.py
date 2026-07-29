@@ -7,6 +7,11 @@
 # copies. Vertex mode with scale 1/2 on a tetrahedron and parents
 # removed is the classic Sierpinski tetrahedron; face mode grows
 # spiky coral-like clusters.
+#
+# References:
+# - Recursive Platonic-solid clusters: after George W. Hart.
+# - Sierpinski tetrahedron / triangle: Waclaw Sierpinski (1916),
+#   self-similar fractal.
 
 bl_info = {
     "name": "Fractal Polyhedra",
@@ -273,7 +278,7 @@ if _IN_BLENDER:
             name="Coloring",
             items=[('GEN', "Per Generation",
                     "One material per generation (view with Material "
-                    "Preview or Solid shading set to Material colour)"),
+                    "Preview or Solid shading set to Material color)"),
                    ('NONE', "None", "No materials")],
             default='GEN')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,

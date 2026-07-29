@@ -29,6 +29,15 @@
 # with the inner polygon's m-fold symmetry.  This is a clean bijection
 # (every inner edge receives exactly one ribbon) for every solid and
 # at every spin angle.
+#
+# References:
+# - Inspired by Bathsheba Grossman's "Quintrino" (and her "Ora"
+#   family of dual-symmetry sculptures): strap-like arms swirling
+#   around the rotational-symmetry axes of a dodecahedron. This
+#   generalizes that idea to any Platonic or Archimedean solid woven
+#   to its dual.
+# - Polyhedron/dual pairing: the dual of a Platonic solid is
+#   Platonic; the dual of an Archimedean solid is its Catalan solid.
 
 bl_info = {
     "name": "Twisted Polyhedron",

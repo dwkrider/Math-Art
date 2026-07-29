@@ -9,6 +9,13 @@
 # turn counts sum to a whole number of turns (auto-snapped by
 # default). Generalised from the construction in the user's
 # wonder2.blend script.
+#
+# References:
+#   - Two nested counter-rotating helices joined into a closed loop
+#     is a classical curve construction; the parametrization here
+#     (raised-cosine radius blend, signed-power cosine height,
+#     whole-turn closure) is original to this project.
+#   - Form inspired by Tom Lawton's kinetic sculpture "Wonder".
 
 bl_info = {
     "name": "Dual Helix",

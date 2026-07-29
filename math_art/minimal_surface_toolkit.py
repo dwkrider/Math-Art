@@ -22,6 +22,20 @@
 #    (trefoil by default).
 #
 # Geometry only; materials and rendering are left to Blender.
+#
+# References:
+#   Weierstrass-Enneper representation: K. Weierstrass (1866) and
+#       A. Enneper (1864); the catenoid (surface of Euler, 1744) was
+#       shown minimal by J. B. C. Meusnier (1776).
+#   Costa surface: C. J. Costa (1982); embeddedness by D. Hoffman and
+#       W. H. Meeks III (1985). Chen-Gackstatter: C. C. Chen and
+#       F. Gackstatter (1982). Jorge-Meeks k-noids: L. P. Jorge and
+#       W. H. Meeks III (1983).
+#   Triply-periodic families: H. A. Schwarz (P, D; Gesammelte Math.
+#       Abhandlungen, 1890),
+#       A. H. Schoen (gyroid, I-WP, F-RD; NASA TN D-5541, 1970),
+#       E. R. Neovius (1883). Cotangent-Laplacian area flow after
+#       U. Pinkall and K. Polthier (1993).
 
 bl_info = {
     "name": "Minimal Surface Toolkit",

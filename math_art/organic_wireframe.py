@@ -16,6 +16,9 @@
 #
 # Everything stays editable in the modifier stack afterwards; the
 # operator only builds the stack and sets smooth shading.
+#
+# No specific mathematical construction: a modifier-stack style whose
+# irregular cells evoke a Voronoi decomposition (named for G. Voronoi).
 
 bl_info = {
     "name": "Organic Wireframe (Voronoi style)",

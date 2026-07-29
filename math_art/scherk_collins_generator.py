@@ -25,6 +25,13 @@
 # rotated by 180/b degrees (so a closed warp=360 ring joins smoothly iff
 # (twist + storeys*180/b) mod (360/b) == 0 -- verified against all demo
 # files shipped with the original program).
+#
+# References:
+#   H. F. Scherk, "Bemerkungen ueber die kleinste Flaeche innerhalb
+#       gegebener Grenzen", J. reine angew. Math. (Crelle) 13, 1835
+#       -- the singly-periodic saddle-tower minimal surface.
+#   Sculptural form after the collaboration of sculptor Brent Collins
+#       and Carlo H. Sequin (see the Leonardo and I3D papers above).
 
 bl_info = {
     "name": "Scherk-Collins Sculpture Generator",

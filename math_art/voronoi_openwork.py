@@ -21,6 +21,17 @@
 #   5. a live Solidify modifier gives the shell its thickness.
 #
 # The mesh's own boundary (if open) can be kept as a solid frame.
+#
+# References:
+#   - Voronoi diagram: Georgy F. Voronoi (1908); the equivalent
+#     Dirichlet tessellation, Lejeune Dirichlet (1850); the dual
+#     Delaunay triangulation, Boris N. Delaunay (1934).
+#   - E. W. Dijkstra, "A Note on Two Problems in Connexion with
+#     Graphs", Numerische Mathematik 1 (1959) -- the shortest-path
+#     algorithm used here for the graph-geodesic distances.
+#   - Primoz Gabrijelcic, "voronoizer"
+#     (https://github.com/gabr42/voronoizer) -- the Voronoi-
+#     perforation idea this operator reworks.
 
 bl_info = {
     "name": "Voronoi Openwork",

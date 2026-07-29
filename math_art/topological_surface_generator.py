@@ -24,6 +24,14 @@
 # surface: 0 for the Klein bottles, 1 for the RP^2 models. Parameter
 # grids are offset by fractional steps where needed so that no two
 # grid samples land exactly on a self-intersection curve.
+#
+# References:
+#   Klein bottle: F. Klein (1882). Boy's surface: W. Boy, Math. Ann.
+#       57 (1903), here via the R. Bryant - R. Kusner parametrization.
+#   Cross-cap and Roman surface: two immersions of RP^2 due to
+#       J. Steiner (Rome, 1844). Mobius band: A. F. Mobius (1858).
+#   Menagerie after ch. 6 of H. Segerman, "Visualizing Mathematics
+#       with 3D Printing" (2016).
 
 bl_info = {
     "name": "Topological Surface Generator",

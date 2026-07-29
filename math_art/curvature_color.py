@@ -24,6 +24,12 @@
 # first if you want the curvature of the modified surface.  The mesh
 # itself is never altered; triangulation happens on a bmesh copy used
 # only for the computation.
+#
+# References:
+#   Gaussian curvature and its intrinsic character: C. F. Gauss,
+#       "Theorema Egregium" (Disquisitiones generales circa superficies
+#       curvas, 1827). The angle-deficit estimate is the discrete
+#       Gauss-Bonnet / Descartes total-angular-defect form.
 
 bl_info = {
     "name": "Curvature Color",

@@ -16,6 +16,16 @@
 #
 # Output styles follow the classic Torus Knot + add-on: a Bezier /
 # Poly / NURBS curve with bevel radius, or a mesh tube.
+#
+# References:
+# - Dale Rolfsen, "Knots and Links", Publish or Perish, 1976 (the
+#   Rolfsen table and its knot numbering).
+# - Knot nomenclature n_k after J. W. Alexander & G. B. Briggs
+#   (1926/27), extending P. G. Tait's 19th-century enumeration.
+# - Thomas A. Gittings, "Minimum braids: a complete invariant of
+#   knots and links", arXiv:math/0401051, 2004 (Table 1 braid words).
+# - Verification via the Alexander polynomial (J. W. Alexander, 1928)
+#   computed from the reduced Burau representation (Werner Burau, 1935).
 
 bl_info = {
     "name": "Prime Knots",

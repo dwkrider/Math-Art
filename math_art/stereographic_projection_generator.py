@@ -32,6 +32,12 @@
 # vertical edge). For GRID/POLAR the latitude rows are spaced
 # uniformly in plane radius r, so pattern cells are evenly
 # resolved in the plane where the pattern lives.
+#
+# References:
+#   Stereographic projection is a classical construction (known to
+#       Hipparchus and Ptolemy in antiquity). Shadow-casting sculpture
+#       application after H. Segerman, "Visualizing Mathematics with
+#       3D Printing" (2016), figs 3-11..3-14.
 
 bl_info = {
     "name": "Stereographic Projection",

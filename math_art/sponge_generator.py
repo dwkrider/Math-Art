@@ -12,6 +12,16 @@
 #   CARPET    Sierpinski carpet: 3x3 in the plane, one cube thick
 #   TETRA     Sierpinski tetrahedron: 4 half-scale copies at vertices
 #   OCTA      Sierpinski octahedron: 6 half-scale copies at vertices
+#
+# References:
+# - Menger sponge: Karl Menger, "Allgemeine Raeume und Cartesische
+#   Raeume", Proc. Akad. Wetensch. Amsterdam 29, 1926, pp. 1125-1128.
+# - Sierpinski carpet (and its 3D tetra/octa analogues): Waclaw
+#   Sierpinski, C. R. Acad. Sci. Paris 162, 1916, pp. 629-632.
+# - Vicsek fractal: Tamas Vicsek, "Fractal models for diffusion
+#   controlled aggregation", J. Phys. A 16, 1983, pp. L647-L652.
+# - Self-similar dimension: Benoit B. Mandelbrot, "The Fractal
+#   Geometry of Nature", W. H. Freeman, 1982.
 
 bl_info = {
     "name": "Fractal Sponges",

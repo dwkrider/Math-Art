@@ -8,6 +8,12 @@
 # 5/8 dome.  Styles: welded shell (optional Solidify thickness), strut
 # and node frame, Leonardo-style open panels, or a panelised dome with
 # inset gaps between the triangles.
+#
+# References:
+# - Geodesic domes: R. Buckminster Fuller.
+# - Goldberg polyhedra (the Class I/II duals): Michael Goldberg (1937).
+# - Henry Segerman, "Visualizing Mathematics with 3D Printing"
+#   (2016), figs 4-5, 4-6.
 
 bl_info = {
     "name": "Geodesic Sphere / Dome Generator",

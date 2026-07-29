@@ -4,6 +4,11 @@
 # Waterman polyhedra (Steve Waterman): the convex hull of the points of
 # the FCC lattice (cubic close packing) that lie within a sphere of
 # radius sqrt(2 * root) about the origin. After Antiprism's `waterman`.
+#
+# References:
+# - Waterman polyhedra: Steve Waterman (convex hulls of close-packed
+#   lattice points within a given radius).
+# - Antiprism (Adrian Rossiter), the `waterman` program.
 
 bl_info = {
     "name": "Waterman Polyhedra",

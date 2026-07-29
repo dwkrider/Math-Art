@@ -8,6 +8,12 @@
 # join into long helical bands: n and the twist step control how many
 # bands spiral around the ring. Optional corner rounding morphs the
 # profile from crisp polygon to circle.
+#
+# References:
+#   - George W. Hart, "Twisted Torus" example,
+#     https://www.georgehart.com/ (the twisted prismatic torus this
+#     follows).  The swept/twisted prismatic torus is otherwise a
+#     classical toroidal construction.
 
 bl_info = {
     "name": "Twisted Torus",
@@ -215,14 +221,14 @@ if _IN_BLENDER:
         coloring: EnumProperty(
             name="Coloring",
             items=[('STRIP', "Per Strip",
-                    "One material per visible helical strip (n colours). "
-                    "Strips that spiral into each other change colour "
+                    "One material per visible helical strip (n colors). "
+                    "Strips that spiral into each other change color "
                     "where they cross the seam ring"),
                    ('BAND', "Per Band",
                     "One material per topologically connected band -- "
-                    "gcd(sides, twist) colours; when sides and twist are "
+                    "gcd(sides, twist) colors; when sides and twist are "
                     "coprime every strip joins into a single band and "
-                    "the whole torus is one colour"),
+                    "the whole torus is one color"),
                    ('NONE', "None", "No materials")],
             default='STRIP')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,

@@ -9,7 +9,14 @@
 # radius.  When gcd(p, q) = d > 1 the result is a torus LINK of d
 # components (e.g. (2,2) is the Hopf link, (2,4) Solomon's link,
 # (3,3) three fibres of the Hopf fibration), emitted as d splines
-# (or merged tube meshes) with optional per-component colouring.
+# (or merged tube meshes) with optional per-component coloring.
+#
+# References:
+# - Torus knots and links T(p,q): a classical construction of knot
+#   theory (see e.g. Dale Rolfsen, "Knots and Links", 1976).
+# - The Hopf fibration of S^3, whose fibres are (1,1) torus circles:
+#   Heinz Hopf, "Ueber die Abbildungen der dreidimensionalen Sphaere
+#   auf die Kugelflaeche", Math. Ann. 104, 1931.
 
 bl_info = {
     "name": "Torus Knots & Links",

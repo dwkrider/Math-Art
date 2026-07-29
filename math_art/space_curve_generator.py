@@ -9,6 +9,17 @@
 #
 # Output is a poly curve with bevel (optionally Chaikin-rounded
 # corners) or a plain mesh wire.
+#
+# References:
+# - Hilbert curve: David Hilbert, "Ueber die stetige Abbildung einer
+#   Linie auf ein Flaechenstueck", Math. Ann. 38, 1891, pp. 459-460.
+# - Moore (closed) curve: E. H. Moore, "On certain crinkly curves",
+#   Trans. Amer. Math. Soc. 1, 1900, pp. 72-90.
+# - Hilbert index/transpose algorithm: John Skilling, "Programming the
+#   Hilbert curve", AIP Conf. Proc. 707, 2004, p. 381.
+# - Corner rounding: G. Chaikin, "An algorithm for high-speed curve
+#   generation", Computer Graphics and Image Processing 3, 1974,
+#   pp. 346-349.
 
 bl_info = {
     "name": "Space-Filling Curves",

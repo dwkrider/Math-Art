@@ -19,6 +19,19 @@
 # Works on the built-in Platonic seeds or the active mesh object,
 # so any polyhedron (Conway, Johnson, Catalan, ...) can be pierced
 # the same way.
+#
+# References:
+# - Minimal surfaces / Plateau's problem: the pierced membrane
+#   approximates a soap film spanning the held edge frame.
+# - Discrete membrane relaxation: U. Pinkall and K. Polthier,
+#   "Computing Discrete Minimal Surfaces and Their Conjugates",
+#   Experimental Mathematics 2(1), 1993, pp. 15-36.
+# - Laplacian mesh smoothing: M. Desbrun, M. Meyer, P. Schroder,
+#   A. Barr, "Implicit Fairing of Irregular Meshes using Diffusion
+#   and Curvature Flow", SIGGRAPH 1999.
+# - Quad-split topology: E. Catmull and J. Clark, "Recursively
+#   generated B-spline surfaces on arbitrary topological meshes",
+#   Computer-Aided Design 10(6), 1978.
 
 bl_info = {
     "name": "Minimal Surface Polyhedron",

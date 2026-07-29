@@ -13,6 +13,14 @@
 #   Antiprism's make_polar_zonohedron (base/zonohedron.cc), including
 #   the spiral-width option -- `zono -P 12,4` is the Rhombic
 #   Spirallohedron preset (after Russell Towle).
+#
+# References:
+# - Zonohedra / zonotopes: E. S. Fedorov (1885).
+# - Zonohedra as Minkowski sums / zones: H. S. M. Coxeter, "Regular
+#   Polytopes", 3rd ed., Dover, 1973.
+# - Polar zonohedra and rhombic spirallohedra: Russell Towle
+#   (zonohedra.com).
+# - Antiprism (Adrian Rossiter), the `zono` program.
 
 bl_info = {
     "name": "Zonohedra Generator",

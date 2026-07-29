@@ -14,6 +14,13 @@
 #   Taubin heart, Ding-dong, Chmutov sextic, Tangle cube
 #
 # Geometry only; materials and rendering are left to Blender.
+#
+# References:
+#   Clebsch diagonal cubic: A. Clebsch (1871). Cayley nodal cubic:
+#       A. Cayley (1869). Kummer quartic: E. E. Kummer (1864).
+#   Barth sextic (65 nodes): W. Barth (1996). Togliatti quintic
+#       (31 nodes): E. G. Togliatti (1940). Chmutov surfaces:
+#       S. V. Chmutov. Heart surface after G. Taubin (1994).
 
 bl_info = {
     "name": "Algebraic Surface Generator",

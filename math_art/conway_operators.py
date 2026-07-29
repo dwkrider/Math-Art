@@ -14,6 +14,14 @@
 #
 # Optional geometry post-processing: spherize, or George Hart-style
 # canonicalization (edges tangent to the unit sphere, planar faces).
+#
+# References:
+# - Conway polyhedron notation: John H. Conway; extended and
+#   popularized by George W. Hart ("Conway Notation for Polyhedra").
+# - Canonicalization algorithm: George W. Hart, "Calculating
+#   Canonical Polyhedra", Mathematica in Education and Research
+#   6(3), 1997, pp. 5-10.
+# - Antiprism (Adrian Rossiter), the `conway` program.
 
 bl_info = {
     "name": "Conway Polyhedron Operators",

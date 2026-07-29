@@ -15,6 +15,13 @@
 # mitred pentagon junctions. The two extension factors
 # sqrt((5+sqrt5)/10) and sqrt((5-sqrt5)/10) keep the bends mitred at
 # constant width. The strip width is the one free parameter.
+#
+# References:
+# - Shengyi Wang (txyyss), "Stellated Surface Weave"
+#   (txyyss.github.io/math-art/stellated-surface-weave; source at
+#   github.com/txyyss/math-art) -- the construction this ports.
+# - Underlying solid: the small stellated dodecahedron, one of the
+#   Kepler-Poinsot star polyhedra (Johannes Kepler, 1619).
 
 bl_info = {
     "name": "Stellated Surface Weave",
@@ -444,7 +451,7 @@ if _IN_BLENDER:
             items=[('STRIP', "Per Strip",
                     "One material per pentagram plane (12 strips; "
                     "view with Material Preview or Solid shading "
-                    "set to Material colour)"),
+                    "set to Material color)"),
                    ('NONE', "None", "No materials")],
             default='STRIP')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,

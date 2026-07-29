@@ -9,10 +9,20 @@
 # operator works straight from the Add menu) or the active mesh
 # object.  Weave types: CELTIC (plain weaving -- every crossing
 # alternates) and TWILL (over two, under two; heuristic edge
-# colouring after Akleman et al., "Cyclic Twill-Woven Objects",
+# coloring after Akleman et al., "Cyclic Twill-Woven Objects",
 # 2011).  Optional remeshing (edge subdivision / medial) refines
 # the pattern; outputs are bezier strands, beveled pipes, or flat
-# ribbon meshes, with optional per-strand / per-braid colouring.
+# ribbon meshes, with optional per-strand / per-braid coloring.
+#
+# References:
+# - Adam Newgas, "Celtic Knot" Blender add-on (original algorithm),
+#   github.com/BorisTheBrave/celtic-knot, MIT license.
+# - Twill weaving after E. Akleman, J. Chen, Q. Xing & J. L. Gross,
+#   "Cyclic Twill-Woven Objects", Computers & Graphics 35(3), 2011,
+#   pp. 623-631.
+# - Mathematical background on Celtic interlace: Peter R. Cromwell,
+#   "Celtic Knotwork: Mathematical Art", Math. Intelligencer 15(1),
+#   1993, pp. 36-47.
 
 bl_info = {
     "name": "Celtic Knot (Math Art)",
@@ -253,7 +263,7 @@ def get_medial_twill_twists(bm, orig_face_len):
 
 
 def get_twill_twists(bm):
-    """Over-two-under-two edge colouring by heuristic voting,
+    """Over-two-under-two edge coloring by heuristic voting,
     after Akleman et al. 2011."""
     seed(0)
     bm.verts.ensure_lookup_table()
@@ -376,7 +386,7 @@ def get_twill_twists(bm):
             color_edge(bm.edges[best_edge],
                        TWIST_CW if best.cw > best.ccw
                        else TWIST_CCW)
-    assert all(coloring), "twill colouring failed"
+    assert all(coloring), "twill coloring failed"
     return coloring
 
 

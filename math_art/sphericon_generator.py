@@ -29,7 +29,10 @@
 #     and its cross-section rotated onto itself).
 #   - I. Sabitov / P. Roberts (polysphericons); H-ITS Polysphericons
 #     project, https://www.h-its.org/projects/polysphericons/ .
-#   - C. J. Roberts, sphericon; Wikipedia "sphericon".
+#   - Sphericon invented by Colin J. Roberts (Baldock, England);
+#     popularized by Ian Stewart, "Cone with a Twist", Mathematical
+#     Recreations, Scientific American, October 1999.  See also
+#     Wikipedia "sphericon".
 
 bl_info = {
     "name": "Sphericon",
@@ -200,7 +203,7 @@ if _IN_BLENDER:
         coloring: EnumProperty(
             name="Coloring",
             items=[('BANDS', "Per Conical Band",
-                    "A different colour per conical band"),
+                    "A different color per conical band"),
                    ('NONE', "Single Material", "One plain material")],
             default='BANDS')
         smooth_shading: BoolProperty(name="Smooth Shading",

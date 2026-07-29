@@ -12,6 +12,18 @@
 # is its sphere trimmed to its own cell, and the interior films
 # are trimmed where a third bubble's cell takes over, so triple
 # junctions appear where three films meet, as in nature.
+#
+# References:
+#   - Joseph Plateau, "Statique experimentale et theorique des
+#     liquides soumis aux seules forces moleculaires" (1873) --
+#     Plateau's laws for soap films (120-degree triple junctions).
+#   - Young-Laplace law for the pressure jump across a curved film.
+#   - Double Bubble theorem: M. Hutchings, F. Morgan, M. Ritore,
+#     A. Ros, "Proof of the double bubble conjecture", Annals of
+#     Mathematics 155 (2002), pp. 459-489.
+#   - C. Isenberg, "The Science of Soap Films and Soap Bubbles"
+#     (Dover, 1992); D. Weaire & S. Hutzler, "The Physics of Foams"
+#     (Oxford, 1999).
 
 bl_info = {
     "name": "Bubble Cluster",

@@ -179,7 +179,7 @@ if _IN_BLENDER:
                     "One material per face size, shared with the "
                     "Conway generator's palette (view with Material "
                     "Preview or Solid shading set to Material "
-                    "colour)"),
+                    "color)"),
                    ('NONE', "None", "No materials")],
             default='SIDES')
         style: EnumProperty(

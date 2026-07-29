@@ -40,6 +40,17 @@
 # a warning) to stay under it.
 #
 # Run this file with plain python for a geometry self-test.
+#
+# References:
+#   - Aristid Lindenmayer, "Mathematical models for cellular
+#     interactions in development" (1968) -- L-systems.
+#   - Przemyslaw Prusinkiewicz & Aristid Lindenmayer, "The
+#     Algorithmic Beauty of Plants" (Springer, 1990).
+#   - Recursive branching in the tradition of the Pythagoras tree
+#     (Albert E. Bosman, 1942).
+#   - Henry Segerman, "Visualizing Mathematics with 3D Printing"
+#     (Johns Hopkins University Press, 2016) -- the Mahler-Segerman
+#     ternary tree mobile (fig. 7-2) reproduced by the Mobile mode.
 
 bl_info = {
     "name": "Fractal Tree",

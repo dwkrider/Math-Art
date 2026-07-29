@@ -23,6 +23,12 @@
 # Examples: "FEV" (default weave), "1,1,1V" (rings around vertices),
 # "1,1,1F" (rings around faces), "1,1,1FFE" (squares on a cube),
 # "1,1,1::::::FEV" (curved segments), "0,1,0:0.1FEV" (raised weave).
+#
+# References:
+#   - Adrian Rossiter, Antiprism and its `poly_weave` program and
+#     pattern language (https://www.antiprism.com) -- the reference
+#     implementation this follows.  The over-under plain/twill weave
+#     over a surface is an otherwise classical basketry construction.
 
 bl_info = {
     "name": "Polyhedral Weave Generator",
@@ -506,7 +512,7 @@ if _IN_BLENDER:
             items=[('STRAND', "Per Strand",
                     "One material per woven strand (view with "
                     "Material Preview or Solid shading set to "
-                    "Material colour)"),
+                    "Material color)"),
                    ('NONE', "None", "No materials")],
             default='STRAND')
         scale: FloatProperty(name="Radius", default=1.0, min=0.01,

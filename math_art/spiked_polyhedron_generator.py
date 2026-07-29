@@ -20,6 +20,17 @@
 #   RHOMBIC   the flat rhombic hexecontahedron itself, emitted as
 #             60 planar golden rhombi -- the union of 20 acute
 #             golden rhombohedra sharing the centre.
+#
+# References:
+# - Deltahedra and face-augmented (pyramid-capped) Platonic solids:
+#   H. Martyn Cundy and A. P. Rollett, "Mathematical Models", 2nd ed.,
+#   Oxford University Press, 1961.
+# - Rhombic hexecontahedron (60 golden rhombi, a stellation of the
+#   rhombic triacontahedron / union of 20 acute golden rhombohedra):
+#   see Stan Wagon; E. W. Weisstein, "Rhombic Hexecontahedron",
+#   MathWorld.
+# - Golden ratio in the icosahedron/dodecahedron and the rhombic
+#   zonohedra: H. S. M. Coxeter, "Regular Polytopes", 3rd ed., 1973.
 
 bl_info = {
     "name": "Spiked & Hyperbolic Polyhedra",

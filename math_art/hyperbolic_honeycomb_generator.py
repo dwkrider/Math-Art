@@ -23,6 +23,14 @@
 # Compact presets: {4,3,5}, {5,3,4}, {3,5,3}, {5,3,5}. Paracompact
 # presets: {6,3,3} (ideal cell centers) and {3,3,6} (ideal vertices --
 # every strut is a complete geodesic between boundary points).
+#
+# References:
+# - Regular hyperbolic honeycombs via Schlafli symbols {p,q,r};
+#   H. S. M. Coxeter, "Regular Honeycombs in Hyperbolic Space" (1954).
+# - Visualization after Roice Nelson & Henry Segerman, "Visualizing
+#   Hyperbolic Honeycombs" (2015).
+# - Henry Segerman, "Visualizing Mathematics with 3D Printing"
+#   (2016), figs 4-21..4-23.
 
 bl_info = {
     "name": "Hyperbolic Honeycomb",

@@ -15,6 +15,11 @@
 #
 # Struts can taper with the local projection scale (near features fat,
 # far features thin), and vertices can be capped with spheres.
+#
+# References:
+# - The six regular convex 4-polytopes: Ludwig Schlafli (c. 1852).
+# - H. S. M. Coxeter, "Regular Polytopes".
+# - Schlegel diagrams: Victor Schlegel (1883).
 
 bl_info = {
     "name": "4D Polytopes",
