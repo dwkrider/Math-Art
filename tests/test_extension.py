@@ -135,6 +135,16 @@ OPS = [
         solid='OCTA')),
     ("woven icosa", lambda: bpy.ops.mesh.woven_polyhedron_add(
         solid='ICOSA')),
+    ("woven trunc tetra", lambda: bpy.ops.mesh.woven_polyhedron_add(
+        solid='TT')),
+    ("woven cuboctahedron", lambda: bpy.ops.mesh.woven_polyhedron_add(
+        solid='CO')),
+    ("woven snub cube", lambda: bpy.ops.mesh.woven_polyhedron_add(
+        solid='SC')),
+    ("woven trunc icosa", lambda: bpy.ops.mesh.woven_polyhedron_add(
+        solid='TI')),
+    ("woven geodesic", lambda: bpy.ops.mesh.woven_polyhedron_add(
+        solid='GEODESIC', frequency=2)),
     ("gilbert 3d", lambda: bpy.ops.curve.space_filling_add(
         kind='GILBERT3D', gw=12, gh=8, gd=4)),
     ("celtic knot", lambda: bpy.ops.curve.celtic_knot_add(
@@ -150,7 +160,12 @@ OPS = [
         preset='BORROMEAN')),
     ("hyperbolic tiling",
      lambda: bpy.ops.mesh.hyperbolic_tiling_add()),
+    ("hyperbolic klein",
+     lambda: bpy.ops.mesh.hyperbolic_tiling_add(model='KLEIN',
+                                                p=3, q=7)),
     ("geodesic", lambda: bpy.ops.mesh.geodesic_add()),
+    ("geodesic dual (goldberg)",
+     lambda: bpy.ops.mesh.geodesic_add(dual=True)),
     ("curvature color",
      lambda: (bpy.ops.mesh.primitive_torus_add(),
               bpy.ops.object.curvature_color_add())[-1]),
@@ -217,6 +232,170 @@ OPS = [
         kind='CELL8', dual_compound=True)),
     ("polytope rings", lambda: bpy.ops.mesh.polytope4d_add(
         kind='CELL120', rings=2, rings_only=True)),
+    ("wallpaper p4m", lambda: bpy.ops.mesh.wallpaper_add(
+        group='p4m', nx=2, ny=2)),
+    ("wallpaper p6m", lambda: bpy.ops.mesh.wallpaper_add(
+        group='p6m', motif_kind='COMMA', nx=2, ny=2)),
+    ("wallpaper pgg op", lambda: bpy.ops.mesh.wallpaper_add(
+        group='pgg', nx=3, ny=3, color_by='OP')),
+    ("wallpaper cmm hand", lambda: bpy.ops.mesh.wallpaper_add(
+        group='cmm', nx=3, ny=3, color_by='HAND')),
+    ("wallpaper p1 relief", lambda: bpy.ops.mesh.wallpaper_add(
+        group='p1', nx=3, ny=3, height=0.1)),
+    ("wallpaper active mesh",
+     lambda: (bpy.ops.mesh.primitive_cube_add(),
+              bpy.ops.mesh.wallpaper_add(
+                  group='p4', motif_kind='ACTIVE', nx=2, ny=2))[-1]),
+    ("wallpaper active fallback (no mesh)",
+     lambda: bpy.ops.mesh.wallpaper_add(
+         group='p3', motif_kind='ACTIVE', nx=2, ny=2)),
+    ("wallpaper margin", lambda: bpy.ops.mesh.wallpaper_add(
+        group='p4m', margin=0.4, nx=2, ny=2)),
+    ("wallpaper active margin",
+     lambda: (bpy.ops.mesh.primitive_cube_add(),
+              bpy.ops.mesh.wallpaper_add(
+                  group='p1', motif_kind='ACTIVE', margin=0.25,
+                  nx=2, ny=2))[-1]),
+    ("wallpaper align cursor", lambda: bpy.ops.mesh.wallpaper_add(
+        group='p4m', nx=2, ny=2, align='CURSOR')),
+    ("frieze p2mm", lambda: bpy.ops.mesh.frieze_add(
+        group='p2mm', reps=4)),
+    ("frieze p2mg op", lambda: bpy.ops.mesh.frieze_add(
+        group='p2mg', reps=4, color_by='OP', height=0.1)),
+    ("frieze active",
+     lambda: (bpy.ops.mesh.primitive_cube_add(),
+              bpy.ops.mesh.frieze_add(
+                  group='p11g', motif_kind='ACTIVE', reps=3))[-1]),
+    ("layer p4 mirror", lambda: bpy.ops.mesh.layer_add(
+        group='p4', zsym='MIRROR', nx=2, ny=2)),
+    ("layer p1 none", lambda: bpy.ops.mesh.layer_add(
+        group='p1', zsym='NONE', nx=2, ny=2)),
+    ("layer active twofold",
+     lambda: (bpy.ops.mesh.primitive_cube_add(),
+              bpy.ops.mesh.layer_add(
+                  group='p2', zsym='TWOFOLD', motif_kind='ACTIVE',
+                  nx=2, ny=2))[-1]),
+    ("tiling rhombitrihex", lambda: bpy.ops.mesh.tiling_add(
+        tiling='RHOMBITRIHEX', nx=3, ny=3)),
+    ("tiling truncsq relief", lambda: bpy.ops.mesh.tiling_add(
+        tiling='TRUNCSQ', nx=3, ny=3, height=0.2)),
+    ("tiling laves deltoidal", lambda: bpy.ops.mesh.tiling_add(
+        tiling='DELTOIDAL', nx=3, ny=3, margin=0.05)),
+    ("tiling cairo type", lambda: bpy.ops.mesh.tiling_add(
+        tiling='CAIRO', nx=3, ny=3, color_by='TYPE')),
+    ("tiling separate", lambda: bpy.ops.mesh.tiling_add(
+        tiling='HEX', nx=2, ny=2, separate=True)),
+    ("tiling trim snubhex", lambda: bpy.ops.mesh.tiling_add(
+        tiling='SNUBHEX', nx=4, ny=4, trim=True)),
+    ("tiling trim trunctrihex", lambda: bpy.ops.mesh.tiling_add(
+        tiling='TRUNCTRIHEX', nx=4, ny=4, trim=True, height=0.2)),
+    ("wallpaper separate", lambda: bpy.ops.mesh.wallpaper_add(
+        group='p4', nx=2, ny=2, separate=True)),
+    ("frieze separate", lambda: bpy.ops.mesh.frieze_add(
+        group='p2', reps=3, separate=True)),
+    ("layer separate", lambda: bpy.ops.mesh.layer_add(
+        group='p2', zsym='MIRROR', nx=2, ny=2, separate=True)),
+    ("wallpaper cm (fixed)", lambda: bpy.ops.mesh.wallpaper_add(
+        group='cm', nx=3, ny=3)),
+    ("wallpaper p4g op (fixed)", lambda: bpy.ops.mesh.wallpaper_add(
+        group='p4g', nx=2, ny=2, color_by='OP')),
+    ("kuniform s_tt", lambda: bpy.ops.mesh.kuniform_add(
+        tiling='S_TT', nx=3, ny=3)),
+    ("kuniform hex_t trim", lambda: bpy.ops.mesh.kuniform_add(
+        tiling='HEX_T', nx=3, ny=3, trim=True)),
+    ("monohedral pent2", lambda: bpy.ops.mesh.monohedral_add(
+        tiling='PENT2', nx=3, ny=3)),
+    ("monohedral hex2 separate", lambda: bpy.ops.mesh.monohedral_add(
+        tiling='HEX2', nx=2, ny=2, separate=True)),
+    ("isohedral p2 shape", lambda: bpy.ops.mesh.isohedral_add(
+        tiling='P2', nx=3, ny=3, shape=0.35)),
+    ("isohedral p31m", lambda: bpy.ops.mesh.isohedral_add(
+        tiling='P31M', nx=3, ny=3)),
+    ("aperiodic penrose p3", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='PENROSE_P3', generations=4)),
+    ("aperiodic ammann trim", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='AMMANN_BEENKER', generations=3, trim=True)),
+    ("aperiodic p2 star", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='PENROSE_P2', seed='STAR', generations=4)),
+    ("aperiodic p2 cartwheel", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='PENROSE_P2', seed='CARTWHEEL', generations=1)),
+    ("aperiodic ammann asym", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='AMMANN_BEENKER', generations=3, phase=0.3,
+        asymmetry=0.5)),
+    ("aperiodic hat", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='HAT', generations=2)),
+    ("aperiodic spectre", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='SPECTRE', generations=2)),
+    ("aperiodic spectre straight", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='SPECTRE', generations=2, spectre_curved=False)),
+    ("aperiodic turtle", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='TURTLE', generations=2)),
+    ("aperiodic chevron", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='CHEVRON', generations=2)),
+    ("aperiodic comet", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='COMET', generations=2)),
+    ("aperiodic custom semi", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='CUSTOM', generations=2, semi_angle=40.0)),
+    ("aperiodic hat cluster", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='HAT', generations=2, color_by='CLUSTER')),
+    ("aperiodic hat supertile", lambda: bpy.ops.mesh.aperiodic_add(
+        kind='HAT', generations=2, color_by='SUPERTILE_LEVEL')),
+    ("reptile sphinx", lambda: bpy.ops.mesh.reptile_add(
+        kind='SPHINX', iterations=3)),
+    ("reptile l_tromino trim", lambda: bpy.ops.mesh.reptile_add(
+        kind='L_TROMINO', iterations=3, trim=True)),
+    ("voderberg classic", lambda: bpy.ops.mesh.voderberg_add(
+        kind='CLASSIC', coils=4)),
+    ("voderberg spiral g3", lambda: bpy.ops.mesh.voderberg_add(
+        kind='SPIRAL', arms=3, coils=4)),
+    ("voderberg radial by type", lambda: bpy.ops.mesh.voderberg_add(
+        kind='RADIAL', coils=4, color_by='TYPE')),
+    ("fractal kite r6", lambda: bpy.ops.mesh.fractal_tiling_add(
+        kind='KITE_R6', iterations=4)),
+    ("fractal kite r12 separate",
+     lambda: bpy.ops.mesh.fractal_tiling_add(
+         kind='KITE_R12', iterations=3, separate=True)),
+    ("fractal kite r8", lambda: bpy.ops.mesh.fractal_tiling_add(
+        kind='KITE_R8', iterations=4, color_by='UNIFORM')),
+    ("islamic starcross8", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='STARCROSS8', nx=4, ny=4)),
+    ("islamic 12-fold tile", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='CUSTOM', substrate='TRUNCHEX', contact_angle=30.0,
+        nx=3, ny=3, color_by='TILE')),
+    ("islamic hex relief", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='CUSTOM', substrate='HEX', contact_angle=35.0,
+        nx=3, ny=3, height=0.15, backing=True)),
+    ("islamic square separate",
+     lambda: bpy.ops.mesh.islamic_pattern_add(
+         preset='CUSTOM', substrate='SQUARE', contact_angle=30.0,
+         nx=4, ny=4, separate=True)),
+    ("islamic curved", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='STARCROSS8', nx=4, ny=4, curved=True, smoothness=8)),
+    ("islamic by ribbon", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='STARCROSS8', nx=4, ny=4, color_by='BAND')),
+    ("islamic curve output", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='STARCROSS8', nx=3, ny=3, output='CURVE', curved=True)),
+    ("hyp uniform t73", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
+        form='TRUNCATED', p=7, q=3, model='POINCARE')),
+    ("hyp uniform r54 klein",
+     lambda: bpy.ops.mesh.hyperbolic_tiling_add(
+         form='RECTIFIED', p=5, q=4, model='KLEIN')),
+    ("hyp uniform pqr", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
+        form='OMNITRUNCATED', p=4, q=3, r=3)),
+    ("hyp snub", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
+        form='SNUB', p=7, q=3, model='KLEIN')),
+    ("hyp hemisphere", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
+        form='TRUNCATED', p=7, q=3, model='HEMISPHERE')),
+    ("hyp hemisphere large tiles", lambda:
+     bpy.ops.mesh.hyperbolic_tiling_add(
+         p=3, q=7, r=4, model='HEMISPHERE', depth=8,
+         color_by='PARITY', thickness=0.08)),
+    ("hyp pseudosphere", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
+        model='PSEUDOSPHERE')),
+    ("hyp parity plaque", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
+        p=6, q=4, color_by='PARITY', height=0.1, backing=True)),
+    ("hyp parity hide off", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
+        p=6, q=4, color_by='PARITY', hide_off_parity=True)),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):
@@ -240,7 +419,9 @@ for name, op in OPS:
         continue
     try:
         obj = bpy.context.object
-        if hasattr(obj.data, 'vertices'):
+        if obj.data is None:               # parent empty (separate cells)
+            n_elem = len(obj.children)
+        elif hasattr(obj.data, 'vertices'):
             n_elem = len(obj.data.vertices)
         else:                              # curve output
             sp = obj.data.splines[0]

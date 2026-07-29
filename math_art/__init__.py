@@ -64,6 +64,19 @@ _MODULE_NAMES = [
     'curiosity_surface_generator',
     'rolling_knot_generator',
     'woven_polyhedron_generator',
+    'pattern_common',
+    'wallpaper_generator',
+    'frieze_generator',
+    'tiling_generator',
+    'layer_generator',
+    'kuniform_generator',
+    'monohedral_generator',
+    'isohedral_generator',
+    'aperiodic_generator',
+    'reptile_generator',
+    'voderberg_generator',
+    'fractal_tiling_generator',
+    'islamic_pattern_generator',
 ]
 
 _MODULES = []
@@ -184,9 +197,31 @@ class VIEW3D_MT_math_art_odds(bpy.types.Menu):
         _op(lay, "mesh.oloid_add", icon='MESH_CAPSULE')
         _op(lay, "mesh.sphericon_add", icon='MESH_CAPSULE')
         _op(lay, "mesh.stereographic_add", icon='LIGHT_POINT')
-        _op(lay, "mesh.hyperbolic_tiling_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.orbifold_sphere_add", icon='MOD_MIRROR')
         _op(lay, "mesh.bubble_cluster_add", icon='SPHERE')
+
+
+class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
+    bl_idname = "VIEW3D_MT_math_art_patterns"
+    bl_label = "Patterns"
+
+    def draw(self, context):
+        lay = self.layout
+        _op(lay, "mesh.frieze_add", icon='MOD_ARRAY')
+        _op(lay, "mesh.wallpaper_add", icon='MOD_MIRROR')
+        _op(lay, "mesh.layer_add", icon='MOD_SOLIDIFY')
+        lay.separator()
+        _op(lay, "mesh.tiling_add", icon='MESH_GRID')
+        _op(lay, "mesh.kuniform_add", icon='MESH_GRID')
+        _op(lay, "mesh.monohedral_add", icon='MESH_PLANE')
+        _op(lay, "mesh.isohedral_add", icon='MOD_UVPROJECT')
+        _op(lay, "mesh.aperiodic_add", icon='MESH_ICOSPHERE')
+        _op(lay, "mesh.reptile_add", icon='MESH_GRID')
+        _op(lay, "mesh.voderberg_add", icon='FORCE_VORTEX')
+        _op(lay, "mesh.fractal_tiling_add", icon='MESH_CIRCLE')
+        _op(lay, "mesh.islamic_pattern_add", icon='SOLO_ON')
+        lay.separator()
+        _op(lay, "mesh.hyperbolic_tiling_add", icon='MESH_CIRCLE')
 
 
 class VIEW3D_MT_math_art_styles(bpy.types.Menu):
@@ -217,6 +252,7 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.menu("VIEW3D_MT_math_art_fractals", icon='MESH_CUBE')
         lay.menu("VIEW3D_MT_math_art_knots", icon='FORCE_VORTEX')
         lay.menu("VIEW3D_MT_math_art_weaves", icon='MOD_LATTICE')
+        lay.menu("VIEW3D_MT_math_art_patterns", icon='MESH_GRID')
         lay.menu("VIEW3D_MT_math_art_odds", icon='MESH_TORUS')
         lay.separator()
         if hasattr(bpy.types, 'OBJECT_OT_symmetric_sculpture_add'):
@@ -230,8 +266,9 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
 
 _MENUS = (VIEW3D_MT_math_art_minimal, VIEW3D_MT_math_art_polyhedra,
           VIEW3D_MT_math_art_fractals, VIEW3D_MT_math_art_knots,
-          VIEW3D_MT_math_art_weaves, VIEW3D_MT_math_art_odds,
-          VIEW3D_MT_math_art_styles, VIEW3D_MT_math_art_add)
+          VIEW3D_MT_math_art_weaves, VIEW3D_MT_math_art_patterns,
+          VIEW3D_MT_math_art_odds, VIEW3D_MT_math_art_styles,
+          VIEW3D_MT_math_art_add)
 
 
 def _menu_func(self, context):
