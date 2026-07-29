@@ -1168,7 +1168,7 @@ if _IN_BLENDER:
             description="Bezier samples per bridge before "
                         "resampling")
         tube_radius: FloatProperty(
-            name="Rope Radius", default=0.035, min=0.005, max=0.12,
+            name="Rope Radius", default=0.02, min=0.005, max=0.12,
             description="Rope tube radius (outer sphere radius = 1)")
         tube_sides: IntProperty(
             name="Tube Sides", default=10, min=3, max=32)
