@@ -21,19 +21,63 @@
 #       children meet leg-to-leg (edge-to-edge); the tiles shrink toward
 #       a fractal boundary.
 #
-# The pure-Python self-test verifies, for each kind: every hypotenuse is
-# paired full-edge (edge-to-edge), the interior is gap-free and
-# overlap-free (dense sampling), and each generation is exactly s times
-# the previous.
+# Besides the f-tiling, two further constructions are implemented:
+#
+# COMPLEX-BASE SELF-AFFINE REPTILES.  A Gaussian-integer base b with
+# N = |b|^2 and a digit set D of N residue representatives (digits may
+# themselves be complex) defines a radix system on Z[i]: every string
+# (d_0 ... d_{k-1}) maps to the Gaussian integer sum_j d_j b^j.  Placing
+# a unit square at each of the N^k positions yields a polyomino that
+# converges (after rescaling) to a rep-N self-affine tile -- Bandt's
+# integer-matrix theorem, catalogued by Vince.  The base -1+i with
+# D = {0,1} gives the twindragon (base +1+i FAILS unique representation,
+# per Gilbert/Knuth); -2+i with the symmetric digits {0,1,-1,i,-i} gives
+# the round rep-5 dragon; collinear digits {0..4} over 2+i and 1+2i give
+# the thin dragons whose aspect ratios Mekhontsev computed.
+#
+# FATHAUER ISOMETRY INFLATION (PENTABOLO).  Following Fathauer's own
+# construction, a half-square right triangle {(0,0),(1,0),(1/2,1/2)} is
+# grown by five fixed plane isometries M0..M4 (identity, +/-90 and 180
+# degree rotations about points of the half-integer lattice).  The union
+# of the five images is the 5-triangle pentabolo; each further level
+# re-applies the five maps conjugated by the sqrt(5) expansion
+# z -> (1+2i)^k z (same rotation angles, inflated centres), giving
+# 5^k congruent unit triangles at level k with no overlaps -- a rep-5
+# gasket built from isometries rather than contractions.
+#
+# The pure-Python self-test verifies, for each kind: the f-tiling is
+# edge-to-edge, gap-free and shrinks by exactly 1/sqrt(2) per level;
+# the complex-base reptiles place N^k unit cells at distinct Gaussian-
+# integer positions; the pentabolo has 5^k triangles with zero sampled
+# overlaps.
 #
 # References:
+# - Andrew Vince, "Rep-tiling Euclidean space", Aequationes
+#   Mathematicae 50, 1995, pp. 191-213.  The radix-system catalog:
+#   Fig 3 (rep-2 twindragon, base -1+i), Fig 5 (rep-5 dragon, base
+#   -2+i, symmetric digits), Fig 6 (rep-4, base 2, digits
+#   {0,1,i,-1-i}).
+# - Christoph Bandt, "Self-similar sets 5. Integer matrices and fractal
+#   tilings of R^n", Proceedings of the AMS 112, 1991, pp. 549-562.
+#   The integer-matrix + residue-digit-set theorem behind all the
+#   complex-base tiles.
+# - Solomon W. Golomb, "Replicating figures in the plane",
+#   Mathematical Gazette 48, 1964, pp. 403-412.  Defines rep-k figures.
+# - Dmitry Mekhontsev, "The aspect ratio of the Twin Dragon is
+#   1/phi", arXiv:2604.05010, 2026.  Aspect ratios of collinear-digit
+#   dragons over Z[i]: (5,4) base 2+i AR 1/phi^3; (5,2) base 1+2i AR
+#   sqrt(2)-1; symmetric-digit base -2+i AR 1/phi.
+# - Mohammad Sajid, Akhlaq Husain, Krishnendra S. Kumar, "Fractal
+#   rep-tiles of the plane via reflections and integer matrices",
+#   Frontiers in Physics 14:1699796, 2026.  Extends the digit-system
+#   maps with reflections/rotations from the symmetry group of the
+#   matrix.
 # - Robert W. Fathauer, "Fractal Tilings Based on Dissections of
-#   Polyominoes", Bridges 2006, pp. 293-300; "Fractal tilings based on
-#   kite- and dart-shaped prototiles", Computers & Graphics 24, 2000.
-#   Online: Fractal Tiling Encyclopedia,
+#   Polyominoes", Bridges 2006, pp. 293-300; "Fractal gaskets:
+#   rep-tiles, Hamiltonian cycles, and spatial development", Bridges
+#   2016, pp. 217-224.  The f-tiling grower and the pentabolo
+#   5-isometry inflation.  Online: Fractal Tiling Encyclopedia,
 #   https://www.mathartfun.com/encyclopedia/Introduction.html .
-# - Rep-tiles: Solomon W. Golomb, "Replicating figures in the plane",
-#   Mathematical Gazette 48, 1964, pp. 403-412.
 
 bl_info = {
     "name": "Fractal Rep-Tile Tiling",
@@ -153,28 +197,31 @@ def _triangle_patch(iterations):
 
 
 # --------------------------------------------------------------------
-# Complex-base self-affine reptiles (Fathauer "iterating polyominoes")
+# Complex-base self-affine reptiles (Bandt 1991; Vince 1995)
 #
 # A Gaussian-integer base b with N = |b|^2 and a complete residue digit
-# set D (|D| = N) defines a rep-N tile: every b-adic "integer"
-# sum_{j} d_j b^j (d_j in D) is a distinct lattice point, and the unit
-# cell placed at each of the N**k length-k strings forms a polyomino
-# that -- because b carries a rotation -- crinkles toward a fractal
-# reptile as k grows.  N copies compound into a b-times-larger replica
-# (self-similar).  Every cell is the same size, so there is no "shrinking
-# generation" to colour by; instead cells are coloured by their two most
-# significant digits (d0, d1) -> the N-fold substitution nested one level
-# deep (N^2 classes), so the recursive structure reads directly, as in
-# Fathauer's figures.
+# set D (|D| = N; digits may be complex, e.g. {0,1,-1,i,-i}) defines a
+# rep-N tile: every b-adic "integer" sum_{j} d_j b^j (d_j in D) is a
+# distinct Gaussian-integer lattice point, and the unit cell placed at
+# each of the N**k length-k strings forms a polyomino that -- because b
+# carries a rotation -- crinkles toward a fractal reptile as k grows.
+# N copies compound into a b-times-larger replica (self-similar).
+# Every cell is the same size, so there is no "shrinking generation" to
+# colour by; instead cells are coloured by their two most significant
+# digits (d0, d1) -> the N-fold substitution nested one level deep
+# (N^2 classes), so the recursive structure reads directly, as in
+# Vince's and Fathauer's figures.
 # --------------------------------------------------------------------
 
 _UNIT = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
 
 
 def _base_reptile(b, digits, iterations):
-    """(polys, types) for the rep-N reptile of Gaussian base b.  The
-    colour index encodes the top two substitution digits (d0*N + d1) so
-    both the outer N copies and the next level of nesting are visible."""
+    """(polys, types) for the rep-N reptile of Gaussian base b with
+    digit set `digits` (ints or complex; positions stay Gaussian
+    integers).  The colour index encodes the top two substitution
+    digits (d0*N + d1) so both the outer N copies and the next level of
+    nesting are visible."""
     cells = [(complex(0.0, 0.0), 0)]      # (position, colour)
     n = len(digits)
     for lvl in range(int(iterations)):
@@ -198,6 +245,53 @@ def _base_reptile(b, digits, iterations):
     return polys, types
 
 
+# --------------------------------------------------------------------
+# Fathauer pentabolo (Bridges 2006/2016): 5-isometry inflation
+#
+# Seed: the half-square right triangle {(0,0),(1,0),(1/2,1/2)}.  Five
+# fixed isometries of the plane (identity; +90/180 deg rotations about
+# 1/2+1/2i; 180 deg about 1/2; -90 deg about 1) send the seed to the
+# 5-triangle pentabolo.  Each further level inflates by sqrt(5): the
+# same five maps are re-applied CONJUGATED by the expansion
+# D(z) = (1+2i)^k z, i.e. rotations of the same angles about the
+# inflated (still half-integer) centres.  Since 1+2i is a Gaussian
+# integer of norm 5, every triangle stays a quarter-cell of the unit
+# grid, so level k is exactly 5^k congruent unit triangles with no
+# overlap (verified by the self-test).  Colour = index of the
+# OUTERMOST (last-applied) map, giving 5 first-level colour classes.
+# --------------------------------------------------------------------
+
+_PENTA_C = 0.5 + 0.5j
+
+_PENTA_MAPS = [
+    lambda z: z,                                    # M0 identity
+    lambda z: _PENTA_C + 1j * (z - _PENTA_C),       # M1 rot +90 @ 1/2+1/2i
+    lambda z: 2.0 * _PENTA_C - z,                   # M2 rot 180 @ 1/2+1/2i
+    lambda z: 1.0 - z,                              # M3 rot 180 @ 1/2
+    lambda z: 1.0 - 1j * (z - 1.0),                 # M4 rot -90 @ 1
+]
+
+_PENTA_LAMBDA = 1 + 2j            # inflation, |lambda|^2 = 5
+
+
+def _pentabolo(iterations):
+    """(polys, types) for Fathauer's rep-5 pentabolo inflation: 5^k
+    unit right triangles, coloured by the outermost map index."""
+    tris = [(np.array([0.0, 1.0, 0.5 + 0.5j], complex), 0)]
+    for lvl in range(int(iterations)):
+        if len(tris) * 5 > _MAX_TILES:
+            break
+        f = _PENTA_LAMBDA ** lvl              # conjugating expansion
+        nxt = []
+        for verts, _col in tris:
+            for mi, m in enumerate(_PENTA_MAPS):
+                nxt.append((f * m(verts / f), mi))
+        tris = nxt
+    polys = [np.column_stack([v.real, v.imag]) for v, _ in tris]
+    types = [int(c) for _, c in tris]
+    return polys, types
+
+
 # builders take `iterations` and return (polys, types)
 def _triangle_ftiling(iterations):
     raw = _triangle_patch(iterations)
@@ -206,21 +300,24 @@ def _triangle_ftiling(iterations):
 
 
 KINDS = {
+    # Fathauer polygon-substitution kinds (triangle cells)
     'RIGHT_TRIANGLE': dict(build=_triangle_ftiling, tri=True),
-    'TWINDRAGON': dict(
-        build=lambda it: _base_reptile(complex(1, 1), [0, 1], it),
-        tri=False, n=2),
-    'REP5': dict(
-        build=lambda it: _base_reptile(complex(2, 1), [0, 1, 2, 3, 4],
-                                       it),
-        tri=False, n=5),
-    'REP5B': dict(
-        build=lambda it: _base_reptile(complex(1, 2), [0, 1, 2, 3, 4],
-                                       it),
-        tri=False, n=5),
-    'REP2B': dict(
-        build=lambda it: _base_reptile(complex(1, -1), [0, 1], it),
-        tri=False, n=2),
+    'PENTABOLO': dict(build=_pentabolo, tri_cells=True, n=5),
+    # Complex-base radix-system kinds (unit-square cells)
+    'TWINDRAGON': dict(                       # Vince Fig 3, AR 1/phi
+        build=lambda it: _base_reptile(-1 + 1j, [0, 1], it), n=2),
+    'REP4': dict(                             # Vince Fig 6
+        build=lambda it: _base_reptile(2 + 0j, [0, 1, 1j, -1 - 1j],
+                                       it), n=4),
+    'REP5': dict(                             # Vince Fig 5, AR 1/phi
+        build=lambda it: _base_reptile(-2 + 1j, [0, 1, -1, 1j, -1j],
+                                       it), n=5),
+    'REP5_THIN': dict(                        # Mekhontsev (5,4)
+        build=lambda it: _base_reptile(2 + 1j, [0, 1, 2, 3, 4], it),
+        n=5),
+    'REP5B': dict(                            # Mekhontsev (5,2)
+        build=lambda it: _base_reptile(1 + 2j, [0, 1, 2, 3, 4], it),
+        n=5),
 }
 
 
@@ -241,16 +338,25 @@ KIND_ITEMS = [
     ('RIGHT_TRIANGLE', "Right Triangle (f-tiling)",
      "Isosceles right-triangle f-tiling: square seed, a 1/sqrt2 child "
      "glued to every exposed leg; tiles shrink to a fractal boundary"),
-    ('TWINDRAGON', "Twindragon (rep-2)",
-     "Gaussian base 1+i: two cells compound into a sqrt2-larger "
-     "replica -- the twindragon fractal reptile"),
-    ('REP5', "Rep-5 Dragon (base 2+i)",
-     "Gaussian base 2+i: five cells compound into a sqrt5-larger "
-     "replica -- Fathauer's iterated-polyomino rep-5 fractal reptile"),
-    ('REP5B', "Rep-5 Dragon (base 1+2i)",
-     "Gaussian base 1+2i: a second rep-5 reptile, different rotation"),
-    ('REP2B', "Twindragon (base 1-i)",
-     "Gaussian base 1-i: the mirror-rotation rep-2 reptile"),
+    ('PENTABOLO', "Pentabolo (rep-5 gasket)",
+     "Fathauer 5-isometry inflation of a half-square triangle: 5^k "
+     "unit triangles, sqrt5 inflation per level, coloured by "
+     "first-level copy"),
+    ('TWINDRAGON', "Twindragon (rep-2, base -1+i)",
+     "Gaussian base -1+i, digits {0,1}: the Gilbert/Knuth twindragon "
+     "(Vince Fig 3), aspect ratio 1/phi"),
+    ('REP4', "Rep-4 Reptile (base 2)",
+     "Base 2, digits {0,1,i,-1-i}: rep-4 Sierpinski-relative reptile "
+     "(Vince Fig 6)"),
+    ('REP5', "Rep-5 Dragon (round, base -2+i)",
+     "Base -2+i, symmetric digits {0,1,-1,i,-i}: the round rep-5 "
+     "dragon (Vince Fig 5), aspect ratio 1/phi"),
+    ('REP5_THIN', "Rep-5 Dragon (thin, AR 1/phi^3)",
+     "Base 2+i, collinear digits {0..4}: thin rep-5 dragon, aspect "
+     "ratio 1/phi^3 (Mekhontsev (5,4))"),
+    ('REP5B', "Rep-5 Dragon (base 1+2i, AR sqrt2-1)",
+     "Base 1+2i, collinear digits {0..4}: rep-5 dragon, aspect ratio "
+     "sqrt(2)-1 (Mekhontsev (5,2))"),
 ]
 
 
@@ -446,17 +552,31 @@ def _inside_loop(loop, pts):
 if __name__ == "__main__":
     all_ok = True
     for kind, label, _ in KIND_ITEMS:
-        tri = KINDS[kind].get('tri', False)
-        depths = (4, 7) if tri else (3, 5)
+        spec = KINDS[kind]
+        tri = spec.get('tri', False)          # f-tiling (shrinking)
+        tri_cells = spec.get('tri_cells', False)  # unit-triangle cells
+        if tri:
+            depths = (4, 7)
+        elif tri_cells:
+            depths = (2, 4)
+        else:
+            depths = (4, 7)
         for depth in depths:
             polys, types = fractal_patch(kind, depth)
-            allv = np.vstack(polys)
-            lo, hi = allv.min(0), allv.max(0)
-            gx, gy = np.meshgrid(
-                np.linspace(lo[0], hi[0], 240) + 0.00131,
-                np.linspace(lo[1], hi[1], 240) + 0.00069)
-            pts = np.column_stack([gx.ravel(), gy.ravel()])
-            overlaps = int((_coverage(polys, pts) >= 2).sum())
+            if tri or tri_cells:
+                # triangle cells: dense-sampling overlap test
+                allv = np.vstack(polys)
+                lo, hi = allv.min(0), allv.max(0)
+                gx, gy = np.meshgrid(
+                    np.linspace(lo[0], hi[0], 240) + 0.00131,
+                    np.linspace(lo[1], hi[1], 240) + 0.00069)
+                pts = np.column_stack([gx.ravel(), gy.ravel()])
+                overlaps = int((_coverage(polys, pts) >= 2).sum())
+            else:
+                # axis-aligned unit squares on the Gaussian-integer
+                # lattice: overlap iff two cells share a position
+                pos = Counter(_key(p.min(axis=0)) for p in polys)
+                overlaps = sum(c - 1 for c in pos.values() if c > 1)
             if tri:
                 e2e = _hyp_paired(polys)
                 per = {}
@@ -471,14 +591,15 @@ if __name__ == "__main__":
                 ok = e2e and sim and overlaps == 0
                 extra = "edge2edge=%s shrink=%s" % (e2e, sim)
             else:
-                n = KINDS[kind]['n']
+                n = spec['n']
                 capped = len(polys) < n ** depth
                 ok = overlaps == 0 and (len(polys) == n ** depth
                                         or capped)
-                extra = "rep-%d count=%d(%d)" % (n, len(polys),
-                                                 n ** depth)
+                extra = "rep-%d count=%d(%d)%s" % (
+                    n, len(polys), n ** depth,
+                    " capped" if capped else "")
             all_ok = all_ok and ok
-            print("%-14s d=%d tiles=%5d overlaps=%d  %-24s %s"
+            print("%-14s d=%d tiles=%5d overlaps=%d  %-28s %s"
                   % (kind, depth, len(polys), overlaps, extra,
                      "OK" if ok else "BAD"))
     print("RESULT:", "OK" if all_ok else "BAD")
