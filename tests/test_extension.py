@@ -464,6 +464,18 @@ OPS = [
      lambda: bpy.ops.mesh.celtic_knot_2d_add(
          grid_w=6, grid_h=6, border=False, barriers='PROCEDURAL',
          wall_spacing=2, color_by='LOOP')),
+    ("celtic smooth flush interlace",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         grid_w=6, grid_h=5, barriers='PRESET', preset='CROSSBREAK',
+         style='SMOOTH', interlace=True, interlace_mode='FLAT')),
+    ("knot carpet square flat", lambda: bpy.ops.mesh.knot_carpet_add(
+        lattice='SQUARE', symmetry=4, nx=3, ny=3,
+        interlace_mode='FLAT', color_by='LOOP')),
+    ("knot carpet tri woven",
+     lambda: bpy.ops.mesh.knot_carpet_add(
+         lattice='TRIANGULAR', symmetry=6, nx=2, ny=2,
+         amplitude=0.12, interlace_mode='WOVEN', weave_height=0.06,
+         height=0.04, color_by='CHECKER')),
     ("hyp uniform t73", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
         form='TRUNCATED', p=7, q=3, model='POINCARE')),
     ("hyp uniform r54 klein",
