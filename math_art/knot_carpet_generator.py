@@ -493,11 +493,15 @@ def build_tube_cells(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
                      overlap=1.15, samples=192, style='ANGULAR',
                      subdiv=6, tube_radius=0.04, tube_sides=10,
                      weave_height=0.06, color_by='LOOP', backing=False,
-                     base=0.06):
+                     base=0.06, relax_iters=0, clearance=0.10,
+                     weave_gap=0.10):
     """One closed round tube per loop, each dipping in z at its
     crossings so the carpet reads as woven rope.  The weave amplitude
     is forced to at least clear the tube diameter, so an over strand
-    never intersects the under strand it passes.  Returns one
+    never intersects the under strand it passes.  With relax_iters > 0
+    the tubes are swept along the tier-2 relaxed centerlines instead
+    of the flat weave path; clearance and weave_gap are floored at the
+    tube diameter so the relaxed ropes cannot touch.  Returns one
     (verts, faces, mats) cell per loop (+ an optional backing slab)."""
     carpet = build_carpet(lattice, k, nx, ny, amp, overlap, samples,
                           style, subdiv)
@@ -506,12 +510,22 @@ def build_tube_cells(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
     # the over/under lift must exceed the tube radius or the ropes touch
     lift = max(float(weave_height), 1.3 * tr)
     sides = max(3, int(tube_sides))
+    relaxed = None
+    if relax_iters > 0:
+        relaxed = relax_carpet(carpet, lattice, nx, ny,
+                               iters=int(relax_iters),
+                               clearance=max(float(clearance), 2.2 * tr),
+                               weave_gap=max(float(weave_gap), 2.2 * tr))
     cells = []
     all_verts = []
     for i, path in enumerate(carpet['paths']):
-        pl2 = [(float(p[0]), float(p[1])) for p in path]
-        zoff = isl._weave_zoff(pl2, True, signed[i], lift)
-        path3d = [(pl2[j][0], pl2[j][1], zoff[j]) for j in range(len(pl2))]
+        if relaxed is not None:
+            path3d = [tuple(p) for p in relaxed[i]]
+        else:
+            pl2 = [(float(p[0]), float(p[1])) for p in path]
+            zoff = isl._weave_zoff(pl2, True, signed[i], lift)
+            path3d = [(pl2[j][0], pl2[j][1], zoff[j])
+                      for j in range(len(pl2))]
         verts, faces = _tube_welded(path3d, tr, sides)
         if not faces:
             continue
@@ -526,6 +540,253 @@ def build_tube_cells(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
         pc.slab(cv, cf, cm, lo, hi, -tr, -tr - base, mat=_BACKING_MAT)
         cells.append((cv, cf, cm))
     return cells
+
+
+# --------------------------------------------------------------------
+# Tier-2 relaxation: the physically relaxed rope carpet
+# --------------------------------------------------------------------
+#
+# Everything above is a FLAT diagram given fake depth: crossings are
+# found in 2D, over/under is solved combinatorially, and the only 3D
+# is a local z-bump at each crossing -- so at steep crossings the rope
+# thins and pinches, because the drawing is not a physical link.  The
+# relaxation below keeps that combinatorial diagram as the SEED
+# (topology and over/under), lifts each loop to a 3D bead polygon,
+# and relaxes the whole field under KnotPlot's dynamical model
+# (Scharein, thesis ch. 7): knots are polygons of beads and sticks
+# under two forces -- a mechanical spring between adjacent beads,
+# F_m = H r^(1+alpha), and an electrical repulsion between all
+# non-adjacent bead pairs, F_e = K r^-(2+beta) with beta ~ 4-6 (a
+# plain 1/r^2 repulsion is deliberately avoided: it does not
+# discourage self-crossing, higher exponents do) -- integrated
+# inertialessly ("critically damped", F proportional to v), each bead
+# moving at most d_max per step so strands cannot jump through one
+# another.  The repulsion-with-cutoff below is the discrete cousin of
+# the knot energies KnotPlot minimizes: Simon's minimum-distance
+# energy and Buck's symmetric ("radiating tube") energy.
+#
+# THE TORUS.  So the relaxed patch still TILES, the carpet lives on a
+# torus with period vectors nx*b1 and ny*b2: only the nx x ny
+# fundamental loops (the `interior` set) are simulated, every
+# inter-loop force is computed over the periodic images (the
+# minimum-image convention of molecular dynamics), and the margin
+# loops are reconstructed afterwards as exact lattice translates of
+# their wrapped partners.  Periodicity is therefore exact by
+# construction, not approximate.
+#
+# References:
+#   Robert G. Scharein, "Interactive Topological Drawing" (PhD
+#     thesis, The University of British Columbia, 1998), ch. 7 -- the
+#     KnotPlot dynamical model: bead/stick forces, critical damping,
+#     the d_max step bound, knot-type-preserving relaxation.
+#   J. K. Simon, "Energy functions for polygonal knots", J. Knot
+#     Theory Ramifications 3(3):299-320, 1994 -- the minimum-distance
+#     energy.
+#   G. Buck & J. Orloff, Topology Appl. 51 (1993) and 61 (1995) --
+#     the symmetric ("radiating tube") energy.
+
+
+def _fund_map(carpet, lattice, nx, ny):
+    """{loop id: (fundamental id, 2D lattice shift)}: every patch loop
+    wrapped into the nx x ny fundamental block.  All loops are the
+    same rosette translated, so bead j of a margin loop is bead j of
+    its fundamental partner plus the shift."""
+    b1, b2, _nb1, _nb2 = _basis(lattice)
+    fund = {}
+    for (m, n), i in carpet['idmap'].items():
+        mf, nf = m % nx, n % ny
+        j = carpet['idmap'][(mf, nf)]
+        fund[i] = (j, (m - mf) * b1 + (n - nf) * b2)
+    return fund
+
+
+def _torus_crossings(carpet, fundmap, fidx):
+    """The crossing list wrapped onto the torus and deduplicated.
+    Returns (cons, conflicts): cons = [((la, ba), (lb, bb))] meaning
+    bead ba of fundamental loop la passes OVER bead bb of loop lb
+    (indices into the fundamental loop order `fidx`); conflicts counts
+    patch crossings whose wrapped duplicates disagreed on the over
+    bit (dropped -- zero for a periodic alternating solution)."""
+    S = len(carpet['paths'][0])
+    over = carpet['over']
+    cons, bad = {}, set()
+    for key, lo, hi, flo, fhi in carpet['crossings']:
+        a = (fidx[fundmap[lo][0]], int(round(flo)) % S)
+        b = (fidx[fundmap[hi][0]], int(round(fhi)) % S)
+        o, u = (a, b) if over[key] else (b, a)
+        ck = (min(o, u), max(o, u))
+        if ck in cons and cons[ck] != (o, u):
+            bad.add(ck)
+        cons.setdefault(ck, (o, u))
+    for ck in bad:
+        del cons[ck]
+    return sorted(cons.values()), len(bad)
+
+
+def relax_carpet(carpet, lattice, nx, ny, iters=120, clearance=0.10,
+                 weave_gap=0.10, flatten=0.5, step=0.15, trace=None):
+    """Physically relax the carpet into a 3D rope field.  Returns one
+    (S, 3) centerline per patch loop (same order as carpet['paths']);
+    margin loops are exact translates of their wrapped fundamental
+    partners, so the result tiles under nx*b1 / ny*b2.
+
+    Per iteration (damped Euler, all deterministic): rest-length edge
+    springs + Laplacian fairing keep each loop smooth and its beads
+    evenly spaced; a soft 1/r^4 repulsion with cutoff pushes beads of
+    different strands (min-image over the torus) apart to about
+    `clearance`; at every crossing the over bead is kept at least
+    `weave_gap` above the under bead; and z is pulled toward 0 with
+    strength `flatten` away from crossings so the sheet stays a
+    carpet.  Each bead moves at most a fraction of `clearance` per
+    step (KnotPlot's d_max), which also discourages strand
+    pass-through.  If `trace` is a list, the mean bead movement of
+    each iteration is appended (for convergence checks)."""
+    b1, b2, _nb1, _nb2 = _basis(lattice)
+    T1, T2 = nx * b1, ny * b2
+    fids = sorted(carpet['interior'])
+    fidx = {i: a for a, i in enumerate(fids)}
+    fundmap = _fund_map(carpet, lattice, nx, ny)
+    cons, _conf = _torus_crossings(carpet, fundmap, fidx)
+    L = len(fids)
+    S = len(carpet['paths'][0])
+
+    # -- seed: the tier-1 weave.  Per-loop signed crossing lists come
+    # from the deduped torus constraints so the seed z respects every
+    # constraint exactly (dz = 2*lift >= weave_gap and clearance).
+    signed_f = [{} for _ in range(L)]
+    for (la, ba), (lb, bb) in cons:
+        signed_f[la][ba] = +1
+        signed_f[lb][bb] = -1
+    lift = 0.6 * max(weave_gap, clearance)
+    P = np.empty((L, S, 3))
+    for i in fids:
+        a = fidx[i]
+        p2 = np.asarray(carpet['paths'][i], float)
+        sg = sorted(signed_f[a].items())
+        P[a, :, :2] = p2
+        P[a, :, 2] = isl._weave_zoff([tuple(q) for q in p2], True,
+                                     sg, lift)
+
+    # -- flatten weight: small at a crossing bead, ramping to 1 within
+    # `win` beads.  The floor (rather than 0) leaves a gentle restoring
+    # force everywhere, so the weave cannot balloon in z -- the z-order
+    # constraint below still guarantees the gap survives.
+    win = max(3, S // 40)
+    wfl = np.ones((L, S))
+    for a in range(L):
+        for b in signed_f[a]:
+            for db in range(-win, win + 1):
+                j = (b + db) % S
+                wfl[a, j] = min(wfl[a, j], abs(db) / float(win))
+    wfl = np.maximum(wfl, 0.15)
+
+    # -- repulsion pair list over the torus: fundamental loop pairs
+    # plus every periodic image whose centres come near enough to
+    # interact.  For a loop against itself, shift (0,0) is the
+    # intra-loop case (ring-adjacent beads excluded) and a half set of
+    # image shifts covers the wrapped self-contacts.
+    cen = np.array([np.mean(carpet['paths'][i], axis=0) for i in fids])
+    rad = np.array([np.max(np.linalg.norm(
+        np.asarray(carpet['paths'][i]) - cen[a], axis=1))
+        for a, i in enumerate(fids)])
+    rcut = 1.7 * clearance
+    reach = rcut + 0.2
+    pairs = []
+    for a in range(L):
+        for b in range(a, L):
+            shifts = (((0, 0), (1, 0), (0, 1), (1, 1), (1, -1))
+                      if a == b else
+                      tuple((h1, h2) for h1 in (-1, 0, 1)
+                            for h2 in (-1, 0, 1)))
+            for h1, h2 in shifts:
+                sv = h1 * T1 + h2 * T2
+                intra = (a == b and h1 == 0 and h2 == 0)
+                if intra or (np.linalg.norm(cen[a] - cen[b] - sv)
+                             <= rad[a] + rad[b] + reach):
+                    pairs.append((a, b, np.array([sv[0], sv[1], 0.0]),
+                                  intra))
+    excl = max(2, S // 32)
+    idx = np.arange(S)
+    ring = np.abs(idx[:, None] - idx[None, :])
+    near = np.minimum(ring, S - ring) <= excl
+
+    # crossing constraints as flat index arrays
+    if cons:
+        ol = np.array([c[0][0] for c in cons])
+        ob = np.array([c[0][1] for c in cons])
+        ul = np.array([c[1][0] for c in cons])
+        ub = np.array([c[1][1] for c in cons])
+
+    # gains: ks * step * 4 (the extremal Laplacian eigenvalue) must
+    # stay below 1 or the edge springs zigzag at the d_max clamp
+    # instead of settling
+    ks, fair, kr, kw = 1.2, 0.25, 1.0, 3.0
+    rest = np.array([np.mean(np.linalg.norm(
+        np.roll(P[a], -1, 0) - P[a], axis=1)) for a in range(L)])
+    dmax = 0.25 * clearance
+    dmin = 0.2 * clearance
+    for _it in range(int(iters)):
+        F = np.zeros_like(P)
+        # springs: rest-length edges (even spacing, no shrinkage)
+        e = np.roll(P, -1, 1) - P
+        ln = np.linalg.norm(e, axis=2, keepdims=True)
+        fe = ks * (1.0 - rest[:, None, None] / (ln + 1e-12)) * e
+        F += fe - np.roll(fe, 1, 1)
+        # Laplacian fairing (smoothness)
+        F += fair * (0.5 * (np.roll(P, -1, 1) + np.roll(P, 1, 1)) - P)
+        # electrical repulsion, min-image over the torus
+        for a, b, sv, intra in pairs:
+            D = P[a][:, None, :] - (P[b] + sv)[None, :, :]
+            d = np.linalg.norm(D, axis=2)
+            if intra:
+                d[near] = np.inf
+            act = d < rcut
+            if not act.any():
+                continue
+            da = np.maximum(d[act], dmin)
+            mag = np.zeros_like(d)
+            mag[act] = kr * (clearance / da) ** 4 \
+                * (1.0 - d[act] / rcut)
+            f = D * (mag / (d + 1e-12))[:, :, None]
+            F[a] += f.sum(axis=1)
+            if not intra:
+                F[b] -= f.sum(axis=0)
+        # weave z-order: over bead >= under bead + weave_gap
+        if cons:
+            dz = P[ol, ob, 2] - P[ul, ub, 2]
+            push = kw * np.maximum(0.0, weave_gap - dz)
+            np.add.at(F, (ol, ob, np.full(len(ol), 2)), 0.5 * push)
+            np.add.at(F, (ul, ub, np.full(len(ul), 2)), -0.5 * push)
+        # planar confinement away from crossings
+        F[:, :, 2] -= flatten * wfl * P[:, :, 2]
+        # damped Euler with the d_max step bound
+        mv = step * F
+        mlen = np.linalg.norm(mv, axis=2, keepdims=True)
+        mv *= np.minimum(1.0, dmax / (mlen + 1e-12))
+        P += mv
+        if trace is not None:
+            trace.append(float(np.mean(np.linalg.norm(mv, axis=2))))
+
+    out = []
+    for i in range(len(carpet['paths'])):
+        j, sh = fundmap[i]
+        Q = P[fidx[j]].copy()
+        Q[:, 0] += sh[0]
+        Q[:, 1] += sh[1]
+        out.append(Q)
+    return out
+
+
+def relaxed_paths(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
+                  overlap=1.15, samples=192, style='ANGULAR', subdiv=6,
+                  iters=120, clearance=0.10, weave_gap=0.10):
+    """Relaxed 3D loop centerlines [(points, True)] for the CURVE
+    output (tier 2; every loop one closed spline)."""
+    carpet = build_carpet(lattice, k, nx, ny, amp, overlap, samples,
+                          style, subdiv)
+    lines = relax_carpet(carpet, lattice, nx, ny, iters, clearance,
+                         weave_gap)
+    return [([tuple(p) for p in Q], True) for Q in lines]
 
 
 # --------------------------------------------------------------------
@@ -559,7 +820,8 @@ if _IN_BLENDER:
 
     def _emit_curve(context, name, paths, span=2.0, operator=None):
         """Build a curve object whose cyclic POLY splines are the loop
-        centerlines, centered and scaled to the span cube."""
+        centerlines (2D flat or 3D relaxed points), centered and
+        scaled to the span cube."""
         paths = [(list(p), c) for p, c in paths if len(p) >= 2]
         if not paths:
             return None
@@ -572,9 +834,10 @@ if _IN_BLENDER:
         for pa, closed in paths:
             sp = cu.splines.new('POLY')
             sp.points.add(len(pa) - 1)
-            for i, (px, py) in enumerate(pa):
-                sp.points[i].co = ((px - cx) * s, (py - cy) * s, 0.0,
-                                   1.0)
+            for i, p in enumerate(pa):
+                pz = p[2] if len(p) > 2 else 0.0
+                sp.points[i].co = ((p[0] - cx) * s, (p[1] - cy) * s,
+                                   pz * s, 1.0)
             sp.use_cyclic_u = bool(closed)
         obj = bpy.data.objects.new(name, cu)
         context.collection.objects.link(obj)
@@ -673,6 +936,22 @@ if _IN_BLENDER:
         tube_sides: IntProperty(
             name="Tube Sides", default=10, min=3, max=32,
             description="Cross-section segments of each tube")
+        relax_iters: IntProperty(
+            name="Relax Iterations", default=0, min=0, max=500,
+            description="0 = flat tier-1 weave; > 0 physically "
+                        "relaxes the carpet into 3D rope "
+                        "(KnotPlot-style bead/stick dynamics on the "
+                        "torus, so it still tiles)")
+        rope_clearance: FloatProperty(
+            name="Rope Clearance", default=0.10, min=0.02, max=0.4,
+            description="Target centerline separation between "
+                        "strands during relaxation (loop-spacing "
+                        "units)")
+        weave_gap: FloatProperty(
+            name="Weave Gap", default=0.10, min=0.02, max=0.4,
+            description="Minimum z separation kept between the over "
+                        "and under strand at each crossing during "
+                        "relaxation")
         height: FloatProperty(
             name="Relief Height", default=0.0, min=0.0, max=1.0,
             description="0 = flat ribbons; > 0 extrudes the loops")
@@ -687,10 +966,18 @@ if _IN_BLENDER:
 
         def execute(self, context):
             if self.output == 'CURVE':
-                paths = loop_paths(self.lattice, self.symmetry,
-                                   self.nx, self.ny, self.amplitude,
-                                   self.overlap, self.samples,
-                                   self.style, self.smoothness)
+                if self.relax_iters > 0:
+                    paths = relaxed_paths(
+                        self.lattice, self.symmetry, self.nx, self.ny,
+                        self.amplitude, self.overlap, self.samples,
+                        self.style, self.smoothness, self.relax_iters,
+                        self.rope_clearance, self.weave_gap)
+                else:
+                    paths = loop_paths(self.lattice, self.symmetry,
+                                       self.nx, self.ny,
+                                       self.amplitude, self.overlap,
+                                       self.samples, self.style,
+                                       self.smoothness)
                 obj = _emit_curve(context, "Knot Carpet", paths,
                                   operator=self)
                 if obj is None:
@@ -707,7 +994,8 @@ if _IN_BLENDER:
                     self.amplitude, self.overlap, self.samples,
                     self.style, self.smoothness, self.tube_radius,
                     self.tube_sides, self.weave_height, self.color_by,
-                    self.backing, self.base)
+                    self.backing, self.base, self.relax_iters,
+                    self.rope_clearance, self.weave_gap)
             else:
                 cells = build_cells(
                 self.lattice, self.symmetry, self.nx, self.ny,
@@ -772,6 +1060,11 @@ if _IN_BLENDER:
                 if self.backing:
                     lay.prop(self, 'base')
                 lay.prop(self, 'separate')
+            if self.output in ('TUBE', 'CURVE'):
+                lay.prop(self, 'relax_iters')
+                if self.relax_iters > 0:
+                    lay.prop(self, 'rope_clearance')
+                    lay.prop(self, 'weave_gap')
             lay.prop(self, 'align')
 
     def _menu_func(self, context):
@@ -882,6 +1175,98 @@ def _check_periodic(lattice, nx, ny, tol=1e-9):
     return True
 
 
+def _torus_min_sep(lines, carpet, lattice, nx, ny):
+    """Minimum min-image distance between beads of DIFFERENT loops of
+    the infinite carpet: fundamental loop pairs plus each loop against
+    its own periodic images (direct same-loop pairs excluded).  An
+    independent implementation (fractional min-image rounding), so it
+    does not share code with the relaxer it checks."""
+    b1, b2, _nb1, _nb2 = _basis(lattice)
+    M = np.column_stack([nx * b1, ny * b2])
+    Minv = np.linalg.inv(M)
+    fids = sorted(carpet['interior'])
+    best = np.inf
+    for ai in range(len(fids)):
+        for bi in range(ai, len(fids)):
+            A = np.asarray(lines[fids[ai]], float)
+            B = np.asarray(lines[fids[bi]], float)
+            D = A[:, None, :] - B[None, :, :]
+            dxy = D[..., :2]
+            wrapped = dxy - np.round(dxy @ Minv.T) @ M.T
+            d = np.sqrt(((wrapped) ** 2).sum(-1) + D[..., 2] ** 2)
+            if ai == bi:
+                # keep only pairs whose min image is a WRAPPED copy
+                moved = np.abs(wrapped - dxy).max(-1) > 1e-9
+                d[~moved] = np.inf
+            best = min(best, float(d.min()))
+    return best
+
+
+def _check_relax(lattice, k, nx, ny, samples=120, iters=120,
+                 clearance=0.10, weave_gap=0.10):
+    """Run the tier-2 relaxation and verify: loops closed and finite;
+    exact tileability (margin loops = wrapped fundamental translates,
+    loop centres periodic); inter-loop separation safe (vs the tier-1
+    seed); the over strand above the under strand at every crossing;
+    and convergence (movement decreasing, nothing diverging).
+    Returns (ok, stats dict)."""
+    b1, b2, _nb1, _nb2 = _basis(lattice)
+    carpet = build_carpet(lattice, k, nx, ny, 0.10, 1.15, samples)
+    seed = relax_carpet(carpet, lattice, nx, ny, iters=0,
+                        clearance=clearance, weave_gap=weave_gap)
+    trace = []
+    lines = relax_carpet(carpet, lattice, nx, ny, iters=iters,
+                         clearance=clearance, weave_gap=weave_gap,
+                         trace=trace)
+    st = {}
+    finite = all(np.isfinite(Q).all() for Q in lines)
+    # closed: no bead flew off its loop (edge lengths stay bounded)
+    closed = True
+    for Q in lines:
+        el = np.linalg.norm(np.roll(Q, -1, 0) - Q, axis=1)
+        if el.max() > 4.0 * el.mean():
+            closed = False
+    # tileability: every loop matches its wrapped fundamental partner
+    fundmap = _fund_map(carpet, lattice, nx, ny)
+    tile_err = 0.0
+    for i, Q in enumerate(lines):
+        j, sh = fundmap[i]
+        ref = lines[j] + np.array([sh[0], sh[1], 0.0])
+        tile_err = max(tile_err, float(np.abs(Q - ref).max()))
+    cen_err = 0.0
+    for i in range(len(lines)):
+        j, sh = fundmap[i]
+        d = np.mean(lines[i], 0) - np.mean(lines[j], 0) \
+            - np.array([sh[0], sh[1], 0.0])
+        cen_err = max(cen_err, float(np.abs(d).max()))
+    st['tile_err'] = max(tile_err, cen_err)
+    # separation: min inter-loop min-image distance, before vs after
+    st['sep_before'] = _torus_min_sep(seed, carpet, lattice, nx, ny)
+    st['sep_after'] = _torus_min_sep(lines, carpet, lattice, nx, ny)
+    sep_ok = (st['sep_after'] >= 0.6 * clearance
+              and (st['sep_after'] >= st['sep_before'] - 1e-9
+                   or st['sep_after'] >= 0.8 * clearance))
+    # z-order at every torus crossing
+    fids = sorted(carpet['interior'])
+    fidx = {i: a for a, i in enumerate(fids)}
+    cons, conf = _torus_crossings(carpet, fundmap, fidx)
+    P = np.array([lines[i] for i in fids])
+    dz = np.array([P[la, ba, 2] - P[lb, bb, 2]
+                   for (la, ba), (lb, bb) in cons])
+    st['min_dz'] = float(dz.min())
+    st['conflicts'] = conf
+    z_ok = conf == 0 and st['min_dz'] >= 0.6 * weave_gap
+    # convergence: finite trace, late movement well below early
+    tr = np.asarray(trace)
+    st['mv_early'] = float(tr[:10].mean())
+    st['mv_late'] = float(tr[-10:].mean())
+    conv = (np.isfinite(tr).all() and len(tr) == iters
+            and st['mv_late'] < st['mv_early'])
+    st['ok'] = (finite and closed and st['tile_err'] < 1e-8
+                and sep_ok and z_ok and conv)
+    return st['ok'], st
+
+
 if __name__ == "__main__":
     ok = True
 
@@ -931,5 +1316,18 @@ if __name__ == "__main__":
         t = _check_tube(lattice, k)
         ok = ok and t
         print("tube     %-10s k=%d : %s" % (lattice, k, t))
+
+    # 7. tier-2 relaxation: closed/finite loops, exact tileability,
+    #    safe separation, weave z-order, convergence
+    for lattice, k, nx, ny in (('SQUARE', 4, 3, 3),
+                               ('TRIANGULAR', 6, 2, 2)):
+        r, st = _check_relax(lattice, k, nx, ny)
+        ok = ok and r
+        print("relax    %-10s k=%d %dx%d : %s  tile_err=%.2e  "
+              "sep %.4f->%.4f  min_dz=%.4f (gap 0.10)  "
+              "move %.2e->%.2e  conflicts=%d"
+              % (lattice, k, nx, ny, r, st['tile_err'],
+                 st['sep_before'], st['sep_after'], st['min_dz'],
+                 st['mv_early'], st['mv_late'], st['conflicts']))
 
     print("RESULT:", "OK" if ok else "BAD")
