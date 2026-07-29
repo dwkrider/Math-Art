@@ -45,13 +45,15 @@ import numpy as np
 
 
 class Ball:
-    """A circle or sphere: signed curvature k (negative if enclosing)
-    and centre c (a 2- or 3-vector)."""
-    __slots__ = ('k', 'c')
+    """A circle or sphere: signed curvature k (negative if enclosing),
+    centre c (a 2- or 3-vector), and generation depth d (0 for the seed
+    elements, increasing with each inscribed level -- used for coloring)."""
+    __slots__ = ('k', 'c', 'd')
 
-    def __init__(self, k, c):
+    def __init__(self, k, c, d=0):
         self.k = float(k)
         self.c = np.asarray(c, dtype=float)
+        self.d = int(d)
 
 
 def reflect(group, c0):
@@ -98,20 +100,23 @@ def _base_2d():
     return A, B, C, tops
 
 
-def _rec2(a, b, c, c0, out, depth, min_r, cap):
+def _rec2(a, b, c, c0, out, depth, min_r, cap, gen=2):
     if len(out) >= cap:
         return
     n = reflect([a, b, c], c0)
     if n.k <= 0.0 or 1.0 / n.k < min_r or depth < 0:
         return
+    n.d = gen
     out.append(n)
-    _rec2(a, b, n, c, out, depth - 1, min_r, cap)
-    _rec2(a, c, n, b, out, depth - 1, min_r, cap)
-    _rec2(b, c, n, a, out, depth - 1, min_r, cap)
+    _rec2(a, b, n, c, out, depth - 1, min_r, cap, gen + 1)
+    _rec2(a, c, n, b, out, depth - 1, min_r, cap, gen + 1)
+    _rec2(b, c, n, a, out, depth - 1, min_r, cap, gen + 1)
 
 
 def gasket_2d(depth, min_r, cap):
     A, B, C, tops = _base_2d()
+    for t in tops:
+        t.d = 1
     out = [A, B, C] + tops
     for t in tops:
         _rec2(A, B, t, C, out, depth, min_r, cap)
@@ -140,7 +145,7 @@ def _base_3d():
     return [outer] + inner
 
 
-def _rec3(a, b, c, d, c0, out, depth, min_r, cap):
+def _rec3(a, b, c, d, c0, out, depth, min_r, cap, gen=1):
     if len(out) >= cap:
         return
     n = reflect([a, b, c, d], c0)
@@ -148,11 +153,12 @@ def _rec3(a, b, c, d, c0, out, depth, min_r, cap):
         return
     if _overlaps(n, out):
         return
+    n.d = gen
     out.append(n)
-    _rec3(a, b, c, n, d, out, depth - 1, min_r, cap)
-    _rec3(a, b, d, n, c, out, depth - 1, min_r, cap)
-    _rec3(a, c, d, n, b, out, depth - 1, min_r, cap)
-    _rec3(b, c, d, n, a, out, depth - 1, min_r, cap)
+    _rec3(a, b, c, n, d, out, depth - 1, min_r, cap, gen + 1)
+    _rec3(a, b, d, n, c, out, depth - 1, min_r, cap, gen + 1)
+    _rec3(a, c, d, n, b, out, depth - 1, min_r, cap, gen + 1)
+    _rec3(b, c, d, n, a, out, depth - 1, min_r, cap, gen + 1)
 
 
 def packing_3d(depth, min_r, cap):
@@ -216,38 +222,89 @@ def _ring(centre, R, tube, nu, nv):
     return verts, faces
 
 
+def _disc(centre, R, seg, z=0.0):
+    """A flat filled disc as a single seg-gon face at height z."""
+    verts = [(centre[0] + R * math.cos(2 * math.pi * i / seg),
+              centre[1] + R * math.sin(2 * math.pi * i / seg), z)
+             for i in range(seg)]
+    return verts, [tuple(range(seg))]
+
+
+# Face/sphere colour palette (RGBA); kept local so the module stays a
+# self-contained single-file add-on.
+_PALETTE = [
+    (0.86, 0.24, 0.24, 1.0), (0.95, 0.58, 0.20, 1.0),
+    (0.96, 0.86, 0.30, 1.0), (0.42, 0.78, 0.36, 1.0),
+    (0.24, 0.70, 0.70, 1.0), (0.28, 0.48, 0.85, 1.0),
+    (0.55, 0.40, 0.82, 1.0), (0.86, 0.42, 0.70, 1.0),
+]
+
+
+def _mat_index(b, color_by, log_rmax, log_rmin, npal):
+    """Palette slot for a circle/sphere under the chosen colouring:
+    UNIFORM (one colour), DEPTH (by generation), or SIZE (log radius)."""
+    if color_by == 'UNIFORM':
+        return 0
+    if color_by == 'DEPTH':
+        return b.d % npal
+    r = 1.0 / abs(b.k)                            # SIZE
+    span = log_rmax - log_rmin
+    if span <= 1e-9:
+        return 0
+    t = (math.log(r) - log_rmin) / span
+    return max(0, min(npal - 1, int(t * (npal - 1) + 0.5)))
+
+
 def build_apollonian(mode='PACKING', depth=5, min_r=0.0, cap=4000,
-                     tube_ratio=0.25, inflate=1.0, ring_seg=20,
-                     tube_seg=8, scale=1.0):
-    """Build the gasket (2D rings) or sphere packing (3D). Returns
-    (verts, faces, n) centred and fit to a 2 m cube."""
-    verts, faces = [], []
+                     tube_ratio=0.06, inflate=1.0, ring_seg=20,
+                     tube_seg=8, scale=1.0, gasket_style='FILLED',
+                     color_by='SIZE'):
+    """Build the gasket (2D) or sphere packing (3D). Returns
+    (verts, faces, mats, n) centred and fit to a 2 m cube, where `mats`
+    is a per-face palette index.  2D circles are filled disc faces by
+    default (`gasket_style='FILLED'`) or drawn as thin tube rings
+    (`'TUBE'`); the enclosing circle is a background disc."""
+    verts, faces, mats = [], [], []
+    npal = len(_PALETTE)
     if mode == 'GASKET':
         mr = min_r if min_r > 0 else 0.01
         balls = gasket_2d(depth, mr, cap)
+    else:
+        mr = min_r if min_r > 0 else 0.012
+        balls = packing_3d(depth, mr, cap)
+    radii = [1.0 / abs(b.k) for b in balls]
+    log_rmax = math.log(max(radii))
+    log_rmin = math.log(min(radii))
+
+    if mode == 'GASKET':
         for b in balls:
             R = 1.0 / abs(b.k)
-            v, f = _ring((b.c[0], b.c[1]), R, tube_ratio * R,
-                         ring_seg, tube_seg)
+            mi = _mat_index(b, color_by, log_rmax, log_rmin, npal)
+            if gasket_style == 'TUBE':
+                v, f = _ring((b.c[0], b.c[1]), R, tube_ratio * R,
+                             ring_seg, tube_seg)
+            else:                                # FILLED discs
+                z = -0.002 if b.k < 0.0 else 0.0  # enclosing circle behind
+                v, f = _disc((b.c[0], b.c[1]), R, ring_seg, z)
             base = len(verts)
             verts.extend(v)
             faces.extend([tuple(base + i for i in fc) for fc in f])
-        n = len(balls)
+            mats.extend([mi] * len(f))
     else:
-        mr = min_r if min_r > 0 else 0.03
-        balls = packing_3d(depth, mr, cap)
         SV, SF = _icosphere()
         for b in balls:
             r = inflate / b.k
+            mi = _mat_index(b, color_by, log_rmax, log_rmin, npal)
             base = len(verts)
             verts.extend((b.c + r * p).tolist() for p in SV)
             faces.extend([tuple(base + i for i in fc) for fc in SF])
-        n = len(balls)
+            mats.extend([mi] * len(SF))
+    n = len(balls)
     V = np.asarray(verts)
     lo, hi = V.min(axis=0), V.max(axis=0)
     ext = float((hi - lo).max())
     V = (V - 0.5 * (lo + hi)) * (2.0 / ext if ext > 1e-9 else 1.0)
-    return V * scale, faces, n
+    return V * scale, faces, mats, n
 
 
 # ==========================================================================
@@ -275,9 +332,22 @@ if _IN_BLENDER:
             name="Mode",
             items=[('PACKING', "Sphere Packing (3D)",
                     "Mutually tangent Soddy spheres"),
-                   ('GASKET', "Gasket (2D rings)",
-                    "Apollonian circles drawn as flat rings")],
+                   ('GASKET', "Gasket (2D)",
+                    "Apollonian circles in the plane")],
             default='PACKING')
+        gasket_style: EnumProperty(
+            name="Circle Style",
+            items=[('FILLED', "Filled Discs",
+                    "Each circle a flat filled face (2D)"),
+                   ('TUBE', "Tube Rings",
+                    "Each circle a raised tube ring (2D)")],
+            default='FILLED')
+        color_by: EnumProperty(
+            name="Color By",
+            items=[('SIZE', "Size", "Color by circle/sphere radius"),
+                   ('DEPTH', "Depth", "Color by inscription generation"),
+                   ('UNIFORM', "Uniform", "A single color")],
+            default='SIZE')
         depth: IntProperty(
             name="Depth", default=5, min=1, max=12,
             description="Maximum recursion depth")
@@ -289,9 +359,9 @@ if _IN_BLENDER:
             name="Max Count", default=4000, min=10, max=40000,
             description="Hard cap on circles/spheres")
         tube_ratio: FloatProperty(
-            name="Ring Tube", default=0.25, min=0.03, max=0.5,
-            description="Ring tube radius as a fraction of circle "
-                        "radius (gasket mode)")
+            name="Ring Tube", default=0.06, min=0.01, max=0.5,
+            description="Tube radius as a fraction of circle radius "
+                        "(gasket Tube Rings style)")
         inflate: FloatProperty(
             name="Sphere Inflate", default=1.0, min=1.0, max=1.15,
             description="Grow spheres slightly to fuse contacts for "
@@ -305,14 +375,24 @@ if _IN_BLENDER:
         smooth: BoolProperty(name="Smooth Shading", default=True)
 
         def execute(self, context):
-            verts, faces, n = build_apollonian(
+            verts, faces, mats, n = build_apollonian(
                 self.mode, self.depth, self.min_r, self.cap,
                 self.tube_ratio, self.inflate, self.ring_seg,
-                self.tube_seg, self.scale)
+                self.tube_seg, self.scale, self.gasket_style,
+                self.color_by)
             me = bpy.data.meshes.new("Apollonian")
             me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
                            [tuple(int(i) for i in f) for f in faces])
             me.validate(clean_customdata=True)
+            for idx, rgba in enumerate(_PALETTE):
+                name = "Apollonian_%d" % idx
+                m = bpy.data.materials.get(name)
+                if m is None:
+                    m = bpy.data.materials.new(name)
+                    m.diffuse_color = rgba
+                me.materials.append(m)
+            if mats and len(mats) == len(me.polygons):
+                me.polygons.foreach_set('material_index', mats)
             if self.smooth:
                 me.polygons.foreach_set('use_smooth',
                                         [True] * len(me.polygons))
@@ -336,12 +416,15 @@ if _IN_BLENDER:
             lay.prop(self, 'depth')
             lay.prop(self, 'min_r')
             lay.prop(self, 'cap')
+            lay.prop(self, 'color_by')
             if self.mode == 'GASKET':
-                lay.prop(self, 'tube_ratio')
+                lay.prop(self, 'gasket_style')
+                if self.gasket_style == 'TUBE':
+                    lay.prop(self, 'tube_ratio')
+                    lay.prop(self, 'tube_seg')
+                lay.prop(self, 'ring_seg')
             else:
                 lay.prop(self, 'inflate')
-            lay.prop(self, 'ring_seg')
-            lay.prop(self, 'tube_seg')
             lay.prop(self, 'scale')
             lay.prop(self, 'smooth')
 
@@ -395,7 +478,14 @@ if __name__ == "__main__":
                 if (np.linalg.norm(sph[i].c - sph[j].c)
                         < ri + rj - 1e-6):
                     bad3 += 1
-        v, f, n = build_apollonian('PACKING', depth=3, min_r=0.05)
+        v, f, m, n = build_apollonian('PACKING', depth=3, min_r=0.05)
         print(f"PACKING depth3: spheres={len(sph)} overlaps={bad3} "
-              f"mesh_V={len(v)} F={len(f)} "
+              f"mesh_V={len(v)} F={len(f)} mats={len(set(m))} "
               f"{'OK' if bad3 == 0 else 'BAD'}")
+        # filled 2D gasket colored by size builds with per-face mats
+        gv, gf, gm, gn = build_apollonian('GASKET', depth=4, min_r=0.02,
+                                          gasket_style='FILLED',
+                                          color_by='SIZE')
+        print(f"GASKET filled: circles={gn} faces={len(gf)} "
+              f"mats={len(set(gm))} "
+              f"{'OK' if len(gf) == gn and len(gm) == len(gf) else 'BAD'}")
