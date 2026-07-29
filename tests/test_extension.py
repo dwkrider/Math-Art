@@ -388,6 +388,15 @@ OPS = [
          preset='CUSTOM', substrate='TRUNCSQ', motif='ROSETTE',
          contact_angle=34.0, rosette_frac=0.4, nx=2, ny=2,
          curved=True, color_by='BAND')),
+    ("islamic interlace flat", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='STARCROSS8', nx=3, ny=3, interlace=True,
+        interlace_mode='FLAT')),
+    ("islamic interlace woven", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='STARCROSS8', nx=3, ny=3, interlace=True,
+        interlace_mode='WOVEN', weave_height=0.12)),
+    ("islamic backing no relief",
+     lambda: bpy.ops.mesh.islamic_pattern_add(
+         preset='STARCROSS8', nx=3, ny=3, backing=True)),
     ("hyp uniform t73", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
         form='TRUNCATED', p=7, q=3, model='POINCARE')),
     ("hyp uniform r54 klein",

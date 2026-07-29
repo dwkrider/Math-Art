@@ -41,6 +41,17 @@
 # modular-constructivist relief tradition of the Pattern Engine (see
 # pattern_common.py).
 #
+# The strapwork can further be made to WEAVE over and under itself, as
+# true Islamic / Celtic knotwork does.  At every crossing one strand is
+# assigned OVER and the other UNDER so that following any single band the
+# sense strictly alternates -- the alternating-knot condition -- decided
+# by the classical checkerboard (medial-graph) construction, solved here
+# in its equivalent "alternate along each strand" form.  Two renderings
+# are offered: FLAT breaks each band where it goes under (2D interlaced
+# knotwork), while WOVEN lifts and dips each band at its crossings into a
+# genuine 3D woven surface.  This over/under assignment is exactly how
+# Celtic and Islamic interlace choose which strand rides on top.
+#
 # References:
 #   E. H. Hankin, "The Drawing of Geometric Patterns in Saracenic Art"
 #     (Memoirs of the Archaeological Survey of India, no. 15, 1925) --
@@ -66,7 +77,8 @@ bl_info = {
     "blender": (4, 2, 0),
     "location": "View3D > Add > Math Art > Patterns",
     "description": "Polygons-in-contact Islamic star patterns "
-                   "(strapwork ribbons, optional relief)",
+                   "(strapwork ribbons, over/under interlacing, "
+                   "optional relief)",
     "category": "Add Mesh",
 }
 
@@ -816,14 +828,436 @@ def strapwork_bands(substrate, nx, ny, contact_deg, ribbon_width,
     return bands, orders
 
 
+# --------------------------------------------------------------------
+# Over/under interlacing (weaving) -- alternating knotwork
+# --------------------------------------------------------------------
+#
+# By default the traced strapwork lies perfectly flat: where two bands
+# cross they simply share the plane.  Real Islamic (and Celtic) knotwork
+# instead WEAVES -- at every crossing one strand rides OVER and the other
+# passes UNDER, and following any single strand the sense strictly
+# alternates over / under / over / under (the alternating-knot
+# condition).  We reproduce that here as an option.
+#
+# A crossing is an interior 4-valent node whose "straightest-through"
+# pairing joins its four half-edges into two through-strands (two
+# different bands passing straight through each other).  To decide, at
+# every crossing, which strand is over, we use the standard method that
+# guarantees a globally consistent alternating diagram: it is equivalent
+# to a checkerboard 2-coloring of the arrangement's faces (the medial-
+# graph coloring).  We solve it directly as its single-strand dual --
+# "alternate along every strand" -- as a system of XOR (parity)
+# constraints between consecutive crossings on each band, resolved with a
+# parity union-find.  Odd-cycle parity clashes (rare boundary cases) are
+# dropped gracefully rather than raising.  This is exactly how Celtic /
+# Islamic knotwork chooses its over/under.
+#
+# Two renderings are offered.  FLAT keeps the flat mesh but BREAKS each
+# band where it goes under, leaving a gap a little wider than the over-
+# band's ribbon, so the over-band reads as crossing on top -- classic
+# 2D interlaced knotwork.  WOVEN gives every band a z-height that swings
+# smoothly (smoothstep along arclength) to +weave_height where it is
+# over a crossing and -weave_height where it is under, turning the
+# ribbon into a genuine 3D woven surface (and undulating the extruded
+# ribbon too when relief height is also set).
+#
+# References for the interlacing (in addition to Kaplan and Bonner
+# above): the alternating-knot / checkerboard construction is the
+# classical way Celtic and Islamic interlace assign over and under.
+
+
+def band_ribbon_faces_z(left, right, closed, height, zoff):
+    """Like `band_ribbon_faces`, but each station i is lifted by
+    `zoff[i]` in z, so the ribbon undulates along its length (the 3D
+    weave).  With relief (`height` > 0) the whole cross-section rides at
+    the weave offset -- top at zoff+height, bottom at zoff -- so the
+    extruded ribbon undulates without changing thickness; flat ribbons
+    become a single woven top surface at z = zoff."""
+    cv, cf = [], []
+    m = len(left)
+    if m < 2:
+        return cv, cf
+    relief = height > 0.0
+    lift = height if relief else 0.0
+
+    def addv(pt, z):
+        cv.append((float(pt[0]), float(pt[1]), float(z)))
+        return len(cv) - 1
+
+    TL = [addv(left[i], zoff[i] + lift) for i in range(m)]
+    TR = [addv(right[i], zoff[i] + lift) for i in range(m)]
+    span = m if closed else m - 1
+
+    def nxt(i):
+        return (i + 1) % m if closed else i + 1
+
+    for i in range(span):
+        j = nxt(i)
+        cf.append((TL[i], TR[i], TR[j], TL[j]))
+    if relief:
+        BL = [addv(left[i], zoff[i]) for i in range(m)]
+        BR = [addv(right[i], zoff[i]) for i in range(m)]
+        for i in range(span):
+            j = nxt(i)
+            cf.append((BL[j], BR[j], BR[i], BL[i]))       # bottom
+            cf.append((TL[j], BL[j], BL[i], TL[i]))       # left wall
+            cf.append((TR[i], BR[i], BR[j], TR[j]))       # right wall
+        if not closed:
+            cf.append((TL[0], BL[0], BR[0], TR[0]))       # start cap
+            cf.append((TR[m - 1], BR[m - 1], BL[m - 1], TL[m - 1]))  # end
+    return cv, cf
+
+
+class _ParityDSU:
+    """Union-find with parity: union(x, y, w) asserts x XOR y == w and
+    find(x) returns (root, parity_of_x_relative_to_root).  Used to solve
+    the alternating over/under constraints across all crossings."""
+
+    def __init__(self):
+        self.parent = {}
+        self.rel = {}
+
+    def add(self, x):
+        if x not in self.parent:
+            self.parent[x] = x
+            self.rel[x] = 0
+
+    def find(self, x):
+        if self.parent[x] == x:
+            return x, 0
+        root, pr = self.find(self.parent[x])
+        self.rel[x] ^= pr
+        self.parent[x] = root
+        return root, self.rel[x]
+
+    def union(self, x, y, w):
+        self.add(x)
+        self.add(y)
+        rx, px = self.find(x)
+        ry, py = self.find(y)
+        if rx == ry:
+            return (px ^ py) == w                  # already consistent?
+        self.parent[ry] = rx
+        self.rel[ry] = px ^ py ^ w
+        return True
+
+
+def _traced_patch(substrate, nx, ny, contact_deg, trim,
+                  motif, star_d, rosette_frac):
+    """(pts, seg_nodes, pair, traced, orders) for a patch: the snapped
+    arrangement, its half-edge pairing, the traced bands and per-segment
+    star orders.  None if the patch produced no strapwork."""
+    motifs, _rect = tile_motifs(substrate, nx, ny, contact_deg, trim,
+                                motif=motif, star_d=star_d,
+                                rosette_frac=rosette_frac)
+    segments, orders, _tiles = _flatten_segments(motifs)
+    if not segments:
+        return None
+    pts, seg_nodes, pair = build_arrangement(segments)
+    traced = trace_bands(seg_nodes, pair)
+    return pts, seg_nodes, pair, traced, orders
+
+
+def _find_crossings(pair):
+    """Crossing nodes of the arrangement: interior 4-valent nodes whose
+    pairing joins the four half-edges into two through-strands.  Returns
+    node -> (pairA, pairB), each pair a frozenset of the two segment ids
+    of one straight-through strand."""
+    crossings = {}
+    for node, pd in pair.items():
+        if len(pd) != 4:
+            continue
+        prs = []
+        seen = set()
+        for s0, s1 in pd.items():
+            key = frozenset((s0, s1))
+            if key not in seen:
+                seen.add(key)
+                prs.append(key)
+        if len(prs) == 2 and all(len(p) == 2 for p in prs):
+            crossings[node] = (prs[0], prs[1])
+    return crossings
+
+
+def _ref_pairs(crossings):
+    """Deterministic reference orientation per crossing: (ref, other)
+    dicts mapping node -> the pair chosen as the parity reference (the
+    one holding the smallest segment id) and its complement."""
+    ref, other = {}, {}
+    for node, (pA, pB) in crossings.items():
+        if min(pA) <= min(pB):
+            ref[node], other[node] = pA, pB
+        else:
+            ref[node], other[node] = pB, pA
+    return ref, other
+
+
+def _band_geometry(pts, node_path, seg_path, curved, subdiv):
+    """(closed, poly, path, stations, pair_here) for one traced band:
+    the closed flag, its control polyline `poly`, the rendered `path`
+    (Catmull-Rom densified when curved), the node id at every control
+    point, and the two-segment strand-pair the band uses passing through
+    each control point (None at an open end where the band caps)."""
+    closed = len(node_path) >= 4 and node_path[0] == node_path[-1]
+    poly = [pts[nd] for nd in node_path]
+    if closed:
+        poly = poly[:-1]
+    m = len(poly)
+    stations = node_path[:-1] if closed else list(node_path)
+    pair_here = []
+    if closed:
+        L = len(seg_path)
+        for k in range(m):
+            pair_here.append(frozenset((seg_path[(k - 1) % L],
+                                        seg_path[k])))
+    else:
+        for k in range(m):
+            si = seg_path[k - 1] if k > 0 else None
+            so = seg_path[k] if k < m - 1 else None
+            pair_here.append(None if (si is None or so is None)
+                             else frozenset((si, so)))
+    path = (catmull_rom(poly, closed, subdiv) if curved
+            else [(float(p[0]), float(p[1])) for p in poly])
+    return closed, poly, path, stations, pair_here
+
+
+def _solve_over(crossings, ref, other, band_seqs):
+    """Solve the alternating over/under assignment.  `band_seqs` is one
+    (seq, closed) per band, seq an ordered list of (node, a) at the
+    band's crossings where a = 1 if the band uses the reference strand.
+    Requiring the band to alternate over/under gives, between consecutive
+    crossings, x_i XOR x_j == 1 XOR a_i XOR a_j (x = "reference is over").
+    We resolve all such parity constraints with a union-find, then read
+    off over[node] = ref (if x == 1) or other (if x == 0)."""
+    dsu = _ParityDSU()
+    for node in crossings:
+        dsu.add(node)
+    for seq, closed in band_seqs:
+        L = len(seq)
+        if L < 2:
+            continue
+        rng = range(L) if closed else range(L - 1)
+        for i in rng:
+            n0, a0 = seq[i]
+            n1, a1 = seq[(i + 1) % L]
+            dsu.union(n0, n1, 1 ^ a0 ^ a1)         # clash -> dropped
+    over = {}
+    for node in crossings:
+        _r, x = dsu.find(node)
+        over[node] = ref[node] if x == 1 else other[node]
+    return over
+
+
+def _arclen(path, closed):
+    """(s, total): cumulative arclength at every vertex and the total
+    length (including the closing edge when `closed`)."""
+    n = len(path)
+    s = [0.0] * n
+    for i in range(1, n):
+        s[i] = s[i - 1] + hypot(path[i][0] - path[i - 1][0],
+                                path[i][1] - path[i - 1][1])
+    total = s[-1]
+    if closed and n >= 2:
+        total += hypot(path[0][0] - path[-1][0],
+                       path[0][1] - path[-1][1])
+    return s, total
+
+
+def _weave_zoff(path, closed, signed, weave_h):
+    """Per-vertex z offset for the 3D weave.  `signed` is a list of
+    (path_index, sign) at the band's crossings (+1 over, -1 under); the
+    offset smoothsteps along arclength between consecutive crossings,
+    reaching +/-weave_h at each, and tapers to 0 at open band ends."""
+    n = len(path)
+    z = [0.0] * n
+    if not signed or weave_h <= 0.0:
+        return z
+    s, total = _arclen(path, closed)
+    anchors = sorted((s[pi], sg * weave_h) for pi, sg in signed)
+    if closed:
+        fs, fz = anchors[0]
+        ls, lz = anchors[-1]
+        ext = [(ls - total, lz)] + anchors + [(fs + total, fz)]
+    else:
+        ext = [(0.0, 0.0)] + anchors + [(total, 0.0)]
+    for i in range(n):
+        si = s[i]
+        for j in range(len(ext) - 1):
+            s0, z0 = ext[j]
+            s1, z1 = ext[j + 1]
+            if si <= s1 or j == len(ext) - 2:
+                seg = s1 - s0
+                u = 0.0 if seg < 1e-12 else min(1.0, max(0.0,
+                                                         (si - s0) / seg))
+                f = u * u * (3.0 - 2.0 * u)         # smoothstep
+                z[i] = z0 + (z1 - z0) * f
+                break
+    return z
+
+
+def _cut_band(path, closed, cut_s, half, s, total):
+    """Break a band's centerline into open sub-paths, removing a gap of
+    half-length `half` centered on each arclength in `cut_s` (the band's
+    under-crossings).  Returns [(subpath_points, False), ...]."""
+    n = len(path)
+
+    def pt_at(arc):
+        if arc <= 0.0:
+            return path[0]
+        if arc >= total:
+            return path[0] if closed else path[-1]
+        for i in range(n - 1):
+            if s[i] <= arc <= s[i + 1]:
+                seg = s[i + 1] - s[i]
+                t = 0.0 if seg < 1e-12 else (arc - s[i]) / seg
+                return (path[i][0] + t * (path[i + 1][0] - path[i][0]),
+                        path[i][1] + t * (path[i + 1][1] - path[i][1]))
+        seg = total - s[-1]
+        t = 0.0 if seg < 1e-12 else (arc - s[-1]) / seg
+        return (path[-1][0] + t * (path[0][0] - path[-1][0]),
+                path[-1][1] + t * (path[0][1] - path[-1][1]))
+
+    intervals = []
+    for c in cut_s:
+        if closed:
+            a = c - half
+            a %= total
+            b = a + 2.0 * half
+            if b <= total:
+                intervals.append((a, b))
+            else:
+                intervals.append((a, total))
+                intervals.append((0.0, b - total))
+        else:
+            a, b = max(0.0, c - half), min(total, c + half)
+            if b > a:
+                intervals.append((a, b))
+    intervals.sort()
+    merged = []
+    for a, b in intervals:
+        if merged and a <= merged[-1][1] + 1e-9:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], b))
+        else:
+            merged.append((a, b))
+    kept = []
+    prev = 0.0
+    for a, b in merged:
+        if a > prev + 1e-9:
+            kept.append((prev, a))
+        prev = max(prev, b)
+    if prev < total - 1e-9:
+        kept.append((prev, total))
+    subs = []
+    for lo, hi in kept:
+        pts_sp = [pt_at(lo)]
+        for i in range(n):
+            if lo + 1e-9 < s[i] < hi - 1e-9:
+                pts_sp.append(path[i])
+        pts_sp.append(pt_at(hi))
+        subs.append(pts_sp)
+    if closed and subs and kept:
+        seam_cut = (any(a <= 1e-9 for a, _b in merged)
+                    or any(b >= total - 1e-9 for _a, b in merged))
+        if (not seam_cut and len(subs) >= 2
+                and kept[0][0] <= 1e-9 and kept[-1][1] >= total - 1e-9):
+            subs[-1] = subs[-1][:-1] + subs[0]     # stitch across seam
+            subs.pop(0)
+    return [(sp, False) for sp in subs if len(sp) >= 2]
+
+
+def _interlaced_cells(substrate, nx, ny, contact_deg, ribbon_width,
+                      color_by, trim, height, backing, base,
+                      curved, subdiv, motif, star_d, rosette_frac,
+                      mode, weave_height):
+    """Interlaced (woven) strapwork cells.  Traces the bands, assigns a
+    consistent alternating over/under at every crossing, then renders
+    either FLAT knotwork (under-bands broken at crossings) or a WOVEN 3D
+    surface (bands rise/dip at crossings).  One (verts, faces, mats) cell
+    per ribbon piece; an optional backing slab is appended."""
+    tp = _traced_patch(substrate, nx, ny, contact_deg, trim,
+                        motif, star_d, rosette_frac)
+    if tp is None:
+        return []
+    pts, _seg_nodes, pair, traced, orders = tp
+    crossings = _find_crossings(pair)
+    ref, other = _ref_pairs(crossings)
+
+    step = subdiv if curved else 1
+    bands, band_seqs = [], []
+    for node_path, seg_path in traced:
+        closed, poly, path, stations, pair_here = _band_geometry(
+            pts, node_path, seg_path, curved, subdiv)
+        if len(poly) < 2:
+            continue
+        cross = []                                 # (node, pair, path_idx)
+        for k, nd in enumerate(stations):
+            ph = pair_here[k]
+            if nd in crossings and ph is not None and ph in crossings[nd]:
+                cross.append((nd, ph, k * step))
+        seq = [(nd, 1 if ph == ref[nd] else 0) for nd, ph, _pi in cross]
+        band_seqs.append((seq, closed))
+        bands.append((closed, path, seg_path, cross))
+
+    over = _solve_over(crossings, ref, other, band_seqs)
+
+    cells = []
+    all_verts = []
+    for bi, (closed, path, seg_path, cross) in enumerate(bands):
+        kind = _band_kind(color_by, bi, seg_path, orders)
+        signed = [(pi, 1 if ph == over[nd] else -1)
+                  for nd, ph, pi in cross]
+        if mode == 'WOVEN':
+            zoff = _weave_zoff(path, closed, signed, weave_height)
+            left, right = miter_ribbon(path, ribbon_width, closed)
+            cv, cf = band_ribbon_faces_z(left, right, closed, height, zoff)
+            if cf:
+                cells.append((cv, cf, [kind] * len(cf)))
+                all_verts.extend(cv)
+        else:                                      # FLAT
+            under = [pi for pi, sg in signed if sg < 0]
+            if under:
+                s, total = _arclen(path, closed)
+                cut_s = sorted(s[pi] for pi in under)
+                margin = max(0.02, 0.25 * ribbon_width)
+                half = 0.5 * (ribbon_width + margin)
+                pieces = _cut_band(path, closed, cut_s, half, s, total)
+            else:
+                pieces = [(path, closed)]
+            for sp, sp_closed in pieces:
+                if len(sp) < 2:
+                    continue
+                left, right = miter_ribbon(sp, ribbon_width, sp_closed)
+                cv, cf = band_ribbon_faces(left, right, sp_closed, height)
+                if cf:
+                    cells.append((cv, cf, [kind] * len(cf)))
+                    all_verts.extend(cv)
+
+    if backing and all_verts:
+        a = np.asarray(all_verts, float)
+        lo = (a[:, 0].min(), a[:, 1].min())
+        hi = (a[:, 0].max(), a[:, 1].max())
+        cv, cf, cm = [], [], []
+        pc.slab(cv, cf, cm, lo, hi, 0.0, -base, mat=_BACKING_MAT)
+        cells.append((cv, cf, cm))
+    return cells
+
+
 def build_cells(substrate, nx, ny, contact_deg, ribbon_width,
                 color_by='UNIFORM', trim=False, height=0.0,
                 backing=False, base=0.08, curved=False, subdiv=8,
-                motif='PIC', star_d=2, rosette_frac=0.0):
+                motif='PIC', star_d=2, rosette_frac=0.0,
+                interlace=False, interlace_mode='FLAT',
+                weave_height=0.05):
     """One (verts, faces, mats) cell per continuous strapwork BAND: the
     band as a single mitered ribbon (flat, or extruded to `height`;
     straight-mitered or Catmull-Rom curved).  An optional backing slab
-    is appended as a final cell."""
+    is appended as a final cell.  With `interlace` the bands instead
+    weave over/under at crossings (FLAT knotwork or a WOVEN 3D surface)."""
+    if interlace:
+        return _interlaced_cells(
+            substrate, nx, ny, contact_deg, ribbon_width, color_by,
+            trim, height, backing, base, curved, subdiv, motif,
+            star_d, rosette_frac, interlace_mode, weave_height)
     bands, orders = strapwork_bands(
         substrate, nx, ny, contact_deg, ribbon_width, trim,
         curved, subdiv, motif, star_d, rosette_frac)
@@ -837,7 +1271,7 @@ def build_cells(substrate, nx, ny, contact_deg, ribbon_width,
         cm = [kind] * len(cf)
         cells.append((cv, cf, cm))
         all_verts.extend(cv)
-    if backing and height > 0.0 and all_verts:
+    if backing and all_verts:
         a = np.asarray(all_verts, float)
         lo = (a[:, 0].min(), a[:, 1].min())
         hi = (a[:, 0].max(), a[:, 1].max())
@@ -850,12 +1284,14 @@ def build_cells(substrate, nx, ny, contact_deg, ribbon_width,
 def build(substrate, nx, ny, contact_deg, ribbon_width,
           color_by='UNIFORM', trim=False, height=0.0,
           backing=False, base=0.08, curved=False, subdiv=8,
-          motif='PIC', star_d=2, rosette_frac=0.0):
+          motif='PIC', star_d=2, rosette_frac=0.0,
+          interlace=False, interlace_mode='FLAT', weave_height=0.05):
     """Merged (verts, faces, mats) for one strapwork patch."""
     return pc.merge_cells(build_cells(
         substrate, nx, ny, contact_deg, ribbon_width, color_by,
         trim, height, backing, base, curved, subdiv,
-        motif, star_d, rosette_frac))
+        motif, star_d, rosette_frac,
+        interlace, interlace_mode, weave_height))
 
 
 # --------------------------------------------------------------------
@@ -984,6 +1420,24 @@ if _IN_BLENDER:
             default='RIBBON',
             description="Build filled ribbon meshes or the band "
                         "centerlines as curve splines")
+        interlace: BoolProperty(
+            name="Interlace (Weave)", default=False,
+            description="Weave the bands over and under at crossings "
+                        "(alternating knotwork); off = flat strapwork")
+        interlace_mode: EnumProperty(
+            name="Interlace Mode",
+            items=[('FLAT', "Flat Knotwork",
+                    "Break the under-band at each crossing so the "
+                    "over-band reads on top (2D interlace, height 0)"),
+                   ('WOVEN', "Woven (3D)",
+                    "Raise each band where it is over and dip it where "
+                    "under, into a genuine 3D woven surface")],
+            default='FLAT',
+            description="How the over/under weave is rendered")
+        weave_height: FloatProperty(
+            name="Weave Height", default=0.05, min=0.0, max=0.5,
+            description="Z amplitude of the woven ribbons at crossings "
+                        "(WOVEN interlace only)")
         height: FloatProperty(
             name="Relief Height", default=0.0, min=0.0, max=2.0,
             description="0 = flat ribbons; > 0 extrudes the strapwork")
@@ -1025,7 +1479,8 @@ if _IN_BLENDER:
                 substrate, self.nx, self.ny, contact,
                 self.ribbon_width, self.color_by, self.trim,
                 self.height, self.backing, self.base, self.curved,
-                self.smoothness, motif, star_d, self.rosette_frac)
+                self.smoothness, motif, star_d, self.rosette_frac,
+                self.interlace, self.interlace_mode, self.weave_height)
             obj = pc.emit(context, "Islamic Star", cells,
                           self.separate, fit=True, operator=self)
             if obj is None:
@@ -1065,11 +1520,15 @@ if _IN_BLENDER:
             lay.prop(self, 'output')
             if self.output == 'RIBBON':
                 lay.prop(self, 'color_by')
+                lay.prop(self, 'interlace')
+                if self.interlace:
+                    lay.prop(self, 'interlace_mode')
+                    if self.interlace_mode == 'WOVEN':
+                        lay.prop(self, 'weave_height')
                 lay.prop(self, 'height')
-                if self.height > 0.0:
-                    lay.prop(self, 'backing')
-                    if self.backing:
-                        lay.prop(self, 'base')
+                lay.prop(self, 'backing')
+                if self.backing:
+                    lay.prop(self, 'base')
                 lay.prop(self, 'separate')
             lay.prop(self, 'align')
 
@@ -1348,6 +1807,127 @@ def _self_test():
     ok = ok and pic_ok
     print("PIC regression byte-identical=%s  %s" %
           (pic_ok, "OK" if pic_ok else "BAD"))
+
+    # (10) Interlacing / weaving.  For each case: the over/under
+    # assignment must (a) strictly ALTERNATE along every band (no two
+    # consecutive crossings of a band share sense) and (b) be CONSISTENT
+    # at every crossing (exactly two passages, one over and one under);
+    # FLAT interlace must actually BREAK the under-bands (more ribbon
+    # pieces than plain bands, by roughly the number of under-crossings);
+    # WOVEN must give the ribbon z-variation with the right sign at each
+    # crossing (over -> +weave, under -> -weave); and interlace=False
+    # must be byte-identical to the plain build.
+    # (At exactly 30 deg the HEX crossings collapse onto tiling vertices
+    # as degenerate higher-valence confluences; trimmed HEX therefore has
+    # no clean 4-valent crossings -- handled gracefully as no weave.  The
+    # untrimmed HEX patch does cross cleanly, so it is used here.)
+    print("substrate  motif    cross alt   consist "
+          "flatgap wovenz sign")
+    il_ok = True
+    il_cases = [('TRUNCSQ', 'PIC', 30.0, 2, 0.4, True),
+                ('TRUNCHEX', 'PIC', 30.0, 2, 0.4, True),
+                ('SQUARE', 'PIC', 30.0, 2, 0.4, True),
+                ('HEX', 'PIC', 30.0, 2, 0.4, False),
+                ('TRUNCSQ', 'ROSETTE', 34.0, 2, 0.4, True),
+                ('TRUNCHEX', 'ROSETTE', 32.0, 2, 0.4, True)]
+    for sub, motif, contact, sd, fr, il_trim in il_cases:
+        tp = _traced_patch(sub, 4, 4, contact, il_trim, motif, sd, fr)
+        pts, _sn, pair, traced, orders = tp
+        crossings = _find_crossings(pair)
+        ref, other = _ref_pairs(crossings)
+
+        # per-band crossing sequences (straight bands for the test):
+        # keep each band's path so the woven z-offsets can be checked.
+        band_seqs, band_cross = [], []
+        for node_path, seg_path in traced:
+            closed, poly, path, stations, pair_here = _band_geometry(
+                pts, node_path, seg_path, False, 1)
+            if len(poly) < 2:
+                continue
+            cross = []
+            for k, nd in enumerate(stations):
+                ph = pair_here[k]
+                if (nd in crossings and ph is not None
+                        and ph in crossings[nd]):
+                    cross.append((k, nd, ph))
+            seq = [(nd, 1 if ph == ref[nd] else 0) for _k, nd, ph in cross]
+            band_seqs.append((seq, closed))
+            band_cross.append((closed, path, cross))
+        over = _solve_over(crossings, ref, other, band_seqs)
+        ncross = len(crossings)
+
+        # (a) alternation along each band (consecutive crossings differ)
+        alt_ok = True
+        for closed, path, cross in band_cross:
+            flags = [ph == over[nd] for _k, nd, ph in cross]
+            for i in range(len(flags) - 1):
+                if flags[i] == flags[i + 1]:
+                    alt_ok = False
+
+        # (b) consistency at every crossing: exactly one over, one under
+        passages = {}
+        for closed, path, cross in band_cross:
+            for _k, nd, ph in cross:
+                passages.setdefault(nd, []).append(ph == over[nd])
+        consist_ok = (bool(passages)
+                      and all(len(v) == 2 and sum(v) == 1
+                              for v in passages.values()))
+
+        # (c) FLAT breaks the under-bands: more pieces than plain bands
+        plain = build_cells(sub, 4, 4, contact, 0.12, 'BAND', trim=il_trim,
+                            motif=motif, star_d=sd, rosette_frac=fr)
+        flat = build_cells(sub, 4, 4, contact, 0.12, 'BAND', trim=il_trim,
+                           motif=motif, star_d=sd, rosette_frac=fr,
+                           interlace=True, interlace_mode='FLAT')
+        flat_ok = bool(flat) and len(flat) > len(plain)
+
+        # (d) WOVEN z-variation reaching +/- the weave height
+        wh = 0.1
+        woven = build_cells(sub, 4, 4, contact, 0.12, 'BAND', trim=il_trim,
+                            motif=motif, star_d=sd, rosette_frac=fr,
+                            interlace=True, interlace_mode='WOVEN',
+                            weave_height=wh)
+        zs = [v[2] for cv, _cf, _cm in woven for v in cv]
+        wovenz_ok = bool(zs) and max(zs) > 0.5 * wh and min(zs) < -0.5 * wh
+
+        # (e) sign correctness: on a band with >=2 crossings, the woven
+        # z-offset is >= +weave at every over-crossing and <= -weave at
+        # every under-crossing.
+        sign_ok = True
+        checked = False
+        for closed, path, cross in band_cross:
+            if len(cross) < 2:
+                continue
+            signed = [(k, 1 if ph == over[nd] else -1)
+                      for k, nd, ph in cross]
+            zoff = _weave_zoff(path, closed, signed, wh)
+            for k, nd, ph in cross:
+                if ph == over[nd] and zoff[k] < wh - 1e-9:
+                    sign_ok = False
+                if ph != over[nd] and zoff[k] > -wh + 1e-9:
+                    sign_ok = False
+            checked = True
+            break
+        sign_ok = sign_ok and checked
+
+        good = (ncross > 0 and alt_ok and consist_ok and flat_ok
+                and wovenz_ok and sign_ok)
+        il_ok = il_ok and good
+        print("%-10s %-8s %5d %-5s %-6s  %-6s  %-5s %-4s %s" %
+              (sub, motif, ncross, alt_ok, consist_ok, flat_ok,
+               wovenz_ok, sign_ok, "OK" if good else "BAD"))
+    ok = ok and il_ok
+
+    # (11) interlace=False regression: identical to the plain build even
+    # when interlace mode / weave height are (ignored) non-defaults.
+    a = build_cells('TRUNCSQ', 4, 4, 30.0, 0.14, 'STAR_ORDER', trim=True)
+    b = build_cells('TRUNCSQ', 4, 4, 30.0, 0.14, 'STAR_ORDER', trim=True,
+                    interlace=False, interlace_mode='WOVEN',
+                    weave_height=0.2)
+    reg_ok = (a == b)
+    ok = ok and reg_ok
+    print("interlace=False regression byte-identical=%s  %s" %
+          (reg_ok, "OK" if reg_ok else "BAD"))
 
     print("RESULT:", "OK" if ok else "BAD")
     return ok
