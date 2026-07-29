@@ -446,7 +446,7 @@ if _IN_BLENDER:
                     "modifier (self-collision + a gather field)")],
             default='PBD')
         cloth_bake: IntProperty(
-            name="Cloth Bake Frames", default=60, min=0, max=400,
+            name="Cloth Bake Frames", default=45, min=0, max=400,
             description="Cloth mode: frames to auto-simulate and "
                         "freeze. 0 = just set up the modifier and let "
                         "you press Play")
@@ -471,6 +471,13 @@ if _IN_BLENDER:
             description="Cloth mode: self-collision distance as a "
                         "fraction of stitch size; higher keeps folds "
                         "from pinching into sharp seams")
+        cloth_detail: IntProperty(
+            name="Cloth Detail", default=1500, min=300, max=12000,
+            description="Cloth mode: target vertex count for the SIM "
+                        "(the sheet is decimated to this before "
+                        "folding). Self-collision cost grows fast with "
+                        "vertex count, so lower = much faster; the "
+                        "fold smoothing hides the coarseness")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                             max=100.0)
         shade_smooth: BoolProperty(name="Smooth Shading", default=True)
@@ -487,7 +494,9 @@ if _IN_BLENDER:
             if self.physics == 'CLOTH':
                 # hand cloth the procedurally-ruffled flat sheet (full
                 # wave seed, no PBD packing/collision) with only a light
-                # cleanup relax; the cloth solver refines + folds it
+                # cleanup relax; the cloth solver refines + folds it.
+                # Cap the resolution -- self-collision cost is superlinear
+                # in vertex count and the fold smoothing hides coarseness.
                 p['pack'] = 0
                 p['anneal'] = False
                 p['collide'] = 0
@@ -522,7 +531,18 @@ if _IN_BLENDER:
             """Attach a Cloth modifier (self-collision + optional inward
             gather field) that folds the flat sheet into a ball, and
             optionally bake+freeze it."""
-            V = np.asarray(verts)
+            context.view_layer.objects.active = obj
+            # decimate to the target sim resolution first -- self-
+            # collision cost is superlinear in vertex count
+            if len(obj.data.vertices) > self.cloth_detail:
+                dm = obj.modifiers.new("PreDecimate", 'DECIMATE')
+                dm.ratio = self.cloth_detail / len(obj.data.vertices)
+                try:
+                    bpy.ops.object.modifier_apply(modifier=dm.name)
+                except RuntimeError:
+                    pass
+            V = np.array([v.co[:] for v in obj.data.vertices])
+            faces = [tuple(p.vertices) for p in obj.data.polygons]
             cen = V.mean(axis=0)
             k = max(6, len(V) // 150)
             pin = np.argsort(np.linalg.norm(V[:, :2] - cen[:2],
@@ -534,7 +554,7 @@ if _IN_BLENDER:
 
             mod = obj.modifiers.new("Cloth", 'CLOTH')
             s = mod.settings
-            s.quality = 10
+            s.quality = 7
             s.mass = 0.3
             s.tension_stiffness = 15.0
             s.compression_stiffness = 15.0
@@ -552,7 +572,7 @@ if _IN_BLENDER:
             col.self_distance_min = min(0.1, max(0.003,
                                                  self.cloth_thick * med))
             col.self_impulse_clamp = 0.0
-            col.collision_quality = 5
+            col.collision_quality = 3
 
             fld = None
             if self.cloth_gather > 0.0:
@@ -602,6 +622,7 @@ if _IN_BLENDER:
                     lay.prop(self, k)
             lay.prop(self, 'physics')
             if self.physics == 'CLOTH':
+                lay.prop(self, 'cloth_detail')
                 lay.prop(self, 'cloth_prep')
                 lay.prop(self, 'cloth_bake')
                 lay.prop(self, 'cloth_gather')
