@@ -37,6 +37,9 @@ OPS = [
     ("waterman", lambda: bpy.ops.mesh.waterman_add(root=20)),
     ("rotegrity", lambda: bpy.ops.mesh.rotegrity_add(kind='ICOSA', freq=1)),
     ("weave", lambda: bpy.ops.mesh.poly_weave_add(kind='CUBE')),
+    ("weave rope tube", lambda: bpy.ops.mesh.poly_weave_add(
+        kind='ICOSA', freq=1, output='TUBE', tube_radius=0.03,
+        relax_iters=40)),
     ("polylinks", lambda: bpy.ops.mesh.polylinks_add(preset='T4')),
     ("platonic twist", lambda: bpy.ops.mesh.platonic_twist_add(
         kind='CUBE')),
@@ -500,6 +503,10 @@ OPS = [
     ("knot carpet tube", lambda: bpy.ops.mesh.knot_carpet_add(
         lattice='SQUARE', symmetry=4, nx=2, ny=2, output='TUBE',
         tube_radius=0.04, tube_sides=8, weave_height=0.06)),
+    ("knot ball sphere relaxed",
+     lambda: bpy.ops.mesh.knot_carpet_add(
+         lattice='SPHERE', sphere_freq=2, output='TUBE',
+         tube_radius=0.04, tube_sides=8, relax_iters=40)),
     ("hyp uniform t73", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
         form='TRUNCATED', p=7, q=3, model='POINCARE')),
     ("hyp uniform r54 klein",
