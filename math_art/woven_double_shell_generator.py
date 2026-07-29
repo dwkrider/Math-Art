@@ -841,7 +841,9 @@ def relax_double_shell(shell, iters=120, clearance=0.10,
     # slide along each other until crossings dissolve -- so the
     # double shell keeps the repulsion just past contact range
     rcut = 1.3 * clr
-    dmax = 0.25 * clr
+    # clr == 0 disables repulsion; keep the per-step clamp alive off the
+    # mean edge length so the relaxer still smooths/confines the ropes.
+    dmax = 0.25 * (clr if clr > 1e-9 else h)
     dmin = 0.2 * clr
     excl = int(np.ceil(rcut / max(h, 1e-9))) + 2
     rebuild = 5
@@ -877,8 +879,11 @@ def relax_double_shell(shell, iters=120, clearance=0.10,
         if it % rebuild == 0:
             if have:
                 _retrack()
-            i_idx, j_idx = _grid_pairs(X, rcut + 0.5 * clr, sid,
-                                       pos, slen, excl)
+            if clr > 1e-9:
+                i_idx, j_idx = _grid_pairs(X, rcut + 0.5 * clr, sid,
+                                           pos, slen, excl)
+            else:                                  # repulsion OFF
+                i_idx = j_idx = np.empty(0, dtype=int)
         F = np.zeros_like(X)
         # springs (rest-length edges: even spacing, no shrinkage)
         e = X[nxt] - X
@@ -900,7 +905,7 @@ def relax_double_shell(shell, iters=120, clearance=0.10,
                 np.add.at(F, ia, f)
                 np.add.at(F, ja, -f)
         # weave order: over radius >= under radius + weave_gap
-        if have:
+        if have and gap > 1e-9:                    # gap == 0 -> OFF
             ro = np.linalg.norm(X[oi], axis=1)
             ru = np.linalg.norm(X[ui], axis=1)
             push = kw * np.maximum(0.0, gap - (ro - ru))
@@ -1001,15 +1006,20 @@ def relax_double_shell(shell, iters=120, clearance=0.10,
 def shell_lines(shell, relax_iters=120, clearance=0.10,
                 weave_gap=0.10, tube_radius=0.035, trace=None):
     """The rendered strand centerlines: the tier-2 relaxation when
-    relax_iters > 0 (clearance / weave_gap floored at the tube
-    diameter so the ropes cannot touch), else the radial weave
-    seed."""
+    relax_iters > 0, else the radial weave seed.  clearance = 0 turns
+    OFF strand-strand repulsion and weave_gap = 0 turns OFF the
+    over/under separation push (ropes may then intersect); any positive
+    value is floored at the rope diameter so ropes can't touch while
+    avoidance is on."""
     if relax_iters > 0:
         tr = max(0.005, float(tube_radius))
+        cl = float(clearance)
+        wg = float(weave_gap)
+        cl = max(cl, 2.2 * tr) if cl > 0.0 else 0.0
+        wg = max(wg, 2.2 * tr) if wg > 0.0 else 0.0
         return relax_double_shell(
             shell, iters=int(relax_iters),
-            clearance=max(float(clearance), 2.2 * tr),
-            weave_gap=max(float(weave_gap), 2.2 * tr), trace=trace)
+            clearance=cl, weave_gap=wg, trace=trace)
     return shell['seed']
 
 
@@ -1174,12 +1184,14 @@ if _IN_BLENDER:
             name="Tube Sides", default=10, min=3, max=32)
         weave_gap: FloatProperty(
             name="Weave Gap", default=0.10, min=0.0, max=0.4,
-            description="Radial over/under separation at crossings "
-                        "(floored at the rope diameter)")
+            description="Radial over/under separation at crossings; "
+                        "0 = off (no over/under push). Positive values "
+                        "are floored at the rope diameter")
         clearance: FloatProperty(
             name="Clearance", default=0.10, min=0.0, max=0.4,
-            description="Strand-strand repulsion distance (floored "
-                        "at the rope diameter)")
+            description="Strand-strand repulsion (intersection "
+                        "avoidance); 0 = off (ropes may intersect). "
+                        "Positive values floored at the rope diameter")
         relax_iters: IntProperty(
             name="Relax Iterations", default=120, min=0, max=400,
             description="Bead/stick relaxation steps (0 = the raw "
