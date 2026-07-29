@@ -97,10 +97,14 @@ OPS = [
         mode='GASKET', depth=3)),
     ("apollonian packing", lambda: bpy.ops.mesh.apollonian_add(
         mode='PACKING', depth=3)),
-    ("hyperbolic crochet ruffle",
-     lambda: bpy.ops.mesh.hyperbolic_crochet_add(mode='RUFFLE')),
-    ("hyperbolic crochet pseudosphere",
-     lambda: bpy.ops.mesh.hyperbolic_crochet_add(mode='PSEUDOSPHERE')),
+    ("hyperbolic surface pseudosphere",
+     lambda: bpy.ops.mesh.hyperbolic_surface_add(preset='PSEUDOSPHERE')),
+    ("hyperbolic surface kuen",
+     lambda: bpy.ops.mesh.hyperbolic_surface_add(preset='KUEN')),
+    ("crochet wavy",
+     lambda: bpy.ops.mesh.crochet_add(preset='WAVY')),
+    ("crochet ruffled",
+     lambda: bpy.ops.mesh.crochet_add(preset='RUFFLED')),
     ("space curve", lambda: bpy.ops.curve.space_filling_add(
         kind='MOORE3D', order=3)),
     ("oloid", lambda: bpy.ops.mesh.oloid_add(kind='OLOID')),

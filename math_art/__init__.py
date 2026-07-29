@@ -39,7 +39,8 @@ _MODULE_NAMES = [
     'antoine_generator',
     'fractal_knot_generator',
     'apollonian_generator',
-    'hyperbolic_crochet_generator',
+    'hyperbolic_surface_generator',
+    'crochet_generator',
     'space_curve_generator',
     'oloid_generator',
     'sphericon_generator',
@@ -130,7 +131,8 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.helical_surface_add", icon='MOD_SCREW')
         _op(lay, "mesh.curiosity_surface_add",
             icon='SURFACE_DATA')
-        _op(lay, "mesh.hyperbolic_crochet_add", icon='MOD_CLOTH')
+        _op(lay, "mesh.hyperbolic_surface_add", icon='MESH_CAPSULE')
+        _op(lay, "mesh.crochet_add", icon='MOD_CLOTH')
 
 
 class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
