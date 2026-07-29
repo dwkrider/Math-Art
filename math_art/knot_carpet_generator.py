@@ -69,7 +69,8 @@ bl_info = {
                    "interlocked unknots (ribbon, woven rope tube, or "
                    "curve) on a square or triangular lattice, on any "
                    "regular or Archimedean tiling, or closed over a "
-                   "geodesic sphere as a knot ball",
+                   "geodesic sphere or a Platonic / Archimedean "
+                   "spherical tiling as a knot ball",
     "category": "Add Mesh",
 }
 
@@ -81,10 +82,12 @@ try:
     from . import pattern_common as pc
     from . import islamic_pattern_generator as isl
     from . import tiling_generator as tg
+    from . import regular_solids_generator as rs
 except Exception:                       # legacy single-file / CLI use
     import pattern_common as pc
     import islamic_pattern_generator as isl
     import tiling_generator as tg
+    import regular_solids_generator as rs
 
 
 # --------------------------------------------------------------------
@@ -843,6 +846,18 @@ def relaxed_paths(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
 # the curves on the sphere, and the planar _seg_cross applies
 # unchanged.
 #
+# POLYHEDRAL SCAFFOLDS.  Besides the geodesic icosahedron (loops on
+# VERTICES), the scaffold can be any Platonic or Archimedean solid
+# with one medallion per FACE, centred at the face centroid
+# projected to the unit sphere.  Radially projected, those solids
+# ARE the regular and Archimedean tilings of the sphere -- the cube
+# is the spherical 4.4.4, the truncated icosahedron (the football)
+# the spherical 5.6.6 -- so this is the knot ball over every
+# spherical uniform tiling, the closed cousin of the flat TILING
+# carpet.  Two medallions are neighbours iff their faces share an
+# edge, and the AUTO lobe count follows the face's side count.  The
+# solids come from the shared regular-solids engine.
+#
 # References:
 #   Robert G. Scharein, KnotPlot knot carpets --
 #     https://knotplot.com/carpets (see the header above).
@@ -851,6 +866,9 @@ def relaxed_paths(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
 #     subdivision of the icosahedron.
 #   L. Euler's polyhedron formula V - E + F = 2 -- the source of the
 #     twelve 5-fold defects.
+#   Archimedes (work lost); Johannes Kepler, "Harmonices Mundi"
+#     (1619) -- the thirteen Archimedean solids, i.e. the spherical
+#     Archimedean tilings the polyhedral scaffolds realize.
 
 _ICO_F = ((0, 11, 5), (0, 5, 1), (0, 1, 7), (0, 7, 10), (0, 10, 11),
           (1, 5, 9), (5, 11, 4), (11, 10, 2), (10, 7, 6), (7, 1, 8),
@@ -914,6 +932,83 @@ def _geodesic_scaffold(freq):
     return np.asarray(verts), sorted(edges), adj
 
 
+# scaffold id -> solids-engine family, straight from the engine's own
+# catalogs so the two stay in step (ids: TETRA, CUBE, ... / TT, CO,
+# ..., TI = the truncated icosahedron, the football)
+_SCAFFOLD_FAMILY = {}
+for _sid, _label, _nota in rs.PLATONIC:
+    _SCAFFOLD_FAMILY[_sid] = 'PLATONIC'
+for _sid, _label, _nota in rs.ARCHIMEDEAN:
+    _SCAFFOLD_FAMILY[_sid] = 'ARCHIMEDEAN'
+
+# the operator's enum items, module-level so the strings stay alive
+# for as long as Blender holds the enum
+SPHERE_SCAFFOLD_ITEMS = [
+    ('GEODESIC', "Geodesic Icosahedron",
+     "Loops on the vertices of a geodesic icosahedron "
+     "(subdivided by Sphere Frequency; twelve 5-fold defects)")]
+SPHERE_SCAFFOLD_ITEMS += [
+    (_sid, _label,
+     "One loop per face of the %s -- the spherical %s tiling"
+     % (_label.lower(),
+        'regular' if _fam == rs.PLATONIC else 'Archimedean'))
+    for _fam in (rs.PLATONIC, rs.ARCHIMEDEAN)
+    for (_sid, _label, _nota) in _fam]
+
+
+def _solid_scaffold(family, sid):
+    """The FACE scaffold of a Platonic / Archimedean solid: one
+    medallion centre per face (the face centroid projected to the
+    unit sphere).  Faces are neighbours iff they share an edge,
+    found through a shared-edge map keyed on the rounded unordered
+    endpoint pair (as _tiling_scaffold), so duplicated vertices
+    cannot split an edge.  Returns (centers, adj, degree): the
+    (F, 3) unit vectors, {face: sorted neighbour ids}, and
+    {face: neighbour count} (= the face's side count on a closed
+    solid)."""
+    V, F, _sizes = rs.build_solid(family, sid, 6, 1.0)
+    V = np.asarray(V, float)
+    centers = []
+    for f in F:
+        c = V[list(f)].mean(axis=0)
+        centers.append(c / (np.linalg.norm(c) + 1e-300))
+    owners = {}
+    for fi, f in enumerate(F):
+        m = len(f)
+        for a in range(m):
+            p, q = V[f[a]], V[f[(a + 1) % m]]
+            kp = (round(float(p[0]), 6), round(float(p[1]), 6),
+                  round(float(p[2]), 6))
+            kq = (round(float(q[0]), 6), round(float(q[1]), 6),
+                  round(float(q[2]), 6))
+            if kp == kq:
+                continue
+            key = (kp, kq) if kp < kq else (kq, kp)
+            owners.setdefault(key, []).append(fi)
+    adj = {i: set() for i in range(len(F))}
+    for own in owners.values():
+        if len(own) == 2 and own[0] != own[1]:
+            i, j = own
+            adj[i].add(j)
+            adj[j].add(i)
+    adj = {i: sorted(s) for i, s in adj.items()}
+    degree = {i: len(adj[i]) for i in adj}
+    return np.asarray(centers), adj, degree
+
+
+def _sphere_scaffold(scaffold, freq):
+    """The unified knot-ball scaffold: (centers, adj, degree) with
+    the centres on the unit sphere.  GEODESIC places them on the
+    VERTICES of the geodesic icosahedron of frequency `freq`; a
+    solid id (see _SCAFFOLD_FAMILY) places them on the FACES of
+    that Platonic / Archimedean solid -- the spherical regular /
+    Archimedean tilings."""
+    if scaffold == 'GEODESIC':
+        V, _edges, adj = _geodesic_scaffold(int(freq))
+        return V, adj, {i: len(adj[i]) for i in adj}
+    return _solid_scaffold(_SCAFFOLD_FAMILY[scaffold], scaffold)
+
+
 def _tangent_frame(v):
     """An orthonormal (e1, e2) spanning the tangent plane at unit
     vector v, e1 toward the projection of global +Z (global +X near
@@ -943,34 +1038,41 @@ def _sphere_loop(v, e1, e2, rho0, k, amp, samples, style, subdiv):
 
 
 def build_sphere_carpet(freq=2, k=0, amp=0.10, overlap=1.15,
-                        samples=192, style='ANGULAR', subdiv=6):
+                        samples=192, style='ANGULAR', subdiv=6,
+                        scaffold='GEODESIC'):
     """The full combinatorial knot ball.  Same dict shape as
     build_carpet, with paths as (S, 3) polylines on the unit sphere:
-      paths     -- one (S, 3) closed loop per scaffold vertex
-      centers   -- the (N, 3) scaffold vertices; adj -- adjacency
+      paths     -- one (S, 3) closed loop per scaffold node
+      centers   -- the (N, 3) scaffold nodes; adj -- adjacency
       nn_pairs  -- the scaffold edges (the only pairs tested)
       nn_hits   -- {edge: crossing count}
       crossings, over, per_loop, consistent -- as build_carpet
       interior  -- ALL loop ids (a sphere has no boundary)
       spacing   -- mean neighbour chord (the unit the tube radius,
                    clearance and weave gap are scaled by)
-    Each loop's angular radius is 0.5 * overlap * (the LARGEST
-    angular distance to a neighbour): geodesic edges vary in length
-    by ~15 percent, and the longest incident edge is the one that
+    `scaffold` picks the underlying spherical tiling (see
+    _sphere_scaffold): GEODESIC keeps the vertex-centred geodesic
+    icosahedron of frequency `freq` (freq is ignored otherwise); a
+    solid id weaves one medallion per FACE of that Platonic /
+    Archimedean solid.  Each loop's angular radius is 0.5 * overlap
+    * (the LARGEST angular distance to a neighbour): scaffold edges
+    vary in length, and the longest incident edge is the one that
     must still be overlapped, so the max (not the mean) keeps the
     planar overlap margin on every edge.
 
     k = 0 (AUTO, the default) gives each rosette as many lobes as
-    its vertex has neighbours -- 6, and 5 at the twelve defects --
-    so every lobe maximum faces a neighbour and every lobe minimum
-    faces a triangle centre, the spherical analogue of the flat
-    triangular carpet's k = 6.  That matters: three loops around a
-    scaffold triangle all pass within a hair of its circumcentre,
-    and only the aligned lobe minima keep them apart there.  An
-    explicit k >= 2 is honoured at every vertex (decorative;
-    misaligned lobes can crowd those near-triple points, which the
-    relaxation then has to untangle)."""
-    V, edges, adj = _geodesic_scaffold(int(freq))
+    its node has neighbours -- on GEODESIC 6, and 5 at the twelve
+    defects; on a solid the face's side count -- so every lobe
+    maximum faces a neighbour and every lobe minimum faces the gap
+    between them, the spherical analogue of the flat carpets' AUTO
+    lobes.  That matters: the loops around a scaffold face corner
+    all pass within a hair of one another, and only the aligned
+    lobe minima keep them apart there.  An explicit k >= 2 is
+    honoured at every node (decorative; misaligned lobes can crowd
+    those near-triple points, which the relaxation then has to
+    untangle)."""
+    V, adj, degree = _sphere_scaffold(scaffold, int(freq))
+    edges = sorted((i, j) for i in adj for j in adj[i] if i < j)
     ang = {}
     for (i, j) in edges:
         ang[(i, j)] = float(np.arccos(np.clip(V[i] @ V[j],
@@ -993,7 +1095,7 @@ def build_sphere_carpet(freq=2, k=0, amp=0.10, overlap=1.15,
         else:
             e1 = e1 / nrm
             e2 = np.cross(v, e1)
-        kv = int(k) if int(k) >= 2 else len(adj[i])
+        kv = int(k) if int(k) >= 2 else degree[i]
         paths.append(_sphere_loop(v, e1, e2, rho0[i], kv, amp,
                                   samples, style, subdiv))
     crossings, nn_hits = [], {}
@@ -1053,7 +1155,7 @@ def build_sphere_tube_cells(freq=2, k=0, amp=0.10, overlap=1.15,
                             tube_radius=0.04, tube_sides=10,
                             weave_height=0.06, color_by='LOOP',
                             relax_iters=0, clearance=0.10,
-                            weave_gap=0.10):
+                            weave_gap=0.10, scaffold='GEODESIC'):
     """One closed round tube per sphere loop, woven radially: over
     beads swell to radius 1 + roff, under beads sink to 1 - roff,
     smooth-stepped between crossings, then swept with _tube_welded.
@@ -1063,7 +1165,7 @@ def build_sphere_tube_cells(freq=2, k=0, amp=0.10, overlap=1.15,
     sphere-constrained tier-2 relaxation instead.  Returns one
     (verts, faces, mats) cell per loop."""
     carpet = build_sphere_carpet(freq, k, amp, overlap, samples,
-                                 style, subdiv)
+                                 style, subdiv, scaffold)
     signed = loop_signed(carpet)
     d = carpet['spacing']
     tru = max(0.005, float(tube_radius))
@@ -1126,13 +1228,14 @@ def build_sphere_ribbon_cells(freq=2, k=0, amp=0.10, overlap=1.15,
                               samples=192, style='ANGULAR', subdiv=6,
                               cord_width=0.12, weave_height=0.06,
                               height=0.0, color_by='LOOP', relax_iters=0,
-                              clearance=0.10, weave_gap=0.10):
+                              clearance=0.10, weave_gap=0.10,
+                              scaffold='GEODESIC'):
     """One closed woven flat BAND per sphere loop -- the ribbon form of
     the knot ball (a woven strap ball).  Same radial over/under weave as
     the tube builder, but a flat strap tangent to the sphere instead of
     a round tube.  Returns one (verts, faces, mats) cell per loop."""
     carpet = build_sphere_carpet(freq, k, amp, overlap, samples,
-                                 style, subdiv)
+                                 style, subdiv, scaffold)
     signed = loop_signed(carpet)
     d = carpet['spacing']
     cw = max(0.01, float(cord_width))
@@ -1296,12 +1399,13 @@ def relax_sphere_carpet(carpet, iters=120, clearance=0.10,
 
 def sphere_loop_paths(freq=2, k=0, amp=0.10, overlap=1.15,
                       samples=192, style='ANGULAR', subdiv=6,
-                      iters=0, clearance=0.10, weave_gap=0.10):
+                      iters=0, clearance=0.10, weave_gap=0.10,
+                      scaffold='GEODESIC'):
     """Knot-ball loop centerlines [(points, True)] for the CURVE
     output: the unit-sphere loops as sampled (iters = 0) or the
     sphere-constrained tier-2 relaxation (iters > 0)."""
     carpet = build_sphere_carpet(freq, k, amp, overlap, samples,
-                                 style, subdiv)
+                                 style, subdiv, scaffold)
     if iters > 0:
         lines = relax_sphere_carpet(carpet, iters=int(iters),
                                     clearance=clearance,
@@ -1807,14 +1911,23 @@ if _IN_BLENDER:
                    ('TRIANGULAR', "Triangular",
                     "Loops on a triangular lattice (6 neighbours)"),
                    ('SPHERE', "Sphere",
-                    "Loops on a geodesic icosahedron -- a closed "
-                    "woven knot ball (6 neighbours, with twelve "
-                    "5-neighbour defects)"),
+                    "Loops on a spherical tiling -- a geodesic "
+                    "icosahedron or the faces of a Platonic / "
+                    "Archimedean solid -- woven into a closed "
+                    "knot ball"),
                    ('TILING', "Tiling",
                     "Medallion loops on a regular/Archimedean "
                     "tiling -- one woven loop per tile, lobes "
                     "following the tile's neighbour count")],
             default='SQUARE')
+        sphere_scaffold: EnumProperty(
+            name="Sphere Tiling", items=SPHERE_SCAFFOLD_ITEMS,
+            default='GEODESIC',
+            description="The spherical tiling carrying the loops: "
+                        "vertex-centred medallions on a geodesic "
+                        "icosahedron, or face-centred medallions on "
+                        "a Platonic / Archimedean solid (the "
+                        "spherical regular / Archimedean tilings)")
         sphere_freq: IntProperty(
             name="Sphere Frequency", default=2, min=1, max=6,
             description="Geodesic subdivision frequency of the "
@@ -1926,22 +2039,26 @@ if _IN_BLENDER:
             """The closed knot ball.  CURVE emits the loop centerlines;
             RIBBON sweeps a woven flat strap per loop; TUBE sweeps a
             woven round rope.  The rosette lobe count is AUTO (k = 0):
-            each loop follows its scaffold degree, so lobes stay aligned
-            with the neighbours across the twelve 5-fold defects."""
+            each loop follows its scaffold degree, so lobes stay
+            aligned with the neighbours across the twelve 5-fold
+            defects (geodesic) or the mixed face sizes (solids)."""
+            scaf = self.sphere_scaffold
+            scdesc = ("freq=%d" % self.sphere_freq
+                      if scaf == 'GEODESIC' else scaf)
             if self.output == 'CURVE':
                 paths = sphere_loop_paths(
                     self.sphere_freq, 0, self.amplitude,
                     self.overlap, self.samples, self.style,
                     self.smoothness, self.relax_iters,
-                    self.rope_clearance, self.weave_gap)
+                    self.rope_clearance, self.weave_gap, scaf)
                 obj = _emit_curve(context, "Knot Ball", paths,
                                   operator=self)
                 if obj is None:
                     self.report({'ERROR'}, "no carpet generated")
                     return {'CANCELLED'}
                 obj["math_art_pattern"] = True
-                self.report({'INFO'}, "SPHERE freq=%d  %d loops" %
-                            (self.sphere_freq, len(paths)))
+                self.report({'INFO'}, "SPHERE %s  %d loops" %
+                            (scdesc, len(paths)))
                 return {'FINISHED'}
             if self.output == 'RIBBON':
                 cells = build_sphere_ribbon_cells(
@@ -1950,14 +2067,14 @@ if _IN_BLENDER:
                     self.smoothness, self.cord_width,
                     self.weave_height, self.height, self.color_by,
                     self.relax_iters, self.rope_clearance,
-                    self.weave_gap)
+                    self.weave_gap, scaf)
             else:
                 cells = build_sphere_tube_cells(
                     self.sphere_freq, 0, self.amplitude,
                     self.overlap, self.samples, self.style,
                     self.smoothness, self.tube_radius, self.tube_sides,
                     self.weave_height, self.color_by, self.relax_iters,
-                    self.rope_clearance, self.weave_gap)
+                    self.rope_clearance, self.weave_gap, scaf)
             obj = pc.emit(context, "Knot Ball", cells,
                           self.separate, fit=True, operator=self)
             if obj is None:
@@ -1968,13 +2085,13 @@ if _IN_BLENDER:
                 _shade_smooth(obj)
             if obj.type == 'MESH':
                 self.report({'INFO'},
-                            "SPHERE freq=%d  %d loops  V=%d F=%d"
-                            % (self.sphere_freq, len(cells),
+                            "SPHERE %s  %d loops  V=%d F=%d"
+                            % (scdesc, len(cells),
                                len(obj.data.vertices),
                                len(obj.data.polygons)))
             else:
-                self.report({'INFO'}, "SPHERE freq=%d  %d loops" %
-                            (self.sphere_freq, len(cells)))
+                self.report({'INFO'}, "SPHERE %s  %d loops" %
+                            (scdesc, len(cells)))
             return {'FINISHED'}
 
         def _execute_tiling(self, context):
@@ -2110,7 +2227,9 @@ if _IN_BLENDER:
             if sphere:
                 # lobe count is AUTO on the sphere (follows the
                 # scaffold degree), so symmetry is not shown
-                lay.prop(self, 'sphere_freq')
+                lay.prop(self, 'sphere_scaffold')
+                if self.sphere_scaffold == 'GEODESIC':
+                    lay.prop(self, 'sphere_freq')
             elif tiling:
                 # lobe count is AUTO on a tiling too (each medallion
                 # follows its tile's neighbour count)
@@ -2421,14 +2540,16 @@ def _sphere_min_sep(lines):
 
 
 def _check_sphere_relax(freq, k, samples=96, iters=120,
-                        clearance=0.10, weave_gap=0.10):
+                        clearance=0.10, weave_gap=0.10,
+                        scaffold='GEODESIC'):
     """Run the sphere-constrained relaxation and verify: loops closed
     and finite; every bead stays within a tolerance band of the unit
     sphere; inter-loop separation safe (vs the radial-weave seed);
     the over strand at LARGER sphere radius than the under strand at
     every crossing; and convergence (movement decreasing).  Returns
     (ok, stats dict)."""
-    carpet = build_sphere_carpet(freq, k, 0.08, 1.15, samples)
+    carpet = build_sphere_carpet(freq, k, 0.08, 1.15, samples,
+                                 scaffold=scaffold)
     d = carpet['spacing']
     clr = clearance * d
     gap = weave_gap * d
@@ -2555,6 +2676,25 @@ if __name__ == "__main__":
         print("scaffold freq=%d : verts=%d edges=%d deg5=%d deg6=%d "
               ": %s" % (freq, len(V), len(edges), n5, n6, scaf))
 
+    # 8b. polyhedral scaffolds: symmetric adjacency, centres on the
+    #     unit sphere, and the face count / degree census of the
+    #     spherical tiling (cube = 4.4.4, dodecahedron = 5.5.5,
+    #     truncated icosahedron -- the football -- = 5.6.6)
+    for sid, nfaces, census in (('CUBE', 6, {4: 6}),
+                                ('DODECA', 12, {5: 12}),
+                                ('TI', 32, {5: 12, 6: 20})):
+        C, adjs, degs = _sphere_scaffold(sid, 1)
+        sym = all(i in adjs[j] for i in adjs for j in adjs[i])
+        unit = bool(np.allclose(np.linalg.norm(C, axis=1), 1.0))
+        cnt = {}
+        for i in degs:
+            cnt[degs[i]] = cnt.get(degs[i], 0) + 1
+        good = sym and unit and len(C) == nfaces and cnt == census
+        ok = ok and good
+        print("solid scaffold %-6s : faces=%d degrees=%s sym=%s "
+              "unit=%s : %s" % (sid, len(C), sorted(cnt.items()),
+                                sym, unit, good))
+
     # 9. sphere carpet: every adjacent loop pair crosses >= 2 times,
     #    every crossing one-over-one-under (always) -- AUTO lobes
     #    (k = 0, deg(v)-fold) and one explicit-k case
@@ -2568,6 +2708,20 @@ if __name__ == "__main__":
         print("sphere   freq=%d k=%d amp=%.2f : min-crossings=%d "
               "one-over=%s  (%d crossings, consistent=%s)"
               % (freq, kk, amp, min_hits, one,
+                 len(car['crossings']), car['consistent']))
+
+    # 9b. polyhedral knot balls: every edge-adjacent medallion pair
+    #     crosses >= 2 times, every crossing one-over-one-under
+    #     (always) -- GEODESIC freq 1 through the same dispatcher
+    for sc in ('GEODESIC', 'CUBE', 'DODECA', 'TI'):
+        car = build_sphere_carpet(1, 0, 0.10, 1.15, 160, scaffold=sc)
+        min_hits = min(car['nn_hits'].values())
+        one = _check_one_over(car)
+        good = min_hits >= 2 and one
+        ok = ok and good
+        print("sphere   %-8s : %d loops  min-crossings=%d "
+              "one-over=%s  (%d crossings, consistent=%s)"
+              % (sc, len(car['paths']), min_hits, one,
                  len(car['crossings']), car['consistent']))
 
     # 10. knot-ball tubes: finite, non-empty, all quads
@@ -2592,6 +2746,26 @@ if __name__ == "__main__":
     print("sphere ribbon freq=2 : %s  (%d loops, %d faces)"
           % (rb, len(rcells), rfaces))
 
+    # 10c. polyhedral knot-ball tubes (finite, non-empty, all quads)
+    #      and ribbons (finite, non-empty, all quads too)
+    for sc in ('CUBE', 'DODECA', 'TI'):
+        tc = build_sphere_tube_cells(1, 0, samples=120, tube_sides=8,
+                                     scaffold=sc)
+        tf = sum(len(c[1]) for c in tc)
+        tfin = all(all(np.isfinite(v).all() for v in c[0])
+                   for c in tc)
+        tq = all(len(f) == 4 for c in tc for f in c[1])
+        rc = build_sphere_ribbon_cells(1, 0, samples=120, scaffold=sc)
+        rf = sum(len(c[1]) for c in rc)
+        rfin = all(all(np.isfinite(v).all() for v in c[0])
+                   for c in rc)
+        rq = all(len(f) == 4 for c in rc for f in c[1])
+        g = tf > 0 and tfin and tq and rf > 0 and rfin and rq
+        ok = ok and g
+        print("sphere geom %-6s : tube %d faces quads=%s  "
+              "ribbon %d faces quads=%s : %s"
+              % (sc, tf, tq, rf, rq, g))
+
     # 11. sphere relaxation: beads near the sphere, safe separation,
     #     radial over/under order, convergence
     r, st = _check_sphere_relax(2, 0)
@@ -2601,6 +2775,18 @@ if __name__ == "__main__":
           % (r, st['rdev'], st['band'], st['sep_before'],
              st['sep_after'], st['min_dz'], st['gap'],
              st['mv_early'], st['mv_late']))
+
+    # 11b. polyhedral knot-ball relaxation: same criteria on the
+    #      dodecahedron and the football scaffolds
+    for sc in ('DODECA', 'TI'):
+        r, st = _check_sphere_relax(1, 0, scaffold=sc)
+        ok = ok and r
+        print("sphere relax %-6s : %s  rdev=%.4f (band %.4f)  "
+              "sep %.4f->%.4f  min_dz=%.4f (gap %.4f)  "
+              "move %.2e->%.2e"
+              % (sc, r, st['rdev'], st['band'], st['sep_before'],
+                 st['sep_after'], st['min_dz'], st['gap'],
+                 st['mv_early'], st['mv_late']))
 
     # 12. tiling scaffold + carpet: symmetric adjacency, interior
     #     degree = side count, >= 2 crossings per adjacent medallion
