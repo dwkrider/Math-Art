@@ -57,11 +57,20 @@ class Ball:
 
 
 def reflect(group, c0):
-    """The element tangent to every ball in `group` other than c0."""
+    """The element tangent to every ball in `group` other than c0.
+
+    Descartes / Soddy reflection.  The two spheres tangent to a group of
+    d+1 mutually tangent spheres in R^d have curvatures (and curvature-
+    centre coordinates) summing to 2/(d-1) times the group's sum -- the
+    factor is 2 for circles in the plane, 1 for spheres in space.  Using
+    the 2D factor in 3D (an earlier bug) made every gap-filler tangent to
+    only the inner spheres, so the packing never reached the enclosing
+    sphere; the dimension-aware factor fixes that."""
+    f = 2.0 / (len(c0.c) - 1)                    # 2 in 2D, 1 in 3D
     ksum = sum(b.k for b in group)
     csum = sum(b.k * b.c for b in group)
-    k = 2.0 * ksum - c0.k
-    c = (2.0 * csum - c0.k * c0.c) / k
+    k = f * ksum - c0.k
+    c = (f * csum - c0.k * c0.c) / k
     return Ball(k, c)
 
 
