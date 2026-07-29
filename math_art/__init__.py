@@ -85,6 +85,7 @@ _MODULE_NAMES = [
     'reptile_generator',
     'voderberg_generator',
     'fractal_tiling_generator',
+    'fractal_reptile_generator',
     'islamic_pattern_generator',
     'celtic_knot_2d_generator',
     'knot_carpet_generator',
@@ -239,6 +240,7 @@ class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
         _op(lay, "mesh.reptile_add", icon='MESH_GRID')
         _op(lay, "mesh.voderberg_add", icon='FORCE_VORTEX')
         _op(lay, "mesh.fractal_tiling_add", icon='MESH_CIRCLE')
+        _op(lay, "mesh.fractal_reptile_add", icon='MOD_TRIANGULATE')
         _op(lay, "mesh.islamic_pattern_add", icon='SOLO_ON')
         _op(lay, "mesh.celtic_knot_2d_add", icon='MOD_LATTICE')
         _op(lay, "mesh.knot_carpet_add", icon='MESH_CIRCLE')

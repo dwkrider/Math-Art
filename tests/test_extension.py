@@ -399,6 +399,9 @@ OPS = [
          kind='KITE_R12', iterations=3, separate=True)),
     ("fractal kite r8", lambda: bpy.ops.mesh.fractal_tiling_add(
         kind='KITE_R8', iterations=4, color_by='UNIFORM')),
+    ("fractal reptile right-triangle",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         kind='RIGHT_TRIANGLE', iterations=6)),
     ("islamic starcross8", lambda: bpy.ops.mesh.islamic_pattern_add(
         preset='STARCROSS8', nx=4, ny=4)),
     ("islamic 12-fold tile", lambda: bpy.ops.mesh.islamic_pattern_add(
