@@ -875,6 +875,84 @@ def _pointed_path(path, control, closed, subdiv, tightness, reflect_idx):
             for k in range(n)]
 
 
+def _seg_proper_cross(a, b, c, d):
+    """True if segments a-b and c-d cross at an interior point."""
+    def cr(p, q, r):
+        return ((q[0] - p[0]) * (r[1] - p[1])
+                - (q[1] - p[1]) * (r[0] - p[0]))
+    d1 = cr(c, d, a)
+    d2 = cr(c, d, b)
+    d3 = cr(a, b, c)
+    d4 = cr(a, b, d)
+    return ((d1 > 0) != (d2 > 0)) and ((d3 > 0) != (d4 > 0))
+
+
+def _window_self_cross(rail, idxs, closed, n):
+    """Does the rail polyline self-intersect among the segments starting
+    at the sample indices in `idxs` (a local window around a tip)?"""
+    def nxt(i):
+        return (i + 1) % n if closed else min(i + 1, n - 1)
+    seg = list(idxs)
+    for a in range(len(seg)):
+        i = seg[a]
+        ai, bi = rail[i], rail[nxt(i)]
+        for b in range(a + 2, len(seg)):
+            j = seg[b]
+            if closed and i == 0 and j == n - 1:
+                continue
+            if _seg_proper_cross(ai, bi, rail[j], rail[nxt(j)]):
+                return True
+    return False
+
+
+def _safe_pointed_tightness(control, cross, closed, subdiv, req_tight,
+                            width):
+    """Largest tightness in [0, req_tight] whose POINTED path, offset into
+    a ribbon of this width, does NOT self-overlap at the lenticular tips.
+
+    A constant-width ribbon cannot render an arbitrarily sharp point (the
+    two hairpin arms meet at the tip, so their inner rails cross once the
+    point is sharper than the cord is wide); this clamps the point to the
+    sharpest lenticular leaf the width allows, easing back toward the
+    round cap (tightness 0) only as far as needed."""
+    if req_tight <= 0.0 or len(control) < 3 or subdiv < 2 or width <= 0.0:
+        return req_tight
+    ridx = _reflect_indices(len(control), cross)
+    if not ridx:
+        return req_tight
+    base = isl.catmull_rom(control, closed, subdiv)
+    n = len(base)
+    windows = []
+    for i in ridx:
+        if not closed and (i <= 0 or i >= len(control) - 1):
+            continue
+        m = (i * subdiv) % n if closed else i * subdiv
+        windows.append(range(max(0, m - subdiv - 1),
+                             min(n - 1, m + subdiv + 1)))
+    if not windows:
+        return req_tight
+
+    def clean(t):
+        path = _pointed_path(base, control, closed, subdiv, t, ridx)
+        left, right = isl.miter_ribbon(path, width, closed)
+        for w in windows:
+            if (_window_self_cross(left, w, closed, n)
+                    or _window_self_cross(right, w, closed, n)):
+                return False
+        return True
+
+    if clean(req_tight):
+        return req_tight
+    lo, hi = 0.0, req_tight
+    for _ in range(7):
+        mid = 0.5 * (lo + hi)
+        if clean(mid):
+            lo = mid
+        else:
+            hi = mid
+    return lo
+
+
 def _smooth_path(control, closed, subdiv, corner_style, tightness,
                  reflect_idx):
     """The smoothed centerline of one cord piece: the Catmull-Rom spline
@@ -1052,9 +1130,12 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
     # index multiplier must stay 1 (short border-off seam pieces).
     smoothed = style == 'SMOOTH' and len(control) >= 3 and subdiv >= 2
     step = subdiv if smoothed else 1
+    ct = corner_tightness
+    if corner_style == 'POINTED' and smoothed:
+        ct = _safe_pointed_tightness(control, cross, closed, subdiv,
+                                     corner_tightness, width)
     path = (_smooth_path(control, closed, subdiv, corner_style,
-                         corner_tightness,
-                         _reflect_indices(len(control), cross))
+                         ct, _reflect_indices(len(control), cross))
             if style == 'SMOOTH' else control)
     signed = [(k * step, sg) for k, sg, _pos in cross]
 
@@ -1978,9 +2059,12 @@ def _profile_cells(control, cross, closed, width, style, subdiv, interlace,
     continuous swept solid."""
     smoothed = style == 'SMOOTH' and len(control) >= 3 and subdiv >= 2
     step = subdiv if smoothed else 1
+    ct = corner_tightness
+    if corner_style == 'POINTED' and smoothed:
+        ct = _safe_pointed_tightness(control, cross, closed, subdiv,
+                                     corner_tightness, width)
     path = (_smooth_path(control, closed, subdiv, corner_style,
-                         corner_tightness,
-                         _reflect_indices(len(control), cross))
+                         ct, _reflect_indices(len(control), cross))
             if style == 'SMOOTH' else [tuple(p) for p in control])
     signed = [(k * step, sg) for k, sg, _pos in cross]
     r = 0.5 * width
