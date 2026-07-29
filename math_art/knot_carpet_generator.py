@@ -354,6 +354,17 @@ def _loop_cell(path, signed, width, interlace, mode, weave_height,
             # crossing angles a gentle overlap produces
             margin = max(0.02, 0.75 * width)
             half = 0.5 * (width + margin)
+            # ... but on a dense tiling (small medallions, crossings
+            # close together) a full-width break can swallow the entire
+            # arc between two crossings and disconnect the cord.  Cap the
+            # half-gap to a fraction of the smallest spacing between any
+            # two consecutive crossings so the cord always stays whole.
+            allc = sorted(s[ci] for ci, _sg in signed)
+            if len(allc) >= 2:
+                gaps = [(allc[(j + 1) % len(allc)] - allc[j]) % total
+                        for j in range(len(allc))]
+                mg = min((g for g in gaps if g > 1e-9), default=total)
+                half = min(half, 0.4 * mg)
             pieces = isl._cut_band(path, True, cut_s, half, s, total)
         else:
             pieces = [(path, True)]
