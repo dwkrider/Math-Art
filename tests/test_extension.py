@@ -96,10 +96,16 @@ OPS = [
         depth=2, count=4)),
     ("fractal knot", lambda: bpy.ops.curve.fractal_knot_add(
         kind='TREFOIL', samples=1200)),
-    ("apollonian gasket", lambda: bpy.ops.mesh.apollonian_add(
-        mode='GASKET', depth=3)),
+    ("apollonian gasket filled", lambda: bpy.ops.mesh.apollonian_add(
+        mode='GASKET', depth=3, gasket_style='FILLED', color_by='SIZE')),
+    ("apollonian gasket depth color",
+     lambda: bpy.ops.mesh.apollonian_add(
+         mode='GASKET', depth=3, gasket_style='FILLED',
+         color_by='DEPTH')),
+    ("apollonian gasket tube", lambda: bpy.ops.mesh.apollonian_add(
+        mode='GASKET', depth=3, gasket_style='TUBE')),
     ("apollonian packing", lambda: bpy.ops.mesh.apollonian_add(
-        mode='PACKING', depth=3)),
+        mode='PACKING', depth=3, color_by='DEPTH')),
     ("hyperbolic surface pseudosphere",
      lambda: bpy.ops.mesh.hyperbolic_surface_add(preset='PSEUDOSPHERE')),
     ("hyperbolic surface kuen",
