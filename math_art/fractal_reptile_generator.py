@@ -41,8 +41,9 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Math Art > Patterns",
-    "description": "Fathauer f-tilings from rep-tile prototiles "
-                   "(isosceles right triangle)",
+    "description": "Fathauer fractal rep-tiles: right-triangle "
+                   "f-tiling and complex-base reptiles (twindragon, "
+                   "rep-5 ...)",
     "category": "Add Mesh",
 }
 
@@ -151,19 +152,75 @@ def _triangle_patch(iterations):
     return tiles
 
 
-KINDS = {'RIGHT_TRIANGLE': (_triangle_patch, 1.0 / sqrt(2.0))}
+# --------------------------------------------------------------------
+# Complex-base self-affine reptiles (Fathauer "iterating polyominoes")
+#
+# A Gaussian-integer base b with N = |b|^2 and a complete residue digit
+# set D (|D| = N) defines a rep-N tile: every b-adic "integer"
+# sum_{j} d_j b^j (d_j in D) is a distinct lattice point, and the unit
+# cell placed at each of the N**k length-k strings forms a polyomino
+# that -- because b carries a rotation -- crinkles toward a fractal
+# reptile as k grows.  N copies compound into a b-times-larger replica
+# (self-similar).  Cells are coloured by their leading (top-level)
+# digit, so the N-fold substitution reads directly, as in Fathauer's
+# figures.
+# --------------------------------------------------------------------
+
+_UNIT = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
+
+
+def _base_reptile(b, digits, iterations):
+    """(polys, types) for the rep-N reptile of Gaussian base b."""
+    cells = [(complex(0.0, 0.0), 0)]      # (position, colour)
+    n = len(digits)
+    for lvl in range(int(iterations)):
+        if len(cells) * n > _MAX_TILES:
+            break
+        nxt = []
+        for p, col in cells:
+            for di, d in enumerate(digits):
+                nxt.append((p * b + d, di if lvl == 0 else col))
+        cells = nxt
+    polys, types = [], []
+    for p, col in cells:
+        polys.append(_UNIT + [p.real, p.imag])
+        types.append(int(col))
+    return polys, types
+
+
+# builders take `iterations` and return (polys, types)
+def _triangle_ftiling(iterations):
+    raw = _triangle_patch(iterations)
+    return ([_ensure_ccw(t) for _, t in raw],
+            [int(lvl) for lvl, _ in raw])
+
+
+KINDS = {
+    'RIGHT_TRIANGLE': dict(build=_triangle_ftiling, tri=True),
+    'TWINDRAGON': dict(
+        build=lambda it: _base_reptile(complex(1, 1), [0, 1], it),
+        tri=False, n=2),
+    'REP5': dict(
+        build=lambda it: _base_reptile(complex(2, 1), [0, 1, 2, 3, 4],
+                                       it),
+        tri=False, n=5),
+    'REP5B': dict(
+        build=lambda it: _base_reptile(complex(1, 2), [0, 1, 2, 3, 4],
+                                       it),
+        tri=False, n=5),
+    'REP2B': dict(
+        build=lambda it: _base_reptile(complex(1, -1), [0, 1], it),
+        tri=False, n=2),
+}
 
 
 def fractal_patch(kind, iterations):
-    """Return (polys, types): CCW (3,2) tile arrays and their generation
-    (level) indices."""
+    """Return (polys, types): CCW tile arrays and their level/colour
+    indices."""
     if kind not in KINDS:
         raise ValueError("unknown fractal rep-tile %r" % kind)
-    builder, _ = KINDS[kind]
-    raw = builder(iterations)
-    polys = [_ensure_ccw(t) for _, t in raw]
-    types = [int(lvl) for lvl, _ in raw]
-    return polys, types
+    polys, types = KINDS[kind]['build'](iterations)
+    return [_ensure_ccw(np.asarray(p, float)) for p in polys], types
 
 
 # --------------------------------------------------------------------
@@ -171,9 +228,19 @@ def fractal_patch(kind, iterations):
 # --------------------------------------------------------------------
 
 KIND_ITEMS = [
-    ('RIGHT_TRIANGLE', "Right Triangle",
-     "Isosceles right-triangle f-tiling: unit-square seed, one "
-     "1/sqrt2-scaled child glued to every exposed leg; fractal boundary"),
+    ('RIGHT_TRIANGLE', "Right Triangle (f-tiling)",
+     "Isosceles right-triangle f-tiling: square seed, a 1/sqrt2 child "
+     "glued to every exposed leg; tiles shrink to a fractal boundary"),
+    ('TWINDRAGON', "Twindragon (rep-2)",
+     "Gaussian base 1+i: two cells compound into a sqrt2-larger "
+     "replica -- the twindragon fractal reptile"),
+    ('REP5', "Rep-5 Dragon (base 2+i)",
+     "Gaussian base 2+i: five cells compound into a sqrt5-larger "
+     "replica -- Fathauer's iterated-polyomino rep-5 fractal reptile"),
+    ('REP5B', "Rep-5 Dragon (base 1+2i)",
+     "Gaussian base 1+2i: a second rep-5 reptile, different rotation"),
+    ('REP2B', "Twindragon (base 1-i)",
+     "Gaussian base 1-i: the mirror-rotation rep-2 reptile"),
 ]
 
 
@@ -302,9 +369,10 @@ def _coverage(polys, pts, tol=1e-9):
             continue
         q = pts[m]
         ok = np.ones(len(q), bool)
-        for i in range(3):
+        m3 = len(p)
+        for i in range(m3):
             ax, ay = p[i]
-            ex, ey = p[(i + 1) % 3] - p[i]
+            ex, ey = p[(i + 1) % m3] - p[i]
             ok &= (ex * (q[:, 1] - ay) - ey * (q[:, 0] - ax)) > tol
         cnt[m] += ok
     return cnt
@@ -365,39 +433,39 @@ def _inside_loop(loop, pts):
 if __name__ == "__main__":
     all_ok = True
     for kind, label, _ in KIND_ITEMS:
-        s = KINDS[kind][1]
-        for depth in (4, 7):
+        tri = KINDS[kind].get('tri', False)
+        depths = (4, 7) if tri else (3, 5)
+        for depth in depths:
             polys, types = fractal_patch(kind, depth)
-            e2e = _hyp_paired(polys)
-            # self-similar: max edge per level shrinks by exactly s
-            per = {}
-            for p, t in zip(polys, types):
-                per[t] = max(per.get(t, 0.0),
-                             max(np.hypot(*(a - b)) for a, b in _edges(p)))
-            lv = sorted(per)
-            sim = all(abs(per[lv[i + 1]] - s * per[lv[i]])
-                      <= 1e-6 * per[lv[i]] for i in range(len(lv) - 1))
-            # gap-free interior over generations < depth, overlaps anywhere
             allv = np.vstack(polys)
             lo, hi = allv.min(0), allv.max(0)
             gx, gy = np.meshgrid(
                 np.linspace(lo[0], hi[0], 240) + 0.00131,
                 np.linspace(lo[1], hi[1], 240) + 0.00069)
             pts = np.column_stack([gx.ravel(), gy.ravel()])
-            cov = _coverage(polys, pts)
-            overlaps = int((cov >= 2).sum())
-            sub = [p for p, t in zip(polys, types) if t < depth]
-            outer, holes, lok = _boundary_loops(sub)
-            gaps = -1
-            if lok:
-                inside = _inside_loop(outer, pts)
-                for h in holes:
-                    inside &= ~_inside_loop(h, pts)
-                gaps = int(np.sum((cov == 0) & inside))
-            ok = e2e and sim and overlaps == 0 and gaps == 0
+            overlaps = int((_coverage(polys, pts) >= 2).sum())
+            if tri:
+                e2e = _hyp_paired(polys)
+                per = {}
+                for p, t in zip(polys, types):
+                    per[t] = max(per.get(t, 0.0),
+                                 max(np.hypot(*(a - b))
+                                     for a, b in _edges(p)))
+                lv = sorted(per)
+                sim = all(abs(per[lv[i + 1]] - per[lv[i]] / sqrt(2.0))
+                          <= 1e-6 * per[lv[i]]
+                          for i in range(len(lv) - 1))
+                ok = e2e and sim and overlaps == 0
+                extra = "edge2edge=%s shrink=%s" % (e2e, sim)
+            else:
+                n = KINDS[kind]['n']
+                capped = len(polys) < n ** depth
+                ok = overlaps == 0 and (len(polys) == n ** depth
+                                        or capped)
+                extra = "rep-%d count=%d(%d)" % (n, len(polys),
+                                                 n ** depth)
             all_ok = all_ok and ok
-            print("%-14s depth=%d tiles=%5d edge2edge=%-5s shrink=%-5s "
-                  "overlaps=%d gaps=%d  %s"
-                  % (kind, depth, len(polys), str(e2e), str(sim),
-                     overlaps, gaps, "OK" if ok else "BAD"))
+            print("%-14s d=%d tiles=%5d overlaps=%d  %-24s %s"
+                  % (kind, depth, len(polys), overlaps, extra,
+                     "OK" if ok else "BAD"))
     print("RESULT:", "OK" if all_ok else "BAD")

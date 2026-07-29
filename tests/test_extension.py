@@ -408,6 +408,12 @@ OPS = [
     ("fractal reptile right-triangle",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          kind='RIGHT_TRIANGLE', iterations=6)),
+    ("fractal reptile rep5",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         kind='REP5', iterations=4)),
+    ("fractal reptile twindragon",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         kind='TWINDRAGON', iterations=5)),
     ("islamic starcross8", lambda: bpy.ops.mesh.islamic_pattern_add(
         preset='STARCROSS8', nx=4, ny=4)),
     ("islamic 12-fold tile", lambda: bpy.ops.mesh.islamic_pattern_add(
