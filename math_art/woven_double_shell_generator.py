@@ -1124,7 +1124,7 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         solid: EnumProperty(
-            name="Scaffold", items=SOLID_ITEMS, default='DODECA',
+            name="Scaffold", items=SOLID_ITEMS, default='CUBE',
             description="Outer solid: one medallion per face outside,"
                         " one per vertex (its dual) inside")
         frequency: IntProperty(
@@ -1183,12 +1183,12 @@ if _IN_BLENDER:
         tube_sides: IntProperty(
             name="Tube Sides", default=10, min=3, max=32)
         weave_gap: FloatProperty(
-            name="Weave Gap", default=0.10, min=0.0, max=0.4,
+            name="Weave Gap", default=0.0, min=0.0, max=0.4,
             description="Radial over/under separation at crossings; "
                         "0 = off (no over/under push). Positive values "
                         "are floored at the rope diameter")
         clearance: FloatProperty(
-            name="Clearance", default=0.10, min=0.0, max=0.4,
+            name="Clearance", default=0.03, min=0.0, max=0.4,
             description="Strand-strand repulsion (intersection "
                         "avoidance); 0 = off (ropes may intersect). "
                         "Positive values floored at the rope diameter")
