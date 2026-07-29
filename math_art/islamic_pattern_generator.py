@@ -18,6 +18,24 @@
 # truncated-square tiling (the iconic 8-point star-and-cross), and the
 # twelve-fold 3.12.12 and 4.6.12 tilings.
 #
+# Beyond the plain PIC star, three further motif families are built on
+# the same continuous-band machinery:
+#
+#   * ROSETTE -- the classic Islamic rosette (an n-pointed star ringed
+#     by n petal / kite shapes), realized by Kaplan's rosette transform:
+#     a regular n-gon is subdivided into a central n-gon plus a ring of
+#     n pentagons, and the PIC / inference construction is applied to
+#     those cells.  The petals emerge from the pentagons, the central
+#     star from the inner n-gon, and because every original edge is split
+#     at its midpoint the strapwork stays continuous from tile to tile.
+#   * INFERENCE -- Kaplan's motif inference generalizes PIC to any
+#     (irregular) tile: contact rays leave each edge midpoint at the
+#     contact angle to that edge's true normal and are truncated at their
+#     nearest crossing, so mixed / non-regular substrates (e.g. the Laves
+#     duals) still knit a consistent, edge-continuous motif.
+#   * STAR -- a regular star polygon {n/d} placed in each tile, its tips
+#     anchored at the edge midpoints so it too feeds the band tracer.
+#
 # Output is strapwork as flat RIBBONS (default), optionally given
 # relief by extrusion to a height on an optional backing slab, in the
 # modular-constructivist relief tradition of the Pattern Engine (see
@@ -29,7 +47,13 @@
 #     the "polygons in contact" construction.
 #   Craig S. Kaplan, "Computer Generated Islamic Star Patterns"
 #     (Bridges 2000) -- the algorithmic PIC formulation reused here.
-#   A. J. Lee, "Islamic Star Patterns" (Muqarnas 4, 1987).
+#   Craig S. Kaplan, "Islamic Star Patterns from Polygons in Contact"
+#     (Graphics Interface 2005) -- motif inference and the rosette.
+#   Craig S. Kaplan, "Computer Graphics and Geometric Ornamental
+#     Design" (Ph.D. dissertation, University of Washington, 2002) --
+#     the rosette transform and inference algorithms implemented here.
+#   A. J. Lee, "Islamic Star Patterns" (Muqarnas 4, 1987) -- the
+#     traditional rosette (star + petal ring) construction.
 #   Jay Bonner, "Islamic Geometric Patterns: Their Historical
 #     Development and Traditional Methods of Construction" (2017).
 #   Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (1987) --
@@ -46,7 +70,7 @@ bl_info = {
     "category": "Add Mesh",
 }
 
-from math import cos, sin, radians, hypot
+from math import cos, sin, radians, hypot, pi, tan, atan2
 import numpy as np
 
 try:
@@ -78,17 +102,26 @@ SUBSTRATE_ITEMS = [
      "Dodecagon-triangle tiling -> 12-point stars"),
     ('TRUNCTRIHEX', "Truncated Trihexagonal (4.6.12)",
      "Dodecagon-hexagon-square tiling -> 12-point stars"),
+    ('RHOMBILLE', "Rhombille (dual 3.6.3.6)",
+     "Irregular rhombi -- needs motif inference"),
+    ('CAIRO', "Cairo Pentagonal (dual 3.3.4.3.4)",
+     "Irregular pentagons -- needs motif inference"),
 ]
+
+# Substrates whose tiles are irregular polygons (Laves duals): these
+# rely on motif inference rather than the regular-polygon PIC/rosette.
+_LAVES_SUBSTRATES = ('RHOMBILLE', 'CAIRO')
 
 # Contact angle (degrees) giving the classic motif for each substrate.
 DEFAULT_CONTACT = {
     'SQUARE': 30.0, 'TRI': 30.0, 'HEX': 30.0,
     'TRUNCSQ': 30.0, 'TRUNCHEX': 30.0, 'TRUNCTRIHEX': 30.0,
+    'RHOMBILLE': 35.0, 'CAIRO': 35.0,
 }
 
-# Historical presets: (substrate, contact angle).
+# Historical presets: (substrate, contact angle, motif, star_d).
 PRESET_ITEMS = [
-    ('CUSTOM', "Custom", "Use the substrate and contact angle below"),
+    ('CUSTOM', "Custom", "Use the substrate, motif and angle below"),
     ('STARCROSS8', "8-fold Star-and-Cross (4.8.8)",
      "The classic octagon star with square crosses"),
     ('TWELVE', "12-fold Star (3.12.12)",
@@ -97,12 +130,31 @@ PRESET_ITEMS = [
      "Six-point stars on the hexagonal tiling"),
     ('FOUREIGHT', "4/8 Star (square)",
      "Eight-point stars on the square grid"),
+    ('ROSETTE8', "8-fold Rosette (4.8.8)",
+     "Octagonal rosettes -- star ringed by eight petals"),
+    ('ROSETTE12', "12-fold Rosette (3.12.12)",
+     "The iconic twelve-petalled dodecagon rosette"),
+    ('ROSETTE12B', "12-fold Rosette (4.6.12)",
+     "Twelve-fold rosettes on the 4.6.12 tiling"),
+    ('STAR8', "8-point Star {8/3} (4.8.8)",
+     "Regular star polygons in the octagons"),
+    ('INFER_RHOMBI', "Inferred (Rhombille)",
+     "Motif inference across irregular rhombi"),
+    ('INFER_CAIRO', "Inferred (Cairo)",
+     "Motif inference across irregular pentagons"),
 ]
+# preset -> (substrate, contact angle, motif, star_d)
 PRESETS = {
-    'STARCROSS8': ('TRUNCSQ', 30.0),
-    'TWELVE':     ('TRUNCHEX', 30.0),
-    'SIX':        ('HEX', 30.0),
-    'FOUREIGHT':  ('SQUARE', 30.0),
+    'STARCROSS8':   ('TRUNCSQ', 30.0, 'PIC', 2),
+    'TWELVE':       ('TRUNCHEX', 30.0, 'PIC', 2),
+    'SIX':          ('HEX', 30.0, 'PIC', 2),
+    'FOUREIGHT':    ('SQUARE', 30.0, 'PIC', 2),
+    'ROSETTE8':     ('TRUNCSQ', 34.0, 'ROSETTE', 2),
+    'ROSETTE12':    ('TRUNCHEX', 32.0, 'ROSETTE', 2),
+    'ROSETTE12B':   ('TRUNCTRIHEX', 32.0, 'ROSETTE', 2),
+    'STAR8':        ('TRUNCSQ', 30.0, 'STAR', 3),
+    'INFER_RHOMBI': ('RHOMBILLE', 35.0, 'PIC', 2),
+    'INFER_CAIRO':  ('CAIRO', 35.0, 'PIC', 2),
 }
 
 # Material slot per polygon side count, for the STAR_ORDER color mode.
@@ -177,6 +229,201 @@ def star_segments(poly, angle_deg):
 
 
 # --------------------------------------------------------------------
+# Motif inference (Kaplan) -- PIC generalized to irregular tiles
+# --------------------------------------------------------------------
+
+def _is_regular(poly, tol=1e-4):
+    """True if `poly` is (numerically) a regular polygon: all edges the
+    same length and all vertices equidistant from the centroid."""
+    poly = np.asarray(poly, float)
+    n = len(poly)
+    if n < 3:
+        return False
+    c = poly.mean(axis=0)
+    r = [hypot(*(poly[i] - c)) for i in range(n)]
+    e = [hypot(*(poly[(i + 1) % n] - poly[i])) for i in range(n)]
+    return (max(r) - min(r) < tol * max(r)
+            and max(e) - min(e) < tol * max(e))
+
+
+def infer_segments(poly, angle_deg):
+    """Kaplan's motif inference: the PIC construction for an arbitrary
+    (convex) tile.  Identical to `star_segments` on a regular polygon,
+    but each edge's inward direction is that edge's TRUE normal rather
+    than the centroid direction, so contact rays leave every edge
+    midpoint at exactly `angle_deg` to the edge and are truncated at
+    their nearest opposite-hand crossing.  Because the contact points
+    sit at the shared edge midpoints and the rays are mirror images
+    across each edge, the inferred motif is continuous across shared
+    edges even when the tiles are irregular or of mixed shape."""
+    theta = radians(angle_deg)
+    ct, st = cos(theta), sin(theta)
+    poly = np.asarray(poly, float)
+    n = len(poly)
+    c = poly.mean(axis=0)
+    left, right = [], []
+    for i in range(n):
+        a, b = poly[i], poly[(i + 1) % n]
+        m = 0.5 * (a + b)
+        e = b - a
+        e = e / (hypot(e[0], e[1]) + 1e-12)
+        nrm = np.array([-e[1], e[0]])            # true edge normal
+        if np.dot(c - m, nrm) < 0.0:             # orient inward
+            nrm = -nrm
+        left.append((m, ct * e + st * nrm))
+        right.append((m, -ct * e + st * nrm))
+    segs = []
+    for src, others in ((left, right), (right, left)):
+        for o0, d0 in src:
+            best = None
+            for o1, d1 in others:
+                s = _ray_param(o0, d0, o1, d1)
+                if s is not None and (best is None or s < best):
+                    best = s
+            if best is None:
+                continue
+            tip = (o0[0] + best * d0[0], o0[1] + best * d0[1])
+            segs.append((tuple(o0), tip))
+    return segs
+
+
+# --------------------------------------------------------------------
+# Rosette (Kaplan's rosette transform) -- star + petal ring
+# --------------------------------------------------------------------
+#
+# A regular n-gon is subdivided into a central n-gon P' (radius r',
+# rotated by pi/n so its vertices point at P's edge midpoints) plus a
+# ring of n pentagons, each spanning one vertex of P.  Applying the PIC
+# / inference construction to those cells yields the classic rosette:
+# the inner n-gon carries the central star, the pentagons carry the
+# petals.  Every original edge of P is split at its own midpoint, so a
+# rosette tile's boundary contacts (the quarter-points of P's edges)
+# coincide with the neighbour's -- the strapwork stays continuous.
+
+def _rosette_rprime(R, n):
+    """Kaplan's inner radius: the connecting segments equal half of the
+    polygon's side, giving a well-proportioned rosette."""
+    d = pi / n
+    return R * cos(d) - R * sin(d) * tan(pi * (n - 2) / (4.0 * n))
+
+
+def rosette_cells(poly, frac=0.0):
+    """Subdivide a regular n-gon into a central n-gon plus n pentagons
+    (Kaplan's rosette transform).  `frac` > 0 overrides the inner-polygon
+    radius as that fraction of the apothem; frac <= 0 uses Kaplan's
+    proportion."""
+    poly = np.asarray(poly, float)
+    n = len(poly)
+    c = poly.mean(axis=0)
+    R = float(np.mean([hypot(*(poly[i] - c)) for i in range(n)]))
+    mids = [0.5 * (poly[i] + poly[(i + 1) % n]) for i in range(n)]
+    mang = [atan2(mids[i][1] - c[1], mids[i][0] - c[0]) for i in range(n)]
+    a = R * cos(pi / n)                           # apothem
+    rp = a * frac if frac > 0.0 else _rosette_rprime(R, n)
+    rp = max(1e-3, min(rp, 0.98 * a))
+    W = [c + np.array([rp * cos(mang[k]), rp * sin(mang[k])])
+         for k in range(n)]
+    cells = [np.array(W)]                          # central n-gon
+    for k in range(n):                             # ring pentagons
+        k1 = (k + 1) % n
+        cells.append(np.array([mids[k], poly[k1], mids[k1], W[k1], W[k]]))
+    return cells
+
+
+def rosette_segments(poly, angle_deg, frac=0.0):
+    """Strapwork segments of the rosette motif for a regular tile.  The
+    central n-gon carries a crisp regular star polygon (its tips anchored
+    at the cell's edge midpoints, which are exactly the contact points
+    the surrounding pentagons infer to -- so the star knits to the petal
+    ring), and each pentagon is filled by motif inference to make the
+    petals."""
+    cells = rosette_cells(poly, frac)
+    n = len(cells[0])
+    core_d = max(2, min((n - 1) // 2, n // 5 + 2))
+    segs = list(star_polygon_segments(cells[0], core_d))
+    for cell in cells[1:]:
+        segs.extend(infer_segments(cell, angle_deg))
+    return segs
+
+
+# --------------------------------------------------------------------
+# Regular star polygon {n/d} motif
+# --------------------------------------------------------------------
+
+def _line_line(p0, p1, p2, p3):
+    """Intersection of the infinite lines p0p1 and p2p3, or None."""
+    d0 = (p1[0] - p0[0], p1[1] - p0[1])
+    d1 = (p3[0] - p2[0], p3[1] - p2[1])
+    det = d0[0] * (-d1[1]) - (-d1[0]) * d0[1]
+    if abs(det) < 1e-12:
+        return None
+    bx, by = p2[0] - p0[0], p2[1] - p0[1]
+    s = (bx * (-d1[1]) - (-d1[0]) * by) / det
+    return (p0[0] + s * d0[0], p0[1] + s * d0[1])
+
+
+def star_polygon_segments(poly, d):
+    """A regular star polygon {n/d} inscribed in a tile with its n tips
+    anchored at the edge midpoints (the contact points, so it stays
+    continuous across shared edges).  `d` is the star's density: the
+    concave (inner) vertices are the crossings of the {n/d} chords, so
+    larger d gives sharper, more overlapping points.  Returns the 2n
+    outline segments; falls back to inference if d is out of range."""
+    poly = np.asarray(poly, float)
+    n = len(poly)
+    d = int(d)
+    if n < 5 or d < 2 or d > (n - 1) // 2:
+        return infer_segments(poly, 30.0)
+    tips = [tuple(0.5 * (poly[i] + poly[(i + 1) % n])) for i in range(n)]
+    inner = []
+    for k in range(n):
+        p = _line_line(tips[k], tips[(k + d) % n],
+                       tips[(k + 1) % n], tips[(k + 1 - d) % n])
+        if p is None:
+            return infer_segments(poly, 30.0)
+        inner.append(p)
+    segs = []
+    for k in range(n):
+        segs.append((tips[k], inner[k]))
+        segs.append((inner[k], tips[(k + 1) % n]))
+    return segs
+
+
+def _augment_edges(poly):
+    """Insert each edge's midpoint as an extra (straight-angle) vertex,
+    doubling the edge count.  Inference then lands two contact points per
+    original edge -- at its quarter-points -- matching a rosette
+    neighbour, so small filler tiles knit to rosettes continuously."""
+    poly = np.asarray(poly, float)
+    n = len(poly)
+    out = []
+    for i in range(n):
+        a, b = poly[i], poly[(i + 1) % n]
+        out.append(a)
+        out.append(0.5 * (a + b))
+    return np.array(out)
+
+
+def _tile_segments(poly, contact_deg, motif, star_d, rosette_frac):
+    """Strapwork segments for one tile under the chosen motif.  Regular
+    tiles use the exact motif; any irregular tile falls back to motif
+    inference, so mixed / non-regular substrates knit continuously."""
+    reg = _is_regular(poly)
+    n = len(poly)
+    if not reg:
+        return infer_segments(poly, contact_deg)
+    if motif == 'ROSETTE':
+        if n >= 5:
+            return rosette_segments(poly, contact_deg, rosette_frac)
+        # small filler tiles: simple motif, but split edges at their
+        # midpoints so boundary contacts meet the rosette's quarter-points
+        return infer_segments(_augment_edges(poly), contact_deg)
+    if motif == 'STAR' and n >= 5:
+        return star_polygon_segments(poly, star_d)
+    return star_segments(poly, contact_deg)       # PIC (regular)
+
+
+# --------------------------------------------------------------------
 # Substrate + motif assembly
 # --------------------------------------------------------------------
 
@@ -212,19 +459,32 @@ def _clip_segment(p0, p1, rect):
     return a, b
 
 
-def tile_motifs(substrate, nx, ny, contact_deg, trim=False, pad=2):
+def _placed_tiles(substrate, NX, NY):
+    """(poly, tile_index) for every tile of a substrate over an NX x NY
+    run.  Regular substrates come from tiling_generator's base tilings;
+    the irregular Laves substrates from its dual construction."""
+    if substrate in _LAVES_SUBSTRATES:
+        polys, _types = tg._build_tiling(substrate, NX, NY)
+        return [(np.asarray(p, float), i) for i, p in enumerate(polys)]
+    return list(tg._base_iter(substrate, NX, NY))
+
+
+def tile_motifs(substrate, nx, ny, contact_deg, trim=False, pad=2,
+                motif='PIC', star_d=2, rosette_frac=0.0):
     """Return (motifs, rect): one (poly, order, segments) per substrate
     tile, where `order` is the polygon side count and `segments` are
-    that tile's PIC strapwork segments (clipped to `rect` when trim).
-    `rect` is the trim rectangle or None."""
+    that tile's strapwork segments under the chosen `motif` (PIC,
+    ROSETTE or STAR; irregular tiles fall back to inference), clipped to
+    `rect` when trim.  `rect` is the trim rectangle or None."""
     NX, NY = (nx + pad, ny + pad) if trim else (nx, ny)
-    placed = list(tg._base_iter(substrate, NX, NY))
+    placed = _placed_tiles(substrate, NX, NY)
     rect = None
     if trim:
         rect = tg._trim_rect([p for p, _ in placed], nx, ny, pad)
     motifs = []
     for poly, _ti in placed:
-        segs = star_segments(poly, contact_deg)
+        segs = _tile_segments(poly, contact_deg, motif, star_d,
+                              rosette_frac)
         if rect is not None:
             clipped = []
             for a, b in segs:
@@ -528,13 +788,16 @@ def catmull_rom(points, closed, subdiv):
 
 
 def strapwork_bands(substrate, nx, ny, contact_deg, ribbon_width,
-                    trim=False, curved=False, subdiv=8):
+                    trim=False, curved=False, subdiv=8,
+                    motif='PIC', star_d=2, rosette_frac=0.0):
     """Trace the continuous strapwork bands of a patch.  Returns
     (bands, orders): each band is
     (left, right, closed, seg_path, path) -- the mitered ribbon
     boundaries, whether it is a closed loop, the segment ids it walks,
     and the centerline polyline (Catmull-Rom smoothed when `curved`)."""
-    motifs, _rect = tile_motifs(substrate, nx, ny, contact_deg, trim)
+    motifs, _rect = tile_motifs(substrate, nx, ny, contact_deg, trim,
+                                motif=motif, star_d=star_d,
+                                rosette_frac=rosette_frac)
     segments, orders, _tiles = _flatten_segments(motifs)
     if not segments:
         return [], orders
@@ -555,14 +818,15 @@ def strapwork_bands(substrate, nx, ny, contact_deg, ribbon_width,
 
 def build_cells(substrate, nx, ny, contact_deg, ribbon_width,
                 color_by='UNIFORM', trim=False, height=0.0,
-                backing=False, base=0.08, curved=False, subdiv=8):
+                backing=False, base=0.08, curved=False, subdiv=8,
+                motif='PIC', star_d=2, rosette_frac=0.0):
     """One (verts, faces, mats) cell per continuous strapwork BAND: the
     band as a single mitered ribbon (flat, or extruded to `height`;
     straight-mitered or Catmull-Rom curved).  An optional backing slab
     is appended as a final cell."""
     bands, orders = strapwork_bands(
         substrate, nx, ny, contact_deg, ribbon_width, trim,
-        curved, subdiv)
+        curved, subdiv, motif, star_d, rosette_frac)
     cells = []
     all_verts = []
     for bi, (left, right, closed, seg_path, _path) in enumerate(bands):
@@ -585,11 +849,13 @@ def build_cells(substrate, nx, ny, contact_deg, ribbon_width,
 
 def build(substrate, nx, ny, contact_deg, ribbon_width,
           color_by='UNIFORM', trim=False, height=0.0,
-          backing=False, base=0.08, curved=False, subdiv=8):
+          backing=False, base=0.08, curved=False, subdiv=8,
+          motif='PIC', star_d=2, rosette_frac=0.0):
     """Merged (verts, faces, mats) for one strapwork patch."""
     return pc.merge_cells(build_cells(
         substrate, nx, ny, contact_deg, ribbon_width, color_by,
-        trim, height, backing, base, curved, subdiv))
+        trim, height, backing, base, curved, subdiv,
+        motif, star_d, rosette_frac))
 
 
 # --------------------------------------------------------------------
@@ -657,11 +923,31 @@ if _IN_BLENDER:
                         "substrate and contact angle")
         substrate: EnumProperty(
             name="Substrate", items=SUBSTRATE_ITEMS, default='TRUNCSQ',
-            description="Underlying tiling of regular polygons")
+            description="Underlying tiling; the last two (Laves duals) "
+                        "are irregular and rely on motif inference")
+        motif: EnumProperty(
+            name="Motif",
+            items=[('PIC', "Polygons in Contact",
+                    "Hankin's star motif (inference on irregular tiles)"),
+                   ('ROSETTE', "Rosette",
+                    "Classic rosette: an n-star ringed by n petals"),
+                   ('STAR', "Star Polygon {n/d}",
+                    "A regular star polygon inscribed in each tile")],
+            default='PIC',
+            description="How each tile's strapwork is generated")
         contact_angle: FloatProperty(
             name="Contact Angle", default=30.0, min=10.0, max=80.0,
             description="Angle (degrees) of the rays to each edge; the "
                         "primary knob -- small = spiky, large = obtuse")
+        star_d: IntProperty(
+            name="Star Density d", default=3, min=2, max=6,
+            description="Density of the {n/d} star polygon (STAR motif); "
+                        "larger d gives sharper, more overlapping points")
+        rosette_frac: FloatProperty(
+            name="Rosette Core", default=0.4, min=0.0, max=0.95,
+            description="Inner-polygon radius of the rosette as a "
+                        "fraction of the apothem (controls the central "
+                        "star size); 0 = Kaplan's proportion")
         nx: IntProperty(name="Cells X", default=5, min=1, max=40)
         ny: IntProperty(name="Cells Y", default=5, min=1, max=40)
         trim: BoolProperty(
@@ -713,32 +999,33 @@ if _IN_BLENDER:
                         "object (parented to an empty)")
 
         def _resolved(self):
-            """(substrate, contact angle) after applying any preset."""
+            """(substrate, contact, motif, star_d) after any preset."""
             if self.preset != 'CUSTOM':
                 return PRESETS[self.preset]
-            return self.substrate, self.contact_angle
+            return (self.substrate, self.contact_angle, self.motif,
+                    self.star_d)
 
         def execute(self, context):
-            substrate, contact = self._resolved()
+            substrate, contact, motif, star_d = self._resolved()
             if self.output == 'CURVE':
                 bands, _orders = strapwork_bands(
                     substrate, self.nx, self.ny, contact,
                     self.ribbon_width, self.trim, self.curved,
-                    self.smoothness)
+                    self.smoothness, motif, star_d, self.rosette_frac)
                 obj = _emit_curve(context, "Islamic Star", bands,
                                   operator=self)
                 if obj is None:
                     self.report({'ERROR'}, "no pattern generated")
                     return {'CANCELLED'}
                 obj["math_art_pattern"] = True
-                self.report({'INFO'}, "%s theta=%.0f  %d bands" %
-                            (substrate, contact, len(bands)))
+                self.report({'INFO'}, "%s %s theta=%.0f  %d bands" %
+                            (substrate, motif, contact, len(bands)))
                 return {'FINISHED'}
             cells = build_cells(
                 substrate, self.nx, self.ny, contact,
                 self.ribbon_width, self.color_by, self.trim,
                 self.height, self.backing, self.base, self.curved,
-                self.smoothness)
+                self.smoothness, motif, star_d, self.rosette_frac)
             obj = pc.emit(context, "Islamic Star", cells,
                           self.separate, fit=True, operator=self)
             if obj is None:
@@ -759,9 +1046,15 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'preset')
+            _sub, _c, motif, _d = self._resolved()
             if self.preset == 'CUSTOM':
                 lay.prop(self, 'substrate')
+                lay.prop(self, 'motif')
                 lay.prop(self, 'contact_angle')
+            if motif == 'STAR':                       # shown for presets too
+                lay.prop(self, 'star_d')
+            if motif == 'ROSETTE':
+                lay.prop(self, 'rosette_frac')
             lay.prop(self, 'nx')
             lay.prop(self, 'ny')
             lay.prop(self, 'trim')
@@ -818,6 +1111,16 @@ def _patch_bands(name, contact):
     placed = list(tg._base_iter(name, 4, 4))
     motifs = [(np.asarray(p, float), len(p), star_segments(p, contact))
               for p, _ in placed]
+    segments, _orders, tiles = _flatten_segments(motifs)
+    pts, seg_nodes, pair = build_arrangement(segments)
+    return pts, seg_nodes, pair, trace_bands(seg_nodes, pair), tiles
+
+
+def _motif_patch(substrate, contact, motif, star_d, frac, nx, ny):
+    """(pts, seg_nodes, pair, traced, tiles) for a patch under any motif
+    -- the arrangement used by the Phase-2 continuity tests."""
+    motifs, _rect = tile_motifs(substrate, nx, ny, contact, False, 2,
+                                motif, star_d, frac)
     segments, _orders, tiles = _flatten_segments(motifs)
     pts, seg_nodes, pair = build_arrangement(segments)
     return pts, seg_nodes, pair, trace_bands(seg_nodes, pair), tiles
@@ -945,6 +1248,106 @@ def _self_test():
     print("builds         flat=%d curved=%d relief=%d  %s" %
           (len(flat), len(curved), len(relief),
            "OK" if build_ok else "BAD"))
+
+    # (8) Phase-2 motifs -- rosette, star polygon and inference.  Each is
+    # built on a 3x3 patch and must: knit continuously across shared
+    # edges (contact points from neighbouring tiles coincide within the
+    # 1e-6 snap, giving shared nodes, and at least one band weaves across
+    # >= 2 distinct substrate tiles); form a consistent motif (the
+    # strapwork knits into multi-segment bands rather than shattering
+    # into stray stubs -- most bands span >= 2 segments); and yield
+    # non-degenerate ribbons (the longest band's quads are all non-zero-
+    # area with the mitred width bounded).  ROSETTE keeps the PIC contacts
+    # at the edge quarter-points, INFERENCE runs on irregular Laves tiles.
+    print("motif    substrate    segs bands shared xtile  cont "
+          "knit  ribbon")
+    p2_ok = True
+    p2_cases = [('ROSETTE', 'TRUNCSQ', 34.0, 2, 0.4),
+                ('ROSETTE', 'TRUNCHEX', 32.0, 2, 0.4),
+                ('STAR', 'TRUNCSQ', 30.0, 3, 0.4),
+                ('PIC', 'CAIRO', 35.0, 2, 0.4),
+                ('PIC', 'RHOMBILLE', 35.0, 2, 0.4)]
+    for motif, sub, contact, sd, fr in p2_cases:
+        pts, seg_nodes, pair, traced, tiles = _motif_patch(
+            sub, contact, motif, sd, fr, 3, 3)
+        nsegs = sum(1 for s in seg_nodes if s is not None)
+
+        # continuity: nodes shared by >= 2 tiles (coincident contacts)
+        # and a band spanning >= 2 tiles.
+        node_tiles = {}
+        for si, nn in enumerate(seg_nodes):
+            if nn is None:
+                continue
+            for nd in nn:
+                node_tiles.setdefault(nd, set()).add(tiles[si])
+        shared = sum(1 for v in node_tiles.values() if len(v) >= 2)
+        xtile = 0
+        n_multi = 0
+        longest = None
+        for node_path, seg_path in traced:
+            xtile = max(xtile, len(set(tiles[s] for s in seg_path)))
+            if len(seg_path) >= 2:
+                n_multi += 1
+            if longest is None or len(seg_path) > len(longest[1]):
+                longest = (node_path, seg_path)
+        cont_ok = shared > 0 and xtile >= 2
+        # the motif knits: the strapwork forms multi-segment bands
+        # (petals / stars / strands), not a shower of single-segment
+        # stubs -- a consistent, closed-figure motif.
+        knit_ok = bool(traced) and n_multi >= 0.5 * len(traced)
+
+        # non-degenerate ribbon on the longest band.
+        ribbon_ok = False
+        if longest is not None:
+            node_path, seg_path = longest
+            closed = (len(node_path) >= 4
+                      and node_path[0] == node_path[-1])
+            poly = [pts[n] for n in node_path]
+            if closed:
+                poly = poly[:-1]
+            if len(poly) >= 2:
+                left, right = miter_ribbon(poly, 0.10, closed)
+                cv, cf = band_ribbon_faces(left, right, closed, 0.0)
+                areas = [_poly_area([cv[i][:2] for i in f]) for f in cf]
+                widths = [hypot(left[i][0] - right[i][0],
+                                left[i][1] - right[i][1])
+                          for i in range(len(poly))]
+                ribbon_ok = (bool(areas)
+                             and all(abs(a) > 1e-12 for a in areas)
+                             and min(widths) > 1e-6
+                             and max(widths) <= 0.10 * 4.0 + 1e-6)
+
+        # motifs build all the way to cells for every color mode.
+        cells = build_cells(sub, 3, 3, contact, 0.10, 'STAR_ORDER',
+                            trim=True, motif=motif, star_d=sd,
+                            rosette_frac=fr)
+        build_p2 = bool(cells) and all(c[1] for c in cells)
+
+        good = (nsegs > 0 and cont_ok and knit_ok and ribbon_ok
+                and build_p2)
+        p2_ok = p2_ok and good
+        print("%-8s %-11s %5d %5d %6d %5d   %-4s  %-5s  %-5s %s" %
+              (motif, sub, nsegs, len(traced), shared, xtile,
+               cont_ok, knit_ok, ribbon_ok,
+               "OK" if good else "BAD"))
+    ok = ok and p2_ok
+
+    # (9) PIC regression: the default motif on a regular substrate must
+    # reproduce the plain star_segments motif byte-for-byte (Phase-1
+    # behaviour is unchanged for motif == PIC).
+    reg_placed = list(tg._base_iter('TRUNCSQ', 2, 2))
+    pic_ok = True
+    for poly, _t in reg_placed:
+        a = star_segments(poly, 30.0)
+        b = _tile_segments(poly, 30.0, 'PIC', 2, 0.4)
+        if len(a) != len(b) or any(
+                hypot(a[i][0][0] - b[i][0][0], a[i][0][1] - b[i][0][1])
+                + hypot(a[i][1][0] - b[i][1][0], a[i][1][1] - b[i][1][1])
+                > 1e-12 for i in range(len(a))):
+            pic_ok = False
+    ok = ok and pic_ok
+    print("PIC regression byte-identical=%s  %s" %
+          (pic_ok, "OK" if pic_ok else "BAD"))
 
     print("RESULT:", "OK" if ok else "BAD")
     return ok

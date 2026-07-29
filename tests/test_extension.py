@@ -375,6 +375,19 @@ OPS = [
         preset='STARCROSS8', nx=4, ny=4, color_by='BAND')),
     ("islamic curve output", lambda: bpy.ops.mesh.islamic_pattern_add(
         preset='STARCROSS8', nx=3, ny=3, output='CURVE', curved=True)),
+    ("islamic rosette8", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='ROSETTE8', nx=3, ny=3)),
+    ("islamic rosette12 relief", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='ROSETTE12', nx=2, ny=2, height=0.3, backing=True)),
+    ("islamic star8", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='STAR8', nx=3, ny=3)),
+    ("islamic infer cairo", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='INFER_CAIRO', nx=3, ny=3)),
+    ("islamic rosette custom curved band",
+     lambda: bpy.ops.mesh.islamic_pattern_add(
+         preset='CUSTOM', substrate='TRUNCSQ', motif='ROSETTE',
+         contact_angle=34.0, rosette_frac=0.4, nx=2, ny=2,
+         curved=True, color_by='BAND')),
     ("hyp uniform t73", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
         form='TRUNCATED', p=7, q=3, model='POINCARE')),
     ("hyp uniform r54 klein",
