@@ -80,7 +80,8 @@ def _crochet_mesh(ratio_n, rows, stitch, max_stitches, seed_scale=1.0):
     R = h / math.log(1.0 + 1.0 / ratio_n)
     rng = np.random.default_rng(0)
     m0 = 3                                        # cascade base
-    P, faces, rings, prev = [], [], [], None
+    # index 0 is a centre vertex closing the magic-ring hole
+    P, faces, rings, prev = [[0.0, 0.0, 0.0]], [], [], None
     for i in range(rows):
         rho = (i + 1) * h
         circ = 2.0 * math.pi * R * math.sinh(rho / R)
@@ -110,6 +111,9 @@ def _crochet_mesh(ratio_n, rows, stitch, max_stitches, seed_scale=1.0):
                       rho * math.sin(theta[j]), float(z[j])])
         if prev is not None:
             faces += _join_rings(prev[0], prev[1], start, n)
+        else:                                     # fan-fill the centre
+            for j in range(n):
+                faces.append((0, start + j, start + (j + 1) % n))
         rings.append((start, n))
         prev = (start, n)
         if len(P) > 80000:
@@ -132,7 +136,7 @@ def _crochet_mesh(ratio_n, rows, stitch, max_stitches, seed_scale=1.0):
     for a, b in edges:
         nbr[a].add(int(b))
         nbr[b].add(int(a))
-    pin = np.arange(rings[0][1])
+    pin = np.arange(rings[0][1] + 1)              # centre + inner ring
     tris = np.array(faces, dtype=np.int64)
     return P, E0, E1, REST, nbr, tris, pin, P[pin].copy()
 
