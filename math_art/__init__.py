@@ -85,6 +85,7 @@ _MODULE_NAMES = [
     'voderberg_generator',
     'fractal_tiling_generator',
     'islamic_pattern_generator',
+    'celtic_knot_2d_generator',
 ]
 
 _MODULES = []
@@ -236,6 +237,7 @@ class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
         _op(lay, "mesh.voderberg_add", icon='FORCE_VORTEX')
         _op(lay, "mesh.fractal_tiling_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.islamic_pattern_add", icon='SOLO_ON')
+        _op(lay, "mesh.celtic_knot_2d_add", icon='MOD_LATTICE')
         lay.separator()
         _op(lay, "mesh.hyperbolic_tiling_add", icon='MESH_CIRCLE')
 

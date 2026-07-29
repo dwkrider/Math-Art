@@ -441,6 +441,21 @@ OPS = [
     ("islamic girih curved", lambda: bpy.ops.mesh.islamic_pattern_add(
         preset='GIRIH10', girih_gens=3, trim=True, curved=True,
         smoothness=8)),
+    ("celtic plain plait", lambda: bpy.ops.mesh.celtic_knot_2d_add(
+        grid_w=5, grid_h=5, barriers='PRESET', preset='PLAIN')),
+    ("celtic crossbreak smooth",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         grid_w=6, grid_h=5, barriers='PRESET', preset='CROSSBREAK',
+         style='SMOOTH')),
+    ("celtic random single cord",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         grid_w=6, grid_h=6, barriers='RANDOM', seed=4, density=0.16,
+         single_cord=True, color_by='LOOP')),
+    ("celtic procedural woven relief",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         grid_w=5, grid_h=5, barriers='PROCEDURAL', wall_spacing=2,
+         interlace=True, interlace_mode='WOVEN', weave_height=0.1,
+         height=0.05)),
     ("hyp uniform t73", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
         form='TRUNCATED', p=7, q=3, model='POINCARE')),
     ("hyp uniform r54 klein",
