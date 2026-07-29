@@ -397,6 +397,18 @@ OPS = [
     ("islamic backing no relief",
      lambda: bpy.ops.mesh.islamic_pattern_add(
          preset='STARCROSS8', nx=3, ny=3, backing=True)),
+    ("islamic rhombille stars",
+     lambda: bpy.ops.mesh.islamic_pattern_add(
+         preset='INFER_RHOMBI', nx=5, ny=5, trim=True)),
+    ("islamic girih", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='GIRIH10', girih_gens=3, trim=True)),
+    ("islamic girih interlaced",
+     lambda: bpy.ops.mesh.islamic_pattern_add(
+         preset='GIRIH10', girih_gens=3, trim=True, interlace=True,
+         interlace_mode='FLAT', color_by='BAND')),
+    ("islamic girih curved", lambda: bpy.ops.mesh.islamic_pattern_add(
+        preset='GIRIH10', girih_gens=3, trim=True, curved=True,
+        smoothness=8)),
     ("hyp uniform t73", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
         form='TRUNCATED', p=7, q=3, model='POINCARE')),
     ("hyp uniform r54 klein",

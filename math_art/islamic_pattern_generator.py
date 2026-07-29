@@ -69,6 +69,12 @@
 #     Development and Traditional Methods of Construction" (2017).
 #   Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (1987) --
 #     the uniform tilings used as PIC substrates.
+#   Peter J. Lu & Paul J. Steinhardt, "Decagonal and Quasi-Crystalline
+#     Tilings in Medieval Islamic Architecture" (Science 315, 2007) --
+#     the girih tiles and the quasiperiodic 10-fold strapwork, realized
+#     here as polygons-in-contact decoration of a Penrose quasilattice.
+#   Peter R. Cromwell, "The Search for Quasi-Periodicity in Islamic Art"
+#     (Mathematical Intelligencer 31, 2009) -- girih construction.
 
 bl_info = {
     "name": "Islamic Star Pattern",
@@ -88,9 +94,11 @@ import numpy as np
 try:
     from . import pattern_common as pc
     from . import tiling_generator as tg
+    from . import aperiodic_generator as ap
 except Exception:                       # legacy single-file / CLI use
     import pattern_common as pc
     import tiling_generator as tg
+    import aperiodic_generator as ap
 
 
 # --------------------------------------------------------------------
@@ -117,18 +125,22 @@ SUBSTRATE_ITEMS = [
     ('RHOMBILLE', "Rhombille (dual 3.6.3.6)",
      "Irregular rhombi -- needs motif inference"),
     ('CAIRO', "Cairo Pentagonal (dual 3.3.4.3.4)",
-     "Irregular pentagons -- needs motif inference"),
+     "Irregular pentagons -- star per tile"),
+    ('GIRIH', "Girih (quasiperiodic 10-fold)",
+     "Penrose quasilattice, girih strapwork -> 10-fold stars, no "
+     "repeating unit cell (Lu & Steinhardt 2007)"),
 ]
 
 # Substrates whose tiles are irregular polygons (Laves duals): these
-# rely on motif inference rather than the regular-polygon PIC/rosette.
+# build star-forming strapwork (per tile for Cairo, per vertex for
+# Rhombille) rather than the regular-polygon PIC/rosette.
 _LAVES_SUBSTRATES = ('RHOMBILLE', 'CAIRO')
 
 # Contact angle (degrees) giving the classic motif for each substrate.
 DEFAULT_CONTACT = {
     'SQUARE': 30.0, 'TRI': 30.0, 'HEX': 30.0,
     'TRUNCSQ': 30.0, 'TRUNCHEX': 30.0, 'TRUNCTRIHEX': 30.0,
-    'RHOMBILLE': 35.0, 'CAIRO': 35.0,
+    'RHOMBILLE': 35.0, 'CAIRO': 35.0, 'GIRIH': 72.0,
 }
 
 # Historical presets: (substrate, contact angle, motif, star_d).
@@ -150,10 +162,12 @@ PRESET_ITEMS = [
      "Twelve-fold rosettes on the 4.6.12 tiling"),
     ('STAR8', "8-point Star {8/3} (4.8.8)",
      "Regular star polygons in the octagons"),
-    ('INFER_RHOMBI', "Inferred (Rhombille)",
-     "Motif inference across irregular rhombi"),
-    ('INFER_CAIRO', "Inferred (Cairo)",
-     "Motif inference across irregular pentagons"),
+    ('INFER_RHOMBI', "Star Weave (Rhombille)",
+     "Six-point vertex stars across irregular rhombi"),
+    ('INFER_CAIRO', "Star Weave (Cairo)",
+     "Five-point stars across irregular pentagons"),
+    ('GIRIH10', "Girih 10-fold (quasiperiodic)",
+     "Quasiperiodic ten-fold stars on a Penrose girih quasilattice"),
 ]
 # preset -> (substrate, contact angle, motif, star_d)
 PRESETS = {
@@ -167,6 +181,7 @@ PRESETS = {
     'STAR8':        ('TRUNCSQ', 30.0, 'STAR', 3),
     'INFER_RHOMBI': ('RHOMBILLE', 35.0, 'PIC', 2),
     'INFER_CAIRO':  ('CAIRO', 35.0, 'PIC', 2),
+    'GIRIH10':      ('GIRIH', 72.0, 'PIC', 2),
 }
 
 # Material slot per polygon side count, for the STAR_ORDER color mode.
@@ -260,20 +275,26 @@ def _is_regular(poly, tol=1e-4):
 
 def infer_segments(poly, angle_deg):
     """Kaplan's motif inference: the PIC construction for an arbitrary
-    (convex) tile.  Identical to `star_segments` on a regular polygon,
-    but each edge's inward direction is that edge's TRUE normal rather
-    than the centroid direction, so contact rays leave every edge
-    midpoint at exactly `angle_deg` to the edge and are truncated at
-    their nearest opposite-hand crossing.  Because the contact points
-    sit at the shared edge midpoints and the rays are mirror images
-    across each edge, the inferred motif is continuous across shared
-    edges even when the tiles are irregular or of mixed shape."""
+    (convex) tile, cast so the motif is a single CLOSED loop with no
+    dangling ends.  From each edge midpoint two rays leave at exactly
+    `angle_deg` to the edge (measured from the edge's TRUE normal, so a
+    ray and its neighbour's mirror stay collinear across a shared edge --
+    the contact stays continuous even on irregular tiles).  Rather than
+    truncating each ray independently at its nearest crossing (which on
+    an irregular tile leaves one ray ending in the middle of another --
+    a stray stub), the rays are truncated MUTUALLY: around each vertex j
+    the "left" ray of the preceding edge and the "right" ray of the
+    following edge -- the two rays that both aim into the wedge at j --
+    are cut at their common crossing, a shared node the band passes
+    through.  Each edge midpoint therefore joins exactly two segments
+    (one to each neighbouring vertex node) and the whole motif closes
+    into one 2n-gon loop: continuous across shared edges, free of stubs."""
     theta = radians(angle_deg)
     ct, st = cos(theta), sin(theta)
     poly = np.asarray(poly, float)
     n = len(poly)
     c = poly.mean(axis=0)
-    left, right = [], []
+    mids, left, right = [], [], []
     for i in range(n):
         a, b = poly[i], poly[(i + 1) % n]
         m = 0.5 * (a + b)
@@ -282,20 +303,67 @@ def infer_segments(poly, angle_deg):
         nrm = np.array([-e[1], e[0]])            # true edge normal
         if np.dot(c - m, nrm) < 0.0:             # orient inward
             nrm = -nrm
-        left.append((m, ct * e + st * nrm))
-        right.append((m, -ct * e + st * nrm))
-    segs = []
-    for src, others in ((left, right), (right, left)):
-        for o0, d0 in src:
-            best = None
-            for o1, d1 in others:
-                s = _ray_param(o0, d0, o1, d1)
-                if s is not None and (best is None or s < best):
-                    best = s
-            if best is None:
+        mids.append((float(m[0]), float(m[1])))
+        left.append((ct * e[0] + st * nrm[0],    # turns toward vertex i+1
+                     ct * e[1] + st * nrm[1]))
+        right.append((-ct * e[0] + st * nrm[0],  # turns toward vertex i
+                      -ct * e[1] + st * nrm[1]))
+    # Every left ray is matched to a right ray at their crossing, both
+    # truncated MUTUALLY there (a shared node), so each midpoint joins
+    # exactly two segments and the motif closes with no stray stubs.  The
+    # matching is greedy shortest-first, so rays pair with their nearest
+    # partner and the motif hugs the tile (bounded, star-like) rather than
+    # shooting off to a distant near-parallel crossing.
+    crs = []
+    for i in range(n):
+        for k in range(n):
+            s = _ray_param(mids[i], left[i], mids[k], right[k])
+            if s is None:
                 continue
-            tip = (o0[0] + best * d0[0], o0[1] + best * d0[1])
-            segs.append((tuple(o0), tip))
+            t = _ray_param(mids[k], right[k], mids[i], left[i])
+            if t is None:
+                continue
+            crs.append((max(s, t), i, k,
+                        (mids[i][0] + s * left[i][0],
+                         mids[i][1] + s * left[i][1])))
+    crs.sort()
+    lused = [False] * n
+    rused = [False] * n
+    tip_of_left = [None] * n
+    tip_of_right = [None] * n
+    for _d, i, k, p in crs:
+        if lused[i] or rused[k]:
+            continue
+        lused[i] = rused[k] = True
+        tip_of_left[i] = tip_of_right[k] = p
+    # Any ray left unmatched (rare, non-convex cells): pair the leftovers
+    # on their infinite-line crossing so no midpoint is left dangling.
+    li = [i for i in range(n) if not lused[i]]
+    ri = [k for k in range(n) if not rused[k]]
+    for i in li:
+        best = None
+        for k in ri:
+            if rused[k]:
+                continue
+            p = _line_line(mids[i], (mids[i][0] + left[i][0],
+                                     mids[i][1] + left[i][1]),
+                           mids[k], (mids[k][0] + right[k][0],
+                                     mids[k][1] + right[k][1]))
+            if p is None:
+                continue
+            dd = hypot(p[0] - mids[i][0], p[1] - mids[i][1])
+            if best is None or dd < best[0]:
+                best = (dd, k, p)
+        if best is not None:
+            _dd, k, p = best
+            rused[k] = True
+            tip_of_left[i] = tip_of_right[k] = p
+    segs = []
+    for i in range(n):
+        if tip_of_left[i] is not None:
+            segs.append((mids[i], tip_of_left[i]))
+        if tip_of_right[i] is not None:
+            segs.append((mids[i], tip_of_right[i]))
     return segs
 
 
@@ -401,6 +469,178 @@ def star_polygon_segments(poly, d):
     return segs
 
 
+def _star_outline_from_tips(tips, d):
+    """The outline of a regular-ish star polygon {n/d} through the given
+    ordered `tips` (any placement, not necessarily on a circle).  Each
+    concave (inner) vertex is the crossing of the two {n/d} chords that
+    span the gap between consecutive tips, so the result is a single
+    closed 2n-gon: n outer points and n inner notches, every vertex of
+    degree two -- dangling-free by construction.  With `d` < 2 (or too
+    large, or a non-crossing gap) it degenerates gracefully to the convex
+    ring {n/1} through the tips."""
+    tips = [(float(t[0]), float(t[1])) for t in tips]
+    n = len(tips)
+    d = int(d)
+    if n < 3:
+        return []
+    if n < 5 or d < 2 or d > (n - 1) // 2:
+        return [(tips[k], tips[(k + 1) % n]) for k in range(n)]
+    inner = []
+    for k in range(n):
+        p = _line_line(tips[k], tips[(k + d) % n],
+                       tips[(k + 1) % n], tips[(k + 1 - d) % n])
+        if p is None:
+            return [(tips[k], tips[(k + 1) % n]) for k in range(n)]
+        inner.append(p)
+    segs = []
+    for k in range(n):
+        segs.append((tips[k], inner[k]))
+        segs.append((inner[k], tips[(k + 1) % n]))
+    return segs
+
+
+def _star_density(n):
+    """A pleasing star density for an n-pointed star (matches the rosette
+    core rule): 2 for pentagons/hexagons, growing slowly with n."""
+    return max(2, min((n - 1) // 2, n // 5 + 2))
+
+
+def _tile_star_motifs(polys):
+    """Per-tile star motifs for an irregular substrate whose tiles can
+    each host a star polygon (n >= 5, e.g. the Cairo pentagons): a
+    regular-ish {n/d} star with its n tips anchored at the tile's edge
+    midpoints.  Because the tips sit on the shared edge midpoints, each
+    tile's star kisses its neighbour's at those points and the strapwork
+    stays continuous; each star is a closed loop, so there are no stubs.
+    Returns (rep_poly, order, segments) per tile."""
+    out = []
+    for poly in polys:
+        poly = np.asarray(poly, float)
+        n = len(poly)
+        tips = [tuple(0.5 * (poly[i] + poly[(i + 1) % n]))
+                for i in range(n)]
+        d = _star_density(n)
+        segs = _star_outline_from_tips(tips, d)
+        if segs:
+            out.append((poly, n, segs))
+    return out
+
+
+def _vertex_star_motifs(polys):
+    """Vertex-centered star motifs for an irregular substrate whose tiles
+    are too small to host a star (e.g. the Rhombille rhombi).  A star
+    sits at every fully surrounded tiling VERTEX, its tips anchored at the
+    midpoints of the edges radiating from that vertex; high-valence
+    vertices (the 6-valent Rhombille corners) become six-point stars, the
+    3-valent corners small triangles.  Every edge midpoint is a tip of the
+    star at each of its two endpoints, so the stars kiss at the midpoints
+    and the strapwork is continuous; each star is a closed loop, so there
+    are no stubs.  Returns (rep_poly, order, segments) per vertex star."""
+    vs = _NodeSet(1e-6)
+    vcoord = {}
+    edge_count = {}
+    vinc = {}
+    for poly in polys:
+        poly = np.asarray(poly, float)
+        n = len(poly)
+        ids = [vs.add((float(poly[i][0]), float(poly[i][1])))
+               for i in range(n)]
+        for i in range(n):
+            ia, ib = ids[i], ids[(i + 1) % n]
+            key = (ia, ib) if ia < ib else (ib, ia)
+            edge_count[key] = edge_count.get(key, 0) + 1
+            m = (float(0.5 * (poly[i][0] + poly[(i + 1) % n][0])),
+                 float(0.5 * (poly[i][1] + poly[(i + 1) % n][1])))
+            vinc.setdefault(ia, {})[key] = m
+            vinc.setdefault(ib, {})[key] = m
+            vcoord[ia] = (float(poly[i][0]), float(poly[i][1]))
+            vcoord[ib] = (float(poly[(i + 1) % n][0]),
+                          float(poly[(i + 1) % n][1]))
+    out = []
+    for vid, edges in vinc.items():
+        if any(edge_count[k] != 2 for k in edges):
+            continue                              # boundary / incomplete
+        cx, cy = vcoord[vid]
+        tips = sorted(edges.values(),
+                      key=lambda p: atan2(p[1] - cy, p[0] - cx))
+        m = len(tips)
+        if m < 3:
+            continue
+        d = _star_density(m) if m >= 5 else 1
+        segs = _star_outline_from_tips(tips, d)
+        if segs:
+            out.append((np.asarray(tips, float), m, segs))
+    return out
+
+
+def _irregular_motifs(polys, substrate):
+    """Star-forming strapwork for an irregular (Laves-dual) substrate.
+    Cairo's pentagons each host a five-point star (per-tile); Rhombille's
+    rhombi are too small, so its stars sit at the tiling vertices.  Both
+    routes emit closed star outlines whose tips land on shared edge
+    midpoints -- authentic star patterns with continuous, stub-free
+    strapwork, unlike the old edge-to-edge inference weave."""
+    if substrate == 'RHOMBILLE':
+        return _vertex_star_motifs(polys)
+    return _tile_star_motifs(polys)
+
+
+# --------------------------------------------------------------------
+# Girih -- quasiperiodic 10-fold strapwork (Lu & Steinhardt 2007)
+# --------------------------------------------------------------------
+#
+# The girih ("knot") tiles decorate a QUASIPERIODIC 10-fold tiling, so
+# unlike the periodic substrates above the pattern never repeats.  We
+# realize it on a Penrose (P3) quasilattice -- the two rhombi Lu &
+# Steinhardt show are equivalent to the girih tiling -- inflated from
+# aperiodic_generator's five-fold sun seed, every tile sharing one edge
+# length.  Each rhomb is decorated with Hankin polygons-in-contact lines
+# crossing each edge midpoint at a fixed contact angle (the 72/108/144
+# girih geometry); because the contacts land on shared edge midpoints the
+# strapwork is continuous across the whole patch, and where five and ten
+# tiles meet it closes into the characteristic ten-point stars and
+# decagonal rosettes (crispest near a 72-degree contact on this rhombic
+# quasilattice, the default).  It then flows through the same continuous-
+# band pipeline, inheriting mitered / curved ribbons, BAND color,
+# interlace and relief.
+
+def _girih_polys(gens):
+    """The rhombi of a Penrose (P3) quasilattice inflated `gens` times
+    from the five-fold sun seed -- a finite quasiperiodic 10-fold patch
+    of equal-edge tiles for girih decoration.  Boundary half-triangles
+    (unequal edges) are dropped so every contact lands on a shared edge
+    midpoint, and the whole patch is scaled to unit edge length to match
+    the periodic substrates (so ribbon widths read the same)."""
+    tiles = [np.asarray(p, float)
+             for _t, p in ap._p3_rhombs(max(0, int(gens))) if len(p) == 4]
+    if not tiles:
+        return tiles
+    e = tiles[0]
+    edge = hypot(e[1][0] - e[0][0], e[1][1] - e[0][1])
+    s = 1.0 / edge if edge > 1e-12 else 1.0
+    return [p * s for p in tiles]
+
+
+def _girih_rect(polys, frac=0.60):
+    """A centered trim rectangle over the inner `frac` of the girih patch,
+    dropping the ragged quasilattice boundary so the strapwork reads as a
+    clean quasiperiodic field with no boundary stubs."""
+    allv = np.vstack([np.asarray(p, float) for p in polys])
+    lo, hi = allv.min(axis=0), allv.max(axis=0)
+    c = 0.5 * (lo + hi)
+    hw = 0.5 * (hi[0] - lo[0]) * frac
+    hh = 0.5 * (hi[1] - lo[1]) * frac
+    return (c[0] - hw, c[1] - hh, c[0] + hw, c[1] + hh)
+
+
+def _girih_motifs(polys, contact_deg):
+    """Girih strapwork for the quasilattice: every rhomb decorated by
+    polygons-in-contact inference at the girih contact angle.  Inference
+    is mutual / dangling-free, so the decorated patch is continuous and
+    stub-free across all shared edges."""
+    return [(p, len(p), infer_segments(p, contact_deg)) for p in polys]
+
+
 def _augment_edges(poly):
     """Insert each edge's midpoint as an extra (straight-angle) vertex,
     doubling the edge count.  Inference then lands two contact points per
@@ -482,21 +722,45 @@ def _placed_tiles(substrate, NX, NY):
 
 
 def tile_motifs(substrate, nx, ny, contact_deg, trim=False, pad=2,
-                motif='PIC', star_d=2, rosette_frac=0.0):
+                motif='PIC', star_d=2, rosette_frac=0.0, girih_gens=3):
     """Return (motifs, rect): one (poly, order, segments) per substrate
     tile, where `order` is the polygon side count and `segments` are
     that tile's strapwork segments under the chosen `motif` (PIC,
     ROSETTE or STAR; irregular tiles fall back to inference), clipped to
-    `rect` when trim.  `rect` is the trim rectangle or None."""
+    `rect` when trim.  `rect` is the trim rectangle or None.  The GIRIH
+    substrate ignores nx/ny and instead builds a `girih_gens`-generation
+    quasiperiodic Penrose patch."""
+    if substrate == 'GIRIH':
+        polys = _girih_polys(girih_gens)
+        rect = _girih_rect(polys) if trim else None
+        raw = _girih_motifs(polys, contact_deg)
+        motifs = []
+        for poly, order, segs in raw:
+            if rect is not None:
+                segs = [cs for cs in
+                        (_clip_segment(a, b, rect) for a, b in segs)
+                        if cs is not None]
+            if not segs:
+                continue
+            motifs.append((np.asarray(poly, float), order, segs))
+        return motifs, rect
     NX, NY = (nx + pad, ny + pad) if trim else (nx, ny)
     placed = _placed_tiles(substrate, NX, NY)
     rect = None
     if trim:
         rect = tg._trim_rect([p for p, _ in placed], nx, ny, pad)
+    if substrate in _LAVES_SUBSTRATES:
+        # Irregular substrates: build star-forming strapwork globally
+        # (per tile for Cairo, per vertex for Rhombille) rather than the
+        # old edge-to-edge inference weave.
+        raw = _irregular_motifs([p for p, _ in placed], substrate)
+    else:
+        raw = [(np.asarray(poly, float), len(poly),
+                _tile_segments(poly, contact_deg, motif, star_d,
+                               rosette_frac))
+               for poly, _ti in placed]
     motifs = []
-    for poly, _ti in placed:
-        segs = _tile_segments(poly, contact_deg, motif, star_d,
-                              rosette_frac)
+    for poly, order, segs in raw:
         if rect is not None:
             clipped = []
             for a, b in segs:
@@ -506,7 +770,7 @@ def tile_motifs(substrate, nx, ny, contact_deg, trim=False, pad=2,
             segs = clipped
         if not segs:
             continue
-        motifs.append((np.asarray(poly, float), len(poly), segs))
+        motifs.append((np.asarray(poly, float), order, segs))
     return motifs, rect
 
 
@@ -801,7 +1065,8 @@ def catmull_rom(points, closed, subdiv):
 
 def strapwork_bands(substrate, nx, ny, contact_deg, ribbon_width,
                     trim=False, curved=False, subdiv=8,
-                    motif='PIC', star_d=2, rosette_frac=0.0):
+                    motif='PIC', star_d=2, rosette_frac=0.0,
+                    girih_gens=3):
     """Trace the continuous strapwork bands of a patch.  Returns
     (bands, orders): each band is
     (left, right, closed, seg_path, path) -- the mitered ribbon
@@ -809,7 +1074,8 @@ def strapwork_bands(substrate, nx, ny, contact_deg, ribbon_width,
     and the centerline polyline (Catmull-Rom smoothed when `curved`)."""
     motifs, _rect = tile_motifs(substrate, nx, ny, contact_deg, trim,
                                 motif=motif, star_d=star_d,
-                                rosette_frac=rosette_frac)
+                                rosette_frac=rosette_frac,
+                                girih_gens=girih_gens)
     segments, orders, _tiles = _flatten_segments(motifs)
     if not segments:
         return [], orders
@@ -943,13 +1209,14 @@ class _ParityDSU:
 
 
 def _traced_patch(substrate, nx, ny, contact_deg, trim,
-                  motif, star_d, rosette_frac):
+                  motif, star_d, rosette_frac, girih_gens=3):
     """(pts, seg_nodes, pair, traced, orders) for a patch: the snapped
     arrangement, its half-edge pairing, the traced bands and per-segment
     star orders.  None if the patch produced no strapwork."""
     motifs, _rect = tile_motifs(substrate, nx, ny, contact_deg, trim,
                                 motif=motif, star_d=star_d,
-                                rosette_frac=rosette_frac)
+                                rosette_frac=rosette_frac,
+                                girih_gens=girih_gens)
     segments, orders, _tiles = _flatten_segments(motifs)
     if not segments:
         return None
@@ -1168,14 +1435,14 @@ def _cut_band(path, closed, cut_s, half, s, total):
 def _interlaced_cells(substrate, nx, ny, contact_deg, ribbon_width,
                       color_by, trim, height, backing, base,
                       curved, subdiv, motif, star_d, rosette_frac,
-                      mode, weave_height):
+                      mode, weave_height, girih_gens=3):
     """Interlaced (woven) strapwork cells.  Traces the bands, assigns a
     consistent alternating over/under at every crossing, then renders
     either FLAT knotwork (under-bands broken at crossings) or a WOVEN 3D
     surface (bands rise/dip at crossings).  One (verts, faces, mats) cell
     per ribbon piece; an optional backing slab is appended."""
     tp = _traced_patch(substrate, nx, ny, contact_deg, trim,
-                        motif, star_d, rosette_frac)
+                        motif, star_d, rosette_frac, girih_gens)
     if tp is None:
         return []
     pts, _seg_nodes, pair, traced, orders = tp
@@ -1247,7 +1514,7 @@ def build_cells(substrate, nx, ny, contact_deg, ribbon_width,
                 backing=False, base=0.08, curved=False, subdiv=8,
                 motif='PIC', star_d=2, rosette_frac=0.0,
                 interlace=False, interlace_mode='FLAT',
-                weave_height=0.05):
+                weave_height=0.05, girih_gens=3):
     """One (verts, faces, mats) cell per continuous strapwork BAND: the
     band as a single mitered ribbon (flat, or extruded to `height`;
     straight-mitered or Catmull-Rom curved).  An optional backing slab
@@ -1257,10 +1524,11 @@ def build_cells(substrate, nx, ny, contact_deg, ribbon_width,
         return _interlaced_cells(
             substrate, nx, ny, contact_deg, ribbon_width, color_by,
             trim, height, backing, base, curved, subdiv, motif,
-            star_d, rosette_frac, interlace_mode, weave_height)
+            star_d, rosette_frac, interlace_mode, weave_height,
+            girih_gens)
     bands, orders = strapwork_bands(
         substrate, nx, ny, contact_deg, ribbon_width, trim,
-        curved, subdiv, motif, star_d, rosette_frac)
+        curved, subdiv, motif, star_d, rosette_frac, girih_gens)
     cells = []
     all_verts = []
     for bi, (left, right, closed, seg_path, _path) in enumerate(bands):
@@ -1285,13 +1553,14 @@ def build(substrate, nx, ny, contact_deg, ribbon_width,
           color_by='UNIFORM', trim=False, height=0.0,
           backing=False, base=0.08, curved=False, subdiv=8,
           motif='PIC', star_d=2, rosette_frac=0.0,
-          interlace=False, interlace_mode='FLAT', weave_height=0.05):
+          interlace=False, interlace_mode='FLAT', weave_height=0.05,
+          girih_gens=3):
     """Merged (verts, faces, mats) for one strapwork patch."""
     return pc.merge_cells(build_cells(
         substrate, nx, ny, contact_deg, ribbon_width, color_by,
         trim, height, backing, base, curved, subdiv,
         motif, star_d, rosette_frac,
-        interlace, interlace_mode, weave_height))
+        interlace, interlace_mode, weave_height, girih_gens))
 
 
 # --------------------------------------------------------------------
@@ -1386,6 +1655,11 @@ if _IN_BLENDER:
                         "star size); 0 = Kaplan's proportion")
         nx: IntProperty(name="Cells X", default=5, min=1, max=40)
         ny: IntProperty(name="Cells Y", default=5, min=1, max=40)
+        girih_gens: IntProperty(
+            name="Girih Generations", default=4, min=1, max=6,
+            description="Inflation depth of the quasiperiodic Penrose "
+                        "girih patch (GIRIH substrate); higher = larger "
+                        "patch, more tiles")
         trim: BoolProperty(
             name="Trim Boundary", default=True,
             description="Clip the strapwork to a clean central "
@@ -1465,7 +1739,8 @@ if _IN_BLENDER:
                 bands, _orders = strapwork_bands(
                     substrate, self.nx, self.ny, contact,
                     self.ribbon_width, self.trim, self.curved,
-                    self.smoothness, motif, star_d, self.rosette_frac)
+                    self.smoothness, motif, star_d, self.rosette_frac,
+                    self.girih_gens)
                 obj = _emit_curve(context, "Islamic Star", bands,
                                   operator=self)
                 if obj is None:
@@ -1480,7 +1755,8 @@ if _IN_BLENDER:
                 self.ribbon_width, self.color_by, self.trim,
                 self.height, self.backing, self.base, self.curved,
                 self.smoothness, motif, star_d, self.rosette_frac,
-                self.interlace, self.interlace_mode, self.weave_height)
+                self.interlace, self.interlace_mode, self.weave_height,
+                self.girih_gens)
             obj = pc.emit(context, "Islamic Star", cells,
                           self.separate, fit=True, operator=self)
             if obj is None:
@@ -1501,7 +1777,7 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'preset')
-            _sub, _c, motif, _d = self._resolved()
+            sub, _c, motif, _d = self._resolved()
             if self.preset == 'CUSTOM':
                 lay.prop(self, 'substrate')
                 lay.prop(self, 'motif')
@@ -1510,8 +1786,11 @@ if _IN_BLENDER:
                 lay.prop(self, 'star_d')
             if motif == 'ROSETTE':
                 lay.prop(self, 'rosette_frac')
-            lay.prop(self, 'nx')
-            lay.prop(self, 'ny')
+            if sub == 'GIRIH':                        # quasiperiodic patch
+                lay.prop(self, 'girih_gens')
+            else:
+                lay.prop(self, 'nx')
+                lay.prop(self, 'ny')
             lay.prop(self, 'trim')
             lay.prop(self, 'ribbon_width')
             lay.prop(self, 'curved')
@@ -1583,6 +1862,53 @@ def _motif_patch(substrate, contact, motif, star_d, frac, nx, ny):
     segments, _orders, tiles = _flatten_segments(motifs)
     pts, seg_nodes, pair = build_arrangement(segments)
     return pts, seg_nodes, pair, trace_bands(seg_nodes, pair), tiles
+
+
+def _node_degrees(seg_nodes):
+    """Valence of every arrangement node (how many strapwork segments
+    touch it)."""
+    deg = {}
+    for nn in seg_nodes:
+        if nn is None:
+            continue
+        for nd in nn:
+            deg[nd] = deg.get(nd, 0) + 1
+    return deg
+
+
+def _interior_danglers(pts, seg_nodes, rect):
+    """The dangling-end count that is the real acceptance criterion for
+    continuous strapwork: arrangement nodes touched by exactly ONE
+    segment (a loose end) that are NOT on the trim-rectangle boundary.
+    A clean pattern has none -- every interior end chains onward.  On the
+    trim edge degree-1 nodes are expected (the clip cut the ribbon)."""
+    deg = _node_degrees(seg_nodes)
+    if rect is None:
+        return [nd for nd, d in deg.items() if d == 1]
+    x0, y0, x1, y1 = rect
+    t = 1e-6
+    out = []
+    for nd, d in deg.items():
+        if d != 1:
+            continue
+        p = pts[nd]
+        on_edge = (abs(p[0] - x0) < t or abs(p[0] - x1) < t
+                   or abs(p[1] - y0) < t or abs(p[1] - y1) < t)
+        if not on_edge:
+            out.append(nd)
+    return out
+
+
+def _star_polygon_count(motifs, order):
+    """How many tiles carry a star-polygon motif of the given point
+    `order` -- a closed 2*order-segment star outline (n tips + n inner
+    notches).  Used to assert Cairo/Rhombille/girih actually form stars
+    rather than a plain weave."""
+    n = 0
+    for _poly, od, segs in motifs:
+        if od == order and len(segs) == 2 * order:
+            n += 1
+    return n
 
 
 def _self_test():
@@ -1708,31 +2034,49 @@ def _self_test():
           (len(flat), len(curved), len(relief),
            "OK" if build_ok else "BAD"))
 
-    # (8) Phase-2 motifs -- rosette, star polygon and inference.  Each is
-    # built on a 3x3 patch and must: knit continuously across shared
-    # edges (contact points from neighbouring tiles coincide within the
-    # 1e-6 snap, giving shared nodes, and at least one band weaves across
-    # >= 2 distinct substrate tiles); form a consistent motif (the
-    # strapwork knits into multi-segment bands rather than shattering
-    # into stray stubs -- most bands span >= 2 segments); and yield
-    # non-degenerate ribbons (the longest band's quads are all non-zero-
-    # area with the mitred width bounded).  ROSETTE keeps the PIC contacts
-    # at the edge quarter-points, INFERENCE runs on irregular Laves tiles.
-    print("motif    substrate    segs bands shared xtile  cont "
-          "knit  ribbon")
+    # (8) Continuity / dangling ends -- the real acceptance criterion.
+    # For EVERY motif x substrate (PIC/ROSETTE/STAR on the regular
+    # tilings, and the irregular Cairo / Rhombille / quasiperiodic girih)
+    # the TRIMMED strapwork must be fully continuous: the count of
+    # interior dangling ends (degree-1 arrangement nodes not on the trim
+    # boundary) MUST be zero -- no loose star-point or petal-tip stubs,
+    # no basket-weave danglers.  Each case must also knit across tile
+    # boundaries (a band spanning >= 2 tiles), form multi-segment bands
+    # (not a shower of stubs) and build non-degenerate ribbon cells.
+    print("motif    substrate    segs bands shared xtile dngl "
+          " cont  knit  ribbon")
     p2_ok = True
-    p2_cases = [('ROSETTE', 'TRUNCSQ', 34.0, 2, 0.4),
-                ('ROSETTE', 'TRUNCHEX', 32.0, 2, 0.4),
-                ('STAR', 'TRUNCSQ', 30.0, 3, 0.4),
-                ('PIC', 'CAIRO', 35.0, 2, 0.4),
-                ('PIC', 'RHOMBILLE', 35.0, 2, 0.4)]
-    for motif, sub, contact, sd, fr in p2_cases:
-        pts, seg_nodes, pair, traced, tiles = _motif_patch(
-            sub, contact, motif, sd, fr, 3, 3)
+    #  motif, substrate, contact, star_d, frac, nx, ny, girih_gens
+    p2_cases = [('PIC', 'SQUARE', 30.0, 2, 0.4, 4, 4, 0),
+                ('PIC', 'HEX', 30.0, 2, 0.4, 4, 4, 0),
+                ('PIC', 'TRUNCSQ', 30.0, 2, 0.4, 4, 4, 0),
+                ('PIC', 'TRUNCHEX', 30.0, 2, 0.4, 3, 3, 0),
+                ('PIC', 'TRUNCTRIHEX', 30.0, 2, 0.4, 3, 3, 0),
+                ('ROSETTE', 'TRUNCSQ', 34.0, 2, 0.4, 4, 4, 0),
+                ('ROSETTE', 'TRUNCHEX', 32.0, 2, 0.4, 3, 3, 0),
+                ('ROSETTE', 'TRUNCTRIHEX', 32.0, 2, 0.4, 3, 3, 0),
+                ('STAR', 'TRUNCSQ', 30.0, 3, 0.4, 4, 4, 0),
+                ('STAR', 'TRUNCHEX', 30.0, 4, 0.4, 3, 3, 0),
+                ('PIC', 'CAIRO', 35.0, 2, 0.4, 3, 3, 0),
+                ('PIC', 'RHOMBILLE', 35.0, 2, 0.4, 3, 3, 0),
+                ('PIC', 'GIRIH', 72.0, 2, 0.4, 0, 0, 4)]
+    for motif, sub, contact, sd, fr, nx, ny, gg in p2_cases:
+        # trimmed arrangement (for the dangling-end criterion)
+        motifs_t, rect = tile_motifs(sub, nx, ny, contact, True, 2,
+                                     motif, sd, fr, gg)
+        segs_t, _ord_t, tiles_t = _flatten_segments(motifs_t)
+        pts_t, seg_nodes_t, _pair_t = build_arrangement(segs_t)
+        dngl = len(_interior_danglers(pts_t, seg_nodes_t, rect))
+        dngl_ok = (dngl == 0)
+
+        # untrimmed arrangement (for continuity / knit metrics)
+        motifs_u, _r = tile_motifs(sub, nx, ny, contact, False, 2,
+                                   motif, sd, fr, gg)
+        segments, _orders, tiles = _flatten_segments(motifs_u)
+        pts, seg_nodes, pair = build_arrangement(segments)
+        traced = trace_bands(seg_nodes, pair)
         nsegs = sum(1 for s in seg_nodes if s is not None)
 
-        # continuity: nodes shared by >= 2 tiles (coincident contacts)
-        # and a band spanning >= 2 tiles.
         node_tiles = {}
         for si, nn in enumerate(seg_nodes):
             if nn is None:
@@ -1750,12 +2094,8 @@ def _self_test():
             if longest is None or len(seg_path) > len(longest[1]):
                 longest = (node_path, seg_path)
         cont_ok = shared > 0 and xtile >= 2
-        # the motif knits: the strapwork forms multi-segment bands
-        # (petals / stars / strands), not a shower of single-segment
-        # stubs -- a consistent, closed-figure motif.
         knit_ok = bool(traced) and n_multi >= 0.5 * len(traced)
 
-        # non-degenerate ribbon on the longest band.
         ribbon_ok = False
         if longest is not None:
             node_path, seg_path = longest
@@ -1776,20 +2116,63 @@ def _self_test():
                              and min(widths) > 1e-6
                              and max(widths) <= 0.10 * 4.0 + 1e-6)
 
-        # motifs build all the way to cells for every color mode.
-        cells = build_cells(sub, 3, 3, contact, 0.10, 'STAR_ORDER',
+        cells = build_cells(sub, nx, ny, contact, 0.10, 'STAR_ORDER',
                             trim=True, motif=motif, star_d=sd,
-                            rosette_frac=fr)
+                            rosette_frac=fr, girih_gens=gg)
         build_p2 = bool(cells) and all(c[1] for c in cells)
 
         good = (nsegs > 0 and cont_ok and knit_ok and ribbon_ok
-                and build_p2)
+                and build_p2 and dngl_ok)
         p2_ok = p2_ok and good
-        print("%-8s %-11s %5d %5d %6d %5d   %-4s  %-5s  %-5s %s" %
-              (motif, sub, nsegs, len(traced), shared, xtile,
+        print("%-8s %-11s %5d %5d %6d %5d %4d  %-4s  %-5s  %-5s %s" %
+              (motif, sub, nsegs, len(traced), shared, xtile, dngl,
                cont_ok, knit_ok, ribbon_ok,
                "OK" if good else "BAD"))
     ok = ok and p2_ok
+
+    # (8b) Stars really form on the irregular / quasiperiodic substrates
+    # (not the old starless weave).  Cairo builds a five-point star in
+    # every pentagon; Rhombille builds six-point stars at its high-valence
+    # vertices; girih forms ten-point star loops.  We detect the star-
+    # polygon outlines directly (closed 2n-segment tip+notch figures) and,
+    # for girih, a long closed band that rings a ten-fold star.
+    cairo_m, _r = tile_motifs('CAIRO', 3, 3, 35.0, False)
+    cairo_stars = _star_polygon_count(cairo_m, 5)
+    rhomb_m, _r = tile_motifs('RHOMBILLE', 3, 3, 35.0, False)
+    rhomb_stars = _star_polygon_count(rhomb_m, 6)
+    gm, _r = tile_motifs('GIRIH', 0, 0, 72.0, False, girih_gens=4)
+    gsegs, _go, _gt = _flatten_segments(gm)
+    gpts, gsn, gpair = build_arrangement(gsegs)
+    gtraced = trace_bands(gsn, gpair)
+    girih_star_loops = sum(
+        1 for np_, sp in gtraced
+        if len(np_) >= 4 and np_[0] == np_[-1] and len(sp) >= 10)
+    star_ok = (cairo_stars > 0 and rhomb_stars > 0
+               and girih_star_loops > 0)
+    ok = ok and star_ok
+    print("stars          cairo5=%d rhombille6=%d girih10loops=%d  %s" %
+          (cairo_stars, rhomb_stars, girih_star_loops,
+           "OK" if star_ok else "BAD"))
+
+    # (8c) Girih is a genuine EDGE-TO-EDGE quasiperiodic patch: every
+    # rhomb edge is shared (its midpoint contact is a node touched by two
+    # tiles) and the strapwork weaves right across those seams.
+    gm2, _r = tile_motifs('GIRIH', 0, 0, 72.0, False, girih_gens=4)
+    g2segs, _o, g2tiles = _flatten_segments(gm2)
+    g2pts, g2sn, g2pair = build_arrangement(g2segs)
+    g2node_tiles = {}
+    for si, nn in enumerate(g2sn):
+        if nn is None:
+            continue
+        for nd in nn:
+            g2node_tiles.setdefault(nd, set()).add(g2tiles[si])
+    g2shared = sum(1 for v in g2node_tiles.values() if len(v) >= 2)
+    g2xtile = max(len(set(g2tiles[s] for s in sp))
+                  for _np, sp in trace_bands(g2sn, g2pair))
+    girih_ok = (len(gm2) > 40 and g2shared > 0 and g2xtile >= 3)
+    ok = ok and girih_ok
+    print("girih patch    tiles=%d shared=%d bandspans<=%d tiles  %s" %
+          (len(gm2), g2shared, g2xtile, "OK" if girih_ok else "BAD"))
 
     # (9) PIC regression: the default motif on a regular substrate must
     # reproduce the plain star_segments motif byte-for-byte (Phase-1
@@ -1829,7 +2212,8 @@ def _self_test():
                 ('SQUARE', 'PIC', 30.0, 2, 0.4, True),
                 ('HEX', 'PIC', 30.0, 2, 0.4, False),
                 ('TRUNCSQ', 'ROSETTE', 34.0, 2, 0.4, True),
-                ('TRUNCHEX', 'ROSETTE', 32.0, 2, 0.4, True)]
+                ('TRUNCHEX', 'ROSETTE', 32.0, 2, 0.4, True),
+                ('GIRIH', 'PIC', 72.0, 2, 0.4, True)]
     for sub, motif, contact, sd, fr, il_trim in il_cases:
         tp = _traced_patch(sub, 4, 4, contact, il_trim, motif, sd, fr)
         pts, _sn, pair, traced, orders = tp
