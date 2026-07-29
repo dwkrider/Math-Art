@@ -468,6 +468,27 @@ OPS = [
      lambda: bpy.ops.mesh.celtic_knot_2d_add(
          grid_w=6, grid_h=5, barriers='PRESET', preset='CROSSBREAK',
          style='SMOOTH', interlace=True, interlace_mode='FLAT')),
+    ("celtic hex tiling", lambda: bpy.ops.mesh.celtic_knot_2d_add(
+        substrate='HEX', grid_w=6, grid_h=6, trim=True,
+        color_by='LOOP')),
+    ("celtic triangle checker",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         substrate='TRIANGLE', grid_w=6, grid_h=6, trim=True,
+         color_by='CHECKER')),
+    ("celtic trihex single cord",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         substrate='TRIHEX', grid_w=6, grid_h=6, trim=True,
+         barriers='RANDOM', seed=3, density=0.2, single_cord=True)),
+    ("celtic snubsquare loop",
+     lambda: bpy.ops.mesh.celtic_knot_2d_add(
+         substrate='SNUBSQUARE', grid_w=5, grid_h=5, trim=True,
+         color_by='LOOP')),
+    ("celtic tube woven", lambda: bpy.ops.mesh.celtic_knot_2d_add(
+        grid_w=5, grid_h=5, preset='CROSSBREAK', profile='TUBE',
+        tube_sides=10, interlace_mode='WOVEN', weave_height=0.16)),
+    ("celtic rope", lambda: bpy.ops.mesh.celtic_knot_2d_add(
+        substrate='HEX', grid_w=4, grid_h=4, trim=True, profile='ROPE',
+        rope_strands=3, rope_twist=9.0, interlace_mode='WOVEN')),
     ("knot carpet square flat", lambda: bpy.ops.mesh.knot_carpet_add(
         lattice='SQUARE', symmetry=4, nx=3, ny=3,
         interlace_mode='FLAT', color_by='LOOP')),
