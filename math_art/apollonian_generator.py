@@ -171,12 +171,54 @@ def _rec3(a, b, c, d, c0, out, depth, min_r, cap, gen=1):
 
 
 def packing_3d(depth, min_r, cap):
-    base = _base_3d()
-    out = list(base[1:])                         # keep the inner spheres
-    for i in range(5):
-        four = [base[j] for j in range(5) if j != i]
-        _rec3(four[0], four[1], four[2], four[3], base[i],
-              out, depth, min_r, cap)
+    """Bounded Apollonian sphere packing, filled uniformly.
+
+    Every curvilinear gap is a quadruple of mutually tangent spheres; its
+    inscribed sphere is found by reflection and each spawns four sub-gaps
+    (each triple of the quadruple plus the new sphere).  The gaps are
+    processed LARGEST-INSCRIBED-FIRST from a global priority queue, with a
+    dedup set on the spheres.  A depth-first recursion with a count cap
+    (the earlier approach) filled some directions densely and left others
+    empty; largest-first breadth filling covers the ball uniformly, and
+    the global dedup replaces the old overlap rejection (the corrected
+    reflection no longer over-fills)."""
+    import heapq
+    base = _base_3d()                            # [outer(-1), i1..i4]
+    out = list(base[1:])                         # keep the 4 inner spheres
+    seen = set()
+    heap = []
+    tie = [0]
+
+    def key(b):
+        return (round(b.k, 3), round(b.c[0], 3),
+                round(b.c[1], 3), round(b.c[2], 3))
+
+    for b in out:
+        b.d = 0
+        seen.add(key(b))
+
+    def push(four, c0, gen):
+        if gen > depth:
+            return
+        n = reflect(four, c0)
+        if n.k <= 0.0 or 1.0 / n.k < min_r:
+            return
+        tie[0] += 1
+        heapq.heappush(heap, (n.k, tie[0], n, four, gen))  # smallest k first
+
+    for i in range(5):                           # the 5 base gaps
+        push([base[j] for j in range(5) if j != i], base[i], 1)
+    while heap and len(out) < cap:
+        _k, _t, n, four, gen = heapq.heappop(heap)
+        kk = key(n)
+        if kk in seen:
+            continue
+        seen.add(kk)
+        n.d = gen
+        out.append(n)
+        for t in range(4):                       # four sub-gaps against n
+            triple = [four[j] for j in range(4) if j != t]
+            push(triple + [n], four[t], gen + 1)
     return out
 
 
@@ -283,7 +325,7 @@ def build_apollonian(mode='PACKING', depth=5, min_r=0.0, cap=4000,
         mr = min_r if min_r > 0 else 0.01
         balls = gasket_2d(depth, mr, cap)
     else:
-        mr = min_r if min_r > 0 else 0.008
+        mr = min_r if min_r > 0 else 0.005
         balls = packing_3d(depth, mr, cap)
     radii = [1.0 / abs(b.k) for b in balls]
     log_rmax = math.log(max(radii))
@@ -362,9 +404,10 @@ if _IN_BLENDER:
                    ('UNIFORM', "Uniform", "A single color")],
             default='SIZE')
         depth: IntProperty(
-            name="Depth", default=7, min=1, max=14,
-            description="Maximum recursion depth (higher fills smaller "
-                        "gaps; a sphere packing never fills space fully)")
+            name="Depth", default=10, min=1, max=16,
+            description="Gap-filling generations (packing fills largest-"
+                        "first to Max Count; a sphere packing never fills "
+                        "space fully -- the gaps are a fractal)")
         min_r: FloatProperty(
             name="Min Radius", default=0.0, min=0.0, max=0.5,
             description="Stop inscribing below this radius "
@@ -381,7 +424,7 @@ if _IN_BLENDER:
             description="Grow spheres slightly to fuse contacts for "
                         "printing (packing mode)")
         sphere_res: IntProperty(
-            name="Sphere Resolution", default=3, min=1, max=5,
+            name="Sphere Resolution", default=2, min=1, max=5,
             description="Icosphere subdivision level (packing mode); "
                         "higher rounds spheres so tangent spheres touch")
         ring_seg: IntProperty(name="Ring Segments", default=20,
