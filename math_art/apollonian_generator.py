@@ -173,8 +173,10 @@ def packing_3d(depth, min_r, cap):
 
 # ---- meshing ------------------------------------------------------------
 
-def _icosphere():
-    """Unit icosphere: icosahedron subdivided once (42 verts)."""
+def _icosphere(level=3):
+    """Unit icosphere: icosahedron subdivided `level` times (level 1 =
+    42 verts, 2 = 162, 3 = 642, 4 = 2562).  Higher levels round the
+    spheres so mutually-tangent spheres actually appear to touch."""
     t = (1.0 + math.sqrt(5.0)) / 2.0
     v = [(-1, t, 0), (1, t, 0), (-1, -t, 0), (1, -t, 0),
          (0, -1, t), (0, 1, t), (0, -1, -t), (0, 1, -t),
@@ -184,20 +186,22 @@ def _icosphere():
          (3, 9, 4), (3, 4, 2), (3, 2, 6), (3, 6, 8), (3, 8, 9),
          (4, 9, 5), (2, 4, 11), (6, 2, 10), (8, 6, 7), (9, 8, 1)]
     verts = [np.array(p, dtype=float) for p in v]
-    mid = {}
+    faces = list(f)
+    for _ in range(max(1, int(level))):
+        mid = {}
 
-    def midpoint(i, j):
-        key = (min(i, j), max(i, j))
-        if key not in mid:
-            m = (verts[i] + verts[j]) / 2.0
-            verts.append(m)
-            mid[key] = len(verts) - 1
-        return mid[key]
+        def midpoint(i, j, verts=verts, mid=mid):
+            key = (min(i, j), max(i, j))
+            if key not in mid:
+                verts.append((verts[i] + verts[j]) / 2.0)
+                mid[key] = len(verts) - 1
+            return mid[key]
 
-    faces = []
-    for a, b, c in f:
-        ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
-        faces += [(a, ab, ca), (b, bc, ab), (c, ca, bc), (ab, bc, ca)]
+        newf = []
+        for a, b, c in faces:
+            ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
+            newf += [(a, ab, ca), (b, bc, ab), (c, ca, bc), (ab, bc, ca)]
+        faces = newf
     V = np.array([p / np.linalg.norm(p) for p in verts])
     return V, faces
 
@@ -258,7 +262,7 @@ def _mat_index(b, color_by, log_rmax, log_rmin, npal):
 def build_apollonian(mode='PACKING', depth=5, min_r=0.0, cap=4000,
                      tube_ratio=0.06, inflate=1.0, ring_seg=20,
                      tube_seg=8, scale=1.0, gasket_style='FILLED',
-                     color_by='SIZE'):
+                     color_by='SIZE', sphere_res=3):
     """Build the gasket (2D) or sphere packing (3D). Returns
     (verts, faces, mats, n) centred and fit to a 2 m cube, where `mats`
     is a per-face palette index.  2D circles are filled disc faces by
@@ -291,7 +295,7 @@ def build_apollonian(mode='PACKING', depth=5, min_r=0.0, cap=4000,
             faces.extend([tuple(base + i for i in fc) for fc in f])
             mats.extend([mi] * len(f))
     else:
-        SV, SF = _icosphere()
+        SV, SF = _icosphere(sphere_res)
         for b in balls:
             r = inflate / b.k
             mi = _mat_index(b, color_by, log_rmax, log_rmin, npal)
@@ -366,6 +370,10 @@ if _IN_BLENDER:
             name="Sphere Inflate", default=1.0, min=1.0, max=1.15,
             description="Grow spheres slightly to fuse contacts for "
                         "printing (packing mode)")
+        sphere_res: IntProperty(
+            name="Sphere Resolution", default=3, min=1, max=5,
+            description="Icosphere subdivision level (packing mode); "
+                        "higher rounds spheres so tangent spheres touch")
         ring_seg: IntProperty(name="Ring Segments", default=20,
                               min=6, max=64)
         tube_seg: IntProperty(name="Tube Segments", default=8,
@@ -379,7 +387,7 @@ if _IN_BLENDER:
                 self.mode, self.depth, self.min_r, self.cap,
                 self.tube_ratio, self.inflate, self.ring_seg,
                 self.tube_seg, self.scale, self.gasket_style,
-                self.color_by)
+                self.color_by, self.sphere_res)
             me = bpy.data.meshes.new("Apollonian")
             me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
                            [tuple(int(i) for i in f) for f in faces])
@@ -424,6 +432,7 @@ if _IN_BLENDER:
                     lay.prop(self, 'tube_seg')
                 lay.prop(self, 'ring_seg')
             else:
+                lay.prop(self, 'sphere_res')
                 lay.prop(self, 'inflate')
             lay.prop(self, 'scale')
             lay.prop(self, 'smooth')
