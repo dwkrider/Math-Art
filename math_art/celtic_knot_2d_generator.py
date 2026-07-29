@@ -2219,7 +2219,7 @@ if _IN_BLENDER:
             default='FLAT',
             description="Cross-section swept along each cord's centerline")
         tube_sides: IntProperty(
-            name="Tube Sides", default=8, min=3, max=24,
+            name="Tube Sides", default=16, min=3, max=64,
             description="Facets around the tube / rope cross-section")
         rope_strands: IntProperty(
             name="Rope Strands", default=3, min=2, max=5,
