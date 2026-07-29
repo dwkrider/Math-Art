@@ -428,8 +428,10 @@ def _solve_over(cords):
 
 
 def _cord_signed(rec, x):
-    """(closed, control_pts, cross): the control polyline of one cord and
-    its crossings as (control_index, over_sign) with +1 over, -1 under."""
+    """(control_pts, cross): the control polyline of one cord and its
+    crossings as (control_index, over_sign, pos) with +1 over, -1 under
+    and `pos` the crossing's lattice point (used to look up the over
+    cord's tangent when cutting an under cord flush)."""
     control = [(float(pos[0]), float(pos[1])) for pos, _b, _d in rec]
     cross = []
     for k, (pos, isb, d) in enumerate(rec):
@@ -437,7 +439,7 @@ def _cord_signed(rec, x):
             continue
         fam = _family(d)
         over = x.get(pos, 0) ^ fam           # cord rides over here?
-        cross.append((k, 1 if over else -1))
+        cross.append((k, 1 if over else -1, pos))
     return control, cross
 
 
@@ -459,7 +461,7 @@ def _render_pieces(rec, x, W, H, border):
                 continue
             fam = _family(d)
             over = x.get(pos, 0) ^ fam
-            cross.append((idx, 1 if over else -1))
+            cross.append((idx, 1 if over else -1, pos))
         out.append((control, cross, closed))
     return out
 
@@ -531,12 +533,55 @@ def _split_at(path, closed, idxs):
     return pieces
 
 
+def _path_tangent(path, i, closed):
+    """Unit tangent of a drawn path at vertex `i` (from its neighbours),
+    or None if degenerate."""
+    n = len(path)
+    if n < 2:
+        return None
+    if closed:
+        a, b = path[(i - 1) % n], path[(i + 1) % n]
+    else:
+        a, b = path[max(0, i - 1)], path[min(n - 1, i + 1)]
+    d = isl._unit(b[0] - a[0], b[1] - a[1])
+    return None if d == (0.0, 0.0) else d
+
+
+def _over_tangents(cords, x, W, H, border, style, subdiv):
+    """Unit tangent of the OVER cord at every crossing lattice point,
+    read from the SAME smoothed path the ribbon uses.  Cutting an under
+    cord flush along the over cord needs the over cord's LOCAL direction
+    at the crossing; in SMOOTH style that deviates from the lattice
+    diagonals near border / break turns, so it must be measured from the
+    Catmull-Rom curve rather than assumed to be a 45-degree diagonal."""
+    tan = {}
+    for rec in cords:
+        for control, cross, closed in _render_pieces(rec, x, W, H, border):
+            if len(control) < 2:
+                continue
+            smoothed = (style == 'SMOOTH' and len(control) >= 3
+                        and subdiv >= 2)
+            step = subdiv if smoothed else 1
+            path = (isl.catmull_rom(control, closed, subdiv)
+                    if style == 'SMOOTH' else control)
+            for k, sg, pos in cross:
+                if sg < 0:
+                    continue                      # only the OVER passage
+                t = _path_tangent(path, k * step, closed)
+                if t is not None:
+                    tan[pos] = t
+    return tan
+
+
 def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
-                mode, weave_height, height, color_by, loop_index):
+                mode, weave_height, height, color_by, loop_index,
+                over_tan=None):
     """Sub-cells (verts, faces, mats) for one drawable piece of a cord.  A
     bordered cord is a single closed piece; a border-off cord may be
     several open pieces (`closed` carries the distinction to the ribbon
-    machinery, which handles both)."""
+    machinery, which handles both).  `over_tan` maps each crossing lattice
+    point to the over cord's local tangent, so an under cord is cut flush
+    ALONG the over cord's edge (FLAT interlace)."""
     if len(control) < 2:
         return []
     # catmull_rom only subdivides when it has >= 3 points and subdiv >= 2;
@@ -546,7 +591,7 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
     step = subdiv if smoothed else 1
     path = (isl.catmull_rom(control, closed, subdiv)
             if style == 'SMOOTH' else control)
-    signed = [(k * step, sg) for k, sg in cross]
+    signed = [(k * step, sg) for k, sg, _pos in cross]
 
     def matof(default):
         if color_by == 'LOOP':
@@ -560,7 +605,7 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
     if color_by == 'CHECKER':
         # two-tone by over/under: cut at every crossing and color arcs by
         # alternating parity (which tracks the over/under sense)
-        idxs = [k * step for k, _sg in cross]
+        idxs = [k * step for k, _sg, _pos in cross]
         for sp, par in _split_at(path, closed, idxs):
             left, right = isl.miter_ribbon(sp, width, False)
             cv, cf = isl.band_ribbon_faces(left, right, False, height)
@@ -573,19 +618,44 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
         if cf:
             sub_cells.append((cv, cf, [matof(0)] * len(cf)))
     elif interlace and mode == 'FLAT':
-        under = [pi for pi, sg in signed if sg < 0]
+        under = [(k * step, pos) for k, sg, pos in cross if sg < 0]
+        ugeo = []
         if under:
             s, total = isl._arclen(path, closed)
-            cut_s = sorted(s[pi] for pi in under)
+            cut_s = sorted(s[pi] for pi, _pos in under)
             margin = max(0.02, 0.25 * width)
             half = 0.5 * (width + margin)
             pieces = isl._cut_band(path, closed, cut_s, half, s, total)
+            # Cut the under cord flush ALONG the over cord's edge (a cap
+            # parallel to the over cord, not perpendicular to the under
+            # cord).  The over cord's tangent is read from its smoothed
+            # path, so this holds for SMOOTH as well as ANGULAR cords.
+            h_o = 0.5 * width
+            gap = 0.5 * margin
+            maxreach = 3.0 * width
+            cut_gate = 1.5 * half
+            if over_tan:
+                for pi, pos in under:
+                    t_o = over_tan.get(pos)
+                    if t_o is None:
+                        continue
+                    ugeo.append((path[pi], t_o, (-t_o[1], t_o[0])))
         else:
             pieces = [(path, closed)]
-        for sp, sp_closed in pieces:
+        npieces = len(pieces)
+        for pj, (sp, sp_closed) in enumerate(pieces):
             if len(sp) < 2:
                 continue
             left, right = isl.miter_ribbon(sp, width, sp_closed)
+            if ugeo and not sp_closed:
+                # for an open (border-off) piece the first sub-piece's
+                # start and the last's end are genuine termini, not cuts;
+                # a closed cord has cuts at both ends of every sub-piece.
+                start_struct = closed or pj != 0
+                end_struct = closed or pj != npieces - 1
+                isl._angle_cut_piece(left, right, sp, start_struct,
+                                     end_struct, ugeo, h_o, gap,
+                                     maxreach, cut_gate)
             cv, cf = isl.band_ribbon_faces(left, right, sp_closed, height)
             if cf:
                 sub_cells.append((cv, cf, [matof(0)] * len(cf)))
@@ -599,7 +669,7 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
 
 
 def _cord_cell(rec, x, W, H, border, width, style, subdiv, interlace, mode,
-               weave_height, height, color_by, loop_index):
+               weave_height, height, color_by, loop_index, over_tan=None):
     """Build one merged (verts, faces, mats) cell for a single cord,
     gathering all of its drawable pieces (one when bordered, several across
     the seams when border-off)."""
@@ -607,7 +677,7 @@ def _cord_cell(rec, x, W, H, border, width, style, subdiv, interlace, mode,
     for control, cross, closed in _render_pieces(rec, x, W, H, border):
         sub_cells += _piece_cell(control, cross, closed, width, style,
                                  subdiv, interlace, mode, weave_height,
-                                 height, color_by, loop_index)
+                                 height, color_by, loop_index, over_tan)
     if not sub_cells:
         return None
     return pc.merge_cells(sub_cells)
@@ -623,12 +693,16 @@ def build_cells(W, H, border, barriers, cord_width=0.25, style='ANGULAR',
     cords = trace_cords(W, H, border, barriers)
     x = _solve_over(cords)
     width = max(0.02, cord_width * 2.0)
+    # Over cord tangents at every crossing, for the flush FLAT-interlace
+    # cut (under cord cut ALONG the over cord's edge).
+    over_tan = (_over_tangents(cords, x, W, H, border, style, subdiv)
+                if interlace and interlace_mode == 'FLAT' else None)
     cells = []
     all_verts = []
     for li, rec in enumerate(cords):
         cell = _cord_cell(rec, x, W, H, border, width, style, subdiv,
                           interlace, interlace_mode, weave_height, height,
-                          color_by, li)
+                          color_by, li, over_tan)
         if cell is None or not cell[1]:
             continue
         cells.append(cell)
@@ -954,12 +1028,12 @@ def _check_over_under(W, H, border, barriers):
     visits = {}                               # crossing -> list of overs
     for rec in cords:
         _control, cross = _cord_signed(rec, x)
-        signs = [sg for _k, sg in cross]
+        signs = [sg for _k, sg, _pos in cross]
         L = len(signs)
         for a in range(L):
             if signs[a] == signs[(a + 1) % L]:
                 alternates = False
-        for k, sg in cross:
+        for k, sg, _pos in cross:
             pos = rec[k][0]
             visits.setdefault(pos, []).append(sg > 0)
     one_over = True

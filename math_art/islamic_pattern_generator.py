@@ -1432,6 +1432,108 @@ def _cut_band(path, closed, cut_s, half, s, total):
     return [(sp, False) for sp in subs if len(sp) >= 2]
 
 
+# --------------------------------------------------------------------
+# FLAT-interlace under-cord cut: cut ALONG the over band's edge
+# --------------------------------------------------------------------
+#
+# When a band goes UNDER at a crossing its centerline is broken (see
+# `_cut_band`) leaving a gap, so the over band reads on top.  A plain
+# flat cap ends the under band PERPENDICULAR to its own direction, which
+# does not line up with the over band it tucks beneath -- at an oblique
+# crossing that leaves a triangular sliver of gap.  Instead the under
+# band should be cut ALONG the over band's edge: the cap a straight
+# segment parallel to (and flush against) the over band's side, so the
+# under cord tucks cleanly beneath the over cord.  The helpers below take
+# the over band's local tangent + half-width at the crossing and slide
+# the under band's two rail cap points onto the over band's edge line.
+
+def _strand_tangent(node, strand, seg_nodes, pts):
+    """Unit through-direction at `node` of a strand (a pair of segment ids
+    that meet there): the direction across the node from one neighbouring
+    node to the other -- the over band's LOCAL tangent at the crossing,
+    used to cut an under band flush along the over band's edge.  Returns
+    None when degenerate."""
+    try:
+        sa, sb = tuple(strand)
+    except ValueError:
+        return None
+    na, nb = seg_nodes[sa], seg_nodes[sb]
+    if na is None or nb is None:
+        return None
+    fa = na[1] if na[0] == node else na[0]
+    fb = nb[1] if nb[0] == node else nb[0]
+    pa, pb = pts[fa], pts[fb]
+    d = _unit(pb[0] - pa[0], pb[1] - pa[1])
+    return None if d == (0.0, 0.0) else d
+
+
+def _cut_cap_on_edge(cap_l, cap_r, rail_dir, side_pt, X, t_o, n_o,
+                     h_o, gap, maxreach):
+    """Slide an under band's flat end cap onto the OVER band's edge line so
+    the cap is parallel to (and flush against) that edge.  The over band is
+    the slab of half-width `h_o` centred on crossing `X`, with unit tangent
+    `t_o` and unit normal `n_o`; its two edge lines run parallel to `t_o` at
+    +/- h_o along `n_o`.  The under ribbon's two rail cap points `cap_l`,
+    `cap_r` (running in unit direction `rail_dir`) are each slid along their
+    own rail until they meet the over edge line on the side the under band
+    exits (the side of `side_pt`), pushed a hairline `gap` beyond the edge.
+    Both new points then lie ON that edge line, so the cap segment is
+    parallel to the over band's edge.  Returns the originals unchanged for a
+    grazing crossing (rails nearly parallel to the edge, i.e. the
+    reprojection would fling the cap farther than `maxreach`)."""
+    sgn = 1.0 if ((side_pt[0] - X[0]) * n_o[0]
+                  + (side_pt[1] - X[1]) * n_o[1]) >= 0.0 else -1.0
+    qx = X[0] + sgn * (h_o + gap) * n_o[0]
+    qy = X[1] + sgn * (h_o + gap) * n_o[1]
+    q2 = (qx + t_o[0], qy + t_o[1])
+    nl = _line_line(cap_l, (cap_l[0] + rail_dir[0], cap_l[1] + rail_dir[1]),
+                    (qx, qy), q2)
+    nr = _line_line(cap_r, (cap_r[0] + rail_dir[0], cap_r[1] + rail_dir[1]),
+                    (qx, qy), q2)
+    if nl is None or nr is None:
+        return cap_l, cap_r
+    if (hypot(nl[0] - cap_l[0], nl[1] - cap_l[1]) > maxreach
+            or hypot(nr[0] - cap_r[0], nr[1] - cap_r[1]) > maxreach):
+        return cap_l, cap_r
+    return nl, nr
+
+
+def _angle_cut_piece(left, right, sp, start_struct, end_struct, ugeo,
+                     h_o, gap, maxreach, cut_gate):
+    """Reproject the interlace-cut end(s) of one under-band ribbon piece so
+    each cut cap lies flush ALONG the over band's edge (parallel to it)
+    rather than perpendicular to the under band.  `left`/`right` are the
+    piece's mitered rails (mutated in place); `sp` its centerline; `ugeo` a
+    list of (X, t_o, n_o) for the band's under-crossings.  `start_struct`
+    / `end_struct` mark ends that are structurally interlace cuts (always
+    reprojected); an end that is structurally a genuine band terminus is
+    reprojected only when it actually sits within `cut_gate` of a crossing
+    (the rare short-first-segment case).  A cut end is matched to its
+    nearest under-crossing."""
+    if not ugeo or len(sp) < 2:
+        return
+    ends = [(0, sp[0], _unit(sp[1][0] - sp[0][0], sp[1][1] - sp[0][1]),
+             start_struct),
+            (-1, sp[-1], _unit(sp[-1][0] - sp[-2][0], sp[-1][1] - sp[-2][1]),
+             end_struct)]
+    for idx, P, rd, struct in ends:
+        best = None
+        for X, t_o, n_o in ugeo:
+            dd = hypot(P[0] - X[0], P[1] - X[1])
+            if best is None or dd < best[0]:
+                best = (dd, X, t_o, n_o)
+        if best is None:
+            continue
+        dd, X, t_o, n_o = best
+        if not struct and dd > cut_gate:
+            continue                              # genuine terminus: flat cap
+        if dd > maxreach:
+            continue
+        nl, nr = _cut_cap_on_edge(left[idx], right[idx], rd, P, X,
+                                  t_o, n_o, h_o, gap, maxreach)
+        left[idx], right[idx] = nl, nr
+
+
 def _interlaced_cells(substrate, nx, ny, contact_deg, ribbon_width,
                       color_by, trim, height, backing, base,
                       curved, subdiv, motif, star_d, rosette_frac,
@@ -1445,7 +1547,7 @@ def _interlaced_cells(substrate, nx, ny, contact_deg, ribbon_width,
                         motif, star_d, rosette_frac, girih_gens)
     if tp is None:
         return []
-    pts, _seg_nodes, pair, traced, orders = tp
+    pts, seg_nodes, pair, traced, orders = tp
     crossings = _find_crossings(pair)
     ref, other = _ref_pairs(crossings)
 
@@ -1482,18 +1584,46 @@ def _interlaced_cells(substrate, nx, ny, contact_deg, ribbon_width,
                 all_verts.extend(cv)
         else:                                      # FLAT
             under = [pi for pi, sg in signed if sg < 0]
+            ugeo = []
             if under:
                 s, total = _arclen(path, closed)
                 cut_s = sorted(s[pi] for pi in under)
                 margin = max(0.02, 0.25 * ribbon_width)
                 half = 0.5 * (ribbon_width + margin)
                 pieces = _cut_band(path, closed, cut_s, half, s, total)
+                # Over-band local tangent + half-width at each of this
+                # band's under-crossings, so the under band is cut ALONG
+                # the over band's edge (flush, parallel) instead of with a
+                # perpendicular cap.  Ribbon width is uniform, so the over
+                # band's half-width is ribbon_width / 2.
+                h_o = 0.5 * ribbon_width
+                gap = 0.5 * margin                 # hairline beyond the edge
+                maxreach = 3.0 * ribbon_width
+                cut_gate = 1.5 * half
+                for nd, ph, _pi in cross:
+                    if ph == over[nd]:
+                        continue                   # this band rides OVER here
+                    t_o = _strand_tangent(nd, over[nd], seg_nodes, pts)
+                    if t_o is None:
+                        continue
+                    ugeo.append((pts[nd], t_o, (-t_o[1], t_o[0])))
             else:
                 pieces = [(path, closed)]
-            for sp, sp_closed in pieces:
+            npieces = len(pieces)
+            for pj, (sp, sp_closed) in enumerate(pieces):
                 if len(sp) < 2:
                     continue
                 left, right = miter_ribbon(sp, ribbon_width, sp_closed)
+                if ugeo and not sp_closed:
+                    # For an open band the first piece's start and the last
+                    # piece's end are genuine band termini, not cuts; every
+                    # other piece end is an interlace cut.  A cut loop
+                    # (closed band) has cuts at both ends of every piece.
+                    start_struct = closed or pj != 0
+                    end_struct = closed or pj != npieces - 1
+                    _angle_cut_piece(left, right, sp, start_struct,
+                                     end_struct, ugeo, h_o, gap,
+                                     maxreach, cut_gate)
                 cv, cf = band_ribbon_faces(left, right, sp_closed, height)
                 if cf:
                     cells.append((cv, cf, [kind] * len(cf)))
