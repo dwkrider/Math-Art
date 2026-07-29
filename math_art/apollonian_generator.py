@@ -283,7 +283,7 @@ def build_apollonian(mode='PACKING', depth=5, min_r=0.0, cap=4000,
         mr = min_r if min_r > 0 else 0.01
         balls = gasket_2d(depth, mr, cap)
     else:
-        mr = min_r if min_r > 0 else 0.012
+        mr = min_r if min_r > 0 else 0.008
         balls = packing_3d(depth, mr, cap)
     radii = [1.0 / abs(b.k) for b in balls]
     log_rmax = math.log(max(radii))
@@ -362,8 +362,9 @@ if _IN_BLENDER:
                    ('UNIFORM', "Uniform", "A single color")],
             default='SIZE')
         depth: IntProperty(
-            name="Depth", default=5, min=1, max=12,
-            description="Maximum recursion depth")
+            name="Depth", default=7, min=1, max=14,
+            description="Maximum recursion depth (higher fills smaller "
+                        "gaps; a sphere packing never fills space fully)")
         min_r: FloatProperty(
             name="Min Radius", default=0.0, min=0.0, max=0.5,
             description="Stop inscribing below this radius "
