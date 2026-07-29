@@ -476,6 +476,9 @@ OPS = [
          lattice='TRIANGULAR', symmetry=6, nx=2, ny=2,
          amplitude=0.12, interlace_mode='WOVEN', weave_height=0.06,
          height=0.04, color_by='CHECKER')),
+    ("knot carpet tube", lambda: bpy.ops.mesh.knot_carpet_add(
+        lattice='SQUARE', symmetry=4, nx=2, ny=2, output='TUBE',
+        tube_radius=0.04, tube_sides=8, weave_height=0.06)),
     ("hyp uniform t73", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
         form='TRUNCATED', p=7, q=3, model='POINCARE')),
     ("hyp uniform r54 klein",

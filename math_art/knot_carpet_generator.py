@@ -62,8 +62,8 @@ bl_info = {
     "blender": (4, 2, 0),
     "location": "View3D > Add > Math Art > Patterns",
     "description": "Knot carpets -- a tileable alternating link of "
-                   "interlocked unknots on a square or triangular "
-                   "lattice",
+                   "interlocked unknots (ribbon, woven rope tube, or "
+                   "curve) on a square or triangular lattice",
     "category": "Add Mesh",
 }
 
@@ -74,9 +74,11 @@ import numpy as np
 try:
     from . import pattern_common as pc
     from . import islamic_pattern_generator as isl
+    from . import polylinks_generator as pl
 except Exception:                       # legacy single-file / CLI use
     import pattern_common as pc
     import islamic_pattern_generator as isl
+    import polylinks_generator as pl
 
 
 # --------------------------------------------------------------------
@@ -414,6 +416,50 @@ def loop_paths(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
 
 
 # --------------------------------------------------------------------
+# Tube assembly (round rope, woven over/under)
+# --------------------------------------------------------------------
+
+def build_tube_cells(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
+                     overlap=1.15, samples=192, style='ANGULAR',
+                     subdiv=6, tube_radius=0.04, tube_sides=10,
+                     weave_height=0.06, color_by='LOOP', backing=False,
+                     base=0.06):
+    """One closed round tube per loop, each dipping in z at its
+    crossings so the carpet reads as woven rope.  The weave amplitude
+    is forced to at least clear the tube diameter, so an over strand
+    never intersects the under strand it passes.  Returns one
+    (verts, faces, mats) cell per loop (+ an optional backing slab)."""
+    carpet = build_carpet(lattice, k, nx, ny, amp, overlap, samples,
+                          style, subdiv)
+    signed = loop_signed(carpet)
+    tr = max(0.005, float(tube_radius))
+    # the over/under lift must exceed the tube radius or the ropes touch
+    lift = max(float(weave_height), 1.3 * tr)
+    sides = max(3, int(tube_sides))
+    cells = []
+    all_verts = []
+    for i, path in enumerate(carpet['paths']):
+        pl2 = [(float(p[0]), float(p[1])) for p in path]
+        zoff = isl._weave_zoff(pl2, True, signed[i], lift)
+        path3d = [(pl2[j][0], pl2[j][1], zoff[j]) for j in range(len(pl2))]
+        verts, faces, tags = [], [], []
+        pl._closed_tube(path3d, tr, sides, verts, faces, tags, 0)
+        if not faces:
+            continue
+        mat = (i % len(pc.PALETTE_RGBA)) if color_by == 'LOOP' else 0
+        cells.append((verts, faces, [mat] * len(faces)))
+        all_verts.extend(verts)
+    if backing and all_verts:
+        a = np.asarray(all_verts, float)
+        lo = (a[:, 0].min(), a[:, 1].min())
+        hi = (a[:, 0].max(), a[:, 1].max())
+        cv, cf, cm = [], [], []
+        pc.slab(cv, cf, cm, lo, hi, -tr, -tr - base, mat=_BACKING_MAT)
+        cells.append((cv, cf, cm))
+    return cells
+
+
+# --------------------------------------------------------------------
 # Blender operator
 # --------------------------------------------------------------------
 
@@ -534,9 +580,17 @@ if _IN_BLENDER:
             name="Output",
             items=[('RIBBON', "Ribbon Mesh",
                     "Filled loop ribbons (supports relief)"),
+                   ('TUBE', "Tube (Rope)",
+                    "Round 3D tubes woven over and under, like rope"),
                    ('CURVE', "Centerline Curves",
                     "Loop centerlines as a Blender curve object")],
             default='RIBBON')
+        tube_radius: FloatProperty(
+            name="Tube Radius", default=0.04, min=0.005, max=0.25,
+            description="Rope radius in loop-spacing units (tube)")
+        tube_sides: IntProperty(
+            name="Tube Sides", default=10, min=3, max=32,
+            description="Cross-section segments of each tube")
         height: FloatProperty(
             name="Relief Height", default=0.0, min=0.0, max=1.0,
             description="0 = flat ribbons; > 0 extrudes the loops")
@@ -565,7 +619,15 @@ if _IN_BLENDER:
                             (self.lattice, self.nx, self.ny,
                              len(paths)))
                 return {'FINISHED'}
-            cells = build_cells(
+            if self.output == 'TUBE':
+                cells = build_tube_cells(
+                    self.lattice, self.symmetry, self.nx, self.ny,
+                    self.amplitude, self.overlap, self.samples,
+                    self.style, self.smoothness, self.tube_radius,
+                    self.tube_sides, self.weave_height, self.color_by,
+                    self.backing, self.base)
+            else:
+                cells = build_cells(
                 self.lattice, self.symmetry, self.nx, self.ny,
                 self.amplitude, self.overlap, self.samples,
                 self.cord_width, self.style, self.smoothness,
@@ -613,6 +675,15 @@ if _IN_BLENDER:
                         lay.prop(self, 'weave_height')
                 lay.prop(self, 'color_by')
                 lay.prop(self, 'height')
+                lay.prop(self, 'backing')
+                if self.backing:
+                    lay.prop(self, 'base')
+                lay.prop(self, 'separate')
+            elif self.output == 'TUBE':
+                lay.prop(self, 'tube_radius')
+                lay.prop(self, 'tube_sides')
+                lay.prop(self, 'weave_height')
+                lay.prop(self, 'color_by')
                 lay.prop(self, 'backing')
                 if self.backing:
                     lay.prop(self, 'base')
@@ -700,6 +771,19 @@ def _check_geometry(lattice, k, mode, color_by):
     return faces > 0 and finite
 
 
+def _check_tube(lattice, k):
+    """Woven round tubes build non-empty, finite, watertight-ish
+    geometry (every face a quad)."""
+    cells = build_tube_cells(lattice, k, 2, 2, amp=0.10, overlap=1.15,
+                             samples=120, tube_radius=0.04,
+                             tube_sides=8, weave_height=0.06)
+    faces = sum(len(c[1]) for c in cells)
+    finite = all(all(np.isfinite(v).all() for v in c[0])
+                 for c in cells)
+    quads = all(len(f) == 4 for c in cells for f in c[1])
+    return faces > 0 and finite and quads
+
+
 def _check_periodic(lattice, nx, ny, tol=1e-9):
     """The interior loop centres are periodic under both lattice basis
     vectors (translates land on placed centres) -- the carpet tiles."""
@@ -757,5 +841,11 @@ if __name__ == "__main__":
         per = _check_periodic(lattice, 3, 3)
         ok = ok and per
         print("periodic %-10s : %s" % (lattice, per))
+
+    # 6. woven round tubes build valid geometry
+    for lattice, k in (('SQUARE', 4), ('TRIANGULAR', 6)):
+        t = _check_tube(lattice, k)
+        ok = ok and t
+        print("tube     %-10s k=%d : %s" % (lattice, k, t))
 
     print("RESULT:", "OK" if ok else "BAD")
