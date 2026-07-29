@@ -315,11 +315,13 @@ def build_apollonian(mode='PACKING', depth=5, min_r=0.0, cap=4000,
                      tube_seg=8, scale=1.0, gasket_style='FILLED',
                      color_by='SIZE', sphere_res=3):
     """Build the gasket (2D) or sphere packing (3D). Returns
-    (verts, faces, mats, n) centred and fit to a 2 m cube, where `mats`
-    is a per-face palette index.  2D circles are filled disc faces by
-    default (`gasket_style='FILLED'`) or drawn as thin tube rings
-    (`'TUBE'`); the enclosing circle is a background disc."""
-    verts, faces, mats = [], [], []
+    (verts, faces, mats, levels, n) centred and fit to a 2 m cube, where
+    `mats` is a per-face palette index and `levels` the per-face
+    generation depth (for splitting the output into per-level objects).
+    2D circles are filled disc faces by default (`gasket_style='FILLED'`)
+    or drawn as thin tube rings (`'TUBE'`); the enclosing circle is a
+    background disc."""
+    verts, faces, mats, levels = [], [], [], []
     npal = len(_PALETTE)
     if mode == 'GASKET':
         mr = min_r if min_r > 0 else 0.01
@@ -345,6 +347,7 @@ def build_apollonian(mode='PACKING', depth=5, min_r=0.0, cap=4000,
             verts.extend(v)
             faces.extend([tuple(base + i for i in fc) for fc in f])
             mats.extend([mi] * len(f))
+            levels.extend([b.d] * len(f))
     else:
         SV, SF = _icosphere(sphere_res)
         for b in balls:
@@ -354,12 +357,13 @@ def build_apollonian(mode='PACKING', depth=5, min_r=0.0, cap=4000,
             verts.extend((b.c + r * p).tolist() for p in SV)
             faces.extend([tuple(base + i for i in fc) for fc in SF])
             mats.extend([mi] * len(SF))
+            levels.extend([b.d] * len(SF))
     n = len(balls)
     V = np.asarray(verts)
     lo, hi = V.min(axis=0), V.max(axis=0)
     ext = float((hi - lo).max())
     V = (V - 0.5 * (lo + hi)) * (2.0 / ext if ext > 1e-9 else 1.0)
-    return V * scale, faces, mats, n
+    return V * scale, faces, mats, levels, n
 
 
 # ==========================================================================
@@ -376,6 +380,26 @@ except ImportError:
 
 
 if _IN_BLENDER:
+
+    def _apollonian_mesh(name, verts, faces, mats, smooth):
+        """Build a mesh with the palette materials assigned per face."""
+        me = bpy.data.meshes.new(name)
+        me.from_pydata([tuple(v) for v in verts], [],
+                       [tuple(int(i) for i in f) for f in faces])
+        me.validate(clean_customdata=True)
+        for idx, rgba in enumerate(_PALETTE):
+            nm = "Apollonian_%d" % idx
+            m = bpy.data.materials.get(nm)
+            if m is None:
+                m = bpy.data.materials.new(nm)
+                m.diffuse_color = rgba
+            me.materials.append(m)
+        if mats and len(mats) == len(me.polygons):
+            me.polygons.foreach_set('material_index', mats)
+        if smooth:
+            me.polygons.foreach_set('use_smooth', [True] * len(me.polygons))
+        me.update()
+        return me
 
     class MESH_OT_apollonian_add(bpy.types.Operator):
         """Add an Apollonian gasket (2D rings) or sphere packing"""
@@ -413,8 +437,9 @@ if _IN_BLENDER:
             description="Stop inscribing below this radius "
                         "(0 = per-mode default)")
         cap: IntProperty(
-            name="Max Count", default=4000, min=10, max=40000,
-            description="Hard cap on circles/spheres")
+            name="Max Count", default=40000, min=10, max=200000,
+            description="Hard cap on circles/spheres (packing fills the "
+                        "largest this many)")
         tube_ratio: FloatProperty(
             name="Ring Tube", default=0.06, min=0.01, max=0.5,
             description="Tube radius as a fraction of circle radius "
@@ -424,7 +449,7 @@ if _IN_BLENDER:
             description="Grow spheres slightly to fuse contacts for "
                         "printing (packing mode)")
         sphere_res: IntProperty(
-            name="Sphere Resolution", default=2, min=1, max=5,
+            name="Sphere Resolution", default=1, min=1, max=5,
             description="Icosphere subdivision level (packing mode); "
                         "higher rounds spheres so tangent spheres touch")
         ring_seg: IntProperty(name="Ring Segments", default=20,
@@ -434,40 +459,60 @@ if _IN_BLENDER:
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                             max=100.0)
         smooth: BoolProperty(name="Smooth Shading", default=True)
+        separate_levels: BoolProperty(
+            name="Separate Levels", default=False,
+            description="Output each inscription level as its own object "
+                        "(parented to an empty) so a level can be hidden "
+                        "or deleted individually")
 
         def execute(self, context):
-            verts, faces, mats, n = build_apollonian(
+            verts, faces, mats, levels, n = build_apollonian(
                 self.mode, self.depth, self.min_r, self.cap,
                 self.tube_ratio, self.inflate, self.ring_seg,
                 self.tube_seg, self.scale, self.gasket_style,
                 self.color_by, self.sphere_res)
-            me = bpy.data.meshes.new("Apollonian")
-            me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
-                           [tuple(int(i) for i in f) for f in faces])
-            me.validate(clean_customdata=True)
-            for idx, rgba in enumerate(_PALETTE):
-                name = "Apollonian_%d" % idx
-                m = bpy.data.materials.get(name)
-                if m is None:
-                    m = bpy.data.materials.new(name)
-                    m.diffuse_color = rgba
-                me.materials.append(m)
-            if mats and len(mats) == len(me.polygons):
-                me.polygons.foreach_set('material_index', mats)
-            if self.smooth:
-                me.polygons.foreach_set('use_smooth',
-                                        [True] * len(me.polygons))
-            me.update()
-            obj = bpy.data.objects.new("Apollonian", me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
+            verts = [tuple(v) for v in np.asarray(verts)]
             for o in context.selected_objects:
                 o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            self.report({'INFO'},
-                        f"{self.mode}: {n} elements, "
-                        f"V={len(me.vertices)} F={len(me.polygons)}")
+            if self.separate_levels:
+                from collections import defaultdict
+                groups = defaultdict(
+                    lambda: {'vmap': {}, 'V': [], 'F': [], 'M': []})
+                for fi, f in enumerate(faces):
+                    g = groups[levels[fi]]
+                    nf = []
+                    for vi in f:
+                        if vi not in g['vmap']:
+                            g['vmap'][vi] = len(g['V'])
+                            g['V'].append(verts[vi])
+                        nf.append(g['vmap'][vi])
+                    g['F'].append(tuple(nf))
+                    g['M'].append(mats[fi])
+                parent = bpy.data.objects.new("Apollonian", None)
+                context.collection.objects.link(parent)
+                parent.location = context.scene.cursor.location
+                for lv in sorted(groups):
+                    g = groups[lv]
+                    me = _apollonian_mesh("Apollonian_L%d" % lv, g['V'],
+                                          g['F'], g['M'], self.smooth)
+                    ob = bpy.data.objects.new("Apollonian_L%d" % lv, me)
+                    context.collection.objects.link(ob)
+                    ob.parent = parent
+                parent.select_set(True)
+                context.view_layer.objects.active = parent
+                self.report({'INFO'}, "%s: %d elements in %d level objects"
+                            % (self.mode, n, len(groups)))
+            else:
+                me = _apollonian_mesh("Apollonian", verts, faces, mats,
+                                      self.smooth)
+                obj = bpy.data.objects.new("Apollonian", me)
+                context.collection.objects.link(obj)
+                obj.location = context.scene.cursor.location
+                obj.select_set(True)
+                context.view_layer.objects.active = obj
+                self.report({'INFO'}, "%s: %d elements, V=%d F=%d"
+                            % (self.mode, n, len(me.vertices),
+                               len(me.polygons)))
             return {'FINISHED'}
 
         def draw(self, context):
@@ -489,6 +534,7 @@ if _IN_BLENDER:
                 lay.prop(self, 'inflate')
             lay.prop(self, 'scale')
             lay.prop(self, 'smooth')
+            lay.prop(self, 'separate_levels')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.apollonian_add", icon='MESH_CIRCLE')
@@ -540,14 +586,16 @@ if __name__ == "__main__":
                 if (np.linalg.norm(sph[i].c - sph[j].c)
                         < ri + rj - 1e-6):
                     bad3 += 1
-        v, f, m, n = build_apollonian('PACKING', depth=3, min_r=0.05)
+        v, f, m, lv, n = build_apollonian('PACKING', depth=3, min_r=0.05)
         print(f"PACKING depth3: spheres={len(sph)} overlaps={bad3} "
               f"mesh_V={len(v)} F={len(f)} mats={len(set(m))} "
+              f"levels={len(set(lv))} "
               f"{'OK' if bad3 == 0 else 'BAD'}")
         # filled 2D gasket colored by size builds with per-face mats
-        gv, gf, gm, gn = build_apollonian('GASKET', depth=4, min_r=0.02,
-                                          gasket_style='FILLED',
-                                          color_by='SIZE')
+        gv, gf, gm, glv, gn = build_apollonian('GASKET', depth=4,
+                                               min_r=0.02,
+                                               gasket_style='FILLED',
+                                               color_by='SIZE')
         print(f"GASKET filled: circles={gn} faces={len(gf)} "
               f"mats={len(set(gm))} "
               f"{'OK' if len(gf) == gn and len(gm) == len(gf) else 'BAD'}")
