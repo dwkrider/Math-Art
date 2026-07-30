@@ -92,7 +92,6 @@ _MODULE_NAMES = [
     'islamic_pattern_generator',
     'celtic_knot_2d_generator',
     'knot_carpet_generator',
-    'planar_simplify_generator',
     'woven_double_shell_generator',
     'harmonic_knot_generator',
     'petal_knot_generator',
@@ -287,24 +286,6 @@ class VIEW3D_MT_math_art_styles(bpy.types.Menu):
             icon='MOD_WIREFRAME')
 
 
-class VIEW3D_MT_math_art_simplify(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_simplify"
-    bl_label = "Simplify"
-
-    def draw(self, context):
-        lay = self.layout
-        _op(lay, "object.planar_simplify", icon='MOD_REMESH')
-
-
-class VIEW3D_MT_math_art_construction(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_construction"
-    bl_label = "Construction"
-
-    def draw(self, context):
-        lay = self.layout
-        lay.menu("VIEW3D_MT_math_art_simplify", icon='MOD_REMESH')
-
-
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_math_art_add"
     bl_label = "Math Art"
@@ -320,7 +301,6 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.menu("VIEW3D_MT_math_art_weaves", icon='MOD_LATTICE')
         lay.menu("VIEW3D_MT_math_art_patterns", icon='MESH_GRID')
         lay.menu("VIEW3D_MT_math_art_odds", icon='MESH_TORUS')
-        lay.menu("VIEW3D_MT_math_art_construction", icon='MOD_UVPROJECT')
         lay.separator()
         if hasattr(bpy.types, 'OBJECT_OT_symmetric_sculpture_add'):
             lay.operator_menu_enum("object.symmetric_sculpture_add",
@@ -335,7 +315,6 @@ _MENUS = (VIEW3D_MT_math_art_minimal, VIEW3D_MT_math_art_polyhedra,
           VIEW3D_MT_math_art_fractals, VIEW3D_MT_math_art_knots,
           VIEW3D_MT_math_art_weaves, VIEW3D_MT_math_art_patterns,
           VIEW3D_MT_math_art_odds, VIEW3D_MT_math_art_styles,
-          VIEW3D_MT_math_art_simplify, VIEW3D_MT_math_art_construction,
           VIEW3D_MT_math_art_add)
 
 
