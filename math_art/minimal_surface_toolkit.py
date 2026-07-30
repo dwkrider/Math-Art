@@ -1217,11 +1217,14 @@ if _IN_BLENDER:
     _build_surface_items()
 
     def _surface_items(self, context):
-        # NOTE: fall back to the FULL union list when context is None.
+        # NOTE: fall back to the FULL union list whenever there is no
+        # UI area (context is None, or a background/scripted context).
         # Scripted calls -- mesh.parametric_minimal_add(surface='COSTA')
-        # -- assign enum values without a context, and a family-filtered
-        # list would reject them (see COORDINATION.md).
-        if context is None:
+        # -- must not be rejected by the family filter, and the stored
+        # enum index must map against the same list on set and get
+        # (see COORDINATION.md).  Only an interactive area (the redo
+        # panel / add-menu) sees the family-filtered list.
+        if context is None or getattr(context, 'area', None) is None:
             return _SURF_ITEMS_ALL
         return _SURF_ITEMS_FAM.get(self.family, _SURF_ITEMS_ALL)
 
