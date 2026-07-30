@@ -12,10 +12,12 @@
 # It is solved by Lloyd relaxation: (1) grow regions from k seeds,
 # always claiming the lowest-error face next; (2) refit each proxy normal
 # to the area-weighted average of its faces; (3) reseed each region at its
-# best-fit face; repeat.  Each converged region is then merged (its
-# interior edges dissolved) into one nearly-flat polygon, so the output
-# is a low-poly control mesh whose faces approximate the surface with
-# bounded normal deviation -- exactly what unfolds into clean flat pieces.
+# best-fit face; repeat.  Each converged region is then reduced to its
+# corner anchors -- the vertices where three or more proxies meet -- and
+# rebuilt as one large flat polygon joining those corners with straight
+# edges, then split into simple triangles or quads.  The output is a
+# LARGE-faced low-poly control mesh (a sphere becomes a couple dozen flat
+# facets) that unfolds into a few clean, cuttable pieces.
 #
 # References:
 #   - D. Cohen-Steiner, P. Alliez, M. Desbrun, "Variational Shape
@@ -138,6 +140,125 @@ def vsa_cluster(V, tris, k, iters=15):
     return label, prox
 
 
+def anchor_mesh(V, tris, label):
+    """Rebuild the surface as one large polygon per proxy.  The proxy
+    partition's boundary network is reduced to its *corners* (vertices
+    where three or more proxies meet, plus proxy-boundary/mesh-boundary
+    junctions); each proxy becomes the polygon of the corners around it,
+    joined by straight chords.  Returns (verts, faces, face_proxy): a
+    small mesh of large near-planar polygons ready to triangulate/quad.
+    """
+    from collections import defaultdict
+    V = np.asarray(V, float)
+    label = [int(x) for x in label]
+
+    vprox = defaultdict(set)
+    for ti, (a, b, c) in enumerate(tris):
+        p = label[ti]
+        vprox[a].add(p)
+        vprox[b].add(p)
+        vprox[c].add(p)
+
+    e2t = defaultdict(list)
+    for ti, (a, b, c) in enumerate(tris):
+        for u, w in ((a, b), (b, c), (c, a)):
+            e2t[(u, w) if u < w else (w, u)].append(ti)
+
+    # boundary edges: between two proxies, or a mesh boundary; group each
+    # onto the proxy (or proxies) it bounds
+    prox_bedges = defaultdict(list)
+    bdeg = defaultdict(int)
+    for e, tl in e2t.items():
+        if len(tl) == 1:
+            prox_bedges[label[tl[0]]].append(e)
+            bdeg[e[0]] += 1
+            bdeg[e[1]] += 1
+        elif label[tl[0]] != label[tl[1]]:
+            prox_bedges[label[tl[0]]].append(e)
+            prox_bedges[label[tl[1]]].append(e)
+            bdeg[e[0]] += 1
+            bdeg[e[1]] += 1
+
+    # corners: boundary-graph junctions (degree != 2) or triple points
+    corners = set(v for v in bdeg
+                  if bdeg[v] != 2 or len(vprox[v]) >= 3)
+
+    def loops_of(edges):
+        adj = defaultdict(list)
+        for (u, w) in edges:
+            adj[u].append(w)
+            adj[w].append(u)
+        seen_e = set()
+        loops = []
+        for s in list(adj):
+            for nb in adj[s]:
+                ek = (s, nb) if s < nb else (nb, s)
+                if ek in seen_e:
+                    continue
+                loop = [s]
+                seen_e.add(ek)
+                prev, cur = s, nb
+                while cur != s:
+                    loop.append(cur)
+                    nxt = None
+                    for x in adj[cur]:
+                        if x == prev:
+                            continue
+                        ek2 = (cur, x) if cur < x else (x, cur)
+                        if ek2 not in seen_e:
+                            nxt = x
+                            break
+                    if nxt is None:
+                        break
+                    ek2 = (cur, nxt) if cur < nxt else (nxt, cur)
+                    seen_e.add(ek2)
+                    prev, cur = cur, nxt
+                loops.append(loop)
+        return loops
+
+    prox_loops = {p: loops_of(es) for p, es in prox_bedges.items()}
+    # ensure every loop carries >= 3 corners (add evenly-spaced anchors on
+    # corner-poor loops -- e.g. cap regions -- shared so neighbours agree)
+    for loops in prox_loops.values():
+        for loop in loops:
+            have = sum(1 for v in loop if v in corners)
+            need = 3 - have
+            if need <= 0:
+                continue
+            L = len(loop)
+            step = max(1, L // (need + 1))
+            i = 0
+            while need > 0 and i < 2 * L:
+                v = loop[(i) % L]
+                if v not in corners:
+                    corners.add(v)
+                    need -= 1
+                    i += step
+                else:
+                    i += 1
+
+    out_faces = []
+    face_proxy = []
+    for p, loops in prox_loops.items():
+        for loop in loops:
+            poly = [v for v in loop if v in corners]
+            uniq = []
+            for v in poly:
+                if not uniq or uniq[-1] != v:
+                    uniq.append(v)
+            if len(uniq) >= 2 and uniq[0] == uniq[-1]:
+                uniq.pop()
+            if len(uniq) >= 3:
+                out_faces.append(uniq)
+                face_proxy.append(p)
+
+    used = sorted(set(v for f in out_faces for v in f))
+    remap = {g: i for i, g in enumerate(used)}
+    out_verts = [tuple(V[g]) for g in used]
+    out_faces = [tuple(remap[v] for v in f) for f in out_faces]
+    return out_verts, out_faces, face_proxy
+
+
 def cluster_error(V, tris, label, prox):
     """Mean and max per-face normal deviation (degrees) from the proxy --
     a proxy of how flat each piece is."""
@@ -229,23 +350,26 @@ if _IN_BLENDER:
             k = min(self.pieces, len(tris))
             label, prox = vsa_cluster(V, tris, k, self.iterations)
             amean, amax = cluster_error(V, tris, label, prox)
+            bm.free()
 
-            # tag each face with its proxy (as a material index) BEFORE
-            # dissolving, so per-piece color survives the merge and the
-            # re-tessellation below
+            # reduce each proxy to a large polygon of its corner anchors
+            verts2, faces2, fproxy = anchor_mesh(V, tris, label)
+            if not faces2:
+                self.report({'ERROR'}, "could not build pieces; try "
+                                       "more pieces or iterations")
+                return {'CANCELLED'}
             npal = len(_PALETTE)
-            for f in bm.faces:
-                f.material_index = int(label[f.index]) % npal
-            # dissolve interior edges (both faces in the same proxy) so
-            # each region collapses to one near-planar polygon
-            inter = [e for e in bm.edges
-                     if len(e.link_faces) == 2
-                     and label[e.link_faces[0].index]
-                     == label[e.link_faces[1].index]]
-            bmesh.ops.dissolve_edges(bm, edges=inter, use_verts=True,
-                                     use_face_split=False)
-            # re-tessellate the merged pieces into simple, flat, cuttable
-            # primitives (dissolved n-gons can be concave / non-planar)
+            bm = bmesh.new()
+            bv = [bm.verts.new(v) for v in verts2]
+            for f, p in zip(faces2, fproxy):
+                try:
+                    face = bm.faces.new([bv[i] for i in f])
+                    face.material_index = p % npal
+                except ValueError:
+                    pass                          # duplicate/degenerate
+            bm.normal_update()
+            # split the large polygons into simple, flat, cuttable
+            # triangles (or quads); the merge respects piece materials
             if self.faces in ('TRI', 'QUAD'):
                 bmesh.ops.triangulate(bm, faces=list(bm.faces),
                                       quad_method='BEAUTY',
@@ -253,8 +377,8 @@ if _IN_BLENDER:
                 if self.faces == 'QUAD':
                     bmesh.ops.join_triangles(
                         bm, faces=list(bm.faces),
-                        angle_face_threshold=0.35,
-                        angle_shape_threshold=0.7,
+                        angle_face_threshold=0.6,
+                        angle_shape_threshold=0.8,
                         cmp_seam=False, cmp_sharp=False,
                         cmp_uvs=False, cmp_materials=True)
             nm = bpy.data.meshes.new("%s Simplified" % src.name)
@@ -279,7 +403,9 @@ if _IN_BLENDER:
             obj.matrix_world = src.matrix_world.copy()
             for o in context.selected_objects:
                 o.select_set(False)
-            if not self.keep_source:
+            if self.keep_source:
+                src.hide_set(True)          # hide so the result is visible
+            else:
                 bpy.data.objects.remove(src, do_unlink=True)
             obj.select_set(True)
             context.view_layer.objects.active = obj
