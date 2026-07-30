@@ -99,6 +99,8 @@ _MODULE_NAMES = [
     'rational_knot_generator',
     'substitution_knot_generator',
     'fractal_knotwork_generator',
+    'we_builders',
+    'minimal_surface_zoo',
 ]
 
 _MODULES = []
@@ -125,6 +127,9 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         lay = self.layout
         _op(lay, "mesh.scherk_collins_add",
             text="Scherk-Collins Sculpture", icon='MESH_TORUS')
+        if hasattr(bpy.types, "VIEW3D_MT_math_art_minimal_zoo"):
+            lay.menu("VIEW3D_MT_math_art_minimal_zoo",
+                     icon='SURFACE_NSPHERE')
         _op(lay, "mesh.parametric_minimal_add",
             icon='SURFACE_NSPHERE')
         _op(lay, "mesh.tpms_add", icon='MESH_ICOSPHERE')

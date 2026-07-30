@@ -1188,16 +1188,58 @@ if _IN_BLENDER:
         finally:
             ev.to_mesh_clear()
 
+    # --- family-filtered surface enum (zoo catalog UX) ------------------
+    # Item tuples are cached module-level: Blender requires the strings
+    # of a dynamic-items enum to stay referenced from Python.
+    _FAMILY_ITEMS = []
+    _SURF_ITEMS_ALL = []
+    _SURF_ITEMS_FAM = {}
+
+    def _build_surface_items():
+        _FAMILY_ITEMS.clear()
+        _SURF_ITEMS_ALL.clear()
+        _SURF_ITEMS_FAM.clear()
+        fam_of = SURFACE_FAMILY or {}
+        for key, (label, _fn) in PARAMETRIC.items():
+            it = (key, label, label)
+            _SURF_ITEMS_ALL.append(it)
+            _SURF_ITEMS_FAM.setdefault(
+                fam_of.get(key, 'CLASSICAL'), []).append(it)
+        for fam, flabel in (FAMILIES or ()):
+            if fam in _SURF_ITEMS_FAM:
+                n = len(_SURF_ITEMS_FAM[fam])
+                _FAMILY_ITEMS.append(
+                    (fam, flabel, f"{flabel} ({n} surfaces)"))
+        if not _FAMILY_ITEMS:
+            _FAMILY_ITEMS.append(
+                ('CLASSICAL', "Classical", "Classical"))
+
+    _build_surface_items()
+
+    def _surface_items(self, context):
+        # NOTE: fall back to the FULL union list when context is None.
+        # Scripted calls -- mesh.parametric_minimal_add(surface='COSTA')
+        # -- assign enum values without a context, and a family-filtered
+        # list would reject them (see COORDINATION.md).
+        if context is None:
+            return _SURF_ITEMS_ALL
+        return _SURF_ITEMS_FAM.get(self.family, _SURF_ITEMS_ALL)
+
     class MESH_OT_parametric_minimal_add(bpy.types.Operator):
         """Add a classic parametric minimal surface"""
         bl_idname = "mesh.parametric_minimal_add"
         bl_label = "Classic Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
 
+        family: EnumProperty(
+            name="Family",
+            items=_FAMILY_ITEMS,
+            default='CLASSICAL',
+            description="Minimal-surface family (Weber's taxonomy); "
+                        "filters the Surface list")
         surface: EnumProperty(
             name="Surface",
-            items=[(k, v[0], v[0]) for k, v in PARAMETRIC.items()],
-            default='ENNEPER')
+            items=_surface_items)
         output: EnumProperty(
             name="Output",
             items=[('MESH', "Mesh", "Dense polygon mesh"),
@@ -1260,6 +1302,7 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
+            lay.prop(self, 'family')
             lay.prop(self, 'surface')
             mesh_only = self.surface in MESH_PARAM
             if not mesh_only:
@@ -1587,12 +1630,31 @@ if _IN_BLENDER:
             col.label(text="Select 1-2 closed curves, then:")
             col.operator("object.minimal_span", icon='OUTLINER_OB_SURFACE')
 
+    class VIEW3D_MT_math_art_minimal_zoo(bpy.types.Menu):
+        """The minimal-surface catalog, one entry per family (each
+        opens the parametric operator with that family preset)."""
+        bl_idname = "VIEW3D_MT_math_art_minimal_zoo"
+        bl_label = "Minimal Surfaces"
+
+        def draw(self, context):
+            lay = self.layout
+            for fam, flabel, _desc in _FAMILY_ITEMS:
+                op = lay.operator("mesh.parametric_minimal_add",
+                                  text=flabel, icon='SURFACE_NSPHERE')
+                op.family = fam
+            lay.separator()
+            lay.operator("mesh.tpms_add",
+                         text="Triply Periodic (TPMS)",
+                         icon='MESH_ICOSPHERE')
+
     class VIEW3D_MT_minimal_add(bpy.types.Menu):
         bl_idname = "VIEW3D_MT_minimal_add"
         bl_label = "Minimal Surfaces"
 
         def draw(self, context):
             lay = self.layout
+            lay.menu("VIEW3D_MT_math_art_minimal_zoo",
+                     icon='SURFACE_NSPHERE')
             lay.operator("mesh.parametric_minimal_add")
             lay.operator("mesh.tpms_add")
             lay.operator("mesh.minimal_knot_span_add")
@@ -1603,7 +1665,8 @@ if _IN_BLENDER:
 
     _classes = (MESH_OT_parametric_minimal_add, MESH_OT_tpms_add,
                 OBJECT_OT_minimal_span, MESH_OT_knot_span_add,
-                VIEW3D_PT_minimal_surfaces, VIEW3D_MT_minimal_add)
+                VIEW3D_PT_minimal_surfaces,
+                VIEW3D_MT_math_art_minimal_zoo, VIEW3D_MT_minimal_add)
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
