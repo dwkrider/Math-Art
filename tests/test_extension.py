@@ -398,6 +398,18 @@ OPS = [
         kind='SPIRAL', arms=3, coils=4)),
     ("voderberg radial by type", lambda: bpy.ops.mesh.voderberg_add(
         kind='RADIAL', coils=4, color_by='TYPE')),
+    ("spiral equilateral", lambda: bpy.ops.mesh.spiral_tiling_add(
+        family='EQUILATERAL')),
+    ("spiral golden", lambda: bpy.ops.mesh.spiral_tiling_add(
+        family='GOLDEN', color_by='RING')),
+    ("spiral iso side-to-side", lambda: bpy.ops.mesh.spiral_tiling_add(
+        family='ISO_SS', n=6)),
+    ("spiral right leg-hyp", lambda: bpy.ops.mesh.spiral_tiling_add(
+        family='RIGHT_LH', n=5)),
+    ("spiral multiarm", lambda: bpy.ops.mesh.spiral_tiling_add(
+        family='GENERAL', n=2, arms=3, angle=80.0, color_by='ARM')),
+    ("spiral polygon 4arm", lambda: bpy.ops.mesh.spiral_tiling_add(
+        family='POLY', arms=4, angle=45.0, color_by='ARM')),
     ("fractal kite r6", lambda: bpy.ops.mesh.fractal_tiling_add(
         kind='KITE_R6', iterations=4)),
     ("fractal kite r12 separate",

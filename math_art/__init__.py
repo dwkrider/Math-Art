@@ -84,6 +84,7 @@ _MODULE_NAMES = [
     'aperiodic_generator',
     'reptile_generator',
     'voderberg_generator',
+    'spiral_tiling_generator',
     'fractal_tiling_generator',
     'fractal_reptile_generator',
     'islamic_pattern_generator',
@@ -239,6 +240,7 @@ class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
         _op(lay, "mesh.aperiodic_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.reptile_add", icon='MESH_GRID')
         _op(lay, "mesh.voderberg_add", icon='FORCE_VORTEX')
+        _op(lay, "mesh.spiral_tiling_add", icon='FORCE_VORTEX')
         _op(lay, "mesh.fractal_tiling_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.fractal_reptile_add", icon='MOD_TRIANGULATE')
         _op(lay, "mesh.islamic_pattern_add", icon='SOLO_ON')
