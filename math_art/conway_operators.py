@@ -807,15 +807,32 @@ if _IN_BLENDER:
                 lay.prop(self, 'thickness')
             lay.prop(self, 'scale')
 
-    def _catalog_items():
-        items = []
-        last = None
-        for notation, cat, name in CATALOG:
-            if cat != last:
-                items.append(('', cat, ''))       # section header
-                last = cat
-            items.append((notation, name, "Conway: " + notation))
-        return items
+    _CAT_LABELS = {
+        'Hull': "Archimedean-Catalan Hulls",
+        'Propellor': "Propellor Solids",
+        'Truncated Archimedean': "Truncated Archimedean",
+        'Rectified Archimedean': "Rectified Archimedean",
+        'Chamfered': "Chamfered Solids",
+        'Dipyramid / Trapezohedron': "Dipyramids & Trapezohedra",
+    }
+
+    def _catalog_category_items():
+        seen = []
+        for _n, cat, _name in CATALOG:
+            if cat not in seen:
+                seen.append(cat)
+        return [(cat, _CAT_LABELS.get(cat, cat), "") for cat in seen]
+
+    _CAT_ITEM_CACHE = {}
+
+    def _catalog_solid_items(self, context):
+        # constituents of the currently selected family (cached so Blender
+        # keeps the item strings alive)
+        cat = self.category
+        if cat not in _CAT_ITEM_CACHE:
+            _CAT_ITEM_CACHE[cat] = [(n, name, "Conway: " + n)
+                                    for n, c, name in CATALOG if c == cat]
+        return _CAT_ITEM_CACHE[cat]
 
     class MESH_OT_conway_catalog_add(bpy.types.Operator):
         """Build a named polyhedron from the curated catalog: Archimedean-
@@ -826,8 +843,8 @@ if _IN_BLENDER:
         bl_label = "Polyhedron Catalog (Hulls, Propellor, ...)"
         bl_options = {'REGISTER', 'UNDO'}
 
-        solid: EnumProperty(name="Solid", items=_catalog_items(),
-                            default='jtT')
+        category: EnumProperty(name="Family", items=_catalog_category_items())
+        solid: EnumProperty(name="Solid", items=_catalog_solid_items)
         iterations: IntProperty(name="Canonical Iterations", default=200,
                                 min=5, max=2000)
         coloring: EnumProperty(
@@ -836,6 +853,15 @@ if _IN_BLENDER:
                    ('NONE', "None", "")],
             default='SIDES')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+
+        def draw(self, context):
+            lay = self.layout
+            lay.use_property_split = True
+            lay.prop(self, 'category')
+            lay.prop(self, 'solid')
+            lay.prop(self, 'iterations')
+            lay.prop(self, 'coloring')
+            lay.prop(self, 'scale')
 
         def execute(self, context):
             notation = self.solid
