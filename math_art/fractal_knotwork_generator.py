@@ -98,6 +98,7 @@ try:
     from . import fractal_tiling_generator as ft
     from . import knot_carpet_generator as kc
     from . import voderberg_generator as vb
+    from . import spiral_tiling_generator as st
 except Exception:                       # legacy single-file / CLI use
     import pattern_common as pc
     import islamic_pattern_generator as isl
@@ -105,6 +106,7 @@ except Exception:                       # legacy single-file / CLI use
     import fractal_tiling_generator as ft
     import knot_carpet_generator as kc
     import voderberg_generator as vb
+    import spiral_tiling_generator as st
 
 
 # --------------------------------------------------------------------
@@ -203,6 +205,19 @@ def _substrate_polys(kind, iterations):
         arms = 2 if vkind == 'SPIRAL' else 1
         polys, _arm, _role = vb.voderberg_patch(vkind, arms=arms,
                                                 coils=coils)
+        return polys
+    if kind.startswith('SPIRAL_'):
+        # log-spiral tilings of similar triangles: SELF-SIMILAR (tiles
+        # shrink inward by scale-level), so the local-edge-length cord
+        # width tapers the knotwork from the big outer triangles toward
+        # the tiny inner ones.  `iterations` -> spiral rings, arms fixed
+        # per option; the Golden family is the default in the screenshot.
+        _SP = {'SPIRAL_GOLDEN': ('GOLDEN', 3, 1),
+               'SPIRAL_GOLDEN_2': ('GOLDEN', 3, 2),
+               'SPIRAL_EQUILATERAL': ('EQUILATERAL', 3, 5)}
+        fam, sn, arms = _SP[kind]
+        rings = max(2, min(int(iterations) + 2, 10))
+        polys, _arms, _lvl = st.spiral_patch(fam, sn, arms, 50.0, rings)
         return polys
     polys, _types = ft.fractal_patch(kind, iterations)
     return polys
@@ -567,6 +582,17 @@ SUBSTRATE_ITEMS = [
     ('VODERBERG_SPIRAL', "Voderberg spiral (multi-arm)",
      "A multi-arm Goldberg-order Voderberg spiral -- swirling "
      "knotwork arms (Iterations = coils)"),
+    ('SPIRAL_GOLDEN', "Golden-triangle spiral",
+     "Log-spiral tiling of golden triangles (self-similar): the "
+     "knotwork tapers from big outer triangles to tiny inner ones "
+     "(Iterations = rings)"),
+    ('SPIRAL_GOLDEN_2', "Golden-triangle spiral (2-arm)",
+     "Two-arm golden-triangle log-spiral -- a tapering double-spiral "
+     "knotwork (Iterations = rings)"),
+    ('SPIRAL_EQUILATERAL', "Equilateral spiral (5-fold)",
+     "Five-arm log-spiral of equilateral triangles (plastic-number "
+     "scale) -- a self-similar tapering pinwheel knotwork "
+     "(Iterations = rings)"),
 ]
 
 
@@ -816,7 +842,9 @@ if __name__ == "__main__":
     all_ok = True
     DEPTHS = {'KITE_R6': (1, 2, 3), 'KITE_R8': (1, 2, 3),
               'KITE_R12': (1, 2), 'VODERBERG_RADIAL': (3,),
-              'VODERBERG_CLASSIC': (3,), 'VODERBERG_SPIRAL': (3,)}
+              'VODERBERG_CLASSIC': (3,), 'VODERBERG_SPIRAL': (3,),
+              'SPIRAL_GOLDEN': (3,), 'SPIRAL_GOLDEN_2': (3,),
+              'SPIRAL_EQUILATERAL': (3,)}
     print("-- fractal knotwork: welded complex + medial link --")
     for kind, _lab, _d in SUBSTRATE_ITEMS:
         prev_cross = prev_comp = None
@@ -827,7 +855,8 @@ if __name__ == "__main__":
             # the Voderberg patches may leave a few boundary T-junctions
             # that the splitter repairs, so only require a VALID complex.
             all_ok = all_ok and cx_ok and (
-                n_split == 0 or kind.startswith('VODERBERG_'))
+                n_split == 0
+                or kind.startswith(('VODERBERG_', 'SPIRAL_')))
             closed_ok = _check_cords(topo)
             all_ok = all_ok and closed_ok
             net = trace_knotwork(kind, it)
