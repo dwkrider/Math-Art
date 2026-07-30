@@ -97,7 +97,6 @@ try:
     from . import celtic_knot_2d_generator as ck
     from . import fractal_tiling_generator as ft
     from . import knot_carpet_generator as kc
-    from . import voderberg_generator as vb
     from . import spiral_tiling_generator as st
 except Exception:                       # legacy single-file / CLI use
     import pattern_common as pc
@@ -105,7 +104,6 @@ except Exception:                       # legacy single-file / CLI use
     import celtic_knot_2d_generator as ck
     import fractal_tiling_generator as ft
     import knot_carpet_generator as kc
-    import voderberg_generator as vb
     import spiral_tiling_generator as st
 
 
@@ -193,19 +191,11 @@ def _split_t_junctions(coords, rings, tol=1e-6):
 
 def _substrate_polys(kind, iterations):
     """Tile polygons of the chosen substrate.  Fathauer kite f-tilings
-    (KITE_*) come from fractal_tiling_generator; the VODERBERG_* spiral
-    tilings come from voderberg_generator (`iterations` -> spiral coils).
-    Both are edge-to-edge, so the same medial weave applies -- and the
-    cord width, which follows the LOCAL edge length, simply comes out
-    uniform on the congruent Voderberg enneagons and self-similar on the
-    scaling kites."""
-    if kind.startswith('VODERBERG_'):
-        vkind = kind.split('_', 1)[1]           # RADIAL / CLASSIC / SPIRAL
-        coils = max(3, int(iterations) + 1)     # spiral rings (dense!)
-        arms = 2 if vkind == 'SPIRAL' else 1
-        polys, _arm, _role = vb.voderberg_patch(vkind, arms=arms,
-                                                coils=coils)
-        return polys
+    (KITE_*) come from fractal_tiling_generator; the SPIRAL_* log-spiral
+    triangle tilings come from spiral_tiling_generator.  Both are
+    self-similar, so the medial cord width -- which follows the LOCAL
+    edge length -- tapers from the big outer tiles to the tiny inner
+    ones."""
     if kind.startswith('SPIRAL_'):
         # log-spiral tilings of similar triangles: SELF-SIMILAR (tiles
         # shrink inward by scale-level), so the local-edge-length cord
@@ -573,15 +563,6 @@ SUBSTRATE_ITEMS = [
     ('KITE_R12', "Kite f-tiling (12-fold)",
      "Fathauer f-tiling of 30-degree kites (ratio 0.268): seven "
      "children per tip -- steep scale contrast"),
-    ('VODERBERG_RADIAL', "Voderberg spiral (radial)",
-     "Voderberg enneagon tiling in a radial (non-spiralling) disk -- "
-     "uniform-width knotwork with n-fold symmetry (Iterations = coils)"),
-    ('VODERBERG_CLASSIC', "Voderberg spiral (classic double)",
-     "The classic Voderberg two-arm double spiral -- a knotwork that "
-     "winds around the centre (Iterations = coils)"),
-    ('VODERBERG_SPIRAL', "Voderberg spiral (multi-arm)",
-     "A multi-arm Goldberg-order Voderberg spiral -- swirling "
-     "knotwork arms (Iterations = coils)"),
     ('SPIRAL_GOLDEN', "Golden-triangle spiral",
      "Log-spiral tiling of golden triangles (self-similar): the "
      "knotwork tapers from big outer triangles to tiny inner ones "
@@ -631,7 +612,7 @@ if _IN_BLENDER:
                         "halo of smaller cords and crossings (5+ is "
                         "heavy)")
         cord_width: FloatProperty(
-            name="Cord Width", default=0.32, min=0.05, max=0.85,
+            name="Cord Width", default=0.05, min=0.05, max=0.85,
             description="Cord width as a fraction of the LOCAL tile "
                         "edge (the cords taper with the fractal scale)")
         style: EnumProperty(
@@ -654,7 +635,7 @@ if _IN_BLENDER:
             description="How the over/under weave is rendered "
                         "(TUBE always weaves in z)")
         weave_height: FloatProperty(
-            name="Weave Height", default=0.25, min=0.0, max=1.0,
+            name="Weave Height", default=0.07, min=0.0, max=1.0,
             description="Woven z amplitude as a fraction of the local "
                         "tile edge (woven ribbon / tube / curve)")
         output: EnumProperty(
@@ -841,10 +822,8 @@ def _check_geometry(kind, iterations):
 if __name__ == "__main__":
     all_ok = True
     DEPTHS = {'KITE_R6': (1, 2, 3), 'KITE_R8': (1, 2, 3),
-              'KITE_R12': (1, 2), 'VODERBERG_RADIAL': (3,),
-              'VODERBERG_CLASSIC': (3,), 'VODERBERG_SPIRAL': (3,),
-              'SPIRAL_GOLDEN': (3,), 'SPIRAL_GOLDEN_2': (3,),
-              'SPIRAL_EQUILATERAL': (3,)}
+              'KITE_R12': (1, 2), 'SPIRAL_GOLDEN': (3,),
+              'SPIRAL_GOLDEN_2': (3,), 'SPIRAL_EQUILATERAL': (3,)}
     print("-- fractal knotwork: welded complex + medial link --")
     for kind, _lab, _d in SUBSTRATE_ITEMS:
         prev_cross = prev_comp = None
@@ -852,11 +831,11 @@ if __name__ == "__main__":
         for it in DEPTHS[kind]:
             cx_ok, n_split, topo = _check_complex(kind, it)
             # the kite f-tilings are exactly edge-to-edge (t-splits == 0);
-            # the Voderberg patches may leave a few boundary T-junctions
-            # that the splitter repairs, so only require a VALID complex.
+            # the spiral-triangle patches may leave a few boundary
+            # T-junctions the splitter repairs -> only require a VALID
+            # complex.
             all_ok = all_ok and cx_ok and (
-                n_split == 0
-                or kind.startswith(('VODERBERG_', 'SPIRAL_')))
+                n_split == 0 or kind.startswith('SPIRAL_'))
             closed_ok = _check_cords(topo)
             all_ok = all_ok and closed_ok
             net = trace_knotwork(kind, it)
