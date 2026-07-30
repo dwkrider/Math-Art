@@ -12,9 +12,9 @@
 #   Johnson       J1-J48: every pyramid / cupola / rotunda solid and
 #                 their elongated, gyroelongated, bi- (ortho / gyro)
 #                 combinations, composed with exact unit-edge
-#                 coordinates; plus J49-J63, the augmented prisms and
+#                 coordinates; plus J49-J64, the augmented prisms and
 #                 the augmented dodecahedron / diminished icosahedron
-#                 (glued/sliced on exact convex bases).  J64-J92 to come.
+#                 (glued/sliced on exact convex bases).  J65-J92 to come.
 #
 # Options: generic stellation (each face replaced by a pyramid to the
 # intersection of its neighbours' planes -- octahedron gives the
@@ -224,6 +224,7 @@ _J_EXT = [
     (61, "Triaugmented Dodecahedron (J61)"),
     (62, "Metabidiminished Icosahedron (J62)"),
     (63, "Tridiminished Icosahedron (J63)"),
+    (64, "Augmented Tridiminished Icosahedron (J64)"),
 ]
 _J_EXT_NUMS = {num for num, _name in _J_EXT}
 JOHNSON += [(f'J{num}', name, num) for num, name in _J_EXT]
@@ -643,6 +644,14 @@ def build_johnson_ext(num, scale=1.0):
         V, F = _platonic_unit('I')
         for vi in sorted(_pick_icosa_verts(V, F, num), reverse=True):
             V, F = _diminish_vertex(V, F, vi)
+    elif num == 64:                        # augment J63's central triangle
+        V, F = _platonic_unit('I')
+        for vi in sorted(_pick_icosa_verts(V, F, 63), reverse=True):
+            V, F = _diminish_vertex(V, F, vi)
+        tri = next(fi for fi, f in enumerate(F) if len(f) == 3
+                   and sum(1 for g in F if g is not f
+                           and _faces_adjacent(f, g) and len(g) == 5) == 3)
+        V, F = _augment(V, F, tri)
     else:
         raise ValueError(f"J{num} not available")
     cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
@@ -1302,7 +1311,7 @@ if _IN_BLENDER:
          "The four regular star polyhedra (true intersecting faces)"),
         ('PRISM', "Prisms & Antiprisms", "Uniform n-prisms"),
         ('JOHNSON', "Johnson",
-         "J1-J63: pyramid / cupola / rotunda solids and their "
+         "J1-J64: pyramid / cupola / rotunda solids and their "
          "elongations and pairings, plus the augmented prisms and "
          "augmented dodecahedron / diminished icosahedron"),
     ]
