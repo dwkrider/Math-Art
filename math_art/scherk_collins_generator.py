@@ -119,7 +119,11 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
     material for NURBS patch output (no thickness/rims)."""
     b = p.branches
     S = p.storeys
-    W = p.flange
+    # flange carries a +0.1 correction: the original tool's flange width
+    # was 0.1 narrower for a given setting (a calibration bug), so a
+    # stored flange is taken as the corrected value -- matching the demo
+    # .txt parameter files directly
+    W = p.flange + 0.1
     d = max(1, p.detail)
     R = 4 * d                    # rows per storey
     m = 4 * d + 1                # points per cross-section branch curve (odd)
