@@ -154,7 +154,8 @@ def cluster_error(V, tris, label, prox):
 try:
     import bpy
     import bmesh
-    from bpy.props import IntProperty, BoolProperty, FloatProperty
+    from bpy.props import (IntProperty, BoolProperty, FloatProperty,
+                           EnumProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -184,6 +185,18 @@ if _IN_BLENDER:
             name="Iterations", default=15, min=1, max=60,
             description="Lloyd relaxation passes (higher = better-shaped, "
                         "lower-distortion pieces)")
+        faces: EnumProperty(
+            name="Faces",
+            items=[('TRI', "Triangles",
+                    "Re-tessellate each piece into triangles -- always "
+                    "flat and simple (best for cutting)"),
+                   ('QUAD', "Quads",
+                    "Triangles merged into quads where they stay near-"
+                    "planar (fewer, cleaner faces; some triangles remain)"),
+                   ('NGON', "N-gons",
+                    "One polygon per piece (fewest faces, but can be "
+                    "concave / non-planar)")],
+            default='TRI')
         color_pieces: BoolProperty(
             name="Color Pieces", default=True,
             description="Give each piece its own material color")
@@ -217,6 +230,12 @@ if _IN_BLENDER:
             label, prox = vsa_cluster(V, tris, k, self.iterations)
             amean, amax = cluster_error(V, tris, label, prox)
 
+            # tag each face with its proxy (as a material index) BEFORE
+            # dissolving, so per-piece color survives the merge and the
+            # re-tessellation below
+            npal = len(_PALETTE)
+            for f in bm.faces:
+                f.material_index = int(label[f.index]) % npal
             # dissolve interior edges (both faces in the same proxy) so
             # each region collapses to one near-planar polygon
             inter = [e for e in bm.edges
@@ -225,16 +244,25 @@ if _IN_BLENDER:
                      == label[e.link_faces[1].index]]
             bmesh.ops.dissolve_edges(bm, edges=inter, use_verts=True,
                                      use_face_split=False)
-            # after dissolving each proxy's interior edges, every
-            # remaining face IS one piece, so per-face coloring below can
-            # just cycle the palette by face index
+            # re-tessellate the merged pieces into simple, flat, cuttable
+            # primitives (dissolved n-gons can be concave / non-planar)
+            if self.faces in ('TRI', 'QUAD'):
+                bmesh.ops.triangulate(bm, faces=list(bm.faces),
+                                      quad_method='BEAUTY',
+                                      ngon_method='BEAUTY')
+                if self.faces == 'QUAD':
+                    bmesh.ops.join_triangles(
+                        bm, faces=list(bm.faces),
+                        angle_face_threshold=0.35,
+                        angle_shape_threshold=0.7,
+                        cmp_seam=False, cmp_sharp=False,
+                        cmp_uvs=False, cmp_materials=True)
             nm = bpy.data.meshes.new("%s Simplified" % src.name)
             bm.to_mesh(nm)
             bm.free()
             nm.update()
 
             if self.color_pieces:
-                npal = len(_PALETTE)
                 for i in range(npal):
                     mat = bpy.data.materials.new("Piece %d" % i)
                     mat.use_nodes = True
@@ -243,9 +271,7 @@ if _IN_BLENDER:
                     b.inputs["Base Color"].default_value = _PALETTE[i]
                     mat.diffuse_color = _PALETTE[i]
                     nm.materials.append(mat)
-                nm.polygons.foreach_set(
-                    "material_index",
-                    [i % npal for i in range(len(nm.polygons))])
+                # material_index was set per piece on the bmesh faces
                 nm.update()
 
             obj = bpy.data.objects.new("%s Simplified" % src.name, nm)

@@ -269,45 +269,6 @@ def _chen_gackstatter(nu, nv, order, radius, theta=0.0):
     return x, y, zc, True, True, mask
 
 
-def _knoid(nu, nv, order, radius, theta=0.0):
-    """Jorge-Meeks k-noid: genus 0 with `order` catenoid ends (n >= 3),
-    the n-fold-symmetric generalization of the catenoid. WE data
-    g = z^(n-1), dh = z^(n-1)/(z^n-1)^2 dz. The n ends sit at the n-th
-    roots of unity on |z| = 1; the surface runs from the bottom point
-    z = 0 across the equator to the top point z = infinity, so the domain
-    spans BOTH sides of |z| = 1. Built by radial WE integration from z = 0
-    (a pole-free base point), with disks around the ends removed.
-    `radius` scales the top cap's reach past the equator; `theta` unused."""
-    n = int(max(3, min(order, 12)))
-    r_out = 1.35 + 0.5 * min(max(radius / 1.2, 0.0), 1.6)   # spans past 1
-    u = np.linspace(1e-3, r_out, nu)
-    # offset theta by half a step so no radial ray lands exactly on an end
-    # (a root of unity), which would otherwise integrate through a pole
-    dth = TAU / nv
-    v = np.linspace(0.5 * dth, TAU + 0.5 * dth, nv, endpoint=False)
-    R, TH = np.meshgrid(u, v, indexing='ij')
-    z = R * np.exp(1j * TH)
-    den = (z ** n - 1.0) ** 2
-    zm = z ** (n - 1)
-    f1 = 0.5 * (1.0 - z ** (2 * (n - 1))) / den        # phi1 integrand / dz
-    f2 = 0.5j * (1.0 + z ** (2 * (n - 1))) / den
-    f3 = zm / den
-    ez = np.exp(1j * TH)                               # dz = ez dr (radial)
-    Xr = np.stack([np.real(f * ez) for f in (f1, f2, f3)], axis=-1)
-    # Radial rays from z ~ 0 (all columns share that base point, so no
-    # angular term is needed). A loose cap only kills true numerical
-    # garbage from a ray grazing a pole; it is high enough not to flatten
-    # the (tall, near-vertical) catenoid ends. The ends are trimmed by the
-    # object-space radius clip in build_parametric.
-    cap = 400.0 * float(np.median(np.abs(Xr)))
-    Xr = np.clip(Xr, -cap, cap)
-    dr = np.diff(R, axis=0)[..., None]
-    XYZ = np.concatenate(
-        [np.zeros((1, nv, 3)),
-         np.cumsum(0.5 * (Xr[1:] + Xr[:-1]) * dr, axis=0)], axis=0)
-    return XYZ[..., 0], XYZ[..., 1], XYZ[..., 2], False, True, True
-
-
 def _cathel(nu, nv, order, radius, theta=0.0):
     """Catenoid<->helicoid associate (Bonnet) family. theta = 0 is the
     catenoid, theta = pi/2 the helicoid; every intermediate value is a
@@ -323,181 +284,13 @@ def _cathel(nu, nv, order, radius, theta=0.0):
     return x, y, z, False, True
 
 
-# --- Costa-Hoffman-Meeks (genus k configurable) ---------------------------
-# The genus-k generalization of Costa: genus k, three ends (two catenoid at
-# z = +-1, one planar at z = infinity), dihedral symmetry of order 4(k+1),
-# on the hyperelliptic curve w^(k+1) = z^k (z^2 - 1). Built by numeric
-# Weierstrass-Enneper integration of ONE fundamental patch (the image of the
-# closed upper half z-plane) which is then rigidly tiled into 2(k+1) copies
-# (k+1 rotations about the vertical axis, each with its mirror) and welded --
-# the deck transformation (z,w) -> (z, e^(2 pi i/(k+1)) w) is exactly a
-# rotation by 2 pi/(k+1). Reduces to the ordinary Costa surface at k = 1.
-# (Plan/derivation cross-checked with fable-5; modulus table verified.)
-
-_CHM_C_CACHE = {}
-
-
-def _chm_w(z, k):
-    """Single-valued branch of (z^k (z^2-1))^(1/(k+1)) on the upper half
-    plane (cuts along [0,1] and (-inf,-1]); DLMF-style principal logs."""
-    return np.exp((k * np.log(z) + np.log(z - 1.0) + np.log(z + 1.0))
-                  / (k + 1))
-
-
-def _chm_modulus(k, n=4096):
-    """Real modulus c fixing the end balance, from the period ratio on an
-    ellipse around the cut [0,1]: c^2 = -Im(A)/Im(B) with A = oint
-    w/(z^2-1) dz, B = oint 1/(w(z^2-1)) dz. (A, B come out imaginary.)"""
-    if k in _CHM_C_CACHE:
-        return _CHM_C_CACHE[k]
-    t = (np.arange(n) + 0.5) * (TAU / n)
-    z = 0.5 + 0.75 * np.cos(t) + 0.35j * np.sin(t)
-    dz = (-0.75 * np.sin(t) + 0.35j * np.cos(t)) * (TAU / n)
-    w = _chm_w(z, k)
-    A = np.sum(w / (z * z - 1.0) * dz)
-    B = np.sum(1.0 / (w * (z * z - 1.0)) * dz)
-    c = math.sqrt(-A.imag / B.imag)
-    _CHM_C_CACHE[k] = c
-    return c
-
-
-def _chm_patch(k, c, n_in, n_out, nv, r_out=12.0):
-    """Integrate the WE 1-forms over the closed upper half plane -> one
-    fundamental patch, as a real (nr, nv, 3) array. Grid: Chebyshev in
-    theta (clustered at the ends theta = 0, pi), graded in r (clustered at
-    the branch point r=0 and the ends r=1)."""
-    nv = nv if nv % 2 else nv + 1                  # odd: a column hits pi/2
-    j = np.arange(nv)
-    th = (math.pi / 2) * (1 - np.cos(math.pi * j / (nv - 1)))
-    s = np.linspace(0.0, 1.0, n_in + 1)[1:]
-    r_in = ((1 - np.cos(math.pi * s)) / 2) ** ((k + 1) / 2)
-    r_o = np.exp(np.linspace(0.0, math.log(r_out), n_out + 1))[1:]
-    r = np.concatenate([[0.0], r_in, r_o])
-    nr = len(r)
-    R, TH = np.meshgrid(r, th, indexing='ij')
-    Z = R * np.exp(1j * TH)
-    Z[0, :] = 0.0
-    with np.errstate(divide='ignore', invalid='ignore'):
-        W = _chm_w(Z, k)
-        d = Z * Z - 1.0
-        F = np.stack([0.5 * (W - c * c / W) / d,
-                      0.5j * (W + c * c / W) / d,
-                      c / d], axis=-1)             # (nr, nv, 3)
-    jm = (nv - 1) // 2                             # spine column theta=pi/2
-    X = np.zeros((nr, nv, 3), dtype=complex)
-    # analytic first spine cell 0 -> z0 = i r[1] (integrand ~ z^-(k/(k+1)))
-    z0 = 1j * r[1]
-    I1 = (c * c / 2) * np.exp(-1j * math.pi / (k + 1)) * (k + 1) \
-        * z0 ** (1.0 / (k + 1))
-    seed = np.array([-I1, -1j * I1, -c * z0])
-    # spine: cumulative along r at column jm (dz = i dr)
-    dr = np.diff(r)[:, None]
-    sp_inc = 0.5 * (F[1:, jm, :] + F[:-1, jm, :]) * (1j * dr)
-    spine = np.concatenate([[np.zeros(3)], [seed],
-                            seed + np.cumsum(sp_inc[1:], axis=0)], axis=0)
-    X[:, jm, :] = spine
-    # arcs: cumulative along theta per row (dz = i z dtheta), from jm out
-    gfac = F * (1j * Z)[..., None]
-    dth = np.diff(th)
-    trap = np.zeros((nr, nv, 3), dtype=complex)
-    trap[:, 1:, :] = 0.5 * (gfac[:, 1:, :] + gfac[:, :-1, :]) \
-        * dth[None, :, None]
-    # Zero non-finite increments (they occur only at the masked end nodes
-    # theta = 0, pi where z = +-1). Otherwise the single cumsum below lets
-    # one bad increment before the spine column poison the whole row.
-    trap = np.where(np.isfinite(trap), trap, 0.0)
-    C = np.cumsum(trap, axis=1)
-    X = X[:, jm, :][:, None, :] + (C - C[:, jm, :][:, None, :])
-    return Z, np.real(X)
-
-
-def _build_chm(nu, nv, order, radius, scale, theta=0.0):
-    """Assemble the full genus-`order` Costa-Hoffman-Meeks mesh: integrate
-    the patch, snap its symmetry seams, tile into 2(k+1) rigid copies, weld,
-    trim the ends, smooth the rims, center and fit a 2 m cube."""
-    k = int(max(1, min(order, 6)))
-    c = _chm_modulus(k)
-    n_in = max(70, int(1.4 * nu))
-    n_out = max(30, int(0.6 * nu))
-    Z, Xr = _chm_patch(k, c, n_in, n_out, nv)
-    nr, nvp, _ = Xr.shape
-    jm = (nvp - 1) // 2
-    Rabs = np.abs(Z)
-    ang = -math.pi / (k + 1)
-    uvec = np.array([math.cos(ang), math.sin(ang)])
-    # Step 4: snap the two boundary columns onto their symmetry planes
-    for jcol, is0 in ((0, True), (nvp - 1, False)):
-        xy = Xr[:, jcol, :2]
-        bank = (Rabs[:, jcol] < 1.0) if is0 else (Rabs[:, jcol] > 1.0)
-        proj = (xy @ uvec)[:, None] * uvec[None, :]         # onto bank line
-        flat = np.stack([xy[:, 0], np.zeros_like(xy[:, 1])], axis=-1)  # y=0
-        Xr[:, jcol, :2] = np.where(bank[:, None], proj, flat)
-    Xr[0, :, :] = 0.0                                       # center vertex
-    rho = 0.09 / max(radius / 1.2, 0.4)
-    valid = (np.abs(Z - 1.0) > rho) & (np.abs(Z + 1.0) > rho)
-    valid[0, :] = True
-    Xr = np.where(np.isfinite(Xr), Xr, 0.0)
-    Xr[~valid] = 0.0                                        # kill near-pole
-    V0 = Xr.reshape(-1, 3)
-    vv = valid.reshape(-1)
-    ii, jj = np.meshgrid(np.arange(nr - 1), np.arange(nvp - 1), indexing='ij')
-    ii, jj = ii.ravel(), jj.ravel()
-    q0 = np.stack([ii * nvp + jj, ii * nvp + jj + 1,
-                   (ii + 1) * nvp + jj + 1, (ii + 1) * nvp + jj], axis=1)
-    q0 = q0[np.all(vv[q0], axis=1)]
-    # tile: k+1 rotations, each with its y-mirror -> 2(k+1) copies
-    M = np.diag([1.0, -1.0, 1.0])
-    Vparts, Fparts, base = [], [], 0
-    for jrot in range(k + 1):
-        a = TAU * jrot / (k + 1)
-        Rj = np.array([[math.cos(a), -math.sin(a), 0.0],
-                       [math.sin(a), math.cos(a), 0.0], [0.0, 0.0, 1.0]])
-        for mir in (False, True):
-            T = Rj @ (M if mir else np.eye(3))
-            Vparts.append(V0 @ T.T)
-            qf = (q0[:, ::-1] if mir else q0) + base       # flip mirror wind
-            Fparts.append(qf)
-            base += len(V0)
-    V = np.concatenate(Vparts, axis=0)
-    faces = np.concatenate(Fparts, axis=0)
-    # weld (quantize + unique). Tolerance is tight: the seam snap already
-    # makes shared vertices coincide to machine epsilon, so a loose weld
-    # only risks fusing distinct sheets near the dense central saddle
-    # (which silently adds handles / breaks the topology).
-    diag = float(np.linalg.norm(V.max(0) - V.min(0)))
-    keyq = np.round(V / (1e-7 * max(diag, 1.0))).astype(np.int64)
-    _, inv = np.unique(keyq, axis=0, return_inverse=True)
-    inv = inv.ravel()
-    Vw = np.zeros((int(inv.max()) + 1, 3))
-    Vw[inv] = V
-    faces = inv[faces]
-    # Collapse welded seam faces: a quad whose two adjacent corners merged
-    # becomes a TRIANGLE (dropping it instead would tear the seam and
-    # disconnect the surface); genuine degenerates are discarded.
-    flist = []
-    for f in faces:
-        g = [int(f[0])]
-        for t in range(1, 4):
-            if int(f[t]) != g[-1]:
-                g.append(int(f[t]))
-        if len(g) >= 3 and g[0] != g[-1] and len(set(g)) == len(g):
-            flist.append(tuple(g))
-    # object-space radius clip to trim the (infinite) ends
-    cen = np.median(Vw, axis=0)
-    rad = np.linalg.norm(Vw - cen, axis=1)
-    thr = float(np.percentile(rad, 93.0))
-    flist = [f for f in flist if all(rad[i] <= thr for i in f)]
-    used = np.unique(np.array([i for f in flist for i in f], dtype=np.int64))
-    remap = np.full(len(Vw), -1, dtype=np.int64)
-    remap[used] = np.arange(len(used))
-    Vf = Vw[used]
-    quads = [tuple(int(remap[i]) for i in f) for f in flist]
-    # the radius clip can shear off small islands; keep the main body only
-    Vf, quads = _largest_component(Vf, quads)
-    Vf = _smooth_boundary(Vf, quads)
-    Vf = _circularize_outer(Vf, quads)      # clean circular planar-end rim
-    Vf = _center_fit(Vf, scale, Vf)
-    return Vf, quads
+# --- Costa-Hoffman-Meeks, k-noids, and the wider catalog ------------------
+# The Jorge-Meeks k-noid and the genus-k Costa-Hoffman-Meeks family
+# (formerly bespoke builders here) now live as data rows in
+# minimal_surface_zoo.py, built by the generic Weierstrass-Enneper
+# engine in we_builders.py; they are wired into PARAMETRIC below by
+# the zoo's register() call, together with the rest of the catalog
+# (saddle towers, Bjorling strips, Meeks Mobius, Riemann's example...).
 
 
 def _largest_component(V, quads):
@@ -540,19 +333,36 @@ PARAMETRIC = {
     'RICHMOND': ("Richmond", _richmond),
     'SCHERK1': ("Scherk (doubly periodic)", _scherk_graph),
     'COSTA': ("Costa (genus 1)", _costa),
-    'COSTA_HM': ("Costa-Hoffman-Meeks (genus k)", _build_chm),
     'CHEN_GACK': ("Chen-Gackstatter", _chen_gackstatter),
-    'KNOID': ("Jorge-Meeks k-noid", _knoid),
     'CATHEL': ("Catenoid-Helicoid (associate)", _cathel),
 }
 
-# surfaces built as a finished (V, quads) mesh rather than a parameter grid
-MESH_PARAM = {'COSTA_HM': _build_chm}
+# surfaces built as a finished (V, quads[, uv]) mesh rather than a
+# parameter grid
+MESH_PARAM = {}
 # surfaces whose `order` selects a discrete count rather than an Enneper
 # order / helicoid turns (drives the operator UI label)
-COUNT_PARAM = {'KNOID': "Ends (n)", 'COSTA_HM': "Genus (k)"}
+COUNT_PARAM = {}
 # surfaces that use the associate-family angle
 ANGLE_PARAM = {'CATHEL'}
+
+# Wire in the catalog (KNOID, COSTA_HM and the rest of the zoo): the
+# rows in minimal_surface_zoo.py are built by the generic engine in
+# we_builders.py and registered into the four dicts above.  Resilient:
+# if the zoo cannot be imported, the classical core still works.
+try:
+    try:
+        from . import minimal_surface_zoo as _zoo
+    except ImportError:
+        import minimal_surface_zoo as _zoo
+    _zoo.register(PARAMETRIC, MESH_PARAM, COUNT_PARAM, ANGLE_PARAM)
+    SURFACE_FAMILY = _zoo.SURFACE_FAMILY
+    FAMILIES = _zoo.FAMILIES
+except Exception as _e:                        # WIP catalog: skip
+    print(f"minimal_surface_toolkit: zoo unavailable: {_e}")
+    _zoo = None
+    SURFACE_FAMILY = {}
+    FAMILIES = ()
 
 
 def _raw_grid(kind, nu, nv, order, radius, theta):
@@ -692,11 +502,32 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
     return G, wrap_u, wrap_v
 
 
-def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0):
+def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
+                     with_uv=False):
+    """Mesh (V, quads) for `kind`; with_uv=True additionally returns a
+    per-face-corner UV array (sum of face lengths, 2).  Minimal
+    surfaces are conformally parametrized by their Weierstrass data,
+    so the normalized (u, v) grid is a high-quality conformal UV chart
+    for free; periodic directions get a clean 0<->1 seam.  Finished
+    (tiled) meshes carry a best-effort per-fundamental-domain UV."""
     if kind in MESH_PARAM:
-        return MESH_PARAM[kind](nu, nv, order, radius, scale, theta)
+        out = MESH_PARAM[kind](nu, nv, order, radius, scale, theta)
+        V, quads = out[0], out[1]
+        if not with_uv:
+            return V, quads
+        uvv = out[2] if len(out) > 2 else None
+        if uvv is None or not quads:
+            return V, quads, None
+        idx = np.fromiter((i for f in quads for i in f), dtype=np.int64)
+        return V, quads, np.asarray(uvv)[idx]
     G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta)
     V = G.reshape(-1, 3)
+    # conformal UV: the normalized parameter grid (endpoint-free on
+    # wrapped axes, so the seam face closes at exactly u or v = 1)
+    gu = np.arange(nu) / (nu if wrap_u else max(nu - 1, 1))
+    gv = np.arange(nv) / (nv if wrap_v else max(nv - 1, 1))
+    UVg = np.stack(np.meshgrid(gu, gv, indexing='ij'),
+                   axis=-1).reshape(-1, 2)
     valid = clip.reshape(-1) if isinstance(clip, np.ndarray) else None
 
     def vid(i, j):
@@ -740,12 +571,26 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0):
         remap = np.full(len(V), -1, dtype=np.int64)
         remap[used] = np.arange(len(used))
         V = V[used]
+        UVg = UVg[used]
         quads = [tuple(int(remap[i]) for i in qd) for qd in quads]
         V = _smooth_boundary(V, quads)   # smooth staircase/clip end rims
         ref = V
 
     V = _center_fit(V, scale, ref)
-    return V, quads
+    if not with_uv:
+        return V, quads
+    if not quads:
+        return V, quads, None
+    q = np.array(quads)
+    cuv = UVg[q].astype(float)                 # (nf, 4, 2) corner UVs
+    for axis, wrapped in ((0, wrap_u), (1, wrap_v)):
+        if wrapped:
+            # faces crossing the periodic seam: lift the low corners by
+            # one period so the face maps to the [.., 1.0] edge cleanly
+            a = cuv[..., axis]
+            seam = (a.max(axis=1) - a.min(axis=1)) > 0.5
+            a += ((a < 0.5) & seam[:, None]).astype(float)
+    return V, quads, cuv.reshape(-1, 2)
 
 
 # ==========================================================================
@@ -1276,11 +1121,19 @@ if _IN_BLENDER:
         obj.location = context.scene.cursor.location
         return obj
 
-    def _new_object(context, name, verts, faces, weld=0.0, smooth=True):
+    def _new_object(context, name, verts, faces, weld=0.0, smooth=True,
+                    loop_uv=None):
         me = bpy.data.meshes.new(name)
         me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
                        [tuple(int(i) for i in f) for f in faces])
         me.validate(clean_customdata=True)
+        if loop_uv is not None:
+            # per-face-corner UVs (assigned before any weld: bmesh's
+            # remove_doubles merges vertices but keeps loop layers)
+            luv = np.asarray(loop_uv, dtype=np.float32)
+            if len(me.loops) == len(luv):
+                layer = me.uv_layers.new(name="UVMap")
+                layer.data.foreach_set('uv', luv.ravel())
         if weld > 0:
             bm = bmesh.new()
             bm.from_mesh(me)
@@ -1335,16 +1188,61 @@ if _IN_BLENDER:
         finally:
             ev.to_mesh_clear()
 
+    # --- family-filtered surface enum (zoo catalog UX) ------------------
+    # Item tuples are cached module-level: Blender requires the strings
+    # of a dynamic-items enum to stay referenced from Python.
+    _FAMILY_ITEMS = []
+    _SURF_ITEMS_ALL = []
+    _SURF_ITEMS_FAM = {}
+
+    def _build_surface_items():
+        _FAMILY_ITEMS.clear()
+        _SURF_ITEMS_ALL.clear()
+        _SURF_ITEMS_FAM.clear()
+        fam_of = SURFACE_FAMILY or {}
+        for key, (label, _fn) in PARAMETRIC.items():
+            it = (key, label, label)
+            _SURF_ITEMS_ALL.append(it)
+            _SURF_ITEMS_FAM.setdefault(
+                fam_of.get(key, 'CLASSICAL'), []).append(it)
+        for fam, flabel in (FAMILIES or ()):
+            if fam in _SURF_ITEMS_FAM:
+                n = len(_SURF_ITEMS_FAM[fam])
+                _FAMILY_ITEMS.append(
+                    (fam, flabel, f"{flabel} ({n} surfaces)"))
+        if not _FAMILY_ITEMS:
+            _FAMILY_ITEMS.append(
+                ('CLASSICAL', "Classical", "Classical"))
+
+    _build_surface_items()
+
+    def _surface_items(self, context):
+        # NOTE: fall back to the FULL union list whenever there is no
+        # UI area (context is None, or a background/scripted context).
+        # Scripted calls -- mesh.parametric_minimal_add(surface='COSTA')
+        # -- must not be rejected by the family filter, and the stored
+        # enum index must map against the same list on set and get
+        # (see COORDINATION.md).  Only an interactive area (the redo
+        # panel / add-menu) sees the family-filtered list.
+        if context is None or getattr(context, 'area', None) is None:
+            return _SURF_ITEMS_ALL
+        return _SURF_ITEMS_FAM.get(self.family, _SURF_ITEMS_ALL)
+
     class MESH_OT_parametric_minimal_add(bpy.types.Operator):
         """Add a classic parametric minimal surface"""
         bl_idname = "mesh.parametric_minimal_add"
         bl_label = "Classic Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
 
+        family: EnumProperty(
+            name="Family",
+            items=_FAMILY_ITEMS,
+            default='CLASSICAL',
+            description="Minimal-surface family (Weber's taxonomy); "
+                        "filters the Surface list")
         surface: EnumProperty(
             name="Surface",
-            items=[(k, v[0], v[0]) for k, v in PARAMETRIC.items()],
-            default='ENNEPER')
+            items=_surface_items)
         output: EnumProperty(
             name="Output",
             items=[('MESH', "Mesh", "Dense polygon mesh"),
@@ -1393,16 +1291,21 @@ if _IN_BLENDER:
                 _nurbs_grid_object(context, label, G,
                                    cyclic_u=wrap_u, cyclic_v=wrap_v)
             else:
-                V, quads = build_parametric(self.surface, self.res_u,
-                                            self.res_v, self.order,
-                                            self.radius, self.scale, theta)
+                out = build_parametric(self.surface, self.res_u,
+                                       self.res_v, self.order,
+                                       self.radius, self.scale, theta,
+                                       with_uv=True)
+                V, quads = out[0], out[1]
+                cuv = out[2] if len(out) > 2 else None
                 _new_object(context, label, V, quads,
-                            weld=1e-5 * max(1.0, self.scale))
+                            weld=1e-5 * max(1.0, self.scale),
+                            loop_uv=cuv)
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
+            lay.prop(self, 'family')
             lay.prop(self, 'surface')
             mesh_only = self.surface in MESH_PARAM
             if not mesh_only:
@@ -1730,12 +1633,31 @@ if _IN_BLENDER:
             col.label(text="Select 1-2 closed curves, then:")
             col.operator("object.minimal_span", icon='OUTLINER_OB_SURFACE')
 
+    class VIEW3D_MT_math_art_minimal_zoo(bpy.types.Menu):
+        """The minimal-surface catalog, one entry per family (each
+        opens the parametric operator with that family preset)."""
+        bl_idname = "VIEW3D_MT_math_art_minimal_zoo"
+        bl_label = "Minimal Surfaces"
+
+        def draw(self, context):
+            lay = self.layout
+            for fam, flabel, _desc in _FAMILY_ITEMS:
+                op = lay.operator("mesh.parametric_minimal_add",
+                                  text=flabel, icon='SURFACE_NSPHERE')
+                op.family = fam
+            lay.separator()
+            lay.operator("mesh.tpms_add",
+                         text="Triply Periodic (TPMS)",
+                         icon='MESH_ICOSPHERE')
+
     class VIEW3D_MT_minimal_add(bpy.types.Menu):
         bl_idname = "VIEW3D_MT_minimal_add"
         bl_label = "Minimal Surfaces"
 
         def draw(self, context):
             lay = self.layout
+            lay.menu("VIEW3D_MT_math_art_minimal_zoo",
+                     icon='SURFACE_NSPHERE')
             lay.operator("mesh.parametric_minimal_add")
             lay.operator("mesh.tpms_add")
             lay.operator("mesh.minimal_knot_span_add")
@@ -1746,7 +1668,8 @@ if _IN_BLENDER:
 
     _classes = (MESH_OT_parametric_minimal_add, MESH_OT_tpms_add,
                 OBJECT_OT_minimal_span, MESH_OT_knot_span_add,
-                VIEW3D_PT_minimal_surfaces, VIEW3D_MT_minimal_add)
+                VIEW3D_PT_minimal_surfaces,
+                VIEW3D_MT_math_art_minimal_zoo, VIEW3D_MT_minimal_add)
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
@@ -1780,8 +1703,10 @@ if __name__ == "__main__":
               f"{'OK' if abs(e1-6.87519) < 1e-3 and resid < 1e-8 else 'FAIL'}")
         ok &= abs(e1 - 6.87519) < 1e-3 and resid < 1e-8
         for kind in PARAMETRIC:
-            th = math.pi / 4 if kind in ANGLE_PARAM else 0.0
-            n = 5 if kind == 'KNOID' else 1
+            th = (math.pi / 4
+                  if kind in ANGLE_PARAM and kind not in COUNT_PARAM
+                  else 0.0)
+            n = {'KNOID': 5, 'COSTA_HM': 1, 'SCHERK_TOWER': 3}.get(kind, 1)
             V, Q = build_parametric(kind, 60, 60, n, 1.2, 1.0, th)
             finite = bool(np.all(np.isfinite(V)))
             lo, hi = V.min(0), V.max(0)
@@ -1793,12 +1718,34 @@ if __name__ == "__main__":
             print(f"parametric {kind:10s}: {len(V):5d} verts {len(Q):5d} "
                   f"quads  fit[max|c|={cen:.1e} ext={ext:.4f}] "
                   f"{'OK' if good else 'FAIL'}")
+        # UV gate: every parametric surface carries a finite, in-range,
+        # non-collapsed conformal UV chart (per-corner, [0, 1])
+        for kind in PARAMETRIC:
+            n = {'KNOID': 5, 'COSTA_HM': 1, 'SCHERK_TOWER': 3}.get(kind, 1)
+            out = build_parametric(kind, 48, 48, n, 1.2, 1.0,
+                                   with_uv=True)
+            cuv = out[2] if len(out) > 2 else None
+            if cuv is None:
+                print(f"uv {kind:15s}: NO UV  FAIL")
+                ok = False
+                continue
+            finite = bool(np.all(np.isfinite(cuv)))
+            inrange = (cuv.min() >= -1e-6) and (cuv.max() <= 1.0 + 1e-6)
+            span = np.ptp(cuv, axis=0)
+            good = finite and inrange and bool(np.all(span > 0.3))
+            ok &= good
+            print(f"uv {kind:15s}: n={len(cuv):6d} "
+                  f"range[{cuv.min():.3f},{cuv.max():.3f}] "
+                  f"span=({span[0]:.2f},{span[1]:.2f}) "
+                  f"{'OK' if good else 'FAIL'}")
         # Costa-Hoffman-Meeks: modulus table + Euler characteristic gate
         # (genus k, 3 ends removed -> chi = 2 - 2k - 3 = -(2k+1))
         cref = {1: 0.955978, 2: 0.988070, 3: 0.995117, 4: 0.997535}
-        cok = all(abs(_chm_modulus(kk) - cref[kk]) < 1e-5 for kk in cref)
+        cok = all(abs(_zoo.chm_modulus(kk) - cref[kk]) < 1e-5
+                  for kk in cref)
         print(f"CHM modulus: "
-              + " ".join(f"c({kk})={_chm_modulus(kk):.5f}" for kk in cref)
+              + " ".join(f"c({kk})={_zoo.chm_modulus(kk):.5f}"
+                         for kk in cref)
               + f"  {'OK' if cok else 'FAIL'}")
         ok &= cok
         for kk in (1, 2, 3):
