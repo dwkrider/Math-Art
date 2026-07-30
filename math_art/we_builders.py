@@ -144,7 +144,19 @@ def _we_disk(spec, p, nu, nv, theta):
     dth = TAU / nv
     off = 0.5 * dth if spec.get('offset_rays', True) else 0.0
     v = off + np.arange(nv) * dth
-    u = np.linspace(max(r0, 1e-3), r1, nu)
+    ra = max(r0, 1e-3)
+    # radial node distribution.  Enneper-type ends grow like a power of
+    # the radius, so a linear-in-r grid starves the fast-growing rim with
+    # a few huge facets; 'radial_grade' clusters nodes toward the
+    # end(s) instead ('rim' -> toward r_out, 'both' -> a cosine/Chebyshev
+    # grid dense at r_in and r_out for two-ended annuli).
+    grade = spec.get('radial_grade')
+    s = np.linspace(0.0, 1.0, nu)
+    if grade == 'rim':
+        s = 1.0 - (1.0 - s) ** 2
+    elif grade == 'both':
+        s = 0.5 - 0.5 * np.cos(math.pi * s)
+    u = ra + (r1 - ra) * s
     R, TH = np.meshgrid(u, v, indexing='ij')
     z = R * np.exp(1j * TH)
     phi = _phi_fn(spec, p, theta)
