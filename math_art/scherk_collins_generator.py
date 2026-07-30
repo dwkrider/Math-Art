@@ -211,7 +211,11 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
                 z_ex = t * pi
                 frac = t - s_rot                 # 0..1 within the storey
                 c = sin(pi * frac)
-                if abs(frac - round(frac)) < 1e-9:
+                # A single branch is an order-1 "saddle" -- geometrically
+                # just a plane -- so every level uses the flat flange
+                # cross-section (twist/warp still apply, as in Design 16);
+                # only at a true vane level otherwise.
+                if b == 1 or abs(frac - round(frac)) < 1e-9:
                     # saddle (vane) level: cross-section degenerates to the
                     # two vane segments [0, W]; interior points at origin
                     row = []
