@@ -232,7 +232,8 @@ def _we_torus(spec, p, nu, nv, theta):
             else np.linspace(0.0, 1.0, nv, endpoint=False)
         U, V = np.meshgrid(u, v, indexing='ij')
     z = 2.0 * w1 * (U + tau * V)
-    x, y, zc = spec['X'](z, p, L)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        x, y, zc = spec['X'](z, p, L)
     mask = tk._puncture_mask(U % 1.0, V % 1.0, _ev(spec['punctures'], p))
     return x, y, zc, wrap_u, wrap_v, mask
 
