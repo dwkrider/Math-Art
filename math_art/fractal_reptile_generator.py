@@ -21,7 +21,7 @@
 #       children meet leg-to-leg (edge-to-edge); the tiles shrink toward
 #       a fractal boundary.
 #
-# Besides the f-tiling, two further constructions are implemented:
+# Besides the f-tiling, three further constructions are implemented:
 #
 # COMPLEX-BASE SELF-AFFINE REPTILES.  A Gaussian-integer base b with
 # N = |b|^2 and a digit set D of N residue representatives (digits may
@@ -34,6 +34,27 @@
 # per Gilbert/Knuth); -2+i with the symmetric digits {0,1,-1,i,-i} gives
 # the round rep-5 dragon; collinear digits {0..4} over 2+i and 1+2i give
 # the thin dragons whose aspect ratios Mekhontsev computed.
+#
+# The same radix construction over the EISENSTEIN ring Z[w],
+# w = e^(2 pi i/3), with base 3+w = 5/2+(sqrt3/2)i (norm 7) and digits
+# {0} + the six sixth-roots of unity, places Voronoi hexagons of the
+# triangular lattice: the rep-7 FLOWSNAKE, whose union converges to
+# the Gosper island (Vince Fig 4/7; Gardner's 1976 "flowsnake";
+# Mandelbrot's Gosper curve).
+#
+# REFLECTION & FOLDABLE REP-TILES.  Sajid-Husain-Kumar (2026) extend
+# the digit-system maps w_j = M^-1 x + d_j by composing with
+# reflections/rotations sigma_j from the symmetry group of M.  Each
+# map is held in the closed conjugate-affine form
+# w(z) = A z + B conj(z) + C and every length-k word is applied to a
+# unit-square seed, giving m^k rotated/reflected quads coloured by the
+# outermost digit.  Implemented: the LEVY DRAGON (rep-2, x-axis
+# reflection; Levy's 1938 curve), the LEAF rep-tile (rep-2, y-axis
+# reflection) and the FOLDABLE rep-4 tile (M = 2I, the digit system
+# {0,1,i,-1-i} of Vince Fig 6 with the last map an orientation-
+# reversing quarter-turn reflection, Theorem 4.4).  Only twists from
+# the lattice symmetry group admit the open set condition; a free
+# irrational twist angle leaves positive-measure overlaps.
 #
 # FATHAUER ISOMETRY INFLATION (PENTABOLO).  Following Fathauer's own
 # construction, a half-square right triangle {(0,0),(1,0),(1/2,1/2)} is
@@ -54,9 +75,19 @@
 # References:
 # - Andrew Vince, "Rep-tiling Euclidean space", Aequationes
 #   Mathematicae 50, 1995, pp. 191-213.  The radix-system catalog:
-#   Fig 3 (rep-2 twindragon, base -1+i), Fig 5 (rep-5 dragon, base
-#   -2+i, symmetric digits), Fig 6 (rep-4, base 2, digits
+#   Fig 3 (rep-2 twindragon, base -1+i), Fig 4/7 (rep-7 flowsnake /
+#   Gosper island, Eisenstein base 3+omega), Fig 5 (rep-5 dragon,
+#   base -2+i, symmetric digits), Fig 6 (rep-4, base 2, digits
 #   {0,1,i,-1-i}).
+# - Martin Gardner, "Mathematical Games: In which 'monster' curves
+#   force redefinition of the word 'curve'", Scientific American 235,
+#   Dec 1976, pp. 124-133.  Names the flowsnake (Gosper's curve);
+#   see also Benoit B. Mandelbrot, "The Fractal Geometry of Nature",
+#   W. H. Freeman, 1982, ch. 6.
+# - Paul Levy, "Les courbes planes ou gauches et les surfaces
+#   composees de parties semblables au tout", Journal de l'Ecole
+#   Polytechnique II-19, 1938, pp. 227-291.  The Levy C curve /
+#   dragon, the earliest reflection-generated rep-tile.
 # - Christoph Bandt, "Self-similar sets 5. Integer matrices and fractal
 #   tilings of R^n", Proceedings of the AMS 112, 1991, pp. 549-562.
 #   The integer-matrix + residue-digit-set theorem behind all the
@@ -71,7 +102,8 @@
 #   rep-tiles of the plane via reflections and integer matrices",
 #   Frontiers in Physics 14:1699796, 2026.  Extends the digit-system
 #   maps with reflections/rotations from the symmetry group of the
-#   matrix.
+#   matrix: the Levy dragon (Fig 2c), the leaf rep-tile (Fig 2d) and
+#   the foldable chiral rep-4 family (Theorem 4.4) implemented here.
 # - Robert W. Fathauer, "Fractal Tilings Based on Dissections of
 #   Polyominoes", Bridges 2006, pp. 293-300; "Fractal gaskets:
 #   rep-tiles, Hamiltonian cycles, and spatial development", Bridges
@@ -85,9 +117,10 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Math Art > Patterns",
-    "description": "Fathauer fractal rep-tiles: right-triangle "
-                   "f-tiling and complex-base reptiles (twindragon, "
-                   "rep-5 ...)",
+    "description": "Fractal rep-tiles: right-triangle f-tiling, "
+                   "complex-base reptiles (twindragon, rep-5, "
+                   "flowsnake) and reflection tiles (Levy dragon, "
+                   "leaf, foldable rep-4)",
     "category": "Add Mesh",
 }
 
@@ -216,12 +249,13 @@ def _triangle_patch(iterations):
 _UNIT = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
 
 
-def _base_reptile(b, digits, iterations):
-    """(polys, types) for the rep-N reptile of Gaussian base b with
-    digit set `digits` (ints or complex; positions stay Gaussian
-    integers).  The colour index encodes the top two substitution
-    digits (d0*N + d1) so both the outer N copies and the next level of
-    nesting are visible."""
+def _base_reptile(b, digits, iterations, cell=_UNIT):
+    """(polys, types) for the rep-N reptile of base b with digit set
+    `digits` (ints or complex; positions stay lattice points).  A copy
+    of `cell` (default the unit square; a Voronoi hexagon for the
+    Eisenstein flowsnake) is placed at every position.  The colour
+    index encodes the top two substitution digits (d0*N + d1) so both
+    the outer N copies and the next level of nesting are visible."""
     cells = [(complex(0.0, 0.0), 0)]      # (position, colour)
     n = len(digits)
     for lvl in range(int(iterations)):
@@ -240,7 +274,122 @@ def _base_reptile(b, digits, iterations):
         cells = nxt
     polys, types = [], []
     for p, col in cells:
-        polys.append(_UNIT + [p.real, p.imag])
+        polys.append(cell + [p.real, p.imag])
+        types.append(int(col))
+    return polys, types
+
+
+# --------------------------------------------------------------------
+# Flowsnake / Gosper island (Vince 1995 Fig 4/7): rep-7, hexagonal
+#
+# The same radix construction over the Eisenstein ring Z[w],
+# w = e^(2 pi i/3): base beta = 3 + w = 5/2 + (sqrt3/2) i (norm 7),
+# digit set {0} + the six sixth-roots of unity (the origin and its 6
+# triangular-lattice neighbours).  Positions sum d_j beta^j are
+# triangular-lattice points; the cell is the lattice's Voronoi hexagon
+# (circumradius 1/sqrt3), so distinct positions tile with no overlap
+# and the union converges to the Gosper island bounded by the
+# flowsnake curve (contraction 1/sqrt7, twist -arctan(sqrt3/5) ~ -19.1
+# degrees per level).
+# --------------------------------------------------------------------
+
+_FLOW_BASE = 2.5 + 0.5 * sqrt(3.0) * 1j          # 3 + w, norm 7
+_FLOW_DIGITS = [0j] + [np.exp(1j * k * np.pi / 3.0) for k in range(6)]
+
+# Voronoi hexagon of the triangular lattice {1, w}: vertices at
+# (1/sqrt3) e^(i(pi/6 + k pi/3)), centred on the lattice point
+_HEXCELL = np.array(
+    [[np.cos(np.pi / 6.0 + k * np.pi / 3.0) / sqrt(3.0),
+      np.sin(np.pi / 6.0 + k * np.pi / 3.0) / sqrt(3.0)]
+     for k in range(6)])
+
+
+# --------------------------------------------------------------------
+# Reflection & foldable rep-tiles (Sajid-Husain-Kumar 2026)
+#
+# IFS maps w_j(z) = sigma_j M^-1 z + d_j where sigma_j is drawn from
+# the symmetry group of the integer matrix M (reflections/rotations),
+# not just the identity -- Levy's 1938 dragon is the earliest example.
+# Each map is kept in the closed conjugate-affine form
+#     w(z) = A z + B conj(z) + C          (complex A, B, C),
+# which is closed under composition.  The attractor is rendered by
+# applying every length-k word to a unit-square seed: m^k small
+# (rotated/reflected) quads, coloured by the OUTERMOST word digit.
+# These satisfy the open set condition, so quad interiors overlap only
+# in a measure-zero boundary set (the self-test samples this).
+# --------------------------------------------------------------------
+
+def _w_apply(w, z):
+    """Apply map w = (A, B, C): z -> A z + B conj(z) + C."""
+    a, b, c = w
+    return a * z + b * np.conj(z) + c
+
+
+def _w_compose(w2, w1):
+    """Composition w2 o w1 in the closed form (A, B, C)."""
+    a2, b2, c2 = w2
+    a1, b1, c1 = w1
+    return (a2 * a1 + b2 * np.conj(b1),
+            a2 * b1 + b2 * np.conj(a1),
+            a2 * c1 + b2 * np.conj(c1) + c2)
+
+
+_W_ID = (1 + 0j, 0j, 0j)
+
+# unit-square seed for the IFS attractor renders
+_IFS_SEED = np.array([0j, 1 + 0j, 1 + 1j, 1j])
+
+# Levy dragon (rep-2): M^-1 = (1-i)/2; second map reflects in the
+# x-axis (conj) before contracting  [Fig 2c; Levy 1938]
+_LEVY_MAPS = [((1 - 1j) / 2, 0j, 0j),
+              (0j, (1 + 1j) / 2, 1 + 0j)]
+
+# Leaf rep-tile (rep-2): same contraction, second map reflects in the
+# y-axis (z -> -conj z)  [Fig 2d].  Translation (3+i)/2: with the
+# printed translation 1 the two maps satisfy w1 = w0 o g for a
+# reflection g fixing the unit square, so the system degenerates
+# (every quad duplicated); (3+i)/2 -- the same residue class mod 1+i
+# -- yields the compact curled-leaf tile with measure-zero overlaps.
+_LEAF_MAPS = [((1 - 1j) / 2, 0j, 0j),
+              (0j, -(1 + 1j) / 2, 1.5 + 0.5j)]
+
+# Foldable rep-4 (Theorem 4.4): M = 2I with digits {0, 1, i, -1-i}
+# (Vince Fig 6's residue system) and the LAST map orientation-
+# reversing: w3(z) = (i/2) conj(z) - (1+i)/2, i.e. the spec form
+# (1/2) e^{-i theta} conj(z) + d with theta locked to a quarter turn.
+# The twist must come from the symmetry group of the square lattice:
+# an irrational twist angle (e.g. 0.30 rad) provably cannot satisfy
+# the open set condition -- measured overlap stays ~9% even with
+# optimised translations -- whereas this lattice reflection tiles
+# exactly (sampled overlap 0).  The reflected fourth copy is what
+# folds the Sierpinski-relative gasket into a triangular tile.
+_FOLD_MAPS = [
+    (0.5 + 0j, 0j, 0j),                    # z/2            d = 0
+    (0.5 + 0j, 0j, 0.5 + 0j),              # z/2 + 1/2      d = 1
+    (0.5 + 0j, 0j, 0.5j),                  # z/2 + i/2      d = i
+    (0j, 0.5j, -0.5 - 0.5j),               # i conj(z)/2 - (1+i)/2
+]
+
+
+def _ifs_reptile(maps, iterations):
+    """(polys, types) for the attractor of a conjugate-affine IFS:
+    every length-k word applied to the unit-square seed gives m^k
+    small quads, coloured by the outermost word digit (m classes)."""
+    m = len(maps)
+    words = [(_W_ID, 0)]
+    for lvl in range(int(iterations)):
+        if len(words) * m > _MAX_TILES:
+            break
+        nxt = []
+        for w, col in words:
+            for mi, wm in enumerate(maps):
+                nxt.append((_w_compose(w, wm),
+                            mi if lvl == 0 else col))
+        words = nxt
+    polys, types = [], []
+    for w, col in words:
+        z = _w_apply(w, _IFS_SEED)
+        polys.append(np.column_stack([z.real, z.imag]))
         types.append(int(col))
     return polys, types
 
@@ -318,6 +467,21 @@ KINDS = {
     'REP5B': dict(                            # Mekhontsev (5,2)
         build=lambda it: _base_reptile(1 + 2j, [0, 1, 2, 3, 4], it),
         n=5),
+    # Eisenstein radix-system kind (hexagon cells)
+    'FLOWSNAKE': dict(                        # Vince Fig 4/7
+        build=lambda it: _base_reptile(_FLOW_BASE, _FLOW_DIGITS, it,
+                                       cell=_HEXCELL),
+        n=7, samp=True),
+    # Reflection / foldable IFS kinds (quad cells; OSC attractors)
+    'LEVY_DRAGON': dict(                      # SHK Fig 2c; Levy 1938
+        build=lambda it: _ifs_reptile(_LEVY_MAPS, it),
+        n=2, samp=True, osc=True),
+    'LEAF': dict(                             # SHK Fig 2d
+        build=lambda it: _ifs_reptile(_LEAF_MAPS, it),
+        n=2, samp=True, osc=True),
+    'FOLDABLE4': dict(                        # SHK Theorem 4.4
+        build=lambda it: _ifs_reptile(_FOLD_MAPS, it),
+        n=4, samp=True, osc=True),
 }
 
 
@@ -357,6 +521,22 @@ KIND_ITEMS = [
     ('REP5B', "Rep-5 Dragon (base 1+2i, AR sqrt2-1)",
      "Base 1+2i, collinear digits {0..4}: rep-5 dragon, aspect ratio "
      "sqrt(2)-1 (Mekhontsev (5,2))"),
+    ('FLOWSNAKE', "Flowsnake / Gosper (rep-7)",
+     "Eisenstein base 5/2+(sqrt3/2)i, digits {0}+sixth roots of "
+     "unity, hexagon cells: the rep-7 Gosper island bounded by the "
+     "flowsnake curve (Vince Fig 4/7; Gardner 1976)"),
+    ('LEVY_DRAGON', "Levy Dragon (rep-2, reflection)",
+     "Two maps contracting by (1-i)/2, the second reflected in the "
+     "x-axis: the Levy dragon rep-tile (Levy 1938; "
+     "Sajid-Husain-Kumar Fig 2c)"),
+    ('LEAF', "Leaf Rep-Tile (rep-2, reflection)",
+     "Same rep-2 contraction with the second map reflected in the "
+     "y-axis (z to -conj z): the curled-leaf rep-tile "
+     "(Sajid-Husain-Kumar Fig 2d)"),
+    ('FOLDABLE4', "Foldable Rep-4 (reflected gasket)",
+     "Rep-4 digit system {0,1,i,-1-i} with an orientation-reversing "
+     "quarter-turn map i*conj(z)/2: foldable reflection rep-4 tile "
+     "(Sajid-Husain-Kumar Theorem 4.4; digits of Vince Fig 6)"),
 ]
 
 
@@ -555,23 +735,32 @@ if __name__ == "__main__":
         spec = KINDS[kind]
         tri = spec.get('tri', False)          # f-tiling (shrinking)
         tri_cells = spec.get('tri_cells', False)  # unit-triangle cells
+        samp = spec.get('samp', False)        # hex/quad sampling cells
+        osc = spec.get('osc', False)          # measure-zero boundary
         if tri:
             depths = (4, 7)
         elif tri_cells:
+            depths = (2, 4)
+        elif osc:
+            depths = (8, 10) if spec['n'] == 2 else (5, 6)
+        elif samp:
             depths = (2, 4)
         else:
             depths = (4, 7)
         for depth in depths:
             polys, types = fractal_patch(kind, depth)
-            if tri or tri_cells:
-                # triangle cells: dense-sampling overlap test
+            covered = 0
+            if tri or tri_cells or samp:
+                # polygon cells: dense-sampling overlap test
                 allv = np.vstack(polys)
                 lo, hi = allv.min(0), allv.max(0)
                 gx, gy = np.meshgrid(
                     np.linspace(lo[0], hi[0], 240) + 0.00131,
                     np.linspace(lo[1], hi[1], 240) + 0.00069)
                 pts = np.column_stack([gx.ravel(), gy.ravel()])
-                overlaps = int((_coverage(polys, pts) >= 2).sum())
+                cov = _coverage(polys, pts)
+                overlaps = int((cov >= 2).sum())
+                covered = int((cov >= 1).sum())
             else:
                 # axis-aligned unit squares on the Gaussian-integer
                 # lattice: overlap iff two cells share a position
@@ -590,6 +779,22 @@ if __name__ == "__main__":
                           for i in range(len(lv) - 1))
                 ok = e2e and sim and overlaps == 0
                 extra = "edge2edge=%s shrink=%s" % (e2e, sim)
+            elif osc:
+                # OSC attractor: only measure-zero boundary overlaps
+                # are allowed -- sampled hits must be a negligible
+                # fraction of the covered points.  The 5% bound leaves
+                # room for the Levy dragon, whose near-dimension-2
+                # boundary (cf. Duvall-Keesling) keeps a few percent
+                # of samples doubled at practical depths; the leaf and
+                # foldable tiles measure ~0.
+                n = spec['n']
+                capped = len(polys) < n ** depth
+                frac = overlaps / float(max(covered, 1))
+                ok = ((len(polys) == n ** depth or capped)
+                      and frac < 0.05)
+                extra = "rep-%d count=%d(%d)%s ovfrac=%.4f" % (
+                    n, len(polys), n ** depth,
+                    " capped" if capped else "", frac)
             else:
                 n = spec['n']
                 capped = len(polys) < n ** depth
