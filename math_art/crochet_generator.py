@@ -34,13 +34,14 @@
 #   R^3): D. Hilbert, Trans. AMS 2, 1901, pp. 87-99.
 
 bl_info = {
-    "name": "Crochet",
+    "name": "Crochet/Coral",
     "author": "Math Art project",
-    "version": (1, 0, 0),
+    "version": (1, 1, 0),
     "blender": (4, 2, 0),
-    "location": "View3D > Add > Mesh > Crochet",
+    "location": "View3D > Add > Mesh > Crochet/Coral",
     "description": "Ruffled crocheted hyperbolic planes, from gently "
-                   "wavy to tightly folded",
+                   "wavy to tightly folded; graded (cristate) and "
+                   "multi-lobed forms",
     "category": "Add Mesh",
 }
 
@@ -72,18 +73,37 @@ def _join_rings(sa, na, sb, nb):
     return faces
 
 
-def _crochet_mesh(ratio_n, rows, stitch, max_stitches, seed_scale=1.0):
+def _crochet_mesh(ratio_n, rows, stitch, max_stitches, seed_scale=1.0,
+                  grade=0.0, lobes=3):
     """Build the crochet mesh: exponentially growing stitch count per
     row (constant stitch size h), cascade-seeded ruffles, and true
-    hyperbolic edge rest lengths."""
+    hyperbolic edge rest lengths.
+
+    `grade` grades the curvature radius across the rows: grade>0 makes a
+    flatter centre and a tighter, more ruffled rim -- Fathauer's cristate
+    / crested-cactus look; grade<0 does the reverse (ruffled centre, calm
+    rim). `lobes` sets the coarsest ruffle wavenumber, so the rim breaks
+    into that many primary lobes (a multi-lobed hyperbolic form)."""
     h = stitch
-    R = h / math.log(1.0 + 1.0 / ratio_n)
+    R0 = h / math.log(1.0 + 1.0 / ratio_n)
+    rho_max = max(1e-6, rows * h)
+
+    def _R(rho):
+        # graded curvature radius: grade>0 flattens the CENTRE (larger R)
+        # while the rim stays at the base curvature R0, so the ruffling
+        # concentrates at the rim -- Fathauer's flat-centred, ruffled-rim
+        # cristate form -- without over-stitching (spiking) the rim.
+        # grade<0 does the reverse (ruffled centre, calmer rim).
+        f = 1.0 + grade * (1.0 - rho / rho_max)
+        return R0 * np.maximum(f, 0.4)
+
     rng = np.random.default_rng(0)
-    m0 = 3                                        # cascade base
+    m0 = max(2, int(lobes))                       # cascade base = lobes
     # index 0 is a centre vertex closing the magic-ring hole
     P, faces, rings, prev = [[0.0, 0.0, 0.0]], [], [], None
     for i in range(rows):
         rho = (i + 1) * h
+        R = float(_R(rho))
         circ = 2.0 * math.pi * R * math.sinh(rho / R)
         n = int(max(6, min(max_stitches, round(circ / h))))
         start = len(P)
@@ -128,10 +148,11 @@ def _crochet_mesh(ratio_n, rows, stitch, max_stitches, seed_scale=1.0):
     E1 = np.array([e[1] for e in edges])
     rr = np.linalg.norm(P[:, :2], axis=1)
     th = np.arctan2(P[:, 1], P[:, 0])
-    ch = (np.cosh(rr[E0] / R) * np.cosh(rr[E1] / R)
-          - np.sinh(rr[E0] / R) * np.sinh(rr[E1] / R)
+    Re = _R(0.5 * (rr[E0] + rr[E1]))              # per-edge graded R
+    ch = (np.cosh(rr[E0] / Re) * np.cosh(rr[E1] / Re)
+          - np.sinh(rr[E0] / Re) * np.sinh(rr[E1] / Re)
           * np.cos(th[E0] - th[E1]))
-    REST = R * np.arccosh(np.maximum(ch, 1.0))
+    REST = Re * np.arccosh(np.maximum(ch, 1.0))
     nbr = [set() for _ in range(len(P))]
     for a, b in edges:
         nbr[a].add(int(b))
@@ -306,7 +327,8 @@ def _pack(P, E0, E1, REST, nbr, faces, pin, pin_pos, iters, pull,
 
 def build_ruffle(ratio_n=4, rows=18, stitch=0.09, max_stitches=600,
                  iters=340, smooth=0.06, repel=0.5, collide=3,
-                 anneal=False, stiff=1.0, pack=0, pack_pull=0.03):
+                 anneal=False, stiff=1.0, pack=0, pack_pull=0.03,
+                 grade=0.0, lobes=3):
     # `anneal`/`stiff` grow the curvature smoothly from flat and damp
     # the springs (needed for the tight-curvature presets to stay
     # smooth); `pack` folds the relaxed sheet into a ball via gravity +
@@ -314,7 +336,7 @@ def build_ruffle(ratio_n=4, rows=18, stitch=0.09, max_stitches=600,
     # Wavy/Ruffled are unchanged.
     P, E0, E1, REST, nbr, faces, pin, pin_pos = _crochet_mesh(
         ratio_n, rows, stitch, max_stitches,
-        seed_scale=0.2 if anneal else 1.0)
+        seed_scale=0.2 if anneal else 1.0, grade=grade, lobes=lobes)
     L0 = None
     if anneal:
         flat = P.copy()
@@ -391,10 +413,10 @@ except ImportError:
 if _IN_BLENDER:
 
     class MESH_OT_crochet_add(bpy.types.Operator):
-        """Add a crocheted hyperbolic plane -- a ruffled surface of
-        constant negative curvature"""
+        """Add a crocheted hyperbolic plane -- a ruffled, negatively
+        curved surface; graded for crested/cristate coral forms"""
         bl_idname = "mesh.crochet_add"
-        bl_label = "Crochet"
+        bl_label = "Crochet/Coral"
         bl_options = {'REGISTER', 'UNDO'}
 
         preset: EnumProperty(
@@ -478,6 +500,18 @@ if _IN_BLENDER:
                         "folding). Self-collision cost grows fast with "
                         "vertex count, so lower = much faster; the "
                         "fold smoothing hides the coarseness")
+        grade: FloatProperty(
+            name="Cristate Grade", default=0.0, min=-0.9, max=2.0,
+            description="Grade the curvature across the sheet: > 0 = a "
+                        "flatter centre with the ruffling concentrated "
+                        "at the rim (a crested / cristate form, as in a "
+                        "crested cactus or brain coral); < 0 = ruffled "
+                        "centre, calmer rim. 0 = uniform curvature")
+        lobes: IntProperty(
+            name="Lobes", default=3, min=2, max=12,
+            description="Coarsest ruffle count: the rim breaks into this "
+                        "many primary lobes, for a multi-lobed "
+                        "hyperbolic form")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                             max=100.0)
         shade_smooth: BoolProperty(name="Smooth Shading", default=True)
@@ -491,6 +525,9 @@ if _IN_BLENDER:
                          repel=self.repel, collide=self.collide)
             else:
                 p = dict(PRESETS[self.preset])
+            # cristate grading + lobe count apply on top of any preset
+            p['grade'] = self.grade
+            p['lobes'] = self.lobes
             if self.physics == 'CLOTH':
                 # hand cloth the procedurally-ruffled flat sheet (full
                 # wave seed, no PBD packing/collision) with only a light
@@ -503,7 +540,7 @@ if _IN_BLENDER:
                 p['iters'] = self.cloth_prep
             verts, faces = build_ruffle(**p)
             verts = np.asarray(verts) * self.scale
-            me = bpy.data.meshes.new("Crochet")
+            me = bpy.data.meshes.new("Crochet Coral")
             me.from_pydata([tuple(v) for v in verts], [],
                            [tuple(int(i) for i in f) for f in faces])
             me.validate(clean_customdata=True)
@@ -511,7 +548,7 @@ if _IN_BLENDER:
                 me.polygons.foreach_set('use_smooth',
                                         [True] * len(me.polygons))
             me.update()
-            obj = bpy.data.objects.new("Crochet", me)
+            obj = bpy.data.objects.new("Crochet Coral", me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
             for o in context.selected_objects:
@@ -522,7 +559,7 @@ if _IN_BLENDER:
             if self.physics == 'CLOTH':
                 note = self._setup_cloth(context, obj, verts, faces)
             self.report({'INFO'},
-                        f"Crochet ({self.preset.title()}): "
+                        f"Crochet/Coral ({self.preset.title()}): "
                         f"V={len(obj.data.vertices)} "
                         f"F={len(obj.data.polygons)}{note}")
             return {'FINISHED'}
@@ -620,6 +657,8 @@ if _IN_BLENDER:
                 for k in ('ratio_n', 'rows', 'stitch', 'max_stitches',
                           'iters', 'smooth', 'repel', 'collide'):
                     lay.prop(self, k)
+            lay.prop(self, 'grade')
+            lay.prop(self, 'lobes')
             lay.prop(self, 'physics')
             if self.physics == 'CLOTH':
                 lay.prop(self, 'cloth_detail')
