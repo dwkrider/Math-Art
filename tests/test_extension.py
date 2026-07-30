@@ -144,6 +144,8 @@ OPS = [
      lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J61')),
     ("solid johnson diminished icosa",
      lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J63')),
+    ("solid johnson augmented truncated",
+     lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J68')),
     ("solid kepler", lambda: bpy.ops.mesh.regular_solid_add(
         family='KEPLER', solid='GSD')),
     ("solid stellated", lambda: bpy.ops.mesh.regular_solid_add(

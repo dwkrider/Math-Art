@@ -12,9 +12,11 @@
 #   Johnson       J1-J48: every pyramid / cupola / rotunda solid and
 #                 their elongated, gyroelongated, bi- (ortho / gyro)
 #                 combinations, composed with exact unit-edge
-#                 coordinates; plus J49-J64, the augmented prisms and
-#                 the augmented dodecahedron / diminished icosahedron
-#                 (glued/sliced on exact convex bases).  J65-J92 to come.
+#                 coordinates; plus J49-J71, the augmented prisms,
+#                 augmented dodecahedron / diminished icosahedron, and
+#                 the cupola-augmented truncated tetrahedron / cube /
+#                 dodecahedron (glued/sliced on exact convex bases).
+#                 J72-J92 to come.
 #
 # Options: generic stellation (each face replaced by a pyramid to the
 # intersection of its neighbours' planes -- octahedron gives the
@@ -225,6 +227,13 @@ _J_EXT = [
     (62, "Metabidiminished Icosahedron (J62)"),
     (63, "Tridiminished Icosahedron (J63)"),
     (64, "Augmented Tridiminished Icosahedron (J64)"),
+    (65, "Augmented Truncated Tetrahedron (J65)"),
+    (66, "Augmented Truncated Cube (J66)"),
+    (67, "Biaugmented Truncated Cube (J67)"),
+    (68, "Augmented Truncated Dodecahedron (J68)"),
+    (69, "Parabiaugmented Truncated Dodecahedron (J69)"),
+    (70, "Metabiaugmented Truncated Dodecahedron (J70)"),
+    (71, "Triaugmented Truncated Dodecahedron (J71)"),
 ]
 _J_EXT_NUMS = {num for num, _name in _J_EXT}
 JOHNSON += [(f'J{num}', name, num) for num, name in _J_EXT]
@@ -625,6 +634,90 @@ def _pick_icosa_verts(V, F, num):
     raise ValueError(f"icosa verts for J{num}")
 
 
+def _augment_cupola(V, F, fi, shift=0, edge=1.0):
+    """Glue a regular n-cupola onto a 2n-gon face fi (its 2n-ring welds
+    to the face).  shift=0 gives the ortho placement, shift=1 the gyro
+    placement (top n-gon rotated by one base edge)."""
+    V = [list(v) for v in V]
+    f = F[fi]
+    twon = len(f)
+    n = twon // 2
+    cen = _face_centroid(V, f)
+    nrm = _face_normal_out(V, F, fi)
+    h = _cupola_height(n) * edge
+    rt = _rn(n) * edge
+    top = []
+    for j in range(n):
+        a = V[f[(2 * j + shift) % twon]]
+        b = V[f[(2 * j + 1 + shift) % twon]]
+        mid = [(a[c] + b[c]) / 2 for c in range(3)]
+        d = [mid[c] - cen[c] for c in range(3)]
+        L = sqrt(sum(x * x for x in d)) or 1.0
+        d = [x / L for x in d]
+        top.append(len(V))
+        V.append([cen[c] + d[c] * rt + nrm[c] * h for c in range(3)])
+    NF = [list(g) for j, g in enumerate(F) if j != fi]
+    for j in range(n):
+        b0 = f[(2 * j + shift) % twon]
+        b1 = f[(2 * j + 1 + shift) % twon]
+        b2 = f[(2 * j + 2 + shift) % twon]
+        NF.append([b0, b1, top[j]])
+        NF.append([b1, b2, top[(j + 1) % n], top[j]])
+    NF.append(list(reversed(top)))
+    return V, NF
+
+
+def _augment_cupola_faces(V, F, idxs, shift=0):
+    for fi in sorted(idxs, reverse=True):
+        V, F = _augment_cupola(V, F, fi, shift=shift)
+    return V, F
+
+
+def _archimedean_unit(nota):
+    """Unit-edge, origin-centred Archimedean solid (canonical form of the
+    combinatorial type == the uniform solid, to numerical precision)."""
+    V, F = cw.apply_conway(nota)
+    # uniform solids are canonical, so their canonical form has regular
+    # faces; the larger ones need many iterations to converge tightly
+    # (canonicalize early-exits once it has).
+    V = cw.canonicalize(V, F, iters=2000)
+    V = _norm_edge(V, F)
+    cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
+    return [tuple(v[c] - cen[c] for c in range(3)) for v in V], F
+
+
+def _pick_faces_by_size(V, F, size, mode):
+    """Pick face(s) of the given polygon size in the requested relation:
+    'one', 'para' (opposite pair), 'meta' (non-adjacent, non-opposite
+    pair), or 'tri' (three mutually non-adjacent)."""
+    cand = [fi for fi, f in enumerate(F) if len(f) == size]
+    cen = [_face_centroid(V, F[fi]) for fi in range(len(F))]
+
+    def ddot(i, j):
+        a, b = cen[i], cen[j]
+        na = sqrt(sum(x * x for x in a)) or 1.0
+        nb = sqrt(sum(x * x for x in b)) or 1.0
+        return sum(a[c] * b[c] for c in range(3)) / (na * nb)
+    f0 = cand[0]
+    if mode == 'one':
+        return [f0]
+    opp = min(cand, key=lambda j: ddot(f0, j))
+    if mode == 'para':
+        return [f0, opp]
+    if mode == 'meta':
+        for j in cand:
+            if j not in (f0, opp) and not _faces_adjacent(F[f0], F[j]):
+                return [f0, j]
+    if mode == 'tri':
+        chosen = [f0]
+        for j in cand:
+            if all(not _faces_adjacent(F[j], F[c]) for c in chosen):
+                chosen.append(j)
+                if len(chosen) == 3:
+                    return chosen
+    raise ValueError(f"cannot pick {mode} {size}-gon faces")
+
+
 def build_johnson_ext(num, scale=1.0):
     if num in (49, 50, 51):
         V, F = _prism_unit(3)
@@ -652,6 +745,20 @@ def build_johnson_ext(num, scale=1.0):
                    and sum(1 for g in F if g is not f
                            and _faces_adjacent(f, g) and len(g) == 5) == 3)
         V, F = _augment(V, F, tri)
+    elif num == 65:                        # cupola on a truncated tetra hex
+        V, F = _archimedean_unit('tT')
+        V, F = _augment_cupola_faces(
+            V, F, _pick_faces_by_size(V, F, 6, 'one'))
+    elif num in (66, 67):                  # cupola on truncated cube octagons
+        V, F = _archimedean_unit('tC')
+        V, F = _augment_cupola_faces(
+            V, F, _pick_faces_by_size(V, F, 8,
+                                      'one' if num == 66 else 'para'))
+    elif num in (68, 69, 70, 71):          # cupolas on trunc. dodeca decagons
+        V, F = _archimedean_unit('tD')
+        mode = {68: 'one', 69: 'para', 70: 'meta', 71: 'tri'}[num]
+        V, F = _augment_cupola_faces(
+            V, F, _pick_faces_by_size(V, F, 10, mode))
     else:
         raise ValueError(f"J{num} not available")
     cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
@@ -1311,9 +1418,10 @@ if _IN_BLENDER:
          "The four regular star polyhedra (true intersecting faces)"),
         ('PRISM', "Prisms & Antiprisms", "Uniform n-prisms"),
         ('JOHNSON', "Johnson",
-         "J1-J64: pyramid / cupola / rotunda solids and their "
-         "elongations and pairings, plus the augmented prisms and "
-         "augmented dodecahedron / diminished icosahedron"),
+         "J1-J71: pyramid / cupola / rotunda solids and their "
+         "elongations and pairings, plus the augmented prisms, "
+         "augmented dodecahedron / diminished icosahedron and "
+         "cupola-augmented truncated solids"),
     ]
 
     _ITEM_CACHE = {}
