@@ -92,6 +92,13 @@ _MODULE_NAMES = [
     'islamic_pattern_generator',
     'celtic_knot_2d_generator',
     'knot_carpet_generator',
+    'woven_double_shell_generator',
+    'harmonic_knot_generator',
+    'petal_knot_generator',
+    'turks_head_generator',
+    'rational_knot_generator',
+    'substitution_knot_generator',
+    'fractal_knotwork_generator',
 ]
 
 _MODULES = []
@@ -184,7 +191,11 @@ class VIEW3D_MT_math_art_knots(bpy.types.Menu):
         lay = self.layout
         _op(lay, "curve.prime_knot_add", icon='FORCE_VORTEX')
         _op(lay, "curve.torus_knot_add", icon='FORCE_VORTEX')
+        _op(lay, "curve.harmonic_knot_add", icon='FORCE_HARMONIC')
+        _op(lay, "curve.petal_knot_add", icon='CURVE_NCIRCLE')
+        _op(lay, "curve.rational_knot_add", icon='MOD_CURVE')
         _op(lay, "curve.fractal_knot_add", icon='FORCE_VORTEX')
+        _op(lay, "curve.substitution_knot_add", icon='CURVE_NCURVE')
         _op(lay, "curve.math_link_add", icon='LINKED')
         _op(lay, "mesh.antoine_add", icon='LINKED')
         if hasattr(bpy.types, 'CURVE_OT_attractor_add'):
@@ -208,6 +219,8 @@ class VIEW3D_MT_math_art_weaves(bpy.types.Menu):
         _op(lay, "mesh.stellated_weave_add", icon='MOD_LATTICE')
         _op(lay, "curve.celtic_knot_add", icon='MOD_LATTICE')
         _op(lay, "mesh.woven_polyhedron_add", icon='MESH_ICOSPHERE')
+        _op(lay, "mesh.woven_double_shell_add", icon='MESH_UVSPHERE')
+        _op(lay, "mesh.turks_head_add", icon='CURVE_NCIRCLE')
 
 
 class VIEW3D_MT_math_art_odds(bpy.types.Menu):
@@ -250,6 +263,7 @@ class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
         _op(lay, "mesh.islamic_pattern_add", icon='SOLO_ON')
         _op(lay, "mesh.celtic_knot_2d_add", icon='MOD_LATTICE')
         _op(lay, "mesh.knot_carpet_add", icon='MESH_CIRCLE')
+        _op(lay, "mesh.fractal_knotwork_add", icon='OUTLINER_OB_CURVES')
         lay.separator()
         _op(lay, "mesh.hyperbolic_tiling_add", icon='MESH_CIRCLE')
 
