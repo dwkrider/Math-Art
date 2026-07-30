@@ -1122,7 +1122,7 @@ if _IN_BLENDER:
         return obj
 
     def _new_object(context, name, verts, faces, weld=0.0, smooth=True,
-                    loop_uv=None):
+                    loop_uv=None, recalc_normals=True):
         me = bpy.data.meshes.new(name)
         me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
                        [tuple(int(i) for i in f) for f in faces])
@@ -1134,13 +1134,21 @@ if _IN_BLENDER:
             if len(me.loops) == len(luv):
                 layer = me.uv_layers.new(name="UVMap")
                 layer.data.foreach_set('uv', luv.ravel())
-        if weld > 0:
+        if weld > 0 or recalc_normals:
             bm = bmesh.new()
             bm.from_mesh(me)
-            bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=weld)
+            if weld > 0:
+                bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=weld)
+            if recalc_normals:
+                # coherent winding across each connected patch: kills the
+                # alternating light/dark facet stripes that flipped quads
+                # produce under smooth shading (one-sided surfaces still
+                # keep a single unavoidable orientation seam)
+                bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
             bm.to_mesh(me)
             bm.free()
-        me.polygons.foreach_set('use_smooth', [True] * len(me.polygons))
+        me.polygons.foreach_set('use_smooth',
+                                [bool(smooth)] * len(me.polygons))
         me.update()
         obj = bpy.data.objects.new(name, me)
         context.collection.objects.link(obj)
@@ -1322,13 +1330,22 @@ if _IN_BLENDER:
                         "cube, centered on the origin)")
 
         def execute(self, context):
-            label = PARAMETRIC[self.surface][0]
-            theta = (self.assoc_angle if self.surface in ANGLE_PARAM
+            # When the Family changes, the dynamic Surface enum is
+            # refiltered and the stored value can momentarily resolve to
+            # an identifier outside the new list (Blender returns '' or a
+            # stale key).  Coerce to the first surface of the current
+            # family so switching families never raises.
+            surf = self.surface
+            if surf not in PARAMETRIC:
+                items = _surface_items(self, context)
+                surf = items[0][0] if items else 'ENNEPER'
+            label = PARAMETRIC[surf][0]
+            theta = (self.assoc_angle if surf in ANGLE_PARAM
                      else 0.0)
             # some surfaces are assembled meshes with no NURBS/grid form
-            if self.output == 'NURBS' and self.surface not in MESH_PARAM:
+            if self.output == 'NURBS' and surf not in MESH_PARAM:
                 G, wrap_u, wrap_v = build_parametric_grid(
-                    self.surface, self.ctrl_u, self.ctrl_v,
+                    surf, self.ctrl_u, self.ctrl_v,
                     self.order, self.radius, self.scale, theta)
                 if wrap_u:          # drop duplicated periodic endpoint
                     G = G[:-1]
@@ -1337,7 +1354,7 @@ if _IN_BLENDER:
                 _nurbs_grid_object(context, label, G,
                                    cyclic_u=wrap_u, cyclic_v=wrap_v)
             else:
-                out = build_parametric(self.surface, self.res_u,
+                out = build_parametric(surf, self.res_u,
                                        self.res_v, self.order,
                                        self.radius, self.scale, theta,
                                        with_uv=True)
@@ -1477,30 +1494,36 @@ if _IN_BLENDER:
                         "cube, centered on the origin)")
 
         def execute(self, context):
-            # Route on the surface's actual backend, not the periodicity
-            # dropdown, so scripted calls resolve regardless of the knob.
-            if self.surface in TPMS:
-                verts, tris = build_tpms(self.surface, self.cells,
+            # Coerce a stale/empty dynamic-enum value (the Periodicity
+            # dropdown refilters Surface) to a valid key so switching
+            # periodicity never raises.  Route on the surface's actual
+            # backend, not the dropdown, so scripted calls also resolve.
+            surf = self.surface
+            if surf not in TPMS and surf not in PARAMETRIC:
+                items = _periodic_surface_items(self, context)
+                surf = items[0][0] if items else 'G'
+            if surf in TPMS:
+                verts, tris = build_tpms(surf, self.cells,
                                          self.resolution, self.cell_size)
                 if len(tris) == 0:
                     self.report({'ERROR'}, "Empty level set")
                     return {'CANCELLED'}
-                label = TPMS[self.surface][0]
+                label = TPMS[surf][0]
                 obj = _new_object(context, label, verts, tris)
                 if self.thickness > 0:
                     mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                     mod.thickness = self.thickness
                     mod.offset = 0.0
                 return {'FINISHED'}
-            if self.surface not in PARAMETRIC:
-                self.report({'ERROR'}, f"Unknown surface '{self.surface}'")
+            if surf not in PARAMETRIC:
+                self.report({'ERROR'}, f"Unknown surface '{surf}'")
                 return {'CANCELLED'}
-            label = PARAMETRIC[self.surface][0]
-            theta = (self.assoc_angle if self.surface in ANGLE_PARAM
+            label = PARAMETRIC[surf][0]
+            theta = (self.assoc_angle if surf in ANGLE_PARAM
                      else 0.0)
-            if self.output == 'NURBS' and self.surface not in MESH_PARAM:
+            if self.output == 'NURBS' and surf not in MESH_PARAM:
                 G, wrap_u, wrap_v = build_parametric_grid(
-                    self.surface, self.ctrl_u, self.ctrl_v,
+                    surf, self.ctrl_u, self.ctrl_v,
                     self.order, self.radius, self.scale, theta)
                 if wrap_u:
                     G = G[:-1]
@@ -1509,7 +1532,7 @@ if _IN_BLENDER:
                 _nurbs_grid_object(context, label, G,
                                    cyclic_u=wrap_u, cyclic_v=wrap_v)
             else:
-                out = build_parametric(self.surface, self.res_u,
+                out = build_parametric(surf, self.res_u,
                                        self.res_v, self.order,
                                        self.radius, self.scale, theta,
                                        with_uv=True)
