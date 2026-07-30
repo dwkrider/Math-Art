@@ -679,6 +679,25 @@ OPS = [
      lambda: bpy.ops.mesh.modular_screen_add(
          preset='DIAGONAL', nx=3, ny=3, rim_bulge=0.9, bulge_segs=4,
          res=8)),
+    ("modular screen bilayer weave",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='DESIGN1', nx=4, ny=4, ribbon_w=0.7)),
+    ("modular screen square apertures",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='DESIGN5', nx=4, ny=4, ap_square=1.0)),
+    ("modular screen carlberg polygon holes",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='HYPAR', nx=3, ny=3, ap_square=0.8, hole=0.3)),
+    ("modular screen curved",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='DESIGN5', nx=6, ny=4, curvature='CURVED',
+         wrap_angle=150.0)),
+    ("modular screen column",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='WEAVE', nx=6, ny=4, curvature='COLUMN', frame=False)),
+    ("modular screen weave column",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='DESIGN1', nx=6, ny=3, curvature='COLUMN')),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):

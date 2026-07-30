@@ -3,21 +3,25 @@
 ![Modular Screen](../images/modular_screen.png)
 
 ## Overview
-A perforated architectural screen wall in the modular-constructivist tradition of **Erwin Hauer** and **Norman Carlberg**. One curvilinear saddle module is tiled seamlessly across a rectangle; because neighbouring cells share their boundary curves, the tiled midsurface is a single continuous undulating sheet -- the "undulating webbing" of a Hauer screen. That sheet is thickened into a solid slab and perforated with a smooth aperture through each module. The result is a single watertight, orientable manifold suitable for rendering or 3D printing. The saddle surface is the essential ingredient: its opposite curvatures let a module's boundary match its neighbour's on all four sides, so a single unit propagates without ever closing the form.
+A perforated architectural screen wall in the modular-constructivist tradition of **Erwin Hauer** and **Norman Carlberg**. One curvilinear saddle module is tiled seamlessly across a rectangle; because neighbouring cells share their boundary curves, the tiled midsurface is a single continuous undulating sheet -- the "undulating webbing" of a Hauer screen. That sheet is thickened into a solid slab and perforated with a smooth aperture through each module. The result is a single watertight, orientable manifold suitable for rendering or 3D printing. The saddle surface is the essential ingredient: its opposite curvatures let a module's boundary match its neighbour's on all four sides, so a single unit propagates without ever closing the form. The interwoven **Bilayer Weave (after Design 1)** -- which no single-valued height field can express -- is built instead as two families of undulating ribbons woven over and under one another. A finished screen can be left flat, **curved** onto a cylinder, or wrapped into a **column**, as in the built installations.
 
 ## Options
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Design | Saddle Lattice (after Design 5) | Saddle Lattice (`cos·cos` egg-crate, round apertures), Weave (`cos x + cos y`), Diagonal Brace (`cos(x+y)·cos(x-y)`), Relief Wall (after Design 6 -- solid, no perforations), or Hypar (Carlberg -- ruled hyperbolic-paraboloid modules with sharp creases). |
+| Design | Saddle Lattice (after Design 5) | Saddle Lattice (`cos·cos` egg-crate), **Bilayer Weave (after Design 1 -- woven ribbons)**, Woven Undulation (`cos x + cos y`), Diagonal Brace (`cos(x+y)·cos(x-y)`), Relief Wall (after Design 6 -- solid, no perforations), or Hypar (Carlberg -- ruled hyperbolic-paraboloid modules with sharp creases). |
 | Cells X / Cells Y | 5 / 5 | Modules across and down. Range 2-24 each. |
-| Relief Depth | 0.5 | Undulation amplitude of the saddle midsurface. Range 0.02-2.0. |
-| Thickness | 0.14 | Wall thickness of the slab. Range 0.02-0.6. |
-| Aperture | 0.34 | Aperture radius per module in cell units (0 = solid wall). Range 0-0.47. Ignored by the Relief Wall design. |
+| Relief Depth | 0.5 | Undulation amplitude of the module. Range 0.02-2.0. |
+| Thickness | 0.14 | Wall / ribbon thickness. Range 0.02-0.6. |
+| Aperture | 0.34 | Aperture radius per module in cell units (0 = solid wall). Range 0-0.47. Ignored by the Relief Wall and Bilayer Weave designs. |
+| Aperture Squareness | 0.0 | Morph each aperture from a circle (0) to a rounded square (1) via a superellipse -- rounded-square openings, and polygonal openings for the Carlberg design. |
 | Solid Border | On | Leave the outer ring of modules unperforated as a frame. |
-| Resolution | 6 | Samples per cell edge and radial rings; higher gives rounder apertures and smoother webbing. Range 3-12. |
+| Ribbon Width | 0.7 | Width of the woven ribbons in cell units (Bilayer Weave only). Range 0.1-0.95. |
+| Resolution | 6 | Samples per cell; higher gives rounder apertures and smoother webbing. Range 3-12. |
 | Rim Bulge | 0.6 | Round the aperture and border edges into a bull-nose (0 = square-cut vertical rim). Range 0-1. |
 | Rim Segments | 3 | Facets across the rounded rim. Range 2-6. |
+| Form | Flat Panel | Flat Panel, Curved Screen (bent onto a cylinder through the Wrap Angle), or Column (wrapped a full turn -- join the seam with Merge by Distance for a watertight tube). |
+| Wrap Angle | 120 | Arc the Curved Screen spans, in degrees. Range 10-350. |
 | Smooth Shading | On | Shade the slab smooth. |
 | Scale | 1.0 | The screen is fitted within a $2\times$ Scale cube at the origin. Range 0.01-100. |
 
@@ -28,10 +32,11 @@ Renders of each Design:
 <table>
 <tr>
 <td align="center"><img src="../images/variants/modular_screen__DESIGN5.png" width="200"><br><sub>Saddle Lattice (Design 5)</sub></td>
-<td align="center"><img src="../images/variants/modular_screen__WEAVE.png" width="200"><br><sub>Weave</sub></td>
-<td align="center"><img src="../images/variants/modular_screen__DIAGONAL.png" width="200"><br><sub>Diagonal Brace</sub></td>
+<td align="center"><img src="../images/variants/modular_screen__DESIGN1.png" width="200"><br><sub>Bilayer Weave (Design 1)</sub></td>
+<td align="center"><img src="../images/variants/modular_screen__WEAVE.png" width="200"><br><sub>Woven Undulation</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/modular_screen__DIAGONAL.png" width="200"><br><sub>Diagonal Brace</sub></td>
 <td align="center"><img src="../images/variants/modular_screen__DESIGN6.png" width="200"><br><sub>Relief Wall (Design 6)</sub></td>
 <td align="center"><img src="../images/variants/modular_screen__HYPAR.png" width="200"><br><sub>Hypar (Carlberg)</sub></td>
 </tr>
@@ -42,6 +47,12 @@ Renders of each Design:
 **Tiled saddle midsurface.** The midsurface is a periodic height field $h(x,y)$ of unit period. For the smooth designs it is a doubly-periodic saddle field -- $h=\text{amp}\cdot\cos\pi x\,\cos\pi y$ (Saddle Lattice), $\tfrac{\text{amp}}2(\cos\pi x+\cos\pi y)$ (Weave), or $\text{amp}\cdot\cos\pi(x{+}y)\,\cos\pi(x{-}y)$ (Diagonal). Each is $C^1$ and continuous across cell boundaries, so tiling it produces a single seamless undulating sheet.
 
 **Hypar (Carlberg) modules.** The Hypar design replaces the smooth field with a ruled **hyperbolic paraboloid** per cell, $h=\text{amp}\cdot\xi\eta$ on local coordinates $\xi,\eta\in[-1,1]$, multiplied by a checkerboard sign $(-1)^{i+j}$. The sign makes adjacent cells meet exactly along their shared edge while leaving a **sharp crease** there -- Carlberg's harder-edged, straight-ruled manner, as opposed to Hauer's smooth membranes.
+
+**Bilayer Weave (Design 1).** Hauer's Design 1 interweaves *two* saddle layers, which no single-valued height field $h(x,y)$ can represent. It is built instead as a plain weave of ribbons: **warp** ribbons run along $x$ at $y=j+\tfrac12$ with height $\text{amp}\,(-1)^j\sin\pi x$, **weft** ribbons run along $y$ at $x=i+\tfrac12$ with the opposite phase $-\text{amp}\,(-1)^i\sin\pi y$. At every crossing the two land at $\pm\text{amp}$, so one rides over and the other under, alternating across the lattice. Each ribbon is a closed swept tube (rectangular section), so the woven screen is watertight by construction; the layers stay clear of one another as long as $2\,\text{amp}>t$, which the builder enforces. Wider ribbons close the openings; the width control sets the openness.
+
+**Apertures: circle to square.** Each aperture is traced along the ray to every perimeter sample as a **superellipse** $|X/r|^{p}+|Y/r|^{p}=1$, with $p=2+6\cdot(\text{squareness})$ running from a circle ($p=2$) to a rounded square ($p=8$) -- giving the softer rounded-square openings of some Hauer screens and the polygonal openings of the Carlberg modules.
+
+**Flat, curved, column.** After the flat screen is built it can be bent onto a cylinder whose axis is vertical: the width $x\in[0,n_x]$ wraps through the chosen angle and the slab's relief $z$ becomes radial, at arc radius $R=n_x/\theta$. A full turn wraps the panel into a **column** (the seam is left coincident -- Merge by Distance closes it into a watertight tube). The wrap is a per-vertex map, so it preserves the mesh topology and watertightness.
 
 **Traced apertures.** Each unit cell is meshed as a radial fan: its square perimeter is sampled uniformly (so adjacent cells share their common-edge samples exactly and weld with no seam), and rings are interpolated inward along the ray to each sample -- ending either on a central **aperture circle** of the chosen radius, or, for a solid cell, at the cell centre (a triangle fan). Because the aperture is traced as a true circle rather than cut out of a square grid, the perforations stay smooth at any resolution.
 
