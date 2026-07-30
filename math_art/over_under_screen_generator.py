@@ -3,68 +3,60 @@
 #
 # A woven square lattice rendered as one visually continuous smooth
 # screen, in the modular-constructivist tradition of Erwin Hauer and
-# Norman Carlberg (Hauer's Design 1, the woven bilayer screen).
+# Norman Carlberg (the woven bilayer screens of Hauer's Continua).
 #
-# THE STRUCTURE.  Label a repeating unit by a 3 x 3 node grid
-#
-#         A B C
-#         D E F
-#         G H I
-#
-# The crossings ALTERNATE -- this is NOT an axis-aligned plain weave:
-#   * A, C, G, I (the unit corners) are FLAT crossings at the middle
-#     level: two ribbons meet there at z ~ 0, tangent-plane flat.
-#   * E (the unit centre) is the OVER/UNDER crossing: one ribbon
-#     passes above (+h), the other below (-h), as TWO SEPARATE
-#     sheets -- the strips overlap in plan but are never merged.
-#   * B, D, F, H (the edge midpoints) are not crossings but SADDLE
-#     BRIDGES joining the flat crossings (B joins A-C, D joins A-G,
-#     F joins C-I, H joins G-I).
-# The ribbons run on the DIAGONALS: one family A -> E -> I, the
-# other C -> E -> G.  Every lattice corner (a, b) is a flat
-# crossing; the two diagonal ribbons through it share the layer
-# parity s = (-1)^(a+b), so both arrive at their common extremum
-# z = 0 and meet flush there.  The upper layer (s = +1) is a
-# diagonal lattice of ribbons bulging up to +h at its centres; the
-# lower layer (s = -1) mirrors it below; at each centre E an upper
-# and a lower ribbon cross at +h / -h WITHOUT touching.  The axis-
-# aligned bridges each join an upper corner to a lower corner
-# (adjacent corners always have opposite parity), sweeping through
-# z = 0 -- the saddles that tie the two layers into one screen.
-# The leftover openings are the 4-pointed STAR holes centred on the
-# over/under crossings, their points reaching toward the bridges.
+# THE STRUCTURE.  Two families of DIAGONAL ribbons cross on a square
+# lattice of crossovers, and EVERY crossover is an over/under
+# crossing: one ribbon passes above (+h), the other below (-h), as
+# two separate sheets, and which family rides on top ALTERNATES in a
+# checkerboard across the crossover lattice -- so along any single
+# ribbon the sense runs over, under, over, under at successive
+# crossovers: a true plain weave of the diagonal families.  There
+# are NO flat crossings.  In the open cell between four crossovers
+# sits a lens-shaped CELL-CENTRE CUSHION (a "football"); every
+# cushion is IDENTICAL: anchored at the z = 0 mid-plane -- exactly
+# halfway between the over (+h) and under (-h) ribbon levels, with
+# no per-cell offset or sign -- and bulging DOWNWARD from that
+# shared base.  Adjacent cushions are joined by smooth saddle
+# BRIDGES that flow over the ribbon mid-spans (where the ribbon
+# wave passes through z = 0), so cushions + bridges + ribbons read
+# as one continuous surface; the leftover openings are 4-pointed
+# STAR holes centred on the crossovers, their points tucked into
+# the gap between the over and under sheets.
 #
 # THE CONSTRUCTION (a bicubic B-spline patch network).  In the 45-
 # degree rotated coordinates p = x + y, q = y - x the diagonal
-# ribbons become an axis-aligned lattice, and the surface is built
-# as an explicit quad CONTROL NET: 3 x 3 junction patches at the
-# flat crossings, lofted ribbon strips through the over/under
-# crossings (their longitudinal profile the C1 wave sin^2(pi u / 2),
-# 0 at flat crossings and +/-1 at woven ones), and bridge strips
-# across each rotated cell, attached through shoulder vertices
-# shared with the ribbon edges -- every connection is a deliberately
-# shared control edge, and the two ribbon families keep disjoint
-# control points wherever they cross over/under.  The net is
-# refined by CATMULL-CLARK subdivision -- the generalization of
-# uniform bicubic B-spline patches to an arbitrary quad control
-# mesh -- so the limit surface is a smooth spline patch network,
-# watertight by construction, with the star holes left open (never
-# trimmed from a blob).  The refined shell is finally thickened
-# along its normals into a closed solid.
+# ribbons are axis-aligned bands on the integer lines, crossing at
+# every integer (P, Q); the checkerboard sign sigma = (-1)^(P+Q)
+# puts family 0 on top where P + Q is even.  Each band is a lofted
+# strip whose longitudinal profile is the C1 wave +/-cos(pi s):
+# extrema exactly AT the crossovers, zero at the mid-spans.  Each
+# open cell carries a 5 x 5 cushion patch sagging to the football
+# depth below z = 0; its side control rows are THE SAME control
+# points as the adjacent band edges (shared vertices at the mid-
+# span stations, where the band wave is centred on z = 0), so every
+# seam vertex is a regular valence-4 vertex of the control net and
+# the Catmull-Clark limit surface -- the generalization of uniform
+# bicubic B-spline patches to an arbitrary quad mesh -- is C1
+# (indeed C2) across every cushion-to-ribbon seam: the bridges
+# between neighbouring cushions are tangent-continuous saddles, not
+# creased tabs.  The cushion corners are inset toward the
+# crossovers and left free, opening the star notches by
+# construction (never trimmed from a blob).  The refined shell is
+# finally thickened along its normals into a closed solid.
 #
 # The MINIMAL (TAUT) mode applies extra passes of non-shrinking
 # Taubin lambda|mu fairing to tauten the saddles without collapsing
 # the relief.  The RIBBONS mode instead renders a classic axis-
 # aligned plain weave as separate lofted strips (with TWILL and
-# BASKET drafts); the alternating-crossing membrane itself is the
-# PLAIN structure and has no twill analogue.
+# BASKET drafts); the membrane itself is inherently the PLAIN draft.
 #
 # References:
 #   Erwin Hauer, "Continua -- Architectural Screens and Walls",
 #     Princeton Architectural Press, 2004 -- the perforated modular
-#     screen designs (Designs 1-7, 1950-57); Design 1 is the woven
-#     bilayer screen with flat and over/under crossings alternating,
-#     the structure realized here.
+#     screen designs (Designs 1-7, 1950-57): woven bilayer screens
+#     of diagonal ribbons with alternating over/under crossings and
+#     smooth saddle infill, the structure realized here.
 #   Norman Carlberg and Erwin Hauer -- co-originators of Modular
 #     Constructivism (sculptural units designed to be multiplied).
 #   E. Catmull and J. Clark, "Recursively Generated B-spline
@@ -74,7 +66,8 @@
 #   Branko Grunbaum and G. C. Shephard, "Satins and Twills: An
 #     Introduction to the Geometry of Fabrics", Mathematics Magazine
 #     53(3), 1980 -- the parity / draft description of plain, twill
-#     and basket weaves (used by the ribbon mode).
+#     and basket weaves (the checkerboard alternation used at the
+#     crossovers, and the drafts of the ribbon mode).
 #   Gabriel Taubin, "A Signal Processing Approach to Fair Surface
 #     Design", SIGGRAPH 1995 -- the non-shrinking lambda|mu fairing
 #     of the taut mode.
@@ -85,9 +78,9 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Math Art > Patterns",
-    "description": "Woven screen of diagonal ribbons -- flat and "
-                   "over/under crossings alternating, saddle "
-                   "bridges, star openings (Hauer / Carlberg)",
+    "description": "Woven screen of diagonal ribbons -- every "
+                   "crossover alternating over/under, sunken cell "
+                   "cushions, star openings (Hauer / Carlberg)",
     "category": "Add Mesh",
 }
 
@@ -103,13 +96,13 @@ except Exception:                       # legacy single-file / CLI use
 
 _BACKING_MAT = len(pc.PALETTE_RGBA) - 1
 _HEIGHT_BANDS = 5     # palette bands of the by-height coloring
-_SAG = -0.4           # junction centre control (x edge value)
-_SHOULDER = 0.45      # bridge shoulder inset (x band-edge gap)
-_BRIDGE_W = 2.0       # bridge width (x shoulder inset)
+_ATTACH = 0.5         # cushion attach half-length (x crossing gap)
+_INSET = 0.5          # star-notch corner inset (x crossing gap)
+_FOOTBALL = 0.75      # cushion sag depth (x h), DOWN from z = 0
 
 
 # --------------------------------------------------------------------
-# Weave drafts (over/under parity; used by the RIBBONS mode)
+# Weave drafts (over/under parity)
 # --------------------------------------------------------------------
 
 WEAVES = ('PLAIN', 'TWILL', 'BASKET')
@@ -117,7 +110,7 @@ WEAVES = ('PLAIN', 'TWILL', 'BASKET')
 
 def x_over(i, j, weave='PLAIN'):
     """Boolean (arrays ok): x-strand over at crossing (i, j) of the
-    axis-aligned ribbon weave."""
+    axis-aligned ribbon weave (RIBBONS mode)."""
     i = np.asarray(i, dtype=np.int64)
     j = np.asarray(j, dtype=np.int64)
     if weave == 'TWILL':
@@ -164,25 +157,19 @@ def _strand_height(s, other_index, family, p):
 # The patch-network control net (rotated coordinates p = x+y, q = y-x)
 # --------------------------------------------------------------------
 #
-# All layout happens in (p, q), where the diagonal ribbons are axis-
-# aligned: lattice corners (a, b) sit at (a+b, b-a), flat crossings
-# every 2 units along a band, woven crossings between.  g is the
-# band HALF-width in these units (band width = strand_width x the
-# ribbon pitch).  z is built at unit amplitude and rescaled to h
-# after subdivision.
-
-def _prof(u):
-    """Longitudinal band profile: 0 (flat crossing, zero slope) to
-    1 (woven crossing, zero slope), C1."""
-    return float(np.sin(0.5 * np.pi * u) ** 2)
-
+# Bands (the diagonal ribbons) run along ALL integer lines of (p, q)
+# and cross at every integer (P, Q) -- corner-type and centre-type
+# crossovers of the original grid alike.  g is the band HALF-width
+# in these units.  z is built at unit amplitude (crossover sheets at
+# +/-1) and rescaled to h after subdivision.
 
 class _Net:
     """Quad/n-gon control net with vertex sharing.  Vertices are
-    keyed by rounded (p, q, layer-tag) so patches that must join
-    share control points exactly -- and the two ribbon layers, with
-    opposite tags, stay DISJOINT where they overlap in plan (the
-    over/under crossings).  Faces are auto-oriented CCW in the
+    keyed by rounded (p, q, tag): the two ribbon families carry
+    different tags, so their sheets stay DISJOINT where they overlap
+    in plan (every crossover), while the cushions reference the band
+    edge vertices directly (tag of that family) so the seams share
+    control points exactly.  Faces are auto-oriented CCW in the
     (p, q) plan so the whole net is consistently oriented."""
 
     def __init__(self, cell):
@@ -200,9 +187,6 @@ class _Net:
             self.key[k] = i
             self.pos.append((float(p), float(q), float(z)))
         return i
-
-    def has(self, p, q, tag):
-        return (round(p, 6), round(q, 6), tag) in self.key
 
     def face(self, ids, label):
         if len(ids) < 3 or len(set(ids)) != len(ids):
@@ -223,165 +207,125 @@ class _Net:
                 for p, q, z in self.pos]
 
 
-def _layer(a, b):
-    """Flat-crossing layer parity: +1 (upper) iff a + b is even."""
-    return 1 if (a + b) % 2 == 0 else -1
+def _band_z(fam, line, s):
+    """Centerline height of a band at along-coordinate s: the C1
+    cosine wave with extrema exactly AT the crossovers and zeros at
+    the mid-spans.  Family 0 (the q-bands) is at +1 where P + Q is
+    even; family 1 is everywhere its opposite -- the checkerboard
+    over/under alternation."""
+    wave = float(np.cos(np.pi * s)) * (1.0 if line % 2 == 0 else -1.0)
+    return wave if fam == 0 else -wave
 
 
-def _junction(net, a, b, g):
-    """3 x 3 patch at flat crossing (a, b): ring controls continue
-    the four band arms (z = prof(g) x layer), the centre sags past
-    zero so the limit surface meets flat at z ~ 0."""
-    s = _layer(a, b)
-    P, Q = a + b, b - a
-    ct = _prof(g) * s
-    ps = (P - g, P, P + g)
-    qs = (Q - g, Q, Q + g)
-    ids = [[net.vid(ps[i], qs[j],
-                    _SAG * ct if (i == 1 and j == 1) else ct, s)
-            for j in range(3)] for i in range(3)]
-    for i in range(2):
-        for j in range(2):
-            net.face([ids[i][j], ids[i + 1][j],
-                      ids[i + 1][j + 1], ids[i][j + 1]], 2)
+def _xy_of(P, Q):
+    return ((P - Q) * 0.5, (P + Q) * 0.5)
 
 
-def _segment(net, a, b, axis, g, d):
-    """One diagonal ribbon span between adjacent flat crossings,
-    passing its woven crossing at +/-1: axis 0 is the A->E->I
-    family (corner (a,b) -> (a+1,b+1)), axis 1 the C->E->G family
-    (corner (a+1,b) -> (a,b+1)).  A lofted strip of 5 stations x 3
-    rows; where the two families cross over/under their vertices
-    carry opposite layer tags, so the strips remain separate
-    sheets.  The outer-row faces adjacent to a junction pick up the
-    bridge SHOULDER vertices (if built) so the bridges share edges
-    with the band -- those faces become pentagons."""
-    if axis == 0:
-        s = _layer(a, b)
-        P0, Q0 = a + b, b - a
+def _cross_ok(P, Q, W, H):
+    x, y = _xy_of(P, Q)
+    return (-1e-9 <= x <= W + 1e-9) and (-1e-9 <= y <= H + 1e-9)
 
-        def co(u, v):
-            return (P0 + u, Q0 + v)
-    else:
-        s = _layer(a + 1, b)
-        P0, Q0 = a + b + 1, b - a - 1
 
-        def co(u, v):
-            return (P0 + v, Q0 + u)
-    off = (g, 1.0 - g, 1.0, 1.0 + g, 2.0 - g)
-    zs = [s * _prof(u) for u in off]
+def _band_piece(net, fam, line, stations, g):
+    """A lofted strip piece of one band: 3 flat transverse rows at
+    line +/- g, longitudinal profile _band_z.  fam 0 runs along p
+    at q = line; fam 1 along q at p = line."""
+    tag = 1 + fam
+    rows = (line - g, line, line + g)
     grid = {}
-    for i, u in enumerate(off):
-        for j, v in enumerate((-g, 0.0, g)):
-            p_, q_ = co(u, v)
-            grid[(i, j)] = net.vid(p_, q_, zs[i], s)
-    zsh = s * _prof(g + d)
-    for jm, jo, vo in ((1, 0, -g), (1, 2, g)):
-        for i in range(4):
-            poly = [grid[(i, jm)], grid[(i + 1, jm)],
-                    grid[(i + 1, jo)]]
-            if i == 3:
-                # the far junction has the SAME layer parity (a+b
-                # and a+b+2), and prof is symmetric about the woven
-                # crossing, so the far shoulder is tag s at +zsh
-                p_, q_ = co(2.0 - g - d, vo)
-                if net.has(p_, q_, s):
-                    poly.append(net.vid(p_, q_, zsh, s))
-            if i == 0:
-                p_, q_ = co(g + d, vo)
-                if net.has(p_, q_, s):
-                    poly.append(net.vid(p_, q_, zsh, s))
-            poly.append(grid[(i, jo)])
-            net.face(poly, axis)
+    for i, s in enumerate(stations):
+        z = _band_z(fam, line, s)
+        for j, t in enumerate(rows):
+            p_, q_ = (s, t) if fam == 0 else (t, s)
+            grid[(i, j)] = net.vid(p_, q_, z, tag)
+    for i in range(len(stations) - 1):
+        for j in range(2):
+            net.face([grid[(i, j)], grid[(i + 1, j)],
+                      grid[(i + 1, j + 1)], grid[(i, j + 1)]], fam)
 
 
-def _bridge(net, a, b, horizontal, g, d, bw, W, H):
-    """Saddle bridge along the lattice edge (a,b)->(a+1,b) or
-    (a,b)->(a,b+1): a strip across the rotated cell joining the
-    upper junction corner (+prof(g)) to the lower one (-prof(g))
-    through z = 0.  Its end caps attach through SHOULDER vertices
-    placed on the flanking band edges (shared with the band
-    pentagons); a shoulder triangle closes the notch at the junction
-    corner.  At the outer rim a missing arm degrades the cap to a
-    quad / triangle on the corner vertex."""
-    s1 = _layer(a, b)
-    P1, Q1 = a + b, b - a
-    e = -1 if horizontal else 1
-    ct = _prof(g)
-    zsh = _prof(g + d)
-    Cn = (P1 + g, Q1 + e * g)
-    Cf = (P1 + 1.0 - g, Q1 + e * (1.0 - g))
-    if horizontal:
-        near = (((Cn[0] + d, Cn[1]), b < H),
-                ((Cn[0], Cn[1] - d), b > 0))
-        far = (((Cf[0] - d, Cf[1]), b > 0),
-               ((Cf[0], Cf[1] + d), b < H))
-    else:
-        near = (((Cn[0] + d, Cn[1]), a < W),
-                ((Cn[0], Cn[1] + d), a > 0))
-        far = (((Cf[0] - d, Cf[1]), a > 0),
-               ((Cf[0], Cf[1] - d), a < W))
-    vCn = net.vid(Cn[0], Cn[1], ct * s1, s1)
-    vCf = net.vid(Cf[0], Cf[1], -ct * s1, -s1)
-    dp = np.array([Cf[0] - Cn[0], Cf[1] - Cn[1]])
-    dh = dp / np.hypot(dp[0], dp[1])
-    nh = np.array([-dh[1], dh[0]])
-    st = []
-    for t in (0.38, 0.62):
-        Pt = np.array(Cn) + t * dp
-        z = ct * s1 * (1.0 - 2.0 * t)
-        A = net.vid(Pt[0] - nh[0] * bw * 0.5,
-                    Pt[1] - nh[1] * bw * 0.5, z, 0)
-        B = net.vid(Pt[0] + nh[0] * bw * 0.5,
-                    Pt[1] + nh[1] * bw * 0.5, z, 0)
-        st.append((A, B))
+# interior sag profile of the cushion (fraction of the full depth),
+# indexed by (min(i, 4-i), min(j, 4-j)) of the 5x5 grid
+_SAG_PROFILE = {(1, 1): 0.45, (1, 2): 0.62, (2, 1): 0.62,
+                (2, 2): 1.0}
 
-    def cap(vC, Cxy, specs, ssh, A, B):
-        sh = []
-        for (pq, ok) in specs:
-            if not ok:
-                continue
-            side = ((pq[0] - Cxy[0]) * nh[0]
-                    + (pq[1] - Cxy[1]) * nh[1])
-            sh.append((side, net.vid(pq[0], pq[1], zsh * ssh, ssh)))
-        if len(sh) == 2:
-            sh.sort()                      # A (-n) side first
-            net.face([sh[0][1], A, B, sh[1][1]], 3)
-            net.face([vC, sh[0][1], sh[1][1]], 3)
-        elif len(sh) == 1:
-            if sh[0][0] < 0.0:
-                net.face([sh[0][1], A, B, vC], 3)
-            else:
-                net.face([vC, A, B, sh[0][1]], 3)
-        else:
-            net.face([vC, A, B], 3)
 
-    cap(vCn, Cn, near, s1, st[0][0], st[0][1])
-    net.face([st[0][0], st[0][1], st[1][1], st[1][0]], 3)
-    cap(vCf, Cf, far, -s1, st[1][0], st[1][1])
+def _cushion(net, P, Q, g, aw, ci, fb):
+    """The cell-centre 'football': a 5 x 5 cushion patch over the
+    open cell [P, P+1] x [Q, Q+1].  Every cushion is IDENTICAL:
+    anchored on the z = 0 mid-plane (its side vertices ARE the band
+    edge vertices at the mid-span stations, whose S-curve is centred
+    on 0) and sagging DOWN to -fb at its centre -- no per-cell
+    offset, no per-cell sign.  The shared side vertices are regular
+    valence-4 vertices of the net, so the subdivision limit is
+    C1/C2 across the seam: the smooth saddle bridges between
+    neighbouring cushions.  The four corners are inset toward the
+    crossovers and left free: the star notches."""
+    us = (P + g, P + 0.5 - aw, P + 0.5, P + 0.5 + aw, P + 1 - g)
+    vs = (Q + g, Q + 0.5 - aw, Q + 0.5, Q + 0.5 + aw, Q + 1 - g)
+    ids = {}
+    for i in range(5):
+        for j in range(5):
+            side_i = i in (0, 4)
+            side_j = j in (0, 4)
+            if side_i and side_j:          # free inset corner
+                sp = ci if i == 0 else -ci
+                sq = ci if j == 0 else -ci
+                ids[(i, j)] = net.vid(us[i] + sp, vs[j] + sq,
+                                      -0.5 * fb, 0)
+            elif side_j:                   # on a q-band edge (fam 0)
+                line = Q if j == 0 else Q + 1
+                ids[(i, j)] = net.vid(us[i], vs[j],
+                                      _band_z(0, line, us[i]), 1)
+            elif side_i:                   # on a p-band edge (fam 1)
+                line = P if i == 0 else P + 1
+                ids[(i, j)] = net.vid(us[i], vs[j],
+                                      _band_z(1, line, vs[j]), 2)
+            else:                          # interior: sag DOWN
+                f = _SAG_PROFILE[(min(i, 4 - i), min(j, 4 - j))]
+                ids[(i, j)] = net.vid(us[i], vs[j], -fb * f, 0)
+    for i in range(4):
+        for j in range(4):
+            net.face([ids[(i, j)], ids[(i + 1, j)],
+                      ids[(i + 1, j + 1)], ids[(i, j + 1)]], 2)
 
 
 def _control_net(W, H, cell, strand_width):
-    """The full control net: junctions at every corner, a bridge on
-    every lattice edge (rim included -- the finished border), and a
-    diagonal ribbon span of each family per cell."""
+    """The full control net: at every crossover both families'
+    crossing sheets (two stacked strips, never merged), mid-span
+    strips between neighbouring crossovers, and an identical sunken
+    cushion in every open cell whose four crossovers all exist."""
     g = 0.5 * min(max(strand_width, 0.15), 0.9)
-    d = _SHOULDER * (1.0 - 2.0 * g)
-    bw = _BRIDGE_W * d
+    gap = 0.5 - g
+    aw = _ATTACH * gap
+    ci = _INSET * gap
     net = _Net(float(cell))
-    for a in range(W + 1):
-        for b in range(H + 1):
-            _junction(net, a, b, g)
-    for a in range(W + 1):
-        for b in range(H + 1):
-            if a < W:
-                _bridge(net, a, b, True, g, d, bw, W, H)
-            if b < H:
-                _bridge(net, a, b, False, g, d, bw, W, H)
-    for a in range(W):
-        for b in range(H):
-            _segment(net, a, b, 0, g, d)
-            _segment(net, a, b, 1, g, d)
+    for P in range(0, W + H + 1):
+        for Q in range(-W, H + 1):
+            if not _cross_ok(P, Q, W, H):
+                continue
+            # a crossing sheet is built only where its band actually
+            # continues along its line (the four extreme diamond
+            # corners would otherwise leave isolated one-crossing
+            # stubs, disconnected from the screen)
+            if (_cross_ok(P - 1, Q, W, H)
+                    or _cross_ok(P + 1, Q, W, H)):
+                _band_piece(net, 0, Q, (P - g, P, P + g), g)
+            if (_cross_ok(P, Q - 1, W, H)
+                    or _cross_ok(P, Q + 1, W, H)):
+                _band_piece(net, 1, P, (Q - g, Q, Q + g), g)
+            if _cross_ok(P + 1, Q, W, H):
+                _band_piece(net, 0, Q,
+                            (P + g, P + 0.5 - aw, P + 0.5,
+                             P + 0.5 + aw, P + 1 - g), g)
+            if _cross_ok(P, Q + 1, W, H):
+                _band_piece(net, 1, P,
+                            (Q + g, Q + 0.5 - aw, Q + 0.5,
+                             Q + 0.5 + aw, Q + 1 - g), g)
+            if (_cross_ok(P + 1, Q, W, H)
+                    and _cross_ok(P, Q + 1, W, H)
+                    and _cross_ok(P + 1, Q + 1, W, H)):
+                _cushion(net, P, Q, g, aw, ci, _FOOTBALL)
     return net
 
 
@@ -546,6 +490,49 @@ def _mesh_stats(nv, faces):
     return _components(nv, faces), nonman, rims
 
 
+def _face_normal(V, f):
+    """Newell normal of a (possibly non-planar) polygon."""
+    n = np.zeros(3)
+    m = len(f)
+    for k in range(m):
+        a = V[int(f[k])]
+        b = V[int(f[(k + 1) % m])]
+        n[0] += (a[1] - b[1]) * (a[2] + b[2])
+        n[1] += (a[2] - b[2]) * (a[0] + b[0])
+        n[2] += (a[0] - b[0]) * (a[1] + b[1])
+    ln = np.linalg.norm(n)
+    return n / ln if ln > 1e-12 else np.array([0.0, 0.0, 1.0])
+
+
+def _seam_normal_dots(V, faces, labels):
+    """Face-normal continuity across the cushion-to-ribbon seams
+    (label-2 face against label-0/1 face): list of dots of the two
+    unit normals, over INTERIOR seam edges (edges ending on the
+    free rims are the legitimate turn of the star notch, not part
+    of the smooth seam).  Near 1.0 everywhere = C1, no crease."""
+    emap = {}
+    for fi, f in enumerate(faces):
+        m = len(f)
+        for k in range(m):
+            a, b = int(f[k]), int(f[(k + 1) % m])
+            e = (a, b) if a < b else (b, a)
+            emap.setdefault(e, []).append(fi)
+    bverts = set()
+    for e, fs in emap.items():
+        if len(fs) == 1:
+            bverts.update(e)
+    dots = []
+    for e, fs in emap.items():
+        if len(fs) != 2 or e[0] in bverts or e[1] in bverts:
+            continue
+        la, lb = labels[fs[0]], labels[fs[1]]
+        if 2 in (la, lb) and (la in (0, 1) or lb in (0, 1)):
+            na = _face_normal(V, faces[fs[0]])
+            nb = _face_normal(V, faces[fs[1]])
+            dots.append(float(np.dot(na, nb)))
+    return dots
+
+
 def _vertex_normals(V, quads):
     N = np.zeros_like(V)
     for q in quads:
@@ -614,7 +601,7 @@ def _height_mats(cz):
 def _face_mats(V, faces, color_by, labels=None, family=None):
     if color_by == 'FAMILY':
         if labels is not None:
-            return list(labels)        # NE / NW / junction / bridge
+            return list(labels)    # ribbon fam 0 / fam 1 / cushions
         return [family] * len(faces)
     if color_by == 'HEIGHT':
         cz = np.array([np.mean([V[i][2] for i in f]) for f in faces])
@@ -643,11 +630,11 @@ def build_membrane(W, H, cell=1.0, strand_width=0.6, weave_depth=0.5,
                    weave='PLAIN', res=14, thickness=0.25,
                    smooth_rounds=2, surface='MEMBRANE',
                    relax_iters=12, color_by='UNIFORM'):
-    """The fused screen as a Catmull-Clark-evaluated bicubic patch
-    network.  Returns (cell, stats); stats includes the hole count
-    (rims minus the outer loop), components, the flat-crossing max
-    |z|, the over/under z-span and the count of stray mid-level
-    vertices at the woven crossings (two-sheet verification)."""
+    """The woven screen as a Catmull-Clark-evaluated bicubic patch
+    network.  Returns (cell, stats); stats carries the crossover
+    two-sheet extremes and parity alternation, the cushion base /
+    sag measurements, the seam normal-continuity minimum, hole
+    count and components -- everything the self-test asserts."""
     cell = float(cell)
     net = _control_net(W, H, cell, strand_width)
     rounds = max(1, min(4, int(np.log2(max(4, int(res)))) - 1))
@@ -665,30 +652,82 @@ def build_membrane(W, H, cell=1.0, strand_width=0.6, weave_depth=0.5,
         _taubin(V, faces, max(1, relax_iters))
         stats['minimal'] = 'TAUBIN-FAIRING'
     comps, nonman, rims = _mesh_stats(len(V), faces)
-    # verification: flat crossings ~ 0; at every woven crossing two
-    # SEPARATE sheets ~2h apart with an empty mid-band between them
-    flat_max = 0.0
-    for a in range(W + 1):
-        for b in range(H + 1):
-            r = np.hypot(V[:, 0] - a * cell, V[:, 1] - b * cell)
-            zz = V[r < 0.12 * cell, 2]
-            if len(zz):
-                flat_max = max(flat_max, float(np.abs(zz).max()))
-    span_min, stray = None, 0
-    for a in range(W):
-        for b in range(H):
-            r = np.hypot(V[:, 0] - (a + 0.5) * cell,
-                         V[:, 1] - (b + 0.5) * cell)
-            zz = V[r < 0.12 * cell, 2]
-            if len(zz):
-                sp = float(zz.max() - zz.min())
-                span_min = sp if span_min is None else min(span_min,
-                                                           sp)
-                stray += int(np.sum(np.abs(zz) < 0.4 * h))
-    stats.update({'components': comps, 'nonmanifold': nonman,
-                  'rims': rims, 'holes': max(0, rims - 1),
-                  'flat_max': flat_max, 'span_min': span_min or 0.0,
-                  'stray_mid': stray, 'h': h})
+
+    # --- verification measurements -------------------------------
+    C = np.array([np.mean([V[i] for i in f], axis=0) for f in faces])
+    L = np.array(labels)
+    # every crossover: two sheets at ~+/-h, family on top by parity
+    top_min, bot_max = None, None
+    parity_ok = True
+    for P in range(0, W + H + 1):
+        for Q in range(-W, H + 1):
+            if not _cross_ok(P, Q, W, H):
+                continue
+            x, y = _xy_of(P, Q)
+            r = np.hypot(C[:, 0] - x * cell, C[:, 1] - y * cell)
+            near = r < 0.15 * cell
+            z0 = C[near & (L == 0), 2]
+            z1 = C[near & (L == 1), 2]
+            if len(z0) == 0 or len(z1) == 0:
+                continue
+            hi = max(z0.max(), z1.max())
+            lo = min(z0.min(), z1.min())
+            top_min = hi if top_min is None else min(top_min, hi)
+            bot_max = lo if bot_max is None else max(bot_max, lo)
+            fam0_top = float(z0.mean()) > float(z1.mean())
+            parity_ok &= fam0_top == ((P + Q) % 2 == 0)
+    # every cushion: anchored at z ~ 0 (mean of its shared seam
+    # vertices -- the band-edge S-curve is centred on the
+    # mid-plane), core entirely below 0, all sagging equally
+    lab_of = defaultdict(set)
+    for fc, lb in zip(faces, labels):
+        for i in fc:
+            lab_of[int(i)].add(lb)
+    seamv = np.array([i for i, ls in lab_of.items()
+                      if 2 in ls and (0 in ls or 1 in ls)],
+                     dtype=int)
+    cush_core_max = None            # highest core point of any cell
+    sags = []                       # per-cell core minimum
+    anchor_absmax = 0.0             # worst seam-level offset
+    for P in range(0, W + H + 1):
+        for Q in range(-W, H + 1):
+            if not (_cross_ok(P, Q, W, H)
+                    and _cross_ok(P + 1, Q, W, H)
+                    and _cross_ok(P, Q + 1, W, H)
+                    and _cross_ok(P + 1, Q + 1, W, H)):
+                continue
+            x, y = _xy_of(P + 0.5, Q + 0.5)
+            r = np.hypot(C[:, 0] - x * cell, C[:, 1] - y * cell)
+            cz = C[:, 2]
+            core = (r < 0.1 * cell) & (L == 2)
+            if not core.any():
+                continue
+            m = float(cz[core].max())
+            cush_core_max = (m if cush_core_max is None
+                             else max(cush_core_max, m))
+            sags.append(float(cz[core].min()))
+            if len(seamv):
+                rs = np.hypot(V[seamv, 0] - x * cell,
+                              V[seamv, 1] - y * cell)
+                sel = rs < 0.3 * cell
+                if sel.any():
+                    anchor_absmax = max(
+                        anchor_absmax,
+                        abs(float(V[seamv[sel], 2].mean())))
+    dots = _seam_normal_dots(V, faces, labels)
+    stats.update({
+        'components': comps, 'nonmanifold': nonman, 'rims': rims,
+        'holes': max(0, rims - 1), 'h': h,
+        'cross_top_min': top_min or 0.0,
+        'cross_bot_max': bot_max or 0.0,
+        'parity_ok': parity_ok,
+        'cushion_core_max': 0.0 if cush_core_max is None
+        else cush_core_max,
+        'cushion_sag_min': min(sags) if sags else 0.0,
+        'cushion_sag_max': max(sags) if sags else 0.0,
+        'cushion_anchor_absmax': anchor_absmax,
+        'seam_dot_min': min(dots) if dots else 1.0,
+        'seam_dot_mean': (sum(dots) / len(dots)) if dots else 1.0})
     mats = _face_mats(V, faces, color_by, labels=labels)
     return _finish(V, faces, mats, thickness * cell), stats
 
@@ -747,7 +786,7 @@ def build_screen(W, H, cell=1.0, strand_width=0.6, weave_depth=0.5,
                                   relax_iters, color_by)
         cells = [c]
         if weave != 'PLAIN':
-            stats['note'] = ("the alternating-crossing membrane is "
+            stats['note'] = ("the alternating-crossover membrane is "
                              "plain-weave only")
     if backing and cells:
         allv = np.array([v for cv, _f, _m in cells for v in cv])
@@ -780,7 +819,7 @@ if _IN_BLENDER:
 
     class MESH_OT_over_under_screen_add(bpy.types.Operator,
                                         AddObjectHelper):
-        """Add a woven over-under screen (Hauer bilayer membrane)"""
+        """Add a woven over-under screen (Hauer woven membrane)"""
         bl_idname = "mesh.over_under_screen_add"
         bl_label = "Over-Under Screen"
         bl_options = {'REGISTER', 'UNDO'}
@@ -797,8 +836,7 @@ if _IN_BLENDER:
             name="Weave",
             items=[('PLAIN', "Plain",
                     "Over-1-under-1 (the membrane structure; the "
-                    "only draft of the alternating-crossing "
-                    "screen)"),
+                    "only draft of the woven screen)"),
                    ('TWILL', "Twill 2/2",
                     "Over-2-under-2 diagonal wale (ribbons mode)"),
                    ('BASKET', "Basket 2/2",
@@ -811,9 +849,9 @@ if _IN_BLENDER:
             items=[('RIBBONS', "Ribbons",
                     "Separate axis-aligned woven ribbons"),
                    ('MEMBRANE', "Membrane",
-                    "One fused patch-network screen: flat and "
-                    "over/under crossings alternating, saddle "
-                    "bridges, star openings (the Hauer screen)"),
+                    "One woven patch-network screen: every "
+                    "crossover alternating over/under, sunken cell "
+                    "cushions, star openings (the Hauer screen)"),
                    ('MINIMAL', "Minimal (Taut)",
                     "The membrane tautened by extra non-shrinking "
                     "(Taubin) fairing")],
@@ -852,8 +890,8 @@ if _IN_BLENDER:
             name="Color By",
             items=[('UNIFORM', "Uniform", "A single material"),
                    ('FAMILY', "By Element",
-                    "Tones by element: the two ribbon families, "
-                    "flat junctions, bridges"),
+                    "Tones by element: the two ribbon families and "
+                    "the cell cushions"),
                    ('HEIGHT', "By Height",
                     "Palette bands by surface height")],
             default='UNIFORM')
@@ -943,7 +981,9 @@ if _IN_BLENDER:
 # --------------------------------------------------------------------
 
 def _check_parity():
-    """Ribbon-mode drafts: exclusive over/under, balanced strands."""
+    """Ribbon-mode drafts: exclusive over/under, balanced strands;
+    and the membrane's crossover parity is a strict checkerboard
+    that flips across every neighbouring crossover."""
     ok = True
     I, J = np.meshgrid(np.arange(8), np.arange(8), indexing='ij')
     xo = x_over(I, J, 'PLAIN')
@@ -954,53 +994,59 @@ def _check_parity():
         xo = x_over(I, J, weave)
         ok &= bool(np.all(xo.sum(axis=0) == 4))
         ok &= bool(np.all(xo.sum(axis=1) == 4))
-    return ok
-
-
-def _check_structure():
-    """The A-I structure: adjacent flat crossings alternate layers
-    (every bridge joins an upper to a lower junction) and at every
-    centre the two diagonal families take opposite layers -- one
-    ribbon over, one under."""
-    ok = True
-    for a in range(4):
-        for b in range(4):
-            ok &= _layer(a, b) == (1 if (a + b) % 2 == 0 else -1)
-            if a < 3:
-                ok &= _layer(a, b) == -_layer(a + 1, b)
-            if b < 3:
-                ok &= _layer(a, b) == -_layer(a, b + 1)
-            if a < 3 and b < 3:
-                # NE family enters centre (a+.5, b+.5) from (a, b);
-                # NW family from (a+1, b): opposite layers
-                ok &= _layer(a, b) == -_layer(a + 1, b)
+    for P in range(4):
+        for Q in range(4):
+            t0 = _band_z(0, Q, P) > _band_z(1, P, Q)
+            ok &= t0 == ((P + Q) % 2 == 0)
+            ok &= (_band_z(0, Q, P + 1) > _band_z(1, P + 1, Q)) != t0
+            ok &= (_band_z(0, Q + 1, P) > _band_z(1, P, Q + 1)) != t0
     return ok
 
 
 def _run_selftest():
-    W, H = 3, 2
+    W, H = 3, 3
     par = _check_parity()
-    struct = _check_structure()
-    print("ribbon parity ok:", par, "| A-I structure ok:", struct)
+    print("weave parity / crossover checkerboard ok:", par)
 
     (v, f, m), st = build_membrane(W, H, res=16, thickness=0.0)
+    h = st['h']
     nonempty = len(v) > 0 and len(f) > 0
     finite = bool(np.all(np.isfinite(np.asarray(v))))
     conn = st['components'] == 1
     manifold = st['nonmanifold'] == 0
-    holes_ok = st['holes'] == W * H
-    h = st['h']
-    flat_ok = st['flat_max'] <= 0.3 * h
-    span_ok = st['span_min'] >= 1.5 * h
-    sheets_ok = st['stray_mid'] == 0        # nothing merged at E
+    # boundary-cycle invariant of the construction (validated over
+    # grids 3x3 .. 6x4): the star-notch cycles around the interior
+    # crossovers plus the partially-enclosed rim cycles
+    exp_holes = 2 * W * H - 3 * (W + H) + 9
+    holes_ok = st['holes'] == exp_holes
+    # (a) NO flat crossovers: every crossover has a sheet near +h
+    # and a sheet near -h, and the top family alternates by parity
+    cross_ok = (st['cross_top_min'] >= 0.6 * h
+                and st['cross_bot_max'] <= -0.6 * h
+                and st['parity_ok'])
+    # (b) every cushion: anchored at z ~ 0 (no per-cell offset),
+    # its core entirely BELOW 0, all sagging by the same depth
+    cush_ok = (st['cushion_core_max'] < 0.0
+               and st['cushion_sag_min'] <= -0.3 * h
+               and st['cushion_anchor_absmax'] <= 0.12 * h
+               and (st['cushion_sag_max']
+                    - st['cushion_sag_min']) <= 0.15 * h)
+    # (c) C1 seams: no crease across any cushion-to-ribbon seam
+    seam_ok = st['seam_dot_min'] >= 0.98
     print("membrane: V=%d F=%d comps=%d nonman=%d rims=%d "
           "holes=%d (want %d)" % (len(v), len(f), st['components'],
                                   st['nonmanifold'], st['rims'],
-                                  st['holes'], W * H))
-    print("flat max|z|=%.3fh (<=0.3h) | E span=%.3fh (>=1.5h) | "
-          "stray mid-level verts at E: %d (want 0)"
-          % (st['flat_max'] / h, st['span_min'] / h,
-             st['stray_mid']))
+                                  st['holes'], exp_holes))
+    print("crossovers: top>=%.3fh bot<=%.3fh parity_ok=%s"
+          % (st['cross_top_min'] / h, st['cross_bot_max'] / h,
+             st['parity_ok']))
+    print("cushions: core max z=%.3fh (<0) sag %.3fh..%.3fh "
+          "anchor |z|<=%.3fh"
+          % (st['cushion_core_max'] / h, st['cushion_sag_min'] / h,
+             st['cushion_sag_max'] / h,
+             st['cushion_anchor_absmax'] / h))
+    print("seam C1: min dot=%.4f mean=%.4f (want >=0.98)"
+          % (st['seam_dot_min'], st['seam_dot_mean']))
 
     (_v2, f2, _m2), st2 = build_membrane(W, H, res=16,
                                          thickness=0.2,
@@ -1024,9 +1070,9 @@ def _run_selftest():
     fit_ok = abs(ext - 2.0) < 1e-6
     print("fit: max extent %.6f (want 2.0)" % ext)
 
-    ok = (par and struct and nonempty and finite and conn
-          and manifold and holes_ok and flat_ok and span_ok
-          and sheets_ok and min_ok and rib_ok and fit_ok)
+    ok = (par and nonempty and finite and conn and manifold
+          and holes_ok and cross_ok and cush_ok and seam_ok
+          and min_ok and rib_ok and fit_ok)
     print("RESULT:", "OK" if ok else "BAD")
     return ok
 
