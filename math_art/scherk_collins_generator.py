@@ -103,9 +103,14 @@ def _v_norm(a):
     return (a[0] / l, a[1] / l, a[2] / l)
 
 
-def generate_sculpture(p, return_grids=False):
+def generate_sculpture(p, return_grids=False, with_uv=False):
     """Build the sculpture mesh. Returns (verts, faces) with faces as
     index tuples (already cleaned of degenerate entries).
+
+    With with_uv=True returns (verts, faces, vert_uv): one (u, v) per
+    vertex, U running around the branch cross-section and V up the tower
+    (each branch a 1/branches slice of U, each storey stacking in V), so
+    an image texture wraps the sheet naturally.
 
     With return_grids=True, stops after the mid-surface grids are built
     and returns (grids, R, m): grids maps (storey, branch) to a list of
@@ -345,10 +350,16 @@ def generate_sculpture(p, return_grids=False):
     # ---- emit vertices and faces --------------------------------------
     verts = []
     faces = []
+    vert_uv = []
 
-    def add_vert(pt):
+    def add_vert(pt, uv=(0.0, 0.0)):
         verts.append(pt)
+        vert_uv.append(uv)
         return len(verts) - 1
+
+    def uv_of(sp, jp, i, k):
+        """(u, v) for row i / column k of branch jp, storey sp."""
+        return ((jp + k / (m - 1)) / b, (sp * R + i) / (S * R))
 
     def add_quad(a, bq, c2, d2):
         uniq = []
@@ -365,7 +376,8 @@ def generate_sculpture(p, return_grids=False):
     # watertight even where neighbouring grids have opposite winding
     arc_cache = {}
 
-    def rim_arc(pt, sheet_top_idx, sheet_bot_idx, sign, cache_tag=None):
+    def rim_arc(pt, sheet_top_idx, sheet_bot_idx, sign, cache_tag=None,
+                uv=(0.0, 0.0)):
         """Full arc vertex list ordered from the (p + t/2*n_canonical) end
         to the (p - t/2*n_canonical) end. `sign` says which of this grid's
         sheet verts sits at which end. `cache_tag` scopes the shared-arc
@@ -385,7 +397,7 @@ def generate_sculpture(p, return_grids=False):
                 phi = pi * a / n_arc
                 q = _v_add(pt, _v_scale(n, (t_out / 2.0) * cos(phi)))
                 q = _v_add(q, _v_scale(o, w_bulge * sin(phi)))
-                interior.append(add_vert(q))
+                interior.append(add_vert(q, uv))
             arc_cache[kk] = interior
         if sign >= 0:
             return [sheet_top_idx] + interior + [sheet_bot_idx]
@@ -409,7 +421,8 @@ def generate_sculpture(p, return_grids=False):
             for i in range(R + 1):
                 if rows[i] is None:
                     continue
-                vid[i] = [add_vert(rows[i][k]) for k in range(m)]
+                vid[i] = [add_vert(rows[i][k], uv_of(key[0], key[1], i, k))
+                          for k in range(m)]
             for i in range(R):
                 if vid[i] is None or vid[i + 1] is None:
                     continue
@@ -440,8 +453,9 @@ def generate_sculpture(p, return_grids=False):
                         n = cn
                         gsign[(i, k)] = 1
                 off = _v_scale(n, t_out / 2.0)
-                trow.append(add_vert(_v_add(pt, off)))
-                brow.append(add_vert(_v_sub(pt, off)))
+                uv = uv_of(key[0], key[1], i, k)
+                trow.append(add_vert(_v_add(pt, off), uv))
+                brow.append(add_vert(_v_sub(pt, off), uv))
             top[i] = trow
             bot[i] = brow
         for i in range(R):
@@ -473,9 +487,11 @@ def generate_sculpture(p, return_grids=False):
             tag_a = key if va[0] in cap_rows else None
             tag_b = key if vb[0] in cap_rows else None
             arc_a = rim_arc(pa, top[va[0]][va[1]], bot[va[0]][va[1]],
-                            gsign.get(va, 1), tag_a)
+                            gsign.get(va, 1), tag_a,
+                            uv=uv_of(key[0], key[1], va[0], va[1]))
             arc_b = rim_arc(pb, top[vb[0]][vb[1]], bot[vb[0]][vb[1]],
-                            gsign.get(vb, 1), tag_b)
+                            gsign.get(vb, 1), tag_b,
+                            uv=uv_of(key[0], key[1], vb[0], vb[1]))
             # arcs are listed in canonical-normal order; if the endpoints'
             # canonical normals oppose (happens where grid orientations
             # flip, e.g. next to the closure seam), pair against the
@@ -486,6 +502,8 @@ def generate_sculpture(p, return_grids=False):
             for a in range(n_arc):
                 add_quad(arc_a[a], arc_b[a], arc_b[a + 1], arc_a[a + 1])
 
+    if with_uv:
+        return verts, faces, vert_uv
     return verts, faces
 
 
@@ -821,12 +839,21 @@ if _IN_BLENDER:
         if st.output_nurbs:
             _build_nurbs_data(obj, p)
             return obj
-        verts, faces = generate_sculpture(p)
+        verts, faces, vert_uv = generate_sculpture(p, with_uv=True)
         me = bpy.data.meshes.new(obj.data.name if obj.data else "ScherkCollins")
         me.from_pydata(verts, [], faces)
         me.validate(clean_customdata=True)
         bm = bmesh.new()
         bm.from_mesh(me)
+        # UV map from the parametric grid, set before welding so the
+        # per-loop coordinates survive remove_doubles (bmesh vert index
+        # still matches the pre-weld vertex order / vert_uv here)
+        if len(vert_uv) == len(me.vertices):
+            bm.verts.ensure_lookup_table()
+            uvl = bm.loops.layers.uv.new("UVMap")
+            for f in bm.faces:
+                for loop in f.loops:
+                    loop[uvl].uv = vert_uv[loop.vert.index]
         bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=weld_epsilon(p))
         bmesh.ops.dissolve_degenerate(bm, dist=weld_epsilon(p) * 0.1,
                                       edges=bm.edges)
@@ -924,11 +951,21 @@ if _IN_BLENDER:
                 setattr(st, k, v)
         st.auto_update = saved
 
+    _RESET_KEYS = ('branches', 'storeys', 'height', 'flange', 'thickness',
+                   'rim_bulge', 'twist', 'azimuth', 'warp', 'detail',
+                   'scale_x', 'scale_y', 'scale_z', 'global_scale')
+
     def _preset_chosen(self, context):
         """Copy the chosen preset's values into the operator's own
         properties so the redo-panel sliders start from them and remain
-        freely tweakable afterwards."""
-        if self.preset != 'CUSTOM':
+        freely tweakable afterwards.  Choosing Default resets every
+        parameter to the program defaults."""
+        if self.preset == 'CUSTOM':
+            for k in _RESET_KEYS:
+                prop = self.bl_rna.properties.get(k)
+                if prop is not None and hasattr(self, k):
+                    setattr(self, k, prop.default)
+        else:
             for k, v in PRESETS[self.preset][1].items():
                 if hasattr(self, k):
                     setattr(self, k, v)
