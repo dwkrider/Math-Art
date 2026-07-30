@@ -16,8 +16,9 @@
 #                 augmented dodecahedron / diminished icosahedron, the
 #                 cupola-augmented truncated solids, and the whole
 #                 gyrate/diminished rhombicosidodecahedron family
-#                 (glued/sliced/gyrated on exact convex bases).  The 9
-#                 elementary solids J84-J92 to come.
+#                 (glued/sliced/gyrated on exact convex bases); and
+#                 J84-J92, the 9 elementary solids (regular-face
+#                 relaxation).  All 92 Johnson solids.
 #
 # Options: generic stellation (each face replaced by a pyramid to the
 # intersection of its neighbours' planes -- octahedron gives the
@@ -247,6 +248,15 @@ _J_EXT = [
     (81, "Metabidiminished Rhombicosidodecahedron (J81)"),
     (82, "Gyrate Bidiminished Rhombicosidodecahedron (J82)"),
     (83, "Tridiminished Rhombicosidodecahedron (J83)"),
+    (84, "Snub Disphenoid (J84)"),
+    (85, "Snub Square Antiprism (J85)"),
+    (86, "Sphenocorona (J86)"),
+    (87, "Augmented Sphenocorona (J87)"),
+    (88, "Sphenomegacorona (J88)"),
+    (89, "Hebesphenomegacorona (J89)"),
+    (90, "Disphenocingulum (J90)"),
+    (91, "Bilunabirotunda (J91)"),
+    (92, "Triangular Hebesphenorotunda (J92)"),
 ]
 _J_EXT_NUMS = {num for num, _name in _J_EXT}
 JOHNSON += [(f'J{num}', name, num) for num, name in _J_EXT]
@@ -853,7 +863,191 @@ _RID_ROLES = {
 }
 
 
+# ---------------------------------------------------------------- #
+#  Elementary Johnson solids J84-J92                               #
+# ---------------------------------------------------------------- #
+#
+# The nine "special / elementary" Johnson solids cannot be cut from
+# regular components -- they are held rigid only by the requirement
+# that every face be a regular unit polygon.  Each is seeded here with
+# a combinatorial face list and approximate vertex coordinates
+# (evaluated from the closed forms / polynomial roots published for
+# each solid -- Snub Disphenoid: root of 2x^3+11x^2+4x-1; Bilunabirotunda:
+# golden-ratio triples; etc.), then _relax_regular snaps every face to a
+# regular unit polygon, converging to the exact solid (edges equal to
+# ~1e-14).  Coordinates are seeds only; the exact geometry is produced
+# by the solver here, not copied from any coordinate database.
+#
+# Seed data: {num: (names, V, F)} with V approximate, F 0-based CCW.
+
+_JELEM = {
+    84: ([[0.644584, 0.205562, 0.0], [-0.644584, 0.205562, 0.0],
+          [0.0, -0.205562, 0.644584], [0.0, -0.205562, -0.644584],
+          [0.5, -0.783931, 0.0], [-0.5, -0.783931, 0.0],
+          [0.0, 0.783931, 0.5], [0.0, 0.783931, -0.5]],
+         [[2, 0, 6], [2, 1, 5], [3, 0, 4], [3, 1, 7], [4, 0, 2], [4, 2, 5],
+          [5, 1, 3], [5, 3, 4], [6, 0, 7], [6, 1, 2], [7, 0, 3], [7, 1, 6]]),
+    85: ([[0.5, 0.5, 0.676869], [1.213206, 0.0, 0.185607],
+          [-0.5, 0.5, 0.676869], [0.707107, 0.0, -0.676869],
+          [0.0, 1.213206, 0.185607], [0.857866, 0.857866, -0.185607],
+          [-0.5, -0.5, 0.676869], [0.0, -0.707107, -0.676869],
+          [0.0, 0.707107, -0.676869], [-1.213206, 0.0, 0.185607],
+          [0.857866, -0.857866, -0.185607], [-0.857866, 0.857866, -0.185607],
+          [0.5, -0.5, 0.676869], [-0.707107, 0.0, -0.676869],
+          [0.0, -1.213206, 0.185607], [-0.857866, -0.857866, -0.185607]],
+         [[1, 0, 12], [2, 0, 4], [3, 1, 10], [4, 0, 5], [5, 0, 1], [5, 1, 3],
+          [5, 3, 8], [6, 2, 9], [7, 3, 10], [8, 4, 5], [9, 2, 11], [10, 1, 12],
+          [11, 2, 4], [11, 4, 8], [11, 8, 13], [12, 6, 14], [13, 7, 15],
+          [13, 9, 11], [14, 6, 15], [14, 7, 10], [14, 10, 12], [15, 6, 9],
+          [15, 7, 14], [15, 9, 13], [12, 0, 2, 6], [13, 8, 3, 7]]),
+    86: ([[0.0, 0.5, 0.522357], [0.852727, 0.5, 0.0],
+          [0.0, 0.789428, -0.434843], [0.5, 0.0, -0.790938],
+          [0.0, -0.5, 0.522357], [-0.852727, 0.5, 0.0],
+          [0.852727, -0.5, 0.0], [0.0, -0.789428, -0.434843],
+          [-0.5, 0.0, -0.790938], [-0.852727, -0.5, 0.0]],
+         [[2, 0, 1], [2, 1, 3], [3, 1, 6], [5, 0, 2], [5, 2, 8], [6, 4, 7],
+          [7, 3, 6], [7, 4, 9], [8, 2, 3], [8, 3, 7], [8, 7, 9], [9, 5, 8],
+          [4, 0, 5, 9], [6, 1, 0, 4]]),
+    87: ([[0.0, 0.5, 0.522357], [0.852727, 0.5, 0.0],
+          [0.0, 0.789428, -0.434843], [0.5, 0.0, -0.790938],
+          [0.0, -0.5, 0.522357], [-0.852727, 0.5, 0.0],
+          [0.852727, -0.5, 0.0], [0.0, -0.789428, -0.434843],
+          [-0.5, 0.0, -0.790938], [-0.852727, -0.5, 0.0],
+          [0.795726, 0.0, 0.864147]],
+         [[1, 0, 10], [2, 0, 1], [2, 1, 3], [3, 1, 6], [5, 0, 2], [5, 2, 8],
+          [6, 1, 10], [6, 4, 7], [7, 3, 6], [7, 4, 9], [8, 2, 3], [8, 3, 7],
+          [8, 7, 9], [9, 5, 8], [10, 0, 4], [10, 4, 6], [4, 0, 5, 9]]),
+    88: ([[0.0, 0.5, 0.803997], [0.594633, 0.5, 0.0],
+          [0.0, 1.283102, 0.182104], [0.5, 0.0, -0.860839],
+          [0.0, 0.854743, -0.721504], [0.0, -0.5, 0.803997],
+          [-0.594633, 0.5, 0.0], [0.594633, -0.5, 0.0],
+          [0.0, -1.283102, 0.182104], [-0.5, 0.0, -0.860839],
+          [0.0, -0.854743, -0.721504], [-0.594633, -0.5, 0.0]],
+         [[2, 0, 1], [2, 1, 4], [3, 1, 7], [4, 1, 3], [4, 3, 9], [6, 0, 2],
+          [6, 2, 4], [6, 4, 9], [7, 5, 8], [8, 5, 11], [9, 3, 10], [10, 3, 7],
+          [10, 7, 8], [10, 8, 11], [11, 6, 9], [11, 9, 10], [1, 0, 5, 7],
+          [11, 5, 0, 6]]),
+    89: ([[0.5, 0.5, 0.976206], [0.716845, 0.5, 0.0],
+          [0.0, 1.101296, 0.352954], [0.5, 0.0, -0.838438],
+          [0.0, 0.835659, -0.611119], [-0.5, 0.5, 0.976206],
+          [0.5, -0.5, 0.976206], [-0.716845, 0.5, 0.0],
+          [0.716845, -0.5, 0.0], [0.0, -1.101296, 0.352954],
+          [-0.5, 0.0, -0.838438], [0.0, -0.835659, -0.611119],
+          [-0.5, -0.5, 0.976206], [-0.716845, -0.5, 0.0]],
+         [[2, 0, 1], [2, 1, 4], [3, 1, 8], [4, 1, 3], [4, 3, 10], [5, 0, 2],
+          [5, 2, 7], [7, 2, 4], [7, 4, 10], [8, 6, 9], [9, 6, 12], [10, 3, 11],
+          [11, 3, 8], [11, 8, 9], [11, 9, 13], [13, 7, 10], [13, 9, 12],
+          [13, 10, 11], [1, 0, 6, 8], [6, 0, 5, 12], [12, 5, 7, 13]]),
+    90: ([[0.5, 0.767131, 0.462948], [0.5, 0.0, 1.104438],
+          [1.126483, 0.0, 0.325003], [-0.5, 0.767131, 0.462948],
+          [0.5, -0.767131, 0.462948], [0.767131, -0.5, -0.462948],
+          [-0.5, 0.0, 1.104438], [0.0, -0.5, -1.104438],
+          [-1.126483, 0.0, 0.325003], [0.0, -1.126483, -0.325003],
+          [-0.5, -0.767131, 0.462948], [0.767131, 0.5, -0.462948],
+          [-0.767131, -0.5, -0.462948], [0.0, 0.5, -1.104438],
+          [0.0, 1.126483, -0.325003], [-0.767131, 0.5, -0.462948]],
+         [[2, 0, 1], [2, 1, 4], [3, 0, 14], [5, 2, 4], [5, 4, 9], [6, 3, 8],
+          [7, 5, 9], [8, 3, 15], [9, 4, 10], [10, 6, 8], [10, 8, 12],
+          [11, 0, 2], [11, 2, 5], [12, 7, 9], [12, 8, 15], [12, 9, 10],
+          [14, 0, 11], [14, 11, 13], [14, 13, 15], [15, 3, 14], [1, 0, 3, 6],
+          [10, 4, 1, 6], [13, 7, 12, 15], [13, 11, 5, 7]]),
+    91: ([[0.0, 0.0, 0.809017], [0.0, 0.0, -0.809017],
+          [0.5, 0.809017, 0.5], [0.5, 0.809017, -0.5],
+          [0.5, -0.809017, 0.5], [0.5, -0.809017, -0.5],
+          [-0.5, 0.809017, 0.5], [-0.5, 0.809017, -0.5],
+          [-0.5, -0.809017, 0.5], [-0.5, -0.809017, -0.5],
+          [1.309017, 0.5, 0.0], [1.309017, -0.5, 0.0],
+          [-1.309017, 0.5, 0.0], [-1.309017, -0.5, 0.0]],
+         [[3, 1, 7], [3, 2, 10], [4, 0, 8], [6, 0, 2], [9, 1, 5], [9, 8, 13],
+          [11, 4, 5], [12, 6, 7], [5, 4, 8, 9], [6, 2, 3, 7],
+          [10, 2, 0, 4, 11], [11, 5, 1, 3, 10], [12, 7, 1, 9, 13],
+          [13, 8, 0, 6, 12]]),
+    92: ([[0.0, -0.57735, 1.511523], [1.309017, 0.178411, 0.934172],
+          [1.309017, -0.755761, 0.57735], [1.0, 0.0, 0.0],
+          [0.5, 0.288675, 1.511523], [-0.809017, 1.044436, 0.934172],
+          [-1.309017, 0.178411, 0.934172], [0.0, 1.511523, 0.57735],
+          [-1.309017, -0.755761, 0.57735], [-0.5, 0.866025, 0.0],
+          [-1.0, 0.0, 0.0], [-0.5, 0.288675, 1.511523],
+          [-0.5, -1.222847, 0.934172], [0.809017, 1.044436, 0.934172],
+          [0.5, -1.222847, 0.934172], [-0.5, -0.866025, 0.0],
+          [0.5, 0.866025, 0.0], [0.5, -0.866025, 0.0]],
+         [[3, 1, 2], [3, 2, 17], [4, 1, 13], [8, 6, 10], [9, 5, 7], [9, 7, 16],
+          [11, 0, 4], [11, 5, 6], [12, 8, 15], [14, 0, 12], [15, 8, 10],
+          [16, 7, 13], [17, 2, 14], [10, 6, 5, 9], [13, 1, 3, 16],
+          [14, 12, 15, 17], [1, 4, 0, 14, 2], [5, 11, 4, 13, 7],
+          [8, 12, 0, 11, 6], [9, 16, 3, 17, 15, 10]]),
+}
+
+
+def _relax_regular(V, F, iters=1500):
+    """Snap the mesh so every face is a regular unit-edge polygon: each
+    iteration best-fits a regular m-gon (circumradius 1/(2 sin(pi/m))) to
+    every face in its own plane and averages the shared-vertex proposals.
+    Converges to the unique all-regular-faced solid for a rigid graph."""
+    V = [list(v) for v in V]
+    n = len(V)
+    for _ in range(iters):
+        acc = [[0.0, 0.0, 0.0] for _ in range(n)]
+        cnt = [0] * n
+        for f in F:
+            m = len(f)
+            pts = [V[i] for i in f]
+            c = [sum(p[k] for p in pts) / m for k in range(3)]
+            nx = [0.0, 0.0, 0.0]
+            for i in range(m):
+                p, q = pts[i], pts[(i + 1) % m]
+                nx[0] += (p[1] - q[1]) * (p[2] + q[2])
+                nx[1] += (p[2] - q[2]) * (p[0] + q[0])
+                nx[2] += (p[0] - q[0]) * (p[1] + q[1])
+            ln = sqrt(sum(x * x for x in nx)) or 1.0
+            nx = [x / ln for x in nx]
+            d0 = [pts[0][k] - c[k] for k in range(3)]
+            dot = sum(d0[k] * nx[k] for k in range(3))
+            u = [d0[k] - dot * nx[k] for k in range(3)]
+            lu = sqrt(sum(x * x for x in u)) or 1.0
+            u = [x / lu for x in u]
+            v = [nx[1] * u[2] - nx[2] * u[1], nx[2] * u[0] - nx[0] * u[2],
+                 nx[0] * u[1] - nx[1] * u[0]]
+            R = 0.5 / sin(pi / m)
+            a = [sum((p[k] - c[k]) * u[k] for k in range(3)) for p in pts]
+            b = [sum((p[k] - c[k]) * v[k] for k in range(3)) for p in pts]
+            sr = si = 0.0
+            for k in range(m):
+                wr, wi = cos(2 * pi * k / m), sin(2 * pi * k / m)
+                sr += a[k] * wr + b[k] * wi
+                si += b[k] * wr - a[k] * wi
+            phi = math.atan2(si, sr)
+            for k in range(m):
+                ang = 2 * pi * k / m + phi
+                tx, ty = R * cos(ang), R * sin(ang)
+                vi = f[k]
+                for j in range(3):
+                    acc[vi][j] += c[j] + tx * u[j] + ty * v[j]
+                cnt[vi] += 1
+        maxd = 0.0
+        for i in range(n):
+            if cnt[i] == 0:
+                continue
+            p = [acc[i][j] / cnt[i] for j in range(3)]
+            maxd = max(maxd, math.dist(p, V[i]))
+            V[i] = p
+        if maxd < 1e-14:
+            break
+    return V
+
+
+def build_johnson_elementary(num, scale=1.0):
+    V, F = _JELEM[num]
+    V = _relax_regular([list(v) for v in V], F)
+    cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
+    V = [tuple((v[c] - cen[c]) * scale for c in range(3)) for v in V]
+    V, F = cw.orient_outward(V, [list(f) for f in F])
+    return V, F
+
+
 def build_johnson_ext(num, scale=1.0):
+    if 84 <= num <= 92:
+        return build_johnson_elementary(num, scale)
     if num in (49, 50, 51):
         V, F = _prism_unit(3)
         V, F = _augment_faces(V, F, {49: [0], 50: [0, 1],
@@ -1564,11 +1758,11 @@ if _IN_BLENDER:
          "The four regular star polyhedra (true intersecting faces)"),
         ('PRISM', "Prisms & Antiprisms", "Uniform n-prisms"),
         ('JOHNSON', "Johnson",
-         "J1-J83: pyramid / cupola / rotunda solids and their "
+         "All 92: pyramid / cupola / rotunda solids and their "
          "elongations and pairings, the augmented prisms, augmented "
          "dodecahedron / diminished icosahedron, cupola-augmented "
-         "truncated solids and the gyrate/diminished "
-         "rhombicosidodecahedron family"),
+         "truncated solids, the gyrate/diminished rhombicosidodecahedron "
+         "family and the 9 elementary solids"),
     ]
 
     _ITEM_CACHE = {}

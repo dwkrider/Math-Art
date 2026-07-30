@@ -151,6 +151,12 @@ OPS = [
      lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J72')),
     ("solid johnson tridiminished rid",
      lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J83')),
+    ("solid johnson snub disphenoid",
+     lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J84')),
+    ("solid johnson hebesphenomegacorona",
+     lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J89')),
+    ("solid johnson triangular hebesphenorotunda",
+     lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J92')),
     ("solid kepler", lambda: bpy.ops.mesh.regular_solid_add(
         family='KEPLER', solid='GSD')),
     ("solid stellated", lambda: bpy.ops.mesh.regular_solid_add(
