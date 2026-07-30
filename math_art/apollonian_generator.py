@@ -428,7 +428,7 @@ if _IN_BLENDER:
                    ('UNIFORM', "Uniform", "A single color")],
             default='SIZE')
         depth: IntProperty(
-            name="Depth", default=10, min=1, max=16,
+            name="Depth", default=6, min=1, max=16,
             description="Gap-filling generations (packing fills largest-"
                         "first to Max Count; a sphere packing never fills "
                         "space fully -- the gaps are a fractal)")
