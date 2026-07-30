@@ -723,6 +723,17 @@ OPS = [
     ("modular screen weave column",
      lambda: bpy.ops.mesh.modular_screen_add(
          preset='DESIGN1', nx=6, ny=3, curvature='COLUMN')),
+    ("modular screen pinwheel relief",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='PINWHEEL', nx=5, ny=5, hole=0.0, swirl=1.0)),
+    ("modular screen pinwheel left perforated",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='PINWHEEL', nx=5, ny=5, handedness='LEFT', swirl=1.2,
+         hole=0.25)),
+    ("modular screen pinwheel curved",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='PINWHEEL', nx=6, ny=4, hole=0.0, curvature='CURVED',
+         wrap_angle=140.0)),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):

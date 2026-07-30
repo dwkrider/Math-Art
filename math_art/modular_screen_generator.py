@@ -76,12 +76,24 @@ except Exception:                            # legacy single-file / CLI
 # Pure-math core (no bpy)
 # --------------------------------------------------------------------
 
-def height_at(style, x, y, ci, cj, amp):
+def height_at(style, x, y, ci, cj, amp, swirl_k=1.0, chir=1.0):
     """Midsurface height of a height-field module at global (x, y).
     ci, cj are the integer indices of the cell (x, y) belongs to (only
     the HYPAR style is piecewise and needs them).  Every style is
     C0-continuous across cell boundaries, so a point on a shared edge
     evaluates to the same height from either adjacent cell."""
+    if style == 'PINWHEEL':
+        # A chiral 4-fold (wallpaper group p4) pinwheel: a mirror-
+        # symmetric base cos + cos, plus a swirl term that is
+        # antisymmetric under reflection (so it cannot be undone by any
+        # mirror) -- the field is invariant only under 90-degree
+        # rotation, giving the one-handed swirling arms.  chir = +/-1
+        # flips the handedness; swirl_k sets how strongly the arms
+        # curl.
+        X = 2.0 * pi * x
+        Y = 2.0 * pi * y
+        S = sin(2.0 * X) * sin(Y) - sin(2.0 * Y) * sin(X)
+        return amp * 0.35 * (cos(X) + cos(Y) + chir * swirl_k * S)
     if style == 'HYPAR':
         # Bilinear ruled saddle per cell (a hyperbolic paraboloid,
         # z = amp * xi * eta on xi, eta in [-1, 1]) with a checkerboard
@@ -194,11 +206,13 @@ def _close_shell(verts, top_faces, bot_faces, top2bot, rim_bulge,
 
 def build_screen(nx=5, ny=5, style='SADDLE', amp=0.5, thick=0.14,
                  hole=0.34, res=6, frame=True, rim_bulge=0.6,
-                 bulge_segs=3, ap_square=0.0):
+                 bulge_segs=3, ap_square=0.0, swirl_k=1.0, chir=1.0):
     """Build (verts, faces, mats) for a thickened, perforated saddle
     screen over an nx x ny block of modules.  `ap_square` in [0, 1]
     morphs each aperture from a circle (0) to a rounded square (1) via
-    a superellipse.  The result is a single closed watertight manifold."""
+    a superellipse; `swirl_k` and `chir` set the swirl strength and
+    handedness of the PINWHEEL style.  The result is a single closed
+    watertight manifold."""
     nx = max(2, int(nx))
     ny = max(2, int(ny))
     K = max(3, int(res))
@@ -251,7 +265,8 @@ def build_screen(nx=5, ny=5, style='SADDLE', amp=0.5, thick=0.14,
                     ix, iy = inner[k]
                     x = ox + t * (ix - ox)
                     y = oy + t * (iy - oy)
-                    h = height_at(style, x, y, ci, cj, amp)
+                    h = height_at(style, x, y, ci, cj, amp,
+                                  swirl_k, chir)
                     top[m][k] = vid(x, y, h, 0)
                     bot[m][k] = vid(x, y, h, 1)
 
@@ -368,6 +383,9 @@ PRESET_ITEMS = [
     ('DESIGN5', "Saddle Lattice (after Design 5)",
      "The egg-crate cos*cos saddle lattice with apertures, in the "
      "family of Hauer's Design 5 screen"),
+    ('PINWHEEL', "Pinwheel (chiral)",
+     "A chiral four-fold pinwheel relief: swirling arms of one "
+     "handedness with curved openings between them"),
     ('DESIGN1', "Bilayer Weave (after Design 1)",
      "Two families of undulating ribbons woven over and under one "
      "another, in the family of Hauer's interwoven Design 1"),
@@ -385,7 +403,7 @@ PRESET_ITEMS = [
 
 _PRESET_STYLE = {'DESIGN5': 'SADDLE', 'WEAVE': 'WEAVE',
                  'DIAGONAL': 'DIAGONAL', 'DESIGN6': 'SADDLE',
-                 'HYPAR': 'HYPAR'}
+                 'HYPAR': 'HYPAR', 'PINWHEEL': 'PINWHEEL'}
 
 
 # --------------------------------------------------------------------
@@ -445,6 +463,16 @@ if _IN_BLENDER:
             name="Ribbon Width", default=0.7, min=0.1, max=0.95,
             description="Width of the woven ribbons in cell units "
                         "(Bilayer Weave only)")
+        swirl: FloatProperty(
+            name="Swirl", default=1.0, min=0.0, max=2.5,
+            description="How strongly the pinwheel arms curl "
+                        "(Pinwheel only)")
+        handedness: EnumProperty(
+            name="Handedness",
+            items=[('RIGHT', "Right", "Clockwise swirl"),
+                   ('LEFT', "Left", "Counter-clockwise (mirror) swirl")],
+            default='RIGHT',
+            description="Chirality of the pinwheel swirl (Pinwheel only)")
         res: IntProperty(
             name="Resolution", default=6, min=3, max=12,
             description="Samples per cell; higher gives rounder "
@@ -485,10 +513,11 @@ if _IN_BLENDER:
             else:
                 style = _PRESET_STYLE[p]
                 hole = 0.0 if p == 'DESIGN6' else self.hole
+                chir = -1.0 if self.handedness == 'LEFT' else 1.0
                 verts, faces, mats = build_screen(
                     self.nx, self.ny, style, self.amp, self.thick, hole,
                     self.res, self.frame, self.rim_bulge,
-                    self.bulge_segs, self.ap_square)
+                    self.bulge_segs, self.ap_square, self.swirl, chir)
             if self.curvature == 'CURVED':
                 verts = wrap_cylinder(verts, self.nx, self.wrap_angle)
             elif self.curvature == 'COLUMN':
@@ -519,6 +548,9 @@ if _IN_BLENDER:
             lay.prop(self, 'ny')
             lay.prop(self, 'amp')
             lay.prop(self, 'thick')
+            if self.preset == 'PINWHEEL':
+                lay.prop(self, 'swirl')
+                lay.prop(self, 'handedness')
             if self.preset == 'DESIGN1':
                 lay.prop(self, 'ribbon_w')
             elif self.preset != 'DESIGN6':
@@ -591,6 +623,8 @@ def _self_test():
         ('SADDLE', dict(nx=4, ny=4, rim_bulge=0.0)),     # square rim
         ('SADDLE', dict(nx=4, ny=4, ap_square=1.0)),     # square holes
         ('HYPAR', dict(nx=4, ny=4, ap_square=1.0)),      # Carlberg poly
+        ('PINWHEEL', dict(nx=4, ny=4)),                  # chiral relief
+        ('PINWHEEL', dict(nx=4, ny=4, hole=0.0)),        # solid relief
     ]
     for style, kw in cases:
         v, f, m = build_screen(style=style, **kw)

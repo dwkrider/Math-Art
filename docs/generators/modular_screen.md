@@ -9,7 +9,9 @@ A perforated architectural screen wall in the modular-constructivist tradition o
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Design | Saddle Lattice (after Design 5) | Saddle Lattice (`cos·cos` egg-crate), **Bilayer Weave (after Design 1 -- woven ribbons)**, Woven Undulation (`cos x + cos y`), Diagonal Brace (`cos(x+y)·cos(x-y)`), Relief Wall (after Design 6 -- solid, no perforations), or Hypar (Carlberg -- ruled hyperbolic-paraboloid modules with sharp creases). |
+| Design | Saddle Lattice (after Design 5) | Saddle Lattice (`cos·cos` egg-crate), **Pinwheel (chiral four-fold swirl)**, **Bilayer Weave (after Design 1 -- woven ribbons)**, Woven Undulation (`cos x + cos y`), Diagonal Brace (`cos(x+y)·cos(x-y)`), Relief Wall (after Design 6 -- solid, no perforations), or Hypar (Carlberg -- ruled hyperbolic-paraboloid modules with sharp creases). |
+| Swirl | 1.0 | How strongly the pinwheel arms curl (Pinwheel only). Range 0-2.5. |
+| Handedness | Right | Chirality of the pinwheel swirl -- Right or Left (mirror) (Pinwheel only). Set Aperture to 0 for the pure relief. |
 | Cells X / Cells Y | 5 / 5 | Modules across and down. Range 2-24 each. |
 | Relief Depth | 0.5 | Undulation amplitude of the module. Range 0.02-2.0. |
 | Thickness | 0.14 | Wall / ribbon thickness. Range 0.02-0.6. |
@@ -32,9 +34,11 @@ Renders of each Design:
 <table>
 <tr>
 <td align="center"><img src="../images/variants/modular_screen__DESIGN5.png" width="200"><br><sub>Saddle Lattice (Design 5)</sub></td>
+<td align="center"><img src="../images/variants/modular_screen__PINWHEEL.png" width="200"><br><sub>Pinwheel (chiral)</sub></td>
 <td align="center"><img src="../images/variants/modular_screen__DESIGN1.png" width="200"><br><sub>Bilayer Weave (Design 1)</sub></td>
-<td align="center"><img src="../images/variants/modular_screen__WEAVE.png" width="200"><br><sub>Woven Undulation</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/modular_screen__WEAVE.png" width="200"><br><sub>Woven Undulation</sub></td>
 <tr>
 <td align="center"><img src="../images/variants/modular_screen__DIAGONAL.png" width="200"><br><sub>Diagonal Brace</sub></td>
 <td align="center"><img src="../images/variants/modular_screen__DESIGN6.png" width="200"><br><sub>Relief Wall (Design 6)</sub></td>
@@ -49,6 +53,8 @@ Renders of each Design:
 **Hypar (Carlberg) modules.** The Hypar design replaces the smooth field with a ruled **hyperbolic paraboloid** per cell, $h=\text{amp}\cdot\xi\eta$ on local coordinates $\xi,\eta\in[-1,1]$, multiplied by a checkerboard sign $(-1)^{i+j}$. The sign makes adjacent cells meet exactly along their shared edge while leaving a **sharp crease** there -- Carlberg's harder-edged, straight-ruled manner, as opposed to Hauer's smooth membranes.
 
 **Bilayer Weave (Design 1).** Hauer's Design 1 interweaves *two* saddle layers, which no single-valued height field $h(x,y)$ can represent. It is built instead as a plain weave of ribbons: **warp** ribbons run along $x$ at $y=j+\tfrac12$ with height $\text{amp}\,(-1)^j\sin\pi x$, **weft** ribbons run along $y$ at $x=i+\tfrac12$ with the opposite phase $-\text{amp}\,(-1)^i\sin\pi y$. At every crossing the two land at $\pm\text{amp}$, so one rides over and the other under, alternating across the lattice. Each ribbon is a closed swept tube (rectangular section), so the woven screen is watertight by construction; the layers stay clear of one another as long as $2\,\text{amp}>t$, which the builder enforces. Wider ribbons close the openings; the width control sets the openness.
+
+**Pinwheel (chiral).** The pinwheel module is a chiral height field of wallpaper group **p4** (four-fold rotation, no mirror): a mirror-symmetric base $\cos2\pi x+\cos2\pi y$ plus a **swirl** term $\sin4\pi x\,\sin2\pi y-\sin4\pi y\,\sin2\pi x$ that is *antisymmetric* under reflection. Because no mirror can undo the swirl, the arms all curl one way; the **Handedness** flips the sign of the swirl term (right/left), and **Swirl** scales it. Left at its default relief (Aperture 0) it is a solid undulating wall of interlocking pinwheels; raising the aperture opens the deep valleys at the cell centres. Unlike the achiral saddle styles, this is the module that reproduces the swirling one-handed relief of chiral screen facades.
 
 **Apertures: circle to square.** Each aperture is traced along the ray to every perimeter sample as a **superellipse** $|X/r|^{p}+|Y/r|^{p}=1$, with $p=2+6\cdot(\text{squareness})$ running from a circle ($p=2$) to a rounded square ($p=8$) -- giving the softer rounded-square openings of some Hauer screens and the polygonal openings of the Carlberg modules.
 
