@@ -19,6 +19,15 @@
 #                 (glued/sliced/gyrated on exact convex bases); and
 #                 J84-J92, the 9 elementary solids (regular-face
 #                 relaxation).  All 92 Johnson solids.
+#   Hulls, Propellor, Truncated Archimedean, Rectified Archimedean,
+#                 Chamfered, Dipyramids & Trapezohedra -- named
+#                 Conway-construction families (join / propellor /
+#                 truncate / ambo / chamfer / dual-of-prism), finished
+#                 by the optional canonicalization step.
+#
+# The Canonicalize toggle (Hart edge-tangency + planarization) is scoped
+# to the Conway-derived families above plus Archimedean and Catalan; the
+# exact families (Platonic, Kepler, Prism, Johnson) are never distorted.
 #
 # Options: generic stellation (each face replaced by a pyramid to the
 # intersection of its neighbours' planes -- octahedron gives the
@@ -1687,6 +1696,23 @@ def split_congruent(V, F, n):
     return best, sorted(valid)
 
 
+# Conway-derived "named" families folded in from the old catalog: each
+# solid's id IS its Conway notation, and they are canonicalized like the
+# Archimedean / Catalan families.  {family id: catalog category in
+# conway_operators.CATALOG}.
+_CATALOG_FAM = {
+    'HULL': 'Hull',
+    'PROPELLOR': 'Propellor',
+    'TRUNC_ARCH': 'Truncated Archimedean',
+    'RECT_ARCH': 'Rectified Archimedean',
+    'CHAMFER': 'Chamfered',
+    'DIPYRAMID': 'Dipyramid / Trapezohedron',
+}
+# families for which Hart canonicalization is the natural finishing step
+# (the toggle is scoped to these; the exact families stay exact)
+_CANON_FAMS = {'ARCHIMEDEAN', 'CATALAN'} | set(_CATALOG_FAM)
+
+
 _STELLATE_OK = {}
 
 
@@ -1698,7 +1724,7 @@ def can_stellate(family, sid, n=6):
     are never rank-deficient."""
     if family == 'KEPLER':
         return False
-    if family in ('ARCHIMEDEAN', 'CATALAN'):
+    if family in _CANON_FAMS:
         return True
     key = (family, sid, n if family == 'PRISM' else 0)
     if key not in _STELLATE_OK:
@@ -1711,7 +1737,7 @@ def can_stellate(family, sid, n=6):
     return _STELLATE_OK[key]
 
 
-def build_solid(family, sid, n=6, scale=1.0):
+def build_solid(family, sid, n=6, scale=1.0, canon=True, canon_iters=250):
     """Returns (V, F, face_sizes or None)."""
     if family == 'KEPLER':
         return build_kepler(sid, scale)
@@ -1725,10 +1751,13 @@ def build_solid(family, sid, n=6, scale=1.0):
         else:
             V, F = build_johnson(num, scale)
         return V, F, None
-    label, nota = _NOTATION[sid]
+    if family in _CATALOG_FAM:
+        nota = sid                    # the id of a catalog solid IS its
+    else:                             # Conway notation
+        _label, nota = _NOTATION[sid]
     V, F = cw.apply_conway(nota)
-    if family in ('ARCHIMEDEAN', 'CATALAN'):
-        V = cw.canonicalize(V, F, iters=250)
+    if family in _CANON_FAMS and canon:
+        V = cw.canonicalize(V, F, iters=canon_iters)
     # normalise to unit circumradius-ish
     r = max(sqrt(sum(c * c for c in v)) for v in V)
     V = [tuple(c / r * scale for c in v) for v in V]
@@ -1763,6 +1792,21 @@ if _IN_BLENDER:
          "dodecahedron / diminished icosahedron, cupola-augmented "
          "truncated solids, the gyrate/diminished rhombicosidodecahedron "
          "family and the 9 elementary solids"),
+        ('HULL', "Archimedean-Catalan Hulls",
+         "Convex hull of an Archimedean solid and its Catalan dual "
+         "(the Conway join)"),
+        ('PROPELLOR', "Propellor Solids",
+         "George Hart's propellor operator on Platonic / Archimedean / "
+         "Catalan seeds"),
+        ('TRUNC_ARCH', "Truncated Archimedean",
+         "Each Archimedean solid truncated, then canonicalized"),
+        ('RECT_ARCH', "Rectified Archimedean",
+         "Each Archimedean solid rectified (ambo), then canonicalized"),
+        ('CHAMFER', "Chamfered Solids",
+         "Chamfered Platonic solids and the chamfered truncated "
+         "icosahedron"),
+        ('DIPYRAMID', "Dipyramids & Trapezohedra",
+         "Duals of the uniform prisms and antiprisms"),
     ]
 
     _ITEM_CACHE = {}
@@ -1777,6 +1821,11 @@ if _IN_BLENDER:
             elif fam == 'JOHNSON':
                 items = [(sid, label, "") for (sid, label, _n)
                          in JOHNSON]
+            elif fam in _CATALOG_FAM:
+                catname = _CATALOG_FAM[fam]
+                items = [(nota, name, "Conway: " + nota)
+                         for nota, cat, name in cw.CATALOG
+                         if cat == catname]
             else:
                 cat = {'PLATONIC': PLATONIC, 'KEPLER': KEPLER,
                        'ARCHIMEDEAN': ARCHIMEDEAN,
@@ -1798,6 +1847,18 @@ if _IN_BLENDER:
         solid: EnumProperty(name="Solid", items=_solid_items)
         n: IntProperty(name="Sides", default=6, min=3, max=32,
                        description="Prism / antiprism base sides")
+        canonicalize: BoolProperty(
+            name="Canonicalize", default=True,
+            description="Hart canonicalization: reshape so all edges are "
+                        "tangent to a common sphere and every face is "
+                        "planar. The natural finishing step for the "
+                        "Conway-derived families (Archimedean, Catalan, "
+                        "hulls, propellor, truncated / rectified "
+                        "Archimedean, chamfered, dipyramids / "
+                        "trapezohedra); the exact families are left "
+                        "untouched")
+        canon_iters: IntProperty(name="Canonical Iterations", default=250,
+                                 min=5, max=3000)
         handedness: EnumProperty(
             name="Handedness",
             items=[('RIGHT', "Right-Handed", "As constructed"),
@@ -1874,7 +1935,9 @@ if _IN_BLENDER:
         def execute(self, context):
             try:
                 V, F, sizes = build_solid(self.family, self.solid,
-                                          self.n, self.scale)
+                                          self.n, self.scale,
+                                          self.canonicalize,
+                                          self.canon_iters)
                 if self.stellated and self.family != 'KEPLER':
                     try:
                         V, F, resid = stellate(V, F)
@@ -1992,6 +2055,10 @@ if _IN_BLENDER:
             lay.prop(self, 'solid')
             if self.family == 'PRISM':
                 lay.prop(self, 'n')
+            if self.family in _CANON_FAMS:
+                lay.prop(self, 'canonicalize')
+                if self.canonicalize:
+                    lay.prop(self, 'canon_iters')
             if (self.family, self.solid) in CHIRAL:
                 lay.prop(self, 'handedness')
             if self.family != 'KEPLER':

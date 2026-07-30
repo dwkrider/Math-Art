@@ -159,7 +159,6 @@ class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
         lay = self.layout
         _op(lay, "mesh.regular_solid_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.conway_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.conway_catalog_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.zonohedron_add", icon='MESH_UVSPHERE')
         _op(lay, "mesh.waterman_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.symmetrohedron_add", icon='MESH_ICOSPHERE')

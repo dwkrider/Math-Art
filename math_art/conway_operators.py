@@ -807,116 +807,20 @@ if _IN_BLENDER:
                 lay.prop(self, 'thickness')
             lay.prop(self, 'scale')
 
-    _CAT_LABELS = {
-        'Hull': "Archimedean-Catalan Hulls",
-        'Propellor': "Propellor Solids",
-        'Truncated Archimedean': "Truncated Archimedean",
-        'Rectified Archimedean': "Rectified Archimedean",
-        'Chamfered': "Chamfered Solids",
-        'Dipyramid / Trapezohedron': "Dipyramids & Trapezohedra",
-    }
-
-    def _catalog_category_items():
-        seen = []
-        for _n, cat, _name in CATALOG:
-            if cat not in seen:
-                seen.append(cat)
-        return [(cat, _CAT_LABELS.get(cat, cat), "") for cat in seen]
-
-    _CAT_ITEM_CACHE = {}
-
-    def _catalog_solid_items(self, context):
-        # constituents of the currently selected family (cached so Blender
-        # keeps the item strings alive)
-        cat = self.category
-        if cat not in _CAT_ITEM_CACHE:
-            _CAT_ITEM_CACHE[cat] = [(n, name, "Conway: " + n)
-                                    for n, c, name in CATALOG if c == cat]
-        return _CAT_ITEM_CACHE[cat]
-
-    class MESH_OT_conway_catalog_add(bpy.types.Operator):
-        """Build a named polyhedron from the curated catalog: Archimedean-
-        Catalan hulls, propellor solids, truncated/rectified Archimedean
-        solids, chamfered solids, and dipyramids/trapezohedra.  Each is a
-        Conway construction on an exact seed, then canonicalized."""
-        bl_idname = "mesh.conway_catalog_add"
-        bl_label = "Polyhedron Catalog (Hulls, Propellor, ...)"
-        bl_options = {'REGISTER', 'UNDO'}
-
-        category: EnumProperty(name="Family", items=_catalog_category_items())
-        solid: EnumProperty(name="Solid", items=_catalog_solid_items)
-        iterations: IntProperty(name="Canonical Iterations", default=200,
-                                min=5, max=2000)
-        coloring: EnumProperty(
-            name="Coloring",
-            items=[('SIDES', "Colored (by face sides)", ""),
-                   ('NONE', "None", "")],
-            default='SIDES')
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
-
-        def draw(self, context):
-            lay = self.layout
-            lay.use_property_split = True
-            lay.prop(self, 'category')
-            lay.prop(self, 'solid')
-            lay.prop(self, 'iterations')
-            lay.prop(self, 'coloring')
-            lay.prop(self, 'scale')
-
-        def execute(self, context):
-            notation = self.solid
-            try:
-                V, F = apply_conway(notation)
-            except (ValueError, KeyError) as e:
-                self.report({'ERROR'}, str(e))
-                return {'CANCELLED'}
-            V = canonicalize(V, F, iters=self.iterations)
-            V, F = orient_outward(V, [list(f) for f in F])
-            label = dict((n, nm) for n, _, nm in CATALOG).get(notation,
-                                                              notation)
-            me = bpy.data.meshes.new(label)
-            me.from_pydata([tuple(c * self.scale for c in v) for v in V],
-                           [], [tuple(f) for f in F])
-            me.validate(clean_customdata=True)
-            if self.coloring == 'SIDES' and len(me.polygons) == len(F):
-                sides = sorted({len(f) for f in F})
-                slot = {n: i for i, n in enumerate(sides)}
-                for n in sides:
-                    me.materials.append(
-                        MESH_OT_conway_add._material_for(n))
-                me.polygons.foreach_set(
-                    'material_index', [slot[len(f)] for f in F])
-            if len(me.polygons) == len(F):
-                attr = me.attributes.new("ngon_sides", 'INT', 'FACE')
-                attr.data.foreach_set('value', [len(f) for f in F])
-            me.update()
-            obj = bpy.data.objects.new(label, me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
-            for o in context.selected_objects:
-                o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            self.report({'INFO'},
-                        f"{label}: V={len(V)} F={len(F)}")
-            return {'FINISHED'}
 
     def _menu_func(self, context):
         self.layout.operator("mesh.conway_add", icon='MESH_ICOSPHERE')
-        self.layout.operator("mesh.conway_catalog_add", icon='MESH_ICOSPHERE')
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
     def register():
         bpy.utils.register_class(MESH_OT_conway_add)
-        bpy.utils.register_class(MESH_OT_conway_catalog_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
-        bpy.utils.unregister_class(MESH_OT_conway_catalog_add)
         bpy.utils.unregister_class(MESH_OT_conway_add)
 
 

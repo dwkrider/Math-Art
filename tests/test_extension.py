@@ -34,11 +34,14 @@ OPS = [
                   method='MEMBRANE', mem_iterations=80))[-1]),
     ("conway", lambda: bpy.ops.mesh.conway_add(
         example='CUSTOM', notation='sC')),
-    ("conway catalog hull", lambda: bpy.ops.mesh.conway_catalog_add(
-        category='Hull', solid='jtT', iterations=60)),
-    ("conway catalog trapezohedron",
-     lambda: bpy.ops.mesh.conway_catalog_add(
-         category='Dipyramid / Trapezohedron', solid='dA5', iterations=60)),
+    ("solid hull family", lambda: bpy.ops.mesh.regular_solid_add(
+        family='HULL', solid='jtT', canon_iters=60)),
+    ("solid trapezohedron family",
+     lambda: bpy.ops.mesh.regular_solid_add(
+         family='DIPYRAMID', solid='dA5', canon_iters=60)),
+    ("solid archimedean canon off",
+     lambda: bpy.ops.mesh.regular_solid_add(
+         family='ARCHIMEDEAN', solid='TI', canonicalize=False)),
     ("zonohedron", lambda: bpy.ops.mesh.zonohedron_add(
         kind='SPIRAL', n=12, spiral_width=4)),
     ("waterman", lambda: bpy.ops.mesh.waterman_add(root=20)),
