@@ -1,6 +1,6 @@
-# Curiosity Surface
+# Miscellaneous Surfaces
 
-![Curiosity Surface](../images/curiosity_surface.png)
+![Miscellaneous Surfaces](../images/curiosity_surface.png)
 
 ## Overview
 Three classic surfaces from the geometry literature: Fresnel's elasticity surface (a quartic radial surface from optics), the paper bag surface (a crimped inflated-bag plot), and the trihyperboloid (the boundary of the solid enclosed by three mutually perpendicular hyperboloids, with exact volume $\ln 256 = 8\ln 2$). The two radial surfaces are meshed as displaced UV spheres and come out watertight; the paper bag stays open like a real bag.

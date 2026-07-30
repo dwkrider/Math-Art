@@ -1,5 +1,5 @@
 
-# Curiosity Surfaces generator for Blender: three classic
+# Miscellaneous Surfaces generator for Blender: three classic
 # surfaces from the geometry literature.
 #
 # 1. Fresnel's elasticity surface (von Seggern 1993, p. 304): the
@@ -35,7 +35,7 @@
 #    as a displaced UV sphere (watertight).
 
 bl_info = {
-    "name": "Curiosity Surfaces",
+    "name": "Miscellaneous Surfaces",
     "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
@@ -155,11 +155,11 @@ def build_paper_bag(a=2.47, b=-1.26, segments=96, rings=48,
 if _IN_BLENDER:
 
     class MESH_OT_curiosity_surface_add(bpy.types.Operator):
-        """Add a classic curiosity surface: Fresnel's
+        """Add a classic miscellaneous surface: Fresnel's
         elasticity surface, the paper bag surface, or the
         trihyperboloid"""
         bl_idname = "mesh.curiosity_surface_add"
-        bl_label = "Curiosity Surface"
+        bl_label = "Miscellaneous Surface"
         bl_options = {'REGISTER', 'UNDO'}
 
         surface: EnumProperty(
@@ -378,4 +378,4 @@ if __name__ == "__main__":
               f"(exact 8 ln 2 = {want:.4f})")
         assert abs(vol - want) < 0.15
 
-        print("curiosity standalone tests passed")
+        print("miscellaneous surfaces standalone tests passed")
