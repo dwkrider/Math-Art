@@ -213,8 +213,8 @@ def build_screen(nx=5, ny=5, style='SADDLE', amp=0.5, thick=0.14,
     a superellipse; `swirl_k` and `chir` set the swirl strength and
     handedness of the PINWHEEL style.  The result is a single closed
     watertight manifold."""
-    nx = max(2, int(nx))
-    ny = max(2, int(ny))
+    nx = max(1, int(nx))
+    ny = max(1, int(ny))
     K = max(3, int(res))
     N = max(2, int(res))                             # radial rings
     M = 4 * K
@@ -301,8 +301,8 @@ def build_weave(nx=5, ny=5, amp=0.35, thick=0.14, ribbon_w=0.7, res=6):
     over and the other under.  Each ribbon is a closed swept tube, so
     the whole screen is watertight by construction.  mats: 0 = warp,
     1 = weft."""
-    nx = max(2, int(nx))
-    ny = max(2, int(ny))
+    nx = max(1, int(nx))
+    ny = max(1, int(ny))
     R = max(3, int(res))
     # keep the two layers clear of one another at the crossings
     amp = max(float(amp), 0.6 * float(thick))
@@ -436,9 +436,9 @@ if _IN_BLENDER:
 
         preset: EnumProperty(name="Design", items=PRESET_ITEMS,
                              default='DESIGN5')
-        nx: IntProperty(name="Cells X", default=5, min=2, max=24,
+        nx: IntProperty(name="Cells X", default=5, min=1, max=24,
                         description="Modules across")
-        ny: IntProperty(name="Cells Y", default=5, min=2, max=24,
+        ny: IntProperty(name="Cells Y", default=5, min=1, max=24,
                         description="Modules down")
         amp: FloatProperty(
             name="Relief Depth", default=0.5, min=0.02, max=2.0,
@@ -625,6 +625,8 @@ def _self_test():
         ('HYPAR', dict(nx=4, ny=4, ap_square=1.0)),      # Carlberg poly
         ('PINWHEEL', dict(nx=4, ny=4)),                  # chiral relief
         ('PINWHEEL', dict(nx=4, ny=4, hole=0.0)),        # solid relief
+        ('SADDLE', dict(nx=1, ny=1, frame=False)),       # single cell
+        ('PINWHEEL', dict(nx=1, ny=3, frame=False)),     # 1-wide strip
     ]
     for style, kw in cases:
         v, f, m = build_screen(style=style, **kw)

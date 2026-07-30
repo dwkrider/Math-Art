@@ -12,7 +12,7 @@ A perforated architectural screen wall in the modular-constructivist tradition o
 | Design | Saddle Lattice (after Design 5) | Saddle Lattice (`cos·cos` egg-crate), **Pinwheel (chiral four-fold swirl)**, **Bilayer Weave (after Design 1 -- woven ribbons)**, Woven Undulation (`cos x + cos y`), Diagonal Brace (`cos(x+y)·cos(x-y)`), Relief Wall (after Design 6 -- solid, no perforations), or Hypar (Carlberg -- ruled hyperbolic-paraboloid modules with sharp creases). |
 | Swirl | 1.0 | How strongly the pinwheel arms curl (Pinwheel only). Range 0-2.5. |
 | Handedness | Right | Chirality of the pinwheel swirl -- Right or Left (mirror) (Pinwheel only). Set Aperture to 0 for the pure relief. |
-| Cells X / Cells Y | 5 / 5 | Modules across and down. Range 2-24 each. |
+| Cells X / Cells Y | 5 / 5 | Modules across and down. Range 1-24 each. |
 | Relief Depth | 0.5 | Undulation amplitude of the module. Range 0.02-2.0. |
 | Thickness | 0.14 | Wall / ribbon thickness. Range 0.02-0.6. |
 | Aperture | 0.34 | Aperture radius per module in cell units (0 = solid wall). Range 0-0.47. Ignored by the Relief Wall and Bilayer Weave designs. |
