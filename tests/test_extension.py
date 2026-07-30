@@ -554,6 +554,19 @@ OPS = [
     ("woven double shell continuous",
      lambda: bpy.ops.mesh.woven_double_shell_add(
          solid='CUBE', advance=1, output='TUBE', relax_iters=30)),
+    ("harmonic lissajous", lambda: bpy.ops.curve.harmonic_knot_add(
+        preset='LISSAJOUS_327', output='MESH')),
+    ("harmonic fourier torus",
+     lambda: bpy.ops.curve.harmonic_knot_add(
+         preset='FOURIER_TREFOIL', output='MESH')),
+    ("petal trefoil", lambda: bpy.ops.curve.petal_knot_add(
+        preset='TREFOIL', output='MESH')),
+    ("turks head ring 3x5", lambda: bpy.ops.mesh.turks_head_add(
+        surface='RING', leads=3, bights=5)),
+    ("rational figure8", lambda: bpy.ops.curve.rational_knot_add(
+        family='RATIONAL', notation='2 2', output='MESH')),
+    ("pretzel 357", lambda: bpy.ops.curve.rational_knot_add(
+        family='PRETZEL', notation='3 5 7', output='MESH')),
     ("hyp uniform t73", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
         form='TRUNCATED', p=7, q=3, model='POINCARE')),
     ("hyp uniform r54 klein",
