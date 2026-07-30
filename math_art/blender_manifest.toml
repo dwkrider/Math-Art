@@ -1,7 +1,7 @@
 schema_version = "1.0.0"
 
 id = "math_art"
-version = "1.12.47"
+version = "1.12.49"
 name = "Math Art"
 tagline = "Mathematical sculpture: minimal surfaces, polyhedra, knots"
 maintainer = "David Krider"

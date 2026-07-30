@@ -69,6 +69,7 @@ _MODULE_NAMES = [
     'squeeze_generator',
     'vortex_generator',
     'bubble_generator',
+    'phyllotaxis_generator',
     'helical_surface_generator',
     'curiosity_surface_generator',
     'rolling_knot_generator',
@@ -221,6 +222,7 @@ class VIEW3D_MT_math_art_odds(bpy.types.Menu):
         _op(lay, "mesh.stereographic_add", icon='LIGHT_POINT')
         _op(lay, "mesh.orbifold_sphere_add", icon='MOD_MIRROR')
         _op(lay, "mesh.bubble_cluster_add", icon='SPHERE')
+        _op(lay, "mesh.phyllotaxis_add", icon='OUTLINER_OB_POINTCLOUD')
 
 
 class VIEW3D_MT_math_art_patterns(bpy.types.Menu):

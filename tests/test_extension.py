@@ -629,6 +629,23 @@ OPS = [
         p=6, q=4, color_by='PARITY', height=0.1, backing=True)),
     ("hyp parity hide off", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
         p=6, q=4, color_by='PARITY', hide_off_parity=True)),
+    ("phyllotaxis disk sunflower",
+     lambda: bpy.ops.mesh.phyllotaxis_add(
+         count=300, form='DISK', floret='BUMP', color_by='PARASTICHY',
+         parastichy=13)),
+    ("phyllotaxis dome cactus spikes",
+     lambda: bpy.ops.mesh.phyllotaxis_add(
+         count=250, form='DOME', floret='SPIKE', size_grade=0.4)),
+    ("phyllotaxis sphere disc rings",
+     lambda: bpy.ops.mesh.phyllotaxis_add(
+         count=300, form='SPHERE', floret='DISC', color_by='RING')),
+    ("phyllotaxis crest left uniform",
+     lambda: bpy.ops.mesh.phyllotaxis_add(
+         count=250, form='CREST', floret='BUMP', chirality='LEFT',
+         crest_waves=4.0, color_by='UNIFORM')),
+    ("phyllotaxis cone parastichy21",
+     lambda: bpy.ops.mesh.phyllotaxis_add(
+         count=280, form='CONE', floret='BUMP', parastichy=21)),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):
