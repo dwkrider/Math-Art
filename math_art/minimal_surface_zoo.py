@@ -55,7 +55,7 @@ LEGACY_FAMILY = {
     'ENNEPER': 'CLASSICAL', 'CATENOID': 'CLASSICAL',
     'HELICOID': 'CLASSICAL', 'HENNEBERG': 'CLASSICAL',
     'CATALAN': 'CLASSICAL', 'BOUR': 'CLASSICAL',
-    'RICHMOND': 'CLASSICAL', 'SCHERK1': 'CLASSICAL',
+    'RICHMOND': 'CLASSICAL', 'SCHERK1': 'DOUBLY',
     'CATHEL': 'CLASSICAL',
     'COSTA': 'TORI', 'CHEN_GACK': 'TORI',
 }
@@ -262,7 +262,7 @@ WE_SURFACES = {
         # by circles in horizontal planes; two copies of the
         # translational fundamental domain, cut at the planar ends
         'label': "Riemann's Minimal Example",
-        'family': 'CLASSICAL',
+        'family': 'SINGLY',
         'X': _riemann_X,
         'domain': ('torus', 0.5, lambda p: p['tau']),
         'p_from': lambda order, radius: {

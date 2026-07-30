@@ -1191,9 +1191,19 @@ if _IN_BLENDER:
     # --- family-filtered surface enum (zoo catalog UX) ------------------
     # Item tuples are cached module-level: Blender requires the strings
     # of a dynamic-items enum to stay referenced from Python.
+    # Periodic minimal surfaces live in their own generator
+    # (mesh.periodic_minimal_add), picked by a Singly/Doubly/Triply
+    # dropdown -- singly/doubly are Weierstrass-Enneper families, triply
+    # is the nodal TPMS set.  They are therefore hidden from the
+    # non-periodic Minimal Surface generator's family list.
+    PERIODIC_FAMILIES = ('SINGLY', 'DOUBLY')
+
     _FAMILY_ITEMS = []
     _SURF_ITEMS_ALL = []
     _SURF_ITEMS_FAM = {}
+    _PERIODIC_ITEMS = {}          # periodicity key -> [surface items]
+    _PERIODIC_ALL = []            # union fallback for scripted calls
+    _PERIODICITY_ITEMS = []       # the Singly/Doubly/Triply dropdown
 
     def _build_surface_items():
         _FAMILY_ITEMS.clear()
@@ -1206,6 +1216,8 @@ if _IN_BLENDER:
             _SURF_ITEMS_FAM.setdefault(
                 fam_of.get(key, 'CLASSICAL'), []).append(it)
         for fam, flabel in (FAMILIES or ()):
+            if fam in PERIODIC_FAMILIES:
+                continue                       # -> periodic generator
             if fam in _SURF_ITEMS_FAM:
                 n = len(_SURF_ITEMS_FAM[fam])
                 _FAMILY_ITEMS.append(
@@ -1213,6 +1225,31 @@ if _IN_BLENDER:
         if not _FAMILY_ITEMS:
             _FAMILY_ITEMS.append(
                 ('CLASSICAL', "Classical", "Classical"))
+
+        # --- periodic catalog: singly/doubly (WE) + triply (TPMS) ------
+        _PERIODIC_ITEMS.clear()
+        _PERIODIC_ALL.clear()
+        _PERIODICITY_ITEMS.clear()
+        flabel_of = dict(FAMILIES or ())
+        for fam in PERIODIC_FAMILIES:
+            items = list(_SURF_ITEMS_FAM.get(fam, ()))
+            if items:
+                _PERIODIC_ITEMS[fam] = items
+                _PERIODIC_ALL.extend(items)
+                lbl = flabel_of.get(fam, fam)
+                _PERIODICITY_ITEMS.append(
+                    (fam, lbl, f"{lbl} ({len(items)} surfaces)"))
+        tpms_items = [(k, v[0], v[0]) for k, v in TPMS.items()]
+        if tpms_items:
+            _PERIODIC_ITEMS['TRIPLY'] = tpms_items
+            _PERIODIC_ALL.extend(tpms_items)
+            _PERIODICITY_ITEMS.append(
+                ('TRIPLY', "Triply Periodic (TPMS)",
+                 f"Triply periodic minimal surfaces "
+                 f"({len(tpms_items)} nodal approximations)"))
+        if not _PERIODICITY_ITEMS:
+            _PERIODICITY_ITEMS.append(
+                ('TRIPLY', "Triply Periodic (TPMS)", "TPMS"))
 
     _build_surface_items()
 
@@ -1227,6 +1264,14 @@ if _IN_BLENDER:
         if context is None or getattr(context, 'area', None) is None:
             return _SURF_ITEMS_ALL
         return _SURF_ITEMS_FAM.get(self.family, _SURF_ITEMS_ALL)
+
+    def _periodic_surface_items(self, context):
+        # Same context=None -> full-union fallback contract as above, so
+        # scripted mesh.periodic_minimal_add(surface='G') keeps working.
+        if context is None or getattr(context, 'area', None) is None:
+            return _PERIODIC_ALL or _SURF_ITEMS_ALL
+        return _PERIODIC_ITEMS.get(self.periodicity,
+                                   _PERIODIC_ALL or _SURF_ITEMS_ALL)
 
     class MESH_OT_parametric_minimal_add(bpy.types.Operator):
         """Add a minimal surface from the Weierstrass-Enneper / Bjorling
@@ -1369,6 +1414,138 @@ if _IN_BLENDER:
             for k in ('surface', 'cells', 'resolution', 'cell_size',
                       'thickness'):
                 lay.prop(self, k)
+
+    class MESH_OT_periodic_minimal_add(bpy.types.Operator):
+        """Add a periodic minimal surface.  Pick the Periodicity
+        (singly / doubly / triply), then a Surface within it.  Singly and
+        doubly periodic surfaces come from the Weierstrass-Enneper
+        catalog; triply periodic are the nodal TPMS approximations."""
+        bl_idname = "mesh.periodic_minimal_add"
+        bl_label = "Periodic Minimal Surface"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        periodicity: EnumProperty(
+            name="Periodicity",
+            items=_PERIODICITY_ITEMS,
+            description="Translational symmetry of the surface: singly / "
+                        "doubly periodic (Weierstrass-Enneper) or triply "
+                        "periodic (TPMS); filters the Surface list")
+        surface: EnumProperty(
+            name="Surface",
+            items=_periodic_surface_items)
+        # -- Weierstrass (singly / doubly) parameters
+        output: EnumProperty(
+            name="Output",
+            items=[('MESH', "Mesh", "Dense polygon mesh"),
+                   ('NURBS', "NURBS", "Compact NURBS surface patch")],
+            default='MESH')
+        res_u: IntProperty(name="Resolution U", default=48, min=8, max=512)
+        res_v: IntProperty(name="Resolution V", default=48, min=8, max=512)
+        ctrl_u: IntProperty(
+            name="Control Points U", default=24, min=6, max=128,
+            description="NURBS control grid size in U")
+        ctrl_v: IntProperty(
+            name="Control Points V", default=24, min=6, max=128,
+            description="NURBS control grid size in V")
+        order: IntProperty(
+            name="Order / Count", default=1, min=1, max=12,
+            description="Period count / lattice modulus where the surface "
+                        "uses it (e.g. saddle-tower end count)")
+        radius: FloatProperty(
+            name="Domain Radius", default=1.2, min=0.2, max=4.0,
+            description="Extent of the parameter domain")
+        assoc_angle: FloatProperty(
+            name="Associate Angle", default=0.0,
+            min=0.0, max=math.pi / 2.0, subtype='ANGLE',
+            description="Bonnet associate family angle")
+        # -- TPMS (triply) parameters
+        cells: IntProperty(
+            name="Cells", default=1, min=1, max=4,
+            description="Number of unit cells per axis")
+        resolution: IntProperty(
+            name="Resolution / Cell", default=28, min=8, max=80,
+            description="Sample grid resolution per unit cell")
+        cell_size: FloatProperty(
+            name="Cell Size", default=2.0, min=0.1, max=100.0,
+            description="Edge length of one unit cell in Blender units")
+        thickness: FloatProperty(
+            name="Thickness", default=0.0, min=0.0, max=1.0,
+            description="If > 0, add a Solidify modifier with this thickness")
+        scale: FloatProperty(
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Multiplier on the normalized size (1.0 = a 2 m "
+                        "cube, centered on the origin)")
+
+        def execute(self, context):
+            # Route on the surface's actual backend, not the periodicity
+            # dropdown, so scripted calls resolve regardless of the knob.
+            if self.surface in TPMS:
+                verts, tris = build_tpms(self.surface, self.cells,
+                                         self.resolution, self.cell_size)
+                if len(tris) == 0:
+                    self.report({'ERROR'}, "Empty level set")
+                    return {'CANCELLED'}
+                label = TPMS[self.surface][0]
+                obj = _new_object(context, label, verts, tris)
+                if self.thickness > 0:
+                    mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
+                    mod.thickness = self.thickness
+                    mod.offset = 0.0
+                return {'FINISHED'}
+            if self.surface not in PARAMETRIC:
+                self.report({'ERROR'}, f"Unknown surface '{self.surface}'")
+                return {'CANCELLED'}
+            label = PARAMETRIC[self.surface][0]
+            theta = (self.assoc_angle if self.surface in ANGLE_PARAM
+                     else 0.0)
+            if self.output == 'NURBS' and self.surface not in MESH_PARAM:
+                G, wrap_u, wrap_v = build_parametric_grid(
+                    self.surface, self.ctrl_u, self.ctrl_v,
+                    self.order, self.radius, self.scale, theta)
+                if wrap_u:
+                    G = G[:-1]
+                if wrap_v:
+                    G = G[:, :-1]
+                _nurbs_grid_object(context, label, G,
+                                   cyclic_u=wrap_u, cyclic_v=wrap_v)
+            else:
+                out = build_parametric(self.surface, self.res_u,
+                                       self.res_v, self.order,
+                                       self.radius, self.scale, theta,
+                                       with_uv=True)
+                V, quads = out[0], out[1]
+                cuv = out[2] if len(out) > 2 else None
+                _new_object(context, label, V, quads,
+                            weld=1e-5 * max(1.0, self.scale),
+                            loop_uv=cuv)
+            return {'FINISHED'}
+
+        def draw(self, context):
+            lay = self.layout
+            lay.use_property_split = True
+            lay.prop(self, 'periodicity')
+            lay.prop(self, 'surface')
+            if self.periodicity == 'TRIPLY' or self.surface in TPMS:
+                for k in ('cells', 'resolution', 'cell_size', 'thickness'):
+                    lay.prop(self, k)
+                return
+            mesh_only = self.surface in MESH_PARAM
+            if not mesh_only:
+                lay.prop(self, 'output')
+            if self.output == 'NURBS' and not mesh_only:
+                lay.prop(self, 'ctrl_u')
+                lay.prop(self, 'ctrl_v')
+            else:
+                lay.prop(self, 'res_u')
+                lay.prop(self, 'res_v')
+            if self.surface in COUNT_PARAM:
+                lay.prop(self, 'order', text=COUNT_PARAM[self.surface])
+            elif self.surface not in ANGLE_PARAM:
+                lay.prop(self, 'order')
+            if self.surface in ANGLE_PARAM:
+                lay.prop(self, 'assoc_angle')
+            lay.prop(self, 'radius')
+            lay.prop(self, 'scale')
 
     class OBJECT_OT_minimal_span(bpy.types.Operator):
         """Span a minimal surface across the selected curve (1 object:
@@ -1668,6 +1845,7 @@ if _IN_BLENDER:
         self.layout.menu("VIEW3D_MT_minimal_add", icon='SURFACE_DATA')
 
     _classes = (MESH_OT_parametric_minimal_add, MESH_OT_tpms_add,
+                MESH_OT_periodic_minimal_add,
                 OBJECT_OT_minimal_span, MESH_OT_knot_span_add,
                 VIEW3D_PT_minimal_surfaces,
                 VIEW3D_MT_math_art_minimal_zoo, VIEW3D_MT_minimal_add)

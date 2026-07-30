@@ -130,8 +130,8 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
             text="Scherk-Collins Sculpture", icon='MESH_TORUS')
         _op(lay, "mesh.parametric_minimal_add",
             text="Minimal Surfaces", icon='SURFACE_NSPHERE')
-        _op(lay, "mesh.tpms_add",
-            text="Minimal Surfaces (Triply Periodic)",
+        _op(lay, "mesh.periodic_minimal_add",
+            text="Minimal Surfaces (Periodic)",
             icon='MESH_ICOSPHERE')
         _op(lay, "mesh.minimal_knot_span_add", icon='MESH_TORUS')
         _op(lay, "object.minimal_span", icon='OUTLINER_OB_SURFACE')
