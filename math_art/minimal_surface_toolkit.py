@@ -495,6 +495,7 @@ def _build_chm(nu, nv, order, radius, scale, theta=0.0):
     # the radius clip can shear off small islands; keep the main body only
     Vf, quads = _largest_component(Vf, quads)
     Vf = _smooth_boundary(Vf, quads)
+    Vf = _circularize_outer(Vf, quads)      # clean circular planar-end rim
     Vf = _center_fit(Vf, scale, Vf)
     return Vf, quads
 
@@ -619,6 +620,56 @@ def _smooth_boundary(V, quads, iters=10, lam=0.5):
     for _ in range(iters):
         target = 0.5 * (V[n0] + V[n1])
         V[idx] += lam * (target - V[idx])
+    return V
+
+
+def _circularize_outer(V, quads):
+    """Snap the outermost open boundary loop -- the planar end of a Costa /
+    Costa-Hoffman-Meeks surface -- to a clean circle in XY, so the
+    perimeter reads as a circle instead of the few-percent staircase wobble
+    the radial end clip leaves behind.  Only the largest-radius loop is
+    touched; the catenoid-end necks and interior are untouched."""
+    if not quads:
+        return V
+    from collections import defaultdict
+    cnt = defaultdict(int)
+    nbr = defaultdict(list)
+    for q in quads:
+        L = len(q)
+        for k in range(L):
+            a, b = q[k], q[(k + 1) % L]
+            cnt[(a, b) if a < b else (b, a)] += 1
+    for (a, b), c in cnt.items():
+        if c == 1:
+            nbr[a].append(b)
+            nbr[b].append(a)
+    bnd = [v for v in nbr if len(nbr[v]) == 2]     # clean-loop vertices
+    if not bnd:
+        return V
+    seen = set()
+    loops = []
+    for v in bnd:
+        if v in seen:
+            continue
+        comp, stack = [], [v]
+        while stack:
+            u = stack.pop()
+            if u in seen:
+                continue
+            seen.add(u)
+            comp.append(u)
+            for w in nbr[u]:
+                if w not in seen:
+                    stack.append(w)
+        loops.append(comp)
+    V = V.copy()
+    xy = np.hypot(V[:, 0], V[:, 1])
+    outer = max(loops, key=lambda comp: xy[comp].mean())
+    idx = np.array(outer)
+    rmean = float(xy[idx].mean())
+    ang = np.arctan2(V[idx, 1], V[idx, 0])
+    V[idx, 0] = rmean * np.cos(ang)
+    V[idx, 1] = rmean * np.sin(ang)
     return V
 
 
