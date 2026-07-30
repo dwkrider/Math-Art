@@ -434,11 +434,19 @@ if __name__ == "__main__":
         lo, hi = V.min(0), V.max(0)
         cen = float(np.max(np.abs(0.5 * (lo + hi))))
         ext = float(np.max(hi - lo))
+        ec = {}
+        for f in Q:
+            m = len(f)
+            for t in range(m):
+                a, b = f[t], f[(t + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ec[e] = ec.get(e, 0) + 1
+        nonman = sum(1 for c in ec.values() if c > 2)
         good = (finite and len(Q) > 100 and cen < 1e-6
-                and abs(ext - 2.0) < 1e-6)
+                and abs(ext - 2.0) < 1e-6 and nonman == 0)
         ok &= good
         print(f"zoo {key:15s}: {len(V):5d} verts {len(Q):5d} faces "
-              f"fit[|c|={cen:.1e} ext={ext:.4f}] "
+              f"fit[|c|={cen:.1e} ext={ext:.4f}] nonman={nonman} "
               f"{'OK' if good else 'FAIL'}")
     # period-closure gates: Re of the contour integral of every phi
     # component vanishes around each listed cycle (up to the allowed
