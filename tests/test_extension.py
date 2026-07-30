@@ -740,6 +740,10 @@ OPS = [
      lambda: bpy.ops.mesh.modular_screen_add(
          preset='PINWHEEL', nx=6, ny=4, hole=0.0, curvature='CURVED',
          wrap_angle=140.0)),
+    ("planar simplify vsa",
+     lambda: (bpy.ops.mesh.primitive_uv_sphere_add(segments=24,
+                                                   ring_count=12),
+              bpy.ops.object.planar_simplify(pieces=30))[-1]),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):
