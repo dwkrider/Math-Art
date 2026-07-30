@@ -138,6 +138,12 @@ OPS = [
         family='ARCHIMEDEAN', solid='SD')),
     ("solid johnson", lambda: bpy.ops.mesh.regular_solid_add(
         family='JOHNSON', solid='J46')),
+    ("solid johnson augmented prism",
+     lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J51')),
+    ("solid johnson augmented dodeca",
+     lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J61')),
+    ("solid johnson diminished icosa",
+     lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J63')),
     ("solid kepler", lambda: bpy.ops.mesh.regular_solid_add(
         family='KEPLER', solid='GSD')),
     ("solid stellated", lambda: bpy.ops.mesh.regular_solid_add(

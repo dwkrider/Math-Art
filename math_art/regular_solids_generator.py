@@ -12,8 +12,9 @@
 #   Johnson       J1-J48: every pyramid / cupola / rotunda solid and
 #                 their elongated, gyroelongated, bi- (ortho / gyro)
 #                 combinations, composed with exact unit-edge
-#                 coordinates (the augmented/diminished J49+ are not
-#                 included)
+#                 coordinates; plus J49-J63, the augmented prisms and
+#                 the augmented dodecahedron / diminished icosahedron
+#                 (glued/sliced on exact convex bases).  J64-J92 to come.
 #
 # Options: generic stellation (each face replaced by a pyramid to the
 # intersection of its neighbours' planes -- octahedron gives the
@@ -203,6 +204,29 @@ JOHNSON = [(f'J{num}', name, num) for (num, name, *_r) in _J]
 JOHNSON.insert(21, ('J26', "Gyrobifastigium (J26)", 26))
 _J_BY_NUM = {num: (top, mid, bot, tw)
              for (num, _n, top, mid, bot, tw) in _J}
+
+# J49-J63: augmented / diminished solids built on exact convex bases
+# (prisms, dodecahedron, icosahedron) rather than pyramid/cupola/rotunda
+# stacks -- see build_johnson_ext below.
+_J_EXT = [
+    (49, "Augmented Triangular Prism (J49)"),
+    (50, "Biaugmented Triangular Prism (J50)"),
+    (51, "Triaugmented Triangular Prism (J51)"),
+    (52, "Augmented Pentagonal Prism (J52)"),
+    (53, "Biaugmented Pentagonal Prism (J53)"),
+    (54, "Augmented Hexagonal Prism (J54)"),
+    (55, "Parabiaugmented Hexagonal Prism (J55)"),
+    (56, "Metabiaugmented Hexagonal Prism (J56)"),
+    (57, "Triaugmented Hexagonal Prism (J57)"),
+    (58, "Augmented Dodecahedron (J58)"),
+    (59, "Parabiaugmented Dodecahedron (J59)"),
+    (60, "Metabiaugmented Dodecahedron (J60)"),
+    (61, "Triaugmented Dodecahedron (J61)"),
+    (62, "Metabidiminished Icosahedron (J62)"),
+    (63, "Tridiminished Icosahedron (J63)"),
+]
+_J_EXT_NUMS = {num for num, _name in _J_EXT}
+JOHNSON += [(f'J{num}', name, num) for num, name in _J_EXT]
 
 
 # the chiral solids -- their mirror images are genuinely different
@@ -445,6 +469,186 @@ def build_prism(kind, n, scale=1.0):
         bld.F.append(bot)
     V, F = cw.orient_outward(bld.V, bld.F)
     return [tuple(c * scale for c in v) for v in V], F
+
+
+# ---------------------------------------------------------------- #
+#  Augmented / diminished Johnson solids (J49-J63)                 #
+# ---------------------------------------------------------------- #
+#
+# J49-J92 are not pyramid/cupola/rotunda stacks; they are made by
+# gluing regular pyramids onto, or slicing pyramidal caps off, exact
+# convex bases.  These generic primitives operate on a unit-edge base
+# and cover the augmented prisms (J49-J57), the augmented dodecahedron
+# (J58-J61) and the bi-/tri-diminished icosahedron (J62-J63).  The
+# augmented-Archimedean (J64-J83) and elementary (J84-J92) Johnson
+# solids are built in later revisions.
+
+def _norm_edge(V, F):
+    """Scale V so the mean edge length is 1 (exact for regular bases)."""
+    els = []
+    for f in F:
+        m = len(f)
+        for i in range(m):
+            els.append(math.dist(V[f[i]], V[f[(i + 1) % m]]))
+    s = 1.0 / (sum(els) / len(els))
+    return [tuple(c * s for c in v) for v in V]
+
+
+def _face_centroid(V, f):
+    return [sum(V[i][c] for i in f) / len(f) for c in range(3)]
+
+
+def _face_normal_out(V, F, fi):
+    """Unit outward normal of face fi (pointing away from the centroid)."""
+    f = F[fi]
+    nrm = cw._newell(V, f)
+    ln = sqrt(sum(x * x for x in nrm)) or 1.0
+    nrm = [x / ln for x in nrm]
+    cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
+    fc = _face_centroid(V, f)
+    if sum(nrm[c] * (fc[c] - cen[c]) for c in range(3)) < 0:
+        nrm = [-x for x in nrm]
+    return nrm
+
+
+def _augment(V, F, fi, edge=1.0):
+    """Glue a regular pyramid with unit lateral edges onto face fi,
+    replacing it with |fi| triangles meeting at a new apex."""
+    V = [list(v) for v in V]
+    f = F[fi]
+    m = len(f)
+    cen = _face_centroid(V, f)
+    R = sum(math.dist(V[i], cen) for i in f) / m       # circumradius
+    h = sqrt(max(1e-12, edge * edge - R * R))
+    nrm = _face_normal_out(V, F, fi)
+    apex = [cen[c] + nrm[c] * h for c in range(3)]
+    ai = len(V)
+    V.append(apex)
+    NF = [list(g) for j, g in enumerate(F) if j != fi]
+    for i in range(m):
+        NF.append([f[i], f[(i + 1) % m], ai])
+    return V, NF
+
+
+def _augment_faces(V, F, idxs):
+    for fi in sorted(idxs, reverse=True):     # high-to-low keeps indices
+        V, F = _augment(V, F, fi)
+    return V, F
+
+
+def _diminish_vertex(V, F, vi):
+    """Slice the pyramidal cap at vertex vi: drop every face touching vi
+    and cap the opening with the polygon of vi's neighbour ring."""
+    other = [list(f) for f in F if vi not in f]
+    nxt = {}
+    for f in F:
+        if vi not in f:
+            continue
+        m = len(f)
+        i = f.index(vi)
+        nxt[f[(i + 1) % m]] = f[(i + 2) % m]   # opposite edge, oriented
+    start = next(iter(nxt))
+    ring = [start]
+    while nxt[ring[-1]] != start:
+        ring.append(nxt[ring[-1]])
+        if len(ring) > 100:
+            raise ValueError("bad vertex fan")
+    other.append(ring)
+    remap = {old: (old if old < vi else old - 1)
+             for old in range(len(V)) if old != vi}
+    NV = [v for j, v in enumerate(V) if j != vi]
+    NF = [[remap[i] for i in f] for f in other]
+    return NV, NF
+
+
+def _prism_unit(n):
+    V, F = build_prism('PRISM', n, 1.0)   # side faces are F[0..n-1]
+    return V, F
+
+
+def _platonic_unit(sym):
+    V, F = cw._seed(sym, 0)                 # 'D' -> pentagons, 'I' -> tris
+    return _norm_edge(V, F), F
+
+
+def _faces_adjacent(fa, fb):
+    return len(set(fa) & set(fb)) >= 2
+
+
+def _pick_dodeca_faces(V, F, num):
+    if num == 58:
+        return [0]
+    cen = [_face_centroid(V, f) for f in F]
+    dot0 = [sum(cen[0][c] * cen[j][c] for c in range(3))
+            for j in range(len(F))]
+    opp = min(range(len(F)), key=lambda j: dot0[j])
+    if num == 59:
+        return [0, opp]
+    if num == 60:                          # meta: non-adjacent, not opposite
+        for j in range(len(F)):
+            if j not in (0, opp) and not _faces_adjacent(F[0], F[j]):
+                return [0, j]
+    if num == 61:                          # three mutually non-adjacent
+        chosen = [0]
+        for j in range(1, len(F)):
+            if all(not _faces_adjacent(F[j], F[c]) for c in chosen):
+                chosen.append(j)
+                if len(chosen) == 3:
+                    return chosen
+    raise ValueError(f"dodeca faces for J{num}")
+
+
+def _pick_icosa_verts(V, F, num):
+    edge = min(math.dist(V[f[i]], V[f[(i + 1) % len(f)]])
+               for f in F for i in range(len(f)))
+
+    def adj(i, j):
+        return abs(math.dist(V[i], V[j]) - edge) < 1e-6
+
+    def antipodal(i, j):
+        di = sqrt(sum(x * x for x in V[i]))
+        dj = sqrt(sum(x * x for x in V[j]))
+        return (sum(V[i][c] * V[j][c] for c in range(3))
+                / (di * dj or 1.0)) < -0.99
+    if num == 62:                          # two non-adjacent, non-antipodal
+        for j in range(1, len(V)):
+            if not adj(0, j) and not antipodal(0, j):
+                return [0, j]
+    if num == 63:                          # three mutually non-adjacent
+        chosen = [0]
+        for j in range(1, len(V)):
+            if all(not adj(j, c) for c in chosen):
+                chosen.append(j)
+                if len(chosen) == 3:
+                    return chosen
+    raise ValueError(f"icosa verts for J{num}")
+
+
+def build_johnson_ext(num, scale=1.0):
+    if num in (49, 50, 51):
+        V, F = _prism_unit(3)
+        V, F = _augment_faces(V, F, {49: [0], 50: [0, 1],
+                                     51: [0, 1, 2]}[num])
+    elif num in (52, 53):
+        V, F = _prism_unit(5)
+        V, F = _augment_faces(V, F, {52: [0], 53: [0, 2]}[num])
+    elif num in (54, 55, 56, 57):
+        V, F = _prism_unit(6)
+        V, F = _augment_faces(V, F, {54: [0], 55: [0, 3], 56: [0, 2],
+                                     57: [0, 2, 4]}[num])
+    elif num in (58, 59, 60, 61):
+        V, F = _platonic_unit('D')
+        V, F = _augment_faces(V, F, _pick_dodeca_faces(V, F, num))
+    elif num in (62, 63):
+        V, F = _platonic_unit('I')
+        for vi in sorted(_pick_icosa_verts(V, F, num), reverse=True):
+            V, F = _diminish_vertex(V, F, vi)
+    else:
+        raise ValueError(f"J{num} not available")
+    cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
+    V = [tuple((v[c] - cen[c]) * scale for c in range(3)) for v in V]
+    V, F = cw.orient_outward(V, F)
+    return V, F
 
 
 # ---------------------------------------------------------------- #
@@ -1059,7 +1263,11 @@ def build_solid(family, sid, n=6, scale=1.0):
         V, F = build_prism(sid, n, scale)
         return V, F, None
     if family == 'JOHNSON':
-        V, F = build_johnson(int(sid[1:]), scale)
+        num = int(sid[1:])
+        if num in _J_EXT_NUMS:
+            V, F = build_johnson_ext(num, scale)
+        else:
+            V, F = build_johnson(num, scale)
         return V, F, None
     label, nota = _NOTATION[sid]
     V, F = cw.apply_conway(nota)
@@ -1094,8 +1302,9 @@ if _IN_BLENDER:
          "The four regular star polyhedra (true intersecting faces)"),
         ('PRISM', "Prisms & Antiprisms", "Uniform n-prisms"),
         ('JOHNSON', "Johnson",
-         "J1-J48: pyramid / cupola / rotunda solids and their "
-         "elongations and pairings"),
+         "J1-J63: pyramid / cupola / rotunda solids and their "
+         "elongations and pairings, plus the augmented prisms and "
+         "augmented dodecahedron / diminished icosahedron"),
     ]
 
     _ITEM_CACHE = {}
