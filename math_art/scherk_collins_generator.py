@@ -61,7 +61,7 @@ class Params:
     def __init__(self, branches=2, storeys=2, height=1.5, flange=1.5,
                  thickness=0.15, rim_bulge=1.5, twist=0.0, azimuth=0.0,
                  warp=0.0, detail=5, scale_x=1.0, scale_y=1.0, scale_z=1.0,
-                 global_scale=1.0, phase=0.5):
+                 global_scale=1.0, phase=0.5, rim_round=1.0):
         self.branches = int(branches)
         self.storeys = int(storeys)
         self.height = height
@@ -72,6 +72,7 @@ class Params:
         self.azimuth = azimuth
         self.warp = warp
         self.phase = phase
+        self.rim_round = rim_round
         self.detail = int(detail)
         self.scale_x = scale_x
         self.scale_y = scale_y
@@ -413,6 +414,9 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
 
     n_arc = 8 if d >= 4 else 4
     w_bulge = (t_out / 2.0) * (1.0 + p.rim_bulge)
+    # rim roundness: 1 = the rounded bull-nose, 0 = a flat/square edge
+    # (the outward arc collapses to a straight wall between the sheets)
+    rim_r = max(0.0, min(1.0, float(getattr(p, 'rim_round', 1.0))))
 
     # canonical rim arc interiors, shared across grids so rim tubes join
     # watertight even where neighbouring grids have opposite winding
@@ -438,7 +442,7 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
             for a in range(1, n_arc):
                 phi = pi * a / n_arc
                 q = _v_add(pt, _v_scale(n, (t_out / 2.0) * cos(phi)))
-                q = _v_add(q, _v_scale(o, w_bulge * sin(phi)))
+                q = _v_add(q, _v_scale(o, rim_r * w_bulge * sin(phi)))
                 interior.append(add_vert(q, uv))
             arc_cache[kk] = interior
         if sign >= 0:
@@ -565,6 +569,7 @@ SPEC_KEYS = {
     'flange': ('flange', float),
     'thickness': ('thickness', float),
     'rim_bulge': ('rim_bulge', float),
+    'rim_round': ('rim_round', float),
     'twist': ('twist', float),
     'azimuth': ('azimuth', float),
     'warp': ('warp', float),
@@ -605,6 +610,7 @@ def spec_text_from(p):
         f"flange = {p.flange:g}\n"
         f"thickness = {p.thickness:g}\n"
         f"rim_bulge = {p.rim_bulge:g}\n"
+        f"rim_round = {p.rim_round:g}\n"
         f"warp = {p.warp:g}\n"
         f"twist = {p.twist:g}\n"
         f"azimuth = {p.azimuth:g}\n"
@@ -731,9 +737,9 @@ if _IN_BLENDER:
                       height=st.height, flange=st.flange,
                       thickness=st.thickness, rim_bulge=st.rim_bulge,
                       twist=st.twist, azimuth=st.azimuth, warp=st.warp,
-                      phase=st.phase, detail=detail, scale_x=st.scale_x,
-                      scale_y=st.scale_y, scale_z=st.scale_z,
-                      global_scale=st.global_scale)
+                      phase=st.phase, rim_round=st.rim_round, detail=detail,
+                      scale_x=st.scale_x, scale_y=st.scale_y,
+                      scale_z=st.scale_z, global_scale=st.global_scale)
 
     def _nurbs_patches(p):
         """Contiguous mid-surface row blocks -> NURBS control patches.
@@ -841,8 +847,9 @@ if _IN_BLENDER:
             view.objects.active = prev_active
 
     _PROP_COPY_KEYS = ('is_scherk', 'auto_update', 'branches', 'storeys',
-                       'height', 'flange', 'thickness', 'rim_bulge', 'twist',
-                       'azimuth', 'warp', 'phase', 'detail', 'scale_x',
+                       'height', 'flange', 'thickness', 'rim_bulge',
+                       'rim_round', 'twist', 'azimuth', 'warp', 'phase',
+                       'detail', 'scale_x',
                        'scale_y', 'scale_z', 'global_scale', 'output_nurbs',
                        'nurbs_detail')
 
@@ -956,6 +963,11 @@ if _IN_BLENDER:
         rim_bulge: FloatProperty(
             name="Rim Bulge", description="Amount of bulge on the rim beads",
             default=1.5, min=0.0, max=4.0, update=_prop_update)
+        rim_round: FloatProperty(
+            name="Rim Round",
+            description="Roundness of the edge: 1 = a rounded bull-nose, "
+                        "0 = a flat/square edge",
+            default=1.0, min=0.0, max=1.0, step=10, update=_prop_update)
         twist: FloatProperty(
             name="Twist", description="Overall axial twist (degrees)",
             default=0.0, min=-900.0, max=1080.0, step=1500, update=_prop_update)
@@ -1002,8 +1014,9 @@ if _IN_BLENDER:
         st.auto_update = saved
 
     _RESET_KEYS = ('branches', 'storeys', 'height', 'flange', 'thickness',
-                   'rim_bulge', 'twist', 'azimuth', 'warp', 'phase',
-                   'detail', 'scale_x', 'scale_y', 'scale_z', 'global_scale')
+                   'rim_bulge', 'rim_round', 'twist', 'azimuth', 'warp',
+                   'phase', 'detail', 'scale_x', 'scale_y', 'scale_z',
+                   'global_scale')
 
     def _preset_chosen(self, context):
         """Copy the chosen preset's values into the operator's own
@@ -1043,6 +1056,10 @@ if _IN_BLENDER:
                                  min=0.0, max=0.5)
         rim_bulge: FloatProperty(name="Rim Bulge", default=1.5,
                                  min=0.0, max=4.0)
+        rim_round: FloatProperty(
+            name="Rim Round", default=1.0, min=0.0, max=1.0,
+            description="Roundness of the edge: 1 = rounded bull-nose, "
+                        "0 = flat/square edge")
         twist: FloatProperty(name="Twist", default=0.0,
                              min=-900.0, max=1080.0)
         azimuth: FloatProperty(name="Azimuth", default=0.0,
@@ -1074,8 +1091,9 @@ if _IN_BLENDER:
         preset_applied: BoolProperty(default=False, options={'HIDDEN'})
 
         _PARAM_KEYS = ('branches', 'storeys', 'height', 'flange',
-                       'thickness', 'rim_bulge', 'twist', 'azimuth', 'warp',
-                       'phase', 'detail', 'scale_x', 'scale_y', 'scale_z',
+                       'thickness', 'rim_bulge', 'rim_round', 'twist',
+                       'azimuth', 'warp', 'phase', 'detail', 'scale_x',
+                       'scale_y', 'scale_z',
                        'global_scale', 'output_nurbs', 'nurbs_detail')
 
         def execute(self, context):
@@ -1196,6 +1214,7 @@ if _IN_BLENDER:
             col.prop(st, "flange")
             col.prop(st, "thickness")
             col.prop(st, "rim_bulge")
+            col.prop(st, "rim_round")
             col.separator()
             col.prop(st, "twist")
             col.prop(st, "azimuth")
