@@ -623,12 +623,12 @@ def _smooth_boundary(V, quads, iters=10, lam=0.5):
     return V
 
 
-def _circularize_outer(V, quads):
-    """Snap the outermost open boundary loop -- the planar end of a Costa /
-    Costa-Hoffman-Meeks surface -- to a clean circle in XY, so the
-    perimeter reads as a circle instead of the few-percent staircase wobble
-    the radial end clip leaves behind.  Only the largest-radius loop is
-    touched; the catenoid-end necks and interior are untouched."""
+def _circularize_outer(V, quads, min_len=8):
+    """Snap each open boundary loop -- the planar end and the two catenoid
+    ends of a Costa / Costa-Hoffman-Meeks surface -- to a clean circle
+    about the vertical axis (constant XY radius, z kept), so every rim
+    reads as a circle instead of the few-percent staircase wobble the
+    radial end clip leaves behind.  Interior vertices are untouched."""
     if not quads:
         return V
     from collections import defaultdict
@@ -663,13 +663,15 @@ def _circularize_outer(V, quads):
                     stack.append(w)
         loops.append(comp)
     V = V.copy()
-    xy = np.hypot(V[:, 0], V[:, 1])
-    outer = max(loops, key=lambda comp: xy[comp].mean())
-    idx = np.array(outer)
-    rmean = float(xy[idx].mean())
-    ang = np.arctan2(V[idx, 1], V[idx, 0])
-    V[idx, 0] = rmean * np.cos(ang)
-    V[idx, 1] = rmean * np.sin(ang)
+    for comp in loops:
+        if len(comp) < min_len:
+            continue                                # skip stray fragments
+        idx = np.array(comp)
+        rmean = float(np.hypot(V[idx, 0], V[idx, 1]).mean())
+        ang = np.arctan2(V[idx, 1], V[idx, 0])
+        V[idx, 0] = rmean * np.cos(ang)
+        V[idx, 1] = rmean * np.sin(ang)
+        V[idx, 2] = float(V[idx, 2].mean())         # flat horizontal circle
     return V
 
 
