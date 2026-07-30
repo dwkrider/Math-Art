@@ -248,6 +248,34 @@ def _frames(Nrm):
     return t1, t2
 
 
+def point_classes(n, rho, color_by='PARASTICHY', parastichy=13, npal=8):
+    """Per-point color class in 0..npal-1: by parastichy residue
+    (i mod k), by radial ring, or uniform (all 0)."""
+    k = max(1, int(parastichy))
+    if color_by == 'PARASTICHY':
+        return (np.arange(n) % k) % npal
+    if color_by == 'RING':
+        return np.floor(np.asarray(rho) * (npal - 1e-9)).astype(int)
+    return np.zeros(n, dtype=int)
+
+
+def build_points(n=500, form='DISK', divergence=GOLDEN_ANGLE_DEG,
+                 dome_height=0.8, chirality='RIGHT', crest_waves=3.0,
+                 crest_amp=0.35, fill=0.9, size_grade=0.0,
+                 color_by='PARASTICHY', parastichy=13):
+    """Just the floret placement, for the points-only output: returns
+    (P, Nrm, size, cls) -- centers, unit surface normals, per-floret
+    size, and color class -- so the user can instance their own object
+    at each point (orienting by the normal, scaling by the size)."""
+    P, Nrm, rho = phyllotaxis_points(n, form, divergence, dome_height,
+                                     chirality, crest_waves, crest_amp)
+    spacing = nearest_neighbor_dist(P)
+    grade = np.clip(1.0 - float(size_grade) * (1.0 - rho), 0.05, 1.0)
+    size = float(fill) * spacing * grade
+    cls = point_classes(len(P), rho, color_by, parastichy)
+    return P, Nrm, size, cls
+
+
 def build_phyllotaxis(n=500, form='DISK', floret='BUMP',
                       divergence=GOLDEN_ANGLE_DEG, dome_height=0.8,
                       chirality='RIGHT', crest_waves=3.0, crest_amp=0.35,
@@ -274,15 +302,8 @@ def build_phyllotaxis(n=500, form='DISK', floret='BUMP',
     Vloc = np.asarray(Vloc, float)
     m = len(Vloc)
 
-    # per-point residue class for parastichy coloring
-    k = max(1, int(parastichy))
-    npal = 8
-    if color_by == 'PARASTICHY':
-        cls = (np.arange(n) % k) % npal
-    elif color_by == 'RING':
-        cls = np.floor(rho * (npal - 1e-9)).astype(int)
-    else:                                     # UNIFORM
-        cls = np.zeros(n, dtype=int)
+    # per-point residue class for coloring
+    cls = point_classes(n, rho, color_by, parastichy)
 
     verts = []
     faces = []
@@ -326,26 +347,26 @@ if _IN_BLENDER:
         (0.86, 0.62, 0.42), (0.40, 0.62, 0.50),
     ]
 
+    def _mat(name, col):
+        mat = bpy.data.materials.new(name)
+        mat.use_nodes = True
+        b = next(nd for nd in mat.node_tree.nodes
+                 if nd.type == 'BSDF_PRINCIPLED')
+        b.inputs["Base Color"].default_value = (*col, 1)
+        b.inputs["Roughness"].default_value = 0.5
+        # also set the solid-viewport color so the coloring is visible
+        # in Solid / Workbench shading, not only in Material Preview
+        mat.diffuse_color = (*col, 1)
+        return mat
+
     def _materials(me, tags, color_by):
         if color_by == 'UNIFORM' or not tags:
-            mat = bpy.data.materials.new("Phyllotaxis")
-            mat.use_nodes = True
-            b = next(nd for nd in mat.node_tree.nodes
-                     if nd.type == 'BSDF_PRINCIPLED')
-            b.inputs["Base Color"].default_value = (0.86, 0.72, 0.42, 1)
-            b.inputs["Roughness"].default_value = 0.5
-            me.materials.append(mat)
+            me.materials.append(_mat("Phyllotaxis", (0.86, 0.72, 0.42)))
             return
         nb = max(tags) + 1
         for i in range(nb):
-            mat = bpy.data.materials.new("Phyllotaxis %d" % i)
-            mat.use_nodes = True
-            b = next(nd for nd in mat.node_tree.nodes
-                     if nd.type == 'BSDF_PRINCIPLED')
-            col = _PALETTE[i % len(_PALETTE)]
-            b.inputs["Base Color"].default_value = (*col, 1)
-            b.inputs["Roughness"].default_value = 0.5
-            me.materials.append(mat)
+            me.materials.append(
+                _mat("Phyllotaxis %d" % i, _PALETTE[i % len(_PALETTE)]))
         if len(tags) == len(me.polygons):
             me.polygons.foreach_set("material_index", tags)
 
@@ -384,6 +405,16 @@ if _IN_BLENDER:
                    ('DISC', "Disc Floret",
                     "A flat disc tangent to the surface")],
             default='BUMP')
+        output: EnumProperty(
+            name="Output",
+            items=[('SOLID', "Floret Solids",
+                    "A mesh of floret solids (bumps / spikes / discs)"),
+                   ('POINTS', "Points Only",
+                    "Just a vertex at each floret center -- for "
+                    "instancing your own object. Carries point "
+                    "attributes: parastichy (int), surface_normal "
+                    "(vector), floret_size (float)")],
+            default='SOLID')
         chirality: EnumProperty(
             name="Handedness",
             items=[('RIGHT', "Right", "Counterclockwise spiral"),
@@ -447,7 +478,50 @@ if _IN_BLENDER:
             description="Multiplier on the normalized size (1.0 fits a "
                         "2 m cube centered on the origin)")
 
+        def _place(self, context, me, name):
+            obj = bpy.data.objects.new(name, me)
+            context.scene.collection.objects.link(obj)
+            obj.location = context.scene.cursor.location
+            for o in context.selected_objects:
+                o.select_set(False)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            obj["math_art_pattern"] = True
+            return obj
+
+        def _execute_points(self, context):
+            import numpy as np
+            P, Nrm, size, cls = build_points(
+                self.count, self.form, self.divergence, self.dome_height,
+                self.chirality, self.crest_waves, self.crest_amp,
+                self.fill, self.size_grade, self.color_by,
+                self.parastichy)
+            lo, hi = P.min(axis=0), P.max(axis=0)
+            c = 0.5 * (lo + hi)
+            ext = float(max(hi[0] - lo[0], hi[1] - lo[1],
+                            hi[2] - lo[2])) or 1.0
+            s = 2.0 * self.scale / ext
+            verts = [tuple((P[i] - c) * s) for i in range(len(P))]
+            me = bpy.data.meshes.new("Phyllotaxis Points")
+            me.from_pydata(verts, [], [])
+            a = me.attributes.new("parastichy", 'INT', 'POINT')
+            a.data.foreach_set("value", [int(v) for v in cls])
+            a = me.attributes.new("surface_normal", 'FLOAT_VECTOR',
+                                  'POINT')
+            a.data.foreach_set("vector",
+                               np.asarray(Nrm, float).ravel())
+            a = me.attributes.new("floret_size", 'FLOAT', 'POINT')
+            a.data.foreach_set("value",
+                               [float(v) * s for v in size])
+            me.update()
+            obj = self._place(context, me, "Phyllotaxis Points")
+            self.report({'INFO'}, "Phyllotaxis %s: %d points" %
+                        (self.form, len(me.vertices)))
+            return {'FINISHED'}
+
         def execute(self, context):
+            if self.output == 'POINTS':
+                return self._execute_points(context)
             verts, faces, tags, fl_smooth = build_phyllotaxis(
                 self.count, self.form, self.floret, self.divergence,
                 self.dome_height, self.chirality, self.crest_waves,
@@ -502,7 +576,10 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'count')
             lay.prop(self, 'form')
-            lay.prop(self, 'floret')
+            lay.prop(self, 'output')
+            solid = self.output == 'SOLID'
+            if solid:
+                lay.prop(self, 'floret')
             lay.prop(self, 'chirality')
             lay.prop(self, 'divergence')
             if self.form in ('DOME', 'CONE', 'CREST'):
@@ -512,17 +589,18 @@ if _IN_BLENDER:
                 lay.prop(self, 'crest_amp')
             lay.prop(self, 'fill')
             lay.prop(self, 'size_grade')
-            if self.floret == 'SPIKE':
+            if solid and self.floret == 'SPIKE':
                 lay.prop(self, 'spike_ratio')
-            if self.floret == 'BUMP':
+            if solid and self.floret == 'BUMP':
                 lay.prop(self, 'flatten')
                 lay.prop(self, 'subdiv')
-            if self.floret in ('SPIKE', 'DISC'):
+            if solid and self.floret in ('SPIKE', 'DISC'):
                 lay.prop(self, 'seg')
             lay.prop(self, 'color_by')
             if self.color_by == 'PARASTICHY':
                 lay.prop(self, 'parastichy')
-            lay.prop(self, 'smooth_shading')
+            if solid:
+                lay.prop(self, 'smooth_shading')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):

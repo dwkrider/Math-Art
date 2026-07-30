@@ -688,6 +688,10 @@ OPS = [
     ("phyllotaxis cone parastichy21",
      lambda: bpy.ops.mesh.phyllotaxis_add(
          count=280, form='CONE', floret='BUMP', parastichy=21)),
+    ("phyllotaxis points output",
+     lambda: bpy.ops.mesh.phyllotaxis_add(
+         count=300, form='DOME', output='POINTS',
+         color_by='PARASTICHY')),
     ("modular screen design5",
      lambda: bpy.ops.mesh.modular_screen_add(
          preset='DESIGN5', nx=4, ny=4)),
