@@ -61,7 +61,7 @@ class Params:
     def __init__(self, branches=2, storeys=2, height=1.5, flange=1.5,
                  thickness=0.15, rim_bulge=1.5, twist=0.0, azimuth=0.0,
                  warp=0.0, detail=5, scale_x=1.0, scale_y=1.0, scale_z=1.0,
-                 global_scale=1.0):
+                 global_scale=1.0, phase=0.5):
         self.branches = int(branches)
         self.storeys = int(storeys)
         self.height = height
@@ -71,6 +71,7 @@ class Params:
         self.twist = twist
         self.azimuth = azimuth
         self.warp = warp
+        self.phase = phase
         self.detail = int(detail)
         self.scale_x = scale_x
         self.scale_y = scale_y
@@ -129,6 +130,14 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
     solid = t_out > 1e-6
     warp_on = p.warp > 1e-6
     closes = ring_closes(p)
+    # phase shift of the saddle chain relative to the tower ends, in
+    # storey units: 0 puts a vane (flange) at each end (symmetric),
+    # while a fraction cuts the ends through a hole.  It is rotationally
+    # invisible on a closed ring, so it is forced to 0 there (keeping
+    # every warped preset unchanged and the closure logic untouched).
+    ph = 0.0 if closes else max(0.0, min(0.999,
+                                         float(getattr(p, 'phase', 0.0))))
+    z_base = ph * pi
     # azimuth carries a -45 deg correction: the original tool had a
     # 45-degree offset (a bug), so a stored azimuth is taken as the
     # corrected value -- matching the demo .txt parameter files directly
@@ -143,7 +152,7 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
         """template cross-section point + tower height -> final position"""
         xs = xt * XY_SCALE * gs
         ys = yt * XY_SCALE * gs
-        zn = z_ex / H_ex
+        zn = (z_ex - z_base) / H_ex
         a = az + tw * zn
         ca, sa = cos(a), sin(a)
         x1 = xs * ca - ys * sa
@@ -159,25 +168,48 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
     # cosine-spaced curve parameter, s[-1..1], midpoint exactly 0
     sig = [-cos(pi * k / (m - 1)) for k in range(m)]
 
+    # ---- tower cells --------------------------------------------------
+    # The tower is the window [ph, S + ph] of the periodic saddle chain
+    # (heights in storey units), split into cells at the integer "vane"
+    # (saddle) levels.  ph = 0 gives S full vane-to-vane storeys (the
+    # original behaviour); a fractional ph cuts the two end cells through
+    # a hole, shifting where the holes sit relative to the tower ends.
+    # Each cell carries s_rot, the storey index driving its branch
+    # rotation (constant within a cell because cells never cross a vane).
+    t_lo = ph
+    t_hi = S + ph
+    bounds = [t_lo] + [k for k in range(1, S + 1)
+                       if t_lo + 1e-9 < k < t_hi - 1e-9] + [t_hi]
+    cells = []
+    for cidx in range(len(bounds) - 1):
+        a, bcell = bounds[cidx], bounds[cidx + 1]
+        cells.append((a, bcell, int(a + 1e-9)))    # (t0, t1, s_rot)
+    n_cells = len(cells)
+
+    def cell_t(cidx, i):
+        a, bcell, _ = cells[cidx]
+        return a + (bcell - a) * (0.5 - 0.5 * cos(pi * i / R))
+
     # ---- per-grid position arrays -------------------------------------
-    # grid identity: (storey s, branch j). rows i=0..R; row entries are
+    # grid identity: (cell index, branch j). rows i=0..R; row entries are
     # a list of m points or None (level inside an opened hole).
     grids = {}
-    for s in range(S):
+    for cidx, (a, bcell, s_rot) in enumerate(cells):
         for j in range(b):
-            A = (2 * j + s) % (2 * b)          # wedge start vane index
+            A = (2 * j + s_rot) % (2 * b)      # wedge start vane index
             base_ang = A * pi / b
             wedge = pi / b
             rows = []
             for i in range(R + 1):
-                # cosine-clustered rows: extra resolution near the saddle
-                # levels where the surface curvature concentrates
-                zloc = pi * (0.5 - 0.5 * cos(pi * i / R))
-                z_ex = s * pi + zloc
-                c = sin(zloc)
-                if i == 0 or i == R:
-                    # saddle level: cross-section degenerates to the two
-                    # vane segments [0, W]; interior points sit at origin
+                # cosine-clustered rows: extra resolution at the cell ends
+                # where the surface curvature concentrates
+                t = cell_t(cidx, i)
+                z_ex = t * pi
+                frac = t - s_rot                 # 0..1 within the storey
+                c = sin(pi * frac)
+                if abs(frac - round(frac)) < 1e-9:
+                    # saddle (vane) level: cross-section degenerates to the
+                    # two vane segments [0, W]; interior points at origin
                     row = []
                     for k in range(m):
                         sg = sig[k]
@@ -207,7 +239,7 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
                     rad = hypot(x, y)
                     row.append(xform(rad * cos(ang), rad * sin(ang), z_ex))
                 rows.append(row)
-            grids[(s, j)] = rows
+            grids[(cidx, j)] = rows
 
     if return_grids:
         return grids, R, m
@@ -272,7 +304,7 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
         """yield (i,k1,k2_or_row) boundary descriptors:
         ('col', i1, i2, k)   vertical rim edge between valid rows i1,i2 at col k
         ('row', i, k1, k2)   cap edge along row i between cols k1,k2"""
-        s, j = key
+        cidx, j = key
         rows = grids[key]
         out = []
         # side rims (the cut/flange edges) - always true boundary
@@ -280,12 +312,12 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
             for i in range(R):
                 if rows[i] is not None and rows[i + 1] is not None:
                     out.append(('col', i, i + 1, k))
-        # storey-end caps: only at tower ends of an open (non-closing) tower
-        if s == 0 and not closes:
+        # tower-end caps: only at the ends of an open (non-closing) tower
+        if cidx == 0 and not closes:
             if rows[0] is not None:
                 for k in range(m - 1):
                     out.append(('row', 0, k, k + 1))
-        if s == S - 1 and not closes:
+        if cidx == n_cells - 1 and not closes:
             if rows[R] is not None:
                 for k in range(m - 1):
                     out.append(('row', R, k, k + 1))
@@ -321,7 +353,7 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
             cap_rows = set()
             if key[0] == 0 and not closes:
                 cap_rows.add(0)
-            if key[0] == S - 1 and not closes:
+            if key[0] == n_cells - 1 and not closes:
                 cap_rows.add(R)
             for ed in bed:
                 if ed[0] == 'col':
@@ -357,9 +389,11 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
         vert_uv.append(uv)
         return len(verts) - 1
 
-    def uv_of(sp, jp, i, k):
-        """(u, v) for row i / column k of branch jp, storey sp."""
-        return ((jp + k / (m - 1)) / b, (sp * R + i) / (S * R))
+    def uv_of(cidx, jp, i, k):
+        """(u, v) for row i / column k of branch jp, cell cidx: u runs
+        around the branch cross-section, v up the tower."""
+        v = (cell_t(cidx, i) - t_lo) / (t_hi - t_lo) if t_hi > t_lo else 0.0
+        return ((jp + k / (m - 1)) / b, v)
 
     def add_quad(a, bq, c2, d2):
         uniq = []
@@ -482,7 +516,7 @@ def generate_sculpture(p, return_grids=False, with_uv=False):
             cap_rows = set()
             if s == 0 and not closes:
                 cap_rows.add(0)
-            if s == S - 1 and not closes:
+            if s == n_cells - 1 and not closes:
                 cap_rows.add(R)
             tag_a = key if va[0] in cap_rows else None
             tag_b = key if vb[0] in cap_rows else None
@@ -526,6 +560,7 @@ SPEC_KEYS = {
     'twist': ('twist', float),
     'azimuth': ('azimuth', float),
     'warp': ('warp', float),
+    'phase': ('phase', float),
     'detail': ('detail', int),
     'scaleX': ('scale_x', float),
     'scaleY': ('scale_y', float),
@@ -565,6 +600,7 @@ def spec_text_from(p):
         f"warp = {p.warp:g}\n"
         f"twist = {p.twist:g}\n"
         f"azimuth = {p.azimuth:g}\n"
+        f"phase = {p.phase:g}\n"
         "texture_tiles = 1\n"
         f"detail = {p.detail}\n"
         f"scaleX = {p.scale_x:g}\n"
@@ -687,7 +723,7 @@ if _IN_BLENDER:
                       height=st.height, flange=st.flange,
                       thickness=st.thickness, rim_bulge=st.rim_bulge,
                       twist=st.twist, azimuth=st.azimuth, warp=st.warp,
-                      detail=detail, scale_x=st.scale_x,
+                      phase=st.phase, detail=detail, scale_x=st.scale_x,
                       scale_y=st.scale_y, scale_z=st.scale_z,
                       global_scale=st.global_scale)
 
@@ -798,8 +834,8 @@ if _IN_BLENDER:
 
     _PROP_COPY_KEYS = ('is_scherk', 'auto_update', 'branches', 'storeys',
                        'height', 'flange', 'thickness', 'rim_bulge', 'twist',
-                       'azimuth', 'warp', 'detail', 'scale_x', 'scale_y',
-                       'scale_z', 'global_scale', 'output_nurbs',
+                       'azimuth', 'warp', 'phase', 'detail', 'scale_x',
+                       'scale_y', 'scale_z', 'global_scale', 'output_nurbs',
                        'nurbs_detail')
 
     def _swap_object_type(old_obj, to_surface):
@@ -921,6 +957,12 @@ if _IN_BLENDER:
         warp: FloatProperty(
             name="Warp", description="Bend of the tower towards an arch/toroid (degrees; 360 = closed ring)",
             default=0.0, min=0.0, max=1080.0, step=1000, update=_prop_update)
+        phase: FloatProperty(
+            name="Phase",
+            description="Shift the holes along an open tower, in storeys "
+                        "(0 = a flange at each end; 0.5 = a half-hole at "
+                        "each end). No effect on closed rings.",
+            default=0.5, min=0.0, max=0.999, step=10, update=_prop_update)
         detail: IntProperty(
             name="Detail", description="Grid detail (tessellation density)",
             default=5, min=1, max=16, update=_prop_update)
@@ -952,8 +994,8 @@ if _IN_BLENDER:
         st.auto_update = saved
 
     _RESET_KEYS = ('branches', 'storeys', 'height', 'flange', 'thickness',
-                   'rim_bulge', 'twist', 'azimuth', 'warp', 'detail',
-                   'scale_x', 'scale_y', 'scale_z', 'global_scale')
+                   'rim_bulge', 'twist', 'azimuth', 'warp', 'phase',
+                   'detail', 'scale_x', 'scale_y', 'scale_z', 'global_scale')
 
     def _preset_chosen(self, context):
         """Copy the chosen preset's values into the operator's own
@@ -998,6 +1040,11 @@ if _IN_BLENDER:
         azimuth: FloatProperty(name="Azimuth", default=0.0,
                                min=-360.0, max=360.0)
         warp: FloatProperty(name="Warp", default=0.0, min=0.0, max=1080.0)
+        phase: FloatProperty(
+            name="Phase", default=0.5, min=0.0, max=0.999,
+            description="Shift the holes along an open tower, in storeys "
+                        "(0 = flange at each end, 0.5 = half-hole at each "
+                        "end); no effect on closed rings")
         detail: IntProperty(name="Detail", default=5, min=1, max=16)
         scale_x: FloatProperty(name="Stretch X", default=1.0,
                                min=0.2, max=5.0)
@@ -1020,7 +1067,7 @@ if _IN_BLENDER:
 
         _PARAM_KEYS = ('branches', 'storeys', 'height', 'flange',
                        'thickness', 'rim_bulge', 'twist', 'azimuth', 'warp',
-                       'detail', 'scale_x', 'scale_y', 'scale_z',
+                       'phase', 'detail', 'scale_x', 'scale_y', 'scale_z',
                        'global_scale', 'output_nurbs', 'nurbs_detail')
 
         def execute(self, context):
@@ -1145,6 +1192,7 @@ if _IN_BLENDER:
             col.prop(st, "twist")
             col.prop(st, "azimuth")
             col.prop(st, "warp")
+            col.prop(st, "phase")
             col.separator()
             col.prop(st, "nurbs_detail" if st.output_nurbs else "detail")
             col.prop(st, "scale_x")

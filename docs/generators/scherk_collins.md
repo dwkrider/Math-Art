@@ -20,6 +20,7 @@ The Scherk-Collins generator builds the saddle-chain toroid sculptures that Carl
 | Twist | 0.0 | Overall axial twist along the chain (degrees) |
 | Azimuth | 0.0 | Fixed turn of the profile around the tower axis (degrees) |
 | Warp | 0.0 | Bend of the tower toward an arch/toroid (degrees; 360 = closed ring, > 360 wraps multiply) |
+| Phase | 0.5 | Shift of the holes along an open tower, in storeys (0 = a flange at each end, symmetric; 0.5 = the ends cut through a hole). No effect on a closed ring, where it is rotationally invisible. |
 | Detail | 5 | Grid detail (tessellation density) |
 | Stretch X | 1.0 | Affine stretch along X (the "Totem" trick) |
 | Stretch Y | 1.0 | Affine stretch along Y |
