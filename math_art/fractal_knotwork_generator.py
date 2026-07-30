@@ -97,12 +97,14 @@ try:
     from . import celtic_knot_2d_generator as ck
     from . import fractal_tiling_generator as ft
     from . import knot_carpet_generator as kc
+    from . import voderberg_generator as vb
 except Exception:                       # legacy single-file / CLI use
     import pattern_common as pc
     import islamic_pattern_generator as isl
     import celtic_knot_2d_generator as ck
     import fractal_tiling_generator as ft
     import knot_carpet_generator as kc
+    import voderberg_generator as vb
 
 
 # --------------------------------------------------------------------
@@ -187,13 +189,32 @@ def _split_t_junctions(coords, rings, tol=1e-6):
     return rings, n_inserted
 
 
-def build_topology(kind, iterations):
-    """Medial-graph topology of a welded fractal-tiling patch.
-    Returns (topo, n_split): the celtic module's tiling topology dict
-    (per-edge incident faces / midpoints, interior and boundary edge
-    lists) and the number of T-junction splits performed (expected 0
-    on the kite substrates)."""
+def _substrate_polys(kind, iterations):
+    """Tile polygons of the chosen substrate.  Fathauer kite f-tilings
+    (KITE_*) come from fractal_tiling_generator; the VODERBERG_* spiral
+    tilings come from voderberg_generator (`iterations` -> spiral coils).
+    Both are edge-to-edge, so the same medial weave applies -- and the
+    cord width, which follows the LOCAL edge length, simply comes out
+    uniform on the congruent Voderberg enneagons and self-similar on the
+    scaling kites."""
+    if kind.startswith('VODERBERG_'):
+        vkind = kind.split('_', 1)[1]           # RADIAL / CLASSIC / SPIRAL
+        coils = max(3, int(iterations) + 1)     # spiral rings (dense!)
+        arms = 2 if vkind == 'SPIRAL' else 1
+        polys, _arm, _role = vb.voderberg_patch(vkind, arms=arms,
+                                                coils=coils)
+        return polys
     polys, _types = ft.fractal_patch(kind, iterations)
+    return polys
+
+
+def build_topology(kind, iterations):
+    """Medial-graph topology of a welded tiling patch.  Returns
+    (topo, n_split): the celtic module's tiling topology dict (per-edge
+    incident faces / midpoints, interior and boundary edge lists) and
+    the number of T-junction splits performed (0 on the edge-to-edge
+    kite substrates; the splitter is a safety net for any others)."""
+    polys = _substrate_polys(kind, iterations)
     coords, rings = _weld(polys)
     rings, n_split = _split_t_junctions(coords, rings)
     rings = [ck._poly_ccw(coords, r) for r in rings]
@@ -537,6 +558,15 @@ SUBSTRATE_ITEMS = [
     ('KITE_R12', "Kite f-tiling (12-fold)",
      "Fathauer f-tiling of 30-degree kites (ratio 0.268): seven "
      "children per tip -- steep scale contrast"),
+    ('VODERBERG_RADIAL', "Voderberg spiral (radial)",
+     "Voderberg enneagon tiling in a radial (non-spiralling) disk -- "
+     "uniform-width knotwork with n-fold symmetry (Iterations = coils)"),
+    ('VODERBERG_CLASSIC', "Voderberg spiral (classic double)",
+     "The classic Voderberg two-arm double spiral -- a knotwork that "
+     "winds around the centre (Iterations = coils)"),
+    ('VODERBERG_SPIRAL', "Voderberg spiral (multi-arm)",
+     "A multi-arm Goldberg-order Voderberg spiral -- swirling "
+     "knotwork arms (Iterations = coils)"),
 ]
 
 
@@ -785,14 +815,19 @@ def _check_geometry(kind, iterations):
 if __name__ == "__main__":
     all_ok = True
     DEPTHS = {'KITE_R6': (1, 2, 3), 'KITE_R8': (1, 2, 3),
-              'KITE_R12': (1, 2)}
+              'KITE_R12': (1, 2), 'VODERBERG_RADIAL': (3,),
+              'VODERBERG_CLASSIC': (3,), 'VODERBERG_SPIRAL': (3,)}
     print("-- fractal knotwork: welded complex + medial link --")
     for kind, _lab, _d in SUBSTRATE_ITEMS:
         prev_cross = prev_comp = None
         grow_ok = True
         for it in DEPTHS[kind]:
             cx_ok, n_split, topo = _check_complex(kind, it)
-            all_ok = all_ok and cx_ok and n_split == 0
+            # the kite f-tilings are exactly edge-to-edge (t-splits == 0);
+            # the Voderberg patches may leave a few boundary T-junctions
+            # that the splitter repairs, so only require a VALID complex.
+            all_ok = all_ok and cx_ok and (
+                n_split == 0 or kind.startswith('VODERBERG_'))
             closed_ok = _check_cords(topo)
             all_ok = all_ok and closed_ok
             net = trace_knotwork(kind, it)
