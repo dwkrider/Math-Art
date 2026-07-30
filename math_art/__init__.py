@@ -91,6 +91,7 @@ _MODULE_NAMES = [
     'fractal_reptile_generator',
     'islamic_pattern_generator',
     'celtic_knot_2d_generator',
+    'over_under_screen_generator',
     'knot_carpet_generator',
     'woven_double_shell_generator',
     'harmonic_knot_generator',
@@ -266,6 +267,7 @@ class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
         _op(lay, "mesh.fractal_reptile_add", icon='MOD_TRIANGULATE')
         _op(lay, "mesh.islamic_pattern_add", icon='SOLO_ON')
         _op(lay, "mesh.celtic_knot_2d_add", icon='MOD_LATTICE')
+        _op(lay, "mesh.over_under_screen_add", icon='MESH_GRID')
         _op(lay, "mesh.knot_carpet_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.fractal_knotwork_add", icon='OUTLINER_OB_CURVES')
         lay.separator()

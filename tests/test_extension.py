@@ -146,6 +146,10 @@ OPS = [
      lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J63')),
     ("solid johnson augmented truncated",
      lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J68')),
+    ("solid johnson gyrate rid",
+     lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J72')),
+    ("solid johnson tridiminished rid",
+     lambda: bpy.ops.mesh.regular_solid_add(family='JOHNSON', solid='J83')),
     ("solid kepler", lambda: bpy.ops.mesh.regular_solid_add(
         family='KEPLER', solid='GSD')),
     ("solid stellated", lambda: bpy.ops.mesh.regular_solid_add(
@@ -549,6 +553,12 @@ OPS = [
      lambda: bpy.ops.mesh.celtic_knot_2d_add(
          grid_w=6, grid_h=6, border=False, barriers='PROCEDURAL',
          wall_spacing=2, color_by='LOOP')),
+    ("over-under screen membrane",
+     lambda: bpy.ops.mesh.over_under_screen_add(
+         grid_w=4, grid_h=3, surface='MEMBRANE', resolution=12)),
+    ("over-under screen ribbons twill",
+     lambda: bpy.ops.mesh.over_under_screen_add(
+         grid_w=4, grid_h=3, weave='TWILL', surface='RIBBONS')),
     ("celtic smooth flush interlace",
      lambda: bpy.ops.mesh.celtic_knot_2d_add(
          grid_w=6, grid_h=5, barriers='PRESET', preset='CROSSBREAK',
