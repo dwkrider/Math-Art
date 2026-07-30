@@ -123,9 +123,8 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
 
     def draw(self, context):
         lay = self.layout
-        lay.operator_menu_enum("mesh.scherk_collins_add", "preset",
-                               text="Scherk-Collins Sculpture",
-                               icon='MESH_TORUS')
+        _op(lay, "mesh.scherk_collins_add",
+            text="Scherk-Collins Sculpture", icon='MESH_TORUS')
         _op(lay, "mesh.parametric_minimal_add",
             icon='SURFACE_NSPHERE')
         _op(lay, "mesh.tpms_add", icon='MESH_ICOSPHERE')
