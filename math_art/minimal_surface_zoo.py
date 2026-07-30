@@ -170,6 +170,11 @@ WE_SURFACES = {
             'n': int(max(3, min(order, 12))), 'r_out': _r_reach(radius)},
         'count': "Ends (n)",
         'clip': True,
+        # the catenoid ends flare out at the n-th roots of unity; a denser
+        # grid lets the object-space end trim + boundary relaxation leave a
+        # clean rounded rim instead of the coarse ragged one the 48x48
+        # grid tore
+        'res_boost': (2.2, 2.2),
         'cycles': lambda p: [(np.exp(2j * math.pi * j / p['n']), 0.18)
                              for j in range(p['n'])],
         'test_order': 4,
@@ -222,6 +227,8 @@ WE_SURFACES = {
             'k': int(min(max(order + 1, 2), 12)), 'reach': radius},
         'count': "Order (k)",
         'clip': False,
+        'radial_grade': 'rim',       # planar end grows toward r_out
+        'res_boost': (1.7, 1.5),
         'cycles': lambda p: [(0.0, 0.5)],
         'test_order': 2,
     },
@@ -237,6 +244,8 @@ WE_SURFACES = {
         'p_from': lambda order, radius: {
             'r1': 1.8 + 0.8 * min(max(radius / 1.2, 0.0), 2.0)},
         'clip': True,
+        'radial_grade': 'both',      # Enneper ends at r_in and r_out
+        'res_boost': (1.7, 2.3),
         'cycles': lambda p: [(0.0, 1.0)],
         'test_order': 1,
     },
@@ -286,6 +295,13 @@ def _bj_circle_normal(w, p):
             np.sin(0.5 * m * w))
 
 
+# Bjorling seed curves that wind quickly (spirals, the trefoil) still read
+# a little polygonal on the shared 48x48 grid once the strip is correctly
+# indexed, so give them a modest denser grid along the curve direction --
+# where the curvature lives -- for a smoother ribbon by default.
+_BJ_BOOST = (2.0, 1.2)
+
+
 BJORLING = {
     'BJ_CYCLOID': {
         # free regression check: the cycloid seed with its principal
@@ -297,6 +313,7 @@ BJORLING = {
         't_range': (-math.pi, 3 * math.pi),
         'v_half': lambda p: p['vh'],
         'p_from': lambda order, radius: {'vh': min(radius, 2.2)},
+        'res_boost': _BJ_BOOST,
         'associate': True,
     },
     'BJ_CIRCLE': {
@@ -312,6 +329,7 @@ BJORLING = {
         'p_from': lambda order, radius: {
             'm': int(min(max(order, 1), 7)),
             'vh': 0.35 * min(max(radius / 1.2, 0.3), 2.0)},
+        'res_boost': _BJ_BOOST,
         'count': "Half-twists",
         'associate': True,
     },
@@ -324,6 +342,7 @@ BJORLING = {
         'v_half': lambda p: p['vh'],
         'p_from': lambda order, radius: {
             'vh': 0.8 * min(max(radius / 1.2, 0.25), 2.0)},
+        'res_boost': _BJ_BOOST,
         'associate': True,
     },
     'BJ_TREFOIL': {
@@ -339,6 +358,7 @@ BJORLING = {
         'v_half': lambda p: p['vh'],
         'p_from': lambda order, radius: {
             'vh': 0.22 * min(max(radius / 1.2, 0.25), 1.6)},
+        'res_boost': _BJ_BOOST,
         'associate': True,
     },
     'BJ_ARCH_SPIRAL': {
@@ -351,6 +371,7 @@ BJORLING = {
         'v_half': lambda p: p['vh'],
         'p_from': lambda order, radius: {
             'vh': 0.8 * min(max(radius / 1.2, 0.25), 2.0)},
+        'res_boost': _BJ_BOOST,
         'associate': True,
     },
     'BJ_LOG_SPIRAL': {
@@ -364,6 +385,7 @@ BJORLING = {
         'v_half': lambda p: p['vh'],
         'p_from': lambda order, radius: {
             'vh': 0.5 * min(max(radius / 1.2, 0.25), 2.0)},
+        'res_boost': _BJ_BOOST,
         'associate': True,
     },
 }
