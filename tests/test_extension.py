@@ -567,6 +567,12 @@ OPS = [
         family='RATIONAL', notation='2 2', output='MESH')),
     ("pretzel 357", lambda: bpy.ops.curve.rational_knot_add(
         family='PRETZEL', notation='3 5 7', output='MESH')),
+    ("substitution fractal knot",
+     lambda: bpy.ops.curve.substitution_knot_add(
+         base='TREFOIL', depth=2, output='TUBE')),
+    ("fractal knotwork",
+     lambda: bpy.ops.mesh.fractal_knotwork_add(
+         substrate='KITE_R6', iterations=2, output='TUBE')),
     ("hyp uniform t73", lambda: bpy.ops.mesh.hyperbolic_tiling_add(
         form='TRUNCATED', p=7, q=3, model='POINCARE')),
     ("hyp uniform r54 klein",
