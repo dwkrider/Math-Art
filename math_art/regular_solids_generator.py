@@ -1835,6 +1835,15 @@ if _IN_BLENDER:
             _ITEM_CACHE[fam] = items
         return _ITEM_CACHE[fam]
 
+    def _family_update(self, context):
+        # when the family changes, the previously-selected solid id is no
+        # longer valid for the new family; snap to that family's first item
+        # so the Solid dropdown never goes empty / feeds a stale id to the
+        # builder
+        ids = [it[0] for it in _solid_items(self, context)]
+        if ids and self.solid not in ids:
+            self.solid = ids[0]
+
     class MESH_OT_regular_solid_add(bpy.types.Operator):
         """Add a regular / semiregular / star / Johnson solid,
         organised by family, with stellation, styles and coloring"""
@@ -1843,7 +1852,7 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         family: EnumProperty(name="Family", items=FAMILIES,
-                             default='PLATONIC')
+                             default='PLATONIC', update=_family_update)
         solid: EnumProperty(name="Solid", items=_solid_items)
         n: IntProperty(name="Sides", default=6, min=3, max=32,
                        description="Prism / antiprism base sides")
@@ -1933,8 +1942,13 @@ if _IN_BLENDER:
             return mat
 
         def execute(self, context):
+            # guard against a stale / empty solid id after a family switch
+            items = _solid_items(self, context)
+            ids = [it[0] for it in items]
+            sid = self.solid if self.solid in ids else (ids[0] if ids
+                                                        else self.solid)
             try:
-                V, F, sizes = build_solid(self.family, self.solid,
+                V, F, sizes = build_solid(self.family, sid,
                                           self.n, self.scale,
                                           self.canonicalize,
                                           self.canon_iters)
@@ -1956,8 +1970,7 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
             fsz = sizes if sizes else [len(f) for f in F]
-            label = dict((i[0], i[1]) for i in
-                         _solid_items(self, context))[self.solid]
+            label = dict((i[0], i[1]) for i in items).get(sid, sid)
             if self.pieces > 1:
                 assign, valid = split_congruent(V, F, self.pieces)
                 if assign is None:
@@ -1979,7 +1992,7 @@ if _IN_BLENDER:
             # right-handed split (mirror_solid keeps face order,
             # so the assignment carries over unchanged)
             if (self.handedness == 'LEFT'
-                    and (self.family, self.solid) in CHIRAL):
+                    and (self.family, sid) in CHIRAL):
                 V, F = mirror_solid(V, F)
             for o in context.selected_objects:
                 o.select_set(False)
@@ -2055,10 +2068,14 @@ if _IN_BLENDER:
             lay.prop(self, 'solid')
             if self.family == 'PRISM':
                 lay.prop(self, 'n')
-            if self.family in _CANON_FAMS:
-                lay.prop(self, 'canonicalize')
-                if self.canonicalize:
-                    lay.prop(self, 'canon_iters')
+            # canonicalize stays visible always, greyed for the exact
+            # families where it does not apply
+            col = lay.column()
+            col.enabled = self.family in _CANON_FAMS
+            col.prop(self, 'canonicalize')
+            sub = col.row()
+            sub.enabled = self.canonicalize
+            sub.prop(self, 'canon_iters')
             if (self.family, self.solid) in CHIRAL:
                 lay.prop(self, 'handedness')
             if self.family != 'KEPLER':

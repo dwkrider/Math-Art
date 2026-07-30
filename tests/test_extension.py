@@ -42,6 +42,11 @@ OPS = [
     ("solid archimedean canon off",
      lambda: bpy.ops.mesh.regular_solid_add(
          family='ARCHIMEDEAN', solid='TI', canonicalize=False)),
+    # family set without a matching solid id (the stale-id switch case):
+    # the operator must fall back to the family's first solid, not error
+    ("solid family switch guard", lambda: (
+        bpy.ops.mesh.regular_solid_add(family='PROPELLOR'),
+        bpy.ops.mesh.regular_solid_add(family='CHAMFER', canon_iters=60))[-1]),
     ("zonohedron", lambda: bpy.ops.mesh.zonohedron_add(
         kind='SPIRAL', n=12, spiral_width=4)),
     ("waterman", lambda: bpy.ops.mesh.waterman_add(root=20)),
