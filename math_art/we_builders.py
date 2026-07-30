@@ -159,6 +159,19 @@ def _we_disk(spec, p, nu, nv, theta):
     u = ra + (r1 - ra) * s
     R, TH = np.meshgrid(u, v, indexing='ij')
     z = R * np.exp(1j * TH)
+    if 'Xexact' in spec:
+        # closed-form immersion (no radial quadrature): the antiderivative
+        # is known analytically, so evaluate it straight on the grid --
+        # avoids the near-pole capping/folding that tears wing ends.
+        with np.errstate(divide='ignore', invalid='ignore'):
+            xx, yy, zz = spec['Xexact'](z, p, theta)
+        X = np.stack(np.broadcast_arrays(xx, yy, zz), axis=-1).astype(float)
+        mask = np.isfinite(X).all(axis=-1)
+        punct = spec.get('mask_punctures')
+        if punct:
+            for zc, rho in _ev(punct, p):
+                mask &= np.abs(z - zc) > rho
+        return X[..., 0], X[..., 1], X[..., 2], False, True, mask
     phi = _phi_fn(spec, p, theta)
     with np.errstate(divide='ignore', invalid='ignore'):
         F = phi(z)

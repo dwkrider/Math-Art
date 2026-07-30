@@ -154,6 +154,42 @@ def _tower_phi(z, p):
             z ** (n - 1) / den)
 
 
+def _tower_roots(n):
+    """The 2n ends of the saddle tower: the roots of z^{2n} = -1, all on
+    the unit circle at the odd multiples of pi/(2n)."""
+    return np.exp(1j * math.pi * (2 * np.arange(2 * n) + 1) / (2 * n))
+
+
+def _tower_X(z, p, theta=0.0):
+    """Exact antiderivative of the tower Weierstrass data (a sum of 2n
+    logarithms, one per end), evaluated on the open unit disk.
+
+    dh = z^{n-1}/(z^{2n}+1) dz and g = z^{n-1} give
+        Int phi1 = -(1/4n) sum_rho (rho + 1/rho) ln(z - rho)
+        Int phi2 = -(i/4n) sum_rho (rho - 1/rho) ln(z - rho)
+        Int phi3 = -(1/2n) sum_rho  rho^n      ln(z - rho),
+    the residue expansion of the rational integrand over its 2n simple
+    poles rho (the ends).  Each logarithm's branch cut is placed radially
+    *outward* from its end -- rho sits on the unit circle, so every cut
+    lies outside the disk and the immersion is single-valued and smooth on
+    it.  This closed form gives the true, unbounded planar (vertical-half-
+    plane) ends: the numeric radial integrator instead caps and folds them
+    into a torn blob, since rays from the origin only ever graze the poles.
+    """
+    n = p['n']
+    rho = _tower_roots(n)
+    d = np.asarray(z)[..., None] - rho
+    dr = d * np.conj(rho)                       # rotate: outward ray -> +real
+    L = np.log(np.abs(dr)) + 1j * np.mod(np.angle(dr), TAU)
+    c1 = -(1.0 / (4 * n)) * (rho + 1.0 / rho)
+    c2 = -(1j / (4 * n)) * (rho - 1.0 / rho)
+    c3 = -(1.0 / (2 * n)) * (rho ** n)
+    rot = np.exp(1j * theta)
+    return (np.real(np.sum(c1 * L, axis=-1) * rot),
+            np.real(np.sum(c2 * L, axis=-1) * rot),
+            np.real(np.sum(c3 * L, axis=-1) * rot))
+
+
 def _r_reach(radius):
     """Shared 'how far past the unit circle' domain radius mapping."""
     return 1.35 + 0.5 * min(max(radius / 1.2, 0.0), 1.6)
@@ -197,22 +233,30 @@ WE_SURFACES = {
     # --- Tier 0/1: new surfaces from textbook Weierstrass data ------------
     'SCHERK_TOWER': {
         # Karcher's most symmetric saddle tower; n = 2 is Scherk's
-        # singly periodic surface (the conjugate of SCHERK1)
+        # singly periodic surface (the conjugate of SCHERK1).  Built from
+        # the exact log-sum antiderivative (_tower_X) over the open unit
+        # disk: the 2n ends sit on the unit circle, and a small circular
+        # puncture around each maps to a clean, near-straight wing rim
+        # (the ends are logarithmic/planar, so their conformal coordinate
+        # is log).  The former radial disk integrator capped and folded
+        # the (infinite) wings into a torn blob and is not used here.
         'label': "Saddle Tower (Scherk singly periodic)",
         'family': 'SINGLY',
-        'phi': _tower_phi,
-        'domain': ('disk', 0.0, lambda p: p['r_out']),
+        'phi': _tower_phi,           # kept for the period-closure gate
+        'Xexact': _tower_X,          # exact immersion used by the mesher
+        'domain': ('disk', 0.0, 0.999),
         # n = wings-per-turn; the UI "order" 1..7 maps to n = 2..8 so the
         # slider's first step already changes the surface (n must be >= 2:
-        # n = 2 is the classical 4-wing Scherk saddle tower)
+        # n = 2 is the classical 4-wing Scherk saddle tower).  The radius
+        # slider shrinks the end punctures, so the wings reach further.
         'p_from': lambda order, radius: {
-            'n': int(min(max(order + 1, 2), 8)), 'r_out': _r_reach(radius)},
-        'count': "Wings (n+1 pairs)",
+            'n': int(min(max(order + 1, 2), 8)),
+            'eps': 0.085 / min(max(radius / 1.2, 0.5), 2.0)},
+        'count': "Wings (n pairs)",
         'mask_punctures': lambda p: [
-            (np.exp(1j * math.pi * (2 * j + 1) / (2 * p['n'])), 0.16)
-            for j in range(2 * p['n'])],
-        'clip': True,
-        'res_boost': (2.4, 2.4),     # disk trim reads ragged at 48x48
+            (rho, p['eps']) for rho in _tower_roots(p['n'])],
+        'clip': False,
+        'res_boost': (2.6, 2.6),     # dense grid -> clean puncture rims
         'cycles': lambda p: [
             (np.exp(1j * math.pi * (2 * j + 1) / (2 * p['n'])), 0.12)
             for j in range(2 * p['n'])],
