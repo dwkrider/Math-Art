@@ -469,12 +469,35 @@ def _miter_ribbon_var(points, widths, closed, limit=4.0):
     return left, right
 
 
+def _smooth_width(wid, step, blend):
+    """Blend the per-vertex strand width so it TAPERS gradually from one
+    substitution level to the next instead of stepping abruptly at each
+    splice.  The window is measured in control-segments (blend * a few) --
+    and because catmull_rom lays down a fixed number of points per
+    segment, the taper length scales with the local copy: a big-to-medium
+    join blends over a long arc, a medium-to-small join over a
+    proportionally shorter one.  blend = 0 restores the hard steps."""
+    if blend <= 0.0:
+        return wid
+    n = len(wid)
+    half = max(1, min(int(round(blend * 2.0 * max(1, step))), n // 2 - 1))
+    if half < 1:
+        return wid
+    kern = np.ones(2 * half + 1) / (2 * half + 1)
+    w = np.asarray(wid, float)
+    for _ in range(2):                      # twice -> smooth (triangular)
+        pad = np.concatenate([w[-half:], w, w[:half]])
+        w = np.convolve(pad, kern, mode='valid')
+    return w
+
+
 def _prepare(base, depth, slot_scale, strand_width, telescope, samples,
-             weave_height, spl=6):
+             weave_height, spl=6, width_blend=0.0):
     """Shared geometry prep: the densified path, per-path-vertex width
     and level, the signed weave anchors, and the z offsets.  Widths
     and weave amplitudes telescope by each instance's true geometric
-    scale (telescope = 0, AUTO) or by telescope**level."""
+    scale (telescope = 0, AUTO) or by telescope**level; `width_blend`
+    tapers the width smoothly across the level joins."""
     diagram = build_diagram(base, depth, slot_scale, spl)
     signed, ok = solve_alternation(diagram)
     pts = diagram['pts']
@@ -497,6 +520,7 @@ def _prepare(base, depth, slot_scale, strand_width, telescope, samples,
                + wnext[:, None] * t[None, :]).reshape(-1)
     else:
         wid = wctrl.copy()
+    wid = _smooth_width(wid, step, width_blend)
     lvlp = np.repeat(np.asarray(diagram['lvl'], int), step)
     anchors = [(idx * step, sg * weave_height * fac(g, lv))
                for (idx, sg, g, lv) in signed]
@@ -581,7 +605,8 @@ def clamp_depth(base, depth, samples, output, spl=6):
 def build_cells(base='TREFOIL', depth=3, slot_scale=0.42,
                 strand_width=0.11, telescope=0.0, samples=6,
                 output='TUBE', mode='WOVEN', weave_height=0.09,
-                height=0.0, tube_sides=12, color_by='LEVEL', spl=6):
+                height=0.0, tube_sides=12, color_by='LEVEL', spl=6,
+                width_blend=0.0):
     """Build the fractal knot as (verts, faces, mats) cells plus an
     info dict.  TUBE sweeps a round welded tube along the woven 3D
     centerline with per-ring telescoped radius; RIBBON is the flat
@@ -590,7 +615,7 @@ def build_cells(base='TREFOIL', depth=3, slot_scale=0.42,
     scale of the fractal reads in its own hue."""
     depth, clamped = clamp_depth(base, depth, samples, output, spl)
     prep = _prepare(base, depth, slot_scale, strand_width, telescope,
-                    samples, weave_height, spl)
+                    samples, weave_height, spl, width_blend)
     path, wid, lvl, zoff = (prep['path'], prep['wid'], prep['lvl'],
                             prep['zoff'])
     info = {'crossings': len(prep['diagram']['cross']),
@@ -650,12 +675,12 @@ def build_cells(base='TREFOIL', depth=3, slot_scale=0.42,
 
 def curve_path(base='TREFOIL', depth=3, slot_scale=0.42,
                strand_width=0.11, telescope=0.0, samples=6,
-               weave_height=0.09, spl=6):
+               weave_height=0.09, spl=6, width_blend=0.0):
     """The woven 3D centerline as one closed polyline (CURVE output),
     plus the info dict."""
     depth, clamped = clamp_depth(base, depth, samples, 'CURVE', spl)
     prep = _prepare(base, depth, slot_scale, strand_width, telescope,
-                    samples, weave_height, spl)
+                    samples, weave_height, spl, width_blend)
     pts3 = [(x, y, z) for (x, y), z in zip(prep['path'], prep['zoff'])]
     info = {'crossings': len(prep['diagram']['cross']),
             'points': len(pts3), 'depth': depth, 'clamped': clamped,
@@ -754,6 +779,10 @@ if _IN_BLENDER:
             name="Width Telescope", default=0.0, min=0.0, max=1.0,
             description="Per-level width factor; 0 = automatic "
                         "(follow each copy's true geometric scale)")
+        width_blend: FloatProperty(
+            name="Width Blend", default=0.5, min=0.0, max=1.0,
+            description="Taper the strand width gradually across the "
+                        "joins between nesting levels; 0 = abrupt steps")
         samples: IntProperty(
             name="Samples", default=6, min=2, max=16,
             description="Catmull-Rom subdivisions per control segment")
@@ -797,7 +826,7 @@ if _IN_BLENDER:
                 pts3, info = curve_path(
                     self.base, self.depth, self.slot_scale,
                     self.strand_width, self.telescope, self.samples,
-                    self.weave_height)
+                    self.weave_height, width_blend=self.width_blend)
                 obj = _emit_curve(context, "Substitution Knot", pts3,
                                   operator=self)
             else:
@@ -806,7 +835,7 @@ if _IN_BLENDER:
                     self.strand_width, self.telescope, self.samples,
                     self.output, self.interlace_mode,
                     self.weave_height, self.height, self.tube_sides,
-                    self.color_by)
+                    self.color_by, width_blend=self.width_blend)
                 obj = pc.emit(context, "Substitution Knot", cells,
                               separate=False, fit=True, operator=self)
                 if obj is not None and self.output == 'TUBE':
@@ -839,6 +868,7 @@ if _IN_BLENDER:
             lay.prop(self, 'slot_scale')
             lay.prop(self, 'strand_width')
             lay.prop(self, 'telescope')
+            lay.prop(self, 'width_blend')
             lay.prop(self, 'samples')
             lay.prop(self, 'output')
             if self.output == 'RIBBON':
