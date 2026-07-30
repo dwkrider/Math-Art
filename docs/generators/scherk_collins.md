@@ -18,7 +18,7 @@ The Scherk-Collins generator builds the saddle-chain toroid sculptures that Carl
 | Thickness | 0.15 | Thickness of the vanes (0 = surface only, no rims) |
 | Rim Bulge | 1.5 | Amount of bulge on the rounded rim beads |
 | Twist | 0.0 | Overall axial twist along the chain (degrees) |
-| Azimuth | 0.0 | Fixed turn of the profile around the tower axis (degrees) |
+| Azimuth | 45.0 | Fixed turn of the profile around the tower axis (degrees); 45 is the aligned/flat orientation |
 | Warp | 0.0 | Bend of the tower toward an arch/toroid (degrees; 360 = closed ring, > 360 wraps multiply) |
 | Detail | 5 | Grid detail (tessellation density) |
 | Stretch X | 1.0 | Affine stretch along X (the "Totem" trick) |

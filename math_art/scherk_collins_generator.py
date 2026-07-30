@@ -59,7 +59,7 @@ WELD_EPS_BASE = 1e-5
 
 class Params:
     def __init__(self, branches=2, storeys=2, height=1.5, flange=1.5,
-                 thickness=0.15, rim_bulge=1.5, twist=0.0, azimuth=0.0,
+                 thickness=0.15, rim_bulge=1.5, twist=0.0, azimuth=45.0,
                  warp=0.0, detail=5, scale_x=1.0, scale_y=1.0, scale_z=1.0,
                  global_scale=1.0):
         self.branches = int(branches)
@@ -124,7 +124,11 @@ def generate_sculpture(p, return_grids=False):
     solid = t_out > 1e-6
     warp_on = p.warp > 1e-6
     closes = ring_closes(p)
-    az = radians(p.azimuth)
+    # azimuth is offset by -45 deg so the profile's flat orientation
+    # falls at a setting of 45 rather than 0 (stored values are in this
+    # display convention: presets/defaults carry the +45 to render the
+    # same as before)
+    az = radians(p.azimuth - 45.0)
     tw = radians(p.twist)
     wr = radians(p.warp) if warp_on else 0.0
     R_ring = (H_out / wr) if warp_on else 0.0
@@ -576,19 +580,19 @@ def spec_text_from(p):
 
 PRESETS = {
     'HEX': ("Hyperbolic Hexagon", dict(branches=2, storeys=6, height=1.2,
-            flange=1.1, thickness=0.07, rim_bulge=1.06, twist=0, azimuth=45,
+            flange=1.1, thickness=0.07, rim_bulge=1.06, twist=0, azimuth=90,
             warp=360)),
     'TREFOIL': ("Minimal Trefoil", dict(branches=2, storeys=3, height=1.5,
-            flange=1.3, thickness=0.06, rim_bulge=1.06, twist=270, azimuth=45,
+            flange=1.3, thickness=0.06, rim_bulge=1.06, twist=270, azimuth=90,
             warp=360)),
     'MONKEY': ("Monkey-Saddle Trefoil", dict(branches=3, storeys=3, height=1.75,
-            flange=1.5, thickness=0.05, rim_bulge=1.0, twist=180, azimuth=0,
+            flange=1.5, thickness=0.05, rim_bulge=1.0, twist=180, azimuth=45,
             warp=360)),
     'HEPTOROID': ("Heptoroid", dict(branches=4, storeys=7, height=1.5,
-            flange=1.0, thickness=0.10, rim_bulge=0.0, twist=135, azimuth=0,
+            flange=1.0, thickness=0.10, rim_bulge=0.0, twist=135, azimuth=45,
             warp=360)),
     'TOWER': ("Scherk Tower (straight)", dict(branches=2, storeys=5, height=1.5,
-            flange=1.5, thickness=0.1, rim_bulge=1.0, twist=0, azimuth=0,
+            flange=1.5, thickness=0.1, rim_bulge=1.0, twist=0, azimuth=45,
             warp=0)),
 }
 
@@ -836,8 +840,8 @@ if _IN_BLENDER:
             name="Twist", description="Overall axial twist (degrees)",
             default=0.0, min=-900.0, max=1080.0, step=1500, update=_prop_update)
         azimuth: FloatProperty(
-            name="Azimuth", description="Turn of the profile around the tower axis (degrees)",
-            default=0.0, min=-360.0, max=360.0, step=500, update=_prop_update)
+            name="Azimuth", description="Turn of the profile around the tower axis (degrees; 45 = the aligned/flat orientation)",
+            default=45.0, min=-360.0, max=360.0, step=500, update=_prop_update)
         warp: FloatProperty(
             name="Warp", description="Bend of the tower towards an arch/toroid (degrees; 360 = closed ring)",
             default=0.0, min=0.0, max=1080.0, step=1000, update=_prop_update)
@@ -905,7 +909,7 @@ if _IN_BLENDER:
                                  min=0.0, max=4.0)
         twist: FloatProperty(name="Twist", default=0.0,
                              min=-900.0, max=1080.0)
-        azimuth: FloatProperty(name="Azimuth", default=0.0,
+        azimuth: FloatProperty(name="Azimuth", default=45.0,
                                min=-360.0, max=360.0)
         warp: FloatProperty(name="Warp", default=0.0, min=0.0, max=1080.0)
         detail: IntProperty(name="Detail", default=5, min=1, max=16)
@@ -1126,7 +1130,7 @@ if __name__ == "__main__":
                          ("open holes", dict(branches=6, storeys=4, height=1.0,
                                              flange=0.8, thickness=0.02,
                                              rim_bulge=0.0, warp=360,
-                                             twist=180, azimuth=45, detail=7)),
+                                             twist=180, azimuth=90, detail=7)),
                          ("thin sheet", dict(thickness=0.0, warp=360,
                                              storeys=4))]:
             p = Params(**kw)
