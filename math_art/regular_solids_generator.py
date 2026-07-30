@@ -1707,6 +1707,7 @@ _CATALOG_FAM = {
     'RECT_ARCH': 'Rectified Archimedean',
     'CHAMFER': 'Chamfered',
     'DIPYRAMID': 'Dipyramid / Trapezohedron',
+    'TRUNC_CATALAN': 'Truncated Catalan',
 }
 # families for which Hart canonicalization is the natural finishing step
 # (the toggle is scoped to these; the exact families stay exact)
@@ -1807,6 +1808,9 @@ if _IN_BLENDER:
          "icosahedron"),
         ('DIPYRAMID', "Dipyramids & Trapezohedra",
          "Duals of the uniform prisms and antiprisms"),
+        ('TRUNC_CATALAN', "Truncated Catalan",
+         "Catalan solids with only the vertices of a given degree "
+         "truncated"),
     ]
 
     _ITEM_CACHE = {}

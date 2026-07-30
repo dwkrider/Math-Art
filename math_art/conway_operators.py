@@ -591,6 +591,22 @@ CATALOG = [
     ('dA6', 'Dipyramid / Trapezohedron', "Hexagonal Trapezohedron"),
     ('dA7', 'Dipyramid / Trapezohedron', "Heptagonal Trapezohedron"),
     ('dA8', 'Dipyramid / Trapezohedron', "Octagonal Trapezohedron"),
+    # Truncated Catalan solids: a Catalan solid with only the vertices of a
+    # given degree truncated (Conway tN = dk(N)d truncates degree-N
+    # vertices; a bare t truncates them all).
+    ('t6dtT', 'Truncated Catalan', "6-Truncated Triakis Tetrahedron"),
+    ('t6dtO', 'Truncated Catalan', "6-Truncated Tetrakis Hexahedron"),
+    ('t8dtC', 'Truncated Catalan', "8-Truncated Triakis Octahedron"),
+    ('tdtO', 'Truncated Catalan', "Truncated Tetrakis Hexahedron"),
+    ('t4deC', 'Truncated Catalan', "4-Truncated Deltoidal Icositetrahedron"),
+    ('t6dtI', 'Truncated Catalan', "6-Truncated Pentakis Dodecahedron"),
+    ('t10dtD', 'Truncated Catalan', "10-Truncated Triakis Icosahedron"),
+    ('tdbC', 'Truncated Catalan', "Truncated Disdyakis Dodecahedron"),
+    ('tdtI', 'Truncated Catalan', "Truncated Pentakis Dodecahedron"),
+    ('t5deD', 'Truncated Catalan', "5-Truncated Deltoidal Hexecontahedron"),
+    ('t4t5deD', 'Truncated Catalan',
+     "4-5-Truncated Deltoidal Hexecontahedron"),
+    ('tdbD', 'Truncated Catalan', "Truncated Disdyakis Triacontahedron"),
 ]
 
 

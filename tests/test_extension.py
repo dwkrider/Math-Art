@@ -39,6 +39,9 @@ OPS = [
     ("solid trapezohedron family",
      lambda: bpy.ops.mesh.regular_solid_add(
          family='DIPYRAMID', solid='dA5', canon_iters=60)),
+    ("solid truncated catalan family",
+     lambda: bpy.ops.mesh.regular_solid_add(
+         family='TRUNC_CATALAN', solid='t6dtT', canon_iters=80)),
     ("solid archimedean canon off",
      lambda: bpy.ops.mesh.regular_solid_add(
          family='ARCHIMEDEAN', solid='TI', canonicalize=False)),
