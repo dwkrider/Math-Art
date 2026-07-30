@@ -59,7 +59,7 @@ WELD_EPS_BASE = 1e-5
 
 class Params:
     def __init__(self, branches=2, storeys=2, height=1.5, flange=1.5,
-                 thickness=0.15, rim_bulge=1.5, twist=0.0, azimuth=45.0,
+                 thickness=0.15, rim_bulge=1.5, twist=0.0, azimuth=0.0,
                  warp=0.0, detail=5, scale_x=1.0, scale_y=1.0, scale_z=1.0,
                  global_scale=1.0):
         self.branches = int(branches)
@@ -124,10 +124,9 @@ def generate_sculpture(p, return_grids=False):
     solid = t_out > 1e-6
     warp_on = p.warp > 1e-6
     closes = ring_closes(p)
-    # azimuth is offset by -45 deg so the profile's flat orientation
-    # falls at a setting of 45 rather than 0 (stored values are in this
-    # display convention: presets/defaults carry the +45 to render the
-    # same as before)
+    # azimuth carries a -45 deg correction: the original tool had a
+    # 45-degree offset (a bug), so a stored azimuth is taken as the
+    # corrected value -- matching the demo .txt parameter files directly
     az = radians(p.azimuth - 45.0)
     tw = radians(p.twist)
     wr = radians(p.warp) if warp_on else 0.0
@@ -580,20 +579,70 @@ def spec_text_from(p):
 
 PRESETS = {
     'HEX': ("Hyperbolic Hexagon", dict(branches=2, storeys=6, height=1.2,
-            flange=1.1, thickness=0.07, rim_bulge=1.06, twist=0, azimuth=90,
+            flange=1.1, thickness=0.07, rim_bulge=1.06, twist=0, azimuth=45,
             warp=360)),
     'TREFOIL': ("Minimal Trefoil", dict(branches=2, storeys=3, height=1.5,
-            flange=1.3, thickness=0.06, rim_bulge=1.06, twist=270, azimuth=90,
+            flange=1.3, thickness=0.06, rim_bulge=1.06, twist=270, azimuth=45,
             warp=360)),
     'MONKEY': ("Monkey-Saddle Trefoil", dict(branches=3, storeys=3, height=1.75,
-            flange=1.5, thickness=0.05, rim_bulge=1.0, twist=180, azimuth=45,
+            flange=1.5, thickness=0.05, rim_bulge=1.0, twist=180, azimuth=0,
             warp=360)),
     'HEPTOROID': ("Heptoroid", dict(branches=4, storeys=7, height=1.5,
-            flange=1.0, thickness=0.10, rim_bulge=0.0, twist=135, azimuth=45,
+            flange=1.0, thickness=0.10, rim_bulge=0.0, twist=135, azimuth=0,
             warp=360)),
     'TOWER': ("Scherk Tower (straight)", dict(branches=2, storeys=5, height=1.5,
-            flange=1.5, thickness=0.1, rim_bulge=1.0, twist=0, azimuth=45,
+            flange=1.5, thickness=0.1, rim_bulge=1.0, twist=0, azimuth=0,
             warp=0)),
+    # Presets imported from the original SculptureGenerator demo/*.txt
+    # parameter files (azimuth taken directly, in the corrected
+    # convention).  Provisional "Demo N" names pending final names.
+    # demo5 = Hyperbolic Hexagon, demo9 = Minimal Trefoil,
+    # demo19 = Heptoroid (already above, not duplicated).
+    'DEMO1': ("Demo 1", dict(branches=1, storeys=4, height=1.9, flange=1.5,
+            thickness=0.08, rim_bulge=1.5, warp=270, twist=885, azimuth=0,
+            detail=11)),
+    'DEMO2': ("Demo 2", dict(branches=1, storeys=3, height=1.7, flange=1.0,
+            thickness=0.08, rim_bulge=1.5, warp=360, twist=540, azimuth=0,
+            detail=10)),
+    'DEMO3': ("Demo 3", dict(branches=3, storeys=5, height=1.0, flange=1.1,
+            thickness=0.04, rim_bulge=1.5, warp=0, twist=-135, azimuth=0,
+            detail=5)),
+    'DEMO4': ("Demo 4", dict(branches=3, storeys=6, height=1.0, flange=1.1,
+            thickness=0.08, rim_bulge=1.01, warp=360, twist=0, azimuth=0,
+            detail=5)),
+    'DEMO6': ("Demo 6", dict(branches=6, storeys=4, height=1.0, flange=0.8,
+            thickness=0.02, rim_bulge=0.0, warp=360, twist=180, azimuth=45,
+            detail=7)),
+    'DEMO7': ("Demo 7", dict(branches=4, storeys=8, height=1.0, flange=0.8,
+            thickness=0.04, rim_bulge=0.96, warp=360, twist=180, azimuth=45,
+            detail=6)),
+    'DEMO8': ("Demo 8", dict(branches=4, storeys=12, height=1.0, flange=1.0,
+            thickness=0.06, rim_bulge=1.06, warp=210, twist=180, azimuth=45,
+            detail=7)),
+    'DEMO10': ("Demo 10", dict(branches=4, storeys=3, height=1.0, flange=1.0,
+            thickness=0.09, rim_bulge=1.06, warp=0, twist=180, azimuth=45,
+            detail=5)),
+    'DEMO11': ("Demo 11", dict(branches=7, storeys=2, height=0.1, flange=2.1,
+            thickness=0.0, rim_bulge=0.0, warp=0, twist=0, azimuth=0,
+            detail=5)),
+    'DEMO12': ("Demo 12", dict(branches=7, storeys=1, height=0.3, flange=2.6,
+            thickness=0.03, rim_bulge=0.0, warp=0, twist=-75, azimuth=0,
+            detail=8)),
+    'DEMO13': ("Demo 13", dict(branches=5, storeys=3, height=0.3, flange=1.1,
+            thickness=0.2, rim_bulge=0.55, warp=0, twist=0, azimuth=0,
+            detail=6)),
+    'DEMO14': ("Demo 14", dict(branches=2, storeys=3, height=1.5, flange=1.5,
+            thickness=0.15, rim_bulge=1.5, warp=0, twist=0, azimuth=0,
+            detail=5)),
+    'DEMO15': ("Demo 15", dict(branches=2, storeys=11, height=1.5, flange=1.5,
+            thickness=0.15, rim_bulge=1.5, warp=180, twist=495, azimuth=0,
+            detail=5)),
+    'DEMO16': ("Demo 16", dict(branches=1, storeys=3, height=1.5, flange=1.5,
+            thickness=0.15, rim_bulge=1.5, warp=0, twist=-300, azimuth=0,
+            detail=5)),
+    'DEMO20': ("Demo 20", dict(branches=4, storeys=7, height=1.5, flange=0.9,
+            thickness=0.11, rim_bulge=0.43, warp=60, twist=390, azimuth=-15,
+            detail=5)),
 }
 
 
@@ -840,8 +889,8 @@ if _IN_BLENDER:
             name="Twist", description="Overall axial twist (degrees)",
             default=0.0, min=-900.0, max=1080.0, step=1500, update=_prop_update)
         azimuth: FloatProperty(
-            name="Azimuth", description="Turn of the profile around the tower axis (degrees; 45 = the aligned/flat orientation)",
-            default=45.0, min=-360.0, max=360.0, step=500, update=_prop_update)
+            name="Azimuth", description="Turn of the profile around the tower axis (degrees)",
+            default=0.0, min=-360.0, max=360.0, step=500, update=_prop_update)
         warp: FloatProperty(
             name="Warp", description="Bend of the tower towards an arch/toroid (degrees; 360 = closed ring)",
             default=0.0, min=0.0, max=1080.0, step=1000, update=_prop_update)
@@ -909,7 +958,7 @@ if _IN_BLENDER:
                                  min=0.0, max=4.0)
         twist: FloatProperty(name="Twist", default=0.0,
                              min=-900.0, max=1080.0)
-        azimuth: FloatProperty(name="Azimuth", default=45.0,
+        azimuth: FloatProperty(name="Azimuth", default=0.0,
                                min=-360.0, max=360.0)
         warp: FloatProperty(name="Warp", default=0.0, min=0.0, max=1080.0)
         detail: IntProperty(name="Detail", default=5, min=1, max=16)
@@ -1130,7 +1179,7 @@ if __name__ == "__main__":
                          ("open holes", dict(branches=6, storeys=4, height=1.0,
                                              flange=0.8, thickness=0.02,
                                              rim_bulge=0.0, warp=360,
-                                             twist=180, azimuth=90, detail=7)),
+                                             twist=180, azimuth=45, detail=7)),
                          ("thin sheet", dict(thickness=0.0, warp=360,
                                              storeys=4))]:
             p = Params(**kw)

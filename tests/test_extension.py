@@ -19,6 +19,8 @@ print("[menu] VIEW3D_MT_math_art_add registered OK")
 
 OPS = [
     ("scherk", lambda: bpy.ops.mesh.scherk_collins_add(preset='TREFOIL')),
+    ("scherk demo preset",
+     lambda: bpy.ops.mesh.scherk_collins_add(preset='DEMO16')),
     ("parametric", lambda: bpy.ops.mesh.parametric_minimal_add(
         surface='CATENOID')),
     ("tpms", lambda: bpy.ops.mesh.tpms_add(surface='G', resolution=16)),
