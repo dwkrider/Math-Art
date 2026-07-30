@@ -12,11 +12,12 @@
 #   Johnson       J1-J48: every pyramid / cupola / rotunda solid and
 #                 their elongated, gyroelongated, bi- (ortho / gyro)
 #                 combinations, composed with exact unit-edge
-#                 coordinates; plus J49-J71, the augmented prisms,
-#                 augmented dodecahedron / diminished icosahedron, and
-#                 the cupola-augmented truncated tetrahedron / cube /
-#                 dodecahedron (glued/sliced on exact convex bases).
-#                 J72-J92 to come.
+#                 coordinates; plus J49-J83 -- the augmented prisms,
+#                 augmented dodecahedron / diminished icosahedron, the
+#                 cupola-augmented truncated solids, and the whole
+#                 gyrate/diminished rhombicosidodecahedron family
+#                 (glued/sliced/gyrated on exact convex bases).  The 9
+#                 elementary solids J84-J92 to come.
 #
 # Options: generic stellation (each face replaced by a pyramid to the
 # intersection of its neighbours' planes -- octahedron gives the
@@ -234,6 +235,18 @@ _J_EXT = [
     (69, "Parabiaugmented Truncated Dodecahedron (J69)"),
     (70, "Metabiaugmented Truncated Dodecahedron (J70)"),
     (71, "Triaugmented Truncated Dodecahedron (J71)"),
+    (72, "Gyrate Rhombicosidodecahedron (J72)"),
+    (73, "Parabigyrate Rhombicosidodecahedron (J73)"),
+    (74, "Metabigyrate Rhombicosidodecahedron (J74)"),
+    (75, "Trigyrate Rhombicosidodecahedron (J75)"),
+    (76, "Diminished Rhombicosidodecahedron (J76)"),
+    (77, "Paragyrate Diminished Rhombicosidodecahedron (J77)"),
+    (78, "Metagyrate Diminished Rhombicosidodecahedron (J78)"),
+    (79, "Bigyrate Diminished Rhombicosidodecahedron (J79)"),
+    (80, "Parabidiminished Rhombicosidodecahedron (J80)"),
+    (81, "Metabidiminished Rhombicosidodecahedron (J81)"),
+    (82, "Gyrate Bidiminished Rhombicosidodecahedron (J82)"),
+    (83, "Tridiminished Rhombicosidodecahedron (J83)"),
 ]
 _J_EXT_NUMS = {num for num, _name in _J_EXT}
 JOHNSON += [(f'J{num}', name, num) for num, name in _J_EXT]
@@ -673,17 +686,26 @@ def _augment_cupola_faces(V, F, idxs, shift=0):
     return V, F
 
 
+_ARCH_CACHE = {}
+
+
 def _archimedean_unit(nota):
     """Unit-edge, origin-centred Archimedean solid (canonical form of the
-    combinatorial type == the uniform solid, to numerical precision)."""
-    V, F = cw.apply_conway(nota)
-    # uniform solids are canonical, so their canonical form has regular
-    # faces; the larger ones need many iterations to converge tightly
-    # (canonicalize early-exits once it has).
-    V = cw.canonicalize(V, F, iters=2000)
-    V = _norm_edge(V, F)
-    cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
-    return [tuple(v[c] - cen[c] for c in range(3)) for v in V], F
+    combinatorial type == the uniform solid, to numerical precision).
+    Cached per notation, since canonicalizing the big bases is slow;
+    callers get fresh copies to mutate."""
+    if nota not in _ARCH_CACHE:
+        V, F = cw.apply_conway(nota)
+        # uniform solids are canonical, so their canonical form has regular
+        # faces; the larger ones need many iterations to converge tightly
+        # (canonicalize early-exits once it has).
+        V = cw.canonicalize(V, F, iters=2000)
+        V = _norm_edge(V, F)
+        cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
+        _ARCH_CACHE[nota] = ([tuple(v[c] - cen[c] for c in range(3))
+                              for v in V], [list(f) for f in F])
+    V, F = _ARCH_CACHE[nota]
+    return [list(v) for v in V], [list(f) for f in F]
 
 
 def _pick_faces_by_size(V, F, size, mode):
@@ -716,6 +738,119 @@ def _pick_faces_by_size(V, F, size, mode):
                 if len(chosen) == 3:
                     return chosen
     raise ValueError(f"cannot pick {mode} {size}-gon faces")
+
+
+def _cap_dir(V, f):
+    c = _face_centroid(V, f)
+    L = sqrt(sum(x * x for x in c)) or 1.0
+    return [x / L for x in c]
+
+
+def _find_face_by_dir(V, F, d, size):
+    """Index of the size-gon face whose centroid direction best matches d."""
+    best, bi = -2.0, None
+    for fi, f in enumerate(F):
+        if len(f) != size:
+            continue
+        cd = _cap_dir(V, f)
+        dot = sum(cd[c] * d[c] for c in range(3))
+        if dot > best:
+            best, bi = dot, fi
+    return bi
+
+
+def _remove_faces_cap(V, F, remove):
+    """Delete the faces in `remove` (a topological disk), close the hole
+    with the polygon of its boundary ring, and drop orphaned vertices."""
+    remove = set(remove)
+    kept = [list(f) for i, f in enumerate(F) if i not in remove]
+    removed = [F[i] for i in remove]
+    kept_edges = set()
+    for f in kept:
+        m = len(f)
+        for i in range(m):
+            a, b = f[i], f[(i + 1) % m]
+            kept_edges.add((min(a, b), max(a, b)))
+    nxt = {}
+    for f in removed:
+        m = len(f)
+        for i in range(m):
+            a, b = f[i], f[(i + 1) % m]
+            if (min(a, b), max(a, b)) in kept_edges:
+                nxt[a] = b
+    start = next(iter(nxt))
+    ring = [start]
+    while nxt[ring[-1]] != start:
+        ring.append(nxt[ring[-1]])
+        if len(ring) > 200:
+            raise ValueError("cap boundary walk")
+    kept.append(list(reversed(ring)))
+    used = set()
+    for f in kept:
+        used.update(f)
+    old = sorted(used)
+    remap = {o: i for i, o in enumerate(old)}
+    NV = [V[o] for o in old]
+    NF = [[remap[i] for i in f] for f in kept]
+    return NV, NF
+
+
+def _diminish_cap(V, F, pent_fi):
+    """Slice off the pentagonal cupola capped by pentagon face pent_fi,
+    leaving a regular decagon in its place."""
+    pv = set(F[pent_fi])
+    remove = [i for i, f in enumerate(F) if set(f) & pv]
+    return _remove_faces_cap(V, F, remove)
+
+
+def _pick_pent_caps(V, F, mode):
+    """Choose pentagonal-cupola caps of the rhombicosidodecahedron by
+    icosahedral relation.  Two pentagons are 'adjacent' (share a
+    triangle) when their centroid directions meet at ~63 deg; the
+    Johnson gyrate/diminished forms only ever act on mutually
+    non-adjacent caps, so cap operations stay independent."""
+    cand = [fi for fi, f in enumerate(F) if len(f) == 5]
+    d = {fi: _cap_dir(V, F[fi]) for fi in cand}
+
+    def dot(i, j):
+        return sum(d[i][c] * d[j][c] for c in range(3))
+
+    def nonadj(i, j):
+        return dot(i, j) < 0.2          # not sharing a triangle
+    c0 = cand[0]
+    if mode == 'one':
+        return [c0]
+    opp = min(cand, key=lambda j: dot(c0, j))
+    if mode == 'para':
+        return [c0, opp]
+    if mode == 'meta':
+        for j in cand:
+            if j not in (c0, opp) and nonadj(c0, j):
+                return [c0, j]
+    if mode == 'tri':
+        na = [j for j in cand if j != c0 and nonadj(c0, j)]
+        for a in na:
+            for b in na:
+                if b != a and nonadj(a, b):
+                    return [c0, a, b]
+    raise ValueError(f"cannot pick {mode} pentagon caps")
+
+
+# (mode, gyrated-cap indices, diminished-cap indices) into the cap list
+_RID_ROLES = {
+    72: ('one', [0], []),
+    73: ('para', [0, 1], []),
+    74: ('meta', [0, 1], []),
+    75: ('tri', [0, 1, 2], []),
+    76: ('one', [], [0]),
+    77: ('para', [0], [1]),
+    78: ('meta', [0], [1]),
+    79: ('tri', [0, 1], [2]),
+    80: ('para', [], [0, 1]),
+    81: ('meta', [], [0, 1]),
+    82: ('tri', [0], [1, 2]),
+    83: ('tri', [], [0, 1, 2]),
+}
 
 
 def build_johnson_ext(num, scale=1.0):
@@ -759,6 +894,17 @@ def build_johnson_ext(num, scale=1.0):
         mode = {68: 'one', 69: 'para', 70: 'meta', 71: 'tri'}[num]
         V, F = _augment_cupola_faces(
             V, F, _pick_faces_by_size(V, F, 10, mode))
+    elif 72 <= num <= 83:                   # gyrate / diminished RID family
+        V, F = _archimedean_unit('eD')
+        mode, gyr_i, dim_i = _RID_ROLES[num]
+        caps = _pick_pent_caps(V, F, mode)
+        dirs = [_cap_dir(V, F[fi]) for fi in caps]
+        for i in dim_i:
+            V, F = _diminish_cap(V, F, _find_face_by_dir(V, F, dirs[i], 5))
+        for i in gyr_i:
+            V, F = _diminish_cap(V, F, _find_face_by_dir(V, F, dirs[i], 5))
+            di = _find_face_by_dir(V, F, dirs[i], 10)
+            V, F = _augment_cupola(V, F, di, shift=1)
     else:
         raise ValueError(f"J{num} not available")
     cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
@@ -1418,10 +1564,11 @@ if _IN_BLENDER:
          "The four regular star polyhedra (true intersecting faces)"),
         ('PRISM', "Prisms & Antiprisms", "Uniform n-prisms"),
         ('JOHNSON', "Johnson",
-         "J1-J71: pyramid / cupola / rotunda solids and their "
-         "elongations and pairings, plus the augmented prisms, "
-         "augmented dodecahedron / diminished icosahedron and "
-         "cupola-augmented truncated solids"),
+         "J1-J83: pyramid / cupola / rotunda solids and their "
+         "elongations and pairings, the augmented prisms, augmented "
+         "dodecahedron / diminished icosahedron, cupola-augmented "
+         "truncated solids and the gyrate/diminished "
+         "rhombicosidodecahedron family"),
     ]
 
     _ITEM_CACHE = {}
