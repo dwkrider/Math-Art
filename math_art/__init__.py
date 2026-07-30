@@ -128,12 +128,11 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         lay = self.layout
         _op(lay, "mesh.scherk_collins_add",
             text="Scherk-Collins Sculpture", icon='MESH_TORUS')
-        if hasattr(bpy.types, "VIEW3D_MT_math_art_minimal_zoo"):
-            lay.menu("VIEW3D_MT_math_art_minimal_zoo",
-                     icon='SURFACE_NSPHERE')
         _op(lay, "mesh.parametric_minimal_add",
-            icon='SURFACE_NSPHERE')
-        _op(lay, "mesh.tpms_add", icon='MESH_ICOSPHERE')
+            text="Minimal Surfaces", icon='SURFACE_NSPHERE')
+        _op(lay, "mesh.tpms_add",
+            text="Minimal Surfaces (Triply Periodic)",
+            icon='MESH_ICOSPHERE')
         _op(lay, "mesh.minimal_knot_span_add", icon='MESH_TORUS')
         _op(lay, "object.minimal_span", icon='OUTLINER_OB_SURFACE')
         _op(lay, "mesh.seifert_surface_add",

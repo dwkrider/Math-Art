@@ -1229,9 +1229,10 @@ if _IN_BLENDER:
         return _SURF_ITEMS_FAM.get(self.family, _SURF_ITEMS_ALL)
 
     class MESH_OT_parametric_minimal_add(bpy.types.Operator):
-        """Add a classic parametric minimal surface"""
+        """Add a minimal surface from the Weierstrass-Enneper / Bjorling
+        catalog. Pick a Family, then a Surface within it."""
         bl_idname = "mesh.parametric_minimal_add"
-        bl_label = "Classic Minimal Surface"
+        bl_label = "Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
 
         family: EnumProperty(
