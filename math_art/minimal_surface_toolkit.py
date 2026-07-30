@@ -502,12 +502,32 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
     return G, wrap_u, wrap_v
 
 
-def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0):
+def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
+                     with_uv=False):
+    """Mesh (V, quads) for `kind`; with_uv=True additionally returns a
+    per-face-corner UV array (sum of face lengths, 2).  Minimal
+    surfaces are conformally parametrized by their Weierstrass data,
+    so the normalized (u, v) grid is a high-quality conformal UV chart
+    for free; periodic directions get a clean 0<->1 seam.  Finished
+    (tiled) meshes carry a best-effort per-fundamental-domain UV."""
     if kind in MESH_PARAM:
         out = MESH_PARAM[kind](nu, nv, order, radius, scale, theta)
-        return out[0], out[1]
+        V, quads = out[0], out[1]
+        if not with_uv:
+            return V, quads
+        uvv = out[2] if len(out) > 2 else None
+        if uvv is None or not quads:
+            return V, quads, None
+        idx = np.fromiter((i for f in quads for i in f), dtype=np.int64)
+        return V, quads, np.asarray(uvv)[idx]
     G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta)
     V = G.reshape(-1, 3)
+    # conformal UV: the normalized parameter grid (endpoint-free on
+    # wrapped axes, so the seam face closes at exactly u or v = 1)
+    gu = np.arange(nu) / (nu if wrap_u else max(nu - 1, 1))
+    gv = np.arange(nv) / (nv if wrap_v else max(nv - 1, 1))
+    UVg = np.stack(np.meshgrid(gu, gv, indexing='ij'),
+                   axis=-1).reshape(-1, 2)
     valid = clip.reshape(-1) if isinstance(clip, np.ndarray) else None
 
     def vid(i, j):
@@ -551,12 +571,26 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0):
         remap = np.full(len(V), -1, dtype=np.int64)
         remap[used] = np.arange(len(used))
         V = V[used]
+        UVg = UVg[used]
         quads = [tuple(int(remap[i]) for i in qd) for qd in quads]
         V = _smooth_boundary(V, quads)   # smooth staircase/clip end rims
         ref = V
 
     V = _center_fit(V, scale, ref)
-    return V, quads
+    if not with_uv:
+        return V, quads
+    if not quads:
+        return V, quads, None
+    q = np.array(quads)
+    cuv = UVg[q].astype(float)                 # (nf, 4, 2) corner UVs
+    for axis, wrapped in ((0, wrap_u), (1, wrap_v)):
+        if wrapped:
+            # faces crossing the periodic seam: lift the low corners by
+            # one period so the face maps to the [.., 1.0] edge cleanly
+            a = cuv[..., axis]
+            seam = (a.max(axis=1) - a.min(axis=1)) > 0.5
+            a += ((a < 0.5) & seam[:, None]).astype(float)
+    return V, quads, cuv.reshape(-1, 2)
 
 
 # ==========================================================================
@@ -1087,11 +1121,19 @@ if _IN_BLENDER:
         obj.location = context.scene.cursor.location
         return obj
 
-    def _new_object(context, name, verts, faces, weld=0.0, smooth=True):
+    def _new_object(context, name, verts, faces, weld=0.0, smooth=True,
+                    loop_uv=None):
         me = bpy.data.meshes.new(name)
         me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
                        [tuple(int(i) for i in f) for f in faces])
         me.validate(clean_customdata=True)
+        if loop_uv is not None:
+            # per-face-corner UVs (assigned before any weld: bmesh's
+            # remove_doubles merges vertices but keeps loop layers)
+            luv = np.asarray(loop_uv, dtype=np.float32)
+            if len(me.loops) == len(luv):
+                layer = me.uv_layers.new(name="UVMap")
+                layer.data.foreach_set('uv', luv.ravel())
         if weld > 0:
             bm = bmesh.new()
             bm.from_mesh(me)
@@ -1204,11 +1246,15 @@ if _IN_BLENDER:
                 _nurbs_grid_object(context, label, G,
                                    cyclic_u=wrap_u, cyclic_v=wrap_v)
             else:
-                V, quads = build_parametric(self.surface, self.res_u,
-                                            self.res_v, self.order,
-                                            self.radius, self.scale, theta)
+                out = build_parametric(self.surface, self.res_u,
+                                       self.res_v, self.order,
+                                       self.radius, self.scale, theta,
+                                       with_uv=True)
+                V, quads = out[0], out[1]
+                cuv = out[2] if len(out) > 2 else None
                 _new_object(context, label, V, quads,
-                            weld=1e-5 * max(1.0, self.scale))
+                            weld=1e-5 * max(1.0, self.scale),
+                            loop_uv=cuv)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -1605,6 +1651,26 @@ if __name__ == "__main__":
             ok &= good
             print(f"parametric {kind:10s}: {len(V):5d} verts {len(Q):5d} "
                   f"quads  fit[max|c|={cen:.1e} ext={ext:.4f}] "
+                  f"{'OK' if good else 'FAIL'}")
+        # UV gate: every parametric surface carries a finite, in-range,
+        # non-collapsed conformal UV chart (per-corner, [0, 1])
+        for kind in PARAMETRIC:
+            n = {'KNOID': 5, 'COSTA_HM': 1, 'SCHERK_TOWER': 3}.get(kind, 1)
+            out = build_parametric(kind, 48, 48, n, 1.2, 1.0,
+                                   with_uv=True)
+            cuv = out[2] if len(out) > 2 else None
+            if cuv is None:
+                print(f"uv {kind:15s}: NO UV  FAIL")
+                ok = False
+                continue
+            finite = bool(np.all(np.isfinite(cuv)))
+            inrange = (cuv.min() >= -1e-6) and (cuv.max() <= 1.0 + 1e-6)
+            span = np.ptp(cuv, axis=0)
+            good = finite and inrange and bool(np.all(span > 0.3))
+            ok &= good
+            print(f"uv {kind:15s}: n={len(cuv):6d} "
+                  f"range[{cuv.min():.3f},{cuv.max():.3f}] "
+                  f"span=({span[0]:.2f},{span[1]:.2f}) "
                   f"{'OK' if good else 'FAIL'}")
         # Costa-Hoffman-Meeks: modulus table + Euler characteristic gate
         # (genus k, 3 ends removed -> chi = 2 - 2k - 3 = -(2k+1))
