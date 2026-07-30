@@ -34,6 +34,10 @@ OPS = [
                   method='MEMBRANE', mem_iterations=80))[-1]),
     ("conway", lambda: bpy.ops.mesh.conway_add(
         example='CUSTOM', notation='sC')),
+    ("conway catalog hull", lambda: bpy.ops.mesh.conway_catalog_add(
+        solid='jtT', iterations=60)),
+    ("conway catalog trapezohedron",
+     lambda: bpy.ops.mesh.conway_catalog_add(solid='dA5', iterations=60)),
     ("zonohedron", lambda: bpy.ops.mesh.zonohedron_add(
         kind='SPIRAL', n=12, spiral_width=4)),
     ("waterman", lambda: bpy.ops.mesh.waterman_add(root=20)),

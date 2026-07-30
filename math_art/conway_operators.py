@@ -498,6 +498,103 @@ def canonicalize(V, F, iters=200, lam_t=0.3, lam_p=0.5):
 
 
 # --------------------------------------------------------------------------
+# Named catalog
+# --------------------------------------------------------------------------
+#
+# Curated named solids that are reachable from the operators above plus
+# Hart canonicalization, mirroring several of the "computed" categories in
+# David I. McCooey's Visual Polyhedra (dmccooey.com/polyhedra): the
+# Archimedean-Catalan hulls (Conway join `j`), the propellor solids (`p`),
+# the truncated (`t`) and rectified (`a`) Archimedean solids, the chamfered
+# solids (`c`), and the dipyramids/trapezohedra (duals of the uniform
+# prisms/antiprisms).  Every entry is a pure Conway construction on an exact
+# seed followed by canonicalization -- no coordinate data is copied; the
+# site is used only as a naming/verification reference.
+#
+# Each entry is (notation, category, name).
+
+CATALOG = [
+    # Archimedean-Catalan hulls: convex hull of an Archimedean solid and its
+    # Catalan dual == the Conway join of the Archimedean solid.
+    ('jtT', 'Hull', "Joined Truncated Tetrahedron"),
+    ('jaC', 'Hull', "Joined Cuboctahedron"),
+    ('jtO', 'Hull', "Joined Truncated Octahedron"),
+    ('jtC', 'Hull', "Joined Truncated Cube"),
+    ('jeC', 'Hull', "Joined Rhombicuboctahedron"),
+    ('jsC', 'Hull', "Joined Snub Cube (laevo)"),
+    ('rjsC', 'Hull', "Joined Snub Cube (dextro)"),
+    ('jaD', 'Hull', "Joined Icosidodecahedron"),
+    ('jbC', 'Hull', "Joined Truncated Cuboctahedron"),
+    ('jtI', 'Hull', "Joined Truncated Icosahedron"),
+    ('jtD', 'Hull', "Joined Truncated Dodecahedron"),
+    ('jeD', 'Hull', "Joined Rhombicosidodecahedron"),
+    ('jsD', 'Hull', "Joined Snub Dodecahedron (laevo)"),
+    ('rjsD', 'Hull', "Joined Snub Dodecahedron (dextro)"),
+    ('jbD', 'Hull', "Joined Truncated Icosidodecahedron"),
+    # Propellor solids (George Hart's propellor operator).
+    ('pT', 'Propellor', "Propello Tetrahedron"),
+    ('pC', 'Propellor', "Propello Cube"),
+    ('pO', 'Propellor', "Propello Octahedron"),
+    ('pD', 'Propellor', "Propello Dodecahedron"),
+    ('pI', 'Propellor', "Propello Icosahedron"),
+    ('ptO', 'Propellor', "Propello Truncated Octahedron"),
+    ('pkC', 'Propellor', "Propello Tetrakis Hexahedron"),
+    ('psC', 'Propellor', "Propello Snub Cube"),
+    ('prgC', 'Propellor', "Propello Pentagonal Icositetrahedron"),
+    ('pbC', 'Propellor', "Propello Truncated Cuboctahedron"),
+    ('pmC', 'Propellor', "Propello Disdyakis Dodecahedron"),
+    ('ptI', 'Propellor', "Propello Truncated Icosahedron"),
+    ('pkD', 'Propellor', "Propello Pentakis Dodecahedron"),
+    ('pbD', 'Propellor', "Propello Truncated Icosidodecahedron"),
+    ('pmD', 'Propellor', "Propello Disdyakis Triacontahedron"),
+    # Truncated Archimedean solids (truncate all vertices, then canonicalize).
+    ('ttT', 'Truncated Archimedean', "Truncated Truncated Tetrahedron"),
+    ('ttO', 'Truncated Archimedean', "Truncated Truncated Octahedron"),
+    ('ttC', 'Truncated Archimedean', "Truncated Truncated Cube"),
+    ('teC', 'Truncated Archimedean', "Truncated Rhombicuboctahedron"),
+    ('tsC', 'Truncated Archimedean', "Truncated Snub Cube"),
+    ('tbC', 'Truncated Archimedean', "Truncated Truncated Cuboctahedron"),
+    ('ttI', 'Truncated Archimedean', "Truncated Truncated Icosahedron"),
+    ('ttD', 'Truncated Archimedean', "Truncated Truncated Dodecahedron"),
+    ('teD', 'Truncated Archimedean', "Truncated Rhombicosidodecahedron"),
+    ('tsD', 'Truncated Archimedean', "Truncated Snub Dodecahedron"),
+    ('tbD', 'Truncated Archimedean', "Truncated Truncated Icosidodecahedron"),
+    # Rectified Archimedean solids (ambo, then canonicalize).
+    ('atT', 'Rectified Archimedean', "Rectified Truncated Tetrahedron"),
+    ('atO', 'Rectified Archimedean', "Rectified Truncated Octahedron"),
+    ('atC', 'Rectified Archimedean', "Rectified Truncated Cube"),
+    ('aeC', 'Rectified Archimedean', "Rectified Rhombicuboctahedron"),
+    ('asC', 'Rectified Archimedean', "Rectified Snub Cube"),
+    ('abC', 'Rectified Archimedean', "Rectified Truncated Cuboctahedron"),
+    ('atI', 'Rectified Archimedean', "Rectified Truncated Icosahedron"),
+    ('atD', 'Rectified Archimedean', "Rectified Truncated Dodecahedron"),
+    ('aeD', 'Rectified Archimedean', "Rectified Rhombicosidodecahedron"),
+    ('asD', 'Rectified Archimedean', "Rectified Snub Dodecahedron"),
+    ('abD', 'Rectified Archimedean', "Rectified Truncated Icosidodecahedron"),
+    # Chamfered solids (chamfer, then canonicalize).
+    ('cT', 'Chamfered', "Chamfered Tetrahedron"),
+    ('cO', 'Chamfered', "Chamfered Octahedron"),
+    ('cC', 'Chamfered', "Chamfered Cube"),
+    ('cI', 'Chamfered', "Chamfered Icosahedron"),
+    ('cD', 'Chamfered', "Chamfered Dodecahedron"),
+    ('ctI', 'Chamfered', "Chamfered Truncated Icosahedron"),
+    # Dipyramids and trapezohedra (duals of the uniform prisms/antiprisms).
+    ('dP3', 'Dipyramid / Trapezohedron', "Triangular Dipyramid"),
+    ('dP4', 'Dipyramid / Trapezohedron', "Square Dipyramid (Octahedron)"),
+    ('dP5', 'Dipyramid / Trapezohedron', "Pentagonal Dipyramid"),
+    ('dP6', 'Dipyramid / Trapezohedron', "Hexagonal Dipyramid"),
+    ('dP7', 'Dipyramid / Trapezohedron', "Heptagonal Dipyramid"),
+    ('dP8', 'Dipyramid / Trapezohedron', "Octagonal Dipyramid"),
+    ('dA3', 'Dipyramid / Trapezohedron', "Trigonal Trapezohedron (Cube)"),
+    ('dA4', 'Dipyramid / Trapezohedron', "Tetragonal Trapezohedron"),
+    ('dA5', 'Dipyramid / Trapezohedron', "Pentagonal Trapezohedron"),
+    ('dA6', 'Dipyramid / Trapezohedron', "Hexagonal Trapezohedron"),
+    ('dA7', 'Dipyramid / Trapezohedron', "Heptagonal Trapezohedron"),
+    ('dA8', 'Dipyramid / Trapezohedron', "Octagonal Trapezohedron"),
+]
+
+
+# --------------------------------------------------------------------------
 # Blender layer
 # --------------------------------------------------------------------------
 
@@ -710,19 +807,90 @@ if _IN_BLENDER:
                 lay.prop(self, 'thickness')
             lay.prop(self, 'scale')
 
+    def _catalog_items():
+        items = []
+        last = None
+        for notation, cat, name in CATALOG:
+            if cat != last:
+                items.append(('', cat, ''))       # section header
+                last = cat
+            items.append((notation, name, "Conway: " + notation))
+        return items
+
+    class MESH_OT_conway_catalog_add(bpy.types.Operator):
+        """Build a named polyhedron from the curated catalog: Archimedean-
+        Catalan hulls, propellor solids, truncated/rectified Archimedean
+        solids, chamfered solids, and dipyramids/trapezohedra.  Each is a
+        Conway construction on an exact seed, then canonicalized."""
+        bl_idname = "mesh.conway_catalog_add"
+        bl_label = "Polyhedron Catalog (Hulls, Propellor, ...)"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        solid: EnumProperty(name="Solid", items=_catalog_items(),
+                            default='jtT')
+        iterations: IntProperty(name="Canonical Iterations", default=200,
+                                min=5, max=2000)
+        coloring: EnumProperty(
+            name="Coloring",
+            items=[('SIDES', "Colored (by face sides)", ""),
+                   ('NONE', "None", "")],
+            default='SIDES')
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+
+        def execute(self, context):
+            notation = self.solid
+            try:
+                V, F = apply_conway(notation)
+            except (ValueError, KeyError) as e:
+                self.report({'ERROR'}, str(e))
+                return {'CANCELLED'}
+            V = canonicalize(V, F, iters=self.iterations)
+            V, F = orient_outward(V, [list(f) for f in F])
+            label = dict((n, nm) for n, _, nm in CATALOG).get(notation,
+                                                              notation)
+            me = bpy.data.meshes.new(label)
+            me.from_pydata([tuple(c * self.scale for c in v) for v in V],
+                           [], [tuple(f) for f in F])
+            me.validate(clean_customdata=True)
+            if self.coloring == 'SIDES' and len(me.polygons) == len(F):
+                sides = sorted({len(f) for f in F})
+                slot = {n: i for i, n in enumerate(sides)}
+                for n in sides:
+                    me.materials.append(
+                        MESH_OT_conway_add._material_for(n))
+                me.polygons.foreach_set(
+                    'material_index', [slot[len(f)] for f in F])
+            if len(me.polygons) == len(F):
+                attr = me.attributes.new("ngon_sides", 'INT', 'FACE')
+                attr.data.foreach_set('value', [len(f) for f in F])
+            me.update()
+            obj = bpy.data.objects.new(label, me)
+            context.collection.objects.link(obj)
+            obj.location = context.scene.cursor.location
+            for o in context.selected_objects:
+                o.select_set(False)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            self.report({'INFO'},
+                        f"{label}: V={len(V)} F={len(F)}")
+            return {'FINISHED'}
+
     def _menu_func(self, context):
         self.layout.operator("mesh.conway_add", icon='MESH_ICOSPHERE')
+        self.layout.operator("mesh.conway_catalog_add", icon='MESH_ICOSPHERE')
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
     def register():
         bpy.utils.register_class(MESH_OT_conway_add)
+        bpy.utils.register_class(MESH_OT_conway_catalog_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        bpy.utils.unregister_class(MESH_OT_conway_catalog_add)
         bpy.utils.unregister_class(MESH_OT_conway_add)
 
 
@@ -758,3 +926,12 @@ if __name__ == "__main__":
             V2 = canonicalize(V, F, iters=40)
             print(f"sD canonicalized: V={len(V2)} F={len(F)} "
                   f"chi2={euler(V2, F) == 2}")
+        bad = 0
+        for notation, cat, name in CATALOG:
+            V, F = apply_conway(notation)
+            if euler(V, F) != 2:
+                print(f"CATALOG MISMATCH {notation} ({name}) chi="
+                      f"{euler(V, F)}")
+                bad += 1
+        print(f"catalog: {len(CATALOG)} named solids, "
+              f"{'all chi=2 OK' if bad == 0 else str(bad) + ' BAD'}")
