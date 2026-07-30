@@ -202,13 +202,17 @@ WE_SURFACES = {
         'family': 'SINGLY',
         'phi': _tower_phi,
         'domain': ('disk', 0.0, lambda p: p['r_out']),
+        # n = wings-per-turn; the UI "order" 1..7 maps to n = 2..8 so the
+        # slider's first step already changes the surface (n must be >= 2:
+        # n = 2 is the classical 4-wing Scherk saddle tower)
         'p_from': lambda order, radius: {
-            'n': int(min(max(order, 2), 8)), 'r_out': _r_reach(radius)},
-        'count': "Wing pairs (n)",
+            'n': int(min(max(order + 1, 2), 8)), 'r_out': _r_reach(radius)},
+        'count': "Wings (n+1 pairs)",
         'mask_punctures': lambda p: [
             (np.exp(1j * math.pi * (2 * j + 1) / (2 * p['n'])), 0.16)
             for j in range(2 * p['n'])],
         'clip': True,
+        'res_boost': (2.4, 2.4),     # disk trim reads ragged at 48x48
         'cycles': lambda p: [
             (np.exp(1j * math.pi * (2 * j + 1) / (2 * p['n'])), 0.12)
             for j in range(2 * p['n'])],
@@ -263,6 +267,7 @@ WE_SURFACES = {
         'p_from': lambda order, radius: {
             'r1': 1.6 + 0.6 * min(max(radius / 1.2, 0.0), 2.0)},
         'clip': True,
+        'res_boost': (2.6, 2.6),     # annulus double-cover reads ragged at 48
         'cycles': lambda p: [(0.0, 1.0)],
         'test_order': 1,
     },

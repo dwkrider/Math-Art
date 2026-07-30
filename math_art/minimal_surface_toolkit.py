@@ -1267,7 +1267,14 @@ if _IN_BLENDER:
                 lbl = flabel_of.get(fam, fam)
                 _PERIODICITY_ITEMS.append(
                     (fam, lbl, f"{lbl} ({len(items)} surfaces)"))
-        tpms_items = [(k, v[0], v[0]) for k, v in TPMS.items()]
+        # Only genuinely triply-periodic surfaces belong under Triply.
+        # SCHERKT (Scherk's tower) is a nodal SINGLY-periodic surface that
+        # historically rode in the TPMS field dict; the proper singly
+        # periodic Scherk tower is the WE SCHERK_TOWER under Singly, so it
+        # is dropped from this list (still reachable via mesh.tpms_add).
+        _NOT_TRIPLY = {'SCHERKT'}
+        tpms_items = [(k, v[0], v[0]) for k, v in TPMS.items()
+                      if k not in _NOT_TRIPLY]
         if tpms_items:
             _PERIODIC_ITEMS['TRIPLY'] = tpms_items
             _PERIODIC_ALL.extend(tpms_items)
