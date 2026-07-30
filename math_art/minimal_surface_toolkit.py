@@ -491,6 +491,7 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
     if kind in MESH_PARAM:
         raise ValueError(f"{kind} has no NURBS/grid form; use mesh output")
     G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta)
+    nu, nv = G.shape[:2]           # the grid may resize itself (odd rows)
     flat = G.reshape(-1, 3)
     if isinstance(clip, np.ndarray):
         ref = flat[clip.reshape(-1)]
@@ -520,7 +521,26 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
             return V, quads, None
         idx = np.fromiter((i for f in quads for i in f), dtype=np.int64)
         return V, quads, np.asarray(uvv)[idx]
+    # per-surface mesh-density boost: some conformal domains (strongly
+    # curved Bjorling ribbons, the fast-growing Enneper disk ends) need a
+    # denser grid than the shared 48x48 default to render smooth rather
+    # than faceted.  Applied only on the mesh path -- the NURBS/grid path
+    # keeps the requested control-point count, and the engine self-tests
+    # call the builders directly, so both stay unaffected.
+    _b = PARAMETRIC[kind][1]
+    _rb = getattr(_b, 'spec', {}).get('res_boost') if hasattr(_b, 'spec') \
+        else None
+    if _rb:
+        nu = max(3, int(round(nu * _rb[0])))
+        nv = max(3, int(round(nv * _rb[1])))
     G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta)
+    # trust the grid's own dimensions: a builder may return a different
+    # size than requested (the Bjorling strip forces an odd row count so
+    # a column lands on the seed axis).  Indexing the quads/UVs with the
+    # requested nv instead would misalign every row by one and shear the
+    # whole strip into a corrugated "accordion" -- the actual grid shape
+    # is the single source of truth.
+    nu, nv = G.shape[:2]
     V = G.reshape(-1, 3)
     # conformal UV: the normalized parameter grid (endpoint-free on
     # wrapped axes, so the seam face closes at exactly u or v = 1)
