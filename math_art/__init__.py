@@ -79,6 +79,7 @@ _MODULE_NAMES = [
     'frieze_generator',
     'tiling_generator',
     'layer_generator',
+    'modular_screen_generator',
     'kuniform_generator',
     'monohedral_generator',
     'isohedral_generator',
@@ -234,6 +235,7 @@ class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
         _op(lay, "mesh.frieze_add", icon='MOD_ARRAY')
         _op(lay, "mesh.wallpaper_add", icon='MOD_MIRROR')
         _op(lay, "mesh.layer_add", icon='MOD_SOLIDIFY')
+        _op(lay, "mesh.modular_screen_add", icon='MOD_WIREFRAME')
         lay.separator()
         _op(lay, "mesh.tiling_add", icon='MESH_GRID')
         _op(lay, "mesh.kuniform_add", icon='MESH_GRID')

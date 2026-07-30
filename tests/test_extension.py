@@ -438,6 +438,23 @@ OPS = [
     ("fractal reptile foldable",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          kind='FOLDABLE4', iterations=5)),
+    ("fractal reptile gasket",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         kind='REP5', iterations=4, holes=2)),
+    ("fractal tiling s6",
+     lambda: bpy.ops.mesh.fractal_tiling_add(kind='TRI_S6', iterations=6)),
+    ("fractal tiling u6",
+     lambda: bpy.ops.mesh.fractal_tiling_add(kind='TRAP_U6', iterations=5)),
+    ("fractal crystal cube-oct",
+     lambda: bpy.ops.mesh.fractal_polyhedron_add(crystal='CUBE_OCT')),
+    ("fractal crystal dodecafoam",
+     lambda: bpy.ops.mesh.fractal_polyhedron_add(
+         crystal='DODECAFOAM', hull_shell=True)),
+    ("algebraic monkey saddle",
+     lambda: bpy.ops.mesh.algebraic_surface_add(preset='MONKEY', fold=3)),
+    ("spiked goldberg",
+     lambda: bpy.ops.mesh.spiked_polyhedron_add(
+         preset='SPIKED', seed='GOLDBERG', goldberg_freq=2)),
     ("islamic starcross8", lambda: bpy.ops.mesh.islamic_pattern_add(
         preset='STARCROSS8', nx=4, ny=4)),
     ("islamic 12-fold tile", lambda: bpy.ops.mesh.islamic_pattern_add(
@@ -646,6 +663,22 @@ OPS = [
     ("phyllotaxis cone parastichy21",
      lambda: bpy.ops.mesh.phyllotaxis_add(
          count=280, form='CONE', floret='BUMP', parastichy=21)),
+    ("modular screen design5",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='DESIGN5', nx=4, ny=4)),
+    ("modular screen weave frameless",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='WEAVE', nx=4, ny=3, frame=False, rim_bulge=0.0)),
+    ("modular screen relief wall",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='DESIGN6', nx=4, ny=4, amp=0.35)),
+    ("modular screen hypar carlberg",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='HYPAR', nx=4, ny=4, hole=0.28)),
+    ("modular screen diagonal bulge",
+     lambda: bpy.ops.mesh.modular_screen_add(
+         preset='DIAGONAL', nx=3, ny=3, rim_bulge=0.9, bulge_segs=4,
+         res=8)),
 ]
 for name, op in OPS:
     for o in list(bpy.data.objects):
