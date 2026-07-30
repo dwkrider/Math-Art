@@ -55,12 +55,62 @@
 #
 # Odd orders are impossible for this family -- the fan count k/2 + 1
 # must be an integer -- which is why the encyclopedia lists no r5 kite
-# f-tiling.  The pure-Python self-test below verifies, for each kind:
-# the g-number (gen-1 count = k * (k/2 + 1)), full-edge edge-to-edge
-# pairing of every long edge (endpoints coincide to 1e-6), a gap-free
-# interior (dense sampling inside the union outline of the previous
+# f-tiling.
+#
+# SEGMENT-OF-REGULAR-POLYGON f-TILINGS (Fathauer, "Self-similar Tilings
+# Based on Prototiles Constructed from Segments of Regular Polygons",
+# Bridges 2000, pp. 285-292).  Two further one-prototile families whose
+# prototile is cut from a regular n-gon by a chord:
+#
+#   s TILINGS -- the chord spans TWO adjacent polygon edges, giving an
+#       isosceles TRIANGLE: two short (unit) edges, base angles pi/s,
+#       apex angle pi - 2 pi/s, and a long edge of 2 cos(pi/s), so the
+#       contraction ratio is
+#
+#           r_s = short / long = 1 / (2 cos(pi/s)).
+#
+#   u TILINGS -- the chord spans THREE adjacent edges, giving an
+#       isosceles TRAPEZOID: three equal short (unit) edges, small
+#       angles 2 pi/u, large angles pi - 2 pi/u, and a long base of
+#       1 + 2 cos(2 pi/u), so
+#
+#           r_u = 1 / (1 + 2 cos(2 pi/u)).
+#
+# CONSTRUCTION (Bridges 2000, figs. 2, 4, 9): generation 0 -- the
+# "pod" seed -- is two prototiles back to back sharing their long
+# edge; each later generation glues one r-scaled child, long edge
+# outward-first, onto EVERY still-exposed short edge of the newest
+# generation (child long = r * long = short, endpoint to endpoint).
+# Every child contributes one base/small angle at each end of the edge
+# it covers, so a vertex of the patch accumulates its free angle in
+# equal steps until it closes to exactly 360 degrees:
+#
+#   * a triangle tip (apex) holds pi - 2 pi/s and gains 2 pi/s per
+#     generation, closing after s/2 + 1 steps -- an integer only for
+#     EVEN s, which is Fathauer's overlap rule s = 4, 6, 8, 10, ...
+#     (his fig. 3 shows s = 5 folding onto itself);
+#   * a trapezoid top corner holds pi - 2 pi/u and gains 4 pi/u per
+#     generation (two exposed short edges), closing after (u + 2)/4
+#     steps -- an integer only for u = 6, 10, 14, 18, ... (u = 2
+#     mod 4), Fathauer's allowed u orders;
+#   * where the closure completes, the two final children meet
+#     back-to-back along a coincident short edge (Fathauer's type-B
+#     vertex) and growth stops there.
+#
+# Shipped segment kinds: s = 6, 8, 12 (pods of figs. 4-5; s = 4 is the
+# right-triangle rep-tile shipped in the sibling generator) and u = 6,
+# 10 (pods of fig. 9; the u = 6 pod is the one whose boundary stays a
+# regular hexagon -- every other shipped kind has a fractal limit
+# boundary).  See also Fathauer & Ouyang, "Aesthetic Patterns Based on
+# Fractal Tilings", IEEE Computer Graphics & Applications 34(6), 2014.
+#
+# The pure-Python self-test below verifies, for each kind: the
+# per-generation counts (gen-1 count = k * (k/2 + 1) kites resp.
+# 2 * (short edges) segment tiles), full-edge edge-to-edge pairing of
+# every long edge (endpoints coincide to 1e-6), a gap-free interior
+# (dense sampling inside the union outline of the previous
 # generations), zero overlaps, and the exact per-generation shrink
-# ratio s.
+# ratio s / r_s / r_u.
 
 bl_info = {
     "name": "Fractal Tiling",
@@ -75,7 +125,7 @@ bl_info = {
 
 import cmath
 from collections import Counter
-from math import pi, cos, tan
+from math import pi, cos, sin, tan
 
 import numpy as np
 
@@ -249,6 +299,114 @@ def _poly_of(tile):
 
 
 # --------------------------------------------------------------------
+# Segment-of-regular-polygon f-tilings (Fathauer, Bridges 2000)
+#
+# A tile is stored as (level, [complex verts]): a triangle (s family)
+# or trapezoid (u family) whose single LONG edge is glued to its
+# parent's short edge; the remaining short edges are the exposed
+# frontier.  Both prototiles are mirror-symmetric, so gluing by either
+# a direct or a conjugate similarity keeps every tile similar to the
+# prototile.
+# --------------------------------------------------------------------
+
+# kind -> (family, polygon order): 'S' = triangle segment spanning two
+# n-gon edges (even n only), 'U' = trapezoid segment spanning three
+# (n = 2 mod 4 only) -- Fathauer's non-overlap conditions
+_SEG = {
+    'TRI_S6': ('S', 6), 'TRI_S8': ('S', 8), 'TRI_S12': ('S', 12),
+    'TRAP_U6': ('U', 6), 'TRAP_U10': ('U', 10),
+}
+
+
+def _seg_proto(fam, n):
+    """Prototile in local coordinates -- long edge from 0 to L on the
+    x-axis, body above, CCW -- and its long-edge length L (short
+    edges are unit).  The contraction ratio is r = 1/L."""
+    if fam == 'S':
+        L = 2.0 * cos(pi / n)
+        verts = [0j, complex(L, 0.0), cmath.rect(1.0, pi / n)]
+    else:
+        th = 2.0 * pi / n
+        c, s = cos(th), sin(th)
+        L = 1.0 + 2.0 * c
+        verts = [0j, complex(L, 0.0), complex(1.0 + c, s),
+                 complex(c, s)]
+    return verts, L
+
+
+def _seg_seed(fam, n):
+    """Generation 0, Fathauer's 'pod' seed: two prototiles back to
+    back sharing their long edge, centred on the origin."""
+    verts, L = _seg_proto(fam, n)
+    off = complex(0.5 * L, 0.0)
+    up = [v - off for v in verts]
+    dn = [complex(v.real, -v.imag) for v in up]
+    return [(0, up), (0, dn)], L
+
+
+def _vkeys(vs):
+    """Endpoint-pair keys of the tile's edges."""
+    m = len(vs)
+    return [frozenset((_ckey(vs[i]), _ckey(vs[(i + 1) % m])))
+            for i in range(m)]
+
+
+def _seg_patch(kind, iterations):
+    """Grow a segment f-tiling.  Each pass glues one r-scaled child --
+    long edge over the short edge, body outward -- onto every exposed
+    short edge of the newest generation.  A short edge shared by two
+    tiles (the coincident back-to-back edges where a vertex has closed
+    to 360 degrees, Fathauer's type-B meeting) is internal and
+    skipped, so the patch stays edge-to-edge and overlap-free."""
+    fam, n = _SEG[kind]
+    proto, L = _seg_proto(fam, n)
+    tiles, _ = _seg_seed(fam, n)
+    m = len(proto)
+    edge_use = Counter()
+    for _, vs in tiles:
+        for ek in _vkeys(vs):
+            edge_use[ek] += 1
+    frontier = list(range(len(tiles)))
+    for _ in range(int(iterations)):
+        if len(tiles) + (m - 1) * len(frontier) > _MAX_TILES:
+            break
+        new_idx = []
+        for ti in frontier:
+            lvl, vs = tiles[ti]
+            cen = sum(vs) / m
+            lens = [abs(vs[(i + 1) % m] - vs[i]) for i in range(m)]
+            li = lens.index(max(lens))            # the long edge
+            for i in range(m):
+                if i == li:
+                    continue
+                q1, q2 = vs[i], vs[(i + 1) % m]
+                if edge_use[frozenset((_ckey(q1), _ckey(q2)))] != 1:
+                    continue                      # internal short edge
+                w = (q2 - q1) / L                 # long edge onto q1-q2
+                mid = 0.5 * (q1 + q2)
+                left = 1j * (q2 - q1)             # left of q1 -> q2
+                outw = mid - cen                  # away from the parent
+                if left.real * outw.real + left.imag * outw.imag > 0.0:
+                    child = [q1 + w * z for z in proto]
+                else:                             # mirror the prototile
+                    child = [q1 + w * z.conjugate() for z in proto]
+                tiles.append((lvl + 1, child))
+                new_idx.append(len(tiles) - 1)
+                for ek in _vkeys(child):
+                    edge_use[ek] += 1
+        frontier = new_idx
+    return tiles
+
+
+def _seg_ratio(kind):
+    """Exact contraction ratio r_s = 1/(2 cos(pi/s)) resp.
+    r_u = 1/(1 + 2 cos(2 pi/u))."""
+    fam, n = _SEG[kind]
+    return 1.0 / (2.0 * cos(pi / n)) if fam == 'S' \
+        else 1.0 / (1.0 + 2.0 * cos(2.0 * pi / n))
+
+
+# --------------------------------------------------------------------
 # Public patch builder
 # --------------------------------------------------------------------
 
@@ -259,13 +417,15 @@ def fractal_patch(kind, iterations):
     types -- list of int GENERATION (level) indices, parallel to polys,
              so 'By Level' color reveals the shrinking generations.
     """
-    if kind not in _KITE_K:
+    if kind in _KITE_K:
+        raw = _kite_patch(_KITE_K[kind], iterations)
+        polys = [_ensure_ccw(_poly_of(t)) for t in raw]
+    elif kind in _SEG:
+        raw = _seg_patch(kind, iterations)
+        polys = [_ensure_ccw(_to_xy(vs)) for _, vs in raw]
+    else:
         raise ValueError("unknown fractal kind %r" % kind)
-    raw = _kite_patch(_KITE_K[kind], iterations)
-    polys, types = [], []
-    for tile in raw:
-        polys.append(_ensure_ccw(_poly_of(tile)))
-        types.append(int(tile[0]))
+    types = [int(t[0]) for t in raw]
     return polys, types
 
 
@@ -283,6 +443,23 @@ KIND_ITEMS = [
     ('KITE_R12', "Kite (12-fold)",
      "Fathauer f-tiling (p4, r12, g7, s.268, m2): 12-gon of 30-degree "
      "kites, seven children per tip, ratio s=0.268"),
+    ('TRI_S6', "Triangle Segment (s=6)",
+     "Fathauer Bridges-2000 s-tiling pod: hexagon-segment isosceles "
+     "triangles (base angles 30 deg) shrinking by r=0.577 onto every "
+     "exposed short edge"),
+    ('TRI_S8', "Triangle Segment (s=8)",
+     "Fathauer Bridges-2000 s-tiling pod: octagon-segment triangles "
+     "(base angles 22.5 deg), ratio r=0.541, fractal limit boundary"),
+    ('TRI_S12', "Triangle Segment (s=12)",
+     "Fathauer Bridges-2000 s-tiling pod: 12-gon-segment triangles "
+     "(base angles 15 deg), ratio r=0.518, fractal limit boundary"),
+    ('TRAP_U6', "Trapezoid Segment (u=6)",
+     "Fathauer Bridges-2000 u-tiling pod: hexagon-segment trapezoids "
+     "(60-deg small angles), ratio r=0.5; the limit boundary stays a "
+     "regular hexagon"),
+    ('TRAP_U10', "Trapezoid Segment (u=10)",
+     "Fathauer Bridges-2000 u-tiling pod: decagon-segment trapezoids "
+     "(36-deg small angles), ratio r=0.382, fractal limit boundary"),
 ]
 
 
@@ -406,16 +583,17 @@ def _edge_use_map(polys):
     return use
 
 
-def _long_edges_paired(polys, use):
+def _long_edges_paired(polys, use, n_long=2):
     """Every LONG edge of every tile must be paired -- shared, endpoint
     to endpoint within 1e-6, with exactly one other tile (a neighbor's
     long edge or the parent's short edge).  This is the edge-to-edge
-    check: only short edges may lie on the open boundary."""
+    check: only short edges may lie on the open boundary.  A kite has
+    two long edges (n_long=2), a segment triangle or trapezoid one."""
     for p in polys:
         e = _edges(p)
         lens = [_edge_len(a, b) for a, b in e]
-        order = sorted(range(4), key=lambda i: -lens[i])
-        for i in order[:2]:                       # the two longest edges
+        order = sorted(range(len(e)), key=lambda i: -lens[i])
+        for i in order[:n_long]:                  # the longest edges
             if use[frozenset((_key(e[i][0]), _key(e[i][1])))] != 2:
                 return False
     return True
@@ -529,22 +707,36 @@ def _self_similar(polys, types, s, tol=1e-6):
 
 
 if __name__ == "__main__":
-    DEPTH = {'KITE_R6': 5, 'KITE_R8': 4, 'KITE_R12': 3}
+    DEPTH = {'KITE_R6': 5, 'KITE_R8': 4, 'KITE_R12': 3,
+             'TRI_S6': 8, 'TRI_S8': 8, 'TRI_S12': 8,
+             'TRAP_U6': 6, 'TRAP_U10': 6}
     all_ok = True
     for kind, label, _ in KIND_ITEMS:
-        k = _KITE_K[kind]
         g = DEPTH[kind]
-        s = tan(pi / k)
-        n_fan = k // 2 + 1
+        if kind in _KITE_K:
+            # Fathauer's g-number: k seed tiles, k * (k/2 + 1) in gen 1
+            k = _KITE_K[kind]
+            s = tan(pi / k)
+            seed_n, gen1_n, n_long = k, k * (k // 2 + 1), 2
+            pocket_max = 6.0 * (s ** g) ** 2
+            head = "k=%-2d s=%.4f fan=g%d" % (k, s, k // 2 + 1)
+        else:
+            # Bridges-2000 pod: 2 seed tiles, one child per exposed
+            # short edge (2 per triangle, 3 per trapezoid) in gen 1
+            fam, n = _SEG[kind]
+            s = _seg_ratio(kind)
+            seed_n, n_long = 2, 1
+            gen1_n = 2 * (2 if fam == 'S' else 3)
+            pocket_max = 6.0 * (s ** (g - 1)) ** 2
+            head = "%s=%-2d r=%.4f       " % (fam.lower(), n, s)
         polys, types = fractal_patch(kind, g)
-        # Fathauer's g-number: k seed tiles, k * (k/2 + 1) in gen 1,
-        # and strictly growing generations after that
+        # seed and gen-1 counts exact, strictly growing after that
         per_lvl = Counter(types)
-        counts_ok = (per_lvl[0] == k and per_lvl[1] == k * n_fan and
+        counts_ok = (per_lvl[0] == seed_n and per_lvl[1] == gen1_n and
                      all(per_lvl[lv + 1] > per_lvl[lv]
                          for lv in range(1, g)))
         # full-edge edge-to-edge pairing of every long edge
-        e2e_ok = _long_edges_paired(polys, _edge_use_map(polys))
+        e2e_ok = _long_edges_paired(polys, _edge_use_map(polys), n_long)
         # gap-free interior: chain the union outline of generations
         # <= g-1; every sample inside it and outside the finest-scale
         # singular pockets must be covered exactly once (the newest
@@ -556,7 +748,6 @@ if __name__ == "__main__":
         if loop_ok:
             # a pocket is only legitimate at the finest scale: bounded
             # by the sub-patch's shortest (generation g-1) short edges
-            pocket_max = 6.0 * (s ** g) ** 2
             n_holes = len(holes)
             loop_ok = all(abs(_signed_area(h)) <= pocket_max
                           for h in holes)
@@ -567,15 +758,23 @@ if __name__ == "__main__":
             inside = _inside_loop(outer, pts)
             for h in holes:
                 inside &= ~_inside_loop(h, pts)
-            n_gap = int(np.sum((cov == 0) & inside))
+            # re-test the (few) uncovered candidates with a boundary-
+            # inclusive tolerance: a sample landing within 1e-9 of a
+            # shared edge belongs to both tiles, not to a gap (real
+            # gaps have interior points far from any edge)
+            cand = pts[(cov == 0) & inside]
+            n_gap = 0
+            if len(cand):
+                n_gap = int(np.sum(_coverage(polys, cand,
+                                             tol=-1e-7) == 0))
         sim_ok, per = _self_similar(polys, types, s)
         ok = (counts_ok and e2e_ok and loop_ok and n_gap == 0 and
               n_over == 0 and sim_ok)
         all_ok = all_ok and ok
-        print("%-9s k=%-2d s=%.4f fan=g%d depth=%d tiles=%5d "
+        print("%-9s %s depth=%d tiles=%5d "
               "counts=%-5s edge2edge=%-5s outline=%-5s singular=%2d "
               "gaps=%2d overlaps=%2d shrink=%-5s  %s"
-              % (kind, k, s, n_fan, g, len(polys), str(counts_ok),
+              % (kind, head, g, len(polys), str(counts_ok),
                  str(e2e_ok), str(loop_ok), n_holes, n_gap, n_over,
                  str(sim_ok), "OK" if ok else "BAD"))
         sizes = " ".join("L%d=%.4f" % (lv, per[lv]) for lv in sorted(per))

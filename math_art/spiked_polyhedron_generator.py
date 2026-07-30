@@ -5,7 +5,10 @@
 #             a pyramid on every face.  At the default height
 #             sqrt(6)/3 x edge the pyramids on the icosahedron are
 #             regular tetrahedra and the result is a 60-face
-#             deltahedron.
+#             deltahedron.  A GOLDBERG seed instead spikes every
+#             face of a Goldberg polyhedron (12 pentagons plus
+#             hexagons), after Robert Fathauer's "Pollen Form" /
+#             "Fungus Form" ceramics.
 #   HYPER     hyperbolic polyhedra: faces sag toward the centre
 #             while the vertices spike outward.  Any Platonic seed
 #             with sharpness / spike-length / resolution controls.
@@ -31,6 +34,10 @@
 #   MathWorld.
 # - Golden ratio in the icosahedron/dodecahedron and the rhombic
 #   zonohedra: H. S. M. Coxeter, "Regular Polytopes", 3rd ed., 1973.
+# - Goldberg polyhedra: Michael Goldberg, "A class of multi-symmetric
+#   polyhedra", Tohoku Mathematical Journal 43 (1937), 104-108.
+# - Spiked Goldberg forms after Robert Fathauer's "Pollen Form" and
+#   "Fungus Form" ceramic sculptures.
 
 bl_info = {
     "name": "Spiked & Hyperbolic Polyhedra",
@@ -127,15 +134,38 @@ def _seed(name):
     raise ValueError(name)
 
 
+def _goldberg(freq=2):
+    """Goldberg polyhedron GP(freq, 0): the dual of the Class-I
+    frequency-`freq` icosahedral geodesic sphere -- 12 pentagons plus
+    10(freq^2 - 1) hexagons (Michael Goldberg, 1937).  Robert
+    Fathauer's "Pollen Form" / "Fungus Form" ceramics spike a chiral
+    Class-III Goldberg, GP(1,2); the sibling geodesic module only
+    builds Class I (f,0) and Class II (f,f) breakdowns, so GP(2,0) --
+    the same hex-plus-12-pentagon sphere minus the chiral twist --
+    stands in for it here."""
+    try:
+        from . import geodesic_generator as geo
+    except ImportError:
+        import geodesic_generator as geo
+    V, F = geo.build_sphere('ICOSA', freq, 'I')
+    Vd, Fd = geo.goldberg_dual(V, F)
+    return np.asarray(Vd, float), Fd
+
+
 # ---------------------------------------------------------------- #
 #  the three constructions                                         #
 # ---------------------------------------------------------------- #
 
-def build_spiked(seed='ICOSA', height=sqrt(6.0) / 3.0):
+def build_spiked(seed='ICOSA', height=sqrt(6.0) / 3.0, freq=2):
     """Every face of the seed replaced by a pyramid of the given
     height (in units of the edge length).  ICOSA at sqrt(6)/3
-    gives a 60-face deltahedron of regular tetrahedra."""
-    V, F = _seed(seed)
+    gives a 60-face deltahedron of regular tetrahedra.  The GOLDBERG
+    seed pyramids the hexagons and 12 pentagons of GP(freq, 0)
+    instead -- the Pollen / Fungus form of Fathauer's ceramics."""
+    if seed == 'GOLDBERG':
+        V, F = _goldberg(freq)
+    else:
+        V, F = _seed(seed)
     verts = [tuple(v) for v in V]
     faces = []
     groups = []
@@ -143,6 +173,8 @@ def build_spiked(seed='ICOSA', height=sqrt(6.0) / 3.0):
         c = V[f].mean(0)
         n = np.cross(V[f[1]] - V[f[0]], V[f[2]] - V[f[0]])
         n /= np.linalg.norm(n)
+        if np.dot(n, c) < 0.0:          # keep the spikes outward
+            n = -n
         e = np.linalg.norm(V[f[1]] - V[f[0]])
         apex = len(verts)
         verts.append(tuple(c + n * height * e))
@@ -289,6 +321,14 @@ SEED_ITEMS = [('TETRA', "Tetrahedron", ""), ('CUBE', "Cube", ""),
               ('DODECA', "Dodecahedron", ""),
               ('ICOSA', "Icosahedron", "")]
 
+# The SPIKED preset additionally accepts a Goldberg polyhedron seed
+# (12 pentagons + hexagons, Michael Goldberg 1937); spiked, it gives
+# the Pollen / Fungus form of Robert Fathauer's ceramics.
+SPIKED_SEED_ITEMS = SEED_ITEMS + [
+    ('GOLDBERG', "Goldberg Sphere",
+     "Goldberg polyhedron GP(f,0): 12 pentagons plus hexagons; a "
+     "spike on every face gives the Pollen / Fungus form")]
+
 
 if _IN_BLENDER:
 
@@ -339,9 +379,14 @@ if _IN_BLENDER:
                     "The flat 60-golden-rhombus solid, a "
                     "stellation of the rhombic triacontahedron")],
             default='MODERN')
-        seed: EnumProperty(name="Seed", items=SEED_ITEMS,
+        seed: EnumProperty(name="Seed", items=SPIKED_SEED_ITEMS,
                            default='ICOSA',
-                           description="Base Platonic solid")
+                           description="Base solid (Platonic, or a "
+                                       "Goldberg polyhedron)")
+        goldberg_freq: IntProperty(
+            name="Frequency", default=2, min=1, max=8,
+            description="Goldberg seed only: GP(f,0) frequency; f=2 "
+                        "gives 12 pentagons + 30 hexagons")
         hyper_seed: EnumProperty(name="Seed", items=SEED_ITEMS,
                                  default='DODECA',
                                  description="Base Platonic solid")
@@ -397,8 +442,8 @@ if _IN_BLENDER:
         def execute(self, context):
             p = self.preset
             if p == 'SPIKED':
-                verts, faces, groups = build_spiked(self.seed,
-                                                    self.height)
+                verts, faces, groups = build_spiked(
+                    self.seed, self.height, self.goldberg_freq)
                 name = f"Spiked {self.seed.title()}"
             elif p == 'HYPER':
                 verts, faces, groups = build_hyper(
@@ -463,6 +508,8 @@ if _IN_BLENDER:
             p = self.preset
             if p == 'SPIKED':
                 lay.prop(self, 'seed')
+                if self.seed == 'GOLDBERG':
+                    lay.prop(self, 'goldberg_freq')
                 lay.prop(self, 'height')
             elif p == 'HYPER':
                 lay.prop(self, 'hyper_seed')
@@ -520,6 +567,18 @@ if __name__ == "__main__":
         print(f"spiked icosa: {len(F)} faces, edge spread "
               f"{spread:.2e} (deltahedron), closed={closed}")
         assert len(F) == 60 and spread < 1e-9 and closed
+
+        # spiked Goldberg GP(2,0): 12 pentagons + 30 hexagons, each
+        # pyramided -> 12*5 + 30*6 = 240 triangles, closed sphere
+        V, F, G = build_spiked('GOLDBERG', freq=2)
+        cnt = edge_face_counts(F)
+        closed = all(c == 2 for c in cnt.values())
+        chi = len(V) - len(cnt) + len(F)
+        finite = all(all(math.isfinite(c) for c in v) for v in V)
+        print(f"spiked goldberg GP(2,0): V={len(V)} F={len(F)} "
+              f"closed={closed} chi={chi} finite={finite}")
+        assert (len(F) == 240 and closed and chi == 2 and finite
+                and len(set(G)) == 42)
 
         # rhombic hexecontahedron: 60 planar golden rhombi
         V, F, G = build_modern(1.0, 1.0, quads=True)

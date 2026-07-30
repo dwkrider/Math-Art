@@ -12,6 +12,7 @@
 #   Barth sextic             (65 nodes -- the maximum for a sextic)
 #   Togliatti quintic        (31 nodes -- the maximum for a quintic)
 #   Taubin heart, Ding-dong, Chmutov sextic, Tangle cube
+#   Monkey saddle           (n-fold: z = Re((x+iy)^n), n = 3 classic)
 #
 # Geometry only; materials and rendering are left to Blender.
 #
@@ -21,6 +22,12 @@
 #   Barth sextic (65 nodes): W. Barth (1996). Togliatti quintic
 #       (31 nodes): E. G. Togliatti (1940). Chmutov surfaces:
 #       S. V. Chmutov. Heart surface after G. Taubin (1994).
+#   N-fold monkey saddles z = rho^n cos(n*phi) = Re((x+iy)^n) are the
+#       graphs of the degree-n harmonic polynomials (real parts of the
+#       holomorphic w^n); n = 2 is the ordinary saddle, n = 3 the
+#       classic monkey saddle z = x^3 - 3xy^2. Ceramic renditions of
+#       these saddle sheets recur in Robert Fathauer's mathematical
+#       ceramics (his n-fold saddle forms).
 
 bl_info = {
     "name": "Algebraic Surface Generator",
@@ -147,6 +154,19 @@ def _f_tangle(x, y, z, mu):
             + z2 * z2 - 5.0 * z2 + 11.8)
 
 
+def _f_monkey(x, y, z, mu, n=3):
+    # n-fold monkey saddle: z = Re((x+iy)^n) = rho^n cos(n*phi), the
+    # graph of the degree-n harmonic polynomial (real part of the
+    # holomorphic w^n).  n = 2 is the ordinary saddle z = x^2 - y^2,
+    # n = 3 the classic monkey saddle z = x^3 - 3xy^2 (two legs and a
+    # tail), n >= 4 the higher-fold saddles -- forms Robert Fathauer
+    # renders as ceramic saddle sheets.  Scaling: inside the unit clip
+    # ball rho <= 1 the height obeys |Re w^n| <= rho^n <= 1, so the
+    # unit-coefficient polynomial already sits in frame; the spherical
+    # clip trims the sheet to a rim that waves up and down n times.
+    return z - ((x + 1j * y) ** int(n)).real
+
+
 # Each preset stores its own clip region framing the interesting part
 # of the (usually unbounded) surface: 'BALL' with radius r, or 'BOX'
 # with half-extent r.
@@ -160,23 +180,29 @@ PRESETS = {
     'DINGDONG': ("Ding-dong", _f_dingdong, 'BALL', 1.5),
     'CHMUTOV': ("Chmutov Sextic", _f_chmutov, 'BOX', 1.1),
     'TANGLE': ("Tangle Cube", _f_tangle, 'BOX', 2.4),
+    'MONKEY': ("Monkey Saddle (n-fold)", _f_monkey, 'BALL', 1.0),
 }
 
 
-def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0):
+def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3):
     """Mesh the zero level set of a preset. Returns (verts, tris).
     marching_tets simply leaves the level set open where it crosses
     the sample box, which for the BOX presets is exactly the wanted
     clip. BALL presets sample the bounding cube of the ball and then
     cull triangles whose centroid falls outside it -- an open, even
     rim (masking outside samples to a large positive value instead
-    stitches jagged stair-step caps onto the boundary)."""
+    stitches jagged stair-step caps onto the boundary). `fold` is the
+    monkey-saddle fold count n (MONKEY preset only)."""
     label, fn, shape, clip_default = PRESETS[kind]
     r = clip if clip > 0.0 else clip_default
+    if kind == 'MONKEY':
+        n = max(2, int(round(fold)))
+        field = lambda X, Y, Z: fn(X, Y, Z, mu, n)
+    else:
+        field = lambda X, Y, Z: fn(X, Y, Z, mu)
     mst = _toolkit()
     verts, tris = mst.marching_tets(
-        lambda X, Y, Z: fn(X, Y, Z, mu),
-        (-r, -r, -r), (r, r, r), (res, res, res))
+        field, (-r, -r, -r), (r, r, r), (res, res, res))
     if shape == 'BALL' and len(tris):
         cen = verts[tris].mean(axis=1)
         keep = np.einsum('ij,ij->i', cen, cen) <= r * r
@@ -248,6 +274,11 @@ if _IN_BLENDER:
             name="Kummer Mu", default=1.3, min=1.05, max=2.0,
             description="Kummer quartic parameter (node sharpness); "
                         "used by the Kummer preset only")
+        fold: IntProperty(
+            name="Fold n", default=3, min=2, max=8,
+            description="Saddle fold count: 2 = ordinary saddle, "
+                        "3 = monkey saddle, higher = n-fold saddles; "
+                        "Monkey Saddle preset only")
         clip: FloatProperty(
             name="Clip Override", default=0.0, min=0.0, max=20.0,
             description="Clip ball radius / box half-extent; "
@@ -263,7 +294,7 @@ if _IN_BLENDER:
             label = PRESETS[self.preset][0]
             verts, tris = build_algebraic(
                 self.preset, self.resolution, mu=self.mu,
-                clip=self.clip, scale=self.scale)
+                clip=self.clip, scale=self.scale, fold=self.fold)
             if len(tris) == 0:
                 self.report({'ERROR'}, "Empty level set")
                 return {'CANCELLED'}
@@ -286,6 +317,8 @@ if _IN_BLENDER:
             lay.prop(self, 'resolution')
             if self.preset == 'KUMMER':
                 lay.prop(self, 'mu')
+            if self.preset == 'MONKEY':
+                lay.prop(self, 'fold')
             for k in ('clip', 'scale', 'thickness', 'smooth'):
                 lay.prop(self, k)
 

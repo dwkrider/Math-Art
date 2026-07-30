@@ -8,10 +8,36 @@
 # removed is the classic Sierpinski tetrahedron; face mode grows
 # spiky coral-like clusters.
 #
+# Crystal mode adds the Fathauer/Haüy fractal crystals: instead of
+# copies at anchors, s-scaled copies are stacked face-to-face on every
+# unoccupied face of the previous generation (all copies in one
+# orientation, tetrahedra alternating). The convex hull then
+# approaches a crystal form -- usually the dual of the seed -- whose
+# facets carry Sierpinski-like patterns: 3 faces meeting at a hull
+# vertex give Sierpinski triangles (cube s=1/2 -> octahedron), 4 give
+# filled square arrays, and 5 at s=phi^-2 give Sierpinski pentagons
+# (icosahedron -> dodecahedron). Cube s=1/3 gives a rhombic
+# dodecahedron; s=1 with duplicates merged reproduces Haüy's classic
+# layer-by-layer octahedron of equal cubes.
+#
 # References:
 # - Recursive Platonic-solid clusters: after George W. Hart.
 # - Sierpinski tetrahedron / triangle: Waclaw Sierpinski (1916),
 #   self-similar fractal.
+# - R.-J. Haüy, "Essai d'une théorie sur la structure des crystaux",
+#   1784 -- crystal forms built by stacking congruent blocks
+#   ("molécules intégrantes"); basis of the crystal presets.
+# - R. W. Fathauer, H. Kaczmarski, N. Duchnowski, "A Fractal Crystal
+#   Comprised of Cubes and Some Related Fractal Arrangements of other
+#   Platonic Solids", Bridges 2008, pp. 289-296.
+#   https://archive.bridgesmathart.org/2008/bridges2008-289.pdf
+# - R. W. Fathauer, "Iterative Arrangements of Polyhedra --
+#   Relationships to Classical Fractals and Haüy Constructions",
+#   Bridges 2013, pp. 175-182.
+#   https://archive.bridgesmathart.org/2013/bridges2013-175.pdf
+# - C. Goodman-Strauss, "Dodecafoam and Substitution Tilings",
+#   Computers & Graphics 23 (1999), pp. 917-924 -- the dodecahedron
+#   arrangement here is a subset of dodecafoam.
 
 bl_info = {
     "name": "Fractal Polyhedra",
@@ -19,7 +45,8 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Fractal Polyhedron",
-    "description": "Recursive Platonic solid clusters",
+    "description": "Recursive Platonic solid clusters and Haüy "
+                   "fractal crystals",
     "category": "Add Mesh",
 }
 
@@ -137,6 +164,294 @@ def _anchors(V, F, mode):
 MAX_COPIES = 30000
 
 
+def _prism_seed(n):
+    """Right n-gonal prism, circumradius 1, square side faces
+    (height = polygon edge length), centred at the origin."""
+    e = 2.0 * math.sin(math.pi / n)
+    h = e / 2.0
+    V = []
+    for z in (-h, h):
+        for i in range(n):
+            a = 2.0 * math.pi * (i + 0.5) / n
+            V.append((math.cos(a), math.sin(a), z))
+    F = [list(range(n - 1, -1, -1)), list(range(n, 2 * n))]
+    for i in range(n):
+        j = (i + 1) % n
+        F.append([i, j, n + j, n + i])
+    return [list(v) for v in V], F
+
+
+def _crystal_seed(kind):
+    if kind == 'HEX_PRISM':
+        return _prism_seed(6)
+    if kind == 'OCT_PRISM':
+        return _prism_seed(8)
+    return seed_poly(kind)
+
+
+def _face_data(V, F):
+    """(unit outward normal, apothem) of every face; the apothem is
+    the origin-to-face-plane distance."""
+    out = []
+    for f in F:
+        nx = ny = nz = 0.0
+        m = len(f)
+        for i in range(m):
+            x1, y1, z1 = V[f[i]]
+            x2, y2, z2 = V[f[(i + 1) % m]]
+            nx += (y1 - y2) * (z1 + z2)
+            ny += (z1 - z2) * (x1 + x2)
+            nz += (x1 - x2) * (y1 + y2)
+        nrm = _unit((nx, ny, nz))
+        a = sum(nrm[k] * V[f[0]][k] for k in range(3))
+        if a < 0:
+            nrm = tuple(-c for c in nrm)
+            a = -a
+        out.append((nrm, a))
+    return out
+
+
+# Haüy/Fathauer crystal presets: (seed solid, scaling factor s).
+# Hulls follow Fathauer (Bridges 2008, 2013): the number of faces
+# meeting at a hull vertex decides the facet pattern -- 3 gives
+# Sierpinski triangles, 4 filled arrays, 5 (at s = phi^-2)
+# Sierpinski pentagons.
+_CRYSTAL_PRESETS = {
+    'CUBE_OCT':     ('CUBE', 0.5),         # octahedron hull
+    'CUBE_RD':      ('CUBE', 1.0 / 3.0),   # rhombic-dodecahedron hull
+    'HAUY_OCT':     ('CUBE', 1.0),         # Haüy 1784, equal cubes
+    'DODECAFOAM':   ('DODECA', 2.0 - PHI),  # phi^-2; dodecafoam subset
+    'DODECA_ICOSA': ('DODECA', 0.5),       # icosahedron hull
+    'ICOSA_SP':     ('ICOSA', 2.0 - PHI),  # dodecahedron hull
+    'HEX_DIPYR':    ('HEX_PRISM', 0.5),    # hexagonal dipyramid hull
+    'OCT_DIPYR':    ('OCT_PRISM', 0.5),    # octagonal dipyramid hull
+}
+
+
+def _build_crystal(crystal, kind, child_scale, generations,
+                   keep_parents):
+    """Fathauer/Haüy face-growth engine: each generation stacks
+    s-scaled copies face-to-face on every unoccupied face of the
+    previous generation. All copies share one orientation (tetrahedra
+    alternate between the two mirror orientations, after
+    Gosper/Moravec). Coincident duplicates are merged, so s = 1
+    reproduces Haüy's layer construction of equal blocks."""
+    if crystal == 'CUSTOM':
+        ck, s = kind, child_scale
+    else:
+        ck, s = _CRYSTAL_PRESETS[crystal]
+    V, F = _crystal_seed(ck)
+    fdata = _face_data(V, F)
+    alternate = (ck == 'TETRA')
+
+    def key(c, sz):
+        return (round(c[0], 6), round(c[1], 6), round(c[2], 6),
+                round(sz, 9))
+
+    frontier = [((0.0, 0.0, 0.0), 1.0, 1, 0, None)]
+    all_copies = list(frontier)
+    seen = {key((0.0, 0.0, 0.0), 1.0)}
+    for g in range(1, generations + 1):
+        nxt = []
+        for (o, sz, sgn, _gen, back) in frontier:
+            for (nf, af) in fdata:
+                nw = (nf[0] * sgn, nf[1] * sgn, nf[2] * sgn)
+                if back is not None and (nw[0] * back[0]
+                                         + nw[1] * back[1]
+                                         + nw[2] * back[2]) < -0.999:
+                    continue  # face occupied by the parent
+                csz = sz * s
+                d = af * (sz + csz)
+                c = (o[0] + nw[0] * d, o[1] + nw[1] * d,
+                     o[2] + nw[2] * d)
+                k = key(c, csz)
+                if k in seen:
+                    continue
+                seen.add(k)
+                nxt.append((c, csz, -sgn if alternate else sgn, g, nw))
+            if len(all_copies) + len(nxt) > MAX_COPIES:
+                raise ValueError(
+                    f"too many copies (>{MAX_COPIES}); "
+                    "lower generations")
+        frontier = nxt
+        all_copies.extend(nxt)
+    final = all_copies if keep_parents else (frontier or all_copies)
+    verts = []
+    faces = []
+    face_gen = []
+    for (o, sz, sgn, gen, _b) in final:
+        base = len(verts)
+        fs = sz * sgn
+        for v in V:
+            verts.append((o[0] + v[0] * fs, o[1] + v[1] * fs,
+                          o[2] + v[2] * fs))
+        for f in F:
+            idx = [base + i for i in f]
+            if sgn < 0:
+                idx.reverse()
+            faces.append(idx)
+            face_gen.append(gen)
+    return verts, faces, len(final), face_gen
+
+
+def _convex_hull(pts):
+    """Triangles of the 3D convex hull of `pts` (index triples,
+    outward winding). Simple incremental algorithm -- adequate for
+    the display shell it feeds."""
+    n = len(pts)
+    if n < 4:
+        return []
+
+    def sub(a, b):
+        return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
+
+    def cross(a, b):
+        return (a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0])
+
+    def dot(a, b):
+        return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+    diag = max(max(p[k] for p in pts) - min(p[k] for p in pts)
+               for k in range(3)) or 1.0
+    eps = 1e-7 * diag
+    i0 = min(range(n), key=lambda i: pts[i])
+    i1 = max(range(n), key=lambda i: pts[i])
+    d01 = sub(pts[i1], pts[i0])
+
+    def _dline(i):
+        c = cross(d01, sub(pts[i], pts[i0]))
+        return dot(c, c)
+
+    i2 = max(range(n), key=_dline)
+    if _dline(i2) <= eps * eps:
+        return []
+    pn = cross(d01, sub(pts[i2], pts[i0]))
+
+    def _dplane(i):
+        return abs(dot(pn, sub(pts[i], pts[i0])))
+
+    i3 = max(range(n), key=_dplane)
+    if _dplane(i3) <= eps * math.sqrt(dot(pn, pn)):
+        return []
+    inner = tuple(sum(pts[i][k] for i in (i0, i1, i2, i3)) / 4.0
+                  for k in range(3))
+    faces = {}
+    nfid = [0]
+
+    def add_face(a, b, c):
+        nrm = _unit(cross(sub(pts[b], pts[a]), sub(pts[c], pts[a])))
+        off = dot(nrm, pts[a])
+        if dot(nrm, inner) > off:
+            b, c = c, b
+            nrm = tuple(-x for x in nrm)
+            off = -off
+        faces[nfid[0]] = (a, b, c, nrm, off)
+        nfid[0] += 1
+
+    for (a, b, c) in ((i0, i1, i2), (i0, i1, i3), (i0, i2, i3),
+                      (i1, i2, i3)):
+        add_face(a, b, c)
+    order = sorted((i for i in range(n) if i not in (i0, i1, i2, i3)),
+                   key=lambda i: -dot(sub(pts[i], inner),
+                                      sub(pts[i], inner)))
+    for ip in order:
+        p = pts[ip]
+        vis = [k for k, (a, b, c, nrm, off) in faces.items()
+               if nrm[0] * p[0] + nrm[1] * p[1] + nrm[2] * p[2]
+               - off > eps]
+        if not vis:
+            continue
+        edges = set()
+        for k in vis:
+            a, b, c, _n, _o = faces[k]
+            edges.update(((a, b), (b, c), (c, a)))
+        horizon = [(u, v) for (u, v) in edges if (v, u) not in edges]
+        for k in vis:
+            del faces[k]
+        for (u, v) in horizon:
+            add_face(u, v, ip)
+    return [(a, b, c) for (a, b, c, _n, _o) in faces.values()]
+
+
+_HULL_CAP = 12000
+
+
+def _hull_candidates_np(pts):
+    """Exact reduction of a large point set to the subset spanning
+    its convex hull, quickhull-style: hull an extreme seed set, then
+    repeatedly add the points lying outside it (numpy for the bulk
+    plane tests). Returns indices into pts, or None without numpy."""
+    try:
+        import numpy as np
+    except ImportError:
+        return None
+    P = np.asarray(pts, dtype=np.float64)
+    diag = float((P.max(axis=0) - P.min(axis=0)).max()) or 1.0
+    eps = 1e-7 * diag
+    dirs = np.array([(x, y, z) for x in (-1, 0, 1) for y in (-1, 0, 1)
+                     for z in (-1, 0, 1) if x or y or z], float)
+    dirs /= np.sqrt((dirs * dirs).sum(axis=1))[:, None]
+    sel = set(np.argmax(P @ dirs.T, axis=0).tolist())
+    sl = sorted(sel)
+    for _ in range(64):
+        sl = sorted(sel)
+        sub = [pts[i] for i in sl]
+        tris = _convex_hull(sub)
+        if not tris:
+            return None
+        A = []
+        b = []
+        for (ia, ib, ic) in tris:
+            pa, pb, pc = sub[ia], sub[ib], sub[ic]
+            u = (pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2])
+            w = (pc[0] - pa[0], pc[1] - pa[1], pc[2] - pa[2])
+            nr = _unit((u[1] * w[2] - u[2] * w[1],
+                        u[2] * w[0] - u[0] * w[2],
+                        u[0] * w[1] - u[1] * w[0]))
+            A.append(nr)
+            b.append(nr[0] * pa[0] + nr[1] * pa[1] + nr[2] * pa[2])
+        A = np.array(A)
+        bb = np.array(b)
+        out = np.empty(len(P))
+        for st in range(0, len(P), 8192):
+            out[st:st + 8192] = (P[st:st + 8192] @ A.T
+                                 - bb).max(axis=1)
+        viol = [int(i) for i in np.nonzero(out > eps)[0]
+                if int(i) not in sel]
+        if not viol:
+            return sl
+        viol.sort(key=lambda i: -out[i])
+        sel.update(viol[:512])
+    return sl
+
+
+def _hull_faces(verts, cap=_HULL_CAP):
+    """Convex-hull triangles over the (deduplicated) mesh vertices.
+    Oversized sets are reduced exactly via numpy when available;
+    otherwise they are capped to the vertices emitted last -- the
+    outermost generations -- as a best effort."""
+    uniq = set()
+    idxs = []
+    for i in range(len(verts) - 1, -1, -1):
+        v = verts[i]
+        k = (round(v[0], 6), round(v[1], 6), round(v[2], 6))
+        if k in uniq:
+            continue
+        uniq.add(k)
+        idxs.append(i)
+    if len(idxs) > cap:
+        sel = _hull_candidates_np([verts[i] for i in idxs])
+        if sel is not None:
+            idxs = [idxs[j] for j in sel]
+        else:
+            idxs = idxs[:cap]
+    pts = [verts[i] for i in idxs]
+    return [[idxs[a], idxs[b], idxs[c]]
+            for (a, b, c) in _convex_hull(pts)]
+
+
 def _mat_mul(A, B):
     return tuple(tuple(sum(A[i][k] * B[k][j] for k in range(3))
                        for j in range(3)) for i in range(3))
@@ -167,12 +482,30 @@ def _euler_rot(rx, ry, rz):
 def build_fractal(kind='CUBE', mode='VERTS', generations=3,
                   child_scale=0.5, spread=1.27, keep_parents=True,
                   push=0.0, twist=0.0, rot_x=0.0, rot_y=0.0, rot_z=0.0,
-                  scale=1.0):
+                  scale=1.0, crystal='OFF', hull_shell=False):
     """Returns (verts, faces, n_copies, face_gen). Each copy carries
     (origin, size, orientation, generation). Children sit at the
     anchors of their parent (scaled by spread, shifted radially by
     push), rotated by `twist` about the anchor direction plus an
-    XYZ rotation -- all cumulative across generations."""
+    XYZ rotation -- all cumulative across generations.
+
+    With crystal != 'OFF' the Fathauer/Haüy face-growth engine is
+    used instead (a preset key of _CRYSTAL_PRESETS, or 'CUSTOM' to
+    apply the face rule to kind/child_scale); mode, spread, push,
+    twist and the rotations are ignored there. hull_shell appends
+    the convex hull of the cluster as extra faces tagged
+    generation -1, so the crystal form reads clearly."""
+    if crystal != 'OFF':
+        verts, faces, ncop, face_gen = _build_crystal(
+            crystal, kind, child_scale, generations, keep_parents)
+        if hull_shell and verts:
+            for tri in _hull_faces(verts):
+                faces.append(tri)
+                face_gen.append(-1)
+        if scale != 1.0:
+            verts = [(v[0] * scale, v[1] * scale, v[2] * scale)
+                     for v in verts]
+        return verts, faces, ncop, face_gen
     V, F = seed_poly(kind)
     anchors = _anchors(V, F, mode)
     Re = _euler_rot(rot_x, rot_y, rot_z)
@@ -215,6 +548,10 @@ def build_fractal(kind='CUBE', mode='VERTS', generations=3,
         for f in F:
             faces.append([base + i for i in f])
             face_gen.append(gen)
+    if hull_shell and verts:
+        for tri in _hull_faces(verts):
+            faces.append(tri)
+            face_gen.append(-1)
     return verts, faces, len(final), face_gen
 
 
@@ -274,6 +611,51 @@ if _IN_BLENDER:
                              min=-180.0, max=180.0)
         rot_z: FloatProperty(name="Child Rotate Z", default=0.0,
                              min=-180.0, max=180.0)
+        crystal: EnumProperty(
+            name="Crystal",
+            description="Haüy/Fathauer fractal-crystal growth: stack "
+                        "scaled copies face-to-face on every free "
+                        "face of the previous generation (after "
+                        "R.-J. Haüy 1784; R. Fathauer, Bridges "
+                        "2008/2013)",
+            items=[
+                ('OFF', "Off",
+                 "Classic vertex/face/edge cluster engine"),
+                ('CUBE_OCT', "Cube s=1/2 (Octahedron)",
+                 "Half-scale cubes; octahedral hull whose facets are "
+                 "Sierpinski triangles (3 faces per hull vertex)"),
+                ('CUBE_RD', "Cube s=1/3 (Rhombic Dodecahedron)",
+                 "Third-scale cubes; outermost edges lie in the "
+                 "planes of a rhombic dodecahedron"),
+                ('HAUY_OCT', "Haüy Octahedron (s=1)",
+                 "Equal cubes stacked in diminishing layers -- "
+                 "Haüy's classic crystal construction (1784)"),
+                ('DODECAFOAM', "Dodecafoam (s=phi^-2)",
+                 "Dodecahedra at the inverse squared golden ratio "
+                 "(~0.382), flush-fitting; organic, no simple hull "
+                 "(subset of Goodman-Strauss dodecafoam)"),
+                ('DODECA_ICOSA', "Dodecahedron s=1/2 (Icosahedron)",
+                 "Half-scale dodecahedra; icosahedral hull with "
+                 "Sierpinski-triangle facets"),
+                ('ICOSA_SP', "Icosahedron s=phi^-2 (Sierpinski Pent)",
+                 "Icosahedra at ~0.382; dodecahedral hull whose "
+                 "facets are Sierpinski pentagons (5 faces per hull "
+                 "vertex)"),
+                ('HEX_DIPYR', "Hex Prism s=1/2 (Dipyramid)",
+                 "Half-scale hexagonal prisms; hexagonal-dipyramid "
+                 "hull with elongated Sierpinski triangles"),
+                ('OCT_DIPYR', "Octagon Prism s=1/2 (Dipyramid)",
+                 "Half-scale octagonal prisms; octagonal-dipyramid "
+                 "hull"),
+                ('CUSTOM', "Custom",
+                 "Face-growth rule applied to the Solid and Child "
+                 "Scale chosen above")],
+            default='OFF')
+        hull_shell: BoolProperty(
+            name="Hull Shell", default=False,
+            description="Add the convex hull of the cluster as a "
+                        "translucent shell so the crystal form reads "
+                        "clearly")
         coloring: EnumProperty(
             name="Coloring",
             items=[('GEN', "Per Generation",
@@ -291,6 +673,24 @@ if _IN_BLENDER:
 
         @classmethod
         def _material_for(cls, g):
+            if g < 0:
+                name = "Fractal Hull Shell"
+                mat = bpy.data.materials.get(name)
+                if mat is None:
+                    mat = bpy.data.materials.new(name)
+                    mat.diffuse_color = (0.9, 0.95, 1.0, 0.25)
+                    mat.use_nodes = True
+                    bsdf = mat.node_tree.nodes.get("Principled BSDF")
+                    if bsdf is not None:
+                        bsdf.inputs["Base Color"].default_value = \
+                            (0.9, 0.95, 1.0, 1.0)
+                        bsdf.inputs["Alpha"].default_value = 0.25
+                        bsdf.inputs["Roughness"].default_value = 0.3
+                    if hasattr(mat, "surface_render_method"):
+                        mat.surface_render_method = 'BLENDED'
+                    elif hasattr(mat, "blend_method"):
+                        mat.blend_method = 'BLEND'
+                return mat
             name = f"Fractal Gen {g}"
             mat = bpy.data.materials.get(name)
             if mat is None:
@@ -310,7 +710,7 @@ if _IN_BLENDER:
                     self.kind, self.mode, self.generations,
                     self.child_scale, self.spread, self.keep_parents,
                     self.push, self.twist, self.rot_x, self.rot_y,
-                    self.rot_z, 1.0)
+                    self.rot_z, 1.0, self.crystal, self.hull_shell)
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -355,12 +755,21 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for k in ('kind', 'mode', 'generations', 'child_scale',
-                      'spread', 'keep_parents'):
-                lay.prop(self, k)
-            col = lay.column(align=True)
-            for k in ('push', 'twist', 'rot_x', 'rot_y', 'rot_z'):
-                col.prop(self, k)
+            lay.prop(self, 'crystal')
+            if self.crystal == 'OFF':
+                for k in ('kind', 'mode', 'generations', 'child_scale',
+                          'spread', 'keep_parents'):
+                    lay.prop(self, k)
+                col = lay.column(align=True)
+                for k in ('push', 'twist', 'rot_x', 'rot_y', 'rot_z'):
+                    col.prop(self, k)
+            else:
+                if self.crystal == 'CUSTOM':
+                    lay.prop(self, 'kind')
+                    lay.prop(self, 'child_scale')
+                lay.prop(self, 'generations')
+                lay.prop(self, 'keep_parents')
+            lay.prop(self, 'hull_shell')
             lay.prop(self, 'coloring')
             lay.prop(self, 'scale')
 
@@ -395,3 +804,11 @@ if __name__ == "__main__":
                                         rot_z=10)
             print(f"{kind} {mode} g{gen}: copies={n} verts={len(v)} "
                   f"gens={sorted(set(fg))}")
+        for cr, gen in (('CUBE_OCT', 3), ('CUBE_RD', 3),
+                        ('HAUY_OCT', 4), ('DODECAFOAM', 2),
+                        ('DODECA_ICOSA', 2), ('ICOSA_SP', 2),
+                        ('HEX_DIPYR', 3), ('OCT_DIPYR', 3)):
+            v, f, n, fg = build_fractal(generations=gen, crystal=cr,
+                                        hull_shell=True)
+            print(f"crystal {cr} g{gen}: copies={n} verts={len(v)} "
+                  f"faces={len(f)} gens={sorted(set(fg))}")

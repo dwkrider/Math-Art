@@ -66,11 +66,26 @@
 # 5^k congruent unit triangles at level k with no overlaps -- a rep-5
 # gasket built from isometries rather than contractions.
 #
+# FRACTAL GASKETS (HOLES).  Fathauer's gaskets (Bridges 2006 and the
+# Bridges 2016 "Fractal Gaskets" paper below) drop sub-copies from a
+# rep-N dissection: keeping only N - h of the substitution digits (or
+# IFS/isometry maps) at EVERY level replaces the solid tile with a
+# Sierpinski-like gasket whose holes repeat at all scales.  The
+# `holes` option here removes the LAST h entries of the digit/map
+# list -- the kept positions are still distinct radix strings (resp.
+# open-set-condition images), so the (N-h)^k cells never overlap --
+# e.g. holes=1 on the rep-4 digit system {0,1,i} leaves the classic
+# Sierpinski triangle arrangement, and holes=1 on the pentabolo keeps
+# a 4-isometry gasket.  holes=0 (default) is the full solid rep-tile;
+# the right-triangle f-tiling grows edge-by-edge rather than by
+# substitution, so it ignores the option.
+#
 # The pure-Python self-test verifies, for each kind: the f-tiling is
 # edge-to-edge, gap-free and shrinks by exactly 1/sqrt(2) per level;
 # the complex-base reptiles place N^k unit cells at distinct Gaussian-
 # integer positions; the pentabolo has 5^k triangles with zero sampled
-# overlaps.
+# overlaps.  Gasket (holes > 0) runs are checked for the reduced
+# count (N-holes)^k and the same distinctness / non-overlap.
 #
 # References:
 # - Andrew Vince, "Rep-tiling Euclidean space", Aequationes
@@ -249,13 +264,17 @@ def _triangle_patch(iterations):
 _UNIT = np.array([[0.0, 0.0], [1.0, 0.0], [1.0, 1.0], [0.0, 1.0]])
 
 
-def _base_reptile(b, digits, iterations, cell=_UNIT):
+def _base_reptile(b, digits, iterations, cell=_UNIT, holes=0):
     """(polys, types) for the rep-N reptile of base b with digit set
     `digits` (ints or complex; positions stay lattice points).  A copy
     of `cell` (default the unit square; a Voronoi hexagon for the
     Eisenstein flowsnake) is placed at every position.  The colour
     index encodes the top two substitution digits (d0*N + d1) so both
-    the outer N copies and the next level of nesting are visible."""
+    the outer N copies and the next level of nesting are visible.
+    holes > 0 drops the last `holes` digits at every level -- the
+    Fathauer gasket: (N-holes)^k cells at still-distinct positions
+    (subsets of distinct radix strings stay distinct)."""
+    digits = list(digits)[:max(1, len(digits) - int(holes))]
     cells = [(complex(0.0, 0.0), 0)]      # (position, colour)
     n = len(digits)
     for lvl in range(int(iterations)):
@@ -371,10 +390,13 @@ _FOLD_MAPS = [
 ]
 
 
-def _ifs_reptile(maps, iterations):
+def _ifs_reptile(maps, iterations, holes=0):
     """(polys, types) for the attractor of a conjugate-affine IFS:
     every length-k word applied to the unit-square seed gives m^k
-    small quads, coloured by the outermost word digit (m classes)."""
+    small quads, coloured by the outermost word digit (m classes).
+    holes > 0 drops the last `holes` maps at every level (gasket);
+    a sub-system of an OSC system still satisfies the OSC."""
+    maps = list(maps)[:max(1, len(maps) - int(holes))]
     m = len(maps)
     words = [(_W_ID, 0)]
     for lvl in range(int(iterations)):
@@ -423,17 +445,21 @@ _PENTA_MAPS = [
 _PENTA_LAMBDA = 1 + 2j            # inflation, |lambda|^2 = 5
 
 
-def _pentabolo(iterations):
+def _pentabolo(iterations, holes=0):
     """(polys, types) for Fathauer's rep-5 pentabolo inflation: 5^k
-    unit right triangles, coloured by the outermost map index."""
+    unit right triangles, coloured by the outermost map index.
+    holes > 0 drops the last `holes` isometries at every level --
+    Fathauer's Bridges-2016 fractal gasket -- leaving (5-holes)^k
+    still-disjoint triangles."""
+    maps = _PENTA_MAPS[:max(1, len(_PENTA_MAPS) - int(holes))]
     tris = [(np.array([0.0, 1.0, 0.5 + 0.5j], complex), 0)]
     for lvl in range(int(iterations)):
-        if len(tris) * 5 > _MAX_TILES:
+        if len(tris) * len(maps) > _MAX_TILES:
             break
         f = _PENTA_LAMBDA ** lvl              # conjugating expansion
         nxt = []
         for verts, _col in tris:
-            for mi, m in enumerate(_PENTA_MAPS):
+            for mi, m in enumerate(maps):
                 nxt.append((f * m(verts / f), mi))
         tris = nxt
     polys = [np.column_stack([v.real, v.imag]) for v, _ in tris]
@@ -441,8 +467,10 @@ def _pentabolo(iterations):
     return polys, types
 
 
-# builders take `iterations` and return (polys, types)
-def _triangle_ftiling(iterations):
+# builders take `iterations` (and a gasket `holes` count) and return
+# (polys, types)
+def _triangle_ftiling(iterations, holes=0):
+    # edge-grown f-tiling, not an N-map substitution: `holes` ignored
     raw = _triangle_patch(iterations)
     return ([_ensure_ccw(t) for _, t in raw],
             [int(lvl) for lvl, _ in raw])
@@ -454,43 +482,47 @@ KINDS = {
     'PENTABOLO': dict(build=_pentabolo, tri_cells=True, n=5),
     # Complex-base radix-system kinds (unit-square cells)
     'TWINDRAGON': dict(                       # Vince Fig 3, AR 1/phi
-        build=lambda it: _base_reptile(-1 + 1j, [0, 1], it), n=2),
+        build=lambda it, h=0: _base_reptile(-1 + 1j, [0, 1], it,
+                                            holes=h), n=2),
     'REP4': dict(                             # Vince Fig 6
-        build=lambda it: _base_reptile(2 + 0j, [0, 1, 1j, -1 - 1j],
-                                       it), n=4),
+        build=lambda it, h=0: _base_reptile(2 + 0j, [0, 1, 1j, -1 - 1j],
+                                            it, holes=h), n=4),
     'REP5': dict(                             # Vince Fig 5, AR 1/phi
-        build=lambda it: _base_reptile(-2 + 1j, [0, 1, -1, 1j, -1j],
-                                       it), n=5),
+        build=lambda it, h=0: _base_reptile(-2 + 1j, [0, 1, -1, 1j, -1j],
+                                            it, holes=h), n=5),
     'REP5_THIN': dict(                        # Mekhontsev (5,4)
-        build=lambda it: _base_reptile(2 + 1j, [0, 1, 2, 3, 4], it),
-        n=5),
+        build=lambda it, h=0: _base_reptile(2 + 1j, [0, 1, 2, 3, 4], it,
+                                            holes=h), n=5),
     'REP5B': dict(                            # Mekhontsev (5,2)
-        build=lambda it: _base_reptile(1 + 2j, [0, 1, 2, 3, 4], it),
-        n=5),
+        build=lambda it, h=0: _base_reptile(1 + 2j, [0, 1, 2, 3, 4], it,
+                                            holes=h), n=5),
     # Eisenstein radix-system kind (hexagon cells)
     'FLOWSNAKE': dict(                        # Vince Fig 4/7
-        build=lambda it: _base_reptile(_FLOW_BASE, _FLOW_DIGITS, it,
-                                       cell=_HEXCELL),
+        build=lambda it, h=0: _base_reptile(_FLOW_BASE, _FLOW_DIGITS,
+                                            it, cell=_HEXCELL, holes=h),
         n=7, samp=True),
     # Reflection / foldable IFS kinds (quad cells; OSC attractors)
     'LEVY_DRAGON': dict(                      # SHK Fig 2c; Levy 1938
-        build=lambda it: _ifs_reptile(_LEVY_MAPS, it),
+        build=lambda it, h=0: _ifs_reptile(_LEVY_MAPS, it, holes=h),
         n=2, samp=True, osc=True),
     'LEAF': dict(                             # SHK Fig 2d
-        build=lambda it: _ifs_reptile(_LEAF_MAPS, it),
+        build=lambda it, h=0: _ifs_reptile(_LEAF_MAPS, it, holes=h),
         n=2, samp=True, osc=True),
     'FOLDABLE4': dict(                        # SHK Theorem 4.4
-        build=lambda it: _ifs_reptile(_FOLD_MAPS, it),
+        build=lambda it, h=0: _ifs_reptile(_FOLD_MAPS, it, holes=h),
         n=4, samp=True, osc=True),
 }
 
 
-def fractal_patch(kind, iterations):
+def fractal_patch(kind, iterations, holes=0):
     """Return (polys, types): CCW tile arrays and their level/colour
-    indices."""
+    indices.  holes > 0 drops that many substitution digits/maps at
+    every level (Fathauer's fractal-gasket option); 0 is the full
+    rep-tile.  The edge-grown RIGHT_TRIANGLE f-tiling has no
+    substitution digits and ignores the option."""
     if kind not in KINDS:
         raise ValueError("unknown fractal rep-tile %r" % kind)
-    polys, types = KINDS[kind]['build'](iterations)
+    polys, types = KINDS[kind]['build'](iterations, int(holes))
     return [_ensure_ccw(np.asarray(p, float)) for p in polys], types
 
 
@@ -567,6 +599,13 @@ if _IN_BLENDER:
             description="Growth depth; each generation glues a "
                         "1/sqrt2-scaled child to every exposed leg "
                         "(capped to keep the mesh manageable)")
+        holes: IntProperty(
+            name="Holes", default=0, min=0, max=6,
+            description="Fractal-gasket option (Fathauer): drop this "
+                        "many of the rep-N substitution digits/maps "
+                        "at every level, leaving (N-holes)^k cells "
+                        "with self-similar holes; 0 = solid rep-tile "
+                        "(ignored by the Right Triangle f-tiling)")
         color_by: EnumProperty(
             name="Color By",
             items=[('TYPE', "By Level",
@@ -589,7 +628,8 @@ if _IN_BLENDER:
             description="Output each tile as its own mesh object")
 
         def execute(self, context):
-            polys, types = fractal_patch(self.kind, self.iterations)
+            polys, types = fractal_patch(self.kind, self.iterations,
+                                         self.holes)
             cells = tg.cells_from_polys(
                 lambda a, b: (polys, types), 1, 1, self.color_by,
                 self.margin, self.height, False)
@@ -612,8 +652,8 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for p in ('kind', 'iterations', 'color_by', 'margin',
-                      'height'):
+            for p in ('kind', 'iterations', 'holes', 'color_by',
+                      'margin', 'height'):
                 lay.prop(self, p)
             lay.prop(self, 'separate')
             lay.prop(self, 'align')
@@ -807,4 +847,38 @@ if __name__ == "__main__":
             print("%-14s d=%d tiles=%5d overlaps=%d  %-28s %s"
                   % (kind, depth, len(polys), overlaps, extra,
                      "OK" if ok else "BAD"))
+    # gasket runs (holes > 0): the same builders with substitution
+    # digits/maps dropped must give exactly (N-holes)^k cells, still
+    # distinct and non-overlapping (Fathauer's fractal gaskets)
+    for kind, h, depth in (('REP4', 1, 7), ('REP5', 2, 7),
+                           ('FOLDABLE4', 1, 6), ('PENTABOLO', 1, 4)):
+        spec = KINDS[kind]
+        n_eff = spec['n'] - h
+        polys, types = fractal_patch(kind, depth, holes=h)
+        if spec.get('samp') or spec.get('tri_cells'):
+            allv = np.vstack(polys)
+            lo, hi = allv.min(0), allv.max(0)
+            gx, gy = np.meshgrid(
+                np.linspace(lo[0], hi[0], 240) + 0.00131,
+                np.linspace(lo[1], hi[1], 240) + 0.00069)
+            pts = np.column_stack([gx.ravel(), gy.ravel()])
+            cov = _coverage(polys, pts)
+            overlaps = int((cov >= 2).sum())
+            if spec.get('osc'):
+                covered = int((cov >= 1).sum())
+                ov_ok = overlaps / float(max(covered, 1)) < 0.05
+            else:
+                ov_ok = overlaps == 0
+        else:
+            # lattice cells: distinct iff no two share a position
+            pos = Counter(_key(p.min(axis=0)) for p in polys)
+            overlaps = sum(c - 1 for c in pos.values() if c > 1)
+            ov_ok = overlaps == 0
+        ok = ov_ok and len(polys) == n_eff ** depth
+        all_ok = all_ok and ok
+        print("%-14s d=%d holes=%d tiles=%5d overlaps=%d "
+              "count=(%d-%d)^%d=%d  %s"
+              % (kind, depth, h, len(polys), overlaps,
+                 spec['n'], h, depth, n_eff ** depth,
+                 "OK" if ok else "BAD"))
     print("RESULT:", "OK" if all_ok else "BAD")
