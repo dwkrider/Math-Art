@@ -36,6 +36,8 @@ OPS = [
         example='CUSTOM', notation='sC')),
     ("conway biscribed", lambda: bpy.ops.mesh.conway_add(
         example='CUSTOM', notation='tO', post='BISCRIBED')),
+    ("conway hexpropello whirl", lambda: bpy.ops.mesh.conway_add(
+        example='CUSTOM', notation='wC')),
     ("solid hull family", lambda: bpy.ops.mesh.regular_solid_add(
         family='HULL', solid='jtT', canon_iters=60)),
     ("solid trapezohedron family",

@@ -7,7 +7,7 @@
 #
 # Seeds:      T C O D I  (Platonics),  Pn prism, An antiprism, Yn pyramid
 # Primitive:  d dual, a ambo, k kis (kN: only N-gon faces), g gyro,
-#             c chamfer, r reflect, p propellor
+#             c chamfer, r reflect, p propellor, w whirl (hexpropellor)
 # Derived:    t truncate (=dkd, tN=dkNd), j join (=da), e expand (=aa),
 #             o ortho (=jj), b bevel (=ta), m meta (=kj), s snub (=dg),
 #             n needle (=kd), z zip (=dk)
@@ -325,6 +325,39 @@ def op_propellor(V, F):
     return NV, NF
 
 
+def op_whirl(V, F):
+    """Hart's whirl (Goldberg-Coxeter c2,1): each n-gon becomes a smaller
+    rotated n-gon surrounded by n hexagons -- the "hexpropellor" (chiral).
+    Adds a 1/3 point per directed edge and, per face, an inner n-gon."""
+    NV = [list(v) for v in V]
+    pid = {}
+    for f in F:
+        m = len(f)
+        for i in range(m):
+            a, b = f[i], f[(i + 1) % m]
+            if (a, b) not in pid:
+                pid[(a, b)] = len(NV)
+                NV.append([V[a][c] + (V[b][c] - V[a][c]) / 3
+                           for c in range(3)])
+    win = {}
+    for fi, f in enumerate(F):
+        m = len(f)
+        cen = [sum(V[i][c] for i in f) / m for c in range(3)]
+        for i in range(m):
+            e = NV[pid[(f[i], f[(i + 1) % m])]]
+            win[(fi, i)] = len(NV)
+            NV.append([cen[c] + (e[c] - cen[c]) * 0.55 for c in range(3)])
+    NF = []
+    for fi, f in enumerate(F):
+        m = len(f)
+        NF.append([win[(fi, i)] for i in range(m)])       # inner n-gon
+        for i in range(m):
+            v1, v2, v3 = f[i], f[(i + 1) % m], f[(i + 2) % m]
+            NF.append([win[(fi, i)], win[(fi, (i + 1) % m)],
+                       pid[(v2, v3)], v2, pid[(v2, v1)], pid[(v1, v2)]])
+    return NV, NF
+
+
 def op_chamfer(V, F, t=0.35):
     e2f, nxt = _edge_face_maps(F)
     NV = [list(v) for v in V]
@@ -365,7 +398,7 @@ def op_reflect(V, F):
 
 DERIVED = {'t': 'dk{n}d', 'j': 'da', 'e': 'aa', 'o': 'dada', 'b': 'dk{n}da',
            'm': 'k{n}da', 's': 'dg', 'n': 'k{n}d', 'z': 'dk{n}'}
-PRIMS = set('dakgcrp')
+PRIMS = set('dakgcrpw')
 SEEDS = set('TCODIPAY')
 
 
@@ -418,6 +451,8 @@ def apply_conway(text, kis_height=0.25, chamfer_t=0.35):
             V, F = op_chamfer(V, F, t=chamfer_t)
         elif ch == 'p':
             V, F = op_propellor(V, F)
+        elif ch == 'w':
+            V, F = op_whirl(V, F)
         elif ch == 'r':
             V, F = op_reflect(V, F)
         V, F = orient_outward(V, F)
@@ -606,6 +641,12 @@ CATALOG = [
     ('pkD', 'Propellor', "Propello Pentakis Dodecahedron"),
     ('pbD', 'Propellor', "Propello Truncated Icosidodecahedron"),
     ('pmD', 'Propellor', "Propello Disdyakis Triacontahedron"),
+    # Hexpropellor (whirl) solids: central n-gon + hexagons per face.
+    ('wT', 'Propellor', "Hexpropello Tetrahedron"),
+    ('wC', 'Propellor', "Hexpropello Cube"),
+    ('wO', 'Propellor', "Hexpropello Octahedron"),
+    ('wD', 'Propellor', "Hexpropello Dodecahedron"),
+    ('wI', 'Propellor', "Hexpropello Icosahedron"),
     # Truncated Archimedean solids (truncate all vertices, then canonicalize).
     ('ttT', 'Truncated Archimedean', "Truncated Truncated Tetrahedron"),
     ('ttO', 'Truncated Archimedean', "Truncated Truncated Octahedron"),
