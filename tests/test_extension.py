@@ -276,6 +276,8 @@ OPS = [
      lambda: bpy.ops.mesh.geodesic_add(dual=True)),
     ("compound 5 tetrahedra",
      lambda: bpy.ops.mesh.polyhedron_compound_add(compound='5TETRA')),
+    ("final stellation echidnahedron",
+     lambda: bpy.ops.mesh.final_stellation_add()),
     ("toroid csaszar",
      lambda: bpy.ops.mesh.toroidal_polyhedron_add(solid='CSASZAR')),
     ("toroid szilassi",

@@ -1960,6 +1960,11 @@ if _IN_BLENDER:
                     try:
                         V, F, resid = stellate(V, F)
                         sizes = None
+                        # keep the spiky stellation inside the 2 m cube
+                        mx = max((abs(c) for v in V for c in v),
+                                 default=1.0) or 1.0
+                        V = [tuple(c / mx * self.scale for c in v)
+                             for v in V]
                         if resid > 1e-4 * self.scale:
                             self.report(
                                 {'WARNING'},
