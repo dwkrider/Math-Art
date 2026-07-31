@@ -91,6 +91,28 @@ TOROIDS = {
               [10, 23, 11, 21], [24, 1, 13], [25, 4, 17], [26, 9, 20],
               [27, 2, 18], [28, 7, 23], [29, 10, 14]],
     },
+    # A genus-1 toroid whose 12 faces (6 quadrilaterals + 6 hexagons) wind
+    # in a knotted band around the hole (D3 symmetry).  Coordinates are an
+    # independent realization: relaxed to exactly planar faces under a free
+    # D3 rotation action (9 DOF) and selected non-self-intersecting.
+    "KNOTTED": {
+        "name": "Knotted Dodecahedron",
+        "V": [
+            (0.417045, 0.180484, -0.494398), (-0.364826, 0.270929, -0.494398),
+            (-0.052218, -0.451413, -0.494398), (0.417045, -0.180484, 0.494398),
+            (-0.052218, 0.451413, 0.494398), (-0.364826, -0.270929, 0.494398),
+            (0.417045, -0.180484, -0.849910), (-0.052218, 0.451413, -0.849910),
+            (-0.364826, -0.270929, -0.849910), (0.417045, 0.180484, 0.849910),
+            (-0.364826, 0.270929, 0.849910), (-0.052218, -0.451413, 0.849910),
+            (0.923864, -0.399820, -0.393777), (0.923864, 0.399820, 0.393777),
+            (-0.115677, 1.0, -0.393777), (-0.808187, 0.600180, 0.393777),
+            (-0.808187, -0.600180, -0.393777), (-0.115677, -1.0, 0.393777)],
+        "F": [[0, 6, 3, 9], [0, 9, 4, 7], [1, 7, 4, 10], [1, 10, 5, 8],
+              [2, 8, 5, 11], [2, 11, 3, 6], [12, 6, 0, 7, 14, 13],
+              [12, 13, 9, 3, 11, 17], [12, 17, 16, 8, 2, 6],
+              [15, 10, 4, 9, 13, 14], [15, 14, 7, 1, 8, 16],
+              [15, 16, 17, 11, 5, 10]],
+    },
 }
 
 TOROID_ITEMS = [("CSASZAR", "Csaszar Polyhedron", "7 vertices, 14 "
@@ -98,7 +120,9 @@ TOROID_ITEMS = [("CSASZAR", "Csaszar Polyhedron", "7 vertices, 14 "
                 ("SZILASSI", "Szilassi Polyhedron", "7 hexagons, every "
                  "pair sharing an edge (dual of Csaszar)"),
                 ("REGULAR", "Regular-Faced Toroid", "genus-1 toroid with "
-                 "all regular faces (6 triangles + 9 squares + 9 hexagons)")]
+                 "all regular faces (6 triangles + 9 squares + 9 hexagons)"),
+                ("KNOTTED", "Knotted Dodecahedron", "genus-1 toroid whose 12 "
+                 "faces wind in a knotted band (6 quads + 6 hexagons)")]
 
 
 def build_toroid(kind):
