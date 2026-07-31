@@ -343,6 +343,9 @@ MESH_PARAM = {}
 # surfaces whose `order` selects a discrete count rather than an Enneper
 # order / helicoid turns (drives the operator UI label)
 COUNT_PARAM = {}
+# surfaces that stack a periodic fundamental domain into N repeats (the
+# saddle tower); maps surface key -> the operator "Storeys" UI label
+STOREY_PARAM = {}
 # surfaces that use the associate-family angle
 ANGLE_PARAM = {'CATHEL'}
 
@@ -355,7 +358,8 @@ try:
         from . import minimal_surface_zoo as _zoo
     except ImportError:
         import minimal_surface_zoo as _zoo
-    _zoo.register(PARAMETRIC, MESH_PARAM, COUNT_PARAM, ANGLE_PARAM)
+    _zoo.register(PARAMETRIC, MESH_PARAM, COUNT_PARAM, ANGLE_PARAM,
+                  STOREY_PARAM)
     SURFACE_FAMILY = _zoo.SURFACE_FAMILY
     FAMILIES = _zoo.FAMILIES
 except Exception as _e:                        # WIP catalog: skip
@@ -504,15 +508,18 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
 
 
 def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
-                     with_uv=False):
+                     with_uv=False, storeys=1):
     """Mesh (V, quads) for `kind`; with_uv=True additionally returns a
     per-face-corner UV array (sum of face lengths, 2).  Minimal
     surfaces are conformally parametrized by their Weierstrass data,
     so the normalized (u, v) grid is a high-quality conformal UV chart
     for free; periodic directions get a clean 0<->1 seam.  Finished
-    (tiled) meshes carry a best-effort per-fundamental-domain UV."""
+    (tiled) meshes carry a best-effort per-fundamental-domain UV.
+    `storeys` stacks a periodic fundamental domain (the saddle tower);
+    ignored by surfaces that do not use it."""
     if kind in MESH_PARAM:
-        out = MESH_PARAM[kind](nu, nv, order, radius, scale, theta)
+        out = MESH_PARAM[kind](nu, nv, order, radius, scale, theta,
+                               storeys=storeys)
         V, quads = out[0], out[1]
         if not with_uv:
             return V, quads
@@ -1342,6 +1349,10 @@ if _IN_BLENDER:
             name="Order / Count", default=1, min=1, max=12,
             description="Enneper order; helicoid half-turns; Jorge-Meeks "
                         "end count n (>= 3); ignored for the rest")
+        storeys: IntProperty(
+            name="Storeys", default=3, min=1, max=8,
+            description="Number of periodic fundamental domains to stack "
+                        "(saddle tower); ignored for the rest")
         radius: FloatProperty(
             name="Domain Radius", default=1.2, min=0.2, max=4.0,
             description="Extent of the parameter domain (for the k-noid, "
@@ -1384,7 +1395,7 @@ if _IN_BLENDER:
                 out = build_parametric(surf, self.res_u,
                                        self.res_v, self.order,
                                        self.radius, self.scale, theta,
-                                       with_uv=True)
+                                       with_uv=True, storeys=self.storeys)
                 V, quads = out[0], out[1]
                 cuv = out[2] if len(out) > 2 else None
                 _new_object(context, label, V, quads,
@@ -1410,6 +1421,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'order', text=COUNT_PARAM[self.surface])
             elif self.surface not in ANGLE_PARAM:
                 lay.prop(self, 'order')
+            if self.surface in STOREY_PARAM:
+                lay.prop(self, 'storeys', text=STOREY_PARAM[self.surface])
             if self.surface in ANGLE_PARAM:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
@@ -1494,7 +1507,11 @@ if _IN_BLENDER:
         order: IntProperty(
             name="Order / Count", default=1, min=1, max=12,
             description="Period count / lattice modulus where the surface "
-                        "uses it (e.g. saddle-tower end count)")
+                        "uses it (e.g. saddle-tower wing count)")
+        storeys: IntProperty(
+            name="Storeys", default=3, min=1, max=8,
+            description="Number of periodic fundamental domains to stack "
+                        "into a repeating tower (saddle tower)")
         radius: FloatProperty(
             name="Domain Radius", default=1.2, min=0.2, max=4.0,
             description="Extent of the parameter domain")
@@ -1562,7 +1579,7 @@ if _IN_BLENDER:
                 out = build_parametric(surf, self.res_u,
                                        self.res_v, self.order,
                                        self.radius, self.scale, theta,
-                                       with_uv=True)
+                                       with_uv=True, storeys=self.storeys)
                 V, quads = out[0], out[1]
                 cuv = out[2] if len(out) > 2 else None
                 _new_object(context, label, V, quads,
@@ -1592,6 +1609,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'order', text=COUNT_PARAM[self.surface])
             elif self.surface not in ANGLE_PARAM:
                 lay.prop(self, 'order')
+            if self.surface in STOREY_PARAM:
+                lay.prop(self, 'storeys', text=STOREY_PARAM[self.surface])
             if self.surface in ANGLE_PARAM:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
