@@ -9,6 +9,13 @@
 # Both are stored from their original published coordinates and centred /
 # fit to a 2 m cube on build.
 #
+# This module also builds parametric regular toroids -- a ring of congruent
+# polygon cross-sections (prism / antiprism ring) -- and tiled toroids, where
+# any of the uniform plane tilings (regular triangular/square/hexagonal, the
+# Archimedean tilings, and their Laves duals) from the tiling engine is
+# wrapped seamlessly onto a torus: the tiling's two lattice vectors map to
+# the major and minor circles, giving a genus-1 polyhedron (V-E+F=0).
+#
 # References:
 # - Akos Csaszar, "A polyhedron without diagonals", Acta Sci. Math.
 #   Szeged 13 (1949-50), 140-142.
@@ -16,6 +23,9 @@
 #   69-80; and "On three classes of regular toroids".
 # - B. M. Stewart, "Adventures Among the Toroids" (1970/1980), for the
 #   toroidal-polyhedron tradition.
+# - Johannes Kepler, "Harmonices Mundi" (1619); Branko Grunbaum & G. C.
+#   Shephard, "Tilings and Patterns" (1987) -- the uniform tilings wrapped
+#   onto the torus here (see tiling_generator.py).
 
 bl_info = {
     "name": "Toroidal Polyhedra",
@@ -23,8 +33,9 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Math Art > Polyhedra",
-    "description": "Toroidal (genus-1) polyhedra: the Csaszar and "
-                   "Szilassi polyhedra",
+    "description": "Toroidal (genus-1) polyhedra: Csaszar & Szilassi, "
+                   "polygon-ring toroids, and uniform tilings wrapped "
+                   "onto a torus",
     "category": "Add Mesh",
 }
 
@@ -102,6 +113,60 @@ def build_polyhedral_torus(m, k, R, r, twist):
     return verts, faces
 
 
+def build_tiled_torus(name, nu, nv, R, r):
+    """Wrap one of the uniform planar tilings from the tiling engine onto a
+    torus: the tiling's lattice vector b1 maps to the major circle (nu
+    periods) and b2 to the minor circle (nv periods), so the flat periodic
+    pattern closes seamlessly into a genus-1 tiled toroid (V-E+F=0).  `name`
+    is any key of tiling_generator.TILING_ITEMS (e.g. 'TRI', 'HEX',
+    'TRIHEX', 'CAIRO', ...)."""
+    try:
+        from . import tiling_generator as tg
+    except Exception:
+        import tiling_generator as tg
+    parent = tg.LAVES_OF.get(name, name)
+    b1, b2, _ = tg._base_cell(parent)
+    a11, a12, a21, a22 = b1[0], b2[0], b1[1], b2[1]   # B = [[a11,a12],[a21,a22]]
+    det = a11 * a22 - a12 * a21
+
+    def latt(x, y):                                    # (x,y) -> lattice (s,t)
+        return ((a22 * x - a12 * y) / det, (-a21 * x + a11 * y) / det)
+
+    polys = tg.substrate_faces(name, nu, nv)
+    verts, index = [], {}
+
+    def vid(s, t):                                     # lattice -> torus, welded
+        u = 2.0 * math.pi * s / nu
+        v = 2.0 * math.pi * t / nv
+        x = (R + r * math.cos(v)) * math.cos(u)
+        y = (R + r * math.cos(v)) * math.sin(u)
+        z = r * math.sin(v)
+        key = (round(x, 6), round(y, 6), round(z, 6))
+        i = index.get(key)
+        if i is None:
+            i = len(verts)
+            index[key] = i
+            verts.append((x, y, z))
+        return i
+
+    seen, faces = set(), []
+    for p in polys:
+        pts = [(float(x), float(y)) for x, y in p]
+        cx = sum(q[0] for q in pts) / len(pts)
+        cy = sum(q[1] for q in pts) / len(pts)
+        cs, ct = latt(cx, cy)
+        key = (round(cs % nu, 4), round(ct % nv, 4))   # one tile per period
+        if key in seen:
+            continue
+        seen.add(key)
+        ring = [vid(*latt(x, y)) for (x, y) in pts]
+        clean = [ring[i] for i in range(len(ring))
+                 if ring[i] != ring[(i - 1) % len(ring)]]
+        if len(clean) >= 3:
+            faces.append(clean)
+    return verts, faces
+
+
 def _self_test():
     for kind, S in TOROIDS.items():
         V, F = build_toroid(kind)
@@ -131,6 +196,18 @@ def _self_test():
                                           for i in range(3))))
         print(f"{kind:9s} V={len(V):2d} E={len(E):2d} F={len(F):2d} "
               f"chi={chi} edge-in-2={e2} planar={maxpl:.1e}")
+    for name in ('TRI', 'HEX', 'TRIHEX', 'CAIRO'):
+        V, F = build_tiled_torus(name, 12, 6, 1.0, 0.4)
+        E = {}
+        for f in F:
+            for i in range(len(f)):
+                a, b = f[i], f[(i + 1) % len(f)]
+                kk = (min(a, b), max(a, b))
+                E[kk] = E.get(kk, 0) + 1
+        chi = len(V) - len(E) + len(F)
+        e2 = all(v == 2 for v in E.values())
+        print(f"tiled:{name:8s} V={len(V):3d} E={len(E):3d} F={len(F):3d} "
+              f"chi={chi} edge-in-2={e2} (genus 1 -> chi 0)")
 
 
 try:
@@ -174,13 +251,32 @@ if _IN_BLENDER:
 
     from bpy.props import IntProperty, BoolProperty
 
+    # Tilings that wrap cleanly onto a torus (all 19 uniform tilings except
+    # Rhombille, whose Laves-dual patch does not fold to a single period).
+    try:
+        from . import tiling_generator as _tg
+    except Exception:
+        import tiling_generator as _tg
+    _TORUS_TILING_EXCLUDE = {'RHOMBILLE'}
+    TORUS_TILING_ITEMS = [it for it in _tg.TILING_ITEMS
+                          if it[0] not in _TORUS_TILING_EXCLUDE]
+
     class MESH_OT_polyhedral_torus_add(bpy.types.Operator):
         """Add a regular polyhedral torus: a ring of congruent polygon
-        cross-sections (prism ring, or antiprism ring when twisted)"""
+        cross-sections (prism / antiprism ring), or a uniform tiling
+        (triangles, hexagons, and the other Archimedean/Laves patterns
+        from the tiling engine) wrapped onto the torus"""
         bl_idname = "mesh.polyhedral_torus_add"
         bl_label = "Polyhedral Torus"
         bl_options = {'REGISTER', 'UNDO'}
 
+        mode: EnumProperty(
+            name="Pattern",
+            items=[('RING', "Polygon Ring",
+                    "A ring of congruent polygon cross-sections"),
+                   ('TILING', "Uniform Tiling",
+                    "A uniform plane tiling wrapped onto the torus")],
+            default='RING')
         segments: IntProperty(name="Segments", default=12, min=3, max=64,
                               description="Sections around the major circle")
         sides: IntProperty(name="Cross-section Sides", default=4, min=3,
@@ -189,6 +285,14 @@ if _IN_BLENDER:
             name="Antiprism Ring", default=False,
             description="Half-step twist between sections (triangular "
                         "faces) instead of a prism ring (quads)")
+        tiling: EnumProperty(name="Tiling", items=TORUS_TILING_ITEMS,
+                             default='HEX')
+        cells_u: IntProperty(
+            name="Cells Around", default=12, min=3, max=64,
+            description="Tiling periods around the major circle")
+        cells_v: IntProperty(
+            name="Cells Through", default=6, min=2, max=48,
+            description="Tiling periods around the minor circle (tube)")
         major: FloatProperty(name="Major Radius", default=1.0, min=0.1,
                              max=10.0)
         minor: FloatProperty(name="Minor Radius", default=0.4, min=0.02,
@@ -196,23 +300,47 @@ if _IN_BLENDER:
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def execute(self, context):
-            V, F = build_polyhedral_torus(
-                self.segments, self.sides, self.major, self.minor,
-                0.5 if self.antiprism else 0.0)
+            if self.mode == 'TILING':
+                V, F = build_tiled_torus(self.tiling, self.cells_u,
+                                         self.cells_v, self.major, self.minor)
+                name = "Tiled Torus %s" % self.tiling
+            else:
+                V, F = build_polyhedral_torus(
+                    self.segments, self.sides, self.major, self.minor,
+                    0.5 if self.antiprism else 0.0)
+                name = "Polyhedral Torus"
             mx = max((abs(c) for v in V for c in v), default=1.0) or 1.0
-            me = bpy.data.meshes.new("Polyhedral Torus")
+            me = bpy.data.meshes.new(name)
             me.from_pydata([tuple(c / mx * self.scale for c in v)
                             for v in V], [], [tuple(f) for f in F])
             me.validate(clean_customdata=True)
             me.update()
-            obj = bpy.data.objects.new("Polyhedral Torus", me)
+            obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
             for o in context.selected_objects:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
+            self.report({'INFO'}, "%s: V=%d F=%d (genus 1)" %
+                        (name, len(V), len(F)))
             return {'FINISHED'}
+
+        def draw(self, context):
+            lay = self.layout
+            lay.use_property_split = True
+            lay.prop(self, 'mode')
+            if self.mode == 'TILING':
+                lay.prop(self, 'tiling')
+                lay.prop(self, 'cells_u')
+                lay.prop(self, 'cells_v')
+            else:
+                lay.prop(self, 'segments')
+                lay.prop(self, 'sides')
+                lay.prop(self, 'antiprism')
+            lay.prop(self, 'major')
+            lay.prop(self, 'minor')
+            lay.prop(self, 'scale')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.toroidal_polyhedron_add",
