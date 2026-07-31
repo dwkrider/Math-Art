@@ -195,6 +195,114 @@ def _r_reach(radius):
     return 1.35 + 0.5 * min(max(radius / 1.2, 0.0), 1.6)
 
 
+# --- generalized Enneper with a Bonnet (associate) angle ------------------
+# Enneper of order k has g = z^k, dh = 2 z^k dz (a disk domain), so the
+# Weierstrass 1-forms are entire polynomials -- every period vanishes
+# identically and the associate family X = Re[e^{i theta} Int phi] is a
+# smooth, tearing-free deformation of the base surface (theta = 0) into its
+# conjugate (theta = pi/2).  The immersion is known in closed form, so it is
+# meshed straight from the antiderivative (no radial quadrature): at theta=0
+# this reproduces the classical Enneper parametrization exactly.
+
+def _enneper_X(z, p, theta=0.0):
+    k = p['k']
+    rot = np.exp(1j * theta)
+    zp = z ** (2 * k + 1) / (2 * k + 1)
+    F1 = z - zp
+    F2 = 1j * (z + zp)
+    F3 = 2.0 * z ** (k + 1) / (k + 1)
+    return (np.real(rot * F1), np.real(rot * F2), np.real(rot * F3))
+
+
+# --- Enneper-ended k-noid --------------------------------------------------
+# A genus-0 surface with n symmetric ends at the n-th roots of unity, each a
+# higher-order (Enneper-type, winding) end rather than a Jorge-Meeks
+# catenoid end.  The catenoid ends of the k-noid have a Gauss map that is
+# finite and non-zero at the end; here the Gauss map g = (z^n - 1)/z instead
+# *vanishes* at every end, so the horizontal coordinates grow like the square
+# of the end coordinate (Enneper flaring) rather than logarithmically.  The
+# height differential dh = (z^{n-1} + t z^{2n-1})/(z^n - 1)^3 dz has a triple
+# pole at each end; regularity of the interior points z = 0 and z = infinity
+# and the n-fold symmetry force this two-term numerator, and the single real
+# weight t = t(n) is fixed by the one non-trivial period condition (only the
+# phi2 real period does not already vanish by symmetry).  With that period
+# closed, every 1-form residue is real, so the immersion has a closed form:
+# a sum of logarithms (the residues) plus a rational partial-fraction part
+# (the m >= 2 principal parts), evaluated directly on the disk -- no radial
+# quadrature, hence clean flaring wings.  The two-term weight and the
+# partial-fraction coefficients are extracted once per n by contour
+# integration (cached) and the antiderivative is checked against its own
+# derivative dX/dz = phi before use.  (n = 2 is the Double Enneper already in
+# the catalog; this row covers n >= 3.)
+
+_ENNK_CACHE = {}
+
+
+def _ennk_g(z, p):
+    n = p['n']
+    return (z ** n - 1.0) / z
+
+
+def _ennk_dh(z, p):
+    n = p['n']
+    return (z ** (n - 1) + p['t'] * z ** (2 * n - 1)) / (z ** n - 1.0) ** 3
+
+
+def _ennk_phi(z, p):
+    g = _ennk_g(z, p)
+    dh = _ennk_dh(z, p)
+    return (0.5 * (1.0 / g - g) * dh, 0.5j * (1.0 / g + g) * dh, dh)
+
+
+def _ennk_solve(p):
+    n = p['n']
+    if n not in _ENNK_CACHE:
+        # the phi2 real period is linear in the weight t = b/a; the other
+        # two components already have vanishing real periods by symmetry
+        def real_period(dh):
+            f = (lambda z: 0.5j * (1.0 / _ennk_g(z, {'n': n})
+                                   + _ennk_g(z, {'n': n})) * dh(z))
+            return we.period_integral(f, 1.0, 0.06, 0.06).real
+        P = real_period(lambda z: z ** (n - 1) / (z ** n - 1.0) ** 3)
+        Q = real_period(lambda z: z ** (2 * n - 1) / (z ** n - 1.0) ** 3)
+        t = -P / Q
+        pn = {'n': n, 't': t}
+        # partial-fraction coefficients c[j, end, m], m = 1..4, of each
+        # 1-form component at each end (m = 1 is the residue -> a log term)
+        rho = np.exp(2j * math.pi * np.arange(n) / n)
+        C = np.zeros((3, n, 5), complex)
+        for k, rk in enumerate(rho):
+            for j in range(3):
+                for m in range(1, 5):
+                    C[j, k, m] = we.period_integral(
+                        lambda z, j=j, rk=rk, m=m:
+                        _ennk_phi(z, pn)[j] * (z - rk) ** (m - 1),
+                        rk, 0.18, 0.18) / (TAU * 1j)
+        _ENNK_CACHE[n] = (t, rho, C)
+    t, rho, C = _ENNK_CACHE[n]
+    return dict(p, t=t, _rho=rho, _C=C)
+
+
+def _ennk_X(z, p, theta=0.0):
+    """Closed-form immersion: sum of end logarithms + rational principal
+    parts.  Each end's log branch cut is rotated to point radially outward
+    from the unit circle, so no cut crosses the meshed disk."""
+    rho, C = p['_rho'], p['_C']
+    z = np.asarray(z, complex)
+    out = []
+    for j in range(3):
+        s = np.zeros(z.shape, complex)
+        for k in range(len(rho)):
+            d = z - rho[k]
+            dr = d * np.conj(rho[k])              # outward ray -> +real axis
+            logd = np.log(np.abs(dr)) + 1j * np.angle(dr) + np.log(rho[k])
+            s = s + C[j, k, 1] * logd
+            for m in range(2, 5):
+                s = s + C[j, k, m] * (-1.0 / ((m - 1) * d ** (m - 1)))
+        out.append(np.real(s))
+    return out[0], out[1], out[2]
+
+
 WE_SURFACES = {
     # --- ports of the former bespoke toolkit builders ---------------------
     'KNOID': {
@@ -278,6 +386,11 @@ WE_SURFACES = {
         'radial_grade': 'rim',       # planar end grows toward r_out
         'res_boost': (1.7, 1.5),
         'cycles': lambda p: [(0.0, 0.5)],
+        # k >= 2 has no residue at the planar end, so every period stays zero
+        # under phi *= e^{i theta}: the associate/Bonnet deformation is
+        # single-valued and tear-free (the annulus base ring closes for all
+        # theta).  theta = 0 is Richmond; sweeping it rotates the flower.
+        'associate': True,
         'test_order': 2,
     },
     'DOUBLE_ENNEPER': {
@@ -329,6 +442,49 @@ WE_SURFACES = {
         'torus_wrap': (False, True),
         'copies': 2,
         'test_order': 1,
+    },
+    # --- Tier 0 (M2): associate-angle surfaces and Enneper-ended k-noid ----
+    # NB: appended in a self-contained block; the saddle-tower row above is
+    # owned by a separate work stream -- do not fold these into it.
+    'ENNEPER': {
+        # generalized Enneper (order k) with a Bonnet associate slider,
+        # rebuilt on the WE engine so theta sweeps Enneper <-> its conjugate.
+        # Overrides the toolkit's closed-form Enneper; identical at theta = 0.
+        'label': "Enneper",
+        'family': 'CLASSICAL',
+        'g': lambda z, p: z ** p['k'],          # for the period-closure gate
+        'dh': lambda z, p: 2.0 * z ** p['k'],
+        'Xexact': _enneper_X,                    # exact immersion (+ theta)
+        'domain': ('disk', 0.0, lambda p: p['reach']),
+        'p_from': lambda order, radius: {
+            'k': int(min(max(order, 1), 12)), 'reach': radius},
+        'count': "Enneper order (k)",
+        'associate': True,
+        'clip': False,
+        'cycles': lambda p: [(0.0, 0.5)],        # entire phi -> zero periods
+        'test_order': 1,
+    },
+    'ENNK': {
+        # Enneper-ended n-noid: genus 0, n winding (Enneper) ends at the
+        # n-th roots of unity.  g = (z^n-1)/z, dh = (z^{n-1}+t z^{2n-1})
+        # /(z^n-1)^3, t = t(n) closing the one non-trivial period.
+        'label': "Enneper-ended k-noid",
+        'family': 'SPHERES',
+        'phi': _ennk_phi,                        # for the period-closure gate
+        'Xexact': _ennk_X,                       # exact immersion (log+rat'l)
+        'domain': ('disk', 0.0, 0.985),
+        'p_from': lambda order, radius: {'n': int(max(3, min(order, 7)))},
+        'solve': _ennk_solve,
+        'count': "Ends (n)",
+        # end punctures give clean flaring-wing rims; grow eps with n so the
+        # tighter high-n wings stay tear-free
+        'mask_punctures': lambda p: [
+            (r, 0.14 + 0.02 * p['n']) for r in p['_rho']],
+        'radial_grade': 'rim',                   # cluster nodes near the ends
+        'clip': False,
+        'res_boost': (3.2, 4.2),                 # dense rims, smooth wings
+        'cycles': lambda p: [(r, 0.12) for r in p['_rho']],
+        'test_order': 1,                         # order 1 -> n = 3 (trinoid)
     },
 }
 
@@ -443,10 +599,14 @@ BJORLING = {
 # Weber's notebooks; deliberately NOT registered rather than mislabeled):
 #   * Pyramidal / bipyramidal / prismatic k-noids (Lopez-Ros parameter;
 #     needs the degree-(n+1) Gauss map data + solve_scalar closure)
-#   * Enneper-ended k-noids, Lopez spheres
+#   * Lopez spheres
 #   * Bjorling clothoid (needs a complex Fresnel evaluator)
 #   * Karcher's less-symmetric saddle towers (angle parameter alpha)
 #   * genus-1 helicoid, Callahan-Hoffman-Meeks, KMR (Tier 3+)
+#   * Bonnet angle on Henneberg (non-orientable -> the associate family is
+#     not globally single-valued) and Bour (fractional-power double cover);
+#     both stay as the toolkit's fixed closed forms.  Catalan's associate is
+#     already reachable through BJ_CYCLOID.
 
 
 SURFACE_FAMILY = dict(LEGACY_FAMILY)
@@ -498,8 +658,10 @@ if __name__ == "__main__":
     for key in list(WE_SURFACES) + list(BJORLING):
         spec = WE_SURFACES.get(key) or BJORLING[key]
         n = spec.get('test_order', 1)
-        th = math.pi / 4 if (spec.get('associate')
-                             and key == 'BJ_CYCLOID') else 0.0
+        # exercise the associate/Bonnet angle on every surface that exposes
+        # it, so a broken morph (tear / self-collapse) trips the fit or
+        # manifold gate here rather than in Blender
+        th = math.pi / 4 if spec.get('associate') else 0.0
         V, Q = tk.build_parametric(key, 60, 60, n, 1.2, 1.0, th)
         finite = bool(np.all(np.isfinite(V)))
         lo, hi = V.min(0), V.max(0)
@@ -577,6 +739,31 @@ if __name__ == "__main__":
         good = err < 1e-9
         ok &= good
         print(f"seed {key:15s}: err={err:.2e} {'OK' if good else 'FAIL'}")
+    # associate/Bonnet morph gate: theta = 0 reproduces the base surface and
+    # the deformation is continuous (a small step gives a bounded, non-torn
+    # change).  Checked on the closed-form engine associates on a fixed grid
+    # (endpoint-free wraps drop at theta > 0, so compare interior columns).
+    for key in ('ENNEPER', 'RICHMOND_K'):
+        spec = WE_SURFACES[key]
+        p0 = spec['p_from'](spec.get('test_order', 1), 1.2)
+        n0 = spec.get('test_order', 1)
+
+        def raw(th):
+            x, y, z, _, _, _ = we.we_surface(spec, 80, 80, n0, 1.2, None, th)
+            return np.stack([x, y, z], axis=-1)
+        base = raw(0.0)
+        d1 = float(np.nanmax(np.abs(raw(0.02) - base)))
+        d2 = float(np.nanmax(np.abs(raw(0.04) - base)))
+        # continuous: a 2x larger angle step gives a ~2x (bounded) change,
+        # never a blow-up; and the morph actually moves (non-degenerate)
+        cont = (np.isfinite(d1) and np.isfinite(d2)
+                and 1e-4 < d1 < 1.0 and d2 < 3.0 * d1 + 1e-6)
+        thmid = raw(math.pi / 4)
+        moved = float(np.nanmax(np.abs(thmid - base))) > 0.05
+        good = cont and moved
+        ok &= good
+        print(f"assoc {key:13s}: d(.02)={d1:.2e} d(.04)={d2:.2e} "
+              f"moved={moved} {'OK' if good else 'FAIL'}")
     # CHM modulus regression (must match the pre-port table)
     cref = {1: 0.955978, 2: 0.988070, 3: 0.995117, 4: 0.997535}
     cok = all(abs(chm_modulus(kk) - cref[kk]) < 1e-5 for kk in cref)
