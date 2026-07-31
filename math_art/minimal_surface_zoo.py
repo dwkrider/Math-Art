@@ -469,6 +469,7 @@ WE_SURFACES = {
         'storeys_label': "Storeys",
         'mask_punctures': lambda p: [
             (rho, p['eps']) for rho in _tower_roots(p['n'])],
+        'clip_punctures': True,       # snap wing rims onto the mask circle
         'clip': False,
         # the 2n ends sit on |z| = 1; grading the radial samples toward the
         # rim puts the fine cells exactly where the punctures cut, so each
@@ -509,6 +510,7 @@ WE_SURFACES = {
         'mask_punctures': lambda p: [
             (rho, p['eps'])
             for rho in _atower_ends(p['n'], p.get('alpha', 0.0))],
+        'clip_punctures': True,       # snap wing rims onto the mask circle
         'clip': False,
         'radial_grade': 'rim',       # fine cells at the |z|=1 ends -> smooth
         'res_boost': (1.7, 1.7),     # unequal wing rims
