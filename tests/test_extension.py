@@ -763,6 +763,10 @@ OPS = [
      lambda: bpy.ops.mesh.knot_carpet_add(
          lattice='POLYHEDRAL', poly_scaffold='ICOSA', output='RIBBON',
          cord_width=0.12, weave_height=0.06)),
+    ("knot carpet polyhedral small stellated dodec",
+     lambda: bpy.ops.mesh.knot_carpet_add(
+         lattice='POLYHEDRAL', poly_scaffold='SSD', output='TUBE',
+         tube_radius=0.04, tube_sides=8, weave_height=0.06)),
     ("knot carpet torus",
      lambda: bpy.ops.mesh.knot_carpet_add(
          lattice='TORUS', nx=4, ny=3, output='TUBE',
@@ -775,6 +779,13 @@ OPS = [
      lambda: bpy.ops.mesh.knot_carpet_add(
          lattice='TORUS', torus_tiling='TRIHEX', nx=4, ny=3,
          output='RIBBON', interlace_mode='WOVEN', weave_height=0.05)),
+    ("knot carpet uvmesh",
+     lambda: (bpy.ops.mesh.primitive_uv_sphere_add(),
+              bpy.ops.mesh.knot_carpet_add(
+                  lattice='UVMESH',
+                  uv_target=bpy.context.active_object.name,
+                  uv_tiles=6, output='TUBE', tube_radius=0.04,
+                  tube_sides=8))[-1]),
     ("woven double shell chainmail",
      lambda: bpy.ops.mesh.woven_double_shell_add(
          solid='DODECA', advance=0, output='TUBE', relax_iters=30)),

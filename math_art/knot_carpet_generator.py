@@ -45,7 +45,29 @@
 # a fifth wraps the carpet onto a 3-D TORUS: the square lattice, or
 # (like the sibling Polyhedral Torus generator) ANY wrappable uniform
 # tiling, one woven medallion per tile (the torus-tiling section) --
-# and a sixth weaves the carpet onto the REAL faces of a POLYHEDRON.
+# a sixth weaves the carpet onto the REAL faces of a POLYHEDRON, and a
+# seventh weaves the carpet onto an ARBITRARY user-selected target mesh
+# through its UV parameterization (the UV-mesh section).
+#
+# THE UV-MESH SCAFFOLD.  The sphere, torus and polyhedral scaffolds
+# all warp the flat carpet through a CLOSED-FORM surface map; this one
+# generalizes that to any surface the user supplies as a UV-unwrapped
+# mesh.  A UV unwrap already IS a parameterization: each UV-space
+# triangle of the mesh maps a flat (u, v) patch to a world-space
+# triangle with interpolated surface normals.  So the ordinary doubly
+# periodic square carpet is built in the flat UV unit square [0, 1]^2
+# (uv_tiles cells across, plus the margin ring), and every emitted
+# vertex is warped by finding which UV triangle its (u, v) falls in,
+# taking barycentric coordinates, and interpolating to the surface
+# point and normal -- the weave / relief z pushed along that normal,
+# exactly as the torus scaffold pushes relief radially.  Vertices whose
+# (u, v) lands in a UV gap (a seam, a hole, outside the chart) are
+# unmappable, and any ribbon face or rope segment touching one is
+# dropped, so the carpet cleanly CLIPS to the UV islands.  It is a
+# direct generalization of the sphere / torus / polyhedral warps (those
+# are the closed-form special cases): excellent on clean single-chart,
+# low-distortion unwraps and degrading gracefully -- clipping at seams,
+# following UV distortion -- on gappy ones.
 #
 # THE POLYHEDRAL SCAFFOLD.  Unlike the sphere (which radially projects
 # every medallion onto a smooth ball), the polyhedral scaffold keeps
@@ -115,7 +137,10 @@ bl_info = {
                    "solid or Escher's Solid (one medallion per face, "
                    "laced across each edge), or wrapped seamlessly onto "
                    "a 3-D torus -- the square lattice or any wrappable "
-                   "uniform tiling, one medallion per tile",
+                   "uniform tiling, one medallion per tile -- or woven "
+                   "onto an arbitrary UV-unwrapped target mesh by "
+                   "sampling its UV parameterization (clipped to the UV "
+                   "islands)",
     "category": "Add Mesh",
 }
 
@@ -1388,6 +1413,345 @@ def relax_torus_tiling_carpet(carpet, iters=120, clearance=0.10,
 
 
 # --------------------------------------------------------------------
+# The UV-mesh carpet: the flat carpet sampled through a target mesh's
+# UV parameterization
+# --------------------------------------------------------------------
+#
+# The sphere, torus and polyhedral scaffolds all warp the flat square
+# carpet through a CLOSED-FORM surface map (radial projection, the
+# torus embedding, per-face planes).  This scaffold generalizes that
+# to an ARBITRARY surface supplied by the user: any mesh carrying a UV
+# unwrap already IS a parameterization -- each of its UV-space
+# triangles maps a flat (u, v) patch to a world-space triangle (with
+# interpolated surface normals).  So we build the ordinary doubly
+# periodic square carpet in the flat UV domain [0, 1]^2 (`uv_tiles`
+# lattice cells across, plus the usual one-cell margin ring), and then
+# WARP every emitted vertex by looking up which UV triangle its (u, v)
+# falls in, taking barycentric coordinates there, and interpolating to
+# the corresponding 3-D surface point and normal -- the flat weave / relief
+# z is pushed along that interpolated surface normal, exactly as the
+# torus scaffold pushes relief radially.  Vertices whose (u, v) lands in a
+# UV gap (no covering triangle -- a seam, a hole, or outside the chart)
+# are UNMAPPABLE, and any ribbon face or tube segment touching one is
+# dropped, so the carpet cleanly CLIPS to the UV islands.  This is a
+# direct generalization of the sphere / torus / polyhedral warps: those
+# are the special cases where the parameterization is known in closed
+# form; here it is read from the target mesh.  It is excellent on clean
+# single-chart, low-distortion unwraps (cylinder / sphere / disk / torus)
+# and degrades gracefully -- clipping at island seams and following UV
+# distortion -- on gappy or stretched unwraps.
+#
+# References:
+#   Robert G. Scharein, KnotPlot knot carpets --
+#     https://knotplot.com/carpets (see the header above).
+
+
+def _bary_interp(tri, u, v, tol=1e-6):
+    """Barycentric point-in-triangle test for the UV point (u, v)
+    against one UV triangle `tri` = (uv0, uv1, uv2, p0, p1, p2, n0, n1,
+    n2).  Returns (pos3, normal3) linearly interpolated from the three
+    world positions / normals if (u, v) lies inside (within `tol`), else
+    None."""
+    uv0, uv1, uv2 = tri[0], tri[1], tri[2]
+    e1 = uv1 - uv0
+    e2 = uv2 - uv0
+    q = np.array([u, v]) - uv0
+    d00 = float(e1 @ e1)
+    d01 = float(e1 @ e2)
+    d11 = float(e2 @ e2)
+    d20 = float(q @ e1)
+    d21 = float(q @ e2)
+    denom = d00 * d11 - d01 * d01
+    if abs(denom) < 1e-18:
+        return None                                # degenerate UV tri
+    b1 = (d11 * d20 - d01 * d21) / denom
+    b2 = (d00 * d21 - d01 * d20) / denom
+    b0 = 1.0 - b1 - b2
+    if b0 < -tol or b1 < -tol or b2 < -tol:
+        return None
+    pos = b0 * tri[3] + b1 * tri[4] + b2 * tri[5]
+    nrm = b0 * tri[6] + b1 * tri[7] + b2 * tri[8]
+    return pos, nrm
+
+
+def _uv_sampler(uv_tris, tol=1e-6):
+    """Build a UV -> surface sampler from a list of UV triangles (each
+    (uv0, uv1, uv2, p0, p1, p2, n0, n1, n2), UVs 2-D, positions/normals
+    3-D numpy arrays).  Buckets the triangles into a uniform grid keyed
+    on their UV bounding boxes, and returns a function `sample(u, v)`
+    that returns (pos3, normal3) for the covering triangle (barycentric
+    interpolation) or None if (u, v) falls in a UV gap.  The grid keeps
+    the point query O(1) on well-behaved unwraps."""
+    tris = list(uv_tris)
+    if not tris:
+        return lambda u, v: None
+    UV = np.array([t[c] for t in tris for c in (0, 1, 2)])
+    umin, vmin = float(UV[:, 0].min()), float(UV[:, 1].min())
+    umax, vmax = float(UV[:, 0].max()), float(UV[:, 1].max())
+    du = max(umax - umin, 1e-9)
+    dv = max(vmax - vmin, 1e-9)
+    G = max(1, int(sqrt(len(tris))))
+
+    def cell(u, v):
+        cx = min(G - 1, max(0, int((u - umin) / du * G)))
+        cy = min(G - 1, max(0, int((v - vmin) / dv * G)))
+        return cx, cy
+
+    buckets = [[] for _ in range(G * G)]
+    for ti, t in enumerate(tris):
+        us = (t[0][0], t[1][0], t[2][0])
+        vs = (t[0][1], t[1][1], t[2][1])
+        cx0, cy0 = cell(min(us), min(vs))
+        cx1, cy1 = cell(max(us), max(vs))
+        for cx in range(cx0, cx1 + 1):
+            for cy in range(cy0, cy1 + 1):
+                buckets[cy * G + cx].append(ti)
+
+    def sample(u, v):
+        if (u < umin - tol or u > umax + tol
+                or v < vmin - tol or v > vmax + tol):
+            return None
+        cx, cy = cell(u, v)
+        for ti in buckets[cy * G + cx]:
+            res = _bary_interp(tris[ti], u, v, tol)
+            if res is not None:
+                return res
+        return None
+
+    return sample
+
+
+def _uvmesh_warp_cell(verts, faces, mats, sample, scale):
+    """Warp one flat (verts, faces, mats) ribbon cell onto the target
+    surface: each flat vertex (x, y, z) is sampled at UV = (x*scale,
+    y*scale); if it maps, it becomes surface_pos + z * surface_normal
+    (relief pushed along the surface normal).  Faces touching any
+    unmappable vertex are dropped and the surviving vertices are
+    re-indexed, so the cell clips to the UV islands.  Returns a compact
+    (verts, faces, mats) (possibly empty)."""
+    warped = [None] * len(verts)
+    for idx, p in enumerate(verts):
+        z = p[2] if len(p) > 2 else 0.0
+        s = sample(p[0] * scale, p[1] * scale)
+        if s is None:
+            continue
+        pos, nrm = s
+        nn = nrm / (np.linalg.norm(nrm) + 1e-12)
+        warped[idx] = (float(pos[0] + z * nn[0]),
+                       float(pos[1] + z * nn[1]),
+                       float(pos[2] + z * nn[2]))
+    remap = {}
+    out_v, out_f, out_m = [], [], []
+    for f, m in zip(faces, mats):
+        if any(warped[vi] is None for vi in f):
+            continue
+        nf = []
+        for vi in f:
+            if vi not in remap:
+                remap[vi] = len(out_v)
+                out_v.append(warped[vi])
+            nf.append(remap[vi])
+        out_f.append(nf)
+        out_m.append(m)
+    return out_v, out_f, out_m
+
+
+def _tube_open(pts, radius, sides):
+    """Sweep a round OPEN tube (no closing seam, no end caps) along the
+    3-D polyline `pts` with rotation-minimizing frames.  The companion
+    of `_tube_welded` for the clipped segments of a UV-mesh loop that a
+    UV gap has cut open.  Returns (verts, faces) with quad faces."""
+    P = np.asarray(pts, float)
+    n = len(P)
+    if n < 2:
+        return [], []
+    T = np.empty_like(P)
+    if n >= 3:
+        T[1:-1] = P[2:] - P[:-2]
+    T[0] = P[1] - P[0]
+    T[-1] = P[-1] - P[-2]
+    T /= np.linalg.norm(T, axis=1, keepdims=True) + 1e-12
+
+    def reflect(a, b, na, ta, tb):
+        v1 = b - a
+        c1 = float(v1 @ v1) + 1e-12
+        rl = na - (2.0 / c1) * float(v1 @ na) * v1
+        tl = ta - (2.0 / c1) * float(v1 @ ta) * v1
+        v2 = tb - tl
+        c2 = float(v2 @ v2) + 1e-12
+        return rl - (2.0 / c2) * float(v2 @ rl) * v2
+
+    ref = np.array([0.0, 0.0, 1.0]) if abs(T[0, 2]) < 0.9 \
+        else np.array([1.0, 0.0, 0.0])
+    n0 = np.cross(T[0], ref)
+    n0 /= np.linalg.norm(n0) + 1e-12
+    N = [n0]
+    for i in range(n - 1):
+        nn = reflect(P[i], P[i + 1], N[-1], T[i], T[i + 1])
+        N.append(nn / (np.linalg.norm(nn) + 1e-12))
+    N = np.array(N)
+    ring0 = 2.0 * pi * np.arange(sides) / sides
+    ca, sa = np.cos(ring0), np.sin(ring0)
+    verts, bases = [], []
+    for i in range(n):
+        B = np.cross(T[i], N[i])
+        ring = P[i] + radius * (ca[:, None] * N[i] + sa[:, None] * B)
+        bases.append(len(verts))
+        verts.extend(map(tuple, ring))
+    faces = []
+    for i in range(n - 1):
+        for s in range(sides):
+            s2 = (s + 1) % sides
+            faces.append([bases[i] + s, bases[i] + s2,
+                          bases[i + 1] + s2, bases[i + 1] + s])
+    return verts, faces
+
+
+def _uvmesh_tube(warped, radius, sides):
+    """Sweep a rope along one warped loop centerline `warped` (a cyclic
+    list of 3-D points or None for unmappable beads).  If every bead
+    maps, sweep a single CLOSED tube; otherwise cut the loop at the UV
+    gaps and sweep each maximal mapped run as an OPEN tube, so the rope
+    clips to the UV islands.  Returns (verts, faces)."""
+    n = len(warped)
+    mapped = [w is not None for w in warped]
+    if not any(mapped):
+        return [], []
+    if all(mapped):
+        return _tube_welded([tuple(w) for w in warped], radius, sides)
+    # start at a run boundary so no run wraps across the seam
+    start = next(i for i in range(n) if mapped[i] and not mapped[i - 1])
+    all_v, all_f = [], []
+    run = []
+    for k in range(n + 1):
+        idx = (start + k) % n
+        if k < n and mapped[idx]:
+            run.append(tuple(warped[idx]))
+            continue
+        if len(run) >= 2:
+            v, f = _tube_open(run, radius, sides)
+            base = len(all_v)
+            all_v.extend(v)
+            all_f.extend([[x + base for x in fc] for fc in f])
+        run = []
+    return all_v, all_f
+
+
+def build_uvmesh_cells(uv_tris, k=4, uv_tiles=6, amp=0.10, overlap=1.15,
+                       samples=192, cord_width=0.12, style='ANGULAR',
+                       subdiv=6, interlace=True, interlace_mode='FLAT',
+                       weave_height=0.05, color_by='LOOP', height=0.0):
+    """One merged (verts, faces, mats) ribbon cell per loop, woven onto
+    the target surface through its UV map.  The flat SQUARE carpet is
+    built over `uv_tiles` x `uv_tiles` lattice cells (plus the margin
+    ring) so it fills the UV unit square [0, 1]^2 after scaling, each
+    loop's mitered ribbon (flat cut-under interlace or the 3-D weave,
+    with optional relief) is built in the flat carpet plane exactly as
+    the flat / torus scaffolds do, and every vertex is then warped
+    through `_uv_sampler` -- ribbon width becomes surface arc length,
+    relief becomes an offset along the surface normal.  Faces landing in
+    a UV gap are dropped (clipping to the islands)."""
+    n = max(1, int(uv_tiles))
+    carpet = build_carpet('SQUARE', k, n, n, amp, overlap, samples,
+                          style, subdiv)
+    signed = loop_signed(carpet)
+    sample = _uv_sampler(uv_tris)
+    scale = 1.0 / n
+    width = max(0.01, float(cord_width))
+    cells = []
+    for i, path in enumerate(carpet['paths']):
+        pl = [tuple(p) for p in path]
+        sub = _loop_cell(pl, signed[i], width, interlace,
+                         interlace_mode, weave_height, height,
+                         color_by, i)
+        if not sub:
+            continue
+        warped = []
+        for cv, cf, cm in sub:
+            wv, wf, wm = _uvmesh_warp_cell(cv, cf, cm, sample, scale)
+            if wf:
+                warped.append((wv, wf, wm))
+        if not warped:
+            continue
+        cell = pc.merge_cells(warped)
+        if cell[1]:
+            cells.append(cell)
+    return cells
+
+
+def build_uvmesh_tube_cells(uv_tris, k=4, uv_tiles=6, amp=0.10,
+                            overlap=1.15, samples=192, style='ANGULAR',
+                            subdiv=6, tube_radius=0.04, tube_sides=10,
+                            weave_height=0.06, color_by='LOOP'):
+    """One woven round rope per loop, swept on the target surface.  The
+    flat woven centerline of each loop (its over/under z is forced to
+    at least clear the tube diameter) is warped through the UV sampler
+    so its weave z becomes an offset along the surface normal, and a
+    round tube is swept along the resulting 3-D curve.  Loops that map
+    fully are swept as closed tubes; loops crossing a UV gap are cut and
+    swept as open segments (clipping to the islands)."""
+    n = max(1, int(uv_tiles))
+    carpet = build_carpet('SQUARE', k, n, n, amp, overlap, samples,
+                          style, subdiv)
+    signed = loop_signed(carpet)
+    sample = _uv_sampler(uv_tris)
+    scale = 1.0 / n
+    tr = max(0.005, float(tube_radius))
+    lift = max(float(weave_height), 1.3 * tr)
+    sides = max(3, int(tube_sides))
+    cells = []
+    for i, path in enumerate(carpet['paths']):
+        pl2 = [(float(p[0]), float(p[1])) for p in path]
+        zoff = isl._weave_zoff(pl2, True, signed[i], lift)
+        warped = []
+        for j in range(len(pl2)):
+            s = sample(pl2[j][0] * scale, pl2[j][1] * scale)
+            if s is None:
+                warped.append(None)
+                continue
+            pos, nrm = s
+            nn = nrm / (np.linalg.norm(nrm) + 1e-12)
+            warped.append((float(pos[0] + zoff[j] * nn[0]),
+                           float(pos[1] + zoff[j] * nn[1]),
+                           float(pos[2] + zoff[j] * nn[2])))
+        verts, faces = _uvmesh_tube(warped, tr, sides)
+        if not faces:
+            continue
+        mat = (i % len(pc.PALETTE_RGBA)) if color_by == 'LOOP' else 0
+        cells.append((verts, faces, [mat] * len(faces)))
+    return cells
+
+
+def uvmesh_loop_paths(uv_tris, k=4, uv_tiles=6, amp=0.10, overlap=1.15,
+                      samples=192, style='ANGULAR', subdiv=6):
+    """Loop centerlines on the target surface for the CURVE output: the
+    flat rosette centerlines (z = 0, so they lie exactly on the sampled
+    surface) warped through the UV map, one closed spline per fully
+    mapped loop.  A loop straddling a UV gap keeps only its mapped beads
+    and is emitted as an OPEN spline (clipped to the islands); loops
+    entirely in a gap are dropped."""
+    n = max(1, int(uv_tiles))
+    carpet = build_carpet('SQUARE', k, n, n, amp, overlap, samples,
+                          style, subdiv)
+    sample = _uv_sampler(uv_tris)
+    scale = 1.0 / n
+    out = []
+    for path in carpet['paths']:
+        pts = []
+        dropped = False
+        for p in path:
+            s = sample(p[0] * scale, p[1] * scale)
+            if s is None:
+                dropped = True
+                continue
+            pos = s[0]
+            pts.append((float(pos[0]), float(pos[1]), float(pos[2])))
+        if len(pts) >= 2:
+            out.append((pts, not dropped))
+    return out
+
+
+# --------------------------------------------------------------------
 # The knot ball: the carpet woven over a sphere
 # --------------------------------------------------------------------
 #
@@ -2061,12 +2425,20 @@ except Exception:                       # legacy single-file / CLI use
 _POLY_SCAFFOLD_FAMILY = dict(_SCAFFOLD_FAMILY)
 for _sid, _label, _nota in rs.CATALAN:
     _POLY_SCAFFOLD_FAMILY[_sid] = 'CATALAN'
+# the small stellated dodecahedron, whose {5/2} pentagram faces the
+# solids engine star-triangulates into a real (welded) surface that is
+# star-shaped from its centre, so the per-edge unfold is well defined
+# and it weaves consistently.  (The Great Dodecahedron and Great
+# Icosahedron are not star-shaped; the Great Stellated Dodecahedron's
+# engine triangulation leaves an unweldable face with no woven
+# neighbour -- all three are excluded.)
+_POLY_SCAFFOLD_FAMILY['SSD'] = 'KEPLER'
 
 # the operator's enum items (module-level so the strings outlive the
-# enum): the Platonic / Archimedean / Catalan solids, then Escher's
-# Solid.  Every listed solid is star-shaped from its centroid, so the
-# per-edge unfold is well defined and the carpet weaves consistently
-# (verified in the self-test) -- none are excluded.
+# enum): the Platonic / Archimedean / Catalan solids, Escher's Solid,
+# then the small stellated dodecahedron.  Every listed solid is
+# star-shaped from its centroid, so the per-edge unfold is well defined
+# and the carpet weaves consistently (verified in the self-test).
 POLY_SCAFFOLD_ITEMS = [
     (_sid, _label,
      "One woven medallion per face of the %s (%s solid), on its real "
@@ -2079,7 +2451,11 @@ POLY_SCAFFOLD_ITEMS += [
     ('ESCHER', "Escher's Solid",
      "One woven medallion per face of Escher's Solid -- the stellated "
      "rhombic dodecahedron of M. C. Escher's \"Waterfall\" (48 "
-     "spiked triangular faces, woven over its real spikes)")]
+     "spiked triangular faces, woven over its real spikes)"),
+    ('SSD', "Small Stellated Dodecahedron",
+     "One woven medallion per face of the small stellated dodecahedron "
+     "-- the {5/2,5} Kepler-Poinsot star solid, woven over its "
+     "star-triangulated pentagram faces")]
 
 
 def _poly_solid(sid):
@@ -2094,6 +2470,30 @@ def _poly_solid(sid):
         V, F, _sz = rs.build_solid(_POLY_SCAFFOLD_FAMILY[sid], sid,
                                    6, 1.0)
     V = np.asarray(V, float)
+    # Weld coincident vertices: the Kepler-Poinsot star meshes arrive
+    # unwelded from the engine (duplicate vertices at shared corners),
+    # which would leave the index-based edge adjacency empty.  Merge by
+    # rounded position and remap the faces so shared edges match.
+    _key, _remap, _WV = {}, np.empty(len(V), int), []
+    for _i, _p in enumerate(V):
+        _k = (round(float(_p[0]), 6), round(float(_p[1]), 6),
+              round(float(_p[2]), 6))
+        _j = _key.get(_k)
+        if _j is None:
+            _j = len(_WV)
+            _key[_k] = _j
+            _WV.append(_p)
+        _remap[_i] = _j
+    if len(_WV) < len(V):
+        V = np.asarray(_WV, float)
+        _welded = []
+        for _f in F:
+            _g = [int(_remap[_i]) for _i in _f]
+            _h = [_g[_t] for _t in range(len(_g))
+                  if _g[_t] != _g[(_t - 1) % len(_g)]]
+            if len(_h) >= 3:
+                _welded.append(_h)
+        F = _welded
     V = V - V.mean(axis=0)
     V = V / (np.max(np.linalg.norm(V, axis=1)) + 1e-300)
     return V, [list(f) for f in F]
@@ -2792,7 +3192,7 @@ def tiling_loop_paths(tiling_name='SQUARE', nx=3, ny=3, amp=0.10,
 try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
-                           BoolProperty)
+                           BoolProperty, StringProperty)
     from bpy_extras.object_utils import AddObjectHelper
     _IN_BLENDER = True
 except ImportError:
@@ -2849,6 +3249,43 @@ if _IN_BLENDER:
         context.view_layer.objects.active = obj
         return obj
 
+    def _uv_triangles_from_object(obj):
+        """Extract the UV -> surface parameterization of a target mesh
+        object as a list of triangles (uv0, uv1, uv2, p0, p1, p2, n0,
+        n1, n2), each a numpy array: the three UV coordinates (active UV
+        layer), the three world-space vertex positions (obj.matrix_world
+        @ vert.co) and the three world-space smooth vertex normals.  The
+        mesh is triangulated via calc_loop_triangles().  Raises
+        ValueError if the object is not a mesh or has no active UV
+        layer."""
+        mesh = getattr(obj, "data", None)
+        if obj is None or obj.type != 'MESH' \
+                or not isinstance(mesh, bpy.types.Mesh):
+            raise ValueError("target is not a mesh object")
+        uvl = mesh.uv_layers.active
+        if uvl is None:
+            raise ValueError("target mesh has no active UV layer")
+        mesh.calc_loop_triangles()
+        mw = obj.matrix_world
+        nmat = mw.to_3x3().inverted_safe().transposed()   # normals
+        uvd = uvl.data
+        verts = mesh.vertices
+        tris = []
+        for lt in mesh.loop_triangles:
+            lp = lt.loops
+            vs = lt.vertices
+            uvs = [np.array(uvd[lp[c]].uv, float) for c in range(3)]
+            pos = [np.array(mw @ verts[vs[c]].co, float)
+                   for c in range(3)]
+            nrm = []
+            for c in range(3):
+                nv = np.array(nmat @ verts[vs[c]].normal, float)
+                nrm.append(nv / (np.linalg.norm(nv) + 1e-12))
+            tris.append((uvs[0], uvs[1], uvs[2],
+                         pos[0], pos[1], pos[2],
+                         nrm[0], nrm[1], nrm[2]))
+        return tris
+
     class MESH_OT_knot_carpet_add(bpy.types.Operator, AddObjectHelper):
         """Add a knot carpet (tileable alternating link of unknots)"""
         bl_idname = "mesh.knot_carpet_add"
@@ -2879,7 +3316,12 @@ if _IN_BLENDER:
                    ('TORUS', "Torus",
                     "The square carpet wrapped seamlessly onto a "
                     "3-D torus -- the nx x ny fundamental block is a "
-                    "flat-torus tile, so it closes with no seam")],
+                    "flat-torus tile, so it closes with no seam"),
+                   ('UVMESH', "UV Mesh",
+                    "Weave the carpet onto a selected target mesh with "
+                    "UV coordinates: the flat carpet is sampled through "
+                    "the mesh's UV map (barycentric), relief along the "
+                    "surface normal; clips to the UV islands")],
             default='SQUARE')
         sphere_scaffold: EnumProperty(
             name="Sphere Tiling", items=SPHERE_SCAFFOLD_ITEMS,
@@ -3012,6 +3454,15 @@ if _IN_BLENDER:
             description="Minor (tube) radius of the torus (ny cells go "
                         "around the tube); relief/weave push outward "
                         "from it; torus lattice only")
+        uv_target: StringProperty(
+            name="Target Mesh",
+            description="Mesh object with UV coordinates to weave the "
+                        "carpet onto (UV Mesh lattice); the flat carpet "
+                        "is sampled through this mesh's UV map")
+        uv_tiles: IntProperty(
+            name="UV Tiles", default=6, min=1, max=24,
+            description="Carpet lattice cells across the UV unit square "
+                        "[0, 1]^2 (UV Mesh lattice)")
         separate: BoolProperty(
             name="Separate Loops", default=False,
             description="Output each loop as its own object")
@@ -3272,6 +3723,88 @@ if _IN_BLENDER:
                             (tn, self.nx, self.ny, len(cells)))
             return {'FINISHED'}
 
+        def _execute_uvmesh(self, context):
+            """Weave the carpet onto a user-selected target mesh through
+            its UV parameterization.  The flat SQUARE carpet (uv_tiles
+            cells across the UV unit square, k = symmetry lobes) is
+            sampled through the target's UV -> surface map (barycentric),
+            relief / weave pushed along the interpolated surface normal;
+            faces or rope segments landing in a UV gap are dropped, so
+            the carpet clips to the UV islands.  CURVE emits the on-
+            surface centerlines, RIBBON the woven straps, TUBE the woven
+            ropes."""
+            name = self.uv_target
+            obj = (context.scene.objects.get(name)
+                   if name else None)
+            if obj is None:
+                obj = bpy.data.objects.get(name) if name else None
+            if obj is None:
+                self.report({'ERROR'},
+                            "UV Mesh: no target mesh selected"
+                            if not name else
+                            "UV Mesh: target '%s' not found" % name)
+                return {'CANCELLED'}
+            if obj.type != 'MESH':
+                self.report({'ERROR'},
+                            "UV Mesh: target '%s' is not a mesh" % name)
+                return {'CANCELLED'}
+            try:
+                uv_tris = _uv_triangles_from_object(obj)
+            except ValueError as exc:
+                self.report({'ERROR'}, "UV Mesh: %s" % exc)
+                return {'CANCELLED'}
+            if not uv_tris:
+                self.report({'ERROR'},
+                            "UV Mesh: target '%s' has no faces / UVs"
+                            % name)
+                return {'CANCELLED'}
+            k, ut = self.symmetry, self.uv_tiles
+            label = "Knot Carpet (UV Mesh)"
+            if self.output == 'CURVE':
+                paths = uvmesh_loop_paths(
+                    uv_tris, k, ut, self.amplitude, self.overlap,
+                    self.samples, self.style, self.smoothness)
+                out = _emit_curve(context, label, paths, operator=self)
+                if out is None:
+                    self.report({'ERROR'}, "no carpet generated "
+                                "(carpet fell entirely in UV gaps)")
+                    return {'CANCELLED'}
+                out["math_art_pattern"] = True
+                self.report({'INFO'}, "UVMESH %s  %d loops"
+                            % (name, len(paths)))
+                return {'FINISHED'}
+            if self.output == 'RIBBON':
+                cells = build_uvmesh_cells(
+                    uv_tris, k, ut, self.amplitude, self.overlap,
+                    self.samples, self.cord_width, self.style,
+                    self.smoothness, self.interlace, self.interlace_mode,
+                    self.weave_height, self.color_by, self.height)
+            else:
+                cells = build_uvmesh_tube_cells(
+                    uv_tris, k, ut, self.amplitude, self.overlap,
+                    self.samples, self.style, self.smoothness,
+                    self.tube_radius, self.tube_sides, self.weave_height,
+                    self.color_by)
+            out = pc.emit(context, label, cells, self.separate,
+                          fit=True, operator=self)
+            if out is None:
+                self.report({'ERROR'}, "no carpet generated (carpet "
+                            "fell entirely in UV gaps)")
+                return {'CANCELLED'}
+            out["math_art_pattern"] = True
+            if self.output == 'TUBE':
+                _shade_smooth(out)
+            if out.type == 'MESH':
+                self.report({'INFO'},
+                            "UVMESH %s  %d loops  V=%d F=%d"
+                            % (name, len(cells),
+                               len(out.data.vertices),
+                               len(out.data.polygons)))
+            else:
+                self.report({'INFO'}, "UVMESH %s  %d loops"
+                            % (name, len(cells)))
+            return {'FINISHED'}
+
         def execute(self, context):
             if self.lattice == 'SPHERE':
                 return self._execute_sphere(context)
@@ -3281,6 +3814,8 @@ if _IN_BLENDER:
                 return self._execute_tiling(context)
             if self.lattice == 'TORUS':
                 return self._execute_torus(context)
+            if self.lattice == 'UVMESH':
+                return self._execute_uvmesh(context)
             if self.output == 'CURVE':
                 if self.relax_iters > 0:
                     paths = relaxed_paths(
@@ -3348,6 +3883,7 @@ if _IN_BLENDER:
             poly = self.lattice == 'POLYHEDRAL'
             tiling = self.lattice == 'TILING'
             torus = self.lattice == 'TORUS'
+            uvmesh = self.lattice == 'UVMESH'
             if sphere:
                 # lobe count is AUTO on the sphere (follows the
                 # scaffold degree), so symmetry is not shown
@@ -3373,6 +3909,13 @@ if _IN_BLENDER:
                     lay.prop(self, 'symmetry')
                 lay.prop(self, 'nx')
                 lay.prop(self, 'ny')
+            elif uvmesh:
+                # pick a target mesh (with UVs) and lay the square
+                # carpet over its UV unit square, k = symmetry lobes
+                lay.prop_search(self, 'uv_target', context.scene,
+                                'objects')
+                lay.prop(self, 'uv_tiles')
+                lay.prop(self, 'symmetry')
             else:
                 lay.prop(self, 'symmetry')
                 lay.prop(self, 'nx')
@@ -3443,6 +3986,26 @@ if _IN_BLENDER:
                     lay.prop(self, 'weave_height')
                     lay.prop(self, 'height')
                     lay.prop(self, 'color_by')
+                    lay.prop(self, 'separate')
+                elif self.output == 'TUBE':
+                    lay.prop(self, 'tube_radius')
+                    lay.prop(self, 'tube_sides')
+                    lay.prop(self, 'weave_height')
+                    lay.prop(self, 'color_by')
+                    lay.prop(self, 'separate')
+                lay.prop(self, 'align')
+                return
+            if uvmesh:
+                # the carpet clips to the UV islands; relief / weave
+                # runs along the sampled surface normal
+                if self.output == 'RIBBON':
+                    lay.prop(self, 'interlace')
+                    if self.interlace:
+                        lay.prop(self, 'interlace_mode')
+                        if self.interlace_mode == 'WOVEN':
+                            lay.prop(self, 'weave_height')
+                    lay.prop(self, 'color_by')
+                    lay.prop(self, 'height')
                     lay.prop(self, 'separate')
                 elif self.output == 'TUBE':
                     lay.prop(self, 'tube_radius')
@@ -4267,5 +4830,103 @@ if __name__ == "__main__":
     ok = ok and g
     print("torus-tiling relax HEX 3x3 : %d faces quads=%s : %s"
           % (rttf, rttq, g))
+
+    # 17. UV-mesh scaffold: weave the flat carpet through a target
+    #     mesh's UV parameterization.  Synthetic cylinder chart:
+    #     UV [0, 1]^2 -> (cos 2pi u, sin 2pi u, v h) with outward
+    #     normals, triangulated nseg around by nz up.  Checks: every
+    #     z = 0 centerline bead lands ON the cylinder (radial band
+    #     [cos(pi/nseg), 1], z in [0, h], the exact range of a linear
+    #     interpolation of the chart); RIBBON / TUBE / CURVE all build
+    #     finite non-empty geometry; and a GAPPY chart (only half the
+    #     cylinder unwrapped) drops the unmappable half -- strictly
+    #     fewer faces / loops, still finite, no NaNs (clipping to the
+    #     UV islands).
+    def _cyl_uv_tris(nseg=64, nz=2, h=1.0, umax=1.0):
+        def Pp(u, v):
+            return np.array([np.cos(2 * pi * u), np.sin(2 * pi * u),
+                             v * h])
+
+        def Nn(u, v):
+            return np.array([np.cos(2 * pi * u), np.sin(2 * pi * u),
+                             0.0])
+        tris = []
+        for a in range(nseg):
+            u0, u1 = a / nseg, (a + 1) / nseg
+            if u1 > umax + 1e-12:
+                continue
+            for b in range(nz):
+                v0, v1 = b / nz, (b + 1) / nz
+                for ca, cb, cc in (((u0, v0), (u1, v0), (u1, v1)),
+                                   ((u0, v0), (u1, v1), (u0, v1))):
+                    tris.append((np.array(ca), np.array(cb),
+                                 np.array(cc), Pp(*ca), Pp(*cb),
+                                 Pp(*cc), Nn(*ca), Nn(*cb), Nn(*cc)))
+        return tris
+
+    nseg = 64
+    n_ut = 6
+    uv_full = _cyl_uv_tris(nseg=nseg, umax=1.0)
+    sampler = _uv_sampler(uv_full)
+    # on-surface check on the z = 0 centerlines
+    cpaths = uvmesh_loop_paths(uv_full, 4, n_ut, 0.10, 1.15, 120)
+    r_lo = np.cos(pi / nseg) - 1e-6
+    on_surf, nbeads = True, 0
+    for pts, _closed in cpaths:
+        for (x, y, z) in pts:
+            nbeads += 1
+            rr = sqrt(x * x + y * y)
+            if not (r_lo <= rr <= 1.0 + 1e-6
+                    and -1e-6 <= z <= 1.0 + 1e-6):
+                on_surf = False
+    # clipped bead count (margin loops past the u = 0/1 seam)
+    _car = build_carpet('SQUARE', 4, n_ut, n_ut, 0.10, 1.15, 120)
+    clipped = sum(1 for path in _car['paths'] for p in path
+                  if sampler(p[0] / n_ut, p[1] / n_ut) is None)
+    rc = build_uvmesh_cells(uv_full, 4, n_ut, samples=120)
+    rc_w = build_uvmesh_cells(uv_full, 4, n_ut, samples=120,
+                              interlace_mode='WOVEN', weave_height=0.05,
+                              height=0.03)
+    tc = build_uvmesh_tube_cells(uv_full, 4, n_ut, samples=120,
+                                 tube_sides=8)
+    rf = sum(len(c[1]) for c in rc)
+    tf = sum(len(c[1]) for c in tc)
+    rv = sum(len(c[0]) for c in rc)
+    rfin = all(all(np.isfinite(v).all() for v in c[0]) for c in rc) \
+        and all(all(np.isfinite(v).all() for v in c[0]) for c in rc_w)
+    tfin = all(all(np.isfinite(v).all() for v in c[0]) for c in tc)
+    tq = all(len(f) == 4 for c in tc for f in c[1])
+    cfin = all(np.isfinite(np.asarray(p)).all() for p, _c in cpaths)
+    good = (on_surf and nbeads > 0 and clipped > 0
+            and rf > 0 and rfin and sum(len(c[1]) for c in rc_w) > 0
+            and tf > 0 and tfin and tq
+            and len(cpaths) > 0 and cfin)
+    ok = ok and good
+    print("uvmesh cylinder : verts=%d faces=%d on-surface=%s clipped=%d "
+          "beads=%d ribbon=%d tube=%d curve=%d : %s"
+          % (rv, rf, on_surf, clipped, nbeads, rf, tf, len(cpaths),
+             good))
+
+    # gappy chart: only half the cylinder (u in [0, 0.5]) is unwrapped
+    uv_gap = _cyl_uv_tris(nseg=nseg, umax=0.5)
+    rc_g = build_uvmesh_cells(uv_gap, 4, n_ut, samples=120)
+    tc_g = build_uvmesh_tube_cells(uv_gap, 4, n_ut, samples=120,
+                                   tube_sides=8)
+    cp_g = uvmesh_loop_paths(uv_gap, 4, n_ut, samples=120)
+    rf_g = sum(len(c[1]) for c in rc_g)
+    tf_g = sum(len(c[1]) for c in tc_g)
+    g_fin = (all(all(np.isfinite(v).all() for v in c[0]) for c in rc_g)
+             and all(all(np.isfinite(v).all() for v in c[0])
+                     for c in tc_g)
+             and all(np.isfinite(np.asarray(p)).all()
+                     for p, _c in cp_g))
+    dropped_loops = len(cpaths) - len(cp_g)
+    good_g = (g_fin and 0 < rf_g < rf and 0 < tf_g < tf
+              and len(cp_g) < len(cpaths))
+    ok = ok and good_g
+    print("uvmesh gappy    : ribbon=%d(<%d) tube=%d(<%d) curve=%d(<%d) "
+          "dropped_loops=%d finite=%s : %s"
+          % (rf_g, rf, tf_g, tf, len(cp_g), len(cpaths), dropped_loops,
+             g_fin, good_g))
 
     print("RESULT:", "OK" if ok else "BAD")
