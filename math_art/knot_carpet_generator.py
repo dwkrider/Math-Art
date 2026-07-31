@@ -47,17 +47,20 @@
 # tiling, one woven medallion per tile (the torus-tiling section) --
 # a sixth weaves the carpet onto the REAL faces of a POLYHEDRON, and a
 # seventh weaves the carpet onto an ARBITRARY user-selected target mesh
-# through its UV parameterization (the UV-mesh section).
+# through its UV parameterization -- the square lattice or any uniform
+# tiling laid over the UV unit square (the UV-mesh section).
 #
 # THE UV-MESH SCAFFOLD.  The sphere, torus and polyhedral scaffolds
 # all warp the flat carpet through a CLOSED-FORM surface map; this one
 # generalizes that to any surface the user supplies as a UV-unwrapped
 # mesh.  A UV unwrap already IS a parameterization: each UV-space
 # triangle of the mesh maps a flat (u, v) patch to a world-space
-# triangle with interpolated surface normals.  So the ordinary doubly
-# periodic square carpet is built in the flat UV unit square [0, 1]^2
-# (uv_tiles cells across, plus the margin ring), and every emitted
-# vertex is warped by finding which UV triangle its (u, v) falls in,
+# triangle with interpolated surface normals.  So the flat carpet --
+# the ordinary doubly periodic square lattice, or (like the flat TILING
+# scaffold) any uniform tiling's woven medallions -- is built in the
+# flat UV unit square [0, 1]^2 (uv_tiles cells/periods across, plus the
+# margin ring), and every emitted vertex is warped by finding which UV
+# triangle its (u, v) falls in,
 # taking barycentric coordinates, and interpolating to the surface
 # point and normal -- the weave / relief z pushed along that normal,
 # exactly as the torus scaffold pushes relief radially.  Vertices whose
@@ -81,9 +84,12 @@
 # basis -- the exact analogue of the sphere's tangent chart, with the
 # edge-unfold in place of the hemisphere projection -- then lacing the
 # whole solid over-and-under with the same parity union-find.  The
-# solids are the Platonic, Archimedean and Catalan solids plus M. C.
-# Escher's Solid, the stellated rhombic dodecahedron of "Waterfall"
-# (see the polyhedral-carpet section below).
+# solids are the Platonic, Archimedean and Catalan solids, M. C.
+# Escher's Solid (the stellated rhombic dodecahedron of "Waterfall"),
+# the small stellated dodecahedron, and the great stellated
+# dodecahedron -- the last built as its CLEAN SPIKY HULL (a star-shaped
+# triangulated manifold, `_gsd_hull`) so it weaves like any other
+# star solid (see the polyhedral-carpet section below).
 #
 # THE TORUS SCAFFOLD.  A square knot carpet is literally wallpaper:
 # the Nx x Ny block plus its margin ring is a fundamental domain of
@@ -134,13 +140,15 @@ bl_info = {
                    "geodesic sphere or a Platonic / Archimedean "
                    "spherical tiling as a knot ball, woven onto the "
                    "real faces of a Platonic / Archimedean / Catalan "
-                   "solid or Escher's Solid (one medallion per face, "
+                   "solid, Escher's Solid, or the small / great "
+                   "stellated dodecahedron (one medallion per face, "
                    "laced across each edge), or wrapped seamlessly onto "
                    "a 3-D torus -- the square lattice or any wrappable "
                    "uniform tiling, one medallion per tile -- or woven "
                    "onto an arbitrary UV-unwrapped target mesh by "
-                   "sampling its UV parameterization (clipped to the UV "
-                   "islands)",
+                   "sampling its UV parameterization -- the square "
+                   "lattice or any uniform tiling over the UV square, "
+                   "clipped to the UV islands",
     "category": "Add Mesh",
 }
 
@@ -1521,18 +1529,22 @@ def _uv_sampler(uv_tris, tol=1e-6):
     return sample
 
 
-def _uvmesh_warp_cell(verts, faces, mats, sample, scale):
+def _uvmesh_warp_cell(verts, faces, mats, sample, uvmap):
     """Warp one flat (verts, faces, mats) ribbon cell onto the target
-    surface: each flat vertex (x, y, z) is sampled at UV = (x*scale,
-    y*scale); if it maps, it becomes surface_pos + z * surface_normal
-    (relief pushed along the surface normal).  Faces touching any
-    unmappable vertex are dropped and the surviving vertices are
-    re-indexed, so the cell clips to the UV islands.  Returns a compact
-    (verts, faces, mats) (possibly empty)."""
+    surface: each flat vertex (x, y, z) is mapped to UV = uvmap(x, y)
+    and sampled there; if it maps, it becomes surface_pos +
+    z * surface_normal (relief pushed along the surface normal).  Faces
+    touching any unmappable vertex are dropped and the surviving
+    vertices are re-indexed, so the cell clips to the UV islands.
+    Returns a compact (verts, faces, mats) (possibly empty).  `uvmap`
+    carries the carpet plane into UV space -- the identity-like
+    (x*scale, y*scale) for the square carpet, or the tiling's lattice
+    normalization for a uniform-tiling carpet."""
     warped = [None] * len(verts)
     for idx, p in enumerate(verts):
         z = p[2] if len(p) > 2 else 0.0
-        s = sample(p[0] * scale, p[1] * scale)
+        u, v = uvmap(p[0], p[1])
+        s = sample(u, v)
         if s is None:
             continue
         pos, nrm = s
@@ -1637,38 +1649,91 @@ def _uvmesh_tube(warped, radius, sides):
     return all_v, all_f
 
 
+def _tiling_uvmap(tiling_name, centers):
+    """A map from the flat TILING carpet plane to UV [0, 1]^2, so a
+    uniform-tiling carpet can be laid over the UV unit square exactly as
+    the square carpet is.  Flat (x, y) is taken to the tiling's LATTICE
+    coordinates (s, t) = B^-1 (x, y) (B = the tiling's period basis, as
+    the torus-tiling wrap uses), then the tile-centre bounding box of
+    those lattice coordinates is normalized to [0, 1] x [0, 1].  Working
+    in lattice space keeps the aspect near-square (nx x ny cells over a
+    unit square) whatever the tiling's world-space cell shape, and the
+    edge medallions overhang [0, 1] and so clip at the UV boundary,
+    exactly like the square carpet's margin ring."""
+    parent = tg.LAVES_OF.get(tiling_name, tiling_name)
+    b1, b2, _t = tg._base_cell(parent)
+    B = np.column_stack([np.asarray(b1, float), np.asarray(b2, float)])
+    Binv = np.linalg.inv(B)
+    ST = np.asarray(centers, float) @ Binv.T
+    smin, smax = float(ST[:, 0].min()), float(ST[:, 0].max())
+    tmin, tmax = float(ST[:, 1].min()), float(ST[:, 1].max())
+    ds = max(smax - smin, 1e-9)
+    dt = max(tmax - tmin, 1e-9)
+    b00, b01 = float(Binv[0, 0]), float(Binv[0, 1])
+    b10, b11 = float(Binv[1, 0]), float(Binv[1, 1])
+
+    def uvmap(x, y):
+        return ((b00 * x + b01 * y - smin) / ds,
+                (b10 * x + b11 * y - tmin) / dt)
+
+    return uvmap
+
+
+def _uvmesh_layout(uv_tiles, tiling, k, amp, overlap, samples, style,
+                   subdiv):
+    """Shared UV-mesh layout: the flat carpet plus its plane -> UV map
+    and loop-spacing unit.  Returns (carpet, uvmap, spacing).  For the
+    default SQUARE tiling this is the byte-for-byte square carpet
+    (`uv_tiles` cells across the unit square, k = symmetry lobes, spacing
+    1); for any other uniform tiling it is the flat TILING carpet (one
+    AUTO-lobe medallion per tile over `uv_tiles` periods) laid over the
+    unit square through `_tiling_uvmap`."""
+    n = max(1, int(uv_tiles))
+    if tiling == 'SQUARE':
+        carpet = build_carpet('SQUARE', k, n, n, amp, overlap, samples,
+                              style, subdiv)
+        scale = 1.0 / n
+        return carpet, (lambda x, y: (x * scale, y * scale)), 1.0
+    carpet = build_tiling_carpet(tiling, n, n, amp, overlap, samples,
+                                 style, subdiv)
+    uvmap = _tiling_uvmap(tiling, carpet['centers'])
+    return carpet, uvmap, float(carpet['spacing'])
+
+
 def build_uvmesh_cells(uv_tris, k=4, uv_tiles=6, amp=0.10, overlap=1.15,
                        samples=192, cord_width=0.12, style='ANGULAR',
                        subdiv=6, interlace=True, interlace_mode='FLAT',
-                       weave_height=0.05, color_by='LOOP', height=0.0):
+                       weave_height=0.05, color_by='LOOP', height=0.0,
+                       tiling='SQUARE'):
     """One merged (verts, faces, mats) ribbon cell per loop, woven onto
-    the target surface through its UV map.  The flat SQUARE carpet is
-    built over `uv_tiles` x `uv_tiles` lattice cells (plus the margin
-    ring) so it fills the UV unit square [0, 1]^2 after scaling, each
-    loop's mitered ribbon (flat cut-under interlace or the 3-D weave,
-    with optional relief) is built in the flat carpet plane exactly as
-    the flat / torus scaffolds do, and every vertex is then warped
-    through `_uv_sampler` -- ribbon width becomes surface arc length,
-    relief becomes an offset along the surface normal.  Faces landing in
-    a UV gap are dropped (clipping to the islands)."""
-    n = max(1, int(uv_tiles))
-    carpet = build_carpet('SQUARE', k, n, n, amp, overlap, samples,
-                          style, subdiv)
+    the target surface through its UV map.  With `tiling` = 'SQUARE' the
+    flat SQUARE carpet is built over `uv_tiles` x `uv_tiles` lattice
+    cells (plus the margin ring) so it fills the UV unit square [0, 1]^2
+    after scaling; with any other uniform tiling the flat TILING carpet
+    (one AUTO-lobe medallion per tile over `uv_tiles` periods) is laid
+    over the unit square instead.  Each loop's mitered ribbon (flat
+    cut-under interlace or the 3-D weave, with optional relief) is built
+    in the flat carpet plane exactly as the flat / torus scaffolds do,
+    and every vertex is then warped through `_uv_sampler` -- ribbon
+    width becomes surface arc length, relief becomes an offset along the
+    surface normal.  Faces landing in a UV gap are dropped (clipping to
+    the islands)."""
+    carpet, uvmap, d = _uvmesh_layout(uv_tiles, tiling, k, amp, overlap,
+                                      samples, style, subdiv)
     signed = loop_signed(carpet)
     sample = _uv_sampler(uv_tris)
-    scale = 1.0 / n
-    width = max(0.01, float(cord_width))
+    width = max(0.01, float(cord_width)) * d
     cells = []
     for i, path in enumerate(carpet['paths']):
         pl = [tuple(p) for p in path]
         sub = _loop_cell(pl, signed[i], width, interlace,
-                         interlace_mode, weave_height, height,
-                         color_by, i)
+                         interlace_mode, float(weave_height) * d,
+                         float(height) * d, color_by, i)
         if not sub:
             continue
         warped = []
         for cv, cf, cm in sub:
-            wv, wf, wm = _uvmesh_warp_cell(cv, cf, cm, sample, scale)
+            wv, wf, wm = _uvmesh_warp_cell(cv, cf, cm, sample, uvmap)
             if wf:
                 warped.append((wv, wf, wm))
         if not warped:
@@ -1682,22 +1747,24 @@ def build_uvmesh_cells(uv_tris, k=4, uv_tiles=6, amp=0.10, overlap=1.15,
 def build_uvmesh_tube_cells(uv_tris, k=4, uv_tiles=6, amp=0.10,
                             overlap=1.15, samples=192, style='ANGULAR',
                             subdiv=6, tube_radius=0.04, tube_sides=10,
-                            weave_height=0.06, color_by='LOOP'):
+                            weave_height=0.06, color_by='LOOP',
+                            tiling='SQUARE'):
     """One woven round rope per loop, swept on the target surface.  The
     flat woven centerline of each loop (its over/under z is forced to
     at least clear the tube diameter) is warped through the UV sampler
     so its weave z becomes an offset along the surface normal, and a
     round tube is swept along the resulting 3-D curve.  Loops that map
     fully are swept as closed tubes; loops crossing a UV gap are cut and
-    swept as open segments (clipping to the islands)."""
-    n = max(1, int(uv_tiles))
-    carpet = build_carpet('SQUARE', k, n, n, amp, overlap, samples,
-                          style, subdiv)
+    swept as open segments (clipping to the islands).  `tiling` selects
+    the flat carpet (SQUARE lattice or any uniform tiling), as
+    build_uvmesh_cells."""
+    carpet, uvmap, d = _uvmesh_layout(uv_tiles, tiling, k, amp, overlap,
+                                      samples, style, subdiv)
     signed = loop_signed(carpet)
     sample = _uv_sampler(uv_tris)
-    scale = 1.0 / n
-    tr = max(0.005, float(tube_radius))
-    lift = max(float(weave_height), 1.3 * tr)
+    tru = max(0.005, float(tube_radius))
+    tr = tru * d
+    lift = max(float(weave_height), 1.3 * tru) * d
     sides = max(3, int(tube_sides))
     cells = []
     for i, path in enumerate(carpet['paths']):
@@ -1705,7 +1772,7 @@ def build_uvmesh_tube_cells(uv_tris, k=4, uv_tiles=6, amp=0.10,
         zoff = isl._weave_zoff(pl2, True, signed[i], lift)
         warped = []
         for j in range(len(pl2)):
-            s = sample(pl2[j][0] * scale, pl2[j][1] * scale)
+            s = sample(*uvmap(pl2[j][0], pl2[j][1]))
             if s is None:
                 warped.append(None)
                 continue
@@ -1723,24 +1790,24 @@ def build_uvmesh_tube_cells(uv_tris, k=4, uv_tiles=6, amp=0.10,
 
 
 def uvmesh_loop_paths(uv_tris, k=4, uv_tiles=6, amp=0.10, overlap=1.15,
-                      samples=192, style='ANGULAR', subdiv=6):
+                      samples=192, style='ANGULAR', subdiv=6,
+                      tiling='SQUARE'):
     """Loop centerlines on the target surface for the CURVE output: the
     flat rosette centerlines (z = 0, so they lie exactly on the sampled
     surface) warped through the UV map, one closed spline per fully
     mapped loop.  A loop straddling a UV gap keeps only its mapped beads
     and is emitted as an OPEN spline (clipped to the islands); loops
-    entirely in a gap are dropped."""
-    n = max(1, int(uv_tiles))
-    carpet = build_carpet('SQUARE', k, n, n, amp, overlap, samples,
-                          style, subdiv)
+    entirely in a gap are dropped.  `tiling` selects the flat carpet
+    (SQUARE lattice or any uniform tiling), as build_uvmesh_cells."""
+    carpet, uvmap, _d = _uvmesh_layout(uv_tiles, tiling, k, amp, overlap,
+                                       samples, style, subdiv)
     sample = _uv_sampler(uv_tris)
-    scale = 1.0 / n
     out = []
     for path in carpet['paths']:
         pts = []
         dropped = False
         for p in path:
-            s = sample(p[0] * scale, p[1] * scale)
+            s = sample(*uvmap(p[0], p[1]))
             if s is None:
                 dropped = True
                 continue
@@ -2428,15 +2495,20 @@ for _sid, _label, _nota in rs.CATALAN:
 # the small stellated dodecahedron, whose {5/2} pentagram faces the
 # solids engine star-triangulates into a real (welded) surface that is
 # star-shaped from its centre, so the per-edge unfold is well defined
-# and it weaves consistently.  (The Great Dodecahedron and Great
-# Icosahedron are not star-shaped; the Great Stellated Dodecahedron's
-# engine triangulation leaves an unweldable face with no woven
-# neighbour -- all three are excluded.)
+# and it weaves consistently.  The great stellated dodecahedron is
+# offered too, but via its CLEAN SPIKY HULL (`_gsd_hull`, a genuine
+# star-shaped triangulated manifold) rather than the engine's
+# self-intersecting {5/2} render, whose triangulation leaves an
+# unweldable face with no woven neighbour.  (The Great Dodecahedron and
+# Great Icosahedron are NOT star-shaped from their centre -- a ray from
+# a face centroid re-enters the solid -- so the per-edge unfold is not
+# well defined and they remain excluded.)
 _POLY_SCAFFOLD_FAMILY['SSD'] = 'KEPLER'
 
 # the operator's enum items (module-level so the strings outlive the
 # enum): the Platonic / Archimedean / Catalan solids, Escher's Solid,
-# then the small stellated dodecahedron.  Every listed solid is
+# the small stellated dodecahedron, then the great stellated
+# dodecahedron (via its clean spiky hull).  Every listed solid is
 # star-shaped from its centroid, so the per-edge unfold is well defined
 # and the carpet weaves consistently (verified in the self-test).
 POLY_SCAFFOLD_ITEMS = [
@@ -2455,7 +2527,75 @@ POLY_SCAFFOLD_ITEMS += [
     ('SSD', "Small Stellated Dodecahedron",
      "One woven medallion per face of the small stellated dodecahedron "
      "-- the {5/2,5} Kepler-Poinsot star solid, woven over its "
-     "star-triangulated pentagram faces")]
+     "star-triangulated pentagram faces"),
+    ('GSD', "Great Stellated Dodecahedron",
+     "One woven medallion per face of the great stellated dodecahedron "
+     "({5/2,3}) -- built as its clean spiky hull, a triangular spike on "
+     "each face of an icosahedron core (32 vertices, 60 triangles), the "
+     "20 spike tips at the vertices of the dual dodecahedron")]
+
+
+def _gsd_hull():
+    """The great stellated dodecahedron ({5/2,3}) as a CLEAN SPIKY HULL:
+    a star-shaped triangulated 2-manifold (32 vertices, 60 triangles).
+    Returns (V, F).
+
+    The Kepler-Poinsot {5/2,3} is a self-intersecting star polyhedron
+    whose 12 pentagram faces cross one another; the solids engine's
+    render of it leaves faces that will not weld into a single manifold.
+    Its OUTER surface, however, is a clean star-shaped solid: an
+    icosahedron core (12 vertices, 20 triangular faces) with a
+    triangular spike erected on each of the 20 faces (one new apex per
+    face, along the outward face normal), giving 60 triangles.  The 20
+    apexes lie on the 20 icosahedral-face normals, so they are the 20
+    vertices of a regular dodecahedron -- the great stellated
+    dodecahedron's true vertex set.
+
+    Apex height.  With the icosahedron core (the 12 valleys) at unit
+    circumradius, each apex sits along the outward icosahedral-face
+    normal at the radius that reproduces the TRUE great stellated
+    dodecahedron's tip/valley proportion -- read directly from the
+    engine's authoritative {5/2,3} vertex set (its 20 outer tips vs its
+    12 inner valleys), a ratio of about 2.38.  (Capping the core at the
+    dual-dodecahedron / polar-reciprocal height instead gives far too
+    shallow a spike, ratio ~1.26 -- essentially a triakis icosahedron,
+    not the sharp great stellated dodecahedron.)  The weave needs only a
+    star-shaped manifold, not exactly planar pentagram faces."""
+    # icosahedron core, unit circumradius (12 vertices)
+    V = np.asarray(rs._icosa(), float)
+    D = np.linalg.norm(V[:, None, :] - V[None, :, :], axis=2)
+    emin = float(np.min(D[D > 1e-9]))
+    F = []
+    for i in range(12):
+        for j in range(i + 1, 12):
+            for k in range(j + 1, 12):
+                if (abs(D[i, j] - emin) < 1e-6
+                        and abs(D[j, k] - emin) < 1e-6
+                        and abs(D[i, k] - emin) < 1e-6):
+                    g = (V[i] + V[j] + V[k]) / 3.0
+                    n = np.cross(V[j] - V[i], V[k] - V[i])
+                    F.append([i, j, k] if float(n @ g) > 0.0
+                             else [i, k, j])       # CCW outward
+    # apex (spike-tip) radius = the true GSD tip/valley radius ratio,
+    # taken from the engine's authoritative {5/2,3} vertex set (its 20
+    # outer tips vs its 12 inner valleys); the core valleys stay at
+    # radius 1, so the ratio IS the apex radius.  (The earlier
+    # 1/inradius height, ~1.26, gave a far-too-shallow spike.)
+    _vg = np.asarray(rs.build_solid('KEPLER', 'GSD', 6, 1.0)[0], float)
+    _vg = _vg - _vg.mean(axis=0)
+    _rg = np.linalg.norm(_vg, axis=1)
+    _rmx = float(_rg.max())
+    c = _rmx / float(_rg[_rg < 0.6 * _rmx].max())
+    verts = [tuple(p) for p in V]
+    faces = []
+    for f in F:
+        g = V[f].mean(axis=0)
+        apex = c * g / (np.linalg.norm(g) + 1e-300)
+        p = len(verts)
+        verts.append(tuple(apex))
+        a, b, cc = f
+        faces += [[a, b, p], [b, cc, p], [cc, a, p]]
+    return np.asarray(verts, float), faces
 
 
 def _poly_solid(sid):
@@ -2463,9 +2603,12 @@ def _poly_solid(sid):
     centroid and scaled so the farthest vertex sits at radius 1.  A
     solid id pulls the Platonic / Archimedean / Catalan solid from the
     solids engine; 'ESCHER' pulls Escher's Solid (the stellated rhombic
-    dodecahedron) from the notable-polyhedra module."""
+    dodecahedron) from the notable-polyhedra module; 'GSD' builds the
+    great stellated dodecahedron's clean spiky hull (`_gsd_hull`)."""
     if sid == 'ESCHER':
         V, F = op.escher()
+    elif sid == 'GSD':
+        V, F = _gsd_hull()
     else:
         V, F, _sz = rs.build_solid(_POLY_SCAFFOLD_FAMILY[sid], sid,
                                    6, 1.0)
@@ -3463,6 +3606,13 @@ if _IN_BLENDER:
             name="UV Tiles", default=6, min=1, max=24,
             description="Carpet lattice cells across the UV unit square "
                         "[0, 1]^2 (UV Mesh lattice)")
+        uvmesh_tiling: EnumProperty(
+            name="UV Tiling", items=TORUS_TILING_ITEMS, default='SQUARE',
+            description="The uniform tiling laid over the target mesh's "
+                        "UV unit square (one woven medallion per tile); "
+                        "SQUARE is the square-lattice carpet (k-fold "
+                        "lobes), every other tiling has AUTO lobes = the "
+                        "tile's neighbour count")
         separate: BoolProperty(
             name="Separate Loops", default=False,
             description="Output each loop as its own object")
@@ -3725,9 +3875,10 @@ if _IN_BLENDER:
 
         def _execute_uvmesh(self, context):
             """Weave the carpet onto a user-selected target mesh through
-            its UV parameterization.  The flat SQUARE carpet (uv_tiles
-            cells across the UV unit square, k = symmetry lobes) is
-            sampled through the target's UV -> surface map (barycentric),
+            its UV parameterization.  The flat carpet (uvmesh_tiling over
+            uv_tiles periods of the UV unit square -- the SQUARE lattice
+            with k = symmetry lobes, or any uniform tiling with AUTO
+            lobes) is sampled through the target's UV -> surface map,
             relief / weave pushed along the interpolated surface normal;
             faces or rope segments landing in a UV gap are dropped, so
             the carpet clips to the UV islands.  CURVE emits the on-
@@ -3759,11 +3910,12 @@ if _IN_BLENDER:
                             % name)
                 return {'CANCELLED'}
             k, ut = self.symmetry, self.uv_tiles
+            tn = self.uvmesh_tiling
             label = "Knot Carpet (UV Mesh)"
             if self.output == 'CURVE':
                 paths = uvmesh_loop_paths(
                     uv_tris, k, ut, self.amplitude, self.overlap,
-                    self.samples, self.style, self.smoothness)
+                    self.samples, self.style, self.smoothness, tn)
                 out = _emit_curve(context, label, paths, operator=self)
                 if out is None:
                     self.report({'ERROR'}, "no carpet generated "
@@ -3778,13 +3930,13 @@ if _IN_BLENDER:
                     uv_tris, k, ut, self.amplitude, self.overlap,
                     self.samples, self.cord_width, self.style,
                     self.smoothness, self.interlace, self.interlace_mode,
-                    self.weave_height, self.color_by, self.height)
+                    self.weave_height, self.color_by, self.height, tn)
             else:
                 cells = build_uvmesh_tube_cells(
                     uv_tris, k, ut, self.amplitude, self.overlap,
                     self.samples, self.style, self.smoothness,
                     self.tube_radius, self.tube_sides, self.weave_height,
-                    self.color_by)
+                    self.color_by, tn)
             out = pc.emit(context, label, cells, self.separate,
                           fit=True, operator=self)
             if out is None:
@@ -3910,12 +4062,16 @@ if _IN_BLENDER:
                 lay.prop(self, 'nx')
                 lay.prop(self, 'ny')
             elif uvmesh:
-                # pick a target mesh (with UVs) and lay the square
-                # carpet over its UV unit square, k = symmetry lobes
+                # pick a target mesh (with UVs) and lay the chosen tiling
+                # carpet over its UV unit square; SQUARE keeps the k-fold
+                # square lattice (symmetry shown), every other tiling has
+                # AUTO lobes = the tile's neighbour count (symmetry hidden)
                 lay.prop_search(self, 'uv_target', context.scene,
                                 'objects')
+                lay.prop(self, 'uvmesh_tiling')
                 lay.prop(self, 'uv_tiles')
-                lay.prop(self, 'symmetry')
+                if self.uvmesh_tiling == 'SQUARE':
+                    lay.prop(self, 'symmetry')
             else:
                 lay.prop(self, 'symmetry')
                 lay.prop(self, 'nx')
@@ -4566,9 +4722,12 @@ if __name__ == "__main__":
     #      zero conflicts; and non-empty finite ribbon / tube / curve
     #      geometry (all-quad tubes and straps).  CUBE / ICOSA are
     #      convex; ESCHER is the star-shaped stellated rhombic
-    #      dodecahedron (48 spiked faces).
-    _POLY_NFACE = {'CUBE': 6, 'ICOSA': 20, 'ESCHER': 48}
-    for sid in ('CUBE', 'ICOSA', 'ESCHER'):
+    #      dodecahedron (48 spiked faces); GSD is the great stellated
+    #      dodecahedron's clean spiky hull (60 spiked triangles) -- for
+    #      it we also check the hull is a closed 2-manifold and
+    #      star-shaped (a ray from every face centroid exits once).
+    _POLY_NFACE = {'CUBE': 6, 'ICOSA': 20, 'ESCHER': 48, 'GSD': 60}
+    for sid in ('CUBE', 'ICOSA', 'ESCHER', 'GSD'):
         (cc, nn, e1p, e2p, plys, adjp, edgp,
          degp) = _polyhedral_scaffold(sid)
         sym = all(i in adjp[j] for i in adjp for j in adjp[i])
@@ -4602,16 +4761,41 @@ if __name__ == "__main__":
         tq = all(len(f) == 4 for c in tc for f in c[1])
         rq = all(len(f) == 4 for c in rc for f in c[1])
         cfin = all(np.isfinite(np.asarray(p)).all() for p, _c in cp)
+        # the GSD is offered via its clean spiky hull: additionally
+        # verify it is a closed 2-manifold (every edge shared by exactly
+        # two faces, Euler V - E + F = 2) and star-shaped (a ray from
+        # every face centroid through the centroid direction exits the
+        # surface exactly once)
+        hull_ok = True
+        if sid == 'GSD':
+            HV, HF = _gsd_hull()
+            ec = {}
+            for f in HF:
+                for a in range(len(f)):
+                    e = tuple(sorted((f[a], f[(a + 1) % len(f)])))
+                    ec[e] = ec.get(e, 0) + 1
+            E = len(ec)
+            manifold = (all(v == 2 for v in ec.values())
+                        and len(HV) - E + len(HF) == 2 and len(HF) == 60)
+            ctr = HV.mean(axis=0)
+            star = True
+            for f in HF:
+                cen = HV[f].mean(axis=0)
+                nrm = np.cross(HV[f[1]] - HV[f[0]], HV[f[2]] - HV[f[0]])
+                if float(nrm @ (cen - ctr)) <= 0.0:
+                    star = False
+            hull_ok = manifold and star
         good = (one_med and sym and fin and min_hits >= 2 and one
-                and car['consistent'] and conflicts == 0
+                and car['consistent'] and conflicts == 0 and hull_ok
                 and rf > 0 and rfin and rq and tf > 0 and tfin and tq
                 and len(cp) == nf and cfin)
         ok = ok and good
         print("PASS polyhedral %-7s : faces=%d medallions=%d "
-              "min-cross=%d one-over=%s consistent=%s conflicts=%d  "
-              "ribbon %d tube %d curve %d : %s"
+              "min-cross=%d one-over=%s consistent=%s conflicts=%d "
+              "hull=%s ribbon %d tube %d curve %d : %s"
               % (sid, nf, len(car['paths']), min_hits, one,
-                 car['consistent'], conflicts, rf, tf, len(cp), good))
+                 car['consistent'], conflicts, hull_ok, rf, tf,
+                 len(cp), good))
 
     # 11d. every offered polyhedral scaffold weaves cleanly (one
     #      medallion per face, one-over-one-under, consistent) -- so
@@ -4928,5 +5112,58 @@ if __name__ == "__main__":
           "dropped_loops=%d finite=%s : %s"
           % (rf_g, rf, tf_g, tf, len(cp_g), len(cpaths), dropped_loops,
              g_fin, good_g))
+
+    # 17b. UV-mesh with a NON-SQUARE tiling: the flat TILING carpet (one
+    #      AUTO-lobe medallion per tile over uv_tiles periods) laid over
+    #      the UV unit square and warped through the same sampler.  On the
+    #      full cylinder chart check every RIBBON / TUBE / CURVE builds
+    #      finite non-empty geometry, the z = 0 centerlines land ON the
+    #      cylinder, edge medallions still clip at the UV boundary, and a
+    #      gappy (half-cylinder) chart drops geometry (strictly fewer
+    #      faces / loops) -- clipping to the UV islands as the square
+    #      UV-mesh does.
+    for _tn in ('HEX', 'TRIHEX'):
+        rc_t = build_uvmesh_cells(uv_full, 4, n_ut, samples=120,
+                                  tiling=_tn)
+        tc_t = build_uvmesh_tube_cells(uv_full, 4, n_ut, samples=120,
+                                       tube_sides=8, tiling=_tn)
+        cp_t = uvmesh_loop_paths(uv_full, 4, n_ut, samples=120,
+                                 tiling=_tn)
+        rf_t = sum(len(c[1]) for c in rc_t)
+        tf_t = sum(len(c[1]) for c in tc_t)
+        rfin_t = all(all(np.isfinite(v).all() for v in c[0])
+                     for c in rc_t)
+        tfin_t = all(all(np.isfinite(v).all() for v in c[0])
+                     for c in tc_t)
+        tq_t = all(len(f) == 4 for c in tc_t for f in c[1])
+        cfin_t = all(np.isfinite(np.asarray(p)).all() for p, _c in cp_t)
+        on_t, nb_t = True, 0
+        for pts, _closed in cp_t:
+            for (x, y, z) in pts:
+                nb_t += 1
+                rr = sqrt(x * x + y * y)
+                if not (r_lo <= rr <= 1.0 + 1e-6
+                        and -1e-6 <= z <= 1.0 + 1e-6):
+                    on_t = False
+        # clipping: edge medallions of the tiling carpet overhang [0, 1]
+        _tcar = build_tiling_carpet(_tn, n_ut, n_ut, 0.10, 1.15, 120)
+        _tmap = _tiling_uvmap(_tn, _tcar['centers'])
+        clip_t = sum(1 for path in _tcar['paths'] for p in path
+                     if sampler(*_tmap(p[0], p[1])) is None)
+        # gappy half-cylinder drops geometry
+        rc_tg = build_uvmesh_cells(uv_gap, 4, n_ut, samples=120,
+                                   tiling=_tn)
+        cp_tg = uvmesh_loop_paths(uv_gap, 4, n_ut, samples=120,
+                                  tiling=_tn)
+        rf_tg = sum(len(c[1]) for c in rc_tg)
+        good_t = (on_t and nb_t > 0 and clip_t > 0
+                  and rf_t > 0 and rfin_t and tf_t > 0 and tfin_t
+                  and tq_t and len(cp_t) > 0 and cfin_t
+                  and 0 < rf_tg < rf_t and len(cp_tg) < len(cp_t))
+        ok = ok and good_t
+        print("uvmesh %-7s : ribbon=%d tube=%d curve=%d on-surface=%s "
+              "clipped=%d gappy-ribbon=%d(<%d) : %s"
+              % (_tn, rf_t, tf_t, len(cp_t), on_t, clip_t, rf_tg, rf_t,
+                 good_t))
 
     print("RESULT:", "OK" if ok else "BAD")
