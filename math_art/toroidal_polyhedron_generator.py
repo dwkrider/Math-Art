@@ -63,12 +63,42 @@ TOROIDS = {
               [1, 3, 10, 13, 12, 9], [9, 12, 11, 7, 8, 2],
               [0, 4, 13, 10, 8, 7], [4, 5, 6, 11, 12, 13]],
     },
+    # A genus-1 toroid all of whose faces are REGULAR polygons (every edge the
+    # same length): 6 triangles + 9 squares + 9 hexagons, C3v -- the kind of
+    # regular-faced toroid catalogued by B. M. Stewart.  Edge-equality (which
+    # this satisfies exactly, spread ~1e-8) determines the solid, so these
+    # clean coordinates are the canonical object, independently verified here.
+    "REGULAR": {
+        "name": "Regular-Faced Toroid",
+        "V": [(0.5, 0.0, 1.0), (0.5, 0.0, -1.0), (-0.5, 0.0, 1.0),
+              (-0.5, 0.0, -1.0), (1.0, 0.5, 0.0), (1.0, -0.5, 0.0),
+              (-1.0, 0.5, 0.0), (-1.0, -0.5, 0.0), (0.0, 1.0, 0.5),
+              (0.0, 1.0, -0.5), (0.0, -1.0, 0.5), (0.0, -1.0, -0.5),
+              (0.0, 0.5, 1.0), (0.0, 0.5, -1.0), (0.0, -0.5, 1.0),
+              (0.0, -0.5, -1.0), (1.0, 0.0, 0.5), (1.0, 0.0, -0.5),
+              (-1.0, 0.0, 0.5), (-1.0, 0.0, -0.5), (0.5, 1.0, 0.0),
+              (0.5, -1.0, 0.0), (-0.5, 1.0, 0.0), (-0.5, -1.0, 0.0),
+              (-1 / 6, -1 / 6, -5 / 6), (5 / 6, -1 / 6, 1 / 6),
+              (-1 / 6, 5 / 6, 1 / 6), (-1 / 3, 1 / 6, 1 / 3),
+              (-1 / 3, -1 / 3, -1 / 6), (1 / 6, -1 / 3, 1 / 3)],
+        "F": [[0, 14, 10, 21, 5, 16], [0, 16, 4, 20, 8, 12],
+              [1, 24, 28, 29, 25, 17], [1, 17, 5, 21, 11, 15],
+              [2, 12, 8, 22, 6, 18], [3, 15, 11, 23, 7, 19],
+              [3, 19, 6, 22, 9, 13], [4, 25, 29, 27, 26, 20],
+              [9, 26, 27, 28, 24, 13], [0, 12, 2, 14], [1, 15, 3, 13],
+              [2, 27, 29, 14], [4, 16, 5, 17], [6, 19, 7, 18],
+              [7, 28, 27, 18], [8, 20, 9, 22], [10, 29, 28, 23],
+              [10, 23, 11, 21], [24, 1, 13], [25, 4, 17], [26, 9, 20],
+              [27, 2, 18], [28, 7, 23], [29, 10, 14]],
+    },
 }
 
 TOROID_ITEMS = [("CSASZAR", "Csaszar Polyhedron", "7 vertices, 14 "
                  "triangles, K7 (no diagonals)"),
                 ("SZILASSI", "Szilassi Polyhedron", "7 hexagons, every "
-                 "pair sharing an edge (dual of Csaszar)")]
+                 "pair sharing an edge (dual of Csaszar)"),
+                ("REGULAR", "Regular-Faced Toroid", "genus-1 toroid with "
+                 "all regular faces (6 triangles + 9 squares + 9 hexagons)")]
 
 
 def build_toroid(kind):

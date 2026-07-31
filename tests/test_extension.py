@@ -319,6 +319,8 @@ OPS = [
      lambda: bpy.ops.mesh.toroidal_polyhedron_add(solid='CSASZAR')),
     ("toroid szilassi",
      lambda: bpy.ops.mesh.toroidal_polyhedron_add(solid='SZILASSI')),
+    ("toroid regular-faced",
+     lambda: bpy.ops.mesh.toroidal_polyhedron_add(solid='REGULAR')),
     ("polyhedral torus prism",
      lambda: bpy.ops.mesh.polyhedral_torus_add(segments=10, sides=4)),
     ("polyhedral torus antiprism",
