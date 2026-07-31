@@ -284,6 +284,21 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         solid: EnumProperty(name="Solid", items=ITEMS)
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", ""),
+                   ('LEONARDO', "Leonardo (da Vinci)",
+                    "Open-faced panels via the shared Leonardo Style "
+                    "modifier (as in Leonardo's drawings for Pacioli's "
+                    "De divina proportione)"),
+                   ('WIRE', "Wireframe", "Wireframe modifier")],
+            default='SOLID')
+        border: FloatProperty(
+            name="Border", default=0.3, min=0.02, max=0.95,
+            description="Leonardo face frame width (fraction of the face)")
+        thickness: FloatProperty(
+            name="Thickness", default=0.05, min=0.001, max=1.0,
+            description="Panel / strut thickness")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def execute(self, context):
@@ -301,8 +316,29 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
+            if self.style == 'LEONARDO':
+                try:
+                    from . import leonardo_style
+                except ImportError:
+                    import leonardo_style
+                leonardo_style.add_modifier(obj, self.border, self.thickness)
+            elif self.style == 'WIRE':
+                mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
+                mod.thickness = self.thickness
+                mod.use_even_offset = False
             self.report({'INFO'}, f"{label}: V={len(V)} F={len(F)}")
             return {'FINISHED'}
+
+        def draw(self, context):
+            lay = self.layout
+            lay.use_property_split = True
+            lay.prop(self, 'solid')
+            lay.prop(self, 'style')
+            if self.style == 'LEONARDO':
+                lay.prop(self, 'border')
+            if self.style != 'SOLID':
+                lay.prop(self, 'thickness')
+            lay.prop(self, 'scale')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.notable_polyhedron_add",
