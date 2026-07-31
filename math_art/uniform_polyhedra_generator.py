@@ -394,6 +394,7 @@ def build_dual(V, faces, big=6.0):
         raise RuntimeError("duals need NumPy")
     F = [f for f, _d in faces]
     poles = []
+    inf_dirs = []                        # faces through the centre
     for f in F:
         pts = [np.array(V[i], float) for i in f]
         c = sum(pts) / len(pts)
@@ -402,7 +403,20 @@ def build_dual(V, faces, big=6.0):
             n += np.cross(pts[i] - c, pts[(i + 1) % len(f)] - c)
         n = n / (np.linalg.norm(n) or 1.0)
         k = float(np.dot(n, pts[0]))
-        poles.append(tuple(n * big) if abs(k) < 1e-6 else tuple(n / k))
+        if abs(k) < 1e-6:                # pole at infinity -- fix up later
+            inf_dirs.append(len(poles))
+            poles.append(np.array(n))
+        else:
+            poles.append(np.array(n / k))
+    # place the "infinite" hemipolyhedron vertices a bounded distance out,
+    # relative to the finite body, so the dual still fits a 2 m cube
+    finite = [p for i, p in enumerate(poles) if i not in set(inf_dirs)]
+    rf = max((float(np.linalg.norm(p)) for p in finite), default=1.0)
+    for i in inf_dirs:
+        poles[i] = poles[i] * (big if big < rf else 1.6 * rf)
+    # the reciprocation centre is the origin; scale to fit a 2 m cube
+    mx = max((abs(float(c)) for p in poles for c in p), default=1.0)
+    poles = [tuple(p / mx) for p in poles]
     vf = defaultdict(list)
     for fi, f in enumerate(F):
         for v in f:
@@ -441,13 +455,30 @@ def build_dual(V, faces, big=6.0):
     return poles, out
 
 
+def valid_star_step(p, q):
+    """Coerce (p, q) to a valid star-polygon step: 1 <= q < p/2, coprime
+    with p ({p/q} and {p/(p-q)} are the same star, so q is folded into
+    range; a non-coprime q is nudged to the nearest coprime, falling back
+    to 1 = a convex prism)."""
+    q = max(1, min(int(q), p - 1))
+    if q > p / 2:                        # {p/q} == {p/(p-q)}
+        q = p - q
+    q = max(1, q)
+    if math.gcd(p, q) != 1:
+        for delta in range(1, p):
+            for cand in (q - delta, q + delta):
+                if 1 <= cand <= p // 2 and math.gcd(p, cand) == 1:
+                    return cand
+        return 1
+    return q
+
+
 def build_star_prism(p, q, scale=1.0):
     """Uniform {p/q} star prism: two star polygon bases joined by squares
-    (q = 1 gives an ordinary convex prism).  Returns (verts, faces) with
-    each face (indices, density)."""
-    g = math.gcd(p, q)
-    if g != 1 or not (1 <= q < p / 2):
-        raise ValueError("need coprime p, q with 1 <= q < p/2")
+    (q = 1 gives an ordinary convex prism).  (p, q) is coerced to a valid
+    star polygon.  Returns (verts, faces) with each face (indices,
+    density)."""
+    q = valid_star_step(p, q)
     R = 1.0 / (2 * math.sin(q * math.pi / p)) * scale
     top = [(R * math.cos(2 * math.pi * k / p),
             R * math.sin(2 * math.pi * k / p), 0.5 * scale)
@@ -703,13 +734,14 @@ if _IN_BLENDER:
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def execute(self, context):
-            try:
-                V, F = build_star_prism(self.sides, self.step, self.scale)
-            except ValueError as e:
-                self.report({'ERROR'}, str(e))
-                return {'CANCELLED'}
-            _make_object(context, f"Star Prism {{{self.sides}/{self.step}}}",
+            q = valid_star_step(self.sides, self.step)
+            V, F = build_star_prism(self.sides, q, self.scale)
+            _make_object(context, f"Star Prism {{{self.sides}/{q}}}",
                          V, F, self.coloring == 'SIDES')
+            if q != self.step:
+                self.report({'INFO'},
+                            f"{{{self.sides}/{self.step}}} is not a star "
+                            f"polygon; built {{{self.sides}/{q}}}")
             return {'FINISHED'}
 
     def _menu_func(self, context):
