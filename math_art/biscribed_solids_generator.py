@@ -1,0 +1,724 @@
+
+# Exact biscribed forms of the symmetric (Archimedean-type) solids.
+#
+# A biscribed solid has ALL vertices on a circumsphere and ALL faces tangent
+# to a CONCENTRIC insphere.  For a vertex-transitive symmetric family the
+# circumsphere is automatic, so biscribing reduces to equalizing the
+# face-orbit plane distances with the family's shape parameter(s):
+#
+#   * Truncation family (tT tC tO tD tI): one parameter t, the truncation
+#     depth (new vertex = (1-t)A + t.B along each base edge; t = 1/2 is full
+#     rectification).  The base-face plane distance is constant in t, the
+#     vertex-truncation-face distance varies; a biscribed form exists iff
+#     g(t) = d_vertexface(t) - d_baseface has a root in (0, 1/2).  Solved by
+#     bisection; no sign change => NO biscribed form exists.
+#   * Rectified solids (cuboctahedron, icosidodecahedron): zero parameters,
+#     two unequal face-orbit distances => NO biscribed form.
+#   * Omnitruncates (truncated cuboctahedron / icosidodecahedron): faces lie
+#     in planes perpendicular to the 2-, 3- and n-fold symmetry axes, with
+#     the three plane offsets (d2 : d3 : dn) as the shape parameters (mod
+#     scale).  Each vertex is the meet of one plane of each type, so setting
+#     d2 = d3 = dn = 1 IS the biscribed form, exactly.
+#   * Snubs (snub cube, snub dodecahedron): vertex orbit of a point p on the
+#     sphere under the pure rotation group (2 parameters mod scale); three
+#     face orbits (n-gons, axis triangles, generic triangles) give two
+#     equalities g(p) = 0, solved by a damped Newton iteration.
+#
+# Duals: polar reciprocation about the sphere of radius rho = sqrt(R*r)
+# carries a biscribed solid to its dual, again biscribed with the same
+# (R, r) -- so tetrakis hexahedron, pentakis dodecahedron, disdyakis solids
+# and the pentagonal icositetra-/hexecontahedron come for free.
+#
+# References:
+# - D. McCooey, "Biscribed (Non-)Chiral Solids", Visual Polyhedra,
+#   dmccooey.com/polyhedra/BiscribedNonChiral.html (catalog matched here).
+# - G. W. Hart, "Calculating Canonical Polyhedra", Mathematica in Education
+#   and Research 6(3), 1997 (canonical/midscribed background).
+# - I. Rivin, "A characterization of ideal polyhedra in hyperbolic 3-space"
+#   (inscribability), arXiv:math/9210218.
+
+bl_info = {
+    "name": "Biscribed Solids",
+    "author": "Math Art project",
+    "version": (1, 0, 0),
+    "blender": (4, 2, 0),
+    "location": "View3D > Add > Mesh > Math Art > Polyhedra",
+    "description": "The biscribed Archimedean-type solids and their duals "
+                   "(vertices on a circumsphere, faces tangent to a "
+                   "concentric insphere)",
+    "category": "Add Mesh",
+}
+
+import itertools
+import math
+
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+PHI = (1 + 5 ** 0.5) / 2
+
+
+# --------------------------------------------------------------------------
+# Platonic seeds
+# --------------------------------------------------------------------------
+
+def _platonic(sym):
+    if sym == 'T':
+        V = [(1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)]
+        F = [[0, 1, 2], [0, 2, 3], [0, 3, 1], [1, 3, 2]]
+    elif sym == 'C':
+        V = [(x, y, z) for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)]
+        F = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1],
+             [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
+    elif sym == 'O':
+        V = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0),
+             (0, 0, 1), (0, 0, -1)]
+        F = [[0, 2, 4], [2, 1, 4], [1, 3, 4], [3, 0, 4],
+             [2, 0, 5], [1, 2, 5], [3, 1, 5], [0, 3, 5]]
+    elif sym == 'I':
+        V = []
+        for a in (-1, 1):
+            for b in (-PHI, PHI):
+                V += [(0, a, b), (a, b, 0), (b, 0, a)]
+        F = convex_hull_faces(np.array(V, float))
+    elif sym == 'D':
+        V = [(x, y, z) for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)]
+        for a in (-1 / PHI, 1 / PHI):
+            for b in (-PHI, PHI):
+                V += [(0, a, b), (a, b, 0), (b, 0, a)]
+        F = convex_hull_faces(np.array(V, float))
+    else:
+        raise ValueError(f"unknown Platonic {sym!r}")
+    return np.array(V, float), [list(f) for f in F]
+
+
+# --------------------------------------------------------------------------
+# Convex hull (plane enumeration, vectorized; fine up to ~100 points)
+# --------------------------------------------------------------------------
+
+def convex_hull_faces(V, tol=1e-7):
+    """Faces of the convex hull of centred points V, merged into maximal
+    planar polygons, each wound CCW seen from outside."""
+    V = np.asarray(V, float)
+    n = len(V)
+    idx = np.array(list(itertools.combinations(range(n), 3)))
+    A, B, C = V[idx[:, 0]], V[idx[:, 1]], V[idx[:, 2]]
+    N = np.cross(B - A, C - A)
+    ln = np.linalg.norm(N, axis=1)
+    ok = ln > 1e-9
+    N, A = N[ok] / ln[ok, None], A[ok]
+    d = np.einsum('ij,ij->i', N, A)
+    flip = d < 0
+    N[flip] *= -1
+    d[flip] *= -1
+    sup = (N @ V.T).max(axis=1) <= d + tol
+    N, d = N[sup], d[sup]
+    keys = np.round(np.column_stack([N, d]), 6)
+    _, uniq = np.unique(keys, axis=0, return_index=True)
+    faces = []
+    for i in uniq:
+        on = np.where(np.abs(V @ N[i] - d[i]) < tol)[0]
+        faces.append(_order_around(V, list(on), N[i]))
+    return faces
+
+
+def _order_around(V, ids, u):
+    """Order vertex ids CCW (seen from outside) about outward direction u."""
+    u = np.asarray(u, float)
+    u = u / np.linalg.norm(u)
+    ref = np.array([1.0, 0.0, 0.0])
+    if abs(u @ ref) > 0.9:
+        ref = np.array([0.0, 1.0, 0.0])
+    e1 = np.cross(u, ref)
+    e1 /= np.linalg.norm(e1)
+    e2 = np.cross(u, e1)          # (e1, e2, u) right-handed
+    c = V[ids].mean(axis=0)
+    ang = [math.atan2((V[i] - c) @ e2, (V[i] - c) @ e1) for i in ids]
+    ordered = [i for _, i in sorted(zip(ang, ids))]
+    # (e1, e2, u) right-handed and increasing atan2 => CCW from outside
+    return ordered
+
+
+# --------------------------------------------------------------------------
+# Mesh measurements
+# --------------------------------------------------------------------------
+
+def _face_planes(V, F):
+    """(unit outward Newell normal, centroid, plane distance) per face."""
+    out = []
+    for f in F:
+        P = V[list(f)]
+        nrm = np.zeros(3)
+        m = len(f)
+        for i in range(m):
+            p, q = P[i], P[(i + 1) % m]
+            nrm += np.cross(p, q)
+        nrm /= np.linalg.norm(nrm)
+        c = P.mean(axis=0)
+        if nrm @ c < 0:
+            nrm = -nrm
+        out.append((nrm, c, nrm @ c))
+    return out
+
+
+def verify(V, F):
+    """(std vertex radii, std face-plane distances, max non-planarity)."""
+    V = np.asarray(V, float)
+    rad = np.linalg.norm(V, axis=1)
+    planes = _face_planes(V, F)
+    dist = np.array([d for _, _, d in planes])
+    planar = max(np.max(np.abs((V[list(f)] - c) @ n))
+                 for f, (n, c, _) in zip(F, planes))
+    return rad.std(), dist.std(), planar
+
+
+# --------------------------------------------------------------------------
+# Truncation family  tT tC tO tD tI  (and rectified at t = 1/2)
+# --------------------------------------------------------------------------
+
+def _truncation_mesh(sym, t):
+    """Truncate Platonic `sym` at depth t.  Returns (V, F_orig, F_vert):
+    the shrunken base faces and the vertex-truncation faces."""
+    V0, F0 = _platonic(sym)
+    nv, verts = {}, []
+    for f in F0:
+        m = len(f)
+        for i in range(m):
+            a, b = f[i], f[(i + 1) % m]
+            for e in ((a, b), (b, a)):
+                if e not in nv:
+                    nv[e] = len(verts)
+                    verts.append((1 - t) * V0[e[0]] + t * V0[e[1]])
+    F_orig = []
+    nbrs = {}
+    for f in F0:
+        m = len(f)
+        face = []
+        for i in range(m):
+            a, b = f[i], f[(i + 1) % m]
+            face += [nv[(a, b)], nv[(b, a)]]
+            nbrs.setdefault(a, set()).add(b)
+            nbrs.setdefault(b, set()).add(a)
+        F_orig.append(face)
+    V = np.array(verts)
+    F_vert = [_order_around(V, [nv[(a, b)] for b in nbrs[a]], V0[a])
+              for a in range(len(V0))]
+    return V, F_orig, F_vert
+
+
+def _trunc_distances(sym, t):
+    V, Fo, Fv = _truncation_mesh(sym, t)
+    d_o = np.array([d for _, _, d in _face_planes(V, Fo)])
+    d_v = np.array([d for _, _, d in _face_planes(V, Fv)])
+    return V, Fo, Fv, d_o.mean(), d_v.mean()
+
+
+def solve_truncation(sym):
+    """Bisection on g(t) = d_vertexface - d_baseface over (0, 1/2)."""
+    def g(t):
+        _, _, _, do, dv = _trunc_distances(sym, t)
+        return dv - do
+
+    lo, hi = 1e-6, 0.499
+    glo, ghi = g(lo), g(hi)
+    if glo * ghi > 0:
+        _, _, _, do, dv = _trunc_distances(sym, 0.25)
+        return {'exists': False, 'why': (
+            f"no root: d_vertexface stays {'above' if glo > 0 else 'below'} "
+            f"d_baseface over t in (0, 1/2)  (at t=1/4: {dv:.4f} vs {do:.4f})")}
+    for _ in range(200):
+        mid = 0.5 * (lo + hi)
+        gm = g(mid)
+        if glo * gm <= 0:
+            hi, ghi = mid, gm
+        else:
+            lo, glo = mid, gm
+    t = 0.5 * (lo + hi)
+    V, Fo, Fv, do, dv = _trunc_distances(sym, t)
+    R = np.linalg.norm(V, axis=1).max()
+    V = V / R
+    r = 0.5 * (do + dv) / R
+    return {'exists': True, 'param': f"t*={t:.6f}", 't': t,
+            'verts': V, 'faces': [list(f) for f in Fo + Fv], 'r_over_R': r}
+
+
+def solve_rectified(sym):
+    """Rectified solid (t = 1/2 fixed): zero shape parameters, two face
+    orbits.  Report the two (unequal) distances after scaling R = 1."""
+    V, Fo, Fv, do, dv = _trunc_distances(sym, 0.5)
+    R = np.linalg.norm(V, axis=1).max()
+    return {'exists': False, 'why': (
+        f"rectified: no shape parameter; face-orbit distances differ "
+        f"({do / R:.5f} vs {dv / R:.5f} at R=1)")}
+
+
+# --------------------------------------------------------------------------
+# Symmetry groups and axes
+# --------------------------------------------------------------------------
+
+def _rot(axis, angle):
+    u = np.asarray(axis, float)
+    u = u / np.linalg.norm(u)
+    K = np.array([[0, -u[2], u[1]], [u[2], 0, -u[0]], [-u[1], u[0], 0]])
+    return np.eye(3) + math.sin(angle) * K + (1 - math.cos(angle)) * (K @ K)
+
+
+def _closure(gens, expect):
+    def key(M):
+        return tuple(np.round(M, 6).ravel())
+    mats = [np.eye(3)]
+    seen = {key(mats[0])}
+    grew = True
+    while grew:
+        grew = False
+        for A in list(mats):
+            for G in gens:
+                M = G @ A
+                k = key(M)
+                if k not in seen:
+                    seen.add(k)
+                    mats.append(M)
+                    grew = True
+    assert len(mats) == expect, f"group closure gave {len(mats)}"
+    return mats
+
+
+def _sym_data(sym):
+    """For octahedral ('O') or icosahedral ('I') symmetry: rotation group,
+    n-/3-/2-fold axis directions, and one mutually adjacent corner triple
+    (cn, c3, c2) of the fundamental spherical triangle."""
+    V, F = _platonic(sym)
+    nfold = 4 if sym == 'O' else 5
+    Vn = V / np.linalg.norm(V, axis=1, keepdims=True)
+    dirs_n = list(Vn)
+    dirs_3 = []
+    for f in F:
+        c = V[list(f)].mean(axis=0)
+        dirs_3.append(c / np.linalg.norm(c))
+    edges = {tuple(sorted((f[i], f[(i + 1) % len(f)])))
+             for f in F for i in range(len(f))}
+    dirs_2 = []
+    for a, b in sorted(edges):
+        m = 0.5 * (V[a] + V[b])
+        dirs_2.append(m / np.linalg.norm(m))
+    f0 = next(f for f in F if 0 in f)
+    cn = Vn[0]
+    c3 = V[list(f0)].mean(axis=0)
+    c3 = c3 / np.linalg.norm(c3)
+    b = f0[(f0.index(0) + 1) % len(f0)]
+    c2 = 0.5 * (V[0] + V[b])
+    c2 = c2 / np.linalg.norm(c2)
+    order = 24 if sym == 'O' else 60
+    rots = _closure([_rot(cn, 2 * math.pi / nfold),
+                     _rot(c3, 2 * math.pi / 3)], order)
+    return {'rots': rots, 'nfold': nfold, 'dirs_n': dirs_n,
+            'dirs_3': dirs_3, 'dirs_2': dirs_2, 'corners': (cn, c3, c2)}
+
+
+# --------------------------------------------------------------------------
+# Omnitruncates (truncated cuboctahedron / icosidodecahedron) -- exact
+# --------------------------------------------------------------------------
+
+def solve_omnitruncate(sym):
+    """Faces sit in planes u.x = d perpendicular to the 2-, 3- and n-fold
+    axes; the offsets (d2:d3:dn) are the two shape parameters (mod scale).
+    d2 = d3 = dn = 1 is the biscribed form, exactly."""
+    S = _sym_data(sym)
+    cn, c3, c2 = S['corners']
+    v = np.linalg.solve(np.array([cn, c3, c2]), np.ones(3))
+    full = S['rots'] + [-R for R in S['rots']]        # Oh / Ih
+    pts = np.array([R @ v for R in full])
+    uniq = np.unique(np.round(pts, 9), axis=0)
+    n_expected = len(full)
+    assert len(uniq) == n_expected, "omnitruncate orbit not free"
+    V = pts
+    faces = []
+    for u, size in ([(d, 2 * S['nfold']) for d in S['dirs_n']] +
+                    [(d, 6) for d in S['dirs_3']] +
+                    [(d, 4) for d in S['dirs_2']]):
+        on = np.where(V @ u > 1 - 1e-6)[0]
+        assert len(on) == size, f"face size {len(on)} != {size}"
+        assert np.max(V @ u) <= 1 + 1e-9        # supporting plane
+        faces.append(_order_around(V, list(on), u))
+    R = np.linalg.norm(v)
+    return {'exists': True, 'param': "d2=d3=dn (exact)",
+            'verts': V / R, 'faces': faces, 'r_over_R': 1.0 / R}
+
+
+# --------------------------------------------------------------------------
+# Snubs (snub cube / snub dodecahedron) -- 2-parameter Newton
+# --------------------------------------------------------------------------
+
+def _snub_orbit(S, p):
+    return np.array([R @ p for R in S['rots']])
+
+
+def _classify_snub_faces(S, faces, V):
+    """Split hull faces into (n-gons, axis triangles, generic triangles)."""
+    big, ax, gen = [], [], []
+    d3 = np.array(S['dirs_3'])
+    for f in faces:
+        if len(f) > 3:
+            big.append(f)
+            continue
+        c = V[list(f)].mean(axis=0)
+        c = c / np.linalg.norm(c)
+        ax.append(f) if np.max(np.abs(d3 @ c)) > 1 - 1e-9 else gen.append(f)
+    return big, ax, gen
+
+
+def solve_snub(sym):
+    """Vertex orbit of p (2 sphere parameters) under the rotation group;
+    equalize the three face-orbit distances by damped Newton on g(p)."""
+    S = _sym_data(sym)
+    cn, c3, c2 = S['corners']
+    nbig = 6 if sym == 'O' else 12
+    nax = 8 if sym == 'O' else 20
+    ngen = 24 if sym == 'O' else 60
+    hist_want = {S['nfold']: nbig, 3: nax + ngen}
+
+    # --- initial guess: barycentric grid over the fundamental triangle,
+    #     keep the sample with snub combinatorics and smallest |g|
+    best = None
+    n = 7
+    for i in range(1, n - 1):
+        for j in range(1, n - i):
+            k = n - i - j
+            p = i * cn + j * c3 + k * c2
+            p = p / np.linalg.norm(p)
+            V = _snub_orbit(S, p)
+            faces = convex_hull_faces(V)
+            hist = {}
+            for f in faces:
+                hist[len(f)] = hist.get(len(f), 0) + 1
+            if hist != hist_want:
+                continue
+            big, ax, gen = _classify_snub_faces(S, faces, V)
+            if (len(big), len(ax), len(gen)) != (nbig, nax, ngen):
+                continue
+            g = _snub_g(S, p, (big, ax, gen))
+            if best is None or np.linalg.norm(g) < best[0]:
+                best = (np.linalg.norm(g), p, (big, ax, gen))
+    if best is None:
+        return {'exists': False, 'why': "no snub-type region found"}
+    _, p, orbits = best
+
+    # --- damped Newton with central differences, topology fixed
+    h = 1e-6
+    for _ in range(100):
+        g0 = _snub_g(S, p, orbits)
+        if np.max(np.abs(g0)) < 1e-13:
+            break
+        ref = np.array([1.0, 0, 0]) if abs(p[0]) < 0.9 else np.array([0, 1.0, 0])
+        e1 = np.cross(p, ref)
+        e1 /= np.linalg.norm(e1)
+        e2 = np.cross(p, e1)
+        J = np.empty((2, 2))
+        for c, e in enumerate((e1, e2)):
+            pp = p + h * e
+            pm = p - h * e
+            gp = _snub_g(S, pp / np.linalg.norm(pp), orbits)
+            gm = _snub_g(S, pm / np.linalg.norm(pm), orbits)
+            J[:, c] = (gp - gm) / (2 * h)
+        step = np.linalg.solve(J, -g0)
+        s = 1.0
+        while s > 1e-8:
+            pn = p + s * (step[0] * e1 + step[1] * e2)
+            pn /= np.linalg.norm(pn)
+            if np.linalg.norm(_snub_g(S, pn, orbits)) < np.linalg.norm(g0):
+                p = pn
+                break
+            s *= 0.5
+        else:
+            return {'exists': False, 'why': "Newton stalled"}
+    else:
+        return {'exists': False, 'why': "Newton did not converge"}
+
+    V = _snub_orbit(S, p)                       # |p| = 1 -> R = 1 exactly
+    big, ax, gen = orbits
+    faces = big + ax + gen
+    # confirm the fixed topology still is the convex hull
+    for nrm, _, d in _face_planes(V, faces):
+        assert np.max(V @ nrm) <= d + 1e-9, "left the snub topology cell"
+    r = np.mean([d for _, _, d in _face_planes(V, faces)])
+    return {'exists': True, 'param': "Newton on 2 sphere params",
+            'verts': V, 'faces': faces, 'r_over_R': r}
+
+
+def _snub_g(S, p, orbits):
+    V = _snub_orbit(S, p)
+    dm = [np.mean([d for _, _, d in _face_planes(V, fs)]) for fs in orbits]
+    return np.array([dm[0] - dm[1], dm[0] - dm[2]])
+
+
+# --------------------------------------------------------------------------
+# Duals by polar reciprocation (rho^2 = R*r; biscribed -> biscribed dual)
+# --------------------------------------------------------------------------
+
+def polar_dual(V, F, r_over_R):
+    """Biscribed solid scaled to R=1 -> its dual, also biscribed with the
+    same R=1 and r.  Dual vertices are the poles of the face planes; dual
+    faces are the ordered face cycles around each vertex."""
+    V = np.asarray(V, float)
+    planes = _face_planes(V, F)
+    rho2 = 1.0 * r_over_R                       # R * r with R = 1
+    DV = np.array([n * (rho2 / d) for n, _, d in planes])
+    e2f, nxt = {}, {}
+    for fi, f in enumerate(F):
+        m = len(f)
+        for i in range(m):
+            a, b = f[i], f[(i + 1) % m]
+            e2f[(a, b)] = fi
+            nxt[(fi, a)] = b
+    v2f = {}
+    for fi, f in enumerate(F):
+        for a in f:
+            v2f.setdefault(a, fi)
+    DF = []
+    for a in range(len(V)):
+        cyc, fi = [], v2f[a]
+        while True:
+            cyc.append(fi)
+            fi = e2f[(nxt[(fi, a)], a)]
+            if fi == v2f[a]:
+                break
+        DF.append(cyc)
+    # rescale so the dual circumsphere is 1 (it already is: |DV| = rho2/r = 1)
+    R = np.linalg.norm(DV, axis=1).max()
+    return DV / R, [list(f) for f in DF], rho2 / R
+
+
+# --------------------------------------------------------------------------
+# Public API
+# --------------------------------------------------------------------------
+
+_SOLVERS = {
+    'truncated_tetrahedron':       lambda: solve_truncation('T'),
+    'truncated_cube':              lambda: solve_truncation('C'),
+    'truncated_octahedron':        lambda: solve_truncation('O'),
+    'truncated_dodecahedron':      lambda: solve_truncation('D'),
+    'truncated_icosahedron':       lambda: solve_truncation('I'),
+    'cuboctahedron':               lambda: solve_rectified('C'),
+    'icosidodecahedron':           lambda: solve_rectified('D'),
+    'truncated_cuboctahedron':     lambda: solve_omnitruncate('O'),
+    'truncated_icosidodecahedron': lambda: solve_omnitruncate('I'),
+    'snub_cube':                   lambda: solve_snub('O'),
+    'snub_dodecahedron':           lambda: solve_snub('I'),
+}
+
+
+def _norm_name(name):
+    return name.strip().lower().replace(' ', '_').replace('-', '_')
+
+
+def biscribe_exact(name):
+    """Exact biscribed form of the named solid, or None if none exists.
+    Returns (verts, faces, r_over_R) with circumradius scaled to 1:
+    verts = list of (x, y, z), faces = list of vertex-index tuples."""
+    key = _norm_name(name)
+    if key not in _SOLVERS:
+        raise ValueError(f"unknown solid {name!r}; know {sorted(_SOLVERS)}")
+    res = _SOLVERS[key]()
+    if not res['exists']:
+        return None
+    V, F = res['verts'], res['faces']
+    return ([tuple(map(float, v)) for v in V],
+            [tuple(f) for f in F], float(res['r_over_R']))
+
+
+def biscribe_exact_dual(name):
+    """Dual of the biscribed solid (polar reciprocation about rho^2 = R*r),
+    itself biscribed with the same r/R.  None if the base has no
+    biscribed form."""
+    base = biscribe_exact(name)
+    if base is None:
+        return None
+    V, F, r = polar_dual(np.array(base[0]), [list(f) for f in base[1]],
+                         base[2])
+    return ([tuple(map(float, v)) for v in V],
+            [tuple(f) for f in F], float(r))
+
+
+# --------------------------------------------------------------------------
+# Blender layer
+# --------------------------------------------------------------------------
+
+# (id, label, base-solver name, is_dual) -- the 8 non-chiral biscribed
+# solids + the 2 chiral snubs + their duals (McCooey's catalog).
+_BISCRIBED = [
+    ('tO', "Biscribed Truncated Octahedron", 'truncated_octahedron', False),
+    ('tI', "Biscribed Truncated Icosahedron", 'truncated_icosahedron', False),
+    ('tCO', "Biscribed Truncated Cuboctahedron",
+     'truncated_cuboctahedron', False),
+    ('tID', "Biscribed Truncated Icosidodecahedron",
+     'truncated_icosidodecahedron', False),
+    ('sC', "Biscribed Snub Cube", 'snub_cube', False),
+    ('sD', "Biscribed Snub Dodecahedron", 'snub_dodecahedron', False),
+    ('kH', "Biscribed Tetrakis Hexahedron", 'truncated_octahedron', True),
+    ('kD', "Biscribed Pentakis Dodecahedron", 'truncated_icosahedron', True),
+    ('mD', "Biscribed Disdyakis Dodecahedron",
+     'truncated_cuboctahedron', True),
+    ('mT', "Biscribed Disdyakis Triacontahedron",
+     'truncated_icosidodecahedron', True),
+    ('pI', "Biscribed Pentagonal Icositetrahedron", 'snub_cube', True),
+    ('pH', "Biscribed Pentagonal Hexecontahedron",
+     'snub_dodecahedron', True),
+]
+
+try:
+    import bpy
+    from bpy.props import EnumProperty, FloatProperty
+    _IN_BLENDER = True
+except ImportError:
+    _IN_BLENDER = False
+
+
+if _IN_BLENDER:
+
+    _PALETTE = {3: (0.90, 0.36, 0.23), 4: (0.27, 0.52, 0.79),
+                5: (0.30, 0.69, 0.42), 6: (0.95, 0.77, 0.29),
+                8: (0.25, 0.72, 0.72), 10: (0.55, 0.60, 0.29)}
+
+    def _material_for(n):
+        name = f"Biscribed {n}-gon"
+        mat = bpy.data.materials.get(name)
+        if mat is None:
+            mat = bpy.data.materials.new(name)
+            import colorsys
+            rgb = _PALETTE.get(n, colorsys.hsv_to_rgb((n * 0.618) % 1.0,
+                                                      0.55, 0.8))
+            mat.diffuse_color = (*rgb, 1.0)
+            mat.use_nodes = True
+            bsdf = mat.node_tree.nodes.get("Principled BSDF")
+            if bsdf is not None:
+                bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+        return mat
+
+    class MESH_OT_biscribed_solid_add(bpy.types.Operator):
+        """Add a biscribed solid: vertices on a circumsphere AND faces
+        tangent to a concentric insphere (exact symmetric construction)"""
+        bl_idname = "mesh.biscribed_solid_add"
+        bl_label = "Biscribed Solid"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        solid: EnumProperty(
+            name="Solid",
+            items=[(sid, lbl, "") for sid, lbl, _b, _d in _BISCRIBED])
+        coloring: EnumProperty(
+            name="Coloring",
+            items=[('SIDES', "By Face Size", ""), ('NONE', "None", "")],
+            default='SIDES')
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+
+        def execute(self, context):
+            if np is None:
+                self.report({'ERROR'}, "biscribed solids need NumPy")
+                return {'CANCELLED'}
+            row = next(r for r in _BISCRIBED if r[0] == self.solid)
+            _sid, label, base, is_dual = row
+            res = (biscribe_exact_dual(base) if is_dual
+                   else biscribe_exact(base))
+            if res is None:
+                self.report({'ERROR'}, "no biscribed form")
+                return {'CANCELLED'}
+            V, F, _r = res
+            me = bpy.data.meshes.new(label)
+            me.from_pydata([tuple(c * self.scale for c in v) for v in V],
+                           [], [tuple(f) for f in F])
+            me.validate(clean_customdata=True)
+            if self.coloring == 'SIDES' and len(me.polygons) == len(F):
+                sizes = sorted({len(f) for f in F})
+                slot = {n: i for i, n in enumerate(sizes)}
+                for n in sizes:
+                    me.materials.append(_material_for(n))
+                me.polygons.foreach_set('material_index',
+                                        [slot[len(f)] for f in F])
+            me.update()
+            obj = bpy.data.objects.new(label, me)
+            context.collection.objects.link(obj)
+            obj.location = context.scene.cursor.location
+            for o in context.selected_objects:
+                o.select_set(False)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            self.report({'INFO'}, f"{label}: V={len(V)} F={len(F)}")
+            return {'FINISHED'}
+
+    def _menu_func(self, context):
+        self.layout.operator("mesh.biscribed_solid_add",
+                             icon='MESH_ICOSPHERE')
+
+    ADD_MENU = True
+
+    def register():
+        bpy.utils.register_class(MESH_OT_biscribed_solid_add)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
+
+    def unregister():
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        bpy.utils.unregister_class(MESH_OT_biscribed_solid_add)
+
+
+# --------------------------------------------------------------------------
+# Self-test / validation table
+# --------------------------------------------------------------------------
+
+if __name__ == '__main__' and not _IN_BLENDER:
+    order = ['truncated_tetrahedron', 'truncated_cube',
+             'truncated_octahedron', 'truncated_dodecahedron',
+             'truncated_icosahedron', 'cuboctahedron', 'icosidodecahedron',
+             'truncated_cuboctahedron', 'truncated_icosidodecahedron',
+             'snub_cube', 'snub_dodecahedron']
+    expected = {                       # (t*, r/R) from prior research
+        'truncated_octahedron':  (0.42265, 0.8069),
+        'truncated_icosahedron': (0.37147, 0.9226),
+    }
+    must_fail = {'truncated_tetrahedron', 'truncated_cube',
+                 'truncated_dodecahedron', 'cuboctahedron',
+                 'icosidodecahedron'}
+    print(f"{'solid':30s} {'param':22s} {'r/R':>8s}  verdict")
+    print('-' * 96)
+    failures = []
+    for name in order:
+        res = _SOLVERS[name]()
+        if not res['exists']:
+            print(f"{name:30s} {'--':22s} {'--':>8s}  "
+                  f"NO biscribed form  ({res['why']})")
+            if name not in must_fail:
+                failures.append(f"{name}: expected biscribed form")
+            continue
+        V, F, r = res['verts'], res['faces'], res['r_over_R']
+        sR, sd, pl = verify(V, F)
+        ok = sR < 1e-10 and sd < 1e-10 and pl < 1e-10
+        print(f"{name:30s} {res['param']:22s} {r:8.4f}  BISCRIBED  "
+              f"V={len(V)} F={len(F)}  std|v|={sR:.1e} "
+              f"std d_f={sd:.1e} planar={pl:.1e}")
+        if not ok:
+            failures.append(f"{name}: verification stds too large")
+        if name in must_fail:
+            failures.append(f"{name}: should have NO biscribed form")
+        if name in expected:
+            t_exp, r_exp = expected[name]
+            if abs(res['t'] - t_exp) > 5e-5:
+                failures.append(f"{name}: t*={res['t']:.6f} != {t_exp}")
+            if abs(r - r_exp) > 5e-5:
+                failures.append(f"{name}: r/R={r:.6f} != {r_exp}")
+        # dual, via polar reciprocation
+        DV, DF, dr = polar_dual(V, F, r)
+        sR, sd, pl = verify(DV, DF)
+        print(f"{'  dual':30s} {'polar rho^2=R*r':22s} {dr:8.4f}  BISCRIBED  "
+              f"V={len(DV)} F={len(DF)}  std|v|={sR:.1e} "
+              f"std d_f={sd:.1e} planar={pl:.1e}")
+        if not (sR < 1e-10 and sd < 1e-10 and pl < 1e-10):
+            failures.append(f"{name} dual: verification stds too large")
+    print('-' * 96)
+    if failures:
+        print("FAILURES:")
+        for f in failures:
+            print("  " + f)
+        raise SystemExit(1)
+    print("All validation checks passed.")

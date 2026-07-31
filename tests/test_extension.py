@@ -38,6 +38,12 @@ OPS = [
         example='CUSTOM', notation='tO', post='BISCRIBED')),
     ("conway hexpropello whirl", lambda: bpy.ops.mesh.conway_add(
         example='CUSTOM', notation='wC')),
+    ("biscribed truncated octahedron",
+     lambda: bpy.ops.mesh.biscribed_solid_add(solid='tO')),
+    ("biscribed snub cube",
+     lambda: bpy.ops.mesh.biscribed_solid_add(solid='sC')),
+    ("biscribed dual pentagonal hexecontahedron",
+     lambda: bpy.ops.mesh.biscribed_solid_add(solid='pH')),
     ("solid hull family", lambda: bpy.ops.mesh.regular_solid_add(
         family='HULL', solid='jtT', canon_iters=60)),
     ("solid trapezohedron family",
