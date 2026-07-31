@@ -546,9 +546,16 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
     # than faceted.  Applied only on the mesh path -- the NURBS/grid path
     # keeps the requested control-point count, and the engine self-tests
     # call the builders directly, so both stay unaffected.
+    # res_boost may be a plain (nu_mult, nv_mult) tuple or a callable
+    # res_boost(order) -> (nu_mult, nv_mult).  The callable form lets a
+    # surface whose rim winds more with order (g = z^k gains ~2(k+1) lobes)
+    # scale its angular sampling with k, so the boundary stays smooth at
+    # every order rather than only at order 1.
     _b = PARAMETRIC[kind][1]
     _rb = getattr(_b, 'spec', {}).get('res_boost') if hasattr(_b, 'spec') \
         else None
+    if callable(_rb):
+        _rb = _rb(order)
     if _rb:
         nu = max(3, int(round(nu * _rb[0])))
         nv = max(3, int(round(nv * _rb[1])))

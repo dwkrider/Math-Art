@@ -469,6 +469,7 @@ WE_SURFACES = {
         'storeys_label': "Storeys",
         'mask_punctures': lambda p: [
             (rho, p['eps']) for rho in _tower_roots(p['n'])],
+        'clip_punctures': True,       # snap wing rims onto the mask circle
         'clip': False,
         # the 2n ends sit on |z| = 1; grading the radial samples toward the
         # rim puts the fine cells exactly where the punctures cut, so each
@@ -509,6 +510,7 @@ WE_SURFACES = {
         'mask_punctures': lambda p: [
             (rho, p['eps'])
             for rho in _atower_ends(p['n'], p.get('alpha', 0.0))],
+        'clip_punctures': True,       # snap wing rims onto the mask circle
         'clip': False,
         'radial_grade': 'rim',       # fine cells at the |z|=1 ends -> smooth
         'res_boost': (1.7, 1.7),     # unequal wing rims
@@ -531,7 +533,12 @@ WE_SURFACES = {
         'count': "Order (k)",
         'clip': False,
         'radial_grade': 'rim',       # planar end grows toward r_out
-        'res_boost': (1.7, 1.5),
+        # g = z^k makes the disk-edge flower gain ~2(k+1) lobes, so the
+        # angular sampling must grow with the order or the rim reads
+        # polygonal at high k; scale nv with k (capped), nu mildly.
+        'res_boost': lambda order: (
+            1.7 * min(1.0 + 0.12 * (min(max(order + 1, 2), 12) - 2), 1.6),
+            1.5 * min(1.0 + 0.45 * (min(max(order + 1, 2), 12) - 2), 2.8)),
         'cycles': lambda p: [(0.0, 0.5)],
         # k >= 2 has no residue at the planar end, so every period stays zero
         # under phi *= e^{i theta}: the associate/Bonnet deformation is
@@ -613,9 +620,15 @@ WE_SURFACES = {
         # spends its nodes on the flat centre and leaves the outer rim a
         # coarse polygon (the classic faceted Enneper at default res).
         # Cluster nodes toward the rim and give the ring enough angular
-        # samples to read as a smooth curve.
+        # samples to read as a smooth curve.  The rim gains ~2(k+1) lobes
+        # with order, so the angular multiplier (nv) scales with k -- order 5
+        # gets ~3x the angular resolution of order 1 -- keeping the rim
+        # smooth at every order, not just order 1 (nu scales mildly, both
+        # capped so high k stays sane).
         'radial_grade': 'rim',
-        'res_boost': (1.5, 1.7),
+        'res_boost': lambda order: (
+            1.5 * min(1.0 + 0.12 * (min(max(order, 1), 12) - 1), 1.7),
+            1.7 * min(1.0 + 0.5 * (min(max(order, 1), 12) - 1), 3.0)),
         'cycles': lambda p: [(0.0, 0.5)],        # entire phi -> zero periods
         'test_order': 1,
     },

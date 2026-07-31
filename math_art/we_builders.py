@@ -167,10 +167,43 @@ def _we_disk(spec, p, nu, nv, theta):
             xx, yy, zz = spec['Xexact'](z, p, theta)
         X = np.stack(np.broadcast_arrays(xx, yy, zz), axis=-1).astype(float)
         mask = np.isfinite(X).all(axis=-1)
-        punct = spec.get('mask_punctures')
+        punct = _ev(spec.get('mask_punctures'), p) if spec.get(
+            'mask_punctures') else None
         if punct:
-            for zc, rho in _ev(punct, p):
+            for zc, rho in punct:
                 mask &= np.abs(z - zc) > rho
+            if spec.get('clip_punctures'):
+                # marching-squares-style boundary CLIP: instead of dropping
+                # whole grid quads that straddle a puncture circle (which
+                # leaves a one-quad staircase along every wing rim), pull the
+                # first ring of just-inside grid vertices radially out onto
+                # the circle |z - zc| = rho and re-evaluate the immersion
+                # there, so the cut lands exactly on the mask boundary and
+                # the wing edge reads as a clean smooth curve.
+                zc_a = np.array([zc for zc, _ in punct])
+                rho_a = np.array([rho for _, rho in punct])
+                keep = mask
+                nb = np.zeros_like(keep)
+                nb[:-1] |= keep[1:]
+                nb[1:] |= keep[:-1]
+                nb |= np.roll(keep, 1, axis=1)
+                nb |= np.roll(keep, -1, axis=1)
+                ring = (~keep) & nb          # inside a puncture, but adjacent
+                ii, jj = np.nonzero(ring)    # to a kept vertex -> snap it out
+                if len(ii):
+                    zr = z[ii, jj]
+                    k = np.abs(zr[:, None] - zc_a[None, :]).argmin(axis=1)
+                    d = zr - zc_a[k]
+                    znew = zc_a[k] + rho_a[k] * d / np.abs(d)
+                    with np.errstate(divide='ignore', invalid='ignore'):
+                        nx, ny, nz = spec['Xexact'](znew, p, theta)
+                    good = np.isfinite(nx) & np.isfinite(ny) & np.isfinite(nz)
+                    gi, gj = ii[good], jj[good]
+                    X[gi, gj, 0] = nx[good]
+                    X[gi, gj, 1] = ny[good]
+                    X[gi, gj, 2] = nz[good]
+                    mask = mask.copy()
+                    mask[gi, gj] = True
         return X[..., 0], X[..., 1], X[..., 2], False, True, mask
     phi = _phi_fn(spec, p, theta)
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -565,14 +598,16 @@ def we_saddle_tower(spec, nu, nv, order, radius, scale, theta, storeys):
     Each fundamental domain is a single 2n-winged saddle from the exact
     log-sum immersion (_tower_X) on the punctured disk.  Consecutive
     storeys are related by the surface's deck isometry -- a *screw motion*:
-    a vertical translation by half the vertical monodromy, T = pi/(2n)
-    (the period pi/n picked up by dh = phi3 around one end, halved because
-    the disk sees only a half-turn around each logarithmic end), composed
-    with a rotation by pi/n about the vertical axis.  The rotation carries
-    the 2n vertical wing-walls onto themselves, so each storey's wing tops
-    meet the next storey's wing bottoms and the walls read as continuous
-    vertical planes.  The shared wing rims are welded (union-find over the
-    screw-matched boundary vertices) so the joins carry no seam."""
+    a vertical rise T = pi/(2n) composed with a rotation by pi/n about the
+    axis.  The screw (not a pure translation) is the true deck map: the two
+    rims of one disk unit are related by a roto-reflection, not a z-shift,
+    so no pure translation registers them -- whereas rot(pi/n) permutes the
+    2n vertical wing-walls onto themselves, keeping every wall one flat,
+    uncrossed vertical half-plane running the whole height (its azimuth is
+    independent of z), and puts consecutive storeys in disjoint z-slabs so
+    the tower stays embedded.  Storey-s top boundary and storey-(s+1) bottom
+    boundary are the same seam curve, so a nearest-neighbour match between
+    the two storeys' boundary rings welds the joins watertight."""
     tk = _toolkit()
     p = spec['p_from'](order, radius) if 'p_from' in spec else {}
     # Karcher unequal-wing tower: the angle knob (theta) is the alpha modulus,
@@ -618,66 +653,82 @@ def we_saddle_tower(spec, nu, nv, order, radius, scale, theta, storeys):
     quads0 = [tuple(int(remap[i]) for i in q) for q in quads0]
     M = len(V0)
 
-    T = math.pi / (2 * n)
+    T = math.pi / (2 * n)                          # one storey's height
     Rm = _rot_z(math.pi / n)
 
     if S > 1 and M:
-        # seam: storey-s top rim coincides with storey-(s+1) bottom rim,
-        # i.e. V0[i] ~= screw(V0[j]),  screw(P) = P @ Rm.T + T*zhat.
+        # Stack S copies under the surface's deck isometry -- the screw
+        # motion screw(P) = P @ Rm.T + T*zhat (rotate pi/n about the axis,
+        # rise T = pi/(2n)) -- and weld the shared seam.
+        #
+        # Why the screw (and not a pure vertical translation): the two rims
+        # of one disk unit are related by a roto-reflection, not a pure
+        # z-shift (domain map z -> e^{i pi/n} z acts on the surface as
+        # rot * diag(1,1,-1) with ZERO z-shift), so no pure translation
+        # tiles the unit -- its rims never register.  The screw is the true
+        # deck isometry: rot(pi/n) permutes the 2n vertical wing-walls onto
+        # themselves so every wall stays one flat, uncrossed vertical
+        # half-plane running the whole height (its azimuth is independent of
+        # z), while consecutive storeys occupy disjoint z-slabs
+        # [sT - T/2, sT + T/2] and so cannot self-intersect.
+        #
+        # Seam weld: storey-s TOP boundary and storey-(s+1) BOTTOM boundary
+        # are the *same space curve* (top rim = screw(bottom rim)), only
+        # sampled at slightly offset grid points, so a nearest-neighbour
+        # match between the two storeys' boundary rings welds it watertight.
+        # The tolerance is a fraction of the slab height T: the only other
+        # inter-storey approach is a full slab away (>= T), so wing side
+        # edges -- free, and in disjoint slabs -- are never falsely merged.
         bnd, med = _open_boundary(V0, quads0)
-        Vb = V0[bnd]
-        scr = Vb @ Rm.T + np.array([0.0, 0.0, T])
-        d = np.linalg.norm(Vb[:, None, :] - scr[None, :, :], axis=2)
-        jmin = d.argmin(axis=1)
-        dmin = d[np.arange(len(bnd)), jmin]
-        tol = 0.5 * med
-        pairs = [(int(bnd[a]), int(bnd[jmin[a]]))
-                 for a in range(len(bnd)) if dmin[a] < tol]
-        parent = list(range(S * M))
-
-        def find(a):
-            while parent[a] != a:
-                parent[a] = parent[parent[a]]
-                a = parent[a]
-            return a
-        for s in range(S - 1):
-            for (it, jb) in pairs:
-                ra, rb2 = find(s * M + it), find((s + 1) * M + jb)
-                if ra != rb2:
-                    parent[ra] = rb2
         Vparts, Rp = [], np.eye(3)
         for s in range(S):
             Vparts.append(V0 @ Rp.T + np.array([0.0, 0.0, s * T]))
             Rp = Rp @ Rm.T                        # (Rm^{s+1}).T
         Vcat = np.concatenate(Vparts, axis=0)
         UVcat = np.concatenate([UV0] * S, axis=0)
+        parent = np.arange(S * M)
+
+        def find(a):
+            while parent[a] != a:
+                parent[a] = parent[parent[a]]
+                a = parent[a]
+            return a
+        tol = min(0.45 * T, max(3.0 * med, 0.15 * T))
+        for s in range(S - 1):
+            A = Vcat[s * M + bnd]                 # storey s boundary ring
+            B = Vcat[(s + 1) * M + bnd]           # storey s+1 boundary ring
+            d = np.linalg.norm(A[:, None, :] - B[None, :, :], axis=2)
+            jmin = d.argmin(axis=1)
+            dmin = d[np.arange(len(bnd)), jmin]
+            for a in np.nonzero(dmin < tol)[0]:
+                ra = find(s * M + int(bnd[a]))
+                rb = find((s + 1) * M + int(bnd[jmin[a]]))
+                if ra != rb:
+                    parent[ra] = rb
         roots = np.array([find(a) for a in range(S * M)])
-        uniq = np.unique(roots)
-        rmap = np.full(S * M, -1, dtype=np.int64)
-        rmap[uniq] = np.arange(len(uniq))
-        ri = rmap[roots]
-        Vf = np.zeros((len(uniq), 3))
-        UVf = np.zeros((len(uniq), 2))
-        cnt = np.zeros(len(uniq))
-        np.add.at(Vf, ri, Vcat)
-        np.add.at(UVf, ri, UVcat)
-        np.add.at(cnt, ri, 1)
+        uniq, inv = np.unique(roots, return_inverse=True)
+        nuq = len(uniq)
+        Vf = np.zeros((nuq, 3))
+        UVf = np.zeros((nuq, 2))
+        cnt = np.zeros(nuq)
+        np.add.at(Vf, inv, Vcat)
+        np.add.at(UVf, inv, UVcat)
+        np.add.at(cnt, inv, 1)
         Vf /= cnt[:, None]
         UVf /= cnt[:, None]
         quads = []
         for s in range(S):
             for q in quads0:
-                fq = tuple(int(ri[s * M + i]) for i in q)
+                fq = tuple(int(inv[s * M + i]) for i in q)
                 if len(set(fq)) >= 3:
                     quads.append(fq)
     else:
         Vf, quads, UVf = V0, quads0, UV0
 
-    # the wing/end rims are cut from the puncture mask, so they start as a
-    # one-quad staircase; the radial-graded sampling (radial_grade='rim')
-    # already shrinks each step near the ends, and a longer boundary
-    # relaxation than the default finishes them into smooth wing edges.
-    Vf = tk._smooth_boundary(Vf, quads, iters=20)
+    # the wing rims are cut exactly on the puncture circles by the
+    # marching-squares clip in _we_disk (clip_punctures), so they arrive
+    # already clean; a short boundary relaxation just evens out the sampling.
+    Vf = tk._smooth_boundary(Vf, quads, iters=6)
     Vf = tk._center_fit(Vf, scale, Vf)
     return Vf, quads, UVf
 
