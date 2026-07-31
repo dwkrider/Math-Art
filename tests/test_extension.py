@@ -296,6 +296,8 @@ OPS = [
      lambda: bpy.ops.mesh.notable_polyhedron_add(solid='SCHONHARDT')),
     ("notable jessen",
      lambda: bpy.ops.mesh.notable_polyhedron_add(solid='JESSEN')),
+    ("notable escher",
+     lambda: bpy.ops.mesh.notable_polyhedron_add(solid='ESCHER')),
     ("notable klein regular map",
      lambda: bpy.ops.mesh.notable_polyhedron_add(solid='KLEIN')),
     ("toroid csaszar",

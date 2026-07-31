@@ -8,10 +8,13 @@
 # orthogonal icosahedron (a shaky polyhedron whose dihedral angles are all
 # right angles), Durer's solid (the truncated rhombohedron from Melencolia I),
 # the Bilinski dodecahedron (the "other" rhombic dodecahedron, of golden
-# rhombi), and a polyhedral realization of Felix Klein's regular map {3,7}_8
-# on a genus-3 surface.
+# rhombi), Escher's Solid (the stellated rhombic dodecahedron of M. C.
+# Escher's "Waterfall"), and a polyhedral realization of Felix Klein's
+# regular map {3,7}_8 on a genus-3 surface.
 #
 # References:
+# - M. C. Escher, "Waterfall" (1961) and "Study for Stars" (1948); the
+#   solid is the first stellation of the rhombic dodecahedron.
 # - J. C. P. Miller / H. S. M. Coxeter, P. Du Val, H. T. Flather &
 #   J. F. Petrie, "The Fifty-Nine Icosahedra" (1938); the final stellation
 #   is Wenninger model W42. Echidnahedron connectivity from A. Hume's netlib
@@ -61,6 +64,51 @@ def schonhardt(twist_deg=40.0):
     for i in range(3):
         a0, a1, b0, b1 = i, (i + 1) % 3, 3 + i, 3 + (i + 1) % 3
         F += [[a0, a1, b0], [a1, b1, b0]]      # concave split
+    return V, F
+
+
+def escher():
+    """Escher's Solid: the (first) stellation of the rhombic dodecahedron --
+    a pyramid raised on each of the 12 rhombic faces, its apex where the four
+    neighbouring face-planes meet (= twice the face centre).  The star solid
+    of M. C. Escher's "Waterfall" (1961) and "Study for Stars".  V26/E72/F48."""
+    cube = [(float(sx), float(sy), float(sz))
+            for sx in (1, -1) for sy in (1, -1) for sz in (1, -1)]
+    octa = [(2., 0., 0.), (-2., 0., 0.), (0., 2., 0.), (0., -2., 0.),
+            (0., 0., 2.), (0., 0., -2.)]
+    V = cube + octa
+    idx = {tuple(p): i for i, p in enumerate(V)}
+    normals = []
+    for a in (1, -1):
+        for b in (1, -1):
+            normals += [(a, b, 0), (a, 0, b), (0, a, b)]
+    F = []
+    for n in normals:
+        octv = [o for o in octa if sum(o[i] * n[i] for i in range(3)) == 2]
+        cubv = [c for c in cube if sum(c[i] * n[i] for i in range(3)) == 2]
+        cen = tuple(sum(p[i] for p in octv + cubv) / 4.0 for i in range(3))
+        u = tuple(octv[0][i] - cen[i] for i in range(3))
+        un = math.sqrt(sum(t * t for t in u)) or 1.0
+        u = tuple(t / un for t in u)
+        nn = math.sqrt(sum(t * t for t in n)) or 1.0
+        nu = tuple(t / nn for t in n)
+        w = (nu[1] * u[2] - nu[2] * u[1], nu[2] * u[0] - nu[0] * u[2],
+             nu[0] * u[1] - nu[1] * u[0])
+
+        def ang(p, cen=cen, u=u, w=w):
+            d = tuple(p[i] - cen[i] for i in range(3))
+            return math.atan2(sum(d[i] * w[i] for i in range(3)),
+                              sum(d[i] * u[i] for i in range(3)))
+        ring = sorted(octv + cubv, key=ang)
+        apex = tuple(2.0 * c for c in n)
+        ai = idx.get(apex)
+        if ai is None:
+            ai = len(V)
+            V.append(apex)
+            idx[apex] = ai
+        ri = [idx[tuple(p)] for p in ring]
+        for k in range(4):
+            F.append([ri[k], ri[(k + 1) % 4], ai])
     return V, F
 
 
@@ -230,12 +278,16 @@ ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
          ("JESSEN", "Jessen's Orthogonal Icosahedron", "all right angles"),
          ("DURER", "Durer's Solid", "Melencolia I"),
          ("BILINSKI", "Bilinski Dodecahedron", "golden rhombi"),
+         ("ESCHER", "Escher's Solid",
+          "stellated rhombic dodecahedron (Escher's Waterfall)"),
          ("KLEIN", "Klein Regular Map {3,7} (genus 3)", "")]
 
 
 def build(kind):
     if kind == 'SCHONHARDT':
         V, F = schonhardt()
+    elif kind == 'ESCHER':
+        V, F = escher()
     else:
         S = GALLERY[kind]
         V = [tuple(float(c) for c in v) for v in S["V"]]
@@ -250,7 +302,7 @@ def _self_test():
     want = {'ECHIDNAHEDRON': (92, 270, 180, 2),
             'SCHONHARDT': (6, 12, 8, 2), 'JESSEN': (12, 30, 20, 2),
             'DURER': (12, 18, 8, 2), 'BILINSKI': (14, 24, 12, 2),
-            'KLEIN': (24, 84, 56, -4)}
+            'ESCHER': (26, 72, 48, 2), 'KLEIN': (24, 84, 56, -4)}
     for kind, _lbl, _d in ITEMS:
         V, F = build(kind)
         E = {}
