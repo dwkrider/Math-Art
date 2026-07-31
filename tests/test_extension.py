@@ -53,6 +53,12 @@ OPS = [
          family='HEMI', solid='4')),
     ("star prism pentagrammic",
      lambda: bpy.ops.mesh.star_prism_add(sides=5, step=2)),
+    ("uniform snub dodecahedron",
+     lambda: bpy.ops.mesh.uniform_polyhedron_add(
+         family='CONVEX', solid='29')),
+    ("uniform great dirhombicosidodecahedron",
+     lambda: bpy.ops.mesh.uniform_polyhedron_add(
+         family='STAR_I', solid='75')),
     ("solid archimedean canon off",
      lambda: bpy.ops.mesh.regular_solid_add(
          family='ARCHIMEDEAN', solid='TI', canonicalize=False)),

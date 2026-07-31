@@ -13,10 +13,12 @@
 # regular star (Kepler-Poinsot) polyhedra, and the non-convex star
 # uniforms including the hemipolyhedra (faces through the centre).
 #
-# This build covers the 63 non-snub uniform polyhedra (Wythoff symbols
-# with the bar not first); the 11 snubs and the great
-# dirhombicosidodecahedron use a separate generator-point solve and are
-# added in a later revision.
+# This covers all 75 uniform polyhedra: the non-snub cases (Wythoff
+# symbols with the bar not first) are built procedurally by the
+# construction above; the 11 snubs and the great dirhombicosidodecahedron
+# (whose generator point needs a transcendental snub solve) are built
+# from stored vertex coordinates evaluated from their published exact
+# constructions, with each face's winding density detected for rendering.
 #
 # Star faces are rendered by fanning each {n/d} polygon from its centre,
 # so the star outline shows as a solid.
@@ -50,6 +52,14 @@ try:
     import numpy as np
 except ImportError:
     np = None
+
+try:                                    # the 12 snub / special solids
+    from . import _uniform_snub_data as _snub_data
+except ImportError:
+    try:
+        import _uniform_snub_data as _snub_data
+    except ImportError:
+        _snub_data = None
 
 
 # u, name, wythoff, pqr, symmetry, V, E, F  (all 75; snubs/U75 flagged
@@ -325,6 +335,53 @@ def build_uniform(wythoff, pqr):
     return verts, faces
 
 
+def _face_density(V, f):
+    """Winding number of a face about its centre (1 = convex polygon,
+    2 = pentagram, ...) -- used to tell pentagons from pentagrams."""
+    pts = [V[i] for i in f]
+    m = len(f)
+    c = [sum(p[k] for p in pts) / m for k in range(3)]
+    nx = [0.0, 0.0, 0.0]
+    for i in range(m):
+        p, q = pts[i], pts[(i + 1) % m]
+        nx[0] += (p[1] - q[1]) * (p[2] + q[2])
+        nx[1] += (p[2] - q[2]) * (p[0] + q[0])
+        nx[2] += (p[0] - q[0]) * (p[1] + q[1])
+    ln = math.sqrt(sum(x * x for x in nx)) or 1.0
+    nx = [x / ln for x in nx]
+    u = [pts[0][k] - c[k] for k in range(3)]
+    dp = sum(u[k] * nx[k] for k in range(3))
+    u = [u[k] - dp * nx[k] for k in range(3)]
+    lu = math.sqrt(sum(x * x for x in u)) or 1.0
+    u = [x / lu for x in u]
+    w = [nx[1] * u[2] - nx[2] * u[1], nx[2] * u[0] - nx[0] * u[2],
+         nx[0] * u[1] - nx[1] * u[0]]
+    ang = [math.atan2(sum((p[k] - c[k]) * w[k] for k in range(3)),
+                      sum((p[k] - c[k]) * u[k] for k in range(3)))
+           for p in pts]
+    tot = 0.0
+    for i in range(m):
+        da = ang[(i + 1) % m] - ang[i]
+        while da <= -math.pi:
+            da += 2 * math.pi
+        while da > math.pi:
+            da -= 2 * math.pi
+        tot += da
+    return max(1, round(abs(tot) / (2 * math.pi)))
+
+
+def build_snub(u, scale=1.0):
+    """The snub / special uniform polyhedra (U12, U29 and the star snubs
+    up to the great dirhombicosidodecahedron) from stored coordinates;
+    each face is tagged with its winding density for star rendering."""
+    if _snub_data is None:
+        raise RuntimeError("snub coordinate data not available")
+    S = _snub_data.SNUBS[u]
+    V = [tuple(c * scale for c in v) for v in S["V"]]
+    faces = [(list(f), _face_density(S["V"], f)) for f in S["F"]]
+    return V, faces
+
+
 def build_star_prism(p, q, scale=1.0):
     """Uniform {p/q} star prism: two star polygon bases joined by squares
     (q = 1 gives an ordinary convex prism).  Returns (verts, faces) with
@@ -368,9 +425,12 @@ def _expand_faces(verts, faces):
     return verts, out, fsize
 
 
-# solids this build can construct: non-snub (bar not first), 3-triangle
+# solids this build can construct: the non-snub Wythoff cases plus the
+# snub / special solids for which stored coordinates are available.
+_SNUB_U = set(_snub_data.SNUBS) if _snub_data else set()
 BUILDABLE = [row for row in UNIFORMS
-             if not row[2].strip().startswith('|') and len(row[3]) == 3]
+             if row[0] in _SNUB_U
+             or (not row[2].strip().startswith('|') and len(row[3]) == 3)]
 
 
 # --- families (to organise the UI) --------------------------------------
@@ -416,7 +476,10 @@ def _self_test():
     ok = 0
     bad = 0
     for (u, name, wy, pqr, Ve, Ee, Fe) in BUILDABLE:
-        V, F = build_uniform(wy, pqr)
+        if u in _SNUB_U:
+            V, F = build_snub(u)
+        else:
+            V, F = build_uniform(wy, pqr)
         E = set()
         for f, _d in F:
             for i in range(len(f)):
@@ -538,7 +601,10 @@ if _IN_BLENDER:
                        BUILDABLE[0])
             u, name, wy, pqr, Ve, Ee, Fe = row
             try:
-                V, F = build_uniform(wy, pqr)
+                if u in _SNUB_U:
+                    V, F = build_snub(u)
+                else:
+                    V, F = build_uniform(wy, pqr)
             except Exception as e:      # noqa: BLE001
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
