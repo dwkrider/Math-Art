@@ -39,9 +39,30 @@
 # the flat cut-under interlace or the true 3D weave, relief and
 # backing -- so the carpet is built as continuous ribbons.  A third
 # scaffold closes the carpet over a SPHERE as a finite woven knot
-# ball (see the knot-ball section below), and a fourth generalizes
-# the lattice to any uniform TILING -- one medallion per tile of a
-# regular, Archimedean or Laves tiling (the tiling-carpet section).
+# ball (see the knot-ball section below), a fourth generalizes the
+# lattice to any uniform TILING -- one medallion per tile of a
+# regular, Archimedean or Laves tiling (the tiling-carpet section) --
+# and a fifth wraps the square carpet onto a 3-D TORUS.
+#
+# THE TORUS SCAFFOLD.  A square knot carpet is literally wallpaper:
+# the Nx x Ny block plus its margin ring is a fundamental domain of
+# the quotient R^2 / (W Z x H Z) with periods W = Nx b1 and H = Ny b2,
+# i.e. a flat torus.  So the carpet already lives on a torus -- we
+# need only realize that torus in space.  Emitting exactly the Nx x Ny
+# fundamental loops (no doubled margin) and weaving them with the
+# crossing constraints wrapped onto the quotient (`_fund_map` +
+# `_torus_crossings`, the same periodic constraints the tier-2
+# relaxer uses, so seam-straddling crossings are woven consistently),
+# every flat vertex (x, y, z) is mapped to the standard torus by
+#     u = 2pi (x - x0) / W,   v = 2pi (y - y0) / H,   rr = r + z,
+#     P = ((R + rr cos v) cos u, (R + rr cos v) sin u, rr sin v),
+# with R the major and r the minor radius: the Nx tiles run the long
+# way around (u) and the Ny tiles around the tube (v), while the
+# out-of-plane weave / relief z becomes a radial offset pushed along
+# the tube's surface normal (exactly as the sphere scaffold pushes
+# relief along the sphere normal).  Because the carpet tiles under W
+# and H, the u = 0 / 2pi and v = 0 / 2pi edges coincide, so the woven
+# ring closes with no visible seam.
 #
 # References:
 #   Robert G. Scharein, "Interactive Topological Drawing" (PhD
@@ -68,9 +89,10 @@ bl_info = {
     "description": "Knot carpets -- a tileable alternating link of "
                    "interlocked unknots (ribbon, woven rope tube, or "
                    "curve) on a square or triangular lattice, on any "
-                   "regular or Archimedean tiling, or closed over a "
+                   "regular or Archimedean tiling, closed over a "
                    "geodesic sphere or a Platonic / Archimedean "
-                   "spherical tiling as a knot ball",
+                   "spherical tiling as a knot ball, or wrapped "
+                   "seamlessly onto a 3-D torus",
     "category": "Add Mesh",
 }
 
@@ -809,6 +831,169 @@ def relaxed_paths(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
     lines = relax_carpet(carpet, lattice, nx, ny, iters, clearance,
                          weave_gap)
     return [([tuple(p) for p in Q], True) for Q in lines]
+
+
+# --------------------------------------------------------------------
+# The torus carpet: the square carpet wrapped onto R^2/(Wz x Hz)
+# --------------------------------------------------------------------
+#
+# The square knot carpet is doubly periodic under W = nx*b1 and
+# H = ny*b2, so the nx x ny fundamental block IS a flat torus.  Here
+# we build exactly those nx x ny fundamental loops (no doubled
+# margin), weave them with the crossing constraints wrapped onto the
+# quotient -- so a crossing that straddles a seam is woven the same
+# way on both sides -- and map every flat vertex onto the standard
+# 3-D torus of major radius R and minor radius r.  The tier-1 weave
+# and relief become a radial offset (rr = r + z), pushed OUTWARD
+# along the tube's surface normal, exactly as the sphere scaffold
+# pushes relief along the sphere normal.  Because the carpet tiles
+# under W and H, the u = 0 / 2pi and v = 0 / 2pi seams coincide and
+# the ring closes without a mismatch.
+
+
+def _torus_signed(carpet, lattice, nx, ny):
+    """Per fundamental-loop signed crossing lists taken from the
+    TORUS-wrapped constraints (`_fund_map` + `_torus_crossings`), so
+    the over/under weave is periodic -- a crossing straddling a seam
+    gets the same sense on both sides.  Returns (signed, conflicts,
+    fids): signed = {fundamental loop id: [(bead, +1 over / -1
+    under)]}, the number of seam conflicts (0 for a periodic
+    alternating solution), and the sorted fundamental loop ids."""
+    fids = sorted(carpet['interior'])
+    fidx = {i: a for a, i in enumerate(fids)}
+    fundmap = _fund_map(carpet, lattice, nx, ny)
+    cons, conf = _torus_crossings(carpet, fundmap, fidx)
+    signed = {i: [] for i in fids}
+    for (la, ba), (lb, bb) in cons:
+        signed[fids[la]].append((ba, +1))
+        signed[fids[lb]].append((bb, -1))
+    return signed, conf, fids
+
+
+def _torus_warp(verts, W, H, R, r, x0=0.0, y0=0.0):
+    """Map flat carpet vertices (x, y, z) onto the standard torus:
+    u = 2pi (x - x0)/W (major angle), v = 2pi (y - y0)/H (minor
+    angle), rr = r + z (relief/weave pushed radially outward), P =
+    ((R + rr cos v) cos u, (R + rr cos v) sin u, rr sin v).  Accepts
+    any (N, 3) sequence, returns a list of (x, y, z) tuples.  Periodic
+    in both angles, so vertices past a seam wrap continuously."""
+    P = np.asarray(verts, float)
+    if P.size == 0:
+        return []
+    u = 2.0 * pi * (P[:, 0] - x0) / W
+    v = 2.0 * pi * (P[:, 1] - y0) / H
+    rr = r + P[:, 2]
+    ring = R + rr * np.cos(v)
+    out = np.column_stack([ring * np.cos(u), ring * np.sin(u),
+                           rr * np.sin(v)])
+    return [tuple(p) for p in out]
+
+
+def build_torus_cells(k=4, nx=3, ny=3, amp=0.10, overlap=1.15,
+                      samples=192, cord_width=0.12, style='ANGULAR',
+                      subdiv=6, interlace=True, interlace_mode='FLAT',
+                      weave_height=0.05, color_by='LOOP', height=0.0,
+                      torus_major=1.0, torus_minor=0.5):
+    """One merged (verts, faces, mats) ribbon cell per fundamental
+    loop, wrapped onto the torus.  Each loop's mitered ribbon (flat
+    cut-under interlace or the 3D weave, with optional relief) is
+    built in the flat carpet plane, then every vertex is mapped onto
+    the torus by `_torus_warp` -- the ribbon width becomes surface arc
+    length and relief becomes a radial offset.  The weave uses the
+    torus-wrapped over/under so it matches across both seams."""
+    lattice = 'SQUARE'
+    carpet = build_carpet(lattice, k, nx, ny, amp, overlap, samples,
+                          style, subdiv)
+    signed, _conf, fids = _torus_signed(carpet, lattice, nx, ny)
+    width = max(0.01, float(cord_width))
+    W, H = float(nx), float(ny)
+    R, r = float(torus_major), float(torus_minor)
+    cells = []
+    for i in fids:
+        pl = [tuple(p) for p in carpet['paths'][i]]
+        sub = _loop_cell(pl, signed[i], width, interlace,
+                         interlace_mode, weave_height, height,
+                         color_by, i)
+        if not sub:
+            continue
+        warped = [(_torus_warp(cv, W, H, R, r), cf, cm)
+                  for cv, cf, cm in sub]
+        cell = pc.merge_cells(warped)
+        if cell[1]:
+            cells.append(cell)
+    return cells
+
+
+def build_torus_tube_cells(k=4, nx=3, ny=3, amp=0.10, overlap=1.15,
+                           samples=192, style='ANGULAR', subdiv=6,
+                           tube_radius=0.04, tube_sides=10,
+                           weave_height=0.06, color_by='LOOP',
+                           relax_iters=0, clearance=0.10, weave_gap=0.10,
+                           torus_major=1.0, torus_minor=0.5):
+    """One closed round tube per fundamental loop, swept on the torus.
+    The flat woven centerline (or, with relax_iters > 0, the tier-2
+    relaxed centerline -- which already tiles under W, H via the torus
+    min-image) is mapped onto the torus by `_torus_warp`, so its
+    over/under z becomes a radial offset, and a round rope is then
+    swept along that 3-D curve.  Sweeping AFTER the warp keeps the
+    cross-section round on the surface.  Returns one (verts, faces,
+    mats) cell per loop."""
+    lattice = 'SQUARE'
+    carpet = build_carpet(lattice, k, nx, ny, amp, overlap, samples,
+                          style, subdiv)
+    signed, _conf, fids = _torus_signed(carpet, lattice, nx, ny)
+    tr = max(0.005, float(tube_radius))
+    lift = max(float(weave_height), 1.3 * tr)
+    sides = max(3, int(tube_sides))
+    W, H = float(nx), float(ny)
+    R, r = float(torus_major), float(torus_minor)
+    relaxed = None
+    if relax_iters > 0:
+        relaxed = relax_carpet(carpet, lattice, nx, ny,
+                               iters=int(relax_iters),
+                               clearance=max(float(clearance), 2.2 * tr),
+                               weave_gap=max(float(weave_gap), 2.2 * tr))
+    cells = []
+    for i in fids:
+        if relaxed is not None:
+            flat = [tuple(p) for p in relaxed[i]]
+        else:
+            pl2 = [(float(p[0]), float(p[1]))
+                   for p in carpet['paths'][i]]
+            zoff = isl._weave_zoff(pl2, True, signed[i], lift)
+            flat = [(pl2[j][0], pl2[j][1], zoff[j])
+                    for j in range(len(pl2))]
+        center = _torus_warp(flat, W, H, R, r)
+        verts, faces = _tube_welded(center, tr, sides)
+        if not faces:
+            continue
+        mat = (i % len(pc.PALETTE_RGBA)) if color_by == 'LOOP' else 0
+        cells.append((verts, faces, [mat] * len(faces)))
+    return cells
+
+
+def torus_loop_paths(k=4, nx=3, ny=3, amp=0.10, overlap=1.15,
+                     samples=192, style='ANGULAR', subdiv=6, iters=0,
+                     clearance=0.10, weave_gap=0.10,
+                     torus_major=1.0, torus_minor=0.5):
+    """Fundamental-loop centerlines [(points, True)] on the torus for
+    the CURVE output: the flat rosette centerlines (iters = 0, all on
+    the tube surface) or the tier-2 relaxed centerlines (iters > 0),
+    each mapped onto the torus by `_torus_warp`."""
+    lattice = 'SQUARE'
+    carpet = build_carpet(lattice, k, nx, ny, amp, overlap, samples,
+                          style, subdiv)
+    _signed, _conf, fids = _torus_signed(carpet, lattice, nx, ny)
+    W, H = float(nx), float(ny)
+    R, r = float(torus_major), float(torus_minor)
+    if iters > 0:
+        lines = relax_carpet(carpet, lattice, nx, ny, int(iters),
+                             clearance, weave_gap)
+        flats = {i: [tuple(p) for p in lines[i]] for i in fids}
+    else:
+        flats = {i: [(float(p[0]), float(p[1]), 0.0)
+                     for p in carpet['paths'][i]] for i in fids}
+    return [(_torus_warp(flats[i], W, H, R, r), True) for i in fids]
 
 
 # --------------------------------------------------------------------
@@ -1918,7 +2103,11 @@ if _IN_BLENDER:
                    ('TILING', "Tiling",
                     "Medallion loops on a regular/Archimedean "
                     "tiling -- one woven loop per tile, lobes "
-                    "following the tile's neighbour count")],
+                    "following the tile's neighbour count"),
+                   ('TORUS', "Torus",
+                    "The square carpet wrapped seamlessly onto a "
+                    "3-D torus -- the nx x ny fundamental block is a "
+                    "flat-torus tile, so it closes with no seam")],
             default='SQUARE')
         sphere_scaffold: EnumProperty(
             name="Sphere Tiling", items=SPHERE_SCAFFOLD_ITEMS,
@@ -2031,6 +2220,15 @@ if _IN_BLENDER:
             description="Add a slab behind the carpet")
         base: FloatProperty(
             name="Base Thickness", default=0.06, min=0.01, max=0.5)
+        torus_major: FloatProperty(
+            name="Torus Major R", default=1.0, min=0.2, max=5.0,
+            description="Major radius of the torus (nx cells run the "
+                        "long way around it); torus lattice only")
+        torus_minor: FloatProperty(
+            name="Torus Minor r", default=0.5, min=0.05, max=3.0,
+            description="Minor (tube) radius of the torus (ny cells go "
+                        "around the tube); relief/weave push outward "
+                        "from it; torus lattice only")
         separate: BoolProperty(
             name="Separate Loops", default=False,
             description="Output each loop as its own object")
@@ -2154,11 +2352,70 @@ if _IN_BLENDER:
                              n_loops))
             return {'FINISHED'}
 
+        def _execute_torus(self, context):
+            """The square carpet wrapped seamlessly onto a 3-D torus.
+            Only the nx x ny fundamental loops are emitted, woven with
+            the torus-wrapped over/under so the u = 0 / 2pi and
+            v = 0 / 2pi seams match; CURVE emits centerlines, RIBBON
+            the woven straps, TUBE the woven ropes.  Reuses the flat
+            symmetry / nx / ny / amplitude / overlap / weave / relief /
+            relax controls; torus_major and torus_minor set the ring."""
+            R, r = float(self.torus_major), float(self.torus_minor)
+            if self.output == 'CURVE':
+                paths = torus_loop_paths(
+                    self.symmetry, self.nx, self.ny, self.amplitude,
+                    self.overlap, self.samples, self.style,
+                    self.smoothness, self.relax_iters,
+                    self.rope_clearance, self.weave_gap, R, r)
+                obj = _emit_curve(context, "Knot Torus", paths,
+                                  operator=self)
+                if obj is None:
+                    self.report({'ERROR'}, "no carpet generated")
+                    return {'CANCELLED'}
+                obj["math_art_pattern"] = True
+                self.report({'INFO'}, "TORUS %dx%d  %d loops" %
+                            (self.nx, self.ny, len(paths)))
+                return {'FINISHED'}
+            if self.output == 'RIBBON':
+                cells = build_torus_cells(
+                    self.symmetry, self.nx, self.ny, self.amplitude,
+                    self.overlap, self.samples, self.cord_width,
+                    self.style, self.smoothness, self.interlace,
+                    self.interlace_mode, self.weave_height,
+                    self.color_by, self.height, R, r)
+            else:
+                cells = build_torus_tube_cells(
+                    self.symmetry, self.nx, self.ny, self.amplitude,
+                    self.overlap, self.samples, self.style,
+                    self.smoothness, self.tube_radius, self.tube_sides,
+                    self.weave_height, self.color_by, self.relax_iters,
+                    self.rope_clearance, self.weave_gap, R, r)
+            obj = pc.emit(context, "Knot Torus", cells,
+                          self.separate, fit=True, operator=self)
+            if obj is None:
+                self.report({'ERROR'}, "no carpet generated")
+                return {'CANCELLED'}
+            obj["math_art_pattern"] = True
+            if self.output == 'TUBE':
+                _shade_smooth(obj)
+            if obj.type == 'MESH':
+                self.report({'INFO'},
+                            "TORUS %dx%d  %d loops  V=%d F=%d"
+                            % (self.nx, self.ny, len(cells),
+                               len(obj.data.vertices),
+                               len(obj.data.polygons)))
+            else:
+                self.report({'INFO'}, "TORUS %dx%d  %d loops" %
+                            (self.nx, self.ny, len(cells)))
+            return {'FINISHED'}
+
         def execute(self, context):
             if self.lattice == 'SPHERE':
                 return self._execute_sphere(context)
             if self.lattice == 'TILING':
                 return self._execute_tiling(context)
+            if self.lattice == 'TORUS':
+                return self._execute_torus(context)
             if self.output == 'CURVE':
                 if self.relax_iters > 0:
                     paths = relaxed_paths(
@@ -2224,6 +2481,7 @@ if _IN_BLENDER:
             lay.prop(self, 'lattice')
             sphere = self.lattice == 'SPHERE'
             tiling = self.lattice == 'TILING'
+            torus = self.lattice == 'TORUS'
             if sphere:
                 # lobe count is AUTO on the sphere (follows the
                 # scaffold degree), so symmetry is not shown
@@ -2296,6 +2554,31 @@ if _IN_BLENDER:
                 if self.relax_iters > 0:
                     lay.prop(self, 'rope_clearance')
                     lay.prop(self, 'weave_gap')
+                lay.prop(self, 'align')
+                return
+            if torus:
+                lay.prop(self, 'torus_major')
+                lay.prop(self, 'torus_minor')
+                if self.output == 'RIBBON':
+                    lay.prop(self, 'interlace')
+                    if self.interlace:
+                        lay.prop(self, 'interlace_mode')
+                        if self.interlace_mode == 'WOVEN':
+                            lay.prop(self, 'weave_height')
+                    lay.prop(self, 'color_by')
+                    lay.prop(self, 'height')
+                    lay.prop(self, 'separate')
+                elif self.output == 'TUBE':
+                    lay.prop(self, 'tube_radius')
+                    lay.prop(self, 'tube_sides')
+                    lay.prop(self, 'weave_height')
+                    lay.prop(self, 'color_by')
+                    lay.prop(self, 'separate')
+                if self.output in ('TUBE', 'CURVE'):
+                    lay.prop(self, 'relax_iters')
+                    if self.relax_iters > 0:
+                        lay.prop(self, 'rope_clearance')
+                        lay.prop(self, 'weave_gap')
                 lay.prop(self, 'align')
                 return
             if self.output == 'RIBBON':
@@ -2600,6 +2883,33 @@ def _check_sphere_relax(freq, k, samples=96, iters=120,
     return st['ok'], st
 
 
+def _check_torus_seam(nx, ny, R, r):
+    """Seam continuity of the torus wrap.  Warps every patch loop
+    centre (fundamental AND margin) and checks each lands on exactly
+    the same torus point as its fundamental partner (m mod nx, n mod
+    ny) -- so a loop near u = 0 coincides with its partner near
+    u = 2pi, and likewise for v.  Returns the worst mismatch (0 for a
+    correctly periodic wrap: it fails immediately if W != nx*b1 or
+    H != ny*b2)."""
+    centers, mns, idmap, _interior = loop_centers('SQUARE', nx, ny)
+    W, H = float(nx), float(ny)
+
+    def warp(c):
+        u = 2.0 * pi * c[0] / W
+        v = 2.0 * pi * c[1] / H
+        return np.array([(R + r * np.cos(v)) * np.cos(u),
+                         (R + r * np.cos(v)) * np.sin(u),
+                         r * np.sin(v)])
+
+    worst = 0.0
+    for (m, n) in mns:
+        i = idmap[(m, n)]
+        j = idmap[(m % nx, n % ny)]
+        worst = max(worst, float(np.abs(warp(centers[i])
+                                        - warp(centers[j])).max()))
+    return worst
+
+
 if __name__ == "__main__":
     ok = True
 
@@ -2864,5 +3174,54 @@ if __name__ == "__main__":
               "interior min_dz=%.4f (gap %.4f)  move %.2e->%.2e"
               % (tname, g, sb, sa, clr, min_dz, gap,
                  tr[:10].mean(), tr[-10:].mean()))
+
+    # 15. torus carpet: the square carpet wrapped onto R^2/(Wz x Hz).
+    #     Emits exactly the nx x ny fundamental loops; checks seam
+    #     continuity (every patch loop coincides with its fundamental
+    #     partner under the wrap), zero periodic-weave conflicts, and
+    #     finite non-empty geometry in all three outputs.
+    for nx, ny in ((3, 3), (4, 3)):
+        R, r = 1.0, 0.5
+        car = build_carpet('SQUARE', 4, nx, ny, 0.10, 1.15, 120)
+        _sig, conf, fids = _torus_signed(car, 'SQUARE', nx, ny)
+        seam = _check_torus_seam(nx, ny, R, r)
+        rcells = build_torus_cells(4, nx, ny, samples=120,
+                                   interlace_mode='WOVEN',
+                                   weave_height=0.05,
+                                   torus_major=R, torus_minor=r)
+        tcells = build_torus_tube_cells(4, nx, ny, samples=120,
+                                        tube_sides=8,
+                                        torus_major=R, torus_minor=r)
+        cpaths = torus_loop_paths(4, nx, ny, samples=120,
+                                  torus_major=R, torus_minor=r)
+        rf = sum(len(c[1]) for c in rcells)
+        tf = sum(len(c[1]) for c in tcells)
+        rfin = all(all(np.isfinite(v).all() for v in c[0])
+                   for c in rcells)
+        tfin = all(all(np.isfinite(v).all() for v in c[0])
+                   for c in tcells)
+        tq = all(len(f) == 4 for c in tcells for f in c[1])
+        cfin = all(np.isfinite(np.asarray(p)).all() for p, _c in cpaths)
+        nloops = nx * ny
+        good = (len(fids) == nloops and len(cpaths) == nloops
+                and conf == 0 and seam < 1e-9
+                and rf > 0 and rfin and tf > 0 and tfin and tq and cfin)
+        ok = ok and good
+        print("torus %dx%d : loops=%d/%d conflicts=%d seam_err=%.2e  "
+              "ribbon %d faces  tube %d faces quads=%s  curve %d : %s"
+              % (nx, ny, len(fids), nloops, conf, seam, rf, tf, tq,
+                 len(cpaths), good))
+
+    # 15b. relaxed torus rope (tier-2 centerlines wrapped on the torus)
+    #      builds finite, non-empty, all-quad geometry
+    rtc = build_torus_tube_cells(4, 3, 3, samples=96, tube_sides=8,
+                                 relax_iters=40, torus_major=1.0,
+                                 torus_minor=0.5)
+    rtf = sum(len(c[1]) for c in rtc)
+    rtfin = all(all(np.isfinite(v).all() for v in c[0]) for c in rtc)
+    rtq = all(len(f) == 4 for c in rtc for f in c[1])
+    g = rtf > 0 and rtfin and rtq
+    ok = ok and g
+    print("torus relax 3x3 : %d faces quads=%s : %s" % (rtf, rtq, g))
 
     print("RESULT:", "OK" if ok else "BAD")
