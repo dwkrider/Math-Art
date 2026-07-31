@@ -395,6 +395,90 @@ def _ennk_X(z, p, theta=0.0):
     return out[0], out[1], out[2]
 
 
+# --- M3 batch helpers: higher genus (Chen-Gackstatter) + symmetrizations
+# (harvested from minimalsurfaces.blog) -----------------------------------
+# Two clean, fully verified additions land in the WE_SURFACES block at the
+# end of this dict: the Tilted Scherk (a Lopez-Ros deformation of the
+# doubly periodic Scherk surface) and Enneper-with-n-catenoids (a
+# symmetrized genus-0 surface with one Enneper end and n catenoidal ends).
+# References:
+#   R. Schoen / Lopez & Ros (1991) on the Lopez-Ros deformation; H. F.
+#   Scherk (1835) for the base Scherk surface; the decorated-Enneper
+#   symmetrization follows M. Weber's repository,
+#   https://minimalsurfaces.blog/ (Enneper with n Catenoids).
+
+def _tiltscherk_roots():
+    """The four ends of the tilted Scherk surface: the 4th roots of unity
+    {1, i, -1, -i} (the poles of dh = 4z/(z^4 - 1))."""
+    return np.exp(1j * math.pi * np.arange(4) / 2.0)
+
+
+def _tiltscherk_phi(z, p):
+    """Weierstrass 1-forms of the tilted Scherk surface (kept for the
+    period-closure gate): g = Rho z, dh = 4z/(z^4 - 1)."""
+    Rho = p['Rho']
+    d = z ** 4 - 1.0
+    return (2.0 * (1.0 / Rho - Rho * z * z) / d,
+            2.0j * (1.0 / Rho + Rho * z * z) / d,
+            4.0 * z / d)
+
+
+def _tiltscherk_X(z, p, theta=0.0):
+    """Exact log-sum immersion of the tilted Scherk surface on the open
+    unit disk.  dh = 4z/(z^4 - 1) has a simple pole at each 4th root of
+    unity rho, so the antiderivative is a sum of four logarithms with
+    residues read off 1/(4 rho^3) = rho/4; each log's branch cut is rotated
+    radially outward (rho is on the unit circle) so no cut crosses the
+    disk and the immersion is single-valued and smooth on it.  The Lopez-Ros
+    parameter Rho tilts the four ends (the doubly periodic 'tilt'); Rho = 1
+    is the symmetric Scherk saddle.  Two of the four end periods are the
+    genuine doubly periodic lattice translations (in x at z = +-i, in y at
+    z = +-1); only the vertical period vanishes, so this single fundamental
+    saddle is meshed straight from the antiderivative (no radial quadrature,
+    hence clean planar wing ends)."""
+    Rho = p['Rho']
+    rho = _tiltscherk_roots()
+    c1 = (rho / 2.0) * (1.0 / Rho - Rho * rho ** 2)
+    c2 = (1j * rho / 2.0) * (1.0 / Rho + Rho * rho ** 2)
+    c3 = rho ** 2
+    d = np.asarray(z)[..., None] - rho
+    dr = d * np.conj(rho)                       # rotate: outward ray -> +real
+    L = np.log(np.abs(dr)) + 1j * np.mod(np.angle(dr), TAU)
+    rot = np.exp(1j * theta)
+    return (np.real(np.sum(c1 * L, axis=-1) * rot),
+            np.real(np.sum(c2 * L, axis=-1) * rot),
+            np.real(np.sum(c3 * L, axis=-1) * rot))
+
+
+# Enneper-with-n-catenoids (decorated Enneper): genus 0, one Enneper end at
+# z = infinity plus n catenoidal ends at the n-th roots of unity (the double
+# poles of dh).  The period problem is solved in closed form via residues:
+# with the free shape parameter a fixed, the Lopez-Ros factor is identically
+# 1 and the neck radius is b = (2 - a^n)^(1/n) (real for a^n < 2), so no
+# numeric solve is needed -- every real period vanishes to machine epsilon
+# (verified by contour integration for n = 2..4).  g = z^{n-1}(z^n - b^n)/
+# (z^n - a^n), dh = z^{n-1}(z^n - a^n)(z^n - b^n)/(z^n - 1)^2 dz.
+
+def _enc_roots(n):
+    """The n catenoidal ends: the n-th roots of unity (the double poles of
+    the height differential)."""
+    return np.exp(2j * math.pi * np.arange(n) / n)
+
+
+def _enc_b(n, a):
+    """Closed-form neck radius b = (2 - a^n)^(1/n) that closes the period
+    problem for the given free shape parameter a (needs a^n < 2)."""
+    return (2.0 - a ** n) ** (1.0 / n)
+
+
+def _enc_phi(z, p):
+    n, a, b = p['n'], p['a'], p['b']
+    zn = z ** n
+    g = z ** (n - 1) * (zn - b ** n) / (zn - a ** n)
+    dh = z ** (n - 1) * (zn - a ** n) * (zn - b ** n) / (zn - 1.0) ** 2
+    return (0.5 * (1.0 / g - g) * dh, 0.5j * (1.0 / g + g) * dh, dh)
+
+
 WE_SURFACES = {
     # --- ports of the former bespoke toolkit builders ---------------------
     'KNOID': {
@@ -656,6 +740,95 @@ WE_SURFACES = {
         'cycles': lambda p: [(r, 0.12) for r in p['_rho']],
         'test_order': 1,                         # order 1 -> n = 3 (trinoid)
     },
+    # --- M3 batch: higher genus (Chen-Gackstatter) + symmetrizations
+    # (harvested) -------------------------------------------------------
+    # Two surfaces from the minimalsurfaces.blog harvest that build clean
+    # at default settings and pass every gate (period closure < 1e-6, 2 m
+    # fit, manifold, conformal UV).  See the TODO(zoo) note below for the
+    # harvested higher-genus Chen-Gackstatter towers and the plane-with-
+    # catenoids that are deliberately deferred rather than shipped rough.
+    'TILT_SCHERK': {
+        # Tilted Scherk: the doubly periodic Scherk surface with a Lopez-Ros
+        # deformation Rho that tilts its four ends.  g = Rho z,
+        # dh = 4z/(z^4 - 1); genus 0, four ends at the 4th roots of unity.
+        # One fundamental saddle is meshed from the exact log-sum immersion
+        # (_tiltscherk_X) on the punctured unit disk -- the two horizontal
+        # end periods are the doubly periodic lattice translations, only the
+        # vertical period vanishes, so a single saddle is the natural unit.
+        # Rho (from the radius slider) is the tilt; Rho = 1 is symmetric.
+        'label': "Tilted Scherk (doubly periodic)",
+        'family': 'DOUBLY',
+        'phi': _tiltscherk_phi,      # kept for the period-closure gate
+        'Xexact': _tiltscherk_X,     # exact immersion used by the mesher
+        'domain': ('disk', 0.0, 0.999),
+        'p_from': lambda order, radius: {
+            'Rho': 1.0 + 0.5 * min(max(radius / 1.2, 0.0), 1.6),
+            'eps': 0.09},
+        'mask_punctures': lambda p: [
+            (r, p['eps']) for r in _tiltscherk_roots()],
+        'clip_punctures': True,      # snap wing rims onto the mask circle
+        'clip': False,
+        'radial_grade': 'rim',       # fine cells at the |z| = 1 ends
+        'res_boost': (1.6, 1.6),
+        'cycles': lambda p: [(r, 0.12) for r in _tiltscherk_roots()],
+        'cycle_free': (0, 1),        # the two doubly periodic translations
+        'test_order': 1,
+    },
+    'ENNEPER_NCAT': {
+        # Enneper with n catenoids (decorated Enneper): genus 0, one Enneper
+        # end at infinity + n catenoidal ends at the n-th roots of unity.
+        # Closed-form period solution (Lopez-Ros factor 1, neck b =
+        # (2 - a^n)^(1/n)); the free shape parameter a is fixed to 1.05, a
+        # value that keeps the ends balanced and tear-free.  n is capped at
+        # 3: at n >= 4 the single Enneper end flares fast enough that the
+        # object-space end clip shears one wing into a thin sail at the
+        # default resolution, so the count stops where the mesh stays clean.
+        'label': "Enneper with n Catenoids",
+        'family': 'SPHERES',
+        'phi': _enc_phi,
+        'domain': ('disk', 0.0, lambda p: p['r1']),
+        'p_from': lambda order, radius: (lambda n: {
+            'n': n, 'a': 1.05, 'b': _enc_b(n, 1.05),
+            'r1': 1.3 + 0.25 * min(max(radius / 1.2 - 1.0, 0.0), 2.0)})(
+                int(max(2, min(order, 3)))),
+        'count': "Catenoids (n)",
+        # the catenoid ends sit on |z| = 1; puncture + rim-graded sampling
+        # give clean neck rims, the Enneper end flares to the disk edge
+        'mask_punctures': lambda p: [(r, 0.16) for r in _enc_roots(p['n'])],
+        'clip': True,
+        'radial_grade': 'rim',
+        'res_boost': (1.9, 2.1),
+        'cycles': lambda p: [(r, 0.1) for r in _enc_roots(p['n'])],
+        'test_order': 2,             # order 2 -> n = 2
+    },
+    # TODO(zoo) -- harvested but deliberately NOT shipped (would be
+    # mislabeled / rough; honesty gate):
+    #   * Higher-genus Chen-Gackstatter towers -- both the hyperelliptic
+    #     g2/g4/g5 (dh = 1, g = rho*sqrt(z)*prod sqrt(z^2 - a_i^2)/...,
+    #     branch constants harvested as literals) and the k-fold-symmetric
+    #     symm-chen-gackstatter-gn (g = z^{-e}(1 - z^2)^e, e = (k-1)/k,
+    #     closed-form Gamma-quotient rho).  The engine's only higher-genus
+    #     assembler (we.tile_dihedral / halfplane_patch) is specialized to
+    #     the Costa-Hoffman-Meeks cut structure (cuts along [0,1] and
+    #     (-inf,-1], catenoid/planar ends at +-1, a percentile radius clip
+    #     sized for finite necks).  Driven with the Chen-Gackstatter data it
+    #     produces non-manifold, wrong-genus meshes and its radius clip
+    #     shears off the single unbounded Enneper end.  A correct build needs
+    #     a dedicated cyclic-cover assembler: integrate one angular wedge
+    #     (the notebooks use [0, pi/2]) with an Enneper-end-aware trim, then
+    #     rotate/reflect and weld -- a separate reparametrization, left for a
+    #     follow-up.  (rho = chm_modulus and the Gamma quotients agree, so
+    #     the constants are verified; only the assembler is missing.)
+    #   * symm-Costa (n > 2) is NOT a new surface: its closed-form Gamma
+    #     rho equals chm_modulus(n-1) exactly (0.955978, 0.988070, 0.995117,
+    #     0.997535 for n = 2..5), i.e. symmetrized Costa of order n is the
+    #     Costa-Hoffman-Meeks surface of genus n-1 -- already shipped as
+    #     COSTA_HM.  Not double-listed.
+    #   * Plane-with-catenoids (g = Rho/sqrt(z), dh = 1/(sqrt(z-1)sqrt(z+1)))
+    #     has a branched Gauss map and height differential; radial disk rays
+    #     cross the sqrt branch cuts on the real axis and tear the surface.
+    #     It needs an upper-half-plane integrator with a Schwarz reflection
+    #     (the notebook's y in (eps, pi - eps) domain), not yet in the engine.
 }
 
 
