@@ -656,7 +656,261 @@ WE_SURFACES = {
         'cycles': lambda p: [(r, 0.12) for r in p['_rho']],
         'test_order': 1,                         # order 1 -> n = 3 (trinoid)
     },
+    # --- M3 batch: genus-0 k-noid symmetry variants + Lopez (harvested) ---
+    # Weierstrass data harvested from Matthias Weber's minimalsurfaces.blog
+    # (research/msblog_harvest/spheres.json).  These are Lopez-Ros
+    # deformations of the Jorge-Meeks k-noid into the symmetry groups of the
+    # pyramid, bipyramid, prism and antiprism, together with F. Lopez's
+    # genus-0 spheres and a finite piece of a Riemann-type surface.  g and dh
+    # are elementary rational maps of z on a disk/annulus domain; the
+    # Lopez-Ros scale rho and branch constant a are the closed forms that
+    # close every real period (verified < 1e-6 by the period gate below), so
+    # each row meshes straight from the numeric radial Weierstrass integrator
+    # with the same object-space end clip the Jorge-Meeks KNOID uses.  The
+    # helper functions (_m3_*) sit just after this dict.
+    # References:
+    #   L. P. Jorge & W. H. Meeks III, "The topology of complete minimal
+    #     surfaces of finite total Gaussian curvature", Topology 22 (1983)
+    #     203-221 (the symmetric k-noids);
+    #   F. J. Lopez & A. Ros, "On embedded complete minimal surfaces of
+    #     genus zero", J. Differential Geom. 33 (1991) 293-300 (the Lopez-Ros
+    #     deformation / vertical-flux parameter);
+    #   F. J. Lopez, "The classification of complete minimal surfaces with
+    #     total curvature greater than -12 pi", Trans. AMS 334 (1992) 49-74
+    #     (the two-ended index-2 spheres);
+    #   B. Riemann, "Ueber die Flaeche vom kleinsten Inhalt bei gegebener
+    #     Begrenzung", Abh. Koenigl. Ges. Wiss. Goettingen 13 (1867)
+    #     (the Riemann minimal example this finite piece is cut from);
+    #   H. Karcher, "Construction of minimal surfaces", Surveys in Geometry
+    #     (1989), for the symmetrization construction of all four k-noids.
+    'M3_PYR': {
+        # Pyramidal k-noid: n slanted catenoid ends around a pyramid + one
+        # axial end.  g = rho z^{n-1}/(z^n - a^n), dh = z^{n-1}(z^n - a^n)/
+        # (z^n - 1)^2 dz; the n ends sit at the n-th roots of unity.  rho is
+        # the explicit Lopez-Ros scale _m3_pyr_rho(a, n) that closes all
+        # periods for any apex tilt a > 1 (tetrahedroid = most symmetric a).
+        'label': "Pyramidal k-noid",
+        'family': 'SPHERES',
+        'g': lambda z, p: p['rho'] * z ** (p['n'] - 1)
+        / (z ** p['n'] - p['a'] ** p['n']),
+        'dh': lambda z, p: z ** (p['n'] - 1) * (z ** p['n'] - p['a'] ** p['n'])
+        / (z ** p['n'] - 1.0) ** 2,
+        'domain': ('disk', 0.0, lambda p: p['r1']),
+        'p_from': lambda order, radius: (lambda n: {
+            'n': n, 'a': _m3_pyr_a(n), 'rho': _m3_pyr_rho(_m3_pyr_a(n), n),
+            'r1': 1.3 + 0.35 * min(max(radius / 1.2, 0.0), 1.4)})(
+                int(max(3, min(order + 2, 8)))),
+        'radial_grade': 'rim', 'clip': True,
+        'res_boost': (1.9, 1.9),
+        'count': "Pyramid order (n)",
+        'cycles': lambda p: [(np.exp(2j * math.pi * j / p['n']), 0.12)
+                             for j in range(p['n'])],
+        'test_order': 1,                         # order 1 -> n = 3
+    },
+    'M3_PRISM': {
+        # Prismatic k-noid: 2*nn ends in prism symmetry, one ring at |z| = b
+        # (inside the unit circle) and one aligned ring at |z| = 1/b.
+        # g = a^nn z^{nn-1}(z^nn - a^-nn)/(z^nn - a^nn), dh as below; the
+        # branch constant a = _m3_prism_a(nn, b) is the closed form (Weber's
+        # notebook) that closes the period problem, with rho = a^nn.  The
+        # cube k-noid is nn = 4, b = sqrt(2 - sqrt 3).
+        'label': "Prismatic k-noid",
+        'family': 'SPHERES',
+        'g': lambda z, p: p['a'] ** p['nn'] * z ** (p['nn'] - 1)
+        * (z ** p['nn'] - 1.0 / p['a'] ** p['nn'])
+        / (z ** p['nn'] - p['a'] ** p['nn']),
+        'dh': lambda z, p: z ** (p['nn'] - 1)
+        * (z ** p['nn'] - p['a'] ** p['nn'])
+        * (z ** p['nn'] - 1.0 / p['a'] ** p['nn'])
+        / ((z ** p['nn'] - p['b'] ** p['nn']) ** 2
+           * (z ** p['nn'] - 1.0 / p['b'] ** p['nn']) ** 2),
+        'domain': ('disk', 0.0, lambda p: p['r1']),
+        'p_from': lambda order, radius: (lambda nn: (lambda b: {
+            'nn': nn, 'b': b, 'a': _m3_prism_a(nn, b),
+            'r1': 1.0 / b + 0.3})(_m3_prism_b(nn)))(
+                int(max(3, min(order + 2, 7)))),
+        'radial_grade': 'rim', 'clip': True,
+        'res_boost': (1.9, 1.9),
+        'count': "Prism order (nn)",
+        'cycles': lambda p: _m3_ring_cyc(p['nn'], p['b'], p['a'], 0.0),
+        'test_order': 2,                         # order 2 -> nn = 4 (cube)
+    },
+    'M3_BIPYR': {
+        # Bipyramidal k-noid: m equatorial catenoid ends at the m-th roots of
+        # unity plus the two axial ends (z = 0 and z = infinity), the apices
+        # of a bipyramid over a regular m-gon.  g = (z^m - s^m)/(z(s^m z^m -
+        # 1)), dh = (z^m - s^m)(s^m z^m - 1)/((z^m - 1)^2 z) dz; all closed
+        # form in the single growth-ratio s (octahedroid = m = 4).  An
+        # annulus domain excludes the two axial ends, whose flares the
+        # object-space end clip trims.
+        'label': "Bipyramidal k-noid",
+        'family': 'SPHERES',
+        'g': lambda z, p: (z ** p['m'] - p['s'] ** p['m'])
+        / (z * (p['s'] ** p['m'] * z ** p['m'] - 1.0)),
+        'dh': lambda z, p: (z ** p['m'] - p['s'] ** p['m'])
+        * (p['s'] ** p['m'] * z ** p['m'] - 1.0)
+        / ((z ** p['m'] - 1.0) ** 2 * z),
+        'domain': ('disk', lambda p: p['r0'], lambda p: p['r1']),
+        'p_from': lambda order, radius: (lambda m: {
+            'm': m, 's': _m3_bipyr_s(m), 'r0': 0.34,
+            'r1': 2.9})(int(max(3, min(order + 2, 7)))),
+        'radial_grade': 'both', 'clip': True,
+        'res_boost': (1.9, 1.9),
+        'count': "Bipyramid order (m)",
+        'cycles': lambda p: [(0.0, 0.12)]
+        + [(np.exp(2j * math.pi * j / p['m']), 0.14) for j in range(p['m'])],
+        'test_order': 1,                         # order 1 -> m = 3
+    },
+    'M3_ANTI5': {
+        # Antiprismatic k-noid: 2*nn ends in antiprism symmetry -- one ring
+        # at |z| = b and a HALF-STEP-rotated ring at |z| = 1/b (phase pi/nn).
+        # g = rho z^{nn-1}(z^nn + a^-nn)/(z^nn - a^nn), dh as below.  Unlike
+        # the prism, the period problem here is only closed-form for nn = 2,3
+        # and needs a numeric NSolve for higher nn; only the harvested
+        # nn = 5, b = 0.2 constants (a, rho) are shipped -- a single verified
+        # member (the general family is deferred; see the TODO note).
+        'label': "Antiprismatic k-noid (nn=5)",
+        'family': 'SPHERES',
+        'g': lambda z, p: p['rho'] * z ** (p['nn'] - 1)
+        * (z ** p['nn'] + 1.0 / p['a'] ** p['nn'])
+        / (z ** p['nn'] - p['a'] ** p['nn']),
+        'dh': lambda z, p: z ** (p['nn'] - 1)
+        * (z ** p['nn'] - p['a'] ** p['nn'])
+        * (z ** p['nn'] + 1.0 / p['a'] ** p['nn'])
+        / ((z ** p['nn'] - p['b'] ** p['nn']) ** 2
+           * (z ** p['nn'] + 1.0 / p['b'] ** p['nn']) ** 2),
+        'domain': ('disk', lambda p: 0.5 * p['b'], lambda p: 1.6 / p['b']),
+        'p_from': lambda order, radius: {
+            'nn': 5, 'b': 0.2, 'a': 0.2748767946679093,
+            'rho': 0.0015692436842339352},
+        'radial_grade': 'both', 'clip': True,
+        'res_boost': (2.0, 2.0),
+        'cycles': lambda p: _m3_ring_cyc(p['nn'], p['b'], p['a'],
+                                         math.pi / p['nn']),
+        'test_order': 1,
+    },
+    'M3_LOPEZ': {
+        # Lopez sphere with two ends of index 2 (Lopez 1992): an annulus
+        # 1/e <= |z| <= e between two winding-2 ends at z = 0 and z =
+        # infinity.  g = (z^2 + c i z + 1)/(B z), dh = i(z^2 + c i z + 1)/
+        # (B z^2) dz with B = 1/sqrt(2 - c^2); c = 0 is the doubly-covered
+        # catenoid, and c in (0, sqrt 2) breaks the symmetry (order steps c).
+        'label': "Lopez sphere (2 ends of index 2)",
+        'family': 'SPHERES',
+        'g': lambda z, p: p['B'] * (z * z + 1j * p['c'] * z + 1.0) / z,
+        'dh': lambda z, p: 1j * p['B'] * (z * z + 1j * p['c'] * z + 1.0)
+        / (z * z),
+        'domain': ('disk', lambda p: 1.0 / p['r1'], lambda p: p['r1']),
+        'p_from': lambda order, radius: _m3_lopez_p(order, radius),
+        'radial_grade': 'both', 'clip': True,
+        'res_boost': (1.6, 1.6),
+        'count': "Asymmetry (c steps)",
+        'cycles': lambda p: [(0.0, 0.22)],
+        'test_order': 1,                         # order 1 -> c = 0
+    },
+    'M3_CATENN': {
+        # Sphere with one catenoid end and one Enneper end (Lopez 1992,
+        # total curvature -8 pi): g = rho(z - 1/z), dh = (z - 1/z) dz on the
+        # annulus 0.16 <= |z| <= 2.6.  The catenoid end sits at z = 0 (dh
+        # simple pole -> logarithmic growth), the Enneper end at z = infinity
+        # (dh grows -> quadratic flaring); rho is the free Lopez-Ros scale.
+        'label': "Sphere: catenoid + Enneper end",
+        'family': 'SPHERES',
+        'g': lambda z, p: p['rho'] * (z - 1.0 / z),
+        'dh': lambda z, p: (z - 1.0 / z),
+        'domain': ('disk', lambda p: p['r0'], lambda p: p['r1']),
+        'p_from': lambda order, radius: {
+            'rho': 0.4, 'r0': 0.16,
+            'r1': 2.6 * min(max(radius / 1.2, 0.5), 1.5)},
+        'radial_grade': 'both', 'clip': True,
+        'res_boost': (1.8, 1.8),
+        'cycles': lambda p: [(0.0, 0.10)],
+        'test_order': 1,
+    },
+    'M3_FRIEM': {
+        # Finite Riemann (plane-1 catenoid-2): the compact disk piece of a
+        # Riemann-type surface with two catenoid ends at z = +-1 and a
+        # higher end toward infinity.  g = t(z^2 + 3)/(z^2 - 1), dh =
+        # (z^2 + 3)/(z^2 - 1) dz (the notebook's P/Q form -- authoritative
+        # over the page's P*Q); t is the Lopez-Ros tilt.  Illustrates the
+        # Lopez-Ros theorem (never embedded).
+        'label': "Finite Riemann (plane + 2 catenoids)",
+        'family': 'SPHERES',
+        'g': lambda z, p: p['t'] * (z * z + 3.0) / (z * z - 1.0),
+        'dh': lambda z, p: (z * z + 3.0) / (z * z - 1.0),
+        'domain': ('disk', 0.0, lambda p: p['r1']),
+        'p_from': lambda order, radius: {
+            't': 0.2, 'r1': 1.35 + 0.4 * min(max(radius / 1.2, 0.0), 1.4)},
+        'radial_grade': 'rim', 'clip': True,
+        'res_boost': (1.7, 1.7),
+        'cycles': lambda p: [(1.0, 0.15), (-1.0, 0.15)],
+        'test_order': 1,
+    },
 }
+
+
+# --- M3 batch helpers (genus-0 k-noid symmetry variants) ------------------
+# Lopez-Ros closing constants (rho, a) and period-cycle builders for the
+# harvested M3 sphere rows at the end of WE_SURFACES above.  Kept as
+# module-level functions so the row lambdas resolve them lazily.
+
+def _m3_pyr_a(n):
+    """Pyramidal apex tilt a > 1, gentler with higher order n."""
+    return max(1.12, 1.7 - 0.18 * (n - 3))
+
+
+def _m3_pyr_rho(a, n):
+    """Explicit Lopez-Ros scale closing the pyramidal k-noid periods."""
+    return math.sqrt((a ** n - 1.0) * (1.0 + a ** n * (n - 1) + n)) \
+        / math.sqrt(n - 1)
+
+
+def _m3_prism_b(nn):
+    """Shape parameter b in (0, 1) per prism order (cube = nn 4)."""
+    return {2: 0.72, 3: 0.60, 4: math.sqrt(2 - math.sqrt(3)),
+            5: 0.45, 6: 0.42, 7: 0.78}.get(nn, 0.5)
+
+
+def _m3_prism_a(nn, b):
+    """Closed-form branch constant a(b, nn) (Weber's notebook) that solves
+    the prismatic k-noid period problem symbolically; rho = a**nn."""
+    t1 = (b ** (4 * nn) * (1 - 3 * nn) + b ** (2 + 2 * nn) * (1 - 3 * nn)
+          + b ** 2 * (nn - 1) + b ** (6 * nn) * (nn - 1)) ** (-1.0 / nn)
+    inner = (b ** 2 * (nn - 1) ** 2 + b ** (2 + 4 * nn) * (nn - 1) ** 2
+             + b ** 4 * nn ** 2 + b ** (4 * nn) * nn ** 2
+             + b ** (2 + 2 * nn) * (4 * nn - 2))
+    t2 = (-b ** 2 - b ** (4 * nn) - b ** (2 * nn) * (1 + b ** 2) * (2 * nn - 1)
+          + (1 - b ** (2 * nn)) * math.sqrt(inner)) ** (1.0 / nn)
+    a = b * t1 * t2
+    return a.real if isinstance(a, complex) else a
+
+
+def _m3_bipyr_s(m):
+    """Growth ratio s in (0, 1) per bipyramid order m."""
+    return {3: 0.7, 4: 0.8, 5: 0.85, 6: 0.9}.get(m, 0.8)
+
+
+def _m3_lopez_p(order, radius):
+    """Lopez-sphere params: order steps the asymmetry c (c = 0 is the
+    doubly-covered catenoid), radius scales the annulus reach."""
+    c = min(0.35 * (order - 1), 1.35)
+    return {'c': c, 'B': 1.0 / math.sqrt(2.0 - c * c),
+            'r1': 3.2 * min(max(radius / 1.2, 0.5), 1.6)}
+
+
+def _m3_ring_cyc(nn, b, a, twist=0.0):
+    """Period cycles around the two rings of ends at |z| = b and |z| = 1/b
+    (the outer ring phase-twisted by `twist` -- pi/nn for the antiprism, 0
+    for the prism).  Each contour radius is shrunk to clear the nearest
+    other singular circle so the residue integral stays clean."""
+    out = []
+    for R, ph in ((b, 0.0), (1.0 / b, twist)):
+        other = [x for x in (b, 1.0 / b, a, 1.0 / a) if abs(x - R) > 1e-6]
+        rr = 0.3 * min([abs(x - R) for x in other]
+                       + [R * math.sin(math.pi / nn)])
+        for j in range(nn):
+            out.append((R * np.exp(1j * (TAU * j / nn + ph)), rr))
+    return out
 
 
 # ==========================================================================
@@ -765,11 +1019,20 @@ BJORLING = {
     },
 }
 
-# TODO(zoo) -- deferred to the next batch (data not yet verified against
+# The pyramidal / bipyramidal / prismatic k-noids and the Lopez spheres
+# (catenoid+Enneper, index-2 two-ended) and Finite Riemann are now the M3
+# batch above (harvested Weierstrass data, closed-form Lopez-Ros constants,
+# all periods verified < 1e-6).
+#
+# TODO(zoo) -- deferred (data not fully closing / not yet verified against
 # Weber's notebooks; deliberately NOT registered rather than mislabeled):
-#   * Pyramidal / bipyramidal / prismatic k-noids (Lopez-Ros parameter;
-#     needs the degree-(n+1) Gauss map data + solve_scalar closure)
-#   * Lopez spheres
+#   * ANTIPRISMATIC k-noid, general nn: only the single harvested member
+#     (nn = 5, b = 0.2 -> a, rho, closes to ~1e-19) is shipped as M3_ANTI5.
+#     The nn = 2, 3 "closed forms": the harvest records a(b) for nn = 2 but
+#     NOT its companion rho, and a numeric (a, rho) solve at that a bottoms
+#     out at ~8e-4 real-period residual (does not close) -- so those sub-
+#     cases are withheld pending rho's closed form.  General nn needs a
+#     2-parameter NSolve of the residue/period conditions per (nn, b).
 #   * Bjorling clothoid (needs a complex Fresnel evaluator)
 #   * Karcher's alpha saddle tower is now SADDLE_TOWER_A (one fundamental
 #     domain -- one vertical period -- with verified period closure across
