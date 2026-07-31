@@ -359,7 +359,7 @@ COUNT_PARAM = {}
 # saddle tower); maps surface key -> the operator "Storeys" UI label
 STOREY_PARAM = {}
 # surfaces that use the associate-family angle
-ANGLE_PARAM = {'CATHEL'}
+ANGLE_PARAM = {'CATHEL', 'PGD'}
 
 # Wire in the catalog (KNOID, COSTA_HM and the rest of the zoo): the
 # rows in minimal_surface_zoo.py are built by the generic engine in
@@ -862,6 +862,38 @@ def build_tpms(kind, cells, res_per_cell, scale):
     return verts * s, tris
 
 
+# --- exact Weierstrass P / Gyroid / D (Bonnet angle) ---------------------
+# The nodal TPMS above (marching-tets level sets) have NO associate
+# parameter -- you cannot morph P <-> Gyroid <-> D in the nodal
+# representation.  The exact genus-3 Enneper-Weierstrass immersion in
+# we_builders.pgd_build does: a single Bonnet angle theta continuously
+# sweeps the whole classical family (P at 0, Gyroid at ~38.0148 deg, D at
+# 90 deg).  It is exposed under the periodic generator's Triply Periodic
+# list as its own entry (with the associate-angle slider), separate from
+# and leaving unchanged the nodal TPMS set.  What it meshes is the exact
+# fundamental surface piece (one translational fundamental domain); its
+# space-group structure -- every boundary edge a 2-fold axis, a cubic
+# period lattice independent of theta up to scale -- is verified in the
+# we_builders self-test, but watertight meshing of the whole connected
+# cell is left as future work (see the pgd_build docstring), so `cells`
+# arrays the exact piece on that verified cubic lattice.
+
+try:
+    from . import we_builders as _we_pgd
+except ImportError:                                # script / test context
+    import we_builders as _we_pgd
+
+# key -> (menu label, builder(cells, res_per_cell, scale, theta))
+TPMS_EXACT = {
+    'PGD': ("Schwarz P-Gyroid-D (exact, Bonnet angle)", _we_pgd.pgd_build),
+}
+
+
+def build_tpms_exact(kind, cells, res_per_cell, scale, theta):
+    label, builder = TPMS_EXACT[kind]
+    return builder(cells, res_per_cell, scale, theta)
+
+
 # ==========================================================================
 # 3. Plateau solver (area minimization with pinned boundaries)
 # ==========================================================================
@@ -1308,15 +1340,20 @@ if _IN_BLENDER:
         # periodic Scherk tower is the WE SCHERK_TOWER under Singly, so it
         # is dropped from this list (still reachable via mesh.tpms_add).
         _NOT_TRIPLY = {'SCHERKT'}
-        tpms_items = [(k, v[0], v[0]) for k, v in TPMS.items()
-                      if k not in _NOT_TRIPLY]
+        # the exact Weierstrass P/Gyroid/D (Bonnet angle) leads the Triply
+        # list, ahead of the nodal approximations
+        exact_items = [(k, v[0], v[0]) for k, v in TPMS_EXACT.items()]
+        tpms_items = exact_items + [(k, v[0], v[0]) for k, v in TPMS.items()
+                                    if k not in _NOT_TRIPLY]
         if tpms_items:
             _PERIODIC_ITEMS['TRIPLY'] = tpms_items
             _PERIODIC_ALL.extend(tpms_items)
             _PERIODICITY_ITEMS.append(
                 ('TRIPLY', "Triply Periodic (TPMS)",
-                 f"Triply periodic minimal surfaces "
-                 f"({len(tpms_items)} nodal approximations)"))
+                 f"Triply periodic minimal surfaces: the exact "
+                 f"P/Gyroid/D associate family + "
+                 f"{len(tpms_items) - len(exact_items)} nodal "
+                 f"approximations"))
         if not _PERIODICITY_ITEMS:
             _PERIODICITY_ITEMS.append(
                 ('TRIPLY', "Triply Periodic (TPMS)", "TPMS"))
@@ -1573,9 +1610,25 @@ if _IN_BLENDER:
             # periodicity never raises.  Route on the surface's actual
             # backend, not the dropdown, so scripted calls also resolve.
             surf = self.surface
-            if surf not in TPMS and surf not in PARAMETRIC:
+            if (surf not in TPMS and surf not in PARAMETRIC
+                    and surf not in TPMS_EXACT):
                 items = _periodic_surface_items(self, context)
                 surf = items[0][0] if items else 'G'
+            if surf in TPMS_EXACT:
+                # exact Weierstrass P/Gyroid/D with the Bonnet angle
+                verts, tris = build_tpms_exact(
+                    surf, self.cells, self.resolution, self.cell_size,
+                    self.assoc_angle)
+                if len(tris) == 0:
+                    self.report({'ERROR'}, "Empty surface")
+                    return {'CANCELLED'}
+                label = TPMS_EXACT[surf][0]
+                obj = _new_object(context, label, verts, tris)
+                if self.thickness > 0:
+                    mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
+                    mod.thickness = self.thickness
+                    mod.offset = 0.0
+                return {'FINISHED'}
             if surf in TPMS:
                 verts, tris = build_tpms(surf, self.cells,
                                          self.resolution, self.cell_size)
@@ -1622,7 +1675,11 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'periodicity')
             lay.prop(self, 'surface')
-            if self.periodicity == 'TRIPLY' or self.surface in TPMS:
+            if (self.periodicity == 'TRIPLY' or self.surface in TPMS
+                    or self.surface in TPMS_EXACT):
+                if self.surface in TPMS_EXACT:
+                    # exact P/Gyroid/D: the Bonnet angle is the family knob
+                    lay.prop(self, 'assoc_angle')
                 for k in ('cells', 'resolution', 'cell_size', 'thickness'):
                     lay.prop(self, k)
                 return
