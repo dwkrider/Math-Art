@@ -34,6 +34,8 @@ OPS = [
                   method='MEMBRANE', mem_iterations=80))[-1]),
     ("conway", lambda: bpy.ops.mesh.conway_add(
         example='CUSTOM', notation='sC')),
+    ("conway biscribed", lambda: bpy.ops.mesh.conway_add(
+        example='CUSTOM', notation='tO', post='BISCRIBED')),
     ("solid hull family", lambda: bpy.ops.mesh.regular_solid_add(
         family='HULL', solid='jtT', canon_iters=60)),
     ("solid trapezohedron family",

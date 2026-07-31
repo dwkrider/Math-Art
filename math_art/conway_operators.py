@@ -497,6 +497,65 @@ def canonicalize(V, F, iters=200, lam_t=0.3, lam_p=0.5):
     return [list(map(float, p)) for p in P]
 
 
+def biscribe(V, F, iters=2500, step=0.1):
+    """Biscribed form: all vertices on a circumsphere AND all faces tangent
+    to a concentric insphere.  Starts from the canonical (edge-tangent)
+    form, then drives the vertex radii and the face-plane distances to
+    common values with a damped summed-force step (circumsphere +
+    insphere + planarity, recentred each step) -- the summed force is what
+    keeps it stable where a sequential projection diverges.  Not every
+    solid HAS a biscribed form (rectified solids and several truncations do
+    not); returns (verts, converged) so the caller can report failure."""
+    if np is None:
+        return V, False
+    P = np.array(canonicalize(V, F), dtype=np.float64)
+    P -= P.mean(axis=0)
+    P /= np.mean(np.linalg.norm(P, axis=1)) or 1.0
+    Fi = [np.array(f) for f in F]
+    for _ in range(iters):
+        R = np.linalg.norm(P, axis=1)
+        Rb = R.mean()
+        dX = (step * ((Rb - R) / np.maximum(R, 1e-9))[:, None]) * P
+        ns = np.zeros((len(F), 3))
+        ds = np.zeros(len(F))
+        cs = np.zeros((len(F), 3))
+        for fi, f in enumerate(Fi):
+            Q = P[f]
+            c = Q.mean(axis=0)
+            n = np.zeros(3)
+            for i in range(len(f)):
+                n += np.cross(Q[i] - c, Q[(i + 1) % len(f)] - c)
+            ln = np.linalg.norm(n) or 1.0
+            n /= ln
+            if n @ c < 0:
+                n = -n
+            ns[fi], ds[fi], cs[fi] = n, n @ c, c
+        rb = ds.mean()
+        for fi, f in enumerate(Fi):
+            n = ns[fi]
+            push = step * (rb - ds[fi])
+            for v in f:
+                dX[v] += push * n + step * (n @ (cs[fi] - P[v])) * n
+        dX -= dX.mean(axis=0)
+        P += dX
+        if R.max() / max(R.min(), 1e-9) > 50:
+            return [list(map(float, p)) for p in P], False
+        if np.max(np.abs(dX)) < 1e-11:
+            break
+    R = np.linalg.norm(P, axis=1)
+    dd = []
+    for f in Fi:
+        Q = P[f]
+        c = Q.mean(axis=0)
+        n = np.zeros(3)
+        for i in range(len(f)):
+            n += np.cross(Q[i] - c, Q[(i + 1) % len(f)] - c)
+        n /= np.linalg.norm(n) or 1.0
+        dd.append(abs(float(n @ c)))
+    converged = (R.max() - R.min() < 1e-5) and (max(dd) - min(dd) < 1e-5)
+    return [list(map(float, p)) for p in P], converged
+
+
 # --------------------------------------------------------------------------
 # Named catalog
 # --------------------------------------------------------------------------
@@ -661,6 +720,11 @@ if _IN_BLENDER:
             name="Geometry",
             items=[('CANON', "Canonical",
                     "Edges tangent to sphere, planar faces (Hart)"),
+                   ('BISCRIBED', "Biscribed",
+                    "Vertices on a circumsphere AND faces tangent to a "
+                    "concentric insphere. Not every solid has a biscribed "
+                    "form (rectified solids and several truncations do "
+                    "not) -- a warning is shown if it cannot converge"),
                    ('SPHERE', "Spherized", "Project vertices to a sphere"),
                    ('RAW', "Raw", "Whatever the operators produce")],
             default='CANON')
@@ -736,6 +800,12 @@ if _IN_BLENDER:
                 return {'CANCELLED'}
             if self.post == 'SPHERE':
                 V = spherize(V, F)
+            elif self.post == 'BISCRIBED':
+                V, conv = biscribe(V, F)
+                if not conv:
+                    self.report({'WARNING'},
+                                "could not biscribe this solid -- it may "
+                                "not have a biscribed form")
             elif self.post == 'CANON':
                 V = canonicalize(V, F, iters=self.iterations)
             V, F = orient_outward(V, [list(f) for f in F])
