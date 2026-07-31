@@ -1340,11 +1340,11 @@ if _IN_BLENDER:
         # periodic Scherk tower is the WE SCHERK_TOWER under Singly, so it
         # is dropped from this list (still reachable via mesh.tpms_add).
         _NOT_TRIPLY = {'SCHERKT'}
-        # the exact Weierstrass P/Gyroid/D (Bonnet angle) leads the Triply
-        # list, ahead of the nodal approximations
+        # the nodal approximations lead the Triply list; the exact
+        # Weierstrass P/Gyroid/D (Bonnet angle) is listed LAST
         exact_items = [(k, v[0], v[0]) for k, v in TPMS_EXACT.items()]
-        tpms_items = exact_items + [(k, v[0], v[0]) for k, v in TPMS.items()
-                                    if k not in _NOT_TRIPLY]
+        tpms_items = [(k, v[0], v[0]) for k, v in TPMS.items()
+                      if k not in _NOT_TRIPLY] + exact_items
         if tpms_items:
             _PERIODIC_ITEMS['TRIPLY'] = tpms_items
             _PERIODIC_ALL.extend(tpms_items)
