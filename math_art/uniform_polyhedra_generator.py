@@ -325,6 +325,49 @@ def build_uniform(wythoff, pqr):
     return verts, faces
 
 
+def build_star_prism(p, q, scale=1.0):
+    """Uniform {p/q} star prism: two star polygon bases joined by squares
+    (q = 1 gives an ordinary convex prism).  Returns (verts, faces) with
+    each face (indices, density)."""
+    g = math.gcd(p, q)
+    if g != 1 or not (1 <= q < p / 2):
+        raise ValueError("need coprime p, q with 1 <= q < p/2")
+    R = 1.0 / (2 * math.sin(q * math.pi / p)) * scale
+    top = [(R * math.cos(2 * math.pi * k / p),
+            R * math.sin(2 * math.pi * k / p), 0.5 * scale)
+           for k in range(p)]
+    bot = [(x, y, -z) for (x, y, z) in top]
+    verts = top + bot
+    faces = []
+    for k in range(p):                       # lateral squares on star edges
+        a, b = k, (k + q) % p
+        faces.append(([a, b, p + b, p + a], 1))
+    faces.append(([(q * k) % p for k in range(p)], q))          # top star
+    faces.append(([p + ((q * k) % p) for k in range(p)][::-1], q))  # bottom
+    return verts, faces
+
+
+def _expand_faces(verts, faces):
+    """Turn (indices, density) faces into a renderable mesh: convex faces
+    stay n-gons, star faces (density > 1) are fanned from their centre so
+    the star shows as a solid.  Returns (verts, faces, face_sizes)."""
+    verts = list(verts)
+    out = []
+    fsize = []
+    for f, d in faces:
+        if d == 1:
+            out.append(list(f))
+            fsize.append(len(f))
+        else:
+            c = [sum(verts[i][k] for i in f) / len(f) for k in range(3)]
+            ci = len(verts)
+            verts.append(tuple(c))
+            for i in range(len(f)):
+                out.append([f[i], f[(i + 1) % len(f)], ci])
+                fsize.append(len(f))
+    return verts, out, fsize
+
+
 # solids this build can construct: non-snub (bar not first), 3-triangle
 BUILDABLE = [row for row in UNIFORMS
              if not row[2].strip().startswith('|') and len(row[3]) == 3]
@@ -440,6 +483,28 @@ if _IN_BLENDER:
                 bsdf.inputs["Roughness"].default_value = 0.5
         return mat
 
+    def _make_object(context, name, verts, faces, color):
+        verts, mfaces, fsize = _expand_faces(verts, faces)
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(verts, [], mfaces)
+        me.validate(clean_customdata=True)
+        if color and len(me.polygons) == len(mfaces):
+            sizes = sorted(set(fsize))
+            slot = {n: i for i, n in enumerate(sizes)}
+            for n in sizes:
+                me.materials.append(_material_for(n))
+            me.polygons.foreach_set('material_index',
+                                    [slot[s] for s in fsize])
+        me.update()
+        obj = bpy.data.objects.new(name, me)
+        context.collection.objects.link(obj)
+        obj.location = context.scene.cursor.location
+        for o in context.selected_objects:
+            o.select_set(False)
+        obj.select_set(True)
+        context.view_layer.objects.active = obj
+        return obj
+
     class MESH_OT_uniform_polyhedron_add(bpy.types.Operator):
         """Add a uniform polyhedron by Wythoff construction: convex,
         Kepler-Poinsot and non-convex star uniforms.  Star faces are
@@ -477,57 +542,57 @@ if _IN_BLENDER:
             except Exception as e:      # noqa: BLE001
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
-            s = self.scale
-            verts = [tuple(c * s for c in v) for v in V]
-            faces = []
-            fsize = []
-            for f, d in F:
-                if d == 1:               # convex polygon: keep as n-gon
-                    faces.append(list(f))
-                    fsize.append(len(f))
-                else:                    # star: fan from the centre
-                    c = [sum(verts[i][k] for i in f) / len(f)
-                         for k in range(3)]
-                    ci = len(verts)
-                    verts.append(tuple(c))
-                    for i in range(len(f)):
-                        faces.append([f[i], f[(i + 1) % len(f)], ci])
-                        fsize.append(len(f))
-            me = bpy.data.meshes.new(name)
-            me.from_pydata(verts, [], faces)
-            me.validate(clean_customdata=True)
-            if self.coloring == 'SIDES' and len(me.polygons) == len(faces):
-                sizes = sorted(set(fsize))
-                slot = {n: i for i, n in enumerate(sizes)}
-                for n in sizes:
-                    me.materials.append(_material_for(n))
-                me.polygons.foreach_set('material_index',
-                                        [slot[s] for s in fsize])
-            me.update()
-            obj = bpy.data.objects.new(name, me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
-            for o in context.selected_objects:
-                o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
+            verts = [tuple(c * self.scale for c in v) for v in V]
+            _make_object(context, name, verts, F,
+                         self.coloring == 'SIDES')
             self.report({'INFO'}, f"{name}: V={len(V)} E={Ee} F={len(F)}")
+            return {'FINISHED'}
+
+    from bpy.props import IntProperty
+
+    class MESH_OT_star_prism_add(bpy.types.Operator):
+        """Add a uniform {p/q} star prism: two star-polygon bases joined
+        by squares (Step = 1 gives an ordinary convex prism)."""
+        bl_idname = "mesh.star_prism_add"
+        bl_label = "Star Prism"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        sides: IntProperty(name="Sides (p)", default=5, min=3, max=32)
+        step: IntProperty(name="Step (q)", default=2, min=1, max=15,
+                          description="Star density; {p/q}, coprime with p")
+        coloring: EnumProperty(
+            name="Coloring",
+            items=[('SIDES', "By Face Size", ""), ('NONE', "None", "")],
+            default='SIDES')
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+
+        def execute(self, context):
+            try:
+                V, F = build_star_prism(self.sides, self.step, self.scale)
+            except ValueError as e:
+                self.report({'ERROR'}, str(e))
+                return {'CANCELLED'}
+            _make_object(context, f"Star Prism {{{self.sides}/{self.step}}}",
+                         V, F, self.coloring == 'SIDES')
             return {'FINISHED'}
 
     def _menu_func(self, context):
         self.layout.operator("mesh.uniform_polyhedron_add",
                              icon='MESH_ICOSPHERE')
+        self.layout.operator("mesh.star_prism_add", icon='MESH_CYLINDER')
 
     ADD_MENU = True
 
     def register():
         bpy.utils.register_class(MESH_OT_uniform_polyhedron_add)
+        bpy.utils.register_class(MESH_OT_star_prism_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        bpy.utils.unregister_class(MESH_OT_star_prism_add)
         bpy.utils.unregister_class(MESH_OT_uniform_polyhedron_add)
 
 
