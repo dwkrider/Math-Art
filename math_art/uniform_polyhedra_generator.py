@@ -330,6 +330,45 @@ BUILDABLE = [row for row in UNIFORMS
              if not row[2].strip().startswith('|') and len(row[3]) == 3]
 
 
+# --- families (to organise the UI) --------------------------------------
+# Convex (Platonic + Archimedean), the regular stars (Kepler-Poinsot), the
+# hemipolyhedra (faces through the centre), and the remaining star uniforms
+# split by symmetry (octahedral vs icosahedral).
+_KEPLER_POINSOT = {34, 35, 52, 53}
+
+_FAMILIES = [
+    ('CONVEX', "Convex (Platonic & Archimedean)"),
+    ('KEPLER', "Regular Star (Kepler-Poinsot)"),
+    ('HEMI', "Hemipolyhedra"),
+    ('STAR_O', "Star (Octahedral)"),
+    ('STAR_I', "Star (Icosahedral)"),
+]
+
+
+def _symmetry(pqr):
+    toks = ' '.join(pqr)
+    if '5' in toks:
+        return 'I'
+    if '4' in toks:
+        return 'O'
+    return 'T'
+
+
+def _category(u, name, pqr):
+    if 'hemi' in name.lower():
+        return 'HEMI'
+    if u in _KEPLER_POINSOT:
+        return 'KEPLER'
+    if not any('/' in x for x in pqr):
+        return 'CONVEX'
+    return 'STAR_O' if _symmetry(pqr) == 'O' else 'STAR_I'
+
+
+_BY_CAT = {cat: [] for cat, _lbl in _FAMILIES}
+for _row in BUILDABLE:
+    _BY_CAT[_category(_row[0], _row[1], _row[3])].append(_row)
+
+
 def _self_test():
     ok = 0
     bad = 0
@@ -363,9 +402,23 @@ except ImportError:
 
 if _IN_BLENDER:
 
-    def _items(self, context):
-        return [(str(u), f"U{u}  {name}", wy)
-                for (u, name, wy, pqr, V, E, F) in BUILDABLE]
+    def _family_items(self, context):
+        return [(cat, lbl, "") for cat, lbl in _FAMILIES if _BY_CAT[cat]]
+
+    _SOLID_CACHE = {}
+
+    def _solid_items(self, context):
+        cat = self.family
+        if cat not in _SOLID_CACHE:
+            _SOLID_CACHE[cat] = [(str(u), f"U{u}  {name}", wy)
+                                 for (u, name, wy, pqr, V, E, F)
+                                 in _BY_CAT.get(cat, [])]
+        return _SOLID_CACHE[cat]
+
+    def _family_update(self, context):
+        ids = [it[0] for it in _solid_items(self, context)]
+        if ids and self.solid not in ids:
+            self.solid = ids[0]
 
     _PALETTE = {3: (0.90, 0.36, 0.23), 4: (0.27, 0.52, 0.79),
                 5: (0.30, 0.69, 0.42), 6: (0.95, 0.77, 0.29),
@@ -395,15 +448,28 @@ if _IN_BLENDER:
         bl_label = "Uniform Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
-        solid: EnumProperty(name="Solid", items=_items)
+        family: EnumProperty(name="Family", items=_family_items,
+                             update=_family_update)
+        solid: EnumProperty(name="Solid", items=_solid_items)
         coloring: EnumProperty(
             name="Coloring",
             items=[('SIDES', "By Face Size", ""), ('NONE', "None", "")],
             default='SIDES')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
+        def draw(self, context):
+            lay = self.layout
+            lay.use_property_split = True
+            lay.prop(self, 'family')
+            lay.prop(self, 'solid')
+            lay.prop(self, 'coloring')
+            lay.prop(self, 'scale')
+
         def execute(self, context):
-            row = next((r for r in BUILDABLE if str(r[0]) == self.solid),
+            ids = [it[0] for it in _solid_items(self, context)]
+            sid = self.solid if self.solid in ids else (ids[0] if ids
+                                                       else self.solid)
+            row = next((r for r in BUILDABLE if str(r[0]) == sid),
                        BUILDABLE[0])
             u, name, wy, pqr, Ve, Ee, Fe = row
             try:

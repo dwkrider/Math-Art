@@ -43,11 +43,14 @@ OPS = [
      lambda: bpy.ops.mesh.regular_solid_add(
          family='TRUNC_CATALAN', solid='t6dtT', canon_iters=80)),
     ("uniform great icosidodecahedron",
-     lambda: bpy.ops.mesh.uniform_polyhedron_add(solid='54')),
+     lambda: bpy.ops.mesh.uniform_polyhedron_add(
+         family='STAR_I', solid='54')),
     ("uniform small cubicuboctahedron",
-     lambda: bpy.ops.mesh.uniform_polyhedron_add(solid='13')),
+     lambda: bpy.ops.mesh.uniform_polyhedron_add(
+         family='STAR_O', solid='13')),
     ("uniform tetrahemihexahedron",
-     lambda: bpy.ops.mesh.uniform_polyhedron_add(solid='4')),
+     lambda: bpy.ops.mesh.uniform_polyhedron_add(
+         family='HEMI', solid='4')),
     ("solid archimedean canon off",
      lambda: bpy.ops.mesh.regular_solid_add(
          family='ARCHIMEDEAN', solid='TI', canonicalize=False)),
