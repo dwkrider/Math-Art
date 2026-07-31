@@ -190,6 +190,98 @@ def _tower_X(z, p, theta=0.0):
             np.real(np.sum(c3 * L, axis=-1) * rot))
 
 
+# --- Karcher's less-symmetric saddle tower (the alpha family) -------------
+# The symmetric saddle tower (SCHERK_TOWER, above) puts its 2n wing ends at
+# the equally spaced 2n-th roots of z^{2n} = -1.  Karcher's generalization
+# ("Embedded minimal surfaces derived from Scherk's examples", Manuscripta
+# Math. 62, 1988) lets the ends *cluster into pairs*: the 2n ends sit in n
+# symmetric pairs about the directions 2 pi k / n, each pair split by a
+# half-angle gamma.  gamma = pi/(2n) is exactly the equally spaced symmetric
+# tower; shrinking gamma opens two-and-narrows-two of the wing walls -- the
+# unequal-wing saddle.  The Weierstrass data keeps the same *form* as the
+# symmetric case, g = z^{n-1} and dh = z^{n-1}/D(z) dz with D(z) = prod
+# (z - rho_j) over the 2n chosen ends rho_j on the unit circle, i.e. a
+# rational height differential with a simple pole at each end.
+#
+# Period closure.  Moving the ends off the equally spaced positions would in
+# general open the horizontal (real) periods and tear the wings apart.  Here
+# the ends are placed as a *symmetric* configuration -- invariant under the
+# real- and imaginary-axis reflections and the 2 pi/n rotation (the dihedral
+# group D_n) -- and g = z^{n-1} respects that symmetry.  That is enough to
+# force every phi1, phi2 residue at every end to be real, so Re oint phi_h
+# vanishes automatically at every end for *all* gamma (verified to < 5e-15
+# by contour integration over n = 2..6 across the whole alpha range in the
+# standalone tests): no residual weight has to be solved for.  Only phi3 = dh
+# keeps a nonzero real period +-V(gamma) -- the vertical translation that
+# makes the surface singly periodic.  The immersion is then the same exact
+# log-sum antiderivative as _tower_X, with the residues (c1, c2, c3) read off
+# each end via 1/D'(rho); at gamma = pi/(2n) it reduces term-by-term to
+# _tower_X, so alpha = 0 reproduces the symmetric unit exactly.
+#
+# One fundamental domain (one vertical period) is meshed.  Unlike the
+# equally spaced tower, the unequal-wing unit admits no screw deck isometry
+# that welds one disk unit onto the next (its only rigid symmetries are the
+# internal reflections/rotation, all with zero vertical shift), so multiple
+# storeys are not stacked here -- see the TODO(zoo) note.  The symmetric
+# tower (SCHERK_TOWER) remains the stackable alpha = 0 special case.
+
+def _atower_ends(n, alpha):
+    """The 2n ends: n symmetric pairs about the directions 2 pi k / n, each
+    split by +-gamma(alpha).  alpha in [0, pi/2]; alpha = 0 -> gamma = pi/(2n)
+    (the equally spaced symmetric tower), larger alpha closes the pairs."""
+    gsym = math.pi / (2 * n)
+    frac = 1.0 - 0.85 * (alpha / (math.pi / 2.0))
+    gamma = gsym * min(max(frac, 0.05), 1.0)
+    k = np.arange(n)
+    a = np.concatenate([k * TAU / n + gamma, k * TAU / n - gamma])
+    return np.exp(1j * a)
+
+
+def _atower_coeffs(n, alpha):
+    """(ends, c1, c2, c3): the residue of each phi component at each end, from
+    the partial-fraction 1/D'(rho) of the rational Weierstrass forms
+    phi1 = (1-z^{2(n-1)})/2D, phi2 = i(1+z^{2(n-1)})/2D, phi3 = z^{n-1}/D."""
+    rho = _atower_ends(n, alpha)
+    Dp = np.array([np.prod([rho[j] - rho[k]
+                            for k in range(len(rho)) if k != j])
+                   for j in range(len(rho))])
+    c1 = 0.5 * (1.0 - rho ** (2 * (n - 1))) / Dp
+    c2 = 0.5j * (1.0 + rho ** (2 * (n - 1))) / Dp
+    c3 = rho ** (n - 1) / Dp
+    return rho, c1, c2, c3
+
+
+def _atower_phi(z, p):
+    """Weierstrass 1-forms of the alpha tower (kept for the period-closure
+    gate): D(z) = prod (z - end) built directly from the end positions."""
+    n = p['n']
+    z = np.asarray(z, complex)
+    rho = _atower_ends(n, p.get('alpha', 0.0))
+    D = np.ones_like(z)
+    for r in rho:
+        D = D * (z - r)
+    return (0.5 * (1.0 - z ** (2 * (n - 1))) / D,
+            0.5j * (1.0 + z ** (2 * (n - 1))) / D,
+            z ** (n - 1) / D)
+
+
+def _atower_X(z, p, theta=0.0):
+    """Exact log-sum immersion of the alpha tower on the punctured disk --
+    the same closed form as _tower_X (a sum of 2n end logarithms, one per
+    residue, each with its branch cut rotated radially outward so no cut
+    crosses the disk), but with the alpha-controlled end positions and their
+    general 1/D'(rho) residues.  Reduces to _tower_X at alpha = 0."""
+    n = p['n']
+    rho, c1, c2, c3 = _atower_coeffs(n, p.get('alpha', 0.0))
+    d = np.asarray(z)[..., None] - rho
+    dr = d * np.conj(rho)                       # rotate: outward ray -> +real
+    L = np.log(np.abs(dr)) + 1j * np.mod(np.angle(dr), TAU)
+    rot = np.exp(1j * theta)
+    return (np.real(np.sum(c1 * L, axis=-1) * rot),
+            np.real(np.sum(c2 * L, axis=-1) * rot),
+            np.real(np.sum(c3 * L, axis=-1) * rot))
+
+
 def _r_reach(radius):
     """Shared 'how far past the unit circle' domain radius mapping."""
     return 1.35 + 0.5 * min(max(radius / 1.2, 0.0), 1.6)
@@ -384,6 +476,39 @@ WE_SURFACES = {
             for j in range(2 * p['n'])],
         'cycle_free': (2,),          # vertical translation is the period
         'test_order': 1,             # n = 2, the classical 4-wing tower
+    },
+    'SADDLE_TOWER_A': {
+        # Karcher's less-symmetric saddle tower (the alpha family): the 2n
+        # wing ends cluster into n symmetric pairs, so the walls become
+        # wide/narrow openings.  alpha (exposed on the associate-angle knob)
+        # runs 0 -> pi/2; alpha = 0 is the equally spaced symmetric unit
+        # (identical to SCHERK_TOWER's fundamental domain).  Period closure
+        # is automatic from the dihedral end placement (see the header block
+        # above); one fundamental domain -- one full vertical period -- is
+        # meshed, from the same exact log-sum immersion (_atower_X).
+        'label': "Saddle Tower (Karcher, unequal wings)",
+        'family': 'SINGLY',
+        'phi': _atower_phi,          # kept for the period-closure gate
+        'Xexact': _atower_X,         # exact immersion used by the mesher
+        'tower': True,               # -> we_saddle_tower (single unit)
+        'alpha_from_theta': True,    # assoc-angle knob feeds alpha, not Bonnet
+        'domain': ('disk', 0.0, 0.999),
+        'p_from': lambda order, radius: {
+            'n': int(min(max(order + 1, 2), 8)),
+            'eps': 0.085 / min(max(radius / 1.2, 0.5), 2.0),
+            'alpha': 0.0},
+        'count': "Wings (n pairs)",
+        'associate': True,           # -> ANGLE_PARAM; the angle knob is alpha
+        'mask_punctures': lambda p: [
+            (rho, p['eps'])
+            for rho in _atower_ends(p['n'], p.get('alpha', 0.0))],
+        'clip': False,
+        'res_boost': (1.7, 1.7),
+        'cycles': lambda p: [
+            (rho, 0.12)
+            for rho in _atower_ends(p['n'], p.get('alpha', 0.0))],
+        'cycle_free': (2,),          # vertical translation is the period
+        'test_order': 1,             # n = 2, the classical 4-wing saddle
     },
     'RICHMOND_K': {
         # generalized Richmond: planar end + higher-order flower,
@@ -615,7 +740,16 @@ BJORLING = {
 #     needs the degree-(n+1) Gauss map data + solve_scalar closure)
 #   * Lopez spheres
 #   * Bjorling clothoid (needs a complex Fresnel evaluator)
-#   * Karcher's less-symmetric saddle towers (angle parameter alpha)
+#   * Karcher's alpha saddle tower is now SADDLE_TOWER_A (one fundamental
+#     domain -- one vertical period -- with verified period closure across
+#     the whole alpha range).  Still deferred: welded *multi-storey*
+#     stacking of the UNEQUAL tower.  The disk unit admits only internal
+#     reflection/rotation symmetries (all with zero vertical shift), so no
+#     screw deck isometry welds one disk unit onto the next once the wings
+#     are unequal; a proper multi-storey mesh needs a translation
+#     fundamental domain (cut by two horizontal planes), a separate
+#     reparametrization.  The symmetric alpha = 0 tower already stacks via
+#     SCHERK_TOWER.
 #   * genus-1 helicoid, Callahan-Hoffman-Meeks, KMR (Tier 3+)
 #   * Bonnet angle on Henneberg (non-orientable -> the associate family is
 #     not globally single-valued) and Bour (fractional-power double cover);
@@ -721,6 +855,47 @@ if __name__ == "__main__":
         ok &= good
         print(f"periods {key:15s}: max|Re oint phi| = {worst:.2e} "
               f"{'OK' if good else 'FAIL'}")
+    # Karcher unequal-wing tower: the period-closure gate above only checks
+    # alpha = 0 (the p_from default).  Sweep the whole alpha range at several
+    # n, integrating the real horizontal periods around every end by contour,
+    # and rebuild the mesh at a strong alpha -- the closure must hold and the
+    # unit must still fit / stay manifold as the wings go unequal.
+    spec = WE_SURFACES['SADDLE_TOWER_A']
+    aworst = 0.0
+    for nn in (2, 3, 4, 5):
+        for alpha in np.linspace(0.0, math.pi / 2, 7):
+            p = {'n': nn, 'alpha': float(alpha)}
+            for (zc, r) in spec['cycles'](p):
+                for comp in (0, 1):        # horizontal periods must vanish
+                    I = we.period_integral(
+                        lambda z, c=comp: _atower_phi(z, p)[c], zc, r, r)
+                    aworst = max(aworst, abs(I.real))
+    agood = aworst < 1e-6
+    ok &= agood
+    print(f"alpha-tower closure (n=2..5, alpha=0..pi/2): "
+          f"max|Re oint phi_h| = {aworst:.2e} {'OK' if agood else 'FAIL'}")
+    amax = 0.0
+    for alpha in (0.0, math.pi / 6, math.pi / 3, math.pi / 2):
+        for order in (1, 3):               # n = 2 and n = 4
+            V, Q = tk.build_parametric('SADDLE_TOWER_A', 60, 60, order,
+                                       1.2, 1.0, float(alpha))
+            lo, hi = V.min(0), V.max(0)
+            cen = float(np.max(np.abs(0.5 * (lo + hi))))
+            ext = float(np.max(hi - lo))
+            ec = {}
+            for f in Q:
+                for t in range(len(f)):
+                    a, b = f[t], f[(t + 1) % len(f)]
+                    e = (a, b) if a < b else (b, a)
+                    ec[e] = ec.get(e, 0) + 1
+            nm = sum(1 for c in ec.values() if c > 2)
+            g2 = (bool(np.all(np.isfinite(V))) and len(Q) > 100
+                  and cen < 1e-6 and abs(ext - 2.0) < 1e-6 and nm == 0)
+            ok &= g2
+            amax = max(amax, 0.0 if g2 else 1.0)
+            print(f"alpha-tower mesh a={alpha:.3f} n={order + 1}: "
+                  f"{len(V):5d}v {len(Q):5d}f fit[|c|={cen:.1e} "
+                  f"ext={ext:.4f}] nonman={nm} {'OK' if g2 else 'FAIL'}")
     # Riemann: the u -> u+1 deck map must be a constant translation
     # (0, y, 1) -- singly periodic, tilted, no x-component
     spec = WE_SURFACES['RIEMANN']

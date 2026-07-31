@@ -575,6 +575,15 @@ def we_saddle_tower(spec, nu, nv, order, radius, scale, theta, storeys):
     screw-matched boundary vertices) so the joins carry no seam."""
     tk = _toolkit()
     p = spec['p_from'](order, radius) if 'p_from' in spec else {}
+    # Karcher unequal-wing tower: the angle knob (theta) is the alpha modulus,
+    # not a Bonnet rotation; fold it into the params so the end positions /
+    # residues / puncture mask all pick it up, and build a single fundamental
+    # domain (the unequal-wing unit has no screw deck isometry to stack -- see
+    # the SADDLE_TOWER_A note in minimal_surface_zoo.py).
+    if spec.get('alpha_from_theta'):
+        p = dict(p, alpha=theta)
+        theta = 0.0
+        storeys = 1
     n = int(p['n'])
     S = max(1, int(storeys))
     rb = spec.get('res_boost')

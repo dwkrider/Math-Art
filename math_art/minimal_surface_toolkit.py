@@ -1360,8 +1360,9 @@ if _IN_BLENDER:
         assoc_angle: FloatProperty(
             name="Associate Angle", default=0.0,
             min=0.0, max=math.pi / 2.0, subtype='ANGLE',
-            description="Bonnet associate family: 0 = catenoid, "
-                        "pi/2 = helicoid")
+            description="Bonnet associate family (0 = catenoid, "
+                        "pi/2 = helicoid); for the Karcher saddle tower it "
+                        "is the wing-clustering angle alpha (0 = symmetric)")
         scale: FloatProperty(
             name="Scale", default=1.0, min=0.01, max=100.0,
             description="Multiplier on the normalized size (1.0 = a 2 m "
@@ -1518,7 +1519,8 @@ if _IN_BLENDER:
         assoc_angle: FloatProperty(
             name="Associate Angle", default=0.0,
             min=0.0, max=math.pi / 2.0, subtype='ANGLE',
-            description="Bonnet associate family angle")
+            description="Bonnet associate family angle; for the Karcher "
+                        "saddle tower it is the wing-clustering angle alpha")
         # -- TPMS (triply) parameters
         cells: IntProperty(
             name="Cells", default=1, min=1, max=4,
