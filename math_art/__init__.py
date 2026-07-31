@@ -165,6 +165,7 @@ class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
         _op(lay, "mesh.uniform_polyhedron_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.polyhedron_compound_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.toroidal_polyhedron_add", icon='MESH_TORUS')
+        _op(lay, "mesh.polyhedral_torus_add", icon='MESH_TORUS')
         _op(lay, "mesh.final_stellation_add", icon='LIGHT_SUN')
         _op(lay, "mesh.star_prism_add", icon='MESH_CYLINDER')
         _op(lay, "mesh.conway_add", icon='MESH_ICOSPHERE')

@@ -282,6 +282,11 @@ OPS = [
      lambda: bpy.ops.mesh.toroidal_polyhedron_add(solid='CSASZAR')),
     ("toroid szilassi",
      lambda: bpy.ops.mesh.toroidal_polyhedron_add(solid='SZILASSI')),
+    ("polyhedral torus prism",
+     lambda: bpy.ops.mesh.polyhedral_torus_add(segments=10, sides=4)),
+    ("polyhedral torus antiprism",
+     lambda: bpy.ops.mesh.polyhedral_torus_add(
+         segments=8, sides=3, antiprism=True)),
     ("compound stella separate",
      lambda: bpy.ops.mesh.polyhedron_compound_add(
          compound='STELLA', separate=True)),

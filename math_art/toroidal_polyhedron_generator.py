@@ -71,6 +71,37 @@ def build_toroid(kind):
     return V, [list(f) for f in S["F"]]
 
 
+def build_polyhedral_torus(m, k, R, r, twist):
+    """Ring of m k-gon cross-sections swept around a torus: twist=0 gives a
+    prism ring (quad faces), twist=0.5 an antiprism ring (triangles).  A
+    genus-1 regular toroid (V-E+F=0)."""
+    verts = []
+    for i in range(m):
+        phi = 2 * math.pi * i / m
+        off = twist * 2 * math.pi / k * i
+        for j in range(k):
+            a = 2 * math.pi * j / k + off
+            verts.append((R * math.cos(phi) + r * math.cos(a) * math.cos(phi),
+                          R * math.sin(phi) + r * math.cos(a) * math.sin(phi),
+                          r * math.sin(a)))
+    faces = []
+
+    def idx(i, j):
+        return (i % m) * k + (j % k)
+    if abs(twist) < 1e-9:
+        for i in range(m):
+            for j in range(k):
+                faces.append([idx(i, j), idx(i, j + 1),
+                              idx(i + 1, j + 1), idx(i + 1, j)])
+    else:
+        for i in range(m):
+            for j in range(k):
+                faces.append([idx(i, j), idx(i, j + 1), idx(i + 1, j)])
+                faces.append([idx(i, j + 1), idx(i + 1, j + 1),
+                              idx(i + 1, j)])
+    return verts, faces
+
+
 def _self_test():
     for kind, S in TOROIDS.items():
         V, F = build_toroid(kind)
@@ -141,20 +172,65 @@ if _IN_BLENDER:
                         f"V={len(V)} F={len(F)} (genus 1)")
             return {'FINISHED'}
 
+    from bpy.props import IntProperty, BoolProperty
+
+    class MESH_OT_polyhedral_torus_add(bpy.types.Operator):
+        """Add a regular polyhedral torus: a ring of congruent polygon
+        cross-sections (prism ring, or antiprism ring when twisted)"""
+        bl_idname = "mesh.polyhedral_torus_add"
+        bl_label = "Polyhedral Torus"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        segments: IntProperty(name="Segments", default=12, min=3, max=64,
+                              description="Sections around the major circle")
+        sides: IntProperty(name="Cross-section Sides", default=4, min=3,
+                           max=32)
+        antiprism: BoolProperty(
+            name="Antiprism Ring", default=False,
+            description="Half-step twist between sections (triangular "
+                        "faces) instead of a prism ring (quads)")
+        major: FloatProperty(name="Major Radius", default=1.0, min=0.1,
+                             max=10.0)
+        minor: FloatProperty(name="Minor Radius", default=0.4, min=0.02,
+                             max=5.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+
+        def execute(self, context):
+            V, F = build_polyhedral_torus(
+                self.segments, self.sides, self.major, self.minor,
+                0.5 if self.antiprism else 0.0)
+            mx = max((abs(c) for v in V for c in v), default=1.0) or 1.0
+            me = bpy.data.meshes.new("Polyhedral Torus")
+            me.from_pydata([tuple(c / mx * self.scale for c in v)
+                            for v in V], [], [tuple(f) for f in F])
+            me.validate(clean_customdata=True)
+            me.update()
+            obj = bpy.data.objects.new("Polyhedral Torus", me)
+            context.collection.objects.link(obj)
+            obj.location = context.scene.cursor.location
+            for o in context.selected_objects:
+                o.select_set(False)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            return {'FINISHED'}
+
     def _menu_func(self, context):
         self.layout.operator("mesh.toroidal_polyhedron_add",
                              icon='MESH_TORUS')
+        self.layout.operator("mesh.polyhedral_torus_add", icon='MESH_TORUS')
 
     ADD_MENU = True
 
     def register():
         bpy.utils.register_class(MESH_OT_toroidal_polyhedron_add)
+        bpy.utils.register_class(MESH_OT_polyhedral_torus_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        bpy.utils.unregister_class(MESH_OT_polyhedral_torus_add)
         bpy.utils.unregister_class(MESH_OT_toroidal_polyhedron_add)
 
 
