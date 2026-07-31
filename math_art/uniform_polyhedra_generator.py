@@ -879,7 +879,11 @@ if _IN_BLENDER:
 
         def execute(self, context):
             q = valid_star_step(self.sides, self.step)
-            V, F = _STAR_BUILD[self.form](self.sides, q, self.scale)
+            V, F = _STAR_BUILD[self.form](self.sides, q, 1.0)
+            # centre at origin (symmetric already) and fit a 2 m cube, then
+            # apply the user scale, so every {p/q} form stays in [-1, 1]^3
+            mx = max((abs(c) for v in V for c in v), default=1.0) or 1.0
+            V = [tuple(c / mx * self.scale for c in v) for v in V]
             lbl = dict((k, v) for k, v, _ in _STAR_FORMS)[self.form]
             _make_object(context, f"Star {lbl} {{{self.sides}/{q}}}",
                          V, F, self.coloring == 'SIDES')
