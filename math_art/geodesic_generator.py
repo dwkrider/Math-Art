@@ -2,16 +2,21 @@
 # Geodesic Sphere / Dome Generator for Blender
 #
 # Geodesic spheres and domes (after Segerman, "Visualizing Mathematics
-# with 3D Printing", figs 4-5 / 4-6): Class I (b,0) and Class II (b,b)
-# breakdowns of the icosahedron, octahedron or tetrahedron projected to
-# the sphere, oriented vertex-up and optionally cut to a hemisphere or
-# 5/8 dome.  Styles: welded shell (optional Solidify thickness), strut
-# and node frame, Leonardo-style open panels, or a panelised dome with
-# inset gaps between the triangles.
+# with 3D Printing", figs 4-5 / 4-6): Class I (h,0), Class II (h,h) and
+# the general chiral Class III (h,k) Goldberg-Coxeter breakdowns of the
+# icosahedron, octahedron or tetrahedron projected to the sphere,
+# oriented vertex-up and optionally cut to a hemisphere or 5/8 dome.
+# The Class III cells are placed as a triangular lattice on each base
+# face and the projected lattice points convex-hulled.  Styles: welded
+# shell (optional Solidify thickness), strut and node frame, Leonardo-
+# style open panels, or a panelised dome with inset gaps.
 #
 # References:
 # - Geodesic domes: R. Buckminster Fuller.
-# - Goldberg polyhedra (the Class I/II duals): Michael Goldberg (1937).
+# - Geodesic/Goldberg (h,k) classification: M. Goldberg, "A class of
+#   multi-symmetric polyhedra", Tohoku Math. J. 43 (1937); Caspar & Klug
+#   (1962) for the triangulation number T = h²+hk+k².
+# - Goldberg polyhedra (the duals): Michael Goldberg (1937).
 # - Henry Segerman, "Visualizing Mathematics with 3D Printing"
 #   (2016), figs 4-5, 4-6.
 
@@ -21,7 +26,8 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Geodesic Sphere / Dome",
-    "description": "Geodesic spheres and domes, Class I and II",
+    "description": "Geodesic spheres and domes, Class I, II and III "
+                   "(h,k), with Goldberg duals",
     "category": "Add Mesh",
 }
 
@@ -188,6 +194,44 @@ def build_sphere(base='ICOSA', freq=3, cls='I'):
     if cls == 'II':
         V, F = kis(V, F)
     return geodesic(V, F, freq)
+
+
+def geodesic_points(base, h, k):
+    """Vertices of the general geodesic [h,k] breakdown (Goldberg-Coxeter),
+    projected to the unit sphere.  h=k=0 excluded; k=0 is Class I, h=k is
+    Class II, otherwise the chiral Class III.  Each base triangle carries a
+    triangular lattice whose (h,k) cell defines the subdivision; the convex
+    hull of the returned points is the geodesic sphere (V = 10T+2,
+    T = h²+hk+k², for the icosahedron)."""
+    V, F = seed_poly(base)
+    V = orient_vertex_up(V)
+    s3 = math.sqrt(3) / 2
+
+    def latt(m, n):
+        return (m + n * 0.5, n * s3)
+    O, P, Q = latt(0, 0), latt(h, k), latt(-k, h + k)
+
+    def bary(p):
+        det = ((P[1] - Q[1]) * (O[0] - Q[0]) + (Q[0] - P[0]) * (O[1] - Q[1]))
+        a = ((P[1] - Q[1]) * (p[0] - Q[0]) + (Q[0] - P[0]) * (p[1] - Q[1])) / det
+        b = ((Q[1] - O[1]) * (p[0] - Q[0]) + (O[0] - Q[0]) * (p[1] - Q[1])) / det
+        return a, b, 1 - a - b
+    lo1 = min(0, h, -k) - 1
+    hi1 = max(0, h, -k) + 1
+    lo2 = min(0, k, h + k) - 1
+    hi2 = max(0, k, h + k) + 1
+    pts = {}
+    for f in F:
+        A, B, C = V[f[0]], V[f[1]], V[f[2]]
+        for m in range(lo1, hi1 + 1):
+            for n in range(lo2, hi2 + 1):
+                a, b, c = bary(latt(m, n))
+                if a < -1e-9 or b < -1e-9 or c < -1e-9:
+                    continue
+                sp = _unit(tuple(a * A[t] + b * B[t] + c * C[t]
+                                 for t in range(3)))
+                pts[tuple(round(x, 7) for x in sp)] = sp
+    return list(pts.values())
 
 
 def _cross(a, b):
@@ -418,12 +462,20 @@ if _IN_BLENDER:
                     "Triacon-style breakdown: mid-face (kis) split "
                     "followed by a Class I subdivision at f, giving "
                     "the (f,f) triangulation (3f² triangles per "
-                    "base face, effective frequency 2f)")],
+                    "base face, effective frequency 2f)"),
+                   ('III', "Class III (h,k)",
+                    "General chiral Goldberg-Coxeter breakdown with "
+                    "h = Frequency and the k below (h != k, k > 0); "
+                    "convex-hulled")],
             default='I')
         frequency: IntProperty(
             name="Frequency", default=3, min=1, max=16,
-            description="Breakdown frequency f: Class I gives the "
-                        "(f,0) subdivision, Class II the (f,f)")
+            description="Breakdown frequency f (= h for Class III): "
+                        "Class I gives (f,0), Class II gives (f,f)")
+        k: IntProperty(
+            name="k (Class III)", default=1, min=1, max=15,
+            description="Second Goldberg-Coxeter index for Class III "
+                        "(the chiral (h,k) breakdown, h = Frequency)")
         dual: BoolProperty(
             name="Dual (Goldberg)", default=False,
             description="Output the dual polyhedron -- hexagons and "
@@ -477,8 +529,27 @@ if _IN_BLENDER:
                         "centroid")
 
         def execute(self, context):
-            V, F = build_sphere(self.base, self.frequency,
-                                self.geo_class)
+            if self.geo_class == 'III':
+                import bmesh
+                pts = geodesic_points(self.base, self.frequency, self.k)
+                bm = bmesh.new()
+                for p in pts:
+                    bm.verts.new(p)
+                bm.verts.ensure_lookup_table()
+                res = bmesh.ops.convex_hull(bm, input=bm.verts)
+                junk = res.get('geom_unused', []) + \
+                    res.get('geom_interior', [])
+                if junk:
+                    bmesh.ops.delete(bm, geom=junk, context='VERTS')
+                bm.verts.ensure_lookup_table()
+                bm.faces.ensure_lookup_table()
+                idx = {v: i for i, v in enumerate(bm.verts)}
+                V = [tuple(v.co) for v in bm.verts]
+                F = [[idx[v] for v in fc.verts] for fc in bm.faces]
+                bm.free()
+            else:
+                V, F = build_sphere(self.base, self.frequency,
+                                    self.geo_class)
             if self.dual:
                 V, F = goldberg_dual(V, F)
             zmin = CUT_Z[self.cut]
@@ -561,6 +632,8 @@ if _IN_BLENDER:
             lay.prop(self, 'base')
             lay.prop(self, 'geo_class')
             lay.prop(self, 'frequency')
+            if self.geo_class == 'III':
+                lay.prop(self, 'k')
             lay.prop(self, 'dual')
             lay.prop(self, 'cut')
             if self.cut != 'FULL':

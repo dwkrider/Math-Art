@@ -272,6 +272,11 @@ OPS = [
     ("geodesic", lambda: bpy.ops.mesh.geodesic_add()),
     ("geodesic dual (goldberg)",
      lambda: bpy.ops.mesh.geodesic_add(dual=True)),
+    ("geodesic class III",
+     lambda: bpy.ops.mesh.geodesic_add(geo_class='III', frequency=2, k=1)),
+    ("geodesic class III dual",
+     lambda: bpy.ops.mesh.geodesic_add(
+         geo_class='III', frequency=3, k=1, dual=True)),
     ("curvature color",
      lambda: (bpy.ops.mesh.primitive_torus_add(),
               bpy.ops.object.curvature_color_add())[-1]),
