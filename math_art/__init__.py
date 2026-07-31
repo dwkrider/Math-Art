@@ -48,6 +48,7 @@ _MODULE_NAMES = [
     'regular_solids_generator',
     'uniform_polyhedra_generator',
     'compound_generator',
+    'toroidal_polyhedron_generator',
     'attractor_generator',
     'dual_helix_generator',
     'stellated_weave_generator',
@@ -162,6 +163,7 @@ class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
         _op(lay, "mesh.regular_solid_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.uniform_polyhedron_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.polyhedron_compound_add", icon='MESH_ICOSPHERE')
+        _op(lay, "mesh.toroidal_polyhedron_add", icon='MESH_TORUS')
         _op(lay, "mesh.star_prism_add", icon='MESH_CYLINDER')
         _op(lay, "mesh.conway_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.zonohedron_add", icon='MESH_UVSPHERE')
