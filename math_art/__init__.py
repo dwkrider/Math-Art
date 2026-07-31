@@ -46,6 +46,7 @@ _MODULE_NAMES = [
     'sphericon_generator',
     'prime_knot_generator',
     'regular_solids_generator',
+    'uniform_polyhedra_generator',
     'attractor_generator',
     'dual_helix_generator',
     'stellated_weave_generator',
@@ -158,6 +159,7 @@ class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
     def draw(self, context):
         lay = self.layout
         _op(lay, "mesh.regular_solid_add", icon='MESH_ICOSPHERE')
+        _op(lay, "mesh.uniform_polyhedron_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.conway_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.zonohedron_add", icon='MESH_UVSPHERE')
         _op(lay, "mesh.waterman_add", icon='MESH_ICOSPHERE')
