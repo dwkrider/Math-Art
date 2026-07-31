@@ -287,6 +287,10 @@ OPS = [
          compound='STELLA', separate=True)),
     ("geodesic class III",
      lambda: bpy.ops.mesh.geodesic_add(geo_class='III', frequency=2, k=1)),
+    ("geodesic cube",
+     lambda: bpy.ops.mesh.geodesic_add(base='CUBE', frequency=3)),
+    ("geodesic rt",
+     lambda: bpy.ops.mesh.geodesic_add(base='RT', frequency=2)),
     ("geodesic class III dual",
      lambda: bpy.ops.mesh.geodesic_add(
          geo_class='III', frequency=3, k=1, dual=True)),

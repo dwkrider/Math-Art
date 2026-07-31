@@ -66,6 +66,61 @@ def seed_poly(kind):
     return [_unit(v) for v in V], [list(f) for f in F]
 
 
+def quad_seed(kind):
+    """Quad-faced seeds for geodesic cubes / rhombic triacontahedra."""
+    if kind == 'CUBE':
+        V = [(-1, -1, -1), (1, -1, -1), (1, 1, -1), (-1, 1, -1),
+             (-1, -1, 1), (1, -1, 1), (1, 1, 1), (-1, 1, 1)]
+        Fq = [[0, 3, 2, 1], [4, 5, 6, 7], [0, 1, 5, 4],
+              [2, 3, 7, 6], [1, 2, 6, 5], [0, 4, 7, 3]]
+    elif kind == 'RT':                   # rhombic triacontahedron = dual iD
+        try:
+            from . import conway_operators as cw
+        except ImportError:
+            import conway_operators as cw
+        V, F = cw.apply_conway('aD')
+        V = cw.canonicalize(V, F, iters=400)
+        Vd, Fd = cw.op_dual(V, F)
+        Vd = cw.canonicalize(Vd, Fd, iters=600)
+        return [_unit(v) for v in Vd], [list(f) for f in Fd]
+    else:
+        raise ValueError(kind)
+    return [_unit(v) for v in V], Fq
+
+
+def quad_geodesic(V, Fq, freq):
+    """Class-I (freq,0) quad subdivision of a quad-faced polyhedron,
+    projected to the unit sphere (geodesic cube / rhombic triacontahedron).
+    Shared edges dedupe exactly by rounded position."""
+    if freq <= 1:
+        return [_unit(v) for v in V], [list(f) for f in Fq]
+    verts = {}
+    faces = []
+
+    def vid(p):
+        k = (round(p[0], 8), round(p[1], 8), round(p[2], 8))
+        if k not in verts:
+            verts[k] = len(verts)
+        return verts[k]
+    for f in Fq:
+        A, B, C, D = (V[i] for i in f)
+
+        def bil(s, t):
+            return _unit(tuple((1 - s) * (1 - t) * A[c] + s * (1 - t) * B[c]
+                               + s * t * C[c] + (1 - s) * t * D[c]
+                               for c in range(3)))
+        g = {}
+        for i in range(freq + 1):
+            for j in range(freq + 1):
+                g[(i, j)] = vid(bil(i / freq, j / freq))
+        for i in range(freq):
+            for j in range(freq):
+                faces.append([g[(i, j)], g[(i + 1, j)],
+                              g[(i + 1, j + 1)], g[(i, j + 1)]])
+    inv = {v: k for k, v in verts.items()}
+    return [inv[i] for i in range(len(verts))], faces
+
+
 def _icosa_faces(V):
     """Triangles of the icosahedron given its 12 vertices: all vertex
     triples at minimal mutual distance."""
@@ -450,7 +505,11 @@ if _IN_BLENDER:
             name="Base",
             items=[('ICOSA', "Icosahedron", ""),
                    ('OCTA', "Octahedron", ""),
-                   ('TETRA', "Tetrahedron", "")],
+                   ('TETRA', "Tetrahedron", ""),
+                   ('CUBE', "Cube (quad geodesic)",
+                    "Square-grid subdivision -> quad-faced geodesic"),
+                   ('RT', "Rhombic Triacontahedron (quad geodesic)",
+                    "Rhombus-grid subdivision -> quad-faced geodesic")],
             default='ICOSA')
         geo_class: EnumProperty(
             name="Class",
@@ -529,7 +588,9 @@ if _IN_BLENDER:
                         "centroid")
 
         def execute(self, context):
-            if self.geo_class == 'III':
+            if self.base in ('CUBE', 'RT'):
+                V, F = quad_geodesic(*quad_seed(self.base), self.frequency)
+            elif self.geo_class == 'III':
                 import bmesh
                 pts = geodesic_points(self.base, self.frequency, self.k)
                 bm = bmesh.new()
