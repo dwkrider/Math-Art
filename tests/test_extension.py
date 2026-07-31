@@ -63,6 +63,13 @@ OPS = [
          family='HEMI', solid='4')),
     ("star prism pentagrammic",
      lambda: bpy.ops.mesh.star_prism_add(sides=5, step=2)),
+    ("star antiprism pentagrammic",
+     lambda: bpy.ops.mesh.star_prism_add(form='ANTIPRISM', sides=5, step=2)),
+    ("star dipyramid heptagrammic",
+     lambda: bpy.ops.mesh.star_prism_add(form='DIPYRAMID', sides=7, step=3)),
+    ("star trapezohedron octagrammic",
+     lambda: bpy.ops.mesh.star_prism_add(
+         form='TRAPEZOHEDRON', sides=8, step=3)),
     ("uniform snub dodecahedron",
      lambda: bpy.ops.mesh.uniform_polyhedron_add(
          family='CONVEX', solid='29')),

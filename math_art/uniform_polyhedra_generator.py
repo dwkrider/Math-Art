@@ -494,6 +494,117 @@ def build_star_prism(p, q, scale=1.0):
     return verts, faces
 
 
+def build_star_antiprism(p, q, scale=1.0):
+    """Uniform {p/q} star antiprism: two star-polygon bases (bottom rotated by
+    pi/p) joined by 2p lateral triangles.  The lateral-triangle apex is the
+    perpendicular-bisector-plane vertex (equal lateral edges), and the height
+    solves the uniform condition (lateral edge = base edge) when real, else
+    falls back to a valid crossed/retrograde form.  V=2p, E=4p, F=2p+2."""
+    q = valid_star_step(p, q)
+    R = scale / (2.0 * math.sin(q * math.pi / p))
+    if p % 2 == 1:                                   # apex shift s: 2s == q-1
+        s = ((q - 1) * ((p + 1) // 2)) % p           # (mod p)
+    else:
+        s = (q - 1) // 2                             # q odd when p even
+    t = (q - s) % p
+    delta = math.pi * (2 * s + 1) / p
+    disc = (math.cos(delta) - math.cos(2 * q * math.pi / p)) / 2.0
+    h = R * math.sqrt(disc) if disc > 1e-12 else 0.5 * scale
+    top = [(R * math.cos(2 * math.pi * k / p),
+            R * math.sin(2 * math.pi * k / p), h) for k in range(p)]
+    bot = [(R * math.cos(2 * math.pi * k / p + math.pi / p),
+            R * math.sin(2 * math.pi * k / p + math.pi / p), -h)
+           for k in range(p)]
+    verts = top + bot                                # T_k = k, B_k = p + k
+    faces = []
+    for k in range(p):
+        faces.append(([k, (k + q) % p, p + (k + s) % p], 1))
+        faces.append(([p + k, p + (k + q) % p, (k + t) % p], 1))
+    faces.append(([(q * k) % p for k in range(p)], q))          # top star
+    faces.append(([p + (q * k) % p for k in range(p)][::-1], q))  # bottom
+    return verts, faces
+
+
+def build_star_dipyramid(p, q, scale=1.0):
+    """Star bipyramid over a {p/q} star polygon (dual of the star prism):
+    p star-polygon equator vertices at z=0, apexes at z = +-scale; 2p
+    triangular faces.  V=p+2, E=3p, F=2p."""
+    q = valid_star_step(p, q)
+    r = H = scale
+    equ = [(r * math.cos(2 * math.pi * k / p),
+            r * math.sin(2 * math.pi * k / p), 0.0) for k in range(p)]
+    verts = equ + [(0.0, 0.0, H), (0.0, 0.0, -H)]    # E_k=k, top=p, bot=p+1
+    ti, bi = p, p + 1
+    faces = []
+    for k in range(p):
+        a, b = k, (k + q) % p
+        faces.append(([a, b, ti], 1))
+        faces.append(([b, a, bi], 1))
+    return verts, faces
+
+
+def _newell_normal(pts):
+    nx = ny = nz = 0.0
+    n = len(pts)
+    for i in range(n):
+        x0, y0, z0 = pts[i]
+        x1, y1, z1 = pts[(i + 1) % n]
+        nx += (y0 - y1) * (z0 + z1)
+        ny += (z0 - z1) * (x0 + x1)
+        nz += (x0 - x1) * (y0 + y1)
+    return nx, ny, nz
+
+
+def _pole_of_face(verts, idx):
+    """Pole of the face plane w.r.t. the unit sphere: n / (n . v0)."""
+    pts = [verts[i] for i in idx]
+    nx, ny, nz = _newell_normal(pts)
+    v0 = pts[0]
+    d = nx * v0[0] + ny * v0[1] + nz * v0[2]
+    return (nx / d, ny / d, nz / d)
+
+
+def _link_ordered_faces(incident):
+    """Cyclic order of the faces around a vertex via its link (one cycle).
+    `incident`: face_index -> (prev_vert, next_vert) of that vertex."""
+    from collections import defaultdict
+    adj = defaultdict(list)
+    for f, (a, b) in incident.items():
+        adj[a].append((f, b))
+        adj[b].append((f, a))
+    start = next(iter(incident))
+    _a, b = incident[start]
+    order = [start]
+    cur_end, cur_face = b, start
+    for _ in range(len(incident) - 1):
+        nxt = next(((f, o) for (f, o) in adj[cur_end] if f != cur_face), None)
+        if nxt is None:
+            break
+        cur_face, cur_end = nxt
+        order.append(cur_face)
+    return order
+
+
+def build_star_trapezohedron(p, q, scale=1.0):
+    """Star trapezohedron = polar reciprocal of the {p/q} star antiprism:
+    2 axial apexes + a 2p-vertex zig-zag equator, 2p kite faces.  Includes
+    the concave star trapezohedra.  V=2p+2, E=4p, F=2p."""
+    q = valid_star_step(p, q)
+    av, af = build_star_antiprism(p, q, scale)
+    poles = [_pole_of_face(av, idx) for (idx, _d) in af]
+    from collections import defaultdict
+    incident = defaultdict(dict)
+    for fi, (idx, _d) in enumerate(af):
+        n = len(idx)
+        for j in range(n):
+            incident[idx[j]][fi] = (idx[(j - 1) % n], idx[(j + 1) % n])
+    faces = [(_link_ordered_faces(incident[v]), 1) for v in range(len(av))]
+    m = max(max(abs(c) for c in P) for P in poles) or 1.0
+    verts = [(x / m * scale, y / m * scale, z / m * scale)
+             for (x, y, z) in poles]
+    return verts, faces
+
+
 def _expand_faces(verts, faces):
     """Turn (indices, density) faces into a renderable mesh: convex faces
     stay n-gons, star faces (density > 1) are fanned from their centre so
@@ -582,6 +693,27 @@ def _self_test():
             bad += 1
             print(f"U{u} {name}: got {got} expected {(Ve, Ee, Fe)}")
     print(f"uniform polyhedra: {ok}/{ok + bad} correct")
+    # star prisms / antiprisms / dipyramids / trapezohedra
+    star = {'prism': (build_star_prism, lambda p: (2 * p, 3 * p, p + 2)),
+            'antiprism': (build_star_antiprism, lambda p: (2 * p, 4 * p,
+                                                           2 * p + 2)),
+            'dipyramid': (build_star_dipyramid, lambda p: (p + 2, 3 * p,
+                                                           2 * p)),
+            'trapezohedron': (build_star_trapezohedron,
+                              lambda p: (2 * p + 2, 4 * p, 2 * p))}
+    for (p, q) in [(5, 2), (7, 2), (7, 3), (8, 3)]:
+        for nm, (fn, want) in star.items():
+            V, F = fn(p, q)
+            E = set()
+            for f, _d in F:
+                for i in range(len(f)):
+                    a, b = f[i], f[(i + 1) % len(f)]
+                    E.add((min(a, b), max(a, b)))
+            chi = len(V) - len(E) + len(F)
+            got = (len(V), len(E), len(F))
+            tag = "OK" if (got == want(p) and chi == 2) else "BAD"
+            print(f"star {nm:13s} {{{p}/{q}}} V={len(V):2d} E={len(E):2d} "
+                  f"F={len(F):2d} chi={chi} {tag}")
 
 
 # --------------------------------------------------------------------------
@@ -717,13 +849,25 @@ if _IN_BLENDER:
 
     from bpy.props import IntProperty
 
+    _STAR_FORMS = [
+        ('PRISM', "Prism", "Two star bases joined by squares"),
+        ('ANTIPRISM', "Antiprism", "Two star bases joined by triangles"),
+        ('DIPYRAMID', "Dipyramid", "Bipyramid over a star (dual of the prism)"),
+        ('TRAPEZOHEDRON', "Trapezohedron",
+         "Dual of the star antiprism (incl. concave forms)"),
+    ]
+    _STAR_BUILD = {'PRISM': build_star_prism, 'ANTIPRISM': build_star_antiprism,
+                   'DIPYRAMID': build_star_dipyramid,
+                   'TRAPEZOHEDRON': build_star_trapezohedron}
+
     class MESH_OT_star_prism_add(bpy.types.Operator):
-        """Add a uniform {p/q} star prism: two star-polygon bases joined
-        by squares (Step = 1 gives an ordinary convex prism)."""
+        """Add a uniform {p/q} star prism, antiprism, dipyramid or
+        trapezohedron (Step = 1 gives the ordinary convex form)."""
         bl_idname = "mesh.star_prism_add"
-        bl_label = "Star Prism"
+        bl_label = "Star Prism / Antiprism"
         bl_options = {'REGISTER', 'UNDO'}
 
+        form: EnumProperty(name="Form", items=_STAR_FORMS, default='PRISM')
         sides: IntProperty(name="Sides (p)", default=5, min=3, max=32)
         step: IntProperty(name="Step (q)", default=2, min=1, max=15,
                           description="Star density; {p/q}, coprime with p")
@@ -735,8 +879,9 @@ if _IN_BLENDER:
 
         def execute(self, context):
             q = valid_star_step(self.sides, self.step)
-            V, F = build_star_prism(self.sides, q, self.scale)
-            _make_object(context, f"Star Prism {{{self.sides}/{q}}}",
+            V, F = _STAR_BUILD[self.form](self.sides, q, self.scale)
+            lbl = dict((k, v) for k, v, _ in _STAR_FORMS)[self.form]
+            _make_object(context, f"Star {lbl} {{{self.sides}/{q}}}",
                          V, F, self.coloring == 'SIDES')
             if q != self.step:
                 self.report({'INFO'},
