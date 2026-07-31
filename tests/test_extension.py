@@ -753,6 +753,14 @@ OPS = [
      lambda: bpy.ops.mesh.knot_carpet_add(
          lattice='SPHERE', sphere_scaffold='TI', output='TUBE',
          tube_radius=0.04, tube_sides=8, relax_iters=40)),
+    ("knot carpet polyhedral escher",
+     lambda: bpy.ops.mesh.knot_carpet_add(
+         lattice='POLYHEDRAL', poly_scaffold='ESCHER', output='TUBE',
+         tube_radius=0.04, tube_sides=8, weave_height=0.06)),
+    ("knot carpet polyhedral icosa ribbon",
+     lambda: bpy.ops.mesh.knot_carpet_add(
+         lattice='POLYHEDRAL', poly_scaffold='ICOSA', output='RIBBON',
+         cord_width=0.12, weave_height=0.06)),
     ("knot carpet torus",
      lambda: bpy.ops.mesh.knot_carpet_add(
          lattice='TORUS', nx=4, ny=3, output='TUBE',

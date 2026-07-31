@@ -42,10 +42,26 @@
 # ball (see the knot-ball section below), a fourth generalizes the
 # lattice to any uniform TILING -- one medallion per tile of a
 # regular, Archimedean or Laves tiling (the tiling-carpet section) --
-# and a fifth wraps the carpet onto a 3-D TORUS: the square lattice,
-# or (like the sibling Polyhedral Torus generator) ANY wrappable
-# uniform tiling, one woven medallion per tile (the torus-tiling
-# section).
+# a fifth wraps the carpet onto a 3-D TORUS: the square lattice, or
+# (like the sibling Polyhedral Torus generator) ANY wrappable uniform
+# tiling, one woven medallion per tile (the torus-tiling section) --
+# and a sixth weaves the carpet onto the REAL faces of a POLYHEDRON.
+#
+# THE POLYHEDRAL SCAFFOLD.  Unlike the sphere (which radially projects
+# every medallion onto a smooth ball), the polyhedral scaffold keeps
+# the solid's true three-dimensional geometry -- spikes and all: one
+# woven medallion lies in the plane of each real face, at the face
+# centroid, and the relief / over-under weave lifts along that face's
+# outward NORMAL.  Two medallions on adjacent faces share an edge, so
+# their crossings are found by UNFOLDING the neighbour flat about that
+# edge (rotating it into the face's plane by the dihedral angle) and
+# running the ordinary planar crossing test in the face's in-plane
+# basis -- the exact analogue of the sphere's tangent chart, with the
+# edge-unfold in place of the hemisphere projection -- then lacing the
+# whole solid over-and-under with the same parity union-find.  The
+# solids are the Platonic, Archimedean and Catalan solids plus M. C.
+# Escher's Solid, the stellated rhombic dodecahedron of "Waterfall"
+# (see the polyhedral-carpet section below).
 #
 # THE TORUS SCAFFOLD.  A square knot carpet is literally wallpaper:
 # the Nx x Ny block plus its margin ring is a fundamental domain of
@@ -94,10 +110,12 @@ bl_info = {
                    "curve) on a square or triangular lattice, on any "
                    "regular or Archimedean tiling, closed over a "
                    "geodesic sphere or a Platonic / Archimedean "
-                   "spherical tiling as a knot ball, or wrapped "
-                   "seamlessly onto a 3-D torus -- the square lattice "
-                   "or any wrappable uniform tiling, one medallion per "
-                   "tile",
+                   "spherical tiling as a knot ball, woven onto the "
+                   "real faces of a Platonic / Archimedean / Catalan "
+                   "solid or Escher's Solid (one medallion per face, "
+                   "laced across each edge), or wrapped seamlessly onto "
+                   "a 3-D torus -- the square lattice or any wrappable "
+                   "uniform tiling, one medallion per tile",
     "category": "Add Mesh",
 }
 
@@ -1983,6 +2001,372 @@ def sphere_loop_paths(freq=2, k=0, amp=0.10, overlap=1.15,
 
 
 # --------------------------------------------------------------------
+# The polyhedral carpet: medallions on the REAL faces of a solid
+# --------------------------------------------------------------------
+#
+# The knot-ball SPHERE scaffold above radially projects every medallion
+# onto the unit ball, so the finished carpet is a smooth sphere.  The
+# POLYHEDRAL scaffold instead keeps the solid's TRUE three-dimensional
+# geometry -- spikes and all: one woven medallion sits in the plane of
+# each real face, at the face centroid, and the relief / over-under
+# weave lifts along that face's outward NORMAL.  A cube stays a cube, a
+# spiked star stays spiked.
+#
+# CROSS-EDGE WEAVE BY UNFOLDING.  Two medallions on adjacent faces live
+# in different planes, so their loops cannot be intersected directly.
+# They share an edge, though, so we UNFOLD the neighbour flat: rotate
+# its loop about the shared edge by the dihedral angle until its face is
+# coplanar with ours (the rotation that carries the neighbour's normal
+# onto ours).  In that common plane the two medallions sit side by side
+# like two tiles of a flat carpet sharing an edge, and the ordinary
+# planar segment-segment test (_seg_cross, in the face's in-plane basis)
+# finds every crossing -- the exact analogue of the sphere's local
+# tangent-plane chart, with the edge-unfold replacing the hemisphere
+# projection.  Each medallion's radius follows the LONGEST unfolded
+# centroid-to-neighbour distance (times the overlap), so every shared
+# edge is straddled and adjacent medallions interlock.  The over/under
+# bit is then solved once per crossing with the same parity union-find
+# as every other scaffold (_solve_over), giving a genuine alternating
+# link laced over and under across each edge.  The unfold is well
+# defined on any solid that is star-shaped from its centroid (every face
+# faces outward); it is exact on the convex solids and works on the
+# star-shaped Escher solid too (the weave is solved in the flat unfold
+# chart, so even its concave valley edges lace consistently).
+#
+# The solids come from the shared solids engine (Platonic, Archimedean
+# and their Catalan duals) plus M. C. Escher's Solid -- the stellated
+# rhombic dodecahedron of "Waterfall" -- from the notable-polyhedra
+# module.  Lobe count is AUTO: each medallion gets as many lobes as its
+# face has edges, the first lobe aimed at the first shared-edge midpoint
+# so the lobes interlock with the neighbours.
+#
+# References:
+#   Robert G. Scharein, KnotPlot knot carpets --
+#     https://knotplot.com/carpets (see the header above).
+#   Branko Gruenbaum & G. C. Shephard, "Tilings and Patterns"
+#     (W. H. Freeman, 1987) -- the uniform / Laves classification.
+#   M. C. Escher, "Waterfall" (1961) and "Study for Stars" (1948);
+#     Escher's Solid is the first stellation of the rhombic
+#     dodecahedron (V26 / E72 / F48).
+
+try:
+    from . import other_polyhedra_generator as op
+except Exception:                       # legacy single-file / CLI use
+    import other_polyhedra_generator as op
+
+
+# scaffold id -> solids-engine family, extending the sphere's
+# Platonic/Archimedean map with the Catalan duals (the engine builds
+# them via build_solid, family 'CATALAN')
+_POLY_SCAFFOLD_FAMILY = dict(_SCAFFOLD_FAMILY)
+for _sid, _label, _nota in rs.CATALAN:
+    _POLY_SCAFFOLD_FAMILY[_sid] = 'CATALAN'
+
+# the operator's enum items (module-level so the strings outlive the
+# enum): the Platonic / Archimedean / Catalan solids, then Escher's
+# Solid.  Every listed solid is star-shaped from its centroid, so the
+# per-edge unfold is well defined and the carpet weaves consistently
+# (verified in the self-test) -- none are excluded.
+POLY_SCAFFOLD_ITEMS = [
+    (_sid, _label,
+     "One woven medallion per face of the %s (%s solid), on its real "
+     "3-D faces" % (_label.lower(), _famname))
+    for _fam, _famname in ((rs.PLATONIC, 'regular'),
+                           (rs.ARCHIMEDEAN, 'Archimedean'),
+                           (rs.CATALAN, 'Catalan'))
+    for (_sid, _label, _nota) in _fam]
+POLY_SCAFFOLD_ITEMS += [
+    ('ESCHER', "Escher's Solid",
+     "One woven medallion per face of Escher's Solid -- the stellated "
+     "rhombic dodecahedron of M. C. Escher's \"Waterfall\" (48 "
+     "spiked triangular faces, woven over its real spikes)")]
+
+
+def _poly_solid(sid):
+    """Real (V, F) geometry of a scaffold solid, centred on its
+    centroid and scaled so the farthest vertex sits at radius 1.  A
+    solid id pulls the Platonic / Archimedean / Catalan solid from the
+    solids engine; 'ESCHER' pulls Escher's Solid (the stellated rhombic
+    dodecahedron) from the notable-polyhedra module."""
+    if sid == 'ESCHER':
+        V, F = op.escher()
+    else:
+        V, F, _sz = rs.build_solid(_POLY_SCAFFOLD_FAMILY[sid], sid,
+                                   6, 1.0)
+    V = np.asarray(V, float)
+    V = V - V.mean(axis=0)
+    V = V / (np.max(np.linalg.norm(V, axis=1)) + 1e-300)
+    return V, [list(f) for f in F]
+
+
+def _poly_unfold(pts, A, B, n_from, n_to):
+    """Rotate points `pts` about the edge line through A, B so a face
+    with normal `n_from` becomes coplanar with a face of normal
+    `n_to` (both normals are perpendicular to the shared edge).  The
+    rotation angle is the signed dihedral carrying n_from onto n_to;
+    applied to a neighbour's loop it UNFOLDS that loop flat into the
+    reference face's plane (Rodrigues' rotation about the hinge)."""
+    ax = B - A
+    ax = ax / (np.linalg.norm(ax) + 1e-300)
+    phi = np.arctan2(float(np.cross(n_from, n_to) @ ax),
+                     float(n_from @ n_to))
+    d = np.asarray(pts, float) - A
+    return (A + d * np.cos(phi)
+            + np.cross(ax, d) * np.sin(phi)
+            + ax * ((d @ ax)[:, None] * (1.0 - np.cos(phi))))
+
+
+def _polyhedral_scaffold(sid):
+    """The face scaffold of a real solid, keeping its 3-D geometry.
+    Returns (centers, normals, e1, e2, polys, adj, edge, degree):
+      centers -- (F, 3) face centroids at their true positions
+      normals -- (F, 3) outward unit face normals
+      e1, e2  -- (F, 3) in-plane orthonormal basis of each face
+                 (e1 aimed at the first shared-edge midpoint, so the
+                 first rosette lobe faces the first neighbour)
+      polys   -- list of (m, 3) real face polygons
+      adj     -- {face: sorted edge-neighbour ids}
+      edge    -- {(i, j) with i < j: (A, B)} the shared edge endpoints
+      degree  -- {face: neighbour count} (= the face's side count)
+    Faces are neighbours iff they share an edge, matched on the
+    rounded unordered endpoint pair (as _solid_scaffold), so duplicated
+    vertices cannot split an edge."""
+    V, F = _poly_solid(sid)
+    csolid = V.mean(axis=0)
+    centers, normals, polys = [], [], []
+    for f in F:
+        P = V[f]
+        polys.append(P)
+        c = P.mean(axis=0)
+        centers.append(c)
+        n = np.cross(P[1] - P[0], P[2] - P[0])
+        n = n / (np.linalg.norm(n) + 1e-300)
+        if float(n @ (c - csolid)) < 0.0:
+            n = -n
+        normals.append(n)
+    centers = np.asarray(centers)
+    normals = np.asarray(normals)
+    owners = {}
+    for fi, f in enumerate(F):
+        m = len(f)
+        for a in range(m):
+            p, q = V[f[a]], V[f[(a + 1) % m]]
+            kp = (round(float(p[0]), 6), round(float(p[1]), 6),
+                  round(float(p[2]), 6))
+            kq = (round(float(q[0]), 6), round(float(q[1]), 6),
+                  round(float(q[2]), 6))
+            if kp == kq:
+                continue
+            key = (kp, kq) if kp < kq else (kq, kp)
+            owners.setdefault(key, []).append((fi, np.array(p, float),
+                                               np.array(q, float)))
+    adj = {i: set() for i in range(len(F))}
+    edge = {}
+    for own in owners.values():
+        if len(own) == 2 and own[0][0] != own[1][0]:
+            i, A, B = own[0]
+            j = own[1][0]
+            adj[i].add(j)
+            adj[j].add(i)
+            edge[(min(i, j), max(i, j))] = (A, B)
+    adj = {i: sorted(s) for i, s in adj.items()}
+    degree = {i: len(adj[i]) for i in adj}
+    # in-plane basis, e1 toward the first neighbour's shared-edge midpoint
+    e1 = np.zeros((len(F), 3))
+    e2 = np.zeros((len(F), 3))
+    for i in range(len(F)):
+        n = normals[i]
+        if adj[i]:
+            A, B = edge[(min(i, adj[i][0]), max(i, adj[i][0]))]
+            t = 0.5 * (A + B) - centers[i]
+        else:
+            t = polys[i][0] - centers[i]
+        t = t - float(t @ n) * n
+        if np.linalg.norm(t) < 1e-9:
+            t = polys[i][0] - centers[i]
+            t = t - float(t @ n) * n
+        e1[i] = t / (np.linalg.norm(t) + 1e-300)
+        e2[i] = np.cross(n, e1[i])
+    return centers, normals, e1, e2, polys, adj, edge, degree
+
+
+def _poly_loop(center, e1, e2, R, k, amp, samples, style, subdiv):
+    """One rosette loop lying IN a face plane: the planar rosette (via
+    _sample_loop, so ANGULAR / SMOOTH both work) placed at `center`
+    with the face's in-plane basis (e1, e2).  Returns an (S, 3) closed
+    polyline of real points on the face."""
+    p2 = np.asarray(_sample_loop(np.zeros(2), R, k, amp, samples,
+                                 style, subdiv), float)
+    return (center + p2[:, 0:1] * e1 + p2[:, 1:2] * e2)
+
+
+def build_poly_carpet(scaffold='ICOSA', k=0, amp=0.10, overlap=1.15,
+                      samples=192, style='ANGULAR', subdiv=6):
+    """The polyhedral knot carpet: one woven medallion per real face of
+    the chosen solid.  Same dict shape as build_sphere_carpet, with the
+    paths as (S, 3) polylines in the face planes and extra face frames:
+      paths     -- one (S, 3) closed loop per face (in its plane)
+      centers   -- (F, 3) face centroids; normals -- (F, 3) face
+                   normals; e1, e2 -- (F, 3) in-plane bases
+      polys     -- the real face polygons; edge -- shared-edge geometry
+      adj       -- face adjacency; nn_pairs -- the shared edges (the
+                   only pairs tested); nn_hits -- {edge: crossing count}
+      crossings, over, per_loop, consistent -- as build_carpet
+      interior  -- ALL face ids (a closed solid has no boundary)
+      spacing   -- mean neighbouring-centroid distance (the unit the
+                   tube radius / weave height are scaled by)
+    Crossings between two adjacent faces are found by UNFOLDING the
+    neighbour flat about the shared edge (_poly_unfold) and running the
+    planar _seg_cross in the face's in-plane basis, then the weave is
+    solved with the shared parity union-find (_solve_over) -- so the
+    carpet laces one-over-one-under across every edge.  k = 0 (AUTO)
+    gives each medallion as many lobes as its face has edges (the first
+    lobe toward the first shared edge); an explicit k >= 2 is honoured
+    at every face."""
+    (centers, normals, e1, e2, polys, adj, edge,
+     degree) = _polyhedral_scaffold(scaffold)
+    N = len(centers)
+    edges = sorted(edge.keys())
+    # longest unfolded centroid-to-neighbour distance per face -> radius
+    L = {}
+    for (i, j) in edges:
+        A, B = edge[(i, j)]
+        cj = _poly_unfold(centers[j:j + 1], A, B,
+                          normals[j], normals[i])[0]
+        L[(i, j)] = float(np.linalg.norm(cj - centers[i]))
+    rho0 = np.array([0.5 * float(overlap)
+                     * max(L[(min(i, j), max(i, j))] for j in adj[i])
+                     for i in range(N)])
+    paths = []
+    for i in range(N):
+        kv = int(k) if int(k) >= 2 else max(2, degree[i])
+        paths.append(_poly_loop(centers[i], e1[i], e2[i], rho0[i], kv,
+                                amp, samples, style, subdiv))
+    crossings, nn_hits = [], {}
+    for (i, j) in edges:
+        A, B = edge[(i, j)]
+        Pj3 = _poly_unfold(paths[j], A, B, normals[j], normals[i])
+        Pi = np.column_stack([(paths[i] - centers[i]) @ e1[i],
+                              (paths[i] - centers[i]) @ e2[i]])
+        Pj = np.column_stack([(Pj3 - centers[i]) @ e1[i],
+                              (Pj3 - centers[i]) @ e2[i]])
+        hits = _seg_cross(Pi, Pj)
+        nn_hits[(i, j)] = len(hits)
+        for (fi, fj) in hits:
+            crossings.append((len(crossings), i, j, fi, fj))
+    over, per_loop, consistent = _solve_over(paths, crossings)
+    spacing = float(np.mean([np.linalg.norm(centers[i] - centers[j])
+                             for (i, j) in edges]))
+    return dict(paths=paths, centers=centers, normals=normals,
+                e1=e1, e2=e2, polys=polys, edge=edge, adj=adj,
+                nn_pairs=edges, interior=set(range(N)),
+                crossings=crossings, nn_hits=nn_hits, over=over,
+                per_loop=per_loop, consistent=consistent,
+                spacing=spacing)
+
+
+def _poly_band(path3d, normal, width, thickness):
+    """Sweep a closed flat band (a thin box cross-section) along a 3D
+    loop that rides on a face: the width lies IN the face (perpendicular
+    to the loop), the thickness runs along the face NORMAL -- a woven
+    strap on the face.  Returns (verts, quad faces)."""
+    P = np.asarray(path3d, float)
+    n = len(P)
+    if n < 3:
+        return [], []
+    up = np.asarray(normal, float)
+    up = up / (np.linalg.norm(up) + 1e-12)
+    hw = 0.5 * float(width)
+    ht = 0.5 * max(float(thickness), 1e-4)
+    verts, faces = [], []
+    for i in range(n):
+        p = P[i]
+        tang = P[(i + 1) % n] - P[(i - 1) % n]
+        tang /= np.linalg.norm(tang) + 1e-12
+        side = np.cross(tang, up)
+        side /= np.linalg.norm(side) + 1e-12
+        for sw, sr in ((1, 1), (-1, 1), (-1, -1), (1, -1)):
+            verts.append(tuple(p + side * (sw * hw) + up * (sr * ht)))
+    for i in range(n):
+        j = (i + 1) % n
+        for c in range(4):
+            faces.append([4 * i + c, 4 * i + (c + 1) % 4,
+                          4 * j + (c + 1) % 4, 4 * j + c])
+    return verts, faces
+
+
+def build_poly_tube_cells(scaffold='ICOSA', k=0, amp=0.10, overlap=1.15,
+                          samples=192, style='ANGULAR', subdiv=6,
+                          tube_radius=0.04, tube_sides=10,
+                          weave_height=0.06, color_by='LOOP'):
+    """One closed round tube per face medallion, woven along the face
+    NORMAL: over beads lift outward, under beads dip inward, smooth-
+    stepped between crossings, then swept with _tube_welded.
+    tube_radius / weave_height are in loop-spacing units (the mean
+    neighbouring-centroid distance).  Returns one (verts, faces, mats)
+    cell per medallion."""
+    carpet = build_poly_carpet(scaffold, k, amp, overlap, samples,
+                               style, subdiv)
+    signed = loop_signed(carpet)
+    normals = carpet['normals']
+    d = carpet['spacing']
+    tru = max(0.005, float(tube_radius))
+    tr = tru * d
+    lift = max(float(weave_height), 1.3 * tru) * d
+    sides = max(3, int(tube_sides))
+    cells = []
+    for i, path in enumerate(carpet['paths']):
+        roff = _weave_roff(path, signed[i], lift)
+        path3d = [tuple(p) for p in path + roff[:, None] * normals[i]]
+        verts, faces = _tube_welded(path3d, tr, sides)
+        if not faces:
+            continue
+        mat = (i % len(pc.PALETTE_RGBA)) if color_by == 'LOOP' else 0
+        cells.append((verts, faces, [mat] * len(faces)))
+    return cells
+
+
+def build_poly_ribbon_cells(scaffold='ICOSA', k=0, amp=0.10,
+                            overlap=1.15, samples=192, style='ANGULAR',
+                            subdiv=6, cord_width=0.12, weave_height=0.06,
+                            height=0.0, color_by='LOOP'):
+    """One closed woven flat BAND per face medallion -- the ribbon form
+    of the polyhedral carpet.  Same normal-direction over/under weave as
+    the tube builder, but a flat strap lying on each face instead of a
+    round tube.  Returns one (verts, faces, mats) cell per medallion."""
+    carpet = build_poly_carpet(scaffold, k, amp, overlap, samples,
+                               style, subdiv)
+    signed = loop_signed(carpet)
+    normals = carpet['normals']
+    d = carpet['spacing']
+    cw = max(0.01, float(cord_width))
+    width = cw * d
+    thick = max(0.0, float(height)) * d
+    if thick <= 0.0:
+        thick = 0.12 * width
+    lift = max(float(weave_height), 0.8 * cw) * d
+    cells = []
+    for i, path in enumerate(carpet['paths']):
+        roff = _weave_roff(path, signed[i], lift)
+        path3d = path + roff[:, None] * normals[i]
+        verts, faces = _poly_band(path3d, normals[i], width, thick)
+        if not faces:
+            continue
+        mat = (i % len(pc.PALETTE_RGBA)) if color_by == 'LOOP' else 0
+        cells.append((verts, faces, [mat] * len(faces)))
+    return cells
+
+
+def poly_loop_paths(scaffold='ICOSA', k=0, amp=0.10, overlap=1.15,
+                    samples=192, style='ANGULAR', subdiv=6):
+    """Polyhedral medallion centerlines [(points, True)] for the CURVE
+    output: the in-face loops as sampled (each in its own face plane)."""
+    carpet = build_poly_carpet(scaffold, k, amp, overlap, samples,
+                               style, subdiv)
+    return [([tuple(p) for p in Q], True) for Q in carpet['paths']]
+
+
+# --------------------------------------------------------------------
 # The tiling carpet: medallions on a uniform tiling
 # --------------------------------------------------------------------
 #
@@ -2482,6 +2866,12 @@ if _IN_BLENDER:
                     "icosahedron or the faces of a Platonic / "
                     "Archimedean solid -- woven into a closed "
                     "knot ball"),
+                   ('POLYHEDRAL', "Polyhedral",
+                    "Weave the carpet onto the real faces of a "
+                    "polyhedron (Platonic/Archimedean/Catalan/Escher's "
+                    "Solid), keeping its 3-D geometry -- one woven "
+                    "medallion per face, laced over/under across each "
+                    "shared edge"),
                    ('TILING', "Tiling",
                     "Medallion loops on a regular/Archimedean "
                     "tiling -- one woven loop per tile, lobes "
@@ -2504,6 +2894,12 @@ if _IN_BLENDER:
             description="Geodesic subdivision frequency of the "
                         "icosahedral scaffold (sphere lattice); "
                         "10 x freq^2 + 2 loops")
+        poly_scaffold: EnumProperty(
+            name="Solid", items=POLY_SCAFFOLD_ITEMS, default='ICOSA',
+            description="The polyhedron carrying the loops: one woven "
+                        "medallion per real face of a Platonic / "
+                        "Archimedean / Catalan solid or Escher's Solid, "
+                        "keeping the solid's true 3-D geometry")
         tiling_name: EnumProperty(
             name="Tiling", items=tg.TILING_ITEMS, default='SQUARE',
             description="The underlying tiling (one medallion per "
@@ -2619,6 +3015,60 @@ if _IN_BLENDER:
         separate: BoolProperty(
             name="Separate Loops", default=False,
             description="Output each loop as its own object")
+
+        def _execute_polyhedral(self, context):
+            """The polyhedral carpet: one woven medallion on each real
+            face of the chosen solid, laced over/under across every
+            shared edge, keeping the solid's true 3-D geometry.  CURVE
+            emits the in-face centerlines; RIBBON sweeps a woven flat
+            strap per face; TUBE sweeps a woven round rope.  The rosette
+            lobe count is AUTO: each medallion follows its face's edge
+            count, so lobes stay aimed at the neighbours across every
+            shared edge."""
+            scaf = self.poly_scaffold
+            if self.output == 'CURVE':
+                paths = poly_loop_paths(
+                    scaf, 0, self.amplitude, self.overlap,
+                    self.samples, self.style, self.smoothness)
+                obj = _emit_curve(context, "Knot Polyhedron", paths,
+                                  operator=self)
+                if obj is None:
+                    self.report({'ERROR'}, "no carpet generated")
+                    return {'CANCELLED'}
+                obj["math_art_pattern"] = True
+                self.report({'INFO'}, "POLYHEDRAL %s  %d loops" %
+                            (scaf, len(paths)))
+                return {'FINISHED'}
+            if self.output == 'RIBBON':
+                cells = build_poly_ribbon_cells(
+                    scaf, 0, self.amplitude, self.overlap,
+                    self.samples, self.style, self.smoothness,
+                    self.cord_width, self.weave_height, self.height,
+                    self.color_by)
+            else:
+                cells = build_poly_tube_cells(
+                    scaf, 0, self.amplitude, self.overlap,
+                    self.samples, self.style, self.smoothness,
+                    self.tube_radius, self.tube_sides,
+                    self.weave_height, self.color_by)
+            obj = pc.emit(context, "Knot Polyhedron", cells,
+                          self.separate, fit=True, operator=self)
+            if obj is None:
+                self.report({'ERROR'}, "no carpet generated")
+                return {'CANCELLED'}
+            obj["math_art_pattern"] = True
+            if self.output == 'TUBE':
+                _shade_smooth(obj)
+            if obj.type == 'MESH':
+                self.report({'INFO'},
+                            "POLYHEDRAL %s  %d loops  V=%d F=%d"
+                            % (scaf, len(cells),
+                               len(obj.data.vertices),
+                               len(obj.data.polygons)))
+            else:
+                self.report({'INFO'}, "POLYHEDRAL %s  %d loops" %
+                            (scaf, len(cells)))
+            return {'FINISHED'}
 
         def _execute_sphere(self, context):
             """The closed knot ball.  CURVE emits the loop centerlines;
@@ -2825,6 +3275,8 @@ if _IN_BLENDER:
         def execute(self, context):
             if self.lattice == 'SPHERE':
                 return self._execute_sphere(context)
+            if self.lattice == 'POLYHEDRAL':
+                return self._execute_polyhedral(context)
             if self.lattice == 'TILING':
                 return self._execute_tiling(context)
             if self.lattice == 'TORUS':
@@ -2893,6 +3345,7 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'lattice')
             sphere = self.lattice == 'SPHERE'
+            poly = self.lattice == 'POLYHEDRAL'
             tiling = self.lattice == 'TILING'
             torus = self.lattice == 'TORUS'
             if sphere:
@@ -2901,6 +3354,10 @@ if _IN_BLENDER:
                 lay.prop(self, 'sphere_scaffold')
                 if self.sphere_scaffold == 'GEODESIC':
                     lay.prop(self, 'sphere_freq')
+            elif poly:
+                # lobe count is AUTO on a solid too (each medallion
+                # follows its face's edge count), so symmetry is hidden
+                lay.prop(self, 'poly_scaffold')
             elif tiling:
                 # lobe count is AUTO on a tiling too (each medallion
                 # follows its tile's neighbour count)
@@ -2923,7 +3380,7 @@ if _IN_BLENDER:
             lay.prop(self, 'amplitude')
             lay.prop(self, 'overlap')
             lay.prop(self, 'samples')
-            if not (sphere or tiling):
+            if not (sphere or poly or tiling):
                 lay.prop(self, 'cord_width')
             lay.prop(self, 'style')
             if self.style == 'SMOOTH':
@@ -2976,6 +3433,23 @@ if _IN_BLENDER:
                 if self.relax_iters > 0:
                     lay.prop(self, 'rope_clearance')
                     lay.prop(self, 'weave_gap')
+                lay.prop(self, 'align')
+                return
+            if poly:
+                # the real-face carpet: relief / weave runs along each
+                # face normal (no torus/sphere relaxation)
+                if self.output == 'RIBBON':
+                    lay.prop(self, 'cord_width')
+                    lay.prop(self, 'weave_height')
+                    lay.prop(self, 'height')
+                    lay.prop(self, 'color_by')
+                    lay.prop(self, 'separate')
+                elif self.output == 'TUBE':
+                    lay.prop(self, 'tube_radius')
+                    lay.prop(self, 'tube_sides')
+                    lay.prop(self, 'weave_height')
+                    lay.prop(self, 'color_by')
+                    lay.prop(self, 'separate')
                 lay.prop(self, 'align')
                 return
             if torus:
@@ -3519,6 +3993,78 @@ if __name__ == "__main__":
               % (sc, r, st['rdev'], st['band'], st['sep_before'],
                  st['sep_after'], st['min_dz'], st['gap'],
                  st['mv_early'], st['mv_late']))
+
+    # 11c. POLYHEDRAL carpet: one woven medallion per REAL face of a
+    #      solid, laced over/under across each shared edge via the
+    #      per-edge unfold.  For each solid check: one medallion per
+    #      face; symmetric face adjacency; centres exactly on their
+    #      faces (finite); >= 2 crossings per shared edge; one-over-
+    #      one-under at every crossing; the parity weave consistent with
+    #      zero conflicts; and non-empty finite ribbon / tube / curve
+    #      geometry (all-quad tubes and straps).  CUBE / ICOSA are
+    #      convex; ESCHER is the star-shaped stellated rhombic
+    #      dodecahedron (48 spiked faces).
+    _POLY_NFACE = {'CUBE': 6, 'ICOSA': 20, 'ESCHER': 48}
+    for sid in ('CUBE', 'ICOSA', 'ESCHER'):
+        (cc, nn, e1p, e2p, plys, adjp, edgp,
+         degp) = _polyhedral_scaffold(sid)
+        sym = all(i in adjp[j] for i in adjp for j in adjp[i])
+        car = build_poly_carpet(sid, 0, 0.10, 1.15, 160)
+        nf = _POLY_NFACE[sid]
+        one_med = len(car['paths']) == nf and len(cc) == nf
+        fin = all(np.isfinite(np.asarray(P)).all()
+                  for P in car['paths'])
+        min_hits = min(car['nn_hits'].values())
+        one = _check_one_over(car)
+        # conflict count: consecutive crossings that fail to alternate
+        over = car['over']
+        conflicts = 0
+        for i in car['interior']:
+            ent = sorted(car['per_loop'].get(i, []))
+            C = len(ent)
+            sv = [over[key] ^ hi for _f, key, hi in ent]
+            for a in range(C):
+                if C >= 2 and sv[a] == sv[(a + 1) % C]:
+                    conflicts += 1
+        # geometry: ribbon (straps), tube (ropes), curve (centerlines)
+        rc = build_poly_ribbon_cells(sid, 0, samples=120)
+        tc = build_poly_tube_cells(sid, 0, samples=120, tube_sides=8)
+        cp = poly_loop_paths(sid, 0, samples=120)
+        rf = sum(len(c[1]) for c in rc)
+        tf = sum(len(c[1]) for c in tc)
+        rfin = all(all(np.isfinite(v).all() for v in c[0])
+                   for c in rc)
+        tfin = all(all(np.isfinite(v).all() for v in c[0])
+                   for c in tc)
+        tq = all(len(f) == 4 for c in tc for f in c[1])
+        rq = all(len(f) == 4 for c in rc for f in c[1])
+        cfin = all(np.isfinite(np.asarray(p)).all() for p, _c in cp)
+        good = (one_med and sym and fin and min_hits >= 2 and one
+                and car['consistent'] and conflicts == 0
+                and rf > 0 and rfin and rq and tf > 0 and tfin and tq
+                and len(cp) == nf and cfin)
+        ok = ok and good
+        print("PASS polyhedral %-7s : faces=%d medallions=%d "
+              "min-cross=%d one-over=%s consistent=%s conflicts=%d  "
+              "ribbon %d tube %d curve %d : %s"
+              % (sid, nf, len(car['paths']), min_hits, one,
+                 car['consistent'], conflicts, rf, tf, len(cp), good))
+
+    # 11d. every offered polyhedral scaffold weaves cleanly (one
+    #      medallion per face, one-over-one-under, consistent) -- so
+    #      none of the Platonic / Archimedean / Catalan / Escher picker
+    #      entries need excluding
+    _poly_all_ok = True
+    for _sid, _label, _desc in POLY_SCAFFOLD_ITEMS:
+        car = build_poly_carpet(_sid, 0, 0.10, 1.15, 96)
+        g = (min(car['nn_hits'].values()) >= 2
+             and _check_one_over(car) and car['consistent'])
+        _poly_all_ok = _poly_all_ok and g
+        if not g:
+            print("poly scaffold %-7s : FAILED to weave" % _sid)
+    ok = ok and _poly_all_ok
+    print("poly scaffolds all-weave (%d solids) : %s"
+          % (len(POLY_SCAFFOLD_ITEMS), _poly_all_ok))
 
     # 12. tiling scaffold + carpet: symmetric adjacency, interior
     #     degree = side count, >= 2 crossings per adjacent medallion
