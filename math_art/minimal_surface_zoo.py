@@ -408,9 +408,9 @@ WE_SURFACES = {
         'clip': True,
         # the catenoid ends flare out at the n-th roots of unity; a denser
         # grid lets the object-space end trim + boundary relaxation leave a
-        # clean rounded rim instead of the coarse ragged one the 48x48
-        # grid tore
-        'res_boost': (2.2, 2.2),
+        # clean rounded rim instead of the coarse ragged one a sparse grid
+        # tore.  Rebalanced for the 64 res baseline (was 2.2 at 48).
+        'res_boost': (1.8, 1.8),
         'cycles': lambda p: [(np.exp(2j * math.pi * j / p['n']), 0.18)
                              for j in range(p['n'])],
         'test_order': 4,
@@ -470,7 +470,14 @@ WE_SURFACES = {
         'mask_punctures': lambda p: [
             (rho, p['eps']) for rho in _tower_roots(p['n'])],
         'clip': False,
-        'res_boost': (1.7, 1.7),     # dense grid -> clean puncture rims
+        # the 2n ends sit on |z| = 1; grading the radial samples toward the
+        # rim puts the fine cells exactly where the punctures cut, so each
+        # wing rim starts as a tiny-step staircase the boundary relaxation
+        # then finishes smooth (instead of the coarse one-quad scallop).
+        # With the grading carrying the rim, a modest raw density suffices
+        # (keeps the 3-storey default tower under ~28k verts).
+        'radial_grade': 'rim',
+        'res_boost': (1.5, 1.5),
         'cycles': lambda p: [
             (np.exp(1j * math.pi * (2 * j + 1) / (2 * p['n'])), 0.12)
             for j in range(2 * p['n'])],
@@ -503,7 +510,8 @@ WE_SURFACES = {
             (rho, p['eps'])
             for rho in _atower_ends(p['n'], p.get('alpha', 0.0))],
         'clip': False,
-        'res_boost': (1.7, 1.7),
+        'radial_grade': 'rim',       # fine cells at the |z|=1 ends -> smooth
+        'res_boost': (1.7, 1.7),     # unequal wing rims
         'cycles': lambda p: [
             (rho, 0.12)
             for rho in _atower_ends(p['n'], p.get('alpha', 0.0))],
@@ -545,7 +553,7 @@ WE_SURFACES = {
             'r1': 1.8 + 0.8 * min(max(radius / 1.2, 0.0), 2.0)},
         'clip': True,
         'radial_grade': 'both',      # Enneper ends at r_in and r_out
-        'res_boost': (1.7, 2.3),
+        'res_boost': (1.4, 1.9),     # rebalanced for the 64 res baseline
         'cycles': lambda p: [(0.0, 1.0)],
         'test_order': 1,
     },
@@ -563,7 +571,7 @@ WE_SURFACES = {
         'p_from': lambda order, radius: {
             'r1': 1.6 + 0.6 * min(max(radius / 1.2, 0.0), 2.0)},
         'clip': True,
-        'res_boost': (2.6, 2.6),     # annulus double-cover reads ragged at 48
+        'res_boost': (2.0, 2.0),     # annulus double-cover; tuned at 64 res
         'cycles': lambda p: [(0.0, 1.0)],
         'test_order': 1,
     },
@@ -580,6 +588,7 @@ WE_SURFACES = {
         'punctures': lambda p: [(0.0, 0.0, 0.17), (0.5, 0.5, 0.17)],
         'torus_wrap': (False, True),
         'copies': 2,
+        'res_boost': (1.5, 1.5),     # finer planar-end puncture rims
         'test_order': 1,
     },
     # --- Tier 0 (M2): associate-angle surfaces and Enneper-ended k-noid ----
@@ -600,6 +609,13 @@ WE_SURFACES = {
         'count': "Enneper order (k)",
         'associate': True,
         'clip': False,
+        # Enneper flares like r^{2k+1} toward the disk edge, so a linear grid
+        # spends its nodes on the flat centre and leaves the outer rim a
+        # coarse polygon (the classic faceted Enneper at default res).
+        # Cluster nodes toward the rim and give the ring enough angular
+        # samples to read as a smooth curve.
+        'radial_grade': 'rim',
+        'res_boost': (1.5, 1.7),
         'cycles': lambda p: [(0.0, 0.5)],        # entire phi -> zero periods
         'test_order': 1,
     },
@@ -621,7 +637,9 @@ WE_SURFACES = {
             (r, 0.14 + 0.02 * p['n']) for r in p['_rho']],
         'radial_grade': 'rim',                   # cluster nodes near the ends
         'clip': False,
-        'res_boost': (3.2, 4.2),                 # dense rims, smooth wings
+        # dense rims, smooth flaring wings; rebalanced for the 64 res
+        # baseline (was 3.2 x 4.2 at 48) to hold the vert count near 30k
+        'res_boost': (2.4, 3.2),
         'cycles': lambda p: [(r, 0.12) for r in p['_rho']],
         'test_order': 1,                         # order 1 -> n = 3 (trinoid)
     },

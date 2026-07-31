@@ -337,6 +337,18 @@ PARAMETRIC = {
     'CATHEL': ("Catenoid-Helicoid (associate)", _cathel),
 }
 
+# per-surface mesh-density boost for the classical grid builders that read
+# faceted at the shared default resolution.  build_parametric reads a
+# builder's `.spec['res_boost']` (the same hook the Weierstrass engine
+# uses), so attaching a tiny spec here lets these fast-flaring disk/strip
+# surfaces get a denser grid -- and hence a smooth rim and body -- without
+# touching the resolution the rest of the catalog is happy with.  (ENNEPER
+# is overridden by the Weierstrass engine below and tuned there instead.)
+_henneberg.spec = {'res_boost': (1.8, 1.8)}   # small domain, body faceted
+_bour.spec = {'res_boost': (1.6, 1.6)}        # z ~ u^1.5 flare -> facets
+_richmond.spec = {'res_boost': (1.4, 1.4)}    # flower rim reads polygonal
+_catalan.spec = {'res_boost': (1.3, 1.3)}     # strip edge slightly polygonal
+
 # surfaces built as a finished (V, quads[, uv]) mesh rather than a
 # parameter grid
 MESH_PARAM = {}
@@ -589,6 +601,15 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
                  for t in q[maxlen <= 4.0 * float(np.median(maxlen))]]
         ref = None
     else:
+        # grid disk/strip with no puncture mask and no radial clip (Enneper,
+        # Bour, Henneberg, Richmond, the associate disks...).  Historically
+        # this branch skipped _smooth_boundary, so the outer disk-edge ring
+        # (and any strip corner) kept the raw grid staircase.  A gentle
+        # boundary relaxation knocks that residual facet down; the denser
+        # sampling (res baseline + per-surface res_boost) does the heavy
+        # lifting, so a light pass is enough and leaves clean circular rims
+        # (catenoid/cathel) essentially untouched.
+        V = _smooth_boundary(V, quads, iters=5)
         ref = _inliers(V) if clip else V
 
     if ref is None:
@@ -1337,8 +1358,8 @@ if _IN_BLENDER:
                    ('NURBS', "NURBS", "Compact NURBS surface patch "
                                       "(control grid = Resolution U x V)")],
             default='MESH')
-        res_u: IntProperty(name="Resolution U", default=48, min=8, max=512)
-        res_v: IntProperty(name="Resolution V", default=48, min=8, max=512)
+        res_u: IntProperty(name="Resolution U", default=64, min=8, max=512)
+        res_v: IntProperty(name="Resolution V", default=64, min=8, max=512)
         ctrl_u: IntProperty(
             name="Control Points U", default=24, min=6, max=128,
             description="NURBS control grid size in U")
@@ -1497,8 +1518,8 @@ if _IN_BLENDER:
             items=[('MESH', "Mesh", "Dense polygon mesh"),
                    ('NURBS', "NURBS", "Compact NURBS surface patch")],
             default='MESH')
-        res_u: IntProperty(name="Resolution U", default=48, min=8, max=512)
-        res_v: IntProperty(name="Resolution V", default=48, min=8, max=512)
+        res_u: IntProperty(name="Resolution U", default=64, min=8, max=512)
+        res_v: IntProperty(name="Resolution V", default=64, min=8, max=512)
         ctrl_u: IntProperty(
             name="Control Points U", default=24, min=6, max=128,
             description="NURBS control grid size in U")

@@ -673,7 +673,11 @@ def we_saddle_tower(spec, nu, nv, order, radius, scale, theta, storeys):
     else:
         Vf, quads, UVf = V0, quads0, UV0
 
-    Vf = tk._smooth_boundary(Vf, quads)
+    # the wing/end rims are cut from the puncture mask, so they start as a
+    # one-quad staircase; the radial-graded sampling (radial_grade='rim')
+    # already shrinks each step near the ends, and a longer boundary
+    # relaxation than the default finishes them into smooth wing edges.
+    Vf = tk._smooth_boundary(Vf, quads, iters=20)
     Vf = tk._center_fit(Vf, scale, Vf)
     return Vf, quads, UVf
 
