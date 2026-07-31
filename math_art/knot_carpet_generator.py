@@ -42,7 +42,10 @@
 # ball (see the knot-ball section below), a fourth generalizes the
 # lattice to any uniform TILING -- one medallion per tile of a
 # regular, Archimedean or Laves tiling (the tiling-carpet section) --
-# and a fifth wraps the square carpet onto a 3-D TORUS.
+# and a fifth wraps the carpet onto a 3-D TORUS: the square lattice,
+# or (like the sibling Polyhedral Torus generator) ANY wrappable
+# uniform tiling, one woven medallion per tile (the torus-tiling
+# section).
 #
 # THE TORUS SCAFFOLD.  A square knot carpet is literally wallpaper:
 # the Nx x Ny block plus its margin ring is a fundamental domain of
@@ -92,7 +95,9 @@ bl_info = {
                    "regular or Archimedean tiling, closed over a "
                    "geodesic sphere or a Platonic / Archimedean "
                    "spherical tiling as a knot ball, or wrapped "
-                   "seamlessly onto a 3-D torus",
+                   "seamlessly onto a 3-D torus -- the square lattice "
+                   "or any wrappable uniform tiling, one medallion per "
+                   "tile",
     "category": "Add Mesh",
 }
 
@@ -668,11 +673,17 @@ def _torus_crossings(carpet, fundmap, fidx):
 
 
 def relax_carpet(carpet, lattice, nx, ny, iters=120, clearance=0.10,
-                 weave_gap=0.10, flatten=0.5, step=0.15, trace=None):
+                 weave_gap=0.10, flatten=0.5, step=0.15, trace=None,
+                 _periodic=None):
     """Physically relax the carpet into a 3D rope field.  Returns one
     (S, 3) centerline per patch loop (same order as carpet['paths']);
     margin loops are exact translates of their wrapped fundamental
     partners, so the result tiles under nx*b1 / ny*b2.
+
+    `_periodic`, when given, supplies the lattice torus directly as
+    (b1, b2, fundmap, fids, cons) -- the tiling-torus carpet's general
+    basis, wrap map and quotient crossings -- so the same relaxer serves
+    both the square lattice and any wrappable uniform tiling.
 
     Per iteration (damped Euler, all deterministic): rest-length edge
     springs + Laplacian fairing keep each loop smooth and its beads
@@ -685,12 +696,16 @@ def relax_carpet(carpet, lattice, nx, ny, iters=120, clearance=0.10,
     step (KnotPlot's d_max), which also discourages strand
     pass-through.  If `trace` is a list, the mean bead movement of
     each iteration is appended (for convergence checks)."""
-    b1, b2, _nb1, _nb2 = _basis(lattice)
+    if _periodic is None:
+        b1, b2, _nb1, _nb2 = _basis(lattice)
+        fids = sorted(carpet['interior'])
+        fundmap = _fund_map(carpet, lattice, nx, ny)
+        fidx = {i: a for a, i in enumerate(fids)}
+        cons, _conf = _torus_crossings(carpet, fundmap, fidx)
+    else:
+        b1, b2, fundmap, fids, cons = _periodic
+        fidx = {i: a for a, i in enumerate(fids)}
     T1, T2 = nx * b1, ny * b2
-    fids = sorted(carpet['interior'])
-    fidx = {i: a for a, i in enumerate(fids)}
-    fundmap = _fund_map(carpet, lattice, nx, ny)
-    cons, _conf = _torus_crossings(carpet, fundmap, fidx)
     L = len(fids)
     S = len(carpet['paths'][0])
 
@@ -997,6 +1012,364 @@ def torus_loop_paths(k=4, nx=3, ny=3, amp=0.10, overlap=1.15,
 
 
 # --------------------------------------------------------------------
+# The torus TILING carpet: any wrappable uniform tiling on the torus
+# --------------------------------------------------------------------
+#
+# The square torus above wraps ONE lattice; this generalizes the wrap to any
+# of the regular, Archimedean or Laves tilings of the shared tiling engine --
+# exactly as the sibling Polyhedral Torus generator wraps a uniform tiling
+# onto a torus (build_tiled_torus), but with the carpet's woven medallion
+# loops in place of flat tiling faces.  One rosette medallion is centred on
+# every TILE (AUTO lobes = the tile's neighbour count, as the flat TILING
+# carpet), and the whole periodic field is woven and folded onto the torus.
+#
+# THE WRAP.  A uniform tiling is periodic under two lattice vectors
+# b1, b2 = tiling_generator._base_cell(parent) (parent = the Archimedean
+# tiling a Laves dual is derived from).  Taking nx cells the long way and ny
+# around the tube gives periods T1 = nx b1, T2 = ny b2, so the nx x ny block
+# is a fundamental domain of the flat torus R^2/(T1 Z x T2 Z).  Each flat
+# vertex maps to lattice coordinates (s, t) = B^-1 (x, y) and then to the
+# standard torus by u = 2pi s/nx, v = 2pi t/ny,
+#     P = ((R + rr cos v) cos u, (R + rr cos v) sin u, rr sin v),  rr = r + z,
+# the very map build_tiled_torus uses (relief / weave z pushed radially
+# outward), so the u = 0/2pi and v = 0/2pi seams coincide and the ring closes
+# with no seam.
+#
+# THE PERIODIC WEAVE.  A padded patch (the fundamental block plus a one-cell
+# margin ring) is medalled and its crossings found in the plane; every patch
+# medallion is classified into the nx x ny fundamental block by its lattice
+# coordinates mod (nx, ny) -- the generalization of the square carpet's
+# `_fund_map` from integer (m, n) to a general lattice basis -- and the
+# crossings are deduplicated onto the torus quotient keyed on (fundamental
+# medallion, bead), generalizing `_torus_crossings`.  The over/under bit is
+# solved ONCE PER QUOTIENT CROSSING (a single parity union-find on the
+# quotient), so a crossing straddling a seam is necessarily woven the same
+# way on both sides: the seam-conflict count is 0 by construction.  Every
+# fundamental medallion is emitted as one canonical loop and its wrapped
+# copies are EXACT lattice translates, so bead j of a copy is bead j of its
+# canonical partner and the crossing beads match across the seam exactly.
+#
+# References:
+#   Robert G. Scharein, KnotPlot knot carpets --
+#     https://knotplot.com/carpets (see the header above).
+#   Branko Gruenbaum & G. C. Shephard, "Tilings and Patterns"
+#     (W. H. Freeman, 1987) -- the regular, Archimedean and Laves tilings
+#     wrapped onto the torus here (via tiling_generator.py).
+
+
+def _torus_tiling_wrap(x, n):
+    """Wrap a lattice coordinate into [0, n), snapping values within a small
+    tolerance of 0 or n back to 0 so tiny floating-point noise at a period
+    boundary (e.g. -1e-16 -> n) cannot spawn a spurious fundamental class."""
+    r = float(x) % n
+    if r > n - 1e-4 or r < 1e-4:
+        r = 0.0
+    return round(r, 3)
+
+
+def build_torus_tiling_carpet(tiling_name='SQUARE', nx=3, ny=3, amp=0.10,
+                              overlap=1.15, samples=192, style='ANGULAR',
+                              subdiv=6):
+    """The combinatorial torus-tiling carpet: one woven medallion per tile of
+    `tiling_name`, wrapped periodically onto the flat torus R^2/(T1 x T2) with
+    T1 = nx b1, T2 = ny b2 (b1, b2 = the tiling's lattice basis).  Returns a
+    dict:
+      paths     -- one (S, 2) closed medallion polyline per PADDED-patch tile
+                   (each an exact lattice translate of its canonical partner)
+      fundmap   -- {patch id: (canonical patch id, world shift)}
+      fids      -- sorted canonical (fundamental) patch ids, one per tile of
+                   the nx x ny block; interior -- set(fids), for reuse
+      signed    -- {fundamental patch id: [(bead, +1 over / -1 under)]}, the
+                   torus-periodic over/under weave
+      cons      -- the quotient crossings ((la, ba), (lb, bb)) in fidx order
+                   (bead ba of loop la passes OVER bead bb of lb), for relax
+      conflicts -- seam-consistency check: flat crossings whose wrapped
+                   duplicate disagreed on the over bit (0 for the periodic
+                   quotient solve); consistent -- alternation fully satisfied
+      Binv      -- world (x, y) -> lattice (s, t) map; b1, b2, nx, ny, spacing
+    Each medallion follows the flat TILING carpet's geometry (radius from the
+    longest neighbour-centroid distance, vertex-clearing cap, AUTO lobes), but
+    computed from an INTERIOR representative so its neighbour ring is the true
+    periodic one, then replicated to every wrapped copy as an exact
+    translate."""
+    parent = tg.LAVES_OF.get(tiling_name, tiling_name)
+    b1, b2, _tiles = tg._base_cell(parent)
+    b1 = np.asarray(b1, float)
+    b2 = np.asarray(b2, float)
+    B = np.column_stack([b1, b2])
+    Binv = np.linalg.inv(B)                       # world -> lattice (s, t)
+    # padded patch: the nx x ny fundamental block plus a one-cell margin ring
+    centers, polys, adj, degree, interior = _tiling_scaffold(
+        tiling_name, nx + 2, ny + 2)
+    T = len(centers)
+    C = np.asarray(centers, float)
+    ST = C @ Binv.T                               # lattice coords (T, 2)
+    key_of = [(_torus_tiling_wrap(ST[i, 0], nx),
+               _torus_tiling_wrap(ST[i, 1], ny)) for i in range(T)]
+    classes = {}
+    for i, kk in enumerate(key_of):
+        classes.setdefault(kk, []).append(i)
+    # canonical representative per class: an interior tile (full neighbour
+    # ring) nearest the patch centre, so its medallion is the true periodic
+    # one and it sits well away from the padded edge
+    ctr = C.mean(axis=0)
+    canon = {}
+    for kk, members in classes.items():
+        ints = [i for i in members if i in interior]
+        pool = ints if ints else members
+        canon[kk] = min(pool, key=lambda i: float(np.linalg.norm(C[i] - ctr)))
+    # canonical medallion path per class (the flat TILING carpet's geometry)
+    canon_path = {}
+    for kk in classes:
+        i = canon[kk]
+        c = C[i]
+        nb = adj[i]
+        if nb:
+            dmax = max(float(np.linalg.norm(C[j] - c)) for j in nb)
+            R = 0.5 * float(overlap) * dmax
+            dvert = float(np.min(np.linalg.norm(polys[i] - c, axis=1)))
+            cap = 0.98 * dvert / max(0.65, 1.0 - float(amp))
+            R = max(min(R, cap), 0.51 * dmax)
+            kv = max(1, degree[i])
+            dv = C[nb[0]] - c
+            phi = float(np.arctan2(dv[1], dv[0]))
+            av = amp
+        else:
+            R = 0.5 * float(overlap) * float(np.max(
+                np.linalg.norm(polys[i] - c, axis=1)))
+            kv, phi, av = 2, 0.0, 0.0
+        p2 = np.asarray(_sample_loop(np.zeros(2), R, kv, av, samples,
+                                     style, subdiv), float)
+        cp, sp = np.cos(phi), np.sin(phi)
+        rot = np.array([[cp, sp], [-sp, cp]])
+        canon_path[kk] = c + p2 @ rot
+    # every patch medallion is its canonical partner translated onto its tile
+    paths = [canon_path[key_of[i]] + (C[i] - C[canon[key_of[i]]])
+             for i in range(T)]
+    fundmap = {i: (canon[key_of[i]], C[i] - C[canon[key_of[i]]])
+               for i in range(T)}
+    fids = sorted({canon[kk] for kk in classes})
+    fidx = {i: a for a, i in enumerate(fids)}
+    canon_of = {i: fidx[canon[key_of[i]]] for i in range(T)}
+    S = len(paths[0])
+
+    # crossings: every padded-patch pair whose bounding circles meet (as the
+    # flat TILING carpet), so vertex-neighbour contacts stay woven
+    Cc = np.asarray([p.mean(axis=0) for p in paths])
+    rad = np.array([float(np.max(np.linalg.norm(paths[i] - Cc[i], axis=1)))
+                    for i in range(T)])
+    crossings = []
+    for i in range(T):
+        d = np.linalg.norm(Cc - Cc[i], axis=1)
+        cand = np.nonzero((np.arange(T) > i)
+                          & (d < rad + rad[i] + 1e-9))[0]
+        for j in cand:
+            j = int(j)
+            for (fi, fj) in _seg_cross(paths[i], paths[j]):
+                crossings.append((len(crossings), i, j, fi, fj))
+
+    # deduplicate onto the torus quotient: key each crossing on the two
+    # (fundamental loop, bead) endpoints; ONE crossing per quotient key
+    qmap = {}
+    for (_key, i, j, fi, fj) in crossings:
+        la, lb = canon_of[i], canon_of[j]
+        if la <= lb:
+            lo, hi, flo, fhi = la, lb, fi, fj
+        else:
+            lo, hi, flo, fhi = lb, la, fj, fi
+        qk = (lo, int(round(flo)) % S, hi, int(round(fhi)) % S)
+        qmap.setdefault(qk, (lo, hi, flo, fhi))
+    qcross = [(idx, lo, hi, flo, fhi)
+              for idx, (lo, hi, flo, fhi) in enumerate(qmap.values())]
+    qk_of = {qk: idx for idx, qk in enumerate(qmap.keys())}
+    # solve the over/under ONCE per quotient crossing -> periodic by
+    # construction (the parity union-find of the flat carpet, on the quotient)
+    over, _per_loop, consistent = _solve_over(None, qcross)
+
+    # signed weave per fundamental loop, and the over-first quotient crossing
+    # list (fidx order) the relaxer consumes
+    signed = {i: [] for i in fids}
+    cons = []
+    for idx, lo, hi, flo, fhi in qcross:
+        bl = int(round(flo)) % S
+        bh = int(round(fhi)) % S
+        ov = over[idx]                            # 1 = lower-id loop over
+        signed[fids[lo]].append((bl, 1 if ov else -1))
+        signed[fids[hi]].append((bh, -1 if ov else 1))
+        cons.append(((lo, bl), (hi, bh)) if ov else ((hi, bh), (lo, bl)))
+
+    # seam-conflict audit: re-derive each flat crossing's over-sense from the
+    # quotient solution; every wrapped duplicate of a quotient crossing must
+    # agree (0 for a correct periodic weave)
+    conflicts = 0
+    seen = {}
+    for (_key, i, j, fi, fj) in crossings:
+        la, lb = canon_of[i], canon_of[j]
+        if la <= lb:
+            lo, hi, flo, fhi = la, lb, fi, fj
+        else:
+            lo, hi, flo, fhi = lb, la, fj, fi
+        qk = (lo, int(round(flo)) % S, hi, int(round(fhi)) % S)
+        idx = qk_of.get(qk)
+        if idx is None:
+            continue
+        if qk in seen and seen[qk] != over[idx]:
+            conflicts += 1
+        seen[qk] = over[idx]
+
+    # spacing: mean neighbour-centroid distance over the fundamental
+    # medallions (the loop-spacing unit the ribbon width scales by)
+    dsum, dcnt = 0.0, 0
+    for i in fids:
+        for j in adj[i]:
+            dsum += float(np.linalg.norm(C[j] - C[i]))
+            dcnt += 1
+    spacing = dsum / dcnt if dcnt else 1.0
+
+    return dict(paths=paths, fundmap=fundmap, fids=fids, interior=set(fids),
+                signed=signed, cons=cons, conflicts=conflicts,
+                consistent=consistent, Binv=Binv, b1=b1, b2=b2,
+                nx=int(nx), ny=int(ny), spacing=spacing)
+
+
+def _torus_warp_latt(verts, Binv, nx, ny, R, r):
+    """Map flat carpet vertices (x, y, z) onto the standard torus through the
+    tiling's lattice: (s, t) = B^-1 (x, y), u = 2pi s/nx, v = 2pi t/ny,
+    rr = r + z (relief / weave pushed radially outward),
+    P = ((R + rr cos v) cos u, (R + rr cos v) sin u, rr sin v).  Accepts any
+    (N, 3) sequence, returns a list of (x, y, z) tuples; periodic in u and v so
+    a vertex past a seam wraps continuously."""
+    P = np.asarray(verts, float)
+    if P.size == 0:
+        return []
+    ST = P[:, :2] @ Binv.T
+    u = 2.0 * pi * ST[:, 0] / nx
+    v = 2.0 * pi * ST[:, 1] / ny
+    rr = r + P[:, 2]
+    ring = R + rr * np.cos(v)
+    out = np.column_stack([ring * np.cos(u), ring * np.sin(u),
+                           rr * np.sin(v)])
+    return [tuple(p) for p in out]
+
+
+def build_torus_tiling_cells(tiling_name='SQUARE', nx=3, ny=3, amp=0.10,
+                             overlap=1.15, samples=192, cord_width=0.12,
+                             style='ANGULAR', subdiv=6, interlace=True,
+                             interlace_mode='FLAT', weave_height=0.05,
+                             color_by='LOOP', height=0.0, torus_major=1.0,
+                             torus_minor=0.5):
+    """One merged (verts, faces, mats) ribbon cell per fundamental medallion,
+    wrapped onto the torus (as build_torus_cells, but for any wrappable
+    tiling).  Each medallion's mitered ribbon is built flat, then every vertex
+    is mapped onto the torus by `_torus_warp_latt`; the weave uses the
+    torus-periodic over/under so it matches across both seams.  cord_width is
+    in loop-spacing units (the mean neighbour-centroid distance)."""
+    carpet = build_torus_tiling_carpet(tiling_name, nx, ny, amp, overlap,
+                                       samples, style, subdiv)
+    signed, fids = carpet['signed'], carpet['fids']
+    Binv, d = carpet['Binv'], carpet['spacing']
+    width = max(0.01, float(cord_width)) * d
+    R, r = float(torus_major), float(torus_minor)
+    cells = []
+    for i in fids:
+        pl = [tuple(p) for p in carpet['paths'][i]]
+        sub = _loop_cell(pl, signed[i], width, interlace, interlace_mode,
+                         weave_height, height, color_by, i)
+        if not sub:
+            continue
+        warped = [(_torus_warp_latt(cv, Binv, nx, ny, R, r), cf, cm)
+                  for cv, cf, cm in sub]
+        cell = pc.merge_cells(warped)
+        if cell[1]:
+            cells.append(cell)
+    return cells
+
+
+def build_torus_tiling_tube_cells(tiling_name='SQUARE', nx=3, ny=3, amp=0.10,
+                                  overlap=1.15, samples=192, style='ANGULAR',
+                                  subdiv=6, tube_radius=0.04, tube_sides=10,
+                                  weave_height=0.06, color_by='LOOP',
+                                  relax_iters=0, clearance=0.10,
+                                  weave_gap=0.10, torus_major=1.0,
+                                  torus_minor=0.5):
+    """One closed round tube per fundamental medallion, swept on the torus (as
+    build_torus_tube_cells).  The flat woven centerline (or, with
+    relax_iters > 0, the tier-2 relaxed centerline, which tiles under T1, T2
+    via the lattice min-image) is mapped onto the torus and a round rope swept
+    along it.  Returns one (verts, faces, mats) cell per medallion."""
+    carpet = build_torus_tiling_carpet(tiling_name, nx, ny, amp, overlap,
+                                       samples, style, subdiv)
+    signed, fids = carpet['signed'], carpet['fids']
+    Binv = carpet['Binv']
+    tr = max(0.005, float(tube_radius))
+    lift = max(float(weave_height), 1.3 * tr)
+    sides = max(3, int(tube_sides))
+    R, r = float(torus_major), float(torus_minor)
+    relaxed = None
+    if relax_iters > 0:
+        relaxed = relax_torus_tiling_carpet(
+            carpet, iters=int(relax_iters),
+            clearance=max(float(clearance), 2.2 * tr),
+            weave_gap=max(float(weave_gap), 2.2 * tr))
+    cells = []
+    for i in fids:
+        if relaxed is not None:
+            flat = [tuple(p) for p in relaxed[i]]
+        else:
+            pl2 = [(float(p[0]), float(p[1])) for p in carpet['paths'][i]]
+            zoff = isl._weave_zoff(pl2, True, signed[i], lift)
+            flat = [(pl2[j][0], pl2[j][1], zoff[j])
+                    for j in range(len(pl2))]
+        center = _torus_warp_latt(flat, Binv, nx, ny, R, r)
+        verts, faces = _tube_welded(center, tr, sides)
+        if not faces:
+            continue
+        mat = (i % len(pc.PALETTE_RGBA)) if color_by == 'LOOP' else 0
+        cells.append((verts, faces, [mat] * len(faces)))
+    return cells
+
+
+def torus_tiling_loop_paths(tiling_name='SQUARE', nx=3, ny=3, amp=0.10,
+                            overlap=1.15, samples=192, style='ANGULAR',
+                            subdiv=6, iters=0, clearance=0.10, weave_gap=0.10,
+                            torus_major=1.0, torus_minor=0.5):
+    """Fundamental-medallion centerlines [(points, True)] on the torus for the
+    CURVE output: the flat rosette centerlines (iters = 0, all on the tube
+    surface) or the tier-2 relaxed centerlines (iters > 0), each mapped onto
+    the torus by `_torus_warp_latt`."""
+    carpet = build_torus_tiling_carpet(tiling_name, nx, ny, amp, overlap,
+                                       samples, style, subdiv)
+    fids, Binv = carpet['fids'], carpet['Binv']
+    R, r = float(torus_major), float(torus_minor)
+    if iters > 0:
+        lines = relax_torus_tiling_carpet(carpet, iters=int(iters),
+                                          clearance=clearance,
+                                          weave_gap=weave_gap)
+        flats = {i: [tuple(p) for p in lines[i]] for i in fids}
+    else:
+        flats = {i: [(float(p[0]), float(p[1]), 0.0)
+                     for p in carpet['paths'][i]] for i in fids}
+    return [(_torus_warp_latt(flats[i], Binv, nx, ny, R, r), True)
+            for i in fids]
+
+
+def relax_torus_tiling_carpet(carpet, iters=120, clearance=0.10,
+                              weave_gap=0.10):
+    """Physically relax the torus-tiling carpet into a 3-D rope field, on the
+    lattice torus with periods T1 = nx b1, T2 = ny b2.  Reuses the square
+    carpet's periodic KnotPlot relaxer `relax_carpet` through its `_periodic`
+    hook (the tiling's basis, fundamental medallions, wrap map and quotient
+    crossings are precomputed in `carpet`).  Returns a list of (S, 3)
+    centerlines indexed by patch id; entry [i] for a fundamental id i is that
+    medallion's relaxed centerline (its wrapped copies are exact translates)."""
+    return relax_carpet(
+        carpet, None, carpet['nx'], carpet['ny'], iters=iters,
+        clearance=clearance, weave_gap=weave_gap,
+        _periodic=(carpet['b1'], carpet['b2'], carpet['fundmap'],
+                   carpet['fids'], carpet['cons']))
+
+
+# --------------------------------------------------------------------
 # The knot ball: the carpet woven over a sphere
 # --------------------------------------------------------------------
 #
@@ -1139,6 +1512,15 @@ SPHERE_SCAFFOLD_ITEMS += [
         'regular' if _fam == rs.PLATONIC else 'Archimedean'))
     for _fam in (rs.PLATONIC, rs.ARCHIMEDEAN)
     for (_sid, _label, _nota) in _fam]
+
+# Tilings that wrap cleanly onto the torus.  Mirrors the Polyhedral Torus
+# generator's TORUS_TILING_ITEMS: every uniform tiling except Rhombille,
+# whose Laves-dual patch does not fold to a single translational period.
+# (Every other tiling folds AND weaves seam-consistently -- one over/under
+# bit per quotient crossing -- so all are offered here.)
+_TORUS_TILING_EXCLUDE = {'RHOMBILLE'}
+TORUS_TILING_ITEMS = [_it for _it in tg.TILING_ITEMS
+                      if _it[0] not in _TORUS_TILING_EXCLUDE]
 
 
 def _solid_scaffold(family, sid):
@@ -2126,6 +2508,11 @@ if _IN_BLENDER:
             name="Tiling", items=tg.TILING_ITEMS, default='SQUARE',
             description="The underlying tiling (one medallion per "
                         "tile)")
+        torus_tiling: EnumProperty(
+            name="Torus Tiling", items=TORUS_TILING_ITEMS, default='SQUARE',
+            description="The uniform tiling wrapped onto the torus (one "
+                        "woven medallion per tile); SQUARE reproduces the "
+                        "square-lattice torus")
         symmetry: IntProperty(
             name="Symmetry", default=4, min=2, max=12,
             description="k-fold symmetry of each loop (rosette lobes; "
@@ -2353,44 +2740,70 @@ if _IN_BLENDER:
             return {'FINISHED'}
 
         def _execute_torus(self, context):
-            """The square carpet wrapped seamlessly onto a 3-D torus.
-            Only the nx x ny fundamental loops are emitted, woven with
-            the torus-wrapped over/under so the u = 0 / 2pi and
-            v = 0 / 2pi seams match; CURVE emits centerlines, RIBBON
-            the woven straps, TUBE the woven ropes.  Reuses the flat
-            symmetry / nx / ny / amplitude / overlap / weave / relief /
-            relax controls; torus_major and torus_minor set the ring."""
+            """A knot carpet wrapped seamlessly onto a 3-D torus.  The
+            chosen uniform tiling's nx x ny fundamental block is emitted
+            and woven with the torus-periodic over/under so the u = 0 /
+            2pi and v = 0 / 2pi seams match; CURVE emits centerlines,
+            RIBBON the woven straps, TUBE the woven ropes.  torus_tiling
+            = SQUARE keeps the original square-lattice torus (loops on
+            lattice nodes, k = symmetry); any other tiling lays one
+            medallion per tile with AUTO lobes = the tile's neighbour
+            count.  torus_major / torus_minor set the ring."""
             R, r = float(self.torus_major), float(self.torus_minor)
+            tn = self.torus_tiling
+            sq = (tn == 'SQUARE')            # the original square-lattice path
+            label = "Knot Torus" if sq else ("Knot Torus %s" % tn)
             if self.output == 'CURVE':
-                paths = torus_loop_paths(
-                    self.symmetry, self.nx, self.ny, self.amplitude,
-                    self.overlap, self.samples, self.style,
-                    self.smoothness, self.relax_iters,
-                    self.rope_clearance, self.weave_gap, R, r)
-                obj = _emit_curve(context, "Knot Torus", paths,
-                                  operator=self)
+                if sq:
+                    paths = torus_loop_paths(
+                        self.symmetry, self.nx, self.ny, self.amplitude,
+                        self.overlap, self.samples, self.style,
+                        self.smoothness, self.relax_iters,
+                        self.rope_clearance, self.weave_gap, R, r)
+                else:
+                    paths = torus_tiling_loop_paths(
+                        tn, self.nx, self.ny, self.amplitude, self.overlap,
+                        self.samples, self.style, self.smoothness,
+                        self.relax_iters, self.rope_clearance,
+                        self.weave_gap, R, r)
+                obj = _emit_curve(context, label, paths, operator=self)
                 if obj is None:
                     self.report({'ERROR'}, "no carpet generated")
                     return {'CANCELLED'}
                 obj["math_art_pattern"] = True
-                self.report({'INFO'}, "TORUS %dx%d  %d loops" %
-                            (self.nx, self.ny, len(paths)))
+                self.report({'INFO'}, "TORUS %s %dx%d  %d loops" %
+                            (tn, self.nx, self.ny, len(paths)))
                 return {'FINISHED'}
             if self.output == 'RIBBON':
-                cells = build_torus_cells(
-                    self.symmetry, self.nx, self.ny, self.amplitude,
-                    self.overlap, self.samples, self.cord_width,
-                    self.style, self.smoothness, self.interlace,
-                    self.interlace_mode, self.weave_height,
-                    self.color_by, self.height, R, r)
+                if sq:
+                    cells = build_torus_cells(
+                        self.symmetry, self.nx, self.ny, self.amplitude,
+                        self.overlap, self.samples, self.cord_width,
+                        self.style, self.smoothness, self.interlace,
+                        self.interlace_mode, self.weave_height,
+                        self.color_by, self.height, R, r)
+                else:
+                    cells = build_torus_tiling_cells(
+                        tn, self.nx, self.ny, self.amplitude, self.overlap,
+                        self.samples, self.cord_width, self.style,
+                        self.smoothness, self.interlace, self.interlace_mode,
+                        self.weave_height, self.color_by, self.height, R, r)
             else:
-                cells = build_torus_tube_cells(
-                    self.symmetry, self.nx, self.ny, self.amplitude,
-                    self.overlap, self.samples, self.style,
-                    self.smoothness, self.tube_radius, self.tube_sides,
-                    self.weave_height, self.color_by, self.relax_iters,
-                    self.rope_clearance, self.weave_gap, R, r)
-            obj = pc.emit(context, "Knot Torus", cells,
+                if sq:
+                    cells = build_torus_tube_cells(
+                        self.symmetry, self.nx, self.ny, self.amplitude,
+                        self.overlap, self.samples, self.style,
+                        self.smoothness, self.tube_radius, self.tube_sides,
+                        self.weave_height, self.color_by, self.relax_iters,
+                        self.rope_clearance, self.weave_gap, R, r)
+                else:
+                    cells = build_torus_tiling_tube_cells(
+                        tn, self.nx, self.ny, self.amplitude, self.overlap,
+                        self.samples, self.style, self.smoothness,
+                        self.tube_radius, self.tube_sides, self.weave_height,
+                        self.color_by, self.relax_iters, self.rope_clearance,
+                        self.weave_gap, R, r)
+            obj = pc.emit(context, label, cells,
                           self.separate, fit=True, operator=self)
             if obj is None:
                 self.report({'ERROR'}, "no carpet generated")
@@ -2400,13 +2813,13 @@ if _IN_BLENDER:
                 _shade_smooth(obj)
             if obj.type == 'MESH':
                 self.report({'INFO'},
-                            "TORUS %dx%d  %d loops  V=%d F=%d"
-                            % (self.nx, self.ny, len(cells),
+                            "TORUS %s %dx%d  %d loops  V=%d F=%d"
+                            % (tn, self.nx, self.ny, len(cells),
                                len(obj.data.vertices),
                                len(obj.data.polygons)))
             else:
-                self.report({'INFO'}, "TORUS %dx%d  %d loops" %
-                            (self.nx, self.ny, len(cells)))
+                self.report({'INFO'}, "TORUS %s %dx%d  %d loops" %
+                            (tn, self.nx, self.ny, len(cells)))
             return {'FINISHED'}
 
         def execute(self, context):
@@ -2492,6 +2905,15 @@ if _IN_BLENDER:
                 # lobe count is AUTO on a tiling too (each medallion
                 # follows its tile's neighbour count)
                 lay.prop(self, 'tiling_name')
+                lay.prop(self, 'nx')
+                lay.prop(self, 'ny')
+            elif torus:
+                # the wrapped tiling; SQUARE keeps the k-fold square
+                # lattice (symmetry shown), every other tiling has AUTO
+                # lobes = the tile's neighbour count (symmetry hidden)
+                lay.prop(self, 'torus_tiling')
+                if self.torus_tiling == 'SQUARE':
+                    lay.prop(self, 'symmetry')
                 lay.prop(self, 'nx')
                 lay.prop(self, 'ny')
             else:
@@ -3223,5 +3645,81 @@ if __name__ == "__main__":
     g = rtf > 0 and rtfin and rtq
     ok = ok and g
     print("torus relax 3x3 : %d faces quads=%s : %s" % (rtf, rtq, g))
+
+    # 16. torus TILING carpet: any wrappable uniform tiling wrapped onto the
+    #     torus, one woven medallion per tile.  Verifies for every tiling:
+    #     non-empty finite geometry in all three outputs; seam continuity
+    #     (every wrapped medallion warps EXACTLY onto its fundamental partner,
+    #     so u = 0/2pi and v = 0/2pi coincide); and zero periodic-weave
+    #     conflicts (the over/under solved once per quotient crossing).  The
+    #     clean regular trio SQUARE / HEX / TRIHEX must also be perfectly
+    #     alternating (consistent); crowded tilings need only weave
+    #     seam-consistently one-over-one-under.
+    def _check_torus_tiling(tn, nxx, nyy, R=1.0, r=0.5, samples=120):
+        car = build_torus_tiling_carpet(tn, nxx, nyy, 0.10, 1.15, samples)
+        Binv, fids = car['Binv'], car['fids']
+        seam = 0.0
+        for i, (cj, _sh) in car['fundmap'].items():
+            wi = np.asarray(_torus_warp_latt(
+                [(p[0], p[1], 0.0) for p in car['paths'][i]],
+                Binv, nxx, nyy, R, r))
+            wj = np.asarray(_torus_warp_latt(
+                [(p[0], p[1], 0.0) for p in car['paths'][cj]],
+                Binv, nxx, nyy, R, r))
+            seam = max(seam, float(np.abs(wi - wj).max()))
+        rcells = build_torus_tiling_cells(
+            tn, nxx, nyy, samples=samples, interlace_mode='WOVEN',
+            weave_height=0.05, torus_major=R, torus_minor=r)
+        tcells = build_torus_tiling_tube_cells(
+            tn, nxx, nyy, samples=samples, tube_sides=8,
+            torus_major=R, torus_minor=r)
+        cpaths = torus_tiling_loop_paths(
+            tn, nxx, nyy, samples=samples, torus_major=R, torus_minor=r)
+        rf = sum(len(c[1]) for c in rcells)
+        tf = sum(len(c[1]) for c in tcells)
+        rfin = all(all(np.isfinite(v).all() for v in c[0]) for c in rcells)
+        tfin = all(all(np.isfinite(v).all() for v in c[0]) for c in tcells)
+        tq = all(len(f) == 4 for c in tcells for f in c[1])
+        cfin = all(np.isfinite(np.asarray(p)).all() for p, _c in cpaths)
+        nl = len(fids)
+        good = (nl > 0 and car['conflicts'] == 0 and seam < 1e-9
+                and rf > 0 and rfin and tf > 0 and tfin and tq
+                and cfin and len(cpaths) == nl)
+        return good, dict(nl=nl, conf=car['conflicts'],
+                          consistent=car['consistent'], seam=seam,
+                          rf=rf, tf=tf, cn=len(cpaths))
+
+    for tn in ('SQUARE', 'HEX', 'TRIHEX'):
+        good, st = _check_torus_tiling(tn, 4, 3)
+        good = good and st['consistent']          # strict for the clean trio
+        ok = ok and good
+        print("torus-tiling %-8s : loops=%d conflicts=%d consistent=%s "
+              "seam_err=%.2e  ribbon %d  tube %d  curve %d : %s"
+              % (tn, st['nl'], st['conf'], st['consistent'], st['seam'],
+                 st['rf'], st['tf'], st['cn'], good))
+
+    # 16b. every other wrappable tiling (all TILING_ITEMS bar Rhombille):
+    #      folds and weaves seam-consistently with zero conflicts
+    _trio = ('SQUARE', 'HEX', 'TRIHEX')
+    for tn in [it[0] for it in TORUS_TILING_ITEMS if it[0] not in _trio]:
+        good, st = _check_torus_tiling(tn, 3, 3, samples=96)
+        ok = ok and good
+        print("torus-tiling %-12s : loops=%d conflicts=%d consistent=%s "
+              "seam_err=%.2e  ribbon %d  tube %d : %s"
+              % (tn, st['nl'], st['conf'], st['consistent'], st['seam'],
+                 st['rf'], st['tf'], good))
+
+    # 16c. relaxed torus-tiling rope (tier-2 periodic relaxation on the
+    #      lattice torus) builds finite, non-empty, all-quad geometry
+    rtt = build_torus_tiling_tube_cells('HEX', 3, 3, samples=96, tube_sides=8,
+                                        relax_iters=30, torus_major=1.0,
+                                        torus_minor=0.5)
+    rttf = sum(len(c[1]) for c in rtt)
+    rttfin = all(all(np.isfinite(v).all() for v in c[0]) for c in rtt)
+    rttq = all(len(f) == 4 for c in rtt for f in c[1])
+    g = rttf > 0 and rttfin and rttq
+    ok = ok and g
+    print("torus-tiling relax HEX 3x3 : %d faces quads=%s : %s"
+          % (rttf, rttq, g))
 
     print("RESULT:", "OK" if ok else "BAD")

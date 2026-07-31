@@ -757,6 +757,14 @@ OPS = [
      lambda: bpy.ops.mesh.knot_carpet_add(
          lattice='TORUS', nx=4, ny=3, output='TUBE',
          tube_radius=0.04, tube_sides=8)),
+    ("knot carpet torus hex",
+     lambda: bpy.ops.mesh.knot_carpet_add(
+         lattice='TORUS', torus_tiling='HEX', nx=6, ny=3,
+         output='TUBE', tube_radius=0.04, tube_sides=8)),
+    ("knot carpet torus trihex ribbon",
+     lambda: bpy.ops.mesh.knot_carpet_add(
+         lattice='TORUS', torus_tiling='TRIHEX', nx=4, ny=3,
+         output='RIBBON', interlace_mode='WOVEN', weave_height=0.05)),
     ("woven double shell chainmail",
      lambda: bpy.ops.mesh.woven_double_shell_add(
          solid='DODECA', advance=0, output='TUBE', relax_iters=30)),
