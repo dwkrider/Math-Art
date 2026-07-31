@@ -41,12 +41,14 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Math Art > Polyhedra",
-    "description": "The uniform polyhedra (Wythoff construction): convex, "
-                   "Kepler-Poinsot and non-convex star uniforms",
+    "description": "All 75 uniform polyhedra (Wythoff construction): "
+                   "convex, Kepler-Poinsot, hemipolyhedra and star "
+                   "uniforms, with duals and star prisms",
     "category": "Add Mesh",
 }
 
 import math
+from collections import defaultdict
 
 try:
     import numpy as np
@@ -382,6 +384,63 @@ def build_snub(u, scale=1.0):
     return V, faces
 
 
+def build_dual(V, faces, big=6.0):
+    """Dual by polar reciprocation about the unit sphere: one dual vertex
+    per face (its pole), one dual face per original vertex (the poles of
+    the faces round that vertex, in cyclic order).  Faces through the
+    centre (hemipolyhedra) have poles at infinity -- rendered truncated at
+    radius `big`.  Returns (verts, faces-with-density)."""
+    if np is None:
+        raise RuntimeError("duals need NumPy")
+    F = [f for f, _d in faces]
+    poles = []
+    for f in F:
+        pts = [np.array(V[i], float) for i in f]
+        c = sum(pts) / len(pts)
+        n = np.zeros(3)
+        for i in range(len(f)):
+            n += np.cross(pts[i] - c, pts[(i + 1) % len(f)] - c)
+        n = n / (np.linalg.norm(n) or 1.0)
+        k = float(np.dot(n, pts[0]))
+        poles.append(tuple(n * big) if abs(k) < 1e-6 else tuple(n / k))
+    vf = defaultdict(list)
+    for fi, f in enumerate(F):
+        for v in f:
+            vf[v].append(fi)
+    dfaces = []
+    for v in range(len(V)):
+        fs = vf[v]
+        fe = {}
+        for fi in fs:
+            f = F[fi]
+            i = f.index(v)
+            fe[fi] = [frozenset((v, f[(i - 1) % len(f)])),
+                      frozenset((v, f[(i + 1) % len(f)]))]
+        e2f = defaultdict(list)
+        for fi in fs:
+            for e in fe[fi]:
+                e2f[e].append(fi)
+        order = [fs[0]]
+        cur = fs[0]
+        while len(order) < len(fs):
+            nxt = None
+            for e in fe[cur]:
+                for g in e2f[e]:
+                    if g != cur and g not in order:
+                        nxt = g
+                        break
+                if nxt is not None:
+                    break
+            if nxt is None:
+                break
+            order.append(nxt)
+            cur = nxt
+        if len(order) >= 3:
+            dfaces.append(order)
+    out = [(df, _face_density(poles, df)) for df in dfaces]
+    return poles, out
+
+
 def build_star_prism(p, q, scale=1.0):
     """Uniform {p/q} star prism: two star polygon bases joined by squares
     (q = 1 gives an ordinary convex prism).  Returns (verts, faces) with
@@ -579,6 +638,12 @@ if _IN_BLENDER:
         family: EnumProperty(name="Family", items=_family_items,
                              update=_family_update)
         solid: EnumProperty(name="Solid", items=_solid_items)
+        dual: BoolProperty(
+            name="Dual", default=False,
+            description="Build the dual by polar reciprocation (the "
+                        "Catalan / Kepler-Poinsot / 'cronic' star duals). "
+                        "Hemipolyhedra have vertices at infinity, drawn "
+                        "truncated")
         coloring: EnumProperty(
             name="Coloring",
             items=[('SIDES', "By Face Size", ""), ('NONE', "None", "")],
@@ -590,6 +655,7 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'family')
             lay.prop(self, 'solid')
+            lay.prop(self, 'dual')
             lay.prop(self, 'coloring')
             lay.prop(self, 'scale')
 
@@ -605,13 +671,17 @@ if _IN_BLENDER:
                     V, F = build_snub(u)
                 else:
                     V, F = build_uniform(wy, pqr)
+                if self.dual:
+                    V, F = build_dual(V, F)
+                    name = name + " (dual)"
             except Exception as e:      # noqa: BLE001
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
             verts = [tuple(c * self.scale for c in v) for v in V]
             _make_object(context, name, verts, F,
                          self.coloring == 'SIDES')
-            self.report({'INFO'}, f"{name}: V={len(V)} E={Ee} F={len(F)}")
+            self.report({'INFO'},
+                        f"{name}: V={len(V)} F={len(F)}")
             return {'FINISHED'}
 
     from bpy.props import IntProperty

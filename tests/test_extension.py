@@ -59,6 +59,11 @@ OPS = [
     ("uniform great dirhombicosidodecahedron",
      lambda: bpy.ops.mesh.uniform_polyhedron_add(
          family='STAR_I', solid='75')),
+    ("uniform dual rhombic triacontahedron",
+     lambda: bpy.ops.mesh.uniform_polyhedron_add(
+         family='CONVEX', solid='24', dual=True)),
+    ("uniform dual star", lambda: bpy.ops.mesh.uniform_polyhedron_add(
+         family='STAR_I', solid='54', dual=True)),
     ("solid archimedean canon off",
      lambda: bpy.ops.mesh.regular_solid_add(
          family='ARCHIMEDEAN', solid='TI', canonicalize=False)),
