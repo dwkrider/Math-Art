@@ -533,10 +533,151 @@ def bjorling_surface(spec, nu, nv, order, radius, theta=0.0):
             spec.get('clip', False))
 
 
+# --------------------------------------------------------------------------
+# Saddle-tower stacking (singly periodic Scherk / Karcher towers)
+# --------------------------------------------------------------------------
+
+def _rot_z(ang):
+    c, s = math.cos(ang), math.sin(ang)
+    return np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
+
+
+def _open_boundary(V, quads):
+    """Vertex indices on open (once-used) mesh edges, plus the median
+    edge length -- used to size the seam-weld tolerance."""
+    from collections import defaultdict
+    cnt = defaultdict(int)
+    for q in quads:
+        m = len(q)
+        for k in range(m):
+            a, b = q[k], q[(k + 1) % m]
+            cnt[(a, b) if a < b else (b, a)] += 1
+    bset = {v for (a, b), c in cnt.items() if c == 1 for v in (a, b)}
+    lens = [float(np.linalg.norm(V[a] - V[b])) for (a, b) in cnt]
+    med = float(np.median(lens)) if lens else 1.0
+    return np.array(sorted(bset), dtype=np.int64), med
+
+
+def we_saddle_tower(spec, nu, nv, order, radius, scale, theta, storeys):
+    """Stack `storeys` copies of one saddle unit into a genuinely periodic
+    tower.
+
+    Each fundamental domain is a single 2n-winged saddle from the exact
+    log-sum immersion (_tower_X) on the punctured disk.  Consecutive
+    storeys are related by the surface's deck isometry -- a *screw motion*:
+    a vertical translation by half the vertical monodromy, T = pi/(2n)
+    (the period pi/n picked up by dh = phi3 around one end, halved because
+    the disk sees only a half-turn around each logarithmic end), composed
+    with a rotation by pi/n about the vertical axis.  The rotation carries
+    the 2n vertical wing-walls onto themselves, so each storey's wing tops
+    meet the next storey's wing bottoms and the walls read as continuous
+    vertical planes.  The shared wing rims are welded (union-find over the
+    screw-matched boundary vertices) so the joins carry no seam."""
+    tk = _toolkit()
+    p = spec['p_from'](order, radius) if 'p_from' in spec else {}
+    n = int(p['n'])
+    S = max(1, int(storeys))
+    rb = spec.get('res_boost')
+    if rb:
+        nu = max(3, int(round(nu * rb[0])))
+        nv = max(3, int(round(nv * rb[1])))
+    nv = max(2 * n, int(round(nv / (2 * n))) * (2 * n))   # whole wings
+    # sample one fundamental domain (exact immersion + puncture mask)
+    x, y, z, _, _, mask = _we_disk(spec, p, nu, nv, theta)
+    Vg = np.stack([x, y, z], axis=-1).reshape(-1, 3)
+    vm = np.asarray(mask).reshape(-1)
+    gu = np.arange(nu) / max(nu - 1, 1)
+    gv = np.arange(nv) / nv
+    UVg = np.stack(np.meshgrid(gu, gv, indexing='ij'), axis=-1).reshape(-1, 2)
+    N = nu * nv
+
+    def vid(i, j):
+        return i * nv + j
+    quads0 = []
+    for i in range(nu - 1):
+        for j in range(nv):                       # wrap in v
+            j2 = (j + 1) % nv
+            f = (vid(i, j), vid(i + 1, j), vid(i + 1, j2), vid(i, j2))
+            if vm[f[0]] and vm[f[1]] and vm[f[2]] and vm[f[3]]:
+                quads0.append(f)
+    used = (np.unique(np.array(quads0).ravel()) if quads0
+            else np.array([], dtype=np.int64))
+    remap = np.full(N, -1, dtype=np.int64)
+    remap[used] = np.arange(len(used))
+    V0 = Vg[used]
+    UV0 = UVg[used]
+    quads0 = [tuple(int(remap[i]) for i in q) for q in quads0]
+    M = len(V0)
+
+    T = math.pi / (2 * n)
+    Rm = _rot_z(math.pi / n)
+
+    if S > 1 and M:
+        # seam: storey-s top rim coincides with storey-(s+1) bottom rim,
+        # i.e. V0[i] ~= screw(V0[j]),  screw(P) = P @ Rm.T + T*zhat.
+        bnd, med = _open_boundary(V0, quads0)
+        Vb = V0[bnd]
+        scr = Vb @ Rm.T + np.array([0.0, 0.0, T])
+        d = np.linalg.norm(Vb[:, None, :] - scr[None, :, :], axis=2)
+        jmin = d.argmin(axis=1)
+        dmin = d[np.arange(len(bnd)), jmin]
+        tol = 0.5 * med
+        pairs = [(int(bnd[a]), int(bnd[jmin[a]]))
+                 for a in range(len(bnd)) if dmin[a] < tol]
+        parent = list(range(S * M))
+
+        def find(a):
+            while parent[a] != a:
+                parent[a] = parent[parent[a]]
+                a = parent[a]
+            return a
+        for s in range(S - 1):
+            for (it, jb) in pairs:
+                ra, rb2 = find(s * M + it), find((s + 1) * M + jb)
+                if ra != rb2:
+                    parent[ra] = rb2
+        Vparts, Rp = [], np.eye(3)
+        for s in range(S):
+            Vparts.append(V0 @ Rp.T + np.array([0.0, 0.0, s * T]))
+            Rp = Rp @ Rm.T                        # (Rm^{s+1}).T
+        Vcat = np.concatenate(Vparts, axis=0)
+        UVcat = np.concatenate([UV0] * S, axis=0)
+        roots = np.array([find(a) for a in range(S * M)])
+        uniq = np.unique(roots)
+        rmap = np.full(S * M, -1, dtype=np.int64)
+        rmap[uniq] = np.arange(len(uniq))
+        ri = rmap[roots]
+        Vf = np.zeros((len(uniq), 3))
+        UVf = np.zeros((len(uniq), 2))
+        cnt = np.zeros(len(uniq))
+        np.add.at(Vf, ri, Vcat)
+        np.add.at(UVf, ri, UVcat)
+        np.add.at(cnt, ri, 1)
+        Vf /= cnt[:, None]
+        UVf /= cnt[:, None]
+        quads = []
+        for s in range(S):
+            for q in quads0:
+                fq = tuple(int(ri[s * M + i]) for i in q)
+                if len(set(fq)) >= 3:
+                    quads.append(fq)
+    else:
+        Vf, quads, UVf = V0, quads0, UV0
+
+    Vf = tk._smooth_boundary(Vf, quads)
+    Vf = tk._center_fit(Vf, scale, Vf)
+    return Vf, quads, UVf
+
+
 def make_entry(key, spec):
     """PARAMETRIC/MESH_PARAM builder closure for a WE spec."""
-    if spec['domain'][0] == 'halfplane':
-        def build(nu, nv, order, radius, scale, theta=0.0):
+    if spec.get('tower'):
+        def build(nu, nv, order, radius, scale, theta=0.0, storeys=1):
+            return we_saddle_tower(spec, nu, nv, order, radius, scale,
+                                   theta, storeys)
+        build.finished_mesh = True
+    elif spec['domain'][0] == 'halfplane':
+        def build(nu, nv, order, radius, scale, theta=0.0, storeys=1):
             return we_surface(spec, nu, nv, order, radius, scale, theta)
         build.finished_mesh = True
     else:

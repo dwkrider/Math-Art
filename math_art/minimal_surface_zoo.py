@@ -233,35 +233,49 @@ WE_SURFACES = {
     # --- Tier 0/1: new surfaces from textbook Weierstrass data ------------
     'SCHERK_TOWER': {
         # Karcher's most symmetric saddle tower; n = 2 is Scherk's
-        # singly periodic surface (the conjugate of SCHERK1).  Built from
-        # the exact log-sum antiderivative (_tower_X) over the open unit
-        # disk: the 2n ends sit on the unit circle, and a small circular
-        # puncture around each maps to a clean, near-straight wing rim
-        # (the ends are logarithmic/planar, so their conformal coordinate
-        # is log).  The former radial disk integrator capped and folded
-        # the (infinite) wings into a torn blob and is not used here.
+        # singly periodic surface (the conjugate of SCHERK1).  One
+        # fundamental domain is a single 2n-winged saddle from the exact
+        # log-sum antiderivative (_tower_X) over the open unit disk: the
+        # 2n ends sit on the unit circle, and a small circular puncture
+        # around each maps to a clean, near-straight wing rim (the ends
+        # are logarithmic/planar, so their conformal coordinate is log).
+        #
+        # A saddle tower is periodic under a vertical *screw motion*: dh =
+        # phi3 has residue +-i/(2n) at each end, so the vertical monodromy
+        # around one end is Re(2 pi i * residue) = +-pi/n; the disk sees
+        # only a half-turn about each logarithmic end, so one fundamental
+        # domain spans T = pi/(2n) in height, and the deck isometry that
+        # stacks the next storey translates by T and rotates by pi/n about
+        # the axis (the rotation permutes the 2n wings, so the vertical
+        # wing-walls join storey-to-storey into continuous planes).  The
+        # mesher (we_saddle_tower) stacks `storeys` copies under that screw
+        # and welds the shared wing rims, so the default renders as a
+        # genuinely repeating tower rather than a lone saddle.
         'label': "Saddle Tower (Scherk singly periodic)",
         'family': 'SINGLY',
         'phi': _tower_phi,           # kept for the period-closure gate
         'Xexact': _tower_X,          # exact immersion used by the mesher
+        'tower': True,               # -> we_saddle_tower finished mesh
         'domain': ('disk', 0.0, 0.999),
-        # n = wings-per-turn; the UI "order" 1..7 maps to n = 2..8 so the
-        # slider's first step already changes the surface (n must be >= 2:
-        # n = 2 is the classical 4-wing Scherk saddle tower).  The radius
-        # slider shrinks the end punctures, so the wings reach further.
+        # n = wings-per-turn; the UI "Wings" (order) 1..7 maps to n = 2..8
+        # so the slider's first step already changes the surface (n must be
+        # >= 2: n = 2 is the classical 4-wing Scherk saddle tower).  The
+        # radius slider shrinks the end punctures, so the wings reach
+        # further.  "Storeys" is a separate count (how many stacked units).
         'p_from': lambda order, radius: {
             'n': int(min(max(order + 1, 2), 8)),
             'eps': 0.085 / min(max(radius / 1.2, 0.5), 2.0)},
         'count': "Wings (n pairs)",
+        'storeys_label': "Storeys",
         'mask_punctures': lambda p: [
             (rho, p['eps']) for rho in _tower_roots(p['n'])],
         'clip': False,
-        'res_boost': (2.6, 2.6),     # dense grid -> clean puncture rims
+        'res_boost': (1.7, 1.7),     # dense grid -> clean puncture rims
         'cycles': lambda p: [
             (np.exp(1j * math.pi * (2 * j + 1) / (2 * p['n'])), 0.12)
             for j in range(2 * p['n'])],
         'cycle_free': (2,),          # vertical translation is the period
-        'test_order': 3,
+        'test_order': 1,             # n = 2, the classical 4-wing tower
     },
     'RICHMOND_K': {
         # generalized Richmond: planar end + higher-order flower,
@@ -457,11 +471,11 @@ for _k, _s in BJORLING.items():
 
 
 def register(PARAMETRIC=None, MESH_PARAM=None, COUNT_PARAM=None,
-             ANGLE_PARAM=None):
+             ANGLE_PARAM=None, STOREY_PARAM=None):
     """Wire every catalog row into the toolkit's registries.  Called
-    (with the four dicts) from minimal_surface_toolkit at import time;
-    a bare register() call -- e.g. from the extension loader -- is a
-    no-op, since this module has no Blender UI of its own."""
+    (with the registry dicts) from minimal_surface_toolkit at import
+    time; a bare register() call -- e.g. from the extension loader -- is
+    a no-op, since this module has no Blender UI of its own."""
     if PARAMETRIC is None:
         return
     for key, spec in WE_SURFACES.items():
@@ -473,6 +487,8 @@ def register(PARAMETRIC=None, MESH_PARAM=None, COUNT_PARAM=None,
             COUNT_PARAM[key] = spec['count']
         if spec.get('associate'):
             ANGLE_PARAM.add(key)
+        if STOREY_PARAM is not None and spec.get('storeys_label'):
+            STOREY_PARAM[key] = spec['storeys_label']
     for key, spec in BJORLING.items():
         b = we.make_bjorling_entry(key, spec)
         PARAMETRIC[key] = (spec['label'], b)
