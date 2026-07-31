@@ -272,6 +272,11 @@ OPS = [
     ("geodesic", lambda: bpy.ops.mesh.geodesic_add()),
     ("geodesic dual (goldberg)",
      lambda: bpy.ops.mesh.geodesic_add(dual=True)),
+    ("compound 5 tetrahedra",
+     lambda: bpy.ops.mesh.polyhedron_compound_add(compound='5TETRA')),
+    ("compound stella separate",
+     lambda: bpy.ops.mesh.polyhedron_compound_add(
+         compound='STELLA', separate=True)),
     ("geodesic class III",
      lambda: bpy.ops.mesh.geodesic_add(geo_class='III', frequency=2, k=1)),
     ("geodesic class III dual",
