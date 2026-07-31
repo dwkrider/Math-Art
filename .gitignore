@@ -7,3 +7,6 @@ dist/
 TODO.md
 renders/**
 research/**
+
+# Minimal-surface harvest: raw .nb/.pov downloads stay local
+research/msblog_harvest/raw/
