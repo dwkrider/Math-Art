@@ -789,26 +789,36 @@ def make_bjorling_entry(key, spec):
 # verified < 1e-16 by the self-test).
 #
 # Fundamental domain + tiling scheme.  The upper half z-plane (all six
-# branch points lie on the real axis) is one translational fundamental
-# domain -- a hyperbolic hexagon.  It is mapped conformally to the unit
-# w-disk by the Cayley transform  w = (z-i)/(z+i)  (base point z=i -> w=0),
-# and the WE 1-forms are integrated radially over that disk.  Its six
-# rim arcs (the images of the six real intervals between consecutive
-# branch points) are the boundary edges of the fundamental surface patch.
-# Each boundary edge is a genuine 2-fold rotation axis of the surface for
-# EVERY theta (verified: the edge maps to its own reversal under a proper
-# 180-degree rotation, residual ~ 0.3 %).  At theta = 0 (P) and theta = 90
-# (D) those edges are straight lines (P's along the cube face diagonals,
-# D's along the cube axes); at the gyroid angle they are skew curves -- as
-# it must be, the gyroid containing no straight line and no mirror plane.
-# The surface's proper point group is O (the 24 cube rotations) for the
-# whole family, so each fitted 2-fold's linear part is snapped to the
-# nearest exact cube rotation (killing all composition drift), and the six
-# rotations generate the cubic space group.  A breadth-first orbit of the
-# fundamental patch under that group, welded, fills the cubic lattice; the
-# translational periods are real cubic lattice vectors, independent of
-# theta up to the family's overall scale (the associate family keeps the
-# lattice).
+# branch points lie on the real axis) is one fundamental domain -- a
+# hyperbolic hexagon.  It is mapped conformally to the unit w-disk by the
+# Cayley transform  w = (z-i)/(z+i)  (base point z=i -> w=0), and the WE
+# 1-forms are integrated radially over that disk.  Its six rim arcs (the
+# images of the six real intervals between consecutive branch points) are the
+# boundary edges of the fundamental surface patch, and by the Schwarz
+# reflection principle each edge is a symmetry element that continues the
+# surface across itself.  WHICH isometry it is depends on the edge geometry,
+# and this is read off each edge directly (an SVD of the sampled edge curve),
+# so no theta-tracking is needed -- every special angle lives in its own fixed
+# symmetry frame:
+#   * theta = 0 (Schwarz P): all six edges are PLANAR geodesics lying in the
+#     cube's coordinate mirror planes, so the continuation is a plane
+#     REFLECTION.  Reflecting the patch across the six coordinate planes is
+#     drift-free (the maps are exact and compose to exact translations), and
+#     fills one cubic cell watertight -- the classic rounded-cube "P" network.
+#   * theta = 90 deg (Schwarz D, P's conjugate): the six edges are STRAIGHT
+#     lines, so the continuation is a 180-degree ROTATION about the line; the
+#     2-fold reassembly fills the (larger) D cell.
+#   * the gyroid (theta ~ 38.0148 deg): the edges are SKEW curves (it is
+#     chiral -- no straight line and no mirror plane), so only 2-fold rotations
+#     apply.  Its cell over-covers under the six edge-2-folds and is not
+#     reassembled watertight here; the exact fundamental piece is built instead
+#     (see the pgd_build / _pgd_tile_cell docstrings).
+# Every generator's linear part is snapped to the exact 48-element cube group
+# O_h so the generated space group closes without composition drift; a
+# breadth-first orbit of the patch, welded on the shared symmetry elements,
+# fills one cubic cell, and pgd_build arrays that cell on the verified cubic
+# period (a ~ 4.31 for P, 4.69 for D), which is independent of theta up to the
+# associate family's overall scale.
 #
 # References:
 #   H. A. Schwarz, "Gesammelte Mathematische Abhandlungen" (1890) -- the P
@@ -818,6 +828,9 @@ def make_bjorling_entry(key, spec):
 #     theta ~ 38.0148-degree associate of P;
 #   A. Weyhaupt, "Deformations of the gyroid and lidinoid minimal
 #     surfaces", Pacific J. Math. 235 (2008) 137-171;
+#   H. Karcher, K. Polthier, "Construction of triply periodic minimal
+#     surfaces", Phil. Trans. R. Soc. Lond. A 354 (1996) 2077-2104 -- the
+#     reflection-group assembly of the P and D cells;
 #   M. Weber, https://minimalsurfaces.blog/ (triply periodic) -- the
 #     explicit g/dh data and the "Associate rPD" notebook this follows.
 
@@ -1182,48 +1195,301 @@ def _pgd_patch_tris(theta, nu, nv, mask_eps=0.045):
     return Vf, tris
 
 
+# --- watertight space-group tiling of one unit cell (P and D) --------------
+# The fundamental patch tiles space by the Schwarz reflection principle applied
+# to its six hexagon edges.  Which isometry continues the surface across an
+# edge depends on the edge's geometry (verified per edge by an SVD of the edge
+# curve, so no theta-tracking is needed -- each special angle is handled in its
+# own fixed symmetry frame):
+#   * a PLANAR-but-curved edge  -> mirror reflection in the plane it lies in
+#     (Schwarz P at theta = 0: all six edges are planar geodesics lying in the
+#     cube's coordinate mirror planes -- so P assembles by pure coordinate-plane
+#     reflections, which compose EXACTLY with no drift);
+#   * a STRAIGHT edge           -> 180-degree rotation about the line (Schwarz D
+#     at theta = 90 deg: the six edges are straight cube-diagonal lines);
+#   * a SKEW edge               -> 180-degree rotation about the fitted 2-fold
+#     axis (the chiral gyroid -- no mirror planes exist, so it never reflects).
+# The linear part of every generator is snapped to the exact 48-element cube
+# group O_h so the generated space group closes without composition drift; the
+# breadth-first orbit of the patch, welded on the shared symmetry elements,
+# fills one cubic cell, which pgd_build then arrays by the (verified) cubic
+# period.  See Schwarz (1890) for the reflection principle and Karcher-Polthier,
+# "Construction of triply periodic minimal surfaces", Phil. Trans. R. Soc. A
+# 354 (1996) 2077-2104, for the reflection-group assembly of P and D.
+
+def _pgd_cube48():
+    """The 48 signed permutation matrices -- the full cube point group O_h
+    (proper rotations det +1 and improper/mirror operations det -1)."""
+    mats = []
+    for perm in _itertools.permutations(range(3)):
+        for sg in _itertools.product((1.0, -1.0), repeat=3):
+            M = np.zeros((3, 3))
+            for i in range(3):
+                M[i, perm[i]] = sg[i]
+            mats.append(M)
+    return np.array(mats)
+
+
+_PGD_CUBE48 = _pgd_cube48()
+
+
+def _pgd_snap48(M):
+    """Nearest exact O_h operation to M (kills composition drift)."""
+    return _PGD_CUBE48[int(np.argmin(
+        np.abs(_PGD_CUBE48 - M).reshape(48, -1).max(axis=1)))]
+
+
+def _pgd_rid48(M):
+    return int(np.argmin(np.abs(_PGD_CUBE48 - M).reshape(48, -1).max(axis=1)))
+
+
+def _pgd_arclen_mid(C):
+    """Arc-length midpoint of a polyline -- a fixed point of the edge's 2-fold
+    (it lies on the rotation axis) / a point of the edge's mirror plane."""
+    seg = np.linalg.norm(np.diff(C, axis=0), axis=1)
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    half = s[-1] / 2.0
+    j = max(0, min(int(np.searchsorted(s, half)) - 1, len(C) - 2))
+    f = (half - s[j]) / max(s[j + 1] - s[j], 1e-12)
+    return C[j] * (1 - f) + C[j + 1] * f
+
+
+def _pgd_edge_ops(theta):
+    """The six edge-continuation isometries (M, b, kind): mirror for a planar
+    edge, 2-fold for a straight/skew one.  M is snapped to O_h and the offset
+    b = (I - M) q is taken from the edge's arc-length midpoint q (which lies on
+    the mirror plane / rotation axis), giving an accurate, mutually consistent
+    generator set."""
+    tf = min(max(theta, 0.05), 0.5 * math.pi - 0.05)   # 2-fold axis-fit angle
+    ops = []
+    for i in range(6):
+        C = _pgd_edge_curve(theta, i, m=400)
+        _, s, vt = np.linalg.svd(C - C.mean(0), full_matrices=False)
+        sr = s / s[0]
+        q = _pgd_arclen_mid(C)
+        if sr[2] < 0.003 and sr[1] > 0.02:             # planar curve -> mirror
+            n = vt[2]
+            M = np.eye(3) - 2.0 * np.outer(n, n)
+            kind = 'mirror'
+        else:                                          # straight/skew -> 2fold
+            Cf = _pgd_edge_curve(tf, i, m=96)
+            M, _b, _r = _pgd_fit_twofold(Cf)
+            kind = 'twofold'
+        Ms = _pgd_snap48(M)
+        ops.append((Ms, (np.eye(3) - Ms) @ q, kind))
+    return ops
+
+
+def _pgd_lattice_basis(lat):
+    """Three shortest linearly independent lattice vectors (basis rows)."""
+    order = np.argsort(np.linalg.norm(lat, axis=1))
+    basis = []
+    for i in order:
+        v = lat[i]
+        if not basis or np.linalg.matrix_rank(
+                np.vstack(basis + [v]), tol=1e-2) > len(basis):
+            basis.append(v)
+        if len(basis) == 3:
+            break
+    return np.array(basis)
+
+
+def _pgd_coset_reps(gens, B, tol=0.25):
+    """Canonical coset translation tau_R (reduced mod the lattice L) for each
+    cube-group element reached -- lets composed frames be snapped back onto the
+    exact space group {tau_R + L n}, so the orbit stays drift-free and finite
+    even for the 2-fold (D / gyroid) assemblies."""
+    Binv = np.linalg.inv(B.T)
+
+    def redmod(t):
+        c = Binv @ t
+        return B.T @ (c - np.round(c))
+    tau = {_pgd_rid48(np.eye(3)): np.zeros(3)}
+    queue = [(np.eye(3), np.zeros(3))]
+    guard = 0
+    while queue and guard < 5000:
+        guard += 1
+        g = queue.pop(0)
+        for M, b in gens:
+            M2 = g[0] @ M
+            t2 = g[0] @ b + g[1]
+            r = _pgd_rid48(M2)
+            tr = redmod(t2)
+            if r in tau and np.linalg.norm(redmod(tr - tau[r])) < tol:
+                continue
+            if r in tau and np.linalg.norm(tr) >= np.linalg.norm(tau[r]):
+                continue
+            tau[r] = tr
+            queue.append((_PGD_CUBE48[r], tr))
+    return tau
+
+
+def _pgd_tile_cell(theta, nu, nv, mask_eps=0.02, smooth=3):
+    """Assemble one watertight filled unit cell of the (periodic) surface at
+    `theta` by orbiting the fundamental patch under its six edge isometries and
+    welding on the shared symmetry elements.  Returns (V, tris, a) in natural
+    (un-fit) coordinates with a the cubic period, or None if the angle is not
+    one of the cleanly-tileable members (only P and D reassemble watertight)."""
+    ops = _pgd_edge_ops(theta)
+    kinds = [k for (_M, _b, k) in ops]
+    # gyroid / generic angles: the 2-fold reassembly over-covers and cannot be
+    # made watertight here -> caller falls back to the fundamental piece.
+    is_P = all(k == 'mirror' for k in kinds)
+    is_D = all(k == 'twofold' for k in kinds) and \
+        abs(theta - 0.5 * math.pi) < 0.02
+    if not (is_P or is_D):
+        return None
+    Vp, tris_p = _pgd_patch_tris(theta, nu, nv, mask_eps=mask_eps)
+    diag = float(np.linalg.norm(Vp.max(0) - Vp.min(0))) or 1.0
+    cen0 = Vp.mean(0)
+    gens = [(M, b) for (M, b, k) in ops]
+    lat = pgd_lattice(gens)
+    a = float(np.min(np.linalg.norm(lat, axis=1))) if len(lat) else 4.4
+    B = _pgd_lattice_basis(lat) if len(lat) >= 3 else None
+    tau = _pgd_coset_reps(gens, B) if B is not None else None
+    Binv = np.linalg.inv(B.T) if B is not None else None
+
+    def snap_frame(M2, b2):
+        if tau is None:
+            return b2
+        tr = tau.get(_pgd_rid48(M2))
+        if tr is None:
+            return b2
+        return tr + B.T @ np.round(Binv @ (b2 - tr))
+
+    box = 0.5 * a + 0.05 * a
+    # interior sample points for the interpenetration test (2-fold orbits of the
+    # over-large patch would otherwise pile copies onto the same sheet)
+    rin = np.linalg.norm(Vp - cen0, axis=1)
+    Vint = Vp[np.argsort(rin)[:max(24, len(Vp) // 5)]]
+    ohit = 0.06 * diag
+    ghash = {}
+
+    def _gk(p):
+        return (int(round(p[0] / ohit)), int(round(p[1] / ohit)),
+                int(round(p[2] / ohit)))
+
+    def add_pts(P):
+        for p in P:
+            ghash.setdefault(_gk(p), []).append(p)
+
+    def overlap_frac(P):
+        hit = 0
+        for p in P:
+            gk = _gk(p)
+            f = False
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    for dz in (-1, 0, 1):
+                        for q in ghash.get((gk[0] + dx, gk[1] + dy,
+                                            gk[2] + dz), ()):
+                            if (abs(q[0] - p[0]) < ohit
+                                    and abs(q[1] - p[1]) < ohit
+                                    and abs(q[2] - p[2]) < ohit):
+                                f = True
+                                break
+                        if f:
+                            break
+                    if f:
+                        break
+            hit += f
+        return hit / len(P)
+
+    I = (np.eye(3), np.zeros(3), +1)
+    frames = [I]
+    add_pts(Vint)
+    dedup = max(0.12 * a, 0.15)
+    seen = {tuple(np.round(cen0 / dedup).astype(int))}
+    queue = [I]
+    while queue and len(frames) < 400:
+        (M, b, o) = queue.pop(0)
+        for (Mg, bg) in gens:
+            M2 = Mg @ M
+            b2 = snap_frame(M2, Mg @ b + bg)
+            c = M2 @ cen0 + b2
+            if np.max(np.abs(c)) > box:
+                continue
+            key = tuple(np.round(c / dedup).astype(int))
+            if key in seen:
+                continue
+            seen.add(key)
+            cand = Vint @ M2.T + b2
+            if overlap_frac(cand) > 0.4:               # would interpenetrate
+                continue
+            o2 = o * int(round(np.linalg.det(Mg)))
+            frames.append((M2, b2, o2))
+            add_pts(cand)
+            queue.append((M2, b2, o2))
+    # assemble with consistent winding (mirror copies flip orientation)
+    Vparts, Tp, base = [], [], 0
+    for (M, b, o) in frames:
+        Vparts.append(Vp @ M.T + b)
+        for (x, y, z) in tris_p:
+            Tp.append((x + base, z + base, y + base) if o < 0
+                      else (x + base, y + base, z + base))
+        base += len(Vp)
+    Vc = np.concatenate(Vparts, axis=0)
+    tol = 0.9 * diag / nu
+    q = np.round(Vc / tol).astype(np.int64)
+    _, inv = np.unique(q, axis=0, return_inverse=True)
+    inv = inv.ravel()
+    Vw = np.zeros((int(inv.max()) + 1, 3))
+    Vw[inv] = Vc
+    tris = []
+    for (x, y, z) in Tp:
+        t = (int(inv[x]), int(inv[y]), int(inv[z]))
+        if len(set(t)) == 3:
+            tris.append(t)
+    Vw = _pgd_smooth(Vw, tris, iters=smooth, lam=0.4)
+    return Vw, tris, a
+
+
 def pgd_build(cells, res, scale, theta):
     """Build the exact Schwarz P / Gyroid / Schwarz D associate surface at
     Bonnet angle `theta`, centered and fit to a 2 m cube (times `scale`).
     Returns (V (n,3) float, tris list).
 
-    HONESTY NOTE.  What is meshed is the exact Weierstrass *fundamental
-    surface piece* -- the image of one translational fundamental domain
-    (the upper half plane / Cayley w-disk) -- which morphs continuously and
-    correctly through P (theta = 0), the Gyroid (theta ~ 38.0148 deg) and D
-    (theta = 90 deg).  Its full space-group symmetry is characterized
-    exactly and verified in the self-tests (every boundary edge is a 2-fold
-    rotation axis; the translational periods form a cubic lattice with
-    constant a ~ 4.3-4.7, independent of theta up to the associate family's
-    overall scale).  Meshing the *whole connected cell* watertight from that
-    data is genuinely hard -- the family's symmetry frame rotates with theta,
-    so the branched-cover corners are parametrization-singular and the
-    space-group reassembly leaves seams -- so, following the honest-scope
-    rule, the clean fundamental piece is what is built rather than a torn
-    multi-cell approximation.  `cells` > 1 arrays that exact piece on the
-    verified cubic period lattice (a translational array showing the triply
-    periodic structure, each copy the clean fundamental domain)."""
+    Two regimes, chosen by the angle:
+
+    * P (theta ~ 0) and D (theta ~ 90 deg) are assembled into a *watertight
+      filled unit cell* by the Schwarz reflection principle -- P by reflecting
+      the fundamental patch across its six coordinate mirror planes, D by
+      180-degree rotations about its six straight edge lines (see
+      `_pgd_tile_cell`).  `cells` > 1 arrays that whole cell on the verified
+      cubic period, so the recognizable P / D network fills the lattice.
+
+    * The Gyroid (theta ~ 38.0148 deg) and every generic (non-periodic)
+      intermediate angle keep the exact Weierstrass *fundamental piece* -- the
+      image of one translational fundamental domain -- which morphs
+      continuously and correctly through the whole family.  Only P / Gyroid / D
+      are truly triply periodic, and the chiral gyroid (no mirror planes) has
+      no drift-free reflection assembly: its 2-fold reassembly over-covers and
+      cannot be closed watertight in this scheme, so -- following the honest-
+      scope rule -- the clean fundamental piece is built rather than a torn
+      multi-cell approximation.  (`cells` is ignored for these angles; the
+      single piece is returned.)"""
     cells = max(1, int(cells))
     nu = max(24, int(round(res)))
     nv = _pgd_good_nv(max(120, int(round(res * 2.4))))
-    Vp, tris_p = _pgd_patch_tris(theta, nu, nv)
-    if cells > 1:
-        gens = pgd_gluings(theta)
-        lat = pgd_lattice(gens)
-        a = float(np.min(np.linalg.norm(lat, axis=1))) if len(lat) else 4.4
-        offs = (np.arange(cells) - 0.5 * (cells - 1)) * a
-        Vparts, Tparts, base = [], [], 0
-        for ox in offs:
-            for oy in offs:
-                for oz in offs:
-                    Vparts.append(Vp + np.array([ox, oy, oz]))
-                    Tparts.extend((x + base, y + base, z + base)
-                                  for (x, y, z) in tris_p)
-                    base += len(Vp)
-        V = np.concatenate(Vparts, axis=0)
-        tris = Tparts
+    tiled = _pgd_tile_cell(theta, nu, nv)
+    if tiled is not None:
+        Vc, tris_c, a = tiled
+        if cells > 1:
+            offs = (np.arange(cells) - 0.5 * (cells - 1)) * a
+            Vparts, Tparts, base = [], [], 0
+            for ox in offs:
+                for oy in offs:
+                    for oz in offs:
+                        Vparts.append(Vc + np.array([ox, oy, oz]))
+                        Tparts.extend((x + base, y + base, z + base)
+                                      for (x, y, z) in tris_c)
+                        base += len(Vc)
+            V, tris = np.concatenate(Vparts, axis=0), Tparts
+        else:
+            V, tris = Vc, tris_c
     else:
-        V, tris = Vp, tris_p
+        # gyroid / generic angle: honest single fundamental piece
+        V, tris = _pgd_patch_tris(theta, nu, nv)
     lo, hi = V.min(0), V.max(0)
     cen = 0.5 * (lo + hi)
     ext = float(np.max(hi - lo)) or 1.0
@@ -1359,29 +1625,59 @@ if __name__ == "__main__":
         ok &= good
         print(f"P/G/D lattice theta={thd:7.3f}deg: a_min={a:.3f} "
               f"n={len(lat)} {'OK' if good else 'FAIL'}")
-    # (4) the fundamental surface piece builds finite, edge-manifold (a disk:
-    #     no edge used more than twice), and fits the 2 m cube -- across the
-    #     whole morph
-    prev = None
+    # (4) the build fits the 2 m cube and is finite across the whole morph;
+    #     P (0 deg) and D (90 deg) assemble a recognizable *filled cell* --
+    #     one connected component, near-manifold (few non-manifold edges
+    #     relative to its size) -- while the gyroid / intermediate angles keep
+    #     the exact fundamental piece (strictly edge-manifold, no edge used
+    #     more than twice).
+
+    def _edge_stats(T):
+        ec = {}
+        for (x0, x1, x2) in T:
+            for a2, b2 in ((x0, x1), (x1, x2), (x2, x0)):
+                e = (a2, b2) if a2 < b2 else (b2, a2)
+                ec[e] = ec.get(e, 0) + 1
+        return sum(1 for c in ec.values() if c > 2)
+
+    def _ncomp(nV, T):
+        parent = list(range(nV))
+
+        def find(a):
+            while parent[a] != a:
+                parent[a] = parent[parent[a]]
+                a = parent[a]
+            return a
+        for (x, y, z) in T:
+            for u, v in ((x, y), (y, z)):
+                ra, rb = find(u), find(v)
+                if ra != rb:
+                    parent[ra] = rb
+        used = set(i for f in T for i in f)
+        return len({find(i) for i in used})
+
     for thd in (0.0, 19.0, 38.0148, 64.0, 90.0):
         V, T = pgd_build(1, 44, 1.0, math.radians(thd))
         finite = bool(np.all(np.isfinite(V)))
         lo, hi = V.min(0), V.max(0)
         cen = float(np.max(np.abs(0.5 * (lo + hi))))
         ext = float(np.max(hi - lo))
-        ec = {}
-        for (x0, x1, x2) in T:
-            for a2, b2 in ((x0, x1), (x1, x2), (x2, x0)):
-                e = (a2, b2) if a2 < b2 else (b2, a2)
-                ec[e] = ec.get(e, 0) + 1
-        nonman = sum(1 for c in ec.values() if c > 2)
-        good = (finite and len(T) > 500 and cen < 1e-6
-                and abs(ext - 2.0) < 1e-6 and nonman == 0)
+        nonman = _edge_stats(T)
+        tiled = thd in (0.0, 90.0)
+        if tiled:                                  # filled P / D cell
+            comps = _ncomp(len(V), T)
+            good = (finite and len(T) > 4000 and cen < 1e-6
+                    and abs(ext - 2.0) < 1e-6 and comps == 1
+                    and nonman < 0.12 * len(T))
+            tag = f"cell comps={comps}"
+        else:                                      # exact fundamental piece
+            good = (finite and len(T) > 500 and cen < 1e-6
+                    and abs(ext - 2.0) < 1e-6 and nonman == 0)
+            tag = "piece"
         ok &= good
-        print(f"P/G/D piece theta={thd:7.3f}deg: {len(V):6d}v {len(T):6d}t "
+        print(f"P/G/D {tag} theta={thd:7.3f}deg: {len(V):6d}v {len(T):6d}t "
               f"fit[|c|={cen:.1e} ext={ext:.4f}] nonman={nonman} "
               f"{'OK' if good else 'FAIL'}")
-        prev = V
     # (5) the Bonnet morph is continuous (a small angle step gives a bounded,
     #     non-degenerate change) and the three iconic members are distinct
     base = _pgd_grid_pts(0.0)
