@@ -869,14 +869,16 @@ def build_tpms(kind, cells, res_per_cell, scale):
 # we_builders.pgd_build does: a single Bonnet angle theta continuously
 # sweeps the whole classical family (P at 0, Gyroid at ~38.0148 deg, D at
 # 90 deg).  It is exposed under the periodic generator's Triply Periodic
-# list as its own entry (with the associate-angle slider), separate from
-# and leaving unchanged the nodal TPMS set.  What it meshes is the exact
-# fundamental surface piece (one translational fundamental domain); its
-# space-group structure -- every boundary edge a 2-fold axis, a cubic
-# period lattice independent of theta up to scale -- is verified in the
-# we_builders self-test, but watertight meshing of the whole connected
-# cell is left as future work (see the pgd_build docstring), so `cells`
-# arrays the exact piece on that verified cubic lattice.
+# list as its own entry (a preset for P / Gyroid / D plus an independent
+# associate-angle slider), separate from and leaving unchanged the nodal TPMS
+# set.  At the two reflective members it reassembles a watertight FILLED unit
+# cell by the Schwarz reflection principle -- Schwarz P from coordinate-plane
+# reflections, Schwarz D from 2-fold rotations about its straight edges -- and
+# `cells` arrays that cell on the verified cubic period.  The chiral gyroid and
+# every generic intermediate angle instead keep the exact fundamental surface
+# piece (the honest choice: only P / Gyroid / D are truly periodic, and the
+# gyroid cell has no drift-free reflection assembly).  See the pgd_build /
+# _pgd_tile_cell docstrings in we_builders.
 
 try:
     from . import we_builders as _we_pgd
@@ -886,6 +888,15 @@ except ImportError:                                # script / test context
 # key -> (menu label, builder(cells, res_per_cell, scale, theta))
 TPMS_EXACT = {
     'PGD': ("Schwarz P-Gyroid-D (exact, Bonnet angle)", _we_pgd.pgd_build),
+}
+
+# named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
+# the gyroid angle builds the fundamental piece.  CUSTOM (absent here) means
+# "use the raw Associate Angle slider".
+_PGD_PRESET_ANGLE = {
+    'P': 0.0,
+    'GYROID': 0.6635246,          # 38.0148 deg -- Schoen's gyroid
+    'D': math.pi / 2.0,
 }
 
 
@@ -1586,6 +1597,24 @@ if _IN_BLENDER:
             min=0.0, max=math.pi / 2.0, subtype='ANGLE',
             description="Bonnet associate family angle; for the Karcher "
                         "saddle tower it is the wing-clustering angle alpha")
+        # -- exact P/Gyroid/D preset: named shortcuts to the three iconic
+        # Bonnet angles, leaving the raw angle slider independently settable.
+        pgd_preset: EnumProperty(
+            name="Preset",
+            items=[
+                ('P', "Schwarz P", "theta = 0: filled watertight P cell"),
+                ('GYROID', "Gyroid",
+                 "theta = 38.0148 deg: the gyroid (fundamental piece -- the "
+                 "chiral cell has no watertight reflection assembly)"),
+                ('D', "Schwarz D",
+                 "theta = 90 deg: filled watertight D cell (P's conjugate)"),
+                ('CUSTOM', "Custom angle",
+                 "Use the Associate Angle slider verbatim; builds the exact "
+                 "fundamental piece of the morph at that angle"),
+            ],
+            default='P',
+            description="Iconic P / Gyroid / D by name, or Custom to drive "
+                        "the raw Bonnet angle")
         # -- TPMS (triply) parameters
         cells: IntProperty(
             name="Cells", default=1, min=1, max=4,
@@ -1615,10 +1644,13 @@ if _IN_BLENDER:
                 items = _periodic_surface_items(self, context)
                 surf = items[0][0] if items else 'G'
             if surf in TPMS_EXACT:
-                # exact Weierstrass P/Gyroid/D with the Bonnet angle
+                # exact Weierstrass P/Gyroid/D.  A named preset selects one of
+                # the three iconic Bonnet angles; Custom uses the raw slider.
+                theta = _PGD_PRESET_ANGLE.get(self.pgd_preset,
+                                              self.assoc_angle)
                 verts, tris = build_tpms_exact(
                     surf, self.cells, self.resolution, self.cell_size,
-                    self.assoc_angle)
+                    theta)
                 if len(tris) == 0:
                     self.report({'ERROR'}, "Empty surface")
                     return {'CANCELLED'}
@@ -1678,8 +1710,18 @@ if _IN_BLENDER:
             if (self.periodicity == 'TRIPLY' or self.surface in TPMS
                     or self.surface in TPMS_EXACT):
                 if self.surface in TPMS_EXACT:
-                    # exact P/Gyroid/D: the Bonnet angle is the family knob
-                    lay.prop(self, 'assoc_angle')
+                    # exact P/Gyroid/D: named preset first, then always show
+                    # the raw Bonnet-angle slider.  A named preset reflects the
+                    # special angle it uses; Custom drives the slider directly.
+                    lay.prop(self, 'pgd_preset')
+                    row = lay.row()
+                    row.enabled = (self.pgd_preset == 'CUSTOM')
+                    ang = _PGD_PRESET_ANGLE.get(self.pgd_preset)
+                    if ang is None:
+                        row.prop(self, 'assoc_angle')
+                    else:
+                        row.prop(self, 'assoc_angle',
+                                 text=f"Associate Angle [{math.degrees(ang):.4g} deg]")
                 for k in ('cells', 'resolution', 'cell_size', 'thickness'):
                     lay.prop(self, k)
                 return
