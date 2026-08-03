@@ -1457,6 +1457,8 @@ def pgd_build(cells, res, scale, theta):
       180-degree rotations about its six straight edge lines (see
       `_pgd_tile_cell`).  `cells` > 1 arrays that whole cell on the verified
       cubic period, so the recognizable P / D network fills the lattice.
+      `cells` may be an int (symmetric block) or a (cx, cy, cz) triple for
+      independent per-axis counts.
 
     * The Gyroid (theta ~ 38.0148 deg) and every generic (non-periodic)
       intermediate angle keep the exact Weierstrass *fundamental piece* -- the
@@ -1468,18 +1470,23 @@ def pgd_build(cells, res, scale, theta):
       scope rule -- the clean fundamental piece is built rather than a torn
       multi-cell approximation.  (`cells` is ignored for these angles; the
       single piece is returned.)"""
-    cells = max(1, int(cells))
+    if isinstance(cells, (tuple, list)):
+        cx, cy, cz = (int(max(1, c)) for c in (list(cells) + [1, 1, 1])[:3])
+    else:
+        cx = cy = cz = max(1, int(cells))
     nu = max(24, int(round(res)))
     nv = _pgd_good_nv(max(120, int(round(res * 2.4))))
     tiled = _pgd_tile_cell(theta, nu, nv)
     if tiled is not None:
         Vc, tris_c, a = tiled
-        if cells > 1:
-            offs = (np.arange(cells) - 0.5 * (cells - 1)) * a
+        if cx > 1 or cy > 1 or cz > 1:
+            oxs = (np.arange(cx) - 0.5 * (cx - 1)) * a
+            oys = (np.arange(cy) - 0.5 * (cy - 1)) * a
+            ozs = (np.arange(cz) - 0.5 * (cz - 1)) * a
             Vparts, Tparts, base = [], [], 0
-            for ox in offs:
-                for oy in offs:
-                    for oz in offs:
+            for ox in oxs:
+                for oy in oys:
+                    for oz in ozs:
                         Vparts.append(Vc + np.array([ox, oy, oz]))
                         Tparts.extend((x + base, y + base, z + base)
                                       for (x, y, z) in tris_c)

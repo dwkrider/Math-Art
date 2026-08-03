@@ -381,13 +381,54 @@ except Exception as _e:                        # WIP catalog: skip
     FAMILIES = ()
 
 
-def _raw_grid(kind, nu, nv, order, radius, theta):
+def _raw_grid(kind, nu, nv, order, radius, theta, copies=None):
     """Raw (unnormalized) surface grid. Returns (G (nu,nv,3), wrap_u,
-    wrap_v, clip) where clip requests end-face trimming by the mesher."""
-    out = PARAMETRIC[kind][1](nu, nv, order, radius, theta)
+    wrap_v, clip) where clip requests end-face trimming by the mesher.
+
+    `copies` overrides a torus surface's translational-copy count (Riemann's
+    singly periodic repeat): the immersion is continuous across the deck
+    translation, so spanning `copies` fundamental domains in the unwrapped
+    direction tiles the surface welded and in its true period scale."""
+    b = PARAMETRIC[kind][1]
+    spec = getattr(b, 'spec', None)
+    if (copies is not None and spec is not None and 'domain' in spec
+            and spec['domain'][0] == 'torus'):
+        spec2 = dict(spec, copies=int(max(1, copies)))
+        out = _we_pgd.we_surface(spec2, nu, nv, order, radius, None, theta)
+    else:
+        out = b(nu, nv, order, radius, theta)
     x, y, w, wrap_u, wrap_v = out[:5]
     clip = out[5] if len(out) > 5 else False
     return np.stack([x, y, w], axis=-1), wrap_u, wrap_v, clip
+
+
+# singly periodic torus surfaces whose 1-D repeat is driven through the
+# torus 'copies' mechanism (continuous deck translation) rather than a
+# rigid lattice array
+PERIODIC_COPIES_1D = {'RIEMANN'}
+
+# Periodic surfaces that CANNOT be tiled cleanly and stay at a single
+# fundamental domain (honesty gate).  Karcher's unequal-wing saddle tower
+# (SADDLE_TOWER_A): the unequal-wing unit admits no screw deck isometry to
+# stack (its only rigid symmetries have zero vertical shift) -- see the
+# SADDLE_TOWER_A note in minimal_surface_zoo.py.  we_saddle_tower already
+# forces storeys=1 for it; the operator hides the (no-op) cell control.
+# TODO: an unequal-wing tower would need a genuine translational period
+# (not the alpha=0 screw) before it can array.
+PERIODIC_NO_ARRAY = {'SADDLE_TOWER_A'}
+
+
+def _periodic_dim(surf):
+    """Tiling dimensionality of a periodic surface: 3 for the triply
+    periodic TPMS / PGD, else 2 for a doubly periodic family member and 1
+    for a singly periodic one.  Drives how many independent cell counts the
+    operator shows and applies."""
+    if surf in TPMS or surf in TPMS_EXACT:
+        return 3
+    fam = (SURFACE_FAMILY or {}).get(surf)
+    if fam == 'DOUBLY':
+        return 2
+    return 1
 
 
 def _center_fit(pts, scale, ref=None):
@@ -412,6 +453,73 @@ def _inliers(pts):
     d = np.linalg.norm(pts - c, axis=1)
     keep = d <= np.percentile(d, 90.0)
     return pts[keep] if keep.any() else pts
+
+
+# --- periodic lattice arraying (doubly periodic grid surfaces) ------------
+# A doubly periodic minimal surface is meshed as ONE fundamental domain in
+# its TRUE period scale.  To tile it we must replicate that raw mesh by the
+# lattice's translation vectors *before* _center_fit rescales the whole
+# object into the 2 m cube (which destroys the period scale -- a post-hoc
+# Blender array or bbox-relative offset would no longer line up).  Each
+# doubly periodic surface supplies its two raw-space lattice vectors below;
+# _array_by_lattice then lays down cells_u x cells_v rigid copies.
+
+def _lattice_vectors(kind, order, radius, theta):
+    """Raw-space (pre-_center_fit) translation lattice vectors for a doubly
+    periodic grid surface, in the same coordinates its builder emits.
+    Returns a list of vectors (one per tiling dimension) or None when the
+    surface is not arrayed by rigid lattice translation on this path
+    (towers array via their screw motion; Riemann via the torus copies).
+
+    * Scherk (doubly periodic graph): the classical surface tiles the plane
+      over the CHECKERBOARD of squares on which z = ln(cos x / cos y) is
+      real -- lattice generators (pi, pi) and (pi, -pi) (z invariant).
+    * Tilted Scherk: from the four end residues the monodromy period is
+      L = pi (Rho + 1/Rho) along x and y, but (as for the classical Scherk)
+      the fundamental saddle occupies one checkerboard cell, so the true
+      translation lattice is the diagonal (L/2, +-L/2, 0) -- verified by the
+      fundamental body extent equalling L/2."""
+    if kind == 'SCHERK1':
+        pi = math.pi
+        return [np.array([pi, pi, 0.0]), np.array([pi, -pi, 0.0])]
+    if kind == 'TILT_SCHERK':
+        b = PARAMETRIC[kind][1]
+        spec = getattr(b, 'spec', None)
+        if spec is None or 'p_from' not in spec:
+            return None
+        p = spec['p_from'](order, radius)
+        rho = float(p['Rho'])
+        h = 0.5 * math.pi * (rho + 1.0 / rho)     # L / 2
+        return [np.array([h, h, 0.0]), np.array([h, -h, 0.0])]
+    return None
+
+
+def _array_by_lattice(V, quads, UV, vectors, counts):
+    """Lay down a grid of rigid copies of the fundamental mesh (V, quads,
+    per-vertex UV) offset by integer combinations of the raw-space lattice
+    `vectors` (len == len(counts)).  The block is centered on the origin so
+    the subsequent _center_fit keeps it symmetric.  Copies that share a seam
+    are merged later by the object weld; here they are placed at the exact
+    period so they line up."""
+    import itertools
+    ranges = [range(int(max(1, c))) for c in counts]
+    offs = []
+    for idx in itertools.product(*ranges):
+        off = np.zeros(3)
+        for k, i in enumerate(idx):
+            off = off + (i - 0.5 * (int(counts[k]) - 1)) * vectors[k]
+        offs.append(off)
+    if len(offs) <= 1:
+        return V, quads, UV
+    nV = len(V)
+    Vbig = np.concatenate([V + o for o in offs], axis=0)
+    UVbig = np.concatenate([UV] * len(offs), axis=0) if UV is not None else None
+    quadsbig = []
+    for c in range(len(offs)):
+        base = c * nV
+        for q in quads:
+            quadsbig.append(tuple(base + i for i in q))
+    return Vbig, quadsbig, UVbig
 
 
 def _smooth_boundary(V, quads, iters=10, lam=0.5):
@@ -520,18 +628,31 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
 
 
 def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
-                     with_uv=False, storeys=1):
+                     with_uv=False, cells=(1, 1)):
     """Mesh (V, quads) for `kind`; with_uv=True additionally returns a
     per-face-corner UV array (sum of face lengths, 2).  Minimal
     surfaces are conformally parametrized by their Weierstrass data,
     so the normalized (u, v) grid is a high-quality conformal UV chart
     for free; periodic directions get a clean 0<->1 seam.  Finished
     (tiled) meshes carry a best-effort per-fundamental-domain UV.
-    `storeys` stacks a periodic fundamental domain (the saddle tower);
-    ignored by surfaces that do not use it."""
+
+    `cells` = (cells_u, cells_v) drives the periodic repeat, with the
+    array's DIMENSIONALITY following the surface's periodicity:
+      * singly periodic (saddle tower, Riemann) -> cells_u copies along
+        the single period axis (cells_v ignored);
+      * doubly periodic (Scherk, tilted Scherk) -> cells_u x cells_v
+        copies over the two lattice vectors.
+    All arraying happens in the surface's true period scale BEFORE
+    _center_fit normalizes the whole (tiled) object into the 2 m cube.
+    A plain int is accepted as (cells, 1)."""
+    if isinstance(cells, (int, float)):
+        cells = (int(cells), 1)
+    cells_u = int(max(1, cells[0]))
+    cells_v = int(max(1, cells[1] if len(cells) > 1 else 1))
     if kind in MESH_PARAM:
+        # towers: cells_u storeys stacked under the surface's screw motion
         out = MESH_PARAM[kind](nu, nv, order, radius, scale, theta,
-                               storeys=storeys)
+                               storeys=cells_u)
         V, quads = out[0], out[1]
         if not with_uv:
             return V, quads
@@ -559,7 +680,15 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
     if _rb:
         nu = max(3, int(round(nu * _rb[0])))
         nv = max(3, int(round(nv * _rb[1])))
-    G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta)
+    # singly periodic torus surfaces (Riemann): array cells_u fundamental
+    # domains along the deck translation via the torus copies mechanism,
+    # scaling the sampling so each copy keeps its density
+    copies = None
+    if kind in PERIODIC_COPIES_1D:
+        copies = cells_u
+        nu = max(3, nu * cells_u)
+    G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta,
+                                        copies=copies)
     # trust the grid's own dimensions: a builder may return a different
     # size than requested (the Bjorling strip forces an odd row count so
     # a column lands on the seed axis).  Indexing the quads/UVs with the
@@ -629,6 +758,14 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
         UVg = UVg[used]
         quads = [tuple(int(remap[i]) for i in qd) for qd in quads]
         V = _smooth_boundary(V, quads)   # smooth staircase/clip end rims
+        ref = V
+
+    # --- doubly periodic lattice array (in the true period scale, BEFORE
+    # _center_fit collapses it) ------------------------------------------
+    lat = _lattice_vectors(kind, order, radius, theta)
+    if lat and (cells_u > 1 or cells_v > 1):
+        counts = (cells_u, cells_v)[:len(lat)]
+        V, quads, UVg = _array_by_lattice(V, quads, UVg, lat, counts)
         ref = V
 
     V = _center_fit(V, scale, ref)
@@ -844,19 +981,37 @@ def marching_tets(field, box_min, box_max, res):
     return verts, tris
 
 
+def _cells_xyz(cells):
+    """Coerce a cell count to a (cx, cy, cz) triple.  A plain int means a
+    symmetric cx = cy = cz block (kept for internal callers/tests); a tuple
+    or list gives independent per-axis counts."""
+    if isinstance(cells, (tuple, list)):
+        vals = [int(max(1, c)) for c in cells]
+        while len(vals) < 3:
+            vals.append(1)
+        return vals[0], vals[1], vals[2]
+    c = int(max(1, cells))
+    return c, c, c
+
+
 def build_tpms(kind, cells, res_per_cell, scale):
+    """Nodal TPMS mesh.  `cells` is an int (symmetric block) or a
+    (cx, cy, cz) triple: the block spans cx x cy x cz unit cells, one
+    independent count per lattice axis.  For the singly periodic Scherk
+    tower only the z count repeats (x/y are clipped)."""
     label, field, triply = TPMS[kind]
+    cx, cy, cz = _cells_xyz(cells)
     if triply:
-        span = cells * TAU
-        box_min = (-span / 2, -span / 2, -span / 2)
-        box_max = (span / 2, span / 2, span / 2)
-        res = (cells * res_per_cell,) * 3
+        sx, sy, sz = cx * TAU, cy * TAU, cz * TAU
+        box_min = (-sx / 2, -sy / 2, -sz / 2)
+        box_max = (sx / 2, sy / 2, sz / 2)
+        res = (cx * res_per_cell, cy * res_per_cell, cz * res_per_cell)
     else:  # Scherk tower: periodic in z only, clip x/y
         w = 2.2
-        box_min = (-w, -w, -cells * math.pi)
-        box_max = (w, w, cells * math.pi)
+        box_min = (-w, -w, -cz * math.pi)
+        box_max = (w, w, cz * math.pi)
         rxy = int(res_per_cell * 1.4)
-        res = (rxy, rxy, cells * res_per_cell)
+        res = (rxy, rxy, cz * res_per_cell)
     verts, tris = marching_tets(field, box_min, box_max, res)
     s = scale / TAU  # one period -> `scale` Blender units
     return verts * s, tris
@@ -1472,7 +1627,7 @@ if _IN_BLENDER:
                 out = build_parametric(surf, self.res_u,
                                        self.res_v, self.order,
                                        self.radius, self.scale, theta,
-                                       with_uv=True, storeys=self.storeys)
+                                       with_uv=True, cells=(self.storeys, 1))
                 V, quads = out[0], out[1]
                 cuv = out[2] if len(out) > 2 else None
                 _new_object(context, label, V, quads,
@@ -1585,10 +1740,28 @@ if _IN_BLENDER:
             name="Order / Count", default=1, min=1, max=12,
             description="Period count / lattice modulus where the surface "
                         "uses it (e.g. saddle-tower wing count)")
-        storeys: IntProperty(
-            name="Storeys", default=3, min=1, max=8,
-            description="Number of periodic fundamental domains to stack "
-                        "into a repeating tower (saddle tower)")
+        # -- unified cell counts: one INDEPENDENT count per tiling
+        # dimension, shown by periodicity (singly -> u only; doubly ->
+        # u, v; triply -> u, v, w = x, y, z).  The array's dimensionality
+        # follows the surface's periodicity.
+        cells_u: IntProperty(
+            name="Cells", default=1, min=1, max=8,
+            description="Copies along the 1st period axis (singly: the "
+                        "single period; doubly: lattice vector 1; triply: x)")
+        cells_v: IntProperty(
+            name="Cells V", default=1, min=1, max=8,
+            description="Copies along the 2nd period axis (doubly: lattice "
+                        "vector 2; triply: y)")
+        cells_w: IntProperty(
+            name="Cells W", default=1, min=1, max=8,
+            description="Copies along the 3rd period axis (triply: z)")
+        # legacy scalar alias (not shown): scripted
+        # periodic_minimal_add(surface=..., cells=3) still works and
+        # broadcasts to every tiling axis left at its default (1).
+        cells: IntProperty(
+            name="Cells", default=0, min=0, max=8,
+            description="Legacy uniform cell count (broadcasts to every "
+                        "period axis); 0 = use the per-axis Cells controls")
         radius: FloatProperty(
             name="Domain Radius", default=1.2, min=0.2, max=4.0,
             description="Extent of the parameter domain")
@@ -1615,10 +1788,7 @@ if _IN_BLENDER:
             default='P',
             description="Iconic P / Gyroid / D by name, or Custom to drive "
                         "the raw Bonnet angle")
-        # -- TPMS (triply) parameters
-        cells: IntProperty(
-            name="Cells", default=1, min=1, max=4,
-            description="Number of unit cells per axis")
+        # -- TPMS (triply) parameters (cells come from cells_u/v/w above)
         resolution: IntProperty(
             name="Resolution / Cell", default=28, min=8, max=80,
             description="Sample grid resolution per unit cell")
@@ -1643,6 +1813,12 @@ if _IN_BLENDER:
                     and surf not in TPMS_EXACT):
                 items = _periodic_surface_items(self, context)
                 surf = items[0][0] if items else 'G'
+            # effective per-axis cell counts: the legacy scalar `cells`
+            # (default 0) broadcasts to every axis still at its default
+            def _eff(v):
+                return self.cells if (self.cells > 0 and v == 1) else v
+            cu, cv, cw = (_eff(self.cells_u), _eff(self.cells_v),
+                          _eff(self.cells_w))
             if surf in TPMS_EXACT:
                 # A named preset (P / Gyroid / D) shows the CLEAN, iconic
                 # surface via the nodal builder -- the exact-WE tiling of P/D
@@ -1652,15 +1828,16 @@ if _IN_BLENDER:
                 # Weierstrass Bonnet morph at the raw slider angle -- the
                 # unique capability of this entry -- and at exactly 0 / 38.0148
                 # / 90 deg Custom still yields the exact tiled P/D cell.
+                cxyz = (cu, cv, cw)
                 _PGD_NODAL = {'P': 'P', 'GYROID': 'G', 'D': 'D'}
                 if self.pgd_preset in _PGD_NODAL:
                     nk = _PGD_NODAL[self.pgd_preset]
-                    verts, tris = build_tpms(nk, self.cells,
+                    verts, tris = build_tpms(nk, cxyz,
                                              self.resolution, self.cell_size)
                     label = TPMS[nk][0]
                 else:                                   # CUSTOM: exact morph
                     verts, tris = build_tpms_exact(
-                        surf, self.cells, self.resolution, self.cell_size,
+                        surf, cxyz, self.resolution, self.cell_size,
                         self.assoc_angle)
                     label = TPMS_EXACT[surf][0]
                 if len(tris) == 0:
@@ -1673,7 +1850,8 @@ if _IN_BLENDER:
                     mod.offset = 0.0
                 return {'FINISHED'}
             if surf in TPMS:
-                verts, tris = build_tpms(surf, self.cells,
+                cxyz = (cu, cv, cw)
+                verts, tris = build_tpms(surf, cxyz,
                                          self.resolution, self.cell_size)
                 if len(tris) == 0:
                     self.report({'ERROR'}, "Empty level set")
@@ -1705,7 +1883,8 @@ if _IN_BLENDER:
                 out = build_parametric(surf, self.res_u,
                                        self.res_v, self.order,
                                        self.radius, self.scale, theta,
-                                       with_uv=True, storeys=self.storeys)
+                                       with_uv=True,
+                                       cells=(cu, cv))
                 V, quads = out[0], out[1]
                 cuv = out[2] if len(out) > 2 else None
                 _new_object(context, label, V, quads,
@@ -1733,7 +1912,11 @@ if _IN_BLENDER:
                     else:
                         row.prop(self, 'assoc_angle',
                                  text=f"Associate Angle [{math.degrees(ang):.4g} deg]")
-                for k in ('cells', 'resolution', 'cell_size', 'thickness'):
+                # triply: three independent per-axis counts (x, y, z)
+                lay.prop(self, 'cells_u', text="Cells X")
+                lay.prop(self, 'cells_v', text="Cells Y")
+                lay.prop(self, 'cells_w', text="Cells Z")
+                for k in ('resolution', 'cell_size', 'thickness'):
                     lay.prop(self, k)
                 return
             mesh_only = self.surface in MESH_PARAM
@@ -1749,8 +1932,16 @@ if _IN_BLENDER:
                 lay.prop(self, 'order', text=COUNT_PARAM[self.surface])
             elif self.surface not in ANGLE_PARAM:
                 lay.prop(self, 'order')
-            if self.surface in STOREY_PARAM:
-                lay.prop(self, 'storeys', text=STOREY_PARAM[self.surface])
+            # cell counts: one per tiling dimension (singly -> u; doubly ->
+            # u, v).  NURBS output is a single control patch (no array).
+            dim = _periodic_dim(self.surface)
+            if (self.output == 'MESH' or mesh_only) \
+                    and self.surface not in PERIODIC_NO_ARRAY:
+                if dim >= 2:
+                    lay.prop(self, 'cells_u', text="Cells U")
+                    lay.prop(self, 'cells_v', text="Cells V")
+                else:
+                    lay.prop(self, 'cells_u', text="Cells")
             if self.surface in ANGLE_PARAM:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
