@@ -469,19 +469,30 @@ def _lattice_vectors(kind, order, radius, theta):
     periodic grid surface, in the same coordinates its builder emits.
     Returns a list of vectors (one per tiling dimension) or None when the
     surface is not arrayed by rigid lattice translation on this path
-    (towers array via their screw motion; Riemann via the torus copies).
+    (the classical Scherk graph tiles as one continuous grid -- see
+    _scherk_doubly; towers array via their screw motion; Riemann via the
+    torus copies).
 
-    * Scherk (doubly periodic graph): the classical surface tiles the plane
-      over the CHECKERBOARD of squares on which z = ln(cos x / cos y) is
-      real -- lattice generators (pi, pi) and (pi, -pi) (z invariant).
     * Tilted Scherk: from the four end residues the monodromy period is
       L = pi (Rho + 1/Rho) along x and y, but (as for the classical Scherk)
       the fundamental saddle occupies one checkerboard cell, so the true
       translation lattice is the diagonal (L/2, +-L/2, 0) -- verified by the
-      fundamental body extent equalling L/2."""
-    if kind == 'SCHERK1':
-        pi = math.pi
-        return [np.array([pi, pi, 0.0]), np.array([pi, -pi, 0.0])]
+      fundamental body extent equalling L/2.
+
+      NOTE (honesty gate): this places tilted-Scherk cells at their exact
+      period but does NOT weld them into one surface.  The tilted (Lopez-Ros
+      Rho != 1) immersion is meshed out to its four ENDS (wing rims cut on the
+      puncture circles), and those ends run to infinity, so a neighbour's
+      opposite-end wing meets this cell's wing only at infinity -- no finite
+      rigid transform makes the truncated wing rims coincide (verified: zero
+      coincident boundary vertices under translation / z-flip / 180-deg /
+      point reflection at the true period).  Welding it would require
+      re-cutting the fundamental domain along the surface's straight-line /
+      planar symmetry curves (which neighbours share exactly) instead of at
+      the ends, then welding on those shared curves -- a re-mesh of the
+      immersion, deferred here.  The untilted classical Scherk (SCHERK1)
+      instead has vertical asymptotic PLANES and IS meshed connected as the
+      graph z = ln|cos x / cos y| (see _scherk_doubly)."""
     if kind == 'TILT_SCHERK':
         b = PARAMETRIC[kind][1]
         spec = getattr(b, 'spec', None)
@@ -520,6 +531,79 @@ def _array_by_lattice(V, quads, UV, vectors, counts):
         for q in quads:
             quadsbig.append(tuple(base + i for i in q))
     return Vbig, quadsbig, UVbig
+
+
+# --- classical Scherk: the connected doubly periodic graph ----------------
+# The doubly periodic Scherk surface (H. F. Scherk, 1835) is the single graph
+#     z = ln|cos x / cos y|   =   ln|cos x| - ln|cos y|
+# over the whole plane (minus the singular grid lines).  Reading it as a graph
+# over the CHECKERBOARD of squares |cos x/cos y| > 0 (the usual z = ln(cos x/
+# cos y) picture) leaves each fundamental saddle stranded on its own square,
+# joined to its neighbours only along the vertical asymptotic PLANES
+# x = pi/2 + k pi (where z -> -inf, cos x -> 0) and y = pi/2 + k pi (z -> +inf).
+# Those planes lie *between* the checkerboard cells, so a rigid lattice array
+# of the single-square graph never welds -- the walls meet only at z = +-inf.
+#
+# The absolute value fixes this: |cos| is continuous across every wall line, so
+# z = ln|cos x| - ln|cos y| (capped in z to tame the log poles) is ONE
+# continuous graph across the whole cells_u x cells_v block -- a single
+# connected component with no seams to weld.  Over an even square it is the
+# classic saddle ln(cos x/cos y); over the neighbouring square it is the same
+# surface's next sheet, ln(cos(x-pi)/cos y) = ln|cos x/cos y|, which asymptotes
+# to the SAME wall plane x = pi/2 from the other side.  The surface is
+# asymptotic to the family of planes y = pi/2 + k pi at the top and
+# x = pi/2 + k pi at the bottom -- the two interleaved half-plane families
+# that are Scherk's defining picture.
+#
+# References:
+#   H. F. Scherk, "Bemerkungen ueber die kleinste Flaeche mit gegebener
+#     Begrenzung", J. Reine Angew. Math. 13 (1835) 185-208 (Scherk's first,
+#     doubly periodic, surface);
+#   J. C. C. Nitsche, "Lectures on Minimal Surfaces" (1989);
+#   H. Karcher, K. Polthier, Phil. Trans. R. Soc. Lond. A 354 (1996)
+#     2077-2104 (the Scherk family and its period lattice).
+
+def _scherk_doubly(nu, nv, order, radius, scale, cells_u, cells_v,
+                   with_uv=False):
+    """Connected doubly periodic Scherk graph, z = ln|cos x| - ln|cos y|,
+    over cells_u (x) by cells_v (y) pi-period cells -> ONE continuous mesh.
+    cells = (1, 1) reproduces the single fundamental saddle; larger counts
+    tile it gap-free (the walls are shared, not welded copies)."""
+    Cu = int(max(1, cells_u))
+    Cv = int(max(1, cells_v))
+    lim = 0.47 * math.pi            # per-cell half width (matches the 1x1 cell)
+    zcap = 2.8                      # tame the log poles at the wall lines
+    per = max(8, int(nu))           # samples across one cell
+    nx = Cu * per
+    ny = Cv * max(8, int(nv))
+    # cells centred at x = k pi (k = 0..Cu-1); span the outer walls too so
+    # neighbouring cells sample continuously across the shared wall lines
+    x = np.linspace(-lim, (Cu - 1) * math.pi + lim, nx)
+    y = np.linspace(-lim, (Cv - 1) * math.pi + lim, ny)
+    X, Y = np.meshgrid(x, y, indexing='ij')
+    with np.errstate(divide='ignore', invalid='ignore'):
+        w = np.log(np.abs(np.cos(X))) - np.log(np.abs(np.cos(Y)))
+    # clip maps the x-wall (-inf) and y-wall (+inf) log poles to -+zcap
+    # correctly; only the isolated corner lines (both cos -> 0) give nan
+    w = np.clip(w, -zcap, zcap)
+    w = np.where(np.isfinite(w), w, 0.0)
+    V = np.stack([X, Y, w], axis=-1).reshape(-1, 3)
+    # per-vertex conformal-ish UV: the normalised parameter grid, 0..1 over
+    # the whole tiled block (the (x, y) graph chart)
+    gu = (np.arange(nx) / max(nx - 1, 1))
+    gv = (np.arange(ny) / max(ny - 1, 1))
+    UVg = np.stack(np.meshgrid(gu, gv, indexing='ij'), axis=-1).reshape(-1, 2)
+    quads = []
+    for i in range(nx - 1):
+        for j in range(ny - 1):
+            b = i * ny + j
+            quads.append((b, b + ny, b + ny + 1, b + 1))
+    V = _center_fit(V, scale, V)
+    if not with_uv:
+        return V, quads
+    q = np.array(quads)
+    cuv = UVg[q].astype(float)
+    return V, quads, cuv.reshape(-1, 2)
 
 
 def _smooth_boundary(V, quads, iters=10, lam=0.5):
@@ -649,6 +733,13 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
         cells = (int(cells), 1)
     cells_u = int(max(1, cells[0]))
     cells_v = int(max(1, cells[1] if len(cells) > 1 else 1))
+    if kind == 'SCHERK1':
+        # classical Scherk: build the whole cells_u x cells_v block as ONE
+        # continuous graph z = ln|cos x/cos y| (single connected component,
+        # gap-free) rather than arraying rigid single-cell copies whose
+        # asymptotic-plane walls would meet only at infinity.
+        return _scherk_doubly(nu, nv, order, radius, scale,
+                              cells_u, cells_v, with_uv)
     if kind in MESH_PARAM:
         # towers: cells_u storeys stacked under the surface's screw motion
         out = MESH_PARAM[kind](nu, nv, order, radius, scale, theta,
