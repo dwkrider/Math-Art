@@ -30,7 +30,11 @@
 # and the pentagonal icositetra-/hexecontahedron come for free.
 #
 # The chiral biscribed solids (propello / hexpropello families) use a
-# general K-orbit generalization of the snub solver (see solve_chiral).
+# general K-orbit generalization of the snub solver (see solve_chiral);
+# solve_chiral_g extends this to non-Platonic seeds (propello / snub of the
+# truncated forms, and orthokis-propello), whose slow roundest-root solves are
+# precomputed into _biscribed_chiral_data and re-derivable via
+# _regen_chiral_data.  Covered: 27 of McCooey's 31 chiral biscribed solids.
 #
 # References:
 # - D. McCooey, "Biscribed (Non-)Chiral Solids", Visual Polyhedra,
@@ -63,6 +67,17 @@ try:
     import numpy as np
 except ImportError:
     np = None
+
+try:
+    from . import _biscribed_chiral_data as _chiral_data
+except ImportError:
+    try:
+        import _biscribed_chiral_data as _chiral_data
+    except ImportError:
+        _chiral_data = None
+# precomputed coords for the slow non-Platonic-seed chiral solids (loaded so
+# the operator is instant; re-derivable via _regen_chiral_data / solve_chiral_g)
+_CHIRAL_DATA = getattr(_chiral_data, 'CHIRAL_DATA', {})
 
 PHI = (1 + 5 ** 0.5) / 2
 
@@ -727,6 +742,142 @@ def solve_chiral(op, seed, restarts=60):
 
 
 # --------------------------------------------------------------------------
+# Generalized chiral biscriber for NON-Platonic seeds (propello / snub of the
+# truncated / orthokis forms).  Same K-orbit machinery, but the solid comes
+# from a full Conway string (or a prebuilt mesh), the rotation group is that
+# of the base symmetry (Conway ops preserve symmetry), and -- since these can
+# have several biscribed roots -- it returns the LARGEST-r/R (roundest) one,
+# which is McCooey's realization.  These solves are slow, so results are
+# precomputed into _biscribed_chiral_data.CHIRAL_DATA (see biscribe_exact).
+# --------------------------------------------------------------------------
+
+def solve_chiral_g(spec, sym, restarts=24, canon_iters=400):
+    """Exact biscribed form of a chiral solid given by `spec` (a Conway
+    notation string built with apply_conway, or a prebuilt (V0, F) mesh) and
+    base-symmetry Platonic char `sym` (whose proper rotation group is the
+    solid's).  Returns the roundest biscribed root among seed + canonical +
+    Fibonacci-restart inits.  Standard {'exists', ...} contract."""
+    cw = _cw()
+    V0, F = cw.apply_conway(spec) if isinstance(spec, str) else spec
+    V0, F = cw.orient_outward([list(v) for v in V0], [list(f) for f in F])
+    V0 = np.array(V0, float)
+    N = len(V0)
+    U = V0 / np.linalg.norm(V0, axis=1, keepdims=True)
+    G = _rot_group(sym)
+    assign, reps, locked = _vertex_orbits(G, U)
+    rep0 = [U[r].copy() for r in reps]
+    free = [o for o in range(len(reps)) if not locked[o]]
+
+    def build_V(rp):
+        Vout = np.empty((N, 3))
+        for i, (o, g) in enumerate(assign):
+            Vout[i] = G[g] @ rp[o]
+        return Vout
+
+    face_reps = _face_orbit_reps(G, build_V(rep0), F)
+
+    def residuals(rp):
+        Vc = build_V(rp)
+        planar, dist = [], []
+        for fi in face_reps:
+            Q = Vc[list(F[fi])]
+            c = Q.mean(0)
+            _, _, Vt = np.linalg.svd(Q - c)
+            n = Vt[2]
+            if n @ c < 0:
+                n = -n
+            planar.extend(((Q - c) @ n).tolist())
+            dist.append(c @ n)
+        return np.array(planar + [d - dist[0] for d in dist[1:]])
+
+    inits = [rep0]
+    try:                                             # canonical-form init
+        Vc = np.array(cw.canonicalize([list(v) for v in V0],
+                                      [list(f) for f in F], iters=canon_iters))
+        Uc = Vc / np.linalg.norm(Vc, axis=1, keepdims=True)
+        inits.append([Uc[r].copy() for r in reps])
+    except Exception:
+        pass
+    fib = _fib_sphere(max(restarts, 8) * max(len(free), 1))
+    for k in range(restarts):
+        rp = [p.copy() for p in rep0]
+        for oi, o in enumerate(free):
+            rp[o] = fib[(k * len(free) + oi) % len(fib)]
+        inits.append(rp)
+
+    best = None                                      # (r/R, rep) of largest r
+    for rp0 in inits:
+        rp, ok = _chiral_lm(residuals, rp0, free, iters=800)
+        V = build_V(rp)
+        if np.max(np.abs(residuals(rp))) < 1e-11 and _chiral_convex(V, F):
+            r = float(np.mean([d for _, _, d in _face_planes(V, F)]))
+            if best is None or r > best[0]:
+                best = (r, [p.copy() for p in rp])
+    if best is None:
+        return {'exists': False,
+                'why': "no non-degenerate convex biscribed form found"}
+    r, rp = best
+    V = build_V(rp)
+    return {'exists': True,
+            'param': f"{len(free)} free orbit(s), {2 * len(free)} params",
+            'verts': V, 'faces': [list(f) for f in F], 'r_over_R': r}
+
+
+def _orthokis_mesh(seed):
+    """kis ONLY the central n-gon faces (those on the n-fold axes) of the
+    biscribed propello solid pX -- seeds solve_chiral_g in the basin of the
+    biscribed orthokis-propello root."""
+    cw = _cw()
+    base = {'C': 'propello_cube', 'D': 'propello_dodecahedron'}[seed]
+    b = biscribe_exact(base)
+    V, F = cw.orient_outward([list(v) for v in b[0]], [list(f) for f in b[1]])
+    V = np.array(V, float)
+    sV, sF = cw._seed(seed, 0)
+    sV = np.array(sV, float)
+    axes = np.array([sV[list(f)].mean(0) / np.linalg.norm(sV[list(f)].mean(0))
+                     for f in sF])
+    Rmean = float(np.linalg.norm(V, axis=1).mean())
+    NV, NF = [list(v) for v in V], []
+    for f in F:
+        cn = V[list(f)].mean(0)
+        cn = cn / np.linalg.norm(cn)
+        if np.max(axes @ cn) > 1 - 1e-6:             # central axis face -> kis
+            ai = len(NV)
+            NV.append(list(cn * Rmean))
+            m = len(f)
+            for i in range(m):
+                NF.append([f[i], f[(i + 1) % m], ai])
+        else:
+            NF.append(list(f))
+    return np.array(NV, float), [list(f) for f in NF]
+
+
+# non-Platonic-seed chiral solids that biscribe: (builder, base symmetry)
+_CHIRAL_SPECS = {
+    'orthokis_propello_cube':           (lambda: _orthokis_mesh('C'), 'C'),
+    'orthokis_propello_dodecahedron':   (lambda: _orthokis_mesh('D'), 'D'),
+    'propello_truncated_octahedron':    (lambda: 'ptO', 'O'),
+    'propello_truncated_cuboctahedron': (lambda: 'pbC', 'C'),
+    'propello_truncated_icosahedron':   (lambda: 'ptI', 'I'),
+    'snub_truncated_octahedron':        (lambda: 'stO', 'O'),
+    'snub_truncated_icosahedron':       (lambda: 'stI', 'I'),
+}
+
+
+def _regen_chiral_data():
+    """Re-derive _biscribed_chiral_data.CHIRAL_DATA from the solver (the
+    embedded coords are exactly this).  Returns {key: {'r','V','F'}}."""
+    data = {}
+    for key, (mk, sym) in _CHIRAL_SPECS.items():
+        res = solve_chiral_g(mk(), sym)
+        if res['exists']:
+            data[key] = {'r': float(res['r_over_R']),
+                         'V': [[float(c) for c in v] for v in res['verts']],
+                         'F': [list(map(int, f)) for f in res['faces']]}
+    return data
+
+
+# --------------------------------------------------------------------------
 # Duals by polar reciprocation (rho^2 = R*r; biscribed -> biscribed dual)
 # --------------------------------------------------------------------------
 
@@ -785,6 +936,13 @@ _SOLVERS = {
     'hexpropello_cube':            lambda: solve_chiral('w', 'C'),
     'hexpropello_dodecahedron':    lambda: solve_chiral('w', 'D'),
 }
+# non-Platonic-seed chiral solvers (the slow, roundest-root ones); their
+# results are normally served from the embedded _CHIRAL_DATA cache, with these
+# as the reproducible fallback.
+_SOLVERS.update({
+    _k: (lambda mk=_mk, sym=_sym: solve_chiral_g(mk(), sym))
+    for _k, (_mk, _sym) in _CHIRAL_SPECS.items()
+})
 
 
 def _norm_name(name):
@@ -800,10 +958,16 @@ def biscribe_exact(name):
     verts = list of (x, y, z), faces = list of vertex-index tuples.
     Results are memoized (the chiral propello/hexpropello solves are slow)."""
     key = _norm_name(name)
-    if key not in _SOLVERS:
-        raise ValueError(f"unknown solid {name!r}; know {sorted(_SOLVERS)}")
     if key in _CACHE:
         return _CACHE[key]
+    if key in _CHIRAL_DATA:                 # precomputed roundest-root coords
+        d = _CHIRAL_DATA[key]
+        out = ([tuple(map(float, v)) for v in d['V']],
+               [tuple(f) for f in d['F']], float(d['r']))
+        _CACHE[key] = out
+        return out
+    if key not in _SOLVERS:
+        raise ValueError(f"unknown solid {name!r}; know {sorted(_SOLVERS)}")
     res = _SOLVERS[key]()
     if not res['exists']:
         _CACHE[key] = None
@@ -868,6 +1032,37 @@ _BISCRIBED = [
      'hexpropello_dodecahedron', False),
     ('dwD', "Biscribed Dual Hexpropello Dodecahedron",
      'hexpropello_dodecahedron', True),
+    # Chiral on non-Platonic seeds (propello / snub of the truncated /
+    # orthokis forms) -- coords served from _CHIRAL_DATA, duals via polar
+    # reciprocation
+    ('okpC', "Biscribed Orthokis Propello Cube",
+     'orthokis_propello_cube', False),
+    ('otpO', "Biscribed Orthotruncated Propello Octahedron",
+     'orthokis_propello_cube', True),
+    ('okpD', "Biscribed Orthokis Propello Dodecahedron",
+     'orthokis_propello_dodecahedron', False),
+    ('otpI', "Biscribed Orthotruncated Propello Icosahedron",
+     'orthokis_propello_dodecahedron', True),
+    ('ptrO', "Biscribed Propello Truncated Octahedron",
+     'propello_truncated_octahedron', False),
+    ('pkH', "Biscribed Propello Tetrakis Hexahedron",
+     'propello_truncated_octahedron', True),
+    ('ptrCO', "Biscribed Propello Truncated Cuboctahedron",
+     'propello_truncated_cuboctahedron', False),
+    ('pmD', "Biscribed Propello Disdyakis Dodecahedron",
+     'propello_truncated_cuboctahedron', True),
+    ('ptrI', "Biscribed Propello Truncated Icosahedron",
+     'propello_truncated_icosahedron', False),
+    ('pkD', "Biscribed Propello Pentakis Dodecahedron",
+     'propello_truncated_icosahedron', True),
+    ('sntO', "Biscribed Snub Truncated Octahedron",
+     'snub_truncated_octahedron', False),
+    ('dsntO', "Biscribed Dual Snub Truncated Octahedron",
+     'snub_truncated_octahedron', True),
+    ('sntI', "Biscribed Snub Truncated Icosahedron",
+     'snub_truncated_icosahedron', False),
+    ('dsntI', "Biscribed Dual Snub Truncated Icosahedron",
+     'snub_truncated_icosahedron', True),
 ]
 
 try:
