@@ -2,13 +2,14 @@
 # Canonical Polyhedra for Blender
 #
 # Polyhedra whose geometry is uniquely fixed by their combinatorics via the
-# canonical (edge-tangent midsphere) form.  Currently the "Greater Self-Dual
-# Solids": 11 self-dual polyhedra of tetrahedral symmetry -- four self-dual
-# icosioctahedra (V=F=28), six self-dual tetracontahedra (V=F=40), and a
-# self-dual 76-hedron (V=F=76).  Each is derived independently: the abstract
-# face-incidence is canonicalized by George Hart's edge-tangent-midsphere
-# algorithm, so the coordinates are our own derivation.  (The simplest
-# canonical polyhedron of each symmetry type is a natural future addition.)
+# canonical (edge-tangent midsphere) form.  Two families:
+#   * Greater Self-Dual Solids: 11 self-dual polyhedra of tetrahedral symmetry
+#     (four icosioctahedra V=F=28, six tetracontahedra V=F=40, a 76-hedron).
+#   * Simplest Canonical (per symmetry): the simplest canonical polyhedron of
+#     each of the 42 three-dimensional point-group symmetry types.
+# Each is derived independently: the abstract face-incidence is canonicalized
+# by George Hart's edge-tangent-midsphere algorithm from a graph-Laplacian
+# spectral seed, so the coordinates are our own derivation, not transcribed.
 #
 # References:
 # - Catalog & naming: David I. McCooey, "Visual Polyhedra"
@@ -24,7 +25,8 @@ bl_info = {
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Math Art > Polyhedra",
     "description": "Canonical polyhedra fixed by their combinatorics: the "
-                   "Greater Self-Dual Solids",
+                   "Greater Self-Dual Solids and the simplest canonical "
+                   "polyhedron of each symmetry type",
     "category": "Add Mesh",
 }
 
@@ -42,6 +44,9 @@ _BY_CAT = {}
 if _data is not None:
     _FAMILIES.append(('SELF_DUAL', "Greater Self-Dual"))
     _BY_CAT['SELF_DUAL'] = _data.SELF_DUAL
+    if hasattr(_data, 'SIMPLEST'):
+        _FAMILIES.append(('SIMPLEST', "Simplest Canonical (per symmetry)"))
+        _BY_CAT['SIMPLEST'] = _data.SIMPLEST
 
 
 def build(family, index):
