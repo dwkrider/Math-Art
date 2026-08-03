@@ -1538,8 +1538,9 @@ def build_face_cells(strands=None, carpet=None, cord_width=0.12,
                      face_color='SHAPE', backing=False, base=0.06,
                      add_border=True):
     """Fill the planar-arrangement cells of the strand network as flat
-    polygons, inset by half `cord_width` so the strands read as channels
-    between the tiles.  `face_color` is 'UNIFORM' (one colour) or 'SHAPE'
+    n-gon tiles, shrunk toward each tile's centroid by ~half `cord_width`
+    so the strands read as the channels between tiles.  `face_color` is
+    'UNIFORM' (one colour) or 'SHAPE'
     (congruent tiles share a colour).  `add_border` closes the open ends
     of the GRID families against one clean rectangle (their ends lie on
     it); radial families (polar / spiral) leave it off -- their open ends
@@ -1635,33 +1636,26 @@ def build_face_cells(strands=None, carpet=None, cord_width=0.12,
     if drop:
         bmesh.ops.delete(bm, geom=drop, context='FACES')
 
-    # inset each tile inward by half the ribbon width -> the strands read
-    # as the channels between tiles.  Done per tile with the inset
-    # CLAMPED to a fraction of that tile's inradius (2*area/perimeter),
-    # so a sliver thinner than the ribbon can't fire off a miter spike;
-    # inset_individual returns the RING faces, the shrunk inner tiles are
-    # everything else (robust for the non-convex pinwheel cells a plain
-    # bisector inset would collapse)
+    # Open the ribbon gap by shrinking each tile toward its own centroid.
+    # A centroid scale is affine, so the tile stays a SIMPLE flat polygon
+    # -- a true uniform-width offset self-intersects on the concave
+    # pinwheel cells, and those bowtie outlines z-fight.  Each tile is
+    # emitted as one flat n-gon by its outline (no triangulation needed;
+    # a simple planar polygon tessellates cleanly).
     half = 0.5 * max(0.005, float(cord_width))
-    rings = set()
-    for f in list(bm.faces):
-        area = f.calc_area()
-        per = f.calc_perimeter()
-        if area < 1e-7 or per < 1e-6:
-            continue
-        t = min(half, 0.42 * (2.0 * area / per))
-        if t < 5e-4:
-            continue                          # too thin to inset; leave full
-        r2 = bmesh.ops.inset_individual(
-            bm, faces=[f], thickness=t, depth=0.0, use_even_offset=True)
-        rings.update(r2.get('faces', []))
-
     cells = []
     all_verts = []
     for f in bm.faces:
-        if f in rings or f.calc_area() < 1e-8:
+        P = np.array([(v.co.x, v.co.y) for v in f.verts], float)
+        if len(P) < 3:
             continue
-        verts = [(v.co.x, v.co.y, 0.0) for v in f.verts]
+        c = P.mean(axis=0)
+        R = float(np.mean(np.linalg.norm(P - c, axis=1)))
+        if R < 1e-6:
+            continue
+        s = min(0.985, max(0.06, 1.0 - half / R))
+        Q = c + s * (P - c)
+        verts = [(float(x), float(y), 0.0) for x, y in Q]
         cells.append((verts, [list(range(len(verts)))],
                       [f.material_index]))
         all_verts.extend(verts)
@@ -5132,13 +5126,16 @@ if _IN_BLENDER:
                             % (self.source, len(strands), nc, conf))
                 return {'FINISHED'}
             if self.output == 'FACES':
-                grid_fam = self.source in ('WAVY_PLAID', 'WARPED_GRID',
-                                           'SMOOTH_PLAIT', 'MOIRE')
+                # the rectangular border only suits the axis-aligned grid
+                # families; moire's rotated second grid, and the radial /
+                # closed families, do not close on one clean rectangle
+                bordered = self.source in ('WAVY_PLAID', 'WARPED_GRID',
+                                           'SMOOTH_PLAIT')
                 cells = build_face_cells(
                     carpet=carpet, cord_width=self.cord_width,
                     face_color=self.face_color,
                     backing=self.backing, base=self.base,
-                    add_border=grid_fam)
+                    add_border=bordered)
                 if not cells:
                     self.report({'ERROR'}, "no faces found")
                     return {'CANCELLED'}
