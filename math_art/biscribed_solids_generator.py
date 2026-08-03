@@ -863,6 +863,23 @@ _CHIRAL_SPECS = {
     'snub_truncated_icosahedron':       (lambda: 'stI', 'I'),
 }
 
+# ---- NOT YET COVERED: McCooey's 4 remaining chiral biscribed solids --------
+# These DO biscribe (McCooey lists their circumradii) but solve_chiral_g's
+# roundest-root LM search does not converge to their root:
+#   #20 Propello Truncated Icosidodecahedron  (spec 'pbD', 480 verts, I sym)
+#   #24 its dual (Propello Disdyakis Triacontahedron)
+#   #27 L-Propello L-Snub Cube  (propello of the CHIRAL snub cube; spec 'psC')
+#   #31 its dual (L-Propello R-Pentagonal Icositetrahedron)
+# Attempts that FAILED: #20 via 'pbD' + canonical init AND a full 24-restart
+# run (~30 min); #27 via 'psC', reflected/matching-chirality propello, and
+# 'psC' with 24 restarts.  Unlike hexpropello T/O/I (which provably do NOT
+# biscribe), these exist -- reaching them needs a better initialization
+# (McCooey's own construction) or an exact/homotopy solver for the large,
+# double-chiral basins.
+# TODO(biscribed-solver): improve solve_chiral_g to reach these 4 (27/31 ->
+# 31/31) -- deferred; see git history for the attempted approaches.
+# ---------------------------------------------------------------------------
+
 
 def _regen_chiral_data():
     """Re-derive _biscribed_chiral_data.CHIRAL_DATA from the solver (the
