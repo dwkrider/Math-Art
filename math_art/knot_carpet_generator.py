@@ -148,7 +148,11 @@ bl_info = {
                    "onto an arbitrary UV-unwrapped target mesh by "
                    "sampling its UV parameterization -- the square "
                    "lattice or any uniform tiling over the UV square, "
-                   "clipped to the UV islands",
+                   "clipped to the UV islands; or, on the flat lattice, "
+                   "from a curvilinear strand source -- a wavy plaid, "
+                   "warped grid, polar rosette, guilloche or smooth "
+                   "plait -- woven through the same crossing / "
+                   "alternation / strapwork back-end",
     "category": "Add Mesh",
 }
 
@@ -318,7 +322,7 @@ def build_carpet(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
 # Over / under assignment (alternating link, parity union-find)
 # --------------------------------------------------------------------
 
-def _solve_over(paths, crossings):
+def _solve_over(paths, crossings, closed=None):
     """One bit per crossing: over[key] = 1 means the LOWER-id loop
     rides over there, so "loop i is over at c" = over[c] XOR
     (i == c.hi).  Walking loop i, consecutive crossings must flip that
@@ -326,19 +330,28 @@ def _solve_over(paths, crossings):
     a pure parity relation fed to the union-find.  Whatever the DSU
     returns, the two loops at a crossing read opposite senses of the
     same bit, so one-over-one-under can never break; `consistent`
-    reports whether alternation itself was fully satisfiable."""
+    reports whether alternation itself was fully satisfiable.
+
+    `closed`, when given, is a per-loop-id sequence of closed flags: a
+    CLOSED loop alternates cyclically (its last and first crossings are
+    consecutive), an OPEN strand (a curvilinear source with free / caps
+    ends) alternates only along its interior, so its last and first
+    crossings carry no constraint.  The default (None) treats every loop
+    as closed -- the rosette-lattice behaviour, byte for byte."""
     per_loop = {}
     for key, lo, hi, flo, fhi in crossings:
         per_loop.setdefault(lo, []).append((flo, key, 0))
         per_loop.setdefault(hi, []).append((fhi, key, 1))
     dsu = isl._ParityDSU()
     consistent = True
-    for ent in per_loop.values():
+    for loop_id, ent in per_loop.items():
         ent.sort()
         C = len(ent)
         if C < 2:
             continue
-        for a in range(C):
+        is_closed = True if closed is None else bool(closed[loop_id])
+        rng = range(C) if is_closed else range(C - 1)
+        for a in rng:
             _f1, k1, h1 = ent[a]
             _f2, k2, h2 = ent[(a + 1) % C]
             if k1 == k2:
@@ -375,10 +388,12 @@ def loop_signed(carpet):
 _BACKING_MAT = len(pc.PALETTE_RGBA) - 1
 
 
-def _checker_pieces(path, signed):
-    """Split a closed path at its crossings; each arc is colored by
-    the over/under sense at the crossing it leaves from (the two-tone
-    CHECKER coloring).  Returns [(subpath, mat)]."""
+def _checker_pieces(path, signed, closed=True):
+    """Split a path at its crossings; each arc is colored by the
+    over/under sense at the crossing it leaves from (the two-tone
+    CHECKER coloring).  Returns [(subpath, mat)].  A CLOSED path wraps
+    (the arc after the last crossing rejoins the first); an OPEN strand
+    also keeps its two free-end arcs."""
     n = len(path)
     if not signed:
         return [(path, 0)]
@@ -386,19 +401,35 @@ def _checker_pieces(path, signed):
     idxs = [a for a, _sg in ent]
     m = len(idxs)
     out = []
-    for a in range(m):
-        i0, i1 = idxs[a], idxs[(a + 1) % m]
-        sp = path[i0:i1 + 1] if i1 > i0 else path[i0:] + path[:i1 + 1]
-        if len(sp) >= 2:
-            out.append((sp, 0 if ent[a][1] > 0 else 1))
+    if closed:
+        for a in range(m):
+            i0, i1 = idxs[a], idxs[(a + 1) % m]
+            sp = path[i0:i1 + 1] if i1 > i0 else path[i0:] + path[:i1 + 1]
+            if len(sp) >= 2:
+                out.append((sp, 0 if ent[a][1] > 0 else 1))
+    else:
+        if idxs[0] > 0:                      # leading free-end arc
+            sp = path[0:idxs[0] + 1]
+            if len(sp) >= 2:
+                out.append((sp, 0 if ent[0][1] > 0 else 1))
+        for a in range(m - 1):
+            sp = path[idxs[a]:idxs[a + 1] + 1]
+            if len(sp) >= 2:
+                out.append((sp, 0 if ent[a][1] > 0 else 1))
+        if idxs[-1] < n - 1:                 # trailing free-end arc
+            sp = path[idxs[-1]:]
+            if len(sp) >= 2:
+                out.append((sp, 0 if ent[-1][1] > 0 else 1))
     return out
 
 
 def _loop_cell(path, signed, width, interlace, mode, weave_height,
-               height, color_by, loop_index):
-    """Sub-cells (verts, faces, mats) for one closed loop rendered as
-    a mitered ribbon.  `signed` is [(path_index, +1 over / -1 under)]
-    at the loop's crossings -- direct indices into `path`."""
+               height, color_by, loop_index, closed=True):
+    """Sub-cells (verts, faces, mats) for one loop rendered as a
+    mitered ribbon.  `signed` is [(path_index, +1 over / -1 under)]
+    at the loop's crossings -- direct indices into `path`.  `closed`
+    is the loop's closed flag (True for rosette loops and closed
+    curvilinear strands, False for an open curvilinear strand)."""
     if len(path) < 3:
         return []
 
@@ -414,22 +445,22 @@ def _loop_cell(path, signed, width, interlace, mode, weave_height,
     if color_by == 'CHECKER':
         # two-tone by over/under: cut at every crossing, color each
         # arc by the sense it leaves its crossing with
-        for sp, mat in _checker_pieces(path, signed):
+        for sp, mat in _checker_pieces(path, signed, closed):
             left, right = isl.miter_ribbon(sp, width, False)
             cv, cf = isl.band_ribbon_faces(left, right, False, height)
             if cf:
                 sub_cells.append((cv, cf, [mat] * len(cf)))
     elif interlace and mode == 'WOVEN':
-        zoff = isl._weave_zoff(path, True, signed, weave_height)
-        left, right = isl.miter_ribbon(path, width, True)
-        cv, cf = isl.band_ribbon_faces_z(left, right, True, height,
+        zoff = isl._weave_zoff(path, closed, signed, weave_height)
+        left, right = isl.miter_ribbon(path, width, closed)
+        cv, cf = isl.band_ribbon_faces_z(left, right, closed, height,
                                          zoff)
         if cf:
             sub_cells.append((cv, cf, [matof(0)] * len(cf)))
     elif interlace and mode == 'FLAT':
         under = [ci for ci, sg in signed if sg < 0]
         if under:
-            s, total = isl._arclen(path, True)
+            s, total = isl._arclen(path, closed)
             cut_s = sorted(s[ci] for ci in under)
             # the gap must clear the over strand even at the shallow
             # crossing angles a gentle overlap produces
@@ -446,9 +477,9 @@ def _loop_cell(path, signed, width, interlace, mode, weave_height,
                         for j in range(len(allc))]
                 mg = min((g for g in gaps if g > 1e-9), default=total)
                 half = min(half, 0.4 * mg)
-            pieces = isl._cut_band(path, True, cut_s, half, s, total)
+            pieces = isl._cut_band(path, closed, cut_s, half, s, total)
         else:
-            pieces = [(path, True)]
+            pieces = [(path, closed)]
         for sp, sp_closed in pieces:
             if len(sp) < 2:
                 continue
@@ -458,8 +489,8 @@ def _loop_cell(path, signed, width, interlace, mode, weave_height,
             if cf:
                 sub_cells.append((cv, cf, [matof(0)] * len(cf)))
     else:                                     # plain flat ribbon
-        left, right = isl.miter_ribbon(path, width, True)
-        cv, cf = isl.band_ribbon_faces(left, right, True, height)
+        left, right = isl.miter_ribbon(path, width, closed)
+        cv, cf = isl.band_ribbon_faces(left, right, closed, height)
         if cf:
             sub_cells.append((cv, cf, [matof(0)] * len(cf)))
 
@@ -640,6 +671,673 @@ def build_tube_cells(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
         pc.slab(cv, cf, cm, lo, hi, -tr, -tr - base, mat=_BACKING_MAT)
         cells.append((cv, cf, cm))
     return cells
+
+
+# --------------------------------------------------------------------
+# Curvilinear interlace: strand SOURCES beyond the rosette lattice
+# --------------------------------------------------------------------
+#
+# The rosette lattice is just ONE way to spawn the closed strand
+# polylines the carpet weaves; the crossing / over-under / strapwork
+# back-end downstream is source-agnostic.  This section adds curvilinear
+# strand SOURCES -- families of smooth parametric curves -- and a
+# GENERIC crossing back-end (`build_curve_carpet`) that laces ANY set of
+# open or closed polylines, so the wavy plaid, warped grid, polar
+# rosette, guilloche and smooth plait all flow through the same ribbon /
+# tube / curve / interlace / relief machinery as the lattice carpet.
+#
+# Whereas the lattice carpet only tests lattice-neighbour loop pairs,
+# curvilinear strands can cross ANYWHERE (and a single closed guilloche
+# curve crosses ITSELF many times), so the back-end finds every pairwise
+# and self intersection.  A uniform-grid broadphase buckets segments by
+# their bounding cells and only tests co-bucketed pairs, so dense
+# guilloche / high-frequency plaids stay well under the naive O(n^2).
+# Over/under is then solved with the same parity union-find
+# (`_solve_over` / `isl._ParityDSU`): an arrangement of closed curves is
+# always checkerboard 2-colourable, so the twin-sinusoid and warped-grid
+# families weave a perfectly alternating link; self-crossing guilloche
+# and the petal/ring polar system are best-effort (near-tangent
+# intersections can frustrate a few crossings, dropped into a seam).
+#
+# Lineage.  Interlace as a woven arrangement of bands with an
+# alternating over/under is the shared grammar of Celtic knotwork
+# (George Bain, "Celtic Art: The Methods of Construction", 1951; Peter
+# R. Cromwell, "Celtic Knotwork: Mathematical Art", Mathematical
+# Intelligencer 15(1), 1993), the mirror-curve formalism unifying
+# knotwork, kolam and sona (Slavik V. Jablan, "Mirror curves", and the
+# LinKnot system), and Islamic star interlace (Craig S. Kaplan & David
+# H. Salesin, "Islamic Star Patterns in Absolute Geometry", ACM
+# Transactions on Graphics 23(2), 2004; Branko Grunbaum & G. C.
+# Shephard, "Tilings and Patterns", on interlace in Islamic and Moorish
+# ornament).  The guilloche family is the rose-engine / spirograph
+# tradition: epitrochoid and hypotrochoid curves, the interwoven
+# rosettes of engraving.
+#
+# References:
+#   George Bain, "Celtic Art: The Methods of Construction" (1951).
+#   Peter R. Cromwell, "Celtic Knotwork: Mathematical Art"
+#     (Mathematical Intelligencer 15(1), 1993).
+#   Slavik V. Jablan, "Mirror curves" (and "Symmetry, Ornament and
+#     Modularity", 2002); the LinKnot system.
+#   Craig S. Kaplan & David H. Salesin, "Islamic Star Patterns in
+#     Absolute Geometry" (ACM Transactions on Graphics 23(2), 2004).
+#   Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (1987) --
+#     interlace in Islamic and Moorish ornament.
+#   Epitrochoid / hypotrochoid (the spirograph / guilloche family) --
+#     standard parametric curves of the rose-engine engraving tradition.
+
+
+def _seg_seg(A, B, C, D, eps=1e-12):
+    """Intersection parameters (t, u) of segment A->B with C->D, or
+    None.  Half-open [0, 1) on both so an intersection is counted once
+    and shared endpoints don't double up; parallel / degenerate pairs
+    (near-zero cross product) are skipped -- the same convention as
+    `_seg_cross`."""
+    rx, ry = B[0] - A[0], B[1] - A[1]
+    sx, sy = D[0] - C[0], D[1] - C[1]
+    denom = rx * sy - ry * sx
+    if abs(denom) <= eps:
+        return None
+    cax, cay = C[0] - A[0], C[1] - A[1]
+    t = (cax * sy - cay * sx) / denom
+    u = (cax * ry - cay * rx) / denom
+    if 0.0 <= t < 1.0 and 0.0 <= u < 1.0:
+        return t, u
+    return None
+
+
+def _curve_crossings_brute(paths, closed):
+    """Every crossing among the strand polylines, by brute force: all
+    segment pairs of every strand pair (i <= j), plus a strand's non-
+    adjacent segments against itself (self-crossings of a closed
+    curve).  Returns [(key, lo, hi, f_lo, f_hi)] with lo <= hi and the
+    fractional arc position (seg index + parameter) on each -- exactly
+    the shape `_solve_over` consumes.  The O(n^2) reference the
+    broadphase is checked against."""
+    crossings = []
+    n = len(paths)
+    for s1 in range(n):
+        P = paths[s1]
+        Sp = len(P)
+        seg1 = Sp if closed[s1] else Sp - 1
+        for s2 in range(s1, n):
+            Q = paths[s2]
+            Sq = len(Q)
+            seg2 = Sq if closed[s2] else Sq - 1
+            for i in range(seg1):
+                A = P[i]
+                B = P[(i + 1) % Sp]
+                jrange = range(i + 2, seg2) if s1 == s2 else range(seg2)
+                for j in jrange:
+                    if s1 == s2 and closed[s1] and i == 0 and j == Sp - 1:
+                        continue                # wrap-adjacent, skip
+                    hit = _seg_seg(A, B, Q[j], Q[(j + 1) % Sq])
+                    if hit is None:
+                        continue
+                    t, u = hit
+                    crossings.append((len(crossings), s1, s2,
+                                      i + t, j + u))
+    return crossings
+
+
+def _curve_crossings(paths, closed):
+    """Every crossing among the strand polylines via a uniform-grid
+    broadphase, returning the same list `_curve_crossings_brute` does.
+    Each segment is bucketed into the grid cells its bounding box spans;
+    only segment pairs sharing a bucket are tested, and each pair once
+    (deduplicated).  Because two segments that truly cross must share a
+    cell, the result is identical to brute force -- just far cheaper on
+    dense diagrams."""
+    strand_of, local_of, endsA, endsB = [], [], [], []
+    for s, P in enumerate(paths):
+        Sp = len(P)
+        seg = Sp if closed[s] else Sp - 1
+        for i in range(seg):
+            strand_of.append(s)
+            local_of.append(i)
+            endsA.append(P[i])
+            endsB.append(P[(i + 1) % Sp])
+    M = len(endsA)
+    if M == 0:
+        return []
+    A = np.asarray(endsA, float)
+    B = np.asarray(endsB, float)
+    lo = np.minimum(A, B)
+    hi = np.maximum(A, B)
+    mn = lo.min(axis=0)
+    mx = hi.max(axis=0)
+    diag = float(np.linalg.norm(mx - mn)) + 1e-12
+    seglen = np.linalg.norm(B - A, axis=1)
+    cell = max(float(np.median(seglen)) * 2.0, diag / 256.0, 1e-9)
+    gi0 = np.floor((lo - mn) / cell).astype(np.int64)
+    gi1 = np.floor((hi - mn) / cell).astype(np.int64)
+    grid = {}
+    for k in range(M):
+        for cx in range(gi0[k, 0], gi1[k, 0] + 1):
+            for cy in range(gi0[k, 1], gi1[k, 1] + 1):
+                grid.setdefault((cx, cy), []).append(k)
+    seen = set()
+    crossings = []
+    for members in grid.values():
+        L = len(members)
+        for a in range(L):
+            for b in range(a + 1, L):
+                k1, k2 = members[a], members[b]
+                if k1 > k2:
+                    k1, k2 = k2, k1
+                if (k1, k2) in seen:
+                    continue
+                seen.add((k1, k2))
+                s1, s2 = strand_of[k1], strand_of[k2]
+                i, j = local_of[k1], local_of[k2]
+                if s1 == s2:                    # same strand: i < j here
+                    if j <= i + 1:
+                        continue                # adjacent, skip
+                    if closed[s1] and i == 0 and j == len(paths[s1]) - 1:
+                        continue                # wrap-adjacent, skip
+                hit = _seg_seg(A[k1], B[k1], A[k2], B[k2])
+                if hit is None:
+                    continue
+                t, u = hit
+                crossings.append((len(crossings), s1, s2, i + t, j + u))
+    return crossings
+
+
+def _crossing_sig(crossings):
+    """A canonical, order-independent signature set of a crossing list
+    (each crossing keyed by its two (strand, rounded-arc) endpoints) so
+    two crossing lists can be compared regardless of ordering."""
+    sig = set()
+    for _key, lo, hi, flo, fhi in crossings:
+        a = (lo, round(flo, 4))
+        b = (hi, round(fhi, 4))
+        sig.add((min(a, b), max(a, b)))
+    return sig
+
+
+def _count_conflicts(over, per_loop, closed):
+    """Number of alternation violations: consecutive crossings along a
+    strand carrying the SAME over/under sense.  0 for a perfectly
+    alternating (2-colourable) diagram; a few for best-effort
+    families."""
+    conflicts = 0
+    for loop_id, ent in per_loop.items():
+        e = sorted(ent)
+        C = len(e)
+        if C < 2:
+            continue
+        sv = [over[key] ^ hi for _f, key, hi in e]
+        rng = range(C) if closed[loop_id] else range(C - 1)
+        for a in rng:
+            if sv[a] == sv[(a + 1) % C]:
+                conflicts += 1
+    return conflicts
+
+
+def build_curve_carpet(strands):
+    """Lace an arbitrary set of strand polylines into a woven carpet.
+    `strands` is a list of (points, closed) -- points an (S, 2) array or
+    sequence, closed the loop flag.  Finds every crossing (pairwise and
+    self, broadphase), solves a globally consistent alternating
+    over/under with the parity union-find, and returns the same dict
+    shape the lattice `build_carpet` yields (so every flat ribbon / tube
+    / curve builder consumes it unchanged), plus `closed` (per-strand
+    flags) and `conflicts` (dropped alternation constraints)."""
+    paths = [np.asarray(p, float) for p, _c in strands]
+    closed = [bool(c) for _p, c in strands]
+    crossings = _curve_crossings(paths, closed)
+    over, per_loop, consistent = _solve_over(paths, crossings, closed)
+    conflicts = _count_conflicts(over, per_loop, closed)
+    return dict(paths=paths, closed=closed, crossings=crossings,
+                over=over, per_loop=per_loop, consistent=consistent,
+                conflicts=conflicts)
+
+
+# --------------------------------------------------------------------
+# Stage 1 -- curvilinear strand families
+# --------------------------------------------------------------------
+#
+# Each family returns a list of (points (S, 2) float array, closed bool).
+# Open families (wavy plaid, warped grid, smooth plait) are finished by
+# `_apply_boundary`; closed families (polar, guilloche) ignore it.
+
+
+def _plaid_strands(nx, ny, amp, freq, phase, samples):
+    """Wavy plaid: two families of phase-shifted sines.  Horizontal
+    threads y = j + amp sin(2pi f x + phase j), x over [0, nx]; vertical
+    threads x = i + amp sin(2pi f y + phase i), y over [0, ny].  Every
+    horizontal-vertical pair crosses about once per cell -- a clean
+    2-colourable weave."""
+    W, H = float(nx), float(ny)
+    ns = max(48, int(samples))
+    out = []
+    for j in range(int(ny) + 1):
+        x = np.linspace(0.0, W, ns)
+        y = j + amp * np.sin(2.0 * pi * freq * x + phase * j)
+        out.append((np.column_stack([x, y]), False))
+    for i in range(int(nx) + 1):
+        y = np.linspace(0.0, H, ns)
+        x = i + amp * np.sin(2.0 * pi * freq * y + phase * i)
+        out.append((np.column_stack([x, y]), False))
+    return out
+
+
+def _warp_strands(nx, ny, warp, freq, samples):
+    """Warped grid: a square grid of straight strands pushed through the
+    smooth displacement p -> p + warp * grad(phi) with
+    phi = sin(k x) sin(k y), grad = (k cos kx sin ky, k sin kx cos ky).
+    A near-conformal flow -- crossings persist (it stays bipartite for
+    modest warp) but the whole net swirls."""
+    W, H = float(nx), float(ny)
+    ns = max(48, int(samples))
+    k = pi * float(freq)
+
+    def warpfn(x, y):
+        gx = k * np.cos(k * x) * np.sin(k * y)
+        gy = k * np.sin(k * x) * np.cos(k * y)
+        return x + warp * gx, y + warp * gy
+
+    out = []
+    for j in range(int(ny) + 1):
+        x = np.linspace(0.0, W, ns)
+        y = np.full(ns, float(j))
+        wx, wy = warpfn(x, y)
+        out.append((np.column_stack([wx, wy]), False))
+    for i in range(int(nx) + 1):
+        y = np.linspace(0.0, H, ns)
+        x = np.full(ns, float(i))
+        wx, wy = warpfn(x, y)
+        out.append((np.column_stack([wx, wy]), False))
+    return out
+
+
+def _polar_strands(nrings, narms, b, p_ring, bow, samples):
+    """Polar interlace: concentric petaled rings r = R_m (1 + b cos p T)
+    crossed with radial petal loops.  Each ring is a closed curve; each
+    radial strand is a closed leaf that sweeps out to the rim and back,
+    bowing +/- `bow` in angle, so it crosses every ring it spans twice.
+    Naturally closed -- no boundary caps."""
+    ns = max(64, int(samples))
+    out = []
+    r0, r1 = 0.35, 1.0
+    nr = max(2, int(nrings))
+    for m in range(nr):
+        R = r0 + (r1 - r0) * (m + 1) / nr
+        th = np.linspace(0.0, 2.0 * pi, ns, endpoint=False)
+        rr = R * (1.0 + b * np.cos(p_ring * th))
+        out.append((np.column_stack([rr * np.cos(th),
+                                     rr * np.sin(th)]), True))
+    rin, rout = 0.14, 1.16
+    na = max(3, int(narms))
+    for a in range(na):
+        th_a = 2.0 * pi * a / na
+        s = np.linspace(0.0, 2.0 * pi, ns, endpoint=False)
+        rad = rin + (rout - rin) * (0.5 - 0.5 * np.cos(s))
+        ang = th_a + bow * np.sin(s)
+        out.append((np.column_stack([rad * np.cos(ang),
+                                     rad * np.sin(ang)]), True))
+    return out
+
+
+def _guilloche_strands(arms, amp, ncopies, phase, samples):
+    """Guilloche rosette: phase-rotated hypotrochoids (spirograph).  For
+    R = arms, r = R - 1 (coprime, so the curve closes only after theta
+    in [0, 2pi r]), the pen offset d ~ r makes one long closed curve
+    self-cross into the dense woven rosette of rose-engine engraving;
+    `ncopies` phase-rotated copies interleave.  Best-effort alternation
+    (a self-crossing curve is only approximately 2-colourable under
+    dense sampling)."""
+    R = max(3, int(arms))
+    r = R - 1
+    ns = max(256, int(samples))
+    d = (0.45 + 0.9 * float(amp)) * r
+    ratio = (R - r) / float(r)
+    out = []
+    nc = max(1, int(ncopies))
+    for c in range(nc):
+        rot = float(phase) + 2.0 * pi * c / nc
+        th = np.linspace(0.0, 2.0 * pi * r, ns, endpoint=False)
+        x = (R - r) * np.cos(th) + d * np.cos(ratio * th)
+        y = (R - r) * np.sin(th) - d * np.sin(ratio * th)
+        ca, sa = np.cos(rot), np.sin(rot)
+        out.append((np.column_stack([ca * x - sa * y,
+                                     sa * x + ca * y]), True))
+    return out
+
+
+def _plait_strands(nx, ny, amp, freq, phase, samples):
+    """Smooth plait: two families of diagonal sinusoidal bands (slopes
+    +1 and -1) clipped to the [0, nx] x [0, ny] box, each a smooth cord
+    with a transverse sine wobble.  The open ends are turned back by the
+    boundary frame into a Celtic-style plait."""
+    W, H = float(nx), float(ny)
+    ns = max(48, int(samples))
+    out = []
+    for slope in (1.0, -1.0):
+        # anti-diagonal intercepts c in y = slope x + c that cross the box
+        cmin = -slope * W - 0.0
+        lohi = sorted([0.0 - slope * 0.0, H - slope * 0.0,
+                       0.0 - slope * W, H - slope * W])
+        c_lo = int(np.floor(lohi[0])) - 1
+        c_hi = int(np.ceil(lohi[-1])) + 1
+        for c in range(c_lo, c_hi + 1):
+            # x-range where slope x + c stays in [0, H]
+            xs = []
+            for yb in (0.0, H):
+                if abs(slope) > 1e-9:
+                    xs.append((yb - c) / slope)
+            x_lo = max(0.0, min(xs))
+            x_hi = min(W, max(xs))
+            if x_hi - x_lo < 0.25:
+                continue
+            x = np.linspace(x_lo, x_hi, ns)
+            yline = slope * x + c
+            # transverse (perpendicular) sine wobble
+            nrm = np.array([-slope, 1.0]) / sqrt(1.0 + slope * slope)
+            t = (x - x_lo) / max(1e-9, (x_hi - x_lo))
+            off = amp * np.sin(2.0 * pi * freq * (x + yline)
+                               + phase * c)
+            px = x + nrm[0] * off
+            py = yline + nrm[1] * off
+            inside = (py >= -1.0) & (py <= H + 1.0)
+            if inside.sum() < 4:
+                continue
+            out.append((np.column_stack([px[inside], py[inside]]),
+                        False))
+    return out
+
+
+# --------------------------------------------------------------------
+# Boundary handling for the OPEN curvilinear families
+# --------------------------------------------------------------------
+
+
+def _rect_perim(pt, rect):
+    """(s, snapped point): snap `pt` onto the nearest edge of rectangle
+    `rect` = (x0, y0, x1, y1) and give its arclength position s going
+    counter-clockwise from the (x0, y0) corner."""
+    x0, y0, x1, y1 = rect
+    W, H = x1 - x0, y1 - y0
+    x, y = float(pt[0]), float(pt[1])
+    db, dt = abs(y - y0), abs(y - y1)
+    dl, dr = abs(x - x0), abs(x - x1)
+    m = min(db, dt, dl, dr)
+    if m == db:
+        sx = min(max(x, x0), x1)
+        return (sx - x0), np.array([sx, y0])
+    if m == dr:
+        sy = min(max(y, y0), y1)
+        return W + (sy - y0), np.array([x1, sy])
+    if m == dt:
+        sx = min(max(x, x0), x1)
+        return W + H + (x1 - sx), np.array([sx, y1])
+    sy = min(max(y, y0), y1)
+    return 2 * W + H + (y1 - sy), np.array([x0, sy])
+
+
+def _perim_point(s, rect):
+    """The boundary point at counter-clockwise arclength s on `rect`."""
+    x0, y0, x1, y1 = rect
+    W, H = x1 - x0, y1 - y0
+    s = s % (2.0 * (W + H))
+    if s <= W:
+        return np.array([x0 + s, y0])
+    s -= W
+    if s <= H:
+        return np.array([x1, y0 + s])
+    s -= H
+    if s <= W:
+        return np.array([x1 - s, y1])
+    s -= W
+    return np.array([x0, y1 - s])
+
+
+def _frame_close(pts, rect):
+    """Close an open strand by turning both ends out onto the frame
+    `rect` and returning from the end back to the start along the
+    shorter perimeter arc -- so the strand becomes a closed loop
+    finished on the border.  `rect` is this strand's OWN (uniquely
+    sized) frame, sitting just outside the woven content, so the return
+    leg neither coincides with another strand's return nor re-enters the
+    weave -- keeping the diagram cleanly 2-colourable."""
+    x0, y0, x1, y1 = rect
+    perim = 2.0 * ((x1 - x0) + (y1 - y0))
+    sA, Aproj = _rect_perim(pts[0], rect)
+    sB, Bproj = _rect_perim(pts[-1], rect)
+    fwd = (sA - sB) % perim
+    if fwd <= perim - fwd:
+        arc, direction = fwd, 1.0
+    else:
+        arc, direction = perim - fwd, -1.0
+    step = 0.02 * max(x1 - x0, y1 - y0)
+    K = max(2, int(arc / max(step, 1e-9)))
+    ret = [_perim_point(sB + direction * arc * (t / K), rect)
+           for t in range(1, K)]
+    body = [np.asarray(q, float) for q in pts[1:-1]]
+    loop = [Aproj] + body + [Bproj] + ret
+    return np.asarray(loop, float)
+
+
+def _apply_boundary(strands, mode):
+    """Finish the OPEN strands per the boundary mode.  CAPS leaves them
+    open (rendered with rounded/blunt end caps).  FRAME and TOROIDAL
+    turn each end back onto a rectangular frame so the strand closes;
+    every open strand gets its OWN concentric frame just outside the
+    content (a distinct radius per strand), so the return legs form
+    nested borders that never coincide with one another nor cross the
+    woven bodies -- the twin-sinusoid and warped-grid families stay
+    perfectly alternating.  For TOROIDAL the callers first snap the wave
+    frequency to whole cycles, so opposite edges match and the block
+    tiles.  Already-closed strands pass through untouched."""
+    if mode == 'CAPS':
+        return strands
+    allpts = np.concatenate([np.asarray(p, float) for p, _c in strands],
+                            axis=0)
+    mn = allpts.min(axis=0)
+    mx = allpts.max(axis=0)
+    span = float(max(mx - mn)) + 1e-9
+    margin = 0.03 * span
+    gap = 0.045 * span
+    out = []
+    frame_idx = 0
+    for p, c in strands:
+        arr = np.asarray(p, float)
+        if c or len(arr) < 2:
+            out.append((arr, c))
+            continue
+        e = margin + frame_idx * gap
+        rect = (float(mn[0] - e), float(mn[1] - e),
+                float(mx[0] + e), float(mx[1] + e))
+        out.append((_frame_close(arr, rect), True))
+        frame_idx += 1
+    return out
+
+
+def curve_source_strands(source, nx, ny, amp, freq, phase, warp,
+                         petals, arms, samples, boundary,
+                         style='ANGULAR', subdiv=6):
+    """Dispatch to a curvilinear strand family, finish open families
+    with the boundary frame, and (for style SMOOTH) run each strand
+    through Catmull-Rom before it reaches the crossing finder -- so the
+    crossings index the final smoothed polyline directly.  Returns
+    [(points, closed)]."""
+    if source == 'WAVY_PLAID':
+        f = round(freq) if boundary == 'TOROIDAL' else freq
+        base = _plaid_strands(nx, ny, amp, max(1.0, f)
+                              if boundary == 'TOROIDAL' else f,
+                              phase, samples)
+    elif source == 'WARPED_GRID':
+        base = _warp_strands(nx, ny, warp, freq, samples)
+    elif source == 'POLAR':
+        base = _polar_strands(ny + 1, arms, 0.4 * amp, petals,
+                              0.35 + amp, samples)
+    elif source == 'GUILLOCHE':
+        base = _guilloche_strands(arms, amp, petals, phase, samples)
+    elif source == 'SMOOTH_PLAIT':
+        f = round(freq) if boundary == 'TOROIDAL' else freq
+        base = _plait_strands(nx, ny, amp, max(1.0, f)
+                              if boundary == 'TOROIDAL' else f,
+                              phase, samples)
+    else:
+        return []
+    if source in ('WAVY_PLAID', 'WARPED_GRID', 'SMOOTH_PLAIT'):
+        base = _apply_boundary(base, boundary)
+    if style == 'SMOOTH' and int(subdiv) >= 2:
+        base = [(np.asarray(isl.catmull_rom([tuple(q) for q in p],
+                                            c, int(subdiv)), float), c)
+                for p, c in base]
+    return base
+
+
+# --------------------------------------------------------------------
+# Open-tube sweep (for CAPS strands) and curvilinear cell builders
+# --------------------------------------------------------------------
+
+
+def _rmf_reflect(a, b, na, ta, tb):
+    """Double-reflection (rotation-minimizing) transport of normal `na`
+    from frame at a to frame at b."""
+    v1 = b - a
+    c1 = float(v1 @ v1) + 1e-12
+    rl = na - (2.0 / c1) * float(v1 @ na) * v1
+    tl = ta - (2.0 / c1) * float(v1 @ ta) * v1
+    v2 = tb - tl
+    c2 = float(v2 @ v2) + 1e-12
+    return rl - (2.0 / c2) * float(v2 @ rl) * v2
+
+
+def _tube_open(pts, radius, sides):
+    """Sweep a round tube along an OPEN 3-D centerline with a rotation-
+    minimizing frame (no seam holonomy), rings joined in order and the
+    two free ends closed with a blunt cap fan.  Returns (verts, faces).
+    """
+    P = np.asarray(pts, float)
+    n = len(P)
+    if n < 2:
+        return [], []
+    T = np.zeros_like(P)
+    T[1:-1] = P[2:] - P[:-2]
+    T[0] = P[1] - P[0]
+    T[-1] = P[-1] - P[-2]
+    T /= np.linalg.norm(T, axis=1, keepdims=True) + 1e-12
+    ref = (np.array([0.0, 0.0, 1.0]) if abs(T[0, 2]) < 0.9
+           else np.array([1.0, 0.0, 0.0]))
+    n0 = np.cross(T[0], ref)
+    n0 /= np.linalg.norm(n0) + 1e-12
+    N = [n0]
+    for i in range(n - 1):
+        nn = _rmf_reflect(P[i], P[i + 1], N[-1], T[i], T[i + 1])
+        N.append(nn / (np.linalg.norm(nn) + 1e-12))
+    N = np.array(N)
+    ring0 = 2.0 * pi * np.arange(sides) / sides
+    ca, sa = np.cos(ring0), np.sin(ring0)
+    verts, bases = [], []
+    for i in range(n):
+        Bv = np.cross(T[i], N[i])
+        ring = P[i] + radius * (ca[:, None] * N[i] + sa[:, None] * Bv)
+        bases.append(len(verts))
+        verts.extend(map(tuple, ring))
+    faces = []
+    for i in range(n - 1):
+        for s in range(sides):
+            s2 = (s + 1) % sides
+            faces.append([bases[i] + s, bases[i] + s2,
+                          bases[i + 1] + s2, bases[i + 1] + s])
+    c0 = len(verts)
+    verts.append(tuple(P[0]))
+    for s in range(sides):
+        s2 = (s + 1) % sides
+        faces.append([c0, bases[0] + s2, bases[0] + s])
+    c1 = len(verts)
+    verts.append(tuple(P[-1]))
+    for s in range(sides):
+        s2 = (s + 1) % sides
+        faces.append([c1, bases[n - 1] + s, bases[n - 1] + s2])
+    return verts, faces
+
+
+def build_curve_cells(strands=None, carpet=None, cord_width=0.12,
+                      interlace=True, interlace_mode='FLAT',
+                      weave_height=0.05, color_by='LOOP', height=0.0,
+                      backing=False, base=0.06):
+    """One merged (verts, faces, mats) mitered-ribbon cell per
+    curvilinear strand (open or closed), plus an optional backing slab
+    -- the curvilinear analogue of `build_cells`."""
+    if carpet is None:
+        carpet = build_curve_carpet(strands)
+    signed = loop_signed(carpet)
+    width = max(0.01, float(cord_width))
+    cells = []
+    all_verts = []
+    for i, path in enumerate(carpet['paths']):
+        pl = [tuple(p) for p in path]
+        sub = _loop_cell(pl, signed[i], width, interlace,
+                         interlace_mode, weave_height, height,
+                         color_by, i, closed=carpet['closed'][i])
+        if not sub:
+            continue
+        cell = pc.merge_cells(sub)
+        if not cell[1]:
+            continue
+        cells.append(cell)
+        all_verts.extend(cell[0])
+    if backing and all_verts:
+        a = np.asarray(all_verts, float)
+        lo = (a[:, 0].min(), a[:, 1].min())
+        hi = (a[:, 0].max(), a[:, 1].max())
+        cv, cf, cm = [], [], []
+        pc.slab(cv, cf, cm, lo, hi, 0.0, -base, mat=_BACKING_MAT)
+        cells.append((cv, cf, cm))
+    return cells
+
+
+def build_curve_tube_cells(strands=None, carpet=None, tube_radius=0.04,
+                           tube_sides=10, weave_height=0.06,
+                           color_by='LOOP', backing=False, base=0.06):
+    """One round woven tube per curvilinear strand: closed strands are
+    swept as seamless loops (`_tube_welded`), open strands as capped
+    open tubes (`_tube_open`), each dipping in z at its crossings so the
+    carpet reads as woven rope."""
+    if carpet is None:
+        carpet = build_curve_carpet(strands)
+    signed = loop_signed(carpet)
+    tr = max(0.005, float(tube_radius))
+    lift = max(float(weave_height), 1.3 * tr)
+    sides = max(3, int(tube_sides))
+    cells = []
+    all_verts = []
+    for i, path in enumerate(carpet['paths']):
+        cl = carpet['closed'][i]
+        pl2 = [(float(p[0]), float(p[1])) for p in path]
+        zoff = isl._weave_zoff(pl2, cl, signed[i], lift)
+        path3d = [(pl2[j][0], pl2[j][1], zoff[j])
+                  for j in range(len(pl2))]
+        if cl:
+            verts, faces = _tube_welded(path3d, tr, sides)
+        else:
+            verts, faces = _tube_open(path3d, tr, sides)
+        if not faces:
+            continue
+        mat = (i % len(pc.PALETTE_RGBA)) if color_by == 'LOOP' else 0
+        cells.append((verts, faces, [mat] * len(faces)))
+        all_verts.extend(verts)
+    if backing and all_verts:
+        a = np.asarray(all_verts, float)
+        lo = (a[:, 0].min(), a[:, 1].min())
+        hi = (a[:, 0].max(), a[:, 1].max())
+        cv, cf, cm = [], [], []
+        pc.slab(cv, cf, cm, lo, hi, -tr, -tr - base, mat=_BACKING_MAT)
+        cells.append((cv, cf, cm))
+    return cells
+
+
+def curve_loop_paths(strands=None, carpet=None):
+    """Strand centerlines [(points, closed)] for the CURVE output (each
+    strand a POLY spline, cyclic iff the strand is closed)."""
+    if carpet is None:
+        carpet = build_curve_carpet(strands)
+    return [([tuple(p) for p in path], carpet['closed'][i])
+            for i, path in enumerate(carpet['paths'])]
 
 
 # --------------------------------------------------------------------
@@ -3616,6 +4314,73 @@ if _IN_BLENDER:
         separate: BoolProperty(
             name="Separate Loops", default=False,
             description="Output each loop as its own object")
+        source: EnumProperty(
+            name="Source",
+            items=[('ROSETTE', "Rosette Lattice",
+                    "The knot carpet's lattice of k-fold rosette "
+                    "loops (the default -- also drives the sphere / "
+                    "torus / polyhedral / UV scaffolds)"),
+                   ('WAVY_PLAID', "Wavy Plaid",
+                    "Two families of phase-shifted sines woven into a "
+                    "curvilinear plaid"),
+                   ('WARPED_GRID', "Warped Grid",
+                    "A square grid of strands pushed through a smooth "
+                    "swirl displacement"),
+                   ('POLAR', "Polar Rosette",
+                    "Concentric petaled rings crossed with radial "
+                    "petal loops (naturally closed)"),
+                   ('GUILLOCHE', "Guilloche",
+                    "Phase-rotated hypotrochoids (spirograph / rose-"
+                    "engine engraving); self-crossing, best effort"),
+                   ('SMOOTH_PLAIT', "Smooth Plait",
+                    "Diagonal sinusoidal bands turned back at a border "
+                    "into a Celtic-style plait")],
+            default='ROSETTE',
+            description="Strand source: the rosette lattice (default) "
+                        "or a curvilinear curve family fed through the "
+                        "same crossing / weave / strapwork back-end "
+                        "(square/triangular lattice only)")
+        curve_amp: FloatProperty(
+            name="Amplitude", default=0.25, min=0.0, max=1.0,
+            description="Wave amplitude of the curvilinear strands "
+                        "(plaid / plait wobble, polar leaf bow, "
+                        "guilloche pen offset)")
+        curve_freq: FloatProperty(
+            name="Frequency", default=1.0, min=0.1, max=6.0,
+            description="Sine cycles per cell (wavy plaid / smooth "
+                        "plait) or swirl frequency (warped grid)")
+        curve_phase: FloatProperty(
+            name="Phase", default=1.5708, min=0.0, max=6.2832,
+            description="Per-strand phase stagger (wavy plaid / plait) "
+                        "or base rotation of the guilloche copies")
+        warp: FloatProperty(
+            name="Warp Strength", default=0.18, min=0.0, max=0.6,
+            description="Displacement strength of the warped-grid "
+                        "swirl")
+        petals: IntProperty(
+            name="Petals / Copies", default=5, min=2, max=16,
+            description="Ring lobe count (polar) or number of phase-"
+                        "rotated guilloche copies")
+        arms: IntProperty(
+            name="Arms", default=6, min=2, max=16,
+            description="Radial petal count (polar) or the spirograph "
+                        "wheel size R (guilloche)")
+        boundary: EnumProperty(
+            name="Boundary",
+            items=[('FRAME', "Frame",
+                    "Turn open ends back onto a rectangular frame so "
+                    "the strands close (default)"),
+                   ('CAPS', "Caps",
+                    "Leave the strands open with rounded / blunt end "
+                    "caps (a fringed edge)"),
+                   ('TOROIDAL', "Toroidal",
+                    "Snap the wave to whole cycles so opposite edges "
+                    "match, then frame -- the block tiles")],
+            default='FRAME',
+            description="How the OPEN curvilinear families (wavy "
+                        "plaid, warped grid, smooth plait) finish their "
+                        "ends; closed families (polar, guilloche) "
+                        "ignore it")
 
         def _execute_polyhedral(self, context):
             """The polyhedral carpet: one woven medallion on each real
@@ -3957,7 +4722,76 @@ if _IN_BLENDER:
                             % (name, len(cells)))
             return {'FINISHED'}
 
+        def _execute_curve(self, context):
+            """A curvilinear-interlace carpet: build the chosen curve
+            family's strand centerlines, lace them with the generic
+            crossing back-end, and emit through the same flat ribbon /
+            tube / curve path as the planar rosette lattice.  These are
+            planar sources -- they use the flat output, not the sphere /
+            torus / polyhedral / UV scaffolds."""
+            strands = curve_source_strands(
+                self.source, self.nx, self.ny, self.curve_amp,
+                self.curve_freq, self.curve_phase, self.warp,
+                self.petals, self.arms, self.samples, self.boundary,
+                self.style, self.smoothness)
+            if not strands:
+                self.report({'ERROR'}, "no strands generated")
+                return {'CANCELLED'}
+            carpet = build_curve_carpet(strands)
+            label = "Knot Carpet (%s)" % self.source.replace('_', ' ')\
+                .title()
+            nc = len(carpet['crossings'])
+            conf = carpet['conflicts']
+            if self.output == 'CURVE':
+                paths = curve_loop_paths(carpet=carpet)
+                obj = _emit_curve(context, label, paths, operator=self)
+                if obj is None:
+                    self.report({'ERROR'}, "no carpet generated")
+                    return {'CANCELLED'}
+                obj["math_art_pattern"] = True
+                self.report({'INFO'},
+                            "%s  %d strands  %d crossings  %d conflicts"
+                            % (self.source, len(strands), nc, conf))
+                return {'FINISHED'}
+            if self.output == 'RIBBON':
+                cells = build_curve_cells(
+                    carpet=carpet, cord_width=self.cord_width,
+                    interlace=self.interlace,
+                    interlace_mode=self.interlace_mode,
+                    weave_height=self.weave_height,
+                    color_by=self.color_by, height=self.height,
+                    backing=self.backing, base=self.base)
+            else:
+                cells = build_curve_tube_cells(
+                    carpet=carpet, tube_radius=self.tube_radius,
+                    tube_sides=self.tube_sides,
+                    weave_height=self.weave_height,
+                    color_by=self.color_by, backing=self.backing,
+                    base=self.base)
+            obj = pc.emit(context, label, cells, self.separate,
+                          fit=True, operator=self)
+            if obj is None:
+                self.report({'ERROR'}, "no carpet generated")
+                return {'CANCELLED'}
+            obj["math_art_pattern"] = True
+            if self.output == 'TUBE':
+                _shade_smooth(obj)
+            if obj.type == 'MESH':
+                self.report({'INFO'},
+                            "%s  %d strands  %d crossings  %d "
+                            "conflicts  V=%d F=%d"
+                            % (self.source, len(strands), nc, conf,
+                               len(obj.data.vertices),
+                               len(obj.data.polygons)))
+            else:
+                self.report({'INFO'}, "%s  %d strands" %
+                            (self.source, len(strands)))
+            return {'FINISHED'}
+
         def execute(self, context):
+            if (self.source != 'ROSETTE'
+                    and self.lattice in ('SQUARE', 'TRIANGULAR')):
+                return self._execute_curve(context)
             if self.lattice == 'SPHERE':
                 return self._execute_sphere(context)
             if self.lattice == 'POLYHEDRAL':
@@ -4027,6 +4861,60 @@ if _IN_BLENDER:
                              len(obj.children)))
             return {'FINISHED'}
 
+        def _draw_curve(self, lay):
+            """UI for the curvilinear sources (source != ROSETTE)."""
+            src = self.source
+            open_fam = src in ('WAVY_PLAID', 'WARPED_GRID',
+                               'SMOOTH_PLAIT')
+            lay.prop(self, 'nx')
+            lay.prop(self, 'ny')
+            lay.prop(self, 'samples')
+            if src in ('WAVY_PLAID', 'SMOOTH_PLAIT'):
+                lay.prop(self, 'curve_amp')
+                lay.prop(self, 'curve_freq')
+                lay.prop(self, 'curve_phase')
+            elif src == 'WARPED_GRID':
+                lay.prop(self, 'warp')
+                lay.prop(self, 'curve_freq')
+            elif src == 'POLAR':
+                lay.prop(self, 'curve_amp')
+                lay.prop(self, 'petals')
+                lay.prop(self, 'arms')
+            elif src == 'GUILLOCHE':
+                lay.prop(self, 'curve_amp')
+                lay.prop(self, 'arms')
+                lay.prop(self, 'petals')
+                lay.prop(self, 'curve_phase')
+            if open_fam:
+                lay.prop(self, 'boundary')
+            lay.prop(self, 'style')
+            if self.style == 'SMOOTH':
+                lay.prop(self, 'smoothness')
+            lay.prop(self, 'output')
+            if self.output == 'RIBBON':
+                lay.prop(self, 'cord_width')
+                lay.prop(self, 'interlace')
+                if self.interlace:
+                    lay.prop(self, 'interlace_mode')
+                    if self.interlace_mode == 'WOVEN':
+                        lay.prop(self, 'weave_height')
+                lay.prop(self, 'color_by')
+                lay.prop(self, 'height')
+                lay.prop(self, 'backing')
+                if self.backing:
+                    lay.prop(self, 'base')
+                lay.prop(self, 'separate')
+            elif self.output == 'TUBE':
+                lay.prop(self, 'tube_radius')
+                lay.prop(self, 'tube_sides')
+                lay.prop(self, 'weave_height')
+                lay.prop(self, 'color_by')
+                lay.prop(self, 'backing')
+                if self.backing:
+                    lay.prop(self, 'base')
+                lay.prop(self, 'separate')
+            lay.prop(self, 'align')
+
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
@@ -4036,6 +4924,14 @@ if _IN_BLENDER:
             tiling = self.lattice == 'TILING'
             torus = self.lattice == 'TORUS'
             uvmesh = self.lattice == 'UVMESH'
+            if self.lattice in ('SQUARE', 'TRIANGULAR'):
+                # curvilinear strand sources are planar (square /
+                # triangular lattice only); the scaffolds keep the
+                # rosette lattice
+                lay.prop(self, 'source')
+                if self.source != 'ROSETTE':
+                    self._draw_curve(lay)
+                    return
             if sphere:
                 # lobe count is AUTO on the sphere (follows the
                 # scaffold degree), so symmetry is not shown
@@ -5165,5 +6061,86 @@ if __name__ == "__main__":
               "clipped=%d gappy-ribbon=%d(<%d) : %s"
               % (_tn, rf_t, tf_t, len(cp_t), on_t, clip_t, rf_tg, rf_t,
                  good_t))
+
+    # 18. curvilinear interlace sources: each curve family flows through
+    #     the GENERIC crossing back-end (all pairwise + self crossings,
+    #     broadphase) and the same over/under solve.  For every source
+    #     check: strands generated; crossings found; the broadphase
+    #     crossing set EQUALS brute force; the solve ran (report
+    #     consistent + conflicts) -- the bipartite families WAVY_PLAID /
+    #     WARPED_GRID must be consistent with 0 conflicts, GUILLOCHE /
+    #     POLAR / SMOOTH_PLAIT best-effort (a small conflict fraction);
+    #     and finite non-empty RIBBON / TUBE / CURVE geometry.
+    def _fin(cells):
+        return all(all(np.isfinite(v).all() for v in c[0])
+                   for c in cells)
+
+    _bipartite = ('WAVY_PLAID', 'WARPED_GRID')
+    for src in ('WAVY_PLAID', 'WARPED_GRID', 'POLAR', 'GUILLOCHE',
+                'SMOOTH_PLAIT'):
+        strands = curve_source_strands(src, 3, 3, 0.25, 1.0, 1.5708,
+                                       0.18, 5, 6, 160, 'FRAME')
+        car = build_curve_carpet(strands)
+        nc = len(car['crossings'])
+        # broadphase == brute force on this case
+        brute = _curve_crossings_brute(car['paths'], car['closed'])
+        bp_ok = _crossing_sig(brute) == _crossing_sig(car['crossings'])
+        rc = build_curve_cells(carpet=car, interlace_mode='WOVEN',
+                               weave_height=0.05, height=0.03)
+        tc = build_curve_tube_cells(carpet=car, tube_sides=8)
+        cp = curve_loop_paths(carpet=car)
+        rf = sum(len(c[1]) for c in rc)
+        tf = sum(len(c[1]) for c in tc)
+        cfin = all(np.isfinite(np.asarray(p)).all() for p, _c in cp)
+        conf = car['conflicts']
+        if src in _bipartite:
+            conf_ok = car['consistent'] and conf == 0
+        else:                                # best-effort families
+            conf_ok = conf <= max(2, int(0.12 * nc))
+        good = (len(strands) > 0 and nc > 0 and bp_ok and conf_ok
+                and rf > 0 and _fin(rc) and tf > 0 and _fin(tc)
+                and len(cp) > 0 and cfin)
+        ok = ok and good
+        print("curve %-13s : strands=%d crossings=%d conflicts=%d "
+              "consistent=%s bp==bf=%s ribbon=%d tube=%d curve=%d : %s"
+              % (src, len(strands), nc, conf, car['consistent'],
+                 bp_ok, rf, tf, len(cp), good))
+
+    # 18b. boundary modes for the open families: CAPS keeps strands open
+    #      (rounded/blunt caps, curve tubes still finite), FRAME and
+    #      TOROIDAL close them; all three build finite non-empty geometry.
+    for bnd in ('FRAME', 'CAPS', 'TOROIDAL'):
+        strands = curve_source_strands('WAVY_PLAID', 3, 3, 0.25, 1.0,
+                                       1.5708, 0.18, 5, 6, 120, bnd)
+        car = build_curve_carpet(strands)
+        n_open = sum(1 for c in car['closed'] if not c)
+        tc = build_curve_tube_cells(carpet=car, tube_sides=8)
+        rc = build_curve_cells(carpet=car)
+        tf = sum(len(c[1]) for c in tc)
+        rf = sum(len(c[1]) for c in rc)
+        want_open = (bnd == 'CAPS')
+        good = (tf > 0 and _fin(tc) and rf > 0 and _fin(rc)
+                and (n_open > 0) == want_open)
+        ok = ok and good
+        print("curve boundary %-8s : open_strands=%d crossings=%d "
+              "ribbon=%d tube=%d : %s"
+              % (bnd, n_open, len(car['crossings']), rf, tf, good))
+
+    # 18c. the ROSETTE default path is untouched: build_curve_carpet is
+    #      never on the rosette code path, and the lattice carpet still
+    #      solves identically (guarded by section 1-3 above); confirm the
+    #      curve back-end also handles a lone closed loop's self-crossing.
+    _fig8 = np.array([[np.sin(t), np.sin(2 * t)]
+                      for t in np.linspace(0, 2 * pi, 200,
+                                           endpoint=False)])
+    _f8 = build_curve_carpet([(_fig8, True)])
+    _f8_bf = _crossing_sig(_curve_crossings_brute(_f8['paths'],
+                                                  _f8['closed']))
+    _f8_ok = (len(_f8['crossings']) >= 1
+              and _f8_bf == _crossing_sig(_f8['crossings']))
+    ok = ok and _f8_ok
+    print("curve self-cross figure-8 : crossings=%d bp==bf=%s : %s"
+          % (len(_f8['crossings']),
+             _f8_bf == _crossing_sig(_f8['crossings']), _f8_ok))
 
     print("RESULT:", "OK" if ok else "BAD")
