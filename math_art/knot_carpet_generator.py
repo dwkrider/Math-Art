@@ -1445,6 +1445,240 @@ def curve_loop_paths(strands=None, carpet=None):
 
 
 # --------------------------------------------------------------------
+# Faces (mosaic) output: fill the arrangement cells
+# --------------------------------------------------------------------
+#
+# The strand network divides the plane into regions (the faces of the
+# planar arrangement); this output fills each region as a flat polygon,
+# inset by half the ribbon width so the strands read as the channels
+# (leading) between the tiles.  No over/under -- the ribbons simply
+# cross.  Faces are optionally coloured so congruent tiles share a
+# colour (a signature of corner count + area/perimeter buckets), the way
+# a tiling's symmetry classes do.  The bounded cells are extracted with
+# Blender's planar edge-net fill after the strands are NODED at every
+# crossing (a shared vertex welded in at each intersection); open
+# families are first closed against one clean rectangular border so the
+# boundary cells fill (the weave's nested per-strand frames would leave
+# spurious ring cells).
+
+
+def _poly_area2(P):
+    x = P[:, 0]
+    y = P[:, 1]
+    return 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
+
+
+def _mosaic_border(carpet):
+    """A single clean rectangular border closing all OPEN strand ends, as
+    one closed polyline through the four corners plus every open endpoint
+    (each lies on the content rectangle for the grid families), sorted
+    around the perimeter -- so the boundary cells fill cleanly.  Returns
+    (border_or_None, rect): rect = (x0, y0, x1, y1) is the clip window,
+    None border when every strand is already closed."""
+    paths = carpet['paths']
+    closed = carpet['closed']
+    ends = []
+    for p, c in zip(paths, closed):
+        if not c and len(p) >= 2:
+            ends.append(np.asarray(p[0], float))
+            ends.append(np.asarray(p[-1], float))
+    if not ends:
+        allpts = np.concatenate([np.asarray(p, float) for p in paths])
+        mn = allpts.min(axis=0)
+        mx = allpts.max(axis=0)
+        return None, (float(mn[0]), float(mn[1]), float(mx[0]),
+                      float(mx[1]))
+    E = np.asarray(ends, float)
+    x0, y0 = float(E[:, 0].min()), float(E[:, 1].min())
+    x1, y1 = float(E[:, 0].max()), float(E[:, 1].max())
+    rect = (x0, y0, x1, y1)
+    # bucket endpoints onto the four edges (nearest), then order each edge
+    bottom, right, top, left = [], [], [], []
+    for q in E:
+        db, dt = abs(q[1] - y0), abs(q[1] - y1)
+        dl, dr = abs(q[0] - x0), abs(q[0] - x1)
+        m = min(db, dt, dl, dr)
+        if m == db:
+            bottom.append(q)
+        elif m == dr:
+            right.append(q)
+        elif m == dt:
+            top.append(q)
+        else:
+            left.append(q)
+    bottom.sort(key=lambda q: q[0])
+    right.sort(key=lambda q: q[1])
+    top.sort(key=lambda q: -q[0])
+    left.sort(key=lambda q: -q[1])
+    ring = ([np.array([x0, y0])] + bottom + [np.array([x1, y0])]
+            + right + [np.array([x1, y1])] + top + [np.array([x0, y1])]
+            + left)
+    # drop consecutive duplicates
+    out = [ring[0]]
+    for q in ring[1:]:
+        if np.linalg.norm(q - out[-1]) > 1e-7:
+            out.append(q)
+    return np.asarray(out, float), rect
+
+
+def _face_signature(loop, corners, span):
+    """A rotation/reflection-invariant class key for `loop`: the number
+    of true corners (crossing nodes on its boundary) plus relative area
+    and perimeter buckets (~12% tolerance), so congruent tiles group."""
+    P = loop
+    area = abs(_poly_area2(P))
+    per = float(np.sum(np.linalg.norm(np.roll(P, -1, 0) - P, axis=1)))
+    unit = max(span, 1e-6)
+    ab = round(np.log(max(area, 1e-9) / (unit * unit)) / np.log(1.12))
+    pb = round(np.log(max(per, 1e-9) / unit) / np.log(1.12))
+    return (int(corners), int(ab), int(pb))
+
+
+def build_face_cells(strands=None, carpet=None, cord_width=0.12,
+                     face_color='SHAPE', backing=False, base=0.06,
+                     add_border=True):
+    """Fill the planar-arrangement cells of the strand network as flat
+    polygons, inset by half `cord_width` so the strands read as channels
+    between the tiles.  `face_color` is 'UNIFORM' (one colour) or 'SHAPE'
+    (congruent tiles share a colour).  `add_border` closes the open ends
+    of the GRID families against one clean rectangle (their ends lie on
+    it); radial families (polar / spiral) leave it off -- their open ends
+    are interior spoke tips, not a boundary.  Returns (verts, faces,
+    mats) cells (one per tile), plus an optional backing slab.  Uses
+    Blender's edge-net fill, so it runs inside Blender only."""
+    import bmesh
+    if carpet is None:
+        carpet = build_curve_carpet(strands)
+    paths = carpet['paths']
+    closed = carpet['closed']
+
+    def _pt_at(path, f):
+        n = len(path)
+        seg = int(np.floor(f))
+        t = f - seg
+        return path[seg % n] * (1.0 - t) + path[(seg + 1) % n] * t
+
+    con = {i: [] for i in range(len(paths))}
+    for _key, s1, s2, f1, f2 in carpet['crossings']:
+        con[s1].append((f1, _pt_at(paths[s1], f1)))
+        con[s2].append((f2, _pt_at(paths[s2], f2)))
+    noded = []
+    for i, path in enumerate(paths):
+        n = len(path)
+        items = [(float(k), path[k]) for k in range(n)]
+        items += [(f, p) for f, p in con[i]]
+        items.sort(key=lambda z: z[0])
+        noded.append(([p for _f, p in items], closed[i]))
+    if add_border:
+        border, rect = _mosaic_border(carpet)
+    else:
+        border = None
+        allpts = np.concatenate([np.asarray(p, float) for p in paths])
+        mn = allpts.min(axis=0)
+        mx = allpts.max(axis=0)
+        rect = (float(mn[0]), float(mn[1]), float(mx[0]), float(mx[1]))
+    span = max(rect[2] - rect[0], rect[3] - rect[1], 1e-6)
+
+    bm = bmesh.new()
+
+    def _add(pts, cyc):
+        vs = [bm.verts.new((float(p[0]), float(p[1]), 0.0)) for p in pts]
+        m = len(vs)
+        for k in (range(m) if cyc else range(m - 1)):
+            try:
+                bm.edges.new((vs[k], vs[(k + 1) % m]))
+            except ValueError:
+                pass
+
+    for pts, cyc in noded:
+        _add(pts, cyc)
+    if border is not None:
+        _add(border, True)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=4e-3)
+    res = bmesh.ops.edgenet_fill(bm, edges=[e for e in bm.edges])
+    bfaces = res.get('faces', [])
+
+    # keep the bounded cells inside the clip window
+    keep = []
+    for f in bfaces:
+        cen = f.calc_center_median()
+        if (rect[0] - 1e-6 <= cen.x <= rect[2] + 1e-6
+                and rect[1] - 1e-6 <= cen.y <= rect[3] + 1e-6):
+            keep.append(f)
+    if not keep:
+        bm.free()
+        return []
+    # drop only a near-total region (a degenerate outer fill); legitimate
+    # cells vary widely in size (small border slivers vs large interior
+    # tiles), so a median-relative cut would wrongly delete big real cells
+    rect_area = max((rect[2] - rect[0]) * (rect[3] - rect[1]), 1e-9)
+    keep = [f for f in keep if f.calc_area() <= 0.5 * rect_area]
+    keep_set = set(keep)
+    if not keep:
+        bm.free()
+        return []
+
+    # colour class per cell (congruent tiles share a colour), stamped on
+    # material_index BEFORE the inset so it rides onto the inner tile
+    cls = {}
+    for f in keep:
+        if face_color == 'UNIFORM':
+            f.material_index = 0
+            continue
+        P = np.asarray([(v.co.x, v.co.y) for v in f.verts], float)
+        corners = sum(1 for v in f.verts if len(v.link_edges) > 2)
+        sig = _face_signature(P, corners, span)
+        f.material_index = cls.setdefault(sig, len(cls)) % len(
+            pc.PALETTE_RGBA)
+
+    drop = [f for f in bm.faces if f not in keep_set]
+    if drop:
+        bmesh.ops.delete(bm, geom=drop, context='FACES')
+
+    # inset each tile inward by half the ribbon width -> the strands read
+    # as the channels between tiles.  Done per tile with the inset
+    # CLAMPED to a fraction of that tile's inradius (2*area/perimeter),
+    # so a sliver thinner than the ribbon can't fire off a miter spike;
+    # inset_individual returns the RING faces, the shrunk inner tiles are
+    # everything else (robust for the non-convex pinwheel cells a plain
+    # bisector inset would collapse)
+    half = 0.5 * max(0.005, float(cord_width))
+    rings = set()
+    for f in list(bm.faces):
+        area = f.calc_area()
+        per = f.calc_perimeter()
+        if area < 1e-7 or per < 1e-6:
+            continue
+        t = min(half, 0.42 * (2.0 * area / per))
+        if t < 5e-4:
+            continue                          # too thin to inset; leave full
+        r2 = bmesh.ops.inset_individual(
+            bm, faces=[f], thickness=t, depth=0.0, use_even_offset=True)
+        rings.update(r2.get('faces', []))
+
+    cells = []
+    all_verts = []
+    for f in bm.faces:
+        if f in rings or f.calc_area() < 1e-8:
+            continue
+        verts = [(v.co.x, v.co.y, 0.0) for v in f.verts]
+        cells.append((verts, [list(range(len(verts)))],
+                      [f.material_index]))
+        all_verts.extend(verts)
+    bm.free()
+    if not cells:
+        return []
+    if backing and all_verts:
+        a = np.asarray(all_verts, float)
+        lo = (a[:, 0].min(), a[:, 1].min())
+        hi = (a[:, 0].max(), a[:, 1].max())
+        cv, cf, cm = [], [], []
+        pc.slab(cv, cf, cm, lo, hi, 0.0, -base, mat=_BACKING_MAT)
+        cells.append((cv, cf, cm))
+    return cells
+
+
+# --------------------------------------------------------------------
 # Tier-2 relaxation: the physically relaxed rope carpet
 # --------------------------------------------------------------------
 #
@@ -4364,8 +4598,22 @@ if _IN_BLENDER:
                    ('TUBE', "Tube (Rope)",
                     "Round 3D tubes woven over and under, like rope"),
                    ('CURVE', "Centerline Curves",
-                    "Loop centerlines as a Blender curve object")],
+                    "Loop centerlines as a Blender curve object"),
+                   ('FACES', "Faces (Mosaic)",
+                    "Fill the regions bounded by the strands as flat "
+                    "tiles, inset by the ribbon width, coloured uniform "
+                    "or with congruent tiles sharing a colour "
+                    "(curvilinear lattice)")],
             default='RIBBON')
+        face_color: EnumProperty(
+            name="Tile Color",
+            items=[('UNIFORM', "Uniform", "All tiles one colour"),
+                   ('SHAPE', "By Shape",
+                    "Congruent tiles (matching corner count and "
+                    "area/perimeter) share a colour")],
+            default='SHAPE',
+            description="How the mosaic tiles are coloured (Faces "
+                        "output)")
         tube_radius: FloatProperty(
             name="Tube Radius", default=0.04, min=0.005, max=0.25,
             description="Rope radius in loop-spacing units (tube)")
@@ -4855,10 +5103,14 @@ if _IN_BLENDER:
             tube / curve path as the planar rosette lattice.  These are
             planar sources -- they use the flat output, not the sphere /
             torus / polyhedral / UV scaffolds."""
+            # the FACES mosaic supplies its own single clean border, so
+            # open families are generated UNframed (the weave's nested
+            # per-strand frames would seed spurious ring tiles)
+            bnd = 'CAPS' if self.output == 'FACES' else self.boundary
             strands = curve_source_strands(
                 self.source, self.nx, self.ny, self.curve_amp,
                 self.curve_freq, self.curve_phase, self.warp,
-                self.petals, self.arms, self.samples, self.boundary,
+                self.petals, self.arms, self.samples, bnd,
                 self.style, self.smoothness)
             if not strands:
                 self.report({'ERROR'}, "no strands generated")
@@ -4879,7 +5131,18 @@ if _IN_BLENDER:
                             "%s  %d strands  %d crossings  %d conflicts"
                             % (self.source, len(strands), nc, conf))
                 return {'FINISHED'}
-            if self.output == 'RIBBON':
+            if self.output == 'FACES':
+                grid_fam = self.source in ('WAVY_PLAID', 'WARPED_GRID',
+                                           'SMOOTH_PLAIT', 'MOIRE')
+                cells = build_face_cells(
+                    carpet=carpet, cord_width=self.cord_width,
+                    face_color=self.face_color,
+                    backing=self.backing, base=self.base,
+                    add_border=grid_fam)
+                if not cells:
+                    self.report({'ERROR'}, "no faces found")
+                    return {'CANCELLED'}
+            elif self.output == 'RIBBON':
                 cells = build_curve_cells(
                     carpet=carpet, cord_width=self.cord_width,
                     interlace=self.interlace,
@@ -5058,6 +5321,13 @@ if _IN_BLENDER:
                 lay.prop(self, 'tube_sides')
                 lay.prop(self, 'weave_height')
                 lay.prop(self, 'color_by')
+                lay.prop(self, 'backing')
+                if self.backing:
+                    lay.prop(self, 'base')
+                lay.prop(self, 'separate')
+            elif self.output == 'FACES':
+                lay.prop(self, 'cord_width')     # ribbon width = gap
+                lay.prop(self, 'face_color')
                 lay.prop(self, 'backing')
                 if self.backing:
                     lay.prop(self, 'base')
