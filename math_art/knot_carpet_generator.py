@@ -4139,6 +4139,12 @@ if _IN_BLENDER:
                     "Loops on a square lattice (4 neighbours)"),
                    ('TRIANGULAR', "Triangular",
                     "Loops on a triangular lattice (6 neighbours)"),
+                   ('CURVILINEAR', "Curvilinear",
+                    "Strands drawn from a family of smooth parametric "
+                    "curves (wavy plaid, warped grid, polar rosette, "
+                    "guilloche, smooth plait) rather than the rosette "
+                    "lattice -- pick the family in Curve Family; a flat "
+                    "woven interlace"),
                    ('SPHERE', "Sphere",
                     "Loops on a spherical tiling -- a geodesic "
                     "icosahedron or the faces of a Platonic / "
@@ -4315,12 +4321,8 @@ if _IN_BLENDER:
             name="Separate Loops", default=False,
             description="Output each loop as its own object")
         source: EnumProperty(
-            name="Source",
-            items=[('ROSETTE', "Rosette Lattice",
-                    "The knot carpet's lattice of k-fold rosette "
-                    "loops (the default -- also drives the sphere / "
-                    "torus / polyhedral / UV scaffolds)"),
-                   ('WAVY_PLAID', "Wavy Plaid",
+            name="Curve Family",
+            items=[('WAVY_PLAID', "Wavy Plaid",
                     "Two families of phase-shifted sines woven into a "
                     "curvilinear plaid"),
                    ('WARPED_GRID', "Warped Grid",
@@ -4335,11 +4337,11 @@ if _IN_BLENDER:
                    ('SMOOTH_PLAIT', "Smooth Plait",
                     "Diagonal sinusoidal bands turned back at a border "
                     "into a Celtic-style plait")],
-            default='ROSETTE',
-            description="Strand source: the rosette lattice (default) "
-                        "or a curvilinear curve family fed through the "
-                        "same crossing / weave / strapwork back-end "
-                        "(square/triangular lattice only)")
+            default='WAVY_PLAID',
+            description="Which family of smooth parametric curves "
+                        "spawns the strands (Curvilinear lattice); fed "
+                        "through the same crossing / weave / strapwork "
+                        "back-end as the rosette lattice")
         curve_amp: FloatProperty(
             name="Amplitude", default=0.25, min=0.0, max=1.0,
             description="Wave amplitude of the curvilinear strands "
@@ -4789,8 +4791,7 @@ if _IN_BLENDER:
             return {'FINISHED'}
 
         def execute(self, context):
-            if (self.source != 'ROSETTE'
-                    and self.lattice in ('SQUARE', 'TRIANGULAR')):
+            if self.lattice == 'CURVILINEAR':
                 return self._execute_curve(context)
             if self.lattice == 'SPHERE':
                 return self._execute_sphere(context)
@@ -4862,7 +4863,7 @@ if _IN_BLENDER:
             return {'FINISHED'}
 
         def _draw_curve(self, lay):
-            """UI for the curvilinear sources (source != ROSETTE)."""
+            """UI for the curvilinear families (Curvilinear lattice)."""
             src = self.source
             open_fam = src in ('WAVY_PLAID', 'WARPED_GRID',
                                'SMOOTH_PLAIT')
@@ -4924,14 +4925,12 @@ if _IN_BLENDER:
             tiling = self.lattice == 'TILING'
             torus = self.lattice == 'TORUS'
             uvmesh = self.lattice == 'UVMESH'
-            if self.lattice in ('SQUARE', 'TRIANGULAR'):
-                # curvilinear strand sources are planar (square /
-                # triangular lattice only); the scaffolds keep the
-                # rosette lattice
+            if self.lattice == 'CURVILINEAR':
+                # a flat curve-family weave: pick the family, then its
+                # own controls (mirrors Sphere -> Sphere Tiling)
                 lay.prop(self, 'source')
-                if self.source != 'ROSETTE':
-                    self._draw_curve(lay)
-                    return
+                self._draw_curve(lay)
+                return
             if sphere:
                 # lobe count is AUTO on the sphere (follows the
                 # scaffold degree), so symmetry is not shown
@@ -6126,7 +6125,7 @@ if __name__ == "__main__":
               "ribbon=%d tube=%d : %s"
               % (bnd, n_open, len(car['crossings']), rf, tf, good))
 
-    # 18c. the ROSETTE default path is untouched: build_curve_carpet is
+    # 18c. the rosette-lattice path is untouched: build_curve_carpet is
     #      never on the rosette code path, and the lattice carpet still
     #      solves identically (guarded by section 1-3 above); confirm the
     #      curve back-end also handles a lone closed loop's self-crossing.
