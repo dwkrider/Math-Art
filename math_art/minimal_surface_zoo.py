@@ -941,15 +941,19 @@ WE_SURFACES = {
         # Tilted Scherk: the doubly periodic Scherk surface with a Lopez-Ros
         # deformation Rho that tilts its four ends.  g = Rho z,
         # dh = 4z/(z^4 - 1); genus 0, four ends at the 4th roots of unity.
-        # One fundamental saddle is meshed from the exact log-sum immersion
-        # (_tiltscherk_X) on the punctured unit disk -- the two horizontal
-        # end periods are the doubly periodic lattice translations, only the
-        # vertical period vanishes, so a single saddle is the natural unit.
-        # Rho (from the radius slider) is the tilt; Rho = 1 is symmetric.
+        # The Weierstrass data here (phi / Xexact) drives the period-closure
+        # gate.  The OPERATOR meshes it connected and gap-free over the whole
+        # Cells U x V block via toolkit._tilt_scherk_doubly: the tilt is
+        # exactly a horizontal reparametrization of the classical Scherk graph
+        # (height unchanged), verified to machine precision against Xexact, so
+        # it tiles as ONE continuous surface with the walls leaned rather than
+        # as disconnected wing-end copies.
+        # Rho (from the radius slider) is the tilt; Rho = 1 is symmetric
+        # (and reproduces SCHERK1 exactly).
         'label': "Tilted Scherk (doubly periodic)",
         'family': 'DOUBLY',
         'phi': _tiltscherk_phi,      # kept for the period-closure gate
-        'Xexact': _tiltscherk_X,     # exact immersion used by the mesher
+        'Xexact': _tiltscherk_X,     # exact immersion (period gate + verify)
         'domain': ('disk', 0.0, 0.999),
         'p_from': lambda order, radius: {
             'Rho': 1.0 + 0.5 * min(max(radius / 1.2, 0.0), 1.6),
