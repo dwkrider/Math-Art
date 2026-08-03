@@ -470,38 +470,15 @@ def _lattice_vectors(kind, order, radius, theta):
     Returns a list of vectors (one per tiling dimension) or None when the
     surface is not arrayed by rigid lattice translation on this path
     (the classical Scherk graph tiles as one continuous grid -- see
-    _scherk_doubly; towers array via their screw motion; Riemann via the
-    torus copies).
+    _scherk_doubly; the tilted Scherk likewise, see _tilt_scherk_doubly;
+    towers array via their screw motion; Riemann via the torus copies).
 
-    * Tilted Scherk: from the four end residues the monodromy period is
-      L = pi (Rho + 1/Rho) along x and y, but (as for the classical Scherk)
-      the fundamental saddle occupies one checkerboard cell, so the true
-      translation lattice is the diagonal (L/2, +-L/2, 0) -- verified by the
-      fundamental body extent equalling L/2.
-
-      NOTE (honesty gate): this places tilted-Scherk cells at their exact
-      period but does NOT weld them into one surface.  The tilted (Lopez-Ros
-      Rho != 1) immersion is meshed out to its four ENDS (wing rims cut on the
-      puncture circles), and those ends run to infinity, so a neighbour's
-      opposite-end wing meets this cell's wing only at infinity -- no finite
-      rigid transform makes the truncated wing rims coincide (verified: zero
-      coincident boundary vertices under translation / z-flip / 180-deg /
-      point reflection at the true period).  Welding it would require
-      re-cutting the fundamental domain along the surface's straight-line /
-      planar symmetry curves (which neighbours share exactly) instead of at
-      the ends, then welding on those shared curves -- a re-mesh of the
-      immersion, deferred here.  The untilted classical Scherk (SCHERK1)
-      instead has vertical asymptotic PLANES and IS meshed connected as the
-      graph z = ln|cos x / cos y| (see _scherk_doubly)."""
-    if kind == 'TILT_SCHERK':
-        b = PARAMETRIC[kind][1]
-        spec = getattr(b, 'spec', None)
-        if spec is None or 'p_from' not in spec:
-            return None
-        p = spec['p_from'](order, radius)
-        rho = float(p['Rho'])
-        h = 0.5 * math.pi * (rho + 1.0 / rho)     # L / 2
-        return [np.array([h, h, 0.0]), np.array([h, -h, 0.0])]
+    Both Scherk surfaces are built connected as ONE continuous graph over the
+    whole cells block (SCHERK1 -> _scherk_doubly, TILT_SCHERK ->
+    _tilt_scherk_doubly, the classical graph with the exact horizontal tilt
+    displacement), so neither needs -- or takes -- the rigid lattice-array
+    path here.  (Their asymptotic walls meet only at infinity, so rigid copies
+    cut on the ends could never weld; the shared-wall graph sidesteps that.)"""
     return None
 
 
@@ -590,6 +567,89 @@ def _scherk_doubly(nu, nv, order, radius, scale, cells_u, cells_v,
     V = np.stack([X, Y, w], axis=-1).reshape(-1, 3)
     # per-vertex conformal-ish UV: the normalised parameter grid, 0..1 over
     # the whole tiled block (the (x, y) graph chart)
+    gu = (np.arange(nx) / max(nx - 1, 1))
+    gv = (np.arange(ny) / max(ny - 1, 1))
+    UVg = np.stack(np.meshgrid(gu, gv, indexing='ij'), axis=-1).reshape(-1, 2)
+    quads = []
+    for i in range(nx - 1):
+        for j in range(ny - 1):
+            b = i * ny + j
+            quads.append((b, b + ny, b + ny + 1, b + 1))
+    V = _center_fit(V, scale, V)
+    if not with_uv:
+        return V, quads
+    q = np.array(quads)
+    cuv = UVg[q].astype(float)
+    return V, quads, cuv.reshape(-1, 2)
+
+
+# --- tilted Scherk: the connected doubly periodic graph, tilted -----------
+# The tilted (Lopez-Ros) Scherk surface deforms the classical doubly periodic
+# Scherk graph by the Lopez-Ros factor Rho (g = Rho z, dh = 4z/(z^4 - 1)),
+# which tilts the two families of asymptotic half-planes so they meet at an
+# angle other than the classical 90 degrees.  Meshed straight from the exact
+# Weierstrass log-sum immersion the surface is a single fundamental saddle cut
+# on its four ends (wing rims), and adjacent lattice copies never weld -- the
+# ends meet only at infinity.
+#
+# But the tilt is exactly a HORIZONTAL reparametrization of the classical
+# Scherk graph, with the HEIGHT left unchanged (derived from, and verified to
+# machine precision against, the log-sum immersion _tiltscherk_X):
+#     x_t = m x - n P(x, y),   y_t = m y + n Q(x, y),   z_t = z = ln|cos x/cos y|
+# where, with the Lopez-Ros factor Rho,
+#     m = (Rho + 1/Rho)/2 ,  n = (Rho - 1/Rho)/2 ,
+#     Q = asinh(-cos x * tan y) ,
+#     P = ln|cos x| - ln|cos y| - ln(cosh Q - sin x) .
+# At Rho = 1 (n = 0, m = 1) the map is the identity and the surface is exactly
+# the classical Scherk graph (SCHERK1).  Because the displacement is a
+# continuous per-vertex function of (x, y), applying it to the single
+# continuous classical grid (which spans the whole cells_u x cells_v block and
+# crosses the shared wall lines by construction) keeps the mesh ONE connected,
+# gap-free component -- the tilt merely leans the shared walls, it does not cut
+# them.  Rho is driven by the radius slider (the surface's tilt control).
+#
+# References:
+#   H. F. Scherk (1835), as for _scherk_doubly (the base doubly periodic
+#     surface and its wall/period lattice);
+#   F. J. Lopez and A. Ros, "On embedded complete minimal surfaces of genus
+#     zero", J. Differential Geom. 33 (1991) 293-300 (the Lopez-Ros
+#     deformation that tilts the ends).
+
+def _tilt_scherk_doubly(nu, nv, rho, scale, cells_u, cells_v,
+                        with_uv=False):
+    """Connected doubly periodic tilted-Scherk graph over cells_u (x) by
+    cells_v (y) pi-period cells -> ONE continuous mesh.  `rho` is the
+    Lopez-Ros tilt factor (rho = 1 reproduces the classical Scherk graph,
+    _scherk_doubly, exactly).  cells = (1, 1) is the single fundamental
+    saddle; larger counts tile it gap-free (shared, leaned walls)."""
+    Cu = int(max(1, cells_u))
+    Cv = int(max(1, cells_v))
+    lim = 0.47 * math.pi            # per-cell half width (matches the 1x1 cell)
+    zcap = 2.8                      # tame the log poles at the wall lines
+    pcap = 2.8                      # matching cap on the tilt displacement
+    per = max(8, int(nu))
+    nx = Cu * per
+    ny = Cv * max(8, int(nv))
+    x = np.linspace(-lim, (Cu - 1) * math.pi + lim, nx)
+    y = np.linspace(-lim, (Cv - 1) * math.pi + lim, ny)
+    X, Y = np.meshgrid(x, y, indexing='ij')
+    with np.errstate(divide='ignore', invalid='ignore'):
+        w = np.log(np.abs(np.cos(X))) - np.log(np.abs(np.cos(Y)))
+        sinhQ = -np.cos(X) * np.tan(Y)
+        Q = np.arcsinh(sinhQ)
+        coshQ = np.sqrt(1.0 + sinhQ ** 2)
+        P = (np.log(np.abs(np.cos(X))) - np.log(np.abs(np.cos(Y)))
+             - np.log(coshQ - np.sin(X)))
+    # clip maps the wall (+-inf) log poles to +-cap correctly; only the
+    # isolated corner lines (both cos -> 0) give nan -> the saddle centre (0)
+    w = np.where(np.isfinite(w), np.clip(w, -zcap, zcap), 0.0)
+    P = np.where(np.isfinite(P), np.clip(P, -pcap, pcap), 0.0)
+    Q = np.where(np.isfinite(Q), np.clip(Q, -pcap, pcap), 0.0)
+    m = 0.5 * (rho + 1.0 / rho)
+    n = 0.5 * (rho - 1.0 / rho)
+    Xt = m * X - n * P
+    Yt = m * Y + n * Q
+    V = np.stack([Xt, Yt, w], axis=-1).reshape(-1, 3)
     gu = (np.arange(nx) / max(nx - 1, 1))
     gv = (np.arange(ny) / max(ny - 1, 1))
     UVg = np.stack(np.meshgrid(gu, gv, indexing='ij'), axis=-1).reshape(-1, 2)
@@ -740,6 +800,17 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
         # asymptotic-plane walls would meet only at infinity.
         return _scherk_doubly(nu, nv, order, radius, scale,
                               cells_u, cells_v, with_uv)
+    if kind == 'TILT_SCHERK':
+        # tilted (Lopez-Ros) Scherk: same connected-graph tiling as SCHERK1,
+        # with the height field untouched and the horizontal coordinates
+        # displaced by the exact tilt map (see _tilt_scherk_doubly).  Rho
+        # (the tilt factor) is read from the surface's own p_from, so the
+        # radius slider drives the tilt; Rho = 1 reproduces SCHERK1 exactly.
+        b = PARAMETRIC[kind][1]
+        spec = getattr(b, 'spec', None)
+        rho = float(spec['p_from'](order, radius)['Rho']) if spec else 1.0
+        return _tilt_scherk_doubly(nu, nv, rho, scale,
+                                   cells_u, cells_v, with_uv)
     if kind in MESH_PARAM:
         # towers: cells_u storeys stacked under the surface's screw motion
         out = MESH_PARAM[kind](nu, nv, order, radius, scale, theta,
