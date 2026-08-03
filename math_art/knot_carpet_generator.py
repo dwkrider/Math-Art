@@ -951,31 +951,37 @@ def _warp_strands(nx, ny, warp, freq, samples):
     return out
 
 
-def _polar_strands(nrings, narms, b, p_ring, bow, samples):
+def _polar_strands(nrings, narms, b, p_ring, twist, samples):
     """Polar interlace: concentric petaled rings r = R_m (1 + b cos p T)
-    crossed with radial petal loops.  Each ring is a closed curve; each
-    radial strand is a closed leaf that sweeps out to the rim and back,
-    bowing +/- `bow` in angle, so it crosses every ring it spans twice.
-    Naturally closed -- no boundary caps."""
+    crossed with radial spiral spokes.  Each ring is a CLOSED petaled
+    curve; each spoke is an OPEN logarithmic-ish spiral running rin ->
+    rout with a gentle angular `twist`, so it crosses every ring exactly
+    once and TRANSVERSALLY -- no folding cusp, no self-overlap.  Spokes
+    fan out from distinct angles so their inner ends never pile up at the
+    centre, and the spoke span brackets the rings so every ring is
+    crossed.  Rings are closed; spokes are open (blunt-capped by the
+    ribbon / tube builders), which the mixed-`closed` back-end laces
+    cleanly."""
     ns = max(64, int(samples))
     out = []
-    r0, r1 = 0.35, 1.0
     nr = max(2, int(nrings))
+    r0, r1 = 0.32, 1.0
     for m in range(nr):
-        R = r0 + (r1 - r0) * (m + 1) / nr
+        R = r0 + (r1 - r0) * m / (nr - 1)
         th = np.linspace(0.0, 2.0 * pi, ns, endpoint=False)
         rr = R * (1.0 + b * np.cos(p_ring * th))
         out.append((np.column_stack([rr * np.cos(th),
                                      rr * np.sin(th)]), True))
-    rin, rout = 0.14, 1.16
+    # spokes bracket the rings (inside the innermost, past the lobed rim)
+    rin, rout = 0.20, r1 * (1.0 + b) + 0.06
     na = max(3, int(narms))
     for a in range(na):
         th_a = 2.0 * pi * a / na
-        s = np.linspace(0.0, 2.0 * pi, ns, endpoint=False)
-        rad = rin + (rout - rin) * (0.5 - 0.5 * np.cos(s))
-        ang = th_a + bow * np.sin(s)
+        t = np.linspace(0.0, 1.0, ns)
+        rad = rin + (rout - rin) * t
+        ang = th_a + twist * t
         out.append((np.column_stack([rad * np.cos(ang),
-                                     rad * np.sin(ang)]), True))
+                                     rad * np.sin(ang)]), False))
     return out
 
 
@@ -1169,8 +1175,8 @@ def curve_source_strands(source, nx, ny, amp, freq, phase, warp,
     elif source == 'WARPED_GRID':
         base = _warp_strands(nx, ny, warp, freq, samples)
     elif source == 'POLAR':
-        base = _polar_strands(ny + 1, arms, 0.4 * amp, petals,
-                              0.35 + amp, samples)
+        base = _polar_strands(ny + 1, arms, 0.35 * amp, petals,
+                              pi * amp, samples)
     elif source == 'GUILLOCHE':
         base = _guilloche_strands(arms, amp, petals, phase, samples)
     elif source == 'SMOOTH_PLAIT':
