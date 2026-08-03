@@ -592,8 +592,9 @@ def _scherk_trim_snap(X, Y, w, zcap):
         m = inside & nb_out                  # rim edge: crosses the contour
         capval = np.sign(nb_w) * zcap        # the wall (+/-) this edge reaches
         denom = nb_w - w
-        t = np.where(m & (np.abs(denom) > 1e-9),
-                     (capval - w) / denom, 0.0)
+        safe = m & (np.abs(denom) > 1e-9)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            t = np.where(safe, (capval - w) / np.where(safe, denom, 1.0), 0.0)
         t = np.clip(t, 0.0, 1.0)             # fraction from this vertex outward
         accX += np.where(m, X + t * (nbX - X), 0.0)
         accY += np.where(m, Y + t * (nbY - Y), 0.0)
