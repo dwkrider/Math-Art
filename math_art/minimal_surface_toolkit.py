@@ -522,7 +522,7 @@ def _array_by_lattice(V, quads, UV, vectors, counts):
 # of the single-square graph never welds -- the walls meet only at z = +-inf.
 #
 # The absolute value fixes this: |cos| is continuous across every wall line, so
-# z = ln|cos x| - ln|cos y| (capped in z to tame the log poles) is ONE
+# z = ln|cos x| - ln|cos y| (trimmed in z at the wall rims) is ONE
 # continuous graph across the whole cells_u x cells_v block -- a single
 # connected component with no seams to weld.  Over an even square it is the
 # classic saddle ln(cos x/cos y); over the neighbouring square it is the same
@@ -540,47 +540,167 @@ def _array_by_lattice(V, quads, UV, vectors, counts):
 #   H. Karcher, K. Polthier, Phil. Trans. R. Soc. Lond. A 354 (1996)
 #     2077-2104 (the Scherk family and its period lattice).
 
+def _shift2d(a, di, dj, fill):
+    """`a` shifted so result[i, j] == a[i + di, j + dj]; the wrapped edge that
+    falls off the grid is set to `fill`, so no false neighbours are seen across
+    the grid boundary."""
+    b = np.roll(a, (-di, -dj), axis=(0, 1))
+    if di == 1:
+        b[-1, :] = fill
+    elif di == -1:
+        b[0, :] = fill
+    if dj == 1:
+        b[:, -1] = fill
+    elif dj == -1:
+        b[:, 0] = fill
+    return b
+
+
+def _scherk_trim_snap(X, Y, w, zcap):
+    """Truncate the height graph w over the (X, Y) grid at |w| = zcap by
+    TRIMMING (not clamping) the over-cap region, then snapping the surviving
+    rim vertices onto the exact |w| = zcap contour.
+
+    A plain np.clip(w, -zcap, zcap) leaves a flat plateau capping every wall;
+    keeping only faces whose four corners are all `inside` (|w| <= zcap) drops
+    the caps and leaves each wall ending in an OPEN slot down its top/bottom.
+    Where the wall slit is wider than the grid the slot opens; where it narrows
+    to sub-grid width (near the corners) the grid steps over it and the cells
+    stay joined -- exactly the corner necks that keep the whole block one
+    connected component.
+
+    A raw trim edge is a stair-step, so each surviving rim vertex (an `inside`
+    vertex with an over-cap neighbour) is moved OUTWARD along its edge(s) to the
+    over-cap side, onto the |w| = zcap crossing, and its height set to the cap:
+    the truncation edge then follows the true contour and the wall reaches full
+    height.  The domain's outer boundary has no over-cap neighbour, so it is
+    left untouched (the finite-patch saddle cut).
+
+    Returns (keep (nx, ny) bool, Xf, Yf, Zf); keep == `inside`."""
+    finite = np.isfinite(w)
+    inside = finite & (np.abs(w) <= zcap)
+    outside = finite & ~inside               # over-cap, excluding nan corners
+    accX = np.zeros_like(w)
+    accY = np.zeros_like(w)
+    accZ = np.zeros_like(w)
+    cnt = np.zeros_like(w)
+    for di, dj in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+        nb_out = _shift2d(outside, di, dj, False)
+        nb_w = _shift2d(w, di, dj, np.nan)
+        nbX = _shift2d(X, di, dj, np.nan)
+        nbY = _shift2d(Y, di, dj, np.nan)
+        m = inside & nb_out                  # rim edge: crosses the contour
+        capval = np.sign(nb_w) * zcap        # the wall (+/-) this edge reaches
+        denom = nb_w - w
+        safe = m & (np.abs(denom) > 1e-9)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            t = np.where(safe, (capval - w) / np.where(safe, denom, 1.0), 0.0)
+        t = np.clip(t, 0.0, 1.0)             # fraction from this vertex outward
+        accX += np.where(m, X + t * (nbX - X), 0.0)
+        accY += np.where(m, Y + t * (nbY - Y), 0.0)
+        accZ += np.where(m, capval, 0.0)
+        cnt += m
+    rim = inside & (cnt > 0)
+    d = np.maximum(cnt, 1.0)
+    Xf = np.where(rim, accX / d, X)
+    Yf = np.where(rim, accY / d, Y)
+    Zf = np.where(rim, accZ / d, np.where(inside, w, 0.0))
+    return inside, Xf, Yf, Zf
+
+
+def _scherk_block(nu, nv, scale, cells_u, cells_v, rho, with_uv=False):
+    """Shared builder for the two doubly periodic Scherk graphs.  Meshes the
+    continuous graph z = ln|cos x| - ln|cos y| over cells_u (x) by cells_v (y)
+    pi-period cells as ONE connected component, truncates the walls at
+    |z| = zcap by trim-and-snap (see _scherk_trim_snap), and -- for rho != 1 --
+    applies the exact Lopez-Ros tilt reparametrization to the KEPT vertices
+    only, so no clamp plateau survives to be sheared into blocky slabs.
+    rho == 1 is the classical Scherk graph exactly."""
+    Cu = int(max(1, cells_u))
+    Cv = int(max(1, cells_v))
+    lim = 0.47 * math.pi            # per-cell half width (matches the 1x1 cell)
+    zcap = 2.8                      # wall truncation height
+    # cells centred at x = k pi (k = 0..Cu-1); the grid spans the interior wall
+    # lines x = pi/2 + k pi (y likewise).  Sample with an ODD count per cell and
+    # a vertex on every cell centre (x = k pi) so each wall line falls on a
+    # cell-edge MIDPOINT and each corner (pi/2 + k pi, pi/2 + l pi) sits at a
+    # grid-cell centre.  That alignment makes the trim robust: along a wall the
+    # slit (over-cap cells) opens as a clean slot, while the single grid cell
+    # straddling each corner has all four corners near w = ln(dx/dy) ~ 0 and so
+    # is always kept -- a bridging quad that welds the four cells there (the
+    # corner neck), keeping the whole block ONE connected component.
+    per_x = int(max(9, nu)) | 1     # odd samples across one x-cell
+    per_y = int(max(9, nv)) | 1
+    dx = math.pi / per_x
+    dy = math.pi / per_y
+    x_hi = (Cu - 1) * math.pi + lim
+    y_hi = (Cv - 1) * math.pi + lim
+    x = np.arange(math.ceil(-lim / dx), math.floor(x_hi / dx) + 1) * dx
+    y = np.arange(math.ceil(-lim / dy), math.floor(y_hi / dy) + 1) * dy
+    nx = len(x)
+    ny = len(y)
+    X, Y = np.meshgrid(x, y, indexing='ij')
+    with np.errstate(divide='ignore', invalid='ignore'):
+        w = np.log(np.abs(np.cos(X))) - np.log(np.abs(np.cos(Y)))
+    keep, Xf, Yf, Zf = _scherk_trim_snap(X, Y, w, zcap)
+    if rho == 1.0:
+        Xo, Yo = Xf, Yf
+    else:
+        # exact horizontal tilt map, evaluated on the trimmed+snapped vertices;
+        # the height Zf is left unchanged (the tilt only leans the walls).  On
+        # the kept region P, Q stay bounded (~+-3.5 for zcap = 2.8), so no cap
+        # is needed -- the old pcap clamp only distorted the near-wall band.
+        with np.errstate(divide='ignore', invalid='ignore'):
+            sinhQ = -np.cos(Xf) * np.tan(Yf)
+            Q = np.arcsinh(sinhQ)
+            coshQ = np.sqrt(1.0 + sinhQ ** 2)
+            P = (np.log(np.abs(np.cos(Xf))) - np.log(np.abs(np.cos(Yf)))
+                 - np.log(coshQ - np.sin(Xf)))
+        P = np.where(np.isfinite(P), P, 0.0)
+        Q = np.where(np.isfinite(Q), Q, 0.0)
+        m = 0.5 * (rho + 1.0 / rho)
+        n = 0.5 * (rho - 1.0 / rho)
+        Xo = m * Xf - n * P
+        Yo = m * Yf + n * Q
+    Vfull = np.stack([Xo, Yo, Zf], axis=-1).reshape(-1, 3)
+    # per-vertex conformal-ish UV: the normalised parameter grid, 0..1 over
+    # the whole tiled block (the (x, y) graph chart)
+    gu = (np.arange(nx) / max(nx - 1, 1))
+    gv = (np.arange(ny) / max(ny - 1, 1))
+    UVfull = np.stack(np.meshgrid(gu, gv, indexing='ij'),
+                      axis=-1).reshape(-1, 2)
+    # quads over the grid whose four corners are all kept
+    cell_ok = (keep[:-1, :-1] & keep[1:, :-1]
+               & keep[1:, 1:] & keep[:-1, 1:])
+    ii, jj = np.nonzero(cell_ok)
+    base = ii * ny + jj
+    quads_arr = np.stack([base, base + ny, base + ny + 1, base + 1], axis=1)
+    # compact to referenced vertices only (drop the trimmed ones)
+    used = np.unique(quads_arr)
+    remap = np.full(nx * ny, -1, dtype=np.int64)
+    remap[used] = np.arange(len(used))
+    V = Vfull[used]
+    UVg = UVfull[used]
+    quads = [tuple(int(remap[i]) for i in q) for q in quads_arr]
+    V = _center_fit(V, scale, V)
+    if not with_uv:
+        return V, quads
+    if not quads:
+        return V, quads, None
+    q = np.array(quads)
+    cuv = UVg[q].astype(float)
+    return V, quads, cuv.reshape(-1, 2)
+
+
 def _scherk_doubly(nu, nv, order, radius, scale, cells_u, cells_v,
                    with_uv=False):
     """Connected doubly periodic Scherk graph, z = ln|cos x| - ln|cos y|,
     over cells_u (x) by cells_v (y) pi-period cells -> ONE continuous mesh.
     cells = (1, 1) reproduces the single fundamental saddle; larger counts
-    tile it gap-free (the walls are shared, not welded copies)."""
-    Cu = int(max(1, cells_u))
-    Cv = int(max(1, cells_v))
-    lim = 0.47 * math.pi            # per-cell half width (matches the 1x1 cell)
-    zcap = 2.8                      # tame the log poles at the wall lines
-    per = max(8, int(nu))           # samples across one cell
-    nx = Cu * per
-    ny = Cv * max(8, int(nv))
-    # cells centred at x = k pi (k = 0..Cu-1); span the outer walls too so
-    # neighbouring cells sample continuously across the shared wall lines
-    x = np.linspace(-lim, (Cu - 1) * math.pi + lim, nx)
-    y = np.linspace(-lim, (Cv - 1) * math.pi + lim, ny)
-    X, Y = np.meshgrid(x, y, indexing='ij')
-    with np.errstate(divide='ignore', invalid='ignore'):
-        w = np.log(np.abs(np.cos(X))) - np.log(np.abs(np.cos(Y)))
-    # clip maps the x-wall (-inf) and y-wall (+inf) log poles to -+zcap
-    # correctly; only the isolated corner lines (both cos -> 0) give nan
-    w = np.clip(w, -zcap, zcap)
-    w = np.where(np.isfinite(w), w, 0.0)
-    V = np.stack([X, Y, w], axis=-1).reshape(-1, 3)
-    # per-vertex conformal-ish UV: the normalised parameter grid, 0..1 over
-    # the whole tiled block (the (x, y) graph chart)
-    gu = (np.arange(nx) / max(nx - 1, 1))
-    gv = (np.arange(ny) / max(ny - 1, 1))
-    UVg = np.stack(np.meshgrid(gu, gv, indexing='ij'), axis=-1).reshape(-1, 2)
-    quads = []
-    for i in range(nx - 1):
-        for j in range(ny - 1):
-            b = i * ny + j
-            quads.append((b, b + ny, b + ny + 1, b + 1))
-    V = _center_fit(V, scale, V)
-    if not with_uv:
-        return V, quads
-    q = np.array(quads)
-    cuv = UVg[q].astype(float)
-    return V, quads, cuv.reshape(-1, 2)
+    tile it gap-free (the walls are shared, not welded copies).  The walls are
+    trimmed (not clamped) at |z| = zcap, so they end in clean open rims rather
+    than flat plateaus."""
+    return _scherk_block(nu, nv, scale, cells_u, cells_v, 1.0, with_uv)
 
 
 # --- tilted Scherk: the connected doubly periodic graph, tilted -----------
@@ -621,49 +741,16 @@ def _tilt_scherk_doubly(nu, nv, rho, scale, cells_u, cells_v,
     cells_v (y) pi-period cells -> ONE continuous mesh.  `rho` is the
     Lopez-Ros tilt factor (rho = 1 reproduces the classical Scherk graph,
     _scherk_doubly, exactly).  cells = (1, 1) is the single fundamental
-    saddle; larger counts tile it gap-free (shared, leaned walls)."""
-    Cu = int(max(1, cells_u))
-    Cv = int(max(1, cells_v))
-    lim = 0.47 * math.pi            # per-cell half width (matches the 1x1 cell)
-    zcap = 2.8                      # tame the log poles at the wall lines
-    pcap = 2.8                      # matching cap on the tilt displacement
-    per = max(8, int(nu))
-    nx = Cu * per
-    ny = Cv * max(8, int(nv))
-    x = np.linspace(-lim, (Cu - 1) * math.pi + lim, nx)
-    y = np.linspace(-lim, (Cv - 1) * math.pi + lim, ny)
-    X, Y = np.meshgrid(x, y, indexing='ij')
-    with np.errstate(divide='ignore', invalid='ignore'):
-        w = np.log(np.abs(np.cos(X))) - np.log(np.abs(np.cos(Y)))
-        sinhQ = -np.cos(X) * np.tan(Y)
-        Q = np.arcsinh(sinhQ)
-        coshQ = np.sqrt(1.0 + sinhQ ** 2)
-        P = (np.log(np.abs(np.cos(X))) - np.log(np.abs(np.cos(Y)))
-             - np.log(coshQ - np.sin(X)))
-    # clip maps the wall (+-inf) log poles to +-cap correctly; only the
-    # isolated corner lines (both cos -> 0) give nan -> the saddle centre (0)
-    w = np.where(np.isfinite(w), np.clip(w, -zcap, zcap), 0.0)
-    P = np.where(np.isfinite(P), np.clip(P, -pcap, pcap), 0.0)
-    Q = np.where(np.isfinite(Q), np.clip(Q, -pcap, pcap), 0.0)
-    m = 0.5 * (rho + 1.0 / rho)
-    n = 0.5 * (rho - 1.0 / rho)
-    Xt = m * X - n * P
-    Yt = m * Y + n * Q
-    V = np.stack([Xt, Yt, w], axis=-1).reshape(-1, 3)
-    gu = (np.arange(nx) / max(nx - 1, 1))
-    gv = (np.arange(ny) / max(ny - 1, 1))
-    UVg = np.stack(np.meshgrid(gu, gv, indexing='ij'), axis=-1).reshape(-1, 2)
-    quads = []
-    for i in range(nx - 1):
-        for j in range(ny - 1):
-            b = i * ny + j
-            quads.append((b, b + ny, b + ny + 1, b + 1))
-    V = _center_fit(V, scale, V)
-    if not with_uv:
-        return V, quads
-    q = np.array(quads)
-    cuv = UVg[q].astype(float)
-    return V, quads, cuv.reshape(-1, 2)
+    saddle; larger counts tile it gap-free (shared, leaned walls).
+
+    The tilt reparametrization is applied to the KEPT vertices of the
+    trimmed graph only (see _scherk_block / _scherk_trim_snap): there is no
+    clamp plateau left to be sheared, so the leaned walls end in clean open
+    rims instead of blocky slanted slabs.  Since the Lopez-Ros tilt makes
+    this surface non-embedded, a tiled copy honestly self-intersects (the
+    leaned asymptotic half-planes pass through each other) -- that is the
+    true surface, not an artifact."""
+    return _scherk_block(nu, nv, scale, cells_u, cells_v, float(rho), with_uv)
 
 
 def _smooth_boundary(V, quads, iters=10, lam=0.5):
