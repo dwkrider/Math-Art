@@ -683,8 +683,9 @@ def build_tube_cells(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
 # strand SOURCES -- families of smooth parametric curves -- and a
 # GENERIC crossing back-end (`build_curve_carpet`) that laces ANY set of
 # open or closed polylines, so the wavy plaid, warped grid, polar
-# rosette, guilloche and smooth plait all flow through the same ribbon /
-# tube / curve / interlace / relief machinery as the lattice carpet.
+# rosette, guilloche, smooth plait, rose / rhodonea rosette, spiral net,
+# lissajous net and moire bands all flow through the same ribbon / tube
+# / curve / interlace / relief machinery as the lattice carpet.
 #
 # Whereas the lattice carpet only tests lattice-neighbour loop pairs,
 # curvilinear strands can cross ANYWHERE (and a single closed guilloche
@@ -1053,6 +1054,90 @@ def _plait_strands(nx, ny, amp, freq, phase, samples):
     return out
 
 
+def _rose_strands(k, ncopies, amp, samples):
+    """Rose / rhodonea rosette: phase-rotated offset roses
+    r = R_c (1 + a cos(k T + phi_c)).  The offset keeps r > 0 (no
+    degenerate all-petals-through-the-origin crossing), and each copy is
+    rotated by a fraction of a lobe and set on its own mean radius so the
+    lobes interleave and cross transversally -- a woven flower.  Every
+    strand is a closed petaled curve."""
+    ns = max(200, int(samples))
+    K = max(2, int(k))
+    nc = max(1, int(ncopies))
+    lobe = 0.30 + 0.55 * float(amp)                # < 1 so r stays > 0
+    th = np.linspace(0.0, 2.0 * pi, ns, endpoint=False)
+    out = []
+    for c in range(nc):
+        phi = (2.0 * pi / K) * (c / nc)            # interleave the lobes
+        Rc = 0.62 + 0.38 * (c + 1) / nc            # nested mean radii
+        rr = Rc * (1.0 + lobe * np.cos(K * th + K * phi))
+        out.append((np.column_stack([rr * np.cos(th),
+                                     rr * np.sin(th)]), True))
+    return out
+
+
+def _spiral_net_strands(narms, turns, tight, samples):
+    """Spiral net: two families of logarithmic spirals of opposite
+    handedness, r = rin (rout/rin)^t, theta = theta_a +/- turns t, each
+    family fanned into `narms` arms.  The clockwise and anti-clockwise
+    families cross transversally into a woven vortex.  Open strands
+    (rin -> rout), blunt-capped by the builders."""
+    ns = max(160, int(samples))
+    na = max(3, int(narms))
+    rin, rout = 0.16, 1.06
+    tw = max(0.4, float(turns)) * (0.8 + 0.9 * float(tight))
+    t = np.linspace(0.0, 1.0, ns)
+    rad = rin * (rout / rin) ** t
+    out = []
+    for sgn in (1.0, -1.0):
+        for a in range(na):
+            th0 = 2.0 * pi * a / na
+            ang = th0 + sgn * tw * t
+            out.append((np.column_stack([rad * np.cos(ang),
+                                         rad * np.sin(ang)]), False))
+    return out
+
+
+def _lissajous_net_strands(a, b, ncopies, phase, samples):
+    """Lissajous net: phase-staggered Lissajous curves
+    x = sin(a T + d_c), y = sin(b T) filling the unit box.  A single
+    curve self-crosses; `ncopies` phase-shifted copies interleave into a
+    looping woven net -- the figure-eight cousin of the wavy plaid.
+    Closed, self-crossing, best-effort alternation (like guilloche)."""
+    ns = max(300, int(samples))
+    A = max(1, int(a))
+    B = max(1, int(b))
+    if A == B:
+        B += 1                                     # avoid a plain ellipse
+    nc = max(1, int(ncopies))
+    t = np.linspace(0.0, 2.0 * pi, ns, endpoint=False)
+    out = []
+    for c in range(nc):
+        d = float(phase) + pi * c / nc
+        x = np.sin(A * t + d)
+        y = np.sin(B * t)
+        out.append((np.column_stack([x, y]), True))
+    return out
+
+
+def _moire_strands(nx, ny, amp, freq, angle, samples):
+    """Moire bands: two identical wavy plaids, the second rotated by
+    `angle` about the block centre, overlaid.  The small relative
+    rotation makes the two nets beat against each other into large
+    flowing moire structure.  Open strands -- finished by the boundary
+    frame."""
+    fam1 = _plaid_strands(nx, ny, amp, freq, 0.0, samples)
+    cx, cy = float(nx) / 2.0, float(ny) / 2.0
+    ca, sa = np.cos(angle), np.sin(angle)
+    out = list(fam1)
+    for p, c in _plaid_strands(nx, ny, amp, freq, 0.0, samples):
+        q = np.asarray(p, float) - (cx, cy)
+        rx = ca * q[:, 0] - sa * q[:, 1] + cx
+        ry = sa * q[:, 0] + ca * q[:, 1] + cy
+        out.append((np.column_stack([rx, ry]), c))
+    return out
+
+
 # --------------------------------------------------------------------
 # Boundary handling for the OPEN curvilinear families
 # --------------------------------------------------------------------
@@ -1184,6 +1269,19 @@ def curve_source_strands(source, nx, ny, amp, freq, phase, warp,
         base = _plait_strands(nx, ny, amp, max(1.0, f)
                               if boundary == 'TOROIDAL' else f,
                               phase, samples)
+    elif source == 'ROSE':
+        base = _rose_strands(petals, arms, amp, samples)
+    elif source == 'SPIRAL_NET':
+        base = _spiral_net_strands(arms, freq, amp, samples)
+    elif source == 'LISSAJOUS':
+        base = _lissajous_net_strands(arms, petals,
+                                      max(1, round(freq)), phase, samples)
+    elif source == 'MOIRE':
+        a = warp if warp > 1e-3 else 0.18
+        f = round(freq) if boundary == 'TOROIDAL' else freq
+        base = _moire_strands(nx, ny, amp, max(1.0, f)
+                              if boundary == 'TOROIDAL' else f,
+                              a, samples)
     else:
         return []
     if source in ('WAVY_PLAID', 'WARPED_GRID', 'SMOOTH_PLAIT'):
@@ -4342,7 +4440,19 @@ if _IN_BLENDER:
                     "engine engraving); self-crossing, best effort"),
                    ('SMOOTH_PLAIT', "Smooth Plait",
                     "Diagonal sinusoidal bands turned back at a border "
-                    "into a Celtic-style plait")],
+                    "into a Celtic-style plait"),
+                   ('ROSE', "Rose / Rhodonea",
+                    "Phase-rotated offset rose curves r = R(1 + a cos "
+                    "kT) nested into a woven flower (closed)"),
+                   ('SPIRAL_NET', "Spiral Net",
+                    "Two families of logarithmic spirals of opposite "
+                    "handedness crossing into a woven vortex"),
+                   ('LISSAJOUS', "Lissajous Net",
+                    "Phase-staggered Lissajous curves x = sin(aT+d), "
+                    "y = sin(bT) woven into a looping net (best effort)"),
+                   ('MOIRE', "Moire Bands",
+                    "Two wavy plaids, one rotated by Warp, overlaid "
+                    "into a large-scale moire weave (best effort)")],
             default='WAVY_PLAID',
             description="Which family of smooth parametric curves "
                         "spawns the strands (Curvilinear lattice); fed "
@@ -4351,28 +4461,36 @@ if _IN_BLENDER:
         curve_amp: FloatProperty(
             name="Amplitude", default=0.25, min=0.0, max=1.0,
             description="Wave amplitude of the curvilinear strands "
-                        "(plaid / plait wobble, polar leaf bow, "
-                        "guilloche pen offset)")
+                        "(plaid / plait / moire wobble, polar bow, "
+                        "guilloche pen offset, rose lobe depth, spiral "
+                        "tightness)")
         curve_freq: FloatProperty(
             name="Frequency", default=1.0, min=0.1, max=6.0,
             description="Sine cycles per cell (wavy plaid / smooth "
-                        "plait) or swirl frequency (warped grid)")
+                        "plait / moire), swirl frequency (warped grid), "
+                        "spiral turns (spiral net) or copy count "
+                        "(lissajous net)")
         curve_phase: FloatProperty(
             name="Phase", default=1.5708, min=0.0, max=6.2832,
-            description="Per-strand phase stagger (wavy plaid / plait) "
-                        "or base rotation of the guilloche copies")
+            description="Per-strand phase stagger (wavy plaid / plait), "
+                        "base rotation of the guilloche copies, or the "
+                        "lissajous phase")
         warp: FloatProperty(
             name="Warp Strength", default=0.18, min=0.0, max=0.6,
             description="Displacement strength of the warped-grid "
-                        "swirl")
+                        "swirl, or the relative rotation (radians) of "
+                        "the second grid (moire bands)")
         petals: IntProperty(
             name="Petals / Copies", default=5, min=2, max=16,
-            description="Ring lobe count (polar) or number of phase-"
-                        "rotated guilloche copies")
+            description="Ring lobe count (polar), phase-rotated copies "
+                        "(guilloche), rose lobe count k, or the "
+                        "lissajous y-frequency b")
         arms: IntProperty(
             name="Arms", default=6, min=2, max=16,
-            description="Radial petal count (polar) or the spirograph "
-                        "wheel size R (guilloche)")
+            description="Radial petal count (polar), spirograph wheel "
+                        "size R (guilloche), rose copies, spiral arms "
+                        "per family (spiral net), or the lissajous "
+                        "x-frequency a")
         boundary: EnumProperty(
             name="Boundary",
             items=[('FRAME', "Frame",
@@ -4871,10 +4989,17 @@ if _IN_BLENDER:
         def _draw_curve(self, lay):
             """UI for the curvilinear families (Curvilinear lattice)."""
             src = self.source
-            open_fam = src in ('WAVY_PLAID', 'WARPED_GRID',
-                               'SMOOTH_PLAIT')
-            lay.prop(self, 'nx')
-            lay.prop(self, 'ny')
+            grid_fam = src in ('WAVY_PLAID', 'WARPED_GRID',
+                               'SMOOTH_PLAIT', 'MOIRE')
+            # framed families get the boundary control; moire is overlaid
+            # rotated grids, so it is capped (a rectangular frame would
+            # blow up into nested squares) -- no boundary control
+            open_fam = src in ('WAVY_PLAID', 'WARPED_GRID', 'SMOOTH_PLAIT')
+            if grid_fam:
+                lay.prop(self, 'nx')
+                lay.prop(self, 'ny')
+            elif src == 'POLAR':
+                lay.prop(self, 'ny')     # ring count
             lay.prop(self, 'samples')
             if src in ('WAVY_PLAID', 'SMOOTH_PLAIT'):
                 lay.prop(self, 'curve_amp')
@@ -4883,6 +5008,10 @@ if _IN_BLENDER:
             elif src == 'WARPED_GRID':
                 lay.prop(self, 'warp')
                 lay.prop(self, 'curve_freq')
+            elif src == 'MOIRE':
+                lay.prop(self, 'curve_amp')
+                lay.prop(self, 'curve_freq')
+                lay.prop(self, 'warp')   # relative rotation angle
             elif src == 'POLAR':
                 lay.prop(self, 'curve_amp')
                 lay.prop(self, 'petals')
@@ -4891,6 +5020,19 @@ if _IN_BLENDER:
                 lay.prop(self, 'curve_amp')
                 lay.prop(self, 'arms')
                 lay.prop(self, 'petals')
+                lay.prop(self, 'curve_phase')
+            elif src == 'ROSE':
+                lay.prop(self, 'curve_amp')
+                lay.prop(self, 'petals')
+                lay.prop(self, 'arms')
+            elif src == 'SPIRAL_NET':
+                lay.prop(self, 'arms')
+                lay.prop(self, 'curve_freq')
+                lay.prop(self, 'curve_amp')
+            elif src == 'LISSAJOUS':
+                lay.prop(self, 'arms')
+                lay.prop(self, 'petals')
+                lay.prop(self, 'curve_freq')
                 lay.prop(self, 'curve_phase')
             if open_fam:
                 lay.prop(self, 'boundary')
