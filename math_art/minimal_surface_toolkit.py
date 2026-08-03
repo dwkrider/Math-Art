@@ -1644,17 +1644,28 @@ if _IN_BLENDER:
                 items = _periodic_surface_items(self, context)
                 surf = items[0][0] if items else 'G'
             if surf in TPMS_EXACT:
-                # exact Weierstrass P/Gyroid/D.  A named preset selects one of
-                # the three iconic Bonnet angles; Custom uses the raw slider.
-                theta = _PGD_PRESET_ANGLE.get(self.pgd_preset,
-                                              self.assoc_angle)
-                verts, tris = build_tpms_exact(
-                    surf, self.cells, self.resolution, self.cell_size,
-                    theta)
+                # A named preset (P / Gyroid / D) shows the CLEAN, iconic
+                # surface via the nodal builder -- the exact-WE tiling of P/D
+                # reads rougher and the chiral gyroid can't be tiled
+                # watertight, so the nodal cells are the better "iconic" view
+                # (and give a clean gyroid).  Custom sweeps the exact
+                # Weierstrass Bonnet morph at the raw slider angle -- the
+                # unique capability of this entry -- and at exactly 0 / 38.0148
+                # / 90 deg Custom still yields the exact tiled P/D cell.
+                _PGD_NODAL = {'P': 'P', 'GYROID': 'G', 'D': 'D'}
+                if self.pgd_preset in _PGD_NODAL:
+                    nk = _PGD_NODAL[self.pgd_preset]
+                    verts, tris = build_tpms(nk, self.cells,
+                                             self.resolution, self.cell_size)
+                    label = TPMS[nk][0]
+                else:                                   # CUSTOM: exact morph
+                    verts, tris = build_tpms_exact(
+                        surf, self.cells, self.resolution, self.cell_size,
+                        self.assoc_angle)
+                    label = TPMS_EXACT[surf][0]
                 if len(tris) == 0:
                     self.report({'ERROR'}, "Empty surface")
                     return {'CANCELLED'}
-                label = TPMS_EXACT[surf][0]
                 obj = _new_object(context, label, verts, tris)
                 if self.thickness > 0:
                     mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
