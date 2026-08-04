@@ -532,6 +532,10 @@ KINDS = {
         build=lambda it, h=0: _base_reptile(
             -2 + _W6, [0, 1, _W6], it, cell=_HEXCELL, holes=h),
         n=3, samp=True),
+    'TRIHEX_BAR': dict(                       # bar trihex, rep-3
+        build=lambda it, h=0: _base_reptile(
+            -2 + _W6, [0, 1, 2], it, cell=_HEXCELL, holes=h),
+        n=3, samp=True),
     'HEX9': dict(                             # 9-hex, rep-9
         build=lambda it, h=0: _base_reptile(
             3 * (_W6 - 1),
@@ -611,6 +615,9 @@ KIND_ITEMS = [
     ('TRIHEX', "Hex: Trihex (rep-3)",
      "Trihex {0,1,w} over Eisenstein base -2+w (w=e^{i pi/3}): the "
      "rep-3 trihex fractal reptile (Fathauer, Bridges 2026)"),
+    ('TRIHEX_BAR', "Hex: Trihex bar (rep-3)",
+     "Bar trihex {0,1,2} over Eisenstein base -2+w: the rep-3 straight "
+     "trihex fractal reptile (Fathauer, Bridges 2026)"),
     ('FLOWSNAKE', "Hex: Heptahex / Gosper (rep-7)",
      "Eisenstein base 5/2+(sqrt3/2)i, digits {0}+sixth roots of "
      "unity, hexagon cells: the rep-7 Gosper island bounded by the "
@@ -687,6 +694,13 @@ if _IN_BLENDER:
         _shape_items_cache[fam] = items
         return items
 
+    def _on_family(self, context):
+        """When the Family changes, snap Shape to that family's first
+        reptile so the Shape enum is never left on a now-invalid id."""
+        shapes = _SHAPES_BY_FAMILY.get(self.family)
+        if shapes:
+            self.shape = shapes[0][0]
+
     class MESH_OT_fractal_reptile_add(bpy.types.Operator,
                                       AddObjectHelper):
         """Add a Fathauer fractal tiling built from a rep-tile
@@ -700,7 +714,7 @@ if _IN_BLENDER:
             items=[(fid, fname, "%s fractal reptiles" % fname)
                    for fid, fname in _FAMILY_ORDER
                    if fid in _SHAPES_BY_FAMILY],
-            default='SQUARE',
+            default='SQUARE', update=_on_family,
             description="Polyform base-shape family")
         shape: EnumProperty(
             name="Shape", items=_shape_items,
@@ -740,6 +754,10 @@ if _IN_BLENDER:
 
         def execute(self, context):
             kind = self.shape
+            if kind not in KINDS:      # family just switched: shape id
+                shapes = (_SHAPES_BY_FAMILY.get(self.family)
+                          or _SHAPES_BY_FAMILY['CLASSIC'])
+                kind = shapes[0][0]    # fall back to family's first shape
             polys, types = fractal_patch(kind, self.iterations,
                                          self.holes)
             cells = tg.cells_from_polys(
