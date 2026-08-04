@@ -156,7 +156,7 @@ bl_info = {
     "category": "Add Mesh",
 }
 
-from math import pi, sqrt
+from math import pi, sqrt, atan2
 
 import numpy as np
 
@@ -1448,18 +1448,24 @@ def curve_loop_paths(strands=None, carpet=None):
 # Faces (mosaic) output: fill the arrangement cells
 # --------------------------------------------------------------------
 #
-# The strand network divides the plane into regions (the faces of the
-# planar arrangement); this output fills each region as a flat polygon,
-# inset by half the ribbon width so the strands read as the channels
-# (leading) between the tiles.  No over/under -- the ribbons simply
-# cross.  Faces are optionally coloured so congruent tiles share a
-# colour (a signature of corner count + area/perimeter buckets), the way
-# a tiling's symmetry classes do.  The bounded cells are extracted with
-# Blender's planar edge-net fill after the strands are NODED at every
-# crossing (a shared vertex welded in at each intersection); open
-# families are first closed against one clean rectangular border so the
-# boundary cells fill (the weave's nested per-strand frames would leave
-# spurious ring cells).
+# The strand network divides the plane into regions -- the faces of the
+# planar arrangement -- and this output fills each BOUNDED region as a
+# flat polygon, shrunk toward its centroid by half the ribbon width so
+# the strands read as the channels (leading) between the tiles.  No
+# over/under -- the ribbons simply cross.  Tiles are optionally coloured
+# so congruent cells share a colour (area / perimeter buckets), the way
+# a tiling's symmetry classes do.
+#
+# The cells are extracted by a half-edge (DCEL) walk of the arrangement:
+# each strand is split at its crossings into arcs, every arc gives two
+# oppositely-directed half-edges, the half-edges are ordered rotationally
+# at each node, and each face is traced by "next = the half-edge
+# clockwise from the twin".  Every arc lies on exactly two faces, so the
+# faces tile the plane with NO overlap -- unlike a fill of the raw edge
+# net, which emits overlapping nested / enclosing cycles on the
+# concentric-ring and pinwheel families.  The single unbounded outer
+# face (clockwise / negative signed area) is dropped, leaving the
+# bounded tiles.
 
 
 def _poly_area2(P):
@@ -1468,31 +1474,154 @@ def _poly_area2(P):
     return 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
 
 
-def _face_signature(loop, corners, span):
-    """A rotation/reflection-invariant class key for `loop`: the number
-    of true corners (crossing nodes on its boundary) plus relative area
-    and perimeter buckets (~12% tolerance), so congruent tiles group."""
+def _face_signature(loop, span):
+    """A size/shape class key for `loop`: relative area and perimeter
+    buckets (~12% tolerance), so congruent tiles group to one colour."""
     P = loop
     area = abs(_poly_area2(P))
     per = float(np.sum(np.linalg.norm(np.roll(P, -1, 0) - P, axis=1)))
     unit = max(span, 1e-6)
     ab = round(np.log(max(area, 1e-9) / (unit * unit)) / np.log(1.12))
     pb = round(np.log(max(per, 1e-9) / unit) / np.log(1.12))
-    return (int(corners), int(ab), int(pb))
+    return (int(ab), int(pb))
+
+
+def _arrangement_faces(paths, closed, crossings):
+    """Bounded faces of the planar arrangement of the strand polylines,
+    traced with a half-edge (DCEL) walk so the cells never overlap.
+    Returns a list of (M, 2) polygon-vertex arrays."""
+    paths = [np.asarray(p, float) for p in paths]
+
+    def _pt_at(path, f):
+        n = len(path)
+        s = int(np.floor(f))
+        t = f - s
+        return path[s % n] * (1.0 - t) + path[(s + 1) % n] * t
+
+    def _arc_pts(path, fa, fb):
+        # polyline points from arc position fa to fb (fa <= fb; fb may
+        # run past len for a closed wrap), node coords exact at both ends
+        out = [_pt_at(path, fa)]
+        j = int(np.floor(fa)) + 1
+        jend = int(np.ceil(fb - 1e-9))
+        n = len(path)
+        for jj in range(j, jend):
+            out.append(path[jj % n])
+        out.append(_pt_at(path, fb))
+        return out
+
+    # ---- nodes: one per crossing key, plus the two ends of each open
+    #      strand ----
+    node_pt = []
+    key_node = {}
+    strand_nodes = {i: [] for i in range(len(paths))}
+    for key, s1, s2, f1, f2 in crossings:
+        if key not in key_node:
+            key_node[key] = len(node_pt)
+            node_pt.append(_pt_at(paths[s1], f1))
+        nid = key_node[key]
+        strand_nodes[s1].append((float(f1), nid))
+        strand_nodes[s2].append((float(f2), nid))
+
+    # ---- arcs (edges) between consecutive nodes along every strand ----
+    edges = []                                 # (nodeA, nodeB, geom A->B)
+    loose_faces = []                           # crossing-free closed loops
+    for i, path in enumerate(paths):
+        n = len(path)
+        sn = sorted(strand_nodes[i])
+        if closed[i]:
+            if not sn:
+                loose_faces.append(path.copy())
+                continue
+            k = len(sn)
+            for a in range(k):
+                fa, na = sn[a]
+                fb, nb = sn[(a + 1) % k]
+                if a == k - 1:
+                    fb = fb + n                # wrap past the seam
+                edges.append((na, nb, _arc_pts(path, fa, fb)))
+        else:
+            sn0 = len(node_pt)
+            node_pt.append(path[0])
+            sn1 = len(node_pt)
+            node_pt.append(path[-1])
+            seq = [(0.0, sn0)] + sn + [(float(n - 1), sn1)]
+            for a in range(len(seq) - 1):
+                fa, na = seq[a]
+                fb, nb = seq[a + 1]
+                if fb <= fa:
+                    continue
+                edges.append((na, nb, _arc_pts(path, fa, fb)))
+    if not edges:
+        return loose_faces
+
+    # ---- half-edges ----
+    he_org, he_tgt, he_geom, he_twin = [], [], [], []
+    for na, nb, geom in edges:
+        h = len(he_org)
+        he_org.append(na)
+        he_tgt.append(nb)
+        he_geom.append(geom)
+        he_twin.append(h + 1)
+        he_org.append(nb)
+        he_tgt.append(na)
+        he_geom.append(geom[::-1])
+        he_twin.append(h)
+
+    # rotational order of the outgoing half-edges at each node
+    out_he = {v: [] for v in range(len(node_pt))}
+    for h in range(len(he_org)):
+        out_he[he_org[h]].append(h)
+
+    def _leave_angle(h):
+        g = he_geom[h]
+        dx = float(g[1][0] - g[0][0])
+        dy = float(g[1][1] - g[0][1])
+        return atan2(dy, dx)
+
+    pos_in = {}
+    for v, hs in out_he.items():
+        hs.sort(key=_leave_angle)
+        for idx, h in enumerate(hs):
+            pos_in[h] = idx
+
+    def _next(h):
+        t = he_twin[h]
+        hs = out_he[he_org[t]]                  # outgoing at target of h
+        return hs[(pos_in[t] - 1) % len(hs)]    # clockwise from the twin
+
+    # ---- trace faces ----
+    used = [False] * len(he_org)
+    faces = list(loose_faces)
+    for h0 in range(len(he_org)):
+        if used[h0]:
+            continue
+        loop = []
+        h = h0
+        while not used[h]:
+            used[h] = True
+            loop.append(h)
+            h = _next(h)
+        pts = []
+        for h in loop:
+            g = he_geom[h]
+            pts.extend(g[:-1])                  # drop shared node
+        if len(pts) >= 3:
+            faces.append(np.asarray(pts, float))
+    # keep the bounded faces (counter-clockwise / positive signed area);
+    # the unbounded outer face of each component is clockwise
+    return [P for P in faces if _poly_area2(P) > 1e-9]
 
 
 def build_face_cells(strands=None, carpet=None, cord_width=0.12,
                      face_color='SHAPE', backing=False, base=0.06):
-    """The mosaic of tiles BETWEEN the strands: the fully-enclosed cells
-    of the strand arrangement, each shrunk toward its centroid by ~half
-    `cord_width` so the strands read as the channels (leading) between
-    the tiles.  Only enclosed cells are tiles -- the open regions around
-    the boundary are not holes, so there is no artificial border and no
-    boundary blobs.  Each tile is one flat n-gon; `face_color` is
-    'UNIFORM' (one colour) or 'SHAPE' (congruent tiles share a colour).
-    Returns (verts, faces, mats) cells plus an optional backing slab.
-    Uses Blender's edge-net fill -- Blender only."""
-    import bmesh
+    """The mosaic of tiles BETWEEN the strands: the bounded cells of the
+    strand arrangement (traced with a non-overlapping half-edge walk),
+    each shrunk toward its centroid by ~half `cord_width` so the strands
+    read as the channels between the tiles.  Each tile is one flat n-gon;
+    `face_color` is 'UNIFORM' (one colour) or 'SHAPE' (congruent tiles
+    share a colour).  Returns (verts, faces, mats) cells plus an optional
+    backing slab."""
     if carpet is None:
         carpet = build_curve_carpet(strands)
     paths = carpet['paths']
@@ -1502,42 +1631,8 @@ def build_face_cells(strands=None, carpet=None, cord_width=0.12,
     span = max(float(np.ptp(allpts[:, 0])), float(np.ptp(allpts[:, 1])),
                1e-6)
 
-    # Node the CENTRELINES at every crossing (the same crossings the weave
-    # uses) and edge-net fill.  The centreline arrangement is planar, so
-    # its cells never overlap -- unlike a ribbon-edge arrangement, whose
-    # ribbons overlap on the nested / converging families and spawn
-    # z-fighting.  Because the strands are left OPEN (no artificial
-    # border), edge-net fill returns only the fully-ENCLOSED cells, so the
-    # open boundary regions are never tiles (no boundary blobs).
-    def _pt_at(path, f):
-        n = len(path)
-        seg = int(np.floor(f))
-        t = f - seg
-        return path[seg % n] * (1.0 - t) + path[(seg + 1) % n] * t
-
-    con = {i: [] for i in range(len(paths))}
-    for _key, s1, s2, f1, f2 in carpet['crossings']:
-        con[s1].append((f1, _pt_at(paths[s1], f1)))
-        con[s2].append((f2, _pt_at(paths[s2], f2)))
-    bm = bmesh.new()
-    for i, path in enumerate(paths):
-        n = len(path)
-        items = [(float(k), path[k]) for k in range(n)]
-        items += [(f, p) for f, p in con[i]]
-        items.sort(key=lambda z: z[0])
-        vs = [bm.verts.new((float(p[0]), float(p[1]), 0.0))
-              for _f, p in items]
-        m = len(vs)
-        for k in (range(m) if closed[i] else range(m - 1)):
-            try:
-                bm.edges.new((vs[k], vs[(k + 1) % m]))
-            except ValueError:
-                pass
-    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-3)
-    res = bmesh.ops.edgenet_fill(bm, edges=[e for e in bm.edges])
-    bfaces = res.get('faces', [])
-    if not bfaces:
-        bm.free()
+    faces = _arrangement_faces(paths, closed, carpet['crossings'])
+    if not faces:
         return []
 
     # Open the ribbon gap by shrinking each cell toward its own centroid.
@@ -1548,8 +1643,7 @@ def build_face_cells(strands=None, carpet=None, cord_width=0.12,
     cls = {}
     cells = []
     all_verts = []
-    for f in bfaces:
-        P = np.array([(v.co.x, v.co.y) for v in f.verts], float)
+    for P in faces:
         if len(P) < 3 or abs(_poly_area2(P)) < 1e-8:
             continue
         c = P.mean(axis=0)
@@ -1561,13 +1655,11 @@ def build_face_cells(strands=None, carpet=None, cord_width=0.12,
         if face_color == 'UNIFORM':
             mat = 0
         else:
-            corners = sum(1 for v in f.verts if len(v.link_edges) > 2)
-            sig = _face_signature(P, corners, span)
+            sig = _face_signature(P, span)
             mat = cls.setdefault(sig, len(cls)) % len(pc.PALETTE_RGBA)
         verts = [(float(x), float(y), 0.0) for x, y in Q]
         cells.append((verts, [list(range(len(verts)))], [mat]))
         all_verts.extend(verts)
-    bm.free()
     if not cells:
         return []
     if backing and all_verts:
