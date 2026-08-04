@@ -620,6 +620,21 @@ OPS = [
     ("fractal reptile pentabolo",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          family='BOLO', shape='PENTABOLO', iterations=3)),
+    ("fractal reptile heptiamond",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         family='IAMOND', shape='HEPTIAMOND', iterations=4)),
+    ("fractal reptile trirhomb",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         family='RHOMB', shape='TRIRHOMB', iterations=5)),
+    ("fractal reptile tetrarhomb",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         family='RHOMB', shape='TETRARHOMB', iterations=4)),
+    ("fractal reptile trikite",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         family='KITE', shape='TRIKITE', iterations=5)),
+    ("fractal reptile tetrakite",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         family='KITE', shape='TETRAKITE', iterations=4)),
     ("fractal reptile flowsnake",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          family='HEX', shape='FLOWSNAKE', iterations=3)),

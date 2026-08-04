@@ -396,12 +396,13 @@ _FOLD_MAPS = [
 ]
 
 
-def _ifs_reptile(maps, iterations, holes=0):
+def _ifs_reptile(maps, iterations, holes=0, seed=_IFS_SEED):
     """(polys, types) for the attractor of a conjugate-affine IFS:
-    every length-k word applied to the unit-square seed gives m^k
-    small quads, coloured by the outermost word digit (m classes).
-    holes > 0 drops the last `holes` maps at every level (gasket);
-    a sub-system of an OSC system still satisfies the OSC."""
+    every length-k word applied to the `seed` polygon (unit square by
+    default; a triangle/rhombus/kite cell for the polyform reptiles)
+    gives m^k small copies, coloured by the outermost word digit (m
+    classes).  holes > 0 drops the last `holes` maps at every level
+    (gasket); a sub-system of an OSC system still satisfies the OSC."""
     maps = list(maps)[:max(1, len(maps) - int(holes))]
     m = len(maps)
     words = [(_W_ID, 0)]
@@ -416,7 +417,7 @@ def _ifs_reptile(maps, iterations, holes=0):
         words = nxt
     polys, types = [], []
     for w, col in words:
-        z = _w_apply(w, _IFS_SEED)
+        z = _w_apply(w, seed)
         polys.append(np.column_stack([z.real, z.imag]))
         types.append(int(col))
     return polys, types
@@ -471,6 +472,140 @@ def _pentabolo(iterations, holes=0):
     polys = [np.column_stack([v.real, v.imag]) for v, _ in tris]
     types = [int(c) for _, c in tris]
     return polys, types
+
+
+# --------------------------------------------------------------------
+# Multi-orientation polyform reptiles (graph-directed IFS)
+#
+# A polyiamond / polyrhomb / polykite tiles the plane with cells in
+# SEVERAL orientations (triangles point up or down; rhombi and kites
+# take 3-6 lattice orientations), so the single-orientation radix
+# construction used for the polyominoes and polyhexes does not apply.
+# Fathauer's method (Bridges 2026) scales such an n-cell polyform by
+# 1/sqrt(n), rotates it by an allowed angle theta, and re-assembles n
+# copies in the polyform's own layout.  Written as a self-similar
+# attractor A, that is one contraction per cell:
+#     g_i(z) = S ( mu_i z + p_i ),    S = (1/sqrt n) e^{i theta},
+# where mu_i is cell i's orientation (the lattice rotation/reflection
+# carrying the seed cell onto cell i) and p_i is its anchor in the
+# assembled polyform (cell_i = mu_i * seed + p_i).  The translation is
+# S*p_i -- the sub-copy sits at the cell's position SCALED by the
+# contraction -- which is exactly what lets the n copies meet edge to
+# edge with no gaps or overlaps.  This is a graph-directed IFS (one
+# node per orientation) collapsed to a single attractor because all
+# orientations are congruent; it is rendered by _ifs_reptile with the
+# family's seed cell.  A rotating theta (not a lattice-aligned 0/60)
+# gives the fractal boundary; the exact cell layouts below were found
+# by an exhaustive polyform search gated on the filled-tile self-test.
+#
+# References:
+#   R. Fathauer, "Fractal tilings based on polyiamonds, polyhexes and
+#     other polyforms", Bridges 2026.
+#   R. Fathauer, Fractal Diversions -- Fractal Reptiles,
+#     mathartfun.com/fractaldiversions/FractalReptilesHome.html
+# --------------------------------------------------------------------
+
+def _tri_up(i, j):
+    L = i + j * _W6
+    return np.array([L, L + 1, L + _W6], complex)
+
+
+def _tri_dn(i, j):
+    L = i + j * _W6
+    return np.array([L + 1, L + _W6, L + 1 + _W6], complex)
+
+
+def _rhomb_A(i, j):                      # 60-120 rhombille rhombus
+    L = i + j * _W6
+    return np.array([L, L + 1, L + 1 + _W6, L + _W6], complex)
+
+
+# deltoidal (60-90-120-90) kite: hexagon centre, two edge midpoints and
+# a hexagon vertex; hexagons of circumradius 1 tile on the sqrt(3)-
+# scaled Eisenstein lattice
+_KITE_V = [np.exp(1j * k * np.pi / 3.0) for k in range(6)]
+_KITE_M = [np.cos(np.pi / 6.0) * np.exp(1j * (k * np.pi / 3.0 + np.pi / 6.0))
+           for k in range(6)]
+_KITE_H0 = sqrt(3.0) * np.exp(1j * np.pi / 6.0)
+_KITE_H1 = _KITE_H0 * _W6
+
+
+def _kite(a, b, k):
+    H = a * _KITE_H0 + b * _KITE_H1
+    return np.array([H, H + _KITE_M[(k - 1) % 6], H + _KITE_V[k],
+                     H + _KITE_M[k]], complex)
+
+
+# candidate lattice orientations (unit complex) used to fit each cell.
+# A triangle has 3-fold symmetry, so its vertex SET is invariant under
+# 120 deg turns; only two orientations are physically distinct (up = 1,
+# down = 180 deg), and the fit must be restricted to those two or it can
+# spuriously read a down-cell as a 60 deg-rotated up-cell -- a different
+# rigid motion that matches the vertices but breaks the tiling.  Rhombi
+# and kites carry no such rotational symmetry, so the full set is safe.
+_ORIENT_TRI = [1 + 0j, -1 + 0j]
+_ORIENT6 = [_W6 ** k for k in range(6)] + [-(_W6 ** k) for k in range(6)]
+
+
+def _vkey_set(poly):
+    return frozenset((round(z.real, 3), round(z.imag, 3)) for z in poly)
+
+
+def _fit_cell(seed, cell, mus):
+    """(A0, B0, anchor) so cell == A0*seed + B0*conj(seed) + anchor as a
+    rigid motion drawn from the rotations/reflections `mus` (before the
+    shared contraction S)."""
+    cs = _vkey_set(cell)
+    sm = seed.mean()
+    # rotations first: a reflected cell can share a symmetric cell's
+    # vertex set (a mirrored up-triangle looks like a down-triangle),
+    # but the reptile substitution uses the pure rotation, so a genuine
+    # rotation must win over any spurious reflection match.
+    for mu in mus:
+        a = cell.mean() - mu * sm
+        if _vkey_set(mu * seed + a) == cs:
+            return (mu, 0j, a)
+    for mu in mus:
+        a2 = cell.mean() - mu * np.conj(sm)
+        if _vkey_set(mu * np.conj(seed) + a2) == cs:
+            return (0j, mu, a2)
+    raise ValueError("polyform cell does not match the seed cell")
+
+
+def _poly_reptile(seed, cells, n, theta_deg, mus=_ORIENT6):
+    """The n conjugate-affine maps g_i(z) = S(mu_i z + p_i) for a
+    polyform with seed cell `seed` and cell list `cells`."""
+    S = np.exp(1j * np.radians(theta_deg)) / sqrt(float(n))
+    maps = []
+    for cell in cells:
+        a0, b0, anchor = _fit_cell(seed, cell, mus)
+        maps.append((S * a0, S * b0, S * anchor))
+    return maps
+
+
+# Verified FILLED presets (each passes the module self-test: cell count
+# = n^k and sampled boundary-overlap fraction ~ 0 at depth, i.e. a solid
+# tile with a measure-zero fractal boundary -- confirmed by render).
+_SEED_TRI = _tri_up(0, 0)
+_HEPTIAMOND_MAPS = _poly_reptile(
+    _SEED_TRI,
+    [_tri_dn(0, 0), _tri_dn(0, 1), _tri_up(1, 0), _tri_dn(1, 0),
+     _tri_up(1, 1), _tri_dn(1, 1), _tri_up(2, 1)], 7, 19.107,
+    mus=_ORIENT_TRI)
+
+_SEED_RHOMB = _rhomb_A(0, 0)
+_TRIRHOMB_MAPS = _poly_reptile(
+    _SEED_RHOMB, [_rhomb_A(0, 0), _rhomb_A(0, 1), _rhomb_A(1, 0)], 3, 30.0)
+_TETRARHOMB_MAPS = _poly_reptile(
+    _SEED_RHOMB, [_rhomb_A(-1, 0), _rhomb_A(-1, 1), _rhomb_A(0, -1),
+                  _rhomb_A(0, 0)], 4, 60.0)
+
+_SEED_KITE = _kite(0, 0, 0)
+_TRIKITE_MAPS = _poly_reptile(
+    _SEED_KITE, [_kite(0, 0, 0), _kite(1, 0, 3), _kite(1, 0, 4)], 3, -30.0)
+_TETRAKITE_MAPS = _poly_reptile(
+    _SEED_KITE, [_kite(0, 0, 0), _kite(1, 0, 3), _kite(1, 0, 4),
+                 _kite(1, 0, 5)], 4, 0.0)
 
 
 # builders take `iterations` (and a gasket `holes` count) and return
@@ -551,6 +686,29 @@ KINDS = {
             [0, _W6 - 1, 1 - _W6, -1, -_W6, _W6, 1, -2 + _W6, -1 - _W6,
              2 * _W6 - 1, 1 - 2 * _W6, 1 + _W6, 2 - _W6],
             it, cell=_HEXCELL, holes=h), n=13, samp=True),
+    # Multi-orientation polyform reptiles (graph-directed IFS; the cell
+    # comes in several lattice orientations, so g_i = S(mu_i z + p_i)).
+    # Filled tiles with measure-zero fractal boundaries (osc sampling).
+    'HEPTIAMOND': dict(                       # heptiamond, rep-7
+        build=lambda it, h=0: _ifs_reptile(_HEPTIAMOND_MAPS, it, holes=h,
+                                           seed=_SEED_TRI),
+        n=7, samp=True, osc=True),
+    'TRIRHOMB': dict(                         # trirhomb (terdragon), rep-3
+        build=lambda it, h=0: _ifs_reptile(_TRIRHOMB_MAPS, it, holes=h,
+                                           seed=_SEED_RHOMB),
+        n=3, samp=True, osc=True),
+    'TETRARHOMB': dict(                       # tetrarhomb, rep-4
+        build=lambda it, h=0: _ifs_reptile(_TETRARHOMB_MAPS, it, holes=h,
+                                           seed=_SEED_RHOMB),
+        n=4, samp=True, osc=True),
+    'TRIKITE': dict(                          # trikite, rep-3
+        build=lambda it, h=0: _ifs_reptile(_TRIKITE_MAPS, it, holes=h,
+                                           seed=_SEED_KITE),
+        n=3, samp=True, osc=True),
+    'TETRAKITE': dict(                        # tetrakite, rep-4
+        build=lambda it, h=0: _ifs_reptile(_TETRAKITE_MAPS, it, holes=h,
+                                           seed=_SEED_KITE),
+        n=4, samp=True, osc=True),
     # Reflection / foldable IFS kinds (quad cells; OSC attractors)
     'LEVY_DRAGON': dict(                      # SHK Fig 2c; Levy 1938
         build=lambda it, h=0: _ifs_reptile(_LEVY_MAPS, it, holes=h),
@@ -634,6 +792,26 @@ KIND_ITEMS = [
      "fractal reptile (Fathauer, Bridges 2026)"),
     ('HEX13', "Hex: 13-hex (rep-13)",
      "A compact 13-hex over Eisenstein base -4+w: the rep-13 polyhex "
+     "fractal reptile (Fathauer, Bridges 2026)"),
+    # --- Polyiamond reptiles (triangle cells) ---
+    ('HEPTIAMOND', "Iamond: Heptiamond (rep-7)",
+     "Seven up/down triangles over an Eisenstein contraction "
+     "(theta=19.107): the rep-7 heptiamond fractal reptile via the "
+     "graph-directed IFS g_i=S(mu_i z+p_i) (Fathauer, Bridges 2026)"),
+    # --- Polyrhomb reptiles (60-120 rhombus cells) ---
+    ('TRIRHOMB', "Rhomb: Trirhomb (terdragon, rep-3)",
+     "Three rhombille rhombi, scale 1/sqrt3 theta=30: the rep-3 "
+     "trirhomb whose boundary is the terdragon curve (Fathauer, "
+     "Bridges 2026; Davis-Knuth terdragon)"),
+    ('TETRARHOMB', "Rhomb: Tetrarhomb (rep-4)",
+     "Four rhombille rhombi, scale 1/2 theta=60: the rep-4 tetrarhomb "
+     "fractal reptile (Fathauer, Bridges 2026)"),
+    # --- Polykite reptiles (deltoidal 60-90-120-90 kite cells) ---
+    ('TRIKITE', "Kite: Trikite (rep-3)",
+     "Three deltoidal kites, scale 1/sqrt3 theta=-30: the rep-3 "
+     "trikite fractal reptile (Fathauer, Bridges 2026)"),
+    ('TETRAKITE', "Kite: Tetrakite (rep-4)",
+     "Four deltoidal kites, scale 1/2 theta=0: the rep-4 tetrakite "
      "fractal reptile (Fathauer, Bridges 2026)"),
     # --- Reflection / foldable reptiles ---
     ('LEVY_DRAGON', "Reflection: Levy Dragon (rep-2)",
