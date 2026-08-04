@@ -10,9 +10,10 @@
 # the Bilinski dodecahedron (the "other" rhombic dodecahedron, of golden
 # rhombi), Escher's Solid (the stellated rhombic dodecahedron of M. C.
 # Escher's "Waterfall"), the tetrated dodecahedron (a near-miss Johnson
-# solid), the 3-D associahedron (Stasheff polytope), and polyhedral
+# solid), the 3-D associahedron (Stasheff polytope), polyhedral
 # realizations of Felix Klein's regular map {3,7}_8 (genus 3) and the
-# Schulte-Wills regular maps {6,4} / {4,6} (genus 6).
+# Schulte-Wills regular maps {6,4} / {4,6} (genus 6), and a pair of genus-2
+# heptagonal dodecahedra (12 heptagons each; see _highgenus_maps_data).
 #
 # References:
 # - M. C. Escher, "Waterfall" (1961) and "Study for Stars" (1948); the
@@ -53,6 +54,8 @@ bl_info = {
 }
 
 import math
+
+from . import _highgenus_maps_data as _hgm
 
 PHI = (1 + 5 ** 0.5) / 2
 
@@ -471,6 +474,12 @@ GALLERY = {
                             [11, 9, 10, 12, 13]]},
 }
 
+# Genus-2 heptagonal dodecahedra (crossing-free rounded realizations; see the
+# data module for the construction + references). Merged into the same gallery
+# so they appear in the Notable Polyhedron dropdown.
+GALLERY.update({k: {"name": v["name"], "V": v["V"], "F": v["F"]}
+                for k, v in _hgm.HIGHGENUS_MAPS.items()})
+
 ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
           "echidnahedron -- the outermost stellation (W42)"),
          ("SCHONHARDT", "Schonhardt Polyhedron", "twisted octahedron"),
@@ -489,7 +498,7 @@ ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
          ("MAP64", "Regular Map {6,4} (genus 6)",
           "Schulte-Wills; 20 hexagons"),
          ("MAP46", "Regular Map {4,6} (genus 6)",
-          "dual of {6,4}; 30 squares")]
+          "dual of {6,4}; 30 squares")] + list(_hgm.ITEMS)
 
 
 def build(kind):
@@ -515,6 +524,7 @@ def _self_test():
             'PENTAGON132': (200, 330, 132, 2),
             'ASSOCIAHEDRON': (14, 21, 9, 2), 'KLEIN': (24, 84, 56, -4),
             'MAP64': (30, 60, 20, -10), 'MAP46': (20, 60, 30, -10)}
+    want.update(_hgm.WANT)
     for kind, _lbl, _d in ITEMS:
         V, F = build(kind)
         E = {}
