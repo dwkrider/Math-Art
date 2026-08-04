@@ -1581,6 +1581,99 @@ WE_SURFACES['WEI_DOUBLY'] = {
 }
 SURFACE_FAMILY['WEI_DOUBLY'] = 'DOUBLY'
 
+# ==========================================================================
+# Doubly periodic long tail (appended catalog block)
+# ==========================================================================
+# Four catalog rows over the dptail_* engine in we_builders -- the
+# remaining doubly periodic repository surfaces with real hyperelliptic
+# branch points and dh = dz/z, each shipped with its notebook's solved
+# period constants and gated by measured wall residuals + quotient
+# topology (chi = 2 - 2 genus - 4, four Scherk end rims) in the
+# we_builders self-tests:
+#
+#   * KARCHER_SCHERK_DP -- Karcher's doubly periodic Scherk surfaces
+#     with handles (genus 2, 3, and the 'exotic' genus 3 branch
+#     arrangement): assembled from a straight diagonal line in the
+#     surface plus two vertical mirrors on a square 2 pi lattice.
+#   * WEI_TOWER_DP -- Fusheng Wei's higher-genus towers (1,3)/(1,4)
+#     (with family members walking the solved parameter tables),
+#     the less-symmetric (2,3) genus 4, and the (1,6) genus 6 member.
+#   * RTW_DP -- Rossman-Thayer-Wohlgemuth M1+ (genus 2, with the
+#     period parameter b re-solved from the notebook's own condition)
+#     and two members of the M1+- genus 3 family.
+#   * CONNOR_DP -- Peter Connor's experimental genus 2/3 surfaces
+#     (asymmetric g2 -- Newton-refined here to close its period
+#     problem -- and the page 78/80/82/84/85 examples).
+#
+# References (full citations in the we_builders engine block):
+#   Karcher 1988; Wei 1992; Rossman-Thayer-Wohlgemuth 2000; Connor
+#   2018-19 / Connor-Weber 2012; data after M. Weber,
+#   https://minimalsurfaces.blog/ (doubly periodic repository).
+# Deferred (see BACKLOG.md): Karcher-Scherk g1 (notebook unpublished,
+# no Weierstrass data), g4 (dh = dz/(z^2 - r^2), ends mid-edge),
+# doubly periodic catenoids (branched z^r Gauss map, hexagonal
+# assembly), Lubeck-Batista and CHM g3 (theta-function Gauss maps).
+
+def _dpt_p(keys):
+    """p_from factory: order picks the member key; radius drives the
+    end truncation (rmin for half-annulus styles, trim factor for the
+    full-annulus Connor members)."""
+    def p_from(order, radius):
+        key = keys[int(np.clip(order, 1, len(keys))) - 1]
+        return {'dpt_key': key,
+                'rmin': _dp_rmin(radius),
+                'trim': float(np.clip(6.0 * (radius / 1.2) ** 2,
+                                      1.6, 40.0))}
+    return p_from
+
+
+WE_SURFACES['KARCHER_SCHERK_DP'] = {
+    'label': "Karcher-Scherk with Handles (doubly periodic)",
+    'family': 'DOUBLY',
+    'mesher': we.dptail_mesh,
+    'cells2d_mesher': we.dptail_mesh,
+    'p_from': _dpt_p(('ksg2', 'ksg3', 'ksg3x')),
+    'count': "Member (g2 | g3 | g3 exotic)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['KARCHER_SCHERK_DP'] = 'DOUBLY'
+
+WE_SURFACES['WEI_TOWER_DP'] = {
+    'label': "Wei Higher-Genus Tower (doubly periodic)",
+    'family': 'DOUBLY',
+    'mesher': we.dptail_mesh,
+    'cells2d_mesher': we.dptail_mesh,
+    'p_from': _dpt_p(('wei13_0', 'wei13_1', 'wei13_2', 'wei13_3',
+                      'wei14_0', 'wei14_1', 'wei23', 'wei16')),
+    'count': "Member ((1,3) c=.1/.2/.5/.8 | (1,4) d=.5/.7 | "
+             "(2,3) | (1,6))",
+    'test_order': 3,
+}
+SURFACE_FAMILY['WEI_TOWER_DP'] = 'DOUBLY'
+
+WE_SURFACES['RTW_DP'] = {
+    'label': "Rossman-Thayer-Wohlgemuth (doubly periodic)",
+    'family': 'DOUBLY',
+    'mesher': we.dptail_mesh,
+    'cells2d_mesher': we.dptail_mesh,
+    'p_from': _dpt_p(('rtwmp', 'rtwm1pm_0', 'rtwm1pm_1')),
+    'count': "Member (M1+ | M1+- d=-.03 | M1+- d=-.1)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['RTW_DP'] = 'DOUBLY'
+
+WE_SURFACES['CONNOR_DP'] = {
+    'label': "Connor Experimental (doubly periodic)",
+    'family': 'DOUBLY',
+    'mesher': we.dptail_mesh,
+    'cells2d_mesher': we.dptail_mesh,
+    'p_from': _dpt_p(('conn_asym', 'conn78', 'conn80', 'conn82',
+                      'conn84', 'conn85')),
+    'count': "Member (asym g2 | p78 | p80 | p82 | p84 | p85)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['CONNOR_DP'] = 'DOUBLY'
+
 
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
