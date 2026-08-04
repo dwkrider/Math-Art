@@ -1,23 +1,6 @@
 
 # Fractal Rep-Tile (Polygon f-tiling) Generator for Blender
 #
-# The headline feature is a catalogue of Fathauer's POLYFORM fractal
-# reptiles (Bridges 2025 & 2026), built by the unified polyform-
-# iteration method (scale a tessellating polyform by 1/sqrt(n),
-# rotate/reflect by a grid-allowed angle, re-assemble n copies,
-# iterate).  Shipped presets cover the families whose cells share a
-# single lattice orientation and so converge to a FILLED self-affine
-# tile: all polyominoes, two polyiamonds, the polyhexes, and the n=6
-# distorted-grid rectangle and rhombus.  (The rotated-cell "other
-# polyform" families -- general polyrhombs, polykites, IFS polyboloes --
-# are deferred: naive arrangements tile without overlaps but limit to a
-# dendritic/disconnected attractor, not Fathauer's filled tiles; a
-# connectivity-gated search is needed.  See the project BACKLOG.)  See
-# the "General polyform-iteration reptiles" section below for the method
-# and citations.  The older constructions kept here (right-triangle
-# f-tiling, complex-base radix reptiles, reflection/foldable IFS tiles,
-# the pentabolo isometry gasket) are grouped under "Classic".
-#
 # Fathauer fractal tilings ("f-tilings") built from rep-tile prototiles
 # rather than the kite/dart of the sibling Fractal Tiling generator.  A
 # single similar prototile is grown edge-to-edge in progressively
@@ -149,11 +132,10 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Math Art > Patterns",
-    "description": "Fractal rep-tiles: Fathauer polyform catalogue "
-                   "(polyominoes, polyiamonds, polyhexes, and n=6 "
-                   "rectangle/rhombus) plus classic right-triangle "
-                   "f-tiling, complex-base reptiles, the pentabolo and "
-                   "reflection/foldable tiles",
+    "description": "Fractal rep-tiles: right-triangle f-tiling, "
+                   "complex-base reptiles (twindragon, rep-5, "
+                   "flowsnake) and reflection tiles (Levy dragon, "
+                   "leaf, foldable rep-4)",
     "category": "Add Mesh",
 }
 
@@ -408,12 +390,10 @@ _FOLD_MAPS = [
 ]
 
 
-def _ifs_reptile(maps, iterations, holes=0, seed=_IFS_SEED):
+def _ifs_reptile(maps, iterations, holes=0):
     """(polys, types) for the attractor of a conjugate-affine IFS:
-    every length-k word applied to the `seed` cell (default the unit
-    square; a triangle/hexagon/rhombus/kite for the polyform reptiles)
-    gives m^k small cells, coloured by the outermost word digit (m
-    classes -- the m cells of the generating polyform).
+    every length-k word applied to the unit-square seed gives m^k
+    small quads, coloured by the outermost word digit (m classes).
     holes > 0 drops the last `holes` maps at every level (gasket);
     a sub-system of an OSC system still satisfies the OSC."""
     maps = list(maps)[:max(1, len(maps) - int(holes))]
@@ -430,7 +410,7 @@ def _ifs_reptile(maps, iterations, holes=0, seed=_IFS_SEED):
         words = nxt
     polys, types = [], []
     for w, col in words:
-        z = _w_apply(w, seed)
+        z = _w_apply(w, _IFS_SEED)
         polys.append(np.column_stack([z.real, z.imag]))
         types.append(int(col))
     return polys, types
@@ -496,238 +476,6 @@ def _triangle_ftiling(iterations, holes=0):
             [int(lvl) for lvl, _ in raw])
 
 
-# --------------------------------------------------------------------
-# General polyform-iteration reptiles (Fathauer, Bridges 2025 & 2026)
-#
-# A starting polyform of n cells that tiles the plane by translation is
-# scaled by 1/sqrt(n) about the origin and rotated by theta (or
-# reflected about the theta/2 line); n copies are then re-assembled in
-# exactly the arrangement by which the polyform was built.  Iterating
-# converges to a rep-n self-replicating fractal tile.  This is precisely
-# an IFS of n conjugate-affine maps w_i = T_i o S, where
-#     S(z) = (e^{i theta}/sqrt n) z          (rotation), or
-#     S(z) = (e^{i theta}/sqrt n) conj(z)    (reflection / mirror),
-# and T_i is the rigid placement of cell i -- so the same _ifs_reptile
-# renderer above draws every one of them, coloured by the outermost word
-# digit (the n cells of the generating polyform).
-#
-# The allowed (n, theta) pairs are those for which sqrt(n) e^{-i theta}
-# maps the cell grid onto itself: on the square grid the Gaussian
-# integers a+bi with a^2+b^2 = n (n = 2,4,5,8,9,10,13,...); on the
-# triangular / hexagonal / rhombille / deltoidal grid the Eisenstein
-# integers a + b w with a^2+ab+b^2 = n (n = 3,4,7,9,12,13,...).  theta =
-# -arg(base).  n = 6 is not an allowed grid norm, but the 6-rectangle
-# (sqrt2 x 1 cells, base 2-sqrt2 i) and 6-rhombus (diagonals 1 and
-# sqrt15/3) reptiles obtain it on a deliberately distorted grid.
-#
-# Reference:
-# - Robert Fathauer, "Iterating Polyominoes to Create Fractal Reptiles",
-#   Bridges 2025, pp. 93-100 (square-grid method + angle table).
-# - Robert Fathauer, "Iterating Polyiamonds, Polyhexes, and other
-#   Polyforms to Create Fractal Reptiles", Bridges 2026, pp. 85-92
-#   (triangle/hex/rhombille/deltoidal grids + angle table).
-# --------------------------------------------------------------------
-
-_E2 = np.exp(1j * np.pi / 3.0)               # 60-degree lattice unit
-_H3 = sqrt(3.0) / 2.0
-_HEX_A1 = sqrt(3.0) + 0j                      # unit-edge hex lattice
-_HEX_A2 = sqrt(3.0) * np.exp(1j * np.pi / 3.0)
-
-# base cells (unit edge), as complex-vertex arrays
-_CELL_TRI = np.array([0j, 1 + 0j, _E2])
-_CELL_HEX = np.array([np.exp(1j * (np.pi / 6.0 + k * np.pi / 3.0))
-                      for k in range(6)])
-_CELL_RHO = np.array([0j, 1 + 0j, 1 + _E2, _E2])   # 60-120 (rhombille)
-_KM = [_H3 * np.exp(1j * np.radians(60.0 * k)) for k in range(6)]
-_CELL_KITE = np.array([0j, _KM[0], np.exp(1j * np.radians(30.0)), _KM[1]])
-_CELL_BOLO = np.array([0j, 1 + 0j, 0.5 + 0.5j])    # half-square triangle
-_CELL_RECT = np.array([0j, sqrt(2.0) + 0j, sqrt(2.0) + 1j, 1j])
-_RU = sqrt(15.0) / 6.0 + 0.5j                       # 6-rhombus edges
-_RV = sqrt(15.0) / 6.0 - 0.5j
-_CELL_RHO6 = np.array([0j, _RU, _RU + _RV, _RV])
-
-
-def _pf_gen(n, theta, mirror=False):
-    """generator S = (1/sqrt n) e^{i theta} as (A, B, C); mirror uses
-    the conjugate term (reflection about the theta/2 line)."""
-    a = (1.0 / sqrt(n)) * np.exp(1j * np.radians(theta))
-    return (0j, a, 0j) if mirror else (a, 0j, 0j)
-
-
-def _pf_rigid(rot=0.0, t=0j):
-    """rigid placement T(z) = e^{i rot} z + t as (A, B, C)."""
-    return (np.exp(1j * np.radians(rot)), 0j, complex(t))
-
-
-def _pf_maps(placements, n, theta, mirror=False):
-    """the n IFS maps w_i = T_i o S for a polyform."""
-    s = _pf_gen(n, theta, mirror)
-    return [_w_compose(t, s) for t in placements]
-
-
-# cell-placement builders (each returns a list of (A, B, C) rigids)
-def _sq_place(ts):
-    return [_pf_rigid(0.0, t) for t in ts]
-
-
-def _tri_place(ijs):
-    """triangular-grid cells (i, j, down): up-triangle translated, or a
-    180-degree-rotated down-triangle."""
-    out = []
-    for i, j, s in ijs:
-        base = i + j * _E2
-        out.append(_pf_rigid(180.0, base + 1 + _E2) if s
-                   else _pf_rigid(0.0, base))
-    return out
-
-
-def _hex_place(mks):
-    """hex-grid cells at integer combos of the lattice vectors,
-    re-centred on their centroid (so the origin is the symmetry
-    centre)."""
-    pts = [m * _HEX_A1 + k * _HEX_A2 for m, k in mks]
-    c = sum(pts) / len(pts)
-    return [_pf_rigid(0.0, p - c) for p in pts]
-
-
-def _hex_fund(n, p, q, off=0j, r=8):
-    """compact fundamental domain: the n hex-lattice cells nearest the
-    origin, one per residue class of the Eisenstein base (p, q) -- a
-    provably tiling rep-n polyhex (Bandt 1991)."""
-    key = lambda m, k: (((p + q) * m + q * k) % n, ((-q) * m + p * k) % n)
-    cand = sorted(((m, k) for m in range(-r, r + 1)
-                   for k in range(-r, r + 1)),
-                  key=lambda mk: abs(mk[0] * _HEX_A1 + mk[1] * _HEX_A2 - off))
-    seen, mks = set(), []
-    for m, k in cand:
-        rk = key(m, k)
-        if rk in seen:
-            continue
-        seen.add(rk)
-        mks.append((m, k))
-        if len(mks) == n:
-            break
-    return _hex_place(mks)
-
-
-def _rect_fund(off=0j, r=7):
-    """the 6-rectangle fundamental domain on the sqrt2 x 1 lattice with
-    base 2 - sqrt2 i (norm 6)."""
-    g1, g2 = sqrt(2.0) + 0j, 1j
-    key = lambda m, k: ((2 * m - k) % 6, (2 * m + 2 * k) % 6)
-    cand = sorted(((m, k) for m in range(-r, r + 1)
-                   for k in range(-r, r + 1)),
-                  key=lambda mk: abs(mk[0] * g1 + mk[1] * g2 - off))
-    seen, ts = set(), []
-    for m, k in cand:
-        rk = key(m, k)
-        if rk in seen:
-            continue
-        seen.add(rk)
-        ts.append(m * g1 + k * g2)
-        if len(ts) == 6:
-            break
-    return _sq_place(ts)
-
-
-def _rt_place(rts):
-    """explicit (rot_deg, x, y) placements (rhombille / deltoidal /
-    tetrakis lattices, verified numerically)."""
-    return [_pf_rigid(r, complex(x, y)) for r, x, y in rts]
-
-
-# ---- the polyform preset registry -------------------------------------
-# Each entry: (label, seed cell, n, theta, mirror, placements, grid).
-# grid drives the self-test's overlap check ('square' -> lattice, else
-# dense sampling).  Every preset is verified (cell count = n^k, sampled
-# overlap ~ 0) by the self-test below.
-def _pf(label, seed, n, theta, mirror, placements, grid):
-    return dict(label=label, seed=np.asarray(seed, complex), n=n,
-                theta=theta, mirror=mirror, cells=placements, grid=grid,
-                pf=True)
-
-
-_PF = {
-    # --- polyominoes (square grid) ---
-    'DOMINO': _pf("Domino (twindragon)", _IFS_SEED, 2,
-                  45.0, False, _sq_place([0, 1]), 'square'),
-    'Z_TETROMINO': _pf("Z-Tetromino (twindragon)", _IFS_SEED, 4, 90.0,
-                       False, _sq_place([0, 1, 1 + 1j, 2 + 1j]), 'square'),
-    'X_PENTOMINO': _pf("X-Pentomino", _IFS_SEED, 5, 26.565, False,
-                       _sq_place([0, 1, -1, 1j, -1j]), 'square'),
-    'Z_PENTOMINO': _pf("Z-Pentomino", _IFS_SEED, 5, -26.565, False,
-                       _sq_place([0, 1, 1 + 1j, 1 + 2j, 2 + 2j]), 'square'),
-    'Y_PENTOMINO': _pf("Y-Pentomino", _IFS_SEED, 5, 26.565, False,
-                       _sq_place([0, 1j, 2j, 3j, 1 + 1j]), 'square'),
-    'P_PENTOMINO': _pf("P-Pentomino", _IFS_SEED, 5, 26.565, False,
-                       _sq_place([0, 1, 1j, 1 + 1j, 2j]), 'square'),
-    'BAR_PENTOMINO': _pf("Bar Pentomino", _IFS_SEED, 5, 63.435, False,
-                         _sq_place([0, 1, 2, 3, 4]), 'square'),
-    'Z_OCTOMINO': _pf("Z-Octomino", _IFS_SEED, 8, 45.0, False,
-                      _sq_place([0, 1, 2, 3, 1 + 1j, 2 + 1j, 3 + 1j,
-                                 4 + 1j]), 'square'),
-    'I_OCTOMINO': _pf("I-Octomino", _IFS_SEED, 8, 45.0, False,
-                      _sq_place([0, 1, 2, 3, 4, 5, 6, 7]), 'square'),
-    'FOURFOLD_OCTOMINO': _pf("Four-fold Octomino", _IFS_SEED, 8, 45.0,
-                             False, _sq_place([0, -1, -1 - 1j, -1j, 1,
-                                               -1 + 1j, -2 - 1j, -2j]),
-                             'square'),
-    # --- polyiamonds (triangular grid) ---
-    'HEPTIAMOND': _pf("Heptiamond", _CELL_TRI, 7, 19.107, False,
-                      _tri_place([(-1, 0, 1), (0, -1, 1), (0, 0, 0),
-                                  (0, 0, 1), (1, -1, 0), (1, 0, 0),
-                                  (1, 0, 1)]), 'tri'),
-    'IAMOND13': _pf("13-Iamond", _CELL_TRI, 13, 73.898, True,
-                    _tri_place([(-1, 0, 1), (0, -2, 1), (0, -1, 1),
-                                (0, 0, 0), (0, 0, 1), (1, -2, 0),
-                                (1, -2, 1), (1, -1, 0), (1, -1, 1),
-                                (1, 0, 0), (2, -1, 0), (2, -1, 1),
-                                (3, -1, 0)]), 'tri'),
-    # --- polyhexes (hexagonal grid) ---
-    'TRIHEX': _pf("Trihex (3-fold)", _CELL_HEX, 3, 30.0, False,
-                  _hex_place([(0, 0), (1, 0), (0, 1)]), 'hex'),
-    'TRIHEX_BAR': _pf("Trihex (bar)", _CELL_HEX, 3, 30.0, False,
-                      _hex_place([(0, 0), (1, 0), (2, 0)]), 'hex'),
-    'TETRAHEX': _pf("Tetrahex (3-fold, Sierpinski-like)", _CELL_HEX, 4,
-                    0.0, False,
-                    _hex_place([(0, 0), (1, 0), (-1, 1), (0, -1)]), 'hex'),
-    'HEPTAHEX': _pf("Heptahex (6-fold / Gosper)", _CELL_HEX, 7, 40.893,
-                    False, _hex_place([(0, 0), (1, 0), (0, 1), (-1, 1),
-                                       (-1, 0), (0, -1), (1, -1)]), 'hex'),
-    'HEX9': _pf("9-Hex", _CELL_HEX, 9, 60.0, False,
-                _hex_fund(9, 3, -3), 'hex'),
-    'HEX12': _pf("12-Hex", _CELL_HEX, 12, 30.0, False,
-                 _hex_fund(12, 4, -2), 'hex'),
-    'HEX13': _pf("13-Hex", _CELL_HEX, 13, 13.898, False,
-                 _hex_fund(13, 4, -1), 'hex'),
-    # (The rotated-cell "other polyform" families -- polyrhomb,
-    # polykite and the IFS polybolo, plus the 12-iamond -- are omitted
-    # for now: the arrangements found so far tile without overlaps but
-    # converge to a *dendritic / disconnected* attractor rather than
-    # Fathauer's filled tiles (Bridges 2026 Figs 8-11).  They need a
-    # search gated on attractor connectivity/fill, not just overlap; see
-    # BACKLOG.  Polyboloes remain covered by the classic PENTABOLO, and
-    # the n = 6 distorted RECT6/RHOMB6 below are single-orientation
-    # translation lattices and do fill.)
-    # --- n = 6 on distorted grids ---
-    'RECT6': _pf("6-Rectangle (distorted grid)", _CELL_RECT, 6, 35.264,
-                 False, _rect_fund(), 'rect'),
-    'RHOMB6': _pf("6-Rhombus (distorted grid)", _CELL_RHO6, 6, 52.239,
-                  False, _sq_place([m * _RU + k * _RV for m, k in
-                                    [(0, 0), (-1, 0), (0, -1), (0, 1),
-                                     (1, 0), (-1, 1)]]), 'rho'),
-}
-
-
-def _polyform_build(kind, iterations, holes=0, mirror=False):
-    """(polys, types) for a polyform reptile preset; `mirror` toggles the
-    preset's own mirror flag (reflect vs. rotate generator)."""
-    s = _PF[kind]
-    maps = _pf_maps(s['cells'], s['n'], s['theta'],
-                    s['mirror'] ^ bool(mirror))
-    return _ifs_reptile(maps, iterations, holes, seed=s['seed'])
-
-
 KINDS = {
     # Fathauer polygon-substitution kinds (triangle cells)
     'RIGHT_TRIANGLE': dict(build=_triangle_ftiling, tri=True),
@@ -748,6 +496,24 @@ KINDS = {
     'REP5B': dict(                            # Mekhontsev (5,2)
         build=lambda it, h=0: _base_reptile(1 + 2j, [0, 1, 2, 3, 4], it,
                                             holes=h), n=5),
+    # Fathauer polyomino reptiles (Bridges 2025): the radix DIGIT SET is
+    # the polyomino's own cell positions (a complete residue system mod
+    # the base b, |b|^2 = n); the resulting self-affine tile is the
+    # filled reptile.  (Domino = TWINDRAGON, X-pentomino = REP5, bar-
+    # pentomino = REP5_THIN/REP5B already appear above.)
+    'Z_PENTOMINO': dict(                      # Z pentomino, rep-5
+        build=lambda it, h=0: _base_reptile(
+            -2 - 1j, [0, 1, 1 + 1j, 1 + 2j, 2 + 2j], it, holes=h), n=5),
+    'Y_PENTOMINO': dict(                      # Y pentomino, rep-5
+        build=lambda it, h=0: _base_reptile(
+            -2 + 1j, [0, 1j, 2j, 3j, 1 + 1j], it, holes=h), n=5),
+    'P_PENTOMINO': dict(                      # P pentomino, rep-5
+        build=lambda it, h=0: _base_reptile(
+            -2 + 1j, [0, 1, 1j, 1 + 1j, 2j], it, holes=h), n=5),
+    'Z_OCTOMINO': dict(                       # Z octomino, rep-8
+        build=lambda it, h=0: _base_reptile(
+            -2 - 2j, [0, 1, 2, 3, 1 + 1j, 2 + 1j, 3 + 1j, 4 + 1j], it,
+            holes=h), n=8),
     # Eisenstein radix-system kind (hexagon cells)
     'FLOWSNAKE': dict(                        # Vince Fig 4/7
         build=lambda it, h=0: _base_reptile(_FLOW_BASE, _FLOW_DIGITS,
@@ -766,27 +532,15 @@ KINDS = {
 }
 
 
-# register the polyform presets as KINDS metadata (build routed through
-# _polyform_build via fractal_patch, so the mirror toggle reaches them)
-for _k, _s in _PF.items():
-    KINDS[_k] = dict(n=_s['n'], pf=True, grid=_s['grid'])
-
-
-def fractal_patch(kind, iterations, holes=0, mirror=False):
+def fractal_patch(kind, iterations, holes=0):
     """Return (polys, types): CCW tile arrays and their level/colour
     indices.  holes > 0 drops that many substitution digits/maps at
     every level (Fathauer's fractal-gasket option); 0 is the full
     rep-tile.  The edge-grown RIGHT_TRIANGLE f-tiling has no
-    substitution digits and ignores the option.  `mirror` toggles the
-    reflect-vs-rotate generator of the polyform presets (ignored by the
-    legacy kinds)."""
-    if kind in _PF:
-        polys, types = _polyform_build(kind, iterations, int(holes),
-                                       mirror)
-    elif kind in KINDS:
-        polys, types = KINDS[kind]['build'](iterations, int(holes))
-    else:
+    substitution digits and ignores the option."""
+    if kind not in KINDS:
         raise ValueError("unknown fractal rep-tile %r" % kind)
+    polys, types = KINDS[kind]['build'](iterations, int(holes))
     return [_ensure_ccw(np.asarray(p, float)) for p in polys], types
 
 
@@ -794,33 +548,57 @@ def fractal_patch(kind, iterations, holes=0, mirror=False):
 # Blender operator
 # --------------------------------------------------------------------
 
-_PF_ORDER = [
-    'DOMINO', 'Z_TETROMINO', 'X_PENTOMINO', 'Z_PENTOMINO', 'Y_PENTOMINO',
-    'P_PENTOMINO', 'BAR_PENTOMINO', 'Z_OCTOMINO', 'I_OCTOMINO',
-    'FOURFOLD_OCTOMINO',
-    'HEPTIAMOND', 'IAMOND13',
-    'TRIHEX', 'TRIHEX_BAR', 'TETRAHEX', 'HEPTAHEX', 'HEX9', 'HEX12',
-    'HEX13',
-    'RECT6', 'RHOMB6',
-]
-
-_GRID_NAME = {'square': "Polyomino", 'tri': "Polyiamond", 'hex': "Polyhex",
-              'rho': "Polyrhomb", 'kite': "Polykite", 'bolo': "Polybolo",
-              'rect': "Polyrectangle"}
-
-
-def _pf_item(k):
-    s = _PF[k]
-    fam = _GRID_NAME[s['grid']]
-    desc = ("%s rep-%d reptile (Fathauer 2025/2026): iterate the "
-            "polyform by scaling 1/sqrt(%d) and rotating %g deg%s; the "
-            "Mirror option reflects instead" %
-            (fam, s['n'], s['n'], s['theta'],
-             ", mirrored" if s['mirror'] else ""))
-    return (k, "%s: %s" % (fam, s['label']), desc)
-
-
-KIND_ITEMS = [_pf_item(k) for k in _PF_ORDER] + [
+# Grouped by polyform family.  The polyomino reptiles are Fathauer's
+# radix construction (Bridges 2025): the digit set is the polyomino's
+# cell positions, giving a solid rep-n self-affine tile.
+KIND_ITEMS = [
+    # --- Polyomino reptiles (square cells) ---
+    ('TWINDRAGON', "Polyomino: Domino (twindragon, rep-2)",
+     "Domino, base -1+i, digits {0,1}: the Gilbert/Knuth twindragon "
+     "(Vince Fig 3), aspect ratio 1/phi"),
+    ('REP4', "Polyomino: Square tetromino (rep-4)",
+     "Base 2, digits {0,1,i,-1-i}: rep-4 Sierpinski-relative reptile "
+     "(Vince Fig 6)"),
+    ('REP5', "Polyomino: X-pentomino (round rep-5)",
+     "X-pentomino, base -2+i, digits {0,1,-1,i,-i}: the round rep-5 "
+     "dragon (Vince Fig 5), aspect ratio 1/phi"),
+    ('Z_PENTOMINO', "Polyomino: Z-pentomino (rep-5)",
+     "Z-pentomino cell set {0,1,1+i,1+2i,2+2i} over base -2-i: the "
+     "rep-5 Z-pentomino fractal reptile (Fathauer, Bridges 2025)"),
+    ('Y_PENTOMINO', "Polyomino: Y-pentomino (rep-5)",
+     "Y-pentomino cell set over base -2+i: the rep-5 Y-pentomino "
+     "fractal reptile (Fathauer, Bridges 2025)"),
+    ('P_PENTOMINO', "Polyomino: P-pentomino (rep-5)",
+     "P-pentomino cell set over base -2+i: the rep-5 P-pentomino "
+     "fractal reptile (Fathauer, Bridges 2025)"),
+    ('REP5_THIN', "Polyomino: Bar pentomino (thin rep-5)",
+     "Bar pentomino, base 2+i, collinear digits {0..4}: thin rep-5 "
+     "dragon, aspect ratio 1/phi^3 (Mekhontsev (5,4))"),
+    ('REP5B', "Polyomino: Bar pentomino (rep-5, base 1+2i)",
+     "Bar pentomino, base 1+2i, collinear digits {0..4}: rep-5 dragon, "
+     "aspect ratio sqrt(2)-1 (Mekhontsev (5,2))"),
+    ('Z_OCTOMINO', "Polyomino: Z-octomino (rep-8)",
+     "Z-octomino cell set over base -2-2i: the rep-8 Z-octomino "
+     "fractal reptile (Fathauer, Bridges 2025)"),
+    # --- Polyhex reptiles (hexagon cells) ---
+    ('FLOWSNAKE', "Polyhex: Heptahex / Gosper (rep-7)",
+     "Eisenstein base 5/2+(sqrt3/2)i, digits {0}+sixth roots of "
+     "unity, hexagon cells: the rep-7 Gosper island bounded by the "
+     "flowsnake curve (Vince Fig 4/7; Gardner 1976)"),
+    # --- Reflection / foldable reptiles ---
+    ('LEVY_DRAGON', "Reflection: Levy Dragon (rep-2)",
+     "Two maps contracting by (1-i)/2, the second reflected in the "
+     "x-axis: the Levy dragon rep-tile (Levy 1938; "
+     "Sajid-Husain-Kumar Fig 2c)"),
+    ('LEAF', "Reflection: Leaf Rep-Tile (rep-2)",
+     "Same rep-2 contraction with the second map reflected in the "
+     "y-axis (z to -conj z): the curled-leaf rep-tile "
+     "(Sajid-Husain-Kumar Fig 2d)"),
+    ('FOLDABLE4', "Reflection: Foldable Rep-4 (reflected gasket)",
+     "Rep-4 digit system {0,1,i,-1-i} with an orientation-reversing "
+     "quarter-turn map i*conj(z)/2: foldable reflection rep-4 tile "
+     "(Sajid-Husain-Kumar Theorem 4.4; digits of Vince Fig 6)"),
+    # --- Classic f-tiling & isometry ---
     ('RIGHT_TRIANGLE', "Classic: Right Triangle (f-tiling)",
      "Isosceles right-triangle f-tiling: square seed, a 1/sqrt2 child "
      "glued to every exposed leg; tiles shrink to a fractal boundary"),
@@ -828,37 +606,6 @@ KIND_ITEMS = [_pf_item(k) for k in _PF_ORDER] + [
      "Fathauer 5-isometry inflation of a half-square triangle: 5^k "
      "unit triangles, sqrt5 inflation per level, coloured by "
      "first-level copy"),
-    ('TWINDRAGON', "Classic: Twindragon (rep-2, base -1+i)",
-     "Gaussian base -1+i, digits {0,1}: the Gilbert/Knuth twindragon "
-     "(Vince Fig 3), aspect ratio 1/phi"),
-    ('REP4', "Rep-4 Reptile (base 2)",
-     "Base 2, digits {0,1,i,-1-i}: rep-4 Sierpinski-relative reptile "
-     "(Vince Fig 6)"),
-    ('REP5', "Rep-5 Dragon (round, base -2+i)",
-     "Base -2+i, symmetric digits {0,1,-1,i,-i}: the round rep-5 "
-     "dragon (Vince Fig 5), aspect ratio 1/phi"),
-    ('REP5_THIN', "Rep-5 Dragon (thin, AR 1/phi^3)",
-     "Base 2+i, collinear digits {0..4}: thin rep-5 dragon, aspect "
-     "ratio 1/phi^3 (Mekhontsev (5,4))"),
-    ('REP5B', "Rep-5 Dragon (base 1+2i, AR sqrt2-1)",
-     "Base 1+2i, collinear digits {0..4}: rep-5 dragon, aspect ratio "
-     "sqrt(2)-1 (Mekhontsev (5,2))"),
-    ('FLOWSNAKE', "Flowsnake / Gosper (rep-7)",
-     "Eisenstein base 5/2+(sqrt3/2)i, digits {0}+sixth roots of "
-     "unity, hexagon cells: the rep-7 Gosper island bounded by the "
-     "flowsnake curve (Vince Fig 4/7; Gardner 1976)"),
-    ('LEVY_DRAGON', "Levy Dragon (rep-2, reflection)",
-     "Two maps contracting by (1-i)/2, the second reflected in the "
-     "x-axis: the Levy dragon rep-tile (Levy 1938; "
-     "Sajid-Husain-Kumar Fig 2c)"),
-    ('LEAF', "Leaf Rep-Tile (rep-2, reflection)",
-     "Same rep-2 contraction with the second map reflected in the "
-     "y-axis (z to -conj z): the curled-leaf rep-tile "
-     "(Sajid-Husain-Kumar Fig 2d)"),
-    ('FOLDABLE4', "Foldable Rep-4 (reflected gasket)",
-     "Rep-4 digit system {0,1,i,-1-i} with an orientation-reversing "
-     "quarter-turn map i*conj(z)/2: foldable reflection rep-4 tile "
-     "(Sajid-Husain-Kumar Theorem 4.4; digits of Vince Fig 6)"),
 ]
 
 
@@ -913,19 +660,13 @@ if _IN_BLENDER:
         height: FloatProperty(
             name="Relief Height", default=0.0, min=0.0, max=2.0,
             description="0 = flat 2D mesh; > 0 extrudes each tile")
-        mirror: BoolProperty(
-            name="Mirror", default=False,
-            description="Polyform reptiles only: reflect (instead of "
-                        "rotate) between generations, giving the mirror "
-                        "variant of the tile; ignored by the classic "
-                        "kinds")
         separate: BoolProperty(
             name="Separate Tiles", default=False,
             description="Output each tile as its own mesh object")
 
         def execute(self, context):
             polys, types = fractal_patch(self.kind, self.iterations,
-                                         self.holes, self.mirror)
+                                         self.holes)
             cells = tg.cells_from_polys(
                 lambda a, b: (polys, types), 1, 1, self.color_by,
                 self.margin, self.height, False)
@@ -951,8 +692,6 @@ if _IN_BLENDER:
             for p in ('kind', 'iterations', 'holes', 'color_by',
                       'margin', 'height'):
                 lay.prop(self, p)
-            if self.kind in _PF:
-                lay.prop(self, 'mirror')
             lay.prop(self, 'separate')
             lay.prop(self, 'align')
 
@@ -1075,7 +814,6 @@ if __name__ == "__main__":
         tri_cells = spec.get('tri_cells', False)  # unit-triangle cells
         samp = spec.get('samp', False)        # hex/quad sampling cells
         osc = spec.get('osc', False)          # measure-zero boundary
-        pf = spec.get('pf', False)            # general polyform reptile
         if tri:
             depths = (4, 7)
         elif tri_cells:
@@ -1084,15 +822,12 @@ if __name__ == "__main__":
             depths = (8, 10) if spec['n'] == 2 else (5, 6)
         elif samp:
             depths = (2, 4)
-        elif pf:
-            depths = (2, {2: 11, 3: 7, 4: 6, 5: 5, 6: 4, 7: 4, 8: 4,
-                          9: 3, 12: 3, 13: 3}.get(spec['n'], 4))
         else:
             depths = (4, 7)
         for depth in depths:
             polys, types = fractal_patch(kind, depth)
             covered = 0
-            if tri or tri_cells or samp or pf:
+            if tri or tri_cells or samp:
                 # polygon cells: dense-sampling overlap test
                 allv = np.vstack(polys)
                 lo, hi = allv.min(0), allv.max(0)
@@ -1134,17 +869,6 @@ if __name__ == "__main__":
                 frac = overlaps / float(max(covered, 1))
                 ok = ((len(polys) == n ** depth or capped)
                       and frac < 0.05)
-                extra = "rep-%d count=%d(%d)%s ovfrac=%.4f" % (
-                    n, len(polys), n ** depth,
-                    " capped" if capped else "", frac)
-            elif pf:
-                # polyform reptile: exact tiling except a measure-zero
-                # fractal boundary, so sampled overlap must be tiny
-                n = spec['n']
-                capped = len(polys) < n ** depth
-                frac = overlaps / float(max(covered, 1))
-                ok = ((len(polys) == n ** depth or capped)
-                      and frac < 0.02)
                 extra = "rep-%d count=%d(%d)%s ovfrac=%.4f" % (
                     n, len(polys), n ** depth,
                     " capped" if capped else "", frac)
