@@ -1436,6 +1436,152 @@ WE_SURFACES['SYMM_CG_G3K'] = {
 SURFACE_FAMILY['SYMM_CG_G3K'] = 'HIGHER'
 
 
+
+
+# ==========================================================================
+# Catenoid-Enneper and Costa-Wohlgemuth / Wohlgemuth (appended block)
+# ==========================================================================
+# Tier-3 higher-genus finite-total-curvature surfaces, meshed watertight
+# from one fundamental piece orbited under the full point group -- the
+# engine, verified period constants and references live in
+# we_builders.cwce_ce_mesh / cwce_cw_mesh and the cwce_* block above
+# them:
+#   * CATENOID_ENNEPER  genus 2/3/4, ONE catenoid + ONE Enneper end,
+#     order-4 symmetry (two orthogonal vertical mirrors); the genus-g
+#     member meshes at exactly chi = 2 - 2g - 2 (two open end rims).
+#   * COSTA_WOHLGEMUTH  genus 2(k-1), FOUR ends (2 catenoidal +
+#     2 planar), prismatic D_kh symmetry; k = 2 is Wohlgemuth's
+#     genus-2 surface -- the first complete embedded minimal surface
+#     with four ends; chi = 2 - 2 genus - 4.
+#   * WOHLGEMUTH_G3     Wohlgemuth's second surface: genus 3, four
+#     ends (k = 2 member of the genus-3(k-1) tower; the k > 2 period
+#     problems did not close from the blog's constants -- BACKLOG.md).
+# (C. J. Costa 1984; M. Wohlgemuth, Bonn dissertation 1993 and Arch.
+# Rational Mech. Anal. 137, 1997; Chen & Gackstatter 1982; data after
+# M. Weber, minimalsurfaces.blog, higher-symmetry Wohlgemuth notebook
+# by Ramazan Yol.)
+
+WE_SURFACES['CATENOID_ENNEPER'] = {
+    'label': "Catenoid-Enneper (higher genus)",
+    'family': 'HIGHER',
+    'mesher': we.cwce_ce_mesh,
+    # count slider = the genus (2, 3 or 4 -- the solved period
+    # problems); radius scales the two end trims (catenoid funnel
+    # depth / Enneper flare reach)
+    'p_from': lambda order, radius: {
+        'genus': 2 if order <= 2 else (3 if order == 3 else 4)},
+    'count': "Genus (2/3/4)",
+    'test_order': 2,
+}
+SURFACE_FAMILY['CATENOID_ENNEPER'] = 'HIGHER'
+
+WE_SURFACES['COSTA_WOHLGEMUTH'] = {
+    'label': "Costa-Wohlgemuth (4 ends)",
+    'family': 'HIGHER',
+    'mesher': we.cwce_cw_mesh,
+    # count slider = the symmetry order k (genus 2(k-1)); k snaps to
+    # the solved orders 2/3/4/5/7.  radius slides the strip trims
+    # (planar-end reach and catenoid depth).
+    'p_from': lambda order, radius: {
+        'fam': 'cw',
+        'k': min((2, 3, 4, 5, 7), key=lambda kk: abs(kk - order))},
+    'count': "Symmetry k (2/3/4/5/7)",
+    'test_order': 2,
+}
+SURFACE_FAMILY['COSTA_WOHLGEMUTH'] = 'HIGHER'
+
+WE_SURFACES['WOHLGEMUTH_G3'] = {
+    'label': "Wohlgemuth Second Surface (genus 3)",
+    'family': 'HIGHER',
+    'mesher': we.cwce_cw_mesh,
+    'p_from': lambda order, radius: {'fam': 'w2', 'k': 2},
+    'test_order': 1,
+}
+SURFACE_FAMILY['WOHLGEMUTH_G3'] = 'HIGHER'
+
+# ==========================================================================
+# Doubly periodic KMR + Wei surfaces (appended catalog block)
+# ==========================================================================
+# Three doubly periodic four-ended surfaces on the reusable hyperelliptic
+# tiler in we_builders (dperiodic_*): ONE conformal patch is integrated in
+# exponential coordinates, its boundary arcs are snapped exactly onto
+# their vertical mirror planes / straight lines, and the surface is the
+# orbit of that patch under the reflections/rotations those arcs
+# generate, tiled at the TRUE lattice vectors and welded seam-exactly.
+# The Cells U / V counts of the periodic operator drive the 2-D lattice
+# tiling.  Wall-constant closure (the period problem), quotient topology
+# (chi = 2 - 2g - 4, four Scherk-type end rims), manifoldness and
+# orientability are all measured in the we_builders self-tests.
+#
+#   * KMR_DOUBLY   -- the Karcher-Meeks-Rosenberg toroidal Scherk family
+#     (genus-1 quotient, 4 parallel Scherk ends).  The count slider
+#     walks the branch modulus a (every member closes -- the family's
+#     period problem is solved by its reciprocal branch symmetry).
+#   * KMR3_DOUBLY  -- the KMR-3 member with a Mobius Gauss map
+#     (z+eps)/(z-eps) and elliptic dh: the ends TILT out of the lattice
+#     plane (lattice vector T2 = (0, 2c2, 2c3)); assembled from a mirror
+#     plane and two straight lines in the surface.
+#   * WEI_DOUBLY   -- Fusheng Wei's genus-2 surface: a handle added to
+#     the KMR/Scherk picture.  The count slider walks the harvested
+#     one-parameter family (b, a) with a solved from b by the period
+#     condition Im int_a^b (G + 1/G) dz/z = 0 (verified in the tests).
+#
+# References (full citations in the we_builders engine block):
+#   Karcher 1988; Meeks-Rosenberg 1989; Perez-Rodriguez-Traizet 2005
+#   (the "KMR" classification); F. Wei 1992; data after M. Weber,
+#   https://minimalsurfaces.blog/ (KMR-2, KMR-3, Doubly Wei notebooks).
+# The KMR-1 notebook publishes only a precomputed mesh (no Weierstrass
+# data), so that member is not reconstructable here -- see BACKLOG.md.
+
+def _dp_rmin(radius):
+    """End depth from the radius slider: bigger radius digs the four
+    Scherk ends deeper (the truncation |z| = rmin moves toward 0)."""
+    return float(np.clip(0.05 * (1.2 / max(radius, 0.2)) ** 1.5,
+                         0.008, 0.2))
+
+
+WE_SURFACES['KMR_DOUBLY'] = {
+    'label': "Karcher-Meeks-Rosenberg (doubly periodic)",
+    'family': 'DOUBLY',
+    'mesher': we.dperiodic_mesh,
+    'cells2d_mesher': we.dperiodic_mesh,
+    'dp_key': 'kmr2',
+    'p_from': lambda order, radius: {
+        'a': (0.25, 0.32, 0.40, 0.48, 0.55)[
+            int(np.clip(order, 1, 5)) - 1],
+        'rmin': _dp_rmin(radius)},
+    'count': "Family member (a)",
+    'test_order': 3,
+}
+SURFACE_FAMILY['KMR_DOUBLY'] = 'DOUBLY'
+
+WE_SURFACES['KMR3_DOUBLY'] = {
+    'label': "Karcher-Meeks-Rosenberg (KMR-3, tilted ends)",
+    'family': 'DOUBLY',
+    'mesher': we.dperiodic_mesh,
+    'cells2d_mesher': we.dperiodic_mesh,
+    'dp_key': 'kmr3',
+    'p_from': lambda order, radius: {
+        'xmin': _dp_rmin(radius)},
+    'test_order': 1,
+}
+SURFACE_FAMILY['KMR3_DOUBLY'] = 'DOUBLY'
+
+WE_SURFACES['WEI_DOUBLY'] = {
+    'label': "Wei Doubly Periodic (genus 2)",
+    'family': 'DOUBLY',
+    'mesher': we.dperiodic_mesh,
+    'cells2d_mesher': we.dperiodic_mesh,
+    'dp_key': 'wei',
+    'p_from': lambda order, radius: (lambda bb, aa: {
+        'b': bb, 'a': aa, 'rmin': _dp_rmin(radius)})(
+            *we.DPERIODIC_WEI_SAMPLES[int(np.clip(order, 1, 7)) - 1]),
+    'count': "Family member (b = .3 ... .7)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['WEI_DOUBLY'] = 'DOUBLY'
+
+
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
@@ -1820,4 +1966,112 @@ if __name__ == "__main__":
               f"(want {-6 * S}) nonman={nonman} loops={nloops} "
               f"(want {2 * S + 2}) ncomp={ncomp} fit[|c|={cen:.1e} "
               f"ext={ext:.4f}] {'OK' if good else 'FAIL'}")
+    # Catenoid-Enneper / Costa-Wohlgemuth / Wohlgemuth: full pipeline
+    # watertight gates -- exact chi = 2 - 2 genus - (open end rims),
+    # edge-manifold, one component, 2 m fit, finite UV chart.  The
+    # engine-level period/null gates live in we_builders.__main__.
+    for wkey, word, wgen, wrim in (('CATENOID_ENNEPER', 2, 2, 2),
+                                   ('CATENOID_ENNEPER', 3, 3, 2),
+                                   ('CATENOID_ENNEPER', 4, 4, 2),
+                                   ('COSTA_WOHLGEMUTH', 2, 2, 4),
+                                   ('COSTA_WOHLGEMUTH', 3, 4, 4),
+                                   ('WOHLGEMUTH_G3', 1, 3, 4)):
+        Vg, Qg, uvg = tk.build_parametric(wkey, 60, 60, word, 1.2, 1.0,
+                                          with_uv=True)
+        ecg = {}
+        for f in Qg:
+            m = len(f)
+            for t in range(m):
+                a, b = f[t], f[(t + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecg[e] = ecg.get(e, 0) + 1
+        chi = len(Vg) - len(ecg) + len(Qg)
+        nonman = sum(1 for c in ecg.values() if c > 2)
+        bed = [e for e, c in ecg.items() if c == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a, b in bed:
+            ra, rb = bfind(a), bfind(b)
+            if ra != rb:
+                par[ra] = rb
+        nloops = len({bfind(a) for a, b in bed})
+        parc = list(range(len(Vg)))
+
+        def cfind(a):
+            while parc[a] != a:
+                parc[a] = parc[parc[a]]
+                a = parc[a]
+            return a
+
+        for f in Qg:
+            for i in range(1, len(f)):
+                ra, rb = cfind(f[0]), cfind(f[i])
+                if ra != rb:
+                    parc[ra] = rb
+        ncomp = len({cfind(f[0]) for f in Qg})
+        lo, hi = Vg.min(0), Vg.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        uv_ok = (uvg is not None and len(uvg) == sum(len(f) for f in Qg)
+                 and bool(np.all(np.isfinite(uvg))))
+        want = 2 - 2 * wgen - wrim
+        good = (chi == want and nonman == 0 and nloops == wrim
+                and ncomp == 1 and cen < 1e-6 and abs(ext - 2.0) < 1e-6
+                and uv_ok and bool(np.all(np.isfinite(Vg))))
+        ok &= good
+        print(f"{wkey} n={word} (genus {wgen}): {len(Vg):6d}v "
+              f"{len(Qg):6d}f chi={chi} (want {want}) nonman={nonman} "
+              f"loops={nloops} (want {wrim}) ncomp={ncomp} "
+              f"fit[|c|={cen:.1e} ext={ext:.4f}] uv={uv_ok} "
+              f"{'OK' if good else 'FAIL'}")
+    # Doubly periodic KMR + Wei rows through the FULL toolkit pipeline
+    # with a 2 x 2 lattice tiling (the operator's Cells U x V path):
+    # one connected component (the tiles genuinely weld -- the Scherk
+    # lesson), edge-manifold, 2 m fit, per-corner conformal UV.  (The
+    # quotient topology chi = 2 - 2g - 4 is gated in we_builders.)
+    for dkey, dord in (('KMR_DOUBLY', 3), ('KMR3_DOUBLY', 1),
+                       ('WEI_DOUBLY', 1)):
+        Vd, Qd, uvd = tk.build_parametric(dkey, 48, 48, dord, 1.2, 1.0,
+                                          with_uv=True, cells=(2, 2))
+        ecd = {}
+        for f in Qd:
+            m = len(f)
+            for tq in range(m):
+                a, b = f[tq], f[(tq + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecd[e] = ecd.get(e, 0) + 1
+        nonman = sum(1 for c in ecd.values() if c > 2)
+        parc = list(range(len(Vd)))
+
+        def dfind(a):
+            while parc[a] != a:
+                parc[a] = parc[parc[a]]
+                a = parc[a]
+            return a
+
+        for f in Qd:
+            for i in range(1, len(f)):
+                ra, rb = dfind(f[0]), dfind(f[i])
+                if ra != rb:
+                    parc[ra] = rb
+        ncomp = len({dfind(f[0]) for f in Qd})
+        lo, hi = Vd.min(0), Vd.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        uv_ok = (uvd is not None and len(uvd) == sum(len(f) for f in Qd)
+                 and bool(np.all(np.isfinite(uvd))))
+        good = (nonman == 0 and ncomp == 1 and cen < 1e-6
+                and abs(ext - 2.0) < 1e-6 and uv_ok and len(Qd) > 1000
+                and bool(np.all(np.isfinite(Vd))))
+        ok &= good
+        print(f"doubly {dkey:12s} 2x2: {len(Vd):6d}v {len(Qd):6d}f "
+              f"nonman={nonman} ncomp={ncomp} fit[|c|={cen:.1e} "
+              f"ext={ext:.4f}] uv={uv_ok} {'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")

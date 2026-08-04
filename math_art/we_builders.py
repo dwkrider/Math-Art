@@ -3210,6 +3210,1559 @@ def chm_periodic_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     return V, F, uv
 
 
+# ==========================================================================
+# Catenoid-Enneper (genus 2/3/4) and Costa-Wohlgemuth / Wohlgemuth
+# higher-genus surfaces  (cwce_* block)
+# ==========================================================================
+# Two families of complete finite-total-curvature minimal surfaces on
+# hyperelliptic / cyclic-cover curves, meshed watertight from ONE
+# fundamental piece orbited under the full point group (the same
+# snap-onto-symmetry-element-then-weld scheme as the cg_higher_* and
+# symmcg_* assemblers above).
+#
+# CATENOID-ENNEPER, genus g = 2, 3, 4 (one catenoid + one Enneper end):
+#   on the hyperelliptic curve y^2 = z (z - v_1) ... (z - v_2g) with
+#     phi1 = G dh = rho z^{-1/2} prod (z - v_i)^{+-1/2},
+#     phi2 = dh/G = (1/rho) z^{-3/2} prod (z - v_i)^{-+1/2} (z+1)^2,
+#     dh   = (1 + z)/z dz
+#   (x = Re Int (phi2 - phi1)/2, y = Re Int i(phi2 + phi1)/2,
+#   x3 = Re Int dh).  The catenoid end is the branch point z = 0 (dh has
+#   residue 2 on the double cover), the Enneper end is z = infinity; dh
+#   vanishes at the regular point z = -1 (the neck).  The 2g + 1 real
+#   constants (rho, v_2..v_2g; v_1 normalized to 1) solve the 2g-period
+#   problem of the notebook: Re Int_{v_s}^{v_s+1} omega = 0 alternating
+#   omega_2 / omega_1 across consecutive branch values (the planar
+#   symmetry arcs on either side must lie in the SAME mirror plane) plus
+#   one condition tying the negative real axis into the x-mirror.  All
+#   constants in _CWCE_CE were verified/re-solved here (residuals
+#   ~5e-9, quadrature-stable; g4's were solved from the notebook's
+#   Newton seeds -- the notebook stores none).  Symmetry: two orthogonal vertical mirror planes intersecting
+#   in a vertical axis that threads every branch-point image; group
+#   {1, Mx, My, Rz(pi)} of order 4 (Rz(pi) = the hyperelliptic sheet
+#   swap).  Fundamental piece: the upper-half-plane annulus
+#   rmin <= |z| <= rmax; the positive real segments map to planar
+#   geodesics alternating between the two mirror planes, the negative
+#   real axis into the x-mirror, and the two rims are the catenoid /
+#   Enneper end trims (chi = 2 - 2g - 2 exactly, gated below).
+#
+# COSTA-WOHLGEMUTH, genus 2(k-1), and WOHLGEMUTH SECOND SURFACE,
+# genus 3(k-1)  (4 ends: 2 catenoidal + 2 planar):
+#   on the k-fold cyclic cover of the sphere branched over
+#   {+-1, +-a, +-b} (resp. {+-1, +-a, +-b, +-c}), with
+#     phi1 = (z-1)^{-1+1/k} (z+1)^{1-1/k} (z-a)^{1+1/k} (z+a)^{-1-1/k}
+#            (z-b)^{-1-1/k} (z+b)^{-1+1/k}   [second surface: extra
+#            (z-c)^{1-1/k} (z+c)^{-1+1/k} and the a/b roles reshuffled
+#            as in _cwce_cw_data],
+#     phi2 = the exponent-negated mirror partner (phi1 phi2 = dh^2),
+#     dh   = dz / ((z-b)(z+b)).
+#   Catenoidal ends at z = +-b (dh poles, totally ramified), planar ends
+#   at z = +-a, finite branch images (handles) at z = +-1 (and +-c).
+#   k = 2 gives Wohlgemuth's genus-2 (Costa-Wohlgemuth) and genus-3
+#   surfaces -- the first complete embedded minimal surfaces with four
+#   ends.  Period problem: (a, b) [resp. (a, b, c)] solve the conditions
+#   that the (a,b) symmetry arc's vertical plane and the (0,a) arc's
+#   plane pass through the axis (plus, for the second surface, the z=c
+#   branch image landing on the axis); the constants in _CWCE_CW /
+#   _CWCE_W2 are the notebook literals re-verified here to ~1e-13 for
+#   every k.  Symmetry: prismatic D_kh of order 4k -- k-fold vertical
+#   axis through the +-1 (and +-c) branch images, k vertical mirror
+#   planes at angles j pi/k, one HORIZONTAL mirror plane at the height
+#   h0 of the z = 0 image (the image of the imaginary axis is a planar
+#   geodesic in that plane).  Fundamental piece: the conformal strip
+#   chart z = sqrt(moeb(e^w)), w in [xa, xb] x [0, pi] with
+#   moeb(u) = (rho_m b^2 u + a^2)/(rho_m u + 1), rho_m = a^2/b^2 (the
+#   notebook's chart of the quarter plane): the planar end opens at the
+#   left strip end, the catenoidal end at the right, and the marked
+#   points z = 0, 1, c, infinity sit at exact grid columns on the top
+#   edge where the integrand's algebraic singularities get graded
+#   quadrature blocks with exact node offsets.  4k copies weld to
+#   chi = 2 - 2 genus - 4 exactly (four open end rims), gated below.
+#
+# The Wohlgemuth second-surface family for k > 2 is NOT shipped: the
+# blog notebook's k = 3 / k = 4 constants do not satisfy the closure
+# conditions (residuals ~3e-2 under the same quadrature that confirms
+# every other member at ~1e-13), and re-solving from them stalls --
+# see BACKLOG.md.
+#
+# References:
+#   C. J. Costa, "Example of a complete minimal immersion in R^3 of
+#     genus one and three embedded ends", Bol. Soc. Bras. Mat. 15
+#     (1984) 47-54 -- the ancestor construction;
+#   M. Wohlgemuth, "Higher genus minimal surfaces by growing handles
+#     out of a catenoid", Manuscripta Math. 70 (1991) 397-428, Bonn
+#     dissertation (1993), and "Minimal surfaces of higher genus with
+#     finite total curvature", Arch. Rational Mech. Anal. 137 (1997)
+#     1-25 -- the genus-2 and genus-3 four-ended embedded surfaces;
+#   C. C. Chen, F. Gackstatter, "Elliptische und hyperelliptische
+#     Funktionen und vollstaendige Minimalflaechen vom Enneperschen
+#     Typ", Math. Ann. 259 (1982) -- the Enneper-end heritage of the
+#     catenoid-Enneper family;
+#   H. Karcher, "Construction of minimal surfaces", Univ. of Tokyo
+#     lecture notes (1989) -- the symmetry / period method;
+#   M. Weber, https://minimalsurfaces.blog/ -- repository pages
+#     "Costa-Wohlgemuth surfaces", "Wohlgemuth's second surface"
+#     (higher-symmetry notebook by Ramazan Yol) and "Catenoid-Enneper
+#     surfaces of genus g", whose Mathematica notebooks supplied the
+#     Weierstrass data, period conditions and constants followed here.
+
+# Solved period constants.  CE: genus -> (rho, (v1..v2g)) with v1 = 1;
+# g2/g3 re-verified notebook literals, g4 solved here from the
+# notebook's Newton seeds (residuals ~1e-13, re-checked by the
+# self-test through cwce_ce_residual).
+_CWCE_CE = {
+    2: (2.441868735003271,
+        (1.0, 1.5899997953673903, 4.2856159413955295,
+         5.235200094406395)),
+    3: (2.709609741854014,
+        (1.0, 1.619390029065051, 3.9554260271562294, 4.993548107702124,
+         7.829353305141648, 8.864263970017321)),
+    4: (2.9455445424953384,
+        (1.0, 1.6412114092203107, 3.8014391806809074, 4.89812108352522,
+         7.320461951519022, 8.47252262184776, 11.478960661548184,
+         12.542173771958389)),
+}
+# Costa-Wohlgemuth: k -> (a, b), genus 2(k-1) -- notebook literals
+# re-verified/refined to ~1e-13 for every k
+_CWCE_CW = {
+    2: (0.5936584192549862, 0.8240789231207696),
+    3: (0.6342850763231503, 0.8412721089595467),
+    4: (0.674940760134315, 0.8583521760688522),
+    5: (0.7084980441058044, 0.8722674706663541),
+    7: (0.7583644125949724, 0.8928687061979),
+}
+# Wohlgemuth second surface: k -> (a, b, c), genus 3(k-1); only the
+# k = 2 (genus 3) period problem closes -- see the header note
+_CWCE_W2 = {
+    2: (0.6518984510521686, 0.9141432157734375, 3.0832637626461463),
+}
+
+_CWCE_GL_CACHE = {}
+
+
+def _cwce_gl(n):
+    if n not in _CWCE_GL_CACHE:
+        _CWCE_GL_CACHE[n] = np.polynomial.legendre.leggauss(n)
+    return _CWCE_GL_CACHE[n]
+
+
+def cwce_path_int(fn, waypoints, e_end=(0.0, 0.0), n=400):
+    """Gauss-Legendre integral of fn(z) dz along the polyline
+    `waypoints`; e_end = (e_first, e_last) are algebraic singularity
+    exponents |z - z_end|^-e at the path ends (graded u^p
+    substitution there makes the transformed integrand smooth)."""
+    x, w = _cwce_gl(n)
+    u = 0.5 * (x + 1.0)
+    wu = 0.5 * w
+    total = 0.0 + 0.0j
+    m = len(waypoints) - 1
+    for i in range(m):
+        A, B = complex(waypoints[i]), complex(waypoints[i + 1])
+        eL = e_end[0] if i == 0 else 0.0
+        eR = e_end[1] if i == m - 1 else 0.0
+        if eL > 0.0 and eR > 0.0:
+            Mid = 0.5 * (A + B)
+            total += cwce_path_int(fn, [A, Mid], (eL, 0.0), n)
+            total += cwce_path_int(fn, [Mid, B], (0.0, eR), n)
+            continue
+        if eR > 0.0:
+            A, B = B, A
+            eL, sgn = eR, -1.0
+        else:
+            sgn = 1.0
+        if eL > 0.0:
+            p = 2.0 / max(1e-9, 1.0 - min(eL, 0.95)) + 1.0
+            t = u ** p
+            J = p * u ** (p - 1.0)
+        else:
+            t, J = u, np.ones_like(u)
+        z = A + t * (B - A)
+        f = fn(z) * (B - A) * J
+        f = np.where(np.isfinite(f), f, 0.0)
+        total += sgn * np.sum(f * wu)
+    return total
+
+
+def _cwce_make_phi(factors, pref=1.0):
+    """z -> pref * prod (z - v)^p on Im z >= 0 (principal branches --
+    continuous there, matching continuation from the upper halfplane)."""
+    def phi(z):
+        z = np.asarray(z, dtype=complex)
+        out = np.full(z.shape, pref, dtype=complex)
+        for (v, p) in factors:
+            out = out * np.exp(p * np.log(z - v))
+        return out
+    return phi
+
+
+def cwce_ce_phis(genus):
+    """(fac1, fac2, rho, roots) for Catenoid-Enneper genus g."""
+    rho, roots = _CWCE_CE[genus]
+    f1 = [(0.0, -0.5)]
+    f2 = [(0.0, -1.5)]
+    for i, v in enumerate(roots):
+        s = 0.5 if i % 2 == 0 else -0.5
+        f1.append((v, s))
+        f2.append((v, -s))
+    return f1, f2, rho, list(roots)
+
+
+def cwce_ce_residual(genus, n=400):
+    """The notebook's 2g period conditions at the stored constants
+    (all must vanish -- the self-test's honesty gate on _CWCE_CE)."""
+    f1, f2, rho, v = cwce_ce_phis(genus)
+    phi1 = _cwce_make_phi(f1, rho)
+    phi2r = _cwce_make_phi(f2, 1.0 / rho)
+
+    def om1(z):
+        return 0.5 * (phi2r(z) * (1.0 + z) ** 2 - phi1(z))
+
+    def om2(z):
+        return 0.5j * (phi2r(z) * (1.0 + z) ** 2 + phi1(z))
+
+    res = []
+    for s in range(2 * genus - 1):
+        A, B = v[s], v[s + 1]
+        om = om2 if s % 2 == 0 else om1
+        res.append(np.real(cwce_path_int(om, [A, 1j, B], (0.5, 0.5), n)))
+    res.append(np.real(cwce_path_int(
+        om1, [-0.5, 1j, 0.5 * (v[0] + v[1])], (0.0, 0.0), n)))
+    return np.array(res)
+
+
+def cwce_cw_residual(fam, k, n=400):
+    """Period-condition residuals at the stored (a, b[, c]) constants:
+    the (a,b) arc's mirror plane and the (0,a) arc's plane must pass
+    through the vertical axis (and z = c must land on it)."""
+    a, b, c, exps, marks = _cwce_cw_data(fam, k)
+    f1 = [(p, q1) for p, (q1, q2) in exps.items()]
+    f2 = [(p, q2) for p, (q1, q2) in exps.items()]
+    phi1 = _cwce_make_phi(f1)
+    phi2 = _cwce_make_phi(f2)
+
+    def om1(z):
+        return 0.5 * (phi2(z) - phi1(z))
+
+    def om2(z):
+        return 0.5j * (phi1(z) + phi2(z))
+
+    e1 = 1.0 - 1.0 / k
+    up = 0.35j
+    m = 0.5 * (a + b)
+    if fam == 'cw':
+        r1 = np.real(cwce_path_int(om2, [1.0, 1.0 + up, m + up, m],
+                                   (e1, 0.0), n))
+        I1 = np.real(cwce_path_int(om1, [1.0, 1.0 + up, up, 0.0],
+                                   (e1, 0.0), n))
+        I2 = np.real(cwce_path_int(om2, [1.0, 1.0 + up, up, 0.0],
+                                   (e1, 0.0), n))
+        al = math.pi / k
+        return np.array([r1, -I1 * math.sin(al) + I2 * math.cos(al)])
+    r1 = np.real(cwce_path_int(om2, [0.0, 0.3 + up, 1.0 + up, 1.0],
+                               (0.0, e1), n))
+    r2 = np.real(cwce_path_int(om2, [0.0, 0.3 + up, c + up, c],
+                               (0.0, e1), n))
+    I1 = np.real(cwce_path_int(om1, [1.0, 1.0 + up, m + up, m],
+                               (e1, 0.0), n))
+    I2 = np.real(cwce_path_int(om2, [1.0, 1.0 + up, m + up, m],
+                               (e1, 0.0), n))
+    bet = 0.5 * math.pi - math.pi / k
+    return np.array([r1, r2, I1 * math.cos(bet) + I2 * math.sin(bet)])
+
+
+def cwce_grids(bounds, sing, nu, msub=6, msing=80, pmesh=1.7):
+    """Coarse mesh nodes + fine trapezoid nodes/weights on
+    [bounds[0], bounds[-1]]; interior bounds are exact coarse nodes,
+    entries of `sing` (node -> exponent e of an |x - node|^-e
+    integrable singularity) get graded u^p quadrature blocks with
+    EXACT node offsets (sid/soff).  Returns (x_c, x_f, cidx, sid,
+    soff, w_lo, w_hi); a cumulative line integral is
+    cumsum(w_lo f[:-1] + w_hi f[1:]) sampled at cidx."""
+    nseg = len(bounds) - 1
+    lens = np.diff(np.array(bounds, dtype=float))
+    wseg = np.sqrt(lens)
+    counts = np.maximum(6, np.round(nu * wseg / wseg.sum()).astype(int))
+    keys = sorted(sing)
+
+    def sing_id(x):
+        for i, s in enumerate(keys):
+            if abs(x - s) < 1e-12:
+                return i
+        return -1
+
+    x_c, x_f = [bounds[0]], [bounds[0]]
+    sid, soff = [-1], [0.0]
+    cidx = [0]
+    w_lo, w_hi = [], []
+    for s in range(nseg):
+        A, B = bounds[s], bounds[s + 1]
+        n = int(counts[s])
+        t = np.linspace(0.0, 1.0, n + 1)[1:]
+        tt = np.where(t < 0.5, 0.5 * (2 * t) ** pmesh,
+                      1.0 - 0.5 * (2 * (1 - t)) ** pmesh)
+        nodes = A + (B - A) * tt
+        nodes[-1] = B
+        prev = A
+        for ci in range(n):
+            hi = nodes[ci]
+            singL = ci == 0 and A in sing
+            singR = ci == n - 1 and B in sing
+            if singL:
+                p = 2.0 / max(1e-9, 1.0 - min(sing[A], 0.95)) + 1.0
+                D = hi - A
+                u = np.linspace(0.0, 1.0, msing + 1)
+                off = D * u ** p
+                J = D * p * u ** (p - 1.0)
+                du = 1.0 / msing
+                xf = (A + off)[1:]
+                xf[-1] = hi
+                sid_i = np.full(len(xf), sing_id(A))
+                soff_i = off[1:]
+                w_lo.extend((0.5 * du * J[:-1]).tolist())
+                w_hi.extend((0.5 * du * J[1:]).tolist())
+            elif singR:
+                p = 2.0 / max(1e-9, 1.0 - min(sing[B], 0.95)) + 1.0
+                D = B - prev
+                v = np.linspace(0.0, 1.0, msing + 1)
+                offB = D * (1.0 - v) ** p
+                J = D * p * (1.0 - v) ** (p - 1.0)
+                dv = 1.0 / msing
+                xf = (B - offB)[1:]
+                xf[-1] = B
+                sid_i = np.full(len(xf), sing_id(B))
+                soff_i = -offB[1:]
+                w_lo.extend((0.5 * dv * J[:-1]).tolist())
+                w_hi.extend((0.5 * dv * J[1:]).tolist())
+            else:
+                tloc = np.linspace(0.0, 1.0, msub + 1)
+                left_half = (prev - A) <= (B - hi)
+                if left_half and A in sing and prev > A:
+                    dlo, dhi = prev - A, hi - A
+                    d = dlo * (dhi / dlo) ** tloc
+                    xf_full = A + d
+                    J = d * math.log(dhi / dlo)
+                elif not left_half and B in sing and hi < B:
+                    dtop, dbot = B - prev, B - hi
+                    d = dtop * (dbot / dtop) ** tloc
+                    xf_full = B - d
+                    J = d * abs(math.log(dbot / dtop))
+                else:
+                    xf_full = prev + (hi - prev) * tloc
+                    J = None
+                xf = xf_full[1:].copy()
+                xf[-1] = hi
+                sid_i = np.full(len(xf), -1)
+                soff_i = np.zeros(len(xf))
+                if J is None:
+                    h = 0.5 * (hi - prev) / msub
+                    w_lo.extend([h] * msub)
+                    w_hi.extend([h] * msub)
+                else:
+                    dt = 1.0 / msub
+                    w_lo.extend((0.5 * dt * J[:-1]).tolist())
+                    w_hi.extend((0.5 * dt * J[1:]).tolist())
+            x_f.extend(xf.tolist())
+            sid.extend(sid_i.tolist())
+            soff.extend(soff_i.tolist())
+            cidx.append(len(x_f) - 1)
+            x_c.append(hi)
+            prev = hi
+    return (np.array(x_c), np.array(x_f), np.array(cidx),
+            np.array(sid, dtype=int), np.array(soff),
+            np.array(w_lo), np.array(w_hi))
+
+
+def cwce_weld_frames(V0, faces0, UV0, bmask, mats, revs, tol=1e-6):
+    """Orbit the snapped piece under the affine frames [(M, t)], weld
+    boundary vertices by coincidence (frames with revs[i] True reverse
+    the face winding), drop degenerate faces, and keep the largest
+    face-connected component.  Returns (V, faces, uv)."""
+    nV = len(V0)
+    Vp, Fp = [], []
+    for fr, (M, t) in enumerate(mats):
+        Vp.append(V0 @ np.asarray(M).T + t)
+        for f in faces0:
+            ff = tuple(int(x) + fr * nV for x in f)
+            Fp.append(ff[::-1] if revs[fr] else ff)
+    V = np.concatenate(Vp)
+    UVall = np.tile(UV0, (len(mats), 1))
+    N = len(V)
+    parent = np.arange(N)
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    bidx = np.nonzero(np.tile(bmask, len(mats)))[0]
+    key = np.floor(V[bidx] / tol + 0.5).astype(np.int64)
+    H = {}
+    for t2, i in enumerate(bidx):
+        H.setdefault((int(key[t2, 0]), int(key[t2, 1]),
+                      int(key[t2, 2])), []).append(int(i))
+    for t2, i in enumerate(bidx):
+        k0 = key[t2]
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for dz in (-1, 0, 1):
+                    for j in H.get((int(k0[0]) + dx, int(k0[1]) + dy,
+                                    int(k0[2]) + dz), ()):
+                        if j > i and np.linalg.norm(V[j] - V[i]) < tol:
+                            ra, rb = find(int(i)), find(j)
+                            if ra != rb:
+                                parent[ra] = rb
+    rts = np.array([find(a) for a in range(N)])
+    uniq, inv = np.unique(rts, return_inverse=True)
+    Vw = np.zeros((len(uniq), 3))
+    UVw = np.zeros((len(uniq), 2))
+    cnt = np.zeros(len(uniq))
+    np.add.at(Vw, inv, V)
+    np.add.at(UVw, inv, UVall)
+    np.add.at(cnt, inv, 1)
+    Vw /= cnt[:, None]
+    UVw /= cnt[:, None]
+    F = []
+    for f in Fp:
+        gg = [int(inv[i]) for i in f]
+        h = [gg[0]]
+        for t2 in range(1, len(gg)):
+            if gg[t2] != h[-1]:
+                h.append(gg[t2])
+        if len(h) >= 3 and h[0] != h[-1] and len(set(h)) == len(h):
+            F.append(tuple(h))
+    parent2 = np.arange(len(Vw))
+
+    def find2(a):
+        while parent2[a] != a:
+            parent2[a] = parent2[parent2[a]]
+            a = parent2[a]
+        return a
+
+    for f in F:
+        for i in range(1, len(f)):
+            ra, rb = find2(f[0]), find2(f[i])
+            if ra != rb:
+                parent2[ra] = rb
+    from collections import Counter
+    sizes = Counter(find2(f[0]) for f in F)
+    root = sizes.most_common(1)[0][0]
+    F = [f for f in F if find2(f[0]) == root]
+    used = sorted(set(i for f in F for i in f))
+    rmv = {v: i for i, v in enumerate(used)}
+    return Vw[used], [tuple(rmv[i] for i in f) for f in F], UVw[used]
+
+
+# ---- Catenoid-Enneper piece / assembly -----------------------------------
+
+def cwce_ce_omega(genus, r, theta, sid, soff, roots):
+    """(n, 3) complex (om1, om2, om3) at z = r e^{i theta} on one
+    radial ray; sid/soff give exact offsets to the branch values on
+    the theta = 0 ray (its algebraic singularities are integrated in
+    graded variables where the integrand is smooth)."""
+    f1, f2, rho, _ = cwce_ce_phis(genus)
+    n = len(r)
+    z = r * np.exp(1j * theta)
+    out = []
+    with np.errstate(divide='ignore', invalid='ignore'):
+        for fac, pref in ((f1, rho), (f2, 1.0 / rho)):
+            lmag = np.full(n, math.log(pref))
+            ang = np.zeros(n)
+            for (v, p) in fac:
+                if theta == 0.0:
+                    t = np.abs(r - v)
+                    if v in roots:
+                        m = sid == roots.index(v)
+                        t[m] = np.abs(soff[m])
+                        left = np.array(r < v)
+                        left[m] = soff[m] < 0
+                    else:
+                        left = r < v
+                    lmag = lmag + p * np.log(t)
+                    ang = ang + p * np.where(left, math.pi, 0.0)
+                else:
+                    d = z - v
+                    lmag = lmag + p * np.log(np.abs(d))
+                    ang = ang + p * np.angle(d)
+            out.append(np.exp(lmag + 1j * ang))
+        phi1, phi2 = out
+        phi2 = phi2 * (1.0 + z) ** 2
+        phi3 = (1.0 + z) / z
+        om = np.stack([0.5 * (phi2 - phi1), 0.5j * (phi2 + phi1),
+                       phi3], axis=-1)
+    return np.where(np.isfinite(om), om, 0.0)
+
+
+def cwce_ce_piece(genus, nu, nv, rmin, rmax):
+    """Mesh the upper-half-plane annulus fundamental piece: stitch arc
+    at a mid radius plus radial-ray integration in both directions.
+    Returns (V, faces, boundary classification, per-vertex uv)."""
+    f1, f2, rho, roots = cwce_ce_phis(genus)
+    bounds = [rmin] + roots + [rmax]
+    sing = {v: 0.5 for v in roots}
+    r_c, r_f, cidx, sid, soff, w_lo, w_hi = cwce_grids(bounds, sing, nu)
+    th = np.linspace(0.0, math.pi, nv)
+    rB = math.sqrt(roots[0] * roots[-1])
+    ib = int(np.argmin(np.abs(r_c - rB)))
+    marc = 12
+    thf = np.linspace(0.0, math.pi, (nv - 1) * marc + 1)
+    zf = float(r_c[ib]) * np.exp(1j * thf)
+    lm1 = np.full(len(thf), math.log(rho))
+    an1 = np.zeros(len(thf))
+    lm2 = np.full(len(thf), -math.log(rho))
+    an2 = np.zeros(len(thf))
+    for (v, p) in f1:
+        d = zf - v
+        lm1 += p * np.log(np.abs(d))
+        an1 += p * np.angle(d)
+    for (v, p) in f2:
+        d = zf - v
+        lm2 += p * np.log(np.abs(d))
+        an2 += p * np.angle(d)
+    phi1 = np.exp(lm1 + 1j * an1)
+    phi2 = np.exp(lm2 + 1j * an2) * (1.0 + zf) ** 2
+    phi3 = (1.0 + zf) / zf
+    oma = np.stack([0.5 * (phi2 - phi1), 0.5j * (phi2 + phi1), phi3],
+                   axis=-1)
+    dzf = np.diff(zf)[:, None]
+    Aarc = np.concatenate(
+        [np.zeros((1, 3), complex),
+         np.cumsum(0.5 * (oma[1:] + oma[:-1]) * dzf, axis=0)],
+        axis=0)[::marc]
+    ncr = len(r_c)
+    X = np.zeros((ncr, nv, 3))
+    for j, t in enumerate(th):
+        om = cwce_ce_omega(genus, r_f, float(t), sid, soff, roots)
+        contrib = (w_lo[:, None] * om[:-1] + w_hi[:, None] * om[1:]) \
+            * np.exp(1j * t)
+        F = np.concatenate([np.zeros((1, 3), complex),
+                            np.cumsum(contrib, axis=0)], axis=0)
+        F = F - F[cidx[ib]]
+        X[:, j, :] = np.real(Aarc[j][None, :] + F[cidx])
+    V = X.reshape(-1, 3)
+
+    def vid(i, j):
+        return i * nv + j
+
+    UV = np.zeros((len(V), 2))
+    UV[:, 0] = np.tile(th / math.pi, ncr)
+    UV[:, 1] = np.repeat(np.linspace(0.0, 1.0, ncr), nv)
+    faces = []
+    for i in range(ncr - 1):
+        for j in range(nv - 1):
+            faces.append((vid(i, j), vid(i + 1, j),
+                          vid(i + 1, j + 1), vid(i, j + 1)))
+    root_ci = [int(np.argmin(np.abs(r_c - v))) for v in roots]
+    b = {'seg': {}, 'branch': {}}
+    lastci = 0
+    for s in range(len(roots) + 1):
+        hi_ci = root_ci[s] if s < len(roots) else ncr - 1
+        i0 = lastci if s == 0 else lastci + 1
+        stop = hi_ci + (1 if s == len(roots) else 0)
+        b['seg'][s] = np.array([vid(i, 0) for i in range(i0, stop)],
+                               dtype=np.int64)
+        if s < len(roots):
+            b['branch'][s] = vid(hi_ci, 0)
+        lastci = hi_ci
+    b['neg'] = np.array([vid(i, nv - 1) for i in range(ncr)],
+                        dtype=np.int64)
+    return V, faces, b, UV
+
+
+def cwce_ce_snap(V, b):
+    """Snap the boundary onto the exact symmetry elements: even real
+    segments into the y = cy mirror, odd segments and the negative
+    axis into x = cx, branch images onto the axis (cx, cy).  Returns
+    (V, (cx, cy), pre-snap residuals -- the numeric period closure)."""
+    ys, xs = [], []
+    for s, idx in b['seg'].items():
+        if len(idx):
+            (ys if s % 2 == 0 else xs).append(
+                V[idx, 1] if s % 2 == 0 else V[idx, 0])
+    xs.append(V[b['neg'], 0])
+    cy = float(np.median(np.concatenate(ys)))
+    cx = float(np.median(np.concatenate(xs)))
+    res = {}
+    for s, idx in b['seg'].items():
+        if len(idx) == 0:
+            continue
+        ax = 1 if s % 2 == 0 else 0
+        cv = cy if s % 2 == 0 else cx
+        res[f'seg{s}'] = float(np.max(np.abs(V[idx, ax] - cv)))
+        V[idx, ax] = cv
+    res['neg'] = float(np.max(np.abs(V[b['neg'], 0] - cx)))
+    V[b['neg'], 0] = cx
+    for s, vi in b['branch'].items():
+        res[f'branch{s}'] = float(np.hypot(V[vi, 0] - cx,
+                                           V[vi, 1] - cy))
+        V[vi, 0], V[vi, 1] = cx, cy
+    return V, (cx, cy), res
+
+
+def cwce_ce_assemble(genus, nu, nv, rmin=None, rmax=None):
+    """Watertight order-4 assembly of the Catenoid-Enneper surface:
+    4 snapped copies of the half-plane piece welded along the mirror
+    curves; the two rims stay open (catenoid / Enneper end trims).
+    Returns (V, faces, uv, diag)."""
+    rho, roots = _CWCE_CE[genus]
+    if rmin is None:
+        rmin = roots[0] / {2: 10.0, 3: 40.0, 4: 60.0}[genus]
+    if rmax is None:
+        rmax = {2: 1.5, 3: 1.12, 4: 1.08}[genus] * roots[-1]
+    V0, faces0, b, UV0 = cwce_ce_piece(genus, nu, nv, rmin, rmax)
+    V0, (cx, cy), res = cwce_ce_snap(V0.copy(), b)
+    bmask = np.zeros(len(V0), dtype=bool)
+    for idx in b['seg'].values():
+        bmask[idx] = True
+    bmask[list(b['branch'].values())] = True
+    bmask[b['neg']] = True
+    I3 = np.eye(3)
+    My = np.diag([1.0, -1.0, 1.0])
+    Mx = np.diag([-1.0, 1.0, 1.0])
+    R2 = np.diag([-1.0, -1.0, 1.0])
+    mats = [(I3, np.zeros(3)),
+            (R2, np.array([2 * cx, 2 * cy, 0.0])),
+            (My, np.array([0.0, 2 * cy, 0.0])),
+            (Mx, np.array([2 * cx, 0.0, 0.0]))]
+    revs = [False, False, True, True]
+    V, F, UV = cwce_weld_frames(V0, faces0, UV0, bmask, mats, revs)
+    return V, F, UV, {'res': res}
+
+
+def cwce_ce_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """MESH_PARAM builder: finished (V, quads, uv) fit to the 2 m cube.
+    The radius slider scales both end trims (how far the catenoid
+    funnel and the Enneper flare reach)."""
+    p = spec['p_from'](order, radius)
+    genus = p['genus']
+    rho, roots = _CWCE_CE[genus]
+    t = float(np.clip(radius / 1.2, 0.55, 1.8))
+    rmin = roots[0] / ({2: 10.0, 3: 40.0, 4: 60.0}[genus] ** t)
+    rmax = roots[-1] * (1.0 + ({2: 0.5, 3: 0.12, 4: 0.08}[genus]) * t)
+    pnu = int(np.clip(nu * 1.6, 90, 260))
+    pnv = int(np.clip(nv * 0.55, 21, 49))
+    V, quads, uv, _diag = cwce_ce_assemble(genus, pnu, pnv, rmin, rmax)
+    tk = _toolkit()
+    V = tk._smooth_boundary(V, quads, iters=6)
+    V = tk._center_fit(V, scale, V)
+    return V, quads, uv
+
+
+# ---- Costa-Wohlgemuth / Wohlgemuth piece / assembly ----------------------
+
+def _cwce_expm1c(w):
+    """exp(w) - 1 for complex w, accurate near w = 0."""
+    w = np.asarray(w, dtype=complex)
+    small = np.abs(w) < 1e-5
+    out = np.exp(w) - 1.0
+    ws = w[small]
+    out[small] = ws * (1.0 + ws * (0.5 + ws / 6.0))
+    return out
+
+
+def _cwce_cw_data(fam, k):
+    """(a, b, c, exps, marks): exps maps branch value p -> exponents
+    (in phi1, in phi2) of the factor (z - p); marks are the strip
+    x-positions of the top-edge marked points z = 0, infinity, 1, c."""
+    if fam == 'cw':
+        a, b = _CWCE_CW[k]
+        c = None
+    else:
+        a, b, c = _CWCE_W2[k]
+    e1 = 1.0 - 1.0 / k
+    ea = 1.0 + 1.0 / k
+    exps = {1.0: (-e1, e1), -1.0: (e1, -e1),
+            a: (ea, -ea), -a: (-ea, ea),
+            b: (-1.0 - 1.0 / k, -1.0 + 1.0 / k),
+            -b: (-1.0 + 1.0 / k, -1.0 - 1.0 / k)}
+    if fam == 'w2':
+        exps[c] = (e1, -e1)
+        exps[-c] = (-e1, e1)
+    marks = {'x0': 0.0,
+             'xinf': math.log(b * b / (a * a)),
+             'x1': math.log(b * b * (1 - a * a)
+                            / (a * a * (1 - b * b)))}
+    if fam == 'w2':
+        rho = a * a / (b * b)
+        marks['xc'] = math.log((c * c - a * a)
+                               / (rho * (c * c - b * b)))
+    return a, b, c, exps, marks
+
+
+def cwce_cw_omega_row(fam, k, dat, x_f, y, sid, soff, skeys):
+    """(nf, 3) complex (om1, om2, om3) * dz/dw along the strip row
+    w = x + iy under the chart z = sqrt(moeb(e^w)).  Every pair
+    difference z^2 - p^2 is evaluated through a cancellation-free
+    Moebius identity (exact expm1 forms), so the rows next to the
+    marked points z = 0, 1, c, infinity stay at full precision;
+    sid/soff carry exact offsets to the singular marks."""
+    a, b, c, exps, marks = dat
+    rho = a * a / (b * b)
+    w = x_f + 1j * y
+    with np.errstate(divide='ignore', invalid='ignore',
+                     over='ignore'):
+        D = -_cwce_expm1c(w + math.log(rho) - 1j * math.pi)
+        Nz = -rho * b * b * _cwce_expm1c(w - 1j * math.pi)
+        z = np.sqrt(Nz / D)
+        flip = (z.imag < 0) | ((z.imag == 0) & (z.real < 0))
+        z = np.where(flip, -z, z)
+        if y in (0.0, math.pi):
+            z = np.where(np.abs(z.imag) < 1e-30 * np.abs(z.real),
+                         z.real + 0j, z)
+        u = np.exp(w)
+        x1 = marks['x1']
+        d1 = x_f - x1
+        if 'x1' in skeys:
+            m = sid == skeys.index('x1')
+            d1 = d1.copy()
+            d1[m] = soff[m]
+        pairs = {1.0: rho * (b * b - 1.0) * (-math.exp(x1))
+                 * _cwce_expm1c(d1 + 1j * (y - math.pi)) / D,
+                 a: rho * u * (b * b - a * a) / D,
+                 b: (a * a - b * b) / D}
+        if fam == 'w2':
+            xc = marks['xc']
+            dc = x_f - xc
+            if 'xc' in skeys:
+                m = sid == skeys.index('xc')
+                dc = dc.copy()
+                dc[m] = soff[m]
+            pairs[c] = rho * (b * b - c * c) * (-math.exp(xc)) \
+                * _cwce_expm1c(dc + 1j * (y - math.pi)) / D
+        lm1 = np.zeros(len(x_f))
+        an1 = np.zeros(len(x_f))
+        lm2 = np.zeros(len(x_f))
+        an2 = np.zeros(len(x_f))
+        for p, (q1, q2) in exps.items():
+            fac = pairs[p] / (z + p) if p > 0 else z - p
+            if y in (0.0, math.pi):
+                fac = np.where(np.abs(fac.imag)
+                               < 1e-25 * np.abs(fac.real),
+                               fac.real + 0j, fac)
+            L = np.log(np.abs(fac))
+            A = np.angle(fac)
+            lm1 = lm1 + q1 * L
+            an1 = an1 + q1 * A
+            lm2 = lm2 + q2 * L
+            an2 = an2 + q2 * A
+        phi1 = np.exp(lm1 + 1j * an1)
+        phi2 = np.exp(lm2 + 1j * an2)
+        dh = 1.0 / pairs[b]
+        dzdw = rho * (b * b - a * a) / (D * D) * u / (2.0 * z)
+        om = np.stack([0.5 * (phi2 - phi1), 0.5j * (phi1 + phi2), dh],
+                      axis=-1) * dzdw[:, None]
+    return np.where(np.isfinite(om), om, 0.0)
+
+
+def cwce_cw_piece(fam, k, nu, nv, xa, xb):
+    """Mesh the strip fundamental piece [xa, xb] x [0, pi]: row-wise
+    integration rebased at a generic column plus one column stitch.
+    Returns (V, faces, boundary classification, per-vertex uv)."""
+    dat = _cwce_cw_data(fam, k)
+    marks = dat[4]
+    e1 = 1.0 - 1.0 / k
+    mk = sorted(marks.items(), key=lambda t: t[1])
+    bounds = [xa] + [v for _, v in mk] + [xb]
+    sing = {v: (e1 if name in ('x1', 'xc') else 0.5)
+            for name, v in mk}
+    x_c, x_f, cidx, sid_x, soff, w_lo, w_hi = cwce_grids(
+        bounds, sing, nu, msub=6, msing=80)
+    skeys = [name for name, v in mk]
+    ys = np.linspace(0.0, math.pi, nv)
+    ncx = len(x_c)
+    icB = int(np.argmin(np.abs(x_c - 0.5 * (marks['x1'] + xb))))
+    marc = 10
+    yf = np.linspace(0.0, math.pi, (nv - 1) * marc + 1)
+    omc = np.stack([cwce_cw_omega_row(
+        fam, k, dat, np.array([x_c[icB]]), float(yf[t]),
+        np.array([-1]), np.array([0.0]), skeys)[0]
+        for t in range(len(yf))])
+    dyf = np.diff(yf)[:, None]
+    Acol = np.concatenate(
+        [np.zeros((1, 3), complex),
+         np.cumsum(0.5 * (omc[1:] + omc[:-1]) * (1j * dyf), axis=0)],
+        axis=0)[::marc]
+    X = np.zeros((ncx, nv, 3))
+    for j, y in enumerate(ys):
+        om = cwce_cw_omega_row(fam, k, dat, x_f, float(y), sid_x,
+                               soff, skeys)
+        contrib = w_lo[:, None] * om[:-1] + w_hi[:, None] * om[1:]
+        F = np.concatenate([np.zeros((1, 3), complex),
+                            np.cumsum(contrib, axis=0)], axis=0)
+        F = F - F[cidx[icB]]
+        X[:, j, :] = np.real(Acol[j][None, :] + F[cidx])
+    V = X.reshape(-1, 3)
+
+    def vid(i, j):
+        return i * nv + j
+
+    UV = np.zeros((len(V), 2))
+    UV[:, 0] = np.tile(ys / math.pi, ncx)
+    UV[:, 1] = np.repeat(np.linspace(0.0, 1.0, ncx), nv)
+    faces = []
+    for i in range(ncx - 1):
+        for j in range(nv - 1):
+            faces.append((vid(i, j), vid(i + 1, j),
+                          vid(i + 1, j + 1), vid(i, j + 1)))
+    mark_ci = {name: int(np.argmin(np.abs(x_c - v)))
+               for name, v in marks.items()}
+    b_cls = {'bottom': np.array([vid(i, 0) for i in range(ncx)],
+                                dtype=np.int64)}
+    edges = [0] + [mark_ci[name] for name in skeys] + [ncx - 1]
+    segs = []
+    for s in range(len(edges) - 1):
+        i0, i1 = edges[s], edges[s + 1]
+        first = i0 if s == 0 else i0 + 1
+        last = i1 + (1 if s == len(edges) - 2 else 0)
+        segs.append(np.array([vid(i, nv - 1)
+                              for i in range(first, last)],
+                             dtype=np.int64))
+    b_cls['top_segs'] = segs
+    b_cls['top_names'] = skeys
+    b_cls['mark_vid'] = {name: vid(ci, nv - 1)
+                         for name, ci in mark_ci.items()}
+    return V, faces, b_cls, UV
+
+
+def cwce_cw_snap(fam, k, V, b_cls):
+    """Center on the z = 1 branch image (the origin of the D_kh
+    frame), then snap every boundary curve onto its exact symmetry
+    element: vertical mirror planes through the axis at the family's
+    angles (0 / pi/k, measured off the Weierstrass phases), the
+    horizontal mirror plane at the z = 0 image height h0, and the
+    branch images onto the axis.  Returns (V, h0, residuals)."""
+    res = {}
+    V = V - V[b_cls['mark_vid']['x1']]
+    if fam == 'cw':
+        seg_angle = [math.pi / k, None, 0.0, math.pi / k]
+        bottom_angle = 0.0
+        ang0 = math.pi / k
+    else:
+        seg_angle = [0.0, None, 0.0, math.pi / k, 0.0]
+        bottom_angle = math.pi / k
+        ang0 = 0.0
+    h0 = float(V[b_cls['mark_vid']['x0'], 2])
+    for s, idx in enumerate(b_cls['top_segs']):
+        if len(idx) == 0:
+            continue
+        ang = seg_angle[s]
+        if ang is None:                    # horizontal-mirror curve
+            res[f'top{s}'] = float(np.max(np.abs(V[idx, 2] - h0)))
+            V[idx, 2] = h0
+        else:
+            uvec = np.array([math.cos(ang), math.sin(ang)])
+            xy = V[idx][:, :2]
+            t = xy @ uvec
+            perp = xy - t[:, None] * uvec[None, :]
+            res[f'top{s}'] = float(np.max(np.linalg.norm(perp,
+                                                        axis=1)))
+            V[idx, 0] = t * uvec[0]
+            V[idx, 1] = t * uvec[1]
+    idx = b_cls['bottom']
+    uvec = np.array([math.cos(bottom_angle), math.sin(bottom_angle)])
+    xy = V[idx][:, :2]
+    t = xy @ uvec
+    perp = xy - t[:, None] * uvec[None, :]
+    res['bottom'] = float(np.max(np.linalg.norm(perp, axis=1)))
+    V[idx, 0] = t * uvec[0]
+    V[idx, 1] = t * uvec[1]
+    mv = b_cls['mark_vid']
+    res['b_x1'] = float(np.hypot(V[mv['x1'], 0], V[mv['x1'], 1]))
+    V[mv['x1'], 0] = V[mv['x1'], 1] = 0.0
+    if 'xc' in mv:
+        res['b_xc'] = float(np.hypot(V[mv['xc'], 0], V[mv['xc'], 1]))
+        V[mv['xc'], 0] = V[mv['xc'], 1] = 0.0
+    for name, ang in (('x0', ang0), ('xinf', 0.0)):
+        vi = mv[name]
+        uvec = np.array([math.cos(ang), math.sin(ang)])
+        t = float(V[vi, :2] @ uvec)
+        res[f'b_{name}'] = max(
+            float(np.linalg.norm(V[vi, :2] - t * uvec)),
+            abs(float(V[vi, 2] - h0)))
+        V[vi, 0], V[vi, 1] = t * uvec[0], t * uvec[1]
+        V[vi, 2] = h0
+    return V, h0, res
+
+
+def cwce_cw_assemble(fam, k, nu, nv, xa=None, xb=None):
+    """Watertight D_kh assembly (4k frames: k rotations x vertical
+    mirror x horizontal mirror at h0); the four end rims stay open.
+    Returns (V, faces, uv, diag)."""
+    dat = _cwce_cw_data(fam, k)
+    marks = dat[4]
+    if xa is None:
+        xa = -1.4
+    if xb is None:
+        xb = marks['x1'] + 2.6
+    V0, faces0, b_cls, UV0 = cwce_cw_piece(fam, k, nu, nv, xa, xb)
+    V0, h0, res = cwce_cw_snap(fam, k, V0.copy(), b_cls)
+    bmask = np.zeros(len(V0), dtype=bool)
+    bmask[b_cls['bottom']] = True
+    for idx in b_cls['top_segs']:
+        bmask[idx] = True
+    bmask[list(b_cls['mark_vid'].values())] = True
+    mats, revs = [], []
+    Mzh = np.diag([1.0, 1.0, -1.0])
+    My = np.diag([1.0, -1.0, 1.0])
+    for j in range(k):
+        cj, sj = math.cos(TAU * j / k), math.sin(TAU * j / k)
+        R = np.array([[cj, -sj, 0.0], [sj, cj, 0.0],
+                      [0.0, 0.0, 1.0]])
+        for m in (0, 1):
+            for h in (0, 1):
+                M = R @ (My if m else np.eye(3)) \
+                    @ (Mzh if h else np.eye(3))
+                mats.append((M, np.array([0.0, 0.0, 2.0 * h0 * h])))
+                revs.append((m + h) % 2 == 1)
+    V, F, UV = cwce_weld_frames(V0, faces0, UV0, bmask, mats, revs)
+    return V, F, UV, {'res': res, 'h0': h0}
+
+
+def cwce_cw_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """MESH_PARAM builder: finished (V, quads, uv) fit to the 2 m
+    cube.  The radius slider slides the strip trims (planar-end reach
+    on the left, catenoid depth on the right)."""
+    p = spec['p_from'](order, radius)
+    fam, k = p['fam'], p['k']
+    marks = _cwce_cw_data(fam, k)[4]
+    t = float(np.clip(radius / 1.2, 0.7, 1.5))
+    xa = -1.4 * t
+    xb = marks['x1'] + 2.6 * t
+    pnu = int(np.clip(nu * 1.8, 110, 300))
+    pnv = int(np.clip(nv * 0.42, 17, 37))
+    V, quads, uv, _diag = cwce_cw_assemble(fam, k, pnu, pnv, xa, xb)
+    tk = _toolkit()
+    V = tk._smooth_boundary(V, quads, iters=6)
+    V = tk._center_fit(V, scale, V)
+    return V, quads, uv
+
+
+# ==========================================================================
+# Doubly periodic hyperelliptic tiler -- Karcher-Meeks-Rosenberg + Wei
+# ==========================================================================
+# A reusable engine for the classical four-ended doubly periodic minimal
+# surfaces whose Weierstrass data lives on a hyperelliptic curve with
+# reciprocal-paired REAL branch points and dh = dz/z (the "KMR form"):
+#
+#     g(z) = prod_i (z - p_i)^(e_i/2),   e_i = +-1,  p_i real,
+#     dh   = dz/z,
+#
+# plus the KMR-3 member, whose Gauss map is the Mobius map
+# (z + eps)/(z - eps) with eps = e^{i Phi} and whose dh is the
+# holomorphic differential dz/w of the elliptic curve
+# w^2 = z^4 - 2 cos(2 Alpha) z^2 + 1 (branch points on the unit circle).
+#
+# Structure exploited (and verified by the self-tests):
+#   * In exponential coordinates z = e^w the quotient surface is an
+#     annulus; the engine integrates ONE conformal patch over the strip
+#     u in [log rmin, 0], v in [0, pi] (the upper-half-plane half of the
+#     annulus) with a graded, branch-aligned grid and a refined
+#     trapezoid rule anchored on the smooth v = pi/2 midline.
+#   * The patch boundary v = 0 / v = pi (the real z axis) decomposes at
+#     the branch points into planar symmetry arcs lying in VERTICAL
+#     MIRROR PLANES x1 = const / x2 = const -- alternating with the
+#     parity of the branch points passed -- or (KMR-3) into straight
+#     lines on the surface.  Each arc is snapped exactly onto its plane
+#     or line; the mismatch of wall constants that must coincide IS the
+#     period problem, measured and gated as a residual (for Wei's
+#     surface it reproduces the notebook's FindRoot condition
+#     Im int_a^b (G + 1/G) dz/z = 0).
+#   * The whole doubly periodic surface is the orbit of that one patch
+#     under the group generated by the boundary isometries -- diagonal
+#     sign maps (reflections in the coordinate mirror planes, 180-degree
+#     rotations about straight lines in the surface) -- together with
+#     the two lattice translations they compose to:
+#         T1 = (2 dx, 0, 0),  T2 = (0, 2 pi, 0)      (KMR-1/2, Wei), or
+#         T2 = (0, 2 c2, 2 c3)                       (KMR-3, tilted).
+#     Copies weld seam-exactly because shared arcs are snapped onto the
+#     fixed sets of the gluing isometries (no loose float matching).
+#
+# Every gluing map is a Schwarz reflection (z -> zbar on the parameter
+# domain, anti-conformal), so every generator -- including the proper
+# 180-degree rotations -- reverses the surface orientation; face
+# windings flip with the generator parity, keeping the welded mesh
+# consistently oriented.
+#
+# References:
+#   H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#     examples", Manuscripta Math. 62 (1988) 83-114 (the doubly
+#     periodic Scherk deformations; toroidal saddle towers);
+#   W. H. Meeks III, H. Rosenberg, "The global theory of doubly
+#     periodic minimal surfaces", Invent. Math. 97 (1989) 351-379;
+#   J. Perez, M. M. Rodriguez, M. Traizet, "The classification of
+#     doubly periodic minimal tori with parallel ends", J. Differential
+#     Geom. 69 (2005) 523-577 (the standard examples are named "KMR
+#     surfaces" here);
+#   F. Wei, "Some existence and uniqueness theorems for doubly periodic
+#     minimal surfaces", Invent. Math. 109 (1992) 113-136 (the genus-2
+#     surface: a KMR/Scherk surface with an added handle);
+#   M. Weber, https://minimalsurfaces.blog/ repository, doubly periodic
+#     section (KMR-2, KMR-3 and "Doubly Wei (g=2)" notebooks -- the
+#     Weierstrass data, solved period constants and reflection
+#     assemblies this engine follows).
+
+# Wei genus-2 family: (b, a) pairs with a solved from b by the period
+# condition Im int_a^b (G + 1/G) dz/z = 0 (the notebook's FindRoot
+# values, verified against the same integral by the self-test below).
+DPERIODIC_WEI_SAMPLES = (
+    (0.30, 0.23640853975826828),
+    (0.35, 0.18932453473239355),
+    (0.40, 0.14531351679837468),
+    (0.50, 0.07082564803712697),
+    (0.60, 0.022673092012506006),
+    (0.65, 0.009769033395931668),
+    (0.70, 0.0030808434547059727),
+)
+
+
+def _dperiodic_graded(a, b, n):
+    """n+1 cosine-graded nodes on [a, b], clustered at both endpoints
+    (the branch points sit at interval ends, where the integrand has
+    its inverse-square-root singularities)."""
+    t = np.linspace(0.0, 1.0, max(2, int(n)) + 1)
+    return a + (b - a) * (0.5 - 0.5 * np.cos(math.pi * t))
+
+
+def _dperiodic_refine(x, m):
+    """Insert m-1 intermediate nodes per interval (keeps the original
+    nodes bit-exact at indices ::m, so a fine integration grid can be
+    subsampled back onto the mesh grid)."""
+    x = np.asarray(x, dtype=float)
+    if m <= 1:
+        return x
+    seg = [x[:-1] + (x[1:] - x[:-1]) * (k / m) for k in range(m)]
+    return np.append(np.stack(seg, axis=1).reshape(-1), x[-1])
+
+
+def _dperiodic_ugrid(splits, total):
+    """Concatenated per-interval graded u grid through the exact split
+    values (branch-point logs).  Returns (u, split_indices)."""
+    splits = list(splits)
+    L = np.diff(np.asarray(splits))
+    w = np.maximum(L, 1e-9) ** 0.6
+    counts = [max(8, int(round(total * wi / w.sum()))) for wi in w]
+    u = [np.array([splits[0]])]
+    idx = [0]
+    for k, n in enumerate(counts):
+        seg = _dperiodic_graded(splits[k], splits[k + 1], n)
+        u.append(seg[1:])
+        idx.append(idx[-1] + n)
+    return np.concatenate(u), idx
+
+
+def _dperiodic_vgrid(nv):
+    """Cosine-graded v grid on [0, pi] (dense at both boundary lines),
+    even interval count so v = pi/2 is an exact node."""
+    n = max(16, int(nv))
+    n += n % 2
+    t = np.linspace(0.0, 1.0, n + 1)
+    return math.pi * (0.5 - 0.5 * np.cos(math.pi * t))
+
+
+def _dperiodic_integrate(F, ug, vg):
+    """Cumulative-trapezoid antiderivative of the (nu, nv, 3) integrand
+    F (in w = u + iv coordinates, dz/dw folded in) on the nonuniform
+    grid: base row along the smooth v = pi/2 midline, columns up and
+    down from it.  Returns Re of the antiderivative (nu, nv, 3)."""
+    F = np.where(np.isfinite(F), F, 0.0)
+    jm = int(np.argmin(np.abs(vg - 0.5 * math.pi)))
+    du = np.diff(ug)[:, None]
+    dv = np.diff(vg)
+    base = np.zeros((len(ug), 3), dtype=complex)
+    row = F[:, jm, :]
+    base[1:] = np.cumsum(0.5 * (row[1:] + row[:-1]) * du, axis=0)
+    col = np.zeros(F.shape, dtype=complex)
+    up = np.cumsum(0.5 * (F[:, jm:-1, :] + F[:, jm + 1:, :])
+                   * (1j * dv[jm:])[None, :, None], axis=1)
+    col[:, jm + 1:, :] = up
+    Frev = F[:, jm::-1, :]
+    dvrev = dv[:jm][::-1]
+    dn = np.cumsum(0.5 * (Frev[:, :-1, :] + Frev[:, 1:, :])
+                   * (-1j * dvrev)[None, :, None], axis=1)
+    col[:, jm - 1::-1, :] = dn
+    return np.real(base[:, None, :] + col)
+
+
+def _dperiodic_cont_sqrt(Q, jm):
+    """Continuous branch of sqrt(Q) on a grid over a simply connected
+    domain with no interior zeros: principal sqrt with the sign
+    propagated by continuity from the (smooth) row jm outward."""
+    s = np.sqrt(Q)
+    t = s.copy()
+    r = s[:, jm]
+    step = np.where(np.abs(r[1:] - r[:-1]) > np.abs(r[1:] + r[:-1]),
+                    -1.0, 1.0)
+    sgn = np.concatenate([[1.0], np.cumprod(step)])
+    t[:, jm] = r * sgn
+    for rng in (range(jm + 1, Q.shape[1]), range(jm - 1, -1, -1)):
+        prev = jm
+        for j in rng:
+            sj = s[:, j]
+            tp = t[:, prev]
+            fj = np.where(np.abs(sj - tp) > np.abs(sj + tp), -1.0, 1.0)
+            t[:, j] = sj * fj
+            prev = j
+    return t
+
+
+def _dperiodic_sqrtprod(z, factors):
+    """g(z) = prod (z - p)^(e/2), principal branches per factor (single
+    valued and holomorphic on the upper half plane for real p)."""
+    g = np.ones_like(z)
+    for p, e in factors:
+        s = np.sqrt(z - p)
+        g = g * s if e > 0 else g / s
+    return g
+
+
+def _dperiodic_F_exp(factors):
+    """Integrand closure for the exp-coordinate KMR form: z = e^w,
+    dh = dz/z; returns (omega1, omega2, omega3) * dz/dw on the w grid.
+    With dh = dz/z the third component is exactly 1, so x3 = Re w = u
+    exactly -- the horizontal-mirror edge u = 0 needs no snapping."""
+    def F(W, jm):
+        z = np.exp(W)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            g = _dperiodic_sqrtprod(z, factors)
+            f1 = 0.5 * (1.0 / g - g)
+            f2 = 0.5j * (1.0 / g + g)
+        one = np.ones_like(f1)
+        return np.stack(np.broadcast_arrays(f1, f2, one), axis=-1)
+    return F
+
+
+def _dperiodic_F_kmr3(alpha, phi):
+    """Integrand closure for KMR-3: parameter x = e^w on the half
+    annulus, z = e^{i phi} (i - x)/(x + i) (which maps the real x axis
+    onto the unit circle where dh's four branch points +-e^{+-i alpha}
+    live), G = (z + eps)/(z - eps) with eps = e^{i phi}, and
+    dh = i dz / sqrt(z^4 - 2 cos(2 alpha) z^2 + 1) taken with a
+    continuity-tracked branch."""
+    eps = np.exp(1j * phi)
+    c2a = math.cos(2.0 * alpha)
+
+    def F(W, jm):
+        x = np.exp(W)
+        z = eps * (1j - x) / (x + 1j)
+        dzdw = eps * (-2j) / (x + 1j) ** 2 * x       # dz/dx * dx/dw
+        Q = z ** 4 - 2.0 * c2a * z ** 2 + 1.0
+        w = _dperiodic_cont_sqrt(Q, jm)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            h = 1j / w * dzdw                        # dh * dz/dw ... = h dw
+            g = (z + eps) / (z - eps)
+            f1 = 0.5 * (1.0 / g - g) * h
+            f2 = 0.5j * (1.0 / g + g) * h
+        return np.stack(np.broadcast_arrays(f1, f2, h), axis=-1)
+    return F
+
+
+def _dperiodic_arcs_exp(factors, rmin):
+    """Boundary-arc tables for the exp-coordinate KMR form.  The v = 0
+    edge is the positive real axis, the v = pi edge the negative one;
+    crossing the real axis at x flips the sign of every factor with
+    p > x, so an arc is a planar symmetry curve in a vertical plane
+    x2 = const when that count is EVEN (g real there) and x1 = const
+    when it is ODD (g imaginary).  Returns (usplits, arcs) with arcs =
+    [(edge, k0, k1, axis, cluster)], edge 0/1 = v = 0/pi, k0..k1 the
+    split-interval index range, axis the constant coordinate, cluster
+    '0' (wall through the origin) or 'far' (the wall whose doubled
+    offset is the lattice vector)."""
+    pos = sorted(p for p, e in factors if 0 < p < 1 and p > rmin)
+    neg = sorted(-p for p, e in factors if -1 < p < 0 and -p > rmin)
+    usplits = sorted({math.log(rmin), 0.0}
+                     | {math.log(p) for p in pos}
+                     | {math.log(t) for t in neg})
+    kof = {round(s, 12): k for k, s in enumerate(usplits)}
+    arcs = []
+    stops_pos = [rmin] + pos + [1.0]
+    for lo, hi in zip(stops_pos[:-1], stops_pos[1:]):
+        x = math.sqrt(lo * hi)
+        cnt = sum(1 for p, e in factors if p > x)
+        axis = 1 if cnt % 2 == 0 else 0
+        arcs.append((0, kof[round(math.log(lo), 12)],
+                     kof[round(math.log(hi), 12)], axis, '0'))
+    stops_neg = [rmin] + neg + [1.0]
+    for lo, hi in zip(stops_neg[:-1], stops_neg[1:]):
+        t = math.sqrt(lo * hi)
+        cnt = sum(1 for p, e in factors if p > -t)
+        axis = 1 if cnt % 2 == 0 else 0
+        arcs.append((1, kof[round(math.log(lo), 12)],
+                     kof[round(math.log(hi), 12)], axis,
+                     '0' if axis == 1 else 'far'))
+    return usplits, arcs
+
+
+def _dperiodic_arc_slice(X, edge, i0, i1):
+    """View of the arc's vertex rows: edge 0 -> v = 0 row, 1 -> v = pi."""
+    j = 0 if edge == 0 else X.shape[1] - 1
+    return X[i0:i1 + 1, j, :]
+
+
+def _dperiodic_arc_med(X, edge, i0, i1, axis):
+    """Median of one coordinate along an arc, endpoints excluded (the
+    corner samples sit next to the branch singularities)."""
+    seg = _dperiodic_arc_slice(X, edge, i0, i1)
+    core = seg[1:-1] if len(seg) > 4 else seg
+    return float(np.median(core[:, axis]))
+
+
+def dperiodic_patch(key, p, nu, nv, refine=3):
+    """Integrate, wall-align and snap ONE conformal patch of the doubly
+    periodic surface `key` ('kmr2' | 'wei' | 'kmr3').  Returns a dict:
+    X (nu, nv, 3) vertex grid, ug/vg parameter grids, ops (list of
+    (sign3, parity) diagonal isometries whose orbit of the patch is one
+    translational fundamental cell), T1/T2 lattice vectors, res
+    (residual diagnostics -- the period problem's closure errors), and
+    arc bookkeeping."""
+    if key == 'wei':
+        b, a = p['b'], p['a']
+        r = a / b
+        rmin = min(p.get('rmin', 0.05), 0.45 * min(a, r))
+        factors = ((a, -1), (b, 1), (1.0 / b, -1), (1.0 / a, 1),
+                   (-r, 1), (-1.0 / r, -1))
+        usplits, arcs = _dperiodic_arcs_exp(factors, rmin)
+        Ffn = _dperiodic_F_exp(factors)
+    elif key == 'kmr2':
+        a = p['a']
+        rmin = min(p.get('rmin', 0.05), 0.45 * a)
+        factors = ((a, -1), (1.0 / a, 1), (-a, 1), (-1.0 / a, -1))
+        usplits, arcs = _dperiodic_arcs_exp(factors, rmin)
+        Ffn = _dperiodic_F_exp(factors)
+    elif key == 'kmr3':
+        alpha = p.get('alpha', 0.5 * math.pi - 0.125 * math.pi)
+        phi = p.get('phi', 0.25 * math.pi)
+        xmin = p.get('xmin', 0.05)
+        t1 = math.tan(0.5 * (alpha - phi))          # v=0 junctions
+        t2 = math.tan(0.5 * (alpha + phi))          # v=pi junctions: t2, 1/t1
+        xmin = min(xmin, 0.45 * t1)
+        usplits = sorted({math.log(xmin), math.log(t1), -math.log(t2),
+                          math.log(t2), -math.log(t1), -math.log(xmin)})
+        kof = {round(s, 12): k for k, s in enumerate(usplits)}
+        # (edge, k0, k1, kind, cluster): planes are x1 = const walls,
+        # 'line' arcs are straight lines parallel to x1 (x2, x3 const)
+        arcs = [
+            (0, kof[round(math.log(xmin), 12)],
+             kof[round(math.log(t1), 12)], 0, 'far'),
+            (0, kof[round(math.log(t1), 12)],
+             kof[round(-math.log(t2), 12)], 'line', '0'),
+            (0, kof[round(-math.log(t2), 12)],
+             kof[round(-math.log(xmin), 12)], 0, '0'),
+            (1, kof[round(math.log(xmin), 12)],
+             kof[round(math.log(t2), 12)], 0, '0'),
+            (1, kof[round(math.log(t2), 12)],
+             kof[round(-math.log(t1), 12)], 'line', 'far'),
+            (1, kof[round(-math.log(t1), 12)],
+             kof[round(-math.log(xmin), 12)], 0, 'far'),
+        ]
+        Ffn = _dperiodic_F_kmr3(alpha, phi)
+    else:
+        raise ValueError(f"dperiodic_patch: unknown key {key!r}")
+
+    ug, uidx = _dperiodic_ugrid(usplits, max(24, int(nu)))
+    vg = _dperiodic_vgrid(max(24, int(nv)))
+    m = max(1, int(refine))
+    uf = _dperiodic_refine(ug, m)
+    vf = _dperiodic_refine(vg, m)
+    jmf = int(np.argmin(np.abs(vf - 0.5 * math.pi)))
+    W = uf[:, None] + 1j * vf[None, :]
+    with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+        F = Ffn(W, jmf)
+    Xf = _dperiodic_integrate(F, uf, vf)
+    X = Xf[::m, ::m, :].copy()
+    kidx = {k: uidx[k] for k in range(len(usplits))}
+    arcsg = [(e, kidx[k0], kidx[k1], ax, cl) for (e, k0, k1, ax, cl)
+             in arcs]
+
+    res = {}
+    if key in ('kmr2', 'wei'):
+        # exact height: with dh = dz/z, x3 = u identically (measured
+        # residual is pure quadrature error -- gate it, then use u)
+        res['x3=u'] = float(np.max(np.abs(
+            X[..., 2] - (X[0, 0, 2] - ug[0] + ug[:, None]))))
+        X[..., 2] = ug[:, None]
+        # align: v=0 x1 wall and (first) v=0 x2 wall through the origin
+        s1 = [_dperiodic_arc_med(X, e, i0, i1, 0)
+              for (e, i0, i1, ax, cl) in arcsg if ax == 0 and cl == '0']
+        s2 = [_dperiodic_arc_med(X, e, i0, i1, 1)
+              for (e, i0, i1, ax, cl) in arcsg if ax == 1 and e == 0]
+        X[..., 0] -= s1[0]
+        X[..., 1] -= s2[0]
+        # wall constants + period residuals: every x2 wall must sit at
+        # a multiple of pi (0 on v=0 -- Wei's FindRoot condition -- and
+        # +-pi on v=pi); the 'far' x1 walls must agree on one offset dx
+        far = []
+        for (e, i0, i1, ax, cl) in arcsg:
+            if ax == 'line':
+                continue
+            med = _dperiodic_arc_med(X, e, i0, i1, ax)
+            if ax == 1:
+                tgt = math.pi * round(med / math.pi)
+                res[f'x2wall@{e}:{i0}'] = abs(med - tgt)
+            elif cl == 'far':
+                far.append(med)
+        dx = float(np.mean(far))
+        if len(far) > 1:
+            res['x1walls'] = float(np.ptp(far))
+        # snap every arc exactly onto its wall plane
+        vpi_sign = 0.0
+        for (e, i0, i1, ax, cl) in arcsg:
+            seg = _dperiodic_arc_slice(X, e, i0, i1)
+            if ax == 1:
+                med = float(np.median(seg[1:-1, 1] if len(seg) > 4
+                                      else seg[:, 1]))
+                tgt = math.pi * round(med / math.pi)
+                seg[:, 1] = tgt
+                if e == 1:
+                    vpi_sign = math.copysign(1.0, tgt if tgt else 1.0)
+            else:
+                seg[:, 0] = 0.0 if cl == '0' else dx
+        ops = [((sx, sy, sz), sx * sy * sz)
+               for sx in (1.0, -1.0) for sy in (1.0, -1.0)
+               for sz in (1.0, -1.0)]
+        T1 = np.array([2.0 * dx, 0.0, 0.0])
+        T2 = np.array([0.0, 2.0 * math.pi * (vpi_sign or 1.0), 0.0])
+    else:                                            # kmr3
+        # classify residuals BEFORE alignment: constancy of the declared
+        # coordinates along each arc (plane arcs: x1; line arcs: x2, x3)
+        for (e, i0, i1, ax, cl) in arcsg:
+            seg = _dperiodic_arc_slice(X, e, i0, i1)
+            core = seg[1:-1] if len(seg) > 4 else seg
+            if ax == 'line':
+                res[f'line@{e}:{i0}'] = float(
+                    max(np.ptp(core[:, 1]), np.ptp(core[:, 2])))
+            else:
+                res[f'plane@{e}:{i0}'] = float(np.ptp(core[:, 0]))
+        # align: v=0 '0' plane wall -> x1 = 0; v=0 line -> x2 = x3 = 0
+        for (e, i0, i1, ax, cl) in arcsg:
+            if e == 0 and ax == 0 and cl == '0':
+                X[..., 0] -= _dperiodic_arc_med(X, e, i0, i1, 0)
+        for (e, i0, i1, ax, cl) in arcsg:
+            if e == 0 and ax == 'line':
+                X[..., 1] -= _dperiodic_arc_med(X, e, i0, i1, 1)
+                X[..., 2] -= _dperiodic_arc_med(X, e, i0, i1, 2)
+        # walls: dx from the v=0 'far' plane; the v=pi planes must land
+        # on the SAME two walls (their offsets are the period residuals)
+        dx = [_dperiodic_arc_med(X, e, i0, i1, 0)
+              for (e, i0, i1, ax, cl) in arcsg
+              if e == 0 and ax == 0 and cl == 'far'][0]
+        c23 = [( _dperiodic_arc_med(X, e, i0, i1, 1),
+                 _dperiodic_arc_med(X, e, i0, i1, 2))
+               for (e, i0, i1, ax, cl) in arcsg
+               if e == 1 and ax == 'line'][0]
+        for (e, i0, i1, ax, cl) in arcsg:
+            if e == 1 and ax == 0:
+                med = _dperiodic_arc_med(X, e, i0, i1, 0)
+                tgt = 0.0 if cl == '0' else dx
+                res[f'x1wall@{e}:{i0}'] = abs(med - tgt)
+        # snap
+        for (e, i0, i1, ax, cl) in arcsg:
+            seg = _dperiodic_arc_slice(X, e, i0, i1)
+            if ax == 'line':
+                seg[:, 1], seg[:, 2] = ((0.0, 0.0) if cl == '0'
+                                        else (c23[0], c23[1]))
+            else:
+                seg[:, 0] = 0.0 if cl == '0' else dx
+        # orbit: mirror x1 = 0 and the 180-degree rotation about the
+        # x1 axis (both Schwarz continuations -> parity -1 each)
+        ops = [((1.0, 1.0, 1.0), 1.0), ((-1.0, 1.0, 1.0), -1.0),
+               ((1.0, -1.0, -1.0), -1.0), ((-1.0, -1.0, -1.0), 1.0)]
+        T1 = np.array([2.0 * dx, 0.0, 0.0])
+        T2 = np.array([0.0, 2.0 * c23[0], 2.0 * c23[1]])
+    return {'X': X, 'ug': ug, 'vg': vg, 'arcs': arcsg, 'ops': ops,
+            'T1': T1, 'T2': T2, 'res': res, 'key': key,
+            'ends_edge': 'both' if key == 'kmr3' else 'low'}
+
+
+def _dperiodic_weld(V, quads, UV, decimals=6):
+    """Weld coincident vertices by exact rounded-coordinate keys (the
+    assembly snaps every shared arc onto the fixed set of its gluing
+    isometry, so seam partners agree to machine precision -- this is a
+    hash join on those exact positions, not a loose tolerance match)."""
+    key = np.round(V * 10.0 ** decimals).astype(np.int64)
+    view = np.ascontiguousarray(key).view(
+        np.dtype((np.void, key.dtype.itemsize * key.shape[1])))
+    _, first, inv = np.unique(view.ravel(), return_index=True,
+                              return_inverse=True)
+    inv = inv.ravel()
+    Vw = V[first]
+    UVw = UV[first] if UV is not None else None
+    out = []
+    for f in inv[np.asarray(quads, dtype=np.int64)]:
+        h = [int(f[0])]
+        for s in f[1:]:
+            if int(s) != h[-1]:
+                h.append(int(s))
+        if len(h) >= 3 and h[0] != h[-1] and len(set(h)) == len(h):
+            out.append(tuple(h))
+    return Vw, out, UVw
+
+
+def dperiodic_assemble(P, cells=(1, 1)):
+    """Tile the patch orbit over cells[0] x cells[1] lattice cells at
+    the TRUE period vectors and weld all seams.  Returns (V, quads,
+    per-vertex UV)."""
+    X = P['X']
+    nu, nv = X.shape[:2]
+    Vp = X.reshape(-1, 3)
+    gu = np.arange(nu) / max(nu - 1, 1)
+    gv = np.arange(nv) / max(nv - 1, 1)
+    UVp = np.stack(np.meshgrid(gu, gv, indexing='ij'),
+                   axis=-1).reshape(-1, 2)
+    ii, jj = np.meshgrid(np.arange(nu - 1), np.arange(nv - 1),
+                         indexing='ij')
+    b = (ii * nv + jj).ravel()
+    q0 = np.stack([b, b + nv, b + nv + 1, b + 1], axis=1)
+    cu, cv = int(max(1, cells[0])), int(max(1, cells[1]))
+    Vs, Qs, UVs = [], [], []
+    off0 = 0
+    for icell in range(cu):
+        for jcell in range(cv):
+            t = ((icell - 0.5 * (cu - 1)) * P['T1']
+                 + (jcell - 0.5 * (cv - 1)) * P['T2'])
+            for sgn, parity in P['ops']:
+                Vs.append(Vp * np.asarray(sgn)[None, :] + t[None, :])
+                UVs.append(UVp)
+                Qs.append((q0 if parity > 0 else q0[:, ::-1]) + off0)
+                off0 += len(Vp)
+    V = np.concatenate(Vs, axis=0)
+    UV = np.concatenate(UVs, axis=0)
+    Q = np.concatenate(Qs, axis=0)
+    return _dperiodic_weld(V, Q, UV)
+
+
+def dperiodic_quotient(P):
+    """Topology of the translational quotient: assemble ONE cell, then
+    identify its opposite lattice walls (vertices matched under +-T1,
+    +-T2 by the same exact-coordinate hash).  Returns (chi, boundary
+    loop count, nonmanifold edge count, oriented, components) --
+    ends stay as boundary rims, so chi must equal 2 - 2 genus - ends."""
+    V, quads, _ = dperiodic_assemble(P, (1, 1))
+    parent = np.arange(len(V))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return int(a)
+
+    key = np.round(V * 1e6).astype(np.int64)
+    hkey = {tuple(k): i for i, k in enumerate(key)}
+    for T in (P['T1'], P['T2'], -P['T1'], -P['T2']):
+        kt = np.round((V + T[None, :]) * 1e6).astype(np.int64)
+        for i, k in enumerate(kt):
+            j = hkey.get(tuple(k))
+            if j is not None:
+                ra, rb = find(i), find(j)
+                if ra != rb:
+                    parent[ra] = rb
+    root = np.array([find(i) for i in range(len(V))])
+    ec, dc = {}, {}
+    for f in quads:
+        mlen = len(f)
+        for k in range(mlen):
+            a2, b2 = int(root[f[k]]), int(root[f[(k + 1) % mlen]])
+            e = (a2, b2) if a2 < b2 else (b2, a2)
+            ec[e] = ec.get(e, 0) + 1
+            dc[(a2, b2)] = dc.get((a2, b2), 0) + 1
+    nvq = len({int(r) for f in quads for r in root[list(f)]})
+    chi = nvq - len(ec) + len(quads)
+    nonman = sum(1 for c in ec.values() if c > 2)
+    orient = all(c == 1 for c in dc.values())
+    bed = [e for e, c in ec.items() if c == 1]
+    par = {}
+
+    def bfind(x):
+        par.setdefault(x, x)
+        while par[x] != x:
+            par[x] = par[par[x]]
+            x = par[x]
+        return x
+
+    for a2, b2 in bed:
+        ra, rb = bfind(a2), bfind(b2)
+        if ra != rb:
+            par[ra] = rb
+    loops = len({bfind(a2) for a2, b2 in bed})
+    parc = {}
+
+    def cfind(x):
+        parc.setdefault(x, x)
+        while parc[x] != x:
+            parc[x] = parc[parc[x]]
+            x = parc[x]
+        return x
+
+    for f in quads:
+        for i in range(1, len(f)):
+            ra, rb = cfind(int(root[f[0]])), cfind(int(root[f[i]]))
+            if ra != rb:
+                parc[ra] = rb
+    ncomp = len({cfind(int(root[i2])) for f in quads for i2 in f})
+    return chi, loops, nonman, orient, ncomp
+
+
+_DPERIODIC_CACHE = {}
+
+
+def dperiodic_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                   cells=(1, 1)):
+    """Finished-mesh builder for the doubly periodic rows (toolkit
+    MESH_PARAM / cells2d contract): patch -> orbit -> cells[0] x
+    cells[1] lattice tiling -> largest component -> 2 m fit.  theta is
+    unused (no associate family on the tiled surfaces)."""
+    tk = _toolkit()
+    p = spec['p_from'](order, radius) if 'p_from' in spec else {}
+    key = spec['dp_key']
+    if isinstance(cells, (int, float)):
+        cells = (int(cells), 1)
+    cu = int(np.clip(cells[0], 1, 8))
+    cv = int(np.clip(cells[1] if len(cells) > 1 else 1, 1, 8))
+    ck = (key, tuple(sorted(p.items())), int(nu), int(nv))
+    P = _DPERIODIC_CACHE.get(ck)
+    if P is None:
+        P = dperiodic_patch(key, p, int(np.clip(nu, 24, 220)),
+                            int(np.clip(nv, 24, 220)))
+        if len(_DPERIODIC_CACHE) > 12:
+            _DPERIODIC_CACHE.clear()
+        _DPERIODIC_CACHE[ck] = P
+    V, quads, UV = dperiodic_assemble(P, (cu, cv))
+    Vu, quads = tk._largest_component(np.hstack([V, UV]), quads)
+    V, UV = Vu[:, :3], Vu[:, 3:]
+    V = tk._center_fit(V, scale, V)
+    return V, quads, UV
+
+
+def dperiodic_wei_residual(b, a, n=320001):
+    """Wei's period condition, exactly as the notebook's FindRoot test:
+    Im int_a^b (G + 1/G) dz/z along the real segment [a, b] (the cut),
+    with the same principal-branch factors as the surface.  The cosine
+    substitution regularizes the endpoint inverse-square-root
+    singularities; the remaining O(h^2) trapezoid error is Richardson-
+    extrapolated away (verified: the harvested constants then close to
+    ~1e-6, and the h^2 tail alone was the earlier 1e-3 'residual')."""
+    r = a / b
+    factors = ((a, -1), (b, 1), (1.0 / b, -1), (1.0 / a, 1),
+               (-r, 1), (-1.0 / r, -1))
+    sa, sb = math.log(a), math.log(b)
+
+    def quad(m):
+        # integrate in s = log x (dz/z = ds exactly, so the 1/z pole
+        # near the small branch point a never amplifies the error),
+        # cosine-graded against the endpoint branch singularities
+        t = np.linspace(0.0, 1.0, m)
+        s = sa + (sb - sa) * (0.5 - 0.5 * np.cos(math.pi * t))
+        x = np.exp(s) + 0j
+        with np.errstate(divide='ignore', invalid='ignore'):
+            g = _dperiodic_sqrtprod(x, factors)
+            f = g + 1.0 / g
+        f = np.where(np.isfinite(f), f, 0.0)
+        ds = np.diff(s)
+        return float(np.imag(np.sum(0.5 * (f[1:] + f[:-1]) * ds)))
+
+    r2 = quad(n)
+    r1 = quad(n // 2 + 1)
+    return (4.0 * r2 - r1) / 3.0
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
@@ -3709,4 +5262,173 @@ if __name__ == "__main__":
               f"chi={chi} (want {-6 * S}) nonman={nonman} "
               f"loops={loops} (want {2 * S + 2}) orient={orient} "
               f"{'OK' if good else 'FAIL'}")
+    # ---- Catenoid-Enneper / Costa-Wohlgemuth / Wohlgemuth (cwce block) -----
+    # (1) the stored period constants close the period problem: every
+    #     notebook condition vanishes under independent quadrature
+    for gg in (2, 3, 4):
+        r = float(np.max(np.abs(cwce_ce_residual(gg))))
+        good = r < 1e-6
+        ok &= good
+        print(f"catenoid-enneper g={gg} period residual: {r:.1e} "
+              f"{'OK' if good else 'FAIL'}")
+    for fam, kk in (('cw', 2), ('cw', 3), ('cw', 4), ('cw', 5),
+                    ('cw', 7), ('w2', 2)):
+        r = float(np.max(np.abs(cwce_cw_residual(fam, kk))))
+        good = r < 1e-8
+        ok &= good
+        print(f"{'costa-wohlgemuth' if fam == 'cw' else 'wohlgemuth-2'} "
+              f"k={kk} period residual: {r:.1e} "
+              f"{'OK' if good else 'FAIL'}")
+    # (2) null identity: phi1 phi2 = dh^2 makes sum omega_i^2 vanish
+    #     identically -- checked on the actual meshing integrands
+    rt = np.linspace(0.31, 4.7, 40)
+    omn = cwce_ce_omega(3, rt, 0.71, np.full(40, -1), np.zeros(40),
+                        list(_CWCE_CE[3][1]))
+    nerr = float(np.max(np.abs(np.sum(omn ** 2, axis=-1))))
+    good = nerr < 1e-12
+    ok &= good
+    print(f"catenoid-enneper null |sum om^2|={nerr:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+    datn = _cwce_cw_data('w2', 2)
+    omn = cwce_cw_omega_row('w2', 2, datn, np.linspace(-0.9, 2.9, 40),
+                            1.1, np.full(40, -1), np.zeros(40),
+                            ['x0', 'xinf', 'xc', 'x1'])
+    nerr = float(np.max(np.abs(np.sum(omn ** 2, axis=-1))))
+    good = nerr < 1e-12
+    ok &= good
+    print(f"wohlgemuth null |sum om^2|={nerr:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+    # (3) watertight assemblies: exact chi = 2 - 2g - (open end rims),
+    #     edge-manifold, oriented, one component, small pre-snap period
+    #     residuals (the snap only removes quadrature noise)
+    for fam, kk, gen, nrim in (('ce', 2, 2, 2), ('ce', 3, 3, 2),
+                               ('ce', 4, 4, 2), ('cw', 2, 2, 4),
+                               ('cw', 3, 4, 4), ('cw', 5, 8, 4),
+                               ('w2', 2, 3, 4)):
+        if fam == 'ce':
+            Vg, Fg, _uv, diag = cwce_ce_assemble(kk, 100, 29)
+        else:
+            Vg, Fg, _uv, diag = cwce_cw_assemble(fam, kk, 110, 21)
+        ecc, dcc = {}, {}
+        for f in Fg:
+            m = len(f)
+            for tq in range(m):
+                a2, b2 = f[tq], f[(tq + 1) % m]
+                e2 = (a2, b2) if a2 < b2 else (b2, a2)
+                ecc[e2] = ecc.get(e2, 0) + 1
+                dcc[(a2, b2)] = dcc.get((a2, b2), 0) + 1
+        chi = len(Vg) - len(ecc) + len(Fg)
+        nonman = sum(1 for cq in ecc.values() if cq > 2)
+        bed = [e2 for e2, cq in ecc.items() if cq == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a2, b2 in bed:
+            ra, rb = bfind(a2), bfind(b2)
+            if ra != rb:
+                par[ra] = rb
+        loops = len({bfind(a2) for a2, b2 in bed})
+        orient = all(cq == 1 for cq in dcc.values())
+        parc = list(range(len(Vg)))
+
+        def cfind(a2):
+            while parc[a2] != a2:
+                parc[a2] = parc[parc[a2]]
+                a2 = parc[a2]
+            return a2
+
+        for f in Fg:
+            for i2 in range(1, len(f)):
+                ra, rb = cfind(f[0]), cfind(f[i2])
+                if ra != rb:
+                    parc[ra] = rb
+        ncomp = len({cfind(f[0]) for f in Fg})
+        pres = max(diag['res'].values())
+        want = 2 - 2 * gen - nrim
+        good = (chi == want and nonman == 0 and loops == nrim
+                and orient and ncomp == 1 and pres < 5e-3
+                and bool(np.all(np.isfinite(Vg))))
+        ok &= good
+        nm = {'ce': 'catenoid-enneper', 'cw': 'costa-wohlgemuth',
+              'w2': 'wohlgemuth-2'}[fam]
+        print(f"{nm} {'g' if fam == 'ce' else 'k'}={kk} "
+              f"(genus {gen}): {len(Vg):6d}v {len(Fg):6d}f chi={chi} "
+              f"(want {want}) nonman={nonman} loops={loops} "
+              f"(want {nrim}) orient={orient} ncomp={ncomp} "
+              f"period_res={pres:.1e} {'OK' if good else 'FAIL'}")
+    # ---- doubly periodic hyperelliptic tiler (KMR + Wei) -------------------
+    # (1) Wei's period problem: the harvested FindRoot constants close the
+    #     notebook's own residual Im int_a^b (G + 1/G) dz/z, and the
+    #     residual moves off-solution (the gate is not vacuous)
+    for bb, aa in ((0.3, 0.23640853975826828), (0.5, 0.07082564803712697),
+                   (0.7, 0.0030808434547059727)):
+        rres = abs(dperiodic_wei_residual(bb, aa))
+        roff = abs(dperiodic_wei_residual(bb, 0.8 * aa))
+        good = rres < 1e-5 and roff > 50 * max(rres, 1e-9)
+        ok &= good
+        print(f"dperiodic Wei period b={bb}: |res|={rres:.2e} "
+              f"off-solution={roff:.2e} {'OK' if good else 'FAIL'}")
+    # (2) per member: wall/period closure residuals small; a genuinely 2-D
+    #     lattice; quotient topology chi = 2 - 2g - 4 with exactly 4
+    #     Scherk end rims, edge-manifold, oriented, one component; and a
+    #     2 x 2 lattice tiling stays ONE connected manifold block
+    for key, p, gen in (('kmr2', {'a': 0.4, 'rmin': 0.05}, 1),
+                        ('kmr2', {'a': 0.55, 'rmin': 0.05}, 1),
+                        ('wei', {'b': 0.3, 'a': 0.23640853975826828,
+                                 'rmin': 0.05}, 2),
+                        ('wei', {'b': 0.5, 'a': 0.07082564803712697,
+                                 'rmin': 0.05}, 2),
+                        ('kmr3', {'xmin': 0.05}, 1)):
+        P = dperiodic_patch(key, p, 48, 48)
+        wres = max(v for kk2, v in P['res'].items() if kk2 != 'x3=u')
+        lat = float(np.linalg.norm(np.cross(P['T1'], P['T2'])))
+        chi, loops, nonman, orient, ncomp = dperiodic_quotient(P)
+        V2, Q2, UV2 = dperiodic_assemble(P, (2, 2))
+        par2 = list(range(len(V2)))
+
+        def find2(a2):
+            while par2[a2] != a2:
+                par2[a2] = par2[par2[a2]]
+                a2 = par2[a2]
+            return a2
+
+        ec2 = {}
+        for f in Q2:
+            m2 = len(f)
+            for t2 in range(m2):
+                a2, b2 = f[t2], f[(t2 + 1) % m2]
+                e2 = (a2, b2) if a2 < b2 else (b2, a2)
+                ec2[e2] = ec2.get(e2, 0) + 1
+                ra2, rb2 = find2(a2), find2(b2)
+                if ra2 != rb2:
+                    par2[ra2] = rb2
+        ncomp2 = len({find2(i2) for f in Q2 for i2 in f})
+        nonman2 = sum(1 for c in ec2.values() if c > 2)
+        chi_want = 2 - 2 * gen - 4
+        good = (wres < 5e-3 and lat > 1.0
+                and chi == chi_want and loops == 4 and nonman == 0
+                and orient and ncomp == 1 and ncomp2 == 1 and nonman2 == 0
+                and bool(np.all(np.isfinite(V2)))
+                and bool(np.all(np.isfinite(UV2))))
+        ok &= good
+        print(f"dperiodic {key:5s} (genus {gen}): wall_res={wres:.1e} "
+              f"|T1xT2|={lat:.2f} chi={chi} (want {chi_want}) ends={loops} "
+              f"nonman={nonman} orient={orient} 2x2[comp={ncomp2} "
+              f"nonman={nonman2}] {'OK' if good else 'FAIL'}")
+    # (3) KMR-3 external cross-check: the measured lattice reproduces the
+    #     notebook's printed translation constants (disx, disy, disz)
+    P3 = dperiodic_patch('kmr3', {'xmin': 0.01}, 60, 48)
+    e1 = abs(abs(P3['T1'][0]) - 2.0 * 2.6417540147391194)
+    e2 = abs(abs(P3['T2'][1]) - 2.0 * 1.2779360827691162)
+    e3 = abs(abs(P3['T2'][2]) - 2.0 * 2.4000944407384024)
+    good = max(e1, e2, e3) < 5e-3
+    ok &= good
+    print(f"dperiodic KMR-3 lattice vs notebook: |dT|=({e1:.1e},"
+          f"{e2:.1e},{e3:.1e}) {'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in we_builders")
