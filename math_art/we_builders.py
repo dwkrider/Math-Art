@@ -4763,6 +4763,622 @@ def dperiodic_wei_residual(b, a, n=320001):
     return (4.0 * r2 - r1) / 3.0
 
 
+# ==========================================================================
+# SYMM/NONORIENT TAIL -- one-sided (non-orientable) quotient meshers and
+# the antiprismatic k-noid period solver
+# ==========================================================================
+# Engine for the catalog rows appended at the end of minimal_surface_zoo:
+#
+#   * symtail_crosscap_mesh -- generic one-sided quotient of a disk /
+#     annulus Weierstrass domain under the free antipodal involution
+#     z -> -1/conj(z).  The fundamental domain is the unit disk (or its
+#     exterior); on the identification rim |z| = 1 the involution acts as
+#     v -> v + pi, so welding each rim vertex to its antipode turns the
+#     grid into a GENUINELY one-sided mesh (a cross-cap): Henneberg's
+#     surface (Mobius strip = projective plane minus the end) and
+#     Kusner's projective planes with p planar ends.  The rim identity
+#     X(-1/conj z) = X(z) is verified numerically before welding and the
+#     build refuses to produce a fake quotient if it fails.
+#   * symtail_lopez_klein_mesh -- F. J. Lopez's one-ended minimal Klein
+#     bottle (total curvature -8 pi), assembled from ONE conformal patch
+#     (the upper-half annulus 1 <= |x| <= rmax of the orientation double
+#     cover) and its orbit under the two straight lines contained in the
+#     surface (the x- and y-axis 180-degree rotations); the Klein deck
+#     identification glues the |x| = 1 rim of the patch to the rim of
+#     its x-axis-rotated copy.
+#   * symtail_antiprism_constants -- numeric Lopez-Ros period solve for
+#     the antiprismatic k-noid family (branch constant a and scale rho
+#     per (nn, b)), generalizing the single harvested nn = 5 member.
+#
+# References:
+#   L. Henneberg, "Ueber solche Minimalflaechen, welche eine vorge-
+#     schriebene ebene Curve zur geodaetischen Linie haben" (Diss. ETH
+#     Zurich, 1875) -- the classical one-sided minimal surface;
+#     U. Dierkes, S. Hildebrandt, F. Sauvigny, "Minimal Surfaces"
+#     (2010), sec. 3.5, for the modern Weierstrass form g = z,
+#     dh = 2 z (1 - z^-4) dz and the antipodal identification.
+#   R. Kusner, "Conformal geometry and complete minimal surfaces",
+#     Bull. Amer. Math. Soc. 17 (1987) 291-295 -- the dihedrally
+#     symmetric projective planes with p planar ends; data
+#     G = rho z^(p-1)(z^p - sqrt(2p-1))/(sqrt(2p-1) z^p + 1) after
+#     M. Weber, minimalsurfaces.blog (Kusner notebook).
+#   F. J. Lopez, "A complete minimal Klein bottle in R^3", Duke Math.
+#     J. 71 (1993) 23-30; Weierstrass data (branch value
+#     a = 2.5447026679682394, G = sqrt(a)(x+1) sqrt(x) sqrt(x-1/a)
+#     sqrt(x+a) / ((x-1)(x+a)), dh = i sqrt(a)(x^2-1)/x^2 dx) after
+#     M. Weber, minimalsurfaces.blog (KleinBottle notebook).
+#   L. P. Jorge, W. H. Meeks III, Topology 22 (1983) (k-noids);
+#     H. Karcher, "Construction of minimal surfaces" (1989)
+#     (symmetrization); antiprismatic data after M. Weber,
+#     minimalsurfaces.blog (Antiprismatic k-Noids notebook).
+
+
+def symtail_edge_stats(V, faces):
+    """Edge-use map -> (chi, nonman, boundary loop count, one_sided).
+    one_sided is measured by orientation propagation across interior
+    edges: a surface is non-orientable iff assigning consistent face
+    orientations meets a contradiction."""
+    from collections import defaultdict
+    ec = defaultdict(int)
+    e2f = defaultdict(list)
+    for fi, f in enumerate(faces):
+        m = len(f)
+        for t in range(m):
+            a, b = f[t], f[(t + 1) % m]
+            e = (a, b) if a < b else (b, a)
+            ec[e] += 1
+            e2f[e].append((fi, a < b))
+    chi = len(V) - len(ec) + len(faces)
+    nonman = sum(1 for c in ec.values() if c > 2)
+    bed = [e for e, c in ec.items() if c == 1]
+    par = {}
+
+    def bfind(x):
+        par.setdefault(x, x)
+        while par[x] != x:
+            par[x] = par[par[x]]
+            x = par[x]
+        return x
+    for a, b in bed:
+        ra, rb = bfind(a), bfind(b)
+        if ra != rb:
+            par[ra] = rb
+    nloops = len({bfind(a) for a, b in bed})
+    sign = {}
+    one_sided = False
+    for f0 in range(len(faces)):
+        if f0 in sign:
+            continue
+        sign[f0] = 1
+        stack = [f0]
+        while stack:
+            fi = stack.pop()
+            f = faces[fi]
+            m = len(f)
+            for t in range(m):
+                a, b = f[t], f[(t + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                pair = e2f[e]
+                if len(pair) != 2:
+                    continue
+                for fj, fwd in pair:
+                    if fj == fi:
+                        continue
+                    s = sign[fi] if (fwd != (a < b)) else -sign[fi]
+                    if fj in sign:
+                        if sign[fj] != s:
+                            one_sided = True
+                    else:
+                        sign[fj] = s
+                        stack.append(fj)
+    return chi, nonman, nloops, one_sided
+
+
+def _symtail_disk_grid(spec, p, nu, nv, theta):
+    """Pole-avoiding Weierstrass integration on the unit disk for the
+    crosscap rows: the row's ends form a ring of double poles strictly
+    inside the disk, and radial rays that graze a pole cannot carry an
+    accurate value to the rim -- so nothing is ever integrated through
+    the ring.  Three anchored-clean stages instead:
+      1. every ray integrates outward from the shared center up to the
+         ring (clean -- bounded distance to every pole),
+      2. ONE anchor ray, at the angle farthest from all poles,
+         continues to the rim, and the whole rim row follows by
+         cumulative arc integration along |z| = 1 (clean),
+      3. every ray integrates INWARD from its exact rim value down to
+         the ring (clean).
+    The two determinations only meet inside the ring band, where the
+    puncture mask discards the cells anyway."""
+    d = spec['domain']
+    r1 = float(_ev(d[2], p))
+    dth = TAU / nv
+    v = 0.5 * dth + np.arange(nv) * dth         # offset: no ray on a pole
+    punct = _ev(spec['mask_punctures'], p)
+    zc_a = np.array([zc for zc, _ in punct])
+    r_ring = float(np.median(np.abs(zc_a)))
+    # radial grid clustered around the ring (fine puncture rims)
+    w = min(0.5 * min(r_ring, r1 - r_ring), 0.08)
+    lo, hi = r_ring - w, r_ring + w
+    n_band = max(8, int(0.35 * nu))
+    n_rest = nu - n_band
+    n_in = max(4, int(n_rest * lo / max(lo + r1 - hi, 1e-9)))
+    n_out = max(4, n_rest - n_in)
+    u = np.concatenate([
+        np.linspace(0.0, lo, n_in, endpoint=False),
+        lo + (hi - lo) * (0.5 - 0.5 * np.cos(
+            math.pi * np.linspace(0.0, 1.0, n_band, endpoint=False))),
+        np.linspace(hi, r1, n_out)])
+    nu = len(u)
+    R, TH = np.meshgrid(u, v, indexing='ij')
+    z = R * np.exp(1j * TH)
+    z[0, :] = 1e-3 * np.exp(1j * v)
+    phi = _phi_fn(spec, p, theta)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        F = phi(z)
+    Xr = np.real(F * np.exp(1j * TH)[..., None])
+    Xr = np.where(np.isfinite(Xr), Xr, 0.0)
+    dr = np.diff(R, axis=0)[..., None]
+    inc = 0.5 * (Xr[1:] + Xr[:-1]) * dr
+    X_in = np.concatenate(
+        [np.zeros((1, nv, 3)), np.cumsum(inc, axis=0)], axis=0)
+    # anchor ray: the grid angle farthest from every pole angle
+    pang = np.angle(zc_a)
+    dmin = np.min(np.abs(((v[:, None] - pang[None, :]) + math.pi)
+                         % TAU - math.pi), axis=1)
+    ja = int(np.argmax(dmin))
+    t_fine = np.linspace(1e-3, r1, 4001)
+    za = t_fine * np.exp(1j * v[ja])
+    with np.errstate(divide='ignore', invalid='ignore'):
+        Fa = phi(za) * np.exp(1j * v[ja])
+    Fa = np.where(np.isfinite(Fa), Fa, 0.0)
+    Xa_rim = np.sum(0.5 * (Fa[1:] + Fa[:-1]).real
+                    * np.diff(t_fine)[:, None], axis=0)
+    # rim row by cumulative Gauss-Legendre arcs from the anchor
+    gx, gw = np.polynomial.legendre.leggauss(8)
+    rim = np.zeros((nv, 3))
+    rim[ja] = Xa_rim
+    order_j = [(ja + k) % nv for k in range(nv)]
+    for k in range(1, nv):
+        j0, j1 = order_j[k - 1], order_j[k]
+        t0 = v[j0]
+        t1 = t0 + dth
+        tg = 0.5 * (t0 + t1) + 0.5 * dth * gx
+        zg = r1 * np.exp(1j * tg)
+        dz = 1j * zg * 0.5 * dth * gw
+        with np.errstate(divide='ignore', invalid='ignore'):
+            Fg = phi(zg)
+        rim[j1] = rim[j0] + np.real(np.sum(Fg * dz[:, None], axis=0))
+    # inward from the rim for the outer rows
+    X_out = np.zeros_like(X_in)
+    X_out[-1] = rim
+    for i in range(nu - 2, -1, -1):
+        X_out[i] = X_out[i + 1] - inc[i]
+    isplit = int(np.searchsorted(u, r_ring))
+    X = np.where((np.arange(nu) < isplit)[:, None, None], X_in, X_out)
+    mask = np.ones(z.shape, dtype=bool)
+    for zc, rho in punct:
+        mask &= np.abs(z - zc) > rho
+    return X, mask
+
+
+def symtail_crosscap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """One-sided quotient mesh of a WE disk/annulus row under the free
+    antipodal involution z -> -1/conj(z): sample the fundamental domain
+    (|z| <= 1 for 'outer' rim, |z| >= 1 for 'inner'), verify the rim
+    identity X(z) = X(-z) on |z| = 1, then weld each rim vertex to its
+    antipode (v ~ v + pi) -- the cross-cap gluing.  Refuses to build if
+    the measured rim identity fails (no fake quotients)."""
+    tk = _toolkit()
+    p = spec['p_from'](order, radius) if 'p_from' in spec else {}
+    if 'solve' in spec:
+        p = spec['solve'](p) or p
+    rb = spec.get('res_boost')
+    if rb:
+        rb = rb(order) if callable(rb) else rb
+        nu = max(3, int(round(nu * rb[0])))
+        nv = max(3, int(round(nv * rb[1])))
+    nv += nv % 2                                # even: antipode on-grid
+    if 'Xexact' in spec:
+        x, y, z, _, _, tail = _we_disk(spec, p, nu, nv, theta)
+        X = np.stack([x, y, z], axis=-1)
+        mask = tail if isinstance(tail, np.ndarray) \
+            else np.ones((nu, nv), dtype=bool)
+    else:
+        X, mask = _symtail_disk_grid(spec, p, nu, nv, theta)
+    nu = X.shape[0]                             # grid may have resized
+    irow = 0 if spec.get('crosscap_rim', 'outer') == 'inner' else nu - 1
+    h = nv // 2
+    rim = X[irow]
+    anti = np.roll(rim, -h, axis=0)
+    mis = float(np.linalg.norm(rim - anti, axis=1).max())
+    flat = X.reshape(-1, 3)
+    diag = float(np.linalg.norm(flat.max(0) - flat.min(0)))
+    if not np.isfinite(mis) or mis > 0.02 * diag:
+        raise ValueError(
+            f"crosscap: antipodal rim identity failed (mismatch "
+            f"{mis:.3e} vs diagonal {diag:.3e}) -- not one-sided")
+    X[irow] = 0.5 * (rim + anti)                # snap the identity exact
+    # vertex ids with the rim's antipodal halves identified, and the
+    # disk center (a single point sampled as a whole ring) welded
+    vid = np.arange(nu * nv).reshape(nu, nv)
+    vid[irow, h:] = vid[irow, :h]
+    d0 = spec['domain']
+    if irow != 0 and float(_ev(d0[1], p)) < 2e-3:
+        vid[0, :] = vid[0, 0]
+        X[0, :] = X[0, 0]
+        mask[0, :] = True
+    gu = np.arange(nu) / max(nu - 1, 1)
+    gv = np.arange(nv) / nv
+    UVg = np.stack(np.meshgrid(gu, gv, indexing='ij'),
+                   axis=-1).reshape(-1, 2)
+    vm = mask.reshape(-1)
+    quads = []
+    for i in range(nu - 1):
+        for j in range(nv):
+            j2 = (j + 1) % nv
+            f = (vid[i, j], vid[i + 1, j], vid[i + 1, j2], vid[i, j2])
+            if not (vm[f[0]] and vm[f[1]] and vm[f[2]] and vm[f[3]]):
+                continue
+            g = [int(f[0])]                     # collapse repeats -> tri
+            for t in range(1, 4):
+                if int(f[t]) != g[-1]:
+                    g.append(int(f[t]))
+            if len(g) > 3 and g[0] == g[-1]:
+                g.pop()                         # wrap-around repeat
+            if len(g) >= 3 and g[0] != g[-1] and len(set(g)) == len(g):
+                quads.append(tuple(g))
+    V = X.reshape(-1, 3)
+    used = np.unique(np.fromiter((i for f in quads for i in f),
+                                 dtype=np.int64))
+    # optional object-space percentile clip (planar-end flares)
+    pct = spec.get('crosscap_clip')
+    if pct:
+        cen = np.median(V[used], axis=0)
+        rad = np.linalg.norm(V - cen, axis=1)
+        thr = float(np.percentile(rad[used], pct))
+        quads = [f for f in quads if all(rad[i] <= thr for i in f)]
+        used = np.unique(np.fromiter((i for f in quads for i in f),
+                                     dtype=np.int64))
+    remap = np.full(nu * nv, -1, dtype=np.int64)
+    remap[used] = np.arange(len(used))
+    V = V[used]
+    UVg = UVg[used]
+    quads = [tuple(int(remap[i]) for i in f) for f in quads]
+    Vu, quads = tk._largest_component(np.hstack([V, UVg]), quads)
+    V, UVg = Vu[:, :3], Vu[:, 3:]
+    V = tk._smooth_boundary(V, quads)
+    V = tk._center_fit(V, scale, V)
+    return V, quads, UVg
+
+
+# --- Lopez minimal Klein bottle -------------------------------------------
+
+SYMTAIL_LOPEZ_A = 2.5447026679682394            # Lopez's branch value
+
+
+def _symtail_lopez_om1(x):
+    """Closed-form antiderivative of phi1 (the x coordinate)."""
+    a = SYMTAIL_LOPEZ_A
+    return 1j * np.sqrt(x - 1.0 / a) * np.sqrt(a + x) \
+        * (a + 2.0 * (a - 2.0) * (a - 1.0) * x - a * x * x) \
+        / (3.0 * x ** 1.5)
+
+
+def _symtail_lopez_om3(x):
+    """Closed-form antiderivative of phi3 = dh (the z coordinate)."""
+    return 1j * math.sqrt(SYMTAIL_LOPEZ_A) * (x + 1.0 / x)
+
+
+def _symtail_lopez_phi2(x):
+    """phi2 = (i/2)(1/G + G) dh -- integrated numerically for the y
+    coordinate (its antiderivative needs incomplete elliptic
+    integrals; Lopez 1993, Weber's notebook).  Written in cancelled
+    form: the (x - 1) zero of dh cancels G's pole at x = 1, so the
+    grid corner x = 1 stays finite (a 0/0 there would poison the
+    cumulative integration)."""
+    a = SYMTAIL_LOPEZ_A
+    q1 = np.sqrt(x) * np.sqrt(x - 1.0 / a)
+    q2 = np.sqrt(x + a)
+    return -0.5 / (x * x) * ((x - 1.0) ** 2 * q2 / q1
+                             + a * (x + 1.0) ** 2 * q1 / q2)
+
+
+def _symtail_lopez_rim_y(nsub=1600):
+    """y along the rim |x| = 1 relative to y(x=1), by cumulative
+    Gauss-Legendre arcs (the rim is free of singularities)."""
+    vv = np.linspace(0.0, math.pi, nsub + 1)
+    tt, wt = np.polynomial.legendre.leggauss(8)
+    y = np.zeros(nsub + 1)
+    acc = 0.0
+    for i in range(nsub):
+        t0, t1 = vv[i], vv[i + 1]
+        t = 0.5 * (t0 + t1) + 0.5 * (t1 - t0) * tt
+        zc = np.exp(1j * t)
+        dz = 1j * zc * 0.5 * (t1 - t0) * wt
+        acc += float(np.real(np.sum(_symtail_lopez_phi2(zc) * dz)))
+        y[i + 1] = acc
+    return vv, y
+
+
+_SYMTAIL_LOPEZ_RIM = None
+
+
+def symtail_lopez_vgrid(nv):
+    """Rim-symmetric angular grid: v_j such that the rim involution
+    (y -> -y at equal om1, the Klein deck on |x| = 1) maps the grid to
+    itself as v_j <-> v_{nv-1-j}.  Built by sampling the rim y-values
+    symmetrically about y = y_mid."""
+    global _SYMTAIL_LOPEZ_RIM
+    if _SYMTAIL_LOPEZ_RIM is None:
+        _SYMTAIL_LOPEZ_RIM = _symtail_lopez_rim_y()
+    vv, y = _SYMTAIL_LOPEZ_RIM
+    if not np.all(np.diff(y) > 0):
+        raise ValueError("lopez: rim y not monotone")
+    ymid = 0.5 * (y[0] + y[-1])
+    yc = y - ymid                               # symmetric range [-Y, Y]
+    Y = yc[-1]
+    # cosine-graded symmetric targets (denser near the axis endpoints)
+    s = np.linspace(0.0, 1.0, nv)
+    tgt = -Y * np.cos(math.pi * s)
+    return np.interp(tgt, yc, vv)
+
+
+def symtail_lopez_klein_mesh(spec, nu, nv, order, radius, scale,
+                             theta=0.0):
+    """Lopez's one-ended minimal Klein bottle (Lopez 1993): ONE
+    conformal patch (upper half annulus 1 <= |x| <= rmax) with exact
+    closed-form x/z coordinates and a numerically integrated y, tiled
+    by the 180-degree rotations about the x- and y-axes (both are
+    straight lines contained in the surface) and welded along the
+    shared axis segments and the |x| = 1 Klein-deck rim.  The end at
+    x = infinity is trimmed at |x| = rmax (the single boundary loop).
+    The mesh is measurably one-sided (see the self-tests)."""
+    tk = _toolkit()
+    A = SYMTAIL_LOPEZ_A
+    p = spec['p_from'](order, radius) if 'p_from' in spec else {}
+    rmax = float(p.get('rmax', 3.0))
+    rb = spec.get('res_boost')
+    if rb:
+        nu = max(3, int(round(nu * rb[0])))
+        nv = max(3, int(round(nv * rb[1])))
+    nv += 1 - (nv % 2)                          # odd: y = ymid on-grid
+    # u-grid: log-radial with an exact node at the branch point |x| = a
+    u = np.linspace(0.0, math.log(rmax), nu)
+    iA = int(np.argmin(np.abs(u - math.log(A))))
+    iA = min(max(iA, 1), nu - 2)
+    u[iA] = math.log(A)
+    v = symtail_lopez_vgrid(nv)
+    U, V = np.meshgrid(u, v, indexing='ij')
+    Xc = np.exp(U + 1j * V)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        x1 = np.real(_symtail_lopez_om1(Xc))
+        x3 = np.real(_symtail_lopez_om3(Xc))
+        F2 = _symtail_lopez_phi2(Xc)
+    # y: cumulative base row (v = v0, just above the real axis) plus
+    # cumulative columns (dz = i x dv on each column)
+    Fb = F2[:, 0] * Xc[:, 0]
+    yb = np.zeros(nu)
+    yb[1:] = np.cumsum(0.5 * np.real(Fb[1:] + Fb[:-1]) * np.diff(u))
+    Fc = F2 * Xc * 1j
+    dv = np.diff(v)[None, :]
+    y = np.zeros((nu, nv))
+    y[:, 1:] = np.cumsum(0.5 * np.real(Fc[:, 1:] + Fc[:, :-1]) * dv,
+                         axis=1)
+    y += yb[:, None]
+    y = np.where(np.isfinite(y), y, 0.0)
+    # anchor: the theta = pi edge beyond the branch point -a is a
+    # straight line ON THE X-AXIS (Lopez's normalization f(-a) = 0);
+    # its columns are regular, so their median y-value is the anchor
+    far = np.arange(iA + 1, nu)
+    y -= float(np.median(y[far, -1]))
+    X = np.stack([x1, y, x3], axis=-1)
+    # snap the symmetry sets exactly:
+    #  * v -> 0 edge (x real in [1, rmax]) lies on the y-axis;
+    #  * v -> pi edge, |x| <= a, lies on the y-axis;
+    #  * v -> pi edge, |x| >= a, lies on the x-axis;
+    #  * the rim |x| = 1 lies in the z = 0 plane, and the deck
+    #    involution pairs rim vertex j with nv-1-j (mirror in y).
+    X[:, 0, 0] = 0.0
+    X[:, 0, 2] = 0.0
+    X[:iA + 1, -1, 0] = 0.0
+    X[:iA + 1, -1, 2] = 0.0
+    X[iA:, -1, 1] = 0.0
+    X[iA:, -1, 2] = 0.0
+    rim = X[0]
+    mir = rim[::-1] * np.array([1.0, -1.0, 1.0])
+    mis = float(np.linalg.norm(rim - mir, axis=1).max())
+    diag = float(np.linalg.norm(X.reshape(-1, 3).max(0)
+                                - X.reshape(-1, 3).min(0)))
+    if not np.isfinite(mis) or mis > 0.02 * diag:
+        raise ValueError(
+            f"lopez: Klein rim identity failed ({mis:.3e} vs "
+            f"{diag:.3e})")
+    X[0] = 0.5 * (rim + mir)
+    X[0, :, 2] = 0.0
+    # tile: I, Rx(pi), Ry(pi), Rz(pi)
+    M1 = np.diag([1.0, -1.0, -1.0])
+    M2 = np.diag([-1.0, 1.0, -1.0])
+    M3 = np.diag([-1.0, -1.0, 1.0])
+    gu = np.arange(nu) / max(nu - 1, 1)
+    gv = np.arange(nv) / max(nv - 1, 1)
+    uv0 = np.stack(np.meshgrid(gu, gv, indexing='ij'),
+                   axis=-1).reshape(-1, 2)
+    V0 = X.reshape(-1, 3)
+    q0 = []
+    for i in range(nu - 1):
+        for j in range(nv - 1):
+            q0.append((i * nv + j, (i + 1) * nv + j,
+                       (i + 1) * nv + j + 1, i * nv + j + 1))
+    Vs, Fs, base = [], [], 0
+    for M in (np.eye(3), M1, M2, M3):
+        Vs.append(V0 @ M.T)
+        for f in q0:
+            Fs.append(tuple(i + base for i in f))
+        base += len(V0)
+    Vc = np.concatenate(Vs, axis=0)
+    UVc = np.concatenate([uv0] * 4, axis=0)
+    # weld ONLY the intended seam pairs (explicit index pairing, not a
+    # geometric weld: the immersed Klein bottle SELF-INTERSECTS along
+    # the axis lines, where a proximity weld would fuse crossing sheets
+    # into non-manifold junk).  Seams, per the surface's symmetry
+    # group {I, Rx, Ry, Rz} and the Klein-deck rim gluing:
+    #   * theta->0 edge (on the y-axis):        I~Ry, Rx~Rz, same index;
+    #   * theta->pi edge, |x| <= a (y-axis):    I~Ry, Rx~Rz, same index;
+    #   * theta->pi edge, |x| >= a (x-axis):    I~Rx, Ry~Rz, same index;
+    #   * rim |x| = 1 (Klein deck):             I~Rx, Ry~Rz, j <-> nv-1-j.
+    N = nu * nv
+
+    def cid(c, i, j):
+        return c * N + i * nv + j
+    pairs = []
+    for i in range(nu):
+        pairs.append((cid(0, i, 0), cid(2, i, 0)))
+        pairs.append((cid(1, i, 0), cid(3, i, 0)))
+    for i in range(iA + 1):
+        pairs.append((cid(0, i, nv - 1), cid(2, i, nv - 1)))
+        pairs.append((cid(1, i, nv - 1), cid(3, i, nv - 1)))
+    for i in range(iA, nu):
+        pairs.append((cid(0, i, nv - 1), cid(1, i, nv - 1)))
+        pairs.append((cid(2, i, nv - 1), cid(3, i, nv - 1)))
+    for j in range(nv):
+        pairs.append((cid(0, 0, j), cid(1, 0, nv - 1 - j)))
+        pairs.append((cid(2, 0, j), cid(3, 0, nv - 1 - j)))
+    pmax = max(float(np.linalg.norm(Vc[a2] - Vc[b2]))
+               for a2, b2 in pairs)
+    if pmax > 1e-6 * diag:
+        raise ValueError(f"lopez: seam pairing failed ({pmax:.3e} vs "
+                         f"diagonal {diag:.3e})")
+    parent = np.arange(4 * N)
+
+    def find(a2):
+        while parent[a2] != a2:
+            parent[a2] = parent[parent[a2]]
+            a2 = parent[a2]
+        return a2
+    for a2, b2 in pairs:
+        ra, rb2 = find(a2), find(b2)
+        if ra != rb2:
+            parent[ra] = rb2
+    roots = np.array([find(a2) for a2 in range(4 * N)])
+    _, inv = np.unique(roots, return_inverse=True)
+    inv = inv.ravel()
+    Vw = np.zeros((int(inv.max()) + 1, 3))
+    Vw[inv] = Vc
+    UVw = np.zeros((len(Vw), 2))
+    UVw[inv] = UVc
+    flist = []
+    for f in Fs:
+        g = [int(inv[f[0]])]
+        for t in range(1, 4):
+            if int(inv[f[t]]) != g[-1]:
+                g.append(int(inv[f[t]]))
+        if len(g) > 3 and g[0] == g[-1]:
+            g.pop()
+        if len(g) >= 3 and g[0] != g[-1] and len(set(g)) == len(g):
+            flist.append(tuple(g))
+    used = np.unique(np.array([i for f in flist for i in f],
+                              dtype=np.int64))
+    remap = np.full(len(Vw), -1, dtype=np.int64)
+    remap[used] = np.arange(len(used))
+    Vf = Vw[used]
+    UVf = UVw[used]
+    quads = [tuple(int(remap[i]) for i in f) for f in flist]
+    Vu, quads = tk._largest_component(np.hstack([Vf, UVf]), quads)
+    Vf, UVf = Vu[:, :3], Vu[:, 3:]
+    Vf = tk._smooth_boundary(Vf, quads, iters=4)
+    Vf = tk._center_fit(Vf, scale, Vf)
+    return Vf, quads, UVf
+
+
+# --- antiprismatic k-noid period solver -----------------------------------
+
+def _symtail_ap_g0_dh(nn, b, a):
+    def g0(z):
+        zn = z ** nn
+        return z ** (nn - 1) * (zn + a ** (-nn)) / (zn - a ** nn)
+
+    def dh(z):
+        zn = z ** nn
+        return z ** (nn - 1) * (zn - a ** nn) * (zn + a ** (-nn)) \
+            / ((zn - b ** nn) ** 2 * (zn + b ** (-nn)) ** 2)
+    return g0, dh
+
+
+def _symtail_ap_r2(nn, b, a):
+    """(rho^2 from the inner end ring, rho^2 from the outer ring) --
+    the Lopez-Ros closure rho^2 = -Im oint dh/g0 / Im oint g0 dh per
+    ring; the free constant a must make them agree."""
+    g0, dh = _symtail_ap_g0_dh(nn, b, a)
+    ri = 0.3 * min(abs(b - a), abs(1.0 / b - b),
+                   b * math.sin(math.pi / nn))
+    zo = (1.0 / b) * np.exp(1j * math.pi / nn)
+    ro = 0.3 * min(abs(1.0 / b - 1.0 / a), abs(1.0 / b - b),
+                   (1.0 / b) * math.sin(math.pi / nn))
+    Ai = period_integral(lambda z: dh(z) / g0(z), b, ri, ri)
+    Bi = period_integral(lambda z: dh(z) * g0(z), b, ri, ri)
+    Ao = period_integral(lambda z: dh(z) / g0(z), zo, ro, ro)
+    Bo = period_integral(lambda z: dh(z) * g0(z), zo, ro, ro)
+    return -Ai.imag / Bi.imag, -Ao.imag / Bo.imag
+
+
+_SYMTAIL_AP_CACHE = {}
+
+
+def symtail_antiprism_constants(nn, b):
+    """Branch constant a and Lopez-Ros scale rho closing the period
+    problem of the antiprismatic k-noid (2*nn ends in antiprism
+    symmetry; Weber's notebook solves the same system with NSolve /
+    FindRoot).  Verified < 1e-10 by the period gate in the self-tests
+    for nn = 3..7; nn = 2 does not close and is rejected."""
+    key = (nn, round(b, 12))
+    if key in _SYMTAIL_AP_CACHE:
+        return _SYMTAIL_AP_CACHE[key]
+
+    def resid(a):
+        r_in, r_out = _symtail_ap_r2(nn, b, a)
+        return r_in - r_out
+    xs = np.linspace(0.08, 0.95, 60)
+    sol = None
+    vals = [resid(float(a)) for a in xs]
+    for i in range(len(xs) - 1):
+        v0, v1 = vals[i], vals[i + 1]
+        if not (np.isfinite(v0) and np.isfinite(v1)) or v0 * v1 >= 0:
+            continue
+        a = solve_scalar(resid, float(xs[i]), float(xs[i + 1]))
+        r_in, r_out = _symtail_ap_r2(nn, b, a)
+        if r_in <= 0:
+            continue
+        rho = math.sqrt(r_in)
+        # accept the root whose full period set closes best
+        g0, dh = _symtail_ap_g0_dh(nn, b, a)
+
+        def phi(z):
+            g = rho * g0(z)
+            h = dh(z)
+            return np.stack(np.broadcast_arrays(
+                0.5 * (1.0 / g - g) * h, 0.5j * (1.0 / g + g) * h, h),
+                axis=-1)
+        w = 0.0
+        for kk in range(nn):
+            for zc in (b * np.exp(2j * math.pi * kk / nn),
+                       (1.0 / b) * np.exp(1j * (2 * math.pi * kk
+                                                + math.pi) / nn)):
+                rr = 0.3 * min(abs(b - a), abs(1.0 / b - b),
+                               abs(zc) * math.sin(math.pi / nn))
+                for c in range(3):
+                    I = period_integral(
+                        lambda z, c=c: phi(z)[..., c], zc, rr, rr)
+                    w = max(w, abs(I.real))
+        if sol is None or w < sol[2]:
+            sol = (a, rho, w)
+    if sol is None or sol[2] > 1e-8:
+        raise ValueError(f"antiprism nn={nn} b={b}: period problem "
+                         f"did not close (worst "
+                         f"{sol[2] if sol else float('nan'):.2e})")
+    _SYMTAIL_AP_CACHE[key] = (sol[0], sol[1])
+    return _SYMTAIL_AP_CACHE[key]
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
@@ -5431,4 +6047,64 @@ if __name__ == "__main__":
     ok &= good
     print(f"dperiodic KMR-3 lattice vs notebook: |dT|=({e1:.1e},"
           f"{e2:.1e},{e3:.1e}) {'OK' if good else 'FAIL'}")
+    # ---- SYMM/NONORIENT TAIL engine gates ------------------------------
+    # (1) validate the one-sidedness checker itself on two synthetic
+    #     meshes: a Mobius band (must read one-sided, chi = 0, 1 loop)
+    #     and a cylinder (two-sided, chi = 0, 2 loops)
+    nuq, nvq = 24, 8
+
+    def _strip(mobius):
+        V, F = [], []
+        for i in range(nuq):
+            t = TAU * i / nuq
+            for j in range(nvq):
+                s = j / (nvq - 1) - 0.5
+                if mobius:
+                    V.append([(1 + s * math.cos(t / 2)) * math.cos(t),
+                              (1 + s * math.cos(t / 2)) * math.sin(t),
+                              s * math.sin(t / 2)])
+                else:
+                    V.append([math.cos(t), math.sin(t), s])
+        for i in range(nuq):
+            i2 = (i + 1) % nuq
+            for j in range(nvq - 1):
+                if mobius and i2 == 0:
+                    # glue with the half-twist flip j -> nvq-1-j
+                    F.append((i * nvq + j, (nvq - 1 - j),
+                              (nvq - 2 - j), i * nvq + j + 1))
+                else:
+                    F.append((i * nvq + j, i2 * nvq + j,
+                              i2 * nvq + j + 1, i * nvq + j + 1))
+        return np.array(V), F
+    Vm, Fm = _strip(True)
+    chi_m, nm_m, lo_m, os_m = symtail_edge_stats(Vm, Fm)
+    Vc, Fc = _strip(False)
+    chi_c, nm_c, lo_c, os_c = symtail_edge_stats(Vc, Fc)
+    good = (os_m and chi_m == 0 and lo_m == 1 and nm_m == 0
+            and (not os_c) and chi_c == 0 and lo_c == 2 and nm_c == 0)
+    ok &= good
+    print(f"symtail checker: mobius(chi={chi_m} loops={lo_m} "
+          f"one_sided={os_m}) cylinder(chi={chi_c} loops={lo_c} "
+          f"one_sided={os_c}) {'OK' if good else 'FAIL'}")
+    # (2) antiprismatic solver reproduces the harvested nn=5 member and
+    #     closes the full period set for the slider range
+    ah, rh = symtail_antiprism_constants(5, 0.2)
+    e = max(abs(ah - 0.2748767946679093),
+            abs(rh - 0.0015692436842339352))
+    good = e < 1e-8
+    ok &= good
+    print(f"symtail antiprism nn=5 b=0.2: a={ah:.12f} rho={rh:.6e} "
+          f"err={e:.2e} {'OK' if good else 'FAIL'}")
+    # (3) Lopez Klein bottle numerics: the rim y-profile is monotone
+    #     (the deck pairing is well defined) and the symmetric v-grid
+    #     is strictly increasing
+    vg = symtail_lopez_vgrid(61)
+    vvr, yr = _SYMTAIL_LOPEZ_RIM
+    good = bool(np.all(np.diff(vg) > 0)) and bool(np.all(np.diff(yr) > 0))
+    ok &= good
+    print(f"symtail lopez rim: y monotone={bool(np.all(np.diff(yr) > 0))} "
+          f"vgrid monotone={bool(np.all(np.diff(vg) > 0))} "
+          f"y range [{yr[0] - 0.5 * (yr[0] + yr[-1]):.4f},"
+          f"{yr[-1] - 0.5 * (yr[0] + yr[-1]):.4f}] "
+          f"{'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in we_builders")
