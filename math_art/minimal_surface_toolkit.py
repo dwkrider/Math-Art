@@ -10,9 +10,13 @@
 #
 # 2. Triply-periodic minimal surfaces via their standard nodal
 #    (level-set) approximations, meshed by marching tetrahedra:
-#    Schwarz P & D, Schoen's Gyroid / I-WP / F-RD, Neovius, Lidinoid,
-#    Split P, plus the singly-periodic Scherk tower. Inventory after
-#    Ken Brakke's periodic-surface pages (kenbrakke.com/evolver).
+#    Schwarz P & D, Schoen's Gyroid / I-WP / F-RD / O,C-TO, Neovius,
+#    Lidinoid, Split P, the Fischer-Koch S / C(S) / Y / +-Y / C(+-Y) /
+#    C(Y) family, the complementary D and Gyroid, G', D', Karcher K,
+#    the C(I2-Y**) rod-packing surface, plus the singly-periodic Scherk
+#    tower.  Inventory after Ken Brakke's periodic-surface pages
+#    (kenbrakke.com/evolver); tier-2 nodal equations and their sources
+#    are documented at the "Tier-2 nodal TPMS expansion" block below.
 #
 # 3. A Plateau-problem solver -- a lightweight, in-Blender take on what
 #    Brakke's Surface Evolver does: pin one or two boundary curves and
@@ -1097,6 +1101,277 @@ TPMS = {
     'SCHERKT': ("Scherk Tower (singly periodic)", _f_scherk_tower, False),
 }
 
+# ==========================================================================
+# Tier-2 nodal TPMS expansion
+# ==========================================================================
+# Additional published nodal (Fourier level-set) approximations of triply
+# periodic minimal surfaces, plus infrastructure for non-cubic unit cells
+# and a level-offset parameter (the constant c in F(x,y,z) = c, which
+# sweeps each field's offset family of companion surfaces).
+#
+# Every field below transcribes a PUBLISHED nodal formula; none are
+# invented here.  The equations are taken from the peer-reviewed
+# compilation by Fisher et al. (2023), which normalized the forms first
+# derived in the primary sources cited per surface.
+#
+# References:
+#   H. G. von Schnering and R. Nesper, "Nodal surfaces of Fourier
+#       series: fundamental invariants of structured matter",
+#       Z. Phys. B Condensed Matter 83 (1991) 407-412.
+#       doi:10.1007/BF01313411  [C(D), C(Y), +-Y, C(+-Y), S nodal forms]
+#   H. G. von Schnering, M. Oehme, G. Rudolf, "Three-dimensional
+#       periodic nodal surfaces which envelope the threefold and
+#       fourfold cubic rod packings", Acta Chem. Scand. 45 (1991)
+#       873-876.  doi:10.3891/acta.chem.scand.45-0873  [C(I2-Y**)]
+#   M. Wohlgemuth, N. Yufa, J. Hoffman, E. L. Thomas, "Triply periodic
+#       bicontinuous cubic microdomain morphologies by symmetries",
+#       Macromolecules 34 (2001) 6083-6089.  doi:10.1021/ma0019499
+#       [O,C-TO (OCTO), G', F-RD variant]
+#   D. A. Hoffman, J. T. Hoffman, M. Weber, et al., "Table of
+#       Surfaces", The Scientific Graphics Project, MSRI (2003).
+#       [D' and further G'/OCTO forms]
+#   J. W. Fisher, S. W. Miller, J. Bartolai, T. W. Simpson,
+#       M. A. Yukish, "Catalog of triply periodic minimal surfaces,
+#       equation-based lattice structures, and their homogenized
+#       property data", Data in Brief 49 (2023) 109311.
+#       doi:10.1016/j.dib.2023.109311  [equation compilation; K, Q*,
+#       Triplane/F recommendations]
+#   W. Fischer and E. Koch, "On 3-periodic minimal surfaces",
+#       Z. Kristallogr. 179 (1987) 31-52, and E. Koch, W. Fischer,
+#       "On 3-periodic minimal surfaces with non-cubic symmetry",
+#       Z. Kristallogr. 183 (1988) 129-152.
+#       doi:10.1524/zkri.1988.183.14.129  [the S, C(S), Y families]
+#   E. Koch and W. Fischer, "Triply periodic minimal balance surfaces:
+#       a correction", Acta Crystallogr. A 49 (1993) 209-210.
+#       doi:10.1107/S0108767392007591  [C(S) = P and Y = D as minimal
+#       surfaces; the nodal geometries remain distinct]
+#   A. H. Schoen, "Infinite periodic minimal surfaces without
+#       self-intersections", NASA TN D-5541 (1970).  [O,C-TO]
+#   H. Karcher, "The triply periodic minimal surfaces of Alan Schoen
+#       and their constant mean curvature companions", Manuscripta
+#       Math. 64 (1989) 291-357.  doi:10.1007/BF01165824  [K surface]
+#   E. A. Lord and A. L. Mackay, "Periodic minimal surfaces of cubic
+#       symmetry", Current Science 85 (2003) 346-362.  [Triplane / F
+#       family context; survey]
+#
+# Shorthand used in the comments below: Ci = cos(i), Si = sin(i),
+# C2x = cos(2x), etc., with coordinates in radians (period 2*pi).
+
+
+def _tpms2_f_octo(x, y, z):
+    # Schoen O,C-TO: 0.6(CxCy+CyCz+CzCx) - 0.4(Cx+Cy+Cz) + 0.25
+    # (Wohlgemuth et al. 2001 form, level constant per Fisher et al.)
+    cx, cy, cz = np.cos(x), np.cos(y), np.cos(z)
+    return 0.6 * (cx * cy + cy * cz + cz * cx) - 0.4 * (cx + cy + cz) + 0.25
+
+
+def _tpms2_f_fk_s(x, y, z):
+    # Fischer-Koch S: C2x Sy Cz + Cx C2y Sz + Sx Cy C2z
+    # (von Schnering & Nesper 1991)
+    return (np.cos(2 * x) * np.sin(y) * np.cos(z)
+            + np.cos(x) * np.cos(2 * y) * np.sin(z)
+            + np.sin(x) * np.cos(y) * np.cos(2 * z))
+
+
+def _tpms2_f_fk_cs(x, y, z):
+    # Fischer-Koch C(S): (C2x+C2y+C2z) + 2(S3x S2y Cz + Cx S3y S2z
+    #   + S2x Cy S3z) + 2(S2x C3y Sz + Sx S2y C3z + C3x Sy S2z)
+    # (Koch & Fischer 1988 surface; nodal form per Fisher et al. 2023)
+    return (np.cos(2 * x) + np.cos(2 * y) + np.cos(2 * z)
+            + 2 * (np.sin(3 * x) * np.sin(2 * y) * np.cos(z)
+                   + np.cos(x) * np.sin(3 * y) * np.sin(2 * z)
+                   + np.sin(2 * x) * np.cos(y) * np.sin(3 * z))
+            + 2 * (np.sin(2 * x) * np.cos(3 * y) * np.sin(z)
+                   + np.sin(x) * np.sin(2 * y) * np.cos(3 * z)
+                   + np.cos(3 * x) * np.sin(y) * np.sin(2 * z)))
+
+
+def _tpms2_f_fk_y(x, y, z):
+    # Fischer-Koch Y: CxCyCz + SxSySz + (S2xSy + S2ySz + SxS2z)
+    #   + (CxS2y + CyS2z + S2xCz)   (Koch & Fischer 1988)
+    return (np.cos(x) * np.cos(y) * np.cos(z)
+            + np.sin(x) * np.sin(y) * np.sin(z)
+            + np.sin(2 * x) * np.sin(y) + np.sin(2 * y) * np.sin(z)
+            + np.sin(x) * np.sin(2 * z)
+            + np.cos(x) * np.sin(2 * y) + np.cos(y) * np.sin(2 * z)
+            + np.sin(2 * x) * np.cos(z))
+
+
+def _tpms2_f_fk_pmy(x, y, z):
+    # Fischer-Koch +-Y (PMY): 2 CxCyCz + S2xSy + S2ySz + SxS2z
+    # (von Schnering & Nesper 1991)
+    return (2 * np.cos(x) * np.cos(y) * np.cos(z)
+            + np.sin(2 * x) * np.sin(y) + np.sin(2 * y) * np.sin(z)
+            + np.sin(x) * np.sin(2 * z))
+
+
+def _tpms2_f_fk_cpmy(x, y, z):
+    # Fischer-Koch C(+-Y): -2 CxCyCz + S2xSy + S2ySz + SxS2z
+    # (von Schnering & Nesper 1991)
+    return (-2 * np.cos(x) * np.cos(y) * np.cos(z)
+            + np.sin(2 * x) * np.sin(y) + np.sin(2 * y) * np.sin(z)
+            + np.sin(x) * np.sin(2 * z))
+
+
+def _tpms2_f_fk_cy(x, y, z):
+    # Fischer-Koch C(Y): -SxSySz + S2xSy + S2ySz + SxS2z - CxCyCz
+    #   + S2xCz + CxS2y + CyS2z   (von Schnering & Nesper 1991)
+    return (-np.sin(x) * np.sin(y) * np.sin(z)
+            + np.sin(2 * x) * np.sin(y) + np.sin(2 * y) * np.sin(z)
+            + np.sin(x) * np.sin(2 * z)
+            - np.cos(x) * np.cos(y) * np.cos(z)
+            + np.sin(2 * x) * np.cos(z) + np.cos(x) * np.sin(2 * y)
+            + np.cos(y) * np.sin(2 * z))
+
+
+def _tpms2_f_cd(x, y, z):
+    # Complementary D, C(D): cos(3x+y)Cz - sin(3x-y)Sz + cos(x+3y)Cz
+    #   + sin(x-3y)Sz + cos(x-y)C3z - sin(x+y)S3z
+    # (von Schnering & Nesper 1991)
+    return (np.cos(3 * x + y) * np.cos(z) - np.sin(3 * x - y) * np.sin(z)
+            + np.cos(x + 3 * y) * np.cos(z) + np.sin(x - 3 * y) * np.sin(z)
+            + np.cos(x - y) * np.cos(3 * z) - np.sin(x + y) * np.sin(3 * z))
+
+
+def _tpms2_f_cg(x, y, z):
+    # Complementary Gyroid C(G) (a.k.a. C(Y**)): 3(SxCy + SyCz + CxSz)
+    #   + 2(S3xCy + S3yCz + CxS3z) - 2(SxC3y + SyC3z + C3xSz)
+    # (Fisher et al. 2023 compilation)
+    return (3 * (np.sin(x) * np.cos(y) + np.sin(y) * np.cos(z)
+                 + np.cos(x) * np.sin(z))
+            + 2 * (np.sin(3 * x) * np.cos(y) + np.sin(3 * y) * np.cos(z)
+                   + np.cos(x) * np.sin(3 * z))
+            - 2 * (np.sin(x) * np.cos(3 * y) + np.sin(y) * np.cos(3 * z)
+                   + np.cos(3 * x) * np.sin(z)))
+
+
+def _tpms2_f_gprime(x, y, z):
+    # G' (alternating-gyroid family): S2x Cy Sz + Sx S2y Cz
+    #   + Cx Sy S2z + 0.32   (Wohlgemuth et al. 2001)
+    return (np.sin(2 * x) * np.cos(y) * np.sin(z)
+            + np.sin(x) * np.sin(2 * y) * np.cos(z)
+            + np.cos(x) * np.sin(y) * np.sin(2 * z) + 0.32)
+
+
+def _tpms2_f_dprime(x, y, z):
+    # D': 1/2(CxCyCz + CxSySz + SxCySz + SxSyCz)
+    #   - 1/2(S2xS2y + S2yS2z + S2zS2x) - 0.2
+    # (Hoffman et al. 2003, MSRI Scientific Graphics Project)
+    return (0.5 * (np.cos(x) * np.cos(y) * np.cos(z)
+                   + np.cos(x) * np.sin(y) * np.sin(z)
+                   + np.sin(x) * np.cos(y) * np.sin(z)
+                   + np.sin(x) * np.sin(y) * np.cos(z))
+            - 0.5 * (np.sin(2 * x) * np.sin(2 * y)
+                     + np.sin(2 * y) * np.sin(2 * z)
+                     + np.sin(2 * z) * np.sin(2 * x)) - 0.2)
+
+
+def _tpms2_f_k(x, y, z):
+    # Karcher K: 0.3(Cx+Cy+Cz) + 0.3(CxCy+CyCz+CzCx)
+    #   - 0.4(C2x+C2y+C2z) + 0.2
+    # (surface: Karcher 1989; nodal fit per Fisher et al. 2023)
+    cx, cy, cz = np.cos(x), np.cos(y), np.cos(z)
+    return (0.3 * (cx + cy + cz) + 0.3 * (cx * cy + cy * cz + cz * cx)
+            - 0.4 * (np.cos(2 * x) + np.cos(2 * y) + np.cos(2 * z)) + 0.2)
+
+
+def _tpms2_f_ci2y(x, y, z):
+    # C(I2-Y**) rod-packing nodal surface: 2(S2x Cy Sz + Sx S2y Cz
+    #   + Cx Sy S2z) + C2xC2y + C2yC2z + C2xC2z
+    # (von Schnering, Oehme & Rudolf 1991)
+    return (2 * (np.sin(2 * x) * np.cos(y) * np.sin(z)
+                 + np.sin(x) * np.sin(2 * y) * np.cos(z)
+                 + np.cos(x) * np.sin(y) * np.sin(2 * z))
+            + np.cos(2 * x) * np.cos(2 * y)
+            + np.cos(2 * y) * np.cos(2 * z)
+            + np.cos(2 * x) * np.cos(2 * z))
+
+
+def _tpms2_f_frd2(x, y, z):
+    # Schoen F-RD, Wohlgemuth variant: 8 CxCyCz + C2xC2yC2z
+    #   - (C2xC2y + C2yC2z + C2zC2x)   (Wohlgemuth et al. 2001)
+    c2x, c2y, c2z = np.cos(2 * x), np.cos(2 * y), np.cos(2 * z)
+    return (8 * np.cos(x) * np.cos(y) * np.cos(z) + c2x * c2y * c2z
+            - (c2x * c2y + c2y * c2z + c2z * c2x))
+
+
+TPMS.update({
+    'OCTO': ("Schoen O,C-TO (nodal approximation)", _tpms2_f_octo, True),
+    'FK_S': ("Fischer-Koch S (nodal approximation)", _tpms2_f_fk_s, True),
+    'FK_CS': ("Fischer-Koch C(S) (nodal approximation)",
+              _tpms2_f_fk_cs, True),
+    'FK_Y': ("Fischer-Koch Y (nodal approximation)", _tpms2_f_fk_y, True),
+    'FK_PMY': ("Fischer-Koch +-Y (nodal approximation)",
+               _tpms2_f_fk_pmy, True),
+    'FK_CPMY': ("Fischer-Koch C(+-Y) (nodal approximation)",
+                _tpms2_f_fk_cpmy, True),
+    'FK_CY': ("Fischer-Koch C(Y) (nodal approximation)",
+              _tpms2_f_fk_cy, True),
+    'CD': ("Complementary D (nodal approximation)", _tpms2_f_cd, True),
+    'CG': ("Complementary Gyroid (nodal approximation)",
+           _tpms2_f_cg, True),
+    'GPRIME': ("G' Alternating Gyroid (nodal approximation)",
+               _tpms2_f_gprime, True),
+    'DPRIME': ("D' (nodal approximation)", _tpms2_f_dprime, True),
+    'KSURF': ("Karcher K (nodal approximation)", _tpms2_f_k, True),
+    'CI2Y': ("C(I2-Y**) Rod Packing (nodal approximation)",
+             _tpms2_f_ci2y, True),
+    'FRD2': ("Schoen F-RD (Wohlgemuth variant, nodal)",
+             _tpms2_f_frd2, True),
+})
+
+# Considered but DEFERRED (verified unsound as zero level sets, so they
+# do not ship -- see BACKLOG):
+#   Q* / ST1  ((Cx - 2Cy)Cz - sqrt3 Sz (Cx-y - Cx) + Cx-y Cz): the zero
+#       set has genuine critical points (at the origin every sine factor
+#       vanishes), i.e. a cone singularity -- not embedded at c = 0.
+#   Triplane / F  (CxCyCz = c): c = 0 degenerates to three orthogonal
+#       plane sets; every c > 0 yields an array of DISCONNECTED closed
+#       bubbles (Fisher et al. note the equation misses the tunnels of
+#       Brakke's true Triplane TPMS).
+#   W, G'2, Slotted-P, P+C(P), double G/D/P, tubular G/D/P: singular at
+#       c = 0, unclear provenance, or not single/minimal surfaces.
+#   Schwarz H, CLP, Schoen H'-T, S'-S'', I6, C(H): genuine TPMS but NO
+#       published nodal formula exists (the Fisher et al. 2023 catalog,
+#       which collects every known nodal fit, omits them); their exact
+#       Weierstrass data lives in research/msblog_harvest.
+
+# Built-in level offsets: rows whose PUBLISHED canonical member sits at
+# a nonzero level of the field (the operator's Level Offset adds on
+# top).  Currently none ship, but the mechanism is load-bearing for the
+# offset-family UI and future rows.
+tpms2_DEFAULT_OFFSET = {}
+
+# Per-row lattice matrices for non-cubic unit cells: a 3x3 matrix mapping
+# fractional cell coordinates (each 2*pi-periodic) to Cartesian space, in
+# units of one cubic period.  Rows absent here use the identity (cubic).
+# A hexagonal cell (for H-family fields defined on hexagonal axes) is
+# M = [[1, -1/2, 0], [0, sqrt(3)/2, 0], [0, 0, c/a]].  No shipped row
+# needs one yet -- kept as infrastructure (exercised by the self-test).
+tpms2_LATTICE = {}
+
+TPMS2_HEX_LATTICE = (
+    (1.0, -0.5, 0.0),
+    (0.0, math.sqrt(3.0) / 2.0, 0.0),
+    (0.0, 0.0, 1.0),
+)
+
+
+def tpms2_cell_matrix(kind, aspect=1.0):
+    """Cell matrix for `kind` with the z column scaled by `aspect`
+    (the tetragonal c/a ratio).  Returns None when the cell is the
+    plain cubic one (identity, aspect 1) so the caller can skip the
+    transform entirely."""
+    base = tpms2_LATTICE.get(kind)
+    if base is None and abs(aspect - 1.0) < 1e-12:
+        return None
+    M = np.array(base if base is not None else np.eye(3), dtype=float)
+    M[:, 2] *= float(aspect)
+    return M
+
+# ===================== end tier-2 nodal TPMS expansion ====================
+
+
 # cube corners (i,j,k offsets) and a 6-tetrahedra decomposition sharing
 # the 0-6 diagonal
 _CUBE = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (0, 1, 0),
@@ -1243,25 +1518,45 @@ def _cells_xyz(cells):
     return c, c, c
 
 
-def build_tpms(kind, cells, res_per_cell, scale):
+def build_tpms(kind, cells, res_per_cell, scale, offset=0.0, aspect=1.0):
     """Nodal TPMS mesh.  `cells` is an int (symmetric block) or a
     (cx, cy, cz) triple: the block spans cx x cy x cz unit cells, one
     independent count per lattice axis.  For the singly periodic Scherk
-    tower only the z count repeats (x/y are clipped)."""
+    tower only the z count repeats (x/y are clipped).
+
+    `offset` is the level constant c in F(x,y,z) = c, added on top of
+    the row's built-in default (tpms2_DEFAULT_OFFSET): 0 keeps the
+    published canonical member, nonzero sweeps the offset companion
+    family.  `aspect` is the tetragonal c/a cell ratio; together with a
+    per-row lattice matrix (tpms2_LATTICE) it generalizes the tiling to
+    non-cubic unit cells: the field is marched in fractional (2*pi-
+    periodic) coordinates and the mesh mapped through the cell matrix,
+    so copies tile seamlessly at the true aspect ratio."""
     label, field, triply = TPMS[kind]
     cx, cy, cz = _cells_xyz(cells)
+    off = tpms2_DEFAULT_OFFSET.get(kind, 0.0) + float(offset)
+    f = field if off == 0.0 else (
+        lambda X, Y, Z: field(X, Y, Z) - off)
     if triply:
+        M = tpms2_cell_matrix(kind, aspect)
+        # sample density follows the true (post-matrix) axis lengths
+        ln = ((1.0, 1.0, 1.0) if M is None
+              else tuple(np.linalg.norm(M[:, i]) for i in range(3)))
         sx, sy, sz = cx * TAU, cy * TAU, cz * TAU
         box_min = (-sx / 2, -sy / 2, -sz / 2)
         box_max = (sx / 2, sy / 2, sz / 2)
-        res = (cx * res_per_cell, cy * res_per_cell, cz * res_per_cell)
+        res = tuple(max(4, int(round(c * res_per_cell * l)))
+                    for c, l in zip((cx, cy, cz), ln))
+        verts, tris = marching_tets(f, box_min, box_max, res)
+        if M is not None:
+            verts = verts @ M.T
     else:  # Scherk tower: periodic in z only, clip x/y
         w = 2.2
         box_min = (-w, -w, -cz * math.pi)
         box_max = (w, w, cz * math.pi)
         rxy = int(res_per_cell * 1.4)
         res = (rxy, rxy, cz * res_per_cell)
-    verts, tris = marching_tets(field, box_min, box_max, res)
+        verts, tris = marching_tets(f, box_min, box_max, res)
     s = scale / TAU  # one period -> `scale` Blender units
     return verts * s, tris
 
@@ -1931,10 +2226,23 @@ if _IN_BLENDER:
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="If > 0, add a Solidify modifier with this thickness")
+        level_offset: FloatProperty(
+            name="Level Offset", default=0.0, min=-3.0, max=3.0,
+            description="Constant c in F(x,y,z) = c, relative to the "
+                        "published surface: 0 keeps the (approximately) "
+                        "minimal member, nonzero sweeps the field's "
+                        "offset companion family")
+        cell_aspect: FloatProperty(
+            name="Cell Aspect (c/a)", default=1.0, min=0.25, max=4.0,
+            description="Height-to-width ratio of the unit cell: 1 is "
+                        "the published cell; other values stretch the "
+                        "lattice tetragonally (tP/tD/tG-style cells)")
 
         def execute(self, context):
             verts, tris = build_tpms(self.surface, self.cells,
-                                     self.resolution, self.cell_size)
+                                     self.resolution, self.cell_size,
+                                     offset=self.level_offset,
+                                     aspect=self.cell_aspect)
             if len(tris) == 0:
                 self.report({'ERROR'}, "Empty level set")
                 return {'CANCELLED'}
@@ -1950,7 +2258,7 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             for k in ('surface', 'cells', 'resolution', 'cell_size',
-                      'thickness'):
+                      'thickness', 'level_offset', 'cell_aspect'):
                 lay.prop(self, k)
 
     class MESH_OT_periodic_minimal_add(bpy.types.Operator):
@@ -2047,6 +2355,17 @@ if _IN_BLENDER:
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="If > 0, add a Solidify modifier with this thickness")
+        level_offset: FloatProperty(
+            name="Level Offset", default=0.0, min=-3.0, max=3.0,
+            description="Constant c in F(x,y,z) = c, relative to the "
+                        "published surface: 0 keeps the (approximately) "
+                        "minimal member, nonzero sweeps the field's "
+                        "offset companion family")
+        cell_aspect: FloatProperty(
+            name="Cell Aspect (c/a)", default=1.0, min=0.25, max=4.0,
+            description="Height-to-width ratio of the unit cell: 1 is "
+                        "the published cell; other values stretch the "
+                        "lattice tetragonally (tP/tD/tG-style cells)")
         scale: FloatProperty(
             name="Scale", default=1.0, min=0.01, max=100.0,
             description="Multiplier on the normalized size (1.0 = a 2 m "
@@ -2082,7 +2401,9 @@ if _IN_BLENDER:
                 if self.pgd_preset in _PGD_NODAL:
                     nk = _PGD_NODAL[self.pgd_preset]
                     verts, tris = build_tpms(nk, cxyz,
-                                             self.resolution, self.cell_size)
+                                             self.resolution, self.cell_size,
+                                             offset=self.level_offset,
+                                             aspect=self.cell_aspect)
                     label = TPMS[nk][0]
                 else:                                   # CUSTOM: exact morph
                     verts, tris = build_tpms_exact(
@@ -2101,7 +2422,9 @@ if _IN_BLENDER:
             if surf in TPMS:
                 cxyz = (cu, cv, cw)
                 verts, tris = build_tpms(surf, cxyz,
-                                         self.resolution, self.cell_size)
+                                         self.resolution, self.cell_size,
+                                         offset=self.level_offset,
+                                         aspect=self.cell_aspect)
                 if len(tris) == 0:
                     self.report({'ERROR'}, "Empty level set")
                     return {'CANCELLED'}
@@ -2165,7 +2488,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'cells_u', text="Cells X")
                 lay.prop(self, 'cells_v', text="Cells Y")
                 lay.prop(self, 'cells_w', text="Cells Z")
-                for k in ('resolution', 'cell_size', 'thickness'):
+                for k in ('resolution', 'cell_size', 'thickness',
+                          'level_offset', 'cell_aspect'):
                     lay.prop(self, k)
                 return
             mesh_only = self.surface in MESH_PARAM
@@ -2597,9 +2921,119 @@ if __name__ == "__main__":
         print(f"k-noid n=3: verts={len(Vn)} z-range="
               f"[{Vn[:,2].min():.3f},{Vn[:,2].max():.3f}] "
               f"{'OK' if np.all(np.isfinite(Vn)) else 'FAIL'}")
+        # ---- TPMS gates (incl. tier-2 nodal rows) ----------------------
+        def _t2_grad(field, P, h=1e-4):
+            g = np.empty_like(P)
+            for a in range(3):
+                d = np.zeros(3)
+                d[a] = h
+                g[:, a] = (field(*(P + d).T) - field(*(P - d).T)) / (2 * h)
+            return g
+
+        def _t2_ncomp(nv, T, frac=0.05):
+            """number of connected components holding >= frac of tris"""
+            parent = np.arange(nv)
+
+            def find(i):
+                while parent[i] != i:
+                    parent[i] = parent[parent[i]]
+                    i = parent[i]
+                return i
+            for a, b, c in T:
+                ra, rb, rc = find(a), find(b), find(c)
+                parent[rb] = ra
+                parent[find(rc)] = find(ra)
+            roots = np.array([find(t[0]) for t in T])
+            _, counts = np.unique(roots, return_counts=True)
+            return int(np.sum(counts >= frac * len(T)))
+
+        # per-row field symmetry spot checks: key -> (map, sign);
+        # F(map(p)) == sign * F(p) must hold identically
+        _t2_cyc = (lambda P: P[:, [1, 2, 0]], 1.0)
+        _t2_swap = (lambda P: P[:, [1, 0, 2]], 1.0)
+        _t2_sym = {
+            'OCTO': _t2_swap, 'KSURF': _t2_swap, 'FRD2': _t2_swap,
+            'FK_S': _t2_cyc, 'FK_CS': _t2_cyc, 'FK_Y': _t2_cyc,
+            'FK_PMY': _t2_cyc, 'FK_CPMY': _t2_cyc, 'FK_CY': _t2_cyc,
+            'CG': _t2_cyc, 'GPRIME': _t2_cyc, 'DPRIME': _t2_cyc,
+            'CI2Y': _t2_cyc,
+            'CD': (lambda P: P + math.pi, -1.0),
+        }
+        _t2_new = tuple(_t2_sym)
+        rng = np.random.default_rng(7)
         for kind in TPMS:
             V, T = build_tpms(kind, 1, 20, 2.0)
-            print(f"tpms {kind:10s}: {len(V):6d} verts {len(T):6d} tris")
+            lo, hi = V.min(0), V.max(0)
+            cen = float(np.max(np.abs(0.5 * (lo + hi))))
+            ext = hi - lo
+            finite = bool(np.all(np.isfinite(V)))
+            triply = TPMS[kind][2]
+            good = finite and len(T) > 200
+            if triply:
+                good &= (cen < 0.15 and float(ext.min()) > 1.7
+                         and float(ext.max()) < 2.0 + 1e-6)
+            extra = ""
+            if kind in _t2_new:
+                field = TPMS[kind][1]
+                off = tpms2_DEFAULT_OFFSET.get(kind, 0.0)
+                f0 = (field if off == 0.0
+                      else (lambda X, Y, Z: field(X, Y, Z) - off))
+                # nonzero field gradient on the level set (no flats)
+                P = V[rng.choice(len(V), min(400, len(V)),
+                                 replace=False)] * (TAU / 2.0)
+                G = np.linalg.norm(_t2_grad(f0, P), axis=1)
+                gok = float(G.min()) > 0.05 * float(np.median(G))
+                # symmetry op maps the field to +-itself
+                op, sgn = _t2_sym[kind]
+                Q = rng.uniform(-math.pi, math.pi, (500, 3))
+                Fq = field(*Q.T)
+                serr = float(np.max(np.abs(field(*op(Q).T) - sgn * Fq)))
+                sok = serr < 1e-9 * max(1.0, float(np.max(np.abs(Fq))))
+                # one macro connected component on a 2^3 block
+                V2, T2 = build_tpms(kind, 2, 14, 2.0)
+                nc = _t2_ncomp(len(V2), T2)
+                cok = nc == 1
+                good &= gok and sok and cok
+                extra = (f" grad[min/med={float(G.min()/np.median(G)):.3f}"
+                         f" {'OK' if gok else 'FAIL'}]"
+                         f" sym[{'OK' if sok else f'FAIL {serr:.2e}'}]"
+                         f" comp[{nc} {'OK' if cok else 'FAIL'}]")
+            ok &= good
+            print(f"tpms {kind:9s}: {len(V):6d} verts {len(T):6d} tris "
+                  f"fit[|c|={cen:.3f} ext={ext.min():.2f}-{ext.max():.2f}] "
+                  f"{'OK' if good else 'FAIL'}{extra}")
+        # level-offset path: the marched level actually moves to c
+        V, T = build_tpms('P', 1, 24, 2.0, offset=0.4)
+        Fv = _f_p(*(V * (TAU / 2.0)).T)
+        lerr = float(np.max(np.abs(Fv - 0.4)))
+        good = len(T) > 200 and lerr < 0.05
+        ok &= good
+        print(f"tpms offset  P c=0.4: level err {lerr:.4f} "
+              f"{'OK' if good else 'FAIL'}")
+        # tetragonal aspect path: cell tiles at the true c/a ratio
+        V, T = build_tpms('D', 1, 20, 2.0, aspect=1.6)
+        ext = V.max(0) - V.min(0)
+        ratio = float(ext[2] / ext[0])
+        good = len(T) > 200 and abs(ratio - 1.6) < 0.05
+        ok &= good
+        print(f"tpms aspect  D c/a=1.6: z/x extent {ratio:.3f} "
+              f"{'OK' if good else 'FAIL'}")
+        # hexagonal-lattice infrastructure: march P on a hex cell
+        tpms2_LATTICE['P'] = TPMS2_HEX_LATTICE
+        try:
+            V, T = build_tpms('P', 1, 20, 2.0)
+        finally:
+            del tpms2_LATTICE['P']
+        # analytic extents of the hex-sheared P cell: the zero set
+        # reaches x = +-1.25 pi and y = +-(sqrt3/2) pi in cell coords
+        ext = V.max(0) - V.min(0)
+        want = (2.5, math.sqrt(3.0), 2.0)
+        good = (len(T) > 200 and bool(np.all(np.isfinite(V)))
+                and all(abs(float(e) - w) < 0.1
+                        for e, w in zip(ext, want)))
+        ok &= good
+        print(f"tpms hexcell P: extents ({ext[0]:.2f},{ext[1]:.2f},"
+              f"{ext[2]:.2f}) {'OK' if good else 'FAIL'}")
         # flat-disk validation: minimal surface on a planar circle is flat
         t = np.linspace(0, TAU, 96, endpoint=False)
         circle = np.stack([np.cos(t), np.sin(t), np.zeros_like(t)], axis=1)
