@@ -1582,6 +1582,188 @@ WE_SURFACES['WEI_DOUBLY'] = {
 SURFACE_FAMILY['WEI_DOUBLY'] = 'DOUBLY'
 
 
+# ==========================================================================
+# Singly periodic long tail (appended catalog block; sptail_* engine)
+# ==========================================================================
+# Karcher-style singly periodic surfaces from the minimalsurfaces.blog
+# harvest (research/msblog_harvest/singly_periodic.json), all built by
+# the shared sptail machinery in we_builders: one fundamental patch
+# integrated by compound Gauss-Legendre cells, boundary snapped exactly
+# onto its symmetry lines/planes, orbited under the isometry group with
+# `storeys` translation or screw copies, welded seam-exactly.  Every
+# member's period problem closes with a machine-checked residual and its
+# Euler characteristic per period is MEASURED in the self-tests (engine
+# gates in we_builders.__main__, pipeline gates below):
+#   * SP_SIX_SCHERK    genus 0, 6 ends/period (2 horizontal + 4 at the
+#     end angle phi); rho, a closed forms in phi; translation from the
+#     om2 residue at z = 0.  chi/period = -4.  (The obtuse phi > 90 deg
+#     branch has a different symmetry group -- deferred, BACKLOG.md.)
+#   * SP_ALT_FENCE     alternating fence of half-catenoids, genus 1,
+#     2 ends/period, rho = 1/sqrt(a); chi/period = -2.
+#   * SP_FENCE_CAT     Karcher's fence of catenoids (translation-
+#     invariant catenoid), genus 0, 2 ends/period; rho = sqrt(a).
+#   * SP_HELICOIDAL_SCHERK  helicoidal Karcher-Scherk: the saddle tower
+#     deformed by a screw motion (twist knob = the associate-angle
+#     slider); one modulus R solved on the geometric closure residual;
+#     rise = pi R^2/(1+R^4) reproduced to 1e-14; chi/period = 2 - 2k.
+#   * SP_ENNEPER_3ANN  translation-invariant Enneper with three annular
+#     ends (limit member, notebook by Ramazan Yol): closed-form
+#     immersion, no constants; MEASURED genus 0 with 4 ends/period
+#     (chi = -2; the harvest's genus-1 annotation contradicts its own
+#     rational g, dh -- see the we_builders block note).
+#   * SP_PERIODIC_ENNEPER  the classical periodic Enneper surface
+#     (g = z, dh = dz on the universal cover of the punctured disk);
+#     closed form, "Turns" stacks whole periods.
+#   * SP_SCHERK_ENNEPER  Scherk-Enneper interpolation family (rational
+#     g, dh; 2k wing ends on the unit circle + 2 Enneper-type ends);
+#     horizontal periods close to machine precision (cycles gate).
+# Karcher's symmetrized Scherk towers (the harvest's symmetrized_scherk
+# row) are already shipped as SCHERK_TOWER / SADDLE_TOWER_A.
+#
+# References:
+#   H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#     examples", Manuscripta Math. 62 (1988);
+#   H. F. Scherk (1835); A. Enneper (1864);
+#   M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0;
+#     Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids;
+#     Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk;
+#     Translation-Invariant Torus with 1 Enneper and 3 Annular Ends,
+#     notebook by Ramazan Yol, 2024).
+
+WE_SURFACES['SP_SIX_SCHERK'] = {
+    'label': "Six-Ended Scherk Tower",
+    'family': 'SINGLY',
+    'mesher': we.sptail_six_mesh,
+    # count slider walks the end angle phi = 10 + 10 order degrees
+    # (20..80); radius slides the wing end trims.
+    'p_from': lambda order, radius: {
+        'phid': 10.0 + 10.0 * int(np.clip(order, 1, 7)),
+        'rmax': float(np.clip(30.0 * (radius / 1.2) ** 2, 8.0, 120.0))},
+    'count': "End angle (x10 deg + 10)",
+    'storeys_label': "Periods",
+    'test_order': 2,
+}
+SURFACE_FAMILY['SP_SIX_SCHERK'] = 'SINGLY'
+
+WE_SURFACES['SP_ALT_FENCE'] = {
+    'label': "Alternating Fence of Half-Catenoids",
+    'family': 'SINGLY',
+    'mesher': we.sptail_fencealt_mesh,
+    # count slider walks the neck modulus a; radius digs the two
+    # catenoid ends deeper (smaller rmin trim).
+    'p_from': lambda order, radius: {
+        'a': (1.4, 1.7, 2.0, 2.5, 3.0, 4.0)[
+            int(np.clip(order, 1, 6)) - 1],
+        'rmin': float(np.clip(0.06 * (1.2 / max(radius, 0.2)) ** 1.2,
+                              0.015, 0.2))},
+    'count': "Neck modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_ALT_FENCE'] = 'SINGLY'
+
+WE_SURFACES['SP_FENCE_CAT'] = {
+    'label': "Fence of Catenoids (Karcher)",
+    'family': 'SINGLY',
+    'mesher': we.sptail_fencecat_mesh,
+    # count slider walks the neck modulus a (0 < a < 1); radius digs
+    # the catenoid funnels deeper (bigger r1 trim ratio).
+    'p_from': lambda order, radius: {
+        'a': (0.08, 0.14, 0.2, 0.3, 0.42, 0.55)[
+            int(np.clip(order, 1, 6)) - 1],
+        'r1': float(np.clip(6.0 * (radius / 1.2) ** 1.5, 2.0, 30.0))},
+    'count': "Neck modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_FENCE_CAT'] = 'SINGLY'
+
+WE_SURFACES['SP_HELICOIDAL_SCHERK'] = {
+    'label': "Helicoidal Karcher-Scherk (twisted tower)",
+    'family': 'SINGLY',
+    'mesher': we.sptail_hks_mesh,
+    # count = wings k; the associate-angle knob is the TWIST modulus
+    # (0 -> gentle twist, pi/2 -> the strongest solved twist); radius
+    # slides the 2k wing end trims.
+    'p_from': lambda order, radius: {
+        'k': int(np.clip(order + 1, 2, 8)),
+        'xmax': float(np.clip(4.0 * (radius / 1.2), 2.0, 8.0))},
+    'count': "Wings (k pairs)",
+    'associate': True,
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_HELICOIDAL_SCHERK'] = 'SINGLY'
+
+WE_SURFACES['SP_ENNEPER_3ANN'] = {
+    'label': "Translation-Invariant Enneper (3 annular ends)",
+    'family': 'SINGLY',
+    'mesher': we.sptail_e3a_mesh,
+    # radius slides the Enneper end trim
+    'p_from': lambda order, radius: {
+        'Rt': float(np.clip(2.2 * (radius / 1.2) ** 0.7, 1.5, 3.2))},
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['SP_ENNEPER_3ANN'] = 'SINGLY'
+
+WE_SURFACES['SP_PERIODIC_ENNEPER'] = {
+    'label': "Periodic Enneper",
+    'family': 'SINGLY',
+    'mesher': we.sptail_penneper_mesh,
+    # radius slides the outer (Enneper) rim; "Turns" stacks whole
+    # translational periods of the universal cover
+    'p_from': lambda order, radius: {
+        'rmax': float(np.clip(1.3 * (radius / 1.2) ** 0.8, 0.9, 2.0))},
+    'storeys_label': "Turns (periods)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['SP_PERIODIC_ENNEPER'] = 'SINGLY'
+
+
+def _sp_se_phi(z, p):
+    """Scherk-Enneper (rational Weierstrass data, Weber's notebook):
+    G = c z^(k-1)(z^2k - a^2k)/(z^2k - a^-2k),
+    dh = i z^(k-1)(z^2k - a^2k)(z^2k - a^-2k)/(z^2k - 1)^3 dz."""
+    k, a = p['k'], p['a']
+    c = (1.0 - a ** (-2 * k)) / (1.0 - a ** (2 * k))
+    zk = z ** (2 * k)
+    G = c * z ** (k - 1) * (zk - a ** (2 * k)) / (zk - a ** (-2 * k))
+    dh = 1j * z ** (k - 1) * (zk - a ** (2 * k)) \
+        * (zk - a ** (-2 * k)) / (zk - 1.0) ** 3
+    return (0.5 * (1.0 / G - G) * dh, 0.5j * (1.0 / G + G) * dh, dh)
+
+
+WE_SURFACES['SP_SCHERK_ENNEPER'] = {
+    'label': "Scherk-Enneper",
+    'family': 'SINGLY',
+    'phi': _sp_se_phi,
+    'domain': ('disk', 0.0, lambda p: p['rmax']),
+    # count = wing pairs k; a = 0.75 fixed (mid-family member: the
+    # a -> 1 limit degenerates toward the plain saddle tower with
+    # vanishing wing amplitude).  radius slides the chart reach.
+    'p_from': lambda order, radius: {
+        'k': int(np.clip(order, 1, 6)), 'a': 0.75,
+        'rmax': float(np.clip(2.0 * (radius / 1.2) ** 0.8, 1.4, 3.2))},
+    'count': "Wing pairs (k)",
+    'clip': False,
+    'mask_punctures': lambda p: [
+        (np.exp(1j * math.pi * j / p['k']),
+         min(0.16, 0.5 * math.sin(math.pi / (2 * p['k']))))
+        for j in range(2 * p['k'])],
+    'res_boost': (1.5, 1.9),
+    # horizontal periods vanish around every wing end; the vertical
+    # component carries the alternating +-T translation (cycle_free)
+    'cycles': lambda p: [
+        (np.exp(1j * math.pi * j / p['k']),
+         0.4 * min(0.16, 0.5 * math.sin(math.pi / (2 * p['k']))))
+        for j in range(2 * p['k'])],
+    'cycle_free': (2,),
+    'test_order': 2,
+}
+SURFACE_FAMILY['SP_SCHERK_ENNEPER'] = 'SINGLY'
+
+
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
@@ -2074,4 +2256,81 @@ if __name__ == "__main__":
         print(f"doubly {dkey:12s} 2x2: {len(Vd):6d}v {len(Qd):6d}f "
               f"nonman={nonman} ncomp={ncomp} fit[|c|={cen:.1e} "
               f"ext={ext:.4f}] uv={uv_ok} {'OK' if good else 'FAIL'}")
+    # Singly periodic long tail: full pipeline gates.  Each mesher row is
+    # built through build_parametric at S = 1 and S = 2 stacked periods;
+    # the measured chi(2) - chi(1) must equal the quotient Euler
+    # characteristic 2 - 2 genus - #ends (the theorem check), and every
+    # stack must be edge-manifold, one component and fit the 2 m cube.
+    # (SP_PERIODIC_ENNEPER is one continuous grid strip -- chi = 1 at
+    # every turn count.)
+    for skey, sord, dchi in (('SP_SIX_SCHERK', 2, -4),
+                             ('SP_ALT_FENCE', 3, -2),
+                             ('SP_FENCE_CAT', 3, -2),
+                             ('SP_HELICOIDAL_SCHERK', 3, -6),
+                             ('SP_ENNEPER_3ANN', 1, -2),
+                             ('SP_PERIODIC_ENNEPER', 1, 0)):
+        chis = []
+        good = True
+        for S in (1, 2):
+            Vs, Qs = tk.build_parametric(skey, 48, 48, sord, 1.2, 1.0,
+                                         cells=(S, 1))
+            ecs = {}
+            for f in Qs:
+                m = len(f)
+                for tq in range(m):
+                    a, b = f[tq], f[(tq + 1) % m]
+                    e = (a, b) if a < b else (b, a)
+                    ecs[e] = ecs.get(e, 0) + 1
+            chis.append(len(Vs) - len(ecs) + len(Qs))
+            nonman = sum(1 for c in ecs.values() if c > 2)
+            parc = list(range(len(Vs)))
+
+            def sfind(a):
+                while parc[a] != a:
+                    parc[a] = parc[parc[a]]
+                    a = parc[a]
+                return a
+
+            for f in Qs:
+                for i in range(1, len(f)):
+                    ra, rb = sfind(f[0]), sfind(f[i])
+                    if ra != rb:
+                        parc[ra] = rb
+            ncomp = len({sfind(f[0]) for f in Qs})
+            lo, hi = Vs.min(0), Vs.max(0)
+            cen = float(np.max(np.abs(0.5 * (lo + hi))))
+            ext = float(np.max(hi - lo))
+            good &= (nonman == 0 and ncomp == 1 and cen < 1e-6
+                     and abs(ext - 2.0) < 1e-6
+                     and bool(np.all(np.isfinite(Vs))))
+        good &= (chis[1] - chis[0] == dchi)
+        ok &= good
+        print(f"sptail {skey:22s}: chi {chis[0]}->{chis[1]} "
+              f"(dchi want {dchi}) manifold/fit "
+              f"{'OK' if good else 'FAIL'}")
+    # Scherk-Enneper: the vertical periods around consecutive wing ends
+    # alternate +-T exactly (the surface's screw structure); horizontal
+    # periods are gated by the generic cycles test above.
+    spec = WE_SURFACES['SP_SCHERK_ENNEPER']
+    seworst, sealt = 0.0, 0.0
+    for order in (1, 2, 3):
+        p = spec['p_from'](order, 1.2)
+        phi = we._phi_fn(spec, p, 0.0)
+        kk = p['k']
+        dzs = []
+        for j in range(2 * kk):
+            zc = np.exp(1j * math.pi * j / kk)
+            rr = 0.4 * min(0.16, 0.5 * math.sin(math.pi / (2 * kk)))
+            I = we.period_integral(lambda z: phi(z)[..., 2], zc, rr, rr)
+            dzs.append(I.real)
+        for j in range(2 * kk):
+            sealt = max(sealt, abs(dzs[j] + dzs[(j + 1) % (2 * kk)]))
+        seworst = max(seworst, -min(abs(d) for d in dzs))
+        seworst = max(seworst, 0.0)
+        semag = min(abs(d) for d in dzs)
+    good = sealt < 1e-9 and semag > 0.05
+    ok &= good
+    print(f"sptail SP_SCHERK_ENNEPER periods: alternation "
+          f"residual={sealt:.1e} |T|>={semag:.3f} "
+          f"{'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")

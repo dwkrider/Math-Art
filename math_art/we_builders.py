@@ -4763,6 +4763,945 @@ def dperiodic_wei_residual(b, a, n=320001):
     return (4.0 * r2 - r1) / 3.0
 
 
+# ==========================================================================
+# Singly periodic long tail (sptail_* block): six-ended Scherk towers,
+# alternating fence of half-catenoids, fence of catenoids, helicoidal
+# Karcher-Scherk (twisted saddle tower), translation-invariant Enneper
+# surfaces
+# ==========================================================================
+# A family of Karcher-style singly periodic minimal surfaces, all meshed
+# by the same scheme: integrate the Weierstrass 1-forms over ONE
+# fundamental patch (compound Gauss-Legendre per grid cell, so singular
+# corner nodes are never evaluated), snap the patch boundary exactly onto
+# its symmetry elements (straight lines / mirror planes measured from the
+# integrand's real/imaginary structure on the domain boundary), orbit the
+# patch under the surface's isometry group plus `storeys` translation /
+# screw copies, and weld seam-exactly.  Fractional powers are always
+# taken in the LIMIT FROM THE DOMAIN INTERIOR (boundary points get a tiny
+# upper-half-plane nudge), so no branch cut is ever crossed -- evaluating
+# exactly ON a cut is where numpy's principal branch silently picks the
+# wrong side.
+#
+# Period problems.  Every shipped member closes its period problem with a
+# machine-checkable residual:
+#   * six-ended Scherk (g = 0): rho and the branch point a are CLOSED
+#     FORMS in the end-angle phi (rho = sqrt((1-cos phi)/(1+cos phi)),
+#     a = 4 rho^4/(1+rho^2)^2); the residue of om2 at z = 0 gives the
+#     translation dy = -(pi/4)(1+rho^2)/rho, verified against the
+#     integrated patch.
+#   * alternating fence of half-catenoids (g = 1): rho = 1/sqrt(a)
+#     closes the horizontal period -- the patch's two vertical-mirror
+#     segments land in the SAME plane (measured ~1e-15).
+#   * helicoidal Karcher-Scherk: one real parameter R solved here by
+#     bisection on the GEOMETRIC closure residual (the k-fold axis point
+#     of the w = 0 line pair must coincide with that of the w = infinity
+#     pair); the vertical rise then reproduces pi R^2/(1+R^4) to 1e-14.
+#   * fence of catenoids: rho = sqrt(a) is the Lopez-Ros normalization
+#     that makes the horizontal arc |z| = sqrt(a) a genuine planar
+#     geodesic: |G| = 1 identically on the arc (an exact algebraic
+#     identity at rho = sqrt(a), checked in the tests), so the
+#     sigma_h reflection is a true symmetry; a is a free neck modulus.
+#     MEASURED topology: quotient chi = -2 with 2 ends -- genus 1 per
+#     period (a chain of catenoids joined neck to neck; the harvest's
+#     "genus 0" annotation is off by the handle, as its metadata has
+#     been before).
+#   * periodic Enneper / translation-invariant Enneper with three
+#     annular ends: g = z resp. g = (1/sqrt2)(1-z^2)/z with dh = dz --
+#     closed-form antiderivatives, no constants at all.
+#
+# Topology is MEASURED, not assumed: the self-tests check the Euler
+# characteristic of the welded stacks (chi(S+1) - chi(S) must equal the
+# quotient chi = 2 - 2 genus - #ends) and/or of the translation-wrapped
+# quotient, plus edge-manifoldness, orientability and connectivity.
+# Note on the three-annular-end Enneper: its harvest metadata says
+# genus 1 ("translation invariant torus"), but the surface built from
+# the notebook's own rational data g = (1/sqrt2)(1-z^2)/z, dh = dz is
+# parametrized by the four-punctured SPHERE (both g and dh are rational
+# in z, so the quotient is genus 0 with 1 Enneper + 3 annular ends,
+# chi = -2) -- which is exactly what the measured Euler characteristic
+# gives.  This limit member is shipped with its measured genus.
+#
+# References:
+#   H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#     examples", Manuscripta Math. 62 (1988) 83-114 -- saddle towers,
+#     their helicoidal (screw-motion) deformations, and the fence of
+#     catenoids;
+#   H. F. Scherk (1835) and A. Enneper (1864) -- the classical data the
+#     towers and the periodic Enneper interpolate;
+#   M. Weber, https://minimalsurfaces.blog/ -- the harvested notebooks
+#     (6-ended Scherk g=0; Alternating Fence of Half-Catenoids, 2024;
+#     Helicoidal Karcher-Scherk; Fence of Catenoids; Periodic Enneper;
+#     Enneper-Scherk; Translation-Invariant Torus with One Enneper and
+#     Three Annular Ends, notebook by Ramazan Yol, 2024) --
+#     research/msblog_harvest/singly_periodic.json.
+# --------------------------------------------------------------------------
+
+_SPTAIL_GL = np.polynomial.legendre.leggauss(8)
+
+
+def sptail_cluster(h0, hmin=2e-7, ratio=0.3):
+    """Geometric offsets h0 * ratio^k down to hmin (largest first)."""
+    offs = []
+    h = h0
+    while h > hmin:
+        offs.append(h)
+        h *= ratio
+    return np.array(offs)
+
+
+def sptail_nudge(z):
+    """Upper-half-plane limit for boundary evaluation: points exactly on
+    the real axis get a tiny positive imaginary part, so every principal
+    fractional power / log is continuous with the domain interior."""
+    return np.where(np.imag(z) == 0.0, z + 1e-14j * (1.0 + np.abs(z)), z)
+
+
+def sptail_polar_patch(om, r, t):
+    """Integrate the 1-form triple om(z) over the polar grid (r_j, t_m)
+    in the upper half plane.  Spine: the column nearest t = pi/2,
+    cumulative in r; rows: arcs at fixed r outward from the spine.
+    Compound GL-8 per cell -- nodes are strictly interior, so singular
+    boundary nodes (branch points on the real axis) are never hit."""
+    xg, wg = _SPTAIL_GL
+    nr, nt = len(r), len(t)
+    jm = int(np.argmin(np.abs(t - 0.5 * math.pi)))
+    dr = np.diff(r)
+    rmid = 0.5 * (r[1:] + r[:-1])
+    zs = (rmid[:, None] + 0.5 * dr[:, None] * xg[None, :]) \
+        * np.exp(1j * t[jm])
+    o = om(zs)
+    incS = np.stack([np.sum(c * wg, axis=-1) for c in o], axis=-1) \
+        * (0.5 * np.exp(1j * t[jm]) * dr)[:, None]
+    S = np.zeros((nr, 3), complex)
+    S[1:] = np.cumsum(incS, axis=0)
+    dt = np.diff(t)
+    tmid = 0.5 * (t[1:] + t[:-1])
+    Z = r[:, None, None] * np.exp(
+        1j * (tmid[None, :, None] + 0.5 * dt[None, :, None] * xg))
+    o = om(Z)
+    incA = np.stack(
+        [np.sum(c * (1j * Z) * wg, axis=-1) for c in o], axis=-1) \
+        * (0.5 * dt)[None, :, None]
+    C = np.zeros((nr, nt, 3), complex)
+    C[:, 1:, :] = np.cumsum(incA, axis=1)
+    C = C - C[:, jm, :][:, None, :]
+    return np.real(S[:, None, :] + C)
+
+
+def sptail_rect_patch(om, x, y):
+    """Same scheme on a rectangular strip grid (x_i, y_j): spine down
+    the column nearest x = 0 (dz = i dy), rows along x."""
+    xg, wg = _SPTAIL_GL
+    nx, ny = len(x), len(y)
+    jm = int(np.argmin(np.abs(x)))
+    dy = np.diff(y)
+    ymid = 0.5 * (y[1:] + y[:-1])
+    zs = x[jm] + 1j * (ymid[:, None] + 0.5 * dy[:, None] * xg[None, :])
+    o = om(zs)
+    incS = np.stack([np.sum(c * wg, axis=-1) for c in o], axis=-1) \
+        * (0.5j * dy)[:, None]
+    S = np.zeros((ny, 3), complex)
+    S[1:] = np.cumsum(incS, axis=0)
+    dx = np.diff(x)
+    xmid = 0.5 * (x[1:] + x[:-1])
+    Z = (xmid[:, None, None] + 0.5 * dx[:, None, None] * xg[None, None, :]) \
+        + 1j * y[None, :, None]
+    o = om(Z)
+    incR = np.stack([np.sum(c * wg, axis=-1) for c in o], axis=-1) \
+        * (0.5 * dx)[:, None, None]
+    C = np.zeros((nx, ny, 3), complex)
+    C[1:] = np.cumsum(incR, axis=0)
+    C = C - C[jm][None, :, :]
+    return np.real(S[None, :, :] + C)
+
+
+def sptail_grid_quads(nr, nt, valid=None):
+    """Grid quads (i, j) -> (i, j+1) -> ...; drop any touching an
+    invalid (masked) vertex."""
+    q = []
+    for i in range(nr - 1):
+        for j in range(nt - 1):
+            f = (i * nt + j, i * nt + j + 1,
+                 (i + 1) * nt + j + 1, (i + 1) * nt + j)
+            if valid is None or (valid[f[0]] and valid[f[1]]
+                                 and valid[f[2]] and valid[f[3]]):
+                q.append(f)
+    return q
+
+
+def sptail_orbit_weld(V0, UV0, quads0, frames, tol):
+    """Tile V0 under `frames` [(M, tvec, parity), ...] and weld
+    coincident vertices (two offset quantization passes, so a pair
+    straddling a rounding boundary is still caught).  Carries the
+    per-vertex uv chart; drops vertices no face uses.  Seam vertices are
+    bitwise-exact after the callers' boundary snapping, so the weld
+    tolerance only needs to absorb float rounding."""
+    Vp, Fp = [], []
+    n0 = len(V0)
+    for i, (M, tv, par) in enumerate(frames):
+        Vp.append(V0 @ M.T + tv)
+        off = i * n0
+        if par < 0:
+            Fp.extend(tuple(off + k for k in f[::-1]) for f in quads0)
+        else:
+            Fp.extend(tuple(off + k for k in f) for f in quads0)
+    V = np.concatenate(Vp, axis=0)
+    UV = np.tile(UV0, (len(frames), 1))
+    parent = np.arange(len(V))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return int(a)
+
+    for shift in (0.0, 0.5):
+        key = np.round(V / tol + shift).astype(np.int64)
+        _, inv = np.unique(key, axis=0, return_inverse=True)
+        inv = inv.ravel()
+        first = {}
+        for i in range(len(V)):
+            b = int(inv[i])
+            if b in first:
+                ra, rb = find(i), find(first[b])
+                if ra != rb:
+                    parent[ra] = rb
+            else:
+                first[b] = i
+    roots = np.array([find(i) for i in range(len(V))])
+    uniq, inv = np.unique(roots, return_inverse=True)
+    nw = len(uniq)
+    Vw = np.zeros((nw, 3))
+    UVw = np.zeros((nw, 2))
+    cnt = np.zeros(nw)
+    np.add.at(Vw, inv, V)
+    np.add.at(UVw, inv, UV)
+    np.add.at(cnt, inv, 1)
+    Vw /= cnt[:, None]
+    UVw /= cnt[:, None]
+    F = []
+    for f in Fp:
+        g = [int(inv[i]) for i in f]
+        h = [g[0]]
+        for s in range(1, len(g)):
+            if g[s] != h[-1]:
+                h.append(g[s])
+        if len(h) >= 3 and h[0] != h[-1] and len(set(h)) == len(h):
+            F.append(tuple(h))
+    used = sorted({i for f in F for i in f})
+    remap = np.full(nw, -1, dtype=np.int64)
+    remap[np.array(used, dtype=np.int64)] = np.arange(len(used))
+    return (Vw[np.array(used, dtype=np.int64)],
+            [tuple(int(remap[i]) for i in f) for f in F],
+            UVw[np.array(used, dtype=np.int64)])
+
+
+def sptail_topology(V, F):
+    """(chi, nonmanifold_edges, oriented, boundary_loops, components)."""
+    ec, dc = {}, {}
+    for f in F:
+        m = len(f)
+        for k in range(m):
+            a, b = f[k], f[(k + 1) % m]
+            e = (a, b) if a < b else (b, a)
+            ec[e] = ec.get(e, 0) + 1
+            dc[(a, b)] = dc.get((a, b), 0) + 1
+    chi = len(V) - len(ec) + len(F)
+    nonman = sum(1 for c in ec.values() if c > 2)
+    orient = all(c == 1 for c in dc.values())
+    bed = [e for e, c in ec.items() if c == 1]
+    par = {}
+
+    def bf(x):
+        par.setdefault(x, x)
+        while par[x] != x:
+            par[x] = par[par[x]]
+            x = par[x]
+        return x
+    for a, b in bed:
+        ra, rb = bf(a), bf(b)
+        if ra != rb:
+            par[ra] = rb
+    loops = len({bf(a) for a, b in bed})
+    parc = list(range(len(V)))
+
+    def cf(a):
+        while parc[a] != a:
+            parc[a] = parc[parc[a]]
+            a = parc[a]
+        return a
+    for f in F:
+        for i in range(1, len(f)):
+            ra, rb = cf(f[0]), cf(f[i])
+            if ra != rb:
+                parc[ra] = rb
+    ncomp = len({cf(f[0]) for f in F})
+    return chi, nonman, orient, loops, ncomp
+
+
+def sptail_quotient(V, F, Tvec, span, kmax=5):
+    """Weld open-boundary vertices under v -> v + k Tvec (k = 1..kmax):
+    the translation-wrapped quotient of a ONE-period stack.  Test-only
+    (measures the true per-period chi and end-rim count)."""
+    from collections import defaultdict
+    cnt = defaultdict(int)
+    for f in F:
+        m = len(f)
+        for k in range(m):
+            a, b = f[k], f[(k + 1) % m]
+            cnt[(a, b) if a < b else (b, a)] += 1
+    bnd = sorted({v for e, c in cnt.items() if c == 1 for v in e})
+    B = V[bnd]
+    tol = 1e-6 * span
+    key = {tuple(np.round(B[i] / tol).astype(np.int64)): bnd[i]
+           for i in range(len(bnd))}
+    parent = list(range(len(V)))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+    for k in range(1, kmax + 1):
+        for i in range(len(bnd)):
+            j = key.get(tuple(np.round(
+                (B[i] + k * Tvec) / tol).astype(np.int64)))
+            if j is not None:
+                ra, rb = find(bnd[i]), find(j)
+                if ra != rb:
+                    parent[ra] = rb
+    roots = np.array([find(i) for i in range(len(V))])
+    uniq, inv = np.unique(roots, return_inverse=True)
+    Vq = V[uniq]
+    Fq = []
+    for f in F:
+        g = [int(inv[i]) for i in f]
+        h = [g[0]]
+        for s in g[1:]:
+            if s != h[-1]:
+                h.append(s)
+        if len(h) >= 3 and h[0] != h[-1] and len(set(h)) == len(h):
+            Fq.append(tuple(h))
+    return Vq, Fq
+
+
+def _sptail_grid_uv(nr, nt):
+    gu = np.arange(nr) / max(nr - 1, 1)
+    gv = np.arange(nt) / max(nt - 1, 1)
+    return np.stack(np.meshgrid(gu, gv, indexing='ij'),
+                    axis=-1).reshape(-1, 2)
+
+
+# ---- six-ended Scherk tower (genus 0, 6 ends per period) -----------------
+
+def sptail_six_om(phid):
+    """Closed-form data for end angle phid (degrees, 0 < phid < 90):
+    rho, a, and the 1-form triple."""
+    ph = math.radians(phid)
+    rho = math.sqrt((1.0 - math.cos(ph)) / (1.0 + math.cos(ph)))
+    a = 4.0 * rho ** 4 / (1.0 + rho ** 2) ** 2
+
+    def om(z):
+        z = sptail_nudge(z)
+        s_za = np.sqrt(z - a)
+        s_z1 = np.sqrt(z - 1.0)
+        p1 = rho / z / s_za * s_z1
+        p2 = 1.0 / rho / s_za / s_z1
+        return (-0.5 * (p1 - p2), 0.5j * (p1 + p2),
+                1.0 / (np.sqrt(z) * s_za))
+    return rho, a, om
+
+
+def sptail_six_build(phid=30.0, nu=48, nt=32, storeys=1, rmin=1e-4,
+                     rmax=30.0):
+    """One 8-frame period block ({E, R_a} x {E, Mx} x {E, My}) per
+    storey, translation (0, 4 dy, 0).  Returns (V, F, uv, diag)."""
+    rho, a, om = sptail_six_om(phid)
+    rE = np.exp(np.linspace(math.log(rmin), math.log(a * 0.8),
+                            max(8, int(0.22 * nu))))
+    cl = sptail_cluster(0.15 * a, hmin=2e-6 * a)
+    rC = np.linspace(a * 1.4, 0.9, max(8, int(0.25 * nu)))
+    cl1 = sptail_cluster(0.08, hmin=2e-6)
+    rO = np.exp(np.linspace(0.0, math.log(rmax),
+                            max(8, int(0.30 * nu))))[1:]
+    r = np.unique(np.concatenate(
+        [rE, a - cl, [a], a + cl[::-1], rC, 1.0 - cl1, [1.0],
+         1.0 + cl1[::-1], rO]))
+    r = r[np.concatenate([[True], np.diff(r) > 1e-13])]
+    base = 0.5 * math.pi * (1.0 - np.cos(np.pi * np.linspace(
+        0, 1, 2 * (nt // 2) + 1)))
+    ex = sptail_cluster(0.06, hmin=1e-7, ratio=0.25)
+    t = np.unique(np.concatenate([base, ex, math.pi - ex]))
+    t = t[np.concatenate([[True], np.diff(t) > 1e-13])]
+    X = sptail_polar_patch(om, r, t)
+    i_a = int(np.searchsorted(r, a))
+    i_1 = int(np.searchsorted(r, 1.0))
+    diag = {
+        'line_dy': float(np.ptp(X[:i_a + 1, 0, 1])),
+        'line_dz': float(np.ptp(X[:i_a + 1, 0, 2])),
+        'mx_dx': float(np.ptp(X[i_a:i_1 + 1, 0, 0])),
+        'my_dy': float(np.ptp(X[i_1:, 0, 1])),
+        'pi_dy': float(np.ptp(X[:, -1, 1]))}
+    X = X.copy()
+    X[..., 0] -= np.median(X[i_a:i_1 + 1, 0, 0])
+    X[..., 1] -= np.median(X[i_1:, 0, 1])
+    X[..., 2] -= np.median(X[:i_a + 1, 0, 2])
+    ya = float(np.median(X[:i_a + 1, 0, 1]))
+    ypi = float(np.median(X[:, -1, 1]))
+    dy_theory = -(math.pi / 4) * (1.0 + rho * rho) / rho
+    diag['dy_vs_residue'] = abs(ya - dy_theory)
+    diag['pi_vs_2dy'] = abs(ypi - 2.0 * ya)
+    X[:i_a + 1, 0, 1] = ya
+    X[:i_a + 1, 0, 2] = 0.0
+    X[i_a:i_1 + 1, 0, 0] = 0.0
+    X[i_1:, 0, 1] = 0.0
+    X[:, -1, 1] = 2.0 * ya
+    V0 = X.reshape(-1, 3)
+    q0 = sptail_grid_quads(len(r), len(t))
+    T = np.array([0.0, 4.0 * ya, 0.0])
+    frames = []
+    for e in (0, 1):
+        for bx in (0, 1):
+            for cy in (0, 1):
+                M = np.eye(3)
+                tv = np.zeros(3)
+                if e:                      # R_a: (x, 2 ya - y, -z)
+                    M = M @ np.diag([1.0, -1.0, -1.0])
+                    tv = np.array([0.0, 2.0 * ya, 0.0])
+                if bx:
+                    M = np.diag([-1.0, 1.0, 1.0]) @ M
+                    tv = np.array([-1.0, 1.0, 1.0]) * tv
+                if cy:
+                    M = np.diag([1.0, -1.0, 1.0]) @ M
+                    tv = np.array([1.0, -1.0, 1.0]) * tv
+                par = (-1.0) ** (e + bx + cy)
+                for s in range(storeys):
+                    frames.append((M, tv + s * T, par))
+    span = float(np.linalg.norm(V0.max(0) - V0.min(0)))
+    V, F, uv = sptail_orbit_weld(V0, _sptail_grid_uv(len(r), len(t)),
+                                 q0, frames, 1e-9 * span)
+    diag['T'] = T
+    diag['span'] = span
+    return V, F, uv, diag
+
+
+def sptail_six_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                    storeys=1):
+    p = spec['p_from'](order, radius)
+    S = int(np.clip(storeys, 1, 6))
+    V, F, uv, _ = sptail_six_build(
+        p['phid'], nu=int(np.clip(int(0.75 * nu), 24, 120)),
+        nt=int(np.clip(int(0.55 * nv), 20, 80)), storeys=S,
+        rmax=p['rmax'], rmin=1.0 / p['rmax'])
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
+# ---- alternating fence of half-catenoids (genus 1, 2 ends) ---------------
+
+def sptail_fencealt_om(a):
+    rho = 1.0 / math.sqrt(a)
+
+    def om(z):
+        z = sptail_nudge(z)
+        p1 = rho * (z + 1.0 / a) ** -0.5 * z ** -1.5 * (z - a) ** 0.5
+        p2 = (1.0 / rho) * (z + 1.0 / a) ** 0.5 * z ** -0.5 \
+            * (z - a) ** -0.5
+        return (0.5 * (p2 - p1), 0.5j * (p2 + p1), 1.0 / z)
+    return om
+
+
+def sptail_fencealt_build(a=2.0, nu=48, nt=32, storeys=1, rmin=0.05):
+    """{E, Mx} x {E, My} per storey, translation (0, 2 dy, 0).  The
+    period problem is closed by rho = 1/sqrt(a): the two vertical-mirror
+    segments (theta = 0 past a, theta = pi past -1/a) land in the SAME
+    plane -- measured in diag['period_x']."""
+    om = sptail_fencealt_om(a)
+    rmax = 1.0 / rmin
+    b1, b2 = 1.0 / a, a
+    cl1 = sptail_cluster(0.10 * b1, hmin=1e-6 * b1)
+    cl2 = sptail_cluster(0.10 * (b2 - b1), hmin=1e-6)
+    n3 = max(8, int(0.30 * nu))
+    rA = np.exp(np.linspace(math.log(rmin), math.log(b1 * 0.85), n3))
+    rB = np.exp(np.linspace(math.log(b1 * 1.15), math.log(b2 * 0.85),
+                            n3))
+    rC = np.exp(np.linspace(math.log(b2 * 1.15), math.log(rmax), n3))
+    r = np.unique(np.concatenate(
+        [rA, b1 - cl1, [b1], b1 + cl1[::-1], rB, b2 - cl2, [b2],
+         b2 + cl2[::-1], rC]))
+    r = r[np.concatenate([[True], np.diff(r) > 1e-13])]
+    base = 0.5 * math.pi * (1.0 - np.cos(np.pi * np.linspace(
+        0, 1, 2 * (nt // 2) + 1)))
+    ex = sptail_cluster(0.06, hmin=1e-7, ratio=0.25)
+    t = np.unique(np.concatenate([base, ex, math.pi - ex]))
+    t = t[np.concatenate([[True], np.diff(t) > 1e-13])]
+    X = sptail_polar_patch(om, r, t)
+    i1 = int(np.searchsorted(r, b1))
+    i2 = int(np.searchsorted(r, b2))
+    xa = float(np.median(X[:i2 + 1, 0, 0]))
+    x2 = float(np.median(X[i1:, -1, 0]))
+    diag = {
+        'xa_ptp': float(np.ptp(X[:i2 + 1, 0, 0])),
+        'y0_ptp': float(np.ptp(X[i2:, 0, 1])),
+        'y1_ptp': float(np.ptp(X[:i1 + 1, -1, 1])),
+        'x2_ptp': float(np.ptp(X[i1:, -1, 0])),
+        'period_x': abs(xa - x2)}
+    X = X.copy()
+    X[..., 0] -= xa
+    X[..., 1] -= np.median(X[i2:, 0, 1])
+    dy = float(np.median(X[:i1 + 1, -1, 1]))
+    X[:i2 + 1, 0, 0] = 0.0
+    X[i2:, 0, 1] = 0.0
+    X[:i1 + 1, -1, 1] = dy
+    X[i1:, -1, 0] = 0.0
+    V0 = X.reshape(-1, 3)
+    q0 = sptail_grid_quads(len(r), len(t))
+    T = np.array([0.0, 2.0 * dy, 0.0])
+    frames = []
+    for bx in (0, 1):
+        for cy in (0, 1):
+            M = np.diag([-1.0 if bx else 1.0, -1.0 if cy else 1.0, 1.0])
+            par = (-1.0) ** (bx + cy)
+            for s in range(storeys):
+                frames.append((M, s * T, par))
+    span = float(np.linalg.norm(V0.max(0) - V0.min(0)))
+    V, F, uv = sptail_orbit_weld(V0, _sptail_grid_uv(len(r), len(t)),
+                                 q0, frames, 1e-9 * span)
+    diag['T'] = T
+    diag['span'] = span
+    return V, F, uv, diag
+
+
+def sptail_fencealt_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                         storeys=1):
+    p = spec['p_from'](order, radius)
+    S = int(np.clip(storeys, 1, 6))
+    V, F, uv, _ = sptail_fencealt_build(
+        p['a'], nu=int(np.clip(int(0.8 * nu), 24, 130)),
+        nt=int(np.clip(int(0.55 * nv), 20, 80)), storeys=S,
+        rmin=p['rmin'])
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
+# ---- fence of catenoids (measured genus 1, 2 ends per period) ------------
+
+def sptail_fencecat_om(a):
+    rho = math.sqrt(a)
+
+    def om(z):
+        z = sptail_nudge(z)
+        p1 = z ** -0.5 * (z - 1.0) ** -0.5 * (z - a) ** 0.5
+        p2 = z ** -1.5 * (z - 1.0) ** 0.5 * (z - a) ** -0.5
+        return (-0.5 * (rho * p1 - p2 / rho),
+                0.5j * (rho * p1 + p2 / rho), 1.0 / z)
+    return om
+
+
+def sptail_fencecat_build(a=0.2, nu=48, nt=32, storeys=1, r1=6.0):
+    """Patch: upper half annulus a/r1 <= |z| <= sqrt(a); boundary =
+    y-mirror (0, a), TWO x-mirrors ((a, sqrt a) and (-sqrt a, 0)) whose
+    plane gap is half the fence translation, the horizontal mirror arc
+    |z| = sqrt(a) (height log(a)/2), and the catenoid end trim at a/r1.
+    Frames {E, MxB} x {E, My} x {E, sigma_h} per storey, horizontal
+    translation T = (2(xB - xA), 0, 0)."""
+    om = sptail_fencecat_om(a)
+    sa = math.sqrt(a)
+    rlo = a / r1
+    cl = sptail_cluster(0.15 * a, hmin=2e-6 * a)
+    rA = np.exp(np.linspace(math.log(rlo), math.log(a * 0.85),
+                            max(8, int(0.45 * nu))))
+    rB = np.linspace(a * 1.15, sa, max(8, int(0.35 * nu)))
+    r = np.unique(np.concatenate(
+        [rA, a - cl, [a], a + cl[::-1], rB, [sa]]))
+    r = r[np.concatenate([[True], np.diff(r) > 1e-13])]
+    r = r[r <= sa + 1e-12]
+    base = 0.5 * math.pi * (1.0 - np.cos(np.pi * np.linspace(
+        0, 1, 2 * (nt // 2) + 1)))
+    ex = sptail_cluster(0.06, hmin=1e-7, ratio=0.25)
+    t = np.unique(np.concatenate([base, ex, math.pi - ex]))
+    t = t[np.concatenate([[True], np.diff(t) > 1e-13])]
+    X = sptail_polar_patch(om, r, t)
+    i_a = int(np.searchsorted(r, a))
+    xA = float(np.median(X[i_a:, 0, 0]))       # (a, sqrt a) mirror
+    xB = float(np.median(X[:, -1, 0]))         # (-sqrt a, 0) mirror
+    diag = {
+        'y_ptp': float(np.ptp(X[:i_a + 1, 0, 1])),
+        'xA_ptp': float(np.ptp(X[i_a:, 0, 0])),
+        'xB_ptp': float(np.ptp(X[:, -1, 0])),
+        'arc_z_ptp': float(np.ptp(X[-1, :, 2]))}
+    X = X.copy()
+    X[..., 0] -= xA
+    X[..., 1] -= np.median(X[:i_a + 1, 0, 1])
+    X[..., 2] -= np.median(X[-1, :, 2])
+    xB = float(np.median(X[:, -1, 0]))
+    X[i_a:, 0, 0] = 0.0
+    X[:i_a + 1, 0, 1] = 0.0
+    X[:, -1, 0] = xB
+    X[-1, :, 2] = 0.0
+    V0 = X.reshape(-1, 3)
+    q0 = sptail_grid_quads(len(r), len(t))
+    T = np.array([2.0 * xB, 0.0, 0.0])
+    diag['T'] = T
+    frames = []
+    for bx in (0, 1):
+        for cy in (0, 1):
+            for sh in (0, 1):
+                M = np.diag([-1.0 if bx else 1.0,
+                             -1.0 if cy else 1.0,
+                             -1.0 if sh else 1.0])
+                tv = np.array([2.0 * xB if bx else 0.0, 0.0, 0.0])
+                par = (-1.0) ** (bx + cy + sh)
+                for s in range(storeys):
+                    frames.append((M, tv + s * T, par))
+    span = float(np.linalg.norm(V0.max(0) - V0.min(0)))
+    V, F, uv = sptail_orbit_weld(V0, _sptail_grid_uv(len(r), len(t)),
+                                 q0, frames, 1e-9 * span)
+    diag['span'] = span
+    return V, F, uv, diag
+
+
+def sptail_fencecat_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                         storeys=1):
+    p = spec['p_from'](order, radius)
+    S = int(np.clip(storeys, 1, 8))
+    V, F, uv, _ = sptail_fencecat_build(
+        p['a'], nu=int(np.clip(int(0.8 * nu), 24, 130)),
+        nt=int(np.clip(int(0.6 * nv), 20, 90)), storeys=S, r1=p['r1'])
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
+# ---- helicoidal Karcher-Scherk (twisted saddle tower) --------------------
+
+def sptail_hks_om(k, a, R):
+    def om(w):
+        p1 = 0.5 * R ** 2 * (R ** 2 - w) ** (-1 + a) \
+            * w ** (1 - 1.0 / k) * (1 + R ** 2 * w) ** (-1 - a)
+        p2 = -0.5 * R ** 2 * (R ** 2 - w) ** (-1 - a) \
+            * w ** (-1 + 1.0 / k) * (1 + R ** 2 * w) ** (-1 + a)
+        dh = 0.5j / (w * (1.0 / R ** 2 - R ** 2 - 1.0 / w + w))
+        return (-0.5 * (p1 - p2), 0.5j * (p2 + p1), dh)
+    return om
+
+
+def _sptail_hks_patch(k, a, R, nu, nt, xmax):
+    om = sptail_hks_om(k, a, R)
+    v1 = -math.log(R * R)
+
+    def omz(zeta):
+        e = np.exp(zeta)
+        w = (e + R ** 2) / (1.0 - e * R ** 2)
+        w = sptail_nudge(w)
+        dw = e * (1.0 + R ** 4) / (1.0 - e * R ** 2) ** 2
+        return tuple(c * dw for c in om(w))
+
+    cl = sptail_cluster(0.25, hmin=3e-6, ratio=0.35)
+    nseg = max(6, int(nu / 4))
+    xs = [np.linspace(-xmax, -v1 - 0.3, nseg), -v1 - cl, [-v1],
+          -v1 + cl[::-1], np.linspace(-v1 + 0.3, -0.02,
+                                      max(4, nseg // 2)), [0.0],
+          np.linspace(0.02, v1 - 0.3, max(4, nseg // 2)),
+          v1 - cl, [v1], v1 + cl[::-1], np.linspace(v1 + 0.3, xmax,
+                                                    nseg)]
+    x = np.unique(np.concatenate([np.atleast_1d(np.asarray(s, float))
+                                  for s in xs]))
+    x = x[np.concatenate([[True], np.diff(x) > 1e-12])]
+    base = 0.5 * math.pi * (1.0 - np.cos(np.pi * np.linspace(
+        0, 1, 2 * (nt // 2) + 1)))
+    ex = sptail_cluster(0.05, hmin=1e-6, ratio=0.3)
+    y = np.unique(np.concatenate([base, ex, math.pi - ex]))
+    y = y[np.concatenate([[True], np.diff(y) > 1e-12])]
+    X = sptail_rect_patch(omz, x, y)
+    iv1 = int(np.searchsorted(x, -v1))
+    ip1 = int(np.searchsorted(x, v1))
+    return X, x, y, iv1, ip1
+
+
+def _sptail_line_fit(S):
+    """2-D line through the xy-projection of a snapped boundary row
+    (drop the sixth nearest the singular corner)."""
+    n = len(S)
+    cut = max(2, n // 6)
+    P = S[:, :2]
+    p = np.mean(P, axis=0)
+    _, _, vt = np.linalg.svd(P - p, full_matrices=False)
+    return p, vt[0]
+
+
+def _sptail_isect(p1, u1, p2, u2):
+    A = np.array([u1, -u2]).T
+    tt = np.linalg.solve(A, p2 - p1)
+    return p1 + tt[0] * u1
+
+
+def sptail_hks_axis_residual(k, a, R, nu=32, nt=24, xmax=4.0):
+    """Geometric period residual: the k-fold axis point fixed by the two
+    w = 0 boundary lines minus the one fixed by the two w = infinity
+    lines (y component; the residual is 1-D)."""
+    X, x, y, iv1, ip1 = _sptail_hks_patch(k, a, R, nu, nt, xmax)
+
+    def li(S, from_end):
+        n = len(S)
+        cut = max(2, n // 6)
+        return _sptail_line_fit(S[:-cut] if from_end else S[cut:])
+    q1 = _sptail_isect(*li(X[:iv1 + 1, -1, :], True),
+                       *li(X[iv1:, -1, :], False))
+    q2 = _sptail_isect(*li(X[:ip1 + 1, 0, :], True),
+                       *li(X[ip1:, 0, :], False))
+    return q2 - q1
+
+
+_SPTAIL_HKS_R = {}
+
+
+def sptail_hks_solveR(k, a):
+    """Bisection on the geometric closure residual; cached."""
+    key = (int(k), round(float(a), 8))
+    if key in _SPTAIL_HKS_R:
+        return _SPTAIL_HKS_R[key]
+    lo, hi = 0.45, 0.985
+    flo = sptail_hks_axis_residual(k, a, lo)[1]
+    fhi = sptail_hks_axis_residual(k, a, hi)[1]
+    if flo * fhi > 0:
+        raise ValueError(f"hks solve: no bracket for k={k} a={a}")
+    for _ in range(52):
+        mid = 0.5 * (lo + hi)
+        fm = sptail_hks_axis_residual(k, a, mid)[1]
+        if flo * fm < 0:
+            hi = mid
+        else:
+            lo, flo = mid, fm
+        if hi - lo < 1e-12:
+            break
+    R = 0.5 * (lo + hi)
+    _SPTAIL_HKS_R[key] = R
+    return R
+
+
+def sptail_hks_build(k=4, a=0.1, nu=48, nt=36, storeys=1, xmax=4.0,
+                     R=None):
+    """{E, R_A} x k rotations x storey screws (twist -2 a pi, rise
+    trans per period).  Returns (V, F, uv, diag)."""
+    if R is None:
+        R = sptail_hks_solveR(k, a)
+    X, x, y, iv1, ip1 = _sptail_hks_patch(k, a, R, nu, nt, xmax)
+
+    def li(S, from_end):
+        n = len(S)
+        cut = max(2, n // 6)
+        return _sptail_line_fit(S[:-cut] if from_end else S[cut:])
+    pA, uA = li(X[:iv1 + 1, -1, :], True)
+    q1 = _sptail_isect(pA, uA, *li(X[iv1:, -1, :], False))
+    q2 = _sptail_isect(*li(X[:ip1 + 1, 0, :], True),
+                       *li(X[ip1:, 0, :], False))
+    diag = {'axis_misalign': float(np.linalg.norm(q1 - q2)), 'R': R}
+    zA = float(X[0, -1, 2])
+    X = X.copy()
+    X[..., 0] -= q1[0]
+    X[..., 1] -= q1[1]
+    X[..., 2] -= zA
+    alA = math.atan2(uA[1], uA[0])
+    ca, sa_ = math.cos(-alA), math.sin(-alA)
+    X[..., :2] = X[..., :2] @ np.array([[ca, -sa_], [sa_, ca]]).T
+
+    def snap_line(rows, beta, zval):
+        u = np.array([math.cos(beta), math.sin(beta)])
+        d = rows[:, :2] @ u
+        rows[:, 0] = d * u[0]
+        rows[:, 1] = d * u[1]
+        rows[:, 2] = zval
+    h = float(np.median(X[:ip1 + 1, 0, 2]))
+    snap_line(X[:iv1 + 1, -1, :], 0.0, 0.0)
+    snap_line(X[iv1:, -1, :], -math.pi / k, 0.0)
+    snap_line(X[:ip1 + 1, 0, :], -a * math.pi, h)
+    snap_line(X[ip1:, 0, :], -math.pi / k - a * math.pi, h)
+    trans = 2.0 * h
+    diag['trans'] = trans
+    diag['trans_vs_theory'] = abs(abs(trans)
+                                  - math.pi * R * R / (1.0 + R ** 4))
+    V0 = X.reshape(-1, 3)
+    q0 = sptail_grid_quads(len(x), len(y))
+    RA = np.diag([1.0, -1.0, -1.0])
+    frames = []
+    for j in range(storeys):
+        for i in range(k):
+            phi = -2.0 * a * math.pi * j - TAU * i / k
+            c, s = math.cos(phi), math.sin(phi)
+            Mz = np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
+            for e in (0, 1):
+                M = Mz @ (RA if e else np.eye(3))
+                frames.append((M, np.array([0.0, 0.0, j * trans]),
+                               (-1.0) ** e))
+    span = float(np.linalg.norm(V0.max(0) - V0.min(0)))
+    V, F, uv = sptail_orbit_weld(V0, _sptail_grid_uv(len(x), len(y)),
+                                 q0, frames, 1e-9 * span)
+    diag['T'] = np.array([0.0, 0.0, trans])
+    diag['span'] = span
+    return V, F, uv, diag
+
+
+def sptail_hks_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                    storeys=1):
+    """The associate-angle knob is the TWIST modulus (like the alpha
+    saddle tower): twist fraction f = theta/(pi/2) in [0, 1] maps to
+    the exponent a = (0.12 + 0.78 f)/k; theta = 0 keeps a gentle
+    default twist."""
+    p = spec['p_from'](order, radius)
+    k = p['k']
+    f = float(np.clip(theta / (0.5 * math.pi), 0.0, 1.0))
+    a = (0.12 + 0.78 * f) / k
+    S = int(np.clip(storeys, 1, 6))
+    V, F, uv, _ = sptail_hks_build(
+        k, a, nu=int(np.clip(int(0.7 * nu), 24, 110)),
+        nt=int(np.clip(int(0.55 * nv), 18, 80)), storeys=S,
+        xmax=p['xmax'])
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
+# ---- translation-invariant Enneper with three annular ends ---------------
+
+_SPTAIL_SQ2 = math.sqrt(2.0)
+_SPTAIL_E3A_Y1 = math.pi / (2.0 * _SPTAIL_SQ2)
+
+
+def sptail_e3a_f(z):
+    """Closed-form immersion: g = (1/sqrt2)(1-z^2)/z, dh = dz."""
+    z = z + 1e-13j * (1.0 + np.abs(z))     # interior branch limit
+    l1 = np.log(z)
+    l2 = np.log(1.0 - z * z)
+    x = np.real((z * z - 2.0 * l1 - 2.0 * l2) / (4.0 * _SPTAIL_SQ2))
+    y = np.imag(z * z - 2.0 * l1 + 2.0 * l2) / (4.0 * _SPTAIL_SQ2)
+    return np.stack(np.broadcast_arrays(x, y, np.real(z)), axis=-1)
+
+
+def sptail_e3a_build(nu=56, nt=44, storeys=1, rmin=0.03, Rt=2.2,
+                     eps=0.10):
+    """Quarter-disk chart; {E, R_L} x {E, My} per storey, translation
+    (0, -pi/sqrt2, 0).  R_L is the 2-fold rotation about the straight
+    line {y = -Y1/2, z = 0} (the imaginary-axis image); the mirrors
+    y = 0 / y = -Y1 sit on the real segments (0,1) / (1, Rt).  Genus 0
+    with 1 Enneper + 3 annular ends per period (measured; see the
+    block header note on the harvest's genus-1 annotation)."""
+    Y1 = _SPTAIL_E3A_Y1
+    cl = sptail_cluster(0.15, hmin=2e-3, ratio=0.45)
+    r1 = np.exp(np.linspace(math.log(rmin), math.log(1.0 - cl[0] - 0.05),
+                            max(8, int(0.4 * nu))))
+    r2 = np.exp(np.linspace(math.log(1.0 + cl[0] + 0.05), math.log(Rt),
+                            max(8, int(0.35 * nu))))
+    r = np.unique(np.concatenate([r1, 1.0 - cl, [1.0], 1.0 + cl[::-1],
+                                  r2]))
+    th = 0.5 * math.pi * (0.5 - 0.5 * np.cos(np.pi * np.linspace(
+        0, 1, nt)))
+    R_, T_ = np.meshgrid(r, th, indexing='ij')
+    Z = R_ * np.exp(1j * T_)
+    with np.errstate(divide='ignore', invalid='ignore'):
+        X = sptail_e3a_f(Z)
+    mask = (np.abs(Z - 1.0) > eps) & np.isfinite(X).all(axis=-1)
+    i1 = int(np.searchsorted(r, 1.0))
+    diag = {
+        'y01_ptp': float(np.ptp(X[:i1, 0, 1][mask[:i1, 0]])),
+        'y1R_vs_const': abs(float(np.median(
+            X[i1:, 0, 1][mask[i1:, 0]])) + Y1),
+        'line_y_vs_const': abs(float(np.median(X[:, -1, 1])) + 0.5 * Y1),
+        'line_z_ptp': float(np.ptp(X[:, -1, 2]))}
+    X[:, -1, 1] = -0.5 * Y1
+    X[:, -1, 2] = 0.0
+    X[:i1, 0, 1] = 0.0
+    X[i1:, 0, 1] = -Y1
+    X[~mask] = 0.0
+    V0 = X.reshape(-1, 3)
+    vm = mask.reshape(-1)
+    q0 = sptail_grid_quads(len(r), len(th), vm)
+    T = np.array([0.0, -2.0 * Y1, 0.0])
+    frames = []
+    for e in (0, 1):
+        for b in (0, 1):
+            M = np.eye(3)
+            tv = np.zeros(3)
+            if e:                          # R_L: (x, -Y1 - y, -z)
+                M = M @ np.diag([1.0, -1.0, -1.0])
+                tv = np.array([0.0, -Y1, 0.0])
+            if b:                          # My (y = 0)
+                M = np.diag([1.0, -1.0, 1.0]) @ M
+                tv = np.array([1.0, -1.0, 1.0]) * tv
+            par = (-1.0) ** (e + b)
+            for s in range(storeys):
+                frames.append((M, tv + s * T, par))
+    vu = V0[vm]
+    span = float(np.linalg.norm(vu.max(0) - vu.min(0)))
+    V, F, uv = sptail_orbit_weld(V0, _sptail_grid_uv(len(r), len(th)),
+                                 q0, frames, 1e-9 * span)
+    diag['T'] = T
+    diag['span'] = span
+    return V, F, uv, diag
+
+
+def sptail_e3a_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                    storeys=1):
+    p = spec['p_from'](order, radius)
+    S = int(np.clip(storeys, 1, 6))
+    V, F, uv, _ = sptail_e3a_build(
+        nu=int(np.clip(nu, 30, 140)), nt=int(np.clip(int(0.8 * nv),
+                                                     24, 110)),
+        storeys=S, Rt=p['Rt'])
+    tk = _toolkit()
+    V = tk._smooth_boundary(V, F, iters=4)
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
+# ---- periodic (translation-invariant) Enneper ----------------------------
+
+def sptail_penneper_X(u, v):
+    """Closed-form immersion on the log chart z = e^(u+iv):
+    X1 = u/2 - e^(2u) cos(2v)/4, X2 = -v/2 - e^(2u) sin(2v)/4,
+    X3 = e^u cos v.  One turn v -> v + 2 pi is the exact translation
+    (0, -pi, 0)."""
+    e2 = np.exp(2.0 * u)
+    return np.stack(np.broadcast_arrays(
+        0.5 * u - 0.25 * e2 * np.cos(2.0 * v),
+        -0.5 * v - 0.25 * e2 * np.sin(2.0 * v),
+        np.exp(u) * np.cos(v)), axis=-1)
+
+
+def sptail_penneper_build(nu=64, nt=48, storeys=2, rmin=0.05,
+                          rmax=1.3):
+    """`storeys` full turns of the universal cover -- the mesh is one
+    continuous grid (each turn joins the next exactly)."""
+    S = max(1, int(storeys))
+    u = np.linspace(math.log(rmin), math.log(rmax), nu)
+    ntt = max(24, nt)                      # columns per turn (exact)
+    nv = S * ntt + 1
+    v = np.linspace(-S * math.pi, S * math.pi, nv)
+    U, V_ = np.meshgrid(u, v, indexing='ij')
+    X = sptail_penneper_X(U, V_)
+    V0 = X.reshape(-1, 3)
+    q0 = sptail_grid_quads(nu, nv)
+    uv = _sptail_grid_uv(nu, nv)
+    return V0, q0, uv, {'T': np.array([0.0, -math.pi, 0.0]),
+                        'ncol_per_turn': int(round(
+                            TAU / (v[1] - v[0])))}
+
+
+def sptail_penneper_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                         storeys=1):
+    p = spec['p_from'](order, radius)
+    S = int(np.clip(storeys, 1, 5))
+    V, F, uv, _ = sptail_penneper_build(
+        nu=int(np.clip(nu, 24, 160)),
+        nt=int(np.clip(int(0.9 * nv), 24, 100)),
+        storeys=S, rmax=p['rmax'])
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
@@ -5431,4 +6370,145 @@ if __name__ == "__main__":
     ok &= good
     print(f"dperiodic KMR-3 lattice vs notebook: |dT|=({e1:.1e},"
           f"{e2:.1e},{e3:.1e}) {'OK' if good else 'FAIL'}")
+    # ---- singly periodic long tail (sptail block) --------------------------
+    # (1) null identity phi1 phi2 = dh^2 <=> sum om_i^2 = 0, on the actual
+    #     meshing integrands of every family
+    rng2 = np.random.default_rng(11)
+    zt2 = rng2.uniform(0.05, 3.0, 200) + 1j * rng2.uniform(1e-3, 3.0, 200)
+    for nm2, omf in (('six-scherk', sptail_six_om(30.0)[2]),
+                     ('alt-fence', sptail_fencealt_om(2.0)),
+                     ('fence-cat', sptail_fencecat_om(0.2)),
+                     ('helicoidal-KS', sptail_hks_om(4, 0.1, 0.8))):
+        o1, o2, o3 = omf(zt2)
+        nerr = float(np.max(np.abs(o1 * o1 + o2 * o2 + o3 * o3)))
+        good = nerr < 1e-12
+        ok &= good
+        print(f"sptail null {nm2}: |sum om^2|={nerr:.1e} "
+              f"{'OK' if good else 'FAIL'}")
+    # (2) six-ended Scherk: boundary symmetry residuals pre-snap, the
+    #     translation vs the om2 residue closed form, and measured
+    #     chi(S+1) - chi(S) = -4 = 2 - 2*0 - 6 (genus 0, 6 ends/period)
+    for phid in (30.0, 60.0):
+        V1, F1, _u, dg = sptail_six_build(phid, storeys=1)
+        pres = max(dg['line_dy'], dg['line_dz'], dg['mx_dx'],
+                   dg['my_dy'], dg['pi_dy'])
+        V2, F2, _u2, _d2 = sptail_six_build(phid, storeys=2)
+        c1 = sptail_topology(V1, F1)
+        c2 = sptail_topology(V2, F2)
+        good = (pres < 1e-3 and dg['dy_vs_residue'] < 1e-6
+                and dg['pi_vs_2dy'] < 1e-6
+                and c2[0] - c1[0] == -4
+                and c1[1] == 0 and c2[1] == 0 and c1[2] and c2[2]
+                and c1[4] == 1 and c2[4] == 1
+                and bool(np.all(np.isfinite(V2))))
+        ok &= good
+        print(f"sptail six-scherk phi={phid:.0f}: presnap={pres:.1e} "
+              f"dy_res={dg['dy_vs_residue']:.1e} chi {c1[0]}->{c2[0]} "
+              f"(dchi -4) nonman={c2[1]} orient={c2[2]} "
+              f"{'OK' if good else 'FAIL'}")
+    # (3) alternating fence: rho = 1/sqrt(a) closes the horizontal period
+    #     (the two vertical mirrors coincide); quotient chi = -2, 2 ends
+    #     (genus 1); stacks stay manifold/oriented/connected
+    V1, F1, _u, dg = sptail_fencealt_build(2.0, storeys=1)
+    V2, F2, _u2, _d2 = sptail_fencealt_build(2.0, storeys=2)
+    c1 = sptail_topology(V1, F1)
+    c2 = sptail_topology(V2, F2)
+    Vq, Fq = sptail_quotient(V1, F1, dg['T'], dg['span'])
+    cq = sptail_topology(Vq, Fq)
+    good = (dg['period_x'] < 1e-9 and c2[0] - c1[0] == -2
+            and cq[0] == -2 and cq[3] == 2 and cq[1] == 0 and cq[2]
+            and c2[1] == 0 and c2[2] and c2[4] == 1)
+    ok &= good
+    print(f"sptail alt-fence a=2: period_x={dg['period_x']:.1e} "
+          f"chi {c1[0]}->{c2[0]} (dchi -2) quotient chi={cq[0]} "
+          f"ends={cq[3]} (want -2, 2) {'OK' if good else 'FAIL'}")
+    # (4) fence of catenoids: |G| = 1 identically on the arc (the
+    #     Lopez-Ros closure rho = sqrt(a)); quotient chi = -2 with 2
+    #     ends (genus 1 per period, measured)
+    aa = 0.2
+    tha = np.linspace(0.01, math.pi - 0.01, 400)
+    za = math.sqrt(aa) * np.exp(1j * tha)
+    Ga = math.sqrt(aa) * np.sqrt(za - 1.0) / (np.sqrt(za)
+                                              * np.sqrt(za - aa))
+    gerr = float(np.max(np.abs(np.abs(Ga) - 1.0)))
+    V1, F1, _u, dg = sptail_fencecat_build(aa, storeys=1)
+    V2, F2, _u2, _d2 = sptail_fencecat_build(aa, storeys=2)
+    c1 = sptail_topology(V1, F1)
+    c2 = sptail_topology(V2, F2)
+    Vq, Fq = sptail_quotient(V1, F1, dg['T'], dg['span'])
+    cq = sptail_topology(Vq, Fq)
+    pres = max(dg['y_ptp'], dg['xA_ptp'], dg['xB_ptp'],
+               dg['arc_z_ptp'])
+    good = (gerr < 1e-12 and pres < 5e-3 and c2[0] - c1[0] == -2
+            and cq[0] == -2 and cq[3] == 2 and cq[1] == 0 and cq[2]
+            and c2[1] == 0 and c2[2] and c2[4] == 1)
+    ok &= good
+    print(f"sptail fence-cat a={aa}: max||G|-1|={gerr:.1e} "
+          f"presnap={pres:.1e} chi {c1[0]}->{c2[0]} quotient "
+          f"chi={cq[0]} ends={cq[3]} (want -2, 2) "
+          f"{'OK' if good else 'FAIL'}")
+    # (5) helicoidal Karcher-Scherk: the geometric period solve closes
+    #     the k-fold axis (and is not vacuous -- off-solution R misses),
+    #     the measured screw rise reproduces pi R^2/(1+R^4), and
+    #     chi(S+1) - chi(S) = 2 - 2k (genus 0, 2k ends per period)
+    for kk, av in ((2, 0.2), (4, 0.1)):
+        Rs = sptail_hks_solveR(kk, av)
+        res_on = float(np.linalg.norm(
+            sptail_hks_axis_residual(kk, av, Rs)))
+        res_off = float(np.linalg.norm(
+            sptail_hks_axis_residual(kk, av, 0.97 * Rs)))
+        V1, F1, _u, dg = sptail_hks_build(kk, av, storeys=1, R=Rs)
+        V2, F2, _u2, _d2 = sptail_hks_build(kk, av, storeys=2, R=Rs)
+        c1 = sptail_topology(V1, F1)
+        c2 = sptail_topology(V2, F2)
+        good = (res_on < 1e-6 and res_off > 100 * max(res_on, 1e-9)
+                and dg['trans_vs_theory'] < 1e-8
+                and c2[0] - c1[0] == 2 - 2 * kk
+                and c2[1] == 0 and c2[2] and c2[4] == 1
+                and bool(np.all(np.isfinite(V2))))
+        ok &= good
+        print(f"sptail helicoidal-KS k={kk} a={av}: R={Rs:.8f} "
+              f"axis_res={res_on:.1e} (off {res_off:.1e}) "
+              f"rise_vs_theory={dg['trans_vs_theory']:.1e} "
+              f"chi {c1[0]}->{c2[0]} (dchi {2 - 2 * kk}) "
+              f"{'OK' if good else 'FAIL'}")
+    # (6) translation-invariant Enneper, 3 annular ends: the closed-form
+    #     boundary constants (mirrors at y = 0 / -Y1, line at -Y1/2),
+    #     quotient chi = -2 with 4 end rims (MEASURED genus 0 -- see the
+    #     block note on the harvest's genus-1 annotation)
+    V1, F1, _u, dg = sptail_e3a_build(storeys=1)
+    V2, F2, _u2, _d2 = sptail_e3a_build(storeys=2)
+    c1 = sptail_topology(V1, F1)
+    c2 = sptail_topology(V2, F2)
+    Vq, Fq = sptail_quotient(V1, F1, dg['T'], dg['span'])
+    cq = sptail_topology(Vq, Fq)
+    pres = max(dg['y01_ptp'], dg['y1R_vs_const'],
+               dg['line_y_vs_const'], dg['line_z_ptp'])
+    good = (pres < 1e-9 and c2[0] - c1[0] == -2
+            and cq[0] == -2 and cq[3] == 4 and cq[1] == 0 and cq[2]
+            and c2[1] == 0 and c2[2] and c2[4] == 1)
+    ok &= good
+    print(f"sptail enneper-3ann: const_res={pres:.1e} chi "
+          f"{c1[0]}->{c2[0]} (dchi -2) quotient chi={cq[0]} "
+          f"ends={cq[3]} (want -2, 4) {'OK' if good else 'FAIL'}")
+    # (7) periodic Enneper: one turn of the built grid is the EXACT
+    #     translation (0, -pi, 0); the wrapped quotient is a cylinder
+    #     (chi = 0, 2 rims -- genus 0, 2 ends)
+    V2t, q2g, _u2, dg2 = sptail_penneper_build(storeys=2)
+    nturn = dg2['ncol_per_turn']
+    nvv = len(V2t) // 64
+    G1 = V2t.reshape(64, nvv, 3)
+    dT = G1[:, nturn:, :] - G1[:, :-nturn, :]
+    terr = float(np.max(np.abs(dT - dg2['T'][None, None, :])))
+    V1, q1g, _u, dg = sptail_penneper_build(storeys=1)
+    span1 = float(np.linalg.norm(V1.max(0) - V1.min(0)))
+    Vq, Fq = sptail_quotient(V1, q1g, dg['T'], span1, kmax=1)
+    cq = sptail_topology(Vq, Fq)
+    good = (terr < 1e-12 and cq[0] == 0 and cq[3] == 2
+            and cq[1] == 0 and cq[2] and cq[4] == 1)
+    ok &= good
+    print(f"sptail periodic-enneper: |T - (0,-pi,0)|={terr:.1e} "
+          f"quotient chi={cq[0]} ends={cq[3]} (want 0, 2) "
+          f"{'OK' if good else 'FAIL'}")
+
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in we_builders")
