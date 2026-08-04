@@ -1031,11 +1031,11 @@ if _IN_BLENDER:
         _seed_previews = bpy.utils.previews.new()
         for kind in KINDS:
             try:
-                px = _rasterize_seed(kind, 64)
+                px = _rasterize_seed(kind, 128)
                 if not px:
                     continue
                 pv = _seed_previews.new(kind)
-                pv.image_size = (64, 64)
+                pv.image_size = (128, 128)
                 pv.image_pixels_float = px
             except Exception:
                 pass                 # a missing icon is non-fatal
@@ -1144,6 +1144,15 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
+            # large thumbnail of the selected shape's seed polyform
+            if (_seed_previews is not None
+                    and self.shape in _seed_previews):
+                box = lay.box()
+                row = box.row()
+                row.alignment = 'CENTER'
+                row.template_icon(
+                    icon_value=_seed_previews[self.shape].icon_id,
+                    scale=7.0)
             for p in ('family', 'shape', 'iterations', 'holes',
                       'color_by', 'margin', 'height'):
                 lay.prop(self, p)
