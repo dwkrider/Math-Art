@@ -607,22 +607,22 @@ OPS = [
          family='CLASSIC', shape='RIGHT_TRIANGLE', iterations=6)),
     ("fractal reptile x-pentomino",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         family='POLYOMINO', shape='REP5', iterations=4)),
+         family='SQUARE', shape='REP5', iterations=4)),
     ("fractal reptile z-pentomino",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         family='POLYOMINO', shape='Z_PENTOMINO', iterations=5)),
+         family='SQUARE', shape='Z_PENTOMINO', iterations=5)),
     ("fractal reptile twindragon",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         family='POLYOMINO', shape='TWINDRAGON', iterations=5)),
+         family='SQUARE', shape='TWINDRAGON', iterations=5)),
     ("fractal reptile trihex",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         family='POLYHEX', shape='TRIHEX', iterations=4)),
+         family='HEX', shape='TRIHEX', iterations=4)),
     ("fractal reptile pentabolo",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          family='CLASSIC', shape='PENTABOLO', iterations=3)),
     ("fractal reptile flowsnake",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         family='POLYHEX', shape='FLOWSNAKE', iterations=3)),
+         family='HEX', shape='FLOWSNAKE', iterations=3)),
     ("fractal reptile levy",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          family='REFLECTION', shape='LEVY_DRAGON', iterations=8)),
@@ -631,7 +631,7 @@ OPS = [
          family='REFLECTION', shape='FOLDABLE4', iterations=5)),
     ("fractal reptile gasket",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         family='POLYOMINO', shape='REP5', iterations=4, holes=2)),
+         family='SQUARE', shape='REP5', iterations=4, holes=2)),
     ("fractal tiling s6",
      lambda: bpy.ops.mesh.fractal_tiling_add(kind='TRI_S6', iterations=6)),
     ("fractal tiling u6",

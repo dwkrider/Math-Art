@@ -577,48 +577,48 @@ def fractal_patch(kind, iterations, holes=0):
 # cell positions, giving a solid rep-n self-affine tile.
 KIND_ITEMS = [
     # --- Polyomino reptiles (square cells) ---
-    ('TWINDRAGON', "Polyomino: Domino (twindragon, rep-2)",
+    ('TWINDRAGON', "Square: Domino (twindragon, rep-2)",
      "Domino, base -1+i, digits {0,1}: the Gilbert/Knuth twindragon "
      "(Vince Fig 3), aspect ratio 1/phi"),
-    ('REP4', "Polyomino: Square tetromino (rep-4)",
+    ('REP4', "Square: Square tetromino (rep-4)",
      "Base 2, digits {0,1,i,-1-i}: rep-4 Sierpinski-relative reptile "
      "(Vince Fig 6)"),
-    ('Z_TETROMINO', "Polyomino: Z-tetromino (twindragon, rep-4)",
+    ('Z_TETROMINO', "Square: Z-tetromino (twindragon, rep-4)",
      "Z-tetromino cell set {0,1,1+i,2+i} over base -2i = (-1+i)^2: the "
      "rep-4 route to the twindragon tile (Fathauer, Bridges 2025)"),
-    ('REP5', "Polyomino: X-pentomino (round rep-5)",
+    ('REP5', "Square: X-pentomino (round rep-5)",
      "X-pentomino, base -2+i, digits {0,1,-1,i,-i}: the round rep-5 "
      "dragon (Vince Fig 5), aspect ratio 1/phi"),
-    ('Z_PENTOMINO', "Polyomino: Z-pentomino (rep-5)",
+    ('Z_PENTOMINO', "Square: Z-pentomino (rep-5)",
      "Z-pentomino cell set {0,1,1+i,1+2i,2+2i} over base -2-i: the "
      "rep-5 Z-pentomino fractal reptile (Fathauer, Bridges 2025)"),
-    ('Y_PENTOMINO', "Polyomino: Y-pentomino (rep-5)",
+    ('Y_PENTOMINO', "Square: Y-pentomino (rep-5)",
      "Y-pentomino cell set over base -2+i: the rep-5 Y-pentomino "
      "fractal reptile (Fathauer, Bridges 2025)"),
-    ('P_PENTOMINO', "Polyomino: P-pentomino (rep-5)",
+    ('P_PENTOMINO', "Square: P-pentomino (rep-5)",
      "P-pentomino cell set over base -2+i: the rep-5 P-pentomino "
      "fractal reptile (Fathauer, Bridges 2025)"),
-    ('REP5_THIN', "Polyomino: Bar pentomino (thin rep-5)",
+    ('REP5_THIN', "Square: Bar pentomino (thin rep-5)",
      "Bar pentomino, base 2+i, collinear digits {0..4}: thin rep-5 "
      "dragon, aspect ratio 1/phi^3 (Mekhontsev (5,4))"),
-    ('REP5B', "Polyomino: Bar pentomino (rep-5, base 1+2i)",
+    ('REP5B', "Square: Bar pentomino (rep-5, base 1+2i)",
      "Bar pentomino, base 1+2i, collinear digits {0..4}: rep-5 dragon, "
      "aspect ratio sqrt(2)-1 (Mekhontsev (5,2))"),
-    ('Z_OCTOMINO', "Polyomino: Z-octomino (rep-8)",
+    ('Z_OCTOMINO', "Square: Z-octomino (rep-8)",
      "Z-octomino cell set over base -2-2i: the rep-8 Z-octomino "
      "fractal reptile (Fathauer, Bridges 2025)"),
     # --- Polyhex reptiles (hexagon cells) ---
-    ('TRIHEX', "Polyhex: Trihex (rep-3)",
+    ('TRIHEX', "Hex: Trihex (rep-3)",
      "Trihex {0,1,w} over Eisenstein base -2+w (w=e^{i pi/3}): the "
      "rep-3 trihex fractal reptile (Fathauer, Bridges 2026)"),
-    ('FLOWSNAKE', "Polyhex: Heptahex / Gosper (rep-7)",
+    ('FLOWSNAKE', "Hex: Heptahex / Gosper (rep-7)",
      "Eisenstein base 5/2+(sqrt3/2)i, digits {0}+sixth roots of "
      "unity, hexagon cells: the rep-7 Gosper island bounded by the "
      "flowsnake curve (Vince Fig 4/7; Gardner 1976)"),
-    ('HEX9', "Polyhex: 9-hex (rep-9)",
+    ('HEX9', "Hex: 9-hex (rep-9)",
      "A compact 9-hex over Eisenstein base 3(w-1): the rep-9 polyhex "
      "fractal reptile (Fathauer, Bridges 2026)"),
-    ('HEX13', "Polyhex: 13-hex (rep-13)",
+    ('HEX13', "Hex: 13-hex (rep-13)",
      "A compact 13-hex over Eisenstein base -4+w: the rep-13 polyhex "
      "fractal reptile (Fathauer, Bridges 2026)"),
     # --- Reflection / foldable reptiles ---
@@ -638,7 +638,7 @@ KIND_ITEMS = [
     ('RIGHT_TRIANGLE', "Classic: Right Triangle (f-tiling)",
      "Isosceles right-triangle f-tiling: square seed, a 1/sqrt2 child "
      "glued to every exposed leg; tiles shrink to a fractal boundary"),
-    ('PENTABOLO', "Classic: Pentabolo (rep-5 isometry gasket)",
+    ('PENTABOLO', "Bolo: Pentabolo (rep-5 isometry gasket)",
      "Fathauer 5-isometry inflation of a half-square triangle: 5^k "
      "unit triangles, sqrt5 inflation per level, coloured by "
      "first-level copy"),
@@ -646,8 +646,11 @@ KIND_ITEMS = [
 
 # Two-level Family -> Shape taxonomy for the operator UI, derived from
 # the "Family: Shape" label prefixes above.
-_FAMILY_ORDER = [('POLYOMINO', "Polyomino"), ('POLYHEX', "Polyhex"),
-                 ('REFLECTION', "Reflection"), ('CLASSIC', "Classic")]
+_FAMILY_ORDER = [('SQUARE', "Square"), ('HEX', "Hex"),
+                 ('IAMOND', "Iamond"), ('RHOMB', "Rhomb"),
+                 ('BOLO', "Bolo"), ('KITE', "Kite"),
+                 ('RECTANGLE', "Rectangle"), ('REFLECTION', "Reflection"),
+                 ('CLASSIC', "Classic")]
 _FAMILY_LABELS = dict(_FAMILY_ORDER)
 _FAMILY_OF = {}                 # kind id -> family id
 _SHAPES_BY_FAMILY = {}          # family id -> [(kind, short label, desc)]
@@ -679,7 +682,7 @@ if _IN_BLENDER:
         """Dynamic Shape enum: only the reptiles in the chosen Family.
         The returned list is cached in a module global so Blender does
         not garbage-collect the strings."""
-        fam = getattr(self, 'family', 'POLYOMINO')
+        fam = getattr(self, 'family', 'SQUARE')
         items = _SHAPES_BY_FAMILY.get(fam) or _SHAPES_BY_FAMILY['CLASSIC']
         _shape_items_cache[fam] = items
         return items
@@ -695,9 +698,10 @@ if _IN_BLENDER:
         family: EnumProperty(
             name="Family",
             items=[(fid, fname, "%s fractal reptiles" % fname)
-                   for fid, fname in _FAMILY_ORDER],
-            default='POLYOMINO',
-            description="Polyform family")
+                   for fid, fname in _FAMILY_ORDER
+                   if fid in _SHAPES_BY_FAMILY],
+            default='SQUARE',
+            description="Polyform base-shape family")
         shape: EnumProperty(
             name="Shape", items=_shape_items,
             description="Which reptile within the chosen family")
