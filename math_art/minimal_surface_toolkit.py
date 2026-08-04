@@ -902,6 +902,22 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
         rho = float(spec['p_from'](order, radius)['Rho']) if spec else 1.0
         return _tilt_scherk_doubly(nu, nv, rho, scale,
                                    cells_u, cells_v, with_uv)
+    # doubly periodic finished meshes (KMR / Wei): a spec that declares a
+    # 'cells2d_mesher' tiles its own 2-D lattice from BOTH cell counts
+    # (the 1-D storeys contract below cannot carry the second axis)
+    _bdp = PARAMETRIC.get(kind)
+    _sdp = getattr(_bdp[1], 'spec', None) if _bdp else None
+    if _sdp is not None and _sdp.get('cells2d_mesher'):
+        out = _sdp['cells2d_mesher'](_sdp, nu, nv, order, radius, scale,
+                                     theta, (cells_u, cells_v))
+        V, quads = out[0], out[1]
+        if not with_uv:
+            return V, quads
+        uvv = out[2] if len(out) > 2 else None
+        if uvv is None or not quads:
+            return V, quads, None
+        idx = np.fromiter((i for f in quads for i in f), dtype=np.int64)
+        return V, quads, np.asarray(uvv)[idx]
     if kind in MESH_PARAM:
         # towers: cells_u storeys stacked under the surface's screw motion
         out = MESH_PARAM[kind](nu, nv, order, radius, scale, theta,
