@@ -1298,6 +1298,74 @@ WE_SURFACES['CG_HIGHER'] = {
 SURFACE_FAMILY['CG_HIGHER'] = 'HIGHER'
 
 
+# ==========================================================================
+# Symmetrized Chen-Gackstatter towers (appended catalog block)
+# ==========================================================================
+# The k-fold-symmetric Chen-Gackstatter continuations: one Enneper-type
+# end, dihedral-antiprismatic symmetry D_kd (order 4k), on the k-fold
+# cyclic cover of the sphere branched over {0, +-r_i, inf}.  Three towers
+# (unified data g = rho z^a0 prod (1-(z/r_i)^2)^(+-e), dh = dz with
+# e = (k-1)/k), meshed watertight from ONE 1/(4k) quarter-plane
+# fundamental piece orbited under the full D_kd group -- the engine,
+# closed-form / harvested period constants and references live in
+# we_builders.symmcg_mesh and the block above it:
+#   * SYMM_CG      genus k-1   -- the canonical tower; rho is the
+#     closed-form Gamma quotient.  k = 2 IS the classical Chen-
+#     Gackstatter torus (a cross-check against CHEN_GACK), and k = 4
+#     reaches GENUS 3, absent from the CG_HIGHER D2d normalization.
+#     Distinct from CG_HIGHER at every shared genus: CG_HIGHER keeps
+#     order-8 D2d symmetry with a winding-3 end at every genus, while
+#     this tower's symmetry order (4k) and end winding (2k-1) grow
+#     with the genus.
+#   * SYMM_CG_G2N  genus 2(k-1) -- second tower; branch value a and rho
+#     solved numerically (Weber), k in {3, 4, 7, 12}.
+#   * SYMM_CG_G3K  genus 3(k-1) -- third tower; branch values a, b from
+#     a 2-D period solve (Weber), k in {2, 3, 4, 5, 7}; note k = 2 is a
+#     second, different genus-3 surface.
+# (Chen & Gackstatter 1982; Karcher's symmetrization method; data after
+# M. Weber, minimalsurfaces.blog, "Symmetrized Chen-Gackstatter".)
+
+def _symmcg_snap_k(order, table):
+    """Nearest solved symmetry order in `table`."""
+    return min(table, key=lambda kk: abs(kk - order))
+
+
+WE_SURFACES['SYMM_CG'] = {
+    'label': "Chen-Gackstatter tower (k-fold)",
+    'family': 'HIGHER',
+    'mesher': we.symmcg_mesh,
+    # count slider = the symmetry order k (genus k-1); radius scales the
+    # spherical end-trim (how far the single Enneper end flares)
+    'p_from': lambda order, radius: {
+        'tower': 'gn', 'k': int(min(8, max(2, order)))},
+    'count': "Symmetry k (genus k-1)",
+    'test_order': 4,
+}
+SURFACE_FAMILY['SYMM_CG'] = 'HIGHER'
+
+WE_SURFACES['SYMM_CG_G2N'] = {
+    'label': "Chen-Gackstatter tower (genus 2(k-1))",
+    'family': 'HIGHER',
+    'mesher': we.symmcg_mesh,
+    'p_from': lambda order, radius: {
+        'tower': 'g2n', 'k': _symmcg_snap_k(order, (3, 4, 7, 12))},
+    'count': "Symmetry k (3/4/7/12)",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SYMM_CG_G2N'] = 'HIGHER'
+
+WE_SURFACES['SYMM_CG_G3K'] = {
+    'label': "Chen-Gackstatter tower (genus 3(k-1))",
+    'family': 'HIGHER',
+    'mesher': we.symmcg_mesh,
+    'p_from': lambda order, radius: {
+        'tower': 'g3k', 'k': _symmcg_snap_k(order, (2, 3, 4, 5, 7))},
+    'count': "Symmetry k (2/3/4/5/7)",
+    'test_order': 2,
+}
+SURFACE_FAMILY['SYMM_CG_G3K'] = 'HIGHER'
+
+
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
@@ -1521,4 +1589,66 @@ if __name__ == "__main__":
               f"(want {1 - 2 * gg}) nonman={nonman} loops={nloops} "
               f"ncomp={ncomp} fit[|c|={cen:.1e} ext={ext:.4f}] "
               f"uv={uv_ok} {'OK' if good else 'FAIL'}")
+    # Symmetrized Chen-Gackstatter towers: the same full watertight gate
+    # through the toolkit pipeline -- exact chi = 1 - 2g (one trimmed
+    # Enneper end), manifold, one loop, one component, 2 m fit, UV chart.
+    # SYMM_CG order k has genus k - 1 (k = 4 -> genus 3); SYMM_CG_G2N
+    # genus 2(k-1); SYMM_CG_G3K genus 3(k-1).
+    for skey, sord, sgen in (('SYMM_CG', 2, 1), ('SYMM_CG', 4, 3),
+                             ('SYMM_CG', 6, 5), ('SYMM_CG_G2N', 3, 4),
+                             ('SYMM_CG_G3K', 2, 3)):
+        Vg, Qg, uvg = tk.build_parametric(skey, 60, 60, sord, 1.2, 1.0,
+                                          with_uv=True)
+        ecg = {}
+        for f in Qg:
+            m = len(f)
+            for t in range(m):
+                a, b = f[t], f[(t + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecg[e] = ecg.get(e, 0) + 1
+        chi = len(Vg) - len(ecg) + len(Qg)
+        nonman = sum(1 for c in ecg.values() if c > 2)
+        bed = [e for e, c in ecg.items() if c == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a, b in bed:
+            ra, rb = bfind(a), bfind(b)
+            if ra != rb:
+                par[ra] = rb
+        nloops = len({bfind(a) for a, b in bed})
+        parc = list(range(len(Vg)))
+
+        def cfind(a):
+            while parc[a] != a:
+                parc[a] = parc[parc[a]]
+                a = parc[a]
+            return a
+
+        for f in Qg:
+            for i in range(1, len(f)):
+                ra, rb = cfind(f[0]), cfind(f[i])
+                if ra != rb:
+                    parc[ra] = rb
+        ncomp = len({cfind(f[0]) for f in Qg})
+        lo, hi = Vg.min(0), Vg.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        uv_ok = (uvg is not None and len(uvg) == sum(len(f) for f in Qg)
+                 and bool(np.all(np.isfinite(uvg))))
+        good = (chi == 1 - 2 * sgen and nonman == 0 and nloops == 1
+                and ncomp == 1 and cen < 1e-6 and abs(ext - 2.0) < 1e-6
+                and uv_ok and bool(np.all(np.isfinite(Vg))))
+        ok &= good
+        print(f"symm-CG {skey:12s} k={sord} (genus {sgen}): {len(Vg):6d}v "
+              f"{len(Qg):6d}f chi={chi} (want {1 - 2 * sgen}) "
+              f"nonman={nonman} loops={nloops} ncomp={ncomp} "
+              f"fit[|c|={cen:.1e} ext={ext:.4f}] uv={uv_ok} "
+              f"{'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")
