@@ -322,6 +322,12 @@ _HEXCELL = np.array(
       np.sin(np.pi / 6.0 + k * np.pi / 3.0) / sqrt(3.0)]
      for k in range(6)])
 
+# unit Eisenstein step (60 deg): hex-cell centres live on Z + Z*_W6, and
+# the polyhex radix reptiles use an Eisenstein base b (|b|^2 = n) with a
+# ROTATING argument so the boundary is fractal (a real/axis-aligned base
+# such as -2 or 3 gives a non-fractal parallelogram instead).
+_W6 = np.exp(1j * np.pi / 3.0)
+
 
 # --------------------------------------------------------------------
 # Reflection & foldable rep-tiles (Sajid-Husain-Kumar 2026)
@@ -514,11 +520,29 @@ KINDS = {
         build=lambda it, h=0: _base_reptile(
             -2 - 2j, [0, 1, 2, 3, 1 + 1j, 2 + 1j, 3 + 1j, 4 + 1j], it,
             holes=h), n=8),
-    # Eisenstein radix-system kind (hexagon cells)
-    'FLOWSNAKE': dict(                        # Vince Fig 4/7
+    'Z_TETROMINO': dict(                      # Z tetromino -> twindragon
+        build=lambda it, h=0: _base_reptile(
+            -2j, [0, 1, 1 + 1j, 2 + 1j], it, holes=h), n=4),
+    # Eisenstein radix-system kinds (hexagon cells); polyhex reptiles
+    'FLOWSNAKE': dict(                        # Vince Fig 4/7 (heptahex)
         build=lambda it, h=0: _base_reptile(_FLOW_BASE, _FLOW_DIGITS,
                                             it, cell=_HEXCELL, holes=h),
         n=7, samp=True),
+    'TRIHEX': dict(                           # trihex, rep-3
+        build=lambda it, h=0: _base_reptile(
+            -2 + _W6, [0, 1, _W6], it, cell=_HEXCELL, holes=h),
+        n=3, samp=True),
+    'HEX9': dict(                             # 9-hex, rep-9
+        build=lambda it, h=0: _base_reptile(
+            3 * (_W6 - 1),
+            [0, _W6 - 1, 1 - _W6, -1, -_W6, _W6, 1, -2 + _W6, -1 - _W6],
+            it, cell=_HEXCELL, holes=h), n=9, samp=True),
+    'HEX13': dict(                            # 13-hex, rep-13
+        build=lambda it, h=0: _base_reptile(
+            -4 + _W6,
+            [0, _W6 - 1, 1 - _W6, -1, -_W6, _W6, 1, -2 + _W6, -1 - _W6,
+             2 * _W6 - 1, 1 - 2 * _W6, 1 + _W6, 2 - _W6],
+            it, cell=_HEXCELL, holes=h), n=13, samp=True),
     # Reflection / foldable IFS kinds (quad cells; OSC attractors)
     'LEVY_DRAGON': dict(                      # SHK Fig 2c; Levy 1938
         build=lambda it, h=0: _ifs_reptile(_LEVY_MAPS, it, holes=h),
@@ -559,6 +583,9 @@ KIND_ITEMS = [
     ('REP4', "Polyomino: Square tetromino (rep-4)",
      "Base 2, digits {0,1,i,-1-i}: rep-4 Sierpinski-relative reptile "
      "(Vince Fig 6)"),
+    ('Z_TETROMINO', "Polyomino: Z-tetromino (twindragon, rep-4)",
+     "Z-tetromino cell set {0,1,1+i,2+i} over base -2i = (-1+i)^2: the "
+     "rep-4 route to the twindragon tile (Fathauer, Bridges 2025)"),
     ('REP5', "Polyomino: X-pentomino (round rep-5)",
      "X-pentomino, base -2+i, digits {0,1,-1,i,-i}: the round rep-5 "
      "dragon (Vince Fig 5), aspect ratio 1/phi"),
@@ -581,10 +608,19 @@ KIND_ITEMS = [
      "Z-octomino cell set over base -2-2i: the rep-8 Z-octomino "
      "fractal reptile (Fathauer, Bridges 2025)"),
     # --- Polyhex reptiles (hexagon cells) ---
+    ('TRIHEX', "Polyhex: Trihex (rep-3)",
+     "Trihex {0,1,w} over Eisenstein base -2+w (w=e^{i pi/3}): the "
+     "rep-3 trihex fractal reptile (Fathauer, Bridges 2026)"),
     ('FLOWSNAKE', "Polyhex: Heptahex / Gosper (rep-7)",
      "Eisenstein base 5/2+(sqrt3/2)i, digits {0}+sixth roots of "
      "unity, hexagon cells: the rep-7 Gosper island bounded by the "
      "flowsnake curve (Vince Fig 4/7; Gardner 1976)"),
+    ('HEX9', "Polyhex: 9-hex (rep-9)",
+     "A compact 9-hex over Eisenstein base 3(w-1): the rep-9 polyhex "
+     "fractal reptile (Fathauer, Bridges 2026)"),
+    ('HEX13', "Polyhex: 13-hex (rep-13)",
+     "A compact 13-hex over Eisenstein base -4+w: the rep-13 polyhex "
+     "fractal reptile (Fathauer, Bridges 2026)"),
     # --- Reflection / foldable reptiles ---
     ('LEVY_DRAGON', "Reflection: Levy Dragon (rep-2)",
      "Two maps contracting by (1-i)/2, the second reflected in the "
