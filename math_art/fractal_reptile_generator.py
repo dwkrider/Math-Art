@@ -1005,6 +1005,28 @@ _KIND_LABEL = dict((k, v) for k, v, _ in KIND_ITEMS)
 # whose last element must be a fixed number that never changes)
 _KIND_NUMBER = dict((k, i) for i, (k, _, _) in enumerate(KIND_ITEMS))
 
+# Canonical construction angle (degrees) per shape -- the primary
+# rotation listed on each Fractal Diversions seed page.  The operator's
+# Angle field defaults to this; the page's other allowed angles are this
+# tile rotated by the lattice symmetry (e.g. +120 for the Eisenstein
+# families) and/or mirrored, which the Angle/Mirror controls reproduce.
+_KIND_ANGLE0 = {
+    'TWINDRAGON': 45.0, 'REP4': 0.0, 'Z_TETROMINO': 90.0, 'REP5': 26.565,
+    'Z_PENTOMINO': 26.565, 'Y_PENTOMINO': 63.435, 'P_PENTOMINO': 26.565,
+    'REP5_THIN': 63.435, 'REP5B': 63.435, 'Z_OCTOMINO': 45.0,
+    'FOURFOLD_OCTOMINO': 45.0,
+    'TRIHEX': 30.0, 'TRIHEX_BAR': 30.0, 'TETRAHEX': 60.0,
+    'FLOWSNAKE': 40.893, 'HEPTAHEX_3FOLD': 40.893, 'HEPTAHEX_2FOLD': 19.107,
+    'HEPTAHEX_2FOLD2': 19.107, 'HEX9': 0.0, 'HEX13': 13.898,
+    'HEX13_2': 13.898,
+    'HEPTIAMOND': 19.107, 'HEPTIAMOND_3FOLD': 19.107, 'HEPTIAMOND_2': 40.893,
+    'TRIRHOMB': 30.0, 'TETRARHOMB': 60.0,
+    'PENTABOLO': 26.565,
+    'TRIKITE': -30.0, 'TRIKITE_2': -30.0, 'TETRAKITE': 0.0,
+    'TETRAKITE_2': 0.0,
+    'LEVY_DRAGON': 0.0, 'LEAF': 0.0, 'FOLDABLE4': 0.0, 'RIGHT_TRIANGLE': 0.0,
+}
+
 
 try:
     import bpy
@@ -1063,6 +1085,11 @@ if _IN_BLENDER:
         if shapes:
             self.shape = shapes[0][0]
 
+    def _on_shape(self, context):
+        """Reset the Angle field to the newly-selected shape's canonical
+        construction angle (the primary angle on its seed page)."""
+        self.angle = _KIND_ANGLE0.get(self.shape, 0.0)
+
     class MESH_OT_fractal_reptile_add(bpy.types.Operator,
                                       AddObjectHelper):
         """Add a Fathauer fractal tiling built from a rep-tile
@@ -1079,8 +1106,19 @@ if _IN_BLENDER:
             default='SQUARE', update=_on_family,
             description="Polyform base-shape family")
         shape: EnumProperty(
-            name="Shape", items=_shape_items,
+            name="Shape", items=_shape_items, update=_on_shape,
             description="Which reptile within the chosen family")
+        angle: FloatProperty(
+            name="Angle", default=0.0, min=-360.0, max=360.0,
+            step=100, precision=3,
+            description="Construction angle in degrees; defaults to the "
+                        "primary angle on the shape's seed page.  The "
+                        "page's other allowed angles are the same tile "
+                        "rotated by the lattice symmetry (e.g. +120)")
+        mirror: BoolProperty(
+            name="Mirror", default=False,
+            description="Reflect the tile (the seed pages' mirror "
+                        "variant)")
         iterations: IntProperty(
             name="Iterations", default=6, min=0, max=14,
             description="Growth depth; each generation glues a "
@@ -1114,6 +1152,12 @@ if _IN_BLENDER:
             name="Separate Tiles", default=False,
             description="Output each tile as its own mesh object")
 
+        def invoke(self, context, event):
+            # seed Angle with the default shape's canonical angle so the
+            # first run is at the page orientation (rotation offset 0)
+            self.angle = _KIND_ANGLE0.get(self.shape, 0.0)
+            return self.execute(context)
+
         def execute(self, context):
             kind = self.shape
             if kind not in KINDS:      # family just switched: shape id
@@ -1122,6 +1166,20 @@ if _IN_BLENDER:
                 kind = shapes[0][0]    # fall back to family's first shape
             polys, types = fractal_patch(kind, self.iterations,
                                          self.holes)
+            # orient the tile: reflect (mirror) then rotate by the offset
+            # from the shape's canonical angle to the chosen Angle
+            rot = np.radians(self.angle - _KIND_ANGLE0.get(kind, 0.0))
+            if self.mirror or abs(rot) > 1e-9:
+                ca, sa = np.cos(rot), np.sin(rot)
+                out = []
+                for p in polys:
+                    q = np.asarray(p, float).copy()
+                    if self.mirror:
+                        q[:, 0] = -q[:, 0]
+                    x = q[:, 0] * ca - q[:, 1] * sa
+                    y = q[:, 0] * sa + q[:, 1] * ca
+                    out.append(np.column_stack([x, y]))
+                polys = out
             cells = tg.cells_from_polys(
                 lambda a, b: (polys, types), 1, 1, self.color_by,
                 self.margin, self.height, False)
@@ -1153,8 +1211,8 @@ if _IN_BLENDER:
                 row.template_icon(
                     icon_value=_seed_previews[self.shape].icon_id,
                     scale=7.0)
-            for p in ('family', 'shape', 'iterations', 'holes',
-                      'color_by', 'margin', 'height'):
+            for p in ('family', 'shape', 'angle', 'mirror', 'iterations',
+                      'holes', 'color_by', 'margin', 'height'):
                 lay.prop(self, p)
             lay.prop(self, 'separate')
             lay.prop(self, 'align')
