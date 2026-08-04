@@ -4763,6 +4763,592 @@ def dperiodic_wei_residual(b, a, n=320001):
     return (4.0 * r2 - r1) / 3.0
 
 
+# ==========================================================================
+# Doubly periodic long tail -- Karcher-Scherk, RTW, Wei tower, Connor
+# ==========================================================================
+# The remaining classical/experimental four-or-more-ended doubly periodic
+# minimal surfaces whose Weierstrass data is hyperelliptic with REAL
+# branch points and dh = dz/z, generalizing the KMR/Wei tiler above to
+# the three assembly styles the source notebooks use:
+#
+#   * 'half8' -- reciprocal-paired branch points with opposite square-
+#     root exponents, so |g| = 1 on the unit circle: the u = 0 edge of
+#     the exp-strip is a horizontal planar symmetry curve and the patch
+#     orbit is the 8 diagonal sign maps (exactly the engine above).
+#     Members: F. Wei's higher-genus (1,3)/(1,4)/(2,3)/(1,6) towers and
+#     the Rossman-Thayer-Wohlgemuth M1+ / M1+- surfaces.
+#   * 'ks'    -- the Karcher-Scherk surfaces with handles: branch
+#     points at +-1 put arg g = const on the unit circle, which is a
+#     horizontal STRAIGHT LINE (direction (1,1,0)) in the surface (the
+#     classical doubly periodic Scherk contains these diagonal lines at
+#     mid-level).  Orbit = closure of {180-degree rotation about that
+#     line, mirrors x1 = 0 and x2 = 0} (8 ops); lattice fixed at
+#     (2 pi, 0, 0) x (0, 2 pi, 0) by the dh = dz/z normalization, so
+#     BOTH x1 and x2 walls must land on multiples of pi -- that is this
+#     family's period problem, solved in the notebooks by FindRoot on
+#     segment integrals of omega1/omega2 between branch points.
+#   * 'full4' -- no circle symmetry at all (Connor's experimental
+#     surfaces, branch sets not reciprocal-invariant in pairs with
+#     mixed exponents): integrate the WHOLE annulus rlo < |z| < rhi
+#     (upper half), orbit = {id, mirror x1, mirror x2, both} only,
+#     ends truncated at both edges.
+#
+# Every member ships with the literal solved period constants recovered
+# from the repository notebooks (FindRoot outputs / family tables); the
+# self-tests re-measure the wall residuals, the 2-D lattice, and the
+# quotient topology chi = 2 - 2 genus - ends per fundamental domain.
+#
+# References:
+#   H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#     examples", Manuscripta Math. 62 (1988) 83-114 (Scherk surfaces
+#     with handles; the genus 2..4 doubly periodic tower);
+#   F. Wei, "Some existence and uniqueness theorems for doubly periodic
+#     minimal surfaces", Invent. Math. 109 (1992) 113-136, and the
+#     higher-genus (m,n) Wei family after M. Weber's repository;
+#   W. Rossman, E. C. Thayer, M. Wohlgemuth, "Embedded, doubly periodic
+#     minimal surfaces", Experiment. Math. 9 (2000) 197-219 (the M1+
+#     and M1+- families);
+#   P. Connor, "A note on special polynomials and minimal surfaces"
+#     (experimental doubly periodic surfaces of genus 3, 2018-2019;
+#     numerically established -- see also P. Connor, M. Weber, "The
+#     construction of doubly periodic minimal surfaces via balance
+#     equations", Amer. J. Math. 134 (2012) 1275-1301);
+#   M. Weber, https://minimalsurfaces.blog/ repository, doubly periodic
+#     section (Karcher-Scherk g=2/3, exotic g=3, RTW, higher-genus Wei
+#     and Connor pages 78-85 notebooks: Weierstrass data, solved
+#     constants and reflection assemblies followed here).
+
+def _dptail_recip(vals):
+    """[(p, e)] -> reciprocal-completed factor list [(p, e), (1/p, -e)]."""
+    out = []
+    for p, e in vals:
+        out.append((p, e))
+        out.append((1.0 / p, -e))
+    return tuple(out)
+
+
+def _dptail_members():
+    """The harvested member catalog: key -> dict(factors, style, genus,
+    label).  Constants are the notebooks' solved period parameters."""
+    M = {}
+
+    # --- Karcher-Scherk with handles (style 'ks') ----------------------
+    a, b = 0.1253991455944982, 0.25068716043696654
+    M['ksg2'] = {
+        'style': 'ks', 'genus': 2,
+        'label': "Karcher-Scherk genus 2",
+        'factors': ((-1.0, 1), (-1.0 / a, 1), (-a, 1),
+                    (1.0, -1), (-1.0 / b, -1), (-b, -1))}
+    a, b, c = (0.06861386286581515, 0.11033686517910986,
+               0.4744615458765442)
+    M['ksg3'] = {
+        'style': 'ks', 'genus': 3,
+        'label': "Karcher-Scherk genus 3",
+        'factors': ((-1.0 / a, 1), (-a, 1), (-1.0 / c, 1), (-c, 1),
+                    (1.0, -1), (-1.0, -1), (-1.0 / b, -1), (-b, -1))}
+    a, b, c = (0.0029790137955450864, 0.21361044126340875,
+               0.0038598089630300695)
+    M['ksg3x'] = {
+        'style': 'ks', 'genus': 3,
+        'label': "Karcher-Scherk genus 3 (exotic)",
+        'factors': ((1.0, 1), (-1.0, 1), (-1.0 / a, 1), (-a, 1),
+                    (c, -1), (1.0 / c, -1), (-1.0 / b, -1), (-b, -1))}
+
+    # --- Rossman-Thayer-Wohlgemuth (style 'half8') ---------------------
+    a = 0.26                       # M1+: b solved from a (self-test)
+    b = DPTAIL_RTWMP_B
+    M['rtwmp'] = {
+        'style': 'half8', 'genus': 2,
+        'label': "RTW M1+ (genus 2)",
+        'factors': ((1.0 / a, 1), (1.0 / b, 1), (-a * b, 1),
+                    (a, -1), (b, -1), (-1.0 / (a * b), -1))}
+    for i, (b, c, d) in enumerate((
+            (0.7348870529374415, -0.6951258227510726, -0.03),
+            (0.6855592258248246, -0.5572870898881896, -0.1))):
+        M[f'rtwm1pm_{i}'] = {
+            'style': 'half8', 'genus': 3,
+            'label': f"RTW M1+- (genus 3, d={d})",
+            'factors': _dptail_recip(((b, 1), (c, 1), (d, 1),
+                                      (1.0 / (b * c * d), 1)))}
+
+    # --- Wei higher-genus towers (style 'half8') -----------------------
+    # (1,3): (c; a, b) rows, r = a c / b
+    for i, (c, a, b) in enumerate((
+            (0.1, 0.008055067127584473, 0.028060852552439276),
+            (0.2, 0.016531255568679768, 0.054948614240354035),
+            (0.5, 0.04830868160434303, 0.11731752208030022),
+            (0.8, 0.09242500104957037, 0.13493687204523117))):
+        r = a * c / b
+        M[f'wei13_{i}'] = {
+            'style': 'half8', 'genus': 3,
+            'label': f"Wei (1,3) genus 3, c={c}",
+            'factors': _dptail_recip(((a, -1), (b, 1), (c, -1),
+                                      (-r, 1)))}
+    # (1,4): (d; a, b, c) rows, r = a c / (b d)
+    for i, (d, a, b, c) in enumerate((
+            (0.5, 0.06504976295629919, 0.07123688388229928,
+             0.451792255249194),
+            (0.7, 0.008088938096668071, 0.01971002640051247,
+             0.07514495599787499))):
+        r = a * c / (b * d)
+        M[f'wei14_{i}'] = {
+            'style': 'half8', 'genus': 4,
+            'label': f"Wei (1,4) genus 4, d={d}",
+            'factors': _dptail_recip(((a, -1), (b, 1), (c, -1),
+                                      (d, 1), (-r, 1)))}
+    # (2,3): a fixed 1e-4; (b, c, d) solved, r = a c / (b d)
+    a, b, c, d = (1e-4, 0.04459799657015391, 0.5189369915935217,
+                  0.00011126886913811259)
+    r = a * c / (b * d)
+    M['wei23'] = {
+        'style': 'half8', 'genus': 4,
+        'label': "Wei (2,3) genus 4",
+        'factors': _dptail_recip(((1.0 / a, 1), (b, 1), (1.0 / c, 1),
+                                  (-d, 1), (-r, 1)))}
+    # (1,6): d fixed 0.02; (a, b, c, e, h) solved, r = a c e / (b d h)
+    a, b, c = (0.0004555021778972459, 0.0008261557506571832,
+               0.0033952038946453533)
+    d, e, h = 0.009809755189394816, 0.02, 0.8260536205512837
+    r = a * c * e / (b * d * h)
+    M['wei16'] = {
+        'style': 'half8', 'genus': 6,
+        'label': "Wei (1,6) genus 6",
+        'factors': _dptail_recip(((1.0 / a, 1), (b, 1), (1.0 / c, 1),
+                                  (d, 1), (1.0 / e, 1), (h, 1),
+                                  (-r, 1)))}
+
+    # --- Connor experimental surfaces (style 'full4') ------------------
+    # (a, c, d) Newton-refined on the notebook's three conditions at
+    # fixed b, e (the published continuation tuple mixes solve stages
+    # and misses closure by ~1e-2; refined residual < 1e-12)
+    a, b, c = 0.014359861472204319, 0.8490182629508395, 2.39270674308568
+    d, e = 31.950515854168334, -0.01
+    f = a * b * d / (c * e)
+    M['conn_asym'] = {
+        'style': 'full4', 'genus': 2,
+        'label': "Connor asymmetric (genus 2)",
+        'factors': ((a, 1), (b, 1), (d, 1),
+                    (c, -1), (e, -1), (f, -1))}
+    a, b, c, d = (0.015, 8.45438228656637, 30.30978961482249,
+                  81.61817271788935)
+    e, h, i2 = (-0.026253034486005255, -0.49160372140098835,
+                -1.2857374677056)
+    j = b * d * e * h / (a * c * i2)
+    M['conn78'] = {
+        'style': 'full4', 'genus': 3,
+        'label': "Connor page 78 (genus 3)",
+        'factors': ((b, 1), (d, 1), (e, 1), (h, 1),
+                    (a, -1), (c, -1), (i2, -1), (j, -1))}
+    a, b, c, d = (0.00572883889017319, 0.05805739403536119,
+                  0.221960415838744, 306.0)
+    M['conn80'] = {
+        'style': 'full4', 'genus': 3,
+        'label': "Connor page 80 (genus 3)",
+        'factors': ((-1.0 / a, 1), (a, 1), (-1.0 / b, 1), (b, 1),
+                    (-1.0 / c, -1), (c, -1), (-1.0 / d, -1), (d, -1))}
+    a, b, c, d = (0.01, 0.0624509711969649, 0.28200180374974865,
+                  -0.005219595739646119)
+    M['conn82'] = {
+        'style': 'full4', 'genus': 3,
+        'label': "Connor page 82 (genus 3)",
+        'factors': ((a, 1), (b, 1), (1.0 / a, 1), (1.0 / b, 1),
+                    (c, -1), (d, -1), (1.0 / c, -1), (1.0 / d, -1))}
+    a, b, c, d = (0.0026378211134974183, 0.490458496891309, 1.0,
+                  5478.680983554296)
+    e, h, i2 = (16486.601223173104, 162703.99452674662,
+                -0.0018594407009749243)
+    j = c * d * h * i2 / (a * b * e)
+    M['conn84'] = {
+        'style': 'full4', 'genus': 3,
+        'label': "Connor page 84 (genus 3)",
+        'factors': ((c, 1), (d, 1), (h, 1), (i2, 1),
+                    (a, -1), (b, -1), (e, -1), (j, -1))}
+    a, b, c, d = (0.00006188567963069017, 0.0055,
+                  0.012221191957186576, 10628.77254193301)
+    M['conn85'] = {
+        'style': 'full4', 'genus': 3,
+        'label': "Connor page 85 (genus 3)",
+        'factors': ((a, -1), (b, 1), (c, -1), (d, 1),
+                    (-1.0 / a, -1), (-1.0 / b, 1), (-1.0 / c, -1),
+                    (-1.0 / d, 1))}
+    return M
+
+
+def dptail_rtwmp_residual(b, a=0.26, n=420):
+    """RTW M1+ period condition, as its notebook's SolvePeriod: the
+    real part of int i (G + 1/G) dz/z from -a b through i to b must
+    vanish; G has reciprocal-paired branch points driven by (a, b)."""
+    factors = ((1.0 / a, 1), (1.0 / b, 1), (-a * b, 1),
+               (a, -1), (b, -1), (-1.0 / (a * b), -1))
+
+    def fn(z):
+        g = _dperiodic_sqrtprod(np.asarray(z, dtype=complex), factors)
+        return 1j * (g + 1.0 / g) / z
+    return float(np.real(cwce_path_int(fn, [-a * b, 1j, b],
+                                       e_end=(0.5, 0.5), n=n)))
+
+
+# b for RTW M1+ at a = 0.26, solved from dptail_rtwmp_residual by
+# bisection at import-verification time (value checked in the
+# self-test against the same residual; the notebook only published the
+# solve call, not the solved value).
+DPTAIL_RTWMP_B = 0.2759530541264884
+
+DPTAIL_MEMBERS = None            # built lazily (needs DPTAIL_RTWMP_B)
+
+
+def dptail_member(key):
+    global DPTAIL_MEMBERS
+    if DPTAIL_MEMBERS is None:
+        DPTAIL_MEMBERS = _dptail_members()
+    return DPTAIL_MEMBERS[key]
+
+
+def _dptail_arcs(factors, ulo, uhi):
+    """Boundary-arc tables for an exp-strip u in [ulo, uhi] whose real
+    z-axis edges decompose at the branch-point logs.  Same parity rule
+    as _dperiodic_arcs_exp, but over an arbitrary radial window (the
+    full annulus of the 'full4' style, or the [rmin, 1] half of the
+    'half8'/'ks' styles).  Returns (usplits, arcs) with arcs entries
+    (edge, k0, k1, axis) -- axis 0 = x1 wall, 1 = x2 wall."""
+    rlo, rhi = math.exp(ulo), math.exp(uhi)
+    pos = sorted(p for p, e in factors if rlo < p < rhi)
+    neg = sorted(-p for p, e in factors if rlo < -p < rhi)
+    usplits = sorted({ulo, uhi}
+                     | {math.log(p) for p in pos}
+                     | {math.log(t) for t in neg})
+    kof = {round(s, 12): k for k, s in enumerate(usplits)}
+    arcs = []
+    for lo, hi in zip([rlo] + pos, pos + [rhi]):
+        x = math.sqrt(lo * hi)
+        cnt = sum(1 for p, e in factors if p > x)
+        arcs.append((0, kof[round(math.log(lo), 12)],
+                     kof[round(math.log(hi), 12)],
+                     1 if cnt % 2 == 0 else 0))
+    for lo, hi in zip([rlo] + neg, neg + [rhi]):
+        t = math.sqrt(lo * hi)
+        cnt = sum(1 for p, e in factors if p > -t)
+        arcs.append((1, kof[round(math.log(lo), 12)],
+                     kof[round(math.log(hi), 12)],
+                     1 if cnt % 2 == 0 else 0))
+    return usplits, arcs
+
+
+def dptail_patch(key, p, nu, nv, refine=3):
+    """Integrate, wall-align and snap ONE conformal patch of the
+    doubly periodic tail member `key`.  Returns the same dict contract
+    as dperiodic_patch, with 'ops' generalized to (M 3x3, t 3, parity)
+    isometries consumed by dptail_assemble/dptail_quotient."""
+    mem = dptail_member(key)
+    factors, style = mem['factors'], mem['style']
+    mags = sorted(abs(q) for q, e in factors)
+    if style == 'full4':
+        f = float(np.clip(p.get('trim', 8.0), 1.5, 200.0))
+        ulo = math.log(mags[0] / f)
+        uhi = math.log(mags[-1] * f)
+    else:
+        rmin = min(p.get('rmin', 0.05), 0.45 * mags[0])
+        ulo, uhi = math.log(rmin), 0.0
+    usplits, arcs = _dptail_arcs(factors, ulo, uhi)
+    Ffn = _dperiodic_F_exp(factors)
+
+    ug, uidx = _dperiodic_ugrid(usplits, max(24, int(nu)))
+    vg = _dperiodic_vgrid(max(24, int(nv)))
+    m = max(1, int(refine))
+    uf = _dperiodic_refine(ug, m)
+    vf = _dperiodic_refine(vg, m)
+    jmf = int(np.argmin(np.abs(vf - 0.5 * math.pi)))
+    W = uf[:, None] + 1j * vf[None, :]
+    with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+        F = Ffn(W, jmf)
+    Xf = _dperiodic_integrate(F, uf, vf)
+    X = Xf[::m, ::m, :].copy()
+    kidx = {k: uidx[k] for k in range(len(usplits))}
+    arcsg = [(e, kidx[k0], kidx[k1], ax) for (e, k0, k1, ax) in arcs]
+
+    res = {}
+    # exact height: with dh = dz/z, x3 = u identically
+    res['x3=u'] = float(np.max(np.abs(
+        X[..., 2] - (X[0, 0, 2] - ug[0] + ug[:, None]))))
+    X[..., 2] = ug[:, None]
+
+    def med(e, i0, i1, ax):
+        return _dperiodic_arc_med(X, e, i0, i1, ax)
+
+    # base alignment: first x1 wall and first x2 wall -> 0
+    w1 = [(e, i0, i1) for (e, i0, i1, ax) in arcsg if ax == 0]
+    w2 = [(e, i0, i1) for (e, i0, i1, ax) in arcsg if ax == 1]
+    if w1:
+        X[..., 0] -= med(*w1[0], 0)
+    if w2:
+        X[..., 1] -= med(*w2[0], 1)
+
+    # wall targets: x2 walls sit on multiples of pi (dh = dz/z fixes
+    # the y-period at 2 pi); x1 walls sit on multiples of pi for 'ks'
+    # (square 2 pi lattice) or on {0, +-dx} otherwise, dx measured
+    m2 = [med(e, i0, i1, 1) for (e, i0, i1) in w2]
+    for (e, i0, i1), v in zip(w2, m2):
+        res[f'x2wall@{e}:{i0}'] = abs(v - math.pi * round(v / math.pi))
+    m1 = [med(e, i0, i1, 0) for (e, i0, i1) in w1]
+    if style == 'ks':
+        dx = math.pi
+        for (e, i0, i1), v in zip(w1, m1):
+            res[f'x1wall@{e}:{i0}'] = abs(v - math.pi
+                                          * round(v / math.pi))
+    else:
+        dx = max(abs(v) for v in m1) if m1 else math.pi
+        if dx < 1e-9:
+            dx = math.pi
+        for (e, i0, i1), v in zip(w1, m1):
+            res[f'x1wall@{e}:{i0}'] = abs(v - dx * round(v / dx))
+
+    # snap every wall arc exactly onto its target plane
+    for (e, i0, i1, ax) in arcsg:
+        seg = _dperiodic_arc_slice(X, e, i0, i1)
+        core = seg[1:-1] if len(seg) > 4 else seg
+        v = float(np.median(core[:, ax]))
+        step = math.pi if (ax == 1 or style == 'ks') else dx
+        seg[:, ax] = step * round(v / step)
+
+    # ops + lattice per style
+    if style == 'half8':
+        ops = [(np.diag([sx, sy, sz]), np.zeros(3), sx * sy * sz)
+               for sx in (1.0, -1.0) for sy in (1.0, -1.0)
+               for sz in (1.0, -1.0)]
+        T1 = np.array([2.0 * dx, 0.0, 0.0])
+        T2 = np.array([0.0, 2.0 * math.pi, 0.0])
+    elif style == 'full4':
+        ops = [(np.diag([sx, sy, 1.0]), np.zeros(3), sx * sy)
+               for sx in (1.0, -1.0) for sy in (1.0, -1.0)]
+        T1 = np.array([2.0 * dx, 0.0, 0.0])
+        T2 = np.array([0.0, 2.0 * math.pi, 0.0])
+    else:                                            # ks
+        # u = 0 edge is a straight horizontal line along (1, 1, 0) or
+        # (1, -1, 0): snap the constant diagonal combination
+        line = X[-1, :, :]
+        d1 = float(np.ptp(line[1:-1, 0] - line[1:-1, 1]))
+        d2 = float(np.ptp(line[1:-1, 0] + line[1:-1, 1]))
+        sgn = 1.0 if d1 <= d2 else -1.0            # x1 - sgn*x2 const
+        res['line'] = min(d1, d2)
+        delta = float(np.median(line[1:-1, 0] - sgn * line[1:-1, 1]))
+        # the line offset must land on the pi wall lattice for the
+        # reflection group to close -- its deviation IS a period
+        # residual; snap it exactly
+        tgt = math.pi * round(delta / math.pi)
+        res['line_off'] = abs(delta - tgt)
+        delta = tgt
+        s = line[:, 0] + sgn * line[:, 1]
+        line[:, 0] = 0.5 * (s + delta)
+        line[:, 1] = sgn * 0.5 * (s - delta)
+        line[:, 2] = 0.0
+        # the u = 0 corners sit exactly ON the circle branch points
+        # z = +-1, where the quadrature is unreliable: replace them by
+        # the exact intersection of the line with the adjacent
+        # (already snapped) wall plane
+        nlast = X.shape[0] - 1
+        for (e, i0, i1, ax) in arcsg:
+            if i1 != nlast:
+                continue
+            j = 0 if e == 0 else X.shape[1] - 1
+            wall = X[i1 - 1, j, ax] if i1 > i0 else X[i0, j, ax]
+            wall = math.pi * round(float(wall) / math.pi)
+            if ax == 0:
+                X[nlast, j, 0] = wall
+                X[nlast, j, 1] = sgn * (wall - delta)
+            else:
+                X[nlast, j, 1] = wall
+                X[nlast, j, 0] = delta + sgn * wall
+            X[nlast, j, 2] = 0.0
+        RL = np.array([[0.0, sgn, 0.0], [sgn, 0.0, 0.0],
+                       [0.0, 0.0, -1.0]])
+        tL = np.array([delta, -sgn * delta, 0.0])
+        gens = [(np.diag([-1.0, 1.0, 1.0]), np.zeros(3), -1.0),
+                (np.diag([1.0, -1.0, 1.0]), np.zeros(3), -1.0),
+                (RL, tL, -1.0)]
+        T1 = np.array([2.0 * math.pi, 0.0, 0.0])
+        T2 = np.array([0.0, 2.0 * math.pi, 0.0])
+        ops = _dptail_close_ops(gens, T1, T2)
+    return {'X': X, 'ug': ug, 'vg': vg, 'arcs': arcsg, 'ops': ops,
+            'T1': T1, 'T2': T2, 'res': res, 'key': key,
+            'style': style}
+
+
+def _dptail_close_ops(gens, T1, T2, cap=40):
+    """Close the generator list into a finite op set modulo the
+    lattice {T1, T2} (translations reduced componentwise into the
+    centered fundamental cell).  Ops are (M, t, parity)."""
+    L = np.stack([T1[:2], T2[:2]])
+
+    def reduce_t(t):
+        # canonical representative in the HALF-OPEN centered cell:
+        # components landing at +half-period (within tolerance) wrap
+        # to -half-period so +-pi never split into distinct keys
+        t = t.copy()
+        c = np.linalg.solve(L.T, t[:2])
+        c -= np.round(c)
+        c[c > 0.5 - 1e-7] -= 1.0
+        t[:2] = L.T @ c
+        return t
+
+    def key_of(M, t):
+        return (tuple(np.round(M, 6).ravel()),
+                tuple(np.round(t, 6)))
+
+    ops = {key_of(np.eye(3), np.zeros(3)):
+           (np.eye(3), np.zeros(3), 1.0)}
+    frontier = list(ops.values())
+    while frontier and len(ops) < cap:
+        nxt = []
+        for (M, t, par) in frontier:
+            for (Mg, tg, pg) in gens:
+                M2 = Mg @ M
+                t2 = reduce_t(Mg @ t + tg)
+                k = key_of(M2, t2)
+                if k not in ops:
+                    ops[k] = (M2, t2, par * pg)
+                    nxt.append(ops[k])
+        frontier = nxt
+    return list(ops.values())
+
+
+def dptail_assemble(P, cells=(1, 1)):
+    """Tile the patch orbit over cells[0] x cells[1] lattice cells at
+    the true period vectors and weld all seams (general (M, t, parity)
+    ops).  Returns (V, quads, per-vertex UV)."""
+    X = P['X']
+    nu, nv = X.shape[:2]
+    Vp = X.reshape(-1, 3)
+    gu = np.arange(nu) / max(nu - 1, 1)
+    gv = np.arange(nv) / max(nv - 1, 1)
+    UVp = np.stack(np.meshgrid(gu, gv, indexing='ij'),
+                   axis=-1).reshape(-1, 2)
+    ii, jj = np.meshgrid(np.arange(nu - 1), np.arange(nv - 1),
+                         indexing='ij')
+    b = (ii * nv + jj).ravel()
+    q0 = np.stack([b, b + nv, b + nv + 1, b + 1], axis=1)
+    cu, cv = int(max(1, cells[0])), int(max(1, cells[1]))
+    Vs, Qs, UVs = [], [], []
+    off = 0
+    for ic in range(cu):
+        for jc in range(cv):
+            t0 = ((ic - 0.5 * (cu - 1)) * P['T1']
+                  + (jc - 0.5 * (cv - 1)) * P['T2'])
+            for (M, t, parity) in P['ops']:
+                Vs.append(Vp @ M.T + (t + t0)[None, :])
+                UVs.append(UVp)
+                Qs.append((q0 if parity > 0 else q0[:, ::-1]) + off)
+                off += len(Vp)
+    V = np.concatenate(Vs, axis=0)
+    UV = np.concatenate(UVs, axis=0)
+    Q = np.concatenate(Qs, axis=0)
+    return _dperiodic_weld(V, Q, UV)
+
+
+def dptail_quotient(P):
+    """Topology of the translational quotient (same contract as
+    dperiodic_quotient): chi, boundary loops, nonmanifold edge count,
+    oriented, components -- ends stay as boundary rims."""
+    V, quads, _ = dptail_assemble(P, (1, 1))
+    parent = np.arange(len(V))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return int(a)
+
+    key = np.round(V * 1e6).astype(np.int64)
+    hkey = {tuple(k): i for i, k in enumerate(key)}
+    # identify under ALL 8 neighbor translations: general (M, t) ops
+    # can place seam partners a composite T1 +- T2 step apart
+    shifts = [i1 * P['T1'] + i2 * P['T2']
+              for i1 in (-1, 0, 1) for i2 in (-1, 0, 1)
+              if (i1, i2) != (0, 0)]
+    for T in shifts:
+        kt = np.round((V + T[None, :]) * 1e6).astype(np.int64)
+        for i, k in enumerate(kt):
+            j = hkey.get(tuple(k))
+            if j is not None:
+                ra, rb = find(i), find(j)
+                if ra != rb:
+                    parent[ra] = rb
+    root = np.array([find(i) for i in range(len(V))])
+    ec, dc = {}, {}
+    for f in quads:
+        mlen = len(f)
+        for k in range(mlen):
+            a2, b2 = int(root[f[k]]), int(root[f[(k + 1) % mlen]])
+            e = (a2, b2) if a2 < b2 else (b2, a2)
+            ec[e] = ec.get(e, 0) + 1
+            dc[(a2, b2)] = dc.get((a2, b2), 0) + 1
+    nvq = len({int(r) for f in quads for r in root[list(f)]})
+    chi = nvq - len(ec) + len(quads)
+    nonman = sum(1 for c in ec.values() if c > 2)
+    orient = all(c == 1 for c in dc.values())
+    bed = [e for e, c in ec.items() if c == 1]
+    par = {}
+
+    def bfind(x):
+        par.setdefault(x, x)
+        while par[x] != x:
+            par[x] = par[par[x]]
+            x = par[x]
+        return x
+
+    for a2, b2 in bed:
+        ra, rb = bfind(a2), bfind(b2)
+        if ra != rb:
+            par[ra] = rb
+    loops = len({bfind(a2) for a2, b2 in bed})
+    parc = {}
+
+    def cfind(x):
+        parc.setdefault(x, x)
+        while parc[x] != x:
+            parc[x] = parc[parc[x]]
+            x = parc[x]
+        return x
+
+    for f in quads:
+        for i2 in range(1, len(f)):
+            ra, rb = cfind(int(root[f[0]])), cfind(int(root[f[i2]]))
+            if ra != rb:
+                parc[ra] = rb
+    ncomp = len({cfind(int(root[i2])) for f in quads for i2 in f})
+    return chi, loops, nonman, orient, ncomp
+
+
+_DPTAIL_CACHE = {}
+
+
+def dptail_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                cells=(1, 1)):
+    """Finished-mesh builder for the doubly periodic tail rows
+    (toolkit MESH_PARAM / cells2d contract)."""
+    tk = _toolkit()
+    p = spec['p_from'](order, radius) if 'p_from' in spec else {}
+    key = p.pop('dpt_key')
+    mem = dptail_member(key)
+    nsp = max(6, len(mem['factors']))
+    nuw = int(np.clip(nu * nsp / 6.0, 32, 320))
+    if isinstance(cells, (int, float)):
+        cells = (int(cells), 1)
+    cu = int(np.clip(cells[0], 1, 8))
+    cv = int(np.clip(cells[1] if len(cells) > 1 else 1, 1, 8))
+    ck = (key, tuple(sorted(p.items())), int(nuw), int(nv))
+    P = _DPTAIL_CACHE.get(ck)
+    if P is None:
+        P = dptail_patch(key, p, nuw, int(np.clip(nv, 24, 220)))
+        if len(_DPTAIL_CACHE) > 10:
+            _DPTAIL_CACHE.clear()
+        _DPTAIL_CACHE[ck] = P
+    V, quads, UV = dptail_assemble(P, (cu, cv))
+    Vu, quads = tk._largest_component(np.hstack([V, UV]), quads)
+    V, UV = Vu[:, :3], Vu[:, 3:]
+    V = tk._center_fit(V, scale, V)
+    return V, quads, UV
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
@@ -5431,4 +6017,65 @@ if __name__ == "__main__":
     ok &= good
     print(f"dperiodic KMR-3 lattice vs notebook: |dT|=({e1:.1e},"
           f"{e2:.1e},{e3:.1e}) {'OK' if good else 'FAIL'}")
+    # ---- doubly periodic long tail (KS / RTW / Wei tower / Connor) --------
+    # (1) RTW M1+ period solve: the re-solved b closes the notebook's own
+    #     SolvePeriod condition, and the residual moves off-solution
+    rres = abs(dptail_rtwmp_residual(DPTAIL_RTWMP_B))
+    roff = abs(dptail_rtwmp_residual(0.9 * DPTAIL_RTWMP_B))
+    good = rres < 1e-9 and roff > 1e3 * max(rres, 1e-12)
+    ok &= good
+    print(f"dptail RTW M1+ period b={DPTAIL_RTWMP_B:.6f}: |res|={rres:.2e} "
+          f"off-solution={roff:.2e} {'OK' if good else 'FAIL'}")
+    # (2) every shipped member: wall/period residuals small, x3 = u exact,
+    #     a genuinely 2-D lattice, quotient topology chi = 2 - 2g - 4 with
+    #     exactly 4 Scherk end rims, edge-manifold, oriented, connected;
+    #     and a 2 x 2 lattice tiling stays ONE connected manifold block
+    dpt_ship = ('ksg2', 'ksg3', 'ksg3x',
+                'rtwmp', 'rtwm1pm_0', 'rtwm1pm_1',
+                'wei13_0', 'wei13_1', 'wei13_2', 'wei13_3',
+                'wei14_0', 'wei14_1', 'wei23', 'wei16',
+                'conn_asym', 'conn78', 'conn80', 'conn82',
+                'conn84', 'conn85')
+    for key in dpt_ship:
+        mem = dptail_member(key)
+        gen = mem['genus']
+        P = dptail_patch(key, {}, 56, 40)
+        wres = max(v for k2, v in P['res'].items() if k2 != 'x3=u')
+        lat = float(np.linalg.norm(np.cross(P['T1'], P['T2'])))
+        chi, loops, nonman, orient, ncomp = dptail_quotient(P)
+        V2, Q2, UV2 = dptail_assemble(P, (2, 2))
+        par2 = list(range(len(V2)))
+
+        def find2(a2):
+            while par2[a2] != a2:
+                par2[a2] = par2[par2[a2]]
+                a2 = par2[a2]
+            return a2
+
+        ec2 = {}
+        for f in Q2:
+            m2 = len(f)
+            for t2 in range(m2):
+                a2, b2 = f[t2], f[(t2 + 1) % m2]
+                e2 = (a2, b2) if a2 < b2 else (b2, a2)
+                ec2[e2] = ec2.get(e2, 0) + 1
+                ra2, rb2 = find2(a2), find2(b2)
+                if ra2 != rb2:
+                    par2[ra2] = rb2
+        ncomp2 = len({find2(i2) for f in Q2 for i2 in f})
+        nonman2 = sum(1 for c in ec2.values() if c > 2)
+        chi_want = 2 - 2 * gen - 4
+        good = (wres < 5e-3 and P['res']['x3=u'] < 1e-9 and lat > 1.0
+                and chi == chi_want and loops == 4 and nonman == 0
+                and orient and ncomp == 1 and ncomp2 == 1
+                and nonman2 == 0 and bool(np.all(np.isfinite(V2)))
+                and bool(np.all(np.isfinite(UV2))))
+        ok &= good
+        print(f"dptail {key:10s} ({mem['style']:5s} genus {gen}): "
+              f"wall_res={wres:.1e} |T1xT2|={lat:.2f} chi={chi} "
+              f"(want {chi_want}) ends={loops} nonman={nonman} "
+              f"orient={orient} 2x2[comp={ncomp2} nonman={nonman2}] "
+              f"{'OK' if good else 'FAIL'}")
+    print("dptail deferred (see BACKLOG.md): ksg1 ksg4 dp_catenoid "
+          "lubeck_batista chm_g3")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in we_builders")
