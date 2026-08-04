@@ -872,12 +872,19 @@ _CHIRAL_SPECS = {
 #   #31 its dual (L-Propello R-Pentagonal Icositetrahedron)
 # Attempts that FAILED: #20 via 'pbD' + canonical init AND a full 24-restart
 # run (~30 min); #27 via 'psC', reflected/matching-chirality propello, and
-# 'psC' with 24 restarts.  Unlike hexpropello T/O/I (which provably do NOT
-# biscribe), these exist -- reaching them needs a better initialization
-# (McCooey's own construction) or an exact/homotopy solver for the large,
-# double-chiral basins.
-# TODO(biscribed-solver): improve solve_chiral_g to reach these 4 (27/31 ->
-# 31/31) -- deferred; see git history for the attempted approaches.
+# 'psC' with 24 restarts -- solve_chiral_g's LM never finds their basin.
+# Also tried an iterative-PROJECTION biscriber (project verts to circumsphere,
+# push face planes to the common insphere radius r = mean(d_f), planarize):
+# it is globally convergent but to a DEGENERATE fixed point -- all faces
+# collapse through the centre (r -> 0), which trivially zeroes the
+# face-distance variance.  solve_chiral_g avoids this via its convexity guard;
+# the plain projection scheme does not.  Unlike hexpropello T/O/I (which
+# provably do NOT biscribe), these four exist.
+# TODO(biscribed-solver): a correct robust solver needs to keep the insphere
+# radius positive / preserve convexity -- e.g. a reciprocal (primal AND dual
+# verts on spheres) projection, which sends the r->0 collapse to poles at
+# infinity, or a homotopy from McCooey's construction.  Deferred; the failed
+# approaches (LM multi-start, plain projection relaxation) are in git history.
 # ---------------------------------------------------------------------------
 
 
