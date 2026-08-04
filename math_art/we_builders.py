@@ -1870,6 +1870,378 @@ def cg_higher_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     return V, quads, uv
 
 
+# ==========================================================================
+# Translation-invariant genus-one helicoid ("helicoid with a handle")
+# ==========================================================================
+# The singly periodic minimal surface asymptotic to a helicoid whose
+# quotient by its vertical translation is a rhombic torus minus two
+# helicoidal ends -- i.e. a helicoid that carries ONE handle per period.
+# It was the key existence step toward the (non-periodic) genus-one
+# helicoid.
+#
+# Weierstrass data on the rhombic torus C/<1, tau>, written with the
+# Jacobi theta function theta_11 (data as in Weber's notebook,
+# harvested in research/msblog_harvest/singly_periodic.json under
+# translation_invariant_helicoid_with_handle):
+#
+#   G(z)  = rho1 e^{i pi (b - 2z + 2 tau + b tau)}
+#           theta(z + (b-2)c) theta(z - (1+b)c)
+#           / ( theta(z + (b-1)c) theta(z - b c) ),      c = (1+tau)/2
+#   dh    = theta(z + (b-2)c) theta(z - b c)
+#           / ( theta(z + (b-1)c) theta(z - (1+b)c) ) dz / dhper
+#
+# Both are elliptic (fully periodic) on the torus; the four theta
+# points on the diagonal are the two helicoidal ends (parameters 1-b
+# and 1+b, where dh has simple poles) and the two points of vertical
+# normal (parameters b and 2-b) that make the handle.  The solved
+# period problem (all constants harvested verbatim, no re-solving
+# here): tau = e^{i alpha0 deg}, plus rho1, b, dhper, and the domain
+# constants r0, a0.  With them the lattice cycle z -> z+1 integrates
+# to the exact vertical translation (0, 0, 2) and the cycle z -> z+tau
+# closes to ~1e-7 (the self-test checks both).
+#
+# The parameter domain is the conformal half-strip R x (0, pi): w maps
+# to the torus by  z = tst(tr(e^w)) (1+tau)/2, where tr is a real
+# Moebius map and tst the Schwarz-Christoffel rectangle map
+# F(arcsin s | 1/r0^2) / (2 K(1/r0^2)) + 1/2, evaluated for complex s
+# via Carlson's R_F.  The strip covers half the torus; the immersed
+# sheet contains the vertical z-axis and horizontal rulings at integer
+# heights, and one fundamental cell is the sheet plus its 180-degree
+# rotation about the z axis, welded along those lines; cells stack by
+# (0, 0, 2).  A stack of S cells has genus exactly S (one handle per
+# period; the self-test verifies chi = 2 - 2S - loops).
+#
+# References:
+#   D. Hoffman, H. Karcher, F. Wei, "Adding handles to the helicoid",
+#     Bull. Amer. Math. Soc. 29 (1993), 77-84.
+#   D. Hoffman, H. Karcher, F. Wei, "The singly periodic genus-one
+#     helicoid", Comment. Math. Helv. 74 (1999), 248-279.
+#   D. Hoffman, M. Weber, M. Wolf, "An embedded genus-one helicoid",
+#     Ann. of Math. 169 (2009), 347-448 (the non-periodic limit).
+#   M. Weber, "The translation invariant helicoid with handle",
+#     https://minimalsurfaces.blog/ (notebook data, 1996).
+#   B. C. Carlson, "Numerical computation of real or complex elliptic
+#     integrals", Numer. Algorithms 10 (1995), 13-98 (R_F).
+
+# harvested constants (verbatim from the notebook; do not re-solve)
+_G1H_ALPHA0 = 70.7083362972048057                 # degrees
+_G1H_TAU = complex(np.exp(1j * np.pi * _G1H_ALPHA0 / 180.0))
+_G1H_B = 0.629065098323904514
+_G1H_RHO1 = 108.369522264594063 - 62.8417365006266681j
+_G1H_DHPER = 0.386191090012370175 - 0.169838749468014027j
+_G1H_R0 = 2.43050611112724901
+_G1H_A0 = -0.409955776251214221
+# x-position of the normal-symmetry point of the strip (the two sums
+# solve tr(e^x) = 1 on y = 0 and tr(e^x) = -r0 on y = pi)
+_G1H_SYM = -0.359811577777830482 - 0.528287934072206422
+# strip x of the four rectangle corners (branch points of the domain
+# map): tr(e^x) = 1, r0 on y = 0 and -1, -r0 on y = pi
+_G1H_XA = -0.3598115777778303
+_G1H_XB = 0.6834249528850583
+_G1H_XC = -1.5715244647350952
+_G1H_XD = -0.5282879340722066
+_G1H_EPS = 1e-7      # inset from the strip boundary: keeps the Carlson
+#                      arguments off their branch cut (negative reals)
+
+
+def genus1helicoid_theta11(z, tau, nterms=30):
+    """Jacobi theta_11 (odd theta), theta_11(z, tau) = 2 sum_{n>=0}
+    (-1)^n q^{(n+1/2)^2} sin((2n+1) pi z), q = e^{i pi tau}.  z is
+    first reduced modulo the lattice <1, tau> and the exact
+    quasi-periodicity factors are applied, so the truncated series
+    converges fast for any argument."""
+    z = np.asarray(z, dtype=complex)
+    m = np.round(z.imag / tau.imag)
+    z1 = z - m * tau
+    n = np.round(z1.real)
+    z2 = z1 - n
+    fac = ((-1.0) ** (m + n)
+           * np.exp(-1j * np.pi * m * m * tau - 2j * np.pi * m * z2))
+    q = np.exp(1j * np.pi * tau)
+    s = np.zeros_like(z2)
+    for k in range(nterms):
+        s = s + ((-1.0) ** k * q ** ((k + 0.5) ** 2)
+                 * np.sin((2 * k + 1) * np.pi * z2))
+    return 2.0 * fac * s
+
+
+def _g1h_rf(x, y, z, iters=26):
+    """Carlson symmetric elliptic integral R_F for complex arguments
+    off the negative real axis (duplication iteration + the standard
+    5th-order tail; Carlson 1995)."""
+    x = np.asarray(x, dtype=complex).copy()
+    y = np.asarray(y, dtype=complex).copy()
+    z = np.asarray(z, dtype=complex).copy()
+    for _ in range(iters):
+        sx, sy, sz = np.sqrt(x), np.sqrt(y), np.sqrt(z)
+        lam = sx * sy + sy * sz + sz * sx
+        x = 0.25 * (x + lam)
+        y = 0.25 * (y + lam)
+        z = 0.25 * (z + lam)
+    A = (x + y + z) / 3.0
+    X = 1.0 - x / A
+    Y = 1.0 - y / A
+    Z = -(X + Y)
+    E2 = X * Y - Z * Z
+    E3 = X * Y * Z
+    return (1.0 - E2 / 10.0 + E3 / 14.0 + E2 * E2 / 24.0
+            - 3.0 * E2 * E3 / 44.0) / np.sqrt(A)
+
+
+def _g1h_ellf(z, msq):
+    """Incomplete elliptic integral F(arcsin z | m), analytically
+    continued to the upper half plane: F = z R_F(1-z^2, 1-m z^2, 1)."""
+    z = np.asarray(z, dtype=complex)
+    return z * _g1h_rf(1.0 - z * z, 1.0 - msq * z * z, np.ones_like(z))
+
+
+_G1H_M = 1.0 / (_G1H_R0 * _G1H_R0)
+_G1H_QUOT = float(2.0 * _g1h_ellf(np.array(1.0 - 1e-15 + 0j),
+                                  _G1H_M).real)          # 2 K(m)
+
+
+def _g1h_tst(s):
+    """Schwarz-Christoffel map: upper half plane -> rectangle
+    [0,1] x [0, h] (the notebook's tst)."""
+    return _g1h_ellf(s, _G1H_M) / _G1H_QUOT + 0.5
+
+
+def _g1h_map(w):
+    """Half-strip coordinate w = x + iy (0 < y < pi) -> torus coord."""
+    ew = np.exp(np.asarray(w, dtype=complex))
+    s = (-_G1H_A0 - _G1H_R0 * ew) / (-1.0 + _G1H_A0 * ew)
+    return _g1h_tst(s) * 0.5 * (1.0 + _G1H_TAU)
+
+
+def _g1h_omega(z):
+    """The three Weierstrass 1-forms (om1, om2, om3) as functions of
+    the torus coordinate (values w.r.t. dz), om3 normalized by the
+    harvested dhper so the z -> z+1 cycle translates by (0, 0, 2)."""
+    c = 0.5 * (1.0 + _G1H_TAU)
+    th = genus1helicoid_theta11
+    t1 = th(z + (_G1H_B - 2.0) * c, _G1H_TAU)
+    t2 = th(z - (1.0 + _G1H_B) * c, _G1H_TAU)
+    t3 = th(z + (_G1H_B - 1.0) * c, _G1H_TAU)
+    t4 = th(z - _G1H_B * c, _G1H_TAU)
+    e = np.exp(1j * np.pi * (_G1H_B - 2.0 * z + 2.0 * _G1H_TAU
+                             + _G1H_B * _G1H_TAU))
+    G = _G1H_RHO1 * e * t1 * t2 / (t3 * t4)
+    o3 = (t1 * t4) / (t3 * t2) / _G1H_DHPER
+    o1 = 0.5 * (1.0 / G - G) * o3
+    o2 = 0.5j * (1.0 / G + G) * o3
+    return o1, o2, o3
+
+
+def _g1h_path_int(za, zb, n=20001):
+    """Integral of (om1, om2, om3) along the straight segment za->zb."""
+    t = np.linspace(0.0, 1.0, n)
+    path = za + (zb - za) * t
+    o1, o2, o3 = _g1h_omega(path)
+    dz = np.diff(path)
+    return np.array([np.sum(0.5 * (o[1:] + o[:-1]) * dz)
+                     for o in (o1, o2, o3)])
+
+
+def _g1h_graded(lo, hi, n, specials, w=0.2):
+    """n samples on [lo, hi] clustered near each special value."""
+    t = np.linspace(0.0, 1.0, n)
+    x = lo + (hi - lo) * t
+    sp = np.asarray(specials)
+    for _ in range(3):
+        d = np.min(np.abs(x[:, None] - sp[None, :]), axis=1)
+        wgt = 1.0 / (w + d)
+        cdf = np.concatenate([[0.0],
+                              np.cumsum(0.5 * (wgt[1:] + wgt[:-1])
+                                        * np.diff(x))])
+        cdf /= cdf[-1]
+        x = np.interp(t, cdf, x)
+    return x
+
+
+_G1H_SHEET_CACHE = {}
+
+
+def genus1helicoid_sheet(r1=-2.5, nu=131, nv=53, K=10):
+    """Immersed fundamental sheet over the half-strip
+    [r1, SYM - r1] x [0, pi]: returns (xs, ys, X) with X (nu', nv, 3)
+    real.  The x-grid is symmetric about SYM/2 and contains the four
+    corner x-values exactly, so the sheet's straight boundary arcs
+    (the z-axis segment and the horizontal rulings) land sample-exact
+    and every weld of the assembly is vertex-to-vertex.  Cumulative
+    trapezoid integration along grid lines with each interval
+    subdivided K times (resolves the sqrt branch corners)."""
+    ck = (round(r1, 6), nu, nv, K)
+    if ck in _G1H_SHEET_CACHE:
+        return _G1H_SHEET_CACHE[ck]
+    x_hi = _G1H_SYM - r1
+    corners = (_G1H_XA, _G1H_XB, _G1H_XC, _G1H_XD)
+    spec = sorted(set(list(corners)
+                      + [_G1H_SYM - c for c in corners]))
+    xs = _g1h_graded(r1, x_hi, nu, spec)
+    xs = np.unique(np.round(np.concatenate(
+        [xs, _G1H_SYM - xs, spec, [_G1H_SYM - s for s in spec]]), 12))
+    t = np.linspace(0.0, 1.0, nv)
+    ys = _G1H_EPS + (np.pi - 2 * _G1H_EPS) * (0.5 - 0.5
+                                              * np.cos(np.pi * t))
+    nu2 = len(xs)
+    j0 = nv // 2
+    i0 = int(np.argmin(np.abs(xs - _G1H_SYM / 2.0)))
+
+    def seg(wa, wb):
+        tt = np.linspace(0.0, 1.0, K + 1)
+        W = wa[:, None] + (wb - wa)[:, None] * tt[None, :]
+        Z = _g1h_map(W)
+        o1, o2, o3 = _g1h_omega(Z)
+        O = np.stack([o1, o2, o3], axis=-1)
+        dZ = np.diff(Z, axis=1)
+        return np.sum(0.5 * (O[:, 1:] + O[:, :-1]) * dZ[..., None],
+                      axis=1)
+
+    F = np.zeros((nu2, nv, 3), complex)
+    row = np.concatenate([np.zeros((1, 3), complex),
+                          np.cumsum(seg(xs[:-1] + 1j * ys[j0],
+                                        xs[1:] + 1j * ys[j0]), axis=0)])
+    F[:, j0] = row - row[i0]
+    for j in range(j0 + 1, nv):
+        F[:, j] = F[:, j - 1] + seg(xs + 1j * ys[j - 1], xs + 1j * ys[j])
+    for j in range(j0 - 1, -1, -1):
+        F[:, j] = F[:, j + 1] - seg(xs + 1j * ys[j], xs + 1j * ys[j + 1])
+    # base point: integrate from the lattice point 1 through tau/2 so
+    # the surface's vertical line is exactly the z axis (the notebook's
+    # w0 offset)
+    C = _g1h_path_int(1.0 + 0.0j, _G1H_TAU / 2.0) \
+        + _g1h_path_int(_G1H_TAU / 2.0,
+                        complex(_g1h_map(xs[i0] + 1j * ys[j0])))
+    out = (xs, ys, np.real(F + C[None, None, :]))
+    _G1H_SHEET_CACHE[ck] = out
+    return out
+
+
+def _g1h_weld_pairs(V, quads, pairs):
+    """Weld the given exact vertex-index pairs (union-find; merged
+    positions averaged).  Returns (V', quads', vertex_map)."""
+    n = len(V)
+    parent = np.arange(n)
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for a, b in pairs:
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[ra] = rb
+    roots = np.array([find(a) for a in range(n)])
+    uniq, first, inv = np.unique(roots, return_index=True,
+                                 return_inverse=True)
+    Vw = np.zeros((len(uniq), 3))
+    cnt = np.zeros(len(uniq))
+    np.add.at(Vw, inv, V)
+    np.add.at(cnt, inv, 1)
+    Vw /= cnt[:, None]
+    qw = []
+    seen = set()
+    for q in quads:
+        f = tuple(int(inv[i]) for i in q)
+        if len(set(f)) >= 3 and frozenset(f) not in seen:
+            seen.add(frozenset(f))
+            qw.append(f)
+    return Vw, qw, first
+
+
+def genus1helicoid_assemble(storeys=1, r1=-2.5, nu=131, nv=53, K=10):
+    """Finished (V, quads, uv): `storeys` translational cells, each the
+    strip sheet plus its 180-degree rotation about the z axis, stacked
+    by (0, 0, 2) and welded along the shared straight arcs (the axis
+    segments and the horizontal rulings).  Genus = storeys.
+
+    Every weld is an exact grid-index correspondence -- the symmetric
+    x-grid makes the partner of sample i the sample nu-1-i (x maps to
+    SYM - x) -- so no positional tolerance is involved and dense grid
+    regions can never over-merge:
+      * axis, y=0 edge  (x in [XA, XB], z in [-2, -1] of the cell):
+        sheet <-> rotated sheet at the SAME i (the axis is pointwise
+        fixed by the 180-degree rotation);
+      * axis, y=pi edge (x in [XC, XD], z in [-1, 0]): likewise;
+      * in-cell ruling z = -1: E0 arc x < XA of one sheet <-> E1 arc
+        x > XD of the other, i <-> nu-1-i;
+      * cell-to-cell rulings: the E1 arc x < XC (z = 0) of cell k
+        <-> the E0 arc x > XB (z = -2) of cell k+1's other sheet."""
+    xs, ys, X = genus1helicoid_sheet(r1, nu, nv, K)
+    nu2, nv2 = X.shape[:2]
+    U, Vv = np.meshgrid((xs - xs[0]) / (xs[-1] - xs[0]), ys / np.pi,
+                        indexing='ij')
+    uv0 = np.stack([U, Vv], axis=-1).reshape(-1, 2)
+    Rz = np.array([-1.0, -1.0, 1.0])
+    zoff = -(storeys - 1)                      # center the stack
+    sheets, flips = [], []
+    for s in range(storeys):
+        off = np.array([0.0, 0.0, 2.0 * s + zoff])
+        sheets.append(X + off)
+        flips.append(False)
+        sheets.append(X * Rz + off)
+        flips.append(True)
+    V = np.concatenate([S.reshape(-1, 3) for S in sheets], axis=0)
+    uv = np.concatenate([uv0] * len(sheets), axis=0)
+    quads = []
+    for k, fl in enumerate(flips):
+        b = k * nu2 * nv2
+        for i in range(nu2 - 1):
+            for j in range(nv2 - 1):
+                a = b + i * nv2 + j
+                c = b + (i + 1) * nv2 + j
+                q = (a, c, c + 1, a + 1)
+                # the rotated sheets get reversed winding so the welded
+                # surface is consistently oriented
+                quads.append(q[::-1] if fl else q)
+
+    iA = int(np.argmin(np.abs(xs - _G1H_XA)))
+    iB = int(np.argmin(np.abs(xs - _G1H_XB)))
+    iC = int(np.argmin(np.abs(xs - _G1H_XC)))
+    iD = int(np.argmin(np.abs(xs - _G1H_XD)))
+
+    def gid(sheet, i, j):
+        return sheet * nu2 * nv2 + i * nv2 + j
+
+    pairs = []
+    for kk in range(storeys):
+        p, r = 2 * kk, 2 * kk + 1
+        for i in range(iA, iB + 1):            # axis segment on E0
+            pairs.append((gid(p, i, 0), gid(r, i, 0)))
+        for i in range(iC, iD + 1):            # axis segment on E1
+            pairs.append((gid(p, i, nv2 - 1), gid(r, i, nv2 - 1)))
+        for i in range(0, iA + 1):             # in-cell ruling z = -1
+            pairs.append((gid(p, i, 0), gid(r, nu2 - 1 - i, nv2 - 1)))
+            pairs.append((gid(r, i, 0), gid(p, nu2 - 1 - i, nv2 - 1)))
+        if kk + 1 < storeys:                   # cell-to-cell rulings
+            p2, r2 = 2 * (kk + 1), 2 * (kk + 1) + 1
+            for i in range(0, iC + 1):
+                pairs.append((gid(p, i, nv2 - 1),
+                              gid(r2, nu2 - 1 - i, 0)))
+                pairs.append((gid(r, i, nv2 - 1),
+                              gid(p2, nu2 - 1 - i, 0)))
+    Vw, qw, first = _g1h_weld_pairs(V, quads, pairs)
+    return Vw, qw, uv[first]
+
+
+def genus1helicoid_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """MESH_PARAM builder: finished (V, quads, uv), fit to the 2 m
+    cube.  order = number of translational periods (= handles);
+    radius sets how far the two helicoidal ends flare (the strip
+    truncation)."""
+    p = spec['p_from'](order, radius)
+    storeys = p['storeys']
+    r1 = -(1.7 + 0.8 * float(np.clip(radius / 1.2, 0.6, 2.0)))
+    pnu = int(np.clip(nu * 1.8, 90, 240))
+    pnv = int(np.clip(nv * 0.85, 36, 96))
+    V, quads, uv = genus1helicoid_assemble(storeys, r1, pnu, pnv)
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, quads, uv
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
@@ -2105,4 +2477,125 @@ if __name__ == "__main__":
         print(f"CG higher genus {gg}: {len(Vg):6d}v {len(Fg):6d}f "
               f"chi={chi} (want {1 - 2 * gg}) nonman={nonman} "
               f"loops={loops} orient={orient} {'OK' if good else 'FAIL'}")
+
+    # ---- genus-one helicoid: theta engine, harvested closure, topology ----
+    # (1) theta_11 identities: odd, quasi-periodic under z+1 and z+tau
+    zt = np.array([0.13 + 0.21j, -0.4 + 0.7j, 0.9 - 0.3j, 2.3 + 1.9j])
+    tt = _G1H_TAU
+    t0 = genus1helicoid_theta11(zt, tt)
+    # relative errors (theta grows like e^{pi Im(z)^2 / Im tau}, so the
+    # identities are compared against the values' own magnitude)
+    e1 = float(np.max(np.abs(genus1helicoid_theta11(zt + 1.0, tt) + t0)
+                      / np.abs(t0)))
+    e2 = float(np.max(np.abs(
+        genus1helicoid_theta11(zt + tt, tt)
+        + np.exp(-1j * np.pi * tt - 2j * np.pi * zt) * t0)
+        / np.abs(genus1helicoid_theta11(zt + tt, tt))))
+    e3 = float(np.max(np.abs(genus1helicoid_theta11(-zt, tt) + t0)
+                      / np.abs(t0)))
+    good = max(e1, e2, e3) < 1e-10
+    ok &= good
+    print(f"g1-helicoid theta11: |z+1|={e1:.2e} |z+tau|={e2:.2e} "
+          f"odd={e3:.2e} {'OK' if good else 'FAIL'}")
+    # (2) the domain map reproduces the notebook's solved constants:
+    # tst(a0) = 1 - b0 and the r0 root residual
+    ra = abs(complex(_g1h_tst(np.array(_G1H_A0 + 0j))) - (1.0 - _G1H_B))
+    v = complex(_g1h_tst(np.array(-_G1H_R0 + 1e-12j)))
+    rb = abs((0.5 * (1.0 + tt) * (1.0 + v) - tt).imag)
+    good = ra < 1e-6 and rb < 1e-6
+    ok &= good
+    print(f"g1-helicoid domain: |tst(a0)-(1-b0)|={ra:.2e} "
+          f"r0-residual={rb:.2e} {'OK' if good else 'FAIL'}")
+    # (3) period closure with the harvested constants: the z -> z+1
+    # cycle is the exact vertical translation (0, 0, 2); z -> z+tau
+    # closes (both to the FindRoot precision of the constants)
+    z0 = 0.311 + 0.077j
+    PA = _g1h_path_int(z0, z0 + 1.0, 8001)
+    PB = _g1h_path_int(z0, z0 + tt, 8001)
+    eh = max(abs(PA[0].real), abs(PA[1].real),
+             abs(PB[0].real), abs(PB[1].real))
+    ev = abs(PA[2].real - 2.0)
+    eb = abs(PB[2].real)
+    good = eh < 1e-6 and ev < 1e-6 and eb < 1e-5
+    ok &= good
+    print(f"g1-helicoid periods: horiz={eh:.2e} |A_v-2|={ev:.2e} "
+          f"B_v={eb:.2e} {'OK' if good else 'FAIL'}")
+    # (4) the sheet contains the z axis and the horizontal rulings
+    xs_t, ys_t, Xs = genus1helicoid_sheet(-2.5, 111, 45)
+    max_ax = (xs_t > _G1H_XA + 1e-6) & (xs_t < _G1H_XB - 1e-6)
+    axdev = float(np.max(np.abs(Xs[max_ax, 0, :2])))
+    rul = Xs[xs_t < _G1H_XA - 1e-6, 0]
+    rdev = max(float(np.max(np.abs(rul[:, 0]))),
+               float(np.max(np.abs(rul[:, 2] + 1.0))))
+    # weld-correspondence residuals (the assembly merges these pairs)
+    Rzv = np.array([-1.0, -1.0, 1.0])
+    ax_r = float(np.max(np.linalg.norm(
+        Xs[max_ax, 0] - Rzv * Xs[max_ax, 0], axis=1)))
+    mA = xs_t <= _G1H_XA + 1e-6
+    rl_r = float(np.max(np.linalg.norm(
+        Xs[mA, 0] - Rzv * Xs[::-1][mA, -1], axis=1)))
+    mC = xs_t <= _G1H_XC + 1e-6
+    cr_r = float(np.max(np.linalg.norm(
+        Xs[mC, -1] - (Rzv * Xs[::-1][mC, 0] + np.array([0, 0, 2.0])),
+        axis=1)))
+    wres = max(ax_r, rl_r, cr_r)
+    good = axdev < 5e-3 and rdev < 5e-3 and wres < 2e-3
+    ok &= good
+    print(f"g1-helicoid lines: axis-dev={axdev:.2e} "
+          f"ruling-dev={rdev:.2e} weld-residual={wres:.2e} "
+          f"{'OK' if good else 'FAIL'}")
+    # (5) topology: a stack of S cells is one connected, manifold,
+    # consistently oriented surface of genus exactly S (one handle per
+    # translational period): chi = 2 - 2S - boundary_loops
+    for S in (1, 2):
+        Vg, Fg, uvg = genus1helicoid_assemble(S, -2.5, 111, 45)
+        ecc, dcc = {}, {}
+        for f in Fg:
+            m = len(f)
+            for kk in range(m):
+                a2, b2 = f[kk], f[(kk + 1) % m]
+                e2k = (a2, b2) if a2 < b2 else (b2, a2)
+                ecc[e2k] = ecc.get(e2k, 0) + 1
+                dcc[(a2, b2)] = dcc.get((a2, b2), 0) + 1
+        chi = len(Vg) - len(ecc) + len(Fg)
+        nonman = sum(1 for c in ecc.values() if c > 2)
+        orient = all(c == 1 for c in dcc.values())
+        bed = [e2k for e2k, c in ecc.items() if c == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a2, b2 in bed:
+            ra2, rb2 = bfind(a2), bfind(b2)
+            if ra2 != rb2:
+                par[ra2] = rb2
+        loops = len({bfind(a2) for a2, b2 in bed})
+        parc = list(range(len(Vg)))
+
+        def cfind(a2):
+            while parc[a2] != a2:
+                parc[a2] = parc[parc[a2]]
+                a2 = parc[a2]
+            return a2
+
+        for f in Fg:
+            for i2 in range(1, len(f)):
+                ra2, rb2 = cfind(f[0]), cfind(f[i2])
+                if ra2 != rb2:
+                    parc[ra2] = rb2
+        ncomp = len({cfind(i2) for f in Fg for i2 in f})
+        genus = (2 - chi - loops) / 2.0
+        uv_ok = bool(np.all(np.isfinite(uvg))) and len(uvg) == len(Vg)
+        good = (genus == S and nonman == 0 and orient and ncomp == 1
+                and uv_ok and bool(np.all(np.isfinite(Vg))))
+        ok &= good
+        print(f"g1-helicoid S={S}: {len(Vg):6d}v {len(Fg):6d}f chi={chi} "
+              f"loops={loops} genus={genus:.0f} (want {S}) "
+              f"nonman={nonman} orient={orient} ncomp={ncomp} "
+              f"{'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in we_builders")
