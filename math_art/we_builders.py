@@ -736,9 +736,14 @@ def we_saddle_tower(spec, nu, nv, order, radius, scale, theta, storeys):
 def make_entry(key, spec):
     """PARAMETRIC/MESH_PARAM builder closure for a WE spec."""
     if spec.get('mesher'):
-        # bespoke finished-mesh builder (higher-genus Chen-Gackstatter):
-        # the spec supplies the whole mesher, the engine only wires it in
+        # bespoke finished-mesh builder (higher-genus Chen-Gackstatter,
+        # periodic Callahan-Hoffman-Meeks): the spec supplies the whole
+        # mesher, the engine only wires it in.  A spec that declares a
+        # storeys_label is periodic -- its mesher takes the storey count.
         def build(nu, nv, order, radius, scale, theta=0.0, storeys=1):
+            if spec.get('storeys_label'):
+                return spec['mesher'](spec, nu, nv, order, radius, scale,
+                                      theta, storeys)
             return spec['mesher'](spec, nu, nv, order, radius, scale, theta)
         build.finished_mesh = True
     elif spec.get('tower'):
@@ -1870,6 +1875,369 @@ def cg_higher_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     return V, quads, uv
 
 
+# ==========================================================================
+# Callahan-Hoffman-Meeks singly periodic surface (k = 1) -- chm_* helpers
+# ==========================================================================
+# The singly periodic analog of the Costa surface: an embedded minimal
+# surface invariant under a vertical translation, with TWO horizontal
+# planar ends per translational period (so infinitely many ends in all).
+# The quotient by the translation has genus 2k + 1 = 3 (the CHM theorem;
+# this is the k = 1 member, Weber's CHM-(1,1) notebook), so one period
+# meshes at exactly chi = -6 with the two end punctures -- the mesh gate
+# below MEASURES that.  (The harvest metadata's "genus 2 / chi = -4"
+# annotation is off by one handle; the built surface, the notebook and
+# the theorem all agree on genus 3.)  The surface is also invariant
+# under the half-period screw T_{2d} rot90 and the vertical glide
+# T_{2d} swap(x, y); neither is a pure translation, so the primitive
+# translation is the full 4d (verified numerically: swap(x, y) alone is
+# NOT a symmetry -- probe points map ~0.1 off the surface).
+#
+# Weierstrass data (M. Weber's CHM-(1,1) notebook; branch values on the
+# real axis at 0, +-1, +-a):
+#     G    = sqrt(x) (x^2-a^2)^{3/4} / (rho (x^2-1)^{1/4})
+#     phi1 = 1 / (sqrt(x) (x^2-1)^{1/4} (x^2-a^2)^{5/4})
+#     phi2 = sqrt(x) (x^2-a^2)^{1/4} / (x^2-1)^{3/4}
+#     om1  = (rho phi1 - phi2/rho) / 2,   om2 = i (rho phi1 + phi2/rho) / 2
+#     om3  = 1 / (sqrt(x^2-1) sqrt(x^2-a^2))
+# with the two solved period constants (harvested verbatim from the
+# notebook's FindRoot; rho independently re-verified here to 1e-12 from
+# its closure condition rho^2 = int_0^1|phi2| / int_0^1|phi1|):
+#     a   = 1.31922381870184635
+#     rho = 1.22370848596689185
+# om1^2 + om2^2 + om3^2 = 0 holds exactly (checked in the self-test).
+#
+# Fundamental patch.  Following the notebook's substitution, the patch is
+# integrated on the strip chart  w = u + i t,  z(w) = sqrt(a^2 + e^w)
+# (so z^2 - a^2 = e^w exactly), u in [umin, umax], t in [0, pi], with
+# umax = log(a sqrt(a^2-1)).  On it every principal fractional power is
+# single-valued (z stays in the first quadrant, z^2-1 and z^2-a^2 in the
+# closed upper half plane), so no branch cuts are crossed.  The patch
+# boundary consists of symmetry curves only:
+#   t = 0            planar geodesic in the vertical mirror plane y = 0
+#   t = pi, u > xa   planar geodesic in the vertical mirror plane x = 0
+#   t = pi, u < xa   STRAIGHT line, direction (1,1,0), at height -d
+#                    (xa = log(a^2-1); z=1 maps to the axis point (0,0,-d))
+#   u = umax         planar geodesic in the horizontal mirror plane z = 0
+#   u = umin         the end trim: u -> -inf is the planar end at z = a
+#                    (asymptotic height exactly -d; the flare radius grows
+#                    as ~0.87 e^{-u/4}, so umin sizes the trimmed end disk)
+# with d = 0.7288482 (the measured half-spacing; the real-axis elliptic
+# integral int_0^1 dx/sqrt((1-x^2)(a^2-x^2)) equals 2d to 7 digits).
+#
+# Assembly.  16 isometries tile ONE translational period from the patch:
+#     {E, sigma_h} x {E, Mx} x {E, My} x {E, R11}
+# where sigma_h reflects across the horizontal plane z = 0, Mx / My across
+# the vertical planes x = 0 / y = 0, and R11 is the 180-degree rotation
+# about the straight line {x = y, z = -d}.  The period translation is
+# (0, 0, 4d); `storeys` stacked periods weld vertex-exactly because the
+# chunk's top boundary sigma_h Mx^b My^c R11 (arc) and the next chunk's
+# bottom boundary T_{4d} Mx^b My^c R11 (arc) evaluate to bitwise-identical
+# coordinates.  Boundary rows are snapped exactly onto their symmetry
+# elements before tiling, so every seam welds by float equality.  (The
+# harvested constants close the period problem to ~1.2e-4 absolute -- the
+# residual of the notebook's FindRoot tolerance; the snap absorbs it.)
+#
+# References:
+#   M. J. Callahan, D. Hoffman, W. H. Meeks III, "Embedded minimal
+#     surfaces with an infinite number of ends", Invent. Math. 96 (1989)
+#     459-505 -- the CHM_k family (this is k = 2);
+#   D. Hoffman, W. H. Meeks III, "Minimal surfaces based on the catenoid",
+#     Amer. Math. Monthly 97 (1990) -- exposition;
+#   M. Weber, https://minimalsurfaces.blog/ (Callahan-Hoffman-Meeks
+#     surfaces) and the CHM-(1,1) notebook -- the g / dh data, the strip
+#     substitution and the solved constants
+#     (research/msblog_harvest/singly_periodic.json).
+# --------------------------------------------------------------------------
+
+_CHMP_A = 1.31922381870184635        # branch point a (harvested)
+_CHMP_RHO = 1.22370848596689185      # balance constant rho (harvested)
+_CHMP_XA = math.log(_CHMP_A * _CHMP_A - 1.0)     # z = 1 at (xa, pi)
+_CHMP_X0 = math.log(_CHMP_A * _CHMP_A)           # z = 0 at (x0, pi)
+_CHMP_UMAX = 0.5 * (_CHMP_XA + _CHMP_X0)         # the arc edge
+
+
+def chm_periodic_forms(w):
+    """(om1, om2, om3) pulled back to the strip chart (times dz/dw =
+    e^w / 2z).  With z^2 - a^2 = e^w the fractional powers of z^2 - a^2
+    become exact exponentials, so the planar end u -> -inf is free of
+    branch issues; the only strip singularity is the integrable
+    (z^2-1)^{-3/4} corner at (xa, pi), the branch point z = 1."""
+    a, rho = _CHMP_A, _CHMP_RHO
+    ew = np.exp(w)
+    z = np.sqrt(a * a + ew)                    # first quadrant (principal)
+    zm1 = a * a - 1.0 + ew                     # z^2 - 1, closed UHP
+    q1 = np.exp(-0.25 * w) / (2.0 * z ** 1.5 * zm1 ** 0.25)
+    q2 = np.exp(1.25 * w) / (2.0 * np.sqrt(z) * zm1 ** 0.75)
+    om3 = np.exp(0.5 * w) / (2.0 * z * np.sqrt(zm1))
+    om1 = 0.5 * (rho * q1 - q2 / rho)
+    om2 = 0.5j * (rho * q1 + q2 / rho)
+    return om1, om2, om3
+
+
+def _chmp_cluster(x0, h0, hmin=1e-10, ratio=0.2):
+    """Geometric offsets h0*ratio^k down to hmin (largest first)."""
+    offs = []
+    h = h0
+    while h > hmin:
+        offs.append(h)
+        h *= ratio
+    return np.array(offs)
+
+
+def _chmp_ugrid(nu, umin):
+    """Ascending u grid: flare-uniform toward the end (uniform in the
+    end's conformal radius e^{-u/4}), a uniform mid band, geometric
+    clusters into the singular corner u = xa from BOTH sides (the
+    (z^2-1)^{-3/4} branch point demands geometrically graded cells for
+    the compound Gauss-Legendre row integrals to converge), and a
+    uniform tail to the arc at umax.  xa is an exact grid node."""
+    xa, umax = _CHMP_XA, _CHMP_UMAX
+    nE = max(14, int(0.40 * nu))
+    nM = max(6, int(0.16 * nu))
+    nR = max(6, int(0.18 * nu))
+    uf = -4.0 * np.log(np.linspace(math.exp(-0.25 * umin),
+                                   math.exp(-0.25 * (xa - 0.8)), nE))
+    um = np.linspace(xa - 0.8, xa - 0.16, nM + 1)[1:]
+    cl = _chmp_cluster(xa, 0.16 * 0.2)
+    left = xa - cl                              # ascending toward xa
+    right = xa + cl[::-1]                       # ascending away from xa
+    h0r = min(0.16, 0.45 * (umax - xa))
+    ur = np.linspace(xa + h0r, umax, nR)
+    u = np.concatenate([uf, um, left, [xa], right,
+                        np.array([xa + h0r * 0.5]), ur])
+    u = np.unique(u)
+    return u[np.concatenate([[True], np.diff(u) > 1e-13])]
+
+
+def _chmp_tgrid(nt):
+    """t grid on [0, pi]: Chebyshev-clustered at both edges plus a
+    geometric cluster into t = pi (the corner rows)."""
+    base = 0.5 * math.pi * (1.0 - np.cos(np.pi * np.linspace(
+        0.0, 1.0, max(24, nt))))
+    extra = math.pi - _chmp_cluster(0.0, 0.08, ratio=0.25)
+    t = np.unique(np.concatenate([base, extra]))
+    return t[np.concatenate([[True], np.diff(t) > 1e-13])]
+
+
+_CHMP_GL = np.polynomial.legendre.leggauss(8)
+
+
+def chm_periodic_patch(u, t):
+    """Integrate the immersion over the strip grid.  Compound 8-point
+    Gauss-Legendre per grid cell (nodes are strictly interior, so the
+    singular corner node (xa, pi) is never evaluated): down/up the arc
+    column u = umax from the base (umax, ~pi/2), then leftward along
+    every row.  Returns X real (nu, nt, 3)."""
+    xg, wg = _CHMP_GL
+    nu, nt = len(u), len(t)
+    du = np.diff(u)
+    umid = 0.5 * (u[1:] + u[:-1])
+    W = (umid[:, None, None] + 0.5 * du[:, None, None] * xg[None, None, :]
+         + 1j * t[None, :, None])
+    o1, o2, o3 = chm_periodic_forms(W)
+    incU = np.stack(
+        [np.sum(o1 * wg, axis=-1), np.sum(o2 * wg, axis=-1),
+         np.sum(o3 * wg, axis=-1)], axis=-1) * (0.5 * du)[:, None, None]
+    dt = np.diff(t)
+    tmid = 0.5 * (t[1:] + t[:-1])
+    Wc = u[-1] + 1j * (tmid[:, None] + 0.5 * dt[:, None] * xg[None, :])
+    c1, c2, c3 = chm_periodic_forms(Wc)
+    incC = np.stack(
+        [np.sum(c1 * wg, axis=-1), np.sum(c2 * wg, axis=-1),
+         np.sum(c3 * wg, axis=-1)], axis=-1) * (0.5j * dt)[:, None]
+    Fc = np.zeros((nt, 3), complex)
+    Fc[1:] = np.cumsum(incC, axis=0)
+    Fc -= Fc[int(np.argmin(np.abs(t - 0.5 * math.pi)))]
+    # F(i, j) = Fc(j) - sum_{cells k >= i} incU(k, j)
+    S = np.zeros((nu, nt, 3), complex)
+    S[:-1] = np.cumsum(incU[::-1], axis=0)[::-1]
+    return np.real(Fc[None, :, :] - S)
+
+
+def chm_periodic_snap(X, u):
+    """Normalize and snap the patch boundary exactly onto its symmetry
+    elements: y = 0 mirror (t = 0 row), x = 0 mirror (t = pi row past
+    xa), z = 0 horizontal mirror (arc column), the straight line
+    {x = y, z = -d} (t = pi row before xa) and the axis point (0,0,-d)
+    at the z = 1 corner.  Returns (X, iL, d)."""
+    iL = int(np.searchsorted(u, _CHMP_XA))
+    X = X.copy()
+    X[..., 1] -= np.median(X[:, 0, 1])            # y = 0 mirror
+    X[..., 0] -= np.median(X[iL:, -1, 0])         # x = 0 mirror
+    X[..., 2] -= np.median(X[-1, :, 2])           # z = 0 mirror (arc)
+    X[:, 0, 1] = 0.0
+    X[iL:, -1, 0] = 0.0
+    X[-1, :, 2] = 0.0
+    zL = float(np.median(X[:iL + 1, -1, 2]))
+    d = -zL
+    X[:iL + 1, -1, 2] = zL                        # the straight line...
+    m = 0.5 * (X[:iL + 1, -1, 0] + X[:iL + 1, -1, 1])
+    X[:iL + 1, -1, 0] = m                         # ...x = y exactly
+    X[:iL + 1, -1, 1] = m
+    X[iL, -1, :] = (0.0, 0.0, zL)                 # z = 1 -> axis point
+    return X, iL, d
+
+
+def _chmp_frames(d, periods):
+    """The 16 * periods assembly isometries (M, tvec, parity), indexed
+    (((sh*2 + bx)*2 + cy)*2 + e)*periods + k:  v -> sigma_h^sh Mx^bx
+    My^cy R11^e v + (0, 0, 4dk).  parity drives face winding."""
+    R11 = (np.array([[0.0, 1.0, 0.0], [1.0, 0.0, 0.0],
+                     [0.0, 0.0, -1.0]]), np.array([0.0, 0.0, -2.0 * d]))
+    out = []
+    for sh in (0, 1):
+        for bx in (0, 1):
+            for cy in (0, 1):
+                D = np.diag([-1.0 if bx else 1.0, -1.0 if cy else 1.0,
+                             -1.0 if sh else 1.0])
+                for e in (0, 1):
+                    if e:
+                        M = D @ R11[0]
+                        tv = D @ R11[1]
+                    else:
+                        M = D.copy()
+                        tv = np.zeros(3)
+                    # every generator is a Schwarz continuation (z -> zbar
+                    # on the parameter domain, anti-conformal), so each --
+                    # including the PROPER rotation R11 -- reverses the
+                    # surface orientation: winding flips with the total
+                    # generator count, not with det M.
+                    par = (-1.0) ** (sh + bx + cy + e)
+                    for k in range(periods):
+                        out.append((M, tv + np.array(
+                            [0.0, 0.0, 4.0 * d * k]), par))
+    return out
+
+
+def chm_periodic_seams(iL, nu, nt, periods):
+    """The COMBINATORIAL weld: every seam pairs frame (sh, bx, cy, e, k)
+    with one partner frame along one boundary index set, with identical
+    within-patch indices (the gluing isometry fixes the seam pointwise).
+    Derived from the generator algebra (R11 My = Mx R11, R11 Mx = My R11,
+    R11 sigma_h = T_{-4d} sigma_h R11):
+      t = 0 row   (y = 0 mirror):   toggle cy if e = 0 else bx
+      x row       (x = 0 mirror):   toggle bx if e = 0 else cy
+      L1 row      (2-fold line):    toggle e
+      arc column  (z = 0 mirror):   toggle sh; same k if e = 0, else the
+                  NEIGHBOR chunk k-1 (sh = 0) / k+1 (sh = 1) -- the
+                  period interface (open at the stack's outer cuts).
+    Returns [(patch-index array, frame A, frame B), ...]."""
+    S = periods
+
+    def fidx(sh, bx, cy, e, k):
+        return (((sh * 2 + bx) * 2 + cy) * 2 + e) * S + k
+
+    t0 = np.arange(nu) * nt
+    xr = np.arange(iL, nu) * nt + (nt - 1)
+    l1 = np.arange(0, iL + 1) * nt + (nt - 1)
+    ac = (nu - 1) * nt + np.arange(nt)
+    out = []
+    for sh in (0, 1):
+        for bx in (0, 1):
+            for cy in (0, 1):
+                for e in (0, 1):
+                    for k in range(S):
+                        me = fidx(sh, bx, cy, e, k)
+                        out.append((t0, me, fidx(sh, bx, 1 - cy, e, k)
+                                    if e == 0 else
+                                    fidx(sh, 1 - bx, cy, e, k)))
+                        out.append((xr, me, fidx(sh, 1 - bx, cy, e, k)
+                                    if e == 0 else
+                                    fidx(sh, bx, 1 - cy, e, k)))
+                        out.append((l1, me, fidx(sh, bx, cy, 1 - e, k)))
+                        k2 = k if e == 0 else (k - 1 if sh == 0 else k + 1)
+                        if 0 <= k2 < S:
+                            out.append((ac, me,
+                                        fidx(1 - sh, bx, cy, e, k2)))
+    return out
+
+
+def chm_periodic_assemble(u, t, X, iL, d, periods):
+    """Tile the snapped patch under the 16 * periods isometries and weld
+    every seam COMBINATORIALLY (chm_periodic_seams knows each edge's
+    partner frame exactly, so no floating-point coincidence matching is
+    involved).  Returns (V, faces, uv) of the largest component -- one
+    translational period per storey, the 2*periods planar-end rims and
+    the 2 outer horizontal cuts left as clean open boundaries."""
+    nu, nt = len(u), len(t)
+    V0 = X.reshape(-1, 3)
+    UV0 = np.stack(np.meshgrid(
+        (u - u[0]) / (u[-1] - u[0]), t / math.pi, indexing='ij'),
+        axis=-1).reshape(-1, 2)
+    q0 = []
+    for i in range(nu - 1):
+        for j in range(nt - 1):
+            q0.append((i * nt + j, i * nt + j + 1,
+                       (i + 1) * nt + j + 1, (i + 1) * nt + j))
+    frames = _chmp_frames(d, periods)
+    nV = len(V0)
+    Vp, Fp = [], []
+    for fr, (M, tv, par) in enumerate(frames):
+        Vp.append(V0 @ M.T + tv)
+        off = fr * nV
+        if par < 0:
+            Fp.extend(tuple(off + i for i in f[::-1]) for f in q0)
+        else:
+            Fp.extend(tuple(off + i for i in f) for f in q0)
+    V = np.concatenate(Vp, axis=0)
+    UVall = np.tile(UV0, (len(frames), 1))
+    parent = np.arange(len(V))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for idx, fA, fB in chm_periodic_seams(iL, nu, nt, periods):
+        if fA >= fB:                   # each seam appears from both sides
+            continue
+        for i in idx:
+            ra, rb = find(fA * nV + int(i)), find(fB * nV + int(i))
+            if ra != rb:
+                parent[ra] = rb
+    roots = np.array([find(a) for a in range(len(V))])
+    uniq, inv = np.unique(roots, return_inverse=True)
+    Vw = np.zeros((len(uniq), 3))
+    UVw = np.zeros((len(uniq), 2))
+    cnt = np.zeros(len(uniq))
+    np.add.at(Vw, inv, V)
+    np.add.at(UVw, inv, UVall)
+    np.add.at(cnt, inv, 1)
+    Vw /= cnt[:, None]
+    UVw /= cnt[:, None]
+    F = []
+    for f in Fp:
+        g = [int(inv[i]) for i in f]
+        h = [g[0]]
+        for s in range(1, len(g)):
+            if g[s] != h[-1]:
+                h.append(g[s])
+        if len(h) >= 3 and h[0] != h[-1] and len(set(h)) == len(h):
+            F.append(tuple(h))
+    tk = _toolkit()
+    Vu, F = tk._largest_component(np.hstack([Vw, UVw]), F)
+    return Vu[:, :3], F, Vu[:, 3:]
+
+
+def chm_periodic_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                      storeys=1):
+    """MESH_PARAM builder: finished (V, faces, uv) of `storeys` stacked
+    translational periods, fit to the 2 m cube.  radius (via p_from's
+    umin) sizes the trimmed planar-end disks; order and theta unused."""
+    p = spec['p_from'](order, radius) if 'p_from' in spec else {}
+    umin = float(p.get('umin', -5.0))
+    S = int(np.clip(storeys, 1, 6))
+    ug = _chmp_ugrid(int(np.clip(nu, 24, 220)), umin)
+    tg = _chmp_tgrid(int(np.clip(int(0.85 * nv), 20, 170)))
+    X = chm_periodic_patch(ug, tg)
+    X, iL, d = chm_periodic_snap(X, ug)
+    V, F, uv = chm_periodic_assemble(ug, tg, X, iL, d, S)
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
@@ -2105,4 +2473,80 @@ if __name__ == "__main__":
         print(f"CG higher genus {gg}: {len(Vg):6d}v {len(Fg):6d}f "
               f"chi={chi} (want {1 - 2 * gg}) nonman={nonman} "
               f"loops={loops} orient={orient} {'OK' if good else 'FAIL'}")
+    # ---- singly periodic Callahan-Hoffman-Meeks (k = 2) --------------------
+    # (1) the pulled-back 1-forms are a null triple (exact minimality)
+    rng = np.random.default_rng(7)
+    wt = (rng.uniform(-6.0, _CHMP_UMAX, 300)
+          + 1j * rng.uniform(1e-3, math.pi - 1e-3, 300))
+    o1, o2, o3 = chm_periodic_forms(wt)
+    nullerr = float(np.max(np.abs(o1 ** 2 + o2 ** 2 + o3 ** 2)))
+    print(f"CHM periodic null |sum om^2|={nullerr:.2e} "
+          f"{'OK' if nullerr < 1e-12 else 'FAIL'}")
+    ok &= nullerr < 1e-12
+    # (2) patch boundary structure BEFORE snapping: the t = 0 / t = pi
+    # rows are planar geodesics (constant y / x), the arc column is a
+    # horizontal planar geodesic, the pre-xa t = pi row is a straight
+    # (1,1,0) line at constant height, and the half-spacing d matches
+    # the real-axis elliptic integral (= 2d).  Residual tolerances sit
+    # at the harvested constants' own closure precision (~1e-3).
+    ug = _chmp_ugrid(90, -5.0)
+    tg = _chmp_tgrid(64)
+    Xp = chm_periodic_patch(ug, tg)
+    iLt = int(np.searchsorted(ug, _CHMP_XA))
+    ry = float(np.ptp(Xp[:, 0, 1]))
+    rx = float(np.ptp(Xp[iLt:, -1, 0]))
+    rz = float(np.ptp(Xp[-1, :, 2]))
+    rl = float(np.ptp(Xp[:iLt + 1, -1, 0] - Xp[:iLt + 1, -1, 1]))
+    rlz = float(np.ptp(Xp[:iLt + 1, -1, 2]))
+    dmeas = float(np.median(Xp[-1, :, 2]) - np.median(Xp[:iLt + 1, -1, 2]))
+    th_e = np.linspace(0.0, 0.5 * math.pi, 4001)
+    _trapz = getattr(np, 'trapezoid', None) or np.trapz
+    ell = _trapz(1.0 / np.sqrt(_CHMP_A ** 2 - np.sin(th_e) ** 2), th_e)
+    good = (ry < 1e-3 and rx < 1e-3 and rz < 1e-6 and rl < 1e-3
+            and rlz < 1e-3 and abs(2.0 * dmeas - ell) < 1e-3)
+    ok &= good
+    print(f"CHM periodic patch: dy={ry:.1e} dx={rx:.1e} dz_arc={rz:.1e} "
+          f"line[d(x-y)={rl:.1e} dz={rlz:.1e}] d={dmeas:.6f} "
+          f"(elliptic/2={0.5 * ell:.6f}) {'OK' if good else 'FAIL'}")
+    # (3) assembled periods: edge-manifold, oriented, one component,
+    # chi = -6 S (the quotient by the 4d translation is genus 3 = 2k+1
+    # with two planar ends -- measured here, and matching the CHM theorem
+    # for k = 1), 2 S end rims + 2 outer horizontal cut loops
+    for S in (1, 2):
+        Xs, iLs, dS = chm_periodic_snap(Xp, ug)
+        Vg, Fg, uvg = chm_periodic_assemble(ug, tg, Xs, iLs, dS, S)
+        ecc, dcc = {}, {}
+        for f in Fg:
+            m = len(f)
+            for kk in range(m):
+                a2, b2 = f[kk], f[(kk + 1) % m]
+                e2 = (a2, b2) if a2 < b2 else (b2, a2)
+                ecc[e2] = ecc.get(e2, 0) + 1
+                dcc[(a2, b2)] = dcc.get((a2, b2), 0) + 1
+        chi = len(Vg) - len(ecc) + len(Fg)
+        nonman = sum(1 for c in ecc.values() if c > 2)
+        bed = [e2 for e2, c in ecc.items() if c == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a2, b2 in bed:
+            ra, rb = bfind(a2), bfind(b2)
+            if ra != rb:
+                par[ra] = rb
+        loops = len({bfind(a2) for a2, b2 in bed})
+        orient = all(c == 1 for c in dcc.values())
+        good = (chi == -6 * S and nonman == 0 and loops == 2 * S + 2
+                and orient and bool(np.all(np.isfinite(Vg)))
+                and bool(np.all(np.isfinite(uvg))))
+        ok &= good
+        print(f"CHM periodic S={S}: {len(Vg):6d}v {len(Fg):6d}f "
+              f"chi={chi} (want {-6 * S}) nonman={nonman} "
+              f"loops={loops} (want {2 * S + 2}) orient={orient} "
+              f"{'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in we_builders")

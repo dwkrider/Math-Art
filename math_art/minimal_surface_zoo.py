@@ -1221,7 +1221,9 @@ BJORLING = {
 #     fundamental domain (cut by two horizontal planes), a separate
 #     reparametrization.  The symmetric alpha = 0 tower already stacks via
 #     SCHERK_TOWER.
-#   * genus-1 helicoid, Callahan-Hoffman-Meeks, KMR (Tier 3+)
+#   * genus-1 helicoid, KMR (Tier 3+); the singly periodic
+#     Callahan-Hoffman-Meeks is now shipped as CHM_PERIODIC (appended
+#     catalog block at the end of this file)
 #   * Bonnet angle on Henneberg (non-orientable -> the associate family is
 #     not globally single-valued) and Bour (fractional-power double cover);
 #     both stay as the toolkit's fixed closed forms.  Catalan's associate is
@@ -1296,6 +1298,46 @@ WE_SURFACES['CG_HIGHER'] = {
     'test_order': 2,
 }
 SURFACE_FAMILY['CG_HIGHER'] = 'HIGHER'
+
+
+# ==========================================================================
+# Callahan-Hoffman-Meeks singly periodic surface (appended catalog block)
+# ==========================================================================
+# The singly periodic analog of the Costa surface (k = 1 member): an
+# embedded minimal surface invariant under a vertical translation, two
+# horizontal planar ends per translational period (infinitely many ends
+# in all), quotient genus 2k + 1 = 3 (one period meshes at chi = -6 with
+# the two end punctures -- gated below and in we_builders).  Weierstrass
+# data and the two solved period constants (a, rho) are harvested from
+# M. Weber's CHM-(1,1) notebook (research/msblog_harvest/
+# singly_periodic.json); the engine, verified branch/strip chart and the
+# 16-isometry period assembly live in we_builders.chm_periodic_mesh and
+# the chm_* block above it.  The "Periods" count stacks whole
+# translational periods, welded seam-exactly; the radius slider sizes
+# the trimmed planar-end disks (how far each flat layer reaches).
+#
+# References:
+#   M. J. Callahan, D. Hoffman, W. H. Meeks III, "Embedded minimal
+#     surfaces with an infinite number of ends", Invent. Math. 96 (1989)
+#     459-505;
+#   M. Weber, https://minimalsurfaces.blog/ (Callahan-Hoffman-Meeks
+#     surfaces; the CHM-(1,1) notebook).
+
+WE_SURFACES['CHM_PERIODIC'] = {
+    'label': "Callahan-Hoffman-Meeks (singly periodic)",
+    'family': 'SINGLY',
+    'mesher': we.chm_periodic_mesh,
+    # umin is the conformal end-trim: the planar end lives at the strip
+    # end u -> -inf and its flare radius grows like ~0.87 e^{-u/4}, so
+    # the radius slider slides the cut (bigger radius = wider flat
+    # layers relative to the core).
+    'p_from': lambda order, radius: {
+        'umin': float(np.clip(-5.0 - 2.5 * math.log(
+            max(radius, 0.2) / 1.2), -7.5, -3.0))},
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['CHM_PERIODIC'] = 'SINGLY'
 
 
 if __name__ == "__main__":
@@ -1521,4 +1563,61 @@ if __name__ == "__main__":
               f"(want {1 - 2 * gg}) nonman={nonman} loops={nloops} "
               f"ncomp={ncomp} fit[|c|={cen:.1e} ext={ext:.4f}] "
               f"uv={uv_ok} {'OK' if good else 'FAIL'}")
+    # Singly periodic Callahan-Hoffman-Meeks: full pipeline gate per
+    # stacked period count S.  The quotient by one translation is genus
+    # 2k + 1 = 3 with two planar ends, so S welded periods mesh at
+    # exactly chi = -6 S with 2 S end rims + 2 outer horizontal cuts,
+    # edge-manifold, one component, 2 m fit.
+    for S in (1, 2):
+        Vp, Qp = tk.build_parametric('CHM_PERIODIC', 60, 60, 1, 1.2, 1.0,
+                                     cells=(S, 1))
+        ecp = {}
+        for f in Qp:
+            m = len(f)
+            for tq in range(m):
+                a, b = f[tq], f[(tq + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecp[e] = ecp.get(e, 0) + 1
+        chi = len(Vp) - len(ecp) + len(Qp)
+        nonman = sum(1 for c in ecp.values() if c > 2)
+        bed = [e for e, c in ecp.items() if c == 1]
+        parb = {}
+
+        def pfind(x):
+            parb.setdefault(x, x)
+            while parb[x] != x:
+                parb[x] = parb[parb[x]]
+                x = parb[x]
+            return x
+
+        for a, b in bed:
+            ra, rb = pfind(a), pfind(b)
+            if ra != rb:
+                parb[ra] = rb
+        nloops = len({pfind(a) for a, b in bed})
+        parc = list(range(len(Vp)))
+
+        def cfind2(a):
+            while parc[a] != a:
+                parc[a] = parc[parc[a]]
+                a = parc[a]
+            return a
+
+        for f in Qp:
+            for i in range(1, len(f)):
+                ra, rb = cfind2(f[0]), cfind2(f[i])
+                if ra != rb:
+                    parc[ra] = rb
+        ncomp = len({cfind2(f[0]) for f in Qp})
+        lo, hi = Vp.min(0), Vp.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        good = (chi == -6 * S and nonman == 0 and nloops == 2 * S + 2
+                and ncomp == 1 and cen < 1e-6 and abs(ext - 2.0) < 1e-6
+                and bool(np.all(np.isfinite(Vp))))
+        ok &= good
+        print(f"CHM periodic S={S}: {len(Vp):6d}v {len(Qp):6d}f chi={chi} "
+              f"(want {-6 * S}) nonman={nonman} loops={nloops} "
+              f"(want {2 * S + 2}) ncomp={ncomp} fit[|c|={cen:.1e} "
+              f"ext={ext:.4f}] {'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")
