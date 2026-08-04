@@ -496,6 +496,24 @@ KINDS = {
     'REP5B': dict(                            # Mekhontsev (5,2)
         build=lambda it, h=0: _base_reptile(1 + 2j, [0, 1, 2, 3, 4], it,
                                             holes=h), n=5),
+    # Fathauer polyomino reptiles (Bridges 2025): the radix DIGIT SET is
+    # the polyomino's own cell positions (a complete residue system mod
+    # the base b, |b|^2 = n); the resulting self-affine tile is the
+    # filled reptile.  (Domino = TWINDRAGON, X-pentomino = REP5, bar-
+    # pentomino = REP5_THIN/REP5B already appear above.)
+    'Z_PENTOMINO': dict(                      # Z pentomino, rep-5
+        build=lambda it, h=0: _base_reptile(
+            -2 - 1j, [0, 1, 1 + 1j, 1 + 2j, 2 + 2j], it, holes=h), n=5),
+    'Y_PENTOMINO': dict(                      # Y pentomino, rep-5
+        build=lambda it, h=0: _base_reptile(
+            -2 + 1j, [0, 1j, 2j, 3j, 1 + 1j], it, holes=h), n=5),
+    'P_PENTOMINO': dict(                      # P pentomino, rep-5
+        build=lambda it, h=0: _base_reptile(
+            -2 + 1j, [0, 1, 1j, 1 + 1j, 2j], it, holes=h), n=5),
+    'Z_OCTOMINO': dict(                       # Z octomino, rep-8
+        build=lambda it, h=0: _base_reptile(
+            -2 - 2j, [0, 1, 2, 3, 1 + 1j, 2 + 1j, 3 + 1j, 4 + 1j], it,
+            holes=h), n=8),
     # Eisenstein radix-system kind (hexagon cells)
     'FLOWSNAKE': dict(                        # Vince Fig 4/7
         build=lambda it, h=0: _base_reptile(_FLOW_BASE, _FLOW_DIGITS,
@@ -530,45 +548,64 @@ def fractal_patch(kind, iterations, holes=0):
 # Blender operator
 # --------------------------------------------------------------------
 
+# Grouped by polyform family.  The polyomino reptiles are Fathauer's
+# radix construction (Bridges 2025): the digit set is the polyomino's
+# cell positions, giving a solid rep-n self-affine tile.
 KIND_ITEMS = [
-    ('RIGHT_TRIANGLE', "Right Triangle (f-tiling)",
-     "Isosceles right-triangle f-tiling: square seed, a 1/sqrt2 child "
-     "glued to every exposed leg; tiles shrink to a fractal boundary"),
-    ('PENTABOLO', "Pentabolo (rep-5 gasket)",
-     "Fathauer 5-isometry inflation of a half-square triangle: 5^k "
-     "unit triangles, sqrt5 inflation per level, coloured by "
-     "first-level copy"),
-    ('TWINDRAGON', "Twindragon (rep-2, base -1+i)",
-     "Gaussian base -1+i, digits {0,1}: the Gilbert/Knuth twindragon "
+    # --- Polyomino reptiles (square cells) ---
+    ('TWINDRAGON', "Polyomino: Domino (twindragon, rep-2)",
+     "Domino, base -1+i, digits {0,1}: the Gilbert/Knuth twindragon "
      "(Vince Fig 3), aspect ratio 1/phi"),
-    ('REP4', "Rep-4 Reptile (base 2)",
+    ('REP4', "Polyomino: Square tetromino (rep-4)",
      "Base 2, digits {0,1,i,-1-i}: rep-4 Sierpinski-relative reptile "
      "(Vince Fig 6)"),
-    ('REP5', "Rep-5 Dragon (round, base -2+i)",
-     "Base -2+i, symmetric digits {0,1,-1,i,-i}: the round rep-5 "
+    ('REP5', "Polyomino: X-pentomino (round rep-5)",
+     "X-pentomino, base -2+i, digits {0,1,-1,i,-i}: the round rep-5 "
      "dragon (Vince Fig 5), aspect ratio 1/phi"),
-    ('REP5_THIN', "Rep-5 Dragon (thin, AR 1/phi^3)",
-     "Base 2+i, collinear digits {0..4}: thin rep-5 dragon, aspect "
-     "ratio 1/phi^3 (Mekhontsev (5,4))"),
-    ('REP5B', "Rep-5 Dragon (base 1+2i, AR sqrt2-1)",
-     "Base 1+2i, collinear digits {0..4}: rep-5 dragon, aspect ratio "
-     "sqrt(2)-1 (Mekhontsev (5,2))"),
-    ('FLOWSNAKE', "Flowsnake / Gosper (rep-7)",
+    ('Z_PENTOMINO', "Polyomino: Z-pentomino (rep-5)",
+     "Z-pentomino cell set {0,1,1+i,1+2i,2+2i} over base -2-i: the "
+     "rep-5 Z-pentomino fractal reptile (Fathauer, Bridges 2025)"),
+    ('Y_PENTOMINO', "Polyomino: Y-pentomino (rep-5)",
+     "Y-pentomino cell set over base -2+i: the rep-5 Y-pentomino "
+     "fractal reptile (Fathauer, Bridges 2025)"),
+    ('P_PENTOMINO', "Polyomino: P-pentomino (rep-5)",
+     "P-pentomino cell set over base -2+i: the rep-5 P-pentomino "
+     "fractal reptile (Fathauer, Bridges 2025)"),
+    ('REP5_THIN', "Polyomino: Bar pentomino (thin rep-5)",
+     "Bar pentomino, base 2+i, collinear digits {0..4}: thin rep-5 "
+     "dragon, aspect ratio 1/phi^3 (Mekhontsev (5,4))"),
+    ('REP5B', "Polyomino: Bar pentomino (rep-5, base 1+2i)",
+     "Bar pentomino, base 1+2i, collinear digits {0..4}: rep-5 dragon, "
+     "aspect ratio sqrt(2)-1 (Mekhontsev (5,2))"),
+    ('Z_OCTOMINO', "Polyomino: Z-octomino (rep-8)",
+     "Z-octomino cell set over base -2-2i: the rep-8 Z-octomino "
+     "fractal reptile (Fathauer, Bridges 2025)"),
+    # --- Polyhex reptiles (hexagon cells) ---
+    ('FLOWSNAKE', "Polyhex: Heptahex / Gosper (rep-7)",
      "Eisenstein base 5/2+(sqrt3/2)i, digits {0}+sixth roots of "
      "unity, hexagon cells: the rep-7 Gosper island bounded by the "
      "flowsnake curve (Vince Fig 4/7; Gardner 1976)"),
-    ('LEVY_DRAGON', "Levy Dragon (rep-2, reflection)",
+    # --- Reflection / foldable reptiles ---
+    ('LEVY_DRAGON', "Reflection: Levy Dragon (rep-2)",
      "Two maps contracting by (1-i)/2, the second reflected in the "
      "x-axis: the Levy dragon rep-tile (Levy 1938; "
      "Sajid-Husain-Kumar Fig 2c)"),
-    ('LEAF', "Leaf Rep-Tile (rep-2, reflection)",
+    ('LEAF', "Reflection: Leaf Rep-Tile (rep-2)",
      "Same rep-2 contraction with the second map reflected in the "
      "y-axis (z to -conj z): the curled-leaf rep-tile "
      "(Sajid-Husain-Kumar Fig 2d)"),
-    ('FOLDABLE4', "Foldable Rep-4 (reflected gasket)",
+    ('FOLDABLE4', "Reflection: Foldable Rep-4 (reflected gasket)",
      "Rep-4 digit system {0,1,i,-1-i} with an orientation-reversing "
      "quarter-turn map i*conj(z)/2: foldable reflection rep-4 tile "
      "(Sajid-Husain-Kumar Theorem 4.4; digits of Vince Fig 6)"),
+    # --- Classic f-tiling & isometry ---
+    ('RIGHT_TRIANGLE', "Classic: Right Triangle (f-tiling)",
+     "Isosceles right-triangle f-tiling: square seed, a 1/sqrt2 child "
+     "glued to every exposed leg; tiles shrink to a fractal boundary"),
+    ('PENTABOLO', "Classic: Pentabolo (rep-5 isometry gasket)",
+     "Fathauer 5-isometry inflation of a half-square triangle: 5^k "
+     "unit triangles, sqrt5 inflation per level, coloured by "
+     "first-level copy"),
 ]
 
 
