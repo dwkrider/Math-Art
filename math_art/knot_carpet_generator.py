@@ -1468,59 +1468,6 @@ def _poly_area2(P):
     return 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
 
 
-def _mosaic_border(carpet):
-    """A single clean rectangular border closing all OPEN strand ends, as
-    one closed polyline through the four corners plus every open endpoint
-    (each lies on the content rectangle for the grid families), sorted
-    around the perimeter -- so the boundary cells fill cleanly.  Returns
-    (border_or_None, rect): rect = (x0, y0, x1, y1) is the clip window,
-    None border when every strand is already closed."""
-    paths = carpet['paths']
-    closed = carpet['closed']
-    ends = []
-    for p, c in zip(paths, closed):
-        if not c and len(p) >= 2:
-            ends.append(np.asarray(p[0], float))
-            ends.append(np.asarray(p[-1], float))
-    if not ends:
-        allpts = np.concatenate([np.asarray(p, float) for p in paths])
-        mn = allpts.min(axis=0)
-        mx = allpts.max(axis=0)
-        return None, (float(mn[0]), float(mn[1]), float(mx[0]),
-                      float(mx[1]))
-    E = np.asarray(ends, float)
-    x0, y0 = float(E[:, 0].min()), float(E[:, 1].min())
-    x1, y1 = float(E[:, 0].max()), float(E[:, 1].max())
-    rect = (x0, y0, x1, y1)
-    # bucket endpoints onto the four edges (nearest), then order each edge
-    bottom, right, top, left = [], [], [], []
-    for q in E:
-        db, dt = abs(q[1] - y0), abs(q[1] - y1)
-        dl, dr = abs(q[0] - x0), abs(q[0] - x1)
-        m = min(db, dt, dl, dr)
-        if m == db:
-            bottom.append(q)
-        elif m == dr:
-            right.append(q)
-        elif m == dt:
-            top.append(q)
-        else:
-            left.append(q)
-    bottom.sort(key=lambda q: q[0])
-    right.sort(key=lambda q: q[1])
-    top.sort(key=lambda q: -q[0])
-    left.sort(key=lambda q: -q[1])
-    ring = ([np.array([x0, y0])] + bottom + [np.array([x1, y0])]
-            + right + [np.array([x1, y1])] + top + [np.array([x0, y1])]
-            + left)
-    # drop consecutive duplicates
-    out = [ring[0]]
-    for q in ring[1:]:
-        if np.linalg.norm(q - out[-1]) > 1e-7:
-            out.append(q)
-    return np.asarray(out, float), rect
-
-
 def _face_signature(loop, corners, span):
     """A rotation/reflection-invariant class key for `loop`: the number
     of true corners (crossing nodes on its boundary) plus relative area
@@ -1535,24 +1482,33 @@ def _face_signature(loop, corners, span):
 
 
 def build_face_cells(strands=None, carpet=None, cord_width=0.12,
-                     face_color='SHAPE', backing=False, base=0.06,
-                     add_border=True):
-    """Fill the planar-arrangement cells of the strand network as flat
-    n-gon tiles, shrunk toward each tile's centroid by ~half `cord_width`
-    so the strands read as the channels between tiles.  `face_color` is
-    'UNIFORM' (one colour) or 'SHAPE'
-    (congruent tiles share a colour).  `add_border` closes the open ends
-    of the GRID families against one clean rectangle (their ends lie on
-    it); radial families (polar / spiral) leave it off -- their open ends
-    are interior spoke tips, not a boundary.  Returns (verts, faces,
-    mats) cells (one per tile), plus an optional backing slab.  Uses
-    Blender's edge-net fill, so it runs inside Blender only."""
+                     face_color='SHAPE', backing=False, base=0.06):
+    """The mosaic of tiles BETWEEN the strands: the fully-enclosed cells
+    of the strand arrangement, each shrunk toward its centroid by ~half
+    `cord_width` so the strands read as the channels (leading) between
+    the tiles.  Only enclosed cells are tiles -- the open regions around
+    the boundary are not holes, so there is no artificial border and no
+    boundary blobs.  Each tile is one flat n-gon; `face_color` is
+    'UNIFORM' (one colour) or 'SHAPE' (congruent tiles share a colour).
+    Returns (verts, faces, mats) cells plus an optional backing slab.
+    Uses Blender's edge-net fill -- Blender only."""
     import bmesh
     if carpet is None:
         carpet = build_curve_carpet(strands)
     paths = carpet['paths']
     closed = carpet['closed']
+    half = 0.5 * max(0.005, float(cord_width))
+    allpts = np.concatenate([np.asarray(p, float) for p in paths])
+    span = max(float(np.ptp(allpts[:, 0])), float(np.ptp(allpts[:, 1])),
+               1e-6)
 
+    # Node the CENTRELINES at every crossing (the same crossings the weave
+    # uses) and edge-net fill.  The centreline arrangement is planar, so
+    # its cells never overlap -- unlike a ribbon-edge arrangement, whose
+    # ribbons overlap on the nested / converging families and spawn
+    # z-fighting.  Because the strands are left OPEN (no artificial
+    # border), edge-net fill returns only the fully-ENCLOSED cells, so the
+    # open boundary regions are never tiles (no boundary blobs).
     def _pt_at(path, f):
         n = len(path)
         seg = int(np.floor(f))
@@ -1563,101 +1519,53 @@ def build_face_cells(strands=None, carpet=None, cord_width=0.12,
     for _key, s1, s2, f1, f2 in carpet['crossings']:
         con[s1].append((f1, _pt_at(paths[s1], f1)))
         con[s2].append((f2, _pt_at(paths[s2], f2)))
-    noded = []
+    bm = bmesh.new()
     for i, path in enumerate(paths):
         n = len(path)
         items = [(float(k), path[k]) for k in range(n)]
         items += [(f, p) for f, p in con[i]]
         items.sort(key=lambda z: z[0])
-        noded.append(([p for _f, p in items], closed[i]))
-    if add_border:
-        border, rect = _mosaic_border(carpet)
-    else:
-        border = None
-        allpts = np.concatenate([np.asarray(p, float) for p in paths])
-        mn = allpts.min(axis=0)
-        mx = allpts.max(axis=0)
-        rect = (float(mn[0]), float(mn[1]), float(mx[0]), float(mx[1]))
-    span = max(rect[2] - rect[0], rect[3] - rect[1], 1e-6)
-
-    bm = bmesh.new()
-
-    def _add(pts, cyc):
-        vs = [bm.verts.new((float(p[0]), float(p[1]), 0.0)) for p in pts]
+        vs = [bm.verts.new((float(p[0]), float(p[1]), 0.0))
+              for _f, p in items]
         m = len(vs)
-        for k in (range(m) if cyc else range(m - 1)):
+        for k in (range(m) if closed[i] else range(m - 1)):
             try:
                 bm.edges.new((vs[k], vs[(k + 1) % m]))
             except ValueError:
                 pass
-
-    for pts, cyc in noded:
-        _add(pts, cyc)
-    if border is not None:
-        _add(border, True)
-    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=4e-3)
+    bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-3)
     res = bmesh.ops.edgenet_fill(bm, edges=[e for e in bm.edges])
     bfaces = res.get('faces', [])
-
-    # keep the bounded cells inside the clip window
-    keep = []
-    for f in bfaces:
-        cen = f.calc_center_median()
-        if (rect[0] - 1e-6 <= cen.x <= rect[2] + 1e-6
-                and rect[1] - 1e-6 <= cen.y <= rect[3] + 1e-6):
-            keep.append(f)
-    if not keep:
-        bm.free()
-        return []
-    # drop only a near-total region (a degenerate outer fill); legitimate
-    # cells vary widely in size (small border slivers vs large interior
-    # tiles), so a median-relative cut would wrongly delete big real cells
-    rect_area = max((rect[2] - rect[0]) * (rect[3] - rect[1]), 1e-9)
-    keep = [f for f in keep if f.calc_area() <= 0.5 * rect_area]
-    keep_set = set(keep)
-    if not keep:
+    if not bfaces:
         bm.free()
         return []
 
-    # colour class per cell (congruent tiles share a colour), stamped on
-    # material_index BEFORE the inset so it rides onto the inner tile
-    cls = {}
-    for f in keep:
-        if face_color == 'UNIFORM':
-            f.material_index = 0
-            continue
-        P = np.asarray([(v.co.x, v.co.y) for v in f.verts], float)
-        corners = sum(1 for v in f.verts if len(v.link_edges) > 2)
-        sig = _face_signature(P, corners, span)
-        f.material_index = cls.setdefault(sig, len(cls)) % len(
-            pc.PALETTE_RGBA)
-
-    drop = [f for f in bm.faces if f not in keep_set]
-    if drop:
-        bmesh.ops.delete(bm, geom=drop, context='FACES')
-
-    # Open the ribbon gap by shrinking each tile toward its own centroid.
+    # Open the ribbon gap by shrinking each cell toward its own centroid.
     # A centroid scale is affine, so the tile stays a SIMPLE flat polygon
-    # -- a true uniform-width offset self-intersects on the concave
-    # pinwheel cells, and those bowtie outlines z-fight.  Each tile is
-    # emitted as one flat n-gon by its outline (no triangulation needed;
-    # a simple planar polygon tessellates cleanly).
-    half = 0.5 * max(0.005, float(cord_width))
+    # (a true uniform-width erosion self-intersects on the concave
+    # pinwheel cells and z-fights); a cell too thin to keep a positive
+    # gap collapses to nothing and is dropped -- the ribbon fills it.
+    cls = {}
     cells = []
     all_verts = []
-    for f in bm.faces:
+    for f in bfaces:
         P = np.array([(v.co.x, v.co.y) for v in f.verts], float)
-        if len(P) < 3:
+        if len(P) < 3 or abs(_poly_area2(P)) < 1e-8:
             continue
         c = P.mean(axis=0)
         R = float(np.mean(np.linalg.norm(P - c, axis=1)))
-        if R < 1e-6:
-            continue
-        s = min(0.985, max(0.06, 1.0 - half / R))
+        if R < half:
+            continue                          # thinner than the ribbon
+        s = min(0.985, 1.0 - half / R)
         Q = c + s * (P - c)
+        if face_color == 'UNIFORM':
+            mat = 0
+        else:
+            corners = sum(1 for v in f.verts if len(v.link_edges) > 2)
+            sig = _face_signature(P, corners, span)
+            mat = cls.setdefault(sig, len(cls)) % len(pc.PALETTE_RGBA)
         verts = [(float(x), float(y), 0.0) for x, y in Q]
-        cells.append((verts, [list(range(len(verts)))],
-                      [f.material_index]))
+        cells.append((verts, [list(range(len(verts)))], [mat]))
         all_verts.extend(verts)
     bm.free()
     if not cells:
@@ -5126,16 +5034,10 @@ if _IN_BLENDER:
                             % (self.source, len(strands), nc, conf))
                 return {'FINISHED'}
             if self.output == 'FACES':
-                # the rectangular border only suits the axis-aligned grid
-                # families; moire's rotated second grid, and the radial /
-                # closed families, do not close on one clean rectangle
-                bordered = self.source in ('WAVY_PLAID', 'WARPED_GRID',
-                                           'SMOOTH_PLAIT')
                 cells = build_face_cells(
                     carpet=carpet, cord_width=self.cord_width,
                     face_color=self.face_color,
-                    backing=self.backing, base=self.base,
-                    add_border=bordered)
+                    backing=self.backing, base=self.base)
                 if not cells:
                     self.report({'ERROR'}, "no faces found")
                     return {'CANCELLED'}
