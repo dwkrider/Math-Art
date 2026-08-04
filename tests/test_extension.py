@@ -619,7 +619,7 @@ OPS = [
          family='HEX', shape='TRIHEX', iterations=4)),
     ("fractal reptile pentabolo",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         family='CLASSIC', shape='PENTABOLO', iterations=3)),
+         family='BOLO', shape='PENTABOLO', iterations=3)),
     ("fractal reptile flowsnake",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          family='HEX', shape='FLOWSNAKE', iterations=3)),
