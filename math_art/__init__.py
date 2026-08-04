@@ -51,6 +51,7 @@ _MODULE_NAMES = [
     'toroidal_polyhedron_generator',
     'biscribed_solids_generator',
     'stellation_engine',
+    'general_stellation',
     'other_polyhedra_generator',
     'canonical_polyhedra_generator',
     'attractor_generator',
@@ -173,6 +174,7 @@ class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
         _op(lay, "mesh.notable_polyhedron_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.canonical_polyhedron_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.icosahedron_stellation_add", icon='MESH_ICOSPHERE')
+        _op(lay, "mesh.general_stellation_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.star_prism_add", icon='MESH_CYLINDER')
         _op(lay, "mesh.conway_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.zonohedron_add", icon='MESH_UVSPHERE')

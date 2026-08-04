@@ -34,7 +34,7 @@
 # solve_chiral_g extends this to non-Platonic seeds (propello / snub of the
 # truncated forms, and orthokis-propello), whose slow roundest-root solves are
 # precomputed into _biscribed_chiral_data and re-derivable via
-# _regen_chiral_data.  Covered: 27 of McCooey's 31 chiral biscribed solids.
+# _regen_chiral_data.  Covered: all 31 of McCooey's chiral biscribed solids.
 #
 # References:
 # - D. McCooey, "Biscribed (Non-)Chiral Solids", Visual Polyhedra,
@@ -863,28 +863,24 @@ _CHIRAL_SPECS = {
     'snub_truncated_icosahedron':       (lambda: 'stI', 'I'),
 }
 
-# ---- NOT YET COVERED: McCooey's 4 remaining chiral biscribed solids --------
-# These DO biscribe (McCooey lists their circumradii) but solve_chiral_g's
-# roundest-root LM search does not converge to their root:
-#   #20 Propello Truncated Icosidodecahedron  (spec 'pbD', 480 verts, I sym)
-#   #24 its dual (Propello Disdyakis Triacontahedron)
-#   #27 L-Propello L-Snub Cube  (propello of the CHIRAL snub cube; spec 'psC')
-#   #31 its dual (L-Propello R-Pentagonal Icositetrahedron)
-# Attempts that FAILED: #20 via 'pbD' + canonical init AND a full 24-restart
-# run (~30 min); #27 via 'psC', reflected/matching-chirality propello, and
-# 'psC' with 24 restarts -- solve_chiral_g's LM never finds their basin.
-# Also tried an iterative-PROJECTION biscriber (project verts to circumsphere,
-# push face planes to the common insphere radius r = mean(d_f), planarize):
-# it is globally convergent but to a DEGENERATE fixed point -- all faces
-# collapse through the centre (r -> 0), which trivially zeroes the
-# face-distance variance.  solve_chiral_g avoids this via its convexity guard;
-# the plain projection scheme does not.  Unlike hexpropello T/O/I (which
-# provably do NOT biscribe), these four exist.
-# TODO(biscribed-solver): a correct robust solver needs to keep the insphere
-# radius positive / preserve convexity -- e.g. a reciprocal (primal AND dual
-# verts on spheres) projection, which sends the r->0 collapse to poles at
-# infinity, or a homotopy from McCooey's construction.  Deferred; the failed
-# approaches (LM multi-start, plain projection relaxation) are in git history.
+# ---- The 4 "hard" chiral biscribed solids (SOLVED, reciprocal solver) -------
+# #20 Propello Truncated Icosidodecahedron ('pbD', 480 verts, I) + #24 its dual
+# (Propello Disdyakis Triacontahedron); #27 L-Propello L-Snub Cube (propello of
+# the MIRRORED snub cube -- the matching-handedness class; the opposite class
+# 'psC' has no convex biscribed root) + #31 its dual.  History: solve_chiral_g's
+# roundest-root LM never found their basin, and a plain projection biscriber
+# (push faces to r = mean(d_f)) collapses to the DEGENERATE r->0 fixed point.
+# The fix is biscribe_reciprocal below: reset all face-plane distances to a
+# FIXED r > 0 each step (the "dual poles on a sphere of radius 1/r" constraint
+# -- r never moves, so the r->0 collapse is impossible), rebuild each vertex
+# from its incident planes by least squares, project onto the symmetric
+# subspace, then polish with the orbit LM (r free) so the final coordinates are
+# self-derived roots of the pure equal-distance equations.  Init that selects
+# the right basin: for #20, propello of the EXACT biscribed truncated
+# icosidodecahedron; for #27, propello of the MIRRORED snub cube.  All four
+# verify std|v|/std(face-dist)/planar ~1e-13 with r/R matching McCooey; coords
+# are in _biscribed_chiral_data (#24/#31 via polar reciprocation).  This
+# completes the biscribed chiral catalog at 31/31.
 # ---------------------------------------------------------------------------
 
 
@@ -894,6 +890,173 @@ def _regen_chiral_data():
     data = {}
     for key, (mk, sym) in _CHIRAL_SPECS.items():
         res = solve_chiral_g(mk(), sym)
+        if res['exists']:
+            data[key] = {'r': float(res['r_over_R']),
+                         'V': [[float(c) for c in v] for v in res['verts']],
+                         'F': [list(map(int, f)) for f in res['faces']]}
+    return data
+
+
+# --------------------------------------------------------------------------
+# Reciprocal (dual-sphere) biscriber -- solves the 4 "hard" chiral solids that
+# the LM roundest-root search misses and the plain projection collapses on
+# (see the note above).  Resetting every face distance to a FIXED r each step
+# is the "dual poles on a sphere of radius 1/r" constraint, which makes the
+# r->0 collapse impossible; a final orbit-LM polish (r free) yields the exact
+# self-derived root.
+# --------------------------------------------------------------------------
+
+def _face_groups(F):
+    gr = {}
+    for fi, f in enumerate(F):
+        gr.setdefault(len(f), []).append(fi)
+    return {k: (np.array(v), np.array([F[fi] for fi in v]))
+            for k, v in gr.items()}
+
+
+def _fit_planes(V, F, FG):
+    n = np.empty((len(F), 3))
+    d = np.empty(len(F))
+    for k, (idx, fk) in FG.items():
+        Q = V[fk]
+        c = Q.mean(1)
+        nrm = np.cross(Q, np.roll(Q, -1, axis=1)).sum(1)
+        nrm /= np.linalg.norm(nrm, axis=1, keepdims=True)
+        flip = np.einsum('ij,ij->i', nrm, c) < 0
+        nrm[flip] *= -1
+        n[idx] = nrm
+        d[idx] = np.einsum('ij,ij->i', nrm, c)
+    return n, d
+
+
+def _vert_face_incidence(nV, F):
+    vf = [[] for _ in range(nV)]
+    for fi, f in enumerate(F):
+        for v in f:
+            vf[v].append(fi)
+    deg = [len(x) for x in vf]
+    groups = {}
+    for v in range(nV):
+        groups.setdefault(deg[v], []).append(v)
+    return {k: (np.array(vs), np.array([vf[v] for v in vs]))
+            for k, vs in groups.items()}
+
+
+def _reconstruct(nV, VF, n, r):
+    """v = argmin sum_f (n_f.v - r)^2 over incident faces (batched 3x3)."""
+    V = np.empty((nV, 3))
+    for k, (vs, fidx) in VF.items():
+        N = n[fidx]
+        M = np.einsum('gki,gkj->gij', N, N)
+        b = r * N.sum(1)
+        V[vs] = np.linalg.solve(M, b[:, :, None])[:, :, 0]
+    return V
+
+
+def biscribe_reciprocal(V0, F, sym, r_target, iters=6000, alpha=0.7,
+                        tol=1e-13):
+    """Reciprocal dual-sphere biscriber + orbit-LM polish.  V0 is a near-target
+    symmetric init; r_target selects the basin (the true r is found free by the
+    polish).  Returns the standard {'exists', ...} dict."""
+    G = _rot_group(sym)
+    U = V0 / np.linalg.norm(V0, axis=1, keepdims=True)
+    assign, reps, locked = _vertex_orbits(G, U)
+    Ga = np.array(G)
+    ov = np.array([a[0] for a in assign])
+    gv = np.array([a[1] for a in assign])
+    n_orb = len(reps)
+    FG = _face_groups(F)
+    VF = _vert_face_incidence(len(V0), F)
+
+    def project(V):
+        back = np.einsum('ikj,ik->ij', Ga[gv], V)     # G^T @ v
+        rep = np.zeros((n_orb, 3))
+        cnt = np.zeros(n_orb)
+        np.add.at(rep, ov, back)
+        np.add.at(cnt, ov, 1)
+        rep /= cnt[:, None]
+        return np.einsum('ijk,ik->ij', Ga[gv], rep[ov])
+
+    V = U.copy()
+    for it in range(iters):
+        n, d = _fit_planes(V, F, FG)
+        Vn = _reconstruct(len(V), VF, n, r_target)
+        V = (1 - alpha) * V + alpha * Vn
+        V /= np.linalg.norm(V, axis=1, keepdims=True)
+        V = project(V)
+        V /= np.linalg.norm(V, axis=1, keepdims=True)
+        if it % 50 == 0:
+            _, sd, pl = verify(V, F)
+            if sd < tol and pl < tol:
+                break
+    # orbit-LM polish (r free) -> exact self-derived root
+    rep0 = [V[r].copy() for r in reps]
+    free = [o for o in range(len(reps)) if not locked[o]]
+    N = len(V)
+
+    def build_V(rp):
+        Vo = np.empty((N, 3))
+        for i, (o, g) in enumerate(assign):
+            Vo[i] = G[g] @ rp[o]
+        return Vo
+
+    face_reps = _face_orbit_reps(G, build_V(rep0), F)
+
+    def residuals(rp):
+        Vc = build_V(rp)
+        planar, dist = [], []
+        for fi in face_reps:
+            Q = Vc[list(F[fi])]
+            c = Q.mean(0)
+            _, _, Vt = np.linalg.svd(Q - c)
+            nn = Vt[2]
+            if nn @ c < 0:
+                nn = -nn
+            planar.extend(((Q - c) @ nn).tolist())
+            dist.append(c @ nn)
+        return np.array(planar + [dd - dist[0] for dd in dist[1:]])
+
+    rp, ok = _chiral_lm(residuals, rep0, free, iters=800)
+    Vf = build_V(rp)
+    if not (np.max(np.abs(residuals(rp))) < 1e-9 and _chiral_convex(Vf, F)):
+        return {'exists': False, 'why': "reciprocal polish did not converge"}
+    r = float(np.mean([dd for _, _, dd in _face_planes(Vf, F)]))
+    return {'exists': True, 'param': "reciprocal + orbit-LM polish",
+            'verts': Vf, 'faces': [list(f) for f in F], 'r_over_R': r}
+
+
+def _hard_mesh(key):
+    """Basin-selecting init for the two hard chiral primals."""
+    cw = _cw()
+    if key == 'propello_truncated_icosidodecahedron':   # propello of biscribed bD
+        b = biscribe_exact('truncated_icosidodecahedron')
+        V, F = cw.op_propellor([list(map(float, v)) for v in b[0]],
+                               [list(f) for f in b[1]])
+    elif key == 'propello_l_snub_cube':                 # propello of MIRRORED sC
+        V, F = cw.apply_conway('sC')
+        V = [[v[0], v[1], -v[2]] for v in V]
+        F = [list(f[::-1]) for f in F]
+        V, F = cw.op_propellor(V, F)
+    else:
+        raise ValueError(key)
+    V, F = cw.orient_outward([list(v) for v in V], [list(f) for f in F])
+    return np.array(V, float), [list(f) for f in F]
+
+
+# key -> (init builder, base symmetry, r_target basin selector)
+_CHIRAL_HARD = {
+    'propello_truncated_icosidodecahedron': ('D', 0.986706162392544289),
+    'propello_l_snub_cube':                 ('C', 0.970598205840632),
+}
+
+
+def _regen_chiral_hard():
+    """Re-derive the 2 hard chiral primals via biscribe_reciprocal (their
+    embedded coords are exactly this; #24/#31 follow by polar reciprocation)."""
+    data = {}
+    for key, (sym, rt) in _CHIRAL_HARD.items():
+        V0, F = _hard_mesh(key)
+        res = biscribe_reciprocal(V0, F, sym, rt)
         if res['exists']:
             data[key] = {'r': float(res['r_over_R']),
                          'V': [[float(c) for c in v] for v in res['verts']],
@@ -966,6 +1129,13 @@ _SOLVERS = {
 _SOLVERS.update({
     _k: (lambda mk=_mk, sym=_sym: solve_chiral_g(mk(), sym))
     for _k, (_mk, _sym) in _CHIRAL_SPECS.items()
+})
+# the 2 "hard" chiral primals -- served from _CHIRAL_DATA, this reciprocal
+# solver is the reproducible fallback
+_SOLVERS.update({
+    _k: (lambda key=_k, sym=_s, rt=_r:
+         biscribe_reciprocal(*_hard_mesh(key), sym, rt))
+    for _k, (_s, _r) in _CHIRAL_HARD.items()
 })
 
 
@@ -1087,6 +1257,15 @@ _BISCRIBED = [
      'snub_truncated_icosahedron', False),
     ('dsntI', "Biscribed Dual Snub Truncated Icosahedron",
      'snub_truncated_icosahedron', True),
+    # the 4 "hard" chiral solids (reciprocal solver) -- completes 31/31
+    ('ptID', "Biscribed Propello Truncated Icosidodecahedron",
+     'propello_truncated_icosidodecahedron', False),
+    ('pmT', "Biscribed Propello Disdyakis Triacontahedron",
+     'propello_truncated_icosidodecahedron', True),
+    ('plsC', "Biscribed L-Propello L-Snub Cube",
+     'propello_l_snub_cube', False),
+    ('plpI', "Biscribed L-Propello R-Pentagonal Icositetrahedron",
+     'propello_l_snub_cube', True),
 ]
 
 try:
