@@ -603,6 +603,24 @@ OPS = [
     ("fractal reptile gasket",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          kind='REP5', iterations=4, holes=2)),
+    ("fractal reptile x-pentomino",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         kind='X_PENTOMINO', iterations=5)),
+    ("fractal reptile heptiamond",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         kind='HEPTIAMOND', iterations=4)),
+    ("fractal reptile trihex",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         kind='TRIHEX', iterations=6, mirror=True)),
+    ("fractal reptile trirhomb",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         kind='TRIRHOMB', iterations=6)),
+    ("fractal reptile tetrakite",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         kind='TETRAKITE', iterations=5)),
+    ("fractal reptile rect6",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         kind='RECT6', iterations=4)),
     ("fractal tiling s6",
      lambda: bpy.ops.mesh.fractal_tiling_add(kind='TRI_S6', iterations=6)),
     ("fractal tiling u6",
