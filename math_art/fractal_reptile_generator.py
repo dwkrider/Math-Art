@@ -686,6 +686,14 @@ KINDS = {
             [0, _W6 - 1, 1 - _W6, -1, -_W6, _W6, 1, -2 + _W6, -1 - _W6,
              2 * _W6 - 1, 1 - 2 * _W6, 1 + _W6, 2 - _W6],
             it, cell=_HEXCELL, holes=h), n=13, samp=True),
+    'HEPTAHEX_3FOLD': dict(                   # 3-fold heptahex, rep-7
+        # centre hex + two 120-deg orbits of three: a complete residue
+        # system mod 1+2w (residue (j-2i) mod 7), giving Fathauer's
+        # pinwheel 3-fold heptahex rather than the 6-fold Gosper flower
+        build=lambda it, h=0: _base_reptile(
+            1 + 2 * _W6,
+            [0, 1, -1 + _W6, -_W6, 2 - _W6, -1 + 2 * _W6, -1 - _W6],
+            it, cell=_HEXCELL, holes=h), n=7, samp=True),
     # Multi-orientation polyform reptiles (graph-directed IFS; the cell
     # comes in several lattice orientations, so g_i = S(mu_i z + p_i)).
     # Filled tiles with measure-zero fractal boundaries (osc sampling).
@@ -787,6 +795,10 @@ KIND_ITEMS = [
      "Eisenstein base 5/2+(sqrt3/2)i, digits {0}+sixth roots of "
      "unity, hexagon cells: the rep-7 Gosper island bounded by the "
      "flowsnake curve (Vince Fig 4/7; Gardner 1976)"),
+    ('HEPTAHEX_3FOLD', "Hex: 3-fold Heptahex (rep-7)",
+     "Centre hex plus two 120-degree orbits of three over Eisenstein "
+     "base 1+2w (theta=40.893): the rep-7 pinwheel 3-fold heptahex "
+     "(Fathauer, Bridges 2026)"),
     ('HEX9', "Hex: 9-hex (rep-9)",
      "A compact 9-hex over Eisenstein base 3(w-1): the rep-9 polyhex "
      "fractal reptile (Fathauer, Bridges 2026)"),
