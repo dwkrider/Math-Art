@@ -1436,6 +1436,69 @@ WE_SURFACES['SYMM_CG_G3K'] = {
 SURFACE_FAMILY['SYMM_CG_G3K'] = 'HIGHER'
 
 
+
+
+# ==========================================================================
+# Catenoid-Enneper and Costa-Wohlgemuth / Wohlgemuth (appended block)
+# ==========================================================================
+# Tier-3 higher-genus finite-total-curvature surfaces, meshed watertight
+# from one fundamental piece orbited under the full point group -- the
+# engine, verified period constants and references live in
+# we_builders.cwce_ce_mesh / cwce_cw_mesh and the cwce_* block above
+# them:
+#   * CATENOID_ENNEPER  genus 2/3/4, ONE catenoid + ONE Enneper end,
+#     order-4 symmetry (two orthogonal vertical mirrors); the genus-g
+#     member meshes at exactly chi = 2 - 2g - 2 (two open end rims).
+#   * COSTA_WOHLGEMUTH  genus 2(k-1), FOUR ends (2 catenoidal +
+#     2 planar), prismatic D_kh symmetry; k = 2 is Wohlgemuth's
+#     genus-2 surface -- the first complete embedded minimal surface
+#     with four ends; chi = 2 - 2 genus - 4.
+#   * WOHLGEMUTH_G3     Wohlgemuth's second surface: genus 3, four
+#     ends (k = 2 member of the genus-3(k-1) tower; the k > 2 period
+#     problems did not close from the blog's constants -- BACKLOG.md).
+# (C. J. Costa 1984; M. Wohlgemuth, Bonn dissertation 1993 and Arch.
+# Rational Mech. Anal. 137, 1997; Chen & Gackstatter 1982; data after
+# M. Weber, minimalsurfaces.blog, higher-symmetry Wohlgemuth notebook
+# by Ramazan Yol.)
+
+WE_SURFACES['CATENOID_ENNEPER'] = {
+    'label': "Catenoid-Enneper (higher genus)",
+    'family': 'HIGHER',
+    'mesher': we.cwce_ce_mesh,
+    # count slider = the genus (2, 3 or 4 -- the solved period
+    # problems); radius scales the two end trims (catenoid funnel
+    # depth / Enneper flare reach)
+    'p_from': lambda order, radius: {
+        'genus': 2 if order <= 2 else (3 if order == 3 else 4)},
+    'count': "Genus (2/3/4)",
+    'test_order': 2,
+}
+SURFACE_FAMILY['CATENOID_ENNEPER'] = 'HIGHER'
+
+WE_SURFACES['COSTA_WOHLGEMUTH'] = {
+    'label': "Costa-Wohlgemuth (4 ends)",
+    'family': 'HIGHER',
+    'mesher': we.cwce_cw_mesh,
+    # count slider = the symmetry order k (genus 2(k-1)); k snaps to
+    # the solved orders 2/3/4/5/7.  radius slides the strip trims
+    # (planar-end reach and catenoid depth).
+    'p_from': lambda order, radius: {
+        'fam': 'cw',
+        'k': min((2, 3, 4, 5, 7), key=lambda kk: abs(kk - order))},
+    'count': "Symmetry k (2/3/4/5/7)",
+    'test_order': 2,
+}
+SURFACE_FAMILY['COSTA_WOHLGEMUTH'] = 'HIGHER'
+
+WE_SURFACES['WOHLGEMUTH_G3'] = {
+    'label': "Wohlgemuth Second Surface (genus 3)",
+    'family': 'HIGHER',
+    'mesher': we.cwce_cw_mesh,
+    'p_from': lambda order, radius: {'fam': 'w2', 'k': 2},
+    'test_order': 1,
+}
+SURFACE_FAMILY['WOHLGEMUTH_G3'] = 'HIGHER'
+
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
@@ -1820,4 +1883,69 @@ if __name__ == "__main__":
               f"(want {-6 * S}) nonman={nonman} loops={nloops} "
               f"(want {2 * S + 2}) ncomp={ncomp} fit[|c|={cen:.1e} "
               f"ext={ext:.4f}] {'OK' if good else 'FAIL'}")
+    # Catenoid-Enneper / Costa-Wohlgemuth / Wohlgemuth: full pipeline
+    # watertight gates -- exact chi = 2 - 2 genus - (open end rims),
+    # edge-manifold, one component, 2 m fit, finite UV chart.  The
+    # engine-level period/null gates live in we_builders.__main__.
+    for wkey, word, wgen, wrim in (('CATENOID_ENNEPER', 2, 2, 2),
+                                   ('CATENOID_ENNEPER', 3, 3, 2),
+                                   ('CATENOID_ENNEPER', 4, 4, 2),
+                                   ('COSTA_WOHLGEMUTH', 2, 2, 4),
+                                   ('COSTA_WOHLGEMUTH', 3, 4, 4),
+                                   ('WOHLGEMUTH_G3', 1, 3, 4)):
+        Vg, Qg, uvg = tk.build_parametric(wkey, 60, 60, word, 1.2, 1.0,
+                                          with_uv=True)
+        ecg = {}
+        for f in Qg:
+            m = len(f)
+            for t in range(m):
+                a, b = f[t], f[(t + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecg[e] = ecg.get(e, 0) + 1
+        chi = len(Vg) - len(ecg) + len(Qg)
+        nonman = sum(1 for c in ecg.values() if c > 2)
+        bed = [e for e, c in ecg.items() if c == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a, b in bed:
+            ra, rb = bfind(a), bfind(b)
+            if ra != rb:
+                par[ra] = rb
+        nloops = len({bfind(a) for a, b in bed})
+        parc = list(range(len(Vg)))
+
+        def cfind(a):
+            while parc[a] != a:
+                parc[a] = parc[parc[a]]
+                a = parc[a]
+            return a
+
+        for f in Qg:
+            for i in range(1, len(f)):
+                ra, rb = cfind(f[0]), cfind(f[i])
+                if ra != rb:
+                    parc[ra] = rb
+        ncomp = len({cfind(f[0]) for f in Qg})
+        lo, hi = Vg.min(0), Vg.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        uv_ok = (uvg is not None and len(uvg) == sum(len(f) for f in Qg)
+                 and bool(np.all(np.isfinite(uvg))))
+        want = 2 - 2 * wgen - wrim
+        good = (chi == want and nonman == 0 and nloops == wrim
+                and ncomp == 1 and cen < 1e-6 and abs(ext - 2.0) < 1e-6
+                and uv_ok and bool(np.all(np.isfinite(Vg))))
+        ok &= good
+        print(f"{wkey} n={word} (genus {wgen}): {len(Vg):6d}v "
+              f"{len(Qg):6d}f chi={chi} (want {want}) nonman={nonman} "
+              f"loops={nloops} (want {wrim}) ncomp={ncomp} "
+              f"fit[|c|={cen:.1e} ext={ext:.4f}] uv={uv_ok} "
+              f"{'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")
