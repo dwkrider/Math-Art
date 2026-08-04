@@ -1221,7 +1221,9 @@ BJORLING = {
 #     fundamental domain (cut by two horizontal planes), a separate
 #     reparametrization.  The symmetric alpha = 0 tower already stacks via
 #     SCHERK_TOWER.
-#   * genus-1 helicoid, Callahan-Hoffman-Meeks, KMR (Tier 3+)
+#   * genus-1 helicoid, KMR (Tier 3+); the singly periodic
+#     Callahan-Hoffman-Meeks is now shipped as CHM_PERIODIC (appended
+#     catalog block at the end of this file)
 #   * Bonnet angle on Henneberg (non-orientable -> the associate family is
 #     not globally single-valued) and Bour (fractional-power double cover);
 #     both stay as the toolkit's fixed closed forms.  Catalan's associate is
@@ -1268,6 +1270,170 @@ ADD_MENU = True
 
 def unregister():
     pass
+
+
+# ==========================================================================
+# Higher-genus Chen-Gackstatter (appended catalog block)
+# ==========================================================================
+# Genus-g Chen-Gackstatter surfaces (one winding-3 Enneper end, D2d
+# symmetry) on the hyperelliptic curve y^2 = z prod(z^2 - r_i^2), meshed
+# watertight (chi = 1 - 2g exactly) from ONE 1/8 Coxeter fundamental
+# domain orbited under the full D2d group -- the engine, verified data
+# and references live in we_builders.cg_higher_mesh and the block above
+# it.  Genus 2, 4 and 5 are the solved period problems (Chen &
+# Gackstatter 1982; E. C. Thayer, Experiment. Math. 4, 1995; data after
+# M. Weber, minimalsurfaces.blog).  Genus 3 is deliberately absent: its
+# period problem is not solved by this two-parameter normalization.
+
+WE_SURFACES['CG_HIGHER'] = {
+    'label': "Chen-Gackstatter (higher genus)",
+    'family': 'HIGHER',
+    'mesher': we.cg_higher_mesh,
+    # the count slider is the target genus; 2, 4, 5 are the solved
+    # families, other values snap to the nearest solved genus.  radius
+    # scales the spherical end-trim (how far the Enneper end flares).
+    'p_from': lambda order, radius: {
+        'genus': 2 if order <= 2 else (4 if order <= 4 else 5)},
+    'count': "Genus (2/4/5)",
+    'test_order': 2,
+}
+SURFACE_FAMILY['CG_HIGHER'] = 'HIGHER'
+
+
+# ==========================================================================
+# Callahan-Hoffman-Meeks singly periodic surface (appended catalog block)
+# ==========================================================================
+# The singly periodic analog of the Costa surface (k = 1 member): an
+# embedded minimal surface invariant under a vertical translation, two
+# horizontal planar ends per translational period (infinitely many ends
+# in all), quotient genus 2k + 1 = 3 (one period meshes at chi = -6 with
+# the two end punctures -- gated below and in we_builders).  Weierstrass
+# data and the two solved period constants (a, rho) are harvested from
+# M. Weber's CHM-(1,1) notebook (research/msblog_harvest/
+# singly_periodic.json); the engine, verified branch/strip chart and the
+# 16-isometry period assembly live in we_builders.chm_periodic_mesh and
+# the chm_* block above it.  The "Periods" count stacks whole
+# translational periods, welded seam-exactly; the radius slider sizes
+# the trimmed planar-end disks (how far each flat layer reaches).
+#
+# References:
+#   M. J. Callahan, D. Hoffman, W. H. Meeks III, "Embedded minimal
+#     surfaces with an infinite number of ends", Invent. Math. 96 (1989)
+#     459-505;
+#   M. Weber, https://minimalsurfaces.blog/ (Callahan-Hoffman-Meeks
+#     surfaces; the CHM-(1,1) notebook).
+
+WE_SURFACES['CHM_PERIODIC'] = {
+    'label': "Callahan-Hoffman-Meeks (singly periodic)",
+    'family': 'SINGLY',
+    'mesher': we.chm_periodic_mesh,
+    # umin is the conformal end-trim: the planar end lives at the strip
+    # end u -> -inf and its flare radius grows like ~0.87 e^{-u/4}, so
+    # the radius slider slides the cut (bigger radius = wider flat
+    # layers relative to the core).
+    'p_from': lambda order, radius: {
+        'umin': float(np.clip(-5.0 - 2.5 * math.log(
+            max(radius, 0.2) / 1.2), -7.5, -3.0))},
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['CHM_PERIODIC'] = 'SINGLY'
+
+
+# ==========================================================================
+# Translation-invariant genus-one helicoid (appended catalog block)
+# ==========================================================================
+# The helicoid with a handle: the singly periodic minimal surface
+# asymptotic to a helicoid whose translational quotient is a rhombic
+# torus with two helicoidal ends -- one handle per vertical period.
+# Built from the Jacobi theta-function Weierstrass data on C/<1, tau>
+# with the fully solved period constants harvested from M. Weber's
+# notebook (research/msblog_harvest/singly_periodic.json); the engine,
+# verification gates and references (Hoffman-Karcher-Wei 1993/1999;
+# Hoffman-Weber-Wolf 2009) live in we_builders.genus1helicoid_mesh and
+# the block above it.  The count slider stacks translational periods
+# (the mesh genus equals that count -- verified by the Euler
+# characteristic in the self-tests); the radius slider sets how far
+# the two helicoidal ends spiral out.
+
+WE_SURFACES['GENUS1_HELICOID'] = {
+    'label': "Helicoid with Handle (genus 1)",
+    'family': 'SINGLY',
+    'mesher': we.genus1helicoid_mesh,
+    'p_from': lambda order, radius: {
+        'storeys': int(min(max(order, 1), 4))},
+    'count': "Periods (handles)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['GENUS1_HELICOID'] = 'SINGLY'
+
+
+# ==========================================================================
+# Symmetrized Chen-Gackstatter towers (appended catalog block)
+# ==========================================================================
+# The k-fold-symmetric Chen-Gackstatter continuations: one Enneper-type
+# end, dihedral-antiprismatic symmetry D_kd (order 4k), on the k-fold
+# cyclic cover of the sphere branched over {0, +-r_i, inf}.  Three towers
+# (unified data g = rho z^a0 prod (1-(z/r_i)^2)^(+-e), dh = dz with
+# e = (k-1)/k), meshed watertight from ONE 1/(4k) quarter-plane
+# fundamental piece orbited under the full D_kd group -- the engine,
+# closed-form / harvested period constants and references live in
+# we_builders.symmcg_mesh and the block above it:
+#   * SYMM_CG      genus k-1   -- the canonical tower; rho is the
+#     closed-form Gamma quotient.  k = 2 IS the classical Chen-
+#     Gackstatter torus (a cross-check against CHEN_GACK), and k = 4
+#     reaches GENUS 3, absent from the CG_HIGHER D2d normalization.
+#     Distinct from CG_HIGHER at every shared genus: CG_HIGHER keeps
+#     order-8 D2d symmetry with a winding-3 end at every genus, while
+#     this tower's symmetry order (4k) and end winding (2k-1) grow
+#     with the genus.
+#   * SYMM_CG_G2N  genus 2(k-1) -- second tower; branch value a and rho
+#     solved numerically (Weber), k in {3, 4, 7, 12}.
+#   * SYMM_CG_G3K  genus 3(k-1) -- third tower; branch values a, b from
+#     a 2-D period solve (Weber), k in {2, 3, 4, 5, 7}; note k = 2 is a
+#     second, different genus-3 surface.
+# (Chen & Gackstatter 1982; Karcher's symmetrization method; data after
+# M. Weber, minimalsurfaces.blog, "Symmetrized Chen-Gackstatter".)
+
+def _symmcg_snap_k(order, table):
+    """Nearest solved symmetry order in `table`."""
+    return min(table, key=lambda kk: abs(kk - order))
+
+
+WE_SURFACES['SYMM_CG'] = {
+    'label': "Symmetrized Chen-Gackstatter (k-fold, genus k-1)",
+    'family': 'HIGHER',
+    'mesher': we.symmcg_mesh,
+    # count slider = the symmetry order k (genus k-1); radius scales the
+    # spherical end-trim (how far the single Enneper end flares)
+    'p_from': lambda order, radius: {
+        'tower': 'gn', 'k': int(min(8, max(2, order)))},
+    'count': "Symmetry k (genus k-1)",
+    'test_order': 4,
+}
+SURFACE_FAMILY['SYMM_CG'] = 'HIGHER'
+
+WE_SURFACES['SYMM_CG_G2N'] = {
+    'label': "Symmetrized Chen-Gackstatter (2-level, genus 2(k-1))",
+    'family': 'HIGHER',
+    'mesher': we.symmcg_mesh,
+    'p_from': lambda order, radius: {
+        'tower': 'g2n', 'k': _symmcg_snap_k(order, (3, 4, 7, 12))},
+    'count': "Symmetry k (3/4/7/12)",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SYMM_CG_G2N'] = 'HIGHER'
+
+WE_SURFACES['SYMM_CG_G3K'] = {
+    'label': "Symmetrized Chen-Gackstatter (3-level, genus 3(k-1))",
+    'family': 'HIGHER',
+    'mesher': we.symmcg_mesh,
+    'p_from': lambda order, radius: {
+        'tower': 'g3k', 'k': _symmcg_snap_k(order, (2, 3, 4, 5, 7))},
+    'count': "Symmetry k (2/3/4/5/7)",
+    'test_order': 2,
+}
+SURFACE_FAMILY['SYMM_CG_G3K'] = 'HIGHER'
 
 
 if __name__ == "__main__":
@@ -1433,4 +1599,225 @@ if __name__ == "__main__":
     print("CHM modulus: "
           + " ".join(f"c({kk})={chm_modulus(kk):.6f}" for kk in cref)
           + f"  {'OK' if cok else 'FAIL'}")
+    # Higher-genus Chen-Gackstatter: the full watertight gate through the
+    # toolkit pipeline -- exact Euler characteristic chi = 1 - 2g (2 - 2g
+    # for the closed surface, minus the one trimmed Enneper end), zero
+    # non-manifold edges, ONE boundary loop, one component, 2 m fit, and
+    # a finite per-corner UV chart.
+    for gord, gg in ((2, 2), (4, 4), (5, 5)):
+        out = tk.build_parametric('CG_HIGHER', 60, 60, gord, 1.2, 1.0,
+                                  with_uv=True)
+        Vg, Qg, uvg = out
+        ecg = {}
+        for f in Qg:
+            m = len(f)
+            for t in range(m):
+                a, b = f[t], f[(t + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecg[e] = ecg.get(e, 0) + 1
+        chi = len(Vg) - len(ecg) + len(Qg)
+        nonman = sum(1 for c in ecg.values() if c > 2)
+        bed = [e for e, c in ecg.items() if c == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a, b in bed:
+            ra, rb = bfind(a), bfind(b)
+            if ra != rb:
+                par[ra] = rb
+        nloops = len({bfind(a) for a, b in bed})
+        parc = list(range(len(Vg)))
+
+        def cfind(a):
+            while parc[a] != a:
+                parc[a] = parc[parc[a]]
+                a = parc[a]
+            return a
+
+        for f in Qg:
+            for i in range(1, len(f)):
+                ra, rb = cfind(f[0]), cfind(f[i])
+                if ra != rb:
+                    parc[ra] = rb
+        ncomp = len({cfind(f[0]) for f in Qg})
+        lo, hi = Vg.min(0), Vg.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        uv_ok = (uvg is not None and len(uvg) == sum(len(f) for f in Qg)
+                 and bool(np.all(np.isfinite(uvg))))
+        good = (chi == 1 - 2 * gg and nonman == 0 and nloops == 1
+                and ncomp == 1 and cen < 1e-6 and abs(ext - 2.0) < 1e-6
+                and uv_ok and bool(np.all(np.isfinite(Vg))))
+        ok &= good
+        print(f"CG higher g{gg}: {len(Vg):6d}v {len(Qg):6d}f chi={chi} "
+              f"(want {1 - 2 * gg}) nonman={nonman} loops={nloops} "
+              f"ncomp={ncomp} fit[|c|={cen:.1e} ext={ext:.4f}] "
+              f"uv={uv_ok} {'OK' if good else 'FAIL'}")
+    # Genus-one helicoid through the toolkit pipeline: a stack of S
+    # translational periods must be one connected manifold surface of
+    # genus exactly S (chi = 2 - 2S - boundary_loops), fit to 2 m.
+    for S in (1, 2):
+        Vg, Qg = tk.build_parametric('GENUS1_HELICOID', 60, 60, S, 1.2,
+                                     1.0)
+        ecg = {}
+        for f in Qg:
+            m = len(f)
+            for t in range(m):
+                a, b = f[t], f[(t + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecg[e] = ecg.get(e, 0) + 1
+        chi = len(Vg) - len(ecg) + len(Qg)
+        nonman = sum(1 for c in ecg.values() if c > 2)
+        bed = [e for e, c in ecg.items() if c == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a, b in bed:
+            ra, rb = bfind(a), bfind(b)
+            if ra != rb:
+                par[ra] = rb
+        nloops = len({bfind(a) for a, b in bed})
+        genus = (2 - chi - nloops) / 2.0
+        lo, hi = Vg.min(0), Vg.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        good = (genus == S and nonman == 0 and cen < 1e-6
+                and abs(ext - 2.0) < 1e-6
+                and bool(np.all(np.isfinite(Vg))))
+        ok &= good
+        print(f"g1-helicoid S={S}: {len(Vg):6d}v {len(Qg):6d}f "
+              f"chi={chi} loops={nloops} genus={genus:.0f} (want {S}) "
+              f"nonman={nonman} fit[|c|={cen:.1e} ext={ext:.4f}] "
+              f"{'OK' if good else 'FAIL'}")
+    # Symmetrized Chen-Gackstatter towers: the same full watertight gate
+    # through the toolkit pipeline -- exact chi = 1 - 2g (one trimmed
+    # Enneper end), manifold, one loop, one component, 2 m fit, UV chart.
+    # SYMM_CG order k has genus k - 1 (k = 4 -> genus 3); SYMM_CG_G2N
+    # genus 2(k-1); SYMM_CG_G3K genus 3(k-1).
+    for skey, sord, sgen in (('SYMM_CG', 2, 1), ('SYMM_CG', 4, 3),
+                             ('SYMM_CG', 6, 5), ('SYMM_CG_G2N', 3, 4),
+                             ('SYMM_CG_G3K', 2, 3)):
+        Vg, Qg, uvg = tk.build_parametric(skey, 60, 60, sord, 1.2, 1.0,
+                                          with_uv=True)
+        ecg = {}
+        for f in Qg:
+            m = len(f)
+            for t in range(m):
+                a, b = f[t], f[(t + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecg[e] = ecg.get(e, 0) + 1
+        chi = len(Vg) - len(ecg) + len(Qg)
+        nonman = sum(1 for c in ecg.values() if c > 2)
+        bed = [e for e, c in ecg.items() if c == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a, b in bed:
+            ra, rb = bfind(a), bfind(b)
+            if ra != rb:
+                par[ra] = rb
+        nloops = len({bfind(a) for a, b in bed})
+        parc = list(range(len(Vg)))
+
+        def cfind(a):
+            while parc[a] != a:
+                parc[a] = parc[parc[a]]
+                a = parc[a]
+            return a
+
+        for f in Qg:
+            for i in range(1, len(f)):
+                ra, rb = cfind(f[0]), cfind(f[i])
+                if ra != rb:
+                    parc[ra] = rb
+        ncomp = len({cfind(f[0]) for f in Qg})
+        lo, hi = Vg.min(0), Vg.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        uv_ok = (uvg is not None and len(uvg) == sum(len(f) for f in Qg)
+                 and bool(np.all(np.isfinite(uvg))))
+        good = (chi == 1 - 2 * sgen and nonman == 0 and nloops == 1
+                and ncomp == 1 and cen < 1e-6 and abs(ext - 2.0) < 1e-6
+                and uv_ok and bool(np.all(np.isfinite(Vg))))
+        ok &= good
+        print(f"symm-CG {skey:12s} k={sord} (genus {sgen}): {len(Vg):6d}v "
+              f"{len(Qg):6d}f chi={chi} (want {1 - 2 * sgen}) "
+              f"nonman={nonman} loops={nloops} ncomp={ncomp} "
+              f"fit[|c|={cen:.1e} ext={ext:.4f}] uv={uv_ok} "
+              f"{'OK' if good else 'FAIL'}")
+    # Singly periodic Callahan-Hoffman-Meeks: full pipeline gate per
+    # stacked period count S.  The quotient by one translation is genus
+    # 2k + 1 = 3 with two planar ends, so S welded periods mesh at
+    # exactly chi = -6 S with 2 S end rims + 2 outer horizontal cuts,
+    # edge-manifold, one component, 2 m fit.
+    for S in (1, 2):
+        Vp, Qp = tk.build_parametric('CHM_PERIODIC', 60, 60, 1, 1.2, 1.0,
+                                     cells=(S, 1))
+        ecp = {}
+        for f in Qp:
+            m = len(f)
+            for tq in range(m):
+                a, b = f[tq], f[(tq + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecp[e] = ecp.get(e, 0) + 1
+        chi = len(Vp) - len(ecp) + len(Qp)
+        nonman = sum(1 for c in ecp.values() if c > 2)
+        bed = [e for e, c in ecp.items() if c == 1]
+        parb = {}
+
+        def pfind(x):
+            parb.setdefault(x, x)
+            while parb[x] != x:
+                parb[x] = parb[parb[x]]
+                x = parb[x]
+            return x
+
+        for a, b in bed:
+            ra, rb = pfind(a), pfind(b)
+            if ra != rb:
+                parb[ra] = rb
+        nloops = len({pfind(a) for a, b in bed})
+        parc = list(range(len(Vp)))
+
+        def cfind2(a):
+            while parc[a] != a:
+                parc[a] = parc[parc[a]]
+                a = parc[a]
+            return a
+
+        for f in Qp:
+            for i in range(1, len(f)):
+                ra, rb = cfind2(f[0]), cfind2(f[i])
+                if ra != rb:
+                    parc[ra] = rb
+        ncomp = len({cfind2(f[0]) for f in Qp})
+        lo, hi = Vp.min(0), Vp.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        good = (chi == -6 * S and nonman == 0 and nloops == 2 * S + 2
+                and ncomp == 1 and cen < 1e-6 and abs(ext - 2.0) < 1e-6
+                and bool(np.all(np.isfinite(Vp))))
+        ok &= good
+        print(f"CHM periodic S={S}: {len(Vp):6d}v {len(Qp):6d}f chi={chi} "
+              f"(want {-6 * S}) nonman={nonman} loops={nloops} "
+              f"(want {2 * S + 2}) ncomp={ncomp} fit[|c|={cen:.1e} "
+              f"ext={ext:.4f}] {'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")
