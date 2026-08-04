@@ -597,6 +597,11 @@ _HEPTIAMOND3_MAPS = _poly_reptile(          # 3-fold pinwheel heptiamond
     [_tri_dn(0, 0), _tri_dn(1, -1), _tri_dn(1, 0), _tri_up(0, 0),
      _tri_up(1, 0), _tri_up(1, 1), _tri_up(2, -1)], 7, 19.107,
     mus=_ORIENT_TRI)
+_HEPTIAMOND2_MAPS = _poly_reptile(          # heptiamond 2 (theta=40.893)
+    _SEED_TRI,
+    [_tri_dn(-1, 0), _tri_dn(-1, 1), _tri_dn(0, -1), _tri_dn(0, 0),
+     _tri_up(0, 0), _tri_up(0, 1), _tri_up(1, -1)], 7, 40.893,
+    mus=_ORIENT_TRI)
 
 _SEED_RHOMB = _rhomb_A(0, 0)
 _TRIRHOMB_MAPS = _poly_reptile(
@@ -608,9 +613,14 @@ _TETRARHOMB_MAPS = _poly_reptile(
 _SEED_KITE = _kite(0, 0, 0)
 _TRIKITE_MAPS = _poly_reptile(
     _SEED_KITE, [_kite(0, 0, 0), _kite(1, 0, 3), _kite(1, 0, 4)], 3, -30.0)
+_TRIKITE2_MAPS = _poly_reptile(
+    _SEED_KITE, [_kite(0, 0, 0), _kite(1, 0, 4), _kite(1, 0, 5)], 3, -30.0)
 _TETRAKITE_MAPS = _poly_reptile(
     _SEED_KITE, [_kite(0, 0, 0), _kite(1, 0, 3), _kite(1, 0, 4),
                  _kite(1, 0, 5)], 4, 0.0)
+_TETRAKITE2_MAPS = _poly_reptile(
+    _SEED_KITE, [_kite(0, 0, 0), _kite(1, 0, 2), _kite(1, 0, 3),
+                 _kite(1, 0, 4)], 4, 0.0)
 
 
 # builders take `iterations` (and a gasket `holes` count) and return
@@ -698,6 +708,14 @@ KINDS = {
             [0, _W6 - 1, 1 - _W6, -1, -_W6, _W6, 1, -2 + _W6, -1 - _W6,
              2 * _W6 - 1, 1 - 2 * _W6, 1 + _W6, 2 - _W6],
             it, cell=_HEXCELL, holes=h), n=13, samp=True),
+    'HEX13_2': dict(                          # 13-hex 2, rep-13
+        # a 3-fold-symmetric complete residue system mod 3+w
+        # (theta=13.898): a distinct 13-hex from HEX13 above
+        build=lambda it, h=0: _base_reptile(
+            3 + _W6,
+            [-2 + _W6, -1 - _W6, -1, -1 + _W6, -1 + 2 * _W6, -_W6, 0,
+             _W6, 1 - 2 * _W6, 1 - _W6, 1, 1 + _W6, 2 - _W6],
+            it, cell=_HEXCELL, holes=h), n=13, samp=True),
     'HEPTAHEX_3FOLD': dict(                   # 3-fold heptahex, rep-7
         # centre hex + two 120-deg orbits of three: a complete residue
         # system mod 1+2w (residue (j-2i) mod 7), giving Fathauer's
@@ -729,6 +747,10 @@ KINDS = {
         build=lambda it, h=0: _ifs_reptile(_HEPTIAMOND3_MAPS, it, holes=h,
                                            seed=_SEED_TRI),
         n=7, samp=True, osc=True),
+    'HEPTIAMOND_2': dict(                     # heptiamond 2, rep-7
+        build=lambda it, h=0: _ifs_reptile(_HEPTIAMOND2_MAPS, it, holes=h,
+                                           seed=_SEED_TRI),
+        n=7, samp=True, osc=True),
     'TRIRHOMB': dict(                         # trirhomb (terdragon), rep-3
         build=lambda it, h=0: _ifs_reptile(_TRIRHOMB_MAPS, it, holes=h,
                                            seed=_SEED_RHOMB),
@@ -741,8 +763,16 @@ KINDS = {
         build=lambda it, h=0: _ifs_reptile(_TRIKITE_MAPS, it, holes=h,
                                            seed=_SEED_KITE),
         n=3, samp=True, osc=True),
+    'TRIKITE_2': dict(                        # trikite 2, rep-3
+        build=lambda it, h=0: _ifs_reptile(_TRIKITE2_MAPS, it, holes=h,
+                                           seed=_SEED_KITE),
+        n=3, samp=True, osc=True),
     'TETRAKITE': dict(                        # tetrakite, rep-4
         build=lambda it, h=0: _ifs_reptile(_TETRAKITE_MAPS, it, holes=h,
+                                           seed=_SEED_KITE),
+        n=4, samp=True, osc=True),
+    'TETRAKITE_2': dict(                      # tetrakite 2, rep-4
+        build=lambda it, h=0: _ifs_reptile(_TETRAKITE2_MAPS, it, holes=h,
                                            seed=_SEED_KITE),
         n=4, samp=True, osc=True),
     # Reflection / foldable IFS kinds (quad cells; OSC attractors)
@@ -768,6 +798,58 @@ def fractal_patch(kind, iterations, holes=0):
         raise ValueError("unknown fractal rep-tile %r" % kind)
     polys, types = KINDS[kind]['build'](iterations, int(holes))
     return [_ensure_ccw(np.asarray(p, float)) for p in polys], types
+
+
+# --------------------------------------------------------------------
+# Seed-shape thumbnails (for the Shape selector icons)
+#
+# The level-1 patch (fractal_patch(kind, 1)) is exactly the n base
+# cells of the polyform -- the "seed" drawn on each Fractal Diversions
+# page.  Rasterise those convex cells, one palette colour per cell, to a
+# small RGBA buffer that Blender loads as a custom preview icon.
+# --------------------------------------------------------------------
+
+_SEED_PALETTE = [
+    (0.16, 0.50, 0.19), (0.20, 0.63, 0.79), (0.84, 0.15, 0.16),
+    (1.00, 0.60, 0.00), (0.42, 0.24, 0.60), (0.55, 0.34, 0.29),
+    (0.89, 0.47, 0.76), (0.30, 0.69, 0.29), (0.12, 0.47, 0.71),
+    (0.99, 0.75, 0.18), (0.65, 0.34, 0.16), (0.40, 0.40, 0.40),
+    (0.09, 0.75, 0.81),
+]
+
+
+def _rasterize_seed(kind, size=64, pad=0.14):
+    """Flat RGBA float list (size*size*4, rows bottom-to-top) of the
+    level-1 seed polyform for `kind`, or None if it cannot be drawn."""
+    try:
+        polys, types = fractal_patch(kind, 1)
+    except Exception:
+        return None
+    polys = [np.asarray(p, float) for p in polys if len(p) >= 3]
+    if not polys:
+        return None
+    allv = np.vstack(polys)
+    lo, hi = allv.min(0), allv.max(0)
+    span = float((hi - lo).max())
+    if span <= 1e-12:
+        return None
+    scale = (size - 2.0 * pad * size) / span
+    cen = (lo + hi) / 2.0
+    ax = (np.arange(size) + 0.5)
+    gx, gy = np.meshgrid(ax, ax)          # gy row 0 = bottom row
+    wx = cen[0] + (gx.ravel() - size / 2.0) / scale
+    wy = cen[1] + (gy.ravel() - size / 2.0) / scale
+    rgba = np.zeros((size * size, 4), float)
+    for poly, t in zip(polys, types):
+        inside = np.ones(len(wx), bool)
+        m = len(poly)
+        for i in range(m):
+            px, py = poly[i]
+            ex, ey = poly[(i + 1) % m] - poly[i]
+            inside &= (ex * (wy - py) - ey * (wx - px)) >= -1e-9
+        col = _SEED_PALETTE[int(t) % len(_SEED_PALETTE)]
+        rgba[inside] = (col[0], col[1], col[2], 1.0)
+    return rgba.reshape(-1).tolist()
 
 
 # --------------------------------------------------------------------
@@ -843,6 +925,9 @@ KIND_ITEMS = [
     ('HEX13', "Hex: 13-hex (rep-13)",
      "A compact 13-hex over Eisenstein base -4+w: the rep-13 polyhex "
      "fractal reptile (Fathauer, Bridges 2026)"),
+    ('HEX13_2', "Hex: 13-hex 2 (rep-13)",
+     "A 3-fold-symmetric 13-hex over Eisenstein base 3+w "
+     "(theta=13.898): a distinct rep-13 layout (Fathauer, Bridges 2026)"),
     # --- Polyiamond reptiles (triangle cells) ---
     ('HEPTIAMOND', "Iamond: Heptiamond (rep-7)",
      "Seven up/down triangles over an Eisenstein contraction "
@@ -851,6 +936,9 @@ KIND_ITEMS = [
     ('HEPTIAMOND_3FOLD', "Iamond: 3-fold Heptiamond (rep-7)",
      "A 120-degree-symmetric pinwheel heptiamond (theta=19.107): the "
      "rep-7 3-fold heptiamond fractal reptile (Fathauer, Bridges 2026)"),
+    ('HEPTIAMOND_2', "Iamond: Heptiamond 2 (rep-7)",
+     "A second heptiamond layout at theta=40.893: a distinct rep-7 "
+     "heptiamond fractal reptile (Fathauer, Bridges 2026)"),
     # --- Polyrhomb reptiles (60-120 rhombus cells) ---
     ('TRIRHOMB', "Rhomb: Trirhomb (terdragon, rep-3)",
      "Three rhombille rhombi, scale 1/sqrt3 theta=30: the rep-3 "
@@ -863,8 +951,14 @@ KIND_ITEMS = [
     ('TRIKITE', "Kite: Trikite (rep-3)",
      "Three deltoidal kites, scale 1/sqrt3 theta=-30: the rep-3 "
      "trikite fractal reptile (Fathauer, Bridges 2026)"),
+    ('TRIKITE_2', "Kite: Trikite 2 (rep-3)",
+     "A second trikite layout (theta=-30): a distinct rep-3 kite "
+     "fractal reptile (Fathauer, Bridges 2026)"),
     ('TETRAKITE', "Kite: Tetrakite (rep-4)",
      "Four deltoidal kites, scale 1/2 theta=0: the rep-4 tetrakite "
+     "fractal reptile (Fathauer, Bridges 2026)"),
+    ('TETRAKITE_2', "Kite: Tetrakite 2 (rep-4)",
+     "A second tetrakite layout (theta=0): a distinct rep-4 kite "
      "fractal reptile (Fathauer, Bridges 2026)"),
     # --- Reflection / foldable reptiles ---
     ('LEVY_DRAGON', "Reflection: Levy Dragon (rep-2)",
@@ -907,10 +1001,14 @@ for _kid, _lbl, _desc in KIND_ITEMS:
     _short = _lbl.split(':', 1)[-1].strip()
     _SHAPES_BY_FAMILY.setdefault(_fam, []).append((_kid, _short, _desc))
 _KIND_LABEL = dict((k, v) for k, v, _ in KIND_ITEMS)
+# stable, unique enum number per kind (icons require the 5-tuple form,
+# whose last element must be a fixed number that never changes)
+_KIND_NUMBER = dict((k, i) for i, (k, _, _) in enumerate(KIND_ITEMS))
 
 
 try:
     import bpy
+    import bpy.utils.previews
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
                            BoolProperty)
     from bpy_extras.object_utils import AddObjectHelper
@@ -922,13 +1020,39 @@ except ImportError:
 if _IN_BLENDER:
 
     _shape_items_cache = {}
+    _seed_previews = None            # bpy preview collection (icons)
+
+    def _load_seed_icons():
+        """Rasterise every shape's level-1 seed into a preview-collection
+        icon so the Shape selector shows a thumbnail of each polyform."""
+        global _seed_previews
+        if _seed_previews is not None:
+            return
+        _seed_previews = bpy.utils.previews.new()
+        for kind in KINDS:
+            try:
+                px = _rasterize_seed(kind, 64)
+                if not px:
+                    continue
+                pv = _seed_previews.new(kind)
+                pv.image_size = (64, 64)
+                pv.image_pixels_float = px
+            except Exception:
+                pass                 # a missing icon is non-fatal
 
     def _shape_items(self, context):
-        """Dynamic Shape enum: only the reptiles in the chosen Family.
-        The returned list is cached in a module global so Blender does
-        not garbage-collect the strings."""
+        """Dynamic Shape enum: only the reptiles in the chosen Family,
+        each carrying a seed-shape thumbnail icon.  The returned list is
+        cached in a module global so Blender does not garbage-collect
+        the strings."""
         fam = getattr(self, 'family', 'SQUARE')
-        items = _SHAPES_BY_FAMILY.get(fam) or _SHAPES_BY_FAMILY['CLASSIC']
+        base = _SHAPES_BY_FAMILY.get(fam) or _SHAPES_BY_FAMILY['CLASSIC']
+        items = []
+        for kind, label, desc in base:
+            icon = 0
+            if _seed_previews is not None and kind in _seed_previews:
+                icon = _seed_previews[kind].icon_id
+            items.append((kind, label, desc, icon, _KIND_NUMBER[kind]))
         _shape_items_cache[fam] = items
         return items
 
@@ -1033,14 +1157,19 @@ if _IN_BLENDER:
     ADD_MENU = True
 
     def register():
+        _load_seed_icons()
         bpy.utils.register_class(MESH_OT_fractal_reptile_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
+        global _seed_previews
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         bpy.utils.unregister_class(MESH_OT_fractal_reptile_add)
+        if _seed_previews is not None:
+            bpy.utils.previews.remove(_seed_previews)
+            _seed_previews = None
 
 
 # --------------------------------------------------------------------
