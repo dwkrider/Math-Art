@@ -663,6 +663,13 @@ KINDS = {
     'Z_TETROMINO': dict(                      # Z tetromino -> twindragon
         build=lambda it, h=0: _base_reptile(
             -2j, [0, 1, 1 + 1j, 2 + 1j], it, holes=h), n=4),
+    'FOURFOLD_OCTOMINO': dict(                # four-fold octomino, rep-8
+        # a 90-deg-symmetric pinwheel octomino, complete residue system
+        # mod 2+2i (the norm-8 Gaussian base, theta=45)
+        build=lambda it, h=0: _base_reptile(
+            2 + 2j,
+            [0, 1, 1 + 1j, 1 + 2j, 2 - 1j, 2, 2 + 1j, 3 + 1j], it,
+            holes=h), n=8),
     # Eisenstein radix-system kinds (hexagon cells); polyhex reptiles
     'FLOWSNAKE': dict(                        # Vince Fig 4/7 (heptahex)
         build=lambda it, h=0: _base_reptile(_FLOW_BASE, _FLOW_DIGITS,
@@ -802,6 +809,10 @@ KIND_ITEMS = [
     ('Z_OCTOMINO', "Square: Z-octomino (rep-8)",
      "Z-octomino cell set over base -2-2i: the rep-8 Z-octomino "
      "fractal reptile (Fathauer, Bridges 2025)"),
+    ('FOURFOLD_OCTOMINO', "Square: Four-fold octomino (rep-8)",
+     "A 90-degree-symmetric pinwheel octomino, complete residue system "
+     "mod 2+2i (theta=45): the rep-8 four-fold octomino fractal reptile "
+     "(Fathauer, Bridges 2025)"),
     # --- Polyhex reptiles (hexagon cells) ---
     ('TRIHEX', "Hex: Trihex (rep-3)",
      "Trihex {0,1,w} over Eisenstein base -2+w (w=e^{i pi/3}): the "
