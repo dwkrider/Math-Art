@@ -1436,6 +1436,89 @@ WE_SURFACES['SYMM_CG_G3K'] = {
 SURFACE_FAMILY['SYMM_CG_G3K'] = 'HIGHER'
 
 
+# ==========================================================================
+# Doubly periodic KMR + Wei surfaces (appended catalog block)
+# ==========================================================================
+# Three doubly periodic four-ended surfaces on the reusable hyperelliptic
+# tiler in we_builders (dperiodic_*): ONE conformal patch is integrated in
+# exponential coordinates, its boundary arcs are snapped exactly onto
+# their vertical mirror planes / straight lines, and the surface is the
+# orbit of that patch under the reflections/rotations those arcs
+# generate, tiled at the TRUE lattice vectors and welded seam-exactly.
+# The Cells U / V counts of the periodic operator drive the 2-D lattice
+# tiling.  Wall-constant closure (the period problem), quotient topology
+# (chi = 2 - 2g - 4, four Scherk-type end rims), manifoldness and
+# orientability are all measured in the we_builders self-tests.
+#
+#   * KMR_DOUBLY   -- the Karcher-Meeks-Rosenberg toroidal Scherk family
+#     (genus-1 quotient, 4 parallel Scherk ends).  The count slider
+#     walks the branch modulus a (every member closes -- the family's
+#     period problem is solved by its reciprocal branch symmetry).
+#   * KMR3_DOUBLY  -- the KMR-3 member with a Mobius Gauss map
+#     (z+eps)/(z-eps) and elliptic dh: the ends TILT out of the lattice
+#     plane (lattice vector T2 = (0, 2c2, 2c3)); assembled from a mirror
+#     plane and two straight lines in the surface.
+#   * WEI_DOUBLY   -- Fusheng Wei's genus-2 surface: a handle added to
+#     the KMR/Scherk picture.  The count slider walks the harvested
+#     one-parameter family (b, a) with a solved from b by the period
+#     condition Im int_a^b (G + 1/G) dz/z = 0 (verified in the tests).
+#
+# References (full citations in the we_builders engine block):
+#   Karcher 1988; Meeks-Rosenberg 1989; Perez-Rodriguez-Traizet 2005
+#   (the "KMR" classification); F. Wei 1992; data after M. Weber,
+#   https://minimalsurfaces.blog/ (KMR-2, KMR-3, Doubly Wei notebooks).
+# The KMR-1 notebook publishes only a precomputed mesh (no Weierstrass
+# data), so that member is not reconstructable here -- see BACKLOG.md.
+
+def _dp_rmin(radius):
+    """End depth from the radius slider: bigger radius digs the four
+    Scherk ends deeper (the truncation |z| = rmin moves toward 0)."""
+    return float(np.clip(0.05 * (1.2 / max(radius, 0.2)) ** 1.5,
+                         0.008, 0.2))
+
+
+WE_SURFACES['KMR_DOUBLY'] = {
+    'label': "Karcher-Meeks-Rosenberg (doubly periodic)",
+    'family': 'DOUBLY',
+    'mesher': we.dperiodic_mesh,
+    'cells2d_mesher': we.dperiodic_mesh,
+    'dp_key': 'kmr2',
+    'p_from': lambda order, radius: {
+        'a': (0.25, 0.32, 0.40, 0.48, 0.55)[
+            int(np.clip(order, 1, 5)) - 1],
+        'rmin': _dp_rmin(radius)},
+    'count': "Family member (a)",
+    'test_order': 3,
+}
+SURFACE_FAMILY['KMR_DOUBLY'] = 'DOUBLY'
+
+WE_SURFACES['KMR3_DOUBLY'] = {
+    'label': "Karcher-Meeks-Rosenberg (KMR-3, tilted ends)",
+    'family': 'DOUBLY',
+    'mesher': we.dperiodic_mesh,
+    'cells2d_mesher': we.dperiodic_mesh,
+    'dp_key': 'kmr3',
+    'p_from': lambda order, radius: {
+        'xmin': _dp_rmin(radius)},
+    'test_order': 1,
+}
+SURFACE_FAMILY['KMR3_DOUBLY'] = 'DOUBLY'
+
+WE_SURFACES['WEI_DOUBLY'] = {
+    'label': "Wei Doubly Periodic (genus 2)",
+    'family': 'DOUBLY',
+    'mesher': we.dperiodic_mesh,
+    'cells2d_mesher': we.dperiodic_mesh,
+    'dp_key': 'wei',
+    'p_from': lambda order, radius: (lambda bb, aa: {
+        'b': bb, 'a': aa, 'rmin': _dp_rmin(radius)})(
+            *we.DPERIODIC_WEI_SAMPLES[int(np.clip(order, 1, 7)) - 1]),
+    'count': "Family member (b = .3 ... .7)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['WEI_DOUBLY'] = 'DOUBLY'
+
+
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
@@ -1820,4 +1903,47 @@ if __name__ == "__main__":
               f"(want {-6 * S}) nonman={nonman} loops={nloops} "
               f"(want {2 * S + 2}) ncomp={ncomp} fit[|c|={cen:.1e} "
               f"ext={ext:.4f}] {'OK' if good else 'FAIL'}")
+    # Doubly periodic KMR + Wei rows through the FULL toolkit pipeline
+    # with a 2 x 2 lattice tiling (the operator's Cells U x V path):
+    # one connected component (the tiles genuinely weld -- the Scherk
+    # lesson), edge-manifold, 2 m fit, per-corner conformal UV.  (The
+    # quotient topology chi = 2 - 2g - 4 is gated in we_builders.)
+    for dkey, dord in (('KMR_DOUBLY', 3), ('KMR3_DOUBLY', 1),
+                       ('WEI_DOUBLY', 1)):
+        Vd, Qd, uvd = tk.build_parametric(dkey, 48, 48, dord, 1.2, 1.0,
+                                          with_uv=True, cells=(2, 2))
+        ecd = {}
+        for f in Qd:
+            m = len(f)
+            for tq in range(m):
+                a, b = f[tq], f[(tq + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecd[e] = ecd.get(e, 0) + 1
+        nonman = sum(1 for c in ecd.values() if c > 2)
+        parc = list(range(len(Vd)))
+
+        def dfind(a):
+            while parc[a] != a:
+                parc[a] = parc[parc[a]]
+                a = parc[a]
+            return a
+
+        for f in Qd:
+            for i in range(1, len(f)):
+                ra, rb = dfind(f[0]), dfind(f[i])
+                if ra != rb:
+                    parc[ra] = rb
+        ncomp = len({dfind(f[0]) for f in Qd})
+        lo, hi = Vd.min(0), Vd.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        uv_ok = (uvd is not None and len(uvd) == sum(len(f) for f in Qd)
+                 and bool(np.all(np.isfinite(uvd))))
+        good = (nonman == 0 and ncomp == 1 and cen < 1e-6
+                and abs(ext - 2.0) < 1e-6 and uv_ok and len(Qd) > 1000
+                and bool(np.all(np.isfinite(Vd))))
+        ok &= good
+        print(f"doubly {dkey:12s} 2x2: {len(Vd):6d}v {len(Qd):6d}f "
+              f"nonman={nonman} ncomp={ncomp} fit[|c|={cen:.1e} "
+              f"ext={ext:.4f}] uv={uv_ok} {'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")
