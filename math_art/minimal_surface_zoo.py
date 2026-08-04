@@ -1861,6 +1861,318 @@ WE_SURFACES['SP_SCHERK_ENNEPER'] = {
 SURFACE_FAMILY['SP_SCHERK_ENNEPER'] = 'SINGLY'
 
 
+# ==========================================================================
+# SYMM/NONORIENT TAIL (appended catalog block)
+# ==========================================================================
+# Two groups of rows on the symtail_* engine block in we_builders:
+#
+# 1) Symmetrization remainder (genus-0 k-noid variants, family SPHERES)
+#    -- the members of minimalsurfaces.blog's "Symmetrizations" index
+#    genuinely NOT already in this catalog (see the skip list in the
+#    self-tests): the symmetrized finite Riemann (1 planar + 2m
+#    catenoid ends), the symmetrized double Enneper (two mutually
+#    rotated Enneper ends), k-noids with Enneper ends, and the FULL
+#    antiprismatic k-noid family (the catalog had only the harvested
+#    nn = 5 member M3_ANTI5; the engine now solves the Lopez-Ros
+#    period problem numerically for every nn).
+# 2) Non-orientable remainder (family NONORIENT): Henneberg's classical
+#    one-sided surface meshed as its actual quotient (a cross-cap weld,
+#    not the orientable double-cover patch the CLASSICAL row shows),
+#    Kusner's projective planes with p planar ends, and F. J. Lopez's
+#    one-ended minimal Klein bottle.  Every non-orientable row is
+#    measurably one-sided (orientation propagation meets a
+#    contradiction) -- gated in the self-tests below.
+#
+# References:
+#   B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33
+#     (1991) for the (never embedded) finite Riemann family; the
+#     symmetrized member follows M. Weber, minimalsurfaces.blog,
+#     "Symmetrized Finite Riemann".
+#   H. Karcher, "Construction of minimal surfaces" (1989) for the
+#     symmetrization method (double Enneper, k-noid families);
+#     L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids;
+#     data after M. Weber, minimalsurfaces.blog ("Symmetrized Double
+#     Enneper", "k-Noids with Enneper Ends", "Antiprismatic k-Noids").
+#   L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987)
+#     291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full
+#     citations in the we_builders symtail engine block.
+
+
+def _symtail_friem_rho(m, a):
+    """Closed-form Lopez-Ros scale of the symmetrized finite Riemann
+    surface (Weber's notebook): all periods close for any a in (0,1)."""
+    a2m = a ** (2 * m)
+    return math.sqrt(1.0 - 2.0 * a2m + a2m * a2m + 2.0 * m
+                     - 2.0 * a2m * a2m * m)
+
+
+def _symtail_dblenn_phi(z, p):
+    """Symmetrized double Enneper: g = P/Q, eta = P Q / z^(2n+2) with
+    zeta = R0 e^(i pi/(2n+2)) twisting the two Enneper ends against
+    each other; all residues at z = 0 vanish identically."""
+    n, R0 = p['n'], p['R0']
+    zeta1 = (R0 * np.exp(1j * math.pi / (2 * n + 2))) ** (n + 1)
+    P = -(zeta1 / (1.0 + zeta1 * zeta1)) * z ** n \
+        * (z ** (n + 1) - zeta1)
+    Q = z ** (n + 1) - 1.0 / zeta1
+    w = z ** (2 * n + 2)
+    return (0.5 * (Q * Q - P * P) / w,
+            0.5j * (Q * Q + P * P) / w,
+            P * Q / w)
+
+
+def _symtail_kusner_p(order):
+    return 2 * int(min(max(order, 1), 3)) + 1          # p = 3, 5, 7
+
+
+def _symtail_kusner_ends(p_sym):
+    """The p inner planar-end punctures of Kusner's projective plane
+    (the other p ends are their antipodes outside the unit disk)."""
+    s = math.sqrt(2 * p_sym - 1)
+    r_in = ((p_sym - s) / (p_sym - 1)) ** (1.0 / p_sym)
+    return [r_in * np.exp(2j * math.pi * j / p_sym)
+            for j in range(p_sym)]
+
+
+def _symtail_kusner_eps(p_sym):
+    """Per-p puncture radius: inside the rim gap and the end spacing."""
+    s = math.sqrt(2 * p_sym - 1)
+    r_in = ((p_sym - s) / (p_sym - 1)) ** (1.0 / p_sym)
+    return min(0.45 * (1.0 - r_in),
+               0.30 * TAU * r_in / p_sym, 0.14)
+
+
+WE_SURFACES['SYMM_FRIEM'] = {
+    # Symmetrized finite Riemann: one planar end (z = infinity) + 2m
+    # catenoidal ends at the 2m-th roots of unity, m-fold dihedral
+    # symmetry.  g = rho z^(m-1)/(z^2m - a^2m), dh = z^(m-1)
+    # (z^2m - a^2m)/(z^2m - 1)^2 dz; rho is the closed form above, the
+    # neck parameter a is free.  Like every Riemann-type surface it is
+    # never embedded (Lopez-Ros); m = 1 is the M3_FRIEM member already
+    # shipped, so the slider starts at m = 2.
+    'label': "Symmetrized Finite Riemann (2m catenoids)",
+    'family': 'SPHERES',
+    'g': lambda z, p: p['rho'] * z ** (p['m'] - 1)
+    / (z ** (2 * p['m']) - p['a'] ** (2 * p['m'])),
+    'dh': lambda z, p: z ** (p['m'] - 1)
+    * (z ** (2 * p['m']) - p['a'] ** (2 * p['m']))
+    / (z ** (2 * p['m']) - 1.0) ** 2,
+    'domain': ('disk', 0.0, lambda p: p['r1']),
+    'p_from': lambda order, radius: (lambda m: {
+        'm': m, 'a': 0.9, 'rho': _symtail_friem_rho(m, 0.9),
+        'r1': 1.35 + 0.4 * min(max(radius / 1.2, 0.0), 1.4)})(
+            int(max(2, min(order, 6)))),
+    'count': "Symmetry (m)",
+    'radial_grade': 'rim', 'clip': True,
+    'res_boost': (1.9, 1.9),
+    'cycles': lambda p: [(np.exp(1j * math.pi * j / p['m']), 0.04)
+                         for j in range(2 * p['m'])]
+    + [(p['a'] * np.exp(1j * math.pi * j / p['m']), 0.03)
+       for j in range(2 * p['m'])],
+    'test_order': 2,
+}
+SURFACE_FAMILY['SYMM_FRIEM'] = 'SPHERES'
+
+WE_SURFACES['SYMM_DBLENN'] = {
+    # Symmetrized double Enneper: two higher-order Enneper ends (z = 0
+    # and z = infinity) rotated against each other by the twist phase of
+    # zeta = R0 e^(i pi/(2n+2)).  All periods vanish identically (the
+    # residues at 0 cancel by construction, verified in the period
+    # gate).  n = 1 is close to the classical DOUBLE_ENNEPER; the
+    # slider starts at n = 2 for the genuinely symmetrized members.
+    'label': "Symmetrized Double Enneper",
+    'family': 'SPHERES',
+    'phi': _symtail_dblenn_phi,
+    'domain': ('disk', lambda p: 1.0 / p['r1'], lambda p: p['r1']),
+    'p_from': lambda order, radius: (lambda n: {
+        'n': n, 'R0': 4.0 + 1.0 * (n - 2),
+        'r1': 2.0 + 0.5 * min(max(radius / 1.2, 0.0), 2.0)})(
+            int(max(2, min(order, 6)))),
+    'count': "Symmetry (n)",
+    'radial_grade': 'both', 'clip': True,
+    'res_boost': (1.6, 2.0),
+    'cycles': lambda p: [(0.0, 1.0)],
+    'test_order': 2,
+}
+SURFACE_FAMILY['SYMM_DBLENN'] = 'SPHERES'
+
+WE_SURFACES['KNOID_ENN_ENDS'] = {
+    # k-noid with Enneper ends: k ends at the k-th roots of unity whose
+    # height differential has POLES OF ORDER FOUR (winding Enneper
+    # ends) -- genuinely distinct from both the Jorge-Meeks KNOID
+    # (simple catenoid ends) and the shipped ENNK (order-three poles).
+    # g = z^(k-1)(z^k - R^k)/(1 - R^k z^k), dh = (1 - (z^k + z^-k)
+    # /(R^k + R^-k)) / (z (z^k + z^-k - 2)^2) dz; R is a free squeeze
+    # parameter and every period closes identically (period gate).
+    'label': "k-Noid with Enneper Ends",
+    'family': 'SPHERES',
+    'g': lambda z, p: z ** (p['k'] - 1)
+    * (z ** p['k'] - p['R'] ** p['k'])
+    / (1.0 - p['R'] ** p['k'] * z ** p['k']),
+    'dh': lambda z, p: (1.0 - (z ** p['k'] + z ** (-p['k']))
+                        / (p['R'] ** p['k'] + p['R'] ** (-p['k'])))
+    / (z * (z ** p['k'] + z ** (-p['k']) - 2.0) ** 2),
+    # ENNK-style domain: stop just INSIDE the unit circle where the k
+    # ends live, and cut each end with a puncture-mask disk -- the
+    # order-four Enneper flares then read as clean winding wings
+    # instead of the untrimmable blade an outside-reaching domain
+    # produces.  The radius slider squeezes the ends via the mask size.
+    'domain': ('disk', 0.0, 0.985),
+    'p_from': lambda order, radius: {
+        'k': int(max(3, min(order, 7))), 'R': 2.0,
+        'eps': 0.16 / min(max(radius / 1.2, 0.7), 1.6)},
+    'count': "Ends (k)",
+    'mask_punctures': lambda p: [
+        (np.exp(2j * math.pi * j / p['k']), p['eps'])
+        for j in range(p['k'])],
+    'radial_grade': 'rim', 'clip': False,
+    'res_boost': (2.0, 2.4),
+    'cycles': lambda p: [(np.exp(2j * math.pi * j / p['k']), 0.1)
+                         for j in range(p['k'])] + [(0.0, 0.3)],
+    'test_order': 3,
+}
+SURFACE_FAMILY['KNOID_ENN_ENDS'] = 'SPHERES'
+
+_SYMTAIL_AP_B = {3: 0.60, 4: 0.55, 5: 0.45, 6: 0.42, 7: 0.40}
+# per-order outer reach: how far past the |z| = 1/b end ring the domain
+# extends before the object-space clip trims -- tuned so the trimmed
+# mesh stays ONE component at every order (gated below)
+_SYMTAIL_AP_ROUT = {3: 1.6, 4: 1.4, 5: 1.4, 6: 1.25, 7: 1.25}
+
+WE_SURFACES['ANTIPRISM_KNOID'] = {
+    # Antiprismatic k-noid, FULL family: 2*nn catenoid ends in antiprism
+    # symmetry (one ring at |z| = b, one half-step-rotated ring at
+    # |z| = 1/b).  The branch constant a and Lopez-Ros scale rho have no
+    # closed form for general nn; we.symtail_antiprism_constants solves
+    # the two-ring period problem numerically per (nn, b) -- at nn = 5,
+    # b = 0.2 it reproduces Weber's harvested constants to 1e-9 (the
+    # M3_ANTI5 row keeps that exact member).
+    'label': "Antiprismatic k-noid (full family)",
+    'family': 'SPHERES',
+    'g': lambda z, p: p['rho'] * z ** (p['nn'] - 1)
+    * (z ** p['nn'] + 1.0 / p['a'] ** p['nn'])
+    / (z ** p['nn'] - p['a'] ** p['nn']),
+    'dh': lambda z, p: z ** (p['nn'] - 1)
+    * (z ** p['nn'] - p['a'] ** p['nn'])
+    * (z ** p['nn'] + 1.0 / p['a'] ** p['nn'])
+    / ((z ** p['nn'] - p['b'] ** p['nn']) ** 2
+       * (z ** p['nn'] + 1.0 / p['b'] ** p['nn']) ** 2),
+    'domain': ('disk', lambda p: 0.5 * p['b'],
+               lambda p: _SYMTAIL_AP_ROUT[p['nn']] / p['b']),
+    'p_from': lambda order, radius: (lambda nn: {
+        'nn': nn, 'b': _SYMTAIL_AP_B[nn]})(
+            int(max(3, min(order + 2, 7)))),
+    'solve': lambda p: dict(p, **dict(zip(('a', 'rho'),
+                                          we.symtail_antiprism_constants(
+                                              p['nn'], p['b'])))),
+    'count': "Antiprism order (nn)",
+    'radial_grade': 'both', 'clip': True,
+    'res_boost': (2.0, 2.0),
+    'cycles': lambda p: _m3_ring_cyc(p['nn'], p['b'], p['a'],
+                                     math.pi / p['nn']),
+    'test_order': 1,                             # order 1 -> nn = 3
+}
+SURFACE_FAMILY['ANTIPRISM_KNOID'] = 'SPHERES'
+
+
+def _symtail_henneberg_X(z, p, theta=0.0):
+    """Exact antiderivative of Henneberg's Weierstrass data g = z,
+    dh = 2 z (1 - z^-4) dz (halved scale).  Satisfies the antipodal
+    identity X(-1/conj z) = X(z) exactly -- the surface is one-sided."""
+    F1 = z - z ** 3 / 3.0 + z ** (-3) / 3.0 - 1.0 / z
+    F2 = 1j * (z + z ** 3 / 3.0 + z ** (-3) / 3.0 + 1.0 / z)
+    F3 = z * z + z ** (-2)
+    return np.real(F1), np.real(F2), np.real(F3)
+
+
+WE_SURFACES['HENNEBERG_RP2'] = {
+    # Henneberg's surface meshed as its true one-sided quotient: the
+    # complete surface is a once-punctured projective plane (Henneberg
+    # 1875 -- the first known non-orientable minimal surface); the
+    # annulus 1 <= |z| <= r1 is a fundamental domain of the free
+    # antipodal involution z -> -1/conj(z), and welding the |z| = 1 rim
+    # to itself antipodally produces a genuine Mobius-strip mesh
+    # (chi = 0, one boundary loop, no consistent orientation -- all
+    # measured in the self-tests).  The four branch points of the
+    # classical immersion (z = +-1, +-i) sit on the welded rim.  The
+    # CLASSICAL family's HENNEBERG row shows the familiar orientable
+    # double-cover patch; this row is the surface's actual topology.
+    'label': "Henneberg (one-sided)",
+    'family': 'NONORIENT',
+    'g': lambda z, p: z,                  # for the period-closure gate
+    'dh': lambda z, p: 2.0 * z * (1.0 - z ** (-4)),
+    'Xexact': _symtail_henneberg_X,
+    'mesher': we.symtail_crosscap_mesh,
+    'crosscap_rim': 'inner',
+    'domain': ('disk', 1.0, lambda p: p['r1']),
+    'p_from': lambda order, radius: {
+        'r1': 1.9 + 0.5 * min(max(radius / 1.2, 0.0), 2.0)},
+    'radial_grade': 'rim',
+    'clip': False,
+    'res_boost': (1.7, 2.2),
+    'cycles': lambda p: [(0.0, 1.2)],
+    'test_order': 1,
+}
+SURFACE_FAMILY['HENNEBERG_RP2'] = 'NONORIENT'
+
+WE_SURFACES['KUSNER_RP2'] = {
+    # Kusner's projective planes (Kusner 1987): an immersed minimal
+    # sphere with 2p planar ends whose immersion commutes with the
+    # antipodal map for ODD p, descending to RP^2 with p planar ends
+    # (p = 3 is the surface whose inversion is Bryant's Boy surface).
+    # G = z^(p-1)(z^p - s)/(s z^p + 1), s = sqrt(2p - 1), dh = i
+    # z^(p-1)(z^p - s)(1 + s z^p)/(z^2p + 2 s z^p/(p-1) - 1)^2 dz; all
+    # 2p residues vanish (gated), so the immersion is single-valued
+    # with NO period problem.  The unit disk is a fundamental domain of
+    # z -> -1/conj(z) (p ends inside, their antipodes outside); the
+    # cross-cap weld of the rim makes the mesh measurably one-sided
+    # with chi = 1 - p and p planar-end boundary loops.
+    'label': "Kusner Projective Plane (p planar ends)",
+    'family': 'NONORIENT',
+    'g': lambda z, p: z ** (p['p'] - 1)
+    * (z ** p['p'] - p['s']) / (p['s'] * z ** p['p'] + 1.0),
+    'dh': lambda z, p: 1j * z ** (p['p'] - 1)
+    * (z ** p['p'] - p['s']) * (1.0 + p['s'] * z ** p['p'])
+    / (z ** (2 * p['p']) + 2.0 * p['s'] * z ** p['p']
+       / (p['p'] - 1) - 1.0) ** 2,
+    'mesher': we.symtail_crosscap_mesh,
+    'crosscap_rim': 'outer',
+    'domain': ('disk', 0.0, 1.0),
+    'p_from': lambda order, radius: (lambda pp: {
+        'p': pp, 's': math.sqrt(2 * pp - 1)})(_symtail_kusner_p(order)),
+    'count': "Planar ends (3/5/7)",
+    'mask_punctures': lambda p: [
+        (e, _symtail_kusner_eps(p['p']))
+        for e in _symtail_kusner_ends(p['p'])],
+    'res_boost': (2.2, 2.4),
+    'clip': False,
+    'cycles': lambda p: [
+        (e, 0.5 * _symtail_kusner_eps(p['p']))
+        for e in _symtail_kusner_ends(p['p'])],
+    'test_order': 1,                             # order 1 -> p = 3
+}
+SURFACE_FAMILY['KUSNER_RP2'] = 'NONORIENT'
+
+WE_SURFACES['LOPEZ_KLEIN'] = {
+    # F. J. Lopez's one-ended minimal Klein bottle (Duke Math. J. 71,
+    # 1993): the unique-in-its-class complete non-orientable minimal
+    # surface of total curvature -8 pi with Klein bottle topology.
+    # Assembled by the symtail engine from one conformal patch of the
+    # orientation double cover and the surface's two straight lines
+    # (x- and y-axis 180-degree rotations); the |x| = 1 rim carries the
+    # Klein-deck gluing.  chi = -1 with ONE boundary loop (the trimmed
+    # end) and no consistent orientation -- all measured.
+    'label': "Lopez Minimal Klein Bottle",
+    'family': 'NONORIENT',
+    'mesher': we.symtail_lopez_klein_mesh,
+    'p_from': lambda order, radius: {
+        'rmax': 2.6 + 0.6 * min(max(radius / 1.2, 0.4), 2.0)},
+    'res_boost': (1.5, 1.5),
+    'test_order': 1,
+}
+SURFACE_FAMILY['LOPEZ_KLEIN'] = 'NONORIENT'
+
+
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
@@ -2430,4 +2742,123 @@ if __name__ == "__main__":
     print(f"sptail SP_SCHERK_ENNEPER periods: alternation "
           f"residual={sealt:.1e} |T|>={semag:.3f} "
           f"{'OK' if good else 'FAIL'}")
+    # ---- SYMM/NONORIENT TAIL gates -----------------------------------
+    # Kusner: the FULL residue (Re and Im) must vanish at every one of
+    # the 2p planar ends -- the immersion is single-valued with no
+    # period problem (p = 7 included, beyond the shipped test orders).
+    for pp in (3, 5, 7):
+        spec = WE_SURFACES['KUSNER_RP2']
+        p = spec['p_from']((pp - 1) // 2, 1.2)
+        phi = we._phi_fn(spec, p, 0.0)
+        s = p['s']
+        r_in = ((pp - s) / (pp - 1)) ** (1.0 / pp)
+        ends = [r_in * np.exp(2j * math.pi * j / pp) for j in range(pp)]
+        ends += [np.exp(1j * (2 * math.pi * j + math.pi) / pp) / r_in
+                 for j in range(pp)]
+        w = 0.0
+        for zc in ends:
+            for c in range(3):
+                I = we.period_integral(lambda z, c=c: phi(z)[..., c],
+                                       zc, 0.05, 0.05)
+                w = max(w, abs(I))
+        good = w < 1e-6
+        ok &= good
+        print(f"kusner residues p={pp}: max|oint phi| = {w:.2e} "
+              f"{'OK' if good else 'FAIL'}")
+    # Henneberg: the antipodal identity X(-1/conj z) = X(z) holds to
+    # machine epsilon on the exact antiderivative (one-sidedness of the
+    # underlying immersion, independent of any mesh).
+    rngh = np.random.default_rng(7)
+    zh = rngh.uniform(0.4, 2.4, 64) \
+        * np.exp(1j * rngh.uniform(0.0, TAU, 64))
+    Xa = np.stack(_symtail_henneberg_X(zh, {}), axis=-1)
+    Xb = np.stack(_symtail_henneberg_X(-1.0 / np.conj(zh), {}), axis=-1)
+    e = float(np.max(np.abs(Xa - Xb)))
+    good = e < 1e-10
+    ok &= good
+    print(f"henneberg antipodal identity: max err = {e:.2e} "
+          f"{'OK' if good else 'FAIL'}")
+    # Antiprismatic k-noid: the numeric two-ring Lopez-Ros solve closes
+    # every period for the whole slider range, and reproduces Weber's
+    # harvested nn = 5, b = 0.2 constants (the M3_ANTI5 member).
+    ah, rh = we.symtail_antiprism_constants(5, 0.2)
+    e = max(abs(ah - 0.2748767946679093),
+            abs(rh - 0.0015692436842339352))
+    good = e < 1e-8
+    ok &= good
+    print(f"antiprism harvested check: a={ah:.12f} rho={rh:.6e} "
+          f"err={e:.2e} {'OK' if good else 'FAIL'}")
+    for nn in (3, 4, 5, 6, 7):
+        try:
+            aa, rr = we.symtail_antiprism_constants(nn, _SYMTAIL_AP_B[nn])
+            print(f"antiprism nn={nn}: a={aa:.10f} rho={rr:.4e} OK")
+        except ValueError as ex:
+            ok = False
+            print(f"antiprism nn={nn}: FAIL ({ex})")
+    # Non-orientable meshes: exact Euler characteristic, boundary loop
+    # count, edge-manifold, 2 m fit, finite UV -- and MEASURED
+    # one-sidedness (orientation propagation meets a contradiction;
+    # the orientation double cover is connected).
+    for nkey, nord, wchi, wloops in (('HENNEBERG_RP2', 1, 0, 1),
+                                     ('KUSNER_RP2', 1, -2, 3),
+                                     ('KUSNER_RP2', 2, -4, 5),
+                                     ('LOPEZ_KLEIN', 1, -1, 1)):
+        Vn, Qn, uvn = tk.build_parametric(nkey, 60, 60, nord, 1.2, 1.0,
+                                          with_uv=True)
+        chi, nonman, nloops, one_sided = we.symtail_edge_stats(Vn, Qn)
+        lo, hi = Vn.min(0), Vn.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        # non-degeneracy: a genuinely 3-D surface, not a collapsed
+        # plane (a flat complex can still pass every topology gate)
+        ext_min = float(np.min(hi - lo))
+        uv_ok = (uvn is not None and len(uvn) == sum(len(f) for f in Qn)
+                 and bool(np.all(np.isfinite(uvn))))
+        good = (chi == wchi and nloops == wloops and nonman == 0
+                and one_sided and cen < 1e-6 and abs(ext - 2.0) < 1e-6
+                and ext_min > 0.3 and uv_ok
+                and bool(np.all(np.isfinite(Vn))))
+        ok &= good
+        print(f"nonorient {nkey:13s} n={nord}: {len(Vn):6d}v "
+              f"{len(Qn):6d}f chi={chi} (want {wchi}) loops={nloops} "
+              f"(want {wloops}) nonman={nonman} one_sided={one_sided} "
+              f"fit[|c|={cen:.1e} ext={ext:.4f} min={ext_min:.2f}] "
+              f"uv={uv_ok} {'OK' if good else 'FAIL'}")
+    # Symmetrization-tail rows: one connected component at every
+    # slider order (the object-space clip must not shear off islands)
+    for skey, sords in (('SYMM_FRIEM', (2, 3, 4, 5, 6)),
+                        ('SYMM_DBLENN', (2, 3, 4, 5, 6)),
+                        ('KNOID_ENN_ENDS', (3, 4, 5, 6, 7)),
+                        ('ANTIPRISM_KNOID', (1, 2, 3, 4, 5))):
+        for so in sords:
+            Vs2, Qs2 = tk.build_parametric(skey, 60, 60, so, 1.2, 1.0)
+            parc2 = list(range(len(Vs2)))
+
+            def sfind(a):
+                while parc2[a] != a:
+                    parc2[a] = parc2[parc2[a]]
+                    a = parc2[a]
+                return a
+
+            for f in Qs2:
+                for i in range(1, len(f)):
+                    ra, rb = sfind(f[0]), sfind(f[i])
+                    if ra != rb:
+                        parc2[ra] = rb
+            nc = len({sfind(f[0]) for f in Qs2})
+            good = nc == 1 and len(Qs2) > 500
+            ok &= good
+            if not good:
+                print(f"symm-tail {skey} order {so}: ncomp={nc} FAIL")
+        print(f"symm-tail {skey}: one component at orders {sords} OK")
+    # Symmetrization skip list (documented duplicates -- kept as a
+    # printed record, not a gate): higher-order Enneper == ENNEPER,
+    # symm-Scherk == SCHERK_TOWER, Jorge-Meeks == KNOID, pyramidal ==
+    # M3_PYR, bipyramidal == M3_BIPYR, prismatic == M3_PRISM,
+    # symm-Costa == COSTA_HM (rho == chm_modulus, see the TODO note),
+    # symm-Chen-Gackstatter == SYMM_CG towers, Enneper-n-catenoids ==
+    # ENNEPER_NCAT.
+    print("symm tail: shipped SYMM_FRIEM SYMM_DBLENN KNOID_ENN_ENDS "
+          "ANTIPRISM_KNOID + nonorient HENNEBERG_RP2 KUSNER_RP2 "
+          "LOPEZ_KLEIN; 9 index entries skipped as duplicates")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")
