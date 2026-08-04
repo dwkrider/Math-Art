@@ -1270,6 +1270,34 @@ def unregister():
     pass
 
 
+# ==========================================================================
+# Higher-genus Chen-Gackstatter (appended catalog block)
+# ==========================================================================
+# Genus-g Chen-Gackstatter surfaces (one winding-3 Enneper end, D2d
+# symmetry) on the hyperelliptic curve y^2 = z prod(z^2 - r_i^2), meshed
+# watertight (chi = 1 - 2g exactly) from ONE 1/8 Coxeter fundamental
+# domain orbited under the full D2d group -- the engine, verified data
+# and references live in we_builders.cg_higher_mesh and the block above
+# it.  Genus 2, 4 and 5 are the solved period problems (Chen &
+# Gackstatter 1982; E. C. Thayer, Experiment. Math. 4, 1995; data after
+# M. Weber, minimalsurfaces.blog).  Genus 3 is deliberately absent: its
+# period problem is not solved by this two-parameter normalization.
+
+WE_SURFACES['CG_HIGHER'] = {
+    'label': "Chen-Gackstatter (higher genus)",
+    'family': 'HIGHER',
+    'mesher': we.cg_higher_mesh,
+    # the count slider is the target genus; 2, 4, 5 are the solved
+    # families, other values snap to the nearest solved genus.  radius
+    # scales the spherical end-trim (how far the Enneper end flares).
+    'p_from': lambda order, radius: {
+        'genus': 2 if order <= 2 else (4 if order <= 4 else 5)},
+    'count': "Genus (2/4/5)",
+    'test_order': 2,
+}
+SURFACE_FAMILY['CG_HIGHER'] = 'HIGHER'
+
+
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
@@ -1433,4 +1461,64 @@ if __name__ == "__main__":
     print("CHM modulus: "
           + " ".join(f"c({kk})={chm_modulus(kk):.6f}" for kk in cref)
           + f"  {'OK' if cok else 'FAIL'}")
+    # Higher-genus Chen-Gackstatter: the full watertight gate through the
+    # toolkit pipeline -- exact Euler characteristic chi = 1 - 2g (2 - 2g
+    # for the closed surface, minus the one trimmed Enneper end), zero
+    # non-manifold edges, ONE boundary loop, one component, 2 m fit, and
+    # a finite per-corner UV chart.
+    for gord, gg in ((2, 2), (4, 4), (5, 5)):
+        out = tk.build_parametric('CG_HIGHER', 60, 60, gord, 1.2, 1.0,
+                                  with_uv=True)
+        Vg, Qg, uvg = out
+        ecg = {}
+        for f in Qg:
+            m = len(f)
+            for t in range(m):
+                a, b = f[t], f[(t + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecg[e] = ecg.get(e, 0) + 1
+        chi = len(Vg) - len(ecg) + len(Qg)
+        nonman = sum(1 for c in ecg.values() if c > 2)
+        bed = [e for e, c in ecg.items() if c == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a, b in bed:
+            ra, rb = bfind(a), bfind(b)
+            if ra != rb:
+                par[ra] = rb
+        nloops = len({bfind(a) for a, b in bed})
+        parc = list(range(len(Vg)))
+
+        def cfind(a):
+            while parc[a] != a:
+                parc[a] = parc[parc[a]]
+                a = parc[a]
+            return a
+
+        for f in Qg:
+            for i in range(1, len(f)):
+                ra, rb = cfind(f[0]), cfind(f[i])
+                if ra != rb:
+                    parc[ra] = rb
+        ncomp = len({cfind(f[0]) for f in Qg})
+        lo, hi = Vg.min(0), Vg.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        uv_ok = (uvg is not None and len(uvg) == sum(len(f) for f in Qg)
+                 and bool(np.all(np.isfinite(uvg))))
+        good = (chi == 1 - 2 * gg and nonman == 0 and nloops == 1
+                and ncomp == 1 and cen < 1e-6 and abs(ext - 2.0) < 1e-6
+                and uv_ok and bool(np.all(np.isfinite(Vg))))
+        ok &= good
+        print(f"CG higher g{gg}: {len(Vg):6d}v {len(Qg):6d}f chi={chi} "
+              f"(want {1 - 2 * gg}) nonman={nonman} loops={nloops} "
+              f"ncomp={ncomp} fit[|c|={cen:.1e} ext={ext:.4f}] "
+              f"uv={uv_ok} {'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")

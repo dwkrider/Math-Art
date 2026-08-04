@@ -321,6 +321,15 @@ OPS = [
      lambda: bpy.ops.mesh.icosahedron_stellation_add(solid='22')),
     ("stellation final (echidnahedron)",
      lambda: bpy.ops.mesh.icosahedron_stellation_add(solid='8')),
+    ("general stellation dodeca small stellated",
+     lambda: bpy.ops.mesh.general_stellation_add(
+         seed='dodecahedron', stellation='small_stellated')),
+    ("general stellation cubocta cube+octahedron",
+     lambda: bpy.ops.mesh.general_stellation_add(
+         seed='cuboctahedron', stellation='cube_octahedron')),
+    ("general stellation RT five cubes",
+     lambda: bpy.ops.mesh.general_stellation_add(
+         seed='rhombic_triacontahedron', stellation='five_cubes')),
     ("notable schonhardt",
      lambda: bpy.ops.mesh.notable_polyhedron_add(solid='SCHONHARDT')),
     ("notable jessen",

@@ -735,7 +735,13 @@ def we_saddle_tower(spec, nu, nv, order, radius, scale, theta, storeys):
 
 def make_entry(key, spec):
     """PARAMETRIC/MESH_PARAM builder closure for a WE spec."""
-    if spec.get('tower'):
+    if spec.get('mesher'):
+        # bespoke finished-mesh builder (higher-genus Chen-Gackstatter):
+        # the spec supplies the whole mesher, the engine only wires it in
+        def build(nu, nv, order, radius, scale, theta=0.0, storeys=1):
+            return spec['mesher'](spec, nu, nv, order, radius, scale, theta)
+        build.finished_mesh = True
+    elif spec.get('tower'):
         def build(nu, nv, order, radius, scale, theta=0.0, storeys=1):
             return we_saddle_tower(spec, nu, nv, order, radius, scale,
                                    theta, storeys)
@@ -1504,6 +1510,366 @@ def pgd_build(cells, res, scale, theta):
     return V, tris
 
 
+# ==========================================================================
+# Higher-genus Chen-Gackstatter surfaces (genus 2, 4, 5)
+# ==========================================================================
+# Complete minimal surfaces of genus g with ONE Enneper-type end of winding
+# 3: the higher-genus continuation of the Chen-Gackstatter torus.  They live
+# on the hyperelliptic curve  y^2 = z * prod_i (z^2 - r_i^2)  with the
+# unified Weierstrass data
+#     g = rho * y / D(z),      dh = dz          (so x3 = Re z),
+# where D collects half of the branch factors (for genus 2 the z sits in the
+# DENOMINATOR of g^2, for genus 4/5 in the numerator) and the real constants
+# r_i, rho solve the period problem (values below verified numerically:
+# the null identity |phi1^2 + phi2^2 + phi3^2| ~ 1e-16 and all periods of
+# the double cover close).
+#
+# Symmetry group: D2d of order 8, the SAME for every genus:
+#   * z -> -z acts on the immersion as the rotoreflection S4 about the
+#     vertical axis, (x1, x2, x3) -> (x2, -x1, -x3)  (g -> i g, dh -> -dh);
+#   * S4^2 = C2 is the hyperelliptic sheet swap (y -> -y);
+#   * z -> conj(z) and z -> -conj(z) are antiholomorphic: two vertical
+#     sigma_d mirror planes x = cx, y = cy (the images of the real-axis
+#     branch intervals) and two horizontal 2-fold axes at x3 = 0 (the
+#     images of the imaginary axis);
+#   * the S4 axis threads every branch-point image at (cx, cy, z_branch).
+#
+# Meshing scheme (the part that makes the assembly watertight): ONE
+# 1/8 Coxeter fundamental domain -- the quarter  {Re z >= 0}  of the upper
+# half plane, i.e. the half  {Im w <= 0}  of the Cayley w-disk
+# (w = (z-i)/(z+i)) -- whose boundary lies ON the symmetry elements:
+# the real-w diameter maps onto a horizontal 2-fold axis (a straight line
+# through (cx, cy, 0) at 45 degrees to the mirror planes), and the rim
+# semicircle maps into the two mirror planes, split at the branch points.
+# The WE forms are integrated radially on one continuous sqrt branch, each
+# boundary vertex is snapped exactly onto its symmetry element (line /
+# plane / axis point), the patch is orbited under the full 8-element D2d
+# group and the copies weld by coincidence -- boundary vertices only, so
+# interior verts can never fuse.  Face winding flips exactly for the four
+# antiholomorphic copies (mirrors and 2-fold axes), NOT by det: S4 has
+# det -1 but is holomorphic (z -> -z) and keeps its winding.  A spherical
+# clip about (cx, cy, 0) trims the one flaring end; with the trim radius
+# past the outermost handles the result is exactly Euler characteristic
+# chi = 1 - 2g (one boundary loop), edge-manifold and connected -- gated
+# by the self-tests below.
+#
+# References:
+#   C. C. Chen, F. Gackstatter, "Elliptische und hyperelliptische
+#     Funktionen und vollstaendige Minimalflaechen vom Enneperschen Typ",
+#     Math. Ann. 259 (1982) -- the genus-1 and genus-2 surfaces;
+#   E. C. Thayer, "Higher-genus Chen-Gackstatter surfaces and the
+#     Weierstrass representation for surfaces of infinite genus",
+#     Experiment. Math. 4 (1995) -- the genus >= 2 family;
+#   H. Karcher, "Construction of minimal surfaces", Univ. of Tokyo lecture
+#     notes (1989) -- the symmetry/period method;
+#   M. Weber, https://minimalsurfaces.blog/ (higher-genus Chen-Gackstatter
+#     pages) -- the numerical data this implementation follows.
+
+_CGH_DATA = {
+    2: dict(roots=(1.0, 1.7126826390981942),
+            Dfac=(('z',), ('sq', 1.7126826390981942)),
+            rho=None),                # solved from the [0,1] period ratio
+    4: dict(roots=(1.0, 1.81645934660556296, 3.11436011061010598,
+                   3.77509108812262628),
+            Dfac=(('sq', 1.0), ('sq', 3.11436011061010598)),
+            rho=0.580558059350863508),
+    5: dict(roots=(1.0, 2.19951977246661467, 3.04734348507243302,
+                   4.58374227188035909, 5.28690084560405004),
+            Dfac=(('sq', 1.0), ('sq', 3.04734348507243302),
+                  ('sq', 5.28690084560405004)),
+            rho=1.97502242055676724),
+}
+
+_CGH_RHO_CACHE = {}
+
+
+def _cgh_forms(genus):
+    """(Pfun, Dfun, rho, roots) for the genus: y^2 = P(z), g = rho*y/D."""
+    d = _CGH_DATA[genus]
+    roots = d['roots']
+
+    def Pfun(z):
+        z = np.asarray(z, dtype=complex)
+        out = z.copy()
+        for r in roots:
+            out = out * (z ** 2 - r ** 2)
+        return out
+
+    def Dfun(z):
+        z = np.asarray(z, dtype=complex)
+        out = np.ones_like(z)
+        for f in d['Dfac']:
+            out = out * (z if f[0] == 'z' else (z ** 2 - f[1] ** 2))
+        return out
+
+    rho = d['rho']
+    if rho is None:                    # genus 2: scalar period ratio on [0,1]
+        if genus not in _CGH_RHO_CACHE:
+            zz = np.linspace(1e-9, 1 - 1e-9, 400000)
+            y = np.sqrt(Pfun(zz))
+            _trapz = getattr(np, 'trapezoid', None) or np.trapz
+            _CGH_RHO_CACHE[genus] = math.sqrt(
+                _trapz((y / (zz ** 2 - 1.0)).real, zz)
+                / _trapz(((zz ** 2 - 1.0) / y).real, zz))
+        rho = _CGH_RHO_CACHE[genus]
+    return Pfun, Dfun, rho, roots
+
+
+def _cgh_octant(genus, nu, arcn):
+    """Mesh the 1/8 fundamental domain (half of the Cayley disk,
+    Im w <= 0) by radial integration from w = 0 (z = i).  Returns
+    (V, faces, boundary-classification dict, per-vertex uv)."""
+    Pfun, Dfun, rho, roots = _cgh_forms(genus)
+    bps = [0.0] + sorted(roots)        # finite branch points, z = 0 first
+    ang = [np.angle((b - 1j) / (b + 1j)) % TAU for b in bps]
+    ang = [a + TAU if a < math.pi - 1e-12 else a for a in ang]
+    ang.append(TAU)                    # z = inf at w = 1
+    # angular grid with the exact branch angles as shared nodes
+    th = []
+    for k in range(len(ang) - 1):
+        n_k = max(8, int(round(arcn * (ang[k + 1] - ang[k])
+                               / (math.pi / 4))))
+        seg = np.linspace(ang[k], ang[k + 1], n_k + 1)
+        th.extend(seg[:-1] if k < len(ang) - 2 else seg)
+    th = np.array(th)
+    bcol = [int(np.argmin(np.abs(th - a))) for a in ang[:-1]]
+    nv = len(th)
+    s = np.linspace(0.0, 1.0, nu)
+    r = 1.0 - (1.0 - s) ** 1.7         # radially graded toward the rim
+    R, TH = np.meshgrid(r, th, indexing='ij')
+    w = R * np.exp(1j * TH)
+    # one continuous branch of sqrt(P(z(w))) along the radial rays
+    P = Pfun(1j * (1.0 + w) / (1.0 - w))
+    pang = np.unwrap(np.angle(P), axis=0)
+    pang = pang - pang[:1, :] + np.unwrap(pang[0])[None, :]
+    ycont = np.sqrt(np.abs(P)) * np.exp(0.5j * pang)
+    z = 1j * (1.0 + w) / (1.0 - w)
+    g = rho * ycont / Dfun(z)
+    J = 2j / (1.0 - w) ** 2            # dz/dw
+    with np.errstate(divide='ignore', invalid='ignore'):
+        F = np.stack([0.5 * (1.0 / g - g) * J,
+                      0.5j * (1.0 / g + g) * J,
+                      np.broadcast_to(J, g.shape)], axis=-1) \
+            * np.exp(1j * TH)[..., None]
+    F = np.where(np.isfinite(F), F, 0.0)
+    dr = np.diff(R, axis=0)[..., None]
+    X = np.concatenate([np.zeros((1, nv, 3)),
+                        np.cumsum(0.5 * (F[1:] + F[:-1]) * dr, axis=0)],
+                       axis=0)
+    X = np.real(X)
+
+    def vid(i, j):                     # row 0 collapses to one center vert
+        return 0 if i == 0 else (i - 1) * nv + j + 1
+
+    V = np.concatenate([X[:1, 0, :], X[1:].reshape(-1, 3)], axis=0)
+    UV = np.zeros((len(V), 2))
+    UV[0] = (0.5, 0.0)
+    UV[1:, 0] = np.tile((th - math.pi) / math.pi, nu - 1)
+    UV[1:, 1] = np.repeat(r[1:], nv)
+    faces = []
+    for j in range(nv - 1):
+        faces.append((0, vid(1, j), vid(1, j + 1)))
+    for i in range(1, nu - 1):
+        for j in range(nv - 1):
+            faces.append((vid(i, j), vid(i + 1, j),
+                          vid(i + 1, j + 1), vid(i, j + 1)))
+    b = {'seam': np.array([0] + [vid(i, j) for i in range(1, nu - 1)
+                                 for j in (0, nv - 1)], dtype=np.int64),
+         'rim': {}, 'branch': {}, 'branch_z': {}}
+    for k in range(len(ang) - 1):
+        j0 = bcol[k]
+        j1 = bcol[k + 1] if k + 1 < len(bcol) else nv - 1
+        b['rim'][k] = np.array([vid(nu - 1, j) for j in range(j0 + 1, j1)],
+                               dtype=np.int64)
+    for k in range(len(bcol)):
+        b['branch'][k] = vid(nu - 1, bcol[k])
+        b['branch_z'][k] = bps[k]
+    # rim ring triples (rim vert, its inner neighbor, next inner) -- used
+    # to keep the snapped rim clear of the last interior row
+    b['ring'] = np.array([[vid(nu - 1, j), vid(nu - 2, j), vid(nu - 3, j)]
+                          for j in range(nv)], dtype=np.int64)
+    return V, faces, b, UV
+
+
+def _cgh_snap(V, b):
+    """Snap every boundary vertex exactly onto its symmetry element.
+    The mirror-plane offsets cx, cy are read off the rim arcs themselves
+    (each arc's near-constant coordinate); returns the axis point q."""
+    arc_ax, arc_val = {}, {}
+    for k, idx in b['rim'].items():
+        if len(idx) == 0:
+            continue
+        sx = float(np.median(np.abs(V[idx, 0] - np.median(V[idx, 0]))))
+        sy = float(np.median(np.abs(V[idx, 1] - np.median(V[idx, 1]))))
+        ax = 0 if sx < sy else 1
+        arc_ax[k] = ax
+        arc_val[k] = float(np.median(V[idx, ax]))
+    cx = float(np.median([v for k, v in arc_val.items() if arc_ax[k] == 0]))
+    cy = float(np.median([v for k, v in arc_val.items() if arc_ax[k] == 1]))
+    q = np.array([cx, cy, 0.0])
+    for k, idx in b['rim'].items():
+        if len(idx):
+            V[idx, arc_ax[k]] = q[arc_ax[k]]
+    # the imaginary axis maps onto the horizontal 2-fold line through q at
+    # 45 degrees to the mirror planes; project the seam onto the best of
+    # the two candidate directions
+    sv = b['seam']
+    Pq = V[sv] - q
+    best = None
+    for sgn in (1.0, -1.0):
+        d = np.array([1.0, sgn, 0.0]) / math.sqrt(2.0)
+        t = Pq @ d
+        res = float(np.median(np.linalg.norm(
+            Pq - t[:, None] * d[None, :], axis=1)))
+        if best is None or res < best[0]:
+            best = (res, d)
+    d = best[1]
+    t = (V[sv] - q) @ d
+    V[sv] = q + t[:, None] * d[None, :]
+    # branch-point images: exactly on the S4 axis at height z_branch
+    for k, vidx in b['branch'].items():
+        V[vidx] = np.array([q[0], q[1], b['branch_z'][k]])
+    return V, q
+
+
+def _cgh_frames(q):
+    """The 8 affine isometries of D2d about q.  Frames 0..3 are the
+    holomorphic copies e, S4, C2, S4^3 (winding kept); frames 4..7 are
+    the antiholomorphic mirror / 2-fold copies (winding reversed)."""
+    S4 = np.array([[0.0, 1.0, 0.0], [-1.0, 0.0, 0.0], [0.0, 0.0, -1.0]])
+    SX = np.diag([-1.0, 1.0, 1.0])
+    mats = []
+    M = np.eye(3)
+    for _ in range(4):
+        mats.append(M)
+        M = S4 @ M
+    mats += [SX @ Mk for Mk in mats]
+    return [(Mk, q - Mk @ q) for Mk in mats]
+
+
+def cg_higher_assemble(genus, nu, arcn, Rend):
+    """Watertight D2d assembly: 8 snapped copies of the 1/8 domain,
+    boundary-coincidence weld, spherical end trim.  Returns
+    (V, faces, uv) of the largest component."""
+    V0, faces0, b, UV0 = _cgh_octant(genus, nu, arcn)
+    V0, q = _cgh_snap(V0.copy(), b)
+    # keep the last interior row clear of the snapped rim: the plane snap
+    # can land a rim vertex arbitrarily close to its inward neighbor, and
+    # a later mesh-level weld (the operator's remove-doubles) would pinch
+    # the sheets there.  Interior verts are free, so back the neighbor off
+    # to the midpoint of its own inward edge.
+    vr, v1, v2 = b['ring'][:, 0], b['ring'][:, 1], b['ring'][:, 2]
+    close = np.linalg.norm(V0[v1] - V0[vr], axis=1) < 2e-4
+    if np.any(close):
+        V0[v1[close]] = 0.5 * (V0[vr[close]] + V0[v2[close]])
+    bmask0 = np.zeros(len(V0), dtype=bool)
+    bmask0[b['seam']] = True
+    for idx in b['rim'].values():
+        bmask0[idx] = True
+    bmask0[list(b['branch'].values())] = True
+    keep = np.linalg.norm(V0 - q, axis=1) <= Rend
+    faces0 = [f for f in faces0 if all(keep[i] for i in f)]
+    used = sorted(set(i for f in faces0 for i in f))
+    rmv = {v: k for k, v in enumerate(used)}
+    V0, UV0, bmask0 = V0[used], UV0[used], bmask0[used]
+    faces0 = [tuple(rmv[i] for i in f) for f in faces0]
+    nV = len(V0)
+    frames = _cgh_frames(q)
+    Vp, Fp = [], []
+    for fr, (M, bb) in enumerate(frames):
+        Vp.append(V0 @ M.T + bb)
+        rev = fr >= 4                  # antiholomorphic copies flip winding
+        for f in faces0:
+            ff = tuple(int(x) + fr * nV for x in f)
+            Fp.append(ff[::-1] if rev else ff)
+    V = np.concatenate(Vp)
+    UVall = np.tile(UV0, (len(frames), 1))
+    N = len(V)
+    # coincidence weld restricted to the snapped boundary verts
+    tol = 1e-6
+    parent = np.arange(N)
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    bidx = np.nonzero(np.tile(bmask0, len(frames)))[0]
+    key = np.floor(V[bidx] / tol + 0.5).astype(np.int64)
+    H = {}
+    for t, i in enumerate(bidx):
+        H.setdefault((int(key[t, 0]), int(key[t, 1]), int(key[t, 2])),
+                     []).append(int(i))
+    for t, i in enumerate(bidx):
+        k0 = key[t]
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for dz in (-1, 0, 1):
+                    for j in H.get((int(k0[0]) + dx, int(k0[1]) + dy,
+                                    int(k0[2]) + dz), ()):
+                        if j > i and np.linalg.norm(V[j] - V[i]) < tol:
+                            ra, rb = find(int(i)), find(j)
+                            if ra != rb:
+                                parent[ra] = rb
+    rt = np.array([find(a) for a in range(N)])
+    uniq, inv = np.unique(rt, return_inverse=True)
+    Vw = np.zeros((len(uniq), 3))
+    UVw = np.zeros((len(uniq), 2))
+    cnt = np.zeros(len(uniq))
+    np.add.at(Vw, inv, V)
+    np.add.at(UVw, inv, UVall)
+    np.add.at(cnt, inv, 1)
+    Vw /= cnt[:, None]
+    UVw /= cnt[:, None]
+    F = []
+    for f in Fp:
+        gg = [int(inv[i]) for i in f]
+        h = [gg[0]]
+        for t in range(1, len(gg)):
+            if gg[t] != h[-1]:
+                h.append(gg[t])
+        if len(h) >= 3 and h[0] != h[-1] and len(set(h)) == len(h):
+            F.append(tuple(h))
+    # largest face-connected component (drops any stray trim islands)
+    parent2 = np.arange(len(Vw))
+
+    def find2(a):
+        while parent2[a] != a:
+            parent2[a] = parent2[parent2[a]]
+            a = parent2[a]
+        return a
+
+    for f in F:
+        for i in range(1, len(f)):
+            ra, rb = find2(f[0]), find2(f[i])
+            if ra != rb:
+                parent2[ra] = rb
+    from collections import Counter
+    sizes = Counter(find2(f[0]) for f in F)
+    root = sizes.most_common(1)[0][0]
+    F = [f for f in F if find2(f[0]) == root]
+    used = sorted(set(i for f in F for i in f))
+    rmv = {v: k for k, v in enumerate(used)}
+    return (Vw[used], [tuple(rmv[i] for i in f) for f in F], UVw[used])
+
+
+def cg_higher_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
+    """MESH_PARAM builder: finished (V, quads, uv), fit to the 2 m cube."""
+    p = spec['p_from'](order, radius)
+    genus = p['genus']
+    pnu = int(np.clip(nu * 1.5, 80, 280))
+    arcn = int(np.clip(nv * 0.65, 28, 110))
+    R0 = {2: 5.5, 4: 6.0, 5: 8.0}[genus]
+    lo, hi = {2: (3.2, 10.0), 4: (4.2, 10.0), 5: (6.2, 12.0)}[genus]
+    Rend = float(np.clip(R0 * radius / 1.2, lo, hi))
+    V, quads, uv = cg_higher_assemble(genus, pnu, arcn, Rend)
+    tk = _toolkit()
+    V = tk._smooth_boundary(V, quads, iters=6)
+    V = tk._center_fit(V, scale, V)
+    return V, quads, uv
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
@@ -1701,4 +2067,42 @@ if __name__ == "__main__":
     print(f"P/G/D Bonnet morph: d(.03)={d1:.2e} d(.06)={d2:.2e} "
           f"distinct={distinct} {'OK' if good else 'FAIL'}")
 
+    # ---- higher-genus Chen-Gackstatter: watertight D2d assembly ------------
+    # gates: exact chi = 1 - 2g, edge-manifold, ONE boundary loop (the
+    # trimmed Enneper end), one component, globally consistent winding
+    for gg, nu_t, arcn_t, R_t in ((2, 100, 44, 5.5), (4, 100, 40, 6.0),
+                                  (5, 100, 36, 8.0)):
+        Vg, Fg, _uv = cg_higher_assemble(gg, nu_t, arcn_t, R_t)
+        ecc, dcc = {}, {}
+        for f in Fg:
+            m = len(f)
+            for kk in range(m):
+                a2, b2 = f[kk], f[(kk + 1) % m]
+                e2 = (a2, b2) if a2 < b2 else (b2, a2)
+                ecc[e2] = ecc.get(e2, 0) + 1
+                dcc[(a2, b2)] = dcc.get((a2, b2), 0) + 1
+        chi = len(Vg) - len(ecc) + len(Fg)
+        nonman = sum(1 for c in ecc.values() if c > 2)
+        bed = [e2 for e2, c in ecc.items() if c == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a2, b2 in bed:
+            ra, rb = bfind(a2), bfind(b2)
+            if ra != rb:
+                par[ra] = rb
+        loops = len({bfind(a2) for a2, b2 in bed})
+        orient = all(c == 1 for c in dcc.values())
+        good = (chi == 1 - 2 * gg and nonman == 0 and loops == 1
+                and orient and bool(np.all(np.isfinite(Vg))))
+        ok &= good
+        print(f"CG higher genus {gg}: {len(Vg):6d}v {len(Fg):6d}f "
+              f"chi={chi} (want {1 - 2 * gg}) nonman={nonman} "
+              f"loops={loops} orient={orient} {'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in we_builders")
