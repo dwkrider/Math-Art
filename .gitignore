@@ -5,6 +5,7 @@ __pycache__/
 *.stl
 dist/
 TODO.md
+BACKLOG.md
 renders/**
 research/**
 
