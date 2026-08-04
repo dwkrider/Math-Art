@@ -1614,14 +1614,17 @@ def _arrangement_faces(paths, closed, crossings):
 
 
 def build_face_cells(strands=None, carpet=None, cord_width=0.12,
-                     face_color='SHAPE', backing=False, base=0.06):
-    """The mosaic of tiles BETWEEN the strands: the bounded cells of the
-    strand arrangement (traced with a non-overlapping half-edge walk),
-    each shrunk toward its centroid by ~half `cord_width` so the strands
-    read as the channels between the tiles.  Each tile is one flat n-gon;
-    `face_color` is 'UNIFORM' (one colour) or 'SHAPE' (congruent tiles
-    share a colour).  Returns (verts, faces, mats) cells plus an optional
-    backing slab."""
+                     face_color='SHAPE', backing=False, base=0.06,
+                     include_ribbons=True):
+    """The mosaic of tiles between the strands: the bounded cells of the
+    strand arrangement, traced with a non-overlapping half-edge walk.
+    With `include_ribbons` (the default) every cell is a FULL flat tile
+    and the flat cords are laid a hair above to cover the shared
+    boundaries -- so no face is lost and the cord reads at a uniform
+    width; without it the tiles are instead shrunk toward their centroids
+    to open the gap.  Each tile is one flat n-gon; `face_color` is
+    'UNIFORM' (one colour) or 'SHAPE' (congruent tiles share a colour).
+    Returns (verts, faces, mats) cells plus an optional backing slab."""
     if carpet is None:
         carpet = build_curve_carpet(strands)
     paths = carpet['paths']
@@ -1635,31 +1638,50 @@ def build_face_cells(strands=None, carpet=None, cord_width=0.12,
     if not faces:
         return []
 
-    # Open the ribbon gap by shrinking each cell toward its own centroid.
-    # A centroid scale is affine, so the tile stays a SIMPLE flat polygon
-    # (a true uniform-width erosion self-intersects on the concave
-    # pinwheel cells and z-fights); a cell too thin to keep a positive
-    # gap collapses to nothing and is dropped -- the ribbon fills it.
     cls = {}
+    npal = max(1, len(pc.PALETTE_RGBA) - 1)    # keep the last slot for cords
+
+    def _mat(P):
+        if face_color == 'UNIFORM':
+            return 0
+        return cls.setdefault(_face_signature(P, span), len(cls)) % npal
+
     cells = []
     all_verts = []
-    for P in faces:
-        if len(P) < 3 or abs(_poly_area2(P)) < 1e-8:
-            continue
-        c = P.mean(axis=0)
-        R = float(np.mean(np.linalg.norm(P - c, axis=1)))
-        if R < half:
-            continue                          # thinner than the ribbon
-        s = min(0.985, 1.0 - half / R)
-        Q = c + s * (P - c)
-        if face_color == 'UNIFORM':
-            mat = 0
-        else:
-            sig = _face_signature(P, span)
-            mat = cls.setdefault(sig, len(cls)) % len(pc.PALETTE_RGBA)
-        verts = [(float(x), float(y), 0.0) for x, y in Q]
-        cells.append((verts, [list(range(len(verts)))], [mat]))
-        all_verts.extend(verts)
+    if include_ribbons:
+        # Every enclosed cell is a FULL flat tile; the ribbons, swept flat
+        # along the strands at `cord_width` and laid a hair above, cover
+        # the shared cell boundaries -- so no face is lost and the channel
+        # (the cord) reads at a uniform width.
+        for P in faces:
+            if len(P) < 3 or abs(_poly_area2(P)) < 1e-9:
+                continue
+            verts = [(float(x), float(y), 0.0) for x, y in P]
+            cells.append((verts, [list(range(len(verts)))], [_mat(P)]))
+            all_verts.extend(verts)
+        zoff = 0.004 * span                    # lift cords clear of tiles
+        rib = build_curve_cells(carpet=carpet, cord_width=cord_width,
+                                interlace=False, color_by='UNIFORM',
+                                height=0.0, backing=False)
+        for v, f, _m in rib:
+            v2 = [(x, y, z + zoff) for x, y, z in v]
+            cells.append((v2, f, [_BACKING_MAT] * len(f)))
+            all_verts.extend(v2)
+    else:
+        # Faces only: shrink each cell toward its centroid to open the
+        # cord gap (an affine scale keeps a SIMPLE flat polygon; a true
+        # uniform erosion self-intersects the concave cells).  Every cell
+        # is kept -- a cell thinner than the cord just shrinks to a speck.
+        for P in faces:
+            if len(P) < 3 or abs(_poly_area2(P)) < 1e-9:
+                continue
+            c = P.mean(axis=0)
+            R = float(np.mean(np.linalg.norm(P - c, axis=1)))
+            s = max(0.08, 1.0 - half / max(R, 1e-6))
+            Q = c + s * (P - c)
+            verts = [(float(x), float(y), 0.0) for x, y in Q]
+            cells.append((verts, [list(range(len(verts)))], [_mat(P)]))
+            all_verts.extend(verts)
     if not cells:
         return []
     if backing and all_verts:
@@ -4608,6 +4630,12 @@ if _IN_BLENDER:
             default='SHAPE',
             description="How the mosaic tiles are coloured (Faces "
                         "output)")
+        face_ribbons: BoolProperty(
+            name="Include Ribbons", default=True,
+            description="Lay the flat cords over the tiles so the strand "
+                        "network shows as uniform-width leading between "
+                        "the tiles (Faces output); off = tiles only, "
+                        "shrunk to open the gap")
         tube_radius: FloatProperty(
             name="Tube Radius", default=0.04, min=0.005, max=0.25,
             description="Rope radius in loop-spacing units (tube)")
@@ -5129,7 +5157,8 @@ if _IN_BLENDER:
                 cells = build_face_cells(
                     carpet=carpet, cord_width=self.cord_width,
                     face_color=self.face_color,
-                    backing=self.backing, base=self.base)
+                    backing=self.backing, base=self.base,
+                    include_ribbons=self.face_ribbons)
                 if not cells:
                     self.report({'ERROR'}, "no faces found")
                     return {'CANCELLED'}
@@ -5319,6 +5348,7 @@ if _IN_BLENDER:
             elif self.output == 'FACES':
                 lay.prop(self, 'cord_width')     # ribbon width = gap
                 lay.prop(self, 'face_color')
+                lay.prop(self, 'face_ribbons')
                 lay.prop(self, 'backing')
                 if self.backing:
                     lay.prop(self, 'base')
