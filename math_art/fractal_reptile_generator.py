@@ -644,6 +644,22 @@ KIND_ITEMS = [
      "first-level copy"),
 ]
 
+# Two-level Family -> Shape taxonomy for the operator UI, derived from
+# the "Family: Shape" label prefixes above.
+_FAMILY_ORDER = [('POLYOMINO', "Polyomino"), ('POLYHEX', "Polyhex"),
+                 ('REFLECTION', "Reflection"), ('CLASSIC', "Classic")]
+_FAMILY_LABELS = dict(_FAMILY_ORDER)
+_FAMILY_OF = {}                 # kind id -> family id
+_SHAPES_BY_FAMILY = {}          # family id -> [(kind, short label, desc)]
+for _kid, _lbl, _desc in KIND_ITEMS:
+    _fam = _lbl.split(':', 1)[0].strip().upper()
+    if _fam not in _FAMILY_LABELS:
+        _fam = 'CLASSIC'
+    _FAMILY_OF[_kid] = _fam
+    _short = _lbl.split(':', 1)[-1].strip()
+    _SHAPES_BY_FAMILY.setdefault(_fam, []).append((_kid, _short, _desc))
+_KIND_LABEL = dict((k, v) for k, v, _ in KIND_ITEMS)
+
 
 try:
     import bpy
@@ -657,6 +673,17 @@ except ImportError:
 
 if _IN_BLENDER:
 
+    _shape_items_cache = {}
+
+    def _shape_items(self, context):
+        """Dynamic Shape enum: only the reptiles in the chosen Family.
+        The returned list is cached in a module global so Blender does
+        not garbage-collect the strings."""
+        fam = getattr(self, 'family', 'POLYOMINO')
+        items = _SHAPES_BY_FAMILY.get(fam) or _SHAPES_BY_FAMILY['CLASSIC']
+        _shape_items_cache[fam] = items
+        return items
+
     class MESH_OT_fractal_reptile_add(bpy.types.Operator,
                                       AddObjectHelper):
         """Add a Fathauer fractal tiling built from a rep-tile
@@ -665,8 +692,15 @@ if _IN_BLENDER:
         bl_label = "Fractal Rep-Tile"
         bl_options = {'REGISTER', 'UNDO'}
 
-        kind: EnumProperty(name="Tiling", items=KIND_ITEMS,
-                           default='RIGHT_TRIANGLE')
+        family: EnumProperty(
+            name="Family",
+            items=[(fid, fname, "%s fractal reptiles" % fname)
+                   for fid, fname in _FAMILY_ORDER],
+            default='POLYOMINO',
+            description="Polyform family")
+        shape: EnumProperty(
+            name="Shape", items=_shape_items,
+            description="Which reptile within the chosen family")
         iterations: IntProperty(
             name="Iterations", default=6, min=0, max=14,
             description="Growth depth; each generation glues a "
@@ -701,12 +735,13 @@ if _IN_BLENDER:
             description="Output each tile as its own mesh object")
 
         def execute(self, context):
-            polys, types = fractal_patch(self.kind, self.iterations,
+            kind = self.shape
+            polys, types = fractal_patch(kind, self.iterations,
                                          self.holes)
             cells = tg.cells_from_polys(
                 lambda a, b: (polys, types), 1, 1, self.color_by,
                 self.margin, self.height, False)
-            label = dict((k, v) for k, v, _ in KIND_ITEMS)[self.kind]
+            label = _KIND_LABEL.get(kind, kind)
             obj = pc.emit(context, "Fractal RepTile %s" % label, cells,
                           self.separate, fit=True, operator=self)
             if obj is None:
@@ -725,8 +760,8 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for p in ('kind', 'iterations', 'holes', 'color_by',
-                      'margin', 'height'):
+            for p in ('family', 'shape', 'iterations', 'holes',
+                      'color_by', 'margin', 'height'):
                 lay.prop(self, p)
             lay.prop(self, 'separate')
             lay.prop(self, 'align')

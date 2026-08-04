@@ -604,28 +604,34 @@ OPS = [
         kind='KITE_R8', iterations=4, color_by='UNIFORM')),
     ("fractal reptile right-triangle",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         kind='RIGHT_TRIANGLE', iterations=6)),
-    ("fractal reptile rep5",
+         family='CLASSIC', shape='RIGHT_TRIANGLE', iterations=6)),
+    ("fractal reptile x-pentomino",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         kind='REP5', iterations=4)),
+         family='POLYOMINO', shape='REP5', iterations=4)),
+    ("fractal reptile z-pentomino",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         family='POLYOMINO', shape='Z_PENTOMINO', iterations=5)),
     ("fractal reptile twindragon",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         kind='TWINDRAGON', iterations=5)),
+         family='POLYOMINO', shape='TWINDRAGON', iterations=5)),
+    ("fractal reptile trihex",
+     lambda: bpy.ops.mesh.fractal_reptile_add(
+         family='POLYHEX', shape='TRIHEX', iterations=4)),
     ("fractal reptile pentabolo",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         kind='PENTABOLO', iterations=3)),
+         family='CLASSIC', shape='PENTABOLO', iterations=3)),
     ("fractal reptile flowsnake",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         kind='FLOWSNAKE', iterations=3)),
+         family='POLYHEX', shape='FLOWSNAKE', iterations=3)),
     ("fractal reptile levy",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         kind='LEVY_DRAGON', iterations=8)),
+         family='REFLECTION', shape='LEVY_DRAGON', iterations=8)),
     ("fractal reptile foldable",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         kind='FOLDABLE4', iterations=5)),
+         family='REFLECTION', shape='FOLDABLE4', iterations=5)),
     ("fractal reptile gasket",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         kind='REP5', iterations=4, holes=2)),
+         family='POLYOMINO', shape='REP5', iterations=4, holes=2)),
     ("fractal tiling s6",
      lambda: bpy.ops.mesh.fractal_tiling_add(kind='TRI_S6', iterations=6)),
     ("fractal tiling u6",
