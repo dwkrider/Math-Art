@@ -1613,18 +1613,45 @@ def _arrangement_faces(paths, closed, crossings):
     return [P for P in faces if _poly_area2(P) > 1e-9]
 
 
+def _ribbon_edges(paths, closed, half):
+    """The two boundary curves of every ribbon -- each centreline offset
+    left and right by `half` (mitered) -- plus a straight cap across each
+    OPEN ribbon's ends.  Returns (edge_paths, edge_closed): the polylines
+    whose arrangement HOLES (the regions no ribbon covers) are the mosaic
+    tiles.  Because a ribbon has width, a hole stays enclosed even where
+    the open centrelines leave a gap, so every visible hole fills."""
+    epaths, eclosed = [], []
+    for p, c in zip(paths, closed):
+        pl = [(float(q[0]), float(q[1])) for q in p]
+        if len(pl) < 2:
+            continue
+        left, right = isl.miter_ribbon(pl, 2.0 * half, bool(c))
+        epaths.append(np.asarray(left, float))
+        eclosed.append(bool(c))
+        epaths.append(np.asarray(right, float))
+        eclosed.append(bool(c))
+        if not c:                              # cap the two open ends
+            epaths.append(np.asarray([left[0], right[0]], float))
+            eclosed.append(False)
+            epaths.append(np.asarray([left[-1], right[-1]], float))
+            eclosed.append(False)
+    return epaths, eclosed
+
+
 def build_face_cells(strands=None, carpet=None, cord_width=0.12,
                      face_color='SHAPE', backing=False, base=0.06,
                      include_ribbons=True):
-    """The mosaic of tiles between the strands: the bounded cells of the
-    strand arrangement, traced with a non-overlapping half-edge walk.
-    With `include_ribbons` (the default) every cell is a FULL flat tile
-    and the flat cords are laid a hair above to cover the shared
-    boundaries -- so no face is lost and the cord reads at a uniform
-    width; without it the tiles are instead shrunk toward their centroids
-    to open the gap.  Each tile is one flat n-gon; `face_color` is
-    'UNIFORM' (one colour) or 'SHAPE' (congruent tiles share a colour).
-    Returns (verts, faces, mats) cells plus an optional backing slab."""
+    """The mosaic of tiles between the strands: the HOLES of the ribbon
+    network.  Each strand is swept to a ribbon of width `cord_width`; the
+    arrangement of the ribbon EDGES is traced with a non-overlapping
+    half-edge (DCEL) walk, and the faces no ribbon covers are the tiles.
+    A hole stays enclosed even where the open centrelines leave a gap
+    (the ribbon width closes it), so every visible hole fills, and the
+    tile is already inset by the ribbon so the cord reads at a uniform
+    width.  With `include_ribbons` (default) the flat cords are laid a
+    hair above the tiles.  Each tile is one flat n-gon; `face_color` is
+    'UNIFORM' or 'SHAPE' (congruent tiles share a colour).  Returns
+    (verts, faces, mats) cells plus an optional backing slab."""
     if carpet is None:
         carpet = build_curve_carpet(strands)
     paths = carpet['paths']
@@ -1634,8 +1661,25 @@ def build_face_cells(strands=None, carpet=None, cord_width=0.12,
     span = max(float(np.ptp(allpts[:, 0])), float(np.ptp(allpts[:, 1])),
                1e-6)
 
-    faces = _arrangement_faces(paths, closed, carpet['crossings'])
-    if not faces:
+    # trace the ribbon-edge arrangement; a face is a HOLE (a tile) when
+    # its centre is farther than the ribbon half-width from every
+    # centreline (i.e. no ribbon paints it)
+    epaths, eclosed = _ribbon_edges(paths, closed, half)
+    if not epaths:
+        return []
+    ecross = _curve_crossings(epaths, eclosed)
+    efaces = _arrangement_faces(epaths, eclosed, ecross)
+    cpts = np.concatenate([np.asarray(p, float)[::2] for p in paths
+                           if len(p) >= 2])
+    holes = []
+    for P in efaces:
+        if len(P) < 3 or abs(_poly_area2(P)) < 1e-9:
+            continue
+        cen = P.mean(axis=0)
+        d = float(np.min(np.linalg.norm(cpts - cen, axis=1)))
+        if d > 0.85 * half:
+            holes.append(P)
+    if not holes:
         return []
 
     cls = {}
@@ -1648,17 +1692,11 @@ def build_face_cells(strands=None, carpet=None, cord_width=0.12,
 
     cells = []
     all_verts = []
+    for P in holes:
+        verts = [(float(x), float(y), 0.0) for x, y in P]
+        cells.append((verts, [list(range(len(verts)))], [_mat(P)]))
+        all_verts.extend(verts)
     if include_ribbons:
-        # Every enclosed cell is a FULL flat tile; the ribbons, swept flat
-        # along the strands at `cord_width` and laid a hair above, cover
-        # the shared cell boundaries -- so no face is lost and the channel
-        # (the cord) reads at a uniform width.
-        for P in faces:
-            if len(P) < 3 or abs(_poly_area2(P)) < 1e-9:
-                continue
-            verts = [(float(x), float(y), 0.0) for x, y in P]
-            cells.append((verts, [list(range(len(verts)))], [_mat(P)]))
-            all_verts.extend(verts)
         zoff = 0.004 * span                    # lift cords clear of tiles
         rib = build_curve_cells(carpet=carpet, cord_width=cord_width,
                                 interlace=False, color_by='UNIFORM',
@@ -1667,21 +1705,6 @@ def build_face_cells(strands=None, carpet=None, cord_width=0.12,
             v2 = [(x, y, z + zoff) for x, y, z in v]
             cells.append((v2, f, [_BACKING_MAT] * len(f)))
             all_verts.extend(v2)
-    else:
-        # Faces only: shrink each cell toward its centroid to open the
-        # cord gap (an affine scale keeps a SIMPLE flat polygon; a true
-        # uniform erosion self-intersects the concave cells).  Every cell
-        # is kept -- a cell thinner than the cord just shrinks to a speck.
-        for P in faces:
-            if len(P) < 3 or abs(_poly_area2(P)) < 1e-9:
-                continue
-            c = P.mean(axis=0)
-            R = float(np.mean(np.linalg.norm(P - c, axis=1)))
-            s = max(0.08, 1.0 - half / max(R, 1e-6))
-            Q = c + s * (P - c)
-            verts = [(float(x), float(y), 0.0) for x, y in Q]
-            cells.append((verts, [list(range(len(verts)))], [_mat(P)]))
-            all_verts.extend(verts)
     if not cells:
         return []
     if backing and all_verts:
