@@ -536,6 +536,10 @@ KINDS = {
         build=lambda it, h=0: _base_reptile(
             -2 + _W6, [0, 1, 2], it, cell=_HEXCELL, holes=h),
         n=3, samp=True),
+    'TETRAHEX': dict(                         # tetrahex, rep-4
+        build=lambda it, h=0: _base_reptile(
+            2 - 2 * _W6, [0, 1 - _W6, -1, -_W6], it, cell=_HEXCELL,
+            holes=h), n=4, samp=True),
     'HEX9': dict(                             # 9-hex, rep-9
         build=lambda it, h=0: _base_reptile(
             3 * (_W6 - 1),
@@ -618,6 +622,9 @@ KIND_ITEMS = [
     ('TRIHEX_BAR', "Hex: Trihex bar (rep-3)",
      "Bar trihex {0,1,2} over Eisenstein base -2+w: the rep-3 straight "
      "trihex fractal reptile (Fathauer, Bridges 2026)"),
+    ('TETRAHEX', "Hex: Tetrahex (rep-4)",
+     "Tetrahex over Eisenstein base 2-2w (theta=60): the rep-4 tetrahex "
+     "fractal reptile (Fathauer, Bridges 2026)"),
     ('FLOWSNAKE', "Hex: Heptahex / Gosper (rep-7)",
      "Eisenstein base 5/2+(sqrt3/2)i, digits {0}+sixth roots of "
      "unity, hexagon cells: the rep-7 Gosper island bounded by the "
