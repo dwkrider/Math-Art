@@ -1671,7 +1671,9 @@ WE_SURFACES['SP_FENCE_CAT'] = {
     'p_from': lambda order, radius: {
         'a': (0.08, 0.14, 0.2, 0.3, 0.42, 0.55)[
             int(np.clip(order, 1, 6)) - 1],
-        'r1': float(np.clip(6.0 * (radius / 1.2) ** 1.5, 2.0, 30.0))},
+        # keep the funnel flare comparable to the neck spacing, or the
+        # catenoid ends engulf the chain and the fence reads as a disk
+        'r1': float(np.clip(1.7 * (radius / 1.2) ** 1.5, 1.25, 8.0))},
     'count': "Neck modulus (a)",
     'storeys_label': "Periods",
     'test_order': 3,
@@ -1747,16 +1749,18 @@ WE_SURFACES['SP_SCHERK_ENNEPER'] = {
         'rmax': float(np.clip(2.0 * (radius / 1.2) ** 0.8, 1.4, 3.2))},
     'count': "Wing pairs (k)",
     'clip': False,
+    # the wing eps balances the (z - z0)^-2 end divergence against the
+    # Enneper core: too small and the 2k wing blades dwarf everything
     'mask_punctures': lambda p: [
         (np.exp(1j * math.pi * j / p['k']),
-         min(0.16, 0.5 * math.sin(math.pi / (2 * p['k']))))
+         min(0.34, 0.7 * math.sin(math.pi / (2 * p['k']))))
         for j in range(2 * p['k'])],
     'res_boost': (1.5, 1.9),
     # horizontal periods vanish around every wing end; the vertical
     # component carries the alternating +-T translation (cycle_free)
     'cycles': lambda p: [
         (np.exp(1j * math.pi * j / p['k']),
-         0.4 * min(0.16, 0.5 * math.sin(math.pi / (2 * p['k']))))
+         0.4 * min(0.34, 0.7 * math.sin(math.pi / (2 * p['k']))))
         for j in range(2 * p['k'])],
     'cycle_free': (2,),
     'test_order': 2,
