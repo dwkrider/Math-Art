@@ -1,14 +1,20 @@
 
 # Fractal Rep-Tile (Polygon f-tiling) Generator for Blender
 #
-# The headline feature is a full catalogue of Fathauer's POLYFORM
-# fractal reptiles (Bridges 2025 & 2026): every polyomino, polyiamond,
-# polyhex, polyrhomb, polybolo, polykite and polyrectangle reptile on
-# his Fractal Diversions site, built by the unified polyform-iteration
-# method (scale a tessellating polyform by 1/sqrt(n), rotate/reflect by
-# a grid-allowed angle, re-assemble n copies, iterate).  See the
-# "General polyform-iteration reptiles" section below for the method and
-# citations.  The older constructions kept here (right-triangle
+# The headline feature is a catalogue of Fathauer's POLYFORM fractal
+# reptiles (Bridges 2025 & 2026), built by the unified polyform-
+# iteration method (scale a tessellating polyform by 1/sqrt(n),
+# rotate/reflect by a grid-allowed angle, re-assemble n copies,
+# iterate).  Shipped presets cover the families whose cells share a
+# single lattice orientation and so converge to a FILLED self-affine
+# tile: all polyominoes, two polyiamonds, the polyhexes, and the n=6
+# distorted-grid rectangle and rhombus.  (The rotated-cell "other
+# polyform" families -- general polyrhombs, polykites, IFS polyboloes --
+# are deferred: naive arrangements tile without overlaps but limit to a
+# dendritic/disconnected attractor, not Fathauer's filled tiles; a
+# connectivity-gated search is needed.  See the project BACKLOG.)  See
+# the "General polyform-iteration reptiles" section below for the method
+# and citations.  The older constructions kept here (right-triangle
 # f-tiling, complex-base radix reptiles, reflection/foldable IFS tiles,
 # the pentabolo isometry gasket) are grouped under "Classic".
 #
@@ -143,11 +149,11 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Math Art > Patterns",
-    "description": "Fractal rep-tiles: the full Fathauer polyform "
-                   "catalogue (polyominoes, polyiamonds, polyhexes, "
-                   "polyrhombs, polybolos, polykites, polyrectangles) "
-                   "plus classic right-triangle f-tiling, complex-base "
-                   "reptiles and reflection/foldable tiles",
+    "description": "Fractal rep-tiles: Fathauer polyform catalogue "
+                   "(polyominoes, polyiamonds, polyhexes, and n=6 "
+                   "rectangle/rhombus) plus classic right-triangle "
+                   "f-tiling, complex-base reptiles, the pentabolo and "
+                   "reflection/foldable tiles",
     "category": "Add Mesh",
 }
 
@@ -671,11 +677,6 @@ _PF = {
                       _tri_place([(-1, 0, 1), (0, -1, 1), (0, 0, 0),
                                   (0, 0, 1), (1, -1, 0), (1, 0, 0),
                                   (1, 0, 1)]), 'tri'),
-    'IAMOND12': _pf("12-Iamond", _CELL_TRI, 12, 90.0, False,
-                    _tri_place([(-2, 0, 1), (-2, 1, 0), (-1, 0, 0),
-                                (-1, 0, 1), (0, 0, 0), (0, 0, 1),
-                                (1, -1, 1), (1, 0, 0), (1, 0, 1),
-                                (2, -1, 1), (2, 0, 0), (2, 0, 1)]), 'tri'),
     'IAMOND13': _pf("13-Iamond", _CELL_TRI, 13, 73.898, True,
                     _tri_place([(-1, 0, 1), (0, -2, 1), (0, -1, 1),
                                 (0, 0, 0), (0, 0, 1), (1, -2, 0),
@@ -687,47 +688,27 @@ _PF = {
                   _hex_place([(0, 0), (1, 0), (0, 1)]), 'hex'),
     'TRIHEX_BAR': _pf("Trihex (bar)", _CELL_HEX, 3, 30.0, False,
                       _hex_place([(0, 0), (1, 0), (2, 0)]), 'hex'),
-    'TETRAHEX': _pf("Tetrahex", _CELL_HEX, 4, 0.0, False,
-                    _hex_place([(0, 0), (1, 0), (0, 1), (-1, 1)]), 'hex'),
+    'TETRAHEX': _pf("Tetrahex (3-fold, Sierpinski-like)", _CELL_HEX, 4,
+                    0.0, False,
+                    _hex_place([(0, 0), (1, 0), (-1, 1), (0, -1)]), 'hex'),
     'HEPTAHEX': _pf("Heptahex (6-fold / Gosper)", _CELL_HEX, 7, 40.893,
                     False, _hex_place([(0, 0), (1, 0), (0, 1), (-1, 1),
                                        (-1, 0), (0, -1), (1, -1)]), 'hex'),
-    'HEX9': _pf("9-Hex (3-fold)", _CELL_HEX, 9, 0.0, False,
-                _hex_fund(9, 3, 0), 'hex'),
+    'HEX9': _pf("9-Hex", _CELL_HEX, 9, 60.0, False,
+                _hex_fund(9, 3, -3), 'hex'),
     'HEX12': _pf("12-Hex", _CELL_HEX, 12, 30.0, False,
                  _hex_fund(12, 4, -2), 'hex'),
     'HEX13': _pf("13-Hex", _CELL_HEX, 13, 13.898, False,
                  _hex_fund(13, 4, -1), 'hex'),
-    # --- polyrhombs (rhombille grid, 60-120 rhombus) ---
-    'TRIRHOMB': _pf("Trirhomb (terdragon envelope)", _CELL_RHO, 3, 90.0,
-                    False, _rt_place([(60, -1.5, -_H3), (60, -2.5, -_H3),
-                                      (60, -3.5, -_H3)]), 'rho'),
-    'TETRARHOMB': _pf("Tetrarhomb", _CELL_RHO, 4, 60.0, False,
-                      _rt_place([(60, -2.5, -_H3), (60, -3.5, -_H3),
-                                 (60, -1.5, -_H3), (60, -4.5, -_H3)]),
-                      'rho'),
-    'HEPTARHOMB': _pf("Heptarhomb", _CELL_RHO, 7, 40.893, False,
-                      _rt_place([(60, 0.5, -_H3), (60, 1.5, -_H3),
-                                 (120, 3.0, 0.0), (60, -1.5, -_H3),
-                                 (60, 2.5, -_H3), (60, -2.5, -_H3),
-                                 (60, 3.5, -_H3)]), 'rho'),
-    # --- polykites (deltoidal grid, 60-90-120-90 kite) ---
-    'TRIKITE': _pf("Trikite", _CELL_KITE, 3, -30.0, False,
-                   _rt_place([(0, -_H3, -1.5), (60, -_H3, -1.5),
-                              (300, -_H3, -1.5)]), 'kite'),
-    'TETRAKITE': _pf("Tetrakite", _CELL_KITE, 4, 60.0, False,
-                     _rt_place([(120, _H3, -1.5), (60, _H3, -1.5),
-                                (180, _H3, -1.5), (240, 0.0, 0.0)]),
-                     'kite'),
-    'TETRAKITE_0': _pf("Tetrakite (0-deg)", _CELL_KITE, 4, 0.0, False,
-                       _rt_place([(120, _H3, -1.5), (60, _H3, -1.5),
-                                  (180, _H3, -1.5), (240, 0.0, 0.0)]),
-                       'kite'),
-    # --- polybolo (tetrakis-square grid, half-square triangle) ---
-    'TETRABOLO': _pf("Tetrabolo", _CELL_BOLO, 4, 0.0, False,
-                     _rt_place([(90, -2.0, -1.0), (270, -2.0, 0.0),
-                                (180, -2.0, 0.0), (0, -3.0, -1.0)]),
-                     'bolo'),
+    # (The rotated-cell "other polyform" families -- polyrhomb,
+    # polykite and the IFS polybolo, plus the 12-iamond -- are omitted
+    # for now: the arrangements found so far tile without overlaps but
+    # converge to a *dendritic / disconnected* attractor rather than
+    # Fathauer's filled tiles (Bridges 2026 Figs 8-11).  They need a
+    # search gated on attractor connectivity/fill, not just overlap; see
+    # BACKLOG.  Polyboloes remain covered by the classic PENTABOLO, and
+    # the n = 6 distorted RECT6/RHOMB6 below are single-orientation
+    # translation lattices and do fill.)
     # --- n = 6 on distorted grids ---
     'RECT6': _pf("6-Rectangle (distorted grid)", _CELL_RECT, 6, 35.264,
                  False, _rect_fund(), 'rect'),
@@ -817,12 +798,9 @@ _PF_ORDER = [
     'DOMINO', 'Z_TETROMINO', 'X_PENTOMINO', 'Z_PENTOMINO', 'Y_PENTOMINO',
     'P_PENTOMINO', 'BAR_PENTOMINO', 'Z_OCTOMINO', 'I_OCTOMINO',
     'FOURFOLD_OCTOMINO',
-    'HEPTIAMOND', 'IAMOND12', 'IAMOND13',
+    'HEPTIAMOND', 'IAMOND13',
     'TRIHEX', 'TRIHEX_BAR', 'TETRAHEX', 'HEPTAHEX', 'HEX9', 'HEX12',
     'HEX13',
-    'TRIRHOMB', 'TETRARHOMB', 'HEPTARHOMB',
-    'TRIKITE', 'TETRAKITE', 'TETRAKITE_0',
-    'TETRABOLO',
     'RECT6', 'RHOMB6',
 ]
 

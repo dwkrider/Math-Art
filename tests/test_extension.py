@@ -631,12 +631,9 @@ OPS = [
     ("fractal reptile trihex",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          kind='TRIHEX', iterations=6, mirror=True)),
-    ("fractal reptile trirhomb",
+    ("fractal reptile tetrahex",
      lambda: bpy.ops.mesh.fractal_reptile_add(
-         kind='TRIRHOMB', iterations=6)),
-    ("fractal reptile tetrakite",
-     lambda: bpy.ops.mesh.fractal_reptile_add(
-         kind='TETRAKITE', iterations=5)),
+         kind='TETRAHEX', iterations=6)),
     ("fractal reptile rect6",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          kind='RECT6', iterations=4)),
