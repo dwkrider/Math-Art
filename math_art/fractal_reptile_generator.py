@@ -592,6 +592,11 @@ _HEPTIAMOND_MAPS = _poly_reptile(
     [_tri_dn(0, 0), _tri_dn(0, 1), _tri_up(1, 0), _tri_dn(1, 0),
      _tri_up(1, 1), _tri_dn(1, 1), _tri_up(2, 1)], 7, 19.107,
     mus=_ORIENT_TRI)
+_HEPTIAMOND3_MAPS = _poly_reptile(          # 3-fold pinwheel heptiamond
+    _SEED_TRI,
+    [_tri_dn(0, 0), _tri_dn(1, -1), _tri_dn(1, 0), _tri_up(0, 0),
+     _tri_up(1, 0), _tri_up(1, 1), _tri_up(2, -1)], 7, 19.107,
+    mus=_ORIENT_TRI)
 
 _SEED_RHOMB = _rhomb_A(0, 0)
 _TRIRHOMB_MAPS = _poly_reptile(
@@ -694,11 +699,27 @@ KINDS = {
             1 + 2 * _W6,
             [0, 1, -1 + _W6, -_W6, 2 - _W6, -1 + 2 * _W6, -1 - _W6],
             it, cell=_HEXCELL, holes=h), n=7, samp=True),
+    'HEPTAHEX_2FOLD': dict(                   # 2-fold heptahex (S), rep-7
+        # complete residue system mod 2+w (theta=19.107), 2-fold about
+        # the centre hex -- the S/Z-shaped 2-fold heptahex
+        build=lambda it, h=0: _base_reptile(
+            2 + _W6,
+            [0, _W6, 2 * _W6, 1, 2 - 2 * _W6, 2 - _W6, 2],
+            it, cell=_HEXCELL, holes=h), n=7, samp=True),
+    'HEPTAHEX_2FOLD2': dict(                  # 2-fold heptahex 2, rep-7
+        build=lambda it, h=0: _base_reptile(
+            2 + _W6,
+            [-1 + _W6, 0, 1 - _W6, 1, 1 + _W6, 2, 3 - _W6],
+            it, cell=_HEXCELL, holes=h), n=7, samp=True),
     # Multi-orientation polyform reptiles (graph-directed IFS; the cell
     # comes in several lattice orientations, so g_i = S(mu_i z + p_i)).
     # Filled tiles with measure-zero fractal boundaries (osc sampling).
     'HEPTIAMOND': dict(                       # heptiamond, rep-7
         build=lambda it, h=0: _ifs_reptile(_HEPTIAMOND_MAPS, it, holes=h,
+                                           seed=_SEED_TRI),
+        n=7, samp=True, osc=True),
+    'HEPTIAMOND_3FOLD': dict(                 # 3-fold heptiamond, rep-7
+        build=lambda it, h=0: _ifs_reptile(_HEPTIAMOND3_MAPS, it, holes=h,
                                            seed=_SEED_TRI),
         n=7, samp=True, osc=True),
     'TRIRHOMB': dict(                         # trirhomb (terdragon), rep-3
@@ -799,6 +820,12 @@ KIND_ITEMS = [
      "Centre hex plus two 120-degree orbits of three over Eisenstein "
      "base 1+2w (theta=40.893): the rep-7 pinwheel 3-fold heptahex "
      "(Fathauer, Bridges 2026)"),
+    ('HEPTAHEX_2FOLD', "Hex: 2-fold Heptahex (rep-7)",
+     "An S/Z-shaped complete residue system mod 2+w (theta=19.107): the "
+     "rep-7 2-fold heptahex (Fathauer, Bridges 2026)"),
+    ('HEPTAHEX_2FOLD2', "Hex: 2-fold Heptahex 2 (rep-7)",
+     "A second 2-fold heptahex over Eisenstein base 2+w (theta=19.107): "
+     "a distinct rep-7 layout (Fathauer, Bridges 2026)"),
     ('HEX9', "Hex: 9-hex (rep-9)",
      "A compact 9-hex over Eisenstein base 3(w-1): the rep-9 polyhex "
      "fractal reptile (Fathauer, Bridges 2026)"),
@@ -810,6 +837,9 @@ KIND_ITEMS = [
      "Seven up/down triangles over an Eisenstein contraction "
      "(theta=19.107): the rep-7 heptiamond fractal reptile via the "
      "graph-directed IFS g_i=S(mu_i z+p_i) (Fathauer, Bridges 2026)"),
+    ('HEPTIAMOND_3FOLD', "Iamond: 3-fold Heptiamond (rep-7)",
+     "A 120-degree-symmetric pinwheel heptiamond (theta=19.107): the "
+     "rep-7 3-fold heptiamond fractal reptile (Fathauer, Bridges 2026)"),
     # --- Polyrhomb reptiles (60-120 rhombus cells) ---
     ('TRIRHOMB', "Rhomb: Trirhomb (terdragon, rep-3)",
      "Three rhombille rhombi, scale 1/sqrt3 theta=30: the rep-3 "
