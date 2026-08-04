@@ -1401,7 +1401,7 @@ def _symmcg_snap_k(order, table):
 
 
 WE_SURFACES['SYMM_CG'] = {
-    'label': "Chen-Gackstatter tower (k-fold)",
+    'label': "Symmetrized Chen-Gackstatter (k-fold, genus k-1)",
     'family': 'HIGHER',
     'mesher': we.symmcg_mesh,
     # count slider = the symmetry order k (genus k-1); radius scales the
@@ -1414,7 +1414,7 @@ WE_SURFACES['SYMM_CG'] = {
 SURFACE_FAMILY['SYMM_CG'] = 'HIGHER'
 
 WE_SURFACES['SYMM_CG_G2N'] = {
-    'label': "Chen-Gackstatter tower (genus 2(k-1))",
+    'label': "Symmetrized Chen-Gackstatter (2-level, genus 2(k-1))",
     'family': 'HIGHER',
     'mesher': we.symmcg_mesh,
     'p_from': lambda order, radius: {
@@ -1425,7 +1425,7 @@ WE_SURFACES['SYMM_CG_G2N'] = {
 SURFACE_FAMILY['SYMM_CG_G2N'] = 'HIGHER'
 
 WE_SURFACES['SYMM_CG_G3K'] = {
-    'label': "Chen-Gackstatter tower (genus 3(k-1))",
+    'label': "Symmetrized Chen-Gackstatter (3-level, genus 3(k-1))",
     'family': 'HIGHER',
     'mesher': we.symmcg_mesh,
     'p_from': lambda order, radius: {
