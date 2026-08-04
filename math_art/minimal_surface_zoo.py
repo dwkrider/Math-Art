@@ -1298,6 +1298,34 @@ WE_SURFACES['CG_HIGHER'] = {
 SURFACE_FAMILY['CG_HIGHER'] = 'HIGHER'
 
 
+# ==========================================================================
+# Translation-invariant genus-one helicoid (appended catalog block)
+# ==========================================================================
+# The helicoid with a handle: the singly periodic minimal surface
+# asymptotic to a helicoid whose translational quotient is a rhombic
+# torus with two helicoidal ends -- one handle per vertical period.
+# Built from the Jacobi theta-function Weierstrass data on C/<1, tau>
+# with the fully solved period constants harvested from M. Weber's
+# notebook (research/msblog_harvest/singly_periodic.json); the engine,
+# verification gates and references (Hoffman-Karcher-Wei 1993/1999;
+# Hoffman-Weber-Wolf 2009) live in we_builders.genus1helicoid_mesh and
+# the block above it.  The count slider stacks translational periods
+# (the mesh genus equals that count -- verified by the Euler
+# characteristic in the self-tests); the radius slider sets how far
+# the two helicoidal ends spiral out.
+
+WE_SURFACES['GENUS1_HELICOID'] = {
+    'label': "Helicoid with Handle (genus 1)",
+    'family': 'SINGLY',
+    'mesher': we.genus1helicoid_mesh,
+    'p_from': lambda order, radius: {
+        'storeys': int(min(max(order, 1), 4))},
+    'count': "Periods (handles)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['GENUS1_HELICOID'] = 'SINGLY'
+
+
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
@@ -1521,4 +1549,46 @@ if __name__ == "__main__":
               f"(want {1 - 2 * gg}) nonman={nonman} loops={nloops} "
               f"ncomp={ncomp} fit[|c|={cen:.1e} ext={ext:.4f}] "
               f"uv={uv_ok} {'OK' if good else 'FAIL'}")
+    # Genus-one helicoid through the toolkit pipeline: a stack of S
+    # translational periods must be one connected manifold surface of
+    # genus exactly S (chi = 2 - 2S - boundary_loops), fit to 2 m.
+    for S in (1, 2):
+        Vg, Qg = tk.build_parametric('GENUS1_HELICOID', 60, 60, S, 1.2,
+                                     1.0)
+        ecg = {}
+        for f in Qg:
+            m = len(f)
+            for t in range(m):
+                a, b = f[t], f[(t + 1) % m]
+                e = (a, b) if a < b else (b, a)
+                ecg[e] = ecg.get(e, 0) + 1
+        chi = len(Vg) - len(ecg) + len(Qg)
+        nonman = sum(1 for c in ecg.values() if c > 2)
+        bed = [e for e, c in ecg.items() if c == 1]
+        par = {}
+
+        def bfind(x):
+            par.setdefault(x, x)
+            while par[x] != x:
+                par[x] = par[par[x]]
+                x = par[x]
+            return x
+
+        for a, b in bed:
+            ra, rb = bfind(a), bfind(b)
+            if ra != rb:
+                par[ra] = rb
+        nloops = len({bfind(a) for a, b in bed})
+        genus = (2 - chi - nloops) / 2.0
+        lo, hi = Vg.min(0), Vg.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        good = (genus == S and nonman == 0 and cen < 1e-6
+                and abs(ext - 2.0) < 1e-6
+                and bool(np.all(np.isfinite(Vg))))
+        ok &= good
+        print(f"g1-helicoid S={S}: {len(Vg):6d}v {len(Qg):6d}f "
+              f"chi={chi} loops={nloops} genus={genus:.0f} (want {S}) "
+              f"nonman={nonman} fit[|c|={cen:.1e} ext={ext:.4f}] "
+              f"{'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")
