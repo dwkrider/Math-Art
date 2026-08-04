@@ -4627,6 +4627,11 @@ if _IN_BLENDER:
         cord_width: FloatProperty(
             name="Cord Width", default=0.12, min=0.02, max=0.4,
             description="Ribbon width in loop-spacing units")
+        face_cord_width: FloatProperty(
+            name="Cord Width", default=0.05, min=0.01, max=0.4,
+            description="Cord (leading) width in loop-spacing units; "
+                        "the tiles are the holes between the cords "
+                        "(Faces output)")
         style: EnumProperty(
             name="Style",
             items=[('ANGULAR', "Angular",
@@ -5217,7 +5222,7 @@ if _IN_BLENDER:
                 return {'FINISHED'}
             if self.output == 'FACES':
                 cells = build_face_cells(
-                    carpet=carpet, cord_width=self.cord_width,
+                    carpet=carpet, cord_width=self.face_cord_width,
                     face_color=self.face_color,
                     backing=self.backing, base=self.base,
                     include_ribbons=self.face_ribbons,
@@ -5412,7 +5417,7 @@ if _IN_BLENDER:
                     lay.prop(self, 'base')
                 lay.prop(self, 'separate')
             elif self.output == 'FACES':
-                lay.prop(self, 'cord_width')     # ribbon width = gap
+                lay.prop(self, 'face_cord_width')
                 lay.prop(self, 'face_color')
                 lay.prop(self, 'tile_height')
                 lay.prop(self, 'face_ribbons')
