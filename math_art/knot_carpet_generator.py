@@ -1613,15 +1613,50 @@ def _arrangement_faces(paths, closed, crossings):
     return [P for P in faces if _poly_area2(P) > 1e-9]
 
 
+def _ribbon_edges(paths, closed, half):
+    """The two boundary curves of every ribbon -- each centreline offset
+    left and right by `half` (mitered) -- plus a straight cap across each
+    OPEN ribbon's ends.  Returns (edge_paths, edge_closed): the polylines
+    whose arrangement HOLES (the regions no ribbon covers) are the mosaic
+    tiles.  Because a ribbon has width, a hole stays enclosed even where
+    the open centrelines leave a gap, so every visible hole fills."""
+    epaths, eclosed = [], []
+    for p, c in zip(paths, closed):
+        pl = [(float(q[0]), float(q[1])) for q in p]
+        if len(pl) < 2:
+            continue
+        left, right = isl.miter_ribbon(pl, 2.0 * half, bool(c))
+        epaths.append(np.asarray(left, float))
+        eclosed.append(bool(c))
+        epaths.append(np.asarray(right, float))
+        eclosed.append(bool(c))
+        if not c:                              # cap the two open ends
+            epaths.append(np.asarray([left[0], right[0]], float))
+            eclosed.append(False)
+            epaths.append(np.asarray([left[-1], right[-1]], float))
+            eclosed.append(False)
+    return epaths, eclosed
+
+
 def build_face_cells(strands=None, carpet=None, cord_width=0.12,
-                     face_color='SHAPE', backing=False, base=0.06):
-    """The mosaic of tiles BETWEEN the strands: the bounded cells of the
-    strand arrangement (traced with a non-overlapping half-edge walk),
-    each shrunk toward its centroid by ~half `cord_width` so the strands
-    read as the channels between the tiles.  Each tile is one flat n-gon;
-    `face_color` is 'UNIFORM' (one colour) or 'SHAPE' (congruent tiles
-    share a colour).  Returns (verts, faces, mats) cells plus an optional
-    backing slab."""
+                     face_color='SHAPE', backing=False, base=0.06,
+                     include_ribbons=True, tile_height=0.0,
+                     separate_colors=False):
+    """The mosaic of tiles between the strands: the HOLES of the ribbon
+    network.  Each strand is swept to a ribbon of width `cord_width`; the
+    arrangement of the ribbon EDGES is traced with a non-overlapping
+    half-edge (DCEL) walk, and the faces no ribbon covers are the tiles.
+    A hole stays enclosed even where the open centrelines leave a gap
+    (the ribbon width closes it), so every visible hole fills, and the
+    tile is already inset by the ribbon so the cord reads at a uniform
+    width.  `tile_height` > 0 raises each tile into a solid prism above
+    the flat cords (0 = flat).  With `include_ribbons` (default) the flat
+    cords are emitted too.  `face_color` is 'UNIFORM' or 'SHAPE'
+    (congruent tiles share a colour).  With `separate_colors` the tiles
+    of each colour are merged into one cell and the cords into another,
+    so `emit(separate=True)` yields one object per colour plus a cords
+    object.  Returns (verts, faces, mats) cells plus an optional backing
+    slab."""
     if carpet is None:
         carpet = build_curve_carpet(strands)
     paths = carpet['paths']
@@ -1631,37 +1666,78 @@ def build_face_cells(strands=None, carpet=None, cord_width=0.12,
     span = max(float(np.ptp(allpts[:, 0])), float(np.ptp(allpts[:, 1])),
                1e-6)
 
-    faces = _arrangement_faces(paths, closed, carpet['crossings'])
-    if not faces:
+    # trace the ribbon-edge arrangement; a face is a HOLE (a tile) when
+    # its centre is farther than the ribbon half-width from every
+    # centreline (i.e. no ribbon paints it)
+    epaths, eclosed = _ribbon_edges(paths, closed, half)
+    if not epaths:
+        return []
+    ecross = _curve_crossings(epaths, eclosed)
+    efaces = _arrangement_faces(epaths, eclosed, ecross)
+    cpts = np.concatenate([np.asarray(p, float)[::2] for p in paths
+                           if len(p) >= 2])
+    holes = []
+    for P in efaces:
+        if len(P) < 3 or abs(_poly_area2(P)) < 1e-9:
+            continue
+        cen = P.mean(axis=0)
+        d = float(np.min(np.linalg.norm(cpts - cen, axis=1)))
+        if d > 0.85 * half:
+            holes.append(P)
+    if not holes:
         return []
 
-    # Open the ribbon gap by shrinking each cell toward its own centroid.
-    # A centroid scale is affine, so the tile stays a SIMPLE flat polygon
-    # (a true uniform-width erosion self-intersects on the concave
-    # pinwheel cells and z-fights); a cell too thin to keep a positive
-    # gap collapses to nothing and is dropped -- the ribbon fills it.
     cls = {}
-    cells = []
-    all_verts = []
-    for P in faces:
-        if len(P) < 3 or abs(_poly_area2(P)) < 1e-8:
-            continue
-        c = P.mean(axis=0)
-        R = float(np.mean(np.linalg.norm(P - c, axis=1)))
-        if R < half:
-            continue                          # thinner than the ribbon
-        s = min(0.985, 1.0 - half / R)
-        Q = c + s * (P - c)
+    npal = max(1, len(pc.PALETTE_RGBA) - 1)    # keep the last slot for cords
+
+    def _mat(P):
         if face_color == 'UNIFORM':
-            mat = 0
+            return 0
+        return cls.setdefault(_face_signature(P, span), len(cls)) % npal
+
+    # tiles: flat n-gons a hair above the cords, or (tile_height > 0)
+    # solid prisms rising from the cord plane
+    h = max(0.0, float(tile_height))
+    zt = 0.003 * span                          # flat-tile lift over cords
+    tile_cells = []
+    all_verts = []
+    for P in holes:
+        m = _mat(P)
+        if h > 1e-5:
+            cv, cf, cm = [], [], []
+            pc.prisms(cv, cf, cm, [P], h, 0.0, mat=m)
+            tile_cells.append((cv, cf, cm))
+            all_verts.extend(cv)
         else:
-            sig = _face_signature(P, span)
-            mat = cls.setdefault(sig, len(cls)) % len(pc.PALETTE_RGBA)
-        verts = [(float(x), float(y), 0.0) for x, y in Q]
-        cells.append((verts, [list(range(len(verts)))], [mat]))
-        all_verts.extend(verts)
-    if not cells:
+            verts = [(float(x), float(y), zt) for x, y in P]
+            tile_cells.append((verts, [list(range(len(verts)))], [m]))
+            all_verts.extend(verts)
+
+    ribbon_cells = []
+    if include_ribbons:
+        rib = build_curve_cells(carpet=carpet, cord_width=cord_width,
+                                interlace=False, color_by='UNIFORM',
+                                height=0.0, backing=False)
+        for v, f, _m in rib:
+            ribbon_cells.append((list(v), f, [_BACKING_MAT] * len(f)))
+            all_verts.extend(v)
+
+    if not tile_cells and not ribbon_cells:
         return []
+
+    if separate_colors:
+        # one merged cell per tile colour + one for the cords, so
+        # emit(separate=True) makes one object each
+        groups = {}
+        for c in tile_cells:
+            k = c[2][0] if c[2] else 0
+            groups.setdefault(k, []).append(c)
+        cells = [pc.merge_cells(groups[k]) for k in sorted(groups)]
+        if ribbon_cells:
+            cells.append(pc.merge_cells(ribbon_cells))
+    else:
+        cells = tile_cells + ribbon_cells
+
     if backing and all_verts:
         a = np.asarray(all_verts, float)
         lo = (a[:, 0].min(), a[:, 1].min())
@@ -4551,6 +4627,11 @@ if _IN_BLENDER:
         cord_width: FloatProperty(
             name="Cord Width", default=0.12, min=0.02, max=0.4,
             description="Ribbon width in loop-spacing units")
+        face_cord_width: FloatProperty(
+            name="Cord Width", default=0.05, min=0.01, max=0.4,
+            description="Cord (leading) width in loop-spacing units; "
+                        "the tiles are the holes between the cords "
+                        "(Faces output)")
         style: EnumProperty(
             name="Style",
             items=[('ANGULAR', "Angular",
@@ -4608,6 +4689,20 @@ if _IN_BLENDER:
             default='SHAPE',
             description="How the mosaic tiles are coloured (Faces "
                         "output)")
+        face_ribbons: BoolProperty(
+            name="Include Ribbons", default=True,
+            description="Emit the flat cords too, so the strand network "
+                        "shows as the uniform-width leading between the "
+                        "tiles (Faces output); off = tiles only")
+        tile_height: FloatProperty(
+            name="Tile Height", default=0.0, min=0.0, max=1.0,
+            description="Raise each tile into a solid prism this tall "
+                        "above the cord plane (Faces output); 0 = flat")
+        face_separate: BoolProperty(
+            name="Separate by Color", default=False,
+            description="Output the cords and each tile colour as its "
+                        "own object (Faces output) instead of one merged "
+                        "mesh")
         tube_radius: FloatProperty(
             name="Tube Radius", default=0.04, min=0.005, max=0.25,
             description="Rope radius in loop-spacing units (tube)")
@@ -5127,9 +5222,12 @@ if _IN_BLENDER:
                 return {'FINISHED'}
             if self.output == 'FACES':
                 cells = build_face_cells(
-                    carpet=carpet, cord_width=self.cord_width,
+                    carpet=carpet, cord_width=self.face_cord_width,
                     face_color=self.face_color,
-                    backing=self.backing, base=self.base)
+                    backing=self.backing, base=self.base,
+                    include_ribbons=self.face_ribbons,
+                    tile_height=self.tile_height,
+                    separate_colors=self.face_separate)
                 if not cells:
                     self.report({'ERROR'}, "no faces found")
                     return {'CANCELLED'}
@@ -5148,7 +5246,9 @@ if _IN_BLENDER:
                     weave_height=self.weave_height,
                     color_by=self.color_by, backing=self.backing,
                     base=self.base)
-            obj = pc.emit(context, label, cells, self.separate,
+            sep = (self.face_separate if self.output == 'FACES'
+                   else self.separate)
+            obj = pc.emit(context, label, cells, sep,
                           fit=True, operator=self)
             if obj is None:
                 self.report({'ERROR'}, "no carpet generated")
@@ -5317,12 +5417,14 @@ if _IN_BLENDER:
                     lay.prop(self, 'base')
                 lay.prop(self, 'separate')
             elif self.output == 'FACES':
-                lay.prop(self, 'cord_width')     # ribbon width = gap
+                lay.prop(self, 'face_cord_width')
                 lay.prop(self, 'face_color')
+                lay.prop(self, 'tile_height')
+                lay.prop(self, 'face_ribbons')
+                lay.prop(self, 'face_separate')
                 lay.prop(self, 'backing')
                 if self.backing:
                     lay.prop(self, 'base')
-                lay.prop(self, 'separate')
             lay.prop(self, 'align')
 
         def draw(self, context):
