@@ -12,8 +12,10 @@
 # cross-section prism, not the number of directions.
 #   * tetrastix -- square rods in 3 directions (the cube axes, <100>),
 #     primitive-cubic packing (O'Keeffe's Pi*); square prisms fill 3/4.
-#   * hemistix  -- square rods in 3 directions, the alternative
-#     body-centred-cubic packing (O'Keeffe's +Pi).
+#   * hemistix  -- square rods in the same 3 directions, the second
+#     (and only other) cubic square-rod packing: chiral, space group
+#     I4_1 32, six rods per cell, filling 3/8 -- exactly half of
+#     tetrastix (the "hemi").
 #   * hexastix  -- hexagonal rods in 4 directions (the body diagonals,
 #     <111>), the garnet packing (O'Keeffe's Gamma, space group Ia-3d);
 #     hexagonal prisms fill exactly 3/4 -- the "bundle of pencils" form.
@@ -79,12 +81,22 @@ PACKINGS = {
         dirs=[(0, 0, 1), (1, 0, 0), (0, 1, 0)],
         offsets=[(0.0, 0.0, 0.0), (0.0, 0.5, 0.0), (0.5, 0.0, 0.5)],
         lattice='PRIM', native=4),
-    # NB: hemistix (Conway's BCC square-rod packing, O'Keeffe's +Pi) is
-    # deliberately omitted -- the published 6-rod coordinates I have
-    # either cross under the (1/2,1/2,1/2) centring or, on the primitive
-    # lattice, give an implausibly sparse (~10% fill) arrangement, so
-    # neither is the true dense packing. Restore it once verified
-    # coordinates are in hand (see BACKLOG).
+    'HEMISTIX': dict(
+        label="Hemistix - square rods, 3 directions (chiral)",
+        # The chiral BCC square-rod packing (Conway's hemistix, space
+        # group I4_1 32) -- the second and only other cubic packing of
+        # square rods along the <100> axes. Six rods per period-1 cell
+        # (two per direction), square side 1/4, filling 3/8 -- exactly
+        # HALF of tetrastix's 3/4 (the "hemi"). The (1/2,1/2,1/2)
+        # centring is an internal symmetry, so it tiles on the PRIMITIVE
+        # lattice. Coordinates verified against the space group and
+        # cross-checked non-intersecting (r_max = 1/8).
+        dirs=[(1, 0, 0), (1, 0, 0), (0, 1, 0),
+              (0, 1, 0), (0, 0, 1), (0, 0, 1)],
+        offsets=[(0.0, 1 / 4, 0.0), (0.0, 3 / 4, 1 / 2),
+                 (0.0, 0.0, 1 / 4), (1 / 2, 0.0, 3 / 4),
+                 (1 / 4, 0.0, 0.0), (3 / 4, 1 / 2, 0.0)],
+        lattice='PRIM', native=4),
     'HEXASTIX': dict(
         label="Hexastix - hexagonal rods, 4 directions (pencils)",
         dirs=list(_D111),
@@ -635,7 +647,7 @@ if _IN_BLENDER:
         packing: EnumProperty(
             name="Packing",
             items=[(k, PACKINGS[k]['label'], "")
-                   for k in ('TETRASTIX', 'HEXASTIX',
+                   for k in ('TETRASTIX', 'HEMISTIX', 'HEXASTIX',
                              'TRISTIX', 'SIGMA')],
             default='HEXASTIX')
         cross_section: EnumProperty(

@@ -132,6 +132,9 @@ OPS = [
     ("polystix tetrastix", lambda: bpy.ops.mesh.polystix_add(
         preset='CUSTOM', packing='TETRASTIX', cross_section='PRISM',
         extent=3, clip='CUBE')),
+    ("polystix hemistix", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='HEMISTIX', cross_section='PRISM',
+        extent=3, clip='TRUNC_OCTA')),
     ("polystix tristix chiral", lambda: bpy.ops.mesh.polystix_add(
         preset='CUSTOM', packing='TRISTIX', cross_section='PRISM',
         extent=3, clip='TRUNC_OCTA', handedness='LEFT')),
