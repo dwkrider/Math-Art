@@ -288,6 +288,23 @@ OPS = [
     ("spacefill", lambda: bpy.ops.mesh.spacefill_add(kind='OCTET')),
     ("spacefill spiral3", lambda: bpy.ops.mesh.spacefill_add(
         kind='SPIRAL3', nx=2, ny=2, nz=2)),
+    ("interlocking tetra",
+     lambda: bpy.ops.mesh.interlocking_add(family='TETRA')),
+    ("interlocking escher osteomorphic",
+     lambda: bpy.ops.mesh.interlocking_add(
+         family='ESCHER', profile='SINE')),
+    ("interlocking versatile",
+     lambda: bpy.ops.mesh.interlocking_add(family='VERSATILE')),
+    ("interlocking kitten",
+     lambda: bpy.ops.mesh.interlocking_add(
+         family='KITTEN', nx=2, ny=2, nz=2)),
+    ("interlocking ufo",
+     lambda: bpy.ops.mesh.interlocking_add(family='UFO')),
+    ("interlocking sl",
+     lambda: bpy.ops.mesh.interlocking_add(family='SL')),
+    ("interlocking dome",
+     lambda: bpy.ops.mesh.interlocking_add(
+         family='DOME', dome_seed='DODECA')),
     ("solid snub cube left", lambda: bpy.ops.mesh.regular_solid_add(
         family='ARCHIMEDEAN', solid='SC', handedness='LEFT')),
     ("spiked modern", lambda: bpy.ops.mesh.spiked_polyhedron_add(
