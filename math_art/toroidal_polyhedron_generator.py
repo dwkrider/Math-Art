@@ -415,6 +415,35 @@ if _IN_BLENDER:
                              max=10.0)
         minor: FloatProperty(name="Minor Radius", default=0.4, min=0.02,
                              max=5.0)
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "Plain closed torus"),
+                   ('LEONARDO', "Leonardo (da Vinci)",
+                    "Open-faced panels via the shared Leonardo Style "
+                    "modifier"),
+                   ('WIRE', "Wireframe", "Wireframe modifier"),
+                   ('FACETS', "Face Segments",
+                    "Split into one inward-extruded, mitre-beveled "
+                    "segment per face")],
+            default='SOLID')
+        border: FloatProperty(
+            name="Border", default=0.3, min=0.02, max=0.95,
+            description="Leonardo face frame width")
+        thickness: FloatProperty(
+            name="Thickness", default=0.05, min=0.001, max=1.0,
+            description="Panel / strut thickness")
+        facet_depth: FloatProperty(name="Depth", default=0.1, min=0.01,
+                                   max=1.0,
+                                   description="Face Segments inward depth")
+        facet_gap: FloatProperty(name="Bevel Gap", default=0.0, min=0.0,
+                                 max=0.5,
+                                 description="Gap between face segments")
+        facet_explode: FloatProperty(name="Explode", default=0.0, min=0.0,
+                                     max=5.0,
+                                     description="Move segments outward")
+        facet_separate: BoolProperty(
+            name="Separate Meshes", default=False,
+            description="Each face segment as its own object")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def execute(self, context):
@@ -432,7 +461,32 @@ if _IN_BLENDER:
             me.from_pydata([tuple(c / mx * self.scale for c in v)
                             for v in V], [], [tuple(f) for f in F])
             me.validate(clean_customdata=True)
+            # consistent outward normals (needed for Face Segments)
+            try:
+                import bmesh
+                bm = bmesh.new()
+                bm.from_mesh(me)
+                bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+                bm.to_mesh(me)
+                bm.free()
+            except Exception:
+                pass
             me.update()
+            if self.style == 'FACETS':
+                Vf = [tuple(v.co) for v in me.vertices]
+                Ff = [list(p.vertices) for p in me.polygons]
+                bpy.data.meshes.remove(me)
+                try:
+                    from . import facet_style
+                except ImportError:
+                    import facet_style
+                facet_style.emit_facets(
+                    context, Vf, Ff, name, self.facet_depth,
+                    self.facet_gap, self.facet_explode,
+                    self.facet_separate)
+                self.report({'INFO'}, "%s: %d face segments" %
+                            (name, len(Ff)))
+                return {'FINISHED'}
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
@@ -440,6 +494,17 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
+            if self.style == 'LEONARDO':
+                try:
+                    from . import leonardo_style
+                except ImportError:
+                    import leonardo_style
+                leonardo_style.add_modifier(obj, self.border,
+                                            self.thickness)
+            elif self.style == 'WIRE':
+                mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
+                mod.thickness = self.thickness
+                mod.use_even_offset = False
             self.report({'INFO'}, "%s: V=%d F=%d (genus 1)" %
                         (name, len(V), len(F)))
             return {'FINISHED'}
@@ -458,6 +523,16 @@ if _IN_BLENDER:
                 lay.prop(self, 'antiprism')
             lay.prop(self, 'major')
             lay.prop(self, 'minor')
+            lay.prop(self, 'style')
+            if self.style == 'LEONARDO':
+                lay.prop(self, 'border')
+            if self.style in ('LEONARDO', 'WIRE'):
+                lay.prop(self, 'thickness')
+            if self.style == 'FACETS':
+                lay.prop(self, 'facet_depth')
+                lay.prop(self, 'facet_gap')
+                lay.prop(self, 'facet_explode')
+                lay.prop(self, 'facet_separate')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):

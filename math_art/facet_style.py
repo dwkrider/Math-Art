@@ -69,14 +69,14 @@ def build_facets(V, F, depth=0.15, padding=0.0):
     """One inward-extruded, mitre-beveled segment per face of the
     convex polyhedron (V, F).  Returns a list of
     (verts, faces, n_sides, outward_dir)."""
-    ctr = tuple(sum(v[k] for v in V) / len(V) for k in range(3))
+    # trust the input winding: the Newell normal of a face wound
+    # counter-clockwise as seen from outside already points outward.
+    # (Using the face winding rather than a global-centroid heuristic
+    # keeps inner faces of a torus oriented correctly.)
     normals, offs = [], []
     for f in F:
         P = [V[i] for i in f]
         n = _face_normal(P)
-        cen = tuple(sum(p[k] for p in P) / len(P) for k in range(3))
-        if sum(n[k] * (cen[k] - ctr[k]) for k in range(3)) < 0:
-            n = (-n[0], -n[1], -n[2])
         normals.append(n)
         offs.append(sum(n[k] * P[0][k] for k in range(3)))
     emap = {}

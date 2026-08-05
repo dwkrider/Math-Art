@@ -814,10 +814,20 @@ if _IN_BLENDER:
         style: EnumProperty(
             name="Style",
             items=[('SOLID', "Solid", "Plain closed polyhedron"),
+                   ('LEONARDO', "Leonardo (da Vinci)",
+                    "Open-faced panels via the shared Leonardo Style "
+                    "modifier"),
+                   ('WIRE', "Wireframe", "Wireframe modifier"),
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
                     "segment per face (best on the convex uniforms)")],
             default='SOLID')
+        border: FloatProperty(
+            name="Border", default=0.3, min=0.02, max=0.95,
+            description="Leonardo face frame width")
+        thickness: FloatProperty(
+            name="Thickness", default=0.05, min=0.001, max=1.0,
+            description="Panel / strut thickness")
         facet_depth: FloatProperty(name="Depth", default=0.15, min=0.01,
                                    max=2.0,
                                    description="Face Segments inward depth")
@@ -840,6 +850,10 @@ if _IN_BLENDER:
             lay.prop(self, 'dual')
             lay.prop(self, 'coloring')
             lay.prop(self, 'style')
+            if self.style == 'LEONARDO':
+                lay.prop(self, 'border')
+            if self.style in ('LEONARDO', 'WIRE'):
+                lay.prop(self, 'thickness')
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'facet_gap')
@@ -881,8 +895,19 @@ if _IN_BLENDER:
                     self.facet_explode, self.facet_separate, mat)
                 self.report({'INFO'}, f"{name}: {len(F)} face segments")
                 return {'FINISHED'}
-            _make_object(context, name, verts, F,
-                         self.coloring == 'SIDES')
+            obj = _make_object(context, name, verts, F,
+                               self.coloring == 'SIDES')
+            if self.style == 'LEONARDO':
+                try:
+                    from . import leonardo_style
+                except ImportError:
+                    import leonardo_style
+                leonardo_style.add_modifier(obj, self.border,
+                                            self.thickness)
+            elif self.style == 'WIRE':
+                mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
+                mod.thickness = self.thickness
+                mod.use_even_offset = False
             self.report({'INFO'},
                         f"{name}: V={len(V)} F={len(F)}")
             return {'FINISHED'}
