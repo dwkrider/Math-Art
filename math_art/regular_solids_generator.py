@@ -1778,35 +1778,104 @@ def _face_normal(P):
     return (n[0] / L, n[1] / L, n[2] / L)
 
 
-def build_facets(V, F, padding=0.05, thickness=0.05):
-    """Split a solid's shell into one thick plate per face.  Each face
-    is shrunk toward its own centroid by `padding` (opening a gap
-    between neighbouring plates) and extruded to a slab of the given
-    `thickness` along its outward normal.  Returns a list of
-    (verts, faces, n_sides, outward_dir) -- outward_dir is the unit
-    vector from the solid centre to the face centroid, used to explode
-    the plates apart."""
-    segs = []
-    for face in F:
-        P = [V[i] for i in face]
-        m = len(P)
-        cen = tuple(sum(p[k] for p in P) / m for k in range(3))
+def _det3(m):
+    (a, b, c), (d, e, f), (g, h, i) = m
+    return a * (e * i - f * h) - b * (d * i - f * g) \
+        + c * (d * h - e * g)
+
+
+def _solve3(rows, rhs):
+    """Solve the 3x3 linear system rows . x = rhs by Cramer's rule;
+    None if singular."""
+    det = _det3(rows)
+    if abs(det) < 1e-12:
+        return None
+    out = []
+    for j in range(3):
+        mm = [list(rows[r]) for r in range(3)]
+        for r in range(3):
+            mm[r][j] = rhs[r]
+        out.append(_det3(mm) / det)
+    return tuple(out)
+
+
+def _orient_faces(verts, faces):
+    """Wind every face outward from the (convex) part's centroid."""
+    c = tuple(sum(v[k] for v in verts) / len(verts) for k in range(3))
+    out = []
+    for f in faces:
+        p0, p1, p2 = verts[f[0]], verts[f[1]], verts[f[2]]
+        u = (p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2])
+        v = (p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2])
+        n = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2],
+             u[0] * v[1] - u[1] * v[0])
+        d = sum(n[k] * (p0[k] - c[k]) for k in range(3))
+        out.append(f[::-1] if d < 0 else list(f))
+    return out
+
+
+def build_facets(V, F, depth=0.15, padding=0.0):
+    """Dissect a convex solid's shell into one segment per face,
+    each face extruded *inward* with side walls beveled at half the
+    dihedral angle (a mitre cut), so neighbouring segments share their
+    bevel planes and meet flush -- the shell is partitioned with no
+    gaps.  The outer cap is the original face; the inner cap sits
+    `depth` below it; each side wall lies on the plane through the
+    shared edge whose normal bisects the two faces' outward normals.
+    `padding` shifts the bevels inward to open a gap.  Returns a list
+    of (verts, faces, n_sides, outward_dir)."""
+    ctr = tuple(sum(v[k] for v in V) / len(V) for k in range(3))
+    normals, offs = [], []
+    for f in F:
+        P = [V[i] for i in f]
         n = _face_normal(P)
-        if sum(n[k] * cen[k] for k in range(3)) < 0:   # face outward
-            n = tuple(-x for x in n)
-        s = 1.0 - padding
-        pin = [tuple(cen[k] + (p[k] - cen[k]) * s for k in range(3))
-               for p in P]
-        h = thickness / 2.0
-        inner = [tuple(p[k] - n[k] * h for k in range(3)) for p in pin]
-        outer = [tuple(p[k] + n[k] * h for k in range(3)) for p in pin]
-        verts = inner + outer
+        cen = tuple(sum(p[k] for p in P) / len(P) for k in range(3))
+        if sum(n[k] * (cen[k] - ctr[k]) for k in range(3)) < 0:
+            n = (-n[0], -n[1], -n[2])
+        normals.append(n)
+        offs.append(sum(n[k] * P[0][k] for k in range(3)))
+    emap = {}
+    for fi, f in enumerate(F):
+        m = len(f)
+        for k in range(m):
+            emap.setdefault(frozenset((f[k], f[(k + 1) % m])),
+                            []).append(fi)
+
+    def unit_diff(na, nb):
+        d = (na[0] - nb[0], na[1] - nb[1], na[2] - nb[2])
+        L = sqrt(d[0] ** 2 + d[1] ** 2 + d[2] ** 2) or 1.0
+        return (d[0] / L, d[1] / L, d[2] / L)
+
+    segs = []
+    for fi, f in enumerate(F):
+        n_i, d_i, m = normals[fi], offs[fi], len(f)
+        cen = tuple(sum(V[i][k] for i in f) / m for k in range(3))
+        outer = [V[i] for i in f]
+        inner = []
+        for k in range(m):
+            v, vp, vn = f[k], f[(k - 1) % m], f[(k + 1) % m]
+            jA = [x for x in emap[frozenset((vp, v))] if x != fi]
+            jB = [x for x in emap[frozenset((v, vn))] if x != fi]
+            nA = normals[jA[0]] if jA else n_i
+            nB = normals[jB[0]] if jB else n_i
+            mA = unit_diff(n_i, nA)
+            mB = unit_diff(n_i, nB)
+            Vv = V[v]
+            cA = sum(mA[k] * Vv[k] for k in range(3)) + padding
+            cB = sum(mB[k] * Vv[k] for k in range(3)) + padding
+            pt = _solve3((mA, mB, n_i), (cA, cB, d_i - depth))
+            if pt is None:                       # near-degenerate
+                pt = tuple(cen[k] + (Vv[k] - cen[k]) * 0.3
+                           for k in range(3))
+            inner.append(pt)
+        verts = list(outer) + inner
         faces = []
-        for i in range(m):
-            j = (i + 1) % m
-            faces.append([i, j, m + j, m + i])          # side wall
-        faces.append(list(range(m))[::-1])              # inner cap
-        faces.append([m + i for i in range(m)])          # outer cap
+        for k in range(m):
+            j = (k + 1) % m
+            faces.append([k, j, m + j, m + k])       # side wall
+        faces.append(list(range(m)))                 # outer cap
+        faces.append([m + k for k in range(m)])       # inner cap
+        faces = _orient_faces(verts, faces)
         L = sqrt(sum(c * c for c in cen)) or 1.0
         segs.append((verts, faces, m, tuple(c / L for c in cen)))
     return segs
@@ -1945,11 +2014,14 @@ if _IN_BLENDER:
                     "Split the shell into one thick plate per face, "
                     "padded apart and optionally exploded outward")],
             default='SOLID')
-        padding: FloatProperty(
-            name="Face Padding", default=0.06, min=0.0, max=0.9,
-            description="Shrink each face plate toward its own centre "
-                        "to open a gap between neighbours (Face "
+        facet_depth: FloatProperty(
+            name="Depth", default=0.15, min=0.01, max=2.0,
+            description="How far each face is extruded inward (Face "
                         "Segments style)")
+        padding: FloatProperty(
+            name="Bevel Gap", default=0.0, min=0.0, max=0.5,
+            description="Shift the mitre bevels inward to open a gap "
+                        "between neighbouring segments (0 = flush)")
         separate_facets: BoolProperty(
             name="Separate Meshes", default=False,
             description="Output each face segment as its own mesh "
@@ -2152,7 +2224,7 @@ if _IN_BLENDER:
             return me
 
         def _emit_facets(self, context, V, F, label):
-            segs = build_facets(V, F, self.padding, self.thickness)
+            segs = build_facets(V, F, self.facet_depth, self.padding)
             for o in context.selected_objects:
                 o.select_set(False)
             cur = context.scene.cursor.location
@@ -2220,9 +2292,10 @@ if _IN_BLENDER:
             lay.prop(self, 'style')
             if self.style == 'LEONARDO':
                 lay.prop(self, 'border')
-            if self.style != 'SOLID':
+            if self.style in ('LEONARDO', 'WIRE'):
                 lay.prop(self, 'thickness')
             if self.style == 'FACETS':
+                lay.prop(self, 'facet_depth')
                 lay.prop(self, 'padding')
                 lay.prop(self, 'explode')
                 lay.prop(self, 'separate_facets')
