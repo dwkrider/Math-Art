@@ -79,6 +79,7 @@ _MODULE_NAMES = [
     'bubble_generator',
     'phyllotaxis_generator',
     'helical_surface_generator',
+    'ruled_surface_generator',
     'curiosity_surface_generator',
     'rolling_knot_generator',
     'woven_polyhedron_generator',
@@ -153,6 +154,7 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.squeeze_add", icon='MOD_SIMPLEDEFORM')
         _op(lay, "mesh.vertex_vortices_add", icon='FORCE_VORTEX')
         _op(lay, "mesh.helical_surface_add", icon='MOD_SCREW')
+        _op(lay, "mesh.ruled_surface_add", icon='MOD_SCREW')
         _op(lay, "mesh.curiosity_surface_add",
             icon='SURFACE_DATA')
         _op(lay, "mesh.hyperbolic_surface_add", icon='MESH_CAPSULE')
