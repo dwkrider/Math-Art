@@ -22,12 +22,12 @@
 #             deformation reproduces Estrin's osteomorphic block; a
 #             tent/zig-zag deformation reproduces a Versatile-style
 #             block.  Two-colouring follows the Truchet rule.
-# TETRA, ESCHER, KITTEN and the SL strand are space-filling /
-# interlocking assemblies (all verified non-overlapping).  The exact
-# Versatile block and the UFO / cushion tetroctahedrille blocks are
-# shown as single reference blocks -- their space-filling assemblies
-# require the rotation-based Truchet / grid grammars left for future
-# work.
+# TETRA, ESCHER, VERSATILE, KITTEN, the SL strand and the DOME are
+# space-filling / interlocking assemblies (all verified
+# non-overlapping).  The Bisquare block and the UFO / cushion
+# tetroctahedrille blocks are shown as single reference blocks --
+# their assemblies require rotation-based grammars not available in
+# coordinate form (see BACKLOG).
 #
 # References:
 # - A. V. Dyskin, Y. Estrin, A. J. Kanel-Belov, E. Pasternak, "A new
