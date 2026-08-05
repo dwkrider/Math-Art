@@ -7369,8 +7369,11 @@ def stinv_costa_build(a=-10.0, nu=52, nt=44, storeys=1, rmin=0.02,
                               dtype=np.int64))
     Vu = V0[used]
     span = float(np.linalg.norm(Vu.max(0) - Vu.min(0)))
+    # every frame is a sign-diagonal matrix plus an exact multiple of T,
+    # so seam partners are bitwise equal after snapping -- a near-exact
+    # tolerance keeps the branch-point clusters from being fused
     V, F, uv = sptail_orbit_weld(V0, _sptail_grid_uv(len(r), len(t)),
-                                 q0, frames, 1e-9 * span)
+                                 q0, frames, 1e-12 * span)
     diag['T'] = T
     diag['span'] = span
     return V, F, uv, diag
