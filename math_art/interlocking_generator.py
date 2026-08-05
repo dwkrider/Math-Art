@@ -585,15 +585,31 @@ def _orient_outward(V, faces):
     return out
 
 
-def build_versatile():
-    """The exact Versatile block as a single block (the interpolation
-    between a square and a 1x2 rectangle).  Its space-filling assembly
-    mixes translations and rotations classified by Truchet tiles and
-    is not a single-cell translation tiling, so only the block itself
-    is emitted here; see BACKLOG for the full Truchet assembler."""
-    V0 = _VERSATILE_V - _VERSATILE_V.mean(axis=0)
+# the Versatile block's z=0 face is a diamond (a square turned 45 deg)
+# and its z=1 face a 1x2 rectangle.  The diamond lattice L_D spanned
+# by (1,1) and (1,-1) tiles both faces at once, so a single-
+# orientation translation over L_D fills the layer -- verified: every
+# horizontal section tiles with coverage exactly one.  (The Truchet
+# classification gives many more assemblies; this is the simplest.)
+_VERSATILE_L = (np.array((1.0, 1.0, 0.0)),
+                np.array((1.0, -1.0, 0.0)))
+
+
+def build_versatile(nx=4, ny=4):
+    """A layer of Versatile blocks tiled by translation over the
+    diamond lattice L_D; the outer ring is flagged as frame and cells
+    are checkerboard-coloured for the Truchet look."""
+    cen = _VERSATILE_V.mean(axis=0)
+    V0 = _VERSATILE_V - cen
     F = _orient_outward(V0, _VERSATILE_F)
-    return [(np.zeros(3), V0, F, False, 0)]
+    L1, L2 = _VERSATILE_L
+    cells = []
+    for i in range(nx):
+        for j in range(ny):
+            t = i * L1 + j * L2 + cen
+            frame = (i == 0 or j == 0 or i == nx - 1 or j == ny - 1)
+            cells.append((t, V0, F, frame, (i + j) % 2))
+    return cells
 
 
 # The Bisquare block (Frezier 1737 / Weiss & Niemeyer 2026): a p4
@@ -935,7 +951,7 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
     if family == 'ESCHER':
         return build_escher(profile, nx, ny, deform, samples, height)
     if family == 'VERSATILE':
-        return build_versatile()
+        return build_versatile(nx, ny)
     if family == 'BISQUARE':
         return build_bisquare()
     if family in _TETROCTA_BLOCKS:
@@ -949,9 +965,9 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
 
 # families that build a space-filling / interlocking assembly; the
 # rest emit a single reference block
-_ASSEMBLY = {'TETRA', 'ESCHER', 'KITTEN', 'SL', 'DOME'}
-_RIGOROUS = {'TETRA', 'ESCHER'}
-_SINGLE_BLOCK = {'VERSATILE', 'BISQUARE', 'UFO', 'CUSHION'}
+_ASSEMBLY = {'TETRA', 'ESCHER', 'VERSATILE', 'KITTEN', 'SL', 'DOME'}
+_RIGOROUS = {'TETRA', 'ESCHER', 'VERSATILE'}
+_SINGLE_BLOCK = {'BISQUARE', 'UFO', 'CUSHION'}
 
 
 # ==================================================================
@@ -1014,10 +1030,11 @@ if _IN_BLENDER:
                  "mid-height and lofted back; sine gives Estrin's "
                  "osteomorphic saddle block, tent a Versatile-style "
                  "block; every layer tiles so copies interlock"),
-                ('VERSATILE', "Versatile Block (single)",
+                ('VERSATILE', "Versatile Blocks",
                  "The exact Versatile block (Akpanya et al., Bridges "
-                 "2023): a square lofted to a rectangle.  Shown as a "
-                 "single block"),
+                 "2023): a square lofted to a rectangle, tiled into a "
+                 "layer over the diamond lattice (every section tiles "
+                 "so the framed layer interlocks)"),
                 ('BISQUARE', "Bisquare Block (single)",
                  "The exact Bisquare block (a square deformed into "
                  "two smaller squares); nests with the Versatile "
@@ -1115,7 +1132,7 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'family')
             fam = self.family
-            if fam in ('TETRA', 'ESCHER', 'KITTEN'):
+            if fam in ('TETRA', 'ESCHER', 'VERSATILE', 'KITTEN'):
                 lay.prop(self, 'nx')
                 lay.prop(self, 'ny')
             if fam == 'KITTEN':
@@ -1279,7 +1296,7 @@ def _selftest():
     for name, cells in (
             ('TETRA', build_tetra(4, 4)),
             ('ESCHER', build_escher('SINE', 4, 4, 0.18, 8, 1.0)),
-            ('VERSATILE', build_versatile()),
+            ('VERSATILE', build_versatile(4, 4)),
             ('BISQUARE', build_bisquare()),
             ('KITTEN', build_tetrocta('KITTEN', 2, 2, 2)),
             ('UFO', build_tetrocta('UFO', 1, 1, 1)),
