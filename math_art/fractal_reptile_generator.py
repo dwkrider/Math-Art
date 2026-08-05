@@ -1250,7 +1250,7 @@ if _IN_BLENDER:
         """Add a Fathauer fractal tiling built from a rep-tile
         prototile"""
         bl_idname = "mesh.fractal_reptile_add"
-        bl_label = "Fractal Rep-Tile"
+        bl_label = "Fractal Rep-Tile (Experimental)"
         bl_options = {'REGISTER', 'UNDO'}
 
         family: EnumProperty(

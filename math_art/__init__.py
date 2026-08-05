@@ -203,6 +203,9 @@ class VIEW3D_MT_math_art_fractals(bpy.types.Menu):
         _op(lay, "curve.space_filling_add", icon='CURVE_DATA')
         _op(lay, "curve.lsystem_add", icon='GRAPH')
         _op(lay, "curve.fractal_tree_add", icon='GRAPH')
+        _op(lay, "mesh.fractal_tiling_add", icon='MESH_CIRCLE')
+        _op(lay, "mesh.fractal_knotwork_add", icon='OUTLINER_OB_CURVES')
+        _op(lay, "mesh.fractal_reptile_add", icon='MOD_TRIANGULATE')
 
 
 class VIEW3D_MT_math_art_knots(bpy.types.Menu):
@@ -280,13 +283,10 @@ class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
         _op(lay, "mesh.reptile_add", icon='MESH_GRID')
         _op(lay, "mesh.voderberg_add", icon='FORCE_VORTEX')
         _op(lay, "mesh.spiral_tiling_add", icon='FORCE_VORTEX')
-        _op(lay, "mesh.fractal_tiling_add", icon='MESH_CIRCLE')
-        _op(lay, "mesh.fractal_reptile_add", icon='MOD_TRIANGULATE')
         _op(lay, "mesh.islamic_pattern_add", icon='SOLO_ON')
         _op(lay, "mesh.celtic_knot_2d_add", icon='MOD_LATTICE')
         _op(lay, "mesh.over_under_screen_add", icon='MESH_GRID')
         _op(lay, "mesh.knot_carpet_add", icon='MESH_CIRCLE')
-        _op(lay, "mesh.fractal_knotwork_add", icon='OUTLINER_OB_CURVES')
         lay.separator()
         _op(lay, "mesh.hyperbolic_tiling_add", icon='MESH_CIRCLE')
 
