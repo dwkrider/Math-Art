@@ -9,9 +9,11 @@
 # or from a right-conoid variant S(u,v) = (v cos u, v sin u, h(u)),
 # or from a bilinear patch spanning four skew points.  Because the
 # generator is always a straight segment, each surface can optionally
-# be rendered as its literal RULINGS -- thin rods -- reproducing the
-# look of string / stick sculptures (George Hart's stick hyperboloids,
-# hyperbolic-paraboloid string art).
+# be rendered as its literal RULINGS -- thin rods or bare curves --
+# optionally alongside its directrix / boundary rails (the two circles,
+# the two torus knots, ...), reproducing the look of string / stick
+# sculptures (George Hart's stick hyperboloids, hyperbolic-paraboloid
+# string art).
 #
 # Modes
 #   HYPERBOLOID   -- hyperboloid of one sheet from straight rulings
@@ -756,10 +758,11 @@ def _build_surface(op):
     return (*vf, "Hyperbolic Paraboloid")
 
 
-def _build_rulings(op):
+def _build_rulings(op, n=None):
     """Ruling segments for the current mode (rods mode)."""
     m = op.mode
-    n = op.n_rods
+    if n is None:
+        n = op.n_rods
     if m == 'HYPERBOLOID':
         return rulings_hyperboloid(op.radius, op.height, op.twist,
                                    op.family, n)
@@ -793,6 +796,70 @@ def _build_rulings(op):
         return rulings_hypar(op.hy_a, op.hy_b, op.hy_c, op.v_extent,
                              corners, n)
     return []
+
+
+def _hypar_boundary(op, N):
+    """The (closed) boundary loop of the hypar: the four corner edges of
+    the bilinear patch, or the perimeter of the z=c((x/a)^2-(y/b)^2)
+    square."""
+    if op.use_corners:
+        loop = [tuple(op.p00), tuple(op.p10), tuple(op.p11),
+                tuple(op.p01)]
+        return [(loop, True)]
+    a, b, c, ext = op.hy_a, op.hy_b, op.hy_c, op.v_extent
+
+    def z(x, y):
+        return c * ((x / a) ** 2 - (y / b) ** 2)
+
+    k = max(2, N // 4)
+    xs = np.linspace(-ext, ext, k + 1)
+    ys = np.linspace(-ext, ext, k + 1)
+    loop = [(x, -ext, z(x, -ext)) for x in xs]
+    loop += [(ext, y, z(ext, y)) for y in ys[1:]]
+    loop += [(x, ext, z(x, ext)) for x in xs[::-1][1:]]
+    loop += [(-ext, y, z(-ext, y)) for y in ys[::-1][1:-1]]
+    return [(loop, True)]
+
+
+def _boundary_loops(op):
+    """The directrix / rail curves the rulings are strung between, as a
+    list of (points, closed) polylines: the two boundary rails of the
+    current mode (for KNOT_SPAN the inner and outer torus knots; for the
+    hyperboloid the two coaxial circles, etc.).  These complete the
+    'net' when a straight-ruled mode is drawn as rods or bare curves."""
+    m = op.mode
+    if m not in _RULED:
+        return []
+    N = max(8, op.res_u)
+    if m == 'HYPAR':
+        return _hypar_boundary(op, N)
+    if m == 'HYPERBOLOID':
+        # a single ruling family gives clean bottom/top rails
+        segs = rulings_hyperboloid(op.radius, op.height, op.twist,
+                                   'RIGHT', N)
+    else:
+        segs = _build_rulings(op, N)
+    if not segs:
+        return []
+    rail0 = [s[0] for s in segs]
+    rail1 = [s[1] for s in segs]
+    closed = (m in ('HYPERBOLOID', 'KNOT_SPAN', 'TWIST_STRIP')
+              or (m == 'CONOID' and op.conoid_kind != 'WHITNEY'))
+    return [(rail0, closed), (rail1, closed)]
+
+
+def _loop_segments(loops):
+    """Flatten (points, closed) polylines into consecutive (p0, p1)
+    segments so boundary curves can flow through _edges / _rods exactly
+    like the rulings do."""
+    segs = []
+    for pts, closed in loops:
+        pts = [tuple(p) for p in pts]
+        for i in range(len(pts) - 1):
+            segs.append((pts[i], pts[i + 1]))
+        if closed and len(pts) > 2:
+            segs.append((pts[-1], pts[0]))
+    return segs
 
 
 if _IN_BLENDER:
@@ -986,6 +1053,12 @@ if _IN_BLENDER:
                             max=400)
         rod_radius: FloatProperty(name="Rod Radius", default=0.02,
                                   min=0.002, max=0.3)
+        show_boundaries: BoolProperty(
+            name="Include Boundary Curves", default=True,
+            description="Add the directrix / rail curves the rulings "
+                        "are strung between (the two torus knots, the "
+                        "hyperboloid's end circles, etc.) to the rods / "
+                        "bare-curves output")
         smooth: BoolProperty(name="Smooth Shading", default=True)
         thickness: FloatProperty(name="Thickness", default=0.0,
                                  min=0.0, max=1.0,
@@ -1001,6 +1074,8 @@ if _IN_BLENDER:
             want_rulings = self.output in ('RODS', 'CURVES')
             if want_rulings and self.mode in _RULED:
                 segs = _build_rulings(self)
+                if self.show_boundaries:
+                    segs = segs + _loop_segments(_boundary_loops(self))
                 if self.output == 'RODS':
                     verts, faces = _rods(segs, self.rod_radius, 8)
                     name += " (Rods)"
@@ -1104,6 +1179,7 @@ if _IN_BLENDER:
                     lay.prop(self, 'n_rods')
                     if self.output == 'RODS':
                         lay.prop(self, 'rod_radius')
+                    lay.prop(self, 'show_boundaries')
             for k in ('smooth', 'thickness', 'scale'):
                 lay.prop(self, k)
 
@@ -1213,9 +1289,20 @@ def _selftest():
     assert len(kseg) == 24
     assert all(len(s) == 2 and len(s[0]) == 3 for s in kseg)
     # outer q=0 leaves the outer loop planar (z == 0)
-    _, oc = _knot_span_boundaries(outer_q=0, m=32)
+    inner, oc = _knot_span_boundaries(outer_q=0, m=32)
     assert np.max(np.abs(oc[:, 2])) < 1e-9
     print(f"knot span: {len(kseg)} rulings, circle-outer planar OK")
+
+    # boundary curves: a closed loop of k points -> k segments, an open
+    # one -> k-1; both knots feed through _edges like the rulings do
+    segs_closed = _loop_segments([(inner, True), (oc, True)])
+    assert len(segs_closed) == 2 * len(inner)
+    segs_open = _loop_segments([(inner, False)])
+    assert len(segs_open) == len(inner) - 1
+    bv, be = _edges(segs_closed)
+    assert len(be) == len(segs_closed) and len(bv) == 2 * len(segs_closed)
+    print(f"boundary curves: {len(inner)}-pt knots -> "
+          f"{len(segs_closed)} closed segments OK")
 
     # bare-curves output: one edge per ruling, no faces
     ev, ee = _edges(segs)
