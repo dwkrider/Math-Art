@@ -120,6 +120,24 @@ OPS = [
         kind='ICOSA', freq=1, output='TUBE', tube_radius=0.03,
         relax_iters=40)),
     ("polylinks", lambda: bpy.ops.mesh.polylinks_add(preset='T4')),
+    ("polystix hexastix pencils", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='HEXASTIX', cross_section='PRISM',
+        extent=3, clip='RHOMBIC_DODECA')),
+    ("polystix hexastix cylinders", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='HEXASTIX', cross_section='CYLINDER',
+        extent=3, clip='SPHERE')),
+    ("polystix tetrastix", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='TETRASTIX', cross_section='PRISM',
+        extent=3, clip='CUBE')),
+    ("polystix hemistix", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='HEMISTIX', cross_section='PRISM',
+        extent=3, clip='TRUNC_OCTA')),
+    ("polystix tristix chiral", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='TRISTIX', cross_section='PRISM',
+        extent=3, clip='TRUNC_OCTA', handedness='LEFT')),
+    ("polystix sigma", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='SIGMA', cross_section='CYLINDER',
+        extent=3, clip='RHOMBIC_DODECA')),
     ("platonic twist", lambda: bpy.ops.mesh.platonic_twist_add(
         kind='CUBE')),
     ("fractal", lambda: bpy.ops.mesh.fractal_polyhedron_add(

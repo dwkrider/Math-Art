@@ -23,6 +23,7 @@ _MODULE_NAMES = [
     'rotegrity_generator',
     'weave_generator',
     'polylinks_generator',
+    'polystix_generator',
     'platonic_twist_generator',
     'fractal_polyhedron_generator',
     'symmetrohedron_generator',
@@ -238,6 +239,7 @@ class VIEW3D_MT_math_art_weaves(bpy.types.Menu):
     def draw(self, context):
         lay = self.layout
         _op(lay, "mesh.polylinks_add", icon='MESH_CIRCLE')
+        _op(lay, "mesh.polystix_add", icon='MESH_CYLINDER')
         _op(lay, "mesh.tangle_add", icon='MOD_BOOLEAN')
         _op(lay, "mesh.poly_weave_add", icon='MOD_LATTICE')
         _op(lay, "mesh.rotegrity_add", icon='SPHERE')
