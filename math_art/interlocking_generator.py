@@ -491,7 +491,11 @@ def build_escher_block(kind, depth, samples, height):
     z=+height/2.  Every block is identical, so translated copies tile
     the slab at every height and interlock.  Returns (verts, faces)."""
     base = _deformed_square(kind, depth, samples)
-    mid = _rot2(base, math.pi / 2.0)
+    # the mid ring is the same tile turned 90 deg -- but M and rot90(M)
+    # share the four square corners, so roll the rotated ring by one
+    # edge (`samples`) to loft corner->corner and edge->edge; without
+    # the roll the side walls jump a whole corner and twist
+    mid = np.roll(_rot2(base, math.pi / 2.0), samples, axis=0)
     rings = [base, mid, base]
     zs = [-height / 2.0, 0.0, height / 2.0]
     return _loft_rings(rings, zs)
