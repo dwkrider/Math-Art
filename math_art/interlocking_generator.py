@@ -901,7 +901,10 @@ def build_dome(seed, depth, thickness):
                 F.append([b0 + a, b0 + bb, b1 + bb, b1 + a])
         F.append(list(range(n2)))                  # inner cap
         F.append([2 * n2 + a for a in range(n2)])   # outer cap
-        F = _orient_outward(verts, F)
+        # the block is non-convex, so orient the whole (closed) block
+        # by its signed volume rather than a per-face centroid test
+        if _mesh_volume(verts, F) < 0:
+            F = [f[::-1] for f in F]
         cells.append((np.zeros(3), verts, F, False, fi % 2))
     return cells
 
@@ -934,6 +937,29 @@ def cells_to_mesh(cells, size=2.0, gap=1.0):
             cols.append(col)
             frames.append(1 if frame else 0)
     return verts, faces, cols, frames
+
+
+def cells_to_meshes(cells, size=2.0, gap=1.0):
+    """Like cells_to_mesh but returns one (verts, faces, cols,
+    frames) tuple per cell -- all sharing the same centring and
+    scale -- for output as separate objects."""
+    lo = np.full(3, np.inf)
+    hi = -lo
+    for c, V, F, frame, col in cells:
+        lo = np.minimum(lo, c + V.min(axis=0))
+        hi = np.maximum(hi, c + V.max(axis=0))
+    mid = (lo + hi) / 2.0
+    span = float(np.max(hi - lo))
+    s = size / span if span > 0 else 1.0
+    out = []
+    for c, V, F, frame, col in cells:
+        cen = V.mean(axis=0)
+        VV = (c - mid + cen + gap * (V - cen)) * s
+        verts = [tuple(p) for p in VV]
+        faces = [list(f) for f in F]
+        out.append((verts, faces, [col] * len(F),
+                    [1 if frame else 0] * len(F)))
+    return out
 
 
 # ==================================================================
@@ -1126,6 +1152,10 @@ if _IN_BLENDER:
                     "Colour the fixed peripheral frame apart"),
                    ('NONE', "None", "Single material")],
             default='TYPE')
+        separate: BoolProperty(
+            name="Separate Objects", default=False,
+            description="Output each element of the pattern as its "
+                        "own mesh object")
 
         def draw(self, context):
             lay = self.layout
@@ -1153,47 +1183,30 @@ if _IN_BLENDER:
             lay.prop(self, 'gap')
             lay.prop(self, 'size')
             lay.prop(self, 'colour_mode')
+            lay.prop(self, 'separate')
 
-        def execute(self, context):
-            try:
-                cells = build_cells(
-                    self.family, self.nx, self.ny, self.nz,
-                    self.profile, self.deform, self.samples,
-                    self.height, self.sl_mode, self.sl_strand,
-                    self.dome_seed, self.dome_depth, self.dome_thick)
-                verts, faces, cols, frames = cells_to_mesh(
-                    cells, self.size, self.gap)
-            except Exception as e:               # bad parameter combo
-                self.report({'ERROR'}, str(e))
-                return {'CANCELLED'}
-            me = bpy.data.meshes.new("Interlocking")
+        def _emit(self, context, name, verts, faces, cols, frames):
+            me = bpy.data.meshes.new(name)
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
-
             if self.colour_mode != 'NONE' and \
                     len(me.polygons) == len(cols):
                 if self.colour_mode == 'FRAME':
-                    _material_a = _material("Interlock Body",
-                                            _COLOURS[0])
-                    _material_b = _material("Interlock Frame",
-                                            _FRAME_RGB)
-                    me.materials.append(_material_a)
-                    me.materials.append(_material_b)
+                    me.materials.append(_material("Interlock Body",
+                                                  _COLOURS[0]))
+                    me.materials.append(_material("Interlock Frame",
+                                                  _FRAME_RGB))
                     me.polygons.foreach_set('material_index', frames)
                 else:
                     used = sorted(set(cols))
                     for c in used:
-                        _material(f"Interlock {c}",
-                                  _COLOURS.get(c, (0.6, 0.6, 0.6)))
-                        me.materials.append(
-                            bpy.data.materials[f"Interlock {c}"])
+                        me.materials.append(_material(
+                            f"Interlock {c}",
+                            _COLOURS.get(c, (0.6, 0.6, 0.6))))
                     remap = {c: idx for idx, c in enumerate(used)}
                     me.polygons.foreach_set(
                         'material_index', [remap[c] for c in cols])
             me.update()
-            # the Escher blocks are 90-deg-twisted lofts, so the side
-            # walls come out with mixed winding; recalculate normals
-            # so each connected shell is consistently outward
             try:
                 import bmesh
                 bm = bmesh.new()
@@ -1204,20 +1217,47 @@ if _IN_BLENDER:
                 me.update()
             except Exception:
                 pass
-            obj = bpy.data.objects.new(
-                f"Interlocking {_LABEL[self.family]}", me)
+            obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
+            obj.select_set(True)
+            return obj
+
+        def execute(self, context):
+            try:
+                cells = build_cells(
+                    self.family, self.nx, self.ny, self.nz,
+                    self.profile, self.deform, self.samples,
+                    self.height, self.sl_mode, self.sl_strand,
+                    self.dome_seed, self.dome_depth, self.dome_thick)
+            except Exception as e:               # bad parameter combo
+                self.report({'ERROR'}, str(e))
+                return {'CANCELLED'}
             for o in context.selected_objects:
                 o.select_set(False)
-            obj.select_set(True)
+            label = _LABEL[self.family]
+            if self.separate:
+                parts = cells_to_meshes(cells, self.size, self.gap)
+                first = None
+                for k, (v, f, cols, frames) in enumerate(parts):
+                    obj = self._emit(context, f"{label} {k + 1}",
+                                     v, f, cols, frames)
+                    if first is None:
+                        first = obj
+                context.view_layer.objects.active = first
+                self.report({'INFO'},
+                            f"{label}: {len(parts)} separate objects")
+                return {'FINISHED'}
+            verts, faces, cols, frames = cells_to_mesh(
+                cells, self.size, self.gap)
+            obj = self._emit(context, f"Interlocking {label}",
+                             verts, faces, cols, frames)
             context.view_layer.objects.active = obj
             tag = ("interlocking (framed interior)"
-                   if self.family in _RIGOROUS
-                   else "modular blocks")
+                   if self.family in _RIGOROUS else "modular blocks")
             self.report({'INFO'},
-                        f"{_LABEL[self.family]}: {tag}, "
-                        f"V={len(me.vertices)} F={len(me.polygons)}")
+                        f"{label}: {tag}, V={len(obj.data.vertices)} "
+                        f"F={len(obj.data.polygons)}")
             return {'FINISHED'}
 
     def _menu_func(self, context):
