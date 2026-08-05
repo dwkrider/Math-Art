@@ -2173,6 +2173,135 @@ WE_SURFACES['LOPEZ_KLEIN'] = {
 SURFACE_FAMILY['LOPEZ_KLEIN'] = 'NONORIENT'
 
 
+# ==========================================================================
+# SFK TAIL (appended catalog block) -- Fischer-Koch towers and
+# annular-ended genus-1 tori (singly periodic; engine: we.sfk_* block)
+# ==========================================================================
+# The singly periodic members that were deferred pending per-notebook
+# constant extraction, now with their solved constants wired in:
+#
+#   * SP_FISCHER_KOCH  translation-invariant Fischer-Koch surface
+#     (theta data on the rhombic torus C/(1, e^(i pi t0)); the
+#     notebook's FindRoot literals (b0, t0) for k = 3, 5).  Genus 1
+#     with 2k Scherk wing ends per period (measured chi/period = -2k);
+#     the vertical rise Re Int dh = -1/k over the half lattice cycle
+#     closes to ~1e-14 (the notebook's own period equation).  Only the
+#     odd-k members ship: for even k two 2-fold axes of the orbit
+#     coincide exactly (the classical embedded-iff-k-odd restriction)
+#     and the mesh would self-intersect along them -- BACKLOG.md.
+#   * SP_FK_FREESE     Fischer-Koch-Freese twist family (after
+#     R. Freese): the mu-power theta deformation, invariant under the
+#     period SCREW Rz(-2 pi mu) + (0,0,-2).  Gauss map multivalued
+#     (G = B H^mu); the engine carries a continuous branch of log H
+#     across the chart.  k = 3 with mu from the notebook's soln3
+#     continuation table; mu -> 0 is SP_FISCHER_KOCH.  chi/period = -6
+#     (measured, screw-wrapped quotient), genus 1, 6 wing ends.
+#   * SP_1CAT_2ANN     singly periodic genus-1 torus with 1 catenoid +
+#     2 annular ends: sqrt data branched at {0, a, 1, b}, dh = dz/z.
+#     TWO period conditions Re Int_a^1 om1 = Re Int_1^b om2 = 0 are
+#     solved by Newton from the notebook's harvested seeds (the
+#     parallel-end member a = 0.2574798..., rho = 1 is reproduced to
+#     ~1e-9).  MEASURED quotient chi = -3 with 3 end rims -- genus 1,
+#     matching the harvest's expected chi.
+#   * SP_2ENN_2ANN     translation-invariant torus with 2 Enneper + 2
+#     annular ends: rational data, period problem closed in CLOSED
+#     FORM (a = b/(1 - b^2 + sqrt(1 - b^2)) cancels the om2 residues).
+#     MEASURED quotient chi = -2 with 4 end rims -- the parametrizing
+#     surface is the 4-punctured SPHERE (both g and dh rational in z),
+#     so the quotient genus is 0; the harvest's "genus 1" annotation
+#     contradicts its own rational data, exactly like the shipped
+#     sibling SP_ENNEPER_3ANN (see the we_builders sptail note).
+#
+# Deferred (BACKLOG.md): hackman_surfaces (Weierstrass-sigma data with
+# a transcendental Bonnet phase and its own torus uniformization),
+# even-k Fischer-Koch / Freese members (self-intersecting), and the
+# flipped-layout Freese branch mu < -0.05 at k = 4.
+#
+# References:
+#   W. Fischer, E. Koch, "Spanning minimal surfaces", Phil. Trans. R.
+#     Soc. Lond. A 354 (1996) 2105-2142;
+#   H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#     examples", Manuscripta Math. 62 (1988);
+#   M. Weber, https://minimalsurfaces.blog/ -- notebooks "Fischer-Koch
+#     Translational", "Fischer-Koch-Freese" (after R. Freese), "Singly
+#     Periodic Torus with One Catenoid and Two Annular Ends",
+#     "Translation Invariant Torus with Two Enneper and Two Annular
+#     Ends" (research/msblog_harvest/singly_periodic.json);
+#   B. C. Carlson, Numer. Algorithms 10 (1995) 13-26 (R_F).
+
+WE_SURFACES['SP_FISCHER_KOCH'] = {
+    'label': "Fischer-Koch Tower (translation-invariant)",
+    'family': 'SINGLY',
+    'mesher': we.sfk_fkt_mesh,
+    # count slider walks the odd wing number k = 3, 5; radius digs the
+    # Scherk wing trims deeper (more negative strip rmin)
+    'p_from': lambda order, radius: {
+        'k': (3, 5)[int(np.clip(order, 1, 2)) - 1],
+        'rmin': float(np.clip(-3.5 * (radius / 1.2) ** 0.8,
+                              -6.0, -2.0))},
+    'count': "Wings k (odd: 3, 5)",
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['SP_FISCHER_KOCH'] = 'SINGLY'
+
+_SFK_FREESE_MUS = (0.05, 0.10, 0.15, 0.20, 0.25, 0.30)
+
+WE_SURFACES['SP_FK_FREESE'] = {
+    'label': "Fischer-Koch-Freese (twisted)",
+    'family': 'SINGLY',
+    'mesher': we.sfk_fkf_mesh,
+    # count slider walks the screw twist mu (k = 3 fixed); radius digs
+    # the wing trims deeper
+    'p_from': lambda order, radius: {
+        'mu': _SFK_FREESE_MUS[int(np.clip(order, 1, 6)) - 1],
+        'rmin': float(np.clip(-3.5 * (radius / 1.2) ** 0.8,
+                              -6.0, -2.0))},
+    'count': "Twist mu (x 0.05)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_FK_FREESE'] = 'SINGLY'
+
+_SFK_C1A2_AS = (0.47, 0.40, 0.30, 0.25747983928707496, 0.10, 0.02)
+
+WE_SURFACES['SP_1CAT_2ANN'] = {
+    'label': "Torus with Catenoid + 2 Annular Ends",
+    'family': 'SINGLY',
+    'mesher': we.sfk_c1a2_mesh,
+    # count slider walks the neck modulus a (order 4 = the parallel-
+    # end member, rho = 1); radius slides the annular end reach
+    'p_from': lambda order, radius: {
+        'a': _SFK_C1A2_AS[int(np.clip(order, 1, 6)) - 1],
+        'rmin': max(0.02, _SFK_C1A2_AS[
+            int(np.clip(order, 1, 6)) - 1] / 5.0),
+        'rmax': float(np.clip(12.0 * (radius / 1.2) ** 1.5,
+                              6.0, 40.0))},
+    'count': "Neck modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 4,
+}
+SURFACE_FAMILY['SP_1CAT_2ANN'] = 'SINGLY'
+
+_SFK_E2A2_BS = (0.35, 0.45, 0.50, 0.55, 0.65, 0.75)
+
+WE_SURFACES['SP_2ENN_2ANN'] = {
+    'label': "Torus with 2 Enneper + 2 Annular Ends",
+    'family': 'SINGLY',
+    'mesher': we.sfk_e2a2_mesh,
+    # count slider walks the modulus b; radius slides the Enneper end
+    # trim (smaller rmin = wider flare)
+    'p_from': lambda order, radius: {
+        'b': _SFK_E2A2_BS[int(np.clip(order, 1, 6)) - 1],
+        'rmin': float(np.clip(0.14 * (1.2 / max(radius, 0.2)) ** 0.8,
+                              0.06, 0.30))},
+    'count': "Modulus (b)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_2ENN_2ANN'] = 'SINGLY'
+
+
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
@@ -2677,7 +2806,13 @@ if __name__ == "__main__":
                              ('SP_FENCE_CAT', 3, -2),
                              ('SP_HELICOIDAL_SCHERK', 3, -6),
                              ('SP_ENNEPER_3ANN', 1, -2),
-                             ('SP_PERIODIC_ENNEPER', 1, 0)):
+                             ('SP_PERIODIC_ENNEPER', 1, 0),
+                             # SFK tail: Fischer-Koch towers + annular
+                             # tori (dchi = quotient chi = 2 - 2g - E)
+                             ('SP_FISCHER_KOCH', 1, -6),
+                             ('SP_FK_FREESE', 3, -6),
+                             ('SP_1CAT_2ANN', 4, -3),
+                             ('SP_2ENN_2ANN', 3, -2)):
         chis = []
         good = True
         for S in (1, 2):
