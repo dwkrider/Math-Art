@@ -209,6 +209,8 @@ TASKS = {
     "squeeze": O("mesh.squeeze_add"),
     "vertex_vortices": O("mesh.vertex_vortices_add"),
     "helical_surface": O("mesh.helical_surface_add"),
+    "ruled_surface": O("mesh.ruled_surface_add", mode='HYPERBOLOID',
+                       output='RODS', family='BOTH'),
     "curiosity_surface": O("mesh.curiosity_surface_add", surface='FRESNEL'),
     # --- Polyhedra ---
     "regular_solids": O("mesh.regular_solid_add", family='ARCHIMEDEAN',
@@ -582,6 +584,28 @@ VARIANTS = {
     "helical_surface": ("mesh.helical_surface_add", _V("surface",
         "HYPERBOLIC_HELICOID=Hyperbolic Helicoid;SEASHELL=Seashell;"
         "CORKSCREW=Corkscrew")),
+    "ruled_surface": ("mesh.ruled_surface_add", [
+        ("HYPERBOLOID", "Stick Hyperboloid", {"mode": "HYPERBOLOID"}),
+        ("HYPERBOLOID_RODS", "Stick Hyperboloid (Rulings)",
+         {"mode": "HYPERBOLOID", "output": "RODS", "family": "BOTH"}),
+        ("HELICAL_CONE", "Compound Helical Cone",
+         {"mode": "HELICAL_CONE"}),
+        ("SPIRAL", "Spiral Ruled", {"mode": "SPIRAL"}),
+        ("SPIRAL_ROSETTE", "Spiral Ruled (Rosette)",
+         {"mode": "SPIRAL", "tightness": 0.0, "petals": 5,
+          "petal_amp": 0.4}),
+        ("PLUCKER", "Plucker Cylindroid",
+         {"mode": "CONOID", "conoid_kind": "PLUCKER"}),
+        ("WALLIS", "Wallis Conical Edge",
+         {"mode": "CONOID", "conoid_kind": "WALLIS"}),
+        ("WHITNEY", "Whitney Umbrella",
+         {"mode": "CONOID", "conoid_kind": "WHITNEY"}),
+        ("TANGENT_DEV", "Tangent Developable",
+         {"mode": "TANGENT_DEV"}),
+        ("HELICOID", "Helicoid", {"mode": "HELICOID"}),
+        ("TWIST_STRIP", "Twisted Strip (Mobius)",
+         {"mode": "TWIST_STRIP", "half_twists": 1}),
+        ("HYPAR", "Hyperbolic Paraboloid", {"mode": "HYPAR"})]),
     "sponge": ("mesh.sponge_add", _V("kind",
         "MENGER=Menger Sponge;TETRA=Sierpinski Tetrahedron;"
         "OCTA=Sierpinski Octahedron;VICSEK=Vicsek Fractal;"
