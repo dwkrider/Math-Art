@@ -623,6 +623,115 @@ _TETRAKITE2_MAPS = _poly_reptile(
                  _kite(1, 0, 4)], 4, 0.0)
 
 
+# --------------------------------------------------------------------
+# Self-affine reptiles from the placement-search solver.
+#
+# Fathauer's method with a FREE scaling origin t: each of the n maps is
+# h_i = g_i o sigma_t, sigma_t(z) = S(z - t) + t (contract about an
+# origin t inside the polyform, |S| = 1/sqrt(n)), and g_i places the
+# seed cell onto figure cell i by a rotation (u z + v) or reflection
+# (u conj(z) + v).  The pure lattice-digit (t=0) radix cannot express
+# these -- e.g. the 12-hex needs the free origin, and the heptarhomb is
+# built entirely from REFLECTED copies.  The maps below were found by an
+# exact depth-2 tessellation CSP over (S, t, placements) and each is a
+# verified TRUE tile: sampled boundary overlap is exactly 0 at depth 6
+# (and depth 7 for the rep-6 cases, past the "deep near-miss" band).
+#
+# References:
+#   R. Fathauer, "Iterating Polyiamonds, Polyhexes, and other Polyforms
+#     to Create Fractal Reptiles", Bridges 2026, pp. 85-92.
+#   R. Fathauer, Fractal Diversions -- Fractal Reptiles,
+#     mathartfun.com/fractaldiversions/FractalReptilesHome.html
+# --------------------------------------------------------------------
+
+_SQ2 = sqrt(2.0)
+_Q15 = sqrt(15.0) / 3.0
+_SEED_RECT6 = np.array([0, _SQ2, _SQ2 + 1j, 1j], complex)   # sqrt2 x 1 rect
+_SEED_RHOMB6 = np.array([-1j * _Q15 / 2, 0.5, 1j * _Q15 / 2, -0.5], complex)
+_SEED_HEXC = _HEXCELL[:, 0] + 1j * _HEXCELL[:, 1]           # hex cell, complex
+
+# 6-Rect (rep-6, theta=35.264, base 2+sqrt2 i, pure translations)
+_RECT6_MAPS = [
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (1.8856180831641272 - 0.6666666666666667j)),
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (3.2998316455372225 - 0.6666666666666667j)),
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (3.2998316455372225 - 1.6666666666666667j)),
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (4.714045207910317 - 1.6666666666666667j)),
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (6.128258770283413 - 1.6666666666666667j)),
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (3.2998316455372225 - 2.666666666666667j))]
+
+# 6-Rhomb (rep-6, theta=52.239, distorted rhombus, pure translations)
+_RHOMB6_MAPS = [
+    ((0.25 + 0.3227486121839514j), 0j,
+     (0.08333333333333334 - 0.3227486121839514j)),
+    ((0.25 + 0.3227486121839514j), 0j,
+     (0.5833333333333334 - 0.9682458365518543j)),
+    ((0.25 + 0.3227486121839514j), 0j,
+     (1.5833333333333333 - 0.9682458365518543j)),
+    ((0.25 + 0.3227486121839514j), 0j,
+     (1.0833333333333333 - 1.6137430609197572j)),
+    ((0.25 + 0.3227486121839514j), 0j,
+     (2.0833333333333335 - 1.6137430609197572j)),
+    ((0.25 + 0.3227486121839514j), 0j,
+     (0.5833333333333334 - 2.25924028528766j))]
+
+# 12-hex (rep-12, theta=-30, base 2+2w, free origin, pure translations)
+_HEX12_MAPS = [
+    ((0.25 - 0.14433756729740643j), 0j,
+     (0.3333333333333333 + 0.28867513459481303j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (0.8333333333333331 - 0.5773502691896255j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (1.3333333333333333 + 0.28867513459481303j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (1.8333333333333333 + 1.1547005383792517j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (1.8333333333333335 + 2.886751345948129j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (2.3333333333333335 + 0.28867513459481303j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (2.3333333333333335 + 2.0207259421636903j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (2.8333333333333335 + 1.1547005383792517j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (2.8333333333333335 + 2.886751345948129j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (3.3333333333333335 + 0.28867513459481303j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (3.8333333333333335 - 0.5773502691896255j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (4.333333333333333 + 0.28867513459481303j))]
+
+# I-octomino (rep-8, theta=45, Gaussian base 2+2i, uniform 90deg copies)
+_IOCTO_MAPS = [
+    ((0.25 + 0.25j), 0j, (1 + 0j)), ((0.25 + 0.25j), 0j, (2 + 0j)),
+    ((0.25 + 0.25j), 0j, (3 + 0j)), ((0.25 + 0.25j), 0j, (2 + 1j)),
+    ((0.25 + 0.25j), 0j, (2 + 2j)), ((0.25 + 0.25j), 0j, (1 + 3j)),
+    ((0.25 + 0.25j), 0j, (2 + 3j)), ((0.25 + 0.25j), 0j, (3 + 3j))]
+
+# Heptarhomb (rep-7): all seven copies are REFLECTIONS (A=0, B!=0)
+_RHOMB7_MAPS = [
+    (0j, (-0.3571428571428571 + 0.12371791482634852j),
+     (-1.0714285714285687 - 1.3608970630898316j)),
+    (0j, (-0.28571428571428586 - 0.24743582965269661j),
+     (-4.857142857142855 - 0.7423074889580876j)),
+    (0j, (0.35714285714285715 - 0.12371791482634834j),
+     (-2.9285714285714284 - 7.299356974754554j)),
+    (0j, (0.2857142857142857 + 0.2474358296526967j),
+     (-0.6428571428571437 - 5.319870337532981j)),
+    (0j, (-0.3571428571428571 + 0.12371791482634852j),
+     (-2.5714285714285694 + 1.2371791482634837j)),
+    (0j, (-0.07142857142857134 + 0.37115374447904514j),
+     (-0.21428571428571397 - 0.6185895741317435j)),
+    (0j, (0.2857142857142857 + 0.2474358296526967j),
+     (-0.6428571428571437 - 3.587819529964104j))]
+
+
 # builders take `iterations` (and a gasket `holes` count) and return
 # (polys, types)
 def _triangle_ftiling(iterations, holes=0):
@@ -775,6 +884,29 @@ KINDS = {
         build=lambda it, h=0: _ifs_reptile(_TETRAKITE2_MAPS, it, holes=h,
                                            seed=_SEED_KITE),
         n=4, samp=True, osc=True),
+    # Self-affine reptiles from the placement-search solver (free-origin
+    # maps; verified true tiles, ovfrac 0 at depth 6).  depths keeps the
+    # self-test light -- the high-n renders are otherwise huge.
+    'HEX12': dict(                            # 12-hex, rep-12
+        build=lambda it, h=0: _ifs_reptile(_HEX12_MAPS, it, holes=h,
+                                           seed=_SEED_HEXC),
+        n=12, samp=True, osc=True, depths=(2, 4)),
+    'IOCTOMINO': dict(                        # I-octomino, rep-8
+        build=lambda it, h=0: _ifs_reptile(_IOCTO_MAPS, it, holes=h,
+                                           seed=_IFS_SEED),
+        n=8, samp=True, osc=True, depths=(2, 4)),
+    'RHOMB7': dict(                           # heptarhomb, rep-7 (reflect)
+        build=lambda it, h=0: _ifs_reptile(_RHOMB7_MAPS, it, holes=h,
+                                           seed=_SEED_RHOMB),
+        n=7, samp=True, osc=True, depths=(2, 4)),
+    'RHOMB6': dict(                           # 6-rhomb, rep-6
+        build=lambda it, h=0: _ifs_reptile(_RHOMB6_MAPS, it, holes=h,
+                                           seed=_SEED_RHOMB6),
+        n=6, samp=True, osc=True, depths=(3, 5)),
+    'RECT6': dict(                            # 6-rect, rep-6
+        build=lambda it, h=0: _ifs_reptile(_RECT6_MAPS, it, holes=h,
+                                           seed=_SEED_RECT6),
+        n=6, samp=True, osc=True, depths=(3, 5)),
     # Reflection / foldable IFS kinds (quad cells; OSC attractors)
     'LEVY_DRAGON': dict(                      # SHK Fig 2c; Levy 1938
         build=lambda it, h=0: _ifs_reptile(_LEVY_MAPS, it, holes=h),
@@ -981,6 +1113,28 @@ KIND_ITEMS = [
      "Fathauer 5-isometry inflation of a half-square triangle: 5^k "
      "unit triangles, sqrt5 inflation per level, coloured by "
      "first-level copy"),
+    # --- Self-affine reptiles (placement-search solver) ---
+    ('IOCTOMINO', "Square: I-octomino (rep-8)",
+     "Straight bar of 8 squares over Gaussian base 2+2i (theta=45), "
+     "uniform 90-degree sub-copies: the rep-8 I-octomino fractal "
+     "reptile found by the self-affine placement solver "
+     "(Fathauer, Bridges 2025/2026)"),
+    ('HEX12', "Hex: 12-hex (rep-12)",
+     "Twelve hexagons over Eisenstein base 2+2w (theta=30) with a "
+     "free scaling origin: the rep-12 polyhex fractal reptile "
+     "(Fathauer, Bridges 2026)"),
+    ('RHOMB7', "Rhomb: Heptarhomb (rep-7)",
+     "Seven rhombille rhombi (theta=40.893); all seven sub-copies are "
+     "REFLECTIONS -- a genuine reflection reptile "
+     "(Fathauer, Bridges 2026)"),
+    ('RHOMB6', "Rhomb: 6-Rhomb (rep-6)",
+     "Six rhombi on a distorted grid (diagonals 1 and sqrt15/3, "
+     "theta=52.239, base 3*tau): the rep-6 distorted-rhombus fractal "
+     "reptile (Fathauer, Bridges 2026)"),
+    ('RECT6', "Rectangle: 6-Rect (rep-6)",
+     "Six sqrt2 x 1 rectangles on a distorted grid (theta=35.264, "
+     "base 2+sqrt2 i): the rep-6 rectangle fractal reptile -- 6 is not "
+     "an allowed norm on a regular grid (Fathauer, Bridges 2026)"),
 ]
 
 # Two-level Family -> Shape taxonomy for the operator UI, derived from
@@ -1020,7 +1174,8 @@ _KIND_ANGLE0 = {
     'HEPTAHEX_2FOLD2': 19.107, 'HEX9': 0.0, 'HEX13': 13.898,
     'HEX13_2': 13.898,
     'HEPTIAMOND': 19.107, 'HEPTIAMOND_3FOLD': 19.107, 'HEPTIAMOND_2': 40.893,
-    'TRIRHOMB': 30.0, 'TETRARHOMB': 60.0,
+    'TRIRHOMB': 30.0, 'TETRARHOMB': 60.0, 'RHOMB7': 40.893, 'RHOMB6': 52.239,
+    'HEX12': 30.0, 'IOCTOMINO': 45.0, 'RECT6': 35.264,
     'PENTABOLO': 26.565,
     'TRIKITE': -30.0, 'TRIKITE_2': -30.0, 'TETRAKITE': 0.0,
     'TETRAKITE_2': 0.0,
@@ -1341,7 +1496,9 @@ if __name__ == "__main__":
         tri_cells = spec.get('tri_cells', False)  # unit-triangle cells
         samp = spec.get('samp', False)        # hex/quad sampling cells
         osc = spec.get('osc', False)          # measure-zero boundary
-        if tri:
+        if 'depths' in spec:
+            depths = spec['depths']           # per-kind override
+        elif tri:
             depths = (4, 7)
         elif tri_cells:
             depths = (2, 4)
