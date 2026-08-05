@@ -86,19 +86,18 @@ def _tet_faces(V):
 
 
 def _wind_face(V, idx, outward_ref):
-    """Order the coplanar vertex indices `idx` of V into a convex
-    polygon wound counterclockwise as seen from outside, where
-    `outward_ref` is a point strictly outside along the face
-    normal side (used only to fix orientation)."""
+    """Boundary of the convex polygon spanned by the coplanar vertex
+    indices `idx`, wound counterclockwise as seen from outside.  Only
+    the 2-D convex-hull corners are kept -- points lying flat in the
+    interior of the face are dropped -- so a face with an interior
+    coplanar vertex still yields a clean simple polygon.  `outward_ref`
+    (the solid centroid) fixes the orientation."""
     P = V[idx]
     c = P.mean(axis=0)
-    # face normal from the best-fit plane (Newell)
     n = np.zeros(3)
     m = len(idx)
     for i in range(m):
-        a = P[i] - c
-        b = P[(i + 1) % m] - c
-        n += np.cross(a, b)
+        n += np.cross(P[i] - c, P[(i + 1) % m] - c)
     if np.linalg.norm(n) < 1e-12:
         n = np.cross(P[1] - P[0], P[2] - P[0])
     n = n / (np.linalg.norm(n) + 1e-30)
@@ -107,11 +106,25 @@ def _wind_face(V, idx, outward_ref):
     u = np.cross(n, a)
     u /= np.linalg.norm(u)
     v = np.cross(n, u)
-    d = P - c
-    ang = np.arctan2(d @ v, d @ u)
-    order = list(np.argsort(ang))
-    ordered = [int(idx[i]) for i in order]
-    # flip so the winding normal points away from outward_ref side
+    pts = np.column_stack(((P - c) @ u, (P - c) @ v))
+    # Andrew's monotone-chain 2-D convex hull -> boundary order
+    order = sorted(range(m), key=lambda k: (pts[k, 0], pts[k, 1]))
+
+    def cross(o, i, j):
+        return ((pts[i, 0] - pts[o, 0]) * (pts[j, 1] - pts[o, 1])
+                - (pts[i, 1] - pts[o, 1]) * (pts[j, 0] - pts[o, 0]))
+    lower = []
+    for k in order:
+        while len(lower) >= 2 and cross(lower[-2], lower[-1], k) <= 1e-12:
+            lower.pop()
+        lower.append(k)
+    upper = []
+    for k in reversed(order):
+        while len(upper) >= 2 and cross(upper[-2], upper[-1], k) <= 1e-12:
+            upper.pop()
+        upper.append(k)
+    hull = lower[:-1] + upper[:-1]        # CCW boundary indices
+    ordered = [int(idx[k]) for k in hull]
     if np.dot(n, c - outward_ref) < 0:
         ordered = ordered[::-1]
     return ordered
@@ -639,6 +652,46 @@ def build_bisquare():
              False, 0)]
 
 
+# The Rhom block and its obverse (Goertzen 2024 / Weiss & Niemeyer
+# 2026): p3 blocks over a unit lozenge, the interpolation between the
+# lozenge (z=0) and a deformed tile (z=sqrt6/3).  Both are convex, so
+# the faces come straight from the convex hull.  Height sqrt6/3, edge
+# length 1; volume 0.7857.  Their p3 / heterogeneous space-filling
+# assembly is left for BACKLOG.
+_S3 = math.sqrt(3.0)
+_S6 = math.sqrt(6.0)
+_RHOM_V = np.array([
+    (0.0, 0.0, 0.0), (0.5, _S3 / 2, 0.0), (1.0, 0.0, 0.0),
+    (0.5, -_S3 / 2, 0.0),                              # z=0 lozenge
+    (0.0, 0.0, _S6 / 3), (0.5, _S3 / 6, _S6 / 3),
+    (1.0, 0.0, _S6 / 3), (1.0, -_S3 / 3, _S6 / 3),
+    (0.5, -_S3 / 2, _S6 / 3), (0.0, -_S3 / 3, _S6 / 3)])
+_RHOM_OBV_V = np.array([
+    (0.0, 0.0, 0.0), (0.5, _S3 / 2, 0.0), (1.0, 0.0, 0.0),
+    (0.5, -_S3 / 2, 0.0), (0.0, 0.0, _S6 / 3),
+    (0.5, _S3 / 6, _S6 / 3), (0.5, _S3 / 2, _S6 / 3),
+    (1.0, _S3 / 3, _S6 / 3), (1.0, 0.0, _S6 / 3),
+    (0.5, -_S3 / 6, _S6 / 3), (0.5, -_S3 / 2, _S6 / 3),
+    (0.0, -_S3 / 3, _S6 / 3)])
+
+
+def build_rhom(obverse=False):
+    """The exact Rhom block (or its obverse) as a single convex block
+    over a unit lozenge (p3).  A couple of the published vertices lie
+    flat in the interior of a face (they matter for the tiling, not
+    the solid shape); dropping the ones that are not true hull corners
+    keeps the block a clean manifold."""
+    Vraw = _RHOM_OBV_V if obverse else _RHOM_V
+    V0 = Vraw - Vraw.mean(axis=0)
+    F = _convex_faces(V0)
+    # drop vertices not used by any face (flat interior-of-face points)
+    used = sorted({i for f in F for i in f})
+    remap = {i: k for k, i in enumerate(used)}
+    Vk = V0[used]
+    Fk = [[remap[i] for i in f] for f in F]
+    return [(np.zeros(3), Vk, Fk, False, 0)]
+
+
 # ==================================================================
 # FAMILY: TETROCTA -- interlocking blocks in the tetroctahedrille
 # ==================================================================
@@ -980,6 +1033,10 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
         return build_versatile(nx, ny)
     if family == 'BISQUARE':
         return build_bisquare()
+    if family == 'RHOM':
+        return build_rhom(False)
+    if family == 'RHOM_OBV':
+        return build_rhom(True)
     if family in _TETROCTA_BLOCKS:
         return build_tetrocta(family, nx, ny, nz)
     if family == 'SL':
@@ -993,7 +1050,7 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
 # rest emit a single reference block
 _ASSEMBLY = {'TETRA', 'ESCHER', 'VERSATILE', 'KITTEN', 'SL', 'DOME'}
 _RIGOROUS = {'TETRA', 'ESCHER', 'VERSATILE'}
-_SINGLE_BLOCK = {'BISQUARE', 'UFO', 'CUSHION'}
+_SINGLE_BLOCK = {'BISQUARE', 'RHOM', 'RHOM_OBV', 'UFO', 'CUSHION'}
 
 
 # ==================================================================
@@ -1015,6 +1072,8 @@ if _IN_BLENDER:
               'ESCHER': "Escher / Osteomorphic Blocks",
               'VERSATILE': "Versatile Block",
               'BISQUARE': "Bisquare Block",
+              'RHOM': "Rhom Block",
+              'RHOM_OBV': "Rhom Block (Obverse)",
               'KITTEN': "Tetroctahedrille Kitten",
               'UFO': "Tetroctahedrille UFO",
               'CUSHION': "Tetroctahedrille Cushion",
@@ -1065,6 +1124,12 @@ if _IN_BLENDER:
                  "The exact Bisquare block (a square deformed into "
                  "two smaller squares); nests with the Versatile "
                  "block in heterogeneous assemblies"),
+                ('RHOM', "Rhom Block (single)",
+                 "The exact Rhom block (Goertzen 2024): a p3 lozenge "
+                 "block, convex, height sqrt6/3"),
+                ('RHOM_OBV', "Rhom Block Obverse (single)",
+                 "The obverse of the Rhom block; nests with it in "
+                 "heterogeneous p3 assemblies"),
                 ('KITTEN', "Tetroctahedrille Kitten",
                  "One octahedron + two tetrahedra glued on the "
                  "octet-truss lattice; tiles space by translation "
@@ -1338,6 +1403,8 @@ def _selftest():
             ('ESCHER', build_escher('SINE', 4, 4, 0.18, 8, 1.0)),
             ('VERSATILE', build_versatile(4, 4)),
             ('BISQUARE', build_bisquare()),
+            ('RHOM', build_rhom(False)),
+            ('RHOM_OBV', build_rhom(True)),
             ('KITTEN', build_tetrocta('KITTEN', 2, 2, 2)),
             ('UFO', build_tetrocta('UFO', 1, 1, 1)),
             ('CUSHION', build_tetrocta('CUSHION', 1, 1, 1)),

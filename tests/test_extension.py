@@ -312,6 +312,10 @@ OPS = [
      lambda: bpy.ops.mesh.interlocking_add(family='VERSATILE')),
     ("interlocking bisquare",
      lambda: bpy.ops.mesh.interlocking_add(family='BISQUARE')),
+    ("interlocking rhom",
+     lambda: bpy.ops.mesh.interlocking_add(family='RHOM')),
+    ("interlocking rhom obverse",
+     lambda: bpy.ops.mesh.interlocking_add(family='RHOM_OBV')),
     ("interlocking kitten",
      lambda: bpy.ops.mesh.interlocking_add(
          family='KITTEN', nx=2, ny=2, nz=2)),
