@@ -68,6 +68,13 @@ OPS = [
      lambda: bpy.ops.mesh.biscribed_solid_add(solid='pmT')),
     ("solid hull family", lambda: bpy.ops.mesh.regular_solid_add(
         family='HULL', solid='jtT', canon_iters=60)),
+    ("solid face segments", lambda: bpy.ops.mesh.regular_solid_add(
+        family='PLATONIC', solid='ICOSA', style='FACETS',
+        padding=0.08, explode=0.4)),
+    ("solid face segments separate",
+     lambda: bpy.ops.mesh.regular_solid_add(
+         family='PLATONIC', solid='DODECA', style='FACETS',
+         separate_facets=True)),
     ("solid trapezohedron family",
      lambda: bpy.ops.mesh.regular_solid_add(
          family='DIPYRAMID', solid='dA5', canon_iters=60)),
@@ -272,10 +279,7 @@ OPS = [
     ("interlocking ufo",
      lambda: bpy.ops.mesh.interlocking_add(family='UFO')),
     ("interlocking sl",
-     lambda: bpy.ops.mesh.interlocking_add(family='SL')),
-    ("interlocking dome",
-     lambda: bpy.ops.mesh.interlocking_add(
-         family='DOME', dome_seed='DODECA')),
+     lambda: bpy.ops.mesh.interlocking_add(family='SL', sl_mode='STRAND')),
     ("solid snub cube left", lambda: bpy.ops.mesh.regular_solid_add(
         family='ARCHIMEDEAN', solid='SC', handedness='LEFT')),
     ("spiked modern", lambda: bpy.ops.mesh.spiked_polyhedron_add(

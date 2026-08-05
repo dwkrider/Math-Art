@@ -1765,6 +1765,53 @@ def build_solid(family, sid, n=6, scale=1.0, canon=True, canon_iters=250):
     return V, F, None
 
 
+def _face_normal(P):
+    """Unit normal of the (planar-ish) polygon P via Newell's method."""
+    n = [0.0, 0.0, 0.0]
+    m = len(P)
+    for i in range(m):
+        a, b = P[i], P[(i + 1) % m]
+        n[0] += (a[1] - b[1]) * (a[2] + b[2])
+        n[1] += (a[2] - b[2]) * (a[0] + b[0])
+        n[2] += (a[0] - b[0]) * (a[1] + b[1])
+    L = sqrt(n[0] ** 2 + n[1] ** 2 + n[2] ** 2) or 1.0
+    return (n[0] / L, n[1] / L, n[2] / L)
+
+
+def build_facets(V, F, padding=0.05, thickness=0.05):
+    """Split a solid's shell into one thick plate per face.  Each face
+    is shrunk toward its own centroid by `padding` (opening a gap
+    between neighbouring plates) and extruded to a slab of the given
+    `thickness` along its outward normal.  Returns a list of
+    (verts, faces, n_sides, outward_dir) -- outward_dir is the unit
+    vector from the solid centre to the face centroid, used to explode
+    the plates apart."""
+    segs = []
+    for face in F:
+        P = [V[i] for i in face]
+        m = len(P)
+        cen = tuple(sum(p[k] for p in P) / m for k in range(3))
+        n = _face_normal(P)
+        if sum(n[k] * cen[k] for k in range(3)) < 0:   # face outward
+            n = tuple(-x for x in n)
+        s = 1.0 - padding
+        pin = [tuple(cen[k] + (p[k] - cen[k]) * s for k in range(3))
+               for p in P]
+        h = thickness / 2.0
+        inner = [tuple(p[k] - n[k] * h for k in range(3)) for p in pin]
+        outer = [tuple(p[k] + n[k] * h for k in range(3)) for p in pin]
+        verts = inner + outer
+        faces = []
+        for i in range(m):
+            j = (i + 1) % m
+            faces.append([i, j, m + j, m + i])          # side wall
+        faces.append(list(range(m))[::-1])              # inner cap
+        faces.append([m + i for i in range(m)])          # outer cap
+        L = sqrt(sum(c * c for c in cen)) or 1.0
+        segs.append((verts, faces, m, tuple(c / L for c in cen)))
+    return segs
+
+
 # ---------------------------------------------------------------- #
 #  Blender layer                                                   #
 # ---------------------------------------------------------------- #
@@ -1893,8 +1940,20 @@ if _IN_BLENDER:
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo "
                     "Style modifier"),
-                   ('WIRE', "Wireframe", "Wireframe modifier")],
+                   ('WIRE', "Wireframe", "Wireframe modifier"),
+                   ('FACETS', "Face Segments",
+                    "Split the shell into one thick plate per face, "
+                    "padded apart and optionally exploded outward")],
             default='SOLID')
+        padding: FloatProperty(
+            name="Face Padding", default=0.06, min=0.0, max=0.9,
+            description="Shrink each face plate toward its own centre "
+                        "to open a gap between neighbours (Face "
+                        "Segments style)")
+        separate_facets: BoolProperty(
+            name="Separate Meshes", default=False,
+            description="Output each face segment as its own mesh "
+                        "object (Face Segments style)")
         border: FloatProperty(name="Border", default=0.3, min=0.02,
                               max=0.95)
         thickness: FloatProperty(name="Thickness", default=0.05,
@@ -1980,6 +2039,11 @@ if _IN_BLENDER:
                 return {'CANCELLED'}
             fsz = sizes if sizes else [len(f) for f in F]
             label = dict((i[0], i[1]) for i in items).get(sid, sid)
+            if self.style == 'FACETS':
+                if (self.handedness == 'LEFT'
+                        and (self.family, sid) in CHIRAL):
+                    V, F = mirror_solid(V, F)
+                return self._emit_facets(context, V, F, label)
             if self.pieces > 1:
                 assign, valid = split_congruent(V, F, self.pieces)
                 if assign is None:
@@ -2070,6 +2134,67 @@ if _IN_BLENDER:
                         f"{len(F)} faces")
             return {'FINISHED'}
 
+        def _facet_mesh(self, name, verts, faces, sizes):
+            me = bpy.data.meshes.new(name)
+            me.from_pydata(verts, [], faces)
+            me.validate(clean_customdata=True)
+            if len(me.polygons) == len(sizes):
+                attr = me.attributes.new("ngon_sides", 'INT', 'FACE')
+                attr.data.foreach_set('value', sizes)
+                if self.coloring == 'SIDES':
+                    lut = {}
+                    for nn in sorted(set(sizes)):
+                        lut[nn] = len(me.materials)
+                        me.materials.append(self._material_for(nn))
+                    me.polygons.foreach_set(
+                        'material_index', [lut[s] for s in sizes])
+            me.update()
+            return me
+
+        def _emit_facets(self, context, V, F, label):
+            segs = build_facets(V, F, self.padding, self.thickness)
+            for o in context.selected_objects:
+                o.select_set(False)
+            cur = context.scene.cursor.location
+            first = None
+            if self.separate_facets:
+                for k, (verts, faces, ns, d) in enumerate(segs):
+                    nm = f"{label} facet {k + 1}of{len(segs)}"
+                    me = self._facet_mesh(nm, verts, faces,
+                                          [ns] * len(faces))
+                    obj = bpy.data.objects.new(nm, me)
+                    context.collection.objects.link(obj)
+                    obj.location = (cur[0] + self.explode * d[0],
+                                    cur[1] + self.explode * d[1],
+                                    cur[2] + self.explode * d[2])
+                    obj.select_set(True)
+                    if first is None:
+                        first = obj
+            else:
+                av, af, sizes = [], [], []
+                for verts, faces, ns, d in segs:
+                    base = len(av)
+                    ox, oy, oz = (self.explode * d[0],
+                                  self.explode * d[1],
+                                  self.explode * d[2])
+                    av.extend((v[0] + ox, v[1] + oy, v[2] + oz)
+                              for v in verts)
+                    af.extend([base + i for i in f] for f in faces)
+                    sizes.extend([ns] * len(faces))
+                me = self._facet_mesh("Facets", av, af, sizes)
+                obj = bpy.data.objects.new(f"{label} facets", me)
+                context.collection.objects.link(obj)
+                obj.location = cur
+                obj.select_set(True)
+                first = obj
+            context.view_layer.objects.active = first
+            self.report(
+                {'INFO'},
+                f"{label}: {len(segs)} face segment(s)"
+                + (" (separate meshes)" if self.separate_facets
+                   else ""))
+            return {'FINISHED'}
+
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
@@ -2097,10 +2222,15 @@ if _IN_BLENDER:
                 lay.prop(self, 'border')
             if self.style != 'SOLID':
                 lay.prop(self, 'thickness')
-            lay.prop(self, 'coloring')
-            lay.prop(self, 'pieces')
-            if self.pieces > 1:
+            if self.style == 'FACETS':
+                lay.prop(self, 'padding')
                 lay.prop(self, 'explode')
+                lay.prop(self, 'separate_facets')
+            lay.prop(self, 'coloring')
+            if self.style != 'FACETS':
+                lay.prop(self, 'pieces')
+                if self.pieces > 1:
+                    lay.prop(self, 'explode')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
