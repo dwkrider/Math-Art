@@ -322,6 +322,12 @@ _HEXCELL = np.array(
       np.sin(np.pi / 6.0 + k * np.pi / 3.0) / sqrt(3.0)]
      for k in range(6)])
 
+# unit Eisenstein step (60 deg): hex-cell centres live on Z + Z*_W6, and
+# the polyhex radix reptiles use an Eisenstein base b (|b|^2 = n) with a
+# ROTATING argument so the boundary is fractal (a real/axis-aligned base
+# such as -2 or 3 gives a non-fractal parallelogram instead).
+_W6 = np.exp(1j * np.pi / 3.0)
+
 
 # --------------------------------------------------------------------
 # Reflection & foldable rep-tiles (Sajid-Husain-Kumar 2026)
@@ -390,12 +396,13 @@ _FOLD_MAPS = [
 ]
 
 
-def _ifs_reptile(maps, iterations, holes=0):
+def _ifs_reptile(maps, iterations, holes=0, seed=_IFS_SEED):
     """(polys, types) for the attractor of a conjugate-affine IFS:
-    every length-k word applied to the unit-square seed gives m^k
-    small quads, coloured by the outermost word digit (m classes).
-    holes > 0 drops the last `holes` maps at every level (gasket);
-    a sub-system of an OSC system still satisfies the OSC."""
+    every length-k word applied to the `seed` polygon (unit square by
+    default; a triangle/rhombus/kite cell for the polyform reptiles)
+    gives m^k small copies, coloured by the outermost word digit (m
+    classes).  holes > 0 drops the last `holes` maps at every level
+    (gasket); a sub-system of an OSC system still satisfies the OSC."""
     maps = list(maps)[:max(1, len(maps) - int(holes))]
     m = len(maps)
     words = [(_W_ID, 0)]
@@ -410,7 +417,7 @@ def _ifs_reptile(maps, iterations, holes=0):
         words = nxt
     polys, types = [], []
     for w, col in words:
-        z = _w_apply(w, _IFS_SEED)
+        z = _w_apply(w, seed)
         polys.append(np.column_stack([z.real, z.imag]))
         types.append(int(col))
     return polys, types
@@ -467,6 +474,264 @@ def _pentabolo(iterations, holes=0):
     return polys, types
 
 
+# --------------------------------------------------------------------
+# Multi-orientation polyform reptiles (graph-directed IFS)
+#
+# A polyiamond / polyrhomb / polykite tiles the plane with cells in
+# SEVERAL orientations (triangles point up or down; rhombi and kites
+# take 3-6 lattice orientations), so the single-orientation radix
+# construction used for the polyominoes and polyhexes does not apply.
+# Fathauer's method (Bridges 2026) scales such an n-cell polyform by
+# 1/sqrt(n), rotates it by an allowed angle theta, and re-assembles n
+# copies in the polyform's own layout.  Written as a self-similar
+# attractor A, that is one contraction per cell:
+#     g_i(z) = S ( mu_i z + p_i ),    S = (1/sqrt n) e^{i theta},
+# where mu_i is cell i's orientation (the lattice rotation/reflection
+# carrying the seed cell onto cell i) and p_i is its anchor in the
+# assembled polyform (cell_i = mu_i * seed + p_i).  The translation is
+# S*p_i -- the sub-copy sits at the cell's position SCALED by the
+# contraction -- which is exactly what lets the n copies meet edge to
+# edge with no gaps or overlaps.  This is a graph-directed IFS (one
+# node per orientation) collapsed to a single attractor because all
+# orientations are congruent; it is rendered by _ifs_reptile with the
+# family's seed cell.  A rotating theta (not a lattice-aligned 0/60)
+# gives the fractal boundary; the exact cell layouts below were found
+# by an exhaustive polyform search gated on the filled-tile self-test.
+#
+# References:
+#   R. Fathauer, "Fractal tilings based on polyiamonds, polyhexes and
+#     other polyforms", Bridges 2026.
+#   R. Fathauer, Fractal Diversions -- Fractal Reptiles,
+#     mathartfun.com/fractaldiversions/FractalReptilesHome.html
+# --------------------------------------------------------------------
+
+def _tri_up(i, j):
+    L = i + j * _W6
+    return np.array([L, L + 1, L + _W6], complex)
+
+
+def _tri_dn(i, j):
+    L = i + j * _W6
+    return np.array([L + 1, L + _W6, L + 1 + _W6], complex)
+
+
+def _rhomb_A(i, j):                      # 60-120 rhombille rhombus
+    L = i + j * _W6
+    return np.array([L, L + 1, L + 1 + _W6, L + _W6], complex)
+
+
+# deltoidal (60-90-120-90) kite: hexagon centre, two edge midpoints and
+# a hexagon vertex; hexagons of circumradius 1 tile on the sqrt(3)-
+# scaled Eisenstein lattice
+_KITE_V = [np.exp(1j * k * np.pi / 3.0) for k in range(6)]
+_KITE_M = [np.cos(np.pi / 6.0) * np.exp(1j * (k * np.pi / 3.0 + np.pi / 6.0))
+           for k in range(6)]
+_KITE_H0 = sqrt(3.0) * np.exp(1j * np.pi / 6.0)
+_KITE_H1 = _KITE_H0 * _W6
+
+
+def _kite(a, b, k):
+    H = a * _KITE_H0 + b * _KITE_H1
+    return np.array([H, H + _KITE_M[(k - 1) % 6], H + _KITE_V[k],
+                     H + _KITE_M[k]], complex)
+
+
+# candidate lattice orientations (unit complex) used to fit each cell.
+# A triangle has 3-fold symmetry, so its vertex SET is invariant under
+# 120 deg turns; only two orientations are physically distinct (up = 1,
+# down = 180 deg), and the fit must be restricted to those two or it can
+# spuriously read a down-cell as a 60 deg-rotated up-cell -- a different
+# rigid motion that matches the vertices but breaks the tiling.  Rhombi
+# and kites carry no such rotational symmetry, so the full set is safe.
+_ORIENT_TRI = [1 + 0j, -1 + 0j]
+_ORIENT6 = [_W6 ** k for k in range(6)] + [-(_W6 ** k) for k in range(6)]
+
+
+def _vkey_set(poly):
+    return frozenset((round(z.real, 3), round(z.imag, 3)) for z in poly)
+
+
+def _fit_cell(seed, cell, mus):
+    """(A0, B0, anchor) so cell == A0*seed + B0*conj(seed) + anchor as a
+    rigid motion drawn from the rotations/reflections `mus` (before the
+    shared contraction S)."""
+    cs = _vkey_set(cell)
+    sm = seed.mean()
+    # rotations first: a reflected cell can share a symmetric cell's
+    # vertex set (a mirrored up-triangle looks like a down-triangle),
+    # but the reptile substitution uses the pure rotation, so a genuine
+    # rotation must win over any spurious reflection match.
+    for mu in mus:
+        a = cell.mean() - mu * sm
+        if _vkey_set(mu * seed + a) == cs:
+            return (mu, 0j, a)
+    for mu in mus:
+        a2 = cell.mean() - mu * np.conj(sm)
+        if _vkey_set(mu * np.conj(seed) + a2) == cs:
+            return (0j, mu, a2)
+    raise ValueError("polyform cell does not match the seed cell")
+
+
+def _poly_reptile(seed, cells, n, theta_deg, mus=_ORIENT6):
+    """The n conjugate-affine maps g_i(z) = S(mu_i z + p_i) for a
+    polyform with seed cell `seed` and cell list `cells`."""
+    S = np.exp(1j * np.radians(theta_deg)) / sqrt(float(n))
+    maps = []
+    for cell in cells:
+        a0, b0, anchor = _fit_cell(seed, cell, mus)
+        maps.append((S * a0, S * b0, S * anchor))
+    return maps
+
+
+# Verified FILLED presets (each passes the module self-test: cell count
+# = n^k and sampled boundary-overlap fraction ~ 0 at depth, i.e. a solid
+# tile with a measure-zero fractal boundary -- confirmed by render).
+_SEED_TRI = _tri_up(0, 0)
+_HEPTIAMOND_MAPS = _poly_reptile(
+    _SEED_TRI,
+    [_tri_dn(0, 0), _tri_dn(0, 1), _tri_up(1, 0), _tri_dn(1, 0),
+     _tri_up(1, 1), _tri_dn(1, 1), _tri_up(2, 1)], 7, 19.107,
+    mus=_ORIENT_TRI)
+_HEPTIAMOND3_MAPS = _poly_reptile(          # 3-fold pinwheel heptiamond
+    _SEED_TRI,
+    [_tri_dn(0, 0), _tri_dn(1, -1), _tri_dn(1, 0), _tri_up(0, 0),
+     _tri_up(1, 0), _tri_up(1, 1), _tri_up(2, -1)], 7, 19.107,
+    mus=_ORIENT_TRI)
+_HEPTIAMOND2_MAPS = _poly_reptile(          # heptiamond 2 (theta=40.893)
+    _SEED_TRI,
+    [_tri_dn(-1, 0), _tri_dn(-1, 1), _tri_dn(0, -1), _tri_dn(0, 0),
+     _tri_up(0, 0), _tri_up(0, 1), _tri_up(1, -1)], 7, 40.893,
+    mus=_ORIENT_TRI)
+
+_SEED_RHOMB = _rhomb_A(0, 0)
+_TRIRHOMB_MAPS = _poly_reptile(
+    _SEED_RHOMB, [_rhomb_A(0, 0), _rhomb_A(0, 1), _rhomb_A(1, 0)], 3, 30.0)
+_TETRARHOMB_MAPS = _poly_reptile(
+    _SEED_RHOMB, [_rhomb_A(-1, 0), _rhomb_A(-1, 1), _rhomb_A(0, -1),
+                  _rhomb_A(0, 0)], 4, 60.0)
+
+_SEED_KITE = _kite(0, 0, 0)
+_TRIKITE_MAPS = _poly_reptile(
+    _SEED_KITE, [_kite(0, 0, 0), _kite(1, 0, 3), _kite(1, 0, 4)], 3, -30.0)
+_TRIKITE2_MAPS = _poly_reptile(
+    _SEED_KITE, [_kite(0, 0, 0), _kite(1, 0, 4), _kite(1, 0, 5)], 3, -30.0)
+_TETRAKITE_MAPS = _poly_reptile(
+    _SEED_KITE, [_kite(0, 0, 0), _kite(1, 0, 3), _kite(1, 0, 4),
+                 _kite(1, 0, 5)], 4, 0.0)
+_TETRAKITE2_MAPS = _poly_reptile(
+    _SEED_KITE, [_kite(0, 0, 0), _kite(1, 0, 2), _kite(1, 0, 3),
+                 _kite(1, 0, 4)], 4, 0.0)
+
+
+# --------------------------------------------------------------------
+# Self-affine reptiles from the placement-search solver.
+#
+# Fathauer's method with a FREE scaling origin t: each of the n maps is
+# h_i = g_i o sigma_t, sigma_t(z) = S(z - t) + t (contract about an
+# origin t inside the polyform, |S| = 1/sqrt(n)), and g_i places the
+# seed cell onto figure cell i by a rotation (u z + v) or reflection
+# (u conj(z) + v).  The pure lattice-digit (t=0) radix cannot express
+# these -- e.g. the 12-hex needs the free origin, and the heptarhomb is
+# built entirely from REFLECTED copies.  The maps below were found by an
+# exact depth-2 tessellation CSP over (S, t, placements) and each is a
+# verified TRUE tile: sampled boundary overlap is exactly 0 at depth 6
+# (and depth 7 for the rep-6 cases, past the "deep near-miss" band).
+#
+# References:
+#   R. Fathauer, "Iterating Polyiamonds, Polyhexes, and other Polyforms
+#     to Create Fractal Reptiles", Bridges 2026, pp. 85-92.
+#   R. Fathauer, Fractal Diversions -- Fractal Reptiles,
+#     mathartfun.com/fractaldiversions/FractalReptilesHome.html
+# --------------------------------------------------------------------
+
+_SQ2 = sqrt(2.0)
+_Q15 = sqrt(15.0) / 3.0
+_SEED_RECT6 = np.array([0, _SQ2, _SQ2 + 1j, 1j], complex)   # sqrt2 x 1 rect
+_SEED_RHOMB6 = np.array([-1j * _Q15 / 2, 0.5, 1j * _Q15 / 2, -0.5], complex)
+_SEED_HEXC = _HEXCELL[:, 0] + 1j * _HEXCELL[:, 1]           # hex cell, complex
+
+# 6-Rect (rep-6, theta=35.264, base 2+sqrt2 i, pure translations)
+_RECT6_MAPS = [
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (1.8856180831641272 - 0.6666666666666667j)),
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (3.2998316455372225 - 0.6666666666666667j)),
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (3.2998316455372225 - 1.6666666666666667j)),
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (4.714045207910317 - 1.6666666666666667j)),
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (6.128258770283413 - 1.6666666666666667j)),
+    ((0.3333333333333333 + 0.23570226039551584j), 0j,
+     (3.2998316455372225 - 2.666666666666667j))]
+
+# 6-Rhomb (rep-6, theta=52.239, distorted rhombus, pure translations)
+_RHOMB6_MAPS = [
+    ((0.25 + 0.3227486121839514j), 0j,
+     (0.08333333333333334 - 0.3227486121839514j)),
+    ((0.25 + 0.3227486121839514j), 0j,
+     (0.5833333333333334 - 0.9682458365518543j)),
+    ((0.25 + 0.3227486121839514j), 0j,
+     (1.5833333333333333 - 0.9682458365518543j)),
+    ((0.25 + 0.3227486121839514j), 0j,
+     (1.0833333333333333 - 1.6137430609197572j)),
+    ((0.25 + 0.3227486121839514j), 0j,
+     (2.0833333333333335 - 1.6137430609197572j)),
+    ((0.25 + 0.3227486121839514j), 0j,
+     (0.5833333333333334 - 2.25924028528766j))]
+
+# 12-hex (rep-12, theta=-30, base 2+2w, free origin, pure translations)
+_HEX12_MAPS = [
+    ((0.25 - 0.14433756729740643j), 0j,
+     (0.3333333333333333 + 0.28867513459481303j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (0.8333333333333331 - 0.5773502691896255j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (1.3333333333333333 + 0.28867513459481303j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (1.8333333333333333 + 1.1547005383792517j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (1.8333333333333335 + 2.886751345948129j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (2.3333333333333335 + 0.28867513459481303j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (2.3333333333333335 + 2.0207259421636903j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (2.8333333333333335 + 1.1547005383792517j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (2.8333333333333335 + 2.886751345948129j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (3.3333333333333335 + 0.28867513459481303j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (3.8333333333333335 - 0.5773502691896255j)),
+    ((0.25 - 0.14433756729740643j), 0j,
+     (4.333333333333333 + 0.28867513459481303j))]
+
+# I-octomino (rep-8, theta=45, Gaussian base 2+2i, uniform 90deg copies)
+_IOCTO_MAPS = [
+    ((0.25 + 0.25j), 0j, (1 + 0j)), ((0.25 + 0.25j), 0j, (2 + 0j)),
+    ((0.25 + 0.25j), 0j, (3 + 0j)), ((0.25 + 0.25j), 0j, (2 + 1j)),
+    ((0.25 + 0.25j), 0j, (2 + 2j)), ((0.25 + 0.25j), 0j, (1 + 3j)),
+    ((0.25 + 0.25j), 0j, (2 + 3j)), ((0.25 + 0.25j), 0j, (3 + 3j))]
+
+# Heptarhomb (rep-7): all seven copies are REFLECTIONS (A=0, B!=0)
+_RHOMB7_MAPS = [
+    (0j, (-0.3571428571428571 + 0.12371791482634852j),
+     (-1.0714285714285687 - 1.3608970630898316j)),
+    (0j, (-0.28571428571428586 - 0.24743582965269661j),
+     (-4.857142857142855 - 0.7423074889580876j)),
+    (0j, (0.35714285714285715 - 0.12371791482634834j),
+     (-2.9285714285714284 - 7.299356974754554j)),
+    (0j, (0.2857142857142857 + 0.2474358296526967j),
+     (-0.6428571428571437 - 5.319870337532981j)),
+    (0j, (-0.3571428571428571 + 0.12371791482634852j),
+     (-2.5714285714285694 + 1.2371791482634837j)),
+    (0j, (-0.07142857142857134 + 0.37115374447904514j),
+     (-0.21428571428571397 - 0.6185895741317435j)),
+    (0j, (0.2857142857142857 + 0.2474358296526967j),
+     (-0.6428571428571437 - 3.587819529964104j))]
+
+
 # builders take `iterations` (and a gasket `holes` count) and return
 # (polys, types)
 def _triangle_ftiling(iterations, holes=0):
@@ -514,11 +779,134 @@ KINDS = {
         build=lambda it, h=0: _base_reptile(
             -2 - 2j, [0, 1, 2, 3, 1 + 1j, 2 + 1j, 3 + 1j, 4 + 1j], it,
             holes=h), n=8),
-    # Eisenstein radix-system kind (hexagon cells)
-    'FLOWSNAKE': dict(                        # Vince Fig 4/7
+    'Z_TETROMINO': dict(                      # Z tetromino -> twindragon
+        build=lambda it, h=0: _base_reptile(
+            -2j, [0, 1, 1 + 1j, 2 + 1j], it, holes=h), n=4),
+    'FOURFOLD_OCTOMINO': dict(                # four-fold octomino, rep-8
+        # a 90-deg-symmetric pinwheel octomino, complete residue system
+        # mod 2+2i (the norm-8 Gaussian base, theta=45)
+        build=lambda it, h=0: _base_reptile(
+            2 + 2j,
+            [0, 1, 1 + 1j, 1 + 2j, 2 - 1j, 2, 2 + 1j, 3 + 1j], it,
+            holes=h), n=8),
+    # Eisenstein radix-system kinds (hexagon cells); polyhex reptiles
+    'FLOWSNAKE': dict(                        # Vince Fig 4/7 (heptahex)
         build=lambda it, h=0: _base_reptile(_FLOW_BASE, _FLOW_DIGITS,
                                             it, cell=_HEXCELL, holes=h),
         n=7, samp=True),
+    'TRIHEX': dict(                           # trihex, rep-3
+        build=lambda it, h=0: _base_reptile(
+            -2 + _W6, [0, 1, _W6], it, cell=_HEXCELL, holes=h),
+        n=3, samp=True),
+    'TRIHEX_BAR': dict(                       # bar trihex, rep-3
+        build=lambda it, h=0: _base_reptile(
+            -2 + _W6, [0, 1, 2], it, cell=_HEXCELL, holes=h),
+        n=3, samp=True),
+    'TETRAHEX': dict(                         # tetrahex, rep-4
+        build=lambda it, h=0: _base_reptile(
+            2 - 2 * _W6, [0, 1 - _W6, -1, -_W6], it, cell=_HEXCELL,
+            holes=h), n=4, samp=True),
+    'HEX9': dict(                             # 9-hex, rep-9
+        build=lambda it, h=0: _base_reptile(
+            3 * (_W6 - 1),
+            [0, _W6 - 1, 1 - _W6, -1, -_W6, _W6, 1, -2 + _W6, -1 - _W6],
+            it, cell=_HEXCELL, holes=h), n=9, samp=True),
+    'HEX13': dict(                            # 13-hex, rep-13
+        build=lambda it, h=0: _base_reptile(
+            -4 + _W6,
+            [0, _W6 - 1, 1 - _W6, -1, -_W6, _W6, 1, -2 + _W6, -1 - _W6,
+             2 * _W6 - 1, 1 - 2 * _W6, 1 + _W6, 2 - _W6],
+            it, cell=_HEXCELL, holes=h), n=13, samp=True),
+    'HEX13_2': dict(                          # 13-hex 2, rep-13
+        # a 3-fold-symmetric complete residue system mod 3+w
+        # (theta=13.898): a distinct 13-hex from HEX13 above
+        build=lambda it, h=0: _base_reptile(
+            3 + _W6,
+            [-2 + _W6, -1 - _W6, -1, -1 + _W6, -1 + 2 * _W6, -_W6, 0,
+             _W6, 1 - 2 * _W6, 1 - _W6, 1, 1 + _W6, 2 - _W6],
+            it, cell=_HEXCELL, holes=h), n=13, samp=True),
+    'HEPTAHEX_3FOLD': dict(                   # 3-fold heptahex, rep-7
+        # centre hex + two 120-deg orbits of three: a complete residue
+        # system mod 1+2w (residue (j-2i) mod 7), giving Fathauer's
+        # pinwheel 3-fold heptahex rather than the 6-fold Gosper flower
+        build=lambda it, h=0: _base_reptile(
+            1 + 2 * _W6,
+            [0, 1, -1 + _W6, -_W6, 2 - _W6, -1 + 2 * _W6, -1 - _W6],
+            it, cell=_HEXCELL, holes=h), n=7, samp=True),
+    'HEPTAHEX_2FOLD': dict(                   # 2-fold heptahex (S), rep-7
+        # complete residue system mod 2+w (theta=19.107), 2-fold about
+        # the centre hex -- the S/Z-shaped 2-fold heptahex
+        build=lambda it, h=0: _base_reptile(
+            2 + _W6,
+            [0, _W6, 2 * _W6, 1, 2 - 2 * _W6, 2 - _W6, 2],
+            it, cell=_HEXCELL, holes=h), n=7, samp=True),
+    'HEPTAHEX_2FOLD2': dict(                  # 2-fold heptahex 2, rep-7
+        build=lambda it, h=0: _base_reptile(
+            2 + _W6,
+            [-1 + _W6, 0, 1 - _W6, 1, 1 + _W6, 2, 3 - _W6],
+            it, cell=_HEXCELL, holes=h), n=7, samp=True),
+    # Multi-orientation polyform reptiles (graph-directed IFS; the cell
+    # comes in several lattice orientations, so g_i = S(mu_i z + p_i)).
+    # Filled tiles with measure-zero fractal boundaries (osc sampling).
+    'HEPTIAMOND': dict(                       # heptiamond, rep-7
+        build=lambda it, h=0: _ifs_reptile(_HEPTIAMOND_MAPS, it, holes=h,
+                                           seed=_SEED_TRI),
+        n=7, samp=True, osc=True),
+    'HEPTIAMOND_3FOLD': dict(                 # 3-fold heptiamond, rep-7
+        build=lambda it, h=0: _ifs_reptile(_HEPTIAMOND3_MAPS, it, holes=h,
+                                           seed=_SEED_TRI),
+        n=7, samp=True, osc=True),
+    'HEPTIAMOND_2': dict(                     # heptiamond 2, rep-7
+        build=lambda it, h=0: _ifs_reptile(_HEPTIAMOND2_MAPS, it, holes=h,
+                                           seed=_SEED_TRI),
+        n=7, samp=True, osc=True),
+    'TRIRHOMB': dict(                         # trirhomb (terdragon), rep-3
+        build=lambda it, h=0: _ifs_reptile(_TRIRHOMB_MAPS, it, holes=h,
+                                           seed=_SEED_RHOMB),
+        n=3, samp=True, osc=True),
+    'TETRARHOMB': dict(                       # tetrarhomb, rep-4
+        build=lambda it, h=0: _ifs_reptile(_TETRARHOMB_MAPS, it, holes=h,
+                                           seed=_SEED_RHOMB),
+        n=4, samp=True, osc=True),
+    'TRIKITE': dict(                          # trikite, rep-3
+        build=lambda it, h=0: _ifs_reptile(_TRIKITE_MAPS, it, holes=h,
+                                           seed=_SEED_KITE),
+        n=3, samp=True, osc=True),
+    'TRIKITE_2': dict(                        # trikite 2, rep-3
+        build=lambda it, h=0: _ifs_reptile(_TRIKITE2_MAPS, it, holes=h,
+                                           seed=_SEED_KITE),
+        n=3, samp=True, osc=True),
+    'TETRAKITE': dict(                        # tetrakite, rep-4
+        build=lambda it, h=0: _ifs_reptile(_TETRAKITE_MAPS, it, holes=h,
+                                           seed=_SEED_KITE),
+        n=4, samp=True, osc=True),
+    'TETRAKITE_2': dict(                      # tetrakite 2, rep-4
+        build=lambda it, h=0: _ifs_reptile(_TETRAKITE2_MAPS, it, holes=h,
+                                           seed=_SEED_KITE),
+        n=4, samp=True, osc=True),
+    # Self-affine reptiles from the placement-search solver (free-origin
+    # maps; verified true tiles, ovfrac 0 at depth 6).  depths keeps the
+    # self-test light -- the high-n renders are otherwise huge.
+    'HEX12': dict(                            # 12-hex, rep-12
+        build=lambda it, h=0: _ifs_reptile(_HEX12_MAPS, it, holes=h,
+                                           seed=_SEED_HEXC),
+        n=12, samp=True, osc=True, depths=(2, 4)),
+    'IOCTOMINO': dict(                        # I-octomino, rep-8
+        build=lambda it, h=0: _ifs_reptile(_IOCTO_MAPS, it, holes=h,
+                                           seed=_IFS_SEED),
+        n=8, samp=True, osc=True, depths=(2, 4)),
+    'RHOMB7': dict(                           # heptarhomb, rep-7 (reflect)
+        build=lambda it, h=0: _ifs_reptile(_RHOMB7_MAPS, it, holes=h,
+                                           seed=_SEED_RHOMB),
+        n=7, samp=True, osc=True, depths=(2, 4)),
+    'RHOMB6': dict(                           # 6-rhomb, rep-6
+        build=lambda it, h=0: _ifs_reptile(_RHOMB6_MAPS, it, holes=h,
+                                           seed=_SEED_RHOMB6),
+        n=6, samp=True, osc=True, depths=(3, 5)),
+    'RECT6': dict(                            # 6-rect, rep-6
+        build=lambda it, h=0: _ifs_reptile(_RECT6_MAPS, it, holes=h,
+                                           seed=_SEED_RECT6),
+        n=6, samp=True, osc=True, depths=(3, 5)),
     # Reflection / foldable IFS kinds (quad cells; OSC attractors)
     'LEVY_DRAGON': dict(                      # SHK Fig 2c; Levy 1938
         build=lambda it, h=0: _ifs_reptile(_LEVY_MAPS, it, holes=h),
@@ -545,6 +933,58 @@ def fractal_patch(kind, iterations, holes=0):
 
 
 # --------------------------------------------------------------------
+# Seed-shape thumbnails (for the Shape selector icons)
+#
+# The level-1 patch (fractal_patch(kind, 1)) is exactly the n base
+# cells of the polyform -- the "seed" drawn on each Fractal Diversions
+# page.  Rasterise those convex cells, one palette colour per cell, to a
+# small RGBA buffer that Blender loads as a custom preview icon.
+# --------------------------------------------------------------------
+
+_SEED_PALETTE = [
+    (0.16, 0.50, 0.19), (0.20, 0.63, 0.79), (0.84, 0.15, 0.16),
+    (1.00, 0.60, 0.00), (0.42, 0.24, 0.60), (0.55, 0.34, 0.29),
+    (0.89, 0.47, 0.76), (0.30, 0.69, 0.29), (0.12, 0.47, 0.71),
+    (0.99, 0.75, 0.18), (0.65, 0.34, 0.16), (0.40, 0.40, 0.40),
+    (0.09, 0.75, 0.81),
+]
+
+
+def _rasterize_seed(kind, size=64, pad=0.14):
+    """Flat RGBA float list (size*size*4, rows bottom-to-top) of the
+    level-1 seed polyform for `kind`, or None if it cannot be drawn."""
+    try:
+        polys, types = fractal_patch(kind, 1)
+    except Exception:
+        return None
+    polys = [np.asarray(p, float) for p in polys if len(p) >= 3]
+    if not polys:
+        return None
+    allv = np.vstack(polys)
+    lo, hi = allv.min(0), allv.max(0)
+    span = float((hi - lo).max())
+    if span <= 1e-12:
+        return None
+    scale = (size - 2.0 * pad * size) / span
+    cen = (lo + hi) / 2.0
+    ax = (np.arange(size) + 0.5)
+    gx, gy = np.meshgrid(ax, ax)          # gy row 0 = bottom row
+    wx = cen[0] + (gx.ravel() - size / 2.0) / scale
+    wy = cen[1] + (gy.ravel() - size / 2.0) / scale
+    rgba = np.zeros((size * size, 4), float)
+    for poly, t in zip(polys, types):
+        inside = np.ones(len(wx), bool)
+        m = len(poly)
+        for i in range(m):
+            px, py = poly[i]
+            ex, ey = poly[(i + 1) % m] - poly[i]
+            inside &= (ex * (wy - py) - ey * (wx - px)) >= -1e-9
+        col = _SEED_PALETTE[int(t) % len(_SEED_PALETTE)]
+        rgba[inside] = (col[0], col[1], col[2], 1.0)
+    return rgba.reshape(-1).tolist()
+
+
+# --------------------------------------------------------------------
 # Blender operator
 # --------------------------------------------------------------------
 
@@ -553,38 +993,105 @@ def fractal_patch(kind, iterations, holes=0):
 # cell positions, giving a solid rep-n self-affine tile.
 KIND_ITEMS = [
     # --- Polyomino reptiles (square cells) ---
-    ('TWINDRAGON', "Polyomino: Domino (twindragon, rep-2)",
+    ('TWINDRAGON', "Square: Domino (twindragon, rep-2)",
      "Domino, base -1+i, digits {0,1}: the Gilbert/Knuth twindragon "
      "(Vince Fig 3), aspect ratio 1/phi"),
-    ('REP4', "Polyomino: Square tetromino (rep-4)",
+    ('REP4', "Square: Square tetromino (rep-4)",
      "Base 2, digits {0,1,i,-1-i}: rep-4 Sierpinski-relative reptile "
      "(Vince Fig 6)"),
-    ('REP5', "Polyomino: X-pentomino (round rep-5)",
+    ('Z_TETROMINO', "Square: Z-tetromino (twindragon, rep-4)",
+     "Z-tetromino cell set {0,1,1+i,2+i} over base -2i = (-1+i)^2: the "
+     "rep-4 route to the twindragon tile (Fathauer, Bridges 2025)"),
+    ('REP5', "Square: X-pentomino (round rep-5)",
      "X-pentomino, base -2+i, digits {0,1,-1,i,-i}: the round rep-5 "
      "dragon (Vince Fig 5), aspect ratio 1/phi"),
-    ('Z_PENTOMINO', "Polyomino: Z-pentomino (rep-5)",
+    ('Z_PENTOMINO', "Square: Z-pentomino (rep-5)",
      "Z-pentomino cell set {0,1,1+i,1+2i,2+2i} over base -2-i: the "
      "rep-5 Z-pentomino fractal reptile (Fathauer, Bridges 2025)"),
-    ('Y_PENTOMINO', "Polyomino: Y-pentomino (rep-5)",
+    ('Y_PENTOMINO', "Square: Y-pentomino (rep-5)",
      "Y-pentomino cell set over base -2+i: the rep-5 Y-pentomino "
      "fractal reptile (Fathauer, Bridges 2025)"),
-    ('P_PENTOMINO', "Polyomino: P-pentomino (rep-5)",
+    ('P_PENTOMINO', "Square: P-pentomino (rep-5)",
      "P-pentomino cell set over base -2+i: the rep-5 P-pentomino "
      "fractal reptile (Fathauer, Bridges 2025)"),
-    ('REP5_THIN', "Polyomino: Bar pentomino (thin rep-5)",
+    ('REP5_THIN', "Square: Bar pentomino (thin rep-5)",
      "Bar pentomino, base 2+i, collinear digits {0..4}: thin rep-5 "
      "dragon, aspect ratio 1/phi^3 (Mekhontsev (5,4))"),
-    ('REP5B', "Polyomino: Bar pentomino (rep-5, base 1+2i)",
+    ('REP5B', "Square: Bar pentomino (rep-5, base 1+2i)",
      "Bar pentomino, base 1+2i, collinear digits {0..4}: rep-5 dragon, "
      "aspect ratio sqrt(2)-1 (Mekhontsev (5,2))"),
-    ('Z_OCTOMINO', "Polyomino: Z-octomino (rep-8)",
+    ('Z_OCTOMINO', "Square: Z-octomino (rep-8)",
      "Z-octomino cell set over base -2-2i: the rep-8 Z-octomino "
      "fractal reptile (Fathauer, Bridges 2025)"),
+    ('FOURFOLD_OCTOMINO', "Square: Four-fold octomino (rep-8)",
+     "A 90-degree-symmetric pinwheel octomino, complete residue system "
+     "mod 2+2i (theta=45): the rep-8 four-fold octomino fractal reptile "
+     "(Fathauer, Bridges 2025)"),
     # --- Polyhex reptiles (hexagon cells) ---
-    ('FLOWSNAKE', "Polyhex: Heptahex / Gosper (rep-7)",
+    ('TRIHEX', "Hex: Trihex (rep-3)",
+     "Trihex {0,1,w} over Eisenstein base -2+w (w=e^{i pi/3}): the "
+     "rep-3 trihex fractal reptile (Fathauer, Bridges 2026)"),
+    ('TRIHEX_BAR', "Hex: Trihex bar (rep-3)",
+     "Bar trihex {0,1,2} over Eisenstein base -2+w: the rep-3 straight "
+     "trihex fractal reptile (Fathauer, Bridges 2026)"),
+    ('TETRAHEX', "Hex: Tetrahex (rep-4)",
+     "Tetrahex over Eisenstein base 2-2w (theta=60): the rep-4 tetrahex "
+     "fractal reptile (Fathauer, Bridges 2026)"),
+    ('FLOWSNAKE', "Hex: Heptahex / Gosper (rep-7)",
      "Eisenstein base 5/2+(sqrt3/2)i, digits {0}+sixth roots of "
      "unity, hexagon cells: the rep-7 Gosper island bounded by the "
      "flowsnake curve (Vince Fig 4/7; Gardner 1976)"),
+    ('HEPTAHEX_3FOLD', "Hex: 3-fold Heptahex (rep-7)",
+     "Centre hex plus two 120-degree orbits of three over Eisenstein "
+     "base 1+2w (theta=40.893): the rep-7 pinwheel 3-fold heptahex "
+     "(Fathauer, Bridges 2026)"),
+    ('HEPTAHEX_2FOLD', "Hex: 2-fold Heptahex (rep-7)",
+     "An S/Z-shaped complete residue system mod 2+w (theta=19.107): the "
+     "rep-7 2-fold heptahex (Fathauer, Bridges 2026)"),
+    ('HEPTAHEX_2FOLD2', "Hex: 2-fold Heptahex 2 (rep-7)",
+     "A second 2-fold heptahex over Eisenstein base 2+w (theta=19.107): "
+     "a distinct rep-7 layout (Fathauer, Bridges 2026)"),
+    ('HEX9', "Hex: 9-hex (rep-9)",
+     "A compact 9-hex over Eisenstein base 3(w-1): the rep-9 polyhex "
+     "fractal reptile (Fathauer, Bridges 2026)"),
+    ('HEX13', "Hex: 13-hex (rep-13)",
+     "A compact 13-hex over Eisenstein base -4+w: the rep-13 polyhex "
+     "fractal reptile (Fathauer, Bridges 2026)"),
+    ('HEX13_2', "Hex: 13-hex 2 (rep-13)",
+     "A 3-fold-symmetric 13-hex over Eisenstein base 3+w "
+     "(theta=13.898): a distinct rep-13 layout (Fathauer, Bridges 2026)"),
+    # --- Polyiamond reptiles (triangle cells) ---
+    ('HEPTIAMOND', "Iamond: Heptiamond (rep-7)",
+     "Seven up/down triangles over an Eisenstein contraction "
+     "(theta=19.107): the rep-7 heptiamond fractal reptile via the "
+     "graph-directed IFS g_i=S(mu_i z+p_i) (Fathauer, Bridges 2026)"),
+    ('HEPTIAMOND_3FOLD', "Iamond: 3-fold Heptiamond (rep-7)",
+     "A 120-degree-symmetric pinwheel heptiamond (theta=19.107): the "
+     "rep-7 3-fold heptiamond fractal reptile (Fathauer, Bridges 2026)"),
+    ('HEPTIAMOND_2', "Iamond: Heptiamond 2 (rep-7)",
+     "A second heptiamond layout at theta=40.893: a distinct rep-7 "
+     "heptiamond fractal reptile (Fathauer, Bridges 2026)"),
+    # --- Polyrhomb reptiles (60-120 rhombus cells) ---
+    ('TRIRHOMB', "Rhomb: Trirhomb (terdragon, rep-3)",
+     "Three rhombille rhombi, scale 1/sqrt3 theta=30: the rep-3 "
+     "trirhomb whose boundary is the terdragon curve (Fathauer, "
+     "Bridges 2026; Davis-Knuth terdragon)"),
+    ('TETRARHOMB', "Rhomb: Tetrarhomb (rep-4)",
+     "Four rhombille rhombi, scale 1/2 theta=60: the rep-4 tetrarhomb "
+     "fractal reptile (Fathauer, Bridges 2026)"),
+    # --- Polykite reptiles (deltoidal 60-90-120-90 kite cells) ---
+    ('TRIKITE', "Kite: Trikite (rep-3)",
+     "Three deltoidal kites, scale 1/sqrt3 theta=-30: the rep-3 "
+     "trikite fractal reptile (Fathauer, Bridges 2026)"),
+    ('TRIKITE_2', "Kite: Trikite 2 (rep-3)",
+     "A second trikite layout (theta=-30): a distinct rep-3 kite "
+     "fractal reptile (Fathauer, Bridges 2026)"),
+    ('TETRAKITE', "Kite: Tetrakite (rep-4)",
+     "Four deltoidal kites, scale 1/2 theta=0: the rep-4 tetrakite "
+     "fractal reptile (Fathauer, Bridges 2026)"),
+    ('TETRAKITE_2', "Kite: Tetrakite 2 (rep-4)",
+     "A second tetrakite layout (theta=0): a distinct rep-4 kite "
+     "fractal reptile (Fathauer, Bridges 2026)"),
     # --- Reflection / foldable reptiles ---
     ('LEVY_DRAGON', "Reflection: Levy Dragon (rep-2)",
      "Two maps contracting by (1-i)/2, the second reflected in the "
@@ -602,15 +1109,83 @@ KIND_ITEMS = [
     ('RIGHT_TRIANGLE', "Classic: Right Triangle (f-tiling)",
      "Isosceles right-triangle f-tiling: square seed, a 1/sqrt2 child "
      "glued to every exposed leg; tiles shrink to a fractal boundary"),
-    ('PENTABOLO', "Classic: Pentabolo (rep-5 isometry gasket)",
+    ('PENTABOLO', "Bolo: Pentabolo (rep-5 isometry gasket)",
      "Fathauer 5-isometry inflation of a half-square triangle: 5^k "
      "unit triangles, sqrt5 inflation per level, coloured by "
      "first-level copy"),
+    # --- Self-affine reptiles (placement-search solver) ---
+    ('IOCTOMINO', "Square: I-octomino (rep-8)",
+     "Straight bar of 8 squares over Gaussian base 2+2i (theta=45), "
+     "uniform 90-degree sub-copies: the rep-8 I-octomino fractal "
+     "reptile found by the self-affine placement solver "
+     "(Fathauer, Bridges 2025/2026)"),
+    ('HEX12', "Hex: 12-hex (rep-12)",
+     "Twelve hexagons over Eisenstein base 2+2w (theta=30) with a "
+     "free scaling origin: the rep-12 polyhex fractal reptile "
+     "(Fathauer, Bridges 2026)"),
+    ('RHOMB7', "Rhomb: Heptarhomb (rep-7)",
+     "Seven rhombille rhombi (theta=40.893); all seven sub-copies are "
+     "REFLECTIONS -- a genuine reflection reptile "
+     "(Fathauer, Bridges 2026)"),
+    ('RHOMB6', "Rhomb: 6-Rhomb (rep-6)",
+     "Six rhombi on a distorted grid (diagonals 1 and sqrt15/3, "
+     "theta=52.239, base 3*tau): the rep-6 distorted-rhombus fractal "
+     "reptile (Fathauer, Bridges 2026)"),
+    ('RECT6', "Rectangle: 6-Rect (rep-6)",
+     "Six sqrt2 x 1 rectangles on a distorted grid (theta=35.264, "
+     "base 2+sqrt2 i): the rep-6 rectangle fractal reptile -- 6 is not "
+     "an allowed norm on a regular grid (Fathauer, Bridges 2026)"),
 ]
+
+# Two-level Family -> Shape taxonomy for the operator UI, derived from
+# the "Family: Shape" label prefixes above.
+_FAMILY_ORDER = [('SQUARE', "Square"), ('HEX', "Hex"),
+                 ('IAMOND', "Iamond"), ('RHOMB', "Rhomb"),
+                 ('BOLO', "Bolo"), ('KITE', "Kite"),
+                 ('RECTANGLE', "Rectangle"), ('REFLECTION', "Reflection"),
+                 ('CLASSIC', "Classic")]
+_FAMILY_LABELS = dict(_FAMILY_ORDER)
+_FAMILY_OF = {}                 # kind id -> family id
+_SHAPES_BY_FAMILY = {}          # family id -> [(kind, short label, desc)]
+for _kid, _lbl, _desc in KIND_ITEMS:
+    _fam = _lbl.split(':', 1)[0].strip().upper()
+    if _fam not in _FAMILY_LABELS:
+        _fam = 'CLASSIC'
+    _FAMILY_OF[_kid] = _fam
+    _short = _lbl.split(':', 1)[-1].strip()
+    _SHAPES_BY_FAMILY.setdefault(_fam, []).append((_kid, _short, _desc))
+_KIND_LABEL = dict((k, v) for k, v, _ in KIND_ITEMS)
+# stable, unique enum number per kind (icons require the 5-tuple form,
+# whose last element must be a fixed number that never changes)
+_KIND_NUMBER = dict((k, i) for i, (k, _, _) in enumerate(KIND_ITEMS))
+
+# Canonical construction angle (degrees) per shape -- the primary
+# rotation listed on each Fractal Diversions seed page.  The operator's
+# Angle field defaults to this; the page's other allowed angles are this
+# tile rotated by the lattice symmetry (e.g. +120 for the Eisenstein
+# families) and/or mirrored, which the Angle/Mirror controls reproduce.
+_KIND_ANGLE0 = {
+    'TWINDRAGON': 45.0, 'REP4': 0.0, 'Z_TETROMINO': 90.0, 'REP5': 26.565,
+    'Z_PENTOMINO': 26.565, 'Y_PENTOMINO': 63.435, 'P_PENTOMINO': 26.565,
+    'REP5_THIN': 63.435, 'REP5B': 63.435, 'Z_OCTOMINO': 45.0,
+    'FOURFOLD_OCTOMINO': 45.0,
+    'TRIHEX': 30.0, 'TRIHEX_BAR': 30.0, 'TETRAHEX': 60.0,
+    'FLOWSNAKE': 40.893, 'HEPTAHEX_3FOLD': 40.893, 'HEPTAHEX_2FOLD': 19.107,
+    'HEPTAHEX_2FOLD2': 19.107, 'HEX9': 0.0, 'HEX13': 13.898,
+    'HEX13_2': 13.898,
+    'HEPTIAMOND': 19.107, 'HEPTIAMOND_3FOLD': 19.107, 'HEPTIAMOND_2': 40.893,
+    'TRIRHOMB': 30.0, 'TETRARHOMB': 60.0, 'RHOMB7': 40.893, 'RHOMB6': 52.239,
+    'HEX12': 30.0, 'IOCTOMINO': 45.0, 'RECT6': 35.264,
+    'PENTABOLO': 26.565,
+    'TRIKITE': -30.0, 'TRIKITE_2': -30.0, 'TETRAKITE': 0.0,
+    'TETRAKITE_2': 0.0,
+    'LEVY_DRAGON': 0.0, 'LEAF': 0.0, 'FOLDABLE4': 0.0, 'RIGHT_TRIANGLE': 0.0,
+}
 
 
 try:
     import bpy
+    import bpy.utils.previews
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
                            BoolProperty)
     from bpy_extras.object_utils import AddObjectHelper
@@ -621,6 +1196,55 @@ except ImportError:
 
 if _IN_BLENDER:
 
+    _shape_items_cache = {}
+    _seed_previews = None            # bpy preview collection (icons)
+
+    def _load_seed_icons():
+        """Rasterise every shape's level-1 seed into a preview-collection
+        icon so the Shape selector shows a thumbnail of each polyform."""
+        global _seed_previews
+        if _seed_previews is not None:
+            return
+        _seed_previews = bpy.utils.previews.new()
+        for kind in KINDS:
+            try:
+                px = _rasterize_seed(kind, 128)
+                if not px:
+                    continue
+                pv = _seed_previews.new(kind)
+                pv.image_size = (128, 128)
+                pv.image_pixels_float = px
+            except Exception:
+                pass                 # a missing icon is non-fatal
+
+    def _shape_items(self, context):
+        """Dynamic Shape enum: only the reptiles in the chosen Family,
+        each carrying a seed-shape thumbnail icon.  The returned list is
+        cached in a module global so Blender does not garbage-collect
+        the strings."""
+        fam = getattr(self, 'family', 'SQUARE')
+        base = _SHAPES_BY_FAMILY.get(fam) or _SHAPES_BY_FAMILY['CLASSIC']
+        items = []
+        for kind, label, desc in base:
+            icon = 0
+            if _seed_previews is not None and kind in _seed_previews:
+                icon = _seed_previews[kind].icon_id
+            items.append((kind, label, desc, icon, _KIND_NUMBER[kind]))
+        _shape_items_cache[fam] = items
+        return items
+
+    def _on_family(self, context):
+        """When the Family changes, snap Shape to that family's first
+        reptile so the Shape enum is never left on a now-invalid id."""
+        shapes = _SHAPES_BY_FAMILY.get(self.family)
+        if shapes:
+            self.shape = shapes[0][0]
+
+    def _on_shape(self, context):
+        """Reset the Angle field to the newly-selected shape's canonical
+        construction angle (the primary angle on its seed page)."""
+        self.angle = _KIND_ANGLE0.get(self.shape, 0.0)
+
     class MESH_OT_fractal_reptile_add(bpy.types.Operator,
                                       AddObjectHelper):
         """Add a Fathauer fractal tiling built from a rep-tile
@@ -629,8 +1253,27 @@ if _IN_BLENDER:
         bl_label = "Fractal Rep-Tile"
         bl_options = {'REGISTER', 'UNDO'}
 
-        kind: EnumProperty(name="Tiling", items=KIND_ITEMS,
-                           default='RIGHT_TRIANGLE')
+        family: EnumProperty(
+            name="Family",
+            items=[(fid, fname, "%s fractal reptiles" % fname)
+                   for fid, fname in _FAMILY_ORDER
+                   if fid in _SHAPES_BY_FAMILY],
+            default='SQUARE', update=_on_family,
+            description="Polyform base-shape family")
+        shape: EnumProperty(
+            name="Shape", items=_shape_items, update=_on_shape,
+            description="Which reptile within the chosen family")
+        angle: FloatProperty(
+            name="Angle", default=0.0, min=-360.0, max=360.0,
+            step=100, precision=3,
+            description="Construction angle in degrees; defaults to the "
+                        "primary angle on the shape's seed page.  The "
+                        "page's other allowed angles are the same tile "
+                        "rotated by the lattice symmetry (e.g. +120)")
+        mirror: BoolProperty(
+            name="Mirror", default=False,
+            description="Reflect the tile (the seed pages' mirror "
+                        "variant)")
         iterations: IntProperty(
             name="Iterations", default=6, min=0, max=14,
             description="Growth depth; each generation glues a "
@@ -664,13 +1307,38 @@ if _IN_BLENDER:
             name="Separate Tiles", default=False,
             description="Output each tile as its own mesh object")
 
+        def invoke(self, context, event):
+            # seed Angle with the default shape's canonical angle so the
+            # first run is at the page orientation (rotation offset 0)
+            self.angle = _KIND_ANGLE0.get(self.shape, 0.0)
+            return self.execute(context)
+
         def execute(self, context):
-            polys, types = fractal_patch(self.kind, self.iterations,
+            kind = self.shape
+            if kind not in KINDS:      # family just switched: shape id
+                shapes = (_SHAPES_BY_FAMILY.get(self.family)
+                          or _SHAPES_BY_FAMILY['CLASSIC'])
+                kind = shapes[0][0]    # fall back to family's first shape
+            polys, types = fractal_patch(kind, self.iterations,
                                          self.holes)
+            # orient the tile: reflect (mirror) then rotate by the offset
+            # from the shape's canonical angle to the chosen Angle
+            rot = np.radians(self.angle - _KIND_ANGLE0.get(kind, 0.0))
+            if self.mirror or abs(rot) > 1e-9:
+                ca, sa = np.cos(rot), np.sin(rot)
+                out = []
+                for p in polys:
+                    q = np.asarray(p, float).copy()
+                    if self.mirror:
+                        q[:, 0] = -q[:, 0]
+                    x = q[:, 0] * ca - q[:, 1] * sa
+                    y = q[:, 0] * sa + q[:, 1] * ca
+                    out.append(np.column_stack([x, y]))
+                polys = out
             cells = tg.cells_from_polys(
                 lambda a, b: (polys, types), 1, 1, self.color_by,
                 self.margin, self.height, False)
-            label = dict((k, v) for k, v, _ in KIND_ITEMS)[self.kind]
+            label = _KIND_LABEL.get(kind, kind)
             obj = pc.emit(context, "Fractal RepTile %s" % label, cells,
                           self.separate, fit=True, operator=self)
             if obj is None:
@@ -689,8 +1357,17 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for p in ('kind', 'iterations', 'holes', 'color_by',
-                      'margin', 'height'):
+            # large thumbnail of the selected shape's seed polyform
+            if (_seed_previews is not None
+                    and self.shape in _seed_previews):
+                box = lay.box()
+                row = box.row()
+                row.alignment = 'CENTER'
+                row.template_icon(
+                    icon_value=_seed_previews[self.shape].icon_id,
+                    scale=7.0)
+            for p in ('family', 'shape', 'angle', 'mirror', 'iterations',
+                      'holes', 'color_by', 'margin', 'height'):
                 lay.prop(self, p)
             lay.prop(self, 'separate')
             lay.prop(self, 'align')
@@ -702,14 +1379,19 @@ if _IN_BLENDER:
     ADD_MENU = True
 
     def register():
+        _load_seed_icons()
         bpy.utils.register_class(MESH_OT_fractal_reptile_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
+        global _seed_previews
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         bpy.utils.unregister_class(MESH_OT_fractal_reptile_add)
+        if _seed_previews is not None:
+            bpy.utils.previews.remove(_seed_previews)
+            _seed_previews = None
 
 
 # --------------------------------------------------------------------
@@ -814,7 +1496,9 @@ if __name__ == "__main__":
         tri_cells = spec.get('tri_cells', False)  # unit-triangle cells
         samp = spec.get('samp', False)        # hex/quad sampling cells
         osc = spec.get('osc', False)          # measure-zero boundary
-        if tri:
+        if 'depths' in spec:
+            depths = spec['depths']           # per-kind override
+        elif tri:
             depths = (4, 7)
         elif tri_cells:
             depths = (2, 4)
