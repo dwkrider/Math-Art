@@ -127,6 +127,35 @@ OPS = [
         kind='ICOSA', freq=1, output='TUBE', tube_radius=0.03,
         relax_iters=40)),
     ("polylinks", lambda: bpy.ops.mesh.polylinks_add(preset='T4')),
+    ("polystix hexastix pencils", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='HEXASTIX', cross_section='PRISM',
+        extent=3, clip='RHOMBIC_DODECA')),
+    ("polystix hexastix overhang", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='HEXASTIX', cross_section='PRISM',
+        extent=3, clip='SPHERE', overhang=2.5)),
+    ("polystix hexastix cylinders", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='HEXASTIX', cross_section='CYLINDER',
+        extent=3, clip='SPHERE')),
+    ("polystix tetrastix", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='TETRASTIX', cross_section='PRISM',
+        extent=3, clip='CUBE')),
+    ("polystix hemistix", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='HEMISTIX', cross_section='PRISM',
+        extent=3, clip='TRUNC_OCTA')),
+    ("polystix tristix chiral", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='TRISTIX', cross_section='PRISM',
+        extent=3, clip='TRUNC_OCTA', handedness='LEFT')),
+    ("polystix sigma", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='SIGMA', cross_section='CYLINDER',
+        extent=3, clip='RHOMBIC_DODECA')),
+    ("polystix knot loops", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='HEXASTIX', cross_section='CYLINDER',
+        extent=2, clip='RHOMBIC_DODECA', fill=0.6, overhang=0.6,
+        connect_loops=True, loop_segments=8, tube_sides=8)),
+    ("polystix knot tetrastix", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='TETRASTIX', cross_section='CYLINDER',
+        extent=2, clip='CUBE', fill=0.6, connect_loops=True,
+        loop_segments=8, tube_sides=8)),
     ("platonic twist", lambda: bpy.ops.mesh.platonic_twist_add(
         kind='CUBE')),
     ("fractal", lambda: bpy.ops.mesh.fractal_polyhedron_add(
@@ -471,6 +500,24 @@ OPS = [
         surface='TRIHYPERBOLOID', resolution=32)),
     ("curiosity paper bag", lambda: bpy.ops.mesh.curiosity_surface_add(
         surface='PAPERBAG', resolution=32)),
+    ("supershape starfish", lambda: bpy.ops.mesh.supershape_add(
+        preset='STARFISH', segments=48, rings=24)),
+    ("supershape custom fractional-m",
+     lambda: bpy.ops.mesh.supershape_add(
+        preset='CUSTOM', mode='SUPERSHAPE_3D', m1=7.0 / 6.0, m2=3.0,
+        segments=48, rings=24)),
+    ("supertoroid", lambda: bpy.ops.mesh.supershape_add(
+        preset='FACETED_RING', segments=48, rings=24)),
+    ("supershape shell", lambda: bpy.ops.mesh.supershape_add(
+        preset='CONCH', segments=96, rings=24)),
+    ("superellipsoid cube", lambda: bpy.ops.mesh.supershape_add(
+        preset='SE_CUBE', segments=48, rings=24)),
+    ("supershape distance color", lambda: bpy.ops.mesh.supershape_add(
+        preset='GEAR', coloring='DISTANCE', segments=48, rings=24)),
+    ("ruled surface helicoid", lambda: bpy.ops.mesh.ruled_surface_add(
+        mode='HELICOID')),
+    ("ruled surface hypar", lambda: bpy.ops.mesh.ruled_surface_add(
+        mode='HYPAR')),
     ("rolling knot", lambda: bpy.ops.mesh.rolling_knot_add(
         p=3, samples=256, sides=10)),
     ("rolling knot morton", lambda: bpy.ops.mesh.rolling_knot_add(

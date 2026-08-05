@@ -23,6 +23,7 @@ _MODULE_NAMES = [
     'rotegrity_generator',
     'weave_generator',
     'polylinks_generator',
+    'polystix_generator',
     'platonic_twist_generator',
     'fractal_polyhedron_generator',
     'symmetrohedron_generator',
@@ -80,7 +81,9 @@ _MODULE_NAMES = [
     'bubble_generator',
     'phyllotaxis_generator',
     'helical_surface_generator',
+    'ruled_surface_generator',
     'curiosity_surface_generator',
+    'supershape_generator',
     'rolling_knot_generator',
     'woven_polyhedron_generator',
     'pattern_common',
@@ -154,8 +157,10 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.squeeze_add", icon='MOD_SIMPLEDEFORM')
         _op(lay, "mesh.vertex_vortices_add", icon='FORCE_VORTEX')
         _op(lay, "mesh.helical_surface_add", icon='MOD_SCREW')
+        _op(lay, "mesh.ruled_surface_add", icon='MOD_SCREW')
         _op(lay, "mesh.curiosity_surface_add",
             icon='SURFACE_DATA')
+        _op(lay, "mesh.supershape_add", icon='SURFACE_NSPHERE')
         _op(lay, "mesh.hyperbolic_surface_add", icon='MESH_CAPSULE')
         _op(lay, "mesh.crochet_add", icon='MOD_CLOTH')
 
@@ -240,6 +245,7 @@ class VIEW3D_MT_math_art_weaves(bpy.types.Menu):
     def draw(self, context):
         lay = self.layout
         _op(lay, "mesh.polylinks_add", icon='MESH_CIRCLE')
+        _op(lay, "mesh.polystix_add", icon='MESH_CYLINDER')
         _op(lay, "mesh.tangle_add", icon='MOD_BOOLEAN')
         _op(lay, "mesh.poly_weave_add", icon='MOD_LATTICE')
         _op(lay, "mesh.rotegrity_add", icon='SPHERE')

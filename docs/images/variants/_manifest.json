@@ -1515,5 +1515,55 @@
    "8",
    "Octagonal (8)"
   ]
+ ],
+ "ruled_surface": [
+  [
+   "HYPERBOLOID",
+   "Stick Hyperboloid"
+  ],
+  [
+   "HYPERBOLOID_RODS",
+   "Stick Hyperboloid (Rulings)"
+  ],
+  [
+   "HELICAL_CONE",
+   "Compound Helical Cone"
+  ],
+  [
+   "SPIRAL",
+   "Spiral Ruled"
+  ],
+  [
+   "SPIRAL_ROSETTE",
+   "Spiral Ruled (Rosette)"
+  ],
+  [
+   "PLUCKER",
+   "Plucker Cylindroid"
+  ],
+  [
+   "WALLIS",
+   "Wallis Conical Edge"
+  ],
+  [
+   "WHITNEY",
+   "Whitney Umbrella"
+  ],
+  [
+   "TANGENT_DEV",
+   "Tangent Developable"
+  ],
+  [
+   "HELICOID",
+   "Helicoid"
+  ],
+  [
+   "TWIST_STRIP",
+   "Twisted Strip (Mobius)"
+  ],
+  [
+   "HYPAR",
+   "Hyperbolic Paraboloid"
+  ]
  ]
 }
