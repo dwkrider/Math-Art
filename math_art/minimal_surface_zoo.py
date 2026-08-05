@@ -1581,6 +1581,942 @@ WE_SURFACES['WEI_DOUBLY'] = {
 }
 SURFACE_FAMILY['WEI_DOUBLY'] = 'DOUBLY'
 
+# ==========================================================================
+# Doubly periodic long tail (appended catalog block)
+# ==========================================================================
+# Four catalog rows over the dptail_* engine in we_builders -- the
+# remaining doubly periodic repository surfaces with real hyperelliptic
+# branch points and dh = dz/z, each shipped with its notebook's solved
+# period constants and gated by measured wall residuals + quotient
+# topology (chi = 2 - 2 genus - 4, four Scherk end rims) in the
+# we_builders self-tests:
+#
+#   * KARCHER_SCHERK_DP -- Karcher's doubly periodic Scherk surfaces
+#     with handles (genus 2, 3, and the 'exotic' genus 3 branch
+#     arrangement): assembled from a straight diagonal line in the
+#     surface plus two vertical mirrors on a square 2 pi lattice.
+#   * WEI_TOWER_DP -- Fusheng Wei's higher-genus towers (1,3)/(1,4)
+#     (with family members walking the solved parameter tables),
+#     the less-symmetric (2,3) genus 4, and the (1,6) genus 6 member.
+#   * RTW_DP -- Rossman-Thayer-Wohlgemuth M1+ (genus 2, with the
+#     period parameter b re-solved from the notebook's own condition)
+#     and two members of the M1+- genus 3 family.
+#   * CONNOR_DP -- Peter Connor's experimental genus 2/3 surfaces
+#     (asymmetric g2 -- Newton-refined here to close its period
+#     problem -- and the page 78/80/82/84/85 examples).
+#
+# References (full citations in the we_builders engine block):
+#   Karcher 1988; Wei 1992; Rossman-Thayer-Wohlgemuth 2000; Connor
+#   2018-19 / Connor-Weber 2012; data after M. Weber,
+#   https://minimalsurfaces.blog/ (doubly periodic repository).
+# Deferred (see BACKLOG.md): Karcher-Scherk g1 (notebook unpublished,
+# no Weierstrass data), g4 (dh = dz/(z^2 - r^2), ends mid-edge),
+# doubly periodic catenoids (branched z^r Gauss map, hexagonal
+# assembly), Lubeck-Batista and CHM g3 (theta-function Gauss maps).
+
+def _dpt_p(keys):
+    """p_from factory: order picks the member key; radius drives the
+    end truncation (rmin for half-annulus styles, trim factor for the
+    full-annulus Connor members)."""
+    def p_from(order, radius):
+        key = keys[int(np.clip(order, 1, len(keys))) - 1]
+        return {'dpt_key': key,
+                'rmin': _dp_rmin(radius),
+                'trim': float(np.clip(6.0 * (radius / 1.2) ** 2,
+                                      1.6, 40.0))}
+    return p_from
+
+
+WE_SURFACES['KARCHER_SCHERK_DP'] = {
+    'label': "Karcher-Scherk with Handles (doubly periodic)",
+    'family': 'DOUBLY',
+    'mesher': we.dptail_mesh,
+    'cells2d_mesher': we.dptail_mesh,
+    'p_from': _dpt_p(('ksg2', 'ksg3', 'ksg3x')),
+    'count': "Member (g2 | g3 | g3 exotic)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['KARCHER_SCHERK_DP'] = 'DOUBLY'
+
+WE_SURFACES['WEI_TOWER_DP'] = {
+    'label': "Wei Higher-Genus Tower (doubly periodic)",
+    'family': 'DOUBLY',
+    'mesher': we.dptail_mesh,
+    'cells2d_mesher': we.dptail_mesh,
+    'p_from': _dpt_p(('wei13_0', 'wei13_1', 'wei13_2', 'wei13_3',
+                      'wei14_0', 'wei14_1', 'wei23', 'wei16')),
+    'count': "Member ((1,3) c=.1/.2/.5/.8 | (1,4) d=.5/.7 | "
+             "(2,3) | (1,6))",
+    'test_order': 3,
+}
+SURFACE_FAMILY['WEI_TOWER_DP'] = 'DOUBLY'
+
+WE_SURFACES['RTW_DP'] = {
+    'label': "Rossman-Thayer-Wohlgemuth (doubly periodic)",
+    'family': 'DOUBLY',
+    'mesher': we.dptail_mesh,
+    'cells2d_mesher': we.dptail_mesh,
+    'p_from': _dpt_p(('rtwmp', 'rtwm1pm_0', 'rtwm1pm_1')),
+    'count': "Member (M1+ | M1+- d=-.03 | M1+- d=-.1)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['RTW_DP'] = 'DOUBLY'
+
+WE_SURFACES['CONNOR_DP'] = {
+    'label': "Connor Experimental (doubly periodic)",
+    'family': 'DOUBLY',
+    'mesher': we.dptail_mesh,
+    'cells2d_mesher': we.dptail_mesh,
+    'p_from': _dpt_p(('conn_asym', 'conn78', 'conn80', 'conn82',
+                      'conn84', 'conn85')),
+    'count': "Member (asym g2 | p78 | p80 | p82 | p84 | p85)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['CONNOR_DP'] = 'DOUBLY'
+
+
+# ==========================================================================
+# Singly periodic long tail (appended catalog block; sptail_* engine)
+# ==========================================================================
+# Karcher-style singly periodic surfaces from the minimalsurfaces.blog
+# harvest (research/msblog_harvest/singly_periodic.json), all built by
+# the shared sptail machinery in we_builders: one fundamental patch
+# integrated by compound Gauss-Legendre cells, boundary snapped exactly
+# onto its symmetry lines/planes, orbited under the isometry group with
+# `storeys` translation or screw copies, welded seam-exactly.  Every
+# member's period problem closes with a machine-checked residual and its
+# Euler characteristic per period is MEASURED in the self-tests (engine
+# gates in we_builders.__main__, pipeline gates below):
+#   * SP_SIX_SCHERK    genus 0, 6 ends/period (2 horizontal + 4 at the
+#     end angle phi); rho, a closed forms in phi; translation from the
+#     om2 residue at z = 0.  chi/period = -4.  (The obtuse phi > 90 deg
+#     branch has a different symmetry group -- deferred, BACKLOG.md.)
+#   * SP_ALT_FENCE     alternating fence of half-catenoids, genus 1,
+#     2 ends/period, rho = 1/sqrt(a); chi/period = -2.
+#   * SP_FENCE_CAT     Karcher's fence of catenoids (translation-
+#     invariant catenoid), genus 0, 2 ends/period; rho = sqrt(a).
+#   * SP_HELICOIDAL_SCHERK  helicoidal Karcher-Scherk: the saddle tower
+#     deformed by a screw motion (twist knob = the associate-angle
+#     slider); one modulus R solved on the geometric closure residual;
+#     rise = pi R^2/(1+R^4) reproduced to 1e-14; chi/period = 2 - 2k.
+#   * SP_ENNEPER_3ANN  translation-invariant Enneper with three annular
+#     ends (limit member, notebook by Ramazan Yol): closed-form
+#     immersion, no constants; MEASURED genus 0 with 4 ends/period
+#     (chi = -2; the harvest's genus-1 annotation contradicts its own
+#     rational g, dh -- see the we_builders block note).
+#   * SP_PERIODIC_ENNEPER  the classical periodic Enneper surface
+#     (g = z, dh = dz on the universal cover of the punctured disk);
+#     closed form, "Turns" stacks whole periods.
+#   * SP_SCHERK_ENNEPER  Scherk-Enneper interpolation family (rational
+#     g, dh; 2k wing ends on the unit circle + 2 Enneper-type ends);
+#     horizontal periods close to machine precision (cycles gate).
+# Karcher's symmetrized Scherk towers (the harvest's symmetrized_scherk
+# row) are already shipped as SCHERK_TOWER / SADDLE_TOWER_A.
+#
+# References:
+#   H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#     examples", Manuscripta Math. 62 (1988);
+#   H. F. Scherk (1835); A. Enneper (1864);
+#   M. Weber, https://minimalsurfaces.blog/ (6-Ended Scherk g0;
+#     Alternating Fence of Half-Catenoids, 2024; Fence of Catenoids;
+#     Helicoidal Karcher-Scherk; Periodic Enneper; Enneper-Scherk;
+#     Translation-Invariant Torus with 1 Enneper and 3 Annular Ends,
+#     notebook by Ramazan Yol, 2024).
+
+WE_SURFACES['SP_SIX_SCHERK'] = {
+    'label': "Six-Ended Scherk Tower",
+    'family': 'SINGLY',
+    'mesher': we.sptail_six_mesh,
+    # count slider walks the end angle phi = 10 + 10 order degrees
+    # (20..80); radius slides the wing end trims.
+    'p_from': lambda order, radius: {
+        'phid': 10.0 + 10.0 * int(np.clip(order, 1, 7)),
+        'rmax': float(np.clip(30.0 * (radius / 1.2) ** 2, 8.0, 120.0))},
+    'count': "End angle (x10 deg + 10)",
+    'storeys_label': "Periods",
+    'test_order': 2,
+}
+SURFACE_FAMILY['SP_SIX_SCHERK'] = 'SINGLY'
+
+WE_SURFACES['SP_ALT_FENCE'] = {
+    'label': "Alternating Fence of Half-Catenoids",
+    'family': 'SINGLY',
+    'mesher': we.sptail_fencealt_mesh,
+    # count slider walks the neck modulus a; radius digs the two
+    # catenoid ends deeper (smaller rmin trim).
+    'p_from': lambda order, radius: {
+        'a': (1.4, 1.7, 2.0, 2.5, 3.0, 4.0)[
+            int(np.clip(order, 1, 6)) - 1],
+        'rmin': float(np.clip(0.06 * (1.2 / max(radius, 0.2)) ** 1.2,
+                              0.015, 0.2))},
+    'count': "Neck modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_ALT_FENCE'] = 'SINGLY'
+
+WE_SURFACES['SP_FENCE_CAT'] = {
+    'label': "Fence of Catenoids (Karcher)",
+    'family': 'SINGLY',
+    'mesher': we.sptail_fencecat_mesh,
+    # count slider walks the neck modulus a (0 < a < 1); radius digs
+    # the catenoid funnels deeper (bigger r1 trim ratio).
+    'p_from': lambda order, radius: {
+        'a': (0.08, 0.14, 0.2, 0.3, 0.42, 0.55)[
+            int(np.clip(order, 1, 6)) - 1],
+        # keep the funnel flare comparable to the neck spacing, or the
+        # catenoid ends engulf the chain and the fence reads as a disk
+        'r1': float(np.clip(1.7 * (radius / 1.2) ** 1.5, 1.25, 8.0))},
+    'count': "Neck modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_FENCE_CAT'] = 'SINGLY'
+
+WE_SURFACES['SP_HELICOIDAL_SCHERK'] = {
+    'label': "Helicoidal Karcher-Scherk (twisted tower)",
+    'family': 'SINGLY',
+    'mesher': we.sptail_hks_mesh,
+    # count = wings k; the associate-angle knob is the TWIST modulus
+    # (0 -> gentle twist, pi/2 -> the strongest solved twist); radius
+    # slides the 2k wing end trims.
+    'p_from': lambda order, radius: {
+        'k': int(np.clip(order + 1, 2, 8)),
+        'xmax': float(np.clip(4.0 * (radius / 1.2), 2.0, 8.0))},
+    'count': "Wings (k pairs)",
+    'associate': True,
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_HELICOIDAL_SCHERK'] = 'SINGLY'
+
+WE_SURFACES['SP_ENNEPER_3ANN'] = {
+    'label': "Translation-Invariant Enneper (3 annular ends)",
+    'family': 'SINGLY',
+    'mesher': we.sptail_e3a_mesh,
+    # radius slides the Enneper end trim
+    'p_from': lambda order, radius: {
+        'Rt': float(np.clip(2.2 * (radius / 1.2) ** 0.7, 1.5, 3.2))},
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['SP_ENNEPER_3ANN'] = 'SINGLY'
+
+WE_SURFACES['SP_PERIODIC_ENNEPER'] = {
+    'label': "Periodic Enneper",
+    'family': 'SINGLY',
+    'mesher': we.sptail_penneper_mesh,
+    # radius slides the outer (Enneper) rim; "Turns" stacks whole
+    # translational periods of the universal cover
+    'p_from': lambda order, radius: {
+        'rmax': float(np.clip(1.3 * (radius / 1.2) ** 0.8, 0.9, 2.0))},
+    'storeys_label': "Turns (periods)",
+    'test_order': 1,
+}
+SURFACE_FAMILY['SP_PERIODIC_ENNEPER'] = 'SINGLY'
+
+
+def _sp_se_phi(z, p):
+    """Scherk-Enneper (rational Weierstrass data, Weber's notebook):
+    G = c z^(k-1)(z^2k - a^2k)/(z^2k - a^-2k),
+    dh = i z^(k-1)(z^2k - a^2k)(z^2k - a^-2k)/(z^2k - 1)^3 dz."""
+    k, a = p['k'], p['a']
+    c = (1.0 - a ** (-2 * k)) / (1.0 - a ** (2 * k))
+    zk = z ** (2 * k)
+    G = c * z ** (k - 1) * (zk - a ** (2 * k)) / (zk - a ** (-2 * k))
+    dh = 1j * z ** (k - 1) * (zk - a ** (2 * k)) \
+        * (zk - a ** (-2 * k)) / (zk - 1.0) ** 3
+    return (0.5 * (1.0 / G - G) * dh, 0.5j * (1.0 / G + G) * dh, dh)
+
+
+WE_SURFACES['SP_SCHERK_ENNEPER'] = {
+    'label': "Scherk-Enneper",
+    'family': 'SINGLY',
+    'phi': _sp_se_phi,
+    'domain': ('disk', 0.0, lambda p: p['rmax']),
+    # count = wing pairs k; a = 0.75 fixed (mid-family member: the
+    # a -> 1 limit degenerates toward the plain saddle tower with
+    # vanishing wing amplitude).  radius slides the chart reach.
+    'p_from': lambda order, radius: {
+        'k': int(np.clip(order, 1, 6)), 'a': 0.75,
+        'rmax': float(np.clip(2.0 * (radius / 1.2) ** 0.8, 1.4, 3.2))},
+    'count': "Wing pairs (k)",
+    'clip': False,
+    # the wing eps balances the (z - z0)^-2 end divergence against the
+    # Enneper core: too small and the 2k wing blades dwarf everything
+    'mask_punctures': lambda p: [
+        (np.exp(1j * math.pi * j / p['k']),
+         min(0.34, 0.7 * math.sin(math.pi / (2 * p['k']))))
+        for j in range(2 * p['k'])],
+    'res_boost': (1.5, 1.9),
+    # horizontal periods vanish around every wing end; the vertical
+    # component carries the alternating +-T translation (cycle_free)
+    'cycles': lambda p: [
+        (np.exp(1j * math.pi * j / p['k']),
+         0.4 * min(0.34, 0.7 * math.sin(math.pi / (2 * p['k']))))
+        for j in range(2 * p['k'])],
+    'cycle_free': (2,),
+    'test_order': 2,
+}
+SURFACE_FAMILY['SP_SCHERK_ENNEPER'] = 'SINGLY'
+
+
+# ==========================================================================
+# SYMM/NONORIENT TAIL (appended catalog block)
+# ==========================================================================
+# Two groups of rows on the symtail_* engine block in we_builders:
+#
+# 1) Symmetrization remainder (genus-0 k-noid variants, family SPHERES)
+#    -- the members of minimalsurfaces.blog's "Symmetrizations" index
+#    genuinely NOT already in this catalog (see the skip list in the
+#    self-tests): the symmetrized finite Riemann (1 planar + 2m
+#    catenoid ends), the symmetrized double Enneper (two mutually
+#    rotated Enneper ends), k-noids with Enneper ends, and the FULL
+#    antiprismatic k-noid family (the catalog had only the harvested
+#    nn = 5 member M3_ANTI5; the engine now solves the Lopez-Ros
+#    period problem numerically for every nn).
+# 2) Non-orientable remainder (family NONORIENT): Henneberg's classical
+#    one-sided surface meshed as its actual quotient (a cross-cap weld,
+#    not the orientable double-cover patch the CLASSICAL row shows),
+#    Kusner's projective planes with p planar ends, and F. J. Lopez's
+#    one-ended minimal Klein bottle.  Every non-orientable row is
+#    measurably one-sided (orientation propagation meets a
+#    contradiction) -- gated in the self-tests below.
+#
+# References:
+#   B. Riemann (1867) and F. J. Lopez, A. Ros, J. Differential Geom. 33
+#     (1991) for the (never embedded) finite Riemann family; the
+#     symmetrized member follows M. Weber, minimalsurfaces.blog,
+#     "Symmetrized Finite Riemann".
+#   H. Karcher, "Construction of minimal surfaces" (1989) for the
+#     symmetrization method (double Enneper, k-noid families);
+#     L. P. Jorge, W. H. Meeks III, Topology 22 (1983) for the k-noids;
+#     data after M. Weber, minimalsurfaces.blog ("Symmetrized Double
+#     Enneper", "k-Noids with Enneper Ends", "Antiprismatic k-Noids").
+#   L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987)
+#     291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full
+#     citations in the we_builders symtail engine block.
+
+
+def _symtail_friem_rho(m, a):
+    """Closed-form Lopez-Ros scale of the symmetrized finite Riemann
+    surface (Weber's notebook): all periods close for any a in (0,1)."""
+    a2m = a ** (2 * m)
+    return math.sqrt(1.0 - 2.0 * a2m + a2m * a2m + 2.0 * m
+                     - 2.0 * a2m * a2m * m)
+
+
+def _symtail_dblenn_phi(z, p):
+    """Symmetrized double Enneper: g = P/Q, eta = P Q / z^(2n+2) with
+    zeta = R0 e^(i pi/(2n+2)) twisting the two Enneper ends against
+    each other; all residues at z = 0 vanish identically."""
+    n, R0 = p['n'], p['R0']
+    zeta1 = (R0 * np.exp(1j * math.pi / (2 * n + 2))) ** (n + 1)
+    P = -(zeta1 / (1.0 + zeta1 * zeta1)) * z ** n \
+        * (z ** (n + 1) - zeta1)
+    Q = z ** (n + 1) - 1.0 / zeta1
+    w = z ** (2 * n + 2)
+    return (0.5 * (Q * Q - P * P) / w,
+            0.5j * (Q * Q + P * P) / w,
+            P * Q / w)
+
+
+def _symtail_kusner_p(order):
+    return 2 * int(min(max(order, 1), 3)) + 1          # p = 3, 5, 7
+
+
+def _symtail_kusner_ends(p_sym):
+    """The p inner planar-end punctures of Kusner's projective plane
+    (the other p ends are their antipodes outside the unit disk)."""
+    s = math.sqrt(2 * p_sym - 1)
+    r_in = ((p_sym - s) / (p_sym - 1)) ** (1.0 / p_sym)
+    return [r_in * np.exp(2j * math.pi * j / p_sym)
+            for j in range(p_sym)]
+
+
+def _symtail_kusner_eps(p_sym):
+    """Per-p puncture radius: inside the rim gap and the end spacing."""
+    s = math.sqrt(2 * p_sym - 1)
+    r_in = ((p_sym - s) / (p_sym - 1)) ** (1.0 / p_sym)
+    return min(0.45 * (1.0 - r_in),
+               0.30 * TAU * r_in / p_sym, 0.14)
+
+
+WE_SURFACES['SYMM_FRIEM'] = {
+    # Symmetrized finite Riemann: one planar end (z = infinity) + 2m
+    # catenoidal ends at the 2m-th roots of unity, m-fold dihedral
+    # symmetry.  g = rho z^(m-1)/(z^2m - a^2m), dh = z^(m-1)
+    # (z^2m - a^2m)/(z^2m - 1)^2 dz; rho is the closed form above, the
+    # neck parameter a is free.  Like every Riemann-type surface it is
+    # never embedded (Lopez-Ros); m = 1 is the M3_FRIEM member already
+    # shipped, so the slider starts at m = 2.
+    'label': "Symmetrized Finite Riemann (2m catenoids)",
+    'family': 'SPHERES',
+    'g': lambda z, p: p['rho'] * z ** (p['m'] - 1)
+    / (z ** (2 * p['m']) - p['a'] ** (2 * p['m'])),
+    'dh': lambda z, p: z ** (p['m'] - 1)
+    * (z ** (2 * p['m']) - p['a'] ** (2 * p['m']))
+    / (z ** (2 * p['m']) - 1.0) ** 2,
+    'domain': ('disk', 0.0, lambda p: p['r1']),
+    'p_from': lambda order, radius: (lambda m: {
+        'm': m, 'a': 0.9, 'rho': _symtail_friem_rho(m, 0.9),
+        'r1': 1.35 + 0.4 * min(max(radius / 1.2, 0.0), 1.4)})(
+            int(max(2, min(order, 6)))),
+    'count': "Symmetry (m)",
+    'radial_grade': 'rim', 'clip': True,
+    'res_boost': (1.9, 1.9),
+    'cycles': lambda p: [(np.exp(1j * math.pi * j / p['m']), 0.04)
+                         for j in range(2 * p['m'])]
+    + [(p['a'] * np.exp(1j * math.pi * j / p['m']), 0.03)
+       for j in range(2 * p['m'])],
+    'test_order': 2,
+}
+SURFACE_FAMILY['SYMM_FRIEM'] = 'SPHERES'
+
+WE_SURFACES['SYMM_DBLENN'] = {
+    # Symmetrized double Enneper: two higher-order Enneper ends (z = 0
+    # and z = infinity) rotated against each other by the twist phase of
+    # zeta = R0 e^(i pi/(2n+2)).  All periods vanish identically (the
+    # residues at 0 cancel by construction, verified in the period
+    # gate).  n = 1 is close to the classical DOUBLE_ENNEPER; the
+    # slider starts at n = 2 for the genuinely symmetrized members.
+    'label': "Symmetrized Double Enneper",
+    'family': 'SPHERES',
+    'phi': _symtail_dblenn_phi,
+    'domain': ('disk', lambda p: 1.0 / p['r1'], lambda p: p['r1']),
+    'p_from': lambda order, radius: (lambda n: {
+        'n': n, 'R0': 4.0 + 1.0 * (n - 2),
+        'r1': 2.0 + 0.5 * min(max(radius / 1.2, 0.0), 2.0)})(
+            int(max(2, min(order, 6)))),
+    'count': "Symmetry (n)",
+    'radial_grade': 'both', 'clip': True,
+    'res_boost': (1.6, 2.0),
+    'cycles': lambda p: [(0.0, 1.0)],
+    'test_order': 2,
+}
+SURFACE_FAMILY['SYMM_DBLENN'] = 'SPHERES'
+
+WE_SURFACES['KNOID_ENN_ENDS'] = {
+    # k-noid with Enneper ends: k ends at the k-th roots of unity whose
+    # height differential has POLES OF ORDER FOUR (winding Enneper
+    # ends) -- genuinely distinct from both the Jorge-Meeks KNOID
+    # (simple catenoid ends) and the shipped ENNK (order-three poles).
+    # g = z^(k-1)(z^k - R^k)/(1 - R^k z^k), dh = (1 - (z^k + z^-k)
+    # /(R^k + R^-k)) / (z (z^k + z^-k - 2)^2) dz; R is a free squeeze
+    # parameter and every period closes identically (period gate).
+    'label': "k-Noid with Enneper Ends",
+    'family': 'SPHERES',
+    'g': lambda z, p: z ** (p['k'] - 1)
+    * (z ** p['k'] - p['R'] ** p['k'])
+    / (1.0 - p['R'] ** p['k'] * z ** p['k']),
+    'dh': lambda z, p: (1.0 - (z ** p['k'] + z ** (-p['k']))
+                        / (p['R'] ** p['k'] + p['R'] ** (-p['k'])))
+    / (z * (z ** p['k'] + z ** (-p['k']) - 2.0) ** 2),
+    # ENNK-style domain: stop just INSIDE the unit circle where the k
+    # ends live, and cut each end with a puncture-mask disk -- the
+    # order-four Enneper flares then read as clean winding wings
+    # instead of the untrimmable blade an outside-reaching domain
+    # produces.  The radius slider squeezes the ends via the mask size.
+    'domain': ('disk', 0.0, 0.985),
+    'p_from': lambda order, radius: {
+        'k': int(max(3, min(order, 7))), 'R': 2.0,
+        'eps': 0.16 / min(max(radius / 1.2, 0.7), 1.6)},
+    'count': "Ends (k)",
+    'mask_punctures': lambda p: [
+        (np.exp(2j * math.pi * j / p['k']), p['eps'])
+        for j in range(p['k'])],
+    'radial_grade': 'rim', 'clip': False,
+    'res_boost': (2.0, 2.4),
+    'cycles': lambda p: [(np.exp(2j * math.pi * j / p['k']), 0.1)
+                         for j in range(p['k'])] + [(0.0, 0.3)],
+    'test_order': 3,
+}
+SURFACE_FAMILY['KNOID_ENN_ENDS'] = 'SPHERES'
+
+_SYMTAIL_AP_B = {3: 0.60, 4: 0.55, 5: 0.45, 6: 0.42, 7: 0.40}
+# per-order outer reach: how far past the |z| = 1/b end ring the domain
+# extends before the object-space clip trims -- tuned so the trimmed
+# mesh stays ONE component at every order (gated below)
+_SYMTAIL_AP_ROUT = {3: 1.6, 4: 1.4, 5: 1.4, 6: 1.25, 7: 1.25}
+
+WE_SURFACES['ANTIPRISM_KNOID'] = {
+    # Antiprismatic k-noid, FULL family: 2*nn catenoid ends in antiprism
+    # symmetry (one ring at |z| = b, one half-step-rotated ring at
+    # |z| = 1/b).  The branch constant a and Lopez-Ros scale rho have no
+    # closed form for general nn; we.symtail_antiprism_constants solves
+    # the two-ring period problem numerically per (nn, b) -- at nn = 5,
+    # b = 0.2 it reproduces Weber's harvested constants to 1e-9 (the
+    # M3_ANTI5 row keeps that exact member).
+    'label': "Antiprismatic k-noid (full family)",
+    'family': 'SPHERES',
+    'g': lambda z, p: p['rho'] * z ** (p['nn'] - 1)
+    * (z ** p['nn'] + 1.0 / p['a'] ** p['nn'])
+    / (z ** p['nn'] - p['a'] ** p['nn']),
+    'dh': lambda z, p: z ** (p['nn'] - 1)
+    * (z ** p['nn'] - p['a'] ** p['nn'])
+    * (z ** p['nn'] + 1.0 / p['a'] ** p['nn'])
+    / ((z ** p['nn'] - p['b'] ** p['nn']) ** 2
+       * (z ** p['nn'] + 1.0 / p['b'] ** p['nn']) ** 2),
+    'domain': ('disk', lambda p: 0.5 * p['b'],
+               lambda p: _SYMTAIL_AP_ROUT[p['nn']] / p['b']),
+    'p_from': lambda order, radius: (lambda nn: {
+        'nn': nn, 'b': _SYMTAIL_AP_B[nn]})(
+            int(max(3, min(order + 2, 7)))),
+    'solve': lambda p: dict(p, **dict(zip(('a', 'rho'),
+                                          we.symtail_antiprism_constants(
+                                              p['nn'], p['b'])))),
+    'count': "Antiprism order (nn)",
+    'radial_grade': 'both', 'clip': True,
+    'res_boost': (2.0, 2.0),
+    'cycles': lambda p: _m3_ring_cyc(p['nn'], p['b'], p['a'],
+                                     math.pi / p['nn']),
+    'test_order': 1,                             # order 1 -> nn = 3
+}
+SURFACE_FAMILY['ANTIPRISM_KNOID'] = 'SPHERES'
+
+
+def _symtail_henneberg_X(z, p, theta=0.0):
+    """Exact antiderivative of Henneberg's Weierstrass data g = z,
+    dh = 2 z (1 - z^-4) dz (halved scale).  Satisfies the antipodal
+    identity X(-1/conj z) = X(z) exactly -- the surface is one-sided."""
+    F1 = z - z ** 3 / 3.0 + z ** (-3) / 3.0 - 1.0 / z
+    F2 = 1j * (z + z ** 3 / 3.0 + z ** (-3) / 3.0 + 1.0 / z)
+    F3 = z * z + z ** (-2)
+    return np.real(F1), np.real(F2), np.real(F3)
+
+
+WE_SURFACES['HENNEBERG_RP2'] = {
+    # Henneberg's surface meshed as its true one-sided quotient: the
+    # complete surface is a once-punctured projective plane (Henneberg
+    # 1875 -- the first known non-orientable minimal surface); the
+    # annulus 1 <= |z| <= r1 is a fundamental domain of the free
+    # antipodal involution z -> -1/conj(z), and welding the |z| = 1 rim
+    # to itself antipodally produces a genuine Mobius-strip mesh
+    # (chi = 0, one boundary loop, no consistent orientation -- all
+    # measured in the self-tests).  The four branch points of the
+    # classical immersion (z = +-1, +-i) sit on the welded rim.  The
+    # CLASSICAL family's HENNEBERG row shows the familiar orientable
+    # double-cover patch; this row is the surface's actual topology.
+    'label': "Henneberg (one-sided)",
+    'family': 'NONORIENT',
+    'g': lambda z, p: z,                  # for the period-closure gate
+    'dh': lambda z, p: 2.0 * z * (1.0 - z ** (-4)),
+    'Xexact': _symtail_henneberg_X,
+    'mesher': we.symtail_crosscap_mesh,
+    'crosscap_rim': 'inner',
+    'domain': ('disk', 1.0, lambda p: p['r1']),
+    'p_from': lambda order, radius: {
+        'r1': 1.9 + 0.5 * min(max(radius / 1.2, 0.0), 2.0)},
+    'radial_grade': 'rim',
+    'clip': False,
+    'res_boost': (1.7, 2.2),
+    'cycles': lambda p: [(0.0, 1.2)],
+    'test_order': 1,
+}
+SURFACE_FAMILY['HENNEBERG_RP2'] = 'NONORIENT'
+
+WE_SURFACES['KUSNER_RP2'] = {
+    # Kusner's projective planes (Kusner 1987): an immersed minimal
+    # sphere with 2p planar ends whose immersion commutes with the
+    # antipodal map for ODD p, descending to RP^2 with p planar ends
+    # (p = 3 is the surface whose inversion is Bryant's Boy surface).
+    # G = z^(p-1)(z^p - s)/(s z^p + 1), s = sqrt(2p - 1), dh = i
+    # z^(p-1)(z^p - s)(1 + s z^p)/(z^2p + 2 s z^p/(p-1) - 1)^2 dz; all
+    # 2p residues vanish (gated), so the immersion is single-valued
+    # with NO period problem.  The unit disk is a fundamental domain of
+    # z -> -1/conj(z) (p ends inside, their antipodes outside); the
+    # cross-cap weld of the rim makes the mesh measurably one-sided
+    # with chi = 1 - p and p planar-end boundary loops.
+    'label': "Kusner Projective Plane (p planar ends)",
+    'family': 'NONORIENT',
+    'g': lambda z, p: z ** (p['p'] - 1)
+    * (z ** p['p'] - p['s']) / (p['s'] * z ** p['p'] + 1.0),
+    'dh': lambda z, p: 1j * z ** (p['p'] - 1)
+    * (z ** p['p'] - p['s']) * (1.0 + p['s'] * z ** p['p'])
+    / (z ** (2 * p['p']) + 2.0 * p['s'] * z ** p['p']
+       / (p['p'] - 1) - 1.0) ** 2,
+    'mesher': we.symtail_crosscap_mesh,
+    'crosscap_rim': 'outer',
+    'domain': ('disk', 0.0, 1.0),
+    'p_from': lambda order, radius: (lambda pp: {
+        'p': pp, 's': math.sqrt(2 * pp - 1)})(_symtail_kusner_p(order)),
+    'count': "Planar ends (3/5/7)",
+    'mask_punctures': lambda p: [
+        (e, _symtail_kusner_eps(p['p']))
+        for e in _symtail_kusner_ends(p['p'])],
+    'res_boost': (2.2, 2.4),
+    'clip': False,
+    'cycles': lambda p: [
+        (e, 0.5 * _symtail_kusner_eps(p['p']))
+        for e in _symtail_kusner_ends(p['p'])],
+    'test_order': 1,                             # order 1 -> p = 3
+}
+SURFACE_FAMILY['KUSNER_RP2'] = 'NONORIENT'
+
+WE_SURFACES['LOPEZ_KLEIN'] = {
+    # F. J. Lopez's one-ended minimal Klein bottle (Duke Math. J. 71,
+    # 1993): the unique-in-its-class complete non-orientable minimal
+    # surface of total curvature -8 pi with Klein bottle topology.
+    # Assembled by the symtail engine from one conformal patch of the
+    # orientation double cover and the surface's two straight lines
+    # (x- and y-axis 180-degree rotations); the |x| = 1 rim carries the
+    # Klein-deck gluing.  chi = -1 with ONE boundary loop (the trimmed
+    # end) and no consistent orientation -- all measured.
+    'label': "Lopez Minimal Klein Bottle",
+    'family': 'NONORIENT',
+    'mesher': we.symtail_lopez_klein_mesh,
+    'p_from': lambda order, radius: {
+        'rmax': 2.6 + 0.6 * min(max(radius / 1.2, 0.4), 2.0)},
+    'res_boost': (1.5, 1.5),
+    'test_order': 1,
+}
+SURFACE_FAMILY['LOPEZ_KLEIN'] = 'NONORIENT'
+
+
+# ==========================================================================
+# SP SCHERK FAMILY (appended catalog block)
+# ==========================================================================
+# Higher-genus singly periodic Scherk towers on the sscherk_* engine
+# block in we_builders: the notebook-solved period constants (extracted
+# from the raw minimalsurfaces.blog notebooks, re-verified numerically
+# at import of the self-tests) drive four hyperelliptic towers.  Every
+# row is meshed from one conformal fundamental patch, snapped onto its
+# measured mirror planes, orbited and welded bitwise-exactly; the
+# quotient topology (chi = 2 - 2 genus - #ends) is MEASURED in the
+# self-tests:
+#   * SP_SIX_SCHERK_G1    genus 1, 6 ends/period (chi = -6): the
+#     six-ended tower of SP_SIX_SCHERK with a handle; count slider
+#     walks the notebook family v4.
+#   * SP_COSTA_SCHERK_G1  genus 1, 6 ends/period (chi = -6): the
+#     Costa-Scherk tower (handle forming Costa-like saddles); count
+#     walks the branch parameter a.
+#   * SP_EIGHT_SCHERK_G2  genus 2, 8 ends/period (chi = -10); count
+#     walks the end-pair spacing b; the translation reproduces the
+#     notebook's closed form transy to ~1e-9.
+#   * SP_DASILVA_BATISTA  daSilva-Batista surface (2009), genus 2 with
+#     8 ends/period (chi = -10); count walks the FindRoot family.
+#
+# References:
+#   H. Karcher, Manuscripta Math. 62 (1988); H. F. Scherk (1835);
+#   K. Li thesis lineage (6/8-ended towers); L. daSilva, V. Ramos
+#   Batista (2009); M. Weber, https://minimalsurfaces.blog/ notebooks
+#   Singly_6ended_Scherk_g1.nb, Singly_CostaScherk_g1.nb,
+#   Singly_8ended_Scherk_g2.nb, Singly_daSilvaBatista_g2.nb
+#   (research/msblog_harvest/singly_periodic.json).  Full scholarly
+#   details in the we_builders sscherk block header.
+
+WE_SURFACES['SP_SIX_SCHERK_G1'] = {
+    'label': "Six-Ended Scherk Tower (genus 1)",
+    'family': 'SINGLY',
+    'mesher': we.sscherk_six1_mesh,
+    # count walks the notebook members v4 = 0.4 .. 0.95; radius slides
+    # the wing-end trim depth
+    'p_from': lambda order, radius: {'build_kw': {
+        'r2': float(np.clip(8.0 * (radius / 1.2) ** 0.8, 5.0, 10.0))}},
+    'count': "Family member (v4 table)",
+    'storeys_label': "Periods",
+    'test_order': 4,
+}
+SURFACE_FAMILY['SP_SIX_SCHERK_G1'] = 'SINGLY'
+
+WE_SURFACES['SP_COSTA_SCHERK_G1'] = {
+    'label': "Costa-Scherk Tower (genus 1)",
+    'family': 'SINGLY',
+    'mesher': we.sscherk_costa_mesh,
+    'p_from': lambda order, radius: {'build_kw': {
+        'r2': float(np.clip(8.0 * (radius / 1.2) ** 0.8, 5.0, 10.0))}},
+    'count': "Family member (a table)",
+    'storeys_label': "Periods",
+    'test_order': 2,
+}
+SURFACE_FAMILY['SP_COSTA_SCHERK_G1'] = 'SINGLY'
+
+WE_SURFACES['SP_EIGHT_SCHERK_G2'] = {
+    'label': "Eight-Ended Scherk Tower (genus 2)",
+    'family': 'SINGLY',
+    'mesher': we.sscherk_eight_mesh,
+    # radius slides both end-trim depths on the log scale
+    'p_from': lambda order, radius: (lambda rr: {'build_kw': {
+        'rmin': 10.0 ** (-3.0 * rr), 'rmax': 10.0 ** (4.0 * rr)}})(
+        float(np.clip((radius / 1.2) ** 0.8, 0.6, 1.4))),
+    'count': "Family member (b table)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_EIGHT_SCHERK_G2'] = 'SINGLY'
+
+WE_SURFACES['SP_DASILVA_BATISTA'] = {
+    'label': "daSilva-Batista Surface (genus 2)",
+    'family': 'SINGLY',
+    'mesher': we.sscherk_das_mesh,
+    'p_from': lambda order, radius: (lambda rr: {'build_kw': {
+        'cut1': 10.0 ** (-1.7 * rr), 'cut2': 10.0 ** (4.3 * rr)}})(
+        float(np.clip((radius / 1.2) ** 0.8, 0.6, 1.4))),
+    'count': "Family member",
+    'storeys_label': "Periods",
+    'test_order': 2,
+}
+SURFACE_FAMILY['SP_DASILVA_BATISTA'] = 'SINGLY'
+
+
+# ==========================================================================
+# Translation-invariant catenoid/Costa towers + CHM variants
+# (appended catalog block; stinv_* engine in we_builders)
+# ==========================================================================
+# The five remaining translation-invariant singly periodic surfaces from
+# the minimalsurfaces.blog harvest, all with their notebook period
+# constants re-extracted and machine-verified (engine block + gates in
+# we_builders; every member's per-period Euler characteristic is
+# MEASURED against 2 - 2 genus - #ends):
+#   * SP_CAT_HANDLE_G1   fence of catenoids with ONE extra handle per
+#     period: genus 2, 2 catenoid ends, chi/period = -4.  Solved pairs
+#     (a, b) from Singly_Catenoid_1Handle_g1.nb.
+#   * SP_CAT_HANDLES_G3  fence of catenoids with TWO extra handles:
+#     genus 3, 2 ends, chi/period = -6.  Solved triples (a, b, c) from
+#     Singly_Catenoid_2Handles_g3.nb.
+#   * SP_COSTA_TRANSINV  translation-invariant Costa I: genus 1, 4 ends
+#     per period (2 catenoid-type + 2 flat annular wings),
+#     chi/period = -4.  Solved triples (a, b, rho) from
+#     Singly_TransInvCosta_I.nb, meshed on the Joukowski half-disk
+#     chart.
+#   * CHM12_PERIODIC     Callahan-Hoffman-Meeks CHM-(1,2): MEASURED
+#     quotient genus 4 with 2 horizontal planar ends per period
+#     (chi = -8) -- one handle more than CHM_PERIODIC's genus 3; the
+#     constants are Newton-polished from the Singly_CHM_1_2.nb seed
+#     (residual ~4e-6 vs the notebook's ~1.4e-3) and the strip chart
+#     x = sqrt(b^2 + e^w) parallels the CHM-(1,1) build, with a
+#     combinatorial 8-isometry weld.
+#   * SP_SCREW_CHM       Weber's screw-motion CHM: the CHM-(1,1) tower
+#     deformed so consecutive storeys are ROTATED, not just translated
+#     (theta-function Gauss map on the rectangular tau-torus; solved
+#     (u, v) per tau from Singly_ScrewMotion_CHM.nb).  Quotient genus 3
+#     with 2 ends per screw period (chi = -6), the same topology as its
+#     translational CHM-(1,1) limit -- measured.
+# The harvest's plain translation-invariant catenoid
+# (Singly_TransInvCatenoid.nb) is ALREADY shipped as SP_FENCE_CAT --
+# identical Weierstrass data (rho = sqrt(a), dh = dz/z, a = 0.2,
+# r1 = 6), so no separate row is added.
+#
+# References:
+#   H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#     examples", Manuscripta Math. 62 (1988) 83-114;
+#   M. J. Callahan, D. Hoffman, W. H. Meeks III, "Embedded minimal
+#     surfaces with an infinite number of ends", Invent. Math. 96
+#     (1989) 459-505;
+#   C. J. Costa (1984); D. Hoffman, W. H. Meeks III (1985);
+#   M. Weber, https://minimalsurfaces.blog/ -- the harvested notebooks
+#     (research/msblog_harvest/singly_periodic.json).
+
+WE_SURFACES['SP_CAT_HANDLE_G1'] = {
+    'label': "Catenoid Tower with Handle (genus 2)",
+    'family': 'SINGLY',
+    'mesher': we.stinv_g1_mesh,
+    # count slider walks the solved neck moduli; radius digs the
+    # catenoid funnels deeper (bigger r1 = deeper trim)
+    'p_from': lambda order, radius: {
+        'a': (0.1, 0.2, 0.3, 0.5)[int(np.clip(order, 1, 4)) - 1],
+        'r1': float(np.clip(3.0 * (radius / 1.2) ** 1.5, 1.6, 9.0))},
+    'count': "Neck modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 4,
+}
+SURFACE_FAMILY['SP_CAT_HANDLE_G1'] = 'SINGLY'
+
+WE_SURFACES['SP_CAT_HANDLES_G3'] = {
+    'label': "Catenoid Tower with 2 Handles (genus 3)",
+    'family': 'SINGLY',
+    'mesher': we.stinv_g3_mesh,
+    'p_from': lambda order, radius: {
+        'a': (0.06, 0.08, 0.1, 0.2, 0.4, 0.6)[
+            int(np.clip(order, 1, 6)) - 1],
+        'r1': float(np.clip(3.5 * (radius / 1.2) ** 1.5, 1.6, 10.0))},
+    'count': "Neck modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_CAT_HANDLES_G3'] = 'SINGLY'
+
+WE_SURFACES['SP_COSTA_TRANSINV'] = {
+    'label': "Translation-Invariant Costa",
+    'family': 'SINGLY',
+    'mesher': we.stinv_costa_mesh,
+    # count walks the solved (a, b, rho) family (a -> -1 squeezes the
+    # wings together); radius extends the flat wings (smaller rmin)
+    # and digs the catenoid funnels (smaller corner delta)
+    'p_from': lambda order, radius: {
+        'a': (-10.0, -5.0, -3.0, -2.0, -1.5, -1.1)[
+            int(np.clip(order, 1, 6)) - 1],
+        'rmin': float(np.clip(0.02 * (1.2 / max(radius, 0.2)) ** 1.2,
+                              0.008, 0.06)),
+        'delta': float(np.clip(0.12 * (1.2 / max(radius, 0.2)) ** 0.7,
+                               0.06, 0.2))},
+    'count': "Wing modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['SP_COSTA_TRANSINV'] = 'SINGLY'
+
+WE_SURFACES['CHM12_PERIODIC'] = {
+    'label': "Callahan-Hoffman-Meeks CHM-(1,2) (genus 4)",
+    'family': 'SINGLY',
+    'mesher': we.stinv_chm12_mesh,
+    # radius slides the two conformal end trims (wider flat shelves)
+    'p_from': lambda order, radius: {
+        'umin': float(np.clip(-4.0 - 2.0 * math.log(
+            max(radius, 0.2) / 1.2), -6.5, -2.5)),
+        'umax': float(np.clip(4.0 + 2.0 * math.log(
+            max(radius, 0.2) / 1.2), 2.5, 6.5))},
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['CHM12_PERIODIC'] = 'SINGLY'
+
+WE_SURFACES['SP_SCREW_CHM'] = {
+    'label': "Screw-Motion CHM Tower",
+    'family': 'SINGLY',
+    'mesher': we.stinv_screw_mesh,
+    # count walks the solved tau family (bigger tau = taller storey and
+    # stronger twist); radius digs the two trimmed ends deeper
+    'p_from': lambda order, radius: {
+        'timag': (0.6, 0.7, 0.8, 0.9, 1.0, 1.05)[
+            int(np.clip(order, 1, 6)) - 1],
+        'delta': float(np.clip(0.10 * (1.2 / max(radius, 0.2)) ** 0.7,
+                               0.05, 0.16))},
+    'count': "Torus modulus (tau)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_SCREW_CHM'] = 'SINGLY'
+
+
+# ==========================================================================
+# SFK TAIL (appended catalog block) -- Fischer-Koch towers and
+# annular-ended genus-1 tori (singly periodic; engine: we.sfk_* block)
+# ==========================================================================
+# The singly periodic members that were deferred pending per-notebook
+# constant extraction, now with their solved constants wired in:
+#
+#   * SP_FISCHER_KOCH  translation-invariant Fischer-Koch surface
+#     (theta data on the rhombic torus C/(1, e^(i pi t0)); the
+#     notebook's FindRoot literals (b0, t0) for k = 3, 5).  Genus 1
+#     with 2k Scherk wing ends per period (measured chi/period = -2k);
+#     the vertical rise Re Int dh = -1/k over the half lattice cycle
+#     closes to ~1e-14 (the notebook's own period equation).  Only the
+#     odd-k members ship: for even k two 2-fold axes of the orbit
+#     coincide exactly (the classical embedded-iff-k-odd restriction)
+#     and the mesh would self-intersect along them -- BACKLOG.md.
+#   * SP_FK_FREESE     Fischer-Koch-Freese twist family (after
+#     R. Freese): the mu-power theta deformation, invariant under the
+#     period SCREW Rz(-2 pi mu) + (0,0,-2).  Gauss map multivalued
+#     (G = B H^mu); the engine carries a continuous branch of log H
+#     across the chart.  k = 3 with mu from the notebook's soln3
+#     continuation table; mu -> 0 is SP_FISCHER_KOCH.  chi/period = -6
+#     (measured, screw-wrapped quotient), genus 1, 6 wing ends.
+#   * SP_1CAT_2ANN     singly periodic genus-1 torus with 1 catenoid +
+#     2 annular ends: sqrt data branched at {0, a, 1, b}, dh = dz/z.
+#     TWO period conditions Re Int_a^1 om1 = Re Int_1^b om2 = 0 are
+#     solved by Newton from the notebook's harvested seeds (the
+#     parallel-end member a = 0.2574798..., rho = 1 is reproduced to
+#     ~1e-9).  MEASURED quotient chi = -3 with 3 end rims -- genus 1,
+#     matching the harvest's expected chi.
+#   * SP_2ENN_2ANN     translation-invariant torus with 2 Enneper + 2
+#     annular ends: rational data, period problem closed in CLOSED
+#     FORM (a = b/(1 - b^2 + sqrt(1 - b^2)) cancels the om2 residues).
+#     MEASURED quotient chi = -2 with 4 end rims -- the parametrizing
+#     surface is the 4-punctured SPHERE (both g and dh rational in z),
+#     so the quotient genus is 0; the harvest's "genus 1" annotation
+#     contradicts its own rational data, exactly like the shipped
+#     sibling SP_ENNEPER_3ANN (see the we_builders sptail note).
+#
+# Deferred (BACKLOG.md): hackman_surfaces (Weierstrass-sigma data with
+# a transcendental Bonnet phase and its own torus uniformization),
+# even-k Fischer-Koch / Freese members (self-intersecting), and the
+# flipped-layout Freese branch mu < -0.05 at k = 4.
+#
+# References:
+#   W. Fischer, E. Koch, "Spanning minimal surfaces", Phil. Trans. R.
+#     Soc. Lond. A 354 (1996) 2105-2142;
+#   H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#     examples", Manuscripta Math. 62 (1988);
+#   M. Weber, https://minimalsurfaces.blog/ -- notebooks "Fischer-Koch
+#     Translational", "Fischer-Koch-Freese" (after R. Freese), "Singly
+#     Periodic Torus with One Catenoid and Two Annular Ends",
+#     "Translation Invariant Torus with Two Enneper and Two Annular
+#     Ends" (research/msblog_harvest/singly_periodic.json);
+#   B. C. Carlson, Numer. Algorithms 10 (1995) 13-26 (R_F).
+
+WE_SURFACES['SP_FISCHER_KOCH'] = {
+    'label': "Fischer-Koch Tower (translation-invariant)",
+    'family': 'SINGLY',
+    'mesher': we.sfk_fkt_mesh,
+    # count slider walks the odd wing number k = 3, 5; radius digs the
+    # Scherk wing trims deeper (more negative strip rmin)
+    'p_from': lambda order, radius: {
+        'k': (3, 5)[int(np.clip(order, 1, 2)) - 1],
+        'rmin': float(np.clip(-3.5 * (radius / 1.2) ** 0.8,
+                              -6.0, -2.0))},
+    'count': "Wings k (odd: 3, 5)",
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['SP_FISCHER_KOCH'] = 'SINGLY'
+
+_SFK_FREESE_MUS = (0.05, 0.10, 0.15, 0.20, 0.25, 0.30)
+
+WE_SURFACES['SP_FK_FREESE'] = {
+    'label': "Fischer-Koch-Freese (twisted)",
+    'family': 'SINGLY',
+    'mesher': we.sfk_fkf_mesh,
+    # count slider walks the screw twist mu (k = 3 fixed); radius digs
+    # the wing trims deeper
+    'p_from': lambda order, radius: {
+        'mu': _SFK_FREESE_MUS[int(np.clip(order, 1, 6)) - 1],
+        'rmin': float(np.clip(-3.5 * (radius / 1.2) ** 0.8,
+                              -6.0, -2.0))},
+    'count': "Twist mu (x 0.05)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_FK_FREESE'] = 'SINGLY'
+
+_SFK_C1A2_AS = (0.47, 0.40, 0.30, 0.25747983928707496, 0.10, 0.02)
+
+WE_SURFACES['SP_1CAT_2ANN'] = {
+    'label': "Torus with Catenoid + 2 Annular Ends",
+    'family': 'SINGLY',
+    'mesher': we.sfk_c1a2_mesh,
+    # count slider walks the neck modulus a (order 4 = the parallel-
+    # end member, rho = 1); radius slides the annular end reach
+    'p_from': lambda order, radius: {
+        'a': _SFK_C1A2_AS[int(np.clip(order, 1, 6)) - 1],
+        'rmin': max(0.02, _SFK_C1A2_AS[
+            int(np.clip(order, 1, 6)) - 1] / 5.0),
+        'rmax': float(np.clip(12.0 * (radius / 1.2) ** 1.5,
+                              6.0, 40.0))},
+    'count': "Neck modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 4,
+}
+SURFACE_FAMILY['SP_1CAT_2ANN'] = 'SINGLY'
+
+_SFK_E2A2_BS = (0.35, 0.45, 0.50, 0.55, 0.65, 0.75)
+
+WE_SURFACES['SP_2ENN_2ANN'] = {
+    'label': "Torus with 2 Enneper + 2 Annular Ends",
+    'family': 'SINGLY',
+    'mesher': we.sfk_e2a2_mesh,
+    # count slider walks the modulus b; radius slides the Enneper end
+    # trim (smaller rmin = wider flare)
+    'p_from': lambda order, radius: {
+        'b': _SFK_E2A2_BS[int(np.clip(order, 1, 6)) - 1],
+        'rmin': float(np.clip(0.14 * (1.2 / max(radius, 0.2)) ** 0.8,
+                              0.06, 0.30))},
+    'count': "Modulus (b)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_2ENN_2ANN'] = 'SINGLY'
+
 
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
@@ -2074,4 +3010,263 @@ if __name__ == "__main__":
         print(f"doubly {dkey:12s} 2x2: {len(Vd):6d}v {len(Qd):6d}f "
               f"nonman={nonman} ncomp={ncomp} fit[|c|={cen:.1e} "
               f"ext={ext:.4f}] uv={uv_ok} {'OK' if good else 'FAIL'}")
+    # Singly periodic long tail: full pipeline gates.  Each mesher row is
+    # built through build_parametric at S = 1 and S = 2 stacked periods;
+    # the measured chi(2) - chi(1) must equal the quotient Euler
+    # characteristic 2 - 2 genus - #ends (the theorem check), and every
+    # stack must be edge-manifold, one component and fit the 2 m cube.
+    # (SP_PERIODIC_ENNEPER is one continuous grid strip -- chi = 1 at
+    # every turn count.)
+    for skey, sord, dchi in (('SP_SIX_SCHERK', 2, -4),
+                             ('SP_ALT_FENCE', 3, -2),
+                             ('SP_FENCE_CAT', 3, -2),
+                             ('SP_HELICOIDAL_SCHERK', 3, -6),
+                             ('SP_ENNEPER_3ANN', 1, -2),
+                             ('SP_PERIODIC_ENNEPER', 1, 0),
+                             # sscherk block: higher-genus towers --
+                             # dchi per period = 2 - 2 genus - #ends
+                             ('SP_SIX_SCHERK_G1', 4, -6),
+                             ('SP_COSTA_SCHERK_G1', 2, -6),
+                             ('SP_EIGHT_SCHERK_G2', 3, -10),
+                             ('SP_DASILVA_BATISTA', 2, -10),
+                             # SFK tail: Fischer-Koch towers + annular
+                             # tori (dchi = quotient chi = 2 - 2g - E)
+                             ('SP_FISCHER_KOCH', 1, -6),
+                             ('SP_FK_FREESE', 3, -6),
+                             ('SP_1CAT_2ANN', 4, -3),
+                             ('SP_2ENN_2ANN', 3, -2)):
+        chis = []
+        good = True
+        for S in (1, 2):
+            Vs, Qs = tk.build_parametric(skey, 48, 48, sord, 1.2, 1.0,
+                                         cells=(S, 1))
+            ecs = {}
+            for f in Qs:
+                m = len(f)
+                for tq in range(m):
+                    a, b = f[tq], f[(tq + 1) % m]
+                    e = (a, b) if a < b else (b, a)
+                    ecs[e] = ecs.get(e, 0) + 1
+            chis.append(len(Vs) - len(ecs) + len(Qs))
+            nonman = sum(1 for c in ecs.values() if c > 2)
+            parc = list(range(len(Vs)))
+
+            def sfind(a):
+                while parc[a] != a:
+                    parc[a] = parc[parc[a]]
+                    a = parc[a]
+                return a
+
+            for f in Qs:
+                for i in range(1, len(f)):
+                    ra, rb = sfind(f[0]), sfind(f[i])
+                    if ra != rb:
+                        parc[ra] = rb
+            ncomp = len({sfind(f[0]) for f in Qs})
+            lo, hi = Vs.min(0), Vs.max(0)
+            cen = float(np.max(np.abs(0.5 * (lo + hi))))
+            ext = float(np.max(hi - lo))
+            good &= (nonman == 0 and ncomp == 1 and cen < 1e-6
+                     and abs(ext - 2.0) < 1e-6
+                     and bool(np.all(np.isfinite(Vs))))
+        good &= (chis[1] - chis[0] == dchi)
+        ok &= good
+        print(f"sptail {skey:22s}: chi {chis[0]}->{chis[1]} "
+              f"(dchi want {dchi}) manifold/fit "
+              f"{'OK' if good else 'FAIL'}")
+    # Scherk-Enneper: the vertical periods around consecutive wing ends
+    # alternate +-T exactly (the surface's screw structure); horizontal
+    # periods are gated by the generic cycles test above.
+    spec = WE_SURFACES['SP_SCHERK_ENNEPER']
+    seworst, sealt = 0.0, 0.0
+    for order in (1, 2, 3):
+        p = spec['p_from'](order, 1.2)
+        phi = we._phi_fn(spec, p, 0.0)
+        kk = p['k']
+        dzs = []
+        for j in range(2 * kk):
+            zc = np.exp(1j * math.pi * j / kk)
+            rr = 0.4 * min(0.16, 0.5 * math.sin(math.pi / (2 * kk)))
+            I = we.period_integral(lambda z: phi(z)[..., 2], zc, rr, rr)
+            dzs.append(I.real)
+        for j in range(2 * kk):
+            sealt = max(sealt, abs(dzs[j] + dzs[(j + 1) % (2 * kk)]))
+        seworst = max(seworst, -min(abs(d) for d in dzs))
+        seworst = max(seworst, 0.0)
+        semag = min(abs(d) for d in dzs)
+    good = sealt < 1e-9 and semag > 0.05
+    ok &= good
+    print(f"sptail SP_SCHERK_ENNEPER periods: alternation "
+          f"residual={sealt:.1e} |T|>={semag:.3f} "
+          f"{'OK' if good else 'FAIL'}")
+    # ---- STINV towers + CHM variants (appended gate block) -----------
+    # engine-level gates (period residuals at the harvested constants,
+    # translation-wrapped quotient topology) live in we_builders'
+    # __main__; here the full pipeline is gated at S = 1 and S = 2
+    # stacked periods: measured chi(2) - chi(1) must equal the quotient
+    # Euler characteristic 2 - 2 genus - #ends, and every stack must be
+    # edge-manifold, one component and fit the 2 m cube.
+    for skey, sord, dchi in (('SP_CAT_HANDLE_G1', 4, -4),
+                             ('SP_CAT_HANDLES_G3', 3, -6),
+                             ('SP_COSTA_TRANSINV', 1, -4),
+                             ('CHM12_PERIODIC', 1, -8),
+                             ('SP_SCREW_CHM', 3, -6)):
+        chis = []
+        good = True
+        for S in (1, 2):
+            Vs, Qs = tk.build_parametric(skey, 48, 48, sord, 1.2, 1.0,
+                                         cells=(S, 1))
+            ecs = {}
+            for f in Qs:
+                m = len(f)
+                for tq in range(m):
+                    a, b = f[tq], f[(tq + 1) % m]
+                    e = (a, b) if a < b else (b, a)
+                    ecs[e] = ecs.get(e, 0) + 1
+            chis.append(len(Vs) - len(ecs) + len(Qs))
+            nonman = sum(1 for c in ecs.values() if c > 2)
+            parc = list(range(len(Vs)))
+
+            def sfind(a):
+                while parc[a] != a:
+                    parc[a] = parc[parc[a]]
+                    a = parc[a]
+                return a
+
+            for f in Qs:
+                for i in range(1, len(f)):
+                    ra, rb = sfind(f[0]), sfind(f[i])
+                    if ra != rb:
+                        parc[ra] = rb
+            ncomp = len({sfind(f[0]) for f in Qs})
+            lo, hi = Vs.min(0), Vs.max(0)
+            cen = float(np.max(np.abs(0.5 * (lo + hi))))
+            ext = float(np.max(hi - lo))
+            good &= (nonman == 0 and ncomp == 1 and cen < 1e-6
+                     and abs(ext - 2.0) < 1e-6
+                     and bool(np.all(np.isfinite(Vs))))
+        good &= (chis[1] - chis[0] == dchi)
+        ok &= good
+        print(f"stinv {skey:22s}: chi {chis[0]}->{chis[1]} "
+              f"(dchi want {dchi}) manifold/fit "
+              f"{'OK' if good else 'FAIL'}")
+    # ---- SYMM/NONORIENT TAIL gates -----------------------------------
+    # Kusner: the FULL residue (Re and Im) must vanish at every one of
+    # the 2p planar ends -- the immersion is single-valued with no
+    # period problem (p = 7 included, beyond the shipped test orders).
+    for pp in (3, 5, 7):
+        spec = WE_SURFACES['KUSNER_RP2']
+        p = spec['p_from']((pp - 1) // 2, 1.2)
+        phi = we._phi_fn(spec, p, 0.0)
+        s = p['s']
+        r_in = ((pp - s) / (pp - 1)) ** (1.0 / pp)
+        ends = [r_in * np.exp(2j * math.pi * j / pp) for j in range(pp)]
+        ends += [np.exp(1j * (2 * math.pi * j + math.pi) / pp) / r_in
+                 for j in range(pp)]
+        w = 0.0
+        for zc in ends:
+            for c in range(3):
+                I = we.period_integral(lambda z, c=c: phi(z)[..., c],
+                                       zc, 0.05, 0.05)
+                w = max(w, abs(I))
+        good = w < 1e-6
+        ok &= good
+        print(f"kusner residues p={pp}: max|oint phi| = {w:.2e} "
+              f"{'OK' if good else 'FAIL'}")
+    # Henneberg: the antipodal identity X(-1/conj z) = X(z) holds to
+    # machine epsilon on the exact antiderivative (one-sidedness of the
+    # underlying immersion, independent of any mesh).
+    rngh = np.random.default_rng(7)
+    zh = rngh.uniform(0.4, 2.4, 64) \
+        * np.exp(1j * rngh.uniform(0.0, TAU, 64))
+    Xa = np.stack(_symtail_henneberg_X(zh, {}), axis=-1)
+    Xb = np.stack(_symtail_henneberg_X(-1.0 / np.conj(zh), {}), axis=-1)
+    e = float(np.max(np.abs(Xa - Xb)))
+    good = e < 1e-10
+    ok &= good
+    print(f"henneberg antipodal identity: max err = {e:.2e} "
+          f"{'OK' if good else 'FAIL'}")
+    # Antiprismatic k-noid: the numeric two-ring Lopez-Ros solve closes
+    # every period for the whole slider range, and reproduces Weber's
+    # harvested nn = 5, b = 0.2 constants (the M3_ANTI5 member).
+    ah, rh = we.symtail_antiprism_constants(5, 0.2)
+    e = max(abs(ah - 0.2748767946679093),
+            abs(rh - 0.0015692436842339352))
+    good = e < 1e-8
+    ok &= good
+    print(f"antiprism harvested check: a={ah:.12f} rho={rh:.6e} "
+          f"err={e:.2e} {'OK' if good else 'FAIL'}")
+    for nn in (3, 4, 5, 6, 7):
+        try:
+            aa, rr = we.symtail_antiprism_constants(nn, _SYMTAIL_AP_B[nn])
+            print(f"antiprism nn={nn}: a={aa:.10f} rho={rr:.4e} OK")
+        except ValueError as ex:
+            ok = False
+            print(f"antiprism nn={nn}: FAIL ({ex})")
+    # Non-orientable meshes: exact Euler characteristic, boundary loop
+    # count, edge-manifold, 2 m fit, finite UV -- and MEASURED
+    # one-sidedness (orientation propagation meets a contradiction;
+    # the orientation double cover is connected).
+    for nkey, nord, wchi, wloops in (('HENNEBERG_RP2', 1, 0, 1),
+                                     ('KUSNER_RP2', 1, -2, 3),
+                                     ('KUSNER_RP2', 2, -4, 5),
+                                     ('LOPEZ_KLEIN', 1, -1, 1)):
+        Vn, Qn, uvn = tk.build_parametric(nkey, 60, 60, nord, 1.2, 1.0,
+                                          with_uv=True)
+        chi, nonman, nloops, one_sided = we.symtail_edge_stats(Vn, Qn)
+        lo, hi = Vn.min(0), Vn.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        # non-degeneracy: a genuinely 3-D surface, not a collapsed
+        # plane (a flat complex can still pass every topology gate)
+        ext_min = float(np.min(hi - lo))
+        uv_ok = (uvn is not None and len(uvn) == sum(len(f) for f in Qn)
+                 and bool(np.all(np.isfinite(uvn))))
+        good = (chi == wchi and nloops == wloops and nonman == 0
+                and one_sided and cen < 1e-6 and abs(ext - 2.0) < 1e-6
+                and ext_min > 0.3 and uv_ok
+                and bool(np.all(np.isfinite(Vn))))
+        ok &= good
+        print(f"nonorient {nkey:13s} n={nord}: {len(Vn):6d}v "
+              f"{len(Qn):6d}f chi={chi} (want {wchi}) loops={nloops} "
+              f"(want {wloops}) nonman={nonman} one_sided={one_sided} "
+              f"fit[|c|={cen:.1e} ext={ext:.4f} min={ext_min:.2f}] "
+              f"uv={uv_ok} {'OK' if good else 'FAIL'}")
+    # Symmetrization-tail rows: one connected component at every
+    # slider order (the object-space clip must not shear off islands)
+    for skey, sords in (('SYMM_FRIEM', (2, 3, 4, 5, 6)),
+                        ('SYMM_DBLENN', (2, 3, 4, 5, 6)),
+                        ('KNOID_ENN_ENDS', (3, 4, 5, 6, 7)),
+                        ('ANTIPRISM_KNOID', (1, 2, 3, 4, 5))):
+        for so in sords:
+            Vs2, Qs2 = tk.build_parametric(skey, 60, 60, so, 1.2, 1.0)
+            parc2 = list(range(len(Vs2)))
+
+            def sfind(a):
+                while parc2[a] != a:
+                    parc2[a] = parc2[parc2[a]]
+                    a = parc2[a]
+                return a
+
+            for f in Qs2:
+                for i in range(1, len(f)):
+                    ra, rb = sfind(f[0]), sfind(f[i])
+                    if ra != rb:
+                        parc2[ra] = rb
+            nc = len({sfind(f[0]) for f in Qs2})
+            good = nc == 1 and len(Qs2) > 500
+            ok &= good
+            if not good:
+                print(f"symm-tail {skey} order {so}: ncomp={nc} FAIL")
+        print(f"symm-tail {skey}: one component at orders {sords} OK")
+    # Symmetrization skip list (documented duplicates -- kept as a
+    # printed record, not a gate): higher-order Enneper == ENNEPER,
+    # symm-Scherk == SCHERK_TOWER, Jorge-Meeks == KNOID, pyramidal ==
+    # M3_PYR, bipyramidal == M3_BIPYR, prismatic == M3_PRISM,
+    # symm-Costa == COSTA_HM (rho == chm_modulus, see the TODO note),
+    # symm-Chen-Gackstatter == SYMM_CG towers, Enneper-n-catenoids ==
+    # ENNEPER_NCAT.
+    print("symm tail: shipped SYMM_FRIEM SYMM_DBLENN KNOID_ENN_ENDS "
+          "ANTIPRISM_KNOID + nonorient HENNEBERG_RP2 KUSNER_RP2 "
+          "LOPEZ_KLEIN; 9 index entries skipped as duplicates")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")
