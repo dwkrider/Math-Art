@@ -80,6 +80,7 @@ _MODULE_NAMES = [
     'phyllotaxis_generator',
     'helical_surface_generator',
     'curiosity_surface_generator',
+    'supershape_generator',
     'rolling_knot_generator',
     'woven_polyhedron_generator',
     'pattern_common',
@@ -155,6 +156,7 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.helical_surface_add", icon='MOD_SCREW')
         _op(lay, "mesh.curiosity_surface_add",
             icon='SURFACE_DATA')
+        _op(lay, "mesh.supershape_add", icon='SURFACE_NSPHERE')
         _op(lay, "mesh.hyperbolic_surface_add", icon='MESH_CAPSULE')
         _op(lay, "mesh.crochet_add", icon='MOD_CLOTH')
 

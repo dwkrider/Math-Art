@@ -450,6 +450,20 @@ OPS = [
         surface='TRIHYPERBOLOID', resolution=32)),
     ("curiosity paper bag", lambda: bpy.ops.mesh.curiosity_surface_add(
         surface='PAPERBAG', resolution=32)),
+    ("supershape starfish", lambda: bpy.ops.mesh.supershape_add(
+        preset='STARFISH', segments=48, rings=24)),
+    ("supershape custom fractional-m",
+     lambda: bpy.ops.mesh.supershape_add(
+        preset='CUSTOM', mode='SUPERSHAPE_3D', m1=7.0 / 6.0, m2=3.0,
+        segments=48, rings=24)),
+    ("supertoroid", lambda: bpy.ops.mesh.supershape_add(
+        preset='FACETED_RING', segments=48, rings=24)),
+    ("supershape shell", lambda: bpy.ops.mesh.supershape_add(
+        preset='CONCH', segments=96, rings=24)),
+    ("superellipsoid cube", lambda: bpy.ops.mesh.supershape_add(
+        preset='SE_CUBE', segments=48, rings=24)),
+    ("supershape distance color", lambda: bpy.ops.mesh.supershape_add(
+        preset='GEAR', coloring='DISTANCE', segments=48, rings=24)),
     ("rolling knot", lambda: bpy.ops.mesh.rolling_knot_add(
         p=3, samples=256, sides=10)),
     ("rolling knot morton", lambda: bpy.ops.mesh.rolling_knot_add(
