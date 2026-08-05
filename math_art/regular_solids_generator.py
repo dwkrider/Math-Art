@@ -1893,8 +1893,25 @@ if _IN_BLENDER:
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo "
                     "Style modifier"),
-                   ('WIRE', "Wireframe", "Wireframe modifier")],
+                   ('WIRE', "Struts", "Wireframe modifier"),
+                   ('WIREFRAME', "Wireframe",
+                    "Mesh edges only, displayed as a wireframe"),
+                   ('FACETS', "Face Segments",
+                    "Split the shell into one thick plate per face, "
+                    "padded apart and optionally exploded outward")],
             default='SOLID')
+        facet_depth: FloatProperty(
+            name="Depth", default=0.15, min=0.01, max=2.0,
+            description="How far each face is extruded inward (Face "
+                        "Segments style)")
+        padding: FloatProperty(
+            name="Bevel Gap", default=0.0, min=0.0, max=0.5,
+            description="Shift the mitre bevels inward to open a gap "
+                        "between neighbouring segments (0 = flush)")
+        separate_facets: BoolProperty(
+            name="Separate Meshes", default=False,
+            description="Output each face segment as its own mesh "
+                        "object (Face Segments style)")
         border: FloatProperty(name="Border", default=0.3, min=0.02,
                               max=0.95)
         thickness: FloatProperty(name="Thickness", default=0.05,
@@ -1915,9 +1932,10 @@ if _IN_BLENDER:
                         "printing and reassembly). 1 = single "
                         "object")
         explode: FloatProperty(
-            name="Explode", default=0.0, min=0.0, max=5.0,
-            description="Move each piece outward along its centroid "
-                        "direction so the split is visible")
+            name="Explode", default=0.1, min=0.0, max=5.0,
+            description="Move each piece / face segment outward along "
+                        "its centroid direction so the split is "
+                        "visible")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -1980,6 +1998,11 @@ if _IN_BLENDER:
                 return {'CANCELLED'}
             fsz = sizes if sizes else [len(f) for f in F]
             label = dict((i[0], i[1]) for i in items).get(sid, sid)
+            if self.style == 'FACETS':
+                if (self.handedness == 'LEFT'
+                        and (self.family, sid) in CHIRAL):
+                    V, F = mirror_solid(V, F)
+                return self._emit_facets(context, V, F, label)
             if self.pieces > 1:
                 assign, valid = split_congruent(V, F, self.pieces)
                 if assign is None:
@@ -2064,10 +2087,29 @@ if _IN_BLENDER:
                     mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
                     mod.thickness = self.thickness
                     mod.use_even_offset = False
+                elif self.style == 'WIREFRAME':
+                    obj.display_type = 'WIRE'
             context.view_layer.objects.active = first
             self.report({'INFO'},
                         f"{label}: {len(groups)} piece(s), "
                         f"{len(F)} faces")
+            return {'FINISHED'}
+
+        def _emit_facets(self, context, V, F, label):
+            try:
+                from . import facet_style
+            except ImportError:
+                import facet_style
+            mat = (self._material_for if self.coloring == 'SIDES'
+                   else None)
+            _obj, nseg = facet_style.emit_facets(
+                context, V, F, label, self.facet_depth, self.padding,
+                self.explode, self.separate_facets, mat)
+            self.report(
+                {'INFO'},
+                f"{label}: {nseg} face segment(s)"
+                + (" (separate meshes)" if self.separate_facets
+                   else ""))
             return {'FINISHED'}
 
         def draw(self, context):
@@ -2095,12 +2137,18 @@ if _IN_BLENDER:
             lay.prop(self, 'style')
             if self.style == 'LEONARDO':
                 lay.prop(self, 'border')
-            if self.style != 'SOLID':
+            if self.style in ('LEONARDO', 'WIRE'):
                 lay.prop(self, 'thickness')
-            lay.prop(self, 'coloring')
-            lay.prop(self, 'pieces')
-            if self.pieces > 1:
+            if self.style == 'FACETS':
+                lay.prop(self, 'facet_depth')
+                lay.prop(self, 'padding')
                 lay.prop(self, 'explode')
+                lay.prop(self, 'separate_facets')
+            lay.prop(self, 'coloring')
+            if self.style != 'FACETS':
+                lay.prop(self, 'pieces')
+                if self.pieces > 1:
+                    lay.prop(self, 'explode')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):

@@ -43,17 +43,11 @@ interlock to modular space-filling blocks and a spherical shell:
   through a shared S corner); pairs chain by the *a*-engagement
   (Rz(−90) then T(1,−1,0)) into a periodic strand — four pairs close
   the a⁴ loop. Verified cube-disjoint.
-- **Polyhedral Shell Dome** — one block per face of an icosahedron or
-  dodecahedron, each the region of the spherical shell between an
-  inner and outer radius cut by the radial walls through that face's
-  edges. Adjacent blocks share their radial walls, so the shell is
-  tiled with no gaps or overlaps (after the radial construction of
-  Akpanya, Goertzen & Niemeyer 2024).
 
 The result is centred at the origin and fit within a cube of the
-chosen **Size**. TETRA, Escher and Kitten are verified
-non-overlapping assemblies; the other families are single reference
-blocks or a shell dissection.
+chosen **Size**. TETRA, Escher, Kitten and the SL strand are verified
+non-overlapping assemblies; the Versatile, UFO and Cushion families
+are single reference blocks.
 
 ## Options
 
@@ -66,9 +60,6 @@ blocks or a shell dissection.
 | Deform Depth | 0.18 | Escher edge-deformation depth — the interlock depth (min 0, max 0.45). |
 | Edge Samples | 8 | Samples along each deformed edge (min 2, max 24). |
 | Block Height | 1.0 | Height of the lofted Escher block (min 0.2, max 4.0). |
-| Dome Seed | Icosahedron | Seed polyhedron for the dome: Icosahedron (20 blocks) or Dodecahedron (12). |
-| Dome Bulge | 0.18 | Outward push of the middle ring for a domed profile (min 0, max 0.8). |
-| Shell Thickness | 0.12 | Inner/outer shell offset about the unit sphere (min 0.02, max 0.4). |
 | SL Mode | Strand | SL layout: Single Block, Conjugate Pair, or Strand. |
 | Strand Pairs | 4 | Conjugate pairs in the SL strand; 4 closes the a⁴ loop (min 1, max 12). |
 | Gap Factor | 0.94 | Scale of each block about its own centroid; 1.0 = blocks touch (min 0.3, max 1.0). |
@@ -85,11 +76,10 @@ blocks or a shell dissection.
   loft, the Kitten and the SL strand are verified non-overlapping
   space-filling / interlocking assemblies; the Escher tiling is
   checked to cover the plane exactly once at every height, and the SL
-  strand is checked to be cube-disjoint. The Polyhedral Shell Dome is
-  a gap-free shell dissection. The Versatile, UFO and Cushion families
-  are shown as single reference blocks, because their space-filling
-  assemblies require rotation-based grammars (see the project
-  backlog).
+  strand is checked to be cube-disjoint. The Versatile, UFO and
+  Cushion families are shown as single reference blocks, because their
+  space-filling assemblies require rotation-based grammars (see the
+  project backlog).
 
 ## References
 

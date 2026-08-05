@@ -68,6 +68,19 @@ OPS = [
      lambda: bpy.ops.mesh.biscribed_solid_add(solid='pmT')),
     ("solid hull family", lambda: bpy.ops.mesh.regular_solid_add(
         family='HULL', solid='jtT', canon_iters=60)),
+    ("solid face segments", lambda: bpy.ops.mesh.regular_solid_add(
+        family='PLATONIC', solid='ICOSA', style='FACETS',
+        padding=0.08, explode=0.4)),
+    ("solid face segments separate",
+     lambda: bpy.ops.mesh.regular_solid_add(
+         family='PLATONIC', solid='DODECA', style='FACETS',
+         separate_facets=True)),
+    ("conway face segments",
+     lambda: bpy.ops.mesh.conway_add(notation='tI', style='FACETS')),
+    ("uniform face segments",
+     lambda: bpy.ops.mesh.uniform_polyhedron_add(style='FACETS')),
+    ("zonohedron face segments",
+     lambda: bpy.ops.mesh.zonohedron_add(style='FACETS')),
     ("solid trapezohedron family",
      lambda: bpy.ops.mesh.regular_solid_add(
          family='DIPYRAMID', solid='dA5', canon_iters=60)),
@@ -288,6 +301,8 @@ OPS = [
     ("spacefill", lambda: bpy.ops.mesh.spacefill_add(kind='OCTET')),
     ("spacefill spiral3", lambda: bpy.ops.mesh.spacefill_add(
         kind='SPIRAL3', nx=2, ny=2, nz=2)),
+    ("spacefill obtetrahedrille", lambda: bpy.ops.mesh.spacefill_add(
+        kind='OBTET', nx=2, ny=2, nz=2)),
     ("interlocking tetra",
      lambda: bpy.ops.mesh.interlocking_add(family='TETRA')),
     ("interlocking escher osteomorphic",
@@ -295,16 +310,22 @@ OPS = [
          family='ESCHER', profile='SINE')),
     ("interlocking versatile",
      lambda: bpy.ops.mesh.interlocking_add(family='VERSATILE')),
+    ("interlocking bisquare",
+     lambda: bpy.ops.mesh.interlocking_add(family='BISQUARE')),
+    ("interlocking rhom",
+     lambda: bpy.ops.mesh.interlocking_add(family='RHOM')),
+    ("interlocking rhom obverse",
+     lambda: bpy.ops.mesh.interlocking_add(family='RHOM_OBV')),
     ("interlocking kitten",
      lambda: bpy.ops.mesh.interlocking_add(
          family='KITTEN', nx=2, ny=2, nz=2)),
     ("interlocking ufo",
      lambda: bpy.ops.mesh.interlocking_add(family='UFO')),
     ("interlocking sl",
-     lambda: bpy.ops.mesh.interlocking_add(family='SL')),
+     lambda: bpy.ops.mesh.interlocking_add(family='SL', sl_mode='STRAND')),
     ("interlocking dome",
-     lambda: bpy.ops.mesh.interlocking_add(
-         family='DOME', dome_seed='DODECA')),
+     lambda: bpy.ops.mesh.interlocking_add(family='DOME',
+                                           dome_seed='DODECA')),
     ("solid snub cube left", lambda: bpy.ops.mesh.regular_solid_add(
         family='ARCHIMEDEAN', solid='SC', handedness='LEFT')),
     ("spiked modern", lambda: bpy.ops.mesh.spiked_polyhedron_add(

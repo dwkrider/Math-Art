@@ -142,6 +142,47 @@ _RD_F = _plane_faces(_RD_V, _RD_P)
 
 
 # ------------------------------------------------------------------
+# obtetrahedrille (Conway's oblate tetrahedrille): the rhombic
+# dodecahedron splits into 24 congruent tetragonal disphenoids -- the
+# space-filling cell of the tetragonal disphenoid honeycomb (Verhoeff
+# & Verhoeff, Bridges 2019).  Each rhombic face pyramid (RD centre +
+# the 4 face vertices) splits along its short diagonal (the two
+# degree-3 "cube" vertices) into two disphenoids.  Every disphenoid
+# has one opposite edge pair of length 1 and four edges of length
+# sqrt(3)/2; the six orientations (by the axis vertex direction) tile
+# space by translation of the FCC-placed rhombic dodecahedra.
+# ------------------------------------------------------------------
+
+_AXIS_TAG = {(1.0, 0.0, 0.0): 0, (-1.0, 0.0, 0.0): 1,
+             (0.0, 1.0, 0.0): 2, (0.0, -1.0, 0.0): 3,
+             (0.0, 0.0, 1.0): 4, (0.0, 0.0, -1.0): 5}
+
+
+def _is_cube_vert(v):
+    return all(abs(abs(c) - 0.5) < 1e-9 for c in v)
+
+
+def _obtet_cells():
+    """The 24 tetragonal disphenoids of one rhombic dodecahedron
+    (centred at the origin) as (centroid_offset, local_verts, faces,
+    orientation_tag) about the RD centre."""
+    out = []
+    for f in _RD_F:
+        vs = [_RD_V[i] for i in f]
+        axis = [v for v in vs if not _is_cube_vert(v)]
+        cube = [v for v in vs if _is_cube_vert(v)]
+        for a in axis:                    # two disphenoids per face
+            T = np.array([(0.0, 0.0, 0.0), a, cube[0], cube[1]])
+            tc = T.mean(axis=0)
+            tag = _AXIS_TAG[tuple(a)]
+            out.append((tc, T - tc, _tet_faces(T - tc), tag))
+    return out
+
+
+_OBTET_CELLS = _obtet_cells()
+
+
+# ------------------------------------------------------------------
 # rhombic spirallohedra (Russell Towle): cells cut from the polar
 # zonohedron construction, spiralling bundles of rhombi
 # ------------------------------------------------------------------
@@ -277,6 +318,15 @@ def build_block(kind, nx, ny, nz, spiral_segments=12,
                 cells.append((np.array((x, y, z), float),
                               _RD_V, _RD_F, 0))
         return cells, 2.0
+    if kind == 'OBTET':
+        # each FCC rhombic dodecahedron split into 24 disphenoids
+        for x, y, z in P(range(2 * nx - 1), range(2 * ny - 1),
+                         range(2 * nz - 1)):
+            if (x + y + z) % 2 == 0:
+                c = np.array((x, y, z), float)
+                for tc, V, F, tag in _OBTET_CELLS:
+                    cells.append((c + tc, V, F, tag))
+        return cells, 2.0
     if kind in _SPIRAL_ARMS:
         # translates over the derived tiling lattice; tag by
         # lattice parity for the optional two-tone coloring
@@ -315,7 +365,8 @@ def build_mesh(kind='OCTET', nx=3, ny=3, nz=2, gap=0.92, size=1.0,
 _CELL_VOL = {'CUBIC': {0: 1.0},               # per canonical cell
              'OCTET': {0: 4.0 / 3.0, 1: 1.0 / 3.0},
              'TRUNCOCT': {0: 32.0},
-             'RHOMBDODEC': {0: 2.0}}
+             'RHOMBDODEC': {0: 2.0},
+             'OBTET': {t: 1.0 / 12.0 for t in range(6)}}
 
 
 def block_volume(kind, nx, ny, nz, size=1.0, spiral_segments=12,
@@ -354,8 +405,14 @@ if _IN_BLENDER:
     _LABEL = {'CUBIC': "Cubes", 'OCTET': "Octet",
               'TRUNCOCT': "Truncated Octahedra",
               'RHOMBDODEC': "Rhombic Dodecahedra",
+              'OBTET': "Obtetrahedrille",
               'SPIRAL3': "Spirallohedra (3-Armed)",
               'SPIRAL4': "Spirallohedra (4-Armed)"}
+
+    # six-colour palette for the obtetrahedrille disphenoid orientations
+    _OBTET_RGB = {0: (0.86, 0.28, 0.24), 1: (0.30, 0.55, 0.82),
+                  2: (0.32, 0.70, 0.42), 3: (0.95, 0.76, 0.28),
+                  4: (0.60, 0.40, 0.75), 5: (0.28, 0.72, 0.70)}
 
     def _material(name, rgb):
         mat = bpy.data.materials.get(name)
@@ -389,6 +446,11 @@ if _IN_BLENDER:
                     "lattice"),
                    ('RHOMBDODEC', "Rhombic Dodecahedra",
                     "Rhombic dodecahedra on the FCC lattice"),
+                   ('OBTET', "Obtetrahedrille",
+                    "The tetragonal disphenoid honeycomb: each FCC "
+                    "rhombic dodecahedron split into 24 congruent "
+                    "disphenoids (Conway's oblate tetrahedrille), "
+                    "six-coloured by orientation"),
                    ('SPIRAL3', "Rhombic Spirallohedra (3-Armed)",
                     "Three-armed rhombic spirallohedra S(12,4) "
                     "after Russell Towle, interlocking on their "
@@ -409,8 +471,9 @@ if _IN_BLENDER:
             description="Scale of each cell about its own centroid "
                         "(1.0 = cells share faces exactly)")
         size: FloatProperty(
-            name="Cell Size", default=1.0, min=0.01, max=100.0,
-            description="Length of one lattice step per axis")
+            name="Size", default=2.0, min=0.01, max=100.0,
+            description="Fit the whole block within a cube of this "
+                        "size, centred at the origin")
         style: EnumProperty(
             name="Style",
             items=[('SOLID', "Solid", "Plain solid cells"),
@@ -447,15 +510,30 @@ if _IN_BLENDER:
             try:
                 verts, faces, tags = build_mesh(
                     self.kind, self.nx, self.ny, self.nz,
-                    self.gap, self.size, self.spiral_segments,
+                    self.gap, 1.0, self.spiral_segments,
                     self.spiral_pitch)
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
+            # fit the whole block into a `size` cube centred at origin
+            P = np.asarray(verts, float)
+            if len(P):
+                lo = P.min(axis=0)
+                hi = P.max(axis=0)
+                span = float(np.max(hi - lo)) or 1.0
+                P = (P - (lo + hi) / 2.0) * (self.size / span)
+                verts = [tuple(p) for p in P]
             me = bpy.data.meshes.new("Spacefill")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
-            if (self.kind in ('OCTET', 'SPIRAL3', 'SPIRAL4')
+            if (self.kind == 'OBTET'
+                    and len(me.polygons) == len(tags)):
+                # six materials, one per disphenoid orientation
+                for t in range(6):
+                    me.materials.append(_material(
+                        f"Spacefill Obtet {t}", _OBTET_RGB[t]))
+                me.polygons.foreach_set('material_index', tags)
+            elif (self.kind in ('OCTET', 'SPIRAL3', 'SPIRAL4')
                     and self.two_materials
                     and len(me.polygons) == len(tags)):
                 if self.kind == 'OCTET':
@@ -530,7 +608,7 @@ if __name__ == "__main__":
         # at gap = 1 the numeric mesh volume must equal the
         # analytic total cell volume for every honeycomb
         for kind in ('CUBIC', 'OCTET', 'TRUNCOCT', 'RHOMBDODEC',
-                     'SPIRAL3', 'SPIRAL4'):
+                     'OBTET', 'SPIRAL3', 'SPIRAL4'):
             v, f, t = build_mesh(kind, 3, 3, 2, gap=1.0)
             num = _mesh_volume(v, f)
             ana = block_volume(kind, 3, 3, 2)
