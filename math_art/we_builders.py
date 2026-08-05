@@ -7604,6 +7604,1283 @@ def sscherk_das_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
                          spec, nu, nv, order, radius, scale, storeys)
 
 
+# ==========================================================================
+# Translation-invariant catenoid / Costa towers and CHM-(1,2)
+# (stinv_* block)
+# ==========================================================================
+# Four singly periodic minimal surfaces completing the translation-
+# invariant family from the minimalsurfaces.blog harvest, all meshed by
+# the sptail scheme (one fundamental patch integrated with compound
+# Gauss-Legendre cells, boundary snapped exactly onto its measured
+# symmetry elements, orbited under the isometry group plus `storeys`
+# translations, welded seam-exactly; fractional powers always evaluated
+# in the limit from the domain interior).
+#
+#   * STINV CATENOID + 1 HANDLE (genus 2 per period, 2 catenoid ends):
+#     Karcher's fence of catenoids with one extra handle.  Data on the
+#     upper half plane, dh = dz/z,
+#       phi1 = sqrt(a/b) z^-1/2 (z-a)^-1/2 (z-b)^1/2 (z-1/b)^-1/2
+#                                                     (z-1/a)^1/2,
+#       phi2 = 1/sqrt(a/b) z^-3/2 (z-a)^1/2 (z-b)^-1/2 (z-1/b)^1/2
+#                                                     (z-1/a)^-1/2,
+#     branch values a in (0,1) and b in (-1,0) (the z -> 1/z symmetry
+#     pairs them with 1/a, 1/b).  One period condition
+#     Re int_{a->i->b} om1 = 0 fixes b(a); the solved pairs are
+#     harvested verbatim from Weber's Singly_Catenoid_1Handle_g1
+#     notebook (FindRoot output, all re-verified here to ~3e-9 by the
+#     self-test):
+#       a = 0.1  b = -0.7054086037971196
+#       a = 0.2  b = -0.6309634409033806
+#       a = 0.3  b = -0.5610309089063753
+#       a = 0.5  b = -0.4191755389731957
+#     Patch = upper half annulus a/r1 <= |z| <= 1; boundary: x-mirror
+#     (segments (rmin, a) at t=0 and (-1, -|b|) at t=pi land in the SAME
+#     vertical plane -- measured), y-mirror (a, 1), a parallel y-mirror
+#     (-|b|, rmin...) at half-period distance, the horizontal mirror arc
+#     |z| = 1, and the catenoid end trim at rmin.  8 isometries + the
+#     horizontal translation T = (0, 2 dy, 0) tile the space.
+#
+#   * STINV CATENOID + 2 HANDLES (genus 3 per period, 2 catenoid ends):
+#     same construction one level up; divisor gains (z-c)^{+-1/2}
+#     (z-1/c)^{-+1/2} with c in (-1,0), b in (0,1).  Two period
+#     conditions Re int_{a->b} om2 = 0 and Re int_{a->i->c} om2 = 0 fix
+#     (b, c)(a); solved triples harvested verbatim from Weber's
+#     Singly_Catenoid_2Handles_g3 notebook (re-verified to ~2e-9):
+#       a = 0.06 b = 0.8313415275984382  c = -0.7834727487665828
+#       a = 0.08 b = 0.8252014282724452  c = -0.7601944503629705
+#       a = 0.1  b = 0.8207141842757188  c = -0.7382148901607947
+#       a = 0.2  b = 0.8106797631408779  c = -0.6367415615956143
+#       a = 0.4  b = 0.816529866798894   c = -0.44635393033532667
+#       a = 0.6  b = 0.8409077253104242  c = -0.26280805739772073
+#     Here the y-mirror holds THREE boundary segments; the two x-mirror
+#     segments are parallel at half the translation T = (2 dx, 0, 0).
+#
+#   * TRANSLATION-INVARIANT COSTA I (genus 1 per period, 4 ends):
+#     a Costa-type tower with two flat annular wings.  Data on the
+#     upper half plane, dh = dz/((z-1)(z+1)),
+#       phi1 = rho (z-a)^-1/2 (z-1)^-1/2 (z-b)^1/2  (z+1)^-1/2,
+#       phi2 = 1/rho (z-a)^1/2 (z-1)^-3/2 (z-b)^-1/2 (z+1)^-3/2,
+#     ends at z = +-1 (catenoid-type) and z = inf (two flat annular
+#     wings after doubling); two period conditions
+#     Re int_{b->i->r0} om2 = 0 and Re int_{a->i->b} om1 = 0 fix
+#     (b, rho)(a); solved triples harvested verbatim from Weber's
+#     Singly_TransInvCosta_I notebook (re-verified to ~4e-8):
+#       a = -10   b = -0.03333055237361433  rho = 3.307161083209713
+#       a = -5    b = -0.06664857639434493  rho = 2.336922594756168
+#       a = -3    b = -0.11107380129022093  rho = 1.8071167824277032
+#       a = -2    b = -0.16689594688623235  rho = 1.4701727470752084
+#       a = -1.5  b = -0.22432453091517268  rho = 1.2657277793430088
+#       a = -1.1  b = -0.3252466601711385   rho = 1.0666960764075604
+#     Meshed on the Joukowski half-disk chart z = -(zeta + 1/zeta)/2
+#     (zeta in the upper half unit disk): the z = inf end is the clean
+#     inner trim |zeta| = rmin, the z = -+1 ends sit at the two corners
+#     zeta = +-1 (masked off with small corner disks -- their funnels
+#     are completed by the mirror frames).  The first period condition
+#     makes the two y-mirror boundary planes coincide (measured in the
+#     self-test); 4 isometries + T = (0, 2 dy, 0).
+#     NOTE the interior-limit nudge here must shrink |zeta| RADIALLY
+#     with a dominant weight: a naive +i epsilon nudge pushes arc
+#     points with sin(theta) > 1/2 to the WRONG side of the Joukowski
+#     image's branch cut (found the hard way; see stinv_costa_om).
+#
+#   * CHM-(1,2) (Callahan-Hoffman-Meeks family, second member; MEASURED
+#     quotient genus 4 per period, 2 horizontal planar ends -- one
+#     handle more than CHM-(1,1)'s genus 3, NOT the genus-2k+1 M_k
+#     sequence).  Data on the real line with
+#     branch values 0, +-1, +-a, +-b (1 < a < b),
+#       phi1 = sqrt(x^2-1) / (sqrt x (x^2-a^2)^3/4 (x^2-b^2)^5/4),
+#       phi2 = sqrt x (x^2-b^2)^1/4 / (sqrt(x^2-1) (x^2-a^2)^1/4),
+#       dh   = dx / (sqrt(x^2-a^2) sqrt(x^2-b^2)).
+#     The two period conditions of Weber's Singly_CHM_1_2 notebook (the
+#     regularized A/P^(1/4) ratio conditions) at the notebook constants
+#       a = 1.07378157681789798, b = 1.46816068659935883,
+#       rho = 1.41294757571306188
+#     leave a residual of ~1.4e-3; a Newton polish from that seed (same
+#     conditions, higher-order quadrature) converges to
+#       a = 1.0735928348392014, b = 1.467713226486139,
+#       rho = 1.4120744657811857
+#     with residual ~4e-6 (the quadrature noise floor); the polished
+#     constants are shipped and the seed kept here for the record.
+#     Meshed on the strip chart x = sqrt(b^2 + e^w) (so x^2 - b^2 = e^w
+#     exactly; every principal fractional power is single-valued on
+#     u in [umin, umax], t in [0, pi]).  The t = pi edge crosses THREE
+#     branch corners xa = log(b^2-a^2) (x = a), xb = log(b^2-1)
+#     (x = 1), x0 = log b^2 (x = 0) and continues onto the imaginary
+#     x axis; its four sub-edges are a horizontal STRAIGHT line with
+#     direction (1,-1,0) at height -d, the y = 0 mirror, the x = 0
+#     mirror, and a second (1,-1,0) line through the origin.  t = 0 is
+#     the y = 0 mirror again; u -> -inf is the planar end at x = b,
+#     u -> +inf the planar end at x = inf (both trimmed by the u
+#     range).  8 isometries {E, R_line} x {E, Mx} x {E, My} + the
+#     vertical translation (0, 0, 2 z_line) tile one period -- the
+#     direct CHM-(1,1) analog with the roles of the strip ends changed.
+#
+# Topology is MEASURED, never assumed (chi of the welded stacks and of
+# the translation-wrapped quotient, manifoldness, orientability,
+# connectivity -- all gated in the self-tests below.  CHM-(1,2)
+# measures chi = -8 with 2 ends per period (genus 4): Weber's (1,j)
+# index adds ONE handle per step over CHM-(1,1)'s genus 3, so this is
+# NOT the M_k subsequence of genus 2k+1 -- the harvest metadata gives
+# no usable chi here and the measurement is the authority).
+#
+# References:
+#   H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#     examples", Manuscripta Math. 62 (1988) 83-114 -- the fence of
+#     catenoids and its handle additions;
+#   M. J. Callahan, D. Hoffman, W. H. Meeks III, "Embedded minimal
+#     surfaces with an infinite number of ends", Invent. Math. 96
+#     (1989) 459-505 -- the CHM_k family;
+#   C. J. Costa (1984); D. Hoffman, W. H. Meeks III (1985) -- the Costa
+#     surface the translation-invariant tower descends from;
+#   M. Weber, https://minimalsurfaces.blog/ -- the harvested notebooks
+#     (Singly_Catenoid_1Handle_g1, Singly_Catenoid_2Handles_g3,
+#     Singly_TransInvCosta_I, Singly_CHM_1_2;
+#     research/msblog_harvest/singly_periodic.json).
+# --------------------------------------------------------------------------
+
+# solved period constants, harvested verbatim from the notebooks
+_STINV_G1 = {
+    0.1: -0.7054086037971196,
+    0.2: -0.6309634409033806,
+    0.3: -0.5610309089063753,
+    0.5: -0.4191755389731957,
+}
+_STINV_G3 = {
+    0.06: (0.8313415275984382, -0.7834727487665828),
+    0.08: (0.8252014282724452, -0.7601944503629705),
+    0.1: (0.8207141842757188, -0.7382148901607947),
+    0.2: (0.8106797631408779, -0.6367415615956143),
+    0.4: (0.816529866798894, -0.44635393033532667),
+    0.6: (0.8409077253104242, -0.26280805739772073),
+}
+_STINV_COSTA = {
+    -10.0: (-0.03333055237361433, 3.307161083209713),
+    -5.0: (-0.06664857639434493, 2.336922594756168),
+    -3.0: (-0.11107380129022093, 1.8071167824277032),
+    -2.0: (-0.16689594688623235, 1.4701727470752084),
+    -1.5: (-0.22432453091517268, 1.2657277793430088),
+    -1.1: (-0.3252466601711385, 1.0666960764075604),
+}
+# CHM-(1,2): Newton-polished from the notebook seed (see block header)
+_STINV_CHM12_A = 1.0735928348392014
+_STINV_CHM12_B = 1.467713226486139
+_STINV_CHM12_RHO = 1.4120744657811857
+_STINV_CHM12_SEED = (1.07378157681789798, 1.46816068659935883,
+                     1.41294757571306188)
+
+
+def stinv_prod(z, pref, factors):
+    """pref * prod (z - v)^p with principal per-factor powers (z must
+    already be nudged into the closed upper half plane)."""
+    out = np.full(z.shape, pref, dtype=complex)
+    for v, p in factors:
+        out = out * np.exp(p * np.log(z - v))
+    return out
+
+
+def stinv_g1_facs(a, b):
+    f1 = ((0.0, -0.5), (a, -0.5), (b, 0.5), (1.0 / b, -0.5),
+          (1.0 / a, 0.5))
+    f2 = ((0.0, -1.5), (a, 0.5), (b, -0.5), (1.0 / b, 0.5),
+          (1.0 / a, -0.5))
+    return complex(a / b) ** 0.5, f1, f2
+
+
+def stinv_g3_facs(a, b, c):
+    f1 = ((0.0, -0.5), (a, -0.5), (b, 0.5), (1.0 / b, -0.5),
+          (1.0 / a, 0.5), (c, 0.5), (1.0 / c, -0.5))
+    f2 = ((0.0, -1.5), (a, 0.5), (b, -0.5), (1.0 / b, 0.5),
+          (1.0 / a, -0.5), (c, -0.5), (1.0 / c, 0.5))
+    return complex(-a / b / c) ** 0.5, f1, f2
+
+
+def stinv_cat_om(pref, f1, f2):
+    """(om1, om2, om3) for the catenoid-tower data (dh = dz/z)."""
+    def om(z):
+        z = sptail_nudge(np.asarray(z, dtype=complex))
+        p1 = stinv_prod(z, pref, f1)
+        p2 = stinv_prod(z, 1.0 / pref, f2)
+        return (-0.5 * (p1 - p2), 0.5j * (p1 + p2), 1.0 / z)
+    return om
+
+
+def stinv_rgrid(rmin, rmax, marks, nu, log_end=True):
+    """Radial grid on [rmin, rmax]: per-segment spacing (log toward the
+    trimmed end at rmin) + geometric clusters into every interior mark
+    (branch points demand graded cells for the compound GL rows)."""
+    cuts = [rmin] + sorted(marks) + [rmax]
+    nseg = max(6, int(nu / max(1, len(cuts) - 1)))
+    parts = []
+    for i in range(len(cuts) - 1):
+        lo, hi = cuts[i], cuts[i + 1]
+        if i == 0 and log_end:
+            parts.append(np.exp(np.linspace(math.log(lo), math.log(hi),
+                                            nseg)))
+        else:
+            parts.append(np.linspace(lo, hi, nseg))
+        w = hi - lo
+        if cuts[i] in marks:
+            parts.append(cuts[i] + sptail_cluster(0.12 * w, 2e-7 * w))
+        if cuts[i + 1] in marks:
+            parts.append(cuts[i + 1] - sptail_cluster(0.12 * w,
+                                                      2e-7 * w))
+    r = np.unique(np.concatenate(parts))
+    r = r[(r >= rmin - 1e-12) & (r <= rmax + 1e-12)]
+    return r[np.concatenate([[True], np.diff(r) > 1e-13])]
+
+
+def stinv_tgrid(nt, marks=()):
+    """t grid on [0, pi]: Chebyshev base + geometric clusters into both
+    edges and into every interior mark."""
+    base = 0.5 * math.pi * (1.0 - np.cos(np.pi * np.linspace(
+        0, 1, 2 * (nt // 2) + 1)))
+    ex = sptail_cluster(0.06, hmin=1e-7, ratio=0.25)
+    parts = [base, ex, math.pi - ex]
+    for m in marks:
+        cl = sptail_cluster(0.05, hmin=1e-8, ratio=0.3)
+        parts += [m - cl, np.array([m]), m + cl[::-1]]
+    t = np.unique(np.concatenate(parts))
+    t = t[(t >= 0.0) & (t <= math.pi)]
+    return t[np.concatenate([[True], np.diff(t) > 1e-13])]
+
+
+def stinv_g1_build(a=0.5, nu=48, nt=32, storeys=1, r1=3.0):
+    """Catenoid tower with one handle.  Frames {E, sigma_z} x {E, Mx}
+    x {E, sigma_yB} per storey, translation T = (0, 2 dy, 0)."""
+    b = _STINV_G1[a]
+    om = stinv_cat_om(*stinv_g1_facs(a, b))
+    rmin = a / r1
+    r = stinv_rgrid(rmin, 1.0, [a, abs(b)], nu)
+    t = stinv_tgrid(nt)
+    X = sptail_polar_patch(om, r, t)
+    i_a = int(np.searchsorted(r, a))
+    i_b = int(np.searchsorted(r, abs(b)))
+    xL1 = float(np.median(X[:i_a + 1, 0, 0]))
+    xL2 = float(np.median(X[i_b:, -1, 0]))
+    yA = float(np.median(X[i_a:, 0, 1]))
+    z1 = float(np.median(X[-1, :, 2]))
+    diag = {
+        'xL1_ptp': float(np.ptp(X[:i_a + 1, 0, 0])),
+        'yA_ptp': float(np.ptp(X[i_a:, 0, 1])),
+        'yB_ptp': float(np.ptp(X[:i_b + 1, -1, 1])),
+        'xL2_ptp': float(np.ptp(X[i_b:, -1, 0])),
+        'arc_z_ptp': float(np.ptp(X[-1, :, 2])),
+        'xmirror_gap': abs(xL1 - xL2)}
+    X = X.copy()
+    X[..., 0] -= 0.5 * (xL1 + xL2)
+    X[..., 1] -= yA
+    X[..., 2] -= z1
+    D = float(np.median(X[:i_b + 1, -1, 1]))
+    X[:i_a + 1, 0, 0] = 0.0
+    X[i_b:, -1, 0] = 0.0
+    X[i_a:, 0, 1] = 0.0
+    X[:i_b + 1, -1, 1] = D
+    X[-1, :, 2] = 0.0
+    V0 = X.reshape(-1, 3)
+    q0 = sptail_grid_quads(len(r), len(t))
+    T = np.array([0.0, 2.0 * D, 0.0])
+    frames = []
+    for sh in (0, 1):
+        for bx in (0, 1):
+            for cy in (0, 1):
+                M = np.diag([-1.0 if bx else 1.0, -1.0 if cy else 1.0,
+                             -1.0 if sh else 1.0])
+                tv = np.array([0.0, 2.0 * D if cy else 0.0, 0.0])
+                par = (-1.0) ** (sh + bx + cy)
+                for s in range(storeys):
+                    frames.append((M, tv + s * T, par))
+    span = float(np.linalg.norm(V0.max(0) - V0.min(0)))
+    V, F, uv = sptail_orbit_weld(V0, _sptail_grid_uv(len(r), len(t)),
+                                 q0, frames, 1e-9 * span)
+    diag['T'] = T
+    diag['span'] = span
+    return V, F, uv, diag
+
+
+def stinv_g1_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                  storeys=1):
+    p = spec['p_from'](order, radius)
+    S = int(np.clip(storeys, 1, 8))
+    V, F, uv, _ = stinv_g1_build(
+        p['a'], nu=int(np.clip(int(0.8 * nu), 24, 130)),
+        nt=int(np.clip(int(0.6 * nv), 20, 90)), storeys=S, r1=p['r1'])
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
+def stinv_g3_build(a=0.1, nu=48, nt=32, storeys=1, r1=3.5):
+    """Catenoid tower with two handles.  Frames {E, sigma_z} x
+    {E, sigma_xC} x {E, My} per storey, translation T = (2 dx, 0, 0)."""
+    b, c = _STINV_G3[a]
+    om = stinv_cat_om(*stinv_g3_facs(a, b, c))
+    rmin = a / r1
+    r = stinv_rgrid(rmin, 1.0, [a, b, abs(c)], nu)
+    t = stinv_tgrid(nt)
+    X = sptail_polar_patch(om, r, t)
+    i_a = int(np.searchsorted(r, a))
+    i_b = int(np.searchsorted(r, b))
+    i_c = int(np.searchsorted(r, abs(c)))
+    y1 = float(np.median(X[:i_a + 1, 0, 1]))
+    y2 = float(np.median(X[i_b:, 0, 1]))
+    y3 = float(np.median(X[i_c:, -1, 1]))
+    xA = float(np.median(X[i_a:i_b + 1, 0, 0]))
+    z1 = float(np.median(X[-1, :, 2]))
+    diag = {
+        'y1_ptp': float(np.ptp(X[:i_a + 1, 0, 1])),
+        'y2_ptp': float(np.ptp(X[i_b:, 0, 1])),
+        'y3_ptp': float(np.ptp(X[i_c:, -1, 1])),
+        'xA_ptp': float(np.ptp(X[i_a:i_b + 1, 0, 0])),
+        'xC_ptp': float(np.ptp(X[:i_c + 1, -1, 0])),
+        'arc_z_ptp': float(np.ptp(X[-1, :, 2])),
+        'ymirror_gap': max(abs(y1 - y2), abs(y1 - y3))}
+    X = X.copy()
+    X[..., 0] -= xA
+    X[..., 1] -= float(np.median([y1, y2, y3]))
+    X[..., 2] -= z1
+    D = float(np.median(X[:i_c + 1, -1, 0]))
+    X[:i_a + 1, 0, 1] = 0.0
+    X[i_b:, 0, 1] = 0.0
+    X[i_c:, -1, 1] = 0.0
+    X[i_a:i_b + 1, 0, 0] = 0.0
+    X[:i_c + 1, -1, 0] = D
+    X[-1, :, 2] = 0.0
+    V0 = X.reshape(-1, 3)
+    q0 = sptail_grid_quads(len(r), len(t))
+    T = np.array([2.0 * D, 0.0, 0.0])
+    frames = []
+    for sh in (0, 1):
+        for bx in (0, 1):
+            for cy in (0, 1):
+                M = np.diag([-1.0 if bx else 1.0, -1.0 if cy else 1.0,
+                             -1.0 if sh else 1.0])
+                tv = np.array([2.0 * D if bx else 0.0, 0.0, 0.0])
+                par = (-1.0) ** (sh + bx + cy)
+                for s in range(storeys):
+                    frames.append((M, tv + s * T, par))
+    span = float(np.linalg.norm(V0.max(0) - V0.min(0)))
+    V, F, uv = sptail_orbit_weld(V0, _sptail_grid_uv(len(r), len(t)),
+                                 q0, frames, 1e-9 * span)
+    diag['T'] = T
+    diag['span'] = span
+    return V, F, uv, diag
+
+
+def stinv_g3_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                  storeys=1):
+    p = spec['p_from'](order, radius)
+    S = int(np.clip(storeys, 1, 8))
+    V, F, uv, _ = stinv_g3_build(
+        p['a'], nu=int(np.clip(int(0.8 * nu), 24, 130)),
+        nt=int(np.clip(int(0.6 * nv), 20, 90)), storeys=S, r1=p['r1'])
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
+def stinv_costa_om(a, b, rho):
+    """(om1, om2, om3) on the Joukowski half-disk chart.  The interior
+    nudge shrinks |zeta| with a 100x dominant radial weight -- the +i
+    epsilon term alone puts arc points with sin(theta) > 1/2 BELOW the
+    real z axis (Im z = eps1 sin t - eps2 sin^2 t), silently flipping
+    every branch there.  The cap zeroes the divergent corner-end cells
+    (masked off the mesh) so they cannot poison the cumulative sums."""
+    def om(zeta):
+        zeta = np.asarray(zeta, dtype=complex)
+        zeta = (zeta + 1e-13j * (1.0 + np.abs(zeta))) * (1.0 - 1e-11)
+        z = -0.5 * (zeta + 1.0 / zeta)
+        dz = -0.5 * (1.0 - 1.0 / (zeta * zeta))
+        p1 = rho * np.exp(-0.5 * np.log(z - a) - 0.5 * np.log(z - 1.0)
+                          + 0.5 * np.log(z - b) - 0.5 * np.log(z + 1.0))
+        p2 = (1.0 / rho) * np.exp(
+            0.5 * np.log(z - a) - 1.5 * np.log(z - 1.0)
+            - 0.5 * np.log(z - b) - 1.5 * np.log(z + 1.0))
+        dh = 1.0 / ((z - 1.0) * (z + 1.0))
+        o = (-0.5 * (p1 - p2) * dz, 0.5j * (p1 + p2) * dz, dh * dz)
+        return tuple(np.where(np.isfinite(v) & (np.abs(v) < 1e7),
+                              v, 0.0) for v in o)
+    return om
+
+
+def stinv_costa_build(a=-10.0, nu=52, nt=44, storeys=1, rmin=0.02,
+                      delta=0.12):
+    """Translation-invariant Costa I.  Frames {E, sigma_y} x {E, Mx}
+    per storey, translation T = (0, 2 dy, 0); the z = -+1 catenoid ends
+    are corner-masked disks of chart radius `delta`, the z = inf wing
+    pair is the clean inner trim at |zeta| = rmin."""
+    b, rho = _STINV_COSTA[a]
+    om = stinv_costa_om(a, b, rho)
+    zeta_a = -a - math.sqrt(a * a - 1.0)
+    theta_b = math.acos(max(-1.0, min(1.0, -b)))
+    cl1 = sptail_cluster(0.08, 1e-7)
+    r = stinv_rgrid(rmin, 1.0, [zeta_a], nu)
+    r = np.unique(np.concatenate([r, 1.0 - cl1]))
+    r = r[(r >= rmin) & (r <= 1.0)]
+    t = stinv_tgrid(nt, marks=(theta_b,))
+    X = sptail_polar_patch(om, r, t)
+    ZG = r[:, None] * np.exp(1j * t[None, :])
+    valid = ((np.abs(ZG - 1.0) > delta) & (np.abs(ZG + 1.0) > delta)
+             ).reshape(-1)
+    i_a = int(np.searchsorted(r, zeta_a))
+    jb = int(np.argmin(np.abs(t - theta_b)))
+    vg = valid.reshape(len(r), len(t))
+
+    def _med(vals, ok):
+        vals = vals[ok]
+        return (float(np.median(vals)), float(np.ptp(vals))) \
+            if len(vals) else (0.0, 0.0)
+
+    yA, yA_ptp = _med(X[:i_a + 1, 0, 1], vg[:i_a + 1, 0])
+    xB1, xB1_ptp = _med(X[i_a:, 0, 0], vg[i_a:, 0])
+    yC1, yC1_ptp = _med(X[:, -1, 1], vg[:, -1])
+    xB2, xB2_ptp = _med(X[-1, jb:, 0], vg[-1, jb:])
+    yC2, yC2_ptp = _med(X[-1, :jb + 1, 1], vg[-1, :jb + 1])
+    diag = {
+        'yA_ptp': yA_ptp, 'xB1_ptp': xB1_ptp, 'yC1_ptp': yC1_ptp,
+        'xB2_ptp': xB2_ptp, 'yC2_ptp': yC2_ptp,
+        'xmirror_gap': abs(xB1 - xB2),
+        'ymirror_gap': abs(yC1 - yC2)}
+    X = X.copy()
+    X[..., 0] -= 0.5 * (xB1 + xB2)
+    X[..., 1] -= 0.5 * (yC1 + yC2)
+    yAc = float(yA - 0.5 * (yC1 + yC2))
+    X[:i_a + 1, 0, 1] = np.where(vg[:i_a + 1, 0], yAc,
+                                 X[:i_a + 1, 0, 1])
+    X[i_a:, 0, 0] = np.where(vg[i_a:, 0], 0.0, X[i_a:, 0, 0])
+    X[:, -1, 1] = np.where(vg[:, -1], 0.0, X[:, -1, 1])
+    X[-1, jb:, 0] = np.where(vg[-1, jb:], 0.0, X[-1, jb:, 0])
+    X[-1, :jb + 1, 1] = np.where(vg[-1, :jb + 1], 0.0,
+                                 X[-1, :jb + 1, 1])
+    V0 = X.reshape(-1, 3)
+    q0 = sptail_grid_quads(len(r), len(t), valid=valid)
+    T = np.array([0.0, 2.0 * yAc, 0.0])
+    frames = []
+    for bx in (0, 1):
+        for cy in (0, 1):
+            M = np.diag([-1.0 if bx else 1.0, -1.0 if cy else 1.0,
+                         1.0])
+            par = (-1.0) ** (bx + cy)
+            for s in range(storeys):
+                frames.append((M, s * T, par))
+    # span over USED vertices only -- the masked corner-zone vertices
+    # carry meaningless (capped) coordinates and must not inflate the
+    # weld tolerance
+    used = np.unique(np.array([i for f in q0 for i in f],
+                              dtype=np.int64))
+    Vu = V0[used]
+    span = float(np.linalg.norm(Vu.max(0) - Vu.min(0)))
+    # every frame is a sign-diagonal matrix plus an exact multiple of T,
+    # so seam partners are bitwise equal after snapping -- a near-exact
+    # tolerance keeps the branch-point clusters from being fused
+    V, F, uv = sptail_orbit_weld(V0, _sptail_grid_uv(len(r), len(t)),
+                                 q0, frames, 1e-12 * span)
+    diag['T'] = T
+    diag['span'] = span
+    return V, F, uv, diag
+
+
+def stinv_costa_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                     storeys=1):
+    p = spec['p_from'](order, radius)
+    S = int(np.clip(storeys, 1, 8))
+    V, F, uv, _ = stinv_costa_build(
+        p['a'], nu=int(np.clip(int(0.8 * nu), 28, 130)),
+        nt=int(np.clip(int(0.7 * nv), 24, 100)), storeys=S,
+        rmin=p['rmin'], delta=p['delta'])
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
+# ---- CHM-(1,2) strip chart ------------------------------------------------
+
+def stinv_chm12_forms(w):
+    """(om1, om2, om3) pulled back to the strip chart (times dx/dw =
+    e^w / 2x).  With x^2 - b^2 = e^w the (x^2-b^2)^{5/4} factor becomes
+    an exact exponential; x stays in the first quadrant and x^2 - 1,
+    x^2 - a^2 in the closed upper half plane, so every principal power
+    is single-valued.  Strip corners at (xa, pi), (xb, pi), (x0, pi)."""
+    a, b, rho = _STINV_CHM12_A, _STINV_CHM12_B, _STINV_CHM12_RHO
+    w = np.asarray(w, dtype=complex)
+    xa = math.log(b * b - a * a)
+    xb = math.log(b * b - 1.0)
+    x0 = math.log(b * b)
+    # exact corner factorizations: b^2-a^2+e^w = -e^{xa} expm1(w-xa-ipi)
+    # etc. -- the naive sums cancel catastrophically in the deep corner
+    # clusters (za ~ e^{xa} h at distance h, below float resolution of
+    # the direct difference once h < 1e-13)
+    za = -math.exp(xa) * _cwce_expm1c(w - xa - 1j * math.pi)
+    zm1 = -math.exp(xb) * _cwce_expm1c(w - xb - 1j * math.pi)
+    x = np.sqrt(-math.exp(x0) * _cwce_expm1c(w - x0 - 1j * math.pi))
+    q1 = np.sqrt(zm1) * np.exp(-0.25 * w) / (2.0 * x ** 1.5
+                                             * za ** 0.75)
+    q2 = np.exp(1.25 * w) / (2.0 * np.sqrt(x) * np.sqrt(zm1)
+                             * za ** 0.25)
+    om3 = np.exp(0.5 * w) / (2.0 * x * np.sqrt(za))
+    return (-0.5 * (rho * q1 - q2 / rho),
+            0.5j * (rho * q1 + q2 / rho), om3)
+
+
+def stinv_chm12_ugrid(nu, umin, umax):
+    """u grid: flare-uniform toward both trimmed ends (conformal end
+    radii ~ e^{-u/4} and ~ e^{+u/4}), geometric clusters into the three
+    singular corners xa, xb, x0 (exact grid nodes)."""
+    b2 = _STINV_CHM12_B * _STINV_CHM12_B
+    xa = math.log(b2 - _STINV_CHM12_A * _STINV_CHM12_A)
+    xb = math.log(b2 - 1.0)
+    x0 = math.log(b2)
+    nE = max(10, int(0.22 * nu))
+    uf1 = -4.0 * np.log(np.linspace(math.exp(-0.25 * umin),
+                                    math.exp(-0.25 * (xa - 0.7)), nE))
+    uf2 = 4.0 * np.log(np.linspace(math.exp(0.25 * (x0 + 0.7)),
+                                   math.exp(0.25 * umax), nE))
+    parts = [uf1, uf2]
+    marks = [xa, xb, x0]
+    segs = [(xa, xb), (xb, x0)]
+    for lo, hi in segs:
+        parts.append(np.linspace(lo, hi, max(6, int(0.12 * nu))))
+    for m in marks:
+        # deep clusters: the corner cells' quadrature bias scales as
+        # hmin^(1/4) (measured), so hmin = 1e-14 buys real accuracy --
+        # possible only with the exact expm1 corner factorizations in
+        # stinv_chm12_forms; image spacing shrinks as hmin^(1/4) too,
+        # so the deep nodes never collapse under the near-exact weld
+        cl = sptail_cluster(0.03, hmin=1e-14, ratio=0.25)
+        parts += [m - cl, np.array([m]), m + cl[::-1]]
+    u = np.unique(np.concatenate(parts))
+    u = u[(u >= umin) & (u <= umax)]
+    return u[np.concatenate([[True], np.diff(u) > 1e-16])]
+
+
+def stinv_chm12_build(nu=64, nt=40, storeys=1, umin=-4.0, umax=4.0,
+                      wrap=False):
+    """CHM-(1,2): one strip patch, 8 isometries {E, R_line} x {E, Mx}
+    x {E, My} per storey, vertical translation T = (0, 0, 2 z_line).
+    The spine column is pinned at u = umin + 0.3 (xa - umin), far from
+    the singular corners (a spine near u = 0 sits within 3e-3 of the
+    xa corner and its quadrature error pollutes every mirror offset)."""
+    b2 = _STINV_CHM12_B * _STINV_CHM12_B
+    xa = math.log(b2 - _STINV_CHM12_A * _STINV_CHM12_A)
+    xb = math.log(b2 - 1.0)
+    x0 = math.log(b2)
+    u = stinv_chm12_ugrid(nu, umin, umax)
+    t = _chmp_tgrid(nt)
+    us = u[int(np.argmin(np.abs(u - (umin + 0.3 * (xa - umin)))))]
+    X = sptail_rect_patch(lambda w: stinv_chm12_forms(w + us),
+                          u - us, t)
+    i_a = int(np.searchsorted(u, xa))
+    i_b = int(np.searchsorted(u, xb))
+    i_0 = int(np.searchsorted(u, x0))
+    F0 = X[i_0, -1, :].copy()                 # the x = 0 corner
+    X = X - F0[None, None, :]
+    sL1 = X[:i_a + 1, -1, :]
+    zL = float(np.median(sL1[:, 2]))
+    diag = {
+        'L1_z_ptp': float(np.ptp(sL1[:, 2])),
+        'L1_diag_ptp': float(np.ptp(sL1[:, 0] + sL1[:, 1])),
+        'y_mid_ptp': float(np.ptp(X[i_a:i_b + 1, -1, 1])),
+        'y_mid_off': abs(float(np.median(X[i_a:i_b + 1, -1, 1]))),
+        'x_mid_ptp': float(np.ptp(X[i_b:i_0 + 1, -1, 0])),
+        'x_mid_off': abs(float(np.median(X[i_b:i_0 + 1, -1, 0]))),
+        'L0_z_ptp': float(np.ptp(X[i_0:, -1, 2])),
+        'L0_diag_ptp': float(np.ptp(X[i_0:, -1, 0] + X[i_0:, -1, 1])),
+        't0_y_ptp': float(np.ptp(X[:, 0, 1])),
+        't0_y_off': abs(float(np.median(X[:, 0, 1]))),
+        'zL': zL}
+    # snap every boundary sub-edge exactly onto its symmetry element
+    m = 0.5 * (X[:i_a + 1, -1, 0] - X[:i_a + 1, -1, 1])
+    X[:i_a + 1, -1, 0] = m
+    X[:i_a + 1, -1, 1] = -m
+    X[:i_a + 1, -1, 2] = zL
+    X[i_a:i_b + 1, -1, 1] = 0.0
+    X[i_b:i_0 + 1, -1, 0] = 0.0
+    m = 0.5 * (X[i_0:, -1, 0] - X[i_0:, -1, 1])
+    X[i_0:, -1, 0] = m
+    X[i_0:, -1, 1] = -m
+    X[i_0:, -1, 2] = 0.0
+    X[:, 0, 1] = 0.0
+    X[i_a, -1, :] = (0.0, 0.0, zL)             # x = a corner: line meets
+    #                                            the y = 0 mirror on the
+    #                                            vertical axis (CHM-(1,1)
+    #                                            axis-point analog)
+    X[i_b, -1, :] = (0.0, 0.0, X[i_b, -1, 2])  # x = 1 corner: Mx + My
+    X[i_0, -1, :] = (0.0, 0.0, 0.0)            # x = 0 corner: origin
+    V0 = X.reshape(-1, 3)
+    q0 = sptail_grid_quads(len(u), len(t))
+    T = np.array([0.0, 0.0, 2.0 * zL])
+    RL = np.array([[0.0, -1.0, 0.0], [-1.0, 0.0, 0.0],
+                   [0.0, 0.0, -1.0]])
+    frames = []
+    for e in (0, 1):
+        for bx in (0, 1):
+            for cy in (0, 1):
+                M = np.eye(3)
+                if e:
+                    M = RL.copy()
+                if bx:
+                    M = np.diag([-1.0, 1.0, 1.0]) @ M
+                if cy:
+                    M = np.diag([1.0, -1.0, 1.0]) @ M
+                par = (-1.0) ** (e + bx + cy)
+                for s in range(storeys):
+                    frames.append((M, s * T, par))
+    # COMBINATORIAL weld (the CHM-(1,1) scheme): every seam pairs a
+    # frame with its partner frame at IDENTICAL within-patch indices.
+    # No coincidence tolerance is involved, so the deep corner clusters
+    # (grid steps down to 1e-14, image spacing |om| h ~ 1e-13) can
+    # never be fused into sliver-collapse holes.  Pairing algebra for
+    # g = My^cy Mx^bx R^e (+ sT):  R My = Mx R,  R Mx = My R,
+    # R T = T^-1 R; the L1 line is fixed by T R.
+    #   y = 0 seams (t=0 row, (xa,xb) row): toggle cy if e=0 else bx
+    #   x = 0 seam  ((xb,x0) row):          toggle bx if e=0 else cy
+    #   L0 line     ((x0,umax) row):        toggle e
+    #   L1 line     ((umin,xa) row):        toggle e; s+1 (e=0) / s-1
+    nu_, nt_ = len(u), len(t)
+    S = storeys
+
+    def fidx(e, bx, cy, s):
+        return ((e * 2 + bx) * 2 + cy) * S + s
+
+    t0r = np.arange(nu_) * nt_
+    ymid = np.arange(i_a, i_b + 1) * nt_ + (nt_ - 1)
+    xmid = np.arange(i_b, i_0 + 1) * nt_ + (nt_ - 1)
+    l0r = np.arange(i_0, nu_) * nt_ + (nt_ - 1)
+    l1r = np.arange(0, i_a + 1) * nt_ + (nt_ - 1)
+    seams = []
+    for e in (0, 1):
+        for bx in (0, 1):
+            for cy in (0, 1):
+                for s in range(S):
+                    me = fidx(e, bx, cy, s)
+                    ytog = fidx(e, bx, 1 - cy, s) if e == 0 \
+                        else fidx(e, 1 - bx, cy, s)
+                    xtog = fidx(e, 1 - bx, cy, s) if e == 0 \
+                        else fidx(e, bx, 1 - cy, s)
+                    seams.append((t0r, me, ytog))
+                    seams.append((ymid, me, ytog))
+                    seams.append((xmid, me, xtog))
+                    seams.append((l0r, me, fidx(1 - e, bx, cy, s)))
+                    s2 = s + 1 if e == 0 else s - 1
+                    if wrap:
+                        # test-only translation-wrapped quotient: close
+                        # the L1 period seam cyclically (measures the
+                        # true per-period chi and end count)
+                        seams.append((l1r, me,
+                                      fidx(1 - e, bx, cy, s2 % S)))
+                    elif 0 <= s2 < S:
+                        seams.append((l1r, me, fidx(1 - e, bx, cy, s2)))
+    UV0 = _sptail_grid_uv(nu_, nt_)
+    nV = len(V0)
+    Vp, Fp = [], []
+    for fr, (M, tv, par) in enumerate(frames):
+        Vp.append(V0 @ M.T + tv)
+        off = fr * nV
+        if par < 0:
+            Fp.extend(tuple(off + i for i in f[::-1]) for f in q0)
+        else:
+            Fp.extend(tuple(off + i for i in f) for f in q0)
+    Vall = np.concatenate(Vp, axis=0)
+    UVall = np.tile(UV0, (len(frames), 1))
+    parent = np.arange(len(Vall))
+
+    def _find(a2):
+        while parent[a2] != a2:
+            parent[a2] = parent[parent[a2]]
+            a2 = parent[a2]
+        return a2
+
+    for idx, fA, fB in seams:
+        if fA >= fB:
+            continue
+        for i in idx:
+            ra, rb = _find(fA * nV + int(i)), _find(fB * nV + int(i))
+            if ra != rb:
+                parent[ra] = rb
+    roots = np.array([_find(a2) for a2 in range(len(Vall))])
+    uniq, inv = np.unique(roots, return_inverse=True)
+    Vw = np.zeros((len(uniq), 3))
+    UVw = np.zeros((len(uniq), 2))
+    cw = np.zeros(len(uniq))
+    np.add.at(Vw, inv, Vall)
+    np.add.at(UVw, inv, UVall)
+    np.add.at(cw, inv, 1)
+    Vw /= cw[:, None]
+    UVw /= cw[:, None]
+    F = []
+    for f in Fp:
+        g = [int(inv[i]) for i in f]
+        h = [g[0]]
+        for sgi in range(1, len(g)):
+            if g[sgi] != h[-1]:
+                h.append(g[sgi])
+        if len(h) >= 3 and h[0] != h[-1] and len(set(h)) == len(h):
+            F.append(tuple(h))
+    used = sorted({i for f in F for i in f})
+    remap = np.full(len(uniq), -1, dtype=np.int64)
+    remap[np.array(used, dtype=np.int64)] = np.arange(len(used))
+    V = Vw[np.array(used, dtype=np.int64)]
+    uv = UVw[np.array(used, dtype=np.int64)]
+    F = [tuple(int(remap[i]) for i in f) for f in F]
+    span = float(np.linalg.norm(V.max(0) - V.min(0)))
+    diag['T'] = T
+    diag['span'] = span
+    return V, F, uv, diag
+
+
+def stinv_chm12_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                     storeys=1):
+    p = spec['p_from'](order, radius)
+    S = int(np.clip(storeys, 1, 6))
+    V, F, uv, _ = stinv_chm12_build(
+        nu=int(np.clip(nu, 28, 200)),
+        nt=int(np.clip(int(0.8 * nv), 20, 160)), storeys=S,
+        umin=p['umin'], umax=p['umax'])
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
+# ---- screw-motion CHM (theta-function data on the tau-torus) --------------
+# Weber's screw-motion deformation of CHM-(1,1): dh = i dz on the
+# rectangular torus C/<1, tau> (tau = i Im tau), Gauss map
+#   G(z) = G0(z)/G0(tau/4),
+#   G0   = th(z-a)^{-3/2} th(z+a+tau/2)^{3/4} th(z+a-tau/2)^{3/4}
+#          th(z+b)^{1/2} th(z-b-tau/2)^{-1/4} th(z-b+tau/2)^{-1/4}
+# (th = Jacobi theta_11).  The two solved constants (a, b) = (u, v) per
+# tau are harvested verbatim from Singly_ScrewMotion_CHM.nb (FindRoot
+# output; both period conditions re-verified here to ~1e-5).  The
+# fundamental rectangle D = [0,1] x [0, Im tau/2] carries two ends (the
+# theta divisor points z = a and z = 1-a+tau/2, trimmed as masked
+# disks), two vertical-normal points z = 1-b, b+tau/2, and FOUR
+# horizontal straight lines on its edges: Lt1 (top edge across the
+# corner), Lt2 (top middle), Lb1 (bottom across the corner), Lb2
+# (bottom middle).  Per-factor principal theta powers are continuous
+# on D away from the end disks (verified numerically), so no branch
+# tracking is needed.
+#
+# Group structure (measured, then EXACTIFIED): the x -> x+1 deck sigma
+# is an exact half-turn about a VERTICAL axis (angle pi, rise 0!); the
+# half-turn axes A := Rot(Lt1) and C := Rot(Lb1) are horizontal lines
+# meeting sigma's axis, so sigma is central and the TOWER SCREW is
+# lambda = A o C -- a vertical screw with rise exactly Im tau whose
+# twist angle is twice the angle between the two line directions.  The
+# generators are rebuilt exactly in that form (axes forced through the
+# common vertical, displacement ~ the closure residual ~1e-6), every
+# frame is the exact word lambda^s A^a sigma^e ({E, A, sigma, A sigma}
+# per storey), and every seam welds COMBINATORIALLY -- the Lt2/Lb2
+# continuations resolve to the words A sigma and C sigma (axis
+# distance ~1e-7, printed by the self-test), the x-seam pairs frame g
+# with g sigma.  A and C are Schwarz continuations (anti-conformal on
+# the domain), so they flip the face winding; sigma and lambda do not.
+# Topology is MEASURED in the self-tests: chi = -6 with 2 ends per
+# lambda-period (quotient genus 3 -- the screw-deformed CHM-(1,1),
+# same genus as its undeformed limit), manifold and oriented; the
+# planar-end trim rims SPIRAL across period boundaries (a screw
+# surface's rims close only in the full tower), so rim loops are not
+# gated per period.
+# References: H. Karcher (Manuscripta Math. 62, 1988); M. Callahan,
+# D. Hoffman, W. H. Meeks III (Invent. Math. 96, 1989); M. Weber,
+# https://minimalsurfaces.blog/ (Screw Motion CHM notebook).
+
+_STINV_SCREW = {
+    0.6: (0.20086439129905187, 0.3748366987539473),
+    0.7: (0.18511053052190832, 0.39446970599451003),
+    0.8: (0.16378924815066304, 0.4140041171462015),
+    0.9: (0.13429097753439428, 0.43453946982282166),
+    1.0: (0.0890762704535419, 0.4593474241183917),
+    1.05: (0.04910253352674421, 0.4782496107553167),
+}
+
+
+def stinv_screw_om(timag, cap=1e6):
+    """(om1, om2, om3) on the tau-torus; principal per-factor theta
+    powers (continuous on the fundamental rectangle away from the two
+    end disks); divergent end-zone values are capped to zero (their
+    cells are masked off the mesh)."""
+    tau = 1j * timag
+    ua, vb = _STINV_SCREW[timag]
+    th = genus1helicoid_theta11
+    fac = ((-ua, -1.5), (ua + tau / 2, 0.75), (ua - tau / 2, 0.75),
+           (vb, 0.5), (-vb - tau / 2, -0.25), (-vb + tau / 2, -0.25))
+
+    def G0(z):
+        out = np.ones(np.shape(z), dtype=complex)
+        for s, e in fac:
+            out = out * th(z + s, tau) ** e
+        return out
+    g0c = complex(G0(np.array(tau / 4)))
+
+    def om(z):
+        z = np.asarray(z, dtype=complex)
+        G = G0(z) / g0c
+        o1 = 0.5j * (1.0 / G - G)
+        o2 = -0.5 * (1.0 / G + G)
+        o3 = np.full(z.shape, 1j)
+        return tuple(np.where(np.isfinite(c) & (np.abs(c) < cap),
+                              c, 0.0) for c in (o1, o2, o3))
+    return om, ua, vb
+
+
+def stinv_screw_patch(om, x, y):
+    """Integrate om over the rect grid (x_i, y_j) with the SPINE along
+    the middle row y ~ h/2 (no boundary singularity ever sits on the
+    spine; the masked end disks touch only the y-edges, so column-wise
+    integration reaches every unmasked cell cleanly)."""
+    xg, wg = _SPTAIL_GL
+    nx, ny = len(x), len(y)
+    jm = int(np.argmin(np.abs(y - 0.5 * (y[0] + y[-1]))))
+    dx = np.diff(x)
+    xmid = 0.5 * (x[1:] + x[:-1])
+    zs = (xmid[:, None] + 0.5 * dx[:, None] * xg[None, :]) \
+        + 1j * y[jm]
+    o = om(zs)
+    incS = np.stack([np.sum(c * wg, axis=-1) for c in o], axis=-1) \
+        * (0.5 * dx)[:, None]
+    S = np.zeros((nx, 3), complex)
+    S[1:] = np.cumsum(incS, axis=0)
+    dy = np.diff(y)
+    ymid = 0.5 * (y[1:] + y[:-1])
+    Z = x[:, None, None] + 1j * (
+        ymid[None, :, None] + 0.5 * dy[None, :, None] * xg)
+    o = om(Z)
+    incC = np.stack([np.sum(c * (1j) * wg, axis=-1) for c in o],
+                    axis=-1) * (0.5 * dy)[None, :, None]
+    C = np.zeros((nx, ny, 3), complex)
+    C[:, 1:, :] = np.cumsum(incC, axis=1)
+    C = C - C[:, jm, :][:, None, :]
+    return np.real(S[:, None, :] + C)
+
+
+def _stinv_line_fit(P):
+    """(point, unit direction, max residual) of the best-fit 3D line."""
+    c = P.mean(axis=0)
+    d = P - c
+    _, _, Vt = np.linalg.svd(d, full_matrices=False)
+    n = Vt[0]
+    res = float(np.max(np.linalg.norm(
+        d - np.outer(d @ n, n), axis=-1))) if len(P) > 1 else 0.0
+    return c, n, res
+
+
+def _stinv_rot180(c, n):
+    """(M, tvec) of the 180-degree rotation about the line c + s n."""
+    M = 2.0 * np.outer(n, n) - np.eye(3)
+    return M, c - M @ c
+
+
+def _stinv_kabsch(P, Q):
+    """Rigid motion (M, t) minimizing |M P + t - Q| (proper rotation)."""
+    cp, cq = P.mean(axis=0), Q.mean(axis=0)
+    H = (P - cp).T @ (Q - cq)
+    U, _, Vt = np.linalg.svd(H)
+    D = np.diag([1.0, 1.0, np.sign(np.linalg.det(Vt.T @ U.T))])
+    M = Vt.T @ D @ U.T
+    return M, cq - M @ cp
+
+
+def stinv_screw_build(timag=0.8, nu=64, nt=40, storeys=1, delta=0.10):
+    """Screw-motion CHM: one rectangle patch, frames
+    {sigma^s} x {E, A, C, CA}.  Returns (V, F, uv, diag)."""
+    om, ua, vb = stinv_screw_om(timag)
+    h = 0.5 * timag
+    e1 = complex(ua, 0.0)
+    e2 = complex(1.0 - ua, h)
+    zb1 = 1.0 - vb                     # theta zero on the bottom edge
+    zt1 = vb                           # theta zero on the top edge
+    marks_x = sorted({ua, zb1, zt1, 1.0 - ua})
+    nseg = max(5, int(nu / (len(marks_x) + 1)))
+    parts = []
+    cuts = [0.0] + marks_x + [1.0]
+    for i in range(len(cuts) - 1):
+        lo, hi = cuts[i], cuts[i + 1]
+        parts.append(np.linspace(lo, hi, nseg))
+        w = hi - lo
+        if cuts[i] in marks_x:
+            parts.append(cuts[i] + sptail_cluster(0.12 * w, 2e-7 * w))
+        if cuts[i + 1] in marks_x:
+            parts.append(cuts[i + 1] - sptail_cluster(0.12 * w,
+                                                      2e-7 * w))
+    x = np.unique(np.concatenate(parts))
+    x = x[(x >= 0.0) & (x <= 1.0)]
+    x = x[np.concatenate([[True], np.diff(x) > 1e-12])]
+    ycl = sptail_cluster(0.10 * h, 2e-7 * h)
+    y = np.unique(np.concatenate(
+        [np.linspace(0.0, h, max(12, nt)), ycl, h - ycl]))
+    y = y[(y >= 0.0) & (y <= h)]
+    y = y[np.concatenate([[True], np.diff(y) > 1e-12])]
+    X = stinv_screw_patch(om, x, y)
+    nx, ny = len(x), len(y)
+    ZG = x[:, None] + 1j * y[None, :]
+    # lattice-aware end masks: a disk crossing the x = 0 / x = 1 screw
+    # seam must cut BOTH sides identically, or the seam weld leaves
+    # unpaired faces
+    valid = np.ones(ZG.shape, dtype=bool)
+    for ec in (e1, e2):
+        for sh in (-1.0, 0.0, 1.0):
+            valid &= np.abs(ZG - (ec + sh)) > delta
+    valid = valid.reshape(-1)
+    vg = valid.reshape(nx, ny)
+    i_u = int(np.searchsorted(x, ua))
+    i_b1 = int(np.searchsorted(x, zb1))
+    i_t1 = int(np.searchsorted(x, zt1))
+    i_u2 = int(np.searchsorted(x, 1.0 - ua))
+    # measured straight-line axes (masked verts excluded)
+    selLb1 = np.concatenate([np.arange(0, i_u + 1),
+                             np.arange(i_b1, nx)])
+    selLb1 = selLb1[vg[selLb1, 0]]
+    Lb1 = _stinv_line_fit(X[selLb1, 0, :])
+    selLb2 = np.arange(i_u, i_b1 + 1)
+    selLb2 = selLb2[vg[selLb2, 0]]
+    Lb2 = _stinv_line_fit(X[selLb2, 0, :])
+    selLt1 = np.concatenate([np.arange(0, i_t1 + 1),
+                             np.arange(i_u2, nx)])
+    selLt1 = selLt1[vg[selLt1, -1]]
+    Lt1 = _stinv_line_fit(X[selLt1, -1, :])
+    selLt2 = np.arange(i_t1, i_u2 + 1)
+    selLt2 = selLt2[vg[selLt2, -1]]
+    Lt2 = _stinv_line_fit(X[selLt2, -1, :])
+    diag = {'Lb1_res': Lb1[2], 'Lb2_res': Lb2[2],
+            'Lt1_res': Lt1[2], 'Lt2_res': Lt2[2]}
+    # ---- EXACTIFIED group -------------------------------------------
+    # sigma (the x -> x+1 deck) measures as an exact half-turn about a
+    # VERTICAL axis (angle pi, rise 0), so the group is generated by
+    # sigma and the two edge-line half-turns A (Lt1), C (Lb1) with
+    # sigma central and A, C axes both meeting sigma's axis; the tower
+    # screw is lambda = A o C (vertical screw, rise 2(zA - zC)).  Force
+    # that structure exactly: both line axes are made horizontal and
+    # are translated (by ~ the period-closure residual) to pass through
+    # the common vertical axis q; sigma becomes diag(-1,-1,1) about q
+    # -- an exact involution.  Every frame is then an exact WORD
+    # lambda^s A^a sigma^e and every seam welds combinatorially.
+    nT = Lt1[1].copy()
+    nT[2] = 0.0
+    nT /= np.linalg.norm(nT)
+    nB = Lb1[1].copy()
+    nB[2] = 0.0
+    nB /= np.linalg.norm(nB)
+    # q = intersection of the two axes' xy-projections
+    Amat = np.array([[nT[0], -nB[0]], [nT[1], -nB[1]]])
+    rhs = np.array([Lb1[0][0] - Lt1[0][0], Lb1[0][1] - Lt1[0][1]])
+    t12 = np.linalg.solve(Amat, rhs)
+    q = np.array([Lt1[0][0] + t12[0] * nT[0],
+                  Lt1[0][1] + t12[0] * nT[1]])
+    zA = float(np.median(X[selLt1, -1, 2]))
+    zC = float(np.median(X[selLb1, 0, 2]))
+    cA = np.array([q[0], q[1], zA])
+    cC = np.array([q[0], q[1], zC])
+    Afr = _stinv_rot180(cA, nT)
+    Cfr = _stinv_rot180(cC, nB)
+    Sfr = (np.diag([-1.0, -1.0, 1.0]),
+           np.array([2.0 * q[0], 2.0 * q[1], 0.0]))
+    diag['axis_shift'] = float(max(
+        np.linalg.norm(np.cross(Lt1[0] - cA, nT)),
+        np.linalg.norm(np.cross(Lb1[0] - cC, nB))))
+
+    def _mul(g1, g2):
+        return (g1[0] @ g2[0], g1[0] @ g2[1] + g1[1])
+
+    def _word(s, a, e):
+        """Frame of lambda^s A^a sigma^e (lambda = A o C)."""
+        out = (np.eye(3), np.zeros(3))
+        lam = _mul(Afr, Cfr)
+        lami = _mul(Cfr, Afr)          # lambda^-1 = C o A (involutions)
+        for _ in range(abs(s)):
+            out = _mul(out, lam if s > 0 else lami)
+        if a:
+            out = _mul(out, Afr)
+        if e:
+            out = _mul(out, Sfr)
+        return out
+
+    # snap the four line edges onto their EXACT axes: Lt1 -> A-axis,
+    # Lb1 -> C-axis; Lt2/Lb2 -> the axes of their continuation WORDS
+    # (searched below), so those seams weld combinatorially too
+    def _snap_line(sel, jj, c, n):
+        P = X[sel, jj, :]
+        X[sel, jj, :] = c + np.outer((P - c) @ n, n)
+
+    _snap_line(selLt1, -1, cA, nT)
+    _snap_line(selLb1, 0, cC, nB)
+
+    def _axis_of(fr):
+        """Axis (point, dir) of a 180-degree rotation frame."""
+        M, tv = fr
+        w_, vec_ = np.linalg.eigh(0.5 * (M + M.T))
+        n_ = vec_[:, np.argmax(w_)]
+        p_ = np.linalg.lstsq(np.eye(3) - M, tv, rcond=None)[0]
+        return p_, n_
+
+    def _line_dist(fr, c, n, m=None):
+        p_, n_ = _axis_of(fr)
+        d1 = np.linalg.norm(np.cross(c - p_, n_))
+        d2 = 1.0 - abs(float(n @ n_))
+        return d1 + d2
+
+    def _search_word(cfit, nfit):
+        best = None
+        for k in (-1, 0, 1, 2, -2):
+            for e in (0, 1):
+                fr = _word(k, 1, e)
+                d = _line_dist(fr, cfit, nfit)
+                if best is None or d < best[0]:
+                    best = (d, k, e, fr)
+        return best
+
+    dB, kB, eB, frB = _search_word(Lt2[0], Lt2[1])
+    dD, kD, eD, frD = _search_word(Lb2[0], Lb2[1])
+    diag['wordB'] = (kB, eB, dB)
+    diag['wordD'] = (kD, eD, dD)
+    pB, nBax = _axis_of(frB)
+    pD, nDax = _axis_of(frD)
+    _snap_line(selLt2, -1, pB, nBax)
+    _snap_line(selLb2, 0, pD, nDax)
+    # screw seam: x=1 edge := sigma(x=0 edge), bitwise
+    sel0 = np.arange(ny)[vg[0, :]]
+    Msg, tsg = Sfr
+    diag['screw_fit'] = float(np.max(np.linalg.norm(
+        X[0, sel0, :] @ Msg.T + tsg - X[-1, sel0, :], axis=-1)))
+    X[-1, :, :] = X[0, :, :] @ Msg.T + tsg
+    V0 = X.reshape(-1, 3)
+    q0 = sptail_grid_quads(nx, ny, valid=valid)
+    # ---- frames: lambda^s A^a sigma^e -------------------------------
+    S = storeys
+    lab = []                          # frame order: (s, a, e)
+    for s in range(S):
+        for a in (0, 1):
+            for e in (0, 1):
+                lab.append((s, a, e))
+    lidx = {t: i for i, t in enumerate(lab)}
+    frames = []
+    for (s, a, e) in lab:
+        M, tv = _word(s, a, e)
+        frames.append((M, tv, (-1.0) ** a))
+
+    def _rmul(t, gen):
+        """Right-multiply label t = (s, a, e) by a generator."""
+        s, a, e = t
+        if gen == 'sig':
+            return (s, a, 1 - e)
+        if gen == 'A':
+            return (s, 1 - a, e)
+        if gen == 'lam':
+            return (s + (1 if a == 0 else -1), a, e)
+        if gen == 'lami':
+            return (s - (1 if a == 0 else -1), a, e)
+        if gen == 'C':                 # C = lambda^-1 A
+            s2, a2, e2 = _rmul(t, 'lami')
+            return (s2, 1 - a2, e2)
+        raise ValueError(gen)
+
+    def _rmul_word(t, k, e2):
+        """Right-multiply by lambda^k A sigma^e2."""
+        for _ in range(abs(k)):
+            t = _rmul(t, 'lam' if k > 0 else 'lami')
+        t = _rmul(t, 'A')
+        for _ in range(e2):
+            t = _rmul(t, 'sig')
+        return t
+
+    # ---- combinatorial seams ----------------------------------------
+    idx_x1 = (nx - 1) * ny + np.arange(ny)
+    idx_x0 = np.arange(ny)
+    iLt1 = selLt1 * ny + (ny - 1)
+    iLb1 = selLb1 * ny
+    iLt2 = selLt2 * ny + (ny - 1)
+    iLb2 = selLb2 * ny
+    seams = []                        # (idxA, idxB, frameA, frameB)
+    for t in lab:
+        me = lidx[t]
+
+        def _pair(idxA, idxB, t2):
+            if t2 in lidx:
+                seams.append((idxA, idxB, me, lidx[t2]))
+        _pair(idx_x1, idx_x0, _rmul(t, 'sig'))
+        _pair(iLt1, iLt1, _rmul(t, 'A'))
+        _pair(iLb1, iLb1, _rmul(t, 'C'))
+        _pair(iLt2, iLt2, _rmul_word(t, kB, eB))
+        _pair(iLb2, iLb2, _rmul_word(t, kD, eD))
+    nV = len(V0)
+    Vp, Fp = [], []
+    for fr, (M, tv, par) in enumerate(frames):
+        Vp.append(V0 @ M.T + tv)
+        off = fr * nV
+        if par < 0:
+            Fp.extend(tuple(off + i for i in f[::-1]) for f in q0)
+        else:
+            Fp.extend(tuple(off + i for i in f) for f in q0)
+    Vall = np.concatenate(Vp, axis=0)
+    UVall = np.tile(_sptail_grid_uv(nx, ny), (len(frames), 1))
+    parent = np.arange(len(Vall))
+
+    def _find(a2):
+        while parent[a2] != a2:
+            parent[a2] = parent[parent[a2]]
+            a2 = parent[a2]
+        return a2
+
+    for idxA, idxB, fA, fB in seams:
+        if fA == fB:
+            continue
+        for iA, iB in zip(idxA, idxB):
+            ra = _find(fA * nV + int(iA))
+            rb = _find(fB * nV + int(iB))
+            if ra != rb:
+                parent[ra] = rb
+    roots = np.array([_find(a2) for a2 in range(len(Vall))])
+    uniq, inv = np.unique(roots, return_inverse=True)
+    Vw = np.zeros((len(uniq), 3))
+    UVw = np.zeros((len(uniq), 2))
+    cw = np.zeros(len(uniq))
+    np.add.at(Vw, inv, Vall)
+    np.add.at(UVw, inv, UVall)
+    np.add.at(cw, inv, 1)
+    Vw /= cw[:, None]
+    UVw /= cw[:, None]
+    F = []
+    for f in Fp:
+        g = [int(inv[i]) for i in f]
+        hh = [g[0]]
+        for sgi in range(1, len(g)):
+            if g[sgi] != hh[-1]:
+                hh.append(g[sgi])
+        if len(hh) >= 3 and hh[0] != hh[-1] and len(set(hh)) == len(hh):
+            F.append(tuple(hh))
+    used2 = sorted({i for f in F for i in f})
+    remap = np.full(len(uniq), -1, dtype=np.int64)
+    remap[np.array(used2, dtype=np.int64)] = np.arange(len(used2))
+    V = Vw[np.array(used2, dtype=np.int64)]
+    uv = UVw[np.array(used2, dtype=np.int64)]
+    F = [tuple(int(remap[i]) for i in f) for f in F]
+    span = float(np.linalg.norm(V.max(0) - V.min(0)))
+    diag['span'] = span
+    lamfr = _mul(Afr, Cfr)
+    diag['lambda'] = lamfr
+    diag['rise'] = 2.0 * (zA - zC)
+    return V, F, uv, diag
+
+
+def stinv_screw_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                     storeys=1):
+    p = spec['p_from'](order, radius)
+    S = int(np.clip(storeys, 1, 8))
+    V, F, uv, _ = stinv_screw_build(
+        p['timag'], nu=int(np.clip(int(0.8 * nu), 32, 130)),
+        nt=int(np.clip(int(0.6 * nv), 20, 90)), storeys=S,
+        delta=p['delta'])
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
+def stinv_screw_residuals(n=3000):
+    """The notebook's two period conditions per shipped tau (det
+    conditions on the horizontal period vectors; see the header)."""
+    out = {}
+    for timag, (ua, vb) in _STINV_SCREW.items():
+        tau = 1j * timag
+        om, _, _ = stinv_screw_om(timag, cap=1e12)
+
+        def seg(wp, e_end=(0.0, 0.0)):
+            tot = np.zeros(2)
+            m = len(wp) - 1
+            for i in range(m):
+                A2, B2 = complex(wp[i]), complex(wp[i + 1])
+                t = np.linspace(0.0, 1.0, n)
+                if (e_end[0] if i == 0 else 0.0) > 0:
+                    t = t ** 3.0
+                if (e_end[1] if i == m - 1 else 0.0) > 0:
+                    t = 1.0 - (1.0 - t) ** 3.0
+                z = A2 + t * (B2 - A2)
+                o1, o2, _ = om(z)
+                dz = np.diff(z)
+                tot[0] += np.real(np.sum(0.5 * (o1[1:] + o1[:-1]) * dz))
+                tot[1] += np.real(np.sum(0.5 * (o2[1:] + o2[:-1]) * dz))
+            return tot
+        p0 = 0.5 + tau / 4
+        I1 = seg([p0, vb + tau / 2], (0.0, 0.5))
+        om1v, om2v, _ = om(np.array(complex(p0)))
+        # want I1 parallel to the horizontal normal projection at p0
+        # recover G from the om pair: om2 + i om1 = -1/G
+        Gv = complex(-1.0 / (om2v + 1j * om1v))
+        d = abs(Gv) ** 2 + 1.0
+        n2 = np.array([2.0 * Gv.real / d, 2.0 * Gv.imag / d])
+        c1 = I1[0] * n2[1] - I1[1] * n2[0]
+        Ia = seg([tau / 2, tau / 4, vb + tau / 2], (0.0, 0.5))
+        Ib = seg([tau / 2, 0.5 + tau / 4, 1 + tau / 2])
+        c2 = Ia[0] * Ib[1] - Ia[1] * Ib[0]
+        out[f'screw tau={timag}i'] = max(abs(c1), abs(c2))
+    return out
+
+
+def stinv_period_residuals(n=600):
+    """Machine-check every shipped constant set against its notebook
+    period conditions (the honesty gate; see the block header)."""
+    out = {}
+    for a, b in _STINV_G1.items():
+        pref, f1, f2 = stinv_g1_facs(a, b)
+
+        def om1(z):
+            z = sptail_nudge(np.asarray(z, dtype=complex))
+            return -0.5 * (stinv_prod(z, pref, f1)
+                           - stinv_prod(z, 1.0 / pref, f2))
+        out[f'g1 a={a}'] = abs(np.real(cwce_path_int(
+            om1, [a, 1j, b], (0.5, 0.5), n)))
+    for a, (b, c) in _STINV_G3.items():
+        pref, f1, f2 = stinv_g3_facs(a, b, c)
+
+        def om2(z):
+            z = sptail_nudge(np.asarray(z, dtype=complex))
+            return 0.5j * (stinv_prod(z, pref, f1)
+                           + stinv_prod(z, 1.0 / pref, f2))
+        r1 = np.real(cwce_path_int(
+            om2, [a, 0.5 * (a + b) + 0.25j, b], (0.5, 0.5), n))
+        r2 = np.real(cwce_path_int(om2, [a, 1j, c], (0.5, 0.5), n))
+        out[f'g3 a={a}'] = max(abs(r1), abs(r2))
+    for a, (b, rho) in _STINV_COSTA.items():
+        f1 = ((a, -0.5), (1.0, -0.5), (b, 0.5), (-1.0, -0.5))
+        f2 = ((a, 0.5), (1.0, -1.5), (b, -0.5), (-1.0, -1.5))
+
+        def omj(z, j):
+            z = sptail_nudge(np.asarray(z, dtype=complex))
+            p1 = stinv_prod(z, complex(rho), f1)
+            p2 = stinv_prod(z, complex(1.0 / rho), f2)
+            return -0.5 * (p1 - p2) if j == 1 else 0.5j * (p1 + p2)
+        r1 = np.real(cwce_path_int(lambda z: omj(z, 2),
+                                   [b, 1j, 200.0], (0.5, 0.0), n))
+        r2 = np.real(cwce_path_int(lambda z: omj(z, 1),
+                                   [a, 1j, b], (0.5, 0.5), n))
+        out[f'costa a={a}'] = max(abs(r1), abs(r2))
+    # CHM-(1,2): the notebook's regularized ratio conditions
+    a, b = _STINV_CHM12_A, _STINV_CHM12_B
+
+    def P(z):
+        return (z ** 2 * (z ** 2 - 1.0) ** 2 * (z ** 2 - a * a) ** 3
+                * (z ** 2 - b * b))
+
+    def Areg(z):
+        return ((b * b - z ** 2 - 2 * a * a * z ** 2 - b * b * z ** 2
+                 + 3 * z ** 4) / (b * b * (b - a) * (a + b)))
+
+    def om1i(z):
+        z = np.asarray(z, dtype=complex)
+        return Areg(z) * np.asarray(P(z), complex) ** -0.25
+
+    def om2i(z):
+        z = np.asarray(z, dtype=complex)
+        return (z ** 2 * (z ** 2 - 1.0 + 0j) ** -2.0
+                * (z ** 2 - a * a + 0j) ** -1.0
+                * (z ** 2 - b * b + 0j)) ** 0.25
+    o1a = cwce_path_int(om1i, [0.0, 1.0], (0.5, 0.5), n)
+    o1b = cwce_path_int(om1i, [1.0, a], (0.5, 0.75), n)
+    o1c = cwce_path_int(om1i, [a, b], (0.75, 0.25), n)
+    o2a = cwce_path_int(om2i, [0.0, 1.0], (0.0, 0.5), n)
+    o2b = cwce_path_int(om2i, [1.0, a], (0.5, 0.25), n)
+    o2c = cwce_path_int(om2i, [a, b], (0.25, 0.0), n)
+    out['chm12'] = max(abs(np.real(o2b / o2a + o1b / o1a)),
+                       abs(np.real(o2c / o2b + o1c / o1b)))
+    return out
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
@@ -8619,5 +9896,120 @@ if __name__ == "__main__":
           f"vgrid monotone={bool(np.all(np.diff(vg) > 0))} "
           f"y range [{yr[0] - 0.5 * (yr[0] + yr[-1]):.4f},"
           f"{yr[-1] - 0.5 * (yr[0] + yr[-1]):.4f}] "
+          f"{'OK' if good else 'FAIL'}")
+    # ---- STINV translation-invariant towers + CHM variants -----------
+    # (1) every harvested/polished constant set closes its notebook
+    #     period conditions (machine-checked residuals)
+    resid = stinv_period_residuals()
+    worst = {}
+    for k, v in resid.items():
+        fam = k.split()[0]
+        worst[fam] = max(worst.get(fam, 0.0), v)
+    good = (worst['g1'] < 1e-7 and worst['g3'] < 1e-7
+            and worst['costa'] < 1e-6 and worst['chm12'] < 1e-4)
+    ok &= good
+    print(f"stinv period residuals: g1={worst['g1']:.1e} "
+          f"g3={worst['g3']:.1e} costa={worst['costa']:.1e} "
+          f"chm12={worst['chm12']:.1e} {'OK' if good else 'FAIL'}")
+    sres = stinv_screw_residuals(n=1500)
+    wsc = max(sres.values())
+    good = wsc < 1e-3
+    ok &= good
+    print(f"stinv screw-CHM residuals (6 tau values): worst={wsc:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+    # (2) the Weierstrass null identity om1^2+om2^2+om3^2 = 0 on random
+    #     interior points, for every member's integrand
+    rng = np.random.default_rng(11)
+    zs = (rng.uniform(0.1, 0.8, 40)
+          * np.exp(1j * rng.uniform(0.1, 3.0, 40)))
+    nullw = 0.0
+    for om in (stinv_cat_om(*stinv_g1_facs(0.5, _STINV_G1[0.5])),
+               stinv_cat_om(*stinv_g3_facs(0.1, *_STINV_G3[0.1])),
+               stinv_costa_om(-10.0, *_STINV_COSTA[-10.0])):
+        o1, o2, o3 = om(zs)
+        nullw = max(nullw, float(np.max(np.abs(
+            o1 * o1 + o2 * o2 + o3 * o3))))
+    ws = rng.uniform(-2.0, 2.0, 40) + 1j * rng.uniform(0.2, 2.9, 40)
+    o1, o2, o3 = stinv_chm12_forms(ws)
+    nullw = max(nullw, float(np.max(np.abs(o1 * o1 + o2 * o2
+                                           + o3 * o3))))
+    omscrew, _, _ = stinv_screw_om(0.8)
+    zt = rng.uniform(0.25, 0.35, 30) + 1j * rng.uniform(0.1, 0.3, 30)
+    o1, o2, o3 = omscrew(zt)
+    nullw = max(nullw, float(np.max(np.abs(o1 * o1 + o2 * o2
+                                           + o3 * o3))))
+    good = nullw < 1e-10
+    ok &= good
+    print(f"stinv null identity: worst |om.om| = {nullw:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+    # (3) per member: stacks at S = 1, 2 (manifold, oriented, one
+    #     component; chi(2)-chi(1) = the quotient chi), the translation-
+    #     wrapped quotient (true per-period chi and end count), and the
+    #     measured mirror/period-closure diagnostics
+    for name, fn, kw, want_dchi, want_ends, gaps in (
+            ('g1 (a=0.5)', stinv_g1_build, dict(a=0.5), -4, 2,
+             ('xmirror_gap',)),
+            ('g3 (a=0.1)', stinv_g3_build, dict(a=0.1), -6, 2,
+             ('ymirror_gap',)),
+            ('costa (a=-10)', stinv_costa_build, dict(a=-10.0), -4, 4,
+             ('xmirror_gap', 'ymirror_gap'))):
+        chis = []
+        good = True
+        keep = None
+        for S in (1, 2):
+            V, F, uv, d = fn(nu=44, nt=30, storeys=S, **kw)
+            chi, nonman, orient, loops, ncomp = sptail_topology(V, F)
+            chis.append(chi)
+            good &= (nonman == 0 and orient and ncomp == 1)
+            if S == 1:
+                keep = (V, F, d)
+        V1, F1, d = keep
+        Vq, Fq = sptail_quotient(V1, F1, d['T'], d['span'] * 1e-3)
+        cq = sptail_topology(Vq, Fq)
+        gap = max(d[g] for g in gaps)
+        good &= (chis[1] - chis[0] == want_dchi
+                 and cq[0] == want_dchi and cq[1] == 0 and cq[2]
+                 and cq[3] == want_ends and cq[4] == 1
+                 and gap < 5e-4 * d['span'])
+        ok &= good
+        print(f"stinv {name:14s}: dchi={chis[1] - chis[0]} "
+              f"(want {want_dchi}) wrapped chi={cq[0]} "
+              f"ends={cq[3]} (want {want_ends}) gap={gap:.1e} "
+              f"{'OK' if good else 'FAIL'}")
+    # CHM-(1,2): combinatorial weld; quotient via the cyclic wrap flag
+    chis = []
+    good = True
+    for S in (1, 2):
+        V, F, uv, d = stinv_chm12_build(nu=56, nt=34, storeys=S)
+        chi, nonman, orient, loops, ncomp = sptail_topology(V, F)
+        chis.append(chi)
+        good &= (nonman == 0 and orient and ncomp == 1)
+    Vq, Fq, _, dq = stinv_chm12_build(nu=56, nt=34, storeys=1,
+                                      wrap=True)
+    cq = sptail_topology(Vq, Fq)
+    good &= (chis[1] - chis[0] == -8 and cq[0] == -8 and cq[1] == 0
+             and cq[2] and cq[3] == 2 and cq[4] == 1)
+    ok &= good
+    print(f"stinv chm12         : dchi={chis[1] - chis[0]} (want -8) "
+          f"wrapped chi={cq[0]} ends={cq[3]} (want 2) "
+          f"line/mirror ptps < {max(dq[k] for k in dq if k.endswith('_ptp')):.1e} "
+          f"{'OK' if good else 'FAIL'}")
+    # screw-motion CHM: dchi = -6 per screw period; the exactified
+    # group's word identifications must land on the fitted lines
+    chis = []
+    good = True
+    for S in (1, 2):
+        V, F, uv, d = stinv_screw_build(timag=0.8, nu=48, nt=32,
+                                        storeys=S)
+        chi, nonman, orient, loops, ncomp = sptail_topology(V, F)
+        chis.append(chi)
+        good &= (nonman == 0 and orient and ncomp == 1)
+    good &= (chis[1] - chis[0] == -6 and d['wordB'][2] < 1e-4
+             and d['wordD'][2] < 1e-4 and d['screw_fit'] < 1e-4
+             and abs(d['rise'] + 0.8) < 1e-9)
+    ok &= good
+    print(f"stinv screw (t=0.8i): dchi={chis[1] - chis[0]} (want -6) "
+          f"wordB axis-dist={d['wordB'][2]:.1e} "
+          f"screw fit={d['screw_fit']:.1e} rise={d['rise']:+.3f} "
           f"{'OK' if good else 'FAIL'}")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in we_builders")

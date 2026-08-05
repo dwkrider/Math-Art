@@ -2259,6 +2259,136 @@ WE_SURFACES['SP_DASILVA_BATISTA'] = {
 SURFACE_FAMILY['SP_DASILVA_BATISTA'] = 'SINGLY'
 
 
+# ==========================================================================
+# Translation-invariant catenoid/Costa towers + CHM variants
+# (appended catalog block; stinv_* engine in we_builders)
+# ==========================================================================
+# The five remaining translation-invariant singly periodic surfaces from
+# the minimalsurfaces.blog harvest, all with their notebook period
+# constants re-extracted and machine-verified (engine block + gates in
+# we_builders; every member's per-period Euler characteristic is
+# MEASURED against 2 - 2 genus - #ends):
+#   * SP_CAT_HANDLE_G1   fence of catenoids with ONE extra handle per
+#     period: genus 2, 2 catenoid ends, chi/period = -4.  Solved pairs
+#     (a, b) from Singly_Catenoid_1Handle_g1.nb.
+#   * SP_CAT_HANDLES_G3  fence of catenoids with TWO extra handles:
+#     genus 3, 2 ends, chi/period = -6.  Solved triples (a, b, c) from
+#     Singly_Catenoid_2Handles_g3.nb.
+#   * SP_COSTA_TRANSINV  translation-invariant Costa I: genus 1, 4 ends
+#     per period (2 catenoid-type + 2 flat annular wings),
+#     chi/period = -4.  Solved triples (a, b, rho) from
+#     Singly_TransInvCosta_I.nb, meshed on the Joukowski half-disk
+#     chart.
+#   * CHM12_PERIODIC     Callahan-Hoffman-Meeks CHM-(1,2): MEASURED
+#     quotient genus 4 with 2 horizontal planar ends per period
+#     (chi = -8) -- one handle more than CHM_PERIODIC's genus 3; the
+#     constants are Newton-polished from the Singly_CHM_1_2.nb seed
+#     (residual ~4e-6 vs the notebook's ~1.4e-3) and the strip chart
+#     x = sqrt(b^2 + e^w) parallels the CHM-(1,1) build, with a
+#     combinatorial 8-isometry weld.
+#   * SP_SCREW_CHM       Weber's screw-motion CHM: the CHM-(1,1) tower
+#     deformed so consecutive storeys are ROTATED, not just translated
+#     (theta-function Gauss map on the rectangular tau-torus; solved
+#     (u, v) per tau from Singly_ScrewMotion_CHM.nb).  Quotient genus 3
+#     with 2 ends per screw period (chi = -6), the same topology as its
+#     translational CHM-(1,1) limit -- measured.
+# The harvest's plain translation-invariant catenoid
+# (Singly_TransInvCatenoid.nb) is ALREADY shipped as SP_FENCE_CAT --
+# identical Weierstrass data (rho = sqrt(a), dh = dz/z, a = 0.2,
+# r1 = 6), so no separate row is added.
+#
+# References:
+#   H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#     examples", Manuscripta Math. 62 (1988) 83-114;
+#   M. J. Callahan, D. Hoffman, W. H. Meeks III, "Embedded minimal
+#     surfaces with an infinite number of ends", Invent. Math. 96
+#     (1989) 459-505;
+#   C. J. Costa (1984); D. Hoffman, W. H. Meeks III (1985);
+#   M. Weber, https://minimalsurfaces.blog/ -- the harvested notebooks
+#     (research/msblog_harvest/singly_periodic.json).
+
+WE_SURFACES['SP_CAT_HANDLE_G1'] = {
+    'label': "Catenoid Tower with Handle (genus 2)",
+    'family': 'SINGLY',
+    'mesher': we.stinv_g1_mesh,
+    # count slider walks the solved neck moduli; radius digs the
+    # catenoid funnels deeper (bigger r1 = deeper trim)
+    'p_from': lambda order, radius: {
+        'a': (0.1, 0.2, 0.3, 0.5)[int(np.clip(order, 1, 4)) - 1],
+        'r1': float(np.clip(3.0 * (radius / 1.2) ** 1.5, 1.6, 9.0))},
+    'count': "Neck modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 4,
+}
+SURFACE_FAMILY['SP_CAT_HANDLE_G1'] = 'SINGLY'
+
+WE_SURFACES['SP_CAT_HANDLES_G3'] = {
+    'label': "Catenoid Tower with 2 Handles (genus 3)",
+    'family': 'SINGLY',
+    'mesher': we.stinv_g3_mesh,
+    'p_from': lambda order, radius: {
+        'a': (0.06, 0.08, 0.1, 0.2, 0.4, 0.6)[
+            int(np.clip(order, 1, 6)) - 1],
+        'r1': float(np.clip(3.5 * (radius / 1.2) ** 1.5, 1.6, 10.0))},
+    'count': "Neck modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_CAT_HANDLES_G3'] = 'SINGLY'
+
+WE_SURFACES['SP_COSTA_TRANSINV'] = {
+    'label': "Translation-Invariant Costa",
+    'family': 'SINGLY',
+    'mesher': we.stinv_costa_mesh,
+    # count walks the solved (a, b, rho) family (a -> -1 squeezes the
+    # wings together); radius extends the flat wings (smaller rmin)
+    # and digs the catenoid funnels (smaller corner delta)
+    'p_from': lambda order, radius: {
+        'a': (-10.0, -5.0, -3.0, -2.0, -1.5, -1.1)[
+            int(np.clip(order, 1, 6)) - 1],
+        'rmin': float(np.clip(0.02 * (1.2 / max(radius, 0.2)) ** 1.2,
+                              0.008, 0.06)),
+        'delta': float(np.clip(0.12 * (1.2 / max(radius, 0.2)) ** 0.7,
+                               0.06, 0.2))},
+    'count': "Wing modulus (a)",
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['SP_COSTA_TRANSINV'] = 'SINGLY'
+
+WE_SURFACES['CHM12_PERIODIC'] = {
+    'label': "Callahan-Hoffman-Meeks CHM-(1,2) (genus 4)",
+    'family': 'SINGLY',
+    'mesher': we.stinv_chm12_mesh,
+    # radius slides the two conformal end trims (wider flat shelves)
+    'p_from': lambda order, radius: {
+        'umin': float(np.clip(-4.0 - 2.0 * math.log(
+            max(radius, 0.2) / 1.2), -6.5, -2.5)),
+        'umax': float(np.clip(4.0 + 2.0 * math.log(
+            max(radius, 0.2) / 1.2), 2.5, 6.5))},
+    'storeys_label': "Periods",
+    'test_order': 1,
+}
+SURFACE_FAMILY['CHM12_PERIODIC'] = 'SINGLY'
+
+WE_SURFACES['SP_SCREW_CHM'] = {
+    'label': "Screw-Motion CHM Tower",
+    'family': 'SINGLY',
+    'mesher': we.stinv_screw_mesh,
+    # count walks the solved tau family (bigger tau = taller storey and
+    # stronger twist); radius digs the two trimmed ends deeper
+    'p_from': lambda order, radius: {
+        'timag': (0.6, 0.7, 0.8, 0.9, 1.0, 1.05)[
+            int(np.clip(order, 1, 6)) - 1],
+        'delta': float(np.clip(0.10 * (1.2 / max(radius, 0.2)) ** 0.7,
+                               0.05, 0.16))},
+    'count': "Torus modulus (tau)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_SCREW_CHM'] = 'SINGLY'
+
+
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
@@ -2834,6 +2964,57 @@ if __name__ == "__main__":
     print(f"sptail SP_SCHERK_ENNEPER periods: alternation "
           f"residual={sealt:.1e} |T|>={semag:.3f} "
           f"{'OK' if good else 'FAIL'}")
+    # ---- STINV towers + CHM variants (appended gate block) -----------
+    # engine-level gates (period residuals at the harvested constants,
+    # translation-wrapped quotient topology) live in we_builders'
+    # __main__; here the full pipeline is gated at S = 1 and S = 2
+    # stacked periods: measured chi(2) - chi(1) must equal the quotient
+    # Euler characteristic 2 - 2 genus - #ends, and every stack must be
+    # edge-manifold, one component and fit the 2 m cube.
+    for skey, sord, dchi in (('SP_CAT_HANDLE_G1', 4, -4),
+                             ('SP_CAT_HANDLES_G3', 3, -6),
+                             ('SP_COSTA_TRANSINV', 1, -4),
+                             ('CHM12_PERIODIC', 1, -8),
+                             ('SP_SCREW_CHM', 3, -6)):
+        chis = []
+        good = True
+        for S in (1, 2):
+            Vs, Qs = tk.build_parametric(skey, 48, 48, sord, 1.2, 1.0,
+                                         cells=(S, 1))
+            ecs = {}
+            for f in Qs:
+                m = len(f)
+                for tq in range(m):
+                    a, b = f[tq], f[(tq + 1) % m]
+                    e = (a, b) if a < b else (b, a)
+                    ecs[e] = ecs.get(e, 0) + 1
+            chis.append(len(Vs) - len(ecs) + len(Qs))
+            nonman = sum(1 for c in ecs.values() if c > 2)
+            parc = list(range(len(Vs)))
+
+            def sfind(a):
+                while parc[a] != a:
+                    parc[a] = parc[parc[a]]
+                    a = parc[a]
+                return a
+
+            for f in Qs:
+                for i in range(1, len(f)):
+                    ra, rb = sfind(f[0]), sfind(f[i])
+                    if ra != rb:
+                        parc[ra] = rb
+            ncomp = len({sfind(f[0]) for f in Qs})
+            lo, hi = Vs.min(0), Vs.max(0)
+            cen = float(np.max(np.abs(0.5 * (lo + hi))))
+            ext = float(np.max(hi - lo))
+            good &= (nonman == 0 and ncomp == 1 and cen < 1e-6
+                     and abs(ext - 2.0) < 1e-6
+                     and bool(np.all(np.isfinite(Vs))))
+        good &= (chis[1] - chis[0] == dchi)
+        ok &= good
+        print(f"stinv {skey:22s}: chi {chis[0]}->{chis[1]} "
+              f"(dchi want {dchi}) manifold/fit "
+              f"{'OK' if good else 'FAIL'}")
     # ---- SYMM/NONORIENT TAIL gates -----------------------------------
     # Kusner: the FULL residue (Re and Im) must vanish at every one of
     # the 2p planar ends -- the immersion is single-valued with no
