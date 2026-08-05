@@ -315,17 +315,171 @@ def _add_rod(P0, P1, e1, e2, section, cap, verts, faces, tag_faces, tag):
         tag_faces.append(tag)
 
 
+# ----------------------------------------------------------------------
+# end-connecting knots/links (after Widmark 2021): join the protruding
+# rod ends in pairs -- "half loops" between neighbours on the same axis,
+# "twists" between crossing neighbours on different axes -- so the rods
+# fuse into continuous embedded loops (the torch-worked glass knots).
+
+def _bezier_arc(p0, t0, p1, t1, segs):
+    """Interior points of a cubic Bezier leaving p0 along +t0 and
+    arriving at p1 along -t1 (t0, t1 are the rods' outward tangents), so
+    the connector bulges out and curves smoothly back in."""
+    h = 0.42 * _norm(_sub(p1, p0)) + 1e-6
+    c0 = _add(p0, _scale(t0, h))
+    c1 = _add(p1, _scale(t1, h))
+    pts = []
+    for s in range(1, segs):
+        u = s / segs
+        v = 1.0 - u
+        b0, b1, b2, b3 = v * v * v, 3 * v * v * u, 3 * v * u * u, u * u * u
+        pts.append((b0 * p0[0] + b1 * c0[0] + b2 * c1[0] + b3 * p1[0],
+                    b0 * p0[1] + b1 * c0[1] + b2 * c1[1] + b3 * p1[1],
+                    b0 * p0[2] + b1 * c0[2] + b2 * c1[2] + b3 * p1[2]))
+    return pts
+
+
+def _match_ends(ends):
+    """Pair every rod end with exactly one other end (never its own
+    rod's), greedily shortest-first, so the rods + connectors form
+    closed loops. Same-axis neighbours naturally win as U-turns (half
+    loops); crossing neighbours become twists."""
+    n = len(ends)
+    cand = []
+    for i in range(n):
+        for j in range(i + 1, n):
+            if ends[i][2] == ends[j][2]:          # same rod: skip
+                continue
+            cand.append((_norm(_sub(ends[i][0], ends[j][0])), i, j))
+    cand.sort(key=lambda c: c[0])
+    match = [-1] * n
+    for _, i, j in cand:
+        if match[i] == -1 and match[j] == -1:
+            match[i] = j
+            match[j] = i
+    for i in range(n):                            # stragglers: nearest free
+        if match[i] != -1:
+            continue
+        best, bj = 1e18, -1
+        for j in range(n):
+            if j == i or match[j] != -1 or ends[j][2] == ends[i][2]:
+                continue
+            d = _norm(_sub(ends[i][0], ends[j][0]))
+            if d < best:
+                best, bj = d, j
+        if bj != -1:
+            match[i] = bj
+            match[bj] = i
+    return match
+
+
+def _loop_centerlines(rod_list, body_seg, loop_seg):
+    """From rods [(P0, P1, u), ...] build closed centreline loops by
+    joining ends. ends[k] = (pos, outward_tangent, rod_id)."""
+    ends = []
+    for r, (P0, P1, u) in enumerate(rod_list):
+        ends.append((P0, _scale(u, -1.0), r))     # end A: outward = -u
+        ends.append((P1, u, r))                    # end B: outward = +u
+    match = _match_ends(ends)
+    n = len(ends)
+    visited = [False] * n
+    loops = []
+    for start in range(n):
+        if visited[start]:
+            continue
+        pts = []
+        cur = start
+        ok = True
+        while not visited[cur]:
+            visited[cur] = True
+            rod = cur // 2
+            other = rod * 2 + (1 - cur % 2)
+            visited[other] = True
+            pc, po = ends[cur][0], ends[other][0]
+            for s in range(body_seg):              # rod body cur -> other
+                t = s / body_seg
+                pts.append(tuple(pc[k] + (po[k] - pc[k]) * t
+                                 for k in range(3)))
+            partner = match[other]
+            if partner == -1:
+                ok = False
+                break
+            pts.extend(_bezier_arc(po, ends[other][1],
+                                   ends[partner][0], ends[partner][1],
+                                   loop_seg))
+            cur = partner
+        if ok and len(pts) >= 6:
+            loops.append(pts)
+    return loops
+
+
+def _closed_tube(pts, tube_r, sides, verts, faces, tag_faces, tag):
+    """Sweep a circular tube along a closed centreline using
+    rotation-minimizing frames (double reflection), distributing the
+    closure twist along the loop."""
+    n = len(pts)
+    tang = []
+    for i in range(n):
+        a = pts[(i - 1) % n]
+        b = pts[(i + 1) % n]
+        tang.append(_unit((b[0] - a[0], b[1] - a[1], b[2] - a[2])))
+    t0 = tang[0]
+    ref = (0.0, 0.0, 1.0) if abs(t0[2]) < 0.9 else (1.0, 0.0, 0.0)
+    r = _unit(_cross(t0, ref))
+    frames = [r]
+    for i in range(n):
+        j = (i + 1) % n
+        v1 = _sub(pts[j], pts[i])
+        c1 = _dot(v1, v1) or 1e-12
+        d = _dot(v1, frames[-1])
+        rl = [frames[-1][k] - 2 / c1 * d * v1[k] for k in range(3)]
+        dt = _dot(v1, tang[i])
+        tl = [tang[i][k] - 2 / c1 * dt * v1[k] for k in range(3)]
+        v2 = [tang[j][k] - tl[k] for k in range(3)]
+        c2 = _dot(v2, v2) or 1e-12
+        dr = _dot(v2, rl)
+        frames.append([rl[k] - 2 / c2 * dr * v2[k] for k in range(3)])
+    last = frames[n]
+    cx = _cross(last, r)
+    sgn = 1.0 if _dot(cx, tang[0]) > 0 else -1.0
+    dotr = max(-1.0, min(1.0, _dot(last, r)))
+    twist = sgn * math.acos(dotr)
+    base = len(verts)
+    for i in range(n):
+        corr = -twist * i / n
+        N = frames[i]
+        T = tang[i]
+        B = _cross(T, N)
+        ca, sa = cos(corr), sin(corr)
+        Nc = [N[k] * ca + B[k] * sa for k in range(3)]
+        Bc = [-N[k] * sa + B[k] * ca for k in range(3)]
+        for s in range(sides):
+            a = 2 * pi * s / sides
+            verts.append(tuple(
+                pts[i][k] + tube_r * (cos(a) * Nc[k] + sin(a) * Bc[k])
+                for k in range(3)))
+    for i in range(n):
+        i2 = (i + 1) % n
+        for s in range(sides):
+            s2 = (s + 1) % sides
+            faces.append([base + i * sides + s, base + i * sides + s2,
+                          base + i2 * sides + s2, base + i2 * sides + s])
+            tag_faces.append(tag)
+
+
 def build_polystix(packing='HEXASTIX', cross_section='PRISM', fill=0.98,
                    extent=4, clip='RHOMBIC_DODECA', handedness='RIGHT',
                    tube_sides=16, cap_ends=True, overhang=0.0,
-                   max_rods=6000):
-    """Return (verts, faces, face_dir, dir_index) for a polystix
-    packing. face_dir[k] is the direction-family colour index of mesh
-    face k; dir_index maps each distinct direction to a colour slot.
+                   connect_loops=False, loop_segments=12, max_rods=6000):
+    """Return (verts, faces, face_tag, n_groups, n_rods, truncated).
+    face_tag[k] is the colour group of mesh face k -- the rod's
+    direction family normally, or its loop index when connect_loops is
+    on; n_groups is the number of colour slots.
 
     ``overhang`` lengthens every rod past the interleaved core by that
     many lattice cells at each end (negative retracts the rods to expose
-    the weave)."""
+    the weave). ``connect_loops`` fuses the protruding rod ends into
+    continuous knots/links (after Widmark 2021)."""
     spec = PACKINGS[packing]
     dirs = spec['dirs']
     offsets = spec['offsets']
@@ -362,14 +516,17 @@ def build_polystix(packing='HEXASTIX', cross_section='PRISM', fill=0.98,
 
     lat = _lattice_translations(lattice, extent + 1)
 
-    verts, faces, tag_faces = [], [], []
+    # loops need the rod ends to protrude so neighbours can be joined
+    if connect_loops and overhang < 0.4:
+        overhang = 0.5
+
+    # collect the (deduplicated, clipped) rod segments first
+    rods = []                          # (P0, P1, u, color, e1, e2)
     seen = set()
-    n_rods = 0
     truncated = False
     for i, d in enumerate(dirs):
         u, e1, e2 = frames[i]
         color = dir_index[_dkey(d)]
-        section = _cross_section(sides, radius, prism)
         for L in lat:
             Q = _add(offsets[i], L)
             # canonicalise the line: drop the component along u, so
@@ -390,22 +547,35 @@ def build_polystix(packing='HEXASTIX', cross_section='PRISM', fill=0.98,
                 t1 += overhang
                 if t1 - t0 <= 1e-6:   # retracted to nothing: drop it
                     continue
-            P0 = _add(Q, _scale(u, t0))
-            P1 = _add(Q, _scale(u, t1))
-            _add_rod(P0, P1, e1, e2, section, cap_ends,
-                     verts, faces, tag_faces, color)
-            n_rods += 1
-            if n_rods >= max_rods:
+            rods.append((_add(Q, _scale(u, t0)),
+                         _add(Q, _scale(u, t1)), u, color, e1, e2))
+            if len(rods) >= max_rods:
                 truncated = True
                 break
         if truncated:
             break
 
+    verts, faces, tag_faces = [], [], []
+    n_rods = len(rods)
+    if connect_loops:
+        loops = _loop_centerlines([(P0, P1, u) for P0, P1, u, _, _, _ in rods],
+                                  body_seg=4, loop_seg=max(2, loop_segments))
+        for li, pts in enumerate(loops):
+            _closed_tube(pts, radius, max(3, tube_sides),
+                         verts, faces, tag_faces, li)
+        n_groups = max(1, len(loops))
+    else:
+        section = _cross_section(sides, radius, prism)
+        for P0, P1, u, color, e1, e2 in rods:
+            _add_rod(P0, P1, e1, e2, section, cap_ends,
+                     verts, faces, tag_faces, color)
+        n_groups = len(dir_index)
+
     if handedness == 'LEFT':          # reflect through x = 0 (mirror)
         verts = [(-x, y, z) for (x, y, z) in verts]
         faces = [list(reversed(f)) for f in faces]
 
-    return verts, faces, tag_faces, len(dir_index), n_rods, truncated
+    return verts, faces, tag_faces, n_groups, n_rods, truncated
 
 
 try:
@@ -435,6 +605,10 @@ if _IN_BLENDER:
         'SIGMA': ("+Sigma bundle (chiral)",
                   dict(packing='SIGMA', cross_section='CYLINDER',
                        fill=0.95, clip='RHOMBIC_DODECA')),
+        'KNOT': ("Hexastix Knot (linked loops)",
+                 dict(packing='HEXASTIX', cross_section='CYLINDER',
+                      fill=0.65, clip='RHOMBIC_DODECA',
+                      connect_loops=True)),
     }
 
     _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
@@ -501,6 +675,16 @@ if _IN_BLENDER:
             description="Extend each rod past the interleaved core by "
                         "this many cells at both ends (negative "
                         "retracts the rods to expose the weave)")
+        connect_loops: BoolProperty(
+            name="Connect Loops", default=False,
+            description="Fuse the protruding rod ends into continuous "
+                        "knots/links: 'half loops' join same-axis "
+                        "neighbours, 'twists' join crossing neighbours "
+                        "(after Widmark 2021). Rods become round tubes; "
+                        "overhang is forced on so the ends can meet")
+        loop_segments: IntProperty(
+            name="Loop Smoothness", default=12, min=2, max=48,
+            description="Samples along each connecting arc")
         cap_ends: BoolProperty(name="Cap Ends", default=True)
         coloring: EnumProperty(
             name="Coloring",
@@ -537,7 +721,8 @@ if _IN_BLENDER:
              n_rods, truncated) = build_polystix(
                 self.packing, self.cross_section, self.fill,
                 self.extent, self.clip, self.handedness,
-                self.tube_sides, self.cap_ends, self.overhang)
+                self.tube_sides, self.cap_ends, self.overhang,
+                self.connect_loops, self.loop_segments)
             if not verts:
                 self.report({'WARNING'},
                             "No rods in the clip volume; raise Extent")
@@ -568,7 +753,10 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
-            msg = f"{n_rods} rods"
+            if self.connect_loops:
+                msg = f"{ncols} loop(s) from {n_rods} rods"
+            else:
+                msg = f"{n_rods} rods"
             if truncated:
                 msg += " (capped; lower Extent)"
             self.report({'INFO'}, msg)
@@ -583,14 +771,22 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'preset')
             locked = self.preset != 'CUSTOM'
+            loops = self.connect_loops
             keys = ['packing', 'cross_section', 'fill', 'extent', 'clip',
                     'handedness']
-            if self.cross_section == 'CYLINDER':
+            if self.cross_section == 'CYLINDER' or loops:
                 keys.append('tube_sides')
-            keys += ['overhang', 'cap_ends', 'coloring', 'scale']
+            keys += ['overhang', 'connect_loops']
+            if loops:
+                keys.append('loop_segments')
+            keys += ['cap_ends', 'coloring', 'scale']
             for k in keys:
                 row = lay.row()
-                row.enabled = not (locked and k in self._PRESET_DRIVEN)
+                dis_preset = locked and k in self._PRESET_DRIVEN
+                # loop mode forces round tubes and closed loops, so the
+                # cross-section and cap-ends controls have no effect
+                dis_loop = loops and k in ('cross_section', 'cap_ends')
+                row.enabled = not (dis_preset or dis_loop)
                 row.prop(self, k)
 
     def _menu_func(self, context):

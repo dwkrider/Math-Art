@@ -138,6 +138,14 @@ OPS = [
     ("polystix sigma", lambda: bpy.ops.mesh.polystix_add(
         preset='CUSTOM', packing='SIGMA', cross_section='CYLINDER',
         extent=3, clip='RHOMBIC_DODECA')),
+    ("polystix knot loops", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='HEXASTIX', cross_section='CYLINDER',
+        extent=2, clip='RHOMBIC_DODECA', fill=0.6, overhang=0.6,
+        connect_loops=True, loop_segments=8, tube_sides=8)),
+    ("polystix knot tetrastix", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='TETRASTIX', cross_section='CYLINDER',
+        extent=2, clip='CUBE', fill=0.6, connect_loops=True,
+        loop_segments=8, tube_sides=8)),
     ("platonic twist", lambda: bpy.ops.mesh.platonic_twist_add(
         kind='CUBE')),
     ("fractal", lambda: bpy.ops.mesh.fractal_polyhedron_add(
