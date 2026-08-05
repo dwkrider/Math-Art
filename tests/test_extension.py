@@ -272,7 +272,7 @@ OPS = [
     ("interlocking ufo",
      lambda: bpy.ops.mesh.interlocking_add(family='UFO')),
     ("interlocking sl",
-     lambda: bpy.ops.mesh.interlocking_add(family='SL', sl_blocks=4)),
+     lambda: bpy.ops.mesh.interlocking_add(family='SL')),
     ("interlocking dome",
      lambda: bpy.ops.mesh.interlocking_add(
          family='DOME', dome_seed='DODECA')),

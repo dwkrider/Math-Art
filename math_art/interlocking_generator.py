@@ -22,14 +22,19 @@
 #             deformation reproduces Estrin's osteomorphic block; a
 #             tent/zig-zag deformation reproduces a Versatile-style
 #             block.  Two-colouring follows the Truchet rule.
-#   DOME      the same loft driven radially over the faces of a
-#             polyhedron (icosahedron / dodecahedron): each face is
-#             lofted from an inner shell through a rotated middle
-#             shell to an outer shell, giving an interlocking
-#             spherical assembly (after Akpanya, Goertzen & Niemeyer).
+#   DOME      a modular polyhedral shell: one block per face of a
+#             polyhedron (icosahedron / dodecahedron), each the region
+#             of the spherical shell between an inner and outer radius
+#             cut by the radial walls through that face's edges, so
+#             the blocks tile the shell with shared walls (after the
+#             radial construction of Akpanya, Goertzen & Niemeyer).
 #
-# The exact literature blocks (Versatile, Bisquare, Rhom) are also
-# available verbatim as single-block showcase presets.
+# TETRA, ESCHER and KITTEN are space-filling / interlocking
+# assemblies (verified non-overlapping; a fixed peripheral frame locks
+# the interior).  The exact Versatile block, the UFO and cushion
+# tetroctahedrille blocks and the SL octocube are shown as single
+# reference blocks -- their space-filling assemblies require rotations
+# / an engagement grammar left for future work.
 #
 # References:
 # - A. V. Dyskin, Y. Estrin, A. J. Kanel-Belov, E. Pasternak, "A new
@@ -399,24 +404,21 @@ def build_mcs(kind, nx, ny):
 # two Truchet colours.  A sine profile is Estrin's osteomorphic
 # block; a tent profile is a Versatile-style block.
 
-def _edge_profile(kind, depth, samples):
-    """Offsets (perpendicular to the edge) at `samples`+1 equally
-    spaced parameters along one edge, endpoints fixed at 0.  Positive
-    is outward.  The four edges of the square are the 90-deg images of
-    this one profile, so the tile stays a valid fundamental domain."""
-    t = np.linspace(0.0, 1.0, samples + 1)
+def _profile(kind, depth, t):
+    """Edge offset at parameters t in [-0.5, 0.5]; zero at the two
+    endpoints so tile corners are fixed."""
     if kind == 'SINE':
-        off = depth * np.sin(np.pi * t)
+        off = depth * np.cos(np.pi * t)             # single bump
     elif kind == 'TENT':
-        off = depth * (1.0 - np.abs(2.0 * t - 1.0))
+        off = depth * (1.0 - 2.0 * np.abs(t))        # triangle
     elif kind == 'ZIGZAG':
-        off = depth * np.where(t < 0.5, t * 2.0, (1.0 - t) * 2.0)
-        off = depth * np.sin(2.0 * np.pi * t)   # S-curve, mean 0
+        off = depth * np.sin(2.0 * np.pi * t)        # S-curve, mean 0
     elif kind == 'STEP':
-        off = depth * np.sign(np.sin(2.0 * np.pi * t)) * \
-            np.minimum(1.0, 6.0 * np.minimum(t, 1.0 - t))
+        off = depth * np.clip(2.0 - 4.0 * np.abs(t),
+                              0.0, 1.0)               # trapezoid
     else:
         off = np.zeros_like(t)
+    off = np.asarray(off, float)
     off[0] = 0.0
     off[-1] = 0.0
     return off
@@ -424,25 +426,24 @@ def _edge_profile(kind, depth, samples):
 
 def _deformed_square(kind, depth, samples):
     """Boundary polyline (Nx2) of the Escher-deformed unit square,
-    centred at the origin, traversed counterclockwise.  The four
-    edges share one profile under 90-deg rotation so opposite edges
-    are compatible for tiling."""
-    off = _edge_profile(kind, depth, samples)
-    # corners of the unit square centred at origin, CCW
-    corners = [np.array((-0.5, -0.5)), np.array((0.5, -0.5)),
-               np.array((0.5, 0.5)), np.array((-0.5, 0.5))]
-    edge_dir = [np.array((1.0, 0.0)), np.array((0.0, 1.0)),
-                np.array((-1.0, 0.0)), np.array((0.0, -1.0))]
-    # outward normal of each edge (to the right of travel dir, then
-    # negated so it points away from centre)
+    centred at the origin, counterclockwise.  Opposite edges carry
+    the SAME offset in the SAME absolute direction (bottom & top both
+    shifted in +y by p(x); left & right both in +x by p(y)), so a
+    copy translated by one unit mates its neighbour's edge exactly --
+    the tile fills the plane with no gap and no overlap."""
+    t = np.linspace(-0.5, 0.5, samples + 1)
+    p = _profile(kind, depth, t)
     poly = []
-    for e in range(4):
-        a = corners[e]
-        d = edge_dir[e]
-        nrm = np.array((d[1], -d[0]))       # outward for CCW square
-        for s in range(samples):            # skip last (next corner)
-            t = s / samples
-            poly.append(a + d * t + nrm * off[s])
+    for s in range(samples):                         # bottom L->R
+        poly.append((t[s], -0.5 + p[s]))
+    for s in range(samples):                         # right  B->T
+        poly.append((0.5 + p[s], t[s]))
+    for s in range(samples):                         # top    R->L
+        k = samples - s
+        poly.append((t[k], 0.5 + p[k]))
+    for s in range(samples):                         # left   T->B
+        k = samples - s
+        poly.append((-0.5 + p[k], t[k]))
     return np.array(poly)
 
 
@@ -492,31 +493,30 @@ def _loft_rings(rings, zs, close=True):
     return [tuple(map(float, p)) for p in V], faces
 
 
-def build_escher_block(kind, depth, samples, height, flip):
+def build_escher_block(kind, depth, samples, height):
     """One Escher-loft block centred at the origin: deformed square at
     z=-height/2, its 90-deg rotation at z=0, deformed square again at
-    z=+height/2.  `flip` swaps the mid-rotation sense (the Truchet
-    colour).  Returns (verts, faces)."""
+    z=+height/2.  Every block is identical, so translated copies tile
+    the slab at every height and interlock.  Returns (verts, faces)."""
     base = _deformed_square(kind, depth, samples)
-    ang = (-1.0 if flip else 1.0) * math.pi / 2.0
-    mid = _rot2(base, ang)
+    mid = _rot2(base, math.pi / 2.0)
     rings = [base, mid, base]
     zs = [-height / 2.0, 0.0, height / 2.0]
     return _loft_rings(rings, zs)
 
 
 def build_escher(kind, nx, ny, depth, samples, height):
-    """Escher-loft assembly: one block per unit cell of the integer
-    lattice, checkerboarded into the two Truchet colours.  Outer ring
-    flagged as frame.  Returns build_tetra-style tuples."""
+    """Escher-loft assembly: identical blocks on the integer lattice
+    (space-filling), coloured in a checkerboard for the Truchet look.
+    Outer ring flagged as frame.  Returns build_tetra-style tuples."""
+    V, F = build_escher_block(kind, depth, samples, height)
+    V = np.asarray(V, float)
     cells = []
     for i, j in itertools.product(range(nx), range(ny)):
         parity = (i + j) % 2
-        V, F = build_escher_block(kind, depth, samples, height,
-                                  flip=(parity == 1))
         frame = (i == 0 or j == 0 or i == nx - 1 or j == ny - 1)
         cells.append((np.array((float(i), float(j), 0.0)),
-                      np.asarray(V, float), F, frame, parity))
+                      V, F, frame, parity))
     return cells
 
 
@@ -589,27 +589,15 @@ def _orient_outward(V, faces):
     return out
 
 
-def build_versatile(nx, ny):
-    """A patch of Versatile blocks on the integer lattice, checker-
-    boarded into the two Truchet colours by a 90-deg turn + z-flip of
-    alternate cells so every z-section stays a valid tiling."""
+def build_versatile():
+    """The exact Versatile block as a single block (the interpolation
+    between a square and a 1x2 rectangle).  Its space-filling assembly
+    mixes translations and rotations classified by Truchet tiles and
+    is not a single-cell translation tiling, so only the block itself
+    is emitted here; see BACKLOG for the full Truchet assembler."""
     V0 = _VERSATILE_V - _VERSATILE_V.mean(axis=0)
     F = _orient_outward(V0, _VERSATILE_F)
-    cells = []
-    step = 2.0                       # diamond diagonal
-    for i, j in itertools.product(range(nx), range(ny)):
-        parity = (i + j) % 2
-        V = V0.copy()
-        if parity:
-            V = _rot2(V[:, :2], math.pi / 2.0)
-            V = np.column_stack((V, -V0[:, 2]))
-            FF = _orient_outward(V, _VERSATILE_F)
-        else:
-            FF = F
-        frame = (i == 0 or j == 0 or i == nx - 1 or j == ny - 1)
-        cells.append((np.array((i * step, j * step, 0.0)),
-                      np.asarray(V, float), FF, frame, parity))
-    return cells
+    return [(np.zeros(3), V0, F, False, 0)]
 
 
 # ==================================================================
@@ -642,24 +630,32 @@ _TETROCTA_BLOCKS = {
 }
 
 
+# The kitten (volume 2) tiles space by pure translation over the
+# non-degenerate FCC basis (v1, v2, v3) (covolume 2, verified no
+# overlap).  UFO and cushion have volume 8/3, which admits no integer
+# translation lattice, so they are shown as single blocks.
+_TETROCTA_LATTICE = (_V1, _V2, _V3)
+_TETROCTA_TILES = {'KITTEN'}
+
+
 def build_tetrocta(kind, nx, ny, nz):
-    """A block of the tetroctahedrille assembly: the chosen block
-    translated over the FCC lattice.  Each primitive tet/oct becomes a
-    coloured cell.  Blocks tile space by translation (space-filling);
-    the outer shell of translates is flagged as frame."""
+    """Tetroctahedrille blocks.  The kitten is translated over the FCC
+    basis (v1, v2, v3) into a space-filling patch; the UFO and cushion
+    are shown as a single block (they do not tile by translation).
+    Each primitive tet/oct becomes a coloured cell."""
     block = _TETROCTA_BLOCKS[kind]
-    # translation lattice for the block's strip/plane growth
-    lat = (_V1, _V2 - _V3, np.array((0.0, 0.0, 2.0)))
+    prims = [(prim, _convex_faces(prim), col) for prim, col in block]
+    if kind not in _TETROCTA_TILES:
+        return [(np.zeros(3), P, F, False, col) for P, F, col in prims]
+    lat = _TETROCTA_LATTICE
     cells = []
     for i, j, k in itertools.product(range(nx), range(ny),
                                      range(nz)):
         off = i * lat[0] + j * lat[1] + k * lat[2]
         frame = (i == 0 or j == 0 or i == nx - 1 or j == ny - 1
                  or k == 0 or k == nz - 1)
-        for prim, col in block:
-            P = prim + off
-            F = _convex_faces(P)
-            cells.append((np.zeros(3), P, F, frame, col))
+        for P, F, col in prims:
+            cells.append((np.zeros(3), P + off, F, frame, col))
     return cells
 
 
@@ -699,24 +695,17 @@ def _rz(deg):
     return np.array(((c, -s, 0.0), (s, c, 0.0), (0.0, 0.0, 1.0)))
 
 
-def build_sl(n):
-    """An SL strand of `n` blocks joined by the `a` engagement
-    (Rz(-90) then T(1,-1,0)); n=4 closes the canonical loop.  Colours
-    cycle so successive blocks are distinguishable."""
-    base = _sl_block_mesh()
-    R = _rz(-90.0)
-    T = np.array((1.0, -1.0, 0.0))
+def build_sl():
+    """The SL octocube as a single block (an S-tetracube fused to an
+    L-tetracube), rendered as eight unit cubes coloured by tetracube.
+    The full engagement grammar (strands, loops, woven panels) is a
+    non-overlapping assembly problem left for BACKLOG."""
+    cubes = _sl_block_mesh()
     cells = []
-    rot = np.eye(3)
-    pos = np.zeros(3)
-    for b in range(n):
-        for cube in base:
-            P = cube @ rot.T + pos
-            F = _convex_faces(P)
-            cells.append((np.zeros(3), P, F, b == 0, b % 2))
-        # compose the a-engagement: new = R . old, translate by R.T
-        pos = pos + rot @ T
-        rot = rot @ R
+    for idx, cube in enumerate(cubes):
+        col = 0 if idx < 4 else 1          # S-tetracube vs L-tetracube
+        cells.append((np.zeros(3), cube, _convex_faces(cube),
+                      False, col))
     return cells
 
 
@@ -763,39 +752,24 @@ def _dodecahedron():
 _DOME_SEED = {'ICOSA': _icosahedron, 'DODECA': _dodecahedron}
 
 
-def build_dome(seed, depth, twist, thickness):
-    """Interlocking dome: one radially-lofted block per face of the
-    seed polyhedron.  `depth` scales the in-plane rotation of the mid
-    ring, `twist` its angle, `thickness` the inner/outer shell offset
-    about the unit sphere."""
+def build_dome(seed, bulge, thickness):
+    """Modular polyhedral shell: one block per face of the seed
+    polyhedron, each the region of the spherical shell between radius
+    r_in and r_out cut out by the radial walls through that face's
+    edges.  Because every block scales its face purely radially about
+    the centre, adjacent blocks share their radial walls exactly, so
+    the shell is tiled with no gaps or overlaps.  `bulge` pushes the
+    middle ring outward for a domed profile; `thickness` sets the
+    inner/outer radii about the unit sphere."""
     V, faces = _DOME_SEED[seed]()
     r_in = 1.0 - thickness
     r_out = 1.0 + thickness
+    r_mid = 1.0 + bulge
     cells = []
     for fi, f in enumerate(faces):
-        ring = V[f]
-        cen = ring.mean(axis=0)
-        rc = np.linalg.norm(cen)
-        nrm = cen / rc
-        u = ring[0] - cen
-        u = u / np.linalg.norm(u)
-        w = np.cross(nrm, u)
-        # inner / outer rings: the plain face scaled to r_in / r_out
-        inner = nrm * r_in + (ring - cen)
-        outer = nrm * r_out + (ring - cen)
-        # mid ring at r = rc, rotated in its plane by `twist` and
-        # dilated by (1 + depth) -- this rotation is what interlocks
-        c2, s2 = math.cos(twist), math.sin(twist)
-        mid = []
-        for p in ring:
-            d = p - cen
-            du, dw = np.dot(d, u), np.dot(d, w)
-            ru = (du * c2 - dw * s2) * (1.0 + depth)
-            rw = (du * s2 + dw * c2) * (1.0 + depth)
-            mid.append(cen + u * ru + w * rw)
-        mid = np.array(mid)
-        verts = np.vstack([inner, mid, outer])
+        ring = V[f]                              # unit-sphere vertices
         m = len(ring)
+        verts = np.vstack([r_in * ring, r_mid * ring, r_out * ring])
         F = []
         for kk in range(2):
             b0, b1 = kk * m, (kk + 1) * m
@@ -845,9 +819,8 @@ def cells_to_mesh(cells, size=2.0, gap=1.0):
 # ==================================================================
 
 def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
-                deform=0.18, samples=8, height=1.0, sl_blocks=4,
-                dome_seed='ICOSA', dome_depth=0.25, dome_twist=0.5,
-                dome_thick=0.12):
+                deform=0.18, samples=8, height=1.0,
+                dome_seed='ICOSA', dome_bulge=0.18, dome_thick=0.12):
     """Placement cells for the chosen family (see the family enum in
     the operator).  Returns build_tetra-style tuples."""
     if family == 'TETRA':
@@ -855,20 +828,22 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
     if family == 'ESCHER':
         return build_escher(profile, nx, ny, deform, samples, height)
     if family == 'VERSATILE':
-        return build_versatile(nx, ny)
+        return build_versatile()
     if family in _TETROCTA_BLOCKS:
         return build_tetrocta(family, nx, ny, nz)
     if family == 'SL':
-        return build_sl(sl_blocks)
+        return build_sl()
     if family == 'DOME':
-        return build_dome(dome_seed, dome_depth, dome_twist,
-                          dome_thick)
+        return build_dome(dome_seed, dome_bulge, dome_thick)
     raise ValueError(family)
 
 
-# families whose interior interlock is mathematically established
-# (a fixed peripheral frame locks the interior)
-_RIGOROUS = {'TETRA', 'ESCHER', 'VERSATILE'}
+# families that build a space-filling / interlocking assembly (a fixed
+# peripheral frame locks the interior); the rest emit a single
+# reference block
+_ASSEMBLY = {'TETRA', 'ESCHER', 'KITTEN', 'DOME'}
+_RIGOROUS = {'TETRA', 'ESCHER'}
+_SINGLE_BLOCK = {'VERSATILE', 'UFO', 'CUSHION', 'SL'}
 
 
 # ==================================================================
@@ -888,12 +863,12 @@ if _IN_BLENDER:
 
     _LABEL = {'TETRA': "Interlocking Tetrahedra",
               'ESCHER': "Escher / Osteomorphic Blocks",
-              'VERSATILE': "Versatile Blocks",
+              'VERSATILE': "Versatile Block",
               'KITTEN': "Tetroctahedrille Kitten",
               'UFO': "Tetroctahedrille UFO",
               'CUSHION': "Tetroctahedrille Cushion",
-              'SL': "SL Blocks",
-              'DOME': "Interlocking Dome"}
+              'SL': "SL Block",
+              'DOME': "Polyhedral Shell Dome"}
 
     _COLOURS = {0: (0.85, 0.55, 0.15), 1: (0.20, 0.45, 0.70),
                 2: (0.55, 0.65, 0.25)}
@@ -930,26 +905,27 @@ if _IN_BLENDER:
                  "mid-height and lofted back; sine gives Estrin's "
                  "osteomorphic saddle block, tent a Versatile-style "
                  "block; every layer tiles so copies interlock"),
-                ('VERSATILE', "Versatile Block",
+                ('VERSATILE', "Versatile Block (single)",
                  "The exact Versatile block (Akpanya et al., Bridges "
-                 "2023): a square lofted to a rectangle, Truchet "
-                 "two-coloured"),
+                 "2023): a square lofted to a rectangle.  Shown as a "
+                 "single block"),
                 ('KITTEN', "Tetroctahedrille Kitten",
                  "One octahedron + two tetrahedra glued on the "
-                 "octet-truss lattice (Akpanya et al. 2024)"),
-                ('UFO', "Tetroctahedrille UFO",
-                 "One octahedron + four tetrahedra; the more stable "
+                 "octet-truss lattice; tiles space by translation "
+                 "(Akpanya et al. 2024)"),
+                ('UFO', "Tetroctahedrille UFO (single)",
+                 "One octahedron + four tetrahedra; a single "
                  "tetroctahedrille block"),
-                ('CUSHION', "Tetroctahedrille Cushion",
+                ('CUSHION', "Tetroctahedrille Cushion (single)",
                  "One octahedron + four tetrahedra in a strip; a "
-                 "grid-assembling tetroctahedrille block"),
-                ('SL', "SL Blocks",
-                 "Self-interlocking octocubes (Shih 2018) joined by "
-                 "the a-engagement into a closed strand"),
-                ('DOME', "Interlocking Dome",
-                 "One radially-lofted block per face of a polyhedron; "
-                 "the blocks tile a spherical shell and interlock "
-                 "(Akpanya, Goertzen & Niemeyer 2024)")],
+                 "single tetroctahedrille block"),
+                ('SL', "SL Block (single)",
+                 "The self-interlocking octocube (Shih 2018): an "
+                 "S-tetracube fused to an L-tetracube"),
+                ('DOME', "Polyhedral Shell Dome",
+                 "One radial block per face of a polyhedron; the "
+                 "blocks tile a spherical shell with shared radial "
+                 "walls (after Akpanya, Goertzen & Niemeyer 2024)")],
             default='TETRA')
 
         nx: IntProperty(name="Cells X", default=4, min=1, max=16)
@@ -974,20 +950,14 @@ if _IN_BLENDER:
         height: FloatProperty(name="Block Height", default=1.0,
                               min=0.2, max=4.0)
 
-        sl_blocks: IntProperty(
-            name="Strand Blocks", default=4, min=1, max=16,
-            description="SL blocks in the strand (4 closes the loop)")
-
         dome_seed: EnumProperty(
             name="Dome Seed",
             items=[('ICOSA', "Icosahedron", "20 triangular blocks"),
                    ('DODECA', "Dodecahedron",
                     "12 pentagonal blocks")],
             default='ICOSA')
-        dome_depth: FloatProperty(name="Dome Bulge", default=0.25,
+        dome_bulge: FloatProperty(name="Dome Bulge", default=0.18,
                                   min=0.0, max=0.8)
-        dome_twist: FloatProperty(name="Dome Twist", default=0.5,
-                                  min=0.0, max=1.2)
         dome_thick: FloatProperty(name="Shell Thickness",
                                   default=0.12, min=0.02, max=0.4)
 
@@ -1012,23 +982,19 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'family')
             fam = self.family
-            if fam in ('TETRA', 'ESCHER', 'VERSATILE') or \
-                    fam in _TETROCTA_BLOCKS:
+            if fam in ('TETRA', 'ESCHER', 'KITTEN'):
                 lay.prop(self, 'nx')
                 lay.prop(self, 'ny')
-            if fam in _TETROCTA_BLOCKS:
+            if fam == 'KITTEN':
                 lay.prop(self, 'nz')
             if fam == 'ESCHER':
                 lay.prop(self, 'profile')
                 lay.prop(self, 'deform')
                 lay.prop(self, 'samples')
                 lay.prop(self, 'height')
-            if fam == 'SL':
-                lay.prop(self, 'sl_blocks')
             if fam == 'DOME':
                 lay.prop(self, 'dome_seed')
-                lay.prop(self, 'dome_depth')
-                lay.prop(self, 'dome_twist')
+                lay.prop(self, 'dome_bulge')
                 lay.prop(self, 'dome_thick')
             lay.prop(self, 'gap')
             lay.prop(self, 'size')
@@ -1039,8 +1005,7 @@ if _IN_BLENDER:
                 cells = build_cells(
                     self.family, self.nx, self.ny, self.nz,
                     self.profile, self.deform, self.samples,
-                    self.height, self.sl_blocks, self.dome_seed,
-                    self.dome_depth, self.dome_twist,
+                    self.height, self.dome_seed, self.dome_bulge,
                     self.dome_thick)
                 verts, faces, cols, frames = cells_to_mesh(
                     cells, self.size, self.gap)
@@ -1164,13 +1129,13 @@ def _selftest():
     for name, cells in (
             ('TETRA', build_tetra(4, 4)),
             ('ESCHER', build_escher('SINE', 4, 4, 0.18, 8, 1.0)),
-            ('VERSATILE', build_versatile(4, 4)),
+            ('VERSATILE', build_versatile()),
             ('KITTEN', build_tetrocta('KITTEN', 2, 2, 2)),
-            ('UFO', build_tetrocta('UFO', 2, 2, 1)),
-            ('CUSHION', build_tetrocta('CUSHION', 2, 2, 1)),
-            ('SL', build_sl(4)),
-            ('DOME_I', build_dome('ICOSA', 0.25, 0.5, 0.12)),
-            ('DOME_D', build_dome('DODECA', 0.25, 0.5, 0.12))):
+            ('UFO', build_tetrocta('UFO', 1, 1, 1)),
+            ('CUSHION', build_tetrocta('CUSHION', 1, 1, 1)),
+            ('SL', build_sl()),
+            ('DOME_I', build_dome('ICOSA', 0.18, 0.12)),
+            ('DOME_D', build_dome('DODECA', 0.18, 0.12))):
         v, f, cols, fr = cells_to_mesh(cells, 2.0, 0.94)
         Vv = np.asarray(v)
         deg = sum(1 for ff in f
@@ -1181,6 +1146,89 @@ def _selftest():
         good = deg == 0 and fit and len(v) > 0
         print(f"family {name}: mesh_ok={good} V={len(v)} F={len(f)} "
               f"degen={deg}")
+        ok = ok and good
+
+    # OVERLAP GATE: assembled families must not interpenetrate.
+    # convex-primitive families use an interior-penetration test;
+    # the Escher tiling is verified by a section-partition test.
+    def _face_planes(V, F):
+        V = np.asarray(V)
+        c = V.mean(axis=0)
+        pls = []
+        for f in F:
+            p = V[f]
+            n = np.cross(p[1] - p[0], p[2] - p[0])
+            ln = np.linalg.norm(n)
+            if ln < 1e-12:
+                continue
+            n = n / ln
+            d = float(np.dot(n, p[0]))
+            if np.dot(n, c) > d:
+                n, d = -n, -d
+            pls.append((n, d))
+        return pls
+
+    def _maxpen(A, B):
+        Va, Fa = A
+        plB = _face_planes(*B)
+        Va = np.asarray(Va)
+        ca = Va.mean(axis=0)
+        S = [ca] + [0.5 * Va[i] + 0.5 * ca for i in range(len(Va))]
+        for f in Fa:
+            S.append(0.5 * ca + 0.5 * Va[f].mean(axis=0))
+        return max(min(d - np.dot(n, x) for n, d in plB) for x in S)
+
+    def _assembly_overlap(cells):
+        sol = [(np.asarray(c) + np.asarray(V), F)
+               for c, V, F, fr, col in cells]
+        cen = [s[0].mean(axis=0) for s in sol]
+        worst = -9.0
+        for a in range(len(sol)):
+            for b in range(a + 1, len(sol)):
+                if np.linalg.norm(cen[a] - cen[b]) < 3.0:
+                    worst = max(worst, min(_maxpen(sol[a], sol[b]),
+                                           _maxpen(sol[b], sol[a])))
+        return worst
+
+    for name, cells in (
+            ('TETRA', build_tetra(5, 5)),
+            ('KITTEN', build_tetrocta('KITTEN', 2, 2, 2)),
+            ('DOME_I', build_dome('ICOSA', 0.18, 0.12)),
+            ('DOME_D', build_dome('DODECA', 0.18, 0.12))):
+        w = _assembly_overlap(cells)
+        good = w < 1e-3
+        print(f"overlap {name}: max_penetration={w:+.4f} "
+              f"{'ok' if good else 'OVERLAP'}")
+        ok = ok and good
+
+    # Escher: every plane section must tile (coverage exactly 1)
+    def _pip(pt, poly):
+        x, y = pt
+        n = len(poly)
+        inside = False
+        j = n - 1
+        for i in range(n):
+            xi, yi = poly[i]
+            xj, yj = poly[j]
+            if ((yi > y) != (yj > y)) and \
+                    (x < (xj - xi) * (y - yi) / (yj - yi + 1e-30) + xi):
+                inside = not inside
+            j = i
+        return inside
+
+    rng = np.random.RandomState(0)
+    for prof in ('SINE', 'TENT', 'ZIGZAG', 'STEP'):
+        base = _deformed_square(prof, 0.18, 10)
+        mid = _rot2(base, math.pi / 2.0)
+        good = True
+        for tile in (base, mid):
+            for pt in rng.uniform(-0.45, 0.45, (200, 2)):
+                cov = sum(1 for i in range(-2, 3) for j in range(-2, 3)
+                          if _pip(pt - np.array([i, j]), tile))
+                if cov != 1:
+                    good = False
+                    break
+        print(f"escher tiling {prof}: coverage_one={good}")
         ok = ok and good
 
     print("RESULT: OK" if ok else "RESULT: FAIL")
