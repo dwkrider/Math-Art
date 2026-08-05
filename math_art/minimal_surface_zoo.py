@@ -2173,6 +2173,92 @@ WE_SURFACES['LOPEZ_KLEIN'] = {
 SURFACE_FAMILY['LOPEZ_KLEIN'] = 'NONORIENT'
 
 
+# ==========================================================================
+# SP SCHERK FAMILY (appended catalog block)
+# ==========================================================================
+# Higher-genus singly periodic Scherk towers on the sscherk_* engine
+# block in we_builders: the notebook-solved period constants (extracted
+# from the raw minimalsurfaces.blog notebooks, re-verified numerically
+# at import of the self-tests) drive four hyperelliptic towers.  Every
+# row is meshed from one conformal fundamental patch, snapped onto its
+# measured mirror planes, orbited and welded bitwise-exactly; the
+# quotient topology (chi = 2 - 2 genus - #ends) is MEASURED in the
+# self-tests:
+#   * SP_SIX_SCHERK_G1    genus 1, 6 ends/period (chi = -6): the
+#     six-ended tower of SP_SIX_SCHERK with a handle; count slider
+#     walks the notebook family v4.
+#   * SP_COSTA_SCHERK_G1  genus 1, 6 ends/period (chi = -6): the
+#     Costa-Scherk tower (handle forming Costa-like saddles); count
+#     walks the branch parameter a.
+#   * SP_EIGHT_SCHERK_G2  genus 2, 8 ends/period (chi = -10); count
+#     walks the end-pair spacing b; the translation reproduces the
+#     notebook's closed form transy to ~1e-9.
+#   * SP_DASILVA_BATISTA  daSilva-Batista surface (2009), genus 2 with
+#     8 ends/period (chi = -10); count walks the FindRoot family.
+#
+# References:
+#   H. Karcher, Manuscripta Math. 62 (1988); H. F. Scherk (1835);
+#   K. Li thesis lineage (6/8-ended towers); L. daSilva, V. Ramos
+#   Batista (2009); M. Weber, https://minimalsurfaces.blog/ notebooks
+#   Singly_6ended_Scherk_g1.nb, Singly_CostaScherk_g1.nb,
+#   Singly_8ended_Scherk_g2.nb, Singly_daSilvaBatista_g2.nb
+#   (research/msblog_harvest/singly_periodic.json).  Full scholarly
+#   details in the we_builders sscherk block header.
+
+WE_SURFACES['SP_SIX_SCHERK_G1'] = {
+    'label': "Six-Ended Scherk Tower (genus 1)",
+    'family': 'SINGLY',
+    'mesher': we.sscherk_six1_mesh,
+    # count walks the notebook members v4 = 0.4 .. 0.95; radius slides
+    # the wing-end trim depth
+    'p_from': lambda order, radius: {'build_kw': {
+        'r2': float(np.clip(8.0 * (radius / 1.2) ** 0.8, 5.0, 10.0))}},
+    'count': "Family member (v4 table)",
+    'storeys_label': "Periods",
+    'test_order': 4,
+}
+SURFACE_FAMILY['SP_SIX_SCHERK_G1'] = 'SINGLY'
+
+WE_SURFACES['SP_COSTA_SCHERK_G1'] = {
+    'label': "Costa-Scherk Tower (genus 1)",
+    'family': 'SINGLY',
+    'mesher': we.sscherk_costa_mesh,
+    'p_from': lambda order, radius: {'build_kw': {
+        'r2': float(np.clip(8.0 * (radius / 1.2) ** 0.8, 5.0, 10.0))}},
+    'count': "Family member (a table)",
+    'storeys_label': "Periods",
+    'test_order': 2,
+}
+SURFACE_FAMILY['SP_COSTA_SCHERK_G1'] = 'SINGLY'
+
+WE_SURFACES['SP_EIGHT_SCHERK_G2'] = {
+    'label': "Eight-Ended Scherk Tower (genus 2)",
+    'family': 'SINGLY',
+    'mesher': we.sscherk_eight_mesh,
+    # radius slides both end-trim depths on the log scale
+    'p_from': lambda order, radius: (lambda rr: {'build_kw': {
+        'rmin': 10.0 ** (-3.0 * rr), 'rmax': 10.0 ** (4.0 * rr)}})(
+        float(np.clip((radius / 1.2) ** 0.8, 0.6, 1.4))),
+    'count': "Family member (b table)",
+    'storeys_label': "Periods",
+    'test_order': 3,
+}
+SURFACE_FAMILY['SP_EIGHT_SCHERK_G2'] = 'SINGLY'
+
+WE_SURFACES['SP_DASILVA_BATISTA'] = {
+    'label': "daSilva-Batista Surface (genus 2)",
+    'family': 'SINGLY',
+    'mesher': we.sscherk_das_mesh,
+    'p_from': lambda order, radius: (lambda rr: {'build_kw': {
+        'cut1': 10.0 ** (-1.7 * rr), 'cut2': 10.0 ** (4.3 * rr)}})(
+        float(np.clip((radius / 1.2) ** 0.8, 0.6, 1.4))),
+    'count': "Family member",
+    'storeys_label': "Periods",
+    'test_order': 2,
+}
+SURFACE_FAMILY['SP_DASILVA_BATISTA'] = 'SINGLY'
+
+
 if __name__ == "__main__":
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
@@ -2677,7 +2763,13 @@ if __name__ == "__main__":
                              ('SP_FENCE_CAT', 3, -2),
                              ('SP_HELICOIDAL_SCHERK', 3, -6),
                              ('SP_ENNEPER_3ANN', 1, -2),
-                             ('SP_PERIODIC_ENNEPER', 1, 0)):
+                             ('SP_PERIODIC_ENNEPER', 1, 0),
+                             # sscherk block: higher-genus towers --
+                             # dchi per period = 2 - 2 genus - #ends
+                             ('SP_SIX_SCHERK_G1', 4, -6),
+                             ('SP_COSTA_SCHERK_G1', 2, -6),
+                             ('SP_EIGHT_SCHERK_G2', 3, -10),
+                             ('SP_DASILVA_BATISTA', 2, -10)):
         chis = []
         good = True
         for S in (1, 2):

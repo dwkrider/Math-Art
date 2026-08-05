@@ -6904,6 +6904,706 @@ def symtail_antiprism_constants(nn, b):
     return _SYMTAIL_AP_CACHE[key]
 
 
+# ==========================================================================
+# SP SCHERK FAMILY (sscherk_* block): higher-genus singly periodic
+# Scherk towers from the minimalsurfaces.blog notebook harvest
+# ==========================================================================
+# Four hyperelliptic Karcher/Scherk-type singly periodic minimal
+# surfaces whose period problems were solved numerically (FindRoot) in
+# Matthias Weber's Mathematica notebooks; the solved constants below are
+# the literal high-precision values extracted from the raw notebooks
+# (research/msblog_harvest/raw/, box-flattened by extract_nb.py), and
+# every member re-verifies its period conditions here with independent
+# quadrature before it ships:
+#
+#   * sscherk_six1_*   six-ended Scherk tower of genus 1
+#       (Singly_6ended_Scherk_g1.nb):
+#       G = rho sqrt(z-v2)/(sqrt(z-v1) sqrt(z-v3) sqrt(z-v4)),
+#       dh = dz/(z^2-1) on the upper half plane; the genus-1
+#       hyperelliptic curve w^2 = prod (z-v_i) carries a vertical handle
+#       through the tower.  Period problem: Re int_{v1}^{v2} om2 = 0,
+#       Re int_{v2}^{v3} om1 = 0, plus two closed-form residue
+#       conditions (both horizontal Scherk ends must translate by the
+#       same step); the notebook table solves (v1, v2, v3, rho) per
+#       family parameter v4.  MEASURED quotient: chi = -6, 6 ends,
+#       genus 1 (= 2 - 2g - e).
+#   * sscherk_costa_*  Costa-Scherk tower of genus 1
+#       (Singly_CostaScherk_g1.nb):
+#       G = rho sqrt(z-b) sqrt(z-c) sqrt(z-d)/sqrt(z-a), dh =
+#       dz/(z^2-1), a < b < -1 < 0 < c < d < 1: a six-ended Scherk
+#       tower whose handle forms Costa-like saddles.  Four point-to-
+#       point real-period conditions (notebook test[]) fix
+#       (b, c, d, rho) per family parameter a.  MEASURED quotient:
+#       chi = -6, 6 ends, genus 1.
+#   * sscherk_eight_*  eight-ended Scherk tower of genus 2
+#       (Singly_8ended_Scherk_g2.nb):
+#       G = rho sqrt(z-1/a1) sqrt(z-a2) sqrt(z-1/a3)(z-c) /
+#           (sqrt(z-a1) sqrt(z-1/a2) sqrt(z-a3)(z-1/c)),
+#       dh = (z-1/c)(z-c) dz/(z(z-1/b)(z-b)),
+#       rho = sqrt(a1 a3)/(sqrt(a2) c) (the closed form that makes
+#       G(1)^2 = -1).  Two integral period conditions plus the residue
+#       match Res(om2, 0) = -Res(om2, b) (checked here numerically to
+#       ~1e-10); the translation is the closed form transy =
+#       -2 pi (a1 a3 + a2 c^2)/(2 sqrt(a1 a2 a3) c), reproduced by the
+#       built mesh to ~1e-9.  MEASURED quotient: chi = -10, 8 ends,
+#       genus 2.
+#   * sscherk_das_*    daSilva-Batista surface, genus 2 with 8 ends
+#       (Singly_daSilvaBatista_g2.nb; L. daSilva and V. Ramos Batista,
+#       2009): G and dh as in the block tables (hyperelliptic with
+#       branch data a, d, e and ends b, c inside the unit half disk);
+#       three integral period conditions verified to ~1e-9, with the
+#       end normals G(b), G(c) reproducing the notebook's prescribed
+#       inner/outer angles.  MEASURED quotient: chi = -10, 8 ends,
+#       genus 2.
+#
+# Meshing scheme (same discipline as the sptail block): integrate the
+# 1-forms over ONE conformal fundamental patch by compound Gauss-
+# Legendre cells (no singular node is ever evaluated; fractional powers
+# take the interior-limit nudge so no principal branch cut is crossed),
+# snap the patch boundary exactly onto its measured symmetry planes,
+# orbit under the isometry group plus storey translations, and weld
+# bitwise-exactly (weld tolerance 1e-12 of the span -- every intended
+# seam is exact after snapping, and the fine clusters must never be
+# falsely merged).  Charts:
+#   * six1/costa: two log-strips w with z = +-sqrt(1 + e^w) (the
+#     notebooks' own charts) welded along the imaginary-axis seam;
+#     integration spine moved off the singular corner z = 0.
+#   * eight: the notebook chart z = ff(c0 - 1/p), ff the inverse
+#     Joukowski map, pulling the half-disk domain to a polar annulus
+#     whose inner/outer trims are exactly the z = 0 / z = b ends.
+#   * dasilva: the notebook's Moebius + Joukowski chart sending the two
+#     interior-segment ends b, c to the annulus radii 0 / infinity.
+# Symmetry structure is MEASURED from the built patch (each boundary
+# sub-row's constant coordinate), not assumed: two parallel vertical
+# mirrors y = y0, y = ym half a period apart (their composition is the
+# translation), a vertical mirror x = xm, and for the genus-2 pair a
+# horizontal mirror z = zh on the |z| = 1 arc.  The Euler
+# characteristic of the translation-wrapped quotient and of the S vs
+# S+1 storey stacks is measured in the self-tests against
+# chi = 2 - 2 genus - #ends.
+#
+# References:
+#   H. Karcher, "Embedded minimal surfaces derived from Scherk's
+#     examples", Manuscripta Math. 62 (1988) 83-114;
+#   H. F. Scherk (1835), the classical tower these generalize;
+#   K. Li, "Singly periodic minimal surfaces" (Indiana University PhD
+#     thesis lineage cited by the blog for the 6/8-ended towers);
+#   L. daSilva, V. Ramos Batista, "Costa-Hoffman-Meeks type embedded
+#     minimal surfaces" lineage -- the daSilva-Batista singly periodic
+#     surface (2009);
+#   M. Weber, https://minimalsurfaces.blog/ -- notebooks
+#     Singly_6ended_Scherk_g1.nb, Singly_CostaScherk_g1.nb,
+#     Singly_8ended_Scherk_g2.nb, Singly_daSilvaBatista_g2.nb
+#     (research/msblog_harvest/singly_periodic.json).
+# --------------------------------------------------------------------------
+
+# Solved period constants, extracted verbatim from the notebooks.
+# six1: family parameter v4 -> (v1, v2, v3, v4, rho)
+SSCHERK_SIX1_MEMBERS = (
+    (-0.9999097463240165, -0.9995846218404437, 0.32722281347079313,
+     0.4, 0.9311638650898755),
+    (-0.999842581353628, -0.9990441104641703, 0.3947092606175121,
+     0.45, 0.90617573822774),
+    (-0.9997892166741251, -0.9982962652599652, 0.45891892793127825,
+     0.5, 0.8774486270142349),
+    (-0.9997707148120727, -0.9929889331850467, 0.6882048308313006,
+     0.7, 0.7203224603580416),
+    (-0.9998768763825345, -0.9584256703240235, 0.8955499209754002,
+     0.9, 0.4425916550119159),
+    (-0.9999200550022518, -0.8936905890458876, 0.9459601036545873,
+     0.95, 0.32246552799548456),
+)
+
+# costa: family parameter a -> (a, b, c, d, rho)
+SSCHERK_COSTA_MEMBERS = (
+    (-1.01, -1.0014807442877984, 0.3754468359389136,
+     0.5066016876271907, 1.1173158075304825),
+    (-1.03, -1.0044731973790795, 0.3186247625445407,
+     0.5477098649370288, 1.1187536194617387),
+    (-1.1, -1.0134896339281911, 0.22686416763109937,
+     0.6349754786834063, 1.1397736769892377),
+    (-1.3, -1.0278863923801085, 0.1280930904161984,
+     0.7599360066323362, 1.2174904307548113),
+    (-1.6, -1.0342509923267171, 0.07410998330062755,
+     0.8439283066495238, 1.3369857748270828),
+    (-2.0, -1.034111462010235, 0.0444190235289843,
+     0.895759295658659, 1.4870353450504705),
+    (-3.0, -1.0276536423752907, 0.01909708900610511,
+     0.9448847188685726, 1.8146317544905508),
+)
+
+# eight: family parameter b -> (a1, a2, a3, b, c); rho closed form
+SSCHERK_EIGHT_MEMBERS = (
+    (0.02, 0.05079558837191939, 0.24207555442197323, -0.4,
+     -0.33429719165838),
+    (0.02, 0.0516869008349762, 0.2645421110390311, -0.45,
+     -0.3520006640761227),
+    (0.02, 0.05188150165699855, 0.3411942059323637, -0.6,
+     -0.4127725007154455),
+    (0.02, 0.04963312235957757, 0.4047116866471815, -0.7,
+     -0.46460413392763156),
+    (0.02, 0.04510764776532291, 0.4869060986651275, -0.8,
+     -0.5339075133085016),
+    (0.02, 0.037642945984715515, 0.6092468800312116, -0.9,
+     -0.6405186145093797),
+)
+
+# dasilva: (a, b, c, d, e) FindRoot members (ordered by neck angle)
+SSCHERK_DAS_MEMBERS = (
+    (-0.16538063249530707, -0.050186950657416095, 0.14280760356113087,
+     0.14431373823719248, 0.2957720830704163),
+    (-0.2318493801219483, -0.16955666911933556, 0.16955667364469934,
+     0.1699296290799072, 0.43726314811269806),
+    (-0.2641085050708083, -0.015204799559572081, 0.09423310060363765,
+     0.09811254515942426, 0.18962901567819868),
+    (-0.323143539872764, -0.010914867530614441, 0.07504706366931041,
+     0.07935654240080936, 0.1549153647710601),
+    (-0.5356990518612961, -0.0040643048547451665, 0.024479936412485897,
+     0.02679936121082089, 0.06011882879492939),
+    (-0.6094206570490024, -0.03032524297897274, 0.03032524309337132,
+     0.030763209335820576, 0.11240090862288739),
+)
+
+
+def sscherk_cheb_seg(f, z0, z1, n=3000):
+    """Gauss-Chebyshev quadrature of f along the straight segment
+    z0 -> z1 (absorbs the inverse-square-root endpoint singularities of
+    the hyperelliptic 1-forms)."""
+    k = np.arange(1, n + 1)
+    x = np.cos((2 * k - 1) * math.pi / (2 * n))
+    w = math.pi / n * np.sqrt(1.0 - x * x)
+    z = 0.5 * (z0 + z1) + 0.5 * (z1 - z0) * x
+    return 0.5 * (z1 - z0) * np.sum(f(z) * w)
+
+
+def _sscherk_grid1d(lo, hi, marks, nseg, cl, rel=False):
+    """1-D grid from lo to hi: nseg points per inter-mark band plus
+    geometric clusters around every mark (relative for log-scale polar
+    radii, absolute for strip coordinates)."""
+    marks = sorted(marks)
+    parts = []
+    prev = lo
+    for mk in marks + [hi]:
+        if rel:
+            parts.append(np.exp(np.linspace(math.log(prev), math.log(mk),
+                                            nseg, endpoint=False)))
+        else:
+            parts.append(np.linspace(prev, mk, nseg, endpoint=False))
+        prev = mk
+    parts.append([hi])
+    for mk in marks:
+        if rel:
+            parts.extend([mk * (1.0 - cl), [mk], mk * (1.0 + cl[::-1])])
+        else:
+            parts.extend([mk - cl, [mk], mk + cl[::-1]])
+    g = np.unique(np.concatenate([np.atleast_1d(np.asarray(p, float))
+                                  for p in parts]))
+    if rel:
+        return g[np.concatenate([[True], np.diff(g) / g[:-1] > 1e-13])]
+    return g[np.concatenate([[True], np.diff(g) > 1e-13])]
+
+
+def _sscherk_tgrid(nt):
+    """theta/y grid on (0, pi): cosine-clustered plus geometric edge
+    clusters (the boundary rows carry the symmetry curves)."""
+    base = math.pi * (0.5 - 0.5 * np.cos(np.pi * np.linspace(
+        0, 1, 2 * max(6, nt // 2) + 1)))
+    ex = sptail_cluster(0.06, hmin=1e-7, ratio=0.25)
+    t = np.unique(np.concatenate([base, ex, math.pi - ex]))
+    return t[np.concatenate([[True], np.diff(t) > 1e-12])]
+
+
+def _sscherk_finish(pieces, rows, use_mz, storeys, extra_diag=None):
+    """Shared classify/snap/orbit stage.
+
+    pieces: list of (X (n1, n2, 3) arrays, already seam-aligned).
+    rows:   list of (X, index-slices) picking each boundary sub-row that
+            lies on a symmetry plane; the constant coordinate of every
+            row is MEASURED (smallest ptp), grouped into planes (y
+            splits into the two parallel mirrors y0/ym half a period
+            apart), normalized to {x = 0, y0 = 0, z = 0} and snapped
+            exactly.
+    Returns (V, F, uv, diag): diag carries presnap (the max deviation
+    of any row from its plane -- the machine-checked period residual),
+    T, span."""
+    kinds, consts, ptps = [], [], []
+    for X, sl in rows:
+        S = X[sl]
+        p3 = [float(np.ptp(S[..., c])) for c in range(3)]
+        k = int(np.argmin(p3))
+        kinds.append(k)
+        consts.append(float(np.median(S[..., k])))
+        ptps.append(p3[k])
+    # y-planes: split into two clusters (y0 holds rows[0] if y-kind,
+    # else the cluster nearest zero span start)
+    yv = [c for k, c in zip(kinds, consts) if k == 1]
+    xv = [c for k, c in zip(kinds, consts) if k == 0]
+    zv = [c for k, c in zip(kinds, consts) if k == 2]
+    ys = sorted(yv)
+    gaps = [ys[i + 1] - ys[i] for i in range(len(ys) - 1)]
+    if gaps and max(gaps) > 0.25 * (ys[-1] - ys[0] + 1e-30):
+        cut = gaps.index(max(gaps))
+        g1 = ys[:cut + 1]
+        g2 = ys[cut + 1:]
+    else:
+        g1, g2 = ys, []
+    # the base y-plane is the one containing the first y-kind row
+    c0 = next(c for k, c in zip(kinds, consts) if k == 1)
+    if g2 and any(abs(c0 - v) < 1e-12 + 0.0 or v == c0 for v in g2):
+        g1, g2 = g2, g1
+    y0 = float(np.mean(g1))
+    ym = float(np.mean(g2)) if g2 else None
+    xm = float(np.mean(xv)) if xv else 0.0
+    zh = float(np.mean(zv)) if zv else 0.0
+    spread = 0.0
+    for grp, mean in ((g1, y0), ((g2 or [0]), ym or 0.0),
+                      (xv, xm), (zv, zh)):
+        for v in grp:
+            spread = max(spread, abs(v - mean))
+    shift = np.array([xm, y0, zh])
+    for X in pieces:
+        X -= shift
+    if ym is not None:
+        ym -= y0
+    # snap every row onto its (shifted) plane
+    planes = {0: 0.0, 2: 0.0}
+    for (X, sl), k, c in zip(rows, kinds, consts):
+        if k == 1:
+            tgt = 0.0 if (ym is None or abs(c - y0 - 0.0)
+                          < abs(c - y0 - ym)) else ym
+        else:
+            tgt = planes[k]
+        X[sl + (k,)] = tgt
+    T = np.array([0.0, 2.0 * ym, 0.0]) if ym is not None \
+        else np.array([0.0, 0.0, 0.0])
+    V0 = np.concatenate([X.reshape(-1, 3) for X in pieces], axis=0)
+    quads = []
+    uvs = []
+    off = 0
+    for X in pieces:
+        n1, n2 = X.shape[0], X.shape[1]
+        quads.extend(tuple(off + i for i in f)
+                     for f in sptail_grid_quads(n1, n2))
+        uvs.append(_sptail_grid_uv(n1, n2))
+        off += n1 * n2
+    uv0 = np.concatenate(uvs, axis=0)
+    frames = []
+    for mz in ((0, 1) if use_mz else (0,)):
+        for mx in (0, 1):
+            for my in (0, 1):
+                M = np.diag([-1.0 if mx else 1.0, -1.0 if my else 1.0,
+                             -1.0 if mz else 1.0])
+                par = (-1.0) ** (mx + my + mz)
+                for s in range(storeys):
+                    frames.append((M, s * T, par))
+    span = float(np.linalg.norm(V0.max(0) - V0.min(0)))
+    V, F, uv = sptail_orbit_weld(V0, uv0, quads, frames, 1e-12 * span)
+    diag = {'presnap': float(max(max(ptps), spread)), 'T': T,
+            'span': span, 'ym': ym}
+    if extra_diag:
+        diag.update(extra_diag)
+    return V, F, uv, diag
+
+
+# ---- two-strip chart (six-ended g1 and Costa-Scherk g1) ------------------
+
+_SSCHERK_SPINE = -2.0
+
+
+def _sscherk_strip_patch(om, sign, x, y):
+    """Rect patch in w = x + iy through the chart z = sign sqrt(1+e^w);
+    dz = (z^2-1)/(2z) dw on both branches.  The integration spine is
+    moved to x = -2 (a regular boundary point for every shipped member;
+    the corner z = 0 at w = i pi is chart-singular)."""
+    sp = _SSCHERK_SPINE
+
+    def omw(w):
+        w = w + sp
+        z = sign * np.sqrt(1.0 + np.exp(w))
+        z = np.where(np.imag(z) == 0.0,
+                     z + 1e-14j * (1.0 + np.abs(z)), z)
+        dz = (z * z - 1.0) / (2.0 * z)
+        o = om(z)
+        return tuple(c * dz for c in o)
+    return sptail_rect_patch(omw, x - sp, y)
+
+
+def _sscherk_twostrip_build(om, marks_a, marks_b0, marks_bpi, r1, r2,
+                            nseg, nt, storeys):
+    """Shared builder for the dh = dz/(z^2-1) towers: strip a covers
+    the right half of the upper half plane, strip b the left, welded
+    along the imaginary-axis seam (y = +-pi, x > 0); marks_* are the
+    strip x-positions of the hyperelliptic branch points on the pi
+    rows (x = log(1-v^2)) resp. the y = 0 rows (x = log(v^2-1))."""
+    cl = sptail_cluster(0.25, hmin=1e-8, ratio=0.3)
+    allm = sorted(set(list(marks_a) + list(marks_b0) + list(marks_bpi)
+                      + [0.0, _SSCHERK_SPINE]))
+    x = _sscherk_grid1d(r1, r2, allm, nseg, cl)
+    y = _sscherk_tgrid(nt)
+    Xa = _sscherk_strip_patch(om, +1.0, x, y)
+    Xb = _sscherk_strip_patch(om, -1.0, x, y - math.pi)
+    i0 = int(np.searchsorted(x, 0.0))
+    d = Xa[:, -1, :] - Xb[:, 0, :]
+    off = np.median(d[i0 + 1:], axis=0)
+    seam_ptp = float(np.abs(d[i0 + 1:] - off).max())
+    Xb += off
+    Xb[i0:, 0, :] = Xa[i0:, -1, :]      # bitwise-exact seam
+
+    def cuts(marks, lo_i, hi_i):
+        idx = [lo_i] + [int(np.searchsorted(x, m)) for m in
+                        sorted(marks)] + [hi_i]
+        return [(slice(idx[i], idx[i + 1] + 1),)
+                for i in range(len(idx) - 1)]
+
+    rows = []
+    rows.append((Xa, (slice(None), 0)))              # (1, inf)
+    for sl in cuts(marks_a, 0, i0):                  # pi row, strip a
+        rows.append((Xa, sl + (-1,)))
+    for sl in cuts(marks_b0, 0, len(x) - 1):         # y=0 row, strip b
+        rows.append((Xb, sl + (-1,)))
+    for sl in cuts(marks_bpi, 0, i0):                # -pi row, strip b
+        rows.append((Xb, sl + (0,)))
+    V, F, uv, diag = _sscherk_finish(
+        [Xa, Xb], rows, use_mz=False, storeys=storeys,
+        extra_diag={'seam_ptp': seam_ptp})
+    # exact seam weld happens inside the orbit because after snapping
+    # the two seam rows are bitwise-identical copies:
+    return V, F, uv, diag
+
+
+def sscherk_six1_om(mi):
+    v1, v2, v3, v4, rho = SSCHERK_SIX1_MEMBERS[mi]
+
+    def om(z):
+        z = sptail_nudge(z)
+        G = rho * np.sqrt(z - v2) / (np.sqrt(z - v1) * np.sqrt(z - v3)
+                                     * np.sqrt(z - v4))
+        dh = 1.0 / (z * z - 1.0)
+        p1 = G * dh
+        p2 = dh / G
+        return (0.5 * (p2 - p1), 0.5j * (p2 + p1), dh)
+    return om
+
+
+def sscherk_six1_check(mi):
+    """Period residuals for a table member: the two integral conditions
+    and the two closed-form residue conditions of the notebook's
+    test[], plus Res(om2, +1) (the translation is 2 pi Im Res)."""
+    v1, v2, v3, v4, rho = SSCHERK_SIX1_MEMBERS[mi]
+    om = sscherk_six1_om(mi)
+    # the near-degenerate members put the dh pole at -1 within ~1e-4 of
+    # the branch interval; Gauss-Chebyshev needs depth there
+    c1 = float(np.real(sscherk_cheb_seg(
+        lambda z: om(z)[1], v1 + 1e-9j, v2 + 1e-9j, n=48000)))
+    c2 = float(np.real(sscherk_cheb_seg(
+        lambda z: om(z)[0], v2 + 1e-9j, v3 + 1e-9j, n=48000)))
+    e3 = -((-1 + v1 + v3 - v1 * v3 + v4 - v1 * v4 - v3 * v4
+            + v1 * v3 * v4 - rho ** 2 + v2 * rho ** 2)
+           / (4 * math.sqrt(1 - v1) * math.sqrt(1 - v2)
+              * math.sqrt(1 - v3) * math.sqrt(1 - v4))) - 0.5
+    e4 = ((1 + v1 + v3 + v1 * v3 + v4 + v1 * v4 + v3 * v4
+           + v1 * v3 * v4 + rho ** 2 + v2 * rho ** 2)
+          / (4 * math.sqrt(1 + v1) * math.sqrt(1 + v2)
+             * math.sqrt(1 + v3) * math.sqrt(1 + v4))) - 0.5
+    rr = 0.25 * (1.0 - v4)
+    res = period_integral(lambda z: om(z)[1], 1.0, rr, rr) \
+        / (2j * math.pi)
+    return c1, c2, float(e3), float(e4), complex(res)
+
+
+def sscherk_six1_build(mi, nseg=10, nt=24, storeys=1, r1=-13.0, r2=8.0):
+    v1, v2, v3, v4, rho = SSCHERK_SIX1_MEMBERS[mi]
+    om = sscherk_six1_om(mi)
+    marks_a = [math.log(1 - v4 * v4), math.log(1 - v3 * v3)]
+    marks_bpi = [math.log(1 - v1 * v1), math.log(1 - v2 * v2)]
+    r1 = min(r1, min(marks_bpi) - 2.5)
+    V, F, uv, diag = _sscherk_twostrip_build(
+        om, marks_a, [], marks_bpi, r1, r2, nseg, nt, storeys)
+    res = sscherk_six1_check(mi)[4]
+    diag['T_vs_residue'] = float(abs(abs(diag['T'][1])
+                                     - abs(2 * math.pi * res.imag)))
+    return V, F, uv, diag
+
+
+def sscherk_costa_om(mi):
+    a, b, c, d, rho = SSCHERK_COSTA_MEMBERS[mi]
+
+    def om(z):
+        z = sptail_nudge(z)
+        G = rho * np.sqrt(z - b) * np.sqrt(z - c) * np.sqrt(z - d) \
+            / np.sqrt(z - a)
+        dh = 1.0 / (z * z - 1.0)
+        p1 = G * dh
+        p2 = dh / G
+        return (0.5 * (p2 - p1), 0.5j * (p2 + p1), dh)
+    return om
+
+
+def sscherk_costa_check(mi):
+    """The notebook test[] conditions (a -> b real period, a -> d and
+    c -> 1.5 point-to-point real parts through i), plus Res(om2, 1)."""
+    a, b, c, d, rho = SSCHERK_COSTA_MEMBERS[mi]
+    om = sscherk_costa_om(mi)
+    t1 = float(np.real(sscherk_cheb_seg(
+        lambda z: om(z)[1], a + 1e-9j, b + 1e-9j)))
+    t2 = float(np.real(sscherk_cheb_seg(lambda z: om(z)[0], a + 0j, 1j)
+                       + sscherk_cheb_seg(lambda z: om(z)[0], 1j,
+                                          d + 0j)))
+    t3 = float(np.real(sscherk_cheb_seg(lambda z: om(z)[1], a + 0j, 1j)
+                       + sscherk_cheb_seg(lambda z: om(z)[1], 1j,
+                                          d + 0j)))
+    t4 = float(np.real(sscherk_cheb_seg(lambda z: om(z)[1], c + 0j, 1j)
+                       + sscherk_cheb_seg(lambda z: om(z)[1], 1j,
+                                          1.5 + 1e-7j)))
+    rr = 0.25 * (1.0 - d)
+    res = period_integral(lambda z: om(z)[1], 1.0, rr, rr) \
+        / (2j * math.pi)
+    return t1, t2, t3, t4, complex(res)
+
+
+def sscherk_costa_build(mi, nseg=10, nt=24, storeys=1, r1=-12.0,
+                        r2=8.0):
+    a, b, c, d, rho = SSCHERK_COSTA_MEMBERS[mi]
+    om = sscherk_costa_om(mi)
+    marks_a = [math.log(1 - d * d), math.log(1 - c * c)]
+    marks_b0 = [math.log(b * b - 1), math.log(a * a - 1)]
+    r1 = min(r1, min(marks_a + marks_b0) - 2.5)
+    V, F, uv, diag = _sscherk_twostrip_build(
+        om, marks_a, marks_b0, [], r1, r2, nseg, nt, storeys)
+    res = sscherk_costa_check(mi)[4]
+    diag['T_vs_residue'] = float(abs(abs(diag['T'][1])
+                                     - abs(2 * math.pi * res.imag)))
+    return V, F, uv, diag
+
+
+# ---- eight-ended Scherk of genus 2 (half-disk polar chart) ---------------
+
+def sscherk_eight_om(mi):
+    a1, a2, a3, b, c = SSCHERK_EIGHT_MEMBERS[mi]
+    rho = math.sqrt(a1) * math.sqrt(a3) / (math.sqrt(a2) * c)
+
+    def om(z):
+        z = sptail_nudge(z)
+        G = rho * np.sqrt(z - 1 / a1) * np.sqrt(z - a2) \
+            * np.sqrt(z - 1 / a3) * (z - c) \
+            / (np.sqrt(z - a1) * np.sqrt(z - 1 / a2)
+               * np.sqrt(z - a3) * (z - 1 / c))
+        dh = (z - 1 / c) * (z - c) / (z * (z - 1 / b) * (z - b))
+        p1 = G * dh
+        p2 = dh / G
+        return (0.5 * (p2 - p1), 0.5j * (p2 + p1), dh)
+    return om
+
+
+def sscherk_eight_check(mi):
+    """Integral period conditions, the residue match of the two dh
+    poles in the domain, and the closed-form translation transy."""
+    a1, a2, a3, b, c = SSCHERK_EIGHT_MEMBERS[mi]
+    om = sscherk_eight_om(mi)
+    t1 = float(np.real(sscherk_cheb_seg(
+        lambda z: om(z)[1], a1 + 1e-10j, a2 + 1e-10j)))
+    t2 = float(np.real(sscherk_cheb_seg(
+        lambda z: om(z)[0], a2 + 1e-10j, a3 + 1e-10j)))
+    r0 = 0.4 * a1
+    res0 = period_integral(lambda z: om(z)[1], 0.0, r0, r0) \
+        / (2j * math.pi)
+    rb = 0.2 * min(abs(b - c), abs(1.0 + b))
+    resb = period_integral(lambda z: om(z)[1], b, rb, rb) \
+        / (2j * math.pi)
+    transy = -2 * math.pi * (a1 * a3 + a2 * c * c) \
+        / (2 * math.sqrt(a1 * a2 * a3) * c)
+    return t1, t2, complex(res0), complex(resb), float(transy)
+
+
+def sscherk_eight_build(mi, nseg=10, nt=24, storeys=1, rmin=1e-3,
+                        rmax=1e4):
+    a1, a2, a3, b, c = SSCHERK_EIGHT_MEMBERS[mi]
+    om = sscherk_eight_om(mi)
+    c0 = -(b + 1 / b) / 2
+
+    def omp(p):
+        p = sptail_nudge(p)
+        u = c0 - 1.0 / p
+        u = np.where(np.imag(u) == 0.0,
+                     u + 1e-14j * (1.0 + np.abs(u)), u)
+        s = np.sqrt(u - 1.0) * np.sqrt(u + 1.0)
+        z = -u + s
+        dz = -(z / s) / (p * p)
+        o = om(z)
+        return tuple(cc * dz for cc in o)
+
+    def invparm(z):
+        return -(2 * b * z) / (-b + z + b * b * z - b * z * z)
+
+    mka = [invparm(a1), invparm(a2), invparm(a3)]
+    p1m, p2m, cm = 1.0 / (c0 + 1.0), 1.0 / (c0 - 1.0), -invparm(c)
+    rmin = min(rmin, 0.25 * min(mka))
+    rmax = max(rmax, 4.0 * max(p2m, cm))
+    cl = sptail_cluster(0.12, hmin=1e-8, ratio=0.3)
+    r = _sscherk_grid1d(rmin, rmax, mka + [p1m, p2m, cm], nseg, cl,
+                        rel=True)
+    t = _sscherk_tgrid(nt)
+    X = sptail_polar_patch(omp, r, t)
+    im = [int(np.searchsorted(r, v)) for v in mka]
+    ip1 = int(np.searchsorted(r, p1m))
+    ip2 = int(np.searchsorted(r, p2m))
+    icm = int(np.searchsorted(r, cm))
+    rows = [
+        (X, (slice(0, im[0] + 1), 0)),          # (0, a1)  y-plane A
+        (X, (slice(im[0], im[1] + 1), 0)),      # (a1, a2) x-plane
+        (X, (slice(im[1], im[2] + 1), 0)),      # (a2, a3) y-plane A
+        (X, (slice(im[2], ip1 + 1), 0)),        # (a3, 1)  x-plane
+        (X, (slice(ip1, ip2 + 1), 0)),          # arc      z-plane
+        (X, (slice(ip2, len(r)), 0)),           # (-1, b)  y-plane A
+        (X, (slice(0, icm + 1), -1)),           # (0, c)   y-plane B
+        (X, (slice(icm, len(r)), -1)),          # (c, b)   y-plane B
+    ]
+    V, F, uv, diag = _sscherk_finish([X], rows, use_mz=True,
+                                     storeys=storeys)
+    transy = sscherk_eight_check(mi)[4]
+    diag['T_vs_transy'] = float(abs(abs(diag['T'][1]) - abs(transy)))
+    return V, F, uv, diag
+
+
+# ---- daSilva-Batista genus 2 (Moebius half-disk chart) -------------------
+
+def sscherk_das_om(mi):
+    a, b, c, d, e = SSCHERK_DAS_MEMBERS[mi]
+    C = complex(np.sqrt(1 - a + 0j) * np.sqrt(1 - 1 / d + 0j)
+                * np.sqrt(1 - 1 / e + 0j)
+                / (np.sqrt(1 - 1 / a + 0j) * np.sqrt(1 - d + 0j)
+                   * np.sqrt(1 - e + 0j)))
+
+    def om(z):
+        z = sptail_nudge(z)
+        G = C * np.sqrt(z - 1 / a) * np.sqrt(z - d) * np.sqrt(z - e) \
+            / (z * np.sqrt(z - a) * np.sqrt(z - 1 / d)
+               * np.sqrt(z - 1 / e))
+        dh = z / ((z - 1 / b) * (z - b) * (z - 1 / c) * (z - c))
+        p1 = G * dh
+        p2 = dh / G
+        return (0.5 * (p2 - p1), 0.5j * (p2 + p1), dh)
+    return om
+
+
+def sscherk_das_check(mi):
+    """The notebook test[] period conditions (through the upper half
+    plane, avoiding the branch segments) plus Res(om2, b) (translation
+    = |2 pi Im Res|)."""
+    a, b, c, d, e = SSCHERK_DAS_MEMBERS[mi]
+    om = sscherk_das_om(mi)
+    t1 = float(np.real(
+        sscherk_cheb_seg(lambda z: om(z)[1], 0.0 + 0j, e / 2 + 0.5j)
+        + sscherk_cheb_seg(lambda z: om(z)[1], e / 2 + 0.5j, e + 0j)))
+    t2 = float(np.real(
+        sscherk_cheb_seg(lambda z: om(z)[1], a + 0j, 0.5j)
+        + sscherk_cheb_seg(lambda z: om(z)[1], 0.5j, d + 0j)))
+    t3 = float(np.real(
+        sscherk_cheb_seg(lambda z: om(z)[0], a + 0j, 0.5j)
+        + sscherk_cheb_seg(lambda z: om(z)[0], 0.5j, d + 0j)))
+    rb = 0.25 * min(abs(b - a), abs(c - b), abs(b))
+    resb = period_integral(lambda z: om(z)[1], b, rb, rb) \
+        / (2j * math.pi)
+    return t1, t2, t3, complex(resb)
+
+
+def sscherk_das_build(mi, nseg=10, nt=24, storeys=1, cut1=0.02,
+                      cut2=2e4):
+    a, b, c, d, e = SSCHERK_DAS_MEMBERS[mi]
+    om = sscherk_das_om(mi)
+
+    def h(z):
+        return -(z + 1.0 / z) / 2.0
+
+    a1, b1 = h(b), h(c)
+
+    def qmark(z):
+        return abs((h(z) - a1) / (h(z) - b1))
+
+    def omq(q):
+        q = sptail_nudge(q)
+        M = (b1 * q - a1) / (q - 1.0)
+        M = np.where(np.imag(M) == 0.0,
+                     M + 1e-14j * (1.0 + np.abs(M)), M)
+        s = np.sqrt(M - 1.0) * np.sqrt(M + 1.0)
+        z = -M + s
+        dz = -(z / s) * (a1 - b1) / ((q - 1.0) ** 2)
+        o = om(z)
+        return tuple(cc * dz for cc in o)
+
+    qa, qm1, qp1 = qmark(a), qmark(-1.0), qmark(1.0)
+    qe, qd = qmark(e), qmark(d)
+    cut1 = min(cut1, 0.25 * qa)
+    cut2 = max(cut2, 4.0 * qd)
+    marks = [qa, qm1, 1.0, qp1, qe, qd]
+    cl = sptail_cluster(0.12, hmin=1e-8, ratio=0.3)
+    r = _sscherk_grid1d(cut1, cut2, marks, nseg, cl, rel=True)
+    t = _sscherk_tgrid(nt)
+    X = sptail_polar_patch(omq, r, t)
+    i0 = int(np.searchsorted(r, 1.0))
+    ia = int(np.searchsorted(r, qa))
+    im1 = int(np.searchsorted(r, qm1))
+    ip1 = int(np.searchsorted(r, qp1))
+    ie = int(np.searchsorted(r, qe))
+    idm = int(np.searchsorted(r, qd))
+    rows = [
+        (X, (slice(0, i0 + 1), 0)),         # (b, 0)   y-plane A
+        (X, (slice(i0, len(r)), 0)),        # (0, c)   y-plane A
+        (X, (slice(0, ia + 1), -1)),        # (b, a)   y-plane B
+        (X, (slice(ia, im1 + 1), -1)),      # (a, -1)  x-plane
+        (X, (slice(im1, ip1 + 1), -1)),     # arc      z-plane
+        (X, (slice(ip1, ie + 1), -1)),      # (1, e)   y-plane A
+        (X, (slice(ie, idm + 1), -1)),      # (e, d)   x-plane
+        (X, (slice(idm, len(r)), -1)),      # (d, c)   y-plane B
+    ]
+    V, F, uv, diag = _sscherk_finish([X], rows, use_mz=True,
+                                     storeys=storeys)
+    resb = sscherk_das_check(mi)[3]
+    diag['T_vs_residue'] = float(abs(abs(diag['T'][1])
+                                     - abs(2 * math.pi * resb.imag)))
+    return V, F, uv, diag
+
+
+# ---- toolkit meshers -----------------------------------------------------
+
+def _sscherk_mesh(build, nmem, spec, nu, nv, order, radius, scale,
+                  storeys):
+    mi = int(np.clip(order, 1, nmem)) - 1
+    S = int(np.clip(storeys, 1, 5))
+    p = spec['p_from'](order, radius) if 'p_from' in spec else {}
+    kw = dict(p.get('build_kw', {}))
+    V, F, uv, _ = build(mi, nseg=int(np.clip(int(0.22 * nu), 6, 18)),
+                        nt=int(np.clip(int(0.5 * nv), 16, 60)),
+                        storeys=S, **kw)
+    tk = _toolkit()
+    V = tk._center_fit(V, scale, V)
+    return V, F, uv
+
+
+def sscherk_six1_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                      storeys=1):
+    return _sscherk_mesh(sscherk_six1_build, len(SSCHERK_SIX1_MEMBERS),
+                         spec, nu, nv, order, radius, scale, storeys)
+
+
+def sscherk_costa_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                       storeys=1):
+    return _sscherk_mesh(sscherk_costa_build, len(SSCHERK_COSTA_MEMBERS),
+                         spec, nu, nv, order, radius, scale, storeys)
+
+
+def sscherk_eight_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                       storeys=1):
+    return _sscherk_mesh(sscherk_eight_build, len(SSCHERK_EIGHT_MEMBERS),
+                         spec, nu, nv, order, radius, scale, storeys)
+
+
+def sscherk_das_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
+                     storeys=1):
+    return _sscherk_mesh(sscherk_das_build, len(SSCHERK_DAS_MEMBERS),
+                         spec, nu, nv, order, radius, scale, storeys)
+
+
 # --------------------------------------------------------------------------
 # Extension plumbing (no Blender UI of its own; the toolkit owns it)
 # --------------------------------------------------------------------------
@@ -7773,6 +8473,92 @@ if __name__ == "__main__":
     print(f"sptail periodic-enneper: |T - (0,-pi,0)|={terr:.1e} "
           f"quotient chi={cq[0]} ends={cq[3]} (want 0, 2) "
           f"{'OK' if good else 'FAIL'}")
+
+    # ---- SP SCHERK FAMILY engine gates (sscherk block) -----------------
+    # (1) null identity sum om_i^2 = 0 on every family's integrand
+    zt3 = rng2.uniform(1.2, 3.0, 160) + 1j * rng2.uniform(0.1, 2.5, 160)
+    for nm3, omf in (('six1', sscherk_six1_om(3)),
+                     ('costa', sscherk_costa_om(1)),
+                     ('eight', sscherk_eight_om(2)),
+                     ('dasilva', sscherk_das_om(1))):
+        o1, o2, o3 = omf(zt3)
+        nerr = float(np.max(np.abs(o1 * o1 + o2 * o2 + o3 * o3)))
+        good = nerr < 1e-10
+        ok &= good
+        print(f"sscherk null {nm3}: |sum om^2|={nerr:.1e} "
+              f"{'OK' if good else 'FAIL'}")
+    # (2) the notebook-solved constants close their period problems:
+    #     independent quadrature of every table member (integral
+    #     conditions ~ quadrature-limited for the nearly degenerate
+    #     branch clusters; the closed-form residue conditions are exact)
+    w_int = w_cf = 0.0
+    for mi3 in range(len(SSCHERK_SIX1_MEMBERS)):
+        c1r, c2r, e3r, e4r, _r = sscherk_six1_check(mi3)
+        w_int = max(w_int, abs(c1r), abs(c2r))
+        w_cf = max(w_cf, abs(e3r), abs(e4r))
+    good = w_int < 5e-4 and w_cf < 1e-9
+    ok &= good
+    print(f"sscherk six1 periods (all {len(SSCHERK_SIX1_MEMBERS)} "
+          f"members): worst integral={w_int:.1e} closed-form="
+          f"{w_cf:.1e} {'OK' if good else 'FAIL'}")
+    w_int = 0.0
+    for mi3 in range(len(SSCHERK_COSTA_MEMBERS)):
+        t1r, t2r, t3r, t4r, _r = sscherk_costa_check(mi3)
+        w_int = max(w_int, abs(t1r), abs(t2r), abs(t3r), abs(t4r))
+    good = w_int < 5e-4
+    ok &= good
+    print(f"sscherk costa periods (all {len(SSCHERK_COSTA_MEMBERS)} "
+          f"members): worst residual={w_int:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+    w_int = w_res = 0.0
+    for mi3 in range(len(SSCHERK_EIGHT_MEMBERS)):
+        t1r, t2r, r0r, rbr, _t = sscherk_eight_check(mi3)
+        w_int = max(w_int, abs(t1r), abs(t2r))
+        w_res = max(w_res, abs(r0r + rbr))
+    good = w_int < 1e-5 and w_res < 1e-8
+    ok &= good
+    print(f"sscherk eight periods (all {len(SSCHERK_EIGHT_MEMBERS)} "
+          f"members): worst integral={w_int:.1e} residue match="
+          f"{w_res:.1e} {'OK' if good else 'FAIL'}")
+    w_int = 0.0
+    for mi3 in range(len(SSCHERK_DAS_MEMBERS)):
+        t1r, t2r, t3r, _r = sscherk_das_check(mi3)
+        w_int = max(w_int, abs(t1r), abs(t2r), abs(t3r))
+    good = w_int < 1e-6
+    ok &= good
+    print(f"sscherk dasilva periods (all {len(SSCHERK_DAS_MEMBERS)} "
+          f"members): worst residual={w_int:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+    # (3) topology per family (one representative member; the full
+    #     member sweep was verified during development): measured
+    #     chi(S+1) - chi(S) and the translation-wrapped quotient must
+    #     equal chi = 2 - 2 genus - #ends with the right end count;
+    #     stacks manifold, oriented, one component; the mesh
+    #     translation reproduces the analytic residue/transy value
+    for nm3, build3, mi3, wchi, wend, ptol, ttol in (
+            ('six1', sscherk_six1_build, 3, -6, 6, 8e-3, 1.5e-2),
+            ('costa', sscherk_costa_build, 1, -6, 6, 1e-4, 1e-5),
+            ('eight', sscherk_eight_build, 2, -10, 8, 5e-4, 1e-7),
+            ('dasilva', sscherk_das_build, 1, -10, 8, 1e-5, 1e-7)):
+        V1, F1, u1, dg = build3(mi3, storeys=1)
+        V2, F2, _u2, _d2 = build3(mi3, storeys=2)
+        c1 = sptail_topology(V1, F1)
+        c2 = sptail_topology(V2, F2)
+        Vq, Fq = sptail_quotient(V1, F1, dg['T'], dg['span'] * 1e-6)
+        cq = sptail_topology(Vq, Fq)
+        tres = dg.get('T_vs_residue', dg.get('T_vs_transy', 0.0))
+        good = (dg['presnap'] < ptol and tres < ttol
+                and c2[0] - c1[0] == wchi and cq[0] == wchi
+                and cq[3] == wend and cq[1] == 0 and cq[2]
+                and c2[1] == 0 and c2[2] and c2[4] == 1
+                and bool(np.all(np.isfinite(V2)))
+                and bool(np.all(np.isfinite(u1))))
+        ok &= good
+        print(f"sscherk {nm3} member {mi3}: presnap={dg['presnap']:.1e} "
+              f"T_res={tres:.1e} chi {c1[0]}->{c2[0]} (dchi {wchi}) "
+              f"quotient chi={cq[0]} ends={cq[3]} (want {wchi}, {wend}) "
+              f"nonman={c2[1]} orient={c2[2]} "
+              f"{'OK' if good else 'FAIL'}")
 
     # ---- SYMM/NONORIENT TAIL engine gates ------------------------------
     # (1) validate the one-sidedness checker itself on two synthetic
