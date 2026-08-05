@@ -510,6 +510,10 @@ OPS = [
         preset='SE_CUBE', segments=48, rings=24)),
     ("supershape distance color", lambda: bpy.ops.mesh.supershape_add(
         preset='GEAR', coloring='DISTANCE', segments=48, rings=24)),
+    ("ruled surface helicoid", lambda: bpy.ops.mesh.ruled_surface_add(
+        mode='HELICOID')),
+    ("ruled surface hypar", lambda: bpy.ops.mesh.ruled_surface_add(
+        mode='HYPAR')),
     ("rolling knot", lambda: bpy.ops.mesh.rolling_knot_add(
         p=3, samples=256, sides=10)),
     ("rolling knot morton", lambda: bpy.ops.mesh.rolling_knot_add(
