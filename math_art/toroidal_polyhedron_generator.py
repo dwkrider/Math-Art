@@ -421,7 +421,9 @@ if _IN_BLENDER:
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo Style "
                     "modifier"),
-                   ('WIRE', "Wireframe", "Wireframe modifier"),
+                   ('WIRE', "Struts", "Wireframe modifier"),
+                   ('WIREFRAME', "Wireframe",
+                    "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
                     "segment per face")],
@@ -480,10 +482,24 @@ if _IN_BLENDER:
                     from . import facet_style
                 except ImportError:
                     import facet_style
+                # explode away from the major (tube-centre) circle,
+                # which lies in the z=0 plane at the scaled major radius
+                import math as _m
+                rmaj = self.major / mx * self.scale
+
+                def _edir(cen):
+                    rl = _m.hypot(cen[0], cen[1])
+                    if rl < 1e-9:
+                        return (0.0, 0.0, 1.0 if cen[2] >= 0 else -1.0)
+                    dx = cen[0] - rmaj * cen[0] / rl
+                    dy = cen[1] - rmaj * cen[1] / rl
+                    dz = cen[2]
+                    L = _m.sqrt(dx * dx + dy * dy + dz * dz) or 1.0
+                    return (dx / L, dy / L, dz / L)
                 facet_style.emit_facets(
                     context, Vf, Ff, name, self.facet_depth,
                     self.facet_gap, self.facet_explode,
-                    self.facet_separate)
+                    self.facet_separate, None, _edir)
                 self.report({'INFO'}, "%s: %d face segments" %
                             (name, len(Ff)))
                 return {'FINISHED'}
@@ -505,6 +521,8 @@ if _IN_BLENDER:
                 mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
                 mod.thickness = self.thickness
                 mod.use_even_offset = False
+            elif self.style == 'WIREFRAME':
+                obj.display_type = 'WIRE'
             self.report({'INFO'}, "%s: V=%d F=%d (genus 1)" %
                         (name, len(V), len(F)))
             return {'FINISHED'}

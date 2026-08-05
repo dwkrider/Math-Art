@@ -1893,7 +1893,9 @@ if _IN_BLENDER:
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo "
                     "Style modifier"),
-                   ('WIRE', "Wireframe", "Wireframe modifier"),
+                   ('WIRE', "Struts", "Wireframe modifier"),
+                   ('WIREFRAME', "Wireframe",
+                    "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split the shell into one thick plate per face, "
                     "padded apart and optionally exploded outward")],
@@ -2085,6 +2087,8 @@ if _IN_BLENDER:
                     mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
                     mod.thickness = self.thickness
                     mod.use_even_offset = False
+                elif self.style == 'WIREFRAME':
+                    obj.display_type = 'WIRE'
             context.view_layer.objects.active = first
             self.report({'INFO'},
                         f"{label}: {len(groups)} piece(s), "

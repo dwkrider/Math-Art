@@ -121,9 +121,13 @@ def build_facets(V, F, depth=0.15, padding=0.0):
         faces.append(list(range(m)))                 # outer cap
         faces.append([m + k for k in range(m)])       # inner cap
         faces = _orient_faces(verts, faces)
-        L = sqrt(sum(c * c for c in cen)) or 1.0
-        segs.append((verts, faces, m, tuple(c / L for c in cen)))
+        segs.append((verts, faces, m, tuple(cen)))   # raw face centroid
     return segs
+
+
+def _unit(v):
+    L = sqrt(sum(c * c for c in v)) or 1.0
+    return tuple(c / L for c in v)
 
 
 try:
@@ -157,35 +161,41 @@ if _IN_BLENDER:
         return me
 
     def emit_facets(context, V, F, label, depth=0.15, padding=0.0,
-                    explode=0.1, separate=False, material_fn=None):
-        """Build the Face Segments of the convex polyhedron (V, F) and
-        add them to the scene.  Returns (first_object, n_segments).
-        `material_fn(n_sides)` may return a material per face size, or
-        None for no colouring."""
+                    explode=0.1, separate=False, material_fn=None,
+                    explode_dir_fn=None):
+        """Build the Face Segments of the polyhedron (V, F) and add
+        them to the scene.  Returns (first_object, n_segments).
+        `material_fn(n_sides)` may return a material per face size.
+        `explode_dir_fn(centroid) -> unit direction` overrides the
+        default explode direction (radially from the origin) -- e.g.
+        a torus explodes away from its major circle."""
         segs = build_facets(V, F, depth, padding)
         for o in context.selected_objects:
             o.select_set(False)
         cur = context.scene.cursor.location
+
+        def offset(cen):
+            d = (explode_dir_fn(cen) if explode_dir_fn else _unit(cen))
+            return (explode * d[0], explode * d[1], explode * d[2])
+
         first = None
         if separate:
-            for k, (verts, faces, ns, d) in enumerate(segs):
+            for k, (verts, faces, ns, cen) in enumerate(segs):
                 nm = f"{label} facet {k + 1}of{len(segs)}"
                 me = _facet_mesh(nm, verts, faces, [ns] * len(faces),
                                  material_fn)
                 obj = bpy.data.objects.new(nm, me)
                 context.collection.objects.link(obj)
-                obj.location = (cur[0] + explode * d[0],
-                                cur[1] + explode * d[1],
-                                cur[2] + explode * d[2])
+                ox, oy, oz = offset(cen)
+                obj.location = (cur[0] + ox, cur[1] + oy, cur[2] + oz)
                 obj.select_set(True)
                 if first is None:
                     first = obj
         else:
             av, af, sizes = [], [], []
-            for verts, faces, ns, d in segs:
+            for verts, faces, ns, cen in segs:
                 base = len(av)
-                ox, oy, oz = (explode * d[0], explode * d[1],
-                              explode * d[2])
+                ox, oy, oz = offset(cen)
                 av.extend((v[0] + ox, v[1] + oy, v[2] + oz)
                           for v in verts)
                 af.extend([base + i for i in f] for f in faces)

@@ -227,9 +227,11 @@ if _IN_BLENDER:
                     "Open-faced panels via the shared Leonardo "
                     "Style Geometry Nodes modifier (Border and "
                     "Thickness stay editable on the modifier)"),
-                   ('WIRE', "Wireframe",
+                   ('WIRE', "Struts",
                     "Struts along the zone edges (Wireframe "
                     "modifier)"),
+                   ('WIREFRAME', "Wireframe",
+                    "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
                     "segment per face")],
@@ -349,6 +351,8 @@ if _IN_BLENDER:
                 mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
                 mod.thickness = self.thickness
                 mod.use_even_offset = False
+            elif self.style == 'WIREFRAME':
+                obj.display_type = 'WIRE'
             self.report({'INFO'},
                         f"V={len(me.vertices)} F={len(me.polygons)}")
             return {'FINISHED'}

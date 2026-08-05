@@ -471,8 +471,9 @@ if _IN_BLENDER:
             description="Scale of each cell about its own centroid "
                         "(1.0 = cells share faces exactly)")
         size: FloatProperty(
-            name="Cell Size", default=1.0, min=0.01, max=100.0,
-            description="Length of one lattice step per axis")
+            name="Size", default=2.0, min=0.01, max=100.0,
+            description="Fit the whole block within a cube of this "
+                        "size, centred at the origin")
         style: EnumProperty(
             name="Style",
             items=[('SOLID', "Solid", "Plain solid cells"),
@@ -509,11 +510,19 @@ if _IN_BLENDER:
             try:
                 verts, faces, tags = build_mesh(
                     self.kind, self.nx, self.ny, self.nz,
-                    self.gap, self.size, self.spiral_segments,
+                    self.gap, 1.0, self.spiral_segments,
                     self.spiral_pitch)
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
+            # fit the whole block into a `size` cube centred at origin
+            P = np.asarray(verts, float)
+            if len(P):
+                lo = P.min(axis=0)
+                hi = P.max(axis=0)
+                span = float(np.max(hi - lo)) or 1.0
+                P = (P - (lo + hi) / 2.0) * (self.size / span)
+                verts = [tuple(p) for p in P]
             me = bpy.data.meshes.new("Spacefill")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)

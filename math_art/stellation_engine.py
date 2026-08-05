@@ -938,7 +938,9 @@ if _IN_BLENDER:
             items=[('SOLID', "Solid", ""),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo modifier"),
-                   ('WIRE', "Wireframe", "Wireframe modifier")],
+                   ('WIRE', "Struts", "Wireframe modifier"),
+                   ('WIREFRAME', "Wireframe",
+                    "Mesh edges only, displayed as a wireframe")],
             default='SOLID')
         border: FloatProperty(name="Border", default=0.3, min=0.02, max=0.95,
                               description="Leonardo face frame width")
@@ -989,6 +991,8 @@ if _IN_BLENDER:
                 mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
                 mod.thickness = self.thickness
                 mod.use_even_offset = False
+            elif self.style == 'WIREFRAME':
+                obj.display_type = 'WIRE'
             self.report({'INFO'}, "%s: V=%d F=%d" % (label, len(V), len(F)))
             return {'FINISHED'}
 
