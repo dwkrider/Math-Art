@@ -9,9 +9,11 @@
 # or from a right-conoid variant S(u,v) = (v cos u, v sin u, h(u)),
 # or from a bilinear patch spanning four skew points.  Because the
 # generator is always a straight segment, each surface can optionally
-# be rendered as its literal RULINGS -- thin rods -- reproducing the
-# look of string / stick sculptures (George Hart's stick hyperboloids,
-# hyperbolic-paraboloid string art).
+# be rendered as its literal RULINGS -- thin rods or bare curves --
+# optionally alongside its directrix / boundary rails (the two circles,
+# the two torus knots, ...), reproducing the look of string / stick
+# sculptures (George Hart's stick hyperboloids, hyperbolic-paraboloid
+# string art).
 #
 # Modes
 #   HYPERBOLOID   -- hyperboloid of one sheet from straight rulings
@@ -41,6 +43,12 @@
 #     z = c((x/a)^2 - (y/b)^2) or as the bilinear patch spanning four
 #     user-set skew corner points (the surface of any four points in
 #     general position).
+#   KNOT_SPAN     -- a ruled surface strung between two concentric
+#     (p, q) torus knots: straight rulings interpolate S = inner(u)(1-v)
+#     + outer(u) v between an inner and an outer toroidal knot sampled on
+#     a shared parameter.  The outer curve degenerates to a plain circle
+#     (wound p times) when its q = 0.  A straight-ruled cousin of the
+#     soap-film "knot to knot" span in the minimal-surface toolkit.
 #
 # Every builder is pure python + numpy and runs without bpy, so this
 # file self-tests standalone.  Seams where a parameter wraps are
@@ -59,6 +67,10 @@
 #       functions of n variables" (1943).
 #   S. A. Coons, "Surfaces for Computer-Aided Design of Space Forms,"
 #       MIT Project MAC TR-41 (1967) -- the bilinear patch.
+#   Torus knots (p, q): classical; see e.g. C. C. Adams, "The Knot
+#       Book" (1994).  The knot-to-knot span is adapted here as a pure
+#       ruled surface (cf. the soap-film version in the minimal-surface
+#       toolkit).
 #   Classical background: M. do Carmo, "Differential Geometry of
 #       Curves and Surfaces" (1976); A. Gray, "Modern Differential
 #       Geometry of Curves and Surfaces" (1997); D. Struik, "Lectures
@@ -72,9 +84,10 @@ bl_info = {
     "location": "View3D > Add > Mesh > Math Art > Surfaces",
     "description": "Stick hyperboloids, compound helical cones, "
                    "spiral ruled surfaces, conoids, tangent "
-                   "developables, helicoids, twisted strips and "
-                   "doubly-ruled hypars -- straight-line-swept "
-                   "surfaces, optionally rendered as rulings",
+                   "developables, helicoids, twisted strips, "
+                   "doubly-ruled hypars and concentric torus-knot "
+                   "spans -- straight-line-swept surfaces, optionally "
+                   "rendered as rulings",
     "category": "Add Mesh",
 }
 
@@ -218,6 +231,91 @@ def rulings_hyperboloid(radius=1.0, height=1.0, twist=120.0,
             segs.append((b, (radius * math.cos(a - tw),
                              radius * math.sin(a - tw), height)))
     return segs
+
+
+# --------------------------------------------------------------------
+# 1b. concentric torus-knot span
+# --------------------------------------------------------------------
+
+def _knot_curve(p, q, m, scale=1.0, tube=1.0, major=2.0):
+    """A (p, q) torus knot sampled at m points on t in [0, 2pi):
+        r     = tube cos(q t) + major
+        (x,y) = r (cos(p t), sin(p t)),   z = -tube sin(q t)
+    all times `scale`.  q = 0 degenerates to a circle of radius
+    (tube + major) wound p times.  endpoint=False so the loop welds
+    cleanly under wrap_u."""
+    t = np.linspace(0.0, _TWO_PI, m, endpoint=False)
+    r = np.cos(q * t) * tube + major
+    return np.stack([r * np.cos(p * t), r * np.sin(p * t),
+                     -np.sin(q * t) * tube], axis=1) * scale
+
+
+def _knot_span_boundaries(p=2, q=3, knot_scale=1.0, tube=1.0,
+                          inner_height=1.0, inner_lift=0.0,
+                          inner_rotation=0.0, outer_p=0, outer_q=5,
+                          outer_scale=2.0, outer_tube=1.0,
+                          outer_height=1.0, circle_radius=4.5, m=96):
+    """Inner and outer boundary loops (each (m, 3)) for the knot span.
+    The inner loop is always a (p, q) torus knot, height-scaled, lifted
+    and optionally rotated about z.  The outer loop is a second
+    (outer_p or p, outer_q) torus knot, or -- when outer_q == 0 -- a
+    plain circle of radius `circle_radius` wound p times so the rulings
+    still line up."""
+    inner = _knot_curve(p, q, m, scale=knot_scale, tube=tube)
+    inner[:, 2] *= inner_height
+    inner[:, 2] += inner_lift
+    if inner_rotation != 0.0:
+        ca, sa = math.cos(inner_rotation), math.sin(inner_rotation)
+        inner[:, :2] = np.stack(
+            [inner[:, 0] * ca - inner[:, 1] * sa,
+             inner[:, 0] * sa + inner[:, 1] * ca], axis=1)
+    po = outer_p or p
+    if outer_q > 0:
+        outer = _knot_curve(po, outer_q, m, scale=outer_scale,
+                            tube=outer_tube)
+        outer[:, 2] *= outer_height
+    else:
+        t = np.linspace(0.0, _TWO_PI, m, endpoint=False)
+        outer = np.stack([circle_radius * np.cos(p * t),
+                          circle_radius * np.sin(p * t),
+                          np.zeros(m)], axis=1)
+    return inner, outer
+
+
+def build_knot_span(p=2, q=3, knot_scale=1.0, tube=1.0,
+                    inner_height=1.0, inner_lift=0.0, inner_rotation=0.0,
+                    outer_p=0, outer_q=5, outer_scale=2.0,
+                    outer_tube=1.0, outer_height=1.0, circle_radius=4.5,
+                    res_u=96, res_v=16):
+    """Ruled surface between two concentric torus knots:
+        S(u, v) = inner(u) (1 - v) + outer(u) v,   v in [0, 1]
+    the same straight-ruling interpolation as the stick hyperboloid,
+    with the two coaxial circles replaced by an inner and an outer
+    (p, q) torus knot."""
+    inner, outer = _knot_span_boundaries(
+        p, q, knot_scale, tube, inner_height, inner_lift, inner_rotation,
+        outer_p, outer_q, outer_scale, outer_tube, outer_height,
+        circle_radius, res_u)
+    v = np.linspace(0.0, 1.0, res_v + 1)
+    P = np.empty((res_u, res_v + 1, 3))
+    for j, vv in enumerate(v):
+        P[:, j, :] = inner * (1.0 - vv) + outer * vv
+    return _mesh_grid(P, wrap_u=True)
+
+
+def rulings_knot_span(p=2, q=3, knot_scale=1.0, tube=1.0,
+                      inner_height=1.0, inner_lift=0.0,
+                      inner_rotation=0.0, outer_p=0, outer_q=5,
+                      outer_scale=2.0, outer_tube=1.0, outer_height=1.0,
+                      circle_radius=4.5, n=48):
+    """Ruling segments of the knot span: one straight rod per sample,
+    joining inner(u) to outer(u).  A single ruling family (unlike the
+    hyperboloid's crossing left/right pair)."""
+    inner, outer = _knot_span_boundaries(
+        p, q, knot_scale, tube, inner_height, inner_lift, inner_rotation,
+        outer_p, outer_q, outer_scale, outer_tube, outer_height,
+        circle_radius, n)
+    return [(tuple(inner[i]), tuple(outer[i])) for i in range(n)]
 
 
 # --------------------------------------------------------------------
@@ -587,6 +685,9 @@ _MODES = [
     ('HYPAR', "Hyperbolic Paraboloid",
      "Doubly-ruled saddle, as z=c((x/a)^2-(y/b)^2) or a bilinear "
      "patch of four skew corner points"),
+    ('KNOT_SPAN', "Concentric Toroidal Knots",
+     "Straight rulings strung between two concentric (p, q) torus "
+     "knots; outer q=0 degenerates the outer curve to a circle"),
 ]
 
 _CONOID_KINDS = [
@@ -600,7 +701,7 @@ _CONOID_KINDS = [
 
 # modes that are genuinely straight-ruled -> rods available
 _RULED = {'HYPERBOLOID', 'SPIRAL', 'CONOID', 'TANGENT_DEV',
-          'HELICOID', 'TWIST_STRIP', 'HYPAR'}
+          'HELICOID', 'TWIST_STRIP', 'HYPAR', 'KNOT_SPAN'}
 
 
 def _build_surface(op):
@@ -639,6 +740,15 @@ def _build_surface(op):
         vf = build_twist_strip(op.radius, op.width, op.half_twists,
                                op.res_u, op.res_v)
         return (*vf, "Twisted Strip")
+    if m == 'KNOT_SPAN':
+        vf = build_knot_span(op.knot_p, op.knot_q, op.knot_scale,
+                             op.knot_tube, op.knot_inner_height,
+                             op.knot_inner_lift, op.knot_rotation,
+                             op.knot_outer_p, op.knot_outer_q,
+                             op.knot_outer_scale, op.knot_outer_tube,
+                             op.knot_outer_height, op.knot_circle_radius,
+                             op.res_u, op.res_v)
+        return (*vf, "Concentric Toroidal Knots")
     # HYPAR
     corners = None
     if op.use_corners:
@@ -648,10 +758,11 @@ def _build_surface(op):
     return (*vf, "Hyperbolic Paraboloid")
 
 
-def _build_rulings(op):
+def _build_rulings(op, n=None):
     """Ruling segments for the current mode (rods mode)."""
     m = op.mode
-    n = op.n_rods
+    if n is None:
+        n = op.n_rods
     if m == 'HYPERBOLOID':
         return rulings_hyperboloid(op.radius, op.height, op.twist,
                                    op.family, n)
@@ -671,12 +782,84 @@ def _build_rulings(op):
     if m == 'TWIST_STRIP':
         return rulings_twist_strip(op.radius, op.width,
                                    op.half_twists, n)
+    if m == 'KNOT_SPAN':
+        return rulings_knot_span(op.knot_p, op.knot_q, op.knot_scale,
+                                 op.knot_tube, op.knot_inner_height,
+                                 op.knot_inner_lift, op.knot_rotation,
+                                 op.knot_outer_p, op.knot_outer_q,
+                                 op.knot_outer_scale, op.knot_outer_tube,
+                                 op.knot_outer_height,
+                                 op.knot_circle_radius, n)
     if m == 'HYPAR':
         corners = (op.p00, op.p10, op.p01, op.p11) \
             if op.use_corners else None
         return rulings_hypar(op.hy_a, op.hy_b, op.hy_c, op.v_extent,
                              corners, n)
     return []
+
+
+def _hypar_boundary(op, N):
+    """The (closed) boundary loop of the hypar: the four corner edges of
+    the bilinear patch, or the perimeter of the z=c((x/a)^2-(y/b)^2)
+    square."""
+    if op.use_corners:
+        loop = [tuple(op.p00), tuple(op.p10), tuple(op.p11),
+                tuple(op.p01)]
+        return [(loop, True)]
+    a, b, c, ext = op.hy_a, op.hy_b, op.hy_c, op.v_extent
+
+    def z(x, y):
+        return c * ((x / a) ** 2 - (y / b) ** 2)
+
+    k = max(2, N // 4)
+    xs = np.linspace(-ext, ext, k + 1)
+    ys = np.linspace(-ext, ext, k + 1)
+    loop = [(x, -ext, z(x, -ext)) for x in xs]
+    loop += [(ext, y, z(ext, y)) for y in ys[1:]]
+    loop += [(x, ext, z(x, ext)) for x in xs[::-1][1:]]
+    loop += [(-ext, y, z(-ext, y)) for y in ys[::-1][1:-1]]
+    return [(loop, True)]
+
+
+def _boundary_loops(op):
+    """The directrix / rail curves the rulings are strung between, as a
+    list of (points, closed) polylines: the two boundary rails of the
+    current mode (for KNOT_SPAN the inner and outer torus knots; for the
+    hyperboloid the two coaxial circles, etc.).  These complete the
+    'net' when a straight-ruled mode is drawn as rods or bare curves."""
+    m = op.mode
+    if m not in _RULED:
+        return []
+    N = max(8, op.res_u)
+    if m == 'HYPAR':
+        return _hypar_boundary(op, N)
+    if m == 'HYPERBOLOID':
+        # a single ruling family gives clean bottom/top rails
+        segs = rulings_hyperboloid(op.radius, op.height, op.twist,
+                                   'RIGHT', N)
+    else:
+        segs = _build_rulings(op, N)
+    if not segs:
+        return []
+    rail0 = [s[0] for s in segs]
+    rail1 = [s[1] for s in segs]
+    closed = (m in ('HYPERBOLOID', 'KNOT_SPAN', 'TWIST_STRIP')
+              or (m == 'CONOID' and op.conoid_kind != 'WHITNEY'))
+    return [(rail0, closed), (rail1, closed)]
+
+
+def _loop_segments(loops):
+    """Flatten (points, closed) polylines into consecutive (p0, p1)
+    segments so boundary curves can flow through _edges / _rods exactly
+    like the rulings do."""
+    segs = []
+    for pts, closed in loops:
+        pts = [tuple(p) for p in pts]
+        for i in range(len(pts) - 1):
+            segs.append((pts[i], pts[i + 1]))
+        if closed and len(pts) > 2:
+            segs.append((pts[-1], pts[0]))
+    return segs
 
 
 if _IN_BLENDER:
@@ -788,6 +971,63 @@ if _IN_BLENDER:
                                  default=(-1.0, 1.0, 1.0))
         p11: FloatVectorProperty(name="P11", size=3,
                                  default=(1.0, 1.0, -1.0))
+        # concentric torus-knot span
+        knot_p: IntProperty(name="Knot p", default=2, min=1, max=8,
+                            description="Times the knots wind around "
+                                        "the main axis")
+        knot_q: IntProperty(name="Knot q", default=3, min=0, max=9,
+                            description="Times the inner knot winds "
+                                        "around the tube; 0 makes it a "
+                                        "flat circle wound p times")
+        knot_scale: FloatProperty(name="Inner Scale", default=1.0,
+                                  min=0.1, max=5.0)
+        knot_tube: FloatProperty(name="Inner Tube", default=1.0,
+                                 min=0.0, max=5.0,
+                                 description="Tube radius of the inner "
+                                             "torus knot")
+        knot_inner_height: FloatProperty(name="Inner Height",
+                                         default=1.0, min=0.0, max=5.0,
+                                         description="Vertical "
+                                                     "oscillation of "
+                                                     "the inner knot")
+        knot_inner_lift: FloatProperty(name="Inner Lift", default=0.0,
+                                       min=-10.0, max=10.0,
+                                       description="Shift the inner "
+                                                   "knot up or down "
+                                                   "along the axis")
+        knot_rotation: FloatProperty(name="Inner Rotation", default=0.0,
+                                     min=-_TWO_PI, max=_TWO_PI,
+                                     subtype='ANGLE',
+                                     description="Rotate the inner knot "
+                                                 "about the axis, "
+                                                 "twisting the rulings")
+        knot_outer_p: IntProperty(name="Outer p", default=0, min=0,
+                                  max=8,
+                                  description="p of the outer knot; 0 "
+                                              "matches the inner p so "
+                                              "the rulings line up")
+        knot_outer_q: IntProperty(name="Outer q", default=5, min=0,
+                                  max=9,
+                                  description="q of the outer knot; 0 "
+                                              "degenerates it to a "
+                                              "circle")
+        knot_outer_scale: FloatProperty(name="Outer Scale",
+                                        default=2.0, min=0.1, max=10.0)
+        knot_outer_tube: FloatProperty(name="Outer Tube", default=1.0,
+                                       min=0.0, max=5.0,
+                                       description="Tube radius of the "
+                                                   "outer torus knot")
+        knot_outer_height: FloatProperty(name="Outer Height",
+                                         default=1.0, min=0.0, max=5.0,
+                                         description="Vertical "
+                                                     "oscillation of "
+                                                     "the outer knot")
+        knot_circle_radius: FloatProperty(name="Outer Circle Radius",
+                                          default=4.5, min=1.0,
+                                          max=20.0,
+                                          description="Radius of the "
+                                                      "outer circle "
+                                                      "when Outer q = 0")
 
         # shared extents / resolution / output
         v_extent: FloatProperty(name="Ruling Extent", default=1.0,
@@ -813,6 +1053,12 @@ if _IN_BLENDER:
                             max=400)
         rod_radius: FloatProperty(name="Rod Radius", default=0.02,
                                   min=0.002, max=0.3)
+        show_boundaries: BoolProperty(
+            name="Include Boundary Curves", default=True,
+            description="Add the directrix / rail curves the rulings "
+                        "are strung between (the two torus knots, the "
+                        "hyperboloid's end circles, etc.) to the rods / "
+                        "bare-curves output")
         smooth: BoolProperty(name="Smooth Shading", default=True)
         thickness: FloatProperty(name="Thickness", default=0.0,
                                  min=0.0, max=1.0,
@@ -828,6 +1074,8 @@ if _IN_BLENDER:
             want_rulings = self.output in ('RODS', 'CURVES')
             if want_rulings and self.mode in _RULED:
                 segs = _build_rulings(self)
+                if self.show_boundaries:
+                    segs = segs + _loop_segments(_boundary_loops(self))
                 if self.output == 'RODS':
                     verts, faces = _rods(segs, self.rod_radius, 8)
                     name += " (Rods)"
@@ -903,6 +1151,15 @@ if _IN_BLENDER:
                 keys = ('radius', 'inner', 'pitch', 'turns', 'slope')
             elif m == 'TWIST_STRIP':
                 keys = ('radius', 'width', 'half_twists')
+            elif m == 'KNOT_SPAN':
+                keys = ('knot_p', 'knot_q', 'knot_scale', 'knot_tube',
+                        'knot_inner_height', 'knot_inner_lift',
+                        'knot_rotation', 'knot_outer_q')
+                if self.knot_outer_q > 0:
+                    keys += ('knot_outer_p', 'knot_outer_scale',
+                             'knot_outer_tube', 'knot_outer_height')
+                else:
+                    keys += ('knot_circle_radius',)
             else:  # HYPAR
                 lay.prop(self, 'use_corners')
                 if self.use_corners:
@@ -922,6 +1179,7 @@ if _IN_BLENDER:
                     lay.prop(self, 'n_rods')
                     if self.output == 'RODS':
                         lay.prop(self, 'rod_radius')
+                    lay.prop(self, 'show_boundaries')
             for k in ('smooth', 'thickness', 'scale'):
                 lay.prop(self, k)
 
@@ -973,6 +1231,11 @@ def _selftest():
         ("hypar patch", lambda: build_hypar(
             res=24, corners=((-1, -1, -1), (1, -1, 1), (-1, 1, 1),
                              (1, 1, -1)))),
+        ("knot span", lambda: build_knot_span(res_u=96, res_v=8)),
+        ("knot span circle", lambda: build_knot_span(
+            outer_q=0, res_u=96, res_v=8)),
+        ("knot span twisted", lambda: build_knot_span(
+            inner_rotation=0.7, res_u=96, res_v=8)),
     ]
     for label, fn in builds:
         verts, faces = fn()
@@ -1020,6 +1283,26 @@ def _selftest():
     assert len(rv) == len(segs) * 2 * 8
     assert len(rf) == len(segs) * (8 + 2)
     print(f"rods: {len(segs)} segments -> V={len(rv)} F={len(rf)} OK")
+
+    # knot span: one ruling per sample joins inner knot to outer knot
+    kseg = rulings_knot_span(n=24)
+    assert len(kseg) == 24
+    assert all(len(s) == 2 and len(s[0]) == 3 for s in kseg)
+    # outer q=0 leaves the outer loop planar (z == 0)
+    inner, oc = _knot_span_boundaries(outer_q=0, m=32)
+    assert np.max(np.abs(oc[:, 2])) < 1e-9
+    print(f"knot span: {len(kseg)} rulings, circle-outer planar OK")
+
+    # boundary curves: a closed loop of k points -> k segments, an open
+    # one -> k-1; both knots feed through _edges like the rulings do
+    segs_closed = _loop_segments([(inner, True), (oc, True)])
+    assert len(segs_closed) == 2 * len(inner)
+    segs_open = _loop_segments([(inner, False)])
+    assert len(segs_open) == len(inner) - 1
+    bv, be = _edges(segs_closed)
+    assert len(be) == len(segs_closed) and len(bv) == 2 * len(segs_closed)
+    print(f"boundary curves: {len(inner)}-pt knots -> "
+          f"{len(segs_closed)} closed segments OK")
 
     # bare-curves output: one edge per ruling, no faces
     ev, ee = _edges(segs)
