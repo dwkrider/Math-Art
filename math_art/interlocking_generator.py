@@ -29,12 +29,12 @@
 #             the blocks tile the shell with shared walls (after the
 #             radial construction of Akpanya, Goertzen & Niemeyer).
 #
-# TETRA, ESCHER and KITTEN are space-filling / interlocking
-# assemblies (verified non-overlapping; a fixed peripheral frame locks
-# the interior).  The exact Versatile block, the UFO and cushion
-# tetroctahedrille blocks and the SL octocube are shown as single
-# reference blocks -- their space-filling assemblies require rotations
-# / an engagement grammar left for future work.
+# TETRA, ESCHER, KITTEN and the SL strand are space-filling /
+# interlocking assemblies (all verified non-overlapping).  The exact
+# Versatile block and the UFO / cushion tetroctahedrille blocks are
+# shown as single reference blocks -- their space-filling assemblies
+# require the rotation-based Truchet / grid grammars left for future
+# work.
 #
 # References:
 # - A. V. Dyskin, Y. Estrin, A. J. Kanel-Belov, E. Pasternak, "A new
@@ -663,49 +663,114 @@ def build_tetrocta(kind, nx, ny, nz):
 # FAMILY: SL -- self-interlocking octocube blocks (Shih 2018)
 # ==================================================================
 #
-# An S-shaped tetracube fused to an L-shaped tetracube (8 unit cubes).
-# The `a` engagement Rz(-90) . T(1,-1,0) placed four times closes a
-# square loop (a^4 = identity), a canonical interlocking SL strand.
+# An S-shaped tetracube fused to an L-shaped tetracube gives the SL
+# octocube.  Each tetracube is a single contiguous unit cell; two SL
+# blocks make a conjugate pair (one is the other turned 180 deg about
+# a y-axis through a shared corner of the S tetracube); pairs chain by
+# the `a` engagement (Rz(-90) then T(1,-1,0)), whose fourth power is
+# the identity, so a4 closes a periodic square strand.
 
-# S-tetracube and L-tetracube as unit-cube origin coordinates
+# unit-cube boundary quads (min corner at the origin), outward-wound
+_CUBE_FACES = (
+    ((1, 0, 0), [(1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1)]),
+    ((-1, 0, 0), [(0, 0, 0), (0, 0, 1), (0, 1, 1), (0, 1, 0)]),
+    ((0, 1, 0), [(0, 1, 0), (0, 1, 1), (1, 1, 1), (1, 1, 0)]),
+    ((0, -1, 0), [(0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1)]),
+    ((0, 0, 1), [(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]),
+    ((0, 0, -1), [(0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0)]))
+
+# S-tetracube and L-tetracube (unit-cube min corners); they share
+# three vertical faces, so their union is a contiguous octocube
 _S_TETRA = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]
-_L_TETRA = [(0, 0, 1), (0, 1, 1), (0, 2, 1), (1, 0, 1)]
-_SL_CUBES = _S_TETRA + _L_TETRA
+_L_TETRA = [(0, 0, 1), (1, 0, 1), (2, 0, 1), (2, 1, 1)]
 
 
-def _unit_cube(o):
-    """8 corners of the unit cube with min corner o."""
-    o = np.asarray(o, float)
-    return np.array([o + (x, y, z) for x in (0.0, 1.0)
-                     for y in (0.0, 1.0) for z in (0.0, 1.0)])
+def _polycube_mesh(origins):
+    """Contiguous boundary surface of a set of unit cubes given by
+    integer min-corner origins: only faces without a cube neighbour
+    are emitted, and shared vertices are welded, so the result is one
+    connected solid (no internal faces).  Returns (verts, faces)."""
+    cset = set(map(tuple, origins))
+    vidx = {}
+    verts = []
+    faces = []
 
+    def vid(p):
+        if p not in vidx:
+            vidx[p] = len(verts)
+            verts.append((float(p[0]), float(p[1]), float(p[2])))
+        return vidx[p]
 
-def _sl_block_mesh():
-    """The SL octocube as (cube_origin -> 8 corners) cells; rendered
-    as 8 unit cubes (shared internal faces are harmless for display).
-    Centred on its own centroid."""
-    cubes = [_unit_cube(o) for o in _SL_CUBES]
-    cen = np.mean([c.mean(axis=0) for c in cubes], axis=0)
-    return [c - cen for c in cubes]
+    for (x, y, z) in cset:
+        for (dx, dy, dz), quad in _CUBE_FACES:
+            if (x + dx, y + dy, z + dz) not in cset:
+                faces.append([vid((x + cx, y + cy, z + cz))
+                              for (cx, cy, cz) in quad])
+    return np.array(verts), faces
 
 
 def _rz(deg):
     a = math.radians(deg)
-    c, s = math.cos(a), math.sin(a)
+    c, s = round(math.cos(a)), round(math.sin(a))
     return np.array(((c, -s, 0.0), (s, c, 0.0), (0.0, 0.0, 1.0)))
 
 
-def build_sl():
-    """The SL octocube as a single block (an S-tetracube fused to an
-    L-tetracube), rendered as eight unit cubes coloured by tetracube.
-    The full engagement grammar (strands, loops, woven panels) is a
-    non-overlapping assembly problem left for BACKLOG."""
-    cubes = _sl_block_mesh()
+_SL_ENGAGE = {                       # (rotation, translation)
+    'a': (_rz(-90), np.array((1.0, -1.0, 0.0))),
+    'h': (np.diag((1.0, -1.0, -1.0)), np.array((0.0, 0.0, 0.0))),
+}
+
+
+def _sl_octocube():
+    """The SL octocube as (origins, colour) with the S tetracube
+    coloured 0 and the L tetracube 1."""
+    return [(np.array(_S_TETRA, float), 0),
+            (np.array(_L_TETRA, float), 1)]
+
+
+def _conjugate(origins):
+    """The conjugate of an octocube: a 180 deg turn about a y-axis
+    through a shared corner of the S tetracube, mapping cube min-
+    corners (x,y,z) -> (2-x, y, -1-z).  The pair is cube-disjoint and
+    face-adjacent (verified)."""
+    return np.array([(2 - x, y, -1 - z) for (x, y, z) in origins],
+                    float)
+
+
+def _sl_pair():
+    """The conjugate pair as (origins, colour): the S/L tetracubes of
+    the base octocube plus those of its conjugate partner."""
+    base = _sl_octocube()
+    return base + [(_conjugate(o), c) for o, c in base]
+
+
+def build_sl(mode='PAIR', strand=4):
+    """SL blocks as contiguous polycubes.  mode BLOCK = one octocube
+    (S + L tetracubes, two-coloured); PAIR = a conjugate pair; STRAND
+    = `strand` conjugate pairs chained by the a-engagement
+    (Rz(-90) then T(1,-1,0)); four pairs close the a4 loop.  Every
+    tetracube is a single connected solid."""
+    def emit(origins, col, R, t, cells):
+        P = origins @ R.T + t
+        V, F = _polycube_mesh(np.round(P).astype(int))
+        cells.append((np.zeros(3), V, F, False, col))
+
     cells = []
-    for idx, cube in enumerate(cubes):
-        col = 0 if idx < 4 else 1          # S-tetracube vs L-tetracube
-        cells.append((np.zeros(3), cube, _convex_faces(cube),
-                      False, col))
+    if mode == 'BLOCK':
+        for o, c in _sl_octocube():
+            emit(o, c, np.eye(3), np.zeros(3), cells)
+        return cells
+    if mode == 'PAIR':
+        for o, c in _sl_pair():
+            emit(o, c, np.eye(3), np.zeros(3), cells)
+        return cells
+    # STRAND: conjugate pairs at cumulative a-engagement powers
+    R, t = np.eye(3), np.zeros(3)
+    aR, at = _SL_ENGAGE['a']
+    for k in range(strand):
+        for o, c in _sl_pair():
+            emit(o, c, R, t, cells)
+        R, t = aR @ R, aR @ t + at
     return cells
 
 
@@ -820,7 +885,8 @@ def cells_to_mesh(cells, size=2.0, gap=1.0):
 
 def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
                 deform=0.18, samples=8, height=1.0,
-                dome_seed='ICOSA', dome_bulge=0.18, dome_thick=0.12):
+                dome_seed='ICOSA', dome_bulge=0.18, dome_thick=0.12,
+                sl_mode='STRAND', sl_strand=4):
     """Placement cells for the chosen family (see the family enum in
     the operator).  Returns build_tetra-style tuples."""
     if family == 'TETRA':
@@ -832,18 +898,17 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
     if family in _TETROCTA_BLOCKS:
         return build_tetrocta(family, nx, ny, nz)
     if family == 'SL':
-        return build_sl()
+        return build_sl(sl_mode, sl_strand)
     if family == 'DOME':
         return build_dome(dome_seed, dome_bulge, dome_thick)
     raise ValueError(family)
 
 
-# families that build a space-filling / interlocking assembly (a fixed
-# peripheral frame locks the interior); the rest emit a single
-# reference block
-_ASSEMBLY = {'TETRA', 'ESCHER', 'KITTEN', 'DOME'}
+# families that build a space-filling / interlocking assembly; the
+# rest emit a single reference block
+_ASSEMBLY = {'TETRA', 'ESCHER', 'KITTEN', 'SL', 'DOME'}
 _RIGOROUS = {'TETRA', 'ESCHER'}
-_SINGLE_BLOCK = {'VERSATILE', 'UFO', 'CUSHION', 'SL'}
+_SINGLE_BLOCK = {'VERSATILE', 'UFO', 'CUSHION'}
 
 
 # ==================================================================
@@ -919,9 +984,11 @@ if _IN_BLENDER:
                 ('CUSHION', "Tetroctahedrille Cushion (single)",
                  "One octahedron + four tetrahedra in a strip; a "
                  "single tetroctahedrille block"),
-                ('SL', "SL Block (single)",
-                 "The self-interlocking octocube (Shih 2018): an "
-                 "S-tetracube fused to an L-tetracube"),
+                ('SL', "SL Blocks",
+                 "Self-interlocking octocubes (Shih 2018): an "
+                 "S-tetracube fused to an L-tetracube; conjugate "
+                 "pairs chain by the a-engagement into a periodic "
+                 "strand (four pairs close the a4 loop)"),
                 ('DOME', "Polyhedral Shell Dome",
                  "One radial block per face of a polyhedron; the "
                  "blocks tile a spherical shell with shared radial "
@@ -961,6 +1028,20 @@ if _IN_BLENDER:
         dome_thick: FloatProperty(name="Shell Thickness",
                                   default=0.12, min=0.02, max=0.4)
 
+        sl_mode: EnumProperty(
+            name="SL Mode",
+            items=[('BLOCK', "Single Block",
+                    "One SL octocube (S + L tetracubes)"),
+                   ('PAIR', "Conjugate Pair",
+                    "Two SL blocks sharing an S corner"),
+                   ('STRAND', "Strand", "Conjugate pairs chained by "
+                    "the a-engagement")],
+            default='STRAND')
+        sl_strand: IntProperty(
+            name="Strand Pairs", default=4, min=1, max=12,
+            description="Conjugate pairs in the strand (4 closes the "
+                        "a4 loop)")
+
         gap: FloatProperty(
             name="Gap Factor", default=0.94, min=0.3, max=1.0,
             description="Scale of each block about its centroid "
@@ -996,6 +1077,10 @@ if _IN_BLENDER:
                 lay.prop(self, 'dome_seed')
                 lay.prop(self, 'dome_bulge')
                 lay.prop(self, 'dome_thick')
+            if fam == 'SL':
+                lay.prop(self, 'sl_mode')
+                if self.sl_mode == 'STRAND':
+                    lay.prop(self, 'sl_strand')
             lay.prop(self, 'gap')
             lay.prop(self, 'size')
             lay.prop(self, 'colour_mode')
@@ -1006,7 +1091,7 @@ if _IN_BLENDER:
                     self.family, self.nx, self.ny, self.nz,
                     self.profile, self.deform, self.samples,
                     self.height, self.dome_seed, self.dome_bulge,
-                    self.dome_thick)
+                    self.dome_thick, self.sl_mode, self.sl_strand)
                 verts, faces, cols, frames = cells_to_mesh(
                     cells, self.size, self.gap)
             except Exception as e:               # bad parameter combo
@@ -1133,7 +1218,7 @@ def _selftest():
             ('KITTEN', build_tetrocta('KITTEN', 2, 2, 2)),
             ('UFO', build_tetrocta('UFO', 1, 1, 1)),
             ('CUSHION', build_tetrocta('CUSHION', 1, 1, 1)),
-            ('SL', build_sl()),
+            ('SL', build_sl('STRAND', 4)),
             ('DOME_I', build_dome('ICOSA', 0.18, 0.12)),
             ('DOME_D', build_dome('DODECA', 0.18, 0.12))):
         v, f, cols, fr = cells_to_mesh(cells, 2.0, 0.94)
@@ -1200,6 +1285,24 @@ def _selftest():
         print(f"overlap {name}: max_penetration={w:+.4f} "
               f"{'ok' if good else 'OVERLAP'}")
         ok = ok and good
+
+    # SL blocks are integer polycubes -> overlap is exact (a cube
+    # shared by two blocks).  Check the a-strand is cube-disjoint.
+    aR, at = _SL_ENGAGE['a']
+    R, t = np.eye(3), np.zeros(3)
+    all_cubes = []
+    for _ in range(4):
+        s = set()
+        for o, c in _sl_pair():
+            s |= set(map(tuple, np.round(o @ R.T + t).astype(int)))
+        all_cubes.append(s)
+        R, t = aR @ R, aR @ t + at
+    tot = sum(len(s) for s in all_cubes)
+    uni = len(set().union(*all_cubes))
+    good = tot == uni
+    print(f"overlap SL a4-strand: shared_cubes={tot - uni} "
+          f"{'ok' if good else 'OVERLAP'}")
+    ok = ok and good
 
     # Escher: every plane section must tile (coverage exactly 1)
     def _pip(pt, poly):
