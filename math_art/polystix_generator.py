@@ -83,20 +83,23 @@ PACKINGS = {
         lattice='PRIM', native=4),
     'HEMISTIX': dict(
         label="Hemistix - square rods, 3 directions (chiral)",
-        # The chiral BCC square-rod packing (Conway's hemistix, space
-        # group I4_1 32) -- the second and only other cubic packing of
-        # square rods along the <100> axes. Six rods per period-1 cell
-        # (two per direction), square side 1/4, filling 3/8 -- exactly
-        # HALF of tetrastix's 3/4 (the "hemi"). The (1/2,1/2,1/2)
-        # centring is an internal symmetry, so it tiles on the PRIMITIVE
-        # lattice. Coordinates verified against the space group and
-        # cross-checked non-intersecting (r_max = 1/8).
-        dirs=[(1, 0, 0), (1, 0, 0), (0, 1, 0),
-              (0, 1, 0), (0, 0, 1), (0, 0, 1)],
-        offsets=[(0.0, 1 / 4, 0.0), (0.0, 3 / 4, 1 / 2),
-                 (0.0, 0.0, 1 / 4), (1 / 2, 0.0, 3 / 4),
-                 (1 / 4, 0.0, 0.0), (3 / 4, 1 / 2, 0.0)],
-        lattice='PRIM', native=4),
+        # Conway's hemistix: literally HALF of tetrastix -- the same
+        # side-1/2 square rods in the three <100> directions, but only a
+        # checkerboard half of them (one colour of "checkerstix"). The
+        # kept perpendicular neighbours still touch and spiral chirally
+        # around each rod (group 4+/4), filling 3/8 = half of tetrastix's
+        # 3/4 (the "hemi"). All checkerboard halves are equivalent under
+        # the tetrastix group, so this concrete parity choice IS
+        # hemistix; the mirror gives the opposite hand. Period-2 cell,
+        # six rods per cell; verified non-intersecting (r_max = 1/4).
+        # Ref: Conway, Burgiel & Goodman-Strauss, "The Symmetries of
+        # Things" (2008), Ch. 23, "The Triamond Net and Hemistix".
+        dirs=[(0, 0, 1), (0, 0, 1), (1, 0, 0),
+              (1, 0, 0), (0, 1, 0), (0, 1, 0)],
+        offsets=[(0.0, 0.0, 0.0), (1.0, 1.0, 0.0),
+                 (0.0, 0.5, 0.0), (0.0, 1.5, 1.0),
+                 (0.5, 0.0, 0.5), (1.5, 0.0, 1.5)],
+        lattice='PRIM', period=2.0, native=4),
     'HEXASTIX': dict(
         label="Hexastix - hexagonal rods, 4 directions (pencils)",
         dirs=list(_D111),
@@ -155,17 +158,19 @@ def _unit(u):
 # ----------------------------------------------------------------------
 # packing geometry
 
-def _lattice_translations(lattice, rng):
+def _lattice_translations(lattice, rng, period=1.0):
     """Integer (and, for BCC, half-integer-centred) lattice points with
-    each coordinate index in range(-rng, rng + 1)."""
+    each coordinate index in range(-rng, rng + 1), scaled by the cell
+    period (period 2 for the checkerboard hemistix)."""
     out = []
     R = range(-rng, rng + 1)
     for i in R:
         for j in R:
             for k in R:
-                out.append((float(i), float(j), float(k)))
+                out.append((i * period, j * period, k * period))
                 if lattice == 'BCC':
-                    out.append((i + 0.5, j + 0.5, k + 0.5))
+                    out.append(((i + 0.5) * period, (j + 0.5) * period,
+                                (k + 0.5) * period))
     return out
 
 
@@ -181,14 +186,14 @@ def _skew_line_distance(p, u, q, v):
     return abs(_dot(_sub(p, q), n)) / nn
 
 
-def _max_radius(dirs, offsets, lattice):
+def _max_radius(dirs, offsets, lattice, period=1.0):
     """Largest rod radius before any two rods touch: half the minimum
     distance between the axes of distinct rods, over a neighbourhood of
     lattice translates (the minimum is attained locally). Only the same
     physical line (parallel AND coincident) is skipped, so a genuine
     crossing between two families -- an invalid packing -- correctly
     drives the result toward zero instead of being masked."""
-    lat = _lattice_translations(lattice, 3)
+    lat = _lattice_translations(lattice, 3, period)
     best = 1e18
     for i, di in enumerate(dirs):
         for j, dj in enumerate(dirs):
@@ -203,12 +208,12 @@ def _max_radius(dirs, offsets, lattice):
     return best / 2.0
 
 
-def _family_frame(i, dirs, offsets, lattice):
+def _family_frame(i, dirs, offsets, lattice, period=1.0):
     """In-plane frame (u, e1, e2) for rod family i, with e1 aimed along
     the signed common perpendicular toward the nearest rod of another
     family so a prism flat squarely faces that neighbour."""
     u = _unit(dirs[i])
-    lat = _lattice_translations('BCC', 2)
+    lat = _lattice_translations('BCC', 2, period)
     best_d, best_g = 1e18, None
     for j, dj in enumerate(dirs):
         vj = _unit(dj)
@@ -496,10 +501,11 @@ def build_polystix(packing='HEXASTIX', cross_section='PRISM', fill=0.98,
     dirs = spec['dirs']
     offsets = spec['offsets']
     lattice = spec['lattice']
+    period = spec.get('period', 1.0)
     prism = (cross_section == 'PRISM')
     sides = spec['native'] if prism else max(3, tube_sides)
 
-    r_max = _max_radius(dirs, offsets, lattice)
+    r_max = _max_radius(dirs, offsets, lattice, period)
     radius = max(1e-4, fill) * r_max
 
     half = extent / 2.0
@@ -523,10 +529,11 @@ def build_polystix(packing='HEXASTIX', cross_section='PRISM', fill=0.98,
     # what fixes the chiral triangle (tristix): a triangle has only
     # three flats, so a wrong sign would aim a corner at a neighbour.
     # e2 completes a frame in the plane perpendicular to u.
-    frames = [_family_frame(i, dirs, offsets, lattice)
+    frames = [_family_frame(i, dirs, offsets, lattice, period)
               for i in range(len(dirs))]
 
-    lat = _lattice_translations(lattice, extent + 1)
+    lat = _lattice_translations(
+        lattice, int(math.ceil(extent / period)) + 1, period)
 
     # loops need the rod ends to protrude so neighbours can be joined
     if connect_loops and overhang < 0.4:
