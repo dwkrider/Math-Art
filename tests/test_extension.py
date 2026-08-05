@@ -123,6 +123,9 @@ OPS = [
     ("polystix hexastix pencils", lambda: bpy.ops.mesh.polystix_add(
         preset='CUSTOM', packing='HEXASTIX', cross_section='PRISM',
         extent=3, clip='RHOMBIC_DODECA')),
+    ("polystix hexastix overhang", lambda: bpy.ops.mesh.polystix_add(
+        preset='CUSTOM', packing='HEXASTIX', cross_section='PRISM',
+        extent=3, clip='SPHERE', overhang=2.5)),
     ("polystix hexastix cylinders", lambda: bpy.ops.mesh.polystix_add(
         preset='CUSTOM', packing='HEXASTIX', cross_section='CYLINDER',
         extent=3, clip='SPHERE')),

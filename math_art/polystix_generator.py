@@ -86,7 +86,11 @@ PACKINGS = {
         offsets=[(0.0, 0.0, 0.0), (5 / 8, 5 / 8, 0.0),
                  (0.0, 0.5, 0.0), (0.0, 7 / 8, 0.25),
                  (0.5, 0.0, 0.5), (0.75, 0.0, 1 / 8)],
-        lattice='BCC', native=4),
+        # the six representative rods already realise the body-centred
+        # symmetry, so they tile on the PRIMITIVE lattice; adding the
+        # (1/2,1/2,1/2) centring on top makes perpendicular families
+        # cross.
+        lattice='PRIM', native=4),
     'HEXASTIX': dict(
         label="Hexastix - hexagonal rods, 4 directions (pencils)",
         dirs=list(_D111),
@@ -171,19 +175,24 @@ def _skew_line_distance(p, u, q, v):
     return abs(_dot(_sub(p, q), n)) / nn
 
 
-def _max_radius(dirs, offsets):
+def _max_radius(dirs, offsets, lattice):
     """Largest rod radius before any two rods touch: half the minimum
-    distance between the axes of distinct rods, computed over a small
-    neighbourhood of lattice translates (the minimum is attained
-    locally). Works for any of the packings."""
-    lat = _lattice_translations('BCC', 2)
+    distance between the axes of distinct rods, over a neighbourhood of
+    lattice translates (the minimum is attained locally). Only the same
+    physical line (parallel AND coincident) is skipped, so a genuine
+    crossing between two families -- an invalid packing -- correctly
+    drives the result toward zero instead of being masked."""
+    lat = _lattice_translations(lattice, 3)
     best = 1e18
     for i, di in enumerate(dirs):
         for j, dj in enumerate(dirs):
             for L in lat:
                 q = _add(offsets[j], L)
                 d = _skew_line_distance(offsets[i], di, q, dj)
-                if 1e-9 < d < best:
+                parallel = _norm(_cross(di, dj)) < 1e-9
+                if parallel and d < 1e-7:          # same line: skip
+                    continue
+                if d < best:
                     best = d
     return best / 2.0
 
@@ -314,10 +323,15 @@ def _add_rod(P0, P1, e1, e2, section, cap, verts, faces, tag_faces, tag):
 
 def build_polystix(packing='HEXASTIX', cross_section='PRISM', fill=0.98,
                    extent=4, clip='RHOMBIC_DODECA', handedness='RIGHT',
-                   tube_sides=16, cap_ends=True, max_rods=6000):
+                   tube_sides=16, cap_ends=True, overhang=0.0,
+                   max_rods=6000):
     """Return (verts, faces, face_dir, dir_index) for a polystix
     packing. face_dir[k] is the direction-family colour index of mesh
-    face k; dir_index maps each distinct direction to a colour slot."""
+    face k; dir_index maps each distinct direction to a colour slot.
+
+    ``overhang`` lengthens every rod past the interleaved core by that
+    many lattice cells at each end (negative retracts the rods to expose
+    the weave)."""
     spec = PACKINGS[packing]
     dirs = spec['dirs']
     offsets = spec['offsets']
@@ -325,7 +339,7 @@ def build_polystix(packing='HEXASTIX', cross_section='PRISM', fill=0.98,
     prism = (cross_section == 'PRISM')
     sides = spec['native'] if prism else max(3, tube_sides)
 
-    r_max = _max_radius(dirs, offsets)
+    r_max = _max_radius(dirs, offsets, lattice)
     radius = max(1e-4, fill) * r_max
 
     half = extent / 2.0
@@ -377,6 +391,11 @@ def build_polystix(packing='HEXASTIX', cross_section='PRISM', fill=0.98,
             if seg is None:
                 continue
             t0, t1 = seg
+            if overhang:              # push rod ends past the core
+                t0 -= overhang
+                t1 += overhang
+                if t1 - t0 <= 1e-6:   # retracted to nothing: drop it
+                    continue
             P0 = _add(Q, _scale(u, t0))
             P1 = _add(Q, _scale(u, t1))
             _add_rod(P0, P1, e1, e2, section, cap_ends,
@@ -415,7 +434,7 @@ if _IN_BLENDER:
                         fill=0.95, clip='SPHERE')),
         'TETRA': ("Tetrastix Cubes",
                   dict(packing='TETRASTIX', cross_section='PRISM',
-                       fill=1.0, clip='CUBE')),
+                       fill=0.9, clip='CUBE')),
         'TRI': ("Tristix (chiral triangles)",
                 dict(packing='TRISTIX', cross_section='PRISM',
                      fill=1.0, clip='TRUNC_OCTA')),
@@ -483,6 +502,11 @@ if _IN_BLENDER:
                         "enantiomorph of tristix / +Sigma)")
         tube_sides: IntProperty(name="Tube Sides", default=16,
                                 min=3, max=48)
+        overhang: FloatProperty(
+            name="Overhang", default=0.0, min=-4.0, max=8.0,
+            description="Extend each rod past the interleaved core by "
+                        "this many cells at both ends (negative "
+                        "retracts the rods to expose the weave)")
         cap_ends: BoolProperty(name="Cap Ends", default=True)
         coloring: EnumProperty(
             name="Coloring",
@@ -519,7 +543,7 @@ if _IN_BLENDER:
              n_rods, truncated) = build_polystix(
                 self.packing, self.cross_section, self.fill,
                 self.extent, self.clip, self.handedness,
-                self.tube_sides, self.cap_ends)
+                self.tube_sides, self.cap_ends, self.overhang)
             if not verts:
                 self.report({'WARNING'},
                             "No rods in the clip volume; raise Extent")
@@ -556,17 +580,24 @@ if _IN_BLENDER:
             self.report({'INFO'}, msg)
             return {'FINISHED'}
 
+        # properties a non-Custom preset overwrites on execute -- these
+        # are greyed out (locked) while a preset is active.
+        _PRESET_DRIVEN = {'packing', 'cross_section', 'fill', 'clip'}
+
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'preset')
+            locked = self.preset != 'CUSTOM'
             keys = ['packing', 'cross_section', 'fill', 'extent', 'clip',
                     'handedness']
             if self.cross_section == 'CYLINDER':
                 keys.append('tube_sides')
-            keys += ['cap_ends', 'coloring', 'scale']
+            keys += ['overhang', 'cap_ends', 'coloring', 'scale']
             for k in keys:
-                lay.prop(self, k)
+                row = lay.row()
+                row.enabled = not (locked and k in self._PRESET_DRIVEN)
+                row.prop(self, k)
 
     def _menu_func(self, context):
         self.layout.operator("mesh.polystix_add", icon='MESH_CYLINDER')
