@@ -1270,7 +1270,7 @@ _BISCRIBED = [
 
 try:
     import bpy
-    from bpy.props import EnumProperty, FloatProperty
+    from bpy.props import EnumProperty, FloatProperty, BoolProperty
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -1311,7 +1311,39 @@ if _IN_BLENDER:
             name="Coloring",
             items=[('SIDES', "By Face Size", ""), ('NONE', "None", "")],
             default='SIDES')
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "Plain closed polyhedron"),
+                   ('FACETS', "Face Segments",
+                    "Split into one inward-extruded, mitre-beveled "
+                    "segment per face")],
+            default='SOLID')
+        facet_depth: FloatProperty(name="Depth", default=0.15, min=0.01,
+                                   max=2.0,
+                                   description="Face Segments inward depth")
+        facet_gap: FloatProperty(name="Bevel Gap", default=0.0, min=0.0,
+                                 max=0.5,
+                                 description="Gap between face segments")
+        facet_explode: FloatProperty(name="Explode", default=0.1, min=0.0,
+                                     max=5.0,
+                                     description="Move segments outward")
+        facet_separate: BoolProperty(
+            name="Separate Meshes", default=False,
+            description="Each face segment as its own object")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+
+        def draw(self, context):
+            lay = self.layout
+            lay.use_property_split = True
+            lay.prop(self, 'solid')
+            lay.prop(self, 'coloring')
+            lay.prop(self, 'style')
+            if self.style == 'FACETS':
+                lay.prop(self, 'facet_depth')
+                lay.prop(self, 'facet_gap')
+                lay.prop(self, 'facet_explode')
+                lay.prop(self, 'facet_separate')
+            lay.prop(self, 'scale')
 
         def execute(self, context):
             if np is None:
@@ -1325,6 +1357,20 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, "no biscribed form")
                 return {'CANCELLED'}
             V, F, _r = res
+            if self.style == 'FACETS':
+                try:
+                    from . import facet_style
+                except ImportError:
+                    import facet_style
+                Vf = [tuple(c * self.scale for c in v) for v in V]
+                mat = (_material_for
+                       if self.coloring == 'SIDES' else None)
+                facet_style.emit_facets(
+                    context, Vf, [list(f) for f in F], label,
+                    self.facet_depth, self.facet_gap,
+                    self.facet_explode, self.facet_separate, mat)
+                self.report({'INFO'}, f"{label}: {len(F)} face segments")
+                return {'FINISHED'}
             me = bpy.data.meshes.new(label)
             me.from_pydata([tuple(c * self.scale for c in v) for v in V],
                            [], [tuple(f) for f in F])

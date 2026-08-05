@@ -42,7 +42,8 @@ def fcc_points(root):
 try:
     import bpy
     import bmesh
-    from bpy.props import IntProperty, FloatProperty, EnumProperty
+    from bpy.props import (IntProperty, FloatProperty, EnumProperty,
+                           BoolProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -68,7 +69,10 @@ if _IN_BLENDER:
                     "Geometry Nodes modifier (Border and Thickness "
                     "stay editable on the modifier)"),
                    ('WIRE', "Wireframe",
-                    "Struts along the edges (Wireframe modifier)")],
+                    "Struts along the edges (Wireframe modifier)"),
+                   ('FACETS', "Face Segments",
+                    "Split into one inward-extruded, mitre-beveled "
+                    "segment per face")],
             default='SOLID')
         border: FloatProperty(
             name="Border", default=0.3, min=0.02, max=0.95,
@@ -78,6 +82,18 @@ if _IN_BLENDER:
             name="Thickness", default=0.05, min=0.001, max=1.0,
             description="Panel / strut thickness for the Leonardo "
                         "and Wireframe styles")
+        facet_depth: FloatProperty(name="Depth", default=0.15, min=0.01,
+                                   max=2.0,
+                                   description="Face Segments inward depth")
+        facet_gap: FloatProperty(name="Bevel Gap", default=0.0, min=0.0,
+                                 max=0.5,
+                                 description="Gap between face segments")
+        facet_explode: FloatProperty(name="Explode", default=0.1, min=0.0,
+                                     max=5.0,
+                                     description="Move segments outward")
+        facet_separate: BoolProperty(
+            name="Separate Meshes", default=False,
+            description="Each face segment as its own object")
         scale: FloatProperty(name="Scale", default=1.0, min=0.001,
                              max=100.0)
 
@@ -100,6 +116,20 @@ if _IN_BLENDER:
             bm.to_mesh(me)
             bm.free()
             me.update()
+            if self.style == 'FACETS':
+                Vf = [tuple(v.co) for v in me.vertices]
+                Ff = [list(p.vertices) for p in me.polygons]
+                bpy.data.meshes.remove(me)
+                try:
+                    from . import facet_style
+                except ImportError:
+                    import facet_style
+                facet_style.emit_facets(
+                    context, Vf, Ff, f"Waterman W{self.root}",
+                    self.facet_depth, self.facet_gap,
+                    self.facet_explode, self.facet_separate)
+                self.report({'INFO'}, f"{len(Ff)} face segments")
+                return {'FINISHED'}
             obj = bpy.data.objects.new(f"Waterman W{self.root}", me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
@@ -130,8 +160,13 @@ if _IN_BLENDER:
             lay.prop(self, 'style')
             if self.style == 'LEONARDO':
                 lay.prop(self, 'border')
-            if self.style != 'SOLID':
+            if self.style in ('LEONARDO', 'WIRE'):
                 lay.prop(self, 'thickness')
+            if self.style == 'FACETS':
+                lay.prop(self, 'facet_depth')
+                lay.prop(self, 'facet_gap')
+                lay.prop(self, 'facet_explode')
+                lay.prop(self, 'facet_separate')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):

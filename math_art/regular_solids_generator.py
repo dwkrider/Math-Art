@@ -1765,122 +1765,6 @@ def build_solid(family, sid, n=6, scale=1.0, canon=True, canon_iters=250):
     return V, F, None
 
 
-def _face_normal(P):
-    """Unit normal of the (planar-ish) polygon P via Newell's method."""
-    n = [0.0, 0.0, 0.0]
-    m = len(P)
-    for i in range(m):
-        a, b = P[i], P[(i + 1) % m]
-        n[0] += (a[1] - b[1]) * (a[2] + b[2])
-        n[1] += (a[2] - b[2]) * (a[0] + b[0])
-        n[2] += (a[0] - b[0]) * (a[1] + b[1])
-    L = sqrt(n[0] ** 2 + n[1] ** 2 + n[2] ** 2) or 1.0
-    return (n[0] / L, n[1] / L, n[2] / L)
-
-
-def _det3(m):
-    (a, b, c), (d, e, f), (g, h, i) = m
-    return a * (e * i - f * h) - b * (d * i - f * g) \
-        + c * (d * h - e * g)
-
-
-def _solve3(rows, rhs):
-    """Solve the 3x3 linear system rows . x = rhs by Cramer's rule;
-    None if singular."""
-    det = _det3(rows)
-    if abs(det) < 1e-12:
-        return None
-    out = []
-    for j in range(3):
-        mm = [list(rows[r]) for r in range(3)]
-        for r in range(3):
-            mm[r][j] = rhs[r]
-        out.append(_det3(mm) / det)
-    return tuple(out)
-
-
-def _orient_faces(verts, faces):
-    """Wind every face outward from the (convex) part's centroid."""
-    c = tuple(sum(v[k] for v in verts) / len(verts) for k in range(3))
-    out = []
-    for f in faces:
-        p0, p1, p2 = verts[f[0]], verts[f[1]], verts[f[2]]
-        u = (p1[0] - p0[0], p1[1] - p0[1], p1[2] - p0[2])
-        v = (p2[0] - p0[0], p2[1] - p0[1], p2[2] - p0[2])
-        n = (u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2],
-             u[0] * v[1] - u[1] * v[0])
-        d = sum(n[k] * (p0[k] - c[k]) for k in range(3))
-        out.append(f[::-1] if d < 0 else list(f))
-    return out
-
-
-def build_facets(V, F, depth=0.15, padding=0.0):
-    """Dissect a convex solid's shell into one segment per face,
-    each face extruded *inward* with side walls beveled at half the
-    dihedral angle (a mitre cut), so neighbouring segments share their
-    bevel planes and meet flush -- the shell is partitioned with no
-    gaps.  The outer cap is the original face; the inner cap sits
-    `depth` below it; each side wall lies on the plane through the
-    shared edge whose normal bisects the two faces' outward normals.
-    `padding` shifts the bevels inward to open a gap.  Returns a list
-    of (verts, faces, n_sides, outward_dir)."""
-    ctr = tuple(sum(v[k] for v in V) / len(V) for k in range(3))
-    normals, offs = [], []
-    for f in F:
-        P = [V[i] for i in f]
-        n = _face_normal(P)
-        cen = tuple(sum(p[k] for p in P) / len(P) for k in range(3))
-        if sum(n[k] * (cen[k] - ctr[k]) for k in range(3)) < 0:
-            n = (-n[0], -n[1], -n[2])
-        normals.append(n)
-        offs.append(sum(n[k] * P[0][k] for k in range(3)))
-    emap = {}
-    for fi, f in enumerate(F):
-        m = len(f)
-        for k in range(m):
-            emap.setdefault(frozenset((f[k], f[(k + 1) % m])),
-                            []).append(fi)
-
-    def unit_diff(na, nb):
-        d = (na[0] - nb[0], na[1] - nb[1], na[2] - nb[2])
-        L = sqrt(d[0] ** 2 + d[1] ** 2 + d[2] ** 2) or 1.0
-        return (d[0] / L, d[1] / L, d[2] / L)
-
-    segs = []
-    for fi, f in enumerate(F):
-        n_i, d_i, m = normals[fi], offs[fi], len(f)
-        cen = tuple(sum(V[i][k] for i in f) / m for k in range(3))
-        outer = [V[i] for i in f]
-        inner = []
-        for k in range(m):
-            v, vp, vn = f[k], f[(k - 1) % m], f[(k + 1) % m]
-            jA = [x for x in emap[frozenset((vp, v))] if x != fi]
-            jB = [x for x in emap[frozenset((v, vn))] if x != fi]
-            nA = normals[jA[0]] if jA else n_i
-            nB = normals[jB[0]] if jB else n_i
-            mA = unit_diff(n_i, nA)
-            mB = unit_diff(n_i, nB)
-            Vv = V[v]
-            cA = sum(mA[k] * Vv[k] for k in range(3)) + padding
-            cB = sum(mB[k] * Vv[k] for k in range(3)) + padding
-            pt = _solve3((mA, mB, n_i), (cA, cB, d_i - depth))
-            if pt is None:                       # near-degenerate
-                pt = tuple(cen[k] + (Vv[k] - cen[k]) * 0.3
-                           for k in range(3))
-            inner.append(pt)
-        verts = list(outer) + inner
-        faces = []
-        for k in range(m):
-            j = (k + 1) % m
-            faces.append([k, j, m + j, m + k])       # side wall
-        faces.append(list(range(m)))                 # outer cap
-        faces.append([m + k for k in range(m)])       # inner cap
-        faces = _orient_faces(verts, faces)
-        L = sqrt(sum(c * c for c in cen)) or 1.0
-        segs.append((verts, faces, m, tuple(c / L for c in cen)))
-    return segs
-
-
 # ---------------------------------------------------------------- #
 #  Blender layer                                                   #
 # ---------------------------------------------------------------- #
@@ -2046,9 +1930,10 @@ if _IN_BLENDER:
                         "printing and reassembly). 1 = single "
                         "object")
         explode: FloatProperty(
-            name="Explode", default=0.0, min=0.0, max=5.0,
-            description="Move each piece outward along its centroid "
-                        "direction so the split is visible")
+            name="Explode", default=0.1, min=0.0, max=5.0,
+            description="Move each piece / face segment outward along "
+                        "its centroid direction so the split is "
+                        "visible")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -2206,63 +2091,19 @@ if _IN_BLENDER:
                         f"{len(F)} faces")
             return {'FINISHED'}
 
-        def _facet_mesh(self, name, verts, faces, sizes):
-            me = bpy.data.meshes.new(name)
-            me.from_pydata(verts, [], faces)
-            me.validate(clean_customdata=True)
-            if len(me.polygons) == len(sizes):
-                attr = me.attributes.new("ngon_sides", 'INT', 'FACE')
-                attr.data.foreach_set('value', sizes)
-                if self.coloring == 'SIDES':
-                    lut = {}
-                    for nn in sorted(set(sizes)):
-                        lut[nn] = len(me.materials)
-                        me.materials.append(self._material_for(nn))
-                    me.polygons.foreach_set(
-                        'material_index', [lut[s] for s in sizes])
-            me.update()
-            return me
-
         def _emit_facets(self, context, V, F, label):
-            segs = build_facets(V, F, self.facet_depth, self.padding)
-            for o in context.selected_objects:
-                o.select_set(False)
-            cur = context.scene.cursor.location
-            first = None
-            if self.separate_facets:
-                for k, (verts, faces, ns, d) in enumerate(segs):
-                    nm = f"{label} facet {k + 1}of{len(segs)}"
-                    me = self._facet_mesh(nm, verts, faces,
-                                          [ns] * len(faces))
-                    obj = bpy.data.objects.new(nm, me)
-                    context.collection.objects.link(obj)
-                    obj.location = (cur[0] + self.explode * d[0],
-                                    cur[1] + self.explode * d[1],
-                                    cur[2] + self.explode * d[2])
-                    obj.select_set(True)
-                    if first is None:
-                        first = obj
-            else:
-                av, af, sizes = [], [], []
-                for verts, faces, ns, d in segs:
-                    base = len(av)
-                    ox, oy, oz = (self.explode * d[0],
-                                  self.explode * d[1],
-                                  self.explode * d[2])
-                    av.extend((v[0] + ox, v[1] + oy, v[2] + oz)
-                              for v in verts)
-                    af.extend([base + i for i in f] for f in faces)
-                    sizes.extend([ns] * len(faces))
-                me = self._facet_mesh("Facets", av, af, sizes)
-                obj = bpy.data.objects.new(f"{label} facets", me)
-                context.collection.objects.link(obj)
-                obj.location = cur
-                obj.select_set(True)
-                first = obj
-            context.view_layer.objects.active = first
+            try:
+                from . import facet_style
+            except ImportError:
+                import facet_style
+            mat = (self._material_for if self.coloring == 'SIDES'
+                   else None)
+            _obj, nseg = facet_style.emit_facets(
+                context, V, F, label, self.facet_depth, self.padding,
+                self.explode, self.separate_facets, mat)
             self.report(
                 {'INFO'},
-                f"{label}: {len(segs)} face segment(s)"
+                f"{label}: {nseg} face segment(s)"
                 + (" (separate meshes)" if self.separate_facets
                    else ""))
             return {'FINISHED'}

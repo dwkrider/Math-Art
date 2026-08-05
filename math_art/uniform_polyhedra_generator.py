@@ -811,6 +811,25 @@ if _IN_BLENDER:
             name="Coloring",
             items=[('SIDES', "By Face Size", ""), ('NONE', "None", "")],
             default='SIDES')
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "Plain closed polyhedron"),
+                   ('FACETS', "Face Segments",
+                    "Split into one inward-extruded, mitre-beveled "
+                    "segment per face (best on the convex uniforms)")],
+            default='SOLID')
+        facet_depth: FloatProperty(name="Depth", default=0.15, min=0.01,
+                                   max=2.0,
+                                   description="Face Segments inward depth")
+        facet_gap: FloatProperty(name="Bevel Gap", default=0.0, min=0.0,
+                                 max=0.5,
+                                 description="Gap between face segments")
+        facet_explode: FloatProperty(name="Explode", default=0.1, min=0.0,
+                                     max=5.0,
+                                     description="Move segments outward")
+        facet_separate: BoolProperty(
+            name="Separate Meshes", default=False,
+            description="Each face segment as its own object")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def draw(self, context):
@@ -820,6 +839,12 @@ if _IN_BLENDER:
             lay.prop(self, 'solid')
             lay.prop(self, 'dual')
             lay.prop(self, 'coloring')
+            lay.prop(self, 'style')
+            if self.style == 'FACETS':
+                lay.prop(self, 'facet_depth')
+                lay.prop(self, 'facet_gap')
+                lay.prop(self, 'facet_explode')
+                lay.prop(self, 'facet_separate')
             lay.prop(self, 'scale')
 
         def execute(self, context):
@@ -841,6 +866,21 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
             verts = [tuple(c * self.scale for c in v) for v in V]
+            if self.style == 'FACETS':
+                try:
+                    from . import facet_style
+                except ImportError:
+                    import facet_style
+                mat = (_material_for
+                       if self.coloring == 'SIDES' else None)
+                # uniform faces are (vertex_indices, marker) tuples
+                ff = [list(f[0]) for f in F]
+                facet_style.emit_facets(
+                    context, verts, ff, name,
+                    self.facet_depth, self.facet_gap,
+                    self.facet_explode, self.facet_separate, mat)
+                self.report({'INFO'}, f"{name}: {len(F)} face segments")
+                return {'FINISHED'}
             _make_object(context, name, verts, F,
                          self.coloring == 'SIDES')
             self.report({'INFO'},

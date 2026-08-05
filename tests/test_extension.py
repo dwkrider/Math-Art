@@ -75,6 +75,12 @@ OPS = [
      lambda: bpy.ops.mesh.regular_solid_add(
          family='PLATONIC', solid='DODECA', style='FACETS',
          separate_facets=True)),
+    ("conway face segments",
+     lambda: bpy.ops.mesh.conway_add(notation='tI', style='FACETS')),
+    ("uniform face segments",
+     lambda: bpy.ops.mesh.uniform_polyhedron_add(style='FACETS')),
+    ("zonohedron face segments",
+     lambda: bpy.ops.mesh.zonohedron_add(style='FACETS')),
     ("solid trapezohedron family",
      lambda: bpy.ops.mesh.regular_solid_add(
          family='DIPYRAMID', solid='dA5', canon_iters=60)),

@@ -79,7 +79,7 @@ def _self_test():
 
 try:
     import bpy
-    from bpy.props import EnumProperty, FloatProperty
+    from bpy.props import EnumProperty, FloatProperty, BoolProperty
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -119,12 +119,27 @@ if _IN_BLENDER:
             items=[('SOLID', "Solid", ""),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo modifier"),
-                   ('WIRE', "Wireframe", "Wireframe modifier")],
+                   ('WIRE', "Wireframe", "Wireframe modifier"),
+                   ('FACETS', "Face Segments",
+                    "Split into one inward-extruded, mitre-beveled "
+                    "segment per face")],
             default='SOLID')
         border: FloatProperty(name="Border", default=0.3, min=0.02, max=0.95,
                               description="Leonardo face frame width")
         thickness: FloatProperty(name="Thickness", default=0.05, min=0.001,
                                  max=1.0, description="Panel/strut thickness")
+        facet_depth: FloatProperty(name="Depth", default=0.15, min=0.01,
+                                   max=2.0,
+                                   description="Face Segments inward depth")
+        facet_gap: FloatProperty(name="Bevel Gap", default=0.0, min=0.0,
+                                 max=0.5,
+                                 description="Gap between face segments")
+        facet_explode: FloatProperty(name="Explode", default=0.1, min=0.0,
+                                     max=5.0,
+                                     description="Move segments outward")
+        facet_separate: BoolProperty(
+            name="Separate Meshes", default=False,
+            description="Each face segment as its own object")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def execute(self, context):
@@ -133,6 +148,18 @@ if _IN_BLENDER:
             sid = self.solid if self.solid in ids else (ids[0] if ids else '0')
             V, F = build(fam, int(sid))
             label = _BY_CAT[fam][int(sid)]["name"]
+            if self.style == 'FACETS':
+                try:
+                    from . import facet_style
+                except ImportError:
+                    import facet_style
+                Vf = [tuple(c * self.scale for c in v) for v in V]
+                facet_style.emit_facets(
+                    context, Vf, [list(f) for f in F], label,
+                    self.facet_depth, self.facet_gap,
+                    self.facet_explode, self.facet_separate)
+                self.report({'INFO'}, f"{label}: {len(F)} face segments")
+                return {'FINISHED'}
             me = bpy.data.meshes.new(label)
             me.from_pydata([tuple(c * self.scale for c in v) for v in V],
                            [], [tuple(f) for f in F])
@@ -166,8 +193,13 @@ if _IN_BLENDER:
             lay.prop(self, 'style')
             if self.style == 'LEONARDO':
                 lay.prop(self, 'border')
-            if self.style != 'SOLID':
+            if self.style in ('LEONARDO', 'WIRE'):
                 lay.prop(self, 'thickness')
+            if self.style == 'FACETS':
+                lay.prop(self, 'facet_depth')
+                lay.prop(self, 'facet_gap')
+                lay.prop(self, 'facet_explode')
+                lay.prop(self, 'facet_separate')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
