@@ -743,27 +743,25 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_prime_knot_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        fails = []
-        counts = {}
-        for (name, braid, ap) in KNOTS:
-            word = parse_letters(braid)
-            cr = int(name.split('_')[0])
-            counts[cr] = counts.get(cr, 0) + 1
-            ok = closure_components(word) == 1 \
-                and alexander_at(word) == ap
-            if not ok:
-                fails.append(name)
-                print(f"FAIL {name} {braid}")
-        print(f"{len(KNOTS)} knots, per crossings: "
-              f"{sorted(counts.items())}")
-        print("braid table:",
-              "ALL VERIFIED" if not fails else f"FAILURES {fails}")
-        # embedding smoke test (no numpy relaxation here)
-        for name in ('3_1', '4_1', '8_18', '10_124'):
-            braid = dict((n, b) for (n, b, a) in KNOTS)[name]
-            pts = braid_closure_points(parse_letters(braid))
-            print(f"{name}: closure polyline {len(pts)} points")
+def _selftest():
+    fails = []
+    counts = {}
+    for (name, braid, ap) in KNOTS:
+        word = parse_letters(braid)
+        cr = int(name.split('_')[0])
+        counts[cr] = counts.get(cr, 0) + 1
+        ok = closure_components(word) == 1 \
+            and alexander_at(word) == ap
+        if not ok:
+            fails.append(name)
+            print(f"FAIL {name} {braid}")
+    print(f"{len(KNOTS)} knots, per crossings: "
+          f"{sorted(counts.items())}")
+    print("braid table:",
+          "ALL VERIFIED" if not fails else f"FAILURES {fails}")
+    # embedding smoke test (no numpy relaxation here)
+    for name in ('3_1', '4_1', '8_18', '10_124'):
+        braid = dict((n, b) for (n, b, a) in KNOTS)[name]
+        pts = braid_closure_points(parse_letters(braid))
+        print(f"{name}: closure polyline {len(pts)} points")
+    assert not fails

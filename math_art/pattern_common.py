@@ -735,7 +735,7 @@ if _IN_BLENDER:
         pass
 
 
-if __name__ == "__main__":
+def _selftest():
     # Self-test of the orbifold router: all 17 wallpaper signatures
     # must be Euclidean (cost 2), sample point groups spherical, and a
     # {7,3,2} triangle group hyperbolic.
@@ -756,3 +756,5 @@ if __name__ == "__main__":
     print("RESULT:", "OK" if (not bad and sph and hyp and grp_ok
                               and frieze_ok and motif_ok
                               and not not_closed) else "BAD")
+    assert (not bad and sph and hyp and grp_ok and frieze_ok
+            and motif_ok and not not_closed)

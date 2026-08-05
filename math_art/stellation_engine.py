@@ -1027,7 +1027,3 @@ if _IN_BLENDER:
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         bpy.utils.unregister_class(MESH_OT_icosahedron_stellation_add)
-
-
-if __name__ == '__main__':
-    _self_test()

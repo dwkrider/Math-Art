@@ -368,14 +368,11 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_symmetrohedron_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for group in ('T', 'O', 'I'):
-            ax = symmetry_axes(group)
-            print(group, {o: len(d) // 2 for o, d in ax.items()},
-                  "axes per class")
-            polys = axial_polygons(group, (1, 1, 0), (0.45, 0.38, 0.3),
-                                   (0, 0, 0))
-            print(f"  {len(polys)} polygons placed")
+def _selftest():
+    for group in ('T', 'O', 'I'):
+        ax = symmetry_axes(group)
+        print(group, {o: len(d) // 2 for o, d in ax.items()},
+              "axes per class")
+        polys = axial_polygons(group, (1, 1, 0), (0.45, 0.38, 0.3),
+                               (0, 0, 0))
+        print(f"  {len(polys)} polygons placed")

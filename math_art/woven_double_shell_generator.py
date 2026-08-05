@@ -1472,7 +1472,3 @@ def _self_test():
     _test_solid('ICOSA', 2, 112, 14, 0)
     _test_solid('GEODESIC', 2, 60, 10, 0)
     print("RESULT: OK")
-
-
-if __name__ == "__main__":
-    _self_test()

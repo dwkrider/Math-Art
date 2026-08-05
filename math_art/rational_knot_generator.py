@@ -858,10 +858,3 @@ def _selftest():
 
     assert ok, "SELF-TEST FAILED"
     print("RESULT: OK")
-
-
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        _selftest()

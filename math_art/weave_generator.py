@@ -791,64 +791,61 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_weave_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for kind, freq, pattern in (
-                ('CUBE', 1, 'FEV'), ('OCTA', 1, 'FEV'),
-                ('ICOSA', 1, 'FEV'), ('ICOSA', 2, 'FEV'),
-                ('CUBE', 1, '1,1,1V'), ('CUBE', 1, '1,1,1F'),
-                ('CUBE', 1, '1,1,1FFE'), ('DODECA', 1, 'FEV'),
-                ('ICOSA', 2, '1,1,1::::::FEV'),
-                ('CUBE', 1, '0,1,0:0.12FEV'),
-                ('CUBE', 1, '1,3,1EV')):
-            V, F = seed_poly(kind)
-            if kind in ('TETRA', 'OCTA', 'ICOSA'):
-                V, F = geodesic(V, F, freq)
-            pat = parse_pattern(pattern)
-            cir = weave_circuits(V, F, pat)
-            lens = sorted(set(len(c) for c in cir))
-            print(f"{kind} f{freq} '{pattern}': strands={len(cir)} "
-                  f"point-counts={lens}")
+def _selftest():
+    for kind, freq, pattern in (
+            ('CUBE', 1, 'FEV'), ('OCTA', 1, 'FEV'),
+            ('ICOSA', 1, 'FEV'), ('ICOSA', 2, 'FEV'),
+            ('CUBE', 1, '1,1,1V'), ('CUBE', 1, '1,1,1F'),
+            ('CUBE', 1, '1,1,1FFE'), ('DODECA', 1, 'FEV'),
+            ('ICOSA', 2, '1,1,1::::::FEV'),
+            ('CUBE', 1, '0,1,0:0.12FEV'),
+            ('CUBE', 1, '1,3,1EV')):
+        V, F = seed_poly(kind)
+        if kind in ('TETRA', 'OCTA', 'ICOSA'):
+            V, F = geodesic(V, F, freq)
+        pat = parse_pattern(pattern)
+        cir = weave_circuits(V, F, pat)
+        lens = sorted(set(len(c) for c in cir))
+        print(f"{kind} f{freq} '{pattern}': strands={len(cir)} "
+              f"point-counts={lens}")
 
-        # tube (rope) output
-        for kind, freq, relax in (('CUBE', 1, 0), ('CUBE', 1, 40),
-                                  ('ICOSA', 1, 0), ('ICOSA', 1, 40)):
-            verts, faces, ns, fs = build_weave_tubes(
-                kind, freq, 'FEV', tube_radius=0.03, tube_sides=8,
-                amplitude=0.05, subdiv=4, relax_iters=relax)
-            assert verts and faces, "empty tube geometry"
-            assert all(len(f) == 4 for f in faces), "non-quad tube face"
-            assert len(fs) == len(faces), "face_strand length mismatch"
-            assert all(math.isfinite(c) for v in verts for c in v), \
-                "non-finite tube vertex"
-            print(f"{kind} f{freq} TUBE relax={relax}: strands={ns} "
-                  f"verts={len(verts)} faces={len(faces)}")
+    # tube (rope) output
+    for kind, freq, relax in (('CUBE', 1, 0), ('CUBE', 1, 40),
+                              ('ICOSA', 1, 0), ('ICOSA', 1, 40)):
+        verts, faces, ns, fs = build_weave_tubes(
+            kind, freq, 'FEV', tube_radius=0.03, tube_sides=8,
+            amplitude=0.05, subdiv=4, relax_iters=relax)
+        assert verts and faces, "empty tube geometry"
+        assert all(len(f) == 4 for f in faces), "non-quad tube face"
+        assert len(fs) == len(faces), "face_strand length mismatch"
+        assert all(math.isfinite(c) for v in verts for c in v), \
+            "non-finite tube vertex"
+        print(f"{kind} f{freq} TUBE relax={relax}: strands={ns} "
+              f"verts={len(verts)} faces={len(faces)}")
 
-        # relaxation separates the strand centerlines
-        def _min_inter(paths):
-            best = None
-            for a in range(len(paths)):
-                for b in range(a + 1, len(paths)):
-                    for p in paths[a]:
-                        for q in paths[b]:
-                            d = math.dist(p, q)
-                            if best is None or d < best:
-                                best = d
-            return best
+    # relaxation separates the strand centerlines
+    def _min_inter(paths):
+        best = None
+        for a in range(len(paths)):
+            for b in range(a + 1, len(paths)):
+                for p in paths[a]:
+                    for q in paths[b]:
+                        d = math.dist(p, q)
+                        if best is None or d < best:
+                            best = d
+        return best
 
-        tr = 0.03
-        clr = 2.2 * tr
-        V, F = seed_poly('ICOSA')
-        cir = weave_circuits(V, F, parse_pattern('FEV'))
-        paths0 = [_strand_path(c, 0.05, 4, 2, True) for c in cir]
-        paths1 = relax_strands(paths0, tr, 80)
-        assert all(math.isfinite(c) for p in paths1 for q in p
-                   for c in q), "non-finite relaxed bead"
-        d0, d1 = _min_inter(paths0), _min_inter(paths1)
-        print(f"ICOSA f1 relax: min inter-strand dist "
-              f"{d0:.4f} -> {d1:.4f} (target clearance {clr:.4f})")
-        assert d1 >= 0.5 * clr or d1 >= d0, \
-            "relaxation did not keep strands apart"
-        print("RESULT: OK")
+    tr = 0.03
+    clr = 2.2 * tr
+    V, F = seed_poly('ICOSA')
+    cir = weave_circuits(V, F, parse_pattern('FEV'))
+    paths0 = [_strand_path(c, 0.05, 4, 2, True) for c in cir]
+    paths1 = relax_strands(paths0, tr, 80)
+    assert all(math.isfinite(c) for p in paths1 for q in p
+               for c in q), "non-finite relaxed bead"
+    d0, d1 = _min_inter(paths0), _min_inter(paths1)
+    print(f"ICOSA f1 relax: min inter-strand dist "
+          f"{d0:.4f} -> {d1:.4f} (target clearance {clr:.4f})")
+    assert d1 >= 0.5 * clr or d1 >= d0, \
+        "relaxation did not keep strands apart"
+    print("RESULT: OK")

@@ -683,29 +683,27 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_orbifold_sphere_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        sigs = list(_FAMILIES) + ['332', 'STAR_332', '3STAR_2',
-                                  '432', 'STAR_432', '532',
-                                  'STAR_532']
-        ok = True
-        for n in (1, 4, 5, 6):
-            for sig in sigs:
-                G = build_group(sig, n)
-                want = expected_order(sig, n)
-                good = len(G) == want
-                ok = ok and good
-                dets = sorted(round(_det(A)) for A in G)
-                plus = dets.count(1)
-                if not good:
-                    print(f"{sig} n={n}: {len(G)} (want {want}) "
-                          f"BAD")
-                elif n == 6:
-                    print(f"{sig} n={n}: order {len(G)} "
-                          f"({plus} rotations, "
-                          f"{len(G) - plus} reversing) OK")
-        pts = comma_outline()
-        print(f"comma outline: {len(pts)} points")
-        print("ALL OK" if ok else "FAILURES")
+def _selftest():
+    sigs = list(_FAMILIES) + ['332', 'STAR_332', '3STAR_2',
+                              '432', 'STAR_432', '532',
+                              'STAR_532']
+    ok = True
+    for n in (1, 4, 5, 6):
+        for sig in sigs:
+            G = build_group(sig, n)
+            want = expected_order(sig, n)
+            good = len(G) == want
+            ok = ok and good
+            dets = sorted(round(_det(A)) for A in G)
+            plus = dets.count(1)
+            if not good:
+                print(f"{sig} n={n}: {len(G)} (want {want}) "
+                      f"BAD")
+            elif n == 6:
+                print(f"{sig} n={n}: order {len(G)} "
+                      f"({plus} rotations, "
+                      f"{len(G) - plus} reversing) OK")
+    pts = comma_outline()
+    print(f"comma outline: {len(pts)} points")
+    print("ALL OK" if ok else "FAILURES")
+    assert ok

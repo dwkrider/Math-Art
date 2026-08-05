@@ -366,49 +366,46 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_squeeze_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        CUBE_V = [(x, y, z) for x in (-1, 1) for y in (-1, 1)
-                  for z in (-1, 1)]
-        CUBE_F = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1],
-                  [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
-        claim = squeeze_assignment(CUBE_F)
-        per_face = [sum(claim[(fi, i)] for i in range(4))
-                    for fi in range(6)]
-        edges = {}
-        for fi, f in enumerate(CUBE_F):
-            for i in range(4):
-                e = frozenset((f[i], f[(i + 1) % 4]))
-                edges.setdefault(e, 0)
-                edges[e] += claim[(fi, i)]
-        once = all(c == 1 for c in edges.values())
-        # claimed slots alternate around each face
-        alt = all(claim[(fi, i)] != claim[(fi, (i + 1) % 4)]
-                  for fi in range(6) for i in range(4))
-        print(f"cube: claims/face={per_face} "
-              f"each edge once={once} alternating={alt}")
-        assert per_face == [2] * 6 and once and alt
-        verts, faces, fids = build_squeeze(
-            CUBE_V, CUBE_F, bend=0.45, m=8, rings=6,
-            iterations=20)
-        cnt = {}
-        for f in faces:
-            for i in range(len(f)):
-                e = frozenset((f[i], f[(i + 1) % len(f)]))
-                cnt[e] = cnt.get(e, 0) + 1
-        watertight = all(c == 2 for c in cnt.values())
-        finite = all(all(math.isfinite(c) for c in v)
-                     for v in verts)
-        print(f"cube squeeze: V={len(verts)} F={len(faces)} "
-              f"watertight={watertight} finite={finite}")
-        assert watertight and finite
-        # a tetrahedron (odd faces) must be rejected
-        TET_F = [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]]
-        try:
-            squeeze_assignment(TET_F)
-            raise AssertionError("tetra should be rejected")
-        except ValueError:
-            print("tetrahedron correctly rejected")
-        print("squeeze standalone tests passed")
+def _selftest():
+    CUBE_V = [(x, y, z) for x in (-1, 1) for y in (-1, 1)
+              for z in (-1, 1)]
+    CUBE_F = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1],
+              [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
+    claim = squeeze_assignment(CUBE_F)
+    per_face = [sum(claim[(fi, i)] for i in range(4))
+                for fi in range(6)]
+    edges = {}
+    for fi, f in enumerate(CUBE_F):
+        for i in range(4):
+            e = frozenset((f[i], f[(i + 1) % 4]))
+            edges.setdefault(e, 0)
+            edges[e] += claim[(fi, i)]
+    once = all(c == 1 for c in edges.values())
+    # claimed slots alternate around each face
+    alt = all(claim[(fi, i)] != claim[(fi, (i + 1) % 4)]
+              for fi in range(6) for i in range(4))
+    print(f"cube: claims/face={per_face} "
+          f"each edge once={once} alternating={alt}")
+    assert per_face == [2] * 6 and once and alt
+    verts, faces, fids = build_squeeze(
+        CUBE_V, CUBE_F, bend=0.45, m=8, rings=6,
+        iterations=20)
+    cnt = {}
+    for f in faces:
+        for i in range(len(f)):
+            e = frozenset((f[i], f[(i + 1) % len(f)]))
+            cnt[e] = cnt.get(e, 0) + 1
+    watertight = all(c == 2 for c in cnt.values())
+    finite = all(all(math.isfinite(c) for c in v)
+                 for v in verts)
+    print(f"cube squeeze: V={len(verts)} F={len(faces)} "
+          f"watertight={watertight} finite={finite}")
+    assert watertight and finite
+    # a tetrahedron (odd faces) must be rejected
+    TET_F = [[0, 2, 1], [0, 1, 3], [0, 3, 2], [1, 2, 3]]
+    try:
+        squeeze_assignment(TET_F)
+        raise AssertionError("tetra should be rejected")
+    except ValueError:
+        print("tetrahedron correctly rejected")
+    print("squeeze standalone tests passed")

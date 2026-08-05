@@ -343,12 +343,9 @@ if _IN_BLENDER:
             bpy.utils.unregister_class(c)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # standalone smoke test of the numeric core (requires the
-        # Minimal Surface Toolkit importable as a sibling)
-        for kind in PRESETS:
-            V, T = build_algebraic(kind, 40)
-            print(f"{kind:10s}: {len(V):6d} verts {len(T):6d} tris")
+def _selftest():
+    # standalone smoke test of the numeric core (requires the
+    # Minimal Surface Toolkit importable as a sibling)
+    for kind in PRESETS:
+        V, T = build_algebraic(kind, 40)
+        print(f"{kind:10s}: {len(V):6d} verts {len(T):6d} tris")

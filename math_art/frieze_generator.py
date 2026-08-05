@@ -234,7 +234,7 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_frieze_add)
 
 
-if __name__ == "__main__":
+def _selftest():
     bad = []
     for g in pc.FRIEZE_ORDER:
         v, f, m = build(g, 'ARROW', 4)
@@ -250,3 +250,4 @@ if __name__ == "__main__":
     print("active p2mg V=%d F=%d %s" %
           (len(v), len(f), "OK" if f else "BAD"))
     print("RESULT:", "OK" if not bad else "BAD %s" % bad)
+    assert not bad

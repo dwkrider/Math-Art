@@ -894,144 +894,141 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_bubble_cluster_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # two equal bubbles: the film must be planar
-        P = np.array([(0.0, 0, 0), (1.4, 0, 0)])
-        R = np.array([1.0, 1.0])
-        pairs = _interfaces(P, R)
-        assert list(pairs) == [(0, 1)]
-        pr = pairs[(0, 1)]
-        assert pr['kind'] == 'P'
-        verts, faces, ids = build_bubbles(P, R, subdiv=2)
-        film = [np.array(verts[i]) for f, d in zip(faces, ids)
-                if d == 2 for i in f]
-        assert film, "no film emitted"
-        planar = max(abs(p[0] - pr['q'][0]) for p in film)
-        print(f"equal pair: film planarity residual "
-              f"{planar:.2e}")
-        assert planar < 1e-9
-        # caps stay in their own cell
-        for f, d in zip(faces, ids):
-            if d == 0:
-                for i in f:
-                    assert verts[i][0] < pr['q'][0] + 1e-6
-        # unequal bubbles: Young-Laplace sphere into the larger
-        P2 = np.array([(0.0, 0, 0), (1.5, 0, 0)])
-        R2 = np.array([0.8, 1.2])
-        pr2 = _interfaces(P2, R2)[(0, 1)]
-        assert pr2['kind'] == 'S'
-        rf_want = 0.8 * 1.2 / (1.2 - 0.8)
-        assert abs(pr2['rf'] - rf_want) < 1e-12
-        assert np.dot(pr2['w'], [1, 0, 0]) > 0  # into larger
-        v2, f2, d2 = build_bubbles(P2, R2, subdiv=2)
-        filmv = [np.array(v2[i]) for f, d in zip(f2, d2)
-                 if d == 2 for i in f]
-        offr = max(abs(np.linalg.norm(p - pr2['cf'])
-                       - pr2['rf']) for p in filmv)
-        print(f"unequal pair: rf={pr2['rf']:.3f} "
-              f"(want {rf_want:.3f}), film sphericity "
-              f"residual {offr:.2e}")
-        assert offr < 1e-9
-        # cube cluster: 8 bubbles, 12 films, all finite
-        Pc, Ec = ([np.array((x, y, z)) for x in (0, 1)
-                   for y in (0, 1) for z in (0, 1)], None)
-        Pc = np.array(Pc)
-        Rc = bubble_radii(Pc, [], factor=0.62)
-        assert abs(Rc[0] - 0.62) < 1e-12   # NN distance is 1
-        vc, fc, dc = build_bubbles(Pc, Rc, subdiv=2)
-        nfilm = len(set(d for d in dc if d >= 8))
-        finite = all(all(math.isfinite(c) for c in v)
-                     for v in vc)
-        print(f"cube cluster: V={len(vc)} F={len(fc)} "
-              f"films={nfilm} finite={finite}")
-        assert nfilm == 12 and finite
-        # every cap vertex lies in its bubble's cell
-        pairs_c = _interfaces(Pc, Rc)
-        Vc = np.array(vc)
-        for i in range(8):
-            prs = [(pr, pr['sign'][i]) for key, pr
-                   in pairs_c.items() if i in key]
-            idxs = sorted({k for f, d in zip(fc, dc)
-                           if d == i for k in f})
-            g = _side_min(prs, Vc[idxs])
-            assert g.min() > -1e-6, g.min()
-        # corner bubbles are not enclosed: no cell polyhedra
-        assert all(film_cell(Pc, Rc, i) is None for i in range(8))
-        # separate solids: every bubble mesh must be CLOSED
-        # (each edge in exactly two triangles), finite, with
-        # positive volume, and its crease vertices must sit on
-        # both surfaces (sphere and film)
-        pairs_k = list(pairs_c)
-        for i in range(8):
-            cons = [(pairs_c[k], pairs_c[k]['sign'][i])
-                    for k in pairs_k if i in k]
-            sv, sf, sl = build_bubble_solid(Pc[i], Rc[i], cons,
-                                            subdiv=2)
-            ec = {}
-            for f in sf:
-                for k in range(3):
-                    e = frozenset((f[k], f[(k + 1) % 3]))
-                    ec[e] = ec.get(e, 0) + 1
-            assert all(c == 2 for c in ec.values()), \
-                f"bubble {i} not closed"
-            A = np.array(sv)
-            vol = sum(np.dot(A[f[0]],
-                             np.cross(A[f[1]], A[f[2]]))
-                      for f in sf) / 6.0
-            assert vol > 0 and np.isfinite(A).all()
-            if i == 0:
-                onboth = 0
-                for k, p in enumerate(A):
-                    rs = abs(np.linalg.norm(p - Pc[0]) - Rc[0])
-                    rq = min(abs(sgn * _raw(pr, p[None, :])[0])
-                             for pr, sgn in cons)
-                    if rs < 1e-5 and rq < 1e-5:
-                        onboth += 1
-                assert onboth > 10, onboth   # crease verts exist
-                print(f"bubble solid: V={len(sv)} F={len(sf)} "
-                      f"closed, vol={vol:.4f}, "
-                      f"{onboth} crease verts on both surfaces")
-        # deep overlap (factor 0.8): every film-label facet of
-        # the solid must be exactly planar -- all its vertices
-        # on the film plane, including the crease rim
-        Rd = bubble_radii(Pc, [], factor=0.8)
-        pairs_d = _interfaces(Pc, Rd)
-        cons = [(pairs_d[k], pairs_d[k]['sign'][0])
-                for k in pairs_d if 0 in k]
-        sv, sf, sl = build_bubble_solid(Pc[0], Rd[0], cons,
-                                        subdiv=3)
-        A = np.array(sv)
-        worst = 0.0
-        for f, l in zip(sf, sl):
-            if l == 0:
-                continue
-            pr, sgn = cons[l - 1]
-            for k in f:
-                worst = max(worst,
-                            abs(np.dot(A[k] - pr['q'],
-                                       pr['u'])))
+def _selftest():
+    # two equal bubbles: the film must be planar
+    P = np.array([(0.0, 0, 0), (1.4, 0, 0)])
+    R = np.array([1.0, 1.0])
+    pairs = _interfaces(P, R)
+    assert list(pairs) == [(0, 1)]
+    pr = pairs[(0, 1)]
+    assert pr['kind'] == 'P'
+    verts, faces, ids = build_bubbles(P, R, subdiv=2)
+    film = [np.array(verts[i]) for f, d in zip(faces, ids)
+            if d == 2 for i in f]
+    assert film, "no film emitted"
+    planar = max(abs(p[0] - pr['q'][0]) for p in film)
+    print(f"equal pair: film planarity residual "
+          f"{planar:.2e}")
+    assert planar < 1e-9
+    # caps stay in their own cell
+    for f, d in zip(faces, ids):
+        if d == 0:
+            for i in f:
+                assert verts[i][0] < pr['q'][0] + 1e-6
+    # unequal bubbles: Young-Laplace sphere into the larger
+    P2 = np.array([(0.0, 0, 0), (1.5, 0, 0)])
+    R2 = np.array([0.8, 1.2])
+    pr2 = _interfaces(P2, R2)[(0, 1)]
+    assert pr2['kind'] == 'S'
+    rf_want = 0.8 * 1.2 / (1.2 - 0.8)
+    assert abs(pr2['rf'] - rf_want) < 1e-12
+    assert np.dot(pr2['w'], [1, 0, 0]) > 0  # into larger
+    v2, f2, d2 = build_bubbles(P2, R2, subdiv=2)
+    filmv = [np.array(v2[i]) for f, d in zip(f2, d2)
+             if d == 2 for i in f]
+    offr = max(abs(np.linalg.norm(p - pr2['cf'])
+                   - pr2['rf']) for p in filmv)
+    print(f"unequal pair: rf={pr2['rf']:.3f} "
+          f"(want {rf_want:.3f}), film sphericity "
+          f"residual {offr:.2e}")
+    assert offr < 1e-9
+    # cube cluster: 8 bubbles, 12 films, all finite
+    Pc, Ec = ([np.array((x, y, z)) for x in (0, 1)
+               for y in (0, 1) for z in (0, 1)], None)
+    Pc = np.array(Pc)
+    Rc = bubble_radii(Pc, [], factor=0.62)
+    assert abs(Rc[0] - 0.62) < 1e-12   # NN distance is 1
+    vc, fc, dc = build_bubbles(Pc, Rc, subdiv=2)
+    nfilm = len(set(d for d in dc if d >= 8))
+    finite = all(all(math.isfinite(c) for c in v)
+                 for v in vc)
+    print(f"cube cluster: V={len(vc)} F={len(fc)} "
+          f"films={nfilm} finite={finite}")
+    assert nfilm == 12 and finite
+    # every cap vertex lies in its bubble's cell
+    pairs_c = _interfaces(Pc, Rc)
+    Vc = np.array(vc)
+    for i in range(8):
+        prs = [(pr, pr['sign'][i]) for key, pr
+               in pairs_c.items() if i in key]
+        idxs = sorted({k for f, d in zip(fc, dc)
+                       if d == i for k in f})
+        g = _side_min(prs, Vc[idxs])
+        assert g.min() > -1e-6, g.min()
+    # corner bubbles are not enclosed: no cell polyhedra
+    assert all(film_cell(Pc, Rc, i) is None for i in range(8))
+    # separate solids: every bubble mesh must be CLOSED
+    # (each edge in exactly two triangles), finite, with
+    # positive volume, and its crease vertices must sit on
+    # both surfaces (sphere and film)
+    pairs_k = list(pairs_c)
+    for i in range(8):
+        cons = [(pairs_c[k], pairs_c[k]['sign'][i])
+                for k in pairs_k if i in k]
+        sv, sf, sl = build_bubble_solid(Pc[i], Rc[i], cons,
+                                        subdiv=2)
         ec = {}
         for f in sf:
             for k in range(3):
                 e = frozenset((f[k], f[(k + 1) % 3]))
                 ec[e] = ec.get(e, 0) + 1
-        closed = all(c == 2 for c in ec.values())
-        print(f"deep-overlap solid: facet planarity residual "
-              f"{worst:.2e}, closed={closed}")
-        assert worst < 1e-6 and closed
-        # BCC: a centre bubble surrounded by the 8 corners is
-        # enclosed -- its film planes (normal to the body
-        # diagonals) bound an octahedron
-        Pb = np.vstack([[[0.5, 0.5, 0.5]], Pc])
-        Rb = np.full(9, 0.62)
-        cellm = film_cell(Pb, Rb, 0)
-        assert cellm is not None
-        cv, cfs = cellm
-        print(f"BCC centre cell: V={len(cv)} F={len(cfs)} "
-              f"(want the octahedron: 6/8)")
-        assert len(cv) == 6 and len(cfs) == 8
-        assert film_cell(Pb, Rb, 1) is None
-        print("bubble standalone tests passed")
+        assert all(c == 2 for c in ec.values()), \
+            f"bubble {i} not closed"
+        A = np.array(sv)
+        vol = sum(np.dot(A[f[0]],
+                         np.cross(A[f[1]], A[f[2]]))
+                  for f in sf) / 6.0
+        assert vol > 0 and np.isfinite(A).all()
+        if i == 0:
+            onboth = 0
+            for k, p in enumerate(A):
+                rs = abs(np.linalg.norm(p - Pc[0]) - Rc[0])
+                rq = min(abs(sgn * _raw(pr, p[None, :])[0])
+                         for pr, sgn in cons)
+                if rs < 1e-5 and rq < 1e-5:
+                    onboth += 1
+            assert onboth > 10, onboth   # crease verts exist
+            print(f"bubble solid: V={len(sv)} F={len(sf)} "
+                  f"closed, vol={vol:.4f}, "
+                  f"{onboth} crease verts on both surfaces")
+    # deep overlap (factor 0.8): every film-label facet of
+    # the solid must be exactly planar -- all its vertices
+    # on the film plane, including the crease rim
+    Rd = bubble_radii(Pc, [], factor=0.8)
+    pairs_d = _interfaces(Pc, Rd)
+    cons = [(pairs_d[k], pairs_d[k]['sign'][0])
+            for k in pairs_d if 0 in k]
+    sv, sf, sl = build_bubble_solid(Pc[0], Rd[0], cons,
+                                    subdiv=3)
+    A = np.array(sv)
+    worst = 0.0
+    for f, l in zip(sf, sl):
+        if l == 0:
+            continue
+        pr, sgn = cons[l - 1]
+        for k in f:
+            worst = max(worst,
+                        abs(np.dot(A[k] - pr['q'],
+                                   pr['u'])))
+    ec = {}
+    for f in sf:
+        for k in range(3):
+            e = frozenset((f[k], f[(k + 1) % 3]))
+            ec[e] = ec.get(e, 0) + 1
+    closed = all(c == 2 for c in ec.values())
+    print(f"deep-overlap solid: facet planarity residual "
+          f"{worst:.2e}, closed={closed}")
+    assert worst < 1e-6 and closed
+    # BCC: a centre bubble surrounded by the 8 corners is
+    # enclosed -- its film planes (normal to the body
+    # diagonals) bound an octahedron
+    Pb = np.vstack([[[0.5, 0.5, 0.5]], Pc])
+    Rb = np.full(9, 0.62)
+    cellm = film_cell(Pb, Rb, 0)
+    assert cellm is not None
+    cv, cfs = cellm
+    print(f"BCC centre cell: V={len(cv)} F={len(cfs)} "
+          f"(want the octahedron: 6/8)")
+    assert len(cv) == 6 and len(cfs) == 8
+    assert film_cell(Pb, Rb, 1) is None
+    print("bubble standalone tests passed")

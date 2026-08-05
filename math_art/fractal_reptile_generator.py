@@ -1488,7 +1488,7 @@ def _inside_loop(loop, pts):
     return inside
 
 
-if __name__ == "__main__":
+def _selftest():
     all_ok = True
     for kind, label, _ in KIND_ITEMS:
         spec = KINDS[kind]
@@ -1603,3 +1603,4 @@ if __name__ == "__main__":
                  spec['n'], h, depth, n_eff ** depth,
                  "OK" if ok else "BAD"))
     print("RESULT:", "OK" if all_ok else "BAD")
+    assert all_ok

@@ -819,7 +819,7 @@ def _check_geometry(kind, iterations):
     return ok
 
 
-if __name__ == "__main__":
+def _selftest():
     all_ok = True
     DEPTHS = {'KITE_R6': (1, 2, 3), 'KITE_R8': (1, 2, 3),
               'KITE_R12': (1, 2), 'SPIRAL_GOLDEN': (3,),
@@ -865,3 +865,4 @@ if __name__ == "__main__":
         print("%-9s it=%d : ribbon+tube+curve geometry ok=%s"
               % (kind, it, g))
     print("RESULT:", "OK" if all_ok else "BAD")
+    assert all_ok

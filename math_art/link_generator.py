@@ -637,31 +637,28 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_math_link_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        word = pk.parse_letters(WHITEHEAD_BRAID)
-        nc = pk.closure_components(word)
-        print(f"Whitehead braid {WHITEHEAD_BRAID}: "
-              f"{nc} components", "OK" if nc == 2 else "FAIL")
-        try:
-            import numpy as np
-        except ImportError:
-            np = None
-        if np is not None:
-            h = hopf_components(120)
-            print("Hopf lk =", round(linking_number(*h), 3))
-            s = torus_link_components(2, 4, 160)
-            print("Solomon lk =", round(linking_number(*s), 3))
-            b = borromean_ellipses(120)
-            print("Borromean pairwise lk =",
-                  [round(linking_number(b[i], b[j]), 3)
-                   for i in range(3) for j in range(i + 1, 3)])
-            c = borromean_crest(120)
-            print("Crest pairwise lk =",
-                  [round(linking_number(c[i], c[j]), 3)
-                   for i in range(3) for j in range(i + 1, 3)])
-            cs = connect_sum(pk.KNOTS[0][1], pk.KNOTS[0][1],
-                             samples=120, iters=40)
-            print("Connect sum: 1 loop of", len(cs[0]), "points")
+def _selftest():
+    word = pk.parse_letters(WHITEHEAD_BRAID)
+    nc = pk.closure_components(word)
+    print(f"Whitehead braid {WHITEHEAD_BRAID}: "
+          f"{nc} components", "OK" if nc == 2 else "FAIL")
+    try:
+        import numpy as np
+    except ImportError:
+        np = None
+    if np is not None:
+        h = hopf_components(120)
+        print("Hopf lk =", round(linking_number(*h), 3))
+        s = torus_link_components(2, 4, 160)
+        print("Solomon lk =", round(linking_number(*s), 3))
+        b = borromean_ellipses(120)
+        print("Borromean pairwise lk =",
+              [round(linking_number(b[i], b[j]), 3)
+               for i in range(3) for j in range(i + 1, 3)])
+        c = borromean_crest(120)
+        print("Crest pairwise lk =",
+              [round(linking_number(c[i], c[j]), 3)
+               for i in range(3) for j in range(i + 1, 3)])
+        cs = connect_sum(pk.KNOTS[0][1], pk.KNOTS[0][1],
+                         samples=120, iters=40)
+        print("Connect sum: 1 loop of", len(cs[0]), "points")

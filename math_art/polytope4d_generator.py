@@ -1119,13 +1119,14 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_polytope4d_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for kind, (env, ene) in COUNTS.items():
-            V = polytope_vertices(kind)
-            E = polytope_edges(V)
-            ok = (len(V), len(E)) == (env, ene)
-            print(f"{kind:8s}: V={len(V):4d} E={len(E):5d}  "
-                  f"expect {env},{ene}  {'OK' if ok else 'MISMATCH'}")
+def _selftest():
+    bad = []
+    for kind, (env, ene) in COUNTS.items():
+        V = polytope_vertices(kind)
+        E = polytope_edges(V)
+        ok = (len(V), len(E)) == (env, ene)
+        print(f"{kind:8s}: V={len(V):4d} E={len(E):5d}  "
+              f"expect {env},{ene}  {'OK' if ok else 'MISMATCH'}")
+        if not ok:
+            bad.append(kind)
+    assert not bad

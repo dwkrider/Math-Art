@@ -397,12 +397,9 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_zonohedron_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for n, w in ((12, 0), (12, 4), (7, 0), (50, 5)):
-            star = polar_star(n)
-            V, F = make_polar_zonohedron(star, 1, w)
-            print(f"polar n={n} w={w}: raw V={len(V)} F={len(F)} "
-                  f"(expect F={'n(n-1)=' + str(n * (n - 1)) if w == 0 else '?'})")
+def _selftest():
+    for n, w in ((12, 0), (12, 4), (7, 0), (50, 5)):
+        star = polar_star(n)
+        V, F = make_polar_zonohedron(star, 1, w)
+        print(f"polar n={n} w={w}: raw V={len(V)} F={len(F)} "
+              f"(expect F={'n(n-1)=' + str(n * (n - 1)) if w == 0 else '?'})")

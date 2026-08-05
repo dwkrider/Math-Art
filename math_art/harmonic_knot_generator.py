@@ -519,77 +519,74 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_harmonic_knot_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        ok_all = True
+def _selftest():
+    ok_all = True
 
-        def check(label, cond):
-            global ok_all
-            ok_all = ok_all and bool(cond)
-            print(f"  {label}: {'OK' if cond else 'BAD'}")
+    def check(label, cond):
+        nonlocal ok_all
+        ok_all = ok_all and bool(cond)
+        print(f"  {label}: {'OK' if cond else 'BAD'}")
 
-        for key, (fam, nf, ph, z2) in PRESETS.items():
-            P = harmonic_knot_points(fam, *nf, *ph, *z2, 900)
-            Pn = fit_unit_cube(P)
-            seg = np.linalg.norm(np.roll(Pn, -1, 0) - Pn, axis=1)
-            print(f"{key} [{fam}] n={len(Pn)}")
-            check("finite", np.isfinite(Pn).all())
-            # closed: the wrap gap is an ordinary sampling step
-            check("closed", seg[-1] < 6.0 * np.median(seg))
-            check("consecutive points distinct", seg.min() > 0)
-            ext = Pn.max(axis=0) - Pn.min(axis=0)
-            check("fits 2 m cube (max extent = 2*scale)",
-                  abs(ext.max() - 2.0) < 1e-9
-                  and ext.max() <= 2.0 + 1e-9)
-        # knot-type certificates: determinant |Delta(-1)| from the
-        # sampled diagram.  Trefoil <=> det 3 on a diagram with
-        # fewer than 8 crossings (the only other det-3 knot below
-        # 12 crossings is 8_19, which needs >= 8)
-        for key, want in (('LISSAJOUS_327', 7),
-                          ('BILLIARD_327', 7),
-                          ('FOURIER_TREFOIL', 3),
-                          ('CHEBYSHEV_TREFOIL', 3)):
-            fam, nf, ph, z2 = PRESETS[key]
-            P = harmonic_knot_points(fam, *nf, *ph, *z2, 1400)
-            det, nc = knot_determinant(P)
-            print(f"{key}: determinant={det} crossings={nc}")
-            check(f"determinant == {want}", det == want)
-            if want == 3:
-                check("diagram < 8 crossings (so a trefoil)",
-                      nc is not None and nc < 8)
-        # Fourier-(1,1,2) torus preset vs. the true (2,3) torus
-        # knot: the preset is a different embedding of the same
-        # knot, so compare topologically -- the standard torus
-        # curve must yield the same determinant certificate (3,
-        # on a small diagram) as the preset checked above
-        t = np.linspace(0, 2 * pi, 1400, endpoint=False)
-        r = 0.7 + 0.3 * np.cos(3 * t)
-        T23 = np.stack([r * np.cos(2 * t), r * np.sin(2 * t),
-                        0.3 * np.sin(3 * t)], axis=1)
-        det_t, nc_t = knot_determinant(T23)
-        print(f"true torus (2,3): determinant={det_t} "
-              f"crossings={nc_t}")
-        check("fourier preset matches torus (2,3) certificate",
-              det_t == 3 and nc_t is not None and nc_t < 8)
-        # mesh tube via the knot-carpet welded sweep
-        try:
-            from . import knot_carpet_generator as kcg
-        except ImportError:
-            import knot_carpet_generator as kcg
-        P = fit_unit_cube(harmonic_knot_points(
-            *PRESETS['LISSAJOUS_327'][0:1],
-            *PRESETS['LISSAJOUS_327'][1],
-            *PRESETS['LISSAJOUS_327'][2],
-            *PRESETS['LISSAJOUS_327'][3], 400))
-        verts, faces = kcg._tube_welded(P, 0.05, 10)
-        va = np.asarray(verts)
-        print(f"tube: {len(verts)} verts, {len(faces)} faces")
-        check("tube non-empty", len(verts) == 400 * 10
-              and len(faces) == 400 * 10)
-        check("tube finite", np.isfinite(va).all())
-        check("tube all quads",
-              all(len(f) == 4 for f in faces))
-        print("RESULT: " + ("OK" if ok_all else "FAIL"))
-        assert ok_all
+    for key, (fam, nf, ph, z2) in PRESETS.items():
+        P = harmonic_knot_points(fam, *nf, *ph, *z2, 900)
+        Pn = fit_unit_cube(P)
+        seg = np.linalg.norm(np.roll(Pn, -1, 0) - Pn, axis=1)
+        print(f"{key} [{fam}] n={len(Pn)}")
+        check("finite", np.isfinite(Pn).all())
+        # closed: the wrap gap is an ordinary sampling step
+        check("closed", seg[-1] < 6.0 * np.median(seg))
+        check("consecutive points distinct", seg.min() > 0)
+        ext = Pn.max(axis=0) - Pn.min(axis=0)
+        check("fits 2 m cube (max extent = 2*scale)",
+              abs(ext.max() - 2.0) < 1e-9
+              and ext.max() <= 2.0 + 1e-9)
+    # knot-type certificates: determinant |Delta(-1)| from the
+    # sampled diagram.  Trefoil <=> det 3 on a diagram with
+    # fewer than 8 crossings (the only other det-3 knot below
+    # 12 crossings is 8_19, which needs >= 8)
+    for key, want in (('LISSAJOUS_327', 7),
+                      ('BILLIARD_327', 7),
+                      ('FOURIER_TREFOIL', 3),
+                      ('CHEBYSHEV_TREFOIL', 3)):
+        fam, nf, ph, z2 = PRESETS[key]
+        P = harmonic_knot_points(fam, *nf, *ph, *z2, 1400)
+        det, nc = knot_determinant(P)
+        print(f"{key}: determinant={det} crossings={nc}")
+        check(f"determinant == {want}", det == want)
+        if want == 3:
+            check("diagram < 8 crossings (so a trefoil)",
+                  nc is not None and nc < 8)
+    # Fourier-(1,1,2) torus preset vs. the true (2,3) torus
+    # knot: the preset is a different embedding of the same
+    # knot, so compare topologically -- the standard torus
+    # curve must yield the same determinant certificate (3,
+    # on a small diagram) as the preset checked above
+    t = np.linspace(0, 2 * pi, 1400, endpoint=False)
+    r = 0.7 + 0.3 * np.cos(3 * t)
+    T23 = np.stack([r * np.cos(2 * t), r * np.sin(2 * t),
+                    0.3 * np.sin(3 * t)], axis=1)
+    det_t, nc_t = knot_determinant(T23)
+    print(f"true torus (2,3): determinant={det_t} "
+          f"crossings={nc_t}")
+    check("fourier preset matches torus (2,3) certificate",
+          det_t == 3 and nc_t is not None and nc_t < 8)
+    # mesh tube via the knot-carpet welded sweep
+    try:
+        from . import knot_carpet_generator as kcg
+    except ImportError:
+        import knot_carpet_generator as kcg
+    P = fit_unit_cube(harmonic_knot_points(
+        *PRESETS['LISSAJOUS_327'][0:1],
+        *PRESETS['LISSAJOUS_327'][1],
+        *PRESETS['LISSAJOUS_327'][2],
+        *PRESETS['LISSAJOUS_327'][3], 400))
+    verts, faces = kcg._tube_welded(P, 0.05, 10)
+    va = np.asarray(verts)
+    print(f"tube: {len(verts)} verts, {len(faces)} faces")
+    check("tube non-empty", len(verts) == 400 * 10
+          and len(faces) == 400 * 10)
+    check("tube finite", np.isfinite(va).all())
+    check("tube all quads",
+          all(len(f) == 4 for f in faces))
+    print("RESULT: " + ("OK" if ok_all else "FAIL"))
+    assert ok_all

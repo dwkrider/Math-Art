@@ -289,7 +289,3 @@ if _IN_BLENDER:
         if ADD_MENU:
             bpy.types.VIEW3D_MT_object.remove(_menu_func)
         bpy.utils.unregister_class(OBJECT_OT_curvature_color_add)
-
-
-if __name__ == "__main__" and _IN_BLENDER:
-    register()

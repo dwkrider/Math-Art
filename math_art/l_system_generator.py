@@ -240,17 +240,15 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_lsystem_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for kind in PRESETS:
-            lines, closed = build_lsystem(kind)
-            npts = sum(len(ln) for ln in lines)
-            allpts = np.vstack(lines) if lines else np.zeros((1, 3))
-            finite = np.isfinite(allpts).all()
-            ext = np.round(allpts.max(axis=0) - allpts.min(axis=0), 2)
-            ok = bool(lines) and finite
-            print(f"{kind:10s}: strands={len(lines)} points={npts} "
-                  f"closed={closed} bbox={ext} "
-                  f"{'OK' if ok else 'BAD'}")
+def _selftest():
+    for kind in PRESETS:
+        lines, closed = build_lsystem(kind)
+        npts = sum(len(ln) for ln in lines)
+        allpts = np.vstack(lines) if lines else np.zeros((1, 3))
+        finite = np.isfinite(allpts).all()
+        ext = np.round(allpts.max(axis=0) - allpts.min(axis=0), 2)
+        ok = bool(lines) and finite
+        print(f"{kind:10s}: strands={len(lines)} points={npts} "
+              f"closed={closed} bbox={ext} "
+              f"{'OK' if ok else 'BAD'}")
+        assert ok

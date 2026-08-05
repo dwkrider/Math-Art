@@ -1506,7 +1506,7 @@ def _mono_half(polys, frac=0.20):
     return frac * ext
 
 
-if __name__ == "__main__":
+def _selftest():
     all_ok = True
     n_samples = 30 * 30                         # _coverage grid size
     # Per-kind generation depths (lo, mid, hi); the mid patch is coverage
@@ -1585,3 +1585,4 @@ if __name__ == "__main__":
                      "OK" if cur_ok else "BAD"))
             all_ok = all_ok and cur_ok
     print("RESULT:", "OK" if all_ok else "BAD")
+    assert all_ok

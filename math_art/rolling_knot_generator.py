@@ -758,65 +758,62 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_rolling_knot_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # the smooth-rolling TDR itself must have rho ~ 0
-        tdr = TDR(np.array([1.0, -1.0, 0]), 0.5, 0.35)
-        th = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
-        E = np.vstack([tdr.point(0, th), tdr.point(1, th)])
-        eruns = [np.arange(1024), np.arange(1024, 2048)]
-        r_tdr, nb = rho_eval(E, np.zeros(3), eruns)
-        print(f"smooth TDR: rho={r_tdr:.6f} (band {nb})")
-        assert r_tdr < 1e-3
-        # no-overlap tube COM is EXACTLY the arc centroid
-        K = morton(3, 0.5, 1.0, 256)
-        c0, ov0 = com_thick(K, 0.01)
-        seg = np.linalg.norm(np.roll(K, -1, 0) - K, axis=1)
-        w = (seg + np.roll(seg, 1)) / 2
-        c_arc = (K * w[:, None]).sum(0) / w.sum()
-        assert ov0 == 0.0 and np.allclose(c0, c_arc)
-        print("thin tube: zero overlap, exact arc centroid")
-        # optimization: trefoil and (5,2)
-        for p in (3, 5):
-            K, info = build_rolling_knot(p, 0.5, 'SMOOTH',
-                                         rt=0.06, n=512)
-            # kink check: worst turning angle between
-            # consecutive segments must stay gentle
-            T = np.roll(K, -1, 0) - K
-            T /= np.linalg.norm(T, axis=1, keepdims=True)
-            turn = np.degrees(np.arccos(np.clip(
-                (T * np.roll(T, 1, 0)).sum(1), -1, 1)))
-            print(f"p={p}: rho raw={info['rho_raw']:.4f} -> "
-                  f"curve={info['rho']:.5f} "
-                  f"thick={info['rho_thick']:.5f} "
-                  f"overlap={100 * info['overlap']:.2f}% "
-                  f"max turn={turn.max():.1f}deg")
-            assert info['rho_raw'] > 0.05
-            assert info['rho'] < 0.01
-            assert info['rho_thick'] < 0.02
-            assert turn.max() < 12.0, turn.max()
-        # minimum clearance: fat tube with a requested gap
-        K, info = build_rolling_knot(3, 0.5, 'SMOOTH',
-                                     rt=0.09, n=512,
-                                     clearance=0.05)
-        print(f"clearance run: gap={info['gap']:.4f} "
-              f"(want >= 0.04) rho={info['rho']:.5f} "
-              f"thick={info['rho_thick']:.5f}")
-        assert info['gap'] >= 0.04
-        assert info['rho'] < 0.01 and info['rho_thick'] < 0.01
-        # tube mesh is closed
-        verts, faces = tube_mesh(K, 0.05, sides=8)
-        cnt = {}
-        for f in faces:
-            for i in range(len(f)):
-                e = frozenset((f[i], f[(i + 1) % len(f)]))
-                cnt[e] = cnt.get(e, 0) + 1
-        assert all(c == 2 for c in cnt.values())
-        finite = all(all(math.isfinite(c) for c in v)
-                     for v in verts)
-        assert finite
-        print(f"tube: V={len(verts)} F={len(faces)} "
-              f"watertight, finite")
-        print("rolling knot standalone tests passed")
+def _selftest():
+    # the smooth-rolling TDR itself must have rho ~ 0
+    tdr = TDR(np.array([1.0, -1.0, 0]), 0.5, 0.35)
+    th = np.linspace(0, 2 * np.pi, 1024, endpoint=False)
+    E = np.vstack([tdr.point(0, th), tdr.point(1, th)])
+    eruns = [np.arange(1024), np.arange(1024, 2048)]
+    r_tdr, nb = rho_eval(E, np.zeros(3), eruns)
+    print(f"smooth TDR: rho={r_tdr:.6f} (band {nb})")
+    assert r_tdr < 1e-3
+    # no-overlap tube COM is EXACTLY the arc centroid
+    K = morton(3, 0.5, 1.0, 256)
+    c0, ov0 = com_thick(K, 0.01)
+    seg = np.linalg.norm(np.roll(K, -1, 0) - K, axis=1)
+    w = (seg + np.roll(seg, 1)) / 2
+    c_arc = (K * w[:, None]).sum(0) / w.sum()
+    assert ov0 == 0.0 and np.allclose(c0, c_arc)
+    print("thin tube: zero overlap, exact arc centroid")
+    # optimization: trefoil and (5,2)
+    for p in (3, 5):
+        K, info = build_rolling_knot(p, 0.5, 'SMOOTH',
+                                     rt=0.06, n=512)
+        # kink check: worst turning angle between
+        # consecutive segments must stay gentle
+        T = np.roll(K, -1, 0) - K
+        T /= np.linalg.norm(T, axis=1, keepdims=True)
+        turn = np.degrees(np.arccos(np.clip(
+            (T * np.roll(T, 1, 0)).sum(1), -1, 1)))
+        print(f"p={p}: rho raw={info['rho_raw']:.4f} -> "
+              f"curve={info['rho']:.5f} "
+              f"thick={info['rho_thick']:.5f} "
+              f"overlap={100 * info['overlap']:.2f}% "
+              f"max turn={turn.max():.1f}deg")
+        assert info['rho_raw'] > 0.05
+        assert info['rho'] < 0.01
+        assert info['rho_thick'] < 0.02
+        assert turn.max() < 12.0, turn.max()
+    # minimum clearance: fat tube with a requested gap
+    K, info = build_rolling_knot(3, 0.5, 'SMOOTH',
+                                 rt=0.09, n=512,
+                                 clearance=0.05)
+    print(f"clearance run: gap={info['gap']:.4f} "
+          f"(want >= 0.04) rho={info['rho']:.5f} "
+          f"thick={info['rho_thick']:.5f}")
+    assert info['gap'] >= 0.04
+    assert info['rho'] < 0.01 and info['rho_thick'] < 0.01
+    # tube mesh is closed
+    verts, faces = tube_mesh(K, 0.05, sides=8)
+    cnt = {}
+    for f in faces:
+        for i in range(len(f)):
+            e = frozenset((f[i], f[(i + 1) % len(f)]))
+            cnt[e] = cnt.get(e, 0) + 1
+    assert all(c == 2 for c in cnt.values())
+    finite = all(all(math.isfinite(c) for c in v)
+                 for v in verts)
+    assert finite
+    print(f"tube: V={len(verts)} F={len(faces)} "
+          f"watertight, finite")
+    print("rolling knot standalone tests passed")

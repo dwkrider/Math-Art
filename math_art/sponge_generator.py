@@ -263,34 +263,31 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_sponge_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # cell counts follow the fractal's replication factor
-        for kind, factor in (('MENGER', 20), ('VICSEK', 7),
-                             ('CARPET', 8), ('MOSELY', 19),
-                             ('MOSELYL', 18), ('CANTOR', 8)):
-            for lv in (1, 2, 3):
-                cells = sponge_cells(kind, lv)
-                ok = len(cells) == factor ** lv
-                print(f"{kind} L{lv}: cells={len(cells)}"
-                      f"({factor ** lv}) {'OK' if ok else 'BAD'}")
-        # watertightness: every edge shared by exactly two faces
-        from collections import Counter
-        for kind in ('MENGER', 'VICSEK', 'CARPET', 'MOSELY',
-                     'MOSELYL', 'CANTOR'):
-            v, f = build_grid_sponge(kind, 2)
-            cnt = Counter()
-            for fc in f:
-                for i in range(len(fc)):
-                    a, b = fc[i], fc[(i + 1) % len(fc)]
-                    cnt[(min(a, b), max(a, b))] += 1
-            man = all(c == 2 for c in cnt.values())
-            print(f"{kind} L2 surface: verts={len(v)} faces={len(f)} "
-                  f"manifold={man} {'OK' if man else 'BAD'}")
-        for kind, copies, bf in (('TETRA', 4, 4), ('OCTA', 6, 8)):
-            v, f = build_corner_sponge(kind, 3)
-            ok = len(f) == bf * copies ** 3
-            print(f"{kind} L3: faces={len(f)}({bf * copies ** 3}) "
-                  f"{'OK' if ok else 'BAD'}")
+def _selftest():
+    # cell counts follow the fractal's replication factor
+    for kind, factor in (('MENGER', 20), ('VICSEK', 7),
+                         ('CARPET', 8), ('MOSELY', 19),
+                         ('MOSELYL', 18), ('CANTOR', 8)):
+        for lv in (1, 2, 3):
+            cells = sponge_cells(kind, lv)
+            ok = len(cells) == factor ** lv
+            print(f"{kind} L{lv}: cells={len(cells)}"
+                  f"({factor ** lv}) {'OK' if ok else 'BAD'}")
+    # watertightness: every edge shared by exactly two faces
+    from collections import Counter
+    for kind in ('MENGER', 'VICSEK', 'CARPET', 'MOSELY',
+                 'MOSELYL', 'CANTOR'):
+        v, f = build_grid_sponge(kind, 2)
+        cnt = Counter()
+        for fc in f:
+            for i in range(len(fc)):
+                a, b = fc[i], fc[(i + 1) % len(fc)]
+                cnt[(min(a, b), max(a, b))] += 1
+        man = all(c == 2 for c in cnt.values())
+        print(f"{kind} L2 surface: verts={len(v)} faces={len(f)} "
+              f"manifold={man} {'OK' if man else 'BAD'}")
+    for kind, copies, bf in (('TETRA', 4, 4), ('OCTA', 6, 8)):
+        v, f = build_corner_sponge(kind, 3)
+        ok = len(f) == bf * copies ** 3
+        print(f"{kind} L3: faces={len(f)}({bf * copies ** 3}) "
+              f"{'OK' if ok else 'BAD'}")

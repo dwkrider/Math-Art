@@ -38,8 +38,8 @@ import math
 # The state may have more than 3 components (Qi and Lorenz-Stenflo
 # are 4D, the coupled Lorenz pair is 6D); the first three are the
 # plotted projection. dt/steps are tuned so each preset draws the
-# attractor's familiar shape; all values verified by the __main__
-# self-test. method is 'RK4' except where the reference renders
+# attractor's familiar shape; all values verified by the _selftest()
+# routine. method is 'RK4' except where the reference renders
 # depend on Euler's numerical dissipation (see Lorenz Mod 1).
 
 
@@ -653,39 +653,37 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_attractor_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        fails = []
-        for key in _ORDER:
-            label = PRESETS[key][0]
-            try:
-                pts, spd = build_attractor(key)
-                lo = [min(p[k] for p in pts) for k in range(3)]
-                hi = [max(p[k] for p in pts) for k in range(3)]
-                ext = sorted(hi[k] - lo[k] for k in range(3))
-                # non-degenerate: real extent in at least 2 axes
-                flat = ext[1] < 0.5
-                # not settled onto a fixed point: the last fifth of
-                # the trajectory still covers a decent volume
-                tail = pts[-len(pts) // 5:]
-                tlo = [min(p[k] for p in tail) for k in range(3)]
-                thi = [max(p[k] for p in tail) for k in range(3)]
-                text = max(thi[k] - tlo[k] for k in range(3))
-                # Rayleigh-Benard is a deliberate transient spiral
-                stuck = text < 0.5 and key != 'RAYLEIGHBENARD'
-                bad = ([] + (["flat"] if flat else [])
-                       + (["stuck"] if stuck else []))
-                print(f"{label:28s} {len(pts):6d} pts  "
-                      f"ext=({ext[0]:5.2f},{ext[1]:5.2f},"
-                      f"{ext[2]:5.2f})  tail={text:5.2f}  "
-                      f"{'OK' if not bad else ' '.join(bad)}")
-                if bad:
-                    fails.append(key)
-            except (OverflowError, ValueError, ZeroDivisionError) \
-                    as e:
-                print(f"{label:28s} FAILED: {e}")
+def _selftest():
+    fails = []
+    for key in _ORDER:
+        label = PRESETS[key][0]
+        try:
+            pts, spd = build_attractor(key)
+            lo = [min(p[k] for p in pts) for k in range(3)]
+            hi = [max(p[k] for p in pts) for k in range(3)]
+            ext = sorted(hi[k] - lo[k] for k in range(3))
+            # non-degenerate: real extent in at least 2 axes
+            flat = ext[1] < 0.5
+            # not settled onto a fixed point: the last fifth of
+            # the trajectory still covers a decent volume
+            tail = pts[-len(pts) // 5:]
+            tlo = [min(p[k] for p in tail) for k in range(3)]
+            thi = [max(p[k] for p in tail) for k in range(3)]
+            text = max(thi[k] - tlo[k] for k in range(3))
+            # Rayleigh-Benard is a deliberate transient spiral
+            stuck = text < 0.5 and key != 'RAYLEIGHBENARD'
+            bad = ([] + (["flat"] if flat else [])
+                   + (["stuck"] if stuck else []))
+            print(f"{label:28s} {len(pts):6d} pts  "
+                  f"ext=({ext[0]:5.2f},{ext[1]:5.2f},"
+                  f"{ext[2]:5.2f})  tail={text:5.2f}  "
+                  f"{'OK' if not bad else ' '.join(bad)}")
+            if bad:
                 fails.append(key)
-        print(f"\n{len(PRESETS)} presets:",
-              "ALL OK" if not fails else f"FAILURES: {fails}")
+        except (OverflowError, ValueError, ZeroDivisionError) \
+                as e:
+            print(f"{label:28s} FAILED: {e}")
+            fails.append(key)
+    print(f"\n{len(PRESETS)} presets:",
+          "ALL OK" if not fails else f"FAILURES: {fails}")
+    assert not fails

@@ -296,37 +296,38 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_snowflake_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        from collections import Counter
+def _selftest():
+    from collections import Counter
 
-        def rot60(idx, ar):
-            # axial 60-degree rotation (q, r) -> (-r, q + r)
-            i, j = idx
-            q, r = i - ar, j - ar
-            return (-r + ar, (q + r) + ar)
+    def rot60(idx, ar):
+        # axial 60-degree rotation (q, r) -> (-r, q + r)
+        i, j = idx
+        q, r = i - ar, j - ar
+        return (-r + ar, (q + r) + ar)
 
-        for kind in PRESETS:
-            s, frozen, hexdist, steps = simulate_reiter(
-                *PRESETS[kind][1:], radius=40, max_steps=4000)
-            ar = frozen.shape[0] // 2
-            cells = np.argwhere(frozen)
-            # six-fold symmetry: rotating the frozen set by 60 degrees
-            # maps it onto itself
-            fset = set(map(tuple, cells))
-            rset = {rot60(c, ar) for c in fset}
-            sym = len(fset & rset) / max(len(fset), 1)
-            verts, faces = build_snowflake(frozen, s)
-            edges = Counter()
-            for f in faces:
-                for k in range(len(f)):
-                    a, b = f[k], f[(k + 1) % len(f)]
-                    edges[(min(a, b), max(a, b))] += 1
-            boundary = sum(1 for c in edges.values() if c != 2)
-            ok = len(cells) and sym > 0.99 and boundary == 0
-            print(f"{kind}: cells={len(cells)} steps={steps} "
-                  f"6fold={sym:.3f} V={len(verts)} F={len(faces)} "
-                  f"boundary_edges={boundary} "
-                  f"{'OK' if ok else 'CHECK'}")
+    bad = []
+    for kind in PRESETS:
+        s, frozen, hexdist, steps = simulate_reiter(
+            *PRESETS[kind][1:], radius=40, max_steps=4000)
+        ar = frozen.shape[0] // 2
+        cells = np.argwhere(frozen)
+        # six-fold symmetry: rotating the frozen set by 60 degrees
+        # maps it onto itself
+        fset = set(map(tuple, cells))
+        rset = {rot60(c, ar) for c in fset}
+        sym = len(fset & rset) / max(len(fset), 1)
+        verts, faces = build_snowflake(frozen, s)
+        edges = Counter()
+        for f in faces:
+            for k in range(len(f)):
+                a, b = f[k], f[(k + 1) % len(f)]
+                edges[(min(a, b), max(a, b))] += 1
+        boundary = sum(1 for c in edges.values() if c != 2)
+        ok = len(cells) and sym > 0.99 and boundary == 0
+        print(f"{kind}: cells={len(cells)} steps={steps} "
+              f"6fold={sym:.3f} V={len(verts)} F={len(faces)} "
+              f"boundary_edges={boundary} "
+              f"{'OK' if ok else 'CHECK'}")
+        if not ok:
+            bad.append(kind)
+    assert not bad

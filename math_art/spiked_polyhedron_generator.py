@@ -555,75 +555,72 @@ if _IN_BLENDER:
             bpy.utils.unregister_class(c)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # spiked icosahedron: 60-face deltahedron of regular
-        # tetrahedra
-        V, F, G = build_spiked('ICOSA')
-        E = [np.linalg.norm(np.array(V[f[i]])
-                            - np.array(V[f[(i + 1) % 3]]))
-             for f in F for i in range(3)]
-        spread = (max(E) - min(E)) / max(E)
-        cnt = edge_face_counts(F)
-        closed = all(c == 2 for c in cnt.values())
-        print(f"spiked icosa: {len(F)} faces, edge spread "
-              f"{spread:.2e} (deltahedron), closed={closed}")
-        assert len(F) == 60 and spread < 1e-9 and closed
+def _selftest():
+    # spiked icosahedron: 60-face deltahedron of regular
+    # tetrahedra
+    V, F, G = build_spiked('ICOSA')
+    E = [np.linalg.norm(np.array(V[f[i]])
+                        - np.array(V[f[(i + 1) % 3]]))
+         for f in F for i in range(3)]
+    spread = (max(E) - min(E)) / max(E)
+    cnt = edge_face_counts(F)
+    closed = all(c == 2 for c in cnt.values())
+    print(f"spiked icosa: {len(F)} faces, edge spread "
+          f"{spread:.2e} (deltahedron), closed={closed}")
+    assert len(F) == 60 and spread < 1e-9 and closed
 
-        # spiked Goldberg GP(2,0): 12 pentagons + 30 hexagons, each
-        # pyramided -> 12*5 + 30*6 = 240 triangles, closed sphere
-        V, F, G = build_spiked('GOLDBERG', freq=2)
+    # spiked Goldberg GP(2,0): 12 pentagons + 30 hexagons, each
+    # pyramided -> 12*5 + 30*6 = 240 triangles, closed sphere
+    V, F, G = build_spiked('GOLDBERG', freq=2)
+    cnt = edge_face_counts(F)
+    closed = all(c == 2 for c in cnt.values())
+    chi = len(V) - len(cnt) + len(F)
+    finite = all(all(math.isfinite(c) for c in v) for v in V)
+    print(f"spiked goldberg GP(2,0): V={len(V)} F={len(F)} "
+          f"closed={closed} chi={chi} finite={finite}")
+    assert (len(F) == 240 and closed and chi == 2 and finite
+            and len(set(G)) == 42)
+
+    # rhombic hexecontahedron: 60 planar golden rhombi
+    V, F, G = build_modern(1.0, 1.0, quads=True)
+    ok_planar = ok_golden = True
+    for f in F:
+        P = np.array([V[i] for i in f])
+        n = np.cross(P[1] - P[0], P[2] - P[0])
+        n /= np.linalg.norm(n)
+        if abs(np.dot(P[3] - P[0], n)) > 1e-9:
+            ok_planar = False
+        d1 = np.linalg.norm(P[2] - P[0])
+        d2 = np.linalg.norm(P[3] - P[1])
+        ratio = max(d1, d2) / min(d1, d2)
+        if abs(ratio - PHI) > 1e-9:
+            ok_golden = False
+    cnt = edge_face_counts(F)
+    closed = all(c == 2 for c in cnt.values())
+    chi = len(V) - len(cnt) + len(F)
+    print(f"rhombic hexecontahedron: {len(F)} rhombi, "
+          f"planar={ok_planar} golden={ok_golden} "
+          f"closed={closed} chi={chi}")
+    assert (len(F) == 60 and ok_planar and ok_golden
+            and closed and chi == 2)
+
+    # folded hexecontahedron: 120 triangles, closed, chi = 2
+    V, F, G = build_modern(1.0, 1.05)
+    cnt = edge_face_counts(F)
+    closed = all(c == 2 for c in cnt.values())
+    chi = len(V) - len(cnt) + len(F)
+    print(f"folded hexecontahedron: {len(F)} triangles, "
+          f"closed={closed} chi={chi}")
+    assert len(F) == 120 and closed and chi == 2
+
+    # hyperbolic solids: closed, chi = 2, spikes reach `spike`
+    for sd in ('TETRA', 'CUBE', 'OCTA', 'DODECA', 'ICOSA'):
+        V, F, G = build_hyper(sd, spike=1.5, res=6)
         cnt = edge_face_counts(F)
         closed = all(c == 2 for c in cnt.values())
         chi = len(V) - len(cnt) + len(F)
-        finite = all(all(math.isfinite(c) for c in v) for v in V)
-        print(f"spiked goldberg GP(2,0): V={len(V)} F={len(F)} "
-              f"closed={closed} chi={chi} finite={finite}")
-        assert (len(F) == 240 and closed and chi == 2 and finite
-                and len(set(G)) == 42)
-
-        # rhombic hexecontahedron: 60 planar golden rhombi
-        V, F, G = build_modern(1.0, 1.0, quads=True)
-        ok_planar = ok_golden = True
-        for f in F:
-            P = np.array([V[i] for i in f])
-            n = np.cross(P[1] - P[0], P[2] - P[0])
-            n /= np.linalg.norm(n)
-            if abs(np.dot(P[3] - P[0], n)) > 1e-9:
-                ok_planar = False
-            d1 = np.linalg.norm(P[2] - P[0])
-            d2 = np.linalg.norm(P[3] - P[1])
-            ratio = max(d1, d2) / min(d1, d2)
-            if abs(ratio - PHI) > 1e-9:
-                ok_golden = False
-        cnt = edge_face_counts(F)
-        closed = all(c == 2 for c in cnt.values())
-        chi = len(V) - len(cnt) + len(F)
-        print(f"rhombic hexecontahedron: {len(F)} rhombi, "
-              f"planar={ok_planar} golden={ok_golden} "
-              f"closed={closed} chi={chi}")
-        assert (len(F) == 60 and ok_planar and ok_golden
-                and closed and chi == 2)
-
-        # folded hexecontahedron: 120 triangles, closed, chi = 2
-        V, F, G = build_modern(1.0, 1.05)
-        cnt = edge_face_counts(F)
-        closed = all(c == 2 for c in cnt.values())
-        chi = len(V) - len(cnt) + len(F)
-        print(f"folded hexecontahedron: {len(F)} triangles, "
-              f"closed={closed} chi={chi}")
-        assert len(F) == 120 and closed and chi == 2
-
-        # hyperbolic solids: closed, chi = 2, spikes reach `spike`
-        for sd in ('TETRA', 'CUBE', 'OCTA', 'DODECA', 'ICOSA'):
-            V, F, G = build_hyper(sd, spike=1.5, res=6)
-            cnt = edge_face_counts(F)
-            closed = all(c == 2 for c in cnt.values())
-            chi = len(V) - len(cnt) + len(F)
-            rmax = max(np.linalg.norm(v) for v in V)
-            print(f"hyperbolic {sd}: F={len(F)} closed={closed} "
-                  f"chi={chi} rmax={rmax:.6f}")
-            assert closed and chi == 2 and abs(rmax - 1.5) < 1e-6
-        print("spikey standalone tests passed")
+        rmax = max(np.linalg.norm(v) for v in V)
+        print(f"hyperbolic {sd}: F={len(F)} closed={closed} "
+              f"chi={chi} rmax={rmax:.6f}")
+        assert closed and chi == 2 and abs(rmax - 1.5) < 1e-6
+    print("spikey standalone tests passed")

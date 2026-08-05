@@ -1493,7 +1493,3 @@ def _run_selftest():
           and min_ok and rib_ok and fit_ok)
     print("RESULT:", "OK" if ok else "BAD")
     return ok
-
-
-if __name__ == "__main__":
-    _run_selftest()

@@ -1314,10 +1314,3 @@ def _selftest():
         assert md in _RULED
     print(f"curves: {len(segs)} segments -> V={len(ev)} E={len(ee)} OK")
     print("RESULT: OK")
-
-
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        _selftest()

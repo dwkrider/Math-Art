@@ -189,9 +189,6 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_waterman_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for root in (1, 2, 5, 10, 100):
-            print(f"W{root}: {len(fcc_points(root))} lattice points")
+def _selftest():
+    for root in (1, 2, 5, 10, 100):
+        print(f"W{root}: {len(fcc_points(root))} lattice points")

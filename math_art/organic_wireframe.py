@@ -132,9 +132,6 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(OBJECT_OT_organic_wireframe)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        print("organic wireframe style: modifier stack only; run "
-              "the extension test suite for coverage")
+def _selftest():
+    print("organic wireframe style: modifier stack only; run "
+          "the extension test suite for coverage")

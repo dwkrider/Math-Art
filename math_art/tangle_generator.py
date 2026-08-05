@@ -408,33 +408,31 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_tangle_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        def _check(v, f):
-            """closed 2-manifold with outward normals?"""
-            from collections import Counter
-            cnt = Counter()
-            for fc_ in f:
-                for i in range(len(fc_)):
-                    a, b = fc_[i], fc_[(i + 1) % len(fc_)]
-                    cnt[(min(a, b), max(a, b))] += 1
-            manifold = all(c == 2 for c in cnt.values())
-            vol = 0.0
-            for fc_ in f:
-                for i in range(1, len(fc_) - 1):
-                    p, q, r = v[fc_[0]], v[fc_[i]], v[fc_[i + 1]]
-                    vol += (p[0] * (q[1] * r[2] - q[2] * r[1])
-                            - p[1] * (q[0] * r[2] - q[2] * r[0])
-                            + p[2] * (q[0] * r[1] - q[1] * r[0])) / 6
-            return manifold, vol
-        for kind, n in (('T2', 2), ('T5', 5), ('T10', 10), ('C5', 5),
-                        ('O5', 5), ('C3', 3)):
-            for style in ('FACES', 'EDGES'):
-                v, f, nc, fc = build_tangle(kind, style)
-                man, vol = _check(v, f)
-                ok = nc == n and man and vol > 0
-                print(f"{kind:4s}/{style}: comps={nc}({n}) "
-                      f"manifold={man} vol={vol:+.3f} "
-                      f"{'OK' if ok else 'BAD'}")
+def _selftest():
+    def _check(v, f):
+        """closed 2-manifold with outward normals?"""
+        from collections import Counter
+        cnt = Counter()
+        for fc_ in f:
+            for i in range(len(fc_)):
+                a, b = fc_[i], fc_[(i + 1) % len(fc_)]
+                cnt[(min(a, b), max(a, b))] += 1
+        manifold = all(c == 2 for c in cnt.values())
+        vol = 0.0
+        for fc_ in f:
+            for i in range(1, len(fc_) - 1):
+                p, q, r = v[fc_[0]], v[fc_[i]], v[fc_[i + 1]]
+                vol += (p[0] * (q[1] * r[2] - q[2] * r[1])
+                        - p[1] * (q[0] * r[2] - q[2] * r[0])
+                        + p[2] * (q[0] * r[1] - q[1] * r[0])) / 6
+        return manifold, vol
+    for kind, n in (('T2', 2), ('T5', 5), ('T10', 10), ('C5', 5),
+                    ('O5', 5), ('C3', 3)):
+        for style in ('FACES', 'EDGES'):
+            v, f, nc, fc = build_tangle(kind, style)
+            man, vol = _check(v, f)
+            ok = nc == n and man and vol > 0
+            print(f"{kind:4s}/{style}: comps={nc}({n}) "
+                  f"manifold={man} vol={vol:+.3f} "
+                  f"{'OK' if ok else 'BAD'}")
+            assert ok

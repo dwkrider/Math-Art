@@ -1276,28 +1276,25 @@ if _IN_BLENDER:
             bpy.utils.unregister_class(c)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # standalone smoke test of the geometry core
-        for name, kw in [("defaults", {}),
-                         ("trefoil", PRESETS['TREFOIL'][1]),
-                         ("heptoroid", PRESETS['HEPTOROID'][1]),
-                         ("open arc b1", dict(branches=1, storeys=4, height=1.9,
-                                              flange=1.5, thickness=0.08,
-                                              rim_bulge=1.5, warp=270,
-                                              twist=885, detail=6)),
-                         ("open holes", dict(branches=6, storeys=4, height=1.0,
-                                             flange=0.8, thickness=0.02,
-                                             rim_bulge=0.0, warp=360,
-                                             twist=180, azimuth=45, detail=7)),
-                         ("thin sheet", dict(thickness=0.0, warp=360,
-                                             storeys=4))]:
-            p = Params(**kw)
-            v, f = generate_sculpture(p)
-            xs = [q[0] for q in v]; ys = [q[1] for q in v]; zs = [q[2] for q in v]
-            print(f"{name:12s}: verts={len(v):7d} faces={len(f):7d} "
-                  f"closes={ring_closes(p)} "
-                  f"bbox=({min(xs):.2f}..{max(xs):.2f}, "
-                  f"{min(ys):.2f}..{max(ys):.2f}, {min(zs):.2f}..{max(zs):.2f})")
+def _selftest():
+    # standalone smoke test of the geometry core
+    for name, kw in [("defaults", {}),
+                     ("trefoil", PRESETS['TREFOIL'][1]),
+                     ("heptoroid", PRESETS['HEPTOROID'][1]),
+                     ("open arc b1", dict(branches=1, storeys=4, height=1.9,
+                                          flange=1.5, thickness=0.08,
+                                          rim_bulge=1.5, warp=270,
+                                          twist=885, detail=6)),
+                     ("open holes", dict(branches=6, storeys=4, height=1.0,
+                                         flange=0.8, thickness=0.02,
+                                         rim_bulge=0.0, warp=360,
+                                         twist=180, azimuth=45, detail=7)),
+                     ("thin sheet", dict(thickness=0.0, warp=360,
+                                         storeys=4))]:
+        p = Params(**kw)
+        v, f = generate_sculpture(p)
+        xs = [q[0] for q in v]; ys = [q[1] for q in v]; zs = [q[2] for q in v]
+        print(f"{name:12s}: verts={len(v):7d} faces={len(f):7d} "
+              f"closes={ring_closes(p)} "
+              f"bbox=({min(xs):.2f}..{max(xs):.2f}, "
+              f"{min(ys):.2f}..{max(ys):.2f}, {min(zs):.2f}..{max(zs):.2f})")

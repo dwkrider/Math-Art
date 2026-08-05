@@ -378,7 +378,7 @@ def _vertex_types(polys):
 _ORDER = [k for k, _, _ in TILING_ITEMS]
 
 
-if __name__ == "__main__":
+def _selftest():
     bad = []
     for name in _ORDER:
         polys, _ = build_patch(name, 6, 6)
@@ -392,3 +392,4 @@ if __name__ == "__main__":
         if not ok:
             bad.append(name)
     print("RESULT:", "OK" if not bad else "BAD %s" % bad)
+    assert not bad
