@@ -79,18 +79,12 @@ PACKINGS = {
         dirs=[(0, 0, 1), (1, 0, 0), (0, 1, 0)],
         offsets=[(0.0, 0.0, 0.0), (0.0, 0.5, 0.0), (0.5, 0.0, 0.5)],
         lattice='PRIM', native=4),
-    'HEMISTIX': dict(
-        label="Hemistix - square rods, 3 directions (BCC)",
-        dirs=[(0, 0, 1), (0, 0, 1), (1, 0, 0),
-              (1, 0, 0), (0, 1, 0), (0, 1, 0)],
-        offsets=[(0.0, 0.0, 0.0), (5 / 8, 5 / 8, 0.0),
-                 (0.0, 0.5, 0.0), (0.0, 7 / 8, 0.25),
-                 (0.5, 0.0, 0.5), (0.75, 0.0, 1 / 8)],
-        # the six representative rods already realise the body-centred
-        # symmetry, so they tile on the PRIMITIVE lattice; adding the
-        # (1/2,1/2,1/2) centring on top makes perpendicular families
-        # cross.
-        lattice='PRIM', native=4),
+    # NB: hemistix (Conway's BCC square-rod packing, O'Keeffe's +Pi) is
+    # deliberately omitted -- the published 6-rod coordinates I have
+    # either cross under the (1/2,1/2,1/2) centring or, on the primitive
+    # lattice, give an implausibly sparse (~10% fill) arrangement, so
+    # neither is the true dense packing. Restore it once verified
+    # coordinates are in hand (see BACKLOG).
     'HEXASTIX': dict(
         label="Hexastix - hexagonal rods, 4 directions (pencils)",
         dirs=list(_D111),
@@ -467,7 +461,7 @@ if _IN_BLENDER:
         packing: EnumProperty(
             name="Packing",
             items=[(k, PACKINGS[k]['label'], "")
-                   for k in ('TETRASTIX', 'HEMISTIX', 'HEXASTIX',
+                   for k in ('TETRASTIX', 'HEXASTIX',
                              'TRISTIX', 'SIGMA')],
             default='HEXASTIX')
         cross_section: EnumProperty(
