@@ -301,6 +301,8 @@ OPS = [
     ("spacefill", lambda: bpy.ops.mesh.spacefill_add(kind='OCTET')),
     ("spacefill spiral3", lambda: bpy.ops.mesh.spacefill_add(
         kind='SPIRAL3', nx=2, ny=2, nz=2)),
+    ("spacefill obtetrahedrille", lambda: bpy.ops.mesh.spacefill_add(
+        kind='OBTET', nx=2, ny=2, nz=2)),
     ("interlocking tetra",
      lambda: bpy.ops.mesh.interlocking_add(family='TETRA')),
     ("interlocking escher osteomorphic",
