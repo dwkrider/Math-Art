@@ -61,6 +61,7 @@ _MODULE_NAMES = [
     'hyperbolic_honeycomb_generator',
     'algebraic_surface_generator',
     'spacefill_generator',
+    'interlocking_generator',
     'link_generator',
     'topological_surface_generator',
     'hyperbolic_tiling_generator',
@@ -183,6 +184,7 @@ class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
         _op(lay, "mesh.polytope4d_add", icon='MESH_CUBE')
         _op(lay, "mesh.hyperbolic_honeycomb_add", icon='META_BALL')
         _op(lay, "mesh.spacefill_add", icon='SNAP_VOLUME')
+        _op(lay, "mesh.interlocking_add", icon='MOD_BUILD')
         _op(lay, "mesh.geodesic_add", icon='MESH_UVSPHERE')
         _op(lay, "mesh.spiked_polyhedron_add", icon='LIGHT_SUN')
 
