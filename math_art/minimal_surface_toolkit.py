@@ -2854,218 +2854,216 @@ if _IN_BLENDER:
             bpy.utils.unregister_class(c)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # standalone smoke tests of the numeric core
-        ok = True
-        # Weierstrass engine invariants on the square torus
-        L = _SQUARE
-        e1 = L.wp(0.5).real
-        zt = np.array([0.2 + 0.3j, 0.37 + 0.11j, 0.6 + 0.44j])
-        resid = np.max(np.abs(L.wp_prime(zt) ** 2
-                              - (4 * L.wp(zt) ** 3 - 4 * e1 ** 2 * L.wp(zt))))
-        print(f"weierstrass: e1={e1:.5f} (exp 6.87519) g2={4*e1**2:.4f} "
-              f"(exp 189.0727) |P'^2-(4P^3-g2 P)|={resid:.2e} "
-              f"{'OK' if abs(e1-6.87519) < 1e-3 and resid < 1e-8 else 'FAIL'}")
-        ok &= abs(e1 - 6.87519) < 1e-3 and resid < 1e-8
-        for kind in PARAMETRIC:
-            th = (math.pi / 4
-                  if kind in ANGLE_PARAM and kind not in COUNT_PARAM
-                  else 0.0)
-            n = {'KNOID': 5, 'COSTA_HM': 1, 'SCHERK_TOWER': 3}.get(kind, 1)
-            V, Q = build_parametric(kind, 60, 60, n, 1.2, 1.0, th)
-            finite = bool(np.all(np.isfinite(V)))
-            lo, hi = V.min(0), V.max(0)
-            cen = float(np.max(np.abs(0.5 * (lo + hi))))
-            ext = float(np.max(hi - lo))
-            good = (finite and len(Q) > 100 and cen < 1e-6
-                    and abs(ext - 2.0) < 1e-6)
-            ok &= good
-            print(f"parametric {kind:10s}: {len(V):5d} verts {len(Q):5d} "
-                  f"quads  fit[max|c|={cen:.1e} ext={ext:.4f}] "
-                  f"{'OK' if good else 'FAIL'}")
-        # UV gate: every parametric surface carries a finite, in-range,
-        # non-collapsed conformal UV chart (per-corner, [0, 1])
-        for kind in PARAMETRIC:
-            n = {'KNOID': 5, 'COSTA_HM': 1, 'SCHERK_TOWER': 3}.get(kind, 1)
-            out = build_parametric(kind, 48, 48, n, 1.2, 1.0,
-                                   with_uv=True)
-            cuv = out[2] if len(out) > 2 else None
-            if cuv is None:
-                print(f"uv {kind:15s}: NO UV  FAIL")
-                ok = False
-                continue
-            finite = bool(np.all(np.isfinite(cuv)))
-            inrange = (cuv.min() >= -1e-6) and (cuv.max() <= 1.0 + 1e-6)
-            span = np.ptp(cuv, axis=0)
-            good = finite and inrange and bool(np.all(span > 0.3))
-            ok &= good
-            print(f"uv {kind:15s}: n={len(cuv):6d} "
-                  f"range[{cuv.min():.3f},{cuv.max():.3f}] "
-                  f"span=({span[0]:.2f},{span[1]:.2f}) "
-                  f"{'OK' if good else 'FAIL'}")
-        # Costa-Hoffman-Meeks: modulus table + Euler characteristic gate
-        # (genus k, 3 ends removed -> chi = 2 - 2k - 3 = -(2k+1))
-        cref = {1: 0.955978, 2: 0.988070, 3: 0.995117, 4: 0.997535}
-        cok = all(abs(_zoo.chm_modulus(kk) - cref[kk]) < 1e-5
-                  for kk in cref)
-        print(f"CHM modulus: "
-              + " ".join(f"c({kk})={_zoo.chm_modulus(kk):.5f}"
-                         for kk in cref)
-              + f"  {'OK' if cok else 'FAIL'}")
-        ok &= cok
-        for kk in (1, 2, 3):
-            Vc, Qc = build_parametric('COSTA_HM', 48, 48, kk, 1.2, 1.0)
-            ec = {}
-            for f in Qc:
-                for t in range(len(f)):
-                    a, b = f[t], f[(t + 1) % len(f)]
-                    e = (a, b) if a < b else (b, a)
-                    ec[e] = ec.get(e, 0) + 1
-            chi = len(Vc) - len(ec) + len(Qc)
-            want = -(2 * kk + 1)
-            good = chi == want and np.all(np.isfinite(Vc))
-            ok &= good
-            print(f"CHM genus {kk}: verts={len(Vc)} faces={len(Qc)} "
-                  f"chi={chi} (want {want}) {'OK' if good else 'FAIL'}")
-        # k-noid vs closed-form trinoid (n=3): both are minimal with 3
-        # ends; compare 3-fold symmetry of the numeric build
-        Vn, _ = build_parametric('KNOID', 72, 72, 3, 0.9, 1.0)
-        ang = np.arctan2(Vn[:, 1], Vn[:, 0])
-        print(f"k-noid n=3: verts={len(Vn)} z-range="
-              f"[{Vn[:,2].min():.3f},{Vn[:,2].max():.3f}] "
-              f"{'OK' if np.all(np.isfinite(Vn)) else 'FAIL'}")
-        # ---- TPMS gates (incl. tier-2 nodal rows) ----------------------
-        def _t2_grad(field, P, h=1e-4):
-            g = np.empty_like(P)
-            for a in range(3):
-                d = np.zeros(3)
-                d[a] = h
-                g[:, a] = (field(*(P + d).T) - field(*(P - d).T)) / (2 * h)
-            return g
-
-        def _t2_ncomp(nv, T, frac=0.05):
-            """number of connected components holding >= frac of tris"""
-            parent = np.arange(nv)
-
-            def find(i):
-                while parent[i] != i:
-                    parent[i] = parent[parent[i]]
-                    i = parent[i]
-                return i
-            for a, b, c in T:
-                ra, rb, rc = find(a), find(b), find(c)
-                parent[rb] = ra
-                parent[find(rc)] = find(ra)
-            roots = np.array([find(t[0]) for t in T])
-            _, counts = np.unique(roots, return_counts=True)
-            return int(np.sum(counts >= frac * len(T)))
-
-        # per-row field symmetry spot checks: key -> (map, sign);
-        # F(map(p)) == sign * F(p) must hold identically
-        _t2_cyc = (lambda P: P[:, [1, 2, 0]], 1.0)
-        _t2_swap = (lambda P: P[:, [1, 0, 2]], 1.0)
-        _t2_sym = {
-            'OCTO': _t2_swap, 'KSURF': _t2_swap, 'FRD2': _t2_swap,
-            'FK_S': _t2_cyc, 'FK_CS': _t2_cyc, 'FK_Y': _t2_cyc,
-            'FK_PMY': _t2_cyc, 'FK_CPMY': _t2_cyc, 'FK_CY': _t2_cyc,
-            'CG': _t2_cyc, 'GPRIME': _t2_cyc, 'DPRIME': _t2_cyc,
-            'CI2Y': _t2_cyc,
-            'CD': (lambda P: P + math.pi, -1.0),
-        }
-        _t2_new = tuple(_t2_sym)
-        rng = np.random.default_rng(7)
-        for kind in TPMS:
-            V, T = build_tpms(kind, 1, 20, 2.0)
-            lo, hi = V.min(0), V.max(0)
-            cen = float(np.max(np.abs(0.5 * (lo + hi))))
-            ext = hi - lo
-            finite = bool(np.all(np.isfinite(V)))
-            triply = TPMS[kind][2]
-            good = finite and len(T) > 200
-            if triply:
-                good &= (cen < 0.15 and float(ext.min()) > 1.7
-                         and float(ext.max()) < 2.0 + 1e-6)
-            extra = ""
-            if kind in _t2_new:
-                field = TPMS[kind][1]
-                off = tpms2_DEFAULT_OFFSET.get(kind, 0.0)
-                f0 = (field if off == 0.0
-                      else (lambda X, Y, Z: field(X, Y, Z) - off))
-                # nonzero field gradient on the level set (no flats)
-                P = V[rng.choice(len(V), min(400, len(V)),
-                                 replace=False)] * (TAU / 2.0)
-                G = np.linalg.norm(_t2_grad(f0, P), axis=1)
-                gok = float(G.min()) > 0.05 * float(np.median(G))
-                # symmetry op maps the field to +-itself
-                op, sgn = _t2_sym[kind]
-                Q = rng.uniform(-math.pi, math.pi, (500, 3))
-                Fq = field(*Q.T)
-                serr = float(np.max(np.abs(field(*op(Q).T) - sgn * Fq)))
-                sok = serr < 1e-9 * max(1.0, float(np.max(np.abs(Fq))))
-                # one macro connected component on a 2^3 block
-                V2, T2 = build_tpms(kind, 2, 14, 2.0)
-                nc = _t2_ncomp(len(V2), T2)
-                cok = nc == 1
-                good &= gok and sok and cok
-                extra = (f" grad[min/med={float(G.min()/np.median(G)):.3f}"
-                         f" {'OK' if gok else 'FAIL'}]"
-                         f" sym[{'OK' if sok else f'FAIL {serr:.2e}'}]"
-                         f" comp[{nc} {'OK' if cok else 'FAIL'}]")
-            ok &= good
-            print(f"tpms {kind:9s}: {len(V):6d} verts {len(T):6d} tris "
-                  f"fit[|c|={cen:.3f} ext={ext.min():.2f}-{ext.max():.2f}] "
-                  f"{'OK' if good else 'FAIL'}{extra}")
-        # level-offset path: the marched level actually moves to c
-        V, T = build_tpms('P', 1, 24, 2.0, offset=0.4)
-        Fv = _f_p(*(V * (TAU / 2.0)).T)
-        lerr = float(np.max(np.abs(Fv - 0.4)))
-        good = len(T) > 200 and lerr < 0.05
+def _selftest():
+    # standalone smoke tests of the numeric core
+    ok = True
+    # Weierstrass engine invariants on the square torus
+    L = _SQUARE
+    e1 = L.wp(0.5).real
+    zt = np.array([0.2 + 0.3j, 0.37 + 0.11j, 0.6 + 0.44j])
+    resid = np.max(np.abs(L.wp_prime(zt) ** 2
+                          - (4 * L.wp(zt) ** 3 - 4 * e1 ** 2 * L.wp(zt))))
+    print(f"weierstrass: e1={e1:.5f} (exp 6.87519) g2={4*e1**2:.4f} "
+          f"(exp 189.0727) |P'^2-(4P^3-g2 P)|={resid:.2e} "
+          f"{'OK' if abs(e1-6.87519) < 1e-3 and resid < 1e-8 else 'FAIL'}")
+    ok &= abs(e1 - 6.87519) < 1e-3 and resid < 1e-8
+    for kind in PARAMETRIC:
+        th = (math.pi / 4
+              if kind in ANGLE_PARAM and kind not in COUNT_PARAM
+              else 0.0)
+        n = {'KNOID': 5, 'COSTA_HM': 1, 'SCHERK_TOWER': 3}.get(kind, 1)
+        V, Q = build_parametric(kind, 60, 60, n, 1.2, 1.0, th)
+        finite = bool(np.all(np.isfinite(V)))
+        lo, hi = V.min(0), V.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = float(np.max(hi - lo))
+        good = (finite and len(Q) > 100 and cen < 1e-6
+                and abs(ext - 2.0) < 1e-6)
         ok &= good
-        print(f"tpms offset  P c=0.4: level err {lerr:.4f} "
+        print(f"parametric {kind:10s}: {len(V):5d} verts {len(Q):5d} "
+              f"quads  fit[max|c|={cen:.1e} ext={ext:.4f}] "
               f"{'OK' if good else 'FAIL'}")
-        # tetragonal aspect path: cell tiles at the true c/a ratio
-        V, T = build_tpms('D', 1, 20, 2.0, aspect=1.6)
-        ext = V.max(0) - V.min(0)
-        ratio = float(ext[2] / ext[0])
-        good = len(T) > 200 and abs(ratio - 1.6) < 0.05
+    # UV gate: every parametric surface carries a finite, in-range,
+    # non-collapsed conformal UV chart (per-corner, [0, 1])
+    for kind in PARAMETRIC:
+        n = {'KNOID': 5, 'COSTA_HM': 1, 'SCHERK_TOWER': 3}.get(kind, 1)
+        out = build_parametric(kind, 48, 48, n, 1.2, 1.0,
+                               with_uv=True)
+        cuv = out[2] if len(out) > 2 else None
+        if cuv is None:
+            print(f"uv {kind:15s}: NO UV  FAIL")
+            ok = False
+            continue
+        finite = bool(np.all(np.isfinite(cuv)))
+        inrange = (cuv.min() >= -1e-6) and (cuv.max() <= 1.0 + 1e-6)
+        span = np.ptp(cuv, axis=0)
+        good = finite and inrange and bool(np.all(span > 0.3))
         ok &= good
-        print(f"tpms aspect  D c/a=1.6: z/x extent {ratio:.3f} "
+        print(f"uv {kind:15s}: n={len(cuv):6d} "
+              f"range[{cuv.min():.3f},{cuv.max():.3f}] "
+              f"span=({span[0]:.2f},{span[1]:.2f}) "
               f"{'OK' if good else 'FAIL'}")
-        # hexagonal-lattice infrastructure: march P on a hex cell
-        tpms2_LATTICE['P'] = TPMS2_HEX_LATTICE
-        try:
-            V, T = build_tpms('P', 1, 20, 2.0)
-        finally:
-            del tpms2_LATTICE['P']
-        # analytic extents of the hex-sheared P cell: the zero set
-        # reaches x = +-1.25 pi and y = +-(sqrt3/2) pi in cell coords
-        ext = V.max(0) - V.min(0)
-        want = (2.5, math.sqrt(3.0), 2.0)
-        good = (len(T) > 200 and bool(np.all(np.isfinite(V)))
-                and all(abs(float(e) - w) < 0.1
-                        for e, w in zip(ext, want)))
+    # Costa-Hoffman-Meeks: modulus table + Euler characteristic gate
+    # (genus k, 3 ends removed -> chi = 2 - 2k - 3 = -(2k+1))
+    cref = {1: 0.955978, 2: 0.988070, 3: 0.995117, 4: 0.997535}
+    cok = all(abs(_zoo.chm_modulus(kk) - cref[kk]) < 1e-5
+              for kk in cref)
+    print(f"CHM modulus: "
+          + " ".join(f"c({kk})={_zoo.chm_modulus(kk):.5f}"
+                     for kk in cref)
+          + f"  {'OK' if cok else 'FAIL'}")
+    ok &= cok
+    for kk in (1, 2, 3):
+        Vc, Qc = build_parametric('COSTA_HM', 48, 48, kk, 1.2, 1.0)
+        ec = {}
+        for f in Qc:
+            for t in range(len(f)):
+                a, b = f[t], f[(t + 1) % len(f)]
+                e = (a, b) if a < b else (b, a)
+                ec[e] = ec.get(e, 0) + 1
+        chi = len(Vc) - len(ec) + len(Qc)
+        want = -(2 * kk + 1)
+        good = chi == want and np.all(np.isfinite(Vc))
         ok &= good
-        print(f"tpms hexcell P: extents ({ext[0]:.2f},{ext[1]:.2f},"
-              f"{ext[2]:.2f}) {'OK' if good else 'FAIL'}")
-        # flat-disk validation: minimal surface on a planar circle is flat
-        t = np.linspace(0, TAU, 96, endpoint=False)
-        circle = np.stack([np.cos(t), np.sin(t), np.zeros_like(t)], axis=1)
-        V, quads, fixed = build_disk_grid(circle, 12)
-        V[~fixed] += np.random.default_rng(1).normal(0, 0.1, V[~fixed].shape)
-        T = _quads_to_tris(quads)
-        minimize_area(V, T, fixed)
-        print("flat disk: max|z| =", float(np.max(np.abs(V[:, 2]))),
-              " area =", mesh_area(V, T), " (pi =", math.pi, ")")
-        # catenoid validation: two rings radius 1 at z = +/-0.4
-        z0 = 0.4
-        ringA = np.stack([np.cos(t), np.sin(t), np.full_like(t, z0)], axis=1)
-        ringB = np.stack([np.cos(t), np.sin(t), np.full_like(t, -z0)], axis=1)
-        V, quads, fixed = build_annulus_grid(ringA, ringB, 20)
-        T = _quads_to_tris(quads)
-        minimize_area(V, T, fixed)
-        waist = np.min(np.linalg.norm(V[:, :2], axis=1))
-        print("catenoid: waist =", float(waist), "(analytic ~0.9098)")
-        print("\nRESULT:", "ALL OK" if ok else "FAILURES in parametric core")
+        print(f"CHM genus {kk}: verts={len(Vc)} faces={len(Qc)} "
+              f"chi={chi} (want {want}) {'OK' if good else 'FAIL'}")
+    # k-noid vs closed-form trinoid (n=3): both are minimal with 3
+    # ends; compare 3-fold symmetry of the numeric build
+    Vn, _ = build_parametric('KNOID', 72, 72, 3, 0.9, 1.0)
+    ang = np.arctan2(Vn[:, 1], Vn[:, 0])
+    print(f"k-noid n=3: verts={len(Vn)} z-range="
+          f"[{Vn[:,2].min():.3f},{Vn[:,2].max():.3f}] "
+          f"{'OK' if np.all(np.isfinite(Vn)) else 'FAIL'}")
+    # ---- TPMS gates (incl. tier-2 nodal rows) ----------------------
+    def _t2_grad(field, P, h=1e-4):
+        g = np.empty_like(P)
+        for a in range(3):
+            d = np.zeros(3)
+            d[a] = h
+            g[:, a] = (field(*(P + d).T) - field(*(P - d).T)) / (2 * h)
+        return g
+
+    def _t2_ncomp(nv, T, frac=0.05):
+        """number of connected components holding >= frac of tris"""
+        parent = np.arange(nv)
+
+        def find(i):
+            while parent[i] != i:
+                parent[i] = parent[parent[i]]
+                i = parent[i]
+            return i
+        for a, b, c in T:
+            ra, rb, rc = find(a), find(b), find(c)
+            parent[rb] = ra
+            parent[find(rc)] = find(ra)
+        roots = np.array([find(t[0]) for t in T])
+        _, counts = np.unique(roots, return_counts=True)
+        return int(np.sum(counts >= frac * len(T)))
+
+    # per-row field symmetry spot checks: key -> (map, sign);
+    # F(map(p)) == sign * F(p) must hold identically
+    _t2_cyc = (lambda P: P[:, [1, 2, 0]], 1.0)
+    _t2_swap = (lambda P: P[:, [1, 0, 2]], 1.0)
+    _t2_sym = {
+        'OCTO': _t2_swap, 'KSURF': _t2_swap, 'FRD2': _t2_swap,
+        'FK_S': _t2_cyc, 'FK_CS': _t2_cyc, 'FK_Y': _t2_cyc,
+        'FK_PMY': _t2_cyc, 'FK_CPMY': _t2_cyc, 'FK_CY': _t2_cyc,
+        'CG': _t2_cyc, 'GPRIME': _t2_cyc, 'DPRIME': _t2_cyc,
+        'CI2Y': _t2_cyc,
+        'CD': (lambda P: P + math.pi, -1.0),
+    }
+    _t2_new = tuple(_t2_sym)
+    rng = np.random.default_rng(7)
+    for kind in TPMS:
+        V, T = build_tpms(kind, 1, 20, 2.0)
+        lo, hi = V.min(0), V.max(0)
+        cen = float(np.max(np.abs(0.5 * (lo + hi))))
+        ext = hi - lo
+        finite = bool(np.all(np.isfinite(V)))
+        triply = TPMS[kind][2]
+        good = finite and len(T) > 200
+        if triply:
+            good &= (cen < 0.15 and float(ext.min()) > 1.7
+                     and float(ext.max()) < 2.0 + 1e-6)
+        extra = ""
+        if kind in _t2_new:
+            field = TPMS[kind][1]
+            off = tpms2_DEFAULT_OFFSET.get(kind, 0.0)
+            f0 = (field if off == 0.0
+                  else (lambda X, Y, Z: field(X, Y, Z) - off))
+            # nonzero field gradient on the level set (no flats)
+            P = V[rng.choice(len(V), min(400, len(V)),
+                             replace=False)] * (TAU / 2.0)
+            G = np.linalg.norm(_t2_grad(f0, P), axis=1)
+            gok = float(G.min()) > 0.05 * float(np.median(G))
+            # symmetry op maps the field to +-itself
+            op, sgn = _t2_sym[kind]
+            Q = rng.uniform(-math.pi, math.pi, (500, 3))
+            Fq = field(*Q.T)
+            serr = float(np.max(np.abs(field(*op(Q).T) - sgn * Fq)))
+            sok = serr < 1e-9 * max(1.0, float(np.max(np.abs(Fq))))
+            # one macro connected component on a 2^3 block
+            V2, T2 = build_tpms(kind, 2, 14, 2.0)
+            nc = _t2_ncomp(len(V2), T2)
+            cok = nc == 1
+            good &= gok and sok and cok
+            extra = (f" grad[min/med={float(G.min()/np.median(G)):.3f}"
+                     f" {'OK' if gok else 'FAIL'}]"
+                     f" sym[{'OK' if sok else f'FAIL {serr:.2e}'}]"
+                     f" comp[{nc} {'OK' if cok else 'FAIL'}]")
+        ok &= good
+        print(f"tpms {kind:9s}: {len(V):6d} verts {len(T):6d} tris "
+              f"fit[|c|={cen:.3f} ext={ext.min():.2f}-{ext.max():.2f}] "
+              f"{'OK' if good else 'FAIL'}{extra}")
+    # level-offset path: the marched level actually moves to c
+    V, T = build_tpms('P', 1, 24, 2.0, offset=0.4)
+    Fv = _f_p(*(V * (TAU / 2.0)).T)
+    lerr = float(np.max(np.abs(Fv - 0.4)))
+    good = len(T) > 200 and lerr < 0.05
+    ok &= good
+    print(f"tpms offset  P c=0.4: level err {lerr:.4f} "
+          f"{'OK' if good else 'FAIL'}")
+    # tetragonal aspect path: cell tiles at the true c/a ratio
+    V, T = build_tpms('D', 1, 20, 2.0, aspect=1.6)
+    ext = V.max(0) - V.min(0)
+    ratio = float(ext[2] / ext[0])
+    good = len(T) > 200 and abs(ratio - 1.6) < 0.05
+    ok &= good
+    print(f"tpms aspect  D c/a=1.6: z/x extent {ratio:.3f} "
+          f"{'OK' if good else 'FAIL'}")
+    # hexagonal-lattice infrastructure: march P on a hex cell
+    tpms2_LATTICE['P'] = TPMS2_HEX_LATTICE
+    try:
+        V, T = build_tpms('P', 1, 20, 2.0)
+    finally:
+        del tpms2_LATTICE['P']
+    # analytic extents of the hex-sheared P cell: the zero set
+    # reaches x = +-1.25 pi and y = +-(sqrt3/2) pi in cell coords
+    ext = V.max(0) - V.min(0)
+    want = (2.5, math.sqrt(3.0), 2.0)
+    good = (len(T) > 200 and bool(np.all(np.isfinite(V)))
+            and all(abs(float(e) - w) < 0.1
+                    for e, w in zip(ext, want)))
+    ok &= good
+    print(f"tpms hexcell P: extents ({ext[0]:.2f},{ext[1]:.2f},"
+          f"{ext[2]:.2f}) {'OK' if good else 'FAIL'}")
+    # flat-disk validation: minimal surface on a planar circle is flat
+    t = np.linspace(0, TAU, 96, endpoint=False)
+    circle = np.stack([np.cos(t), np.sin(t), np.zeros_like(t)], axis=1)
+    V, quads, fixed = build_disk_grid(circle, 12)
+    V[~fixed] += np.random.default_rng(1).normal(0, 0.1, V[~fixed].shape)
+    T = _quads_to_tris(quads)
+    minimize_area(V, T, fixed)
+    print("flat disk: max|z| =", float(np.max(np.abs(V[:, 2]))),
+          " area =", mesh_area(V, T), " (pi =", math.pi, ")")
+    # catenoid validation: two rings radius 1 at z = +/-0.4
+    z0 = 0.4
+    ringA = np.stack([np.cos(t), np.sin(t), np.full_like(t, z0)], axis=1)
+    ringB = np.stack([np.cos(t), np.sin(t), np.full_like(t, -z0)], axis=1)
+    V, quads, fixed = build_annulus_grid(ringA, ringB, 20)
+    T = _quads_to_tris(quads)
+    minimize_area(V, T, fixed)
+    waist = np.min(np.linalg.norm(V[:, :2], axis=1))
+    print("catenoid: waist =", float(waist), "(analytic ~0.9098)")
+    print("\nRESULT:", "ALL OK" if ok else "FAILURES in parametric core")
+    assert ok

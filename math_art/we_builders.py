@@ -9843,7 +9843,7 @@ def unregister():
     pass
 
 
-if __name__ == "__main__":
+def _selftest():
     # engine self-tests (numpy only)
     ok = True
     # period integral: winding integral of 1/z
@@ -11070,3 +11070,4 @@ if __name__ == "__main__":
           "Fischer-Koch/Freese (self-intersecting), Freese k=4 branch")
 
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in we_builders")
+    assert ok

@@ -300,37 +300,34 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_helical_surface_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        builds = [
-            ("hyperbolic helicoid",
-             lambda: build_hyperbolic_helicoid(res=48)),
-            ("seashell", lambda: build_seashell(res=48)),
-            ("corkscrew", lambda: build_corkscrew(res=48)),
-        ]
-        for label, fn in builds:
-            verts, faces = fn()
-            assert len(verts) > 0 and len(faces) > 0
-            finite = all(all(math.isfinite(c) for c in v)
-                         for v in verts)
-            assert finite, f"{label}: non-finite coordinate"
-            valid = all(0 <= i < len(verts)
-                        for f in faces for i in f)
-            assert valid, f"{label}: face index out of range"
-            print(f"{label}: V={len(verts)} F={len(faces)} "
-                  f"finite={finite} indices ok={valid}")
-        # the seashell apex (last vertex, where the tube
-        # collapses) must be a clean finite point
-        verts, faces = build_seashell(res=48)
-        apex = verts[-1]
-        assert all(math.isfinite(c) for c in apex)
-        assert not any(math.isnan(c) for c in apex)
-        # every apex triangle references the single apex vertex
-        tris = [f for f in faces if len(f) == 3]
-        assert len(tris) == 48
-        assert all(f[2] == len(verts) - 1 for f in tris)
-        print(f"seashell apex {tuple(round(c, 6) for c in apex)}"
-              f" welded into {len(tris)} triangles")
-        print("helical standalone tests passed")
+def _selftest():
+    builds = [
+        ("hyperbolic helicoid",
+         lambda: build_hyperbolic_helicoid(res=48)),
+        ("seashell", lambda: build_seashell(res=48)),
+        ("corkscrew", lambda: build_corkscrew(res=48)),
+    ]
+    for label, fn in builds:
+        verts, faces = fn()
+        assert len(verts) > 0 and len(faces) > 0
+        finite = all(all(math.isfinite(c) for c in v)
+                     for v in verts)
+        assert finite, f"{label}: non-finite coordinate"
+        valid = all(0 <= i < len(verts)
+                    for f in faces for i in f)
+        assert valid, f"{label}: face index out of range"
+        print(f"{label}: V={len(verts)} F={len(faces)} "
+              f"finite={finite} indices ok={valid}")
+    # the seashell apex (last vertex, where the tube
+    # collapses) must be a clean finite point
+    verts, faces = build_seashell(res=48)
+    apex = verts[-1]
+    assert all(math.isfinite(c) for c in apex)
+    assert not any(math.isnan(c) for c in apex)
+    # every apex triangle references the single apex vertex
+    tris = [f for f in faces if len(f) == 3]
+    assert len(tris) == 48
+    assert all(f[2] == len(verts) - 1 for f in tris)
+    print(f"seashell apex {tuple(round(c, 6) for c in apex)}"
+          f" welded into {len(tris)} triangles")
+    print("helical standalone tests passed")

@@ -990,44 +990,44 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_conway_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        def euler(V, F):
-            E = set()
-            for f in F:
-                for i in range(len(f)):
-                    a, b = f[i], f[(i + 1) % len(f)]
-                    E.add((min(a, b), max(a, b)))
-            return len(V) - len(E) + len(F)
-        for s, expect in [("C", (8, 6)), ("dC", (6, 8)), ("aC", (12, 14)),
-                          ("tC", (24, 14)), ("tI", (60, 32)),
-                          ("sC", (24, 38)), ("gC", (38, 24)),
-                          ("cC", (32, 18)), ("eD", (60, 62)),
-                          ("jC", (14, 12)), ("mC", (26, 48)),
-                          ("bC", (48, 26)), ("kD", (32, 60)),
-                          ("pC", (32, 30)), ("pT", (16, 16)),
-                          ("pD", (80, 72)), ("dpC", (30, 32)),
-                          ("pdC", (30, 32)),
-                          ("P6", (12, 8)), ("A5", (10, 12)),
-                          ("dA5", (12, 10)), ("Y4", (5, 5))]:
-            V, F = apply_conway(s)
-            ok = (len(V), len(F)) == expect and euler(V, F) == 2
-            print(f"{s:6s}: V={len(V):3d} F={len(F):3d} chi=2:"
-                  f"{euler(V, F) == 2}  expect {expect} "
-                  f"{'OK' if ok else 'MISMATCH'}")
-        if np is not None:
-            V, F = apply_conway("sD")
-            V2 = canonicalize(V, F, iters=40)
-            print(f"sD canonicalized: V={len(V2)} F={len(F)} "
-                  f"chi2={euler(V2, F) == 2}")
-        bad = 0
-        for notation, cat, name in CATALOG:
-            V, F = apply_conway(notation)
-            if euler(V, F) != 2:
-                print(f"CATALOG MISMATCH {notation} ({name}) chi="
-                      f"{euler(V, F)}")
-                bad += 1
-        print(f"catalog: {len(CATALOG)} named solids, "
-              f"{'all chi=2 OK' if bad == 0 else str(bad) + ' BAD'}")
+def _selftest():
+    def euler(V, F):
+        E = set()
+        for f in F:
+            for i in range(len(f)):
+                a, b = f[i], f[(i + 1) % len(f)]
+                E.add((min(a, b), max(a, b)))
+        return len(V) - len(E) + len(F)
+    all_ok = True
+    for s, expect in [("C", (8, 6)), ("dC", (6, 8)), ("aC", (12, 14)),
+                      ("tC", (24, 14)), ("tI", (60, 32)),
+                      ("sC", (24, 38)), ("gC", (38, 24)),
+                      ("cC", (32, 18)), ("eD", (60, 62)),
+                      ("jC", (14, 12)), ("mC", (26, 48)),
+                      ("bC", (48, 26)), ("kD", (32, 60)),
+                      ("pC", (32, 30)), ("pT", (16, 16)),
+                      ("pD", (80, 72)), ("dpC", (30, 32)),
+                      ("pdC", (30, 32)),
+                      ("P6", (12, 8)), ("A5", (10, 12)),
+                      ("dA5", (12, 10)), ("Y4", (5, 5))]:
+        V, F = apply_conway(s)
+        ok = (len(V), len(F)) == expect and euler(V, F) == 2
+        all_ok = all_ok and ok
+        print(f"{s:6s}: V={len(V):3d} F={len(F):3d} chi=2:"
+              f"{euler(V, F) == 2}  expect {expect} "
+              f"{'OK' if ok else 'MISMATCH'}")
+    if np is not None:
+        V, F = apply_conway("sD")
+        V2 = canonicalize(V, F, iters=40)
+        print(f"sD canonicalized: V={len(V2)} F={len(F)} "
+              f"chi2={euler(V2, F) == 2}")
+    bad = 0
+    for notation, cat, name in CATALOG:
+        V, F = apply_conway(notation)
+        if euler(V, F) != 2:
+            print(f"CATALOG MISMATCH {notation} ({name}) chi="
+                  f"{euler(V, F)}")
+            bad += 1
+    print(f"catalog: {len(CATALOG)} named solids, "
+          f"{'all chi=2 OK' if bad == 0 else str(bad) + ' BAD'}")
+    assert all_ok and bad == 0

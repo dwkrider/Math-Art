@@ -1026,7 +1026,3 @@ def _selftest():
                                               info['crossings']))
     print("RESULT: %s" % ("OK" if ok else "FAILED"))
     return ok
-
-
-if __name__ == "__main__":
-    _selftest()

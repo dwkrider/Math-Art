@@ -1070,7 +1070,7 @@ def _parity_defects(polys, parities, radius=0.9):
     return adj, clash
 
 
-if __name__ == "__main__":
+def _selftest():
     CASES = [(7, 3, 2), (5, 4, 2), (8, 3, 2), (4, 3, 3)]
     FORMS = ['REGULAR', 'TRUNCATED', 'RECTIFIED', 'BITRUNCATED',
              'CANTELLATED', 'OMNITRUNCATED', 'SNUB']
@@ -1151,3 +1151,4 @@ if __name__ == "__main__":
     all_ok = all_ok and color_ok
 
     print("RESULT:", "OK" if all_ok else "BAD")
+    assert all_ok

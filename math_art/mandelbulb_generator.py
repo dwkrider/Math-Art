@@ -390,23 +390,21 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_mandelbulb_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # standalone self-test: every preset must mesh to a non-empty,
-        # closed (no boundary edges) single component
-        from collections import Counter
-        for kind in ('MANDELBULB', 'JULIA', 'MANDELBOX'):
-            verts, tris = build_escape_fractal(kind, res=64)
-            edges = Counter()
-            for tri in tris:
-                for i in range(3):
-                    a, b = int(tri[i]), int(tri[(i + 1) % 3])
-                    edges[(min(a, b), max(a, b))] += 1
-            boundary = sum(1 for c in edges.values() if c != 2)
-            lo, hi = verts.min(axis=0), verts.max(axis=0)
-            print(f"{kind}: V={len(verts)} F={len(tris)} "
-                  f"boundary_edges={boundary} "
-                  f"bbox={np.round(hi - lo, 3)} "
-                  f"{'OK' if len(tris) and boundary == 0 else 'CHECK'}")
+def _selftest():
+    # standalone self-test: every preset must mesh to a non-empty,
+    # closed (no boundary edges) single component
+    from collections import Counter
+    for kind in ('MANDELBULB', 'JULIA', 'MANDELBOX'):
+        verts, tris = build_escape_fractal(kind, res=64)
+        edges = Counter()
+        for tri in tris:
+            for i in range(3):
+                a, b = int(tri[i]), int(tri[(i + 1) % 3])
+                edges[(min(a, b), max(a, b))] += 1
+        boundary = sum(1 for c in edges.values() if c != 2)
+        lo, hi = verts.min(axis=0), verts.max(axis=0)
+        print(f"{kind}: V={len(verts)} F={len(tris)} "
+              f"boundary_edges={boundary} "
+              f"bbox={np.round(hi - lo, 3)} "
+              f"{'OK' if len(tris) and boundary == 0 else 'CHECK'}")
+        assert len(tris) and boundary == 0

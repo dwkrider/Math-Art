@@ -2485,7 +2485,3 @@ def _self_test():
 
     print("RESULT:", "OK" if ok else "BAD")
     return ok
-
-
-if __name__ == "__main__":
-    _self_test()

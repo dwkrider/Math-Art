@@ -537,8 +537,9 @@ if _IN_BLENDER:
             bpy.utils.unregister_class(c)
 
 
-if __name__ == "__main__" and not _IN_BLENDER:
+def _selftest():
     # Combinatorial + topology self-check (needs NumPy + the seifert package).
+    bad = []
     for name, (label, word) in PRESETS.items():
         braid = make_braid(word)
         mesh = build_surface(braid, relax_steps=10, levels=1, fair_steps=2)
@@ -548,3 +549,6 @@ if __name__ == "__main__" and not _IN_BLENDER:
               f"crossings={braid.n_crossings} chi={info.euler_characteristic} "
               f"b={info.n_boundaries} genus={info.genus} "
               f"{'OK' if ok else 'CHI MISMATCH'}")
+        if not ok:
+            bad.append(name)
+    assert not bad

@@ -544,26 +544,23 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_stellated_weave_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        from collections import Counter
-        faces = indexed_ssd_faces()
-        # 12 pentagram faces from 12 tips, 5 arms each
-        arms = build_arms(faces)
-        tips = set(a.tipIndex for a in arms)
-        print(f"faces={len(faces)}(12) tips={len(tips)}(12) "
-              f"arms={len(arms)}(60) "
-              f"{'OK' if (len(faces), len(tips), len(arms)) == (12, 12, 60) else 'BAD'}")
-        for w in (0.06, 0.12, 0.2):
-            v, f, t = build_weave(w)
-            cnt = Counter()
-            for fc in f:
-                for i in range(len(fc)):
-                    a, b = fc[i], fc[(i + 1) % len(fc)]
-                    cnt[(min(a, b), max(a, b))] += 1
-            nonman = sum(1 for c in cnt.values() if c != 2)
-            print(f"width {w}: verts={len(v)} faces={len(f)} "
-                  f"strips={len(set(t))}(12) "
-                  f"non-2-manifold edges={nonman}")
+def _selftest():
+    from collections import Counter
+    faces = indexed_ssd_faces()
+    # 12 pentagram faces from 12 tips, 5 arms each
+    arms = build_arms(faces)
+    tips = set(a.tipIndex for a in arms)
+    print(f"faces={len(faces)}(12) tips={len(tips)}(12) "
+          f"arms={len(arms)}(60) "
+          f"{'OK' if (len(faces), len(tips), len(arms)) == (12, 12, 60) else 'BAD'}")
+    for w in (0.06, 0.12, 0.2):
+        v, f, t = build_weave(w)
+        cnt = Counter()
+        for fc in f:
+            for i in range(len(fc)):
+                a, b = fc[i], fc[(i + 1) % len(fc)]
+                cnt[(min(a, b), max(a, b))] += 1
+        nonman = sum(1 for c in cnt.values() if c != 2)
+        print(f"width {w}: verts={len(v)} faces={len(f)} "
+              f"strips={len(set(t))}(12) "
+              f"non-2-manifold edges={nonman}")

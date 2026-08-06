@@ -706,7 +706,7 @@ def _self_similar(polys, types, s, tol=1e-6):
     return ok, per
 
 
-if __name__ == "__main__":
+def _selftest():
     DEPTH = {'KITE_R6': 5, 'KITE_R8': 4, 'KITE_R12': 3,
              'TRI_S6': 8, 'TRI_S8': 8, 'TRI_S12': 8,
              'TRAP_U6': 6, 'TRAP_U10': 6}
@@ -780,3 +780,4 @@ if __name__ == "__main__":
         sizes = " ".join("L%d=%.4f" % (lv, per[lv]) for lv in sorted(per))
         print("          sizes: %s" % sizes)
     print("RESULT:", "OK" if all_ok else "BAD")
+    assert all_ok

@@ -387,12 +387,9 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_rotegrity_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for kind, freq in (('ICOSA', 1), ('ICOSA', 2), ('CUBE', 1),
-                           ('DODECA', 1)):
-            v, f, ne, fs, sl = build_rotegrity(kind, freq)
-            print(f"{kind} f{freq}: straps={ne} verts={len(v)} "
-                  f"faces={len(f)}")
+def _selftest():
+    for kind, freq in (('ICOSA', 1), ('ICOSA', 2), ('CUBE', 1),
+                       ('DODECA', 1)):
+        v, f, ne, fs, sl = build_rotegrity(kind, freq)
+        print(f"{kind} f{freq}: straps={ne} verts={len(v)} "
+              f"faces={len(f)}")

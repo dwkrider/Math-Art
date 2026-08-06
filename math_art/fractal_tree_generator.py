@@ -472,41 +472,38 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_fractal_tree_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for arity, depth in ((2, 3), (3, 4), (5, 3)):
-            segs, tips = build_tree(arity, depth,
-                                    math.radians(35.0), 0.67,
-                                    GOLDEN_ANGLE, 2.0)
-            assert len(segs) == tree_segment_count(arity, depth)
-            assert len(tips) == arity ** depth
-            starts = {tuple(round(c, 6) for c in s[0])
-                      for s in segs}
-            free = [s for s in segs
-                    if tuple(round(c, 6) for c in s[1])
-                    not in starts]
-            assert len(free) == arity ** depth, \
-                f"tip endpoints {len(free)} != {arity ** depth}"
-            # radius continuity: child start == parent end
-            r_at = {tuple(round(c, 6) for c in s[1]): s[3]
-                    for s in segs}
-            for s in segs:
-                key = tuple(round(c, 6) for c in s[0])
-                if key in r_at:
-                    assert abs(r_at[key] - s[2]) < 1e-9
-            print(f"tree  arity={arity} depth={depth}: "
-                  f"{len(segs)} segs, {len(tips)} tips OK")
-        for arity, levels in ((3, 3), (2, 4)):
-            segs, weights = build_mobile(arity, levels,
-                                         MOBILE_TWIST, 2.0, 0.67)
-            assert len(segs) == mobile_segment_count(arity, levels)
-            assert len(weights) == arity ** levels
-            assert all(p[2] < bar_z for p, bar_z in weights)
-            print(f"mobile arity={arity} levels={levels}: "
-                  f"{len(segs)} segs, {len(weights)} weights "
-                  f"all below their bars OK")
-        v, f = icosphere(1)
-        assert len(v) == 42 and len(f) == 80
-        print("fractal_tree_generator self-test: ALL OK")
+def _selftest():
+    for arity, depth in ((2, 3), (3, 4), (5, 3)):
+        segs, tips = build_tree(arity, depth,
+                                math.radians(35.0), 0.67,
+                                GOLDEN_ANGLE, 2.0)
+        assert len(segs) == tree_segment_count(arity, depth)
+        assert len(tips) == arity ** depth
+        starts = {tuple(round(c, 6) for c in s[0])
+                  for s in segs}
+        free = [s for s in segs
+                if tuple(round(c, 6) for c in s[1])
+                not in starts]
+        assert len(free) == arity ** depth, \
+            f"tip endpoints {len(free)} != {arity ** depth}"
+        # radius continuity: child start == parent end
+        r_at = {tuple(round(c, 6) for c in s[1]): s[3]
+                for s in segs}
+        for s in segs:
+            key = tuple(round(c, 6) for c in s[0])
+            if key in r_at:
+                assert abs(r_at[key] - s[2]) < 1e-9
+        print(f"tree  arity={arity} depth={depth}: "
+              f"{len(segs)} segs, {len(tips)} tips OK")
+    for arity, levels in ((3, 3), (2, 4)):
+        segs, weights = build_mobile(arity, levels,
+                                     MOBILE_TWIST, 2.0, 0.67)
+        assert len(segs) == mobile_segment_count(arity, levels)
+        assert len(weights) == arity ** levels
+        assert all(p[2] < bar_z for p, bar_z in weights)
+        print(f"mobile arity={arity} levels={levels}: "
+              f"{len(segs)} segs, {len(weights)} weights "
+              f"all below their bars OK")
+    v, f = icosphere(1)
+    assert len(v) == 42 and len(f) == 80
+    print("fractal_tree_generator self-test: ALL OK")

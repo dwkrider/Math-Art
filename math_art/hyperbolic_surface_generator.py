@@ -228,22 +228,19 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_hyperbolic_surface_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # each surface has constant Gaussian curvature ~ -1
-        # (Dini with twist 0.2 -> -1/(1+0.2^2) = -0.96)
-        for kind in PRESETS:
-            fn = PRESETS[kind][1]
-            _, _, (u0, u1), (v0, v1), wrap = PRESETS[kind]
-            us = np.linspace(u0, u1, 80)
-            vs = (np.linspace(v0, v1, 80, endpoint=False) if wrap
-                  else np.linspace(v0, v1, 80))
-            U, Vv = np.meshgrid(us, vs, indexing='ij')
-            x, y, z = fn(U, Vv, 0.2)
-            Vraw = np.stack([x.ravel(), y.ravel(), z.ravel()], -1)
-            faces = _grid_faces(80, 80, wrap)
-            K = mean_curvature(Vraw, faces)
-            print(f"{kind:13s}: V={len(Vraw)} F={len(faces)} "
-                  f"meanK={K:+.3f}")
+def _selftest():
+    # each surface has constant Gaussian curvature ~ -1
+    # (Dini with twist 0.2 -> -1/(1+0.2^2) = -0.96)
+    for kind in PRESETS:
+        fn = PRESETS[kind][1]
+        _, _, (u0, u1), (v0, v1), wrap = PRESETS[kind]
+        us = np.linspace(u0, u1, 80)
+        vs = (np.linspace(v0, v1, 80, endpoint=False) if wrap
+              else np.linspace(v0, v1, 80))
+        U, Vv = np.meshgrid(us, vs, indexing='ij')
+        x, y, z = fn(U, Vv, 0.2)
+        Vraw = np.stack([x.ravel(), y.ravel(), z.ravel()], -1)
+        faces = _grid_faces(80, 80, wrap)
+        K = mean_curvature(Vraw, faces)
+        print(f"{kind:13s}: V={len(Vraw)} F={len(faces)} "
+              f"meanK={K:+.3f}")

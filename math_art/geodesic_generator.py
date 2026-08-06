@@ -731,25 +731,22 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_geodesic_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for f in range(1, 6):
-            V, F = build_sphere('ICOSA', f, 'I')
-            assert len(V) == 10 * f * f + 2, (f, len(V))
-            assert len(F) == 20 * f * f
-        for f in range(1, 5):
-            V, F = build_sphere('OCTA', f, 'I')
-            assert len(V) == 4 * f * f + 2, (f, len(V))
-            V, F = build_sphere('ICOSA', f, 'II')
-            assert len(V) == 30 * f * f + 2, (f, len(V))
-        V, F = build_sphere('ICOSA', 3, 'I')
-        for cut, z in (('HEMI', 0.0), ('FIVEEIGHTHS', -0.25)):
-            Vc, Fc = cut_faces(V, F, z)
-            loops = boundary_loops(Fc)
-            zs = sorted({round(Vc[i][2], 6)
-                         for lp in loops for i in lp})
-            print(f"{cut}: verts={len(Vc)} faces={len(Fc)} "
-                  f"rim loops={len(loops)} rim z levels={zs}")
-        print("geodesic_generator self-test OK")
+def _selftest():
+    for f in range(1, 6):
+        V, F = build_sphere('ICOSA', f, 'I')
+        assert len(V) == 10 * f * f + 2, (f, len(V))
+        assert len(F) == 20 * f * f
+    for f in range(1, 5):
+        V, F = build_sphere('OCTA', f, 'I')
+        assert len(V) == 4 * f * f + 2, (f, len(V))
+        V, F = build_sphere('ICOSA', f, 'II')
+        assert len(V) == 30 * f * f + 2, (f, len(V))
+    V, F = build_sphere('ICOSA', 3, 'I')
+    for cut, z in (('HEMI', 0.0), ('FIVEEIGHTHS', -0.25)):
+        Vc, Fc = cut_faces(V, F, z)
+        loops = boundary_loops(Fc)
+        zs = sorted({round(Vc[i][2], 6)
+                     for lp in loops for i in lp})
+        print(f"{cut}: verts={len(Vc)} faces={len(Fc)} "
+              f"rim loops={len(loops)} rim z levels={zs}")
+    print("geodesic_generator self-test OK")

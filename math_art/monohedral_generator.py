@@ -424,7 +424,7 @@ def _coverage(name, nx=6, ny=6, N=35, half=2.5):
     return len(polys), defects
 
 
-if __name__ == "__main__":
+def _selftest():
     bad = []
     for name in _ORDER:
         ntiles, defects = _coverage(name)
@@ -434,3 +434,4 @@ if __name__ == "__main__":
         if not ok:
             bad.append(name)
     print("RESULT:", "OK" if not bad else "BAD %s" % bad)
+    assert not bad

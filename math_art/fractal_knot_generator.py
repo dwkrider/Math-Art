@@ -236,18 +236,16 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_fractal_knot_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for kind in PRESETS:
-            pts, closed = build_fractal_knot(kind, samples=2000)
-            # closure gap and max step (smoothness) checks
-            gap = float(np.linalg.norm(pts[0] - pts[-1]))
-            steps = np.linalg.norm(np.diff(pts, axis=0), axis=1)
-            finite = np.isfinite(pts).all()
-            ext = np.round(pts.max(axis=0) - pts.min(axis=0), 2)
-            ok = finite and gap < steps.mean() * 3.0
-            print(f"{kind:11s}: N={len(pts)} closed_gap={gap:.4f} "
-                  f"max_step={steps.max():.4f} bbox={ext} "
-                  f"{'OK' if ok else 'CHECK'}")
+def _selftest():
+    for kind in PRESETS:
+        pts, closed = build_fractal_knot(kind, samples=2000)
+        # closure gap and max step (smoothness) checks
+        gap = float(np.linalg.norm(pts[0] - pts[-1]))
+        steps = np.linalg.norm(np.diff(pts, axis=0), axis=1)
+        finite = np.isfinite(pts).all()
+        ext = np.round(pts.max(axis=0) - pts.min(axis=0), 2)
+        ok = finite and gap < steps.mean() * 3.0
+        print(f"{kind:11s}: N={len(pts)} closed_gap={gap:.4f} "
+              f"max_step={steps.max():.4f} bbox={ext} "
+              f"{'OK' if ok else 'CHECK'}")
+        assert ok

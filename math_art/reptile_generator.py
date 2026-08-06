@@ -337,7 +337,7 @@ def _coverage(polys, proto, samples=48, off=(0.0137, 0.0071)):
     return n_in, n_gap, n_over
 
 
-if __name__ == "__main__":
+def _selftest():
     all_ok = True
     for kind, label, _ in KIND_ITEMS:
         verts, _maps, N = _KINDS[kind]
@@ -350,3 +350,4 @@ if __name__ == "__main__":
               % (kind, len(polys), N ** 3, n_in, n_gap, n_over,
                  "OK" if ok else "BAD"))
     print("RESULT:", "OK" if all_ok else "BAD")
+    assert all_ok

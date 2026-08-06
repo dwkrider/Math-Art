@@ -2984,7 +2984,7 @@ def _check_tiling_flush_cut(substrate, style='ANGULAR', nx=5, ny=5,
     return ok and checked > 0, checked, worst
 
 
-if __name__ == "__main__":
+def _selftest():
     ok = True
 
     # 1. threading partitions all segments into closed cords
@@ -3201,3 +3201,4 @@ if __name__ == "__main__":
                   "worst_cap/width=%.4f" % (sub, style, good, nchk, worst))
 
     print("RESULT:", "OK" if ok else "BAD")
+    assert ok

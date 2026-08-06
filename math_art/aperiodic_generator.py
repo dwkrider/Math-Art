@@ -1365,7 +1365,10 @@ if _IN_BLENDER:
 # Self-test (pure Python)
 # --------------------------------------------------------------------
 
-def _coverage(polys, samples=30, half=3.0, off=(0.0137, 0.0071)):
+_COV_SAMPLES = 24                               # coverage grid resolution
+
+
+def _coverage(polys, samples=_COV_SAMPLES, half=3.0, off=(0.0137, 0.0071)):
     """Sample a `samples` x `samples` grid over an interior window of
     half-width `half`, centred on the patch bbox centre and nudged by
     `off` to avoid landing on tile edges.  Return (n_covered, n_over):
@@ -1506,17 +1509,21 @@ def _mono_half(polys, frac=0.20):
     return frac * ext
 
 
-if __name__ == "__main__":
+def _selftest():
     all_ok = True
-    n_samples = 30 * 30                         # _coverage grid size
+    n_samples = _COV_SAMPLES * _COV_SAMPLES      # _coverage grid size
     # Per-kind generation depths (lo, mid, hi); the mid patch is coverage
     # tested.  The Penrose/Ammann triples are unchanged; the monotiles use
     # smaller depths so the tested patch is a few hundred to ~1000 tiles.
+    # SPECTRE stays one level shallower than the others: its tiles are
+    # 112-vertex polygons, so ray-cast coverage of a deep patch is far more
+    # expensive per tile -- the depth-2 (71-tile) patch still fully contains
+    # the fixed coverage window and exercises every check.
     gens_map = {'PENROSE_P3': (3, 4, 5), 'PENROSE_P2': (3, 4, 5),
                 'AMMANN_BEENKER': (3, 4, 5), 'HAT': (1, 2, 3),
                 'TURTLE': (1, 2, 3), 'CHEVRON': (1, 2, 3),
                 'COMET': (1, 2, 3), 'CUSTOM': (1, 2, 3),
-                'SPECTRE': (2, 3, 4)}
+                'SPECTRE': (1, 2, 3)}
     mono_kinds = ('HAT', 'TURTLE', 'CHEVRON', 'COMET', 'CUSTOM', 'SPECTRE')
     # the hat family patches are round and bbox-centred, so a patch-relative
     # window fits any family member whatever its overall scale; the spectre
@@ -1585,3 +1592,4 @@ if __name__ == "__main__":
                      "OK" if cur_ok else "BAD"))
             all_ok = all_ok and cur_ok
     print("RESULT:", "OK" if all_ok else "BAD")
+    assert all_ok

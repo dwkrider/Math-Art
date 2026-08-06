@@ -328,61 +328,60 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_oloid_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        from collections import Counter
-        v, f = build_oloid(96)
-        cnt = Counter()
-        for fc in f:
-            for i in range(len(fc)):
-                a, b = fc[i], fc[(i + 1) % len(fc)]
-                cnt[(min(a, b), max(a, b))] += 1
-        man = all(c == 2 for c in cnt.values())
-        # constant ruling length sqrt(3)
-        T = 2 * pi / 3
-        maxerr = 0.0
-        for i in range(1, 96):
-            t = -T + 2 * T * i / 96
-            A = (sin(t), -0.5 - cos(t), 0.0)
-            c = cos(t)
-            B = (0.0, 0.5 - c / (1 + c), sqrt(1 + 2 * c) / (1 + c))
-            d = sqrt(sum((A[k] - B[k]) ** 2 for k in range(3)))
-            maxerr = max(maxerr, abs(d - sqrt(3)))
-        print(f"oloid: verts={len(v)} faces={len(f)} manifold={man} "
-              f"ruling |err|={maxerr:.2e} "
-              f"{'OK' if man and maxerr < 1e-9 else 'BAD'}")
-        v, f = build_mobius(96)
-        # Mobius: one boundary loop, chi = 0
-        cnt = Counter()
-        for fc in f:
-            for i in range(len(fc)):
-                a, b = fc[i], fc[(i + 1) % len(fc)]
-                cnt[(min(a, b), max(a, b))] += 1
-        border = [e for e, c in cnt.items() if c == 1]
-        chi = len(v) - len(cnt) + len(f)
-        # walk the boundary
-        from collections import defaultdict
-        adj = defaultdict(list)
-        for a, b in border:
-            adj[a].append(b)
-            adj[b].append(a)
-        loops = 0
-        seen = set()
-        for s in adj:
-            if s in seen:
-                continue
-            loops += 1
-            cur, prev = s, None
-            while True:
-                seen.add(cur)
-                nxt = [x for x in adj[cur] if x != prev]
-                if not nxt or nxt[0] == s:
-                    break
-                prev, cur = cur, nxt[0]
-        ok = loops == 1 and chi == 0
-        print(f"mobius: verts={len(v)} faces={len(f)} chi={chi}(0) "
-              f"boundary loops={loops}(1) {'OK' if ok else 'BAD'}")
-        v, f = build_ruled(96)
-        print(f"ruled: verts={len(v)} faces={len(f)} OK")
+def _selftest():
+    from collections import Counter
+    v, f = build_oloid(96)
+    cnt = Counter()
+    for fc in f:
+        for i in range(len(fc)):
+            a, b = fc[i], fc[(i + 1) % len(fc)]
+            cnt[(min(a, b), max(a, b))] += 1
+    man = all(c == 2 for c in cnt.values())
+    # constant ruling length sqrt(3)
+    T = 2 * pi / 3
+    maxerr = 0.0
+    for i in range(1, 96):
+        t = -T + 2 * T * i / 96
+        A = (sin(t), -0.5 - cos(t), 0.0)
+        c = cos(t)
+        B = (0.0, 0.5 - c / (1 + c), sqrt(1 + 2 * c) / (1 + c))
+        d = sqrt(sum((A[k] - B[k]) ** 2 for k in range(3)))
+        maxerr = max(maxerr, abs(d - sqrt(3)))
+    print(f"oloid: verts={len(v)} faces={len(f)} manifold={man} "
+          f"ruling |err|={maxerr:.2e} "
+          f"{'OK' if man and maxerr < 1e-9 else 'BAD'}")
+    v, f = build_mobius(96)
+    # Mobius: one boundary loop, chi = 0
+    cnt = Counter()
+    for fc in f:
+        for i in range(len(fc)):
+            a, b = fc[i], fc[(i + 1) % len(fc)]
+            cnt[(min(a, b), max(a, b))] += 1
+    border = [e for e, c in cnt.items() if c == 1]
+    chi = len(v) - len(cnt) + len(f)
+    # walk the boundary
+    from collections import defaultdict
+    adj = defaultdict(list)
+    for a, b in border:
+        adj[a].append(b)
+        adj[b].append(a)
+    loops = 0
+    seen = set()
+    for s in adj:
+        if s in seen:
+            continue
+        loops += 1
+        cur, prev = s, None
+        while True:
+            seen.add(cur)
+            nxt = [x for x in adj[cur] if x != prev]
+            if not nxt or nxt[0] == s:
+                break
+            prev, cur = cur, nxt[0]
+    ok = loops == 1 and chi == 0
+    print(f"mobius: verts={len(v)} faces={len(f)} chi={chi}(0) "
+          f"boundary loops={loops}(1) {'OK' if ok else 'BAD'}")
+    v, f = build_ruled(96)
+    print(f"ruled: verts={len(v)} faces={len(f)} OK")
+    assert man and maxerr < 1e-9
+    assert ok

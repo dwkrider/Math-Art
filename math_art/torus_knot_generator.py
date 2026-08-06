@@ -232,31 +232,28 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_torus_knot_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        import numpy as np
-        ok_all = True
-        for p, q in ((2, 3), (3, 5), (2, 2), (2, 4), (3, 3),
-                     (4, 6)):
-            comps = torus_link_components(p, q, 200)
-            d = gcd(p, q)
-            # every point on the torus (R=0.7, r=0.3)
-            dev = max(
-                abs(np.hypot(np.hypot(P[:, 0], P[:, 1]) - 0.7,
-                             P[:, 2]) - 0.3).max()
-                for P in comps)
-            # components pairwise disjoint
-            mind = min(
-                np.linalg.norm(A[:, None, :] - B[None, :, :],
-                               axis=-1).min()
-                for i, A in enumerate(comps)
-                for B in comps[i + 1:]) if d > 1 else 1.0
-            ok = len(comps) == d and dev < 1e-12 and mind > 1e-3
-            ok_all = ok_all and ok
-            print(f"({p},{q}): components={len(comps)} (want {d}) "
-                  f"on-torus dev={dev:.1e} min-sep={mind:.3f} "
-                  f"{'OK' if ok else 'BAD'}")
-        assert ok_all
-        print("torus knot standalone tests passed")
+def _selftest():
+    import numpy as np
+    ok_all = True
+    for p, q in ((2, 3), (3, 5), (2, 2), (2, 4), (3, 3),
+                 (4, 6)):
+        comps = torus_link_components(p, q, 200)
+        d = gcd(p, q)
+        # every point on the torus (R=0.7, r=0.3)
+        dev = max(
+            abs(np.hypot(np.hypot(P[:, 0], P[:, 1]) - 0.7,
+                         P[:, 2]) - 0.3).max()
+            for P in comps)
+        # components pairwise disjoint
+        mind = min(
+            np.linalg.norm(A[:, None, :] - B[None, :, :],
+                           axis=-1).min()
+            for i, A in enumerate(comps)
+            for B in comps[i + 1:]) if d > 1 else 1.0
+        ok = len(comps) == d and dev < 1e-12 and mind > 1e-3
+        ok_all = ok_all and ok
+        print(f"({p},{q}): components={len(comps)} (want {d}) "
+              f"on-torus dev={dev:.1e} min-sep={mind:.3f} "
+              f"{'OK' if ok else 'BAD'}")
+    assert ok_all
+    print("torus knot standalone tests passed")

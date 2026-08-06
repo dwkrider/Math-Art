@@ -331,7 +331,7 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_polyhedron_compound_add)
 
 
-if __name__ == "__main__" and not _IN_BLENDER:
+def _selftest():
     for k, lbl in COMPOUNDS:
         comps = build_compound(k)
         nv = len(set(tuple(round(c, 4) for c in v)

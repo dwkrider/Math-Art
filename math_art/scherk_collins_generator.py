@@ -53,6 +53,27 @@ XY_SCALE = 1.5 / pi
 WELD_EPS_BASE = 1e-5
 
 
+def fit_transform(verts, global_scale=1.0, span=2.0):
+    """Return (center, factor) that, applied as (v - center) * factor,
+    centres `verts` on the origin and scales the largest bounding-box
+    extent to `span` (the 2 m cube convention), then multiplies by
+    `global_scale` -- so global_scale = 1 fits the sculpture exactly
+    inside a `span`-unit cube and acts as a plain size multiplier on top
+    of the normalized form.  `global_scale` already baked into `verts`
+    cancels out in the span/ext ratio, so it stays a clean multiplier."""
+    if not verts:
+        return (0.0, 0.0, 0.0), global_scale
+    xs = [v[0] for v in verts]
+    ys = [v[1] for v in verts]
+    zs = [v[2] for v in verts]
+    center = (0.5 * (min(xs) + max(xs)),
+              0.5 * (min(ys) + max(ys)),
+              0.5 * (min(zs) + max(zs)))
+    ext = max(max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
+    factor = (span / ext if ext > 1e-9 else 1.0) * global_scale
+    return center, factor
+
+
 # --------------------------------------------------------------------------
 # Pure-python geometry core (no bpy - testable standalone)
 # --------------------------------------------------------------------------
@@ -721,6 +742,7 @@ PRESETS = {
 try:
     import bpy
     import bmesh
+    from mathutils import Matrix
     from bpy.props import (IntProperty, FloatProperty, BoolProperty,
                            PointerProperty, StringProperty, EnumProperty)
     from bpy_extras.io_utils import ImportHelper, ExportHelper
@@ -787,7 +809,16 @@ if _IN_BLENDER:
                                 round(c0[2], 4)))
             return fps
 
-        for patch in _nurbs_patches(p):
+        # Fit the mid-surface control net into the 2 m cube (same
+        # convention as the mesh path) before laying down the splines.
+        patches = _nurbs_patches(p)
+        allpts = [pt for patch in patches for row in patch for pt in row]
+        center, f = fit_transform(allpts, p.global_scale)
+        patches = [[[((pt[0] - center[0]) * f,
+                      (pt[1] - center[1]) * f,
+                      (pt[2] - center[2]) * f) for pt in row]
+                    for row in patch] for patch in patches]
+        for patch in patches:
             prev_fps = _grid_fps()
             for sp in su.splines:
                 for pt in sp.points:
@@ -912,6 +943,13 @@ if _IN_BLENDER:
             bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
         bm.to_mesh(me)
         bm.free()
+        # Centre at the origin and fit the whole sculpture (thickness and
+        # rim beads included) into the 2 m cube, then apply Overall Scale.
+        # Done after welding so remove_doubles still runs at the tuned raw
+        # scale; a uniform positive scale preserves the recalculated normals.
+        center, f = fit_transform(verts, p.global_scale)
+        me.transform(Matrix.Diagonal((f, f, f, 1.0)) @
+                     Matrix.Translation((-center[0], -center[1], -center[2])))
         me.polygons.foreach_set('use_smooth', [True] * len(me.polygons))
         me.update()
         old = obj.data
@@ -1276,28 +1314,25 @@ if _IN_BLENDER:
             bpy.utils.unregister_class(c)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # standalone smoke test of the geometry core
-        for name, kw in [("defaults", {}),
-                         ("trefoil", PRESETS['TREFOIL'][1]),
-                         ("heptoroid", PRESETS['HEPTOROID'][1]),
-                         ("open arc b1", dict(branches=1, storeys=4, height=1.9,
-                                              flange=1.5, thickness=0.08,
-                                              rim_bulge=1.5, warp=270,
-                                              twist=885, detail=6)),
-                         ("open holes", dict(branches=6, storeys=4, height=1.0,
-                                             flange=0.8, thickness=0.02,
-                                             rim_bulge=0.0, warp=360,
-                                             twist=180, azimuth=45, detail=7)),
-                         ("thin sheet", dict(thickness=0.0, warp=360,
-                                             storeys=4))]:
-            p = Params(**kw)
-            v, f = generate_sculpture(p)
-            xs = [q[0] for q in v]; ys = [q[1] for q in v]; zs = [q[2] for q in v]
-            print(f"{name:12s}: verts={len(v):7d} faces={len(f):7d} "
-                  f"closes={ring_closes(p)} "
-                  f"bbox=({min(xs):.2f}..{max(xs):.2f}, "
-                  f"{min(ys):.2f}..{max(ys):.2f}, {min(zs):.2f}..{max(zs):.2f})")
+def _selftest():
+    # standalone smoke test of the geometry core
+    for name, kw in [("defaults", {}),
+                     ("trefoil", PRESETS['TREFOIL'][1]),
+                     ("heptoroid", PRESETS['HEPTOROID'][1]),
+                     ("open arc b1", dict(branches=1, storeys=4, height=1.9,
+                                          flange=1.5, thickness=0.08,
+                                          rim_bulge=1.5, warp=270,
+                                          twist=885, detail=6)),
+                     ("open holes", dict(branches=6, storeys=4, height=1.0,
+                                         flange=0.8, thickness=0.02,
+                                         rim_bulge=0.0, warp=360,
+                                         twist=180, azimuth=45, detail=7)),
+                     ("thin sheet", dict(thickness=0.0, warp=360,
+                                         storeys=4))]:
+        p = Params(**kw)
+        v, f = generate_sculpture(p)
+        xs = [q[0] for q in v]; ys = [q[1] for q in v]; zs = [q[2] for q in v]
+        print(f"{name:12s}: verts={len(v):7d} faces={len(f):7d} "
+              f"closes={ring_closes(p)} "
+              f"bbox=({min(xs):.2f}..{max(xs):.2f}, "
+              f"{min(ys):.2f}..{max(ys):.2f}, {min(zs):.2f}..{max(zs):.2f})")

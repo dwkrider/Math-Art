@@ -320,44 +320,41 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_vertex_vortices_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        CUBE_V = [(x, y, z) for x in (-1, 1) for y in (-1, 1)
-                  for z in (-1, 1)]
-        CUBE_F = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1],
-                  [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
-        verts, faces, eids = build_vortex(
-            CUBE_V, CUBE_F, bend=0.11, m=8, iterations=20)
-        # 12 edges -> 12 patches
-        assert len(set(eids)) == 12
-        cnt = {}
-        for f in faces:
-            for i in range(len(f)):
-                e = frozenset((f[i], f[(i + 1) % len(f)]))
-                cnt[e] = cnt.get(e, 0) + 1
-        watertight = all(c == 2 for c in cnt.values())
-        finite = all(all(math.isfinite(c) for c in v)
-                     for v in verts)
-        # consistent orientation: each welded edge traversed once
-        # in each direction
-        dcnt = {}
-        for f in faces:
-            for i in range(len(f)):
-                d = (f[i], f[(i + 1) % len(f)])
-                dcnt[d] = dcnt.get(d, 0) + 1
-        oriented = all(c == 1 for c in dcnt.values())
-        A = np.array(verts)
-        vol = sum(np.dot(A[f[0]], np.cross(A[f[1]], A[f[2]]))
-                  for f in faces) / 6.0
-        print(f"cube vortex: V={len(verts)} F={len(faces)} "
-              f"watertight={watertight} oriented={oriented} "
-              f"finite={finite} vol={vol:.3f}")
-        assert watertight and oriented and finite and vol > 0
-        # chirality flips with reverse
-        v2, _, _ = build_vortex(CUBE_V, CUBE_F, bend=0.11, m=8,
-                                iterations=0, reverse=True)
-        assert not np.allclose(np.array(verts)[:10],
-                               np.array(v2)[:10])
-        print("vortex standalone tests passed")
+def _selftest():
+    CUBE_V = [(x, y, z) for x in (-1, 1) for y in (-1, 1)
+              for z in (-1, 1)]
+    CUBE_F = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1],
+              [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
+    verts, faces, eids = build_vortex(
+        CUBE_V, CUBE_F, bend=0.11, m=8, iterations=20)
+    # 12 edges -> 12 patches
+    assert len(set(eids)) == 12
+    cnt = {}
+    for f in faces:
+        for i in range(len(f)):
+            e = frozenset((f[i], f[(i + 1) % len(f)]))
+            cnt[e] = cnt.get(e, 0) + 1
+    watertight = all(c == 2 for c in cnt.values())
+    finite = all(all(math.isfinite(c) for c in v)
+                 for v in verts)
+    # consistent orientation: each welded edge traversed once
+    # in each direction
+    dcnt = {}
+    for f in faces:
+        for i in range(len(f)):
+            d = (f[i], f[(i + 1) % len(f)])
+            dcnt[d] = dcnt.get(d, 0) + 1
+    oriented = all(c == 1 for c in dcnt.values())
+    A = np.array(verts)
+    vol = sum(np.dot(A[f[0]], np.cross(A[f[1]], A[f[2]]))
+              for f in faces) / 6.0
+    print(f"cube vortex: V={len(verts)} F={len(faces)} "
+          f"watertight={watertight} oriented={oriented} "
+          f"finite={finite} vol={vol:.3f}")
+    assert watertight and oriented and finite and vol > 0
+    # chirality flips with reverse
+    v2, _, _ = build_vortex(CUBE_V, CUBE_F, bend=0.11, m=8,
+                            iterations=0, reverse=True)
+    assert not np.allclose(np.array(verts)[:10],
+                           np.array(v2)[:10])
+    print("vortex standalone tests passed")

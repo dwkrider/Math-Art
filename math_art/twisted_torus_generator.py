@@ -430,18 +430,16 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_twisted_torus_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for n, tw in ((3, 1), (4, 1), (5, 2), (6, 2)):
-            v, f, nb = build_twisted_torus(n, twist_steps=tw)
-            # Euler check for a torus: V - E + F should be 0
-            E = set()
-            for fc in f:
-                for i in range(len(fc)):
-                    a, b = fc[i], fc[(i + 1) % len(fc)]
-                    E.add((min(a, b), max(a, b)))
-            chi = len(v) - len(E) + len(f)
-            print(f"n={n} twist={tw}: verts={len(v)} chi={chi} "
-                  f"bands={nb} {'OK' if chi == 0 else 'BAD'}")
+def _selftest():
+    for n, tw in ((3, 1), (4, 1), (5, 2), (6, 2)):
+        v, f, nb = build_twisted_torus(n, twist_steps=tw)
+        # Euler check for a torus: V - E + F should be 0
+        E = set()
+        for fc in f:
+            for i in range(len(fc)):
+                a, b = fc[i], fc[(i + 1) % len(fc)]
+                E.add((min(a, b), max(a, b)))
+        chi = len(v) - len(E) + len(f)
+        print(f"n={n} twist={tw}: verts={len(v)} chi={chi} "
+              f"bands={nb} {'OK' if chi == 0 else 'BAD'}")
+        assert chi == 0

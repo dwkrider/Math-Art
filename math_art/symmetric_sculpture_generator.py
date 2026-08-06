@@ -819,27 +819,27 @@ if _IN_BLENDER:
             OBJECT_OT_symmetric_sculpture_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # group orders and plane-family counts
-        for kind, order in _ORDER.items():
-            rots = group_rotations(kind)
-            print(f"{kind}: {len(rots)} rotations "
-                  f"{'OK' if len(rots) == order else 'BAD'}")
-        expect = {('ICOSA', 'P5'): 12, ('ICOSA', 'P3'): 20,
-                  ('ICOSA', 'P2'): 30, ('ICOSA', 'P1'): 60,
-                  ('OCTA', 'P4'): 6, ('OCTA', 'P3'): 8,
-                  ('OCTA', 'P2'): 12, ('OCTA', 'P1'): 24,
-                  ('TETRA', 'P3'): 4, ('TETRA', 'P2'): 6,
-                  ('TETRA', 'P1'): 12}
-        for (kind, fam), n in expect.items():
-            _, normals = plane_normals(kind, fam)
-            ok = len(normals) == n
-            print(f"{kind}/{fam}: {len(normals)} planes "
-                  f"(want {n}) {'OK' if ok else 'BAD'}")
-        # icosa 3-fold: 18 guide lines (19 others minus the parallel)
-        segs = stellation_lines('ICOSA', 'P3', 1.0, 10.0)
-        print(f"ICOSA/P3 guide lines: {len(segs)} "
-              f"{'OK' if len(segs) == 18 else 'BAD'}")
+def _selftest():
+    # group orders and plane-family counts
+    for kind, order in _ORDER.items():
+        rots = group_rotations(kind)
+        print(f"{kind}: {len(rots)} rotations "
+              f"{'OK' if len(rots) == order else 'BAD'}")
+        assert len(rots) == order
+    expect = {('ICOSA', 'P5'): 12, ('ICOSA', 'P3'): 20,
+              ('ICOSA', 'P2'): 30, ('ICOSA', 'P1'): 60,
+              ('OCTA', 'P4'): 6, ('OCTA', 'P3'): 8,
+              ('OCTA', 'P2'): 12, ('OCTA', 'P1'): 24,
+              ('TETRA', 'P3'): 4, ('TETRA', 'P2'): 6,
+              ('TETRA', 'P1'): 12}
+    for (kind, fam), n in expect.items():
+        _, normals = plane_normals(kind, fam)
+        ok = len(normals) == n
+        print(f"{kind}/{fam}: {len(normals)} planes "
+              f"(want {n}) {'OK' if ok else 'BAD'}")
+        assert ok
+    # icosa 3-fold: 18 guide lines (19 others minus the parallel)
+    segs = stellation_lines('ICOSA', 'P3', 1.0, 10.0)
+    print(f"ICOSA/P3 guide lines: {len(segs)} "
+          f"{'OK' if len(segs) == 18 else 'BAD'}")
+    assert len(segs) == 18

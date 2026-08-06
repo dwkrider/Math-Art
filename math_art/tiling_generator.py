@@ -641,7 +641,7 @@ def _check_regular(polys, tol=1e-3):
 _ORDER = [k for k, _, _ in TILING_ITEMS]
 
 
-if __name__ == "__main__":
+def _selftest():
     bad = []
     for name in _ORDER:
         laves = name in LAVES_OF
@@ -658,3 +658,4 @@ if __name__ == "__main__":
         if not ok:
             bad.append(name)
     print("RESULT:", "OK" if not bad else "BAD %s" % bad)
+    assert not bad

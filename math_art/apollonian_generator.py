@@ -552,50 +552,49 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_apollonian_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # 2D: verify the packing is valid (no two positive circles
-        # overlap; all inside the outer circle)
-        balls = gasket_2d(depth=4, min_r=0.01, cap=3000)
-        pos = [b for b in balls if b.k > 0]
-        outer = next(b for b in balls if b.k < 0)
-        Rout = 1.0 / abs(outer.k)
-        bad = 0
-        for i in range(len(pos)):
-            bi = pos[i]
-            ri = 1.0 / bi.k
-            if np.linalg.norm(bi.c - outer.c) + ri > Rout + 1e-6:
+def _selftest():
+    # 2D: verify the packing is valid (no two positive circles
+    # overlap; all inside the outer circle)
+    balls = gasket_2d(depth=4, min_r=0.01, cap=3000)
+    pos = [b for b in balls if b.k > 0]
+    outer = next(b for b in balls if b.k < 0)
+    Rout = 1.0 / abs(outer.k)
+    bad = 0
+    for i in range(len(pos)):
+        bi = pos[i]
+        ri = 1.0 / bi.k
+        if np.linalg.norm(bi.c - outer.c) + ri > Rout + 1e-6:
+            bad += 1
+        for j in range(i + 1, len(pos)):
+            bj = pos[j]
+            rj = 1.0 / bj.k
+            if (np.linalg.norm(bi.c - bj.c)
+                    < ri + rj - 1e-6):
                 bad += 1
-            for j in range(i + 1, len(pos)):
-                bj = pos[j]
-                rj = 1.0 / bj.k
-                if (np.linalg.norm(bi.c - bj.c)
-                        < ri + rj - 1e-6):
-                    bad += 1
-        print(f"GASKET  depth4: circles={len(balls)} overlaps={bad} "
-              f"{'OK' if bad == 0 else 'BAD'}")
-        # 3D: same validity check
-        sph = packing_3d(depth=3, min_r=0.03, cap=3000)
-        bad3 = 0
-        for i in range(len(sph)):
-            ri = 1.0 / sph[i].k
-            for j in range(i + 1, len(sph)):
-                rj = 1.0 / sph[j].k
-                if (np.linalg.norm(sph[i].c - sph[j].c)
-                        < ri + rj - 1e-6):
-                    bad3 += 1
-        v, f, m, lv, n = build_apollonian('PACKING', depth=3, min_r=0.05)
-        print(f"PACKING depth3: spheres={len(sph)} overlaps={bad3} "
-              f"mesh_V={len(v)} F={len(f)} mats={len(set(m))} "
-              f"levels={len(set(lv))} "
-              f"{'OK' if bad3 == 0 else 'BAD'}")
-        # filled 2D gasket colored by size builds with per-face mats
-        gv, gf, gm, glv, gn = build_apollonian('GASKET', depth=4,
-                                               min_r=0.02,
-                                               gasket_style='FILLED',
-                                               color_by='SIZE')
-        print(f"GASKET filled: circles={gn} faces={len(gf)} "
-              f"mats={len(set(gm))} "
-              f"{'OK' if len(gf) == gn and len(gm) == len(gf) else 'BAD'}")
+    print(f"GASKET  depth4: circles={len(balls)} overlaps={bad} "
+          f"{'OK' if bad == 0 else 'BAD'}")
+    # 3D: same validity check
+    sph = packing_3d(depth=3, min_r=0.03, cap=3000)
+    bad3 = 0
+    for i in range(len(sph)):
+        ri = 1.0 / sph[i].k
+        for j in range(i + 1, len(sph)):
+            rj = 1.0 / sph[j].k
+            if (np.linalg.norm(sph[i].c - sph[j].c)
+                    < ri + rj - 1e-6):
+                bad3 += 1
+    v, f, m, lv, n = build_apollonian('PACKING', depth=3, min_r=0.05)
+    print(f"PACKING depth3: spheres={len(sph)} overlaps={bad3} "
+          f"mesh_V={len(v)} F={len(f)} mats={len(set(m))} "
+          f"levels={len(set(lv))} "
+          f"{'OK' if bad3 == 0 else 'BAD'}")
+    # filled 2D gasket colored by size builds with per-face mats
+    gv, gf, gm, glv, gn = build_apollonian('GASKET', depth=4,
+                                           min_r=0.02,
+                                           gasket_style='FILLED',
+                                           color_by='SIZE')
+    print(f"GASKET filled: circles={gn} faces={len(gf)} "
+          f"mats={len(set(gm))} "
+          f"{'OK' if len(gf) == gn and len(gm) == len(gf) else 'BAD'}")
+    assert bad == 0 and bad3 == 0
+    assert len(gf) == gn and len(gm) == len(gf)
