@@ -752,6 +752,7 @@ def build_polytope_ex(kind='CELL8', style='CURVED', proj_dist=1.05,
         dist = max(proj_dist, 1.001)
     verts = []
     faces = []
+    edges = []                              # only the Wireframe render
     face_mat = []
     for mi, (V, Es, Fs) in enumerate(systems):
         proj = {}
@@ -796,12 +797,19 @@ def build_polytope_ex(kind='CELL8', style='CURVED', proj_dist=1.05,
                                for t in range(arc_segments + 1)]
                         scls = [sa + (sb - sa) * t / arc_segments
                                 for t in range(arc_segments + 1)]
+                if render == 'WIREFRAME':
+                    # bare polyline along the (possibly curved) edge
+                    base = len(verts)
+                    verts.extend(pts)
+                    for a in range(len(pts) - 1):
+                        edges.append((base + a, base + a + 1))
+                    continue
                 if taper:
                     radii = [radius * s * scale for s in scls]
                 else:
                     radii = [radius * scale] * len(pts)
                 add_strut(verts, faces, pts, radii, sides)
-            if vertex_spheres or render == 'BALLSTICK':
+            if render == 'BALLSTICK':
                 for i in range(len(V)):
                     p, s = proj[i]
                     r = (radius * sphere_factor
@@ -826,7 +834,8 @@ def build_polytope_ex(kind='CELL8', style='CURVED', proj_dist=1.05,
              'dual_ne': (len(systems[1][1])
                          if dual_compound and len(systems) > 1 else 0),
              'n_systems': len(systems), 'n_cells': n_cells,
-             'n_rings': (min(rings, 12) if cells else 0)}
+             'n_rings': (min(rings, 12) if cells else 0),
+             'wire_edges': edges}
     return verts, faces, face_mat, stats
 
 
@@ -949,15 +958,18 @@ if _IN_BLENDER:
         render: EnumProperty(
             name="Style",
             items=[('EDGES', "Struts",
-                    "Struts along the projected edges (the same "
-                    "edge-strut style as the other polyhedron "
-                    "generators, following the curved stereographic "
-                    "arcs)"),
+                    "Solid tubes along the projected edges (no vertex "
+                    "spheres) -- the same edge-strut style as the "
+                    "other polyhedron generators, following the curved "
+                    "stereographic arcs"),
                    ('BALLSTICK', "Ball and Stick",
                     "Struts along the projected edges with a sphere "
-                    "at every vertex, always on (ball-and-stick "
-                    "model); the struts still follow the curved "
-                    "stereographic arcs"),
+                    "at every vertex (ball-and-stick model); the "
+                    "struts still follow the curved stereographic "
+                    "arcs"),
+                   ('WIREFRAME', "Wireframe",
+                    "Projected edges as a bare wireframe of polylines "
+                    "(no solid struts or spheres)"),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "A flat open panel per 2D face of the polytope "
                     "(projected faces are planar in both edge "
@@ -1026,7 +1038,7 @@ if _IN_BLENDER:
                 verts = [((v[0] - cen[0]) * s, (v[1] - cen[1]) * s,
                           (v[2] - cen[2]) * s) for v in verts]
             me = bpy.data.meshes.new("Polytope4D")
-            me.from_pydata(verts, [], faces)
+            me.from_pydata(verts, st.get('wire_edges', []), faces)
             n_rings = st['n_rings']
             if st['n_systems'] > 1 or n_rings > 0:
                 mats = []
@@ -1095,11 +1107,19 @@ if _IN_BLENDER:
                 for k in ('border', 'panel_thickness', 'taper',
                           'scale'):
                     lay.prop(self, k)
+            elif self.render == 'WIREFRAME':
+                # bare polylines: only arc smoothness and overall scale
+                lay.prop(self, 'arc_segments')
+                lay.prop(self, 'scale')
             else:
-                for k in ('arc_segments', 'radius', 'sides', 'taper',
-                          'vertex_spheres', 'sphere_factor', 'scale'):
-                    if k == 'vertex_spheres' and self.render == 'BALLSTICK':
-                        continue                # forced on for ball-and-stick
+                # EDGES ("Struts") = tubes only; BALLSTICK adds spheres.
+                # The vertex_spheres toggle is retired -- the style now
+                # decides -- so it is never drawn.
+                keys = ['arc_segments', 'radius', 'sides', 'taper']
+                if self.render == 'BALLSTICK':
+                    keys.append('sphere_factor')
+                keys.append('scale')
+                for k in keys:
                     lay.prop(self, k)
             lay.separator()
             col = lay.column(align=True)
