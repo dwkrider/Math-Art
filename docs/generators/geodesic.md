@@ -17,12 +17,12 @@ Geodesic spheres and domes built by subdividing a triangular Platonic seed (icos
 | Cut | Full Sphere | Full sphere, Hemisphere Dome (centroid $z\ge0$), or 5/8 Dome (centroid $z\ge-0.25R$) |
 | Base Ring | False | Thicken the open rim of a dome into a flat ring band |
 | Ring Width | 0.1 | Radial width of the base-ring band |
-| Style | Shell | Shell (welded surface, Solidify if thickness $>0$), Struts & Nodes (cylinder edges + sphere vertices), Leonardo open panels, or inset Panels |
+| Style | Shell | Shell (welded surface, Solidify if thickness $>0$), Ball and Stick (cylinder edges + sphere vertices), Leonardo open panels, or inset Panels |
 | Radius | 1.0 | Sphere radius $R$ |
 | Thickness | 0.05 | Shell / panel thickness (0 = single surface) |
 | Border | 0.3 | Leonardo face-frame width |
-| Strut Radius | 0.02 | Struts style: cylinder radius |
-| Node Radius | 0.035 | Struts style: node sphere radius |
+| Strut Radius | 0.02 | Ball and Stick style: cylinder radius |
+| Node Radius | 0.035 | Ball and Stick style: node sphere radius |
 | Panel Gap | 0.15 | Panels style: fraction each triangle is shrunk about its centroid |
 
 ## Variants
@@ -56,7 +56,7 @@ Each base triangle becomes $f^2$ small triangles. Vertices shared along an edge 
 
 **Dome cutting and base ring.** A dome keeps only faces whose centroid lies above a cut height: $z\ge0$ for a hemisphere, $z\ge-0.25R$ for the 5/8 dome (a clean strut ring on the 3v icosahedron). The open rim loops are found from the boundary edges (edges belonging to a single face); the optional base ring widens each rim loop outward in $XY$ by the ring width into a flat band.
 
-**Output styles.** *Shell* welds the triangles into one surface, adding a Solidify modifier for thickness. *Struts & Nodes* renders every edge as a cylinder and every vertex as a small sphere. *Leonardo* opens each face into a framed panel via the shared Leonardo modifier. *Panels* insets each triangle about its centroid by the gap and extrudes it into a thin prism along its outward normal.
+**Output styles.** *Shell* welds the triangles into one surface, adding a Solidify modifier for thickness. *Ball and Stick* renders every edge as a cylinder and every vertex as a small sphere (the shared ball-and-stick style used across the polyhedron generators). *Leonardo* opens each face into a framed panel via the shared Leonardo modifier. *Panels* insets each triangle about its centroid by the gap and extrudes it into a thin prism along its outward normal.
 
 ## References
 

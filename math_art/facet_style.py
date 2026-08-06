@@ -65,6 +65,29 @@ def _orient_faces(verts, faces):
     return out
 
 
+def wind_outward(V, F, center=None):
+    """Return F with every face re-wound so its Newell normal points
+    away from `center` (the vertex centroid by default).
+
+    build_facets deliberately *trusts* the input winding (so a torus's
+    inner faces can point inward); callers that feed a convex solid
+    whose faces come with mixed / inconsistent winding -- e.g. the
+    uniform-polyhedron builder -- should normalise it through here
+    first, or half the segments extrude the wrong way."""
+    if center is None:
+        n = len(V) or 1
+        center = tuple(sum(v[k] for v in V) / n for k in range(3))
+    out = []
+    for f in F:
+        P = [V[i] for i in f]
+        nrm = _face_normal(P)
+        m = len(P)
+        fc = tuple(sum(P[j][k] for j in range(m)) / m for k in range(3))
+        d = sum(nrm[k] * (fc[k] - center[k]) for k in range(3))
+        out.append(list(f)[::-1] if d < 0 else list(f))
+    return out
+
+
 def build_facets(V, F, depth=0.15, padding=0.0):
     """One inward-extruded, mitre-beveled segment per face of the
     convex polyhedron (V, F).  Returns a list of
