@@ -233,21 +233,25 @@ def _rounded_edges(kind):
 
 
 def _radius(u, cen, w, rounded):
-    """Radial distance to the body boundary along unit dir u."""
+    """Radial distance to the body boundary along unit dir u.
+
+    Each rounded edge's spindle is a small closed lens sitting on that
+    edge, so a ray from the centroid only ever crosses the lens of the
+    edge it actually exits over; taking the min over all three
+    spindles therefore localises the rounding automatically.  (An
+    earlier version instead *classified* the exit by its two nearest
+    spheres, but that tie is unstable near the vertices where three
+    spheres meet and produced a rippled surface.)"""
     ts = [_exit_t(u, c, w) for c in cen]
     r0 = min(t for t in ts if t is not None)
     if not rounded:
         return r0
-    # two binding spheres = the two nearest exits
-    order = sorted(range(4), key=lambda i: ts[i] if ts[i] else 9e9)
-    bind = frozenset(order[:2])
+    r = r0
     for (i, j) in rounded:
-        other = frozenset(x for x in range(4) if x != i and x != j)
-        if bind == other:                         # ray exits over this edge
-            hit = _spindle_hit(u, cen[i], cen[j], w)
-            if hit is not None:
-                return min(r0, hit)
-    return r0
+        hit = _spindle_hit(u, cen[i], cen[j], w)
+        if hit is not None and hit < r:
+            r = hit
+    return r
 
 
 def build_tetra_body(kind='MEISSNER_V', width=2.0, phi_segments=96,

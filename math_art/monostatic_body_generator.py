@@ -1,5 +1,5 @@
 
-# Gomboc Generator for Blender
+# Monostatic Body ("Gomboc") Generator for Blender
 #
 # A gomboc is a convex, homogeneous solid that is "mono-monostatic":
 # it has exactly ONE stable and ONE unstable balance point, so -- like
@@ -8,63 +8,50 @@
 # conjectured such a body could exist; Gabor Domokos and Peter
 # Varkonyi proved it and built the first one in 2006.
 #
-# The catch for a sculptor is that a TRUE gomboc is startlingly close
-# to a sphere (Domokos & Varkonyi's first solution departs from it by
-# under 5e-5 in radius).  This generator offers three ways to get a
-# gomboc-shaped object:
+# There is an important gap between the MATHEMATICS and the ICONIC
+# OBJECT, so this generator offers four forms:
 #
-#   * DOMOKOS-VARKONYI (default) -- the ACTUAL construction from their
-#     2006 paper (transcribed in
+#   * REFERENCE (default) -- the recognisable FABRICATED gomboc: a
+#     rounded body with a smooth belly rising to a single curved ridge
+#     and beak.  The makers describe it as a "tennis-ball" assembly of
+#     segments of simple surfaces (cylinder, ellipsoid, cone) and
+#     planes -- it has NO single closed-form equation.  To reproduce it
+#     faithfully, its convex star-shaped boundary was digitised from a
+#     reference model and fit as a degree-12 real spherical-harmonic
+#     radial function R(theta, phi) (see _monostatic_data.py; ~0.8% RMS).
+#     This is the shape people picture; it departs from a sphere by
+#     ~40%.
+#
+#   * DOMOKOS-VARKONYI -- the actual construction from their 2006
+#     existence proof (transcribed in
 #     research/papers/monostatic-bodies/monostatic_bodies_2006/).  In
-#     spherical coordinates (longitude theta, latitude phi in
-#     (-pi/2, pi/2)) the boundary is the radial surface
-#         R(theta, phi) = 1 + d * dR(theta, phi, c),
-#     a small deformation of the unit sphere by the field dR built from
-#     a latitude-warping map
-#         f(phi, c) = pi * ( (e^{phi/(pi c) + 1/(2c)} - 1)/(e^{1/c} - 1)
-#                            - 1/2 ),
-#     two meridian profiles f1 = sin f(phi, c),  f2 = -sin f(-phi, c),
-#     and a longitude blend weight
-#         a = cos^2(theta) cos^2 f(phi, c)
-#             / ( cos^2(theta) cos^2 f(phi, c)
-#                 + sin^2(theta) cos^2 f(-phi, c) ),
-#         dR = a f1 + (1 - a) f2      (dR = +-1 at the poles).
-#     d sets the amplitude of the deviation from the sphere; c shapes
-#     the "tennis-ball seam" separatrix dR = 0.  The genuine
-#     mono-monostatic body needs d < 5e-5 with c ~ 0.275 -- visually a
-#     ball -- so, exactly as in the paper's own Figures 3-4, we default
-#     to an EXAGGERATED d that makes the class {1,1} shape visible.
-#     (Two known typos in the printed equations are corrected here: the
-#     physical radius is 1 + d*dR, not (1+d)*dR, and the blend
-#     numerator carries cos^2 f(-phi, c).)
+#     spherical coordinates the boundary is R = 1 + d*dR, a small
+#     deformation of the unit sphere with a "tennis-ball seam"
+#     separatrix (dR built from a latitude-warp map -- see _dv_delta).
+#     The genuine class {1,1} body needs d < 5e-5 (visually a ball), so
+#     -- as in the paper's own figures -- d defaults to an exaggerated
+#     value to make the shape visible.
 #
-#   * SCULPTURAL -- the familiar high-domed "turtle shell" LIKENESS:
-#     a rounded belly sweeping up to a leaning dorsal ridge, built by
-#     morphing the signed-distance field of a sphere toward a thin tall
-#     blade (after the libfive sketch by M. Keeter / E. Liberato) and
-#     meshed with the project's marching-tetrahedra kernel.  A likeness
-#     of the physical object, not a certified balancing body.
-#
-#   * ANALYTIC (Sloan I / II) -- Robert J. Sloan's 2023 closed-form
-#     radial surfaces, exaggerated by a flatness parameter beta:
-#         Sloan 1:  r^4 = 1 + 4 beta sin(phi) cos(theta - 5 phi)
-#         Sloan 2:  r^4 = 1 + 4 beta sin(phi)
-#                          cos( theta - (3pi/2)(cos phi - cos^3 phi/3) )
+#   * SLOAN I / SLOAN II -- M. L. Sloan's two closed-form ANALYTIC
+#     gombocs (infinitely differentiable), r^4 = 1 + 4 beta sin(theta)
+#     cos(phi - P(theta)) with theta the polar angle and phi the
+#     azimuth:
+#         Sloan 1:  P = 5 theta                              (beta<=0.15)
+#         Sloan 2:  P = (3pi/2)(cos theta - cos^3 theta / 3) (beta<=0.17)
+#     These provably have exactly two equilibria, but (footnote 2 of
+#     Sloan) are only small perturbations of a sphere -- they do NOT
+#     look like the fabricated object.
 #
 # References:
 #   - G. Domokos and P. Varkonyi, "Mono-monostatic bodies: the answer
 #     to Arnold's question", The Mathematical Intelligencer 28 (2006),
-#     no. 4, 34-38.  (Local copy + Markdown transcription under
+#     no. 4, 34-38.  (Local copy + Markdown under
 #     research/papers/monostatic-bodies/.)
-#   - P. L. Varkonyi and G. Domokos, "Static equilibria of rigid bodies:
-#     dice, pebbles and the Poincare-Hopf theorem", J. Nonlinear Sci.
-#     16 (2006), 255-281.
-#   - Robert J. Sloan, "An analytic parameterization of the gomboc"
-#     (2023); see also Wolfram MathWorld, "Gomboc",
+#   - M. L. Sloan, "An Analytical Gomboc" (technical note, with the
+#     guidance of G. Domokos); see also Wolfram MathWorld, "Gomboc",
 #     https://mathworld.wolfram.com/Gomboc.html .
-#   - libfive gomboc sketch: E. Liberato (2020),
-#     eddieliberato.github.io/blog/2020-08-12-gomboc/ (after M. Keeter's
-#     libfive f-rep modeller).
+#   - The fabricated gomboc and its tennis-ball segment construction:
+#     G. Domokos & P. Varkonyi, gomboc.eu.
 
 bl_info = {
     "name": "Monostatic Body",
@@ -72,9 +59,9 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Monostatic Body",
-    "description": "Monostatic body: the self-righting gomboc and "
-                   "related mono-monostatic solids (after Domokos & "
-                   "Varkonyi; analytic form after Sloan)",
+    "description": "Monostatic body: the self-righting gomboc -- the "
+                   "fabricated shape plus the Domokos-Varkonyi and Sloan "
+                   "analytic constructions",
     "category": "Add Mesh",
 }
 
@@ -85,56 +72,13 @@ import numpy as np
 
 
 # ---------------------------------------------------------------------
-# SCULPTURAL gomboc: sphere-to-blade SDF morph, marched to a mesh
-# ---------------------------------------------------------------------
-def _box_sdf(X, Y, Z, c, h):
-    qx = np.abs(X - c[0]) - h[0]
-    qy = np.abs(Y - c[1]) - h[1]
-    qz = np.abs(Z - c[2]) - h[2]
-    ox, oy, oz = np.maximum(qx, 0.0), np.maximum(qy, 0.0), np.maximum(qz, 0.0)
-    outside = np.sqrt(ox * ox + oy * oy + oz * oz)
-    inside = np.minimum(np.maximum(np.maximum(qx, qy), qz), 0.0)
-    return outside + inside
-
-
-def _sculptural_field(ridge, lean):
-    """SDF whose zero set is the gomboc likeness.  `ridge` (0..~0.5) is
-    the sphere->blade morph weight (higher = sharper dorsal crest);
-    `lean` shears the crest sideways as it rises, breaking symmetry."""
-    def f(X, Y, Z):
-        Ys = Y - lean * np.maximum(Z, 0.0)         # lean the ridge over
-        sphere = np.sqrt(X * X + Ys * Ys + Z * Z) - 1.0
-        blade = _box_sdf(X, Ys, Z, (0.0, 0.0, 0.65), (0.02, 0.8, 0.65))
-        return (1.0 - ridge) * sphere + ridge * blade
-    return f
-
-
-def build_gomboc_sculptural(ridge=0.35, lean=0.5, resolution=76):
-    """Recognisable gomboc likeness, meshed by marching tetrahedra."""
-    try:
-        from . import minimal_surface_toolkit as mst
-    except ImportError:
-        import minimal_surface_toolkit as mst
-    bmin = (-1.55, -2.0, -1.5)
-    bmax = (1.55, 1.6, 1.7)
-    cell = 3.2 / max(24, resolution)
-    res = tuple(max(8, int(round((bmax[i] - bmin[i]) / cell)))
-                for i in range(3))
-    V, F = mst.marching_tets(_sculptural_field(ridge, lean), bmin, bmax, res)
-    return V, F
-
-
-# ---------------------------------------------------------------------
-# mesh helper (welds the two spherical poles) -- shared by the radial
-# Domokos-Varkonyi and Sloan builders
+# mesh helper (welds coincident vertices, e.g. the two spherical poles)
 # ---------------------------------------------------------------------
 def _vkey(p):
     return (round(p[0], 7), round(p[1], 7), round(p[2], 7))
 
 
 class _Mesh:
-    """Vertex-welding mesh builder (welds the two poles)."""
-
     def __init__(self):
         self.verts = []
         self.faces = []
@@ -159,19 +103,87 @@ class _Mesh:
             self.faces.append(ids)
 
 
+def _radial_mesh(radius_grid):
+    """Build a watertight radial mesh from R sampled on an
+    (nphi+1) x nth grid (phi = colatitude 0..pi rows, theta wraps).
+    Poles weld automatically."""
+    nphi = radius_grid.shape[0] - 1
+    nth = radius_grid.shape[1]
+    m = _Mesh()
+    ii = np.arange(nphi + 1)[:, None]
+    jj = np.arange(nth)[None, :]
+    phi = pi * ii / nphi
+    th = 2.0 * pi * jj / nth
+    R = radius_grid
+    X = R * np.sin(phi) * np.cos(th)
+    Y = R * np.sin(phi) * np.sin(th)
+    Z = R * np.cos(phi) * np.ones((1, nth))
+    for i in range(nphi):
+        for j in range(nth):
+            jn = (j + 1) % nth
+            m.quad((X[i, j], Y[i, j], Z[i, j]),
+                   (X[i, jn], Y[i, jn], Z[i, jn]),
+                   (X[i + 1, jn], Y[i + 1, jn], Z[i + 1, jn]),
+                   (X[i + 1, j], Y[i + 1, j], Z[i + 1, j]))
+    return m.verts, m.faces
+
+
 # ---------------------------------------------------------------------
-# DOMOKOS-VARKONYI gomboc: the actual 2006 two-parameter construction
+# REFERENCE (fabricated) gomboc: spherical-harmonic radial model
+# ---------------------------------------------------------------------
+def _legendre_all(L, x):
+    """Unnormalised associated Legendre P_l^m(x), m >= 0, on array x."""
+    P = {(0, 0): np.ones_like(x)}
+    somx2 = np.sqrt(np.clip(1.0 - x * x, 0.0, None))
+    for m in range(L + 1):
+        if m > 0:
+            P[(m, m)] = -(2 * m - 1) * somx2 * P[(m - 1, m - 1)]
+        if m < L:
+            P[(m + 1, m)] = x * (2 * m + 1) * P[(m, m)]
+        for l in range(m + 2, L + 1):
+            P[(l, m)] = ((2 * l - 1) * x * P[(l - 1, m)]
+                         - (l + m - 1) * P[(l - 2, m)]) / (l - m)
+    return P
+
+
+def _sh_radius(theta, phi):
+    """Evaluate the fitted spherical-harmonic radial function."""
+    try:
+        from ._monostatic_data import GOMBOC_SH_L as L, GOMBOC_SH_COEF as C
+    except ImportError:
+        from _monostatic_data import GOMBOC_SH_L as L, GOMBOC_SH_COEF as C
+    Pl = _legendre_all(L, np.cos(phi))
+    R = np.zeros_like(theta)
+    k = 0
+    for l in range(L + 1):
+        for m in range(-l, l + 1):
+            am = abs(m)
+            ang = np.cos(m * theta) if m >= 0 else np.sin(am * theta)
+            R = R + C[k] * Pl[(l, am)] * ang
+            k += 1
+    return R
+
+
+def build_gomboc_reference(phi_segments=128, theta_segments=176):
+    nphi = max(8, phi_segments)
+    nth = max(8, theta_segments)
+    ii = np.arange(nphi + 1)[:, None]
+    jj = np.arange(nth)[None, :]
+    phi = (pi * ii / nphi) * np.ones((1, nth))
+    th = (2.0 * pi * jj / nth) * np.ones((nphi + 1, 1))
+    R = _sh_radius(th.ravel(), phi.ravel()).reshape(nphi + 1, nth)
+    return _radial_mesh(R)
+
+
+# ---------------------------------------------------------------------
+# DOMOKOS-VARKONYI gomboc: the 2006 two-parameter construction
 # ---------------------------------------------------------------------
 def _dv_warp(phi, c):
-    """Latitude-warping map f(phi, c): (-pi/2, pi/2) -> (-pi/2, pi/2),
-    near-identity for c >> 1, strongly nonlinear as c -> 0."""
     return pi * ((math.exp(phi / (pi * c) + 1.0 / (2.0 * c)) - 1.0)
                  / (math.exp(1.0 / c) - 1.0) - 0.5)
 
 
 def _dv_delta(theta, phi, c):
-    """Deviation field dR(theta, phi, c) in [-1, 1]; dR = 0 is the
-    separatrix (tennis-ball seam)."""
     if phi >= 0.5 * pi - 1e-9:
         return 1.0
     if phi <= -0.5 * pi + 1e-9:
@@ -187,67 +199,71 @@ def _dv_delta(theta, phi, c):
 
 
 def build_gomboc_dv(c=0.275, d=0.5, phi_segments=128, theta_segments=176):
-    """Watertight Domokos-Varkonyi radial gomboc R = 1 + d*dR about its
-    centre.  d is the (here exaggerated) deviation from the unit sphere;
-    c shapes the separatrix."""
-    m = _Mesh()
     nphi = max(8, phi_segments)
     nth = max(8, theta_segments)
+    R = np.empty((nphi + 1, nth))
+    for i in range(nphi + 1):
+        phi = -0.5 * pi + pi * i / nphi
+        for j in range(nth):
+            theta = 2.0 * pi * j / nth
+            R[i, j] = 1.0 + d * _dv_delta(theta, phi, c)
+    # note: here phi is a LATITUDE (-pi/2..pi/2); remap to colatitude
+    # grid rows already run pole-to-pole, so _radial_mesh's colatitude
+    # matches after flipping the row order is unnecessary -- rows i=0..n
+    # correspond to latitude -pi/2..pi/2 i.e. colatitude pi..0.  Build
+    # directly here to keep the latitude convention.
+    m = _Mesh()
 
     def pt(i, j):
         phi = -0.5 * pi + pi * i / nphi
         theta = 2.0 * pi * (j % nth) / nth
-        r = 1.0 + d * _dv_delta(theta, phi, c)
+        r = R[i, j]
         return (r * cos(phi) * cos(theta),
                 r * cos(phi) * sin(theta),
                 r * sin(phi))
 
-    grid = [[pt(i, j) for j in range(nth)] for i in range(nphi + 1)]
     for i in range(nphi):
         for j in range(nth):
             jn = (j + 1) % nth
-            m.quad(grid[i][j], grid[i][jn],
-                   grid[i + 1][jn], grid[i + 1][j])
+            m.quad(pt(i, j), pt(i, jn), pt(i + 1, jn), pt(i + 1, j))
     return m.verts, m.faces
 
 
 # ---------------------------------------------------------------------
-# ANALYTIC gomboc: Sloan's closed-form radial surfaces
+# SLOAN analytic gombocs: r^4 = 1 + 4 beta sin(theta) cos(phi - P(theta))
+# (theta = polar angle, phi = azimuth, per Sloan's note)
 # ---------------------------------------------------------------------
-def _sloan_radius(kind, phi, theta, beta):
-    s = sin(phi)
+def _sloan_radius(kind, polar, azim, beta):
+    s = sin(polar)
     if kind == 'SLOAN_II':
-        c = cos(phi)
-        ph = theta - (1.5 * pi) * (c - c * c * c / 3.0)
+        c = cos(polar)
+        p = azim - (1.5 * pi) * (c - c * c * c / 3.0)
     else:                                    # 'SLOAN_I'
-        ph = theta - 5.0 * phi
-    r4 = 1.0 + 4.0 * beta * s * cos(ph)
+        p = azim - 5.0 * polar
+    r4 = 1.0 + 4.0 * beta * s * cos(p)
     if r4 < 1e-9:
         r4 = 1e-9
     return r4 ** 0.25
 
 
-def build_gomboc_analytic(kind='SLOAN_II', beta=0.17, phi_segments=96,
-                          theta_segments=128):
-    """Watertight radial Sloan gomboc surface about its centre."""
+def build_gomboc_sloan(kind='SLOAN_I', beta=0.15, phi_segments=96,
+                       theta_segments=128):
     m = _Mesh()
     nphi = max(6, phi_segments)
     nth = max(8, theta_segments)
 
     def pt(i, j):
-        phi = pi * i / nphi
-        theta = 2.0 * pi * (j % nth) / nth
-        r = _sloan_radius(kind, phi, theta, beta)
-        return (r * sin(phi) * cos(theta),
-                r * sin(phi) * sin(theta),
-                r * cos(phi))
+        polar = pi * i / nphi
+        azim = 2.0 * pi * (j % nth) / nth
+        r = _sloan_radius(kind, polar, azim, beta)
+        return (r * sin(polar) * cos(azim),
+                r * sin(polar) * sin(azim),
+                r * cos(polar))
 
-    grid = [[pt(i, j) for j in range(nth)] for i in range(nphi + 1)]
     for i in range(nphi):
         for j in range(nth):
             jn = (j + 1) % nth
-            m.quad(grid[i][j], grid[i][jn],
-                   grid[i + 1][jn], grid[i + 1][j])
+            m.quad(pt(i, j), pt(i, jn), pt(i + 1, jn), pt(i + 1, j))
     return m.verts, m.faces
 
 
@@ -272,70 +288,57 @@ if _IN_BLENDER:
 
         kind: EnumProperty(
             name="Form",
-            items=[('DV', "Domokos-Varkonyi (paper)",
-                    "The actual 2006 construction: R = 1 + d*dR, a "
-                    "deformed sphere with a tennis-ball-seam "
-                    "separatrix (d exaggerated for visibility)"),
-                   ('SCULPTURAL', "Sculptural (turtle-shell likeness)",
-                    "The familiar gomboc silhouette: rounded belly "
-                    "sweeping up to a leaning dorsal ridge (a likeness, "
-                    "meshed from an SDF morph)"),
-                   ('SLOAN_II', "Analytic - Sloan II",
-                    "Sloan's closed-form radial surface II "
-                    "(beta up to ~0.17)"),
+            items=[('REFERENCE', "Fabricated Gomboc (recognisable)",
+                    "The iconic fabricated shape: smooth belly rising "
+                    "to a curved ridge and beak (spherical-harmonic "
+                    "model of the real object)"),
+                   ('DV', "Domokos-Varkonyi (2006)",
+                    "The existence-proof construction R = 1 + d*dR "
+                    "with a tennis-ball-seam separatrix (d exaggerated "
+                    "for visibility)"),
                    ('SLOAN_I', "Analytic - Sloan I",
-                    "Sloan's closed-form radial surface I; a helically "
-                    "swept ridge (beta up to ~0.15)")],
-            default='DV')
+                    "Sloan's closed-form r^4 = 1 + 4 beta sin(t) "
+                    "cos(p - 5t); a near-sphere (beta up to ~0.15)"),
+                   ('SLOAN_II', "Analytic - Sloan II",
+                    "Sloan's closed-form II; a near-sphere "
+                    "(beta up to ~0.17)")],
+            default='REFERENCE')
         dv_c: FloatProperty(
             name="Separatrix c", default=0.275, min=0.1, max=3.0,
             description="Domokos-Varkonyi: shapes the tennis-ball-seam "
                         "separatrix (~0.275 is the paper's value)")
         dv_d: FloatProperty(
             name="Deviation d", default=0.5, min=0.0, max=0.95,
-            description="Domokos-Varkonyi: deviation from the sphere. "
-                        "The true body needs d < 5e-5 (a ball); larger "
-                        "d exaggerates the shape, as in the paper's "
-                        "figures")
-        ridge: FloatProperty(
-            name="Ridge", default=0.35, min=0.05, max=0.6,
-            description="Sculptural: sharpness of the dorsal crest "
-                        "(sphere-to-blade morph weight)")
-        lean: FloatProperty(
-            name="Lean", default=0.5, min=0.0, max=1.0,
-            description="Sculptural: how far the crest leans over one "
-                        "end (breaks the symmetry)")
-        resolution: IntProperty(
-            name="Resolution", default=76, min=24, max=200,
-            description="Sculptural: marching-grid density")
+            description="Domokos-Varkonyi: deviation from the sphere "
+                        "(the true body needs d < 5e-5; larger d "
+                        "exaggerates the shape, as in the paper)")
         beta: FloatProperty(
-            name="Flatness beta", default=0.17, min=0.0, max=0.25,
-            description="Analytic: departure from a sphere (0 = ball). "
-                        "Keep <= ~0.15 (Sloan I) / ~0.17 (Sloan II)")
+            name="Perturbation beta", default=0.15, min=0.0, max=0.25,
+            description="Sloan: perturbation from the sphere. Keep "
+                        "<= ~0.15 (Sloan I) / ~0.17 (Sloan II)")
         phi_segments: IntProperty(
-            name="Rings", default=96, min=8, max=400,
-            description="Analytic: segments pole to pole")
+            name="Rings", default=128, min=8, max=400,
+            description="Segments from pole to pole")
         theta_segments: IntProperty(
-            name="Segments", default=128, min=8, max=512,
-            description="Analytic: segments around the axis")
+            name="Segments", default=176, min=8, max=512,
+            description="Segments around the axis")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
         def execute(self, context):
-            if self.kind == 'DV':
+            if self.kind == 'REFERENCE':
+                verts, faces = build_gomboc_reference(
+                    self.phi_segments, self.theta_segments)
+            elif self.kind == 'DV':
                 verts, faces = build_gomboc_dv(
                     self.dv_c, self.dv_d, self.phi_segments,
                     self.theta_segments)
-            elif self.kind == 'SCULPTURAL':
-                verts, faces = build_gomboc_sculptural(
-                    self.ridge, self.lean, self.resolution)
             else:
-                verts, faces = build_gomboc_analytic(
+                verts, faces = build_gomboc_sloan(
                     self.kind, self.beta, self.phi_segments,
                     self.theta_segments)
 
-            verts = [tuple(map(float, v)) for v in np.asarray(verts)]
-            faces = [tuple(int(i) for i in f) for f in faces]
+            verts = [tuple(map(float, v)) for v in verts]
 
             def _fit(vs):
                 # centre on the bbox midpoint and scale the largest
@@ -384,20 +387,15 @@ if _IN_BLENDER:
             if self.kind == 'DV':
                 lay.prop(self, 'dv_c')
                 lay.prop(self, 'dv_d')
-                lay.prop(self, 'phi_segments')
-                lay.prop(self, 'theta_segments')
-            elif self.kind == 'SCULPTURAL':
-                lay.prop(self, 'ridge')
-                lay.prop(self, 'lean')
-                lay.prop(self, 'resolution')
-            else:
+            elif self.kind in ('SLOAN_I', 'SLOAN_II'):
                 lay.prop(self, 'beta')
-                lay.prop(self, 'phi_segments')
-                lay.prop(self, 'theta_segments')
+            lay.prop(self, 'phi_segments')
+            lay.prop(self, 'theta_segments')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
-        self.layout.operator("mesh.monostatic_body_add", icon='MESH_UVSPHERE')
+        self.layout.operator("mesh.monostatic_body_add",
+                             icon='MESH_UVSPHERE')
 
     ADD_MENU = True
 
@@ -412,65 +410,51 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_monostatic_body_add)
 
 
-def _selftest():
+def _edge_manifold(f):
     from collections import Counter
-
-    def _edge_manifold(f):
-        cnt = Counter()
-        for fc in f:
-            n = len(fc)
-            for i in range(n):
-                a, b = fc[i], fc[(i + 1) % n]
-                cnt[(min(a, b), max(a, b))] += 1
-        return all(c == 2 for c in cnt.values()), len(cnt)
-
-    # Domokos-Varkonyi: watertight ball (chi = 2), positive radius, and
-    # the deformation actually breaks the sphere (R varies with d).
-    v, f = build_gomboc_dv(0.275, 0.5, 80, 112)
-    man, ne = _edge_manifold(f)
-    chi = len(v) - ne + len(f)
-    rr = [math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v]
-    ok = man and chi == 2 and min(rr) > 0.05 and (max(rr) - min(rr)) > 0.3
-    print(f"gomboc[DV c=.275 d=.5]: V={len(v)} F={len(f)} manifold={man} "
-          f"chi={chi}(2) R=[{min(rr):.3f},{max(rr):.3f}] "
-          f"{'OK' if ok else 'BAD'}")
-    assert ok
-    # d -> 0 relaxes to the unit sphere (all radii ~ 1)
-    v0, _ = build_gomboc_dv(0.275, 0.0, 24, 32)
-    rr0 = [math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v0]
-    assert max(abs(r - 1.0) for r in rr0) < 1e-9, "d=0 must be a sphere"
-
-    # sculptural: closed manifold, convex-ish, taller than wide with a
-    # single upper crest (top extent above centre exceeds the belly).
-    v, f = build_gomboc_sculptural(0.35, 0.5, 56)
-    v = [tuple(map(float, p)) for p in np.asarray(v)]
-    f = [tuple(int(i) for i in t) for t in f]
     cnt = Counter()
     for fc in f:
         n = len(fc)
         for i in range(n):
             a, b = fc[i], fc[(i + 1) % n]
             cnt[(min(a, b), max(a, b))] += 1
-    manifold = all(c == 2 for c in cnt.values())
-    zs = [p[2] for p in v]
-    ok = manifold and len(v) > 100 and (max(zs) - min(zs)) > 0.5
-    print(f"gomboc[sculptural]: V={len(v)} F={len(f)} manifold={manifold} "
-          f"z-extent={max(zs) - min(zs):.2f} {'OK' if ok else 'BAD'}")
+    return all(c == 2 for c in cnt.values()), len(cnt)
+
+
+def _selftest():
+    # Reference (SH) gomboc: watertight ball (chi = 2), clearly
+    # non-spherical (the fabricated shape deviates ~40% from a sphere).
+    v, f = build_gomboc_reference(80, 112)
+    man, ne = _edge_manifold(f)
+    chi = len(v) - ne + len(f)
+    rr = [math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v]
+    dev = (max(rr) - min(rr)) / (sum(rr) / len(rr))
+    ok = man and chi == 2 and min(rr) > 0.1 and dev > 0.2
+    print(f"gomboc[REFERENCE]: V={len(v)} F={len(f)} manifold={man} "
+          f"chi={chi}(2) R=[{min(rr):.3f},{max(rr):.3f}] dev={dev:.2f} "
+          f"{'OK' if ok else 'BAD'}")
     assert ok
 
-    # analytic Sloan forms: watertight ball (chi = 2), radius positive.
+    # Domokos-Varkonyi: watertight, positive radius, d -> 0 is a sphere.
+    v, f = build_gomboc_dv(0.275, 0.5, 60, 96)
+    man, ne = _edge_manifold(f)
+    chi = len(v) - ne + len(f)
+    rr = [math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v]
+    ok = man and chi == 2 and min(rr) > 0.05
+    print(f"gomboc[DV]: V={len(v)} F={len(f)} manifold={man} chi={chi}(2) "
+          f"R=[{min(rr):.3f},{max(rr):.3f}] {'OK' if ok else 'BAD'}")
+    assert ok
+    v0, _ = build_gomboc_dv(0.275, 0.0, 24, 32)
+    rr0 = [math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v0]
+    assert max(abs(r - 1.0) for r in rr0) < 1e-9, "d=0 must be a sphere"
+
+    # Sloan analytic forms: watertight ball, near-sphere.
     for kind, beta in (('SLOAN_I', 0.15), ('SLOAN_II', 0.17)):
-        v, f = build_gomboc_analytic(kind, beta, 48, 64)
-        cnt = Counter()
-        for fc in f:
-            n = len(fc)
-            for i in range(n):
-                a, b = fc[i], fc[(i + 1) % n]
-                cnt[(min(a, b), max(a, b))] += 1
-        manifold = all(c == 2 for c in cnt.values())
-        chi = len(v) - len(cnt) + len(f)
+        v, f = build_gomboc_sloan(kind, beta, 48, 64)
+        man, ne = _edge_manifold(f)
+        chi = len(v) - ne + len(f)
         rmin = min(math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v)
-        ok = manifold and chi == 2 and rmin > 0.1
-        print(f"gomboc[{kind}]: V={len(v)} F={len(f)} manifold={manifold} "
+        ok = man and chi == 2 and rmin > 0.1
+        print(f"gomboc[{kind}]: V={len(v)} F={len(f)} manifold={man} "
               f"chi={chi}(2) rmin={rmin:.3f} {'OK' if ok else 'BAD'}")
         assert ok
