@@ -30,9 +30,16 @@
 #      true constant-width solids and are conjectured (Bonnesen-Fenchel)
 #      to minimise volume among all width-w bodies.
 #
-# All shapes are built as star-shaped radial meshes about the centroid
-# (each body is convex and contains its centroid), so the meshes are
-# watertight with no Boolean operations.
+# The Reuleaux solids of revolution are meshed directly by revolving a
+# Reuleaux polygon.  The Reuleaux and Meissner tetrahedra are built by
+# Boolean geometry in Blender (intersecting four balls, then paring
+# three edges with a wedge and filling them with a spindle -- a
+# surface of revolution of a circular arc -- after the OpenSCAD
+# construction of ceptimus, 2018): Booleans mesh the sphere patches and
+# their rounded joins cleanly, whereas a single lat-long radial mesh
+# tears along the patch-boundary seams.  (A pure-Python radial builder
+# is retained for the headless self-test, which checks the constant-
+# width property numerically.)
 #
 # References:
 #   - Ernst Meissner & Friedrich Schilling, "Drei Gipsmodelle von
@@ -289,6 +296,125 @@ except ImportError:
 
 if _IN_BLENDER:
 
+    import mathutils
+    from math import atan
+
+    # Standard regular-tetrahedron vertices (edge sqrt(8/3)); the tetra
+    # bodies are built by Boolean geometry, which meshes the sphere
+    # patches and their rounded joins cleanly -- a radial (lat-long)
+    # sampling instead tears along the patch-boundary seams.
+    _TETRA_STD = [(sqrt(8.0 / 9.0), 0.0, -1.0 / 3.0),
+                  (-sqrt(2.0 / 9.0), sqrt(2.0 / 3.0), -1.0 / 3.0),
+                  (-sqrt(2.0 / 9.0), -sqrt(2.0 / 3.0), -1.0 / 3.0),
+                  (0.0, 0.0, 1.0)]
+
+    def _cw_sphere(coll, center, r, subdiv):
+        bm = bmesh.new()
+        bmesh.ops.create_icosphere(bm, subdivisions=subdiv, radius=r)
+        bmesh.ops.translate(bm, verts=bm.verts, vec=center)
+        me = bpy.data.meshes.new("cw_tmp")
+        bm.to_mesh(me)
+        bm.free()
+        o = bpy.data.objects.new("cw_tmp", me)
+        coll.objects.link(o)
+        return o
+
+    def _cw_boolean(ctx, a, b, op):
+        md = a.modifiers.new("b", 'BOOLEAN')
+        md.operation = op
+        md.object = b
+        md.solver = 'EXACT'
+        with ctx.temp_override(object=a, active_object=a,
+                               selected_objects=[a]):
+            bpy.ops.object.modifier_apply(modifier=md.name)
+        bpy.data.objects.remove(b, do_unlink=True)
+        return a
+
+    def _cw_spindle(coll, w, nz=64, nth=72):
+        # revolve the Meissner arc rho_s(z) = sqrt(w^2 - z^2) - w*sqrt3/2
+        # about z (a thin lens with tips at z = -+ w/2), shifted to
+        # z in [0, w] so the tips sit on two tetra vertices.
+        c3 = w * sqrt(3.0) / 2.0
+        bm = bmesh.new()
+        rings = []
+        for iz in range(nz + 1):
+            z = -0.5 * w + w * iz / nz
+            rho = max(sqrt(max(w * w - z * z, 0.0)) - c3, 0.0)
+            rings.append([bm.verts.new((rho * cos(2 * pi * j / nth),
+                                        rho * sin(2 * pi * j / nth),
+                                        z + 0.5 * w)) for j in range(nth)])
+        for iz in range(nz):
+            for j in range(nth):
+                jn = (j + 1) % nth
+                try:
+                    bm.faces.new([rings[iz][j], rings[iz][jn],
+                                  rings[iz + 1][jn], rings[iz + 1][j]])
+                except ValueError:
+                    pass
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        me = bpy.data.meshes.new("cw_tmp")
+        bm.to_mesh(me)
+        bm.free()
+        o = bpy.data.objects.new("cw_tmp", me)
+        coll.objects.link(o)
+        return o
+
+    def _cw_wedge(coll, w, alpha):
+        # dihedral wedge (triangular prism) that pares the sharp edge
+        # back to the spindle; angle 2*alpha, apex on the edge line.
+        ca, sa, R, H = cos(alpha), sin(alpha), w / 5.0, 1.2 * w
+        pts = [(0, 0, 0), (R * ca, -R * sa, 0), (R * ca, R * sa, 0),
+               (0, 0, H), (R * ca, -R * sa, H), (R * ca, R * sa, H)]
+        faces = [(0, 1, 2), (3, 5, 4), (0, 3, 4, 1),
+                 (1, 4, 5, 2), (2, 5, 3, 0)]
+        me = bpy.data.meshes.new("cw_tmp")
+        me.from_pydata(pts, [], faces)
+        me.update()
+        o = bpy.data.objects.new("cw_tmp", me)
+        coll.objects.link(o)
+        return o
+
+    def _cw_place(o, v_apex, alpha, angle):
+        rz = mathutils.Matrix.Rotation(angle, 4, 'Z')
+        ry = mathutils.Matrix.Rotation(-alpha, 4, 'Y')
+        t = mathutils.Matrix.Translation(mathutils.Vector(v_apex))
+        o.data.transform(rz @ t @ ry)
+        return o
+
+    def _build_tetra_csg(ctx, kind, width, subdiv):
+        """Reuleaux / Meissner tetra by Boolean geometry (after the
+        OpenSCAD construction of ceptimus, 2018).  Returns verts, faces
+        of a cleaned, watertight mesh."""
+        coll = ctx.collection
+        k = width / sqrt(8.0 / 3.0)
+        vk = [(x * k, y * k, z * k) for (x, y, z) in _TETRA_STD]
+        alpha = atan(2.0 * sqrt(2.0)) / 2.0
+
+        res = _cw_sphere(coll, vk[0], width, subdiv)
+        for i in (1, 2, 3):
+            res = _cw_boolean(ctx, res, _cw_sphere(coll, vk[i], width,
+                                                   subdiv), 'INTERSECT')
+        if kind == 'MEISSNER':
+            for ang in (0.0, 2.0 * pi / 3.0, 4.0 * pi / 3.0):
+                res = _cw_boolean(ctx, res,
+                                  _cw_place(_cw_wedge(coll, width, alpha),
+                                            vk[0], alpha, ang), 'DIFFERENCE')
+            for ang in (0.0, 2.0 * pi / 3.0, 4.0 * pi / 3.0):
+                res = _cw_boolean(ctx, res,
+                                  _cw_place(_cw_spindle(coll, width),
+                                            vk[0], alpha, ang), 'UNION')
+
+        bm = bmesh.new()
+        bm.from_mesh(res.data)
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-5 * width)
+        bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
+        bm.to_mesh(res.data)
+        bm.free()
+        verts = [v.co[:] for v in res.data.vertices]
+        faces = [list(p.vertices) for p in res.data.polygons]
+        bpy.data.objects.remove(res, do_unlink=True)
+        return verts, faces
+
     class MESH_OT_constant_width_add(bpy.types.Operator):
         """Add a surface of constant width -- a Reuleaux solid of """ \
             """revolution, the Reuleaux tetrahedron, or a Meissner """ \
@@ -299,38 +425,37 @@ if _IN_BLENDER:
 
         kind: EnumProperty(
             name="Shape",
-            items=[('REVOLUTION', "Reuleaux Solid of Revolution",
+            items=[('MEISSNER', "Meissner Tetrahedron",
+                    "Reuleaux tetrahedron with three edges (meeting at "
+                    "one vertex) rounded -- a true constant-width solid"),
+                   ('REVOLUTION', "Reuleaux Solid of Revolution",
                     "A Reuleaux polygon revolved about a symmetry axis "
                     "(the triangle case has least known volume)"),
-                   ('MEISSNER_V', "Meissner Tetrahedron (vertex)",
-                    "Reuleaux tetrahedron with the three edges meeting "
-                    "at one vertex rounded -- true constant width"),
-                   ('MEISSNER_E', "Meissner Tetrahedron (triangle)",
-                    "Reuleaux tetrahedron with three edges forming a "
-                    "triangle rounded -- true constant width"),
                    ('REULEAUX', "Reuleaux Tetrahedron",
                     "Intersection of four balls; NOT quite constant "
                     "width (its edges bulge) -- the starting point")],
-            default='MEISSNER_V')
+            default='MEISSNER')
         poly_n: IntProperty(
             name="Polygon Sides", default=3, min=3, max=15,
             description="Sides of the Reuleaux polygon (forced odd)")
         width: FloatProperty(
             name="Width", default=2.0, min=0.05, max=100.0,
             description="The constant width (rolling height)")
-        phi_segments: IntProperty(
-            name="Rings", default=96, min=8, max=400)
+        sphere_subdiv: IntProperty(
+            name="Smoothness", default=6, min=4, max=7,
+            description="Icosphere subdivisions for the Boolean tetra "
+                        "(higher = smoother, slower)")
         theta_segments: IntProperty(
-            name="Segments", default=160, min=12, max=512)
+            name="Segments", default=160, min=12, max=512,
+            description="Revolution: segments around the axis")
 
         def execute(self, context):
             if self.kind == 'REVOLUTION':
                 verts, faces = build_reuleaux_revolution(
                     self.poly_n, self.width, self.theta_segments)
             else:
-                verts, faces = build_tetra_body(
-                    self.kind, self.width, self.phi_segments,
-                    self.theta_segments)
+                verts, faces = _build_tetra_csg(
+                    context, self.kind, self.width, self.sphere_subdiv)
 
             def _fit(vs):
                 # centre on the bbox midpoint; the shapes already carry
@@ -374,9 +499,10 @@ if _IN_BLENDER:
             if self.kind == 'REVOLUTION':
                 lay.prop(self, 'poly_n')
             lay.prop(self, 'width')
-            if self.kind != 'REVOLUTION':
-                lay.prop(self, 'phi_segments')
-            lay.prop(self, 'theta_segments')
+            if self.kind == 'REVOLUTION':
+                lay.prop(self, 'theta_segments')
+            else:
+                lay.prop(self, 'sphere_subdiv')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.constant_width_add", icon='MESH_CIRCLE')
