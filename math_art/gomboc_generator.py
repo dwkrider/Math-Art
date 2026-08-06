@@ -9,37 +9,53 @@
 # Varkonyi proved it and built the first one in 2006.
 #
 # The catch for a sculptor is that a TRUE gomboc is startlingly close
-# to a sphere (Domokos & Varkonyi's first solution departs from the
-# sphere by only ~1e-5) and has no simple closed form -- it comes from
-# an optimisation.  So this generator offers two ways to get a
+# to a sphere (Domokos & Varkonyi's first solution departs from it by
+# under 5e-5 in radius).  This generator offers three ways to get a
 # gomboc-shaped object:
 #
-#   * SCULPTURAL (default) -- the recognisable gomboc silhouette: a
-#     rounded "belly" that sweeps up to a curved dorsal ridge leaning
-#     over one end ("steep back, flattened bottom", like a high-domed
-#     turtle shell).  It is built by morphing the signed-distance field
-#     of a sphere toward that of a thin tall blade (after the libfive
-#     community sketch by M. Keeter / E. Liberato), with an added shear
-#     that leans the ridge to break the symmetry a real gomboc must
-#     break.  The zero level set is meshed with the project's
-#     marching-tetrahedra kernel.  This is a faithful LIKENESS, not a
-#     certified balancing body.
+#   * DOMOKOS-VARKONYI (default) -- the ACTUAL construction from their
+#     2006 paper (transcribed in
+#     research/papers/monostatic-bodies/monostatic_bodies_2006/).  In
+#     spherical coordinates (longitude theta, latitude phi in
+#     (-pi/2, pi/2)) the boundary is the radial surface
+#         R(theta, phi) = 1 + d * dR(theta, phi, c),
+#     a small deformation of the unit sphere by the field dR built from
+#     a latitude-warping map
+#         f(phi, c) = pi * ( (e^{phi/(pi c) + 1/(2c)} - 1)/(e^{1/c} - 1)
+#                            - 1/2 ),
+#     two meridian profiles f1 = sin f(phi, c),  f2 = -sin f(-phi, c),
+#     and a longitude blend weight
+#         a = cos^2(theta) cos^2 f(phi, c)
+#             / ( cos^2(theta) cos^2 f(phi, c)
+#                 + sin^2(theta) cos^2 f(-phi, c) ),
+#         dR = a f1 + (1 - a) f2      (dR = +-1 at the poles).
+#     d sets the amplitude of the deviation from the sphere; c shapes
+#     the "tennis-ball seam" separatrix dR = 0.  The genuine
+#     mono-monostatic body needs d < 5e-5 with c ~ 0.275 -- visually a
+#     ball -- so, exactly as in the paper's own Figures 3-4, we default
+#     to an EXAGGERATED d that makes the class {1,1} shape visible.
+#     (Two known typos in the printed equations are corrected here: the
+#     physical radius is 1 + d*dR, not (1+d)*dR, and the blend
+#     numerator carries cos^2 f(-phi, c).)
+#
+#   * SCULPTURAL -- the familiar high-domed "turtle shell" LIKENESS:
+#     a rounded belly sweeping up to a leaning dorsal ridge, built by
+#     morphing the signed-distance field of a sphere toward a thin tall
+#     blade (after the libfive sketch by M. Keeter / E. Liberato) and
+#     meshed with the project's marching-tetrahedra kernel.  A likeness
+#     of the physical object, not a certified balancing body.
 #
 #   * ANALYTIC (Sloan I / II) -- Robert J. Sloan's 2023 closed-form
-#     radial surfaces r = R(theta, phi), the only published analytic
-#     "gomboc" equations, exaggerated by a flatness parameter beta so
-#     the departure from a sphere is visible:
+#     radial surfaces, exaggerated by a flatness parameter beta:
 #         Sloan 1:  r^4 = 1 + 4 beta sin(phi) cos(theta - 5 phi)
 #         Sloan 2:  r^4 = 1 + 4 beta sin(phi)
 #                          cos( theta - (3pi/2)(cos phi - cos^3 phi/3) )
-#     (These reproduce two radial critical points; whether a given beta
-#     yields a strictly mono-monostatic solid depends on the finer
-#     centre-of-mass-height condition, so they too are used for shape.)
 #
 # References:
 #   - G. Domokos and P. Varkonyi, "Mono-monostatic bodies: the answer
 #     to Arnold's question", The Mathematical Intelligencer 28 (2006),
-#     no. 4, 34-38.
+#     no. 4, 34-38.  (Local copy + Markdown transcription under
+#     research/papers/monostatic-bodies/.)
 #   - P. L. Varkonyi and G. Domokos, "Static equilibria of rigid bodies:
 #     dice, pebbles and the Poincare-Hopf theorem", J. Nonlinear Sci.
 #     16 (2006), 255-281.
@@ -108,7 +124,8 @@ def build_gomboc_sculptural(ridge=0.35, lean=0.5, resolution=76):
 
 
 # ---------------------------------------------------------------------
-# ANALYTIC gomboc: Sloan's closed-form radial surfaces
+# mesh helper (welds the two spherical poles) -- shared by the radial
+# Domokos-Varkonyi and Sloan builders
 # ---------------------------------------------------------------------
 def _vkey(p):
     return (round(p[0], 7), round(p[1], 7), round(p[2], 7))
@@ -141,6 +158,61 @@ class _Mesh:
             self.faces.append(ids)
 
 
+# ---------------------------------------------------------------------
+# DOMOKOS-VARKONYI gomboc: the actual 2006 two-parameter construction
+# ---------------------------------------------------------------------
+def _dv_warp(phi, c):
+    """Latitude-warping map f(phi, c): (-pi/2, pi/2) -> (-pi/2, pi/2),
+    near-identity for c >> 1, strongly nonlinear as c -> 0."""
+    return pi * ((math.exp(phi / (pi * c) + 1.0 / (2.0 * c)) - 1.0)
+                 / (math.exp(1.0 / c) - 1.0) - 0.5)
+
+
+def _dv_delta(theta, phi, c):
+    """Deviation field dR(theta, phi, c) in [-1, 1]; dR = 0 is the
+    separatrix (tennis-ball seam)."""
+    if phi >= 0.5 * pi - 1e-9:
+        return 1.0
+    if phi <= -0.5 * pi + 1e-9:
+        return -1.0
+    fp = _dv_warp(phi, c)
+    fm = _dv_warp(-phi, c)
+    f1 = sin(fp)
+    f2 = -sin(fm)
+    num = cos(theta) ** 2 * cos(fp) ** 2
+    den = num + sin(theta) ** 2 * cos(fm) ** 2
+    a = (num / den) if den > 1e-12 else 0.5
+    return a * f1 + (1.0 - a) * f2
+
+
+def build_gomboc_dv(c=0.275, d=0.5, phi_segments=128, theta_segments=176):
+    """Watertight Domokos-Varkonyi radial gomboc R = 1 + d*dR about its
+    centre.  d is the (here exaggerated) deviation from the unit sphere;
+    c shapes the separatrix."""
+    m = _Mesh()
+    nphi = max(8, phi_segments)
+    nth = max(8, theta_segments)
+
+    def pt(i, j):
+        phi = -0.5 * pi + pi * i / nphi
+        theta = 2.0 * pi * (j % nth) / nth
+        r = 1.0 + d * _dv_delta(theta, phi, c)
+        return (r * cos(phi) * cos(theta),
+                r * cos(phi) * sin(theta),
+                r * sin(phi))
+
+    grid = [[pt(i, j) for j in range(nth)] for i in range(nphi + 1)]
+    for i in range(nphi):
+        for j in range(nth):
+            jn = (j + 1) % nth
+            m.quad(grid[i][j], grid[i][jn],
+                   grid[i + 1][jn], grid[i + 1][j])
+    return m.verts, m.faces
+
+
+# ---------------------------------------------------------------------
+# ANALYTIC gomboc: Sloan's closed-form radial surfaces
+# ---------------------------------------------------------------------
 def _sloan_radius(kind, phi, theta, beta):
     s = sin(phi)
     if kind == 'SLOAN_II':
@@ -198,17 +270,31 @@ if _IN_BLENDER:
 
         kind: EnumProperty(
             name="Form",
-            items=[('SCULPTURAL', "Sculptural (recognisable)",
+            items=[('DV', "Domokos-Varkonyi (paper)",
+                    "The actual 2006 construction: R = 1 + d*dR, a "
+                    "deformed sphere with a tennis-ball-seam "
+                    "separatrix (d exaggerated for visibility)"),
+                   ('SCULPTURAL', "Sculptural (turtle-shell likeness)",
                     "The familiar gomboc silhouette: rounded belly "
-                    "sweeping up to a leaning dorsal ridge (a faithful "
-                    "likeness, meshed from an SDF morph)"),
+                    "sweeping up to a leaning dorsal ridge (a likeness, "
+                    "meshed from an SDF morph)"),
                    ('SLOAN_II', "Analytic - Sloan II",
                     "Sloan's closed-form radial surface II "
                     "(beta up to ~0.17)"),
                    ('SLOAN_I', "Analytic - Sloan I",
                     "Sloan's closed-form radial surface I; a helically "
                     "swept ridge (beta up to ~0.15)")],
-            default='SCULPTURAL')
+            default='DV')
+        dv_c: FloatProperty(
+            name="Separatrix c", default=0.275, min=0.1, max=3.0,
+            description="Domokos-Varkonyi: shapes the tennis-ball-seam "
+                        "separatrix (~0.275 is the paper's value)")
+        dv_d: FloatProperty(
+            name="Deviation d", default=0.5, min=0.0, max=0.95,
+            description="Domokos-Varkonyi: deviation from the sphere. "
+                        "The true body needs d < 5e-5 (a ball); larger "
+                        "d exaggerates the shape, as in the paper's "
+                        "figures")
         ridge: FloatProperty(
             name="Ridge", default=0.35, min=0.05, max=0.6,
             description="Sculptural: sharpness of the dorsal crest "
@@ -234,7 +320,11 @@ if _IN_BLENDER:
                              max=100.0)
 
         def execute(self, context):
-            if self.kind == 'SCULPTURAL':
+            if self.kind == 'DV':
+                verts, faces = build_gomboc_dv(
+                    self.dv_c, self.dv_d, self.phi_segments,
+                    self.theta_segments)
+            elif self.kind == 'SCULPTURAL':
                 verts, faces = build_gomboc_sculptural(
                     self.ridge, self.lean, self.resolution)
             else:
@@ -289,7 +379,12 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'kind')
-            if self.kind == 'SCULPTURAL':
+            if self.kind == 'DV':
+                lay.prop(self, 'dv_c')
+                lay.prop(self, 'dv_d')
+                lay.prop(self, 'phi_segments')
+                lay.prop(self, 'theta_segments')
+            elif self.kind == 'SCULPTURAL':
                 lay.prop(self, 'ridge')
                 lay.prop(self, 'lean')
                 lay.prop(self, 'resolution')
@@ -317,6 +412,31 @@ if _IN_BLENDER:
 
 def _selftest():
     from collections import Counter
+
+    def _edge_manifold(f):
+        cnt = Counter()
+        for fc in f:
+            n = len(fc)
+            for i in range(n):
+                a, b = fc[i], fc[(i + 1) % n]
+                cnt[(min(a, b), max(a, b))] += 1
+        return all(c == 2 for c in cnt.values()), len(cnt)
+
+    # Domokos-Varkonyi: watertight ball (chi = 2), positive radius, and
+    # the deformation actually breaks the sphere (R varies with d).
+    v, f = build_gomboc_dv(0.275, 0.5, 80, 112)
+    man, ne = _edge_manifold(f)
+    chi = len(v) - ne + len(f)
+    rr = [math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v]
+    ok = man and chi == 2 and min(rr) > 0.05 and (max(rr) - min(rr)) > 0.3
+    print(f"gomboc[DV c=.275 d=.5]: V={len(v)} F={len(f)} manifold={man} "
+          f"chi={chi}(2) R=[{min(rr):.3f},{max(rr):.3f}] "
+          f"{'OK' if ok else 'BAD'}")
+    assert ok
+    # d -> 0 relaxes to the unit sphere (all radii ~ 1)
+    v0, _ = build_gomboc_dv(0.275, 0.0, 24, 32)
+    rr0 = [math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v0]
+    assert max(abs(r - 1.0) for r in rr0) < 1e-9, "d=0 must be a sphere"
 
     # sculptural: closed manifold, convex-ish, taller than wide with a
     # single upper crest (top extent above centre exceeds the belly).
