@@ -67,13 +67,14 @@
 #     libfive f-rep modeller).
 
 bl_info = {
-    "name": "Gomboc",
+    "name": "Monostatic Body",
     "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
-    "location": "View3D > Add > Mesh > Gomboc",
-    "description": "Gomboc: the self-righting mono-monostatic solid "
-                   "(after Domokos & Varkonyi; analytic form after Sloan)",
+    "location": "View3D > Add > Mesh > Monostatic Body",
+    "description": "Monostatic body: the self-righting gomboc and "
+                   "related mono-monostatic solids (after Domokos & "
+                   "Varkonyi; analytic form after Sloan)",
     "category": "Add Mesh",
 }
 
@@ -261,11 +262,12 @@ except ImportError:
 
 if _IN_BLENDER:
 
-    class MESH_OT_gomboc_add(bpy.types.Operator):
-        """Add a gomboc -- the convex, homogeneous self-righting solid """ \
-            """with a single stable and single unstable balance point"""
-        bl_idname = "mesh.gomboc_add"
-        bl_label = "Gomboc"
+    class MESH_OT_monostatic_body_add(bpy.types.Operator):
+        """Add a monostatic body -- the gomboc, a convex homogeneous """ \
+            """self-righting solid with one stable and one unstable """ \
+            """balance point"""
+        bl_idname = "mesh.monostatic_body_add"
+        bl_label = "Monostatic Body"
         bl_options = {'REGISTER', 'UNDO'}
 
         kind: EnumProperty(
@@ -353,7 +355,7 @@ if _IN_BLENDER:
                 return [((v[0] - cx) * s, (v[1] - cy) * s,
                          (v[2] - cz) * s) for v in vs]
 
-            me = bpy.data.meshes.new("Gomboc")
+            me = bpy.data.meshes.new("Monostatic Body")
             me.from_pydata(_fit(verts), [], faces)
             me.validate(clean_customdata=True)
             bm = bmesh.new()
@@ -364,7 +366,7 @@ if _IN_BLENDER:
             me.polygons.foreach_set('use_smooth',
                                     [True] * len(me.polygons))
             me.update()
-            obj = bpy.data.objects.new("Gomboc", me)
+            obj = bpy.data.objects.new("Monostatic Body", me)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
             for o in context.selected_objects:
@@ -395,19 +397,19 @@ if _IN_BLENDER:
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
-        self.layout.operator("mesh.gomboc_add", icon='MESH_UVSPHERE')
+        self.layout.operator("mesh.monostatic_body_add", icon='MESH_UVSPHERE')
 
     ADD_MENU = True
 
     def register():
-        bpy.utils.register_class(MESH_OT_gomboc_add)
+        bpy.utils.register_class(MESH_OT_monostatic_body_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
-        bpy.utils.unregister_class(MESH_OT_gomboc_add)
+        bpy.utils.unregister_class(MESH_OT_monostatic_body_add)
 
 
 def _selftest():

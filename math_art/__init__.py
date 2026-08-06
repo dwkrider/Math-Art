@@ -45,7 +45,7 @@ _MODULE_NAMES = [
     'space_curve_generator',
     'oloid_generator',
     'sphericon_generator',
-    'gomboc_generator',
+    'monostatic_body_generator',
     'constant_width_generator',
     'prime_knot_generator',
     'regular_solids_generator',
@@ -268,7 +268,8 @@ class VIEW3D_MT_math_art_odds(bpy.types.Menu):
         _op(lay, "mesh.twisted_torus_add", icon='MESH_TORUS')
         _op(lay, "mesh.oloid_add", icon='MESH_CAPSULE')
         _op(lay, "mesh.sphericon_add", icon='MESH_CAPSULE')
-        _op(lay, "mesh.gomboc_add", icon='MESH_UVSPHERE')
+        _op(lay, "mesh.monostatic_body_add", text="Monostatic Body",
+            icon='MESH_UVSPHERE')
         _op(lay, "mesh.constant_width_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.stereographic_add", icon='LIGHT_POINT')
         _op(lay, "mesh.orbifold_sphere_add", icon='MOD_MIRROR')
