@@ -509,6 +509,9 @@ if _IN_BLENDER:
             items=[('SHELL', "Shell",
                     "Smooth welded sphere surface (Solidify modifier "
                     "if thickness > 0)"),
+                   ('WIRE', "Struts",
+                    "Edges as a wireframe frame of struts (Wireframe "
+                    "modifier)"),
                    ('STRUTS', "Ball and Stick",
                     "Edges as cylinders, vertices as small spheres"),
                    ('LEONARDO', "Leonardo (da Vinci)",
@@ -571,7 +574,7 @@ if _IN_BLENDER:
             # only round struts/nodes shade smooth; the flat facets
             # of shells and panels must stay flat or the edges blur
             smooth = self.style == 'STRUTS'
-            if self.style in ('SHELL', 'LEONARDO'):
+            if self.style in ('SHELL', 'LEONARDO', 'WIRE'):
                 verts = list(V)
                 faces = [list(f) for f in F]
                 add_base_ring(verts, faces, loops, V,
@@ -625,6 +628,10 @@ if _IN_BLENDER:
                     import leonardo_style
                 leonardo_style.add_modifier(obj, self.border,
                                             self.thickness)
+            elif self.style == 'WIRE':
+                mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
+                mod.thickness = self.thickness * R
+                mod.use_even_offset = False
             self.report({'INFO'},
                         f"V={len(me.vertices)} E={len(me.edges)} "
                         f"F={len(me.polygons)}")
@@ -645,7 +652,7 @@ if _IN_BLENDER:
                 if self.base_ring:
                     lay.prop(self, 'ring_width')
             lay.prop(self, 'style')
-            if self.style in ('SHELL', 'PANELS'):
+            if self.style in ('SHELL', 'PANELS', 'WIRE'):
                 lay.prop(self, 'thickness')
             elif self.style == 'LEONARDO':
                 lay.prop(self, 'border')

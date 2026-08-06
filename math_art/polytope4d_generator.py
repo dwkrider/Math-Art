@@ -948,8 +948,11 @@ if _IN_BLENDER:
                                      min=1.0, max=4.0)
         render: EnumProperty(
             name="Style",
-            items=[('EDGES', "Edge Struts",
-                    "Struts along the projected edges"),
+            items=[('EDGES', "Struts",
+                    "Struts along the projected edges (the same "
+                    "edge-strut style as the other polyhedron "
+                    "generators, following the curved stereographic "
+                    "arcs)"),
                    ('BALLSTICK', "Ball and Stick",
                     "Struts along the projected edges with a sphere "
                     "at every vertex, always on (ball-and-stick "

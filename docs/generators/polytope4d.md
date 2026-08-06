@@ -20,7 +20,7 @@ The six regular convex 4-polytopes — the 5-cell, tesseract (8-cell), 16-cell, 
 | Taper With Projection | On | Scale strut thickness by the local projection factor (features near the pole appear fatter). |
 | Vertex Spheres | On | Cap each projected vertex with a small sphere. |
 | Sphere Size | 1.6 | Vertex-sphere radius as a multiple of the strut radius (min 1.0, max 4.0). |
-| Style | Edge Struts | Edge Struts (tubes along the projected edges) or Leonardo (da Vinci) (a flat open panel per 2D face). |
+| Style | Struts | Struts (tubes along the projected edges), Ball and Stick (struts plus a sphere at every vertex), or Leonardo (da Vinci) (a flat open panel per 2D face). |
 | Border | 0.35 | Leonardo panel frame width, as a fraction of the face (min 0.02, max 0.95). |
 | Panel Thickness | 0.03 | Leonardo panel thickness (min 0.002, max 0.5). |
 | Scale | 1.0 | Uniform output scale; the framework is fit to a 2 m cube times this (min 0.01, max 100.0). |
