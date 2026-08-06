@@ -316,6 +316,8 @@ OPS = [
      lambda: bpy.ops.mesh.interlocking_add(family='MCSOCTA', nx=4, ny=4)),
     ("interlocking bisquare",
      lambda: bpy.ops.mesh.interlocking_add(family='BISQUARE')),
+    ("interlocking bisquare layer",
+     lambda: bpy.ops.mesh.interlocking_add(family='BISQUARE', nx=4, ny=4)),
     ("interlocking rhom",
      lambda: bpy.ops.mesh.interlocking_add(family='RHOM')),
     ("interlocking rhom obverse",

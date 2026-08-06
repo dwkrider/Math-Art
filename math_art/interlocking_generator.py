@@ -634,10 +634,16 @@ def build_versatile(nx=4, ny=4):
 
 
 # The Bisquare block (Frezier 1737 / Weiss & Niemeyer 2026): a p4
-# fundamental domain deformed into two small squares.  11 vertices,
-# 18 triangular faces, a closed non-convex block of volume 3/2 (the
-# operator recomputes normals, so the published winding is fine).
+# fundamental domain whose square base (side sqrt2, at z=0) rises to a
+# two-tent roof (peak vertex 11 at z=1).  11 vertices, 18 triangular
+# faces, a closed non-convex block of volume 3/2 (the operator
+# recomputes normals, so the published winding is fine).  It is a p4
+# TIA, not a solid space-filler: base squares tile the z=0 plane and
+# the roofs interlock, so the layer has a flat floor and a tented top
+# (block volume 3/2 < the cell's 2 -- the missing quarter is the
+# valleys between roofs, exactly as in Weiss & Niemeyer Fig 8).
 _A2 = math.sqrt(2.0) / 2.0
+_S2 = math.sqrt(2.0)
 _BISQUARE_V = np.array([
     (-_A2, _A2, 0.0), (_A2, _A2, 0.0), (_A2, -_A2, 0.0),
     (-_A2, -_A2, 0.0),
@@ -650,14 +656,40 @@ _BISQUARE_F = [[i - 1 for i in f] for f in (
     (1, 5, 11), (4, 10, 11), (2, 6, 7), (1, 5, 6), (2, 3, 11),
     (2, 7, 11), (3, 8, 11), (1, 2, 6))]
 
+# the two block orientations (quad-triangular tile senses) are 90-deg
+# rotations of each other about the vertical; neighbours on the unit
+# square lattice always take opposite orientations (p4), so a single
+# checkerboard tiles the interlocking layer (verified: no
+# interpenetration).  Lattice = the base square's side sqrt2.
+_BISQUARE_L = (np.array((_S2, 0.0, 0.0)), np.array((0.0, _S2, 0.0)))
 
-def build_bisquare():
-    """The exact Bisquare block as a single block (a square deformed
-    into two smaller squares).  Nests with the Versatile block in
-    heterogeneous p4 assemblies (see BACKLOG)."""
-    V0 = _BISQUARE_V - _BISQUARE_V.mean(axis=0)
-    return [(np.zeros(3), V0, [list(f) for f in _BISQUARE_F],
-             False, 0)]
+
+def _rot_z(deg):
+    a = math.radians(deg)
+    c, s = math.cos(a), math.sin(a)
+    return np.array(((c, -s, 0.0), (s, c, 0.0), (0.0, 0.0, 1.0)))
+
+
+def build_bisquare(nx=1, ny=1):
+    """The Bisquare block: at nx=ny=1 a single reference block, else
+    the p4 interlocking layer -- one block per unit square, adjacent
+    cells rotated 90 deg (checkerboard), verified non-overlapping.
+    The base squares tile the floor; the roofs interlock above."""
+    F = [list(f) for f in _BISQUARE_F]
+    cen = _BISQUARE_V.mean(axis=0)
+    if nx == 1 and ny == 1:
+        return [(np.zeros(3), _BISQUARE_V - cen, F, False, 0)]
+    L1, L2 = _BISQUARE_L
+    cells = []
+    for i in range(nx):
+        for j in range(ny):
+            R = _rot_z(90.0 * ((i + j) % 2))
+            V = _BISQUARE_V @ R.T + i * L1 + j * L2
+            frame = (i == 0 or j == 0 or i == nx - 1 or j == ny - 1)
+            cells.append((np.zeros(3), V, F, frame, (i + j) % 2))
+    # centre the whole layer at the origin
+    mid = np.mean([c[1].mean(axis=0) for c in cells], axis=0)
+    return [(t, V - mid, F2, fr, col) for t, V, F2, fr, col in cells]
 
 
 # The Rhom block and its obverse (Goertzen 2024 / Weiss & Niemeyer
@@ -1065,7 +1097,7 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
     if family == 'MCSOCTA':
         return build_mcs('OCTA', nx, ny)
     if family == 'BISQUARE':
-        return build_bisquare()
+        return build_bisquare(nx, ny)
     if family == 'RHOM':
         return build_rhom(False)
     if family == 'RHOM_OBV':
@@ -1082,9 +1114,9 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
 # families that build a space-filling / interlocking assembly; the
 # rest emit a single reference block
 _ASSEMBLY = {'TETRA', 'ESCHER', 'VERSATILE', 'MCSCUBE', 'MCSOCTA',
-             'KITTEN', 'SL', 'DOME'}
+             'BISQUARE', 'KITTEN', 'SL', 'DOME'}
 _RIGOROUS = {'TETRA', 'ESCHER', 'VERSATILE', 'MCSCUBE', 'MCSOCTA'}
-_SINGLE_BLOCK = {'BISQUARE', 'RHOM', 'RHOM_OBV', 'UFO', 'CUSHION'}
+_SINGLE_BLOCK = {'RHOM', 'RHOM_OBV', 'UFO', 'CUSHION'}
 
 
 # ==================================================================
@@ -1107,7 +1139,7 @@ if _IN_BLENDER:
               'VERSATILE': "Versatile Block",
               'MCSCUBE': "Interlocking Cubes",
               'MCSOCTA': "Interlocking Octahedra",
-              'BISQUARE': "Bisquare Block",
+              'BISQUARE': "Bisquare Blocks",
               'RHOM': "Rhom Block",
               'RHOM_OBV': "Rhom Block (Obverse)",
               'KITTEN': "Tetroctahedrille Kitten",
@@ -1167,10 +1199,11 @@ if _IN_BLENDER:
                  "Octahedra with a 3-fold axis vertical on the same "
                  "honeycomb; faces tilt +/-19.47 deg (Kanel-Belov "
                  "moving cross-section); the framed layer locks"),
-                ('BISQUARE', "Bisquare Block (single)",
-                 "The exact Bisquare block (a square deformed into "
-                 "two smaller squares); nests with the Versatile "
-                 "block in heterogeneous assemblies"),
+                ('BISQUARE', "Bisquare Blocks",
+                 "The exact Bisquare block (Frezier 1737): a square "
+                 "base rising to a two-tent roof.  1x1 is a single "
+                 "block; larger sizes give the p4 interlocking layer "
+                 "(90-deg checkerboard, flat floor, tented top)"),
                 ('RHOM', "Rhom Block (single)",
                  "The exact Rhom block (Goertzen 2024): a p3 lozenge "
                  "block, convex, height sqrt6/3"),
@@ -1293,7 +1326,7 @@ if _IN_BLENDER:
             lay.prop(self, 'family')
             fam = self.family
             if fam in ('TETRA', 'ESCHER', 'VERSATILE', 'MCSCUBE',
-                       'MCSOCTA', 'KITTEN'):
+                       'MCSOCTA', 'BISQUARE', 'KITTEN'):
                 lay.prop(self, 'nx')
                 lay.prop(self, 'ny')
             if fam == 'KITTEN':
@@ -1577,6 +1610,43 @@ def _selftest():
         good = len(c0 & c1) == 0
         print(f"overlap SL engagement {e}: 2-block disjoint={good}")
         ok = ok and good
+
+    # Bisquare p4 layer: non-convex roofs, so overlap is tested by a
+    # ray-cast point-in-mesh coverage sample -- the interlocking layer
+    # must have NO interpenetration (gaps are allowed: the roof
+    # valleys make it a tented layer, not a solid fill).
+    def _inside(P, V, tri, d):
+        cnt = np.zeros(len(P), int)
+        for f in tri:
+            a, e1, e2 = V[f[0]], V[f[1]] - V[f[0]], V[f[2]] - V[f[0]]
+            h = np.cross(d, e2)
+            det = e1 @ h
+            if abs(det) < 1e-12:
+                continue
+            s = P - a
+            u = (s @ h) / det
+            q = np.cross(s, e1)
+            v = (q @ d) / det
+            tt = (q @ e2) / det
+            cnt += ((u >= -1e-9) & (u <= 1 + 1e-9) & (v >= -1e-9) &
+                    (u + v <= 1 + 1e-9) & (tt > 1e-9))
+        return cnt % 2 == 1
+
+    bcells = build_bisquare(4, 4)
+    d = np.array((0.5123, 0.311, 0.8007))
+    d = d / np.linalg.norm(d)
+    lo = np.min([c[1].min(axis=0) for c in bcells], axis=0)
+    hi = np.max([c[1].max(axis=0) for c in bcells], axis=0)
+    rng2 = np.random.RandomState(1)
+    P = lo + (hi - lo) * rng2.uniform(size=(1500, 3))
+    P[:, 2] = rng2.uniform(0.05, 0.95, 1500)
+    cov = np.zeros(len(P), int)
+    for _, V, F, _fr, _c in bcells:
+        cov += _inside(P, np.asarray(V), F, d)
+    overlaps = int((cov > 1).sum())
+    print(f"overlap BISQUARE p4 layer: interpenetrations={overlaps} "
+          f"{'ok' if overlaps == 0 else 'OVERLAP'}")
+    ok = ok and overlaps == 0
 
     # Escher: every plane section must tile (coverage exactly 1)
     def _pip(pt, poly):
