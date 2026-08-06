@@ -2233,7 +2233,8 @@ def _selftest():
         if not ok:
             fails.append(sid)
     for (sid, label, num) in JOHNSON:
-        V, F = build_johnson(num)
+        V, F = (build_johnson_ext(num) if num in _J_EXT_NUMS
+                else build_johnson(num))
         dev = check_regular(V, F)
         chi = None
         E = set()
