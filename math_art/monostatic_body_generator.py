@@ -17,10 +17,10 @@
 #     segments of simple surfaces (cylinder, ellipsoid, cone) and
 #     planes -- it has NO single closed-form equation.  To reproduce it
 #     faithfully, its convex star-shaped boundary was digitised from a
-#     reference model and fit as a degree-12 real spherical-harmonic
-#     radial function R(theta, phi) (see _monostatic_data.py; ~0.8% RMS).
-#     This is the shape people picture; it departs from a sphere by
-#     ~40%.
+#     reference model as a radial grid R(phi, theta) (see
+#     _monostatic_data.py) and bilinearly interpolated.  This is the
+#     shape people picture; it departs from a sphere by ~40%.  (A
+#     spherical-harmonic fit was tried first but rings near the beak.)
 #
 #   * DOMOKOS-VARKONYI -- the actual construction from their 2006
 #     existence proof (transcribed in
@@ -129,50 +129,25 @@ def _radial_mesh(radius_grid):
 
 
 # ---------------------------------------------------------------------
-# REFERENCE (fabricated) gomboc: spherical-harmonic radial model
+# REFERENCE (fabricated) gomboc: digitised radial grid, bilinearly
+# interpolated (a spherical-harmonic fit was tried first but rings)
 # ---------------------------------------------------------------------
-def _legendre_all(L, x):
-    """Unnormalised associated Legendre P_l^m(x), m >= 0, on array x."""
-    P = {(0, 0): np.ones_like(x)}
-    somx2 = np.sqrt(np.clip(1.0 - x * x, 0.0, None))
-    for m in range(L + 1):
-        if m > 0:
-            P[(m, m)] = -(2 * m - 1) * somx2 * P[(m - 1, m - 1)]
-        if m < L:
-            P[(m + 1, m)] = x * (2 * m + 1) * P[(m, m)]
-        for l in range(m + 2, L + 1):
-            P[(l, m)] = ((2 * l - 1) * x * P[(l - 1, m)]
-                         - (l + m - 1) * P[(l - 2, m)]) / (l - m)
-    return P
-
-
-def _sh_radius(theta, phi):
-    """Evaluate the fitted spherical-harmonic radial function."""
+def _reference_grid():
     try:
-        from ._monostatic_data import GOMBOC_SH_L as L, GOMBOC_SH_COEF as C
+        from . import _monostatic_data as md
     except ImportError:
-        from _monostatic_data import GOMBOC_SH_L as L, GOMBOC_SH_COEF as C
-    Pl = _legendre_all(L, np.cos(phi))
-    R = np.zeros_like(theta)
-    k = 0
-    for l in range(L + 1):
-        for m in range(-l, l + 1):
-            am = abs(m)
-            ang = np.cos(m * theta) if m >= 0 else np.sin(am * theta)
-            R = R + C[k] * Pl[(l, am)] * ang
-            k += 1
-    return R
+        import _monostatic_data as md
+    return (md.GOMBOC_GRID_NPHI, md.GOMBOC_GRID_NTH,
+            np.asarray(md.GOMBOC_GRID, dtype=float).reshape(
+                md.GOMBOC_GRID_NPHI, md.GOMBOC_GRID_NTH))
 
 
-def build_gomboc_reference(phi_segments=128, theta_segments=176):
-    nphi = max(8, phi_segments)
-    nth = max(8, theta_segments)
-    ii = np.arange(nphi + 1)[:, None]
-    jj = np.arange(nth)[None, :]
-    phi = (pi * ii / nphi) * np.ones((1, nth))
-    th = (2.0 * pi * jj / nth) * np.ones((nphi + 1, 1))
-    R = _sh_radius(th.ravel(), phi.ravel()).reshape(nphi + 1, nth)
-    return _radial_mesh(R)
+def build_gomboc_reference():
+    """Mesh the digitised radial grid directly at its native resolution
+    (grid rows are the pole-to-pole colatitude samples, columns the
+    wrapping azimuth samples), so no interpolation crease is introduced."""
+    _gph, _gth, G = _reference_grid()
+    return _radial_mesh(G)
 
 
 # ---------------------------------------------------------------------
@@ -327,8 +302,7 @@ if _IN_BLENDER:
 
         def execute(self, context):
             if self.kind == 'REFERENCE':
-                verts, faces = build_gomboc_reference(
-                    self.phi_segments, self.theta_segments)
+                verts, faces = build_gomboc_reference()
             elif self.kind == 'DV':
                 verts, faces = build_gomboc_dv(
                     self.dv_c, self.dv_d, self.phi_segments,
@@ -389,8 +363,9 @@ if _IN_BLENDER:
                 lay.prop(self, 'dv_d')
             elif self.kind in ('SLOAN_I', 'SLOAN_II'):
                 lay.prop(self, 'beta')
-            lay.prop(self, 'phi_segments')
-            lay.prop(self, 'theta_segments')
+            if self.kind != 'REFERENCE':      # reference uses its grid res
+                lay.prop(self, 'phi_segments')
+                lay.prop(self, 'theta_segments')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
@@ -424,7 +399,7 @@ def _edge_manifold(f):
 def _selftest():
     # Reference (SH) gomboc: watertight ball (chi = 2), clearly
     # non-spherical (the fabricated shape deviates ~40% from a sphere).
-    v, f = build_gomboc_reference(80, 112)
+    v, f = build_gomboc_reference()
     man, ne = _edge_manifold(f)
     chi = len(v) - ne + len(f)
     rr = [math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v]

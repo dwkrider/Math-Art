@@ -442,9 +442,9 @@ if _IN_BLENDER:
             name="Width", default=2.0, min=0.05, max=100.0,
             description="The constant width (rolling height)")
         sphere_subdiv: IntProperty(
-            name="Smoothness", default=6, min=4, max=7,
+            name="Smoothness", default=6, min=4, max=8,
             description="Icosphere subdivisions for the Boolean tetra "
-                        "(higher = smoother, slower)")
+                        "(higher = smoother, slower; 8 is very heavy)")
         theta_segments: IntProperty(
             name="Segments", default=160, min=12, max=512,
             description="Revolution: segments around the axis")
