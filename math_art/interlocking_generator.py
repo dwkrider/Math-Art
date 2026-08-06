@@ -370,28 +370,36 @@ def _mcs_cell(kind, mirror=False):
 
 
 def build_mcs(kind, nx, ny):
-    """Cells of an MCS layer over a honeycomb patch.  Hexagon centres
-    sit on a triangular lattice; the alternating tilt pattern gives
-    two cell types placed by row/column parity.  Returns the same
-    tuple form as build_tetra."""
-    # flat-top unit hexagon (circumradius 1, apothem sqrt3/2): the
-    # centres of the honeycomb sit on a triangular lattice; columns
-    # are spaced 1.5 apart and odd columns drop by half a row
+    """Cells of a moving-cross-section (MCS) interlocking layer over a
+    honeycomb patch (Kanel-Belov / Dyskin et al.).  Every solid is an
+    *identical* pure translate -- a single orientation, NOT a two-type
+    alternation.  The in/out tilt lives on the six faces of each cell
+    (three up, three down, alternating around the equatorial hexagon);
+    because opposite hexagon edges have opposite parity and a honeycomb
+    neighbour sits across an edge (mapping an edge to the *opposite*
+    edge of the neighbour), adjacent cells automatically share each
+    inclined face-plane -- so nothing needs a per-cell tilt sign, and
+    the three-hexagons-at-a-vertex conflict of a two-colour scheme
+    never arises.  Hexagon centres sit on the triangular lattice
+    t1=(3/2, sqrt3/2), t2=(0, sqrt3): neighbours lie across the six
+    hexagon *edges*, and the cells are cube/octahedron-disjoint
+    (verified, face-to-face contact).  Returns build_tetra-style
+    tuples."""
     ax = 1.5                         # horizontal (column) spacing
     ay = math.sqrt(3.0)             # vertical (row) spacing
-    cellP = _mcs_cell(kind, mirror=False)
-    cellQ = _mcs_cell(kind, mirror=True)
+    V, F = _mcs_cell(kind, mirror=False)
+    V = np.asarray(V, float)
     cells = []
     for i in range(nx):
         for j in range(ny):
             cx = i * ax
             cy = (j + 0.5 * (i % 2)) * ay
-            parity = (i + j) % 2
-            V, F = cellP if parity == 0 else cellQ
             frame = (i == 0 or j == 0
                      or i == nx - 1 or j == ny - 1)
+            # colour is cosmetic only (all cells are identical
+            # translates); checkerboard for legibility
             cells.append((np.array((cx, cy, 0.0)),
-                          np.asarray(V, float), F, frame, parity))
+                          V, F, frame, (i + j) % 2))
     return cells
 
 
@@ -1031,6 +1039,10 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
         return build_escher(profile, nx, ny, deform, samples, height)
     if family == 'VERSATILE':
         return build_versatile(nx, ny)
+    if family == 'MCSCUBE':
+        return build_mcs('CUBE', nx, ny)
+    if family == 'MCSOCTA':
+        return build_mcs('OCTA', nx, ny)
     if family == 'BISQUARE':
         return build_bisquare()
     if family == 'RHOM':
@@ -1048,8 +1060,9 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
 
 # families that build a space-filling / interlocking assembly; the
 # rest emit a single reference block
-_ASSEMBLY = {'TETRA', 'ESCHER', 'VERSATILE', 'KITTEN', 'SL', 'DOME'}
-_RIGOROUS = {'TETRA', 'ESCHER', 'VERSATILE'}
+_ASSEMBLY = {'TETRA', 'ESCHER', 'VERSATILE', 'MCSCUBE', 'MCSOCTA',
+             'KITTEN', 'SL', 'DOME'}
+_RIGOROUS = {'TETRA', 'ESCHER', 'VERSATILE', 'MCSCUBE', 'MCSOCTA'}
 _SINGLE_BLOCK = {'BISQUARE', 'RHOM', 'RHOM_OBV', 'UFO', 'CUSHION'}
 
 
@@ -1071,6 +1084,8 @@ if _IN_BLENDER:
     _LABEL = {'TETRA': "Interlocking Tetrahedra",
               'ESCHER': "Escher / Osteomorphic Blocks",
               'VERSATILE': "Versatile Block",
+              'MCSCUBE': "Interlocking Cubes",
+              'MCSOCTA': "Interlocking Octahedra",
               'BISQUARE': "Bisquare Block",
               'RHOM': "Rhom Block",
               'RHOM_OBV': "Rhom Block (Obverse)",
@@ -1120,6 +1135,17 @@ if _IN_BLENDER:
                  "2023): a square lofted to a rectangle, tiled into a "
                  "layer over the diamond lattice (every section tiles "
                  "so the framed layer interlocks)"),
+                ('MCSCUBE', "Interlocking Cubes",
+                 "Cubes with a body-diagonal (3-fold) axis vertical, "
+                 "placed as identical translates on a honeycomb "
+                 "lattice; each cube's faces tilt +/-35.26 deg and "
+                 "adjacent cubes share every inclined plane, so the "
+                 "framed layer locks (Kanel-Belov / Dyskin moving "
+                 "cross-section)"),
+                ('MCSOCTA', "Interlocking Octahedra",
+                 "Octahedra with a 3-fold axis vertical on the same "
+                 "honeycomb; faces tilt +/-19.47 deg (Kanel-Belov "
+                 "moving cross-section); the framed layer locks"),
                 ('BISQUARE', "Bisquare Block (single)",
                  "The exact Bisquare block (a square deformed into "
                  "two smaller squares); nests with the Versatile "
@@ -1227,7 +1253,8 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'family')
             fam = self.family
-            if fam in ('TETRA', 'ESCHER', 'VERSATILE', 'KITTEN'):
+            if fam in ('TETRA', 'ESCHER', 'VERSATILE', 'MCSCUBE',
+                       'MCSOCTA', 'KITTEN'):
                 lay.prop(self, 'nx')
                 lay.prop(self, 'ny')
             if fam == 'KITTEN':
@@ -1402,6 +1429,8 @@ def _selftest():
             ('TETRA', build_tetra(4, 4)),
             ('ESCHER', build_escher('SINE', 4, 4, 0.18, 8, 1.0)),
             ('VERSATILE', build_versatile(4, 4)),
+            ('MCSCUBE', build_mcs('CUBE', 4, 4)),
+            ('MCSOCTA', build_mcs('OCTA', 4, 4)),
             ('BISQUARE', build_bisquare()),
             ('RHOM', build_rhom(False)),
             ('RHOM_OBV', build_rhom(True)),
@@ -1467,6 +1496,8 @@ def _selftest():
 
     for name, cells in (
             ('TETRA', build_tetra(5, 5)),
+            ('MCSCUBE', build_mcs('CUBE', 4, 4)),
+            ('MCSOCTA', build_mcs('OCTA', 4, 4)),
             ('KITTEN', build_tetrocta('KITTEN', 2, 2, 2))):
         w = _assembly_overlap(cells)
         good = w < 1e-3
@@ -1522,12 +1553,7 @@ def _selftest():
         print(f"escher tiling {prof}: coverage_one={good}")
         ok = ok and good
 
-    print("RESULT: OK" if ok else "RESULT: FAIL")
+    if not ok:
+        raise AssertionError("interlocking self-test failed")
+    print("RESULT: OK")
     return ok
-
-
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        _selftest()
