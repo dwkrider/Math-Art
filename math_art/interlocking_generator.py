@@ -1430,9 +1430,10 @@ if _IN_BLENDER:
             name="Gap Factor", default=0.94, min=0.3, max=1.0,
             description="Scale of each block about its centroid "
                         "(1.0 = blocks touch)")
-        size: FloatProperty(name="Size", default=2.0, min=0.1,
-                            max=100.0,
-                            description="Fit within this cube")
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01,
+                             max=100.0,
+                             description="Overall scale (1.0 fits a "
+                                         "2 m cube)")
         colour_mode: EnumProperty(
             name="Colouring",
             items=[('TYPE', "By Block Type",
@@ -1475,7 +1476,7 @@ if _IN_BLENDER:
             if fam == 'HENDECA':
                 lay.prop(self, 'hendeca_count')
             lay.prop(self, 'gap')
-            lay.prop(self, 'size')
+            lay.prop(self, 'scale')
             lay.prop(self, 'colour_mode')
             lay.prop(self, 'separate')
 
@@ -1532,7 +1533,8 @@ if _IN_BLENDER:
                 o.select_set(False)
             label = _LABEL[self.family]
             if self.separate:
-                parts = cells_to_meshes(cells, self.size, self.gap)
+                parts = cells_to_meshes(cells, 2.0 * self.scale,
+                                        self.gap)
                 first = None
                 for k, (v, f, cols, frames) in enumerate(parts):
                     obj = self._emit(context, f"{label} {k + 1}",
@@ -1544,7 +1546,7 @@ if _IN_BLENDER:
                             f"{label}: {len(parts)} separate objects")
                 return {'FINISHED'}
             verts, faces, cols, frames = cells_to_mesh(
-                cells, self.size, self.gap)
+                cells, 2.0 * self.scale, self.gap)
             obj = self._emit(context, f"Interlocking {label}",
                              verts, faces, cols, frames)
             context.view_layer.objects.active = obj

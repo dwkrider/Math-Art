@@ -470,10 +470,10 @@ if _IN_BLENDER:
             name="Gap Factor", default=0.92, min=0.05, max=1.0,
             description="Scale of each cell about its own centroid "
                         "(1.0 = cells share faces exactly)")
-        size: FloatProperty(
-            name="Size", default=2.0, min=0.01, max=100.0,
-            description="Fit the whole block within a cube of this "
-                        "size, centred at the origin")
+        scale: FloatProperty(
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall scale (1.0 fits a 2 m cube, centred "
+                        "at the origin)")
         style: EnumProperty(
             name="Style",
             items=[('SOLID', "Solid", "Plain solid cells"),
@@ -515,13 +515,13 @@ if _IN_BLENDER:
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
-            # fit the whole block into a `size` cube centred at origin
+            # centre at the origin and fit a 2 m cube, then scale
             P = np.asarray(verts, float)
             if len(P):
                 lo = P.min(axis=0)
                 hi = P.max(axis=0)
                 span = float(np.max(hi - lo)) or 1.0
-                P = (P - (lo + hi) / 2.0) * (self.size / span)
+                P = (P - (lo + hi) / 2.0) * (2.0 * self.scale / span)
                 verts = [tuple(p) for p in P]
             me = bpy.data.meshes.new("Spacefill")
             me.from_pydata(verts, [], faces)
@@ -572,7 +572,7 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            for k in ('kind', 'nx', 'ny', 'nz', 'gap', 'size'):
+            for k in ('kind', 'nx', 'ny', 'nz', 'gap', 'scale'):
                 lay.prop(self, k)
             if self.kind in ('SPIRAL3', 'SPIRAL4'):
                 lay.prop(self, 'spiral_segments')
