@@ -11,16 +11,36 @@
 # There is an important gap between the MATHEMATICS and the ICONIC
 # OBJECT, so this generator offers four forms:
 #
-#   * REFERENCE (default) -- the recognisable FABRICATED gomboc: a
-#     rounded body with a smooth belly rising to a single curved ridge
-#     and beak.  The makers describe it as a "tennis-ball" assembly of
-#     segments of simple surfaces (cylinder, ellipsoid, cone) and
-#     planes -- it has NO single closed-form equation.  To reproduce it
-#     faithfully, its convex star-shaped boundary was digitised from a
-#     reference model as a radial grid R(phi, theta) (see
-#     _monostatic_data.py) and bilinearly interpolated.  This is the
-#     shape people picture; it departs from a sphere by ~40%.  (A
-#     spherical-harmonic fit was tried first but rings near the beak.)
+#   * GÖMBÖC (default; internal id FABRICATED) -- the recognisable
+#     fabricated gomboc as a
+#     SMOOTH, STRICTLY CONVEX body.  The makers describe the object as
+#     a "tennis-ball" assembly of segments of simple surfaces
+#     (cylinder, ellipsoid, cone) and planes, joined along crease
+#     edges -- it has NO single closed-form equation.  Here its
+#     digitised SUPPORT function h(u) = max_x x.u (spherical-harmonic
+#     coefficients in _monostatic_data.py) is smoothed by the spherical
+#     heat kernel, i.e. the coefficients are damped by
+#     exp(-l(l+1) sigma^2/2).  Convolving a support function with a
+#     nonnegative zonal kernel is a rotational Minkowski average of the
+#     body, so the result is PROVABLY again the support function of a
+#     convex body -- the crease edges come out rounded at radius ~sigma
+#     with no ringing, faceting or pole pinch.  The surface is meshed
+#     by the normal parametrisation x(u) = grad H(u) of the
+#     1-homogeneous extension H(p) = |p| h(p/|p|), evaluated on an
+#     icosphere of directions (this naturally concentrates vertices where the
+#     curvature is high, e.g. along the seam and beak).
+#     CAVEAT on the physics: this form reproduces the SHAPE (smooth,
+#     strictly convex, one mirror plane, ~40% off a sphere), but it is
+#     NOT a certified mono-monostatic solid.  Resting energy is
+#     V(e) = c.e + h(-e) (c = centre of mass); equilibria are its
+#     critical points, and a true gomboc must have exactly one min and
+#     one max.  Digitising h from the (low-poly) reference leaves a
+#     residual roughness of ~1e-3 * h -- the SAME order as the real
+#     gomboc's ~1e-3 tolerance -- so the energy landscape carries extra
+#     shallow equilibria and the exact 1+1 count cannot be certified
+#     here.  For a PROVABLY mono-monostatic body use the Sloan or
+#     Domokos-Varkonyi forms below (which look near-spherical -- that
+#     tension is the whole point of the gomboc).
 #
 #   * DOMOKOS-VARKONYI -- the actual construction from their 2006
 #     existence proof (transcribed in
@@ -52,6 +72,11 @@
 #     https://mathworld.wolfram.com/Gomboc.html .
 #   - The fabricated gomboc and its tennis-ball segment construction:
 #     G. Domokos & P. Varkonyi, gomboc.eu.
+#   - Support functions, Minkowski combinations and their convolution
+#     by nonnegative zonal kernels: R. Schneider, "Convex Bodies: The
+#     Brunn-Minkowski Theory", 2nd ed., Cambridge Univ. Press, 2014
+#     (ch. 1.7-1.8; the normal parametrisation x = h u + grad_S h is
+#     the classical "reverse spherical image").
 
 bl_info = {
     "name": "Monostatic Body",
@@ -103,45 +128,10 @@ class _Mesh:
             self.faces.append(ids)
 
 
-def _radial_mesh(radius_grid):
-    """Build a watertight radial mesh from R sampled on an
-    (nphi+1) x nth grid (phi = colatitude 0..pi rows, theta wraps).
-    Poles weld automatically."""
-    nphi = radius_grid.shape[0] - 1
-    nth = radius_grid.shape[1]
-    m = _Mesh()
-    ii = np.arange(nphi + 1)[:, None]
-    jj = np.arange(nth)[None, :]
-    phi = pi * ii / nphi
-    th = 2.0 * pi * jj / nth
-    R = radius_grid
-    X = R * np.sin(phi) * np.cos(th)
-    Y = R * np.sin(phi) * np.sin(th)
-    Z = R * np.cos(phi) * np.ones((1, nth))
-    for i in range(nphi):
-        for j in range(nth):
-            jn = (j + 1) % nth
-            m.quad((X[i, j], Y[i, j], Z[i, j]),
-                   (X[i, jn], Y[i, jn], Z[i, jn]),
-                   (X[i + 1, jn], Y[i + 1, jn], Z[i + 1, jn]),
-                   (X[i + 1, j], Y[i + 1, j], Z[i + 1, j]))
-    return m.verts, m.faces
-
-
 # ---------------------------------------------------------------------
-# REFERENCE (fabricated) gomboc: digitised radial grid, bilinearly
-# interpolated (a spherical-harmonic fit was tried first but rings)
+# shared: a subdivided icosphere of directions (uniform, no polar
+# singularity), used to mesh the Gomboc's normal sphere
 # ---------------------------------------------------------------------
-def _reference_grid():
-    try:
-        from . import _monostatic_data as md
-    except ImportError:
-        import _monostatic_data as md
-    return (md.GOMBOC_GRID_NPHI, md.GOMBOC_GRID_NTH,
-            np.asarray(md.GOMBOC_GRID, dtype=float).reshape(
-                md.GOMBOC_GRID_NPHI, md.GOMBOC_GRID_NTH))
-
-
 def _icosphere(level):
     """Subdivided icosahedron on the unit sphere -- uniform vertices
     with NO polar singularities (a lat-long grid pinches at its poles)."""
@@ -180,33 +170,107 @@ def _icosphere(level):
     return verts, faces
 
 
-def _grid_interp(dirs, gph, gth, G):
-    """Bilinearly sample the radial grid at unit directions `dirs`."""
-    x, y, z = dirs[:, 0], dirs[:, 1], dirs[:, 2]
-    pol = np.arccos(np.clip(z, -1.0, 1.0))              # 0..pi
-    az = np.mod(np.arctan2(y, x), 2.0 * pi)            # 0..2pi
-    ip = pol / pi * (gph - 1)
-    it = az / (2.0 * pi) * gth
-    r0 = np.floor(ip).astype(int)
-    r1 = np.minimum(r0 + 1, gph - 1)
-    fr = ip - r0
-    c0 = np.floor(it).astype(int) % gth
-    c1 = (c0 + 1) % gth
-    fc = it - np.floor(it)
-    return ((G[r0, c0] * (1 - fc) + G[r0, c1] * fc) * (1 - fr)
-            + (G[r1, c0] * (1 - fc) + G[r1, c1] * fc) * fr)
+# ---------------------------------------------------------------------
+# FABRICATED gomboc: smooth strictly convex body from the heat-damped
+# spherical-harmonic expansion of the digitised SUPPORT function.
+# Heat flow of a support function = rotational Minkowski average of the
+# body (nonnegative zonal kernel), hence again a support function of a
+# convex body: the crease edges round off at radius ~sigma with no
+# ringing or faceting.  Surface meshed by the classical normal
+# parametrisation x(u) = grad H(u), H(p) = |p| h(p/|p|).
+# ---------------------------------------------------------------------
+def _sh_gomboc_coeffs():
+    try:
+        from . import _monostatic_data as md
+    except ImportError:
+        import _monostatic_data as md
+    L = md.GOMBOC_SH_L
+    c = np.zeros((L + 1) * (L + 1))
+    c[np.asarray(md.GOMBOC_SH_IDX, dtype=int)] = md.GOMBOC_SH_COEF
+    return L, c
 
 
-def build_gomboc_reference(level=6):
-    """The fabricated gomboc: an icosphere radially displaced by the
-    digitised radial function (uniform, pinch-free, convex)."""
-    verts, faces = _icosphere(level)
-    gph, gth, G = _reference_grid()
-    d = np.asarray(verts)
-    R = _grid_interp(d, gph, gth, G)
-    out = [(R[i] * d[i, 0], R[i] * d[i, 1], R[i] * d[i, 2])
-           for i in range(len(verts))]
-    return out, [list(f) for f in faces]
+def _sh_support(dirs, sigma):
+    """Evaluate the heat-damped support function h_sigma at unit
+    directions `dirs` (n, 3).  Fully normalised real spherical
+    harmonics via the stable Holmes-Featherstone recurrences; memory
+    stays O(n) (no basis matrix is materialised)."""
+    L, c = _sh_gomboc_coeffs()
+    ll = np.arange(L + 1)
+    damp = np.exp(-ll * (ll + 1) * sigma * sigma / 2.0)
+    # degrees the damping has not annihilated
+    lcut = int(max(np.nonzero(damp > 1e-9)[0], default=0)) \
+        if damp[-1] <= 1e-9 else L
+    lcut = max(2, lcut)
+    # highest degree with a surviving coefficient, per order m
+    lmax_m = np.full(L + 1, -1, dtype=int)
+    for i in np.nonzero(c)[0]:
+        l = int(sqrt(i))
+        m = abs(i - l * l - l)
+        if l > lmax_m[m]:
+            lmax_m[m] = l
+    ct = np.clip(dirs[:, 2], -1.0, 1.0)
+    st = np.sqrt(np.maximum(0.0, 1.0 - ct * ct))
+    phi = np.arctan2(dirs[:, 1], dirs[:, 0])
+    out = np.zeros(len(dirs))
+    r2 = sqrt(2.0)
+    pmm = np.full(len(dirs), sqrt(1.0 / (4.0 * pi)))    # P_00
+    for m in range(L + 1):
+        if m > 0:
+            pmm = pmm * st * sqrt((2.0 * m + 1.0) / (2.0 * m))
+        ltop = min(lmax_m[m], lcut)
+        if ltop < m:
+            continue
+        cosm = np.cos(m * phi) if m else None
+        sinm = np.sin(m * phi) if m else None
+        plm2 = None
+        plm1 = None
+        for l in range(m, ltop + 1):
+            if l == m:
+                p = pmm
+            elif l == m + 1:
+                p = ct * sqrt(2.0 * m + 3.0) * pmm
+            else:
+                a = sqrt((4.0 * l * l - 1.0) / (l * l - m * m))
+                b = sqrt(((2.0 * l + 1.0) * (l + m - 1.0) * (l - m - 1.0))
+                         / ((2.0 * l - 3.0) * (l * l - m * m)))
+                p = a * ct * plm1 - b * plm2
+            base = l * l + l
+            if m == 0:
+                cc = c[base] * damp[l]
+                if cc:
+                    out += cc * p
+            else:
+                cc = c[base + m] * damp[l]
+                cs = c[base - m] * damp[l]
+                if cc:
+                    out += (r2 * cc) * (p * cosm)
+                if cs:
+                    out += (r2 * cs) * (p * sinm)
+            plm2, plm1 = plm1, p
+    return out
+
+
+def build_gomboc_fabricated(sigma=0.09, level=6):
+    """The fabricated gomboc as a C-infinity strictly convex surface:
+    heat-kernel-rounded support function, meshed on an icosphere of
+    normal directions via x(u) = grad H(u) (central differences of the
+    1-homogeneous extension H)."""
+    verts, faces = _icosphere(max(2, min(7, int(level))))
+    U = np.asarray(verts)
+    d = 1e-4
+
+    def hom(P):
+        r = np.sqrt((P * P).sum(axis=1))
+        return r * _sh_support(P / r[:, None], sigma)
+
+    X = np.empty_like(U)
+    for k in range(3):
+        e = np.zeros(3)
+        e[k] = d
+        X[:, k] = (hom(U + e) - hom(U - e)) / (2.0 * d)
+    return ([tuple(map(float, p)) for p in X],
+            [list(f) for f in faces])
 
 
 # ---------------------------------------------------------------------
@@ -241,11 +305,8 @@ def build_gomboc_dv(c=0.275, d=0.5, phi_segments=128, theta_segments=176):
         for j in range(nth):
             theta = 2.0 * pi * j / nth
             R[i, j] = 1.0 + d * _dv_delta(theta, phi, c)
-    # note: here phi is a LATITUDE (-pi/2..pi/2); remap to colatitude
-    # grid rows already run pole-to-pole, so _radial_mesh's colatitude
-    # matches after flipping the row order is unnecessary -- rows i=0..n
-    # correspond to latitude -pi/2..pi/2 i.e. colatitude pi..0.  Build
-    # directly here to keep the latitude convention.
+    # here phi is a LATITUDE (-pi/2..pi/2): rows i = 0..nphi run pole to
+    # pole and the poles weld automatically.
     m = _Mesh()
 
     def pt(i, j):
@@ -322,10 +383,12 @@ if _IN_BLENDER:
 
         kind: EnumProperty(
             name="Form",
-            items=[('REFERENCE', "Fabricated Gomboc (recognisable)",
-                    "The iconic fabricated shape: smooth belly rising "
-                    "to a curved ridge and beak (spherical-harmonic "
-                    "model of the real object)"),
+            items=[('FABRICATED', "Gömböc",
+                    "The iconic fabricated gomboc as a smooth, "
+                    "strictly convex surface: spherical heat-kernel "
+                    "(Minkowski) rounding of the digitised support "
+                    "function -- rounded belly, seam edges and beak "
+                    "with no faceting"),
                    ('DV', "Domokos-Varkonyi (2006)",
                     "The existence-proof construction R = 1 + d*dR "
                     "with a tennis-ball-seam separatrix (d exaggerated "
@@ -336,7 +399,17 @@ if _IN_BLENDER:
                    ('SLOAN_II', "Analytic - Sloan II",
                     "Sloan's closed-form II; a near-sphere "
                     "(beta up to ~0.17)")],
-            default='REFERENCE')
+            default='FABRICATED')
+        smooth_sigma: FloatProperty(
+            name="Edge Rounding", default=0.09, min=0.07, max=0.25,
+            description="Fabricated: heat-kernel rounding radius "
+                        "(radians on the sphere of normals); smaller "
+                        "keeps the tennis-ball seam edges crisper "
+                        "(below ~0.07 the digitisation noise returns)")
+        smooth_level: IntProperty(
+            name="Subdivisions", default=6, min=3, max=7,
+            description="Fabricated: icosphere subdivisions of the "
+                        "normal sphere (6 = 40962 vertices)")
         dv_c: FloatProperty(
             name="Separatrix c", default=0.275, min=0.1, max=3.0,
             description="Domokos-Varkonyi: shapes the tennis-ball-seam "
@@ -360,8 +433,9 @@ if _IN_BLENDER:
                              max=100.0)
 
         def execute(self, context):
-            if self.kind == 'REFERENCE':
-                verts, faces = build_gomboc_reference()
+            if self.kind == 'FABRICATED':
+                verts, faces = build_gomboc_fabricated(
+                    self.smooth_sigma, self.smooth_level)
             elif self.kind == 'DV':
                 verts, faces = build_gomboc_dv(
                     self.dv_c, self.dv_d, self.phi_segments,
@@ -417,12 +491,16 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'kind')
-            if self.kind == 'DV':
+            if self.kind == 'FABRICATED':
+                lay.prop(self, 'smooth_sigma')
+                lay.prop(self, 'smooth_level')
+            elif self.kind == 'DV':
                 lay.prop(self, 'dv_c')
                 lay.prop(self, 'dv_d')
             elif self.kind in ('SLOAN_I', 'SLOAN_II'):
                 lay.prop(self, 'beta')
-            if self.kind != 'REFERENCE':      # reference uses its grid res
+            if self.kind != 'FABRICATED':
+                # the Gomboc form meshes on its own normal-sphere
                 lay.prop(self, 'phi_segments')
                 lay.prop(self, 'theta_segments')
             lay.prop(self, 'scale')
@@ -456,17 +534,34 @@ def _edge_manifold(f):
 
 
 def _selftest():
-    # Reference (SH) gomboc: watertight ball (chi = 2), clearly
-    # non-spherical (the fabricated shape deviates ~40% from a sphere).
-    v, f = build_gomboc_reference()
+    # Fabricated (smooth convex) gomboc: watertight ball (chi = 2),
+    # mirror-symmetric about x = 0, clearly non-spherical, and CONVEX
+    # (every mesh point lies inside the support-function bound).
+    v, f = build_gomboc_fabricated(sigma=0.09, level=4)
     man, ne = _edge_manifold(f)
     chi = len(v) - ne + len(f)
-    rr = [math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v]
-    dev = (max(rr) - min(rr)) / (sum(rr) / len(rr))
-    ok = man and chi == 2 and min(rr) > 0.1 and dev > 0.2
-    print(f"gomboc[REFERENCE]: V={len(v)} F={len(f)} manifold={man} "
-          f"chi={chi}(2) R=[{min(rr):.3f},{max(rr):.3f}] dev={dev:.2f} "
-          f"{'OK' if ok else 'BAD'}")
+    X = np.asarray(v)
+    rr = np.sqrt((X * X).sum(axis=1))
+    dev = (rr.max() - rr.min()) / rr.mean()
+    # mirror symmetry of the underlying support function
+    rng = np.random.default_rng(7)
+    dirs = rng.normal(size=(256, 3))
+    dirs /= np.sqrt((dirs * dirs).sum(axis=1))[:, None]
+    hd = _sh_support(dirs, 0.09)
+    hm = _sh_support(dirs * np.array([-1.0, 1.0, 1.0]), 0.09)
+    asym = np.abs(hd - hm).max()
+    # convexity certificate: max_j X_j . u_i <= h(u_i) (+ tolerance)
+    U = X / rr[:, None]
+    hu = _sh_support(U, 0.09)
+    worst = -1e9
+    for i0 in range(0, len(U), 512):
+        s = (X @ U[i0:i0 + 512].T).max(axis=0) - hu[i0:i0 + 512]
+        worst = max(worst, float(s.max()))
+    ok = (man and chi == 2 and rr.min() > 0.1 and dev > 0.2
+          and asym < 1e-6 and worst < 1e-4)
+    print(f"gomboc[FABRICATED]: V={len(v)} F={len(f)} manifold={man} "
+          f"chi={chi}(2) dev={dev:.2f} mirror_asym={asym:.1e} "
+          f"convexity_excess={worst:.1e} {'OK' if ok else 'BAD'}")
     assert ok
 
     # Domokos-Varkonyi: watertight, positive radius, d -> 0 is a sphere.
