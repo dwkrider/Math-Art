@@ -220,12 +220,32 @@ def _emit_edge_struts(verts, faces, face_comp, ci, V, F, thickness,
             face_comp.append(ci)
 
 
+def _emit_ball_stick(verts, faces, face_comp, ci, V, F, strut_radius,
+                     node_radius, scale):
+    """Round ball-and-stick frame for one component: a cylinder per
+    edge and a sphere per vertex, via the shared ball_and_stick module
+    (the same struts and nodes every polyhedron generator uses)."""
+    try:
+        from . import ball_and_stick
+    except ImportError:
+        import ball_and_stick
+    Vs = [tuple(x * scale for x in v) for v in V]
+    edges = ball_and_stick.edges_from_faces(F)
+    bv, bf = ball_and_stick.build_mesh(Vs, edges, strut_radius,
+                                       node_radius)
+    base = len(verts)
+    verts.extend(bv)
+    for f in bf:
+        faces.append([base + i for i in f])
+    face_comp.extend([ci] * len(bf))
+
+
 def build_tangle(kind='T5', style='FACES', width=0.22, thickness=0.10,
                  size=1.0, comp_rot=0.0, spin=0.0, scale=1.0,
-                 cap_size=1.0):
-    """Frames for every component of the compound: hollow faces or
-    edge struts. comp_rot rotates each component about its own
-    symmetry axis (Lang-style variants).
+                 cap_size=1.0, strut_radius=0.02, node_radius=0.035):
+    """Frames for every component of the compound: hollow faces, edge
+    struts, or a round ball-and-stick frame. comp_rot rotates each
+    component about its own symmetry axis (Lang-style variants).
     Returns (verts, faces, n_components, face_comp)."""
     comps = compound(kind)
     if abs(comp_rot) > 1e-9:
@@ -244,6 +264,9 @@ def build_tangle(kind='T5', style='FACES', width=0.22, thickness=0.10,
         if style == 'EDGES':
             _emit_edge_struts(verts, faces, face_comp, ci, V, F,
                               thickness, scale, cap_size)
+        elif style == 'BALLSTICK':
+            _emit_ball_stick(verts, faces, face_comp, ci, V, F,
+                             strut_radius, node_radius, scale)
         else:
             _emit_face_rings(verts, faces, face_comp, ci, V, F, width,
                              thickness, scale)
@@ -284,7 +307,11 @@ if _IN_BLENDER:
                    ('EDGES', "Edge Struts",
                     "Square sticks along the edges with flat caps "
                     "and faceted knuckles at the vertices (Lang "
-                    "polypolyhedra style)")],
+                    "polypolyhedra style)"),
+                   ('BALLSTICK', "Ball and Stick",
+                    "Round cylindrical struts along the edges and "
+                    "small spheres at the vertices (ball-and-stick "
+                    "model)")],
             default='FACES')
         width: FloatProperty(
             name="Frame Width", default=0.22, min=0.02, max=0.9,
@@ -296,6 +323,13 @@ if _IN_BLENDER:
             description="How far the edge struts stop short of each "
                         "vertex (in strut thicknesses); the faceted "
                         "knuckle fills the joint")
+        strut_radius: FloatProperty(
+            name="Strut Radius", default=0.02, min=0.001, max=0.5,
+            description="Ball-and-stick edge cylinder radius")
+        node_radius: FloatProperty(
+            name="Node Radius", default=0.035, min=0.0, max=0.5,
+            description="Ball-and-stick vertex sphere radius "
+                        "(0 = no nodes)")
         comp_rot: FloatProperty(
             name="Component Rotation", default=0.0, min=-180.0,
             max=180.0,
@@ -347,7 +381,7 @@ if _IN_BLENDER:
             verts, faces, nc, face_comp = build_tangle(
                 self.kind, self.style, self.width, self.thickness,
                 self.size, self.comp_rot, self.spin, self.scale,
-                self.cap_size)
+                self.cap_size, self.strut_radius, self.node_radius)
             me = bpy.data.meshes.new("Tangle")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
@@ -383,10 +417,15 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
+            bs = self.style == 'BALLSTICK'
             for k in ('kind', 'style', 'width', 'thickness',
-                      'cap_size', 'size', 'comp_rot', 'spin',
-                      'coloring', 'scale'):
-                if k == 'width' and self.style == 'EDGES':
+                      'strut_radius', 'node_radius', 'cap_size',
+                      'size', 'comp_rot', 'spin', 'coloring', 'scale'):
+                if k == 'width' and self.style != 'FACES':
+                    continue
+                if k == 'thickness' and bs:
+                    continue
+                if k in ('strut_radius', 'node_radius') and not bs:
                     continue
                 if k == 'cap_size' and self.style != 'EDGES':
                     continue

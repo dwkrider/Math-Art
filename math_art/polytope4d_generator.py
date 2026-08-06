@@ -801,7 +801,7 @@ def build_polytope_ex(kind='CELL8', style='CURVED', proj_dist=1.05,
                 else:
                     radii = [radius * scale] * len(pts)
                 add_strut(verts, faces, pts, radii, sides)
-            if vertex_spheres:
+            if vertex_spheres or render == 'BALLSTICK':
                 for i in range(len(V)):
                     p, s = proj[i]
                     r = (radius * sphere_factor
@@ -950,6 +950,11 @@ if _IN_BLENDER:
             name="Style",
             items=[('EDGES', "Edge Struts",
                     "Struts along the projected edges"),
+                   ('BALLSTICK', "Ball and Stick",
+                    "Struts along the projected edges with a sphere "
+                    "at every vertex, always on (ball-and-stick "
+                    "model); the struts still follow the curved "
+                    "stereographic arcs"),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "A flat open panel per 2D face of the polytope "
                     "(projected faces are planar in both edge "
@@ -1090,6 +1095,8 @@ if _IN_BLENDER:
             else:
                 for k in ('arc_segments', 'radius', 'sides', 'taper',
                           'vertex_spheres', 'sphere_factor', 'scale'):
+                    if k == 'vertex_spheres' and self.render == 'BALLSTICK':
+                        continue                # forced on for ball-and-stick
                     lay.prop(self, k)
             lay.separator()
             col = lay.column(align=True)

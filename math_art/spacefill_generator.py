@@ -479,7 +479,10 @@ if _IN_BLENDER:
             items=[('SOLID', "Solid", "Plain solid cells"),
                    ('LEONARDO', "Leonardo",
                     "Open-faced da Vinci panels (Geometry Nodes "
-                    "modifier on the whole block)")],
+                    "modifier on the whole block)"),
+                   ('BALLSTICK', "Ball and Stick",
+                    "Edges as solid cylindrical struts and vertices "
+                    "as small spheres (ball-and-stick model)")],
             default='SOLID')
         border: FloatProperty(
             name="Border", default=0.3, min=0.02, max=0.95,
@@ -488,6 +491,13 @@ if _IN_BLENDER:
         thickness: FloatProperty(
             name="Thickness", default=0.06, min=0.001, max=1.0,
             description="Leonardo panel thickness")
+        strut_radius: FloatProperty(
+            name="Strut Radius", default=0.02, min=0.001, max=0.5,
+            description="Ball-and-stick edge cylinder radius")
+        node_radius: FloatProperty(
+            name="Node Radius", default=0.035, min=0.0, max=0.5,
+            description="Ball-and-stick vertex sphere radius "
+                        "(0 = no nodes)")
         two_materials: BoolProperty(
             name="Two Materials", default=True,
             description="Distinct materials for octahedra and "
@@ -563,6 +573,13 @@ if _IN_BLENDER:
                     import leonardo_style
                 leonardo_style.add_modifier(obj, self.border,
                                             self.thickness)
+            elif self.style == 'BALLSTICK':
+                try:
+                    from . import ball_and_stick
+                except ImportError:
+                    import ball_and_stick
+                ball_and_stick.rebuild(obj, self.strut_radius,
+                                       self.node_radius)
             self.report({'INFO'},
                         f"{_LABEL[self.kind]}: "
                         f"V={len(me.vertices)} "
@@ -583,6 +600,9 @@ if _IN_BLENDER:
             if self.style == 'LEONARDO':
                 lay.prop(self, 'border')
                 lay.prop(self, 'thickness')
+            elif self.style == 'BALLSTICK':
+                lay.prop(self, 'strut_radius')
+                lay.prop(self, 'node_radius')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.spacefill_add",

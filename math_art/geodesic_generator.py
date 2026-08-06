@@ -401,63 +401,10 @@ def add_base_ring(verts, faces, loops, rim_coords, width,
             faces.append([inner[b], inner[a], outer[a], outer[b]])
 
 
-# ---- strut / node / panel geometry ---------------------------------------
-
-def _frame(d):
-    d = np.asarray(d, dtype=float)
-    d = d / (np.linalg.norm(d) or 1.0)
-    h = np.array([1.0, 0.0, 0.0]) if abs(d[0]) < 0.9 \
-        else np.array([0.0, 1.0, 0.0])
-    u = np.cross(d, h)
-    u /= np.linalg.norm(u)
-    w = np.cross(d, u)
-    return d, u, w
-
-
-def add_strut(verts, faces, p0, p1, radius, nseg=8):
-    p0 = np.asarray(p0, dtype=float)
-    p1 = np.asarray(p1, dtype=float)
-    d, u, w = _frame(p1 - p0)
-    base = len(verts)
-    for p in (p0, p1):
-        for j in range(nseg):
-            t = 2 * pi * j / nseg
-            q = p + radius * (cos(t) * u + sin(t) * w)
-            verts.append(tuple(q))
-    for j in range(nseg):
-        jn = (j + 1) % nseg
-        faces.append([base + j, base + jn,
-                      base + nseg + jn, base + nseg + j])
-    faces.append([base + j for j in range(nseg - 1, -1, -1)])
-    faces.append([base + nseg + j for j in range(nseg)])
-
-
-def add_node(verts, faces, center, radius, nu=8, nv=6):
-    c = np.asarray(center, dtype=float)
-    rows = []
-    for i in range(1, nv):
-        phi = pi * i / nv
-        ring = []
-        for j in range(nu):
-            t = 2 * pi * j / nu
-            q = c + radius * np.array([sin(phi) * cos(t),
-                                       sin(phi) * sin(t), cos(phi)])
-            ring.append(len(verts))
-            verts.append(tuple(q))
-        rows.append(ring)
-    top = len(verts)
-    verts.append(tuple(c + np.array([0.0, 0.0, radius])))
-    bot = len(verts)
-    verts.append(tuple(c + np.array([0.0, 0.0, -radius])))
-    for j in range(nu):
-        jn = (j + 1) % nu
-        faces.append([top, rows[0][j], rows[0][jn]])
-        faces.append([bot, rows[-1][jn], rows[-1][j]])
-    for i in range(len(rows) - 1):
-        for j in range(nu):
-            jn = (j + 1) % nu
-            faces.append([rows[i][j], rows[i + 1][j],
-                          rows[i + 1][jn], rows[i][jn]])
+# ---- panel geometry ------------------------------------------------------
+# The strut (edge cylinder) and node (vertex sphere) primitives that back
+# the "Ball and Stick" style now live in the shared ball_and_stick module,
+# so every polyhedron generator draws struts and nodes the same way.
 
 
 def add_panel(verts, faces, pts, gap, thickness):
@@ -562,7 +509,7 @@ if _IN_BLENDER:
             items=[('SHELL', "Shell",
                     "Smooth welded sphere surface (Solidify modifier "
                     "if thickness > 0)"),
-                   ('STRUTS', "Struts & Nodes",
+                   ('STRUTS', "Ball and Stick",
                     "Edges as cylinders, vertices as small spheres"),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo Style "
@@ -631,18 +578,14 @@ if _IN_BLENDER:
                               self.ring_width * R,
                               reuse={i: i for i in range(len(V))})
             elif self.style == 'STRUTS':
-                verts, faces = [], []
-                edges = set()
-                for f in F:
-                    m = len(f)
-                    for i in range(m):
-                        a, b = f[i], f[(i + 1) % m]
-                        edges.add((min(a, b), max(a, b)))
-                for a, b in sorted(edges):
-                    add_strut(verts, faces, V[a], V[b],
-                              self.strut_radius * R)
-                for p in V:
-                    add_node(verts, faces, p, self.node_radius * R)
+                try:
+                    from . import ball_and_stick
+                except ImportError:
+                    import ball_and_stick
+                edges = ball_and_stick.edges_from_faces(F)
+                verts, faces = ball_and_stick.build_mesh(
+                    V, edges, self.strut_radius * R,
+                    self.node_radius * R)
                 add_base_ring(verts, faces, loops, V,
                               self.ring_width * R)
             else:                                        # PANELS
