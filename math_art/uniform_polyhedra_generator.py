@@ -902,8 +902,12 @@ if _IN_BLENDER:
                     import facet_style
                 mat = (_material_for
                        if self.coloring == 'SIDES' else None)
-                # uniform faces are (vertex_indices, marker) tuples
+                # uniform faces are (vertex_indices, marker) tuples,
+                # and build_uniform returns them with mixed winding;
+                # facet_style trusts the winding to aim the inward
+                # mitre, so normalise every face to point outward first
                 ff = [list(f[0]) for f in F]
+                ff = facet_style.wind_outward(verts, ff)
                 facet_style.emit_facets(
                     context, verts, ff, name,
                     self.facet_depth, self.facet_gap,
