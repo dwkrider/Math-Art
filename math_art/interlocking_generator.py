@@ -764,11 +764,20 @@ def build_tetrocta(kind, nx, ny, nz):
 # ==================================================================
 #
 # An S-shaped tetracube fused to an L-shaped tetracube gives the SL
-# octocube.  Each tetracube is a single contiguous unit cell; two SL
-# blocks make a conjugate pair (one is the other turned 180 deg about
-# a y-axis through a shared corner of the S tetracube); pairs chain by
-# the `a` engagement (Rz(-90) then T(1,-1,0)), whose fourth power is
-# the identity, so a4 closes a periodic square strand.
+# octocube: eight unit cubes spanning three z-levels, the S and L
+# tetracubes sharing three faces so their union is one contiguous
+# solid.  Blocks engage by one of six rigid "engagements" a,h,s,t,d,y
+# (world-frame affine maps p -> R p + t); a strand is a word over
+# those letters and is a periodic (self-locking) loop iff its
+# transform product is the identity.  Frames compose by post-
+# multiplication (G <- G . M_e) with exactly one octocube placed per
+# letter.  Simplest loop: a4 (the square strand); general square
+# frames are (a h^{2n})4.  All verified cube-disjoint.
+#
+# References: Shen-Guan Shih, "The Art and Mathematics of Self-
+# Interlocking SL Blocks," Bridges 2018, pp. 107-114; and "On the
+# Hierarchical Construction of SL Blocks," Advances in Architectural
+# Geometry 2016.
 
 # unit-cube boundary quads (min corner at the origin), outward-wound
 _CUBE_FACES = (
@@ -779,10 +788,12 @@ _CUBE_FACES = (
     ((0, 0, 1), [(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]),
     ((0, 0, -1), [(0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0)]))
 
-# S-tetracube and L-tetracube (unit-cube min corners); they share
-# three vertical faces, so their union is a contiguous octocube
-_S_TETRA = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]
-_L_TETRA = [(0, 0, 1), (1, 0, 1), (2, 0, 1), (2, 1, 1)]
+# The SL octocube at the verified interlocking placement (unit-cube
+# min corners): the S and L tetracubes share three faces so their
+# union is one contiguous three-level octocube.  The engagements are
+# absolute (world-frame), so the block only locks at this placement.
+_SL_S = [(-2, 0, 1), (-2, 0, 2), (-1, 0, 2), (0, 0, 2)]
+_SL_L = [(-2, 0, 0), (-1, -1, 0), (-1, 0, 0), (-1, 0, 1)]
 
 
 def _polycube_mesh(origins):
@@ -809,68 +820,78 @@ def _polycube_mesh(origins):
     return np.array(verts), faces
 
 
-def _rz(deg):
-    a = math.radians(deg)
-    c, s = round(math.cos(a)), round(math.sin(a))
-    return np.array(((c, -s, 0.0), (s, c, 0.0), (0.0, 0.0, 1.0)))
+def _eng(rows, t):
+    return (np.array(rows, float), np.array(t, float))
 
 
-_SL_ENGAGE = {                       # (rotation, translation)
-    'a': (_rz(-90), np.array((1.0, -1.0, 0.0))),
-    'h': (np.diag((1.0, -1.0, -1.0)), np.array((0.0, 0.0, 0.0))),
+# Shih's six engagements as world-frame affine maps p -> R p + t.
+# {h,s,t} carry Rx(180) (a flip to the layer below, reversing z);
+# {d,a,y} keep Rx(0); within each group the z-rotation is 0 / -90 /
+# +90.  a = Rz(-90) then T(1,-1,0), whose fourth power is the identity.
+_SL_ENGAGE = {
+    'h': _eng([[1, 0, 0], [0, -1, 0], [0, 0, -1]], (2.0, 0.0, 0.0)),
+    's': _eng([[0, 1, 0], [1, 0, 0], [0, 0, -1]], (1.0, 1.0, -1.0)),
+    't': _eng([[0, -1, 0], [-1, 0, 0], [0, 0, -1]], (1.0, -1.0, 1.0)),
+    'd': _eng([[1, 0, 0], [0, 1, 0], [0, 0, 1]], (2.0, 0.0, -1.0)),
+    'a': _eng([[0, 1, 0], [-1, 0, 0], [0, 0, 1]], (1.0, -1.0, 0.0)),
+    'y': _eng([[0, -1, 0], [1, 0, 0], [0, 0, 1]], (1.0, 1.0, -2.0)),
 }
 
 
 def _sl_octocube():
-    """The SL octocube as (origins, colour) with the S tetracube
+    """The SL octocube as [(origins, colour)] with the S tetracube
     coloured 0 and the L tetracube 1."""
-    return [(np.array(_S_TETRA, float), 0),
-            (np.array(_L_TETRA, float), 1)]
+    return [(np.array(_SL_S, float), 0), (np.array(_SL_L, float), 1)]
 
 
-def _conjugate(origins):
-    """The conjugate of an octocube: a 180 deg turn about a y-axis
-    through a shared corner of the S tetracube, mapping cube min-
-    corners (x,y,z) -> (2-x, y, -1-z).  The pair is cube-disjoint and
-    face-adjacent (verified)."""
-    return np.array([(2 - x, y, -1 - z) for (x, y, z) in origins],
-                    float)
+def _sl_compose(G, e):
+    """Post-multiply the frame G=(R,t) by engagement e (world-frame
+    translation): returns G . M_e."""
+    R, t = G
+    Re, te = _SL_ENGAGE[e]
+    return (R @ Re, R @ te + t)
 
 
-def _sl_pair():
-    """The conjugate pair as (origins, colour): the S/L tetracubes of
-    the base octocube plus those of its conjugate partner."""
-    base = _sl_octocube()
-    return base + [(_conjugate(o), c) for o, c in base]
-
-
-def build_sl(mode='PAIR', strand=4):
-    """SL blocks as contiguous polycubes.  mode BLOCK = one octocube
-    (S + L tetracubes, two-coloured); PAIR = a conjugate pair; STRAND
-    = `strand` conjugate pairs chained by the a-engagement
-    (Rz(-90) then T(1,-1,0)); four pairs close the a4 loop.  Every
-    tetracube is a single connected solid."""
-    def emit(origins, col, R, t, cells):
-        P = origins @ R.T + t
-        V, F = _polycube_mesh(np.round(P).astype(int))
-        cells.append((np.zeros(3), V, F, False, col))
-
-    cells = []
+def _sl_word(mode, engage, frame):
+    """Engagement word (a string over a,h,s,t,d,y) for a build mode."""
     if mode == 'BLOCK':
-        for o, c in _sl_octocube():
-            emit(o, c, np.eye(3), np.zeros(3), cells)
-        return cells
-    if mode == 'PAIR':
-        for o, c in _sl_pair():
-            emit(o, c, np.eye(3), np.zeros(3), cells)
-        return cells
-    # STRAND: conjugate pairs at cumulative a-engagement powers
-    R, t = np.eye(3), np.zeros(3)
-    aR, at = _SL_ENGAGE['a']
-    for k in range(strand):
-        for o, c in _sl_pair():
-            emit(o, c, R, t, cells)
-        R, t = aR @ R, aR @ t + at
+        return ''
+    if mode == 'ENGAGEMENT':
+        return engage
+    return ('a' + 'h' * (2 * frame)) * 4        # STRAND: (a h^{2n})^4
+
+
+def _sl_frames(word):
+    """Cumulative engagement frames for a word, with coincident frames
+    dropped (a closing strand ends where it began)."""
+    G = (np.eye(3), np.zeros(3))
+    frames = [G]
+    for e in word:
+        G = _sl_compose(G, e)
+        frames.append(G)
+    seen, uniq = set(), []
+    for R, t in frames:
+        key = tuple(np.round(np.concatenate([R.ravel(), t]), 3))
+        if key not in seen:
+            seen.add(key)
+            uniq.append((R, t))
+    return uniq
+
+
+def build_sl(mode='STRAND', engage='a', frame=0):
+    """SL blocks as contiguous polycubes (Shih 2018), one octocube per
+    engagement letter placed at the cumulative (post-multiplied) frame.
+    BLOCK = one octocube; ENGAGEMENT = the octocube plus one engaged
+    partner (`engage` in a,h,s,t,d,y); STRAND = the periodic square
+    strand (a h^{2n})^4 (`frame` = n; n=0 closes the a4 loop, n>=1
+    gives nested square frames).  The S and L tetracubes are two-
+    coloured and every strand is cube-disjoint (verified)."""
+    cells = []
+    for R, t in _sl_frames(_sl_word(mode, engage, frame)):
+        for origins, col in _sl_octocube():
+            P = origins @ R.T + t
+            V, F = _polycube_mesh(np.round(P).astype(int))
+            cells.append((np.zeros(3), V, F, False, col))
     return cells
 
 
@@ -1029,7 +1050,7 @@ def cells_to_meshes(cells, size=2.0, gap=1.0):
 
 def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
                 deform=0.18, samples=8, height=1.0,
-                sl_mode='STRAND', sl_strand=4,
+                sl_mode='STRAND', sl_engage='a', sl_frame=0,
                 dome_seed='ICOSA', dome_depth=0.18, dome_thick=0.15):
     """Placement cells for the chosen family (see the family enum in
     the operator).  Returns build_tetra-style tuples."""
@@ -1052,7 +1073,7 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
     if family in _TETROCTA_BLOCKS:
         return build_tetrocta(family, nx, ny, nz)
     if family == 'SL':
-        return build_sl(sl_mode, sl_strand)
+        return build_sl(sl_mode, sl_engage, sl_frame)
     if family == 'DOME':
         return build_dome(dome_seed, dome_depth, dome_thick)
     raise ValueError(family)
@@ -1204,15 +1225,33 @@ if _IN_BLENDER:
             name="SL Mode",
             items=[('BLOCK', "Single Block",
                     "One SL octocube (S + L tetracubes)"),
-                   ('PAIR', "Conjugate Pair",
-                    "Two SL blocks sharing an S corner"),
-                   ('STRAND', "Strand", "Conjugate pairs chained by "
-                    "the a-engagement")],
+                   ('ENGAGEMENT', "Engaged Pair",
+                    "The octocube plus one partner engaged by the "
+                    "chosen engagement"),
+                   ('STRAND', "Square Strand",
+                    "The periodic square strand (a h^2n)^4 -- a "
+                    "self-locking loop of octocubes")],
             default='STRAND')
-        sl_strand: IntProperty(
-            name="Strand Pairs", default=4, min=1, max=12,
-            description="Conjugate pairs in the strand (4 closes the "
-                        "a4 loop)")
+        sl_engage: EnumProperty(
+            name="Engagement",
+            items=[('a', "a  (Rz-90, T 1 -1 0)",
+                    "The square-strand engagement; a4 = identity"),
+                   ('h', "h  (Rx180, T 2 0 0)", "Flip to the row "
+                    "below, half-period along x"),
+                   ('s', "s  (Rx180 Rz-90, T 1 1 -1)", "Flip + "
+                    "quarter turn"),
+                   ('t', "t  (Rx180 Rz90, T 1 -1 1)", "Flip + "
+                    "quarter turn (opposite)"),
+                   ('d', "d  (T 2 0 -1)", "Pure translation to the "
+                    "next block"),
+                   ('y', "y  (Rz90, T 1 1 -2)", "Quarter turn, two "
+                    "levels down")],
+            default='a',
+            description="Engagement used for the Engaged Pair mode")
+        sl_frame: IntProperty(
+            name="Frame Order", default=0, min=0, max=4,
+            description="Square strand (a h^2n)^4: n=0 is the tight "
+                        "a4 loop, n>=1 nests larger square frames")
 
         dome_seed: EnumProperty(
             name="Seed",
@@ -1266,8 +1305,10 @@ if _IN_BLENDER:
                 lay.prop(self, 'height')
             if fam == 'SL':
                 lay.prop(self, 'sl_mode')
+                if self.sl_mode == 'ENGAGEMENT':
+                    lay.prop(self, 'sl_engage')
                 if self.sl_mode == 'STRAND':
-                    lay.prop(self, 'sl_strand')
+                    lay.prop(self, 'sl_frame')
             if fam == 'DOME':
                 lay.prop(self, 'dome_seed')
                 lay.prop(self, 'dome_depth')
@@ -1320,8 +1361,9 @@ if _IN_BLENDER:
                 cells = build_cells(
                     self.family, self.nx, self.ny, self.nz,
                     self.profile, self.deform, self.samples,
-                    self.height, self.sl_mode, self.sl_strand,
-                    self.dome_seed, self.dome_depth, self.dome_thick)
+                    self.height, self.sl_mode, self.sl_engage,
+                    self.sl_frame, self.dome_seed, self.dome_depth,
+                    self.dome_thick)
             except Exception as e:               # bad parameter combo
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -1437,7 +1479,7 @@ def _selftest():
             ('KITTEN', build_tetrocta('KITTEN', 2, 2, 2)),
             ('UFO', build_tetrocta('UFO', 1, 1, 1)),
             ('CUSHION', build_tetrocta('CUSHION', 1, 1, 1)),
-            ('SL', build_sl('STRAND', 4)),
+            ('SL', build_sl('STRAND', 'a', 0)),
             ('DOME_I', build_dome('ICOSA', 0.18, 0.15)),
             ('DOME_D', build_dome('DODECA', 0.18, 0.15))):
         v, f, cols, fr = cells_to_mesh(cells, 2.0, 0.94)
@@ -1506,22 +1548,35 @@ def _selftest():
         ok = ok and good
 
     # SL blocks are integer polycubes -> overlap is exact (a cube
-    # shared by two blocks).  Check the a-strand is cube-disjoint.
-    aR, at = _SL_ENGAGE['a']
-    R, t = np.eye(3), np.zeros(3)
-    all_cubes = []
-    for _ in range(4):
-        s = set()
-        for o, c in _sl_pair():
-            s |= set(map(tuple, np.round(o @ R.T + t).astype(int)))
-        all_cubes.append(s)
-        R, t = aR @ R, aR @ t + at
-    tot = sum(len(s) for s in all_cubes)
-    uni = len(set().union(*all_cubes))
-    good = tot == uni
-    print(f"overlap SL a4-strand: shared_cubes={tot - uni} "
-          f"{'ok' if good else 'OVERLAP'}")
-    ok = ok and good
+    # shared by two blocks).  Each square strand (a h^{2n})^4 must
+    # close to the identity and be globally cube-disjoint, and each of
+    # the six single engagements must give a disjoint 2-block pair.
+    octo = [c for o, _ in _sl_octocube() for c in map(tuple, o)]
+    for n in range(4):
+        frames = _sl_frames(('a' + 'h' * (2 * n)) * 4)
+        # closure: the word's full product returns to the start, so the
+        # dropped frame count equals one full loop (len(word) frames ->
+        # len(word) distinct blocks, the (len+1)-th coincident)
+        closes = len(frames) == 4 * (1 + 2 * n)
+        cubes = []
+        for R, t in frames:
+            cubes += [tuple(np.round(R @ np.array(p, float) + t)
+                            .astype(int)) for p in octo]
+        disjoint = len(cubes) == len(set(cubes))
+        good = closes and disjoint
+        print(f"overlap SL (a h^{2 * n})^4: blocks={len(frames)} "
+              f"closes={closes} disjoint={disjoint} "
+              f"{'ok' if good else 'OVERLAP'}")
+        ok = ok and good
+    for e in 'ahstdy':
+        b0, b1 = _sl_frames(e)
+        c0 = {tuple(np.round(b0[0] @ np.array(p, float) + b0[1])
+                    .astype(int)) for p in octo}
+        c1 = {tuple(np.round(b1[0] @ np.array(p, float) + b1[1])
+                    .astype(int)) for p in octo}
+        good = len(c0 & c1) == 0
+        print(f"overlap SL engagement {e}: 2-block disjoint={good}")
+        ok = ok and good
 
     # Escher: every plane section must tile (coverage exactly 1)
     def _pip(pt, poly):
