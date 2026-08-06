@@ -63,6 +63,7 @@ bl_info = {
 
 import itertools
 import math
+from collections import deque
 
 import numpy as np
 
@@ -1024,6 +1025,191 @@ def build_dome(seed, depth, thickness):
 
 
 # ==================================================================
+# FAMILY: HENDECA -- bisymmetric hendecahedron space-filler
+# ==================================================================
+#
+# The bisymmetric hendecahedron (Inchbald 1996): a space-filling
+# 11-hedron with 2 large rhombi, 1 small rhombus, 4 isosceles
+# triangles and 4 kites (7 quads + 4 triangles), volume 16 in these
+# coordinates.  It is NOT a translation or reflection tiler; four
+# cells make a "hexagonal boat" that stacks by translation on a
+# body-centred-cubic-like lattice (Inchbald).  Here the space-filling
+# is grown directly: the exact rigid motions that carry the cell onto
+# a face-adjacent, non-overlapping neighbour are found by matching
+# each face onto a congruent face (an off-plane point fixes the
+# out-of-plane sense), and a flood fill lays down an interlocking
+# cluster that is guaranteed free of interpenetration (verified).
+#
+# References: Guy Inchbald, "Five Space-filling Polyhedra," The
+# Mathematical Gazette 80 (489), 1996, pp. 466-475; Jiangmei Wu &
+# Guy Inchbald, "Folding the Space-Filling Bisymmetric
+# Hendecahedron," Bridges 2018, pp. 483-486.
+
+_HENDECA_V = np.array([
+    (0.0, 0.0, 2.0), (2.0, 1.0, 1.0), (0.0, -1.0, 1.0),
+    (-2.0, 1.0, 1.0), (0.0, 2.0, 0.0), (1.0, -1.0, 0.0),
+    (-1.0, -1.0, 0.0), (2.0, 1.0, -1.0), (0.0, -1.0, -1.0),
+    (-2.0, 1.0, -1.0), (0.0, 0.0, -2.0)])
+# vertices A..L map to indices 0..10; 4 triangles + 7 quadrilaterals
+_HENDECA_F = [[5, 2, 0, 1], [3, 0, 1, 4], [3, 0, 2, 6], [7, 1, 4],
+              [7, 1, 5], [5, 8, 6, 2], [4, 9, 3], [6, 9, 3],
+              [4, 9, 10, 7], [5, 8, 10, 7], [10, 8, 6, 9]]
+
+
+def _poly_normals(W, F):
+    """Unit normals of the (convex) faces F of vertex set W."""
+    out = []
+    for f in F:
+        p = W[f]
+        n = np.cross(p[1] - p[0], p[2] - p[0])
+        ln = np.linalg.norm(n)
+        if ln > 1e-9:
+            out.append(n / ln)
+    return out
+
+
+def _convex_overlap(A, B, FA, FB):
+    """True if convex solids A, B interpenetrate (separating-axis test
+    over both solids' face normals; touching counts as disjoint)."""
+    for n in _poly_normals(A, FA) + _poly_normals(B, FB):
+        a = A @ n
+        b = B @ n
+        if a.min() - b.max() > -1e-6 or b.min() - a.max() > -1e-6:
+            return False
+    return True
+
+
+def _rigid_from(src, dst):
+    """Rigid motion (R, t) with dst ~= src @ R.T + t, or None if the
+    point sets are not congruent (allows reflections)."""
+    cs = src.mean(axis=0)
+    cd = dst.mean(axis=0)
+    A = src - cs
+    B = dst - cd
+    U, S, Vt = np.linalg.svd(A.T @ B)
+    R = Vt.T @ U.T
+    if np.linalg.norm((A @ R.T) - B) > 1e-5 * len(src):
+        return None
+    return R, cd - R @ cs
+
+
+_HENDECA_NEIGH = None
+
+
+def _hendeca_neighbors():
+    """The rigid motions carrying the cell onto each face-adjacent
+    non-overlapping neighbour (cached).  For every face F, any
+    congruent face F2 is matched onto F in all cyclic/reflected
+    orders; an off-plane point (the cell interior side of F2 -> the
+    outward side of F) fixes the isometry, and only non-overlapping
+    results are kept."""
+    global _HENDECA_NEIGH
+    if _HENDECA_NEIGH is not None:
+        return _HENDECA_NEIGH
+    V, F = _HENDECA_V, _HENDECA_F
+    C = V.mean(axis=0)
+
+    def fcn(f):
+        p = V[f]
+        c = p.mean(axis=0)
+        n = np.cross(p[1] - p[0], p[2] - p[0])
+        n = n / np.linalg.norm(n)
+        if np.dot(n, C - c) > 0:
+            n = -n
+        return c, n
+
+    def eseq(f):
+        p = V[f]
+        return [round(np.linalg.norm(p[i] - p[(i + 1) % len(f)]), 3)
+                for i in range(len(f))]
+
+    def orders(f):
+        k = len(f)
+        out = []
+        for s in range(k):
+            out.append([f[(s + i) % k] for i in range(k)])
+            out.append([f[(s - i) % k] for i in range(k)])
+        return out
+
+    FN = [fcn(f) for f in F]
+    out, keys = [], set()
+    for ti, Ft in enumerate(F):
+        c, nrm = FN[ti]
+        es = eseq(Ft)
+        for si, F2 in enumerate(F):
+            if len(F2) != len(Ft):
+                continue
+            c2, n2 = FN[si]
+            for od in orders(F2):
+                if eseq(od) != es:
+                    continue
+                g = _rigid_from(np.vstack([V[od], [c2 - n2]]),
+                                np.vstack([V[Ft], [c + nrm]]))
+                if g is None:
+                    continue
+                R, t = g
+                if not _convex_overlap(V, V @ R.T + t, F, F):
+                    key = tuple(np.round(np.concatenate(
+                        [R.ravel(), t]), 3))
+                    if key not in keys:
+                        keys.add(key)
+                        out.append((R, t))
+    _HENDECA_NEIGH = out
+    return out
+
+
+def build_hendeca(count=32):
+    """A cluster of `count` bisymmetric hendecahedra grown by flood
+    fill from the face-neighbour motions.  Every added cell is checked
+    against all placed cells, so the cluster never interpenetrates
+    (verified); its core is solidly space-filling and its surface is
+    the ragged boundary of the grown region.  Cells are three-coloured
+    by orientation class."""
+    V, F = _HENDECA_V, _HENDECA_F
+    G = _hendeca_neighbors()
+    frames = [(np.eye(3), np.zeros(3))]
+    verts = [V]
+    cens = [V.mean(axis=0)]
+    seen = {tuple(np.round(cens[0], 1))}
+    colmap = {}
+
+    def colour(R):
+        k = tuple(np.round(R.ravel(), 1))
+        if k not in colmap:
+            colmap[k] = len(colmap) % 3
+        return colmap[k]
+
+    q = deque([0])
+    cols = [colour(frames[0][0])]
+    pre = 2.0 * float(np.max(np.linalg.norm(V, axis=1))) + 0.1
+    while q and len(frames) < count:
+        i = q.popleft()
+        Rc, tc = frames[i]
+        for Rn, tn in G:
+            R = Rc @ Rn
+            t = Rc @ tn + tc
+            W = V @ R.T + t
+            c = W.mean(axis=0)
+            key = tuple(np.round(c, 1))
+            if key in seen:
+                continue
+            if any(np.linalg.norm(cens[j] - c) < pre and
+                   _convex_overlap(verts[j], W, F, F)
+                   for j in range(len(frames))):
+                continue
+            seen.add(key)
+            frames.append((R, t))
+            verts.append(W)
+            cens.append(c)
+            cols.append(colour(R))
+            q.append(len(frames) - 1)
+            if len(frames) >= count:
+                break
+    return [(np.zeros(3), verts[i], [list(f) for f in F], False,
+             cols[i]) for i in range(len(frames))]
+
+
+# ==================================================================
 # assembly -> mesh
 # ==================================================================
 
@@ -1083,7 +1269,8 @@ def cells_to_meshes(cells, size=2.0, gap=1.0):
 def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
                 deform=0.18, samples=8, height=1.0,
                 sl_mode='STRAND', sl_engage='a', sl_frame=0,
-                dome_seed='ICOSA', dome_depth=0.18, dome_thick=0.15):
+                dome_seed='ICOSA', dome_depth=0.18, dome_thick=0.15,
+                hendeca_count=32):
     """Placement cells for the chosen family (see the family enum in
     the operator).  Returns build_tetra-style tuples."""
     if family == 'TETRA':
@@ -1108,13 +1295,15 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
         return build_sl(sl_mode, sl_engage, sl_frame)
     if family == 'DOME':
         return build_dome(dome_seed, dome_depth, dome_thick)
+    if family == 'HENDECA':
+        return build_hendeca(hendeca_count)
     raise ValueError(family)
 
 
 # families that build a space-filling / interlocking assembly; the
 # rest emit a single reference block
 _ASSEMBLY = {'TETRA', 'ESCHER', 'VERSATILE', 'MCSCUBE', 'MCSOCTA',
-             'BISQUARE', 'KITTEN', 'SL', 'DOME'}
+             'BISQUARE', 'KITTEN', 'SL', 'DOME', 'HENDECA'}
 _RIGOROUS = {'TETRA', 'ESCHER', 'VERSATILE', 'MCSCUBE', 'MCSOCTA'}
 _SINGLE_BLOCK = {'RHOM', 'RHOM_OBV', 'UFO', 'CUSHION'}
 
@@ -1146,7 +1335,8 @@ if _IN_BLENDER:
               'UFO': "Tetroctahedrille UFO",
               'CUSHION': "Tetroctahedrille Cushion",
               'SL': "SL Block",
-              'DOME': "Interlocking Dome"}
+              'DOME': "Interlocking Dome",
+              'HENDECA': "Bisymmetric Hendecahedron"}
 
     _COLOURS = {0: (0.85, 0.55, 0.15), 1: (0.20, 0.45, 0.70),
                 2: (0.55, 0.65, 0.25)}
@@ -1229,7 +1419,12 @@ if _IN_BLENDER:
                  "One radially-lofted block per polyhedron face; each "
                  "shared edge is displaced tangentially at the middle "
                  "shell so adjacent blocks share a wavy wall and "
-                 "interlock (Escher on a sphere; Akpanya et al. 2024)")],
+                 "interlock (Escher on a sphere; Akpanya et al. 2024)"),
+                ('HENDECA', "Bisymmetric Hendecahedron",
+                 "A space-filling 11-hedron (Inchbald 1996): 7 quads "
+                 "+ 4 triangles, grown into an interlocking cluster by "
+                 "its face-adjacency motions (four cells make a "
+                 "translation 'boat'); guaranteed non-overlapping")],
             default='TETRA')
 
         nx: IntProperty(name="Cells X", default=4, min=1, max=16)
@@ -1300,6 +1495,11 @@ if _IN_BLENDER:
             name="Shell Thickness", default=0.15, min=0.03, max=0.5,
             description="Inner/outer shell offset about the sphere")
 
+        hendeca_count: IntProperty(
+            name="Cells", default=32, min=1, max=200,
+            description="Number of hendecahedra in the interlocking "
+                        "cluster")
+
         gap: FloatProperty(
             name="Gap Factor", default=0.94, min=0.3, max=1.0,
             description="Scale of each block about its centroid "
@@ -1346,6 +1546,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'dome_seed')
                 lay.prop(self, 'dome_depth')
                 lay.prop(self, 'dome_thick')
+            if fam == 'HENDECA':
+                lay.prop(self, 'hendeca_count')
             lay.prop(self, 'gap')
             lay.prop(self, 'size')
             lay.prop(self, 'colour_mode')
@@ -1396,7 +1598,7 @@ if _IN_BLENDER:
                     self.profile, self.deform, self.samples,
                     self.height, self.sl_mode, self.sl_engage,
                     self.sl_frame, self.dome_seed, self.dome_depth,
-                    self.dome_thick)
+                    self.dome_thick, self.hendeca_count)
             except Exception as e:               # bad parameter combo
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -1514,7 +1716,8 @@ def _selftest():
             ('CUSHION', build_tetrocta('CUSHION', 1, 1, 1)),
             ('SL', build_sl('STRAND', 'a', 0)),
             ('DOME_I', build_dome('ICOSA', 0.18, 0.15)),
-            ('DOME_D', build_dome('DODECA', 0.18, 0.15))):
+            ('DOME_D', build_dome('DODECA', 0.18, 0.15)),
+            ('HENDECA', build_hendeca(20))):
         v, f, cols, fr = cells_to_mesh(cells, 2.0, 0.94)
         Vv = np.asarray(v)
         deg = sum(1 for ff in f
@@ -1647,6 +1850,46 @@ def _selftest():
     print(f"overlap BISQUARE p4 layer: interpenetrations={overlaps} "
           f"{'ok' if overlaps == 0 else 'OVERLAP'}")
     ok = ok and overlaps == 0
+
+    # Bisymmetric hendecahedron: the cell is a closed 11-hedron of
+    # volume 16, and the grown cluster must not interpenetrate.
+    be = closed_bad_edges(_HENDECA_V, _HENDECA_F)
+
+    def _convex_volume(V, F):           # winding-independent (convex)
+        V = np.asarray(V)
+        c = V.mean(axis=0)
+        vol = 0.0
+        for f in F:
+            p = V[f]
+            fc = p.mean(axis=0)
+            n = np.cross(p[1] - p[0], p[2] - p[0])
+            n = n / np.linalg.norm(n)
+            if np.dot(n, fc - c) < 0:
+                n = -n
+            cs = np.zeros(3)             # positive face area (magnitude)
+            for i in range(len(f)):
+                cs = cs + np.cross(p[i] - fc, p[(i + 1) % len(f)] - fc)
+            area = np.linalg.norm(cs) / 2
+            vol += area * np.dot(n, fc) / 3
+        return abs(vol)
+
+    hv = _convex_volume(_HENDECA_V, _HENDECA_F)
+    good = be == 0 and abs(hv - 16.0) < 1e-6 and len(_HENDECA_F) == 11
+    print(f"hendecahedron cell: bad_edges={be} faces={len(_HENDECA_F)} "
+          f"vol={hv:.3f} {'ok' if good else 'BAD'}")
+    ok = ok and good
+    hcells = build_hendeca(24)
+    hverts = [np.asarray(V) for _, V, _f, _fr, _c in hcells]
+    hbad = 0
+    for a in range(len(hverts)):
+        for b in range(a + 1, len(hverts)):
+            if np.linalg.norm(hverts[a].mean(0) - hverts[b].mean(0)) \
+                    < 5.0 and _convex_overlap(hverts[a], hverts[b],
+                                              _HENDECA_F, _HENDECA_F):
+                hbad += 1
+    print(f"overlap HENDECA cluster: cells={len(hcells)} "
+          f"interpenetrations={hbad} {'ok' if hbad == 0 else 'OVERLAP'}")
+    ok = ok and hbad == 0
 
     # Escher: every plane section must tile (coverage exactly 1)
     def _pip(pt, poly):

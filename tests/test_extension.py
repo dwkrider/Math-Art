@@ -339,6 +339,9 @@ OPS = [
     ("interlocking dome",
      lambda: bpy.ops.mesh.interlocking_add(family='DOME',
                                            dome_seed='DODECA')),
+    ("interlocking hendecahedron",
+     lambda: bpy.ops.mesh.interlocking_add(family='HENDECA',
+                                           hendeca_count=32)),
     ("solid snub cube left", lambda: bpy.ops.mesh.regular_solid_add(
         family='ARCHIMEDEAN', solid='SC', handedness='LEFT')),
     ("spiked modern", lambda: bpy.ops.mesh.spiked_polyhedron_add(
