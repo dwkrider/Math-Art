@@ -38,6 +38,12 @@
 # - The alternated cubic (octet) and bitruncated cubic honeycombs and
 #   the Voronoi cells of the cubic, BCC and FCC lattices: H. S. M.
 #   Coxeter, "Regular Polytopes", 3rd ed., Dover, 1973.
+# - The obtetrahedrille (Conway's oblate tetrahedrille / tetragonal
+#   disphenoid honeycomb, each rhombic dodecahedron split into 24
+#   disphenoids): J. H. Conway, H. Burgiel, C. Goodman-Strauss, "The
+#   Symmetries of Things", A K Peters, 2008; and Tom Verhoeff & Koos
+#   Verhoeff, "The Obtetrahedrille as a Modular Building Block for 3D
+#   Mathematical Art", Bridges 2019, 407-410.
 
 bl_info = {
     "name": "Space-Filling Solids",

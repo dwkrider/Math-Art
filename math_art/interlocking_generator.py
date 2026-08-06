@@ -6,28 +6,39 @@
 # blocks can be slid or rotated out without collision.  The blocks
 # are never glued -- interlocking is purely geometric.
 #
-# Families implemented here:
+# Families implemented here (all verified non-overlapping; the
+# space-filling ones fill with coverage exactly one):
 #
-#   TETRA     the canonical interlocking layer of regular tetrahedra
-#             (two 90-deg-rotated orientations on a checkerboard),
-#             after Dyskin, Estrin, Kanel-Belov & Pasternak (2001).
-#   MCS       the "moving cross-section" family: cubes and octahedra
-#             reconstructed as the intersection of edge-tilted planes
-#             over a hexagonal middle section (Kanel-Belov et al.).
-#   ESCHER    the Escher-trick / osteomorphic / Versatile-block
-#             family: a square (p4) fundamental domain is edge-
-#             deformed, placed at z=0, rotated 90 deg at the mid-
-#             plane, and lofted back to z=1, so every horizontal
-#             section tiles the plane and copies interlock.  A sine
-#             deformation reproduces Estrin's osteomorphic block; a
-#             tent/zig-zag deformation reproduces a Versatile-style
-#             block.  Two-colouring follows the Truchet rule.
-# TETRA, ESCHER, VERSATILE, KITTEN, the SL strand and the DOME are
-# space-filling / interlocking assemblies (all verified
-# non-overlapping).  The Bisquare block and the UFO / cushion
-# tetroctahedrille blocks are shown as single reference blocks --
-# their assemblies require rotation-based grammars not available in
-# coordinate form (see BACKLOG).
+#   TETRA        the canonical interlocking layer of regular tetrahedra
+#                (two 90-deg orientations on a checkerboard), after
+#                Dyskin, Estrin, Kanel-Belov & Pasternak (2001).
+#   MCSCUBE /    cubes / octahedra with a 3-fold (body-diagonal) axis
+#   MCSOCTA      vertical, placed as identical translates on a
+#                honeycomb; each cell's six faces tilt +/-alpha and
+#                adjacent cells share every inclined plane -- the
+#                Kanel-Belov / Dyskin moving-cross-section layer.
+#   ESCHER       the Escher-trick / osteomorphic family: a square (p4)
+#                fundamental domain is edge-deformed, rotated 90 deg at
+#                the mid-plane and lofted, so every section tiles.  A
+#                sine profile gives Estrin's osteomorphic block, a tent
+#                profile a Versatile-style block (Truchet colouring).
+#   VERSATILE    the exact Versatile block tiled over the diamond
+#                lattice (Akpanya et al., Bridges 2023).
+#   BISQUARE     the exact Bisquare block (Frezier 1737); 1x1 a single
+#                block, larger a p4 interlocking layer (Weiss &
+#                Niemeyer 2026).
+#   RHOM /       the exact Rhom block and its obverse, single p3
+#   RHOM_OBV     reference blocks (Weiss & Niemeyer 2026).
+#   KITTEN /     tetroctahedrille blocks: the kitten tiles by
+#   UFO /        translation; UFO and cushion are single reference
+#   CUSHION      blocks (Akpanya, Goertzen & Niemeyer 2024).
+#   SL           self-interlocking octocubes with the six-engagement
+#                grammar and the periodic square strand (Shih 2018).
+#   DOME         one radially-lofted block per polyhedron face, the
+#                spherical Escher loft (Akpanya et al. 2024).
+#   HENDECA      the bisymmetric hendecahedron space-filler: a 4-cell
+#                "boat" translated over a body-centred-tetragonal
+#                lattice (Inchbald 1996; Wu & Inchbald 2018).
 #
 # References:
 # - A. V. Dyskin, Y. Estrin, A. J. Kanel-Belov, E. Pasternak, "A new
@@ -47,7 +58,21 @@
 #   Self-Assemblies", Bridges 2023, 61-68 (Versatile block).
 # - R. Akpanya, T. Goertzen, A. C. Niemeyer, "From Tilings of
 #   Orientable Surfaces to Topological Interlocking Assemblies",
-#   Applied Sciences 14(16):7276 (2024) (the Escher-loft framework).
+#   Applied Sciences 14(16):7276 (2024) (the Escher-loft framework and
+#   the interlocking dome).
+# - R. Akpanya, T. Goertzen, A. C. Niemeyer, "Topologically
+#   Interlocking Blocks inside the Tetroctahedrille", arXiv:2405.01944
+#   (2024) (kitten / UFO / cushion).
+# - M. Weiss, A. C. Niemeyer, "Construction Methods for Space-Filling
+#   Heterogeneous Topological Interlocking Assemblies", arXiv:2604.22475
+#   (2026) (Bisquare and Rhom blocks; A.-F. Frezier, 1737, for the
+#   original Bisquare block).
+# - Shen-Guan Shih, "The Art and Mathematics of Self-Interlocking SL
+#   Blocks", Bridges 2018, 107-114.
+# - G. Inchbald, "Five Space-filling Polyhedra", The Mathematical
+#   Gazette 80 (489) (1996) 466-475; J. Wu & G. Inchbald, "Folding the
+#   Space-Filling Bisymmetric Hendecahedron for a Large-Scale Art
+#   Installation", Bridges 2018, 483-486 (hendecahedron).
 
 bl_info = {
     "name": "Topological Interlocking Blocks",
@@ -693,12 +718,12 @@ def build_bisquare(nx=1, ny=1):
     return [(t, V - mid, F2, fr, col) for t, V, F2, fr, col in cells]
 
 
-# The Rhom block and its obverse (Goertzen 2024 / Weiss & Niemeyer
-# 2026): p3 blocks over a unit lozenge, the interpolation between the
-# lozenge (z=0) and a deformed tile (z=sqrt6/3).  Both are convex, so
-# the faces come straight from the convex hull.  Height sqrt6/3, edge
-# length 1; volume 0.7857.  Their p3 / heterogeneous space-filling
-# assembly is left for BACKLOG.
+# The Rhom block and its obverse (Weiss & Niemeyer 2026, sec. 3.2,
+# building on Goertzen's lozenge construction): p3 blocks over a unit
+# lozenge, the interpolation between the lozenge (z=0) and a deformed
+# tile (z=sqrt6/3).  Both are convex, so the faces come straight from
+# the convex hull.  Height sqrt6/3, edge length 1; volume 0.7857.
+# Their p3 / heterogeneous space-filling assembly is left for BACKLOG.
 _S3 = math.sqrt(3.0)
 _S6 = math.sqrt(6.0)
 _RHOM_V = np.array([
