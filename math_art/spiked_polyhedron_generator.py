@@ -460,9 +460,20 @@ if _IN_BLENDER:
                 verts, faces, groups = build_modern(1.0, 1.0,
                                                     quads=True)
                 name = "Rhombic Hexecontahedron"
-            s = self.scale
+            # Centre on the origin and fit the whole spiked solid (tips
+            # included) into the 2 m cube, then apply Scale -- the seeds are
+            # unit-circumradius but the spikes push well past the sphere.
+            xs = [v[0] for v in verts]
+            ys = [v[1] for v in verts]
+            zs = [v[2] for v in verts]
+            cx = 0.5 * (min(xs) + max(xs))
+            cy = 0.5 * (min(ys) + max(ys))
+            cz = 0.5 * (min(zs) + max(zs))
+            ext = max(max(xs) - min(xs), max(ys) - min(ys),
+                      max(zs) - min(zs), 1e-12)
+            s = 2.0 * self.scale / ext
             me = bpy.data.meshes.new(name)
-            me.from_pydata([(x * s, y * s, z * s)
+            me.from_pydata([((x - cx) * s, (y - cy) * s, (z - cz) * s)
                             for x, y, z in verts], [],
                            [list(f) for f in faces])
             me.validate(clean_customdata=True)

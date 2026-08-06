@@ -1738,6 +1738,27 @@ def can_stellate(family, sid, n=6):
     return _STELLATE_OK[key]
 
 
+def fit_cube(V, scale=1.0):
+    """Centre V on its bounding-box midpoint and scale the largest extent
+    to 2*scale -- the shared "2 m cube" convention.  The catalog families
+    are already normalized to the unit circumsphere inside build_solid, but
+    the Johnson (unit edge, stacked off-origin), prism (unit edge) and
+    Kepler-Poinsot (raw ~1.9 circumradius) families are not, so the
+    operator fits those here.  Any scale already baked into V is normalized
+    away, so the result's largest extent is exactly 2*scale regardless."""
+    if not V:
+        return V
+    xs = [v[0] for v in V]
+    ys = [v[1] for v in V]
+    zs = [v[2] for v in V]
+    cx = 0.5 * (min(xs) + max(xs))
+    cy = 0.5 * (min(ys) + max(ys))
+    cz = 0.5 * (min(zs) + max(zs))
+    ext = max(max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs), 1e-12)
+    s = 2.0 * scale / ext
+    return [((x - cx) * s, (y - cy) * s, (z - cz) * s) for x, y, z in V]
+
+
 def build_solid(family, sid, n=6, scale=1.0, canon=True, canon_iters=250):
     """Returns (V, F, face_sizes or None)."""
     if family == 'KEPLER':
@@ -1974,6 +1995,12 @@ if _IN_BLENDER:
                                           self.n, self.scale,
                                           self.canonicalize,
                                           self.canon_iters)
+                if self.family in ('JOHNSON', 'PRISM', 'KEPLER'):
+                    # these families are built at unit edge length / raw
+                    # circumradius (and Johnson solids sit off-origin);
+                    # centre + fit them into the 2 m cube so `scale`
+                    # behaves the same as for the catalog families
+                    V = fit_cube(V, self.scale)
                 if self.stellated and self.family != 'KEPLER':
                     try:
                         V, F, resid = stellate(V, F)
