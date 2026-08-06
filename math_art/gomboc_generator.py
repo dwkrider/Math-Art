@@ -6,29 +6,35 @@
 # a self-righting toy, but with no added weight and no hollow -- it
 # always rolls back to the same resting pose.  Vladimir Arnold
 # conjectured such a body could exist; Gabor Domokos and Peter
-# Varkonyi proved it and built the first one in 2006.  A true gomboc
-# is startlingly close to a sphere (their first solution departs from
-# the sphere by only ~1e-5), which is exactly what makes it hard to
-# picture.
+# Varkonyi proved it and built the first one in 2006.
 #
-# This generator draws the boundary as a radial ("star-shaped") surface
-# r = R(theta, phi) about the centre of mass, using Robert J. Sloan's
-# 2023 closed-form analytic gomboc surfaces.  The flatness parameter
-# beta exaggerates the departure from a sphere so the shape is actually
-# visible as a sculpture; at beta -> 0 it relaxes back to a round ball.
+# The catch for a sculptor is that a TRUE gomboc is startlingly close
+# to a sphere (Domokos & Varkonyi's first solution departs from the
+# sphere by only ~1e-5) and has no simple closed form -- it comes from
+# an optimisation.  So this generator offers two ways to get a
+# gomboc-shaped object:
 #
-#   Sloan gomboc 1:  r^4 = 1 + 4 beta sin(phi) cos(theta - 5 phi)
-#   Sloan gomboc 2:  r^4 = 1 + 4 beta sin(phi)
-#                            cos( theta - (3 pi / 2)(cos phi - cos^3(phi)/3) )
+#   * SCULPTURAL (default) -- the recognisable gomboc silhouette: a
+#     rounded "belly" that sweeps up to a curved dorsal ridge leaning
+#     over one end ("steep back, flattened bottom", like a high-domed
+#     turtle shell).  It is built by morphing the signed-distance field
+#     of a sphere toward that of a thin tall blade (after the libfive
+#     community sketch by M. Keeter / E. Liberato), with an added shear
+#     that leans the ridge to break the symmetry a real gomboc must
+#     break.  The zero level set is meshed with the project's
+#     marching-tetrahedra kernel.  This is a faithful LIKENESS, not a
+#     certified balancing body.
 #
-# with phi the polar angle (colatitude, 0..pi) and theta the azimuth
-# (0..2pi).  Both poles sit at r = 1, so the mesh closes into a
-# watertight ball.  (Note: these analytic surfaces reproduce the
-# gomboc's characteristic look and its two radial critical points;
-# whether a given beta yields a strictly mono-monostatic *solid*
-# depends on the centre-of-mass height over all orientations -- a
-# finer condition than the surface radius alone.  They are used here
-# for their shape, not as a certified balancing object.)
+#   * ANALYTIC (Sloan I / II) -- Robert J. Sloan's 2023 closed-form
+#     radial surfaces r = R(theta, phi), the only published analytic
+#     "gomboc" equations, exaggerated by a flatness parameter beta so
+#     the departure from a sphere is visible:
+#         Sloan 1:  r^4 = 1 + 4 beta sin(phi) cos(theta - 5 phi)
+#         Sloan 2:  r^4 = 1 + 4 beta sin(phi)
+#                          cos( theta - (3pi/2)(cos phi - cos^3 phi/3) )
+#     (These reproduce two radial critical points; whether a given beta
+#     yields a strictly mono-monostatic solid depends on the finer
+#     centre-of-mass-height condition, so they too are used for shape.)
 #
 # References:
 #   - G. Domokos and P. Varkonyi, "Mono-monostatic bodies: the answer
@@ -40,6 +46,9 @@
 #   - Robert J. Sloan, "An analytic parameterization of the gomboc"
 #     (2023); see also Wolfram MathWorld, "Gomboc",
 #     https://mathworld.wolfram.com/Gomboc.html .
+#   - libfive gomboc sketch: E. Liberato (2020),
+#     eddieliberato.github.io/blog/2020-08-12-gomboc/ (after M. Keeter's
+#     libfive f-rep modeller).
 
 bl_info = {
     "name": "Gomboc",
@@ -47,15 +56,60 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Gomboc",
-    "description": "Mono-monostatic self-righting solid (after Domokos & "
-                   "Varkonyi; analytic surface after Sloan)",
+    "description": "Gomboc: the self-righting mono-monostatic solid "
+                   "(after Domokos & Varkonyi; analytic form after Sloan)",
     "category": "Add Mesh",
 }
 
 import math
 from math import cos, sin, pi
 
+import numpy as np
 
+
+# ---------------------------------------------------------------------
+# SCULPTURAL gomboc: sphere-to-blade SDF morph, marched to a mesh
+# ---------------------------------------------------------------------
+def _box_sdf(X, Y, Z, c, h):
+    qx = np.abs(X - c[0]) - h[0]
+    qy = np.abs(Y - c[1]) - h[1]
+    qz = np.abs(Z - c[2]) - h[2]
+    ox, oy, oz = np.maximum(qx, 0.0), np.maximum(qy, 0.0), np.maximum(qz, 0.0)
+    outside = np.sqrt(ox * ox + oy * oy + oz * oz)
+    inside = np.minimum(np.maximum(np.maximum(qx, qy), qz), 0.0)
+    return outside + inside
+
+
+def _sculptural_field(ridge, lean):
+    """SDF whose zero set is the gomboc likeness.  `ridge` (0..~0.5) is
+    the sphere->blade morph weight (higher = sharper dorsal crest);
+    `lean` shears the crest sideways as it rises, breaking symmetry."""
+    def f(X, Y, Z):
+        Ys = Y - lean * np.maximum(Z, 0.0)         # lean the ridge over
+        sphere = np.sqrt(X * X + Ys * Ys + Z * Z) - 1.0
+        blade = _box_sdf(X, Ys, Z, (0.0, 0.0, 0.65), (0.02, 0.8, 0.65))
+        return (1.0 - ridge) * sphere + ridge * blade
+    return f
+
+
+def build_gomboc_sculptural(ridge=0.35, lean=0.5, resolution=76):
+    """Recognisable gomboc likeness, meshed by marching tetrahedra."""
+    try:
+        from . import minimal_surface_toolkit as mst
+    except ImportError:
+        import minimal_surface_toolkit as mst
+    bmin = (-1.55, -2.0, -1.5)
+    bmax = (1.55, 1.6, 1.7)
+    cell = 3.2 / max(24, resolution)
+    res = tuple(max(8, int(round((bmax[i] - bmin[i]) / cell)))
+                for i in range(3))
+    V, F = mst.marching_tets(_sculptural_field(ridge, lean), bmin, bmax, res)
+    return V, F
+
+
+# ---------------------------------------------------------------------
+# ANALYTIC gomboc: Sloan's closed-form radial surfaces
+# ---------------------------------------------------------------------
 def _vkey(p):
     return (round(p[0], 7), round(p[1], 7), round(p[2], 7))
 
@@ -87,13 +141,12 @@ class _Mesh:
             self.faces.append(ids)
 
 
-def _radius(kind, phi, theta, beta):
-    """Sloan's analytic gomboc radius R = (r^4)^(1/4)."""
+def _sloan_radius(kind, phi, theta, beta):
     s = sin(phi)
-    if kind == 'SECOND':
+    if kind == 'SLOAN_II':
         c = cos(phi)
         ph = theta - (1.5 * pi) * (c - c * c * c / 3.0)
-    else:                                    # 'FIRST'
+    else:                                    # 'SLOAN_I'
         ph = theta - 5.0 * phi
     r4 = 1.0 + 4.0 * beta * s * cos(ph)
     if r4 < 1e-9:
@@ -101,14 +154,9 @@ def _radius(kind, phi, theta, beta):
     return r4 ** 0.25
 
 
-def build_gomboc(kind='SECOND', beta=0.17, phi_segments=96,
-                 theta_segments=128, scale=1.0):
-    """Watertight radial gomboc surface about its centre.
-
-    phi (phi_segments) is colatitude 0..pi; theta (theta_segments) is
-    the azimuth 0..2pi and wraps.  The poles collapse to single welded
-    vertices.
-    """
+def build_gomboc_analytic(kind='SLOAN_II', beta=0.17, phi_segments=96,
+                          theta_segments=128):
+    """Watertight radial Sloan gomboc surface about its centre."""
     m = _Mesh()
     nphi = max(6, phi_segments)
     nth = max(8, theta_segments)
@@ -116,10 +164,10 @@ def build_gomboc(kind='SECOND', beta=0.17, phi_segments=96,
     def pt(i, j):
         phi = pi * i / nphi
         theta = 2.0 * pi * (j % nth) / nth
-        r = _radius(kind, phi, theta, beta)
-        return (r * sin(phi) * cos(theta) * scale,
-                r * sin(phi) * sin(theta) * scale,
-                r * cos(phi) * scale)
+        r = _sloan_radius(kind, phi, theta, beta)
+        return (r * sin(phi) * cos(theta),
+                r * sin(phi) * sin(theta),
+                r * cos(phi))
 
     grid = [[pt(i, j) for j in range(nth)] for i in range(nphi + 1)]
     for i in range(nphi):
@@ -142,43 +190,65 @@ except ImportError:
 if _IN_BLENDER:
 
     class MESH_OT_gomboc_add(bpy.types.Operator):
-        """Add a gomboc -- a convex, homogeneous self-righting solid """ \
+        """Add a gomboc -- the convex, homogeneous self-righting solid """ \
             """with a single stable and single unstable balance point"""
         bl_idname = "mesh.gomboc_add"
         bl_label = "Gomboc"
         bl_options = {'REGISTER', 'UNDO'}
 
         kind: EnumProperty(
-            name="Variant",
-            items=[('SECOND', "Sloan II",
-                    "r^4 = 1 + 4 beta sin(phi) cos(theta - "
-                    "(3pi/2)(cos phi - cos^3 phi / 3)); smooth single "
-                    "crest (beta up to ~0.17)"),
-                   ('FIRST', "Sloan I",
-                    "r^4 = 1 + 4 beta sin(phi) cos(theta - 5 phi); a "
-                    "helically swept ridge (beta up to ~0.15)")],
-            default='SECOND')
+            name="Form",
+            items=[('SCULPTURAL', "Sculptural (recognisable)",
+                    "The familiar gomboc silhouette: rounded belly "
+                    "sweeping up to a leaning dorsal ridge (a faithful "
+                    "likeness, meshed from an SDF morph)"),
+                   ('SLOAN_II', "Analytic - Sloan II",
+                    "Sloan's closed-form radial surface II "
+                    "(beta up to ~0.17)"),
+                   ('SLOAN_I', "Analytic - Sloan I",
+                    "Sloan's closed-form radial surface I; a helically "
+                    "swept ridge (beta up to ~0.15)")],
+            default='SCULPTURAL')
+        ridge: FloatProperty(
+            name="Ridge", default=0.35, min=0.05, max=0.6,
+            description="Sculptural: sharpness of the dorsal crest "
+                        "(sphere-to-blade morph weight)")
+        lean: FloatProperty(
+            name="Lean", default=0.5, min=0.0, max=1.0,
+            description="Sculptural: how far the crest leans over one "
+                        "end (breaks the symmetry)")
+        resolution: IntProperty(
+            name="Resolution", default=76, min=24, max=200,
+            description="Sculptural: marching-grid density")
         beta: FloatProperty(
             name="Flatness beta", default=0.17, min=0.0, max=0.25,
-            description="Departure from a sphere; 0 is a round ball. "
+            description="Analytic: departure from a sphere (0 = ball). "
                         "Keep <= ~0.15 (Sloan I) / ~0.17 (Sloan II)")
         phi_segments: IntProperty(
             name="Rings", default=96, min=8, max=400,
-            description="Segments from pole to pole")
+            description="Analytic: segments pole to pole")
         theta_segments: IntProperty(
             name="Segments", default=128, min=8, max=512,
-            description="Segments around the axis")
+            description="Analytic: segments around the axis")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
         def execute(self, context):
-            verts, faces = build_gomboc(
-                self.kind, self.beta, self.phi_segments,
-                self.theta_segments, self.scale)
+            if self.kind == 'SCULPTURAL':
+                verts, faces = build_gomboc_sculptural(
+                    self.ridge, self.lean, self.resolution)
+            else:
+                verts, faces = build_gomboc_analytic(
+                    self.kind, self.beta, self.phi_segments,
+                    self.theta_segments)
+
+            verts = [tuple(map(float, v)) for v in np.asarray(verts)]
+            faces = [tuple(int(i) for i in f) for f in faces]
 
             def _fit(vs):
-                # centre on the bbox midpoint, scale largest extent to
-                # 2.0 * scale (scale divides out of the ratio).
+                # centre on the bbox midpoint and scale the largest
+                # extent to 2.0 * scale (a ~2 m cube); scale divides out
+                # of the ratio, so it is not applied twice.
                 if not vs:
                     return vs
                 xs = [v[0] for v in vs]
@@ -219,9 +289,14 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'kind')
-            lay.prop(self, 'beta')
-            lay.prop(self, 'phi_segments')
-            lay.prop(self, 'theta_segments')
+            if self.kind == 'SCULPTURAL':
+                lay.prop(self, 'ridge')
+                lay.prop(self, 'lean')
+                lay.prop(self, 'resolution')
+            else:
+                lay.prop(self, 'beta')
+                lay.prop(self, 'phi_segments')
+                lay.prop(self, 'theta_segments')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
@@ -242,13 +317,28 @@ if _IN_BLENDER:
 
 def _selftest():
     from collections import Counter
-    for kind, beta in (('FIRST', 0.15), ('SECOND', 0.17)):
-        v, f = build_gomboc(kind, beta, 48, 64)
-        for p in v:
-            for c in p:
-                assert math.isfinite(c)
-        # closed manifold: every edge shared by exactly two faces,
-        # Euler characteristic of a sphere = 2.
+
+    # sculptural: closed manifold, convex-ish, taller than wide with a
+    # single upper crest (top extent above centre exceeds the belly).
+    v, f = build_gomboc_sculptural(0.35, 0.5, 56)
+    v = [tuple(map(float, p)) for p in np.asarray(v)]
+    f = [tuple(int(i) for i in t) for t in f]
+    cnt = Counter()
+    for fc in f:
+        n = len(fc)
+        for i in range(n):
+            a, b = fc[i], fc[(i + 1) % n]
+            cnt[(min(a, b), max(a, b))] += 1
+    manifold = all(c == 2 for c in cnt.values())
+    zs = [p[2] for p in v]
+    ok = manifold and len(v) > 100 and (max(zs) - min(zs)) > 0.5
+    print(f"gomboc[sculptural]: V={len(v)} F={len(f)} manifold={manifold} "
+          f"z-extent={max(zs) - min(zs):.2f} {'OK' if ok else 'BAD'}")
+    assert ok
+
+    # analytic Sloan forms: watertight ball (chi = 2), radius positive.
+    for kind, beta in (('SLOAN_I', 0.15), ('SLOAN_II', 0.17)):
+        v, f = build_gomboc_analytic(kind, beta, 48, 64)
         cnt = Counter()
         for fc in f:
             n = len(fc)
@@ -257,11 +347,8 @@ def _selftest():
                 cnt[(min(a, b), max(a, b))] += 1
         manifold = all(c == 2 for c in cnt.values())
         chi = len(v) - len(cnt) + len(f)
-        # convexity sanity: radius must stay strictly positive.
-        rmin = min(math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2)
-                   for p in v)
+        rmin = min(math.sqrt(p[0] ** 2 + p[1] ** 2 + p[2] ** 2) for p in v)
         ok = manifold and chi == 2 and rmin > 0.1
-        print(f"gomboc[{kind} beta={beta}]: verts={len(v)} faces={len(f)} "
-              f"manifold={manifold} chi={chi}(2) rmin={rmin:.3f} "
-              f"{'OK' if ok else 'BAD'}")
+        print(f"gomboc[{kind}]: V={len(v)} F={len(f)} manifold={manifold} "
+              f"chi={chi}(2) rmin={rmin:.3f} {'OK' if ok else 'BAD'}")
         assert ok

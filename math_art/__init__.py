@@ -45,7 +45,6 @@ _MODULE_NAMES = [
     'space_curve_generator',
     'oloid_generator',
     'sphericon_generator',
-    'sudanese_mobius_generator',
     'gomboc_generator',
     'constant_width_generator',
     'prime_knot_generator',
@@ -164,7 +163,6 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.curiosity_surface_add",
             icon='SURFACE_DATA')
         _op(lay, "mesh.supershape_add", icon='SURFACE_NSPHERE')
-        _op(lay, "mesh.sudanese_mobius_add", icon='MOD_SIMPLEDEFORM')
         _op(lay, "mesh.hyperbolic_surface_add", icon='MESH_CAPSULE')
         _op(lay, "mesh.crochet_add", icon='MOD_CLOTH')
 

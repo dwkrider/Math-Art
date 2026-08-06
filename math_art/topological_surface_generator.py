@@ -15,6 +15,9 @@
 #     the marching-tetrahedra kernel from minimal_surface_toolkit.
 #   * Solid closed strips with n half-twists (n = 1 is a printable
 #     Mobius band, fig 6-1), swept as a watertight solid directly.
+#   * The Sudanese Mobius band -- Lawson's minimal Mobius band in S^3,
+#     stereographically projected to R^3 (embedded, with a round
+#     great-circle boundary).
 #
 # Non-orientable surfaces cannot embed in 3-space, so KLEIN / KLEIN8 /
 # CROSSCAP / ROMAN / BOY are immersions with self-intersections. The
@@ -30,6 +33,10 @@
 #       57 (1903), here via the R. Bryant - R. Kusner parametrization.
 #   Cross-cap and Roman surface: two immersions of RP^2 due to
 #       J. Steiner (Rome, 1844). Mobius band: A. F. Mobius (1858).
+#   Sudanese Mobius band: H. B. Lawson, "Complete Minimal Surfaces in
+#       S^3", Ann. of Math. 92 (1970), 335-374; named for Sue Goodman
+#       and Daniel Asimov (cf. G. Francis, "A Topological Picturebook",
+#       Springer 1987).
 #   Menagerie after ch. 6 of H. Segerman, "Visualizing Mathematics
 #       with 3D Printing" (2016).
 
@@ -130,6 +137,53 @@ def build_klein_figure8(nu, nv, radius=2.0):
             j2 = (j + 1) % nv
             faces.append((i * nv + j, i * nv + j2,
                           (i + 1) * nv + j2, (i + 1) * nv + j))
+    return V, faces
+
+
+# ==========================================================================
+# Sudanese Mobius band (Lawson's minimal Mobius band in S^3)
+# ==========================================================================
+# Half of Lawson's minimally-immersed Klein bottle in the unit 3-sphere
+#   x(t, v) = (cos t cos v, sin t cos v, cos 2t sin v, sin 2t sin v),
+# taking v in [0, pi], is an EMBEDDED Mobius band whose single boundary
+# is a great circle.  Stereographically projecting to R^3 keeps that
+# boundary a round circle.  We project from the point of S^3 farthest
+# from the band, p = (-1, 0, -1, 0)/sqrt2 (the band's dot with p peaks
+# at 1/sqrt2, so the denominator 1 - x.p never drops below ~0.293 and
+# the image stays bounded).  In the basis e1 = (0,1,0,0),
+# e2 = (0,0,0,1), e3 = (1,0,-1,0)/sqrt2 of p^perp this reduces to
+#   X = x2/s,  Y = x4/s,  Z = (x1 - x3)/(sqrt2 s),  s = 1 + (x1+x3)/sqrt2.
+# The nickname "Sudanese" honours topologists Sue Goodman and Daniel
+# Asimov (Sue + Dan), not the country.
+
+def build_sudanese_mobius(nu, nv):
+    """Lawson's minimal Mobius band in S^3, stereographically projected
+    to R^3.  The t = 0 and t = pi seam rows coincide in space (with a
+    flip v -> pi - v), so -- exactly as for the Klein bottles above --
+    the grid is left SPLIT there rather than index-glued: welding flips
+    the winding and averaged smooth normals then form a dark crease.
+    Cut open along the seam the mesh is a disk (chi 1) whose two ends
+    meet on the boundary circle."""
+    R2 = math.sqrt(2.0)
+    t = math.pi * np.arange(nu + 1)[:, None] / nu       # around
+    v = math.pi * np.arange(nv + 1)[None, :] / nv        # across
+    ct, st = np.cos(t), np.sin(t)
+    cv, sv = np.cos(v), np.sin(v)
+    x1 = ct * cv
+    x2 = st * cv
+    x3 = np.cos(2 * t) * sv
+    x4 = np.sin(2 * t) * sv
+    s = 1.0 + (x1 + x3) / R2                              # = 1 - x . p
+    x = x2 / s
+    y = x4 / s
+    z = (x1 - x3) / (R2 * s)
+    V = np.stack(np.broadcast_arrays(x, y, z), axis=-1).reshape(-1, 3)
+    stride = nv + 1
+    faces = []
+    for i in range(nu):
+        for j in range(nv):
+            faces.append((i * stride + j, i * stride + j + 1,
+                          (i + 1) * stride + j + 1, (i + 1) * stride + j))
     return V, faces
 
 
@@ -350,6 +404,9 @@ PRESET_ITEMS = [
      "Classical bottle-shaped Klein bottle immersion"),
     ('KLEIN8', "Klein Bottle (Figure-8)",
      "Figure-8 / twisted-torus Klein bottle immersion"),
+    ('SUDANESE', "Sudanese Mobius Band",
+     "Lawson's minimal Mobius band in S^3, stereographically "
+     "projected to R^3 (embedded, round boundary circle)"),
     ('CROSSCAP', "Cross-Cap",
      "Standard cross-cap immersion of the projective plane"),
     ('ROMAN', "Roman Surface",
@@ -362,7 +419,7 @@ PRESET_ITEMS = [
      "Solid closed strip with n half-twists; n = 1 is a Mobius band"),
 ]
 
-_IMMERSIONS = {'KLEIN', 'KLEIN8', 'CROSSCAP', 'ROMAN', 'BOY'}
+_IMMERSIONS = {'KLEIN', 'KLEIN8', 'SUDANESE', 'CROSSCAP', 'ROMAN', 'BOY'}
 
 
 if _IN_BLENDER:
@@ -429,6 +486,9 @@ if _IN_BLENDER:
             elif p == 'KLEIN8':
                 V, F = build_klein_figure8(self.res_u, self.res_v)
                 name = "Klein Bottle 8"
+            elif p == 'SUDANESE':
+                V, F = build_sudanese_mobius(self.res_u, self.res_v)
+                name = "Sudanese Mobius Band"
             elif p == 'CROSSCAP':
                 V, F = build_crosscap(self.res_u, self.res_v)
                 name = "Cross-Cap"
@@ -531,6 +591,10 @@ def _selftest():
     stats("klein", V, F, 0, nbound_want=64)
     V, F = build_klein_figure8(64, 32)
     stats("klein8", V, F, 0, nbound_want=64)
+    # split-seam Sudanese band: cut open it is a disk (chi 1); its
+    # boundary is the full grid perimeter, 2*nu + 2*nv edges.
+    V, F = build_sudanese_mobius(64, 32)
+    stats("sudanese", V, F, 1, nbound_want=2 * 64 + 2 * 32)
     V, F = build_crosscap(64, 24)
     stats("crosscap", V, F, 1)
     V, F = build_roman(64, 24)
