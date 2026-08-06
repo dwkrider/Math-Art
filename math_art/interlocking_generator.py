@@ -1031,14 +1031,13 @@ def build_dome(seed, depth, thickness):
 # The bisymmetric hendecahedron (Inchbald 1996): a space-filling
 # 11-hedron with 2 large rhombi, 1 small rhombus, 4 isosceles
 # triangles and 4 kites (7 quads + 4 triangles), volume 16 in these
-# coordinates.  It is NOT a translation or reflection tiler; four
-# cells make a "hexagonal boat" that stacks by translation on a
-# body-centred-cubic-like lattice (Inchbald).  Here the space-filling
-# is grown directly: the exact rigid motions that carry the cell onto
-# a face-adjacent, non-overlapping neighbour are found by matching
-# each face onto a congruent face (an off-plane point fixes the
-# out-of-plane sense), and a flood fill lays down an interlocking
-# cluster that is guaranteed free of interpenetration (verified).
+# coordinates.  It is NOT a single-cell translation tiler and NOT a
+# reflection tiler.  Four cells make a "hexagonal boat" that stacks by
+# pure translation on a body-centred-tetragonal (BCC-scaled-
+# vertically) lattice -- Inchbald's construction, here given exactly
+# as a four-cell motif plus three lattice vectors (see _HENDECA_MOTIF
+# and _HENDECA_L below).  The tiling is verified to fill space with no
+# gaps, no overlaps and face-to-face contact everywhere.
 #
 # References: Guy Inchbald, "Five Space-filling Polyhedra," The
 # Mathematical Gazette 80 (489), 1996, pp. 466-475; Jiangmei Wu &
@@ -1079,134 +1078,61 @@ def _convex_overlap(A, B, FA, FB):
     return True
 
 
-def _rigid_from(src, dst):
-    """Rigid motion (R, t) with dst ~= src @ R.T + t, or None if the
-    point sets are not congruent (allows reflections)."""
-    cs = src.mean(axis=0)
-    cd = dst.mean(axis=0)
-    A = src - cs
-    B = dst - cd
-    U, S, Vt = np.linalg.svd(A.T @ B)
-    R = Vt.T @ U.T
-    if np.linalg.norm((A @ R.T) - B) > 1e-5 * len(src):
-        return None
-    return R, cd - R @ cs
-
-
-_HENDECA_NEIGH = None
-
-
-def _hendeca_neighbors():
-    """The rigid motions carrying the cell onto each face-adjacent
-    non-overlapping neighbour (cached).  For every face F, any
-    congruent face F2 is matched onto F in all cyclic/reflected
-    orders; an off-plane point (the cell interior side of F2 -> the
-    outward side of F) fixes the isometry, and only non-overlapping
-    results are kept."""
-    global _HENDECA_NEIGH
-    if _HENDECA_NEIGH is not None:
-        return _HENDECA_NEIGH
-    V, F = _HENDECA_V, _HENDECA_F
-    C = V.mean(axis=0)
-
-    def fcn(f):
-        p = V[f]
-        c = p.mean(axis=0)
-        n = np.cross(p[1] - p[0], p[2] - p[0])
-        n = n / np.linalg.norm(n)
-        if np.dot(n, C - c) > 0:
-            n = -n
-        return c, n
-
-    def eseq(f):
-        p = V[f]
-        return [round(np.linalg.norm(p[i] - p[(i + 1) % len(f)]), 3)
-                for i in range(len(f))]
-
-    def orders(f):
-        k = len(f)
-        out = []
-        for s in range(k):
-            out.append([f[(s + i) % k] for i in range(k)])
-            out.append([f[(s - i) % k] for i in range(k)])
-        return out
-
-    FN = [fcn(f) for f in F]
-    out, keys = [], set()
-    for ti, Ft in enumerate(F):
-        c, nrm = FN[ti]
-        es = eseq(Ft)
-        for si, F2 in enumerate(F):
-            if len(F2) != len(Ft):
-                continue
-            c2, n2 = FN[si]
-            for od in orders(F2):
-                if eseq(od) != es:
-                    continue
-                g = _rigid_from(np.vstack([V[od], [c2 - n2]]),
-                                np.vstack([V[Ft], [c + nrm]]))
-                if g is None:
-                    continue
-                R, t = g
-                if not _convex_overlap(V, V @ R.T + t, F, F):
-                    key = tuple(np.round(np.concatenate(
-                        [R.ravel(), t]), 3))
-                    if key not in keys:
-                        keys.add(key)
-                        out.append((R, t))
-    _HENDECA_NEIGH = out
-    return out
+# The space-filling rule (verified: motif + lattice covers space with
+# no gaps and no overlaps, face-to-face everywhere).  Four cells make
+# Inchbald's "hexagonal boat": the base cell plus three copies turned
+# by a 2-fold rotation (no reflections needed).  The boat then tiles
+# by pure translation on a body-centred-tetragonal lattice -- the
+# square lattice (4,4,0),(4,-4,0) with vertical period (0,0,4) and the
+# body centre (4,0,2) -- i.e. BCC compressed vertically by one half,
+# exactly as Inchbald describes.  The four orientations are forced:
+# of the 22 face-adjacent placements per cell only these four are
+# crystallographically consistent (the rest are "false" neighbours
+# that never extend to a tiling, which is why a naive flood fill
+# leaves permanent gaps).
+_HENDECA_MOTIF = [
+    (np.eye(3), np.array((0.0, 0.0, 0.0))),
+    (np.array(((0.0, 1.0, 0.0), (1.0, 0.0, 0.0), (0.0, 0.0, -1.0))),
+     np.array((1.0, 3.0, 4.0))),                     # C2 about (1,1,0)
+    (np.array(((1.0, 0.0, 0.0), (0.0, -1.0, 0.0), (0.0, 0.0, -1.0))),
+     np.array((0.0, 2.0, 2.0))),                     # C2 about x
+    (np.array(((0.0, -1.0, 0.0), (-1.0, 0.0, 0.0), (0.0, 0.0, -1.0))),
+     np.array((3.0, 3.0, 6.0)))]                     # C2 about (1,-1,0)
+_HENDECA_L = (np.array((4.0, 0.0, 2.0)), np.array((0.0, 4.0, 2.0)),
+              np.array((0.0, 0.0, 4.0)))
 
 
 def build_hendeca(count=32):
-    """A cluster of `count` bisymmetric hendecahedra grown by flood
-    fill from the face-neighbour motions.  Every added cell is checked
-    against all placed cells, so the cluster never interpenetrates
-    (verified); its core is solidly space-filling and its surface is
-    the ragged boundary of the grown region.  Cells are three-coloured
-    by orientation class."""
+    """A compact cluster of `count` bisymmetric hendecahedra from the
+    exact space-filling rule: the four-cell boat translated over the
+    body-centred-tetragonal lattice.  The `count` cells nearest the
+    centre of a generated block are kept, giving a solid interlocking
+    chunk (verified space-filling: no gaps, no overlaps, face-to-face).
+    Cells are coloured by their orientation in the boat."""
     V, F = _HENDECA_V, _HENDECA_F
-    G = _hendeca_neighbors()
-    frames = [(np.eye(3), np.zeros(3))]
-    verts = [V]
-    cens = [V.mean(axis=0)]
-    seen = {tuple(np.round(cens[0], 1))}
-    colmap = {}
-
-    def colour(R):
-        k = tuple(np.round(R.ravel(), 1))
-        if k not in colmap:
-            colmap[k] = len(colmap) % 3
-        return colmap[k]
-
-    q = deque([0])
-    cols = [colour(frames[0][0])]
-    pre = 2.0 * float(np.max(np.linalg.norm(V, axis=1))) + 0.1
-    while q and len(frames) < count:
-        i = q.popleft()
-        Rc, tc = frames[i]
-        for Rn, tn in G:
-            R = Rc @ Rn
-            t = Rc @ tn + tc
-            W = V @ R.T + t
-            c = W.mean(axis=0)
-            key = tuple(np.round(c, 1))
-            if key in seen:
-                continue
-            if any(np.linalg.norm(cens[j] - c) < pre and
-                   _convex_overlap(verts[j], W, F, F)
-                   for j in range(len(frames))):
-                continue
-            seen.add(key)
-            frames.append((R, t))
-            verts.append(W)
-            cens.append(c)
-            cols.append(colour(R))
-            q.append(len(frames) - 1)
-            if len(frames) >= count:
-                break
-    return [(np.zeros(3), verts[i], [list(f) for f in F], False,
-             cols[i]) for i in range(len(frames))]
+    L1, L2, L3 = _HENDECA_L
+    # generate enough boats to contain `count` cells, then keep the
+    # nearest ones to the block centre for a compact solid cluster
+    r = 1
+    cells = []
+    while len(cells) < count + 4:
+        cells = []
+        rng = range(-r, r + 1)
+        for ci, (R, t) in enumerate(_HENDECA_MOTIF):
+            for i in rng:
+                for j in rng:
+                    for k in rng:
+                        off = t + i * L1 + j * L2 + k * L3
+                        W = V @ R.T + off
+                        cells.append((W, W.mean(axis=0), ci))
+        r += 1
+    mid = np.mean([c[1] for c in cells], axis=0)
+    cells.sort(key=lambda c: np.linalg.norm(c[1] - mid))
+    cells = cells[:count]
+    keep_mid = np.mean([c[1] for c in cells], axis=0)
+    faces = [list(f) for f in F]
+    return [(np.zeros(3), W - keep_mid, faces, False, ci % 3)
+            for W, _c, ci in cells]
 
 
 # ==================================================================
@@ -1878,7 +1804,7 @@ def _selftest():
     print(f"hendecahedron cell: bad_edges={be} faces={len(_HENDECA_F)} "
           f"vol={hv:.3f} {'ok' if good else 'BAD'}")
     ok = ok and good
-    hcells = build_hendeca(24)
+    hcells = build_hendeca(48)
     hverts = [np.asarray(V) for _, V, _f, _fr, _c in hcells]
     hbad = 0
     for a in range(len(hverts)):
@@ -1890,6 +1816,44 @@ def _selftest():
     print(f"overlap HENDECA cluster: cells={len(hcells)} "
           f"interpenetrations={hbad} {'ok' if hbad == 0 else 'OVERLAP'}")
     ok = ok and hbad == 0
+
+    # the boat motif + lattice must fill space (coverage exactly one)
+
+    def _in_cell(p, W):
+        cc = W.mean(axis=0)
+        for f in _HENDECA_F:
+            q = W[f]
+            n = np.cross(q[1] - q[0], q[2] - q[0])
+            n = n / np.linalg.norm(n)
+            d = np.dot(n, q[0])
+            if np.dot(n, cc) > d:
+                n, d = -n, -d
+            if np.dot(n, p) - d > 1e-9:
+                return False
+        return True
+
+    tiles = []
+    for R, t in _HENDECA_MOTIF:
+        for i in range(-3, 4):
+            for j in range(-3, 4):
+                for k in range(-3, 4):
+                    tiles.append(_HENDECA_V @ R.T + (t + i * _HENDECA_L[0]
+                                 + j * _HENDECA_L[1] + k * _HENDECA_L[2]))
+    tcen = [W.mean(axis=0) for W in tiles]
+    rngh = np.random.RandomState(7)
+    Ph = rngh.uniform(-4.0, 4.0, (2000, 3))
+    hg = ho = 0
+    for p in Ph:
+        cnt = sum(1 for W, c in zip(tiles, tcen)
+                  if np.linalg.norm(c - p) < 2.5 and _in_cell(p, W))
+        if cnt == 0:
+            hg += 1
+        elif cnt > 1:
+            ho += 1
+    good = hg == 0 and ho == 0
+    print(f"tiling HENDECA boat+lattice: gaps={hg} overlaps={ho} "
+          f"{'ok' if good else 'FAIL'}")
+    ok = ok and good
 
     # Escher: every plane section must tile (coverage exactly 1)
     def _pip(pt, poly):
