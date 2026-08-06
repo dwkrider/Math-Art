@@ -808,7 +808,11 @@ def build_polytope_ex(kind='CELL8', style='CURVED', proj_dist=1.05,
                     radii = [radius * s * scale for s in scls]
                 else:
                     radii = [radius * scale] * len(pts)
-                add_strut(verts, faces, pts, radii, sides)
+                # "Struts" matches the square-section beams the other
+                # generators get from the Wireframe modifier; Ball and
+                # Stick keeps its round, user-adjustable cross-section
+                strut_sides = 4 if render == 'EDGES' else sides
+                add_strut(verts, faces, pts, radii, strut_sides)
             if render == 'BALLSTICK':
                 for i in range(len(V)):
                     p, s = proj[i]
@@ -1056,11 +1060,11 @@ if _IN_BLENDER:
                     me.materials.append(mat)
                 me.polygons.foreach_set('material_index', face_mat)
             me.validate(clean_customdata=True)
-            # Leonardo panels are wound consistently by construction
-            # (the mitred joints share rim walls between panels, so
-            # a normal recalc would be unreliable there); struts
-            # shade smooth, flat panels and ring cells must stay flat
-            smooth = self.render != 'LEONARDO'
+            # Only Ball and Stick's round cylinders (and spheres) shade
+            # smooth; the square-section "Struts" beams, flat Leonardo
+            # panels and solid ring cells must stay flat, or the square
+            # profile reads as a round tube
+            smooth = self.render == 'BALLSTICK'
             if n_rings > 0 and smooth:
                 rb = st['n_systems']
                 flags = [m < rb for m in face_mat]
@@ -1112,10 +1116,14 @@ if _IN_BLENDER:
                 lay.prop(self, 'arc_segments')
                 lay.prop(self, 'scale')
             else:
-                # EDGES ("Struts") = tubes only; BALLSTICK adds spheres.
+                # EDGES ("Struts") = square-section beams, no spheres;
+                # BALLSTICK = round struts (adjustable sides) + spheres.
                 # The vertex_spheres toggle is retired -- the style now
                 # decides -- so it is never drawn.
-                keys = ['arc_segments', 'radius', 'sides', 'taper']
+                keys = ['arc_segments', 'radius']
+                if self.render == 'BALLSTICK':
+                    keys.append('sides')
+                keys.append('taper')
                 if self.render == 'BALLSTICK':
                     keys.append('sphere_factor')
                 keys.append('scale')
