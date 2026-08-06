@@ -250,25 +250,25 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_dual_helix_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # default parameters must close exactly
-        pts, closed = dual_helix_points()
-        gap = math.dist(pts[0], pts[-1])
-        n1 = int(round(1.5 * 120))
-        # joint between the two helices must be continuous
-        j = math.dist(pts[n1], pts[n1 + 1])
-        step = math.dist(pts[0], pts[1])
-        print(f"points={len(pts)} closed={closed} "
-              f"joint step={j:.4f} (~{step:.4f}) "
-              f"{'OK' if closed and j < 5 * step else 'BAD'}")
-        pts, closed = dual_helix_points(outer_turns=2.0,
-                                        inner_turns=3.0)
-        print(f"2+3 turns closed={closed} "
-              f"{'OK' if closed else 'BAD'}")
-        pts, closed = dual_helix_points(outer_turns=1.5,
-                                        inner_turns=2.0)
-        print(f"1.5+2 turns closed={closed} (expect False) "
-              f"{'OK' if not closed else 'BAD'}")
+def _selftest():
+    # default parameters must close exactly
+    pts, closed = dual_helix_points()
+    gap = math.dist(pts[0], pts[-1])
+    n1 = int(round(1.5 * 120))
+    # joint between the two helices must be continuous
+    j = math.dist(pts[n1], pts[n1 + 1])
+    step = math.dist(pts[0], pts[1])
+    print(f"points={len(pts)} closed={closed} "
+          f"joint step={j:.4f} (~{step:.4f}) "
+          f"{'OK' if closed and j < 5 * step else 'BAD'}")
+    assert closed and j < 5 * step
+    pts, closed = dual_helix_points(outer_turns=2.0,
+                                    inner_turns=3.0)
+    print(f"2+3 turns closed={closed} "
+          f"{'OK' if closed else 'BAD'}")
+    assert closed
+    pts, closed = dual_helix_points(outer_turns=1.5,
+                                    inner_turns=2.0)
+    print(f"1.5+2 turns closed={closed} (expect False) "
+          f"{'OK' if not closed else 'BAD'}")
+    assert not closed

@@ -2195,84 +2195,82 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_regular_solid_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        fails = []
+def _selftest():
+    fails = []
 
-        def check_regular(V, F, tol=2e-3, name=""):
-            """All edges unit length; all faces planar."""
-            worst = 0.0
-            for f in F:
-                m = len(f)
-                for i in range(m):
-                    e = math.dist(V[f[i]], V[f[(i + 1) % m]])
-                    worst = max(worst, abs(e - 1.0))
-            return worst
+    def check_regular(V, F, tol=2e-3, name=""):
+        """All edges unit length; all faces planar."""
+        worst = 0.0
+        for f in F:
+            m = len(f)
+            for i in range(m):
+                e = math.dist(V[f[i]], V[f[(i + 1) % m]])
+                worst = max(worst, abs(e - 1.0))
+        return worst
 
-        COUNTS = {'TT': (12, 8), 'CO': (12, 14), 'TC': (24, 14),
-                  'TO': (24, 14), 'RCO': (24, 26), 'TCO': (48, 26),
-                  'SC': (24, 38), 'ID': (30, 32), 'TD': (60, 32),
-                  'TI': (60, 32), 'RID': (60, 62), 'TID': (120, 62),
-                  'SD': (60, 92)}
-        for (sid, label, nota) in ARCHIMEDEAN:
-            V, F = cw.apply_conway(nota)
-            V = cw.canonicalize(V, F, iters=250)
-            ok = (len(V), len(F)) == COUNTS[sid]
-            print(f"{label:32s} V={len(V)} F={len(F)} "
-                  f"{'OK' if ok else 'BAD'}")
-            if not ok:
-                fails.append(sid)
-        for (sid, label, nota) in CATALAN:
-            V, F = cw.apply_conway(nota)
-            V = cw.canonicalize(V, F, iters=250)
-            arch = COUNTS[dict(zip(
-                [c[0] for c in CATALAN],
-                [a[0] for a in ARCHIMEDEAN]))[sid]]
-            ok = (len(V), len(F)) == (arch[1], arch[0])
-            print(f"{label:32s} V={len(V)} F={len(F)} "
-                  f"{'OK' if ok else 'BAD'}")
-            if not ok:
-                fails.append(sid)
-        for (sid, label, num) in JOHNSON:
-            V, F = build_johnson(num)
-            dev = check_regular(V, F)
-            chi = None
-            E = set()
-            for f in F:
-                for i in range(len(f)):
-                    a, b = f[i], f[(i + 1) % len(f)]
-                    E.add((min(a, b), max(a, b)))
-            chi = len(V) - len(E) + len(F)
-            ok = dev < 2e-3 and chi == 2
-            print(f"{label:44s} edge dev={dev:.2e} chi={chi} "
-                  f"{'OK' if ok else 'BAD'}")
-            if not ok:
-                fails.append(sid)
-        # ortho forms have like-meets-like contacts at the girdle
-        def titi(num):
-            V, F = build_johnson(num)
-            from collections import defaultdict
-            e2 = defaultdict(list)
-            for f in F:
-                for i in range(len(f)):
-                    a, b = f[i], f[(i + 1) % len(f)]
-                    e2[(min(a, b), max(a, b))].append(len(f))
-            return sum(1 for s in e2.values() if s == [3, 3])
-        for num, expect in ((27, True), (28, True), (29, False),
-                            (32, True), (33, False), (34, True)):
-            has = titi(num) > 0
-            ok = has == expect
-            print(f"J{num} tri-tri contacts={has} (expect {expect}) "
-                  f"{'OK' if ok else 'BAD'}")
-            if not ok:
-                fails.append(f'J{num}-og')
-        for kind in ('SSD', 'GD', 'GSD', 'GI'):
-            V, F, sizes = build_kepler(kind)
-            print(f"kepler {kind}: verts={len(V)} faces={len(F)}")
-        V, F = cw.apply_conway('O')
-        SV, SF, r = stellate([list(v) for v in V], F)
-        print(f"stellated octahedron: F={len(SF)}(24) resid={r:.1e} "
-              f"{'OK' if len(SF) == 24 and r < 1e-9 else 'BAD'}")
-        print("RESULT:", "ALL OK" if not fails else f"FAILS {fails}")
+    COUNTS = {'TT': (12, 8), 'CO': (12, 14), 'TC': (24, 14),
+              'TO': (24, 14), 'RCO': (24, 26), 'TCO': (48, 26),
+              'SC': (24, 38), 'ID': (30, 32), 'TD': (60, 32),
+              'TI': (60, 32), 'RID': (60, 62), 'TID': (120, 62),
+              'SD': (60, 92)}
+    for (sid, label, nota) in ARCHIMEDEAN:
+        V, F = cw.apply_conway(nota)
+        V = cw.canonicalize(V, F, iters=250)
+        ok = (len(V), len(F)) == COUNTS[sid]
+        print(f"{label:32s} V={len(V)} F={len(F)} "
+              f"{'OK' if ok else 'BAD'}")
+        if not ok:
+            fails.append(sid)
+    for (sid, label, nota) in CATALAN:
+        V, F = cw.apply_conway(nota)
+        V = cw.canonicalize(V, F, iters=250)
+        arch = COUNTS[dict(zip(
+            [c[0] for c in CATALAN],
+            [a[0] for a in ARCHIMEDEAN]))[sid]]
+        ok = (len(V), len(F)) == (arch[1], arch[0])
+        print(f"{label:32s} V={len(V)} F={len(F)} "
+              f"{'OK' if ok else 'BAD'}")
+        if not ok:
+            fails.append(sid)
+    for (sid, label, num) in JOHNSON:
+        V, F = build_johnson(num)
+        dev = check_regular(V, F)
+        chi = None
+        E = set()
+        for f in F:
+            for i in range(len(f)):
+                a, b = f[i], f[(i + 1) % len(f)]
+                E.add((min(a, b), max(a, b)))
+        chi = len(V) - len(E) + len(F)
+        ok = dev < 2e-3 and chi == 2
+        print(f"{label:44s} edge dev={dev:.2e} chi={chi} "
+              f"{'OK' if ok else 'BAD'}")
+        if not ok:
+            fails.append(sid)
+    # ortho forms have like-meets-like contacts at the girdle
+    def titi(num):
+        V, F = build_johnson(num)
+        from collections import defaultdict
+        e2 = defaultdict(list)
+        for f in F:
+            for i in range(len(f)):
+                a, b = f[i], f[(i + 1) % len(f)]
+                e2[(min(a, b), max(a, b))].append(len(f))
+        return sum(1 for s in e2.values() if s == [3, 3])
+    for num, expect in ((27, True), (28, True), (29, False),
+                        (32, True), (33, False), (34, True)):
+        has = titi(num) > 0
+        ok = has == expect
+        print(f"J{num} tri-tri contacts={has} (expect {expect}) "
+              f"{'OK' if ok else 'BAD'}")
+        if not ok:
+            fails.append(f'J{num}-og')
+    for kind in ('SSD', 'GD', 'GSD', 'GI'):
+        V, F, sizes = build_kepler(kind)
+        print(f"kepler {kind}: verts={len(V)} faces={len(F)}")
+    V, F = cw.apply_conway('O')
+    SV, SF, r = stellate([list(v) for v in V], F)
+    print(f"stellated octahedron: F={len(SF)}(24) resid={r:.1e} "
+          f"{'OK' if len(SF) == 24 and r < 1e-9 else 'BAD'}")
+    print("RESULT:", "ALL OK" if not fails else f"FAILS {fails}")
+    assert not fails

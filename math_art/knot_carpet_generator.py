@@ -5931,7 +5931,7 @@ def _check_torus_seam(nx, ny, R, r):
     return worst
 
 
-if __name__ == "__main__":
+def _selftest():
     ok = True
 
     # 1. neighbour counts and >= 2 crossings per neighbour pair
@@ -6654,3 +6654,4 @@ if __name__ == "__main__":
              _f8_bf == _crossing_sig(_f8['crossings']), _f8_ok))
 
     print("RESULT:", "OK" if ok else "BAD")
+    assert ok

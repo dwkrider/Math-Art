@@ -541,11 +541,8 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_hyperbolic_honeycomb_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for name, (p, q, r) in PRESETS.items():
-            E, ideal = honeycomb_edges(p, q, r, depth=6)
-            print(f"{{{p},{q},{r}}}: {len(E):5d} edges at depth 6"
-                  f"{'  (ideal vertices)' if ideal else ''}")
+def _selftest():
+    for name, (p, q, r) in PRESETS.items():
+        E, ideal = honeycomb_edges(p, q, r, depth=6)
+        print(f"{{{p},{q},{r}}}: {len(E):5d} edges at depth 6"
+              f"{'  (ideal vertices)' if ideal else ''}")

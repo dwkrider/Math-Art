@@ -458,51 +458,48 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_space_curve_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        def unit_steps(pts, closed):
-            n = len(pts)
-            rng = range(n) if closed else range(n - 1)
-            for i in rng:
-                a, b = pts[i], pts[(i + 1) % n]
-                if sum(abs(a[k] - b[k]) for k in range(len(a))) != 1:
-                    return False
-            return True
-        for dim in (2, 3):
-            for order in (1, 2, 3, 4):
-                p = hilbert_points(order, dim)
-                ok = (len(p) == 2 ** (order * dim)
-                      and len(set(p)) == len(p)
-                      and unit_steps(p, False))
-                print(f"hilbert{dim}d o{order}: {len(p)} pts "
-                      f"{'OK' if ok else 'BAD'}")
-        for dim in (2, 3):
-            for order in (2, 3, 4):
-                p = moore_points(order, dim)
-                ok = (len(p) == 2 ** (order * dim)
-                      and len(set(p)) == len(p)
-                      and unit_steps(p, True))
-                print(f"moore{dim}d o{order}: {len(p)} pts closed "
-                      f"{'OK' if ok else 'BAD'}")
-        for w, h in ((5, 3), (12, 8), (7, 11), (16, 6), (1, 9)):
-            p = gilbert2d(w, h)
-            ok = (len(p) == w * h and len(set(p)) == len(p)
+def _selftest():
+    def unit_steps(pts, closed):
+        n = len(pts)
+        rng = range(n) if closed else range(n - 1)
+        for i in rng:
+            a, b = pts[i], pts[(i + 1) % n]
+            if sum(abs(a[k] - b[k]) for k in range(len(a))) != 1:
+                return False
+        return True
+    for dim in (2, 3):
+        for order in (1, 2, 3, 4):
+            p = hilbert_points(order, dim)
+            ok = (len(p) == 2 ** (order * dim)
+                  and len(set(p)) == len(p)
                   and unit_steps(p, False))
-            print(f"gilbert2d {w}x{h}: {len(p)} pts "
+            print(f"hilbert{dim}d o{order}: {len(p)} pts "
                   f"{'OK' if ok else 'BAD'}")
-            assert ok
-        # 3D: full coverage always; unit steps guaranteed only for
-        # even sizes (odd sizes make a few diagonal hops -- a
-        # documented property of the algorithm)
-        for w, h, d in ((4, 4, 4), (12, 8, 4), (6, 10, 2),
-                        (8, 6, 6), (5, 4, 3), (16, 2, 2)):
-            p = gilbert3d(w, h, d)
-            even = w % 2 == 0 and h % 2 == 0 and d % 2 == 0
-            ok = (len(p) == w * h * d and len(set(p)) == len(p)
-                  and (unit_steps(p, False) or not even))
-            print(f"gilbert3d {w}x{h}x{d}: {len(p)} pts "
+    for dim in (2, 3):
+        for order in (2, 3, 4):
+            p = moore_points(order, dim)
+            ok = (len(p) == 2 ** (order * dim)
+                  and len(set(p)) == len(p)
+                  and unit_steps(p, True))
+            print(f"moore{dim}d o{order}: {len(p)} pts closed "
                   f"{'OK' if ok else 'BAD'}")
-            assert ok
-        print("space curve standalone tests passed")
+    for w, h in ((5, 3), (12, 8), (7, 11), (16, 6), (1, 9)):
+        p = gilbert2d(w, h)
+        ok = (len(p) == w * h and len(set(p)) == len(p)
+              and unit_steps(p, False))
+        print(f"gilbert2d {w}x{h}: {len(p)} pts "
+              f"{'OK' if ok else 'BAD'}")
+        assert ok
+    # 3D: full coverage always; unit steps guaranteed only for
+    # even sizes (odd sizes make a few diagonal hops -- a
+    # documented property of the algorithm)
+    for w, h, d in ((4, 4, 4), (12, 8, 4), (6, 10, 2),
+                    (8, 6, 6), (5, 4, 3), (16, 2, 2)):
+        p = gilbert3d(w, h, d)
+        even = w % 2 == 0 and h % 2 == 0 and d % 2 == 0
+        ok = (len(p) == w * h * d and len(set(p)) == len(p)
+              and (unit_steps(p, False) or not even))
+        print(f"gilbert3d {w}x{h}x{d}: {len(p)} pts "
+              f"{'OK' if ok else 'BAD'}")
+        assert ok
+    print("space curve standalone tests passed")

@@ -682,10 +682,3 @@ def _self_test():
 
     print("RESULT:", "OK" if ok else "BAD")
     return ok
-
-
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        _self_test()

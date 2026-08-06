@@ -980,8 +980,3 @@ if _IN_BLENDER:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         bpy.utils.unregister_class(MESH_OT_star_prism_add)
         bpy.utils.unregister_class(MESH_OT_uniform_polyhedron_add)
-
-
-if __name__ == "__main__":
-    if not _IN_BLENDER:
-        _self_test()

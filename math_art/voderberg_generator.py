@@ -462,7 +462,7 @@ def _enclosed_hole(polys, eps=0.01):
     return exposed
 
 
-if __name__ == "__main__":
+def _selftest():
     all_ok = True
     # (kind, arms, coils, beta) cases -- classic, radial, a couple of
     # enclosure orders, and a deformed tile shape.
@@ -489,3 +489,4 @@ if __name__ == "__main__":
                  n_cov, n_tot, n_over, hole == 0,
                  "OK" if ok else "BAD"))
     print("RESULT:", "OK" if all_ok else "BAD")
+    assert all_ok

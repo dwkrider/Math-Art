@@ -883,26 +883,23 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_stereographic_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        from collections import Counter
-        ok_all = True
-        for pat in ('GRID', 'POLAR', 'TILING', 'BEACHBALL',
-                    'FLOWER'):
-            for bowl in (False, True):
-                v, f = build_shell(pat, res=32, bowl=bowl)
-                cnt = Counter()
-                for fc in f:
-                    for i in range(len(fc)):
-                        a, b = fc[i], fc[(i + 1) % len(fc)]
-                        cnt[(min(a, b), max(a, b))] += 1
-                man = all(c == 2 for c in cnt.values())
-                ok_all = ok_all and man
-                print("%-9s bowl=%d verts=%d faces=%d "
-                      "watertight=%s %s"
-                      % (pat, bowl, len(v), len(f), man,
-                         'OK' if man else 'BAD'))
-        assert ok_all
-        print("stereographic standalone tests passed")
+def _selftest():
+    from collections import Counter
+    ok_all = True
+    for pat in ('GRID', 'POLAR', 'TILING', 'BEACHBALL',
+                'FLOWER'):
+        for bowl in (False, True):
+            v, f = build_shell(pat, res=32, bowl=bowl)
+            cnt = Counter()
+            for fc in f:
+                for i in range(len(fc)):
+                    a, b = fc[i], fc[(i + 1) % len(fc)]
+                    cnt[(min(a, b), max(a, b))] += 1
+            man = all(c == 2 for c in cnt.values())
+            ok_all = ok_all and man
+            print("%-9s bowl=%d verts=%d faces=%d "
+                  "watertight=%s %s"
+                  % (pat, bowl, len(v), len(f), man,
+                     'OK' if man else 'BAD'))
+    assert ok_all
+    print("stereographic standalone tests passed")

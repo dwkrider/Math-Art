@@ -601,42 +601,39 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_spacefill_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # at gap = 1 the numeric mesh volume must equal the
-        # analytic total cell volume for every honeycomb
-        for kind in ('CUBIC', 'OCTET', 'TRUNCOCT', 'RHOMBDODEC',
-                     'OBTET', 'SPIRAL3', 'SPIRAL4'):
-            v, f, t = build_mesh(kind, 3, 3, 2, gap=1.0)
-            num = _mesh_volume(v, f)
-            ana = block_volume(kind, 3, 3, 2)
-            ok = abs(num - ana) < 1e-9 * max(1.0, ana)
-            print(f"{kind}: vol={num:.6f} ({ana:.6f}) "
-                  f"{'OK' if ok else 'BAD'}")
-        # spirallohedra: the tiling-basis derivation must succeed
-        # (it raises when the cell is not a translational tiler)
-        # and at gap = 1 non-boundary faces of a block must be
-        # shared exactly, for a sweep of segment counts and pitches
-        for kind in ('SPIRAL3', 'SPIRAL4'):
-            for segs in (6, 8, 9, 12, 15, 16, 20, 24):
-                if spiral_n(kind, segs) != segs:
-                    continue
-                for pitch in (35.0, 45.0, 55.0, 70.0):
-                    V, F, B, height, vol = _spiral_data(kind, segs,
-                                                        pitch)
-                    keys = {}
-                    for off in itertools.product(range(2),
-                                                 repeat=3):
-                        t = (off[0] * B[0] + off[1] * B[1]
-                             + off[2] * B[2])
-                        for f in F:
-                            k = _face_key(V[list(f)] + t)
-                            keys[k] = keys.get(k, 0) + 1
-                    shared = sum(1 for c in keys.values()
-                                 if c == 2)
-                    assert shared > 0, (kind, segs, pitch)
-                print(f"{kind} n={segs}: tiles at all pitches, "
-                      f"shared faces OK")
-        print("spacefill standalone tests passed")
+def _selftest():
+    # at gap = 1 the numeric mesh volume must equal the
+    # analytic total cell volume for every honeycomb
+    for kind in ('CUBIC', 'OCTET', 'TRUNCOCT', 'RHOMBDODEC',
+                 'OBTET', 'SPIRAL3', 'SPIRAL4'):
+        v, f, t = build_mesh(kind, 3, 3, 2, gap=1.0)
+        num = _mesh_volume(v, f)
+        ana = block_volume(kind, 3, 3, 2)
+        ok = abs(num - ana) < 1e-9 * max(1.0, ana)
+        print(f"{kind}: vol={num:.6f} ({ana:.6f}) "
+              f"{'OK' if ok else 'BAD'}")
+    # spirallohedra: the tiling-basis derivation must succeed
+    # (it raises when the cell is not a translational tiler)
+    # and at gap = 1 non-boundary faces of a block must be
+    # shared exactly, for a sweep of segment counts and pitches
+    for kind in ('SPIRAL3', 'SPIRAL4'):
+        for segs in (6, 8, 9, 12, 15, 16, 20, 24):
+            if spiral_n(kind, segs) != segs:
+                continue
+            for pitch in (35.0, 45.0, 55.0, 70.0):
+                V, F, B, height, vol = _spiral_data(kind, segs,
+                                                    pitch)
+                keys = {}
+                for off in itertools.product(range(2),
+                                             repeat=3):
+                    t = (off[0] * B[0] + off[1] * B[1]
+                         + off[2] * B[2])
+                    for f in F:
+                        k = _face_key(V[list(f)] + t)
+                        keys[k] = keys.get(k, 0) + 1
+                shared = sum(1 for c in keys.values()
+                             if c == 2)
+                assert shared > 0, (kind, segs, pitch)
+            print(f"{kind} n={segs}: tiles at all pitches, "
+                  f"shared faces OK")
+    print("spacefill standalone tests passed")

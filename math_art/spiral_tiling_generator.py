@@ -591,7 +591,3 @@ def _self_test():
     all_ok = all_ok and gold_ok and equi_ok
     print("RESULT:", "OK" if all_ok else "BAD")
     return all_ok
-
-
-if __name__ == "__main__":
-    _self_test()

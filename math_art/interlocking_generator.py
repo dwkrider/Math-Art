@@ -1524,10 +1524,3 @@ def _selftest():
 
     print("RESULT: OK" if ok else "RESULT: FAIL")
     return ok
-
-
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        _selftest()

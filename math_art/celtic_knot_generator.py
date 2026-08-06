@@ -859,10 +859,7 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_celtic_knot_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        print("celtic knot generator: the strand walk needs "
-              "Blender's bmesh; run the extension test suite for "
-              "coverage")
+def _selftest():
+    print("celtic knot generator: the strand walk needs "
+          "Blender's bmesh; run the extension test suite for "
+          "coverage")

@@ -775,9 +775,6 @@ if _IN_BLENDER:
             bpy.utils.unregister_class(c)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        print("Woven Polyhedron needs Blender (mathutils) to build; "
-              "run tests/test_extension.py under Blender.")
+def _selftest():
+    print("Woven Polyhedron needs Blender (mathutils) to build; "
+          "run tests/test_extension.py under Blender.")

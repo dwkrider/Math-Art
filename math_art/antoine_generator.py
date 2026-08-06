@@ -260,44 +260,42 @@ def _linking_number(A, B):
     return tot / 2.0
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        from collections import Counter
-        ok_all = True
+def _selftest():
+    from collections import Counter
+    ok_all = True
 
-        # TOPOLOGY: the necklace is only Antoine's construction if every
-        # ADJACENT pair in the chain is genuinely linked and non-adjacent
-        # pairs are not.  (The old self-test checked only mesh validity
-        # and so missed that the count=4 default produced UNLINKED rings.)
-        unit = Frame(np.zeros(3), np.array([1.0, 0, 0]),
-                     np.array([0, 1.0, 0]), np.array([0, 0, 1.0]), 1.0)
-        for count in (4, 6, 8):
-            ch = _children(unit, count, 0.62)
-            circ = [_core_circle(f) for f in ch]
-            adj = [abs(round(_linking_number(circ[i], circ[(i + 1) % count])))
-                   for i in range(count)]
-            non = abs(round(_linking_number(circ[0], circ[2])))
-            lk_ok = all(a == 1 for a in adj) and non == 0
-            ok_all = ok_all and lk_ok
-            print(f"link count={count}: adjacent={adj} nonadj={non} "
-                  f"{'OK' if lk_ok else 'BAD (chain not linked)'}")
+    # TOPOLOGY: the necklace is only Antoine's construction if every
+    # ADJACENT pair in the chain is genuinely linked and non-adjacent
+    # pairs are not.  (The old self-test checked only mesh validity
+    # and so missed that the count=4 default produced UNLINKED rings.)
+    unit = Frame(np.zeros(3), np.array([1.0, 0, 0]),
+                 np.array([0, 1.0, 0]), np.array([0, 0, 1.0]), 1.0)
+    for count in (4, 6, 8):
+        ch = _children(unit, count, 0.62)
+        circ = [_core_circle(f) for f in ch]
+        adj = [abs(round(_linking_number(circ[i], circ[(i + 1) % count])))
+               for i in range(count)]
+        non = abs(round(_linking_number(circ[0], circ[2])))
+        lk_ok = all(a == 1 for a in adj) and non == 0
+        ok_all = ok_all and lk_ok
+        print(f"link count={count}: adjacent={adj} nonadj={non} "
+              f"{'OK' if lk_ok else 'BAD (chain not linked)'}")
 
-        # MESH VALIDITY: watertight tori, right ring count, finite coords
-        for depth in (1, 2, 3):
-            verts, faces, n = build_antoine(depth=depth, count=4)
-            edges = Counter()
-            for f in faces:
-                for k in range(len(f)):
-                    a, b = f[k], f[(k + 1) % len(f)]
-                    edges[(min(a, b), max(a, b))] += 1
-            bnd = sum(1 for c in edges.values() if c != 2)
-            finite = np.isfinite(verts).all()
-            ok = n == 4 ** depth and bnd == 0 and finite
-            ok_all = ok_all and ok
-            print(f"depth={depth}: rings={n}({4 ** depth}) "
-                  f"V={len(verts)} F={len(faces)} openEdges={bnd} "
-                  f"{'OK' if ok else 'BAD'}")
+    # MESH VALIDITY: watertight tori, right ring count, finite coords
+    for depth in (1, 2, 3):
+        verts, faces, n = build_antoine(depth=depth, count=4)
+        edges = Counter()
+        for f in faces:
+            for k in range(len(f)):
+                a, b = f[k], f[(k + 1) % len(f)]
+                edges[(min(a, b), max(a, b))] += 1
+        bnd = sum(1 for c in edges.values() if c != 2)
+        finite = np.isfinite(verts).all()
+        ok = n == 4 ** depth and bnd == 0 and finite
+        ok_all = ok_all and ok
+        print(f"depth={depth}: rings={n}({4 ** depth}) "
+              f"V={len(verts)} F={len(faces)} openEdges={bnd} "
+              f"{'OK' if ok else 'BAD'}")
 
-        print("RESULT:", "OK" if ok_all else "BAD")
+    print("RESULT:", "OK" if ok_all else "BAD")
+    assert ok_all

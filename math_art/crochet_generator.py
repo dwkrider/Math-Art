@@ -686,26 +686,24 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_crochet_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        import time
-        h0 = 0.09
-        Rc = h0 / math.log(1.0 + 1.0 / 4)
-        t0 = time.time()
-        V, E0, E1, REST, nbr0, F, pin, pinp = _crochet_mesh(4, 18, h0,
-                                                            600)
-        V = _relax(V, E0, E1, REST, nbr0, pin, pinp, 340, 0.06,
-                   0.4 * h0, 0.5)
-        dt = time.time() - t0
-        strain = float(np.mean(np.linalg.norm(V[E1] - V[E0], axis=1)
-                               / REST))
-        zext = float(V[:, 2].max() - V[:, 2].min())
-        K = mean_curvature(V, F)
-        finite = np.isfinite(V).all()
-        ok = finite and zext > 0.05 and K < 0
-        print(f"RUFFLED: V={len(V)} F={len(F)} z_extent={zext:.3f} "
-              f"meanK={K:+.2f} strain={strain:.3f} "
-              f"targetK={-1.0 / Rc ** 2:+.2f} time={dt:.1f}s "
-              f"{'OK' if ok else 'CHECK'}")
+def _selftest():
+    import time
+    h0 = 0.09
+    Rc = h0 / math.log(1.0 + 1.0 / 4)
+    t0 = time.time()
+    V, E0, E1, REST, nbr0, F, pin, pinp = _crochet_mesh(4, 18, h0,
+                                                        600)
+    V = _relax(V, E0, E1, REST, nbr0, pin, pinp, 340, 0.06,
+               0.4 * h0, 0.5)
+    dt = time.time() - t0
+    strain = float(np.mean(np.linalg.norm(V[E1] - V[E0], axis=1)
+                           / REST))
+    zext = float(V[:, 2].max() - V[:, 2].min())
+    K = mean_curvature(V, F)
+    finite = np.isfinite(V).all()
+    ok = finite and zext > 0.05 and K < 0
+    print(f"RUFFLED: V={len(V)} F={len(F)} z_extent={zext:.3f} "
+          f"meanK={K:+.2f} strain={strain:.3f} "
+          f"targetK={-1.0 / Rc ** 2:+.2f} time={dt:.1f}s "
+          f"{'OK' if ok else 'CHECK'}")
+    assert ok

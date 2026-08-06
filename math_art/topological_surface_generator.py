@@ -513,40 +513,37 @@ if _IN_BLENDER:
             bpy.utils.unregister_class(c)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # standalone smoke tests of the numeric core
-        def stats(name, V, F, chi_want, nbound_want=0):
-            cnt = edge_face_counts(F)
-            chi = len(V) - len(cnt) + len(F)
-            nbound = sum(1 for c in cnt.values() if c == 1)
-            print(f"{name:10s}: {len(V):6d} verts {len(F):6d} faces "
-                  f"chi = {chi:3d} (want {chi_want:3d}) "
-                  f"boundary edges = {nbound}")
-            assert chi == chi_want and nbound == nbound_want, name
+def _selftest():
+    # standalone smoke tests of the numeric core
+    def stats(name, V, F, chi_want, nbound_want=0):
+        cnt = edge_face_counts(F)
+        chi = len(V) - len(cnt) + len(F)
+        nbound = sum(1 for c in cnt.values() if c == 1)
+        print(f"{name:10s}: {len(V):6d} verts {len(F):6d} faces "
+              f"chi = {chi:3d} (want {chi_want:3d}) "
+              f"boundary edges = {nbound}")
+        assert chi == chi_want and nbound == nbound_want, name
 
-        # the Klein seams are split (2 coincident rims of nv edges
-        # each), so cut open they are orientable cylinders: chi = 0
-        # with 2*nv boundary edges
-        V, F = build_klein_bottle(64, 32)
-        stats("klein", V, F, 0, nbound_want=64)
-        V, F = build_klein_figure8(64, 32)
-        stats("klein8", V, F, 0, nbound_want=64)
-        V, F = build_crosscap(64, 24)
-        stats("crosscap", V, F, 1)
-        V, F = build_roman(64, 24)
-        stats("roman", V, F, 1)
-        V, F = build_boy(64, 24)
-        stats("boy", V, F, 1)
-        for g in (1, 2, 3):
-            V, F = build_genus(g, cell=0.125)
-            stats(f"genus-{g}", V, [tuple(t) for t in F], 2 - 2 * g)
-        for n in (0, 1, 2, 3):
-            V, F = build_twist_strip(n, 96, ridge=(n == 1))
-            cnt = edge_face_counts(F)
-            ok = all(c == 2 for c in cnt.values())
-            print(f"twist n={n}: {len(V)} verts, watertight = {ok}")
-            assert ok
-        print("standalone tests passed")
+    # the Klein seams are split (2 coincident rims of nv edges
+    # each), so cut open they are orientable cylinders: chi = 0
+    # with 2*nv boundary edges
+    V, F = build_klein_bottle(64, 32)
+    stats("klein", V, F, 0, nbound_want=64)
+    V, F = build_klein_figure8(64, 32)
+    stats("klein8", V, F, 0, nbound_want=64)
+    V, F = build_crosscap(64, 24)
+    stats("crosscap", V, F, 1)
+    V, F = build_roman(64, 24)
+    stats("roman", V, F, 1)
+    V, F = build_boy(64, 24)
+    stats("boy", V, F, 1)
+    for g in (1, 2, 3):
+        V, F = build_genus(g, cell=0.125)
+        stats(f"genus-{g}", V, [tuple(t) for t in F], 2 - 2 * g)
+    for n in (0, 1, 2, 3):
+        V, F = build_twist_strip(n, 96, ridge=(n == 1))
+        cnt = edge_face_counts(F)
+        ok = all(c == 2 for c in cnt.values())
+        print(f"twist n={n}: {len(V)} verts, watertight = {ok}")
+        assert ok
+    print("standalone tests passed")

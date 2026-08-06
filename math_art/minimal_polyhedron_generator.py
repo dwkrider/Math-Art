@@ -424,50 +424,47 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_minimal_surface_polyhedron_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # standalone: exercise the numeric core on a cube and an
-        # icosahedron without bpy
-        CUBE_V = [(x, y, z) for x in (-1, 1) for y in (-1, 1)
-                  for z in (-1, 1)]
-        CUBE_F = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1],
-                  [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
-        for name, V, F, holes in (("cube", CUBE_V, CUBE_F, 6),):
-            verts, faces = build_form(V, F, levels=3, hole=0.5,
-                                      iterations=30)
-            # boundary loops = number of holes
-            cnt = {}
-            for f in faces:
-                for i in range(len(f)):
-                    e = frozenset((f[i], f[(i + 1) % len(f)]))
-                    cnt[e] = cnt.get(e, 0) + 1
-            bed = [e for e, c in cnt.items() if c == 1]
-            # count boundary loops by walking
-            import collections
-            adj = collections.defaultdict(list)
-            for e in bed:
-                a, b = tuple(e)
-                adj[a].append(b)
-                adj[b].append(a)
-            seen = set()
-            loops = 0
-            for e in bed:
-                a, _ = tuple(e)
-                if a in seen:
+def _selftest():
+    # standalone: exercise the numeric core on a cube and an
+    # icosahedron without bpy
+    CUBE_V = [(x, y, z) for x in (-1, 1) for y in (-1, 1)
+              for z in (-1, 1)]
+    CUBE_F = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1],
+              [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
+    for name, V, F, holes in (("cube", CUBE_V, CUBE_F, 6),):
+        verts, faces = build_form(V, F, levels=3, hole=0.5,
+                                  iterations=30)
+        # boundary loops = number of holes
+        cnt = {}
+        for f in faces:
+            for i in range(len(f)):
+                e = frozenset((f[i], f[(i + 1) % len(f)]))
+                cnt[e] = cnt.get(e, 0) + 1
+        bed = [e for e, c in cnt.items() if c == 1]
+        # count boundary loops by walking
+        import collections
+        adj = collections.defaultdict(list)
+        for e in bed:
+            a, b = tuple(e)
+            adj[a].append(b)
+            adj[b].append(a)
+        seen = set()
+        loops = 0
+        for e in bed:
+            a, _ = tuple(e)
+            if a in seen:
+                continue
+            loops += 1
+            stack = [a]
+            while stack:
+                u = stack.pop()
+                if u in seen:
                     continue
-                loops += 1
-                stack = [a]
-                while stack:
-                    u = stack.pop()
-                    if u in seen:
-                        continue
-                    seen.add(u)
-                    stack.extend(adj[u])
-            finite = all(all(math.isfinite(c) for c in v)
-                         for v in verts)
-            print(f"{name}: V={len(verts)} F={len(faces)} "
-                  f"holes={loops} (want {holes}) finite={finite}")
-            assert loops == holes and finite
-        print("minimal surface polyhedron tests passed")
+                seen.add(u)
+                stack.extend(adj[u])
+        finite = all(all(math.isfinite(c) for c in v)
+                     for v in verts)
+        print(f"{name}: V={len(verts)} F={len(faces)} "
+              f"holes={loops} (want {holes}) finite={finite}")
+        assert loops == holes and finite
+    print("minimal surface polyhedron tests passed")

@@ -298,19 +298,16 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(OBJECT_OT_voronoi_openwork)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        # pure-python check of the graph machinery on a ring graph
-        n = 12
-        adj = {i: [((i + 1) % n, 1.0), ((i - 1) % n, 1.0)]
-               for i in range(n)}
-        rng = random.Random(1)
-        seeds = farthest_point_sample(adj, list(range(n)), 3, rng)
-        dist, label = _dijkstra(adj, seeds)
-        assert len(set(seeds)) == 3
-        assert max(dist.values()) <= n / 2
-        assert set(label.values()) == set(seeds)
-        print("voronoi openwork graph tests passed:",
-              sorted(seeds))
+def _selftest():
+    # pure-python check of the graph machinery on a ring graph
+    n = 12
+    adj = {i: [((i + 1) % n, 1.0), ((i - 1) % n, 1.0)]
+           for i in range(n)}
+    rng = random.Random(1)
+    seeds = farthest_point_sample(adj, list(range(n)), 3, rng)
+    dist, label = _dijkstra(adj, seeds)
+    assert len(set(seeds)) == 3
+    assert max(dist.values()) <= n / 2
+    assert set(label.values()) == set(seeds)
+    print("voronoi openwork graph tests passed:",
+          sorted(seeds))

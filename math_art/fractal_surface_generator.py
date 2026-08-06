@@ -334,25 +334,23 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_fractal_surface_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        from collections import Counter
-        for base in ('PLATE', 'SPHERE', 'TORUS'):
-            for method in ('WEIERSTRASS', 'FBM'):
-                verts, faces = build_fractal_surface(
-                    base=base, method=method, res=48)
-                # closed check only meaningful for sphere/torus
-                edges = Counter()
-                for f in faces:
-                    for k in range(len(f)):
-                        a, b = f[k], f[(k + 1) % len(f)]
-                        edges[(min(a, b), max(a, b))] += 1
-                bnd = sum(1 for c in edges.values() if c != 2)
-                lo, hi = verts.min(axis=0), verts.max(axis=0)
-                finite = np.isfinite(verts).all()
-                print(f"{base:7s}/{method:11s}: V={len(verts)} "
-                      f"F={len(faces)} openEdges={bnd} "
-                      f"bbox={np.round(hi - lo, 2)} "
-                      f"{'OK' if len(faces) and finite else 'BAD'}")
+def _selftest():
+    from collections import Counter
+    for base in ('PLATE', 'SPHERE', 'TORUS'):
+        for method in ('WEIERSTRASS', 'FBM'):
+            verts, faces = build_fractal_surface(
+                base=base, method=method, res=48)
+            # closed check only meaningful for sphere/torus
+            edges = Counter()
+            for f in faces:
+                for k in range(len(f)):
+                    a, b = f[k], f[(k + 1) % len(f)]
+                    edges[(min(a, b), max(a, b))] += 1
+            bnd = sum(1 for c in edges.values() if c != 2)
+            lo, hi = verts.min(axis=0), verts.max(axis=0)
+            finite = np.isfinite(verts).all()
+            print(f"{base:7s}/{method:11s}: V={len(verts)} "
+                  f"F={len(faces)} openEdges={bnd} "
+                  f"bbox={np.round(hi - lo, 2)} "
+                  f"{'OK' if len(faces) and finite else 'BAD'}")
+            assert len(faces) and finite

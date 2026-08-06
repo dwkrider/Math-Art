@@ -570,7 +570,7 @@ def _defects(polys, n=30, half=2.0):
 _ORDER = [k for k, _, _ in TILING_ITEMS]
 
 
-if __name__ == "__main__":
+def _selftest():
     bad_types = []
     for name in _ORDER:
         label = _label(name)
@@ -590,3 +590,4 @@ if __name__ == "__main__":
         if not ok:
             bad_types.append(name)
     print("RESULT:", "OK" if not bad_types else "BAD %s" % bad_types)
+    assert not bad_types

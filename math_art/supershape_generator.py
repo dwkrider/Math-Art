@@ -661,7 +661,7 @@ def _aspect(verts):
     return dims[0] / dims[2] if dims[2] > 1e-9 else 0.0
 
 
-if __name__ == "__main__" and not _IN_BLENDER:
+def _selftest():
     print("== builders ==")
     v, f = build_supershape_3d((5, 2, 7, 7, 1, 1), (5, 2, 7, 7, 1, 1), 96, 48)
     print(f"supershape_3d: V={len(v)} F={len(f)} chi={_chi(v, f)} "
@@ -687,3 +687,4 @@ if __name__ == "__main__" and not _IN_BLENDER:
         print(f"  {name:14s} V={len(v):5d} F={len(f):5d} "
               f"aspect={asp:.3f} {'OK' if ok else 'FLAT!'}")
     print("\nRESULT:", "OK" if not bad else f"FLAT PRESETS: {bad}")
+    assert not bad

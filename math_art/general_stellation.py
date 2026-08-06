@@ -28,7 +28,7 @@ Built-in seeds (SEEDS): 'icosahedron', 'dodecahedron', 'cuboctahedron',
 icosidodecahedron).  Custom convex seeds: pass a vertex array (origin
 must be interior; at most 60 face planes).
 
-Verification (run this file):  for every seed the __main__ transcript
+Verification (via _selftest()):  for every seed the self-test
 checks that the core cell reproduces the seed exactly, and validates the
 classical named stellations -- the icosahedron against Du Val's shell
 tally / echidnahedron / great icosahedron / the tetrahedra+octahedra
@@ -916,7 +916,7 @@ def five_cubes_cells(engine):
 
 
 # --------------------------------------------------------------------------
-# named presets (verified in the __main__ transcript below)
+# named presets (verified by _selftest())
 # --------------------------------------------------------------------------
 # code entries: shell labels, 'all', or ('hand', shell_label, hand_index)
 # for one hand of a chiral shell.  Shell labels are the engine's generic
@@ -1436,7 +1436,3 @@ if _IN_BLENDER:
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
         bpy.utils.unregister_class(MESH_OT_general_stellation_add)
-
-
-if __name__ == '__main__':
-    _self_test()

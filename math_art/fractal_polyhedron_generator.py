@@ -790,25 +790,22 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_fractal_poly_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        for kind, mode, gen, cs, keep in (
-                ('TETRA', 'VERTS', 3, 0.5, False),
-                ('TETRA', 'VERTS', 4, 0.5, False),
-                ('CUBE', 'FACES', 3, 0.45, True),
-                ('ICOSA', 'VERTS', 2, 0.4, True)):
-            v, f, n, fg = build_fractal(kind, mode, gen, cs, spread=1.0,
-                                        keep_parents=keep, twist=15,
-                                        rot_z=10)
-            print(f"{kind} {mode} g{gen}: copies={n} verts={len(v)} "
-                  f"gens={sorted(set(fg))}")
-        for cr, gen in (('CUBE_OCT', 3), ('CUBE_RD', 3),
-                        ('HAUY_OCT', 4), ('DODECAFOAM', 2),
-                        ('DODECA_ICOSA', 2), ('ICOSA_SP', 2),
-                        ('HEX_DIPYR', 3), ('OCT_DIPYR', 3)):
-            v, f, n, fg = build_fractal(generations=gen, crystal=cr,
-                                        hull_shell=True)
-            print(f"crystal {cr} g{gen}: copies={n} verts={len(v)} "
-                  f"faces={len(f)} gens={sorted(set(fg))}")
+def _selftest():
+    for kind, mode, gen, cs, keep in (
+            ('TETRA', 'VERTS', 3, 0.5, False),
+            ('TETRA', 'VERTS', 4, 0.5, False),
+            ('CUBE', 'FACES', 3, 0.45, True),
+            ('ICOSA', 'VERTS', 2, 0.4, True)):
+        v, f, n, fg = build_fractal(kind, mode, gen, cs, spread=1.0,
+                                    keep_parents=keep, twist=15,
+                                    rot_z=10)
+        print(f"{kind} {mode} g{gen}: copies={n} verts={len(v)} "
+              f"gens={sorted(set(fg))}")
+    for cr, gen in (('CUBE_OCT', 3), ('CUBE_RD', 3),
+                    ('HAUY_OCT', 4), ('DODECAFOAM', 2),
+                    ('DODECA_ICOSA', 2), ('ICOSA_SP', 2),
+                    ('HEX_DIPYR', 3), ('OCT_DIPYR', 3)):
+        v, f, n, fg = build_fractal(generations=gen, crystal=cr,
+                                    hull_shell=True)
+        print(f"crystal {cr} g{gen}: copies={n} verts={len(v)} "
+              f"faces={len(f)} gens={sorted(set(fg))}")

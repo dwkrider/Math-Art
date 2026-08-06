@@ -1686,7 +1686,7 @@ SURFACE_FAMILY['CONNOR_DP'] = 'DOUBLY'
 # `storeys` translation or screw copies, welded seam-exactly.  Every
 # member's period problem closes with a machine-checked residual and its
 # Euler characteristic per period is MEASURED in the self-tests (engine
-# gates in we_builders.__main__, pipeline gates below):
+# gates in we_builders._selftest(), pipeline gates below):
 #   * SP_SIX_SCHERK    genus 0, 6 ends/period (2 horizontal + 4 at the
 #     end angle phi); rho, a closed forms in phi; translation from the
 #     om2 residue at z = 0.  chi/period = -4.  (The obtuse phi > 90 deg
@@ -2518,7 +2518,7 @@ WE_SURFACES['SP_2ENN_2ANN'] = {
 SURFACE_FAMILY['SP_2ENN_2ANN'] = 'SINGLY'
 
 
-if __name__ == "__main__":
+def _selftest():
     # standalone catalog tests: build every row through the toolkit
     # pipeline, then the engine-level QA gates (period closure,
     # translation structure, Bjorling seed reproduction)
@@ -2905,7 +2905,7 @@ if __name__ == "__main__":
     # Catenoid-Enneper / Costa-Wohlgemuth / Wohlgemuth: full pipeline
     # watertight gates -- exact chi = 2 - 2 genus - (open end rims),
     # edge-manifold, one component, 2 m fit, finite UV chart.  The
-    # engine-level period/null gates live in we_builders.__main__.
+    # engine-level period/null gates live in we_builders._selftest().
     for wkey, word, wgen, wrim in (('CATENOID_ENNEPER', 2, 2, 2),
                                    ('CATENOID_ENNEPER', 3, 3, 2),
                                    ('CATENOID_ENNEPER', 4, 4, 2),
@@ -3102,7 +3102,7 @@ if __name__ == "__main__":
     # ---- STINV towers + CHM variants (appended gate block) -----------
     # engine-level gates (period residuals at the harvested constants,
     # translation-wrapped quotient topology) live in we_builders'
-    # __main__; here the full pipeline is gated at S = 1 and S = 2
+    # _selftest(); here the full pipeline is gated at S = 1 and S = 2
     # stacked periods: measured chi(2) - chi(1) must equal the quotient
     # Euler characteristic 2 - 2 genus - #ends, and every stack must be
     # edge-manifold, one component and fit the 2 m cube.
@@ -3270,3 +3270,4 @@ if __name__ == "__main__":
           "ANTIPRISM_KNOID + nonorient HENNEBERG_RP2 KUSNER_RP2 "
           "LOPEZ_KLEIN; 9 index entries skipped as duplicates")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in zoo")
+    assert ok

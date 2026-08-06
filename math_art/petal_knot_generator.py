@@ -399,85 +399,82 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_petal_knot_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        try:
-            from . import knot_carpet_generator as kcg
-        except ImportError:
-            import knot_carpet_generator as kcg
-        ok_all = True
+def _selftest():
+    try:
+        from . import knot_carpet_generator as kcg
+    except ImportError:
+        import knot_carpet_generator as kcg
+    ok_all = True
 
-        def _chk(cond, msg):
-            global ok_all
-            print(f"  {'OK ' if cond else 'BAD'} {msg}")
-            ok_all = ok_all and bool(cond)
+    def _chk(cond, msg):
+        nonlocal ok_all
+        print(f"  {'OK ' if cond else 'BAD'} {msg}")
+        ok_all = ok_all and bool(cond)
 
-        for key, (N, perm, det_want, label) in PRESETS.items():
-            print(f"{key} ({label}): {N} petals, heights {perm}")
-            _chk(N % 2 == 1 and sorted(perm) == list(range(1, N + 1)),
-                 f"valid odd permutation of 1..{N}")
-            stride = (N + 1) // 2
-            orbit = {(m * stride) % N for m in range(N)}
-            _chk(gcd(stride, N) == 1 and len(orbit) == N,
-                 f"tip stride {stride} is a single {N}-cycle "
-                 "(one closed cord)")
-            h = pass_heights(N, perm)
-            _chk(len(set(np.round(h, 12))) == N
-                 and np.array_equal(np.argsort(np.argsort(h)) + 1,
-                                    np.asarray(perm)),
-                 f"{N} distinct centre heights ranked as the "
-                 "permutation")
-            P = petal_knot_points(N, perm, samples=64)
-            d = np.linalg.norm(np.roll(P, -1, 0) - P, axis=1)
-            _chk(np.all(np.isfinite(P)) and d.min() > 1e-9,
-                 f"finite closed curve, {len(P)} pts, consecutive "
-                 "points distinct (min step "
-                 f"{d.min():.2e})")
-            ext = P.max(axis=0) - P.min(axis=0)
-            ctr = 0.5 * (P.max(axis=0) + P.min(axis=0))
-            _chk(np.all(ext <= 2.0 + 1e-9)
-                 and np.all(np.abs(ctr) < 1e-9),
-                 f"centred, fits the 2 m cube (extent "
-                 f"{ext[0]:.2f} x {ext[1]:.2f} x {ext[2]:.2f})")
-            cr = _shadow_crossings(P)
-            want = N * (N - 1) // 2
-            _chk(len(cr) == want,
-                 f"resolved multi-crossing has C({N},2) = {want} "
-                 "crossings")
-            det = _alexander_det_m1(cr)
-            _chk(det == det_want,
-                 f"knot determinant |Delta(-1)| = {det} "
-                 f"(expect {det_want})")
-
-        # random model + custom parser
-        for N, seed in ((9, 1), (11, 7)):
-            perm = random_permutation(N, seed)
-            _chk(sorted(perm) == list(range(1, N + 1)),
-                 f"random_permutation({N}, seed={seed}) valid")
-            P = petal_knot_points(N, perm, samples=32)
-            _chk(len(_shadow_crossings(P)) == N * (N - 1) // 2,
-                 f"random {N}-petal curve: C(N,2) crossings")
-        _chk(parse_permutation("1, 3;5 2\t4") == [1, 3, 5, 2, 4],
-             "parse_permutation accepts mixed separators")
-        for bad in ("1 2 3 4", "1 2 2 4 5", "1 2 x", ""):
-            try:
-                parse_permutation(bad)
-                _chk(False, f"parse_permutation rejects {bad!r}")
-            except ValueError:
-                _chk(True, f"parse_permutation rejects {bad!r}")
-
-        # mesh tube via the knot-carpet welded sweep
-        N, perm, _dw, _lb = PRESETS['TREFOIL']
+    for key, (N, perm, det_want, label) in PRESETS.items():
+        print(f"{key} ({label}): {N} petals, heights {perm}")
+        _chk(N % 2 == 1 and sorted(perm) == list(range(1, N + 1)),
+             f"valid odd permutation of 1..{N}")
+        stride = (N + 1) // 2
+        orbit = {(m * stride) % N for m in range(N)}
+        _chk(gcd(stride, N) == 1 and len(orbit) == N,
+             f"tip stride {stride} is a single {N}-cycle "
+             "(one closed cord)")
+        h = pass_heights(N, perm)
+        _chk(len(set(np.round(h, 12))) == N
+             and np.array_equal(np.argsort(np.argsort(h)) + 1,
+                                np.asarray(perm)),
+             f"{N} distinct centre heights ranked as the "
+             "permutation")
         P = petal_knot_points(N, perm, samples=64)
-        verts, faces = kcg._tube_welded(P, 0.03, 8)
-        V = np.asarray(verts, float)
-        _chk(len(verts) == len(P) * 8 and len(faces) == len(P) * 8
-             and np.all(np.isfinite(V))
-             and all(len(f) == 4 for f in faces),
-             f"mesh tube: {len(verts)} verts, {len(faces)} faces, "
-             "finite, all quads")
+        d = np.linalg.norm(np.roll(P, -1, 0) - P, axis=1)
+        _chk(np.all(np.isfinite(P)) and d.min() > 1e-9,
+             f"finite closed curve, {len(P)} pts, consecutive "
+             "points distinct (min step "
+             f"{d.min():.2e})")
+        ext = P.max(axis=0) - P.min(axis=0)
+        ctr = 0.5 * (P.max(axis=0) + P.min(axis=0))
+        _chk(np.all(ext <= 2.0 + 1e-9)
+             and np.all(np.abs(ctr) < 1e-9),
+             f"centred, fits the 2 m cube (extent "
+             f"{ext[0]:.2f} x {ext[1]:.2f} x {ext[2]:.2f})")
+        cr = _shadow_crossings(P)
+        want = N * (N - 1) // 2
+        _chk(len(cr) == want,
+             f"resolved multi-crossing has C({N},2) = {want} "
+             "crossings")
+        det = _alexander_det_m1(cr)
+        _chk(det == det_want,
+             f"knot determinant |Delta(-1)| = {det} "
+             f"(expect {det_want})")
 
-        print("RESULT: " + ("OK" if ok_all else "FAILED"))
-        assert ok_all
+    # random model + custom parser
+    for N, seed in ((9, 1), (11, 7)):
+        perm = random_permutation(N, seed)
+        _chk(sorted(perm) == list(range(1, N + 1)),
+             f"random_permutation({N}, seed={seed}) valid")
+        P = petal_knot_points(N, perm, samples=32)
+        _chk(len(_shadow_crossings(P)) == N * (N - 1) // 2,
+             f"random {N}-petal curve: C(N,2) crossings")
+    _chk(parse_permutation("1, 3;5 2\t4") == [1, 3, 5, 2, 4],
+         "parse_permutation accepts mixed separators")
+    for bad in ("1 2 3 4", "1 2 2 4 5", "1 2 x", ""):
+        try:
+            parse_permutation(bad)
+            _chk(False, f"parse_permutation rejects {bad!r}")
+        except ValueError:
+            _chk(True, f"parse_permutation rejects {bad!r}")
+
+    # mesh tube via the knot-carpet welded sweep
+    N, perm, _dw, _lb = PRESETS['TREFOIL']
+    P = petal_knot_points(N, perm, samples=64)
+    verts, faces = kcg._tube_welded(P, 0.03, 8)
+    V = np.asarray(verts, float)
+    _chk(len(verts) == len(P) * 8 and len(faces) == len(P) * 8
+         and np.all(np.isfinite(V))
+         and all(len(f) == 4 for f in faces),
+         f"mesh tube: {len(verts)} verts, {len(faces)} faces, "
+         "finite, all quads")
+
+    print("RESULT: " + ("OK" if ok_all else "FAILED"))
+    assert ok_all

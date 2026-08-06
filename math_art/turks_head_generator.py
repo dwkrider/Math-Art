@@ -565,72 +565,69 @@ def _interp(A, f):
     return (1.0 - fr) * A[i] + fr * A[(i + 1) % n]
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        ok_all = True
-        depth = 0.07
-        for L, B in ((3, 5), (2, 3), (4, 3), (5, 4), (2, 1),
-                     (2, 4), (3, 6), (4, 6)):
-            d = gcd(L, B)
-            core = build_turks_head('RING', L, B, samples=600,
-                                    weave_depth=depth)
-            paths = core['paths']
-            ncross = len(core['crossings'])
-            ok = core['components'] == d
-            ok = ok and ncross == B * (L - 1)
-            ok = ok and core['consistent']
-            # cords closed: the seam step is an ordinary segment
-            for P in paths:
-                seg = np.linalg.norm(np.roll(P, -1, 0) - P, axis=1)
-                ok = ok and seg[-1] < 4.0 * seg[:-1].mean()
-                ok = ok and np.isfinite(P).all()
-            # strict alternation along every cord (cyclic)
-            for a, ent in core['signed'].items():
-                sg = [s for _f, s in ent]
-                for i in range(len(sg)):
-                    ok = ok and sg[i] != sg[(i + 1) % len(sg)]
-            # every crossing one-over-one-under, strands separated
-            for key, ca, cb, fa, fb in core['crossings']:
-                za = _interp(core['offsets'][ca], fa)
-                zb = _interp(core['offsets'][cb], fb)
-                dz = za - zb if core['over'][key] else zb - za
-                ok = ok and dz >= 1.2 * depth       # over is over
-                pa = _interp(paths[ca], fa)
-                pb = _interp(paths[cb], fb)
-                ok = ok and (np.linalg.norm(pa - pb)
-                             >= 1.2 * depth)
-            ok_all = ok_all and ok
-            print(f"THK {L}Lx{B}B: cords={core['components']} "
-                  f"(want {d}) crossings={ncross} "
-                  f"(want {B * (L - 1)}) "
-                  f"alternating={core['consistent']} "
-                  f"{'OK' if ok else 'BAD'}")
-        # every surface: woven tubes, all-quad, finite, separated
-        for surf in ('RING', 'CYLINDER', 'TORUS', 'SPHERE'):
-            core = build_turks_head(surf, 3, 5, samples=600,
-                                    weave_depth=depth)
-            for key, ca, cb, fa, fb in core['crossings']:
-                pa = _interp(core['paths'][ca], fa)
-                pb = _interp(core['paths'][cb], fb)
-                ok_all = ok_all and (np.linalg.norm(pa - pb)
-                                     >= 1.2 * depth)
-            cells = turks_head_tubes(core, 0.055, 10)
-            cells, sc = fit_cells(cells, 2.0)
-            allv = np.concatenate([np.asarray(v)
-                                   for v, _f in cells])
-            quads = all(len(face) == 4 for _v, f in cells
-                        for face in f)
-            nonempty = all(len(v) > 0 and len(f) > 0
-                           for v, f in cells)
-            fits = (np.abs(allv).max() <= 1.0 + 1e-9
-                    and abs((allv.max(0) - allv.min(0)).max()
-                            - 2.0) < 1e-9)
-            ok = (quads and nonempty and fits
-                  and np.isfinite(allv).all())
-            ok_all = ok_all and ok
-            print(f"{surf}: tubes quads={quads} fits 2m "
-                  f"cube={fits} {'OK' if ok else 'BAD'}")
-        print("RESULT:", "OK" if ok_all else "FAIL")
-        assert ok_all
+def _selftest():
+    ok_all = True
+    depth = 0.07
+    for L, B in ((3, 5), (2, 3), (4, 3), (5, 4), (2, 1),
+                 (2, 4), (3, 6), (4, 6)):
+        d = gcd(L, B)
+        core = build_turks_head('RING', L, B, samples=600,
+                                weave_depth=depth)
+        paths = core['paths']
+        ncross = len(core['crossings'])
+        ok = core['components'] == d
+        ok = ok and ncross == B * (L - 1)
+        ok = ok and core['consistent']
+        # cords closed: the seam step is an ordinary segment
+        for P in paths:
+            seg = np.linalg.norm(np.roll(P, -1, 0) - P, axis=1)
+            ok = ok and seg[-1] < 4.0 * seg[:-1].mean()
+            ok = ok and np.isfinite(P).all()
+        # strict alternation along every cord (cyclic)
+        for a, ent in core['signed'].items():
+            sg = [s for _f, s in ent]
+            for i in range(len(sg)):
+                ok = ok and sg[i] != sg[(i + 1) % len(sg)]
+        # every crossing one-over-one-under, strands separated
+        for key, ca, cb, fa, fb in core['crossings']:
+            za = _interp(core['offsets'][ca], fa)
+            zb = _interp(core['offsets'][cb], fb)
+            dz = za - zb if core['over'][key] else zb - za
+            ok = ok and dz >= 1.2 * depth       # over is over
+            pa = _interp(paths[ca], fa)
+            pb = _interp(paths[cb], fb)
+            ok = ok and (np.linalg.norm(pa - pb)
+                         >= 1.2 * depth)
+        ok_all = ok_all and ok
+        print(f"THK {L}Lx{B}B: cords={core['components']} "
+              f"(want {d}) crossings={ncross} "
+              f"(want {B * (L - 1)}) "
+              f"alternating={core['consistent']} "
+              f"{'OK' if ok else 'BAD'}")
+    # every surface: woven tubes, all-quad, finite, separated
+    for surf in ('RING', 'CYLINDER', 'TORUS', 'SPHERE'):
+        core = build_turks_head(surf, 3, 5, samples=600,
+                                weave_depth=depth)
+        for key, ca, cb, fa, fb in core['crossings']:
+            pa = _interp(core['paths'][ca], fa)
+            pb = _interp(core['paths'][cb], fb)
+            ok_all = ok_all and (np.linalg.norm(pa - pb)
+                                 >= 1.2 * depth)
+        cells = turks_head_tubes(core, 0.055, 10)
+        cells, sc = fit_cells(cells, 2.0)
+        allv = np.concatenate([np.asarray(v)
+                               for v, _f in cells])
+        quads = all(len(face) == 4 for _v, f in cells
+                    for face in f)
+        nonempty = all(len(v) > 0 and len(f) > 0
+                       for v, f in cells)
+        fits = (np.abs(allv).max() <= 1.0 + 1e-9
+                and abs((allv.max(0) - allv.min(0)).max()
+                        - 2.0) < 1e-9)
+        ok = (quads and nonempty and fits
+              and np.isfinite(allv).all())
+        ok_all = ok_all and ok
+        print(f"{surf}: tubes quads={quads} fits 2m "
+              f"cube={fits} {'OK' if ok else 'BAD'}")
+    print("RESULT:", "OK" if ok_all else "FAIL")
+    assert ok_all

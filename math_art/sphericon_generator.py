@@ -308,30 +308,28 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_sphericon_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        from collections import Counter
+def _selftest():
+    from collections import Counter
 
-        def check(n, k, seg=48):
-            v, f, t = build_sphericon(n, k, seg)
-            cnt = Counter()
-            for fc in f:
-                L = len(fc)
-                for i in range(L):
-                    a, b = fc[i], fc[(i + 1) % L]
-                    cnt[(min(a, b), max(a, b))] += 1
-            border = [e for e, c in cnt.items() if c != 2]
-            man = not border
-            chi = len(v) - len(cnt) + len(f)
-            print("(%d,%d): V=%d E=%d F=%d chi=%d watertight=%s %s"
-                  % (n, k, len(v), len(cnt), len(f), chi, man,
-                     "OK" if man and chi == 2 else "BAD"))
-            return man and chi == 2
+    def check(n, k, seg=48):
+        v, f, t = build_sphericon(n, k, seg)
+        cnt = Counter()
+        for fc in f:
+            L = len(fc)
+            for i in range(L):
+                a, b = fc[i], fc[(i + 1) % L]
+                cnt[(min(a, b), max(a, b))] += 1
+        border = [e for e, c in cnt.items() if c != 2]
+        man = not border
+        chi = len(v) - len(cnt) + len(f)
+        print("(%d,%d): V=%d E=%d F=%d chi=%d watertight=%s %s"
+              % (n, k, len(v), len(cnt), len(f), chi, man,
+                 "OK" if man and chi == 2 else "BAD"))
+        return man and chi == 2
 
-        allok = True
-        for (n, k) in [(4, 1), (3, 1), (5, 1), (6, 1), (7, 1),
-                       (8, 1), (8, 3), (9, 1), (12, 1)]:
-            allok = check(n, k) and allok
-        print("RESULT:", "ALL OK" if allok else "SOME BAD")
+    allok = True
+    for (n, k) in [(4, 1), (3, 1), (5, 1), (6, 1), (7, 1),
+                   (8, 1), (8, 3), (9, 1), (12, 1)]:
+        allok = check(n, k) and allok
+    print("RESULT:", "ALL OK" if allok else "SOME BAD")
+    assert allok

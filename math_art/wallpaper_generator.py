@@ -292,7 +292,7 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_wallpaper_add)
 
 
-if __name__ == "__main__":
+def _selftest():
     bad = []
     for g in IUC_ORDER:
         v, f, m = build(g, 'F', 2, 2)
@@ -313,3 +313,4 @@ if __name__ == "__main__":
     print("active-mesh p6 V=%d F=%d %s" %
           (len(v), len(f), "OK" if f else "BAD"))
     print("RESULT:", "OK" if not bad else "BAD %s" % bad)
+    assert not bad

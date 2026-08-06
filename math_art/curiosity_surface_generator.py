@@ -282,100 +282,97 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_curiosity_surface_add)
 
 
-if __name__ == "__main__":
-    if _IN_BLENDER:
-        register()
-    else:
-        def _finite(verts):
-            return all(all(math.isfinite(c) for c in v)
-                       for v in verts)
+def _selftest():
+    def _finite(verts):
+        return all(all(math.isfinite(c) for c in v)
+                   for v in verts)
 
-        def _valid(verts, faces):
-            n = len(verts)
-            return all(0 <= i < n for f in faces for i in f)
+    def _valid(verts, faces):
+        n = len(verts)
+        return all(0 <= i < n for f in faces for i in f)
 
-        def _watertight(faces):
-            cnt = {}
-            for f in faces:
-                for i in range(len(f)):
-                    e = frozenset((f[i], f[(i + 1) % len(f)]))
-                    cnt[e] = cnt.get(e, 0) + 1
-            return all(c == 2 for c in cnt.values())
+    def _watertight(faces):
+        cnt = {}
+        for f in faces:
+            for i in range(len(f)):
+                e = frozenset((f[i], f[(i + 1) % len(f)]))
+                cnt[e] = cnt.get(e, 0) + 1
+        return all(c == 2 for c in cnt.values())
 
-        def _volume(verts, faces):
-            vol = 0.0
-            for f in faces:
-                for i in range(1, len(f) - 1):
-                    (ax, ay, az) = verts[f[0]]
-                    (bx, by, bz) = verts[f[i]]
-                    (cx, cy, cz) = verts[f[i + 1]]
-                    vol += (ax * (by * cz - bz * cy)
-                            - ay * (bx * cz - bz * cx)
-                            + az * (bx * cy - by * cx)) / 6.0
-            return vol
+    def _volume(verts, faces):
+        vol = 0.0
+        for f in faces:
+            for i in range(1, len(f) - 1):
+                (ax, ay, az) = verts[f[0]]
+                (bx, by, bz) = verts[f[i]]
+                (cx, cy, cz) = verts[f[i + 1]]
+                vol += (ax * (by * cz - bz * cy)
+                        - ay * (bx * cz - bz * cx)
+                        + az * (bx * cy - by * cx)) / 6.0
+        return vol
 
-        # ---- Fresnel's elasticity surface -------------------
-        a, b, c = 1.0, 1.5, 2.0
-        segs, rngs = 32, 16
-        verts, faces = build_fresnel(a, b, c, segs, rngs)
-        assert _finite(verts) and _valid(verts, faces)
-        assert _watertight(faces)
-        # every vertex obeys r = sqrt(a^2 l^2 + b^2 m^2
-        # + c^2 n^2) for its unit direction (l, m, n)
-        for (x, y, z) in verts:
-            r = math.sqrt(x * x + y * y + z * z)
-            l, m, n = x / r, y / r, z / r
-            want = math.sqrt(a * a * l * l + b * b * m * m
-                             + c * c * n * n)
-            assert abs(r - want) < 1e-9
-        # sample directions: the axes hit r = a, b, c
-        eq = 1 + (rngs // 2 - 1) * segs      # phi = pi/2, th = 0
-        px = verts[eq]
-        py = verts[eq + segs // 4]           # theta = pi/2
-        pz = verts[0]                        # north pole
-        assert abs(px[0] - a) < 1e-9 and abs(px[1]) < 1e-9
-        assert abs(py[1] - b) < 1e-9 and abs(abs(py[0])) < 1e-9
-        assert abs(pz[2] - c) < 1e-9
-        vol = _volume(verts, faces)
-        print(f"fresnel: V={len(verts)} F={len(faces)} "
-              f"watertight=True axes=({a},{b},{c}) "
-              f"vol={vol:.3f}")
-        assert vol > 0.0
+    # ---- Fresnel's elasticity surface -------------------
+    a, b, c = 1.0, 1.5, 2.0
+    segs, rngs = 32, 16
+    verts, faces = build_fresnel(a, b, c, segs, rngs)
+    assert _finite(verts) and _valid(verts, faces)
+    assert _watertight(faces)
+    # every vertex obeys r = sqrt(a^2 l^2 + b^2 m^2
+    # + c^2 n^2) for its unit direction (l, m, n)
+    for (x, y, z) in verts:
+        r = math.sqrt(x * x + y * y + z * z)
+        l, m, n = x / r, y / r, z / r
+        want = math.sqrt(a * a * l * l + b * b * m * m
+                         + c * c * n * n)
+        assert abs(r - want) < 1e-9
+    # sample directions: the axes hit r = a, b, c
+    eq = 1 + (rngs // 2 - 1) * segs      # phi = pi/2, th = 0
+    px = verts[eq]
+    py = verts[eq + segs // 4]           # theta = pi/2
+    pz = verts[0]                        # north pole
+    assert abs(px[0] - a) < 1e-9 and abs(px[1]) < 1e-9
+    assert abs(py[1] - b) < 1e-9 and abs(abs(py[0])) < 1e-9
+    assert abs(pz[2] - c) < 1e-9
+    vol = _volume(verts, faces)
+    print(f"fresnel: V={len(verts)} F={len(faces)} "
+          f"watertight=True axes=({a},{b},{c}) "
+          f"vol={vol:.3f}")
+    assert vol > 0.0
 
-        # ---- Paper bag surface ------------------------------
-        pa, pb, depth = 2.47, -1.26, 2.0
-        segs, rngs = 48, 24
-        verts, faces = build_paper_bag(pa, pb, segs, rngs)
-        assert _finite(verts) and _valid(verts, faces)
-        # spot-check the parametrization at a few grid points
-        for (i, j) in ((0, 0), (rngs, 0), (7, 11), (rngs, 30)):
-            v = depth * i / rngs
-            u = 2.0 * math.pi * j / segs
-            x, y, z = verts[i * segs + j]
-            assert abs(x - v * math.cos(u)) < 1e-9
-            assert abs(y - (v + pb * u) * math.sin(u)) < 1e-9
-            assert abs(z - pa * v * v) < 1e-9
-        print(f"paper bag: V={len(verts)} F={len(faces)} "
-              f"open surface, formula verified")
+    # ---- Paper bag surface ------------------------------
+    pa, pb, depth = 2.47, -1.26, 2.0
+    segs, rngs = 48, 24
+    verts, faces = build_paper_bag(pa, pb, segs, rngs)
+    assert _finite(verts) and _valid(verts, faces)
+    # spot-check the parametrization at a few grid points
+    for (i, j) in ((0, 0), (rngs, 0), (7, 11), (rngs, 30)):
+        v = depth * i / rngs
+        u = 2.0 * math.pi * j / segs
+        x, y, z = verts[i * segs + j]
+        assert abs(x - v * math.cos(u)) < 1e-9
+        assert abs(y - (v + pb * u) * math.sin(u)) < 1e-9
+        assert abs(z - pa * v * v) < 1e-9
+    print(f"paper bag: V={len(verts)} F={len(faces)} "
+          f"open surface, formula verified")
 
-        # ---- Trihyperboloid ---------------------------------
-        segs, rngs = 96, 48
-        verts, faces = build_trihyperboloid(segs, rngs)
-        assert _finite(verts) and _valid(verts, faces)
-        assert _watertight(faces)
-        # every vertex lies on the boundary: the largest of the
-        # three hyperboloid forms equals 1, and 1 <= r <= sqrt 3
-        for (x, y, z) in verts:
-            x2, y2, z2 = x * x, y * y, z * z
-            q = max(x2 + y2 - z2, y2 + z2 - x2, z2 + x2 - y2)
-            assert abs(q - 1.0) < 1e-9
-            r = math.sqrt(x2 + y2 + z2)
-            assert 1.0 - 1e-9 <= r <= math.sqrt(3.0) + 1e-9
-        vol = _volume(verts, faces)
-        want = 8.0 * math.log(2.0)     # ln 256, the exact volume
-        print(f"trihyperboloid: V={len(verts)} F={len(faces)} "
-              f"watertight=True vol={vol:.4f} "
-              f"(exact 8 ln 2 = {want:.4f})")
-        assert abs(vol - want) < 0.15
+    # ---- Trihyperboloid ---------------------------------
+    segs, rngs = 96, 48
+    verts, faces = build_trihyperboloid(segs, rngs)
+    assert _finite(verts) and _valid(verts, faces)
+    assert _watertight(faces)
+    # every vertex lies on the boundary: the largest of the
+    # three hyperboloid forms equals 1, and 1 <= r <= sqrt 3
+    for (x, y, z) in verts:
+        x2, y2, z2 = x * x, y * y, z * z
+        q = max(x2 + y2 - z2, y2 + z2 - x2, z2 + x2 - y2)
+        assert abs(q - 1.0) < 1e-9
+        r = math.sqrt(x2 + y2 + z2)
+        assert 1.0 - 1e-9 <= r <= math.sqrt(3.0) + 1e-9
+    vol = _volume(verts, faces)
+    want = 8.0 * math.log(2.0)     # ln 256, the exact volume
+    print(f"trihyperboloid: V={len(verts)} F={len(faces)} "
+          f"watertight=True vol={vol:.4f} "
+          f"(exact 8 ln 2 = {want:.4f})")
+    assert abs(vol - want) < 0.15
 
-        print("miscellaneous surfaces standalone tests passed")
+    print("miscellaneous surfaces standalone tests passed")

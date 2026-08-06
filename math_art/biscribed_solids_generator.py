@@ -1443,7 +1443,7 @@ if _IN_BLENDER:
 # Self-test / validation table
 # --------------------------------------------------------------------------
 
-if __name__ == '__main__' and not _IN_BLENDER:
+def _selftest():
     order = ['truncated_tetrahedron', 'truncated_cube',
              'truncated_octahedron', 'truncated_dodecahedron',
              'truncated_icosahedron', 'cuboctahedron', 'icosidodecahedron',
@@ -1526,5 +1526,5 @@ if __name__ == '__main__' and not _IN_BLENDER:
         print("FAILURES:")
         for f in failures:
             print("  " + f)
-        raise SystemExit(1)
+        raise AssertionError("biscribed self-test failed")
     print("All validation checks passed.")
