@@ -244,7 +244,7 @@ if _IN_BLENDER:
             name="Cylinder Segments", default=48, min=8, max=160,
             description="Facets per cycloplane cylinder (mesh "
                         "resolution vs. Boolean cost)")
-        shade_smooth: BoolProperty(name="Shade Smooth", default=True)
+        shade_smooth: BoolProperty(name="Shade Smooth", default=False)
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
