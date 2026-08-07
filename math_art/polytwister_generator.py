@@ -540,7 +540,7 @@ if _IN_BLENDER:
         """Add the 3D cross-section of a polytwister -- a Boolean tree over
         cycloplanes (Hopf-fibration 4D->3D, after Bowers / Ho)"""
         bl_idname = "mesh.polytwister_add"
-        bl_label = "Polytwister"
+        bl_label = "Polytwister (Experimental)"
         bl_options = {'REGISTER', 'UNDO'}
 
         shape: EnumProperty(
