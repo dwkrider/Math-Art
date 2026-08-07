@@ -76,6 +76,8 @@ _MODULE_NAMES = [
     'celtic_knot_generator',
     'voronoi_openwork',
     'torus_knot_generator',
+    'hopf_fibration_generator',
+    'polytwister_generator',
     'organic_wireframe',
     'minimal_polyhedron_generator',
     'squeeze_generator',
@@ -189,6 +191,7 @@ class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
         _op(lay, "mesh.waterman_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.symmetrohedron_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.polytope4d_add", icon='MESH_CUBE')
+        _op(lay, "mesh.polytwister_add", icon='MESH_TORUS')
         _op(lay, "mesh.hyperbolic_honeycomb_add", icon='META_BALL')
         _op(lay, "mesh.spacefill_add", icon='SNAP_VOLUME')
         _op(lay, "mesh.interlocking_add", icon='MOD_BUILD')
@@ -225,6 +228,8 @@ class VIEW3D_MT_math_art_knots(bpy.types.Menu):
         lay = self.layout
         _op(lay, "curve.prime_knot_add", icon='FORCE_VORTEX')
         _op(lay, "curve.torus_knot_add", icon='FORCE_VORTEX')
+        _op(lay, "curve.hopf_fibration_add", icon='FORCE_MAGNETIC')
+        _op(lay, "mesh.hopf_torus_add", icon='MESH_TORUS')
         _op(lay, "curve.harmonic_knot_add", icon='FORCE_HARMONIC')
         _op(lay, "curve.petal_knot_add", icon='CURVE_NCIRCLE')
         _op(lay, "curve.rational_knot_add", icon='MOD_CURVE')
@@ -232,10 +237,8 @@ class VIEW3D_MT_math_art_knots(bpy.types.Menu):
         _op(lay, "curve.substitution_knot_add", icon='CURVE_NCURVE')
         _op(lay, "curve.math_link_add", icon='LINKED')
         _op(lay, "mesh.antoine_add", icon='LINKED')
-        if hasattr(bpy.types, 'CURVE_OT_attractor_add'):
-            lay.operator_menu_enum("curve.attractor_add", "preset",
-                                   text="Strange Attractor",
-                                   icon='RNDCURVE')
+        _op(lay, "curve.attractor_add", text="Strange Attractor",
+            icon='RNDCURVE')
         _op(lay, "curve.dual_helix_add", icon='MOD_SCREW')
         _op(lay, "mesh.rolling_knot_add", icon='PHYSICS')
 
@@ -271,6 +274,8 @@ class VIEW3D_MT_math_art_odds(bpy.types.Menu):
         _op(lay, "mesh.monostatic_body_add", text="Monostatic Body",
             icon='MESH_UVSPHERE')
         _op(lay, "mesh.constant_width_add", icon='MESH_CIRCLE')
+        _op(lay, "mesh.polytwister_add", icon='MESH_TORUS')
+        _op(lay, "mesh.hyperbolic_honeycomb_add", icon='META_BALL')
         _op(lay, "mesh.stereographic_add", icon='LIGHT_POINT')
         _op(lay, "mesh.orbifold_sphere_add", icon='MOD_MIRROR')
         _op(lay, "mesh.bubble_cluster_add", icon='SPHERE')
