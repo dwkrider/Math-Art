@@ -227,6 +227,7 @@ class VIEW3D_MT_math_art_knots(bpy.types.Menu):
         _op(lay, "curve.prime_knot_add", icon='FORCE_VORTEX')
         _op(lay, "curve.torus_knot_add", icon='FORCE_VORTEX')
         _op(lay, "curve.hopf_fibration_add", icon='FORCE_MAGNETIC')
+        _op(lay, "mesh.hopf_torus_add", icon='MESH_TORUS')
         _op(lay, "curve.harmonic_knot_add", icon='FORCE_HARMONIC')
         _op(lay, "curve.petal_knot_add", icon='CURVE_NCIRCLE')
         _op(lay, "curve.rational_knot_add", icon='MOD_CURVE')

@@ -293,6 +293,100 @@ def _fiber_color(base):
     return colorsys.hsv_to_rgb(hue, 0.72, val)
 
 
+# --------------------------------------------------------------------------
+# Pinkall Hopf tori: the preimage of a closed curve on S^2
+# --------------------------------------------------------------------------
+# Ulrich Pinkall, "Hopf tori in S^3", Invent. Math. 81 (1985) 379-386:
+# the full preimage h^{-1}(gamma) of a closed curve gamma on S^2 is an
+# (immersed) torus in S^3 -- a "Hopf torus".  It is intrinsically flat,
+# its mean curvature equals the geodesic curvature of gamma, and its
+# Willmore energy is pi * integral_gamma (1 + kappa^2) ds, so minimising
+# surface bending reduces to an elastic-curve problem for gamma.  We
+# build the torus as the orbit of a lift Gamma(s) of gamma under the
+# Hopf circle action e^{i psi}*(z0,z1); the loop closes because a curve
+# winding the sphere returns e^{i psi} to itself.  The closure carries a
+# twist equal to half the spherical area A enclosed by gamma (the
+# holonomy), which we report for reference.
+
+def gamma_curve(preset, n, colat_deg, lobes, amp_deg, ecc):
+    """A closed curve on S^2 as `n` unit 3-vectors (endpoint
+    excluded).  colat_deg sets the mean colatitude; `lobes`/`amp_deg`
+    drive the wavy m-fold curve; `ecc` squashes the ellipse."""
+    import numpy as np
+    b0 = colat_deg * pi / 180.0
+    amp = amp_deg * pi / 180.0
+    s = np.linspace(0.0, 2.0 * pi, n, endpoint=False)
+    if preset == 'CIRCLE':
+        beta = np.full_like(s, b0)
+        lam = s
+    elif preset == 'WAVY':
+        beta = np.clip(b0 + amp * np.cos(lobes * s), 0.06, pi - 0.06)
+        lam = s
+    elif preset == 'TREFOIL':
+        # (2, lobes) winding: colatitude modulated as longitude winds
+        beta = np.clip(b0 + amp * np.cos(lobes * s), 0.06, pi - 0.06)
+        lam = 2.0 * s
+    elif preset == 'ELLIPSE':
+        a = math.sin(b0)
+        bb = math.sin(b0) * max(0.05, 1.0 - ecc)
+        c = math.cos(b0)
+        V = np.stack([a * np.cos(s), bb * np.sin(s),
+                      np.full_like(s, c)], axis=1)
+        return [tuple(v / np.linalg.norm(v)) for v in V]
+    else:
+        beta = np.full_like(s, b0)
+        lam = s
+    return [(math.sin(bt) * math.cos(lm), math.sin(bt) * math.sin(lm),
+             math.cos(bt)) for bt, lm in zip(beta, lam)]
+
+
+def _enclosed_area(gamma_pts):
+    """Signed spherical area enclosed by the closed curve, via the
+    solid-angle line integral A = closed-integral (1 - cos beta) dlam."""
+    import numpy as np
+    G = np.asarray(gamma_pts)
+    beta = np.arccos(np.clip(G[:, 2], -1.0, 1.0))
+    lam = np.arctan2(G[:, 1], G[:, 0])
+    dlam = np.angle(np.exp(1j * (np.roll(lam, -1) - lam)))  # wrapped
+    return float(np.sum((1.0 - np.cos(beta)) * dlam))
+
+
+def build_hopf_torus(gamma_pts, m_psi, fit_radius=1.0, max_radius=40.0):
+    """Mesh the Hopf torus h^{-1}(gamma): each of the N curve samples
+    contributes a fibre circle of `m_psi` points (the Hopf orbit of a
+    lift), joined into a closed quad torus.  Returns (verts, faces,
+    area) with verts centred and scaled to the unit cube."""
+    import numpy as np
+    N, M = len(gamma_pts), m_psi
+    psi = np.linspace(0.0, 2.0 * pi, M, endpoint=False)
+    cp, sp = np.cos(psi), np.sin(psi)
+    rings = []
+    for g in gamma_pts:
+        x, y, z = g
+        beta = math.acos(max(-1.0, min(1.0, z)))
+        lam = math.atan2(y, x)
+        cb, sb = math.cos(beta / 2.0), math.sin(beta / 2.0)
+        z0r, z0i = cb * math.cos(lam), cb * math.sin(lam)
+        z1r, z1i = sb, 0.0
+        X = np.stack([cp * z0r - sp * z0i, sp * z0r + cp * z0i,
+                      cp * z1r - sp * z1i, sp * z1r + cp * z1i], axis=1)
+        rings.append(stereographic(X))
+    verts = np.concatenate(rings, axis=0)
+    center = 0.5 * (verts.max(0) + verts.min(0))
+    rad = np.linalg.norm(verts - center, axis=1)
+    ref = np.percentile(rad, 97.0)
+    scale = (fit_radius / ref) if ref > 1e-9 else 1.0
+    verts = (verts - center) * scale
+    faces = []
+    for i in range(N):
+        i1 = (i + 1) % N
+        for j in range(M):
+            j1 = (j + 1) % M
+            faces.append([i * M + j, i * M + j1,
+                          i1 * M + j1, i1 * M + j])
+    return verts, faces, _enclosed_area(gamma_pts)
+
+
 if _IN_BLENDER:
 
     class CURVE_OT_hopf_fibration_add(bpy.types.Operator):
@@ -469,20 +563,105 @@ if _IN_BLENDER:
             lay.prop(self, 'color_fibers')
             lay.prop(self, 'scale')
 
+    class MESH_OT_hopf_torus_add(bpy.types.Operator):
+        """Add a Pinkall Hopf torus: the preimage h^{-1}(gamma) of a
+        closed curve gamma on S^2, stereographically projected to R^3"""
+        bl_idname = "mesh.hopf_torus_add"
+        bl_label = "Hopf Torus"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        preset: EnumProperty(
+            name="Curve on S^2",
+            items=[('CIRCLE', "Circle", "latitude circle -> torus "
+                    "of revolution filled by Villarceau circles"),
+                   ('WAVY', "Wavy (m-lobed)", "m-fold undulating "
+                    "closed curve -> m-fold symmetric Hopf torus"),
+                   ('ELLIPSE', "Ellipse", "squashed loop"),
+                   ('TREFOIL', "Trefoil-like", "doubly-wound curve")],
+            default='WAVY')
+        n_curve: IntProperty(
+            name="Curve Samples", default=200, min=12, max=2000,
+            description="Samples along gamma (the torus meridians)")
+        m_psi: IntProperty(
+            name="Fibre Samples", default=64, min=6, max=512,
+            description="Samples around each Hopf fibre (the torus "
+                        "longitudes)")
+        colat: FloatProperty(
+            name="Mean Colatitude", default=90.0, min=10.0, max=170.0,
+            description="Mean colatitude of gamma on S^2 (deg)")
+        lobes: IntProperty(
+            name="Lobes", default=3, min=1, max=12,
+            description="Number of lobes (WAVY / TREFOIL)")
+        amp: FloatProperty(
+            name="Amplitude", default=35.0, min=0.0, max=80.0,
+            description="Lobe amplitude in colatitude (deg)")
+        ecc: FloatProperty(
+            name="Ellipse Squash", default=0.5, min=0.0, max=0.95,
+            description="Ellipse eccentricity (ELLIPSE)")
+        shade_smooth: BoolProperty(name="Shade Smooth", default=True)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01,
+                             max=100.0)
+
+        def execute(self, context):
+            import numpy as np
+            gamma = gamma_curve(self.preset, self.n_curve, self.colat,
+                                self.lobes, self.amp, self.ecc)
+            verts, faces, area = build_hopf_torus(gamma, self.m_psi)
+            verts = (np.asarray(verts) * self.scale).tolist()
+            name = f"Hopf Torus ({self.preset.title()})"
+            me = bpy.data.meshes.new(name)
+            me.from_pydata(verts, [], faces)
+            me.validate(clean_customdata=True)
+            if self.shade_smooth:
+                me.polygons.foreach_set(
+                    'use_smooth', [True] * len(me.polygons))
+            me.update()
+            obj = bpy.data.objects.new(name, me)
+            context.collection.objects.link(obj)
+            obj.location = context.scene.cursor.location
+            for o in context.selected_objects:
+                o.select_set(False)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            self.report(
+                {'INFO'},
+                f"{name}: {len(verts)} verts, enclosed area "
+                f"{area:.3f} sr, closure twist {area / 2.0:.3f} rad")
+            return {'FINISHED'}
+
+        def draw(self, context):
+            lay = self.layout
+            lay.use_property_split = True
+            lay.prop(self, 'preset')
+            lay.prop(self, 'n_curve')
+            lay.prop(self, 'm_psi')
+            lay.prop(self, 'colat')
+            if self.preset in ('WAVY', 'TREFOIL'):
+                lay.prop(self, 'lobes')
+                lay.prop(self, 'amp')
+            if self.preset == 'ELLIPSE':
+                lay.prop(self, 'ecc')
+            lay.prop(self, 'shade_smooth')
+            lay.prop(self, 'scale')
+
     def _menu_func(self, context):
         self.layout.operator("curve.hopf_fibration_add",
                              icon='FORCE_MAGNETIC')
+        self.layout.operator("mesh.hopf_torus_add",
+                             icon='MESH_TORUS')
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
     def register():
         bpy.utils.register_class(CURVE_OT_hopf_fibration_add)
+        bpy.utils.register_class(MESH_OT_hopf_torus_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_curve_add.append(_menu_func)
 
     def unregister():
         if ADD_MENU:
             bpy.types.VIEW3D_MT_curve_add.remove(_menu_func)
+        bpy.utils.unregister_class(MESH_OT_hopf_torus_add)
         bpy.utils.unregister_class(CURVE_OT_hopf_fibration_add)
 
 
@@ -540,6 +719,29 @@ def _selftest():
         ok_all = ok_all and ok
         print(f"{preset}: {len(pts)} base pts unit dev={unit:.1e} "
               f"-> {len(fibers)} fibres {'OK' if ok else 'BAD'}")
+
+    # 4) Hopf torus: curve is unit-norm, un-projected orbit lies on
+    #    S^3, mesh has N*M verts / N*M quads, all finite; the enclosed
+    #    area of a latitude circle matches 2*pi*(1 - cos beta).
+    for preset in ('CIRCLE', 'WAVY', 'ELLIPSE', 'TREFOIL'):
+        g = gamma_curve(preset, 120, 90.0, 3, 35.0, 0.5)
+        gunit = max(abs(np.linalg.norm(p) - 1.0) for p in g)
+        V, F, area = build_hopf_torus(g, 40)
+        V = np.asarray(V)
+        ok = (gunit < 1e-9 and len(V) == 120 * 40
+              and len(F) == 120 * 40 and np.isfinite(V).all())
+        ok_all = ok_all and ok
+        print(f"torus {preset}: curve unit dev={gunit:.1e} "
+              f"verts={len(V)} faces={len(F)} area={area:.3f} "
+              f"{'OK' if ok else 'BAD'}")
+    # latitude-circle enclosed area check (beta = 60 deg)
+    gc = gamma_curve('CIRCLE', 400, 60.0, 1, 0.0, 0.0)
+    a_num = _enclosed_area(gc)
+    a_exp = 2.0 * pi * (1.0 - math.cos(60.0 * pi / 180.0))
+    ok = abs(abs(a_num) - a_exp) < 1e-3
+    ok_all = ok_all and ok
+    print(f"circle area: num={abs(a_num):.4f} exp={a_exp:.4f} "
+          f"{'OK' if ok else 'BAD'}")
 
     assert ok_all
     print("hopf fibration standalone tests passed")
