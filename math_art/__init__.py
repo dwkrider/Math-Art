@@ -77,6 +77,7 @@ _MODULE_NAMES = [
     'voronoi_openwork',
     'torus_knot_generator',
     'hopf_fibration_generator',
+    'polytwister_generator',
     'organic_wireframe',
     'minimal_polyhedron_generator',
     'squeeze_generator',
@@ -190,6 +191,7 @@ class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
         _op(lay, "mesh.waterman_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.symmetrohedron_add", icon='MESH_ICOSPHERE')
         _op(lay, "mesh.polytope4d_add", icon='MESH_CUBE')
+        _op(lay, "mesh.polytwister_add", icon='MESH_TORUS')
         _op(lay, "mesh.hyperbolic_honeycomb_add", icon='META_BALL')
         _op(lay, "mesh.spacefill_add", icon='SNAP_VOLUME')
         _op(lay, "mesh.interlocking_add", icon='MOD_BUILD')
