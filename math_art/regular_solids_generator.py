@@ -1915,6 +1915,9 @@ if _IN_BLENDER:
                     "Open-faced panels via the shared Leonardo "
                     "Style modifier"),
                    ('WIRE', "Struts", "Wireframe modifier"),
+                   ('BALLSTICK', "Ball and Stick",
+                    "Edges as solid cylindrical struts and vertices "
+                    "as small spheres (ball-and-stick model)"),
                    ('WIREFRAME', "Wireframe",
                     "Mesh edges only, displayed as a wireframe"),
                    ('FACETS', "Face Segments",
@@ -1937,6 +1940,13 @@ if _IN_BLENDER:
                               max=0.95)
         thickness: FloatProperty(name="Thickness", default=0.05,
                                  min=0.001, max=1.0)
+        strut_radius: FloatProperty(
+            name="Strut Radius", default=0.02, min=0.001, max=0.5,
+            description="Ball-and-stick edge cylinder radius")
+        node_radius: FloatProperty(
+            name="Node Radius", default=0.035, min=0.0, max=0.5,
+            description="Ball-and-stick vertex sphere radius "
+                        "(0 = no nodes)")
         coloring: EnumProperty(
             name="Coloring",
             items=[('SIDES', "By Face Size",
@@ -2114,6 +2124,13 @@ if _IN_BLENDER:
                     mod = obj.modifiers.new("Wireframe", 'WIREFRAME')
                     mod.thickness = self.thickness
                     mod.use_even_offset = False
+                elif self.style == 'BALLSTICK':
+                    try:
+                        from . import ball_and_stick
+                    except ImportError:
+                        import ball_and_stick
+                    ball_and_stick.rebuild(obj, self.strut_radius,
+                                           self.node_radius)
                 elif self.style == 'WIREFRAME':
                     obj.display_type = 'WIRE'
             context.view_layer.objects.active = first
@@ -2166,6 +2183,9 @@ if _IN_BLENDER:
                 lay.prop(self, 'border')
             if self.style in ('LEONARDO', 'WIRE'):
                 lay.prop(self, 'thickness')
+            if self.style == 'BALLSTICK':
+                lay.prop(self, 'strut_radius')
+                lay.prop(self, 'node_radius')
             if self.style == 'FACETS':
                 lay.prop(self, 'facet_depth')
                 lay.prop(self, 'padding')

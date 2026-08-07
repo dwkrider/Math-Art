@@ -6,28 +6,39 @@
 # blocks can be slid or rotated out without collision.  The blocks
 # are never glued -- interlocking is purely geometric.
 #
-# Families implemented here:
+# Families implemented here (all verified non-overlapping; the
+# space-filling ones fill with coverage exactly one):
 #
-#   TETRA     the canonical interlocking layer of regular tetrahedra
-#             (two 90-deg-rotated orientations on a checkerboard),
-#             after Dyskin, Estrin, Kanel-Belov & Pasternak (2001).
-#   MCS       the "moving cross-section" family: cubes and octahedra
-#             reconstructed as the intersection of edge-tilted planes
-#             over a hexagonal middle section (Kanel-Belov et al.).
-#   ESCHER    the Escher-trick / osteomorphic / Versatile-block
-#             family: a square (p4) fundamental domain is edge-
-#             deformed, placed at z=0, rotated 90 deg at the mid-
-#             plane, and lofted back to z=1, so every horizontal
-#             section tiles the plane and copies interlock.  A sine
-#             deformation reproduces Estrin's osteomorphic block; a
-#             tent/zig-zag deformation reproduces a Versatile-style
-#             block.  Two-colouring follows the Truchet rule.
-# TETRA, ESCHER, VERSATILE, KITTEN, the SL strand and the DOME are
-# space-filling / interlocking assemblies (all verified
-# non-overlapping).  The Bisquare block and the UFO / cushion
-# tetroctahedrille blocks are shown as single reference blocks --
-# their assemblies require rotation-based grammars not available in
-# coordinate form (see BACKLOG).
+#   TETRA        the canonical interlocking layer of regular tetrahedra
+#                (two 90-deg orientations on a checkerboard), after
+#                Dyskin, Estrin, Kanel-Belov & Pasternak (2001).
+#   MCSCUBE /    cubes / octahedra with a 3-fold (body-diagonal) axis
+#   MCSOCTA      vertical, placed as identical translates on a
+#                honeycomb; each cell's six faces tilt +/-alpha and
+#                adjacent cells share every inclined plane -- the
+#                Kanel-Belov / Dyskin moving-cross-section layer.
+#   ESCHER       the Escher-trick / osteomorphic family: a square (p4)
+#                fundamental domain is edge-deformed, rotated 90 deg at
+#                the mid-plane and lofted, so every section tiles.  A
+#                sine profile gives Estrin's osteomorphic block, a tent
+#                profile a Versatile-style block (Truchet colouring).
+#   VERSATILE    the exact Versatile block tiled over the diamond
+#                lattice (Akpanya et al., Bridges 2023).
+#   BISQUARE     the exact Bisquare block (Frezier 1737); 1x1 a single
+#                block, larger a p4 interlocking layer (Weiss &
+#                Niemeyer 2026).
+#   RHOM /       the exact Rhom block and its obverse, single p3
+#   RHOM_OBV     reference blocks (Weiss & Niemeyer 2026).
+#   KITTEN /     tetroctahedrille blocks: the kitten tiles by
+#   UFO /        translation; UFO and cushion are single reference
+#   CUSHION      blocks (Akpanya, Goertzen & Niemeyer 2024).
+#   SL           self-interlocking octocubes with the six-engagement
+#                grammar and the periodic square strand (Shih 2018).
+#   DOME         one radially-lofted block per polyhedron face, the
+#                spherical Escher loft (Akpanya et al. 2024).
+#   HENDECA      the bisymmetric hendecahedron space-filler: a 4-cell
+#                "boat" translated over a body-centred-tetragonal
+#                lattice (Inchbald 1996; Wu & Inchbald 2018).
 #
 # References:
 # - A. V. Dyskin, Y. Estrin, A. J. Kanel-Belov, E. Pasternak, "A new
@@ -47,7 +58,21 @@
 #   Self-Assemblies", Bridges 2023, 61-68 (Versatile block).
 # - R. Akpanya, T. Goertzen, A. C. Niemeyer, "From Tilings of
 #   Orientable Surfaces to Topological Interlocking Assemblies",
-#   Applied Sciences 14(16):7276 (2024) (the Escher-loft framework).
+#   Applied Sciences 14(16):7276 (2024) (the Escher-loft framework and
+#   the interlocking dome).
+# - R. Akpanya, T. Goertzen, A. C. Niemeyer, "Topologically
+#   Interlocking Blocks inside the Tetroctahedrille", arXiv:2405.01944
+#   (2024) (kitten / UFO / cushion).
+# - M. Weiss, A. C. Niemeyer, "Construction Methods for Space-Filling
+#   Heterogeneous Topological Interlocking Assemblies", arXiv:2604.22475
+#   (2026) (Bisquare and Rhom blocks; A.-F. Frezier, 1737, for the
+#   original Bisquare block).
+# - Shen-Guan Shih, "The Art and Mathematics of Self-Interlocking SL
+#   Blocks", Bridges 2018, 107-114.
+# - G. Inchbald, "Five Space-filling Polyhedra", The Mathematical
+#   Gazette 80 (489) (1996) 466-475; J. Wu & G. Inchbald, "Folding the
+#   Space-Filling Bisymmetric Hendecahedron for a Large-Scale Art
+#   Installation", Bridges 2018, 483-486 (hendecahedron).
 
 bl_info = {
     "name": "Topological Interlocking Blocks",
@@ -63,6 +88,7 @@ bl_info = {
 
 import itertools
 import math
+from collections import deque
 
 import numpy as np
 
@@ -370,28 +396,36 @@ def _mcs_cell(kind, mirror=False):
 
 
 def build_mcs(kind, nx, ny):
-    """Cells of an MCS layer over a honeycomb patch.  Hexagon centres
-    sit on a triangular lattice; the alternating tilt pattern gives
-    two cell types placed by row/column parity.  Returns the same
-    tuple form as build_tetra."""
-    # flat-top unit hexagon (circumradius 1, apothem sqrt3/2): the
-    # centres of the honeycomb sit on a triangular lattice; columns
-    # are spaced 1.5 apart and odd columns drop by half a row
+    """Cells of a moving-cross-section (MCS) interlocking layer over a
+    honeycomb patch (Kanel-Belov / Dyskin et al.).  Every solid is an
+    *identical* pure translate -- a single orientation, NOT a two-type
+    alternation.  The in/out tilt lives on the six faces of each cell
+    (three up, three down, alternating around the equatorial hexagon);
+    because opposite hexagon edges have opposite parity and a honeycomb
+    neighbour sits across an edge (mapping an edge to the *opposite*
+    edge of the neighbour), adjacent cells automatically share each
+    inclined face-plane -- so nothing needs a per-cell tilt sign, and
+    the three-hexagons-at-a-vertex conflict of a two-colour scheme
+    never arises.  Hexagon centres sit on the triangular lattice
+    t1=(3/2, sqrt3/2), t2=(0, sqrt3): neighbours lie across the six
+    hexagon *edges*, and the cells are cube/octahedron-disjoint
+    (verified, face-to-face contact).  Returns build_tetra-style
+    tuples."""
     ax = 1.5                         # horizontal (column) spacing
     ay = math.sqrt(3.0)             # vertical (row) spacing
-    cellP = _mcs_cell(kind, mirror=False)
-    cellQ = _mcs_cell(kind, mirror=True)
+    V, F = _mcs_cell(kind, mirror=False)
+    V = np.asarray(V, float)
     cells = []
     for i in range(nx):
         for j in range(ny):
             cx = i * ax
             cy = (j + 0.5 * (i % 2)) * ay
-            parity = (i + j) % 2
-            V, F = cellP if parity == 0 else cellQ
             frame = (i == 0 or j == 0
                      or i == nx - 1 or j == ny - 1)
+            # colour is cosmetic only (all cells are identical
+            # translates); checkerboard for legibility
             cells.append((np.array((cx, cy, 0.0)),
-                          np.asarray(V, float), F, frame, parity))
+                          V, F, frame, (i + j) % 2))
     return cells
 
 
@@ -626,10 +660,16 @@ def build_versatile(nx=4, ny=4):
 
 
 # The Bisquare block (Frezier 1737 / Weiss & Niemeyer 2026): a p4
-# fundamental domain deformed into two small squares.  11 vertices,
-# 18 triangular faces, a closed non-convex block of volume 3/2 (the
-# operator recomputes normals, so the published winding is fine).
+# fundamental domain whose square base (side sqrt2, at z=0) rises to a
+# two-tent roof (peak vertex 11 at z=1).  11 vertices, 18 triangular
+# faces, a closed non-convex block of volume 3/2 (the operator
+# recomputes normals, so the published winding is fine).  It is a p4
+# TIA, not a solid space-filler: base squares tile the z=0 plane and
+# the roofs interlock, so the layer has a flat floor and a tented top
+# (block volume 3/2 < the cell's 2 -- the missing quarter is the
+# valleys between roofs, exactly as in Weiss & Niemeyer Fig 8).
 _A2 = math.sqrt(2.0) / 2.0
+_S2 = math.sqrt(2.0)
 _BISQUARE_V = np.array([
     (-_A2, _A2, 0.0), (_A2, _A2, 0.0), (_A2, -_A2, 0.0),
     (-_A2, -_A2, 0.0),
@@ -642,22 +682,48 @@ _BISQUARE_F = [[i - 1 for i in f] for f in (
     (1, 5, 11), (4, 10, 11), (2, 6, 7), (1, 5, 6), (2, 3, 11),
     (2, 7, 11), (3, 8, 11), (1, 2, 6))]
 
-
-def build_bisquare():
-    """The exact Bisquare block as a single block (a square deformed
-    into two smaller squares).  Nests with the Versatile block in
-    heterogeneous p4 assemblies (see BACKLOG)."""
-    V0 = _BISQUARE_V - _BISQUARE_V.mean(axis=0)
-    return [(np.zeros(3), V0, [list(f) for f in _BISQUARE_F],
-             False, 0)]
+# the two block orientations (quad-triangular tile senses) are 90-deg
+# rotations of each other about the vertical; neighbours on the unit
+# square lattice always take opposite orientations (p4), so a single
+# checkerboard tiles the interlocking layer (verified: no
+# interpenetration).  Lattice = the base square's side sqrt2.
+_BISQUARE_L = (np.array((_S2, 0.0, 0.0)), np.array((0.0, _S2, 0.0)))
 
 
-# The Rhom block and its obverse (Goertzen 2024 / Weiss & Niemeyer
-# 2026): p3 blocks over a unit lozenge, the interpolation between the
-# lozenge (z=0) and a deformed tile (z=sqrt6/3).  Both are convex, so
-# the faces come straight from the convex hull.  Height sqrt6/3, edge
-# length 1; volume 0.7857.  Their p3 / heterogeneous space-filling
-# assembly is left for BACKLOG.
+def _rot_z(deg):
+    a = math.radians(deg)
+    c, s = math.cos(a), math.sin(a)
+    return np.array(((c, -s, 0.0), (s, c, 0.0), (0.0, 0.0, 1.0)))
+
+
+def build_bisquare(nx=1, ny=1):
+    """The Bisquare block: at nx=ny=1 a single reference block, else
+    the p4 interlocking layer -- one block per unit square, adjacent
+    cells rotated 90 deg (checkerboard), verified non-overlapping.
+    The base squares tile the floor; the roofs interlock above."""
+    F = [list(f) for f in _BISQUARE_F]
+    cen = _BISQUARE_V.mean(axis=0)
+    if nx == 1 and ny == 1:
+        return [(np.zeros(3), _BISQUARE_V - cen, F, False, 0)]
+    L1, L2 = _BISQUARE_L
+    cells = []
+    for i in range(nx):
+        for j in range(ny):
+            R = _rot_z(90.0 * ((i + j) % 2))
+            V = _BISQUARE_V @ R.T + i * L1 + j * L2
+            frame = (i == 0 or j == 0 or i == nx - 1 or j == ny - 1)
+            cells.append((np.zeros(3), V, F, frame, (i + j) % 2))
+    # centre the whole layer at the origin
+    mid = np.mean([c[1].mean(axis=0) for c in cells], axis=0)
+    return [(t, V - mid, F2, fr, col) for t, V, F2, fr, col in cells]
+
+
+# The Rhom block and its obverse (Weiss & Niemeyer 2026, sec. 3.2,
+# building on Goertzen's lozenge construction): p3 blocks over a unit
+# lozenge, the interpolation between the lozenge (z=0) and a deformed
+# tile (z=sqrt6/3).  Both are convex, so the faces come straight from
+# the convex hull.  Height sqrt6/3, edge length 1; volume 0.7857.
+# Their p3 / heterogeneous space-filling assembly is left for BACKLOG.
 _S3 = math.sqrt(3.0)
 _S6 = math.sqrt(6.0)
 _RHOM_V = np.array([
@@ -756,11 +822,20 @@ def build_tetrocta(kind, nx, ny, nz):
 # ==================================================================
 #
 # An S-shaped tetracube fused to an L-shaped tetracube gives the SL
-# octocube.  Each tetracube is a single contiguous unit cell; two SL
-# blocks make a conjugate pair (one is the other turned 180 deg about
-# a y-axis through a shared corner of the S tetracube); pairs chain by
-# the `a` engagement (Rz(-90) then T(1,-1,0)), whose fourth power is
-# the identity, so a4 closes a periodic square strand.
+# octocube: eight unit cubes spanning three z-levels, the S and L
+# tetracubes sharing three faces so their union is one contiguous
+# solid.  Blocks engage by one of six rigid "engagements" a,h,s,t,d,y
+# (world-frame affine maps p -> R p + t); a strand is a word over
+# those letters and is a periodic (self-locking) loop iff its
+# transform product is the identity.  Frames compose by post-
+# multiplication (G <- G . M_e) with exactly one octocube placed per
+# letter.  Simplest loop: a4 (the square strand); general square
+# frames are (a h^{2n})4.  All verified cube-disjoint.
+#
+# References: Shen-Guan Shih, "The Art and Mathematics of Self-
+# Interlocking SL Blocks," Bridges 2018, pp. 107-114; and "On the
+# Hierarchical Construction of SL Blocks," Advances in Architectural
+# Geometry 2016.
 
 # unit-cube boundary quads (min corner at the origin), outward-wound
 _CUBE_FACES = (
@@ -771,10 +846,12 @@ _CUBE_FACES = (
     ((0, 0, 1), [(0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1)]),
     ((0, 0, -1), [(0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0)]))
 
-# S-tetracube and L-tetracube (unit-cube min corners); they share
-# three vertical faces, so their union is a contiguous octocube
-_S_TETRA = [(0, 0, 0), (1, 0, 0), (1, 1, 0), (2, 1, 0)]
-_L_TETRA = [(0, 0, 1), (1, 0, 1), (2, 0, 1), (2, 1, 1)]
+# The SL octocube at the verified interlocking placement (unit-cube
+# min corners): the S and L tetracubes share three faces so their
+# union is one contiguous three-level octocube.  The engagements are
+# absolute (world-frame), so the block only locks at this placement.
+_SL_S = [(-2, 0, 1), (-2, 0, 2), (-1, 0, 2), (0, 0, 2)]
+_SL_L = [(-2, 0, 0), (-1, -1, 0), (-1, 0, 0), (-1, 0, 1)]
 
 
 def _polycube_mesh(origins):
@@ -801,68 +878,78 @@ def _polycube_mesh(origins):
     return np.array(verts), faces
 
 
-def _rz(deg):
-    a = math.radians(deg)
-    c, s = round(math.cos(a)), round(math.sin(a))
-    return np.array(((c, -s, 0.0), (s, c, 0.0), (0.0, 0.0, 1.0)))
+def _eng(rows, t):
+    return (np.array(rows, float), np.array(t, float))
 
 
-_SL_ENGAGE = {                       # (rotation, translation)
-    'a': (_rz(-90), np.array((1.0, -1.0, 0.0))),
-    'h': (np.diag((1.0, -1.0, -1.0)), np.array((0.0, 0.0, 0.0))),
+# Shih's six engagements as world-frame affine maps p -> R p + t.
+# {h,s,t} carry Rx(180) (a flip to the layer below, reversing z);
+# {d,a,y} keep Rx(0); within each group the z-rotation is 0 / -90 /
+# +90.  a = Rz(-90) then T(1,-1,0), whose fourth power is the identity.
+_SL_ENGAGE = {
+    'h': _eng([[1, 0, 0], [0, -1, 0], [0, 0, -1]], (2.0, 0.0, 0.0)),
+    's': _eng([[0, 1, 0], [1, 0, 0], [0, 0, -1]], (1.0, 1.0, -1.0)),
+    't': _eng([[0, -1, 0], [-1, 0, 0], [0, 0, -1]], (1.0, -1.0, 1.0)),
+    'd': _eng([[1, 0, 0], [0, 1, 0], [0, 0, 1]], (2.0, 0.0, -1.0)),
+    'a': _eng([[0, 1, 0], [-1, 0, 0], [0, 0, 1]], (1.0, -1.0, 0.0)),
+    'y': _eng([[0, -1, 0], [1, 0, 0], [0, 0, 1]], (1.0, 1.0, -2.0)),
 }
 
 
 def _sl_octocube():
-    """The SL octocube as (origins, colour) with the S tetracube
+    """The SL octocube as [(origins, colour)] with the S tetracube
     coloured 0 and the L tetracube 1."""
-    return [(np.array(_S_TETRA, float), 0),
-            (np.array(_L_TETRA, float), 1)]
+    return [(np.array(_SL_S, float), 0), (np.array(_SL_L, float), 1)]
 
 
-def _conjugate(origins):
-    """The conjugate of an octocube: a 180 deg turn about a y-axis
-    through a shared corner of the S tetracube, mapping cube min-
-    corners (x,y,z) -> (2-x, y, -1-z).  The pair is cube-disjoint and
-    face-adjacent (verified)."""
-    return np.array([(2 - x, y, -1 - z) for (x, y, z) in origins],
-                    float)
+def _sl_compose(G, e):
+    """Post-multiply the frame G=(R,t) by engagement e (world-frame
+    translation): returns G . M_e."""
+    R, t = G
+    Re, te = _SL_ENGAGE[e]
+    return (R @ Re, R @ te + t)
 
 
-def _sl_pair():
-    """The conjugate pair as (origins, colour): the S/L tetracubes of
-    the base octocube plus those of its conjugate partner."""
-    base = _sl_octocube()
-    return base + [(_conjugate(o), c) for o, c in base]
-
-
-def build_sl(mode='PAIR', strand=4):
-    """SL blocks as contiguous polycubes.  mode BLOCK = one octocube
-    (S + L tetracubes, two-coloured); PAIR = a conjugate pair; STRAND
-    = `strand` conjugate pairs chained by the a-engagement
-    (Rz(-90) then T(1,-1,0)); four pairs close the a4 loop.  Every
-    tetracube is a single connected solid."""
-    def emit(origins, col, R, t, cells):
-        P = origins @ R.T + t
-        V, F = _polycube_mesh(np.round(P).astype(int))
-        cells.append((np.zeros(3), V, F, False, col))
-
-    cells = []
+def _sl_word(mode, engage, frame):
+    """Engagement word (a string over a,h,s,t,d,y) for a build mode."""
     if mode == 'BLOCK':
-        for o, c in _sl_octocube():
-            emit(o, c, np.eye(3), np.zeros(3), cells)
-        return cells
-    if mode == 'PAIR':
-        for o, c in _sl_pair():
-            emit(o, c, np.eye(3), np.zeros(3), cells)
-        return cells
-    # STRAND: conjugate pairs at cumulative a-engagement powers
-    R, t = np.eye(3), np.zeros(3)
-    aR, at = _SL_ENGAGE['a']
-    for k in range(strand):
-        for o, c in _sl_pair():
-            emit(o, c, R, t, cells)
-        R, t = aR @ R, aR @ t + at
+        return ''
+    if mode == 'ENGAGEMENT':
+        return engage
+    return ('a' + 'h' * (2 * frame)) * 4        # STRAND: (a h^{2n})^4
+
+
+def _sl_frames(word):
+    """Cumulative engagement frames for a word, with coincident frames
+    dropped (a closing strand ends where it began)."""
+    G = (np.eye(3), np.zeros(3))
+    frames = [G]
+    for e in word:
+        G = _sl_compose(G, e)
+        frames.append(G)
+    seen, uniq = set(), []
+    for R, t in frames:
+        key = tuple(np.round(np.concatenate([R.ravel(), t]), 3))
+        if key not in seen:
+            seen.add(key)
+            uniq.append((R, t))
+    return uniq
+
+
+def build_sl(mode='STRAND', engage='a', frame=0):
+    """SL blocks as contiguous polycubes (Shih 2018), one octocube per
+    engagement letter placed at the cumulative (post-multiplied) frame.
+    BLOCK = one octocube; ENGAGEMENT = the octocube plus one engaged
+    partner (`engage` in a,h,s,t,d,y); STRAND = the periodic square
+    strand (a h^{2n})^4 (`frame` = n; n=0 closes the a4 loop, n>=1
+    gives nested square frames).  The S and L tetracubes are two-
+    coloured and every strand is cube-disjoint (verified)."""
+    cells = []
+    for R, t in _sl_frames(_sl_word(mode, engage, frame)):
+        for origins, col in _sl_octocube():
+            P = origins @ R.T + t
+            V, F = _polycube_mesh(np.round(P).astype(int))
+            cells.append((np.zeros(3), V, F, False, col))
     return cells
 
 
@@ -963,6 +1050,117 @@ def build_dome(seed, depth, thickness):
 
 
 # ==================================================================
+# FAMILY: HENDECA -- bisymmetric hendecahedron space-filler
+# ==================================================================
+#
+# The bisymmetric hendecahedron (Inchbald 1996): a space-filling
+# 11-hedron with 2 large rhombi, 1 small rhombus, 4 isosceles
+# triangles and 4 kites (7 quads + 4 triangles), volume 16 in these
+# coordinates.  It is NOT a single-cell translation tiler and NOT a
+# reflection tiler.  Four cells make a "hexagonal boat" that stacks by
+# pure translation on a body-centred-tetragonal (BCC-scaled-
+# vertically) lattice -- Inchbald's construction, here given exactly
+# as a four-cell motif plus three lattice vectors (see _HENDECA_MOTIF
+# and _HENDECA_L below).  The tiling is verified to fill space with no
+# gaps, no overlaps and face-to-face contact everywhere.
+#
+# References: Guy Inchbald, "Five Space-filling Polyhedra," The
+# Mathematical Gazette 80 (489), 1996, pp. 466-475; Jiangmei Wu &
+# Guy Inchbald, "Folding the Space-Filling Bisymmetric
+# Hendecahedron," Bridges 2018, pp. 483-486.
+
+_HENDECA_V = np.array([
+    (0.0, 0.0, 2.0), (2.0, 1.0, 1.0), (0.0, -1.0, 1.0),
+    (-2.0, 1.0, 1.0), (0.0, 2.0, 0.0), (1.0, -1.0, 0.0),
+    (-1.0, -1.0, 0.0), (2.0, 1.0, -1.0), (0.0, -1.0, -1.0),
+    (-2.0, 1.0, -1.0), (0.0, 0.0, -2.0)])
+# vertices A..L map to indices 0..10; 4 triangles + 7 quadrilaterals
+_HENDECA_F = [[5, 2, 0, 1], [3, 0, 1, 4], [3, 0, 2, 6], [7, 1, 4],
+              [7, 1, 5], [5, 8, 6, 2], [4, 9, 3], [6, 9, 3],
+              [4, 9, 10, 7], [5, 8, 10, 7], [10, 8, 6, 9]]
+
+
+def _poly_normals(W, F):
+    """Unit normals of the (convex) faces F of vertex set W."""
+    out = []
+    for f in F:
+        p = W[f]
+        n = np.cross(p[1] - p[0], p[2] - p[0])
+        ln = np.linalg.norm(n)
+        if ln > 1e-9:
+            out.append(n / ln)
+    return out
+
+
+def _convex_overlap(A, B, FA, FB):
+    """True if convex solids A, B interpenetrate (separating-axis test
+    over both solids' face normals; touching counts as disjoint)."""
+    for n in _poly_normals(A, FA) + _poly_normals(B, FB):
+        a = A @ n
+        b = B @ n
+        if a.min() - b.max() > -1e-6 or b.min() - a.max() > -1e-6:
+            return False
+    return True
+
+
+# The space-filling rule (verified: motif + lattice covers space with
+# no gaps and no overlaps, face-to-face everywhere).  Four cells make
+# Inchbald's "hexagonal boat": the base cell plus three copies turned
+# by a 2-fold rotation (no reflections needed).  The boat then tiles
+# by pure translation on a body-centred-tetragonal lattice -- the
+# square lattice (4,4,0),(4,-4,0) with vertical period (0,0,4) and the
+# body centre (4,0,2) -- i.e. BCC compressed vertically by one half,
+# exactly as Inchbald describes.  The four orientations are forced:
+# of the 22 face-adjacent placements per cell only these four are
+# crystallographically consistent (the rest are "false" neighbours
+# that never extend to a tiling, which is why a naive flood fill
+# leaves permanent gaps).
+_HENDECA_MOTIF = [
+    (np.eye(3), np.array((0.0, 0.0, 0.0))),
+    (np.array(((0.0, 1.0, 0.0), (1.0, 0.0, 0.0), (0.0, 0.0, -1.0))),
+     np.array((1.0, 3.0, 4.0))),                     # C2 about (1,1,0)
+    (np.array(((1.0, 0.0, 0.0), (0.0, -1.0, 0.0), (0.0, 0.0, -1.0))),
+     np.array((0.0, 2.0, 2.0))),                     # C2 about x
+    (np.array(((0.0, -1.0, 0.0), (-1.0, 0.0, 0.0), (0.0, 0.0, -1.0))),
+     np.array((3.0, 3.0, 6.0)))]                     # C2 about (1,-1,0)
+_HENDECA_L = (np.array((4.0, 0.0, 2.0)), np.array((0.0, 4.0, 2.0)),
+              np.array((0.0, 0.0, 4.0)))
+
+
+def build_hendeca(count=32):
+    """A compact cluster of `count` bisymmetric hendecahedra from the
+    exact space-filling rule: the four-cell boat translated over the
+    body-centred-tetragonal lattice.  The `count` cells nearest the
+    centre of a generated block are kept, giving a solid interlocking
+    chunk (verified space-filling: no gaps, no overlaps, face-to-face).
+    Cells are coloured by their orientation in the boat."""
+    V, F = _HENDECA_V, _HENDECA_F
+    L1, L2, L3 = _HENDECA_L
+    # generate enough boats to contain `count` cells, then keep the
+    # nearest ones to the block centre for a compact solid cluster
+    r = 1
+    cells = []
+    while len(cells) < count + 4:
+        cells = []
+        rng = range(-r, r + 1)
+        for ci, (R, t) in enumerate(_HENDECA_MOTIF):
+            for i in rng:
+                for j in rng:
+                    for k in rng:
+                        off = t + i * L1 + j * L2 + k * L3
+                        W = V @ R.T + off
+                        cells.append((W, W.mean(axis=0), ci))
+        r += 1
+    mid = np.mean([c[1] for c in cells], axis=0)
+    cells.sort(key=lambda c: np.linalg.norm(c[1] - mid))
+    cells = cells[:count]
+    keep_mid = np.mean([c[1] for c in cells], axis=0)
+    faces = [list(f) for f in F]
+    return [(np.zeros(3), W - keep_mid, faces, False, ci % 3)
+            for W, _c, ci in cells]
+
+
+# ==================================================================
 # assembly -> mesh
 # ==================================================================
 
@@ -1021,8 +1219,9 @@ def cells_to_meshes(cells, size=2.0, gap=1.0):
 
 def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
                 deform=0.18, samples=8, height=1.0,
-                sl_mode='STRAND', sl_strand=4,
-                dome_seed='ICOSA', dome_depth=0.18, dome_thick=0.15):
+                sl_mode='STRAND', sl_engage='a', sl_frame=0,
+                dome_seed='ICOSA', dome_depth=0.18, dome_thick=0.15,
+                hendeca_count=32):
     """Placement cells for the chosen family (see the family enum in
     the operator).  Returns build_tetra-style tuples."""
     if family == 'TETRA':
@@ -1031,8 +1230,12 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
         return build_escher(profile, nx, ny, deform, samples, height)
     if family == 'VERSATILE':
         return build_versatile(nx, ny)
+    if family == 'MCSCUBE':
+        return build_mcs('CUBE', nx, ny)
+    if family == 'MCSOCTA':
+        return build_mcs('OCTA', nx, ny)
     if family == 'BISQUARE':
-        return build_bisquare()
+        return build_bisquare(nx, ny)
     if family == 'RHOM':
         return build_rhom(False)
     if family == 'RHOM_OBV':
@@ -1040,17 +1243,20 @@ def build_cells(family, nx=4, ny=4, nz=2, profile='SINE',
     if family in _TETROCTA_BLOCKS:
         return build_tetrocta(family, nx, ny, nz)
     if family == 'SL':
-        return build_sl(sl_mode, sl_strand)
+        return build_sl(sl_mode, sl_engage, sl_frame)
     if family == 'DOME':
         return build_dome(dome_seed, dome_depth, dome_thick)
+    if family == 'HENDECA':
+        return build_hendeca(hendeca_count)
     raise ValueError(family)
 
 
 # families that build a space-filling / interlocking assembly; the
 # rest emit a single reference block
-_ASSEMBLY = {'TETRA', 'ESCHER', 'VERSATILE', 'KITTEN', 'SL', 'DOME'}
-_RIGOROUS = {'TETRA', 'ESCHER', 'VERSATILE'}
-_SINGLE_BLOCK = {'BISQUARE', 'RHOM', 'RHOM_OBV', 'UFO', 'CUSHION'}
+_ASSEMBLY = {'TETRA', 'ESCHER', 'VERSATILE', 'MCSCUBE', 'MCSOCTA',
+             'BISQUARE', 'KITTEN', 'SL', 'DOME', 'HENDECA'}
+_RIGOROUS = {'TETRA', 'ESCHER', 'VERSATILE', 'MCSCUBE', 'MCSOCTA'}
+_SINGLE_BLOCK = {'RHOM', 'RHOM_OBV', 'UFO', 'CUSHION'}
 
 
 # ==================================================================
@@ -1071,14 +1277,17 @@ if _IN_BLENDER:
     _LABEL = {'TETRA': "Interlocking Tetrahedra",
               'ESCHER': "Escher / Osteomorphic Blocks",
               'VERSATILE': "Versatile Block",
-              'BISQUARE': "Bisquare Block",
+              'MCSCUBE': "Interlocking Cubes",
+              'MCSOCTA': "Interlocking Octahedra",
+              'BISQUARE': "Bisquare Blocks",
               'RHOM': "Rhom Block",
               'RHOM_OBV': "Rhom Block (Obverse)",
               'KITTEN': "Tetroctahedrille Kitten",
               'UFO': "Tetroctahedrille UFO",
               'CUSHION': "Tetroctahedrille Cushion",
               'SL': "SL Block",
-              'DOME': "Interlocking Dome"}
+              'DOME': "Interlocking Dome",
+              'HENDECA': "Bisymmetric Hendecahedron"}
 
     _COLOURS = {0: (0.85, 0.55, 0.15), 1: (0.20, 0.45, 0.70),
                 2: (0.55, 0.65, 0.25)}
@@ -1120,10 +1329,22 @@ if _IN_BLENDER:
                  "2023): a square lofted to a rectangle, tiled into a "
                  "layer over the diamond lattice (every section tiles "
                  "so the framed layer interlocks)"),
-                ('BISQUARE', "Bisquare Block (single)",
-                 "The exact Bisquare block (a square deformed into "
-                 "two smaller squares); nests with the Versatile "
-                 "block in heterogeneous assemblies"),
+                ('MCSCUBE', "Interlocking Cubes",
+                 "Cubes with a body-diagonal (3-fold) axis vertical, "
+                 "placed as identical translates on a honeycomb "
+                 "lattice; each cube's faces tilt +/-35.26 deg and "
+                 "adjacent cubes share every inclined plane, so the "
+                 "framed layer locks (Kanel-Belov / Dyskin moving "
+                 "cross-section)"),
+                ('MCSOCTA', "Interlocking Octahedra",
+                 "Octahedra with a 3-fold axis vertical on the same "
+                 "honeycomb; faces tilt +/-19.47 deg (Kanel-Belov "
+                 "moving cross-section); the framed layer locks"),
+                ('BISQUARE', "Bisquare Blocks",
+                 "The exact Bisquare block (Frezier 1737): a square "
+                 "base rising to a two-tent roof.  1x1 is a single "
+                 "block; larger sizes give the p4 interlocking layer "
+                 "(90-deg checkerboard, flat floor, tented top)"),
                 ('RHOM', "Rhom Block (single)",
                  "The exact Rhom block (Goertzen 2024): a p3 lozenge "
                  "block, convex, height sqrt6/3"),
@@ -1149,7 +1370,12 @@ if _IN_BLENDER:
                  "One radially-lofted block per polyhedron face; each "
                  "shared edge is displaced tangentially at the middle "
                  "shell so adjacent blocks share a wavy wall and "
-                 "interlock (Escher on a sphere; Akpanya et al. 2024)")],
+                 "interlock (Escher on a sphere; Akpanya et al. 2024)"),
+                ('HENDECA', "Bisymmetric Hendecahedron",
+                 "A space-filling 11-hedron (Inchbald 1996): 7 quads "
+                 "+ 4 triangles, grown into an interlocking cluster by "
+                 "its face-adjacency motions (four cells make a "
+                 "translation 'boat'); guaranteed non-overlapping")],
             default='TETRA')
 
         nx: IntProperty(name="Cells X", default=4, min=1, max=16)
@@ -1178,15 +1404,33 @@ if _IN_BLENDER:
             name="SL Mode",
             items=[('BLOCK', "Single Block",
                     "One SL octocube (S + L tetracubes)"),
-                   ('PAIR', "Conjugate Pair",
-                    "Two SL blocks sharing an S corner"),
-                   ('STRAND', "Strand", "Conjugate pairs chained by "
-                    "the a-engagement")],
+                   ('ENGAGEMENT', "Engaged Pair",
+                    "The octocube plus one partner engaged by the "
+                    "chosen engagement"),
+                   ('STRAND', "Square Strand",
+                    "The periodic square strand (a h^2n)^4 -- a "
+                    "self-locking loop of octocubes")],
             default='STRAND')
-        sl_strand: IntProperty(
-            name="Strand Pairs", default=4, min=1, max=12,
-            description="Conjugate pairs in the strand (4 closes the "
-                        "a4 loop)")
+        sl_engage: EnumProperty(
+            name="Engagement",
+            items=[('a', "a  (Rz-90, T 1 -1 0)",
+                    "The square-strand engagement; a4 = identity"),
+                   ('h', "h  (Rx180, T 2 0 0)", "Flip to the row "
+                    "below, half-period along x"),
+                   ('s', "s  (Rx180 Rz-90, T 1 1 -1)", "Flip + "
+                    "quarter turn"),
+                   ('t', "t  (Rx180 Rz90, T 1 -1 1)", "Flip + "
+                    "quarter turn (opposite)"),
+                   ('d', "d  (T 2 0 -1)", "Pure translation to the "
+                    "next block"),
+                   ('y', "y  (Rz90, T 1 1 -2)", "Quarter turn, two "
+                    "levels down")],
+            default='a',
+            description="Engagement used for the Engaged Pair mode")
+        sl_frame: IntProperty(
+            name="Frame Order", default=0, min=0, max=4,
+            description="Square strand (a h^2n)^4: n=0 is the tight "
+                        "a4 loop, n>=1 nests larger square frames")
 
         dome_seed: EnumProperty(
             name="Seed",
@@ -1202,13 +1446,19 @@ if _IN_BLENDER:
             name="Shell Thickness", default=0.15, min=0.03, max=0.5,
             description="Inner/outer shell offset about the sphere")
 
+        hendeca_count: IntProperty(
+            name="Cells", default=32, min=1, max=200,
+            description="Number of hendecahedra in the interlocking "
+                        "cluster")
+
         gap: FloatProperty(
             name="Gap Factor", default=0.94, min=0.3, max=1.0,
             description="Scale of each block about its centroid "
                         "(1.0 = blocks touch)")
-        size: FloatProperty(name="Size", default=2.0, min=0.1,
-                            max=100.0,
-                            description="Fit within this cube")
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01,
+                             max=100.0,
+                             description="Overall scale (1.0 fits a "
+                                         "2 m cube)")
         colour_mode: EnumProperty(
             name="Colouring",
             items=[('TYPE', "By Block Type",
@@ -1227,7 +1477,8 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'family')
             fam = self.family
-            if fam in ('TETRA', 'ESCHER', 'VERSATILE', 'KITTEN'):
+            if fam in ('TETRA', 'ESCHER', 'VERSATILE', 'MCSCUBE',
+                       'MCSOCTA', 'BISQUARE', 'KITTEN'):
                 lay.prop(self, 'nx')
                 lay.prop(self, 'ny')
             if fam == 'KITTEN':
@@ -1239,14 +1490,18 @@ if _IN_BLENDER:
                 lay.prop(self, 'height')
             if fam == 'SL':
                 lay.prop(self, 'sl_mode')
+                if self.sl_mode == 'ENGAGEMENT':
+                    lay.prop(self, 'sl_engage')
                 if self.sl_mode == 'STRAND':
-                    lay.prop(self, 'sl_strand')
+                    lay.prop(self, 'sl_frame')
             if fam == 'DOME':
                 lay.prop(self, 'dome_seed')
                 lay.prop(self, 'dome_depth')
                 lay.prop(self, 'dome_thick')
+            if fam == 'HENDECA':
+                lay.prop(self, 'hendeca_count')
             lay.prop(self, 'gap')
-            lay.prop(self, 'size')
+            lay.prop(self, 'scale')
             lay.prop(self, 'colour_mode')
             lay.prop(self, 'separate')
 
@@ -1293,8 +1548,9 @@ if _IN_BLENDER:
                 cells = build_cells(
                     self.family, self.nx, self.ny, self.nz,
                     self.profile, self.deform, self.samples,
-                    self.height, self.sl_mode, self.sl_strand,
-                    self.dome_seed, self.dome_depth, self.dome_thick)
+                    self.height, self.sl_mode, self.sl_engage,
+                    self.sl_frame, self.dome_seed, self.dome_depth,
+                    self.dome_thick, self.hendeca_count)
             except Exception as e:               # bad parameter combo
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -1302,7 +1558,8 @@ if _IN_BLENDER:
                 o.select_set(False)
             label = _LABEL[self.family]
             if self.separate:
-                parts = cells_to_meshes(cells, self.size, self.gap)
+                parts = cells_to_meshes(cells, 2.0 * self.scale,
+                                        self.gap)
                 first = None
                 for k, (v, f, cols, frames) in enumerate(parts):
                     obj = self._emit(context, f"{label} {k + 1}",
@@ -1314,7 +1571,7 @@ if _IN_BLENDER:
                             f"{label}: {len(parts)} separate objects")
                 return {'FINISHED'}
             verts, faces, cols, frames = cells_to_mesh(
-                cells, self.size, self.gap)
+                cells, 2.0 * self.scale, self.gap)
             obj = self._emit(context, f"Interlocking {label}",
                              verts, faces, cols, frames)
             context.view_layer.objects.active = obj
@@ -1402,15 +1659,18 @@ def _selftest():
             ('TETRA', build_tetra(4, 4)),
             ('ESCHER', build_escher('SINE', 4, 4, 0.18, 8, 1.0)),
             ('VERSATILE', build_versatile(4, 4)),
+            ('MCSCUBE', build_mcs('CUBE', 4, 4)),
+            ('MCSOCTA', build_mcs('OCTA', 4, 4)),
             ('BISQUARE', build_bisquare()),
             ('RHOM', build_rhom(False)),
             ('RHOM_OBV', build_rhom(True)),
             ('KITTEN', build_tetrocta('KITTEN', 2, 2, 2)),
             ('UFO', build_tetrocta('UFO', 1, 1, 1)),
             ('CUSHION', build_tetrocta('CUSHION', 1, 1, 1)),
-            ('SL', build_sl('STRAND', 4)),
+            ('SL', build_sl('STRAND', 'a', 0)),
             ('DOME_I', build_dome('ICOSA', 0.18, 0.15)),
-            ('DOME_D', build_dome('DODECA', 0.18, 0.15))):
+            ('DOME_D', build_dome('DODECA', 0.18, 0.15)),
+            ('HENDECA', build_hendeca(20))):
         v, f, cols, fr = cells_to_mesh(cells, 2.0, 0.94)
         Vv = np.asarray(v)
         deg = sum(1 for ff in f
@@ -1467,6 +1727,8 @@ def _selftest():
 
     for name, cells in (
             ('TETRA', build_tetra(5, 5)),
+            ('MCSCUBE', build_mcs('CUBE', 4, 4)),
+            ('MCSOCTA', build_mcs('OCTA', 4, 4)),
             ('KITTEN', build_tetrocta('KITTEN', 2, 2, 2))):
         w = _assembly_overlap(cells)
         good = w < 1e-3
@@ -1475,21 +1737,149 @@ def _selftest():
         ok = ok and good
 
     # SL blocks are integer polycubes -> overlap is exact (a cube
-    # shared by two blocks).  Check the a-strand is cube-disjoint.
-    aR, at = _SL_ENGAGE['a']
-    R, t = np.eye(3), np.zeros(3)
-    all_cubes = []
-    for _ in range(4):
-        s = set()
-        for o, c in _sl_pair():
-            s |= set(map(tuple, np.round(o @ R.T + t).astype(int)))
-        all_cubes.append(s)
-        R, t = aR @ R, aR @ t + at
-    tot = sum(len(s) for s in all_cubes)
-    uni = len(set().union(*all_cubes))
-    good = tot == uni
-    print(f"overlap SL a4-strand: shared_cubes={tot - uni} "
-          f"{'ok' if good else 'OVERLAP'}")
+    # shared by two blocks).  Each square strand (a h^{2n})^4 must
+    # close to the identity and be globally cube-disjoint, and each of
+    # the six single engagements must give a disjoint 2-block pair.
+    octo = [c for o, _ in _sl_octocube() for c in map(tuple, o)]
+    for n in range(4):
+        frames = _sl_frames(('a' + 'h' * (2 * n)) * 4)
+        # closure: the word's full product returns to the start, so the
+        # dropped frame count equals one full loop (len(word) frames ->
+        # len(word) distinct blocks, the (len+1)-th coincident)
+        closes = len(frames) == 4 * (1 + 2 * n)
+        cubes = []
+        for R, t in frames:
+            cubes += [tuple(np.round(R @ np.array(p, float) + t)
+                            .astype(int)) for p in octo]
+        disjoint = len(cubes) == len(set(cubes))
+        good = closes and disjoint
+        print(f"overlap SL (a h^{2 * n})^4: blocks={len(frames)} "
+              f"closes={closes} disjoint={disjoint} "
+              f"{'ok' if good else 'OVERLAP'}")
+        ok = ok and good
+    for e in 'ahstdy':
+        b0, b1 = _sl_frames(e)
+        c0 = {tuple(np.round(b0[0] @ np.array(p, float) + b0[1])
+                    .astype(int)) for p in octo}
+        c1 = {tuple(np.round(b1[0] @ np.array(p, float) + b1[1])
+                    .astype(int)) for p in octo}
+        good = len(c0 & c1) == 0
+        print(f"overlap SL engagement {e}: 2-block disjoint={good}")
+        ok = ok and good
+
+    # Bisquare p4 layer: non-convex roofs, so overlap is tested by a
+    # ray-cast point-in-mesh coverage sample -- the interlocking layer
+    # must have NO interpenetration (gaps are allowed: the roof
+    # valleys make it a tented layer, not a solid fill).
+    def _inside(P, V, tri, d):
+        cnt = np.zeros(len(P), int)
+        for f in tri:
+            a, e1, e2 = V[f[0]], V[f[1]] - V[f[0]], V[f[2]] - V[f[0]]
+            h = np.cross(d, e2)
+            det = e1 @ h
+            if abs(det) < 1e-12:
+                continue
+            s = P - a
+            u = (s @ h) / det
+            q = np.cross(s, e1)
+            v = (q @ d) / det
+            tt = (q @ e2) / det
+            cnt += ((u >= -1e-9) & (u <= 1 + 1e-9) & (v >= -1e-9) &
+                    (u + v <= 1 + 1e-9) & (tt > 1e-9))
+        return cnt % 2 == 1
+
+    bcells = build_bisquare(4, 4)
+    d = np.array((0.5123, 0.311, 0.8007))
+    d = d / np.linalg.norm(d)
+    lo = np.min([c[1].min(axis=0) for c in bcells], axis=0)
+    hi = np.max([c[1].max(axis=0) for c in bcells], axis=0)
+    rng2 = np.random.RandomState(1)
+    P = lo + (hi - lo) * rng2.uniform(size=(1500, 3))
+    P[:, 2] = rng2.uniform(0.05, 0.95, 1500)
+    cov = np.zeros(len(P), int)
+    for _, V, F, _fr, _c in bcells:
+        cov += _inside(P, np.asarray(V), F, d)
+    overlaps = int((cov > 1).sum())
+    print(f"overlap BISQUARE p4 layer: interpenetrations={overlaps} "
+          f"{'ok' if overlaps == 0 else 'OVERLAP'}")
+    ok = ok and overlaps == 0
+
+    # Bisymmetric hendecahedron: the cell is a closed 11-hedron of
+    # volume 16, and the grown cluster must not interpenetrate.
+    be = closed_bad_edges(_HENDECA_V, _HENDECA_F)
+
+    def _convex_volume(V, F):           # winding-independent (convex)
+        V = np.asarray(V)
+        c = V.mean(axis=0)
+        vol = 0.0
+        for f in F:
+            p = V[f]
+            fc = p.mean(axis=0)
+            n = np.cross(p[1] - p[0], p[2] - p[0])
+            n = n / np.linalg.norm(n)
+            if np.dot(n, fc - c) < 0:
+                n = -n
+            cs = np.zeros(3)             # positive face area (magnitude)
+            for i in range(len(f)):
+                cs = cs + np.cross(p[i] - fc, p[(i + 1) % len(f)] - fc)
+            area = np.linalg.norm(cs) / 2
+            vol += area * np.dot(n, fc) / 3
+        return abs(vol)
+
+    hv = _convex_volume(_HENDECA_V, _HENDECA_F)
+    good = be == 0 and abs(hv - 16.0) < 1e-6 and len(_HENDECA_F) == 11
+    print(f"hendecahedron cell: bad_edges={be} faces={len(_HENDECA_F)} "
+          f"vol={hv:.3f} {'ok' if good else 'BAD'}")
+    ok = ok and good
+    hcells = build_hendeca(48)
+    hverts = [np.asarray(V) for _, V, _f, _fr, _c in hcells]
+    hbad = 0
+    for a in range(len(hverts)):
+        for b in range(a + 1, len(hverts)):
+            if np.linalg.norm(hverts[a].mean(0) - hverts[b].mean(0)) \
+                    < 5.0 and _convex_overlap(hverts[a], hverts[b],
+                                              _HENDECA_F, _HENDECA_F):
+                hbad += 1
+    print(f"overlap HENDECA cluster: cells={len(hcells)} "
+          f"interpenetrations={hbad} {'ok' if hbad == 0 else 'OVERLAP'}")
+    ok = ok and hbad == 0
+
+    # the boat motif + lattice must fill space (coverage exactly one)
+
+    def _in_cell(p, W):
+        cc = W.mean(axis=0)
+        for f in _HENDECA_F:
+            q = W[f]
+            n = np.cross(q[1] - q[0], q[2] - q[0])
+            n = n / np.linalg.norm(n)
+            d = np.dot(n, q[0])
+            if np.dot(n, cc) > d:
+                n, d = -n, -d
+            if np.dot(n, p) - d > 1e-9:
+                return False
+        return True
+
+    tiles = []
+    for R, t in _HENDECA_MOTIF:
+        for i in range(-3, 4):
+            for j in range(-3, 4):
+                for k in range(-3, 4):
+                    tiles.append(_HENDECA_V @ R.T + (t + i * _HENDECA_L[0]
+                                 + j * _HENDECA_L[1] + k * _HENDECA_L[2]))
+    tcen = [W.mean(axis=0) for W in tiles]
+    rngh = np.random.RandomState(7)
+    Ph = rngh.uniform(-4.0, 4.0, (2000, 3))
+    hg = ho = 0
+    for p in Ph:
+        cnt = sum(1 for W, c in zip(tiles, tcen)
+                  if np.linalg.norm(c - p) < 2.5 and _in_cell(p, W))
+        if cnt == 0:
+            hg += 1
+        elif cnt > 1:
+            ho += 1
+    good = hg == 0 and ho == 0
+    print(f"tiling HENDECA boat+lattice: gaps={hg} overlaps={ho} "
+          f"{'ok' if good else 'FAIL'}")
     ok = ok and good
 
     # Escher: every plane section must tile (coverage exactly 1)
@@ -1522,5 +1912,7 @@ def _selftest():
         print(f"escher tiling {prof}: coverage_one={good}")
         ok = ok and good
 
-    print("RESULT: OK" if ok else "RESULT: FAIL")
+    if not ok:
+        raise AssertionError("interlocking self-test failed")
+    print("RESULT: OK")
     return ok
