@@ -45,6 +45,8 @@ _MODULE_NAMES = [
     'space_curve_generator',
     'oloid_generator',
     'sphericon_generator',
+    'steinmetz_generator',
+    'orbis_generator',
     'monostatic_body_generator',
     'constant_width_generator',
     'prime_knot_generator',
@@ -261,6 +263,24 @@ class VIEW3D_MT_math_art_weaves(bpy.types.Menu):
         _op(lay, "mesh.turks_head_add", icon='CURVE_NCIRCLE')
 
 
+class VIEW3D_MT_math_art_rollers(bpy.types.Menu):
+    bl_idname = "VIEW3D_MT_math_art_rollers"
+    bl_label = "Rollers"
+
+    def draw(self, context):
+        lay = self.layout
+        # non-spherical shapes that roll ("rolloids"): rollers of
+        # constant width, developable rollers, and balancing solids
+        _op(lay, "mesh.oloid_add", icon='MESH_CAPSULE')
+        _op(lay, "mesh.sphericon_add", icon='MESH_CAPSULE')
+        _op(lay, "mesh.steinmetz_add", icon='MESH_CYLINDER')
+        _op(lay, "mesh.orbis_add", icon='MESH_TORUS')
+        _op(lay, "mesh.constant_width_add", icon='MESH_CIRCLE')
+        _op(lay, "mesh.monostatic_body_add", text="Monostatic Body",
+            icon='MESH_UVSPHERE')
+        _op(lay, "mesh.rolling_knot_add", icon='PHYSICS')
+
+
 class VIEW3D_MT_math_art_odds(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_math_art_odds"
     bl_label = "Odds & Ends"
@@ -271,9 +291,11 @@ class VIEW3D_MT_math_art_odds(bpy.types.Menu):
         _op(lay, "mesh.twisted_torus_add", icon='MESH_TORUS')
         _op(lay, "mesh.oloid_add", icon='MESH_CAPSULE')
         _op(lay, "mesh.sphericon_add", icon='MESH_CAPSULE')
+        _op(lay, "mesh.steinmetz_add", icon='MESH_CYLINDER')
+        _op(lay, "mesh.orbis_add", icon='MESH_TORUS')
+        _op(lay, "mesh.constant_width_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.monostatic_body_add", text="Monostatic Body",
             icon='MESH_UVSPHERE')
-        _op(lay, "mesh.constant_width_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.polytwister_add", icon='MESH_TORUS')
         _op(lay, "mesh.hyperbolic_honeycomb_add", icon='META_BALL')
         _op(lay, "mesh.stereographic_add", icon='LIGHT_POINT')
@@ -338,6 +360,7 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.menu("VIEW3D_MT_math_art_knots", icon='FORCE_VORTEX')
         lay.menu("VIEW3D_MT_math_art_weaves", icon='MOD_LATTICE')
         lay.menu("VIEW3D_MT_math_art_patterns", icon='MESH_GRID')
+        lay.menu("VIEW3D_MT_math_art_rollers", icon='MESH_CAPSULE')
         lay.menu("VIEW3D_MT_math_art_odds", icon='MESH_TORUS')
         lay.separator()
         if hasattr(bpy.types, 'OBJECT_OT_symmetric_sculpture_add'):
@@ -352,8 +375,8 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
 _MENUS = (VIEW3D_MT_math_art_minimal, VIEW3D_MT_math_art_polyhedra,
           VIEW3D_MT_math_art_fractals, VIEW3D_MT_math_art_knots,
           VIEW3D_MT_math_art_weaves, VIEW3D_MT_math_art_patterns,
-          VIEW3D_MT_math_art_odds, VIEW3D_MT_math_art_styles,
-          VIEW3D_MT_math_art_add)
+          VIEW3D_MT_math_art_rollers, VIEW3D_MT_math_art_odds,
+          VIEW3D_MT_math_art_styles, VIEW3D_MT_math_art_add)
 
 
 def _menu_func(self, context):
