@@ -326,6 +326,13 @@ def gamma_curve(preset, n, colat_deg, lobes, amp_deg, ecc):
         # (2, lobes) winding: colatitude modulated as longitude winds
         beta = np.clip(b0 + amp * np.cos(lobes * s), 0.06, pi - 0.06)
         lam = 2.0 * s
+    elif preset == 'BAND':
+        # OPEN arc of a meridian -> Hopf band (an annulus whose two
+        # boundary fibres form a Hopf link). Endpoints included.
+        lo = max(0.06, b0 - amp)
+        hi = min(pi - 0.06, b0 + amp)
+        beta = np.linspace(lo, hi, n)
+        lam = np.zeros_like(beta)
     elif preset == 'ELLIPSE':
         a = math.sin(b0)
         bb = math.sin(b0) * max(0.05, 1.0 - ecc)
@@ -351,11 +358,14 @@ def _enclosed_area(gamma_pts):
     return float(np.sum((1.0 - np.cos(beta)) * dlam))
 
 
-def build_hopf_torus(gamma_pts, m_psi, fit_radius=1.0, max_radius=40.0):
+def build_hopf_torus(gamma_pts, m_psi, closed=True, fit_radius=1.0,
+                     max_radius=40.0):
     """Mesh the Hopf torus h^{-1}(gamma): each of the N curve samples
     contributes a fibre circle of `m_psi` points (the Hopf orbit of a
-    lift), joined into a closed quad torus.  Returns (verts, faces,
-    area) with verts centred and scaled to the unit cube."""
+    lift), joined into a quad grid.  `closed` wraps the curve direction
+    into a torus; `closed=False` leaves an open annulus (a Hopf band).
+    Returns (verts, faces, area) with verts centred and scaled to the
+    unit cube."""
     import numpy as np
     N, M = len(gamma_pts), m_psi
     psi = np.linspace(0.0, 2.0 * pi, M, endpoint=False)
@@ -378,7 +388,8 @@ def build_hopf_torus(gamma_pts, m_psi, fit_radius=1.0, max_radius=40.0):
     scale = (fit_radius / ref) if ref > 1e-9 else 1.0
     verts = (verts - center) * scale
     faces = []
-    for i in range(N):
+    rows = N if closed else N - 1
+    for i in range(rows):
         i1 = (i + 1) % N
         for j in range(M):
             j1 = (j + 1) % M
@@ -577,7 +588,10 @@ if _IN_BLENDER:
                    ('WAVY', "Wavy (m-lobed)", "m-fold undulating "
                     "closed curve -> m-fold symmetric Hopf torus"),
                    ('ELLIPSE', "Ellipse", "squashed loop"),
-                   ('TREFOIL', "Trefoil-like", "doubly-wound curve")],
+                   ('TREFOIL', "Trefoil-like", "doubly-wound curve"),
+                   ('BAND', "Hopf Band", "open meridian arc -> "
+                    "annulus whose two boundary fibres are a Hopf "
+                    "link (a Seifert surface for it)")],
             default='WAVY')
         n_curve: IntProperty(
             name="Curve Samples", default=200, min=12, max=2000,
@@ -606,7 +620,8 @@ if _IN_BLENDER:
             import numpy as np
             gamma = gamma_curve(self.preset, self.n_curve, self.colat,
                                 self.lobes, self.amp, self.ecc)
-            verts, faces, area = build_hopf_torus(gamma, self.m_psi)
+            verts, faces, area = build_hopf_torus(
+                gamma, self.m_psi, closed=(self.preset != 'BAND'))
             verts = (np.asarray(verts) * self.scale).tolist()
             name = f"Hopf Torus ({self.preset.title()})"
             me = bpy.data.meshes.new(name)
@@ -638,6 +653,7 @@ if _IN_BLENDER:
             lay.prop(self, 'colat')
             if self.preset in ('WAVY', 'TREFOIL'):
                 lay.prop(self, 'lobes')
+            if self.preset in ('WAVY', 'TREFOIL', 'BAND'):
                 lay.prop(self, 'amp')
             if self.preset == 'ELLIPSE':
                 lay.prop(self, 'ecc')
@@ -734,6 +750,14 @@ def _selftest():
         print(f"torus {preset}: curve unit dev={gunit:.1e} "
               f"verts={len(V)} faces={len(F)} area={area:.3f} "
               f"{'OK' if ok else 'BAD'}")
+    # Hopf band: open arc -> annulus with (N-1)*M faces
+    gb = gamma_curve('BAND', 100, 90.0, 1, 60.0, 0.0)
+    Vb, Fb, _ = build_hopf_torus(gb, 40, closed=False)
+    ok = len(Vb) == 100 * 40 and len(Fb) == 99 * 40
+    ok_all = ok_all and ok
+    print(f"hopf band: verts={len(Vb)} faces={len(Fb)} "
+          f"(want {99 * 40}) {'OK' if ok else 'BAD'}")
+
     # latitude-circle enclosed area check (beta = 60 deg)
     gc = gamma_curve('CIRCLE', 400, 60.0, 1, 0.0, 0.0)
     a_num = _enclosed_area(gc)
