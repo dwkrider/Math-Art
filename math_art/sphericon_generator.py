@@ -23,6 +23,11 @@
 # edge-midpoint -- the profile is sampled at every polygon vertex AND
 # every edge midpoint so the two halves weld exactly along the seam.
 #
+# The `bulge` option bows the straight cone sides outward (a convex
+# "femisphere" -- a name the Canadian wood turner R. P. Rand coined for
+# a sphericon whose cone sides are curved) or inward, while leaving the
+# polygon vertices fixed so the seam weld is unaffected.
+#
 # References:
 #   - David Swart, "Arcs on Spheres and Snakes on Planes", Bridges 2024
 #     (the sphericon = solid of revolution of a regular polygon, halved
@@ -47,7 +52,7 @@ bl_info = {
 }
 
 import math
-from math import sin, cos, pi
+from math import sin, cos, pi, sqrt
 
 
 def _vkey(p):
@@ -83,13 +88,19 @@ class _TagMesh:
             self.tags.append(tag)
 
 
-def _profile(n, detail=2):
+def _profile(n, detail=2, bulge=0.0):
     """Right-hand profile (r >= 0) of a regular n-gon revolved about a
     symmetry axis, top apex to bottom axis-point, as a list of
     (band_index, r, z).  Each polygon edge is split into `detail`
     steps (>=2, even) so vertices *and* midpoints are sampled; the odd
     half-edge at the bottom gets detail/2 steps to keep the sampling
-    uniform around the polygon (needed for an exact seam weld)."""
+    uniform around the polygon (needed for an exact seam weld).
+
+    `bulge` bows each straight edge out (>0, convex "femisphere") or in
+    (<0, concave) by a quadratic hump perpendicular to the edge, largest
+    at the midpoint and zero at the polygon vertices -- so the vertices
+    (hence the seam weld) are untouched.  bulge = 0 is the plain
+    straight-sided (poly)sphericon."""
     detail = max(2, detail - (detail % 2))     # force even, >= 2
     odd = (n % 2 == 1)
     last = (n - 1) // 2 if odd else n // 2
@@ -101,20 +112,32 @@ def _profile(n, detail=2):
     pts = [(0, V[0][0], V[0][1])]              # top apex, band 0
     band = 0
     for (p0, p1, steps) in segs:
+        dr, dz = p1[0] - p0[0], p1[1] - p0[1]
+        elen = sqrt(dr * dr + dz * dz)
+        # outward edge normal in the (r, z) plane (points away from axis)
+        nr, nz = (dz / elen, -dr / elen) if elen > 1e-12 else (0.0, 0.0)
+        if nr < 0.0:
+            nr, nz = -nr, -nz
         for s in range(1, steps + 1):
             t = s / steps
-            pts.append((band, p0[0] + (p1[0] - p0[0]) * t,
-                        p0[1] + (p1[1] - p0[1]) * t))
+            r = p0[0] + dr * t
+            z = p0[1] + dz * t
+            if bulge:
+                w = bulge * elen * (1.0 - (2.0 * t - 1.0) ** 2)
+                r += nr * w
+                z += nz * w
+            pts.append((band, r, z))
         band += 1
     return pts
 
 
-def build_sphericon(sides=4, steps=1, segments=96, scale=1.0):
+def build_sphericon(sides=4, steps=1, segments=96, scale=1.0, bulge=0.0):
     """Watertight (n, k) polysphericon.  `sides` = n (>=3), `steps` = k
     (the half is turned by k*360/n degrees), `segments` = angular
-    resolution over a half turn.  Returns (verts, faces, band_ids)."""
+    resolution over a half turn.  `bulge` > 0 curves the cone sides
+    outward (a "femisphere").  Returns (verts, faces, band_ids)."""
     n = max(3, int(sides))
-    prof = _profile(n)
+    prof = _profile(n, bulge=bulge)
     alpha = (int(steps) % n) * 2.0 * pi / n
     ca, sa = cos(alpha), sin(alpha)
     seg = max(6, int(segments))
@@ -212,10 +235,14 @@ if _IN_BLENDER:
             name="Scale", default=1.0, min=0.01, max=100.0,
             description="Multiplier on the normalized size (1.0 = a "
                         "2 m cube, centered on the origin)")
+        bulge: FloatProperty(
+            name="Side Curve", default=0.0, min=-0.5, max=0.5,
+            description="Curve the cone sides: 0 = straight sphericon, "
+                        "> 0 = convex 'femisphere', < 0 = concave")
 
         def execute(self, context):
             verts, faces, tags = build_sphericon(
-                self.sides, self.steps, self.segments)
+                self.sides, self.steps, self.segments, bulge=self.bulge)
 
             # centre on the bounding box and fit a 2 m cube * scale
             xs = [v[0] for v in verts]
@@ -290,6 +317,7 @@ if _IN_BLENDER:
             lay.prop(self, 'segments')
             lay.prop(self, 'coloring')
             lay.prop(self, 'smooth_shading')
+            lay.prop(self, 'bulge')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):

@@ -88,15 +88,17 @@ def build_oloid(segments=96, scale=1.0):
     return m.verts, m.faces
 
 
-def roller_circles(segments=96, scale=1.0):
-    """Point cloud of the two-circle roller: two unit circles in
-    perpendicular planes, centres sqrt(2) apart (hulled in Blender)."""
+def roller_circles(segments=96, scale=1.0, aspect=1.0):
+    """Point cloud of the two-circle roller / wobbler: two circles in
+    perpendicular planes, centres sqrt(2) apart (hulled in Blender).
+    `aspect` != 1 stretches each disc along the separation axis into an
+    ellipse -- David Hirsch's "ellipsoloid" variant."""
     d = sqrt(2.0) / 2.0
     pts = []
     for i in range(segments):
         a = 2 * pi * i / segments
-        pts.append((cos(a) * scale, (-d + sin(a)) * scale, 0.0))
-        pts.append((0.0, (d + cos(a)) * scale, sin(a) * scale))
+        pts.append((cos(a) * scale, (-d + sin(a) * aspect) * scale, 0.0))
+        pts.append((0.0, (d + cos(a) * aspect) * scale, sin(a) * scale))
     return pts
 
 
@@ -197,9 +199,10 @@ if _IN_BLENDER:
                     "Convex hull of two perpendicular circles "
                     "through each other's centre (exact ruled "
                     "surface, Schatz 1929)"),
-                   ('ROLLER', "Two-Circle Roller",
+                   ('ROLLER', "Two-Circle Roller / Wobbler",
                     "Circle centres sqrt(2) apart: rolls with its "
-                    "centre of mass at constant height"),
+                    "centre of mass at constant height. Set Disc "
+                    "Aspect != 1 for Hirsch's elliptical 'ellipsoloid'"),
                    ('ANTIOLOID', "Anti-Oloid",
                     "Ruled band between the oloid's two circles, "
                     "sweeping through the interior: two-sided and "
@@ -226,6 +229,11 @@ if _IN_BLENDER:
             name="Phase", default=0.0, min=-0.5, max=0.5,
             description="Ruling offset around the second circle "
                         "(fraction of a turn)")
+        aspect: FloatProperty(
+            name="Disc Aspect", default=1.0, min=0.25, max=4.0,
+            description="Two-circle roller: 1.0 = round discs "
+                        "(wobbler); != 1 stretches them to ellipses "
+                        "(ellipsoloid)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -268,7 +276,8 @@ if _IN_BLENDER:
 
             me = bpy.data.meshes.new("Oloid")
             if self.kind == 'ROLLER':
-                pts = _fit(roller_circles(self.segments, self.scale))
+                pts = _fit(roller_circles(self.segments, self.scale,
+                                          self.aspect))
                 bm = bmesh.new()
                 vs = [bm.verts.new(p) for p in pts]
                 bmesh.ops.convex_hull(bm, input=vs)
@@ -310,6 +319,8 @@ if _IN_BLENDER:
                     lay.prop(self, k)
             elif self.kind == 'ANTIOLOID':
                 lay.prop(self, 'phase')
+            elif self.kind == 'ROLLER':
+                lay.prop(self, 'aspect')
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):

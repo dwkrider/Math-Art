@@ -46,6 +46,7 @@ _MODULE_NAMES = [
     'oloid_generator',
     'sphericon_generator',
     'steinmetz_generator',
+    'orbis_generator',
     'monostatic_body_generator',
     'constant_width_generator',
     'prime_knot_generator',
@@ -270,9 +271,11 @@ class VIEW3D_MT_math_art_rollers(bpy.types.Menu):
         _op(lay, "mesh.oloid_add", icon='MESH_CAPSULE')
         _op(lay, "mesh.sphericon_add", icon='MESH_CAPSULE')
         _op(lay, "mesh.steinmetz_add", icon='MESH_CYLINDER')
+        _op(lay, "mesh.orbis_add", icon='MESH_TORUS')
         _op(lay, "mesh.constant_width_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.monostatic_body_add", text="Monostatic Body",
             icon='MESH_UVSPHERE')
+        _op(lay, "mesh.rolling_knot_add", icon='PHYSICS')
 
 
 class VIEW3D_MT_math_art_odds(bpy.types.Menu):
