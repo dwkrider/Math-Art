@@ -242,6 +242,10 @@ OPS = [
         kind='MOORE3D', order=3)),
     ("oloid", lambda: bpy.ops.mesh.oloid_add(kind='OLOID')),
     ("oloid roller", lambda: bpy.ops.mesh.oloid_add(kind='ROLLER')),
+    ("orbis", lambda: bpy.ops.mesh.orbis_add()),
+    ("polytwister", lambda: bpy.ops.mesh.polytwister_add()),
+    ("hopf torus", lambda: bpy.ops.mesh.hopf_torus_add()),
+    ("hopf fibration", lambda: bpy.ops.curve.hopf_fibration_add()),
     ("prime knot", lambda: bpy.ops.curve.prime_knot_add(
         knot='6_2', iters=60)),
     ("torus knot", lambda: bpy.ops.curve.torus_knot_add(p=3, q=5)),
