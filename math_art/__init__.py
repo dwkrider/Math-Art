@@ -237,10 +237,8 @@ class VIEW3D_MT_math_art_knots(bpy.types.Menu):
         _op(lay, "curve.substitution_knot_add", icon='CURVE_NCURVE')
         _op(lay, "curve.math_link_add", icon='LINKED')
         _op(lay, "mesh.antoine_add", icon='LINKED')
-        if hasattr(bpy.types, 'CURVE_OT_attractor_add'):
-            lay.operator_menu_enum("curve.attractor_add", "preset",
-                                   text="Strange Attractor",
-                                   icon='RNDCURVE')
+        _op(lay, "curve.attractor_add", text="Strange Attractor",
+            icon='RNDCURVE')
         _op(lay, "curve.dual_helix_add", icon='MOD_SCREW')
         _op(lay, "mesh.rolling_knot_add", icon='PHYSICS')
 
