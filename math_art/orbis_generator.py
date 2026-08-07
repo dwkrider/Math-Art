@@ -1,19 +1,21 @@
 
 # Orbis / Holey Roller Generator for Blender
 #
-# Two congruent tori (rings) sharing a centre but tilted relative to
-# each other roll together as a single object with a wobbling,
-# meandering path.  Peer Clahsen designed such a two-ring play object,
-# the "Orbis", for the Swiss Naef toy company; Kenneth Brecher and
-# Randy Rhine built a large wooden sculptural version they call the
-# "Holey Roller", two tori joined at about 45 degrees.
+# Two LINKED tori (rings) -- each threaded through the other's hole,
+# like two links of a chain -- roll together as a single object with a
+# wobbling, meandering path.  Peer Clahsen designed such a two-ring play
+# object, the "Orbis", for the Swiss Naef toy company; Kenneth Brecher
+# and Randy Rhine built a large wooden sculptural version they call the
+# "Holey Roller".
 #
-# This generator sweeps two tori (major radius R, tube radius r) and
-# tilts the second by `tilt` degrees about a shared diameter.  The two
-# rings interpenetrate near their crossings, so the result is a single
-# object with two holes that rolls as one -- as with the compound
-# polyhedra, the pieces are left as an immersed pair rather than
-# Boolean-merged.
+# The two ring circles are placed exactly like the oloid's two circles:
+# radius R, centres R/2 either side of the origin in perpendicular
+# planes, so each circle passes through the other's centre and the rings
+# are Hopf-linked.  A tube of radius r is swept around each (r < R/2, so
+# a ring passes cleanly through the other's hole without the tubes
+# touching); `angle` may tilt the second ring about the shared axis.
+# The linked pair is inseparable, so it rolls as one; as with the
+# compound polyhedra it is left as an immersed pair, not Boolean-merged.
 #
 # References:
 #   - P. Clahsen, "Objeux", Naef Herstellung und Verlag, 1967/1976.
@@ -36,9 +38,10 @@ import math
 from math import cos, sin, pi, radians
 
 
-def _torus(R, r, nu, nv, rot_x=0.0):
-    """Torus (axis Z), optionally rotated by rot_x radians about X.
-    Returns (verts, faces) with local vertex indices from 0."""
+def _torus(R, r, nu, nv, center=(0.0, 0.0, 0.0), axis='Z', rot_x=0.0):
+    """Tube of radius r around a circle of radius R (in the xy-plane for
+    axis 'Z', the xz-plane for axis 'Y'), shifted by `center` and then
+    rotated by rot_x radians about the X axis.  Local indices from 0."""
     ca, sa = cos(rot_x), sin(rot_x)
     verts = []
     for i in range(nu):
@@ -47,9 +50,14 @@ def _torus(R, r, nu, nv, rot_x=0.0):
         for j in range(nv):
             v = 2.0 * pi * j / nv
             rr = R + r * cos(v)
-            x = rr * cu
-            y = rr * su
-            z = r * sin(v)
+            zz = r * sin(v)
+            if axis == 'Z':
+                x, y, z = rr * cu, rr * su, zz       # ring in xy-plane
+            else:
+                x, y, z = rr * cu, zz, rr * su       # ring in xz-plane
+            x += center[0]
+            y += center[1]
+            z += center[2]
             verts.append((x, y * ca - z * sa, y * sa + z * ca))
 
     def vid(i, j):
@@ -63,14 +71,21 @@ def _torus(R, r, nu, nv, rot_x=0.0):
     return verts, faces
 
 
-def build_orbis(major=1.0, tube=0.28, tilt=45.0, nu=96, nv=32):
-    """Two tori sharing a centre, the second tilted `tilt` degrees about
-    the X axis; combined into one mesh (an immersed pair)."""
-    v1, f1 = _torus(major, tube, nu, nv, 0.0)
-    v2, f2 = _torus(major, tube, nu, nv, radians(tilt))
-    off = len(v1)
-    verts = v1 + v2
-    faces = f1 + [[k + off for k in fc] for fc in f2]
+def build_orbis(major=1.0, tube=0.28, angle=0.0, nu=96, nv=32):
+    """Two LINKED tori (a Hopf link of solid rings): the two ring
+    circles are placed like the oloid's two circles -- radius R, centres
+    R/2 either side of the origin in perpendicular planes -- so each ring
+    passes through the other's central hole.  `angle` tilts the second
+    ring about the shared X axis.  Combined into one mesh (an immersed,
+    inseparable pair that rolls as one)."""
+    R = major
+    c = 0.5 * R                                # centres 2c = R apart
+    vA, fA = _torus(R, tube, nu, nv, center=(-c, 0.0, 0.0), axis='Z')
+    vB, fB = _torus(R, tube, nu, nv, center=(c, 0.0, 0.0), axis='Y',
+                    rot_x=radians(angle))
+    off = len(vA)
+    verts = vA + vB
+    faces = fA + [[k + off for k in fc] for fc in fB]
     return verts, faces
 
 
@@ -93,11 +108,14 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         tube: FloatProperty(
-            name="Tube Radius", default=0.28, min=0.02, max=0.9,
-            description="Ring thickness (fraction of the ring radius)")
-        tilt: FloatProperty(
-            name="Tilt", default=45.0, min=5.0, max=90.0,
-            description="Angle between the two rings (degrees)")
+            name="Tube Radius", default=0.28, min=0.02, max=0.49,
+            description="Ring thickness (fraction of the ring radius; "
+                        "< 0.5 so the rings link without the tubes "
+                        "touching)")
+        angle: FloatProperty(
+            name="Ring Tilt", default=0.0, min=-90.0, max=90.0,
+            description="Tilt of the second ring about the shared axis "
+                        "(0 = perpendicular linked rings)")
         major_segments: IntProperty(
             name="Ring Segments", default=96, min=12, max=512)
         tube_segments: IntProperty(
@@ -107,7 +125,7 @@ if _IN_BLENDER:
 
         def execute(self, context):
             verts, faces = build_orbis(
-                1.0, self.tube, self.tilt,
+                1.0, self.tube, self.angle,
                 self.major_segments, self.tube_segments)
 
             def _fit(vs):
@@ -149,7 +167,7 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'tube')
-            lay.prop(self, 'tilt')
+            lay.prop(self, 'angle')
             lay.prop(self, 'major_segments')
             lay.prop(self, 'tube_segments')
             lay.prop(self, 'scale')
@@ -172,9 +190,9 @@ if _IN_BLENDER:
 
 def _selftest():
     from collections import Counter
-    v, f = build_orbis(1.0, 0.28, 45.0, 64, 24)
+    v, f = build_orbis(1.0, 0.28, 0.0, 64, 24)
     # each torus is a watertight torus (every edge shared by two faces,
-    # chi = 0); the pair has chi = 0 and two components.
+    # chi = 0); the linked pair has chi = 0 and two components.
     cnt = Counter()
     for fc in f:
         n = len(fc)
