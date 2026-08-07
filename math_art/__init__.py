@@ -275,6 +275,7 @@ class VIEW3D_MT_math_art_odds(bpy.types.Menu):
             icon='MESH_UVSPHERE')
         _op(lay, "mesh.constant_width_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.polytwister_add", icon='MESH_TORUS')
+        _op(lay, "mesh.hyperbolic_honeycomb_add", icon='META_BALL')
         _op(lay, "mesh.stereographic_add", icon='LIGHT_POINT')
         _op(lay, "mesh.orbifold_sphere_add", icon='MOD_MIRROR')
         _op(lay, "mesh.bubble_cluster_add", icon='SPHERE')
