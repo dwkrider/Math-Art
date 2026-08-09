@@ -188,6 +188,27 @@ def edge_stats(faces):
     return (int(np.sum(counts == 1)), int(np.sum(counts > 2)))
 
 
+def fill_pinholes(cells, res, need=5):
+    """Fill empty cells that have `need` or more of their six face
+    neighbours occupied.
+
+    A finite sample leaves isolated gaps inside a solid region; they
+    are sampling noise, and each one is a void a slicer would try to
+    print around.  The threshold is deliberately conservative -- five
+    of six means the cell is all but enclosed -- so this closes
+    pinholes without dilating the set or bridging a genuine thin gap
+    (which would inflate the volume, the trap with rasterising these
+    tiles)."""
+    g = np.zeros((res, res, res), dtype=bool)
+    g[cells[:, 0], cells[:, 1], cells[:, 2]] = True
+    n = np.zeros((res, res, res), dtype=np.int8)
+    for axis in (0, 1, 2):
+        for shift in (1, -1):
+            n += np.roll(g, shift, axis=axis)
+    g |= (~g) & (n >= int(need))
+    return np.argwhere(g).astype(np.int64)
+
+
 def _packer(pts, pad=2):
     """A collision-free integer key for lattice points, or None when
     the bounding box is too large to pack into an int64."""
@@ -502,7 +523,7 @@ def build_radix(preset='ABC_124', level=0, holes=0, custom=None,
                          "bounding box")
 
     if output == 'VOXEL':
-        cells = np.unique(idx, axis=0)
+        cells = fill_pinholes(np.unique(idx, axis=0), res)
         verts_i, faces = voxel_surface(cells)
         verts = lo + verts_i.astype(float) * s
         span = verts.max(axis=0) - verts.min(axis=0)
