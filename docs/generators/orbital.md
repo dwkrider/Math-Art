@@ -21,7 +21,10 @@ Hydrogenic atomic orbitals and LCAO molecular orbitals, drawn as isosurfaces of 
 | Bond Length | 1.4 | Diatomic nuclear separation in bohr (1.4 a₀ is H₂). Range 0.2-12. |
 | Hückel MO | 0 | Which of the six benzene π orbitals to draw, lowest energy first. Range 0-5. |
 | LCAO | `1s@0,0,-1.4 1; 1s@0,0,1.4 -1` | Custom combination: `orbital@x,y,z[:zeta] coefficient`, semicolon separated, positions in bohr. |
-| Enclosed Probability | 0.90 | Fraction of the electron density the isosurface encloses. Range 0.05-0.99. |
+| Display | Single Surface | One isosurface at the enclosed probability, or a **Probability Cloud** of nested transparent contours fading outward. |
+| Cloud Shells | 3 | Cloud mode: how many nested contours, each enclosing an even step of the density. Range 2-6. |
+| Outer Opacity | 0.18 | Cloud mode: opacity of the outermost shell; the inner ones are progressively more solid. Range 0.02-1. |
+| Enclosed Probability | 0.90 | Fraction of the electron density the isosurface encloses (in cloud mode, the fraction enclosed by the *outermost* shell). Range 0.05-0.99. |
 | Level Override | 0.0 | Raw $\|\psi\|$ contour value; 0 uses the enclosed probability instead. Range 0-10. |
 | Resolution | 96 | Sample grid resolution per axis; cost grows as the cube. Range 24-192. |
 | Box Override | 0.0 | Sample box half-width in bohr; 0 fits it to the orbital. Range 0-200. |
@@ -56,6 +59,12 @@ Renders of a selection of the presets:
 <td align="center"><img src="../images/variants/orbital__sp3.png" width="200"><br><sub>sp³ hybrid</sub></td>
 <td align="center"><img src="../images/variants/orbital__benzene.png" width="200"><br><sub>benzene π</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/orbital__cloud.png" width="200"><br><sub>π 2p<sub>x</sub> probability cloud</sub></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
 </table>
 
 ## How it works
@@ -77,6 +86,14 @@ since Blender ships no scipy. The factor $\rho^{\ell}e^{-\rho/2}$ is evaluated a
 The operator exposes **enclosed probability**, not a raw level. It samples $|\psi|^2$ on a coarse grid, sorts it descending and takes the contour at which the cumulative density reaches the requested fraction. Without this, one operator could not serve both 1s and 5g, whose peak amplitudes differ by orders of magnitude.
 
 The same pass also reports the box the contour actually needs, which is then used for the fine grid. This matters more than it sounds: an orbital's 99.9%-density radius is mostly empty space, and marching over it wastes the sample budget exactly where the nodes need it.
+
+### The probability cloud
+
+A single contour is a hard shell, which is exactly what an electron density is not. Cloud mode instead draws several **nested** contours — for three shells at 90%, the surfaces enclosing 30%, 60% and 90% of the density — and gives each its own transparent material, nearly solid at the core and a faint haze at the rim, so the falloff reads as a falloff.
+
+Two details make it work. All shells are marched over the **same** sample box and put through **one** centre-and-fit at the end; fitting each to the 2 m cube on its own would scale them to identical size and stack them exactly. And a single sampling pass yields every level at once, so choosing three contours costs no more than choosing one. Sign colouring is kept, so a cloud of an antibonding orbital has $2\times$shells material slots and each lobe still shows its phase.
+
+The transparency is set on the Principled BSDF's Alpha input, with the material's blend mode switched to blended — under whichever name the running Blender uses, since EEVEE Next renamed the switch in 4.2. Cycles honours the alpha directly.
 
 ### Meshing
 

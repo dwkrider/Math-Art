@@ -570,6 +570,9 @@ VARIANTS = {
          dict(mode='MOLECULAR', preset='WATER_LONE_PAIR')),
         ("benzene", "benzene pi",
          dict(mode='MOLECULAR', preset='BENZENE_PI', huckel_k=0)),
+        ("cloud", "pi 2p_x probability cloud",
+         dict(mode='MOLECULAR', preset='PI_2PX', display='CLOUD',
+              shells=3)),
     ]),
     "oloid": ("mesh.oloid_add", _V("kind",
         "OLOID=Oloid;ROLLER=Two-Circle Roller;ANTIOLOID=Anti-Oloid;"

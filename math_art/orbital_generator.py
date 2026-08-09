@@ -257,6 +257,38 @@ def evaluate_lcao(basis, X, Y, Z):
     return out
 
 
+def probability_levels(basis, box, probabilities, samples=64):
+    """The |psi| contours enclosing each of `probabilities` of the
+    electron density, plus the half-width of the box the OUTERMOST of
+    them needs.  Returns (levels, tight_half).
+
+    One sampling pass serves every level, which is what makes the
+    nested-shell cloud mode cost no more to choose than a single
+    surface does."""
+    g = np.linspace(-box, box, int(samples))
+    X, Y, Z = np.meshgrid(g, g, g, indexing='ij')
+    psi = np.abs(evaluate_lcao(basis, X, Y, Z))
+    p2 = (psi * psi).ravel()
+    order = np.argsort(p2)[::-1]
+    cum = np.cumsum(p2[order])
+    if cum[-1] <= 0.0:
+        return [0.0] * len(probabilities), box
+    levels = []
+    for p in probabilities:
+        idx = int(np.searchsorted(cum, float(p) * cum[-1]))
+        levels.append(float(np.sqrt(p2[order[min(idx,
+                                                 len(order) - 1)]])))
+    widest = min(levels)
+    inside = psi >= widest
+    if not np.any(inside):
+        return levels, box
+    reach = 0.0
+    for axis in ((1, 2), (0, 2), (0, 1)):
+        reach = max(reach,
+                    float(np.max(np.abs(g[np.any(inside, axis=axis)]))))
+    return levels, min(box, reach + 2.0 * (g[1] - g[0]))
+
+
 def probability_level(basis, box, probability=0.90, samples=64):
     """The |psi| contour enclosing `probability` of the electron
     density, plus the half-width of the box that contour actually
@@ -563,13 +595,18 @@ def build_orbital(mode='ATOMIC', n=2, l=1, m=0, zeta=1.0,
                   lcao="1s@0,0,-1.4 1; 1s@0,0,1.4 -1",
                   probability=0.90, isolevel=0.0, resolution=96,
                   box=0.0, largest_only=False, despeckle=0.005,
-                  scale=1.0):
+                  shells=1, scale=1.0):
     """Mesh one orbital.  Returns (verts, tris, face_sign, label, info).
 
     The field handed to marching tetrahedra is level - |psi|, which is
     negative inside the lobes; the extractor winds triangles along the
     field gradient, so that sign convention is what puts the normals
-    on the outside."""
+    on the outside.
+
+    With `shells` > 1 the orbital comes out as that many NESTED
+    contours -- the probability-cloud picture: each encloses an even
+    step of the electron density, and rendering them with decreasing
+    opacity outward reads as the density falling off."""
     if mode == 'ATOMIC':
         n, l = int(n), int(l)
         m = int(np.clip(int(m), -l, l))
@@ -595,43 +632,72 @@ def build_orbital(mode='ATOMIC', n=2, l=1, m=0, zeta=1.0,
         need += max((float(np.linalg.norm(b.centre)) for b in basis),
                     default=0.0)
 
+    nshell = max(1, int(shells))
+    # nested contours enclosing an even spread of the density, the
+    # outermost at the requested probability
+    probs = [probability * (i + 1) / nshell for i in range(nshell)]
     half = float(box) if box > 0.0 else 1.05 * need
-    level, tight = probability_level(basis, half, probability)
+    levels, tight = probability_levels(basis, half, probs)
     if isolevel > 0.0:
-        level, tight = float(isolevel), half
+        levels, tight = [float(isolevel)], half
+        probs = [probability]
     if box > 0.0:
         tight = half
     half = tight
-    if level <= 0.0:
+    if not levels or max(levels) <= 0.0:
         return (np.zeros((0, 3)), np.zeros((0, 3), dtype=np.int64),
                 np.zeros(0, dtype=int), label, {})
 
     mst = _toolkit()
     res = int(resolution)
-    verts, tris = mst.marching_tets(
-        lambda X, Y, Z: level - np.abs(evaluate_lcao(basis, X, Y, Z)),
-        (-half, -half, -half), (half, half, half), (res, res, res))
-    if not len(tris):
-        return (verts, tris, np.zeros(0, dtype=int), label, {})
+    # every shell is marched over the SAME box and put through ONE
+    # centre-and-fit at the end; fitting them individually would scale
+    # each to the 2 m cube separately and they would stop nesting
+    all_v, all_t, all_sign, all_shell = [], [], [], []
+    open_edges, base = 0, 0
+    for si, level in enumerate(levels):
+        if level <= 0.0:
+            continue
+        verts, tris = mst.marching_tets(
+            lambda X, Y, Z: level - np.abs(evaluate_lcao(basis,
+                                                         X, Y, Z)),
+            (-half, -half, -half), (half, half, half),
+            (res, res, res))
+        if not len(tris):
+            continue
+        open_edges += _boundary_edges(tris)
+        verts, tris = filter_components(verts, tris,
+                                        min_fraction=despeckle,
+                                        largest_only=largest_only)
+        if not len(tris):
+            continue
+        cen = verts[tris].mean(axis=1)
+        psi = evaluate_lcao(basis, cen[:, 0], cen[:, 1], cen[:, 2])
+        all_sign.append(np.where(psi >= 0.0, 1, -1))
+        all_shell.append(np.full(len(tris), si, dtype=int))
+        all_v.append(verts)
+        all_t.append(tris + base)
+        base += len(verts)
+    if not all_t:
+        return (np.zeros((0, 3)), np.zeros((0, 3), dtype=np.int64),
+                np.zeros(0, dtype=int), label, {})
 
-    open_edges = _boundary_edges(tris)
-    verts, tris = filter_components(verts, tris,
-                                    min_fraction=despeckle,
-                                    largest_only=largest_only)
-    if not len(tris):
-        return (verts, tris, np.zeros(0, dtype=int), label, {})
+    verts = np.vstack(all_v)
+    tris = np.vstack(all_t)
+    sign = np.concatenate(all_sign)
+    shell = np.concatenate(all_shell)
 
-    cen = verts[tris].mean(axis=1)
-    psi = evaluate_lcao(basis, cen[:, 0], cen[:, 1], cen[:, 2])
-    sign = np.where(psi >= 0.0, 1, -1)
-
-    ncomp = len(mesh_components(len(verts), tris))
+    # the outermost shell is the one whose lobe count is diagnostic
+    outer = tris[shell == shell.max()]
+    ncomp = len(mesh_components(len(verts), outer))
     cell = 2.0 * half / max(res, 1)
     if mode == 'ATOMIC':
-        want, gap = predicted_surfaces(n, l, m, zeta, level, half)
+        want, gap = predicted_surfaces(n, l, m, zeta, max(levels), half)
     else:
         want, gap = None, float('inf')
-    info = {'level': level, 'box': half, 'components': ncomp,
+    info = {'level': max(levels), 'levels': levels,
+            'probabilities': probs, 'shells': len(set(shell.tolist())),
+            'shell': shell, 'box': half, 'components': ncomp,
             'open_edges': open_edges, 'centres': centres,
             'bonds': bonds, 'basis': basis, 'cell': cell,
             'node_gap': gap, 'predicted': want,
@@ -744,20 +810,41 @@ if _IN_BLENDER:
     _PALETTE = {1: (0.85, 0.25, 0.20), -1: (0.20, 0.40, 0.85),
                 0: (0.75, 0.75, 0.78)}
 
-    def _material(kind):
-        name = {1: "Orbital psi +", -1: "Orbital psi -",
+    def _material(kind, alpha=1.0, suffix=""):
+        base = {1: "Orbital psi +", -1: "Orbital psi -",
                 0: "Orbital nuclei"}[kind]
+        name = base + suffix
         mat = bpy.data.materials.get(name)
         if mat is None:
             rgb = _PALETTE[kind]
             mat = bpy.data.materials.new(name)
-            mat.diffuse_color = (*rgb, 1.0)
+            mat.diffuse_color = (*rgb, alpha)
             mat.use_nodes = True
             bsdf = mat.node_tree.nodes.get("Principled BSDF")
             if bsdf is not None:
                 bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
                 bsdf.inputs["Roughness"].default_value = 0.45
+                if "Alpha" in bsdf.inputs:
+                    bsdf.inputs["Alpha"].default_value = alpha
+            if alpha < 1.0:
+                # EEVEE Next (4.2+) renamed the transparency switch;
+                # set whichever this build actually has
+                if hasattr(mat, 'surface_render_method'):
+                    mat.surface_render_method = 'BLENDED'
+                elif hasattr(mat, 'blend_method'):
+                    mat.blend_method = 'BLEND'
+                if hasattr(mat, 'show_transparent_back'):
+                    mat.show_transparent_back = True
+                if hasattr(mat, 'use_backface_culling'):
+                    mat.use_backface_culling = False
         return mat
+
+    def _shell_alpha(si, nshell, base_alpha):
+        """Innermost shell nearly opaque, outermost at `base_alpha`."""
+        if nshell <= 1:
+            return 1.0
+        t = si / float(nshell - 1)          # 0 inner .. 1 outer
+        return (1.0 - t) * min(1.0, base_alpha + 0.55) + t * base_alpha
 
     def _new_object(context, name, verts, faces, smooth=True):
         me = bpy.data.meshes.new(name)
@@ -852,6 +939,23 @@ if _IN_BLENDER:
         largest_only: BoolProperty(
             name="Largest Lobe Only", default=False,
             description="Discard all but the biggest connected piece")
+        display: EnumProperty(
+            name="Display",
+            items=[('SOLID', "Single Surface", "One isosurface at the "
+                                               "enclosed probability"),
+                   ('CLOUD', "Probability Cloud", "Nested transparent "
+                                                  "contours, fading "
+                                                  "outward as the "
+                                                  "density falls off")],
+            default='SOLID')
+        shells: IntProperty(
+            name="Cloud Shells", default=3, min=2, max=6,
+            description="How many nested contours the cloud has; each "
+                        "encloses an even step of the electron density")
+        cloud_alpha: FloatProperty(
+            name="Outer Opacity", default=0.18, min=0.02, max=1.0,
+            description="Opacity of the outermost shell; the inner "
+                        "ones are progressively more solid")
         despeckle: FloatProperty(
             name="Despeckle", default=0.005, min=0.0, max=0.2,
             description="Drop connected pieces smaller than this "
@@ -883,7 +987,9 @@ if _IN_BLENDER:
                     lcao=self.lcao, probability=self.probability,
                     isolevel=self.isolevel, resolution=self.resolution,
                     box=self.box, largest_only=self.largest_only,
-                    despeckle=self.despeckle, scale=self.scale)
+                    despeckle=self.despeckle, scale=self.scale,
+                    shells=(self.shells
+                            if self.display == 'CLOUD' else 1))
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -903,14 +1009,37 @@ if _IN_BLENDER:
             obj = _new_object(context, label, verts, faces,
                               smooth=self.smooth)
             me = obj.data
-            if self.sign_colors and len(me.polygons) == len(faces):
-                me.materials.append(_material(1))
-                me.materials.append(_material(-1))
-                me.materials.append(_material(0))
-                idx = [0 if s > 0 else 1 for s in sign]
-                idx += [2] * (len(faces) - nsurf)
-                me.polygons.foreach_set('material_index', idx)
-                me.update()
+            if len(me.polygons) == len(faces):
+                nsh = int(info.get('shells', 1))
+                shell = info.get('shell')
+                if self.display == 'CLOUD' and nsh > 1 and shell is not None:
+                    # one slot per (shell, sign): the innermost shell
+                    # is nearly solid, the outermost a faint haze
+                    slot, idx = {}, []
+                    for si in range(nsh):
+                        a = _shell_alpha(si, nsh, self.cloud_alpha)
+                        for s in ((1, -1) if self.sign_colors else (1,)):
+                            slot[(si, s)] = len(me.materials)
+                            me.materials.append(
+                                _material(s, alpha=a,
+                                          suffix=f" cloud {si + 1}"
+                                                 f"/{nsh}"))
+                    nuc = len(me.materials)
+                    me.materials.append(_material(0))
+                    for k in range(nsurf):
+                        s = int(sign[k]) if self.sign_colors else 1
+                        idx.append(slot[(int(shell[k]), s)])
+                    idx += [nuc] * (len(faces) - nsurf)
+                    me.polygons.foreach_set('material_index', idx)
+                    me.update()
+                elif self.sign_colors:
+                    me.materials.append(_material(1))
+                    me.materials.append(_material(-1))
+                    me.materials.append(_material(0))
+                    idx = [0 if s > 0 else 1 for s in sign]
+                    idx += [2] * (len(faces) - nsurf)
+                    me.polygons.foreach_set('material_index', idx)
+                    me.update()
             if self.thickness > 0:
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                 mod.thickness = self.thickness
@@ -929,11 +1058,20 @@ if _IN_BLENDER:
                             f"{info['node_gap']:.2f} a0 against a "
                             f"{info['cell']:.2f} a0 sample cell; "
                             f"raise Resolution")
-            self.report({'INFO'},
-                        f"{label}: {len(me.vertices)} verts, "
-                        f"{len(me.polygons)} faces, "
-                        f"{info.get('components', 0)} lobes, "
-                        f"|psi| = {info.get('level', 0.0):.4g}")
+            if self.display == 'CLOUD':
+                pcts = ", ".join(f"{100.0 * p:.0f}%"
+                                 for p in info.get('probabilities', ()))
+                self.report({'INFO'},
+                            f"{label}: {len(me.vertices)} verts, "
+                            f"{len(me.polygons)} faces, "
+                            f"{info.get('shells', 1)} shells enclosing "
+                            f"{pcts} of the density")
+            else:
+                self.report({'INFO'},
+                            f"{label}: {len(me.vertices)} verts, "
+                            f"{len(me.polygons)} faces, "
+                            f"{info.get('components', 0)} lobes, "
+                            f"|psi| = {info.get('level', 0.0):.4g}")
             return {'FINISHED'}
 
         def _append_skeleton(self, verts, faces, info):
@@ -976,6 +1114,10 @@ if _IN_BLENDER:
                 elif self.preset.startswith(('SIGMA', 'PI', 'DELTA')):
                     lay.prop(self, 'separation')
                 lay.prop(self, 'skeleton')
+            lay.prop(self, 'display')
+            if self.display == 'CLOUD':
+                lay.prop(self, 'shells')
+                lay.prop(self, 'cloud_alpha')
             lay.prop(self, 'probability')
             lay.prop(self, 'isolevel')
             for k in ('resolution', 'box', 'sign_colors', 'despeckle',
@@ -1205,6 +1347,40 @@ def _selftest():
             raise AssertionError(f"{label} produced non-finite verts")
         print(f"{label:40s}: {info['components']} lobes, "
               f"{len(T):6d} tris")
+
+    # ---- 9. probability cloud: the shells must actually nest --------
+    # each contour encloses more density than the one inside it, so its
+    # level is LOWER and its extent strictly LARGER.  All shells share
+    # one centre-and-fit, which is what keeps them concentric -- fitting
+    # each to the 2 m cube on its own would stack them exactly.
+    for kw in (dict(mode='ATOMIC', n=2, l=1, m=0),
+               dict(mode='MOLECULAR', preset='SIGMA_1S'),
+               dict(mode='MOLECULAR', preset='PI_STAR_2PX')):
+        V, T, S, label, info = build_orbital(resolution=56, shells=3,
+                                             probability=0.90, **kw)
+        if info['shells'] != 3:
+            raise AssertionError(f"{label} cloud has {info['shells']} "
+                                 f"shells, expected 3")
+        lv = info['levels']
+        if not all(a > b for a, b in zip(lv[:-1], lv[1:])):
+            raise AssertionError(
+                f"{label} cloud levels {lv} are not decreasing outward")
+        shell = info['shell']
+        prev = -1.0
+        for si in range(info['shells']):
+            sv = V[np.unique(T[shell == si])]
+            reach = float(np.max(np.linalg.norm(sv, axis=1)))
+            if reach <= prev:
+                raise AssertionError(
+                    f"{label} cloud shell {si} reaches {reach:.3f}, "
+                    f"not beyond the {prev:.3f} of the one inside it")
+            prev = reach
+        ext = float((V.max(axis=0) - V.min(axis=0)).max())
+        if abs(ext - 2.0) > 1e-6:
+            raise AssertionError(f"{label} cloud is {ext:.4f} across, "
+                                 f"expected a 2 m fit")
+        print(f"{label:28s}: cloud of {info['shells']} nested shells, "
+              f"levels {['%.4g' % v for v in lv]}, {len(T)} tris")
 
     # custom LCAO reproduces the sigma* preset
     V, T, S, label, info = build_orbital(

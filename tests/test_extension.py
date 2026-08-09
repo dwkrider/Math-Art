@@ -584,6 +584,12 @@ OPS = [
     ("orbital custom lcao", lambda: bpy.ops.mesh.orbital_add(
         mode='MOLECULAR', preset='CUSTOM',
         lcao="2pz@0,0,-1.2 1; 2pz@0,0,1.2 -1", resolution=48)),
+    ("orbital cloud molecular", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='PI_2PX', display='CLOUD', shells=3,
+        resolution=44)),
+    ("orbital cloud atomic", lambda: bpy.ops.mesh.orbital_add(
+        mode='ATOMIC', n=3, l=2, m=0, display='CLOUD', shells=4,
+        resolution=44)),
     ("ruled surface helicoid", lambda: bpy.ops.mesh.ruled_surface_add(
         mode='HELICOID')),
     ("ruled surface hypar", lambda: bpy.ops.mesh.ruled_surface_add(
