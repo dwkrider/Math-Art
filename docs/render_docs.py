@@ -212,6 +212,9 @@ TASKS = {
     "ruled_surface": O("mesh.ruled_surface_add", mode='HYPERBOLOID',
                        output='RODS', family='BOTH'),
     "curiosity_surface": O("mesh.curiosity_surface_add", surface='FRESNEL'),
+    "spherical_harmonic": O("mesh.spherical_harmonic_add",
+                            form='OFFSET', degree=4, order=2),
+    "orbital": O("mesh.orbital_add", mode='ATOMIC', n=3, l=2, m=-2),
     # --- Polyhedra ---
     "regular_solids": O("mesh.regular_solid_add", family='ARCHIMEDEAN',
                         solid='SC'),
@@ -546,6 +549,28 @@ VARIANTS = {
     "curiosity_surface": ("mesh.curiosity_surface_add", _V("surface",
         "FRESNEL=Fresnel Elasticity;PAPERBAG=Paper Bag;"
         "TRIHYPERBOLOID=Trihyperboloid")),
+    "spherical_harmonic": ("mesh.spherical_harmonic_add", _V("form",
+        "OFFSET=Offset Sphere;ABS=Absolute Lobes;SIGNED=Signed Lobes;"
+        "BOURKE=Bourke Family", degree=4, order=2)),
+    "orbital": ("mesh.orbital_add", [
+        ("1s", "1s", dict(mode='ATOMIC', n=1, l=0, m=0)),
+        ("2s", "2s (radial node)", dict(mode='ATOMIC', n=2, l=0, m=0)),
+        ("2pz", "2p_z", dict(mode='ATOMIC', n=2, l=1, m=0)),
+        ("3pz", "3p_z", dict(mode='ATOMIC', n=3, l=1, m=0)),
+        ("3dxy", "3d_xy", dict(mode='ATOMIC', n=3, l=2, m=-2)),
+        ("3dz2", "3d_z2", dict(mode='ATOMIC', n=3, l=2, m=0)),
+        ("4fz3", "4f_z3", dict(mode='ATOMIC', n=4, l=3, m=0)),
+        ("sigma1s", "sigma 1s",
+         dict(mode='MOLECULAR', preset='SIGMA_1S')),
+        ("sigmastar1s", "sigma* 1s",
+         dict(mode='MOLECULAR', preset='SIGMA_STAR_1S')),
+        ("pi2px", "pi 2p_x", dict(mode='MOLECULAR', preset='PI_2PX')),
+        ("sp3", "sp3 hybrid", dict(mode='MOLECULAR', preset='SP3')),
+        ("water", "H2O lone pair",
+         dict(mode='MOLECULAR', preset='WATER_LONE_PAIR')),
+        ("benzene", "benzene pi",
+         dict(mode='MOLECULAR', preset='BENZENE_PI', huckel_k=0)),
+    ]),
     "oloid": ("mesh.oloid_add", _V("kind",
         "OLOID=Oloid;ROLLER=Two-Circle Roller;ANTIOLOID=Anti-Oloid;"
         "RULED=Ruled Circle Strip;MOBIUS=Ruled Mobius Strip")),

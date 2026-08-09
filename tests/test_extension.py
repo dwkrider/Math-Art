@@ -551,6 +551,39 @@ OPS = [
         preset='SE_CUBE', segments=48, rings=24)),
     ("supershape distance color", lambda: bpy.ops.mesh.supershape_add(
         preset='GEAR', coloring='DISTANCE', segments=48, rings=24)),
+    ("spherical harmonic offset",
+     lambda: bpy.ops.mesh.spherical_harmonic_add(
+        form='OFFSET', degree=4, order=2, res_u=64, res_v=128)),
+    ("spherical harmonic lobes",
+     lambda: bpy.ops.mesh.spherical_harmonic_add(
+        form='ABS', degree=3, order=1, res_u=64, res_v=128)),
+    ("spherical harmonic signed split",
+     lambda: bpy.ops.mesh.spherical_harmonic_add(
+        form='SIGNED', degree=3, order=-2, split_lobes=True,
+        res_u=64, res_v=128)),
+    ("spherical harmonic bourke",
+     lambda: bpy.ops.mesh.spherical_harmonic_add(
+        form='BOURKE', bourke_preset='B3', res_u=64, res_v=128)),
+    ("orbital 2pz", lambda: bpy.ops.mesh.orbital_add(
+        mode='ATOMIC', n=2, l=1, m=0, resolution=48)),
+    ("orbital 3dxy", lambda: bpy.ops.mesh.orbital_add(
+        mode='ATOMIC', n=3, l=2, m=-2, resolution=48)),
+    ("orbital 4f", lambda: bpy.ops.mesh.orbital_add(
+        mode='ATOMIC', n=4, l=3, m=0, resolution=48)),
+    ("orbital sigma star 1s", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='SIGMA_STAR_1S', resolution=48)),
+    ("orbital pi 2px", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='PI_2PX', resolution=48)),
+    ("orbital sp3 hybrid", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='SP3', resolution=48)),
+    ("orbital water lone pair", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='WATER_LONE_PAIR', resolution=48)),
+    ("orbital benzene pi", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='BENZENE_PI', huckel_k=1,
+        resolution=48)),
+    ("orbital custom lcao", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='CUSTOM',
+        lcao="2pz@0,0,-1.2 1; 2pz@0,0,1.2 -1", resolution=48)),
     ("ruled surface helicoid", lambda: bpy.ops.mesh.ruled_surface_add(
         mode='HELICOID')),
     ("ruled surface hypar", lambda: bpy.ops.mesh.ruled_surface_add(
