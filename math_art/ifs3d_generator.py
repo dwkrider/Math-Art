@@ -188,6 +188,52 @@ def edge_stats(faces):
     return (int(np.sum(counts == 1)), int(np.sum(counts > 2)))
 
 
+def blur_density(dens):
+    """Separable 3-tap blur with ZERO padding, and an empty shell left
+    around the grid.
+
+    np.roll would wrap, bleeding density from one face of the box to
+    the opposite one; and unless the outermost layer is empty the
+    contour runs into the sample box and comes out as an open surface
+    with a boundary, whose normals then mean nothing."""
+    out = dens.astype(float)
+    for axis in (0, 1, 2):
+        lo = np.zeros_like(out)
+        hi = np.zeros_like(out)
+        sl_lo = [slice(None)] * 3
+        sl_hi = [slice(None)] * 3
+        sl_lo[axis] = slice(1, None)
+        sl_hi[axis] = slice(None, -1)
+        lo[tuple(sl_hi)] = out[tuple(sl_lo)]
+        hi[tuple(sl_lo)] = out[tuple(sl_hi)]
+        out = (out + lo + hi) / 3.0
+    out[0, :, :] = out[-1, :, :] = 0.0
+    out[:, 0, :] = out[:, -1, :] = 0.0
+    out[:, :, 0] = out[:, :, -1] = 0.0
+    return out
+
+
+def orient_outward(verts, faces):
+    """Reverse every face when the mesh is inside-out.
+
+    The divergence theorem gives the enclosed volume as
+    sum over faces of (1/6) v0 . ((v1-v0) x (v2-v0)); a closed surface
+    whose normals point outward has it positive.  An orientation-
+    REVERSING transform -- and det M is negative for every ABC tile, so
+    M^-k reverses at odd levels -- silently turns a solid inside out
+    without changing a single vertex."""
+    V = np.asarray(verts, dtype=float)
+    tot = 0.0
+    for f in faces:
+        f = list(f)
+        for i in range(1, len(f) - 1):
+            a, b, c = V[f[0]], V[f[i]], V[f[i + 1]]
+            tot += float(np.dot(a, np.cross(b - a, c - a)))
+    if tot < 0.0:
+        return [tuple(reversed(tuple(f))) for f in faces]
+    return [tuple(f) for f in faces]
+
+
 def fill_pinholes(cells, res, need=5):
     """Fill empty cells that have `need` or more of their six face
     neighbours occupied.
@@ -493,6 +539,9 @@ def build_radix(preset='ABC_124', level=0, holes=0, custom=None,
         A = np.linalg.inv(np.linalg.matrix_power(M.astype(float), lvl))
         verts = verts_i.astype(float) @ A.T
         sv = np.linalg.svd(A, compute_uv=False)
+        # det M is negative for every ABC tile, so M^-k turns the
+        # cubes inside out at odd levels
+        faces = orient_outward(verts, _as_quads(faces))
         span = verts.max(axis=0) - verts.min(axis=0)
         info.update({
             'level': lvl, 'cells': len(S),
@@ -500,7 +549,7 @@ def build_radix(preset='ABC_124', level=0, holes=0, custom=None,
             'cell_aspect': float(sv[0] / max(sv[-1], 1e-300)),
             'fidelity': float(np.min(span / np.maximum(true_span,
                                                        1e-12)))})
-        return center_fit(verts, scale), _as_quads(faces), info
+        return center_fit(verts, scale), faces, info
 
     # --- attractor sampling -------------------------------------------
     Mi = np.linalg.inv(M.astype(float))
@@ -536,9 +585,7 @@ def build_radix(preset='ABC_124', level=0, holes=0, custom=None,
     # SMOOTH: density grid -> blur -> marching tetrahedra
     dens = np.zeros((res, res, res), dtype=float)
     np.add.at(dens, (idx[:, 0], idx[:, 1], idx[:, 2]), 1.0)
-    for axis in (0, 1, 2):
-        dens = (dens + np.roll(dens, 1, axis=axis)
-                + np.roll(dens, -1, axis=axis)) / 3.0
+    dens = blur_density(dens)
     occupied = dens[dens > 0]
     t = float(np.quantile(occupied, 0.02)) if len(occupied) else 0.0
     hi = lo + s * res
@@ -561,7 +608,8 @@ def build_radix(preset='ABC_124', level=0, holes=0, custom=None,
                  'fidelity': float(np.min(
                      span / np.maximum(true_span, 1e-12)))})
     return (center_fit(verts, scale),
-            [tuple(int(i) for i in f) for f in tris], info)
+            orient_outward(verts, [tuple(int(i) for i in f)
+                                   for f in tris]), info)
 
 
 def _as_quads(faces):
@@ -576,7 +624,9 @@ def _as_quads(faces):
 
 _TETRA = np.array([(1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)],
                   dtype=float)
-_TETRA_F = [(0, 2, 1), (0, 3, 2), (0, 1, 3), (1, 2, 3)]
+# wound so the normals face outward: a signed-volume check in the
+# self-test keeps them that way
+_TETRA_F = [(0, 1, 2), (0, 2, 3), (0, 3, 1), (1, 3, 2)]
 _OCTA = np.array([(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0),
                   (0, 0, 1), (0, 0, -1)], dtype=float)
 _OCTA_F = [(0, 2, 4), (2, 1, 4), (1, 3, 4), (3, 0, 4),
@@ -771,7 +821,11 @@ def build_ifs(preset='SIERP_TETRA', output='SOLIDS', maps=None,
             base = len(verts)
             for v in sv:
                 verts.append(Ai @ v + bi)
-            for f in sf:
+            # a map with negative determinant reflects, which reverses
+            # the seed's winding along with it
+            wind = (list(sf) if np.linalg.det(Ai) >= 0.0
+                    else [tuple(reversed(tuple(f))) for f in sf])
+            for f in wind:
                 faces.append([base + i for i in f])
         verts = np.asarray(verts, dtype=float)
         info = {'copies': len(A), 'depth': d, 'maps': m}
@@ -793,10 +847,7 @@ def build_ifs(preset='SIERP_TETRA', output='SOLIDS', maps=None,
     cells, counts, lo, s = _occupied_cells(P, res)
     dens = np.zeros((res, res, res), dtype=float)
     dens[cells[:, 0], cells[:, 1], cells[:, 2]] = counts
-    for axis in (0, 1, 2):                       # separable 3-tap blur
-        dens = (dens
-                + np.roll(dens, 1, axis=axis)
-                + np.roll(dens, -1, axis=axis)) / 3.0
+    dens = blur_density(dens)
     flat = dens.ravel()
     order = np.argsort(flat)[::-1]
     cum = np.cumsum(flat[order])
@@ -823,8 +874,9 @@ def build_ifs(preset='SIERP_TETRA', output='SOLIDS', maps=None,
         verts, tris = keep_largest(verts, tris)
     info = {'points': len(P), 'level': t, 'maps': m,
             'tris': len(tris)}
-    return center_fit(verts, scale), [tuple(int(i) for i in f)
-                                      for f in tris], info
+    return (center_fit(verts, scale),
+            orient_outward(verts, [tuple(int(i) for i in f)
+                                   for f in tris]), info)
 
 
 def keep_largest(verts, tris):
@@ -1165,7 +1217,75 @@ if _IN_BLENDER:
 # Standalone numeric self-test
 # ==========================================================================
 
+def _signed_volume(verts, faces):
+    """Enclosed volume by the divergence theorem; positive when the
+    normals point outward."""
+    V = np.asarray(verts, dtype=float)
+    tot = 0.0
+    for f in faces:
+        f = list(f)
+        for i in range(1, len(f) - 1):
+            a, b, c = V[f[0]], V[f[i]], V[f[i + 1]]
+            tot += float(np.dot(a, np.cross(b - a, c - a))) / 6.0
+    return tot
+
+
 def _selftest():
+    # ---- 0. normals point outward, everywhere ------------------------
+    # Three separate ways to get this wrong, all of them silent: a seed
+    # solid wound the wrong way; an orientation-REVERSING transform
+    # (det M is negative for every ABC tile, so M^-k flips at odd
+    # levels); and an isosurface left open, whose normals then mean
+    # nothing at all.  The divergence theorem catches all three.
+    for name, (sv, sf) in SEEDS.items():
+        vol = _signed_volume(sv, sf)
+        if vol <= 0.0:
+            raise AssertionError(
+                f"the {name} seed solid is wound inside out "
+                f"(signed volume {vol:+.4f})")
+    print(f"seed solids: {', '.join(sorted(SEEDS))} all wound outward")
+
+    checks = [
+        ("radix exact, odd level",
+         lambda: build_radix(preset='ABC_124', level=3, output='EXACT')),
+        ("radix exact, even level",
+         lambda: build_radix(preset='ABC_124', level=4, output='EXACT')),
+        ("radix voxels",
+         lambda: build_radix(preset='ABC_124', output='VOXEL',
+                             resolution=48, points=120000)),
+        ("radix smooth",
+         lambda: build_radix(preset='ABC_223', output='SMOOTH',
+                             resolution=48, points=150000)),
+        ("ifs solid tetrahedra",
+         lambda: build_ifs(preset='SIERP_TETRA', output='SOLIDS',
+                           depth=3)),
+        ("ifs solid cubes",
+         lambda: build_ifs(preset='MENGER', output='SOLIDS',
+                           seed_solid='CUBE', depth=1)),
+        ("ifs solid octahedra",
+         lambda: build_ifs(preset='SIERP_OCTA', output='SOLIDS',
+                           seed_solid='OCTA', depth=2)),
+        ("ifs voxels",
+         lambda: build_ifs(preset='SIERP_TETRA', output='VOXEL',
+                           points=80000, resolution=40)),
+        ("ifs smooth",
+         lambda: build_ifs(preset='SIERP_TETRA', output='ISO',
+                           points=150000, resolution=48)),
+    ]
+    for name, fn in checks:
+        V, F, info = fn()
+        nb, nm = edge_stats(F)
+        if nb:
+            raise AssertionError(
+                f"{name}: {nb} boundary edges -- the surface is open, "
+                f"so its normals are meaningless")
+        vol = _signed_volume(V, F)
+        if vol <= 0.0:
+            raise AssertionError(
+                f"{name}: signed volume {vol:+.4f} -- the mesh is "
+                f"inside out")
+        print(f"{name:24s}: closed, signed volume {vol:+.4f}")
+
     # ---- 1. every preset really is a radix system -------------------
     for key, (label, (M, D)) in RADIX_PRESETS.items():
         if not is_expanding(M):
