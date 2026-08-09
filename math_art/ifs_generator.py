@@ -1,5 +1,5 @@
 
-# 3D Iterated Function System Generator for Blender
+# Iterated Function System Generator for Blender
 #
 # Attractors of iterated function systems in three dimensions, in two
 # families that need quite different machinery.
@@ -79,13 +79,14 @@
 #   are offered here embedded in the z = 0 plane.
 
 bl_info = {
-    "name": "3D Iterated Function System Generator",
+    "name": "Iterated Function System Generator",
     "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
-    "location": "View3D > Add > Mesh > 3D Iterated Function System",
+    "location": "View3D > Add > Mesh > Iterated Function System",
     "description": "Self-affine lattice tiles from an expanding integer "
-                   "matrix, and general affine IFS attractors",
+                   "matrix, and affine IFS attractors in two and three "
+                   "dimensions",
     "category": "Add Mesh",
 }
 
@@ -674,16 +675,120 @@ def _fern_maps():
     return out
 
 
+def _planar(maps2d):
+    """Lift a list of 2-D maps ((a,b,c,d), (e,f), p) into the xz-plane,
+    so a planar system stands upright in Blender's z-up world."""
+    out = []
+    for (a, b, c, d), (e, f), pr in maps2d:
+        A = np.array([[a, 0.0, b], [0.0, 0.0, 0.0], [c, 0.0, d]])
+        out.append((A, np.array([e, 0.0, f]), pr))
+    return out
+
+
+def _sierpinski2d():
+    """Three half-scale maps to the corners of a triangle."""
+    v = [(0.0, 0.0), (1.0, 0.0), (0.5, math.sqrt(3.0) / 2.0)]
+    return _planar([((0.5, 0.0, 0.0, 0.5), (0.5 * x, 0.5 * y), 1.0)
+                    for (x, y) in v])
+
+
+def _dragon2d():
+    """Heighway dragon: two similarities of ratio 1/sqrt2 at +-45
+    degrees.  Its attractor is the boundary curve's filled region."""
+    return _planar([((0.5, -0.5, 0.5, 0.5), (0.0, 0.0), 1.0),
+                    ((-0.5, -0.5, 0.5, -0.5), (1.0, 0.0), 1.0)])
+
+
+def _levy2d():
+    """Levy C curve: two similarities of ratio 1/sqrt2."""
+    return _planar([((0.5, -0.5, 0.5, 0.5), (0.0, 0.0), 1.0),
+                    ((0.5, 0.5, -0.5, 0.5), (0.5, 0.5), 1.0)])
+
+
+def _koch2d():
+    """Koch curve as four third-scale maps, two of them turned by
+    +-60 degrees."""
+    t = math.radians(60.0)
+    ct, st = math.cos(t) / 3.0, math.sin(t) / 3.0
+    return _planar([
+        ((1.0 / 3.0, 0.0, 0.0, 1.0 / 3.0), (0.0, 0.0), 1.0),
+        ((ct, -st, st, ct), (1.0 / 3.0, 0.0), 1.0),
+        ((ct, st, -st, ct), (0.5, math.sqrt(3.0) / 6.0), 1.0),
+        ((1.0 / 3.0, 0.0, 0.0, 1.0 / 3.0), (2.0 / 3.0, 0.0), 1.0)])
+
+
+# (label, map factory, dimension).  The dimension is declared rather
+# than guessed because it decides which renderings even make sense: a
+# planar system has no solid image, and a volume grid over it wastes
+# almost all of its cells on empty space.
 IFS_PRESETS = {
     'SIERP_TETRA': ("Sierpinski Tetrahedron",
-                    lambda: _uniform(_TETRA, 0.5)),
+                    lambda: _uniform(_TETRA, 0.5), 3),
     'SIERP_OCTA': ("Sierpinski Octahedron",
-                   lambda: _uniform(_OCTA, 0.5)),
+                   lambda: _uniform(_OCTA, 0.5), 3),
     'SIERP_CUBE': ("Cantor Dust (cube corners)",
-                   lambda: _uniform(_CUBE_V, 1.0 / 3.0)),
-    'MENGER': ("Menger Sponge", _menger_maps),
-    'FERN2D': ("Barnsley Fern (2-D, embedded)", _fern_maps),
+                   lambda: _uniform(_CUBE_V, 1.0 / 3.0), 3),
+    'MENGER': ("Menger Sponge", _menger_maps, 3),
+    'FERN2D': ("Barnsley Fern (2-D)", _fern_maps, 2),
+    'SIERP_TRI': ("Sierpinski Triangle (2-D)", _sierpinski2d, 2),
+    'DRAGON': ("Heighway Dragon (2-D)", _dragon2d, 2),
+    'LEVY': ("Levy C Curve (2-D)", _levy2d, 2),
+    'KOCH': ("Koch Curve (2-D)", _koch2d, 2),
 }
+
+
+def plane_frame(points, tol=1e-6):
+    """Detect a planar point set and return (centre, axes, flat).
+
+    `axes` are the two in-plane principal directions followed by the
+    normal.  Whether a system is planar is measured, not assumed, so a
+    custom map set that happens to be flat gets the same treatment as
+    the shipped 2-D families."""
+    P = np.asarray(points, dtype=float)
+    c = P.mean(axis=0)
+    X = P - c
+    # the 3x3 covariance, not an SVD of the whole cloud: for a few
+    # hundred thousand points the full SVD would try to allocate a
+    # square matrix of that side
+    w, V = np.linalg.eigh(X.T @ X)
+    order = np.argsort(w)[::-1]              # widest spread first
+    axes = V[:, order].T
+    sv = np.sqrt(np.maximum(w[order], 0.0))
+    flat = bool(sv[2] <= tol * max(sv[0], 1e-300))
+    return c, axes, flat
+
+
+def plane_relief(points, resolution=512, thickness_cells=1):
+    """Mesh a planar point set as a watertight slab one cell thick.
+
+    A planar attractor deserves a plane's worth of resolution: a
+    512 x 512 grid is a quarter of a million cells, where a 512^3
+    volume grid is out of reach and would leave all but a sliver of it
+    empty.  The slab is closed, so it prints, and Solidify will give it
+    real depth."""
+    P = np.asarray(points, dtype=float)
+    c, axes, _flat = plane_frame(P)
+    u = (P - c) @ axes[0]
+    v = (P - c) @ axes[1]
+    res = max(8, int(resolution))
+    lo_u, lo_v = float(u.min()), float(v.min())
+    s = max(float(u.max()) - lo_u, float(v.max()) - lo_v) / res
+    if s <= 0.0:
+        raise ValueError("the attractor collapsed to a point")
+    iu = np.clip(np.floor((u - lo_u) / s).astype(np.int64), 0, res)
+    iv = np.clip(np.floor((v - lo_v) / s).astype(np.int64), 0, res)
+    nk = max(1, int(thickness_cells))
+    cells = np.unique(np.stack([iu, iv], axis=1), axis=0)
+    cells = np.concatenate(
+        [np.column_stack([cells, np.full(len(cells), k)])
+         for k in range(nk)], axis=0)
+    verts_i, faces = voxel_surface(cells)
+    # back into three dimensions, centred on the plane
+    xyz = (c
+           + np.outer(lo_u + verts_i[:, 0] * s, axes[0])
+           + np.outer(lo_v + verts_i[:, 1] * s, axes[1])
+           + np.outer((verts_i[:, 2] - 0.5 * nk) * s, axes[2]))
+    return xyz, faces, len(cells)
 
 
 def parse_maps(spec):
@@ -788,10 +893,14 @@ def _occupied_cells(P, res, cover=0.98):
 
 def build_ifs(preset='SIERP_TETRA', output='SOLIDS', maps=None,
               depth=5, seed_solid='TETRA', points=400000,
-              resolution=128, cover=0.90, seed=0, min_count=1,
-              largest_only=False, scale=1.0):
-    """Mesh a general affine IFS attractor.  Returns
-    (verts, faces, info)."""
+              resolution=128, plane_resolution=512, cover=0.90, seed=0,
+              min_count=1, largest_only=False, scale=1.0):
+    """Mesh a general affine IFS attractor, in two or three dimensions.
+    Returns (verts, faces, info).
+
+    A planar system is detected from the attractor itself and meshed as
+    a slab one cell thick at plane resolution, which is far finer than
+    any volume grid could be."""
     if maps is None:
         if preset == 'CUSTOM':
             raise ValueError("custom mode needs a map specification")
@@ -803,6 +912,29 @@ def build_ifs(preset='SIERP_TETRA', output='SOLIDS', maps=None,
                          "singular value < 1)")
 
     m = len(maps)
+
+    # Is this system planar?  Measure it rather than trusting the
+    # preset label, so a custom flat map set is handled too.
+    probe = chaos_game(maps, points=4000, seed=1, transient=200)
+    _c, _axes, planar = plane_frame(probe)
+    if planar:
+        if output == 'SOLIDS':
+            raise ValueError(
+                "this system is planar, so solid copies would flatten "
+                "the seed solid to a plate. It is drawn as a relief "
+                "instead -- choose the Relief or Smooth Contour output")
+        P = chaos_game(maps, points=points, seed=seed, transient=300)
+        verts, faces, ncell = plane_relief(P, plane_resolution)
+        info = {'points': len(P), 'cells': ncell, 'maps': m,
+                'planar': True, 'resolution': int(plane_resolution)}
+        return (center_fit(verts, scale),
+                orient_outward(verts, _as_quads(faces)), info)
+
+    if output == 'RELIEF':
+        raise ValueError("the Relief output is for planar systems; "
+                         "this one is three-dimensional, so use "
+                         "Voxels, Smooth Contour or Solid Copies")
+
     if output == 'SOLIDS':
         # A singular map has no solid image: it squashes the seed flat.
         # The Barnsley fern is the case that matters here -- it is a
@@ -967,8 +1099,8 @@ if _IN_BLENDER:
     class MESH_OT_ifs3d_add(bpy.types.Operator):
         """Add a three-dimensional self-affine tile or the attractor of
         an affine iterated function system"""
-        bl_idname = "mesh.ifs3d_add"
-        bl_label = "3D Iterated Function System"
+        bl_idname = "mesh.ifs_add"
+        bl_label = "Iterated Function System"
         bl_options = {'REGISTER', 'UNDO'}
 
         mode: EnumProperty(
@@ -1020,7 +1152,10 @@ if _IN_BLENDER:
                    ('VOXEL', "Voxels", "Chaos game binned into a "
                                        "watertight voxel grid"),
                    ('ISO', "Smooth Contour", "Chaos game contoured by "
-                                             "marching tetrahedra")],
+                                             "marching tetrahedra"),
+                   ('RELIEF', "Relief (planar systems)",
+                    "A watertight slab one cell thick, at plane "
+                    "resolution -- for two-dimensional systems")],
             default='SOLIDS')
         seed_solid: EnumProperty(
             name="Seed Solid",
@@ -1037,6 +1172,11 @@ if _IN_BLENDER:
         resolution: IntProperty(
             name="Resolution", default=128, min=16, max=256,
             description="Voxel / density grid resolution per axis")
+        plane_resolution: IntProperty(
+            name="Plane Resolution", default=512, min=32, max=2048,
+            description="In-plane grid resolution for a planar "
+                        "system; a plane affords far more of it than a "
+                        "volume can")
         cover: FloatProperty(
             name="Cover", default=0.90, min=0.1, max=0.999,
             description="Smooth contour: the fraction of the sampled "
@@ -1090,7 +1230,9 @@ if _IN_BLENDER:
                         preset=self.ifs_preset, output=self.output,
                         maps=mp, depth=self.depth,
                         seed_solid=self.seed_solid, points=self.points,
-                        resolution=self.resolution, cover=self.cover,
+                        resolution=self.resolution,
+                        plane_resolution=self.plane_resolution,
+                        cover=self.cover,
                         seed=self.seed, min_count=self.min_count,
                         largest_only=self.largest_only,
                         scale=self.scale)
@@ -1164,9 +1306,13 @@ if _IN_BLENDER:
                         f"{len(me.vertices)} verts, "
                         f"{len(me.polygons)} faces")
             else:
-                extra = (f"{info.get('copies', 0)} copies"
-                         if self.output == 'SOLIDS'
-                         else f"{info.get('points', 0)} points")
+                if self.output == 'SOLIDS':
+                    extra = f"{info.get('copies', 0)} copies"
+                elif info.get('planar'):
+                    extra = (f"planar relief, {info.get('cells', 0)} "
+                             f"cells at {info.get('resolution', 0)}^2")
+                else:
+                    extra = f"{info.get('points', 0)} points"
                 self.report({'INFO'},
                             f"{label}: {extra}, {len(me.vertices)} "
                             f"verts, {len(me.polygons)} faces")
@@ -1198,18 +1344,21 @@ if _IN_BLENDER:
                     lay.prop(self, 'depth')
                 else:
                     lay.prop(self, 'points')
-                    lay.prop(self, 'resolution')
                     lay.prop(self, 'seed')
-                    if self.output == 'VOXEL':
-                        lay.prop(self, 'min_count')
+                    if self.output == 'RELIEF':
+                        lay.prop(self, 'plane_resolution')
                     else:
-                        lay.prop(self, 'cover')
-                        lay.prop(self, 'largest_only')
+                        lay.prop(self, 'resolution')
+                        if self.output == 'VOXEL':
+                            lay.prop(self, 'min_count')
+                        else:
+                            lay.prop(self, 'cover')
+                            lay.prop(self, 'largest_only')
             for k in ('scale', 'thickness', 'smooth'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
-        self.layout.operator("mesh.ifs3d_add", icon='MOD_REMESH')
+        self.layout.operator("mesh.ifs_add", icon='MOD_REMESH')
 
     _classes = (MESH_OT_ifs3d_add,)
 
@@ -1286,6 +1435,9 @@ def _selftest():
         ("ifs smooth",
          lambda: build_ifs(preset='SIERP_TETRA', output='ISO',
                            points=150000, resolution=48)),
+        ("planar relief",
+         lambda: build_ifs(preset='SIERP_TRI', output='RELIEF',
+                           points=150000, plane_resolution=192)),
     ]
     for name, fn in checks:
         V, F, info = fn()
@@ -1515,9 +1667,9 @@ def _selftest():
           f"correctly flagged")
 
     # ---- 5. IFS maps are contractions -------------------------------
-    for key, (label, fn) in IFS_PRESETS.items():
+    for key, (label, fn, dim) in IFS_PRESETS.items():
         mp = fn()
-        if key == 'FERN2D':
+        if dim == 2:
             # the fern's first map is singular (it flattens to the
             # stem), which is contractive but not invertible
             if not all(float(np.linalg.svd(A, compute_uv=False)[0])
@@ -1607,37 +1759,65 @@ def _selftest():
             continue
         raise AssertionError(f"parse_maps({bad!r}) should have raised")
 
-    # ---- 10. the fern is two-dimensional, and says so ----------------
-    # All four of its maps are singular in 3-D, so solid copies of a
-    # seed would come out as a scatter of loose plates rather than a
-    # fern.  That has to be refused with a usable message, not drawn.
-    fern = IFS_PRESETS['FERN2D'][1]()
-    if any(abs(float(np.linalg.det(A))) > 1e-12 for A, _, _ in fern):
-        raise AssertionError("the fern's maps should all be singular "
-                             "in 3-D")
+    # ---- 10. planar systems, detected and meshed as reliefs ---------
+    # A two-dimensional system has singular maps in R^3, so solid
+    # copies would flatten the seed to a plate.  Planarity is MEASURED
+    # from the attractor, not read off the preset label, so a custom
+    # flat map set is handled the same way.
+    planar = [k for k, v in IFS_PRESETS.items() if v[2] == 2]
+    if not planar:
+        raise AssertionError("no planar presets to test")
+    for key in planar:
+        label = IFS_PRESETS[key][0]
+        mp = IFS_PRESETS[key][1]()
+        if any(abs(float(np.linalg.det(A))) > 1e-12 for A, _, _ in mp):
+            raise AssertionError(f"{label}: a planar system's maps "
+                                 f"should be singular in 3-D")
+        try:
+            build_ifs(preset=key, output='SOLIDS', depth=3)
+        except ValueError as e:
+            if 'planar' not in str(e):
+                raise AssertionError(
+                    f"{label} was refused for solid copies, but "
+                    f"unhelpfully: {e}")
+        else:
+            raise AssertionError(
+                f"solid copies of {label} should have been refused")
+        V, F, info = build_ifs(preset=key, output='RELIEF',
+                               points=200000, plane_resolution=256)
+        if not info.get('planar'):
+            raise AssertionError(f"{label} was not detected as planar")
+        nb, nm = edge_stats(F)
+        if nb:
+            raise AssertionError(f"{label}: {nb} boundary edges -- the "
+                                 f"relief slab is not closed")
+        if _signed_volume(V, F) <= 0.0:
+            raise AssertionError(f"{label}: the relief is inside out")
+        span = V.max(axis=0) - V.min(axis=0)
+        thin = float(np.min(span))
+        wide = float(np.max(span))
+        if thin > 0.05 * wide:
+            raise AssertionError(
+                f"{label} should be flat, but its thinnest axis spans "
+                f"{thin:.3f} against {wide:.3f}")
+        # embedded in the xz-plane, so y is the thin one
+        if float(np.argmin(span)) != 1:
+            raise AssertionError(
+                f"{label} should be flat in y (upright in a z-up "
+                f"world), but the thin axis is {int(np.argmin(span))}")
+        print(f"{label:28s}: planar, closed relief, "
+              f"{info['cells']:6d} cells, {thin / wide:.4f} thick")
+
+    # a three-dimensional system must refuse the relief output
     try:
-        build_ifs(preset='FERN2D', output='SOLIDS', depth=3)
+        build_ifs(preset='SIERP_TETRA', output='RELIEF')
     except ValueError as e:
-        if 'singular' not in str(e):
-            raise AssertionError(f"the fern was refused for solid "
-                                 f"copies, but unhelpfully: {e}")
+        if 'planar' not in str(e):
+            raise AssertionError(f"unhelpful refusal: {e}")
     else:
-        raise AssertionError("solid copies of the fern should have "
-                             "been refused -- its maps flatten the "
-                             "seed to a plate")
-    # embedded in the xz-plane so it stands upright in a z-up world
-    V, F, info = build_ifs(preset='FERN2D', output='VOXEL',
-                           points=300000, resolution=128)
-    span = V.max(axis=0) - V.min(axis=0)
-    if span[1] > 0.05 * max(span[0], span[2]):
-        raise AssertionError(f"the fern should be flat in y, but spans "
-                             f"{span[1]:.3f} against {span[2]:.3f}")
-    if span[2] <= span[0]:
-        raise AssertionError(f"the fern should be taller than it is "
-                             f"wide, got {span[0]:.3f} x {span[2]:.3f}")
-    print(f"Barnsley fern: refused for solid copies, upright in the "
-          f"xz-plane ({span[0]:.2f} wide x {span[2]:.2f} tall, "
-          f"{span[1]:.3f} thick)")
+        raise AssertionError("a relief of a 3-D system should have "
+                             "been refused")
+    print("relief output refused for three-dimensional systems")
 
     # a non-contractive system must be refused, not silently diverge
     try:

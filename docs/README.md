@@ -29,7 +29,7 @@ Each shape is generated centered on the origin fitting a 2 m cube, and shown w
 | | | |
 |:--:|:--:|:--:|
 | [<img src="images/sponge.png" width="240">](generators/sponge.md)<br>**[Fractal Sponge](generators/sponge.md)** | [<img src="images/fractal_polyhedron.png" width="240">](generators/fractal_polyhedron.md)<br>**[Fractal Polyhedron](generators/fractal_polyhedron.md)** | [<img src="images/space_filling_curve.png" width="240">](generators/space_filling_curve.md)<br>**[Space-filling Curve](generators/space_filling_curve.md)** |
-| [<img src="images/fractal_tree.png" width="240">](generators/fractal_tree.md)<br>**[Fractal Tree](generators/fractal_tree.md)** | [<img src="images/ifs3d.png" width="240">](generators/ifs3d.md)<br>**[3D Iterated Function System](generators/ifs3d.md)** |  |
+| [<img src="images/fractal_tree.png" width="240">](generators/fractal_tree.md)<br>**[Fractal Tree](generators/fractal_tree.md)** | [<img src="images/ifs.png" width="240">](generators/ifs.md)<br>**[Iterated Function System](generators/ifs.md)** |  |
 
 ## Knots & Curves
 

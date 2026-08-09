@@ -707,43 +707,52 @@ OPS = [
          kind='KITE_R12', iterations=3, separate=True)),
     ("fractal kite r8", lambda: bpy.ops.mesh.fractal_tiling_add(
         kind='KITE_R8', iterations=4, color_by='UNIFORM')),
-    ("ifs3d abc tile", lambda: bpy.ops.mesh.ifs3d_add(
+    ("ifs abc tile", lambda: bpy.ops.mesh.ifs_add(
         mode='RADIX', preset='ABC_124', resolution=64,
         points=120000)),
-    ("ifs3d twindragon", lambda: bpy.ops.mesh.ifs3d_add(
+    ("ifs twindragon", lambda: bpy.ops.mesh.ifs_add(
         mode='RADIX', preset='TWIN_D', resolution=64,
         points=120000)),
-    ("ifs3d tile smooth", lambda: bpy.ops.mesh.ifs3d_add(
+    ("ifs tile smooth", lambda: bpy.ops.mesh.ifs_add(
         mode='RADIX', preset='ABC_223', tile_output='SMOOTH',
         resolution=48, points=120000)),
-    ("ifs3d tile exact", lambda: bpy.ops.mesh.ifs3d_add(
+    ("ifs tile exact", lambda: bpy.ops.mesh.ifs_add(
         mode='RADIX', preset='ABC_124', tile_output='EXACT',
         level=5)),
-    ("ifs3d cube gasket", lambda: bpy.ops.mesh.ifs3d_add(
+    ("ifs cube gasket", lambda: bpy.ops.mesh.ifs_add(
         mode='RADIX', preset='CUBE', holes=4, resolution=64,
         points=120000)),
-    ("ifs3d gasket overclamped", lambda: bpy.ops.mesh.ifs3d_add(
+    ("ifs gasket overclamped", lambda: bpy.ops.mesh.ifs_add(
         mode='RADIX', preset='CUBE', holes=6, resolution=48,
         points=80000)),
-    ("ifs3d sierpinski solids", lambda: bpy.ops.mesh.ifs3d_add(
+    ("ifs sierpinski solids", lambda: bpy.ops.mesh.ifs_add(
         mode='IFS', ifs_preset='SIERP_TETRA', output='SOLIDS',
         depth=4)),
-    ("ifs3d menger solids", lambda: bpy.ops.mesh.ifs3d_add(
+    ("ifs menger solids", lambda: bpy.ops.mesh.ifs_add(
         mode='IFS', ifs_preset='MENGER', output='SOLIDS',
         seed_solid='CUBE', depth=2)),
-    ("ifs3d voxel attractor", lambda: bpy.ops.mesh.ifs3d_add(
+    ("ifs voxel attractor", lambda: bpy.ops.mesh.ifs_add(
         mode='IFS', ifs_preset='SIERP_OCTA', output='VOXEL',
         points=80000, resolution=48)),
-    ("ifs3d smooth contour", lambda: bpy.ops.mesh.ifs3d_add(
+    ("ifs smooth contour", lambda: bpy.ops.mesh.ifs_add(
         mode='IFS', ifs_preset='SIERP_TETRA', output='ISO',
         points=120000, resolution=48)),
-    ("ifs3d fern", lambda: bpy.ops.mesh.ifs3d_add(
-        mode='IFS', ifs_preset='FERN2D', output='VOXEL',
-        points=80000, resolution=48)),
-    ("ifs3d fern smooth", lambda: bpy.ops.mesh.ifs3d_add(
-        mode='IFS', ifs_preset='FERN2D', output='ISO',
-        points=120000, resolution=48)),
-    ("ifs3d custom maps", lambda: bpy.ops.mesh.ifs3d_add(
+    ("ifs fern", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', ifs_preset='FERN2D', output='RELIEF',
+        points=120000, plane_resolution=256)),
+    ("ifs sierpinski triangle 2d", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', ifs_preset='SIERP_TRI', output='RELIEF',
+        points=120000, plane_resolution=256)),
+    ("ifs heighway dragon 2d", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', ifs_preset='DRAGON', output='RELIEF',
+        points=120000, plane_resolution=256)),
+    ("ifs levy c 2d", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', ifs_preset='LEVY', output='RELIEF',
+        points=120000, plane_resolution=256)),
+    ("ifs koch 2d", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', ifs_preset='KOCH', output='RELIEF',
+        points=120000, plane_resolution=256)),
+    ("ifs custom maps", lambda: bpy.ops.mesh.ifs_add(
         mode='IFS', ifs_preset='CUSTOM', output='SOLIDS', depth=4)),
     ("fractal reptile right-triangle",
      lambda: bpy.ops.mesh.fractal_reptile_add(

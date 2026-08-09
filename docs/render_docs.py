@@ -226,7 +226,7 @@ TASKS = {
     "spiked_polyhedron": O("mesh.spiked_polyhedron_add", preset='MODERN'),
     # --- Fractals ---
     "sponge": O("mesh.sponge_add"),
-    "ifs3d": O("mesh.ifs3d_add", mode='RADIX',
+    "ifs": O("mesh.ifs_add", mode='RADIX',
                preset='ABC_124'),
     "fractal_polyhedron": O("mesh.fractal_polyhedron_add"),
     "space_filling_curve": O("curve.space_filling_add"),
@@ -608,7 +608,7 @@ VARIANTS = {
         ("TWIST_STRIP", "Twisted Strip (Mobius)",
          {"mode": "TWIST_STRIP", "half_twists": 1}),
         ("HYPAR", "Hyperbolic Paraboloid", {"mode": "HYPAR"})]),
-    "ifs3d": ("mesh.ifs3d_add", [
+    "ifs": ("mesh.ifs_add", [
         ("ABC124", "ABC tile (1,2,4)",
          dict(mode='RADIX', preset='ABC_124')),
         ("ABC112", "ABC tile (1,1,2)",
@@ -634,8 +634,16 @@ VARIANTS = {
          dict(mode='IFS', ifs_preset='SIERP_OCTA', output='VOXEL')),
         ("ISO", "Sierpinski tetrahedron (smooth)",
          dict(mode='IFS', ifs_preset='SIERP_TETRA', output='ISO')),
-        ("FERN", "Barnsley fern (2-D, embedded)",
-         dict(mode='IFS', ifs_preset='FERN2D', output='VOXEL')),
+        ("FERN", "Barnsley fern (2-D)",
+         dict(mode='IFS', ifs_preset='FERN2D', output='RELIEF')),
+        ("SIERPTRI", "Sierpinski triangle (2-D)",
+         dict(mode='IFS', ifs_preset='SIERP_TRI', output='RELIEF')),
+        ("DRAGON", "Heighway dragon (2-D)",
+         dict(mode='IFS', ifs_preset='DRAGON', output='RELIEF')),
+        ("LEVY", "Levy C curve (2-D)",
+         dict(mode='IFS', ifs_preset='LEVY', output='RELIEF')),
+        ("KOCH", "Koch curve (2-D)",
+         dict(mode='IFS', ifs_preset='KOCH', output='RELIEF')),
     ]),
     "sponge": ("mesh.sponge_add", _V("kind",
         "MENGER=Menger Sponge;TETRA=Sierpinski Tetrahedron;"

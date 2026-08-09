@@ -1,14 +1,16 @@
-# 3D Iterated Function System
+# Iterated Function System
 
-![3D Iterated Function System](../images/ifs3d.png)
+![Iterated Function System](../images/ifs.png)
 
 ## Overview
 
-Attractors of iterated function systems in three dimensions, in two families that need quite different machinery.
+Attractors of iterated function systems, in two and three dimensions, across three families that need quite different machinery.
 
 **Self-affine lattice tiles** come from an expanding integer matrix and a digit set: exotic, crystal-like solids that tile space by the integer lattice, including Bandt's three-dimensional twindragons and the ABC tiles proved homeomorphic to a ball. The level-$k$ point set is computed exactly on the integer lattice rather than sampled; how that point set becomes a mesh is the interesting part, and is discussed below.
 
 **General affine IFS attractors** come from any set of contractive maps: the Sierpinski tetrahedron and octahedron, the Menger sponge, Cantor dust, and anything you care to type in, rendered as exact solid copies, as watertight voxels, or as a smooth contour.
+
+**Planar systems** — the Barnsley fern, the Sierpinski triangle, the Heighway dragon, the Lévy C curve, the Koch curve — are recognised as flat and meshed as a watertight slab one cell thick, at *plane* resolution. This is not a lesser case: a 512×512 grid is a quarter of a million cells, where a 512³ volume grid is out of reach and would leave all but a sliver of it empty. The result prints, and Solidify gives it real depth.
 
 ## Options
 
@@ -19,8 +21,9 @@ Attractors of iterated function systems in three dimensions, in two families tha
 | Tile Output | Voxels | Sample the attractor and mesh it as a watertight voxel solid, contour it with marching tetrahedra, or build the exact level-$k$ union of cubes. |
 | Level | 0 (auto) | Exact mode only: radix depth; 0 picks a level landing in the 30k-300k cell band. Range 0-24. |
 | Holes | 0 | Drop this many digits at every level, turning the tile into a gasket; clamped so the attractor stays three-dimensional. Range 0-6. |
-| System | Sierpinski Tetrahedron | Sierpinski tetrahedron/octahedron, Cantor dust, Menger sponge, the embedded 2-D Barnsley fern, or Custom. |
-| Output | Solid Copies | Deterministic seed copies, chaos-game voxels, or a smooth marching-tetrahedra contour. |
+| System | Sierpinski Tetrahedron | Three-dimensional: Sierpinski tetrahedron/octahedron, Cantor dust, Menger sponge. Planar: Barnsley fern, Sierpinski triangle, Heighway dragon, Lévy C curve, Koch curve. Or Custom. |
+| Output | Solid Copies | Deterministic seed copies, chaos-game voxels, a smooth marching-tetrahedra contour, or a planar relief. |
+| Plane Resolution | 512 | In-plane grid resolution for a planar system. Range 32-2048. |
 | Seed Solid | Tetrahedron | Which solid to place per word in Solid Copies mode. |
 | Depth | 5 | Solid-copies depth; the count is maps^depth and is capped automatically. Range 1-12. |
 | Points | 400000 | Chaos-game sample count. Range 10k-5M. |
@@ -38,25 +41,31 @@ Attractors of iterated function systems in three dimensions, in two families tha
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/ifs3d__ABC124.png" width="200"><br><sub>ABC tile (1,2,4)</sub></td>
-<td align="center"><img src="../images/variants/ifs3d__ABC112.png" width="200"><br><sub>Twindragon C mirror</sub></td>
-<td align="center"><img src="../images/variants/ifs3d__ABC134.png" width="200"><br><sub>ABC tile (1,3,4)</sub></td>
-<td align="center"><img src="../images/variants/ifs3d__TWINA.png" width="200"><br><sub>Twindragon A (non-fractal)</sub></td>
+<td align="center"><img src="../images/variants/ifs__ABC124.png" width="200"><br><sub>ABC tile (1,2,4)</sub></td>
+<td align="center"><img src="../images/variants/ifs__ABC112.png" width="200"><br><sub>Twindragon C mirror</sub></td>
+<td align="center"><img src="../images/variants/ifs__ABC134.png" width="200"><br><sub>ABC tile (1,3,4)</sub></td>
+<td align="center"><img src="../images/variants/ifs__TWINA.png" width="200"><br><sub>Twindragon A (non-fractal)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/ifs3d__TWIND.png" width="200"><br><sub>Twindragon D</sub></td>
-<td align="center"><img src="../images/variants/ifs3d__TWING.png" width="200"><br><sub>Twindragon G</sub></td>
-<td align="center"><img src="../images/variants/ifs3d__GASKET.png" width="200"><br><sub>Cube gasket (4 holes)</sub></td>
-<td align="center"><img src="../images/variants/ifs3d__SIERPTETRA.png" width="200"><br><sub>Sierpinski tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/ifs__TWIND.png" width="200"><br><sub>Twindragon D</sub></td>
+<td align="center"><img src="../images/variants/ifs__TWING.png" width="200"><br><sub>Twindragon G</sub></td>
+<td align="center"><img src="../images/variants/ifs__GASKET.png" width="200"><br><sub>Cube gasket (4 holes)</sub></td>
+<td align="center"><img src="../images/variants/ifs__SIERPTETRA.png" width="200"><br><sub>Sierpinski tetrahedron</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/ifs3d__MENGER.png" width="200"><br><sub>Menger sponge</sub></td>
-<td align="center"><img src="../images/variants/ifs3d__VOXEL.png" width="200"><br><sub>Sierpinski octahedron (voxels)</sub></td>
-<td align="center"><img src="../images/variants/ifs3d__ISO.png" width="200"><br><sub>Sierpinski tetrahedron (smooth)</sub></td>
-<td align="center"><img src="../images/variants/ifs3d__FERN.png" width="200"><br><sub>Barnsley fern (2-D, embedded)</sub></td>
+<td align="center"><img src="../images/variants/ifs__MENGER.png" width="200"><br><sub>Menger sponge</sub></td>
+<td align="center"><img src="../images/variants/ifs__VOXEL.png" width="200"><br><sub>Sierpinski octahedron (voxels)</sub></td>
+<td align="center"><img src="../images/variants/ifs__ISO.png" width="200"><br><sub>Sierpinski tetrahedron (smooth)</sub></td>
+<td align="center"><img src="../images/variants/ifs__FERN.png" width="200"><br><sub>Barnsley fern (2-D)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/ifs3d__EXACT.png" width="200"><br><sub>ABC (1,2,4), exact level-k cubes</sub></td>
+<td align="center"><img src="../images/variants/ifs__SIERPTRI.png" width="200"><br><sub>Sierpinski triangle (2-D)</sub></td>
+<td align="center"><img src="../images/variants/ifs__DRAGON.png" width="200"><br><sub>Heighway dragon (2-D)</sub></td>
+<td align="center"><img src="../images/variants/ifs__LEVY.png" width="200"><br><sub>Lévy C curve (2-D)</sub></td>
+<td align="center"><img src="../images/variants/ifs__KOCH.png" width="200"><br><sub>Koch curve (2-D)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/ifs__EXACT.png" width="200"><br><sub>ABC (1,2,4), exact level-k cubes</sub></td>
 <td></td>
 <td></td>
 <td></td>
@@ -125,7 +134,9 @@ These families touch at edges and corners by construction, so an edge can have f
 
 There is no "3D Barnsley fern". The four maps of the **two-dimensional** fern are published (Barnsley, *Fractals Everywhere*) and are offered embedded in the $xz$-plane — so it stands upright in Blender's z-up world — correctly attributed; a three-dimensional fern is folklore with no authoritative source, so none is invented.
 
-Because it is genuinely two-dimensional, all four of its maps are singular in $\mathbb{R}^3$. **Solid Copies** is therefore refused for it: a rank-deficient map flattens the seed solid to a plate, and the output would be a scatter of loose quads rather than a fern. Use Voxels (a one-cell-thick relief, printable, and Solidify will give it depth) or Smooth Contour. The same check applies to any custom map set with a singular linear part.
+Because it is genuinely two-dimensional, all four of its maps are singular in $\mathbb{R}^3$, and the same is true of every planar preset. **Solid Copies** is therefore refused for them: a rank-deficient map flattens the seed solid to a plate, and the output would be a scatter of loose quads rather than a fern.
+
+Planarity is **measured, not assumed** — the generator samples the attractor and takes the eigenvalues of its 3×3 covariance, so a custom map set that happens to be flat gets the relief treatment too, and a three-dimensional one is refused the relief output. The plane's two principal axes become the grid, and the result is lifted back into the $xz$-plane so it stands upright.
 
 ## References
 
