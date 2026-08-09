@@ -188,16 +188,67 @@ def edge_stats(faces):
     return (int(np.sum(counts == 1)), int(np.sum(counts > 2)))
 
 
+def _packer(pts, pad=2):
+    """A collision-free integer key for lattice points, or None when
+    the bounding box is too large to pack into an int64."""
+    lo = pts.min(axis=0) - pad
+    span = (pts.max(axis=0) + pad) - lo + 1
+    if int(span[0]) * int(span[1]) * int(span[2]) > (1 << 62):
+        return None
+    return lo, span.astype(np.int64)
+
+
+def _pack(pts, lo, span):
+    q = pts - lo
+    return (q[:, 0] * span[1] + q[:, 1]) * span[2] + q[:, 2]
+
+
 def voxel_surface(cells):
     """Watertight exterior surface of a set of unit cubes on the
     integer lattice: only faces between an occupied cell and an empty
     neighbour are emitted, with shared vertices.  Returns integer
-    vertices and quad faces.
+    vertices and an (n, 4) array of quad faces.
 
-    Structurally the same walker the Fractal Sponge generator uses; the
-    occupancy test needs a set of tuples for O(1) lookup, not an `in`
-    test against an array."""
-    occ = set(map(tuple, np.asarray(cells, dtype=np.int64).tolist()))
+    Same walker the Fractal Sponge generator uses, but vectorised --
+    the occupancy and vertex-welding lookups are sorted-key searches
+    rather than Python dict hits, because these sets run to hundreds of
+    thousands of cells."""
+    cells = np.unique(np.asarray(cells, dtype=np.int64), axis=0)
+    if not len(cells):
+        return np.zeros((0, 3), dtype=np.int64), np.zeros((0, 4),
+                                                          dtype=np.int64)
+    pk = _packer(cells)
+    if pk is None:                     # pathological span: sparse path
+        return _voxel_surface_slow(cells)
+    lo, span = pk
+    keys = np.sort(_pack(cells, lo, span))
+
+    quads = []
+    for (d, corners) in _FACE_DIRS:
+        nb = cells + np.asarray(d, dtype=np.int64)
+        nk = _pack(nb, lo, span)
+        pos = np.searchsorted(keys, nk)
+        pos_c = np.clip(pos, 0, len(keys) - 1)
+        occupied = keys[pos_c] == nk
+        free = cells[~occupied]
+        if not len(free):
+            continue
+        quads.append(np.stack(
+            [free + np.asarray(c, dtype=np.int64) for c in corners],
+            axis=1))
+    if not quads:
+        return np.zeros((0, 3), dtype=np.int64), np.zeros((0, 4),
+                                                          dtype=np.int64)
+    Q = np.concatenate(quads, axis=0)              # (nf, 4, 3)
+    flat = Q.reshape(-1, 3)
+    verts, inv = np.unique(flat, axis=0, return_inverse=True)
+    return verts, inv.reshape(-1, 4)
+
+
+def _voxel_surface_slow(cells):
+    """Dict-based fallback for point sets whose bounding box will not
+    pack into an int64 key."""
+    occ = set(map(tuple, cells.tolist()))
     verts, vid, faces = [], {}, []
 
     def vertex(key):
@@ -214,7 +265,39 @@ def voxel_surface(cells):
                 continue
             faces.append([vertex((cx + a, cy + b, cz + c))
                           for (a, b, c) in corners])
-    return np.asarray(verts, dtype=np.int64), faces
+    return (np.asarray(verts, dtype=np.int64),
+            np.asarray(faces, dtype=np.int64))
+
+
+# --- what the tile actually is, in closed form -----------------------------
+
+def tile_support_bbox(M, digits, terms=400, tol=1e-15):
+    """Exact axis-aligned bounding box of the attractor of
+    w_d(x) = M^-1 (x + d).
+
+    Every point of the attractor is a convergent radix series
+    sum_(j>=1) M^-j d_j with each d_j free, so the support function
+    along an axis separates term by term:
+
+        max coordinate = sum_(j>=1) max over d of (M^-j d)
+
+    and likewise the min.  That gives the true extent in closed form,
+    which is the only honest yardstick for how far a level-k
+    approximation still has to go."""
+    M = np.asarray(M, dtype=float)
+    D = np.asarray(digits, dtype=float)
+    Mi = np.linalg.inv(M)
+    P = Mi.copy()
+    lo = np.zeros(3)
+    hi = np.zeros(3)
+    for _ in range(int(terms)):
+        W = D @ P.T
+        hi += W.max(axis=0)
+        lo += W.min(axis=0)
+        if float(np.max(np.abs(W))) < tol:
+            break
+        P = P @ Mi
+    return lo, hi
 
 
 # --- presets --------------------------------------------------------------
@@ -232,14 +315,33 @@ def _twindragon(a, b):
             np.array([(0, 0, 0), (1, 0, 0)], dtype=np.int64))
 
 
+# The cube's digits are ordered so that dropping them from the END
+# always leaves an affinely three-dimensional set: a naive i,j,k
+# ordering puts all four i = 0 digits last, so a four-hole gasket
+# collapses to a flat sheet.  This order takes the first removals off a
+# space diagonal instead, and keeps rank 3 down to four digits (whose
+# attractor is a tetrahedral gasket).
+# The first four are one of the cube's two inscribed tetrahedra, so a
+# four-hole gasket is the Sierpinski tetrahedron rather than a slab.
+_CUBE_DIGITS = np.array([(0, 0, 0), (1, 1, 0), (1, 0, 1), (0, 1, 1),
+                         (1, 1, 1), (1, 0, 0), (0, 1, 0), (0, 0, 1)],
+                        dtype=np.int64)
+
 RADIX_PRESETS = {
-    'ABC_112': ("ABC tile (1,1,2)", _abc(1, 1, 2)),
+    # (1,1,2) has |det M| = 2 with two collinear digits, so by Bandt's
+    # Theorem 6.2 it is itself a three-dimensional twindragon -- the
+    # det = -2 mirror of case C -- rather than a member of the ABC ball
+    # family, and it is labelled as such.
+    'ABC_112': ("Twindragon C mirror (det -2)", _abc(1, 1, 2)),
     'ABC_113': ("ABC tile (1,1,3)", _abc(1, 1, 3)),
     'ABC_123': ("ABC tile (1,2,3)", _abc(1, 2, 3)),
     'ABC_124': ("ABC tile (1,2,4)", _abc(1, 2, 4)),
     'ABC_134': ("ABC tile (1,3,4)", _abc(1, 3, 4)),
     'ABC_223': ("ABC tile (2,2,3)", _abc(2, 2, 3)),
-    'TWIN_A': ("Twindragon A (0,0)", _twindragon(0, 0)),
+    # case A is Bandt's own non-fractal example: in this lattice basis
+    # the tile is exactly the unit cube
+    'TWIN_A': ("Twindragon A (0,0) - non-fractal (a cube)",
+               _twindragon(0, 0)),
     'TWIN_B': ("Twindragon B (-1,1)", _twindragon(-1, 1)),
     'TWIN_C': ("Twindragon C (1,-1)", _twindragon(1, -1)),
     'TWIN_D': ("Twindragon D (0,1)", _twindragon(0, 1)),
@@ -247,10 +349,48 @@ RADIX_PRESETS = {
     'TWIN_F': ("Twindragon F (1,0)", _twindragon(1, 0)),
     'TWIN_G': ("Twindragon G (0,2)", _twindragon(0, 2)),
     'CUBE': ("Cube (2I, 8 digits)",
-             (2 * np.eye(3, dtype=np.int64),
-              np.array([(i, j, k) for i in (0, 1) for j in (0, 1)
-                        for k in (0, 1)], dtype=np.int64))),
+             (2 * np.eye(3, dtype=np.int64), _CUBE_DIGITS)),
 }
+
+
+def attractor_rank(M, digits, terms=16):
+    """Dimension of the affine hull of the attractor of
+    w_d(x) = M^-1 (x + d).
+
+    NOT the rank of the digit set: every point of the attractor is
+    sum_(j>=1) M^-j d_j, so the hull is the span of
+    {M^-j (d - d_0) : j >= 1}, the smallest M^-1-invariant subspace
+    containing the digit differences.  The twindragons have only two,
+    collinear, digits and are still solidly three-dimensional, because
+    M^-1 turns that one direction through the other two."""
+    M = np.asarray(M, dtype=float)
+    D = np.asarray(digits, dtype=float)
+    if len(D) < 2:
+        return 0
+    V = D[1:] - D[0]
+    Mi = np.linalg.inv(M)
+    P = Mi.copy()
+    rows = []
+    for _ in range(int(terms)):
+        W = V @ P.T
+        n = np.linalg.norm(W, axis=1, keepdims=True)
+        # normalise: M^-j shrinks geometrically, and un-normalised rows
+        # would fall under the rank tolerance and be miscounted
+        rows.append(W / np.maximum(n, 1e-300))
+        P = P @ Mi
+    return int(np.linalg.matrix_rank(np.vstack(rows), tol=1e-8))
+
+
+def max_holes(M, digits):
+    """Most digits that can be dropped from the end while the attractor
+    still fills three dimensions.  Dropping past this point collapses
+    it to a sheet, a line or a point."""
+    D = np.asarray(digits, dtype=np.int64)
+    for h in range(len(D) - 1, -1, -1):
+        keep = D[:len(D) - h]
+        if len(keep) >= 2 and attractor_rank(M, keep) == 3:
+            return h
+    return 0
 
 MAX_CELLS = 300000
 
@@ -272,9 +412,28 @@ def default_level(ndigits):
 
 
 def build_radix(preset='ABC_124', level=0, holes=0, custom=None,
-                scale=1.0):
-    """Mesh the level-k approximation of a self-affine radix tile.
-    Returns (verts, faces, info)."""
+                output='VOXEL', resolution=128, points=800000, seed=0,
+                largest_only=False, scale=1.0):
+    """Mesh a self-affine radix tile.  Returns (verts, faces, info).
+
+    Three renderings, and the choice matters:
+
+    VOXEL / SMOOTH sample the ATTRACTOR.  Because T tiles R^3 by Z^3,
+    the invariant measure of w_d(x) = M^-1 (x + d) with equal weights
+    is Lebesgue measure restricted to T, so the chaos game samples the
+    tile uniformly and a voxel grid over its exact bounding box
+    recovers the solid.  This is what the published pictures of these
+    tiles are.
+
+    EXACT is the level-k union of cubes: S_k has exactly C^k points and
+    the body has volume exactly 1.  It is the mathematically exact
+    object -- but M^-k maps the unit cube to a parallelepiped whose
+    aspect ratio grows like (max|lambda| / min|lambda|)^k, so beyond a
+    few levels the cells are plates or needles and the surface reads as
+    a laminate rather than a solid.  Raising the level improves the
+    shape and worsens the lamination at the same time, so this mode is
+    offered with its aspect ratio and its shortfall reported, not as
+    the default."""
     if preset == 'CUSTOM' and custom is not None:
         M, D = custom
     else:
@@ -288,27 +447,106 @@ def build_radix(preset='ABC_124', level=0, holes=0, custom=None,
         raise ValueError("the digits are not a complete residue system "
                          "for Z^3 / M Z^3 (two of them are congruent)")
     C = len(D)
-    holes = int(np.clip(int(holes), 0, max(0, C - 2)))
+    hmax = max_holes(M, D)
+    want_holes = int(max(0, int(holes)))
+    holes = min(want_holes, hmax)
     kept = C - holes
-    lvl = int(level) if level > 0 else default_level(kept)
-    lvl = max(1, min(lvl, max_level(kept)))
-
-    S = radix_points(M, D, lvl, holes)
-    verts_i, faces = voxel_surface(S)
-    if not len(faces):
-        raise ValueError("the tile came out empty")
-
-    # one linear map takes the integer cubes to the level-k tile; being
-    # linear it cannot break the watertightness the walker just built
-    A = np.linalg.inv(np.linalg.matrix_power(M.astype(float), lvl))
-    verts = verts_i.astype(float) @ A.T
+    Dk = D[:kept]
 
     detM = abs(int(round(np.linalg.det(M.astype(float)))))
-    info = {'level': lvl, 'cells': len(S), 'digits': C,
-            'kept': kept, 'det': detM,
+    ev = np.linalg.eigvals(M.astype(float))
+    lo_t, hi_t = tile_support_bbox(M, Dk)
+    true_span = hi_t - lo_t
+    info = {'digits': C, 'kept': kept, 'det': detM, 'eigenvalues': ev,
+            'holes': holes, 'holes_clamped': want_holes > hmax,
+            'max_holes': hmax, 'true_span': true_span,
+            'output': output}
+
+    if output == 'EXACT':
+        lvl = int(level) if level > 0 else default_level(kept)
+        lvl = max(1, min(lvl, max_level(kept)))
+        S = radix_points(M, D, lvl, holes)
+        verts_i, faces = voxel_surface(S)
+        if not len(faces):
+            raise ValueError("the tile came out empty")
+        A = np.linalg.inv(np.linalg.matrix_power(M.astype(float), lvl))
+        verts = verts_i.astype(float) @ A.T
+        sv = np.linalg.svd(A, compute_uv=False)
+        span = verts.max(axis=0) - verts.min(axis=0)
+        info.update({
+            'level': lvl, 'cells': len(S),
             'volume': len(S) / float(detM) ** lvl,
-            'eigenvalues': np.linalg.eigvals(M.astype(float))}
-    return center_fit(verts, scale), faces, info
+            'cell_aspect': float(sv[0] / max(sv[-1], 1e-300)),
+            'fidelity': float(np.min(span / np.maximum(true_span,
+                                                       1e-12)))})
+        return center_fit(verts, scale), _as_quads(faces), info
+
+    # --- attractor sampling -------------------------------------------
+    Mi = np.linalg.inv(M.astype(float))
+    maps = [(Mi, Mi @ d.astype(float), 1.0) for d in Dk]
+    if not spectrally_contractive(maps):
+        raise ValueError("M^-1 is not contractive -- the matrix must "
+                         "be expanding")
+    # the transient must outlast ||M^-n||, which decays only like
+    # min|lambda|^-n -- 0.94^n for twindragon G, so 20 steps is nowhere
+    # near enough to forget the starting point
+    P = chaos_game(maps, points=points, seed=seed, transient=300)
+    res = int(resolution)
+    pad = 0.02 * float(np.max(true_span))
+    lo = lo_t - pad
+    s = (float(np.max(true_span)) + 2.0 * pad) / res
+    idx = np.floor((P - lo) / s).astype(np.int64)
+    idx = idx[np.all((idx >= 0) & (idx < res), axis=1)]
+    if not len(idx):
+        raise ValueError("the attractor sample fell outside its own "
+                         "bounding box")
+
+    if output == 'VOXEL':
+        cells = np.unique(idx, axis=0)
+        verts_i, faces = voxel_surface(cells)
+        verts = lo + verts_i.astype(float) * s
+        span = verts.max(axis=0) - verts.min(axis=0)
+        info.update({'cells': len(cells), 'points': len(P),
+                     'resolution': res,
+                     'fidelity': float(np.min(
+                         span / np.maximum(true_span, 1e-12)))})
+        return center_fit(verts, scale), _as_quads(faces), info
+
+    # SMOOTH: density grid -> blur -> marching tetrahedra
+    dens = np.zeros((res, res, res), dtype=float)
+    np.add.at(dens, (idx[:, 0], idx[:, 1], idx[:, 2]), 1.0)
+    for axis in (0, 1, 2):
+        dens = (dens + np.roll(dens, 1, axis=axis)
+                + np.roll(dens, -1, axis=axis)) / 3.0
+    occupied = dens[dens > 0]
+    t = float(np.quantile(occupied, 0.02)) if len(occupied) else 0.0
+    hi = lo + s * res
+
+    def field(X, Y, Z):
+        ix = np.clip(((X - lo[0]) / s).astype(np.int64), 0, res - 1)
+        iy = np.clip(((Y - lo[1]) / s).astype(np.int64), 0, res - 1)
+        iz = np.clip(((Z - lo[2]) / s).astype(np.int64), 0, res - 1)
+        return t - dens[ix, iy, iz]
+
+    mst = _toolkit()
+    verts, tris = mst.marching_tets(field, lo, hi, (res, res, res))
+    if not len(tris):
+        raise ValueError("the contour came out empty -- try more "
+                         "points or a lower resolution")
+    if largest_only:
+        verts, tris = keep_largest(verts, tris)
+    span = verts.max(axis=0) - verts.min(axis=0)
+    info.update({'points': len(P), 'resolution': res, 'tris': len(tris),
+                 'fidelity': float(np.min(
+                     span / np.maximum(true_span, 1e-12)))})
+    return (center_fit(verts, scale),
+            [tuple(int(i) for i in f) for f in tris], info)
+
+
+def _as_quads(faces):
+    """The vectorised walker returns an (n, 4) array; Blender wants a
+    list of tuples."""
+    return [tuple(int(i) for i in f) for f in np.asarray(faces)]
 
 
 # ==========================================================================
@@ -410,8 +648,23 @@ def parse_maps(spec):
 
 
 def contractive(maps, tol=1e-9):
-    """Every map a contraction, by largest singular value."""
+    """Every map a contraction in the Euclidean metric, by largest
+    singular value.  This is the strict condition, and it is the right
+    one for the deterministic solid-copies path, where a map that
+    stretches in some direction would make the copies grow."""
     return all(float(np.linalg.svd(A, compute_uv=False)[0]) < 1.0 - tol
+               for A, _, _ in maps)
+
+
+def spectrally_contractive(maps, tol=1e-9):
+    """Every map eventually contracting, by spectral radius.
+
+    A radix tile's own maps M^-1 (x + d) are contractions in SOME
+    metric but usually not in the Euclidean one -- sigma_max(M^-1) runs
+    to 1.46 for these presets while the spectral radius stays near 0.7.
+    Testing singular values there would reject the very systems this
+    module is built on."""
+    return all(float(np.max(np.abs(np.linalg.eigvals(A)))) < 1.0 - tol
                for A, _, _ in maps)
 
 
@@ -512,7 +765,7 @@ def build_ifs(preset='SIERP_TETRA', output='SOLIDS', maps=None,
         verts_i, faces = voxel_surface(cells)
         verts = lo + verts_i.astype(float) * s
         info = {'points': len(P), 'cells': len(cells), 'maps': m}
-        return center_fit(verts, scale), faces, info
+        return center_fit(verts, scale), _as_quads(faces), info
 
     # ISO: density grid, blurred, contoured
     res = int(resolution)
@@ -643,10 +896,26 @@ if _IN_BLENDER:
             name="Tile",
             items=[(k, v[0], v[0]) for k, v in RADIX_PRESETS.items()],
             default='ABC_124')
+        tile_output: EnumProperty(
+            name="Tile Output",
+            items=[('VOXEL', "Voxels", "Sample the attractor and mesh "
+                                       "it as a watertight voxel "
+                                       "solid"),
+                   ('SMOOTH', "Smooth Contour", "Sample the attractor "
+                                                "and contour it with "
+                                                "marching tetrahedra"),
+                   ('EXACT', "Exact Level-k Cubes", "The exact union "
+                                                    "of C^k cells, "
+                                                    "volume exactly 1 "
+                                                    "-- but the cells "
+                                                    "flatten into "
+                                                    "plates as the "
+                                                    "level rises")],
+            default='VOXEL')
         level: IntProperty(
             name="Level", default=0, min=0, max=24,
-            description="Radix depth; 0 picks a level landing in the "
-                        "30k-300k cell band")
+            description="Exact mode only: radix depth; 0 picks a level "
+                        "landing in the 30k-300k cell band")
         holes: IntProperty(
             name="Holes", default=0, min=0, max=6,
             description="Drop this many digits at every level, turning "
@@ -718,10 +987,14 @@ if _IN_BLENDER:
                 if self.mode == 'RADIX':
                     verts, faces, info = build_radix(
                         preset=self.preset, level=self.level,
-                        holes=self.holes, scale=self.scale)
+                        holes=self.holes, output=self.tile_output,
+                        resolution=self.resolution, points=self.points,
+                        seed=self.seed,
+                        largest_only=self.largest_only,
+                        scale=self.scale)
                     label = RADIX_PRESETS[self.preset][0]
-                    if self.holes:
-                        label += f" gasket -{self.holes}"
+                    if info['holes']:
+                        label += f" gasket -{info['holes']}"
                 else:
                     mp = (parse_maps(self.maps)
                           if self.ifs_preset == 'CUSTOM' else None)
@@ -764,11 +1037,44 @@ if _IN_BLENDER:
                 mod.offset = 0.0
             me = obj.data
             if self.mode == 'RADIX':
-                self.report(
-                    {'INFO'},
-                    f"{label}: level {info['level']}, "
-                    f"{info['cells']} cells, volume "
-                    f"{info['volume']:.4f}, {len(me.vertices)} verts")
+                if info.get('holes_clamped'):
+                    self.report({'WARNING'},
+                                f"{label}: dropping more than "
+                                f"{info['max_holes']} digits leaves "
+                                f"them coplanar, which would collapse "
+                                f"the tile to a sheet -- clamped")
+                fid = info.get('fidelity', 1.0)
+                if self.tile_output == 'EXACT':
+                    asp = info.get('cell_aspect', 1.0)
+                    if asp > 20.0:
+                        self.report(
+                            {'WARNING'},
+                            f"{label}: at level {info['level']} the "
+                            f"cells are {asp:.0f}:1 slivers, so this "
+                            f"reads as a laminate rather than a solid "
+                            f"-- use the Voxels or Smooth output")
+                    if fid < 0.95:
+                        self.report(
+                            {'WARNING'},
+                            f"{label}: the level-{info['level']} body "
+                            f"reaches only {100 * fid:.0f}% of the "
+                            f"true tile's extent on its thinnest axis")
+                    self.report(
+                        {'INFO'},
+                        f"{label}: level {info['level']}, "
+                        f"{info['cells']} cells, volume "
+                        f"{info['volume']:.4f}, cell aspect "
+                        f"{info['cell_aspect']:.0f}:1, "
+                        f"{len(me.vertices)} verts")
+                else:
+                    self.report(
+                        {'INFO'},
+                        f"{label}: {info.get('points', 0)} attractor "
+                        f"samples at resolution "
+                        f"{info.get('resolution', 0)}, "
+                        f"{100 * fid:.0f}% of the true extent, "
+                        f"{len(me.vertices)} verts, "
+                        f"{len(me.polygons)} faces")
             else:
                 extra = (f"{info.get('copies', 0)} copies"
                          if self.output == 'SOLIDS'
@@ -784,8 +1090,16 @@ if _IN_BLENDER:
             lay.prop(self, 'mode')
             if self.mode == 'RADIX':
                 lay.prop(self, 'preset')
-                lay.prop(self, 'level')
+                lay.prop(self, 'tile_output')
                 lay.prop(self, 'holes')
+                if self.tile_output == 'EXACT':
+                    lay.prop(self, 'level')
+                else:
+                    lay.prop(self, 'resolution')
+                    lay.prop(self, 'points')
+                    lay.prop(self, 'seed')
+                    if self.tile_output == 'SMOOTH':
+                        lay.prop(self, 'largest_only')
             else:
                 lay.prop(self, 'ifs_preset')
                 if self.ifs_preset == 'CUSTOM':
@@ -873,10 +1187,10 @@ def _selftest():
                     f"{(8 - h) ** k}")
     print("gaskets: (C-h)^k cells at every level")
 
-    # ---- 3. volume is exactly 1, and watertight ---------------------
+    # ---- 3. the exact body: volume exactly 1, and watertight --------
     for key in ('ABC_124', 'TWIN_A', 'TWIN_G', 'CUBE'):
         label = RADIX_PRESETS[key][0]
-        V, F, info = build_radix(preset=key, level=4)
+        V, F, info = build_radix(preset=key, level=4, output='EXACT')
         if abs(info['volume'] - 1.0) > 1e-12:
             raise AssertionError(
                 f"{label}: level-4 volume {info['volume']} != 1")
@@ -894,42 +1208,155 @@ def _selftest():
         print(f"{label:24s}: level {info['level']}, {info['cells']:6d} "
               f"cells, volume {info['volume']:.6f}, closed{note}")
 
-    # ---- 4. the tile converges: its shape settles as k grows --------
-    # A wrong M^-k shows up here as a bounding box that never settles.
-    # There is no uniform threshold to test against: the level-k box
-    # approaches the tile's at a rate set by 1/min|eigenvalue|, which
-    # ranges from 1/2 for the cube to 1/1.063 for twindragon G.  So the
-    # assertion is on the DECAY -- the step must shrink several-fold
-    # across the tested range and end small.
-    for key in ('ABC_124', 'ABC_112', 'TWIN_B', 'TWIN_G', 'CUBE'):
+    # ---- 3b. the closed-form bounding box -----------------------------
+    # the cube tile is [0,1]^3 exactly, which pins the support series
+    M, D = RADIX_PRESETS['CUBE'][1]
+    lo, hi = tile_support_bbox(M, D)
+    if (float(np.max(np.abs(lo))) > 1e-12
+            or float(np.max(np.abs(hi - 1.0))) > 1e-12):
+        raise AssertionError(f"the cube tile's support box came out "
+                             f"{lo} .. {hi}, expected [0,1]^3")
+    # Twindragon A is Bandt's non-fractal case, and in this lattice
+    # basis its tile is exactly the unit cube: M [0,1]^3 is the box
+    # spanned by Me1 = e2, Me2 = e3, Me3 = 2e1, i.e. [0,2]x[0,1]x[0,1],
+    # which is precisely [0,1]^3 union ([0,1]^3 + e1) = T + D.  Support
+    # box [0,1]^3 together with volume 1 pins it down.
+    M, D = RADIX_PRESETS['TWIN_A'][1]
+    lo, hi = tile_support_bbox(M, D)
+    if (float(np.max(np.abs(lo))) > 1e-12
+            or float(np.max(np.abs(hi - 1.0))) > 1e-12):
+        raise AssertionError(f"twindragon A's support box came out "
+                             f"{lo} .. {hi}; it should be the unit "
+                             f"cube")
+    print("support series: cube and twindragon A both exactly [0,1]^3 "
+          "(A is Bandt's non-fractal case)")
+
+    # ---- 3c. gasket digit sets stay three-dimensional -----------------
+    # dropping digits off the end must never leave them coplanar: the
+    # cube's naive i,j,k order put all four i = 0 digits last, so a
+    # four-hole gasket collapsed to a flat sheet
+    for key, (label, (M, D)) in RADIX_PRESETS.items():
+        hmax = max_holes(M, D)
+        for h in range(0, hmax + 1):
+            keep = D[:len(D) - h]
+            rk = attractor_rank(M, keep)
+            if rk != 3:
+                raise AssertionError(
+                    f"{label}: {h} holes leaves an attractor of "
+                    f"dimension {rk} -- it would collapse")
+        if hmax + 1 <= len(D) - 2:
+            over = D[:len(D) - (hmax + 1)]
+            if attractor_rank(M, over) == 3:
+                raise AssertionError(
+                    f"{label}: {hmax + 1} holes still fills three "
+                    f"dimensions, so the clamp is too tight")
+    hmax_cube = max_holes(*RADIX_PRESETS['CUBE'][1])
+    if hmax_cube < 4:
+        raise AssertionError(
+            f"the cube should support a 4-hole gasket, got {hmax_cube}")
+    V, F, info = build_radix(preset='CUBE', holes=4, output='VOXEL',
+                             resolution=48, points=120000)
+    span = V.max(axis=0) - V.min(axis=0)
+    if float(span.max() / max(span.min(), 1e-12)) > 4.0:
+        raise AssertionError(
+            f"the 4-hole cube gasket has aspect "
+            f"{span.max() / span.min():.1f} -- it collapsed")
+    print(f"gasket digit sets: rank 3 throughout, cube takes up to "
+          f"{hmax_cube} holes")
+
+    # ---- 3d. sampled tiles reach their true extent -------------------
+    # this is the check the old per-step metric could not make: compare
+    # against the closed-form support box, not against the last level
+    # The tips of these tiles are reached only by rare addresses along
+    # thin fibres -- Bandt says as much of cases F and G -- so no finite
+    # sample reaches 100%.  What must hold is that the body stays
+    # INSIDE the true tile and gets closer as the sample grows.
+    for key in ('ABC_124', 'ABC_134', 'TWIN_A', 'TWIN_D', 'TWIN_G',
+                'CUBE'):
+        label = RADIX_PRESETS[key][0]
+        V, F, info = build_radix(preset=key, output='VOXEL',
+                                 resolution=64, points=200000)
+        fid = info['fidelity']
+        if fid > 1.05:
+            raise AssertionError(
+                f"{label}: the sampled body is {100 * fid:.0f}% of the "
+                f"true extent -- it cannot exceed the tile")
+        if fid < 0.75:
+            raise AssertionError(
+                f"{label}: the sampled tile reaches only "
+                f"{100 * fid:.0f}% of its true extent")
+        nb, nm = edge_stats(F)
+        if nb:
+            raise AssertionError(f"{label}: {nb} boundary edges in the "
+                                 f"sampled tile")
+        print(f"{label:34s}: sampled to {100 * fid:5.1f}% of the true "
+              f"extent, {info['cells']:6d} cells, closed")
+
+    # more samples must get closer -- the check that the shortfall is
+    # sampling and not a wrong bounding box
+    lean = build_radix(preset='ABC_134', output='VOXEL', resolution=64,
+                       points=60000)[2]['fidelity']
+    rich = build_radix(preset='ABC_134', output='VOXEL', resolution=64,
+                       points=600000)[2]['fidelity']
+    if rich <= lean:
+        raise AssertionError(
+            f"ABC (1,3,4): fidelity went {lean:.3f} -> {rich:.3f} as "
+            f"the sample grew tenfold; it should improve")
+    print(f"sampling converges: ABC (1,3,4) {100 * lean:.1f}% -> "
+          f"{100 * rich:.1f}% on a tenfold sample")
+
+    # ---- 4. the exact level-k body, measured against the truth -------
+    # The old check compared each level with the previous one, which is
+    # far too weak: the remaining error is the tail of a geometric
+    # series with ratio 1/min|lambda|, so for twindragon G a per-step
+    # change of 9% hides a body that has reached barely a quarter of
+    # the real tile.  Measure against the closed-form support box, and
+    # assert the two things that actually matter -- the level-k body
+    # must approach the tile from INSIDE and must improve with k.
+    for key in ('ABC_124', 'TWIN_B', 'TWIN_G', 'CUBE'):
         label = RADIX_PRESETS[key][0]
         M, D = RADIX_PRESETS[key][1]
+        true_span = np.subtract(*reversed(tile_support_bbox(M, D)))
         top = min(10, max_level(len(D)))
-        rels, prev = [], None
-        for k in range(3, top + 1):
+        fids = []
+        for k in (3, top):
             S = radix_points(M, D, k)
             A = np.linalg.inv(np.linalg.matrix_power(M.astype(float),
                                                      k))
-            span = ((S.astype(float) @ A.T).max(axis=0)
-                    - (S.astype(float) @ A.T).min(axis=0))
-            if prev is not None:
-                rels.append(float(np.max(np.abs(span - prev) / prev)))
-            prev = span
-        if len(rels) < 2:
-            raise AssertionError(f"{label}: too few levels to test "
-                                 f"convergence")
-        if rels[-1] > 0.5 * rels[0]:
+            P = S.astype(float) @ A.T
+            span = P.max(axis=0) - P.min(axis=0)
+            if float(np.max(span / true_span)) > 1.0 + 1e-9:
+                raise AssertionError(
+                    f"{label}: the level-{k} body sticks out past the "
+                    f"true tile ({span} vs {true_span}) -- M^-k is "
+                    f"wrong")
+            fids.append(float(np.min(span / true_span)))
+        if fids[-1] <= fids[0]:
             raise AssertionError(
-                f"{label}: the bounding box step went from "
-                f"{rels[0]:.3f} to {rels[-1]:.3f} -- it is not "
-                f"settling, so M^-k is wrong")
-        if rels[-1] > 0.15:
-            raise AssertionError(
-                f"{label}: still moving {100 * rels[-1]:.1f}% at level "
-                f"{top}")
-        mn = float(np.min(np.abs(np.linalg.eigvals(M.astype(float)))))
-        print(f"{label:24s}: box step {rels[0]:.3f} -> {rels[-1]:.3f} "
-              f"by level {top} (min |eigenvalue| {mn:.3f})")
+                f"{label}: fidelity went {fids[0]:.3f} -> {fids[-1]:.3f} "
+                f"as the level rose; it should improve")
+        A = np.linalg.inv(np.linalg.matrix_power(M.astype(float), top))
+        sv = np.linalg.svd(A, compute_uv=False)
+        print(f"{label:34s}: level {top:2d} reaches "
+              f"{100 * fids[-1]:5.1f}% of the true extent, cells "
+              f"{sv[0] / sv[-1]:8.0f}:1")
+
+    # the aspect blow-up is real and must be REPORTED, not hidden: at
+    # its own default level twindragon G's cells are thousands to one
+    V, F, info = build_radix(preset='TWIN_G', output='EXACT')
+    if info['cell_aspect'] < 100.0:
+        raise AssertionError(
+            f"twindragon G cells came out {info['cell_aspect']:.0f}:1; "
+            f"the laminate warning would never fire")
+    if info['fidelity'] > 0.9:
+        raise AssertionError(
+            f"twindragon G exact mode reached {info['fidelity']:.2f} "
+            f"of the true extent; the shortfall warning would never "
+            f"fire")
+    print(f"exact mode on twindragon G: cells "
+          f"{info['cell_aspect']:.0f}:1 and only "
+          f"{100 * info['fidelity']:.0f}% of the extent -- both "
+          f"correctly flagged")
 
     # ---- 5. IFS maps are contractions -------------------------------
     for key, (label, fn) in IFS_PRESETS.items():
@@ -971,7 +1398,8 @@ def _selftest():
                   resolution=48, seed=7)
     b = build_ifs(preset='SIERP_TETRA', output='VOXEL', points=60000,
                   resolution=48, seed=7)
-    if not np.array_equal(a[0], b[0]) or a[1] != b[1]:
+    if (not np.array_equal(a[0], b[0])
+            or not np.array_equal(np.asarray(a[1]), np.asarray(b[1]))):
         raise AssertionError("the chaos game is not reproducible from "
                              "its seed")
     c = build_ifs(preset='SIERP_TETRA', output='VOXEL', points=60000,

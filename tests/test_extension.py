@@ -708,11 +708,23 @@ OPS = [
     ("fractal kite r8", lambda: bpy.ops.mesh.fractal_tiling_add(
         kind='KITE_R8', iterations=4, color_by='UNIFORM')),
     ("ifs3d abc tile", lambda: bpy.ops.mesh.ifs3d_add(
-        mode='RADIX', preset='ABC_124', level=5)),
+        mode='RADIX', preset='ABC_124', resolution=64,
+        points=120000)),
     ("ifs3d twindragon", lambda: bpy.ops.mesh.ifs3d_add(
-        mode='RADIX', preset='TWIN_D', level=10)),
+        mode='RADIX', preset='TWIN_D', resolution=64,
+        points=120000)),
+    ("ifs3d tile smooth", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='RADIX', preset='ABC_223', tile_output='SMOOTH',
+        resolution=48, points=120000)),
+    ("ifs3d tile exact", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='RADIX', preset='ABC_124', tile_output='EXACT',
+        level=5)),
     ("ifs3d cube gasket", lambda: bpy.ops.mesh.ifs3d_add(
-        mode='RADIX', preset='CUBE', holes=4, level=4)),
+        mode='RADIX', preset='CUBE', holes=4, resolution=64,
+        points=120000)),
+    ("ifs3d gasket overclamped", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='RADIX', preset='CUBE', holes=6, resolution=48,
+        points=80000)),
     ("ifs3d sierpinski solids", lambda: bpy.ops.mesh.ifs3d_add(
         mode='IFS', ifs_preset='SIERP_TETRA', output='SOLIDS',
         depth=4)),

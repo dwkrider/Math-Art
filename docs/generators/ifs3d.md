@@ -6,7 +6,7 @@
 
 Attractors of iterated function systems in three dimensions, in two families that need quite different machinery.
 
-**Self-affine lattice tiles** come from an expanding integer matrix and a digit set: exotic, crystal-like solids that tile space by the integer lattice, including Bandt's three-dimensional twindragons and the ABC tiles proved homeomorphic to a ball. These are computed *exactly* — the level-$k$ approximation is a set of integer lattice points, not a sampled cloud, so the mesh is watertight and has volume exactly 1 at every level.
+**Self-affine lattice tiles** come from an expanding integer matrix and a digit set: exotic, crystal-like solids that tile space by the integer lattice, including Bandt's three-dimensional twindragons and the ABC tiles proved homeomorphic to a ball. The level-$k$ point set is computed exactly on the integer lattice rather than sampled; how that point set becomes a mesh is the interesting part, and is discussed below.
 
 **General affine IFS attractors** come from any set of contractive maps: the Sierpinski tetrahedron and octahedron, the Menger sponge, Cantor dust, and anything you care to type in, rendered as exact solid copies, as watertight voxels, or as a smooth contour.
 
@@ -15,9 +15,10 @@ Attractors of iterated function systems in three dimensions, in two families tha
 | Option | Default | Description |
 | --- | --- | --- |
 | Mode | Self-Affine Tile | A lattice tile from an expanding integer matrix and a residue digit set, or the attractor of contractive affine maps. |
-| Tile | ABC tile (1,2,4) | Six ABC tiles, Bandt's seven twindragons, or the cube. |
-| Level | 0 (auto) | Radix depth; 0 picks a level landing in the 30k-300k cell band. Range 0-24. |
-| Holes | 0 | Drop this many digits at every level, turning the tile into a gasket. Range 0-6. |
+| Tile | ABC tile (1,2,4) | Five ABC tiles, Bandt's seven twindragons (one listed under its ABC companion form as the $\det=-2$ mirror), and the cube. Two of the fourteen — twindragon A and the cube — are not fractals. |
+| Tile Output | Voxels | Sample the attractor and mesh it as a watertight voxel solid, contour it with marching tetrahedra, or build the exact level-$k$ union of cubes. |
+| Level | 0 (auto) | Exact mode only: radix depth; 0 picks a level landing in the 30k-300k cell band. Range 0-24. |
+| Holes | 0 | Drop this many digits at every level, turning the tile into a gasket; clamped so the attractor stays three-dimensional. Range 0-6. |
 | System | Sierpinski Tetrahedron | Sierpinski tetrahedron/octahedron, Cantor dust, Menger sponge, the embedded 2-D Barnsley fern, or Custom. |
 | Output | Solid Copies | Deterministic seed copies, chaos-game voxels, or a smooth marching-tetrahedra contour. |
 | Seed Solid | Tetrahedron | Which solid to place per word in Solid Copies mode. |
@@ -38,9 +39,9 @@ Attractors of iterated function systems in three dimensions, in two families tha
 <table>
 <tr>
 <td align="center"><img src="../images/variants/ifs3d__ABC124.png" width="200"><br><sub>ABC tile (1,2,4)</sub></td>
-<td align="center"><img src="../images/variants/ifs3d__ABC112.png" width="200"><br><sub>ABC tile (1,1,2)</sub></td>
+<td align="center"><img src="../images/variants/ifs3d__ABC112.png" width="200"><br><sub>Twindragon C mirror</sub></td>
 <td align="center"><img src="../images/variants/ifs3d__ABC134.png" width="200"><br><sub>ABC tile (1,3,4)</sub></td>
-<td align="center"><img src="../images/variants/ifs3d__TWINA.png" width="200"><br><sub>Twindragon A</sub></td>
+<td align="center"><img src="../images/variants/ifs3d__TWINA.png" width="200"><br><sub>Twindragon A (non-fractal)</sub></td>
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/ifs3d__TWIND.png" width="200"><br><sub>Twindragon D</sub></td>
@@ -53,6 +54,12 @@ Attractors of iterated function systems in three dimensions, in two families tha
 <td align="center"><img src="../images/variants/ifs3d__VOXEL.png" width="200"><br><sub>Sierpinski octahedron (voxels)</sub></td>
 <td align="center"><img src="../images/variants/ifs3d__ISO.png" width="200"><br><sub>Sierpinski tetrahedron (smooth)</sub></td>
 <td align="center"><img src="../images/variants/ifs3d__FERN.png" width="200"><br><sub>Barnsley fern (2-D, embedded)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/ifs3d__EXACT.png" width="200"><br><sub>ABC (1,2,4), exact level-k cubes</sub></td>
+<td></td>
+<td></td>
+<td></td>
 </tr>
 </table>
 
@@ -70,21 +77,35 @@ The level-$k$ approximation is computed on the integers rather than sampled. Sta
 
 $$S_{j+1} = D + M\,S_j$$
 
-as one int64 broadcast — int64 because the coordinates grow like $\|M\|^k$ and would overflow int32 within a few levels. After $k$ steps $S_k$ has **exactly** $C^k$ distinct points; the distinctness is precisely what the residue condition buys, and the self-test checks it for every preset at every level up to 6. Those unit cubes are meshed by an exterior-face walker (only faces between an occupied cell and an empty neighbour, with shared vertices), and then the single linear map $M^{-k}$ is applied. Being linear it cannot break what the walker just built, so the surface stays closed — and its volume is $C^k \cdot |\det M|^{-k} = 1$ exactly, at any level.
+as one int64 broadcast — int64 because the coordinates grow like $\|M\|^k$ and would overflow int32 within a few levels. After $k$ steps $S_k$ has **exactly** $C^k$ distinct points; the distinctness is precisely what the residue condition buys, and the self-test checks it for every preset at every level up to 6. In **Exact Level-$k$ Cubes** mode those unit cubes are meshed by an exterior-face walker (only faces between an occupied cell and an empty neighbour, with shared vertices), and then the single linear map $M^{-k}$ is applied. Being linear it cannot break what the walker just built, so the surface stays closed — and its volume is $C^k \cdot |\det M|^{-k} = 1$ exactly, at any level. The default outputs sample the attractor instead and make no such volume claim; see below for why.
 
 The presets:
 
-- **ABC tiles** — $M$ is the companion matrix of $\lambda^3 + A\lambda^2 + B\lambda + C$ with digits $j\,e_1$, $j = 0,\dots,C-1$. Those with $1 = A \le B < C$ are proved homeomorphic to a closed ball, with the cell structure of a truncated octahedron (Thuswaldner–Zhang).
-- **Twindragons** — Bandt's seven three-dimensional twindragons: $|\det M| = 2$, two digits, characteristic polynomial $\lambda^3 - a\lambda^2 - b\lambda - 2$ for the seven $(a,b)$ pairs giving distinct tiles.
+- **ABC tiles** — $M$ is the companion matrix of $\lambda^3 + A\lambda^2 + B\lambda + C$ with digits $j\,e_1$, $j = 0,\dots,C-1$. Thuswaldner–Zhang prove such a tile homeomorphic to a closed ball, with the cell structure of a truncated octahedron, when $1 = A \le B < C$ **and** the tile has 14 neighbours. Of the presets here only **ABC (1,2,4)** — the default — is known to satisfy both; the others fail one hypothesis or the other and are shipped as tiles, not as proven balls.
+- **Twindragons** — Bandt's seven three-dimensional twindragons: $|\det M| = 2$, two digits, characteristic polynomial $\lambda^3 - a\lambda^2 - b\lambda - 2$ for the seven $(a,b)$ pairs giving distinct tiles. Case **A** is Bandt's own non-fractal example — in this lattice basis its tile is exactly the unit cube. The preset labelled *Twindragon C mirror* is the $\det = -2$ partner of case C: it has $|\det M| = 2$ with two collinear digits, so by Bandt's Theorem 6.2 it belongs to the twindragon family rather than the ABC ball family, despite its companion form.
 - **Cube** — $M = 2I$ with the eight digits $\{0,1\}^3$: the degenerate case, and the base for the gaskets.
 
-A **Holes** count drops the last $h$ digits at every level, giving $(C-h)^k$ cells instead of $C^k$ — the same gasket semantics the sibling 2-D Fractal Rep-Tile generator uses.
+A **Holes** count drops the last $h$ digits at every level, giving $(C-h)^k$ cells instead of $C^k$ — the same gasket semantics the sibling 2-D Fractal Rep-Tile generator uses. The count is clamped so the survivors still fill three dimensions. That test is on the *attractor*, not on the digits: the affine hull is the span of $\{M^{-j}(d-d_0)\}$, the smallest $M^{-1}$-invariant subspace containing the digit differences, which is why the twindragons stay solid on two collinear digits while a badly ordered cube subset would collapse to a sheet. The cube's digits are ordered so that the first four are an inscribed tetrahedron, making its four-hole gasket a Sierpinski tetrahedron.
 
-### Anisotropy is the point
+### Why the tile is sampled, not built from cubes
 
-In three dimensions the eigenvalues of $M$ generally have *different* moduli, so $M^{-k}$ contracts unevenly and the level-$k$ approximation is genuinely thin in the slow direction. That is not a defect — it is what "self-affine" rather than "self-similar" means. (A self-affine tile is conjugate to a self-similar one **iff** all eigenvalues of $M$ share a modulus.)
+The obvious way to mesh the level-$k$ body is the one the mathematics hands you: take the $C^k$ unit cubes and apply $M^{-k}$. That is exactly right as a *set* — volume 1, closed surface — and exactly wrong as a *mesh*. These companion matrices are strongly non-normal, so $M^{-k}$ maps the unit cube to a parallelepiped whose aspect ratio grows like $(\max|\lambda|/\min|\lambda|)^k$. At its own default level twindragon G's cells are **4830:1 slivers**; the object renders as a stack of loose wafers, and ABC (1,3,4) renders as a hairball of needles. Raising the level improves the shape and worsens the lamination at the same time, so no level fixes it.
 
-It also sets how fast the shape settles: the bounding box approaches the tile's at a rate governed by $1/\min|\lambda|$, which runs from $1/2$ for the cube to $1/1.063$ for twindragon G. That is why the auto level differs per preset, and why the self-test asserts on the *decay* of the box step rather than against any fixed threshold.
+The tile's *own* proportions are fine — bounding-box aspect ratios across the presets run 1.0 to 5.2. It is the cells that degenerate, not the object, and compensating with a non-uniform scale would falsify the tile.
+
+So the default output samples the **attractor** instead. Because $T$ tiles $\mathbb{R}^3$ by $\mathbb{Z}^3$, the invariant measure of $w_d(x) = M^{-1}(x+d)$ with equal weights is Lebesgue measure restricted to $T$ — the chaos game samples the tile *uniformly*, and a voxel grid over its exact bounding box recovers the solid. The transient has to be long: $\|M^{-n}\|$ decays only like $\min|\lambda|^{-n}$, which is $0.94^n$ for twindragon G, so the sampler runs 300 steps before recording anything. This is also how the published pictures of these tiles are made.
+
+**Exact Level-$k$ Cubes** remains available, because it is the only mode with volume exactly 1 and it is genuinely exact for the cube and for twindragon A. It reports its own cell aspect ratio and warns when the body has become a laminate.
+
+### Knowing how close it is
+
+The true tile's bounding box is available in closed form, which makes "how good is this approximation" a measurable question rather than a guess. Every point of $T$ is a convergent radix series $\sum_{j\ge1}M^{-j}d_j$ with each digit free, so the support function separates term by term:
+
+$$\max_{x \in T}\langle u, x\rangle = \sum_{j\ge1}\max_{d \in D}\langle u, M^{-j}d\rangle,$$
+
+a geometric series evaluated to machine precision in a few dozen terms. The operator reports the achieved extent as a percentage of that limit.
+
+The numbers are sobering for the thin cases, and are reported rather than hidden. Twindragon G's tips lie along fibres of vanishing measure: reaching 99% of its true extent would need on the order of $2^{77}$ cells. At the default sample it reaches about 80%, and in exact mode at level 10 only 45%. The cube, twindragon A and ABC (1,2,4) reach 97-100%.
 
 ### General IFS attractors
 
