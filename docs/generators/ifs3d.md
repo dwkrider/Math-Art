@@ -123,7 +123,9 @@ These families touch at edges and corners by construction, so an edge can have f
 
 ### What is not here
 
-There is no "3D Barnsley fern". The four maps of the **two-dimensional** fern are published (Barnsley, *Fractals Everywhere*) and are offered embedded in the $z = 0$ plane, correctly attributed; a three-dimensional fern is folklore with no authoritative source, so none is invented.
+There is no "3D Barnsley fern". The four maps of the **two-dimensional** fern are published (Barnsley, *Fractals Everywhere*) and are offered embedded in the $xz$-plane — so it stands upright in Blender's z-up world — correctly attributed; a three-dimensional fern is folklore with no authoritative source, so none is invented.
+
+Because it is genuinely two-dimensional, all four of its maps are singular in $\mathbb{R}^3$. **Solid Copies** is therefore refused for it: a rank-deficient map flattens the seed solid to a plate, and the output would be a scatter of loose quads rather than a fern. Use Voxels (a one-cell-thick relief, printable, and Solidify will give it depth) or Smooth Contour. The same check applies to any custom map set with a singular linear part.
 
 ## References
 

@@ -740,6 +740,9 @@ OPS = [
     ("ifs3d fern", lambda: bpy.ops.mesh.ifs3d_add(
         mode='IFS', ifs_preset='FERN2D', output='VOXEL',
         points=80000, resolution=48)),
+    ("ifs3d fern smooth", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='IFS', ifs_preset='FERN2D', output='ISO',
+        points=120000, resolution=48)),
     ("ifs3d custom maps", lambda: bpy.ops.mesh.ifs3d_add(
         mode='IFS', ifs_preset='CUSTOM', output='SOLIDS', depth=4)),
     ("fractal reptile right-triangle",

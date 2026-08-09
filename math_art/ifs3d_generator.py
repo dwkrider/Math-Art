@@ -665,10 +665,12 @@ def _fern_maps():
            ((0.85, 0.04, -0.04, 0.85), (0.0, 1.60), 0.85),
            ((0.20, -0.26, 0.23, 0.22), (0.0, 1.60), 0.07),
            ((-0.15, 0.28, 0.26, 0.24), (0.0, 0.44), 0.07)]
+    # embedded in the xz-plane, not xy, so the fern stands upright in
+    # Blender's z-up world instead of lying flat on the ground
     out = []
     for (a, b, c, d), (e, f), p in raw:
-        A = np.array([[a, b, 0.0], [c, d, 0.0], [0.0, 0.0, 0.0]])
-        out.append((A, np.array([e, f, 0.0]), p))
+        A = np.array([[a, 0.0, b], [0.0, 0.0, 0.0], [c, 0.0, d]])
+        out.append((A, np.array([e, 0.0, f]), p))
     return out
 
 
@@ -802,6 +804,19 @@ def build_ifs(preset='SIERP_TETRA', output='SOLIDS', maps=None,
 
     m = len(maps)
     if output == 'SOLIDS':
+        # A singular map has no solid image: it squashes the seed flat.
+        # The Barnsley fern is the case that matters here -- it is a
+        # TWO-dimensional system embedded in z = 0, so all four of its
+        # maps have a zero third row and column, and solid copies of it
+        # come out as a scatter of loose plates rather than a fern.
+        flat = [i for i, (A, _, _) in enumerate(maps)
+                if abs(float(np.linalg.det(A))) < 1e-12]
+        if flat:
+            raise ValueError(
+                f"solid copies need invertible maps, but "
+                f"{len(flat)} of {m} are singular (they flatten the "
+                f"seed solid to a plate). Use the Voxels or Smooth "
+                f"Contour output for this system")
         d = max(1, int(depth))
         while m ** d > MAX_CELLS and d > 1:
             d -= 1
@@ -1591,6 +1606,38 @@ def _selftest():
         except ValueError:
             continue
         raise AssertionError(f"parse_maps({bad!r}) should have raised")
+
+    # ---- 10. the fern is two-dimensional, and says so ----------------
+    # All four of its maps are singular in 3-D, so solid copies of a
+    # seed would come out as a scatter of loose plates rather than a
+    # fern.  That has to be refused with a usable message, not drawn.
+    fern = IFS_PRESETS['FERN2D'][1]()
+    if any(abs(float(np.linalg.det(A))) > 1e-12 for A, _, _ in fern):
+        raise AssertionError("the fern's maps should all be singular "
+                             "in 3-D")
+    try:
+        build_ifs(preset='FERN2D', output='SOLIDS', depth=3)
+    except ValueError as e:
+        if 'singular' not in str(e):
+            raise AssertionError(f"the fern was refused for solid "
+                                 f"copies, but unhelpfully: {e}")
+    else:
+        raise AssertionError("solid copies of the fern should have "
+                             "been refused -- its maps flatten the "
+                             "seed to a plate")
+    # embedded in the xz-plane so it stands upright in a z-up world
+    V, F, info = build_ifs(preset='FERN2D', output='VOXEL',
+                           points=300000, resolution=128)
+    span = V.max(axis=0) - V.min(axis=0)
+    if span[1] > 0.05 * max(span[0], span[2]):
+        raise AssertionError(f"the fern should be flat in y, but spans "
+                             f"{span[1]:.3f} against {span[2]:.3f}")
+    if span[2] <= span[0]:
+        raise AssertionError(f"the fern should be taller than it is "
+                             f"wide, got {span[0]:.3f} x {span[2]:.3f}")
+    print(f"Barnsley fern: refused for solid copies, upright in the "
+          f"xz-plane ({span[0]:.2f} wide x {span[2]:.2f} tall, "
+          f"{span[1]:.3f} thick)")
 
     # a non-contractive system must be refused, not silently diverge
     try:
