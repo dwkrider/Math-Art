@@ -1,0 +1,1049 @@
+
+# 3D Iterated Function System Generator for Blender
+#
+# Attractors of iterated function systems in three dimensions, in two
+# families that need quite different machinery.
+#
+# RADIX -- self-affine lattice tiles.  An expanding integer matrix
+# M (all eigenvalues of modulus > 1) together with a digit set
+# D subset of Z^3 that is a COMPLETE RESIDUE SYSTEM for Z^3 / M Z^3
+# (so |D| = |det M| = C) determines a unique compact set T with
+#
+#     M T = T + D,   equivalently   T = union over d in D of M^-1 (T+d)
+#
+# and that T tiles R^3 by the lattice Z^3.  The level-k approximation
+# is exact rather than sampled: iterate the integer point set
+# S_0 = {0}, S_(j+1) = D + M S_j (which has exactly C^k points after k
+# steps, distinctness guaranteed by the residue condition), mesh those
+# unit cubes with an exterior-face walker, and apply the single linear
+# map M^-k.  A linear map preserves watertightness, so the result is a
+# closed surface of volume exactly 1 whatever the level.
+#
+#   ABC          the Thuswaldner-Zhang normal form for collinear digit
+#                sets: M is the companion matrix of
+#                lambda^3 + A lambda^2 + B lambda + C with digits
+#                j*e1, j = 0 .. C-1.  Those with 1 = A <= B < C are
+#                proved homeomorphic to a closed ball, with the cell
+#                structure of a truncated octahedron.
+#   TWINDRAGON   Bandt's seven three-dimensional twindragons: |det| = 2,
+#                two digits, characteristic polynomial
+#                lambda^3 - a lambda^2 - b lambda - 2 for the seven
+#                (a, b) pairs that give distinct tiles.
+#   CUBE         M = 2I with the eight digits {0,1}^3 -- the unit cube,
+#                the degenerate case, and the base for the gaskets.
+#
+# A `holes` count drops the last h digits at every level, giving
+# (C-h)^k cells instead of C^k: the same "gasket" semantics the sibling
+# 2-D Fractal Rep-Tile generator uses, and the way to get Sierpinski-
+# like sets out of a tile family.
+#
+# IFS -- general affine attractors.  Contractive maps w_i(x) = A_i x +
+# b_i (all with largest singular value < 1) have, by Hutchinson's
+# theorem, a unique compact attractor.  Three ways to render it:
+#
+#   SOLIDS   deterministic: apply every map k times to a seed solid and
+#            emit the m^k transformed copies.  Exact, and the copies
+#            meet at points for the Sierpinski sets.
+#   VOXEL    chaos game into a voxel grid, then the same exterior-face
+#            walker -- watertight and blocky, the printable option.
+#   ISO      chaos game into a density grid, blurred and contoured by
+#            marching tetrahedra -- smooth and cloud-like.
+#
+# Note on anisotropy: in three dimensions the eigenvalues of M
+# generally have DIFFERENT moduli, so M^-k contracts unevenly and the
+# level-k approximation is genuinely thin in the slow direction.  That
+# is not a defect -- it is what "self-affine" rather than "self-similar"
+# means.  (A self-affine tile is conjugate to a self-similar one if and
+# only if all eigenvalues of M share a modulus.)
+#
+# Geometry only; materials and rendering are left to Blender.
+#
+# References:
+# - C. Bandt, Mai The Duy and M. Mesing, "Three-Dimensional Fractals",
+#   The Mathematical Intelligencer 32, 2010, pp. 12-18.
+#   doi:10.1007/s00283-009-9110-6
+# - C. Bandt, "Self-similar sets 5. Integer matrices and fractal
+#   tilings of R^n", Proceedings of the American Mathematical Society
+#   112, 1991, pp. 549-562 -- the integer-matrix plus residue-digit-set
+#   theorem behind every radix tile here.
+# - C. Bandt, "Combinatorial topology of three-dimensional self-affine
+#   tiles", arXiv:1002.0710, 2010 -- the seven twindragon cases.
+# - J. M. Thuswaldner and S.-Q. Zhang, "On self-affine tiles that are
+#   homeomorphic to a ball", arXiv:2107.12076 -- the ABC normal form.
+# - G. Gelbrich, "Crystallographic reptiles", Geometriae Dedicata, 1994.
+# - J. E. Hutchinson, "Fractals and self similarity", Indiana
+#   University Mathematics Journal 30, 1981 -- existence and uniqueness
+#   of the attractor of a contractive IFS.
+# - M. F. Barnsley, "Fractals Everywhere", 2nd ed., Academic Press,
+#   1993 -- the chaos game, and the fern whose (two-dimensional) maps
+#   are offered here embedded in the z = 0 plane.
+
+bl_info = {
+    "name": "3D Iterated Function System Generator",
+    "author": "Math Art project",
+    "version": (1, 0, 0),
+    "blender": (4, 2, 0),
+    "location": "View3D > Add > Mesh > 3D Iterated Function System",
+    "description": "Self-affine lattice tiles from an expanding integer "
+                   "matrix, and general affine IFS attractors",
+    "category": "Add Mesh",
+}
+
+import math
+
+import numpy as np
+
+
+def _toolkit():
+    """The sibling Minimal Surface Toolkit supplies marching_tets."""
+    try:
+        from . import minimal_surface_toolkit as mst
+    except ImportError:
+        import minimal_surface_toolkit as mst
+    return mst
+
+
+# ==========================================================================
+# Radix tiles: expanding integer matrix + complete residue digit set
+# ==========================================================================
+
+def companion(c2, c1, c0):
+    """The companion matrix of lambda^3 + c2 lambda^2 + c1 lambda + c0,
+    whose determinant is -c0."""
+    return np.array([[0, 0, -c0],
+                     [1, 0, -c1],
+                     [0, 1, -c2]], dtype=np.int64)
+
+
+def is_expanding(M, tol=1e-9):
+    """Every eigenvalue of modulus > 1 -- the condition that makes the
+    radix representation converge."""
+    return bool(np.min(np.abs(np.linalg.eigvals(
+        np.asarray(M, dtype=float)))) > 1.0 + tol)
+
+
+def is_residue_system(M, digits, tol=1e-9):
+    """True when no two digits are congruent mod M Z^3, i.e. the digit
+    set is a complete residue system for Z^3 / M Z^3.  This is exactly
+    what makes every radix string denote a distinct lattice point, and
+    hence what makes |S_k| = C^k."""
+    Mi = np.linalg.inv(np.asarray(M, dtype=float))
+    D = np.asarray(digits, dtype=float)
+    for a in range(len(D)):
+        for b in range(a + 1, len(D)):
+            v = Mi @ (D[a] - D[b])
+            if np.all(np.abs(v - np.round(v)) < tol):
+                return False
+    return True
+
+
+def radix_points(M, digits, level, holes=0):
+    """The level-k integer point set S_k defined by
+    S_0 = {0}, S_(j+1) = D + M S_j.
+
+    With `holes` > 0 the last `holes` digits are dropped at every
+    level, giving (C-h)^k points -- a gasket inside the tile."""
+    M = np.asarray(M, dtype=np.int64)
+    D = np.asarray(digits, dtype=np.int64)
+    if holes:
+        D = D[:max(1, len(D) - int(holes))]
+    S = np.zeros((1, 3), dtype=np.int64)
+    for _ in range(int(level)):
+        # S <- D + M S, as one broadcast; int64 throughout because the
+        # coordinates grow like ||M||^k and would overflow int32
+        MS = S @ M.T
+        S = (MS[:, None, :] + D[None, :, :]).reshape(-1, 3)
+    return S
+
+
+_FACE_DIRS = (
+    ((1, 0, 0), ((1, 0, 0), (1, 1, 0), (1, 1, 1), (1, 0, 1))),
+    ((-1, 0, 0), ((0, 0, 0), (0, 0, 1), (0, 1, 1), (0, 1, 0))),
+    ((0, 1, 0), ((0, 1, 0), (0, 1, 1), (1, 1, 1), (1, 1, 0))),
+    ((0, -1, 0), ((0, 0, 0), (1, 0, 0), (1, 0, 1), (0, 0, 1))),
+    ((0, 0, 1), ((0, 0, 1), (1, 0, 1), (1, 1, 1), (0, 1, 1))),
+    ((0, 0, -1), ((0, 0, 0), (0, 1, 0), (1, 1, 0), (1, 0, 0))),
+)
+
+
+def edge_stats(faces):
+    """(boundary, non_manifold) edge counts.
+
+    A boundary edge (one incident face) means the surface has a hole --
+    always a bug here.  An edge with FOUR incident faces means two cubes
+    of the set meet only along that edge; the surface still encloses its
+    solid, but it is not a manifold there.  That happens for real in
+    these families -- Sierpinski-like sets touch at edges and corners by
+    construction -- so it is reported, not treated as an error."""
+    if not len(faces):
+        return 0, 0
+    e = []
+    for f in faces:
+        k = len(f)
+        for i in range(k):
+            a, b = f[i], f[(i + 1) % k]
+            e.append((a, b) if a < b else (b, a))
+    arr = np.asarray(e, dtype=np.int64)
+    _, counts = np.unique(arr, axis=0, return_counts=True)
+    return (int(np.sum(counts == 1)), int(np.sum(counts > 2)))
+
+
+def voxel_surface(cells):
+    """Watertight exterior surface of a set of unit cubes on the
+    integer lattice: only faces between an occupied cell and an empty
+    neighbour are emitted, with shared vertices.  Returns integer
+    vertices and quad faces.
+
+    Structurally the same walker the Fractal Sponge generator uses; the
+    occupancy test needs a set of tuples for O(1) lookup, not an `in`
+    test against an array."""
+    occ = set(map(tuple, np.asarray(cells, dtype=np.int64).tolist()))
+    verts, vid, faces = [], {}, []
+
+    def vertex(key):
+        i = vid.get(key)
+        if i is None:
+            i = len(verts)
+            vid[key] = i
+            verts.append(key)
+        return i
+
+    for (cx, cy, cz) in sorted(occ):
+        for (d, corners) in _FACE_DIRS:
+            if (cx + d[0], cy + d[1], cz + d[2]) in occ:
+                continue
+            faces.append([vertex((cx + a, cy + b, cz + c))
+                          for (a, b, c) in corners])
+    return np.asarray(verts, dtype=np.int64), faces
+
+
+# --- presets --------------------------------------------------------------
+# (key, label, M, digits).  Verified expanding with a complete residue
+# system by the self-test, not by assertion here.
+
+def _abc(A, B, C):
+    return companion(A, B, C), np.array([(j, 0, 0) for j in range(C)],
+                                        dtype=np.int64)
+
+
+def _twindragon(a, b):
+    # characteristic polynomial lambda^3 - a lambda^2 - b lambda - 2
+    return (companion(-a, -b, -2),
+            np.array([(0, 0, 0), (1, 0, 0)], dtype=np.int64))
+
+
+RADIX_PRESETS = {
+    'ABC_112': ("ABC tile (1,1,2)", _abc(1, 1, 2)),
+    'ABC_113': ("ABC tile (1,1,3)", _abc(1, 1, 3)),
+    'ABC_123': ("ABC tile (1,2,3)", _abc(1, 2, 3)),
+    'ABC_124': ("ABC tile (1,2,4)", _abc(1, 2, 4)),
+    'ABC_134': ("ABC tile (1,3,4)", _abc(1, 3, 4)),
+    'ABC_223': ("ABC tile (2,2,3)", _abc(2, 2, 3)),
+    'TWIN_A': ("Twindragon A (0,0)", _twindragon(0, 0)),
+    'TWIN_B': ("Twindragon B (-1,1)", _twindragon(-1, 1)),
+    'TWIN_C': ("Twindragon C (1,-1)", _twindragon(1, -1)),
+    'TWIN_D': ("Twindragon D (0,1)", _twindragon(0, 1)),
+    'TWIN_E': ("Twindragon E (2,-2)", _twindragon(2, -2)),
+    'TWIN_F': ("Twindragon F (1,0)", _twindragon(1, 0)),
+    'TWIN_G': ("Twindragon G (0,2)", _twindragon(0, 2)),
+    'CUBE': ("Cube (2I, 8 digits)",
+             (2 * np.eye(3, dtype=np.int64),
+              np.array([(i, j, k) for i in (0, 1) for j in (0, 1)
+                        for k in (0, 1)], dtype=np.int64))),
+}
+
+MAX_CELLS = 300000
+
+
+def max_level(ndigits):
+    """Largest level whose point count stays inside the cell budget."""
+    if ndigits < 2:
+        return 1
+    return max(1, int(math.floor(math.log(MAX_CELLS)
+                                 / math.log(ndigits))))
+
+
+def default_level(ndigits):
+    """A level landing in the 30k-300k cell band, where these tiles
+    read as their limit shape without costing a minute."""
+    if ndigits < 2:
+        return 1
+    return max(1, int(round(math.log(60000) / math.log(ndigits))))
+
+
+def build_radix(preset='ABC_124', level=0, holes=0, custom=None,
+                scale=1.0):
+    """Mesh the level-k approximation of a self-affine radix tile.
+    Returns (verts, faces, info)."""
+    if preset == 'CUSTOM' and custom is not None:
+        M, D = custom
+    else:
+        M, D = RADIX_PRESETS[preset][1]
+    M = np.asarray(M, dtype=np.int64)
+    D = np.asarray(D, dtype=np.int64)
+    if not is_expanding(M):
+        raise ValueError("the matrix is not expanding (it needs every "
+                         "eigenvalue of modulus > 1)")
+    if not is_residue_system(M, D):
+        raise ValueError("the digits are not a complete residue system "
+                         "for Z^3 / M Z^3 (two of them are congruent)")
+    C = len(D)
+    holes = int(np.clip(int(holes), 0, max(0, C - 2)))
+    kept = C - holes
+    lvl = int(level) if level > 0 else default_level(kept)
+    lvl = max(1, min(lvl, max_level(kept)))
+
+    S = radix_points(M, D, lvl, holes)
+    verts_i, faces = voxel_surface(S)
+    if not len(faces):
+        raise ValueError("the tile came out empty")
+
+    # one linear map takes the integer cubes to the level-k tile; being
+    # linear it cannot break the watertightness the walker just built
+    A = np.linalg.inv(np.linalg.matrix_power(M.astype(float), lvl))
+    verts = verts_i.astype(float) @ A.T
+
+    detM = abs(int(round(np.linalg.det(M.astype(float)))))
+    info = {'level': lvl, 'cells': len(S), 'digits': C,
+            'kept': kept, 'det': detM,
+            'volume': len(S) / float(detM) ** lvl,
+            'eigenvalues': np.linalg.eigvals(M.astype(float))}
+    return center_fit(verts, scale), faces, info
+
+
+# ==========================================================================
+# General affine IFS
+# ==========================================================================
+
+_TETRA = np.array([(1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)],
+                  dtype=float)
+_TETRA_F = [(0, 2, 1), (0, 3, 2), (0, 1, 3), (1, 2, 3)]
+_OCTA = np.array([(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0),
+                  (0, 0, 1), (0, 0, -1)], dtype=float)
+_OCTA_F = [(0, 2, 4), (2, 1, 4), (1, 3, 4), (3, 0, 4),
+           (2, 0, 5), (1, 2, 5), (3, 1, 5), (0, 3, 5)]
+_CUBE_V = np.array([(x, y, z) for x in (-1, 1) for y in (-1, 1)
+                    for z in (-1, 1)], dtype=float)
+_CUBE_F = [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1),
+           (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
+
+SEEDS = {'CUBE': (_CUBE_V, _CUBE_F), 'TETRA': (_TETRA, _TETRA_F),
+         'OCTA': (_OCTA, _OCTA_F)}
+
+
+def _uniform(vs, s):
+    """Maps x -> s x + (1-s) v for each v: the classic 'shrink toward
+    each vertex' system whose attractor is the Sierpinski set."""
+    return [(s * np.eye(3), (1.0 - s) * np.asarray(v, dtype=float),
+             1.0) for v in vs]
+
+
+def _menger_maps():
+    cells = [c for c in
+             ((i, j, k) for i in (-1, 0, 1) for j in (-1, 0, 1)
+              for k in (-1, 0, 1))
+             if sum(1 for t in c if t == 0) <= 1]
+    return [(np.eye(3) / 3.0, (2.0 / 3.0) * np.asarray(c, dtype=float),
+             1.0) for c in cells]
+
+
+def _fern_maps():
+    """Barnsley's fern -- a TWO-dimensional system, embedded in the
+    z = 0 plane.  Its four maps are published (Barnsley, "Fractals
+    Everywhere"); there is no authoritative three-dimensional fern, so
+    none is invented here."""
+    raw = [((0.00, 0.00, 0.00, 0.16), (0.0, 0.00), 0.01),
+           ((0.85, 0.04, -0.04, 0.85), (0.0, 1.60), 0.85),
+           ((0.20, -0.26, 0.23, 0.22), (0.0, 1.60), 0.07),
+           ((-0.15, 0.28, 0.26, 0.24), (0.0, 0.44), 0.07)]
+    out = []
+    for (a, b, c, d), (e, f), p in raw:
+        A = np.array([[a, b, 0.0], [c, d, 0.0], [0.0, 0.0, 0.0]])
+        out.append((A, np.array([e, f, 0.0]), p))
+    return out
+
+
+IFS_PRESETS = {
+    'SIERP_TETRA': ("Sierpinski Tetrahedron",
+                    lambda: _uniform(_TETRA, 0.5)),
+    'SIERP_OCTA': ("Sierpinski Octahedron",
+                   lambda: _uniform(_OCTA, 0.5)),
+    'SIERP_CUBE': ("Cantor Dust (cube corners)",
+                   lambda: _uniform(_CUBE_V, 1.0 / 3.0)),
+    'MENGER': ("Menger Sponge", _menger_maps),
+    'FERN2D': ("Barnsley Fern (2-D, embedded)", _fern_maps),
+}
+
+
+def parse_maps(spec):
+    """Parse custom affine maps, one per line or semicolon:
+
+        a b c d e f g h i | tx ty tz | p
+
+    with the nine numbers the row-major 3x3 linear part, the three the
+    translation and the optional p the chaos-game probability."""
+    out = []
+    for chunk in str(spec).replace('\n', ';').split(';'):
+        chunk = chunk.strip()
+        if not chunk:
+            continue
+        parts = [p.strip() for p in chunk.split('|')]
+        if len(parts) < 2:
+            raise ValueError(f"map {chunk!r} needs a '|' between the "
+                             f"matrix and the translation")
+        try:
+            lin = [float(v) for v in parts[0].split()]
+            tr = [float(v) for v in parts[1].split()]
+            p = float(parts[2]) if len(parts) > 2 and parts[2] else 1.0
+        except ValueError:
+            raise ValueError(f"cannot read the numbers in map {chunk!r}")
+        if len(lin) != 9:
+            raise ValueError(f"map {chunk!r} needs 9 matrix entries, "
+                             f"got {len(lin)}")
+        if len(tr) != 3:
+            raise ValueError(f"map {chunk!r} needs 3 translation "
+                             f"entries, got {len(tr)}")
+        out.append((np.asarray(lin).reshape(3, 3), np.asarray(tr), p))
+    if not out:
+        raise ValueError("the map specification is empty")
+    return out
+
+
+def contractive(maps, tol=1e-9):
+    """Every map a contraction, by largest singular value."""
+    return all(float(np.linalg.svd(A, compute_uv=False)[0]) < 1.0 - tol
+               for A, _, _ in maps)
+
+
+def chaos_game(maps, points=400000, seed=0, walkers=4096,
+               transient=20):
+    """Sample the attractor.  Rather than one long sequential orbit,
+    many walkers advance together and each step is a handful of
+    vectorised affine maps -- the same measure, a hundred times faster
+    in Python."""
+    m = len(maps)
+    probs = np.array([max(p, 0.0) for _, _, p in maps], dtype=float)
+    probs = (probs / probs.sum() if probs.sum() > 0
+             else np.full(m, 1.0 / m))
+    rng = np.random.default_rng(int(seed))
+    n = max(64, int(walkers))
+    steps = max(1, int(math.ceil(points / n)) + int(transient))
+    X = rng.normal(size=(n, 3)) * 0.1
+    keep = []
+    for t in range(steps):
+        idx = rng.choice(m, size=n, p=probs)
+        Y = np.empty_like(X)
+        for i, (A, b, _) in enumerate(maps):
+            sel = idx == i
+            if np.any(sel):
+                Y[sel] = X[sel] @ A.T + b
+        X = Y
+        if t >= transient:
+            keep.append(X.copy())
+    P = np.vstack(keep)
+    return P[:int(points)] if len(P) > points else P
+
+
+def _occupied_cells(P, res, cover=0.98):
+    """Bin points into a res^3 grid over their own bounding box and
+    return (cells, counts, lo, cell_size).  A robust box is used: the
+    outermost `1 - cover` of the points, which for a chaos game are
+    stragglers still converging, would otherwise stretch the grid."""
+    lo = np.quantile(P, (1.0 - cover) / 2.0, axis=0)
+    hi = np.quantile(P, 1.0 - (1.0 - cover) / 2.0, axis=0)
+    span = np.maximum(hi - lo, 1e-9)
+    s = float(np.max(span)) / int(res)
+    lo = 0.5 * (lo + hi) - 0.5 * s * int(res)
+    idx = np.floor((P - lo) / s).astype(np.int64)
+    idx = idx[np.all((idx >= 0) & (idx < int(res)), axis=1)]
+    cells, counts = np.unique(idx, axis=0, return_counts=True)
+    return cells, counts, lo, s
+
+
+def build_ifs(preset='SIERP_TETRA', output='SOLIDS', maps=None,
+              depth=5, seed_solid='TETRA', points=400000,
+              resolution=128, cover=0.90, seed=0, min_count=1,
+              largest_only=False, scale=1.0):
+    """Mesh a general affine IFS attractor.  Returns
+    (verts, faces, info)."""
+    if maps is None:
+        if preset == 'CUSTOM':
+            raise ValueError("custom mode needs a map specification")
+        maps = IFS_PRESETS[preset][1]()
+    if not maps:
+        raise ValueError("no maps given")
+    if not contractive(maps):
+        raise ValueError("every map must be a contraction (largest "
+                         "singular value < 1)")
+
+    m = len(maps)
+    if output == 'SOLIDS':
+        d = max(1, int(depth))
+        while m ** d > MAX_CELLS and d > 1:
+            d -= 1
+        sv, sf = SEEDS[seed_solid]
+        # compose all m^d words, then place one seed copy per word
+        A = [np.eye(3)]
+        b = [np.zeros(3)]
+        for _ in range(d):
+            A2, b2 = [], []
+            for Ai, bi in zip(A, b):
+                for (Am, bm, _p) in maps:
+                    A2.append(Am @ Ai)
+                    b2.append(Am @ bi + bm)
+            A, b = A2, b2
+        verts, faces = [], []
+        for Ai, bi in zip(A, b):
+            base = len(verts)
+            for v in sv:
+                verts.append(Ai @ v + bi)
+            for f in sf:
+                faces.append([base + i for i in f])
+        verts = np.asarray(verts, dtype=float)
+        info = {'copies': len(A), 'depth': d, 'maps': m}
+        return center_fit(verts, scale), faces, info
+
+    P = chaos_game(maps, points=points, seed=seed)
+    if output == 'VOXEL':
+        cells, counts, lo, s = _occupied_cells(P, resolution)
+        cells = cells[counts >= max(1, int(min_count))]
+        if not len(cells):
+            raise ValueError("no cell met the minimum point count")
+        verts_i, faces = voxel_surface(cells)
+        verts = lo + verts_i.astype(float) * s
+        info = {'points': len(P), 'cells': len(cells), 'maps': m}
+        return center_fit(verts, scale), faces, info
+
+    # ISO: density grid, blurred, contoured
+    res = int(resolution)
+    cells, counts, lo, s = _occupied_cells(P, res)
+    dens = np.zeros((res, res, res), dtype=float)
+    dens[cells[:, 0], cells[:, 1], cells[:, 2]] = counts
+    for axis in (0, 1, 2):                       # separable 3-tap blur
+        dens = (dens
+                + np.roll(dens, 1, axis=axis)
+                + np.roll(dens, -1, axis=axis)) / 3.0
+    flat = dens.ravel()
+    order = np.argsort(flat)[::-1]
+    cum = np.cumsum(flat[order])
+    if cum[-1] <= 0.0:
+        raise ValueError("the density grid came out empty")
+    # contour enclosing `cover` of the sampled mass
+    t = float(flat[order[min(int(np.searchsorted(cum,
+                                                 cover * cum[-1])),
+                             len(order) - 1)]])
+    hi = lo + s * res
+
+    def field(X, Y, Z):
+        ix = np.clip(((X - lo[0]) / s).astype(np.int64), 0, res - 1)
+        iy = np.clip(((Y - lo[1]) / s).astype(np.int64), 0, res - 1)
+        iz = np.clip(((Z - lo[2]) / s).astype(np.int64), 0, res - 1)
+        return t - dens[ix, iy, iz]
+
+    mst = _toolkit()
+    verts, tris = mst.marching_tets(field, lo, hi, (res, res, res))
+    if not len(tris):
+        raise ValueError("the contour came out empty -- try a larger "
+                         "cover or more points")
+    if largest_only:
+        verts, tris = keep_largest(verts, tris)
+    info = {'points': len(P), 'level': t, 'maps': m,
+            'tris': len(tris)}
+    return center_fit(verts, scale), [tuple(int(i) for i in f)
+                                      for f in tris], info
+
+
+def keep_largest(verts, tris):
+    """Biggest connected piece only -- a chaos game on a coarse grid
+    leaves speckle."""
+    parent = list(range(len(verts)))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    for t in tris:
+        a = find(int(t[0]))
+        for i in (1, 2):
+            b = find(int(t[i]))
+            if a != b:
+                parent[b] = a
+    lab = np.array([find(int(t[0])) for t in tris])
+    vals, counts = np.unique(lab, return_counts=True)
+    keep = tris[lab == vals[int(np.argmax(counts))]]
+    used = np.unique(keep)
+    remap = np.full(len(verts), -1, dtype=np.int64)
+    remap[used] = np.arange(len(used))
+    return verts[used], remap[keep]
+
+
+def center_fit(verts, scale=1.0):
+    """Centre on the bounding box and fit the largest extent to a 2 m
+    cube (the project-wide convention), then apply `scale`."""
+    verts = np.asarray(verts, dtype=float)
+    if not len(verts):
+        return verts
+    lo, hi = verts.min(axis=0), verts.max(axis=0)
+    ext = float((hi - lo).max())
+    return (verts - 0.5 * (lo + hi)) * (2.0 / ext
+                                        if ext > 1e-9 else 1.0) * scale
+
+
+# ==========================================================================
+# Blender layer
+# ==========================================================================
+
+try:
+    import bpy
+    from bpy.props import (IntProperty, FloatProperty, EnumProperty,
+                           BoolProperty, StringProperty)
+    _IN_BLENDER = True
+except ImportError:
+    _IN_BLENDER = False
+
+
+if _IN_BLENDER:
+
+    def _new_object(context, name, verts, faces, smooth=False):
+        me = bpy.data.meshes.new(name)
+        me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
+                       [tuple(int(i) for i in f) for f in faces])
+        me.validate(clean_customdata=True)
+        me.polygons.foreach_set('use_smooth',
+                                [smooth] * len(me.polygons))
+        me.update()
+        obj = bpy.data.objects.new(name, me)
+        context.collection.objects.link(obj)
+        obj.location = context.scene.cursor.location
+        for o in context.selected_objects:
+            o.select_set(False)
+        obj.select_set(True)
+        context.view_layer.objects.active = obj
+        return obj
+
+    class MESH_OT_ifs3d_add(bpy.types.Operator):
+        """Add a three-dimensional self-affine tile or the attractor of
+        an affine iterated function system"""
+        bl_idname = "mesh.ifs3d_add"
+        bl_label = "3D Iterated Function System"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        mode: EnumProperty(
+            name="Mode",
+            items=[('RADIX', "Self-Affine Tile", "A lattice tile from "
+                                                 "an expanding integer "
+                                                 "matrix and a residue "
+                                                 "digit set"),
+                   ('IFS', "IFS Attractor", "The attractor of a set of "
+                                            "contractive affine maps")],
+            default='RADIX')
+        preset: EnumProperty(
+            name="Tile",
+            items=[(k, v[0], v[0]) for k, v in RADIX_PRESETS.items()],
+            default='ABC_124')
+        level: IntProperty(
+            name="Level", default=0, min=0, max=24,
+            description="Radix depth; 0 picks a level landing in the "
+                        "30k-300k cell band")
+        holes: IntProperty(
+            name="Holes", default=0, min=0, max=6,
+            description="Drop this many digits at every level, turning "
+                        "the tile into a gasket")
+        ifs_preset: EnumProperty(
+            name="System",
+            items=[(k, v[0], v[0]) for k, v in IFS_PRESETS.items()]
+                  + [('CUSTOM', "Custom", "Use the maps field")],
+            default='SIERP_TETRA')
+        output: EnumProperty(
+            name="Output",
+            items=[('SOLIDS', "Solid Copies", "Deterministic: one seed "
+                                              "solid per word"),
+                   ('VOXEL', "Voxels", "Chaos game binned into a "
+                                       "watertight voxel grid"),
+                   ('ISO', "Smooth Contour", "Chaos game contoured by "
+                                             "marching tetrahedra")],
+            default='SOLIDS')
+        seed_solid: EnumProperty(
+            name="Seed Solid",
+            items=[('TETRA', "Tetrahedron", ""), ('CUBE', "Cube", ""),
+                   ('OCTA', "Octahedron", "")],
+            default='TETRA')
+        depth: IntProperty(
+            name="Depth", default=5, min=1, max=12,
+            description="Solid-copies depth; the count is maps^depth "
+                        "and is capped automatically")
+        points: IntProperty(
+            name="Points", default=400000, min=10000, max=5000000,
+            description="Chaos-game sample count")
+        resolution: IntProperty(
+            name="Resolution", default=128, min=16, max=256,
+            description="Voxel / density grid resolution per axis")
+        cover: FloatProperty(
+            name="Cover", default=0.90, min=0.1, max=0.999,
+            description="Smooth contour: the fraction of the sampled "
+                        "mass the surface encloses")
+        min_count: IntProperty(
+            name="Min Points per Cell", default=1, min=1, max=200,
+            description="Voxel mode: cells with fewer points than this "
+                        "are left empty")
+        maps: StringProperty(
+            name="Maps",
+            default="0.5 0 0 0 0.5 0 0 0 0.5 | 0.5 0.5 0.5 | 1; "
+                    "0.5 0 0 0 0.5 0 0 0 0.5 | -0.5 -0.5 0.5 | 1; "
+                    "0.5 0 0 0 0.5 0 0 0 0.5 | 0.5 -0.5 -0.5 | 1; "
+                    "0.5 0 0 0 0.5 0 0 0 0.5 | -0.5 0.5 -0.5 | 1",
+            description="Custom affine maps: nine matrix entries | "
+                        "three translations | probability, one map per "
+                        "semicolon")
+        seed: IntProperty(
+            name="Seed", default=0, min=0, max=99999,
+            description="Chaos-game random seed; the same seed always "
+                        "gives the same mesh")
+        largest_only: BoolProperty(
+            name="Largest Piece Only", default=False,
+            description="Smooth contour: discard all but the biggest "
+                        "connected piece")
+        scale: FloatProperty(
+            name="Scale", default=1.0, min=0.01, max=100.0)
+        thickness: FloatProperty(
+            name="Thickness", default=0.0, min=0.0, max=1.0,
+            description="If > 0, add a Solidify modifier with this "
+                        "thickness")
+        smooth: BoolProperty(name="Smooth Shading", default=False)
+
+        def execute(self, context):
+            try:
+                if self.mode == 'RADIX':
+                    verts, faces, info = build_radix(
+                        preset=self.preset, level=self.level,
+                        holes=self.holes, scale=self.scale)
+                    label = RADIX_PRESETS[self.preset][0]
+                    if self.holes:
+                        label += f" gasket -{self.holes}"
+                else:
+                    mp = (parse_maps(self.maps)
+                          if self.ifs_preset == 'CUSTOM' else None)
+                    verts, faces, info = build_ifs(
+                        preset=self.ifs_preset, output=self.output,
+                        maps=mp, depth=self.depth,
+                        seed_solid=self.seed_solid, points=self.points,
+                        resolution=self.resolution, cover=self.cover,
+                        seed=self.seed, min_count=self.min_count,
+                        largest_only=self.largest_only,
+                        scale=self.scale)
+                    label = (IFS_PRESETS[self.ifs_preset][0]
+                             if self.ifs_preset != 'CUSTOM'
+                             else "Custom IFS")
+            except (ValueError, KeyError) as e:
+                self.report({'ERROR'}, str(e))
+                return {'CANCELLED'}
+
+            # edge-to-edge contact is intrinsic to these families, but
+            # a slicer will choke on it, so say so -- only when the
+            # count is small enough that the check is cheap
+            if len(faces) <= 200000 and self.output != 'ISO':
+                nb, nm = edge_stats(faces)
+                if nb:
+                    self.report({'WARNING'},
+                                f"{label}: {nb} boundary edges -- the "
+                                f"surface is not closed")
+                elif nm:
+                    self.report({'WARNING'},
+                                f"{label}: closed, but {nm} edges have "
+                                f"cells meeting only edge to edge; "
+                                f"non-manifold, so thicken it before "
+                                f"printing")
+
+            obj = _new_object(context, label, verts, faces,
+                              smooth=self.smooth)
+            if self.thickness > 0:
+                mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
+                mod.thickness = self.thickness
+                mod.offset = 0.0
+            me = obj.data
+            if self.mode == 'RADIX':
+                self.report(
+                    {'INFO'},
+                    f"{label}: level {info['level']}, "
+                    f"{info['cells']} cells, volume "
+                    f"{info['volume']:.4f}, {len(me.vertices)} verts")
+            else:
+                extra = (f"{info.get('copies', 0)} copies"
+                         if self.output == 'SOLIDS'
+                         else f"{info.get('points', 0)} points")
+                self.report({'INFO'},
+                            f"{label}: {extra}, {len(me.vertices)} "
+                            f"verts, {len(me.polygons)} faces")
+            return {'FINISHED'}
+
+        def draw(self, context):
+            lay = self.layout
+            lay.use_property_split = True
+            lay.prop(self, 'mode')
+            if self.mode == 'RADIX':
+                lay.prop(self, 'preset')
+                lay.prop(self, 'level')
+                lay.prop(self, 'holes')
+            else:
+                lay.prop(self, 'ifs_preset')
+                if self.ifs_preset == 'CUSTOM':
+                    lay.prop(self, 'maps')
+                lay.prop(self, 'output')
+                if self.output == 'SOLIDS':
+                    lay.prop(self, 'seed_solid')
+                    lay.prop(self, 'depth')
+                else:
+                    lay.prop(self, 'points')
+                    lay.prop(self, 'resolution')
+                    lay.prop(self, 'seed')
+                    if self.output == 'VOXEL':
+                        lay.prop(self, 'min_count')
+                    else:
+                        lay.prop(self, 'cover')
+                        lay.prop(self, 'largest_only')
+            for k in ('scale', 'thickness', 'smooth'):
+                lay.prop(self, k)
+
+    def _menu_func(self, context):
+        self.layout.operator("mesh.ifs3d_add", icon='MOD_REMESH')
+
+    _classes = (MESH_OT_ifs3d_add,)
+
+    ADD_MENU = True   # the Math Art extension menu sets this False
+
+    def register():
+        for c in _classes:
+            bpy.utils.register_class(c)
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
+
+    def unregister():
+        if ADD_MENU:
+            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        for c in reversed(_classes):
+            bpy.utils.unregister_class(c)
+
+
+# ==========================================================================
+# Standalone numeric self-test
+# ==========================================================================
+
+def _selftest():
+    # ---- 1. every preset really is a radix system -------------------
+    for key, (label, (M, D)) in RADIX_PRESETS.items():
+        if not is_expanding(M):
+            raise AssertionError(f"{label}: matrix is not expanding, "
+                                 f"eigenvalues "
+                                 f"{np.linalg.eigvals(M.astype(float))}")
+        if not is_residue_system(M, D):
+            raise AssertionError(f"{label}: digits are not a complete "
+                                 f"residue system")
+        det = abs(int(round(np.linalg.det(M.astype(float)))))
+        if det != len(D):
+            raise AssertionError(f"{label}: |det M| = {det} but there "
+                                 f"are {len(D)} digits")
+    print(f"{len(RADIX_PRESETS)} radix presets: expanding, "
+          f"|det M| = |D|, digits a complete residue system")
+
+    # ---- 2. |S_k| = C^k exactly (this is what the residue condition
+    #         buys, and the check that catches a wrong digit set) -----
+    for key, (label, (M, D)) in RADIX_PRESETS.items():
+        C = len(D)
+        kmax = min(6, max_level(C))
+        for k in range(1, kmax + 1):
+            S = radix_points(M, D, k)
+            uniq = len(np.unique(S, axis=0))
+            if uniq != C ** k or len(S) != C ** k:
+                raise AssertionError(
+                    f"{label}: level {k} has {uniq} distinct points of "
+                    f"{len(S)}, expected {C ** k}")
+    print("radix point sets: |S_k| = C^k distinct points, all presets")
+
+    # gaskets drop exactly the digits asked for
+    M, D = RADIX_PRESETS['CUBE'][1]
+    for h in (1, 2, 4):
+        for k in (1, 2, 3):
+            S = radix_points(M, D, k, holes=h)
+            if len(np.unique(S, axis=0)) != (8 - h) ** k:
+                raise AssertionError(
+                    f"cube gasket -{h}: level {k} has "
+                    f"{len(np.unique(S, axis=0))} points, expected "
+                    f"{(8 - h) ** k}")
+    print("gaskets: (C-h)^k cells at every level")
+
+    # ---- 3. volume is exactly 1, and watertight ---------------------
+    for key in ('ABC_124', 'TWIN_A', 'TWIN_G', 'CUBE'):
+        label = RADIX_PRESETS[key][0]
+        V, F, info = build_radix(preset=key, level=4)
+        if abs(info['volume'] - 1.0) > 1e-12:
+            raise AssertionError(
+                f"{label}: level-4 volume {info['volume']} != 1")
+        nb, nm = edge_stats(F)
+        if nb:
+            raise AssertionError(
+                f"{label}: {nb} boundary edges -- the surface has a "
+                f"hole in it")
+        ext = float((V.max(axis=0) - V.min(axis=0)).max())
+        if abs(ext - 2.0) > 1e-6:
+            raise AssertionError(f"{label}: {ext:.4f} across, expected "
+                                 f"a 2 m fit")
+        note = (f", {nm} non-manifold edges (cubes touching edge to "
+                f"edge)" if nm else "")
+        print(f"{label:24s}: level {info['level']}, {info['cells']:6d} "
+              f"cells, volume {info['volume']:.6f}, closed{note}")
+
+    # ---- 4. the tile converges: its shape settles as k grows --------
+    # A wrong M^-k shows up here as a bounding box that never settles.
+    # There is no uniform threshold to test against: the level-k box
+    # approaches the tile's at a rate set by 1/min|eigenvalue|, which
+    # ranges from 1/2 for the cube to 1/1.063 for twindragon G.  So the
+    # assertion is on the DECAY -- the step must shrink several-fold
+    # across the tested range and end small.
+    for key in ('ABC_124', 'ABC_112', 'TWIN_B', 'TWIN_G', 'CUBE'):
+        label = RADIX_PRESETS[key][0]
+        M, D = RADIX_PRESETS[key][1]
+        top = min(10, max_level(len(D)))
+        rels, prev = [], None
+        for k in range(3, top + 1):
+            S = radix_points(M, D, k)
+            A = np.linalg.inv(np.linalg.matrix_power(M.astype(float),
+                                                     k))
+            span = ((S.astype(float) @ A.T).max(axis=0)
+                    - (S.astype(float) @ A.T).min(axis=0))
+            if prev is not None:
+                rels.append(float(np.max(np.abs(span - prev) / prev)))
+            prev = span
+        if len(rels) < 2:
+            raise AssertionError(f"{label}: too few levels to test "
+                                 f"convergence")
+        if rels[-1] > 0.5 * rels[0]:
+            raise AssertionError(
+                f"{label}: the bounding box step went from "
+                f"{rels[0]:.3f} to {rels[-1]:.3f} -- it is not "
+                f"settling, so M^-k is wrong")
+        if rels[-1] > 0.15:
+            raise AssertionError(
+                f"{label}: still moving {100 * rels[-1]:.1f}% at level "
+                f"{top}")
+        mn = float(np.min(np.abs(np.linalg.eigvals(M.astype(float)))))
+        print(f"{label:24s}: box step {rels[0]:.3f} -> {rels[-1]:.3f} "
+              f"by level {top} (min |eigenvalue| {mn:.3f})")
+
+    # ---- 5. IFS maps are contractions -------------------------------
+    for key, (label, fn) in IFS_PRESETS.items():
+        mp = fn()
+        if key == 'FERN2D':
+            # the fern's first map is singular (it flattens to the
+            # stem), which is contractive but not invertible
+            if not all(float(np.linalg.svd(A, compute_uv=False)[0])
+                       < 1.0 for A, _, _ in mp):
+                raise AssertionError(f"{label}: not every map is a "
+                                     f"contraction")
+        elif not contractive(mp):
+            raise AssertionError(f"{label}: not every map is a "
+                                 f"contraction")
+    print(f"{len(IFS_PRESETS)} IFS presets: every map a contraction")
+
+    # ---- 6. deterministic solid copies ------------------------------
+    V, F, info = build_ifs(preset='SIERP_TETRA', output='SOLIDS',
+                           depth=5)
+    if info['copies'] != 4 ** 5:
+        raise AssertionError(f"Sierpinski tetrahedron depth 5 made "
+                             f"{info['copies']} copies, expected "
+                             f"{4 ** 5}")
+    if len(F) != 4 ** 5 * 4:
+        raise AssertionError(f"expected {4 ** 5 * 4} faces, got "
+                             f"{len(F)}")
+    print(f"Sierpinski tetrahedron: {info['copies']} copies, "
+          f"{len(F)} faces")
+
+    V, F, info = build_ifs(preset='MENGER', output='SOLIDS',
+                           seed_solid='CUBE', depth=3)
+    if info['copies'] != 20 ** 3:
+        raise AssertionError(f"Menger depth 3 made {info['copies']} "
+                             f"copies, expected {20 ** 3}")
+    print(f"Menger sponge (solid copies): {info['copies']} copies")
+
+    # ---- 7. chaos game: determinism and watertight voxels -----------
+    a = build_ifs(preset='SIERP_TETRA', output='VOXEL', points=60000,
+                  resolution=48, seed=7)
+    b = build_ifs(preset='SIERP_TETRA', output='VOXEL', points=60000,
+                  resolution=48, seed=7)
+    if not np.array_equal(a[0], b[0]) or a[1] != b[1]:
+        raise AssertionError("the chaos game is not reproducible from "
+                             "its seed")
+    c = build_ifs(preset='SIERP_TETRA', output='VOXEL', points=60000,
+                  resolution=48, seed=8)
+    if np.array_equal(a[0], c[0]):
+        raise AssertionError("two different seeds gave an identical "
+                             "mesh")
+    nb, nm = edge_stats(a[1])
+    if nb:
+        raise AssertionError(f"voxel attractor: {nb} boundary edges")
+    print(f"chaos game: reproducible from the seed, {len(a[1])} voxel "
+          f"faces, closed ({nm} non-manifold edges)")
+
+    # the attractor stays inside a bounded region
+    P = chaos_game(IFS_PRESETS['SIERP_TETRA'][1](), points=20000,
+                   seed=3)
+    if float(np.max(np.abs(P))) > 3.0:
+        raise AssertionError("the Sierpinski attractor escaped its "
+                             "bounding box")
+
+    # ---- 8. smooth contour ------------------------------------------
+    V, F, info = build_ifs(preset='SIERP_TETRA', output='ISO',
+                           points=200000, resolution=64, cover=0.9,
+                           largest_only=False)
+    if not len(F) or not np.all(np.isfinite(V)):
+        raise AssertionError("the smooth contour came out empty or "
+                             "non-finite")
+    ext = float((V.max(axis=0) - V.min(axis=0)).max())
+    if abs(ext - 2.0) > 1e-6:
+        raise AssertionError(f"smooth contour is {ext:.4f} across, "
+                             f"expected a 2 m fit")
+    print(f"smooth contour: {len(F)} tris, level {info['level']:.1f}")
+
+    # ---- 9. custom map parser ---------------------------------------
+    mp = parse_maps("0.5 0 0 0 0.5 0 0 0 0.5 | 1 2 3 | 0.4; "
+                    "0.5 0 0 0 0.5 0 0 0 0.5 | 0 0 0")
+    if len(mp) != 2:
+        raise AssertionError(f"parser made {len(mp)} maps, expected 2")
+    if not np.allclose(mp[0][1], [1, 2, 3]) or mp[0][2] != 0.4:
+        raise AssertionError("first custom map parsed wrongly")
+    if mp[1][2] != 1.0:
+        raise AssertionError("a missing probability should default "
+                             "to 1")
+    for bad in ("", "0.5 0 0 | 1 2 3", "1 2 3 4 5 6 7 8 9 | 1 2",
+                "a b c d e f g h i | 1 2 3"):
+        try:
+            parse_maps(bad)
+        except ValueError:
+            continue
+        raise AssertionError(f"parse_maps({bad!r}) should have raised")
+
+    # a non-contractive system must be refused, not silently diverge
+    try:
+        build_ifs(maps=parse_maps("2 0 0 0 2 0 0 0 2 | 0 0 0"),
+                  output='SOLIDS', depth=2)
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("an expanding map set should have been "
+                             "refused")
+
+    # and so must a digit set that is not a residue system
+    try:
+        build_radix(preset='CUSTOM',
+                    custom=(companion(1, 2, 4),
+                            np.array([(0, 0, 0), (1, 0, 0), (2, 0, 0),
+                                      (4, 0, 0)], dtype=np.int64)))
+    except ValueError:
+        pass
+    else:
+        raise AssertionError("digits 0 and 4 are congruent mod M; the "
+                             "build should have been refused")
+    print("parsers and validity checks reject what they should")
+
+    print("RESULT: OK")

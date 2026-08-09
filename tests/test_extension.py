@@ -707,6 +707,29 @@ OPS = [
          kind='KITE_R12', iterations=3, separate=True)),
     ("fractal kite r8", lambda: bpy.ops.mesh.fractal_tiling_add(
         kind='KITE_R8', iterations=4, color_by='UNIFORM')),
+    ("ifs3d abc tile", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='RADIX', preset='ABC_124', level=5)),
+    ("ifs3d twindragon", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='RADIX', preset='TWIN_D', level=10)),
+    ("ifs3d cube gasket", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='RADIX', preset='CUBE', holes=4, level=4)),
+    ("ifs3d sierpinski solids", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='IFS', ifs_preset='SIERP_TETRA', output='SOLIDS',
+        depth=4)),
+    ("ifs3d menger solids", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='IFS', ifs_preset='MENGER', output='SOLIDS',
+        seed_solid='CUBE', depth=2)),
+    ("ifs3d voxel attractor", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='IFS', ifs_preset='SIERP_OCTA', output='VOXEL',
+        points=80000, resolution=48)),
+    ("ifs3d smooth contour", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='IFS', ifs_preset='SIERP_TETRA', output='ISO',
+        points=120000, resolution=48)),
+    ("ifs3d fern", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='IFS', ifs_preset='FERN2D', output='VOXEL',
+        points=80000, resolution=48)),
+    ("ifs3d custom maps", lambda: bpy.ops.mesh.ifs3d_add(
+        mode='IFS', ifs_preset='CUSTOM', output='SOLIDS', depth=4)),
     ("fractal reptile right-triangle",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          family='CLASSIC', shape='RIGHT_TRIANGLE', iterations=6)),
