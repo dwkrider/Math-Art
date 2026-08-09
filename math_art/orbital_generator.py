@@ -687,15 +687,18 @@ def build_orbital(mode='ATOMIC', n=2, l=1, m=0, zeta=1.0,
     sign = np.concatenate(all_sign)
     shell = np.concatenate(all_shell)
 
-    # the outermost shell is the one whose lobe count is diagnostic
+    # the outermost shell is the one whose lobe count is diagnostic --
+    # and it is the LOWEST level, so the prediction has to use that one
+    # too or the two would be counting different contours
+    outer_level = min(levels)
     outer = tris[shell == shell.max()]
     ncomp = len(mesh_components(len(verts), outer))
     cell = 2.0 * half / max(res, 1)
     if mode == 'ATOMIC':
-        want, gap = predicted_surfaces(n, l, m, zeta, max(levels), half)
+        want, gap = predicted_surfaces(n, l, m, zeta, outer_level, half)
     else:
         want, gap = None, float('inf')
-    info = {'level': max(levels), 'levels': levels,
+    info = {'level': outer_level, 'levels': levels,
             'probabilities': probs, 'shells': len(set(shell.tolist())),
             'shell': shell, 'box': half, 'components': ncomp,
             'open_edges': open_edges, 'centres': centres,
@@ -1050,14 +1053,18 @@ if _IN_BLENDER:
                             f"sample box; raise Box Override or lower "
                             f"the enclosed probability")
             if not info.get('resolved', True):
+                gap = info['node_gap']
+                why = (f"the narrowest radial node gap is "
+                       f"{gap:.2f} a0 against a "
+                       f"{info['cell']:.2f} a0 sample cell"
+                       if math.isfinite(gap) else
+                       f"a {info['cell']:.2f} a0 sample cell cannot "
+                       f"separate lobes across the angular nodes")
                 self.report({'WARNING'},
-                            f"{label}: drew "
-                            f"{info['components']} of the "
-                            f"{info['predicted']} lobe surfaces this "
-                            f"orbital has -- the narrowest node gap is "
-                            f"{info['node_gap']:.2f} a0 against a "
-                            f"{info['cell']:.2f} a0 sample cell; "
-                            f"raise Resolution")
+                            f"{label}: drew {info['components']} of "
+                            f"the {info['predicted']} lobe surfaces "
+                            f"this orbital has -- {why}; raise "
+                            f"Resolution")
             if self.display == 'CLOUD':
                 pcts = ", ".join(f"{100.0 * p:.0f}%"
                                  for p in info.get('probabilities', ()))
@@ -1088,11 +1095,21 @@ if _IN_BLENDER:
             k = self.scale / max(half, 1e-9)
             pts = [tuple(p) for p in src * k]
             bonds = info['bonds'] or _auto_bonds(info['centres'])
+            self._verts = verts
+            if not bonds:
+                # a one-centre preset (the sp/sp2/sp3 hybrids, a lone
+                # pair): ball-and-stick emits nodes only for vertices an
+                # edge uses, so there is nothing to append -- and the
+                # single nucleus sits buried inside the lobe anyway
+                return faces
             sv, sf = bas.build_mesh(pts, bonds,
                                     strut_radius=0.02 * self.scale,
                                     node_radius=0.05 * self.scale)
+            if not sv or not sf:
+                return faces
             off = len(verts)
-            self._verts = np.vstack([verts, np.asarray(sv, dtype=float)])
+            self._verts = np.vstack([verts,
+                                     np.asarray(sv, dtype=float)])
             return faces + [tuple(off + i for i in f) for f in sf]
 
         def draw(self, context):
