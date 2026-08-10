@@ -1,0 +1,107 @@
+# Invariant Manifold
+
+![Invariant Manifold](../images/invariant_manifold.png)
+
+## Overview
+
+Two-dimensional **invariant manifolds** of equilibria of chaotic systems: the surfaces of points that flow into (stable) or out of (unstable) an equilibrium rather than onto the attractor. The Hadamard–Perron theorem gives every hyperbolic equilibrium local stable and unstable manifolds tangent to the corresponding eigenspaces; this generator globalises them by flowing.
+
+The default is the famous one — the **stable manifold of the Lorenz origin**, the object Osinga and Krauskopf crocheted and the one the 2026 Alternative Fields Medal trophies were 3D-printed from:
+
+$$\dot x = \sigma(y-x), \qquad \dot y = x(\rho - z) - y, \qquad \dot z = xy - \beta z$$
+
+but the same machinery grows the manifold of any equilibrium of any shipped system, on either side.
+
+| System | Equilibria | Notable |
+|---|---|---|
+| **Lorenz** ($\sigma,\rho,\beta$) | Origin, $C^+$, $C^-$ | Origin: the stable side is 2-D (eigenvalues $-22.83$, $-8/3$); the unstable side is a *curve* and is refused. $C^\pm$ are **spiral saddles** — eigenvalues $-13.855$ and $0.094 \pm 10.195i$, so their 2-D unstable eigenspace comes from a complex pair. |
+| **Rössler** ($a,b,c$) | Inner, Outer | The roots of $ay^2 + cy + b = 0$. |
+
+## Options
+
+| Option | Default | Description |
+| --- | --- | --- |
+| System | Lorenz | Which vector field. Selecting one loads its own default parameters. |
+| Parameter 1-3 | 10, 28, 8/3 | The system's parameters, labelled per system ($\sigma,\rho,\beta$ for Lorenz; $a,b,c$ for Rössler). |
+| Equilibrium | Origin | Which equilibrium, listed with its coordinates. |
+| Manifold | Stable | Stable (grown backward) or unstable (grown forward). |
+| Arclength | 100.0 | How far to grow the manifold, measured along trajectories rather than in time. Range 5-250. |
+| Ring Spacing | 1.0 | Arclength between recorded rings. Range 0.1-5. |
+| Target Edge | 0.25 | Wanted spacing along a ring; smaller keeps the sharp folds from being cut across. Range 0.02-2. |
+| Seed Radius | 0.02 | Radius of the starting circle in the stable eigenspace. Range 1e-4 to 0.5. |
+| Seed Points | 96 | Points on the starting circle. Range 16-512. |
+| Max Ring Points | 3000 | Cap on the points in one ring. Range 200-20000. |
+| Step | 0.02 | Arclength step of the integrator. Range 0.002-0.2. |
+| Thickness | 0.03 | Solidify thickness — the manifold is a surface, so it needs a shell to print. Range 0-0.5. |
+| Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |
+| Smooth Shading | On | Shade the mesh smooth. |
+
+## How it works
+
+### Why the obvious method fails
+
+At the origin the Jacobian
+
+$$J(0) = \begin{pmatrix} -\sigma & \sigma & 0 \\ \rho & -1 & 0 \\ 0 & 0 & -\beta\end{pmatrix}$$
+
+has eigenvalues $+11.83$, $-22.83$ and $-8/3$. The two negative ones span the stable eigenspace, and the manifold is tangent to it at the origin. Growing it outward means integrating **backward** in time.
+
+The difficulty is that the two stable rates differ by a factor of **8.6**. A front of equal-*time* images therefore stretches by $8.6^{\,t}$ between the fast and slow directions, and the mesh degenerates within a few units of growth. Equal-time integration is not a coarse method here; it is the wrong one.
+
+### Unit-speed growth
+
+The cure is to integrate at unit speed,
+
+$$\frac{dx}{d\tau} = -\frac{f(x)}{\lVert f(x)\rVert},$$
+
+so every trajectory advances the same **arclength** rather than the same time — which is exactly what removes the eigenvalue-ratio stretching. The whole ring is stepped in lockstep by a vectorised RK4, and at each checkpoint it is resampled to evenly spaced points and allowed to gain points as it lengthens.
+
+This is the method of the 2026 *AMS Notices* article, which is how the printed trophies were made. The alternative — Krauskopf and Osinga's geodesic level sets, where each new ring point solves a two-unknown boundary value problem — produces true geodesic circles and reaches much larger geodesic radii, at a cost this module does not need.
+
+Note the sign: growing a *stable* manifold means integrating backward, so it is $-f/\lVert f\rVert$, not $+$. Getting that wrong silently produces the unstable manifold instead, which is a curve's worth of nonsense; the self-test checks the ring moves outward.
+
+### The seed
+
+The starting circle is the **linear** stable eigenspace at radius $\delta$, not a high-order parameterization of the manifold. The error is $O(\delta^2)$, which at $\delta = 0.02$ is far below the mesh resolution once the result is fitted into a 2 m cube. The parameterization method used in the *Notices* paper is the upgrade if that ever stops being true.
+
+### Interpolation is the accuracy bottleneck
+
+Every resampling step moves each point off the true ring by the chord-to-arc deviation, and those errors are what the forward flow later amplifies. Measured, that — not the ODE integrator — is what limits the surface's accuracy: halving `target_edge` halves the error, while halving `step` changes nothing.
+
+So resampling uses **Catmull-Rom**, not linear interpolation, dropping the deviation from $O(h^2)$ to $O(h^4)$ at no cost in ring count. Measured against the invariance test below, that roughly halves how far the finished surface sits off the manifold: **0.049 against 0.113**.
+
+### Complex eigenspaces, and sides that are curves
+
+The 2-D invariant eigenspace need not come from two *real* eigenvalues. At a **spiral saddle** — Lorenz's $C^\pm$ are exactly that — the pair is complex conjugate and the invariant plane is spanned by the real and imaginary parts of one complex eigenvector; a seed circle in it works just as in the real case. An earlier version of this generator refused complex eigenvalues outright, which excluded precisely the manifold that wraps the butterfly's wings.
+
+Where the chosen side is only one-dimensional the generator says so rather than growing nonsense: the Lorenz origin's *unstable* manifold is a curve, not a surface, and asking for it gives a clear refusal.
+
+### How it is checked
+
+The defining *local* property is tangency: the manifold leaves the equilibrium tangent to the invariant eigenplane. That is checkable for every case, so it is the general test — measured deviation runs $3.6\times10^{-4}$ to $7.4\times10^{-3}$ across the shipped cases.
+
+The stronger test flows the finished surface and watches it collapse into the equilibrium, against a control of points nudged off it:
+
+| | closest approach |
+|---|---|
+| points of the outer ring | **0.059** |
+| the same points nudged 0.5 off the surface | 0.384 |
+
+But that test only *discriminates* where the contraction beats the transverse blow-up. It does at the Lorenz origin (rates $2.67$ and $22.83$). It **cannot** at $C^+$: testing an unstable manifold means running backward, which amplifies the transverse direction at $e^{13.855\,t}$ while the spiral contracts at only $e^{0.094\,t}$, so every trajectory leaves the box long before a collapse would show. It is therefore applied where it means something and skipped, explicitly, where it does not.
+
+Also checked: the numeric Jacobian against Lorenz's analytic one to $10^{-6}$, that each listed equilibrium really satisfies $f = 0$, that the eigenbasis is orthonormal and spans an invariant plane of $J$, that the rings grow overall, and that the mesh is a disk ($\chi = 1$) whose single free rim is exactly the outermost ring.
+
+Ring growth is **not** monotone in general, which an earlier version wrongly asserted: at a spiral saddle the rotation dwarfs the growth — $C^+$ turns at $10.195$ while growing at $0.094$, so it winds about a hundred times per unit of outward progress and the ring pulses as it winds.
+
+### Limits worth knowing
+
+The field vanishes at the two nontrivial equilibria $C^\pm = (\pm\sqrt{\beta(\rho-1)}, \pm\sqrt{\beta(\rho-1)}, \rho-1)$, which the manifold spirals around but never contains. Unit-speed integration divides by $\lVert f\rVert$, so the norm is clamped and the operator warns if the ring passes within 0.05 of either.
+
+Chord-length resampling **cuts across sharp folds** as the manifold develops its helical scrolls. Past about arclength 180 you want `target_edge` at 0.1 or below; the operator warns when the outermost ring hits its point cap, which is the symptom.
+
+## References
+
+- E. N. Lorenz, "Deterministic nonperiodic flow," *Journal of the Atmospheric Sciences* 20(2), 1963, pp. 130-141.
+- B. Krauskopf and H. M. Osinga, "Computing geodesic level sets on global (un)stable manifolds of vector fields," *SIAM Journal on Applied Dynamical Systems* 2(4), 2003, pp. 546-569.
+- H. M. Osinga and B. Krauskopf, "Crocheting the Lorenz manifold," *The Mathematical Intelligencer* 26(4), 2004, pp. 25-37.
+- P. R. Bishop, S. Chenoweth, E. Fleurantin, A. Ogueda-Oliva, E. Sander and J. Seay, "3D printing of invariant manifolds in dynamical systems," *Notices of the American Mathematical Society*, 2026; preprint [arXiv:2504.15884](https://arxiv.org/abs/2504.15884). The arclength-reparametrized growth used here, and the parameterization method for the local piece.

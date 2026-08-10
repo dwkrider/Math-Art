@@ -551,6 +551,39 @@ OPS = [
         preset='SE_CUBE', segments=48, rings=24)),
     ("supershape distance color", lambda: bpy.ops.mesh.supershape_add(
         preset='GEAR', coloring='DISTANCE', segments=48, rings=24)),
+    ("invariant manifold lorenz", lambda: bpy.ops.mesh.invariant_manifold_add(
+        arclength=25.0, seed_points=64, target_edge=0.4)),
+    ("invariant manifold deep",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        arclength=60.0, seed_points=64, target_edge=0.5,
+        max_ring_points=1200)),
+    ("invariant manifold spiral saddle",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='LORENZ', equilibrium='1', kind='UNSTABLE',
+        arclength=25.0, seed_points=64, target_edge=0.3)),
+    ("invariant manifold chen",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='CHEN', p1=36.0, p2=3.0, p3=20.0, equilibrium='1',
+        kind='UNSTABLE', arclength=20.0, seed_points=64,
+        target_edge=0.4)),
+    ("invariant manifold shimizu",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='SHIMIZU', p1=0.75, p2=0.45, p3=0.0, equilibrium='1',
+        kind='UNSTABLE', arclength=20.0, seed_points=64,
+        target_edge=0.4)),
+    ("invariant manifold halvorsen",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='HALVORSEN', p1=1.4, equilibrium='1', kind='STABLE',
+        arclength=20.0, seed_points=64, target_edge=0.4)),
+    ("invariant manifold thomas",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='THOMAS', p1=0.19, equilibrium='0', kind='STABLE',
+        arclength=15.0, seed_points=64, target_edge=0.4)),
+    ("invariant manifold roessler",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='ROSSLER', p1=0.2, p2=0.2, p3=5.7, equilibrium='0',
+        kind='UNSTABLE', arclength=25.0, seed_points=64,
+        target_edge=0.3)),
     ("ruled surface helicoid", lambda: bpy.ops.mesh.ruled_surface_add(
         mode='HELICOID')),
     ("ruled surface hypar", lambda: bpy.ops.mesh.ruled_surface_add(
