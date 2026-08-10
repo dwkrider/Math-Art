@@ -149,5 +149,52 @@ render_object(obj, os.path.join(OUT, 'min_trefoil_circle.png'),
 render_object(obj, os.path.join(OUT, 'min_trefoil_circle_side.png'),
               view_dir=(1.0, -0.2, 0.15))
 
+
+# the default span topology (Single Sheet / Seifert) must be ONE
+# connected surface with NO genuine self-intersections: BVH self-overlap
+# may only report face pairs that share a vertex (touching neighbours)
+def genuine_crossings(obj):
+    from mathutils.bvhtree import BVHTree
+    bm = bmesh.new()
+    bm.from_mesh(obj.data)
+    bm.faces.ensure_lookup_table()
+    fv = [frozenset(v.index for v in f.verts) for f in bm.faces]
+    tree = BVHTree.FromBMesh(bm, epsilon=0.0)
+    n = sum(1 for i, j in tree.overlap(tree)
+            if i < j and not (fv[i] & fv[j]))
+    # connected components while the bmesh is open
+    parent = list(range(len(bm.verts)))
+
+    def find(i):
+        while parent[i] != i:
+            parent[i] = parent[parent[i]]
+            i = parent[i]
+        return i
+    for e in bm.edges:
+        parent[find(e.verts[0].index)] = find(e.verts[1].index)
+    comps = len({find(v.index) for v in bm.verts})
+    bm.free()
+    return n, comps
+
+
+nx, comps = genuine_crossings(obj)
+ok = nx == 0 and comps == 1 and len(bpy.data.objects) == 1
+print(f"[trefoil single sheet] objects={len(bpy.data.objects)} "
+      f"components={comps} genuine_crossings={nx} "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('trefoil-single-sheet')
+
+# and the legacy wound annulus must still be reachable (it is the one
+# that self-crosses -- the same gate must detect that, proving the gate)
+clear_objects()
+bpy.ops.mesh.minimal_knot_span_add(span_topology='WOUND')
+nx, comps = genuine_crossings(bpy.context.object)
+ok = comps == 1 and nx > 0
+print(f"[trefoil wound annulus] components={comps} "
+      f"genuine_crossings={nx} (>0 expected) {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('trefoil-wound')
+
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")
 print("RENDERS ->", OUT)

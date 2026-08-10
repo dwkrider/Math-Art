@@ -23,7 +23,12 @@
 #    minimize surface area (Pinkall-Polthier cotangent-Laplacian
 #    iteration solved with conjugate gradients). Includes the classic
 #    "minimal surface between a circle and a torus knot" construction
-#    (trefoil by default).
+#    (trefoil by default). For (2, q) knots the default span is a
+#    single embedded sheet: Seifert's algorithm applied to the round
+#    knot diagram, with the outer Seifert disk opened out to the
+#    circle (an embedded *annulus* between a knotted and a round
+#    boundary cannot exist, so the correct spanning surface has genus
+#    (q - 1) / 2).
 #
 # Geometry only; materials and rendering are left to Blender.
 #
@@ -40,6 +45,10 @@
 #       A. H. Schoen (gyroid, I-WP, F-RD; NASA TN D-5541, 1970),
 #       E. R. Neovius (1883). Cotangent-Laplacian area flow after
 #       U. Pinkall and K. Polthier (1993).
+#   Seifert surfaces: H. Seifert, "Ueber das Geschlecht von Knoten",
+#       Mathematische Annalen 110 (1934). Visualization of Seifert
+#       surfaces as disks joined by twisted bands after J. J. van Wijk
+#       and A. M. Cohen, IEEE TVCG 12(4) (2006).
 
 bl_info = {
     "name": "Minimal Surface Toolkit",
@@ -1864,6 +1873,218 @@ def torus_knot(p, q, m, scale=1.0, tube=1.0):
                      -np.sin(q * t) * tube], axis=1) * scale
 
 
+def build_seifert_span_grid(q, m, rings, knot_scale=1.0, circle_radius=4.5,
+                            inner_height=1.0, inner_lift=0.0, window=0.35):
+    """Embedded single-sheet spanning surface between the (2, q) torus
+    knot (q odd) and the round circle of radius `circle_radius`.
+
+    An embedded *annulus* between a knotted and a round boundary cannot
+    exist (its two boundary curves would be isotopic knots), so this
+    builds the correct next-simplest surface: Seifert's algorithm
+    (H. Seifert, 1934) applied to the round (2, q) diagram, with the
+    outer Seifert disk opened out to the circle. Three families of
+    structured patches share their seam vertices:
+
+      funnel   -- annulus from the circle in to the outer smoothed
+                  Seifert circle (knot arcs + saddle diagonals);
+      membrane -- disk spanning the inner smoothed Seifert circle
+                  across the middle;
+      q bands  -- one half-twist Coons patch per diagram crossing,
+                  edged by the two knot strands and the two diagonals.
+
+    Every patch preserves azimuth and they occupy disjoint radial
+    ranges (funnel outside `r_out`, membrane inside `r_in`, bands in
+    between, in disjoint azimuth windows), so the result is embedded
+    by construction. Genus (q - 1) / 2, two boundary loops: the exact
+    torus knot (2 m-ish samples) and the exact circle. Returns
+    (V, quads, fixed) with `fixed` True exactly on the two boundary
+    loops, ready for minimize_area.
+    """
+    q = int(q)
+    if q < 1 or q % 2 == 0:
+        raise ValueError("build_seifert_span_grid needs odd q >= 1")
+    k = float(knot_scale)
+    h = float(inner_height)
+    R = float(circle_radius)
+    g = max(4, int(round(m / (2.0 * q))))
+    mA = 2 * q * g                      # azimuth samples, once around
+    wn = max(2, min(g - 2, int(round(window * g))))
+    ns = 2 * wn + 1                     # samples across a crossing window
+    th = TAU * np.arange(mA) / mA
+
+    def strand(which, t):
+        """Knot strand 0/1 at azimuth t (i.e. tau = t/2 [+ pi])."""
+        ph = q * t / 2.0 + (q * math.pi if which else 0.0)
+        rho = 2.0 * k + k * math.cos(ph)
+        return np.array([rho * math.cos(t), rho * math.sin(t),
+                         -k * h * math.sin(ph) + inner_lift])
+
+    centers = [g * (2 * n + 1) for n in range(q)]   # crossing indices
+    in_open = np.zeros(mA, dtype=bool)  # strictly inside a window
+    for c in centers:
+        for d in range(1 - wn, wn):
+            in_open[(c + d) % mA] = True
+
+    cw = math.sin(q * (wn * TAU / mA) / 2.0)   # |cos(q u/2)| at edge
+    r_out = 2.0 * k + k * cw            # diagonal rail radii
+    r_in = 2.0 * k - k * cw
+
+    # smoothed Seifert circles: knot arcs outside the crossing windows,
+    # constant-radius diagonals (the saddle rails) across them
+    Cout = np.empty((mA, 3))
+    Cin = np.empty((mA, 3))
+    for i in range(mA):
+        A, B = strand(0, th[i]), strand(1, th[i])
+        a_out = math.cos(q * th[i] / 2.0) >= 0.0
+        Cout[i], Cin[i] = (A, B) if a_out else (B, A)
+    for c in centers:
+        s1 = 0 if math.cos(q * th[(c - wn) % mA] / 2.0) >= 0.0 else 1
+        zo0 = Cout[(c - wn) % mA][2]    # strand z at the window edges
+        zo1 = strand(1 - s1, (c + wn) * TAU / mA)[2]
+        zi0 = Cin[(c - wn) % mA][2]
+        zi1 = strand(s1, (c + wn) * TAU / mA)[2]
+        for d in range(-wn, wn + 1):
+            i = (c + d) % mA
+            fb = (d + wn) / (2.0 * wn)
+            Cout[i] = (r_out * math.cos(th[i]), r_out * math.sin(th[i]),
+                       (1 - fb) * zo0 + fb * zo1)
+            Cin[i] = (r_in * math.cos(th[i]), r_in * math.sin(th[i]),
+                      (1 - fb) * zi0 + fb * zi1)
+
+    circle = np.stack([R * np.cos(th), R * np.sin(th),
+                       np.zeros(mA)], axis=1)
+    verts = []
+    fixed = []
+    quads = []
+    for r in range(rings + 1):          # funnel rows: circle -> Cout
+        f = r / rings
+        verts.append(circle * (1 - f) + Cout * f)
+        fixed.append(np.ones(mA, bool) if r == 0
+                     else (~in_open if r == rings
+                           else np.zeros(mA, bool)))
+    for r in range(rings):
+        for i in range(mA):
+            i2 = (i + 1) % mA
+            quads.append((r * mA + i, r * mA + i2,
+                          (r + 1) * mA + i2, (r + 1) * mA + i))
+    fun_last = rings * mA               # first index of the Cout row
+    base = (rings + 1) * mA             # first index of the membrane
+    cen = Cin.mean(axis=0)
+    for r in range(rings):              # membrane rows: Cin -> center
+        f = r / rings
+        verts.append(Cin * (1 - f) + cen * f)
+        fixed.append(~in_open if r == 0 else np.zeros(mA, bool))
+    verts.append(cen[None, :])
+    fixed.append(np.zeros(1, bool))
+    cidx = base + rings * mA
+    for r in range(rings - 1):
+        for i in range(mA):
+            i2 = (i + 1) % mA
+            quads.append((base + r * mA + i, base + r * mA + i2,
+                          base + (r + 1) * mA + i2,
+                          base + (r + 1) * mA + i))
+    lastm = base + (rings - 1) * mA
+    for i in range(mA):
+        quads.append((lastm + i, lastm + (i + 1) % mA, cidx))
+
+    Vp = np.concatenate(verts, axis=0)
+    Vs = [Vp]
+    Fs = [np.concatenate(fixed)]
+    nxt = len(Vp)
+    for c in centers:                   # one saddle band per crossing
+        s1 = 0 if math.cos(q * th[(c - wn) % mA] / 2.0) >= 0.0 else 1
+        S1 = np.array([strand(s1, (c - wn + x) * TAU / mA)
+                       for x in range(ns)])           # rail y = 0
+        S2r = np.array([strand(1 - s1, (c + wn - x) * TAU / mA)
+                        for x in range(ns)])          # rail y = ns-1
+        Out = Vp[[fun_last + (c - wn + y) % mA for y in range(ns)]]
+        Inr = Vp[[base + (c + wn - y) % mA for y in range(ns)]]
+        idx = np.empty((ns, ns), dtype=np.int64)
+        for y in range(ns):
+            idx[0, y] = fun_last + (c - wn + y) % mA
+            idx[ns - 1, y] = base + (c + wn - y) % mA
+        new_v = []
+        new_f = []
+        for x in range(1, ns - 1):
+            u = x / (ns - 1.0)
+            for y in (0, ns - 1):       # strand rails: on the knot
+                idx[x, y] = nxt
+                new_v.append(S1[x] if y == 0 else S2r[x])
+                new_f.append(True)
+                nxt += 1
+            for y in range(1, ns - 1):  # Coons interior of the saddle
+                v = y / (ns - 1.0)
+                pt = ((1 - v) * S1[x] + v * S2r[x]
+                      + (1 - u) * Out[y] + u * Inr[y]
+                      - ((1 - u) * (1 - v) * S1[0]
+                         + u * (1 - v) * S1[-1]
+                         + (1 - u) * v * S2r[0] + u * v * S2r[-1]))
+                idx[x, y] = nxt
+                new_v.append(pt)
+                new_f.append(False)
+                nxt += 1
+        Vs.append(np.array(new_v))
+        Fs.append(np.array(new_f, dtype=bool))
+        for x in range(ns - 1):
+            for y in range(ns - 1):
+                quads.append((idx[x, y], idx[x + 1, y],
+                              idx[x + 1, y + 1], idx[x, y + 1]))
+    return np.concatenate(Vs, axis=0), quads, np.concatenate(Fs)
+
+
+def _selfx_crossings(V, T, tol=1e-7):
+    """Count genuine self-intersections of a triangle mesh: edges that
+    pierce the open interior of a triangle they share no vertex with
+    (Moeller-Trumbore, bbox-prefiltered). O(edges x tris) per bbox
+    survivor -- intended for selftest-sized meshes."""
+    T = np.asarray(T)
+    E = set()
+    for tri in T:
+        for a, b in ((tri[0], tri[1]), (tri[1], tri[2]),
+                     (tri[2], tri[0])):
+            E.add((a, b) if a < b else (b, a))
+    E = np.array(sorted(E))
+    P0, P1 = V[E[:, 0]], V[E[:, 1]]
+    elo, ehi = np.minimum(P0, P1), np.maximum(P0, P1)
+    A, B, C = V[T[:, 0]], V[T[:, 1]], V[T[:, 2]]
+    tlo = np.minimum(np.minimum(A, B), C)
+    thi = np.maximum(np.maximum(A, B), C)
+    count = 0
+    for i0 in range(0, len(E), 512):
+        i1 = min(i0 + 512, len(E))
+        ov = np.all((elo[i0:i1, None, :] <= thi[None, :, :] + tol)
+                    & (ehi[i0:i1, None, :] >= tlo[None, :, :] - tol),
+                    axis=2)
+        ei, ti = np.nonzero(ov)
+        ei += i0
+        if not len(ei):
+            continue
+        share = np.zeros(len(ei), dtype=bool)
+        for cc in range(2):
+            for dd in range(3):
+                share |= (E[ei, cc] == T[ti, dd])
+        ei, ti = ei[~share], ti[~share]
+        if not len(ei):
+            continue
+        o = V[E[ei, 0]]
+        d = V[E[ei, 1]] - o
+        e1 = V[T[ti, 1]] - V[T[ti, 0]]
+        e2 = V[T[ti, 2]] - V[T[ti, 0]]
+        pv = np.cross(d, e2)
+        det = np.einsum('ij,ij->i', e1, pv)
+        good = np.abs(det) > 1e-14
+        inv = np.where(good, 1.0 / np.where(good, det, 1.0), 0.0)
+        tv = o - V[T[ti, 0]]
+        uu = np.einsum('ij,ij->i', tv, pv) * inv
+        qv = np.cross(tv, e1)
+        vv = np.einsum('ij,ij->i', d, qv) * inv
+        tt = np.einsum('ij,ij->i', e2, qv) * inv
+        count += int(np.sum(good & (uu > tol) & (vv > tol)
+                            & (uu + vv < 1 - tol)
+                            & (tt > tol) & (tt < 1 - tol)))
+    return count
+
+
 # ==========================================================================
 # Blender layer
 # ==========================================================================
@@ -2678,8 +2899,64 @@ if _IN_BLENDER:
                         "objects instead (they share their seam "
                         "edges, so together they still form the "
                         "whole span)")
+        span_topology: EnumProperty(
+            name="Span Topology",
+            items=(
+                ('SEIFERT', "Single Sheet (Seifert)",
+                 "One embedded self-intersection-free surface from "
+                 "the circle to the knot: the outer sheet funnels in "
+                 "once around, a membrane spans the middle, and q "
+                 "half-twist saddle bands resolve the knot "
+                 "(Seifert's algorithm on the round diagram; genus "
+                 "(q-1)/2). Used for p = 2 knots over the circle; "
+                 "other cases fall back to the wound annulus"),
+                ('WOUND', "Wound Annulus (crossing sheets)",
+                 "The classic ruled annulus: the circle is traversed "
+                 "p times so the ruling lines up, and for p > 1 the "
+                 "windings pass through one another (an embedded "
+                 "annulus between a knot and a round circle cannot "
+                 "exist). Split Sheets can emit the windings as "
+                 "separate objects")),
+            default='SEIFERT',
+            description="How to span the surface when the outer "
+                        "boundary is the round circle")
+
+        def _seifert_active(self):
+            """The single-sheet Seifert span applies: (2, odd-q) knot
+            over the plain circle, with enough room and a non-flat
+            knot. Everything else keeps the classic wound annulus."""
+            return (self.span_topology == 'SEIFERT'
+                    and self.outer_q == 0 and self.p == 2
+                    and self.q >= 1 and self.q % 2 == 1
+                    and self.inner_height > 0.0
+                    and self.circle_radius > 3.0 * self.knot_scale)
 
         def execute(self, context):
+            if self._seifert_active():
+                V, quads, fixed = build_seifert_span_grid(
+                    self.q, self.samples, self.rings,
+                    knot_scale=self.knot_scale,
+                    circle_radius=self.circle_radius,
+                    inner_height=self.inner_height,
+                    inner_lift=self.inner_lift)
+                if self.inner_rotation != 0.0:
+                    # rotating everything keeps the circle a circle
+                    # while turning the knot as requested
+                    ca = math.cos(self.inner_rotation)
+                    sa = math.sin(self.inner_rotation)
+                    V[:, :2] = np.stack(
+                        [V[:, 0] * ca - V[:, 1] * sa,
+                         V[:, 0] * sa + V[:, 1] * ca], axis=1)
+                T = _quads_to_tris(quads)
+                minimize_area(V, T, fixed, outer_iters=self.iterations)
+                V = _center_fit(V, 1.0)
+                obj = _new_object(
+                    context, f"Knot(2,{self.q})SeifertSpan", V, quads)
+                self.report(
+                    {'INFO'},
+                    f"single sheet, genus {(self.q - 1) // 2}, "
+                    f"area = {mesh_area(V, T):.4f}")
+                return {'FINISHED'}
             m = self.samples
             if self.split_sheets and self.p > 1:
                 m = max(self.p * 8, (m // self.p) * self.p)
@@ -2778,11 +3055,15 @@ if _IN_BLENDER:
                 lay.prop(self, 'outer_height')
             else:
                 lay.prop(self, 'circle_radius')
-            for k in ('samples', 'rings', 'iterations',
-                      'output_nurbs'):
+                if self.p == 2 and self.q % 2 == 1:
+                    lay.prop(self, 'span_topology')
+            seif = self._seifert_active()
+            for k in ('samples', 'rings', 'iterations'):
                 lay.prop(self, k)
-            if self.p > 1:
-                lay.prop(self, 'split_sheets')
+            if not seif:
+                lay.prop(self, 'output_nurbs')
+                if self.p > 1:
+                    lay.prop(self, 'split_sheets')
 
     class VIEW3D_PT_minimal_surfaces(bpy.types.Panel):
         bl_label = "Minimal Surfaces"
@@ -3065,5 +3346,63 @@ def _selftest():
     minimize_area(V, T, fixed)
     waist = np.min(np.linalg.norm(V[:, :2], axis=1))
     print("catenoid: waist =", float(waist), "(analytic ~0.9098)")
+    # single-sheet Seifert span between a (2, q) knot and the circle:
+    # Euler characteristic (genus gate), 2 boundary loops == the fixed
+    # verts, manifoldness, and genuine self-intersection freedom after
+    # the default 2 solver iterations
+    for qq, chi_want in ((1, 0), (3, -2), (5, -4)):
+        V, F, fx = build_seifert_span_grid(qq, 48, 8)
+        T = _quads_to_tris(F)
+        ec = {}
+        for f in F:
+            for i in range(len(f)):
+                a, b = f[i], f[(i + 1) % len(f)]
+                e = (a, b) if a < b else (b, a)
+                ec[e] = ec.get(e, 0) + 1
+        chi = len(V) - len(ec) + len(F)
+        nm = sum(1 for v in ec.values() if v > 2)
+        adj = {}
+        for (a, b), n in ec.items():
+            if n == 1:
+                adj.setdefault(a, []).append(b)
+                adj.setdefault(b, []).append(a)
+        seen = set()
+        loops = 0
+        for s in adj:
+            if s not in seen:
+                loops += 1
+                stk = [s]
+                while stk:
+                    x = stk.pop()
+                    if x not in seen:
+                        seen.add(x)
+                        stk.extend(adj[x])
+        bnd_fix = set(adj) == set(np.nonzero(fx)[0].tolist())
+        minimize_area(V, T, fx, outer_iters=2)
+        V = _center_fit(V, 1.0)
+        nx = _selfx_crossings(V, T)
+        lo, hi = V.min(0), V.max(0)
+        fit = (np.max(np.abs(0.5 * (lo + hi))) < 1e-6
+               and abs(float(np.max(hi - lo)) - 2.0) < 1e-6)
+        good = (chi == chi_want and nm == 0 and loops == 2
+                and bnd_fix and nx == 0 and fit)
+        ok &= good
+        print(f"seifert span (2,{qq}): chi={chi} (want {chi_want}) "
+              f"loops={loops} nonmanifold={nm} bnd=fixed:{bnd_fix} "
+              f"crossings={nx} fit={fit} {'OK' if good else 'FAIL'}")
+    # the wound annulus really does self-cross for p = 2 -- the
+    # crossing detector must see it (sanity of the gate itself)
+    t48 = np.linspace(0, TAU, 48, endpoint=False)
+    kn = torus_knot(2, 3, 48)
+    ci = np.stack([4.5 * np.cos(2 * t48), 4.5 * np.sin(2 * t48),
+                   np.zeros(48)], axis=1)
+    Vw, Fw, fw = build_annulus_grid(kn, ci, 8)
+    Tw = _quads_to_tris(Fw)
+    minimize_area(Vw, Tw, fw, outer_iters=2)
+    nw = _selfx_crossings(_center_fit(Vw, 1.0), Tw)
+    good = nw > 0
+    ok &= good
+    print(f"wound annulus (2,3): crossings={nw} detected "
+          f"{'OK' if good else 'FAIL'} (the classic mode crosses)")
     print("\nRESULT:", "ALL OK" if ok else "FAILURES in parametric core")
     assert ok
