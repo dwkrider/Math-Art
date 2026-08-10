@@ -22,9 +22,13 @@
 #   ABC          the Thuswaldner-Zhang normal form for collinear digit
 #                sets: M is the companion matrix of
 #                lambda^3 + A lambda^2 + B lambda + C with digits
-#                j*e1, j = 0 .. C-1.  Those with 1 = A <= B < C are
-#                proved homeomorphic to a closed ball, with the cell
-#                structure of a truncated octahedron.
+#                j*e1, j = 0 .. C-1.  Such a tile is a closed 3-ball
+#                when 1 = A <= B < C AND it has 14 neighbours
+#                (Thuswaldner-Zhang Thm 1.1) -- the neighbour count is
+#                a hypothesis, not a consequence, and their Remark 1.4
+#                conjectures the opposite without it.  Their Remark 1.3
+#                turns the count into arithmetic, which this module
+#                evaluates and reports per tile.
 #   TWINDRAGON   Bandt's seven three-dimensional twindragons: |det| = 2,
 #                two digits, characteristic polynomial
 #                lambda^3 - a lambda^2 - b lambda - 2 for the seven
@@ -70,7 +74,6 @@
 #   tiles", arXiv:1002.0710, 2010 -- the seven twindragon cases.
 # - J. M. Thuswaldner and S.-Q. Zhang, "On self-affine tiles that are
 #   homeomorphic to a ball", arXiv:2107.12076 -- the ABC normal form.
-# - G. Gelbrich, "Crystallographic reptiles", Geometriae Dedicata, 1994.
 # - J. E. Hutchinson, "Fractals and self similarity", Indiana
 #   University Mathematics Journal 30, 1981 -- existence and uniqueness
 #   of the attractor of a contractive IFS.
@@ -396,28 +399,31 @@ _CUBE_DIGITS = np.array([(0, 0, 0), (1, 1, 0), (1, 0, 1), (0, 1, 1),
                         dtype=np.int64)
 
 RADIX_PRESETS = {
-    # (1,1,2) has |det M| = 2 with two collinear digits, so by Bandt's
-    # Theorem 6.2 it is itself a three-dimensional twindragon -- the
-    # det = -2 mirror of case C -- rather than a member of the ABC ball
-    # family, and it is labelled as such.
-    'ABC_112': ("Twindragon C mirror (det -2)", _abc(1, 1, 2)),
-    'ABC_113': ("ABC tile (1,1,3)", _abc(1, 1, 3)),
-    'ABC_123': ("ABC tile (1,2,3)", _abc(1, 2, 3)),
-    'ABC_124': ("ABC tile (1,2,4)", _abc(1, 2, 4)),
-    'ABC_134': ("ABC tile (1,3,4)", _abc(1, 3, 4)),
-    'ABC_223': ("ABC tile (2,2,3)", _abc(2, 2, 3)),
+    # ABC (1,1,2) is deliberately absent: it satisfies the normal form
+    # 1 <= A <= B < C, so it IS an ABC tile, but it is also a
+    # twindragon (two collinear digits, |det| = 2) and is congruent to
+    # case C -- diag(-1,1,-1) conjugates one matrix to minus the other
+    # -- so it would be twindragon C shipped twice, turned around.
+    'ABC_123': ("ABC tile (1,2,3)", _abc(1, 2, 3), (1, 2, 3)),
+    'ABC_124': ("ABC tile (1,2,4)", _abc(1, 2, 4), (1, 2, 4)),
+    'ABC_128': ("ABC tile (1,2,8) - self-similar", _abc(1, 2, 8),
+                (1, 2, 8)),
+    'ABC_136': ("ABC tile (1,3,6)", _abc(1, 3, 6), (1, 3, 6)),
+    'ABC_134': ("ABC tile (1,3,4)", _abc(1, 3, 4), (1, 3, 4)),
+    'ABC_223': ("ABC tile (2,2,3)", _abc(2, 2, 3), (2, 2, 3)),
     # case A is Bandt's own non-fractal example: in this lattice basis
     # the tile is exactly the unit cube
     'TWIN_A': ("Twindragon A (0,0) - non-fractal (a cube)",
-               _twindragon(0, 0)),
-    'TWIN_B': ("Twindragon B (-1,1)", _twindragon(-1, 1)),
-    'TWIN_C': ("Twindragon C (1,-1)", _twindragon(1, -1)),
-    'TWIN_D': ("Twindragon D (0,1)", _twindragon(0, 1)),
-    'TWIN_E': ("Twindragon E (2,-2)", _twindragon(2, -2)),
-    'TWIN_F': ("Twindragon F (1,0)", _twindragon(1, 0)),
-    'TWIN_G': ("Twindragon G (0,2)", _twindragon(0, 2)),
+               _twindragon(0, 0), 'A'),
+    'TWIN_B': ("Twindragon B (-1,1)", _twindragon(-1, 1), 'B'),
+    'TWIN_C': ("Twindragon C (1,-1)", _twindragon(1, -1), 'C'),
+    'TWIN_D': ("Twindragon D (0,1)", _twindragon(0, 1), 'D'),
+    'TWIN_E': ("Twindragon E (2,-2)", _twindragon(2, -2), 'E'),
+    'TWIN_F': ("Twindragon F (1,0)", _twindragon(1, 0), 'F'),
+    'TWIN_G': ("Twindragon G (0,2)", _twindragon(0, 2), 'G'),
     'CUBE': ("Cube (2I, 8 digits)",
-             (2 * np.eye(3, dtype=np.int64), _CUBE_DIGITS)),
+             (2 * np.eye(3, dtype=np.int64), _CUBE_DIGITS),
+             'CUBE'),
 }
 
 
@@ -447,6 +453,78 @@ def attractor_rank(M, digits, terms=16):
         rows.append(W / np.maximum(n, 1e-300))
         P = P @ Mi
     return int(np.linalg.matrix_rank(np.vstack(rows), tol=1e-8))
+
+
+def abc_has_14_neighbours(A, B, C):
+    """Thuswaldner-Zhang Remark 1.3: for a collinear-digit tile with
+    1 <= A <= B < C, T has exactly 14 neighbours iff
+
+        1 <= A < B < C  and  B >= 2A-1, C >= 2(B-A)+2,   or
+        1 <= A < B < C  and  B <  2A-1, C >= A+B-2.
+
+    Note both branches need A < B strictly, so A = B never gives 14."""
+    A, B, C = int(A), int(B), int(C)
+    if not (1 <= A < B < C):
+        return False
+    if B >= 2 * A - 1:
+        return C >= 2 * (B - A) + 2
+    return C >= A + B - 2
+
+
+def abc_is_ball(A, B, C):
+    """Thuswaldner-Zhang Theorem 1.1: a 3-dimensional self-affine tile
+    with collinear digit set whose characteristic polynomial satisfies
+    1 = A <= B < C, AND which has 14 neighbours, is a 3-ball."""
+    return int(A) == 1 and abc_has_14_neighbours(A, B, C)
+
+
+# Bandt, "Combinatorial topology of three-dimensional self-affine
+# tiles", Prop 6.4 (neighbours, uncountable boundary sets, faces) and
+# Prop 7.2 / Examples 6.3, 10.2, 12.4 (point neighbours, topology).
+#
+# Cases F and G are deliberately omitted.  Bandt states 48 and 76
+# neighbours for them but also says "we shall provide no details for
+# the complicated twindragons F and G", and warns in his neighbour
+# algorithm that "for F and G there are rare outliers on the thin
+# fibres, and an exact estimate is needed" -- so those two numbers are
+# not repeated here as though they were settled.
+TWINDRAGON_FACTS = {
+    'A': (26, 18, 6, 8, "not a fractal: the unique self-similar 3-D "
+                        "lattice tile with two pieces"),
+    'B': (18, 14, 14, 4, "truncated-octahedron face pattern; ball "
+                         "conjectured, not proved"),
+    'C': (20, 12, 12, 8, "rhombic face pattern; interior proved "
+                         "connected; ball conjectured"),
+    'D': (34, 14, 14, 12, "interior not simply connected, so NOT a "
+                          "ball"),
+    'E': (34, 32, 12, 2, "interior not simply connected, so NOT a "
+                         "ball"),
+}
+
+
+def radix_topology(meta):
+    """A one-line, citable statement of what is known about a preset's
+    topology -- or nothing, when the papers do not settle it."""
+    if isinstance(meta, tuple) and len(meta) == 3:
+        A, B, C = meta
+        if abc_is_ball(A, B, C):
+            return (f"proved a 3-ball with 14 neighbours "
+                    f"(Thuswaldner-Zhang Thm 1.1); truncated-octahedron "
+                    f"CW structure, 24 vertices / 36 edges / 14 faces")
+        if abc_has_14_neighbours(A, B, C):
+            return ("14 neighbours, so its faces are 2-balls meeting in "
+                    "1-balls (Thuswaldner-Zhang Prop 2.6); the ball "
+                    "theorem needs A = 1, so it does not apply")
+        return ("more than 14 neighbours: the ball theorem does not "
+                "apply, and Thuswaldner-Zhang Remark 1.4 conjectures "
+                "such tiles are not balls")
+    if meta in TWINDRAGON_FACTS:
+        nb, unc, faces, pts, note = TWINDRAGON_FACTS[meta]
+        return (f"{nb} neighbours ({faces} faces, {pts} point "
+                f"neighbours) -- {note} [Bandt, Prop 6.4/7.2]")
+    if meta == 'CUBE':
+        return "the unit cube: 6 faces, 12 edge and 8 point neighbours"
+    return ""
 
 
 def max_holes(M, digits):
@@ -525,7 +603,11 @@ def build_radix(preset='ABC_124', level=0, holes=0, custom=None,
     ev = np.linalg.eigvals(M.astype(float))
     lo_t, hi_t = tile_support_bbox(M, Dk)
     true_span = hi_t - lo_t
+    meta = (RADIX_PRESETS[preset][2]
+            if preset in RADIX_PRESETS and len(RADIX_PRESETS[preset]) > 2
+            else None)
     info = {'digits': C, 'kept': kept, 'det': detM, 'eigenvalues': ev,
+            'topology': radix_topology(meta),
             'holes': holes, 'holes_clamped': want_holes > hmax,
             'max_holes': hmax, 'true_span': true_span,
             'output': output}
@@ -906,7 +988,8 @@ def _occupied_cells(P, res, cover=0.98):
 def build_ifs(preset='SIERP_TETRA', output='SOLIDS', maps=None,
               depth=5, seed_solid='TETRA', points=400000,
               resolution=128, plane_resolution=512, cover=0.90, seed=0,
-              min_count=1, largest_only=False, scale=1.0):
+              min_count=1, largest_only=False, reverse=False,
+              scale=1.0):
     """Mesh a general affine IFS attractor, in two or three dimensions.
     Returns (verts, faces, info).
 
@@ -919,6 +1002,13 @@ def build_ifs(preset='SIERP_TETRA', output='SOLIDS', maps=None,
         maps = IFS_PRESETS[preset][1]()
     if not maps:
         raise ValueError("no maps given")
+    if reverse:
+        # Bandt, Mai The Duy and Mesing call these the "reverse
+        # fractals": replacing every f_i by -f_i leaves the neighbour
+        # maps f_i^-1 f_j unchanged, so the dimension and the number of
+        # boundary types are the same while the shape is quite
+        # different.
+        maps = [(-np.asarray(A), -np.asarray(b), p) for A, b, p in maps]
     if not contractive(maps):
         raise ValueError("every map must be a contraction (largest "
                          "singular value < 1)")
@@ -1263,6 +1353,12 @@ if _IN_BLENDER:
             name="Seed", default=0, min=0, max=99999,
             description="Chaos-game random seed; the same seed always "
                         "gives the same mesh")
+        reverse: BoolProperty(
+            name="Reverse", default=False,
+            description="Replace every map f by -f: the neighbour maps "
+                        "are unchanged, so the dimension and the "
+                        "boundary structure survive, but the shape "
+                        "does not")
         largest_only: BoolProperty(
             name="Largest Piece Only", default=False,
             description="Smooth contour: discard all but the biggest "
@@ -1308,6 +1404,7 @@ if _IN_BLENDER:
                         cover=self.cover,
                         seed=self.seed, min_count=self.min_count,
                         largest_only=self.largest_only,
+                        reverse=self.reverse,
                         scale=self.scale)
                     label = (IFS_PRESETS[self.ifs_preset][0]
                              if self.ifs_preset != 'CUSTOM'
@@ -1340,6 +1437,9 @@ if _IN_BLENDER:
                 mod.offset = 0.0
             me = obj.data
             if self.mode == 'RADIX':
+                if info.get('topology'):
+                    self.report({'INFO'},
+                                f"{label}: {info['topology']}")
                 if info.get('holes_clamped'):
                     self.report({'WARNING'},
                                 f"{label}: dropping more than "
@@ -1410,6 +1510,7 @@ if _IN_BLENDER:
             else:
                 lay.prop(self, 'dimension', expand=True)
                 lay.prop(self, 'ifs_preset')
+                lay.prop(self, 'reverse')
                 lay.prop(self, 'maps')
                 lay.prop(self, 'output')
                 if self.output == 'SOLIDS':
@@ -1527,7 +1628,7 @@ def _selftest():
         print(f"{name:24s}: closed, signed volume {vol:+.4f}")
 
     # ---- 1. every preset really is a radix system -------------------
-    for key, (label, (M, D)) in RADIX_PRESETS.items():
+    for key, (label, (M, D), _meta) in RADIX_PRESETS.items():
         if not is_expanding(M):
             raise AssertionError(f"{label}: matrix is not expanding, "
                                  f"eigenvalues "
@@ -1544,7 +1645,7 @@ def _selftest():
 
     # ---- 2. |S_k| = C^k exactly (this is what the residue condition
     #         buys, and the check that catches a wrong digit set) -----
-    for key, (label, (M, D)) in RADIX_PRESETS.items():
+    for key, (label, (M, D), _meta) in RADIX_PRESETS.items():
         C = len(D)
         kmax = min(6, max_level(C))
         for k in range(1, kmax + 1):
@@ -1589,6 +1690,67 @@ def _selftest():
         print(f"{label:24s}: level {info['level']}, {info['cells']:6d} "
               f"cells, volume {info['volume']:.6f}, closed{note}")
 
+    # ---- 3a. the papers' own arithmetic and tables -------------------
+    # Thuswaldner-Zhang Remark 1.3 reduced to arithmetic, checked
+    # against the neighbour counts computed for these tiles: only
+    # (1,2,4) of the originally shipped six had 14 neighbours.
+    for (A, B, C), want in (((1, 1, 2), False), ((1, 1, 3), False),
+                            ((1, 2, 3), False), ((1, 2, 4), True),
+                            ((1, 3, 4), False), ((2, 2, 3), False),
+                            ((1, 2, 5), True), ((1, 2, 8), True),
+                            ((1, 3, 6), True), ((1, 4, 8), True),
+                            ((2, 3, 4), True)):
+        if abc_has_14_neighbours(A, B, C) != want:
+            raise AssertionError(
+                f"ABC ({A},{B},{C}): Remark 1.3 gives "
+                f"{abc_has_14_neighbours(A, B, C)}, expected {want}")
+    # the ball theorem additionally needs A = 1
+    if abc_is_ball(2, 3, 4):
+        raise AssertionError("ABC (2,3,4) has 14 neighbours but A = 2, "
+                             "so Theorem 1.1 must not claim it")
+    if not abc_is_ball(1, 2, 4):
+        raise AssertionError("ABC (1,2,4) is the paper's own worked "
+                             "example of a ball")
+    balls = [k for k, v in RADIX_PRESETS.items()
+             if isinstance(v[2], tuple) and abc_is_ball(*v[2])]
+    print(f"Thuswaldner-Zhang Remark 1.3 reproduced; proven 3-balls "
+          f"shipped: {', '.join(sorted(balls))}")
+
+    # (1,2,8) factors as (x+2)(x^2-x+4), so all three eigenvalues have
+    # modulus exactly 2 -- by Bandt Prop 2.2 that makes it conjugate to
+    # a SELF-SIMILAR tile, and its level-k cells distort only
+    # polynomially instead of exponentially
+    M, D = RADIX_PRESETS['ABC_128'][1]
+    ev = np.abs(np.linalg.eigvals(M.astype(float)))
+    if float(ev.max() / ev.min()) > 1.0 + 1e-9:
+        raise AssertionError(
+            f"ABC (1,2,8) should have equal eigenvalue moduli, got "
+            f"{np.sort(ev)}")
+    asp = []
+    for k in (4, 12):
+        Ak = np.linalg.inv(np.linalg.matrix_power(M.astype(float), k))
+        sv = np.linalg.svd(Ak, compute_uv=False)
+        asp.append(float(sv[0] / sv[-1]))
+    if asp[1] > 4.0 * asp[0]:
+        raise AssertionError(
+            f"ABC (1,2,8) cells went {asp[0]:.1f} -> {asp[1]:.1f} from "
+            f"level 4 to 12; equal moduli should keep that slow")
+    print(f"ABC (1,2,8): eigenvalue moduli all 2, cell aspect "
+          f"{asp[0]:.1f} -> {asp[1]:.1f} over levels 4-12")
+
+    # every preset's topology note must come from the tables, not thin
+    # air -- and F and G must stay silent, since Bandt gives no details
+    for key, v in RADIX_PRESETS.items():
+        note = radix_topology(v[2])
+        if key in ('TWIN_F', 'TWIN_G'):
+            if note:
+                raise AssertionError(
+                    f"{v[0]}: Bandt provides no details for F and G, so "
+                    f"nothing should be claimed")
+        elif not note:
+            raise AssertionError(f"{v[0]}: no topology note")
+    print("topology notes present for every preset but F and G")
+
     # ---- 3b. the closed-form bounding box -----------------------------
     # the cube tile is [0,1]^3 exactly, which pins the support series
     M, D = RADIX_PRESETS['CUBE'][1]
@@ -1616,7 +1778,7 @@ def _selftest():
     # dropping digits off the end must never leave them coplanar: the
     # cube's naive i,j,k order put all four i = 0 digits last, so a
     # four-hole gasket collapsed to a flat sheet
-    for key, (label, (M, D)) in RADIX_PRESETS.items():
+    for key, (label, (M, D), _meta) in RADIX_PRESETS.items():
         hmax = max_holes(M, D)
         for h in range(0, hmax + 1):
             keep = D[:len(D) - h]

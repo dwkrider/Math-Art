@@ -6,7 +6,7 @@
 
 Attractors of iterated function systems, in two and three dimensions, across three families that need quite different machinery.
 
-**Self-affine lattice tiles** come from an expanding integer matrix and a digit set: exotic, crystal-like solids that tile space by the integer lattice, including Bandt's three-dimensional twindragons and the ABC tiles proved homeomorphic to a ball. The level-$k$ point set is computed exactly on the integer lattice rather than sampled; how that point set becomes a mesh is the interesting part, and is discussed below.
+**Self-affine lattice tiles** come from an expanding integer matrix and a digit set: exotic, crystal-like solids that tile space by the integer lattice, including Bandt's seven three-dimensional twindragons and the ABC tiles that are proved homeomorphic to a 3-ball. The level-$k$ point set is computed exactly on the integer lattice rather than sampled; how that point set becomes a mesh is the interesting part, and is discussed below.
 
 **General affine IFS attractors** come from any set of contractive maps: the Sierpinski tetrahedron and octahedron, the Menger sponge, Cantor dust, and anything you care to type in, rendered as exact solid copies, as watertight voxels, or as a smooth contour.
 
@@ -17,7 +17,7 @@ Attractors of iterated function systems, in two and three dimensions, across thr
 | Option | Default | Description |
 | --- | --- | --- |
 | Mode | Self-Affine Tile | A lattice tile from an expanding integer matrix and a residue digit set, or the attractor of contractive affine maps. |
-| Tile | ABC tile (1,2,4) | Five ABC tiles, Bandt's seven twindragons (one listed under its ABC companion form as the $\det=-2$ mirror), and the cube. Two of the fourteen — twindragon A and the cube — are not fractals. |
+| Tile | ABC tile (1,2,4) | Six ABC tiles, Bandt's seven twindragons, and the cube. Twindragon A is not a fractal — it *is* the cube, in a different basis. The operator reports what the papers prove about each tile's topology. |
 | Tile Output | Voxels | Sample the attractor and mesh it as a watertight voxel solid, contour it with marching tetrahedra, or build the exact level-$k$ union of cubes. |
 | Level | 0 (auto) | Exact mode only: radix depth; 0 picks a level landing in the 30k-300k cell band. Range 0-24. |
 | Holes | 0 | Drop this many digits at every level, turning the tile into a gasket; clamped so the attractor stays three-dimensional. Range 0-6. |
@@ -43,7 +43,7 @@ Attractors of iterated function systems, in two and three dimensions, across thr
 <table>
 <tr>
 <td align="center"><img src="../images/variants/ifs__ABC124.png" width="200"><br><sub>ABC tile (1,2,4)</sub></td>
-<td align="center"><img src="../images/variants/ifs__ABC112.png" width="200"><br><sub>Twindragon C mirror</sub></td>
+<td align="center"><img src="../images/variants/ifs__ABC128.png" width="200"><br><sub>ABC tile (1,2,8), self-similar</sub></td>
 <td align="center"><img src="../images/variants/ifs__ABC134.png" width="200"><br><sub>ABC tile (1,3,4)</sub></td>
 <td align="center"><img src="../images/variants/ifs__TWINA.png" width="200"><br><sub>Twindragon A (non-fractal)</sub></td>
 </tr>
@@ -91,8 +91,33 @@ as one int64 broadcast — int64 because the coordinates grow like $\|M\|^k$ and
 
 The presets:
 
-- **ABC tiles** — $M$ is the companion matrix of $\lambda^3 + A\lambda^2 + B\lambda + C$ with digits $j\,e_1$, $j = 0,\dots,C-1$. Thuswaldner–Zhang prove such a tile homeomorphic to a closed ball, with the cell structure of a truncated octahedron, when $1 = A \le B < C$ **and** the tile has 14 neighbours. Of the presets here only **ABC (1,2,4)** — the default — is known to satisfy both; the others fail one hypothesis or the other and are shipped as tiles, not as proven balls.
-- **Twindragons** — Bandt's seven three-dimensional twindragons: $|\det M| = 2$, two digits, characteristic polynomial $\lambda^3 - a\lambda^2 - b\lambda - 2$ for the seven $(a,b)$ pairs giving distinct tiles. Case **A** is Bandt's own non-fractal example — in this lattice basis its tile is exactly the unit cube. The preset labelled *Twindragon C mirror* is the $\det = -2$ partner of case C: it has $|\det M| = 2$ with two collinear digits, so by Bandt's Theorem 6.2 it belongs to the twindragon family rather than the ABC ball family, despite its companion form.
+- **ABC tiles** — $M$ is the companion matrix of $\lambda^3 + A\lambda^2 + B\lambda + C$ with digits $j\,e_1$, $j = 0,\dots,C-1$. Thuswaldner–Zhang (Theorem 1.1) prove such a tile homeomorphic to a closed 3-ball when $1 = A \le B < C$ **and** the tile has 14 neighbours. The neighbour count is a *hypothesis*, not a consequence — their Remark 1.4 conjectures that tiles with more than 14 neighbours are generally *not* balls.
+
+Their Remark 1.3 reduces the count to arithmetic: for $1 \le A \le B < C$ there are 14 neighbours iff $1 \le A < B < C$ and either ($B \ge 2A-1$ and $C \ge 2(B-A)+2$) or ($B < 2A-1$ and $C \ge A+B-2$). Note both branches need $A < B$ strictly, so $A = B$ never qualifies. The generator evaluates this per tile and reports the result, so a Custom matrix gets the same verdict as a preset:
+
+| preset | neighbours | verdict |
+|---|---|---|
+| (1,2,4), (1,2,8), (1,3,6) | 14 | **proved a 3-ball**; truncated-octahedron CW structure, 24 vertices / 36 edges / 14 faces (Thm 1.5) |
+| (1,2,3), (1,3,4), (2,2,3) | >14 | ball theorem does not apply; Remark 1.4 conjectures they are not balls |
+
+**ABC (1,2,8)** is worth singling out: $x^3+x^2+2x+8 = (x+2)(x^2-x+4)$, so all three eigenvalues have modulus exactly 2. By Bandt's Proposition 2.2 that makes it conjugate to a genuinely *self-similar* tile, and it is the one preset whose exact level-$k$ cells distort only polynomially (aspect 5:1 at level 4, 13:1 at level 12) instead of exponentially — so **Exact Level-$k$ Cubes** stays usable at depth on it.
+
+ABC (1,1,2) is deliberately **not** shipped. It satisfies the normal form, so it is a genuine ABC tile, but it also has two collinear digits and $|\det M| = 2$, making it a twindragon as well — and $\mathrm{diag}(-1,1,-1)$ conjugates its matrix to minus twindragon C's, so it is case C turned 180°, not a distinct solid.
+- **Twindragons** — Bandt's seven three-dimensional twindragons: $|\det M| = 2$, two digits, characteristic polynomial $\lambda^3 - a\lambda^2 - b\lambda - 2$ for the seven $(a,b)$ pairs giving distinct tiles. Theorem 6.2 proves these seven are the complete list up to conjugacy. Case **A** is Bandt's own non-fractal example: in this lattice basis its tile is exactly the unit cube, and Theorem 2.3(ii) makes it the *unique* self-similar three-dimensional lattice tile with two pieces — as a $1 : \sqrt[3]{2} : \sqrt[3]{4}$ box, its map is a 120° rotation composed with a homothety of ratio $\sqrt[3]{2}$.
+
+What is known about each (Bandt, Prop. 6.4, Prop. 7.2 and §12):
+
+| case | $(a,b)$ | neighbours | faces | point nbrs | topology |
+|---|---|---|---|---|---|
+| A | (0,0) | 26 | 6 | 8 | the cube; not a fractal |
+| B | (−1,1) | 18 | 14 | 4 | truncated-octahedron face pattern; ball *conjectured* |
+| C | (1,−1) | 20 | 12 | 8 | rhombic faces; interior *proved* connected; ball conjectured |
+| D | (0,1) | 34 | 14 | 12 | interior not simply connected → **not** a ball |
+| E | (2,−2) | 34 | 12 | 2 | interior not simply connected → **not** a ball |
+| F | (1,0) | — | 16 | — | — |
+| G | (0,2) | — | ≥22 | — | — |
+
+F and G are left blank on purpose. Bandt prints neighbour counts for them but writes "we shall provide no details for the complicated twindragons $\mathcal{F}$ and $\mathcal{G}$", and warns that "for $\mathcal{F}$ and $\mathcal{G}$ there are rare outliers on the thin fibres, and an exact estimate is needed" — so this generator does not repeat those two numbers as settled.
 - **Cube** — $M = 2I$ with the eight digits $\{0,1\}^3$: the degenerate case, and the base for the gaskets.
 
 A **Holes** count drops the last $h$ digits at every level, giving $(C-h)^k$ cells instead of $C^k$ — the same gasket semantics the sibling 2-D Fractal Rep-Tile generator uses. The count is clamped so the survivors still fill three dimensions. That test is on the *attractor*, not on the digits: the affine hull is the span of $\{M^{-j}(d-d_0)\}$, the smallest $M^{-1}$-invariant subspace containing the digit differences, which is why the twindragons stay solid on two collinear digits while a badly ordered cube subset would collapse to a sheet. The cube's digits are ordered so that the first four are an inscribed tetrahedron, making its four-hole gasket a Sierpinski tetrahedron.
@@ -145,6 +170,5 @@ Planarity is **measured, not assumed** — the generator samples the attractor a
 - C. Bandt, "Self-similar sets 5. Integer matrices and fractal tilings of $\mathbb{R}^n$," *Proceedings of the American Mathematical Society* 112, 1991, pp. 549-562 — the integer-matrix plus residue-digit-set theorem behind every radix tile here.
 - C. Bandt, "Combinatorial topology of three-dimensional self-affine tiles," arXiv:1002.0710, 2010 — the seven twindragon cases.
 - J. M. Thuswaldner and S.-Q. Zhang, "On self-affine tiles that are homeomorphic to a ball," arXiv:2107.12076 — the ABC normal form.
-- G. Gelbrich, "Crystallographic reptiles," *Geometriae Dedicata*, 1994.
 - J. E. Hutchinson, "Fractals and self similarity," *Indiana University Mathematics Journal* 30, 1981 — existence and uniqueness of the attractor of a contractive IFS.
 - M. F. Barnsley, *Fractals Everywhere*, 2nd ed., Academic Press, 1993 — the chaos game, and the fern.

@@ -611,8 +611,8 @@ VARIANTS = {
     "ifs": ("mesh.ifs_add", [
         ("ABC124", "ABC tile (1,2,4)",
          dict(mode='RADIX', preset='ABC_124')),
-        ("ABC112", "ABC tile (1,1,2)",
-         dict(mode='RADIX', preset='ABC_112')),
+        ("ABC128", "ABC tile (1,2,8), self-similar",
+         dict(mode='RADIX', preset='ABC_128')),
         ("ABC134", "ABC tile (1,3,4)",
          dict(mode='RADIX', preset='ABC_134')),
         ("TWINA", "Twindragon A",

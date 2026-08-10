@@ -719,6 +719,12 @@ OPS = [
     ("ifs tile exact", lambda: bpy.ops.mesh.ifs_add(
         mode='RADIX', preset='ABC_124', tile_output='EXACT',
         level=5)),
+    ("ifs tile self-similar", lambda: bpy.ops.mesh.ifs_add(
+        mode='RADIX', preset='ABC_128', resolution=64,
+        points=120000)),
+    ("ifs reverse fractal", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='SIERP_TETRA',
+        output='SOLIDS', depth=4, reverse=True)),
     ("ifs cube gasket", lambda: bpy.ops.mesh.ifs_add(
         mode='RADIX', preset='CUBE', holes=4, resolution=64,
         points=120000)),
