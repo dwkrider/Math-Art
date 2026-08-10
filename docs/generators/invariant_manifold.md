@@ -1,20 +1,30 @@
-# Lorenz Manifold
+# Invariant Manifold
 
-![Lorenz Manifold](../images/lorenz_manifold.png)
+![Invariant Manifold](../images/invariant_manifold.png)
 
 ## Overview
 
-The two-dimensional **stable manifold of the origin** of the Lorenz system — the surface of all points that flow *into* the equilibrium at 0 rather than onto the butterfly attractor. It is the object Osinga and Krauskopf famously crocheted, and the one the 2026 Alternative Fields Medal trophies were 3D-printed from.
+Two-dimensional **invariant manifolds** of equilibria of chaotic systems: the surfaces of points that flow into (stable) or out of (unstable) an equilibrium rather than onto the attractor. The Hadamard–Perron theorem gives every hyperbolic equilibrium local stable and unstable manifolds tangent to the corresponding eigenspaces; this generator globalises them by flowing.
+
+The default is the famous one — the **stable manifold of the Lorenz origin**, the object Osinga and Krauskopf crocheted and the one the 2026 Alternative Fields Medal trophies were 3D-printed from:
 
 $$\dot x = \sigma(y-x), \qquad \dot y = x(\rho - z) - y, \qquad \dot z = xy - \beta z$$
+
+but the same machinery grows the manifold of any equilibrium of any shipped system, on either side.
+
+| System | Equilibria | Notable |
+|---|---|---|
+| **Lorenz** ($\sigma,\rho,\beta$) | Origin, $C^+$, $C^-$ | Origin: the stable side is 2-D (eigenvalues $-22.83$, $-8/3$); the unstable side is a *curve* and is refused. $C^\pm$ are **spiral saddles** — eigenvalues $-13.855$ and $0.094 \pm 10.195i$, so their 2-D unstable eigenspace comes from a complex pair. |
+| **Rössler** ($a,b,c$) | Inner, Outer | The roots of $ay^2 + cy + b = 0$. |
 
 ## Options
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Sigma | 10.0 | Prandtl number; 10 is Lorenz's own value. Range 0.1-50. |
-| Rho | 28.0 | Rayleigh number; 28 is Lorenz's own value. Range 1.1-100. |
-| Beta | 2.667 | Geometric factor; 8/3 is Lorenz's own value. Range 0.1-10. |
+| System | Lorenz | Which vector field. Selecting one loads its own default parameters. |
+| Parameter 1-3 | 10, 28, 8/3 | The system's parameters, labelled per system ($\sigma,\rho,\beta$ for Lorenz; $a,b,c$ for Rössler). |
+| Equilibrium | Origin | Which equilibrium, listed with its coordinates. |
+| Manifold | Stable | Stable (grown backward) or unstable (grown forward). |
 | Arclength | 100.0 | How far to grow the manifold, measured along trajectories rather than in time. Range 5-250. |
 | Ring Spacing | 1.0 | Arclength between recorded rings. Range 0.1-5. |
 | Target Edge | 0.25 | Wanted spacing along a ring; smaller keeps the sharp folds from being cut across. Range 0.02-2. |
@@ -60,16 +70,28 @@ Every resampling step moves each point off the true ring by the chord-to-arc dev
 
 So resampling uses **Catmull-Rom**, not linear interpolation, dropping the deviation from $O(h^2)$ to $O(h^4)$ at no cost in ring count. Measured against the invariance test below, that roughly halves how far the finished surface sits off the manifold: **0.049 against 0.113**.
 
+### Complex eigenspaces, and sides that are curves
+
+The 2-D invariant eigenspace need not come from two *real* eigenvalues. At a **spiral saddle** — Lorenz's $C^\pm$ are exactly that — the pair is complex conjugate and the invariant plane is spanned by the real and imaginary parts of one complex eigenvector; a seed circle in it works just as in the real case. An earlier version of this generator refused complex eigenvalues outright, which excluded precisely the manifold that wraps the butterfly's wings.
+
+Where the chosen side is only one-dimensional the generator says so rather than growing nonsense: the Lorenz origin's *unstable* manifold is a curve, not a surface, and asking for it gives a clear refusal.
+
 ### How it is checked
 
-Points of a stable manifold flow into the equilibrium — but they cannot stay there numerically. The origin is a saddle, so any deviation is amplified by $e^{11.83\,t}$: a point sitting slightly off the surface dives toward 0 and then shoots away. The test therefore measures the **closest approach** as a fraction of the starting radius, and is only meaningful beside a control:
+The defining *local* property is tangency: the manifold leaves the equilibrium tangent to the invariant eigenplane. That is checkable for every case, so it is the general test — measured deviation runs $3.6\times10^{-4}$ to $7.4\times10^{-3}$ across the shipped cases.
+
+The stronger test flows the finished surface and watches it collapse into the equilibrium, against a control of points nudged off it:
 
 | | closest approach |
 |---|---|
-| points of the outer ring | **0.049** (worst 0.102) |
-| the same points nudged 0.5 off the surface | 0.378 |
+| points of the outer ring | **0.059** |
+| the same points nudged 0.5 off the surface | 0.384 |
 
-A surface that merely looked right would fail this. The self-test also confirms the stable eigenvalues to $10^{-3}$, that the seed frame is orthonormal and spans an invariant plane of $J$, that ring circumference and point count grow monotonically, and that the mesh is a disk ($\chi = 1$) whose single free rim is exactly the outermost ring.
+But that test only *discriminates* where the contraction beats the transverse blow-up. It does at the Lorenz origin (rates $2.67$ and $22.83$). It **cannot** at $C^+$: testing an unstable manifold means running backward, which amplifies the transverse direction at $e^{13.855\,t}$ while the spiral contracts at only $e^{0.094\,t}$, so every trajectory leaves the box long before a collapse would show. It is therefore applied where it means something and skipped, explicitly, where it does not.
+
+Also checked: the numeric Jacobian against Lorenz's analytic one to $10^{-6}$, that each listed equilibrium really satisfies $f = 0$, that the eigenbasis is orthonormal and spans an invariant plane of $J$, that the rings grow overall, and that the mesh is a disk ($\chi = 1$) whose single free rim is exactly the outermost ring.
+
+Ring growth is **not** monotone in general, which an earlier version wrongly asserted: at a spiral saddle the rotation dwarfs the growth — $C^+$ turns at $10.195$ while growing at $0.094$, so it winds about a hundred times per unit of outward progress and the ring pulses as it winds.
 
 ### Limits worth knowing
 

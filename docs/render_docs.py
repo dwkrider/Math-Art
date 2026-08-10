@@ -212,7 +212,7 @@ TASKS = {
     "ruled_surface": O("mesh.ruled_surface_add", mode='HYPERBOLOID',
                        output='RODS', family='BOTH'),
     "curiosity_surface": O("mesh.curiosity_surface_add", surface='FRESNEL'),
-    "lorenz_manifold": O("mesh.lorenz_manifold_add"),
+    "invariant_manifold": O("mesh.invariant_manifold_add"),
     # --- Polyhedra ---
     "regular_solids": O("mesh.regular_solid_add", family='ARCHIMEDEAN',
                         solid='SC'),

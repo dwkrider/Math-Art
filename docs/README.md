@@ -13,7 +13,7 @@ Each shape is generated centered on the origin fitting a 2 m cube, and shown w
 | [<img src="images/knot_span.png" width="240">](generators/knot_span.md)<br>**[Knot to Knot Surface](generators/knot_span.md)** | [<img src="images/seifert.png" width="240">](generators/seifert.md)<br>**[Seifert Surface](generators/seifert.md)** _(experimental)_ | [<img src="images/algebraic.png" width="240">](generators/algebraic.md)<br>**[Algebraic Surface](generators/algebraic.md)** |
 | [<img src="images/topological.png" width="240">](generators/topological.md)<br>**[Topological Surface](generators/topological.md)** | [<img src="images/minimal_polyhedron.png" width="240">](generators/minimal_polyhedron.md)<br>**[Minimal Surface Polyhedron](generators/minimal_polyhedron.md)** | [<img src="images/squeeze.png" width="240">](generators/squeeze.md)<br>**[Squeeze Surface](generators/squeeze.md)** |
 | [<img src="images/vertex_vortices.png" width="240">](generators/vertex_vortices.md)<br>**[Vertex Vortices](generators/vertex_vortices.md)** | [<img src="images/helical_surface.png" width="240">](generators/helical_surface.md)<br>**[Helical Surface](generators/helical_surface.md)** | [<img src="images/curiosity_surface.png" width="240">](generators/curiosity_surface.md)<br>**[Miscellaneous Surfaces](generators/curiosity_surface.md)** |
-| [<img src="images/lorenz_manifold.png" width="240">](generators/lorenz_manifold.md)<br>**[Lorenz Manifold](generators/lorenz_manifold.md)** |  |  |
+| [<img src="images/invariant_manifold.png" width="240">](generators/invariant_manifold.md)<br>**[Invariant Manifold](generators/invariant_manifold.md)** |  |  |
 | **[Span Minimal Surface](generators/minimal_span.md)**<br><sub>operates on selected curves</sub> |  |  |
 
 ## Polyhedra

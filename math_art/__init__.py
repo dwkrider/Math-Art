@@ -65,7 +65,7 @@ _MODULE_NAMES = [
     'stereographic_projection_generator',
     'hyperbolic_honeycomb_generator',
     'algebraic_surface_generator',
-    'lorenz_manifold_generator',
+    'invariant_manifold_generator',
     'spacefill_generator',
     'interlocking_generator',
     'link_generator',
@@ -167,7 +167,7 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.ruled_surface_add", icon='MOD_SCREW')
         _op(lay, "mesh.curiosity_surface_add",
             icon='SURFACE_DATA')
-        _op(lay, "mesh.lorenz_manifold_add",
+        _op(lay, "mesh.invariant_manifold_add",
             icon='SURFACE_NSURFACE')
         _op(lay, "mesh.supershape_add", icon='SURFACE_NSPHERE')
         _op(lay, "mesh.hyperbolic_surface_add", icon='MESH_CAPSULE')

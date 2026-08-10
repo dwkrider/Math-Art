@@ -551,11 +551,21 @@ OPS = [
         preset='SE_CUBE', segments=48, rings=24)),
     ("supershape distance color", lambda: bpy.ops.mesh.supershape_add(
         preset='GEAR', coloring='DISTANCE', segments=48, rings=24)),
-    ("lorenz manifold", lambda: bpy.ops.mesh.lorenz_manifold_add(
+    ("invariant manifold lorenz", lambda: bpy.ops.mesh.invariant_manifold_add(
         arclength=25.0, seed_points=64, target_edge=0.4)),
-    ("lorenz manifold deep", lambda: bpy.ops.mesh.lorenz_manifold_add(
+    ("invariant manifold deep",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
         arclength=60.0, seed_points=64, target_edge=0.5,
         max_ring_points=1200)),
+    ("invariant manifold spiral saddle",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='LORENZ', equilibrium='1', kind='UNSTABLE',
+        arclength=25.0, seed_points=64, target_edge=0.3)),
+    ("invariant manifold roessler",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='ROSSLER', p1=0.2, p2=0.2, p3=5.7, equilibrium='0',
+        kind='UNSTABLE', arclength=25.0, seed_points=64,
+        target_edge=0.3)),
     ("ruled surface helicoid", lambda: bpy.ops.mesh.ruled_surface_add(
         mode='HELICOID')),
     ("ruled surface hypar", lambda: bpy.ops.mesh.ruled_surface_add(
