@@ -65,6 +65,7 @@ _MODULE_NAMES = [
     'stereographic_projection_generator',
     'hyperbolic_honeycomb_generator',
     'algebraic_surface_generator',
+    'invariant_manifold_generator',
     'spacefill_generator',
     'interlocking_generator',
     'link_generator',
@@ -90,6 +91,8 @@ _MODULE_NAMES = [
     'ruled_surface_generator',
     'curiosity_surface_generator',
     'supershape_generator',
+    'spherical_harmonic_generator',
+    'orbital_generator',
     'rolling_knot_generator',
     'woven_polyhedron_generator',
     'pattern_common',
@@ -107,6 +110,7 @@ _MODULE_NAMES = [
     'spiral_tiling_generator',
     'fractal_tiling_generator',
     'fractal_reptile_generator',
+    'ifs_generator',
     'islamic_pattern_generator',
     'celtic_knot_2d_generator',
     'over_under_screen_generator',
@@ -166,7 +170,12 @@ class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
         _op(lay, "mesh.ruled_surface_add", icon='MOD_SCREW')
         _op(lay, "mesh.curiosity_surface_add",
             icon='SURFACE_DATA')
+        _op(lay, "mesh.invariant_manifold_add",
+            icon='SURFACE_NSURFACE')
         _op(lay, "mesh.supershape_add", icon='SURFACE_NSPHERE')
+        _op(lay, "mesh.spherical_harmonic_add",
+            icon='SURFACE_NSPHERE')
+        _op(lay, "mesh.orbital_add", icon='META_BALL')
         _op(lay, "mesh.hyperbolic_surface_add", icon='MESH_CAPSULE')
         _op(lay, "mesh.crochet_add", icon='MOD_CLOTH')
 
@@ -220,6 +229,7 @@ class VIEW3D_MT_math_art_fractals(bpy.types.Menu):
         _op(lay, "mesh.fractal_tiling_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.fractal_knotwork_add", icon='OUTLINER_OB_CURVES')
         _op(lay, "mesh.fractal_reptile_add", icon='MOD_TRIANGULATE')
+        _op(lay, "mesh.ifs_add", icon='MOD_REMESH')
 
 
 class VIEW3D_MT_math_art_knots(bpy.types.Menu):

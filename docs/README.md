@@ -13,6 +13,8 @@ Each shape is generated centered on the origin fitting a 2 m cube, and shown w
 | [<img src="images/knot_span.png" width="240">](generators/knot_span.md)<br>**[Knot to Knot Surface](generators/knot_span.md)** | [<img src="images/seifert.png" width="240">](generators/seifert.md)<br>**[Seifert Surface](generators/seifert.md)** _(experimental)_ | [<img src="images/algebraic.png" width="240">](generators/algebraic.md)<br>**[Algebraic Surface](generators/algebraic.md)** |
 | [<img src="images/topological.png" width="240">](generators/topological.md)<br>**[Topological Surface](generators/topological.md)** | [<img src="images/minimal_polyhedron.png" width="240">](generators/minimal_polyhedron.md)<br>**[Minimal Surface Polyhedron](generators/minimal_polyhedron.md)** | [<img src="images/squeeze.png" width="240">](generators/squeeze.md)<br>**[Squeeze Surface](generators/squeeze.md)** |
 | [<img src="images/vertex_vortices.png" width="240">](generators/vertex_vortices.md)<br>**[Vertex Vortices](generators/vertex_vortices.md)** | [<img src="images/helical_surface.png" width="240">](generators/helical_surface.md)<br>**[Helical Surface](generators/helical_surface.md)** | [<img src="images/curiosity_surface.png" width="240">](generators/curiosity_surface.md)<br>**[Miscellaneous Surfaces](generators/curiosity_surface.md)** |
+| [<img src="images/invariant_manifold.png" width="240">](generators/invariant_manifold.md)<br>**[Invariant Manifold](generators/invariant_manifold.md)** |  |  |
+| [<img src="images/spherical_harmonic.png" width="240">](generators/spherical_harmonic.md)<br>**[Spherical Harmonic](generators/spherical_harmonic.md)** | [<img src="images/orbital.png" width="240">](generators/orbital.md)<br>**[Atomic & Molecular Orbital](generators/orbital.md)** |  |
 | **[Span Minimal Surface](generators/minimal_span.md)**<br><sub>operates on selected curves</sub> |  |  |
 
 ## Polyhedra
@@ -29,7 +31,7 @@ Each shape is generated centered on the origin fitting a 2 m cube, and shown w
 | | | |
 |:--:|:--:|:--:|
 | [<img src="images/sponge.png" width="240">](generators/sponge.md)<br>**[Fractal Sponge](generators/sponge.md)** | [<img src="images/fractal_polyhedron.png" width="240">](generators/fractal_polyhedron.md)<br>**[Fractal Polyhedron](generators/fractal_polyhedron.md)** | [<img src="images/space_filling_curve.png" width="240">](generators/space_filling_curve.md)<br>**[Space-filling Curve](generators/space_filling_curve.md)** |
-| [<img src="images/fractal_tree.png" width="240">](generators/fractal_tree.md)<br>**[Fractal Tree](generators/fractal_tree.md)** |  |  |
+| [<img src="images/fractal_tree.png" width="240">](generators/fractal_tree.md)<br>**[Fractal Tree](generators/fractal_tree.md)** | [<img src="images/ifs.png" width="240">](generators/ifs.md)<br>**[Iterated Function System](generators/ifs.md)** |  |
 
 ## Knots & Curves
 

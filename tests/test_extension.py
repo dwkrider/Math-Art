@@ -551,6 +551,78 @@ OPS = [
         preset='SE_CUBE', segments=48, rings=24)),
     ("supershape distance color", lambda: bpy.ops.mesh.supershape_add(
         preset='GEAR', coloring='DISTANCE', segments=48, rings=24)),
+    ("invariant manifold lorenz", lambda: bpy.ops.mesh.invariant_manifold_add(
+        arclength=25.0, seed_points=64, target_edge=0.4)),
+    ("invariant manifold deep",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        arclength=60.0, seed_points=64, target_edge=0.5,
+        max_ring_points=1200)),
+    ("invariant manifold spiral saddle",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='LORENZ', equilibrium='1', kind='UNSTABLE',
+        arclength=25.0, seed_points=64, target_edge=0.3)),
+    ("invariant manifold chen",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='CHEN', p1=36.0, p2=3.0, p3=20.0, equilibrium='1',
+        kind='UNSTABLE', arclength=20.0, seed_points=64,
+        target_edge=0.4)),
+    ("invariant manifold shimizu",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='SHIMIZU', p1=0.75, p2=0.45, p3=0.0, equilibrium='1',
+        kind='UNSTABLE', arclength=20.0, seed_points=64,
+        target_edge=0.4)),
+    ("invariant manifold halvorsen",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='HALVORSEN', p1=1.4, equilibrium='1', kind='STABLE',
+        arclength=20.0, seed_points=64, target_edge=0.4)),
+    ("invariant manifold thomas",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='THOMAS', p1=0.19, equilibrium='0', kind='STABLE',
+        arclength=15.0, seed_points=64, target_edge=0.4)),
+    ("invariant manifold roessler",
+     lambda: bpy.ops.mesh.invariant_manifold_add(
+        system='ROSSLER', p1=0.2, p2=0.2, p3=5.7, equilibrium='0',
+        kind='UNSTABLE', arclength=25.0, seed_points=64,
+        target_edge=0.3)),
+    ("spherical harmonic offset",
+     lambda: bpy.ops.mesh.spherical_harmonic_add(
+        form='OFFSET', degree=4, order=2, res_u=64, res_v=128)),
+    ("spherical harmonic lobes",
+     lambda: bpy.ops.mesh.spherical_harmonic_add(
+        form='ABS', degree=3, order=1, res_u=64, res_v=128)),
+    ("spherical harmonic signed split",
+     lambda: bpy.ops.mesh.spherical_harmonic_add(
+        form='SIGNED', degree=3, order=-2, split_lobes=True,
+        res_u=64, res_v=128)),
+    ("spherical harmonic bourke",
+     lambda: bpy.ops.mesh.spherical_harmonic_add(
+        form='BOURKE', bourke_preset='B3', res_u=64, res_v=128)),
+    ("orbital 2pz", lambda: bpy.ops.mesh.orbital_add(
+        mode='ATOMIC', n=2, l=1, m=0, resolution=48)),
+    ("orbital 3dxy", lambda: bpy.ops.mesh.orbital_add(
+        mode='ATOMIC', n=3, l=2, m=-2, resolution=48)),
+    ("orbital 4f", lambda: bpy.ops.mesh.orbital_add(
+        mode='ATOMIC', n=4, l=3, m=0, resolution=48)),
+    ("orbital sigma star 1s", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='SIGMA_STAR_1S', resolution=48)),
+    ("orbital pi 2px", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='PI_2PX', resolution=48)),
+    ("orbital sp3 hybrid", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='SP3', resolution=48)),
+    ("orbital water lone pair", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='WATER_LONE_PAIR', resolution=48)),
+    ("orbital benzene pi", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='BENZENE_PI', huckel_k=1,
+        resolution=48)),
+    ("orbital custom lcao", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='CUSTOM',
+        lcao="2pz@0,0,-1.2 1; 2pz@0,0,1.2 -1", resolution=48)),
+    ("orbital cloud molecular", lambda: bpy.ops.mesh.orbital_add(
+        mode='MOLECULAR', preset='PI_2PX', display='CLOUD', shells=3,
+        resolution=44)),
+    ("orbital cloud atomic", lambda: bpy.ops.mesh.orbital_add(
+        mode='ATOMIC', n=3, l=2, m=0, display='CLOUD', shells=4,
+        resolution=44)),
     ("ruled surface helicoid", lambda: bpy.ops.mesh.ruled_surface_add(
         mode='HELICOID')),
     ("ruled surface hypar", lambda: bpy.ops.mesh.ruled_surface_add(
@@ -707,6 +779,72 @@ OPS = [
          kind='KITE_R12', iterations=3, separate=True)),
     ("fractal kite r8", lambda: bpy.ops.mesh.fractal_tiling_add(
         kind='KITE_R8', iterations=4, color_by='UNIFORM')),
+    ("ifs abc tile", lambda: bpy.ops.mesh.ifs_add(
+        mode='RADIX', preset='ABC_124', resolution=64,
+        points=120000)),
+    ("ifs twindragon", lambda: bpy.ops.mesh.ifs_add(
+        mode='RADIX', preset='TWIN_D', resolution=64,
+        points=120000)),
+    ("ifs tile smooth", lambda: bpy.ops.mesh.ifs_add(
+        mode='RADIX', preset='ABC_223', tile_output='SMOOTH',
+        resolution=48, points=120000)),
+    ("ifs tile exact", lambda: bpy.ops.mesh.ifs_add(
+        mode='RADIX', preset='ABC_124', tile_output='EXACT',
+        level=5)),
+    ("ifs tile self-similar", lambda: bpy.ops.mesh.ifs_add(
+        mode='RADIX', preset='ABC_128', resolution=64,
+        points=120000)),
+    ("ifs bmm sierpinski", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='BMM_SIERP',
+        output='VOXEL', points=120000, resolution=48)),
+    ("ifs bmm sierpinski pentagon", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='BMM_SIERP',
+        poly_sides=5, poly_ratio=0.7, output='VOXEL',
+        points=120000, resolution=48)),
+    ("ifs bmm tetrahedron", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='BMM_TETRA',
+        output='VOXEL', points=120000, resolution=48)),
+    ("ifs bmm cube", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='BMM_CUBE',
+        output='ISO', points=120000, resolution=48)),
+    ("ifs reverse fractal", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='SIERP_TETRA',
+        output='SOLIDS', depth=4, reverse=True)),
+    ("ifs cube gasket", lambda: bpy.ops.mesh.ifs_add(
+        mode='RADIX', preset='CUBE', holes=4, resolution=64,
+        points=120000)),
+    ("ifs gasket overclamped", lambda: bpy.ops.mesh.ifs_add(
+        mode='RADIX', preset='CUBE', holes=6, resolution=48,
+        points=80000)),
+    ("ifs sierpinski solids", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='SIERP_TETRA', output='SOLIDS',
+        depth=4)),
+    ("ifs menger solids", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='MENGER', output='SOLIDS',
+        seed_solid='CUBE', depth=2)),
+    ("ifs voxel attractor", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='SIERP_OCTA', output='VOXEL',
+        points=80000, resolution=48)),
+    ("ifs smooth contour", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='SIERP_TETRA', output='ISO',
+        points=120000, resolution=48)),
+    ("ifs fern", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='2', ifs_preset='FERN2D',
+        output='RELIEF', points=120000, plane_resolution=256)),
+    ("ifs sierpinski triangle 2d", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='2', ifs_preset='SIERP_TRI',
+        output='RELIEF', points=120000, plane_resolution=256)),
+    ("ifs heighway dragon 2d", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='2', ifs_preset='DRAGON',
+        output='RELIEF', points=120000, plane_resolution=256)),
+    ("ifs levy c 2d", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='2', ifs_preset='LEVY',
+        output='RELIEF', points=120000, plane_resolution=256)),
+    ("ifs koch 2d", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='2', ifs_preset='KOCH',
+        output='RELIEF', points=120000, plane_resolution=256)),
+    ("ifs custom maps", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='CUSTOM', output='SOLIDS', depth=4)),
     ("fractal reptile right-triangle",
      lambda: bpy.ops.mesh.fractal_reptile_add(
          family='CLASSIC', shape='RIGHT_TRIANGLE', iterations=6)),
