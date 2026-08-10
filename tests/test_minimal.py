@@ -185,6 +185,26 @@ print(f"[trefoil single sheet] objects={len(bpy.data.objects)} "
 if not ok:
     fails.append('trefoil-single-sheet')
 
+# the single sheet has to survive the whole range the operator exposes,
+# not just its defaults: the highest genus it builds, the coarsest and
+# finest grids, and a solver setting past the relaxation cap (which the
+# operator clamps -- an uncapped flow drags the sheet back through
+# itself, which is exactly what the cap is there to prevent)
+for label, kw in (("q9", dict(q=9)),
+                  ("q7-coarse", dict(q=7, samples=32, rings=4)),
+                  ("q5-fine", dict(q=5, samples=256, rings=48)),
+                  ("iterations-past-cap", dict(iterations=200)),
+                  ("lifted", dict(inner_lift=3.0, inner_height=5.0))):
+    clear_objects()
+    bpy.ops.mesh.minimal_knot_span_add(**kw)
+    nx, comps = genuine_crossings(bpy.context.object)
+    ok = nx == 0 and comps == 1 and len(bpy.data.objects) == 1
+    print(f"[single sheet {label}] objects={len(bpy.data.objects)} "
+          f"components={comps} genuine_crossings={nx} "
+          f"{'OK' if ok else 'FAIL'}")
+    if not ok:
+        fails.append(f'single-sheet-{label}')
+
 # and the legacy wound annulus must still be reachable (it is the one
 # that self-crosses -- the same gate must detect that, proving the gate)
 clear_objects()

@@ -1873,6 +1873,37 @@ def torus_knot(p, q, m, scale=1.0, tube=1.0):
                      -np.sin(q * t) * tube], axis=1) * scale
 
 
+# The Seifert span is embedded as built, but the area flow that relaxes
+# it afterwards is what can undo that: the cotangent-Laplacian solve is
+# free to drag the membrane's rim collar (where the inner Seifert
+# circle's ~q/2 waves of wobble die away) through the membrane behind
+# it, and to pinch the handles. Three limits keep the flow inside the
+# embedded regime: a floor on the azimuth samples per half period, so
+# the collar is never one quad thick; a ceiling on the radial rows,
+# since rows much finer than the azimuth spacing make slivers that the
+# cotangent weights fold (the ceiling tightens with q, whose waves
+# crowd the collar); and a cap on the relaxation passes, because the
+# least-area surface in this class is not the embedded one -- run the
+# flow long enough and it pinches through itself whatever the grid.
+# All three were fixed by sweeping q x samples x rings x iterations and
+# counting genuine edge-through-triangle crossings; a normal-flip
+# detector was tried first and rejected (it both misses folds that
+# creep in without a flip and fires on the harmless slivers in the
+# q = 1 band).
+_SEIFERT_MIN_G = 12         # azimuth samples per half period, minimum
+_SEIFERT_MAX_ROWS = 48      # radial row budget, divided down as q grows
+_SEIFERT_MAX_ITERS = 8      # relaxation passes the span stays embedded for
+
+
+def _seifert_rows(q, rings, mA):
+    """Radial rows the relaxation stays embedded for: the ceiling falls
+    with q (whose waves crowd the collar) and never lets a row be finer
+    than a third of the azimuth spacing."""
+    return max(4, min(int(rings),
+                      _SEIFERT_MAX_ROWS // ((int(q) + 3) // 2),
+                      mA // 3))
+
+
 def build_seifert_span_grid(q, m, rings, knot_scale=1.0, circle_radius=4.5,
                             inner_height=1.0, inner_lift=0.0, window=0.35):
     """Embedded single-sheet spanning surface between the (2, q) torus
@@ -1898,7 +1929,9 @@ def build_seifert_span_grid(q, m, rings, knot_scale=1.0, circle_radius=4.5,
     by construction. Genus (q - 1) / 2, two boundary loops: the exact
     torus knot (2 m-ish samples) and the exact circle. Returns
     (V, quads, fixed) with `fixed` True exactly on the two boundary
-    loops, ready for minimize_area.
+    loops, ready for minimize_area -- for at most _SEIFERT_MAX_ITERS
+    passes, beyond which the area flow pulls the sheet back through
+    itself (see the note on that constant).
     """
     q = int(q)
     if q < 1 or q % 2 == 0:
@@ -1906,8 +1939,15 @@ def build_seifert_span_grid(q, m, rings, knot_scale=1.0, circle_radius=4.5,
     k = float(knot_scale)
     h = float(inner_height)
     R = float(circle_radius)
-    g = max(4, int(round(m / (2.0 * q))))
+    # `m` is a request, not a promise: the azimuth resolution is floored
+    # at _SEIFERT_MIN_G samples per half period so the relaxation cannot
+    # fold the membrane collar (a coarse grid leaves it one quad thick)
+    g = max(_SEIFERT_MIN_G, int(round(m / (2.0 * q))))
     mA = 2 * q * g                      # azimuth samples, once around
+    # ... and `rings` likewise: rows finer than a third of the azimuth
+    # spacing, or too many of them for this q, slice the sheet into
+    # slivers that the flow folds
+    rings = _seifert_rows(q, rings, mA)
     wn = max(2, min(g - 2, int(round(window * g))))
     ns = 2 * wn + 1                     # samples across a crossing window
     th = TAU * np.arange(mA) / mA
@@ -2909,7 +2949,11 @@ if _IN_BLENDER:
                  "half-twist saddle bands resolve the knot "
                  "(Seifert's algorithm on the round diagram; genus "
                  "(q-1)/2). Used for p = 2 knots over the circle; "
-                 "other cases fall back to the wound annulus"),
+                 "other cases fall back to the wound annulus. Keeping "
+                 "the sheet embedded floors the samples it uses and "
+                 "caps both the rings and the relaxation, so Boundary "
+                 "Samples, Interior Rings and Solver Iterations are "
+                 "requests rather than exact counts here"),
                 ('WOUND', "Wound Annulus (crossing sheets)",
                  "The classic ruled annulus: the circle is traversed "
                  "p times so the ruling lines up, and for p > 1 the "
@@ -2948,15 +2992,30 @@ if _IN_BLENDER:
                         [V[:, 0] * ca - V[:, 1] * sa,
                          V[:, 0] * sa + V[:, 1] * ca], axis=1)
                 T = _quads_to_tris(quads)
-                minimize_area(V, T, fixed, outer_iters=self.iterations)
+                iters = min(self.iterations, _SEIFERT_MAX_ITERS)
+                minimize_area(V, T, fixed, outer_iters=iters)
                 V = _center_fit(V, 1.0)
                 obj = _new_object(
                     context, f"Knot(2,{self.q})SeifertSpan", V, quads)
+                capped = ("" if iters == self.iterations else
+                          f" (relaxation capped at {iters} passes to "
+                          f"keep the sheet embedded)")
                 self.report(
                     {'INFO'},
                     f"single sheet, genus {(self.q - 1) // 2}, "
-                    f"area = {mesh_area(V, T):.4f}")
+                    f"area = {mesh_area(V, T):.4f}{capped}")
                 return {'FINISHED'}
+            if (self.span_topology == 'SEIFERT' and self.outer_q == 0
+                    and self.p > 1):
+                # asked for the single sheet but outside its range, and
+                # the annulus about to be built really does wind p times
+                # through itself: say so rather than quietly handing
+                # back crossing sheets
+                self.report(
+                    {'WARNING'},
+                    "Single Sheet needs p = 2, odd q, a non-flat knot "
+                    "and a circle clear of it (Circle Radius > 3 x Knot "
+                    "Scale); using the wound annulus instead")
             m = self.samples
             if self.split_sheets and self.p > 1:
                 m = max(self.p * 8, (m // self.p) * self.p)
@@ -3348,9 +3407,10 @@ def _selftest():
     print("catenoid: waist =", float(waist), "(analytic ~0.9098)")
     # single-sheet Seifert span between a (2, q) knot and the circle:
     # Euler characteristic (genus gate), 2 boundary loops == the fixed
-    # verts, manifoldness, and genuine self-intersection freedom after
-    # the default 2 solver iterations
-    for qq, chi_want in ((1, 0), (3, -2), (5, -4)):
+    # verts, manifoldness, and genuine self-intersection freedom -- the
+    # last one relaxed all the way to the iteration cap, which is the
+    # worst case the operator can ask for
+    for qq, chi_want in ((1, 0), (3, -2), (5, -4), (7, -6), (9, -8)):
         V, F, fx = build_seifert_span_grid(qq, 48, 8)
         T = _quads_to_tris(F)
         ec = {}
@@ -3378,7 +3438,7 @@ def _selftest():
                         seen.add(x)
                         stk.extend(adj[x])
         bnd_fix = set(adj) == set(np.nonzero(fx)[0].tolist())
-        minimize_area(V, T, fx, outer_iters=2)
+        minimize_area(V, T, fx, outer_iters=_SEIFERT_MAX_ITERS)
         V = _center_fit(V, 1.0)
         nx = _selfx_crossings(V, T)
         lo, hi = V.min(0), V.max(0)
