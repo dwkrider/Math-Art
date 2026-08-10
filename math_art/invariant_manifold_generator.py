@@ -158,6 +158,33 @@ def numeric_jacobian(field, X, p, h=1e-6):
     return J
 
 
+HYPERBOLIC_TOL = 1e-4
+
+
+def classify_equilibrium(field, point, p, tol=HYPERBOLIC_TOL):
+    """(eigenvalues, sides) where `sides` lists the kinds whose
+    manifold is a SURFACE -- exactly two eigenvalues of that sign.
+
+    An eigenvalue counts only if its real part is a real part.  At
+    Roessler's outer equilibrium the complex pair has
+    Re = -4.6e-6 against |lambda| = 5.43, a ratio of 8.5e-7: that
+    equilibrium is not hyperbolic to within anything one can compute,
+    the stable manifold theorem does not apply to it, and whether the
+    pair reads as stable or unstable is decided by rounding.  Treating
+    it as a stable manifold would be inventing a theorem."""
+    w = np.linalg.eig(numeric_jacobian(field, point, p))[0]
+    scale = float(np.max(np.abs(w)))
+    if scale <= 0.0:
+        return w, []
+    hyper = np.abs(w.real) > tol * scale
+    sides = []
+    if int(np.sum(hyper & (w.real < 0.0))) == 2:
+        sides.append('STABLE')
+    if int(np.sum(hyper & (w.real > 0.0))) == 2:
+        sides.append('UNSTABLE')
+    return w, sides
+
+
 def invariant_eigenbasis(field, point, p, kind='STABLE'):
     """An orthonormal basis of the two-dimensional invariant eigenspace
     at `point`, plus the eigenvalues that span it.
@@ -171,9 +198,20 @@ def invariant_eigenbasis(field, point, p, kind='STABLE'):
     works exactly as in the real case."""
     J = numeric_jacobian(field, point, p)
     w, V = np.linalg.eig(J)
+    scale = max(float(np.max(np.abs(w))), 1e-300)
+    side = "stable" if kind == 'STABLE' else "unstable"
+    soft = np.abs(w.real) <= HYPERBOLIC_TOL * scale
+    if np.any(soft):
+        raise ValueError(
+            f"this equilibrium is not hyperbolic -- "
+            f"{int(np.sum(soft))} of its eigenvalues have a real part "
+            f"of essentially zero "
+            f"(|Re| / |lambda| = "
+            f"{float(np.min(np.abs(w.real)) / scale):.1e}), so the "
+            f"stable manifold theorem does not apply and there is no "
+            f"{side} manifold to grow")
     want = (w.real < 0.0) if kind == 'STABLE' else (w.real > 0.0)
     idx = np.nonzero(want)[0]
-    side = "stable" if kind == 'STABLE' else "unstable"
     if len(idx) == 0:
         raise ValueError(f"this equilibrium has no {side} directions")
     if len(idx) == 1:
@@ -424,10 +462,49 @@ if _IN_BLENDER:
             eqs = []
         if not eqs:
             eqs = [("(none)", np.zeros(3))]
-        items = [(str(i), nm,
-                  f"{nm} at ({q[0]:.3f}, {q[1]:.3f}, {q[2]:.3f})")
-                 for i, (nm, q) in enumerate(eqs)]
+        field = SYSTEMS[key][1]
+        p = (self.p1, self.p2, self.p3)
+        items = []
+        for i, (nm, q) in enumerate(eqs):
+            try:
+                sides = classify_equilibrium(field, q, p)[1]
+            except Exception:
+                sides = []
+            note = (", ".join(s.lower() for s in sides) + " manifold"
+                    if sides else "no 2-D manifold (not hyperbolic, "
+                                  "or its sides are curves)")
+            items.append((str(i), nm,
+                          f"{nm} at ({q[0]:.3f}, {q[1]:.3f}, "
+                          f"{q[2]:.3f}) -- {note}"))
         _ENUM_CACHE[key] = items
+        return items
+
+    _KIND_ALL = (('STABLE', "Stable", "Points that flow INTO the "
+                                      "equilibrium; grown by "
+                                      "integrating backward"),
+                 ('UNSTABLE', "Unstable", "Points that flow OUT of "
+                                          "it; grown forward"))
+
+    def _kind_items(self, context):
+        """Only the sides whose manifold is actually a surface.
+
+        Every equilibrium shipped here has exactly one such side, so
+        filtering the list means the wrong combination is unreachable
+        rather than something you discover from an error."""
+        key = getattr(self, 'system', 'LORENZ')
+        field, equilibria = SYSTEMS[key][1], SYSTEMS[key][2]
+        p = (self.p1, self.p2, self.p3)
+        try:
+            eqs = equilibria(p)
+            q = eqs[int(getattr(self, 'equilibrium', '0'))][1]
+            sides = classify_equilibrium(field, q, p)[1]
+        except Exception:
+            sides = []
+        items = [it for it in _KIND_ALL if it[0] in sides]
+        if not items:
+            # nothing valid: offer both so the operator can explain why
+            items = list(_KIND_ALL)
+        _ENUM_CACHE['kind' + key] = items
         return items
 
     def _on_system(self, context):
@@ -471,14 +548,7 @@ if _IN_BLENDER:
                           min=-100.0, max=100.0)
         equilibrium: EnumProperty(name="Equilibrium",
                                   items=_equilibrium_items)
-        kind: EnumProperty(
-            name="Manifold",
-            items=[('STABLE', "Stable", "Points that flow INTO the "
-                                        "equilibrium; grown by "
-                                        "integrating backward"),
-                   ('UNSTABLE', "Unstable", "Points that flow OUT of "
-                                            "it; grown forward")],
-            default='STABLE')
+        kind: EnumProperty(name="Manifold", items=_kind_items)
         arclength: FloatProperty(
             name="Arclength", default=100.0, min=5.0, max=250.0,
             description="How far to grow, measured along trajectories "
@@ -794,6 +864,43 @@ def _selftest():
     print(f"invariance (Lorenz origin, where the rates allow it): the "
           f"surface dives to {float(np.median(on)):.3f} of its radius, "
           f"points nudged 0.5 off only to {float(np.median(off)):.3f}")
+
+    # ---- 3b. only the valid side is offered, and non-hyperbolic
+    #          equilibria are refused --------------------------------
+    # Every equilibrium shipped here has exactly ONE side whose
+    # manifold is a surface, so the dropdown filtering makes the wrong
+    # combination unreachable instead of an error you discover.
+    want_sides = {('LORENZ', 0): ['STABLE'],
+                  ('LORENZ', 1): ['UNSTABLE'],
+                  ('LORENZ', 2): ['UNSTABLE'],
+                  ('ROSSLER', 0): ['UNSTABLE'],
+                  ('ROSSLER', 1): []}
+    for (system, ei), want in want_sides.items():
+        field = SYSTEMS[system][1]
+        p = SYSTEMS[system][4]
+        nm, q = SYSTEMS[system][2](p)[ei]
+        got = classify_equilibrium(field, q, p)[1]
+        if got != want:
+            raise AssertionError(
+                f"{system} {nm}: valid sides {got}, expected {want}")
+    # Roessler's outer equilibrium has a complex pair with
+    # |Re| / |lambda| = 8.5e-7 -- not hyperbolic to within anything
+    # computable, so it must be refused rather than grown
+    field, p = SYSTEMS['ROSSLER'][1], SYSTEMS['ROSSLER'][4]
+    q = SYSTEMS['ROSSLER'][2](p)[1][1]
+    for side in ('STABLE', 'UNSTABLE'):
+        try:
+            invariant_eigenbasis(field, q, p, side)
+        except ValueError as e:
+            if 'not hyperbolic' not in str(e):
+                raise AssertionError(f"wrong refusal for the outer "
+                                     f"Roessler point: {e}")
+        else:
+            raise AssertionError(
+                f"the outer Roessler equilibrium is not hyperbolic; "
+                f"its {side} side should have been refused")
+    print("sides: each equilibrium offers exactly the one that is a "
+          "surface; Roessler outer refused as non-hyperbolic")
 
     # ---- 4. the mesh ------------------------------------------------
     V, F, info = build_invariant_manifold(arclength=30.0)
