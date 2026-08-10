@@ -107,6 +107,7 @@ _MODULE_NAMES = [
     'spiral_tiling_generator',
     'fractal_tiling_generator',
     'fractal_reptile_generator',
+    'ifs_generator',
     'islamic_pattern_generator',
     'celtic_knot_2d_generator',
     'over_under_screen_generator',
@@ -220,6 +221,7 @@ class VIEW3D_MT_math_art_fractals(bpy.types.Menu):
         _op(lay, "mesh.fractal_tiling_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.fractal_knotwork_add", icon='OUTLINER_OB_CURVES')
         _op(lay, "mesh.fractal_reptile_add", icon='MOD_TRIANGULATE')
+        _op(lay, "mesh.ifs_add", icon='MOD_REMESH')
 
 
 class VIEW3D_MT_math_art_knots(bpy.types.Menu):
