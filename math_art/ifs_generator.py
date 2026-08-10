@@ -730,6 +730,102 @@ def _uniform(vs, s):
              1.0) for v in vs]
 
 
+def _rot(axis, theta):
+    """Rodrigues rotation matrix about `axis` by `theta`."""
+    u = np.asarray(axis, dtype=float)
+    u = u / np.linalg.norm(u)
+    K = np.array([[0.0, -u[2], u[1]],
+                  [u[2], 0.0, -u[0]],
+                  [-u[1], u[0], 0.0]])
+    return (np.eye(3) + math.sin(theta) * K
+            + (1.0 - math.cos(theta)) * (K @ K))
+
+
+def _bmm_sierpinski(sides=3, ratio=2.0 / 3.0):
+    """Bandt, Mai The Duy and Mesing's three-dimensional modification of
+    Sierpinski's triangle (their Figure 7).
+
+    Their construction verbatim: the fixed points c_i sit symmetrically
+    about 0 in the x1,x2-plane with c_1 = (1,0,0), and each f_i is the
+    homothety of ratio r toward c_i composed with a 90 degree rotation
+    about the axis [0, c_i] --
+
+        f_1(x1,x2,x3) = (r x1 + 1 - r,  -r x3,  r x2)
+        f_2 = t f_1 t^-1,   f_3 = t^-1 f_1 t
+
+    with t the 120 degree rotation in the x1,x2-plane.  At r = 1/2 the
+    attractor is a Cantor set; at r = 2/3 the three pieces meet in a
+    Cantor set on a vertical segment through 0, which is the figure in
+    the paper.  That 2/3 comes from altitudes of an isosceles triangle
+    meeting in ratio 1:2, so it is derived for the TRIANGLE only -- the
+    paper notes the construction applies to every n-gon with n >= 3 but
+    gives no ratio for them, which is why `sides` and `ratio` are both
+    exposed rather than tied together.
+
+    Dimension (triangle, r = 2/3): log 3 / log(3/2) = 2.7095..."""
+    n = max(3, int(sides))
+    r = float(ratio)
+    A1 = r * np.array([[1.0, 0.0, 0.0],
+                       [0.0, 0.0, -1.0],
+                       [0.0, 1.0, 0.0]])
+    b1 = np.array([1.0 - r, 0.0, 0.0])
+    out = []
+    for k in range(n):
+        t = _rot((0.0, 0.0, 1.0), 2.0 * math.pi * k / n)
+        out.append((t @ A1 @ t.T, t @ b1, 1.0))
+    return out
+
+
+# the regular tetrahedron on alternate vertices of the unit cube, in
+# the paper's own labelling: c3, c4, c1, c2
+_BMM_TETRA_V = np.array([[1.0, 0.0, 1.0], [0.0, 1.0, 1.0],
+                         [0.0, 0.0, 0.0], [1.0, 1.0, 0.0]])
+
+
+def _bmm_tetrahedron(ratio=0.6):
+    """The same paper's modified fractal tetrahedron (their Figure 8).
+
+    Each f_i is the homothety toward vertex c_i composed with a
+    rotation about the altitude from c_i onto the opposite face.  A
+    120 degree turn there would be a symmetry of the ordinary fractal
+    tetrahedron and give nothing new, so they take 60 degrees --
+    "or, equivalently, around 180 degrees", the two differing by that
+    symmetry.  The ratio r = 3/5 is the value at which the images of
+    the basic tetrahedron meet along an edge; they derive it from
+    |c2' - c3| = |c2' - c1|, giving t = 4/5 and |c2' - c1| =
+    (3/5) sqrt 2 against |c2 - c1| = sqrt 2.
+
+    The pieces meet the faces of the convex hull in Koch curves.
+    Dimension: log 4 / log(5/3) = 2.7138..."""
+    r = float(ratio)
+    centre = _BMM_TETRA_V.mean(axis=0)
+    out = []
+    for c in _BMM_TETRA_V:
+        R = _rot(centre - c, math.pi)
+        out.append((r * R, c - r * (R @ c), 1.0))
+    return out
+
+
+def _bmm_cube(ratio=0.625):
+    """The same paper's modified cube (their Figure 9).
+
+    The cube is the self-similar set of eight homotheties of factor 1/2
+    centred at its vertices; combining those with a 180 degree rotation
+    about the corresponding space diagonal and raising the factor to
+    5/8 gives this fractal, whose pieces touch in single points.
+
+    No dimension is quoted, and none should be: 8 (5/8)^3 = 1.953 > 1,
+    so the pieces overlap in measure and Moran's formula does not
+    apply.  Being centrally symmetric, this one coincides with its own
+    reverse -- the paper says so, and the self-test checks it."""
+    r = float(ratio)
+    out = []
+    for v in _CUBE_V:
+        R = _rot(v, math.pi)
+        out.append((r * R, v - r * (R @ v), 1.0))
+    return out
+
+
 def _menger_maps():
     cells = [c for c in
              ((i, j, k) for i in (-1, 0, 1) for j in (-1, 0, 1)
@@ -811,6 +907,11 @@ IFS_PRESETS = {
     'SIERP_CUBE': ("Cantor Dust (cube corners)",
                    lambda: _uniform(_CUBE_V, 1.0 / 3.0), 3),
     'MENGER': ("Menger Sponge", _menger_maps, 3),
+    'BMM_SIERP': ("Sierpinski Triangle in 3D (Bandt et al.)",
+                  _bmm_sierpinski, 3),
+    'BMM_TETRA': ("Modified Fractal Tetrahedron (Bandt et al.)",
+                  _bmm_tetrahedron, 3),
+    'BMM_CUBE': ("Modified Cube (Bandt et al.)", _bmm_cube, 3),
     'FERN2D': ("Barnsley Fern (2-D)", _fern_maps, 2),
     'SIERP_TRI': ("Sierpinski Triangle (2-D)", _sierpinski2d, 2),
     'DRAGON': ("Heighway Dragon (2-D)", _dragon2d, 2),
@@ -883,6 +984,35 @@ def format_maps(maps, prec=8):
         tr = " ".join(f"{v:.{prec}g}" for v in np.asarray(b).ravel())
         out.append(f"{lin} | {tr} | {p:.{prec}g}")
     return "; ".join(out)
+
+
+# Facts quoted from Bandt, Mai The Duy and Mesing, "Three-Dimensional
+# Fractals", Math. Intelligencer 32(3), 2010, and shown in the
+# operator's status line.
+IFS_FACTS = {
+    'SIERP_TETRA': "the fractal tetrahedron; A. G. Bell built it from "
+                   "kites in 1903, some years before Sierpinski. "
+                   "Dimension 2",
+    'SIERP_OCTA': "the fractal octahedron: 8 faces and NO interior -- "
+                  "a deflated balloon. Neighbouring faces meet in an "
+                  "ordinary Euclidean triangle; face dimension "
+                  "log 6 / log 2 = 2.585",
+    'MENGER': "dimension log 20 / log 3 = 2.727, with three neighbour "
+              "types (face, edge and point)",
+    'BMM_SIERP': "3 pieces at ratio 2/3, each turned 90 degrees about "
+                 "its own axis; the pieces meet in a Cantor set on a "
+                 "vertical segment. Dimension log 3 / log(3/2) = "
+                 "2.710 [Bandt et al. 2010, Fig. 7]",
+    'BMM_TETRA': "4 pieces at ratio 3/5, each turned 180 degrees about "
+                 "its altitude; the pieces meet the faces of the hull "
+                 "in Koch curves. Dimension log 4 / log(5/3) = 2.714 "
+                 "[Fig. 8]",
+    'BMM_CUBE': "8 pieces at ratio 5/8, each turned 180 degrees about "
+                "a space diagonal; they touch in single points. "
+                "Centrally symmetric, so it is its own reverse. The "
+                "pieces overlap in measure, so no dimension formula "
+                "applies [Fig. 9]",
+}
 
 
 def parse_maps(spec):
@@ -1353,6 +1483,18 @@ if _IN_BLENDER:
             name="Seed", default=0, min=0, max=99999,
             description="Chaos-game random seed; the same seed always "
                         "gives the same mesh")
+        poly_sides: IntProperty(
+            name="Polygon Sides", default=3, min=3, max=10,
+            description="The n-gon the Sierpinski-in-3D construction "
+                        "is built on; the paper derives its ratio for "
+                        "the triangle and notes the construction "
+                        "applies to every n >= 3")
+        poly_ratio: FloatProperty(
+            name="Polygon Ratio", default=2.0 / 3.0, min=0.35,
+            max=0.95,
+            description="Contraction ratio toward each vertex; 2/3 is "
+                        "the triangle value at which the pieces meet, "
+                        "and 1/2 would give a Cantor set")
         reverse: BoolProperty(
             name="Reverse", default=False,
             description="Replace every map f by -f: the neighbour maps "
@@ -1393,8 +1535,13 @@ if _IN_BLENDER:
                             f"{IFS_PRESETS[self.ifs_preset][0]} is a "
                             f"{IFS_PRESETS[self.ifs_preset][2]}D "
                             f"system; switch the Dimension to match")
-                    mp = (parse_maps(self.maps)
-                          if self.ifs_preset == 'CUSTOM' else None)
+                    if self.ifs_preset == 'CUSTOM':
+                        mp = parse_maps(self.maps)
+                    elif self.ifs_preset == 'BMM_SIERP':
+                        mp = _bmm_sierpinski(self.poly_sides,
+                                             self.poly_ratio)
+                    else:
+                        mp = None
                     verts, faces, info = build_ifs(
                         preset=self.ifs_preset, output=self.output,
                         maps=mp, depth=self.depth,
@@ -1479,6 +1626,9 @@ if _IN_BLENDER:
                         f"{len(me.vertices)} verts, "
                         f"{len(me.polygons)} faces")
             else:
+                note = IFS_FACTS.get(self.ifs_preset)
+                if note:
+                    self.report({'INFO'}, f"{label}: {note}")
                 if self.output == 'SOLIDS':
                     extra = f"{info.get('copies', 0)} copies"
                 elif info.get('planar'):
@@ -1510,6 +1660,9 @@ if _IN_BLENDER:
             else:
                 lay.prop(self, 'dimension', expand=True)
                 lay.prop(self, 'ifs_preset')
+                if self.ifs_preset == 'BMM_SIERP':
+                    lay.prop(self, 'poly_sides')
+                    lay.prop(self, 'poly_ratio')
                 lay.prop(self, 'reverse')
                 lay.prop(self, 'maps')
                 lay.prop(self, 'output')
@@ -1915,6 +2068,124 @@ def _selftest():
             raise AssertionError(f"{label}: not every map is a "
                                  f"contraction")
     print(f"{len(IFS_PRESETS)} IFS presets: every map a contraction")
+
+    # ---- 5b. the Bandt-Mai-Mesing constructions ---------------------
+    # Each is a homothety toward a fixed point composed with a proper
+    # rotation, so the linear part must be exactly ratio x orthogonal
+    # with determinant +1 -- a reflection would be a different fractal.
+    for key, r, count in (('BMM_SIERP', 2.0 / 3.0, 3),
+                          ('BMM_TETRA', 0.6, 4),
+                          ('BMM_CUBE', 0.625, 8)):
+        mp = IFS_PRESETS[key][1]()
+        if len(mp) != count:
+            raise AssertionError(
+                f"{key}: {len(mp)} maps, the paper gives {count}")
+        for A, b, _p in mp:
+            R = np.asarray(A) / r
+            if not np.allclose(R @ R.T, np.eye(3), atol=1e-12):
+                raise AssertionError(f"{key}: the linear part is not "
+                                     f"{r} times an orthogonal matrix")
+            if abs(float(np.linalg.det(R)) - 1.0) > 1e-12:
+                raise AssertionError(
+                    f"{key}: det {np.linalg.det(R):+.3f} -- a rotation "
+                    f"must be proper, a reflection is a different set")
+        # each map must fix its own centre
+        for A, b, _p in mp:
+            fix = np.linalg.solve(np.eye(3) - np.asarray(A), b)
+            if not np.all(np.isfinite(fix)):
+                raise AssertionError(f"{key}: a map has no fixed point")
+    print("Bandt-Mai-Mesing maps: proper rotations at ratios 2/3, 3/5, "
+          "5/8 with the stated piece counts")
+
+    # the triangle case must reproduce the paper's f_1 verbatim:
+    #   f_1(x1,x2,x3) = (r x1 + 1 - r, -r x3, r x2)
+    r = 2.0 / 3.0
+    A1, b1, _ = _bmm_sierpinski(3, r)[0]
+    x = np.array([0.3, -0.7, 0.2])
+    want = np.array([r * x[0] + 1 - r, -r * x[2], r * x[1]])
+    if not np.allclose(A1 @ x + b1, want, atol=1e-12):
+        raise AssertionError(f"the Sierpinski-in-3D f_1 gives "
+                             f"{A1 @ x + b1}, the paper gives {want}")
+    print("Sierpinski-in-3D f_1 matches the paper's formula exactly")
+
+    # Each construction is built around a 3-fold rotation, so its
+    # attractor has to be invariant under that rotation -- a strong
+    # check on the axes and the composition order, which a formula
+    # comparison of f_1 alone would not catch.
+    def _cloud_sig(P, n=28):
+        P = np.asarray(P, dtype=float)
+        P = (P - P.mean(axis=0))
+        P = P / max(float(np.abs(P).max()), 1e-12)
+        idx = np.clip(((P + 1.0) * 0.5 * n).astype(int), 0, n - 1)
+        grid = np.zeros((n, n, n), dtype=bool)
+        grid[idx[:, 0], idx[:, 1], idx[:, 2]] = True
+        return grid
+
+    def _cloud_overlap(a, b):
+        return float((a & b).sum()) / max(int((a | b).sum()), 1)
+
+    tetra_axis = _BMM_TETRA_V.mean(axis=0) - _BMM_TETRA_V[0]
+    for key, axis in (('BMM_SIERP', (0.0, 0.0, 1.0)),
+                      ('BMM_TETRA', tetra_axis),
+                      ('BMM_CUBE', (1.0, 1.0, 1.0))):
+        P = chaos_game(IFS_PRESETS[key][1](), points=400000, seed=2,
+                       transient=300)
+        R = _rot(axis, 2.0 * math.pi / 3.0)
+        turned = _cloud_overlap(_cloud_sig(P), _cloud_sig(P @ R.T))
+        if turned < 0.85:
+            raise AssertionError(
+                f"{key} should be invariant under a 120 degree turn "
+                f"about {np.round(np.asarray(axis, float), 2)}, but "
+                f"the overlap is only {turned:.2f}")
+        # a turn that is NOT a symmetry has to score much lower, or the
+        # test would pass on any blob
+        Rc = _rot(axis, math.radians(50.0))
+        control = _cloud_overlap(_cloud_sig(P), _cloud_sig(P @ Rc.T))
+        if control > 0.75 * turned:
+            raise AssertionError(
+                f"{key}: a 50 degree turn scores {control:.2f} against "
+                f"{turned:.2f} for the real symmetry -- the test is "
+                f"not discriminating")
+    print("Bandt-Mai-Mesing attractors: all three invariant under "
+          "their own 3-fold rotation")
+
+    # "When A is centrally symmetric, as in Figures 9 and 5, it
+    # coincides with its reverse."  The modified cube is that case; the
+    # modified tetrahedron is not (the paper's Figure 1 IS the reverse
+    # of its Figure 8, and looks quite different).  Compare occupancy,
+    # not bounding boxes -- a set and its mirror share their extents.
+    def _occupancy(V, n=24):
+        idx = np.clip(((np.asarray(V) + 1.0) * 0.5 * n).astype(int),
+                      0, n - 1)
+        grid = np.zeros((n, n, n), dtype=bool)
+        grid[idx[:, 0], idx[:, 1], idx[:, 2]] = True
+        return grid
+
+    def _overlap(a, b):
+        return float((a & b).sum()) / max(int((a | b).sum()), 1)
+
+    same = {}
+    for key in ('BMM_CUBE', 'BMM_TETRA', 'BMM_SIERP'):
+        fwd = build_ifs(preset=key, output='VOXEL', points=300000,
+                        resolution=48, seed=5)[0]
+        rev = build_ifs(preset=key, output='VOXEL', points=300000,
+                        resolution=48, seed=5, reverse=True)[0]
+        same[key] = _overlap(_occupancy(fwd), _occupancy(rev))
+    if same['BMM_CUBE'] < 0.6:
+        raise AssertionError(
+            f"the modified cube is centrally symmetric, so it should "
+            f"coincide with its reverse, but they overlap only "
+            f"{same['BMM_CUBE']:.2f}")
+    for key in ('BMM_TETRA', 'BMM_SIERP'):
+        if same[key] > 0.5 * same['BMM_CUBE']:
+            raise AssertionError(
+                f"{key} is not centrally symmetric, so its reverse "
+                f"should differ, but they overlap {same[key]:.2f} "
+                f"against the cube's {same['BMM_CUBE']:.2f}")
+    print(f"reverse fractals: cube overlaps its reverse "
+          f"{same['BMM_CUBE']:.2f} (centrally symmetric), tetrahedron "
+          f"{same['BMM_TETRA']:.2f} and triangle "
+          f"{same['BMM_SIERP']:.2f} (not)")
 
     # ---- 6. deterministic solid copies ------------------------------
     V, F, info = build_ifs(preset='SIERP_TETRA', output='SOLIDS',

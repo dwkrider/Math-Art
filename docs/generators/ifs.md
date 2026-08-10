@@ -22,7 +22,7 @@ Attractors of iterated function systems, in two and three dimensions, across thr
 | Level | 0 (auto) | Exact mode only: radix depth; 0 picks a level landing in the 30k-300k cell band. Range 0-24. |
 | Holes | 0 | Drop this many digits at every level, turning the tile into a gasket; clamped so the attractor stays three-dimensional. Range 0-6. |
 | Dimension | 3D | Filters both the system list and the output list to what is valid. |
-| System | Sierpinski Tetrahedron | 3D: Sierpinski tetrahedron/octahedron, Cantor dust, Menger sponge. 2D: Barnsley fern, Sierpinski triangle, Heighway dragon, Lévy C curve, Koch curve. Or Custom. Selecting one loads its maps into the Maps field. |
+| System | Sierpinski Tetrahedron | 3D: Sierpinski tetrahedron/octahedron, Cantor dust, Menger sponge, and the three self-similar constructions of Bandt, Mai The Duy & Mesing (2010). 2D: Barnsley fern, Sierpinski triangle, Heighway dragon, Lévy C curve, Koch curve. Or Custom. Selecting one loads its maps into the Maps field. |
 | Output | Solid Copies | Filtered by Dimension. 3D: deterministic seed copies, chaos-game voxels, or a smooth marching-tetrahedra contour. 2D: relief. |
 | Plane Resolution | 512 | In-plane grid resolution for a planar system. Range 32-2048. |
 | Seed Solid | Tetrahedron | Which solid to place per word in Solid Copies mode. |
@@ -141,6 +141,16 @@ $$\max_{x \in T}\langle u, x\rangle = \sum_{j\ge1}\max_{d \in D}\langle u, M^{-j
 a geometric series evaluated to machine precision in a few dozen terms. The operator reports the achieved extent as a percentage of that limit.
 
 The numbers are sobering for the thin cases, and are reported rather than hidden. Twindragon G's tips lie along fibres of vanishing measure: reaching 99% of its true extent would need on the order of $2^{77}$ cells. At the default sample it reaches about 80%, and in exact mode at level 10 only 45%. The cube, twindragon A and ABC (1,2,4) reach 97-100%.
+
+### The Bandt–Mai–Mesing constructions
+
+Their 2010 *Mathematical Intelligencer* article builds three-dimensional fractals by composing each contraction with a **rotation** — which is what makes them genuinely spatial rather than a planar figure thickened. All three are implemented from the paper's own formulas:
+
+- **Sierpiński triangle in 3D** (their Fig. 7) — the three homotheties toward the vertices of a triangle, each turned 90° about its own axis $[0, c_i]$. Explicitly $f_1(x_1,x_2,x_3) = (rx_1 + 1 - r,\; -rx_3,\; rx_2)$ with $f_2 = tf_1t^{-1}$, $f_3 = t^{-1}f_1t$. At $r = 1/2$ the attractor is a Cantor set; at $r = 2/3$ the pieces meet in a Cantor set on a vertical segment, which is the published figure. Dimension $\log 3/\log(3/2) pprox 2.71$. That ratio is derived for the *triangle* — the paper notes the construction applies to every $n$-gon with $n \ge 3$ but gives no ratio for them, so **Polygon Sides** and **Polygon Ratio** are exposed separately rather than tied together.
+- **Modified fractal tetrahedron** (Fig. 8) — four homotheties toward the vertices, each turned 180° about the altitude from that vertex. At $r = 3/5$ the images meet along an edge, and the pieces meet the faces of the convex hull in **Koch curves**. Dimension $\log 4/\log(5/3) pprox 2.71$.
+- **Modified cube** (Fig. 9) — eight homotheties at the cube's vertices, each turned 180° about the corresponding space diagonal, at $r = 5/8$; the pieces touch in single points. No dimension is quoted and none is invented here: $8(5/8)^3 = 1.95 > 1$, so the pieces overlap in measure and Moran's formula does not apply.
+
+**Reverse** replaces every $f_i$ by $-f_i$. The neighbour maps $f_i^{-1}f_j$ are unchanged, so the dimension and the number of boundary types survive while the shape need not: the paper's Fig. 1 *is* the reverse of its Fig. 8, and its Fig. 10 the reverse of Fig. 7. A centrally symmetric fractal coincides with its own reverse — the modified cube is that case, and the self-test checks it (occupancy overlap 0.77 for the cube against 0.22 for the tetrahedron).
 
 ### General IFS attractors
 

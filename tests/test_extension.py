@@ -722,6 +722,19 @@ OPS = [
     ("ifs tile self-similar", lambda: bpy.ops.mesh.ifs_add(
         mode='RADIX', preset='ABC_128', resolution=64,
         points=120000)),
+    ("ifs bmm sierpinski", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='BMM_SIERP',
+        output='VOXEL', points=120000, resolution=48)),
+    ("ifs bmm sierpinski pentagon", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='BMM_SIERP',
+        poly_sides=5, poly_ratio=0.7, output='VOXEL',
+        points=120000, resolution=48)),
+    ("ifs bmm tetrahedron", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='BMM_TETRA',
+        output='VOXEL', points=120000, resolution=48)),
+    ("ifs bmm cube", lambda: bpy.ops.mesh.ifs_add(
+        mode='IFS', dimension='3', ifs_preset='BMM_CUBE',
+        output='ISO', points=120000, resolution=48)),
     ("ifs reverse fractal", lambda: bpy.ops.mesh.ifs_add(
         mode='IFS', dimension='3', ifs_preset='SIERP_TETRA',
         output='SOLIDS', depth=4, reverse=True)),
