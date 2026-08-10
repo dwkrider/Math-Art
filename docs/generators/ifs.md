@@ -21,8 +21,9 @@ Attractors of iterated function systems, in two and three dimensions, across thr
 | Tile Output | Voxels | Sample the attractor and mesh it as a watertight voxel solid, contour it with marching tetrahedra, or build the exact level-$k$ union of cubes. |
 | Level | 0 (auto) | Exact mode only: radix depth; 0 picks a level landing in the 30k-300k cell band. Range 0-24. |
 | Holes | 0 | Drop this many digits at every level, turning the tile into a gasket; clamped so the attractor stays three-dimensional. Range 0-6. |
-| System | Sierpinski Tetrahedron | Three-dimensional: Sierpinski tetrahedron/octahedron, Cantor dust, Menger sponge. Planar: Barnsley fern, Sierpinski triangle, Heighway dragon, Lévy C curve, Koch curve. Or Custom. |
-| Output | Solid Copies | Deterministic seed copies, chaos-game voxels, a smooth marching-tetrahedra contour, or a planar relief. |
+| Dimension | 3D | Filters both the system list and the output list to what is valid. |
+| System | Sierpinski Tetrahedron | 3D: Sierpinski tetrahedron/octahedron, Cantor dust, Menger sponge. 2D: Barnsley fern, Sierpinski triangle, Heighway dragon, Lévy C curve, Koch curve. Or Custom. Selecting one loads its maps into the Maps field. |
+| Output | Solid Copies | Filtered by Dimension. 3D: deterministic seed copies, chaos-game voxels, or a smooth marching-tetrahedra contour. 2D: relief. |
 | Plane Resolution | 512 | In-plane grid resolution for a planar system. Range 32-2048. |
 | Seed Solid | Tetrahedron | Which solid to place per word in Solid Copies mode. |
 | Depth | 5 | Solid-copies depth; the count is maps^depth and is capped automatically. Range 1-12. |
@@ -30,7 +31,7 @@ Attractors of iterated function systems, in two and three dimensions, across thr
 | Resolution | 128 | Voxel / density grid resolution per axis. Range 16-256. |
 | Cover | 0.90 | Smooth contour: the fraction of the sampled mass the surface encloses. Range 0.1-0.999. |
 | Min Points per Cell | 1 | Voxel mode: cells with fewer points than this are left empty. Range 1-200. |
-| Maps | (Sierpinski tetrahedron) | Custom affine maps: nine matrix entries \| three translations \| probability, one map per semicolon. |
+| Maps | (Sierpinski tetrahedron) | The maps that will be built: nine matrix entries \| three translations \| probability, one map per semicolon. Always shown, and reloaded whenever a System is selected; editing it switches System to Custom so the edit is what gets used. |
 | Seed | 0 | Chaos-game random seed; the same seed always gives the same mesh. Range 0-99999. |
 | Largest Piece Only | Off | Smooth contour: discard all but the biggest connected piece. |
 | Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |

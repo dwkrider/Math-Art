@@ -791,6 +791,18 @@ def plane_relief(points, resolution=512, thickness_cells=1):
     return xyz, faces, len(cells)
 
 
+def format_maps(maps, prec=8):
+    """Render a map list back into the text the Maps field shows --
+    the inverse of parse_maps, so a preset can be loaded into the field
+    and edited from there."""
+    out = []
+    for A, b, p in maps:
+        lin = " ".join(f"{v:.{prec}g}" for v in np.asarray(A).ravel())
+        tr = " ".join(f"{v:.{prec}g}" for v in np.asarray(b).ravel())
+        out.append(f"{lin} | {tr} | {p:.{prec}g}")
+    return "; ".join(out)
+
+
 def parse_maps(spec):
     """Parse custom affine maps, one per line or semicolon:
 
@@ -1096,7 +1108,65 @@ if _IN_BLENDER:
         context.view_layer.objects.active = obj
         return obj
 
-    class MESH_OT_ifs3d_add(bpy.types.Operator):
+    # Blender hands dynamic enum items back to C, which does not keep
+    # the Python strings alive; anything returned from an items
+    # callback has to be held in a module-level cache or the labels
+    # turn to garbage.
+    _ENUM_CACHE = {}
+
+    # Selecting a system loads its maps into the field; editing the
+    # field flips the system to Custom so the edit is what gets built.
+    # The flag stops the two callbacks from calling each other.
+    _SYNC = {'busy': False}
+
+    def _on_system(self, context):
+        if _SYNC['busy'] or self.ifs_preset == 'CUSTOM':
+            return
+        entry = IFS_PRESETS.get(self.ifs_preset)
+        if entry is None:
+            return
+        _SYNC['busy'] = True
+        try:
+            self.maps = format_maps(entry[1]())
+        finally:
+            _SYNC['busy'] = False
+
+    def _on_maps(self, context):
+        if _SYNC['busy'] or self.ifs_preset == 'CUSTOM':
+            return
+        _SYNC['busy'] = True
+        try:
+            self.ifs_preset = 'CUSTOM'
+        finally:
+            _SYNC['busy'] = False
+
+    def _system_items(self, context):
+        dim = int(getattr(self, 'dimension', '3'))
+        items = [(k, v[0], v[0]) for k, v in IFS_PRESETS.items()
+                 if v[2] == dim]
+        items.append(('CUSTOM', "Custom", "Use the maps field below"))
+        _ENUM_CACHE[f'sys{dim}'] = items
+        return items
+
+    def _output_items(self, context):
+        dim = int(getattr(self, 'dimension', '3'))
+        if dim == 2:
+            # a planar attractor has no solid image, and a volume grid
+            # over it would be almost entirely empty
+            items = [('RELIEF', "Relief",
+                      "A watertight slab one cell thick, meshed at "
+                      "plane resolution")]
+        else:
+            items = [('SOLIDS', "Solid Copies",
+                      "Deterministic: one seed solid per word"),
+                     ('VOXEL', "Voxels",
+                      "Chaos game binned into a watertight voxel grid"),
+                     ('ISO', "Smooth Contour",
+                      "Chaos game contoured by marching tetrahedra")]
+        _ENUM_CACHE[f'out{dim}'] = items
+        return items
+
+    class MESH_OT_ifs_add(bpy.types.Operator):
         """Add a three-dimensional self-affine tile or the attractor of
         an affine iterated function system"""
         bl_idname = "mesh.ifs_add"
@@ -1140,23 +1210,18 @@ if _IN_BLENDER:
             name="Holes", default=0, min=0, max=6,
             description="Drop this many digits at every level, turning "
                         "the tile into a gasket")
-        ifs_preset: EnumProperty(
-            name="System",
-            items=[(k, v[0], v[0]) for k, v in IFS_PRESETS.items()]
-                  + [('CUSTOM', "Custom", "Use the maps field")],
-            default='SIERP_TETRA')
-        output: EnumProperty(
-            name="Output",
-            items=[('SOLIDS', "Solid Copies", "Deterministic: one seed "
-                                              "solid per word"),
-                   ('VOXEL', "Voxels", "Chaos game binned into a "
-                                       "watertight voxel grid"),
-                   ('ISO', "Smooth Contour", "Chaos game contoured by "
-                                             "marching tetrahedra"),
-                   ('RELIEF', "Relief (planar systems)",
-                    "A watertight slab one cell thick, at plane "
-                    "resolution -- for two-dimensional systems")],
-            default='SOLIDS')
+        dimension: EnumProperty(
+            name="Dimension",
+            items=[('3', "3D", "Systems whose attractor fills three "
+                               "dimensions"),
+                   ('2', "2D", "Planar systems, meshed as a relief")],
+            default='3')
+        # both of these are filtered by the dimension above, so they
+        # take an items callback rather than a fixed list; a dynamic
+        # enum cannot carry a default, so the first entry is it
+        ifs_preset: EnumProperty(name="System", items=_system_items,
+                                 update=_on_system)
+        output: EnumProperty(name="Output", items=_output_items)
         seed_solid: EnumProperty(
             name="Seed Solid",
             items=[('TETRA', "Tetrahedron", ""), ('CUBE', "Cube", ""),
@@ -1186,7 +1251,7 @@ if _IN_BLENDER:
             description="Voxel mode: cells with fewer points than this "
                         "are left empty")
         maps: StringProperty(
-            name="Maps",
+            name="Maps", update=_on_maps,
             default="0.5 0 0 0 0.5 0 0 0 0.5 | 0.5 0.5 0.5 | 1; "
                     "0.5 0 0 0 0.5 0 0 0 0.5 | -0.5 -0.5 0.5 | 1; "
                     "0.5 0 0 0 0.5 0 0 0 0.5 | 0.5 -0.5 -0.5 | 1; "
@@ -1224,6 +1289,14 @@ if _IN_BLENDER:
                     if info['holes']:
                         label += f" gasket -{info['holes']}"
                 else:
+                    if (self.ifs_preset != 'CUSTOM'
+                            and self.ifs_preset in IFS_PRESETS
+                            and IFS_PRESETS[self.ifs_preset][2]
+                            != int(self.dimension)):
+                        raise ValueError(
+                            f"{IFS_PRESETS[self.ifs_preset][0]} is a "
+                            f"{IFS_PRESETS[self.ifs_preset][2]}D "
+                            f"system; switch the Dimension to match")
                     mp = (parse_maps(self.maps)
                           if self.ifs_preset == 'CUSTOM' else None)
                     verts, faces, info = build_ifs(
@@ -1335,9 +1408,9 @@ if _IN_BLENDER:
                     if self.tile_output == 'SMOOTH':
                         lay.prop(self, 'largest_only')
             else:
+                lay.prop(self, 'dimension', expand=True)
                 lay.prop(self, 'ifs_preset')
-                if self.ifs_preset == 'CUSTOM':
-                    lay.prop(self, 'maps')
+                lay.prop(self, 'maps')
                 lay.prop(self, 'output')
                 if self.output == 'SOLIDS':
                     lay.prop(self, 'seed_solid')
@@ -1360,7 +1433,7 @@ if _IN_BLENDER:
     def _menu_func(self, context):
         self.layout.operator("mesh.ifs_add", icon='MOD_REMESH')
 
-    _classes = (MESH_OT_ifs3d_add,)
+    _classes = (MESH_OT_ifs_add,)
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
@@ -1818,6 +1891,27 @@ def _selftest():
         raise AssertionError("a relief of a 3-D system should have "
                              "been refused")
     print("relief output refused for three-dimensional systems")
+
+    # ---- 11. the Maps field round-trips every preset ----------------
+    # Selecting a system loads its maps into the editable field, so
+    # format_maps has to be an exact inverse of parse_maps or a preset
+    # would quietly change the moment it was displayed.
+    for key, (label, fn, dim) in IFS_PRESETS.items():
+        mp = fn()
+        back = parse_maps(format_maps(mp))
+        if len(back) != len(mp):
+            raise AssertionError(
+                f"{label}: the field round-tripped {len(mp)} maps into "
+                f"{len(back)}")
+        for (A, b, pr), (A2, b2, pr2) in zip(mp, back):
+            if (not np.allclose(A, A2, atol=1e-8)
+                    or not np.allclose(b, b2, atol=1e-8)
+                    or abs(pr - pr2) > 1e-8):
+                raise AssertionError(
+                    f"{label}: a map changed on its way through the "
+                    f"Maps field")
+    print(f"Maps field: all {len(IFS_PRESETS)} presets round-trip "
+          f"exactly")
 
     # a non-contractive system must be refused, not silently diverge
     try:
