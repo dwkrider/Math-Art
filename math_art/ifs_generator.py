@@ -1175,13 +1175,13 @@ if _IN_BLENDER:
 
         mode: EnumProperty(
             name="Mode",
-            items=[('RADIX', "Self-Affine Tile", "A lattice tile from "
+            items=[('IFS', "IFS Attractor", "The attractor of a set of "
+                                            "contractive affine maps"),
+                   ('RADIX', "Self-Affine Tile", "A lattice tile from "
                                                  "an expanding integer "
                                                  "matrix and a residue "
-                                                 "digit set"),
-                   ('IFS', "IFS Attractor", "The attractor of a set of "
-                                            "contractive affine maps")],
-            default='RADIX')
+                                                 "digit set")],
+            default='IFS')
         preset: EnumProperty(
             name="Tile",
             items=[(k, v[0], v[0]) for k, v in RADIX_PRESETS.items()],
