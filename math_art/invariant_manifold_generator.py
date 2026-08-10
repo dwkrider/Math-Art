@@ -139,11 +139,183 @@ def rossler_equilibria(p):
     return out
 
 
+_EQ_CACHE = {}
+
+
+def find_equilibria(field, p, extent=30.0, grid=5, tol=1e-9,
+                    max_iter=80):
+    """Solve f = 0 by Newton from a fixed grid of seeds.
+
+    Deterministic on purpose: the equilibrium dropdown indexes into
+    this list, so a random seeding that reordered the roots between
+    runs would silently change what the operator builds.  The seed
+    grid is fixed, duplicates are merged by rounding, and the survivors
+    are sorted by (norm, x, y, z)."""
+    # the enum callback that lists equilibria fires on every redraw of
+    # the redo panel, and Thomas needs 125 Newton solves; without this
+    # the panel would re-solve them all on each mouse move
+    ck = (getattr(field, '__name__', repr(field)),
+          tuple(round(float(v), 9) for v in p), extent, grid)
+    if ck in _EQ_CACHE:
+        return _EQ_CACHE[ck]
+    seeds = []
+    span = np.linspace(-extent, extent, int(grid))
+    for a in span:
+        for b in span:
+            for c in span:
+                seeds.append((a, b, c))
+    found = []
+    for x0 in seeds:
+        x = np.asarray(x0, dtype=float)
+        for _ in range(int(max_iter)):
+            fx = field(x, p)
+            if not np.all(np.isfinite(fx)):
+                break
+            if float(np.max(np.abs(fx))) < tol:
+                break
+            J = numeric_jacobian(field, x, p)
+            try:
+                dx = np.linalg.lstsq(J, -fx, rcond=None)[0]
+            except np.linalg.LinAlgError:
+                break
+            if not np.all(np.isfinite(dx)):
+                break
+            step = float(np.linalg.norm(dx))
+            if step > 10.0 * extent:          # diverging: give up
+                break
+            x = x + dx
+        else:
+            continue
+        fx = field(x, p)
+        if (np.all(np.isfinite(x))
+                and float(np.max(np.abs(fx))) < tol
+                and float(np.max(np.abs(x))) <= 4.0 * extent):
+            found.append(x + 0.0)             # kill -0.0
+    if not found:
+        _EQ_CACHE[ck] = []
+        return []
+    # merge duplicates on a rounded key but keep the UNROUNDED root:
+    # storing the rounded one would move it off the solution and leave
+    # a residual around 1e-7 instead of 1e-12
+    seen = {}
+    for x in found:
+        key = tuple(np.round(x, 5) + 0.0)
+        seen.setdefault(key, x)
+    roots = list(seen.values())
+    roots.sort(key=lambda v: (round(float(np.linalg.norm(v)), 5),
+                              round(float(v[0]), 5),
+                              round(float(v[1]), 5),
+                              round(float(v[2]), 5)))
+    out = [(f"E{k}", v) for k, v in enumerate(roots)]
+    _EQ_CACHE[ck] = out
+    return out
+
+
+def _lorenz_like_equilibria(p, zc, xc2):
+    """The origin plus a symmetric pair, the shape shared by Lorenz,
+    Chen, Rayleigh-Benard and their relatives: y = x, z = zc and
+    x^2 = xc2."""
+    out = [("Origin", np.zeros(3))]
+    if xc2 > 0.0:
+        r = math.sqrt(xc2)
+        out.append(("C+", np.array([r, r, zc])))
+        out.append(("C-", np.array([-r, -r, zc])))
+    return out
+
+
+def chen_field(X, p):
+    """Chen-Celikovsky.  p = (a, b, c)."""
+    a, b, c = p
+    X = np.asarray(X, dtype=float)
+    x, y, z = X[..., 0], X[..., 1], X[..., 2]
+    return np.stack([a * (y - x), -x * z + c * y, x * y - b * z],
+                    axis=-1)
+
+
+def chen_equilibria(p):
+    a, b, c = p
+    return _lorenz_like_equilibria(p, c, b * c)
+
+
+def rb_field(X, p):
+    """Rayleigh-Benard convection.  p = (a, r, b)."""
+    a, r, b = p
+    X = np.asarray(X, dtype=float)
+    x, y, z = X[..., 0], X[..., 1], X[..., 2]
+    return np.stack([-a * (x - y), r * x - y - x * z, x * y - b * z],
+                    axis=-1)
+
+
+def rb_equilibria(p):
+    a, r, b = p
+    return _lorenz_like_equilibria(p, r - 1.0, b * (r - 1.0))
+
+
+def shimizu_field(X, p):
+    """Shimizu-Morioka.  p = (a, b, unused)."""
+    a, b = p[0], p[1]
+    X = np.asarray(X, dtype=float)
+    x, y, z = X[..., 0], X[..., 1], X[..., 2]
+    return np.stack([y, x - a * y - x * z, -b * z + x * x], axis=-1)
+
+
+def shimizu_equilibria(p):
+    """y = 0 throughout; then x(1 - z) = 0 gives the origin, or z = 1
+    with x^2 = b."""
+    a, b = p[0], p[1]
+    out = [("Origin", np.zeros(3))]
+    if b > 0.0:
+        r = math.sqrt(b)
+        out.append(("C+", np.array([r, 0.0, 1.0])))
+        out.append(("C-", np.array([-r, 0.0, 1.0])))
+    return out
+
+
+def halvorsen_field(X, p):
+    """Halvorsen's cyclically symmetric attractor.  p = (a, .., ..)."""
+    a = p[0]
+    X = np.asarray(X, dtype=float)
+    x, y, z = X[..., 0], X[..., 1], X[..., 2]
+    return np.stack([-a * x - 4.0 * y - 4.0 * z - y * y,
+                     -a * y - 4.0 * z - 4.0 * x - z * z,
+                     -a * z - 4.0 * x - 4.0 * y - x * x], axis=-1)
+
+
+def halvorsen_equilibria(p):
+    """No tidy closed form, so these are solved for."""
+    return find_equilibria(halvorsen_field, p, extent=12.0, grid=5)
+
+
+def thomas_field(X, p):
+    """Thomas' cyclically symmetric attractor.  p = (b, .., ..)."""
+    b = p[0]
+    X = np.asarray(X, dtype=float)
+    x, y, z = X[..., 0], X[..., 1], X[..., 2]
+    return np.stack([-b * x + np.sin(y),
+                     -b * y + np.sin(z),
+                     -b * z + np.sin(x)], axis=-1)
+
+
+def thomas_equilibria(p):
+    """Transcendental, and there are many; solved for numerically."""
+    return find_equilibria(thomas_field, p, extent=8.0, grid=5)
+
+
 SYSTEMS = {
     'LORENZ': ("Lorenz", lorenz_field, lorenz_equilibria,
                ("Sigma", "Rho", "Beta"), (10.0, 28.0, 8.0 / 3.0)),
+    'CHEN': ("Chen-Celikovsky", chen_field, chen_equilibria,
+             ("a", "b", "c"), (36.0, 3.0, 20.0)),
+    'RAYLEIGH': ("Rayleigh-Benard", rb_field, rb_equilibria,
+                 ("a", "r", "b"), (9.0, 12.0, 5.0)),
+    'SHIMIZU': ("Shimizu-Morioka", shimizu_field, shimizu_equilibria,
+                ("a", "b", "(unused)"), (0.75, 0.45, 0.0)),
     'ROSSLER': ("Roessler", rossler_field, rossler_equilibria,
                 ("a", "b", "c"), (0.2, 0.2, 5.7)),
+    'HALVORSEN': ("Halvorsen", halvorsen_field, halvorsen_equilibria,
+                  ("a", "(unused)", "(unused)"), (1.4, 0.0, 0.0)),
+    'THOMAS': ("Thomas", thomas_field, thomas_equilibria,
+               ("b", "(unused)", "(unused)"), (0.19, 0.0, 0.0)),
 }
 
 
@@ -901,6 +1073,85 @@ def _selftest():
                 f"its {side} side should have been refused")
     print("sides: each equilibrium offers exactly the one that is a "
           "surface; Roessler outer refused as non-hyperbolic")
+
+    # ---- 3c. every shipped system ------------------------------------
+    # Each listed equilibrium must actually satisfy f = 0, and the
+    # numeric solver has to be deterministic: the dropdown indexes into
+    # this list, so a reordering between runs would silently change
+    # what the operator builds.
+    for key, (lab, field, eqf, _names, pars) in SYSTEMS.items():
+        eqs = eqf(pars)
+        if not eqs:
+            raise AssertionError(f"{lab}: no equilibria found")
+        worst = max(float(np.max(np.abs(field(q, pars))))
+                    for _nm, q in eqs)
+        if worst > 1e-8:
+            raise AssertionError(
+                f"{lab}: worst equilibrium residual {worst:.2e} -- "
+                f"these are not roots of f")
+        sides = {nm: classify_equilibrium(field, q, pars)[1]
+                 for nm, q in eqs}
+        if not any(sides.values()):
+            raise AssertionError(
+                f"{lab}: not one of its {len(eqs)} equilibria has a "
+                f"two-dimensional manifold, so the system is unusable")
+        n2 = sum(1 for v in sides.values() if v)
+        print(f"{lab:16s}: {len(eqs):2d} equilibria, worst residual "
+              f"{worst:.1e}, {n2} with a 2-D manifold")
+
+    # determinism of the numeric solver, on the system that needs it
+    a = [nm for nm, _ in find_equilibria(thomas_field,
+                                         SYSTEMS['THOMAS'][4],
+                                         extent=8.0, grid=5)]
+    _EQ_CACHE.clear()
+    b = [nm for nm, _ in find_equilibria(thomas_field,
+                                         SYSTEMS['THOMAS'][4],
+                                         extent=8.0, grid=5)]
+    if a != b:
+        raise AssertionError("the equilibrium solver is not "
+                             "deterministic between runs")
+    print(f"solver: {len(a)} Thomas equilibria, same list twice")
+
+    # Rayleigh-Benard's C+ is an ATTRACTING FOCUS -- all three
+    # eigenvalues have negative real part, so its stable set is the
+    # whole neighbourhood rather than a surface, and offering it as a
+    # 2-D manifold would be wrong
+    field, pars = SYSTEMS['RAYLEIGH'][1], SYSTEMS['RAYLEIGH'][4]
+    q = SYSTEMS['RAYLEIGH'][2](pars)[1][1]
+    w, sides = classify_equilibrium(field, q, pars)
+    if int(np.sum(w.real < 0.0)) != 3 or sides:
+        raise AssertionError(
+            f"Rayleigh-Benard C+ should be an attracting focus with no "
+            f"2-D manifold, got eigenvalues {np.round(w, 3)} and sides "
+            f"{sides}")
+    print("Rayleigh-Benard C+: attracting focus, correctly offering no "
+          "surface")
+
+    # and the new systems really grow
+    for system, eqi, kind in (('CHEN', 1, 'UNSTABLE'),
+                              ('SHIMIZU', 1, 'UNSTABLE'),
+                              ('HALVORSEN', 1, 'STABLE')):
+        field = SYSTEMS[system][1]
+        pars = SYSTEMS[system][4]
+        centre = SYSTEMS[system][2](pars)[eqi][1]
+        u1, u2, _sel = invariant_eigenbasis(field, centre, pars, kind)
+        nrm = np.cross(u1, u2)
+        nrm = nrm / np.linalg.norm(nrm)
+        rings, info = grow_manifold(system=system, equilibrium=eqi,
+                                    kind=kind, arclength=1.0,
+                                    ring_spacing=0.25)
+        r = rings[1]
+        out = (float(np.max(np.abs((r - centre) @ nrm)))
+               / float(np.max(np.linalg.norm(r - centre, axis=1))))
+        if out > 2e-2:
+            raise AssertionError(
+                f"{system} {kind}: leaves its eigenplane by {out:.2e}")
+        V, F, info = build_invariant_manifold(
+            system=system, equilibrium=eqi, kind=kind, arclength=12.0)
+        if not np.all(np.isfinite(V)) or not len(F):
+            raise AssertionError(f"{system}: empty or non-finite mesh")
+        print(f"{info['system']:16s} {info['equilibrium']:6s} "
+              f"{kind:8s}: tangent to {out:.1e}, {len(F)} faces")
 
     # ---- 4. the mesh ------------------------------------------------
     V, F, info = build_invariant_manifold(arclength=30.0)
