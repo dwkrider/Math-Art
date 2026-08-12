@@ -38,6 +38,9 @@ _MODULE_NAMES = [
     'fractal_surface_generator',
     'l_system_generator',
     'turtle_curve_generator',
+    'inflorescence_generator',
+    'receptacle_generator',
+    'leaf_generator',
     'strahler_style',
     'antoine_generator',
     'fractal_knot_generator',
@@ -344,6 +347,20 @@ class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
         _op(lay, "mesh.hyperbolic_tiling_add", icon='MESH_CIRCLE')
 
 
+class VIEW3D_MT_math_art_plants(bpy.types.Menu):
+    bl_idname = "VIEW3D_MT_math_art_plants"
+    bl_label = "Plants & Growth"
+
+    def draw(self, context):
+        lay = self.layout
+        _op(lay, "curve.lsystem_add", icon='GRAPH')
+        _op(lay, "curve.inflorescence_add", icon='OUTLINER_OB_CURVES')
+        _op(lay, "mesh.receptacle_add", icon='MESH_UVSPHERE')
+        _op(lay, "mesh.leaf_add", icon='OUTLINER_OB_MESH')
+        _op(lay, "curve.fractal_tree_add", icon='GRAPH')
+        _op(lay, "mesh.phyllotaxis_add", icon='MESH_CIRCLE')
+
+
 class VIEW3D_MT_math_art_styles(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_math_art_styles"
     bl_label = "Styles"
@@ -371,6 +388,8 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.menu("VIEW3D_MT_math_art_polyhedra",
                  icon='MESH_ICOSPHERE')
         lay.menu("VIEW3D_MT_math_art_fractals", icon='MESH_CUBE')
+        lay.menu("VIEW3D_MT_math_art_plants",
+                 icon='OUTLINER_OB_CURVES')
         lay.menu("VIEW3D_MT_math_art_knots", icon='FORCE_VORTEX')
         lay.menu("VIEW3D_MT_math_art_weaves", icon='MOD_LATTICE')
         lay.menu("VIEW3D_MT_math_art_patterns", icon='MESH_GRID')
@@ -390,6 +409,7 @@ _MENUS = (VIEW3D_MT_math_art_minimal, VIEW3D_MT_math_art_polyhedra,
           VIEW3D_MT_math_art_fractals, VIEW3D_MT_math_art_knots,
           VIEW3D_MT_math_art_weaves, VIEW3D_MT_math_art_patterns,
           VIEW3D_MT_math_art_rollers, VIEW3D_MT_math_art_odds,
+          VIEW3D_MT_math_art_plants,
           VIEW3D_MT_math_art_styles, VIEW3D_MT_math_art_add)
 
 
