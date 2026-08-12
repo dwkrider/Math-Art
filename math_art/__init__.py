@@ -37,6 +37,7 @@ _MODULE_NAMES = [
     'snowflake_generator',
     'fractal_surface_generator',
     'l_system_generator',
+    'turtle_curve_generator',
     'strahler_style',
     'antoine_generator',
     'fractal_knot_generator',
@@ -226,6 +227,7 @@ class VIEW3D_MT_math_art_fractals(bpy.types.Menu):
             icon='OUTLINER_OB_POINTCLOUD')
         _op(lay, "curve.space_filling_add", icon='CURVE_DATA')
         _op(lay, "curve.lsystem_add", icon='GRAPH')
+        _op(lay, "curve.turtle_curve_add", icon='MOD_CURVE')
         _op(lay, "curve.fractal_tree_add", icon='GRAPH')
         _op(lay, "mesh.fractal_tiling_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.fractal_knotwork_add", icon='OUTLINER_OB_CURVES')
