@@ -28,8 +28,10 @@ import numpy as np
 
 try:
     from .lsystem import leaves as lv
+    from .lsystem import venation as vn
 except ImportError:                       # headless / direct execution
     from lsystem import leaves as lv
+    from lsystem import venation as vn
 
 
 #: Re-exported so the operator and the engine cannot drift apart.
@@ -103,6 +105,37 @@ if _IN_BLENDER:
         leaflet_scale: FloatProperty(name="Leaflet Size", default=0.3,
                                      min=0.02, max=1.0)
 
+        veins: BoolProperty(
+            name="Venation", default=False,
+            description="Grow a vein network into the blade by space "
+                        "colonization (Runions et al., 2005)")
+        vein_mode: EnumProperty(
+            name="Venation Type",
+            items=[('OPEN', "Open (dichotomous)", "Each source attracts "
+                            "only the nearest vein, so veins never "
+                            "rejoin -- a tree. Ginkgo, conifers, most "
+                            "monocots"),
+                   ('CLOSED', "Closed (reticulate)", "Each source "
+                              "attracts every vein in its relative "
+                              "neighbourhood, so veins meet and close "
+                              "loops -- the areoles of a dicot leaf")],
+            default='CLOSED')
+        vein_sources: IntProperty(name="Auxin Sources", default=450,
+                                  min=20, max=4000)
+        vein_step: FloatProperty(name="Vein Step", default=0.025,
+                                 min=0.004, max=0.2)
+        vein_kill: FloatProperty(
+            name="Kill Radius", default=0.05, min=0.005, max=0.5,
+            description="A source is consumed once a vein reaches this "
+                        "close. It is the control that sets how fine "
+                        "the network is, because it is what stops veins "
+                        "crowding")
+        vein_influence: FloatProperty(name="Influence Radius", default=0.35,
+                                      min=0.02, max=2.0)
+        vein_radius: FloatProperty(name="Vein Radius", default=0.006,
+                                   min=0.0005, max=0.1)
+        vein_seed: IntProperty(name="Seed", default=0, min=0, max=10000)
+
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def execute(self, context):
@@ -136,17 +169,59 @@ if _IN_BLENDER:
             V = np.array(verts, dtype=float)
             lo, hi = V.min(axis=0), V.max(axis=0)
             ext = float((hi - lo).max())
+            self._fit = ((lo + hi) / 2.0,
+                         (2.0 * self.scale / ext) if ext > 1e-12 else 1.0)
             if ext > 1e-12:
                 V = (V - (lo + hi) / 2.0) * (2.0 * self.scale / ext)
-            ob = _mesh([tuple(p) for p in V], faces, name)
-            context.collection.objects.link(ob)
+            verts = [tuple(p) for p in V]
+            objs = [_mesh(verts, faces, name)]
+            if self.veins and self.mode == 'SIMPLE':
+                vob = self._veins(name)
+                if vob is not None:
+                    objs.append(vob)
             for o in context.selected_objects:
                 o.select_set(False)
-            ob.select_set(True)
+            for o in objs:
+                context.collection.objects.link(o)
+                o.select_set(True)
+            ob = objs[0]
             context.view_layer.objects.active = ob
             self.report({'INFO'},
                         f"{name}: {len(V)} vertices, {len(faces)} faces")
             return {'FINISHED'}
+
+        def _veins(self, name):
+            """A vein network grown into the blade, as a bevelled curve.
+
+            The veins are a separate object: they want their own
+            material, and a blade with its venation welded in cannot be
+            solidified independently of it.
+            """
+            outline = lv.simple_leaf(self.shape, steps=self.steps,
+                                     samples=self.samples)
+            nodes, edges, parents = vn.grow(
+                outline, n_sources=self.vein_sources,
+                mode=self.vein_mode, step=self.vein_step,
+                kill=self.vein_kill, influence=self.vein_influence,
+                seed=self.vein_seed)
+            if len(nodes) < 2 or not edges:
+                return None
+            w = vn.vein_widths(nodes, edges, parents)
+            w = w / max(float(w.max()), 1e-9)
+            cen, f = self._fit
+            cu = bpy.data.curves.new(name + " Veins", 'CURVE')
+            cu.dimensions = '3D'
+            for a, b in edges:
+                sp = cu.splines.new('POLY')
+                sp.points.add(1)
+                for k, i in enumerate((a, b)):
+                    x = (float(nodes[i][0]) - float(cen[0])) * f
+                    y = (float(nodes[i][1]) - float(cen[1])) * f
+                    sp.points[k].co = (x, y, 0.0, 1.0)
+                    sp.points[k].radius = float(w[i])
+            cu.bevel_depth = float(self.vein_radius)
+            cu.bevel_resolution = 1
+            return bpy.data.objects.new(name + " Veins", cu)
 
         def draw(self, context):
             lay = self.layout
@@ -165,6 +240,14 @@ if _IN_BLENDER:
                     lay.prop(self, "rate")
                 for k in ("plastochrons", "leaflet_angle", "leaflet_scale"):
                     lay.prop(self, k)
+            if self.mode == 'SIMPLE':
+                lay.separator()
+                lay.prop(self, "veins")
+                if self.veins:
+                    for k in ("vein_mode", "vein_sources", "vein_step",
+                              "vein_kill", "vein_influence",
+                              "vein_radius", "vein_seed"):
+                        lay.prop(self, k)
             lay.separator()
             lay.prop(self, "scale")
 

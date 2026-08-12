@@ -58,10 +58,10 @@ import numpy as np
 
 try:
     from . import lsystem as ls
-    from .lsystem import closure, koch, words
+    from .lsystem import closure, koch, lifts, words
 except ImportError:                       # headless / direct execution
     import lsystem as ls
-    from lsystem import closure, koch, words
+    from lsystem import closure, koch, lifts, words
 
 
 MODES = ("NODE", "EDGE", "FOLD", "FASS", "WORD", "SPIRO")
@@ -327,7 +327,13 @@ if _IN_BLENDER:
                    ('PRISM', "Extruded Prism", "The island given "
                              "thickness"),
                    ('MESH', "Plain Mesh", "Vertices and edges along the "
-                            "exact path -- no bevel, no fillet")],
+                            "exact path -- no bevel, no fillet"),
+                   ('RELIEF', "Mitred Relief", "A prism along the path "
+                              "with MITRED joints, terracing in height "
+                              "at every turn"),
+                   ('SCAFFOLD', "Scaffold on Columns", "The path raised "
+                                "on columns over a base plate -- what "
+                                "makes an open figure printable")],
             default='CURVE')
         radius: FloatProperty(name="Tube Radius", default=0.01,
                               min=0.0001, max=1.0)
@@ -346,6 +352,49 @@ if _IN_BLENDER:
                         "cross-section even; 0 keeps corners exact")
         fillet_segments: IntProperty(name="Corner Segments", default=4,
                                      min=1, max=16)
+
+        # -- mitred relief
+        band: FloatProperty(
+            name="Band Width", default=0.06, min=0.002, max=1.0,
+            description="Width of the ribbon. The joints are MITRED: the "
+                        "offset at a corner runs along the bisector at "
+                        "w/2 / cos(angle/2), so there is no notch")
+        relief_step: FloatProperty(
+            name="Height Step", default=0.02, min=0.0, max=0.5,
+            description="Height added per right-angle of turning. This "
+                        "is what makes it a relief rather than an "
+                        "extrusion -- the surface terraces as the curve "
+                        "winds. 0 gives a constant-height prism")
+        miter_limit: FloatProperty(
+            name="Miter Limit", default=4.0, min=1.0, max=20.0,
+            description="Cap on the mitre extension. It diverges at a "
+                        "hairpin, so without a limit one corner flies "
+                        "off to infinity")
+
+        # -- scaffold
+        gap: FloatProperty(name="Stand-off", default=0.35,
+                           min=0.01, max=2.0,
+                           description="Height of the curve above the plate")
+        plate: FloatProperty(name="Plate Thickness", default=0.04,
+                             min=0.005, max=0.5)
+        column_radius: FloatProperty(name="Column Radius", default=0.012,
+                                     min=0.002, max=0.2)
+        column_every: IntProperty(
+            name="Column Every", default=8, min=1, max=200,
+            description="One column every N path points")
+
+        # -- assembly
+        assembly: EnumProperty(
+            name="Assembly",
+            items=[('NONE', "Single", "One copy"),
+                   ('AXIS', "About an Axis", "N copies rotated about Z"),
+                   ('CUBE', "Cube Faces", "One copy on each face of a "
+                            "cube -- what turns a flat figure into a "
+                            "solid object")],
+            default='NONE')
+        copies: IntProperty(name="Copies", default=6, min=2, max=64)
+        spin: FloatProperty(name="Phase", default=0.0,
+                            min=-180.0, max=180.0)
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def _kwargs(self):
@@ -389,7 +438,12 @@ if _IN_BLENDER:
                 out = 'CURVE'
 
             name = f"Turtle {self.mode.title()}"
-            if out == 'MESH':
+            if out in ('RELIEF', 'SCAFFOLD') or self.assembly != 'NONE':
+                ob = self._solid(pts, name, out, shut)
+                if ob is None:
+                    self.report({'ERROR'}, "produced no geometry")
+                    return {'CANCELLED'}
+            elif out == 'MESH':
                 ob = _mesh_object(pts, name, shut)
             else:
                 ob = _curve_object(pts, name, out, self.radius,
@@ -402,6 +456,45 @@ if _IN_BLENDER:
             context.view_layer.objects.active = ob
             self.report({'INFO'}, f"{name}: {describe(pts)}")
             return {'FINISHED'}
+
+        def _solid(self, pts, name, out, shut):
+            """The mesh lifts, and any assembly applied on top.
+
+            A relief or a scaffold is already a mesh, and an assembly has
+            to repeat a mesh, so anything reaching here is built as
+            (verts, faces) rather than as a curve.
+            """
+            if out == 'SCAFFOLD':
+                verts, faces = lifts.scaffold(
+                    pts, closed=shut, plate_thickness=self.plate,
+                    gap=self.gap, column_radius=self.column_radius,
+                    every=self.column_every)
+                rv, rf = lifts.mitred_relief(
+                    pts, width=self.band, closed=shut,
+                    height=max(self.band * 0.4, 1e-3),
+                    step=self.relief_step, miter_limit=self.miter_limit)
+                base = len(verts)
+                verts = list(verts) + list(rv)
+                faces = list(faces) + [tuple(i + base for i in q)
+                                       for q in rf]
+            else:
+                verts, faces = lifts.mitred_relief(
+                    pts, width=self.band, closed=shut,
+                    height=max(self.band * 0.6, 1e-3),
+                    step=self.relief_step, miter_limit=self.miter_limit)
+            if self.assembly != 'NONE':
+                verts, faces = lifts.assemble(
+                    verts, faces, mode=self.assembly,
+                    count=self.copies, size=2.0 * self.scale,
+                    spin=self.spin)
+            if not faces:
+                return None
+            me = bpy.data.meshes.new(name)
+            me.from_pydata([tuple(float(c) for c in v) for v in verts],
+                           [], faces)
+            me.validate()
+            me.update()
+            return bpy.data.objects.new(name, me)
 
         def draw(self, context):
             lay = self.layout
@@ -454,6 +547,18 @@ if _IN_BLENDER:
                     lay.prop(self, k)
             elif self.output == 'PRISM':
                 lay.prop(self, "height")
+            elif self.output == 'RELIEF':
+                for k in ("band", "relief_step", "miter_limit"):
+                    lay.prop(self, k)
+            elif self.output == 'SCAFFOLD':
+                for k in ("band", "gap", "plate", "column_radius",
+                          "column_every"):
+                    lay.prop(self, k)
+            lay.separator()
+            lay.prop(self, "assembly")
+            if self.assembly == 'AXIS':
+                lay.prop(self, "copies")
+                lay.prop(self, "spin")
             lay.prop(self, "scale")
 
     _NODE_ITEMS = [(k, ls.title(k), k) for k in sorted(ls.CURVES)]
@@ -521,6 +626,9 @@ def _selftest():
     assert abs(float(n2[:, 0].max() - n2[:, 0].min()) - 2.0) < 1e-12
     flat = normalise(np.array([[1.0, 1.0], [1.0, 1.0]]))
     assert np.all(np.isfinite(flat))
+
+    # --- the output lifts ---------------------------------------------
+    from .lsystem import lifts as _lf  # noqa: F401  (import shape check)
 
     print(f"turtle_curve_generator: OK -- {len(cases)} mode/parameter "
           f"combinations produce finite planar figures fitting the 2 m "
