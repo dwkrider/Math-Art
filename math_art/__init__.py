@@ -41,6 +41,8 @@ _MODULE_NAMES = [
     'inflorescence_generator',
     'receptacle_generator',
     'leaf_generator',
+    'growth_generator',
+    'map_lsystem_generator',
     'strahler_style',
     'antoine_generator',
     'fractal_knot_generator',
@@ -357,6 +359,8 @@ class VIEW3D_MT_math_art_plants(bpy.types.Menu):
         _op(lay, "curve.inflorescence_add", icon='OUTLINER_OB_CURVES')
         _op(lay, "mesh.receptacle_add", icon='MESH_UVSPHERE')
         _op(lay, "mesh.leaf_add", icon='OUTLINER_OB_MESH')
+        _op(lay, "curve.growth_add", icon='OUTLINER_OB_FORCE_FIELD')
+        _op(lay, "mesh.map_lsystem_add", icon='MESH_GRID')
         _op(lay, "curve.fractal_tree_add", icon='GRAPH')
         _op(lay, "mesh.phyllotaxis_add", icon='MESH_CIRCLE')
 
