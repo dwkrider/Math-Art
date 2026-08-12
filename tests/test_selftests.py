@@ -46,8 +46,32 @@ _FAIL_MARKER = re.compile(r'\b(BAD|FAIL(?:URE|ED|URES)?)\b')
 
 
 def _discover():
+    """Top-level modules, PLUS one level of subpackages.
+
+    The subpackage walk is not optional.  Discovery used to be a flat
+    listdir over `math_art/*.py`, which silently skipped anything inside
+    a package -- so moving an engine into `math_art/lsystem/` would have
+    made every one of its self-tests invisible while the suite still
+    reported success.  A green bar that means nothing is the worst
+    failure mode available, so subpackages are walked explicitly and
+    their names reported individually.
+
+    A subpackage is included when it has an `__init__.py`; its own
+    `_selftest` runs first (as `<pkg>`), then each submodule
+    (`<pkg>.<mod>`).  `math_art/seifert/` has no self-tests today and is
+    simply reported as SKIP, which is accurate rather than silent.
+    """
     names = [f[:-3] for f in sorted(os.listdir(MATH_ART))
              if f.endswith('.py') and f != '__init__.py']
+    for entry in sorted(os.listdir(MATH_ART)):
+        sub = os.path.join(MATH_ART, entry)
+        if not os.path.isdir(sub) or entry.startswith(('.', '_', 'test')):
+            continue
+        if not os.path.exists(os.path.join(sub, '__init__.py')):
+            continue
+        names.append(entry)
+        names.extend(f"{entry}.{f[:-3]}" for f in sorted(os.listdir(sub))
+                     if f.endswith('.py') and f != '__init__.py')
     return names
 
 

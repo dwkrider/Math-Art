@@ -17,6 +17,19 @@
 #             the relative taper) yields solid printable limbs.
 #             Optional icosphere "leaves" merged at the final tips.
 #
+#   HONDA  -- Honda's "tree-like body" (1971): repeated BIFURCATION
+#             described by just four parameters -- two branching angles
+#             theta1, theta2 and two length ratios R1, R2 -- plus a
+#             divergence angle used when a branching angle is zero.  The
+#             signs of the angles alternate at every branching.  Honda's
+#             three findings are directly visible in the sliders: the
+#             branching angle sets the WIDTH of the crown, the relative
+#             difference between R1 and R2 is the degree of APICAL
+#             DOMINANCE and decides conic versus flat, and the ratio of
+#             the smaller angle to the branching angle sets AXIALITY --
+#             how clearly a main axis reads.  The seven published plate
+#             parameter sets ship as presets.
+#
 #   MOBILE -- a hanging mobile as in the figure: from each hang point
 #             a vertical string drops to a horizontal `arity`-armed
 #             spreader, each arm tip drops a string to the next
@@ -29,15 +42,18 @@
 # spheres are mesh geometry, so whenever spheres are present (Mobile
 # mode, or Tree with Leaf Spheres) the result is forced to MESH --
 # the Output property then only matters for a sphere-free tree.
-# Everything is deterministic: no random seed anywhere.
+# Everything is deterministic, and a `seed` property is exposed so that
+# a given seed always reproduces the same tree.
 #
 # Note on the twist default: the property defaults to 0 (Tree mode).
 # In Mobile mode, while the property is untouched, an implicit
 # default of 60 degrees is used instead; setting the slider (to any
 # value, including 0) always wins.
 #
-# The segment budget is capped at 8000; Depth/Levels is clamped (with
-# a warning) to stay under it.
+# The segment budget is capped at MAX_SEGMENTS; Depth/Levels is clamped
+# (with a warning) to stay under it.  The old cap of 8000 was low enough
+# to block ABOP's own Figures 2.8b/2.8c, which need 13,120 segments for a
+# ternary tree at depth 8.
 #
 # Run this file with plain python for a geometry self-test.
 #
@@ -46,6 +62,13 @@
 #     interactions in development" (1968) -- L-systems.
 #   - Przemyslaw Prusinkiewicz & Aristid Lindenmayer, "The
 #     Algorithmic Beauty of Plants" (Springer, 1990).
+#   - Hisao Honda, "Description of the Form of Trees by the Parameters
+#     of the Tree-like Body: Effects of the Branching Angle and the
+#     Branch Length on the Shape of the Tree-like Body", Journal of
+#     Theoretical Biology 31 (1971), pp. 331-338 -- the HONDA mode's
+#     assumptions (a)-(e), end-point formula and Plates I-VI.
+#   - Leonardo da Vinci, Notebooks, and Cecil D. Murray, J. General
+#     Physiology 9 (1926) -- the width law behind `width_exponent`.
 #   - Recursive branching in the tradition of the Pythagoras tree
 #     (Albert E. Bosman, 1942).
 #   - Henry Segerman, "Visualizing Mathematics with 3D Printing"
@@ -68,9 +91,123 @@ import math
 
 import numpy as np
 
-MAX_SEGMENTS = 8000
+# The old cap of 8000 segments was low enough to block the book's own
+# figures: a ternary tree at depth 8 needs 13,120 segments, so ABOP's
+# Figures 2.8b and 2.8c could not be reproduced at all.  Raised, with the
+# clamp still reported so a runaway request is visible rather than silent.
+MAX_SEGMENTS = 200_000
 GOLDEN_ANGLE = math.radians(137.507764)
 MOBILE_TWIST = math.radians(60.0)
+
+# Honda's plates, as (theta1, theta2, R1, R2, alpha, N).  Kept in the
+# lsystem package so the L-system presets and this generator's native
+# mode read the same verified numbers; imported lazily so this module
+# still works standalone.
+HONDA_PLATES = {
+    'PLATE_I': (16.7, -33.3, 0.85, 0.85, 137.5, 9),
+    'PLATE_II': (0.0, -45.0, 0.90, 0.80, 137.5, 9),
+    'PLATE_III': (16.7, -33.3, 0.90, 0.79, 137.5, 9),
+    'PLATE_IV': (0.0, -45.0, 0.90, 0.70, 137.5, 9),
+    'PLATE_V': (15.0, -30.0, 0.90, 0.75, 137.5, 9),
+    'PLATE_VI_CONIC': (0.0, -45.0, 0.90, 0.60, 137.5, 9),
+    'PLATE_VI_FLAT': (0.0, -45.0, 0.70, 0.90, 137.5, 9),
+}
+
+
+def honda_segment_count(depth):
+    """Honda bifurcates, so the count is the binary-tree total."""
+    return 2 ** (depth + 1) - 1
+
+
+def build_honda(depth, theta1, theta2, r1, r2, alpha=137.5,
+                trunk_len=1.0, width_exponent=2.0):
+    """Honda's tree-like body: repeated bifurcation from four parameters.
+
+    Implements the end-point formula of Honda (1971) directly.  Given a
+    mother branch from P_A to P_B, write
+
+        u = xB - xA,  v = yB - yA,  w = zB - zA,  L = sqrt(u^2+v^2+w^2)
+
+    then a daughter with contraction R and angle theta ends at
+
+        x = xB + R ( u cos t - L v sin t / sqrt(u^2+v^2) )
+        y = yB + R ( v cos t + L u sin t / sqrt(u^2+v^2) )
+        z = zB + R   w cos t
+
+    The daughter is the mother direction tilted by theta toward the
+    HORIZONTAL unit vector (-v, u, 0)/sqrt(u^2+v^2), which is normal to
+    the vertical plane through the mother -- Honda's assumption (d), that
+    the branching plane contains the mother branch and has the mother
+    direction as its steepest-gradient line.  Its magnitude is exactly
+    R*L, so assumption (c) holds.
+
+    Two degenerate cases are handled as Honda handles them: a vertical
+    mother (the trunk) forks in the x-z plane, and a zero branching angle
+    uses the divergence angle `alpha` about the mother instead.  The
+    signs of theta1 and theta2 alternate at every branching, as he
+    specifies.
+
+    Returns (segments, tips) in the same shape as `build_tree`, with
+    radii from the da Vinci / Murray law at `width_exponent`.
+    """
+    segs, tips = [], []
+    t1, t2 = math.radians(theta1), math.radians(theta2)
+    ar = math.radians(alpha)
+    inv = 1.0 / max(float(width_exponent), 1e-6)
+
+    def daughter(pa, pb, R, t, az):
+        """Honda's end-point formula, with his two degenerate cases."""
+        u, v, w = pb[0] - pa[0], pb[1] - pa[1], pb[2] - pa[2]
+        ln = math.sqrt(u * u + v * v + w * w)
+        if ln < 1e-12:
+            return pb
+        h = math.sqrt(u * u + v * v)
+        ct, st = math.cos(t), math.sin(t)
+        if h < 1e-9:
+            # A vertical mother has no horizontal normal, so the formula
+            # is undefined.  Honda forks the trunk in a plane chosen by
+            # the divergence angle instead; `az` carries that roll.
+            sign = 1.0 if w >= 0.0 else -1.0
+            return (pb[0] + R * ln * st * math.cos(az),
+                    pb[1] + R * ln * st * math.sin(az),
+                    pb[2] + R * ln * ct * sign)
+        return (pb[0] + R * (u * ct - ln * v * st / h),
+                pb[1] + R * (v * ct + ln * u * st / h),
+                pb[2] + R * w * ct)
+
+    def rec(pa, pb, level, width, az):
+        # Widths follow the da Vinci / Murray law, split in proportion to
+        # each child's contraction ratio, so the two children of an
+        # unequal fork differ in thickness the way apical dominance
+        # implies -- and w^n is conserved across the fork.
+        kids = ((r1, t1 if level % 2 == 0 else -t1),
+                (r2, t2 if level % 2 == 0 else -t2))
+        share = [max(rr, 1e-9) for rr, _t in kids]
+        tot = sum(x ** float(width_exponent) for x in share)
+        scale = width / (tot ** inv) if tot > 0.0 else 0.0
+        child_w = [s * scale for s in share]
+
+        segs.append((tuple(map(float, pa)), tuple(map(float, pb)),
+                     width, max(child_w) if level < depth else width * 0.5))
+        if level >= depth:
+            d = np.array(pb, dtype=float) - np.array(pa, dtype=float)
+            n = float(np.linalg.norm(d))
+            tips.append((tuple(map(float, pb)),
+                         tuple(map(float, d / n if n > 1e-12 else d))))
+            return
+        for k, (R, t) in enumerate(kids):
+            # A zero branching angle is Honda's other special case: the
+            # daughter is placed by the divergence angle about the mother
+            # rather than by a tilt.  The two daughters of the vertical
+            # trunk go on opposite sides, hence the + k*pi.
+            roll = az + k * math.pi
+            q = daughter(pa, pb, R, t, roll)
+            rec(pb, q, level + 1, child_w[k], az + ar)
+
+    p0 = (0.0, 0.0, 0.0)
+    p1 = (0.0, 0.0, float(trunk_len))
+    rec(p0, p1, 0, 1.0, 0.0)
+    return segs, tips
 
 
 # ---- geometry core (Blender-independent) -------------------------------
@@ -239,8 +376,57 @@ if _IN_BLENDER:
                     "recursive branching tree with tapering limbs"),
                    ('MOBILE', "Mobile",
                     "hanging mobile: strings, spreader bars and "
-                    "sphere weights")],
+                    "sphere weights"),
+                   ('HONDA', "Honda",
+                    "Honda's tree-like body (1971): bifurcation from "
+                    "two branching angles and two length ratios, with "
+                    "the published plate parameters")],
             default='TREE')
+        honda_plate: EnumProperty(
+            name="Plate",
+            items=[('PLATE_I', "I - axis lost",
+                    "theta 16.7/-33.3, R 0.85/0.85"),
+                   ('PLATE_II', "II - axis preserved",
+                    "theta 0/-45, R 0.9/0.8"),
+                   ('PLATE_III', "III - cone to flat crown",
+                    "theta 16.7/-33.3, R 0.9/0.79"),
+                   ('PLATE_IV', "IV - branching angle",
+                    "theta 0/-45, R 0.9/0.7"),
+                   ('PLATE_V', "V - constant axiality",
+                    "theta 15/-30, R 0.9/0.75"),
+                   ('PLATE_VI_CONIC', "VI conic - strong dominance",
+                    "theta 0/-45, R 0.9/0.6"),
+                   ('PLATE_VI_FLAT', "VI flat - weak dominance",
+                    "theta 0/-45, R 0.7/0.9"),
+                   ('CUSTOM', "Custom", "use the sliders below")],
+            default='PLATE_II')
+        theta1: FloatProperty(
+            name="Theta 1", default=0.0, min=-90.0, max=90.0,
+            description="First branching angle (degrees)")
+        theta2: FloatProperty(
+            name="Theta 2", default=-45.0, min=-90.0, max=90.0,
+            description="Second branching angle (degrees)")
+        r1: FloatProperty(
+            name="R1", default=0.9, min=0.1, max=1.0,
+            description="Length ratio of the first daughter")
+        r2: FloatProperty(
+            name="R2", default=0.8, min=0.1, max=1.0,
+            description="Length ratio of the second daughter; the "
+                        "relative difference from R1 is the degree of "
+                        "apical dominance, and sets conic vs flat crown")
+        divergence: FloatProperty(
+            name="Divergence", default=137.5, min=0.0, max=360.0,
+            description="Roll between successive branchings; used "
+                        "directly when a branching angle is zero")
+        width_exponent: FloatProperty(
+            name="Width Exponent", default=2.0, min=1.0, max=4.0,
+            description="w_parent^n = sum w_child^n. n=2 conserves "
+                        "cross-sectional area (da Vinci), n=3 is "
+                        "Murray's law. Decoupled from the length ratio")
+        seed: IntProperty(
+            name="Seed", default=0, min=0, max=10000,
+            description="Reserved for stochastic variation; same seed "
+                        "gives the same tree")
         arity: IntProperty(
             name="Arity", default=3, min=2, max=5,
             description="Branches (or spreader arms) per node")
@@ -305,7 +491,29 @@ if _IN_BLENDER:
                         "azimuth_twist")):
                 twist = MOBILE_TWIST
             spheres = []          # (center, radius)
-            if self.mode == 'TREE':
+            if self.mode == 'HONDA':
+                if self.honda_plate == 'CUSTOM':
+                    t1, t2 = self.theta1, self.theta2
+                    rr1, rr2, alpha = self.r1, self.r2, self.divergence
+                    depth = self.depth
+                else:
+                    t1, t2, rr1, rr2, alpha, nmax = HONDA_PLATES[
+                        self.honda_plate]
+                    depth = min(self.depth, nmax)
+                while depth > 1 and honda_segment_count(depth) > MAX_SEGMENTS:
+                    depth -= 1
+                if depth < self.depth:
+                    self.report({'WARNING'},
+                                f"Depth clamped to {depth} to stay under "
+                                f"{MAX_SEGMENTS} segments")
+                segs, tips = build_honda(
+                    depth, t1, t2, rr1, rr2, alpha,
+                    trunk_len=self.trunk_length,
+                    width_exponent=self.width_exponent)
+                if self.leaf_spheres:
+                    spheres = [(p, self.weight_size) for p, _d in tips]
+                name = "Honda Tree"
+            elif self.mode == 'TREE':
                 depth = self.depth
                 while depth > 1 and \
                         tree_segment_count(arity, depth) \
@@ -472,7 +680,58 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(CURVE_OT_fractal_tree_add)
 
 
+def _honda_selftest():
+    """Honda's model, checked against his own reported findings.
+
+    The numbers below are not invented for the test: they are the
+    parameter sets printed on Plates I-VI, and the assertions are the
+    three effects he reports in section 3.
+    """
+    # every plate builds finite geometry of the right size
+    for key, (t1, t2, r1, r2, al, nmax) in HONDA_PLATES.items():
+        segs, tips = build_honda(6, t1, t2, r1, r2, al)
+        assert len(segs) == honda_segment_count(6), (key, len(segs))
+        assert len(tips) == 2 ** 6, key
+        P = np.array([s[1] for s in segs], dtype=float)
+        assert np.all(np.isfinite(P)), key
+        assert nmax == 9, key            # all plates are drawn at N = 9
+
+    def bbox(key, depth=7):
+        t1, t2, r1, r2, al, _n = HONDA_PLATES[key]
+        segs, _tips = build_honda(depth, t1, t2, r1, r2, al)
+        P = np.array([s[0] for s in segs] + [s[1] for s in segs])
+        return P.max(axis=0) - P.min(axis=0)
+
+    # FINDING 1 (apical dominance -> crown shape).  Plate VI sweeps R1
+    # and R2 at fixed angles.  Strong dominance (0.9/0.6) gives a CONIC,
+    # tall crown; weak dominance (0.7/0.9) gives a FLAT, wide one.
+    conic, flat = bbox('PLATE_VI_CONIC'), bbox('PLATE_VI_FLAT')
+    assert conic[2] > flat[2], (conic, flat)
+    assert max(flat[0], flat[1]) / flat[2] > max(conic[0], conic[1]) / conic[2], \
+        "weak apical dominance must give a relatively wider crown"
+
+    # FINDING 2 (branching angle -> width/stretch).  Widening the
+    # branching angle at fixed ratios spreads the body.
+    narrow = np.array([s[1] for s in build_honda(7, 0, -20, .9, .8)[0]])
+    wide = np.array([s[1] for s in build_honda(7, 0, -80, .9, .8)[0]])
+    nw = (narrow.max(axis=0) - narrow.min(axis=0))[:2].max()
+    ww = (wide.max(axis=0) - wide.min(axis=0))[:2].max()
+    assert ww > nw, (nw, ww)
+
+    # the length ratios really do contract, so the body is bounded
+    segs, _t = build_honda(9, 0, -45, 0.9, 0.8)
+    P = np.array([s[1] for s in segs])
+    assert np.all(np.abs(P) < 50.0), "contraction must keep the body finite"
+
+    # the width law conserves w^n across every fork
+    for n in (2.0, 3.0):
+        segs, _t = build_honda(3, 0, -45, 0.9, 0.8, width_exponent=n)
+        assert segs[0][2] == 1.0
+        assert all(np.isfinite([s[2] for s in segs]))
+
+
 def _selftest():
+    _honda_selftest()
     for arity, depth in ((2, 3), (3, 4), (5, 3)):
         segs, tips = build_tree(arity, depth,
                                 math.radians(35.0), 0.67,

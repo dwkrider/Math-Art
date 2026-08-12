@@ -37,6 +37,7 @@ _MODULE_NAMES = [
     'snowflake_generator',
     'fractal_surface_generator',
     'l_system_generator',
+    'strahler_style',
     'antoine_generator',
     'fractal_knot_generator',
     'apollonian_generator',
@@ -354,6 +355,7 @@ class VIEW3D_MT_math_art_styles(bpy.types.Menu):
             text="Voronoi Openwork (Experimental)", icon='MOD_REMESH')
         _op(lay, "object.organic_wireframe_add",
             icon='MOD_WIREFRAME')
+        _op(lay, "object.strahler_add", icon='MOD_SIMPLIFY')
 
 
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
