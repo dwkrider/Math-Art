@@ -81,6 +81,11 @@ from math import pi
 
 import numpy as np
 
+try:                                  # inside the math_art package
+    from .curve_frames import welded_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import welded_tube
+
 try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
@@ -637,7 +642,7 @@ if _IN_BLENDER:
             if self.output == 'MESH':
                 verts, faces, midx = [], [], []
                 for ci, P in enumerate(comps):
-                    v, f = kcg._tube_welded([tuple(p) for p in P],
+                    v, f = welded_tube([tuple(p) for p in P],
                                             self.radius,
                                             self.tube_sides)
                     base = len(verts)
@@ -843,7 +848,7 @@ def _selftest():
           and abs(float((hi - lo).max()) - 2.0) < 1e-9
           and np.all(np.abs(lo + hi) < 1e-9))
     for P in k['loops']:
-        v, f = kcg._tube_welded([tuple(p) for p in P], 0.05, 10)
+        v, f = welded_tube([tuple(p) for p in P], 0.05, 10)
         check("tube: %d verts, %d faces, all quads, finite"
               % (len(v), len(f)),
               len(v) > 0 and len(f) > 0

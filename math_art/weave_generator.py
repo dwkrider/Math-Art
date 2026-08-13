@@ -43,13 +43,14 @@ bl_info = {
 }
 
 import math
+
+try:                                  # inside the math_art package
+    from .curve_frames import welded_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import welded_tube
 import re
 from math import cos
 
-try:                                    # round-tube sweep (shared helper)
-    from . import knot_carpet_generator as kcg
-except Exception:                       # legacy single-file / CLI use
-    import knot_carpet_generator as kcg
 
 PHI = (1 + 5 ** 0.5) / 2
 
@@ -555,7 +556,7 @@ def sweep_tubes(circuits, tube_radius, tube_sides, amplitude, subdiv,
     faces = []
     face_strand = []          # strand (circuit) index per face
     for si, path in enumerate(paths):
-        tv, tf = kcg._tube_welded(path, tube_radius, sides)
+        tv, tf = welded_tube(path, tube_radius, sides)
         if not tf:
             continue
         base = len(verts)

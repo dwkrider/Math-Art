@@ -87,14 +87,17 @@ from math import pi, cos, sin, hypot
 
 import numpy as np
 
+try:                                  # inside the math_art package
+    from .curve_frames import welded_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import welded_tube
+
 try:
     from . import pattern_common as pc
     from . import islamic_pattern_generator as isl
-    from . import knot_carpet_generator as kc
 except Exception:                       # legacy single-file / CLI use
     import pattern_common as pc
     import islamic_pattern_generator as isl
-    import knot_carpet_generator as kc
 
 
 # --------------------------------------------------------------------
@@ -635,7 +638,7 @@ def build_cells(base='TREFOIL', depth=3, slot_scale=0.42,
         # local strand width (unit-radius sweep, rings rescaled).
         pts3 = np.array([(x, y, z)
                          for (x, y), z in zip(path, zoff)])
-        verts, faces = kc._tube_welded(pts3, 1.0, int(tube_sides))
+        verts, faces = welded_tube(pts3, 1.0, int(tube_sides))
         if not faces:
             return [], info
         n = len(pts3)

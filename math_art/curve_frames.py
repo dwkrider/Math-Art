@@ -429,6 +429,17 @@ def sweep(points, profile, mode=PARALLEL, radii=None, up=(0.0, 0.0, 1.0),
     return verts, faces
 
 
+def welded_tube(points, radius, sides):
+    """`closed_tube` with the nearest-vertex ring weld enabled.
+
+    The form nine generators used to reach for as
+    `knot_carpet_generator._tube_welded`.  Kept as a named function rather
+    than a default argument so those call sites read the same and cannot
+    silently lose the weld.
+    """
+    return closed_tube(points, radius, sides, weld=True)
+
+
 def _selftest():
     # --- orthonormality on a hard curve -------------------------------
     t = np.linspace(0, 4 * math.pi, 400)
