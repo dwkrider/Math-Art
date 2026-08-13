@@ -129,9 +129,9 @@ _MODULE_NAMES = [
     'rational_knot_generator',
     'substitution_knot_generator',
     'fractal_knotwork_generator',
-    'we_builders',
-    'minimal_surface_zoo',
 ]
+# NOTE: engine subpackages (`minsurf`, `seifert`, `lsystem`) are deliberately
+# absent -- they register nothing and are imported by their operator modules.
 
 _MODULES = []
 for _nm in _MODULE_NAMES:

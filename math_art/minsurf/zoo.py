@@ -1,6 +1,6 @@
 
 # Minimal-surface zoo: the data catalog for the Weierstrass-Enneper /
-# Bjorling engine in we_builders.py.
+# Bjorling engine in weierstrass.py.
 #
 # Each surface is one table row (Gauss map g, height differential dh
 # or an explicit phi / antiderivative stack, a domain, and UI hooks);
@@ -27,10 +27,7 @@
 import math
 import numpy as np
 
-try:
-    from . import we_builders as we
-except ImportError:
-    import we_builders as we
+from . import weierstrass as we
 
 TAU = 2.0 * math.pi
 
@@ -1279,7 +1276,7 @@ def unregister():
 # symmetry) on the hyperelliptic curve y^2 = z prod(z^2 - r_i^2), meshed
 # watertight (chi = 1 - 2g exactly) from ONE 1/8 Coxeter fundamental
 # domain orbited under the full D2d group -- the engine, verified data
-# and references live in we_builders.cg_higher_mesh and the block above
+# and references live in weierstrass.cg_higher_mesh and the block above
 # it.  Genus 2, 4 and 5 are the solved period problems (Chen &
 # Gackstatter 1982; E. C. Thayer, Experiment. Math. 4, 1995; data after
 # M. Weber, minimalsurfaces.blog).  Genus 3 is deliberately absent: its
@@ -1307,11 +1304,11 @@ SURFACE_FAMILY['CG_HIGHER'] = 'HIGHER'
 # embedded minimal surface invariant under a vertical translation, two
 # horizontal planar ends per translational period (infinitely many ends
 # in all), quotient genus 2k + 1 = 3 (one period meshes at chi = -6 with
-# the two end punctures -- gated below and in we_builders).  Weierstrass
+# the two end punctures -- gated below and in weierstrass).  Weierstrass
 # data and the two solved period constants (a, rho) are harvested from
 # M. Weber's CHM-(1,1) notebook (research/msblog_harvest/
 # singly_periodic.json); the engine, verified branch/strip chart and the
-# 16-isometry period assembly live in we_builders.chm_periodic_mesh and
+# 16-isometry period assembly live in weierstrass.chm_periodic_mesh and
 # the chm_* block above it.  The "Periods" count stacks whole
 # translational periods, welded seam-exactly; the radius slider sizes
 # the trimmed planar-end disks (how far each flat layer reaches).
@@ -1350,7 +1347,7 @@ SURFACE_FAMILY['CHM_PERIODIC'] = 'SINGLY'
 # with the fully solved period constants harvested from M. Weber's
 # notebook (research/msblog_harvest/singly_periodic.json); the engine,
 # verification gates and references (Hoffman-Karcher-Wei 1993/1999;
-# Hoffman-Weber-Wolf 2009) live in we_builders.genus1helicoid_mesh and
+# Hoffman-Weber-Wolf 2009) live in weierstrass.genus1helicoid_mesh and
 # the block above it.  The count slider stacks translational periods
 # (the mesh genus equals that count -- verified by the Euler
 # characteristic in the self-tests); the radius slider sets how far
@@ -1378,7 +1375,7 @@ SURFACE_FAMILY['GENUS1_HELICOID'] = 'SINGLY'
 # e = (k-1)/k), meshed watertight from ONE 1/(4k) quarter-plane
 # fundamental piece orbited under the full D_kd group -- the engine,
 # closed-form / harvested period constants and references live in
-# we_builders.symmcg_mesh and the block above it:
+# weierstrass.symmcg_mesh and the block above it:
 #   * SYMM_CG      genus k-1   -- the canonical tower; rho is the
 #     closed-form Gamma quotient.  k = 2 IS the classical Chen-
 #     Gackstatter torus (a cross-check against CHEN_GACK), and k = 4
@@ -1444,7 +1441,7 @@ SURFACE_FAMILY['SYMM_CG_G3K'] = 'HIGHER'
 # Tier-3 higher-genus finite-total-curvature surfaces, meshed watertight
 # from one fundamental piece orbited under the full point group -- the
 # engine, verified period constants and references live in
-# we_builders.cwce_ce_mesh / cwce_cw_mesh and the cwce_* block above
+# weierstrass.cwce_ce_mesh / cwce_cw_mesh and the cwce_* block above
 # them:
 #   * CATENOID_ENNEPER  genus 2/3/4, ONE catenoid + ONE Enneper end,
 #     order-4 symmetry (two orthogonal vertical mirrors); the genus-g
@@ -1503,7 +1500,7 @@ SURFACE_FAMILY['WOHLGEMUTH_G3'] = 'HIGHER'
 # Doubly periodic KMR + Wei surfaces (appended catalog block)
 # ==========================================================================
 # Three doubly periodic four-ended surfaces on the reusable hyperelliptic
-# tiler in we_builders (dperiodic_*): ONE conformal patch is integrated in
+# tiler in weierstrass (dperiodic_*): ONE conformal patch is integrated in
 # exponential coordinates, its boundary arcs are snapped exactly onto
 # their vertical mirror planes / straight lines, and the surface is the
 # orbit of that patch under the reflections/rotations those arcs
@@ -1511,7 +1508,7 @@ SURFACE_FAMILY['WOHLGEMUTH_G3'] = 'HIGHER'
 # The Cells U / V counts of the periodic operator drive the 2-D lattice
 # tiling.  Wall-constant closure (the period problem), quotient topology
 # (chi = 2 - 2g - 4, four Scherk-type end rims), manifoldness and
-# orientability are all measured in the we_builders self-tests.
+# orientability are all measured in the weierstrass self-tests.
 #
 #   * KMR_DOUBLY   -- the Karcher-Meeks-Rosenberg toroidal Scherk family
 #     (genus-1 quotient, 4 parallel Scherk ends).  The count slider
@@ -1526,7 +1523,7 @@ SURFACE_FAMILY['WOHLGEMUTH_G3'] = 'HIGHER'
 #     one-parameter family (b, a) with a solved from b by the period
 #     condition Im int_a^b (G + 1/G) dz/z = 0 (verified in the tests).
 #
-# References (full citations in the we_builders engine block):
+# References (full citations in the weierstrass engine block):
 #   Karcher 1988; Meeks-Rosenberg 1989; Perez-Rodriguez-Traizet 2005
 #   (the "KMR" classification); F. Wei 1992; data after M. Weber,
 #   https://minimalsurfaces.blog/ (KMR-2, KMR-3, Doubly Wei notebooks).
@@ -1584,12 +1581,12 @@ SURFACE_FAMILY['WEI_DOUBLY'] = 'DOUBLY'
 # ==========================================================================
 # Doubly periodic long tail (appended catalog block)
 # ==========================================================================
-# Four catalog rows over the dptail_* engine in we_builders -- the
+# Four catalog rows over the dptail_* engine in weierstrass -- the
 # remaining doubly periodic repository surfaces with real hyperelliptic
 # branch points and dh = dz/z, each shipped with its notebook's solved
 # period constants and gated by measured wall residuals + quotient
 # topology (chi = 2 - 2 genus - 4, four Scherk end rims) in the
-# we_builders self-tests:
+# weierstrass self-tests:
 #
 #   * KARCHER_SCHERK_DP -- Karcher's doubly periodic Scherk surfaces
 #     with handles (genus 2, 3, and the 'exotic' genus 3 branch
@@ -1605,7 +1602,7 @@ SURFACE_FAMILY['WEI_DOUBLY'] = 'DOUBLY'
 #     (asymmetric g2 -- Newton-refined here to close its period
 #     problem -- and the page 78/80/82/84/85 examples).
 #
-# References (full citations in the we_builders engine block):
+# References (full citations in the weierstrass engine block):
 #   Karcher 1988; Wei 1992; Rossman-Thayer-Wohlgemuth 2000; Connor
 #   2018-19 / Connor-Weber 2012; data after M. Weber,
 #   https://minimalsurfaces.blog/ (doubly periodic repository).
@@ -1680,13 +1677,13 @@ SURFACE_FAMILY['CONNOR_DP'] = 'DOUBLY'
 # ==========================================================================
 # Karcher-style singly periodic surfaces from the minimalsurfaces.blog
 # harvest (research/msblog_harvest/singly_periodic.json), all built by
-# the shared sptail machinery in we_builders: one fundamental patch
+# the shared sptail machinery in weierstrass: one fundamental patch
 # integrated by compound Gauss-Legendre cells, boundary snapped exactly
 # onto its symmetry lines/planes, orbited under the isometry group with
 # `storeys` translation or screw copies, welded seam-exactly.  Every
 # member's period problem closes with a machine-checked residual and its
 # Euler characteristic per period is MEASURED in the self-tests (engine
-# gates in we_builders._selftest(), pipeline gates below):
+# gates in weierstrass._selftest(), pipeline gates below):
 #   * SP_SIX_SCHERK    genus 0, 6 ends/period (2 horizontal + 4 at the
 #     end angle phi); rho, a closed forms in phi; translation from the
 #     om2 residue at z = 0.  chi/period = -4.  (The obtuse phi > 90 deg
@@ -1703,7 +1700,7 @@ SURFACE_FAMILY['CONNOR_DP'] = 'DOUBLY'
 #     ends (limit member, notebook by Ramazan Yol): closed-form
 #     immersion, no constants; MEASURED genus 0 with 4 ends/period
 #     (chi = -2; the harvest's genus-1 annotation contradicts its own
-#     rational g, dh -- see the we_builders block note).
+#     rational g, dh -- see the weierstrass block note).
 #   * SP_PERIODIC_ENNEPER  the classical periodic Enneper surface
 #     (g = z, dh = dz on the universal cover of the punctured disk);
 #     closed form, "Turns" stacks whole periods.
@@ -1864,7 +1861,7 @@ SURFACE_FAMILY['SP_SCHERK_ENNEPER'] = 'SINGLY'
 # ==========================================================================
 # SYMM/NONORIENT TAIL (appended catalog block)
 # ==========================================================================
-# Two groups of rows on the symtail_* engine block in we_builders:
+# Two groups of rows on the symtail_* engine block in weierstrass:
 #
 # 1) Symmetrization remainder (genus-0 k-noid variants, family SPHERES)
 #    -- the members of minimalsurfaces.blog's "Symmetrizations" index
@@ -1895,7 +1892,7 @@ SURFACE_FAMILY['SP_SCHERK_ENNEPER'] = 'SINGLY'
 #     Enneper", "k-Noids with Enneper Ends", "Antiprismatic k-Noids").
 #   L. Henneberg (1875); R. Kusner, Bull. Amer. Math. Soc. 17 (1987)
 #     291-295; F. J. Lopez, Duke Math. J. 71 (1993) 23-30 -- full
-#     citations in the we_builders symtail engine block.
+#     citations in the weierstrass symtail engine block.
 
 
 def _symtail_friem_rho(m, a):
@@ -2177,7 +2174,7 @@ SURFACE_FAMILY['LOPEZ_KLEIN'] = 'NONORIENT'
 # SP SCHERK FAMILY (appended catalog block)
 # ==========================================================================
 # Higher-genus singly periodic Scherk towers on the sscherk_* engine
-# block in we_builders: the notebook-solved period constants (extracted
+# block in weierstrass: the notebook-solved period constants (extracted
 # from the raw minimalsurfaces.blog notebooks, re-verified numerically
 # at import of the self-tests) drive four hyperelliptic towers.  Every
 # row is meshed from one conformal fundamental patch, snapped onto its
@@ -2203,7 +2200,7 @@ SURFACE_FAMILY['LOPEZ_KLEIN'] = 'NONORIENT'
 #   Singly_6ended_Scherk_g1.nb, Singly_CostaScherk_g1.nb,
 #   Singly_8ended_Scherk_g2.nb, Singly_daSilvaBatista_g2.nb
 #   (research/msblog_harvest/singly_periodic.json).  Full scholarly
-#   details in the we_builders sscherk block header.
+#   details in the weierstrass sscherk block header.
 
 WE_SURFACES['SP_SIX_SCHERK_G1'] = {
     'label': "Six-Ended Scherk Tower (genus 1)",
@@ -2261,12 +2258,12 @@ SURFACE_FAMILY['SP_DASILVA_BATISTA'] = 'SINGLY'
 
 # ==========================================================================
 # Translation-invariant catenoid/Costa towers + CHM variants
-# (appended catalog block; stinv_* engine in we_builders)
+# (appended catalog block; stinv_* engine in weierstrass)
 # ==========================================================================
 # The five remaining translation-invariant singly periodic surfaces from
 # the minimalsurfaces.blog harvest, all with their notebook period
 # constants re-extracted and machine-verified (engine block + gates in
-# we_builders; every member's per-period Euler characteristic is
+# weierstrass; every member's per-period Euler characteristic is
 # MEASURED against 2 - 2 genus - #ends):
 #   * SP_CAT_HANDLE_G1   fence of catenoids with ONE extra handle per
 #     period: genus 2, 2 catenoid ends, chi/period = -4.  Solved pairs
@@ -2426,7 +2423,7 @@ SURFACE_FAMILY['SP_SCREW_CHM'] = 'SINGLY'
 #     surface is the 4-punctured SPHERE (both g and dh rational in z),
 #     so the quotient genus is 0; the harvest's "genus 1" annotation
 #     contradicts its own rational data, exactly like the shipped
-#     sibling SP_ENNEPER_3ANN (see the we_builders sptail note).
+#     sibling SP_ENNEPER_3ANN (see the weierstrass sptail note).
 #
 # Deferred (BACKLOG.md): hackman_surfaces (Weierstrass-sigma data with
 # a transcendental Bonnet phase and its own torus uniformization),
@@ -2519,10 +2516,15 @@ SURFACE_FAMILY['SP_2ENN_2ANN'] = 'SINGLY'
 
 
 def _selftest():
-    # standalone catalog tests: build every row through the toolkit
+    # standalone catalog tests: build every row through the meshing
     # pipeline, then the engine-level QA gates (period closure,
     # translation structure, Bjorling seed reproduction)
-    import minimal_surface_toolkit as tk
+    #
+    # Imported here rather than at module scope on purpose: `parametric`
+    # imports THIS module to register the catalog, so a top-level import
+    # would close a cycle.  By the time a self-test runs, `parametric` is
+    # fully initialized.
+    from . import parametric as tk
     ok = True
     for key in list(WE_SURFACES) + list(BJORLING):
         spec = WE_SURFACES.get(key) or BJORLING[key]
@@ -2905,7 +2907,7 @@ def _selftest():
     # Catenoid-Enneper / Costa-Wohlgemuth / Wohlgemuth: full pipeline
     # watertight gates -- exact chi = 2 - 2 genus - (open end rims),
     # edge-manifold, one component, 2 m fit, finite UV chart.  The
-    # engine-level period/null gates live in we_builders._selftest().
+    # engine-level period/null gates live in weierstrass._selftest().
     for wkey, word, wgen, wrim in (('CATENOID_ENNEPER', 2, 2, 2),
                                    ('CATENOID_ENNEPER', 3, 3, 2),
                                    ('CATENOID_ENNEPER', 4, 4, 2),
@@ -2971,7 +2973,7 @@ def _selftest():
     # with a 2 x 2 lattice tiling (the operator's Cells U x V path):
     # one connected component (the tiles genuinely weld -- the Scherk
     # lesson), edge-manifold, 2 m fit, per-corner conformal UV.  (The
-    # quotient topology chi = 2 - 2g - 4 is gated in we_builders.)
+    # quotient topology chi = 2 - 2g - 4 is gated in weierstrass.)
     for dkey, dord in (('KMR_DOUBLY', 3), ('KMR3_DOUBLY', 1),
                        ('WEI_DOUBLY', 1)):
         Vd, Qd, uvd = tk.build_parametric(dkey, 48, 48, dord, 1.2, 1.0,
@@ -3101,7 +3103,7 @@ def _selftest():
           f"{'OK' if good else 'FAIL'}")
     # ---- STINV towers + CHM variants (appended gate block) -----------
     # engine-level gates (period residuals at the harvested constants,
-    # translation-wrapped quotient topology) live in we_builders'
+    # translation-wrapped quotient topology) live in weierstrass'
     # _selftest(); here the full pipeline is gated at S = 1 and S = 2
     # stacked periods: measured chi(2) - chi(1) must equal the quotient
     # Euler characteristic 2 - 2 genus - #ends, and every stack must be
