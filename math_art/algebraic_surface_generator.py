@@ -49,13 +49,13 @@ _SQRT2 = math.sqrt(2.0)
 
 
 def _toolkit():
-    """The sibling Minimal Surface Toolkit supplies marching_tets.
+    """The sibling `minsurf` engine package supplies marching_tets.
     Relative import when installed as part of the Math Art package,
     absolute when this file runs standalone next to the toolkit."""
     try:
-        from . import minimal_surface_toolkit as mst
+        from . import minsurf as mst
     except ImportError:
-        import minimal_surface_toolkit as mst
+        import minsurf as mst
     return mst
 
 

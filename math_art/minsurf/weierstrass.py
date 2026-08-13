@@ -4,10 +4,11 @@
 #
 # Numpy-only (no bpy): the generic machinery that turns a small data
 # "spec" (Gauss map g, height differential dh, a domain, a couple of
-# parameter hooks) into a surface builder matching the toolkit's
-# PARAMETRIC / MESH_PARAM contracts.  The data tables themselves live
-# in minimal_surface_zoo.py; the meshing pipeline, elliptic-function
-# engine and operators stay in minimal_surface_toolkit.py.
+# parameter hooks) into a surface builder matching the PARAMETRIC /
+# MESH_PARAM contracts.  The data tables themselves live in `zoo.py`;
+# the meshing pipeline is `parametric.py`, the elliptic-function engine
+# `elliptic.py`, the shared mesh utilities `domain.py`, and the
+# registered Blender operators the flat `minimal_surface_toolkit.py`.
 #
 #   X = Re [ e^{i theta} * Int (phi1, phi2, phi3) dz ],
 #   phi1 = (1/2)(1/g - g) h,  phi2 = (i/2)(1/g + g) h,  phi3 = h,
@@ -29,31 +30,11 @@
 import math
 import numpy as np
 
+from .domain import (_center_fit, _circularize_outer, _largest_component,
+                     _puncture_mask, _smooth_boundary, _torus_grid)
+from .elliptic import _SQUARE, _Lattice
+
 TAU = 2.0 * math.pi
-
-
-# --------------------------------------------------------------------------
-# Toolkit access (lazy -- resolves the toolkit -> zoo -> we_builders
-# circular import; by the time any builder here runs, the toolkit module
-# object is fully initialized)
-# --------------------------------------------------------------------------
-
-def _toolkit():
-    import sys
-    for name in ('math_art.minimal_surface_toolkit',
-                 'minimal_surface_toolkit'):
-        m = sys.modules.get(name)
-        if m is not None and hasattr(m, '_center_fit'):
-            return m
-    m = sys.modules.get('__main__')
-    if (m is not None and hasattr(m, '_center_fit')
-            and hasattr(m, '_Lattice')):
-        return m                       # toolkit run as a script
-    try:
-        from . import minimal_surface_toolkit as tk
-    except ImportError:
-        import minimal_surface_toolkit as tk
-    return tk
 
 
 def _ev(x, p):
@@ -274,15 +255,14 @@ def _we_torus(spec, p, nu, nv, theta):
     may unwrap one direction ('torus_wrap') and span several copies
     ('copies') -- used by singly periodic surfaces whose deck
     translation is a genuine space translation."""
-    tk = _toolkit()
     d = spec['domain']
     w1 = float(_ev(d[1], p))
     tau = _ev(d[2], p)
-    L = tk._Lattice(w1, tau) if (w1, tau) != (0.5, 1j) else tk._SQUARE
+    L = _Lattice(w1, tau) if (w1, tau) != (0.5, 1j) else _SQUARE
     wrap_u, wrap_v = spec.get('torus_wrap', (True, True))
     m = int(_ev(spec.get('copies', 1), p))
     if wrap_u and wrap_v and m == 1:
-        U, V = tk._torus_grid(nu, nv)
+        U, V = _torus_grid(nu, nv)
     else:
         u = (np.linspace(0.0, m, nu, endpoint=not wrap_u) if not wrap_u
              else np.linspace(0.0, m, nu, endpoint=False))
@@ -292,7 +272,7 @@ def _we_torus(spec, p, nu, nv, theta):
     z = 2.0 * w1 * (U + tau * V)
     with np.errstate(divide='ignore', invalid='ignore'):
         x, y, zc = spec['X'](z, p, L)
-    mask = tk._puncture_mask(U % 1.0, V % 1.0, _ev(spec['punctures'], p))
+    mask = _puncture_mask(U % 1.0, V % 1.0, _ev(spec['punctures'], p))
     return x, y, zc, wrap_u, wrap_v, mask
 
 
@@ -354,7 +334,6 @@ def tile_dihedral(Z, Xr, rot, punctures, radius, scale,
     copy -- a tiled surface has no global conformal chart).
     Generalizes the Costa-Hoffman-Meeks assembly; assumes the standard
     hyperelliptic cut structure along [0, 1] and (-inf, -1]."""
-    tk = _toolkit()
     nr, nvp, _ = Xr.shape
     Rabs = np.abs(Z)
     ang = -math.pi / rot
@@ -435,12 +414,12 @@ def tile_dihedral(Z, Xr, rot, punctures, radius, scale,
     quads = [tuple(int(remap[i]) for i in f) for f in flist]
     # keep the main body only (the clip can shear off small islands);
     # ride uv along by stacking it into the vertex array
-    Vu, quads = tk._largest_component(np.hstack([Vf, uvf]), quads)
+    Vu, quads = _largest_component(np.hstack([Vf, uvf]), quads)
     Vf, uvf = Vu[:, :3], Vu[:, 3:]
-    Vf = tk._smooth_boundary(Vf, quads)
+    Vf = _smooth_boundary(Vf, quads)
     if circularize:
-        Vf = tk._circularize_outer(Vf, quads)
-    Vf = tk._center_fit(Vf, scale, Vf)
+        Vf = _circularize_outer(Vf, quads)
+    Vf = _center_fit(Vf, scale, Vf)
     return Vf, quads, uvf
 
 
@@ -608,13 +587,12 @@ def we_saddle_tower(spec, nu, nv, order, radius, scale, theta, storeys):
     the tower stays embedded.  Storey-s top boundary and storey-(s+1) bottom
     boundary are the same seam curve, so a nearest-neighbour match between
     the two storeys' boundary rings welds the joins watertight."""
-    tk = _toolkit()
     p = spec['p_from'](order, radius) if 'p_from' in spec else {}
     # Karcher unequal-wing tower: the angle knob (theta) is the alpha modulus,
     # not a Bonnet rotation; fold it into the params so the end positions /
     # residues / puncture mask all pick it up, and build a single fundamental
     # domain (the unequal-wing unit has no screw deck isometry to stack -- see
-    # the SADDLE_TOWER_A note in minimal_surface_zoo.py).
+    # the SADDLE_TOWER_A note in zoo.py).
     if spec.get('alpha_from_theta'):
         p = dict(p, alpha=theta)
         theta = 0.0
@@ -728,8 +706,8 @@ def we_saddle_tower(spec, nu, nv, order, radius, scale, theta, storeys):
     # the wing rims are cut exactly on the puncture circles by the
     # marching-squares clip in _we_disk (clip_punctures), so they arrive
     # already clean; a short boundary relaxation just evens out the sampling.
-    Vf = tk._smooth_boundary(Vf, quads, iters=6)
-    Vf = tk._center_fit(Vf, scale, Vf)
+    Vf = _smooth_boundary(Vf, quads, iters=6)
+    Vf = _center_fit(Vf, scale, Vf)
     return Vf, quads, UVf
 
 
@@ -1869,9 +1847,8 @@ def cg_higher_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     lo, hi = {2: (3.2, 10.0), 4: (4.2, 10.0), 5: (6.2, 12.0)}[genus]
     Rend = float(np.clip(R0 * radius / 1.2, lo, hi))
     V, quads, uv = cg_higher_assemble(genus, pnu, arcn, Rend)
-    tk = _toolkit()
-    V = tk._smooth_boundary(V, quads, iters=6)
-    V = tk._center_fit(V, scale, V)
+    V = _smooth_boundary(V, quads, iters=6)
+    V = _center_fit(V, scale, V)
     return V, quads, uv
 
 
@@ -2242,8 +2219,7 @@ def genus1helicoid_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     pnu = int(np.clip(nu * 1.8, 90, 240))
     pnv = int(np.clip(nv * 0.85, 36, 96))
     V, quads, uv = genus1helicoid_assemble(storeys, r1, pnu, pnv)
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, quads, uv
 
 
@@ -2841,9 +2817,8 @@ def symmcg_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
         if len(V) - len(edges) + len(quads) == 1 - 2 * genus:
             break
         Rend *= 1.22                   # trim cut a handle: widen and retry
-    tk = _toolkit()
-    V = tk._smooth_boundary(V, quads, iters=6)
-    V = tk._center_fit(V, scale, V)
+    V = _smooth_boundary(V, quads, iters=6)
+    V = _center_fit(V, scale, V)
     return V, quads, uv
 
 
@@ -3187,8 +3162,7 @@ def chm_periodic_assemble(u, t, X, iL, d, periods):
                 h.append(g[s])
         if len(h) >= 3 and h[0] != h[-1] and len(set(h)) == len(h):
             F.append(tuple(h))
-    tk = _toolkit()
-    Vu, F = tk._largest_component(np.hstack([Vw, UVw]), F)
+    Vu, F = _largest_component(np.hstack([Vw, UVw]), F)
     return Vu[:, :3], F, Vu[:, 3:]
 
 
@@ -3205,8 +3179,7 @@ def chm_periodic_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     X = chm_periodic_patch(ug, tg)
     X, iL, d = chm_periodic_snap(X, ug)
     V, F, uv = chm_periodic_assemble(ug, tg, X, iL, d, S)
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -3841,9 +3814,8 @@ def cwce_ce_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     pnu = int(np.clip(nu * 1.6, 90, 260))
     pnv = int(np.clip(nv * 0.55, 21, 49))
     V, quads, uv, _diag = cwce_ce_assemble(genus, pnu, pnv, rmin, rmax)
-    tk = _toolkit()
-    V = tk._smooth_boundary(V, quads, iters=6)
-    V = tk._center_fit(V, scale, V)
+    V = _smooth_boundary(V, quads, iters=6)
+    V = _center_fit(V, scale, V)
     return V, quads, uv
 
 
@@ -4130,9 +4102,8 @@ def cwce_cw_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     pnu = int(np.clip(nu * 1.8, 110, 300))
     pnv = int(np.clip(nv * 0.42, 17, 37))
     V, quads, uv, _diag = cwce_cw_assemble(fam, k, pnu, pnv, xa, xb)
-    tk = _toolkit()
-    V = tk._smooth_boundary(V, quads, iters=6)
-    V = tk._center_fit(V, scale, V)
+    V = _smooth_boundary(V, quads, iters=6)
+    V = _center_fit(V, scale, V)
     return V, quads, uv
 
 
@@ -4709,7 +4680,6 @@ def dperiodic_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     MESH_PARAM / cells2d contract): patch -> orbit -> cells[0] x
     cells[1] lattice tiling -> largest component -> 2 m fit.  theta is
     unused (no associate family on the tiled surfaces)."""
-    tk = _toolkit()
     p = spec['p_from'](order, radius) if 'p_from' in spec else {}
     key = spec['dp_key']
     if isinstance(cells, (int, float)):
@@ -4725,9 +4695,9 @@ def dperiodic_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
             _DPERIODIC_CACHE.clear()
         _DPERIODIC_CACHE[ck] = P
     V, quads, UV = dperiodic_assemble(P, (cu, cv))
-    Vu, quads = tk._largest_component(np.hstack([V, UV]), quads)
+    Vu, quads = _largest_component(np.hstack([V, UV]), quads)
     V, UV = Vu[:, :3], Vu[:, 3:]
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, quads, UV
 
 
@@ -5325,7 +5295,6 @@ def dptail_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
                 cells=(1, 1)):
     """Finished-mesh builder for the doubly periodic tail rows
     (toolkit MESH_PARAM / cells2d contract)."""
-    tk = _toolkit()
     p = spec['p_from'](order, radius) if 'p_from' in spec else {}
     key = p.pop('dpt_key')
     mem = dptail_member(key)
@@ -5343,9 +5312,9 @@ def dptail_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
             _DPTAIL_CACHE.clear()
         _DPTAIL_CACHE[ck] = P
     V, quads, UV = dptail_assemble(P, (cu, cv))
-    Vu, quads = tk._largest_component(np.hstack([V, UV]), quads)
+    Vu, quads = _largest_component(np.hstack([V, UV]), quads)
     V, UV = Vu[:, :3], Vu[:, 3:]
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, quads, UV
 
 
@@ -5779,8 +5748,7 @@ def sptail_six_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         p['phid'], nu=int(np.clip(int(0.75 * nu), 24, 120)),
         nt=int(np.clip(int(0.55 * nv), 20, 80)), storeys=S,
         rmax=p['rmax'], rmin=1.0 / p['rmax'])
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -5867,8 +5835,7 @@ def sptail_fencealt_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         p['a'], nu=int(np.clip(int(0.8 * nu), 24, 130)),
         nt=int(np.clip(int(0.55 * nv), 20, 80)), storeys=S,
         rmin=p['rmin'])
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -5956,8 +5923,7 @@ def sptail_fencecat_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     V, F, uv, _ = sptail_fencecat_build(
         p['a'], nu=int(np.clip(int(0.8 * nu), 24, 130)),
         nt=int(np.clip(int(0.6 * nv), 20, 90)), storeys=S, r1=p['r1'])
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -6145,8 +6111,7 @@ def sptail_hks_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         k, a, nu=int(np.clip(int(0.7 * nu), 24, 110)),
         nt=int(np.clip(int(0.55 * nv), 18, 80)), storeys=S,
         xmax=p['xmax'])
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -6236,9 +6201,8 @@ def sptail_e3a_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         nu=int(np.clip(nu, 30, 140)), nt=int(np.clip(int(0.8 * nv),
                                                      24, 110)),
         storeys=S, Rt=p['Rt'])
-    tk = _toolkit()
-    V = tk._smooth_boundary(V, F, iters=4)
-    V = tk._center_fit(V, scale, V)
+    V = _smooth_boundary(V, F, iters=4)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -6283,8 +6247,7 @@ def sptail_penneper_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         nu=int(np.clip(nu, 24, 160)),
         nt=int(np.clip(int(0.9 * nv), 24, 100)),
         storeys=S, rmax=p['rmax'])
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -6292,7 +6255,7 @@ def sptail_penneper_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
 # SYMM/NONORIENT TAIL -- one-sided (non-orientable) quotient meshers and
 # the antiprismatic k-noid period solver
 # ==========================================================================
-# Engine for the catalog rows appended at the end of minimal_surface_zoo:
+# Engine for the catalog rows appended at the end of zoo:
 #
 #   * symtail_crosscap_mesh -- generic one-sided quotient of a disk /
 #     annulus Weierstrass domain under the free antipodal involution
@@ -6493,7 +6456,6 @@ def symtail_crosscap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     identity X(z) = X(-z) on |z| = 1, then weld each rim vertex to its
     antipode (v ~ v + pi) -- the cross-cap gluing.  Refuses to build if
     the measured rim identity fails (no fake quotients)."""
-    tk = _toolkit()
     p = spec['p_from'](order, radius) if 'p_from' in spec else {}
     if 'solve' in spec:
         p = spec['solve'](p) or p
@@ -6569,10 +6531,10 @@ def symtail_crosscap_mesh(spec, nu, nv, order, radius, scale, theta=0.0):
     V = V[used]
     UVg = UVg[used]
     quads = [tuple(int(remap[i]) for i in f) for f in quads]
-    Vu, quads = tk._largest_component(np.hstack([V, UVg]), quads)
+    Vu, quads = _largest_component(np.hstack([V, UVg]), quads)
     V, UVg = Vu[:, :3], Vu[:, 3:]
-    V = tk._smooth_boundary(V, quads)
-    V = tk._center_fit(V, scale, V)
+    V = _smooth_boundary(V, quads)
+    V = _center_fit(V, scale, V)
     return V, quads, UVg
 
 
@@ -6658,7 +6620,6 @@ def symtail_lopez_klein_mesh(spec, nu, nv, order, radius, scale,
     shared axis segments and the |x| = 1 Klein-deck rim.  The end at
     x = infinity is trimmed at |x| = rmax (the single boundary loop).
     The mesh is measurably one-sided (see the self-tests)."""
-    tk = _toolkit()
     A = SYMTAIL_LOPEZ_A
     p = spec['p_from'](order, radius) if 'p_from' in spec else {}
     rmax = float(p.get('rmax', 3.0))
@@ -6808,10 +6769,10 @@ def symtail_lopez_klein_mesh(spec, nu, nv, order, radius, scale,
     Vf = Vw[used]
     UVf = UVw[used]
     quads = [tuple(int(remap[i]) for i in f) for f in flist]
-    Vu, quads = tk._largest_component(np.hstack([Vf, UVf]), quads)
+    Vu, quads = _largest_component(np.hstack([Vf, UVf]), quads)
     Vf, UVf = Vu[:, :3], Vu[:, 3:]
-    Vf = tk._smooth_boundary(Vf, quads, iters=4)
-    Vf = tk._center_fit(Vf, scale, Vf)
+    Vf = _smooth_boundary(Vf, quads, iters=4)
+    Vf = _center_fit(Vf, scale, Vf)
     return Vf, quads, UVf
 
 
@@ -7575,8 +7536,7 @@ def _sscherk_mesh(build, nmem, spec, nu, nv, order, radius, scale,
     V, F, uv, _ = build(mi, nseg=int(np.clip(int(0.22 * nu), 6, 18)),
                         nt=int(np.clip(int(0.5 * nv), 16, 60)),
                         storeys=S, **kw)
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -7904,8 +7864,7 @@ def stinv_g1_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     V, F, uv, _ = stinv_g1_build(
         p['a'], nu=int(np.clip(int(0.8 * nu), 24, 130)),
         nt=int(np.clip(int(0.6 * nv), 20, 90)), storeys=S, r1=p['r1'])
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -7973,8 +7932,7 @@ def stinv_g3_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
     V, F, uv, _ = stinv_g3_build(
         p['a'], nu=int(np.clip(int(0.8 * nu), 24, 130)),
         nt=int(np.clip(int(0.6 * nv), 20, 90)), storeys=S, r1=p['r1'])
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -8087,8 +8045,7 @@ def stinv_costa_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         p['a'], nu=int(np.clip(int(0.8 * nu), 28, 130)),
         nt=int(np.clip(int(0.7 * nv), 24, 100)), storeys=S,
         rmin=p['rmin'], delta=p['delta'])
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -8335,8 +8292,7 @@ def stinv_chm12_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         nu=int(np.clip(nu, 28, 200)),
         nt=int(np.clip(int(0.8 * nv), 20, 160)), storeys=S,
         umin=p['umin'], umax=p['umax'])
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -8767,8 +8723,7 @@ def stinv_screw_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         p['timag'], nu=int(np.clip(int(0.8 * nu), 32, 130)),
         nt=int(np.clip(int(0.6 * nv), 20, 90)), storeys=S,
         delta=p['delta'])
-    tk = _toolkit()
-    V = tk._center_fit(V, scale, V)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -9033,9 +8988,8 @@ def sfk_e2a2_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         b=p['b'], nu=int(np.clip(nu, 30, 120)),
         nt=int(np.clip(int(0.8 * nv), 24, 100)), storeys=S,
         rmin=p['rmin'])
-    tk = _toolkit()
-    V = tk._smooth_boundary(V, F, iters=4)
-    V = tk._center_fit(V, scale, V)
+    V = _smooth_boundary(V, F, iters=4)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -9190,9 +9144,8 @@ def sfk_c1a2_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         a=p['a'], nu=int(np.clip(nu, 30, 120)),
         nt=int(np.clip(int(0.8 * nv), 24, 100)), storeys=S,
         rmin=p['rmin'], rmax=p['rmax'])
-    tk = _toolkit()
-    V = tk._smooth_boundary(V, F, iters=4)
-    V = tk._center_fit(V, scale, V)
+    V = _smooth_boundary(V, F, iters=4)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -9499,9 +9452,8 @@ def sfk_fkt_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         k=p['k'], nu=int(np.clip(nu, 36, 120)),
         nt=int(np.clip(int(0.8 * nv), 24, 90)), storeys=S,
         rmin=p['rmin'])
-    tk = _toolkit()
-    V = tk._smooth_boundary(V, F, iters=4)
-    V = tk._center_fit(V, scale, V)
+    V = _smooth_boundary(V, F, iters=4)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -9822,9 +9774,8 @@ def sfk_fkf_mesh(spec, nu, nv, order, radius, scale, theta=0.0,
         k=3, mu=p['mu'], nu=int(np.clip(nu, 36, 120)),
         nt=int(np.clip(int(0.8 * nv), 24, 90)), storeys=S,
         rmin=p['rmin'])
-    tk = _toolkit()
-    V = tk._smooth_boundary(V, F, iters=4)
-    V = tk._center_fit(V, scale, V)
+    V = _smooth_boundary(V, F, iters=4)
+    V = _center_fit(V, scale, V)
     return V, F, uv
 
 
@@ -11069,5 +11020,5 @@ def _selftest():
     print("sfk deferred (see BACKLOG.md): hackman_surfaces, even-k "
           "Fischer-Koch/Freese (self-intersecting), Freese k=4 branch")
 
-    print("\nRESULT:", "ALL OK" if ok else "FAILURES in we_builders")
+    print("\nRESULT:", "ALL OK" if ok else "FAILURES in weierstrass")
     assert ok

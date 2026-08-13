@@ -84,11 +84,11 @@ import numpy as np
 
 
 def _toolkit():
-    """The sibling Minimal Surface Toolkit supplies marching_tets."""
+    """The sibling `minsurf` engine package supplies marching_tets."""
     try:
-        from . import minimal_surface_toolkit as mst
+        from . import minsurf as mst
     except ImportError:
-        import minimal_surface_toolkit as mst
+        import minsurf as mst
     return mst
 
 

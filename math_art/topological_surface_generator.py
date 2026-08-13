@@ -12,7 +12,7 @@
 #   * Boy's surface via the Bryant-Kusner parametrization (an RP^2
 #     immersion with no pinch points).
 #   * Orientable genus-g handlebody surfaces, meshed implicitly with
-#     the marching-tetrahedra kernel from minimal_surface_toolkit.
+#     the marching-tetrahedra kernel from the minsurf package.
 #   * Solid closed strips with n half-twists (n = 1 is a printable
 #     Mobius band, fig 6-1), swept as a watertight solid directly.
 #   * The Sudanese Mobius band -- Lawson's minimal Mobius band in S^3,
@@ -319,9 +319,9 @@ _GENUS_ZK = 2.0         # z^2 coefficient: slab half-height <= ~0.42
 
 def build_genus(genus, cell=0.125):
     try:
-        from . import minimal_surface_toolkit as mst
+        from . import minsurf as mst
     except ImportError:
-        import minimal_surface_toolkit as mst
+        import minsurf as mst
     g = genus
     r, d = _GENUS_R, _GENUS_SPACING
     cs = [(i - g / 2.0) * d for i in range(g + 1)]

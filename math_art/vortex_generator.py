@@ -85,9 +85,9 @@ def build_vortex(V, F, bend=0.11, m=12, iterations=30,
 
     try:
         try:
-            from .minimal_surface_toolkit import minimize_area
+            from .minsurf import minimize_area
         except ImportError:
-            from minimal_surface_toolkit import minimize_area
+            from minsurf import minimize_area
     except Exception:
         minimize_area = None
 
