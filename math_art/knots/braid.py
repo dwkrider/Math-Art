@@ -35,71 +35,68 @@ def parse_letters(s):
     return word
 
 
-def closure_components(word):
-    """Number of components of the braid closure."""
+def strand_permutation(word, strands=None):
+    """Strand permutation of the closure of a signed-integer word.
+
+    A signed-integer word is the canonical interchange form: `+i` is the
+    Artin generator s_i, `-i` its inverse, indices 1-based.  Only which
+    pair of strands each crossing transposes matters here, so the SIGN IS
+    IGNORED -- which is why this is safely shared between engines whose
+    letter notations disagree about what a capital letter means.
+
+    `strands` may be given when the braid is wider than its word implies
+    (a word using only s_1 may still live in B_4).
+    """
     n = max(abs(g) for g in word) + 1
+    if strands is not None:
+        if strands < n:
+            raise ValueError(f"word needs at least {n} strands, got {strands}")
+        n = strands
     perm = list(range(n))
     for g in word:
         i = abs(g) - 1
         perm[i], perm[i + 1] = perm[i + 1], perm[i]
+    return perm
+
+
+def count_cycles(perm):
+    """Number of cycles of a permutation given as a list."""
     seen = set()
-    comps = 0
-    for s0 in range(n):
+    cycles = 0
+    for s0 in range(len(perm)):
         if s0 in seen:
             continue
-        comps += 1
+        cycles += 1
         cur = s0
         while cur not in seen:
             seen.add(cur)
             cur = perm[cur]
-    return comps
+    return cycles
+
+
+def closure_components(word, strands=None):
+    """Number of components of the braid closure: the cycles of the
+    strand permutation."""
+    return count_cycles(strand_permutation(word, strands))
 
 
 def braid_closure_points(word, ring=1.6, spacing=0.3, bump=0.26):
     """Closed 3D polyline of the braid closure: strands at radii by
-    braid level around a circle, crossings as +-z bumps."""
-    n = max(abs(g) for g in word) + 1
-    L = len(word)
+    braid level around a circle, crossings as +-z bumps.
 
-    def pt(a, lev, z=0.0):
-        r = ring + (lev - (n - 1) / 2.0) * spacing
-        return (r * math.cos(a), r * math.sin(a), z)
-
-    paths = [[] for _ in range(n)]        # per strand id
-    strands = list(range(n))              # level -> strand id
-    for lev in range(n):
-        paths[lev].append(pt(0.0, lev))
-    for s, g in enumerate(word):
-        a0 = 2 * math.pi * s / L
-        a1 = 2 * math.pi * (s + 1) / L
-        am = (a0 + a1) / 2
-        i = abs(g) - 1
-        for lev in range(n):
-            if lev != i and lev != i + 1:
-                paths[strands[lev]].append(pt(a1, lev))
-        z = bump if g > 0 else -bump
-        sid_i, sid_j = strands[i], strands[i + 1]
-        paths[sid_i].append(pt(am, i + 0.5, z))
-        paths[sid_i].append(pt(a1, i + 1))
-        paths[sid_j].append(pt(am, i + 0.5, -z))
-        paths[sid_j].append(pt(a1, i))
-        strands[i], strands[i + 1] = sid_j, sid_i
-    end_level = {sid: lev for lev, sid in enumerate(strands)}
-    loop = [paths[0][0]]
-    sid = 0
-    while True:
-        loop.extend(paths[sid][1:])
-        sid = end_level[sid]
-        if sid == 0:
-            break
-    loop.pop()                            # closing duplicate
-    return loop
+    The single-component view of `braid_closure_loops`.  These were two
+    separate copies of one traversal until the engine was extracted; the
+    first loop it returns is this polyline exactly, so the knot path and
+    the link path can no longer drift apart.
+    """
+    return braid_closure_loops(word, ring=ring, spacing=spacing,
+                               bump=bump)[0]
 
 
 def braid_closure_loops(word, ring=1.6, spacing=0.3, bump=0.26):
     """Closed 3D polylines of a braid closure, one per link
-    component (multi-component generalization of
-    prime_knot_generator.braid_closure_points)."""
+    component.  `braid_closure_points` is the single-component view of
+    this, and delegates to it."""
     n = max(abs(g) for g in word) + 1
     L = len(word)
 
@@ -155,6 +152,27 @@ def _selftest():
             and parse_letters('AAA') == [-1, -1, -1])
     ok &= good
     print(f"braid: parse_letters {'OK' if good else 'FAIL'}")
+
+    # The shared core: strand_permutation is a genuine permutation (a
+    # bijection on 0..n-1), ignores signs, and honours an explicit strand
+    # count; count_cycles agrees with a direct orbit count.
+    perm = strand_permutation(parse_letters('AbAb'))
+    good = (sorted(perm) == list(range(len(perm)))
+            and strand_permutation([1, 1]) == strand_permutation([-1, -1])
+            and len(strand_permutation([1], strands=5)) == 5
+            and count_cycles([0, 1, 2]) == 3
+            and count_cycles([1, 0, 2]) == 2
+            and count_cycles([1, 2, 0]) == 1)
+    ok &= good
+    print(f"braid: strand_permutation + count_cycles {'OK' if good else 'FAIL'}")
+
+    # A width wider than the word implies adds fixed points, hence extra
+    # closure components -- s1 in B_4 closes to 3 circles, not 1.
+    good = (closure_components([1]) == 1
+            and closure_components([1], strands=4) == 3)
+    ok &= good
+    print(f"braid: explicit strand count widens the closure "
+          f"{'OK' if good else 'FAIL'}")
 
     # closure_components counts the cycles of the strand permutation.
     # s1^n on 2 strands closes to ONE component when n is odd (trefoil,

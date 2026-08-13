@@ -13,8 +13,10 @@
 #       Trans. AMS 30 (1928).
 #   W. Burau, "Ueber Zopfgruppen und gleichsinnig verdrillte
 #       Verkettungen", Abh. Math. Semin. Univ. Hambg. 11 (1935).
-#   At x = -1 the value is the knot determinant, which is what the
-#   table in `tables.py` records and this module verifies.
+#   At x = -1 the value is the knot determinant.  That is NOT what
+#   `tables.py` records: its third column is Gittings' published value
+#   at t = 10, this module's default evaluation point.  The trefoil's
+#   determinant is 3; its table entry is 91.
 
 def _padd(a, b):
     n = max(len(a), len(b))

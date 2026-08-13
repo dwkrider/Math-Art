@@ -15,7 +15,7 @@
 # fails to line up.
 #
 # NOTE: this carries its own projection-based transport rather than using
-# the shared `turtle_frame`, because that module has no closed-curve
+# the shared `curve_frames`, because that module has no closed-curve
 # holonomy distribution.  Unifying them would change the emitted geometry,
 # so it is deliberately left as a follow-up rather than folded in here.
 #

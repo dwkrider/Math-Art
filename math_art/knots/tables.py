@@ -8,9 +8,13 @@
 # The 249 minimum braid words are Table 1 of:
 #   Thomas A. Gittings, "Minimum braids: a complete invariant of knots
 #   and links", arXiv:math/0401051 (2004).
-# Each row is (name, braid word, determinant).  The determinant column is
-# what makes the table self-verifying: `alexander.alexander_at(word, -1)`
-# must reproduce it, which is checked in this package's self-test.
+# Each row is (name, braid word, alexander).  The third column is Gittings'
+# published Alexander value at t = 10, and it is what makes the table
+# self-verifying: `alexander.alexander_at(word)` -- whose default
+# evaluation point is x = 10 -- must reproduce it.
+#
+# NOT the knot determinant, which is |Delta(-1)|: the trefoil's determinant
+# is 3, while its entry here is 91.
 
 KNOTS = (
     ('3_1', 'AAA', 91),

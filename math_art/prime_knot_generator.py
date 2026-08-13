@@ -173,45 +173,12 @@ if _IN_BLENDER:
                         f"{name}: braid {braid}, {len(P)} samples")
             return {'FINISHED'}
 
-        @staticmethod
-        def _tube(P, radius, sides):
-            """Closed tube with parallel-transport frames; the frame
-            holonomy is distributed so the seam matches."""
-            import numpy as np
-            m = len(P)
-            T = np.roll(P, -1, 0) - np.roll(P, 1, 0)
-            T /= np.linalg.norm(T, axis=1)[:, None]
-            N = np.empty_like(P)
-            ref = np.array([0.0, 0.0, 1.0])
-            if abs(np.dot(ref, T[0])) > 0.9:
-                ref = np.array([1.0, 0.0, 0.0])
-            N[0] = np.cross(T[0], ref)
-            N[0] /= np.linalg.norm(N[0])
-            for i in range(1, m):
-                v = N[i - 1] - T[i] * np.dot(N[i - 1], T[i])
-                N[i] = v / (np.linalg.norm(v) or 1.0)
-            # transport once more to measure the closure twist
-            v = N[m - 1] - T[0] * np.dot(N[m - 1], T[0])
-            v /= (np.linalg.norm(v) or 1.0)
-            B0 = np.cross(T[0], N[0])
-            ang = math.atan2(np.dot(v, B0), np.dot(v, N[0]))
-            verts = []
-            faces = []
-            for i in range(m):
-                corr = -ang * i / m
-                B = np.cross(T[i], N[i])
-                for j in range(sides):
-                    a = 2 * math.pi * j / sides + corr
-                    p = (P[i] + radius
-                         * (math.cos(a) * N[i] + math.sin(a) * B))
-                    verts.append(tuple(p))
-            for i in range(m):
-                i2 = (i + 1) % m
-                for j in range(sides):
-                    j2 = (j + 1) % sides
-                    faces.append([i * sides + j, i * sides + j2,
-                                  i2 * sides + j2, i2 * sides + j])
-            return verts, faces
+        # The engine's closed_tube, exposed under the operator's old
+        # attribute name.  This WAS a verbatim copy of the same function;
+        # the extraction left it behind, so the operator kept running the
+        # duplicate while the imported one sat unused.  Delegating keeps
+        # any caller that reached in through the class working.
+        _tube = staticmethod(closed_tube)
 
         def draw(self, context):
             lay = self.layout

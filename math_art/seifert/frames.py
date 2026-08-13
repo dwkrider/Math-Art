@@ -20,9 +20,9 @@ from __future__ import annotations
 import numpy as np
 
 try:                                  # inside the math_art package
-    from ..turtle_frame import transport_normals as _transport_normals
+    from ..curve_frames import transport_normals as _transport_normals
 except ImportError:                   # flat import (headless test runner)
-    from turtle_frame import transport_normals as _transport_normals
+    from curve_frames import transport_normals as _transport_normals
 
 __all__ = ["unit", "bezier", "rotation_minimising_frames", "twist_to_close"]
 
@@ -48,7 +48,7 @@ def rotation_minimising_frames(
 ) -> np.ndarray:
     """Propagate ``first_normal`` along the curve by double reflection.
 
-    The kernel is shared: it lives in the repo-wide :mod:`turtle_frame`,
+    The kernel is shared: it lives in the repo-wide :mod:`curve_frames`,
     because the band geometry here is not the only thing that needs a
     rotation-minimising frame.  This wrapper is the name the rest of the
     package (and the paper's vocabulary) uses for it.
@@ -96,7 +96,7 @@ def _selftest():
     print(f"seifert.frames: bezier endpoints + unit tangents "
           f"{'OK' if good else 'FAIL'}")
 
-    # The RMF kernel (shared with turtle_frame) must return unit normals
+    # The RMF kernel (shared with curve_frames) must return unit normals
     # perpendicular to the tangent everywhere.
     n0 = np.array([0.0, 0.0, 1.0])
     N = rotation_minimising_frames(pts, tans, n0)

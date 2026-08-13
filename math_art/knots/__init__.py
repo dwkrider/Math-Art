@@ -12,7 +12,8 @@ including reaching into its registered operator class for the tube builder.
 Extracting it here makes the dependency a real one.
 
     tables      the 249 minimum braid words of Gittings' Table 1, each with
-                the determinant that makes the row self-verifying.
+                that paper's published Alexander value at t = 10, which
+                makes the row self-verifying.
     braid       words, closure component count, and the embedding of a
                 braid closure as 3-D polylines (one, or one per component).
     alexander   the Alexander polynomial through the reduced Burau
@@ -28,7 +29,7 @@ Extracting it here makes the dependency a real one.
 Typical use:
 
     from math_art import knots
-    P = knots.build_knot('AAbAb')            # the 6_2 knot as a polyline
+    P = knots.build_knot('AAAbAb')           # the 6_2 knot as a polyline
     verts, faces = knots.closed_tube(P, 0.08, 16)
 
 References for the mathematics are in each submodule's header; the

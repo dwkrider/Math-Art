@@ -54,7 +54,7 @@ def relax_knot(P, iters=150, repel=0.35, step=0.25, smooth=0.5,
 
 def relax_link(comps, iters=100, repel=0.35, step=0.25, smooth=0.5,
                excl=6):
-    """Multi-component version of prime_knot_generator.relax_knot:
+    """Multi-component version of `relax_knot` (its sibling here):
     per-component curve smoothing plus repulsion between all strand
     pairs (both self and cross-component), globally renormalized.
     Repulsion never lets strands cross, so linked components stay

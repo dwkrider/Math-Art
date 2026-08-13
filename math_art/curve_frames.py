@@ -1,10 +1,17 @@
 
-# Differential turtle frames: orienting a cross-section along a curve.
+# Moving frames along a space curve: orienting a cross-section as it
+# sweeps.
 #
-# This is a SHARED utility, not an L-system feature.  Every generator in
-# this repo that sweeps a profile along a space curve -- knots, ruled
-# surfaces, space-filling curves, tree limbs, tubes of any kind -- needs
-# a moving reference frame, and the obvious choice is broken.
+# Every generator in this repo that sweeps a profile along a space curve --
+# knots, ruled surfaces, space-filling curves, tree limbs, tubes of any
+# kind -- needs a moving reference frame, and the obvious choice is broken.
+#
+# (This module was called `turtle_frame.py` until the knot engine was
+# extracted, after the differential-turtle-geometry formulation of the
+# `frames` construction below.  The name suggested an L-system feature,
+# which is why several generators grew their own copies of a tube sweep
+# rather than finding it here; the L-system provenance is preserved in the
+# references, where it belongs.)
 #
 # THE PROBLEM WITH THE FRENET FRAME.  The Frenet frame is built from the
 # curve's own derivatives, so it is:
@@ -390,6 +397,6 @@ def _selftest():
                        axis=2)
     assert abs(d.mean() - 0.1) < 1e-9, d.mean()
 
-    print("turtle_frame: OK -- orthonormal on helix/circle/line, survives "
+    print("curve_frames: OK -- orthonormal on helix/circle/line, survives "
           "an inflection, Frenet recovers the osculating plane, parallel "
           "transport minimises roll, twist exact, sweep closes")
