@@ -112,6 +112,9 @@ def _place(base, ops):
     return [(pc.apply(M, base), i) for i, M in enumerate(ops)]
 
 
+# _Rot and _Mir are signature ADAPTERS, not reimplementations: they take
+# the centre as a tuple where the engine takes two arguments.  _I was a
+# genuine duplicate of the engine's identity and now delegates.
 def _Rot(theta, c=(0.0, 0.0)):
     return pc.Rot(theta, c[0], c[1])
 
@@ -121,7 +124,7 @@ def _Mir(ang, c=(0.0, 0.0)):
 
 
 def _I():
-    return np.eye(3)
+    return pc.I()
 
 
 def _rot(poly, theta, c=(0.0, 0.0)):

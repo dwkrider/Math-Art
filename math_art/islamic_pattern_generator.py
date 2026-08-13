@@ -91,6 +91,38 @@ bl_info = {
 from math import cos, sin, radians, hypot, pi, tan, atan2
 import numpy as np
 
+# --- the interlace engine moved to the patterns package ---------------
+# Mitred ribbons, band faces, strand smoothing and the over/under solver
+# were written here and then reached for PRIVATELY by celtic_knot_2d,
+# knot_carpet, substitution_knot and fractal_knotwork -- about eighty
+# call sites into this module's underscore names.  They now live in
+# `patterns.ribbon`, `patterns.weave` and `patterns.polygon2d`, with
+# public names.  They are re-bound to their old private names here so
+# this module's own several hundred call sites read unchanged.
+try:
+    from .patterns.polygon2d import arclen as _arclen
+    from .patterns.polygon2d import line_intersection as _line_line
+    from .patterns.polygon2d import unit as _unit
+    from .patterns.ribbon import (angle_cut_piece as _angle_cut_piece,
+                                  band_ribbon_faces, band_ribbon_faces_z,
+                                  catmull_rom, cut_band as _cut_band,
+                                  cut_cap_on_edge as _cut_cap_on_edge,
+                                  miter as _miter, miter_ribbon)
+    from .patterns.weave import ParityDSU as _ParityDSU
+    from .patterns.weave import weave_zoff as _weave_zoff
+except ImportError:                   # flat import (test runner)
+    from patterns.polygon2d import arclen as _arclen
+    from patterns.polygon2d import line_intersection as _line_line
+    from patterns.polygon2d import unit as _unit
+    from patterns.ribbon import (angle_cut_piece as _angle_cut_piece,
+                                 band_ribbon_faces, band_ribbon_faces_z,
+                                 catmull_rom, cut_band as _cut_band,
+                                 cut_cap_on_edge as _cut_cap_on_edge,
+                                 miter as _miter, miter_ribbon)
+    from patterns.weave import ParityDSU as _ParityDSU
+    from patterns.weave import weave_zoff as _weave_zoff
+
+
 try:
     from . import pattern_common as pc
     from . import tiling_generator as tg
@@ -468,16 +500,6 @@ def rosette_segments(poly, angle_deg, frac=0.0):
 # Regular star polygon {n/d} motif
 # --------------------------------------------------------------------
 
-def _line_line(p0, p1, p2, p3):
-    """Intersection of the infinite lines p0p1 and p2p3, or None."""
-    d0 = (p1[0] - p0[0], p1[1] - p0[1])
-    d1 = (p3[0] - p2[0], p3[1] - p2[1])
-    det = d0[0] * (-d1[1]) - (-d1[0]) * d0[1]
-    if abs(det) < 1e-12:
-        return None
-    bx, by = p2[0] - p0[0], p2[1] - p0[1]
-    s = (bx * (-d1[1]) - (-d1[0]) * by) / det
-    return (p0[0] + s * d0[0], p0[1] + s * d0[1])
 
 
 def star_polygon_segments(poly, d):
@@ -829,11 +851,6 @@ def tile_motifs(substrate, nx, ny, contact_deg, trim=False, pad=2,
 # strapwork topology.  Each traced band is then built as ONE continuous
 # mitered ribbon of shared vertices, not a pile of rectangles.
 
-def _unit(x, y):
-    L = hypot(x, y)
-    if L < 1e-12:
-        return (0.0, 0.0)
-    return (x / L, y / L)
 
 
 def _flatten_segments(motifs):
@@ -959,96 +976,10 @@ def trace_bands(seg_nodes, pair):
     return bands
 
 
-def _miter(np_, nn, limit):
-    """Miter offset direction (unit bisector) and length scale for a
-    joint between offset normals `np_` (incoming) and `nn` (outgoing).
-    scale = 1/cos(half-angle), clamped to +/-`limit` so a sharp turn
-    cannot fire off an inverting spike."""
-    mx, my = np_[0] + nn[0], np_[1] + nn[1]
-    L = hypot(mx, my)
-    if L < 1e-9:                                   # ~180 deg reversal
-        return nn[0], nn[1], 1.0
-    mx, my = mx / L, my / L
-    cos_half = mx * nn[0] + my * nn[1]
-    scale = limit if abs(cos_half) < 1e-6 else 1.0 / cos_half
-    scale = max(-limit, min(limit, scale))
-    return mx, my, scale
 
 
-def miter_ribbon(points, width, closed, limit=4.0):
-    """Offset a polyline left and right by width/2 with mitered joints.
-    Returns (left, right): two point lists parallel to `points`, with
-    interior vertices mitered and (open) ends cut flat."""
-    w = 0.5 * width
-    V = list(points)
-    k = len(V)
-    left, right = [], []
-    if closed:
-        d = [_unit(V[(i + 1) % k][0] - V[i][0],
-                   V[(i + 1) % k][1] - V[i][1]) for i in range(k)]
-        for i in range(k):
-            dp, dn = d[(i - 1) % k], d[i]
-            mx, my, s = _miter((-dp[1], dp[0]), (-dn[1], dn[0]), limit)
-            left.append((V[i][0] + mx * w * s, V[i][1] + my * w * s))
-            right.append((V[i][0] - mx * w * s, V[i][1] - my * w * s))
-    else:
-        d = [_unit(V[i + 1][0] - V[i][0], V[i + 1][1] - V[i][1])
-             for i in range(k - 1)]
-        for i in range(k):
-            if i == 0:
-                dn = d[0]
-                mx, my, s = -dn[1], dn[0], 1.0     # flat cap
-            elif i == k - 1:
-                dp = d[-1]
-                mx, my, s = -dp[1], dp[0], 1.0     # flat cap
-            else:
-                dp, dn = d[i - 1], d[i]
-                mx, my, s = _miter((-dp[1], dp[0]),
-                                   (-dn[1], dn[0]), limit)
-            left.append((V[i][0] + mx * w * s, V[i][1] + my * w * s))
-            right.append((V[i][0] - mx * w * s, V[i][1] - my * w * s))
-    return left, right
 
 
-def band_ribbon_faces(left, right, closed, height):
-    """Build one continuous ribbon cell (verts, faces, mats-less) from
-    the left/right boundaries.  Flat (height <= 0) is a single strip of
-    top quads sharing vertices along the band; with relief it is a
-    watertight strip -- top, bottom, and both side walls, plus flat end
-    caps when open."""
-    cv, cf = [], []
-    m = len(left)
-    if m < 2:
-        return cv, cf
-    relief = height > 0.0
-    z_top = height if relief else 0.0
-
-    def addv(pt, z):
-        cv.append((float(pt[0]), float(pt[1]), float(z)))
-        return len(cv) - 1
-
-    TL = [addv(left[i], z_top) for i in range(m)]
-    TR = [addv(right[i], z_top) for i in range(m)]
-    span = m if closed else m - 1
-
-    def nxt(i):
-        return (i + 1) % m if closed else i + 1
-
-    for i in range(span):
-        j = nxt(i)
-        cf.append((TL[i], TR[i], TR[j], TL[j]))
-    if relief:
-        BL = [addv(left[i], 0.0) for i in range(m)]
-        BR = [addv(right[i], 0.0) for i in range(m)]
-        for i in range(span):
-            j = nxt(i)
-            cf.append((BL[j], BR[j], BR[i], BL[i]))       # bottom
-            cf.append((TL[j], BL[j], BL[i], TL[i]))       # left wall
-            cf.append((TR[i], BR[i], BR[j], TR[j]))       # right wall
-        if not closed:
-            cf.append((TL[0], BL[0], BR[0], TR[0]))       # start cap
-            cf.append((TR[m - 1], BR[m - 1], BL[m - 1], TL[m - 1]))  # end
-    return cv, cf
 
 
 def _band_kind(color_by, band_index, seg_path, orders):
@@ -1067,40 +998,8 @@ def _band_kind(color_by, band_index, seg_path, orders):
     return 0                                      # UNIFORM
 
 
-def _cr_point(p0, p1, p2, p3, t):
-    """Uniform Catmull-Rom interpolation between p1 and p2."""
-    t2, t3 = t * t, t * t * t
-    return tuple(0.5 * (2.0 * p1
-                        + (-p0 + p2) * t
-                        + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
-                        + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3))
 
 
-def catmull_rom(points, closed, subdiv):
-    """Smooth a band polyline with a uniform Catmull-Rom spline sampled
-    `subdiv` times per segment.  The curve INTERPOLATES every control
-    point, so the contact-point nodes shared with neighboring bands stay
-    exactly anchored and the strapwork remains continuous across edges."""
-    n = len(points)
-    if n < 3 or subdiv < 2:
-        return [tuple(p) for p in points]
-    P = [np.asarray(p, float) for p in points]
-    if closed:
-        def get(i):
-            return P[i % n]
-        segs = range(n)
-    else:
-        def get(i):
-            return P[min(max(i, 0), n - 1)]
-        segs = range(n - 1)
-    out = []
-    for i in segs:
-        p0, p1, p2, p3 = get(i - 1), get(i), get(i + 1), get(i + 2)
-        for t in range(subdiv):
-            out.append(_cr_point(p0, p1, p2, p3, t / subdiv))
-    if not closed:
-        out.append(tuple(P[-1]))                  # anchor the far end
-    return out
 
 
 def strapwork_bands(substrate, nx, ny, contact_deg, ribbon_width,
@@ -1172,80 +1071,8 @@ def strapwork_bands(substrate, nx, ny, contact_deg, ribbon_width,
 # classical way Celtic and Islamic interlace assign over and under.
 
 
-def band_ribbon_faces_z(left, right, closed, height, zoff):
-    """Like `band_ribbon_faces`, but each station i is lifted by
-    `zoff[i]` in z, so the ribbon undulates along its length (the 3D
-    weave).  With relief (`height` > 0) the whole cross-section rides at
-    the weave offset -- top at zoff+height, bottom at zoff -- so the
-    extruded ribbon undulates without changing thickness; flat ribbons
-    become a single woven top surface at z = zoff."""
-    cv, cf = [], []
-    m = len(left)
-    if m < 2:
-        return cv, cf
-    relief = height > 0.0
-    lift = height if relief else 0.0
-
-    def addv(pt, z):
-        cv.append((float(pt[0]), float(pt[1]), float(z)))
-        return len(cv) - 1
-
-    TL = [addv(left[i], zoff[i] + lift) for i in range(m)]
-    TR = [addv(right[i], zoff[i] + lift) for i in range(m)]
-    span = m if closed else m - 1
-
-    def nxt(i):
-        return (i + 1) % m if closed else i + 1
-
-    for i in range(span):
-        j = nxt(i)
-        cf.append((TL[i], TR[i], TR[j], TL[j]))
-    if relief:
-        BL = [addv(left[i], zoff[i]) for i in range(m)]
-        BR = [addv(right[i], zoff[i]) for i in range(m)]
-        for i in range(span):
-            j = nxt(i)
-            cf.append((BL[j], BR[j], BR[i], BL[i]))       # bottom
-            cf.append((TL[j], BL[j], BL[i], TL[i]))       # left wall
-            cf.append((TR[i], BR[i], BR[j], TR[j]))       # right wall
-        if not closed:
-            cf.append((TL[0], BL[0], BR[0], TR[0]))       # start cap
-            cf.append((TR[m - 1], BR[m - 1], BL[m - 1], TL[m - 1]))  # end
-    return cv, cf
 
 
-class _ParityDSU:
-    """Union-find with parity: union(x, y, w) asserts x XOR y == w and
-    find(x) returns (root, parity_of_x_relative_to_root).  Used to solve
-    the alternating over/under constraints across all crossings."""
-
-    def __init__(self):
-        self.parent = {}
-        self.rel = {}
-
-    def add(self, x):
-        if x not in self.parent:
-            self.parent[x] = x
-            self.rel[x] = 0
-
-    def find(self, x):
-        if self.parent[x] == x:
-            return x, 0
-        root, pr = self.find(self.parent[x])
-        self.rel[x] ^= pr
-        self.parent[x] = root
-        return root, self.rel[x]
-
-    def union(self, x, y, w):
-        self.add(x)
-        self.add(y)
-        rx, px = self.find(x)
-        ry, py = self.find(y)
-        if rx == ry:
-            return (px ^ py) == w                  # already consistent?
-        self.parent[ry] = rx
-        self.rel[ry] = px ^ py ^ w
-        return True
 
 
 def _traced_patch(substrate, nx, ny, contact_deg, trim,
@@ -1355,121 +1182,10 @@ def _solve_over(crossings, ref, other, band_seqs):
     return over
 
 
-def _arclen(path, closed):
-    """(s, total): cumulative arclength at every vertex and the total
-    length (including the closing edge when `closed`)."""
-    n = len(path)
-    s = [0.0] * n
-    for i in range(1, n):
-        s[i] = s[i - 1] + hypot(path[i][0] - path[i - 1][0],
-                                path[i][1] - path[i - 1][1])
-    total = s[-1]
-    if closed and n >= 2:
-        total += hypot(path[0][0] - path[-1][0],
-                       path[0][1] - path[-1][1])
-    return s, total
 
 
-def _weave_zoff(path, closed, signed, weave_h):
-    """Per-vertex z offset for the 3D weave.  `signed` is a list of
-    (path_index, sign) at the band's crossings (+1 over, -1 under); the
-    offset smoothsteps along arclength between consecutive crossings,
-    reaching +/-weave_h at each, and tapers to 0 at open band ends."""
-    n = len(path)
-    z = [0.0] * n
-    if not signed or weave_h <= 0.0:
-        return z
-    s, total = _arclen(path, closed)
-    anchors = sorted((s[pi], sg * weave_h) for pi, sg in signed)
-    if closed:
-        fs, fz = anchors[0]
-        ls, lz = anchors[-1]
-        ext = [(ls - total, lz)] + anchors + [(fs + total, fz)]
-    else:
-        ext = [(0.0, 0.0)] + anchors + [(total, 0.0)]
-    for i in range(n):
-        si = s[i]
-        for j in range(len(ext) - 1):
-            s0, z0 = ext[j]
-            s1, z1 = ext[j + 1]
-            if si <= s1 or j == len(ext) - 2:
-                seg = s1 - s0
-                u = 0.0 if seg < 1e-12 else min(1.0, max(0.0,
-                                                         (si - s0) / seg))
-                f = u * u * (3.0 - 2.0 * u)         # smoothstep
-                z[i] = z0 + (z1 - z0) * f
-                break
-    return z
 
 
-def _cut_band(path, closed, cut_s, half, s, total):
-    """Break a band's centerline into open sub-paths, removing a gap of
-    half-length `half` centered on each arclength in `cut_s` (the band's
-    under-crossings).  Returns [(subpath_points, False), ...]."""
-    n = len(path)
-
-    def pt_at(arc):
-        if arc <= 0.0:
-            return path[0]
-        if arc >= total:
-            return path[0] if closed else path[-1]
-        for i in range(n - 1):
-            if s[i] <= arc <= s[i + 1]:
-                seg = s[i + 1] - s[i]
-                t = 0.0 if seg < 1e-12 else (arc - s[i]) / seg
-                return (path[i][0] + t * (path[i + 1][0] - path[i][0]),
-                        path[i][1] + t * (path[i + 1][1] - path[i][1]))
-        seg = total - s[-1]
-        t = 0.0 if seg < 1e-12 else (arc - s[-1]) / seg
-        return (path[-1][0] + t * (path[0][0] - path[-1][0]),
-                path[-1][1] + t * (path[0][1] - path[-1][1]))
-
-    intervals = []
-    for c in cut_s:
-        if closed:
-            a = c - half
-            a %= total
-            b = a + 2.0 * half
-            if b <= total:
-                intervals.append((a, b))
-            else:
-                intervals.append((a, total))
-                intervals.append((0.0, b - total))
-        else:
-            a, b = max(0.0, c - half), min(total, c + half)
-            if b > a:
-                intervals.append((a, b))
-    intervals.sort()
-    merged = []
-    for a, b in intervals:
-        if merged and a <= merged[-1][1] + 1e-9:
-            merged[-1] = (merged[-1][0], max(merged[-1][1], b))
-        else:
-            merged.append((a, b))
-    kept = []
-    prev = 0.0
-    for a, b in merged:
-        if a > prev + 1e-9:
-            kept.append((prev, a))
-        prev = max(prev, b)
-    if prev < total - 1e-9:
-        kept.append((prev, total))
-    subs = []
-    for lo, hi in kept:
-        pts_sp = [pt_at(lo)]
-        for i in range(n):
-            if lo + 1e-9 < s[i] < hi - 1e-9:
-                pts_sp.append(path[i])
-        pts_sp.append(pt_at(hi))
-        subs.append(pts_sp)
-    if closed and subs and kept:
-        seam_cut = (any(a <= 1e-9 for a, _b in merged)
-                    or any(b >= total - 1e-9 for _a, b in merged))
-        if (not seam_cut and len(subs) >= 2
-                and kept[0][0] <= 1e-9 and kept[-1][1] >= total - 1e-9):
-            subs[-1] = subs[-1][:-1] + subs[0]     # stitch across seam
-            subs.pop(0)
-    return [(sp, False) for sp in subs if len(sp) >= 2]
 
 
 # --------------------------------------------------------------------
@@ -1507,71 +1223,8 @@ def _strand_tangent(node, strand, seg_nodes, pts):
     return None if d == (0.0, 0.0) else d
 
 
-def _cut_cap_on_edge(cap_l, cap_r, rail_dir, side_pt, X, t_o, n_o,
-                     h_o, gap, maxreach):
-    """Slide an under band's flat end cap onto the OVER band's edge line so
-    the cap is parallel to (and flush against) that edge.  The over band is
-    the slab of half-width `h_o` centred on crossing `X`, with unit tangent
-    `t_o` and unit normal `n_o`; its two edge lines run parallel to `t_o` at
-    +/- h_o along `n_o`.  The under ribbon's two rail cap points `cap_l`,
-    `cap_r` (running in unit direction `rail_dir`) are each slid along their
-    own rail until they meet the over edge line on the side the under band
-    exits (the side of `side_pt`), pushed a hairline `gap` beyond the edge.
-    Both new points then lie ON that edge line, so the cap segment is
-    parallel to the over band's edge.  Returns the originals unchanged for a
-    grazing crossing (rails nearly parallel to the edge, i.e. the
-    reprojection would fling the cap farther than `maxreach`)."""
-    sgn = 1.0 if ((side_pt[0] - X[0]) * n_o[0]
-                  + (side_pt[1] - X[1]) * n_o[1]) >= 0.0 else -1.0
-    qx = X[0] + sgn * (h_o + gap) * n_o[0]
-    qy = X[1] + sgn * (h_o + gap) * n_o[1]
-    q2 = (qx + t_o[0], qy + t_o[1])
-    nl = _line_line(cap_l, (cap_l[0] + rail_dir[0], cap_l[1] + rail_dir[1]),
-                    (qx, qy), q2)
-    nr = _line_line(cap_r, (cap_r[0] + rail_dir[0], cap_r[1] + rail_dir[1]),
-                    (qx, qy), q2)
-    if nl is None or nr is None:
-        return cap_l, cap_r
-    if (hypot(nl[0] - cap_l[0], nl[1] - cap_l[1]) > maxreach
-            or hypot(nr[0] - cap_r[0], nr[1] - cap_r[1]) > maxreach):
-        return cap_l, cap_r
-    return nl, nr
 
 
-def _angle_cut_piece(left, right, sp, start_struct, end_struct, ugeo,
-                     h_o, gap, maxreach, cut_gate):
-    """Reproject the interlace-cut end(s) of one under-band ribbon piece so
-    each cut cap lies flush ALONG the over band's edge (parallel to it)
-    rather than perpendicular to the under band.  `left`/`right` are the
-    piece's mitered rails (mutated in place); `sp` its centerline; `ugeo` a
-    list of (X, t_o, n_o) for the band's under-crossings.  `start_struct`
-    / `end_struct` mark ends that are structurally interlace cuts (always
-    reprojected); an end that is structurally a genuine band terminus is
-    reprojected only when it actually sits within `cut_gate` of a crossing
-    (the rare short-first-segment case).  A cut end is matched to its
-    nearest under-crossing."""
-    if not ugeo or len(sp) < 2:
-        return
-    ends = [(0, sp[0], _unit(sp[1][0] - sp[0][0], sp[1][1] - sp[0][1]),
-             start_struct),
-            (-1, sp[-1], _unit(sp[-1][0] - sp[-2][0], sp[-1][1] - sp[-2][1]),
-             end_struct)]
-    for idx, P, rd, struct in ends:
-        best = None
-        for X, t_o, n_o in ugeo:
-            dd = hypot(P[0] - X[0], P[1] - X[1])
-            if best is None or dd < best[0]:
-                best = (dd, X, t_o, n_o)
-        if best is None:
-            continue
-        dd, X, t_o, n_o = best
-        if not struct and dd > cut_gate:
-            continue                              # genuine terminus: flat cap
-        if dd > maxreach:
-            continue
-        nl, nr = _cut_cap_on_edge(left[idx], right[idx], rd, P, X,
-                                  t_o, n_o, h_o, gap, maxreach)
-        left[idx], right[idx] = nl, nr
 
 
 def _interlaced_cells(substrate, nx, ny, contact_deg, ribbon_width,

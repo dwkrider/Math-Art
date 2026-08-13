@@ -129,10 +129,19 @@ bl_info = {
     "category": "Add Mesh",
 }
 
-from math import gcd, hypot, cos, sin, pi
+from math import atan2, gcd, hypot, cos, sin, pi
 import random as _random
 
 import numpy as np
+
+try:                                  # inside the math_art package
+    from .patterns.polygon2d import (arclen, line_intersection, unit)
+    from .patterns.ribbon import (angle_cut_piece, band_ribbon_faces, band_ribbon_faces_z, catmull_rom, cut_band, cut_cap_on_edge, miter_ribbon)
+    from .patterns.weave import (ParityDSU, weave_zoff)
+except ImportError:                   # flat import (test runner)
+    from patterns.polygon2d import (arclen, line_intersection, unit)
+    from patterns.ribbon import (angle_cut_piece, band_ribbon_faces, band_ribbon_faces_z, catmull_rom, cut_band, cut_cap_on_edge, miter_ribbon)
+    from patterns.weave import (ParityDSU, weave_zoff)
 
 try:
     from . import pattern_common as pc
@@ -689,7 +698,7 @@ def _solve_over(cords):
     constraint  x[c1] XOR x[c2] = 1 XOR (reflections between).  Resolve
     all constraints with a parity union-find and return x: crossing
     position -> bit (1 = the slope +1 family rides over there)."""
-    dsu = isl._ParityDSU()
+    dsu = ParityDSU()
     keys = set()
     for rec in cords:
         L = len(rec)
@@ -833,7 +842,7 @@ def _path_tangent(path, i, closed):
         a, b = path[(i - 1) % n], path[(i + 1) % n]
     else:
         a, b = path[max(0, i - 1)], path[min(n - 1, i + 1)]
-    d = isl._unit(b[0] - a[0], b[1] - a[1])
+    d = unit(b[0] - a[0], b[1] - a[1])
     return None if d == (0.0, 0.0) else d
 
 
@@ -954,7 +963,7 @@ def _safe_pointed_tightness(control, cross, closed, subdiv, req_tight,
     ridx = _reflect_indices(len(control), cross)
     if not ridx:
         return req_tight
-    base = isl.catmull_rom(control, closed, subdiv)
+    base = catmull_rom(control, closed, subdiv)
     n = len(base)
     windows = []
     for i in ridx:
@@ -968,7 +977,7 @@ def _safe_pointed_tightness(control, cross, closed, subdiv, req_tight,
 
     def clean(t):
         path = _pointed_path(base, control, closed, subdiv, t, ridx)
-        left, right = isl.miter_ribbon(path, width, closed)
+        left, right = miter_ribbon(path, width, closed)
         for w in windows:
             if (_window_self_cross(left, w, closed, n)
                     or _window_self_cross(right, w, closed, n)):
@@ -992,7 +1001,7 @@ def _smooth_path(control, closed, subdiv, corner_style, tightness,
     """The smoothed centerline of one cord piece: the Catmull-Rom spline
     (corner_style ROUNDED -- byte-identical to the classic path) or the
     same spline with pointed lenticular reflection turns (POINTED)."""
-    path = isl.catmull_rom(control, closed, subdiv)
+    path = catmull_rom(control, closed, subdiv)
     if corner_style != 'POINTED':
         return path
     return _pointed_path(path, control, closed, subdiv, tightness,
@@ -1050,7 +1059,7 @@ _FLUSH_PIECE_MIN = 3.0
 def _flush_cap_reproject(cap_l, cap_r, rail_dir, side_pt, X, t_o, n_o,
                          h_o, gap, width, cap_max):
     """Bounded flush reprojection of ONE under-band end cap onto the over
-    band's edge line (the tiling analogue of `isl._cut_cap_on_edge`, but
+    band's edge line (the tiling analogue of `cut_cap_on_edge`, but
     spike-proof).  Slides the two rail cap points along `rail_dir` onto the
     over edge (half-width `h_o` about crossing `X`, tangent `t_o`, normal
     `n_o`), and ACCEPTS the reprojection only when it is well-conditioned:
@@ -1064,9 +1073,9 @@ def _flush_cap_reproject(cap_l, cap_r, rail_dir, side_pt, X, t_o, n_o,
     qx = X[0] + sgn * (h_o + gap) * n_o[0]
     qy = X[1] + sgn * (h_o + gap) * n_o[1]
     q2 = (qx + t_o[0], qy + t_o[1])
-    nl = isl._line_line(cap_l, (cap_l[0] + rail_dir[0], cap_l[1] + rail_dir[1]),
+    nl = line_intersection(cap_l, (cap_l[0] + rail_dir[0], cap_l[1] + rail_dir[1]),
                         (qx, qy), q2)
-    nr = isl._line_line(cap_r, (cap_r[0] + rail_dir[0], cap_r[1] + rail_dir[1]),
+    nr = line_intersection(cap_r, (cap_r[0] + rail_dir[0], cap_r[1] + rail_dir[1]),
                         (qx, qy), q2)
     if nl is None or nr is None:
         return cap_l, cap_r                       # rails parallel to the edge
@@ -1090,7 +1099,7 @@ def _tiling_flush_cut(left, right, sp, start_struct, end_struct, ugeo,
                       h_o, gap, width, maxreach, cut_gate):
     """FLAT-interlace under-cord end cut for the medial-tiling path, robust
     at the tilings' acute / near-tangent crossings.  Like
-    `isl._angle_cut_piece` it slides each interlace-cut cap flush ALONG the
+    `angle_cut_piece` it slides each interlace-cut cap flush ALONG the
     over cord's edge, but ONLY where the crossing is well-conditioned: the
     two cords not near tangent (|sin theta| >= `_FLUSH_SIN_MIN`), the piece
     long enough relative to the cord width (>= `_FLUSH_PIECE_MIN` widths, so
@@ -1107,9 +1116,9 @@ def _tiling_flush_cut(left, right, sp, start_struct, end_struct, ugeo,
         plen += hypot(sp[i][0] - sp[i - 1][0], sp[i][1] - sp[i - 1][1])
     if plen < _FLUSH_PIECE_MIN * width:
         return                                    # packed tiling: square caps
-    ends = [(0, sp[0], isl._unit(sp[1][0] - sp[0][0], sp[1][1] - sp[0][1]),
+    ends = [(0, sp[0], unit(sp[1][0] - sp[0][0], sp[1][1] - sp[0][1]),
              start_struct),
-            (-1, sp[-1], isl._unit(sp[-1][0] - sp[-2][0],
+            (-1, sp[-1], unit(sp[-1][0] - sp[-2][0],
                                    sp[-1][1] - sp[-2][1]), end_struct)]
     for idx, P, rd, struct in ends:
         best = None
@@ -1187,25 +1196,25 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
         # alternating parity (which tracks the over/under sense)
         idxs = [k * step for k, _sg, _pos in cross]
         for sp, par in _split_at(path, closed, idxs):
-            left, right = isl.miter_ribbon(sp, width, False)
-            cv, cf = isl.band_ribbon_faces(left, right, False, height)
+            left, right = miter_ribbon(sp, width, False)
+            cv, cf = band_ribbon_faces(left, right, False, height)
             if cf:
                 sub_cells.append((cv, cf, [par] * len(cf)))
     elif interlace and mode == 'WOVEN':
-        zoff = isl._weave_zoff(path, closed, signed, weave_height)
-        left, right = isl.miter_ribbon(path, width, closed)
-        cv, cf = isl.band_ribbon_faces_z(left, right, closed, height, zoff)
+        zoff = weave_zoff(path, closed, signed, weave_height)
+        left, right = miter_ribbon(path, width, closed)
+        cv, cf = band_ribbon_faces_z(left, right, closed, height, zoff)
         if cf:
             sub_cells.append((cv, cf, [matof(0)] * len(cf)))
     elif interlace and mode == 'FLAT':
         under = [(k * step, pos) for k, sg, pos in cross if sg < 0]
         ugeo = []
         if under:
-            s, total = isl._arclen(path, closed)
+            s, total = arclen(path, closed)
             cut_s = sorted(s[pi] for pi, _pos in under)
             margin = max(0.02, 0.25 * width)
             half = 0.5 * (width + margin)
-            pieces = isl._cut_band(path, closed, cut_s, half, s, total)
+            pieces = cut_band(path, closed, cut_s, half, s, total)
             # Cut the under cord flush ALONG the over cord's edge (a cap
             # parallel to the over cord, not perpendicular to the under
             # cord).  The over cord's tangent is read from its smoothed
@@ -1226,7 +1235,7 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
         for pj, (sp, sp_closed) in enumerate(pieces):
             if len(sp) < 2:
                 continue
-            left, right = isl.miter_ribbon(sp, width, sp_closed)
+            left, right = miter_ribbon(sp, width, sp_closed)
             if ugeo and not sp_closed:
                 # for an open (border-off) piece the first sub-piece's
                 # start and the last's end are genuine termini, not cuts;
@@ -1242,15 +1251,15 @@ def _piece_cell(control, cross, closed, width, style, subdiv, interlace,
                                       end_struct, ugeo, h_o, gap, width,
                                       maxreach, cut_gate)
                 else:
-                    isl._angle_cut_piece(left, right, sp, start_struct,
+                    angle_cut_piece(left, right, sp, start_struct,
                                          end_struct, ugeo, h_o, gap,
                                          maxreach, cut_gate)
-            cv, cf = isl.band_ribbon_faces(left, right, sp_closed, height)
+            cv, cf = band_ribbon_faces(left, right, sp_closed, height)
             if cf:
                 sub_cells.append((cv, cf, [matof(0)] * len(cf)))
     else:                                     # plain flat ribbon
-        left, right = isl.miter_ribbon(path, width, closed)
-        cv, cf = isl.band_ribbon_faces(left, right, closed, height)
+        left, right = miter_ribbon(path, width, closed)
+        cv, cf = band_ribbon_faces(left, right, closed, height)
         if cf:
             sub_cells.append((cv, cf, [matof(0)] * len(cf)))
 
@@ -1598,10 +1607,10 @@ def _tiling_solve_over(cords):
     """Alternating over/under across the tiling's crossings.  Between
     consecutive crossings on a cord the reference-strand parity must flip:
     x[c1] XOR x[c2] = 1 XOR label1 XOR label2, solved with a parity union-
-    find (isl._ParityDSU).  Non-bipartite tilings frustrate some
+    find (ParityDSU).  Non-bipartite tilings frustrate some
     constraints; the union-find simply drops the clashing ones (a graceful
     seam) rather than raising."""
-    dsu = isl._ParityDSU()
+    dsu = ParityDSU()
     keys = set()
     for rec in cords:
         L = len(rec)
@@ -1985,9 +1994,9 @@ def _tiling_cord_paths(substrate, nx, ny, border, walls, style, subdiv,
 # several helical sub-strands twisting about the cord centerline.  The
 # sweep runs along the SAME centerline the ribbon uses, so it composes
 # with angular / smooth cords, both substrates, color-by-loop, and the
-# interlace: FLAT breaks the under-tube at crossings (via `isl._cut_band`,
+# interlace: FLAT breaks the under-tube at crossings (via `cut_band`,
 # exactly as the ribbon breaks the under-cord), WOVEN lifts and dips the
-# tube in z (via `isl._weave_zoff`).
+# tube in z (via `weave_zoff`).
 
 def _frames(path3, closed):
     """An approximate parallel-transport frame (unit side, up) at every
@@ -2021,6 +2030,32 @@ def _frames(path3, closed):
         s = s / (ln + 1e-12)
         sides.append(s)
         ups.append(np.cross(T[i], s))
+
+    if closed and n > 2:
+        # CLOSURE HOLONOMY.  Transporting a frame once round a closed
+        # curve does not generally bring it back to itself: it returns
+        # rotated about the tangent.  Carried naively, that entire
+        # residual lands on the single join between the last ring and the
+        # first -- on a plait cord it measures about 160 degrees, so the
+        # tube folds through itself there and reads as a torn or twisted
+        # corner.  (Every other ring-to-ring step is ~0.0001 degrees.)
+        #
+        # Spread it evenly instead: ring i takes i/n of it.  Same fix as
+        # `curve_frames.closed_frames` applies to the knot tubes; kept
+        # local because this frame feeds ribbon and rope sweeps with weave
+        # offsets, not only the round tube.  OPEN paths are untouched.
+        v = sides[-1] - T[0] * float(np.dot(sides[-1], T[0]))
+        nv = float(np.linalg.norm(v))
+        if nv > 1e-12:
+            v = v / nv
+            theta = atan2(float(np.dot(v, ups[0])), float(np.dot(v, sides[0])))
+            if abs(theta) > 1e-12:
+                for i in range(n):
+                    a = -theta * i / n
+                    ca, sa = cos(a), sin(a)
+                    si, ui = sides[i].copy(), ups[i].copy()
+                    sides[i] = si * ca + ui * sa
+                    ups[i] = -si * sa + ui * ca
     return P, sides, ups
 
 
@@ -2079,7 +2114,7 @@ def _sweep_rope(path3, closed, radius, strands, nseg, twist):
     nseg = max(3, int(nseg))
     strands = max(2, int(strands))
     P, sides, ups = _frames(path3, closed)
-    s, total = isl._arclen(path3, closed)
+    s, total = arclen(path3, closed)
     r_major = 0.5 * radius
     r_minor = 0.55 * radius
     cv, cf = [], []
@@ -2147,7 +2182,7 @@ def _profile_cells(control, cross, closed, width, style, subdiv, interlace,
                 sub_cells.append(c)
         return sub_cells
     if interlace and mode == 'WOVEN':
-        zoff = isl._weave_zoff(path, closed, signed, weave_height)
+        zoff = weave_zoff(path, closed, signed, weave_height)
         p3 = [(path[i][0], path[i][1], zoff[i]) for i in range(len(path))]
         c = sweep(p3, closed, matof(0))
         if c:
@@ -2156,11 +2191,11 @@ def _profile_cells(control, cross, closed, width, style, subdiv, interlace,
     if interlace and mode == 'FLAT':
         under = [k * step for k, sg, _pos in cross if sg < 0]
         if under:
-            s, total = isl._arclen(path, closed)
+            s, total = arclen(path, closed)
             cut_s = sorted(s[pi] for pi in under)
             margin = max(0.02, 0.25 * width)
             half = 0.5 * (width + margin)
-            pieces = isl._cut_band(path, closed, cut_s, half, s, total)
+            pieces = cut_band(path, closed, cut_s, half, s, total)
         else:
             pieces = [(path, closed)]
         for sp, sp_closed in pieces:
@@ -2940,9 +2975,9 @@ def _check_tiling_flush_cut(substrate, style='ANGULAR', nx=5, ny=5,
         under = [(k * step, pos) for k, sg, pos in cross if sg < 0]
         if not under:
             continue
-        s, total = isl._arclen(path, closed)
+        s, total = arclen(path, closed)
         cut_s = sorted(s[k] for k, _pos in under)
-        pieces = isl._cut_band(path, closed, cut_s, half, s, total)
+        pieces = cut_band(path, closed, cut_s, half, s, total)
         ugeo = []
         for k, pos in under:
             t_o = over_tan.get(pos)
@@ -2954,7 +2989,7 @@ def _check_tiling_flush_cut(substrate, style='ANGULAR', nx=5, ny=5,
         for pj, (sp, sp_closed) in enumerate(pieces):
             if len(sp) < 2:
                 continue
-            left, right = isl.miter_ribbon(sp, width, sp_closed)
+            left, right = miter_ribbon(sp, width, sp_closed)
             orig = {0: (left[0], right[0]), -1: (left[-1], right[-1])}
             start_struct = closed or pj != 0
             end_struct = closed or pj != npieces - 1
@@ -3199,6 +3234,46 @@ def _selftest():
             ok = ok and good
             print("flush-cut %-11s %-8s : no-spike=%s checked=%d "
                   "worst_cap/width=%.4f" % (sub, style, good, nchk, worst))
+
+
+    # --- closed cords must not fold at the seam -----------------------
+    # A closed curve's frame comes back rotated (its holonomy); carried
+    # naively the whole residual lands on the join between the last ring
+    # and the first.  On a plait cord that is ~160 degrees, which folds
+    # the round tube through itself and reads as a torn corner.  This
+    # asserts the correction is spread: no ring-to-ring step may be an
+    # outlier against the rest.
+    import numpy as _np
+    from math import degrees as _deg, acos as _acos
+    _n = 200
+    _t = _np.linspace(0, 2 * pi, _n, endpoint=False)
+    _r = 1.0 + 0.35 * _np.cos(4 * _t)
+    _path = [(float(_r[i] * _np.cos(_t[i])), float(_r[i] * _np.sin(_t[i])),
+              float(0.30 * _np.sin(4 * _t[i]))) for i in range(_n)]
+    _P, _S, _U = _frames(_path, True)
+    _S = _np.asarray(_S, float)
+    _T = []
+    for i in range(_n):
+        _a = _np.asarray(_path[(i - 1) % _n])
+        _b = _np.asarray(_path[(i + 1) % _n])
+        _d = _b - _a
+        _T.append(_d / _np.linalg.norm(_d))
+    _T = _np.asarray(_T)
+    _steps = []
+    for i in range(_n):
+        j = (i + 1) % _n
+        _w = _S[i] - _T[j] * float(_np.dot(_S[i], _T[j]))
+        _w /= _np.linalg.norm(_w)
+        _steps.append(_deg(_acos(max(-1.0, min(1.0, float(_np.dot(_w, _S[j])))))))
+    _steps = _np.asarray(_steps)
+    _worst, _med = float(_steps.max()), float(_np.median(_steps))
+    _ok = _worst < 10.0 and _worst < 20.0 * max(_med, 1e-6)
+    print(f"closed-cord frame: worst ring twist {_worst:.2f} deg, median "
+          f"{_med:.3f} deg -> {'OK' if _ok else 'FAIL (seam fold)'}")
+    if not _ok:
+        raise AssertionError(
+            f"closed cord folds at the seam: {_worst:.1f} deg twist in one "
+            f"step (median {_med:.3f}) -- holonomy is not being distributed")
 
     print("RESULT:", "OK" if ok else "BAD")
     assert ok

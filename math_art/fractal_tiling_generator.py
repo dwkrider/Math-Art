@@ -130,6 +130,11 @@ from math import pi, cos, sin, tan
 import numpy as np
 
 try:                                  # inside the math_art package
+    from .patterns.polygon2d import points_in_poly as _inside_loop
+except ImportError:                   # flat import (test runner)
+    from patterns.polygon2d import points_in_poly as _inside_loop
+
+try:                                  # inside the math_art package
     from .patterns.polygon2d import ensure_ccw as _ensure_ccw
     from .patterns.polygon2d import signed_area as _signed_area
 except ImportError:                   # flat import (test runner)
@@ -643,22 +648,6 @@ def _boundary_loops(polys):
     return loops[0], loops[1:], True
 
 
-def _inside_loop(loop, pts):
-    """Even-odd point-in-polygon for an arbitrary closed loop,
-    vectorized over the sample points."""
-    x, y = pts[:, 0], pts[:, 1]
-    inside = np.zeros(len(pts), bool)
-    n = len(loop)
-    for i in range(n):
-        x1, y1 = loop[i]
-        x2, y2 = loop[(i + 1) % n]
-        cond = (y1 > y) != (y2 > y)
-        if not cond.any():
-            continue
-        dy = (y2 - y1) if abs(y2 - y1) > 1e-30 else 1e-30
-        xi = x1 + (y - y1) * (x2 - x1) / dy
-        inside ^= cond & (x < xi)
-    return inside
 
 
 def _coverage(polys, pts, tol=1e-9):

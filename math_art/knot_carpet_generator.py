@@ -161,6 +161,15 @@ from math import pi, sqrt, atan2
 import numpy as np
 
 try:                                  # inside the math_art package
+    from .patterns.polygon2d import (arclen)
+    from .patterns.ribbon import (band_ribbon_faces, band_ribbon_faces_z, catmull_rom, cut_band, miter_ribbon)
+    from .patterns.weave import (ParityDSU, weave_zoff)
+except ImportError:                   # flat import (test runner)
+    from patterns.polygon2d import (arclen)
+    from patterns.ribbon import (band_ribbon_faces, band_ribbon_faces_z, catmull_rom, cut_band, miter_ribbon)
+    from patterns.weave import (ParityDSU, weave_zoff)
+
+try:                                  # inside the math_art package
     from .curve_frames import closed_tube as _shared_closed_tube
 except ImportError:                   # flat import (test runner)
     from curve_frames import closed_tube as _shared_closed_tube
@@ -241,7 +250,7 @@ def _sample_loop(center, R, k, amp, samples, style, subdiv):
     if style == 'SMOOTH' and subdiv >= 2:
         nc = max(12, int(samples) // int(subdiv))
         control = [tuple(p) for p in _rosette(center, R, k, amp, nc)]
-        return np.asarray(isl.catmull_rom(control, True, subdiv), float)
+        return np.asarray(catmull_rom(control, True, subdiv), float)
     return _rosette(center, R, k, amp, samples)
 
 
@@ -347,7 +356,7 @@ def _solve_over(paths, crossings, closed=None):
     for key, lo, hi, flo, fhi in crossings:
         per_loop.setdefault(lo, []).append((flo, key, 0))
         per_loop.setdefault(hi, []).append((fhi, key, 1))
-    dsu = isl._ParityDSU()
+    dsu = ParityDSU()
     consistent = True
     for loop_id, ent in per_loop.items():
         ent.sort()
@@ -451,21 +460,21 @@ def _loop_cell(path, signed, width, interlace, mode, weave_height,
         # two-tone by over/under: cut at every crossing, color each
         # arc by the sense it leaves its crossing with
         for sp, mat in _checker_pieces(path, signed, closed):
-            left, right = isl.miter_ribbon(sp, width, False)
-            cv, cf = isl.band_ribbon_faces(left, right, False, height)
+            left, right = miter_ribbon(sp, width, False)
+            cv, cf = band_ribbon_faces(left, right, False, height)
             if cf:
                 sub_cells.append((cv, cf, [mat] * len(cf)))
     elif interlace and mode == 'WOVEN':
-        zoff = isl._weave_zoff(path, closed, signed, weave_height)
-        left, right = isl.miter_ribbon(path, width, closed)
-        cv, cf = isl.band_ribbon_faces_z(left, right, closed, height,
+        zoff = weave_zoff(path, closed, signed, weave_height)
+        left, right = miter_ribbon(path, width, closed)
+        cv, cf = band_ribbon_faces_z(left, right, closed, height,
                                          zoff)
         if cf:
             sub_cells.append((cv, cf, [matof(0)] * len(cf)))
     elif interlace and mode == 'FLAT':
         under = [ci for ci, sg in signed if sg < 0]
         if under:
-            s, total = isl._arclen(path, closed)
+            s, total = arclen(path, closed)
             cut_s = sorted(s[ci] for ci in under)
             # the gap must clear the over strand even at the shallow
             # crossing angles a gentle overlap produces
@@ -482,20 +491,20 @@ def _loop_cell(path, signed, width, interlace, mode, weave_height,
                         for j in range(len(allc))]
                 mg = min((g for g in gaps if g > 1e-9), default=total)
                 half = min(half, 0.4 * mg)
-            pieces = isl._cut_band(path, closed, cut_s, half, s, total)
+            pieces = cut_band(path, closed, cut_s, half, s, total)
         else:
             pieces = [(path, closed)]
         for sp, sp_closed in pieces:
             if len(sp) < 2:
                 continue
-            left, right = isl.miter_ribbon(sp, width, sp_closed)
-            cv, cf = isl.band_ribbon_faces(left, right, sp_closed,
+            left, right = miter_ribbon(sp, width, sp_closed)
+            cv, cf = band_ribbon_faces(left, right, sp_closed,
                                            height)
             if cf:
                 sub_cells.append((cv, cf, [matof(0)] * len(cf)))
     else:                                     # plain flat ribbon
-        left, right = isl.miter_ribbon(path, width, closed)
-        cv, cf = isl.band_ribbon_faces(left, right, closed, height)
+        left, right = miter_ribbon(path, width, closed)
+        cv, cf = band_ribbon_faces(left, right, closed, height)
         if cf:
             sub_cells.append((cv, cf, [matof(0)] * len(cf)))
 
@@ -604,7 +613,7 @@ def build_tube_cells(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
             path3d = [tuple(p) for p in relaxed[i]]
         else:
             pl2 = [(float(p[0]), float(p[1])) for p in path]
-            zoff = isl._weave_zoff(pl2, True, signed[i], lift)
+            zoff = weave_zoff(pl2, True, signed[i], lift)
             path3d = [(pl2[j][0], pl2[j][1], zoff[j])
                       for j in range(len(pl2))]
         verts, faces = _tube_welded(path3d, tr, sides)
@@ -644,7 +653,7 @@ def build_tube_cells(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
 # their bounding cells and only tests co-bucketed pairs, so dense
 # guilloche / high-frequency plaids stay well under the naive O(n^2).
 # Over/under is then solved with the same parity union-find
-# (`_solve_over` / `isl._ParityDSU`): an arrangement of closed curves is
+# (`_solve_over` / `ParityDSU`): an arrangement of closed curves is
 # always checkerboard 2-colourable, so the twin-sinusoid and warped-grid
 # families weave a perfectly alternating link; self-crossing guilloche
 # and the petal/ring polar system are best-effort (near-tangent
@@ -1237,7 +1246,7 @@ def curve_source_strands(source, nx, ny, amp, freq, phase, warp,
     if source in ('WAVY_PLAID', 'WARPED_GRID', 'SMOOTH_PLAIT'):
         base = _apply_boundary(base, boundary)
     if style == 'SMOOTH' and int(subdiv) >= 2:
-        base = [(np.asarray(isl.catmull_rom([tuple(q) for q in p],
+        base = [(np.asarray(catmull_rom([tuple(q) for q in p],
                                             c, int(subdiv)), float), c)
                 for p, c in base]
     return base
@@ -1363,7 +1372,7 @@ def build_curve_tube_cells(strands=None, carpet=None, tube_radius=0.04,
     for i, path in enumerate(carpet['paths']):
         cl = carpet['closed'][i]
         pl2 = [(float(p[0]), float(p[1])) for p in path]
-        zoff = isl._weave_zoff(pl2, cl, signed[i], lift)
+        zoff = weave_zoff(pl2, cl, signed[i], lift)
         path3d = [(pl2[j][0], pl2[j][1], zoff[j])
                   for j in range(len(pl2))]
         if cl:
@@ -1575,7 +1584,7 @@ def _ribbon_edges(paths, closed, half):
         pl = [(float(q[0]), float(q[1])) for q in p]
         if len(pl) < 2:
             continue
-        left, right = isl.miter_ribbon(pl, 2.0 * half, bool(c))
+        left, right = miter_ribbon(pl, 2.0 * half, bool(c))
         epaths.append(np.asarray(left, float))
         eclosed.append(bool(c))
         epaths.append(np.asarray(right, float))
@@ -1830,7 +1839,7 @@ def relax_carpet(carpet, lattice, nx, ny, iters=120, clearance=0.10,
         p2 = np.asarray(carpet['paths'][i], float)
         sg = sorted(signed_f[a].items())
         P[a, :, :2] = p2
-        P[a, :, 2] = isl._weave_zoff([tuple(q) for q in p2], True,
+        P[a, :, 2] = weave_zoff([tuple(q) for q in p2], True,
                                      sg, lift)
 
     # -- flatten weight: small at a crossing bead, ramping to 1 within
@@ -2082,7 +2091,7 @@ def build_torus_tube_cells(k=4, nx=3, ny=3, amp=0.10, overlap=1.15,
         else:
             pl2 = [(float(p[0]), float(p[1]))
                    for p in carpet['paths'][i]]
-            zoff = isl._weave_zoff(pl2, True, signed[i], lift)
+            zoff = weave_zoff(pl2, True, signed[i], lift)
             flat = [(pl2[j][0], pl2[j][1], zoff[j])
                     for j in range(len(pl2))]
         center = _torus_warp(flat, W, H, R, r)
@@ -2424,7 +2433,7 @@ def build_torus_tiling_tube_cells(tiling_name='SQUARE', nx=3, ny=3, amp=0.10,
             flat = [tuple(p) for p in relaxed[i]]
         else:
             pl2 = [(float(p[0]), float(p[1])) for p in carpet['paths'][i]]
-            zoff = isl._weave_zoff(pl2, True, signed[i], lift)
+            zoff = weave_zoff(pl2, True, signed[i], lift)
             flat = [(pl2[j][0], pl2[j][1], zoff[j])
                     for j in range(len(pl2))]
         center = _torus_warp_latt(flat, Binv, nx, ny, R, r)
@@ -2825,7 +2834,7 @@ def build_uvmesh_tube_cells(uv_tris, k=4, uv_tiles=6, amp=0.10,
     cells = []
     for i, path in enumerate(carpet['paths']):
         pl2 = [(float(p[0]), float(p[1])) for p in path]
-        zoff = isl._weave_zoff(pl2, True, signed[i], lift)
+        zoff = weave_zoff(pl2, True, signed[i], lift)
         warped = []
         for j in range(len(pl2)):
             s = sample(*uvmap(pl2[j][0], pl2[j][1]))
@@ -3191,7 +3200,7 @@ def build_sphere_carpet(freq=2, k=0, amp=0.10, overlap=1.15,
 
 
 def _weave_roff(P, signed, h):
-    """Per-bead RADIAL offset of a sphere loop: isl._weave_zoff's
+    """Per-bead RADIAL offset of a sphere loop: weave_zoff's
     smoothstep between crossings, but along the 3D arclength of the
     closed loop, applied by scaling each unit-sphere point to radius
     1 + roff (over = outward, under = inward)."""
@@ -4213,7 +4222,7 @@ def build_tiling_tube_cells(tiling_name='SQUARE', nx=3, ny=3,
             path3d = [tuple(p) for p in relaxed[i]]
         else:
             pl2 = [(float(p[0]), float(p[1])) for p in path]
-            zoff = isl._weave_zoff(pl2, True, signed[i], lift)
+            zoff = weave_zoff(pl2, True, signed[i], lift)
             path3d = [(pl2[j][0], pl2[j][1], zoff[j])
                       for j in range(len(pl2))]
         verts, faces = _tube_welded(path3d, tr, sides)
@@ -4262,7 +4271,7 @@ def relax_tiling_carpet(carpet, iters=120, clearance=0.10,
     for i in range(L):
         p2 = np.asarray(paths[i], float)
         P[i, :, :2] = p2
-        P[i, :, 2] = isl._weave_zoff([tuple(q) for q in p2], True,
+        P[i, :, 2] = weave_zoff([tuple(q) for q in p2], True,
                                      signed[i], lift)
     seed_xy = P[:, :, :2].copy()
     pinned = np.array([0.0 if i in carpet['interior'] else 1.0
