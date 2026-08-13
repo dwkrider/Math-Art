@@ -1,9 +1,10 @@
 # Blender object builders for the pattern operators.
 #
 # Part of the Math Art Pattern Engine (`math_art/patterns/`), split out of
-# the former single-file `pattern_common.py`.  Python + numpy only -- no
-# `bpy` -- so the engine imports and self-tests headlessly; the registered
-# operators stay in their flat generator modules and import this package.
+# the former single-file `pattern_common.py`.  This is the ONE module here
+# that touches `bpy`; everything Blender-facing sits behind an
+# `if _IN_BLENDER:` guard so the file still imports headlessly, and the
+# package facade deliberately does not re-export it.
 #
 # The ONLY module here that touches `bpy`.  It is deliberately not
 # re-exported from the package facade, so `import patterns` stays
@@ -12,7 +13,9 @@
 from math import cos, sin, pi, hypot, gcd            # noqa: F401
 import numpy as np
 
-from .relief import center_scale, merge_cells
+from .motifs import PALETTE_RGBA
+from .relief import (_apply_transform, _global_transform,
+                     center_scale, center_xy, merge_cells)
 
 
 # Blender object builder (shared by the pattern operators)
@@ -152,3 +155,50 @@ if _IN_BLENDER:
 
     def unregister():
         pass
+
+
+def _selftest():
+    """Import this module AS IF Blender were present.
+
+    Everything below `if _IN_BLENDER:` is invisible to a headless run, so
+    a missing import in there is latent until a user clicks the operator.
+    That is exactly how this module once shipped referring to four names
+    it never imported.  Stubbing `bpy` re-executes the guarded branch, and
+    the names the generators reach for through `pattern_common` are then
+    asserted to exist.
+    """
+    import importlib
+    import sys
+    import types
+
+    stub = types.ModuleType('bpy')
+    stub.types = types.SimpleNamespace(Operator=object, Menu=object)
+    stub.props = types.SimpleNamespace()
+    stub.data = types.SimpleNamespace()
+    stub.utils = types.SimpleNamespace(
+        register_class=lambda c: None, unregister_class=lambda c: None)
+    stub.ops = types.SimpleNamespace()
+    saved = {k: sys.modules.get(k)
+             for k in ('bpy', 'bmesh', 'bpy_extras')}
+    sys.modules['bpy'] = stub
+    sys.modules['bmesh'] = types.ModuleType('bmesh')
+    sys.modules['bpy_extras'] = types.ModuleType('bpy_extras')
+    try:
+        mod = importlib.reload(sys.modules[__name__])
+        wanted = ('build_object', 'emit', 'register', 'unregister',
+                  'ADD_MENU')
+        missing = [n for n in wanted if not hasattr(mod, n)]
+        ok = not missing and getattr(mod, '_IN_BLENDER', False)
+        print(f"patterns.emit: under a stub bpy the module imports and "
+              f"exposes {len(wanted) - len(missing)}/{len(wanted)} names "
+              f"{'OK' if ok else 'FAIL missing ' + ','.join(missing)}")
+        if not ok:
+            raise AssertionError(f"emit incomplete under bpy: {missing}")
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                sys.modules.pop(k, None)
+            else:
+                sys.modules[k] = v
+        importlib.reload(sys.modules[__name__])
+    print("RESULT: OK")

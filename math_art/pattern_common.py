@@ -83,6 +83,21 @@ except ImportError:                   # flat import (legacy / test runner)
 
 
 
+# The Blender layer moved to `patterns.emit`.  It only defines these names
+# when `bpy` is importable, so the re-export is guarded: headless callers
+# (and the test runner) simply do not see them, exactly as before.
+try:
+    from .patterns.emit import (ADD_MENU, build_object, emit, register,
+                                unregister)
+except ImportError:                   # flat import
+    try:
+        from patterns.emit import (ADD_MENU, build_object, emit, register,
+                                   unregister)
+    except ImportError:               # headless: no Blender layer to re-export
+        pass
+
+
+
 def _selftest():
     # Self-test of the orbifold router: all 17 wallpaper signatures
     # must be Euclidean (cost 2), sample point groups spherical, and a
