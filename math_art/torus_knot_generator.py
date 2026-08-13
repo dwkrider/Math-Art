@@ -33,6 +33,11 @@ import math
 from math import gcd, pi
 
 try:
+    from .knots import torus_link_components as _shared_torus_link
+except ImportError:
+    from knots import torus_link_components as _shared_torus_link
+
+try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
                            BoolProperty)
@@ -41,25 +46,15 @@ except ImportError:
     _IN_BLENDER = False
 
 
+# The (p, q) torus link curve is shared with link_generator; both had
+# their own copy of the same construction.  It lives in `knots.curves`
+# now.  This generator's radii (major 0.7, minor 0.3) differ from the
+# link generator's, so they are passed explicitly rather than baked in.
+
 def torus_link_components(p, q, samples, major=0.7, minor=0.3):
-    """List of closed polylines, one per link component.  The
-    (p, q) torus link has d = gcd(p, q) components, each a reduced
-    (p/d, q/d) torus knot; on the flat torus they are parallel
-    lines of slope q'/p' spaced 2 pi / p apart in the tube angle
-    (spacing by 2 pi / d would re-trace the same curve when
-    p/d > 1)."""
-    import numpy as np
-    d = gcd(p, q)
-    pr, qr = p // d, q // d
-    t = np.linspace(0.0, 2.0 * pi, samples, endpoint=False)
-    comps = []
-    for k in range(d):
-        ph = 2.0 * pi * k / p
-        rr = major + minor * np.cos(qr * t + ph)
-        P = np.stack([rr * np.cos(pr * t), rr * np.sin(pr * t),
-                      minor * np.sin(qr * t + ph)], axis=1)
-        comps.append(P)
-    return comps
+    """List of closed polylines, one per link component -- see
+    `knots.curves.torus_link_components`."""
+    return _shared_torus_link(p, q, samples, R=major, r=minor)
 
 
 if _IN_BLENDER:
@@ -123,10 +118,9 @@ if _IN_BLENDER:
             color = self.color_components and d > 1
             if self.output == 'MESH':
                 try:
-                    from . import prime_knot_generator as pk
+                    from .knots import closed_tube as tube
                 except ImportError:
-                    import prime_knot_generator as pk
-                tube = pk.CURVE_OT_prime_knot_add._tube
+                    from knots import closed_tube as tube
                 verts = []
                 faces = []
                 midx = []

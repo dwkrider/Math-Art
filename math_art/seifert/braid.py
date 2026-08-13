@@ -25,6 +25,13 @@ import re
 from dataclasses import dataclass
 from typing import Iterator
 
+try:                                  # inside the math_art package
+    from ..knots.braid import count_cycles as _count_cycles
+    from ..knots.braid import strand_permutation as _strand_permutation
+except ImportError:                   # flat import (headless test runner)
+    from knots.braid import count_cycles as _count_cycles
+    from knots.braid import strand_permutation as _strand_permutation
+
 __all__ = ["Crossing", "Braid", "torus_knot"]
 
 _TOKEN = re.compile(r"([A-Za-z])(\d*)")
@@ -111,32 +118,44 @@ class Braid:
 
     n_crossings = n_bands
 
+    def signed_word(self) -> list[int]:
+        """This braid as a signed-integer word: `+i` is s_i, `-i` its
+        inverse, indices 1-based.
+
+        The canonical interchange form between this package and
+        :mod:`math_art.knots`.  Note the two engines' LETTER notations are
+        opposites -- here an uppercase letter is the right-hand (positive)
+        crossing, after van Wijk and Cohen, while ``knots`` follows
+        Gittings, where lowercase is positive.  So ``'AAA'`` is a
+        different braid to each of them, and this integer form is what
+        they exchange instead of strings.
+        """
+        return [(c.row + 1) * c.sign for c in self.crossings]
+
+    @classmethod
+    def from_signed_word(cls, word, strands: int | None = None) -> "Braid":
+        """Build a braid from a signed-integer word (see `signed_word`)."""
+        letters = []
+        for g in word:
+            letter = chr(ord("A") + abs(g) - 1)
+            letters.append(letter if g > 0 else letter.lower())
+        return cls("".join(letters), strands)
+
     def permutation(self) -> list[int]:
         """Strand permutation of the closure.
 
         Each crossing transposes its two strands; the link components are the
-        cycles of the product.
+        cycles of the product.  Shared with :mod:`math_art.knots.braid`,
+        which needs the same permutation from its own word form -- the
+        computation ignores crossing signs, so the engines' opposite
+        letter conventions do not matter here.
         """
-        perm = list(range(self.strands))
-        for c in self.crossings:
-            k = c.row
-            perm[k], perm[k + 1] = perm[k + 1], perm[k]
-        return perm
+        return _strand_permutation(self.signed_word(), self.strands)
 
     @property
     def n_components(self) -> int:
         """Number of link components: cycles of the strand permutation."""
-        perm = self.permutation()
-        seen, cycles = set(), 0
-        for start in range(self.strands):
-            if start in seen:
-                continue
-            cycles += 1
-            i = start
-            while i not in seen:
-                seen.add(i)
-                i = perm[i]
-        return cycles
+        return _count_cycles(self.permutation())
 
     @property
     def euler_characteristic(self) -> int:
@@ -180,3 +199,100 @@ def torus_knot(p: int, q: int) -> "Braid":
     if p < 2 or q < 1:
         raise ValueError("need p >= 2 and q >= 1")
     return Braid("".join(chr(ord("A") + i) for i in range(p - 1)) * q)
+
+
+def _selftest():
+    ok = True
+
+    # Letter parsing, including the repeat-count grammar this notation has
+    # and the Gittings-style one does not.
+    good = (Braid("A3").signed_word() == [1, 1, 1]
+            and Braid("AAA").signed_word() == [1, 1, 1]
+            and Braid("Ab").signed_word() == [1, -2]
+            and Braid("AbAb").strands == 3)
+    ok &= good
+    print(f"seifert.braid: letter notation + repeat counts "
+          f"{'OK' if good else 'FAIL'}")
+
+    # THE CONVENTION TRAP.  This package follows van Wijk and Cohen, where
+    # an UPPERCASE letter is the positive crossing; math_art.knots follows
+    # Gittings, where LOWERCASE is positive.  The same string therefore
+    # denotes mirror-image braids, and the two engines must exchange
+    # signed-integer words rather than strings.  Assert that explicitly, so
+    # nobody later "unifies" the parsers and silently mirrors output.
+    try:
+        from ..knots.braid import parse_letters
+    except ImportError:
+        from knots.braid import parse_letters
+    bad = []
+    for w in ("AAA", "AbAb", "AABacBc", "aBaBa"):
+        mine, theirs = Braid(w).signed_word(), parse_letters(w)
+        if mine != [-g for g in theirs]:
+            bad.append(w)
+    good = not bad
+    ok &= good
+    print(f"seifert.braid: sign convention is opposite to knots' on every "
+          f"word {'OK' if good else 'FAIL ' + ','.join(bad)}")
+
+    # The signed-integer bridge round-trips, preserving strand count.
+    bad = []
+    for w in ("AAA", "AbAb", "AABacBc", "A3", "aBaBa"):
+        b = Braid(w)
+        rt = Braid.from_signed_word(b.signed_word(), b.strands)
+        if rt.signed_word() != b.signed_word() or rt.strands != b.strands:
+            bad.append(w)
+    good = not bad
+    ok &= good
+    print(f"seifert.braid: signed-word round-trip "
+          f"{'OK' if good else 'FAIL ' + ','.join(bad)}")
+
+    # Component count is sign-independent, so despite the opposite letter
+    # conventions BOTH engines must agree on it for the same string.
+    try:
+        from ..knots.braid import closure_components
+    except ImportError:
+        from knots.braid import closure_components
+    bad = []
+    for w in ("AAA", "AbAb", "AABacBc", "aBaBa", "ABABAB"):
+        if Braid(w).n_components != closure_components(parse_letters(w)):
+            bad.append(w)
+    good = not bad
+    ok &= good
+    print(f"seifert.braid: component count agrees with knots "
+          f"{'OK' if good else 'FAIL ' + ','.join(bad)}")
+
+    # Seifert's algorithm on a braid closure: n disks, one band per
+    # crossing, chi = disks - bands, and genus from chi.  The trefoil and
+    # figure-eight both have genus 1; the (2,5) torus knot has genus 2.
+    cases = [("AAA", 2, 3, -1, 1), ("AbAb", 3, 4, -1, 1),
+             ("A5", 2, 5, -3, 2)]
+    bad = []
+    for w, disks, bands, chi, genus in cases:
+        b = Braid(w)
+        if (b.n_disks, b.n_bands, b.euler_characteristic) != (disks, bands,
+                                                              chi):
+            bad.append(f"{w}:{b.n_disks},{b.n_bands},"
+                       f"{b.euler_characteristic}")
+        elif b.genus != genus:
+            bad.append(f"{w}:genus {b.genus}!={genus}")
+    good = not bad
+    ok &= good
+    print(f"seifert.braid: disk/band/chi/genus on {len(cases)} braids "
+          f"{'OK' if good else 'FAIL ' + ','.join(bad)}")
+
+    # torus_knot(p, q) must build a braid whose closure is a single
+    # component when gcd(p, q) = 1, and gcd components otherwise.
+    from math import gcd
+    bad = []
+    for p, q in ((2, 3), (2, 5), (3, 4), (2, 4), (3, 6)):
+        got = torus_knot(p, q).n_components
+        if got != gcd(p, q):
+            bad.append(f"({p},{q}):{got}!={gcd(p, q)}")
+    good = not bad
+    ok &= good
+    print(f"seifert.braid: torus_knot component counts "
+          f"{'OK' if good else 'FAIL ' + ','.join(bad)}")
+
+    print("RESULT:", "OK" if ok else "FAIL")
+    if not ok:
+        raise AssertionError("seifert.braid self-test failed")
