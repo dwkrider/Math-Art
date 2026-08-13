@@ -326,31 +326,29 @@ def dla(count=900, dim=3, seed_kind="POINT", stickiness=1.0, size=48,
         pts.append(key)
         parents.append(int(parent))
 
+    # Every seed particle is its OWN nucleation site, with no parent.
+    # Chaining them in creation order looks harmless and is not: the
+    # sphere seed places them at random points all over the shell, so
+    # each link becomes a rod spanning the whole cluster.  The aggregate
+    # is a FOREST when there are several seeds, which is exactly right --
+    # several nucleation centres.
     if seed_kind == "LINE":
-        prev = -1
         for x in range(-half, half + 1):
-            put((x,) + (0,) * (dim - 1), prev)
-            prev = len(pts) - 1
+            put((x,) + (0,) * (dim - 1))
     elif seed_kind == "RING":
-        prev = -1
         for a in np.linspace(0, 2 * np.pi, 4 * half, endpoint=False):
             p = [int(half * 0.6 * np.cos(a)), int(half * 0.6 * np.sin(a))]
-            put(p + [0] * (dim - 2), prev)
-            prev = len(pts) - 1
+            put(p + [0] * (dim - 2))
     elif seed_kind == "DISK":
-        prev = -1
         for x in range(-half // 2, half // 2 + 1):
             for y in range(-half // 2, half // 2 + 1):
                 if x * x + y * y <= (half // 2) ** 2:
-                    put([x, y] + [0] * (dim - 2), prev)
-                    prev = len(pts) - 1
+                    put([x, y] + [0] * (dim - 2))
     elif seed_kind == "SPHERE":
-        prev = -1
         for _ in range(400):
             v = rng.normal(size=dim)
             v = v / (np.linalg.norm(v) or 1.0) * (half * 0.5)
-            put(v.astype(int), prev)
-            prev = len(pts) - 1
+            put(v.astype(int))
     else:
         put((0,) * dim)
 
@@ -361,7 +359,19 @@ def dla(count=900, dim=3, seed_kind="POINT", stickiness=1.0, size=48,
             o[ax] = s
             offs.append(tuple(o))
 
+    # Release walkers from outside the SEED, not from a fixed radius.
+    # An extended seed -- a line spanning the lattice, a disk, a shell --
+    # swallows the spawn point, so the walker starts on an occupied cell
+    # and nothing accretes: the line seed grew five particles out of
+    # seven hundred.
     radius = 3.0
+    if pts:
+        radius = float(np.linalg.norm(np.asarray(pts, dtype=float),
+                                      axis=1).max()) + 3.0
+    # The growth limit is relative to the seed too.  An absolute cap of
+    # half the lattice is already exceeded by a line seed spanning the
+    # grid, so the run aborted before a single walker was released.
+    limit = radius + half
     for _ in range(int(count)):
         v = rng.normal(size=dim)
         v = v / (np.linalg.norm(v) or 1.0)
@@ -380,7 +390,7 @@ def dla(count=900, dim=3, seed_kind="POINT", stickiness=1.0, size=48,
             p = p + np.array(offs[int(rng.integers(len(offs)))])
             if np.linalg.norm(p) > radius * 2.5 + 6:
                 break
-        if radius > half - 2:
+        if radius > limit:
             break
     P = np.asarray(pts, dtype=float)
     if dim == 2:
@@ -571,11 +581,25 @@ def _selftest():
         # as a bag of dots.
         assert (par < np.arange(len(par))).all(), kind
         assert int((par < 0).sum()) >= 1, kind
-    # every stuck particle is lattice-adjacent to its parent
-    pts, par = dla(count=200, dim=3, size=28, seed=6)
-    link = par >= 0
-    step = np.abs(pts[link] - pts[par[link]]).sum(axis=1)
-    assert np.allclose(step, 1.0), sorted(set(step.tolist()))[:5]
+    # EVERY edge must be a single lattice step, for every seed shape.
+    # Testing only the default POINT seed missed the real failure: the
+    # sphere seed chained its particles in creation order, so each link
+    # spanned the whole cluster and the aggregate rendered as a ball of
+    # crossing rods.
+    for kind in SEEDS:
+        pts, par = dla(count=250, dim=3, seed_kind=kind, size=28, seed=6)
+        link = par >= 0
+        # An extended seed must still ACCRETE: walkers have to be
+        # released from outside it, or they start on an occupied cell
+        # and the cluster never grows.
+        assert int(link.sum()) > 20, f"{kind}: only {int(link.sum())} stuck"
+        step = np.abs(pts[link] - pts[par[link]]).sum(axis=1)
+        assert np.allclose(step, 1.0),             f"{kind}: edge lengths {sorted(set(step.tolist()))[:5]}"
+        # seeds are independent roots, so a multi-seed cluster is a
+        # forest rather than one tree
+        assert int((par < 0).sum()) >= 1, kind
+    assert int((dla(count=250, dim=3, seed_kind="SPHERE",
+                    size=28, seed=6)[1] < 0).sum()) > 1
     # 2-D stays planar
     flat, _p = dla(count=150, dim=2, size=28, seed=7)
     assert abs(float(flat[:, 2].max() - flat[:, 2].min())) < 1e-9
