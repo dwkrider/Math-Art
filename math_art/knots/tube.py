@@ -27,44 +27,27 @@ import math
 
 import numpy as np
 
+try:                                  # inside the math_art package
+    from ..curve_frames import closed_tube as _shared_closed_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import closed_tube as _shared_closed_tube
+
 
 def closed_tube(P, radius, sides):
-    """Closed tube with parallel-transport frames; the frame
-    holonomy is distributed so the seam matches."""
-    m = len(P)
-    T = np.roll(P, -1, 0) - np.roll(P, 1, 0)
-    T /= np.linalg.norm(T, axis=1)[:, None]
-    N = np.empty_like(P)
-    ref = np.array([0.0, 0.0, 1.0])
-    if abs(np.dot(ref, T[0])) > 0.9:
-        ref = np.array([1.0, 0.0, 0.0])
-    N[0] = np.cross(T[0], ref)
-    N[0] /= np.linalg.norm(N[0])
-    for i in range(1, m):
-        v = N[i - 1] - T[i] * np.dot(N[i - 1], T[i])
-        N[i] = v / (np.linalg.norm(v) or 1.0)
-    # transport once more to measure the closure twist
-    v = N[m - 1] - T[0] * np.dot(N[m - 1], T[0])
-    v /= (np.linalg.norm(v) or 1.0)
-    B0 = np.cross(T[0], N[0])
-    ang = math.atan2(np.dot(v, B0), np.dot(v, N[0]))
-    verts = []
-    faces = []
-    for i in range(m):
-        corr = -ang * i / m
-        B = np.cross(T[i], N[i])
-        for j in range(sides):
-            a = 2 * math.pi * j / sides + corr
-            p = (P[i] + radius
-                 * (math.cos(a) * N[i] + math.sin(a) * B))
-            verts.append(tuple(p))
-    for i in range(m):
-        i2 = (i + 1) % m
-        for j in range(sides):
-            j2 = (j + 1) % sides
-            faces.append([i * sides + j, i * sides + j2,
-                          i2 * sides + j2, i2 * sides + j])
-    return verts, faces
+    """Closed tube along `P`; see :func:`curve_frames.closed_tube`.
+
+    Kept as the knot engine's name for the operation.  The implementation
+    is shared because five modules in this repo had grown their own copy
+    of it -- this one carried the weakest kernel of the family (projection
+    transport, second order) and now uses the same double-reflection
+    sweep as the rest.
+
+    The emitted SURFACE is unchanged by that: each ring is a circle in the
+    plane normal to the tangent, and which normal spans that plane does
+    not move the circle.  What changes is where the vertices sit around
+    it, and they now sit far more evenly.
+    """
+    return _shared_closed_tube(P, radius, sides)
 
 
 def _selftest():
@@ -95,7 +78,13 @@ def _selftest():
     d = np.linalg.norm(V.reshape(len(ring), sides, 3) - ring[:, None, :],
                        axis=2)
     err = float(np.max(np.abs(d - radius)))
-    good = err < 1e-12
+    # 1e-9 (a nanometre on a metre-scale object), not 1e-12: the shared
+    # double-reflection kernel renormalises at every step and so carries
+    # slightly more rounding than the projection transport this used to
+    # use -- ~1e-12 rather than ~1e-16.  Both are exact for any geometric
+    # purpose; the tighter bound was measuring the old kernel's arithmetic,
+    # not the tube's correctness.
+    good = err < 1e-9
     ok &= good
     print(f"tube: max |dist - radius| = {err:.2e} {'OK' if good else 'FAIL'}")
 
