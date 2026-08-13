@@ -38,6 +38,26 @@ import numpy as np
 
 PHI = (1 + 5 ** 0.5) / 2
 
+try:                                  # inside the math_art package
+    from .polyhedra.seeds import icosa_faces as _icosa_faces
+    from .polyhedra.seeds import seed_poly as _shared_seed
+except ImportError:                   # flat import (test runner)
+    from polyhedra.seeds import icosa_faces as _icosa_faces
+    from polyhedra.seeds import seed_poly as _shared_seed
+
+
+def seed_poly(kind):
+    """Platonic seed normalised to unit circumradius.
+
+    This module and two others built their seeds this way, while
+    three others used the raw coordinates.  The two sets are
+    EXACTLY related by that scale (verified vertex for vertex on
+    all five solids, with identical face lists), so the shared
+    table carries both behind its `unit` flag and this wrapper
+    keeps the call sites here reading as before.
+    """
+    return _shared_seed(kind, unit=True)
+
 
 # ---- seed polyhedra (triangular faces only) ------------------------------
 
@@ -46,24 +66,6 @@ def _unit(v):
     return tuple(x / l for x in v)
 
 
-def seed_poly(kind):
-    if kind == 'TETRA':
-        V = [(1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)]
-        F = [(0, 1, 2), (0, 2, 3), (0, 3, 1), (1, 3, 2)]
-    elif kind == 'OCTA':
-        V = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0),
-             (0, 0, 1), (0, 0, -1)]
-        F = [(0, 2, 4), (2, 1, 4), (1, 3, 4), (3, 0, 4),
-             (2, 0, 5), (1, 2, 5), (3, 1, 5), (0, 3, 5)]
-    elif kind == 'ICOSA':
-        V = []
-        for a in (-1, 1):
-            for b in (-PHI, PHI):
-                V += [(0, a, b), (a, b, 0), (b, 0, a)]
-        F = _icosa_faces(V)
-    else:
-        raise ValueError(kind)
-    return [_unit(v) for v in V], [list(f) for f in F]
 
 
 def quad_seed(kind):
@@ -121,39 +123,6 @@ def quad_geodesic(V, Fq, freq):
     return [inv[i] for i in range(len(verts))], faces
 
 
-def _icosa_faces(V):
-    """Triangles of the icosahedron given its 12 vertices: all vertex
-    triples at minimal mutual distance."""
-    n = len(V)
-    emin = None
-    d2 = {}
-    for i in range(n):
-        for j in range(i + 1, n):
-            d = sum((V[i][k] - V[j][k]) ** 2 for k in range(3))
-            d2[(i, j)] = d
-            emin = d if emin is None else min(emin, d)
-    adj = {i: set() for i in range(n)}
-    for (i, j), d in d2.items():
-        if d < emin * 1.2:
-            adj[i].add(j)
-            adj[j].add(i)
-    F = set()
-    for i in range(n):
-        for j in adj[i]:
-            for k in adj[i] & adj[j]:
-                F.add(tuple(sorted((i, j, k))))
-    faces = []
-    for f in F:
-        a, b, c = (V[i] for i in f)
-        nx = ((b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]),
-              (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]),
-              (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
-        cen = [(a[k] + b[k] + c[k]) / 3 for k in range(3)]
-        if sum(nx[k] * cen[k] for k in range(3)) < 0:
-            faces.append([f[0], f[2], f[1]])
-        else:
-            faces.append(list(f))
-    return faces
 
 
 def orient_vertex_up(V):
