@@ -33,6 +33,26 @@ from math import sin, cos, pi
 
 PHI = (1 + 5 ** 0.5) / 2
 
+try:                                  # inside the math_art package
+    from .polyhedra.seeds import icosa_faces as _icosa_faces
+    from .polyhedra.seeds import seed_poly as _shared_seed
+except ImportError:                   # flat import (test runner)
+    from polyhedra.seeds import icosa_faces as _icosa_faces
+    from polyhedra.seeds import seed_poly as _shared_seed
+
+
+def seed_poly(kind):
+    """Platonic seed normalised to unit circumradius.
+
+    This module and two others built their seeds this way, while
+    three others used the raw coordinates.  The two sets are
+    EXACTLY related by that scale (verified vertex for vertex on
+    all five solids, with identical face lists), so the shared
+    table carries both behind its `unit` flag and this wrapper
+    keeps the call sites here reading as before.
+    """
+    return _shared_seed(kind, unit=True)
+
 
 # ---- spherical seed polyhedra -------------------------------------------
 
@@ -41,90 +61,8 @@ def _unit(v):
     return tuple(x / l for x in v)
 
 
-def seed_poly(kind):
-    if kind == 'TETRA':
-        V = [(1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)]
-        F = [(0, 1, 2), (0, 2, 3), (0, 3, 1), (1, 3, 2)]
-    elif kind == 'OCTA':
-        V = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0),
-             (0, 0, 1), (0, 0, -1)]
-        F = [(0, 2, 4), (2, 1, 4), (1, 3, 4), (3, 0, 4),
-             (2, 0, 5), (1, 2, 5), (3, 1, 5), (0, 3, 5)]
-    elif kind == 'CUBE':
-        V = [(x, y, z) for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)]
-        F = [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1),
-             (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
-    elif kind == 'ICOSA':
-        V = []
-        for a in (-1, 1):
-            for b in (-PHI, PHI):
-                V += [(0, a, b), (a, b, 0), (b, 0, a)]
-        F = _icosa_faces(V)
-    elif kind == 'DODECA':
-        # dual of icosahedron: face centers
-        IV = []
-        for a in (-1, 1):
-            for b in (-PHI, PHI):
-                IV += [(0, a, b), (a, b, 0), (b, 0, a)]
-        IF = _icosa_faces(IV)
-        V = []
-        for f in IF:
-            c = [sum(IV[i][k] for i in f) / 3 for k in range(3)]
-            V.append(tuple(c))
-        # faces: for each icosa vertex, its 5 adjacent icosa faces ordered
-        F = []
-        for vi in range(len(IV)):
-            adj = [fi for fi, f in enumerate(IF) if vi in f]
-            c = IV[vi]
-            u = [V[adj[0]][k] - 0 for k in range(3)]
-            n = _unit(c)
-            u = [u[k] - sum(u[j] * n[j] for j in range(3)) * n[k]
-                 for k in range(3)]
-            w = (n[1] * u[2] - n[2] * u[1], n[2] * u[0] - n[0] * u[2],
-                 n[0] * u[1] - n[1] * u[0])
-            def ang(fi):
-                d = V[fi]
-                return math.atan2(sum(d[k] * w[k] for k in range(3)),
-                                  sum(d[k] * u[k] for k in range(3)))
-            F.append(sorted(adj, key=ang))
-    else:
-        raise ValueError(kind)
-    return [_unit(v) for v in V], [list(f) for f in F]
 
 
-def _icosa_faces(V):
-    """Triangles of the icosahedron given its 12 vertices: all vertex
-    triples at minimal mutual distance."""
-    n = len(V)
-    emin = None
-    d2 = {}
-    for i in range(n):
-        for j in range(i + 1, n):
-            d = sum((V[i][k] - V[j][k]) ** 2 for k in range(3))
-            d2[(i, j)] = d
-            emin = d if emin is None else min(emin, d)
-    adj = {i: set() for i in range(n)}
-    for (i, j), d in d2.items():
-        if d < emin * 1.2:
-            adj[i].add(j)
-            adj[j].add(i)
-    F = set()
-    for i in range(n):
-        for j in adj[i]:
-            for k in adj[i] & adj[j]:
-                F.add(tuple(sorted((i, j, k))))
-    faces = []
-    for f in F:
-        a, b, c = (V[i] for i in f)
-        nx = ((b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]),
-              (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]),
-              (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
-        cen = [(a[k] + b[k] + c[k]) / 3 for k in range(3)]
-        if sum(nx[k] * cen[k] for k in range(3)) < 0:
-            faces.append([f[0], f[2], f[1]])
-        else:
-            faces.append(list(f))
-    return faces
 
 
 def geodesic(V, F, freq):
