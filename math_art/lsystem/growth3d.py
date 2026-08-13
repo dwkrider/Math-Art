@@ -398,6 +398,99 @@ def dla(count=900, dim=3, seed_kind="POINT", stickiness=1.0, size=48,
     return P, np.asarray(parents, dtype=int)
 
 
+def dla_offlattice(count=900, dim=3, seed_kind="POINT", stickiness=1.0,
+                   radius=0.5, extent=22.0, seed=0, max_walk=6000):
+    """Off-lattice DLA: continuous directions, contact sticking.
+
+    The lattice model can only produce axis-aligned bonds, and it does
+    something subtler than square the corners -- it makes the cluster
+    ANISOTROPIC, growing arms preferentially along the lattice axes.
+    That is a real property of lattice DLA, not an artifact, but it is
+    not what a frost dendrite or a coral looks like.
+
+    Here a walker moves in a uniformly random direction and sticks the
+    moment it touches a cluster particle, so nothing privileges any
+    direction and the arms wander smoothly.  Every bond comes out at
+    exactly the contact distance, one particle diameter, because the
+    walker is backed off along the line of approach to the touching
+    position rather than left wherever the step happened to land.
+
+    The step is ADAPTIVE -- a walker far from the cluster jumps most of
+    the way to it in one go.  Without that, a continuous walk at contact
+    resolution spends nearly all its time in empty space and the model
+    is unusably slow.
+    """
+    rng = np.random.default_rng(int(seed))
+    dim = 3 if int(dim) >= 3 else 2
+    r = float(radius)
+    contact = 2.0 * r
+
+    # seeds, in continuous coordinates
+    S = []
+    half = float(extent)
+    if seed_kind == "LINE":
+        for x in np.arange(-half, half + contact, contact):
+            S.append([x] + [0.0] * (dim - 1))
+    elif seed_kind == "RING":
+        rad = half * 0.5
+        for a in np.arange(0, 2 * np.pi, contact / max(rad, 1e-6)):
+            S.append([rad * np.cos(a), rad * np.sin(a)] + [0.0] * (dim - 2))
+    elif seed_kind == "DISK":
+        rad = half * 0.4
+        for x in np.arange(-rad, rad, contact):
+            for y in np.arange(-rad, rad, contact):
+                if x * x + y * y <= rad * rad:
+                    S.append([x, y] + [0.0] * (dim - 2))
+    elif seed_kind == "SPHERE":
+        for _ in range(300):
+            v = rng.normal(size=dim)
+            S.append((v / (np.linalg.norm(v) or 1.0) * half * 0.5).tolist())
+    else:
+        S.append([0.0] * dim)
+
+    pts = [np.asarray(p, dtype=float) for p in S]
+    parents = [-1] * len(pts)
+
+    launch = float(np.linalg.norm(np.asarray(pts), axis=1).max()) + 4.0 * r
+    limit = launch + half
+
+    for _ in range(int(count)):
+        v = rng.normal(size=dim)
+        p = v / (np.linalg.norm(v) or 1.0) * launch
+        P = np.asarray(pts)
+        for _w in range(int(max_walk)):
+            d = np.linalg.norm(P - p, axis=1)
+            j = int(np.argmin(d))
+            gap = float(d[j]) - contact
+            if gap <= 0.0:
+                if rng.random() > float(stickiness):
+                    # refuse: nudge away and keep walking
+                    u = rng.normal(size=dim)
+                    p = p + (u / (np.linalg.norm(u) or 1.0)) * contact
+                    continue
+                # back off along the line of approach so the bond is
+                # exactly one diameter -- otherwise the bond length is
+                # whatever the last step happened to leave
+                w = p - P[j]
+                n = np.linalg.norm(w) or 1.0
+                p = P[j] + (w / n) * contact
+                pts.append(p)
+                parents.append(j)
+                launch = max(launch, float(np.linalg.norm(p)) + 4.0 * r)
+                limit = launch + half
+                break
+            # adaptive step: jump most of the remaining gap
+            u = rng.normal(size=dim)
+            u = u / (np.linalg.norm(u) or 1.0)
+            p = p + u * max(gap * 0.9, contact * 0.35)
+            if np.linalg.norm(p) > limit:
+                break
+    P = np.asarray(pts, dtype=float)
+    if dim == 2:
+        P = np.hstack([P, np.zeros((len(P), 1))])
+    return P, np.asarray(parents, dtype=int)
+
+
 # ---------------------------------------------------------------------
 # PYTHAGORAS
 # ---------------------------------------------------------------------
@@ -600,6 +693,62 @@ def _selftest():
         assert int((par < 0).sum()) >= 1, kind
     assert int((dla(count=250, dim=3, seed_kind="SPHERE",
                     size=28, seed=6)[1] < 0).sum()) > 1
+
+    # --- off-lattice DLA ------------------------------------------------
+    # Every bond must be exactly one particle diameter, because the
+    # walker is backed off to the touching position rather than left
+    # where its step landed.
+    for kind in SEEDS:
+        P, par = dla_offlattice(count=150, dim=3, seed_kind=kind,
+                                radius=0.5, extent=14.0, seed=3)
+        link = par >= 0
+        assert int(link.sum()) > 20, f"{kind}: only {int(link.sum())} stuck"
+        L = np.linalg.norm(P[link] - P[par[link]], axis=1)
+        assert np.allclose(L, 1.0, atol=1e-9), (kind, L.min(), L.max())
+        assert (par < np.arange(len(par))).all(), kind
+
+    # THE POINT OF THE VARIANT: no direction is privileged.  A lattice
+    # bond is axis-aligned, so its unit vector has a component of
+    # exactly 1; an off-lattice bond points anywhere, and for a uniform
+    # direction in 3-D the largest component averages about 0.83.
+    def axis_alignment(P, par):
+        link = par >= 0
+        d = P[link] - P[par[link]]
+        d = d / np.linalg.norm(d, axis=1)[:, None]
+        return float(np.abs(d).max(axis=1).mean())
+    lat_p, lat_q = dla(count=400, dim=3, size=34, seed=3)
+    off_p, off_q = dla_offlattice(count=400, dim=3, radius=0.5,
+                                  extent=17.0, seed=3)
+    assert abs(axis_alignment(lat_p, lat_q) - 1.0) < 1e-9
+    off_align = axis_alignment(off_p, off_q)
+    assert off_align < 0.95, off_align
+
+    # ... and no bond turns by a right angle as a rule: the lattice
+    # model can only turn by multiples of 90 degrees, this one cannot be
+    # concentrated there
+    def right_angle_fraction(P, par):
+        link = np.flatnonzero(par >= 0)
+        got, tot = 0, 0
+        for i in link:
+            g = par[i]
+            if par[g] < 0:
+                continue
+            a = P[i] - P[g]
+            b = P[g] - P[par[g]]
+            na, nb = np.linalg.norm(a), np.linalg.norm(b)
+            if na < 1e-12 or nb < 1e-12:
+                continue
+            c = abs(float(np.dot(a, b) / (na * nb)))
+            tot += 1
+            if c < 0.05:
+                got += 1
+        return got / max(tot, 1)
+    assert right_angle_fraction(off_p, off_q) <         right_angle_fraction(lat_p, lat_q)
+
+    # 2-D stays planar here too
+    fp, _fq = dla_offlattice(count=120, dim=2, radius=0.5, extent=12.0,
+                             seed=4)
+    assert abs(float(fp[:, 2].max() - fp[:, 2].min())) < 1e-9
     # 2-D stays planar
     flat, _p = dla(count=150, dim=2, size=28, seed=7)
     assert abs(float(flat[:, 2].max() - flat[:, 2].min())) < 1e-9
@@ -670,6 +819,7 @@ def _selftest():
     assert abs(float((F.max(0) - F.min(0)).max()) - 2.0) < 1e-9
 
     print(f"growth3d: OK -- habit emerges from the envelope (crown "
+          f"[off-lattice axis alignment {off_align:.3f} vs lattice 1.0] "
           f"width aloft: cone {slender(nc):.2f} vs mushroom "
           f"{slender(nb):.2f}), "
           f"lambda sweeps excurrent/decurrent {shapes}, DLA stickiness "

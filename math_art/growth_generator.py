@@ -172,6 +172,21 @@ if _IN_BLENDER:
                         "it packs deeper: wispy dendrite at 1, compact "
                         "moss well below")
         lattice: IntProperty(name="Lattice", default=44, min=12, max=140)
+        dla_kind: EnumProperty(
+            name="Walk",
+            items=[('LATTICE', "Lattice", "Witten-Sander's original: "
+                               "unit steps on a cubic lattice, so every "
+                               "bond is axis-aligned and the arms grow "
+                               "preferentially along the axes"),
+                   ('OFF', "Off-Lattice", "Continuous directions and "
+                           "contact sticking. No direction is "
+                           "privileged, so the dendrites wander "
+                           "smoothly instead of turning square corners")],
+            default='LATTICE')
+        particle: FloatProperty(
+            name="Particle Radius", default=0.5, min=0.1, max=3.0,
+            description="Off-lattice only. Every bond comes out at one "
+                        "particle diameter")
 
         # -- PYTHAGORAS
         depth: IntProperty(name="Depth", default=9, min=1, max=14)
@@ -218,11 +233,19 @@ if _IN_BLENDER:
                     # the grown ones.  Emitting bare points made the
                     # mode look empty: a vertex-only mesh is not drawn
                     # at all in Object Mode.
-                    pts, par = g3.dla(
-                        count=self.walkers, dim=int(self.dla_dim),
-                        seed_kind=self.seed_kind,
-                        stickiness=self.stickiness,
-                        size=self.lattice, seed=self.seed)
+                    if self.dla_kind == 'OFF':
+                        pts, par = g3.dla_offlattice(
+                            count=self.walkers, dim=int(self.dla_dim),
+                            seed_kind=self.seed_kind,
+                            stickiness=self.stickiness,
+                            radius=self.particle,
+                            extent=self.lattice * 0.5, seed=self.seed)
+                    else:
+                        pts, par = g3.dla(
+                            count=self.walkers, dim=int(self.dla_dim),
+                            seed_kind=self.seed_kind,
+                            stickiness=self.stickiness,
+                            size=self.lattice, seed=self.seed)
                     if len(pts) < 2:
                         self.report({'ERROR'}, "no particles stuck")
                         return {'CANCELLED'}
@@ -287,9 +310,11 @@ if _IN_BLENDER:
                           else ("decurrent (spreading)" if self.lam < 0.45
                                 else "intermediate"), icon='INFO')
             elif self.mode == 'DLA':
-                for k in ("walkers", "dla_dim", "seed_kind", "stickiness",
-                          "lattice"):
+                for k in ("dla_kind", "walkers", "dla_dim", "seed_kind",
+                          "stickiness", "lattice"):
                     lay.prop(self, k)
+                if self.dla_kind == 'OFF':
+                    lay.prop(self, "particle")
             else:
                 for k in ("depth", "alpha", "roll", "jitter"):
                     lay.prop(self, k)
@@ -324,10 +349,12 @@ def _selftest():
     nodes2, parents2 = g3.selforg(steps=8, seed=0)
     assert len(nodes2) > 3
 
-    pts, dpar = g3.dla(count=200, dim=3, size=30, seed=0)
-    assert len(pts) > 10 and pts.shape[1] == 3
-    # the aggregate skins through the same path as the trees
-    assert len(g3.pipe_radii(dpar)) == len(pts)
+    for pts, dpar in (g3.dla(count=200, dim=3, size=30, seed=0),
+                      g3.dla_offlattice(count=200, dim=3, radius=0.5,
+                                        extent=15.0, seed=0)):
+        assert len(pts) > 10 and pts.shape[1] == 3
+        # both walks skin through the same path as the trees
+        assert len(g3.pipe_radii(dpar)) == len(pts)
 
     quads, depths = g3.pythagoras(depth=6)
     assert len(quads) == 2 ** 7 - 1
