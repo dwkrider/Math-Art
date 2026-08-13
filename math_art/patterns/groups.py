@@ -141,13 +141,35 @@ def group_closes(sig, tol=1e-6):
 def wallpaper_isometries(sig, nx, ny):
     """All isometries of a wallpaper group over an nx x ny run of the
     lattice, as a list of 3x3 matrices."""
+    return [M for M, _w in wallpaper_isometries_tagged(sig, nx, ny)]
+
+
+def wallpaper_isometries_tagged(sig, nx, ny):
+    """As `wallpaper_isometries`, but each matrix is paired with the GROUP
+    WORD that produced it: `(lattice_i, lattice_j, coset_index)`.
+
+    The word is what turns a pile of matrices back into a group.  Two
+    things need it and neither can be done without it:
+
+      * COLOUR SYMMETRY.  Colouring by a homomorphism G -> S_n (a perfect
+        colouring, in the Conway-Burgiel-Goodman-Strauss sense) needs to
+        know WHICH group element placed each copy.  Colouring by cell
+        index cannot express it -- the colours would not permute under the
+        group action.
+      * The placements layer of the tiling interchange format, which
+        records (prototile, transform, word) rather than baked geometry.
+
+    The loop below already computed the word and threw it away; this
+    returns it.  `wallpaper_isometries` is unchanged and still returns
+    bare matrices, so nothing that exists today has to move.
+    """
     b1, b2, cosets = wallpaper_group(sig)
     out = []
     for i in range(nx):
         for j in range(ny):
             t = T(i * b1[0] + j * b2[0], i * b1[1] + j * b2[1])
-            for g in cosets:
-                out.append(t @ g)
+            for k, g in enumerate(cosets):
+                out.append((t @ g, (i, j, k)))
     return out
 
 

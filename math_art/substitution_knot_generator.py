@@ -88,6 +88,15 @@ from math import pi, cos, sin, hypot
 import numpy as np
 
 try:                                  # inside the math_art package
+    from .patterns.polygon2d import (arclen, unit)
+    from .patterns.ribbon import (band_ribbon_faces, band_ribbon_faces_z, catmull_rom, miter)
+    from .patterns.weave import (ParityDSU, weave_zoff)
+except ImportError:                   # flat import (test runner)
+    from patterns.polygon2d import (arclen, unit)
+    from patterns.ribbon import (band_ribbon_faces, band_ribbon_faces_z, catmull_rom, miter)
+    from patterns.weave import (ParityDSU, weave_zoff)
+
+try:                                  # inside the math_art package
     from .curve_frames import welded_tube
 except ImportError:                   # flat import (test runner)
     from curve_frames import welded_tube
@@ -410,7 +419,7 @@ def solve_alternation(diagram):
     a closed strand of self-crossings -- the checkerboard property --
     but verified anyway)."""
     cross = diagram['cross']
-    dsu = isl._ParityDSU()
+    dsu = ParityDSU()
     passages = []
     for cid, (ia, ib, g, lv) in enumerate(cross):
         dsu.add(cid)
@@ -443,17 +452,17 @@ def _miter_ribbon_var(points, widths, closed, limit=4.0):
     k = len(V)
     left, right = [], []
     if closed:
-        d = [isl._unit(V[(i + 1) % k][0] - V[i][0],
+        d = [unit(V[(i + 1) % k][0] - V[i][0],
                        V[(i + 1) % k][1] - V[i][1]) for i in range(k)]
         for i in range(k):
             dp, dn = d[(i - 1) % k], d[i]
-            mx, my, s = isl._miter((-dp[1], dp[0]), (-dn[1], dn[0]),
+            mx, my, s = miter((-dp[1], dp[0]), (-dn[1], dn[0]),
                                    limit)
             w = 0.5 * widths[i] * s
             left.append((V[i][0] + mx * w, V[i][1] + my * w))
             right.append((V[i][0] - mx * w, V[i][1] - my * w))
     else:
-        d = [isl._unit(V[i + 1][0] - V[i][0], V[i + 1][1] - V[i][1])
+        d = [unit(V[i + 1][0] - V[i][0], V[i + 1][1] - V[i][1])
              for i in range(k - 1)]
         for i in range(k):
             if i == 0:
@@ -464,7 +473,7 @@ def _miter_ribbon_var(points, widths, closed, limit=4.0):
                 mx, my, s = -dp[1], dp[0], 1.0
             else:
                 dp, dn = d[i - 1], d[i]
-                mx, my, s = isl._miter((-dp[1], dp[0]),
+                mx, my, s = miter((-dp[1], dp[0]),
                                        (-dn[1], dn[0]), limit)
             w = 0.5 * widths[i] * s
             left.append((V[i][0] + mx * w, V[i][1] + my * w))
@@ -514,7 +523,7 @@ def _prepare(base, depth, slot_scale, strand_width, telescope, samples,
                       for g, lv in zip(diagram['g'], diagram['lvl'])])
     subdiv = max(1, int(samples))
     step = subdiv if (subdiv >= 2 and n >= 3) else 1
-    path = isl.catmull_rom(ctrl, True, subdiv) if step > 1 else ctrl
+    path = catmull_rom(ctrl, True, subdiv) if step > 1 else ctrl
     m = len(path)
     if step > 1:                        # lerp widths along each segment
         t = np.arange(step) / float(step)
@@ -527,7 +536,7 @@ def _prepare(base, depth, slot_scale, strand_width, telescope, samples,
     lvlp = np.repeat(np.asarray(diagram['lvl'], int), step)
     anchors = [(idx * step, sg * weave_height * fac(g, lv))
                for (idx, sg, g, lv) in signed]
-    zoff = isl._weave_zoff(path, True, anchors, 1.0) if anchors \
+    zoff = weave_zoff(path, True, anchors, 1.0) if anchors \
         else [0.0] * m
     return {'diagram': diagram, 'signed': signed, 'alt_ok': ok,
             'path': path, 'wid': wid, 'lvl': lvlp, 'zoff': zoff,
@@ -552,7 +561,7 @@ def _cut_runs(path, wid, lvl, zoff, signed_paths):
     passage (gap radius ~ the local strand width, which telescopes),
     returning the kept runs as open pieces of (pts, wid, lvl)."""
     m = len(path)
-    s, total = isl._arclen(path, True)
+    s, total = arclen(path, True)
     keep = np.ones(m, bool)
     sa = np.asarray(s)
     for (pi, sg) in signed_paths:
@@ -657,7 +666,7 @@ def build_cells(base='TREFOIL', depth=3, slot_scale=0.42,
         for (sp, sw, sl, _sz, closed) in _cut_runs(path, wid, lvl,
                                                    zoff, signed_paths):
             left, right = _miter_ribbon_var(sp, sw, closed)
-            cv, cf = isl.band_ribbon_faces(left, right, closed, height)
+            cv, cf = band_ribbon_faces(left, right, closed, height)
             if not cf:
                 continue
             span = len(sp) if closed else len(sp) - 1
@@ -666,7 +675,7 @@ def build_cells(base='TREFOIL', depth=3, slot_scale=0.42,
             cells.append((cv, cf, mats))
     else:                               # WOVEN ribbon
         left, right = _miter_ribbon_var(path, wid, True)
-        cv, cf = isl.band_ribbon_faces_z(left, right, True, height,
+        cv, cf = band_ribbon_faces_z(left, right, True, height,
                                          zoff)
         if cf:
             span = len(path)

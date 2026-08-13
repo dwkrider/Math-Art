@@ -92,6 +92,15 @@ from math import exp, hypot, log
 import numpy as np
 
 try:                                  # inside the math_art package
+    from .patterns.polygon2d import (arclen)
+    from .patterns.ribbon import (band_ribbon_faces, band_ribbon_faces_z, catmull_rom, miter_ribbon)
+    from .patterns.weave import (ParityDSU, weave_zoff)
+except ImportError:                   # flat import (test runner)
+    from patterns.polygon2d import (arclen)
+    from patterns.ribbon import (band_ribbon_faces, band_ribbon_faces_z, catmull_rom, miter_ribbon)
+    from patterns.weave import (ParityDSU, weave_zoff)
+
+try:                                  # inside the math_art package
     from .curve_frames import welded_tube
 except ImportError:                   # flat import (test runner)
     from curve_frames import welded_tube
@@ -249,7 +258,7 @@ def _solve_over(cords):
     union-find.  Returns (x, clashes); clashes == 0 means the diagram
     is perfectly alternating (mirror curves are, so this is expected
     to be 0 and the self-test reports it)."""
-    dsu = isl._ParityDSU()
+    dsu = ParityDSU()
     keys = set()
     clashes = 0
     for rec in cords:
@@ -301,8 +310,8 @@ def _cord_render(rec, coords, x, style, subdiv, cord_width):
     smoothed = style == 'SMOOTH' and len(control) >= 3 and subdiv >= 2
     step = subdiv if smoothed else 1
     if smoothed:
-        path = isl.catmull_rom(control, True, subdiv)
-        lw = isl.catmull_rom([(log(s),) for s in scales], True, subdiv)
+        path = catmull_rom(control, True, subdiv)
+        lw = catmull_rom([(log(s),) for s in scales], True, subdiv)
         widths = [cord_width * exp(v[0]) for v in lw]
     else:
         path = [tuple(p) for p in control]
@@ -319,7 +328,7 @@ def _var_ribbon(path, widths, closed):
     """Variable-width mitered ribbon: reuse the Islamic miter machinery
     at unit half-width, then scale each station's offset by its local
     half-width.  Returns (left, right) parallel to `path`."""
-    lu, ru = isl.miter_ribbon(path, 2.0, closed)     # unit offsets
+    lu, ru = miter_ribbon(path, 2.0, closed)     # unit offsets
     left, right = [], []
     for p, a, b, w in zip(path, lu, ru, widths):
         h = 0.5 * w
@@ -429,7 +438,7 @@ def _ribbon_cells(path, widths, signed, mode, weave_height, cord_width,
     breaks the cord where it passes under (gap scaled to the local
     width); WOVEN lifts and dips the whole cord in z.  CHECKER colors
     each inter-crossing arc by its alternation parity."""
-    s, total = isl._arclen(path, True)
+    s, total = arclen(path, True)
     cross_arcs = sorted(s[m] for m, _sg in signed)
 
     def face_mats(arcs, nfaces, closed):
@@ -448,10 +457,10 @@ def _ribbon_cells(path, widths, signed, mode, weave_height, cord_width,
     cells = []
     if mode == 'WOVEN':
         amp = _weave_amp(widths, cord_width, weave_height)
-        zu = isl._weave_zoff(path, True, signed, 1.0)
+        zu = weave_zoff(path, True, signed, 1.0)
         zoff = [zu[i] * amp[i] for i in range(len(path))]
         left, right = _var_ribbon(path, widths, True)
-        cv, cf = isl.band_ribbon_faces_z(left, right, True, 0.0, zoff)
+        cv, cf = band_ribbon_faces_z(left, right, True, 0.0, zoff)
         if cf:
             cells.append((cv, cf, face_mats(s, len(cf), True)))
         return cells
@@ -460,7 +469,7 @@ def _ribbon_cells(path, widths, signed, mode, weave_height, cord_width,
     for pts, ws, arcs, closed in _cut_closed_var(path, widths, s, total,
                                                  cuts):
         left, right = _var_ribbon(pts, ws, closed)
-        cv, cf = isl.band_ribbon_faces(left, right, closed, 0.0)
+        cv, cf = band_ribbon_faces(left, right, closed, 0.0)
         if cf:
             cells.append((cv, cf, face_mats(arcs, len(cf), closed)))
     return cells
@@ -478,7 +487,7 @@ def _tube_cell(path, widths, signed, weave_height, cord_width,
     if n < 3:
         return None
     amp = _weave_amp(widths, cord_width, weave_height, floor=0.6)
-    zu = isl._weave_zoff(path, True, signed, 1.0)
+    zu = weave_zoff(path, True, signed, 1.0)
     p3 = [(path[i][0], path[i][1], zu[i] * amp[i]) for i in range(n)]
     r0 = 0.5 * cord_width
     verts, faces = welded_tube(p3, r0, tube_sides)
@@ -490,7 +499,7 @@ def _tube_cell(path, widths, signed, weave_height, cord_width,
     V = P + f * (V - P)
     verts = [tuple(v) for v in V.reshape(-1, 3)]
     if color_by == 'CHECKER':
-        s, total = isl._arclen(path, True)
+        s, total = arclen(path, True)
         cross_arcs = sorted(s[m] for m, _sg in signed)
         mats = []
         for i in range(n):
@@ -548,7 +557,7 @@ def cord_paths(kind='KITE_R6', iterations=3, cord_width=0.32,
         if len(path) < 2:
             continue
         amp = _weave_amp(widths, cord_width, weave_height)
-        zu = isl._weave_zoff(path, True, signed, 1.0)
+        zu = weave_zoff(path, True, signed, 1.0)
         out.append(([(path[i][0], path[i][1], zu[i] * amp[i])
                      for i in range(len(path))], True))
     return out

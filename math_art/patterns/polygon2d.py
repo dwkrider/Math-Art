@@ -16,6 +16,8 @@
 #   formula" name is later.  For a simple polygon its sign is positive
 #   exactly when the vertices wind counter-clockwise.
 
+from math import hypot
+
 import numpy as np
 
 
@@ -51,6 +53,67 @@ def to_xy(z):
     """
     z = np.asarray(z)
     return np.column_stack([z.real, z.imag]).astype(float)
+
+
+# --- generic planar helpers, extracted from the interlace engine ---
+
+def unit(x, y):
+    L = hypot(x, y)
+    if L < 1e-12:
+        return (0.0, 0.0)
+    return (x / L, y / L)
+
+
+def line_intersection(p0, p1, p2, p3):
+    """Intersection of the infinite lines p0p1 and p2p3, or None."""
+    d0 = (p1[0] - p0[0], p1[1] - p0[1])
+    d1 = (p3[0] - p2[0], p3[1] - p2[1])
+    det = d0[0] * (-d1[1]) - (-d1[0]) * d0[1]
+    if abs(det) < 1e-12:
+        return None
+    bx, by = p2[0] - p0[0], p2[1] - p0[1]
+    s = (bx * (-d1[1]) - (-d1[0]) * by) / det
+    return (p0[0] + s * d0[0], p0[1] + s * d0[1])
+
+
+def arclen(path, closed):
+    """(s, total): cumulative arclength at every vertex and the total
+    length (including the closing edge when `closed`)."""
+    n = len(path)
+    s = [0.0] * n
+    for i in range(1, n):
+        s[i] = s[i - 1] + hypot(path[i][0] - path[i - 1][0],
+                                path[i][1] - path[i - 1][1])
+    total = s[-1]
+    if closed and n >= 2:
+        total += hypot(path[0][0] - path[-1][0],
+                       path[0][1] - path[-1][1])
+    return s, total
+
+
+def points_in_poly(loop, pts):
+    """Even-odd point-in-polygon for an arbitrary closed loop, vectorized
+    over an (N, 2) array of sample points.
+
+    The crossing-number rule: count how many polygon edges a ray from the
+    point crosses; odd means inside.  Works for non-convex and
+    self-intersecting loops, which is why the tiling self-tests use it to
+    measure coverage.
+    """
+    pts = np.asarray(pts, float)
+    x, y = pts[:, 0], pts[:, 1]
+    inside = np.zeros(len(pts), bool)
+    n = len(loop)
+    for i in range(n):
+        x1, y1 = loop[i]
+        x2, y2 = loop[(i + 1) % n]
+        cond = (y1 > y) != (y2 > y)
+        if not cond.any():
+            continue
+        dy = (y2 - y1) if abs(y2 - y1) > 1e-30 else 1e-30
+        xi = x1 + (y - y1) * (x2 - x1) / dy
+        inside ^= cond & (x < xi)
+    return inside
 
 
 def _selftest():

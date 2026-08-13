@@ -19,9 +19,14 @@ operators stay in their flat generator modules.  Layout follows
                 emits and every relief mode consumes.
     relief      Mode-A relief: 2D polygons and segments to watertight
                 prisms on a slab, centred and scaled to the 2 m cube.
-    polygon2d   planar polygon predicates (signed area, winding, the
-                projection to the xy-plane) that the tiling generators
-                had each grown their own copy of.
+    polygon2d   planar predicates (signed area, winding, arclength, line
+                intersection) the tiling generators had each grown their
+                own copy of.
+    ribbon      mitred ribbons, band faces and strand smoothing -- the
+                interlace layer, previously private to the Islamic
+                pattern generator and reached into by four others.
+    weave       the over/under solver: union-find with parity, and the
+                smoothstep z-offset that makes a strand pass under.
     emit        Blender object builders -- the ONLY module here that
                 touches `bpy`, and deliberately not re-exported below, so
                 `import patterns` stays headless.
@@ -42,7 +47,12 @@ from .motifs import MOTIFS, PALETTE_RGBA, iso_type, kind_of, motif
 from .orbifold import (IUC_ORDER, SIG_OF, WALLPAPER_NAMES, geometry_of,
                        orbifold_cost)
 from .placed import Tiling
-from .polygon2d import ensure_ccw, signed_area, to_xy
+from .polygon2d import (arclen, ensure_ccw, line_intersection,
+                        signed_area, to_xy, unit)
+from .ribbon import (angle_cut_piece, band_ribbon_faces,
+                     band_ribbon_faces_z, catmull_rom, cut_band,
+                     cut_cap_on_edge, miter, miter_ribbon)
+from .weave import ParityDSU, weave_zoff
 from .relief import (center_scale, center_xy, merge_cells, prisms,
                      ribbon_polys, slab)
 
@@ -79,6 +89,20 @@ __all__ = [
     "signed_area",
     "ensure_ccw",
     "to_xy",
+    "unit",
+    "line_intersection",
+    "arclen",
+    # ribbons and interlace
+    "miter",
+    "miter_ribbon",
+    "band_ribbon_faces",
+    "band_ribbon_faces_z",
+    "catmull_rom",
+    "cut_band",
+    "cut_cap_on_edge",
+    "angle_cut_piece",
+    "ParityDSU",
+    "weave_zoff",
     # relief
     "ribbon_polys",
     "prisms",
@@ -89,3 +113,40 @@ __all__ = [
 ]
 
 __version__ = "1.0.0"
+
+
+def _selftest():
+    """The facade's contract: everything in __all__ is importable from
+    the package itself, and nothing Blender-facing leaks in.
+
+    A facade that drifts from its own __all__ fails at the caller, not
+    here, so this is cheap insurance -- and it is the check that would
+    have caught `emit`'s names going missing from the shim.
+    """
+    import sys
+    missing = [n for n in __all__ if not hasattr(sys.modules[__name__], n)]
+    ok = not missing
+    print(f"patterns: all {len(__all__)} names in __all__ resolve "
+          f"{'OK' if ok else 'FAIL missing ' + ', '.join(missing)}")
+
+    # importing the package must NOT drag in bpy: emit stays out of the
+    # facade precisely so the engine is headless.
+    leaked = 'bpy' in sys.modules
+    ok &= not leaked
+    print(f"patterns: importing the facade left bpy out of sys.modules "
+          f"{'OK' if not leaked else 'FAIL'}")
+
+    # `emit` must not be RE-EXPORTED.  Note the check is on __all__, not
+    # on hasattr: importing `patterns.emit` anywhere makes Python bind it
+    # as an attribute of this package, so hasattr says nothing about the
+    # facade's contract.  What matters is that `from patterns import *`
+    # does not drag the Blender layer in.
+    leaked_names = [n for n in __all__ if n in ('emit', 'build_object',
+                                                'register', 'unregister')]
+    ok &= not leaked_names
+    print(f"patterns: the Blender layer is not in __all__ "
+          f"{'OK' if not leaked_names else 'FAIL ' + ','.join(leaked_names)}")
+
+    print("RESULT:", "OK" if ok else "FAIL")
+    if not ok:
+        raise AssertionError("patterns facade self-test failed")

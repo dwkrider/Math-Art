@@ -87,6 +87,70 @@ IUC_ORDER = ['p1', 'p2', 'pm', 'pg', 'cm', 'pmm', 'pmg', 'pgg',
 SIG_OF = {v: k for k, v in WALLPAPER_NAMES.items()}
 
 
+# --------------------------------------------------------------------
+# Spherical signatures
+# --------------------------------------------------------------------
+# `orbifold_sphere_generator` predates this parser and names its point
+# groups with ad-hoc tokens -- 'STAR_NN', 'NX', '2STAR_N' and so on --
+# because a signature like `*22n` cannot be spelled in a Blender enum
+# identifier.  They ARE orbifold signatures; only the spelling differs.
+#
+# This table is the translation, so a real signature can route through
+# `geometry_of` and reach the spherical builder.  The seven infinite
+# families take the order n; the seven exceptional groups do not.
+#
+# Reference: Conway, Burgiel and Goodman-Strauss, "The Symmetries of
+# Things" (2008), chapters 3-4 -- the spherical orbifolds and their
+# correspondence with the Schoenflies point groups noted below.
+
+#: The seven infinite families, as EXPLICIT patterns.  Order matters:
+#: '226' is the group 22n with n = 6 (dihedral D6), not the family nn --
+#: so the patterns carrying a literal '22' must be tried first.  And 'nn'
+#: means the SAME order twice, hence the backreference; '55' is C5, while
+#: '54' is not a signature at all.
+_SPHERICAL_PATTERNS = [
+    (r'^\*22(\d+)$', 'STAR_22N', 'D{n}h'),
+    (r'^22(\d+)$',    '22N',      'D{n}'),
+    (r'^2\*(\d+)$',   '2STAR_N',  'D{n}d'),
+    (r'^\*(\d+)\1$',  'STAR_NN',  'C{n}v'),
+    (r'^(\d+)\*$',    'N_STAR',   'C{n}h'),
+    (r'^(\d+)x$',     'NX',       'S{n2}'),
+    (r'^(\d+)\1$',    'NN',       'C{n}'),
+]
+
+#: the seven exceptional (polyhedral) spherical groups
+SPHERICAL_EXCEPTIONAL = {
+    '332':  ('332',       'T'),
+    '*332': ('STAR_332',  'Td'),
+    '3*2':  ('3STAR_2',   'Th'),
+    '432':  ('432',       'O'),
+    '*432': ('STAR_432',  'Oh'),
+    '532':  ('532',       'I'),
+    '*532': ('STAR_532',  'Ih'),
+}
+
+
+def spherical_token(sig):
+    """Signature -> (generator token, order n, Schoenflies name).
+
+    Accepts the exceptional groups verbatim ('*532') and the infinite
+    families with a concrete order ('*226' is the *22n family at n = 6,
+    i.e. D6h).  Returns None when `sig` is not a spherical signature.
+    """
+    import re
+    sig = sig.replace('×', 'x')
+    if sig in SPHERICAL_EXCEPTIONAL:
+        tok, name = SPHERICAL_EXCEPTIONAL[sig]
+        return tok, None, name
+    for pat, tok, name in _SPHERICAL_PATTERNS:
+        m = re.match(pat, sig)
+        if m:
+            n = int(m.group(1))
+            # S2n: the rotoreflection group's Schoenflies index is 2n
+            return tok, n, name.format(n=n, n2=2 * n)
+    return None
+
+
 def _selftest():
     ok = True
     # THE MAGIC THEOREM: every one of the 17 wallpaper signatures must
@@ -117,6 +181,39 @@ def _selftest():
     ok &= good
     print(f"orbifold: signature <-> IUC name round-trip "
           f"{'OK' if good else 'FAIL'}")
+
+
+    # Spherical routing: a real signature must reach the right point
+    # group.  The traps this pins down, all of which I got wrong first:
+    #   '226' is the 22n family at n=6 (D6), NOT the nn family at n=226;
+    #   'nn' means the SAME order twice, so '55' is C5 while '54' is not
+    #   a signature at all; and 'nx' is the rotoreflection group S(2n),
+    #   so '8x' is S16, not S8.
+    cases = {'*532': ('STAR_532', None, 'Ih'), '332': ('332', None, 'T'),
+             '3*2': ('3STAR_2', None, 'Th'), '*226': ('STAR_22N', 6, 'D6h'),
+             '226': ('22N', 6, 'D6'), '2*3': ('2STAR_N', 3, 'D3d'),
+             '55': ('NN', 5, 'C5'), '*44': ('STAR_NN', 4, 'C4v'),
+             '8x': ('NX', 8, 'S16'), '5*': ('N_STAR', 5, 'C5h')}
+    bad = [f"{k}->{spherical_token(k)}" for k, v in cases.items()
+           if spherical_token(k) != v]
+    good = not bad
+    ok &= good
+    print(f"orbifold: spherical routing on {len(cases)} signatures "
+          f"{'OK' if good else 'FAIL ' + ', '.join(bad[:3])}")
+
+    # non-signatures must be refused, not silently mapped
+    bad = [s_ for s_ in ('54', '*54', '', 'xyz', '2') if spherical_token(s_)]
+    good = not bad
+    ok &= good
+    print(f"orbifold: non-signatures refused "
+          f"{'OK' if good else 'FAIL ' + ','.join(bad)}")
+
+    # and every routed signature really is spherical by the cost rule
+    bad = [k for k in cases if geometry_of(k) != 'SPHERICAL']
+    good = not bad
+    ok &= good
+    print(f"orbifold: every routed signature costs < 2 "
+          f"{'OK' if good else 'FAIL ' + ','.join(bad)}")
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
