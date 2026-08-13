@@ -47,142 +47,23 @@ bl_info = {
 }
 
 import math
-from math import gcd
 
-try:                                    # sibling module (extension)
-    from . import prime_knot_generator as pk
-except ImportError:                     # standalone install / script
-    import prime_knot_generator as pk
+# The generic machinery (braid-closure loops, resampling, rope relaxation,
+# linking number) and the torus-link curve moved to `math_art/knots/`,
+# where prime_knot_generator's copy of the same code now also lives.  This
+# module keeps its preset link constructions and its operator.
+
+from .knots import (KNOTS, braid_closure_loops, build_knot, closed_tube,
+                    closure_components,
+                    linking_number, parse_letters, relax_knot,
+                    relax_link, resample_closed, resample_loops,
+                    torus_link_components)
 
 # (s1 s2^-1)^2 s1: a connected reduced alternating 5-crossing closed
 # braid with 2 components and linking number 0 -- the only such link
 # is the Whitehead link 5^2_1.  (Cf. figure-eight = (s1 s2^-1)^2 and
 # Borromean rings = (s1 s2^-1)^3.)
 WHITEHEAD_BRAID = "aBaBa"
-
-
-# ---- generic machinery -------------------------------------------------
-
-def braid_closure_loops(word, ring=1.6, spacing=0.3, bump=0.26):
-    """Closed 3D polylines of a braid closure, one per link
-    component (multi-component generalization of
-    prime_knot_generator.braid_closure_points)."""
-    n = max(abs(g) for g in word) + 1
-    L = len(word)
-
-    def pt(a, lev, z=0.0):
-        r = ring + (lev - (n - 1) / 2.0) * spacing
-        return (r * math.cos(a), r * math.sin(a), z)
-
-    paths = [[] for _ in range(n)]        # per strand id
-    strands = list(range(n))              # level -> strand id
-    for lev in range(n):
-        paths[lev].append(pt(0.0, lev))
-    for s, g in enumerate(word):
-        a0 = 2 * math.pi * s / L
-        a1 = 2 * math.pi * (s + 1) / L
-        am = (a0 + a1) / 2
-        i = abs(g) - 1
-        for lev in range(n):
-            if lev != i and lev != i + 1:
-                paths[strands[lev]].append(pt(a1, lev))
-        z = bump if g > 0 else -bump
-        sid_i, sid_j = strands[i], strands[i + 1]
-        paths[sid_i].append(pt(am, i + 0.5, z))
-        paths[sid_i].append(pt(a1, i + 1))
-        paths[sid_j].append(pt(am, i + 0.5, -z))
-        paths[sid_j].append(pt(a1, i))
-        strands[i], strands[i + 1] = sid_j, sid_i
-    end_level = {sid: lev for lev, sid in enumerate(strands)}
-    loops = []
-    seen = set()
-    for s0 in range(n):
-        if s0 in seen:
-            continue
-        loop = [paths[s0][0]]
-        sid = s0
-        while True:
-            seen.add(sid)
-            loop.extend(paths[sid][1:])
-            sid = end_level[sid]
-            if sid == s0:
-                break
-        loop.pop()                        # closing duplicate
-        loops.append(loop)
-    return loops
-
-
-def resample_loops(loops, samples):
-    """Resample each closed loop, distributing points by arc length
-    so an average component gets `samples` points."""
-    import numpy as np
-    lens = []
-    for lp in loops:
-        Q = np.asarray(lp, dtype=float)
-        lens.append(np.linalg.norm(np.roll(Q, -1, 0) - Q,
-                                   axis=1).sum())
-    avg = sum(lens) / len(lens)
-    return [pk.resample_closed(lp, max(32, int(round(samples
-                                                     * ln / avg))))
-            for lp, ln in zip(loops, lens)]
-
-
-def relax_link(comps, iters=100, repel=0.35, step=0.25, smooth=0.5,
-               excl=6):
-    """Multi-component version of prime_knot_generator.relax_knot:
-    per-component curve smoothing plus repulsion between all strand
-    pairs (both self and cross-component), globally renormalized.
-    Repulsion never lets strands cross, so linked components stay
-    linked; being linked, they also cannot drift apart."""
-    import numpy as np
-    comps = [np.asarray(c, dtype=float).copy() for c in comps]
-    if iters <= 0:
-        return comps
-    sizes = [len(c) for c in comps]
-    off = [0]
-    for s in sizes:
-        off.append(off[-1] + s)
-    P = np.concatenate(comps)
-    cid = np.concatenate([np.full(s, k, dtype=int)
-                          for k, s in enumerate(sizes)])
-    lidx = np.concatenate([np.arange(s) for s in sizes])
-    same = cid[:, None] == cid[None, :]
-    ring = np.abs(lidx[:, None] - lidx[None, :])
-    msz = np.array(sizes)[cid]
-    ring = np.minimum(ring, msz[:, None] - ring)
-    near = same & (ring <= excl)          # neighbors along a strand
-    target = np.linalg.norm(P - P.mean(0), axis=1).mean()
-    for _ in range(iters):
-        for k in range(len(sizes)):
-            seg = P[off[k]:off[k + 1]]
-            Pn = (np.roll(seg, 1, 0) + np.roll(seg, -1, 0)) / 2
-            P[off[k]:off[k + 1]] = seg + smooth * (Pn - seg)
-        D = P[:, None, :] - P[None, :, :]
-        d = np.linalg.norm(D, axis=-1)
-        np.fill_diagonal(d, 1.0)
-        mask = (d < repel) & ~near
-        if mask.any():
-            w = np.where(mask, (repel - d) / d, 0.0)
-            P += step * (D * w[:, :, None]).sum(axis=1)
-        P -= P.mean(0)
-        r = np.linalg.norm(P, axis=1).mean()
-        if r > 1e-9:
-            P *= target / r
-    return [P[off[k]:off[k + 1]].copy() for k in range(len(sizes))]
-
-
-def linking_number(A, B):
-    """Gauss linking integral of two closed polylines (midpoint
-    rule); rounds to +-lk for reasonably sampled curves."""
-    import numpy as np
-    a = np.asarray(A, dtype=float)
-    b = np.asarray(B, dtype=float)
-    da = np.roll(a, -1, 0) - a
-    db = np.roll(b, -1, 0) - b
-    R = (a + 0.5 * da)[:, None, :] - (b + 0.5 * db)[None, :, :]
-    r3 = ((R * R).sum(-1)) ** 1.5
-    cr = np.cross(da[:, None, :], db[None, :, :])
-    return float(((cr * R).sum(-1) / r3).sum() / (4 * math.pi))
 
 
 # ---- preset geometry ---------------------------------------------------
@@ -203,26 +84,9 @@ def hopf_components(samples):
             _circle((1, 0, 0), (1, 0, 0), (0, 0, 1), 1.0, samples)]
 
 
-def torus_link_components(p, q, samples, R=1.25, r=0.55):
-    """(p,q) torus link: gcd(p,q) components, each a (p/g, q/g)-type
-    curve, phase-offset by 2*pi*k/p in the tube angle (the distinct
-    cosets k mod g give the g disjoint components)."""
-    import numpy as np
-    g = gcd(p, q)
-    s = np.linspace(0.0, 2 * math.pi, samples, endpoint=False)
-    comps = []
-    for k in range(g):
-        th = (p // g) * s
-        ph = (q // g) * s + 2 * math.pi * k / p
-        rad = R + r * np.cos(ph)
-        comps.append(np.stack([rad * np.cos(th), rad * np.sin(th),
-                               r * np.sin(ph)], axis=1))
-    return comps
-
-
 def whitehead_components(samples, iters=100, repel=0.35):
     """Whitehead link from its minimum braid closure, rope-relaxed."""
-    loops = braid_closure_loops(pk.parse_letters(WHITEHEAD_BRAID))
+    loops = braid_closure_loops(parse_letters(WHITEHEAD_BRAID))
     return relax_link(resample_loops(loops, samples),
                       iters=iters, repel=repel)
 
@@ -319,9 +183,9 @@ def connect_sum(braid_a, braid_b, samples=160, iters=120,
     two short bridges, and rope-relaxed into one closed rope.
     mirror_b mirrors the second summand (square vs granny)."""
     import numpy as np
-    Pa = pk.build_knot(braid_a, samples=samples, iters=iters,
+    Pa = build_knot(braid_a, samples=samples, iters=iters,
                        repel=repel)
-    Pb = pk.build_knot(braid_b, samples=samples, iters=iters,
+    Pb = build_knot(braid_b, samples=samples, iters=iters,
                        repel=repel, mirror=mirror_b)
     w = max(3, samples // 20)
     A = _open_loop(Pa, w)
@@ -340,8 +204,8 @@ def connect_sum(braid_a, braid_b, samples=160, iters=120,
 
     loop = np.concatenate([A, bridge(A[-1], B[0]),
                            B, bridge(B[-1], A[0])])
-    loop = pk.resample_closed(loop, 2 * samples)
-    return [pk.relax_knot(loop, iters=iters, repel=repel)]
+    loop = resample_closed(loop, 2 * samples)
+    return [relax_knot(loop, iters=iters, repel=repel)]
 
 
 # ---- Blender layer -----------------------------------------------------
@@ -360,8 +224,8 @@ if _IN_BLENDER:
     _KNOT_ITEMS = [(name, name.replace('_', '.'),
                     f"{name.split('_')[0]}-crossing prime knot, "
                     f"minimum braid {braid}")
-                   for (name, braid, _ap) in pk.KNOTS]
-    _BRAIDS = {name: braid for (name, braid, _ap) in pk.KNOTS}
+                   for (name, braid, _ap) in KNOTS]
+    _BRAIDS = {name: braid for (name, braid, _ap) in KNOTS}
 
     _PRESETS = [
         ('HOPF', "Hopf Link",
@@ -555,7 +419,7 @@ if _IN_BLENDER:
 
         def _make_mesh(self, name, comps):
             import numpy as np
-            tube = pk.CURVE_OT_prime_knot_add._tube
+            tube = closed_tube
             verts, faces, midx = [], [], []
             for k, P in enumerate(comps):
                 v, f = tube(np.asarray(P), self.radius,
@@ -638,8 +502,8 @@ if _IN_BLENDER:
 
 
 def _selftest():
-    word = pk.parse_letters(WHITEHEAD_BRAID)
-    nc = pk.closure_components(word)
+    word = parse_letters(WHITEHEAD_BRAID)
+    nc = closure_components(word)
     print(f"Whitehead braid {WHITEHEAD_BRAID}: "
           f"{nc} components", "OK" if nc == 2 else "FAIL")
     try:
@@ -659,6 +523,6 @@ def _selftest():
         print("Crest pairwise lk =",
               [round(linking_number(c[i], c[j]), 3)
                for i in range(3) for j in range(i + 1, 3)])
-        cs = connect_sum(pk.KNOTS[0][1], pk.KNOTS[0][1],
+        cs = connect_sum(KNOTS[0][1], KNOTS[0][1],
                          samples=120, iters=40)
         print("Connect sum: 1 loop of", len(cs[0]), "points")

@@ -475,10 +475,9 @@ if _IN_BLENDER:
 
             if self.output == 'MESH':
                 try:
-                    from . import prime_knot_generator as pk
+                    from .knots import closed_tube as tube
                 except ImportError:
-                    import prime_knot_generator as pk
-                tube = pk.CURVE_OT_prime_knot_add._tube
+                    from knots import closed_tube as tube
                 verts, faces, midx = [], [], []
                 for k, Pl in enumerate(fibers):
                     v, f = tube(Pl, self.radius, self.tube_sides)
