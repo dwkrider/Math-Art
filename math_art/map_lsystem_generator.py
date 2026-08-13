@@ -136,7 +136,7 @@ if _IN_BLENDER:
                                  min=0, max=600)
 
         inset: FloatProperty(
-            name="Wall Inset", default=0.06, min=0.0, max=0.45,
+            name="Wall Inset", default=0.14, min=0.0, max=0.45,
             description="Shrink each cell toward its centroid so the "
                         "gaps become walls -- what turns a tiling into "
                         "an openwork screen")

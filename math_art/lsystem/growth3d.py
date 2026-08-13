@@ -305,32 +305,52 @@ def dla(count=900, dim=3, seed_kind="POINT", stickiness=1.0, size=48,
     cluster.  `stickiness` under 1 lets it refuse and keep walking, so
     it penetrates further before attaching -- wispy dendrite at 1.0,
     compact moss well below.
+
+    Returns (points, parents).  Every particle attaches to exactly one
+    existing particle, so the aggregate IS a tree -- which means it can
+    be skinned, tapered by the pipe model and ordered by Strahler
+    exactly like the grown trees, instead of being a bag of dots.  Seed
+    particles have parent -1.
     """
     rng = np.random.default_rng(int(seed))
     dim = 3 if int(dim) >= 3 else 2
     half = size // 2
-    occupied = set()
+    occupied = {}
+    pts, parents = [], []
 
-    def put(p):
-        occupied.add(tuple(int(c) for c in p))
+    def put(p, parent=-1):
+        key = tuple(int(c) for c in p)
+        if key in occupied:
+            return
+        occupied[key] = len(pts)
+        pts.append(key)
+        parents.append(int(parent))
 
     if seed_kind == "LINE":
+        prev = -1
         for x in range(-half, half + 1):
-            put((x,) + (0,) * (dim - 1))
+            put((x,) + (0,) * (dim - 1), prev)
+            prev = len(pts) - 1
     elif seed_kind == "RING":
+        prev = -1
         for a in np.linspace(0, 2 * np.pi, 4 * half, endpoint=False):
             p = [int(half * 0.6 * np.cos(a)), int(half * 0.6 * np.sin(a))]
-            put(p + [0] * (dim - 2))
+            put(p + [0] * (dim - 2), prev)
+            prev = len(pts) - 1
     elif seed_kind == "DISK":
+        prev = -1
         for x in range(-half // 2, half // 2 + 1):
             for y in range(-half // 2, half // 2 + 1):
                 if x * x + y * y <= (half // 2) ** 2:
-                    put([x, y] + [0] * (dim - 2))
+                    put([x, y] + [0] * (dim - 2), prev)
+                    prev = len(pts) - 1
     elif seed_kind == "SPHERE":
+        prev = -1
         for _ in range(400):
             v = rng.normal(size=dim)
             v = v / (np.linalg.norm(v) or 1.0) * (half * 0.5)
-            put(v.astype(int))
+            put(v.astype(int), prev)
+            prev = len(pts) - 1
     else:
         put((0,) * dim)
 
@@ -347,9 +367,14 @@ def dla(count=900, dim=3, seed_kind="POINT", stickiness=1.0, size=48,
         v = v / (np.linalg.norm(v) or 1.0)
         p = np.round(v * radius).astype(int)
         for _w in range(int(max_walk)):
-            touching = any(tuple(p + np.array(o)) in occupied for o in offs)
-            if touching and rng.random() <= float(stickiness):
-                put(p)
+            hit = -1
+            for o in offs:
+                j = occupied.get(tuple(p + np.array(o)))
+                if j is not None:
+                    hit = j
+                    break
+            if hit >= 0 and rng.random() <= float(stickiness):
+                put(p, hit)
                 radius = max(radius, np.linalg.norm(p) + 3.0)
                 break
             p = p + np.array(offs[int(rng.integers(len(offs)))])
@@ -357,10 +382,10 @@ def dla(count=900, dim=3, seed_kind="POINT", stickiness=1.0, size=48,
                 break
         if radius > half - 2:
             break
-    pts = np.asarray(sorted(occupied), dtype=float)
+    P = np.asarray(pts, dtype=float)
     if dim == 2:
-        pts = np.hstack([pts, np.zeros((len(pts), 1))])
-    return pts
+        P = np.hstack([P, np.zeros((len(P), 1))])
+    return P, np.asarray(parents, dtype=int)
 
 
 # ---------------------------------------------------------------------
@@ -371,12 +396,29 @@ def pythagoras(depth=10, alpha=45.0, roll=0.0, jitter=0.0, seed=0,
                size=1.0):
     """The Pythagoras tree: squares on the legs of a right triangle.
 
-    Returns (quads, depths) where each quad is 4 points in 3-D.  `roll`
-    turns the classic relief into a genuinely spatial figure by rotating
-    each generation out of its parent's plane.
+    Returns (quads, depths) where each quad is 4 points in 3-D.
+
+    `roll` rotates each child's basis about ITS OWN growth direction, so
+    successive generations leave their parent's plane and the figure
+    becomes genuinely spatial.  Rotating only the initial frame -- which
+    is the obvious thing to write -- merely tilts a flat tree: every
+    child is a linear combination of its parent's two basis vectors, so
+    the whole structure stays in the starting plane however far it is
+    turned.  The two children take opposite signs, so the tree spirals
+    rather than shearing to one side.
     """
     rng = np.random.default_rng(int(seed))
     quads, depths = [], []
+
+    def twist(ex, ey, deg):
+        """Rotate `ex` about `ey` -- takes the child out of plane."""
+        if not deg:
+            return ex
+        a = ey / (np.linalg.norm(ey) or 1.0)
+        th = np.radians(float(deg))
+        # ex is perpendicular to ey, so the Rodrigues term in a.(a.ex)
+        # vanishes and this is just a rotation in the plane normal to a
+        return ex * np.cos(th) + np.cross(a, ex) * np.sin(th)
 
     def emit(origin, ex, ey, d):
         if d > int(depth):
@@ -392,24 +434,22 @@ def pythagoras(depth=10, alpha=45.0, roll=0.0, jitter=0.0, seed=0,
         a = np.radians(float(alpha)
                        + (rng.uniform(-jitter, jitter) if jitter else 0.0))
         ca, sa = np.cos(a), np.sin(a)
-        # the two child squares sit on the legs of the right triangle
-        # raised on the top edge
-        left_len = ca
-        right_len = sa
         top = p3
-        exl = (ex * ca + ey * sa) * left_len
-        eyl = (-ex * sa + ey * ca) * left_len
-        emit(top, exl, eyl, d + 1)
+
+        # left child: basis rotated by +alpha within the parent plane,
+        # then twisted out of it about its own growth direction
+        exl = (ex * ca + ey * sa) * ca
+        eyl = (-ex * sa + ey * ca) * ca
+        emit(top, twist(exl, eyl, roll), eyl, d + 1)
+
+        # right child, twisted the other way so the tree spirals
         apex = top + exl
-        exr = (ex * (-sa) + ey * ca) * right_len
-        eyr = (-ex * ca - ey * sa) * right_len
-        emit(apex, exr, -eyr, d + 1)
+        exr = (ex * (-sa) + ey * ca) * sa
+        eyr = (-ex * ca - ey * sa) * sa
+        emit(apex, twist(exr, -eyr, -roll), -eyr, d + 1)
 
     ex = np.array([float(size), 0.0, 0.0])
     ey = np.array([0.0, 0.0, float(size)])
-    if roll:
-        r = np.radians(float(roll))
-        ey = np.array([0.0, np.sin(r) * size, np.cos(r) * size])
     emit(np.zeros(3), ex, ey, 0)
     return quads, np.asarray(depths)
 
@@ -520,17 +560,29 @@ def _selftest():
 
     # --- DLA ------------------------------------------------------------
     for kind in SEEDS:
-        pts = dla(count=120, dim=3, seed_kind=kind, size=28, seed=6)
+        pts, par = dla(count=120, dim=3, seed_kind=kind, size=28, seed=6)
         assert len(pts) > 10, kind
         assert np.all(np.isfinite(pts)), kind
         assert pts.shape[1] == 3, kind
+        assert len(par) == len(pts), kind
+        # An aggregate is a TREE: every particle but the seeds attaches
+        # to exactly one existing particle, and a parent always precedes
+        # its child.  That is what lets it be skinned rather than shown
+        # as a bag of dots.
+        assert (par < np.arange(len(par))).all(), kind
+        assert int((par < 0).sum()) >= 1, kind
+    # every stuck particle is lattice-adjacent to its parent
+    pts, par = dla(count=200, dim=3, size=28, seed=6)
+    link = par >= 0
+    step = np.abs(pts[link] - pts[par[link]]).sum(axis=1)
+    assert np.allclose(step, 1.0), sorted(set(step.tolist()))[:5]
     # 2-D stays planar
-    flat = dla(count=150, dim=2, size=28, seed=7)
+    flat, _p = dla(count=150, dim=2, size=28, seed=7)
     assert abs(float(flat[:, 2].max() - flat[:, 2].min())) < 1e-9
     # low stickiness packs tighter: same walkers, smaller radius of
     # gyration, which is the whole reason the knob exists
     def gyration(s):
-        p = dla(count=250, dim=2, stickiness=s, size=40, seed=8)
+        p, _q = dla(count=250, dim=2, stickiness=s, size=40, seed=8)
         return float(np.sqrt(((p - p.mean(0)) ** 2).sum(1).mean()))
     assert gyration(0.15) < gyration(1.0), (gyration(0.15), gyration(1.0))
 
@@ -553,13 +605,25 @@ def _selftest():
     a0 = np.mean([area(q) for q, dd in zip(q45, d45) if dd == 0])
     a1 = np.mean([area(q) for q, dd in zip(q45, d45) if dd == 1])
     assert abs(a1 / a0 - 0.5) < 1e-9, (a0, a1)
-    # roll takes it out of the plane
-    flatq, _d = pythagoras(depth=5, roll=0.0)
-    rolled, _d = pythagoras(depth=5, roll=35.0)
-    fy = np.vstack(flatq)[:, 1]
-    ry = np.vstack(rolled)[:, 1]
-    assert abs(float(fy.max() - fy.min())) < 1e-9
-    assert float(ry.max() - ry.min()) > 0.1
+    # Roll must make the tree genuinely SPATIAL, not merely tilt a flat
+    # one.  Tilting passes a y-extent test while leaving every point in
+    # a single plane, so measure planarity directly: the smallest
+    # singular value of the centred points is the thickness of the best
+    # fitting plane, and it must be zero without roll and substantial
+    # with it.
+    def thickness(q):
+        P = np.vstack(q)
+        P = P - P.mean(axis=0)
+        s = np.linalg.svd(P, compute_uv=False)
+        return float(s[-1] / s[0])
+    flatq, _d = pythagoras(depth=6, roll=0.0)
+    assert thickness(flatq) < 1e-12, thickness(flatq)
+    prev = 0.0
+    for r in (10.0, 25.0, 40.0):
+        th = thickness(pythagoras(depth=6, roll=r)[0])
+        assert th > prev, (r, th, prev)
+        prev = th
+    assert prev > 0.05, prev
 
     # --- pipe model -----------------------------------------------------
     N, P = colonize(envelope_points("CROWN", n=400, seed=9), max_iters=120)

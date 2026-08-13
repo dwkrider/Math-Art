@@ -147,7 +147,16 @@ def _split_cell(cm, ci, direction):
     right = [b] + [ring[k % n] for k in range(i1 + 1, i0 + 1 + n)] + [a]
     if len(left) < 3 or len(right) < 3:
         return None
-    return left, right
+
+    # Keep every ring counter-clockwise.  The pressure term reads the
+    # winding to decide which way is out, so a stray clockwise daughter
+    # would be sucked inward instead of inflated.
+    def ccw(r):
+        Q = cm.verts[r]
+        s = 0.5 * float(np.dot(Q[:, 0], np.roll(Q[:, 1], -1))
+                        - np.dot(np.roll(Q[:, 0], -1), Q[:, 1]))
+        return r if s >= 0 else r[::-1]
+    return ccw(left), ccw(right)
 
 
 def divide(cm, pa=1.0, seed=0, axis=(0.0, 1.0), jitter=0.25):
@@ -219,20 +228,38 @@ def relax(cm, steps=60, pressure=0.02, stiffness=0.6, dt=0.25,
         np.add.at(F, E[:, 0], f)
         np.add.at(F, E[:, 1], -f)
 
-        # turgor: p = nRT / (A h), so the force is inversely proportional
-        # to the cell's area
-        for ci, ring in enumerate(cm.cells):
+        # Turgor: p = nRT / (A h), so a small cell pushes harder.  The
+        # force acts on each WALL along its outward normal, not radially
+        # from the centroid.  Pushing radially seems equivalent and is
+        # not: a vertex shared by several cells collects several
+        # independent pushes and can cross to the wrong side of its own
+        # ring, inverting the cell.  Four cells in thirty-two came out
+        # inverted that way, which renders as dark overlapping shards.
+        for ring in cm.cells:
             P = V[ring]
-            c = P.mean(axis=0)
-            a = max(float(np.abs(0.5 * (
-                np.dot(P[:, 0], np.roll(P[:, 1], -1))
-                - np.dot(np.roll(P[:, 0], -1), P[:, 1])))), 1e-9)
-            out = P - c
-            n = np.linalg.norm(out, axis=1)
-            n[n < 1e-12] = 1e-12
-            F[ring] += (out / n[:, None]) * (float(pressure) / a)
+            sa = 0.5 * float(np.dot(P[:, 0], np.roll(P[:, 1], -1))
+                             - np.dot(np.roll(P[:, 0], -1), P[:, 1]))
+            a = max(abs(sa), 1e-9)
+            d = np.roll(P, -1, axis=0) - P
+            # outward normal of each edge, scaled by the edge length
+            nor = np.stack([d[:, 1], -d[:, 0]], axis=1)
+            if sa < 0:                       # clockwise ring: flip
+                nor = -nor
+            f = nor * (0.5 * float(pressure) / a)
+            np.add.at(F, ring, f)
+            np.add.at(F, np.roll(ring, -1), f)
 
-        V = V + F * float(dt)
+        # Cap the step at a fraction of the shortest wall.  Forward
+        # Euler with a stiff pressure term will otherwise fling a vertex
+        # clean through its neighbours in a single step.
+        stepv = F * float(dt)
+        lim = 0.25 * float(np.linalg.norm(
+            V[E[:, 0]] - V[E[:, 1]], axis=1).min())
+        m = np.linalg.norm(stepv, axis=1)
+        big = m > lim
+        if big.any():
+            stepv[big] *= (lim / m[big])[:, None]
+        V = V + stepv
         for i in pin:
             V[i] = cm.verts[i]
     return CellMap(V, cm.cells, cm.ages)
@@ -399,6 +426,25 @@ def _selftest():
     spread = lambda a: float(a.std() / a.mean())      # noqa: E731
     assert spread(after) < spread(before) + 1e-9, (spread(before),
                                                    spread(after))
+
+    # NO CELL MAY INVERT.  A ring that folds through itself has negative
+    # signed area and renders as dark overlapping shards; radial turgor
+    # produced four such cells in thirty-two.
+    def signed(cm2):
+        out = []
+        for r in cm2.cells:
+            P = cm2.verts[r]
+            out.append(0.5 * float(
+                np.dot(P[:, 0], np.roll(P[:, 1], -1))
+                - np.dot(np.roll(P[:, 0], -1), P[:, 1])))
+        return np.array(out)
+    for pa_ in (0.3, 1.0, 4.0):
+        c2 = square()
+        for k in range(5):
+            c2 = divide(c2, pa=pa_, seed=k)
+            c2 = relax(c2, steps=60, pressure=0.02)
+        s = signed(c2)
+        assert (s > 0).all(), f"pa={pa_}: {int((s <= 0).sum())} inverted"
     # Zero pressure is not the same as no change -- the springs still
     # equalise wall lengths, and that is not area-neutral.  What must
     # hold is that turgor drives the inflation: more pressure, more

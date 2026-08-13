@@ -214,11 +214,22 @@ if _IN_BLENDER:
                              for i in range(len(quads))]
                     ob = _quads_mesh(quads, depths, name)
                 elif self.mode == 'DLA':
-                    pts = g3.dla(count=self.walkers, dim=int(self.dla_dim),
-                                 seed_kind=self.seed_kind,
-                                 stickiness=self.stickiness,
-                                 size=self.lattice, seed=self.seed)
-                    ob = _points_mesh(g3.fit(pts, 2.0 * self.scale), name)
+                    # An aggregate is a tree, so it skins exactly like
+                    # the grown ones.  Emitting bare points made the
+                    # mode look empty: a vertex-only mesh is not drawn
+                    # at all in Object Mode.
+                    pts, par = g3.dla(
+                        count=self.walkers, dim=int(self.dla_dim),
+                        seed_kind=self.seed_kind,
+                        stickiness=self.stickiness,
+                        size=self.lattice, seed=self.seed)
+                    if len(pts) < 2:
+                        self.report({'ERROR'}, "no particles stuck")
+                        return {'CANCELLED'}
+                    radii = g3.pipe_radii(par, exponent=self.murray)
+                    ob = _tree_curve(g3.fit(pts, 2.0 * self.scale), par,
+                                     radii, name, self.radius,
+                                     self.resolution)
                 else:
                     if self.mode == 'COLONIZE':
                         A = g3.envelope_points(
@@ -284,9 +295,11 @@ if _IN_BLENDER:
                     lay.prop(self, k)
             lay.separator()
             lay.prop(self, "seed")
-            if self.mode in ('COLONIZE', 'SELFORG'):
-                for k in ("radius", "resolution", "murray", "grow_t"):
+            if self.mode in ('COLONIZE', 'SELFORG', 'DLA'):
+                for k in ("radius", "resolution", "murray"):
                     lay.prop(self, k)
+            if self.mode in ('COLONIZE', 'SELFORG'):
+                lay.prop(self, "grow_t")
             lay.prop(self, "scale")
 
     def register():
@@ -311,8 +324,10 @@ def _selftest():
     nodes2, parents2 = g3.selforg(steps=8, seed=0)
     assert len(nodes2) > 3
 
-    pts = g3.dla(count=200, dim=3, size=30, seed=0)
+    pts, dpar = g3.dla(count=200, dim=3, size=30, seed=0)
     assert len(pts) > 10 and pts.shape[1] == 3
+    # the aggregate skins through the same path as the trees
+    assert len(g3.pipe_radii(dpar)) == len(pts)
 
     quads, depths = g3.pythagoras(depth=6)
     assert len(quads) == 2 ** 7 - 1
