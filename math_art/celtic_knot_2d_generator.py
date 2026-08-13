@@ -129,7 +129,7 @@ bl_info = {
     "category": "Add Mesh",
 }
 
-from math import gcd, hypot, cos, sin, pi
+from math import atan2, gcd, hypot, cos, sin, pi
 import random as _random
 
 import numpy as np
@@ -2030,6 +2030,32 @@ def _frames(path3, closed):
         s = s / (ln + 1e-12)
         sides.append(s)
         ups.append(np.cross(T[i], s))
+
+    if closed and n > 2:
+        # CLOSURE HOLONOMY.  Transporting a frame once round a closed
+        # curve does not generally bring it back to itself: it returns
+        # rotated about the tangent.  Carried naively, that entire
+        # residual lands on the single join between the last ring and the
+        # first -- on a plait cord it measures about 160 degrees, so the
+        # tube folds through itself there and reads as a torn or twisted
+        # corner.  (Every other ring-to-ring step is ~0.0001 degrees.)
+        #
+        # Spread it evenly instead: ring i takes i/n of it.  Same fix as
+        # `curve_frames.closed_frames` applies to the knot tubes; kept
+        # local because this frame feeds ribbon and rope sweeps with weave
+        # offsets, not only the round tube.  OPEN paths are untouched.
+        v = sides[-1] - T[0] * float(np.dot(sides[-1], T[0]))
+        nv = float(np.linalg.norm(v))
+        if nv > 1e-12:
+            v = v / nv
+            theta = atan2(float(np.dot(v, ups[0])), float(np.dot(v, sides[0])))
+            if abs(theta) > 1e-12:
+                for i in range(n):
+                    a = -theta * i / n
+                    ca, sa = cos(a), sin(a)
+                    si, ui = sides[i].copy(), ups[i].copy()
+                    sides[i] = si * ca + ui * sa
+                    ups[i] = -si * sa + ui * ca
     return P, sides, ups
 
 
@@ -3208,6 +3234,46 @@ def _selftest():
             ok = ok and good
             print("flush-cut %-11s %-8s : no-spike=%s checked=%d "
                   "worst_cap/width=%.4f" % (sub, style, good, nchk, worst))
+
+
+    # --- closed cords must not fold at the seam -----------------------
+    # A closed curve's frame comes back rotated (its holonomy); carried
+    # naively the whole residual lands on the join between the last ring
+    # and the first.  On a plait cord that is ~160 degrees, which folds
+    # the round tube through itself and reads as a torn corner.  This
+    # asserts the correction is spread: no ring-to-ring step may be an
+    # outlier against the rest.
+    import numpy as _np
+    from math import degrees as _deg, acos as _acos
+    _n = 200
+    _t = _np.linspace(0, 2 * pi, _n, endpoint=False)
+    _r = 1.0 + 0.35 * _np.cos(4 * _t)
+    _path = [(float(_r[i] * _np.cos(_t[i])), float(_r[i] * _np.sin(_t[i])),
+              float(0.30 * _np.sin(4 * _t[i]))) for i in range(_n)]
+    _P, _S, _U = _frames(_path, True)
+    _S = _np.asarray(_S, float)
+    _T = []
+    for i in range(_n):
+        _a = _np.asarray(_path[(i - 1) % _n])
+        _b = _np.asarray(_path[(i + 1) % _n])
+        _d = _b - _a
+        _T.append(_d / _np.linalg.norm(_d))
+    _T = _np.asarray(_T)
+    _steps = []
+    for i in range(_n):
+        j = (i + 1) % _n
+        _w = _S[i] - _T[j] * float(_np.dot(_S[i], _T[j]))
+        _w /= _np.linalg.norm(_w)
+        _steps.append(_deg(_acos(max(-1.0, min(1.0, float(_np.dot(_w, _S[j])))))))
+    _steps = _np.asarray(_steps)
+    _worst, _med = float(_steps.max()), float(_np.median(_steps))
+    _ok = _worst < 10.0 and _worst < 20.0 * max(_med, 1e-6)
+    print(f"closed-cord frame: worst ring twist {_worst:.2f} deg, median "
+          f"{_med:.3f} deg -> {'OK' if _ok else 'FAIL (seam fold)'}")
+    if not _ok:
+        raise AssertionError(
+            f"closed cord folds at the seam: {_worst:.1f} deg twist in one "
+            f"step (median {_med:.3f}) -- holonomy is not being distributed")
 
     print("RESULT:", "OK" if ok else "BAD")
     assert ok
