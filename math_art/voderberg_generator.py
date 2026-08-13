@@ -78,6 +78,11 @@ from math import pi, sin, cos, tan
 
 import numpy as np
 
+try:                                  # inside the math_art package
+    from .patterns.polygon2d import ensure_ccw as _ensure_ccw
+except ImportError:                   # flat import (test runner)
+    from patterns.polygon2d import ensure_ccw as _ensure_ccw
+
 try:
     from . import pattern_common as pc
     from . import tiling_generator as tg
@@ -103,17 +108,8 @@ def _to_xy(z):
     return np.column_stack([z.real, z.imag])
 
 
-def _signed_area(poly):
-    x = poly[:, 0]
-    y = poly[:, 1]
-    return 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
 
 
-def _ensure_ccw(poly):
-    poly = np.asarray(poly, float)
-    if _signed_area(poly) < 0.0:
-        return poly[::-1].copy()
-    return poly
 
 
 # --------------------------------------------------------------------

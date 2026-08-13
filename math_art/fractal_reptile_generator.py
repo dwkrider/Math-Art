@@ -144,6 +144,13 @@ from math import sqrt
 
 import numpy as np
 
+try:                                  # inside the math_art package
+    from .patterns.polygon2d import ensure_ccw as _ensure_ccw
+    from .patterns.polygon2d import signed_area as _signed_area
+except ImportError:                   # flat import (test runner)
+    from patterns.polygon2d import ensure_ccw as _ensure_ccw
+    from patterns.polygon2d import signed_area as _signed_area
+
 try:
     from . import pattern_common as pc
     from . import tiling_generator as tg
@@ -156,14 +163,8 @@ except Exception:                       # legacy single-file / CLI use
 # geometry helpers
 # --------------------------------------------------------------------
 
-def _signed_area(poly):
-    x, y = poly[:, 0], poly[:, 1]
-    return 0.5 * float(np.sum(x * np.roll(y, -1) - np.roll(x, -1) * y))
 
 
-def _ensure_ccw(poly):
-    poly = np.asarray(poly, float)
-    return poly[::-1].copy() if _signed_area(poly) < 0.0 else poly
 
 
 def _key(p, nd=6):
