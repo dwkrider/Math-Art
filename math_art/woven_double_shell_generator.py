@@ -60,6 +60,11 @@ from math import atan2, cos, pi, radians, sin
 
 import numpy as np
 
+try:                                  # inside the math_art package
+    from .curve_frames import welded_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import welded_tube
+
 try:
     from . import pattern_common as pc
     from . import knot_carpet_generator as kcg
@@ -1041,7 +1046,7 @@ def build_cells(shell, lines, output='TUBE', tube_radius=0.035,
                                             0.9 * tr)
             per = 4
         else:
-            verts, faces = kcg._tube_welded(pts, tr, sides)
+            verts, faces = welded_tube(pts, tr, sides)
             per = sides
         if not faces:
             continue

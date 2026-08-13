@@ -160,6 +160,11 @@ from math import pi, sqrt, atan2
 
 import numpy as np
 
+try:                                  # inside the math_art package
+    from .curve_frames import closed_tube as _shared_closed_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import closed_tube as _shared_closed_tube
+
 try:
     from . import pattern_common as pc
     from . import islamic_pattern_generator as isl
@@ -549,75 +554,20 @@ def loop_paths(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,
 # --------------------------------------------------------------------
 
 def _tube_welded(pts, radius, sides):
-    """Sweep a round closed tube along the 3D centerline `pts` with
-    rotation-minimizing frames, and join the rings by PROXIMITY.
+    """Sweep a round closed tube along `pts`, joining rings by PROXIMITY.
 
-    A closed RMF sweep leaves a residual twist at the seam (the frame's
-    holonomy), so a naive vertex-s -> vertex-s closure connects rotated
-    points and pinches the loop shut.  Two things prevent that here: the
-    holonomy is measured (atan2, full range) and spread evenly along the
-    loop, and then EACH ring is connected to the next by the whole-ring
-    rotation that best aligns them (nearest-vertex weld), so any leftover
-    fractional twist lands on the seam as a clean shift rather than a
-    fold.  Returns (verts, faces) with quad faces."""
+    Now a thin call into the shared sweep: this module's copy was the best
+    of the five that had grown around the repo (double-reflection kernel,
+    holonomy measured with atan2 over the full range), so the shared one
+    was built to reproduce it -- outputs agree to ~1e-10 and the faces are
+    identical.  `weld=True` keeps the nearest-vertex ring join that
+    absorbs any residual fractional twist into a clean shift at the seam
+    rather than a fold.
+    """
     P = np.asarray(pts, float)
-    n = len(P)
-    if n < 3:
+    if len(P) < 3:
         return [], []
-    T = np.roll(P, -1, 0) - np.roll(P, 1, 0)
-    T /= np.linalg.norm(T, axis=1, keepdims=True) + 1e-12
-
-    def _reflect_step(a, b, na, ta, tb):
-        """Double-reflection transport of normal `na` from a to b."""
-        v1 = b - a
-        c1 = float(v1 @ v1) + 1e-12
-        rl = na - (2.0 / c1) * float(v1 @ na) * v1
-        tl = ta - (2.0 / c1) * float(v1 @ ta) * v1
-        v2 = tb - tl
-        c2 = float(v2 @ v2) + 1e-12
-        return rl - (2.0 / c2) * float(v2 @ rl) * v2
-
-    ref = np.array([0.0, 0.0, 1.0]) if abs(T[0, 2]) < 0.9 \
-        else np.array([1.0, 0.0, 0.0])
-    n0 = np.cross(T[0], ref)
-    n0 /= np.linalg.norm(n0) + 1e-12
-    N = [n0]
-    for i in range(n - 1):
-        nn = _reflect_step(P[i], P[i + 1], N[-1], T[i], T[i + 1])
-        N.append(nn / (np.linalg.norm(nn) + 1e-12))
-    N = np.array(N)
-    # holonomy: transport once more across the closing edge, compare to N[0]
-    nw = _reflect_step(P[n - 1], P[0], N[n - 1], T[n - 1], T[0])
-    nw /= np.linalg.norm(nw) + 1e-12
-    b0 = np.cross(T[0], N[0])
-    theta = np.arctan2(float(nw @ b0), float(nw @ N[0]))
-
-    ring0 = 2.0 * pi * np.arange(sides) / sides
-    ca0, sa0 = np.cos(ring0), np.sin(ring0)
-    verts, bases = [], []
-    for i in range(n):
-        corr = -theta * i / n
-        B = np.cross(T[i], N[i])
-        Nc = N[i] * np.cos(corr) + B * np.sin(corr)
-        Bc = -N[i] * np.sin(corr) + B * np.cos(corr)
-        ring = P[i] + radius * (ca0[:, None] * Nc + sa0[:, None] * Bc)
-        bases.append(len(verts))
-        verts.extend(map(tuple, ring))
-    faces = []
-    for i in range(n):
-        j = (i + 1) % n
-        Ri = np.asarray(verts[bases[i]:bases[i] + sides])
-        Rj = np.asarray(verts[bases[j]:bases[j] + sides])
-        # whole-ring rotation of ring j that best aligns it to ring i
-        shift = min(range(sides),
-                    key=lambda s: float(np.sum(
-                        (Ri - np.roll(Rj, -s, axis=0)) ** 2)))
-        for s in range(sides):
-            s2 = (s + 1) % sides
-            faces.append([bases[i] + s, bases[i] + s2,
-                          bases[j] + (s2 + shift) % sides,
-                          bases[j] + (s + shift) % sides])
-    return verts, faces
+    return _shared_closed_tube(P, radius, sides, weld=True)
 
 
 def build_tube_cells(lattice='SQUARE', k=4, nx=3, ny=3, amp=0.10,

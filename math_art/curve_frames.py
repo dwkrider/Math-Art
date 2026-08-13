@@ -226,6 +226,112 @@ def _unit(v):
     return v / np.where(n == 0, 1.0, n)
 
 
+def closed_tangents(points):
+    """Unit tangents of a CLOSED polyline, by central differences that
+    wrap.  The convention every closed sweep in this repo already uses."""
+    P = np.asarray(points, dtype=float)
+    T = np.roll(P, -1, 0) - np.roll(P, 1, 0)
+    return T / (np.linalg.norm(T, axis=1, keepdims=True) + 1e-12)
+
+
+def closure_holonomy(points, tangents, normals):
+    """The angle by which a transported frame fails to return to itself
+    after one circuit of a closed curve.
+
+    A closed curve generally has non-zero holonomy: carry a normal all the
+    way round and it comes back rotated about the tangent.  Sweeping a
+    tube without accounting for it leaves that entire rotation as a twist
+    discontinuity at the seam.
+
+    Measured with atan2 over the FULL range.  Using `sign * acos(dot)`
+    instead is a real trap -- it is the formulation that left a 1.7 radian
+    kink at the seam of two generators' tubes, because it recovers the
+    wrong branch and the error lands entirely on the closing edge.
+    """
+    P = np.asarray(points, dtype=float)
+    T = np.asarray(tangents, dtype=float)
+    N = np.asarray(normals, dtype=float)
+    # one more double-reflection step, across the closing edge
+    wrapped = transport_normals(np.stack([P[-1], P[0]]),
+                                np.stack([T[-1], T[0]]), N[-1])[1]
+    wrapped = _unit(wrapped - T[0] * float(np.dot(wrapped, T[0])))
+    binormal = np.cross(T[0], N[0])
+    return math.atan2(float(np.dot(wrapped, binormal)),
+                      float(np.dot(wrapped, N[0])))
+
+
+def closed_frames(points):
+    """(T, N, B) for a closed curve, with the closure holonomy already
+    distributed evenly so the frame joins up at the seam.
+
+    The kernel is `transport_normals` -- double reflection, fourth order.
+    """
+    P = np.asarray(points, dtype=float)
+    n = len(P)
+    T = closed_tangents(P)
+    ref = (np.array([0.0, 0.0, 1.0]) if abs(T[0, 2]) < 0.9
+           else np.array([1.0, 0.0, 0.0]))
+    n0 = _unit(np.cross(T[0], ref))
+    N = transport_normals(P, T, n0)
+    theta = closure_holonomy(P, T, N)
+    B = np.cross(T, N)
+    # spread the residual evenly: ring i takes i/n of it
+    corr = -theta * np.arange(n) / n
+    c, s = np.cos(corr)[:, None], np.sin(corr)[:, None]
+    return T, N * c + B * s, -N * s + B * c
+
+
+def closed_tube(points, radius, sides, weld=False):
+    """Sweep a closed round tube of `radius` along `points`.
+
+    Returns (verts, faces) with `len(points) * sides` vertices and the
+    same number of quads.  Vertices are ordered ring by ring.
+
+    `weld=True` additionally joins each ring to the next by the whole-ring
+    rotation that best aligns them (nearest-vertex).  That absorbs any
+    residual fractional twist into a clean shift at the seam rather than a
+    fold, which matters when `sides` is small.
+    """
+    P = np.asarray(points, dtype=float)
+    n = len(P)
+    if n < 3:
+        return [], []
+    T, N, B = closed_frames(P)
+    ang = 2.0 * math.pi * np.arange(sides) / sides
+    ca, sa = np.cos(ang), np.sin(ang)
+    rings = (P[:, None, :]
+             + radius * (ca[None, :, None] * N[:, None, :]
+                         + sa[None, :, None] * B[:, None, :]))
+    verts = [tuple(v) for v in rings.reshape(-1, 3)]
+
+    shift = np.zeros(n, dtype=int)
+    if weld:
+        for i in range(n):
+            j = (i + 1) % n
+            d = np.linalg.norm(rings[j][None, :, :] - rings[i][:, None, :],
+                               axis=2)
+            # rotate ring j by the offset that best matches ring i
+            best, bo = None, 0
+            for o in range(sides):
+                tot = float(np.sum(d[np.arange(sides),
+                                     (np.arange(sides) + o) % sides]))
+                if best is None or tot < best:
+                    best, bo = tot, o
+            shift[j] = (shift[i] + bo) % sides
+
+    faces = []
+    for i in range(n):
+        j = (i + 1) % n
+        for k in range(sides):
+            k2 = (k + 1) % sides
+            a = i * sides + (k + shift[i]) % sides
+            b = i * sides + (k2 + shift[i]) % sides
+            c2 = j * sides + (k2 + shift[j]) % sides
+            d2 = j * sides + (k + shift[j]) % sides
+            faces.append([a, b, c2, d2])
+    return verts, faces
+
+
 def _transport(h0, h1, l0):
     """Carry `l0` from tangent `h0` to `h1` by the minimal rotation.
 
@@ -323,6 +429,17 @@ def sweep(points, profile, mode=PARALLEL, radii=None, up=(0.0, 0.0, 1.0),
     return verts, faces
 
 
+def welded_tube(points, radius, sides):
+    """`closed_tube` with the nearest-vertex ring weld enabled.
+
+    The form nine generators used to reach for as
+    `knot_carpet_generator._tube_welded`.  Kept as a named function rather
+    than a default argument so those call sites read the same and cannot
+    silently lose the weld.
+    """
+    return closed_tube(points, radius, sides, weld=True)
+
+
 def _selftest():
     # --- orthonormality on a hard curve -------------------------------
     t = np.linspace(0, 4 * math.pi, 400)
@@ -396,6 +513,61 @@ def _selftest():
     d = np.linalg.norm(V.reshape(len(helix), 8, 3) - helix[:, None, :],
                        axis=2)
     assert abs(d.mean() - 0.1) < 1e-9, d.mean()
+
+    # --- CLOSED CURVES: holonomy must be measured and distributed ----
+    # A closed curve generally comes back rotated about its own tangent.
+    # A planar circle does not (zero holonomy), so it is the control.
+    a = np.linspace(0, 2 * math.pi, 160, endpoint=False)
+    circle = np.stack([np.cos(a), np.sin(a), np.zeros_like(a)], axis=1)
+    T, N, B = closed_frames(circle)
+    assert abs(closure_holonomy(circle, closed_tangents(circle),
+                                transport_normals(circle,
+                                                  closed_tangents(circle),
+                                                  N[0]))) < 1e-6,         "a planar circle must have zero closure holonomy"
+    assert np.allclose(np.linalg.norm(N, axis=1), 1, atol=1e-9)
+    assert np.allclose((T * N).sum(axis=1), 0, atol=1e-9)
+    assert np.allclose(np.cross(T, N) - B, 0, atol=1e-8)
+
+    # a wavy closed ring HAS holonomy, and it must be spread EVENLY -- the
+    # regression that matters.  Measuring it with sign*acos instead of
+    # atan2 recovers the wrong branch, so the loop does not close and the
+    # whole residual lands on the single seam quad.  That shipped in two
+    # generators as a ~1.7 radian kink; this asserts no step is an outlier.
+    t = np.linspace(0, 2 * math.pi, 160, endpoint=False)
+    r = 1.0 + 0.3 * np.cos(6 * t)
+    wavy = np.stack([r * np.cos(t), r * np.sin(t), 0.4 * np.sin(6 * t)],
+                    axis=1)
+    verts, faces = closed_tube(wavy, 0.09, 12)
+    assert len(verts) == len(wavy) * 12 and len(faces) == len(wavy) * 12
+
+    R = np.asarray(verts).reshape(len(wavy), 12, 3)
+    u = R[:, 0, :] - wavy
+    u /= np.linalg.norm(u, axis=1, keepdims=True)
+    Tw = closed_tangents(wavy)
+    steps = []
+    for i in range(len(wavy)):
+        j = (i + 1) % len(wavy)
+        moved = _transport(Tw[i], Tw[j], u[i])
+        d = max(-1.0, min(1.0, float(np.dot(moved, u[j]))))
+        steps.append(abs(math.acos(d)))
+    steps = np.array(steps)
+    assert steps.max() < 5.0 * steps.mean(), (
+        f"seam discontinuity: worst ring step {steps.max():.3f} vs mean "
+        f"{steps.mean():.4f} -- the closure holonomy was not distributed")
+
+    # watertight, and every vertex exactly one radius from its spine sample
+    cnt = {}
+    for f in faces:
+        for x, y in zip(f, f[1:] + f[:1]):
+            k = (x, y) if x < y else (y, x)
+            cnt[k] = cnt.get(k, 0) + 1
+    assert all(c == 2 for c in cnt.values()), "closed tube must be watertight"
+    d = np.linalg.norm(R - wavy[:, None, :], axis=2)
+    assert abs(d - 0.09).max() < 1e-9, abs(d - 0.09).max()
+
+    print("curve_frames: closed-curve OK -- planar circle has zero holonomy, "
+          "wavy ring's is distributed evenly (no seam outlier), tube "
+          "watertight and on-radius")
 
     print("curve_frames: OK -- orthonormal on helix/circle/line, survives "
           "an inflection, Frenet recovers the osculating plane, parallel "

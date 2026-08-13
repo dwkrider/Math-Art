@@ -65,6 +65,11 @@ from math import gcd, pi
 
 import numpy as np
 
+try:                                  # inside the math_art package
+    from .curve_frames import welded_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import welded_tube
+
 try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
@@ -368,7 +373,7 @@ def turks_head_tubes(core, tube_radius=0.055, tube_sides=12):
     rotation-minimizing sweep."""
     sides = max(3, int(tube_sides))
     tr = max(0.002, float(tube_radius))
-    return [kcg._tube_welded([tuple(p) for p in P], tr, sides)
+    return [welded_tube([tuple(p) for p in P], tr, sides)
             for P in core['paths']]
 
 

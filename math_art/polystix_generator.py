@@ -64,6 +64,13 @@ bl_info = {
 }
 
 import math
+
+import numpy as np
+
+try:                                  # inside the math_art package
+    from .curve_frames import closed_tube as _shared_closed_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import closed_tube as _shared_closed_tube
 from math import cos, sin, sqrt, pi
 
 # The four <111> directions used by every hexastix/tristix/Sigma
@@ -431,57 +438,27 @@ def _loop_centerlines(rod_list, body_seg, loop_seg):
 
 
 def _closed_tube(pts, tube_r, sides, verts, faces, tag_faces, tag):
-    """Sweep a circular tube along a closed centreline using
-    rotation-minimizing frames (double reflection), distributing the
-    closure twist along the loop."""
-    n = len(pts)
-    tang = []
-    for i in range(n):
-        a = pts[(i - 1) % n]
-        b = pts[(i + 1) % n]
-        tang.append(_unit((b[0] - a[0], b[1] - a[1], b[2] - a[2])))
-    t0 = tang[0]
-    ref = (0.0, 0.0, 1.0) if abs(t0[2]) < 0.9 else (1.0, 0.0, 0.0)
-    r = _unit(_cross(t0, ref))
-    frames = [r]
-    for i in range(n):
-        j = (i + 1) % n
-        v1 = _sub(pts[j], pts[i])
-        c1 = _dot(v1, v1) or 1e-12
-        d = _dot(v1, frames[-1])
-        rl = [frames[-1][k] - 2 / c1 * d * v1[k] for k in range(3)]
-        dt = _dot(v1, tang[i])
-        tl = [tang[i][k] - 2 / c1 * dt * v1[k] for k in range(3)]
-        v2 = [tang[j][k] - tl[k] for k in range(3)]
-        c2 = _dot(v2, v2) or 1e-12
-        dr = _dot(v2, rl)
-        frames.append([rl[k] - 2 / c2 * dr * v2[k] for k in range(3)])
-    last = frames[n]
-    cx = _cross(last, r)
-    sgn = 1.0 if _dot(cx, tang[0]) > 0 else -1.0
-    dotr = max(-1.0, min(1.0, _dot(last, r)))
-    twist = sgn * math.acos(dotr)
+    """Append a swept closed tube along `pts` into the caller's buffers.
+
+    The sweep itself is shared (`curve_frames.closed_tube`); this wrapper
+    only rebases the indices and carries the per-face tag.
+
+    NOTE: this module previously carried its own copy, which measured the
+    closure holonomy as `sign * acos(dot)`.  That recovers the wrong
+    branch, so the correction did not actually close the loop and the
+    whole residual -- about 1.7 radians on a typical ring -- landed on the
+    single seam quad as a twist discontinuity.  The shared sweep uses
+    atan2 over the full range and spreads the correction evenly.
+    """
+    P = np.asarray(pts, float)
+    if len(P) < 3:
+        return
     base = len(verts)
-    for i in range(n):
-        corr = -twist * i / n
-        N = frames[i]
-        T = tang[i]
-        B = _cross(T, N)
-        ca, sa = cos(corr), sin(corr)
-        Nc = [N[k] * ca + B[k] * sa for k in range(3)]
-        Bc = [-N[k] * sa + B[k] * ca for k in range(3)]
-        for s in range(sides):
-            a = 2 * pi * s / sides
-            verts.append(tuple(
-                pts[i][k] + tube_r * (cos(a) * Nc[k] + sin(a) * Bc[k])
-                for k in range(3)))
-    for i in range(n):
-        i2 = (i + 1) % n
-        for s in range(sides):
-            s2 = (s + 1) % sides
-            faces.append([base + i * sides + s, base + i * sides + s2,
-                          base + i2 * sides + s2, base + i2 * sides + s])
-            tag_faces.append(tag)
+    v, f = _shared_closed_tube(P, tube_r, sides)
+    verts.extend(v)
+    for quad in f:
+        faces.append([base + i for i in quad])
+        tag_faces.append(tag)
 
 
 def build_polystix(packing='HEXASTIX', cross_section='PRISM', fill=0.98,

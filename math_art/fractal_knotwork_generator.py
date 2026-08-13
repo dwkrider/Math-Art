@@ -91,6 +91,11 @@ from math import exp, hypot, log
 
 import numpy as np
 
+try:                                  # inside the math_art package
+    from .curve_frames import welded_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import welded_tube
+
 try:
     from . import pattern_common as pc
     from . import islamic_pattern_generator as isl
@@ -476,7 +481,7 @@ def _tube_cell(path, widths, signed, weave_height, cord_width,
     zu = isl._weave_zoff(path, True, signed, 1.0)
     p3 = [(path[i][0], path[i][1], zu[i] * amp[i]) for i in range(n)]
     r0 = 0.5 * cord_width
-    verts, faces = kc._tube_welded(p3, r0, tube_sides)
+    verts, faces = welded_tube(p3, r0, tube_sides)
     if not faces:
         return None
     V = np.asarray(verts, float).reshape(n, tube_sides, 3)

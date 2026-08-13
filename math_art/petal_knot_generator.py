@@ -66,6 +66,11 @@ from math import gcd, pi
 
 import numpy as np
 
+try:                                  # inside the math_art package
+    from .curve_frames import welded_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import welded_tube
+
 try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
@@ -315,11 +320,7 @@ if _IN_BLENDER:
             P = P * self.scale
             name = f"Petal Knot {label}"
             if self.output == 'MESH':
-                try:
-                    from . import knot_carpet_generator as kcg
-                except ImportError:
-                    import knot_carpet_generator as kcg
-                verts, faces = kcg._tube_welded(
+                verts, faces = welded_tube(
                     P, max(self.radius, 1e-3), self.tube_sides)
                 me = bpy.data.meshes.new(name)
                 me.from_pydata(verts, [], faces)
@@ -400,10 +401,6 @@ if _IN_BLENDER:
 
 
 def _selftest():
-    try:
-        from . import knot_carpet_generator as kcg
-    except ImportError:
-        import knot_carpet_generator as kcg
     ok_all = True
 
     def _chk(cond, msg):
@@ -468,7 +465,7 @@ def _selftest():
     # mesh tube via the knot-carpet welded sweep
     N, perm, _dw, _lb = PRESETS['TREFOIL']
     P = petal_knot_points(N, perm, samples=64)
-    verts, faces = kcg._tube_welded(P, 0.03, 8)
+    verts, faces = welded_tube(P, 0.03, 8)
     V = np.asarray(verts, float)
     _chk(len(verts) == len(P) * 8 and len(faces) == len(P) * 8
          and np.all(np.isfinite(V))

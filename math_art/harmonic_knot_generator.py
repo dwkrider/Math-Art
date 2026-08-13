@@ -50,6 +50,11 @@ from math import gcd, pi
 
 import numpy as np
 
+try:                                  # inside the math_art package
+    from .curve_frames import welded_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import welded_tube
+
 try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty)
@@ -432,11 +437,7 @@ if _IN_BLENDER:
             name = (f"{fam} Knot "
                     f"({self.nx},{self.ny},{self.nz})")
             if self.output == 'MESH':
-                try:
-                    from . import knot_carpet_generator as kcg
-                except ImportError:
-                    import knot_carpet_generator as kcg
-                verts, faces = kcg._tube_welded(
+                verts, faces = welded_tube(
                     P, self.radius, self.tube_sides)
                 me = bpy.data.meshes.new(name)
                 me.from_pydata(verts, [], faces)
@@ -570,17 +571,13 @@ def _selftest():
           f"crossings={nc_t}")
     check("fourier preset matches torus (2,3) certificate",
           det_t == 3 and nc_t is not None and nc_t < 8)
-    # mesh tube via the knot-carpet welded sweep
-    try:
-        from . import knot_carpet_generator as kcg
-    except ImportError:
-        import knot_carpet_generator as kcg
+    # mesh tube via the shared welded sweep
     P = fit_unit_cube(harmonic_knot_points(
         *PRESETS['LISSAJOUS_327'][0:1],
         *PRESETS['LISSAJOUS_327'][1],
         *PRESETS['LISSAJOUS_327'][2],
         *PRESETS['LISSAJOUS_327'][3], 400))
-    verts, faces = kcg._tube_welded(P, 0.05, 10)
+    verts, faces = welded_tube(P, 0.05, 10)
     va = np.asarray(verts)
     print(f"tube: {len(verts)} verts, {len(faces)} faces")
     check("tube non-empty", len(verts) == 400 * 10

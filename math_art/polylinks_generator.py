@@ -27,6 +27,13 @@ bl_info = {
 }
 
 import math
+
+import numpy as np
+
+try:                                  # inside the math_art package
+    from .curve_frames import closed_tube as _shared_closed_tube
+except ImportError:                   # flat import (test runner)
+    from curve_frames import closed_tube as _shared_closed_tube
 from math import cos, sin, pi
 
 PHI = (1 + 5 ** 0.5) / 2
@@ -118,65 +125,27 @@ def seed_poly(kind):
 
 
 def _closed_tube(pts, tube_r, sides, verts, faces, face_tag, fidx):
-    """Sweep a circular tube along a closed centerline using
-    rotation-minimizing frames (double reflection) with the closure
-    twist distributed along the loop (after Wang's polylink
-    add-on)."""
-    n = len(pts)
-    tang = []
-    for i in range(n):
-        a = pts[(i - 1) % n]
-        b = pts[(i + 1) % n]
-        tang.append(_unit([b[k] - a[k] for k in range(3)]))
-    # initial normal: anything perpendicular to tang[0]
-    t0 = tang[0]
-    ref = (0.0, 0.0, 1.0) if abs(t0[2]) < 0.9 else (1.0, 0.0, 0.0)
-    r = _unit([t0[1] * ref[2] - t0[2] * ref[1],
-               t0[2] * ref[0] - t0[0] * ref[2],
-               t0[0] * ref[1] - t0[1] * ref[0]])
-    frames = [r]
-    for i in range(n):
-        j = (i + 1) % n
-        v1 = [pts[j][k] - pts[i][k] for k in range(3)]
-        c1 = sum(t * t for t in v1) or 1e-12
-        d = sum(v1[k] * frames[-1][k] for k in range(3))
-        rl = [frames[-1][k] - 2 / c1 * d * v1[k] for k in range(3)]
-        dt = sum(v1[k] * tang[i][k] for k in range(3))
-        tl = [tang[i][k] - 2 / c1 * dt * v1[k] for k in range(3)]
-        v2 = [tang[j][k] - tl[k] for k in range(3)]
-        c2 = sum(t * t for t in v2) or 1e-12
-        dr = sum(v2[k] * rl[k] for k in range(3))
-        frames.append([rl[k] - 2 / c2 * dr * v2[k] for k in range(3)])
-    # distribute the closure twist
-    last = frames[n]
-    cx = (last[1] * r[2] - last[2] * r[1],
-          last[2] * r[0] - last[0] * r[2],
-          last[0] * r[1] - last[1] * r[0])
-    sgn = 1.0 if sum(cx[k] * tang[0][k] for k in range(3)) > 0 else -1.0
-    dotr = max(-1.0, min(1.0, sum(last[k] * r[k] for k in range(3))))
-    ang = sgn * math.acos(dotr)
+    """Append a swept closed tube along `pts` into the caller's buffers.
+
+    The sweep itself is shared (`curve_frames.closed_tube`); this wrapper
+    only rebases the indices and carries the per-face tag.
+
+    NOTE: this module previously carried its own copy, which measured the
+    closure holonomy as `sign * acos(dot)`.  That recovers the wrong
+    branch, so the correction did not actually close the loop and the
+    whole residual -- about 1.7 radians on a typical ring -- landed on the
+    single seam quad as a twist discontinuity.  The shared sweep uses
+    atan2 over the full range and spreads the correction evenly.
+    """
+    P = np.asarray(pts, float)
+    if len(P) < 3:
+        return
     base = len(verts)
-    for i in range(n):
-        corr = -ang * i / n
-        N = frames[i]
-        T = tang[i]
-        B = (T[1] * N[2] - T[2] * N[1], T[2] * N[0] - T[0] * N[2],
-             T[0] * N[1] - T[1] * N[0])
-        ca, sa = cos(corr), sin(corr)
-        Nc = [N[k] * ca + B[k] * sa for k in range(3)]
-        Bc = [-N[k] * sa + B[k] * ca for k in range(3)]
-        for s in range(sides):
-            a = 2 * pi * s / sides
-            verts.append(tuple(
-                pts[i][k] + tube_r * (cos(a) * Nc[k] + sin(a) * Bc[k])
-                for k in range(3)))
-    for i in range(n):
-        i2 = (i + 1) % n
-        for s in range(sides):
-            s2 = (s + 1) % sides
-            faces.append([base + i * sides + s, base + i * sides + s2,
-                          base + i2 * sides + s2, base + i2 * sides + s])
-            face_tag.append(fidx)
+    v, f = _shared_closed_tube(P, tube_r, sides)
+    verts.extend(v)
+    for quad in f:
+        faces.append([base + i for i in quad])
+        face_tag.append(fidx)
 
 
 def build_polylinks(kind='TETRA', size=1.35, rotation=25.0, offset=-0.2,
