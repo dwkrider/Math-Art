@@ -1097,21 +1097,13 @@ if _IN_BLENDER:
                 if self.p > 1:
                     lay.prop(self, 'split_sheets')
 
-    class VIEW3D_PT_minimal_surfaces(bpy.types.Panel):
-        bl_label = "Minimal Surfaces"
-        bl_space_type = 'VIEW_3D'
-        bl_region_type = 'UI'
-        bl_category = "Minimal Surfaces"
-
-        def draw(self, context):
-            lay = self.layout
-            col = lay.column(align=True)
-            col.operator("mesh.parametric_minimal_add", icon='SURFACE_NSPHERE')
-            col.operator("mesh.tpms_add", icon='MESH_ICOSPHERE')
-            col.separator()
-            col.operator("mesh.minimal_knot_span_add", icon='MESH_TORUS')
-            col.label(text="Select 1-2 closed curves, then:")
-            col.operator("object.minimal_span", icon='OUTLINER_OB_SURFACE')
+    # A sidebar panel used to sit here listing four operators.  It was
+    # removed: every one of them is in the Add > Mesh > Math Art > Surfaces
+    # menu, so the tab was a second copy of the menu that cost a permanent
+    # slot in the sidebar and held no state of its own.  Sidebar tabs are
+    # for editing an object after it exists (see the Scherk and Relief Panel
+    # tabs, which drive per-object property groups); a list of Add buttons
+    # does not need one.
 
     class VIEW3D_MT_math_art_minimal_zoo(bpy.types.Menu):
         """The minimal-surface catalog, one entry per family (each
@@ -1149,7 +1141,6 @@ if _IN_BLENDER:
     _classes = (MESH_OT_parametric_minimal_add, MESH_OT_tpms_add,
                 MESH_OT_periodic_minimal_add,
                 OBJECT_OT_minimal_span, MESH_OT_knot_span_add,
-                VIEW3D_PT_minimal_surfaces,
                 VIEW3D_MT_math_art_minimal_zoo, VIEW3D_MT_minimal_add)
 
     ADD_MENU = True   # the Math Art extension menu sets this False
