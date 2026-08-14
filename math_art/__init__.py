@@ -107,6 +107,7 @@ _MODULE_NAMES = [
     'tiling_generator',
     'layer_generator',
     'modular_screen_generator',
+    'relief_generator',
     'kuniform_generator',
     'monohedral_generator',
     'isohedral_generator',
@@ -335,6 +336,7 @@ class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
         _op(lay, "mesh.wallpaper_add", icon='MOD_MIRROR')
         _op(lay, "mesh.layer_add", icon='MOD_SOLIDIFY')
         _op(lay, "mesh.modular_screen_add", icon='MOD_WIREFRAME')
+        _op(lay, "mesh.relief_panel_add", icon='MOD_DISPLACE')
         lay.separator()
         _op(lay, "mesh.tiling_add", icon='MESH_GRID')
         _op(lay, "mesh.kuniform_add", icon='MESH_GRID')
