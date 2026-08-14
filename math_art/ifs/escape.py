@@ -25,17 +25,6 @@ import numpy as np
 from .voxel import _toolkit
 
 
-def _toolkit():
-    """The sibling `minsurf` engine package supplies marching_tets.
-    Relative import inside the Math Art package, absolute when this
-    file runs standalone next to the toolkit."""
-    try:
-        from . import minsurf as mst
-    except ImportError:
-        import minsurf as mst
-    return mst
-
-
 def _mandelbulb_field(power, iters, bailout, cell):
     def field(X, Y, Z):
         shape = X.shape

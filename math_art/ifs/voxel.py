@@ -25,9 +25,16 @@ import numpy as np
 
 
 def _toolkit():
-    """The sibling `minsurf` engine package supplies marching_tets."""
+    """The sibling `minsurf` engine package supplies marching_tets.
+
+    Note the TWO dots: `minsurf` is a sibling of this package, not a
+    child of it.  A single dot resolves to `math_art.ifs.minsurf`, which
+    does not exist -- and the flat fallback then hides the mistake
+    anywhere `math_art/` happens to be on sys.path, which is the case in
+    the headless test runner but NOT inside Blender.
+    """
     try:
-        from . import minsurf as mst
+        from .. import minsurf as mst
     except ImportError:
         import minsurf as mst
     return mst

@@ -225,9 +225,12 @@ def _spiral_data(kind, segments=12, pitch=55.0):
     key = (kind, n, round(pitch, 4))
     if key in _SPIRAL_CACHE:
         return _SPIRAL_CACHE[key]
+    # two dots: the generator is a sibling of this PACKAGE, not of this
+    # module.  A single dot silently falls through to the flat import,
+    # which resolves under the headless test runner and fails in Blender.
     try:
-        from .zonohedra_generator import (polar_star,
-                                          make_polar_zonohedron)
+        from ..zonohedra_generator import (polar_star,
+                                           make_polar_zonohedron)
     except ImportError:
         from zonohedra_generator import (polar_star,
                                          make_polar_zonohedron)
