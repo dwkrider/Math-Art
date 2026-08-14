@@ -211,9 +211,9 @@ def _seed(name):
         V, F = sp._seed('CUBE')
         return [tuple(v) for v in V], [list(f) for f in F]
     try:
-        from . import spacefill_generator as sf
+        from .ifs import spacefill as sf
     except ImportError:
-        import spacefill_generator as sf
+        from ifs import spacefill as sf
     if name == 'RHOMBIC':
         return ([tuple(v) for v in sf._RD_V],
                 [list(f) for f in sf._RD_F])
