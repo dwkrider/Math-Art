@@ -85,8 +85,8 @@ PRESETS = {
         # and breaks those lines into blobs, and the result reads as eroded
         # terrain rather than as sand.  Even Drapery, the preset that does
         # want a warp, only takes a slight one.  A high Hurst exponent keeps
-        # the flanks smooth, since
-        # wind-graded sand is not rough at small scales.
+        # the flanks smooth, since wind-graded sand is not rough at small
+        # scales.
         field='FBM', method='FBM', hurst=0.8, warp=0.0,
         curve='RIDGE', depth=0.28, seed=3),
     'POND': dict(
@@ -130,15 +130,19 @@ PRESETS = {
         tau_re=0.0, tau_im=1.0, shape='RECT', tiling='TORUS',
         curve='NONE', warp=0.0, depth=0.26),
     'TRUCHET': dict(
-        # A little subdivision, not a lot: subdividing a cell doubles the
-        # frequency inside it, and past about a third of the cells the lanes
-        # stop reading as one continuous meander.
-        field='TRUCHET', tile_cells=6, lane=0.3, multiscale=0.25,
+        # A minority of straight tiles: they punctuate the meander without
+        # squaring it off, and being a second tile on the same edge
+        # convention they cost the arcs nothing.
+        field='TRUCHET', tile_cells=6, lane=0.3, straight=0.3,
         shape='RECT', tiling='TORUS', curve='NONE', warp=0.0,
-        depth=0.2, seed=2),
+        depth=0.2, seed=2, antialias=2),
     'SEIGAIHA': dict(
-        field='SEIGAIHA', tile_cells=5, rings=3, crown=0.55,
-        shape='RECT', tiling='TORUS', curve='NONE', warp=0.0, depth=0.18),
+        # Three arcs across a fifth of the panel needs about 400 samples to
+        # draw a rounded crest rather than a faceted one; the build reports
+        # the figure, so a coarser setting is a choice rather than a surprise.
+        field='SEIGAIHA', tile_cells=5, rings=3, crown=0.55, rim=0.08,
+        shape='RECT', tiling='TORUS', curve='NONE', warp=0.0, depth=0.18,
+        resolution=384, antialias=2),
 }
 
 
@@ -176,6 +180,8 @@ def build_relief(**kw):
         layers=None,
         # seamless tiling: NONE / TORUS / MIRROR / ANTIMIRROR
         tiling='NONE',
+        # prefilter: 1 = point sampling, 2..4 = that many sub-samples per axis
+        antialias=1,
         # orientation + warp
         orient='CONSTANT', orient_freq=0.5, swirl=1.0,
         warp=0.0, warp_iters=2, warp_freq=0.6,
@@ -197,15 +203,47 @@ def build_relief(**kw):
     warp_suppressed = warp_amount > 0.0 and p.get('tiling', 'NONE') != 'NONE'
     if warp_suppressed:
         warp_amount = 0.0
-    Xw, Yw = warp.domain_warp(X, Y, warp_amount, seed=int(p['seed']) + 1013,
-                              iterations=p['warp_iters'], freq=p['warp_freq'])
+    def _height(ox=0.0, oy=0.0):
+        """The field at the sample points, optionally displaced by (ox, oy).
 
-    if p.get('layers'):
-        # Multi-layer stack.  The single-field controls become the defaults
-        # each layer inherits, so a one-layer stack is exactly the old path.
-        h, _per = stack.evaluate_stack(p['layers'], Xw, Yw, info, p)
+        The warp is inside, not outside: displacing the samples and warping
+        them is the composite h(x, y) evaluated at a different point, which
+        is what a filter has to average.  Warping once and displacing after
+        would average the wrong function.
+        """
+        Xs = X if ox == 0.0 else X + ox
+        Ys = Y if oy == 0.0 else Y + oy
+        Xw, Yw = warp.domain_warp(Xs, Ys, warp_amount,
+                                  seed=int(p['seed']) + 1013,
+                                  iterations=p['warp_iters'],
+                                  freq=p['warp_freq'])
+        if p.get('layers'):
+            # Multi-layer stack.  The single-field controls become the
+            # defaults each layer inherits, so a one-layer stack is exactly
+            # the old path.
+            return stack.evaluate_stack(p['layers'], Xw, Yw, info, p)[0]
+        return fields.evaluate(p['field'], Xw, Yw, info, p)
+
+    # Prefilter.  Point sampling shows a pattern only what falls exactly on
+    # the grid, so any feature finer than the pitch -- a lane edge, a tight
+    # arc, a wavelength set too small -- lands on whichever sample is nearest
+    # and comes out as a staircase.  Averaging a square of sub-sample
+    # positions is a box filter one pitch wide centred on each sample, which
+    # band-limits the field to what the grid can actually carry.  It costs
+    # aa^2 evaluations, which is why it is off by default and why the preview
+    # resolution exists.
+    aa = max(1, min(4, int(p.get('antialias', 1))))
+    if aa == 1:
+        h = _height()
     else:
-        h = fields.evaluate(p['field'], Xw, Yw, info, p)
+        acc = None
+        for iy in range(aa):
+            for ix in range(aa):
+                ox = ((ix + 0.5) / aa - 0.5) * info['dx']
+                oy = ((iy + 0.5) / aa - 0.5) * info['dy']
+                hs = _height(ox, oy)
+                acc = hs if acc is None else acc + hs
+        h = acc / float(aa * aa)
     h = transfer.normalize(h, p['norm'])
     h = transfer.apply_curve(h, p['curve'], amount=p['curve_amount'],
                              levels=p['levels'], smooth=p['terrace'])
@@ -225,9 +263,22 @@ def build_relief(**kw):
     verts = mesh.apply_fit(verts, p['fit'], p['scale'], p['span'])
 
     lam_cells = grid.wavelength_in_cells(p['wavelength'], info)
+    # How well the sampling resolves the finest thing the pattern draws.  For
+    # a stack it is the worst case over the layers, since one under-resolved
+    # layer facets the whole panel.
+    feat = fields.feature_samples(p['field'], p, info)
+    for spec in (p.get('layers') or []):
+        q = dict(p)
+        q.update(spec)
+        f = fields.feature_samples(spec.get('kind', p['field']), q, info)
+        if f is not None:
+            feat = f if feat is None else min(feat, f)
     info = dict(info)
     info.update(verts=len(verts), faces=len(faces),
                 wavelength_cells=lam_cells,
+                feature_samples=feat,
+                undersampled=(feat is not None and feat < 6.0),
+                antialias=aa,
                 aliasing=lam_cells < 4.0,
                 tiling=p.get('tiling', 'NONE'),
                 warp_suppressed=warp_suppressed)
@@ -244,7 +295,12 @@ def build_relief(**kw):
 def _selftest():
     ok = True
     for name, preset in sorted(PRESETS.items()):
-        v, f, info = build_relief(resolution=97, **preset)
+        # A preset may carry its own resolution -- one that needs a fine grid
+        # to draw its finest feature says so.  Override it for the sweep
+        # rather than passing both, which is a TypeError.
+        args = dict(preset)
+        args['resolution'] = 97
+        v, f, info = build_relief(**args)
         open_e, nonman, oriented = mesh.edge_report(f)
         import numpy as _np
         ext = _np.asarray(v).max(axis=0) - _np.asarray(v).min(axis=0)

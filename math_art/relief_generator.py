@@ -61,11 +61,13 @@ try:
                          build_relief, ordered_fields)
     from .relief.kernels import KERNELS
     from .relief import transfer as _transfer
+    from .relief import fields as _fields, grid as _grid
 except ImportError:                       # flat import outside the package
     from relief import (FIELDS, FITS, FORMS, ORIENTATIONS, PRESETS, SHAPES,
                         build_relief, ordered_fields)
     from relief.kernels import KERNELS
     from relief import transfer as _transfer
+    from relief import fields as _fields, grid as _grid
 
 
 try:
@@ -306,6 +308,13 @@ if _IN_BLENDER:
                               unit='ROTATION')
         sources: IntProperty(name="Sources", default=3, min=1, max=32)
         seed: IntProperty(name="Seed", default=1, min=0, max=100000)
+        antialias: IntProperty(
+            name="Prefilter", default=1, min=1, max=4,
+            description="Average this many sub-samples per axis. Point "
+                        "sampling shows a pattern only what lands exactly on "
+                        "the grid, so a feature finer than the sample pitch "
+                        "snaps to the nearest sample and staircases. Costs "
+                        "its square in evaluations")
 
         method: EnumProperty(
             name="Fractal",
@@ -362,14 +371,21 @@ if _IN_BLENDER:
             name="Lane Width", default=0.25, min=0.02, max=1.0,
             description="Width of the Truchet arc lane, as a fraction of "
                         "the cell")
-        multiscale: FloatProperty(
-            name="Subdivision", default=0.0, min=0.0, max=1.0,
-            description="Fraction of cells subdivided one level finer")
+        straight: FloatProperty(
+            name="Straight Tiles", default=0.0, min=0.0, max=1.0,
+            description="Fraction of cells drawn with crossing straight "
+                        "lanes instead of arcs. A second tile on the same "
+                        "edge convention, so the lanes still join smoothly")
         rings: IntProperty(name="Arcs", default=3, min=1, max=12)
         crown: FloatProperty(
             name="Crown", default=0.55, min=0.1, max=1.0,
             description="Fraction of each circle left visible by the row "
                         "in front")
+        rim: FloatProperty(
+            name="Rim", default=0.08, min=0.0, max=0.5,
+            description="Width of the edge where a scale laps over the one "
+                        "behind, as a fraction of its radius. Zero is a "
+                        "vertical wall, which no grid can place cleanly")
 
         # -- vibration modes & optics ---------------------------------
         exact: BoolProperty(
@@ -518,15 +534,16 @@ if _IN_BLENDER:
                 field=self.field, wavelength=self.wavelength,
                 angle=self.angle, steepness=self.steepness,
                 count=self.count, spread=self.spread, sources=self.sources,
-                seed=self.seed, method=self.method, hurst=self.hurst,
+                seed=self.seed, antialias=self.antialias,
+                method=self.method, hurst=self.hurst,
                 dim=self.dim, octaves=self.octaves,
                 anisotropy=self.anisotropy, wind=self.wind,
                 ell_kind=self.ell_kind, ell_part=self.ell_part,
                 tau_re=self.tau_re, tau_im=self.tau_im,
                 ell_cells=self.ell_cells,
                 tile_cells=self.tile_cells, lane=self.lane,
-                multiscale=self.multiscale, rings=self.rings,
-                crown=self.crown,
+                straight=self.straight, rings=self.rings,
+                crown=self.crown, rim=self.rim,
                 exact=self.exact, mode_index=self.mode_index,
                 poisson=self.poisson, ritz=self.ritz,
                 mode_m=self.mode_m, mode_n=self.mode_n, chi=self.chi,
@@ -729,11 +746,12 @@ if _IN_BLENDER:
             elif self.field == 'TRUCHET':
                 col.prop(self, 'tile_cells')
                 col.prop(self, 'lane')
-                col.prop(self, 'multiscale')
+                col.prop(self, 'straight')
             elif self.field == 'SEIGAIHA':
                 col.prop(self, 'tile_cells')
                 col.prop(self, 'rings')
                 col.prop(self, 'crown')
+                col.prop(self, 'rim')
             elif self.field == 'CHLADNI':
                 col.prop(self, 'exact')
                 if self.exact:
@@ -963,11 +981,14 @@ if _IN_BLENDER:
                                 update=_auto)
         lane: FloatProperty(name="Lane Width", default=0.25, min=0.02,
                             max=1.0, update=_auto)
-        multiscale: FloatProperty(name="Subdivision", default=0.0, min=0.0,
-                                  max=1.0, update=_auto)
-        rings: IntProperty(name="Arcs", default=3, min=1, max=12, update=_auto)
+        straight: FloatProperty(name="Straight Tiles", default=0.0, min=0.0,
+                                max=1.0, update=_auto)
+        rings: IntProperty(name="Arcs", default=3, min=1, max=12,
+                           update=_auto)
         crown: FloatProperty(name="Crown", default=0.55, min=0.1, max=1.0,
                              update=_auto)
+        rim: FloatProperty(name="Rim", default=0.08, min=0.0, max=0.5,
+                           update=_auto)
 
         orient: EnumProperty(name="Orientation", items=_ORIENT_ITEMS,
                              default='CONSTANT', update=_auto)
@@ -1045,6 +1066,12 @@ if _IN_BLENDER:
                         "setting changes. The full-resolution build stays an "
                         "explicit action, so autobuild costs preview time, "
                         "not build time")
+        antialias: IntProperty(
+            name="Prefilter", default=1, min=1, max=4,
+            description="Average this many sub-samples per axis, to keep "
+                        "features finer than the sample pitch from "
+                        "staircasing. Costs its square in evaluations",
+            update=_auto)
         preview_resolution: IntProperty(
             name="Preview Resolution", default=128, min=8, max=512,
             description="Sampling used by autobuild and Rebuild. The surface "
@@ -1151,7 +1178,8 @@ if _IN_BLENDER:
                 tau_re=lay.tau_re, tau_im=lay.tau_im,
                 ell_cells=lay.ell_cells,
                 tile_cells=lay.tile_cells, lane=lay.lane,
-                multiscale=lay.multiscale, rings=lay.rings, crown=lay.crown,
+                straight=lay.straight, rings=lay.rings,
+                crown=lay.crown, rim=lay.rim,
                 orient=lay.orient,
                 orient_freq=lay.orient_freq,
                 offset_x=lay.offset_x, offset_y=lay.offset_y,
@@ -1168,11 +1196,27 @@ if _IN_BLENDER:
         return dict(
             shape=props.shape, width=props.width, aspect=props.aspect,
             resolution=res, border=props.border,
-            tiling=props.tiling, warp=props.warp,
+            tiling=props.tiling, antialias=props.antialias,
+            warp=props.warp,
             warp_iters=props.warp_iters, seed=props.seed,
             depth=props.depth, form=props.form,
             base_thickness=props.base_thickness, fit=props.fit,
             scale=props.scale, layers=layers)
+
+    def _feature_samples(kind, params, props):
+        """Finest feature of one layer, in samples, at preview resolution."""
+        prev = min(int(props.preview_resolution), int(props.resolution))
+        nx, ny = _grid.clamp_resolution(prev, props.aspect)
+        info = {'dx': props.width / max(nx - 1, 1), 'width': props.width}
+        try:
+            return _fields.feature_samples(kind, params, info)
+        except (KeyError, TypeError, ValueError):
+            return None
+
+    def _resolution_for(props, have, want):
+        """Resolution at which the finest feature would span `want` samples."""
+        prev = min(int(props.preview_resolution), int(props.resolution))
+        return int(max(8, min(1024, round(prev * want / max(have, 1e-6)))))
 
     def _params_signature(props):
         """A short string identifying the SETTINGS a mesh was built from.
@@ -1392,7 +1436,32 @@ if _IN_BLENDER:
             col.prop(props, 'aspect')
             col.prop(props, 'resolution')
             col.prop(props, 'preview_resolution')
+            col.prop(props, 'antialias')
             col.prop(props, 'border')
+
+            # How well the sampling resolves the finest thing being drawn.
+            # A mesh interpolates linearly between samples, so a crest given
+            # only a few of them comes out as a facet -- which is what the
+            # eye reads as a jagged relief line.
+            worst = None
+            for lay_i in props.layers:
+                if not lay_i.enabled:
+                    continue
+                q = _panel_params(props, preview=True)
+                q.update({k: getattr(lay_i, k) for k in
+                          ('tile_cells', 'rings', 'lane', 'wavelength',
+                           'octaves', 'mode_m', 'mode_n', 'zern_n',
+                           'mode_index', 'ell_cells')})
+                f = _feature_samples(lay_i.kind, q, props)
+                if f is not None:
+                    worst = f if worst is None else min(worst, f)
+            if worst is not None and worst < 8.0:
+                warn = box.column(align=True)
+                warn.alert = worst < 6.0
+                warn.label(text="Finest feature spans %.1f samples" % worst,
+                           icon='ERROR' if worst < 6.0 else 'INFO')
+                warn.label(text="Raise Resolution to about %d for a smooth "
+                                "crest" % _resolution_for(props, worst, 10.0))
             col.prop(props, 'tiling')
 
             box = lay.box()
@@ -1450,11 +1519,12 @@ if _IN_BLENDER:
                 elif lay_.kind == 'TRUCHET':
                     sub.prop(lay_, 'tile_cells')
                     sub.prop(lay_, 'lane')
-                    sub.prop(lay_, 'multiscale')
+                    sub.prop(lay_, 'straight')
                 elif lay_.kind == 'SEIGAIHA':
                     sub.prop(lay_, 'tile_cells')
                     sub.prop(lay_, 'rings')
                     sub.prop(lay_, 'crown')
+                    sub.prop(lay_, 'rim')
                 elif lay_.kind == 'CHLADNI':
                     sub.prop(lay_, 'mode_index')
                 elif lay_.kind in ('DRUMHEAD', 'MEMBRANE', 'HERMITE'):

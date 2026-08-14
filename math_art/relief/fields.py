@@ -269,7 +269,7 @@ def truchet(X, Y, info, p):
     return _t.truchet(X, Y, info, cells=int(p.get('tile_cells', 6)),
                       seed=int(p.get('seed', 1)),
                       lane=float(p.get('lane', 0.25)),
-                      multiscale=float(p.get('multiscale', 0.0)))
+                      straight=float(p.get('straight', 0.0)))
 
 
 def seigaiha(X, Y, info, p):
@@ -278,7 +278,8 @@ def seigaiha(X, Y, info, p):
     return _t.seigaiha(X, Y, info, cells=int(p.get('tile_cells', 6)),
                        seed=int(p.get('seed', 1)),
                        rings=int(p.get('rings', 3)),
-                       crown=float(p.get('crown', 0.55)))
+                       crown=float(p.get('crown', 0.55)),
+                       rim=float(p.get('rim', 0.08)))
 
 
 def _splat_common(X, Y, info, p, pts, wts):
@@ -440,6 +441,53 @@ def evaluate(kind, X, Y, info, params):
     except KeyError:
         raise ValueError("unknown field: %r" % (kind,))
     return fn(X, Y, info, params or {})
+
+
+def feature_samples(field, p, info):
+    """How many samples span the pattern's FINEST feature.  None if unknown.
+
+    Nyquist is the wrong threshold to design to.  A cosine sampled 5 times per
+    cycle is above Nyquist and reconstructs exactly in principle, but a mesh
+    interpolates linearly between samples, so its crest becomes a triangle and
+    reads as a facet.  Comfortable is ~8 and up; below ~6 the faceting shows
+    under raking light, which is precisely the light a relief is looked at in.
+
+    Reported rather than clamped: it is the user's panel, and coarse sampling
+    is a legitimate look.  Silently producing facets and calling it the
+    pattern is not.
+    """
+    dx = float(info.get('dx', 0.0)) or 1e-9
+    width = float(info.get('width', 2.0))
+    def n(size):
+        return float(size) / dx
+
+    if field in ('WAVE', 'WAVE_TRAIN', 'RIPPLE'):
+        return n(float(p.get('wavelength', 0.5)))
+    if field == 'FBM':
+        # The top octave is the finest thing in the sum.
+        oct_ = max(1, int(p.get('octaves', 8)))
+        return n(width / (2.0 ** oct_))
+    if field == 'TRUCHET':
+        cell = width / max(1, int(p.get('tile_cells', 6)))
+        return n(cell * float(p.get('lane', 0.25)))
+    if field == 'SEIGAIHA':
+        cell = width / max(1, int(p.get('tile_cells', 6)))
+        # Concentric arcs across the circle's radius, 0.75 of a cell.
+        return n(0.75 * cell / max(1, int(p.get('rings', 3))))
+    if field == 'ELLIPTIC':
+        return n(width / max(1e-6, float(p.get('ell_cells', 1.0))) / 8.0)
+    if field in ('DRUMHEAD', 'MEMBRANE', 'HERMITE'):
+        k = max(1, max(int(p.get('mode_m', 2)), int(p.get('mode_n', 3))))
+        return n(width / (2.0 * k))
+    if field == 'ZERNIKE':
+        return n(width / (2.0 * max(1, int(p.get('zern_n', 4)))))
+    if field == 'CHLADNI':
+        k = max(1, int(p.get('mode_index', 6)))
+        return n(width / (2.0 * math.sqrt(k)))
+    if field in ('SCATTER', 'OBJECT'):
+        sig = float(p.get('sigma', 0.0))
+        return n(sig) if sig > 0.0 else None
+    return None
 
 
 def _selftest():
