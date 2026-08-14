@@ -216,10 +216,32 @@ if _IN_BLENDER:
         bl_label = "Relief Panel"
         bl_options = {'REGISTER', 'UNDO'}
 
+        def _preset_update(self, context):
+            """Write a chosen preset's values into the real properties.
+
+            The properties are the single source of truth; a preset is a
+            *starting point* that fills them in, not a parallel setting that
+            overrides them at build time.  That way switching to Custom
+            inherits whatever the preset just set, instead of snapping back
+            to the factory defaults -- which is what happens if the preset is
+            only consulted while building.
+            """
+            if self.preset == 'CUSTOM':
+                return
+            for key, value in PRESETS.get(self.preset, {}).items():
+                if not hasattr(self, key):
+                    continue
+                try:
+                    setattr(self, key, value)
+                except (TypeError, ValueError):
+                    pass          # a preset key the property cannot hold
+
         preset: EnumProperty(
             name="Preset", items=_PRESET_ITEMS, default='DRAPERY',
-            description="Named starting point; choose Custom to drive the "
-                        "controls below directly")
+            update=_preset_update,
+            description="Named starting point. Choosing one fills in the "
+                        "controls below, so switching to Custom keeps what "
+                        "you were looking at")
 
         # -- panel ----------------------------------------------------
         shape: EnumProperty(
@@ -435,22 +457,19 @@ if _IN_BLENDER:
                 depth=self.depth, form=self.form,
                 base_thickness=self.base_thickness,
                 fit=self.fit, scale=self.scale)
-            if self.preset != 'CUSTOM':
-                # A preset overrides only what it names; panel size,
-                # resolution and output form stay under the user's control.
-                # `shape` is NOT kept -- a drumhead mode on a rectangular
-                # panel is simply the wrong domain, so a preset may set it.
-                keep = ('width', 'aspect', 'resolution', 'form',
-                        'base_thickness', 'fit', 'scale', 'border')
-                over = dict(PRESETS[self.preset])
-                for k in keep:
-                    over.pop(k, None)
-                p.update(over)
+            # No preset override here: choosing a preset has already written
+            # its values into the properties (see `_preset_update`), so the
+            # properties are the only source of truth and what the panel
+            # shows is exactly what gets built.
             return p
 
         def invoke(self, context, event):
             if not self.source and context.active_object is not None:
                 self.source = context.active_object.name
+            # The update callback fires when the enum is *changed*, not for
+            # its default, so the first invocation has to seed it explicitly
+            # or the default preset would build from factory values.
+            self._preset_update(context)
             return self.execute(context)
 
         def _object_inputs(self, context, params):
@@ -537,6 +556,12 @@ if _IN_BLENDER:
             obj.select_set(True)
             context.view_layer.objects.active = obj
 
+            # Seed the object's layer stack from what was just built, so the
+            # sidebar can carry on editing it.  Without this an Add-menu
+            # panel is a dead end: the stack UI would offer only "New
+            # Layered Panel", as though the thing just made were not one.
+            _seed_stack(obj, self)
+
             msg = ("%dx%d samples, V=%d F=%d"
                    % (info['nx'], info['ny'], len(me.vertices),
                       len(me.polygons)))
@@ -564,7 +589,8 @@ if _IN_BLENDER:
 
             custom = self.preset == 'CUSTOM'
             box = lay.box()
-            box.label(text="Pattern" if custom else "Pattern (from preset)")
+            box.label(text="Pattern" if custom
+                      else "Pattern - switch to Custom to edit")
             col = box.column()
             col.enabled = custom
             col.prop(self, 'field')
@@ -800,6 +826,40 @@ if _IN_BLENDER:
             sub.alignment = 'RIGHT'
             sub.label(text="%s  x%.2f" % (item.blend.title(), item.amplitude))
 
+    # Properties copied from the single-shot operator into the first stack
+    # layer, so an Add-menu panel and a sidebar panel are the same thing.
+    _SEED_LAYER_KEYS = (
+        'wavelength', 'angle', 'steepness', 'count', 'sources', 'seed',
+        'mode_index', 'mode_m', 'mode_n', 'zern_n', 'zern_m', 'hurst',
+        'orient', 'orient_freq', 'curve', 'curve_amount')
+    _SEED_PANEL_KEYS = (
+        'shape', 'width', 'aspect', 'resolution', 'border', 'warp',
+        'warp_iters', 'seed', 'depth', 'form', 'base_thickness', 'fit',
+        'scale', 'smooth')
+
+    def _seed_stack(obj, op):
+        """Fill an object's layer stack from the single-shot operator."""
+        props = obj.relief_panel
+        props.is_panel = True
+        props.layers.clear()
+        for key in _SEED_PANEL_KEYS:
+            if hasattr(op, key):
+                try:
+                    setattr(props, key, getattr(op, key))
+                except (TypeError, ValueError):
+                    pass
+        lay = props.layers.add()
+        lay.kind = op.field
+        lay.amplitude = 1.0
+        lay.blend = 'ADD'
+        for key in _SEED_LAYER_KEYS:
+            if hasattr(op, key) and hasattr(lay, key):
+                try:
+                    setattr(lay, key, getattr(op, key))
+                except (TypeError, ValueError):
+                    pass
+        props.active = 0
+
     def _panel_params(props):
         """Turn the property group into a `build_relief` argument dict."""
         layers = []
@@ -971,7 +1031,9 @@ if _IN_BLENDER:
             if obj is None or not getattr(obj, 'relief_panel', None) \
                     or not obj.relief_panel.is_panel:
                 lay.operator("relief.panel_new", icon='ADD')
-                lay.label(text="or select an existing relief panel")
+                col = lay.column(align=True)
+                col.label(text="or select a relief panel,")
+                col.label(text="or use Add > Mesh > Relief Panel")
                 return
             props = obj.relief_panel
             lay.operator("relief.rebuild", icon='FILE_REFRESH')
