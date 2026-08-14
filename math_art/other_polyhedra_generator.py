@@ -55,7 +55,7 @@ bl_info = {
 
 import math
 
-from . import _highgenus_maps_data as _hgm
+from .polyhedra import _highgenus_maps_data as _hgm
 
 PHI = (1 + 5 ** 0.5) / 2
 

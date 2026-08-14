@@ -56,10 +56,10 @@ except ImportError:
     np = None
 
 try:                                    # the 12 snub / special solids
-    from . import _uniform_snub_data as _snub_data
+    from .polyhedra import _uniform_snub_data as _snub_data
 except ImportError:
     try:
-        import _uniform_snub_data as _snub_data
+        from polyhedra import _uniform_snub_data as _snub_data
     except ImportError:
         _snub_data = None
 
@@ -194,6 +194,11 @@ UNIFORMS = [
     (75, "Great Dirhombicosidodecahedron", "| 3/2 5/3 3 5/2",
      ["3/2", "5/3", "3", "5/2"], 60, 240, 124),
 ]
+
+try:                                  # inside the math_art package
+    from .polyhedra.fit import fit_cube as _fit_cube
+except ImportError:                   # flat import (test runner)
+    from polyhedra.fit import fit_cube as _fit_cube
 
 
 def _frac(x):
@@ -770,6 +775,10 @@ if _IN_BLENDER:
 
     def _make_object(context, name, verts, faces, color):
         verts, mfaces, fsize = _expand_faces(verts, faces)
+        # centre and fit the 2 m cube.  These were emitted at their raw
+        # construction coordinates, which left them both undersized and
+        # OFF-ORIGIN (a third of a unit, for the default).
+        verts = _fit_cube(verts)
         me = bpy.data.meshes.new(name)
         me.from_pydata(verts, [], mfaces)
         me.validate(clean_customdata=True)

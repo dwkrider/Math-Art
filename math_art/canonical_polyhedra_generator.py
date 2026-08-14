@@ -31,10 +31,10 @@ bl_info = {
 }
 
 try:
-    from . import _canonical_polyhedra_data as _data
+    from .polyhedra import _canonical_polyhedra_data as _data
 except ImportError:
     try:
-        import _canonical_polyhedra_data as _data
+        from polyhedra import _canonical_polyhedra_data as _data
     except ImportError:
         _data = None
 
@@ -47,6 +47,11 @@ if _data is not None:
     if hasattr(_data, 'SIMPLEST'):
         _FAMILIES.append(('SIMPLEST', "Simplest Canonical (per symmetry)"))
         _BY_CAT['SIMPLEST'] = _data.SIMPLEST
+
+try:                                  # inside the math_art package
+    from .polyhedra.fit import fit_cube as _fit_cube
+except ImportError:                   # flat import (test runner)
+    from polyhedra.fit import fit_cube as _fit_cube
 
 
 def build(family, index):
@@ -173,7 +178,9 @@ if _IN_BLENDER:
                 self.report({'INFO'}, f"{label}: {len(F)} face segments")
                 return {'FINISHED'}
             me = bpy.data.meshes.new(label)
-            me.from_pydata([tuple(c * self.scale for c in v) for v in V],
+            # canonicalisation fixes the midsphere, which leaves the bounding box a fraction under;
+            # fit the bounding box so it matches every other generator
+            me.from_pydata(_fit_cube(V, 2.0 * self.scale),
                            [], [tuple(f) for f in F])
             me.validate(clean_customdata=True)
             me.update()

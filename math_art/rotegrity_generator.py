@@ -40,6 +40,11 @@ except ImportError:                   # flat import (test runner)
     from polyhedra.seeds import icosa_faces as _icosa_faces
     from polyhedra.seeds import seed_poly as _shared_seed
 
+try:                                  # inside the math_art package
+    from .polyhedra.fit import fit_cube as _fit_cube
+except ImportError:                   # flat import (test runner)
+    from polyhedra.fit import fit_cube as _fit_cube
+
 
 def seed_poly(kind):
     """Platonic seed normalised to unit circumradius.
@@ -260,6 +265,9 @@ if _IN_BLENDER:
             verts, faces, ne, face_strap, strap_len = build_rotegrity(
                 self.kind, self.freq, self.twist, self.extension,
                 self.width, self.thickness, self.segments, self.scale)
+            # the strap thickness pushes the hull a little past the
+            # nominal radius, so fit the bounding box rather than trust it
+            verts = _fit_cube(verts, 2.0 * self.scale)
             me = bpy.data.meshes.new("Rotegrity")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
