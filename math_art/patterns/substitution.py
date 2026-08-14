@@ -21,9 +21,34 @@
 #
 # This form was already in the codebase -- `fractal_reptile_generator`
 # writes its maps as exactly (A, B, C) and composes them in closed form.
-# The other four engines each use a narrower encoding (integer 2x2
-# matrices, a bare similarity, a carried transform, or direct vertex
-# construction), and all four are expressible here.
+#
+# WHICH ENGINES USE THIS, and which deliberately do not.  Three carried a
+# duplicate implementation and now share this one:
+#
+#   fractal_reptile          was (A, B, C) already -- delegated
+#   substitution_knot        had `_sim`/`_apply` over tagged triples
+#                            (a, b, reflect); agrees with `from_pair` to
+#                            3e-14 over 400 random maps
+#   aperiodic                had ~36 lines of 2x3 real affine algebra
+#                            (`_ein_mul`, `_ein_inv`, `_ein_match_two`,
+#                            whose docstrings already said "Similarity");
+#                            all 1178 maps it composes across the six
+#                            tilings are similarities, so the general
+#                            affine capability was unused
+#
+# Two are NOT migrated, on measurement rather than preference:
+#
+#   reptile                  composes with one line of numpy matrix
+#                            algebra (`M0 @ A`, `M0 @ b + t0`) and defines
+#                            no map type of its own.  Its 18 maps ARE all
+#                            similarities, but there is no duplicate
+#                            implementation to remove -- swapping it would
+#                            add conversions at the polygon and
+#                            orientation-key boundaries and delete nothing.
+#   fractal_tiling           has no map algebra at all; its two patch
+#                            builders construct child vertices directly.
+#                            Moving it here would be a rewrite of those
+#                            builders, not a migration.
 #
 # WHAT AN EXPANSION RETURNS is a list of PLACEMENTS -- (prototile id,
 # similarity) -- not baked polygons.  That is deliberate: the placement
@@ -122,6 +147,24 @@ class Similarity:
         B = a2 * b1 + b2 * np.conj(a1)
         C = a2 * c1 + b2 * np.conj(c1) + c2
         return Similarity(A, B, C)
+
+    def inverse(self):
+        """The inverse map, which exists for every non-degenerate
+        similarity (the scale is never zero).
+
+        Direct: w = A z + C inverts to z = (w - C) / A.
+        Reflected: w = B conj(z) + C gives conj(w) = conj(B) z + conj(C),
+        so z = (conj(w) - conj(C)) / conj(B) -- which is again a
+        reflected similarity, with coefficient 1 / conj(B).
+        """
+        if abs(self.B) > abs(self.A):
+            b = np.conj(self.B)
+            if abs(b) < 1e-15:
+                raise ValueError("degenerate similarity has no inverse")
+            return Similarity(0.0, 1.0 / b, -np.conj(self.C) / b)
+        if abs(self.A) < 1e-15:
+            raise ValueError("degenerate similarity has no inverse")
+        return Similarity(1.0 / self.A, 0.0, -self.C / self.A)
 
     @property
     def scale(self):
@@ -413,6 +456,39 @@ def _selftest():
     print(f"substitution: the engine reproduces aperiodic's own P3 "
           f"deflation to 4 generations "
           f"{'OK' if good else 'FAIL ' + ','.join(bad)}")
+
+    # inverse: exists for every non-degenerate similarity, and must be a
+    # true two-sided inverse for the REFLECTED case as well -- a reflected
+    # map inverts to another reflected map with coefficient 1/conj(B),
+    # which is the half a naive implementation gets wrong.
+    rng = np.random.default_rng(20260814)
+    worst = 0.0
+    for _ in range(300):
+        for refl in (False, True):
+            c = complex(*rng.normal(size=2)) * (1.0 + rng.random())
+            t = complex(*rng.normal(size=2))
+            S = Similarity(0.0, c, t) if refl else Similarity(c, 0.0, t)
+            fwd, back = S.compose(S.inverse()), S.inverse().compose(S)
+            for _ in range(2):
+                z = complex(*rng.normal(size=2))
+                worst = max(worst, abs(fwd.apply(z) - z), abs(back.apply(z) - z),
+                            abs(S.inverse().apply(S.apply(z)) - z))
+    good = worst < 1e-9
+    ok &= good
+    print(f"substitution: inverse is two-sided for direct and reflected maps "
+          f"(worst {worst:.1e}) {'OK' if good else 'FAIL'}")
+
+    # a degenerate map has no inverse and must say so rather than divide
+    # by zero somewhere downstream
+    try:
+        Similarity(0.0, 0.0, 1.0).inverse()
+    except ValueError:
+        good = True
+    else:
+        good = False
+    ok &= good
+    print(f"substitution: the degenerate map refuses to invert "
+          f"{'OK' if good else 'FAIL'}")
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
