@@ -201,6 +201,98 @@ def hermite_gauss(X, Y, info, p):
                                    math.sqrt(2.0) * sy))
 
 
+def _splat_common(X, Y, info, p, pts, wts):
+    """Shared tail of the object and scatter layers."""
+    from . import kernels as _k
+    mode = p.get('obj_mode', 'SPLAT')
+    sigma = float(p.get('sigma', 0.0))
+    if sigma <= 0.0:                       # auto bandwidth
+        sigma = _k.auto_sigma(pts, area=info['width'] * info['height'])
+    sigma = max(sigma, 0.5 * info['dx'])
+    kernel = p.get('kernel', 'GAUSSIAN')
+    wrap = bool(p.get('wrap', False))
+
+    if mode == 'MAX':
+        return _k.splat_max(pts, wts, X, Y, kernel, sigma,
+                            smooth=float(p.get('merge', 0.0)))
+    if mode == 'INTERPOLATE':
+        z = (pts[:, 2] if pts.shape[1] > 2 else
+             (wts if wts is not None else np.ones(len(pts))))
+        return _k.shepard(pts, z, X, Y, power=float(p.get('power', 2.0)),
+                          radius=p.get('shepard_radius'))
+    if mode == 'ENGRAVE':
+        mask = _k.rasterise(pts, None, X, Y) > 0.0
+        if not mask.any():
+            return np.zeros(X.shape)
+        d = _k.distance_transform(mask, info['dx'], info['dy'], wrap=wrap)
+        w = max(float(p.get('groove', 0.08)), 1e-6)
+        return -np.clip(1.0 - d / w, 0.0, 1.0)
+    # SPLAT (density)
+    exact = sigma < 1.5 * info['dx']
+    return _k.splat(pts, wts, X, Y, kernel, sigma, wrap=wrap, exact=exact)
+
+
+def object_field(X, Y, info, p):
+    """Relief driven by an arbitrary scene object.
+
+    The operator does the Blender-side work (depsgraph evaluation, point
+    sampling, ray casting) and passes plain arrays in, so this stays free of
+    `bpy`.  Modes: SPLAT / MAX / INTERPOLATE / ENGRAVE use the points;
+    IMPRINT uses a ray-cast depth map, compressed so it reads at panel depth.
+    """
+    from . import imprint as _imp
+    mode = p.get('obj_mode', 'SPLAT')
+
+    if mode == 'IMPRINT':
+        depth = p.get('depth_map')
+        if depth is None:
+            return np.zeros(X.shape)
+        m = p.get('obj_mask')
+        m = None if m is None else np.asarray(m, dtype=bool)
+        return _imp.imprint(np.asarray(depth, dtype=float), m,
+                            p.get('compress', 'AHE'),
+                            dx=info['dx'], dy=info['dy'],
+                            alpha=float(p.get('alpha', 0.1)),
+                            beta=float(p.get('beta', 0.85)))
+
+    pts = p.get('points')
+    if pts is None or len(pts) == 0:
+        return np.zeros(X.shape)
+    pts = np.asarray(pts, dtype=float)
+    wts = p.get('weights')
+    wts = None if wts is None else np.asarray(wts, dtype=float)
+    return _splat_common(X, Y, info, p, pts, wts)
+
+
+def scatter(X, Y, info, p):
+    """The same splat engine over a generated point process.
+
+    This is sparse convolution noise: swap the object's points for a Poisson
+    (or blue-noise, or low-discrepancy) process and the imprint layer becomes
+    a noise generator.  Blue noise is the default because the low-frequency
+    energy of a uniform random set survives the kernel's low-pass and reads as
+    clumping.
+    """
+    from . import kernels as _k
+    hx = float(np.abs(X).max())
+    hy = float(np.abs(Y).max())
+    seed = int(p.get('seed', 1))
+    n = max(1, int(p.get('points_n', 120)))
+    proc = p.get('process', 'BLUE')
+    if proc == 'BLUE':
+        r = math.sqrt(4.0 * hx * hy / max(n, 1)) * 0.7
+        q = _k.poisson_disk(2.0 * hx, 2.0 * hy, r, seed=seed)
+    elif proc == 'HALTON':
+        q = _k.halton(n, seed=seed) * np.array([2.0 * hx, 2.0 * hy])
+    else:                                   # UNIFORM
+        rng = np.random.default_rng(seed & 0x7FFFFFFF)
+        q = rng.random((n, 2)) * np.array([2.0 * hx, 2.0 * hy])
+    pts = q - np.array([hx, hy])
+    rng = np.random.default_rng((seed + 7717) & 0x7FFFFFFF)
+    wts = rng.uniform(-1.0, 1.0, size=len(pts))
+    return _splat_common(X, Y, info, p, pts, wts)
+
+
 # id -> (menu label, description, function)
 FIELDS = {
     'WAVE':       ("Directional Wave",
@@ -224,6 +316,12 @@ FIELDS = {
                    "Optical aberration mode on the disc", zernike_field),
     'HERMITE':    ("Hermite-Gauss",
                    "TEM_mn laser transverse mode", hermite_gauss),
+    'OBJECT':     ("Object",
+                   "Imprint a scene object: splat, drape, engrave or press",
+                   object_field),
+    'SCATTER':    ("Scatter (sparse noise)",
+                   "The same kernel splat over a generated point process",
+                   scatter),
 }
 
 
@@ -242,8 +340,12 @@ def _selftest():
 
     X, Y, info = _grid.make_grid(width=2.0, aspect=1.0, resolution=97)
 
+    rng = np.random.default_rng(5)
+    demo_pts = rng.uniform(-0.8, 0.8, size=(40, 2))
+    base = {'seed': 3, 'points': demo_pts,
+            'weights': rng.uniform(0.5, 1.5, 40)}
     for kind in FIELDS:
-        h = evaluate(kind, X, Y, info, {'seed': 3})
+        h = evaluate(kind, X, Y, info, dict(base))
         finite = np.isfinite(h).all()
         varies = h.std() > 1e-6
         print("fields: %-11s shape=%s finite=%s sd=%.4f"

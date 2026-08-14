@@ -59,20 +59,114 @@ import numpy as np
 try:
     from .relief import (FIELDS, FITS, FORMS, ORIENTATIONS, PRESETS, SHAPES,
                          build_relief)
+    from .relief.kernels import KERNELS
     from .relief import transfer as _transfer
 except ImportError:                       # flat import outside the package
     from relief import (FIELDS, FITS, FORMS, ORIENTATIONS, PRESETS, SHAPES,
                         build_relief)
+    from relief.kernels import KERNELS
     from relief import transfer as _transfer
 
 
 try:
     import bpy
     from bpy.props import (BoolProperty, EnumProperty, FloatProperty,
-                           IntProperty)
+                           IntProperty, StringProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
+
+
+if _IN_BLENDER:
+
+    def _evaluated_mesh(context, obj):
+        """The object's mesh with modifiers applied, plus its world matrix."""
+        deps = context.evaluated_depsgraph_get()
+        ev = obj.evaluated_get(deps)
+        me = ev.to_mesh()
+        if me is None:
+            return None, None, None
+        V = np.empty((len(me.vertices), 3))
+        me.vertices.foreach_get('co', V.ravel())
+        tris = []
+        me.calc_loop_triangles()
+        for t in me.loop_triangles:
+            tris.append(tuple(t.vertices))
+        M = np.array(obj.matrix_world.to_4x4())
+        V = (np.c_[V, np.ones(len(V))] @ M.T)[:, :3]
+        ev.to_mesh_clear()
+        return V, np.array(tris, dtype=int) if tris else None, me
+
+    def _area_weighted_samples(V, tris, count, seed=1):
+        """Uniform samples over the surface, area-weighted.
+
+        Raw vertices over-weight densely subdivided regions, so a smooth
+        sphere and a faceted one would imprint differently for no reason.
+        The square root is what makes the barycentric draw area-uniform:
+
+            P = (1 - sqrt(r1)) A + sqrt(r1)(1 - r2) B + sqrt(r1) r2 C
+
+        *Osada, Funkhouser, Chazelle and Dobkin, "Shape Distributions",
+        ACM TOG 21(4), 2002.*
+        """
+        if tris is None or not len(tris):
+            return V
+        rng = np.random.default_rng(int(seed) & 0x7FFFFFFF)
+        A, B, C = V[tris[:, 0]], V[tris[:, 1]], V[tris[:, 2]]
+        area = 0.5 * np.linalg.norm(np.cross(B - A, C - A), axis=1)
+        tot = float(area.sum())
+        if tot <= 0.0:
+            return V
+        cum = np.cumsum(area) / tot
+        pick = np.searchsorted(cum, rng.random(int(count)))
+        r1 = np.sqrt(rng.random(int(count)))[:, None]
+        r2 = rng.random(int(count))[:, None]
+        return ((1.0 - r1) * A[pick] + r1 * (1.0 - r2) * B[pick]
+                + r1 * r2 * C[pick])
+
+    def _fit_to_panel(P, width, height, margin=0.9):
+        """Map the object's XY footprint into the panel, keeping aspect."""
+        if P is None or not len(P):
+            return P
+        lo = P[:, :2].min(axis=0)
+        hi = P[:, :2].max(axis=0)
+        ext = np.maximum(hi - lo, 1e-9)
+        s = margin * min(width / ext[0], height / ext[1])
+        out = P.copy()
+        out[:, :2] = (P[:, :2] - 0.5 * (lo + hi)) * s
+        if out.shape[1] > 2:
+            out[:, 2] = (P[:, 2] - P[:, 2].min()) * s
+        return out
+
+    def _depth_map(context, obj, X, Y):
+        """Ray-cast the object from above; returns (depth, hit-mask).
+
+        A height field is a graph, so one downward ray per sample is the whole
+        story -- no undercut can be represented anyway.
+        """
+        from mathutils.bvhtree import BVHTree
+        from mathutils import Vector
+        V, tris, _ = _evaluated_mesh(context, obj)
+        if V is None or tris is None or not len(tris):
+            return None, None
+        V = _fit_to_panel(V, float(np.abs(X).max()) * 2.0,
+                          float(np.abs(Y).max()) * 2.0)
+        bvh = BVHTree.FromPolygons([Vector(v) for v in V],
+                                   [tuple(t) for t in tris])
+        top = float(V[:, 2].max()) + 1.0
+        down = Vector((0.0, 0.0, -1.0))
+        depth = np.zeros(X.shape)
+        hit = np.zeros(X.shape, dtype=bool)
+        for j in range(X.shape[0]):
+            for i in range(X.shape[1]):
+                loc, _n, _idx, _d = bvh.ray_cast(
+                    Vector((float(X[j, i]), float(Y[j, i]), top)), down)
+                if loc is not None:
+                    depth[j, i] = loc.z
+                    hit[j, i] = True
+        if hit.any():
+            depth[~hit] = depth[hit].min()
+        return depth, hit
 
 
 if _IN_BLENDER:
@@ -206,6 +300,77 @@ if _IN_BLENDER:
         waist: FloatProperty(name="Beam Waist", default=0.5, min=0.05,
                              max=2.0)
 
+        # -- object layer ---------------------------------------------
+        # An operator property cannot be a PointerProperty to an ID, so the
+        # object is named and resolved at execute time.
+        source: StringProperty(
+            name="Object",
+            description="Scene object to imprint (defaults to the active "
+                        "object)")
+        obj_mode: EnumProperty(
+            name="Mode",
+            items=[('SPLAT', "Splat",
+                    "Sum a kernel at every point -- a density field"),
+                   ('MAX', "Merge",
+                    "Union of bumps rather than their sum, metaball-like"),
+                   ('INTERPOLATE', "Drape",
+                    "Interpolate a surface through the points"),
+                   ('IMPRINT', "Press",
+                    "Ray-cast the object's depth and compress it to read"),
+                   ('ENGRAVE', "Engrave",
+                    "Cut a groove along the object's projected outline")],
+            default='SPLAT')
+        sample: EnumProperty(
+            name="Points",
+            items=[('FACES', "Surface samples",
+                    "Area-weighted samples -- mesh density does not bias the "
+                    "result"),
+                   ('VERTS', "Vertices", "The object's vertices as they are")],
+            default='FACES')
+        samples: IntProperty(name="Sample Count", default=2000, min=8,
+                             max=200000)
+        kernel: EnumProperty(
+            name="Kernel",
+            items=[(k, v[0], "%s support, %s at the edge" % (v[1], v[2]))
+                   for k, v in sorted(KERNELS.items())],
+            default='GAUSSIAN')
+        sigma: FloatProperty(
+            name="Radius", default=0.0, min=0.0, max=10.0, unit='LENGTH',
+            description="Kernel radius; 0 uses the density-estimation rule "
+                        "sigma = spread * N^(-1/6)")
+        merge: FloatProperty(
+            name="Merge", default=0.0, min=0.0, max=1.0,
+            description="Round the seam where merged bumps meet (Merge mode)")
+        power: FloatProperty(name="Falloff Power", default=2.0, min=0.5,
+                             max=8.0)
+        groove: FloatProperty(name="Groove Width", default=0.08, min=0.002,
+                              max=1.0, unit='LENGTH')
+        compress: EnumProperty(
+            name="Compression",
+            items=[('AHE', "Histogram",
+                    "Adaptive histogram equalisation -- no solver, robust"),
+                   ('GRADIENT', "Gradient domain",
+                    "Attenuate gradients and reintegrate -- better on "
+                    "organic shapes"),
+                   ('LINEAR', "None",
+                    "Raw depth; usually reads as a stepped blob")],
+            default='AHE')
+        alpha: FloatProperty(name="Attenuation", default=0.1, min=0.001,
+                             max=2.0)
+        beta: FloatProperty(name="Compression", default=0.85, min=0.1,
+                            max=1.0)
+
+        # -- scatter layer --------------------------------------------
+        process: EnumProperty(
+            name="Point Process",
+            items=[('BLUE', "Blue noise",
+                    "Poisson-disk: no clumping under the kernel's low-pass"),
+                   ('HALTON', "Halton", "Low-discrepancy, deterministic"),
+                   ('UNIFORM', "Uniform random", "Clumps, for comparison")],
+            default='BLUE')
+        points_n: IntProperty(name="Point Count", default=120, min=2,
+                              max=20000)
+
         # -- orientation & warp ---------------------------------------
         orient: EnumProperty(name="Orientation", items=_ORIENT_ITEMS,
                              default='CONSTANT')
@@ -257,6 +422,11 @@ if _IN_BLENDER:
                 poisson=self.poisson, ritz=self.ritz,
                 mode_m=self.mode_m, mode_n=self.mode_n, chi=self.chi,
                 zern_n=self.zern_n, zern_m=self.zern_m, waist=self.waist,
+                obj_mode=self.obj_mode, kernel=self.kernel,
+                sigma=self.sigma, merge=self.merge, power=self.power,
+                groove=self.groove, compress=self.compress,
+                alpha=self.alpha, beta=self.beta,
+                process=self.process, points_n=self.points_n,
                 orient=self.orient, orient_freq=self.orient_freq,
                 swirl=self.swirl, warp=self.warp,
                 warp_iters=self.warp_iters,
@@ -278,9 +448,58 @@ if _IN_BLENDER:
                 p.update(over)
             return p
 
+        def invoke(self, context, event):
+            if not self.source and context.active_object is not None:
+                self.source = context.active_object.name
+            return self.execute(context)
+
+        def _object_inputs(self, context, params):
+            """Resolve the source object into plain arrays for the engine."""
+            obj = bpy.data.objects.get(self.source)
+            if obj is None:
+                obj = context.active_object
+            if obj is None or obj.type not in {'MESH', 'CURVE', 'SURFACE',
+                                               'FONT', 'META'}:
+                self.report({'ERROR'},
+                            "Object pattern needs a mesh-like source object; "
+                            "pick one in the Object field")
+                return False
+
+            half_w = 0.5 * self.width
+            half_h = 0.5 * self.width * self.aspect
+            if self.obj_mode == 'IMPRINT':
+                from .relief import make_grid
+                X, Y, _ = make_grid(self.width, self.aspect, self.resolution)
+                depth, hit = _depth_map(context, obj, X, Y)
+                if depth is None:
+                    self.report({'ERROR'}, "could not evaluate that object "
+                                           "into a mesh")
+                    return False
+                params['depth_map'] = depth
+                params['obj_mask'] = hit
+                return True
+
+            V, tris, _ = _evaluated_mesh(context, obj)
+            if V is None or not len(V):
+                self.report({'ERROR'}, "could not evaluate that object "
+                                       "into a mesh")
+                return False
+            if self.sample == 'FACES' and tris is not None and len(tris):
+                P = _area_weighted_samples(V, tris, self.samples, self.seed)
+            else:
+                P = V
+            P = _fit_to_panel(P, 2.0 * half_w, 2.0 * half_h)
+            params['points'] = P
+            params['weights'] = None
+            return True
+
         def execute(self, context):
+            params = self._params()
+            if params.get('field') == 'OBJECT':
+                if not self._object_inputs(context, params):
+                    return {'CANCELLED'}
             try:
-                verts, faces, info = build_relief(**self._params())
+                verts, faces, info = build_relief(**params)
             except (ValueError, MemoryError) as exc:
                 self.report({'ERROR'}, str(exc))
                 return {'CANCELLED'}
@@ -392,6 +611,31 @@ if _IN_BLENDER:
                 col.prop(self, 'mode_m')
                 col.prop(self, 'mode_n')
                 col.prop(self, 'waist')
+            elif self.field == 'OBJECT':
+                col.prop_search(self, 'source', bpy.data, 'objects')
+                col.prop(self, 'obj_mode')
+                if self.obj_mode == 'IMPRINT':
+                    col.prop(self, 'compress')
+                    if self.compress == 'GRADIENT':
+                        col.prop(self, 'alpha')
+                        col.prop(self, 'beta')
+                elif self.obj_mode == 'ENGRAVE':
+                    col.prop(self, 'groove')
+                else:
+                    col.prop(self, 'sample')
+                    if self.sample == 'FACES':
+                        col.prop(self, 'samples')
+                    col.prop(self, 'kernel')
+                    col.prop(self, 'sigma')
+                    if self.obj_mode == 'MAX':
+                        col.prop(self, 'merge')
+                    if self.obj_mode == 'INTERPOLATE':
+                        col.prop(self, 'power')
+            elif self.field == 'SCATTER':
+                col.prop(self, 'process')
+                col.prop(self, 'points_n')
+                col.prop(self, 'kernel')
+                col.prop(self, 'sigma')
             col.prop(self, 'seed')
 
             box = lay.box()

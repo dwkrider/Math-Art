@@ -35,7 +35,8 @@ References:
     1961.
 """
 
-from . import fields, grid, mesh, plates, special, transfer, warp
+from . import (fields, grid, imprint, kernels, mesh, plates, special,
+               transfer, warp)
 from .fields import FIELDS, evaluate
 from .grid import border_window, make_grid, mask_for, SHAPES
 from .mesh import apply_fit, edge_report, FITS, FORMS, sheet, slab
@@ -48,7 +49,8 @@ from .warp import (domain_warp, orientation_field, ORIENTATIONS,
                    phase_from_direction, smooth_field)
 
 __all__ = [
-    "fields", "grid", "mesh", "plates", "special", "transfer", "warp",
+    "fields", "grid", "imprint", "kernels", "mesh", "plates", "special",
+    "transfer", "warp",
     "FIELDS", "evaluate",
     "SHAPES", "make_grid", "mask_for", "border_window",
     "CURVES", "NORMS", "normalize", "apply_curve", "to_depth",
@@ -98,6 +100,10 @@ PRESETS = {
     'ZERNIKE': dict(
         field='ZERNIKE', zern_n=5, zern_m=3, shape='DISC',
         curve='NONE', warp=0.0, depth=0.2),
+    'SCATTER': dict(
+        field='SCATTER', process='BLUE', points_n=150, kernel='WYVILL',
+        obj_mode='MAX', merge=0.15, curve='NONE', warp=0.0, depth=0.22,
+        seed=9),
     'LASER': dict(
         field='HERMITE', mode_m=3, mode_n=2, waist=0.45, shape='RECT',
         curve='NONE', warp=0.0, depth=0.2),
@@ -124,6 +130,11 @@ def build_relief(**kw):
         # plate / membrane / optical modes
         exact=True, mode_index=6, mode_m=2, mode_n=3, chi=1.0,
         poisson=0.225, ritz=10, zern_n=4, zern_m=2, waist=0.5,
+        # object / scatter layer
+        obj_mode='SPLAT', kernel='GAUSSIAN', sigma=0.0, merge=0.0,
+        power=2.0, groove=0.08, compress='AHE', alpha=0.1, beta=0.85,
+        process='BLUE', points_n=120, wrap=False,
+        points=None, weights=None, depth_map=None, obj_mask=None,
         # orientation + warp
         orient='CONSTANT', orient_freq=0.5, swirl=1.0,
         warp=0.0, warp_iters=2, warp_freq=0.6,
