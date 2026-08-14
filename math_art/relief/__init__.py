@@ -121,6 +121,24 @@ PRESETS = {
     'LASER': dict(
         field='HERMITE', mode_m=3, mode_n=2, waist=0.45, shape='RECT',
         curve='NONE', warp=0.0, depth=0.2),
+    # -- families that tile by construction ---------------------------
+    # All three set TORUS not to snap anything -- they are already seamless
+    # by their own mathematics -- but so the build reports the measured seam
+    # and the claim stays checkable rather than asserted.
+    'ELLIPTIC_TORUS': dict(
+        field='ELLIPTIC', ell_kind='WP', ell_part='SPHERE', ell_cells=2.0,
+        tau_re=0.0, tau_im=1.0, shape='RECT', tiling='TORUS',
+        curve='NONE', warp=0.0, depth=0.26),
+    'TRUCHET': dict(
+        # A little subdivision, not a lot: subdividing a cell doubles the
+        # frequency inside it, and past about a third of the cells the lanes
+        # stop reading as one continuous meander.
+        field='TRUCHET', tile_cells=6, lane=0.3, multiscale=0.25,
+        shape='RECT', tiling='TORUS', curve='NONE', warp=0.0,
+        depth=0.2, seed=2),
+    'SEIGAIHA': dict(
+        field='SEIGAIHA', tile_cells=5, rings=3, crown=0.55,
+        shape='RECT', tiling='TORUS', curve='NONE', warp=0.0, depth=0.18),
 }
 
 

@@ -186,6 +186,15 @@ if _IN_BLENDER:
         ('DRUMHEAD', "Drumhead", "Circular membrane mode on a disc"),
         ('ZERNIKE', "Zernike", "Optical aberration mode on a disc"),
         ('LASER', "Laser Mode", "Hermite-Gauss TEM transverse mode"),
+        ('SCATTER', "Scatter",
+         "Blue-noise points, each raised by a smooth kernel"),
+        ('ELLIPTIC_TORUS', "Elliptic Torus",
+         "Weierstrass P on a period lattice -- doubly periodic, so it tiles "
+         "exactly by definition rather than by snapping"),
+        ('TRUCHET', "Truchet Lanes",
+         "Randomly oriented arc tiles whose arcs always join tangentially"),
+        ('SEIGAIHA', "Seigaiha",
+         "The Japanese overlapping-wave motif on a staggered grid"),
     ]
 
     _FIELD_ITEMS = list(ordered_fields())
@@ -300,7 +309,8 @@ if _IN_BLENDER:
 
         method: EnumProperty(
             name="Fractal",
-            items=[('FBM', "Fractional Brownian", "Hurst exponent is the knob"),
+            items=[('FBM', "Fractional Brownian",
+                    "Hurst exponent is the knob"),
                    ('WEIERSTRASS', "Weierstrass-Mandelbrot",
                     "Fractal dimension is the knob")],
             default='FBM')
@@ -833,135 +843,214 @@ if _IN_BLENDER:
         ('LAYER', "Layer", "Use an earlier layer as the mask"),
     ]
 
+    # Set while a rebuild is running.  An autobuild writes `built_sig` and
+    # `built_quality` back onto the property group; those two carry no update
+    # callback of their own, but the guard makes the no-reentry rule explicit
+    # rather than dependent on that staying true.
+    _BUILDING = [False]
+
+    def _rebuild(obj, preview=True):
+        """Rebuild `obj`'s geometry from its layer stack.  Returns `info`.
+
+        The single place a relief panel's mesh is written, shared by the
+        Rebuild operators and by autobuild -- an autobuild cannot go through
+        `bpy.ops`, which would act on the active object rather than on the
+        one whose property actually changed.
+        """
+        props = obj.relief_panel
+        params = _panel_params(props, preview=preview)
+        verts, faces, info = build_relief(**params)
+        _write_mesh(obj, verts, faces, props.smooth)
+        props.built_sig = _params_signature(props)
+        props.built_quality = 'PREVIEW' if preview else 'FULL'
+        return info
+
+    def _auto(self, context):
+        """Property update hook: rebuild at preview resolution if asked to.
+
+        Attached to every setting that changes the geometry.  It builds at
+        PREVIEW resolution unconditionally -- autobuild is only affordable
+        because of that, and an exact plate solve on a 1024 grid is not
+        drag-speed.  The full-resolution build stays an explicit action.
+        """
+        if _BUILDING[0]:
+            return
+        obj = getattr(self, 'id_data', None)
+        props = getattr(obj, 'relief_panel', None)
+        if props is None or not props.is_panel or not props.autobuild:
+            return
+        _BUILDING[0] = True
+        try:
+            _rebuild(obj, preview=True)
+        except (ValueError, MemoryError, RuntimeError):
+            # A half-typed number is a normal intermediate state while
+            # dragging; failing loudly on every one of them would make the
+            # option unusable.  The stale marker still tells the truth.
+            pass
+        finally:
+            _BUILDING[0] = False
+
     class ReliefLayer(bpy.types.PropertyGroup):
         """One entry in a panel's pattern stack."""
         kind: EnumProperty(name="Pattern", items=_FIELD_ITEMS,
-                           default='WAVE_TRAIN')
+                           default='WAVE_TRAIN', update=_auto)
         amplitude: FloatProperty(name="Amount", default=1.0, min=-4.0,
-                                 max=4.0)
-        blend: EnumProperty(name="Blend", items=_BLEND_ITEMS, default='ADD')
-        enabled: BoolProperty(name="Enabled", default=True)
+                                 max=4.0, update=_auto)
+        blend: EnumProperty(name="Blend", items=_BLEND_ITEMS, default='ADD',
+                            update=_auto)
+        enabled: BoolProperty(name="Enabled", default=True, update=_auto)
 
         wavelength: FloatProperty(name="Wavelength", default=0.5, min=0.005,
-                                  max=20.0, unit='LENGTH')
+                                  max=20.0, unit='LENGTH', update=_auto)
         angle: FloatProperty(name="Angle", default=0.0, min=-6.2832,
-                             max=6.2832, unit='ROTATION')
+                             max=6.2832, unit='ROTATION', update=_auto)
         steepness: FloatProperty(name="Steepness", default=0.0, min=0.0,
-                                 max=1.0)
-        count: IntProperty(name="Waves", default=3, min=1, max=24)
-        sources: IntProperty(name="Sources", default=3, min=1, max=32)
-        seed: IntProperty(name="Seed", default=1, min=0, max=100000)
-        mode_index: IntProperty(name="Mode", default=6, min=1, max=40)
-        mode_m: IntProperty(name="m", default=2, min=0, max=24)
-        mode_n: IntProperty(name="n", default=3, min=0, max=24)
-        zern_n: IntProperty(name="Zernike n", default=4, min=0, max=20)
-        zern_m: IntProperty(name="Zernike m", default=2, min=-20, max=20)
-        hurst: FloatProperty(name="Hurst", default=0.7, min=0.05, max=0.99)
+                                 max=1.0, update=_auto)
+        count: IntProperty(name="Waves", default=3, min=1, max=24,
+                           update=_auto)
+        sources: IntProperty(name="Sources", default=3, min=1, max=32,
+                             update=_auto)
+        seed: IntProperty(name="Seed", default=1, min=0, max=100000,
+                          update=_auto)
+        mode_index: IntProperty(name="Mode", default=6, min=1, max=40,
+                                update=_auto)
+        mode_m: IntProperty(name="m", default=2, min=0, max=24, update=_auto)
+        mode_n: IntProperty(name="n", default=3, min=0, max=24, update=_auto)
+        zern_n: IntProperty(name="Zernike n", default=4, min=0, max=20,
+                            update=_auto)
+        zern_m: IntProperty(name="Zernike m", default=2, min=-20, max=20,
+                            update=_auto)
+        hurst: FloatProperty(name="Hurst", default=0.7, min=0.05, max=0.99,
+                             update=_auto)
         method: EnumProperty(
             name="Fractal",
-            items=[('FBM', "Fractional Brownian", "Hurst exponent is the knob"),
+            items=[('FBM', "Fractional Brownian",
+                    "Hurst exponent is the knob"),
                    ('WEIERSTRASS', "Weierstrass-Mandelbrot",
                     "Fractal dimension is the knob")],
-            default='FBM')
+            default='FBM', update=_auto)
         dim: FloatProperty(name="Fractal Dimension", default=2.3, min=2.01,
-                           max=2.95)
-        octaves: IntProperty(name="Octaves", default=8, min=1, max=16)
+                           max=2.95, update=_auto)
+        octaves: IntProperty(name="Octaves", default=8, min=1, max=16,
+                             update=_auto)
         anisotropy: FloatProperty(name="Wind Anisotropy", default=0.0,
-                                  min=0.0, max=1.0)
+                                  min=0.0, max=1.0, update=_auto)
         wind: FloatProperty(name="Wind Direction", default=0.0, min=-6.2832,
-                            max=6.2832, unit='ROTATION')
+                            max=6.2832, unit='ROTATION', update=_auto)
 
         ell_kind: EnumProperty(
             name="Function",
             items=[('WP', "Weierstrass P", "Doubly periodic: tiles exactly"),
                    ('WP_PRIME', "Weierstrass P'", "Also doubly periodic"),
-                   ('ZETA', "Weierstrass zeta", "Quasi-periodic: does NOT tile"),
+                   ('ZETA', "Weierstrass zeta",
+                    "Quasi-periodic: does NOT tile"),
                    ('THETA', "Jacobi theta", "Quasi-periodic: does NOT tile")],
-            default='WP')
+            default='WP', update=_auto)
         ell_part: EnumProperty(
             name="Height From",
             items=[('SPHERE', "Riemann Sphere", "Smooth through the poles"),
                    ('RE', "Real Part", ""), ('IM', "Imaginary Part", ""),
                    ('ABS', "Modulus", "")],
-            default='SPHERE')
+            default='SPHERE', update=_auto)
         tau_re: FloatProperty(name="Lattice Skew", default=0.0, min=-2.0,
-                              max=2.0)
+                              max=2.0, update=_auto)
         tau_im: FloatProperty(name="Lattice Ratio", default=1.0, min=0.05,
-                              max=4.0)
+                              max=4.0, update=_auto)
         ell_cells: FloatProperty(name="Periods", default=1.0, min=0.25,
-                                 max=8.0)
+                                 max=8.0, update=_auto)
 
-        tile_cells: IntProperty(name="Cells", default=6, min=1, max=64)
+        tile_cells: IntProperty(name="Cells", default=6, min=1, max=64,
+                                update=_auto)
         lane: FloatProperty(name="Lane Width", default=0.25, min=0.02,
-                            max=1.0)
+                            max=1.0, update=_auto)
         multiscale: FloatProperty(name="Subdivision", default=0.0, min=0.0,
-                                  max=1.0)
-        rings: IntProperty(name="Arcs", default=3, min=1, max=12)
-        crown: FloatProperty(name="Crown", default=0.55, min=0.1, max=1.0)
+                                  max=1.0, update=_auto)
+        rings: IntProperty(name="Arcs", default=3, min=1, max=12, update=_auto)
+        crown: FloatProperty(name="Crown", default=0.55, min=0.1, max=1.0,
+                             update=_auto)
 
         orient: EnumProperty(name="Orientation", items=_ORIENT_ITEMS,
-                             default='CONSTANT')
+                             default='CONSTANT', update=_auto)
         orient_freq: FloatProperty(name="Field Scale", default=0.5, min=0.05,
-                                   max=8.0)
+                                   max=8.0, update=_auto)
 
         offset_x: FloatProperty(name="Offset X", default=0.0, min=-10.0,
-                                max=10.0, unit='LENGTH')
+                                max=10.0, unit='LENGTH', update=_auto)
         offset_y: FloatProperty(name="Offset Y", default=0.0, min=-10.0,
-                                max=10.0, unit='LENGTH')
+                                max=10.0, unit='LENGTH', update=_auto)
         rotation: FloatProperty(name="Rotation", default=0.0, min=-6.2832,
-                                max=6.2832, unit='ROTATION')
+                                max=6.2832, unit='ROTATION', update=_auto)
         scale_x: FloatProperty(name="Scale X", default=1.0, min=0.01,
-                               max=100.0)
+                               max=100.0, update=_auto)
         scale_y: FloatProperty(name="Scale Y", default=1.0, min=0.01,
-                               max=100.0)
+                               max=100.0, update=_auto)
 
-        mask: EnumProperty(name="Mask", items=_MASK_ITEMS, default='NONE')
+        mask: EnumProperty(name="Mask", items=_MASK_ITEMS, default='NONE',
+                           update=_auto)
         mask_width: FloatProperty(name="Mask Width", default=0.5, min=0.01,
-                                  max=2.0)
+                                  max=2.0, update=_auto)
         mask_angle: FloatProperty(name="Mask Angle", default=0.0, min=-6.2832,
-                                  max=6.2832, unit='ROTATION')
+                                  max=6.2832, unit='ROTATION', update=_auto)
         mask_layer: IntProperty(
             name="Mask Layer", default=0, min=0, max=63,
             description="Index of an EARLIER layer to use as the mask; a "
-                        "layer can only reference ones below it")
+                        "layer can only reference ones below it", update=_auto)
         curve: EnumProperty(name="Profile", items=_CURVE_ITEMS,
-                            default='NONE')
+                            default='NONE', update=_auto)
         curve_amount: FloatProperty(name="Amount", default=1.0, min=0.05,
-                                    max=4.0)
+                                    max=4.0, update=_auto)
 
     class ReliefPanelProps(bpy.types.PropertyGroup):
         """The whole panel: outline, output settings, and the layer stack."""
         shape: EnumProperty(
             name="Shape",
             items=[(s, s.replace('_', ' ').title(), "") for s in SHAPES],
-            default='RECT')
+            default='RECT', update=_auto)
         width: FloatProperty(name="Width", default=2.0, min=0.01, max=100.0,
-                             unit='LENGTH')
-        aspect: FloatProperty(name="Aspect", default=1.0, min=0.05, max=20.0)
+                             unit='LENGTH', update=_auto)
+        aspect: FloatProperty(name="Aspect", default=1.0, min=0.05, max=20.0,
+                              update=_auto)
         resolution: IntProperty(name="Resolution", default=192, min=8,
-                                max=1024)
-        border: FloatProperty(name="Border", default=0.0, min=0.0, max=0.5)
+                                max=1024, update=_auto)
+        border: FloatProperty(name="Border", default=0.0, min=0.0, max=0.5,
+                              update=_auto)
         tiling: EnumProperty(name="Tiling", items=_TILING_ITEMS,
-                             default='NONE')
-        warp: FloatProperty(name="Warp", default=0.0, min=0.0, max=2.0)
-        warp_iters: IntProperty(name="Warp Steps", default=2, min=1, max=4)
-        seed: IntProperty(name="Seed", default=1, min=0, max=100000)
+                             default='NONE', update=_auto)
+        warp: FloatProperty(name="Warp", default=0.0, min=0.0, max=2.0,
+                            update=_auto)
+        warp_iters: IntProperty(name="Warp Steps", default=2, min=1, max=4,
+                                update=_auto)
+        seed: IntProperty(name="Seed", default=1, min=0, max=100000,
+                          update=_auto)
         depth: FloatProperty(name="Relief Depth", default=0.25, min=0.0,
-                             max=10.0, unit='LENGTH')
+                             max=10.0, unit='LENGTH', update=_auto)
         form: EnumProperty(
             name="Form",
             items=[('SLAB', "Slab", "Watertight panel with a flat back"),
                    ('SHEET', "Sheet", "Open surface")],
-            default='SLAB')
+            default='SLAB', update=_auto)
         base_thickness: FloatProperty(name="Base", default=0.1, min=0.0,
-                                      max=10.0, unit='LENGTH')
+                                      max=10.0, unit='LENGTH', update=_auto)
         fit: EnumProperty(
             name="Fit",
             items=[('FOOTPRINT', "Footprint", ""), ('CUBE', "2 m Cube", ""),
                    ('NONE', "None", "")],
-            default='FOOTPRINT')
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+            default='FOOTPRINT', update=_auto)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             update=_auto)
+        smooth: BoolProperty(name="Smooth Shading", default=True, update=_auto)
+        autobuild: BoolProperty(
+            name="Autobuild", default=True,
+            description="Rebuild the panel at PREVIEW resolution whenever a "
+                        "setting changes. The full-resolution build stays an "
+                        "explicit action, so autobuild costs preview time, "
+                        "not build time")
+        preview_resolution: IntProperty(
+            name="Preview Resolution", default=128, min=8, max=512,
+            description="Sampling used by autobuild and Rebuild. The surface "
+                        "is the same one the final build makes, only sampled "
+                        "more coarsely",
+            update=_auto)
 
         layers: bpy.props.CollectionProperty(type=ReliefLayer)
         active: IntProperty(name="Active Layer", default=0, min=0)
@@ -973,6 +1062,10 @@ if _IN_BLENDER:
         # some actions (add, remove, reorder) and not others is the worst of
         # both worlds: you cannot tell which state you are looking at.
         built_sig: StringProperty(default="")
+        # Which of the two resolutions produced the current mesh.  Kept apart
+        # from `built_sig` on purpose: a preview is not a settings change, and
+        # folding the two together would make every preview read as stale.
+        built_quality: StringProperty(default="")
 
     class RELIEF_UL_layers(bpy.types.UIList):
         def draw_item(self, context, layout, data, item, icon, active_data,
@@ -1000,30 +1093,46 @@ if _IN_BLENDER:
         'scale', 'smooth')
 
     def _seed_stack(obj, op):
-        """Fill an object's layer stack from the single-shot operator."""
+        """Fill an object's layer stack from the single-shot operator.
+
+        Seeding assigns dozens of properties in a row.  Each assignment would
+        otherwise fire the autobuild hook and rebuild the panel from a
+        half-copied state, so the whole transfer happens under the guard --
+        the operator has already built the mesh it is seeding from.
+        """
         props = obj.relief_panel
         props.is_panel = True
-        props.layers.clear()
-        for key in _SEED_PANEL_KEYS:
-            if hasattr(op, key):
-                try:
-                    setattr(props, key, getattr(op, key))
-                except (TypeError, ValueError):
-                    pass
-        lay = props.layers.add()
-        lay.kind = op.field
-        lay.amplitude = 1.0
-        lay.blend = 'ADD'
-        for key in _SEED_LAYER_KEYS:
-            if hasattr(op, key) and hasattr(lay, key):
-                try:
-                    setattr(lay, key, getattr(op, key))
-                except (TypeError, ValueError):
-                    pass
-        props.active = 0
+        _BUILDING[0] = True
+        try:
+            props.layers.clear()
+            for key in _SEED_PANEL_KEYS:
+                if hasattr(op, key):
+                    try:
+                        setattr(props, key, getattr(op, key))
+                    except (TypeError, ValueError):
+                        pass
+            lay = props.layers.add()
+            lay.kind = op.field
+            lay.amplitude = 1.0
+            lay.blend = 'ADD'
+            for key in _SEED_LAYER_KEYS:
+                if hasattr(op, key) and hasattr(lay, key):
+                    try:
+                        setattr(lay, key, getattr(op, key))
+                    except (TypeError, ValueError):
+                        pass
+            props.active = 0
+        finally:
+            _BUILDING[0] = False
 
-    def _panel_params(props):
-        """Turn the property group into a `build_relief` argument dict."""
+    def _panel_params(props, preview=False):
+        """Turn the property group into a `build_relief` argument dict.
+
+        `preview` swaps in the preview resolution.  Nothing else changes, so
+        a preview is the same surface sampled more coarsely -- not a different
+        or simplified one -- and what you tune at preview resolution is what
+        you get at full.
+        """
         layers = []
         for lay in props.layers:
             if not lay.enabled:
@@ -1051,17 +1160,29 @@ if _IN_BLENDER:
                 mask=lay.mask, mask_width=lay.mask_width,
                 mask_angle=lay.mask_angle, mask_layer=lay.mask_layer,
                 curve=lay.curve, curve_amount=lay.curve_amount))
+        res = props.resolution
+        if preview:
+            # Never preview at more than the final resolution: below that the
+            # preview would be the slower of the two, which is absurd.
+            res = min(int(props.preview_resolution), int(props.resolution))
         return dict(
             shape=props.shape, width=props.width, aspect=props.aspect,
-            resolution=props.resolution, border=props.border,
-            tiling=props.tiling, warp=props.warp, warp_iters=props.warp_iters, seed=props.seed,
+            resolution=res, border=props.border,
+            tiling=props.tiling, warp=props.warp,
+            warp_iters=props.warp_iters, seed=props.seed,
             depth=props.depth, form=props.form,
             base_thickness=props.base_thickness, fit=props.fit,
             scale=props.scale, layers=layers)
 
     def _params_signature(props):
-        """A short string identifying the settings a mesh was built from."""
-        p = _panel_params(props)
+        """A short string identifying the SETTINGS a mesh was built from.
+
+        Always taken at full resolution, so it describes the design and not
+        the sampling.  Which of the two resolutions actually produced the
+        current mesh is recorded separately in `built_quality` -- conflating
+        them would make every preview look like a settings change.
+        """
+        p = _panel_params(props, preview=False)
         return repr(sorted((k, repr(v)) for k, v in p.items()))
 
     def _write_mesh(obj, verts, faces, smooth):
@@ -1118,13 +1239,19 @@ if _IN_BLENDER:
 
             props = obj.relief_panel
             props.is_panel = True
-            base = props.layers.add()
-            base.kind = 'WAVE_TRAIN'
-            base.amplitude = 1.0
-            base.orient = 'CURL'
-            base.steepness = 0.5
-            props.active = 0
-            bpy.ops.relief.rebuild()
+            _BUILDING[0] = True
+            try:
+                base = props.layers.add()
+                base.kind = 'WAVE_TRAIN'
+                base.amplitude = 1.0
+                base.orient = 'CURL'
+                base.steepness = 0.5
+                props.active = 0
+            finally:
+                _BUILDING[0] = False
+            # A new panel always builds, autobuild or not: an empty object
+            # would be a worse answer than a coarse one.
+            _rebuild(obj, preview=True)
             return {'FINISHED'}
 
     class RELIEF_OT_layer_add(bpy.types.Operator):
@@ -1139,7 +1266,7 @@ if _IN_BLENDER:
             lay.amplitude = 0.4
             lay.seed = len(props.layers)
             props.active = len(props.layers) - 1
-            bpy.ops.relief.rebuild()
+            _auto(props, context)
             return {'FINISHED'}
 
     class RELIEF_OT_layer_remove(bpy.types.Operator):
@@ -1154,7 +1281,7 @@ if _IN_BLENDER:
                 return {'CANCELLED'}
             props.layers.remove(props.active)
             props.active = max(0, min(props.active, len(props.layers) - 1))
-            bpy.ops.relief.rebuild()
+            _auto(props, context)
             return {'FINISHED'}
 
     class RELIEF_OT_layer_move(bpy.types.Operator):
@@ -1174,7 +1301,7 @@ if _IN_BLENDER:
                 return {'CANCELLED'}
             props.layers.move(i, j)
             props.active = j
-            bpy.ops.relief.rebuild()
+            _auto(props, context)
             return {'FINISHED'}
 
     class RELIEF_OT_rebuild(bpy.types.Operator):
@@ -1183,24 +1310,27 @@ if _IN_BLENDER:
         bl_label = "Rebuild Panel"
         bl_options = {'REGISTER', 'UNDO'}
 
+        preview: BoolProperty(
+            name="Preview", default=True,
+            description="Build at the preview resolution rather than the "
+                        "full one")
+
         def execute(self, context):
             obj = context.active_object
             if obj is None or not obj.relief_panel.is_panel:
                 self.report({'ERROR'}, "active object is not a relief panel")
                 return {'CANCELLED'}
             props = obj.relief_panel
-            params = _panel_params(props)
-            if not params['layers']:
+            if not _panel_params(props)['layers']:
                 self.report({'WARNING'}, "no enabled layers; panel is flat")
             try:
-                verts, faces, info = build_relief(**params)
+                info = _rebuild(obj, preview=self.preview)
             except (ValueError, MemoryError) as exc:
                 self.report({'ERROR'}, str(exc))
                 return {'CANCELLED'}
-            _write_mesh(obj, verts, faces, props.smooth)
-            props.built_sig = _params_signature(props)
-            self.report({'INFO'}, "%d layers, %dx%d samples, V=%d F=%d"
-                        % (len(params['layers']), info['nx'], info['ny'],
+            self.report({'INFO'}, "%s: %dx%d samples, V=%d F=%d"
+                        % ("preview" if self.preview else "full",
+                           info['nx'], info['ny'],
                            len(obj.data.vertices), len(obj.data.polygons)))
             return {'FINISHED'}
 
@@ -1223,13 +1353,35 @@ if _IN_BLENDER:
                 return
             props = obj.relief_panel
             stale = _params_signature(props) != props.built_sig
-            row = lay.row()
+            prev_res = min(int(props.preview_resolution),
+                           int(props.resolution))
+            coarse = (props.built_quality == 'PREVIEW'
+                      and prev_res < int(props.resolution))
+
+            head = lay.row(align=True)
+            head.prop(props, 'autobuild', toggle=True,
+                      icon='AUTO' if props.autobuild else 'FILE_REFRESH')
+
+            row = lay.row(align=True)
             row.scale_y = 1.4 if stale else 1.0
             row.alert = stale
-            row.operator("relief.rebuild", icon='FILE_REFRESH',
-                         text="Rebuild *" if stale else "Rebuild")
-            if stale:
+            # Autobuild already keeps the preview current, so offering a
+            # manual preview rebuild alongside it is just a button that does
+            # nothing; the final build is the one that still has work to do.
+            if not props.autobuild:
+                row.operator("relief.rebuild", icon='FILE_REFRESH',
+                             text="Rebuild *" if stale else "Rebuild"
+                             ).preview = True
+            fin = row.operator("relief.rebuild", icon='SHADERFX',
+                               text="Build Final")
+            fin.preview = False
+
+            if stale and not props.autobuild:
                 lay.label(text="Settings changed since the last build",
+                          icon='INFO')
+            elif coarse:
+                lay.label(text="Preview at %d; final is %d"
+                               % (prev_res, int(props.resolution)),
                           icon='INFO')
 
             box = lay.box()
@@ -1239,6 +1391,7 @@ if _IN_BLENDER:
             col.prop(props, 'width')
             col.prop(props, 'aspect')
             col.prop(props, 'resolution')
+            col.prop(props, 'preview_resolution')
             col.prop(props, 'border')
             col.prop(props, 'tiling')
 
