@@ -71,15 +71,21 @@ __all__ = [
 # defaults of `build_relief`; none of them locks anything.
 PRESETS = {
     'DRAPERY': dict(
+        # Only a slight warp.  Hanging cloth folds in long continuous runs;
+        # the curl orientation field already supplies that sway, and a strong
+        # domain warp on top of it breaks the folds into unrelated bulges.
+        # The warp is here to keep the folds from looking machined, not to
+        # bend them.
         field='WAVE_TRAIN', count=3, wavelength=0.55, steepness=0.55,
-        orient='CURL', orient_freq=0.45, warp=0.22, warp_iters=2,
+        orient='CURL', orient_freq=0.45, warp=0.03, warp_iters=2,
         curve='RIDGE', depth=0.3, seed=7),
     'DUNES': dict(
         # No warp.  Ridged fBm on its own gives long, coherent, quasi-parallel
         # crest lines, which is what a dune field looks like; warping bends
         # and breaks those lines into blobs, and the result reads as eroded
-        # terrain rather than as sand.  Warp is what the Drapery preset wants,
-        # not this one.  A high Hurst exponent keeps the flanks smooth, since
+        # terrain rather than as sand.  Even Drapery, the preset that does
+        # want a warp, only takes a slight one.  A high Hurst exponent keeps
+        # the flanks smooth, since
         # wind-graded sand is not rough at small scales.
         field='FBM', method='FBM', hurst=0.8, warp=0.0,
         curve='RIDGE', depth=0.28, seed=3),
