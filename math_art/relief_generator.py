@@ -85,6 +85,13 @@ if _IN_BLENDER:
         ('POND', "Pond", "Interfering circular wavefronts"),
         ('TERRAIN', "Terrain", "Weierstrass-Mandelbrot relief"),
         ('BANDS', "Bands", "Spiral-steered wave with contrast"),
+        ('CHLADNI', "Chladni Plate",
+         "A real free-plate mode, sand-figure profile"),
+        ('CHLADNI_FLOW', "Chladni (Melted)",
+         "The same plate mode warped -- geometric structure, organic surface"),
+        ('DRUMHEAD', "Drumhead", "Circular membrane mode on a disc"),
+        ('ZERNIKE', "Zernike", "Optical aberration mode on a disc"),
+        ('LASER', "Laser Mode", "Hermite-Gauss TEM transverse mode"),
     ]
 
     _FIELD_ITEMS = [(k, v[0], v[1]) for k, v in sorted(FIELDS.items())]
@@ -169,6 +176,36 @@ if _IN_BLENDER:
                            max=2.95)
         octaves: IntProperty(name="Octaves", default=8, min=1, max=16)
 
+        # -- vibration modes & optics ---------------------------------
+        exact: BoolProperty(
+            name="Exact Plate Solve", default=True,
+            description="Solve the real free-plate eigenproblem "
+                        "(Rayleigh-Ritz). Off uses Rayleigh's cosine "
+                        "approximation with a freely mixable blend")
+        mode_index: IntProperty(
+            name="Mode", default=6, min=1, max=40,
+            description="Which plate mode, counting from the first "
+                        "non-rigid-body figure")
+        poisson: FloatProperty(
+            name="Poisson Ratio", default=0.225, min=0.0, max=0.49,
+            description="Material constant. Ritz used 0.225 to match "
+                        "Chladni's glass plates; metals are near 0.33")
+        ritz: IntProperty(
+            name="Basis Size", default=10, min=4, max=16,
+            description="Ritz basis order; the eigenproblem is "
+                        "(n+1)^2 square")
+        mode_m: IntProperty(name="Mode m", default=2, min=0, max=24)
+        mode_n: IntProperty(name="Mode n", default=3, min=0, max=24)
+        chi: FloatProperty(
+            name="Blend", default=1.0, min=-1.0, max=1.0,
+            description="Mix of the swapped cosine pair. For a real plate "
+                        "this is not free: equal-parity pairs occur only at "
+                        "+1 and -1, at two different frequencies")
+        zern_n: IntProperty(name="Zernike n", default=4, min=0, max=20)
+        zern_m: IntProperty(name="Zernike m", default=2, min=-20, max=20)
+        waist: FloatProperty(name="Beam Waist", default=0.5, min=0.05,
+                             max=2.0)
+
         # -- orientation & warp ---------------------------------------
         orient: EnumProperty(name="Orientation", items=_ORIENT_ITEMS,
                              default='CONSTANT')
@@ -216,6 +253,10 @@ if _IN_BLENDER:
                 count=self.count, spread=self.spread, sources=self.sources,
                 seed=self.seed, method=self.method, hurst=self.hurst,
                 dim=self.dim, octaves=self.octaves,
+                exact=self.exact, mode_index=self.mode_index,
+                poisson=self.poisson, ritz=self.ritz,
+                mode_m=self.mode_m, mode_n=self.mode_n, chi=self.chi,
+                zern_n=self.zern_n, zern_m=self.zern_m, waist=self.waist,
                 orient=self.orient, orient_freq=self.orient_freq,
                 swirl=self.swirl, warp=self.warp,
                 warp_iters=self.warp_iters,
@@ -227,7 +268,9 @@ if _IN_BLENDER:
             if self.preset != 'CUSTOM':
                 # A preset overrides only what it names; panel size,
                 # resolution and output form stay under the user's control.
-                keep = ('shape', 'width', 'aspect', 'resolution', 'form',
+                # `shape` is NOT kept -- a drumhead mode on a rectangular
+                # panel is simply the wrong domain, so a preset may set it.
+                keep = ('width', 'aspect', 'resolution', 'form',
                         'base_thickness', 'fit', 'scale', 'border')
                 over = dict(PRESETS[self.preset])
                 for k in keep:
@@ -323,6 +366,32 @@ if _IN_BLENDER:
                 else:
                     col.prop(self, 'dim')
                 col.prop(self, 'octaves')
+            elif self.field == 'CHLADNI':
+                col.prop(self, 'exact')
+                if self.exact:
+                    col.prop(self, 'mode_index')
+                    col.prop(self, 'poisson')
+                    col.prop(self, 'ritz')
+                else:
+                    col.prop(self, 'mode_m')
+                    col.prop(self, 'mode_n')
+                    col.prop(self, 'chi')
+            elif self.field in ('DRUMHEAD', 'MEMBRANE'):
+                col.prop(self, 'mode_m')
+                col.prop(self, 'mode_n')
+                if self.field == 'DRUMHEAD' and self.shape != 'DISC':
+                    col.label(text="Drumhead wants the Disc shape",
+                              icon='INFO')
+            elif self.field == 'ZERNIKE':
+                col.prop(self, 'zern_n')
+                col.prop(self, 'zern_m')
+                if self.shape != 'DISC':
+                    col.label(text="Zernike is defined on the disc",
+                              icon='INFO')
+            elif self.field == 'HERMITE':
+                col.prop(self, 'mode_m')
+                col.prop(self, 'mode_n')
+                col.prop(self, 'waist')
             col.prop(self, 'seed')
 
             box = lay.box()

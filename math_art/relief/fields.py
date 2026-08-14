@@ -137,6 +137,70 @@ def fbm(X, Y, info, p):
     return eval_field(pts, modes).reshape(X.shape)
 
 
+def drumhead(X, Y, info, p):
+    """Circular membrane eigenmode -- pair it with the DISC panel shape."""
+    from . import plates as _plates
+    return _plates.circular_membrane(X, Y, m=int(p.get('mode_m', 1)),
+                                     n=int(p.get('mode_n', 1)),
+                                     phase=float(p.get('phase', 0.0)))
+
+
+def membrane(X, Y, info, p):
+    """Clamped rectangular membrane eigenmode."""
+    from . import plates as _plates
+    return _plates.rect_membrane(X, Y, m=int(p.get('mode_m', 2)),
+                                 n=int(p.get('mode_n', 3)))
+
+
+def chladni(X, Y, info, p):
+    """Free-plate Chladni figure.
+
+    `exact=True` runs the Rayleigh-Ritz solver and picks a real mode; the
+    fast path is Rayleigh's cosine combination with a freely mixable chi.
+    """
+    from . import plates as _plates
+    if p.get('exact', True):
+        lam, vec, s = _plates.free_plate_cached(
+            s=int(p.get('ritz', 10)), poisson=float(p.get('poisson', 0.225)),
+            aspect=1.0, count=int(p.get('mode_index', 1)) + 6)
+        # Skip the three rigid-body modes; index 1 is the first real figure.
+        real = [i for i in range(lam.size) if lam[i] > 1.0]
+        if not real:
+            return np.zeros(X.shape)
+        k = real[min(max(int(p.get('mode_index', 1)) - 1, 0), len(real) - 1)]
+        return _plates.plate_mode_field(X, Y, vec[:, k], s)
+    return _plates.chladni_rayleigh(X, Y, m=int(p.get('mode_m', 2)),
+                                    n=int(p.get('mode_n', 3)),
+                                    chi=float(p.get('chi', 1.0)))
+
+
+def zernike_field(X, Y, info, p):
+    """A Zernike aberration mode on the unit disc."""
+    from . import special as _sp
+    R = min(float(np.abs(X).max()), float(np.abs(Y).max())) or 1.0
+    rho = np.clip(np.hypot(X, Y) / R, 0.0, 1.0)
+    th = np.arctan2(Y, X)
+    n = int(p.get('zern_n', 4))
+    m = int(p.get('zern_m', 2))
+    if (n - abs(m)) % 2 or abs(m) > n:      # nearest legal m
+        m = abs(m) - 1 if (n - abs(m)) % 2 else abs(m)
+        m = max(-n, min(n, m))
+    out = _sp.zernike(n, m, rho, th)
+    return np.where(np.hypot(X, Y) <= R, out, 0.0)
+
+
+def hermite_gauss(X, Y, info, p):
+    """Hermite-Gauss (TEM_mn) transverse mode."""
+    from . import special as _sp
+    w = max(float(p.get('waist', 0.5)), 1e-6)
+    hx = float(np.abs(X).max()) or 1.0
+    sx = X / (w * hx)
+    sy = Y / (w * hx)
+    return (_sp.hermite_function(int(p.get('mode_m', 2)), math.sqrt(2.0) * sx)
+            * _sp.hermite_function(int(p.get('mode_n', 1)),
+                                   math.sqrt(2.0) * sy))
+
+
 # id -> (menu label, description, function)
 FIELDS = {
     'WAVE':       ("Directional Wave",
@@ -148,6 +212,18 @@ FIELDS = {
                    "Interfering circular wavefronts", ripple),
     'FBM':        ("Fractal (fBm)",
                    "Spectral-synthesis fractional Brownian surface", fbm),
+    'CHLADNI':    ("Chladni Plate",
+                   "Free-plate vibration figure, solved by Rayleigh-Ritz",
+                   chladni),
+    'DRUMHEAD':   ("Drumhead",
+                   "Circular membrane eigenmode; use the Disc shape",
+                   drumhead),
+    'MEMBRANE':   ("Rectangular Membrane",
+                   "Clamped membrane eigenmode sin(m)sin(n)", membrane),
+    'ZERNIKE':    ("Zernike",
+                   "Optical aberration mode on the disc", zernike_field),
+    'HERMITE':    ("Hermite-Gauss",
+                   "TEM_mn laser transverse mode", hermite_gauss),
 }
 
 

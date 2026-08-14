@@ -35,22 +35,30 @@ References:
     1961.
 """
 
-from . import fields, grid, mesh, transfer, warp
+from . import fields, grid, mesh, plates, special, transfer, warp
 from .fields import FIELDS, evaluate
 from .grid import border_window, make_grid, mask_for, SHAPES
 from .mesh import apply_fit, edge_report, FITS, FORMS, sheet, slab
+from .plates import (chladni_rayleigh, circular_membrane, free_plate_cached,
+                     free_plate_modes, plate_mode_field, rect_membrane)
+from .special import (besselj, bessel_zero, bessel_zeros, hermite,
+                      hermite_function, laguerre, zernike, zernike_radial)
 from .transfer import apply_curve, CURVES, normalize, NORMS, to_depth
 from .warp import (domain_warp, orientation_field, ORIENTATIONS,
                    phase_from_direction, smooth_field)
 
 __all__ = [
-    "fields", "grid", "mesh", "transfer", "warp",
+    "fields", "grid", "mesh", "plates", "special", "transfer", "warp",
     "FIELDS", "evaluate",
     "SHAPES", "make_grid", "mask_for", "border_window",
     "CURVES", "NORMS", "normalize", "apply_curve", "to_depth",
     "ORIENTATIONS", "orientation_field", "domain_warp",
     "phase_from_direction", "smooth_field",
     "FORMS", "FITS", "sheet", "slab", "apply_fit", "edge_report",
+    "besselj", "bessel_zero", "bessel_zeros", "zernike", "zernike_radial",
+    "hermite", "hermite_function", "laguerre",
+    "free_plate_modes", "free_plate_cached", "plate_mode_field",
+    "circular_membrane", "rect_membrane", "chladni_rayleigh",
     "PRESETS", "build_relief",
 ]
 
@@ -74,6 +82,25 @@ PRESETS = {
     'BANDS': dict(
         field='WAVE', wavelength=0.4, orient='SPIRAL', swirl=1.6,
         warp=0.08, curve='SCURVE', curve_amount=0.7, depth=0.22, seed=5),
+    # -- geometric families -------------------------------------------
+    'CHLADNI': dict(
+        field='CHLADNI', exact=True, mode_index=6, poisson=0.225,
+        shape='RECT', curve='ABS', warp=0.0, depth=0.22),
+    'CHLADNI_FLOW': dict(
+        # The organic-geometric hybrid: a real plate mode, melted by a warp
+        # but keeping its nodal topology.
+        field='CHLADNI', exact=True, mode_index=8, poisson=0.225,
+        shape='RECT', curve='ABS', warp=0.18, warp_iters=2, depth=0.25,
+        seed=4),
+    'DRUMHEAD': dict(
+        field='DRUMHEAD', mode_m=2, mode_n=2, shape='DISC',
+        curve='NONE', warp=0.0, depth=0.22),
+    'ZERNIKE': dict(
+        field='ZERNIKE', zern_n=5, zern_m=3, shape='DISC',
+        curve='NONE', warp=0.0, depth=0.2),
+    'LASER': dict(
+        field='HERMITE', mode_m=3, mode_n=2, waist=0.45, shape='RECT',
+        curve='NONE', warp=0.0, depth=0.2),
 }
 
 
@@ -94,6 +121,9 @@ def build_relief(**kw):
         steepness=0.0, count=3, spread=0.4, sources=3, seed=1,
         method='FBM', hurst=0.7, dim=2.3, octaves=8, lacunarity=2.0,
         modes=240,
+        # plate / membrane / optical modes
+        exact=True, mode_index=6, mode_m=2, mode_n=3, chi=1.0,
+        poisson=0.225, ritz=10, zern_n=4, zern_m=2, waist=0.5,
         # orientation + warp
         orient='CONSTANT', orient_freq=0.5, swirl=1.0,
         warp=0.0, warp_iters=2, warp_freq=0.6,
