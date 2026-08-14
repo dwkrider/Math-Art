@@ -75,7 +75,13 @@ PRESETS = {
         orient='CURL', orient_freq=0.45, warp=0.22, warp_iters=2,
         curve='RIDGE', depth=0.3, seed=7),
     'DUNES': dict(
-        field='FBM', method='FBM', hurst=0.75, warp=0.3, warp_iters=2,
+        # No warp.  Ridged fBm on its own gives long, coherent, quasi-parallel
+        # crest lines, which is what a dune field looks like; warping bends
+        # and breaks those lines into blobs, and the result reads as eroded
+        # terrain rather than as sand.  Warp is what the Drapery preset wants,
+        # not this one.  A high Hurst exponent keeps the flanks smooth, since
+        # wind-graded sand is not rough at small scales.
+        field='FBM', method='FBM', hurst=0.8, warp=0.0,
         curve='RIDGE', depth=0.28, seed=3),
     'POND': dict(
         field='RIPPLE', sources=5, wavelength=0.3, warp=0.0,
