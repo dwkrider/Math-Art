@@ -100,7 +100,7 @@ PRESETS = {
         warp=0.08, curve='SCURVE', curve_amount=0.7, depth=0.22, seed=5),
     # -- geometric families -------------------------------------------
     'CHLADNI': dict(
-        field='CHLADNI', exact=True, mode_index=6, poisson=0.225,
+        field='CHLADNI', exact=True, mode_index=11, poisson=0.225,
         shape='RECT', curve='ABS', warp=0.0, depth=0.22),
     'CHLADNI_FLOW': dict(
         # The organic-geometric hybrid: a real plate mode, melted by a warp
