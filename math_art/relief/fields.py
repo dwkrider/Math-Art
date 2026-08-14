@@ -162,7 +162,21 @@ def fbm(X, Y, info, p):
                               octaves=int(p.get('octaves', 8)),
                               count=int(p.get('modes', 240)),
                               seed=int(p.get('seed', 1)),
-                              lacunarity=float(p.get('lacunarity', 2.0)))
+                              lacunarity=float(p.get('lacunarity', 2.0)),
+                              method=p.get('method', 'FBM'),
+                              dim=float(p.get('dim', 2.3)))
+    aniso = float(p.get('anisotropy', 0.0))
+    if aniso > 0.0:
+        from . import tiling as _t
+        return _t.anisotropic_fbm(X, Y, info, hurst=float(p.get('hurst', 0.7)),
+                                  octaves=int(p.get('octaves', 8)),
+                                  count=int(p.get('modes', 240)),
+                                  seed=int(p.get('seed', 1)),
+                                  wind=float(p.get('wind', 0.0)),
+                                  spread=aniso,
+                                  method=p.get('method', 'FBM'),
+                                  dim=float(p.get('dim', 2.3)),
+                                  lacunarity=float(p.get('lacunarity', 2.0)))
     pts = np.stack([X.ravel(), Y.ravel(), np.zeros(X.size)], axis=-1)
     if p.get('method', 'FBM') == 'WEIERSTRASS':
         modes = weierstrass_modes(int(p.get('octaves', 8)),
@@ -237,6 +251,34 @@ def hermite_gauss(X, Y, info, p):
     return (_sp.hermite_function(int(p.get('mode_m', 2)), math.sqrt(2.0) * sx)
             * _sp.hermite_function(int(p.get('mode_n', 1)),
                                    math.sqrt(2.0) * sy))
+
+
+def elliptic(X, Y, info, p):
+    """Doubly periodic relief from the Weierstrass/Jacobi functions."""
+    from . import elliptic as _e
+    return _e.elliptic_field(X, Y, info, kind=p.get('ell_kind', 'WP'),
+                             tau_re=float(p.get('tau_re', 0.0)),
+                             tau_im=float(p.get('tau_im', 1.0)),
+                             cells=float(p.get('ell_cells', 1.0)),
+                             part=p.get('ell_part', 'SPHERE'))
+
+
+def truchet(X, Y, info, p):
+    """Truchet arc tiling -- smooth meandering lanes from a random assembly."""
+    from . import tiles as _t
+    return _t.truchet(X, Y, info, cells=int(p.get('tile_cells', 6)),
+                      seed=int(p.get('seed', 1)),
+                      lane=float(p.get('lane', 0.25)),
+                      multiscale=float(p.get('multiscale', 0.0)))
+
+
+def seigaiha(X, Y, info, p):
+    """The Japanese overlapping-wave motif."""
+    from . import tiles as _t
+    return _t.seigaiha(X, Y, info, cells=int(p.get('tile_cells', 6)),
+                       seed=int(p.get('seed', 1)),
+                       rings=int(p.get('rings', 3)),
+                       crown=float(p.get('crown', 0.55)))
 
 
 def _splat_common(X, Y, info, p, pts, wts):
@@ -354,6 +396,14 @@ FIELDS = {
                    "Optical aberration mode on the disc", zernike_field),
     'HERMITE':    ("Hermite-Gauss",
                    "TEM_mn laser transverse mode", hermite_gauss),
+    'ELLIPTIC':   ("Elliptic (doubly periodic)",
+                   "Weierstrass/Jacobi functions -- tiles exactly, by theorem",
+                   elliptic),
+    'TRUCHET':    ("Truchet",
+                   "Arc tiles that always join tangentially: flowing lanes",
+                   truchet),
+    'SEIGAIHA':   ("Seigaiha",
+                   "The Japanese overlapping wave-fan ornament", seigaiha),
     'OBJECT':     ("Object",
                    "Imprint a scene object: splat, drape, engrave or press",
                    object_field),
@@ -371,6 +421,7 @@ FIELDS = {
 FIELD_ORDER = [
     'WAVE', 'WAVE_TRAIN', 'RIPPLE', 'FBM',
     'CHLADNI', 'DRUMHEAD', 'MEMBRANE', 'ZERNIKE', 'HERMITE',
+    'ELLIPTIC', 'TRUCHET', 'SEIGAIHA',
     'SCATTER', 'OBJECT',
 ]
 
@@ -456,6 +507,27 @@ def _selftest():
     print("fields: guided vs constant rms difference = %.4f"
           % float(np.sqrt(((g - d) ** 2).mean())))
     ok = ok and np.sqrt(((g - d) ** 2).mean()) > 0.2
+
+    # The two fractal styles must actually be two styles.  This regressed
+    # once: the tiling and anisotropy branches built fBm modes unconditionally
+    # and dropped `method` on the floor, so every preset that set either one
+    # gave the same surface from both menu entries.  Sweep the combinations,
+    # because it is the SPECIAL paths that forget.
+    Xf, Yf, inf_f = _grid.make_grid(width=2.0, aspect=1.0, resolution=128)
+    for tiling_mode in ('NONE', 'TORUS', 'MIRROR', 'ANTIMIRROR'):
+        for aniso in (0.0, 0.6):
+            base = dict(tiling=tiling_mode, anisotropy=aniso, octaves=7,
+                        seed=3, hurst=0.7, dim=2.3, wind=0.4)
+            a = fbm(Xf, Yf, inf_f, dict(base, method='FBM'))
+            b = fbm(Xf, Yf, inf_f, dict(base, method='WEIERSTRASS'))
+            # Normalise before comparing: a difference in overall gain is not
+            # a difference in style, and the two spectra scale differently.
+            na = a / (a.std() or 1.0)
+            nb = b / (b.std() or 1.0)
+            rms = float(np.sqrt(((na - nb) ** 2).mean()))
+            print("fields: fractal styles differ, tiling=%-10s anisotropy=%.1f "
+                  "-> normalised rms %.3f" % (tiling_mode, aniso, rms))
+            ok = ok and rms > 0.2
 
     print("RESULT:", "OK" if ok else "BAD")
     assert ok

@@ -210,8 +210,48 @@ def tile(h, nx=2, ny=2, mode='TORUS'):
     return np.concatenate(rows, axis=0)
 
 
+def wm_ladder(octaves=8, lacunarity=2.0, dim=2.3, dirs_per_oct=4, nmax=None):
+    """Weierstrass-Mandelbrot modes as (frequency, angle, amplitude, phase).
+
+    This is what makes the second fractal style a different style.  Fractional
+    Brownian synthesis draws a *cloud* of wavevectors at random directions and
+    log-uniform frequencies, so it reads as cloud or eroded rock.  The
+    Weierstrass-Mandelbrot function instead sums a GEOMETRIC ladder --
+    frequency b^n, amplitude b^((D-3)n) -- over a handful of fixed ridge
+    directions per octave, with deterministic phases.  The same ridge
+    therefore recurs at every scale, which is the visibly self-similar,
+    creased character that distinguishes it.
+
+    Frequencies are in cycles across the panel, so the caller can round them
+    to lattice indices (seam basis) or use them directly.  Modes above `nmax`
+    cycles are dropped rather than aliased into low-frequency junk.
+
+    References:
+      Benoit B. Mandelbrot, "The Fractal Geometry of Nature", Freeman, 1982.
+      Michael V. Berry and Zbigniew V. Lewis, "On the Weierstrass-Mandelbrot
+        fractal function", Proc. R. Soc. Lond. A 370, 1980, 459-484.
+    """
+    golden = 0.6180339887498949
+    out = []
+    idx = 0
+    for n in range(max(1, int(octaves))):
+        f = float(lacunarity) ** n
+        if nmax is not None and f > float(nmax):
+            break
+        amp = float(lacunarity) ** ((float(dim) - 3.0) * n)
+        for _ in range(max(1, int(dirs_per_oct))):
+            # Golden-angle directions and phases: deterministic, and spread as
+            # evenly as an irrational rotation can manage, so no two octaves
+            # share a ridge direction.
+            ang = 2.0 * math.pi * ((idx * golden) % 1.0)
+            phase = 2.0 * math.pi * ((idx * golden * golden) % 1.0)
+            out.append((f, ang, amp, phase))
+            idx += 1
+    return out
+
+
 def lattice_fbm(X, Y, info, mode, hurst=0.7, octaves=8, count=240, seed=1,
-                lacunarity=2.0):
+                lacunarity=2.0, method='FBM', dim=2.3):
     """Fractional Brownian synthesis performed IN the seam basis.
 
     Ordinary spectral synthesis draws wavevectors at random, so its modes miss
@@ -221,6 +261,11 @@ def lattice_fbm(X, Y, info, mode, hurst=0.7, octaves=8, count=240, seed=1,
     sine products for mirror and antimirror.  The amplitude law
     |k|^-(H+1) -- and therefore the fractal character -- is unchanged; only
     the admissible frequencies are.
+
+    `method` selects the spectrum: 'FBM' draws the random cloud described
+    above, 'WEIERSTRASS' walks the geometric ladder of `wm_ladder`.  Both are
+    snapped to the same lattice, so both tile; what differs is the character,
+    which is the entire point of offering two.
     """
     Lx, Ly = periods(info)
     rng = np.random.default_rng(int(seed) & 0x7FFFFFFF)
@@ -229,36 +274,94 @@ def lattice_fbm(X, Y, info, mode, hurst=0.7, octaves=8, count=240, seed=1,
     u = (X - X.min())
     v = (Y - Y.min())
 
-    # Log-uniform integer frequencies, so the octave band is covered evenly.
-    for _ in range(max(1, int(count))):
-        f = float(np.exp(rng.uniform(0.0, math.log(nmax))))
-        ang = rng.uniform(0.0, 2.0 * math.pi)
-        m = int(round(f * math.cos(ang)))
-        n = int(round(f * math.sin(ang)))
+    def add(m, n, amp, phase):
+        """Accumulate one lattice mode in whichever basis `mode` names."""
         if mode in ('MIRROR', 'ANTIMIRROR'):
             m, n = abs(m), abs(n)
             if mode == 'ANTIMIRROR':
                 m, n = max(1, m), max(1, n)
         if m == 0 and n == 0:
-            continue
-        k = math.hypot(m / Lx, n / Ly)
-        if k <= 0.0:
-            continue
-        amp = k ** (-(float(hurst) + 1.0))
+            return
         if mode == 'TORUS':
-            out += amp * np.cos(2.0 * math.pi * (m * u / Lx + n * v / Ly)
-                                + rng.uniform(0.0, 2.0 * math.pi))
+            out[:] += amp * np.cos(
+                2.0 * math.pi * (m * u / Lx + n * v / Ly) + phase)
         elif mode == 'MIRROR':
-            out += amp * (np.cos(m * math.pi * u / Lx)
-                          * np.cos(n * math.pi * v / Ly))
+            out[:] += amp * (np.cos(m * math.pi * u / Lx)
+                             * np.cos(n * math.pi * v / Ly))
         else:
-            out += amp * (np.sin(m * math.pi * u / Lx)
-                          * np.sin(n * math.pi * v / Ly))
+            out[:] += amp * (np.sin(m * math.pi * u / Lx)
+                             * np.sin(n * math.pi * v / Ly))
+
+    if str(method).upper() == 'WEIERSTRASS':
+        for f, ang, amp, phase in wm_ladder(octaves, lacunarity, dim,
+                                            nmax=nmax):
+            add(int(round(f * math.cos(ang))), int(round(f * math.sin(ang))),
+                amp, phase)
+    else:
+        # Log-uniform integer frequencies, so the octave band is covered evenly.
+        for _ in range(max(1, int(count))):
+            f = float(np.exp(rng.uniform(0.0, math.log(nmax))))
+            ang = rng.uniform(0.0, 2.0 * math.pi)
+            m = int(round(f * math.cos(ang)))
+            n = int(round(f * math.sin(ang)))
+            k = math.hypot(m / Lx, n / Ly)
+            if k <= 0.0:
+                continue
+            add(m, n, k ** (-(float(hurst) + 1.0)),
+                rng.uniform(0.0, 2.0 * math.pi))
     # Centring is harmless for torus and mirror -- a constant is a legal mode
     # of both bases -- but it would destroy the antimirror field's defining
     # property, that it VANISHES at the rim.  A shifted field does not.
     if mode != 'ANTIMIRROR':
         out -= out.mean()
+    sd = out.std()
+    return out / sd if sd > 1e-12 else out
+
+
+def anisotropic_fbm(X, Y, info, hurst=0.7, octaves=8, count=240, seed=1,
+                    wind=0.0, spread=0.7, method='FBM', dim=2.3,
+                    lacunarity=2.0):
+    """Fractional Brownian synthesis with a directional spectrum.
+
+    Real dune fields are wind-formed, so their crests run transverse to a
+    prevailing direction; an isotropic fBm has no such preference and reads as
+    eroded rock instead.  Weighting each mode by |cos(theta_k - wind)|^(2s)
+    concentrates the spectrum around one direction, which is the same device
+    the Phillips ocean spectrum uses for wind-driven waves.
+
+    `spread` 0 is isotropic; 1 is strongly directional.  `method` selects the
+    underlying spectrum ('FBM' or 'WEIERSTRASS'); the directional weighting is
+    applied to either, so choosing a fractal style still changes the surface
+    when the wind is blowing.
+    """
+    rng = np.random.default_rng(int(seed) & 0x7FFFFFFF)
+    nmax = max(2, int(2 ** max(1, int(octaves))))
+    out = np.zeros(X.shape)
+    s_exp = 8.0 * float(np.clip(spread, 0.0, 1.0))
+
+    if str(method).upper() == 'WEIERSTRASS':
+        # More directions per octave than the isotropic ladder needs: the wind
+        # lobe rejects most of them, and a ladder with four would leave an
+        # octave with no surviving direction at all.
+        modes = [(f, ang, amp, ph) for (f, ang, amp, ph)
+                 in wm_ladder(octaves, lacunarity, dim, dirs_per_oct=16,
+                              nmax=nmax)]
+    else:
+        modes = []
+        for _ in range(max(1, int(count))):
+            f = float(np.exp(rng.uniform(0.0, math.log(nmax))))
+            ang = rng.uniform(0.0, 2.0 * math.pi)
+            modes.append((f, ang, f ** (-(float(hurst) + 1.0)),
+                          rng.uniform(0.0, 2.0 * math.pi)))
+
+    for f, ang, amp, phase in modes:
+        w = abs(math.cos(ang - float(wind))) ** s_exp if s_exp > 0 else 1.0
+        if w < 1e-6:
+            continue
+        k = 2.0 * math.pi * f / max(info['width'], 1e-9)
+        out += (w * amp) * np.cos(
+            k * (X * math.cos(ang) + Y * math.sin(ang)) + phase)
+    out -= out.mean()
     sd = out.std()
     return out / sd if sd > 1e-12 else out
 

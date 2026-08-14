@@ -308,6 +308,58 @@ if _IN_BLENDER:
         dim: FloatProperty(name="Fractal Dimension", default=2.3, min=2.01,
                            max=2.95)
         octaves: IntProperty(name="Octaves", default=8, min=1, max=16)
+        anisotropy: FloatProperty(
+            name="Wind Anisotropy", default=0.0, min=0.0, max=1.0,
+            description="Concentrate the fractal spectrum around one "
+                        "direction, so crests run transverse to it as a dune "
+                        "field's do. 0 is isotropic")
+        wind: FloatProperty(
+            name="Wind Direction", default=0.0, min=-6.2832, max=6.2832,
+            unit='ROTATION')
+
+        # -- elliptic functions ---------------------------------------
+        ell_kind: EnumProperty(
+            name="Function",
+            items=[('WP', "Weierstrass P", "Doubly periodic: tiles exactly"),
+                   ('WP_PRIME', "Weierstrass P'",
+                    "Its derivative; also doubly periodic"),
+                   ('ZETA', "Weierstrass zeta",
+                    "Quasi-periodic: gains a constant per period, so it "
+                    "does NOT tile"),
+                   ('THETA', "Jacobi theta",
+                    "Quasi-periodic: gains a factor per period, so it "
+                    "does NOT tile")],
+            default='WP')
+        ell_part: EnumProperty(
+            name="Height From",
+            items=[('SPHERE', "Riemann Sphere",
+                    "Stereographic height: smooth THROUGH the poles, so a "
+                    "pole becomes a rounded summit"),
+                   ('RE', "Real Part", "Unbounded at the poles"),
+                   ('IM', "Imaginary Part", "Unbounded at the poles"),
+                   ('ABS', "Modulus", "Unbounded at the poles")],
+            default='SPHERE')
+        tau_re: FloatProperty(name="Lattice Skew", default=0.0, min=-2.0,
+                              max=2.0)
+        tau_im: FloatProperty(name="Lattice Ratio", default=1.0, min=0.05,
+                              max=4.0)
+        ell_cells: FloatProperty(name="Periods", default=1.0, min=0.25,
+                                 max=8.0)
+
+        # -- tile patterns --------------------------------------------
+        tile_cells: IntProperty(name="Cells", default=6, min=1, max=64)
+        lane: FloatProperty(
+            name="Lane Width", default=0.25, min=0.02, max=1.0,
+            description="Width of the Truchet arc lane, as a fraction of "
+                        "the cell")
+        multiscale: FloatProperty(
+            name="Subdivision", default=0.0, min=0.0, max=1.0,
+            description="Fraction of cells subdivided one level finer")
+        rings: IntProperty(name="Arcs", default=3, min=1, max=12)
+        crown: FloatProperty(
+            name="Crown", default=0.55, min=0.1, max=1.0,
+            description="Fraction of each circle left visible by the row "
+                        "in front")
 
         # -- vibration modes & optics ---------------------------------
         exact: BoolProperty(
@@ -458,6 +510,13 @@ if _IN_BLENDER:
                 count=self.count, spread=self.spread, sources=self.sources,
                 seed=self.seed, method=self.method, hurst=self.hurst,
                 dim=self.dim, octaves=self.octaves,
+                anisotropy=self.anisotropy, wind=self.wind,
+                ell_kind=self.ell_kind, ell_part=self.ell_part,
+                tau_re=self.tau_re, tau_im=self.tau_im,
+                ell_cells=self.ell_cells,
+                tile_cells=self.tile_cells, lane=self.lane,
+                multiscale=self.multiscale, rings=self.rings,
+                crown=self.crown,
                 exact=self.exact, mode_index=self.mode_index,
                 poisson=self.poisson, ritz=self.ritz,
                 mode_m=self.mode_m, mode_n=self.mode_n, chi=self.chi,
@@ -642,6 +701,29 @@ if _IN_BLENDER:
                 else:
                     col.prop(self, 'dim')
                 col.prop(self, 'octaves')
+                col.prop(self, 'anisotropy')
+                if self.anisotropy > 0.0:
+                    col.prop(self, 'wind')
+                    if self.tiling != 'NONE':
+                        col.label(text="Tiling overrides the wind",
+                                  icon='INFO')
+            elif self.field == 'ELLIPTIC':
+                col.prop(self, 'ell_kind')
+                col.prop(self, 'ell_part')
+                col.prop(self, 'ell_cells')
+                col.prop(self, 'tau_re')
+                col.prop(self, 'tau_im')
+                if self.ell_kind not in ('WP', 'WP_PRIME'):
+                    col.label(text="Only P and P' are doubly periodic",
+                              icon='INFO')
+            elif self.field == 'TRUCHET':
+                col.prop(self, 'tile_cells')
+                col.prop(self, 'lane')
+                col.prop(self, 'multiscale')
+            elif self.field == 'SEIGAIHA':
+                col.prop(self, 'tile_cells')
+                col.prop(self, 'rings')
+                col.prop(self, 'crown')
             elif self.field == 'CHLADNI':
                 col.prop(self, 'exact')
                 if self.exact:
@@ -775,6 +857,47 @@ if _IN_BLENDER:
         zern_n: IntProperty(name="Zernike n", default=4, min=0, max=20)
         zern_m: IntProperty(name="Zernike m", default=2, min=-20, max=20)
         hurst: FloatProperty(name="Hurst", default=0.7, min=0.05, max=0.99)
+        method: EnumProperty(
+            name="Fractal",
+            items=[('FBM', "Fractional Brownian", "Hurst exponent is the knob"),
+                   ('WEIERSTRASS', "Weierstrass-Mandelbrot",
+                    "Fractal dimension is the knob")],
+            default='FBM')
+        dim: FloatProperty(name="Fractal Dimension", default=2.3, min=2.01,
+                           max=2.95)
+        octaves: IntProperty(name="Octaves", default=8, min=1, max=16)
+        anisotropy: FloatProperty(name="Wind Anisotropy", default=0.0,
+                                  min=0.0, max=1.0)
+        wind: FloatProperty(name="Wind Direction", default=0.0, min=-6.2832,
+                            max=6.2832, unit='ROTATION')
+
+        ell_kind: EnumProperty(
+            name="Function",
+            items=[('WP', "Weierstrass P", "Doubly periodic: tiles exactly"),
+                   ('WP_PRIME', "Weierstrass P'", "Also doubly periodic"),
+                   ('ZETA', "Weierstrass zeta", "Quasi-periodic: does NOT tile"),
+                   ('THETA', "Jacobi theta", "Quasi-periodic: does NOT tile")],
+            default='WP')
+        ell_part: EnumProperty(
+            name="Height From",
+            items=[('SPHERE', "Riemann Sphere", "Smooth through the poles"),
+                   ('RE', "Real Part", ""), ('IM', "Imaginary Part", ""),
+                   ('ABS', "Modulus", "")],
+            default='SPHERE')
+        tau_re: FloatProperty(name="Lattice Skew", default=0.0, min=-2.0,
+                              max=2.0)
+        tau_im: FloatProperty(name="Lattice Ratio", default=1.0, min=0.05,
+                              max=4.0)
+        ell_cells: FloatProperty(name="Periods", default=1.0, min=0.25,
+                                 max=8.0)
+
+        tile_cells: IntProperty(name="Cells", default=6, min=1, max=64)
+        lane: FloatProperty(name="Lane Width", default=0.25, min=0.02,
+                            max=1.0)
+        multiscale: FloatProperty(name="Subdivision", default=0.0, min=0.0,
+                                  max=1.0)
+        rings: IntProperty(name="Arcs", default=3, min=1, max=12)
+        crown: FloatProperty(name="Crown", default=0.55, min=0.1, max=1.0)
 
         orient: EnumProperty(name="Orientation", items=_ORIENT_ITEMS,
                              default='CONSTANT')
@@ -912,7 +1035,15 @@ if _IN_BLENDER:
                 sources=lay.sources, seed=lay.seed,
                 mode_index=lay.mode_index, mode_m=lay.mode_m,
                 mode_n=lay.mode_n, zern_n=lay.zern_n, zern_m=lay.zern_m,
-                hurst=lay.hurst, orient=lay.orient,
+                hurst=lay.hurst, method=lay.method, dim=lay.dim,
+                octaves=lay.octaves, anisotropy=lay.anisotropy,
+                wind=lay.wind,
+                ell_kind=lay.ell_kind, ell_part=lay.ell_part,
+                tau_re=lay.tau_re, tau_im=lay.tau_im,
+                ell_cells=lay.ell_cells,
+                tile_cells=lay.tile_cells, lane=lay.lane,
+                multiscale=lay.multiscale, rings=lay.rings, crown=lay.crown,
+                orient=lay.orient,
                 orient_freq=lay.orient_freq,
                 offset_x=lay.offset_x, offset_y=lay.offset_y,
                 rotation=lay.rotation, scale_x=lay.scale_x,
@@ -1142,7 +1273,35 @@ if _IN_BLENDER:
                     sub.prop(lay_, 'wavelength')
                     sub.prop(lay_, 'sources')
                 elif lay_.kind == 'FBM':
-                    sub.prop(lay_, 'hurst')
+                    sub.prop(lay_, 'method')
+                    if lay_.method == 'FBM':
+                        sub.prop(lay_, 'hurst')
+                    else:
+                        sub.prop(lay_, 'dim')
+                    sub.prop(lay_, 'octaves')
+                    sub.prop(lay_, 'anisotropy')
+                    if lay_.anisotropy > 0.0:
+                        sub.prop(lay_, 'wind')
+                        if props.tiling != 'NONE':
+                            sub.label(text="Tiling overrides the wind",
+                                      icon='INFO')
+                elif lay_.kind == 'ELLIPTIC':
+                    sub.prop(lay_, 'ell_kind')
+                    sub.prop(lay_, 'ell_part')
+                    sub.prop(lay_, 'ell_cells')
+                    sub.prop(lay_, 'tau_re')
+                    sub.prop(lay_, 'tau_im')
+                    if lay_.ell_kind not in ('WP', 'WP_PRIME'):
+                        sub.label(text="Only P and P' are doubly periodic",
+                                  icon='INFO')
+                elif lay_.kind == 'TRUCHET':
+                    sub.prop(lay_, 'tile_cells')
+                    sub.prop(lay_, 'lane')
+                    sub.prop(lay_, 'multiscale')
+                elif lay_.kind == 'SEIGAIHA':
+                    sub.prop(lay_, 'tile_cells')
+                    sub.prop(lay_, 'rings')
+                    sub.prop(lay_, 'crown')
                 elif lay_.kind == 'CHLADNI':
                     sub.prop(lay_, 'mode_index')
                 elif lay_.kind in ('DRUMHEAD', 'MEMBRANE', 'HERMITE'):

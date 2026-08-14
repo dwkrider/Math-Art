@@ -35,8 +35,8 @@ References:
     1961.
 """
 
-from . import (fields, grid, imprint, kernels, mesh, plates, special,
-               stack, tiling, transfer, warp)
+from . import (elliptic, fields, grid, imprint, kernels, mesh, plates,
+               special, stack, tiles, tiling, transfer, warp)
 from .fields import FIELD_ORDER, FIELDS, evaluate, ordered_fields
 from .grid import border_window, make_grid, mask_for, SHAPES
 from .mesh import apply_fit, edge_report, FITS, FORMS, sheet, slab
@@ -51,7 +51,7 @@ from .warp import (domain_warp, orientation_field, ORIENTATIONS,
 
 __all__ = [
     "fields", "grid", "imprint", "kernels", "mesh", "plates", "special",
-    "stack", "tiling", "transfer", "warp",
+    "elliptic", "stack", "tiles", "tiling", "transfer", "warp",
     "BLENDS", "MASKS", "layer", "evaluate_stack",
     "FIELDS", "FIELD_ORDER", "ordered_fields", "evaluate",
     "SHAPES", "make_grid", "mask_for", "border_window",
@@ -142,6 +142,11 @@ def build_relief(**kw):
         obj_mode='SPLAT', kernel='GAUSSIAN', sigma=0.0, merge=0.0,
         power=2.0, groove=0.08, compress='AHE', alpha=0.1, beta=0.85,
         process='BLUE', points_n=120, wrap=False,
+        # elliptic / tile families, and directional fBm
+        ell_kind='WP', tau_re=0.0, tau_im=1.0, ell_cells=1.0,
+        ell_part='SPHERE', tile_cells=6, lane=0.25,
+        multiscale=0.0, rings=3, crown=0.55,
+        anisotropy=0.0, wind=0.0,
         points=None, weights=None, depth_map=None, obj_mask=None,
         # optional multi-layer stack; overrides `field` when present
         layers=None,
@@ -185,10 +190,14 @@ def build_relief(**kw):
         h = h * grid.border_window(X, Y, p['border'], p['shape'])
     Z = 0.5 * float(p['depth']) * h
 
+    # The pattern is sampled on the regular grid; only the geometry's rim is
+    # moved onto the true outline, so a curved panel has a clean silhouette
+    # without disturbing the field.
+    Xg, Yg = grid.snap_boundary(X, Y, mask, p['shape'])
     if p['form'] == 'SHEET':
-        verts, faces = mesh.sheet(X, Y, Z, mask)
+        verts, faces = mesh.sheet(Xg, Yg, Z, mask)
     else:
-        verts, faces = mesh.slab(X, Y, Z, mask, p['base_thickness'])
+        verts, faces = mesh.slab(Xg, Yg, Z, mask, p['base_thickness'])
     verts = mesh.apply_fit(verts, p['fit'], p['scale'], p['span'])
 
     lam_cells = grid.wavelength_in_cells(p['wavelength'], info)

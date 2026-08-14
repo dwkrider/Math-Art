@@ -129,6 +129,65 @@ def border_window(X, Y, margin, shape='RECT'):
     return 0.5 - 0.5 * np.cos(math.pi * d)
 
 
+def snap_boundary(X, Y, mask, shape, corner=0.15):
+    """Move the outermost masked samples onto the exact panel outline.
+
+    A mask is a per-sample include/exclude, so a curved outline comes out
+    quantised to the sample grid: the rim of a disc is a staircase whose steps
+    are one cell high, and no amount of resolution removes the character of it
+    -- it just makes the steps smaller.  Projecting the boundary ring onto the
+    true curve fixes the silhouette exactly, and costs nothing in topology,
+    because each vertex moves at most one cell (a boundary sample is by
+    definition within one cell of the rim).
+
+    Interior samples are untouched, so the grid stays regular where it is not
+    visible.
+    """
+    if shape == 'RECT':
+        return X, Y
+    m = np.asarray(mask, dtype=bool)
+    if not m.any():
+        return X, Y
+    # A boundary sample is inside the mask with at least one outside neighbour.
+    pad = np.pad(m, 1, mode='constant', constant_values=False)
+    inner = (pad[1:-1, :-2] & pad[1:-1, 2:] & pad[:-2, 1:-1] & pad[2:, 1:-1])
+    edge = m & ~inner
+
+    hx = float(np.abs(X).max())
+    hy = float(np.abs(Y).max())
+    Xs = X.copy()
+    Ys = Y.copy()
+    x = X[edge]
+    y = Y[edge]
+
+    if shape == 'DISC':
+        R = min(hx, hy)
+        r = np.hypot(x, y)
+        sc = np.where(r > 1e-12, R / np.maximum(r, 1e-12), 1.0)
+        Xs[edge] = x * sc
+        Ys[edge] = y * sc
+    elif shape == 'ELLIPSE':
+        t = np.sqrt((x / hx) ** 2 + (y / hy) ** 2)
+        sc = np.where(t > 1e-12, 1.0 / np.maximum(t, 1e-12), 1.0)
+        Xs[edge] = x * sc
+        Ys[edge] = y * sc
+    elif shape == 'ROUNDED_RECT':
+        rad = float(corner) * min(hx, hy)
+        ax = hx - rad
+        ay = hy - rad
+        qx = np.clip(np.abs(x) - ax, 0.0, None)
+        qy = np.clip(np.abs(y) - ay, 0.0, None)
+        q = np.hypot(qx, qy)
+        # Only the four rounded corners are curved and need moving.  A sample
+        # on a straight run has qx or qy exactly zero, and its coordinates are
+        # already exact -- projecting it would slide it along the edge.
+        on_corner = (qx > 0.0) & (qy > 0.0)
+        sc = rad / np.where(q > 1e-12, q, 1.0)
+        Xs[edge] = np.where(on_corner, np.sign(x) * (ax + qx * sc), x)
+        Ys[edge] = np.where(on_corner, np.sign(y) * (ay + qy * sc), y)
+    return Xs, Ys
+
+
 def wavelength_in_cells(wavelength, info):
     """How many samples span one wavelength.  Below ~4 the layer aliases."""
     return float(wavelength) / max(info['dx'], 1e-12)
@@ -188,6 +247,54 @@ def _selftest():
     print("grid: border rim slope %.3e -> %.3e -> %.3e (4x refine, ratio %.2f)"
           % (slopes[0], slopes[1], slopes[2], ratio))
     ok = ok and ratio > 3.0 and slopes[-1] < slopes[0]
+
+    # Boundary projection: the rim must land ON the outline, not near it, and
+    # no sample may move more than the cell it came from -- a bigger move means
+    # an interior sample was caught, which would dent the panel.
+    for shape, aspect in (('DISC', 0.8), ('ELLIPSE', 0.8), ('ROUNDED_RECT', 0.8),
+                          ('DISC', 1.0)):
+        Xr, Yr, ir = make_grid(width=2.0, aspect=aspect, resolution=160)
+        msk = mask_for(shape, Xr, Yr)
+        Xs, Ys = snap_boundary(Xr, Yr, msk, shape)
+        pad = np.pad(msk, 1, mode='constant', constant_values=False)
+        inner = (pad[1:-1, :-2] & pad[1:-1, 2:] & pad[:-2, 1:-1] & pad[2:, 1:-1])
+        edge = msk & ~inner
+        hx = np.abs(Xr).max()
+        hy = np.abs(Yr).max()
+        if shape == 'DISC':
+            R = min(hx, hy)
+            dev = np.abs(np.hypot(Xs[edge], Ys[edge]) - R)
+            was = np.abs(np.hypot(Xr[edge], Yr[edge]) - R)
+        elif shape == 'ELLIPSE':
+            f = lambda a, b: np.abs(
+                np.sqrt((a / hx) ** 2 + (b / hy) ** 2) - 1.0) * min(hx, hy)
+            dev = f(Xs[edge], Ys[edge])
+            was = f(Xr[edge], Yr[edge])
+        else:
+            rad = 0.15 * min(hx, hy)
+            def f(a, b, ax=hx - 0.15 * min(hx, hy), ay=hy - 0.15 * min(hx, hy)):
+                qx = np.clip(np.abs(a) - ax, 0.0, None)
+                qy = np.clip(np.abs(b) - ay, 0.0, None)
+                return np.abs(np.hypot(qx, qy) - rad)
+            dev = f(Xs[edge], Ys[edge])
+            was = f(Xr[edge], Yr[edge])
+        moved = np.hypot(Xs[edge] - Xr[edge], Ys[edge] - Yr[edge])
+        print("grid: %-13s rim deviation %.2e -> %.2e, worst move %.4f "
+              "(cell %.4f)" % (shape, was.max(), dev.max(), moved.max(), ir['dx']))
+        # The move is along the radius, which for an ellipse is not the
+        # shortest path to the outline -- it overshoots the perpendicular
+        # distance by 1/cos(angle between radius and normal), a few percent
+        # here.  The check exists to catch an INTERIOR sample being dragged,
+        # which would move it many cells, so a two-cell bound discriminates.
+        ok = ok and dev.max() < 1e-12 and moved.max() <= ir['dx'] * 2.0
+        # Interior samples must be untouched.
+        ok = ok and np.array_equal(Xs[inner & msk], Xr[inner & msk])
+        ok = ok and np.array_equal(Ys[inner & msk], Yr[inner & msk])
+
+    # A rectangle has no curved outline, so nothing may move at all.
+    Xr, Yr, _ = make_grid(width=2.0, aspect=1.0, resolution=64)
+    Xs, Ys = snap_boundary(Xr, Yr, mask_for('RECT', Xr, Yr), 'RECT')
+    ok = ok and np.array_equal(Xs, Xr) and np.array_equal(Ys, Yr)
 
     print("RESULT:", "OK" if ok else "BAD")
     assert ok
