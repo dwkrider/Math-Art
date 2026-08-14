@@ -280,6 +280,11 @@ CHIRAL = {('ARCHIMEDEAN', 'SC'), ('ARCHIMEDEAN', 'SD'),
           ('JOHNSON', 'J46'), ('JOHNSON', 'J47'),
           ('JOHNSON', 'J48')}
 
+try:                                  # inside the math_art package
+    from .polyhedra.fit import fit_cube as _shared_fit_cube
+except ImportError:                   # flat import (test runner)
+    from polyhedra.fit import fit_cube as _shared_fit_cube
+
 
 def mirror_solid(V, F):
     """The enantiomorph: reflect through the yz-plane and reverse
@@ -1739,24 +1744,14 @@ def can_stellate(family, sid, n=6):
 
 
 def fit_cube(V, scale=1.0):
-    """Centre V on its bounding-box midpoint and scale the largest extent
-    to 2*scale -- the shared "2 m cube" convention.  The catalog families
-    are already normalized to the unit circumsphere inside build_solid, but
-    the Johnson (unit edge, stacked off-origin), prism (unit edge) and
-    Kepler-Poinsot (raw ~1.9 circumradius) families are not, so the
-    operator fits those here.  Any scale already baked into V is normalized
-    away, so the result's largest extent is exactly 2*scale regardless."""
-    if not V:
-        return V
-    xs = [v[0] for v in V]
-    ys = [v[1] for v in V]
-    zs = [v[2] for v in V]
-    cx = 0.5 * (min(xs) + max(xs))
-    cy = 0.5 * (min(ys) + max(ys))
-    cz = 0.5 * (min(zs) + max(zs))
-    ext = max(max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs), 1e-12)
-    s = 2.0 * scale / ext
-    return [((x - cx) * s, (y - cy) * s, (z - cz) * s) for x, y, z in V]
+    """Centre V and scale its largest extent to 2*scale -- the shared
+    "2 m cube" convention, applied to EVERY family by the operator.
+
+    Note the argument convention: `scale` is a multiplier on the standard
+    2-unit cube, so the resulting extent is 2*scale.  The engine's
+    `polyhedra.fit.fit_cube` takes the extent directly.
+    """
+    return _shared_fit_cube(V, 2.0 * scale) if V else V
 
 
 def build_solid(family, sid, n=6, scale=1.0, canon=True, canon_iters=250):
@@ -1780,7 +1775,10 @@ def build_solid(family, sid, n=6, scale=1.0, canon=True, canon_iters=250):
     V, F = cw.apply_conway(nota)
     if family in _CANON_FAMS and canon:
         V = cw.canonicalize(V, F, iters=canon_iters)
-    # normalise to unit circumradius-ish
+    # Normalise to unit circumradius here; the operator then fits the
+    # bounding box to the 2 m cube, which is the extension-wide
+    # convention.  Keeping this step means `build_solid` still returns a
+    # sanely-sized solid to non-Blender callers.
     r = max(sqrt(sum(c * c for c in v)) for v in V)
     V = [tuple(c / r * scale for c in v) for v in V]
     return V, F, None
@@ -2005,21 +2003,24 @@ if _IN_BLENDER:
                                           self.n, self.scale,
                                           self.canonicalize,
                                           self.canon_iters)
-                if self.family in ('JOHNSON', 'PRISM', 'KEPLER'):
-                    # these families are built at unit edge length / raw
-                    # circumradius (and Johnson solids sit off-origin);
-                    # centre + fit them into the 2 m cube so `scale`
-                    # behaves the same as for the catalog families
-                    V = fit_cube(V, self.scale)
+                # EVERY family is centred and fitted to the 2 m cube.
+                # This used to apply only to JOHNSON/PRISM/KEPLER, while
+                # the catalog families were normalised to unit
+                # CIRCUMRADIUS instead.  Those agree for a sphere-like
+                # solid but not otherwise: a tetrahedron of circumradius
+                # 1 is only 2/sqrt(3) = 1.155 across its bounding box, so
+                # it arrived visibly smaller than everything else in the
+                # extension.
+                V = fit_cube(V, self.scale)
                 if self.stellated and self.family != 'KEPLER':
                     try:
                         V, F, resid = stellate(V, F)
                         sizes = None
-                        # keep the spiky stellation inside the 2 m cube
-                        mx = max((abs(c) for v in V for c in v),
-                                 default=1.0) or 1.0
-                        V = [tuple(c / mx * self.scale for c in v)
-                             for v in V]
+                        # keep the spiky stellation inside the 2 m cube.
+                        # (Scaling by the largest COORDINATE, as this did,
+                        # only gives the right size when the solid is
+                        # symmetric about every axis.)
+                        V = fit_cube(V, self.scale)
                         if resid > 1e-4 * self.scale:
                             self.report(
                                 {'WARNING'},

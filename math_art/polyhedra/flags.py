@@ -350,6 +350,165 @@ def kis(V, F, height=0.25, only_n=0):
     return _dedupe(pts, out)
 
 
+# --------------------------------------------------------------------
+# The remaining operators
+# --------------------------------------------------------------------
+# These all draw on the same two families of point that the flag complex
+# names: the FACE POINT (a face's centroid) and, per directed edge, the
+# ONE-THIRD POINT.  A directed edge IS a flag -- corner c of face f taken
+# with the edge leaving it -- so `_third_points` below is a per-flag
+# quantity, and each operator is then a rule for grouping flags into new
+# faces.  That is the whole content of "operators are flag rewrites".
+
+
+def _face_points(fc):
+    """Centroid of every face, as a list indexed by face."""
+    return [np.mean([fc.V[i] for i in f], axis=0) for f in fc.F]
+
+
+def _third_points(fc, V, t=1.0 / 3.0):
+    """Point `t` of the way along every DIRECTED edge (a, b).
+
+    One per flag: the chirality of gyro, propellor and whirl comes from
+    the fact that (a, b) and (b, a) are different points.
+    """
+    out = {}
+    for face in fc.F:
+        m = len(face)
+        for i in range(m):
+            a, b = face[i], face[(i + 1) % m]
+            if (a, b) not in out:
+                A = np.asarray(V[a], float)
+                B = np.asarray(V[b], float)
+                out[(a, b)] = A + (B - A) * t
+    return out
+
+
+def gyro(V, F):
+    """Conway `g`: every n-gon becomes n pentagons (chiral).
+
+    Uses the face point and both one-third points of each edge.
+    """
+    fc = FlagComplex(V, F)
+    pts = [list(v) for v in fc.V]
+    cid = {}
+    for fi, face in enumerate(fc.F):
+        cid[fi] = len(pts)
+        pts.append(list(np.mean([fc.V[i] for i in face], axis=0)))
+    third = _third_points(fc, fc.V)
+    pid = {}
+    for k, pnt in third.items():
+        pid[k] = len(pts)
+        pts.append([float(c) for c in pnt])
+    out = []
+    for fi, face in enumerate(fc.F):
+        m = len(face)
+        for i in range(m):
+            v1, v2, v3 = face[i], face[(i + 1) % m], face[(i + 2) % m]
+            out.append([cid[fi], pid[(v1, v2)], pid[(v2, v1)], v2,
+                        pid[(v2, v3)]])
+    return pts, out
+
+
+def propellor(V, F):
+    """Conway `p`: an n-gon becomes a rotated n-gon inside n quads."""
+    fc = FlagComplex(V, F)
+    pts = [list(v) for v in fc.V]
+    third = _third_points(fc, fc.V)
+    pid = {}
+    for k, pnt in third.items():
+        pid[k] = len(pts)
+        pts.append([float(c) for c in pnt])
+    out = []
+    for face in fc.F:
+        m = len(face)
+        out.append([pid[(face[i], face[(i + 1) % m])] for i in range(m)])
+        for i in range(m):
+            v1, v2, v3 = face[i], face[(i + 1) % m], face[(i + 2) % m]
+            out.append([pid[(v1, v2)], pid[(v2, v1)], v2, pid[(v2, v3)]])
+    return pts, out
+
+
+def whirl(V, F, inset=0.55):
+    """Conway `w`: an n-gon becomes a rotated n-gon inside n hexagons.
+
+    The Goldberg-Coxeter c(2,1) operator -- the "hexpropellor".
+    """
+    fc = FlagComplex(V, F)
+    pts = [list(v) for v in fc.V]
+    third = _third_points(fc, fc.V)
+    pid = {}
+    for k, pnt in third.items():
+        pid[k] = len(pts)
+        pts.append([float(c) for c in pnt])
+    win = {}
+    for fi, face in enumerate(fc.F):
+        m = len(face)
+        cen = np.mean([fc.V[i] for i in face], axis=0)
+        for i in range(m):
+            e = np.asarray(pts[pid[(face[i], face[(i + 1) % m])]], float)
+            win[(fi, i)] = len(pts)
+            pts.append([float(c) for c in (cen + (e - cen) * inset)])
+    out = []
+    for fi, face in enumerate(fc.F):
+        m = len(face)
+        out.append([win[(fi, i)] for i in range(m)])
+        for i in range(m):
+            v1, v2, v3 = face[i], face[(i + 1) % m], face[(i + 2) % m]
+            out.append([win[(fi, i)], win[(fi, (i + 1) % m)],
+                        pid[(v2, v3)], v2, pid[(v2, v1)], pid[(v1, v2)]])
+    return pts, out
+
+
+def chamfer(V, F, t=0.35):
+    """Conway `c`: shrink every face and join the gaps with hexagons.
+
+    One shrunk copy of each corner per face, and one hexagon per EDGE --
+    which is where s2 earns its keep: the hexagon needs the corner points
+    from BOTH faces on that edge.
+    """
+    fc = FlagComplex(V, F)
+    pts = [list(v) for v in fc.V]
+    sid = {}
+    for fi, face in enumerate(fc.F):
+        c = np.mean([fc.V[i] for i in face], axis=0)
+        for v in face:
+            sid[(fi, v)] = len(pts)
+            A = np.asarray(fc.V[v], float)
+            pts.append([float(x) for x in (A + (c - A) * t)])
+    out = [[sid[(fi, v)] for v in face] for fi, face in enumerate(fc.F)]
+    # directed edge -> the face on its left
+    e2f = {}
+    for fi, face in enumerate(fc.F):
+        m = len(face)
+        for i in range(m):
+            e2f[(face[i], face[(i + 1) % m])] = fi
+    done = set()
+    for fi, face in enumerate(fc.F):
+        m = len(face)
+        for i in range(m):
+            a, b = face[i], face[(i + 1) % m]
+            k = (min(a, b), max(a, b))
+            if k in done or (b, a) not in e2f:
+                continue
+            done.add(k)
+            fL, fR = e2f[(a, b)], e2f[(b, a)]
+            out.append([a, sid[(fR, a)], sid[(fR, b)], b,
+                        sid[(fL, b)], sid[(fL, a)]])
+    return pts, out
+
+
+def reflect(V, F):
+    """Conway `r`: mirror the solid, reversing every face's winding.
+
+    On flags this is the orientation-reversing relabelling; geometrically
+    it is a reflection in x with the face cycles reversed so the outward
+    normals stay outward.
+    """
+    return ([[-v[0], v[1], v[2]] for v in V],
+            [list(reversed(list(f))) for f in F])
+
+
 def _selftest():
     ok = True
     from .seeds import seed_poly
@@ -448,12 +607,14 @@ def _selftest():
     except ImportError:
         import conway_operators as _co
     bad = []
+    OPS = (('d', _co.op_dual, dual), ('a', _co.op_ambo, ambo),
+           ('k', _co.op_kis, kis), ('g', _co.op_gyro, gyro),
+           ('p', _co.op_propellor, propellor), ('w', _co.op_whirl, whirl),
+           ('c', _co.op_chamfer, chamfer), ('r', _co.op_reflect, reflect))
     for kind in ('TETRA', 'CUBE', 'OCTA', 'DODECA', 'ICOSA'):
         Vs, Fs = seed_poly(kind)
         Vs, Fs = _co.orient_outward(Vs, Fs)
-        for nm, old, new in (('d', _co.op_dual, dual),
-                             ('a', _co.op_ambo, ambo),
-                             ('k', _co.op_kis, kis)):
+        for nm, old, new in OPS:
             Vb, Fb = old(Vs, Fs)
             Vf, Ff = new(Vs, Fs)
             hb = sorted((len(f) for f in Fb))
@@ -468,8 +629,9 @@ def _selftest():
                 bad.append(f"{nm}{kind}:geometry")
     good = not bad
     ok &= good
-    print(f"flags: d/a/k reproduce the bespoke operators on all five solids "
-          f"(15 combinations) {'OK' if good else 'FAIL ' + ','.join(bad)}")
+    print(f"flags: all EIGHT operators reproduce the bespoke ones on all "
+          f"five solids (40 combinations) "
+          f"{'OK' if good else 'FAIL ' + ','.join(bad)}")
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
