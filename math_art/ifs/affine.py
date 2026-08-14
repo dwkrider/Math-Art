@@ -39,30 +39,29 @@ from .voxel import (MAX_CELLS, _as_quads, _occupied_cells, _signed_volume,
                     blur_density, center_fit, keep_largest, orient_outward,
                     voxel_surface)
 
+try:
+    from ..polyhedra.seeds import seed_poly
+except ImportError:  # flat import outside the package
+    from polyhedra.seeds import seed_poly
 
-_TETRA = np.array([(1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)],
-                  dtype=float)
-
-
-# wound so the normals face outward: a signed-volume check in the
-# self-test keeps them that way
-_TETRA_F = [(0, 1, 2), (0, 2, 3), (0, 3, 1), (1, 3, 2)]
-
-
-_OCTA = np.array([(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0),
-                  (0, 0, 1), (0, 0, -1)], dtype=float)
-
-
-_OCTA_F = [(0, 2, 4), (2, 1, 4), (1, 3, 4), (3, 0, 4),
-           (2, 0, 5), (1, 2, 5), (3, 1, 5), (0, 3, 5)]
+# The tetrahedron and octahedron (and the cube, below) are the project's
+# canonical seed solids and live in `polyhedra.seeds`.  All three were
+# verbatim copies of that table before -- same vertices, same winding --
+# in this module, in the sponge generator, and in `polyhedra` itself.
+_TETRA, _TETRA_F = seed_poly("TETRA")
+_OCTA, _OCTA_F = seed_poly("OCTA")
+_CUBE_V, _CUBE_F = seed_poly("CUBE")
 
 
-_CUBE_V = np.array([(x, y, z) for x in (-1, 1) for y in (-1, 1)
-                    for z in (-1, 1)], dtype=float)
 
 
-_CUBE_F = [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1),
-           (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
+
+
+
+
+
+
+
 
 
 SEEDS = {'CUBE': (_CUBE_V, _CUBE_F), 'TETRA': (_TETRA, _TETRA_F),
