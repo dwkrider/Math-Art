@@ -43,6 +43,11 @@ except ImportError:
 
 PHI = (1 + 5 ** 0.5) / 2
 
+try:                                  # inside the math_art package
+    from .polyhedra.fit import fit_cube as _fit_cube
+except ImportError:                   # flat import (test runner)
+    from polyhedra.fit import fit_cube as _fit_cube
+
 
 # --------------------------------------------------------------------------
 # Seeds
@@ -893,7 +898,9 @@ if _IN_BLENDER:
                 self.report({'INFO'}, f"{len(F)} face segments")
                 return {'FINISHED'}
             me = bpy.data.meshes.new(f"Conway {self.notation}")
-            me.from_pydata([tuple(c * self.scale for c in v) for v in V],
+            # operator strings change the size unpredictably (kis grows a
+            # solid, ambo shrinks it), so fit rather than scale
+            me.from_pydata(_fit_cube(V, 2.0 * self.scale),
                            [], [tuple(f) for f in F])
             me.validate(clean_customdata=True)
             if self.coloring == 'SIDES' and len(me.polygons) == len(F):

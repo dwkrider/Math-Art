@@ -69,10 +69,10 @@ except ImportError:
     np = None
 
 try:
-    from . import _biscribed_chiral_data as _chiral_data
+    from .polyhedra import _biscribed_chiral_data as _chiral_data
 except ImportError:
     try:
-        import _biscribed_chiral_data as _chiral_data
+        from polyhedra import _biscribed_chiral_data as _chiral_data
     except ImportError:
         _chiral_data = None
 # precomputed coords for the slow non-Platonic-seed chiral solids (loaded so
@@ -80,6 +80,11 @@ except ImportError:
 _CHIRAL_DATA = getattr(_chiral_data, 'CHIRAL_DATA', {})
 
 PHI = (1 + 5 ** 0.5) / 2
+
+try:                                  # inside the math_art package
+    from .polyhedra.fit import fit_cube as _fit_cube
+except ImportError:                   # flat import (test runner)
+    from polyhedra.fit import fit_cube as _fit_cube
 
 
 # --------------------------------------------------------------------------
@@ -1401,7 +1406,9 @@ if _IN_BLENDER:
                 self.report({'INFO'}, f"{label}: {len(F)} face segments")
                 return {'FINISHED'}
             me = bpy.data.meshes.new(label)
-            me.from_pydata([tuple(c * self.scale for c in v) for v in V],
+            # biscribed solids are normalised to their in/circumsphere pair, not to a bounding box;
+            # fit the bounding box so it matches every other generator
+            me.from_pydata(_fit_cube(V, 2.0 * self.scale),
                            [], [tuple(f) for f in F])
             me.validate(clean_customdata=True)
             if self.coloring == 'SIDES' and len(me.polygons) == len(F):

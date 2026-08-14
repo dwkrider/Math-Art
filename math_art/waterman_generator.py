@@ -22,6 +22,11 @@ bl_info = {
 
 import math
 
+try:                                  # inside the math_art package
+    from .polyhedra.fit import fit_cube as _fit_cube
+except ImportError:                   # flat import (test runner)
+    from polyhedra.fit import fit_cube as _fit_cube
+
 
 def fcc_points(root):
     """FCC lattice points (x+y+z even) with |p|^2 <= 2*root."""
@@ -114,10 +119,13 @@ if _IN_BLENDER:
             if len(pts) < 4:
                 self.report({'ERROR'}, "not enough lattice points")
                 return {'CANCELLED'}
-            s = self.scale / math.sqrt(2 * self.root)
+            # The lattice radius sqrt(2*root) bounds the SPHERE the points
+            # were chosen from, not the hull's bounding box, so scaling by
+            # it left every Waterman short of the 2 m cube (1.79 across for
+            # the default).  Fit the actual points instead.
+            pts = _fit_cube(pts, 2.0 * self.scale)
             bm = bmesh.new()
-            vlist = [bm.verts.new((p[0] * s, p[1] * s, p[2] * s))
-                     for p in pts]
+            vlist = [bm.verts.new((p[0], p[1], p[2])) for p in pts]
             bmesh.ops.convex_hull(bm, input=vlist)
             unused = [v for v in bm.verts if not v.link_faces]
             bmesh.ops.delete(bm, geom=unused, context='VERTS')
