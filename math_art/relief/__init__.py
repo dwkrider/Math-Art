@@ -37,7 +37,7 @@ References:
 
 from . import (fields, grid, imprint, kernels, mesh, plates, special,
                transfer, warp)
-from .fields import FIELDS, evaluate
+from .fields import FIELD_ORDER, FIELDS, evaluate, ordered_fields
 from .grid import border_window, make_grid, mask_for, SHAPES
 from .mesh import apply_fit, edge_report, FITS, FORMS, sheet, slab
 from .plates import (chladni_rayleigh, circular_membrane, free_plate_cached,
@@ -51,7 +51,7 @@ from .warp import (domain_warp, orientation_field, ORIENTATIONS,
 __all__ = [
     "fields", "grid", "imprint", "kernels", "mesh", "plates", "special",
     "transfer", "warp",
-    "FIELDS", "evaluate",
+    "FIELDS", "FIELD_ORDER", "ordered_fields", "evaluate",
     "SHAPES", "make_grid", "mask_for", "border_window",
     "CURVES", "NORMS", "normalize", "apply_curve", "to_depth",
     "ORIENTATIONS", "orientation_field", "domain_warp",

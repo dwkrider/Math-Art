@@ -325,6 +325,25 @@ FIELDS = {
 }
 
 
+# Display order for the UI.  Deliberately NOT alphabetical: the waves come
+# first because they are the organic base most panels start from, the
+# closed-form vibration and optical modes next, and the point-driven layers
+# last -- Object is the one that needs a scene object selected, so it belongs
+# at the end of the list rather than in the middle of it.
+FIELD_ORDER = [
+    'WAVE', 'WAVE_TRAIN', 'RIPPLE', 'FBM',
+    'CHLADNI', 'DRUMHEAD', 'MEMBRANE', 'ZERNIKE', 'HERMITE',
+    'SCATTER', 'OBJECT',
+]
+
+
+def ordered_fields():
+    """(id, label, description) in display order, with any stragglers last."""
+    seen = [k for k in FIELD_ORDER if k in FIELDS]
+    rest = [k for k in sorted(FIELDS) if k not in seen]
+    return [(k, FIELDS[k][0], FIELDS[k][1]) for k in seen + rest]
+
+
 def evaluate(kind, X, Y, info, params):
     """Evaluate a registered field by id."""
     try:

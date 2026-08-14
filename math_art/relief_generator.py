@@ -58,12 +58,12 @@ import numpy as np
 
 try:
     from .relief import (FIELDS, FITS, FORMS, ORIENTATIONS, PRESETS, SHAPES,
-                         build_relief)
+                         build_relief, ordered_fields)
     from .relief.kernels import KERNELS
     from .relief import transfer as _transfer
 except ImportError:                       # flat import outside the package
     from relief import (FIELDS, FITS, FORMS, ORIENTATIONS, PRESETS, SHAPES,
-                        build_relief)
+                        build_relief, ordered_fields)
     from relief.kernels import KERNELS
     from relief import transfer as _transfer
 
@@ -188,7 +188,7 @@ if _IN_BLENDER:
         ('LASER', "Laser Mode", "Hermite-Gauss TEM transverse mode"),
     ]
 
-    _FIELD_ITEMS = [(k, v[0], v[1]) for k, v in sorted(FIELDS.items())]
+    _FIELD_ITEMS = list(ordered_fields())
 
     _ORIENT_ITEMS = [
         ('CONSTANT', "Constant", "One global direction"),
