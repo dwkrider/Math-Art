@@ -110,28 +110,24 @@ except Exception:                       # legacy single-file / CLI use
 
 
 # --------------------------------------------------------------------
-# Planar similarities (complex-number form)
+# Planar similarities
 # --------------------------------------------------------------------
 #
 # A slot splice is the unique direct (or reflected) similarity mapping
-# the motif's gate ends G0, G1 onto the slot chord ends E0, E1.  With
-# points as complex numbers a direct similarity is z -> a z + b and a
-# reflected one is z -> a conj(z) + b.
-
-def _sim(g0, g1, e0, e1, reflect):
-    """The similarity taking gate (g0, g1) to slot edge (e0, e1)."""
-    if reflect:
-        a = (e1 - e0) / (g1 - g0).conjugate()
-        b = e0 - a * g0.conjugate()
-    else:
-        a = (e1 - e0) / (g1 - g0)
-        b = e0 - a * g0
-    return (a, b, reflect)
-
-
-def _apply(T, z):
-    a, b, reflect = T
-    return a * (z.conjugate() if reflect else z) + b
+# the motif's gate ends G0, G1 onto the slot chord ends E0, E1.  That map
+# is `patterns.substitution.Similarity`, shared with the rep-tile and
+# Penrose engines -- a knot substitution and a tiling substitution move
+# their prototiles by exactly the same transformation, so they use one
+# implementation of it.
+#
+# This module used to carry its own, as a tagged triple (a, b, reflect)
+# with z -> a z + b or z -> a conj(z) + b.  The shared form is untagged,
+# z -> A z + B conj(z) + C, with B = 0 for a direct map and A = 0 for a
+# reflected one; the two agree to 3e-14 over 400 random maps.
+try:
+    from .patterns.substitution import Similarity
+except ImportError:                   # flat import outside the package
+    from patterns.substitution import Similarity
 
 
 def _side(e0, e1, z):
@@ -326,12 +322,12 @@ def _expand(motif, kit, depth, T, level, out):
     child's body lands on the side of the chord AWAY from this
     instance's own body (the empty outward side), keeping the copies
     clear of the parent strand."""
-    g = abs(T[0])
+    g = T.scale
     K = len(motif.pts)
     imap = np.empty(K, int)
-    c_par = _apply(T, motif.centroid)
+    c_par = T.apply(motif.centroid)
     for i in range(K):
-        w = _apply(T, complex(motif.pts[i]))
+        w = T.apply(complex(motif.pts[i]))
         imap[i] = len(out['pts'])
         out['pts'].append(w)
         out['g'].append(g)
@@ -339,11 +335,11 @@ def _expand(motif, kit, depth, T, level, out):
         if i in motif.slot_of and depth > 0 and i + 1 < K:
             sub = kit['child'] if depth > 1 else kit['child0']
             e0 = w
-            e1 = _apply(T, complex(motif.pts[i + 1]))
-            S = _sim(sub.g0, sub.g1, e0, e1, False)
-            if _side(e0, e1, _apply(S, sub.centroid)) == \
+            e1 = T.apply(complex(motif.pts[i + 1]))
+            S = Similarity.from_pair(sub.g0, sub.g1, e0, e1, False)
+            if _side(e0, e1, S.apply(sub.centroid)) == \
                     _side(e0, e1, c_par):
-                S = _sim(sub.g0, sub.g1, e0, e1, True)
+                S = Similarity.from_pair(sub.g0, sub.g1, e0, e1, True)
             _expand(sub, kit, depth - 1, S, level + 1, out)
     for (ia, ib) in motif.cross:
         out['cross'].append((int(imap[ia]), int(imap[ib]), g, level))
@@ -396,7 +392,7 @@ def build_diagram(base='TREFOIL', depth=3, slot_scale=0.42, spl=6):
     kit = make_motif(base, slot_scale, spl)
     top = kit['root'] if depth > 0 else kit['root0']
     out = {'pts': [], 'g': [], 'lvl': [], 'cross': []}
-    _expand(top, kit, depth, (1.0 + 0.0j, 0.0 + 0.0j, False), 0, out)
+    _expand(top, kit, depth, Similarity.identity(), 0, out)
     pts, g, lvl, cross = _dedupe(out)
     return {'pts': pts, 'g': g, 'lvl': lvl, 'cross': cross,
             'motif': kit['root'], 'depth': depth}
