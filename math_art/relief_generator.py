@@ -210,6 +210,18 @@ if _IN_BLENDER:
         ('CLAMP', "Clamp", "Flat-topped mesas"),
     ]
 
+    _TILING_ITEMS = [
+        ('NONE', "None", "Do not constrain the pattern"),
+        ('TORUS', "Translation",
+         "Tiles by repeating; wavevectors snap to the panel's dual lattice"),
+        ('MIRROR', "Mirror",
+         "Tiles by reflection; built from cosine modes, so the joint is "
+         "smooth to every order"),
+        ('ANTIMIRROR', "Alternating",
+         "Neighbouring panels are the negative relief, meeting at the base "
+         "plane"),
+    ]
+
     class MESH_OT_relief_panel_add(bpy.types.Operator):
         """Add a relief panel whose height is a pattern field"""
         bl_idname = "mesh.relief_panel_add"
@@ -262,6 +274,11 @@ if _IN_BLENDER:
             name="Border", default=0.0, min=0.0, max=0.5,
             description="Raised-cosine margin fading the relief to a flat "
                         "rim (fraction of the short side)")
+        tiling: EnumProperty(
+            name="Tiling", items=_TILING_ITEMS, default='NONE',
+            description="Constrain the pattern so the panel abuts copies of "
+                        "itself invisibly. Suppresses Warp, which cannot be "
+                        "made periodic")
 
         # -- pattern --------------------------------------------------
         field: EnumProperty(name="Pattern", items=_FIELD_ITEMS,
@@ -435,6 +452,7 @@ if _IN_BLENDER:
             p = dict(
                 shape=self.shape, width=self.width, aspect=self.aspect,
                 resolution=self.resolution, border=self.border,
+                tiling=self.tiling,
                 field=self.field, wavelength=self.wavelength,
                 angle=self.angle, steepness=self.steepness,
                 count=self.count, spread=self.spread, sources=self.sources,
@@ -565,6 +583,14 @@ if _IN_BLENDER:
             msg = ("%dx%d samples, V=%d F=%d"
                    % (info['nx'], info['ny'], len(me.vertices),
                       len(me.polygons)))
+            if info.get('tiling', 'NONE') != 'NONE':
+                if info.get('untileable'):
+                    self.report({'WARNING'},
+                                "this pattern cannot tile: %s"
+                                % info['untileable'])
+                msg += ("  seam x%.2f/x%.2f"
+                        % (info.get('seam_step', 0.0),
+                           info.get('seam_curvature', 0.0)))
             if info.get('aliasing'):
                 self.report({'WARNING'},
                             msg + " -- wavelength is only %.1f samples; "
@@ -586,6 +612,10 @@ if _IN_BLENDER:
             box.prop(self, 'aspect')
             box.prop(self, 'resolution')
             box.prop(self, 'border')
+            box.prop(self, 'tiling')
+            if self.tiling != 'NONE' and self.warp > 0.0:
+                box.label(text="Warp is suppressed while tiling",
+                          icon='INFO')
 
             custom = self.preset == 'CUSTOM'
             box = lay.box()
@@ -789,6 +819,8 @@ if _IN_BLENDER:
         resolution: IntProperty(name="Resolution", default=192, min=8,
                                 max=1024)
         border: FloatProperty(name="Border", default=0.0, min=0.0, max=0.5)
+        tiling: EnumProperty(name="Tiling", items=_TILING_ITEMS,
+                             default='NONE')
         warp: FloatProperty(name="Warp", default=0.0, min=0.0, max=2.0)
         warp_iters: IntProperty(name="Warp Steps", default=2, min=1, max=4)
         seed: IntProperty(name="Seed", default=1, min=0, max=100000)
@@ -833,7 +865,8 @@ if _IN_BLENDER:
         'mode_index', 'mode_m', 'mode_n', 'zern_n', 'zern_m', 'hurst',
         'orient', 'orient_freq', 'curve', 'curve_amount')
     _SEED_PANEL_KEYS = (
-        'shape', 'width', 'aspect', 'resolution', 'border', 'warp',
+        'shape', 'width', 'aspect', 'resolution', 'border', 'tiling',
+        'warp',
         'warp_iters', 'seed', 'depth', 'form', 'base_thickness', 'fit',
         'scale', 'smooth')
 
@@ -884,7 +917,7 @@ if _IN_BLENDER:
         return dict(
             shape=props.shape, width=props.width, aspect=props.aspect,
             resolution=props.resolution, border=props.border,
-            warp=props.warp, warp_iters=props.warp_iters, seed=props.seed,
+            tiling=props.tiling, warp=props.warp, warp_iters=props.warp_iters, seed=props.seed,
             depth=props.depth, form=props.form,
             base_thickness=props.base_thickness, fit=props.fit,
             scale=props.scale, layers=layers)
@@ -1046,6 +1079,7 @@ if _IN_BLENDER:
             col.prop(props, 'aspect')
             col.prop(props, 'resolution')
             col.prop(props, 'border')
+            col.prop(props, 'tiling')
 
             box = lay.box()
             box.label(text="Layers")

@@ -36,7 +36,7 @@ References:
 """
 
 from . import (fields, grid, imprint, kernels, mesh, plates, special,
-               stack, transfer, warp)
+               stack, tiling, transfer, warp)
 from .fields import FIELD_ORDER, FIELDS, evaluate, ordered_fields
 from .grid import border_window, make_grid, mask_for, SHAPES
 from .mesh import apply_fit, edge_report, FITS, FORMS, sheet, slab
@@ -51,7 +51,7 @@ from .warp import (domain_warp, orientation_field, ORIENTATIONS,
 
 __all__ = [
     "fields", "grid", "imprint", "kernels", "mesh", "plates", "special",
-    "stack", "transfer", "warp",
+    "stack", "tiling", "transfer", "warp",
     "BLENDS", "MASKS", "layer", "evaluate_stack",
     "FIELDS", "FIELD_ORDER", "ordered_fields", "evaluate",
     "SHAPES", "make_grid", "mask_for", "border_window",
@@ -139,6 +139,8 @@ def build_relief(**kw):
         points=None, weights=None, depth_map=None, obj_mask=None,
         # optional multi-layer stack; overrides `field` when present
         layers=None,
+        # seamless tiling: NONE / TORUS / MIRROR / ANTIMIRROR
+        tiling='NONE',
         # orientation + warp
         orient='CONSTANT', orient_freq=0.5, swirl=1.0,
         warp=0.0, warp_iters=2, warp_freq=0.6,
@@ -153,7 +155,14 @@ def build_relief(**kw):
     X, Y, info = grid.make_grid(p['width'], p['aspect'], p['resolution'])
     mask = grid.mask_for(p['shape'], X, Y)
 
-    Xw, Yw = warp.domain_warp(X, Y, p['warp'], seed=int(p['seed']) + 1013,
+    # Warping breaks tiling unless the warp field is itself periodic, which
+    # it is not; rather than emit a panel that claims to tile and does not,
+    # the warp is suppressed and reported.
+    warp_amount = float(p['warp'])
+    warp_suppressed = warp_amount > 0.0 and p.get('tiling', 'NONE') != 'NONE'
+    if warp_suppressed:
+        warp_amount = 0.0
+    Xw, Yw = warp.domain_warp(X, Y, warp_amount, seed=int(p['seed']) + 1013,
                               iterations=p['warp_iters'], freq=p['warp_freq'])
 
     if p.get('layers'):
@@ -180,7 +189,13 @@ def build_relief(**kw):
     info = dict(info)
     info.update(verts=len(verts), faces=len(faces),
                 wavelength_cells=lam_cells,
-                aliasing=lam_cells < 4.0)
+                aliasing=lam_cells < 4.0,
+                tiling=p.get('tiling', 'NONE'),
+                warp_suppressed=warp_suppressed)
+    if p.get('tiling', 'NONE') != 'NONE':
+        c0, c1 = tiling.seam_error(h, p['tiling'], info)
+        info.update(seam_step=c0, seam_curvature=c1,
+                    untileable=tiling.UNTILEABLE.get(p['field']))
     return verts, faces, info
 
 

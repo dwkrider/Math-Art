@@ -68,8 +68,33 @@ def _sharpen(s, steepness):
     return 2.0 * u - 1.0
 
 
+def _tiled_wave(X, Y, info, p, mode):
+    """A wave built in the basis whose boundary condition gives the seam.
+
+    Torus uses a wavevector snapped to the dual lattice; mirror and antimirror
+    use separable cosine or sine products, which are the only forms satisfying
+    Neumann or Dirichlet on all four edges at once.  Being separable, they
+    cannot follow an orientation field -- so a tiled wave is a straight wave,
+    and the caller is told rather than being given a seam.
+    """
+    from . import tiling as _t
+    Lx, Ly = _t.periods(info)
+    lam = float(p.get('wavelength', 0.5))
+    ang = float(p.get('angle', 0.0))
+    if mode == 'TORUS':
+        kx, ky, _rep = _t.snap_torus(lam, ang, Lx, Ly)
+        return np.sin(kx * (X - X.min()) + ky * (Y - Y.min())
+                      + float(p.get('phase', 0.0)))
+    m, n = _t.snap_symmetric(lam, ang, Lx, Ly, mode)
+    return _t.symmetric_wave(X, Y, info, m, n, mode)
+
+
 def wave(X, Y, info, p):
     """A single directional wave, optionally steered by an orientation field."""
+    mode = p.get('tiling', 'NONE')
+    if mode in ('TORUS', 'MIRROR', 'ANTIMIRROR'):
+        return _sharpen(_tiled_wave(X, Y, info, p, mode),
+                        p.get('steepness', 0.0))
     return _sharpen(np.sin(_guided_phase(X, Y, p)),
                     p.get('steepness', 0.0))
 
@@ -84,6 +109,7 @@ def wave_train(X, Y, info, p):
     rng = np.random.default_rng(int(p.get('seed', 1)) & 0x7FFFFFFF)
     spread = float(p.get('spread', 0.4))
     lam0 = max(float(p.get('wavelength', 0.5)), 1e-6)
+    mode = p.get('tiling', 'NONE')
     out = np.zeros(X.shape)
     for i in range(n):
         q = dict(p)
@@ -91,8 +117,11 @@ def wave_train(X, Y, info, p):
         q['wavelength'] = lam0 * float(rng.uniform(0.75, 1.35))
         q['phase'] = float(rng.uniform(0.0, 2.0 * math.pi))
         q['seed'] = int(p.get('seed', 1)) + 101 * i
-        out += _sharpen(np.sin(_guided_phase(X, Y, q)),
-                        p.get('steepness', 0.0)) / math.sqrt(n)
+        if mode in ('TORUS', 'MIRROR', 'ANTIMIRROR'):
+            comp = _tiled_wave(X, Y, info, q, mode)
+        else:
+            comp = np.sin(_guided_phase(X, Y, q))
+        out += _sharpen(comp, p.get('steepness', 0.0)) / math.sqrt(n)
     return out
 
 
