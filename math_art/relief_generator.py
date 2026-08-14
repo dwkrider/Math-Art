@@ -671,6 +671,411 @@ if _IN_BLENDER:
             box.prop(self, 'scale')
             box.prop(self, 'smooth')
 
+    # ==================================================================
+    # Multi-layer stack: a live, editable panel on the object itself
+    # ==================================================================
+    #
+    # The redo panel is fine for one pattern but cannot host an
+    # add/remove list, so the stack lives on the object as a property
+    # group with a UIList and an explicit Rebuild -- the same shape the
+    # Scherk-Collins generator uses.
+
+    _BLEND_ITEMS = [
+        ('ADD', "Add", "Sum -- the usual choice"),
+        ('SUB', "Subtract", "Carve this layer out of what is below"),
+        ('MUL', "Multiply", "Modulate the layers below"),
+        ('SCREEN', "Screen", "Lighten; the inverse of multiply"),
+        ('MAX', "Max", "Keep whichever is higher"),
+        ('MIN', "Min", "Keep whichever is lower"),
+    ]
+
+    _MASK_ITEMS = [
+        ('NONE', "None", "Apply everywhere"),
+        ('RADIAL', "Radial", "Fade out from a centre"),
+        ('LINEAR', "Linear", "Fade across the panel"),
+        ('LAYER', "Layer", "Use an earlier layer as the mask"),
+    ]
+
+    class ReliefLayer(bpy.types.PropertyGroup):
+        """One entry in a panel's pattern stack."""
+        kind: EnumProperty(name="Pattern", items=_FIELD_ITEMS,
+                           default='WAVE_TRAIN')
+        amplitude: FloatProperty(name="Amount", default=1.0, min=-4.0,
+                                 max=4.0)
+        blend: EnumProperty(name="Blend", items=_BLEND_ITEMS, default='ADD')
+        enabled: BoolProperty(name="Enabled", default=True)
+
+        wavelength: FloatProperty(name="Wavelength", default=0.5, min=0.005,
+                                  max=20.0, unit='LENGTH')
+        angle: FloatProperty(name="Angle", default=0.0, min=-6.2832,
+                             max=6.2832, unit='ROTATION')
+        steepness: FloatProperty(name="Steepness", default=0.0, min=0.0,
+                                 max=1.0)
+        count: IntProperty(name="Waves", default=3, min=1, max=24)
+        sources: IntProperty(name="Sources", default=3, min=1, max=32)
+        seed: IntProperty(name="Seed", default=1, min=0, max=100000)
+        mode_index: IntProperty(name="Mode", default=6, min=1, max=40)
+        mode_m: IntProperty(name="m", default=2, min=0, max=24)
+        mode_n: IntProperty(name="n", default=3, min=0, max=24)
+        zern_n: IntProperty(name="Zernike n", default=4, min=0, max=20)
+        zern_m: IntProperty(name="Zernike m", default=2, min=-20, max=20)
+        hurst: FloatProperty(name="Hurst", default=0.7, min=0.05, max=0.99)
+
+        orient: EnumProperty(name="Orientation", items=_ORIENT_ITEMS,
+                             default='CONSTANT')
+        orient_freq: FloatProperty(name="Field Scale", default=0.5, min=0.05,
+                                   max=8.0)
+
+        offset_x: FloatProperty(name="Offset X", default=0.0, min=-10.0,
+                                max=10.0, unit='LENGTH')
+        offset_y: FloatProperty(name="Offset Y", default=0.0, min=-10.0,
+                                max=10.0, unit='LENGTH')
+        rotation: FloatProperty(name="Rotation", default=0.0, min=-6.2832,
+                                max=6.2832, unit='ROTATION')
+        scale_x: FloatProperty(name="Scale X", default=1.0, min=0.01,
+                               max=100.0)
+        scale_y: FloatProperty(name="Scale Y", default=1.0, min=0.01,
+                               max=100.0)
+
+        mask: EnumProperty(name="Mask", items=_MASK_ITEMS, default='NONE')
+        mask_width: FloatProperty(name="Mask Width", default=0.5, min=0.01,
+                                  max=2.0)
+        mask_angle: FloatProperty(name="Mask Angle", default=0.0, min=-6.2832,
+                                  max=6.2832, unit='ROTATION')
+        mask_layer: IntProperty(
+            name="Mask Layer", default=0, min=0, max=63,
+            description="Index of an EARLIER layer to use as the mask; a "
+                        "layer can only reference ones below it")
+        curve: EnumProperty(name="Profile", items=_CURVE_ITEMS,
+                            default='NONE')
+        curve_amount: FloatProperty(name="Amount", default=1.0, min=0.05,
+                                    max=4.0)
+
+    class ReliefPanelProps(bpy.types.PropertyGroup):
+        """The whole panel: outline, output settings, and the layer stack."""
+        shape: EnumProperty(
+            name="Shape",
+            items=[(s, s.replace('_', ' ').title(), "") for s in SHAPES],
+            default='RECT')
+        width: FloatProperty(name="Width", default=2.0, min=0.01, max=100.0,
+                             unit='LENGTH')
+        aspect: FloatProperty(name="Aspect", default=1.0, min=0.05, max=20.0)
+        resolution: IntProperty(name="Resolution", default=192, min=8,
+                                max=1024)
+        border: FloatProperty(name="Border", default=0.0, min=0.0, max=0.5)
+        warp: FloatProperty(name="Warp", default=0.0, min=0.0, max=2.0)
+        warp_iters: IntProperty(name="Warp Steps", default=2, min=1, max=4)
+        seed: IntProperty(name="Seed", default=1, min=0, max=100000)
+        depth: FloatProperty(name="Relief Depth", default=0.25, min=0.0,
+                             max=10.0, unit='LENGTH')
+        form: EnumProperty(
+            name="Form",
+            items=[('SLAB', "Slab", "Watertight panel with a flat back"),
+                   ('SHEET', "Sheet", "Open surface")],
+            default='SLAB')
+        base_thickness: FloatProperty(name="Base", default=0.1, min=0.0,
+                                      max=10.0, unit='LENGTH')
+        fit: EnumProperty(
+            name="Fit",
+            items=[('FOOTPRINT', "Footprint", ""), ('CUBE', "2 m Cube", ""),
+                   ('NONE', "None", "")],
+            default='FOOTPRINT')
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        smooth: BoolProperty(name="Smooth Shading", default=True)
+
+        layers: bpy.props.CollectionProperty(type=ReliefLayer)
+        active: IntProperty(name="Active Layer", default=0, min=0)
+        is_panel: BoolProperty(default=False)
+
+    class RELIEF_UL_layers(bpy.types.UIList):
+        def draw_item(self, context, layout, data, item, icon, active_data,
+                      active_prop, index):
+            row = layout.row(align=True)
+            row.prop(item, 'enabled', text="", emboss=False,
+                     icon='CHECKBOX_HLT' if item.enabled
+                     else 'CHECKBOX_DEHLT')
+            label = dict(_FIELD_ITEMS_MAP).get(item.kind, item.kind)
+            row.label(text="%d. %s" % (index, label))
+            sub = row.row(align=True)
+            sub.alignment = 'RIGHT'
+            sub.label(text="%s  x%.2f" % (item.blend.title(), item.amplitude))
+
+    def _panel_params(props):
+        """Turn the property group into a `build_relief` argument dict."""
+        layers = []
+        for lay in props.layers:
+            if not lay.enabled:
+                continue
+            layers.append(dict(
+                kind=lay.kind, amplitude=lay.amplitude, blend=lay.blend,
+                wavelength=lay.wavelength, angle=lay.angle,
+                steepness=lay.steepness, count=lay.count,
+                sources=lay.sources, seed=lay.seed,
+                mode_index=lay.mode_index, mode_m=lay.mode_m,
+                mode_n=lay.mode_n, zern_n=lay.zern_n, zern_m=lay.zern_m,
+                hurst=lay.hurst, orient=lay.orient,
+                orient_freq=lay.orient_freq,
+                offset_x=lay.offset_x, offset_y=lay.offset_y,
+                rotation=lay.rotation, scale_x=lay.scale_x,
+                scale_y=lay.scale_y,
+                mask=lay.mask, mask_width=lay.mask_width,
+                mask_angle=lay.mask_angle, mask_layer=lay.mask_layer,
+                curve=lay.curve, curve_amount=lay.curve_amount))
+        return dict(
+            shape=props.shape, width=props.width, aspect=props.aspect,
+            resolution=props.resolution, border=props.border,
+            warp=props.warp, warp_iters=props.warp_iters, seed=props.seed,
+            depth=props.depth, form=props.form,
+            base_thickness=props.base_thickness, fit=props.fit,
+            scale=props.scale, layers=layers)
+
+    def _write_mesh(obj, verts, faces, smooth):
+        """Replace the object's geometry IN PLACE.
+
+        The mesh datablock is reused rather than swapped out: replacing it
+        invalidates every reference anything else still holds and surfaces
+        later as a stale-`Mesh` ReferenceError.
+        """
+        me = obj.data
+        me.clear_geometry()
+        me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
+                       [tuple(int(i) for i in f) for f in faces])
+        me.validate(clean_customdata=True)
+        if smooth and len(me.polygons):
+            me.polygons.foreach_set('use_smooth', [True] * len(me.polygons))
+        try:
+            attr = me.attributes.get("height") or me.attributes.new(
+                "height", 'FLOAT', 'POINT')
+            z = np.asarray(verts, dtype=float)[:, 2]
+            rng = float(z.max() - z.min())
+            attr.data.foreach_set('value',
+                                  ((z - z.min()) / rng if rng > 1e-12
+                                   else z * 0.0).tolist())
+        except (RuntimeError, AttributeError):
+            pass
+        me.update()
+
+    class RELIEF_OT_panel_new(bpy.types.Operator):
+        """Create a new layered relief panel"""
+        bl_idname = "relief.panel_new"
+        bl_label = "New Layered Panel"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        def execute(self, context):
+            me = bpy.data.meshes.new("Relief Panel")
+            obj = bpy.data.objects.new("Relief Panel", me)
+            context.collection.objects.link(obj)
+            obj.location = context.scene.cursor.location
+            for o in context.selected_objects:
+                o.select_set(False)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+
+            props = obj.relief_panel
+            props.is_panel = True
+            base = props.layers.add()
+            base.kind = 'WAVE_TRAIN'
+            base.amplitude = 1.0
+            base.orient = 'CURL'
+            base.steepness = 0.5
+            props.active = 0
+            bpy.ops.relief.rebuild()
+            return {'FINISHED'}
+
+    class RELIEF_OT_layer_add(bpy.types.Operator):
+        """Add a layer to the stack"""
+        bl_idname = "relief.layer_add"
+        bl_label = "Add Layer"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        def execute(self, context):
+            props = context.active_object.relief_panel
+            lay = props.layers.add()
+            lay.amplitude = 0.4
+            lay.seed = len(props.layers)
+            props.active = len(props.layers) - 1
+            bpy.ops.relief.rebuild()
+            return {'FINISHED'}
+
+    class RELIEF_OT_layer_remove(bpy.types.Operator):
+        """Remove the active layer"""
+        bl_idname = "relief.layer_remove"
+        bl_label = "Remove Layer"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        def execute(self, context):
+            props = context.active_object.relief_panel
+            if not len(props.layers):
+                return {'CANCELLED'}
+            props.layers.remove(props.active)
+            props.active = max(0, min(props.active, len(props.layers) - 1))
+            bpy.ops.relief.rebuild()
+            return {'FINISHED'}
+
+    class RELIEF_OT_layer_move(bpy.types.Operator):
+        """Move the active layer up or down the stack"""
+        bl_idname = "relief.layer_move"
+        bl_label = "Move Layer"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        direction: EnumProperty(
+            items=[('UP', "Up", ""), ('DOWN', "Down", "")], default='UP')
+
+        def execute(self, context):
+            props = context.active_object.relief_panel
+            i = props.active
+            j = i - 1 if self.direction == 'UP' else i + 1
+            if j < 0 or j >= len(props.layers):
+                return {'CANCELLED'}
+            props.layers.move(i, j)
+            props.active = j
+            bpy.ops.relief.rebuild()
+            return {'FINISHED'}
+
+    class RELIEF_OT_rebuild(bpy.types.Operator):
+        """Rebuild the panel from its layer stack"""
+        bl_idname = "relief.rebuild"
+        bl_label = "Rebuild Panel"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        def execute(self, context):
+            obj = context.active_object
+            if obj is None or not obj.relief_panel.is_panel:
+                self.report({'ERROR'}, "active object is not a relief panel")
+                return {'CANCELLED'}
+            props = obj.relief_panel
+            params = _panel_params(props)
+            if not params['layers']:
+                self.report({'WARNING'}, "no enabled layers; panel is flat")
+            try:
+                verts, faces, info = build_relief(**params)
+            except (ValueError, MemoryError) as exc:
+                self.report({'ERROR'}, str(exc))
+                return {'CANCELLED'}
+            _write_mesh(obj, verts, faces, props.smooth)
+            self.report({'INFO'}, "%d layers, %dx%d samples, V=%d F=%d"
+                        % (len(params['layers']), info['nx'], info['ny'],
+                           len(obj.data.vertices), len(obj.data.polygons)))
+            return {'FINISHED'}
+
+    class VIEW3D_PT_relief_panel(bpy.types.Panel):
+        bl_label = "Relief Panel"
+        bl_idname = "VIEW3D_PT_relief_panel"
+        bl_space_type = 'VIEW_3D'
+        bl_region_type = 'UI'
+        bl_category = "Math Art"
+
+        def draw(self, context):
+            lay = self.layout
+            obj = context.active_object
+            if obj is None or not getattr(obj, 'relief_panel', None) \
+                    or not obj.relief_panel.is_panel:
+                lay.operator("relief.panel_new", icon='ADD')
+                lay.label(text="or select an existing relief panel")
+                return
+            props = obj.relief_panel
+            lay.operator("relief.rebuild", icon='FILE_REFRESH')
+
+            box = lay.box()
+            box.label(text="Panel")
+            col = box.column(align=True)
+            col.prop(props, 'shape')
+            col.prop(props, 'width')
+            col.prop(props, 'aspect')
+            col.prop(props, 'resolution')
+            col.prop(props, 'border')
+
+            box = lay.box()
+            box.label(text="Layers")
+            row = box.row()
+            row.template_list("RELIEF_UL_layers", "", props, "layers",
+                              props, "active", rows=4)
+            side = row.column(align=True)
+            side.operator("relief.layer_add", icon='ADD', text="")
+            side.operator("relief.layer_remove", icon='REMOVE', text="")
+            side.separator()
+            side.operator("relief.layer_move", icon='TRIA_UP',
+                          text="").direction = 'UP'
+            side.operator("relief.layer_move", icon='TRIA_DOWN',
+                          text="").direction = 'DOWN'
+
+            if 0 <= props.active < len(props.layers):
+                lay_ = props.layers[props.active]
+                sub = box.box()
+                sub.prop(lay_, 'kind')
+                sub.prop(lay_, 'amplitude')
+                if props.active > 0:
+                    sub.prop(lay_, 'blend')
+                if lay_.kind in ('WAVE', 'WAVE_TRAIN'):
+                    sub.prop(lay_, 'wavelength')
+                    sub.prop(lay_, 'angle')
+                    sub.prop(lay_, 'steepness')
+                    if lay_.kind == 'WAVE_TRAIN':
+                        sub.prop(lay_, 'count')
+                elif lay_.kind == 'RIPPLE':
+                    sub.prop(lay_, 'wavelength')
+                    sub.prop(lay_, 'sources')
+                elif lay_.kind == 'FBM':
+                    sub.prop(lay_, 'hurst')
+                elif lay_.kind == 'CHLADNI':
+                    sub.prop(lay_, 'mode_index')
+                elif lay_.kind in ('DRUMHEAD', 'MEMBRANE', 'HERMITE'):
+                    sub.prop(lay_, 'mode_m')
+                    sub.prop(lay_, 'mode_n')
+                elif lay_.kind == 'ZERNIKE':
+                    sub.prop(lay_, 'zern_n')
+                    sub.prop(lay_, 'zern_m')
+                sub.prop(lay_, 'orient')
+                sub.prop(lay_, 'seed')
+                sub.prop(lay_, 'curve')
+
+                place = sub.box()
+                place.label(text="Place")
+                r = place.row(align=True)
+                r.prop(lay_, 'offset_x')
+                r.prop(lay_, 'offset_y')
+                r = place.row(align=True)
+                r.prop(lay_, 'scale_x')
+                r.prop(lay_, 'scale_y')
+                place.prop(lay_, 'rotation')
+
+                msk = sub.box()
+                msk.label(text="Mask")
+                msk.prop(lay_, 'mask', text="")
+                if lay_.mask == 'RADIAL':
+                    msk.prop(lay_, 'mask_width')
+                elif lay_.mask == 'LINEAR':
+                    msk.prop(lay_, 'mask_width')
+                    msk.prop(lay_, 'mask_angle')
+                elif lay_.mask == 'LAYER':
+                    msk.prop(lay_, 'mask_layer')
+                    if lay_.mask_layer >= props.active:
+                        msk.label(text="Must be an earlier layer",
+                                  icon='ERROR')
+
+            box = lay.box()
+            box.label(text="Warp & Output")
+            col = box.column(align=True)
+            col.prop(props, 'warp')
+            if props.warp > 0.0:
+                col.prop(props, 'warp_iters')
+            col.prop(props, 'seed')
+            col.separator()
+            col.prop(props, 'depth')
+            col.prop(props, 'form')
+            if props.form == 'SLAB':
+                col.prop(props, 'base_thickness')
+            col.prop(props, 'fit')
+            col.prop(props, 'scale')
+            col.prop(props, 'smooth')
+
+    _FIELD_ITEMS_MAP = [(k, lbl) for k, lbl, _d in _FIELD_ITEMS]
+
+    _STACK_CLASSES = (ReliefLayer, ReliefPanelProps, RELIEF_UL_layers,
+                      RELIEF_OT_panel_new, RELIEF_OT_layer_add,
+                      RELIEF_OT_layer_remove, RELIEF_OT_layer_move,
+                      RELIEF_OT_rebuild, VIEW3D_PT_relief_panel)
+
     def _menu_func(self, context):
         self.layout.operator("mesh.relief_panel_add", icon='MOD_DISPLACE')
 
@@ -678,12 +1083,19 @@ if _IN_BLENDER:
 
     def register():
         bpy.utils.register_class(MESH_OT_relief_panel_add)
+        for c in _STACK_CLASSES:
+            bpy.utils.register_class(c)
+        bpy.types.Object.relief_panel = bpy.props.PointerProperty(
+            type=ReliefPanelProps)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        del bpy.types.Object.relief_panel
+        for c in reversed(_STACK_CLASSES):
+            bpy.utils.unregister_class(c)
         bpy.utils.unregister_class(MESH_OT_relief_panel_add)
 
 

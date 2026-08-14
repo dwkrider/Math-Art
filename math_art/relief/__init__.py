@@ -36,7 +36,7 @@ References:
 """
 
 from . import (fields, grid, imprint, kernels, mesh, plates, special,
-               transfer, warp)
+               stack, transfer, warp)
 from .fields import FIELD_ORDER, FIELDS, evaluate, ordered_fields
 from .grid import border_window, make_grid, mask_for, SHAPES
 from .mesh import apply_fit, edge_report, FITS, FORMS, sheet, slab
@@ -44,13 +44,15 @@ from .plates import (chladni_rayleigh, circular_membrane, free_plate_cached,
                      free_plate_modes, plate_mode_field, rect_membrane)
 from .special import (besselj, bessel_zero, bessel_zeros, hermite,
                       hermite_function, laguerre, zernike, zernike_radial)
+from .stack import BLENDS, evaluate_stack, layer, MASKS
 from .transfer import apply_curve, CURVES, normalize, NORMS, to_depth
 from .warp import (domain_warp, orientation_field, ORIENTATIONS,
                    phase_from_direction, smooth_field)
 
 __all__ = [
     "fields", "grid", "imprint", "kernels", "mesh", "plates", "special",
-    "transfer", "warp",
+    "stack", "transfer", "warp",
+    "BLENDS", "MASKS", "layer", "evaluate_stack",
     "FIELDS", "FIELD_ORDER", "ordered_fields", "evaluate",
     "SHAPES", "make_grid", "mask_for", "border_window",
     "CURVES", "NORMS", "normalize", "apply_curve", "to_depth",
@@ -135,6 +137,8 @@ def build_relief(**kw):
         power=2.0, groove=0.08, compress='AHE', alpha=0.1, beta=0.85,
         process='BLUE', points_n=120, wrap=False,
         points=None, weights=None, depth_map=None, obj_mask=None,
+        # optional multi-layer stack; overrides `field` when present
+        layers=None,
         # orientation + warp
         orient='CONSTANT', orient_freq=0.5, swirl=1.0,
         warp=0.0, warp_iters=2, warp_freq=0.6,
@@ -152,7 +156,12 @@ def build_relief(**kw):
     Xw, Yw = warp.domain_warp(X, Y, p['warp'], seed=int(p['seed']) + 1013,
                               iterations=p['warp_iters'], freq=p['warp_freq'])
 
-    h = fields.evaluate(p['field'], Xw, Yw, info, p)
+    if p.get('layers'):
+        # Multi-layer stack.  The single-field controls become the defaults
+        # each layer inherits, so a one-layer stack is exactly the old path.
+        h, _per = stack.evaluate_stack(p['layers'], Xw, Yw, info, p)
+    else:
+        h = fields.evaluate(p['field'], Xw, Yw, info, p)
     h = transfer.normalize(h, p['norm'])
     h = transfer.apply_curve(h, p['curve'], amount=p['curve_amount'],
                              levels=p['levels'], smooth=p['terrace'])
