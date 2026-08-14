@@ -27,6 +27,10 @@ operators stay in their flat generator modules.  Layout follows
                 pattern generator and reached into by four others.
     weave       the over/under solver: union-find with parity, and the
                 smoothstep z-offset that makes a strand pass under.
+    substitution  prototiles + inflation rules over planar similarities
+                (z -> Az + B conj z + C, so reflections are expressible
+                and the hat is representable).  Expansion returns
+                PLACEMENTS, not baked polygons.
     emit        Blender object builders -- the ONLY module here that
                 touches `bpy`, and deliberately not re-exported below, so
                 `import patterns` stays headless.
@@ -53,6 +57,7 @@ from .ribbon import (angle_cut_piece, band_ribbon_faces,
                      band_ribbon_faces_z, catmull_rom, cut_band,
                      cut_cap_on_edge, miter, miter_ribbon)
 from .weave import ParityDSU, weave_zoff
+from .substitution import Similarity, Substitution, penrose_p3
 from .relief import (center_scale, center_xy, merge_cells, prisms,
                      ribbon_polys, slab)
 
@@ -103,6 +108,10 @@ __all__ = [
     "angle_cut_piece",
     "ParityDSU",
     "weave_zoff",
+    # substitution tilings
+    "Similarity",
+    "Substitution",
+    "penrose_p3",
     # relief
     "ribbon_polys",
     "prisms",
