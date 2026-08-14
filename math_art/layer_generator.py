@@ -12,7 +12,7 @@
 # Because the whole point is the third dimension, a layer pattern only
 # reads in 3D: use a relief height (built-in motifs) or the active mesh
 # as the unit.  A z-mirror then produces a top/bottom-symmetric screen.
-# Part of the Pattern Engine (see pattern_common.py).
+# Part of the Pattern Engine (see the `patterns` package).
 #
 # References:
 #   The 80 layer (diperiodic) groups -- "International Tables for
@@ -37,9 +37,9 @@ from math import pi
 import numpy as np
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
 except Exception:
-    import pattern_common as pc
+    from patterns import common as pc
 
 
 # groups whose in-plane operations keep x and y separate (rectangular

@@ -67,9 +67,9 @@ from math import pi, cos, sin, hypot, radians
 import numpy as np
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
 except Exception:                            # legacy single-file / CLI
-    import pattern_common as pc
+    from patterns import common as pc
 
 
 # --------------------------------------------------------------------

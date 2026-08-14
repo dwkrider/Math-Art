@@ -10,7 +10,7 @@
 # centroids of the polygons around every interior vertex), so only the
 # 11 base tilings carry hand-placed coordinates.
 #
-# Part of the Pattern Engine (see pattern_common.py).
+# Part of the Pattern Engine (see the `patterns` package).
 #
 # References:
 #   Johannes Kepler, "Harmonices Mundi" (1619) -- first systematic
@@ -36,9 +36,9 @@ from collections import defaultdict
 import numpy as np
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
 except Exception:
-    import pattern_common as pc
+    from patterns import common as pc
 
 
 _H = sqrt(3.0) / 2.0                       # height of a unit triangle

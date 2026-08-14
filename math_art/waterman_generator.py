@@ -141,9 +141,9 @@ if _IN_BLENDER:
                 Ff = [list(p.vertices) for p in me.polygons]
                 bpy.data.meshes.remove(me)
                 try:
-                    from . import facet_style
+                    from .styles import facet_style
                 except ImportError:
-                    import facet_style
+                    from styles import facet_style
                 facet_style.emit_facets(
                     context, Vf, Ff, f"Waterman W{self.root}",
                     self.facet_depth, self.facet_gap,
@@ -170,9 +170,9 @@ if _IN_BLENDER:
                 mod.use_even_offset = False
             elif self.style == 'BALLSTICK':
                 try:
-                    from . import ball_and_stick
+                    from .styles import ball_and_stick
                 except ImportError:
-                    import ball_and_stick
+                    from styles import ball_and_stick
                 ball_and_stick.rebuild(obj, self.strut_radius,
                                        self.node_radius)
             elif self.style == 'WIREFRAME':

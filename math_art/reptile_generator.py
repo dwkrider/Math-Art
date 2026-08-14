@@ -10,7 +10,7 @@
 # exactly tile the prototile.  `iterations` deflation steps therefore
 # yield N**iterations sub-tiles covering the prototile with no gaps and
 # no overlaps; the finished patch is fed through the shared Pattern
-# Engine (see pattern_common.py) for color, grout margin and relief:
+# Engine (see the `patterns` package) for color, grout margin and relief:
 #
 #   L_TROMINO       The L-tromino (three unit squares in an L).  rep-4:
 #       the L splits into four half-scale L-trominoes.
@@ -56,10 +56,10 @@ except ImportError:                   # flat import (test runner)
     from patterns.polygon2d import ensure_ccw as _ensure_ccw
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import tiling_generator as tg
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import tiling_generator as tg
 
 

@@ -101,10 +101,10 @@ from collections import deque
 import numpy as np
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import tiling_generator as tg
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import tiling_generator as tg
 
 

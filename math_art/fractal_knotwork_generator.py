@@ -106,14 +106,14 @@ except ImportError:                   # flat import (test runner)
     from curve_frames import welded_tube
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import islamic_pattern_generator as isl
     from . import celtic_knot_2d_generator as ck
     from . import fractal_tiling_generator as ft
     from . import knot_carpet_generator as kc
     from . import spiral_tiling_generator as st
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import islamic_pattern_generator as isl
     import celtic_knot_2d_generator as ck
     import fractal_tiling_generator as ft

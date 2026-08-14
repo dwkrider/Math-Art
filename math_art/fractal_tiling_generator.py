@@ -142,10 +142,10 @@ except ImportError:                   # flat import (test runner)
     from patterns.polygon2d import signed_area as _signed_area
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import tiling_generator as tg
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import tiling_generator as tg
 
 

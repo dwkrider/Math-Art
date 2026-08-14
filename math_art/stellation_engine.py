@@ -1003,9 +1003,9 @@ if _IN_BLENDER:
                 mod.use_even_offset = False
             elif self.style == 'BALLSTICK':
                 try:
-                    from . import ball_and_stick
+                    from .styles import ball_and_stick
                 except ImportError:
-                    import ball_and_stick
+                    from styles import ball_and_stick
                 ball_and_stick.rebuild(obj, self.strut_radius,
                                        self.node_radius)
             elif self.style == 'WIREFRAME':

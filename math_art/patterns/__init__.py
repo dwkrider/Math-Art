@@ -35,8 +35,10 @@ operators stay in their flat generator modules.  Layout follows
                 touches `bpy`, and deliberately not re-exported below, so
                 `import patterns` stays headless.
 
-`pattern_common.py` remains as a re-export shim for its 22 importers.
-New code should import this package directly.
+`common` is the Blender-facing facade: this package's engine names plus
+the `emit` builders in one namespace, which is what the 22 pattern
+generators import.  It exists because `__init__` deliberately leaves the
+Blender layer out, and those generators need both halves.
 
 References for the mathematics are in each submodule's header; the
 principal ones are Conway, Burgiel and Goodman-Strauss, "The Symmetries

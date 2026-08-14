@@ -109,9 +109,9 @@ from collections import defaultdict
 import numpy as np
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
 
 
 _BACKING_MAT = len(pc.PALETTE_RGBA) - 1

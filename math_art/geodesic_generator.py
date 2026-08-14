@@ -551,9 +551,9 @@ if _IN_BLENDER:
                               reuse={i: i for i in range(len(V))})
             elif self.style == 'STRUTS':
                 try:
-                    from . import ball_and_stick
+                    from .styles import ball_and_stick
                 except ImportError:
-                    import ball_and_stick
+                    from styles import ball_and_stick
                 edges = ball_and_stick.edges_from_faces(F)
                 verts, faces = ball_and_stick.build_mesh(
                     V, edges, self.strut_radius * R,

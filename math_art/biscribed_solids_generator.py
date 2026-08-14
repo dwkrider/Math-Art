@@ -1393,9 +1393,9 @@ if _IN_BLENDER:
             V, F, _r = res
             if self.style == 'FACETS':
                 try:
-                    from . import facet_style
+                    from .styles import facet_style
                 except ImportError:
-                    import facet_style
+                    from styles import facet_style
                 Vf = [tuple(c * self.scale for c in v) for v in V]
                 mat = (_material_for
                        if self.coloring == 'SIDES' else None)
@@ -1439,9 +1439,9 @@ if _IN_BLENDER:
                 mod.use_even_offset = False
             elif self.style == 'BALLSTICK':
                 try:
-                    from . import ball_and_stick
+                    from .styles import ball_and_stick
                 except ImportError:
-                    import ball_and_stick
+                    from styles import ball_and_stick
                 ball_and_stick.rebuild(obj, self.strut_radius,
                                        self.node_radius)
             elif self.style == 'WIREFRAME':

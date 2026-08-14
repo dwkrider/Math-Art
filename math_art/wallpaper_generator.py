@@ -15,9 +15,9 @@
 # faces into a relief.
 #
 # The 17 wallpaper groups are selected by orbifold signature; the same
-# signature language (pattern_common.geometry_of) routes to the
+# signature language (patterns.geometry_of) routes to the
 # spherical and hyperbolic worlds -- one grammar, three geometries.
-# Part of the Pattern Engine (see pattern_common.py).
+# Part of the Pattern Engine (see the `patterns` package).
 #
 # References:
 #   E. S. Fedorov (1891); George Polya and Paul Niggli (1924) -- the
@@ -40,13 +40,13 @@ bl_info = {
 import numpy as np
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
 except Exception:
-    import pattern_common as pc
+    from patterns import common as pc
 
 
-# The motif library, color classifier and group tables live in
-# pattern_common so the wallpaper, frieze and layer generators share
+# The motif library, color classifier and group tables live in the
+# `patterns` package so the wallpaper, frieze and layer generators share
 # one implementation.  Keep the familiar local names as thin aliases.
 motif = pc.motif
 MOTIFS = pc.MOTIFS

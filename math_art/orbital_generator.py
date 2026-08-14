@@ -1085,9 +1085,9 @@ if _IN_BLENDER:
             """Append a ball-and-stick model of the nuclei, in the same
             coordinate frame the surface was fitted into."""
             try:
-                from . import ball_and_stick as bas
+                from .styles import ball_and_stick as bas
             except ImportError:
-                import ball_and_stick as bas
+                from styles import ball_and_stick as bas
             half = info['box']
             # the surface was centred and fitted to a 2 m cube; put the
             # nuclei through the same map so the two line up

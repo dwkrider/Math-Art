@@ -4,7 +4,7 @@
 # Non-periodic plane tilings -- finite patches whose local patterns
 # repeat everywhere yet never form a translational period.  Three
 # families are produced, each as a fixed patch of colored tiles fed
-# through the shared Pattern Engine (see pattern_common.py) for color,
+# through the shared Pattern Engine (see the `patterns` package) for color,
 # grout margin and relief:
 #
 #   PENROSE_P3  Penrose rhombs (thick/thin).  Built by deflating the
@@ -111,10 +111,10 @@ except ImportError:                   # flat import (test runner)
     from patterns.polygon2d import signed_area as _signed_area
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import tiling_generator as tg
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import tiling_generator as tg
 
 

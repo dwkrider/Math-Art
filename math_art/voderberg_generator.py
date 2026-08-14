@@ -4,7 +4,7 @@
 # The first spiral tiling ever devised (Heinz Voderberg, 1936) and its
 # Grunbaum-Shephard generalizations, produced as finite patches of
 # colored tiles fed through the shared Pattern Engine (see
-# pattern_common.py) for color, grout margin and relief.
+# the `patterns` package) for color, grout margin and relief.
 #
 # THE TILE.  The Voderberg prototile is a nonconvex ENNEAGON (nine-sided
 # figure) -- a single prototile, so the tiling is MONOHEDRAL (every tile
@@ -84,10 +84,10 @@ except ImportError:                   # flat import (test runner)
     from patterns.polygon2d import ensure_ccw as _ensure_ccw
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import tiling_generator as tg
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import tiling_generator as tg
 
 

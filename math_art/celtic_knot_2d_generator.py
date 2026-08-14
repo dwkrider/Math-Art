@@ -43,7 +43,7 @@
 # and dips each cord into a genuine 3D woven surface.
 #
 # The traced cords flow through the shared Pattern Engine
-# (pattern_common) and reuse the strapwork machinery of the Islamic
+# (`patterns`) and reuse the strapwork machinery of the Islamic
 # generator -- mitered / Catmull-Rom ribbons, the over/under interlace,
 # relief and backing -- so a knot is built as continuous ribbons, not a
 # pile of quads.
@@ -144,11 +144,11 @@ except ImportError:                   # flat import (test runner)
     from patterns.weave import (ParityDSU, weave_zoff)
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import islamic_pattern_generator as isl
     from . import tiling_generator as tg
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import islamic_pattern_generator as isl
     import tiling_generator as tg
 

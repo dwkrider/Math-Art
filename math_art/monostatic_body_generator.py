@@ -181,9 +181,9 @@ def _icosphere(level):
 # ---------------------------------------------------------------------
 def _sh_gomboc_coeffs():
     try:
-        from . import _monostatic_data as md
+        from .polyhedra import _monostatic_data as md
     except ImportError:
-        import _monostatic_data as md
+        from polyhedra import _monostatic_data as md
     L = md.GOMBOC_SH_L
     c = np.zeros((L + 1) * (L + 1))
     c[np.asarray(md.GOMBOC_SH_IDX, dtype=int)] = md.GOMBOC_SH_COEF
