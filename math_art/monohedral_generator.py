@@ -14,7 +14,7 @@
 # per-tile "type" index records each copy's orientation orbit so the
 # TYPE color mode can paint the tile's dance across the plane.
 #
-# Part of the Pattern Engine (see pattern_common.py).  The heavy lifting
+# Part of the Pattern Engine (see the `patterns` package).  The heavy lifting
 # of color / margin / relief / trim is delegated to the shared
 # tiling_generator.cells_from_polys assembler.
 #
@@ -45,10 +45,10 @@ from math import cos, sin, pi, radians, atan2, hypot, sqrt, tan
 import numpy as np
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import tiling_generator as tg
 except Exception:
-    import pattern_common as pc
+    from patterns import common as pc
     import tiling_generator as tg
 
 

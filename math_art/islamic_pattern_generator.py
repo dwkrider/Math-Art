@@ -38,8 +38,8 @@
 #
 # Output is strapwork as flat RIBBONS (default), optionally given
 # relief by extrusion to a height on an optional backing slab, in the
-# modular-constructivist relief tradition of the Pattern Engine (see
-# pattern_common.py).
+# modular-constructivist relief tradition of the Pattern Engine (the
+# `patterns` package).
 #
 # The strapwork can further be made to WEAVE over and under itself, as
 # true Islamic / Celtic knotwork does.  At every crossing one strand is
@@ -124,11 +124,11 @@ except ImportError:                   # flat import (test runner)
 
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import tiling_generator as tg
     from . import aperiodic_generator as ap
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import tiling_generator as tg
     import aperiodic_generator as ap
 

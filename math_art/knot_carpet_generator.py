@@ -35,7 +35,7 @@
 # ever frustrated the alternation, the weave stays consistent).
 #
 # The loops then flow through the shared Pattern Engine strapwork
-# machinery (pattern_common / Islamic generator) -- mitered ribbons,
+# machinery (`patterns` / Islamic generator) -- mitered ribbons,
 # the flat cut-under interlace or the true 3D weave, relief and
 # backing -- so the carpet is built as continuous ribbons.  A third
 # scaffold closes the carpet over a SPHERE as a finite woven knot
@@ -175,12 +175,12 @@ except ImportError:                   # flat import (test runner)
     from curve_frames import closed_tube as _shared_closed_tube
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import islamic_pattern_generator as isl
     from . import tiling_generator as tg
     from . import regular_solids_generator as rs
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import islamic_pattern_generator as isl
     import tiling_generator as tg
     import regular_solids_generator as rs

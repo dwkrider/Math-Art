@@ -102,10 +102,10 @@ except ImportError:                   # flat import (test runner)
     from curve_frames import welded_tube
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import islamic_pattern_generator as isl
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import islamic_pattern_generator as isl
 
 

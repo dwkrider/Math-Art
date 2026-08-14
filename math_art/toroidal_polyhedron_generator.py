@@ -489,9 +489,9 @@ if _IN_BLENDER:
                 Ff = [list(p.vertices) for p in me.polygons]
                 bpy.data.meshes.remove(me)
                 try:
-                    from . import facet_style
+                    from .styles import facet_style
                 except ImportError:
-                    import facet_style
+                    from styles import facet_style
                 # explode away from the major (tube-centre) circle,
                 # which lies in the z=0 plane at the scaled major radius
                 import math as _m
@@ -533,9 +533,9 @@ if _IN_BLENDER:
                 mod.use_even_offset = False
             elif self.style == 'BALLSTICK':
                 try:
-                    from . import ball_and_stick
+                    from .styles import ball_and_stick
                 except ImportError:
-                    import ball_and_stick
+                    from styles import ball_and_stick
                 ball_and_stick.rebuild(obj, self.strut_radius,
                                        self.node_radius)
             elif self.style == 'WIREFRAME':

@@ -10,7 +10,7 @@
 # Same machinery as the wallpaper generator: a chiral motif (or the
 # active mesh) is replicated along the strip, colored so the symmetry
 # is evident, optionally extruded into a relief.  Part of the Pattern
-# Engine (see pattern_common.py).
+# Engine (see the `patterns` package).
 #
 # References:
 #   The 7 frieze (strip) groups -- classical crystallographic result.
@@ -32,9 +32,9 @@ bl_info = {
 import numpy as np
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
 except Exception:
-    import pattern_common as pc
+    from patterns import common as pc
 
 
 def build(group='p2mm', motif_kind='ARROW', reps=6, color_by='COPY',

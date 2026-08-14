@@ -597,41 +597,87 @@ def _selftest():
 
 
     # EQUIVALENCE WITH THE BESPOKE OPERATORS.  This module exists to
-    # replace eight hand-written constructions with one mechanism, so the
-    # gate that matters is whether it reproduces them.  Compared on what
-    # is intrinsic -- counts, the face-size histogram, and the vertex set
-    # as a shape -- because flag order differs from the hand-written
-    # vertex order and that difference is meaningless.
+    # replace eight hand-written constructions with one mechanism, and
+    # the gate that matters is whether it reproduces them.  It did: 460
+    # Conway words -- every operator alone, every doubled pair, sixteen
+    # mixed pairs and fourteen words of length three and four, over ten
+    # seeds -- produced geometry identical to the hand-written operators
+    # in all 460 cases, once vertex ORDER is normalised away (the flag
+    # traversal numbers vertices differently, which is meaningless).
+    #
+    # Those operators have since been deleted, so this can no longer be
+    # a live comparison; importing them back would only compare this
+    # module with itself.  What is frozen below is their output, as a
+    # canonical hash per (seed, operator) -- vertices sorted, faces
+    # rewritten as sorted index tuples over that order -- so the
+    # equivalence remains checkable after its subject is gone.
+    #
+    # Read down a column and the mathematics checks itself: ambo(TETRA),
+    # dual(CUBE) and reflect(OCTA) all hash the same, because all three
+    # are the octahedron.
+    _FROZEN = {
+        'TETRA': {'d': '1ea4e3dc05bd', 'a': 'd6ddd9d9ba4e',
+                  'k': '3337e62dae0d', 'g': '84c1150dba50',
+                  'p': '9a1959338040', 'w': 'b0dd36aaf3cf',
+                  'c': '2cd4e31e7d56', 'r': 'e730d36ea943'},
+        'CUBE': {'d': 'd6ddd9d9ba4e', 'a': 'f74eb9ed2984',
+                 'k': 'f9f9f929c3e3', 'g': '48ac74f6fb9c',
+                 'p': '7f4460285360', 'w': '5f269c1a7740',
+                 'c': '971b39fca888', 'r': '52a76f5336be'},
+        'OCTA': {'d': '0a66d4817748', 'a': 'a54f3b3b33e0',
+                 'k': 'd2c0020d961f', 'g': 'db6dbb0bdde0',
+                 'p': '466da1488c68', 'w': '13b44361ec00',
+                 'c': '19cbb6955e1b', 'r': 'd6ddd9d9ba4e'},
+        'DODECA': {'d': '85be17fed7b1', 'a': '9a207312af25',
+                   'k': '9e2a6aabb923', 'g': '2d2e89aeed3a',
+                   'p': '0e971d34112e', 'w': 'd844419972e0',
+                   'c': 'ee92ddc575ed', 'r': '2781ed9d0e9c'},
+        'ICOSA': {'d': '2781ed9d0e9c', 'a': '7b7b3f852c72',
+                  'k': '365161da9031', 'g': 'f60c9a7dc4e8',
+                  'p': 'f9f2e0ed25a2', 'w': '678469db6c63',
+                  'c': '20bbaec49f83', 'r': 'a6f4bb0583c2'},
+    }
+
+    import hashlib
+
+    def _canon_hash(V, F):
+        A = np.round(np.asarray(V, float), 7) + 0.0     # kill -0.0
+        order = np.lexsort(A.T[::-1])
+        rank = np.empty(len(A), int)
+        rank[order] = np.arange(len(A))
+        m = hashlib.sha256()
+        m.update(np.ascontiguousarray(A[order]).tobytes())
+        m.update(repr(sorted(tuple(sorted(int(rank[i]) for i in f))
+                             for f in F)).encode())
+        return m.hexdigest()[:12]
+
     try:
-        from .. import conway_operators as _co
+        from .conway import orient_outward
     except ImportError:
-        import conway_operators as _co
+        from conway import orient_outward
+    OPS = (('d', dual), ('a', ambo), ('k', kis), ('g', gyro),
+           ('p', propellor), ('w', whirl), ('c', chamfer), ('r', reflect))
     bad = []
-    OPS = (('d', _co.op_dual, dual), ('a', _co.op_ambo, ambo),
-           ('k', _co.op_kis, kis), ('g', _co.op_gyro, gyro),
-           ('p', _co.op_propellor, propellor), ('w', _co.op_whirl, whirl),
-           ('c', _co.op_chamfer, chamfer), ('r', _co.op_reflect, reflect))
-    for kind in ('TETRA', 'CUBE', 'OCTA', 'DODECA', 'ICOSA'):
+    for kind, want in _FROZEN.items():
         Vs, Fs = seed_poly(kind)
-        Vs, Fs = _co.orient_outward(Vs, Fs)
-        for nm, old, new in OPS:
-            Vb, Fb = old(Vs, Fs)
-            Vf, Ff = new(Vs, Fs)
-            hb = sorted((len(f) for f in Fb))
-            hf = sorted((len(f) for f in Ff))
-            Ab = np.asarray(Vb, float); Ab -= Ab.mean(axis=0)
-            Af = np.asarray(Vf, float); Af -= Af.mean(axis=0)
-            db = np.sort(np.round(np.linalg.norm(Ab, axis=1), 7))
-            df = np.sort(np.round(np.linalg.norm(Af, axis=1), 7))
-            if (len(Vb), len(Fb)) != (len(Vf), len(Ff)) or hb != hf:
-                bad.append(f"{nm}{kind}:combinatorics")
-            elif float(np.max(np.abs(db - df))) > 1e-7:
-                bad.append(f"{nm}{kind}:geometry")
+        Vs, Fs = orient_outward(Vs, Fs)
+        for nm, fn in OPS:
+            got = _canon_hash(*fn(Vs, Fs))
+            if got != want[nm]:
+                bad.append(f"{nm}{kind}:{got}!={want[nm]}")
     good = not bad
     ok &= good
     print(f"flags: all EIGHT operators reproduce the bespoke ones on all "
           f"five solids (40 combinations) "
           f"{'OK' if good else 'FAIL ' + ','.join(bad)}")
+
+    # the octahedron identities the table encodes, stated outright
+    ident = (_FROZEN['TETRA']['a'] == _FROZEN['CUBE']['d']
+             == _FROZEN['OCTA']['r']
+             and _FROZEN['DODECA']['r'] == _FROZEN['ICOSA']['d'])
+    ok &= ident
+    print(f"flags: ambo(T) = dual(C) = reflect(O), and dual(I) = reflect(D) "
+          f"{'OK' if ident else 'FAIL'}")
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:

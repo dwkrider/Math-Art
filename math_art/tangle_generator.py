@@ -226,9 +226,9 @@ def _emit_ball_stick(verts, faces, face_comp, ci, V, F, strut_radius,
     edge and a sphere per vertex, via the shared ball_and_stick module
     (the same struts and nodes every polyhedron generator uses)."""
     try:
-        from . import ball_and_stick
+        from .styles import ball_and_stick
     except ImportError:
-        import ball_and_stick
+        from styles import ball_and_stick
     Vs = [tuple(x * scale for x in v) for v in V]
     edges = ball_and_stick.edges_from_faces(F)
     bv, bf = ball_and_stick.build_mesh(Vs, edges, strut_radius,

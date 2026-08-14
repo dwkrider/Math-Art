@@ -157,11 +157,16 @@ except ImportError:                   # flat import (test runner)
     from patterns.polygon2d import signed_area as _signed_area
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import tiling_generator as tg
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import tiling_generator as tg
+
+try:                                  # inside the math_art package
+    from .patterns.substitution import Similarity as _Similarity
+except ImportError:                   # flat import (test runner)
+    from patterns.substitution import Similarity as _Similarity
 
 
 # --------------------------------------------------------------------
@@ -351,18 +356,20 @@ _W6 = np.exp(1j * np.pi / 3.0)
 # --------------------------------------------------------------------
 
 def _w_apply(w, z):
-    """Apply map w = (A, B, C): z -> A z + B conj(z) + C."""
-    a, b, c = w
-    return a * z + b * np.conj(z) + c
+    """Apply map w = (A, B, C): z -> A z + B conj(z) + C.
+
+    The shared planar similarity, in this module's tuple encoding.  The
+    algebra lives in `patterns.substitution.Similarity`, which the
+    substitution engine also uses -- the maps here and the inflation
+    rules of a Penrose or hat tiling are the same objects.
+    """
+    return _Similarity(*w).apply(z)
 
 
 def _w_compose(w2, w1):
     """Composition w2 o w1 in the closed form (A, B, C)."""
-    a2, b2, c2 = w2
-    a1, b1, c1 = w1
-    return (a2 * a1 + b2 * np.conj(b1),
-            a2 * b1 + b2 * np.conj(a1),
-            a2 * c1 + b2 * np.conj(c1) + c2)
+    c = _Similarity(*w2).compose(_Similarity(*w1))
+    return (c.A, c.B, c.C)
 
 
 _W_ID = (1 + 0j, 0j, 0j)

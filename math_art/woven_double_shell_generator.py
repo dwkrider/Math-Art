@@ -66,12 +66,12 @@ except ImportError:                   # flat import (test runner)
     from curve_frames import welded_tube
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import knot_carpet_generator as kcg
     from . import regular_solids_generator as rs
     from . import geodesic_generator as geo
 except Exception:                       # legacy single-file / CLI use
-    import pattern_common as pc
+    from patterns import common as pc
     import knot_carpet_generator as kcg
     import regular_solids_generator as rs
     import geodesic_generator as geo

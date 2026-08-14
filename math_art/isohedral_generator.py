@@ -23,7 +23,7 @@
 # mirrors -- are rigid: `shape` moves nothing.  Every other type here
 # has one or more deformable edges.
 #
-# Part of the Pattern Engine (see pattern_common.py).
+# Part of the Pattern Engine (see the `patterns` package).
 #
 # References:
 #   Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H.
@@ -51,10 +51,10 @@ from math import cos, sin, pi, hypot, sqrt
 import numpy as np
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import tiling_generator as tg
 except Exception:
-    import pattern_common as pc
+    from patterns import common as pc
     import tiling_generator as tg
 
 

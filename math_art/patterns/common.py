@@ -45,56 +45,32 @@
 # Blender builders, which are the only part that needs `bpy`.
 # ---------------------------------------------------------------------
 
-try:                                  # inside the math_art package
-    from .patterns.groups import (FRIEZE_NAMES, FRIEZE_ORDER, frieze_group,
-                                  group_closes, wallpaper_group,
-                                  wallpaper_isometries)
-    from .patterns.isometry import Glide, I, Mir, Rot, T, apply
-    from .patterns.motifs import (MOTIFS, PALETTE_RGBA, iso_type, kind_of,
-                                  motif)
-    from .patterns.orbifold import (IUC_ORDER, SIG_OF, WALLPAPER_NAMES,
-                                    geometry_of, orbifold_cost)
-    from .patterns.placed import Tiling
-    from .patterns.relief import (center_scale, center_xy, merge_cells, prisms,
-                                  ribbon_polys, slab)
 
-    # private names some generators still reach for
-    from .patterns.groups import _cyclic, _dihedral, _HEX, _SQ      # noqa: F401
-    from .patterns.motifs import _comma, _rect                      # noqa: F401
-    from .patterns.relief import _apply_transform, _global_transform  # noqa: F401
+from .groups import (FRIEZE_NAMES, FRIEZE_ORDER, frieze_group,
+                              group_closes, wallpaper_group,
+                              wallpaper_isometries)
+from .isometry import Glide, I, Mir, Rot, T, apply
+from .motifs import (MOTIFS, PALETTE_RGBA, iso_type, kind_of,
+                              motif)
+from .orbifold import (IUC_ORDER, SIG_OF, WALLPAPER_NAMES,
+                                geometry_of, orbifold_cost)
+from .placed import Tiling
+from .relief import (center_scale, center_xy, merge_cells, prisms,
+                              ribbon_polys, slab)
 
-except ImportError:                   # flat import (legacy / test runner)
-    from patterns.groups import (FRIEZE_NAMES, FRIEZE_ORDER, frieze_group,
-                                  group_closes, wallpaper_group,
-                                  wallpaper_isometries)
-    from patterns.isometry import Glide, I, Mir, Rot, T, apply
-    from patterns.motifs import (MOTIFS, PALETTE_RGBA, iso_type, kind_of,
-                                  motif)
-    from patterns.orbifold import (IUC_ORDER, SIG_OF, WALLPAPER_NAMES,
-                                    geometry_of, orbifold_cost)
-    from patterns.placed import Tiling
-    from patterns.relief import (center_scale, center_xy, merge_cells, prisms,
-                                  ribbon_polys, slab)
-
-    # private names some generators still reach for
-    from patterns.groups import _cyclic, _dihedral, _HEX, _SQ      # noqa: F401
-    from patterns.motifs import _comma, _rect                      # noqa: F401
-    from patterns.relief import _apply_transform, _global_transform  # noqa: F401
+# private names some generators still reach for
+from .groups import _cyclic, _dihedral, _HEX, _SQ      # noqa: F401
+from .motifs import _comma, _rect                      # noqa: F401
+from .relief import _apply_transform, _global_transform  # noqa: F401
 
 
-
-# The Blender layer moved to `patterns.emit`.  It only defines these names
+# The Blender layer lives in `patterns.emit`.  It only defines these names
 # when `bpy` is importable, so the re-export is guarded: headless callers
 # (and the test runner) simply do not see them, exactly as before.
 try:
-    from .patterns.emit import (ADD_MENU, build_object, emit, register,
-                                unregister)
-except ImportError:                   # flat import
-    try:
-        from patterns.emit import (ADD_MENU, build_object, emit, register,
-                                   unregister)
-    except ImportError:               # headless: no Blender layer to re-export
-        pass
+    from .emit import ADD_MENU, build_object, emit, register, unregister
+except ImportError:               # headless: no Blender layer to re-export
+    pass
 
 
 

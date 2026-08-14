@@ -496,11 +496,18 @@ def _snub_g(S, p, orbits):
 # --------------------------------------------------------------------------
 
 def _cw():
+    """The Conway engine: notation, the flag operators, canonical forms.
+
+    Used to reach through `conway_operators`, the Blender module, for
+    mathematics that has since moved into `polyhedra`.  Importing the
+    engine directly means this generator no longer depends on another
+    generator loading first.
+    """
     try:
-        from . import conway_operators as cw
+        from .polyhedra import canonical, conway, flags
     except ImportError:
-        import conway_operators as cw
-    return cw
+        from polyhedra import canonical, conway, flags
+    return conway, canonical, flags
 
 
 def _frame(a, b):
@@ -514,7 +521,7 @@ def _frame(a, b):
 def _rot_group(seed):
     """All proper rotations permuting a Platonic seed's vertex directions
     (order 12 for T, 24 for C/O, 60 for D/I)."""
-    V, _ = _cw()._seed(seed, 0)
+    V, _ = _cw()[0]._seed(seed, 0)
     P = np.array(V, float)
     P /= np.linalg.norm(P, axis=1, keepdims=True)
     n = len(P)
@@ -682,7 +689,7 @@ def solve_chiral(op, seed, restarts=60):
     Platonic seed in {'T','C','O','D','I'}.  Standard {'exists', ...}
     contract; exists=False (with a reason) when only a degenerate
     vertex-collapsing solution exists."""
-    cw = _cw()
+    cw, _canon, _flags = _cw()
     V0, F = cw.apply_conway(op + seed)
     V0, F = cw.orient_outward(V0, [list(f) for f in F])
     V0 = np.array(V0, float)
@@ -762,7 +769,7 @@ def solve_chiral_g(spec, sym, restarts=24, canon_iters=400):
     base-symmetry Platonic char `sym` (whose proper rotation group is the
     solid's).  Returns the roundest biscribed root among seed + canonical +
     Fibonacci-restart inits.  Standard {'exists', ...} contract."""
-    cw = _cw()
+    cw, _canon, _flags = _cw()
     V0, F = cw.apply_conway(spec) if isinstance(spec, str) else spec
     V0, F = cw.orient_outward([list(v) for v in V0], [list(f) for f in F])
     V0 = np.array(V0, float)
@@ -797,7 +804,7 @@ def solve_chiral_g(spec, sym, restarts=24, canon_iters=400):
 
     inits = [rep0]
     try:                                             # canonical-form init
-        Vc = np.array(cw.canonicalize([list(v) for v in V0],
+        Vc = np.array(_canon.canonicalize([list(v) for v in V0],
                                       [list(f) for f in F], iters=canon_iters))
         Uc = Vc / np.linalg.norm(Vc, axis=1, keepdims=True)
         inits.append([Uc[r].copy() for r in reps])
@@ -832,7 +839,7 @@ def _orthokis_mesh(seed):
     """kis ONLY the central n-gon faces (those on the n-fold axes) of the
     biscribed propello solid pX -- seeds solve_chiral_g in the basin of the
     biscribed orthokis-propello root."""
-    cw = _cw()
+    cw, _canon, _flags = _cw()
     base = {'C': 'propello_cube', 'D': 'propello_dodecahedron'}[seed]
     b = biscribe_exact(base)
     V, F = cw.orient_outward([list(v) for v in b[0]], [list(f) for f in b[1]])
@@ -1032,16 +1039,16 @@ def biscribe_reciprocal(V0, F, sym, r_target, iters=6000, alpha=0.7,
 
 def _hard_mesh(key):
     """Basin-selecting init for the two hard chiral primals."""
-    cw = _cw()
+    cw, _canon, _flags = _cw()
     if key == 'propello_truncated_icosidodecahedron':   # propello of biscribed bD
         b = biscribe_exact('truncated_icosidodecahedron')
-        V, F = cw.op_propellor([list(map(float, v)) for v in b[0]],
+        V, F = _flags.propellor([list(map(float, v)) for v in b[0]],
                                [list(f) for f in b[1]])
     elif key == 'propello_l_snub_cube':                 # propello of MIRRORED sC
         V, F = cw.apply_conway('sC')
         V = [[v[0], v[1], -v[2]] for v in V]
         F = [list(f[::-1]) for f in F]
-        V, F = cw.op_propellor(V, F)
+        V, F = _flags.propellor(V, F)
     else:
         raise ValueError(key)
     V, F = cw.orient_outward([list(v) for v in V], [list(f) for f in F])
@@ -1393,9 +1400,9 @@ if _IN_BLENDER:
             V, F, _r = res
             if self.style == 'FACETS':
                 try:
-                    from . import facet_style
+                    from .styles import facet_style
                 except ImportError:
-                    import facet_style
+                    from styles import facet_style
                 Vf = [tuple(c * self.scale for c in v) for v in V]
                 mat = (_material_for
                        if self.coloring == 'SIDES' else None)
@@ -1439,9 +1446,9 @@ if _IN_BLENDER:
                 mod.use_even_offset = False
             elif self.style == 'BALLSTICK':
                 try:
-                    from . import ball_and_stick
+                    from .styles import ball_and_stick
                 except ImportError:
-                    import ball_and_stick
+                    from styles import ball_and_stick
                 ball_and_stick.rebuild(obj, self.strut_radius,
                                        self.node_radius)
             elif self.style == 'WIREFRAME':

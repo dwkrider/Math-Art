@@ -77,13 +77,15 @@ def quad_seed(kind):
               [2, 3, 7, 6], [1, 2, 6, 5], [0, 4, 7, 3]]
     elif kind == 'RT':                   # rhombic triacontahedron = dual iD
         try:
-            from . import conway_operators as cw
+            from .polyhedra import (canonical as _canon, conway as cw,
+                                    flags as _flags)
         except ImportError:
-            import conway_operators as cw
+            from polyhedra import (canonical as _canon, conway as cw,
+                                   flags as _flags)
         V, F = cw.apply_conway('aD')
-        V = cw.canonicalize(V, F, iters=400)
-        Vd, Fd = cw.op_dual(V, F)
-        Vd = cw.canonicalize(Vd, Fd, iters=600)
+        V = _canon.canonicalize(V, F, iters=400)
+        Vd, Fd = _flags.dual(V, F)
+        Vd = _canon.canonicalize(Vd, Fd, iters=600)
         return [_unit(v) for v in Vd], [list(f) for f in Fd]
     else:
         raise ValueError(kind)
@@ -551,9 +553,9 @@ if _IN_BLENDER:
                               reuse={i: i for i in range(len(V))})
             elif self.style == 'STRUTS':
                 try:
-                    from . import ball_and_stick
+                    from .styles import ball_and_stick
                 except ImportError:
-                    import ball_and_stick
+                    from styles import ball_and_stick
                 edges = ball_and_stick.edges_from_faces(F)
                 verts, faces = ball_and_stick.build_mesh(
                     V, edges, self.strut_radius * R,

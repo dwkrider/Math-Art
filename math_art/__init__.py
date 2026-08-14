@@ -102,7 +102,6 @@ _MODULE_NAMES = [
     'orbital_generator',
     'rolling_knot_generator',
     'woven_polyhedron_generator',
-    'pattern_common',
     'wallpaper_generator',
     'frieze_generator',
     'tiling_generator',
@@ -130,8 +129,12 @@ _MODULE_NAMES = [
     'substitution_knot_generator',
     'fractal_knotwork_generator',
 ]
-# NOTE: engine subpackages (`minsurf`, `seifert`, `lsystem`) are deliberately
-# absent -- they register nothing and are imported by their operator modules.
+# NOTE: engine subpackages (`minsurf`, `seifert`, `lsystem`, `knots`,
+# `patterns`, `polyhedra`, `curve_frames`, `ifs`) and the `styles` namespace
+# are deliberately absent -- they register nothing and are imported by their
+# operator modules.  `pattern_common` used to be listed here; it is now
+# `patterns/common.py`, and its `register` was always a no-op re-exported
+# from `patterns.emit` (ADD_MENU = False), so nothing is lost by dropping it.
 
 _MODULES = []
 for _nm in _MODULE_NAMES:

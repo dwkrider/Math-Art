@@ -41,559 +41,83 @@ try:
 except ImportError:
     np = None
 
-PHI = (1 + 5 ** 0.5) / 2
 
+# The mathematics lives in the sibling `polyhedra` engine package: the
+# notation and its seeds in `polyhedra.conway`, the eight operators in
+# `polyhedra.flags` -- as flag-complex rewrites, which is why this module
+# no longer carries eight hand-written constructions of its own -- and
+# the canonical forms in `polyhedra.canonical`.
 try:                                  # inside the math_art package
     from .polyhedra.fit import fit_cube as _fit_cube
+    from .polyhedra.canonical import biscribe, canonicalize, spherize
+    from .polyhedra.conway import (CATALOG, apply_conway, orient_outward,
+                                   parse_conway)
 except ImportError:                   # flat import (test runner)
     from polyhedra.fit import fit_cube as _fit_cube
+    from polyhedra.canonical import biscribe, canonicalize, spherize
+    from polyhedra.conway import (CATALOG, apply_conway, orient_outward,
+                                  parse_conway)
 
 
-# --------------------------------------------------------------------------
-# Seeds
-# --------------------------------------------------------------------------
 
-def _seed(sym, n):
-    if sym == 'T':
-        V = [(1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)]
-        F = [(0, 1, 2), (0, 2, 3), (0, 3, 1), (1, 3, 2)]
-    elif sym == 'C':
-        V = [(x, y, z) for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)]
-        F = [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1),
-             (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]
-    elif sym == 'O':
-        V = [(1, 0, 0), (-1, 0, 0), (0, 1, 0), (0, -1, 0),
-             (0, 0, 1), (0, 0, -1)]
-        F = [(0, 2, 4), (2, 1, 4), (1, 3, 4), (3, 0, 4),
-             (2, 0, 5), (1, 2, 5), (3, 1, 5), (0, 3, 5)]
-    elif sym == 'I':
-        V = []
-        for a in (-1, 1):
-            for b in (-PHI, PHI):
-                V += [(0, a, b), (a, b, 0), (b, 0, a)]
-        F = _hull_faces(V)
-    elif sym == 'D':
-        V = [(x, y, z) for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)]
-        for a in (-1 / PHI, 1 / PHI):
-            for b in (-PHI, PHI):
-                V += [(0, a, b), (a, b, 0), (b, 0, a)]
-        F = _hull_faces(V)
-    elif sym == 'P':          # n-prism
-        V = [(math.cos(2 * math.pi * i / n), math.sin(2 * math.pi * i / n), z)
-             for z in (-1, 1) for i in range(n)]
-        F = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))]
-        F += [(i, (i + 1) % n, n + (i + 1) % n, n + i) for i in range(n)]
-    elif sym == 'A':          # n-antiprism
-        V = [(math.cos(2 * math.pi * i / n), math.sin(2 * math.pi * i / n),
-              -0.5) for i in range(n)]
-        V += [(math.cos(2 * math.pi * (i + 0.5) / n),
-               math.sin(2 * math.pi * (i + 0.5) / n), 0.5) for i in range(n)]
-        F = [tuple(range(n - 1, -1, -1)), tuple(range(n, 2 * n))]
-        for i in range(n):
-            F.append((i, (i + 1) % n, n + i))
-            F.append(((i + 1) % n, n + (i + 1) % n, n + i))
-    elif sym == 'Y':          # n-pyramid
-        V = [(math.cos(2 * math.pi * i / n), math.sin(2 * math.pi * i / n),
-              0.0) for i in range(n)] + [(0.0, 0.0, 1.0)]
-        F = [tuple(range(n - 1, -1, -1))]
-        F += [(i, (i + 1) % n, n) for i in range(n)]
-    else:
-        raise ValueError(f"unknown seed {sym!r}")
-    return [list(map(float, v)) for v in V], [list(f) for f in F]
-
-
-def _hull_faces(V):
-    """Faces of the convex hull of V, merged into maximal planar faces.
-    Small inputs only (seed construction)."""
-    import itertools
-    n = len(V)
-    planes = []
-    for combo in itertools.combinations(range(n), 3):
-        a, b, c = (V[i] for i in combo)
-        nx = ((b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]),
-              (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]),
-              (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]))
-        ln = math.sqrt(sum(x * x for x in nx))
-        if ln < 1e-9:
-            continue
-        nx = tuple(x / ln for x in nx)
-        d = sum(nx[i] * a[i] for i in range(3))
-        if d < 0:
-            nx = tuple(-x for x in nx)
-            d = -d
-        key = (round(nx[0], 6), round(nx[1], 6), round(nx[2], 6), round(d, 6))
-        if all(sum(nx[i] * V[j][i] for i in range(3)) <= d + 1e-8
-               for j in range(n)):
-            planes.append((key, nx, d))
-    seen = set()
-    faces = []
-    for key, nx, d in planes:
-        if key in seen:
-            continue
-        seen.add(key)
-        onv = [j for j in range(n)
-               if abs(sum(nx[i] * V[j][i] for i in range(3)) - d) < 1e-7]
-        cen = [sum(V[j][i] for j in onv) / len(onv) for i in range(3)]
-        ux = [V[onv[0]][i] - cen[i] for i in range(3)]
-        uy = [nx[1] * ux[2] - nx[2] * ux[1], nx[2] * ux[0] - nx[0] * ux[2],
-              nx[0] * ux[1] - nx[1] * ux[0]]
-        def ang(j):
-            dx = [V[j][i] - cen[i] for i in range(3)]
-            return math.atan2(sum(dx[i] * uy[i] for i in range(3)),
-                              sum(dx[i] * ux[i] for i in range(3)))
-        faces.append(sorted(onv, key=ang))
-    return faces
 
 
 # --------------------------------------------------------------------------
 # Mesh helpers
 # --------------------------------------------------------------------------
 
-def _centroid(V, f):
-    return [sum(V[i][c] for i in f) / len(f) for c in range(3)]
 
 
-def _sub(a, b):
-    return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
 
 
-def _cross(a, b):
-    return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2],
-            a[0] * b[1] - a[1] * b[0]]
 
 
-def _newell(V, f):
-    n = [0.0, 0.0, 0.0]
-    for i in range(len(f)):
-        p = V[f[i]]
-        q = V[f[(i + 1) % len(f)]]
-        n[0] += (p[1] - q[1]) * (p[2] + q[2])
-        n[1] += (p[2] - q[2]) * (p[0] + q[0])
-        n[2] += (p[0] - q[0]) * (p[1] + q[1])
-    return n
 
 
-def orient_outward(V, F):
-    """Flip faces whose Newell normal points toward the centroid.
-    Valid for star-shaped (in particular convex-ish) solids."""
-    cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
-    for f in F:
-        n = _newell(V, f)
-        fc = _centroid(V, f)
-        d = _sub(fc, cen)
-        if n[0] * d[0] + n[1] * d[1] + n[2] * d[2] < 0:
-            f.reverse()
-    return V, F
 
 
-def _edge_face_maps(F):
-    """directed edge (a,b) -> face index; and next-vertex-in-face map."""
-    e2f = {}
-    nxt = {}
-    for fi, f in enumerate(F):
-        m = len(f)
-        for i in range(m):
-            a, b = f[i], f[(i + 1) % m]
-            e2f[(a, b)] = fi
-            nxt[(fi, a)] = b
-    return e2f, nxt
 
 
-def _faces_around_vertex(v, start_face, e2f, nxt):
-    """Ordered cycle of faces around vertex v."""
-    out = []
-    f = start_face
-    while True:
-        out.append(f)
-        w = nxt[(f, v)]
-        f = e2f[(w, v)]
-        if f == start_face:
-            break
-        if len(out) > 1000:
-            raise ValueError("bad topology walking around vertex")
-    return out
 
 
 # --------------------------------------------------------------------------
 # Primitive operators
 # --------------------------------------------------------------------------
 
-def op_dual(V, F):
-    e2f, nxt = _edge_face_maps(F)
-    v2f = {}
-    for fi, f in enumerate(F):
-        for v in f:
-            v2f.setdefault(v, fi)
-    NV = [_centroid(V, f) for f in F]
-    NF = []
-    for v in range(len(V)):
-        NF.append(_faces_around_vertex(v, v2f[v], e2f, nxt))
-    return NV, NF
 
 
-def op_ambo(V, F):
-    e2f, nxt = _edge_face_maps(F)
-    eid = {}
-    NV = []
-    for fi, f in enumerate(F):
-        m = len(f)
-        for i in range(m):
-            a, b = f[i], f[(i + 1) % m]
-            k = (min(a, b), max(a, b))
-            if k not in eid:
-                eid[k] = len(NV)
-                NV.append([(V[a][c] + V[b][c]) / 2 for c in range(3)])
-    NF = []
-    for f in F:
-        m = len(f)
-        NF.append([eid[(min(f[i], f[(i + 1) % m]),
-                        max(f[i], f[(i + 1) % m]))] for i in range(m)])
-    v2f = {}
-    for fi, f in enumerate(F):
-        for v in f:
-            v2f.setdefault(v, fi)
-    for v in range(len(V)):
-        cyc = _faces_around_vertex(v, v2f[v], e2f, nxt)
-        ring = []
-        for fi in cyc:
-            w = nxt[(fi, v)]
-            ring.append(eid[(min(v, w), max(v, w))])
-        NF.append(ring[::-1])
-    return NV, NF
 
 
-def op_kis(V, F, only_n=0, height=0.25):
-    NV = [list(v) for v in V]
-    NF = []
-    for f in F:
-        if only_n and len(f) != only_n:
-            NF.append(list(f))
-            continue
-        c = _centroid(V, f)
-        n = _newell(V, f)
-        ln = math.sqrt(sum(x * x for x in n)) or 1.0
-        el = sum(math.dist(V[f[i]], V[f[(i + 1) % len(f)]])
-                 for i in range(len(f))) / len(f)
-        apex = [c[j] + n[j] / ln * height * el for j in range(3)]
-        ai = len(NV)
-        NV.append(apex)
-        for i in range(len(f)):
-            NF.append([f[i], f[(i + 1) % len(f)], ai])
-    return NV, NF
 
 
-def op_gyro(V, F):
-    NV = [list(v) for v in V]
-    cid = {}
-    for fi, f in enumerate(F):
-        cid[fi] = len(NV)
-        NV.append(_centroid(V, f))
-    pid = {}
-    for fi, f in enumerate(F):
-        m = len(f)
-        for i in range(m):
-            a, b = f[i], f[(i + 1) % m]
-            if (a, b) not in pid:
-                pid[(a, b)] = len(NV)
-                NV.append([V[a][c] + (V[b][c] - V[a][c]) / 3
-                           for c in range(3)])
-    NF = []
-    for fi, f in enumerate(F):
-        m = len(f)
-        for i in range(m):
-            v1, v2, v3 = f[i], f[(i + 1) % m], f[(i + 2) % m]
-            NF.append([cid[fi], pid[(v1, v2)], pid[(v2, v1)], v2,
-                       pid[(v2, v3)]])
-    return NV, NF
 
 
-def op_propellor(V, F):
-    """Hart's propellor: each n-gon becomes a smaller rotated n-gon
-    surrounded by n quadrilaterals (chiral; dp = pd, pa = ap)."""
-    NV = [list(v) for v in V]
-    pid = {}
-    for fi, f in enumerate(F):
-        m = len(f)
-        for i in range(m):
-            a, b = f[i], f[(i + 1) % m]
-            if (a, b) not in pid:
-                pid[(a, b)] = len(NV)
-                NV.append([V[a][c] + (V[b][c] - V[a][c]) / 3
-                           for c in range(3)])
-    NF = []
-    for fi, f in enumerate(F):
-        m = len(f)
-        NF.append([pid[(f[i], f[(i + 1) % m])] for i in range(m)])
-        for i in range(m):
-            v1, v2, v3 = f[i], f[(i + 1) % m], f[(i + 2) % m]
-            NF.append([pid[(v1, v2)], pid[(v2, v1)], v2, pid[(v2, v3)]])
-    return NV, NF
 
 
-def op_whirl(V, F):
-    """Hart's whirl (Goldberg-Coxeter c2,1): each n-gon becomes a smaller
-    rotated n-gon surrounded by n hexagons -- the "hexpropellor" (chiral).
-    Adds a 1/3 point per directed edge and, per face, an inner n-gon."""
-    NV = [list(v) for v in V]
-    pid = {}
-    for f in F:
-        m = len(f)
-        for i in range(m):
-            a, b = f[i], f[(i + 1) % m]
-            if (a, b) not in pid:
-                pid[(a, b)] = len(NV)
-                NV.append([V[a][c] + (V[b][c] - V[a][c]) / 3
-                           for c in range(3)])
-    win = {}
-    for fi, f in enumerate(F):
-        m = len(f)
-        cen = [sum(V[i][c] for i in f) / m for c in range(3)]
-        for i in range(m):
-            e = NV[pid[(f[i], f[(i + 1) % m])]]
-            win[(fi, i)] = len(NV)
-            NV.append([cen[c] + (e[c] - cen[c]) * 0.55 for c in range(3)])
-    NF = []
-    for fi, f in enumerate(F):
-        m = len(f)
-        NF.append([win[(fi, i)] for i in range(m)])       # inner n-gon
-        for i in range(m):
-            v1, v2, v3 = f[i], f[(i + 1) % m], f[(i + 2) % m]
-            NF.append([win[(fi, i)], win[(fi, (i + 1) % m)],
-                       pid[(v2, v3)], v2, pid[(v2, v1)], pid[(v1, v2)]])
-    return NV, NF
 
 
-def op_chamfer(V, F, t=0.35):
-    e2f, nxt = _edge_face_maps(F)
-    NV = [list(v) for v in V]
-    sid = {}
-    for fi, f in enumerate(F):
-        c = _centroid(V, f)
-        for v in f:
-            sid[(fi, v)] = len(NV)
-            NV.append([V[v][j] + (c[j] - V[v][j]) * t for j in range(3)])
-    NF = []
-    for fi, f in enumerate(F):
-        NF.append([sid[(fi, v)] for v in f])
-    done = set()
-    for fi, f in enumerate(F):
-        m = len(f)
-        for i in range(m):
-            a, b = f[i], f[(i + 1) % m]
-            k = (min(a, b), max(a, b))
-            if k in done:
-                continue
-            done.add(k)
-            fL = e2f[(a, b)]
-            fR = e2f[(b, a)]
-            NF.append([a, sid[(fR, a)], sid[(fR, b)], b,
-                       sid[(fL, b)], sid[(fL, a)]])
-    return NV, NF
 
 
-def op_reflect(V, F):
-    NV = [[-v[0], v[1], v[2]] for v in V]
-    NF = [list(reversed(f)) for f in F]
-    return NV, NF
 
 
 # --------------------------------------------------------------------------
 # Notation
 # --------------------------------------------------------------------------
 
-DERIVED = {'t': 'dk{n}d', 'j': 'da', 'e': 'aa', 'o': 'dada', 'b': 'dk{n}da',
-           'm': 'k{n}da', 's': 'dg', 'n': 'k{n}d', 'z': 'dk{n}'}
-PRIMS = set('dakgcrpw')
-SEEDS = set('TCODIPAY')
 
 
-def parse_conway(text):
-    """Parse a Conway string into (ops_right_to_left, seed, seed_n).
-    ops is a list of (op_char, n) with n=0 meaning unfiltered."""
-    text = text.strip().replace(' ', '')
-    m = re.fullmatch(r'([a-z0-9]*)([TCODIPAY])(\d*)', text)
-    if not m:
-        raise ValueError(
-            "cannot parse: expected operators then a seed, e.g. 'dkC', "
-            "'taD', 'k3sT', 'eP5'")
-    opstr, seed, seed_n = m.group(1), m.group(2), m.group(3)
-    n = int(seed_n) if seed_n else 0
-    if seed in 'PAY' and n < 3:
-        raise ValueError(f"seed {seed} needs a number >= 3, e.g. {seed}5")
-    toks = re.findall(r'([a-z])(\d*)', opstr)
-    # expand derived operators (right-to-left application order)
-    prim = []
-    for ch, dig in toks:
-        nn = int(dig) if dig else 0
-        if ch in PRIMS:
-            if nn and ch != 'k':
-                raise ValueError(f"only k (and t) take a number, not {ch}")
-            prim.append((ch, nn))
-        elif ch in DERIVED:
-            sub = DERIVED[ch].format(n='')
-            subtoks = re.findall(r'([a-z])', sub)
-            for sch in subtoks:
-                prim.append((sch, nn if sch == 'k' else 0))
-        else:
-            raise ValueError(f"unknown operator {ch!r}")
-    return prim, seed, n
 
 
-def apply_conway(text, kis_height=0.25, chamfer_t=0.35):
-    prim, seed, n = parse_conway(text)
-    V, F = _seed(seed, n)
-    V, F = orient_outward(V, F)
-    for ch, nn in reversed(prim):
-        if ch == 'd':
-            V, F = op_dual(V, F)
-        elif ch == 'a':
-            V, F = op_ambo(V, F)
-        elif ch == 'k':
-            V, F = op_kis(V, F, only_n=nn, height=kis_height)
-        elif ch == 'g':
-            V, F = op_gyro(V, F)
-        elif ch == 'c':
-            V, F = op_chamfer(V, F, t=chamfer_t)
-        elif ch == 'p':
-            V, F = op_propellor(V, F)
-        elif ch == 'w':
-            V, F = op_whirl(V, F)
-        elif ch == 'r':
-            V, F = op_reflect(V, F)
-        V, F = orient_outward(V, F)
-    return V, F
 
 
 # --------------------------------------------------------------------------
 # Geometry post-processing
 # --------------------------------------------------------------------------
 
-def spherize(V, F, iters=0):
-    c = [sum(v[i] for v in V) / len(V) for i in range(3)]
-    out = []
-    for v in V:
-        d = _sub(v, c)
-        ln = math.sqrt(sum(x * x for x in d)) or 1.0
-        out.append([d[i] / ln for i in range(3)])
-    return out
 
 
-def canonicalize(V, F, iters=200, lam_t=0.3, lam_p=0.5):
-    """George Hart's canonicalization: iterate edge-tangency to the unit
-    sphere, recentering on the edge tangency points, and face
-    planarization, until converged (or iters)."""
-    if np is None:
-        return V
-    P = np.array(V, dtype=np.float64)
-    P -= P.mean(axis=0)
-    P /= np.mean(np.linalg.norm(P, axis=1))
-    edges = set()
-    for f in F:
-        m = len(f)
-        for i in range(m):
-            a, b = f[i], f[(i + 1) % m]
-            edges.add((min(a, b), max(a, b)))
-    E = np.array(sorted(edges))
-    Fi = [np.array(f) for f in F]
-    for it in range(iters):
-        prev = P.copy()
-        A = P[E[:, 0]]
-        B = P[E[:, 1]]
-        d = B - A
-        t = -np.einsum('ij,ij->i', A, d) / np.maximum(
-            np.einsum('ij,ij->i', d, d), 1e-12)
-        t = np.clip(t, 0.0, 1.0)
-        C = A + t[:, None] * d
-        # recentre on the edge tangency points (Hart), then push edges
-        # to tangency with the unit sphere
-        P -= C.mean(axis=0)
-        C -= C.mean(axis=0)
-        cl = np.linalg.norm(C, axis=1, keepdims=True)
-        corr = C / np.maximum(cl, 1e-9) * (1.0 - cl)
-        adj = np.zeros_like(P)
-        cnt = np.zeros(len(P))
-        np.add.at(adj, E[:, 0], corr)
-        np.add.at(adj, E[:, 1], corr)
-        np.add.at(cnt, E[:, 0], 1)
-        np.add.at(cnt, E[:, 1], 1)
-        P += lam_t * adj / np.maximum(cnt, 1)[:, None]
-        for f in Fi:
-            Q = P[f]
-            c = Q.mean(axis=0)
-            Qc = Q - c
-            nrm = np.zeros(3)
-            for i in range(len(f)):
-                p = Qc[i]
-                q = Qc[(i + 1) % len(f)]
-                nrm += np.cross(p, q)
-            ln = np.linalg.norm(nrm)
-            if ln < 1e-12:
-                continue
-            nrm /= ln
-            dist = Qc @ nrm
-            P[f] -= lam_p * dist[:, None] * nrm
-        if np.max(np.linalg.norm(P - prev, axis=1)) < 1e-7:
-            break
-    return [list(map(float, p)) for p in P]
 
 
-def biscribe(V, F, iters=2500, step=0.1):
-    """Biscribed form: all vertices on a circumsphere AND all faces tangent
-    to a concentric insphere.  Starts from the canonical (edge-tangent)
-    form, then drives the vertex radii and the face-plane distances to
-    common values with a damped summed-force step (circumsphere +
-    insphere + planarity, recentred each step) -- the summed force is what
-    keeps it stable where a sequential projection diverges.  Not every
-    solid HAS a biscribed form (rectified solids and several truncations do
-    not); returns (verts, converged) so the caller can report failure."""
-    if np is None:
-        return V, False
-    P = np.array(canonicalize(V, F), dtype=np.float64)
-    P -= P.mean(axis=0)
-    P /= np.mean(np.linalg.norm(P, axis=1)) or 1.0
-    Fi = [np.array(f) for f in F]
-    for _ in range(iters):
-        R = np.linalg.norm(P, axis=1)
-        Rb = R.mean()
-        dX = (step * ((Rb - R) / np.maximum(R, 1e-9))[:, None]) * P
-        ns = np.zeros((len(F), 3))
-        ds = np.zeros(len(F))
-        cs = np.zeros((len(F), 3))
-        for fi, f in enumerate(Fi):
-            Q = P[f]
-            c = Q.mean(axis=0)
-            n = np.zeros(3)
-            for i in range(len(f)):
-                n += np.cross(Q[i] - c, Q[(i + 1) % len(f)] - c)
-            ln = np.linalg.norm(n) or 1.0
-            n /= ln
-            if n @ c < 0:
-                n = -n
-            ns[fi], ds[fi], cs[fi] = n, n @ c, c
-        rb = ds.mean()
-        for fi, f in enumerate(Fi):
-            n = ns[fi]
-            push = step * (rb - ds[fi])
-            for v in f:
-                dX[v] += push * n + step * (n @ (cs[fi] - P[v])) * n
-        dX -= dX.mean(axis=0)
-        P += dX
-        if R.max() / max(R.min(), 1e-9) > 50:
-            return [list(map(float, p)) for p in P], False
-        if np.max(np.abs(dX)) < 1e-11:
-            break
-    R = np.linalg.norm(P, axis=1)
-    dd = []
-    for f in Fi:
-        Q = P[f]
-        c = Q.mean(axis=0)
-        n = np.zeros(3)
-        for i in range(len(f)):
-            n += np.cross(Q[i] - c, Q[(i + 1) % len(f)] - c)
-        n /= np.linalg.norm(n) or 1.0
-        dd.append(abs(float(n @ c)))
-    converged = (R.max() - R.min() < 1e-5) and (max(dd) - min(dd) < 1e-5)
-    return [list(map(float, p)) for p in P], converged
 
 
 # --------------------------------------------------------------------------
@@ -612,107 +136,6 @@ def biscribe(V, F, iters=2500, step=0.1):
 #
 # Each entry is (notation, category, name).
 
-CATALOG = [
-    # Archimedean-Catalan hulls: convex hull of an Archimedean solid and its
-    # Catalan dual == the Conway join of the Archimedean solid.
-    ('jtT', 'Hull', "Joined Truncated Tetrahedron"),
-    ('jaC', 'Hull', "Joined Cuboctahedron"),
-    ('jtO', 'Hull', "Joined Truncated Octahedron"),
-    ('jtC', 'Hull', "Joined Truncated Cube"),
-    ('jeC', 'Hull', "Joined Rhombicuboctahedron"),
-    ('jsC', 'Hull', "Joined Snub Cube (laevo)"),
-    ('rjsC', 'Hull', "Joined Snub Cube (dextro)"),
-    ('jaD', 'Hull', "Joined Icosidodecahedron"),
-    ('jbC', 'Hull', "Joined Truncated Cuboctahedron"),
-    ('jtI', 'Hull', "Joined Truncated Icosahedron"),
-    ('jtD', 'Hull', "Joined Truncated Dodecahedron"),
-    ('jeD', 'Hull', "Joined Rhombicosidodecahedron"),
-    ('jsD', 'Hull', "Joined Snub Dodecahedron (laevo)"),
-    ('rjsD', 'Hull', "Joined Snub Dodecahedron (dextro)"),
-    ('jbD', 'Hull', "Joined Truncated Icosidodecahedron"),
-    # Propellor solids (George Hart's propellor operator).
-    ('pT', 'Propellor', "Propello Tetrahedron"),
-    ('pC', 'Propellor', "Propello Cube"),
-    ('pO', 'Propellor', "Propello Octahedron"),
-    ('pD', 'Propellor', "Propello Dodecahedron"),
-    ('pI', 'Propellor', "Propello Icosahedron"),
-    ('ptO', 'Propellor', "Propello Truncated Octahedron"),
-    ('pkC', 'Propellor', "Propello Tetrakis Hexahedron"),
-    ('psC', 'Propellor', "Propello Snub Cube"),
-    ('prgC', 'Propellor', "Propello Pentagonal Icositetrahedron"),
-    ('pbC', 'Propellor', "Propello Truncated Cuboctahedron"),
-    ('pmC', 'Propellor', "Propello Disdyakis Dodecahedron"),
-    ('ptI', 'Propellor', "Propello Truncated Icosahedron"),
-    ('pkD', 'Propellor', "Propello Pentakis Dodecahedron"),
-    ('pbD', 'Propellor', "Propello Truncated Icosidodecahedron"),
-    ('pmD', 'Propellor', "Propello Disdyakis Triacontahedron"),
-    # Hexpropellor (whirl) solids: central n-gon + hexagons per face.
-    ('wT', 'Propellor', "Hexpropello Tetrahedron"),
-    ('wC', 'Propellor', "Hexpropello Cube"),
-    ('wO', 'Propellor', "Hexpropello Octahedron"),
-    ('wD', 'Propellor', "Hexpropello Dodecahedron"),
-    ('wI', 'Propellor', "Hexpropello Icosahedron"),
-    # Truncated Archimedean solids (truncate all vertices, then canonicalize).
-    ('ttT', 'Truncated Archimedean', "Truncated Truncated Tetrahedron"),
-    ('ttO', 'Truncated Archimedean', "Truncated Truncated Octahedron"),
-    ('ttC', 'Truncated Archimedean', "Truncated Truncated Cube"),
-    ('teC', 'Truncated Archimedean', "Truncated Rhombicuboctahedron"),
-    ('tsC', 'Truncated Archimedean', "Truncated Snub Cube"),
-    ('tbC', 'Truncated Archimedean', "Truncated Truncated Cuboctahedron"),
-    ('ttI', 'Truncated Archimedean', "Truncated Truncated Icosahedron"),
-    ('ttD', 'Truncated Archimedean', "Truncated Truncated Dodecahedron"),
-    ('teD', 'Truncated Archimedean', "Truncated Rhombicosidodecahedron"),
-    ('tsD', 'Truncated Archimedean', "Truncated Snub Dodecahedron"),
-    ('tbD', 'Truncated Archimedean', "Truncated Truncated Icosidodecahedron"),
-    # Rectified Archimedean solids (ambo, then canonicalize).
-    ('atT', 'Rectified Archimedean', "Rectified Truncated Tetrahedron"),
-    ('atO', 'Rectified Archimedean', "Rectified Truncated Octahedron"),
-    ('atC', 'Rectified Archimedean', "Rectified Truncated Cube"),
-    ('aeC', 'Rectified Archimedean', "Rectified Rhombicuboctahedron"),
-    ('asC', 'Rectified Archimedean', "Rectified Snub Cube"),
-    ('abC', 'Rectified Archimedean', "Rectified Truncated Cuboctahedron"),
-    ('atI', 'Rectified Archimedean', "Rectified Truncated Icosahedron"),
-    ('atD', 'Rectified Archimedean', "Rectified Truncated Dodecahedron"),
-    ('aeD', 'Rectified Archimedean', "Rectified Rhombicosidodecahedron"),
-    ('asD', 'Rectified Archimedean', "Rectified Snub Dodecahedron"),
-    ('abD', 'Rectified Archimedean', "Rectified Truncated Icosidodecahedron"),
-    # Chamfered solids (chamfer, then canonicalize).
-    ('cT', 'Chamfered', "Chamfered Tetrahedron"),
-    ('cO', 'Chamfered', "Chamfered Octahedron"),
-    ('cC', 'Chamfered', "Chamfered Cube"),
-    ('cI', 'Chamfered', "Chamfered Icosahedron"),
-    ('cD', 'Chamfered', "Chamfered Dodecahedron"),
-    ('ctI', 'Chamfered', "Chamfered Truncated Icosahedron"),
-    # Dipyramids and trapezohedra (duals of the uniform prisms/antiprisms).
-    ('dP3', 'Dipyramid / Trapezohedron', "Triangular Dipyramid"),
-    ('dP4', 'Dipyramid / Trapezohedron', "Square Dipyramid (Octahedron)"),
-    ('dP5', 'Dipyramid / Trapezohedron', "Pentagonal Dipyramid"),
-    ('dP6', 'Dipyramid / Trapezohedron', "Hexagonal Dipyramid"),
-    ('dP7', 'Dipyramid / Trapezohedron', "Heptagonal Dipyramid"),
-    ('dP8', 'Dipyramid / Trapezohedron', "Octagonal Dipyramid"),
-    ('dA3', 'Dipyramid / Trapezohedron', "Trigonal Trapezohedron (Cube)"),
-    ('dA4', 'Dipyramid / Trapezohedron', "Tetragonal Trapezohedron"),
-    ('dA5', 'Dipyramid / Trapezohedron', "Pentagonal Trapezohedron"),
-    ('dA6', 'Dipyramid / Trapezohedron', "Hexagonal Trapezohedron"),
-    ('dA7', 'Dipyramid / Trapezohedron', "Heptagonal Trapezohedron"),
-    ('dA8', 'Dipyramid / Trapezohedron', "Octagonal Trapezohedron"),
-    # Truncated Catalan solids: a Catalan solid with only the vertices of a
-    # given degree truncated (Conway tN = dk(N)d truncates degree-N
-    # vertices; a bare t truncates them all).
-    ('t6dtT', 'Truncated Catalan', "6-Truncated Triakis Tetrahedron"),
-    ('t6dtO', 'Truncated Catalan', "6-Truncated Tetrakis Hexahedron"),
-    ('t8dtC', 'Truncated Catalan', "8-Truncated Triakis Octahedron"),
-    ('tdtO', 'Truncated Catalan', "Truncated Tetrakis Hexahedron"),
-    ('t4deC', 'Truncated Catalan', "4-Truncated Deltoidal Icositetrahedron"),
-    ('t6dtI', 'Truncated Catalan', "6-Truncated Pentakis Dodecahedron"),
-    ('t10dtD', 'Truncated Catalan', "10-Truncated Triakis Icosahedron"),
-    ('tdbC', 'Truncated Catalan', "Truncated Disdyakis Dodecahedron"),
-    ('tdtI', 'Truncated Catalan', "Truncated Pentakis Dodecahedron"),
-    ('t5deD', 'Truncated Catalan', "5-Truncated Deltoidal Hexecontahedron"),
-    ('t4t5deD', 'Truncated Catalan',
-     "4-5-Truncated Deltoidal Hexecontahedron"),
-    ('tdbD', 'Truncated Catalan', "Truncated Disdyakis Triacontahedron"),
-]
 
 
 # --------------------------------------------------------------------------
@@ -884,9 +307,9 @@ if _IN_BLENDER:
             V, F = orient_outward(V, [list(f) for f in F])
             if self.style == 'FACETS':
                 try:
-                    from . import facet_style
+                    from .styles import facet_style
                 except ImportError:
-                    import facet_style
+                    from styles import facet_style
                 Vf = [tuple(c * self.scale for c in v) for v in V]
                 mat = (self._material_for
                        if self.coloring == 'SIDES' else None)
@@ -963,9 +386,9 @@ if _IN_BLENDER:
                 mod.use_even_offset = False
             elif self.style == 'BALLSTICK':
                 try:
-                    from . import ball_and_stick
+                    from .styles import ball_and_stick
                 except ImportError:
-                    import ball_and_stick
+                    from styles import ball_and_stick
                 ball_and_stick.rebuild(obj, self.strut_radius,
                                        self.node_radius)
             elif self.style == 'WIREFRAME':

@@ -15,7 +15,7 @@
 # bands of triangles).  Those layered families are what this module
 # builds; every unit cell is derived by hand and coverage-verified.
 #
-# Part of the Pattern Engine (see pattern_common.py); mirrors the layout
+# Part of the Pattern Engine (see the `patterns` package); mirrors the layout
 # of tiling_generator.py and reuses its geometry helpers.
 #
 # References:
@@ -40,10 +40,10 @@ from math import sqrt, hypot, atan2
 import numpy as np
 
 try:
-    from . import pattern_common as pc
+    from .patterns import common as pc
     from . import tiling_generator as tg
 except Exception:
-    import pattern_common as pc
+    from patterns import common as pc
     import tiling_generator as tg
 
 
