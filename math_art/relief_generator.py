@@ -172,7 +172,7 @@ if _IN_BLENDER:
 if _IN_BLENDER:
 
     _PRESET_ITEMS = [
-        ('CUSTOM', "Custom", "Use the controls below"),
+        ('CUSTOM', "Custom", "Leave the controls below alone"),
         ('DRAPERY', "Drapery",
          "Wave train steered by a curl field, ridged -- carved cloth"),
         ('DUNES', "Dunes", "Warped fractal surface, ridged"),
@@ -249,7 +249,7 @@ if _IN_BLENDER:
                     pass          # a preset key the property cannot hold
 
         preset: EnumProperty(
-            name="Preset", items=_PRESET_ITEMS, default='DRAPERY',
+            name="Load Preset", items=_PRESET_ITEMS, default='DRAPERY',
             update=_preset_update,
             description="Named starting point. Choosing one fills in the "
                         "controls below, so switching to Custom keeps what "
@@ -584,12 +584,16 @@ if _IN_BLENDER:
                    % (info['nx'], info['ny'], len(me.vertices),
                       len(me.polygons)))
             if info.get('tiling', 'NONE') != 'NONE':
-                if info.get('untileable'):
-                    self.report({'WARNING'},
-                                "this pattern cannot tile: %s"
-                                % info['untileable'])
                 msg += ("  seam x%.2f/x%.2f"
                         % (info.get('seam_step', 0.0),
+                           info.get('seam_curvature', 0.0)))
+                if not info.get('seam_ok', True):
+                    self.report(
+                        {'WARNING'},
+                        "the panel does NOT tile: %s (joint x%.1f step, "
+                        "x%.1f curvature; 1.0 would be invisible)"
+                        % (info.get('seam_reason') or "measured at the joint",
+                           info.get('seam_step', 0.0),
                            info.get('seam_curvature', 0.0)))
             if info.get('aliasing'):
                 self.report({'WARNING'},
@@ -617,12 +621,9 @@ if _IN_BLENDER:
                 box.label(text="Warp is suppressed while tiling",
                           icon='INFO')
 
-            custom = self.preset == 'CUSTOM'
             box = lay.box()
-            box.label(text="Pattern" if custom
-                      else "Pattern - switch to Custom to edit")
+            box.label(text="Pattern")
             col = box.column()
-            col.enabled = custom
             col.prop(self, 'field')
             if self.field in ('WAVE', 'WAVE_TRAIN'):
                 col.prop(self, 'wavelength')
@@ -697,7 +698,6 @@ if _IN_BLENDER:
             box = lay.box()
             box.label(text="Orientation & Warp")
             col = box.column()
-            col.enabled = custom
             col.prop(self, 'orient')
             if self.orient in ('CURL', 'GRADIENT'):
                 col.prop(self, 'orient_freq')
@@ -710,7 +710,6 @@ if _IN_BLENDER:
             box = lay.box()
             box.label(text="Profile")
             col = box.column()
-            col.enabled = custom
             col.prop(self, 'curve')
             if self.curve in ('GAMMA', 'SCURVE', 'CLAMP'):
                 col.prop(self, 'curve_amount')
@@ -844,6 +843,13 @@ if _IN_BLENDER:
         layers: bpy.props.CollectionProperty(type=ReliefLayer)
         active: IntProperty(name="Active Layer", default=0, min=0)
         is_panel: BoolProperty(default=False)
+        # Signature of the settings the current mesh was built from.  Layer
+        # edits do not rebuild automatically -- an exact plate solve at full
+        # resolution is not drag-speed -- so the panel compares this against
+        # the live settings and says when the mesh is stale.  Auto-rebuilding
+        # some actions (add, remove, reorder) and not others is the worst of
+        # both worlds: you cannot tell which state you are looking at.
+        built_sig: StringProperty(default="")
 
     class RELIEF_UL_layers(bpy.types.UIList):
         def draw_item(self, context, layout, data, item, icon, active_data,
@@ -922,6 +928,11 @@ if _IN_BLENDER:
             base_thickness=props.base_thickness, fit=props.fit,
             scale=props.scale, layers=layers)
 
+    def _params_signature(props):
+        """A short string identifying the settings a mesh was built from."""
+        p = _panel_params(props)
+        return repr(sorted((k, repr(v)) for k, v in p.items()))
+
     def _write_mesh(obj, verts, faces, smooth):
         """Replace the object's geometry IN PLACE.
 
@@ -947,6 +958,16 @@ if _IN_BLENDER:
         except (RuntimeError, AttributeError):
             pass
         me.update()
+        # Editing the datablock in place does not by itself mark the object
+        # dirty, so the viewport keeps drawing the previous geometry until
+        # something else happens to trigger a refresh.
+        obj.update_tag()
+        me.update_tag()
+        if bpy.context.view_layer is not None:
+            bpy.context.view_layer.update()
+        for area in getattr(bpy.context.screen, 'areas', ()) or ():
+            if area.type == 'VIEW_3D':
+                area.tag_redraw()
 
     class RELIEF_OT_panel_new(bpy.types.Operator):
         """Create a new layered relief panel"""
@@ -1046,6 +1067,7 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, str(exc))
                 return {'CANCELLED'}
             _write_mesh(obj, verts, faces, props.smooth)
+            props.built_sig = _params_signature(props)
             self.report({'INFO'}, "%d layers, %dx%d samples, V=%d F=%d"
                         % (len(params['layers']), info['nx'], info['ny'],
                            len(obj.data.vertices), len(obj.data.polygons)))
@@ -1069,7 +1091,15 @@ if _IN_BLENDER:
                 col.label(text="or use Add > Mesh > Relief Panel")
                 return
             props = obj.relief_panel
-            lay.operator("relief.rebuild", icon='FILE_REFRESH')
+            stale = _params_signature(props) != props.built_sig
+            row = lay.row()
+            row.scale_y = 1.4 if stale else 1.0
+            row.alert = stale
+            row.operator("relief.rebuild", icon='FILE_REFRESH',
+                         text="Rebuild *" if stale else "Rebuild")
+            if stale:
+                lay.label(text="Settings changed since the last build",
+                          icon='INFO')
 
             box = lay.box()
             box.label(text="Panel")

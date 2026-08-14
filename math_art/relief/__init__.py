@@ -193,9 +193,12 @@ def build_relief(**kw):
                 tiling=p.get('tiling', 'NONE'),
                 warp_suppressed=warp_suppressed)
     if p.get('tiling', 'NONE') != 'NONE':
-        c0, c1 = tiling.seam_error(h, p['tiling'], info)
-        info.update(seam_step=c0, seam_curvature=c1,
-                    untileable=tiling.UNTILEABLE.get(p['field']))
+        # Measure the seam rather than trusting the pattern to have handled
+        # it.  A panel that claims to tile and does not is the one outcome
+        # this feature must never produce silently.
+        chk = tiling.check(h, p['tiling'], info, p.get('field'))
+        info.update(seam_step=chk['step'], seam_curvature=chk['curvature'],
+                    seam_ok=chk['ok'], seam_reason=chk['reason'])
     return verts, faces, info
 
 

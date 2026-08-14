@@ -154,6 +154,15 @@ def fbm(X, Y, info, p):
         from ..ifs.spectral import (fbm_modes, weierstrass_modes, eval_field)
     except ImportError:                       # flat import outside the package
         from ifs.spectral import (fbm_modes, weierstrass_modes, eval_field)
+    mode = p.get('tiling', 'NONE')
+    if mode in ('TORUS', 'MIRROR', 'ANTIMIRROR'):
+        from . import tiling as _t
+        return _t.lattice_fbm(X, Y, info, mode,
+                              hurst=float(p.get('hurst', 0.7)),
+                              octaves=int(p.get('octaves', 8)),
+                              count=int(p.get('modes', 240)),
+                              seed=int(p.get('seed', 1)),
+                              lacunarity=float(p.get('lacunarity', 2.0)))
     pts = np.stack([X.ravel(), Y.ravel(), np.zeros(X.size)], axis=-1)
     if p.get('method', 'FBM') == 'WEIERSTRASS':
         modes = weierstrass_modes(int(p.get('octaves', 8)),

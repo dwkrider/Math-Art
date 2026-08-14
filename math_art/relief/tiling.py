@@ -66,7 +66,24 @@ UNTILEABLE = {
     'RIPPLE': "radial ripples do not periodise (the 2-D Helmholtz Green's "
               "function decays too slowly for an image sum)",
     'OBJECT': "an imprint is bounded by its object; wrap the kernel instead",
+    'CHLADNI': "free-plate modes satisfy neither periodicity nor Neumann at "
+               "the rim -- their free-edge condition is a third-derivative "
+               "one, which no seam basis matches",
+    'DRUMHEAD': "a drumhead mode lives on a disc, not on a repeating cell",
 }
+
+# Which seam a pattern is naturally built for, where one exists.  Advisory:
+# the measured check below is what actually decides.
+NATURAL_MODE = {
+    'MEMBRANE': 'ANTIMIRROR',   # sin.sin vanishes at the rim; mirroring kinks
+    'WAVE': 'TORUS',
+    'WAVE_TRAIN': 'TORUS',
+    'FBM': 'TORUS',
+}
+
+# Ratio above which a joint reads as a line rather than as detail.  1.0 is
+# indistinguishable from the panel's own interior.
+SEAM_TOLERANCE = 2.0
 
 
 def periods(info):
@@ -140,6 +157,33 @@ def symmetric_wave(X, Y, info, m, n, mode):
     return np.cos(m * u) * np.cos(n * v)
 
 
+def check(h, mode, info, field=None):
+    """Measure the seam and say whether it will show.
+
+    This is the mechanism that keeps the feature honest.  Curating a list of
+    which patterns tile is a list that rots: it was wrong about fBm, which
+    could tile and was not doing so, and silent about Chladni, which cannot
+    tile at all.  Measuring the assembled joint covers every pattern, present
+    and future, including ones nobody thought about.
+    """
+    if mode == 'NONE':
+        return dict(ok=True, step=0.0, curvature=0.0, reason=None)
+    c0, c1 = seam_error(h, mode, info)
+    ok = max(c0, c1) <= SEAM_TOLERANCE
+    reason = None
+    if not ok:
+        reason = UNTILEABLE.get(field)
+        if reason is None:
+            nat = NATURAL_MODE.get(field)
+            if nat and nat != mode:
+                reason = ("this pattern is built for %s tiling, not %s"
+                          % (nat.lower(), mode.lower()))
+            else:
+                reason = ("the joint is %.0fx the panel's own detail"
+                          % max(c0, c1))
+    return dict(ok=ok, step=c0, curvature=c1, reason=reason)
+
+
 def tile(h, nx=2, ny=2, mode='TORUS'):
     """Lay out an nx-by-ny run of the panel.
 
@@ -164,6 +208,59 @@ def tile(h, nx=2, ny=2, mode='TORUS'):
 
     rows = [row(j) if j == ny - 1 else row(j)[:-1, :] for j in range(ny)]
     return np.concatenate(rows, axis=0)
+
+
+def lattice_fbm(X, Y, info, mode, hurst=0.7, octaves=8, count=240, seed=1,
+                lacunarity=2.0):
+    """Fractional Brownian synthesis performed IN the seam basis.
+
+    Ordinary spectral synthesis draws wavevectors at random, so its modes miss
+    the dual lattice and the field cannot tile however the panel is cut.  The
+    fix is not to post-process it but to draw the modes from the basis in the
+    first place: integer lattice indices for the torus, separable cosine or
+    sine products for mirror and antimirror.  The amplitude law
+    |k|^-(H+1) -- and therefore the fractal character -- is unchanged; only
+    the admissible frequencies are.
+    """
+    Lx, Ly = periods(info)
+    rng = np.random.default_rng(int(seed) & 0x7FFFFFFF)
+    nmax = max(2, int(2 ** max(1, int(octaves))))
+    out = np.zeros(X.shape)
+    u = (X - X.min())
+    v = (Y - Y.min())
+
+    # Log-uniform integer frequencies, so the octave band is covered evenly.
+    for _ in range(max(1, int(count))):
+        f = float(np.exp(rng.uniform(0.0, math.log(nmax))))
+        ang = rng.uniform(0.0, 2.0 * math.pi)
+        m = int(round(f * math.cos(ang)))
+        n = int(round(f * math.sin(ang)))
+        if mode in ('MIRROR', 'ANTIMIRROR'):
+            m, n = abs(m), abs(n)
+            if mode == 'ANTIMIRROR':
+                m, n = max(1, m), max(1, n)
+        if m == 0 and n == 0:
+            continue
+        k = math.hypot(m / Lx, n / Ly)
+        if k <= 0.0:
+            continue
+        amp = k ** (-(float(hurst) + 1.0))
+        if mode == 'TORUS':
+            out += amp * np.cos(2.0 * math.pi * (m * u / Lx + n * v / Ly)
+                                + rng.uniform(0.0, 2.0 * math.pi))
+        elif mode == 'MIRROR':
+            out += amp * (np.cos(m * math.pi * u / Lx)
+                          * np.cos(n * math.pi * v / Ly))
+        else:
+            out += amp * (np.sin(m * math.pi * u / Lx)
+                          * np.sin(n * math.pi * v / Ly))
+    # Centring is harmless for torus and mirror -- a constant is a legal mode
+    # of both bases -- but it would destroy the antimirror field's defining
+    # property, that it VANISHES at the rim.  A shifted field does not.
+    if mode != 'ANTIMIRROR':
+        out -= out.mean()
+    sd = out.std()
+    return out / sd if sd > 1e-12 else out
 
 
 def seam_error(h, mode, info):
@@ -325,9 +422,31 @@ def _selftest():
           % (c0, ratio))
     ok = ok and c0 < 1e-12 and ratio < 1.5
 
+    # --- lattice fBm really tiles, unlike the random-mode kind ----------
+    from . import fields as _f
+    for mode in ('TORUS', 'MIRROR', 'ANTIMIRROR'):
+        hf = lattice_fbm(X, Y, info, mode, hurst=0.75, seed=3, count=120)
+        c = check(hf, mode, info, 'FBM')
+        print("tiling: lattice fBm %-11s ok=%-5s worst x%.2f"
+              % (mode, c['ok'], max(c['step'], c['curvature'])))
+        ok = ok and c['ok']
+    # ...and the unsnapped kind does not, so the check is not vacuous.
+    plain = _f.evaluate('FBM', X, Y, info, {'seed': 3, 'hurst': 0.75})
+    c = check(plain, 'TORUS', info, 'FBM')
+    print("tiling: unsnapped fBm under TORUS ok=%s worst x%.2f (must fail)"
+          % (c['ok'], max(c['step'], c['curvature'])))
+    ok = ok and not c['ok']
+
+    # The checker must catch a pattern that cannot tile at all, and say why.
+    c = check(_f.evaluate('RIPPLE', X, Y, info, {'seed': 2}), 'TORUS', info,
+              'RIPPLE')
+    print("tiling: ripple under TORUS ok=%s, reason given=%s"
+          % (c['ok'], bool(c['reason'])))
+    ok = ok and not c['ok'] and c['reason']
+
     # Untileable patterns are named, not silently seamed.
-    print("tiling: reported untileable: %s" % sorted(UNTILEABLE))
-    ok = ok and 'RIPPLE' in UNTILEABLE
+    print("tiling: named untileable: %s" % sorted(UNTILEABLE))
+    ok = ok and 'RIPPLE' in UNTILEABLE and 'CHLADNI' in UNTILEABLE
 
     print("RESULT:", "OK" if ok else "BAD")
     assert ok
