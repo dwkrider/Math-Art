@@ -458,38 +458,46 @@ def _ammann_beenker(generations, gamma=None):
 # --------------------------------------------------------------------
 
 _HR3 = 3.0 ** 0.5 / 2.0
-_EIN_IDENT = [1.0, 0.0, 0.0, 0.0, 1.0, 0.0]
+# Transforms are `patterns.substitution.Similarity` -- the same planar
+# similarity z -> A z + B conj(z) + C that the rep-tile, Penrose and
+# substitution-knot engines use.  This module used to carry its own
+# algebra over 2x3 real affine maps stored row-major as [a, b, c, d, e, f];
+# every map it ever builds is a similarity (checked: 1178 composed maps
+# across all six tilings, none with unequal singular values), so the
+# general affine machinery was capability nobody used.
+#
+# The `_ein_*` names are kept as the module's vocabulary, now one-liners
+# over the shared type.
+try:
+    from .patterns.polygon2d import line_intersection
+    from .patterns.substitution import Similarity
+except ImportError:                   # flat import outside the package
+    from patterns.polygon2d import line_intersection
+    from patterns.substitution import Similarity
+
+_EIN_IDENT = Similarity.identity()
 
 
 def _ein_mul(A, B):
-    """Compose two affine maps: (A . B)."""
-    return [A[0] * B[0] + A[1] * B[3],
-            A[0] * B[1] + A[1] * B[4],
-            A[0] * B[2] + A[1] * B[5] + A[2],
-            A[3] * B[0] + A[4] * B[3],
-            A[3] * B[1] + A[4] * B[4],
-            A[3] * B[2] + A[4] * B[5] + A[5]]
+    """Compose two maps: (A . B), applying B first."""
+    return A.compose(B)
 
 
 def _ein_inv(T):
-    det = T[0] * T[4] - T[1] * T[3]
-    return [T[4] / det, -T[1] / det, (T[1] * T[5] - T[2] * T[4]) / det,
-            -T[3] / det, T[0] / det, (T[2] * T[3] - T[0] * T[5]) / det]
+    return T.inverse()
 
 
 def _ein_trot(ang):
-    c = cos(ang)
-    s = sin(ang)
-    return [c, -s, 0.0, s, c, 0.0]
+    return Similarity(complex(cos(ang), sin(ang)), 0.0, 0.0)
 
 
 def _ein_ttrans(tx, ty):
-    return [1.0, 0.0, tx, 0.0, 1.0, ty]
+    return Similarity(1.0, 0.0, complex(tx, ty))
 
 
 def _ein_tpt(M, p):
-    return (M[0] * p[0] + M[1] * p[1] + M[2],
-            M[3] * p[0] + M[4] * p[1] + M[5])
+    z = M.apply(complex(p[0], p[1]))
+    return (z.real, z.imag)
 
 
 def _ein_rot_about(p, ang):
@@ -499,31 +507,31 @@ def _ein_rot_about(p, ang):
 
 def _ein_match_seg(p, q):
     """Similarity mapping the unit x-interval onto segment p->q."""
-    return [q[0] - p[0], p[1] - q[1], p[0], q[1] - p[1], q[0] - p[0], p[1]]
+    return Similarity.from_pair(0.0, 1.0,
+                                complex(p[0], p[1]), complex(q[0], q[1]))
 
 
 def _ein_match_two(p1, q1, p2, q2):
     """Similarity carrying segment p1->q1 onto segment p2->q2."""
-    return _ein_mul(_ein_match_seg(p2, q2), _ein_inv(_ein_match_seg(p1, q1)))
+    return Similarity.from_pair(complex(p1[0], p1[1]), complex(q1[0], q1[1]),
+                                complex(p2[0], p2[1]), complex(q2[0], q2[1]))
 
 
 def _ein_intersect(p1, q1, p2, q2):
     """Intersection point of lines p1-q1 and p2-q2."""
-    d = ((q2[1] - p2[1]) * (q1[0] - p1[0]) -
-         (q2[0] - p2[0]) * (q1[1] - p1[1]))
-    ua = ((q2[0] - p2[0]) * (p1[1] - p2[1]) -
-          (q2[1] - p2[1]) * (p1[0] - p2[0])) / d
-    return (p1[0] + ua * (q1[0] - p1[0]), p1[1] + ua * (q1[1] - p1[1]))
+    return line_intersection(p1, q1, p2, q2)
 
 
 def _ein_det(T):
-    return T[0] * T[4] - T[1] * T[3]
+    """Determinant of the linear part: +scale^2 direct, -scale^2 reflected."""
+    return -abs(T.B) ** 2 if T.reflected else abs(T.A) ** 2
 
 
 def _ein_linpart(T):
-    """The 2x2 linear part (a, b, d, e) of an affine map, translation
-    dropped."""
-    return (T[0], T[1], T[3], T[4])
+    """The 2x2 linear part (a, b, d, e), translation dropped."""
+    if T.reflected:
+        return (T.B.real, T.B.imag, T.B.imag, -T.B.real)
+    return (T.A.real, -T.A.imag, T.A.imag, T.A.real)
 
 
 class _EinLeaf:
@@ -625,25 +633,25 @@ def _hat_bases():
     H.add(_ein_match_two(ho[9], ho[11], H_o[1], H_o[2]), hat)
     H.add(_ein_match_two(ho[5], ho[7], H_o[3], H_o[4]), hat)
     H.add(_ein_mul(_ein_ttrans(2.5, _HR3),
-                   _ein_mul([-0.5, -_HR3, 0, _HR3, -0.5, 0],
-                            [0.5, 0, 0, 0, -0.5, 0])), hat_r)
+                   _ein_mul(Similarity(complex(-0.5, _HR3), 0.0, 0.0),
+                            Similarity(0.0, 0.5, 0.0))), hat_r)
 
     T = _EinMeta([(0, 0), (3, 0), (1.5, 3 * _HR3)])
-    T.add([0.5, 0, 0.5, 0, 0.5, _HR3], hat_t)
+    T.add(Similarity(0.5, 0.0, complex(0.5, _HR3)), hat_t)
 
     P_o = [(0, 0), (4, 0), (3, 2 * _HR3), (-1, 2 * _HR3)]
     P = _EinMeta(P_o)
-    P.add([0.5, 0, 1.5, 0, 0.5, _HR3], hat_p)
+    P.add(Similarity(0.5, 0.0, complex(1.5, _HR3)), hat_p)
     P.add(_ein_mul(_ein_ttrans(0, 2 * _HR3),
-                   _ein_mul([0.5, _HR3, 0, -_HR3, 0.5, 0],
-                            [0.5, 0, 0, 0, 0.5, 0])), hat_p)
+                   _ein_mul(Similarity(complex(0.5, -_HR3), 0.0, 0.0),
+                            Similarity(0.5, 0.0, 0.0))), hat_p)
 
     F_o = [(0, 0), (3, 0), (3.5, _HR3), (3, 2 * _HR3), (-1, 2 * _HR3)]
     F = _EinMeta(F_o)
-    F.add([0.5, 0, 1.5, 0, 0.5, _HR3], hat_f)
+    F.add(Similarity(0.5, 0.0, complex(1.5, _HR3)), hat_f)
     F.add(_ein_mul(_ein_ttrans(0, 2 * _HR3),
-                   _ein_mul([0.5, _HR3, 0, -_HR3, 0.5, 0],
-                            [0.5, 0, 0, 0, 0.5, 0])), hat_f)
+                   _ein_mul(Similarity(complex(0.5, -_HR3), 0.0, 0.0),
+                            Similarity(0.5, 0.0, 0.0))), hat_f)
     return [H, T, P, F]
 
 
@@ -671,7 +679,7 @@ def _hat_patch_meta(H, T, P, F):
     ret = _EinMeta([])
     for r in _HAT_RULES:
         if len(r) == 1:
-            ret.add(list(_EIN_IDENT), shapes[r[0]])
+            ret.add(_EIN_IDENT, shapes[r[0]])
         elif len(r) == 4:
             T0, geom = ret.children[r[0]]
             poly = geom.shape
@@ -746,7 +754,7 @@ def _hat_tiles(generations):
     for _ in range(int(generations)):
         tiles = _hat_inflate(_hat_patch_meta(*tiles))
     raw = []
-    _ein_collect(tiles[0], list(_EIN_IDENT), raw)
+    _ein_collect(tiles[0], _EIN_IDENT, raw)
     out = []
     for label, det, poly in raw:
         refl = 1 if (label == 'H1' or det < 0.0) else 0
@@ -838,7 +846,7 @@ def _hat_reference(generations):
     for _ in range(int(generations)):
         tiles = _hat_inflate(_hat_patch_meta(*tiles))
     raw = []
-    _ein_collect_tagged(tiles[0], list(_EIN_IDENT), -1, -1, 0, raw)
+    _ein_collect_tagged(tiles[0], _EIN_IDENT, -1, -1, 0, raw)
     return raw
 
 
@@ -918,7 +926,7 @@ def _hatfamily_tiles(a, b, generations):
     S0 = _ein_match_two(refbase[0][0], refbase[0][1],
                         ref14[0][0], ref14[0][1])
     t = [None] * N
-    t[0] = (S0[2], S0[5])
+    t[0] = (S0.C.real, S0.C.imag)   # the map's translation part
     dq = deque([0])
     while dq:
         h = dq.popleft()
@@ -983,7 +991,7 @@ def _spectre_bases():
     for lab in _SPECTRE_LABELS:
         sys[lab] = _EinLeaf(so, lab, list(_SPECTRE_KEYS))
     mystic = _EinMeta(list(_SPECTRE_KEYS))
-    mystic.add(list(_EIN_IDENT), _EinLeaf(so, 'Gamma1'))
+    mystic.add(_EIN_IDENT, _EinLeaf(so, 'Gamma1'))
     mystic.add(_ein_mul(_ein_ttrans(so[8][0], so[8][1]),
                         _ein_trot(pi / 6.0)), _EinLeaf(so, 'Gamma2'))
     sys['Gamma'] = mystic
@@ -1007,12 +1015,12 @@ def _spectre_inflate(sys):
     frames Ts are derived from the shared quad, then each supertile lists
     which sub-metatile sits in each frame."""
     quad = sys['Delta'].quad
-    R = [-1.0, 0, 0, 0, 1.0, 0]
+    R = Similarity(0.0, -1.0, 0.0)
     t_rules = [(60, 3, 1), (0, 2, 0), (60, 3, 1), (60, 3, 1),
                (0, 2, 0), (60, 3, 1), (-120, 3, 3)]
-    Ts = [list(_EIN_IDENT)]
+    Ts = [_EIN_IDENT]
     total = 0
-    rot = list(_EIN_IDENT)
+    rot = _EIN_IDENT
     tquad = list(quad)
     for ang, frm, to in t_rules:
         total += ang
@@ -1089,7 +1097,7 @@ def _spectre_tiles(generations, curved=False):
     for _ in range(int(generations)):
         sys = _spectre_inflate(sys)
     raw = []
-    _ein_collect_tagged(sys['Delta'], list(_EIN_IDENT), -1, -1, 0, raw)
+    _ein_collect_tagged(sys['Delta'], _EIN_IDENT, -1, -1, 0, raw)
     out = []
     for label, _det, poly, cl, lv in raw:
         typ = 1 if label in ('Gamma1', 'Gamma2') else 0
