@@ -60,10 +60,12 @@ bl_info = {
 import math
 from math import pi, sin, cos, sqrt
 
+# The Conway engine, imported directly rather than through the
+# `conway_operators` Blender module that used to own it.
 try:
-    from . import conway_operators as cw
+    from .polyhedra import canonical as _canon, conway as cw
 except ImportError:
-    import conway_operators as cw
+    from polyhedra import canonical as _canon, conway as cw
 
 PHI = (1 + sqrt(5)) / 2
 
@@ -335,7 +337,7 @@ def _rotunda_unit():
     if 'rot' in _ROT_CACHE:
         return _ROT_CACHE['rot']
     V, F = cw.apply_conway('aD')
-    V = cw.canonicalize(V, F, iters=300)
+    V = _canon.canonicalize(V, F, iters=300)
     # normalise edge length to 1
     els = []
     for f in F:
@@ -723,7 +725,7 @@ def _archimedean_unit(nota):
         # uniform solids are canonical, so their canonical form has regular
         # faces; the larger ones need many iterations to converge tightly
         # (canonicalize early-exits once it has).
-        V = cw.canonicalize(V, F, iters=2000)
+        V = _canon.canonicalize(V, F, iters=2000)
         V = _norm_edge(V, F)
         cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
         _ARCH_CACHE[nota] = ([tuple(v[c] - cen[c] for c in range(3))
@@ -1774,7 +1776,7 @@ def build_solid(family, sid, n=6, scale=1.0, canon=True, canon_iters=250):
         _label, nota = _NOTATION[sid]
     V, F = cw.apply_conway(nota)
     if family in _CANON_FAMS and canon:
-        V = cw.canonicalize(V, F, iters=canon_iters)
+        V = _canon.canonicalize(V, F, iters=canon_iters)
     # Normalise to unit circumradius here; the operator then fits the
     # bounding box to the 2 m cube, which is the extension-wide
     # convention.  Keeping this step means `build_solid` still returns a
@@ -2236,7 +2238,7 @@ def _selftest():
               'SD': (60, 92)}
     for (sid, label, nota) in ARCHIMEDEAN:
         V, F = cw.apply_conway(nota)
-        V = cw.canonicalize(V, F, iters=250)
+        V = _canon.canonicalize(V, F, iters=250)
         ok = (len(V), len(F)) == COUNTS[sid]
         print(f"{label:32s} V={len(V)} F={len(F)} "
               f"{'OK' if ok else 'BAD'}")
@@ -2244,7 +2246,7 @@ def _selftest():
             fails.append(sid)
     for (sid, label, nota) in CATALAN:
         V, F = cw.apply_conway(nota)
-        V = cw.canonicalize(V, F, iters=250)
+        V = _canon.canonicalize(V, F, iters=250)
         arch = COUNTS[dict(zip(
             [c[0] for c in CATALAN],
             [a[0] for a in ARCHIMEDEAN]))[sid]]

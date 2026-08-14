@@ -77,13 +77,15 @@ def quad_seed(kind):
               [2, 3, 7, 6], [1, 2, 6, 5], [0, 4, 7, 3]]
     elif kind == 'RT':                   # rhombic triacontahedron = dual iD
         try:
-            from . import conway_operators as cw
+            from .polyhedra import (canonical as _canon, conway as cw,
+                                    flags as _flags)
         except ImportError:
-            import conway_operators as cw
+            from polyhedra import (canonical as _canon, conway as cw,
+                                   flags as _flags)
         V, F = cw.apply_conway('aD')
-        V = cw.canonicalize(V, F, iters=400)
-        Vd, Fd = cw.op_dual(V, F)
-        Vd = cw.canonicalize(Vd, Fd, iters=600)
+        V = _canon.canonicalize(V, F, iters=400)
+        Vd, Fd = _flags.dual(V, F)
+        Vd = _canon.canonicalize(Vd, Fd, iters=600)
         return [_unit(v) for v in Vd], [list(f) for f in Fd]
     else:
         raise ValueError(kind)
