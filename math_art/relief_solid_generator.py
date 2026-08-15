@@ -636,9 +636,8 @@ if _IN_BLENDER:
                                    "repeating pattern%s"
                                    % (" and no global wind"
                                       if self.field == 'OCEAN' else ""))
-                row = col.row(align=True)
-                row.prop(self, 'cells_u')
-                row.prop(self, 'cells_v')
+                col.prop(self, 'cells_u')
+                col.prop(self, 'cells_v')
                 if self.field == 'WALLPAPER':
                     col.prop(self, 'group')
                     col.prop(self, 'waves')
