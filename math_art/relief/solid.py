@@ -52,7 +52,7 @@ BASES = ('SPHERE', 'TORUS', 'CYLINDER')
 # missing from it while being dispatched and offered.
 FIELDS3D = ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC', 'QUASI',
             'GROUP', 'RIPPLE', 'WAVE', 'SCATTER', 'TORUS_MODE',
-            'WALLPAPER', 'ELLIPTIC', 'TRUCHET', 'SEIGAIHA',
+            'WALLPAPER', 'ELLIPTIC', 'TRUCHET', 'SEIGAIHA', 'OCEAN',
             'LATTICE', 'TURING')
 
 
@@ -1086,6 +1086,35 @@ def flat_on_surface(P, kind, p, base='TORUS', ring=1.0, tube=0.4,
                        seed=int(p.get('seed', 1)),
                        lane=float(p.get('lane', 0.3)),
                        straight=float(p.get('straight', 0.0)))
+    if kind == 'OCEAN':
+        try:
+            from .ocean import spectrum_field, _forward_choppy
+            from .ocean import _sample_wrapped, cusp_lambda
+        except ImportError:                 # flat import outside the package
+            from ocean import spectrum_field, _forward_choppy
+            from ocean import _sample_wrapped, cusp_lambda
+        # The one port that is not pointwise: the sea is SYNTHESISED on its
+        # own square lattice by an inverse FFT and then sampled, so it cannot
+        # be handed a list of scattered points the way the others can.  It is
+        # sampled at each vertex's own (u, v) instead, wrapped -- which is
+        # exactly what makes it descend to the torus without a seam, since
+        # the synthesis was periodic to begin with.
+        n = int(max(32, p.get('sea_sim', 256)))
+        patch = float(p.get('patch', 100.0))
+        h_s, dx_s, dy_s = spectrum_field(
+            n=n, patch=patch, wind=float(p.get('wind_speed', 8.0)),
+            direction=float(p.get('wind_dir', 0.0)),
+            seed=int(p.get('seed', 1)))
+        lam = float(p.get('choppy', 0.0))
+        if lam > 0.0:
+            cell = patch / n
+            h_s = _forward_choppy(h_s, dx_s, dy_s,
+                                  lam * cusp_lambda(dx_s, dy_s, cell) / cell)
+        gx = (u * float(p.get('cells_u', 1.0)) % 1.0) * n
+        gy = (v * float(p.get('cells_v', 1.0)) % 1.0) * n
+        out = _sample_wrapped(h_s, gx, gy)
+        sd = out.std()
+        return (out - out.mean()) / sd if sd > 1e-12 else out - out.mean()
     if kind == 'SEIGAIHA':
         try:
             from .tiles import seigaiha
@@ -1123,6 +1152,94 @@ def conformal_tau(ring=1.0, tube=0.4):
     r = float(tube)
     d = math.sqrt(max(R * R - r * r, 1e-12))
     return R / d
+
+
+def cube_chart(P):
+    """Which cube face each direction belongs to, and where on it.
+
+    The equiangular cubed sphere: the six faces of a cube, each divided by
+    equal ANGLES rather than equal distances, then projected outward.  Equal
+    angles matter because they are what make the cell boundaries of adjacent
+    faces line up along their shared edge -- a gnomonic (equal-distance)
+    division would leave them mismatched and every face boundary would show.
+
+    Returns `(face, s, t)` with s and t in [0, 1) across the face.
+
+    References:
+      Ronald Ronchi, Roberto Iacono and Pier S. Paolucci, "The 'Cubed
+        Sphere': A New Method for the Solution of Partial Differential
+        Equations in Spherical Geometry", J. Comput. Phys. 124(1), 1996,
+        93-114 -- the equiangular construction used here.
+      C. Ronchi et al. build on R. Sadourny, "Conservative finite-difference
+        approximations of the primitive equations on quasi-uniform spherical
+        grids", Monthly Weather Review 100, 1972, 136-144.
+    """
+    P = np.asarray(P, dtype=float)
+    u = P / np.maximum(np.linalg.norm(P, axis=1, keepdims=True), 1e-12)
+    a = np.abs(u)
+    axis = np.argmax(a, axis=1)
+    pos = u[np.arange(len(u)), axis] >= 0.0
+    face = axis * 2 + (~pos).astype(int)
+
+    # For each face, the two in-plane axes and the outward one.  Chosen so
+    # neighbouring faces agree along their shared edge.
+    other = np.zeros((len(u), 2))
+    major = np.abs(u[np.arange(len(u)), axis])
+    for ax in (0, 1, 2):
+        m = axis == ax
+        if not m.any():
+            continue
+        i1, i2 = (ax + 1) % 3, (ax + 2) % 3
+        other[m, 0] = u[m, i1]
+        other[m, 1] = u[m, i2]
+    # Equal angles: the tangent of the in-plane angle is the ratio, so the
+    # angle itself is what gets divided evenly.
+    q = np.pi / 4.0
+    s = (np.arctan2(other[:, 0], major) / q + 1.0) * 0.5
+    t = (np.arctan2(other[:, 1], major) / q + 1.0) * 0.5
+    return face, np.clip(s, 0.0, 1.0 - 1e-12), np.clip(t, 0.0, 1.0 - 1e-12)
+
+
+def truchet_sphere(P, cells=4, seed=1, lane=0.3, straight=0.0):
+    """Truchet arc tiles over a cubed-sphere quad complex.
+
+    Truchet's tile only works on a QUAD: its arcs cross each edge at the
+    midpoint, and pairing those crossings needs an even number of them.  A
+    cell with three or five sides cannot pair its midpoints at all, so an
+    icosphere's triangles and a Goldberg dual's pentagons are both ruled out
+    by parity, not by effort.  The cubed sphere is the quad complex that
+    fits: six square charts, each divided into cells whose edges line up with
+    their neighbours' across every face boundary.
+
+    The chart is independent of the mesh, so this works on any sphere mesh --
+    the geodesic one included -- rather than requiring its own base.
+    """
+    face, s, t = cube_chart(P)
+    n = max(1, int(cells))
+    rng = np.random.default_rng(int(seed) & 0x7FFFFFFF)
+    orient = rng.integers(0, 2, size=(6, n + 1, n + 1))
+    cross = (rng.random((6, n + 1, n + 1)) < float(straight)
+             if straight > 0.0 else np.zeros((6, n + 1, n + 1), dtype=bool))
+
+    fi = np.clip((s * n).astype(int), 0, n - 1)
+    fj = np.clip((t * n).astype(int), 0, n - 1)
+    lu = s * n - fi
+    lv = t * n - fj
+    o = orient[face, fi, fj]
+    xs = cross[face, fi, fj]
+
+    r = 0.5
+    d_a = np.abs(np.hypot(lu, lv) - r)
+    d_b = np.abs(np.hypot(lu - 1.0, lv - 1.0) - r)
+    d_c = np.abs(np.hypot(lu - 1.0, lv) - r)
+    d_d = np.abs(np.hypot(lu, lv - 1.0) - r)
+    d = np.where(o == 0, np.minimum(d_a, d_b), np.minimum(d_c, d_d))
+    d_x = np.minimum(np.abs(lu - 0.5), np.abs(lv - 0.5))
+    d = np.where(xs, d_x, d)
+
+    w = max(float(lane), 1e-3) * 0.5
+    q = np.clip(1.0 - d / w, 0.0, 1.0)
+    return q * q * (3.0 - 2.0 * q) * 2.0 - 1.0
 
 
 def evaluate(kind, P, p, faces=None):
@@ -1205,13 +1322,24 @@ def evaluate(kind, P, p, faces=None):
                               ring=float(p.get('ring', 1.0)),
                               tube=float(p.get('tube', 0.4)),
                               phase=float(p.get('phase', 0.0)))
-    if kind in ('WALLPAPER', 'ELLIPTIC', 'TRUCHET', 'SEIGAIHA'):
+    if kind == 'TRUCHET' and p.get('base', 'TORUS') == 'SPHERE':
+        # The one repeating pattern that DOES reach a sphere, because its
+        # tile needs only a quad complex and not a flat structure.
+        return truchet_sphere(P, cells=int(p.get('tile_cells', 4)),
+                              seed=int(p.get('seed', 1)),
+                              lane=float(p.get('lane', 0.3)),
+                              straight=float(p.get('straight', 0.0)))
+    if kind in ('WALLPAPER', 'ELLIPTIC', 'TRUCHET', 'SEIGAIHA',
+                'OCEAN'):
         base = p.get('base', 'TORUS')
         if base == 'SPHERE':
             raise ValueError(
-                "%s is a doubly periodic construction and belongs on the "
-                "torus or cylinder; a sphere has no flat structure for it "
-                "to descend to" % kind)
+                "%s is a doubly periodic construction and belongs on "
+                "the torus or cylinder; a sphere has no flat structure "
+                "for it to descend to%s"
+                % (kind, " -- and no global wind direction either, by "
+                   "the hairy ball theorem" if kind == 'OCEAN'
+                   else ""))
         return flat_on_surface(P, kind, p, base=base,
                                ring=float(p.get('ring', 1.0)),
                                tube=float(p.get('tube', 0.4)),
@@ -1327,6 +1455,8 @@ def build_solid(**kw):
              freq_max=3, ell_kind='WP', ell_part='SPHERE',
              tau_re=0.0, tau_im=1.0, tile_cells=6, lane=0.3,
              straight=0.0, rings=3, crown=0.55, rim=0.08,
+             sea_sim=256, patch=100.0, wind_speed=8.0, wind_dir=0.0,
+             choppy=0.0,
              depth=0.05, curve='NONE', curve_amount=1.0, norm='STD',
              fit='CUBE', scale=1.0, span=2.0)
     p.update(kw)
@@ -1834,7 +1964,9 @@ def _selftest():
     for name, prm in (('WALLPAPER', dict(group='P4M', waves=5, seed=3)),
                       ('ELLIPTIC', dict(ell_kind='WP')),
                       ('TRUCHET', dict(tile_cells=4, lane=0.35)),
-                      ('SEIGAIHA', dict(tile_cells=4, rings=2))):
+                      ('SEIGAIHA', dict(tile_cells=4, rings=2)),
+                      ('OCEAN', dict(sea_sim=128, wind_speed=9.0,
+                                     choppy=0.6))):
         prm.update(cells_u=2.0, cells_v=1.0, base='TORUS')
         hv = evaluate(name, Pw, prm, faces=Fw)
         H = hv.reshape(128, nvw)
@@ -1877,6 +2009,38 @@ def _selftest():
               "bbox %s" % (base, len(V), len(F2), op, nm, info['area_ratio'],
                            np.round(ext, 3)))
         ok = ok and nm == 0 and op == 0 and np.isfinite(np.asarray(V)).all()
+
+    # --- Truchet on the cubed sphere ------------------------------------
+    # The chart's whole job is that neighbouring faces divide their shared
+    # edge the same way, so the tiling crosses a face boundary without a
+    # joint.  Measured the way every seam here is: the largest step between
+    # neighbouring vertices that straddle a cube edge, against the largest
+    # step anywhere else.
+    Pcs, Ncs, Fcs = icosphere(5)
+    hcs = truchet_sphere(Pcs, cells=4, seed=3, lane=0.32, straight=0.25)
+    fc, sc, tc = cube_chart(Pcs)
+    edge_set = set()
+    for f in Fcs:
+        for i in range(len(f)):
+            a_, b_ = int(f[i]), int(f[(i + 1) % len(f)])
+            edge_set.add((min(a_, b_), max(a_, b_)))
+    ee = np.array(sorted(edge_set))
+    step = np.abs(hcs[ee[:, 0]] - hcs[ee[:, 1]])
+    crosses = fc[ee[:, 0]] != fc[ee[:, 1]]
+    sd = hcs.std() or 1.0
+    across = float(step[crosses].max() / sd)
+    inside = float(step[~crosses].max() / sd)
+    print("solid: truchet on the cubed sphere -- worst step across a face "
+          "boundary %.3f sd, worst step elsewhere %.3f sd"
+          % (across, inside))
+    ok = ok and np.isfinite(hcs).all() and across <= 1.05 * inside
+
+    # Every face carries tiles, and the pattern is not simply constant.
+    print("solid: cubed-sphere chart covers %d faces, cell occupancy %s"
+          % (len(np.unique(fc)),
+             "even" if np.bincount(fc, minlength=6).min() > 0.1
+             * len(fc) / 6 else "UNEVEN"))
+    ok = ok and len(np.unique(fc)) == 6 and hcs.std() > 0.1
 
     # --- the sampling report --------------------------------------------
     # The Truchet lane edge is the finest thing any of these fields draws,

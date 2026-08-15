@@ -90,6 +90,13 @@ if _IN_BLENDER:
             base='TORUS', grid_res=192, field='ELLIPTIC', ell_kind='WP',
             ell_part='SPHERE', cells_u=2.0, cells_v=1.0, curve='NONE',
             depth=0.1),
+        'OCEAN_TORUS': dict(
+            base='TORUS', grid_res=256, field='OCEAN', wind_speed=9.0,
+            patch=100.0, choppy=0.7, sea_sim=256, cells_u=1.0, cells_v=1.0,
+            curve='NONE', depth=0.05, seed=11),
+        'TRUCHET_SPHERE': dict(
+            base='SPHERE', sphere_res=6, field='TRUCHET', tile_cells=4,
+            lane=0.34, straight=0.25, curve='NONE', depth=0.05, seed=3),
         'TRUCHET_TORUS': dict(
             base='TORUS', grid_res=384, field='TRUCHET', tile_cells=5,
             lane=0.32, straight=0.3, cells_u=2.0, cells_v=1.0,
@@ -154,6 +161,11 @@ if _IN_BLENDER:
          "A plane symmetry group wrapped onto its natural flat home"),
         ('ELLIPTIC_TORUS', "Elliptic Torus",
          "Weierstrass P on the torus, with the lattice the torus implies"),
+        ('OCEAN_TORUS', "Ocean Torus",
+         "A wind-driven sea wrapped round a torus"),
+        ('TRUCHET_SPHERE', "Truchet Sphere",
+         "Arc tiles over a cubed-sphere quad complex -- the one repeating "
+         "pattern that reaches a sphere"),
         ('TRUCHET_TORUS', "Truchet Torus",
          "Meandering lanes that close around both directions"),
         ('SEIGAIHA_TORUS', "Seigaiha Torus",
@@ -200,6 +212,9 @@ if _IN_BLENDER:
          "Arc tiles that always join, on the intrinsically flat torus"),
         ('SEIGAIHA', "Seigaiha",
          "The overlapping wave-fan ornament, wrapped without a seam"),
+        ('OCEAN', "Ocean",
+         "Phillips-spectrum sea on the torus or cylinder, with choppiness. "
+         "A sphere has no global wind direction to give it"),
         ('RIPPLE', "Geodesic Ripple",
          "Wavefronts spreading over the surface at constant geodesic "
          "wavelength -- on a sphere they close up again at the antipode"),
@@ -391,6 +406,22 @@ if _IN_BLENDER:
         rings: IntProperty(name="Arcs", default=3, min=1, max=12)
         crown: FloatProperty(name="Crown", default=0.55, min=0.1, max=1.0)
         rim: FloatProperty(name="Rim", default=0.08, min=0.0, max=0.5)
+        sea_sim: IntProperty(
+            name="Sea Grid", default=256, min=64, max=512,
+            description="Lattice the sea is synthesised on before being "
+                        "sampled onto the surface")
+        patch: FloatProperty(
+            name="Patch", default=100.0, min=5.0, max=1000.0, unit='LENGTH',
+            description="Physical size of the sea being simulated; with the "
+                        "wind speed it decides how many waves cross it")
+        wind_speed: FloatProperty(name="Wind", default=8.0, min=1.0,
+                                  max=30.0)
+        wind_dir: FloatProperty(name="Wind Direction", default=0.0,
+                                min=-6.2832, max=6.2832, unit='ROTATION')
+        choppy: FloatProperty(
+            name="Choppiness", default=0.0, min=0.0, max=3.0,
+            description="Measured in cusp limits: 1 puts the steepest crest "
+                        "exactly at the Stokes cusp")
         sources: IntProperty(name="Sources", default=4, min=1, max=32)
         wavelength: FloatProperty(name="Wavelength", default=0.35, min=0.01,
                                   max=8.0, unit='LENGTH')
@@ -502,6 +533,9 @@ if _IN_BLENDER:
                 qc_jitter=self.qc_jitter, sph_group=self.sph_group,
                 sym_cells=self.sym_cells, waves=self.waves,
                 seed_kind=self.seed_kind,
+                sea_sim=self.sea_sim, patch=self.patch,
+                wind_speed=self.wind_speed,
+                wind_dir=self.wind_dir, choppy=self.choppy,
                 regime=self.regime, rd_steps=self.rd_steps,
                 rd_scale=self.rd_scale,
                 sph_l=self.sph_l, sph_m=self.sph_m, mode_m=self.mode_m,
@@ -591,12 +625,17 @@ if _IN_BLENDER:
                 col.prop(self, 'spread')
                 col.prop(self, 'points_n')
             elif self.field in ('WALLPAPER', 'ELLIPTIC', 'TRUCHET',
-                                'SEIGAIHA'):
-                if self.base == 'SPHERE':
+                                'SEIGAIHA', 'OCEAN'):
+                if self.base == 'SPHERE' and self.field == 'TRUCHET':
+                    col.label(text="Sphere uses the cubed-sphere tiling",
+                              icon='INFO')
+                elif self.base == 'SPHERE':
                     col.label(text="Needs the Torus or Cylinder base",
                               icon='ERROR')
                     col.label(text="A sphere has no flat structure for a "
-                                   "repeating pattern")
+                                   "repeating pattern%s"
+                                   % (" and no global wind"
+                                      if self.field == 'OCEAN' else ""))
                 row = col.row(align=True)
                 row.prop(self, 'cells_u')
                 row.prop(self, 'cells_v')
@@ -623,6 +662,12 @@ if _IN_BLENDER:
                     col.prop(self, 'tile_cells')
                     col.prop(self, 'lane')
                     col.prop(self, 'straight')
+                elif self.field == 'OCEAN':
+                    col.prop(self, 'wind_speed')
+                    col.prop(self, 'patch')
+                    col.prop(self, 'choppy')
+                    col.prop(self, 'wind_dir')
+                    col.prop(self, 'sea_sim')
                 else:
                     col.prop(self, 'tile_cells')
                     col.prop(self, 'rings')
@@ -785,9 +830,10 @@ def _selftest():
     for base in _B:
         for fld in ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC',
                     'LATTICE', 'TURING', 'QUASI', 'GROUP',
-                    'RIPPLE', 'WAVE', 'SCATTER', 'TORUS_MODE'):
+                    'RIPPLE', 'WAVE', 'SCATTER', 'TORUS_MODE',
+                    'TRUCHET', 'OCEAN'):
             if base == 'SPHERE' and fld in ('WALLPAPER', 'ELLIPTIC',
-                                            'TRUCHET', 'SEIGAIHA'):
+                                            'SEIGAIHA', 'OCEAN'):
                 continue
             v, f, _ = build_solid(
                 base=base, sphere_res=3, grid_res=48, field=fld,
