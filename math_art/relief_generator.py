@@ -894,9 +894,11 @@ if _IN_BLENDER:
             box.prop(self, 'border')
             box.prop(self, 'tiling')
             if self.tiling != 'NONE':
-                row = box.row(align=True)
-                row.prop(self, 'tile_x')
-                row.prop(self, 'tile_y')
+                # One per row.  Side by side, Blender splits the width
+                # between them and truncates the second label to "Til...",
+                # which reads as a bug rather than as a layout.
+                box.prop(self, 'tile_x')
+                box.prop(self, 'tile_y')
                 if self.tile_x > 1 or self.tile_y > 1:
                     box.label(text="%d copies as one mesh, %.1f x %.1f m"
                                    % (self.tile_x * self.tile_y,
@@ -1911,9 +1913,8 @@ if _IN_BLENDER:
                                 "crest" % _resolution_for(props, worst, 10.0))
             col.prop(props, 'tiling')
             if props.tiling != 'NONE':
-                row = col.row(align=True)
-                row.prop(props, 'tile_x')
-                row.prop(props, 'tile_y')
+                col.prop(props, 'tile_x')
+                col.prop(props, 'tile_y')
                 if props.tile_x > 1 or props.tile_y > 1:
                     col.label(text="%d copies, one mesh, no joint"
                                    % (props.tile_x * props.tile_y),
