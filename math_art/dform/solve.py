@@ -53,6 +53,11 @@ import numpy as np
 from .sheet import (angle_defects, boundary_edges, edges_from_tris,
                     interior_edge_flaps)
 
+# Isometry sweeps in the closing polish.  Every other pass in the loop
+# can leave a little strain behind; this one is the last word, and it is
+# paid ONCE per solve, so it is cheap to make generous.
+_POLISH = 400
+
 
 class Glued:
     """Two flat pieces welded along a seam, ready to solve.
@@ -81,6 +86,57 @@ class Glued:
             self.free[np.unique(bnd)] = True
         self.strain = float('nan')
         self.iterations = 0
+        self._cache = None
+
+    def plan(self, hull_dirs):
+        """Topology-constant work, done once and reused by every sweep.
+
+        The mesh never changes during a solve, so the edge colouring, the
+        per-colour index arrays, the flap scatter indices and their
+        (constant) incidence counts are all loop invariants.  `settle`
+        calls `relax` eight times; recomputing these there cost more than
+        the solve at high segment counts -- the greedy colouring alone is
+        a Python loop over every edge.
+        """
+        if self._cache is not None and self._cache['dirs'] is not None \
+                and len(self._cache['dirs']) == hull_dirs:
+            return self._cache
+        nv = len(self.V)
+        ar = np.arange(3)
+
+        groups = []
+        for g in edge_colouring(self.edges, nv):
+            e0 = self.edges[g, 0].copy()
+            e1 = self.edges[g, 1].copy()
+            # within a colour no vertex repeats, so both endpoints can be
+            # written in ONE scatter instead of two
+            groups.append((e0, e1, self.rest[g].copy(),
+                           np.concatenate([e0, e1])))
+
+        a, b, c, d = (self.flaps[:, 0], self.flaps[:, 1],
+                      self.flaps[:, 2], self.flaps[:, 3])
+        flat3 = lambda i: (i[:, None] * 3 + ar).ravel()   # noqa: E731
+        cache = {
+            'groups': groups,
+            'valence': np.maximum(np.bincount(self.edges.ravel(),
+                                              minlength=nv), 1).astype(float),
+            'e0': self.edges[:, 0].copy(),
+            'e1': self.edges[:, 1].copy(),
+            'edge3': np.concatenate([flat3(self.edges[:, 0]),
+                                     flat3(self.edges[:, 1])]),
+            'flap3': np.concatenate([flat3(d), flat3(a), flat3(b), flat3(c)]),
+            # each flap touches d once and a, b, c once -- V-independent
+            'flap_cnt': np.maximum(
+                np.bincount(np.concatenate([d, a, b, c]), minlength=nv),
+                1).astype(float)[:, None],
+            'tri3': np.concatenate([flat3(self.tris[:, 0]),
+                                    flat3(self.tris[:, 1]),
+                                    flat3(self.tris[:, 2])]),
+            'dirs': _sphere_dirs(hull_dirs) if hull_dirs else None,
+            'nv': nv,
+        }
+        self._cache = cache
+        return cache
 
     def max_strain(self):
         d = self.V[self.edges[:, 1]] - self.V[self.edges[:, 0]]
@@ -202,8 +258,17 @@ def glue(sheet_a, sheet_b, corr, closed=True, pop=1.0):
     edges = edges_from_tris(tris)
     rest = _rest_from_flat(edges, [(A2, map_a, TA), (B2, map_b, TB)])
 
-    return Glued(V, tris, edges, rest, np.arange(n), piece,
-                 [(A2, TA), (B2, TB)], [map_a, map_b], closed=closed)
+    g = Glued(V, tris, edges, rest, np.arange(n), piece,
+              [(A2, TA), (B2, TB)], [map_a, map_b], closed=closed)
+    # keep the polar coordinates the layout was built from: they are what
+    # lets a finer mesh be warm-started off a coarser solve (`warm_start`)
+    g.param = np.zeros(nxt)
+    g.depth = np.zeros(nxt)
+    g.param[map_a] = pa % 1.0
+    g.depth[map_a] = da
+    g.param[map_b] = par_b % 1.0
+    g.depth[map_b] = db
+    return g
 
 
 def _place_cap(V, mp, param, depth, flat, bnd, seam2, sign, height):
@@ -269,14 +334,17 @@ def _orientable(tris):
     return len(np.unique(key)) == len(key)
 
 
-def _vertex_normals(V, tris):
+def _vertex_normals(V, tris, cache=None):
     """Area-weighted vertex normals (the volume gradient, up to 1/3)."""
     P = V[tris]
     fn = np.cross(P[:, 1] - P[:, 0], P[:, 2] - P[:, 0]) * 0.5
-    N = np.zeros_like(V)
-    for k in range(3):
-        np.add.at(N, tris[:, k], fn)
-    return N
+    if cache is None:
+        N = np.zeros_like(V)
+        for k in range(3):
+            np.add.at(N, tris[:, k], fn)
+        return N
+    f = fn.ravel()
+    return _scatter3(cache['tri3'], np.concatenate([f, f, f]), cache['nv'])
 
 
 def signed_volume(V, tris):
@@ -315,16 +383,24 @@ def edge_colouring(edges, n_vert):
     return [np.nonzero(colour == c)[0] for c in range(int(colour.max()) + 1)]
 
 
-def _project_edges(V, edges, rest, groups, sweeps):
+def _project_edges(V, groups, sweeps):
     for _ in range(sweeps):
-        for g in groups:
-            e0, e1 = edges[g, 0], edges[g, 1]
+        for e0, e1, rest_g, both in groups:
             d = V[e1] - V[e0]
-            L = np.linalg.norm(d, axis=1)
-            f = (0.5 * (1.0 - rest[g] / np.maximum(L, 1e-12)))[:, None] * d
-            V[e0] += f
-            V[e1] -= f
+            L = np.sqrt(np.einsum('ij,ij->i', d, d))
+            f = (0.5 * (1.0 - rest_g / np.maximum(L, 1e-12)))[:, None] * d
+            V[both] += np.concatenate([f, -f])
     return V
+
+
+def _scatter3(idx3, vals, nv):
+    """Scatter-add 3-vectors by flattened index -- bincount, not add.at.
+
+    `np.add.at` is the obvious spelling and is an order of magnitude
+    slower than `np.bincount` for exactly this pattern, which is worth
+    caring about because these run inside the iteration loop.
+    """
+    return np.bincount(idx3, weights=vals, minlength=3 * nv).reshape(nv, 3)
 
 
 def _sphere_dirs(k):
@@ -336,7 +412,7 @@ def _sphere_dirs(k):
     return np.stack([r * np.cos(th), r * np.sin(th), z], axis=1)
 
 
-def _project_hull(V, seam, dirs, weight):
+def _project_hull(V, seam, dirs):
     """Clip every vertex back inside the convex hull of the SEAM ring.
 
     This is the Demaine-O'Rourke theorem used as a constraint rather than
@@ -356,9 +432,13 @@ def _project_hull(V, seam, dirs, weight):
     is the standard alternating projection: correcting every violated
     halfspace at once overshoots at the edges where several meet.  Seam
     vertices generate h(u), so they are already inside and never move.
+
+    Sampling leaves slack: the approximation is an outer one, loose by
+    about R*theta^2/2 where theta ~ sqrt(4*pi/k), so a vertex may sit
+    ~2% of R outside the true hull at k = 256.  That is the same order
+    as the solver's own strain tolerance, and dropping to 128 doubles it
+    -- which is what sets the floor on `hull_dirs`.
     """
-    if weight <= 0.0:
-        return V
     h = (V[seam] @ dirs.T).max(axis=0)
     excess = V @ dirs.T - h
     k = np.argmax(excess, axis=1)
@@ -366,78 +446,53 @@ def _project_hull(V, seam, dirs, weight):
     hit = worst > 0.0
     if not np.any(hit):
         return V
-    V[hit] -= (weight * worst[hit])[:, None] * dirs[k[hit]]
+    V[hit] -= worst[hit][:, None] * dirs[k[hit]]
     return V
 
 
-def _project_convexity(V, flaps, weight):
-    """Push reflex flaps flat: the local half of Alexandrov's theorem."""
-    if len(flaps) == 0 or weight <= 0.0:
-        return V
-    a, b, c, d = flaps[:, 0], flaps[:, 1], flaps[:, 2], flaps[:, 3]
-    n = np.cross(V[b] - V[a], V[c] - V[a])
-    ln = np.linalg.norm(n, axis=1)
-    n = n / np.maximum(ln, 1e-15)[:, None]
-    viol = np.maximum(np.einsum('ij,ij->i', n, V[d] - V[a]), 0.0)
-    if not np.any(viol > 0):
-        return V
-    step = (viol * weight)[:, None] * n
-    acc = np.zeros_like(V)
-    cnt = np.zeros(len(V))
-    np.add.at(acc, d, -0.5 * step)
-    np.add.at(cnt, d, 1.0)
-    for idx in (a, b, c):
-        np.add.at(acc, idx, step / 6.0)
-        np.add.at(cnt, idx, 1.0)
-    V += acc / np.maximum(cnt, 1.0)[:, None]
-    return V
+def _project_flaps(V, flaps, cache, bending, convexity):
+    """Bending stiffness and the local convexity push, in one pass.
 
-
-def _project_bending(V, flaps, weight):
-    """Bending stiffness: pull every flap back toward planar.
-
-    Paper resists bending, and that resistance is what stops a real
-    D-form from crumpling.  The isometry constraint alone does not
-    supply it -- a wrinkled sheet is just as isometric as a smooth one,
-    so a pure length solver happily converges to a crushed paper bag.
-    Measuring the flap's deviation as the height of the opposite vertex
-    over the neighbouring face plane, and pushing it back symmetrically
-    (unlike the convexity term, which only pushes one way), is a
-    linearised dihedral spring with rest angle pi.
+    Both terms are the same measurement -- the height h of the flap's
+    opposite vertex over the plane of its neighbour triangle -- and
+    differ only in which way they act.  Bending is symmetric, a
+    linearised dihedral spring with rest angle pi: paper resists being
+    bent, and that resistance is what stops a real D-form from
+    crumpling, since the isometry constraint cannot supply it (a
+    wrinkled sheet is exactly as isometric as a smooth one).  Convexity
+    is one-sided, pushing only where the flap is reflex -- the local
+    half of Alexandrov's theorem.  Computing the normals once for both
+    halves the cost of the most expensive term in the loop.
     """
-    if len(flaps) == 0 or weight <= 0.0:
+    if len(flaps) == 0 or (bending <= 0.0 and convexity <= 0.0):
         return V
     a, b, c, d = flaps[:, 0], flaps[:, 1], flaps[:, 2], flaps[:, 3]
     n = np.cross(V[b] - V[a], V[c] - V[a])
     n = n / np.maximum(np.linalg.norm(n, axis=1), 1e-15)[:, None]
     h = np.einsum('ij,ij->i', n, V[d] - V[a])
-    step = (h * weight)[:, None] * n
-    acc = np.zeros_like(V)
-    cnt = np.zeros(len(V))
-    np.add.at(acc, d, -0.5 * step)
-    np.add.at(cnt, d, 1.0)
-    for idx in (a, b, c):
-        np.add.at(acc, idx, step / 6.0)
-        np.add.at(cnt, idx, 1.0)
-    V += acc / np.maximum(cnt, 1.0)[:, None]
+    amp = bending * h + convexity * np.maximum(h, 0.0)
+    step = amp[:, None] * n
+    third = (step / 6.0).ravel()
+    vals = np.concatenate([(-0.5 * step).ravel(), third, third, third])
+    V += _scatter3(cache['flap3'], vals, cache['nv']) / cache['flap_cnt']
     return V
 
 
-def _fair(V, edges, valence, weight):
+def _fair(V, cache, weight):
     """Umbrella smoothing; the isometry pass undoes the shrinkage."""
     if weight <= 0.0:
         return V
-    e0, e1 = edges[:, 0], edges[:, 1]
-    acc = np.zeros_like(V)
-    np.add.at(acc, e0, V[e1])
-    np.add.at(acc, e1, V[e0])
-    V += weight * (acc / valence[:, None] - V)
+    e0, e1 = cache['e0'], cache['e1']
+    acc = _scatter3(cache['edge3'],
+                    np.concatenate([V[e1].ravel(), V[e0].ravel()]),
+                    cache['nv'])
+    V += weight * (acc / cache['valence'][:, None] - V)
     return V
 
 
-def relax(g, iterations=400, sweeps=8, convexity=0.5, bending=0.15,
+def relax(g, iterations=400, sweeps=3, convexity=0.5, bending=0.15,
           pressure=0.06, fairing=0.0, tol=1.5e-3, closed=None,
-          hull_dirs=512):
+          hull_dirs=256, finish=False):
     """Settle the surface: isometry, bending stiffness, convexity.
 
     Starting from the sphere there is no symmetry left to break, so
@@ -456,45 +511,113 @@ def relax(g, iterations=400, sweeps=8, convexity=0.5, bending=0.15,
     one-sided there, so inflating them peels the boundary outward into a
     flare instead of lifting the collar.
     """
-    V, edges, rest = g.V, g.edges, g.rest
+    V, rest = g.V, g.rest
     if closed is None:
         closed = g.closed
-    # one exact Gauss-Seidel pass per colour, all edges of a colour at
-    # once -- see `edge_colouring`
-    groups = edge_colouring(edges, len(V))
-    valence = np.maximum(np.bincount(edges.ravel(),
-                                     minlength=len(V)), 1).astype(float)
+    cache = g.plan(hull_dirs if convexity > 0.0 else 0)
+    groups = cache['groups']
     mean_len = float(np.mean(rest))
     drive = (~g.free)[:, None] if not closed else 1.0
-    dirs = _sphere_dirs(hull_dirs) if convexity > 0.0 else None
+    dirs = cache['dirs'] if convexity > 0.0 else None
 
     for it in range(iterations):
         if pressure > 0.0:
-            N = _vertex_normals(V, g.tris)
+            N = _vertex_normals(V, g.tris, cache)
             s = float(np.max(np.linalg.norm(N, axis=1)))
             if s > 1e-15:
                 V += (pressure * mean_len / s) * N * drive
-        _project_edges(V, edges, rest, groups, sweeps)
-        _project_bending(V, g.flaps, bending)
+        _project_edges(V, groups, sweeps)
         if dirs is not None:
-            _project_hull(V, g.seam, dirs, 1.0)
-        _project_convexity(V, g.flaps, convexity)
-        _fair(V, edges, valence, fairing)
-        _project_edges(V, edges, rest, groups, max(2, sweeps // 2))
+            _project_hull(V, g.seam, dirs)
+        _project_flaps(V, g.flaps, cache, bending, convexity)
+        _fair(V, cache, fairing)
+        _project_edges(V, groups, 1)
         g.iterations = it + 1
-        if it > 20 and g.max_strain() < tol:
+        # `max_strain` is a full pass over the edges, so do not pay for
+        # it when the caller has switched the early exit off
+        if tol > 0.0 and it > 20 and g.max_strain() < tol:
             break
-    # finish on the constraint that has to hold exactly: bending,
-    # convexity and fairing are the passes that leave strain behind
-    _project_edges(V, edges, rest, groups, 60)
+    if finish:
+        # finish on the constraint that has to hold exactly: bending,
+        # convexity and fairing are the passes that leave strain behind
+        _project_edges(V, groups, _POLISH)
 
     g.strain = g.max_strain()
     g.V = V - 0.5 * (V.max(axis=0) + V.min(axis=0))
     return g
 
 
-def settle(g, iterations=900, pressure=0.2, convexity=0.5, bending=0.2,
-           fairing=0.15, hull_dirs=512, closed=None):
+def _rings(g, which):
+    """One piece's vertices, grouped into its constant-depth rings.
+
+    The sheet is ring-meshed, so a piece is already a stack of closed
+    curves at fixed depth -- a structured (depth, param) grid, which is
+    what makes resampling it onto a different resolution easy.  The seam
+    is the depth-0 ring of BOTH pieces.
+    """
+    sel = (g.piece == which)
+    sel[g.seam] = True
+    idx = np.nonzero(sel)[0]
+    dep = np.round(g.depth[idx], 9)
+    rings = []
+    for dv in np.unique(dep):
+        m = idx[dep == dv]
+        order = np.argsort(g.param[m] % 1.0)
+        rings.append((float(dv), m[order], (g.param[m] % 1.0)[order]))
+    return rings
+
+
+def _eval_ring(P, params, t):
+    """Periodic linear interpolation of a closed ring at parameters `t`."""
+    t = np.asarray(t) % 1.0
+    j = np.searchsorted(params, t, side='right') - 1
+    j0 = j % len(params)
+    j1 = (j + 1) % len(params)
+    span = (params[j1] - params[j0]) % 1.0
+    span = np.where(span < 1e-12, 1.0, span)
+    f = ((t - params[j0]) % 1.0) / span
+    return P[j0] + f[:, None] * (P[j1] - P[j0])
+
+
+def warm_start(fine, coarse):
+    """Put a fine mesh onto an already-solved coarse surface.
+
+    Convergence gets much harder as the mesh refines -- corrections
+    travel about one ring per sweep, so a mesh twice as wide needs
+    several times the iterations, and at 240 segments even 3000 of them
+    left the seam carrying only 85% of its 4*pi.  Solving small first
+    and resampling up sidesteps that: the fine mesh starts on the right
+    shape and only has to sharpen it.
+
+    Both meshes carry the same (piece, depth, param) coordinates, and
+    each piece is a stack of closed rings in them, so this is a bilinear
+    resample -- interpolate the two bracketing coarse rings at the fine
+    vertex's param, then blend by depth.
+    """
+    for which in (0, 1):
+        cr = _rings(coarse, which)
+        if len(cr) < 2:
+            continue
+        cd = np.array([r[0] for r in cr])
+        sel = (fine.piece == which)
+        sel[fine.seam] = True
+        idx = np.nonzero(sel)[0]
+        t = fine.param[idx] % 1.0
+        d = fine.depth[idx]
+        k = np.clip(np.searchsorted(cd, d, side='right') - 1, 0, len(cd) - 2)
+        w = (d - cd[k]) / np.maximum(cd[k + 1] - cd[k], 1e-12)
+        out = np.empty((len(idx), 3))
+        for kk in np.unique(k):
+            m = k == kk
+            lo = _eval_ring(coarse.V[cr[kk][1]], cr[kk][2], t[m])
+            hi = _eval_ring(coarse.V[cr[kk + 1][1]], cr[kk + 1][2], t[m])
+            out[m] = lo + w[m][:, None] * (hi - lo)
+        fine.V[idx] = out
+    return fine
+
+
+def settle(g, iterations=900, pressure=0.4, convexity=0.5, bending=0.2,
+           fairing=0.15, hull_dirs=256, closed=None, sweeps=3):
     """Solve a glued pair with the three-stage schedule.
 
     The stages exist because the terms that FIND the shape and the terms
@@ -510,27 +633,61 @@ def settle(g, iterations=900, pressure=0.2, convexity=0.5, bending=0.2,
     3. tighten -- bending dropped an order of magnitude so the isometry
        and convexity projections have the last word.
 
-    Measured on an ellipse+circle pair at n=96: max strain 0.003, worst
-    interior angle defect 0.008 rad, seam defect 1.005 x 4*pi.
+    THE WARM-UP PRESSURE HAS TO BE GENEROUS, and this is the parameter
+    that decides whether a hard pair converges at all.  Forms that end
+    up fat (a join offset that makes the two outlines disagree strongly)
+    need a lot of inflation to reach; too little strands them
+    half-inflated, and the wrinkles of that state then survive every
+    later stage.  Adding iterations does NOT rescue it -- it is a wrong
+    attractor, not a slow one, and 6000 iterations came out worse than
+    900.  Across seven curve pairs, dropping the warm-up from 0.4 to 0.2
+    took the worst interior defect from 0.022 to 0.199 rad.
+
+    Measured over those seven pairs at 900 iterations: max strain 0.005,
+    worst interior angle defect 0.022 rad, seam defect within 2% of 4*pi.
     """
     stages = 6
     warm = max(stages, int(0.4 * iterations))
     per = max(1, warm // stages)
     total = 0
     for k in range(stages):
-        relax(g, iterations=per, sweeps=8, bending=bending,
+        relax(g, iterations=per, sweeps=sweeps, bending=bending,
               pressure=pressure * (1.0 - k / stages), convexity=convexity,
               fairing=fairing, tol=0.0, hull_dirs=hull_dirs, closed=closed)
         total += g.iterations
     rest = max(2, iterations - per * stages)
-    relax(g, iterations=rest // 2, bending=0.5 * bending, pressure=0.0,
-          convexity=convexity, fairing=0.0, tol=1e-5, hull_dirs=hull_dirs,
-          closed=closed)
-    total += g.iterations
-    relax(g, iterations=rest - rest // 2, bending=0.1 * bending,
-          pressure=0.0, convexity=convexity, fairing=0.0, tol=1e-5,
+    relax(g, iterations=rest // 2, sweeps=sweeps, bending=0.5 * bending,
+          pressure=0.0, convexity=convexity, fairing=0.0, tol=0.0,
           hull_dirs=hull_dirs, closed=closed)
+    total += g.iterations
+    # only the LAST stage pays for the 60-sweep isometry polish; running
+    # it at the end of each stage just fed the next stage's pressure
+    relax(g, iterations=rest - rest // 2, sweeps=sweeps,
+          bending=0.1 * bending, pressure=0.0, convexity=convexity,
+          fairing=0.0, tol=0.0, hull_dirs=hull_dirs, closed=closed,
+          finish=True)
     g.iterations += total
+    return g
+
+
+def polish(g, iterations=400, convexity=0.5, bending=0.2, hull_dirs=256,
+           closed=None, sweeps=3):
+    """Settle a warm-started mesh: no inflation, it is already inflated.
+
+    The pressure stages of `settle` exist only to escape the flat pillow.
+    A mesh resampled off a solved coarse surface starts nowhere near it,
+    so re-inflating would just push the shape back out of the answer.
+    """
+    half = max(1, iterations // 2)
+    relax(g, iterations=half, sweeps=sweeps, bending=bending, pressure=0.0,
+          convexity=convexity, fairing=0.0, tol=0.0, hull_dirs=hull_dirs,
+          closed=closed)
+    first = g.iterations
+    relax(g, iterations=max(1, iterations - half), sweeps=sweeps,
+          bending=0.1 * bending, pressure=0.0, convexity=convexity,
+          fairing=0.0, tol=0.0, hull_dirs=hull_dirs, closed=closed,
+          finish=True)
+    g.iterations += first
     return g
 
 

@@ -58,6 +58,29 @@ class DForm:
         self.stats = stats
 
 
+# Seam resolution above which the solve is done coarse-first.  The
+# solver's convergence rate falls off with the mesh width, so past this
+# it is both faster AND better to solve small and resample up.
+_COARSE = 72
+
+
+def _solve_at(A, B, n, join_offset, flip, quality):
+    """Solve at `n` segments, coarse-first when that is worth doing."""
+    def build(m):
+        Am = curves.resample_arclength(A, m)
+        Bm = curves.resample_arclength(B, m)
+        Bm, _ = curves.match_perimeter(Am, Bm)
+        return solve.glue(sheet.disc_mesh(Am), sheet.disc_mesh(Bm),
+                          curves.seam_correspondence(m, join_offset, flip))
+
+    if n <= _COARSE:
+        return solve.settle(build(n), iterations=quality)
+
+    coarse = solve.settle(build(_COARSE), iterations=quality)
+    fine = solve.warm_start(build(n), coarse)
+    return solve.polish(fine, iterations=max(120, quality // 2))
+
+
 def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
                 aspect_a=0.6, aspect_b=1.0, super_n=3.0, egg=0.35,
                 sides_a=3, sides_b=5, corner=0.35, cassini=1.6,
@@ -81,13 +104,14 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
     B = curves.curve_points(kind_b, aspect=aspect_b, super_n=super_n,
                             egg=egg, sides=sides_b, corner=corner,
                             cassini=cassini)
-    A = curves.ensure_ccw(curves.resample_arclength(A, n))
-    B = curves.ensure_ccw(curves.resample_arclength(B, n))
-    B, _ = curves.match_perimeter(A, B)
+    # stay dense here: `_solve_at` may sample the pair at more than one
+    # resolution, and each should come off the curve rather than off an
+    # already-decimated copy of it
+    A = curves.ensure_ccw(A)
+    B = curves.ensure_ccw(B)
 
-    corr = curves.seam_correspondence(n, join_offset, flip)
-    g = solve.glue(sheet.disc_mesh(A), sheet.disc_mesh(B), corr)
-    solve.settle(g, iterations=max(120, int(quality)))
+    quality = max(120, int(quality))
+    g = _solve_at(A, B, n, join_offset, flip, quality)
 
     V = g.V
     ext = float(np.max(V.max(axis=0) - V.min(axis=0)))
@@ -145,6 +169,28 @@ def _selftest():
     ok &= good
     print(f"dform: isometric (strain {d.stats['strain']:.4f}, area "
           f"{100*d.stats['area_error']:.2f}%) {'OK' if good else 'FAIL'}")
+
+    # Above `_COARSE` the solve goes coarse-first and resamples up, and
+    # that path has to land on the SAME shape -- if it did not, the
+    # segment count would silently change the object rather than just
+    # its resolution.  Solving the fine mesh directly does not converge
+    # at all here (at 240 segments the seam carried 66% of its 4*pi even
+    # after 3000 iterations), so this is also the gate on that.
+    lo = build_dform(segments=48, quality=700, kind_b='EGG', aspect_b=0.8,
+                     egg=0.3, join_offset=0.3)
+    hi = build_dform(segments=_COARSE + 40, quality=700, kind_b='EGG',
+                     aspect_b=0.8, egg=0.3, join_offset=0.3)
+    ext_lo = lo.verts.max(axis=0) - lo.verts.min(axis=0)
+    ext_hi = hi.verts.max(axis=0) - hi.verts.min(axis=0)
+    shape = float(np.max(np.abs(np.sort(ext_hi) - np.sort(ext_lo))))
+    good = (hi.stats['strain'] < 0.015
+            and abs(hi.stats['mu_total'] - 4 * np.pi) < 0.03 * 4 * np.pi
+            and shape < 0.12)
+    ok &= good
+    print(f"dform: refined solve agrees with the coarse one "
+          f"(extent delta {shape:.3f}, strain {hi.stats['strain']:.4f}, "
+          f"seam {hi.stats['mu_total']/(4*np.pi):.3f}x4pi) "
+          f"{'OK' if good else 'FAIL'}")
 
     # an unknown mode must fail loudly rather than silently make a pillow
     try:

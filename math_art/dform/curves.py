@@ -52,7 +52,11 @@ def _superellipse(t, aspect, n):
 
 def _egg(t, aspect, e):
     # an oval fattened at one end: y is modulated by (1 + e cos t), which
-    # keeps x = cos t and moves the widest point off the short axis
+    # keeps x = cos t and moves the widest point off the short axis.
+    # e is clamped away from -1, where the normalisation divides by zero
+    # (the Blender UI already bounds it, but the engine is callable on
+    # its own and must not hand the solver a NaN mesh)
+    e = min(max(float(e), 0.0), 0.95)
     return np.stack([np.cos(t),
                      aspect * np.sin(t) * (1.0 + e * np.cos(t)) / (1.0 + e)],
                     axis=1)

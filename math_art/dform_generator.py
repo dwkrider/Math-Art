@@ -139,7 +139,10 @@ if _IN_BLENDER:
         quality: IntProperty(
             name="Solver Quality", default=900, min=120, max=4000,
             description="Solver iteration budget. Raise it if the form "
-                        "looks creased or the report shows high strain")
+                        "looks creased or the report shows high strain. "
+                        "Above 72 segments the solve is done coarse-first "
+                        "and resampled up, so raising the segment count "
+                        "costs resolution but not convergence")
 
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
         make_net: BoolProperty(

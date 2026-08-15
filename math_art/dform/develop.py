@@ -125,7 +125,25 @@ def seam_mu(g):
     return angle_defects(g.V, g.tris, len(g.V))[g.seam]
 
 
-def mu_from_flat(g, corr=None):
+def _boundary_interior_angles(V2, mp, n):
+    """Interior angles of a piece's seam ring, whichever way it winds.
+
+    `interior_angles` is pi minus the turning angle, which is the
+    INTERIOR angle only for a counter-clockwise traversal; walk the same
+    polygon clockwise and it returns the 2*pi-complements instead, so the
+    defects come out summing to 0 rather than 4*pi.  Piece B is walked in
+    the order it was glued -- reversed by default -- and whether that
+    ends up counter-clockwise depends on whether the Procrustes fit in
+    `glue` chose a reflection, which it does only when a reflection fits
+    better.  So the winding is checked here rather than assumed.
+    """
+    Q = np.asarray(V2)[np.argsort(mp)[:n]]
+    if polygon_area(Q) >= 0.0:
+        return interior_angles(Q)
+    return interior_angles(Q[::-1])[::-1]
+
+
+def mu_from_flat(g):
     """The same mu predicted from the FLAT outlines (Orduno Eq. 1).
 
     Exact and solver-independent -- it depends only on the two outlines
@@ -135,8 +153,8 @@ def mu_from_flat(g, corr=None):
     n = len(g.seam)
     # global seam index i is local vertex argsort(map)[i] in each piece,
     # so this walks both boundaries in the order they were glued
-    ia = interior_angles(np.asarray(A2)[np.argsort(g.maps[0])[:n]])
-    ib = interior_angles(np.asarray(B2)[np.argsort(g.maps[1])[:n]])
+    ia = _boundary_interior_angles(A2, g.maps[0], n)
+    ib = _boundary_interior_angles(B2, g.maps[1], n)
     return 2 * np.pi - ia - ib
 
 
