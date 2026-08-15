@@ -35,7 +35,6 @@ _MODULE_NAMES = [
     'sponge_generator',
     'mandelbulb_generator',
     'snowflake_generator',
-    'fractal_surface_generator',
     'l_system_generator',
     'turtle_curve_generator',
     'inflorescence_generator',
@@ -107,6 +106,8 @@ _MODULE_NAMES = [
     'tiling_generator',
     'layer_generator',
     'modular_screen_generator',
+    'relief_generator',
+    'relief_solid_generator',
     'kuniform_generator',
     'monohedral_generator',
     'isohedral_generator',
@@ -229,7 +230,6 @@ class VIEW3D_MT_math_art_fractals(bpy.types.Menu):
         _op(lay, "mesh.sponge_add", icon='MESH_CUBE')
         _op(lay, "mesh.mandelbulb_add", icon='META_BALL')
         _op(lay, "mesh.snowflake_add", icon='FREEZE')
-        _op(lay, "mesh.fractal_surface_add", icon='RNDCURVE')
         _op(lay, "mesh.apollonian_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.fractal_polyhedron_add",
             icon='OUTLINER_OB_POINTCLOUD')
@@ -335,6 +335,8 @@ class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
         _op(lay, "mesh.wallpaper_add", icon='MOD_MIRROR')
         _op(lay, "mesh.layer_add", icon='MOD_SOLIDIFY')
         _op(lay, "mesh.modular_screen_add", icon='MOD_WIREFRAME')
+        _op(lay, "mesh.relief_panel_add", icon='MOD_DISPLACE')
+        _op(lay, "mesh.relief_solid_add", icon='MATSPHERE')
         lay.separator()
         _op(lay, "mesh.tiling_add", icon='MESH_GRID')
         _op(lay, "mesh.kuniform_add", icon='MESH_GRID')

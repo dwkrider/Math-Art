@@ -492,35 +492,16 @@ if _IN_BLENDER:
                         f"({100 * (1 - after / max(before, 1e-9)):.1f}% less)")
             return {'FINISHED'}
 
-    class VIEW3D_PT_seifert(bpy.types.Panel):
-        bl_label = "Seifert Surfaces"
-        bl_space_type = 'VIEW_3D'
-        bl_region_type = 'UI'
-        bl_category = "Minimal Surfaces"
-
-        def draw(self, context):
-            lay = self.layout
-            lay.operator("mesh.seifert_surface_add", icon='MOD_SIMPLIFY')
-            obj = context.object
-            if obj is not None and "braid" in obj:
-                lay.operator("mesh.seifert_minimize", icon='MOD_SMOOTH')
-                box = lay.box()
-                box.label(text=f"Braid: {obj['braid']}")
-                box.label(text=f"Strands {obj['strands']}, "
-                               f"crossings {obj['crossings']}")
-                if obj.get('orientable', True):
-                    box.label(text=f"Components {obj['boundary_components']}, "
-                                   f"genus {obj['genus']}")
-                else:
-                    box.label(text=f"Components {obj['boundary_components']}, "
-                                   f"crosscap {obj['crosscap_number']} "
-                                   f"(non-orientable)")
+    # The sidebar panel that used to sit here is gone.  It offered an
+    # Add button (Add > Mesh has one), a read-out of the braid's
+    # invariants (they are custom properties on the object, so Object
+    # Properties > Custom Properties shows them), and the minimise
+    # operator, which stays registered and reachable from search.
 
     def _menu_func(self, context):
         self.layout.operator("mesh.seifert_surface_add", icon='MOD_SIMPLIFY')
 
-    _classes = (MESH_OT_seifert_add, MESH_OT_seifert_minimize,
-                VIEW3D_PT_seifert)
+    _classes = (MESH_OT_seifert_add, MESH_OT_seifert_minimize)
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 

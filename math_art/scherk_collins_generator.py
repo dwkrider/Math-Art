@@ -877,7 +877,7 @@ if _IN_BLENDER:
         if prev_active is not None:
             view.objects.active = prev_active
 
-    _PROP_COPY_KEYS = ('is_scherk', 'auto_update', 'branches', 'storeys',
+    _PROP_COPY_KEYS = ('is_scherk', 'branches', 'storeys',
                        'height', 'flange', 'thickness', 'rim_bulge',
                        'rim_round', 'twist', 'azimuth', 'warp', 'phase',
                        'detail', 'scale_x',
@@ -903,11 +903,10 @@ if _IN_BLENDER:
             coll.objects.link(new_obj)
         new_obj.matrix_world = mw
         st = new_obj.scherk_collins
-        st.auto_update = False
+        _SUSPEND[0] = True
         for k in saved:
-            if k != 'auto_update':
-                setattr(st, k, saved[k])
-        st.auto_update = saved['auto_update']
+            setattr(st, k, saved[k])
+        _SUSPEND[0] = False
         new_obj.select_set(True)
         bpy.context.view_layer.objects.active = new_obj
         return new_obj
@@ -958,8 +957,15 @@ if _IN_BLENDER:
             bpy.data.meshes.remove(old)
         return obj
 
+    # Set while properties are being copied in bulk -- loading a spec, or
+    # duplicating a sculpture -- so the half-copied state does not rebuild
+    # once per property.  This used to be done by switching `auto_update`
+    # off and back on, which meant the guard and a user-facing toggle were
+    # the same switch; with the toggle gone the guard says what it is.
+    _SUSPEND = [False]
+
     def _prop_update(self, context):
-        if not self.auto_update or not self.is_scherk:
+        if _SUSPEND[0] or not self.is_scherk:
             return
         obj = self.id_data
         if obj is None:
@@ -979,9 +985,6 @@ if _IN_BLENDER:
 
     class ScherkCollinsProps(bpy.types.PropertyGroup):
         is_scherk: BoolProperty(default=False, options={'HIDDEN'})
-        auto_update: BoolProperty(
-            name="Auto Update", default=True,
-            description="Rebuild the mesh whenever a parameter changes")
         branches: IntProperty(
             name="Branches", description="Order of the saddles (# of branches)",
             default=2, min=1, max=10, update=_prop_update)
@@ -1045,11 +1048,11 @@ if _IN_BLENDER:
             default=2, min=1, max=16, update=_prop_update)
 
     def _apply_param_dict(st, d):
-        st.auto_update, saved = False, st.auto_update
+        _SUSPEND[0] = True
         for k, v in d.items():
             if hasattr(st, k):
                 setattr(st, k, v)
-        st.auto_update = saved
+        _SUSPEND[0] = False
 
     _RESET_KEYS = ('branches', 'storeys', 'height', 'flange', 'thickness',
                    'rim_bulge', 'rim_round', 'twist', 'azimuth', 'warp',
@@ -1233,16 +1236,21 @@ if _IN_BLENDER:
         bl_label = "Scherk-Collins"
         bl_space_type = 'VIEW_3D'
         bl_region_type = 'UI'
-        bl_category = "Scherk"
+        bl_category = "Math Art"
+        bl_order = 20
+
+        @classmethod
+        def poll(cls, context):
+            # Only for a Scherk-Collins sculpture.  The panel used to offer
+            # an Add button when none was selected, which forced it to stay
+            # visible in every scene; creating one belongs in Add > Mesh,
+            # where every other generator's entry already is.
+            o = context.object
+            return o is not None and o.scherk_collins.is_scherk
 
         def draw(self, context):
             lay = self.layout
             obj = context.object
-            if obj is None or not obj.scherk_collins.is_scherk:
-                lay.operator_menu_enum("mesh.scherk_collins_add", "preset",
-                                       text="Add Sculpture", icon='MESH_TORUS')
-                lay.operator("scherk.load_spec", icon='FILE_FOLDER')
-                return
             st = obj.scherk_collins
             col = lay.column(align=True)
             col.use_property_split = True
@@ -1278,14 +1286,11 @@ if _IN_BLENDER:
                     lay.label(text=f"Seam at ring closure (twist "
                                    f"{need:.0f} + k*{360.0 / b:.0f} closes)",
                               icon='ERROR')
-            row = lay.row(align=True)
-            row.prop(st, "auto_update", toggle=True)
-            row.operator("scherk.regenerate", icon='FILE_REFRESH')
-            row = lay.row(align=True)
-            row.operator("scherk.load_spec", text="Load", icon='FILE_FOLDER')
-            row.operator("scherk.save_spec", text="Save", icon='FILE_TICK')
-            lay.operator_menu_enum("mesh.scherk_collins_add", "preset",
-                                   text="Add Another", icon='MESH_TORUS')
+            # No Auto Update toggle, no Regenerate, no Add Another: every
+            # property below rebuilds the mesh as it changes, so the first two
+            # had nothing to do, and making a new sculpture belongs in
+            # Add > Mesh like every other generator's.  Load and Save remain
+            # as operators (F3), off the panel.
 
     def _menu_func(self, context):
         self.layout.operator_menu_enum("mesh.scherk_collins_add", "preset",
