@@ -68,14 +68,14 @@ if _IN_BLENDER:
     _PRESETS = {
         'PLANET': dict(
             base='SPHERE', sphere_res=5, field='FRACTAL', method='FBM', hurst=0.75,
-            octaves=9, curve='NONE', depth=0.05, seed=3),
+            octaves=9, curve='NONE', depth=0.1, seed=3),
         'ASTEROID': dict(
             base='SPHERE', sphere_res=5, field='FRACTAL', method='WEIERSTRASS',
-            dim=2.4, octaves=8, curve='NONE', depth=0.05, seed=7),
+            dim=2.4, octaves=8, curve='NONE', depth=0.1, seed=7),
         'HARMONIC_BALL': dict(
             # The sphere's own eigenmode: a Chladni figure for a ball.
             base='SPHERE', sphere_res=5, field='HARMONIC', sph_l=6, sph_m=3,
-            curve='NONE', depth=0.05),
+            curve='NONE', depth=0.1),
         'SHAGREEN': dict(
             # Cellular texture with the feature points in space, so the cells
             # meet across every wrap without being matched up.
@@ -89,7 +89,7 @@ if _IN_BLENDER:
         'ELLIPTIC_TORUS': dict(
             base='TORUS', grid_res=192, field='ELLIPTIC', ell_kind='WP',
             ell_part='SPHERE', cells_u=2.0, cells_v=1.0, curve='NONE',
-            depth=0.05),
+            depth=0.1),
         'TRUCHET_TORUS': dict(
             base='TORUS', grid_res=384, field='TRUCHET', tile_cells=5,
             lane=0.32, straight=0.3, cells_u=2.0, cells_v=1.0,
@@ -116,11 +116,11 @@ if _IN_BLENDER:
         'ICOSAHEDRAL': dict(
             base='SPHERE', sphere_res=5, field='GROUP',
             sph_group='STAR_532', sym_cells=5.0, waves=5, curve='NONE',
-            depth=0.05, seed=3),
+            depth=0.1, seed=3),
         'OCTAHEDRAL': dict(
             base='SPHERE', sphere_res=5, field='GROUP',
             sph_group='STAR_432', sym_cells=4.0, waves=4,
-            seed_kind='PACKET', curve='NONE', depth=0.05, seed=7),
+            seed_kind='PACKET', curve='NONE', depth=0.1, seed=7),
         'TURING_SPHERE': dict(
             base='SPHERE', sphere_res=5, field='TURING', regime='MAZE',
             rd_steps=5000, rd_scale=0.35, curve='NONE', depth=0.05, seed=3),
