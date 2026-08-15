@@ -8,6 +8,10 @@ follows `math_art/seifert/`, `minsurf/`, `knots/`, `patterns/`,
 
     primitives  the geodesic sphere and the other base surfaces that
                 other engines build on.
+    supershape  Gielis's superformula and its spherical products.
+    harmonics   spherical harmonics as radial displacement.
+    algebraic   the classical algebraic surfaces -- Cayley, Clebsch,
+                Kummer, Barth -- as zero sets of polynomials.
 
 WHY THIS IS SEPARATE FROM `minsurf/`.  Minimal surfaces are surfaces,
 so two sibling packages reads oddly, and the split is historical rather
@@ -25,10 +29,32 @@ rather than an invented one.
 """
 
 from .primitives import PHI, icosphere
+from .supershape import (PRESETS, build_from_preset, build_shell, build_superellipsoid, build_supershape_3d, build_supertoroid)
+from .harmonics import (BOURKE_PRESETS, FORM_ITEMS, TAU, assoc_legendre, bourke_radius, build_radial_surface, build_spherical_harmonic, center_fit, max_abs_harmonic, real_sph_harm, sph_harm_norm)
+from .algebraic import (PRESETS, build_algebraic)
 
 __all__ = [
     "icosphere",
     "PHI",
+    "PRESETS",
+    "build_from_preset",
+    "build_shell",
+    "build_superellipsoid",
+    "build_supershape_3d",
+    "build_supertoroid",
+    "BOURKE_PRESETS",
+    "FORM_ITEMS",
+    "TAU",
+    "assoc_legendre",
+    "bourke_radius",
+    "build_radial_surface",
+    "build_spherical_harmonic",
+    "center_fit",
+    "max_abs_harmonic",
+    "real_sph_harm",
+    "sph_harm_norm",
+    "PRESETS",
+    "build_algebraic",
 ]
 
 __version__ = "1.0.0"
