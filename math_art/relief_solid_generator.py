@@ -68,76 +68,76 @@ if _IN_BLENDER:
     _PRESETS = {
         'PLANET': dict(
             base='SPHERE', sphere_res=5, field='FRACTAL', method='FBM', hurst=0.75,
-            octaves=9, curve='NONE', depth=0.26, seed=3),
+            octaves=9, curve='NONE', depth=0.05, seed=3),
         'ASTEROID': dict(
             base='SPHERE', sphere_res=5, field='FRACTAL', method='WEIERSTRASS',
-            dim=2.4, octaves=8, curve='NONE', depth=0.45, seed=7),
+            dim=2.4, octaves=8, curve='NONE', depth=0.05, seed=7),
         'HARMONIC_BALL': dict(
             # The sphere's own eigenmode: a Chladni figure for a ball.
             base='SPHERE', sphere_res=5, field='HARMONIC', sph_l=6, sph_m=3,
-            curve='NONE', depth=0.3),
+            curve='NONE', depth=0.05),
         'SHAGREEN': dict(
             # Cellular texture with the feature points in space, so the cells
             # meet across every wrap without being matched up.
             base='SPHERE', sphere_res=5, field='CELLULAR', points_n=220,
-            cell_mode='CRACK', cell_sharp=0.7, curve='NONE', depth=0.2,
+            cell_mode='CRACK', cell_sharp=0.7, curve='NONE', depth=0.05,
             seed=11),
         'WALLPAPER_TORUS': dict(
             base='TORUS', grid_res=192, field='WALLPAPER', group='P6M',
-            cells_u=3.0, cells_v=1.0, waves=5, curve='NONE', depth=0.18,
+            cells_u=3.0, cells_v=1.0, waves=5, curve='NONE', depth=0.05,
             seed=3),
         'ELLIPTIC_TORUS': dict(
             base='TORUS', grid_res=192, field='ELLIPTIC', ell_kind='WP',
             ell_part='SPHERE', cells_u=2.0, cells_v=1.0, curve='NONE',
-            depth=0.2),
+            depth=0.05),
         'TRUCHET_TORUS': dict(
-            base='TORUS', grid_res=192, field='TRUCHET', tile_cells=5,
+            base='TORUS', grid_res=384, field='TRUCHET', tile_cells=5,
             lane=0.32, straight=0.3, cells_u=2.0, cells_v=1.0,
-            curve='NONE', depth=0.16, seed=2),
+            curve='NONE', depth=0.05, seed=2),
         'SEIGAIHA_TORUS': dict(
-            base='TORUS', grid_res=192, field='SEIGAIHA', tile_cells=4,
-            rings=3, cells_u=3.0, cells_v=1.0, curve='NONE', depth=0.16),
+            base='TORUS', grid_res=320, field='SEIGAIHA', tile_cells=4,
+            rings=3, cells_u=3.0, cells_v=1.0, curve='NONE', depth=0.05),
         'GEODESIC_POND': dict(
             base='SPHERE', sphere_res=5, field='RIPPLE', sources=4,
-            wavelength=0.32, curve='NONE', depth=0.2, seed=6),
+            wavelength=0.32, curve='NONE', depth=0.05, seed=6),
         'ZONAL': dict(
             base='SPHERE', sphere_res=5, field='WAVE', wavelength=0.35,
             steepness=0.5, wave_count=3, wave_spread=0.25, curve='RIDGE',
-            depth=0.24, seed=2),
+            depth=0.05, seed=2),
         'SCATTERED': dict(
             base='SPHERE', sphere_res=5, field='SCATTER', points_n=180,
-            sigma=0.16, kernel='WYVILL', curve='NONE', depth=0.22, seed=9),
+            sigma=0.16, kernel='WYVILL', curve='NONE', depth=0.05, seed=9),
         'TORUS_HARMONIC': dict(
             base='TORUS', grid_res=192, field='TORUS_MODE', mode_m=7,
-            mode_n=2, curve='NONE', depth=0.18),
+            mode_n=2, curve='NONE', depth=0.05),
         'QUASICRYSTAL': dict(
             base='SPHERE', sphere_res=5, field='QUASI', qc_cells=7.0,
-            qc_sharp=1.4, curve='NONE', depth=0.28),
+            qc_sharp=1.4, curve='NONE', depth=0.05),
         'ICOSAHEDRAL': dict(
             base='SPHERE', sphere_res=5, field='GROUP',
             sph_group='STAR_532', sym_cells=5.0, waves=5, curve='NONE',
-            depth=0.26, seed=3),
+            depth=0.05, seed=3),
         'OCTAHEDRAL': dict(
             base='SPHERE', sphere_res=5, field='GROUP',
             sph_group='STAR_432', sym_cells=4.0, waves=4,
-            seed_kind='PACKET', curve='NONE', depth=0.3, seed=7),
+            seed_kind='PACKET', curve='NONE', depth=0.05, seed=7),
         'TURING_SPHERE': dict(
             base='SPHERE', sphere_res=5, field='TURING', regime='MAZE',
-            rd_steps=5000, rd_scale=0.35, curve='NONE', depth=0.2, seed=3),
+            rd_steps=5000, rd_scale=0.35, curve='NONE', depth=0.05, seed=3),
         'TURING_TORUS': dict(
             base='TORUS', grid_res=192, field='TURING', regime='SPOTS',
-            rd_steps=5000, rd_scale=0.35, curve='NONE', depth=0.16, seed=5),
+            rd_steps=5000, rd_scale=0.35, curve='NONE', depth=0.05, seed=5),
         'WOVEN_TORUS': dict(
             base='TORUS', grid_res=192, field='GABOR', gabor_freq=9.0,
-            points_n=260, spread=0.4, curve='NONE', depth=0.16, seed=5),
+            points_n=260, spread=0.4, curve='NONE', depth=0.05, seed=5),
         'CORAL_TORUS': dict(
             base='TORUS', grid_res=192, field='CELLULAR', points_n=260,
-            cell_mode='CRACK', curve='RIDGE', depth=0.18, seed=2),
+            cell_mode='CRACK', curve='RIDGE', depth=0.05, seed=2),
         'CARVED_COLUMN': dict(
             # A cylinder is developable, so a pattern on it keeps every
             # distance it had -- the one base here with no distortion at all.
             base='CYLINDER', grid_res=192, field='GABOR', gabor_freq=7.0,
-            points_n=240, spread=0.2, curve='NONE', depth=0.14, seed=4),
+            points_n=240, spread=0.2, curve='NONE', depth=0.05, seed=4),
     }
 
     _PRESET_KEYS = sorted({k for v in _PRESETS.values() for k in v})
@@ -532,11 +532,17 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
+            feat = info.get('feature_samples')
+            note = ""
+            if feat is not None:
+                note = ", finest feature %.1f edges%s" % (
+                    feat, " -- raise Detail" if info.get('undersampled')
+                    else "")
             self.report({'INFO'},
-                        "%s / %s: V=%d F=%d, base face areas vary %.2fx"
+                        "%s / %s: V=%d F=%d, base face areas vary %.2fx%s"
                         % (self.base.title(), self.field.title(),
                            len(me.vertices), len(me.polygons),
-                           info['area_ratio']))
+                           info['area_ratio'], note))
             return {'FINISHED'}
 
         def draw(self, context):
@@ -692,6 +698,34 @@ if _IN_BLENDER:
                 col.prop(self, 'mode_k')
                 col.prop(self, 'phase')
             col.prop(self, 'seed')
+
+            # A mesh interpolates linearly between its samples, so a
+            # feature given only a few of them comes out as a facet whatever
+            # the field does.  Say so while the Detail slider is in reach.
+            try:
+                Pp, Np, Fp = _solid.build_base(
+                    self.base,
+                    sphere_res=min(self.sphere_res, 4),
+                    grid_res=min(self.grid_res, 160), ring=self.ring,
+                    tube=self.tube, height=self.height, radius=self.radius)
+                fs = _solid.feature_samples(self.field, self._params(),
+                                            Pp, Fp)
+            except Exception:               # a preview must never break draw
+                fs = None
+            if fs is not None:
+                scale = 1.0
+                if self.base == 'SPHERE':
+                    scale = 2.0 ** max(0, self.sphere_res - 4)
+                elif self.grid_res > 160:
+                    scale = self.grid_res / 160.0
+                fs = fs * scale
+                if fs < 6.0:
+                    warn = lay.box()
+                    warn.alert = True
+                    warn.label(text="Finest feature spans %.1f mesh edges"
+                                    % fs, icon='ERROR')
+                    warn.label(text="Under about 6 it facets; raise Detail "
+                                    "or enlarge the pattern")
 
             box = lay.box()
             box.label(text="Output")

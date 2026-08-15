@@ -1241,6 +1241,67 @@ def face_areas(V, faces):
     return np.asarray(out)
 
 
+def feature_samples(kind, p, P, faces):
+    """How many mesh edges span the finest thing a field draws.
+
+    The flat engine learned this the hard way and reports it (plan section
+    12.1): a mesh interpolates linearly between its samples, so a feature
+    given three of them comes out as a facet however smooth the underlying
+    function is.  Nyquist is the wrong bar -- comfortable is about eight.
+
+    Returns `None` where a field has no single characteristic size.
+    """
+    edges = set()
+    for f in faces:
+        k = len(f)
+        for i in range(k):
+            a, b = int(f[i]), int(f[(i + 1) % k])
+            edges.add((min(a, b), max(a, b)))
+    e = np.array(sorted(edges), dtype=np.int64)
+    h = float(np.median(np.linalg.norm(P[e[:, 1]] - P[e[:, 0]], axis=1)))
+    if h <= 0.0:
+        return None
+    span = float(np.max(P.max(axis=0) - P.min(axis=0))) or 1.0
+    kind = str(kind).upper()
+
+    def n(size):
+        return float(size) / h
+
+    if kind == 'TRUCHET':
+        # The lane EDGE is the fine part, not the lane: the profile ramps
+        # over half the lane width within one cell.
+        cells = (max(1, int(p.get('tile_cells', 6)))
+                 * max(1.0, float(p.get('cells_u', 1.0))))
+        return n(span * math.pi / cells * float(p.get('lane', 0.3)) * 0.5)
+    if kind == 'SEIGAIHA':
+        cells = (max(1, int(p.get('tile_cells', 5)))
+                 * max(1.0, float(p.get('cells_u', 1.0))))
+        return n(span * math.pi / cells * 0.75
+                 / max(1, int(p.get('rings', 3))))
+    if kind in ('WALLPAPER',):
+        cells = (max(1, int(p.get('tile_cells', 1)))
+                 * max(1.0, float(p.get('cells_u', 1.0))))
+        return n(span * math.pi / (cells
+                                   * max(1, int(p.get('freq_max', 3))) * 2.0))
+    if kind == 'QUASI':
+        return n(span / max(1e-6, float(p.get('qc_cells', 6.0))))
+    if kind == 'GROUP':
+        return n(span / max(1e-6, float(p.get('sym_cells', 4.0))))
+    if kind == 'GABOR':
+        return n(span / max(1e-6, float(p.get('gabor_freq', 6.0))))
+    if kind in ('RIPPLE', 'WAVE'):
+        return n(float(p.get('wavelength', 0.35)))
+    if kind == 'SCATTER':
+        return n(float(p.get('sigma', 0.12)))
+    if kind == 'HARMONIC':
+        l = max(1, int(p.get('sph_l', 4)))
+        return n(span * math.pi / (2.0 * l))
+    if kind == 'TORUS_MODE':
+        m = max(1, int(p.get('mode_m', 3)))
+        return n(2.0 * math.pi * float(p.get('ring', 1.0)) / (2.0 * m))
+    return None
+
+
 def build_solid(**kw):
     """Displace a closed base by a field evaluated in space.
 
@@ -1285,12 +1346,18 @@ def build_solid(**kw):
     V = P + (float(p['depth']) * h)[:, None] * N
 
     base_area = face_areas(P, faces)
+    feat = feature_samples(p['field'], p, P, faces)
     info = {
         'verts': len(V), 'faces': len(faces),
         'base': p['base'], 'field': p['field'],
         # Uniformity of the base itself: the number the lat-long sphere
         # failed at, kept where it can be seen.
         'area_ratio': float(base_area.max() / max(base_area.min(), 1e-30)),
+        # Reported, not clamped, for the same reason the flat engine reports
+        # it: a coarse mesh is a legitimate choice, and silently faceting a
+        # pattern while calling it the pattern is not.
+        'feature_samples': feat,
+        'undersampled': (feat is not None and feat < 6.0),
         'area_cv': float(base_area.std() / max(base_area.mean(), 1e-30)),
     }
 
@@ -1810,6 +1877,20 @@ def _selftest():
               "bbox %s" % (base, len(V), len(F2), op, nm, info['area_ratio'],
                            np.round(ext, 3)))
         ok = ok and nm == 0 and op == 0 and np.isfinite(np.asarray(V)).all()
+
+    # --- the sampling report --------------------------------------------
+    # The Truchet lane edge is the finest thing any of these fields draws,
+    # and at the detail a torus preset used to carry it spanned about three
+    # mesh edges -- which is a facet, not a curve.  The figure is now
+    # reported so the choice is visible.
+    for res_t, want in ((192, False), (384, True)):
+        Pt2, Nt2, Ft2 = torus(res_t, ring=1.0, tube=0.4)
+        f_s = feature_samples('TRUCHET', dict(tile_cells=5, lane=0.32,
+                                              cells_u=2.0), Pt2, Ft2)
+        print("solid: torus detail %3d -> truchet lane edge spans %.1f mesh "
+              "edges (%s)" % (res_t, f_s,
+                              "comfortable" if f_s >= 6.0 else "facets"))
+        ok = ok and ((f_s >= 6.0) == want)
 
     print("RESULT:", "OK" if ok else "BAD")
     assert ok

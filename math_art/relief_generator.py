@@ -371,6 +371,13 @@ if _IN_BLENDER:
                               unit='ROTATION')
         sources: IntProperty(name="Sources", default=3, min=1, max=32)
         seed: IntProperty(name="Seed", default=1, min=0, max=100000)
+        tile_x: IntProperty(
+            name="Tile Across", default=1, min=1, max=16,
+            description="Copies of the panel to lay out. The run is one mesh "
+                        "with no joint in it, which is what the seamless "
+                        "basis was for, and each copy keeps the size a "
+                        "single panel would have")
+        tile_y: IntProperty(name="Tile Down", default=1, min=1, max=16)
         antialias: IntProperty(
             name="Prefilter", default=1, min=1, max=4,
             description="Average this many sub-samples per axis. Point "
@@ -711,6 +718,7 @@ if _IN_BLENDER:
                 patch=self.patch, wind_speed=self.wind_speed,
                 choppy=self.choppy, sea_sim=self.sea_sim,
                 gabor_freq=self.gabor_freq, gabor_band=self.gabor_band,
+                tile_x=self.tile_x, tile_y=self.tile_y,
                 pierce=self.pierce, pierce_level=self.pierce_level,
                 pierce_invert=self.pierce_invert,
                 pierce_min=self.pierce_min,
@@ -1357,6 +1365,10 @@ if _IN_BLENDER:
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
                              update=_auto)
         smooth: BoolProperty(name="Smooth Shading", default=True, update=_auto)
+        tile_x: IntProperty(name="Tile Across", default=1, min=1, max=16,
+                            update=_auto)
+        tile_y: IntProperty(name="Tile Down", default=1, min=1, max=16,
+                            update=_auto)
         pierce: BoolProperty(
             name="Pierce", default=False,
             description="Open the panel right through where the field is "
@@ -1518,6 +1530,7 @@ if _IN_BLENDER:
             shape=props.shape, width=props.width, aspect=props.aspect,
             resolution=res, border=props.border,
             tiling=props.tiling, antialias=props.antialias,
+            tile_x=props.tile_x, tile_y=props.tile_y,
             pierce=props.pierce, pierce_level=props.pierce_level,
             pierce_invert=props.pierce_invert,
             pierce_min=props.pierce_min,
