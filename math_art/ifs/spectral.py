@@ -151,6 +151,16 @@ def _weld(V, faces, eps=1e-5):
     return newV, out
 
 
+# NOTE: `build_fractal_surface`, `BASES` and the three base-surface builders
+# have no caller in the shipped add-on since the Fractal Relief generator was
+# removed in favour of the Relief Panel.  They are kept deliberately.  The
+# Relief Panel is a flat h(x, y) engine and cannot make a fractal planet or a
+# displaced torus; restoring those is Phase 6 of the relief plan ("non-planar
+# bases"), and this is the piece it needs -- the field evaluated in 3D on the
+# base's own points and displaced along its normal, which is what keeps a
+# sphere free of seams and pole distortion.  Deleting it would mean writing it
+# again.  `fbm_modes`, `weierstrass_modes` and `eval_field` below it are live:
+# the Relief Panel's fractal field calls them.
 def build_fractal_surface(base='PLATE', method='WEIERSTRASS', res=128,
                           octaves=9, lacunarity=2.0, dim=2.3,
                           hurst=0.7, amplitude=0.3, count=240,

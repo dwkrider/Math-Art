@@ -205,10 +205,6 @@ OPS = [
         preset='MANDELBOX', resolution=40)),
     ("snowflake", lambda: bpy.ops.mesh.snowflake_add(
         preset='DENDRITE', radius=36)),
-    ("fractal surface wm", lambda: bpy.ops.mesh.fractal_surface_add(
-        base='SPHERE', method='WEIERSTRASS', resolution=40)),
-    ("fractal surface fbm", lambda: bpy.ops.mesh.fractal_surface_add(
-        base='PLATE', method='FBM', resolution=40)),
     ("lsystem gosper", lambda: bpy.ops.curve.lsystem_add(
         kind='GOSPER')),
     ("lsystem bush3d", lambda: bpy.ops.curve.lsystem_add(

@@ -35,7 +35,6 @@ _MODULE_NAMES = [
     'sponge_generator',
     'mandelbulb_generator',
     'snowflake_generator',
-    'fractal_surface_generator',
     'l_system_generator',
     'turtle_curve_generator',
     'inflorescence_generator',
@@ -230,7 +229,6 @@ class VIEW3D_MT_math_art_fractals(bpy.types.Menu):
         _op(lay, "mesh.sponge_add", icon='MESH_CUBE')
         _op(lay, "mesh.mandelbulb_add", icon='META_BALL')
         _op(lay, "mesh.snowflake_add", icon='FREEZE')
-        _op(lay, "mesh.fractal_surface_add", icon='RNDCURVE')
         _op(lay, "mesh.apollonian_add", icon='MESH_CIRCLE')
         _op(lay, "mesh.fractal_polyhedron_add",
             icon='OUTLINER_OB_POINTCLOUD')
