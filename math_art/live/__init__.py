@@ -116,6 +116,15 @@ if _IN_BLENDER:
                     seen[idname] = cls
         return seen
 
+    class MathArtGroupMember(bpy.types.PropertyGroup):
+        """One companion object of a multi-object build.
+
+        An object POINTER, not a name: Blender clears it when the object
+        is deleted and follows it when the object is renamed, so a group
+        stays correct through both without any bookkeeping here.
+        """
+        obj: bpy.props.PointerProperty(type=bpy.types.Object)
+
     def _container_class():
         """The settings block stored on every Math Art object.
 
@@ -138,6 +147,15 @@ if _IN_BLENDER:
             'n_created': bpy.props.IntProperty(default=1),
             'built_elements': bpy.props.IntProperty(default=0),
             'built_faces': bpy.props.IntProperty(default=0),
+            # A generator that builds several objects at once records
+            # the companions here, on the root that owns the settings...
+            'members': bpy.props.CollectionProperty(
+                type=MathArtGroupMember),
+            # ...and each companion points back, so selecting one of
+            # them finds the settings that made it.
+            'group_root': bpy.props.PointerProperty(
+                type=bpy.types.Object,
+                description="The Math Art object this one is part of"),
         }
         for info in GENERATORS.values():
             annotations[info.slug] = bpy.props.PointerProperty(
@@ -153,6 +171,8 @@ if _IN_BLENDER:
         are what everything here is derived from.
         """
         uninstall()
+        bpy.utils.register_class(MathArtGroupMember)
+        _REGISTERED.append(MathArtGroupMember)
         for idname, cls in sorted(_operator_classes(modules).items()):
             if not is_generator(cls):
                 continue

@@ -20,11 +20,26 @@ except ImportError:
 
 try:
     from . import build, clone
-    from .registry import settings_for_object
+    from .registry import root_for_object, settings_for_object
 except ImportError:                     # flat import outside the package
     import build
     import clone
-    from registry import settings_for_object
+    from registry import root_for_object, settings_for_object
+
+
+def target(context):
+    """(root, info, settings) for whatever is selected, or (None,)*3.
+
+    Selecting any piece of a multi-object build edits that build, so
+    everything the panel offers resolves to the group's root first.
+    """
+    root = root_for_object(getattr(context, 'active_object', None))
+    if root is None:
+        return None, None, None
+    info, pg = settings_for_object(root)
+    if info is None or pg is None:
+        return None, None, None
+    return root, info, pg
 
 
 if _IN_BLENDER:
@@ -37,11 +52,10 @@ if _IN_BLENDER:
 
         @classmethod
         def poll(cls, context):
-            info, _pg = settings_for_object(context.active_object)
-            return info is not None
+            return target(context)[0] is not None
 
         def execute(self, context):
-            obj = context.active_object
+            obj, _info, _pg = target(context)
             try:
                 built = build.rebuild(obj, context)
             except build.LiveError as exc:
@@ -61,12 +75,10 @@ if _IN_BLENDER:
 
         @classmethod
         def poll(cls, context):
-            info, _pg = settings_for_object(context.active_object)
-            return info is not None
+            return target(context)[0] is not None
 
         def execute(self, context):
-            obj = context.active_object
-            _info, pg = settings_for_object(obj)
+            obj, _info, pg = target(context)
             # One rebuild at the end, not one per property: resetting a
             # hundred settings would otherwise be a hundred builds.
             build._BUILDING[0] = True
@@ -92,17 +104,21 @@ if _IN_BLENDER:
 
         @classmethod
         def poll(cls, context):
-            info, _pg = settings_for_object(context.active_object)
-            return info is not None
+            return target(context)[0] is not None
 
         def execute(self, context):
-            settings = context.active_object.math_art
+            obj = target(context)[0]
+            settings = obj.math_art
             # The settings themselves are left in place: re-attaching is
             # then a matter of restoring one name, and nothing about the
             # object the user can see has changed.
             settings.generator = ''
+            for entry in settings.members:
+                if entry.obj is not None:
+                    entry.obj.math_art.group_root = None
+            settings.members.clear()
             self.report({'INFO'}, "%s is no longer linked to a generator"
-                        % context.active_object.name)
+                        % obj.name)
             return {'FINISHED'}
 
     class VIEW3D_PT_math_art_object(bpy.types.Panel):
@@ -115,45 +131,40 @@ if _IN_BLENDER:
 
         @classmethod
         def poll(cls, context):
-            info, pg = settings_for_object(context.active_object)
-            return info is not None and pg is not None
+            return target(context)[0] is not None
 
         def draw_header(self, context):
-            info, _pg = settings_for_object(context.active_object)
-            if info is not None:
-                self.layout.label(icon='MATSHADERBALL')
+            self.layout.label(icon='MATSHADERBALL')
 
         def draw(self, context):
             lay = self.layout
-            obj = context.active_object
-            info, pg = settings_for_object(obj)
+            obj, info, pg = target(context)
             settings = obj.math_art
 
             title = lay.row()
             title.label(text=info.label)
 
-            multi = settings.n_created > 1
+            # Selecting a companion edits the assembly it belongs to, so
+            # say which object is actually being edited rather than
+            # leaving the panel looking like it belongs to the piece.
+            if obj is not context.active_object:
+                lay.label(text="Part of %s" % obj.name, icon='LINKED')
+
             stale = build.is_stale(obj)
 
             row = lay.row(align=True)
-            sub = row.row(align=True)
-            sub.enabled = not multi
-            sub.prop(settings, 'autobuild', toggle=True,
+            row.prop(settings, 'autobuild', toggle=True,
                      icon='AUTO' if settings.autobuild else 'FILE_REFRESH')
             act = row.row(align=True)
-            act.enabled = not multi
             act.alert = stale
             act.scale_y = 1.3 if stale else 1.0
             act.operator("math_art.rebuild", icon='FILE_REFRESH',
                          text="Rebuild *" if stale else "Rebuild")
 
-            if multi:
-                note = lay.column(align=True)
-                note.label(text="Builds %d objects at once"
-                                % settings.n_created, icon='INFO')
-                note.label(text="Editing those in place is not supported "
-                                "yet")
-            elif stale and not settings.autobuild:
+            if settings.n_created > 1:
+                lay.label(text="Builds %d objects" % settings.n_created,
+                          icon='OUTLINER_OB_GROUP_INSTANCE')
+            if stale and not settings.autobuild:
                 lay.label(text="Settings changed since the last build",
                           icon='INFO')
 

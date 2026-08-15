@@ -52,6 +52,31 @@ def info_for_object(obj):
     return GENERATORS.get(settings.generator)
 
 
+def root_for_object(obj):
+    """The Math Art object whose settings govern `obj`, or None.
+
+    Usually `obj` itself.  For one of the companion objects of a
+    multi-object build -- a single bubble of a bubble cluster, one plane
+    of a symmetric sculpture -- it is the root that build hangs off, so
+    clicking any piece of an assembly finds the settings that made it
+    rather than an empty tab.
+    """
+    if obj is None:
+        return None
+    settings = getattr(obj, 'math_art', None)
+    if settings is None:
+        return None
+    if settings.generator:
+        return obj
+    root = getattr(settings, 'group_root', None)
+    if root is None or root is obj:
+        return None
+    root_settings = getattr(root, 'math_art', None)
+    if root_settings is None or not root_settings.generator:
+        return None
+    return root
+
+
 def settings_for_object(obj):
     """(GenInfo, settings group) for an object, or (None, None).
 

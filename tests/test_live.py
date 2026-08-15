@@ -22,6 +22,7 @@ import sys
 import traceback
 
 import bpy
+from mathutils import Vector
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJ)
@@ -29,6 +30,7 @@ import math_art                                          # noqa: E402
 from math_art import live                                # noqa: E402
 from math_art.live import build, clone                   # noqa: E402
 from math_art.live.registry import (GENERATORS,          # noqa: E402
+                                    root_for_object,
                                     settings_for_object)
 
 math_art.register()
@@ -113,13 +115,72 @@ def _extent(obj):
         for axis in range(3) for fn in (min, max))
 
 
-def _shape(obj):
-    """Element counts plus the measured extent.
+def _group(root):
+    """A build's root plus every companion it hangs off, live only."""
+    objects = [root]
+    for entry in root.math_art.members:
+        member = entry.obj
+        if member is None:
+            continue
+        try:
+            member.name
+        except ReferenceError:
+            continue
+        objects.append(member)
+    return objects
 
-    Counts alone are a weak comparison: a rebuild that used the wrong
-    parameter can easily land on the same vertex count as the right one.
+
+def _points_in_root_space(root, objects):
+    """Every point of a group, expressed relative to its root.
+
+    Root-relative, because a rebuilt group sits wherever the object the
+    user was editing sits while a freshly added one lands on the 3D
+    cursor.  Comparing world coordinates would only measure that
+    difference; comparing root-relative ones measures the shape, which
+    is what has to match.
+
+    The view layer is updated first because `matrix_world` -- like
+    `bound_box` -- is depsgraph-evaluated.  Re-parenting a companion
+    leaves the cached value behind until something asks the depsgraph to
+    catch up, which in background mode nothing ever does: every bubble
+    of a rebuilt cluster reads as sitting at the origin while its local
+    transform is perfectly correct.
     """
-    return _counts(obj), _extent(obj)
+    bpy.context.view_layer.update()
+    to_root = root.matrix_world.inverted()
+    points = []
+    for obj in objects:
+        matrix = to_root @ obj.matrix_world
+        local = []
+        if obj.type == 'MESH' and obj.data.vertices:
+            flat = [0.0] * (3 * len(obj.data.vertices))
+            obj.data.vertices.foreach_get('co', flat)
+            local = list(zip(flat[0::3], flat[1::3], flat[2::3]))
+        elif obj.type == 'CURVE':
+            for spline in obj.data.splines:
+                local.extend(tuple(p.co)[:3] for p in spline.bezier_points)
+                local.extend(tuple(p.co)[:3] for p in spline.points)
+        points.extend(matrix @ Vector(p) for p in local)
+    return points
+
+
+def _shape(root):
+    """What a build produced: per-object counts and the group's extent.
+
+    For a single-object generator this is the object.  For one that
+    builds an assembly it is the whole assembly, because rebuilding
+    only the root correctly while mangling its twelve children would
+    otherwise pass.
+    """
+    objects = _group(root)
+    counts = tuple(sorted(_counts(o) for o in objects))
+    points = _points_in_root_space(root, objects)
+    if not points:
+        return (len(objects), counts), ()
+    extent = tuple(
+        round(fn(p[axis] for p in points), 4)
+        for axis in range(3) for fn in (min, max))
+    return (len(objects), counts), extent
 
 
 class FakeLayout:
@@ -179,15 +240,24 @@ for idname, info in sorted(GENERATORS.items()):
         skips.append((idname, "add returned %s" % result))
         continue
 
-    obj = bpy.context.view_layer.objects.active
-    if obj is None:
+    active = bpy.context.view_layer.objects.active
+    if active is None:
         fails.append((idname, "nothing active after the add"))
         continue
 
-    # 1. the settings were recorded
+    # 1. the settings were recorded -- on the group's ROOT, which is not
+    #    always what the generator left active.  Bubble Cluster leaves a
+    #    bubble active while the settings belong to the Empty the twelve
+    #    of them hang off, and resolving that is exactly what makes
+    #    clicking one bubble show the cluster's panel.
+    obj = root_for_object(active)
+    if obj is None:
+        fails.append((idname, "settings were not recorded on %r, and it "
+                              "resolves to no group root" % active.name))
+        continue
     got, pg = settings_for_object(obj)
     if got is None or pg is None:
-        fails.append((idname, "settings were not recorded on %r"
+        fails.append((idname, "no settings on the resolved root %r"
                       % obj.name))
         continue
     if got.idname != idname:
@@ -211,11 +281,14 @@ for idname, info in sorted(GENERATORS.items()):
             fails.append((idname, "draw produced no controls"))
             continue
 
-    multi = obj.math_art.n_created > 1
-    if multi:
-        skips.append((idname, "builds %d objects (a later phase)"
-                      % obj.math_art.n_created))
-        continue
+    group_size = obj.math_art.n_created
+    # Every companion must point back at the root, or selecting one of
+    # them in the viewport finds no settings.
+    for entry in obj.math_art.members:
+        if entry.obj is not None and root_for_object(entry.obj) is not obj:
+            fails.append((idname, "companion %r does not resolve to its "
+                                  "root" % entry.obj.name))
+            break
 
     # 3a. Auto Update, which the generator's measured speed switched on
     #     for anything fast enough, must rebuild without being asked.
@@ -276,9 +349,9 @@ for idname, info in sorted(GENERATORS.items()):
     if build.is_stale(rebuilt):
         fails.append((idname, "still stale after a rebuild"))
         continue
-    live_counts = _counts(rebuilt)
     live_shape = _shape(rebuilt)
-    if live_counts == (0, 0):
+    live_counts = _counts(rebuilt)
+    if live_counts == (0, 0) and len(_group(rebuilt)) == 1:
         fails.append((idname, "rebuild produced empty geometry"))
         continue
 
@@ -304,13 +377,24 @@ for idname, info in sorted(GENERATORS.items()):
         skips.append((idname, "could not re-run for comparison: %s"
                       % exc))
         continue
-    fresh = bpy.context.view_layer.objects.active
+    # The comparison run's root is resolved the same way the first one
+    # was: what the generator leaves active is not always the root of
+    # what it built.  Measuring from the active object instead would
+    # compare a whole rebuilt cluster against one of its bubbles.
+    fresh = root_for_object(bpy.context.view_layer.objects.active)
+    if fresh is None:
+        fails.append((idname, "the comparison run recorded no settings"))
+        continue
+    # No reading anything off `rebuilt` past this point: the reset above
+    # freed it.  `live_shape` was measured while it was still alive, and
+    # already carries the group size and per-object counts.
     fresh_shape = _shape(fresh)
     if fresh_shape[0] != live_shape[0]:
         fails.append((idname,
                       "rebuild differs from a fresh %s=%r run: "
-                      "live %s vs fresh %s"
-                      % (name, new, live_shape[0], fresh_shape[0])))
+                      "live %d object(s) %s vs fresh %d object(s) %s"
+                      % (name, new, live_shape[0][0], live_shape[0][1],
+                         fresh_shape[0][0], fresh_shape[0][1])))
         continue
     if fresh_shape[1] != live_shape[1]:
         fails.append((idname,
@@ -319,8 +403,8 @@ for idname, info in sorted(GENERATORS.items()):
         continue
 
     checked += 1
-    print("OK   %-42s %s %r->%r  %s" % (idname, name, old, new,
-                                        live_counts))
+    print("OK   %-42s %s %r->%r  %d object(s) %s"
+          % (idname, name, old, new, live_shape[0][0], live_counts))
 
 print("\n" + "=" * 64)
 for idname, why in skips:

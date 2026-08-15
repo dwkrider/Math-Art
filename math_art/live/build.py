@@ -49,6 +49,37 @@ class LiveError(Exception):
     """A rebuild could not be completed; the old geometry is untouched."""
 
 
+def choose_root(made, active):
+    """Which of the objects a generator made is THE object.
+
+    STRUCTURE decides, and the active object only breaks ties.  It is
+    tempting to trust what the generator left active, but that is not
+    always the assembly's root: Bubble Cluster parents twelve bubbles to
+    an Empty and leaves the FIRST BUBBLE active.  Anchoring the group on
+    that bubble makes the Empty a mere companion, so the next rebuild
+    deletes it as part of the previous generation and leaves the root
+    parented to nothing -- the cluster comes apart.
+
+    So: a candidate is an object no other member of the same build owns.
+    Among candidates the active one wins, because a generator that makes
+    several independent objects (a curve and its mesh, say) really has
+    said which one it considers primary.
+
+    Both the first record and every later rebuild go through here, so
+    the anchor cannot drift from one build to the next.
+    """
+    if not made:
+        return None
+    members = set(made)
+    candidates = [obj for obj in made
+                  if obj.parent is None or obj.parent not in members]
+    if not candidates:                  # a cycle: no structural answer
+        candidates = list(made)
+    if active is not None and active in candidates:
+        return active
+    return candidates[0]
+
+
 # Set while a rebuild is running.  Rebuilding writes settings back (a
 # generator's `execute` assigns to `properties.location`, and preset
 # callbacks assign to their siblings), and every one of those writes
@@ -157,7 +188,12 @@ if _IN_BLENDER:
     def _transplant(obj, src, settings):
         """Move the scratch build's data onto the existing object."""
         old_data = obj.data
-        obj.data = src.data
+        if src.data is not None:
+            obj.data = src.data
+        # An Empty -- which is what a generator that lays its pieces out
+        # as separate objects uses for a root -- holds no data at all,
+        # and its `data` is read-only.  There is nothing to move; the
+        # group hanging off it is the whole of the rebuild.
 
         # Modifiers the generator itself added are part of its output and
         # have to be refreshed; anything the user added afterwards is
@@ -206,6 +242,73 @@ if _IN_BLENDER:
             src.matrix_parent_inverse = parent_inverse
         src.matrix_world = matrix
         return src, released
+
+    def _group_members(root):
+        """The companion objects a previous build left under `root`.
+
+        Read through object POINTERS rather than by name: Blender clears
+        a pointer when its object is deleted and follows it when the
+        object is renamed, so a group survives both without this module
+        having to notice either.
+        """
+        members = []
+        for entry in getattr(root.math_art, 'members', ()):
+            member = entry.obj
+            if member is None:
+                continue                    # deleted since the last build
+            try:
+                member.name
+            except ReferenceError:
+                continue
+            members.append(member)
+        return members
+
+    def _record_members(root, companions):
+        """Note the group a build produced, on the root and the members."""
+        settings = root.math_art
+        settings.members.clear()
+        for companion in companions:
+            settings.members.add().obj = companion
+            # The back-pointer is what lets someone click a bubble in a
+            # bubble cluster and get the cluster's settings, instead of
+            # an empty tab and no way to tell what made it.
+            companion.math_art.group_root = root
+        settings.n_created = len(companions) + 1
+
+    def _adopt(built, src, companions, src_matrix):
+        """Move a scratch build's companions onto the kept object.
+
+        Two things have to be true afterwards: the companions hang off
+        the object the user has been editing, and they sit where that
+        object is rather than where the scratch build was made.
+
+        Anything parented to the scratch root gets re-parented, which
+        settles its position on its own -- a local transform against a
+        new parent is exactly the offset it already had.  Anything
+        unparented has to be moved bodily by the difference between the
+        two roots.  Anything parented to another companion is already
+        correct, because that companion is being handled too.
+        """
+        if built is src:                    # replacement: already right
+            delta = None
+        else:
+            delta = built.matrix_world @ src_matrix.inverted()
+        collections = list(built.users_collection)
+        for companion in companions:
+            if companion.parent is src and built is not src:
+                basis = companion.matrix_basis.copy()
+                inverse = companion.matrix_parent_inverse.copy()
+                companion.parent = built
+                companion.matrix_parent_inverse = inverse
+                companion.matrix_basis = basis
+            elif companion.parent is None and delta is not None:
+                companion.matrix_world = delta @ companion.matrix_world
+            for coll in list(companion.users_collection):
+                if coll not in collections:
+                    coll.objects.unlink(companion)
+            for coll in collections:
+                if companion.name not in coll.objects:
+                    coll.objects.link(companion)
 
     def _geometry_counts(obj):
         """(elements, faces) for whatever kind of data the object holds."""
@@ -286,14 +389,11 @@ if _IN_BLENDER:
             if not result or 'FINISHED' not in result or not made:
                 _purge(before, keep=set())
                 raise LiveError("the generator produced no geometry")
-            if len(made) > 1:
-                _purge(before, keep=set())
-                settings.n_created = len(made)
-                raise LiveError(
-                    "%s builds %d objects at once; editing those in place "
-                    "is not supported yet" % (info.label, len(made)))
 
-            src = made[0]
+            # Which of the new objects is THE object is decided the same
+            # way it was when the settings were first recorded, so the
+            # anchor does not wander between builds.
+            src = choose_root(made, view_layer.objects.active)
             if src.type != obj.type and not allow_replace:
                 # Read the type BEFORE purging: the purge frees `src`,
                 # and reaching for an attribute of a freed object to
@@ -304,17 +404,45 @@ if _IN_BLENDER:
                 raise LiveError(
                     "changing the output to %s replaces the object; use "
                     "Rebuild" % became)
+
+            companions = [o for o in made if o is not src]
+            # Where the scratch build put its root, needed to move any
+            # unparented companion onto the object being kept.
+            src_matrix = src.matrix_world.copy()
+            superseded = _group_members(obj)
+
             if src.type == obj.type:
                 released = _transplant(obj, src, settings)
-                bpy.data.objects.remove(src)
                 built = obj
+                # Re-parent BEFORE the scratch root is freed, or its
+                # children lose their parent as it goes.
+                _adopt(built, src, companions, src_matrix)
+                bpy.data.objects.remove(src)
             else:
                 built, released = _replace(obj, src, info, settings,
                                            context)
-            keep = {built, built.data}
-            keep |= set(built.data.materials or [])
-            _purge(before, keep=keep, discard=(released,))
+                _adopt(built, src, companions, src_matrix)
 
+            # The previous generation of companions goes only now that
+            # the new one is safely in place.
+            discard = [released]
+            for member in superseded:
+                discard.append(getattr(member, 'data', None))
+                try:
+                    bpy.data.objects.remove(member)
+                except (RuntimeError, ReferenceError):
+                    pass
+
+            keep = {built} | set(companions)
+            for kept in list(keep):
+                data = getattr(kept, 'data', None)
+                if data is None:
+                    continue
+                keep.add(data)
+                keep |= set(getattr(data, 'materials', None) or [])
+            _purge(before, keep=keep, discard=tuple(discard))
+
+            _record_members(built, companions)
             record_build(built, info, built.math_art, seconds)
             # The object's evaluated state -- its bounds, and any
             # modifier reading its geometry -- is cached until the
@@ -376,7 +504,15 @@ if _IN_BLENDER:
 
 
 def _selftest():
-    """The parts that hold without Blender: the staleness contract."""
+    """Root choice, which decides what a group hangs off."""
+    class FakeObject:
+        def __init__(self, name, parent=None):
+            self.name = name
+            self.parent = parent
+
+        def __repr__(self):
+            return self.name
+
     ok = AUTO_LIMIT_SECONDS > 0.0
     # A guard that never clears would silently disable every rebuild
     # after the first failure, so the flag has to start down.
@@ -385,5 +521,38 @@ def _selftest():
           % AUTO_LIMIT_SECONDS)
     err = LiveError("no geometry")
     ok = ok and isinstance(err, Exception) and str(err) == "no geometry"
+
+    empty = FakeObject('Bubbles')
+    bubbles = [FakeObject('Bubble %03d' % i, empty) for i in range(1, 13)]
+    cluster = bubbles + [empty]
+
+    # THE regression that motivated the structural rule: Bubble Cluster
+    # leaves a CHILD active.  Trusting that made the parent Empty a
+    # companion, and the next rebuild deleted it and orphaned the root.
+    ok = ok and choose_root(cluster, bubbles[0]) is empty
+    print("live.build: a child left active does not become the root")
+
+    ok = ok and choose_root(cluster, None) is empty
+    ok = ok and choose_root(cluster, FakeObject('Cube')) is empty
+    print("live.build: an unrelated active object is ignored")
+
+    # Independent objects: no structure to go on, so the generator's
+    # choice of active object is the answer.
+    curve = FakeObject('Raceme')
+    mesh = FakeObject('Florets')
+    ok = ok and choose_root([curve, mesh], mesh) is mesh
+    ok = ok and choose_root([curve, mesh], None) is curve
+    print("live.build: with no hierarchy the active object decides")
+
+    single = FakeObject('Torus Knot')
+    ok = ok and choose_root([single], None) is single
+    ok = ok and choose_root([], None) is None
+
+    # A parent cycle has no structural answer; it must still return one
+    # of the objects rather than raise or hand back None.
+    a = FakeObject('A')
+    b = FakeObject('B', a)
+    a.parent = b
+    ok = ok and choose_root([a, b], None) in (a, b)
     print("RESULT:", "OK" if ok else "BAD")
     assert ok

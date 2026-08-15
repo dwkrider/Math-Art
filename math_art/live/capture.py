@@ -23,27 +23,10 @@ except ImportError:
 
 try:
     from . import clone
-    from .build import AUTO_LIMIT_SECONDS, is_building
+    from .build import AUTO_LIMIT_SECONDS, choose_root, is_building
 except ImportError:                     # flat import outside the package
     import clone
-    from build import AUTO_LIMIT_SECONDS, is_building
-
-
-def choose_root(made, active):
-    """Which of the objects a generator made is THE object.
-
-    The generator has already said so by leaving it active, which is
-    what the Add menu relies on too.  Failing that, an object nothing
-    else is parented to is the assembly's root.
-    """
-    if not made:
-        return None
-    if active is not None and active in made:
-        return active
-    for obj in made:
-        if obj.parent is None:
-            return obj
-    return made[0]
+    from build import AUTO_LIMIT_SECONDS, choose_root, is_building
 
 
 if _IN_BLENDER:
@@ -64,14 +47,17 @@ if _IN_BLENDER:
             return
         clone.copy_values(op, pg)
         settings.generator = info.idname
-        settings.n_created = len(made)
         settings.gen_modifiers = '\x1f'.join(m.name for m in root.modifiers)
+        try:
+            from .build import _record_members
+        except ImportError:
+            from build import _record_members
+        _record_members(root, [o for o in made if o is not root])
         # Auto Update is offered on the strength of what this generator
         # actually cost on this machine, not a guess: a build that takes
         # two seconds is a button, a build that takes twenty
         # milliseconds is a slider.
-        settings.autobuild = (seconds < AUTO_LIMIT_SECONDS
-                              and len(made) == 1)
+        settings.autobuild = seconds < AUTO_LIMIT_SECONDS
         try:
             from .build import record_build
         except ImportError:
@@ -124,35 +110,24 @@ if _IN_BLENDER:
 
 
 def _selftest():
-    """Root choice, which decides which object owns the settings."""
-    class FakeObject:
-        def __init__(self, name, parent=None):
-            self.name = name
-            self.parent = parent
+    """That recording and rebuilding agree on what a group hangs off.
 
-        def __repr__(self):
-            return self.name
+    `choose_root` used to have a copy here as well as in `build`, and
+    two copies is exactly how the object that OWNS the settings comes to
+    differ from the object a rebuild treats as the root -- after which a
+    rebuild quietly rearranges the group.  The rule is tested where it
+    lives, in `live.build`; what matters here is that this module uses
+    that one and has not grown a second.
+    """
+    try:
+        from . import build as build_module
+    except ImportError:
+        import build as build_module
 
-    parent = FakeObject('Bubbles')
-    children = [FakeObject('Bubble %d' % i, parent) for i in range(3)]
-    made = children + [parent]
+    ok = choose_root is build_module.choose_root
+    print("live.capture: recording and rebuilding share one root rule")
 
-    ok = choose_root(made, parent) is parent
-    print("live.capture: the generator's active object wins")
-
-    # No active object: the one nothing hangs off is the root, even when
-    # the children were created first.
-    ok = ok and choose_root(made, None) is parent
-    print("live.capture: otherwise the unparented object is the root")
-
-    # An active object that belongs to something else must not be
-    # mistaken for this build's output.
-    outsider = FakeObject('Cube')
-    ok = ok and choose_root(made, outsider) is parent
-    print("live.capture: an unrelated active object is ignored")
-
-    ok = ok and choose_root([], None) is None
-    single = FakeObject('Torus Knot')
-    ok = ok and choose_root([single], None) is single
+    for name in ('record', 'install_capture', 'remove_capture'):
+        ok = ok and (not _IN_BLENDER or name in globals())
     print("RESULT:", "OK" if ok else "BAD")
     assert ok
