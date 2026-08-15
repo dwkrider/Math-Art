@@ -125,6 +125,116 @@ def apply_fit(verts, mode='FOOTPRINT', scale=1.0, span=2.0):
     return v * (s * float(scale))
 
 
+def pierce(mask, h, threshold=0.0, invert=False, min_island=8):
+    """Open holes through the panel wherever the field falls below a level.
+
+    Piercing needs no new meshing: `slab` walls whatever boundary the mask
+    has, and the boundary of a mask with holes in it includes those holes, so
+    removing samples is the whole operation.  The result is watertight for the
+    same reason the unpierced slab is.
+
+    `min_island` discards holes smaller than that many samples.  A threshold
+    cutting near a noisy field's mean opens a scatter of one- and two-sample
+    pinholes that no process can make -- too fine to mill, too fine to print,
+    and on screen just dirt.
+    """
+    m = np.asarray(mask, dtype=bool)
+    z = np.asarray(h, dtype=float)
+    hole = (z > float(threshold)) if invert else (z < float(threshold))
+    hole &= m
+    if int(min_island) > 1 and hole.any():
+        hole = _drop_small(hole, int(min_island))
+    return _break_pinches(m & ~hole)
+
+
+def quad_mask(keep):
+    """Which cells become faces: those whose four corner samples are kept."""
+    k = np.asarray(keep, dtype=bool)
+    return k[:-1, :-1] & k[:-1, 1:] & k[1:, :-1] & k[1:, 1:]
+
+
+def _count_pinches(keep):
+    """Diagonal pinches, counted between FACES rather than between samples.
+
+    This distinction is the whole of it.  A face exists where all four corner
+    samples are kept, so it is faces that can touch at a corner and faces
+    whose walls then share an edge four ways.  Counting pinches in the sample
+    mask instead reports zero on a mask riddled with them.
+    """
+    q = quad_mask(keep)
+    a = q[:-1, :-1]
+    b = q[1:, 1:]
+    c = q[:-1, 1:]
+    d = q[1:, :-1]
+    return int(((a & b & ~c & ~d) | (c & d & ~a & ~b)).sum())
+
+
+def _break_pinches(keep):
+    """Fill the diagonal pinches a threshold leaves behind.
+
+    Where two kept cells meet only at a corner -- a 2x2 block holding one
+    diagonal pair -- the walls built around the two holes meet along a single
+    edge, and that edge ends up shared by four faces instead of two.  The
+    result passes a watertightness check (no boundary edge is unpaired) while
+    being **non-manifold**, so it is not a solid: no printer or mill can make
+    material that touches itself along a line of zero thickness.
+
+    Filling one of the two missing cells removes the pinch and costs a single
+    sample of opening.  Keeping material rather than removing it is the safer
+    direction: the alternative disconnects the two kept cells, which can
+    orphan a whole region of the panel.
+    """
+    k = np.array(keep, dtype=bool)
+    # Filling one pinch can create another, so iterate to a fixed point.  Each
+    # pass strictly adds samples and the grid is finite, so it terminates; the
+    # cap is a backstop, not the mechanism.
+    for _ in range(64):
+        q = quad_mask(k)
+        a = q[:-1, :-1]          # face at (j, i)
+        b = q[1:, 1:]            # face at (j+1, i+1)
+        c = q[:-1, 1:]           # face at (j, i+1)
+        d = q[1:, :-1]           # face at (j+1, i)
+        # The two diagonal orientations need different faces filled: filling
+        # the same one for both silently fixes only half of them.
+        fall = a & b & ~c & ~d   # faces on the main diagonal
+        rise = c & d & ~a & ~b   # faces on the anti-diagonal
+        if not (fall.any() or rise.any()):
+            break
+        # Realising a face means keeping all four of its corner samples.
+        for sel, dj, di in ((fall, 0, 1), (rise, 0, 0)):
+            jj, ii = np.nonzero(sel)
+            for oj in (0, 1):
+                for oi in (0, 1):
+                    k[jj + dj + oj, ii + di + oi] = True
+    return k
+
+
+def _drop_small(flag, least):
+    """Clear connected runs of `flag` smaller than `least` samples."""
+    out = np.array(flag, dtype=bool)
+    seen = np.zeros(out.shape, dtype=bool)
+    ny, nx = out.shape
+    for j0 in range(ny):
+        for i0 in range(nx):
+            if not out[j0, i0] or seen[j0, i0]:
+                continue
+            stack = [(j0, i0)]
+            seen[j0, i0] = True
+            cells = []
+            while stack:
+                j, i = stack.pop()
+                cells.append((j, i))
+                for dj, di in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                    a, b = j + dj, i + di
+                    if 0 <= a < ny and 0 <= b < nx and out[a, b]                             and not seen[a, b]:
+                        seen[a, b] = True
+                        stack.append((a, b))
+            if len(cells) < least:
+                for j, i in cells:
+                    out[j, i] = False
+    return out
+
+
 def edge_report(faces):
     """(open_edges, nonmanifold_edges, oriented) for a face list."""
     from collections import Counter
@@ -193,6 +303,46 @@ def _selftest():
           "CUBE width %.4f->%.4f" % (fw1, fw2, cw1, cw2))
     ok = ok and abs(fw1 - fw2) < 1e-9        # footprint is depth-independent
     ok = ok and cw2 < cw1 - 1e-3             # cube shrinks the panel
+
+    # Piercing opens holes right through, and the result must still be a
+    # solid: `slab` walls whatever boundary the mask has, and a hole's rim is
+    # part of that boundary, so a pierced panel is watertight for exactly the
+    # same reason an unpierced one is.
+    Xp, Yp, ip = _grid.make_grid(width=2.0, aspect=1.0, resolution=97)
+    field = np.sin(4.0 * Xp) * np.cos(4.0 * Yp)
+    full = np.ones(Xp.shape, dtype=bool)
+    for thr in (-0.3, 0.0, 0.3):
+        pm = pierce(full, field, threshold=thr, min_island=6)
+        vv, ff = slab(Xp, Yp, 0.1 * field, pm, 0.1)
+        op, nm, ori = edge_report(ff)
+        print("mesh: pierced at %+.1f -> %.0f%% open, %d verts, open edges %d,"
+              " non-manifold %d, oriented %s"
+              % (thr, 100 * (1 - pm.mean()), len(vv), op, nm, ori))
+        ok = ok and op == 0 and nm == 0 and ori
+
+    # A field with fine structure is where diagonal pinches appear, and they
+    # are the failure that LOOKS closed: no unpaired edge, but an edge shared
+    # by four faces, which is not a solid.  Noise makes plenty of them.
+    rngp = np.random.default_rng(9)
+    speckle = np.asarray(
+        [[float(v) for v in row] for row in rngp.normal(size=Xp.shape)])
+    raw = np.ones(Xp.shape, dtype=bool) & (speckle > 0.0)
+    pinched = int(_count_pinches(raw))
+    fixed = pierce(full, speckle, threshold=0.0, min_island=1)
+    _, nm2, _ = edge_report(slab(Xp, Yp, 0.1 * speckle, fixed, 0.1)[1])
+    print("mesh: speckle mask had %d diagonal pinches; after pierce %d "
+          "non-manifold edges" % (pinched, nm2))
+    ok = ok and pinched > 0 and nm2 == 0
+
+    # Pinholes are discarded: a threshold near a noisy field's mean opens a
+    # scatter of one-sample holes that nothing can manufacture.
+    rng = np.random.default_rng(4)
+    noise = rng.normal(size=Xp.shape)
+    loose = pierce(full, noise, threshold=0.0, min_island=1)
+    tidy = pierce(full, noise, threshold=0.0, min_island=12)
+    print("mesh: min_island 1 -> %.1f%% open, 12 -> %.1f%% open"
+          % (100 * (1 - loose.mean()), 100 * (1 - tidy.mean())))
+    ok = ok and (1 - tidy.mean()) < (1 - loose.mean())
 
     print("RESULT:", "OK" if ok else "BAD")
     assert ok

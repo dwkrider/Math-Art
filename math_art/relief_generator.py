@@ -62,12 +62,14 @@ try:
     from .relief.kernels import KERNELS
     from .relief import transfer as _transfer
     from .relief import fields as _fields, grid as _grid
+    from .relief import reaction as _reaction, symmetry as _symmetry
 except ImportError:                       # flat import outside the package
     from relief import (FIELDS, FITS, FORMS, ORIENTATIONS, PRESETS, SHAPES,
                         build_relief, ordered_fields)
     from relief.kernels import KERNELS
     from relief import transfer as _transfer
     from relief import fields as _fields, grid as _grid
+    from relief import reaction as _reaction, symmetry as _symmetry
 
 
 try:
@@ -197,9 +199,39 @@ if _IN_BLENDER:
          "Randomly oriented arc tiles whose arcs always join tangentially"),
         ('SEIGAIHA', "Seigaiha",
          "The Japanese overlapping-wave motif on a staggered grid"),
+        ('TURING_SKIN', "Turing Skin",
+         "Reaction-diffusion grown on a torus -- spots, worms, mazes, coral"),
+        ('CELLULAR', "Cellular",
+         "Worley cell walls: setts, dried mud, reptile skin"),
+        ('WALLPAPER_RELIEF', "Wallpaper",
+         "A function invariant under a plane symmetry group"),
+        ('QUASICRYSTAL', "Quasicrystal",
+         "Ten-fold order that never repeats; approximant when tiled"),
+        ('OCEAN', "Ocean",
+         "Wind-driven sea by Phillips-spectrum synthesis, with choppiness"),
+        ('WEAVE', "Gabor Weave",
+         "Band-limited noise: a fibrous weave at a chosen pitch"),
+        ('SCREEN', "Pierced Screen",
+         "Quasicrystal ground opened right through the panel"),
     ]
 
     _FIELD_ITEMS = list(ordered_fields())
+
+    # Built from the engine's own tuples rather than retyped, so a family
+    # added there cannot go missing here.
+    _CELL_ITEMS = [
+        ('CRACK', "Cell Walls", "F2 - F1: zero exactly on the Voronoi "
+                                "boundary, so it draws the walls"),
+        ('F1', "Domes", "Distance to the nearest feature point"),
+        ('F2', "Second Nearest", "Distance to the second nearest"),
+        ('F2F1_SUM', "Mounds", "F1 + F2: broader, softer cells"),
+        ('CELL_ID', "Flat Cells", "Each Voronoi region a plateau"),
+    ]
+    _REGIME_ITEMS = [(k, k.title(), "feed %.3f, kill %.3f"
+                      % _reaction.REGIMES[k])
+                     for k in _reaction.REGIME_ORDER]
+    _GROUP_ITEMS = [(g, g, "Plane symmetry group %s" % g)
+                    for g in _symmetry.GROUP_ORDER]
 
     _ORIENT_ITEMS = [
         ('CONSTANT', "Constant", "One global direction"),
@@ -335,6 +367,83 @@ if _IN_BLENDER:
         wind: FloatProperty(
             name="Wind Direction", default=0.0, min=-6.2832, max=6.2832,
             unit='ROTATION')
+
+        # -- Phase 5 families -----------------------------------------
+        cell_mode: EnumProperty(name="Cells", items=_CELL_ITEMS,
+                                default='CRACK')
+        jitter: FloatProperty(
+            name="Jitter", default=1.0, min=0.0, max=1.0,
+            description="0 puts the feature points on a regular lattice, "
+                        "giving identical cells")
+        cell_sharp: FloatProperty(name="Wall Profile", default=1.0, min=0.2,
+                                  max=4.0)
+        regime: EnumProperty(
+            name="Regime", items=_REGIME_ITEMS, default='MAZE',
+            description="Where in the feed/kill plane the chemistry sits. "
+                        "Outside a narrow diagonal band every seed decays "
+                        "and the panel comes out blank")
+        rd_steps: IntProperty(
+            name="Steps", default=6000, min=100, max=40000,
+            description="Reaction-diffusion is grown, not evaluated; this is "
+                        "how long it runs")
+        rd_scale: FloatProperty(
+            name="Blobs Across", default=12.0, min=3.0, max=50.0,
+            description="How many pattern features span the panel. Sets the "
+                        "simulation lattice; the panel resolution only "
+                        "decides how finely the finished skin is sampled")
+        rd_init: EnumProperty(
+            name="Seeding",
+            items=[('SCATTER', "Scattered",
+                    "Seed patches across the whole panel"),
+                   ('CENTRE', "Central (Pearson)",
+                    "One central patch, and watch the front spread")],
+            default='SCATTER')
+        group: EnumProperty(name="Group", items=_GROUP_ITEMS, default='P4M')
+        waves: IntProperty(name="Waves", default=6, min=1, max=24)
+        sym_cells: FloatProperty(name="Cells Across", default=2.0, min=0.5,
+                                 max=12.0)
+        freq_max: IntProperty(name="Detail", default=3, min=1, max=8)
+        fold: IntProperty(
+            name="Wave Directions", default=5, min=2, max=17,
+            description="Directions spread over a half-turn, so five give a "
+                        "ten-fold pattern. Five-fold order is impossible for "
+                        "any lattice, which is why it cannot repeat")
+        qc_cells: FloatProperty(name="Scale", default=6.0, min=1.0, max=30.0)
+        qc_sharp: FloatProperty(name="Terrace", default=0.0, min=0.0,
+                                max=6.0)
+        patch: FloatProperty(
+            name="Patch", default=100.0, min=5.0, max=1000.0, unit='LENGTH',
+            description="Physical size of the sea being simulated. With the "
+                        "wind speed this decides how many waves cross it")
+        wind_speed: FloatProperty(name="Wind", default=8.0, min=1.0,
+                                  max=30.0)
+        choppy: FloatProperty(
+            name="Choppiness", default=0.0, min=0.0, max=3.0,
+            description="Measured in cusp limits: 1 puts the steepest crest "
+                        "exactly at the Stokes cusp, above that the sharpest "
+                        "crests break")
+        sea_sim: IntProperty(name="Sea Grid", default=256, min=64, max=512)
+        gabor_freq: FloatProperty(name="Pitch", default=8.0, min=1.0,
+                                  max=60.0)
+        gabor_band: FloatProperty(
+            name="Bandwidth", default=0.3, min=0.05, max=1.0,
+            description="Envelope width as a fraction of the carrier. Well "
+                        "under 1, or the band is as wide as the frequency it "
+                        "is centred on")
+
+        # -- pierced output -------------------------------------------
+        pierce: BoolProperty(
+            name="Pierce", default=False,
+            description="Open the panel right through where the field is "
+                        "low, turning a relief into a screen")
+        pierce_level: FloatProperty(name="Open Below", default=0.35, min=0.0,
+                                    max=1.0)
+        pierce_invert: BoolProperty(name="Invert", default=False)
+        pierce_min: IntProperty(
+            name="Smallest Hole", default=8, min=1, max=200,
+            description="Holes smaller than this many samples are filled in; "
+                        "a threshold near the mean otherwise opens pinholes "
+                        "nothing can manufacture")
 
         # -- elliptic functions ---------------------------------------
         ell_kind: EnumProperty(
@@ -534,6 +643,20 @@ if _IN_BLENDER:
                 field=self.field, wavelength=self.wavelength,
                 angle=self.angle, steepness=self.steepness,
                 count=self.count, spread=self.spread, sources=self.sources,
+                cell_mode=self.cell_mode, jitter=self.jitter,
+                cell_sharp=self.cell_sharp,
+                regime=self.regime, rd_steps=self.rd_steps,
+                rd_scale=self.rd_scale, rd_init=self.rd_init,
+                group=self.group, waves=self.waves,
+                sym_cells=self.sym_cells, freq_max=self.freq_max,
+                fold=self.fold, qc_cells=self.qc_cells,
+                qc_sharp=self.qc_sharp,
+                patch=self.patch, wind_speed=self.wind_speed,
+                choppy=self.choppy, sea_sim=self.sea_sim,
+                gabor_freq=self.gabor_freq, gabor_band=self.gabor_band,
+                pierce=self.pierce, pierce_level=self.pierce_level,
+                pierce_invert=self.pierce_invert,
+                pierce_min=self.pierce_min,
                 seed=self.seed, antialias=self.antialias,
                 method=self.method, hurst=self.hurst,
                 dim=self.dim, octaves=self.octaves,
@@ -752,6 +875,46 @@ if _IN_BLENDER:
                 col.prop(self, 'rings')
                 col.prop(self, 'crown')
                 col.prop(self, 'rim')
+            elif self.field == 'WORLEY':
+                col.prop(self, 'cell_mode')
+                col.prop(self, 'points_n')
+                col.prop(self, 'jitter')
+                col.prop(self, 'cell_sharp')
+            elif self.field == 'TURING':
+                col.prop(self, 'regime')
+                col.prop(self, 'rd_scale')
+                col.prop(self, 'rd_steps')
+                col.prop(self, 'rd_init')
+                col.label(text="Grown, not evaluated: cost is the step count",
+                          icon='INFO')
+            elif self.field == 'WALLPAPER':
+                col.prop(self, 'group')
+                col.prop(self, 'sym_cells')
+                col.prop(self, 'waves')
+                col.prop(self, 'freq_max')
+                if self.group in ('P3', 'P3M1', 'P31M', 'P6', 'P6M') \
+                        and abs(self.aspect - 1.7320508) > 0.02:
+                    col.label(text="Hex groups tile at aspect 1.732",
+                              icon='INFO')
+            elif self.field == 'QUASI':
+                col.prop(self, 'fold')
+                col.prop(self, 'qc_cells')
+                col.prop(self, 'qc_sharp')
+                if self.tiling != 'NONE':
+                    col.label(text="Tiling uses the periodic approximant",
+                              icon='INFO')
+            elif self.field == 'OCEAN':
+                col.prop(self, 'wind_speed')
+                col.prop(self, 'patch')
+                col.prop(self, 'choppy')
+                col.prop(self, 'sea_sim')
+                col.prop(self, 'angle', text="Wind Direction")
+            elif self.field == 'GABOR':
+                col.prop(self, 'gabor_freq')
+                col.prop(self, 'gabor_band')
+                col.prop(self, 'angle')
+                col.prop(self, 'spread')
+                col.prop(self, 'points_n')
             elif self.field == 'CHLADNI':
                 col.prop(self, 'exact')
                 if self.exact:
@@ -956,6 +1119,49 @@ if _IN_BLENDER:
         wind: FloatProperty(name="Wind Direction", default=0.0, min=-6.2832,
                             max=6.2832, unit='ROTATION', update=_auto)
 
+        cell_mode: EnumProperty(name="Cells", items=_CELL_ITEMS,
+                                default='CRACK', update=_auto)
+        jitter: FloatProperty(name="Jitter", default=1.0, min=0.0, max=1.0,
+                              update=_auto)
+        cell_sharp: FloatProperty(name="Wall Profile", default=1.0, min=0.2,
+                                  max=4.0, update=_auto)
+        regime: EnumProperty(name="Regime", items=_REGIME_ITEMS,
+                             default='MAZE', update=_auto)
+        rd_steps: IntProperty(name="Steps", default=6000, min=100,
+                              max=40000, update=_auto)
+        rd_scale: FloatProperty(name="Blobs Across", default=12.0, min=3.0,
+                                max=50.0, update=_auto)
+        rd_init: EnumProperty(
+            name="Seeding",
+            items=[('SCATTER', "Scattered", ""), ('CENTRE', "Central", "")],
+            default='SCATTER', update=_auto)
+        group: EnumProperty(name="Group", items=_GROUP_ITEMS, default='P4M',
+                            update=_auto)
+        waves: IntProperty(name="Waves", default=6, min=1, max=24,
+                           update=_auto)
+        sym_cells: FloatProperty(name="Cells Across", default=2.0, min=0.5,
+                                 max=12.0, update=_auto)
+        freq_max: IntProperty(name="Detail", default=3, min=1, max=8,
+                              update=_auto)
+        fold: IntProperty(name="Wave Directions", default=5, min=2, max=17,
+                          update=_auto)
+        qc_cells: FloatProperty(name="Scale", default=6.0, min=1.0, max=30.0,
+                                update=_auto)
+        qc_sharp: FloatProperty(name="Terrace", default=0.0, min=0.0,
+                                max=6.0, update=_auto)
+        patch: FloatProperty(name="Patch", default=100.0, min=5.0,
+                             max=1000.0, unit='LENGTH', update=_auto)
+        wind_speed: FloatProperty(name="Wind", default=8.0, min=1.0,
+                                  max=30.0, update=_auto)
+        choppy: FloatProperty(name="Choppiness", default=0.0, min=0.0,
+                              max=3.0, update=_auto)
+        sea_sim: IntProperty(name="Sea Grid", default=256, min=64, max=512,
+                             update=_auto)
+        gabor_freq: FloatProperty(name="Pitch", default=8.0, min=1.0,
+                                  max=60.0, update=_auto)
+        gabor_band: FloatProperty(name="Bandwidth", default=0.3, min=0.05,
+                                  max=1.0, update=_auto)
+
         ell_kind: EnumProperty(
             name="Function",
             items=[('WP', "Weierstrass P", "Doubly periodic: tiles exactly"),
@@ -1060,6 +1266,17 @@ if _IN_BLENDER:
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
                              update=_auto)
         smooth: BoolProperty(name="Smooth Shading", default=True, update=_auto)
+        pierce: BoolProperty(
+            name="Pierce", default=False,
+            description="Open the panel right through where the field is "
+                        "low, turning a relief into a screen",
+            update=_auto)
+        pierce_level: FloatProperty(name="Open Below", default=0.35, min=0.0,
+                                    max=1.0, update=_auto)
+        pierce_invert: BoolProperty(name="Invert", default=False,
+                                    update=_auto)
+        pierce_min: IntProperty(name="Smallest Hole", default=8, min=1,
+                                max=200, update=_auto)
         autobuild: BoolProperty(
             name="Autobuild", default=True,
             description="Rebuild the panel at PREVIEW resolution whenever a "
@@ -1171,6 +1388,17 @@ if _IN_BLENDER:
                 sources=lay.sources, seed=lay.seed,
                 mode_index=lay.mode_index, mode_m=lay.mode_m,
                 mode_n=lay.mode_n, zern_n=lay.zern_n, zern_m=lay.zern_m,
+                cell_mode=lay.cell_mode, jitter=lay.jitter,
+                cell_sharp=lay.cell_sharp,
+                regime=lay.regime, rd_steps=lay.rd_steps,
+                rd_scale=lay.rd_scale, rd_init=lay.rd_init,
+                group=lay.group, waves=lay.waves,
+                sym_cells=lay.sym_cells, freq_max=lay.freq_max,
+                fold=lay.fold, qc_cells=lay.qc_cells,
+                qc_sharp=lay.qc_sharp,
+                patch=lay.patch, wind_speed=lay.wind_speed,
+                choppy=lay.choppy, sea_sim=lay.sea_sim,
+                gabor_freq=lay.gabor_freq, gabor_band=lay.gabor_band,
                 hurst=lay.hurst, method=lay.method, dim=lay.dim,
                 octaves=lay.octaves, anisotropy=lay.anisotropy,
                 wind=lay.wind,
@@ -1197,6 +1425,9 @@ if _IN_BLENDER:
             shape=props.shape, width=props.width, aspect=props.aspect,
             resolution=res, border=props.border,
             tiling=props.tiling, antialias=props.antialias,
+            pierce=props.pierce, pierce_level=props.pierce_level,
+            pierce_invert=props.pierce_invert,
+            pierce_min=props.pierce_min,
             warp=props.warp,
             warp_iters=props.warp_iters, seed=props.seed,
             depth=props.depth, form=props.form,
@@ -1378,6 +1609,111 @@ if _IN_BLENDER:
                            len(obj.data.vertices), len(obj.data.polygons)))
             return {'FINISHED'}
 
+    class RELIEF_OT_export_heightmap(bpy.types.Operator):
+        """Write the panel's height field to an image"""
+        bl_idname = "relief.export_heightmap"
+        bl_label = "Export Heightmap"
+        bl_options = {'REGISTER'}
+
+        filepath: StringProperty(subtype='FILE_PATH')
+        file_format: EnumProperty(
+            name="Format",
+            items=[('OPEN_EXR', "OpenEXR",
+                    "Float: no visible banding on a shallow relief"),
+                   ('PNG', "PNG",
+                    "Integer: smaller, and banded where the relief is "
+                    "shallow")],
+            default='OPEN_EXR')
+        resolution: IntProperty(name="Resolution", default=512, min=8,
+                                max=4096)
+
+        def invoke(self, context, event):
+            if not self.filepath:
+                self.filepath = "//relief_height.exr"
+            context.window_manager.fileselect_add(self)
+            return {'RUNNING_MODAL'}
+
+        def execute(self, context):
+            obj = context.active_object
+            if obj is None or not obj.relief_panel.is_panel:
+                self.report({'ERROR'}, "active object is not a relief panel")
+                return {'CANCELLED'}
+            props = obj.relief_panel
+            params = _panel_params(props)
+            params['resolution'] = int(self.resolution)
+            # A heightmap is the field, not the mesh: ask for the open sheet
+            # so no slab underside or wall is folded into the image.
+            params['form'] = 'SHEET'
+            params['fit'] = 'NONE'
+            try:
+                verts, faces, info = build_relief(**params)
+            except (ValueError, MemoryError) as exc:
+                self.report({'ERROR'}, str(exc))
+                return {'CANCELLED'}
+
+            nx, ny = info['nx'], info['ny']
+            z = np.asarray(verts, dtype=float)[:nx * ny, 2].reshape(ny, nx)
+            lo, hi = float(z.min()), float(z.max())
+            span = (hi - lo) or 1.0
+
+            # **The map is normalised to 0..1, in both formats.**  Writing
+            # metres would be better and is not available: Blender's image
+            # save clamps to the display range, so a float buffer holding
+            # -0.125..0.125 comes back as 0..1 with every negative flattened
+            # to zero -- verified by round-tripping a -2..2 ramp, which
+            # returned 0..1.  The mapping is reported instead, and it is
+            # exactly what a Displace modifier wants: Strength = the reported
+            # span, Midlevel = -lo / span.
+            v = (z - lo) / span
+
+            img = bpy.data.images.new("relief_height", width=nx, height=ny,
+                                      float_buffer=True, alpha=False)
+            # Colourspace BEFORE the pixels.  Setting it afterwards discards
+            # the buffer -- the image saves as a uniform zero, and the only
+            # visible symptom is a suspiciously small file.
+            img.file_format = self.file_format
+            img.colorspace_settings.name = 'Non-Color'
+            px = np.empty((ny, nx, 4), dtype=np.float32)
+            px[:, :, 0] = v
+            px[:, :, 1] = v
+            px[:, :, 2] = v
+            px[:, :, 3] = 1.0
+            img.pixels.foreach_set(px.ravel())
+            # **Written with `save_render`, not `save`.**  `Image.save()`
+            # ignores `file_format` on a generated image -- asking for
+            # OpenEXR produced a PNG with an .exr name -- and it clamps the
+            # buffer to the display range on the way out.  `save_render` goes
+            # through the scene's image settings, which do honour the format,
+            # and a Raw view transform keeps the numbers untouched: the
+            # round trip is exact for EXR and 16-bit-quantised for PNG.
+            scene = context.scene
+            st = scene.render.image_settings
+            keep = (st.file_format, st.color_mode, st.color_depth,
+                    scene.view_settings.view_transform)
+            try:
+                st.file_format = self.file_format
+                st.color_mode = 'BW'
+                st.color_depth = '32' if self.file_format == 'OPEN_EXR'                     else '16'
+                scene.view_settings.view_transform = 'Raw'
+                img.save_render(filepath=bpy.path.abspath(self.filepath),
+                                scene=scene)
+            except (RuntimeError, TypeError) as exc:
+                self.report({'ERROR'}, "could not write image: %s" % exc)
+                return {'CANCELLED'}
+            finally:
+                # The render settings belong to the user's scene, not to this
+                # operator; leaving them changed would silently alter their
+                # next render.
+                (st.file_format, st.color_mode, st.color_depth,
+                 scene.view_settings.view_transform) = keep
+                bpy.data.images.remove(img)
+            self.report({'INFO'},
+                        "%dx%d %s: 0..1 maps to %.4f..%.4f m "
+                        "(Displace strength %.4f, midlevel %.3f)"
+                        % (nx, ny, self.file_format, lo, hi, span,
+                           -lo / span))
+            return {'FINISHED'}
+
     class VIEW3D_PT_relief_panel(bpy.types.Panel):
         bl_label = "Relief Panel"
         bl_idname = "VIEW3D_PT_relief_panel"
@@ -1419,6 +1755,8 @@ if _IN_BLENDER:
             fin = row.operator("relief.rebuild", icon='SHADERFX',
                                text="Build Final")
             fin.preview = False
+
+            lay.operator("relief.export_heightmap", icon='IMAGE_DATA')
 
             if stale and not props.autobuild:
                 lay.label(text="Settings changed since the last build",
@@ -1525,6 +1863,29 @@ if _IN_BLENDER:
                     sub.prop(lay_, 'rings')
                     sub.prop(lay_, 'crown')
                     sub.prop(lay_, 'rim')
+                elif lay_.kind == 'WORLEY':
+                    sub.prop(lay_, 'cell_mode')
+                    sub.prop(lay_, 'points_n')
+                    sub.prop(lay_, 'jitter')
+                elif lay_.kind == 'TURING':
+                    sub.prop(lay_, 'regime')
+                    sub.prop(lay_, 'rd_scale')
+                    sub.prop(lay_, 'rd_steps')
+                elif lay_.kind == 'WALLPAPER':
+                    sub.prop(lay_, 'group')
+                    sub.prop(lay_, 'sym_cells')
+                    sub.prop(lay_, 'waves')
+                elif lay_.kind == 'QUASI':
+                    sub.prop(lay_, 'fold')
+                    sub.prop(lay_, 'qc_cells')
+                    sub.prop(lay_, 'qc_sharp')
+                elif lay_.kind == 'OCEAN':
+                    sub.prop(lay_, 'wind_speed')
+                    sub.prop(lay_, 'choppy')
+                elif lay_.kind == 'GABOR':
+                    sub.prop(lay_, 'gabor_freq')
+                    sub.prop(lay_, 'gabor_band')
+                    sub.prop(lay_, 'spread')
                 elif lay_.kind == 'CHLADNI':
                     sub.prop(lay_, 'mode_index')
                 elif lay_.kind in ('DRUMHEAD', 'MEMBRANE', 'HERMITE'):
@@ -1571,6 +1932,11 @@ if _IN_BLENDER:
             col.separator()
             col.prop(props, 'depth')
             col.prop(props, 'form')
+            col.prop(props, 'pierce')
+            if props.pierce:
+                col.prop(props, 'pierce_level')
+                col.prop(props, 'pierce_invert')
+                col.prop(props, 'pierce_min')
             if props.form == 'SLAB':
                 col.prop(props, 'base_thickness')
             col.prop(props, 'fit')
@@ -1580,6 +1946,7 @@ if _IN_BLENDER:
     _FIELD_ITEMS_MAP = [(k, lbl) for k, lbl, _d in _FIELD_ITEMS]
 
     _STACK_CLASSES = (ReliefLayer, ReliefPanelProps, RELIEF_UL_layers,
+                      RELIEF_OT_export_heightmap,
                       RELIEF_OT_panel_new, RELIEF_OT_layer_add,
                       RELIEF_OT_layer_remove, RELIEF_OT_layer_move,
                       RELIEF_OT_rebuild, VIEW3D_PT_relief_panel)

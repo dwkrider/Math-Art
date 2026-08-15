@@ -35,8 +35,9 @@ References:
     1961.
 """
 
-from . import (elliptic, fields, grid, imprint, kernels, mesh, plates,
-               special, stack, tiles, tiling, transfer, warp)
+from . import (cellular, elliptic, fields, grid, imprint, kernels, mesh,
+               ocean, plates, reaction, special, stack, symmetry, tiles,
+               tiling, transfer, warp)
 from .fields import FIELD_ORDER, FIELDS, evaluate, ordered_fields
 from .grid import border_window, make_grid, mask_for, SHAPES
 from .mesh import apply_fit, edge_report, FITS, FORMS, sheet, slab
@@ -52,6 +53,7 @@ from .warp import (domain_warp, orientation_field, ORIENTATIONS,
 __all__ = [
     "fields", "grid", "imprint", "kernels", "mesh", "plates", "special",
     "elliptic", "stack", "tiles", "tiling", "transfer", "warp",
+    "cellular", "reaction", "symmetry", "ocean",
     "BLENDS", "MASKS", "layer", "evaluate_stack",
     "FIELDS", "FIELD_ORDER", "ordered_fields", "evaluate",
     "SHAPES", "make_grid", "mask_for", "border_window",
@@ -136,6 +138,48 @@ PRESETS = {
         field='TRUCHET', tile_cells=6, lane=0.3, straight=0.3,
         shape='RECT', tiling='TORUS', curve='NONE', warp=0.0,
         depth=0.2, seed=2, antialias=2),
+    # -- Phase 5 families ---------------------------------------------
+    'TURING_SKIN': dict(
+        # Grown, not evaluated: this is the one pattern with a step count.
+        # The maze regime fills a panel most evenly; spots and worms are the
+        # other two worth starting from.
+        field='TURING', regime='MAZE', rd_steps=6000, rd_scale=12.0,
+        shape='RECT', tiling='TORUS', curve='NONE', warp=0.0,
+        depth=0.22, seed=4),
+    'CELLULAR': dict(
+        # Worley's F2 - F1 vanishes on the Voronoi boundary, so the walls are
+        # drawn without a Voronoi diagram ever being built.
+        field='WORLEY', cell_mode='CRACK', points_n=60, cell_sharp=0.7,
+        shape='RECT', tiling='TORUS', curve='NONE', warp=0.0,
+        depth=0.24, seed=6),
+    'WALLPAPER_RELIEF': dict(
+        field='WALLPAPER', group='P4M', waves=6, sym_cells=2.0, freq_max=3,
+        shape='RECT', curve='NONE', warp=0.0, depth=0.24, seed=3),
+    'QUASICRYSTAL': dict(
+        # Five wave directions over a half-turn: ten-fold order, and no
+        # translational period at all.  TORUS switches to the approximant,
+        # which is the only version that can tile.
+        field='QUASI', fold=5, qc_cells=6.0, qc_sharp=1.2,
+        shape='RECT', tiling='NONE', curve='NONE', warp=0.0, depth=0.22),
+    'OCEAN': dict(
+        # choppy is measured in cusp limits: 1 puts the steepest crest exactly
+        # at the Stokes cusp, so 0.8 is a lively sea that is not yet breaking.
+        field='OCEAN', wind_speed=9.0, patch=100.0, choppy=0.8, sea_sim=256,
+        shape='RECT', tiling='TORUS', curve='NONE', warp=0.0,
+        depth=0.26, seed=11, resolution=320),
+    'WEAVE': dict(
+        # Gabor noise with no orientation spread: a directional fibrous weave
+        # whose pitch is set rather than filtered for.
+        field='GABOR', gabor_freq=14.0, gabor_band=0.3, spread=0.6,
+        points_n=400, shape='RECT', tiling='TORUS', curve='NONE', warp=0.0,
+        depth=0.2, seed=5),
+    'SCREEN': dict(
+        # Pierced output: a relief becomes a screen.  Quasicrystal ground
+        # gives openings that never quite repeat.
+        field='QUASI', fold=5, qc_cells=5.0, qc_sharp=1.5,
+        shape='RECT', tiling='NONE', curve='NONE', warp=0.0, depth=0.18,
+        pierce=True, pierce_level=0.42, pierce_min=12,
+        form='SLAB', base_thickness=0.06, resolution=320),
     'SEIGAIHA': dict(
         # Three arcs across a fifth of the panel needs about 400 samples to
         # draw a rounded crest rather than a faceted one; the build reports
@@ -182,6 +226,8 @@ def build_relief(**kw):
         tiling='NONE',
         # prefilter: 1 = point sampling, 2..4 = that many sub-samples per axis
         antialias=1,
+        # pierced output: open the panel where the field falls below a level
+        pierce=False, pierce_level=0.35, pierce_invert=False, pierce_min=8,
         # orientation + warp
         orient='CONSTANT', orient_freq=0.5, swirl=1.0,
         warp=0.0, warp_iters=2, warp_freq=0.6,
@@ -251,6 +297,16 @@ def build_relief(**kw):
     if p['border'] > 0.0:
         h = h * grid.border_window(X, Y, p['border'], p['shape'])
     Z = 0.5 * float(p['depth']) * h
+
+    # Pierced panels: open the low ground right through, turning a relief into
+    # a screen.  This needs no new meshing -- `slab` walls whatever boundary
+    # the mask has, and a hole's rim is part of that boundary -- so it is a
+    # mask operation and the result stays watertight for the same reason the
+    # unpierced panel does.
+    if p.get('pierce'):
+        mask = mesh.pierce(mask, h, threshold=float(p['pierce_level']),
+                           invert=bool(p['pierce_invert']),
+                           min_island=int(p['pierce_min']))
 
     # The pattern is sampled on the regular grid; only the geometry's rim is
     # moved onto the true outline, so a curved panel has a clean silhouette

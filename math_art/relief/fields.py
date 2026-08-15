@@ -375,6 +375,70 @@ def scatter(X, Y, info, p):
 
 
 # id -> (menu label, description, function)
+def worley(X, Y, info, p):
+    """Voronoi cell walls and domes from scattered feature points."""
+    from . import cellular as _c
+    return _c.worley(X, Y, info, count=int(p.get('points_n', 48)),
+                     seed=int(p.get('seed', 1)),
+                     mode=p.get('cell_mode', 'CRACK'),
+                     jitter=float(p.get('jitter', 1.0)),
+                     periodic=p.get('tiling', 'NONE') == 'TORUS',
+                     sharp=float(p.get('cell_sharp', 1.0)))
+
+
+def turing(X, Y, info, p):
+    """Reaction-diffusion skin, grown rather than evaluated."""
+    from . import reaction as _r
+    return _r.turing(X, Y, info, regime=p.get('regime', 'SPOTS'),
+                     steps=int(p.get('rd_steps', 6000)),
+                     seed=int(p.get('seed', 1)),
+                     scale=float(p.get('rd_scale', 12.0)),
+                     init=p.get('rd_init', 'SCATTER'))
+
+
+def wallpaper(X, Y, info, p):
+    """A function invariant under one of the 17 plane symmetry groups."""
+    from . import symmetry as _s
+    return _s.wallpaper(X, Y, info, group=p.get('group', 'P4M'),
+                        waves=int(p.get('waves', 6)),
+                        seed=int(p.get('seed', 1)),
+                        cells=float(p.get('sym_cells', 2.0)),
+                        freq_max=int(p.get('freq_max', 3)))
+
+
+def quasicrystal(X, Y, info, p):
+    """Plane waves at equal angles: ordered everywhere, repeating nowhere."""
+    from . import symmetry as _s
+    return _s.quasicrystal(X, Y, info, fold=int(p.get('fold', 5)),
+                           cells=float(p.get('qc_cells', 6.0)),
+                           approximant=(p.get('tiling', 'NONE') != 'NONE'
+                                        or bool(p.get('approximant', False))),
+                           sharp=float(p.get('qc_sharp', 0.0)))
+
+
+def ocean(X, Y, info, p):
+    """A wind-driven sea by Phillips-spectrum FFT synthesis."""
+    from . import ocean as _o
+    return _o.ocean(X, Y, info, sim=int(p.get('sea_sim', 256)),
+                    patch=float(p.get('patch', 100.0)),
+                    wind=float(p.get('wind_speed', 8.0)),
+                    direction=float(p.get('angle', 0.0)),
+                    seed=int(p.get('seed', 1)),
+                    choppy=float(p.get('choppy', 0.0)))
+
+
+def gabor(X, Y, info, p):
+    """Band-limited sparse convolution noise: a weave with a chosen pitch."""
+    from . import kernels as _k
+    return _k.gabor_noise(X, Y, info, count=int(p.get('points_n', 300)),
+                          freq=float(p.get('gabor_freq', 8.0)),
+                          bandwidth=float(p.get('gabor_band', 0.3)),
+                          angle=float(p.get('angle', 0.0)),
+                          spread=float(p.get('spread', 0.0)),
+                          seed=int(p.get('seed', 1)),
+                          wrap=p.get('tiling', 'NONE') == 'TORUS')
+
+
 FIELDS = {
     'WAVE':       ("Directional Wave",
                    "One wave; steer it with an orientation field", wave),
@@ -405,6 +469,24 @@ FIELDS = {
                    truchet),
     'SEIGAIHA':   ("Seigaiha",
                    "The Japanese overlapping wave-fan ornament", seigaiha),
+    'WORLEY':     ("Cellular (Worley)",
+                   "Voronoi cell walls: setts, dried mud, reptile skin",
+                   worley),
+    'TURING':     ("Turing Skin",
+                   "Reaction-diffusion: spots, worms, mazes and coral",
+                   turing),
+    'WALLPAPER':  ("Wallpaper Group",
+                   "Invariant under one of the 17 plane symmetry groups",
+                   wallpaper),
+    'QUASI':      ("Quasicrystal",
+                   "N-fold order with no repeat; approximant when tiling",
+                   quasicrystal),
+    'OCEAN':      ("Ocean (Phillips)",
+                   "Wind-driven sea by spectral synthesis, with choppiness",
+                   ocean),
+    'GABOR':      ("Gabor Weave",
+                   "Band-limited noise: a fibrous weave at a chosen pitch",
+                   gabor),
     'OBJECT':     ("Object",
                    "Imprint a scene object: splat, drape, engrave or press",
                    object_field),
@@ -422,7 +504,8 @@ FIELDS = {
 FIELD_ORDER = [
     'WAVE', 'WAVE_TRAIN', 'RIPPLE', 'FBM',
     'CHLADNI', 'DRUMHEAD', 'MEMBRANE', 'ZERNIKE', 'HERMITE',
-    'ELLIPTIC', 'TRUCHET', 'SEIGAIHA',
+    'ELLIPTIC', 'TRUCHET', 'SEIGAIHA', 'WALLPAPER', 'QUASI',
+    'WORLEY', 'TURING', 'OCEAN', 'GABOR',
     'SCATTER', 'OBJECT',
 ]
 
@@ -484,6 +567,23 @@ def feature_samples(field, p, info):
     if field == 'CHLADNI':
         k = max(1, int(p.get('mode_index', 6)))
         return n(width / (2.0 * math.sqrt(k)))
+    if field == 'WORLEY':
+        # The cell wall is the finest thing drawn; cells scale as the spacing.
+        return n(math.sqrt(width * width / max(1, int(p.get('points_n', 48))))
+                 * 0.25)
+    if field == 'TURING':
+        return n(width / max(1e-6, float(p.get('rd_scale', 12.0))) * 0.4)
+    if field == 'WALLPAPER':
+        cells = max(1e-6, float(p.get('sym_cells', 2.0)))
+        return n(width / (cells * max(1, int(p.get('freq_max', 3))) * 2.0))
+    if field == 'QUASI':
+        return n(width / max(1e-6, float(p.get('qc_cells', 6.0))) / 2.0)
+    if field == 'OCEAN':
+        # The short-wave cutoff sets the finest wave the spectrum carries.
+        patch = max(1e-6, float(p.get('patch', 100.0)))
+        return n(width * float(p.get('cutoff', 0.5)) * 2.0 / patch)
+    if field == 'GABOR':
+        return n(width / max(1e-6, float(p.get('gabor_freq', 8.0))))
     if field in ('SCATTER', 'OBJECT'):
         sig = float(p.get('sigma', 0.0))
         return n(sig) if sig > 0.0 else None
