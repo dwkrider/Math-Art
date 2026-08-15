@@ -461,7 +461,7 @@ if _IN_BLENDER:
             default='NONE')
         curve_amount: FloatProperty(name="Amount", default=1.0, min=0.05,
                                     max=4.0)
-        depth: FloatProperty(name="Relief Depth", default=0.25, min=0.0,
+        depth: FloatProperty(name="Relief Depth", default=0.05, min=0.0,
                              max=4.0, unit='LENGTH')
         seed: IntProperty(name="Seed", default=1, min=0, max=100000)
         fit: EnumProperty(

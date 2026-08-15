@@ -1266,7 +1266,7 @@ def build_solid(**kw):
              freq_max=3, ell_kind='WP', ell_part='SPHERE',
              tau_re=0.0, tau_im=1.0, tile_cells=6, lane=0.3,
              straight=0.0, rings=3, crown=0.55, rim=0.08,
-             depth=0.25, curve='NONE', curve_amount=1.0, norm='STD',
+             depth=0.05, curve='NONE', curve_amount=1.0, norm='STD',
              fit='CUBE', scale=1.0, span=2.0)
     p.update(kw)
 
