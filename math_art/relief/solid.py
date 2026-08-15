@@ -58,6 +58,12 @@ FIELDS3D = ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC', 'QUASI',
 
 # ---------------------------------------------------------------- bases ----
 
+try:
+    from ..surfaces.primitives import icosphere as _icosphere_shared
+except ImportError:  # flat import outside the package
+    from surfaces.primitives import icosphere as _icosphere_shared
+
+
 def icosphere(subdivisions=4):
     """Geodesic sphere: the icosahedron, subdivided and pushed onto the ball.
 
@@ -67,37 +73,13 @@ def icosphere(subdivisions=4):
     is denser and shallower there through no wish of the pattern's.  A
     geodesic sphere has no poles and no seam at all -- every vertex is
     equivalent apart from the twelve original icosahedral corners.
+
+    The construction is shared with five other modules and lives in
+    `surfaces.primitives`; on the unit sphere the outward normal at a
+    vertex IS its position, which is why the second return value is a
+    copy of the first.
     """
-    t = (1.0 + math.sqrt(5.0)) / 2.0
-    verts = [(-1, t, 0), (1, t, 0), (-1, -t, 0), (1, -t, 0),
-             (0, -1, t), (0, 1, t), (0, -1, -t), (0, 1, -t),
-             (t, 0, -1), (t, 0, 1), (-t, 0, -1), (-t, 0, 1)]
-    faces = [(0, 11, 5), (0, 5, 1), (0, 1, 7), (0, 7, 10), (0, 10, 11),
-             (1, 5, 9), (5, 11, 4), (11, 10, 2), (10, 7, 6), (7, 1, 8),
-             (3, 9, 4), (3, 4, 2), (3, 2, 6), (3, 6, 8), (3, 8, 9),
-             (4, 9, 5), (2, 4, 11), (6, 2, 10), (8, 6, 7), (9, 8, 1)]
-    V = [np.array(v, dtype=float) / np.linalg.norm(v) for v in verts]
-
-    for _ in range(max(0, int(subdivisions))):
-        mid = {}
-
-        def midpoint(a, b):
-            key = (min(a, b), max(a, b))
-            if key not in mid:
-                m = V[a] + V[b]
-                V.append(m / np.linalg.norm(m))
-                mid[key] = len(V) - 1
-            return mid[key]
-
-        nf = []
-        for a, b, c in faces:
-            ab = midpoint(a, b)
-            bc = midpoint(b, c)
-            ca = midpoint(c, a)
-            nf += [(a, ab, ca), (b, bc, ab), (c, ca, bc), (ab, bc, ca)]
-        faces = nf
-
-    P = np.array(V)
+    P, faces = _icosphere_shared(subdivisions, 'per_level')
     return P, P.copy(), [list(f) for f in faces]
 
 

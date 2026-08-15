@@ -128,46 +128,17 @@ class _Mesh:
             self.faces.append(ids)
 
 
-# ---------------------------------------------------------------------
-# shared: a subdivided icosphere of directions (uniform, no polar
-# singularity), used to mesh the Gomboc's normal sphere
-# ---------------------------------------------------------------------
-def _icosphere(level):
-    """Subdivided icosahedron on the unit sphere -- uniform vertices
-    with NO polar singularities (a lat-long grid pinches at its poles)."""
-    t = (1.0 + sqrt(5.0)) / 2.0
-    raw = [(-1, t, 0), (1, t, 0), (-1, -t, 0), (1, -t, 0),
-           (0, -1, t), (0, 1, t), (0, -1, -t), (0, 1, -t),
-           (t, 0, -1), (t, 0, 1), (-t, 0, -1), (-t, 0, 1)]
+try:
+    from .surfaces.primitives import icosphere as _icosphere_shared
+except ImportError:  # flat import outside the package
+    from surfaces.primitives import icosphere as _icosphere_shared
 
-    def nrm(v):
-        n = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
-        return (v[0] / n, v[1] / n, v[2] / n)
 
-    verts = [nrm(v) for v in raw]
-    faces = [(0, 11, 5), (0, 5, 1), (0, 1, 7), (0, 7, 10), (0, 10, 11),
-             (1, 5, 9), (5, 11, 4), (11, 10, 2), (10, 7, 6), (7, 1, 8),
-             (3, 9, 4), (3, 4, 2), (3, 2, 6), (3, 6, 8), (3, 8, 9),
-             (4, 9, 5), (2, 4, 11), (6, 2, 10), (8, 6, 7), (9, 8, 1)]
-    mid = {}
-
-    def midpoint(a, b):
-        key = (a, b) if a < b else (b, a)
-        i = mid.get(key)
-        if i is None:
-            va, vb = verts[a], verts[b]
-            i = len(verts)
-            verts.append(nrm((va[0] + vb[0], va[1] + vb[1], va[2] + vb[2])))
-            mid[key] = i
-        return i
-
-    for _ in range(level):
-        nf = []
-        for a, b, c in faces:
-            ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
-            nf += [(a, ab, ca), (b, bc, ab), (c, ca, bc), (ab, bc, ca)]
-        faces = nf
-    return verts, faces
+def _icosphere(level=0):
+    """Unit icosphere: the icosahedron subdivided `level` times.
+    The shared builder is in `surfaces.primitives`.
+    """
+    return _icosphere_shared(level, 'per_level')
 
 
 # ---------------------------------------------------------------------

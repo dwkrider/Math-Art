@@ -302,42 +302,17 @@ def build_mobile(arity, levels, twist, trunk_len, ratio,
     return segs, weights
 
 
-def icosphere(subdiv=1):
-    """Unit icosphere (verts, tri faces); subdiv=1 gives 42/80."""
-    t = (1.0 + math.sqrt(5.0)) / 2.0
-    verts = [(-1, t, 0), (1, t, 0), (-1, -t, 0), (1, -t, 0),
-             (0, -1, t), (0, 1, t), (0, -1, -t), (0, 1, -t),
-             (t, 0, -1), (t, 0, 1), (-t, 0, -1), (-t, 0, 1)]
-    faces = [(0, 11, 5), (0, 5, 1), (0, 1, 7), (0, 7, 10),
-             (0, 10, 11), (1, 5, 9), (5, 11, 4), (11, 10, 2),
-             (10, 7, 6), (7, 1, 8), (3, 9, 4), (3, 4, 2),
-             (3, 2, 6), (3, 6, 8), (3, 8, 9), (4, 9, 5),
-             (2, 4, 11), (6, 2, 10), (8, 6, 7), (9, 8, 1)]
-    verts = [list(v) for v in verts]
-    for _ in range(subdiv):
-        mid = {}
+try:
+    from .surfaces.primitives import icosphere as _icosphere_shared
+except ImportError:  # flat import outside the package
+    from surfaces.primitives import icosphere as _icosphere_shared
 
-        def midpoint(a, b):
-            key = (a, b) if a < b else (b, a)
-            if key not in mid:
-                va, vb = verts[a], verts[b]
-                verts.append([(va[i] + vb[i]) / 2.0
-                              for i in range(3)])
-                mid[key] = len(verts) - 1
-            return mid[key]
 
-        nf = []
-        for a, b, c in faces:
-            ab, bc, ca = midpoint(a, b), midpoint(b, c), \
-                midpoint(c, a)
-            nf += [(a, ab, ca), (b, bc, ab), (c, ca, bc),
-                   (ab, bc, ca)]
-        faces = nf
-    out = []
-    for v in verts:
-        n = math.sqrt(v[0] ** 2 + v[1] ** 2 + v[2] ** 2)
-        out.append((v[0] / n, v[1] / n, v[2] / n))
-    return out, faces
+def icosphere(subdiv=0):
+    """Unit icosphere: the icosahedron subdivided `subdiv` times.
+    The shared builder is in `surfaces.primitives`.
+    """
+    return _icosphere_shared(subdiv, 'once')
 
 
 _ICO = None
