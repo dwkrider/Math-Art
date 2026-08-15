@@ -85,6 +85,9 @@ bl_info = {
                    "tetroctahedrille and SL blocks",
     "category": "Add Mesh",
 }
+import math
+import numpy as np
+
 # The mathematics lives in the sibling `interlocking` engine package;
 # this module is the Blender layer over it.
 try:
@@ -102,8 +105,7 @@ try:
                                           build_hendeca, build_mcs,
                                           build_rhom, build_sl, build_tetra,
                                           build_tetrocta, build_versatile,
-                                          cells_to_mesh, cells_to_meshes,
-                                          math, np)
+                                          cells_to_mesh, cells_to_meshes)
 except ImportError:  # flat import outside the package
     from interlocking.blocks import (_HENDECA_F, _HENDECA_L,
                                          _HENDECA_MOTIF, _HENDECA_V, _OCT,
@@ -119,8 +121,7 @@ except ImportError:  # flat import outside the package
                                          build_hendeca, build_mcs,
                                          build_rhom, build_sl, build_tetra,
                                          build_tetrocta, build_versatile,
-                                         cells_to_mesh, cells_to_meshes,
-                                         math, np)
+                                         cells_to_mesh, cells_to_meshes)
 
 
 

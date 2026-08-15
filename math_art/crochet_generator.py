@@ -72,16 +72,19 @@ bl_info = {
 # Blender layer
 # ==========================================================================
 
+import math
+import numpy as np
+
 # The mathematics lives in the sibling `hyperbolic` engine package;
 # this module is the Blender layer over it.
 try:
     from .hyperbolic.crochet import (PRESETS, _bvh_decollide, _center,
                                          _crochet_mesh, _relax, _repel,
-                                         math, mean_curvature, np)
+                                         mean_curvature)
 except ImportError:  # flat import outside the package
     from hyperbolic.crochet import (PRESETS, _bvh_decollide, _center,
                                         _crochet_mesh, _relax, _repel,
-                                        math, mean_curvature, np)
+                                        mean_curvature)
 
 
 try:

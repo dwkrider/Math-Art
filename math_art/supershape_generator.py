@@ -53,6 +53,8 @@ bl_info = {
                    "seashells and superellipsoids",
     "category": "Add Mesh",
 }
+import math
+
 # The mathematics lives in the sibling `surfaces` engine package;
 # this module is the Blender layer over it.
 try:
@@ -60,13 +62,13 @@ try:
                                           build_from_preset, build_shell,
                                           build_superellipsoid,
                                           build_supershape_3d,
-                                          build_supertoroid, math)
+                                          build_supertoroid)
 except ImportError:  # flat import outside the package
     from surfaces.supershape import (PRESETS, _PRESET_ORDER,
                                          build_from_preset, build_shell,
                                          build_superellipsoid,
                                          build_supershape_3d,
-                                         build_supertoroid, math)
+                                         build_supertoroid)
 
 
 

@@ -40,12 +40,14 @@ bl_info = {
                    "sets meshed by marching tetrahedra",
     "category": "Add Mesh",
 }
+import numpy as np
+
 # The mathematics lives in the sibling `surfaces` engine package;
 # this module is the Blender layer over it.
 try:
-    from .surfaces.algebraic import (PRESETS, build_algebraic, np)
+    from .surfaces.algebraic import (PRESETS, build_algebraic)
 except ImportError:  # flat import outside the package
-    from surfaces.algebraic import (PRESETS, build_algebraic, np)
+    from surfaces.algebraic import (PRESETS, build_algebraic)
 
 
 

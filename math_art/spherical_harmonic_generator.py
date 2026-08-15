@@ -65,18 +65,19 @@ bl_info = {
                    "eight-integer Bourke harmonic family",
     "category": "Add Mesh",
 }
+import math
+import numpy as np
+
 # The mathematics lives in the sibling `surfaces` engine package;
 # this module is the Blender layer over it.
 try:
     from .surfaces.harmonics import (BOURKE_PRESETS, FORM_ITEMS, TAU,
                                          assoc_legendre,
-                                         build_spherical_harmonic, math,
-                                         max_abs_harmonic, np, real_sph_harm)
+                                         build_spherical_harmonic, max_abs_harmonic, real_sph_harm)
 except ImportError:  # flat import outside the package
     from surfaces.harmonics import (BOURKE_PRESETS, FORM_ITEMS, TAU,
                                         assoc_legendre,
-                                        build_spherical_harmonic, math,
-                                        max_abs_harmonic, np, real_sph_harm)
+                                        build_spherical_harmonic, max_abs_harmonic, real_sph_harm)
 
 
 
