@@ -1097,23 +1097,11 @@ if _IN_BLENDER:
                 if self.p > 1:
                     lay.prop(self, 'split_sheets')
 
-    class VIEW3D_PT_minimal_surfaces(bpy.types.Panel):
-        bl_label = "Minimal Surfaces"
-        bl_space_type = 'VIEW_3D'
-        bl_region_type = 'UI'
-        bl_category = "Math Art"
-        bl_order = 30
-        bl_options = {'DEFAULT_CLOSED'}
-
-        def draw(self, context):
-            lay = self.layout
-            col = lay.column(align=True)
-            col.operator("mesh.parametric_minimal_add", icon='SURFACE_NSPHERE')
-            col.operator("mesh.tpms_add", icon='MESH_ICOSPHERE')
-            col.separator()
-            col.operator("mesh.minimal_knot_span_add", icon='MESH_TORUS')
-            col.label(text="Select 1-2 closed curves, then:")
-            col.operator("object.minimal_span", icon='OUTLINER_OB_SURFACE')
+    # The sidebar panel that used to sit here is gone.  It only
+    # launched the four operators below, every one of which is in
+    # Add > Mesh > Minimal Surfaces already, so it was a second copy
+    # of the menu taking up the tab -- and the tab is for editing the
+    # selected object, not for making new ones.
 
     class VIEW3D_MT_math_art_minimal_zoo(bpy.types.Menu):
         """The minimal-surface catalog, one entry per family (each
@@ -1151,8 +1139,7 @@ if _IN_BLENDER:
     _classes = (MESH_OT_parametric_minimal_add, MESH_OT_tpms_add,
                 MESH_OT_periodic_minimal_add,
                 OBJECT_OT_minimal_span, MESH_OT_knot_span_add,
-                VIEW3D_PT_minimal_surfaces,
-                VIEW3D_MT_math_art_minimal_zoo, VIEW3D_MT_minimal_add)
+                                VIEW3D_MT_math_art_minimal_zoo, VIEW3D_MT_minimal_add)
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 

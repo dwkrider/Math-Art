@@ -1830,24 +1830,16 @@ if _IN_BLENDER:
 
         @classmethod
         def poll(cls, context):
-            # Always available, and the only panel in this tab that is.  The
-            # rule the tab follows: a panel appears when the active object is
-            # one it can edit, EXCEPT this one, which doubles as the place a
-            # relief panel is created and its layer stack assembled -- hiding
-            # it when none is selected would hide the way to make one.
-            # Everything else is reachable from Add > Mesh.
-            return True
+            # The tab edits the selected object and nothing else: objects are
+            # created from Add > Mesh, and this panel appears when one of
+            # them is what you have selected.
+            o = context.active_object
+            return (o is not None and getattr(o, 'relief_panel', None)
+                    and o.relief_panel.is_panel)
 
         def draw(self, context):
             lay = self.layout
             obj = context.active_object
-            if obj is None or not getattr(obj, 'relief_panel', None) \
-                    or not obj.relief_panel.is_panel:
-                lay.operator("relief.panel_new", icon='ADD')
-                col = lay.column(align=True)
-                col.label(text="or select a relief panel,")
-                col.label(text="or use Add > Mesh > Relief Panel")
-                return
             props = obj.relief_panel
             stale = _params_signature(props) != props.built_sig
             prev_res = min(int(props.preview_resolution),
