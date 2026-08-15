@@ -239,6 +239,8 @@ def build_relief(**kw):
         tiling='NONE',
         # prefilter: 1 = point sampling, 2..4 = that many sub-samples per axis
         antialias=1,
+        # tile layout: how many copies of the panel to lay out, and how
+        tile_x=1, tile_y=1,
         # pierced output: open the panel where the field falls below a level
         pierce=False, pierce_level=0.35, pierce_invert=False, pierce_min=8,
         # orientation + warp
@@ -307,6 +309,43 @@ def build_relief(**kw):
     h = transfer.apply_curve(h, p['curve'], amount=p['curve_amount'],
                              levels=p['levels'], smooth=p['terrace'])
     h = transfer.normalize(h, 'MINMAX')
+
+    # Lay the tile out.  The panel is built once and repeated, which is the
+    # point of having made it seamless: the assembly is one mesh with no
+    # joint in it, not a row of panels that happen to abut.
+    #
+    # The field is tiled BEFORE the border window and the depth, so the
+    # window fades the whole assembly's rim rather than drawing a frame
+    # around every copy -- which would announce the repeat the tiling exists
+    # to hide.  Mirror and antimirror flip alternate copies, so the run is
+    # continuous in those bases too.
+    tx = max(1, int(p.get('tile_x', 1)))
+    ty = max(1, int(p.get('tile_y', 1)))
+    tiled = tx > 1 or ty > 1
+    if tiled:
+        mode = p.get('tiling', 'NONE')
+        if mode == 'NONE':
+            # Repeating an unseamed panel would put a visible joint at every
+            # copy; refusing is more useful than obliging.
+            tiled = False
+        else:
+            h = tiling.tile(h, tx, ty, mode)
+            ny_t, nx_t = h.shape
+            X, Y, info = grid.make_grid(p['width'] * tx,
+                                        p['aspect'] * ty / float(tx),
+                                        nx_t)
+            # `make_grid` derives its own sample counts, so the field has to
+            # be resampled if the rounding moved them.
+            if (info['ny'], info['nx']) != (ny_t, nx_t):
+                yi = np.clip((np.arange(info['ny'])
+                              * (ny_t - 1) / max(info['ny'] - 1, 1)
+                              ).round().astype(int), 0, ny_t - 1)
+                xi = np.clip((np.arange(info['nx'])
+                              * (nx_t - 1) / max(info['nx'] - 1, 1)
+                              ).round().astype(int), 0, nx_t - 1)
+                h = h[np.ix_(yi, xi)]
+            mask = grid.mask_for(p['shape'], X, Y)
+
     if p['border'] > 0.0:
         h = h * grid.border_window(X, Y, p['border'], p['shape'])
     Z = 0.5 * float(p['depth']) * h
@@ -329,7 +368,12 @@ def build_relief(**kw):
         verts, faces = mesh.sheet(Xg, Yg, Z, mask)
     else:
         verts, faces = mesh.slab(Xg, Yg, Z, mask, p['base_thickness'])
-    verts = mesh.apply_fit(verts, p['fit'], p['scale'], p['span'])
+    # A laid-out run keeps its TILE at the size a single panel would be, so
+    # the assembly grows instead of the pattern shrinking.  Fitting the whole
+    # run into the usual 2 m would quietly scale a 3x2 wall's relief to a
+    # third of the depth that was asked for.
+    span = float(p['span']) * (max(tx, ty) if tiled else 1)
+    verts = mesh.apply_fit(verts, p['fit'], p['scale'], span)
 
     lam_cells = grid.wavelength_in_cells(p['wavelength'], info)
     # How well the sampling resolves the finest thing the pattern draws.  For
@@ -350,11 +394,17 @@ def build_relief(**kw):
                 antialias=aa,
                 aliasing=lam_cells < 4.0,
                 tiling=p.get('tiling', 'NONE'),
+                tiled=(tx, ty) if tiled else (1, 1),
                 warp_suppressed=warp_suppressed)
-    if p.get('tiling', 'NONE') != 'NONE':
+    if p.get('tiling', 'NONE') != 'NONE' and not tiled:
         # Measure the seam rather than trusting the pattern to have handled
         # it.  A panel that claims to tile and does not is the one outcome
         # this feature must never produce silently.
+        #
+        # Skipped once the run is laid out, because there is nothing left to
+        # measure: the copies are merged into one field, so the joint the
+        # check looks for has already been absorbed.  Build a single tile to
+        # see the number.
         chk = tiling.check(h, p['tiling'], info, p.get('field'))
         info.update(seam_step=chk['step'], seam_curvature=chk['curvature'],
                     seam_ok=chk['ok'], seam_reason=chk['reason'])

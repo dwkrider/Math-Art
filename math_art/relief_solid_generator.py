@@ -93,6 +93,8 @@ if _IN_BLENDER:
             points_n=240, spread=0.2, curve='NONE', depth=0.14, seed=4),
     }
 
+    _PRESET_KEYS = sorted({k for v in _PRESETS.values() for k in v})
+
     _PRESET_ITEMS = [
         ('CUSTOM', "Custom", "Leave the controls below alone"),
         ('PLANET', "Planet", "Fractional Brownian relief on a geodesic ball"),
@@ -133,7 +135,19 @@ if _IN_BLENDER:
         """
         if self.preset == 'CUSTOM':
             return
-        for key, value in _PRESETS[self.preset].items():
+        values = _PRESETS[self.preset]
+        # Reset anything any preset can set, so a key one preset turns on is
+        # not left on by the next preset that has no opinion about it.
+        for key in _PRESET_KEYS:
+            if key in values or not hasattr(self, key):
+                continue
+            prop = self.bl_rna.properties.get(key)
+            if prop is not None:
+                try:
+                    setattr(self, key, prop.default)
+                except (TypeError, ValueError):
+                    pass
+        for key, value in values.items():
             if hasattr(self, key):
                 try:
                     setattr(self, key, value)

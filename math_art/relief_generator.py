@@ -223,6 +223,11 @@ if _IN_BLENDER:
 
     _FIELD_ITEMS = list(ordered_fields())
 
+    # Every property any preset touches.  Built from the presets themselves,
+    # so a key added to one of them is reset by all the others automatically
+    # rather than leaking the next time someone switches.
+    _PRESET_KEYS = sorted({k for v in PRESETS.values() for k in v})
+
     # Built from the engine's own tuples rather than retyped, so a family
     # added there cannot go missing here.
     _CELL_ITEMS = [
@@ -286,10 +291,30 @@ if _IN_BLENDER:
             inherits whatever the preset just set, instead of snapping back
             to the factory defaults -- which is what happens if the preset is
             only consulted while building.
+
+            **Anything a preset can set is reset first.**  A preset is a
+            partial dict, so simply writing its keys leaves every setting it
+            does not mention at whatever the last preset put there.  Pierced
+            Screen switches piercing on; choosing Dunes afterwards left the
+            panel full of holes, because Dunes has no opinion about piercing
+            and so said nothing.  Silence has to mean "the default", not "keep
+            whatever was there", or presets stop being independent of the
+            order they are visited in.
             """
             if self.preset == 'CUSTOM':
                 return
-            for key, value in PRESETS.get(self.preset, {}).items():
+            values = PRESETS.get(self.preset, {})
+            for key in _PRESET_KEYS:
+                if key in values or not hasattr(self, key):
+                    continue
+                prop = self.bl_rna.properties.get(key)
+                if prop is None:
+                    continue
+                try:
+                    setattr(self, key, prop.default)
+                except (TypeError, ValueError):
+                    pass
+            for key, value in values.items():
                 if not hasattr(self, key):
                     continue
                 try:
@@ -860,6 +885,16 @@ if _IN_BLENDER:
             box.prop(self, 'resolution')
             box.prop(self, 'border')
             box.prop(self, 'tiling')
+            if self.tiling != 'NONE':
+                row = box.row(align=True)
+                row.prop(self, 'tile_x')
+                row.prop(self, 'tile_y')
+                if self.tile_x > 1 or self.tile_y > 1:
+                    box.label(text="%d copies as one mesh, %.1f x %.1f m"
+                                   % (self.tile_x * self.tile_y,
+                                      self.width * self.tile_x,
+                                      self.width * self.aspect * self.tile_y),
+                              icon='INFO')
             if self.tiling != 'NONE' and self.warp > 0.0:
                 box.label(text="Warp is suppressed while tiling",
                           icon='INFO')
@@ -1859,6 +1894,17 @@ if _IN_BLENDER:
                 warn.label(text="Raise Resolution to about %d for a smooth "
                                 "crest" % _resolution_for(props, worst, 10.0))
             col.prop(props, 'tiling')
+            if props.tiling != 'NONE':
+                row = col.row(align=True)
+                row.prop(props, 'tile_x')
+                row.prop(props, 'tile_y')
+                if props.tile_x > 1 or props.tile_y > 1:
+                    col.label(text="%d copies, one mesh, no joint"
+                                   % (props.tile_x * props.tile_y),
+                              icon='INFO')
+            elif props.tile_x > 1 or props.tile_y > 1:
+                col.label(text="Tiling is off; copies would show a joint",
+                          icon='ERROR')
 
             box = lay.box()
             box.label(text="Layers")
