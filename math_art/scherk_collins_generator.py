@@ -1233,7 +1233,15 @@ if _IN_BLENDER:
         bl_label = "Scherk-Collins"
         bl_space_type = 'VIEW_3D'
         bl_region_type = 'UI'
-        bl_category = "Scherk"
+        bl_category = "Math Art"
+        bl_order = 20
+        bl_options = {'DEFAULT_CLOSED'}
+
+        # Deliberately no poll.  The panels in this tab follow one rule: a
+        # panel that can CREATE its object stays visible, because hiding it
+        # would hide the way to make one; a panel that only inspects an
+        # object appears when that object is active.  This one creates (see
+        # the Add Sculpture button below), so it stays.
 
         def draw(self, context):
             lay = self.layout

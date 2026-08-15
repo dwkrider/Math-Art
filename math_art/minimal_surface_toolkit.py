@@ -1101,7 +1101,9 @@ if _IN_BLENDER:
         bl_label = "Minimal Surfaces"
         bl_space_type = 'VIEW_3D'
         bl_region_type = 'UI'
-        bl_category = "Minimal Surfaces"
+        bl_category = "Math Art"
+        bl_order = 30
+        bl_options = {'DEFAULT_CLOSED'}
 
         def draw(self, context):
             lay = self.layout

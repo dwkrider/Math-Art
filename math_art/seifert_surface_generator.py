@@ -496,7 +496,16 @@ if _IN_BLENDER:
         bl_label = "Seifert Surfaces"
         bl_space_type = 'VIEW_3D'
         bl_region_type = 'UI'
-        bl_category = "Minimal Surfaces"
+        bl_category = "Math Art"
+        bl_order = 40
+        bl_options = {'DEFAULT_CLOSED'}
+
+        @classmethod
+        def poll(cls, context):
+            # Only for a Seifert surface: the panel reports the braid's
+            # invariants, which nothing else carries.
+            o = context.object
+            return o is not None and "braid" in o
 
         def draw(self, context):
             lay = self.layout

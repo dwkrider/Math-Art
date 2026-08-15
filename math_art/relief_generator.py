@@ -1825,7 +1825,15 @@ if _IN_BLENDER:
         bl_idname = "VIEW3D_PT_relief_panel"
         bl_space_type = 'VIEW_3D'
         bl_region_type = 'UI'
-        bl_category = "Relief Panel"
+        bl_category = "Math Art"
+        bl_order = 10
+
+        @classmethod
+        def poll(cls, context):
+            # Always available: this panel is also where a relief panel is
+            # created, so hiding it when none is selected would hide the way
+            # to make one.
+            return True
 
         def draw(self, context):
             lay = self.layout
