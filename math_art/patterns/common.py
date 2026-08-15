@@ -55,13 +55,13 @@ from .motifs import (MOTIFS, PALETTE_RGBA, iso_type, kind_of,
 from .orbifold import (IUC_ORDER, SIG_OF, WALLPAPER_NAMES,
                                 geometry_of, orbifold_cost)
 from .placed import Tiling
-from .relief import (center_scale, center_xy, merge_cells, prisms,
+from .prisms import (center_scale, center_xy, merge_cells, prisms,
                               ribbon_polys, slab)
 
 # private names some generators still reach for
 from .groups import _cyclic, _dihedral, _HEX, _SQ      # noqa: F401
 from .motifs import _comma, _rect                      # noqa: F401
-from .relief import _apply_transform, _global_transform  # noqa: F401
+from .prisms import _apply_transform, _global_transform  # noqa: F401
 
 
 # The Blender layer lives in `patterns.emit`.  It only defines these names
