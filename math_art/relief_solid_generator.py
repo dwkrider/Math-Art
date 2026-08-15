@@ -82,6 +82,17 @@ if _IN_BLENDER:
             base='SPHERE', sphere_res=5, field='CELLULAR', points_n=220,
             cell_mode='CRACK', cell_sharp=0.7, curve='NONE', depth=0.2,
             seed=11),
+        'QUASICRYSTAL': dict(
+            base='SPHERE', sphere_res=5, field='QUASI', qc_cells=7.0,
+            qc_sharp=1.4, curve='NONE', depth=0.28),
+        'ICOSAHEDRAL': dict(
+            base='SPHERE', sphere_res=5, field='GROUP',
+            sph_group='STAR_532', sym_cells=5.0, waves=5, curve='NONE',
+            depth=0.26, seed=3),
+        'OCTAHEDRAL': dict(
+            base='SPHERE', sphere_res=5, field='GROUP',
+            sph_group='STAR_432', sym_cells=4.0, waves=4,
+            seed_kind='PACKET', curve='NONE', depth=0.3, seed=7),
         'TURING_SPHERE': dict(
             base='SPHERE', sphere_res=5, field='TURING', regime='MAZE',
             rd_steps=5000, rd_scale=0.35, curve='NONE', depth=0.2, seed=3),
@@ -111,6 +122,12 @@ if _IN_BLENDER:
         ('HARMONIC_BALL', "Harmonic Ball",
          "A spherical harmonic -- the sphere's own vibration mode"),
         ('SHAGREEN', "Shagreen", "Cellular texture, cells cut out of space"),
+        ('QUASICRYSTAL', "Quasicrystal",
+         "Icosahedral order with no repeat anywhere"),
+        ('ICOSAHEDRAL', "Icosahedral",
+         "Invariant under all 120 symmetries of the icosahedron"),
+        ('OCTAHEDRAL', "Octahedral",
+         "The cube's symmetry, from localised packets"),
         ('TURING_SPHERE', "Turing Sphere",
          "A reaction-diffusion skin grown on the ball itself"),
         ('TURING_TORUS', "Turing Torus",
@@ -129,6 +146,12 @@ if _IN_BLENDER:
          "Band-limited sparse convolution noise, at a chosen pitch"),
         ('HARMONIC', "Spherical Harmonic",
          "Y_lm: the sphere's own eigenfunction. Meant for the Sphere base"),
+        ('QUASI', "Quasicrystal",
+         "Six cosines along the icosahedron's five-fold axes: exact "
+         "icosahedral symmetry, and no repeat in any direction"),
+        ('GROUP', "Symmetry Group",
+         "A field averaged over one of the spherical symmetry groups, so it "
+         "is invariant by construction"),
         ('TURING', "Turing Skin",
          "Gray-Scott grown on the surface itself, with no grid to map it "
          "onto and so no seam"),
@@ -257,6 +280,38 @@ if _IN_BLENDER:
             name="Feature Size", default=0.35, min=0.05, max=1.2,
             description="Diffusion per step; larger spreads the pattern "
                         "into bigger blobs")
+        qc_cells: FloatProperty(
+            name="Scale", default=6.0, min=1.0, max=30.0,
+            description="How many wave periods span the object")
+        qc_sharp: FloatProperty(
+            name="Terrace", default=0.0, min=0.0, max=6.0,
+            description="Flattens the field toward plateaus, which turns "
+                        "interference into something that reads as tiling")
+        qc_jitter: FloatProperty(
+            name="Break Symmetry", default=0.0, min=0.0, max=0.5,
+            description="Perturbs the axes. Any value above zero destroys "
+                        "the exact icosahedral symmetry, deliberately")
+        sph_group: EnumProperty(
+            name="Group",
+            items=[('332', "332 - tetrahedral (T)", "Order 12, chiral"),
+                   ('STAR_332', "*332 - full tetrahedral (Td)", "Order 24"),
+                   ('432', "432 - octahedral (O)", "Order 24, chiral"),
+                   ('STAR_432', "*432 - full octahedral (Oh)", "Order 48"),
+                   ('532', "532 - icosahedral (I)", "Order 60, chiral"),
+                   ('STAR_532', "*532 - full icosahedral (Ih)",
+                    "Order 120, the largest"),
+                   ('3STAR2', "3*2 - pyritohedral (Th)", "Order 24")],
+            default='STAR_532')
+        sym_cells: FloatProperty(name="Wave Scale", default=4.0, min=0.5,
+                                 max=20.0)
+        waves: IntProperty(name="Seed Waves", default=5, min=1, max=16)
+        seed_kind: EnumProperty(
+            name="Seed",
+            items=[('WAVE', "Plane Waves", "Smooth, spread over the sphere"),
+                   ('PACKET', "Packets",
+                    "Localised, giving distinct motifs at the group's "
+                    "special points")],
+            default='WAVE')
         sph_l: IntProperty(name="Degree l", default=4, min=0, max=24)
         sph_m: IntProperty(name="Order m", default=2, min=-24, max=24)
         mode_m: IntProperty(name="m", default=3, min=0, max=16)
@@ -293,6 +348,10 @@ if _IN_BLENDER:
                 points_n=self.points_n, cell_mode=self.cell_mode,
                 cell_sharp=self.cell_sharp, gabor_freq=self.gabor_freq,
                 gabor_band=self.gabor_band, spread=self.spread,
+                qc_cells=self.qc_cells, qc_sharp=self.qc_sharp,
+                qc_jitter=self.qc_jitter, sph_group=self.sph_group,
+                sym_cells=self.sym_cells, waves=self.waves,
+                seed_kind=self.seed_kind,
                 regime=self.regime, rd_steps=self.rd_steps,
                 rd_scale=self.rd_scale,
                 sph_l=self.sph_l, sph_m=self.sph_m, mode_m=self.mode_m,
@@ -375,6 +434,24 @@ if _IN_BLENDER:
                 col.prop(self, 'gabor_band')
                 col.prop(self, 'spread')
                 col.prop(self, 'points_n')
+            elif self.field == 'QUASI':
+                col.prop(self, 'qc_cells')
+                col.prop(self, 'qc_sharp')
+                col.prop(self, 'qc_jitter')
+                if self.qc_jitter > 0.0:
+                    col.label(text="Symmetry deliberately broken",
+                              icon='INFO')
+                if self.base != 'SPHERE':
+                    col.label(text="Icosahedral order suits the Sphere",
+                              icon='INFO')
+            elif self.field == 'GROUP':
+                col.prop(self, 'sph_group')
+                col.prop(self, 'sym_cells')
+                col.prop(self, 'waves')
+                col.prop(self, 'seed_kind')
+                if self.base != 'SPHERE':
+                    col.label(text="These groups act on the sphere",
+                              icon='INFO')
             elif self.field == 'TURING':
                 col.prop(self, 'regime')
                 col.prop(self, 'rd_scale')
@@ -455,13 +532,13 @@ def _selftest():
     # here rather than in front of them.
     for base in _B:
         for fld in ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC',
-                    'LATTICE', 'TURING'):
+                    'LATTICE', 'TURING', 'QUASI', 'GROUP'):
             v, f, _ = build_solid(
                 base=base, sphere_res=3, grid_res=48, field=fld,
                 points_n=60, seed=1, rd_steps=300)
             ok = ok and np.isfinite(np.asarray(v)).all() and len(f) > 0
     print("relief_solid: all %d fields build on all %d bases"
-          % (6, len(_B)))
+          % (8, len(_B)))
 
     print("RESULT:", "OK" if ok else "BAD")
     assert ok

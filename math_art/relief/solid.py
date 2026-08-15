@@ -50,7 +50,8 @@ BASES = ('SPHERE', 'TORUS', 'CYLINDER')
 # Every field `evaluate` dispatches.  Kept complete: this tuple and the
 # operator's menu are the two lists that have to agree, and LATTICE was
 # missing from it while being dispatched and offered.
-FIELDS3D = ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC', 'LATTICE', 'TURING')
+FIELDS3D = ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC', 'QUASI',
+            'GROUP', 'LATTICE', 'TURING')
 
 
 # ---------------------------------------------------------------- bases ----
@@ -656,6 +657,125 @@ def turing_surface(P, faces, regime='MAZE', steps=4000, seed=1, scale=0.35,
     return v
 
 
+def icosahedral_axes():
+    """The six five-fold axes of the icosahedron, as unit vectors.
+
+    An icosahedron's twelve vertices come in six antipodal pairs, and each
+    pair defines one five-fold axis.  They are the golden-ratio coordinates
+    the icosphere is already built from.
+    """
+    phi = (1.0 + math.sqrt(5.0)) / 2.0
+    v = np.array([[0.0, 1.0, phi], [0.0, -1.0, phi],
+                  [1.0, phi, 0.0], [-1.0, phi, 0.0],
+                  [phi, 0.0, 1.0], [phi, 0.0, -1.0]])
+    return v / np.linalg.norm(v, axis=1, keepdims=True)
+
+
+def quasicrystal3d(P, cells=6.0, phase=0.0, sharp=0.0, jitter=0.0, seed=1):
+    """Icosahedral quasicrystal: six cosines along the five-fold axes.
+
+    Two-dimensional quasicrystals come from summing plane waves at angles no
+    lattice can hold; the three-dimensional case is the same idea with the
+    icosahedron's six five-fold axes, which is the structure that started
+    quasicrystallography.  Fivefold symmetry is impossible for any lattice --
+    the crystallographic restriction -- so this field has perfect icosahedral
+    symmetry and no translational period whatever, in any direction.
+
+    That makes it the one pattern here that is ordered everywhere and repeats
+    nowhere, and it needs no chart, no parameterisation and no seam handling:
+    it is a function of space, sampled on the surface.
+
+    Zero phase keeps the symmetry exact, because a cosine is even and so the
+    sign of each axis does not matter.  `jitter` breaks it deliberately.
+
+    References:
+      Dov Levine and Paul J. Steinhardt, "Quasicrystals: A New Class of
+        Ordered Structures", Phys. Rev. Lett. 53, 1984, 2477-2480.
+      Marjorie Senechal, "Quasicrystals and Geometry", Cambridge University
+        Press, 1995.
+    """
+    P = np.asarray(P, dtype=float)
+    span = float(np.max(P.max(axis=0) - P.min(axis=0))) or 1.0
+    k = 2.0 * math.pi * float(cells) / span
+    axes = icosahedral_axes()
+    if jitter > 0.0:
+        rng = np.random.default_rng(int(seed) & 0x7FFFFFFF)
+        axes = axes + jitter * rng.normal(size=axes.shape)
+        axes /= np.linalg.norm(axes, axis=1, keepdims=True)
+    out = np.zeros(len(P))
+    for b_ in axes:
+        out += np.cos(k * (P @ b_) + float(phase))
+    out /= math.sqrt(len(axes))
+    if sharp > 0.0:
+        out = np.tanh(float(sharp) * out)
+    return out
+
+
+SPHERE_GROUPS = ('332', 'STAR_332', '432', 'STAR_432', '532', 'STAR_532',
+                 '3STAR2')
+
+
+def sphere_group_matrices(signature='STAR_532', n=5):
+    """Orthogonal matrices of one of the spherical symmetry types.
+
+    Reuses `orbifold_sphere_generator.build_group`, which already builds all
+    fourteen and is order-tested against Conway's table -- there is no reason
+    for a second implementation of the same finite groups.
+    """
+    try:
+        from ..orbifold_sphere_generator import build_group
+    except ImportError:                     # flat import outside the package
+        from orbifold_sphere_generator import build_group
+    return [np.asarray(g, dtype=float) for g in build_group(signature, n)]
+
+
+def spherical_wallpaper(P, signature='STAR_532', n=5, waves=5, seed=1,
+                        cells=4.0, kind='WAVE'):
+    """A field invariant under a spherical symmetry group.
+
+    The sphere's answer to a wallpaper pattern.  Averaging any function over
+    a group produces something that group cannot change, so the invariance is
+    *by construction* rather than by arrangement -- the same argument the flat
+    engine makes for the seventeen plane groups, one dimension up.  Where the
+    plane has a lattice and a point group, the sphere has only the point
+    group, and there are fourteen of them rather than seventeen.
+
+    The seed field is a handful of 3D plane waves (or Gabor-like packets),
+    so the result is a smooth field on the whole sphere with no chart, no
+    parameterisation and no pole.
+
+    References:
+      John H. Conway, Heidi Burgiel and Chaim Goodman-Strauss, "The
+        Symmetries of Things", A K Peters, 2008 -- the orbifold notation and
+        the enumeration of the spherical types.
+      Frank A. Farris, "Creating Symmetry", Princeton University Press,
+        2015 -- the group-averaging construction, for the plane.
+    """
+    P = np.asarray(P, dtype=float)
+    span = float(np.max(P.max(axis=0) - P.min(axis=0))) or 1.0
+    k = 2.0 * math.pi * float(cells) / span
+    rng = np.random.default_rng(int(seed) & 0x7FFFFFFF)
+    m = max(1, int(waves))
+    dirs = rng.normal(size=(m, 3))
+    dirs /= np.linalg.norm(dirs, axis=1, keepdims=True)
+    phases = rng.uniform(0.0, 2.0 * math.pi, m)
+    amps = 1.0 / (1.0 + np.arange(m))
+
+    G = sphere_group_matrices(signature, n)
+    out = np.zeros(len(P))
+    for g in G:
+        Q = P @ g.T
+        for i in range(m):
+            t = Q @ dirs[i]
+            if str(kind).upper() == 'PACKET':
+                out += amps[i] * np.cos(k * t + phases[i]) * np.exp(-t * t)
+            else:
+                out += amps[i] * np.cos(k * t + phases[i])
+    out /= float(len(G))
+    sd = out.std()
+    return out / sd if sd > 1e-12 else out
+
+
 def evaluate(kind, P, p, faces=None):
     """Dispatch one of the 3D fields over the base's points."""
     kind = str(kind).upper()
@@ -690,6 +810,20 @@ def evaluate(kind, P, p, faces=None):
                               steps=int(p.get('rd_steps', 4000)),
                               seed=int(p.get('seed', 1)),
                               scale=float(p.get('rd_scale', 1.0)))
+    if kind == 'QUASI':
+        return quasicrystal3d(P, cells=float(p.get('qc_cells', 6.0)),
+                              phase=float(p.get('phase', 0.0)),
+                              sharp=float(p.get('qc_sharp', 0.0)),
+                              jitter=float(p.get('qc_jitter', 0.0)),
+                              seed=int(p.get('seed', 1)))
+    if kind == 'GROUP':
+        return spherical_wallpaper(P, signature=p.get('sph_group',
+                                                      'STAR_532'),
+                                   n=int(p.get('sph_n', 5)),
+                                   waves=int(p.get('waves', 5)),
+                                   seed=int(p.get('seed', 1)),
+                                   cells=float(p.get('sym_cells', 4.0)),
+                                   kind=p.get('seed_kind', 'WAVE'))
     if kind == 'LATTICE':
         return lattice3d(P, nx=int(p.get('mode_m', 3)),
                          ny=int(p.get('mode_n', 2)),
@@ -729,6 +863,9 @@ def build_solid(**kw):
              cell_sharp=1.0, gabor_freq=6.0, gabor_band=0.35, spread=3.1416,
              sph_l=4, sph_m=2, mode_m=3, mode_n=2, mode_k=1, phase=0.0,
              regime='MAZE', rd_steps=4000, rd_scale=0.35,
+             qc_cells=6.0, qc_sharp=0.0, qc_jitter=0.0,
+             sph_group='STAR_532', sph_n=5, waves=5, sym_cells=4.0,
+             seed_kind='WAVE',
              depth=0.25, curve='NONE', curve_amount=1.0, norm='STD',
              fit='CUBE', scale=1.0, span=2.0)
     p.update(kw)
@@ -978,6 +1115,107 @@ def _selftest():
           % (len(SURFACE_REGIME_ORDER) - len(dead), len(SURFACE_REGIME_ORDER),
              "" if not dead else "; DEAD: " + ", ".join(dead)))
     ok = ok and not dead
+
+    # --- quasicrystal: exact icosahedral symmetry, and no period --------
+    Pq, Nq, Fq = icosphere(3)
+    hq = quasicrystal3d(Pq, cells=5.0)
+    try:
+        from ..orbifold_sphere_generator import build_group as _bg
+    except ImportError:
+        from orbifold_sphere_generator import build_group as _bg
+    worst = 0.0
+    for g in _bg('532'):
+        worst = max(worst, float(np.abs(
+            quasicrystal3d(Pq @ np.asarray(g, dtype=float).T, cells=5.0)
+            - hq).max()))
+    # The control matters: a field invariant under EVERYTHING would pass the
+    # line above and mean nothing.  Octahedral symmetry is the one an
+    # icosahedral field must NOT have.
+    ctrl = max(float(np.abs(
+        quasicrystal3d(Pq @ np.asarray(g, dtype=float).T, cells=5.0)
+        - hq).max()) for g in _bg('432'))
+    print("solid: quasicrystal invariance over 532 = %.2e; over 432 "
+          "(must fail) = %.3f" % (worst, ctrl))
+    ok = ok and worst < 1e-10 and ctrl > 0.1
+
+    # Aperiodic: no translation repeats it.  Sampled along a generic line,
+    # the autocorrelation of a periodic field returns to 1 at its period; a
+    # quasicrystal's never does.  A cubic lattice sum is the control that
+    # shows the measurement can see a period when there is one.
+    t = np.linspace(0.0, 80.0, 8000)
+
+    def repeat_peak(f):
+        # Overlap-normalised, or the answer is meaningless: `np.correlate`
+        # compares fewer and fewer samples as the lag grows, so its raw output
+        # decays like (N - k)/N and even an exactly periodic signal scores
+        # 0.92 instead of 1.  Dividing by the overlap removes that envelope.
+        f = f - f.mean()
+        n = len(f)
+        ac = np.correlate(f, f, mode='full')[n - 1:]
+        counts = np.arange(n, 0, -1)
+        ac = (ac / counts) / (ac[0] / n)
+        lo = n // 40                    # skip the central peak's own width
+        hi = int(n * 0.75)              # and the tail, where overlap is thin
+        band = ac[lo:hi]
+        # Return both the best near-repeat and how many lags are an actual
+        # repeat.  The height alone does not separate the two cases: a
+        # quasiperiodic field has arbitrarily good ALMOST-periods, and scored
+        # 0.963 against the lattice's 1.002.  What it never has is an exact
+        # period, which recurs at every multiple -- so counting the lags that
+        # reach 1 is the robust discriminator, not the tallest one.
+        return float(np.max(band)), int(np.sum(band > 0.99))
+
+    # **Each field is sampled along its OWN most favourable direction.**  A
+    # generic line through a cubic lattice is an incommensurate section and
+    # is not periodic either, so comparing both along one arbitrary ray shows
+    # nothing -- it scored the lattice lower than the quasicrystal.  The
+    # lattice is therefore sampled along a lattice axis, where it certainly
+    # repeats, and the quasicrystal along one of its own five-fold axes,
+    # which is the best chance it has of repeating.
+    axis = icosahedral_axes()[0]
+    qray = t[:, None] * axis[None, :]
+    qp, qn = repeat_peak(quasicrystal3d(qray, cells=1.0))
+    cp, cn = repeat_peak(np.cos(t) + 2.0)
+    print("solid: repeats -- quasicrystal along a 5-fold axis: best %.3f, "
+          "exact %d; cubic lattice along a lattice axis: best %.3f, exact %d"
+          % (qp, qn, cp, cn))
+    ok = ok and qn == 0 and cn > 5
+
+    # --- spherical groups: invariance, and the spectral fingerprint ------
+    for sig, order in (('332', 12), ('432', 24), ('STAR_532', 120)):
+        G = sphere_group_matrices(sig)
+        hw = spherical_wallpaper(Pq, signature=sig, waves=4, seed=3)
+        bad = 0.0
+        for g in G:
+            bad = max(bad, float(np.abs(
+                spherical_wallpaper(Pq @ g.T, signature=sig, waves=4, seed=3)
+                - hw).max()))
+        print("solid: group %-9s |G|=%-4d worst invariance violation %.2e"
+              % (sig, len(G), bad))
+        ok = ok and len(G) == order and bad < 1e-9
+
+    # The fingerprint invariant theory predicts: the lowest non-constant
+    # spherical harmonic an icosahedrally symmetric field can carry is l = 6,
+    # so every projection from l = 1 to 5 must vanish.  This is a much
+    # stronger statement than "it looks symmetric", and it uses the
+    # area-weighted inner product already verified above.
+    Ph, Nh, Fh = icosphere(4)
+    w = np.zeros(len(Ph))
+    for f, a_ in zip(Fh, face_areas(Ph, Fh)):
+        for i in f:
+            w[i] += a_ / 3.0
+    w *= 4.0 * math.pi / w.sum()
+    hi = spherical_wallpaper(Ph, signature='STAR_532', waves=4, seed=3)
+    hi = hi - float(np.sum(w * hi)) / (4.0 * math.pi)
+    power = []
+    for l in range(1, 7):
+        p_l = sum(float(np.sum(w * hi * spherical_harmonic(Ph, l, m))) ** 2
+                  for m in range(-l, l + 1))
+        power.append(p_l)
+    low = max(power[:5])
+    print("solid: icosahedral field, harmonic power l=1..6: %s"
+          % " ".join("%.2e" % v for v in power))
+    ok = ok and power[5] > 100.0 * low
 
     # --- the built solid -------------------------------------------------
     for base in BASES:
