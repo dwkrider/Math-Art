@@ -84,10 +84,10 @@ if _IN_BLENDER:
             seed=11),
         'TURING_SPHERE': dict(
             base='SPHERE', sphere_res=5, field='TURING', regime='MAZE',
-            rd_steps=5000, rd_scale=1.0, curve='NONE', depth=0.2, seed=3),
+            rd_steps=5000, rd_scale=0.35, curve='NONE', depth=0.2, seed=3),
         'TURING_TORUS': dict(
             base='TORUS', grid_res=192, field='TURING', regime='SPOTS',
-            rd_steps=5000, rd_scale=1.0, curve='NONE', depth=0.16, seed=5),
+            rd_steps=5000, rd_scale=0.35, curve='NONE', depth=0.16, seed=5),
         'WOVEN_TORUS': dict(
             base='TORUS', grid_res=192, field='GABOR', gabor_freq=9.0,
             points_n=260, spread=0.4, curve='NONE', depth=0.16, seed=5),
@@ -254,7 +254,7 @@ if _IN_BLENDER:
             name="Steps", default=4000, min=100, max=30000,
             description="Reaction-diffusion is grown, not evaluated")
         rd_scale: FloatProperty(
-            name="Feature Size", default=1.0, min=0.2, max=2.5,
+            name="Feature Size", default=0.35, min=0.05, max=1.2,
             description="Diffusion per step; larger spreads the pattern "
                         "into bigger blobs")
         sph_l: IntProperty(name="Degree l", default=4, min=0, max=24)
