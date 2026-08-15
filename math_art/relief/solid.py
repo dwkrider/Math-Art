@@ -52,6 +52,7 @@ BASES = ('SPHERE', 'TORUS', 'CYLINDER')
 # missing from it while being dispatched and offered.
 FIELDS3D = ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC', 'QUASI',
             'GROUP', 'RIPPLE', 'WAVE', 'SCATTER', 'TORUS_MODE',
+            'WALLPAPER', 'ELLIPTIC', 'TRUCHET', 'SEIGAIHA',
             'LATTICE', 'TURING')
 
 
@@ -991,6 +992,139 @@ def torus_harmonic(P, m=2, n=1, ring=1.0, tube=0.4, phase=0.0, samples=256):
     return out / sd if sd > 1e-12 else out
 
 
+# Patterns that descend from the flat engine because the surface they land
+# on is intrinsically flat.
+#
+# **The flat torus is Euclidean.**  The abstract torus is R^2 / L and the
+# parameterisation is the universal covering map -- a local isometry, not a
+# projection of a plane onto something curved.  Every doubly periodic
+# construction therefore descends EXACTLY: no seam to match, no pole, no
+# distortion of the intrinsic pattern.  The cylinder is developable and takes
+# the same treatment with only one direction closed.
+#
+# Two things to be honest about rather than hide.  The *embedded* ring torus
+# is not flat -- Gauss-Bonnet forces positive curvature outside and negative
+# inside -- so the embedding stretches the pattern by
+# (R + r cos v) / (R + r), bounded and about 2.3 to 1 at the defaults; that
+# is the same factor `build_solid` already reports as `area_ratio`.  And only
+# the u-rotations and the reflections are isometries of the embedded surface,
+# so a symmetry group's other elements are symmetries of the intrinsic
+# structure rather than of the object you can pick up.
+PARAMETRIC = ('TORUS', 'CYLINDER')
+
+
+def surface_uv(P, base='TORUS', ring=1.0, tube=0.4, height=2.0, radius=0.7):
+    """Intrinsic coordinates of a parametrised base, each in [0, 1).
+
+    Only ever used to evaluate functions that are periodic in them, so the
+    branch cut of the arctangent is invisible: a periodic function does not
+    notice where the chart was cut.
+    """
+    P = np.asarray(P, dtype=float)
+    u = (np.arctan2(P[:, 1], P[:, 0]) / (2.0 * math.pi)) % 1.0
+    if base == 'CYLINDER':
+        v = (P[:, 2] / float(height)) + 0.5
+        return u, np.clip(v, 0.0, 1.0)
+    rho = np.hypot(P[:, 0], P[:, 1]) - float(ring)
+    v = (np.arctan2(P[:, 2], rho) / (2.0 * math.pi)) % 1.0
+    return u, v
+
+
+def _uv_grid(u, v, cells_u=1.0, cells_v=1.0):
+    """(X, Y) for a flat-engine field, in the panel's own [-1, 1] units."""
+    X = (u * float(cells_u) % 1.0) * 2.0 - 1.0
+    Y = (v * float(cells_v) % 1.0) * 2.0 - 1.0
+    return X, Y
+
+
+def flat_on_surface(P, kind, p, base='TORUS', ring=1.0, tube=0.4,
+                    height=2.0, radius=0.7):
+    """Evaluate one of the flat engine's doubly periodic fields here.
+
+    The field is evaluated at the intrinsic coordinates, so what lands on the
+    surface is the pattern itself rather than a picture of it.  Only fields
+    that are genuinely periodic in both directions are offered: anything else
+    would show a seam where the chart closes, which is exactly what this
+    module exists to avoid.
+    """
+    u, v = surface_uv(P, base=base, ring=ring, tube=tube, height=height,
+                      radius=radius)
+    cu = float(p.get('cells_u', 1.0))
+    cv = float(p.get('cells_v', 1.0))
+    X, Y = _uv_grid(u, v, cu, cv)
+    info = {'dx': 2.0 / max(float(p.get('grid_res', 128)), 2.0),
+            'dy': 2.0 / max(float(p.get('grid_res', 128)), 2.0),
+            'width': 2.0, 'height': 2.0, 'nx': 2, 'ny': 2}
+
+    kind = str(kind).upper()
+    if kind == 'WALLPAPER':
+        try:
+            from .symmetry import wallpaper
+        except ImportError:
+            from symmetry import wallpaper
+        return wallpaper(X, Y, info, group=p.get('group', 'P4M'),
+                         # Shared with the spherical group's seed count:
+                         # both are "how many waves go in".
+                         waves=int(p.get('waves', 5)),
+                         seed=int(p.get('seed', 1)),
+                         cells=1.0, freq_max=int(p.get('freq_max', 3)))
+    if kind == 'ELLIPTIC':
+        try:
+            from .elliptic import elliptic_field
+        except ImportError:
+            from elliptic import elliptic_field
+        return elliptic_field(X, Y, info, kind=p.get('ell_kind', 'WP'),
+                              tau_re=float(p.get('tau_re', 0.0)),
+                              tau_im=float(p.get('tau_im', 1.0)),
+                              cells=1.0, part=p.get('ell_part', 'SPHERE'))
+    if kind == 'TRUCHET':
+        try:
+            from .tiles import truchet
+        except ImportError:
+            from tiles import truchet
+        return truchet(X, Y, info, cells=int(p.get('tile_cells', 6)),
+                       seed=int(p.get('seed', 1)),
+                       lane=float(p.get('lane', 0.3)),
+                       straight=float(p.get('straight', 0.0)))
+    if kind == 'SEIGAIHA':
+        try:
+            from .tiles import seigaiha
+        except ImportError:
+            from tiles import seigaiha
+        # **The crown is snapped so the stagger closes.**  Seigaiha offsets
+        # alternate rows by half a cell, so its pattern repeats every TWO
+        # rows -- and it only wraps if an even number of rows fits the
+        # period.  At an arbitrary crown it does not: measured, the v wrap
+        # came to 2.57 against an interior variation of 1.65, a plain line
+        # across the torus.  Rows across the period are cells/crown, so
+        # snapping the crown to the nearest value giving an even count fixes
+        # it, and moves the crown by a few percent at most.
+        cells_n = max(1, int(p.get('tile_cells', 5)))
+        crown = float(p.get('crown', 0.55))
+        rows = cells_n / max(crown, 1e-6)
+        even = max(2.0, 2.0 * round(rows / 2.0))
+        return seigaiha(X, Y, info, cells=cells_n,
+                        seed=int(p.get('seed', 1)),
+                        rings=int(p.get('rings', 3)),
+                        crown=cells_n / even,
+                        rim=float(p.get('rim', 0.08)))
+    raise ValueError("no surface form for %r" % (kind,))
+
+
+def conformal_tau(ring=1.0, tube=0.4):
+    """The ring torus's own conformal modulus.
+
+    A torus of revolution is conformally the flat torus with modulus
+    tau = i R / sqrt(R^2 - r^2), so defaulting the elliptic lattice to it
+    puts the Weierstrass function on the shape it actually belongs to rather
+    than on an arbitrary square lattice.
+    """
+    R = float(ring)
+    r = float(tube)
+    d = math.sqrt(max(R * R - r * r, 1e-12))
+    return R / d
+
+
 def evaluate(kind, P, p, faces=None):
     """Dispatch one of the 3D fields over the base's points."""
     kind = str(kind).upper()
@@ -1071,6 +1205,18 @@ def evaluate(kind, P, p, faces=None):
                               ring=float(p.get('ring', 1.0)),
                               tube=float(p.get('tube', 0.4)),
                               phase=float(p.get('phase', 0.0)))
+    if kind in ('WALLPAPER', 'ELLIPTIC', 'TRUCHET', 'SEIGAIHA'):
+        base = p.get('base', 'TORUS')
+        if base == 'SPHERE':
+            raise ValueError(
+                "%s is a doubly periodic construction and belongs on the "
+                "torus or cylinder; a sphere has no flat structure for it "
+                "to descend to" % kind)
+        return flat_on_surface(P, kind, p, base=base,
+                               ring=float(p.get('ring', 1.0)),
+                               tube=float(p.get('tube', 0.4)),
+                               height=float(p.get('height', 2.0)),
+                               radius=float(p.get('radius', 0.7)))
     if kind == 'LATTICE':
         return lattice3d(P, nx=int(p.get('mode_m', 3)),
                          ny=int(p.get('mode_n', 2)),
@@ -1116,6 +1262,10 @@ def build_solid(**kw):
              sources=4, wavelength=0.35, decay=0.0, steepness=0.0,
              wave_count=1, wave_spread=0.0, sigma=0.12,
              kernel='WYVILL', merge_mode='MAX',
+             cells_u=1.0, cells_v=1.0, group='P4M',
+             freq_max=3, ell_kind='WP', ell_part='SPHERE',
+             tau_re=0.0, tau_im=1.0, tile_cells=6, lane=0.3,
+             straight=0.0, rings=3, crown=0.55, rim=0.08,
              depth=0.25, curve='NONE', curve_amount=1.0, norm='STD',
              fit='CUBE', scale=1.0, span=2.0)
     p.update(kw)
@@ -1605,6 +1755,50 @@ def _selftest():
     print("solid: m=12 mode peaks at v=%.3f rad (0 is the outer equator)"
           % peak)
     ok = ok and (peak < 0.4 or peak > 2.0 * math.pi - 0.4)
+
+    # --- the flat ports, and the property that lets them come -----------
+    # A doubly periodic field evaluated at the torus's intrinsic coordinates
+    # descends exactly, so it must be continuous across BOTH wraps -- which
+    # is where a projected pattern would betray itself.  Measured the same
+    # way as everything else here: the step across the wrap against the step
+    # inside.
+    Pw, Nw, Fw = torus(128, ring=1.0, tube=0.4)
+    nvw = len(Pw) // 128
+    for name, prm in (('WALLPAPER', dict(group='P4M', waves=5, seed=3)),
+                      ('ELLIPTIC', dict(ell_kind='WP')),
+                      ('TRUCHET', dict(tile_cells=4, lane=0.35)),
+                      ('SEIGAIHA', dict(tile_cells=4, rings=2))):
+        prm.update(cells_u=2.0, cells_v=1.0, base='TORUS')
+        hv = evaluate(name, Pw, prm, faces=Fw)
+        H = hv.reshape(128, nvw)
+        sd = hv.std() or 1.0
+        wu = float(np.abs(H[0] - H[-1]).max() / sd)
+        wv = float(np.abs(H[:, 0] - H[:, -1]).max() / sd)
+        iu = float(np.abs(np.diff(H, axis=0)).max() / sd)
+        print("solid: %-9s on the torus -- wrap step u %.3f, v %.3f sd; "
+              "interior %.3f sd" % (name, wu, wv, iu))
+        ok = ok and np.isfinite(hv).all()
+        # The wrap must be no worse than ordinary interior variation.  Note
+        # this is a real test only because the fields are periodic by
+        # construction: a projected one would fail it loudly.
+        ok = ok and wu <= 1.0 * iu and wv <= 1.0 * iu
+
+    # Asking for one on a sphere is refused rather than obliged: there is no
+    # flat structure there for a doubly periodic pattern to descend to.
+    try:
+        evaluate('WALLPAPER', Pq, dict(base='SPHERE'), faces=Fq)
+        refused = False
+    except ValueError:
+        refused = True
+    print("solid: a doubly periodic field on a sphere is refused: %s"
+          % refused)
+    ok = ok and refused
+
+    # The conformal modulus is the torus's own, not an arbitrary square.
+    tau = conformal_tau(1.0, 0.4)
+    print("solid: ring torus conformal modulus tau = %.4f i (R/sqrt(R^2-r^2))"
+          % tau)
+    ok = ok and abs(tau - 1.0 / math.sqrt(1.0 - 0.16)) < 1e-12
 
     # --- the built solid -------------------------------------------------
     for base in BASES:

@@ -82,6 +82,21 @@ if _IN_BLENDER:
             base='SPHERE', sphere_res=5, field='CELLULAR', points_n=220,
             cell_mode='CRACK', cell_sharp=0.7, curve='NONE', depth=0.2,
             seed=11),
+        'WALLPAPER_TORUS': dict(
+            base='TORUS', grid_res=192, field='WALLPAPER', group='P6M',
+            cells_u=3.0, cells_v=1.0, waves=5, curve='NONE', depth=0.18,
+            seed=3),
+        'ELLIPTIC_TORUS': dict(
+            base='TORUS', grid_res=192, field='ELLIPTIC', ell_kind='WP',
+            ell_part='SPHERE', cells_u=2.0, cells_v=1.0, curve='NONE',
+            depth=0.2),
+        'TRUCHET_TORUS': dict(
+            base='TORUS', grid_res=192, field='TRUCHET', tile_cells=5,
+            lane=0.32, straight=0.3, cells_u=2.0, cells_v=1.0,
+            curve='NONE', depth=0.16, seed=2),
+        'SEIGAIHA_TORUS': dict(
+            base='TORUS', grid_res=192, field='SEIGAIHA', tile_cells=4,
+            rings=3, cells_u=3.0, cells_v=1.0, curve='NONE', depth=0.16),
         'GEODESIC_POND': dict(
             base='SPHERE', sphere_res=5, field='RIPPLE', sources=4,
             wavelength=0.32, curve='NONE', depth=0.2, seed=6),
@@ -135,6 +150,14 @@ if _IN_BLENDER:
         ('HARMONIC_BALL', "Harmonic Ball",
          "A spherical harmonic -- the sphere's own vibration mode"),
         ('SHAGREEN', "Shagreen", "Cellular texture, cells cut out of space"),
+        ('WALLPAPER_TORUS', "Wallpaper Torus",
+         "A plane symmetry group wrapped onto its natural flat home"),
+        ('ELLIPTIC_TORUS', "Elliptic Torus",
+         "Weierstrass P on the torus, with the lattice the torus implies"),
+        ('TRUCHET_TORUS', "Truchet Torus",
+         "Meandering lanes that close around both directions"),
+        ('SEIGAIHA_TORUS', "Seigaiha Torus",
+         "Overlapping wave fans, wrapped with no seam"),
         ('GEODESIC_POND', "Geodesic Pond",
          "Wavefronts that wrap the sphere and refocus at the antipode"),
         ('ZONAL', "Zonal Bands",
@@ -167,6 +190,16 @@ if _IN_BLENDER:
          "Band-limited sparse convolution noise, at a chosen pitch"),
         ('HARMONIC', "Spherical Harmonic",
          "Y_lm: the sphere's own eigenfunction. Meant for the Sphere base"),
+        ('WALLPAPER', "Wallpaper Group",
+         "One of the 17 plane groups, on the torus or cylinder -- their "
+         "intrinsic geometry is flat, so the pattern descends exactly"),
+        ('ELLIPTIC', "Weierstrass P",
+         "The elliptic function on its native domain: a torus IS the "
+         "quotient of the plane its lattice defines"),
+        ('TRUCHET', "Truchet",
+         "Arc tiles that always join, on the intrinsically flat torus"),
+        ('SEIGAIHA', "Seigaiha",
+         "The overlapping wave-fan ornament, wrapped without a seam"),
         ('RIPPLE', "Geodesic Ripple",
          "Wavefronts spreading over the surface at constant geodesic "
          "wavelength -- on a sphere they close up again at the antipode"),
@@ -312,6 +345,52 @@ if _IN_BLENDER:
             name="Feature Size", default=0.35, min=0.05, max=1.2,
             description="Diffusion per step; larger spreads the pattern "
                         "into bigger blobs")
+        cells_u: FloatProperty(
+            name="Repeats Around", default=2.0, min=0.25, max=24.0,
+            description="Copies of the pattern around the ring")
+        cells_v: FloatProperty(
+            name="Repeats Across", default=1.0, min=0.25, max=24.0,
+            description="Copies across the tube")
+        group: EnumProperty(
+            name="Plane Group",
+            items=[(g, g, "Wallpaper group %s" % g)
+                   for g in ('P1', 'P2', 'PM', 'PG', 'CM', 'PMM', 'PMG',
+                             'PGG', 'CMM', 'P4', 'P4M', 'P4G', 'P3',
+                             'P3M1', 'P31M', 'P6', 'P6M')],
+            default='P4M')
+        freq_max: IntProperty(name="Detail", default=3, min=1, max=8)
+        ell_kind: EnumProperty(
+            name="Function",
+            items=[('WP', "Weierstrass P", "Doubly periodic: tiles exactly"),
+                   ('WP_PRIME', "Weierstrass P'", "Also doubly periodic"),
+                   ('ZETA', "Weierstrass zeta",
+                    "Quasi-periodic: will NOT close"),
+                   ('THETA', "Jacobi theta",
+                    "Quasi-periodic: will NOT close")],
+            default='WP')
+        ell_part: EnumProperty(
+            name="Height From",
+            items=[('SPHERE', "Riemann Sphere", "Smooth through the poles"),
+                   ('RE', "Real Part", ""), ('IM', "Imaginary Part", ""),
+                   ('ABS', "Modulus", "")],
+            default='SPHERE')
+        use_conformal: BoolProperty(
+            name="Conformal Lattice", default=True,
+            description="Set the lattice to the torus's own conformal "
+                        "modulus, so the function sits on the shape it "
+                        "belongs to rather than an arbitrary square")
+        tau_re: FloatProperty(name="Lattice Skew", default=0.0, min=-2.0,
+                              max=2.0)
+        tau_im: FloatProperty(name="Lattice Ratio", default=1.0, min=0.05,
+                              max=4.0)
+        tile_cells: IntProperty(name="Cells", default=6, min=1, max=32)
+        lane: FloatProperty(name="Lane Width", default=0.3, min=0.02,
+                            max=1.0)
+        straight: FloatProperty(name="Straight Tiles", default=0.0, min=0.0,
+                                max=1.0)
+        rings: IntProperty(name="Arcs", default=3, min=1, max=12)
+        crown: FloatProperty(name="Crown", default=0.55, min=0.1, max=1.0)
+        rim: FloatProperty(name="Rim", default=0.08, min=0.0, max=0.5)
         sources: IntProperty(name="Sources", default=4, min=1, max=32)
         wavelength: FloatProperty(name="Wavelength", default=0.35, min=0.01,
                                   max=8.0, unit='LENGTH')
@@ -404,6 +483,15 @@ if _IN_BLENDER:
                 points_n=self.points_n, cell_mode=self.cell_mode,
                 cell_sharp=self.cell_sharp, gabor_freq=self.gabor_freq,
                 gabor_band=self.gabor_band, spread=self.spread,
+                cells_u=self.cells_u, cells_v=self.cells_v,
+                group=self.group, freq_max=self.freq_max,
+                ell_kind=self.ell_kind, ell_part=self.ell_part,
+                tau_re=self.tau_re,
+                tau_im=(_solid.conformal_tau(self.ring, self.tube)
+                        if self.use_conformal else self.tau_im),
+                tile_cells=self.tile_cells, lane=self.lane,
+                straight=self.straight, rings=self.rings,
+                crown=self.crown, rim=self.rim,
                 sources=self.sources, wavelength=self.wavelength,
                 decay=self.decay, steepness=self.steepness,
                 wave_count=self.wave_count,
@@ -496,6 +584,46 @@ if _IN_BLENDER:
                 col.prop(self, 'gabor_band')
                 col.prop(self, 'spread')
                 col.prop(self, 'points_n')
+            elif self.field in ('WALLPAPER', 'ELLIPTIC', 'TRUCHET',
+                                'SEIGAIHA'):
+                if self.base == 'SPHERE':
+                    col.label(text="Needs the Torus or Cylinder base",
+                              icon='ERROR')
+                    col.label(text="A sphere has no flat structure for a "
+                                   "repeating pattern")
+                row = col.row(align=True)
+                row.prop(self, 'cells_u')
+                row.prop(self, 'cells_v')
+                if self.field == 'WALLPAPER':
+                    col.prop(self, 'group')
+                    col.prop(self, 'waves')
+                    col.prop(self, 'freq_max')
+                elif self.field == 'ELLIPTIC':
+                    col.prop(self, 'ell_kind')
+                    col.prop(self, 'ell_part')
+                    col.prop(self, 'use_conformal')
+                    if self.use_conformal:
+                        col.label(text="Lattice ratio %.3f, from the torus"
+                                       % _solid.conformal_tau(self.ring,
+                                                              self.tube),
+                                  icon='INFO')
+                    else:
+                        col.prop(self, 'tau_re')
+                        col.prop(self, 'tau_im')
+                    if self.ell_kind not in ('WP', 'WP_PRIME'):
+                        col.label(text="Only P and P' are doubly periodic",
+                                  icon='INFO')
+                elif self.field == 'TRUCHET':
+                    col.prop(self, 'tile_cells')
+                    col.prop(self, 'lane')
+                    col.prop(self, 'straight')
+                else:
+                    col.prop(self, 'tile_cells')
+                    col.prop(self, 'rings')
+                    col.prop(self, 'crown')
+                    col.prop(self, 'rim')
+                    col.label(text="Crown snaps so the stagger closes",
+                              icon='INFO')
             elif self.field == 'RIPPLE':
                 col.prop(self, 'sources')
                 col.prop(self, 'wavelength')
@@ -624,6 +752,9 @@ def _selftest():
         for fld in ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC',
                     'LATTICE', 'TURING', 'QUASI', 'GROUP',
                     'RIPPLE', 'WAVE', 'SCATTER', 'TORUS_MODE'):
+            if base == 'SPHERE' and fld in ('WALLPAPER', 'ELLIPTIC',
+                                            'TRUCHET', 'SEIGAIHA'):
+                continue
             v, f, _ = build_solid(
                 base=base, sphere_res=3, grid_res=48, field=fld,
                 points_n=60, seed=1, rd_steps=300)
