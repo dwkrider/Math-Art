@@ -623,6 +623,8 @@ OPS = [
         mode='HELICOID')),
     ("ruled surface hypar", lambda: bpy.ops.mesh.ruled_surface_add(
         mode='HYPAR')),
+    ("relief solid", lambda: bpy.ops.mesh.relief_solid_add()),
+    ("relief panel", lambda: bpy.ops.mesh.relief_panel_add()),
     ("rolling knot", lambda: bpy.ops.mesh.rolling_knot_add(
         p=3, samples=256, sides=10)),
     ("rolling knot morton", lambda: bpy.ops.mesh.rolling_knot_add(
