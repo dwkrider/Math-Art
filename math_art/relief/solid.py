@@ -47,7 +47,7 @@ import math
 import numpy as np
 
 BASES = ('SPHERE', 'TORUS', 'CYLINDER')
-FIELDS3D = ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC')
+FIELDS3D = ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC', 'TURING')
 
 
 # ---------------------------------------------------------------- bases ----
@@ -163,15 +163,32 @@ def _wrapped_quads(nu, nv, wrap_u=False, wrap_v=False):
     return out
 
 
-def build_base(base='SPHERE', res=4, ring=1.0, tube=0.4, height=2.0,
-               radius=0.7):
-    """`(points, normals, faces)` for one of the closed bases."""
+# What "detail" means depends on the base, and the two scales are nowhere
+# near each other: a geodesic sphere takes SUBDIVISIONS, where 5 is already
+# 10k vertices and 8 would be half a million, while the torus and cylinder
+# take a GRID RESOLUTION, where 5 is a pentagon.  One control serving both
+# gave whichever base you did not have in mind a useless default.
+SPHERE_RES_DEFAULT = 5
+GRID_RES_DEFAULT = 128
+
+
+def build_base(base='SPHERE', res=None, ring=1.0, tube=0.4, height=2.0,
+               radius=0.7, sphere_res=None, grid_res=None):
+    """`(points, normals, faces)` for one of the closed bases.
+
+    `res` is accepted as a single legacy control; `sphere_res` and `grid_res`
+    are the two it should have been from the start.
+    """
     if base == 'SPHERE':
-        return icosphere(int(res))
+        n = sphere_res if sphere_res is not None else (
+            res if res is not None else SPHERE_RES_DEFAULT)
+        return icosphere(int(n))
+    n = grid_res if grid_res is not None else (
+        res if res is not None else GRID_RES_DEFAULT)
     if base == 'TORUS':
-        return torus(int(res), ring=ring, tube=tube)
+        return torus(int(n), ring=ring, tube=tube)
     if base == 'CYLINDER':
-        return cylinder(int(res), height=height, radius=radius)
+        return cylinder(int(n), height=height, radius=radius)
     raise ValueError("unknown base: %r" % (base,))
 
 
@@ -340,7 +357,118 @@ def lattice3d(P, nx=3, ny=2, nz=1, phase=0.0, ring=1.0, tube=0.4):
             + np.sin(k * nz * P[:, 2] + phase))
 
 
-def evaluate(kind, P, p):
+# Gray-Scott regimes for the MESH, which are not the grid's.
+#
+# The living region of the (F, k) plane moves with the operator and the
+# lattice: on a mesh the spacing is the edge length, and the umbrella
+# Laplacian is not the five-point stencil.  Feeding the flat engine's pairs
+# in here killed three of seven outright, and matching Pearson's per-step
+# diffusion exactly killed all seven -- his rates diffuse across a whole
+# geodesic sphere in a few steps, because his lattice is far finer relative
+# to the pattern than this one is.  So the plane was swept again here, and
+# these are pairs that actually grow on a surface.
+#
+#                        F       k      cover
+SURFACE_REGIMES = {
+    'SOLITONS': (0.030, 0.065),   #   5%  sparse, well separated dots
+    'SPOTS':    (0.030, 0.063),   #  20%  even spotting
+    'MITOSIS':  (0.034, 0.063),   #  20%  spots caught dividing
+    'WORMS':    (0.038, 0.061),   #  41%  elongated, joined
+    'MAZE':     (0.030, 0.057),   #  46%  labyrinth
+    'HOLES':    (0.026, 0.053),   #  61%  pits in a filled field
+    'CORAL':    (0.042, 0.059),   #  71%  dense branching
+}
+SURFACE_REGIME_ORDER = ('SPOTS', 'SOLITONS', 'MITOSIS', 'WORMS', 'MAZE',
+                        'HOLES', 'CORAL')
+
+
+def vertex_laplacian(P, faces):
+    """Graph Laplacian of the mesh, as (neighbour lists, inverse valences).
+
+    Diffusion on a curved surface needs the Laplace operator OF that surface,
+    not of a grid it has been flattened onto -- which is the whole reason
+    this module exists.  The umbrella operator, the average of a vertex's
+    neighbours minus the vertex, is the discrete Laplacian for a mesh whose
+    edges are near enough equal, and a geodesic sphere or a regular torus
+    grid is exactly that.  (The cotangent weights would be the right answer
+    on a mesh with badly varying triangles; here they would buy nothing and
+    cost a great deal.)
+    """
+    nbr = [[] for _ in range(len(P))]
+    seen = set()
+    for f in faces:
+        k = len(f)
+        for i in range(k):
+            a_, b_ = int(f[i]), int(f[(i + 1) % k])
+            key = (a_, b_) if a_ < b_ else (b_, a_)
+            if key in seen:
+                continue
+            seen.add(key)
+            nbr[a_].append(b_)
+            nbr[b_].append(a_)
+    width = max(len(n) for n in nbr)
+    # Padded index table so the sum is one fancy-indexed reduction rather
+    # than a Python loop over a hundred thousand vertices per step.
+    idx = np.zeros((len(P), width), dtype=np.int64)
+    wgt = np.zeros((len(P), width))
+    for i, ns in enumerate(nbr):
+        idx[i, :len(ns)] = ns
+        wgt[i, :len(ns)] = 1.0
+    inv = 1.0 / np.maximum(wgt.sum(axis=1), 1.0)
+    return idx, wgt, inv
+
+
+def turing_surface(P, faces, regime='MAZE', steps=4000, seed=1, scale=1.0,
+                   feed=None, kill=None):
+    """Grow a Gray-Scott skin on the surface itself.
+
+    The flat engine runs this on a grid and resamples; that cannot be done
+    here, because there is no grid a closed surface maps to without
+    distortion.  Running it on the mesh instead is both simpler and more
+    faithful -- it is how these patterns are actually modelled on animal
+    coats, and the pattern has no seam because the surface has none.
+
+    `scale` sets how large the features are relative to the surface: the
+    edge length is the lattice spacing, so the diffusion rate per step is
+    what decides the blob size.
+    """
+    f_, k_ = SURFACE_REGIMES.get(str(regime).upper(),
+                                 SURFACE_REGIMES['MAZE'])
+    F = float(f_ if feed is None else feed)
+    K = float(k_ if kill is None else kill)
+
+    idx, wgt, inv = vertex_laplacian(P, faces)
+    rng = np.random.default_rng(int(seed) & 0x7FFFFFFF)
+    n = len(P)
+    u = np.ones(n)
+    v = np.zeros(n)
+    # Finite-amplitude patches, for the reason the flat engine documents: the
+    # uniform state is linearly stable, so low-amplitude noise everywhere
+    # decays and leaves a blank surface.
+    hit = rng.random(n) < 0.06
+    u[hit] = 0.50
+    v[hit] = 0.25
+    u += 0.02 * (rng.random(n) - 0.5)
+    v += 0.02 * (rng.random(n) - 0.5)
+
+    # Diffusion per step in mesh units.  The umbrella operator has spectral
+    # radius 2, so rates below 1/2 are stable; `scale` moves both rates
+    # together, which changes feature size without leaving that bound.
+    du = 0.16 * float(scale)
+    dv = 0.08 * float(scale)
+    du = min(du, 0.45)
+    dv = min(dv, 0.45)
+
+    for _ in range(max(1, int(steps))):
+        lu = (u[idx] * wgt).sum(axis=1) * inv - u
+        lv = (v[idx] * wgt).sum(axis=1) * inv - v
+        uvv = u * v * v
+        u += du * lu - uvv + F * (1.0 - u)
+        v += dv * lv + uvv - (F + K) * v
+    return v
+
+
+def evaluate(kind, P, p, faces=None):
     """Dispatch one of the 3D fields over the base's points."""
     kind = str(kind).upper()
     if kind == 'FRACTAL':
@@ -367,6 +495,13 @@ def evaluate(kind, P, p):
         return spherical_harmonic(P, l=int(p.get('sph_l', 4)),
                                   m=int(p.get('sph_m', 2)),
                                   phase=float(p.get('phase', 0.0)))
+    if kind == 'TURING':
+        if faces is None:
+            raise ValueError("the Turing field needs the mesh faces")
+        return turing_surface(P, faces, regime=p.get('regime', 'MAZE'),
+                              steps=int(p.get('rd_steps', 4000)),
+                              seed=int(p.get('seed', 1)),
+                              scale=float(p.get('rd_scale', 1.0)))
     if kind == 'LATTICE':
         return lattice3d(P, nx=int(p.get('mode_m', 3)),
                          ny=int(p.get('mode_n', 2)),
@@ -398,20 +533,24 @@ def build_solid(**kw):
     that matter for this construction: how uniform the base's faces are, and
     whether the displaced surface stayed a valid solid.
     """
-    p = dict(base='SPHERE', res=4, ring=1.0, tube=0.4, height=2.0,
+    p = dict(base='SPHERE', res=None, sphere_res=SPHERE_RES_DEFAULT,
+             grid_res=GRID_RES_DEFAULT, ring=1.0, tube=0.4, height=2.0,
              radius=0.7, field='FRACTAL', method='FBM', octaves=8,
              lacunarity=2.0, dim=2.3, hurst=0.7, modes=240, seed=1,
              field_scale=1.0, points_n=120, cell_mode='CRACK',
              cell_sharp=1.0, gabor_freq=6.0, gabor_band=0.35, spread=3.1416,
              sph_l=4, sph_m=2, mode_m=3, mode_n=2, mode_k=1, phase=0.0,
+             regime='MAZE', rd_steps=4000, rd_scale=1.0,
              depth=0.25, curve='NONE', curve_amount=1.0, norm='STD',
              fit='CUBE', scale=1.0, span=2.0)
     p.update(kw)
 
-    P, N, faces = build_base(p['base'], res=p['res'], ring=p['ring'],
+    P, N, faces = build_base(p['base'], res=p['res'],
+                             sphere_res=p['sphere_res'],
+                             grid_res=p['grid_res'], ring=p['ring'],
                              tube=p['tube'], height=p['height'],
                              radius=p['radius'])
-    h = evaluate(p['field'], P, p)
+    h = evaluate(p['field'], P, p, faces=faces)
 
     from . import transfer as _transfer
     h = _transfer.normalize(h, p['norm'])
@@ -492,7 +631,8 @@ def _selftest():
                        ('CYLINDER', dict(res=96))):
         Pb, Nb, Fb = build_base(base, **args)
         for fld in ('FRACTAL', 'CELLULAR', 'GABOR'):
-            hb = evaluate(fld, Pb, dict(seed=3, points_n=80, octaves=6))
+            hb = evaluate(fld, Pb, dict(seed=3, points_n=80, octaves=6),
+                          faces=Fb)
             step, mean = worst_step(Pb, Fb, hb)
             print("solid: %-8s %-8s worst neighbour step %.2f sd "
                   "(mean %.4f)" % (base, fld, step, mean))
@@ -502,7 +642,7 @@ def _selftest():
     # The torus wraps in BOTH directions, and that is where a projected
     # field would betray itself.  Check the two wrap rings explicitly.
     Pt, Nt, Ft = torus(96)
-    ht = evaluate('FRACTAL', Pt, dict(seed=5, octaves=6))
+    ht = evaluate('FRACTAL', Pt, dict(seed=5, octaves=6), faces=Ft)
     nu = 96
     nv = len(Pt) // nu
     H = ht.reshape(nu, nv)
