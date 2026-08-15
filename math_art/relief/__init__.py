@@ -49,6 +49,7 @@ from .stack import BLENDS, evaluate_stack, layer, MASKS
 from .transfer import apply_curve, CURVES, normalize, NORMS, to_depth
 from .warp import (domain_warp, orientation_field, ORIENTATIONS,
                    phase_from_direction, smooth_field)
+import numpy as np
 
 __all__ = [
     "fields", "grid", "imprint", "kernels", "mesh", "plates", "special",

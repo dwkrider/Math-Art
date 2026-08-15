@@ -17,15 +17,19 @@ operators stay in their flat generator modules.  Layout follows
                 isometry that produced it.
     placed      the placed-tiles interchange format every tiling backend
                 emits and every relief mode consumes.
-    relief      Mode-A relief: 2D polygons and segments to watertight
+    prisms      Mode-A relief: 2D polygons and segments to watertight
                 prisms on a slab, centred and scaled to the 2 m cube.
+                Named `prisms` and not `relief` because `math_art/relief/`
+                is a different subject -- displacement on closed surfaces
+                -- and two unrelated answers to one grep is a bug in the
+                naming, not in either module.
     polygon2d   planar predicates (signed area, winding, arclength, line
                 intersection) the tiling generators had each grown their
                 own copy of.
     ribbon      mitred ribbons, band faces and strand smoothing -- the
                 interlace layer, previously private to the Islamic
                 pattern generator and reached into by four others.
-    weave       the over/under solver: union-find with parity, and the
+    overunder   the over/under solver: union-find with parity, and the
                 smoothstep z-offset that makes a strand pass under.
     substitution  prototiles + inflation rules over planar similarities
                 (z -> Az + B conj z + C, so reflections are expressible
@@ -58,9 +62,9 @@ from .polygon2d import (arclen, ensure_ccw, line_intersection,
 from .ribbon import (angle_cut_piece, band_ribbon_faces,
                      band_ribbon_faces_z, catmull_rom, cut_band,
                      cut_cap_on_edge, miter, miter_ribbon)
-from .weave import ParityDSU, weave_zoff
+from .overunder import ParityDSU, weave_zoff
 from .substitution import Similarity, Substitution, penrose_p3
-from .relief import (center_scale, center_xy, merge_cells, prisms,
+from .prisms import (center_scale, center_xy, merge_cells, prisms,
                      ribbon_polys, slab)
 
 __all__ = [

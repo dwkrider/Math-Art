@@ -40,23 +40,20 @@ bl_info = {
                    "sets meshed by marching tetrahedra",
     "category": "Add Mesh",
 }
-
-import math
 import numpy as np
 
-_PHI = (1.0 + math.sqrt(5.0)) / 2.0          # golden ratio
-_SQRT2 = math.sqrt(2.0)
+# The mathematics lives in the sibling `surfaces` engine package;
+# this module is the Blender layer over it.
+try:
+    from .surfaces.algebraic import (PRESETS, build_algebraic)
+except ImportError:  # flat import outside the package
+    from surfaces.algebraic import (PRESETS, build_algebraic)
 
 
-def _toolkit():
-    """The sibling `minsurf` engine package supplies marching_tets.
-    Relative import when installed as part of the Math Art package,
-    absolute when this file runs standalone next to the toolkit."""
-    try:
-        from . import minsurf as mst
-    except ImportError:
-        import minsurf as mst
-    return mst
+
+
+
+
 
 
 # ==========================================================================
@@ -66,159 +63,28 @@ def _toolkit():
 # parameter mu (ignored by every preset except the Kummer quartic)
 # and returns f on the grid; the surface is the zero level set.
 
-def _f_clebsch(x, y, z, mu):
-    # 81(x^3+y^3+z^3) - 189(sum of x^2 y terms) + 54xyz
-    #   + 126(xy+xz+yz) - 9(x^2+y^2+z^2) - 9(x+y+z) + 1 = 0
-    # Future option: overlay the famous 27 real lines of this cubic
-    # as curve objects (not implemented).
-    x2, y2, z2 = x * x, y * y, z * z
-    return (81.0 * (x2 * x + y2 * y + z2 * z)
-            - 189.0 * (x2 * y + x2 * z + y2 * x + y2 * z
-                       + z2 * x + z2 * y)
-            + 54.0 * x * y * z
-            + 126.0 * (x * y + x * z + y * z)
-            - 9.0 * (x2 + y2 + z2)
-            - 9.0 * (x + y + z) + 1.0)
 
 
-def _f_cayley(x, y, z, mu):
-    # 4(x^2+y^2+z^2) + 16xyz - 1 = 0 -- four conical nodes, the
-    # maximum possible on a cubic surface
-    return 4.0 * (x * x + y * y + z * z) + 16.0 * x * y * z - 1.0
 
 
-def _f_kummer(x, y, z, mu):
-    # (x^2+y^2+z^2 - mu^2)^2 - lambda p q r s = 0 with the four
-    # tetrahedral tangent planes p, q, r, s; 16 nodes for generic mu
-    mu2 = mu * mu
-    lam = (3.0 * mu2 - 1.0) / (3.0 - mu2)
-    p = 1.0 - z - _SQRT2 * x
-    q = 1.0 - z + _SQRT2 * x
-    r = 1.0 + z + _SQRT2 * y
-    s = 1.0 + z - _SQRT2 * y
-    core = x * x + y * y + z * z - mu2
-    return core * core - lam * p * q * r * s
 
 
-def _f_barth(x, y, z, mu):
-    # 4(phi^2 x^2 - y^2)(phi^2 y^2 - z^2)(phi^2 z^2 - x^2)
-    #   - (1+2 phi)(x^2+y^2+z^2-1)^2 = 0, phi the golden ratio
-    p2 = _PHI * _PHI
-    x2, y2, z2 = x * x, y * y, z * z
-    w = x2 + y2 + z2 - 1.0
-    return (4.0 * (p2 * x2 - y2) * (p2 * y2 - z2) * (p2 * z2 - x2)
-            - (1.0 + 2.0 * _PHI) * w * w)
 
 
-def _f_togliatti(x, y, z, mu):
-    # 64(x-1)(x^4 - 4x^3 - 10x^2 y^2 - 4x^2 + 16x - 20x y^2
-    #   + 5y^4 + 16 - 20y^2)
-    #   - 5 a (2z - a)(4(x^2+y^2-z^2) + (1+3 sqrt5))^2 = 0,
-    # a = sqrt(5 - sqrt5)
-    a = math.sqrt(5.0 - math.sqrt(5.0))
-    x2, y2 = x * x, y * y
-    quart = (x2 * x2 - 4.0 * x2 * x - 10.0 * x2 * y2 - 4.0 * x2
-             + 16.0 * x - 20.0 * x * y2 + 5.0 * y2 * y2
-             + 16.0 - 20.0 * y2)
-    q = 4.0 * (x2 + y2 - z * z) + (1.0 + 3.0 * math.sqrt(5.0))
-    return (64.0 * (x - 1.0) * quart
-            - 5.0 * a * (2.0 * z - a) * q * q)
 
 
-def _f_heart(x, y, z, mu):
-    # Taubin's heart (z up, lobes on top):
-    # (x^2 + 9/4 y^2 + z^2 - 1)^3 - x^2 z^3 - 9/80 y^2 z^3 = 0
-    z3 = z * z * z
-    w = x * x + 2.25 * y * y + z * z - 1.0
-    return w * w * w - x * x * z3 - 0.1125 * y * y * z3
 
 
-def _f_dingdong(x, y, z, mu):
-    # x^2 + y^2 - (1 - z) z^2 = 0 -- a droplet sitting on a cone
-    return x * x + y * y - (1.0 - z) * z * z
 
 
-def _f_chmutov(x, y, z, mu):
-    # T6(x) + T6(y) + T6(z) = 0 with the degree-6 Chebyshev
-    # polynomial T6(t) = 32t^6 - 48t^4 + 18t^2 - 1
-    def t6(t):
-        t2 = t * t
-        return ((32.0 * t2 - 48.0) * t2 + 18.0) * t2 - 1.0
-    return t6(x) + t6(y) + t6(z)
 
 
-def _f_tangle(x, y, z, mu):
-    # tangle cube: x^4 - 5x^2 + y^4 - 5y^2 + z^4 - 5z^2 + 11.8 = 0
-    x2, y2, z2 = x * x, y * y, z * z
-    return (x2 * x2 - 5.0 * x2 + y2 * y2 - 5.0 * y2
-            + z2 * z2 - 5.0 * z2 + 11.8)
 
 
-def _f_monkey(x, y, z, mu, n=3):
-    # n-fold monkey saddle: z = Re((x+iy)^n) = rho^n cos(n*phi), the
-    # graph of the degree-n harmonic polynomial (real part of the
-    # holomorphic w^n).  n = 2 is the ordinary saddle z = x^2 - y^2,
-    # n = 3 the classic monkey saddle z = x^3 - 3xy^2 (two legs and a
-    # tail), n >= 4 the higher-fold saddles -- forms Robert Fathauer
-    # renders as ceramic saddle sheets.  Scaling: inside the unit clip
-    # ball rho <= 1 the height obeys |Re w^n| <= rho^n <= 1, so the
-    # unit-coefficient polynomial already sits in frame; the spherical
-    # clip trims the sheet to a rim that waves up and down n times.
-    return z - ((x + 1j * y) ** int(n)).real
 
 
-# Each preset stores its own clip region framing the interesting part
-# of the (usually unbounded) surface: 'BALL' with radius r, or 'BOX'
-# with half-extent r.
-PRESETS = {
-    'CLEBSCH': ("Clebsch Diagonal Cubic", _f_clebsch, 'BALL', 3.0),
-    'CAYLEY': ("Cayley Nodal Cubic", _f_cayley, 'BALL', 1.4),
-    'KUMMER': ("Kummer Quartic", _f_kummer, 'BALL', 2.2),
-    'BARTH': ("Barth Sextic", _f_barth, 'BALL', 2.0),
-    'TOGLIATTI': ("Togliatti Quintic", _f_togliatti, 'BALL', 5.0),
-    'HEART': ("Taubin Heart", _f_heart, 'BOX', 1.5),
-    'DINGDONG': ("Ding-dong", _f_dingdong, 'BALL', 1.5),
-    'CHMUTOV': ("Chmutov Sextic", _f_chmutov, 'BOX', 1.1),
-    'TANGLE': ("Tangle Cube", _f_tangle, 'BOX', 2.4),
-    'MONKEY': ("Monkey Saddle (n-fold)", _f_monkey, 'BALL', 1.0),
-}
 
 
-def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3):
-    """Mesh the zero level set of a preset. Returns (verts, tris).
-    marching_tets simply leaves the level set open where it crosses
-    the sample box, which for the BOX presets is exactly the wanted
-    clip. BALL presets sample the bounding cube of the ball and then
-    cull triangles whose centroid falls outside it -- an open, even
-    rim (masking outside samples to a large positive value instead
-    stitches jagged stair-step caps onto the boundary). `fold` is the
-    monkey-saddle fold count n (MONKEY preset only)."""
-    label, fn, shape, clip_default = PRESETS[kind]
-    r = clip if clip > 0.0 else clip_default
-    if kind == 'MONKEY':
-        n = max(2, int(round(fold)))
-        field = lambda X, Y, Z: fn(X, Y, Z, mu, n)
-    else:
-        field = lambda X, Y, Z: fn(X, Y, Z, mu)
-    mst = _toolkit()
-    verts, tris = mst.marching_tets(
-        field, (-r, -r, -r), (r, r, r), (res, res, res))
-    if shape == 'BALL' and len(tris):
-        cen = verts[tris].mean(axis=1)
-        keep = np.einsum('ij,ij->i', cen, cen) <= r * r
-        tris = tris[keep]
-        used = np.unique(tris)               # drop orphaned verts
-        remap = np.full(len(verts), -1, dtype=np.int64)
-        remap[used] = np.arange(len(used))
-        verts = verts[used]
-        tris = remap[tris]
-    # center on the origin and fit within a 2 m cube, then apply scale
-    if len(verts):
-        lo, hi = verts.min(axis=0), verts.max(axis=0)
-        ext = float((hi - lo).max())
-        verts = (verts - 0.5 * (lo + hi)) * (2.0 / ext if ext > 1e-9
-                                             else 1.0)
-    return verts * scale, tris
 
 
 # ==========================================================================

@@ -137,11 +137,11 @@ import numpy as np
 try:                                  # inside the math_art package
     from .patterns.polygon2d import (arclen, line_intersection, unit)
     from .patterns.ribbon import (angle_cut_piece, band_ribbon_faces, band_ribbon_faces_z, catmull_rom, cut_band, cut_cap_on_edge, miter_ribbon)
-    from .patterns.weave import (ParityDSU, weave_zoff)
+    from .patterns.overunder import (ParityDSU, weave_zoff)
 except ImportError:                   # flat import (test runner)
     from patterns.polygon2d import (arclen, line_intersection, unit)
     from patterns.ribbon import (angle_cut_piece, band_ribbon_faces, band_ribbon_faces_z, catmull_rom, cut_band, cut_cap_on_edge, miter_ribbon)
-    from patterns.weave import (ParityDSU, weave_zoff)
+    from patterns.overunder import (ParityDSU, weave_zoff)
 
 try:
     from .patterns import common as pc

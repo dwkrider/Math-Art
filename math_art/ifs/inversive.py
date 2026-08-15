@@ -210,37 +210,21 @@ def packing_3d(depth, min_r, cap):
     return out
 
 
+try:
+    from ..surfaces.primitives import icosphere as _icosphere_shared
+except ImportError:  # flat import outside the package
+    from surfaces.primitives import icosphere as _icosphere_shared
+
+
 def _icosphere(level=3):
     """Unit icosphere: icosahedron subdivided `level` times (level 1 =
     42 verts, 2 = 162, 3 = 642, 4 = 2562).  Higher levels round the
-    spheres so mutually-tangent spheres actually appear to touch."""
-    t = (1.0 + math.sqrt(5.0)) / 2.0
-    v = [(-1, t, 0), (1, t, 0), (-1, -t, 0), (1, -t, 0),
-         (0, -1, t), (0, 1, t), (0, -1, -t), (0, 1, -t),
-         (t, 0, -1), (t, 0, 1), (-t, 0, -1), (-t, 0, 1)]
-    f = [(0, 11, 5), (0, 5, 1), (0, 1, 7), (0, 7, 10), (0, 10, 11),
-         (1, 5, 9), (5, 11, 4), (11, 10, 2), (10, 7, 6), (7, 1, 8),
-         (3, 9, 4), (3, 4, 2), (3, 2, 6), (3, 6, 8), (3, 8, 9),
-         (4, 9, 5), (2, 4, 11), (6, 2, 10), (8, 6, 7), (9, 8, 1)]
-    verts = [np.array(p, dtype=float) for p in v]
-    faces = list(f)
-    for _ in range(max(1, int(level))):
-        mid = {}
-
-        def midpoint(i, j, verts=verts, mid=mid):
-            key = (min(i, j), max(i, j))
-            if key not in mid:
-                verts.append((verts[i] + verts[j]) / 2.0)
-                mid[key] = len(verts) - 1
-            return mid[key]
-
-        newf = []
-        for a, b, c in faces:
-            ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
-            newf += [(a, ab, ca), (b, bc, ab), (c, ca, bc), (ab, bc, ca)]
-        faces = newf
-    V = np.array([p / np.linalg.norm(p) for p in verts])
-    return V, faces
+    spheres so mutually-tangent spheres actually appear to touch.
+    The shared builder is in `surfaces.primitives`.  This caller wants
+    the 'once' projection and clamps level 0 up to 1: tangent spheres
+    look wrong faceted, and that clamp is this module's policy.
+    """
+    return _icosphere_shared(max(1, int(level)), 'once')
 
 
 def _ring(centre, R, tube, nu, nv):

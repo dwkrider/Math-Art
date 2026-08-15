@@ -90,11 +90,11 @@ import numpy as np
 try:                                  # inside the math_art package
     from .patterns.polygon2d import (arclen, unit)
     from .patterns.ribbon import (band_ribbon_faces, band_ribbon_faces_z, catmull_rom, miter)
-    from .patterns.weave import (ParityDSU, weave_zoff)
+    from .patterns.overunder import (ParityDSU, weave_zoff)
 except ImportError:                   # flat import (test runner)
     from patterns.polygon2d import (arclen, unit)
     from patterns.ribbon import (band_ribbon_faces, band_ribbon_faces_z, catmull_rom, miter)
-    from patterns.weave import (ParityDSU, weave_zoff)
+    from patterns.overunder import (ParityDSU, weave_zoff)
 
 try:                                  # inside the math_art package
     from .curve_frames import welded_tube

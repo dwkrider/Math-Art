@@ -14,7 +14,7 @@ from math import cos, sin, pi, hypot, gcd            # noqa: F401
 import numpy as np
 
 from .motifs import PALETTE_RGBA
-from .relief import (_apply_transform, _global_transform,
+from .prisms import (_apply_transform, _global_transform,
                      center_scale, center_xy, merge_cells)
 
 

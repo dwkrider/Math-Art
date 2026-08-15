@@ -84,6 +84,7 @@ def _seed(sym, n):
 
 
 from .hull import hull_faces as _hull_faces
+import numpy as np
 
 
 def _centroid(V, f):

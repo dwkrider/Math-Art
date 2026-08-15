@@ -96,7 +96,7 @@ import numpy as np
 # were written here and then reached for PRIVATELY by celtic_knot_2d,
 # knot_carpet, substitution_knot and fractal_knotwork -- about eighty
 # call sites into this module's underscore names.  They now live in
-# `patterns.ribbon`, `patterns.weave` and `patterns.polygon2d`, with
+# `patterns.ribbon`, `patterns.overunder` and `patterns.polygon2d`, with
 # public names.  They are re-bound to their old private names here so
 # this module's own several hundred call sites read unchanged.
 try:
@@ -108,8 +108,8 @@ try:
                                   catmull_rom, cut_band as _cut_band,
                                   cut_cap_on_edge as _cut_cap_on_edge,
                                   miter as _miter, miter_ribbon)
-    from .patterns.weave import ParityDSU as _ParityDSU
-    from .patterns.weave import weave_zoff as _weave_zoff
+    from .patterns.overunder import ParityDSU as _ParityDSU
+    from .patterns.overunder import weave_zoff as _weave_zoff
 except ImportError:                   # flat import (test runner)
     from patterns.polygon2d import arclen as _arclen
     from patterns.polygon2d import line_intersection as _line_line
@@ -119,8 +119,8 @@ except ImportError:                   # flat import (test runner)
                                  catmull_rom, cut_band as _cut_band,
                                  cut_cap_on_edge as _cut_cap_on_edge,
                                  miter as _miter, miter_ribbon)
-    from patterns.weave import ParityDSU as _ParityDSU
-    from patterns.weave import weave_zoff as _weave_zoff
+    from patterns.overunder import ParityDSU as _ParityDSU
+    from patterns.overunder import weave_zoff as _weave_zoff
 
 
 try:

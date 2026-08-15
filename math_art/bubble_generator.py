@@ -51,35 +51,21 @@ except ImportError:
     _IN_BLENDER = False
 
 
-def _icosphere(subdiv):
-    t = (1 + sqrt(5)) / 2
-    V = [np.array(v, float) for v in
-         [(-1, t, 0), (1, t, 0), (-1, -t, 0), (1, -t, 0),
-          (0, -1, t), (0, 1, t), (0, -1, -t), (0, 1, -t),
-          (t, 0, -1), (t, 0, 1), (-t, 0, -1), (-t, 0, 1)]]
-    V = [v / np.linalg.norm(v) for v in V]
-    F = [(0, 11, 5), (0, 5, 1), (0, 1, 7), (0, 7, 10),
-         (0, 10, 11), (1, 5, 9), (5, 11, 4), (11, 10, 2),
-         (10, 7, 6), (7, 1, 8), (3, 9, 4), (3, 4, 2),
-         (3, 2, 6), (3, 6, 8), (3, 8, 9), (4, 9, 5),
-         (2, 4, 11), (6, 2, 10), (8, 6, 7), (9, 8, 1)]
-    for _ in range(subdiv):
-        cache = {}
-        nf = []
+try:
+    from .surfaces.primitives import icosphere as _icosphere_shared
+except ImportError:  # flat import outside the package
+    from surfaces.primitives import icosphere as _icosphere_shared
 
-        def mid(i, j):
-            key = (i, j) if i < j else (j, i)
-            if key not in cache:
-                m = V[i] + V[j]
-                cache[key] = len(V)
-                V.append(m / np.linalg.norm(m))
-            return cache[key]
-        for a, b, c in F:
-            ab, bc, ca = mid(a, b), mid(b, c), mid(c, a)
-            nf += [(a, ab, ca), (ab, b, bc), (ca, bc, c),
-                   (ab, bc, ca)]
-        F = nf
-    return np.array(V), F
+
+def _icosphere(subdiv=0):
+    """Unit icosphere: the icosahedron subdivided `subdiv` times.
+    Six modules built one of these; the shared one is in
+    `surfaces.primitives`.  Same surface as before -- identical vertex
+    set and identical triangles -- but the shared builder numbers the
+    vertices in the standard order rather than this module's rotated
+    one, so index order changes while the mesh does not.
+    """
+    return _icosphere_shared(subdiv, 'per_level')
 
 
 def bubble_radii(P, edges, factor=0.62, uniform=True):
