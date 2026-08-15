@@ -1235,22 +1235,19 @@ if _IN_BLENDER:
         bl_region_type = 'UI'
         bl_category = "Math Art"
         bl_order = 20
-        bl_options = {'DEFAULT_CLOSED'}
 
-        # Deliberately no poll.  The panels in this tab follow one rule: a
-        # panel that can CREATE its object stays visible, because hiding it
-        # would hide the way to make one; a panel that only inspects an
-        # object appears when that object is active.  This one creates (see
-        # the Add Sculpture button below), so it stays.
+        @classmethod
+        def poll(cls, context):
+            # Only for a Scherk-Collins sculpture.  The panel used to offer
+            # an Add button when none was selected, which forced it to stay
+            # visible in every scene; creating one belongs in Add > Mesh,
+            # where every other generator's entry already is.
+            o = context.object
+            return o is not None and o.scherk_collins.is_scherk
 
         def draw(self, context):
             lay = self.layout
             obj = context.object
-            if obj is None or not obj.scherk_collins.is_scherk:
-                lay.operator_menu_enum("mesh.scherk_collins_add", "preset",
-                                       text="Add Sculpture", icon='MESH_TORUS')
-                lay.operator("scherk.load_spec", icon='FILE_FOLDER')
-                return
             st = obj.scherk_collins
             col = lay.column(align=True)
             col.use_property_split = True

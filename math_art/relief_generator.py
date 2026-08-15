@@ -1830,9 +1830,12 @@ if _IN_BLENDER:
 
         @classmethod
         def poll(cls, context):
-            # Always available: this panel is also where a relief panel is
-            # created, so hiding it when none is selected would hide the way
-            # to make one.
+            # Always available, and the only panel in this tab that is.  The
+            # rule the tab follows: a panel appears when the active object is
+            # one it can edit, EXCEPT this one, which doubles as the place a
+            # relief panel is created and its layer stack assembled -- hiding
+            # it when none is selected would hide the way to make one.
+            # Everything else is reachable from Add > Mesh.
             return True
 
         def draw(self, context):
