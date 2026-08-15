@@ -180,6 +180,17 @@ PRESETS = {
         shape='RECT', tiling='NONE', curve='NONE', warp=0.0, depth=0.18,
         pierce=True, pierce_level=0.42, pierce_min=12,
         form='SLAB', base_thickness=0.06, resolution=320),
+    'TRIANGLE_DRUM': dict(
+        field='DRUM', drum_shape='TRIANGLE', mode_index=5, drum_res=56,
+        shape='RECT', curve='ABS', warp=0.0, depth=0.24),
+    'ISOSPECTRAL_A': dict(
+        # Half of Kac's counterexample.  Build this and ISOSPECTRAL_B at the
+        # same mode: two plainly different outlines, the same figure.
+        field='DRUM', drum_shape='ISO_ONE', mode_index=4, drum_res=56,
+        shape='RECT', curve='ABS', warp=0.0, depth=0.24),
+    'ISOSPECTRAL_B': dict(
+        field='DRUM', drum_shape='ISO_TWO', mode_index=4, drum_res=56,
+        shape='RECT', curve='ABS', warp=0.0, depth=0.24),
     'SEIGAIHA': dict(
         # Three arcs across a fifth of the panel needs about 400 samples to
         # draw a rounded crest rather than a faceted one; the build reports
@@ -202,6 +213,8 @@ def build_relief(**kw):
     p = dict(
         # panel
         shape='RECT', width=2.0, aspect=1.0, resolution=256, border=0.0,
+        # solved membrane drums
+        drum_shape='TRIANGLE', drum_ratio=0.6, drum_res=48,
         # pattern
         field='WAVE_TRAIN', wavelength=0.5, angle=0.0, phase=0.0,
         steepness=0.0, count=3, spread=0.4, sources=3, seed=1,

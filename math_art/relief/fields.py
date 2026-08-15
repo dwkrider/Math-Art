@@ -439,6 +439,15 @@ def gabor(X, Y, info, p):
                           wrap=p.get('tiling', 'NONE') == 'TORUS')
 
 
+def drum(X, Y, info, p):
+    """A membrane mode of a shape with no closed-form spectrum."""
+    from . import drums as _d
+    return _d.drum_field(X, Y, info, shape=p.get('drum_shape', 'TRIANGLE'),
+                         index=int(p.get('mode_index', 2)),
+                         ratio=float(p.get('drum_ratio', 0.6)),
+                         solve_res=int(p.get('drum_res', 48)))
+
+
 FIELDS = {
     'WAVE':       ("Directional Wave",
                    "One wave; steer it with an orientation field", wave),
@@ -484,6 +493,9 @@ FIELDS = {
     'OCEAN':      ("Ocean (Phillips)",
                    "Wind-driven sea by spectral synthesis, with choppiness",
                    ocean),
+    'DRUM':       ("Drum (solved)",
+                   "Membrane mode of a triangle, ellipse or the isospectral "
+                   "pair -- solved, not closed form", drum),
     'GABOR':      ("Gabor Weave",
                    "Band-limited noise: a fibrous weave at a chosen pitch",
                    gabor),
@@ -505,7 +517,7 @@ FIELD_ORDER = [
     'WAVE', 'WAVE_TRAIN', 'RIPPLE', 'FBM',
     'CHLADNI', 'DRUMHEAD', 'MEMBRANE', 'ZERNIKE', 'HERMITE',
     'ELLIPTIC', 'TRUCHET', 'SEIGAIHA', 'WALLPAPER', 'QUASI',
-    'WORLEY', 'TURING', 'OCEAN', 'GABOR',
+    'WORLEY', 'TURING', 'OCEAN', 'GABOR', 'DRUM',
     'SCATTER', 'OBJECT',
 ]
 
@@ -564,6 +576,9 @@ def feature_samples(field, p, info):
         return n(width / (2.0 * k))
     if field == 'ZERNIKE':
         return n(width / (2.0 * max(1, int(p.get('zern_n', 4)))))
+    if field == 'DRUM':
+        # A mode's finest lobe scales as the domain over sqrt(mode index).
+        return n(width / (2.0 * math.sqrt(max(1, int(p.get('mode_index', 2))))))
     if field == 'CHLADNI':
         k = max(1, int(p.get('mode_index', 6)))
         return n(width / (2.0 * math.sqrt(k)))

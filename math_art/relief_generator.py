@@ -199,6 +199,12 @@ if _IN_BLENDER:
          "Randomly oriented arc tiles whose arcs always join tangentially"),
         ('SEIGAIHA', "Seigaiha",
          "The Japanese overlapping-wave motif on a staggered grid"),
+        ('TRIANGLE_DRUM', "Triangle Drum",
+         "An equilateral membrane mode -- Lame's closed-form spectrum"),
+        ('ISOSPECTRAL_A', "Isospectral A",
+         "Half of Kac's counterexample; build B at the same mode"),
+        ('ISOSPECTRAL_B', "Isospectral B",
+         "A different outline carrying the same spectrum"),
         ('TURING_SKIN', "Turing Skin",
          "Reaction-diffusion grown on a torus -- spots, worms, mazes, coral"),
         ('CELLULAR', "Cellular",
@@ -367,6 +373,32 @@ if _IN_BLENDER:
         wind: FloatProperty(
             name="Wind Direction", default=0.0, min=-6.2832, max=6.2832,
             unit='ROTATION')
+
+        # -- solved membrane drums ------------------------------------
+        drum_shape: EnumProperty(
+            name="Drum",
+            items=[('TRIANGLE', "Equilateral Triangle",
+                    "Lame solved this one; its spectrum is proportional to "
+                    "the Loeschian numbers"),
+                   ('ELLIPSE', "Ellipse (Mathieu)",
+                    "The elliptical membrane, whose modes are Mathieu "
+                    "functions"),
+                   ('L_SHAPE', "L-Shape",
+                    "The reentrant corner that makes this hard"),
+                   ('CIRCLE', "Circle", "Bessel modes, solved numerically"),
+                   ('ISO_ONE', "Isospectral A",
+                    "Half of the Gordon-Webb-Wolpert pair"),
+                   ('ISO_TWO', "Isospectral B",
+                    "The other half: a different outline, the same "
+                    "spectrum")],
+            default='TRIANGLE')
+        drum_ratio: FloatProperty(
+            name="Ellipse Ratio", default=0.6, min=0.1, max=1.0)
+        drum_res: IntProperty(
+            name="Solve Grid", default=48, min=20, max=96,
+            description="Grid the eigenproblem is solved on. The cost is "
+                        "cubic in the sample count, so this is the "
+                        "expensive number, not the panel resolution")
 
         # -- Phase 5 families -----------------------------------------
         cell_mode: EnumProperty(name="Cells", items=_CELL_ITEMS,
@@ -661,6 +693,8 @@ if _IN_BLENDER:
                 method=self.method, hurst=self.hurst,
                 dim=self.dim, octaves=self.octaves,
                 anisotropy=self.anisotropy, wind=self.wind,
+                drum_shape=self.drum_shape, drum_ratio=self.drum_ratio,
+                drum_res=self.drum_res,
                 ell_kind=self.ell_kind, ell_part=self.ell_part,
                 tau_re=self.tau_re, tau_im=self.tau_im,
                 ell_cells=self.ell_cells,
@@ -915,6 +949,15 @@ if _IN_BLENDER:
                 col.prop(self, 'angle')
                 col.prop(self, 'spread')
                 col.prop(self, 'points_n')
+            elif self.field == 'DRUM':
+                col.prop(self, 'drum_shape')
+                if self.drum_shape == 'ELLIPSE':
+                    col.prop(self, 'drum_ratio')
+                col.prop(self, 'mode_index')
+                col.prop(self, 'drum_res')
+                if self.drum_shape in ('ISO_ONE', 'ISO_TWO'):
+                    col.label(text="Build both at one mode to compare",
+                              icon='INFO')
             elif self.field == 'CHLADNI':
                 col.prop(self, 'exact')
                 if self.exact:
@@ -1189,6 +1232,19 @@ if _IN_BLENDER:
                             max=1.0, update=_auto)
         straight: FloatProperty(name="Straight Tiles", default=0.0, min=0.0,
                                 max=1.0, update=_auto)
+        drum_shape: EnumProperty(
+            name="Drum",
+            items=[('TRIANGLE', "Equilateral Triangle", ""),
+                   ('ELLIPSE', "Ellipse (Mathieu)", ""),
+                   ('L_SHAPE', "L-Shape", ""),
+                   ('CIRCLE', "Circle", ""),
+                   ('ISO_ONE', "Isospectral A", ""),
+                   ('ISO_TWO', "Isospectral B", "")],
+            default='TRIANGLE', update=_auto)
+        drum_ratio: FloatProperty(name="Ellipse Ratio", default=0.6,
+                                  min=0.1, max=1.0, update=_auto)
+        drum_res: IntProperty(name="Solve Grid", default=48, min=20,
+                              max=96, update=_auto)
         rings: IntProperty(name="Arcs", default=3, min=1, max=12,
                            update=_auto)
         crown: FloatProperty(name="Crown", default=0.55, min=0.1, max=1.0,
@@ -1406,6 +1462,8 @@ if _IN_BLENDER:
                 tau_re=lay.tau_re, tau_im=lay.tau_im,
                 ell_cells=lay.ell_cells,
                 tile_cells=lay.tile_cells, lane=lay.lane,
+                drum_shape=lay.drum_shape, drum_ratio=lay.drum_ratio,
+                drum_res=lay.drum_res,
                 straight=lay.straight, rings=lay.rings,
                 crown=lay.crown, rim=lay.rim,
                 orient=lay.orient,
@@ -1886,6 +1944,10 @@ if _IN_BLENDER:
                     sub.prop(lay_, 'gabor_freq')
                     sub.prop(lay_, 'gabor_band')
                     sub.prop(lay_, 'spread')
+                elif lay_.kind == 'DRUM':
+                    sub.prop(lay_, 'drum_shape')
+                    sub.prop(lay_, 'mode_index')
+                    sub.prop(lay_, 'drum_res')
                 elif lay_.kind == 'CHLADNI':
                     sub.prop(lay_, 'mode_index')
                 elif lay_.kind in ('DRUMHEAD', 'MEMBRANE', 'HERMITE'):
