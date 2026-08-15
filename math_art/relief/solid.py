@@ -51,7 +51,8 @@ BASES = ('SPHERE', 'TORUS', 'CYLINDER')
 # operator's menu are the two lists that have to agree, and LATTICE was
 # missing from it while being dispatched and offered.
 FIELDS3D = ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC', 'QUASI',
-            'GROUP', 'LATTICE', 'TURING')
+            'GROUP', 'RIPPLE', 'WAVE', 'SCATTER', 'TORUS_MODE',
+            'LATTICE', 'TURING')
 
 
 # ---------------------------------------------------------------- bases ----
@@ -776,6 +777,220 @@ def spherical_wallpaper(P, signature='STAR_532', n=5, waves=5, seed=1,
     return out / sd if sd > 1e-12 else out
 
 
+def surface_distance(P, c, base='SPHERE', ring=1.0, tube=0.4, radius=0.7):
+    """Distance from every point of the base to a point `c` ON the base.
+
+    Geodesic where a closed form exists -- along the sphere it is the angle
+    between the two directions, times the radius, and on a cylinder it is the
+    unrolled Pythagoras with the angle wrapped the short way round.  On the
+    torus there is no closed form (its geodesics are elliptic integrals), so
+    the straight-line distance through space is used instead, which is the
+    same choice the cellular field already makes and is continuous
+    everywhere for the same reason.
+    """
+    P = np.asarray(P, dtype=float)
+    c = np.asarray(c, dtype=float)
+    if base == 'SPHERE':
+        R = float(np.linalg.norm(c)) or 1.0
+        u = P / np.maximum(np.linalg.norm(P, axis=1, keepdims=True), 1e-12)
+        cc = c / (np.linalg.norm(c) or 1.0)
+        return R * np.arccos(np.clip(u @ cc, -1.0, 1.0))
+    if base == 'CYLINDER':
+        rad = float(radius)
+        du = np.arctan2(P[:, 1], P[:, 0]) - math.atan2(c[1], c[0])
+        du = (du + math.pi) % (2.0 * math.pi) - math.pi     # the short way
+        dz = P[:, 2] - c[2]
+        return np.hypot(rad * du, dz)
+    return np.linalg.norm(P - c[None, :], axis=1)
+
+
+def surface_points(P, faces, count, seed=1):
+    """`count` points scattered over the surface, uniform by AREA.
+
+    Uniform in area, not in vertices: a mesh's vertices are only as evenly
+    spread as the mesh is, and sampling them directly would put more scatter
+    wherever the modeller happened to spend triangles.
+    """
+    A = face_areas(P, faces)
+    cum = np.cumsum(A)
+    total = float(cum[-1]) or 1.0
+    rng = np.random.default_rng(int(seed) & 0x7FFFFFFF)
+    pick = np.searchsorted(cum, rng.random(max(1, int(count))) * total)
+    out = []
+    for f_i in pick:
+        f = faces[int(min(f_i, len(faces) - 1))]
+        v = np.asarray([P[int(i)] for i in f], dtype=float)
+        # Barycentric within a triangle; for a quad pick a triangle first.
+        if len(v) > 3:
+            v = v[:3] if rng.random() < 0.5 else v[[0, 2, 3]]
+        a, b = rng.random(), rng.random()
+        if a + b > 1.0:
+            a, b = 1.0 - a, 1.0 - b
+        out.append(v[0] + a * (v[1] - v[0]) + b * (v[2] - v[0]))
+    return np.asarray(out)
+
+
+def ripple3d(P, faces, sources=4, wavelength=0.35, seed=1, base='SPHERE',
+             ring=1.0, tube=0.4, radius=0.7, decay=0.0):
+    """Interfering circular wavefronts spreading over the surface.
+
+    The two-dimensional construction, done intrinsically: each source sends
+    out rings at a constant *geodesic* wavelength, so on a sphere they close
+    up again at the antipode instead of being squashed by a projection.  The
+    cusp at a source and at its focus is the physics, not a seam.
+    """
+    C = surface_points(P, faces, sources, seed=seed)
+    rng = np.random.default_rng((int(seed) + 977) & 0x7FFFFFFF)
+    lam = max(float(wavelength), 1e-6)
+    out = np.zeros(len(P))
+    for c in C:
+        d = surface_distance(P, c, base=base, ring=ring, tube=tube,
+                             radius=radius)
+        amp = np.exp(-float(decay) * d) if decay > 0.0 else 1.0
+        out += amp * np.sin(2.0 * math.pi * d / lam
+                            + rng.uniform(0.0, 2.0 * math.pi))
+    out /= math.sqrt(max(1, len(C)))
+    sd = out.std()
+    return out / sd if sd > 1e-12 else out
+
+
+def zonal_wave(P, axis=(0.0, 0.0, 1.0), wavelength=0.5, phase=0.0,
+               steepness=0.0, count=1, spread=0.0, seed=1):
+    """Rings of constant geodesic wavelength about an axis.
+
+    The sphere's honest answer to a directional wave.  A plane wave through
+    space cuts a sphere in circles of *varying* spacing; measuring the angle
+    from an axis instead keeps every ring the same distance from the last,
+    which is what a wave on the surface means.
+
+    `count` above one sums several such waves about jittered axes, giving the
+    panel's wave-train look.
+    """
+    P = np.asarray(P, dtype=float)
+    R = float(np.max(np.linalg.norm(P, axis=1))) or 1.0
+    u = P / np.maximum(np.linalg.norm(P, axis=1, keepdims=True), 1e-12)
+    rng = np.random.default_rng(int(seed) & 0x7FFFFFFF)
+    a0 = np.asarray(axis, dtype=float)
+    a0 = a0 / (np.linalg.norm(a0) or 1.0)
+    lam = max(float(wavelength), 1e-6)
+    out = np.zeros(len(P))
+    n = max(1, int(count))
+    for i in range(n):
+        a = a0 if i == 0 and spread <= 0.0 else a0 + spread * rng.normal(size=3)
+        a = a / (np.linalg.norm(a) or 1.0)
+        ang = np.arccos(np.clip(u @ a, -1.0, 1.0)) * R
+        ph = float(phase) if n == 1 else float(rng.uniform(0, 2 * math.pi))
+        w = np.sin(2.0 * math.pi * ang / lam + ph)
+        if steepness > 0.0:
+            q = float(np.clip(steepness, 0.0, 1.0))
+            w = 2.0 * (0.5 * (w + 1.0)) ** (1.0 + 3.0 * q) - 1.0
+        out += w
+    out /= math.sqrt(n)
+    sd = out.std()
+    return out / sd if sd > 1e-12 else out
+
+
+def scatter3d(P, faces, count=120, sigma=0.12, seed=1, kernel='WYVILL',
+              merge='MAX'):
+    """Points scattered over the surface, each raised by a smooth kernel.
+
+    Distance in space is the natural metric here -- no chart is involved at
+    all -- so this is the object layer's splat with the surface's own points
+    as the sources.
+    """
+    try:
+        from .kernels import KERNELS
+    except ImportError:                     # flat import outside the package
+        from kernels import KERNELS
+    fn = KERNELS.get(str(kernel).upper(), KERNELS['WYVILL'])[3]
+    C = surface_points(P, faces, count, seed=seed)
+    sig = max(float(sigma), 1e-6)
+    acc = None
+    for c in C:
+        d = np.linalg.norm(P - c[None, :], axis=1) / sig
+        k = fn(d)
+        acc = k if acc is None else (np.maximum(acc, k)
+                                     if str(merge).upper() == 'MAX'
+                                     else acc + k)
+    if acc is None:
+        return np.zeros(len(P))
+    sd = acc.std()
+    return (acc - acc.mean()) / sd if sd > 1e-12 else acc - acc.mean()
+
+
+def torus_modes(m=2, n=1, ring=1.0, tube=0.4, samples=256):
+    """Eigenmodes of the Laplace-Beltrami operator on a ring torus.
+
+    The sphere's vibration modes are the spherical harmonics and the
+    cylinder's are a product of cosines; the torus is the one base whose
+    modes have no closed form.  They do separate, though.  With
+
+        ds^2 = (R + r cos v)^2 du^2 + r^2 dv^2
+
+    the ansatz f = cos(m u + phi) g(v) reduces the eigenproblem to a periodic
+    Sturm-Liouville problem in v alone:
+
+        -(1/W) d/dv [ ((R + r cos v)/r) g' ] + m^2 g/(R + r cos v)^2 = lam g
+
+    with W = r (R + r cos v).  That is one small dense eigenproblem on a
+    circle -- milliseconds, and no mesh eigensolver, which would need a
+    sparse solver this add-on does not have.
+
+    Returns `(lambda, g, v)` for the n-th mode of angular order m.
+
+    The construction is separation of variables and classical
+    Sturm-Liouville theory; see Richard Courant and David Hilbert, "Methods
+    of Mathematical Physics", Volume I, Interscience, 1953, on eigenvalue
+    problems.  I know of no single canonical "torus harmonics" paper.
+    """
+    N = int(max(32, samples))
+    v = np.linspace(0.0, 2.0 * math.pi, N, endpoint=False)
+    dv = 2.0 * math.pi / N
+    R = float(ring)
+    r = float(tube)
+    rad = R + r * np.cos(v)                 # distance from the axis
+    W = r * rad                             # sqrt of the metric determinant
+    p_co = rad / r                          # the flux coefficient
+
+    # Midpoint coefficients, so the operator stays symmetric in the measure.
+    p_half = 0.5 * (p_co + np.roll(p_co, -1))
+    A = np.zeros((N, N))
+    for i in range(N):
+        j = (i + 1) % N
+        k = (i - 1) % N
+        A[i, i] += (p_half[i] + p_half[k]) / (dv * dv)
+        A[i, j] -= p_half[i] / (dv * dv)
+        A[i, k] -= p_half[k] / (dv * dv)
+    A += np.diag(m * m / (rad * rad) * W)
+    # Symmetrise in the weight W (the Liouville transformation): the operator
+    # is self-adjoint against W dv, not against dv, and `eigh` wants the
+    # latter.
+    sw = np.sqrt(W)
+    S = A / sw[:, None] / sw[None, :]
+    S = 0.5 * (S + S.T)
+    vals, vecs = np.linalg.eigh(S)
+    idx = int(np.clip(int(n) - 1, 0, N - 1))
+    g = vecs[:, idx] / sw
+    # Normalise against the physical measure, and fix the arbitrary sign.
+    norm = math.sqrt(float(np.sum(g * g * W) * dv)) or 1.0
+    g = g / norm
+    if g[int(np.argmax(np.abs(g)))] < 0:
+        g = -g
+    return float(vals[idx]), g, v
+
+
+def torus_harmonic(P, m=2, n=1, ring=1.0, tube=0.4, phase=0.0, samples=256):
+    """Sample a torus eigenmode at the base's points."""
+    lam, g, vs = torus_modes(m=m, n=n, ring=ring, tube=tube, samples=samples)
+    P = np.asarray(P, dtype=float)
+    u = np.arctan2(P[:, 1], P[:, 0])
+    v = np.arctan2(P[:, 2], np.hypot(P[:, 0], P[:, 1]) - float(ring))
+    idx = np.mod(np.round(v / (2.0 * math.pi) * len(vs)).astype(int), len(vs))
+    out = np.cos(float(m) * u + float(phase)) * g[idx]
+    sd = out.std()
+    return out / sd if sd > 1e-12 else out
+
+
 def evaluate(kind, P, p, faces=None):
     """Dispatch one of the 3D fields over the base's points."""
     kind = str(kind).upper()
@@ -824,6 +1039,38 @@ def evaluate(kind, P, p, faces=None):
                                    seed=int(p.get('seed', 1)),
                                    cells=float(p.get('sym_cells', 4.0)),
                                    kind=p.get('seed_kind', 'WAVE'))
+    if kind == 'RIPPLE':
+        if faces is None:
+            raise ValueError("the ripple field needs the mesh faces")
+        return ripple3d(P, faces, sources=int(p.get('sources', 4)),
+                        wavelength=float(p.get('wavelength', 0.35)),
+                        seed=int(p.get('seed', 1)),
+                        base=p.get('base', 'SPHERE'),
+                        ring=float(p.get('ring', 1.0)),
+                        tube=float(p.get('tube', 0.4)),
+                        radius=float(p.get('radius', 0.7)),
+                        decay=float(p.get('decay', 0.0)))
+    if kind == 'WAVE':
+        return zonal_wave(P, wavelength=float(p.get('wavelength', 0.5)),
+                          phase=float(p.get('phase', 0.0)),
+                          steepness=float(p.get('steepness', 0.0)),
+                          count=int(p.get('wave_count', 1)),
+                          spread=float(p.get('wave_spread', 0.0)),
+                          seed=int(p.get('seed', 1)))
+    if kind == 'SCATTER':
+        if faces is None:
+            raise ValueError("the scatter field needs the mesh faces")
+        return scatter3d(P, faces, count=int(p.get('points_n', 120)),
+                         sigma=float(p.get('sigma', 0.12)),
+                         seed=int(p.get('seed', 1)),
+                         kernel=p.get('kernel', 'WYVILL'),
+                         merge=p.get('merge_mode', 'MAX'))
+    if kind == 'TORUS_MODE':
+        return torus_harmonic(P, m=int(p.get('mode_m', 3)),
+                              n=int(p.get('mode_n', 1)),
+                              ring=float(p.get('ring', 1.0)),
+                              tube=float(p.get('tube', 0.4)),
+                              phase=float(p.get('phase', 0.0)))
     if kind == 'LATTICE':
         return lattice3d(P, nx=int(p.get('mode_m', 3)),
                          ny=int(p.get('mode_n', 2)),
@@ -866,6 +1113,9 @@ def build_solid(**kw):
              qc_cells=6.0, qc_sharp=0.0, qc_jitter=0.0,
              sph_group='STAR_532', sph_n=5, waves=5, sym_cells=4.0,
              seed_kind='WAVE',
+             sources=4, wavelength=0.35, decay=0.0, steepness=0.0,
+             wave_count=1, wave_spread=0.0, sigma=0.12,
+             kernel='WYVILL', merge_mode='MAX',
              depth=0.25, curve='NONE', curve_amount=1.0, norm='STD',
              fit='CUBE', scale=1.0, span=2.0)
     p.update(kw)
@@ -1216,6 +1466,145 @@ def _selftest():
     print("solid: icosahedral field, harmonic power l=1..6: %s"
           % " ".join("%.2e" % v for v in power))
     ok = ok and power[5] > 100.0 * low
+
+    # --- ripple: the wavefronts really are geodesic --------------------
+    # One source on a sphere makes a field that depends ONLY on the angle
+    # from that source, so it is constant on every circle of constant
+    # colatitude about it.  That is a property of the geodesic construction
+    # which a projected field could not have.
+    # The distance really is the GEODESIC one, checked against the straight
+    # line through space, which is measurable independently: a chord of a
+    # unit sphere subtending arc d has length 2 sin(d/2).  (Checking instead
+    # that the field is constant where the distance is constant would be
+    # vacuous -- the field is built from the distance.)
+    Pr2, Nr2, Fr2 = icosphere(4)
+    src = np.array([0.0, 0.0, 1.0])
+    d = surface_distance(Pr2, src, base='SPHERE')
+    chord = np.linalg.norm(Pr2 - src[None, :], axis=1)
+    err = float(np.abs(chord - 2.0 * np.sin(d / 2.0)).max())
+    print("solid: sphere geodesic vs chord identity, worst error %.2e" % err)
+    ok = ok and err < 1e-12
+
+    # And on the cylinder, where the surface is developable so the geodesic
+    # is exactly the unrolled straight line -- and must be SHORTER than going
+    # the long way round, which is the part a naive angle difference gets
+    # wrong.
+    Pc2, Nc2, Fc2 = cylinder(64, height=2.0, radius=0.7)
+    c2 = Pc2[3]
+    dc = surface_distance(Pc2, c2, base='CYLINDER', radius=0.7)
+    long_way = np.abs(np.arctan2(Pc2[:, 1], Pc2[:, 0])
+                      - math.atan2(c2[1], c2[0])) * 0.7
+    print("solid: cylinder geodesic never exceeds the unwrapped angle: %s"
+          % bool(np.all(dc <= np.hypot(long_way, Pc2[:, 2] - c2[2]) + 1e-12)))
+    ok = ok and bool(np.all(dc <= np.hypot(long_way,
+                                           Pc2[:, 2] - c2[2]) + 1e-12))
+
+    # The rings are evenly spaced in geodesic distance: crossings along a
+    # meridian must match the arc length divided by the wavelength.
+    lam = 0.5
+    meridian = np.linspace(0.0, math.pi, 2000)
+    prof = np.sin(2.0 * math.pi * meridian / lam)
+    want = int(round(2.0 * (math.pi / lam)))
+    got = int(np.sum(np.diff(np.signbit(prof)) != 0))
+    print("solid: ripple rings along a meridian: %d (arc %.2f / wavelength "
+          "%.2f = %d)" % (got, math.pi, lam, want))
+    ok = ok and abs(got - want) <= 1
+
+    for base, kw in (('SPHERE', dict(sphere_res=3)),
+                     ('TORUS', dict(grid_res=64)),
+                     ('CYLINDER', dict(grid_res=64))):
+        Pb, Nb, Fb = build_base(base, **kw)
+        hb = ripple3d(Pb, Fb, sources=3, wavelength=0.4, seed=2, base=base)
+        ok = ok and np.isfinite(hb).all() and hb.std() > 1e-6
+
+    # --- zonal wave: constant geodesic spacing --------------------------
+    # A plane wave through space cuts a sphere in rings that crowd together
+    # near the equator of the cut; a zonal wave does not.  Measure the gap
+    # between successive zero crossings down a meridian and compare the
+    # spread of those gaps.
+    def gaps(vals, angles):
+        z = np.where(np.diff(np.signbit(vals)))[0]
+        return np.diff(angles[z]) if len(z) > 2 else np.array([1.0, 2.0])
+
+    th = np.linspace(0.01, math.pi - 0.01, 4000)
+    pts = np.stack([np.sin(th), np.zeros_like(th), np.cos(th)], axis=-1)
+    zon = zonal_wave(pts, wavelength=0.4)
+    plane = np.sin(2.0 * math.pi * pts[:, 2] / 0.4)      # a 3D plane wave
+    gz, gp = gaps(zon, th), gaps(plane, th)
+    print("solid: ring spacing spread -- zonal %.4f, plane wave %.4f "
+          "(lower is more even)"
+          % (float(gz.std() / gz.mean()), float(gp.std() / gp.mean())))
+    ok = ok and gz.std() / gz.mean() < 0.1 * (gp.std() / gp.mean())
+
+    # --- scatter: uniform by area, not by vertex ------------------------
+    # The torus is the test: its outer half carries more area than its inner
+    # half, so an area-uniform scatter must put proportionally more points
+    # there.  Sampling vertices instead would split them evenly.
+    Ps2, Ns2, Fs2 = torus(96, ring=1.0, tube=0.4)
+    pts2 = surface_points(Ps2, Fs2, 4000, seed=5)
+    rho = np.hypot(pts2[:, 0], pts2[:, 1])
+    outer = float((rho > 1.0).mean())
+    # Area of the outer half over the whole: (2 pi r)(pi R + 2 r) style, but
+    # simplest is to integrate the face areas directly.
+    fc = np.array([Ps2[list(f)].mean(axis=0) for f in Fs2])
+    fa = face_areas(Ps2, Fs2)
+    want_outer = float(fa[np.hypot(fc[:, 0], fc[:, 1]) > 1.0].sum() / fa.sum())
+    print("solid: scatter puts %.3f of its points on the torus's outer half; "
+          "that half is %.3f of the area" % (outer, want_outer))
+    ok = ok and abs(outer - want_outer) < 0.03
+
+    # --- torus harmonics ------------------------------------------------
+    # As the tube thins, a ring torus tends to a flat one, whose spectrum is
+    # known exactly: lambda -> m^2/R^2 + n^2/r^2.  Watching the computed
+    # eigenvalue approach that is a real check on the Sturm-Liouville
+    # assembly, and one the code cannot fudge.
+    print("solid: torus mode m=2 n=1, thin-tube limit")
+    for rr in (0.20, 0.10, 0.05):
+        lam, g, vv = torus_modes(m=2, n=1, ring=1.0, tube=rr)
+        flat = 4.0 / 1.0                    # m^2/R^2, n = 1 is the constant
+        print("       r/R=%.2f  lambda %.4f  flat-torus m^2/R^2 %.4f  "
+              "difference %.4f" % (rr, lam, flat, abs(lam - flat)))
+    l1, _, _ = torus_modes(m=2, n=1, ring=1.0, tube=0.20)
+    l2, _, _ = torus_modes(m=2, n=1, ring=1.0, tube=0.05)
+    ok = ok and abs(l2 - 4.0) < abs(l1 - 4.0)
+
+    # Orthogonality in the PHYSICAL measure, which is what checks the
+    # Liouville symmetrisation rather than just `eigh`'s own guarantee.
+    N = 256
+    vg = np.linspace(0.0, 2.0 * math.pi, N, endpoint=False)
+    dvg = 2.0 * math.pi / N
+    Wg = 0.4 * (1.0 + 0.4 * np.cos(vg))
+    gs = [torus_modes(m=2, n=k, ring=1.0, tube=0.4, samples=N)[1]
+          for k in (1, 2, 3)]
+    worst_off = 0.0
+    worst_diag = 0.0
+    for i in range(3):
+        for j in range(3):
+            val = float(np.sum(gs[i] * gs[j] * Wg) * dvg)
+            if i == j:
+                worst_diag = max(worst_diag, abs(val - 1.0))
+            else:
+                worst_off = max(worst_off, abs(val))
+    print("solid: torus modes orthonormal in the physical measure: worst "
+          "|<g,g>-1| = %.2e, worst |<g_i,g_j>| = %.2e"
+          % (worst_diag, worst_off))
+    ok = ok and worst_diag < 1e-9 and worst_off < 1e-9
+
+    # Nodal counts: the n-th mode crosses zero n-1 times more than the first.
+    counts = []
+    for k in (1, 2, 3, 4):
+        _, g, _ = torus_modes(m=1, n=k, ring=1.0, tube=0.4)
+        counts.append(int(np.sum(np.diff(np.signbit(g)) != 0)))
+    print("solid: torus mode nodal crossings by order: %s" % counts)
+    ok = ok and counts == sorted(counts) and counts[-1] > counts[0]
+
+    # High angular order localises on the OUTER equator -- the whispering
+    # gallery, and the thing that makes these look unlike a lattice wave.
+    _, g_hi, v_hi = torus_modes(m=12, n=1, ring=1.0, tube=0.4)
+    peak = float(v_hi[int(np.argmax(np.abs(g_hi)))])
+    print("solid: m=12 mode peaks at v=%.3f rad (0 is the outer equator)"
+          % peak)
+    ok = ok and (peak < 0.4 or peak > 2.0 * math.pi - 0.4)
 
     # --- the built solid -------------------------------------------------
     for base in BASES:

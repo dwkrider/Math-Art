@@ -82,6 +82,19 @@ if _IN_BLENDER:
             base='SPHERE', sphere_res=5, field='CELLULAR', points_n=220,
             cell_mode='CRACK', cell_sharp=0.7, curve='NONE', depth=0.2,
             seed=11),
+        'GEODESIC_POND': dict(
+            base='SPHERE', sphere_res=5, field='RIPPLE', sources=4,
+            wavelength=0.32, curve='NONE', depth=0.2, seed=6),
+        'ZONAL': dict(
+            base='SPHERE', sphere_res=5, field='WAVE', wavelength=0.35,
+            steepness=0.5, wave_count=3, wave_spread=0.25, curve='RIDGE',
+            depth=0.24, seed=2),
+        'SCATTERED': dict(
+            base='SPHERE', sphere_res=5, field='SCATTER', points_n=180,
+            sigma=0.16, kernel='WYVILL', curve='NONE', depth=0.22, seed=9),
+        'TORUS_HARMONIC': dict(
+            base='TORUS', grid_res=192, field='TORUS_MODE', mode_m=7,
+            mode_n=2, curve='NONE', depth=0.18),
         'QUASICRYSTAL': dict(
             base='SPHERE', sphere_res=5, field='QUASI', qc_cells=7.0,
             qc_sharp=1.4, curve='NONE', depth=0.28),
@@ -122,6 +135,14 @@ if _IN_BLENDER:
         ('HARMONIC_BALL', "Harmonic Ball",
          "A spherical harmonic -- the sphere's own vibration mode"),
         ('SHAGREEN', "Shagreen", "Cellular texture, cells cut out of space"),
+        ('GEODESIC_POND', "Geodesic Pond",
+         "Wavefronts that wrap the sphere and refocus at the antipode"),
+        ('ZONAL', "Zonal Bands",
+         "Ridged rings of even geodesic spacing"),
+        ('SCATTERED', "Scattered",
+         "Blue-ish scatter, even by area rather than by vertex"),
+        ('TORUS_HARMONIC', "Torus Harmonic",
+         "A solved vibration mode of the torus itself"),
         ('QUASICRYSTAL', "Quasicrystal",
          "Icosahedral order with no repeat anywhere"),
         ('ICOSAHEDRAL', "Icosahedral",
@@ -146,6 +167,17 @@ if _IN_BLENDER:
          "Band-limited sparse convolution noise, at a chosen pitch"),
         ('HARMONIC', "Spherical Harmonic",
          "Y_lm: the sphere's own eigenfunction. Meant for the Sphere base"),
+        ('RIPPLE', "Geodesic Ripple",
+         "Wavefronts spreading over the surface at constant geodesic "
+         "wavelength -- on a sphere they close up again at the antipode"),
+        ('WAVE', "Zonal Wave",
+         "Rings of constant geodesic spacing about an axis, which a plane "
+         "wave cutting the surface cannot give"),
+        ('SCATTER', "Scatter",
+         "Points spread evenly by AREA, each raised by a smooth kernel"),
+        ('TORUS_MODE', "Torus Harmonic",
+         "The torus's own vibration mode, solved. High angular orders "
+         "gather on the outer equator"),
         ('QUASI', "Quasicrystal",
          "Six cosines along the icosahedron's five-fold axes: exact "
          "icosahedral symmetry, and no repeat in any direction"),
@@ -280,6 +312,30 @@ if _IN_BLENDER:
             name="Feature Size", default=0.35, min=0.05, max=1.2,
             description="Diffusion per step; larger spreads the pattern "
                         "into bigger blobs")
+        sources: IntProperty(name="Sources", default=4, min=1, max=32)
+        wavelength: FloatProperty(name="Wavelength", default=0.35, min=0.01,
+                                  max=8.0, unit='LENGTH')
+        decay: FloatProperty(
+            name="Decay", default=0.0, min=0.0, max=4.0,
+            description="Fades each wavefront with distance from its source")
+        steepness: FloatProperty(name="Steepness", default=0.0, min=0.0,
+                                 max=1.0)
+        wave_count: IntProperty(name="Waves", default=1, min=1, max=12)
+        wave_spread: FloatProperty(name="Axis Spread", default=0.0, min=0.0,
+                                   max=1.0)
+        sigma: FloatProperty(name="Kernel Radius", default=0.12, min=0.01,
+                             max=2.0, unit='LENGTH')
+        kernel: EnumProperty(
+            name="Kernel",
+            items=[(k, k.title().replace('_', ' '), "")
+                   for k in ('WYVILL', 'GAUSSIAN', 'BLINN', 'COSINE',
+                             'WENDLAND', 'CONE')],
+            default='WYVILL')
+        merge_mode: EnumProperty(
+            name="Merge",
+            items=[('MAX', "Merge", "Keep the tallest where they overlap"),
+                   ('SUM', "Sum", "Add them, so overlaps pile up")],
+            default='MAX')
         qc_cells: FloatProperty(
             name="Scale", default=6.0, min=1.0, max=30.0,
             description="How many wave periods span the object")
@@ -348,6 +404,12 @@ if _IN_BLENDER:
                 points_n=self.points_n, cell_mode=self.cell_mode,
                 cell_sharp=self.cell_sharp, gabor_freq=self.gabor_freq,
                 gabor_band=self.gabor_band, spread=self.spread,
+                sources=self.sources, wavelength=self.wavelength,
+                decay=self.decay, steepness=self.steepness,
+                wave_count=self.wave_count,
+                wave_spread=self.wave_spread,
+                sigma=self.sigma, kernel=self.kernel,
+                merge_mode=self.merge_mode,
                 qc_cells=self.qc_cells, qc_sharp=self.qc_sharp,
                 qc_jitter=self.qc_jitter, sph_group=self.sph_group,
                 sym_cells=self.sym_cells, waves=self.waves,
@@ -434,6 +496,34 @@ if _IN_BLENDER:
                 col.prop(self, 'gabor_band')
                 col.prop(self, 'spread')
                 col.prop(self, 'points_n')
+            elif self.field == 'RIPPLE':
+                col.prop(self, 'sources')
+                col.prop(self, 'wavelength')
+                col.prop(self, 'decay')
+                if self.base == 'TORUS':
+                    col.label(text="Torus spacing is chordal, not geodesic",
+                              icon='INFO')
+            elif self.field == 'WAVE':
+                col.prop(self, 'wavelength')
+                col.prop(self, 'steepness')
+                col.prop(self, 'wave_count')
+                if self.wave_count > 1:
+                    col.prop(self, 'wave_spread')
+                if self.base != 'SPHERE':
+                    col.label(text="Zonal rings are a sphere construction",
+                              icon='INFO')
+            elif self.field == 'SCATTER':
+                col.prop(self, 'points_n')
+                col.prop(self, 'sigma')
+                col.prop(self, 'kernel')
+                col.prop(self, 'merge_mode')
+            elif self.field == 'TORUS_MODE':
+                col.prop(self, 'mode_m')
+                col.prop(self, 'mode_n')
+                col.prop(self, 'phase')
+                if self.base != 'TORUS':
+                    col.label(text="This mode belongs to the Torus base",
+                              icon='INFO')
             elif self.field == 'QUASI':
                 col.prop(self, 'qc_cells')
                 col.prop(self, 'qc_sharp')
@@ -532,13 +622,14 @@ def _selftest():
     # here rather than in front of them.
     for base in _B:
         for fld in ('FRACTAL', 'CELLULAR', 'GABOR', 'HARMONIC',
-                    'LATTICE', 'TURING', 'QUASI', 'GROUP'):
+                    'LATTICE', 'TURING', 'QUASI', 'GROUP',
+                    'RIPPLE', 'WAVE', 'SCATTER', 'TORUS_MODE'):
             v, f, _ = build_solid(
                 base=base, sphere_res=3, grid_res=48, field=fld,
                 points_n=60, seed=1, rd_steps=300)
             ok = ok and np.isfinite(np.asarray(v)).all() and len(f) > 0
     print("relief_solid: all %d fields build on all %d bases"
-          % (8, len(_B)))
+          % (12, len(_B)))
 
     print("RESULT:", "OK" if ok else "BAD")
     assert ok
