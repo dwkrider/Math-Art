@@ -68,7 +68,7 @@ from .relief import _apply_transform, _global_transform  # noqa: F401
 # when `bpy` is importable, so the re-export is guarded: headless callers
 # (and the test runner) simply do not see them, exactly as before.
 try:
-    from .emit import ADD_MENU, build_object, emit, register, unregister
+    from .emit import ADD_MENU, build_object, emit, register, unregister, source_mesh
 except ImportError:               # headless: no Blender layer to re-export
     pass
 

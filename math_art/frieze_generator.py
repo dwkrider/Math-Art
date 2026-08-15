@@ -108,7 +108,7 @@ def build_active_cells(group, verts3, faces, reps=6, color_by='COPY',
 try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
-                           BoolProperty)
+                           BoolProperty, StringProperty)
     from bpy_extras.object_utils import AddObjectHelper
     _IN_BLENDER = True
 except ImportError:
@@ -138,10 +138,18 @@ if _IN_BLENDER:
                    ('COMMA', "Comma", "Chiral paisley"),
                    ('ZIG', "Zig", "Z / zigzag"),
                    ('TRIANGLE', "Triangle", "Scalene triangle"),
-                   ('ACTIVE', "Active Mesh",
-                    "Use the selected mesh as the unit; falls back to "
-                    "the default motif if no mesh is selected")],
+                   # The identifier stays 'ACTIVE' although the label is
+                   # now "Object": it is what saved presets and the
+                   # extension smoke tests already pass.
+                   ('ACTIVE', "Object",
+                    "Use another object's mesh as the unit. Pick it below; "
+                    "with nothing picked the active or selected mesh is "
+                    "used, and failing that the default motif")],
             default='ARROW')
+        source: StringProperty(
+            name="Object",
+            description="Object whose mesh is used as the motif. Leave "
+                        "empty to use the active or selected mesh")
         reps: IntProperty(name="Repeats", default=6, min=1, max=60)
         color_by: EnumProperty(
             name="Color By",
@@ -167,16 +175,23 @@ if _IN_BLENDER:
                         "(parented to an empty) so cells can be edited "
                         "individually")
 
+        def invoke(self, context, event):
+            # Start from whatever is active, so choosing "Object" does
+            # something immediately rather than needing a pick first.
+            if not self.source and context.active_object is not None:
+                src = pc.source_mesh(context, "")
+                if src is not None:
+                    self.source = src.name
+            return self.execute(context)
+
         def execute(self, context):
             src = None
             if self.motif_kind == 'ACTIVE':
-                for o in ([context.active_object]
-                          + list(context.selected_objects)):
-                    if (o and o.type == 'MESH' and o.data.vertices
-                            and o.data.polygons
-                            and not o.get("math_art_pattern")):
-                        src = o
-                        break
+                src = pc.source_mesh(context, self.source)
+                if src is None and self.source:
+                    self.report({'WARNING'},
+                                "%r is not a usable mesh; using the default "
+                                "motif" % self.source)
             fit = True
             if self.motif_kind == 'ACTIVE' and src is not None:
                 v3 = [(vv.co.x, vv.co.y, vv.co.z)
@@ -213,6 +228,8 @@ if _IN_BLENDER:
             for p in ('group', 'motif_kind', 'reps', 'color_by',
                       'margin'):
                 lay.prop(self, p)
+            if self.motif_kind == 'ACTIVE':
+                lay.prop_search(self, 'source', bpy.data, 'objects')
             if self.motif_kind != 'ACTIVE':
                 lay.prop(self, 'height')
             lay.prop(self, 'separate')

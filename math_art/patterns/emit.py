@@ -98,6 +98,31 @@ if _IN_BLENDER:
         cols = cols or PALETTE
         return _material("Math Art Pattern %d" % i, cols[i % len(cols)])
 
+    def source_mesh(context, name=""):
+        """The mesh a pattern should use as its motif.
+
+        A named object if one is given, and otherwise the active or selected
+        mesh -- which is what these generators did before they had a picker,
+        so an empty name keeps the old behaviour rather than producing
+        nothing.
+
+        Objects this engine made itself are skipped: a pattern built from a
+        previous pattern compounds every symmetry copy and is almost never
+        what was wanted, while looking enough like a plausible result to be
+        confusing.
+        """
+        named = bpy.data.objects.get(name) if name else None
+        if named is not None:
+            if named.type == 'MESH' and named.data.vertices                     and named.data.polygons:
+                return named
+            return None
+        for o in ([context.active_object] + list(context.selected_objects)):
+            if (o and o.type == 'MESH' and o.data.vertices
+                    and o.data.polygons
+                    and not o.get("math_art_pattern")):
+                return o
+        return None
+
     def emit(context, name, cells, separate=False, fit=True, span=2.0,
              operator=None):
         """Turn per-cell pieces into scene geometry.  separate=False
