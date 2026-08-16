@@ -179,6 +179,32 @@ def _frame(a):
     return u, v
 
 
+def max_line_foot(kind, family, d=1.0):
+    """Largest foot radius over the family's guide lines -- the
+    smallest guide extent that still emits every line.
+
+    A line is dropped entirely once its foot (the point of the line
+    closest to the plane centre) falls outside the guide disc, so an
+    extent below this silently loses the outermost lines -- and with
+    them the intersections the outer corners of a motif snap to.  For
+    the icosahedral 2-fold planes (Frabjous) this is phi^2 + 1/phi^2
+    ~ 3.078, while the pointed ends of the parts reach out to the
+    3-fold piercings at phi^2 ~ 2.618."""
+    a, normals = plane_normals(kind, family)
+    u, v = _frame(a)
+    best = 0.0
+    for b in normals:
+        ab = sum(x * y for x, y in zip(a, b))
+        if abs(ab) > 1 - 1e-9:
+            continue
+        Bu = sum(x * y for x, y in zip(b, u))
+        Bv = sum(x * y for x, y in zip(b, v))
+        n2 = Bu * Bu + Bv * Bv
+        c = d * (1 - ab)
+        best = max(best, sqrt((c * Bu / n2) ** 2 + (c * Bv / n2) ** 2))
+    return best
+
+
 def stellation_lines(kind, family, d=1.0, extent=3.0):
     """The guide pattern of Hart's 2D editor: line segments (in the
     representative plane's local xy coordinates) where the other
@@ -728,9 +754,17 @@ if _IN_BLENDER:
             description="Radial extrusion fraction (Hart used ~4%); "
                         "0 keeps the flat planes")
         guide_extent: FloatProperty(
-            name="Guide Extent", default=2.2, min=1.0, max=8.0,
+            name="Guide Extent", default=3.2, min=1.0, max=12.0,
             description="Radius of the guide pattern, in units of "
-                        "the plane distance")
+                        "the plane distance. 3.2 covers every line "
+                        "of the 5-, 4-, 3- and 2-fold families "
+                        "(the outermost sits at 3.078, on the "
+                        "icosahedral 2-fold planes) so the outer "
+                        "corners a motif snaps to -- e.g. Frabjous's "
+                        "tips at phi^2 = 2.618 -- have guide lines "
+                        "crossing there. The general P1 families run "
+                        "much farther out and need a bigger radius "
+                        "to draw in full")
         lift: BoolProperty(
             name="Lift Sculpture Clear of Motif", default=True,
             description="Raise the sculpture up +Z so it stops "
@@ -924,3 +958,31 @@ def _selftest():
     print(f"ICOSA/P3 guide lines: {len(segs)} "
           f"{'OK' if len(segs) == 18 else 'BAD'}")
     assert len(segs) == 18
+
+    # the shipped Guide Extent must emit EVERY line of the k-fold
+    # families -- a line whose foot lies outside the disc is dropped
+    # altogether, taking with it the corner intersections that the
+    # outer tips of a motif are drawn to.
+    default_extent = 3.2
+    for kind, fam in (('ICOSA', 'P5'), ('ICOSA', 'P3'), ('ICOSA', 'P2'),
+                      ('OCTA', 'P4'), ('OCTA', 'P3'), ('OCTA', 'P2'),
+                      ('TETRA', 'P3'), ('TETRA', 'P2')):
+        _, normals = plane_normals(kind, fam)
+        foot = max_line_foot(kind, fam, 1.0)
+        segs = stellation_lines(kind, fam, 1.0, default_extent)
+        want = sum(1 for b in normals
+                   if abs(sum(x * y for x, y in
+                              zip(_normalize(_AXES[(kind, fam)]), b)))
+                   <= 1 - 1e-9)
+        ok = len(segs) == want and foot < default_extent
+        print(f"{kind}/{fam} guides at extent {default_extent}: "
+              f"{len(segs)}/{want} lines, max foot {foot:.3f} "
+              f"{'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, len(segs), want, foot)
+
+    # Frabjous draws its pointed ends to the 3-fold piercings at
+    # phi^2; those must be a real crossing of two guide lines, and
+    # inside the default disc
+    assert max_line_foot('ICOSA', 'P2', 1.0) > PHI * PHI
+    assert PHI * PHI < default_extent
+    print(f"ICOSA/P2 reaches the phi^2={PHI * PHI:.4f} corner OK")

@@ -3,6 +3,7 @@
 # Run:  blender --background --factory-startup --python tests/test_symmetric.py
 import sys
 import os
+import math
 
 import bpy
 
@@ -196,6 +197,22 @@ for preset, fam, merged in (('TWISTED_RIVERS', 'P3', 0),
           f"{'OK' if ok else 'FAIL'}")
     if not ok:
         fails.append(f'preset-{preset}')
+
+    # the guides have to reach at least as far as the motif they are
+    # drawn for -- Frabjous runs its tips out to the 3-fold piercings
+    # at phi^2 = 2.618, well past the old 2.2 guide disc, so the very
+    # crossing its corners sit on was not being drawn
+    mo = [o for o in bpy.data.objects
+          if o.name.startswith('SymSculpt Motif')][0]
+    gd = [o for o in bpy.data.objects
+          if o.name.startswith('SymSculpt Guides')][0]
+    r_motif = max(math.hypot(v.co.x, v.co.y) for v in mo.data.vertices)
+    r_guide = max(math.hypot(v.co.x, v.co.y) for v in gd.data.vertices)
+    ok = r_guide >= r_motif
+    print(f"[guides cover {preset}] motif r={r_motif:.3f} "
+          f"guides r={r_guide:.3f} {'OK' if ok else 'FAIL'}")
+    if not ok:
+        fails.append(f'guides-{preset}')
 
 # Lift: raises the modifier result up +Z, leaves the Motif and Guides
 # objects behind at the origin, and keeps the motif's own copy (the
