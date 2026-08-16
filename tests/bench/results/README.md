@@ -1,0 +1,40 @@
+# Committed benchmark results — provenance
+
+Every file here is reproducible from the committed code and the committed
+configs (`tests/bench/configs/`).  Quality metrics are deterministic;
+`time_s`/`t` fields are wall-clock noise, quoted only as ratios.  Run all
+commands from the repo/worktree root.
+
+| artifact(s) | command |
+|---|---|
+| `baseline.*` | `python tests/bench/run.py --config tests/bench/configs/old_defaults.json --tag baseline` |
+| `post.*` | `python tests/bench/run.py --tag post` |
+| `ab_plateau_mollify.md`, `plateau_mollify_*` | `python tests/bench/run.py catenoid catenoid_fine seifert_span_q3 seifert_span_q5 --ab tests/bench/configs/old_defaults.json tests/bench/configs/mollify.json --tag plateau_mollify` |
+| `ab_plateau_groom.md`, `plateau_groom_*` | `python tests/bench/run.py catenoid catenoid_fine seifert_span_q3 seifert_span_q5 --ab tests/bench/configs/mollify.json tests/bench/configs/mollify_groom.json --tag plateau_groom` |
+| `ab_poly_ls.md`, `poly_ls_*` | `python tests/bench/run.py canonical biscribe --ab tests/bench/configs/old_defaults.json tests/bench/configs/poly_ls.json --tag poly_ls` |
+| `ab_fair_mollify.md`, `fair_mollify_*` | `python tests/bench/run.py seifert_fair --ab tests/bench/configs/old_defaults.json tests/bench/configs/fair_mollify.json --tag fair_mollify` |
+| `sweep_groom.*` | `python tests/bench/run.py seifert_sweep --config tests/bench/configs/mollify_groom.json --tag sweep_groom` |
+
+Config semantics: `{}` / `baseline.json` = **current defaults** (they moved
+when measured winners shipped); `old_defaults.json` = the pre-branch
+(master @ 3873571) behaviour, kept A/B-able forever.  A/B columns are
+labelled by config-file basename, and each side's `effective:` line in the
+tables records the flags that actually ran (`grooms_run` > 0 proves the
+groom cycle fired) — added after a stale artifact was found reporting a
+groomed config whose grooming had been silently disabled by a tracer bug.
+
+Known reproduction tolerance: in `baseline.*`, the biscribe residual
+spreads (`r/f_spread_worst_ok`, scale ~1e-10) can differ from a fresh
+old-defaults run in their 4th significant digit: `biscribe`'s *internal*
+`canonicalize` init uses the current adaptive default (there is no knob to
+re-create the pre-branch init), which shifts the fixed-step solve's start
+point minutely.  Both values sit five orders of magnitude below the 1e-5
+convergence criterion; every decision-bearing metric reproduces exactly.
+`baseline.*` as committed IS the fresh old-defaults run against current
+code, so re-runs match it bitwise.
+
+History note: artifacts predating the final harness (including one whose
+"mollify_groom" column had grooming silently off, and a "sweep_baseline"
+generated after the default flip that actually measured mollify) were
+removed and regenerated on 2026-08-16; no verdict changed.  See
+`research/plans/solver-unification-bench-plan.md` §"Reconciliation".

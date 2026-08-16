@@ -2,7 +2,8 @@
 
 ## catenoid
 
-time: 0.106 s, n_verts=1088, n_tris=2048
+time: 0.115 s, n_verts=1088, n_tris=2048  
+effective: cotan_mode=mollify, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -26,7 +27,8 @@ time: 0.106 s, n_verts=1088, n_tris=2048
 
 ## catenoid_fine
 
-time: 0.305 s, n_verts=2400, n_tris=4608
+time: 0.343 s, n_verts=2400, n_tris=4608  
+effective: cotan_mode=mollify, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -50,7 +52,8 @@ time: 0.305 s, n_verts=2400, n_tris=4608
 
 ## seifert_span_q3
 
-time: 0.992 s, n_verts=5320, n_tris=10230
+time: 1.093 s, n_verts=5320, n_tris=10230  
+effective: cotan_mode=mollify, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -72,7 +75,8 @@ time: 0.992 s, n_verts=5320, n_tris=10230
 
 ## seifert_span_q5
 
-time: 1.226 s, n_verts=3996, n_tris=7580
+time: 1.649 s, n_verts=3996, n_tris=7580  
+effective: cotan_mode=mollify, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -94,7 +98,8 @@ time: 1.226 s, n_verts=3996, n_tris=7580
 
 ## seifert_sweep
 
-time: 82.114 s
+time: 85.423 s  
+effective: cotan_mode=mollify, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -124,7 +129,7 @@ time: 82.114 s
 
 ## seifert_fair
 
-time: 1.042 s, n_verts=9263, n_tris=17952
+time: 1.128 s, n_verts=9263, n_tris=17952
 
 | metric | value |
 |---|---|
@@ -135,8 +140,8 @@ time: 1.042 s, n_verts=9263, n_tris=17952
 | rim_max_move | 0 |
 | interior_mean_move | 0.01023 |
 | selfx | 0 |
-| time_relax_s | 0.2268 |
-| time_fair_s | 0.815 |
+| time_relax_s | 0.2504 |
+| time_fair_s | 0.8773 |
 | H_rms | 0.0503 |
 | H_max | 0.279 |
 | q_min | 0.05965 |
@@ -149,7 +154,7 @@ time: 1.042 s, n_verts=9263, n_tris=17952
 
 ## canonical
 
-time: 3.928 s
+time: 3.981 s
 
 | metric | value |
 |---|---|
@@ -160,15 +165,15 @@ time: 3.928 s
 
 | solid | tangent_spread | planarity_max | iters | time_s |
 |---|---|---|---|---|
-| gC | 8.026e-06 | 1.537e-07 | 400 | 0.786 |
-| pC | 1.281e-05 | 3.367e-08 | 400 | 0.7957 |
-| wC | 0.001425 | 4.311e-05 | 400 | 1.033 |
-| tI | 3.249e-05 | 3.019e-16 | 400 | 1.069 |
-| kD | 5.214e-07 | 1.797e-16 | 75 | 0.2451 |
+| gC | 8.026e-06 | 1.537e-07 | 400 | 0.7949 |
+| pC | 1.281e-05 | 3.367e-08 | 400 | 0.7909 |
+| wC | 0.001425 | 4.311e-05 | 400 | 1.023 |
+| tI | 3.249e-05 | 3.019e-16 | 400 | 1.136 |
+| kD | 5.214e-07 | 1.797e-16 | 75 | 0.2359 |
 
 ## biscribe
 
-time: 2.512 s
+time: 2.580 s
 
 | metric | value |
 |---|---|
@@ -180,18 +185,18 @@ time: 2.512 s
 
 | solid | exists | converged | correct | r_spread | f_spread | iters | time_s |
 |---|---|---|---|---|---|---|---|
-| C | True | True | 1 | 0 | 0 | 1 | 0.0399 |
-| D | True | True | 1 | 4.965e-17 | 1.21e-16 | 1 | 0.04594 |
-| kC | True | True | 1 | 1.839e-14 | 2.448e-16 | 18 | 0.1999 |
-| kD | True | True | 1 | 4.439e-14 | 1.117e-14 | 24 | 0.532 |
-| tO | True | True | 1 | 1.327e-15 | 7.463e-14 | 103 | 0.6025 |
-| aC | False | False | 1 | 1.063e-16 | 0.07034 | 1 | 0.05732 |
-| aD | False | False | 1 | 9.065e-17 | 0.04479 | 1 | 0.1211 |
-| tC | False | False | 1 | 1.242e-08 | 7.866e-08 | 182 | 0.9129 |
+| C | True | True | 1 | 0 | 0 | 1 | 0.04668 |
+| D | True | True | 1 | 4.965e-17 | 1.21e-16 | 1 | 0.05479 |
+| kC | True | True | 1 | 1.839e-14 | 2.448e-16 | 18 | 0.1943 |
+| kD | True | True | 1 | 4.439e-14 | 1.117e-14 | 24 | 0.5666 |
+| tO | True | True | 1 | 1.327e-15 | 7.463e-14 | 103 | 0.636 |
+| aC | False | False | 1 | 1.063e-16 | 0.07034 | 1 | 0.06313 |
+| aD | False | False | 1 | 9.065e-17 | 0.04479 | 1 | 0.1417 |
+| tC | False | False | 1 | 1.242e-08 | 7.866e-08 | 182 | 0.8772 |
 
 ## knot_trefoil
 
-time: 0.081 s, n_verts=120
+time: 0.093 s, n_verts=120
 
 | metric | value |
 |---|---|
@@ -202,7 +207,7 @@ time: 0.081 s, n_verts=120
 
 ## knot_hopf
 
-time: 0.057 s, n_verts=200
+time: 0.068 s, n_verts=200
 
 | metric | value |
 |---|---|
@@ -214,7 +219,7 @@ time: 0.057 s, n_verts=200
 
 ## crochet
 
-time: 0.150 s, n_verts=430, n_tris=767
+time: 0.151 s, n_verts=430, n_tris=767
 
 | metric | value |
 |---|---|
@@ -226,7 +231,7 @@ time: 0.150 s, n_verts=430, n_tris=767
 
 ## planarize
 
-time: 0.172 s, n_verts=28
+time: 0.154 s, n_verts=28
 
 | metric | value |
 |---|---|

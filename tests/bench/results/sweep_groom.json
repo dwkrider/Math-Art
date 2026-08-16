@@ -6,6 +6,11 @@
     "groom_every": 4
    }
   },
+  "effective": {
+   "cotan_mode": "mollify",
+   "groom_every": 4,
+   "grooms_run": 17
+  },
   "metrics": {
    "n_embedded": 17,
    "n_total": 17,
@@ -81,7 +86,7 @@
     "selfx": 0
    }
   },
-  "time_s": 92.48115730000427,
+  "time_s": 96.7311328999931,
   "trace": []
  }
 }

@@ -1,8 +1,9 @@
-# Bench results: groom_on_mollify_mollify_groom
+# Bench results: plateau_groom_mollify_groom
 
 ## catenoid
 
-time: 0.415 s, n_verts=1088, n_tris=2048
+time: 0.446 s, n_verts=1088, n_tris=2048  
+effective: cotan_mode=mollify, groom_every=4, grooms_run=9
 
 | metric | value |
 |---|---|
@@ -24,9 +25,35 @@ time: 0.415 s, n_verts=1088, n_tris=2048
 | selfx | 0 |
 | iters | 40 |
 
+## catenoid_fine
+
+time: 0.667 s, n_verts=2400, n_tris=4608  
+effective: cotan_mode=mollify, groom_every=4, grooms_run=9
+
+| metric | value |
+|---|---|
+| area | 5.991 |
+| q_min | 0.7034 |
+| q_mean | 0.9481 |
+| q_p05 | 0.8525 |
+| min_angle_deg | 35.4 |
+| degenerate | 0 |
+| clamp_frac | 0.003834 |
+| neg_cot_frac | 0.0034 |
+| H_rms | 0.0001724 |
+| H_max | 0.001685 |
+| edge_cv | 0.1304 |
+| valence_rms_dev | 0.4267 |
+| area_exact | 5.992 |
+| area_rel_err | -0.0001051 |
+| waist_rel_err | 0.0005197 |
+| selfx | 0 |
+| iters | 40 |
+
 ## seifert_span_q3
 
-time: 1.542 s, n_verts=5320, n_tris=10230
+time: 1.608 s, n_verts=5320, n_tris=10230  
+effective: cotan_mode=mollify, groom_every=4, grooms_run=1
 
 | metric | value |
 |---|---|
@@ -48,7 +75,8 @@ time: 1.542 s, n_verts=5320, n_tris=10230
 
 ## seifert_span_q5
 
-time: 1.300 s, n_verts=3996, n_tris=7580
+time: 1.587 s, n_verts=3996, n_tris=7580  
+effective: cotan_mode=mollify, groom_every=4, grooms_run=1
 
 | metric | value |
 |---|---|

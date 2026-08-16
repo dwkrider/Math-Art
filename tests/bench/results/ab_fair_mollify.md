@@ -1,7 +1,7 @@
-# A/B: baseline vs fair_mollify
+# A/B: old_defaults vs fair_mollify
 
-### seifert_fair   time 1.36s -> 1.06s (x0.78)
-| metric | baseline | fair_mollify | verdict |
+### seifert_fair   time 1.41s -> 1.20s (x0.85)
+| metric | old_defaults | fair_mollify | verdict |
 |---|---|---|---|
 | area_before_fair | 49.22 | 49.22 | tie |
 | area | 48.77 | 48.66 | B wins |
@@ -10,8 +10,8 @@
 | rim_max_move | 0 | 0 | tie |
 | interior_mean_move | 0.01849 | 0.01023 | info |
 | selfx | 0 | 0 | tie |
-| time_relax_s | 0.313 | 0.2384 | info |
-| time_fair_s | 1.047 | 0.8212 | info |
+| time_relax_s | 0.3356 | 0.2649 | info |
+| time_fair_s | 1.075 | 0.932 | info |
 | H_rms | 0.04898 | 0.0503 | A wins |
 | H_max | 0.3136 | 0.279 | B wins |
 | q_min | 0.04218 | 0.05965 | B wins |

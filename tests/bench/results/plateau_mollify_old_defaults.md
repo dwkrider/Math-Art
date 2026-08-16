@@ -1,8 +1,9 @@
-# Bench results: mollify_baseline
+# Bench results: plateau_mollify_old_defaults
 
 ## catenoid
 
-time: 0.184 s, n_verts=1088, n_tris=2048
+time: 0.202 s, n_verts=1088, n_tris=2048  
+effective: cotan_mode=clamp, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -26,7 +27,8 @@ time: 0.184 s, n_verts=1088, n_tris=2048
 
 ## catenoid_fine
 
-time: 0.457 s, n_verts=2400, n_tris=4608
+time: 0.462 s, n_verts=2400, n_tris=4608  
+effective: cotan_mode=clamp, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -50,7 +52,8 @@ time: 0.457 s, n_verts=2400, n_tris=4608
 
 ## seifert_span_q3
 
-time: 2.753 s, n_verts=5320, n_tris=10230
+time: 3.437 s, n_verts=5320, n_tris=10230  
+effective: cotan_mode=clamp, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -72,7 +75,8 @@ time: 2.753 s, n_verts=5320, n_tris=10230
 
 ## seifert_span_q5
 
-time: 1.704 s, n_verts=3996, n_tris=7580
+time: 1.769 s, n_verts=3996, n_tris=7580  
+effective: cotan_mode=clamp, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|

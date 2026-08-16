@@ -1,12 +1,25 @@
 {
  "biscribe": {
-  "config": {},
+  "config": {
+   "biscribe_kwargs": {
+    "line_search": false
+   },
+   "canonical_kwargs": {
+    "adaptive": false
+   },
+   "fair_kwargs": {
+    "mollify": false
+   },
+   "plateau_kwargs": {
+    "cotan_mode": "clamp"
+   }
+  },
   "metrics": {
-   "f_spread_worst_ok": 1.108188705544443e-10,
+   "f_spread_worst_ok": 1.116186273201053e-10,
    "iters_mean_ok": 200.6,
    "n_correct": 8,
    "n_total": 8,
-   "r_spread_worst_ok": 8.14618664606174e-11
+   "r_spread_worst_ok": 8.146464973405642e-11
   },
   "per_solid": {
    "C": {
@@ -16,7 +29,7 @@
     "f_spread": 0.0,
     "iters": 1,
     "r_spread": 0.0,
-    "time_s": 0.02434000000357628
+    "time_s": 0.03328680002596229
    },
    "D": {
     "converged": true,
@@ -24,69 +37,82 @@
     "exists": true,
     "f_spread": 1.2099363644413789e-16,
     "iters": 1,
-    "r_spread": 1.2412670766236366e-16,
-    "time_s": 0.03522520000115037
+    "r_spread": 1.0235750533041807e-16,
+    "time_s": 0.05073119996814057
    },
    "aC": {
     "converged": false,
     "correct": 1,
     "exists": false,
-    "f_spread": 0.07033892914713144,
+    "f_spread": 0.07033892914713148,
     "iters": 2500,
-    "r_spread": 1.4073403298634282e-16,
-    "time_s": 2.3151915000053123
+    "r_spread": 7.522550487054795e-17,
+    "time_s": 2.7474709000089206
    },
    "aD": {
     "converged": false,
     "correct": 1,
     "exists": false,
-    "f_spread": 0.044785531611029404,
+    "f_spread": 0.04478553161102942,
     "iters": 2500,
-    "r_spread": 2.590749532122602e-16,
-    "time_s": 5.24136849999195
+    "r_spread": 7.160453436532848e-17,
+    "time_s": 5.985073999967426
    },
    "kC": {
     "converged": true,
     "correct": 1,
     "exists": true,
-    "f_spread": 1.588769302345246e-16,
+    "f_spread": 1.404286934286679e-16,
     "iters": 196,
-    "r_spread": 7.563497564761633e-11,
-    "time_s": 0.4386485000140965
+    "r_spread": 7.56353877105153e-11,
+    "time_s": 0.42863659997237846
    },
    "kD": {
     "converged": true,
     "correct": 1,
     "exists": true,
-    "f_spread": 1.8899528906738048e-16,
+    "f_spread": 2.0433519324066588e-16,
     "iters": 179,
-    "r_spread": 8.14618664606174e-11,
-    "time_s": 0.8629298000014387
+    "r_spread": 8.146464973405642e-11,
+    "time_s": 0.8890814000042155
    },
    "tC": {
     "converged": false,
     "correct": 1,
     "exists": false,
-    "f_spread": 0.02143020689606664,
+    "f_spread": 0.1380860593953378,
     "iters": 2500,
-    "r_spread": 0.02758851932760749,
-    "time_s": 3.3886935000191443
+    "r_spread": 0.10567953717252664,
+    "time_s": 3.8583328999811783
    },
    "tO": {
     "converged": true,
     "correct": 1,
     "exists": true,
-    "f_spread": 1.108188705544443e-10,
+    "f_spread": 1.116186273201053e-10,
     "iters": 626,
-    "r_spread": 1.0353991325350102e-16,
-    "time_s": 0.9903419999754988
+    "r_spread": 1.523436554188811e-16,
+    "time_s": 1.078300399996806
    }
   },
-  "time_s": 13.296739000012167,
+  "time_s": 15.070914199925028,
   "trace": []
  },
  "canonical": {
-  "config": {},
+  "config": {
+   "biscribe_kwargs": {
+    "line_search": false
+   },
+   "canonical_kwargs": {
+    "adaptive": false
+   },
+   "fair_kwargs": {
+    "mollify": false
+   },
+   "plateau_kwargs": {
+    "cotan_mode": "clamp"
+   }
+  },
   "metrics": {
    "iters_mean": 338.8,
    "planarity_worst": 0.00025606091285257913,
@@ -98,34 +124,34 @@
     "iters": 400,
     "planarity_max": 8.439231973975525e-07,
     "tangent_spread": 5.5445622574928936e-05,
-    "time_s": 0.6933639000053518
+    "time_s": 0.7329626000137068
    },
    "kD": {
     "iters": 94,
     "planarity_max": 2.0957596964860995e-16,
     "tangent_spread": 1.0283376701282745e-06,
-    "time_s": 0.3281773999915458
+    "time_s": 0.33075059996917844
    },
    "pC": {
     "iters": 400,
     "planarity_max": 4.400561187770987e-06,
     "tangent_spread": 0.0007871835522687331,
-    "time_s": 0.7928218999877572
+    "time_s": 0.7852537000435404
    },
    "tI": {
     "iters": 400,
     "planarity_max": 2.2812883503096e-16,
     "tangent_spread": 0.00036017399659019143,
-    "time_s": 1.0431362999952398
+    "time_s": 1.2340817999793217
    },
    "wC": {
     "iters": 400,
     "planarity_max": 0.00025606091285257913,
     "tangent_spread": 0.009115836744551842,
-    "time_s": 0.9979930000263266
+    "time_s": 1.2177980999695137
    }
   },
-  "time_s": 3.8554925000062212,
+  "time_s": 4.300846799975261,
   "trace": []
  }
 }

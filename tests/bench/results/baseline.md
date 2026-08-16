@@ -2,7 +2,8 @@
 
 ## catenoid
 
-time: 0.200 s, n_verts=1088, n_tris=2048
+time: 0.187 s, n_verts=1088, n_tris=2048  
+effective: cotan_mode=clamp, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -26,7 +27,8 @@ time: 0.200 s, n_verts=1088, n_tris=2048
 
 ## catenoid_fine
 
-time: 0.449 s, n_verts=2400, n_tris=4608
+time: 0.452 s, n_verts=2400, n_tris=4608  
+effective: cotan_mode=clamp, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -50,7 +52,8 @@ time: 0.449 s, n_verts=2400, n_tris=4608
 
 ## seifert_span_q3
 
-time: 3.222 s, n_verts=5320, n_tris=10230
+time: 3.185 s, n_verts=5320, n_tris=10230  
+effective: cotan_mode=clamp, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -72,7 +75,8 @@ time: 3.222 s, n_verts=5320, n_tris=10230
 
 ## seifert_span_q5
 
-time: 1.773 s, n_verts=3996, n_tris=7580
+time: 1.619 s, n_verts=3996, n_tris=7580  
+effective: cotan_mode=clamp, groom_every=0, grooms_run=0
 
 | metric | value |
 |---|---|
@@ -92,9 +96,40 @@ time: 1.773 s, n_verts=3996, n_tris=7580
 | rim_max_move | 0 |
 | iters | 8 |
 
+## seifert_sweep
+
+time: 122.975 s  
+effective: cotan_mode=clamp, groom_every=0, grooms_run=0
+
+| metric | value |
+|---|---|
+| selfx_worst | 0 |
+| n_embedded | 17 |
+| n_total | 17 |
+
+| solid | selfx | min_angle_deg |
+|---|---|---|
+| q1_m96_r24 | 0 | 2.384 |
+| q1_m140_r24 | 0 | 1.262 |
+| q1_m200_r24 | 0 | 0.9161 |
+| q3_m96_r24 | 0 | 2.593 |
+| q3_m140_r24 | 0 | 2.011 |
+| q3_m200_r24 | 0 | 1.194 |
+| q5_m96_r24 | 0 | 2.535 |
+| q5_m140_r24 | 0 | 2.228 |
+| q5_m200_r24 | 0 | 1.166 |
+| q7_m96_r24 | 0 | 1.735 |
+| q7_m140_r24 | 0 | 1.735 |
+| q7_m200_r24 | 0 | 1.28 |
+| q1_m48_r8 | 0 | 4.722 |
+| q3_m48_r8 | 0 | 2.718 |
+| q5_m48_r8 | 0 | 2.344 |
+| q7_m48_r8 | 0 | 1.701 |
+| q9_m48_r8 | 0 | 1.14 |
+
 ## seifert_fair
 
-time: 1.312 s, n_verts=9263, n_tris=17952
+time: 1.422 s, n_verts=9263, n_tris=17952
 
 | metric | value |
 |---|---|
@@ -105,8 +140,8 @@ time: 1.312 s, n_verts=9263, n_tris=17952
 | rim_max_move | 0 |
 | interior_mean_move | 0.01849 |
 | selfx | 0 |
-| time_relax_s | 0.2478 |
-| time_fair_s | 1.065 |
+| time_relax_s | 0.2637 |
+| time_fair_s | 1.159 |
 | H_rms | 0.04898 |
 | H_max | 0.3136 |
 | q_min | 0.04218 |
@@ -119,7 +154,7 @@ time: 1.312 s, n_verts=9263, n_tris=17952
 
 ## canonical
 
-time: 3.692 s
+time: 4.770 s
 
 | metric | value |
 |---|---|
@@ -130,38 +165,38 @@ time: 3.692 s
 
 | solid | tangent_spread | planarity_max | iters | time_s |
 |---|---|---|---|---|
-| gC | 5.545e-05 | 8.439e-07 | 400 | 0.7201 |
-| pC | 0.0007872 | 4.401e-06 | 400 | 0.7115 |
-| wC | 0.009116 | 0.0002561 | 400 | 0.9585 |
-| tI | 0.0003602 | 2.281e-16 | 400 | 1.03 |
-| kD | 1.028e-06 | 2.096e-16 | 94 | 0.2717 |
+| gC | 5.545e-05 | 8.439e-07 | 400 | 0.8987 |
+| pC | 0.0007872 | 4.401e-06 | 400 | 0.9132 |
+| wC | 0.009116 | 0.0002561 | 400 | 1.292 |
+| tI | 0.0003602 | 2.281e-16 | 400 | 1.332 |
+| kD | 1.028e-06 | 2.096e-16 | 94 | 0.3337 |
 
 ## biscribe
 
-time: 13.112 s
+time: 15.077 s
 
 | metric | value |
 |---|---|
 | n_correct | 8 |
 | n_total | 8 |
 | r_spread_worst_ok | 8.146e-11 |
-| f_spread_worst_ok | 1.108e-10 |
+| f_spread_worst_ok | 1.116e-10 |
 | iters_mean_ok | 200.6 |
 
 | solid | exists | converged | correct | r_spread | f_spread | iters | time_s |
 |---|---|---|---|---|---|---|---|
-| C | True | True | 1 | 0 | 0 | 1 | 0.02476 |
-| D | True | True | 1 | 1.241e-16 | 1.21e-16 | 1 | 0.04026 |
-| kC | True | True | 1 | 7.563e-11 | 1.589e-16 | 196 | 0.4479 |
-| kD | True | True | 1 | 8.146e-11 | 1.89e-16 | 179 | 0.8627 |
-| tO | True | True | 1 | 1.035e-16 | 1.108e-10 | 626 | 0.9799 |
-| aC | False | False | 1 | 1.407e-16 | 0.07034 | 2500 | 2.164 |
-| aD | False | False | 1 | 2.591e-16 | 0.04479 | 2500 | 5.249 |
-| tC | False | False | 1 | 0.02759 | 0.02143 | 2500 | 3.343 |
+| C | True | True | 1 | 0 | 0 | 1 | 0.03554 |
+| D | True | True | 1 | 1.024e-16 | 1.21e-16 | 1 | 0.05336 |
+| kC | True | True | 1 | 7.564e-11 | 1.404e-16 | 196 | 0.4486 |
+| kD | True | True | 1 | 8.146e-11 | 2.043e-16 | 179 | 0.9494 |
+| tO | True | True | 1 | 1.523e-16 | 1.116e-10 | 626 | 1.161 |
+| aC | False | False | 1 | 7.523e-17 | 0.07034 | 2500 | 2.522 |
+| aD | False | False | 1 | 7.16e-17 | 0.04479 | 2500 | 6.153 |
+| tC | False | False | 1 | 0.1057 | 0.1381 | 2500 | 3.754 |
 
 ## knot_trefoil
 
-time: 0.091 s, n_verts=120
+time: 0.088 s, n_verts=120
 
 | metric | value |
 |---|---|
@@ -172,7 +207,7 @@ time: 0.091 s, n_verts=120
 
 ## knot_hopf
 
-time: 0.067 s, n_verts=200
+time: 0.064 s, n_verts=200
 
 | metric | value |
 |---|---|
@@ -184,7 +219,7 @@ time: 0.067 s, n_verts=200
 
 ## crochet
 
-time: 0.153 s, n_verts=430, n_tris=767
+time: 0.175 s, n_verts=430, n_tris=767
 
 | metric | value |
 |---|---|
@@ -196,7 +231,7 @@ time: 0.153 s, n_verts=430, n_tris=767
 
 ## planarize
 
-time: 0.166 s, n_verts=28
+time: 0.195 s, n_verts=28
 
 | metric | value |
 |---|---|

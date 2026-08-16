@@ -86,11 +86,28 @@ def _minimize_area_traced(V, T, fixed, outer_iters, kwargs):
     g, 2g, ...; chunking per-iteration would reset that counter and
     silently disable grooming, so here the groom cycle is invoked
     explicitly on the same schedule -- provably the same sequence of
-    operations as a single call."""
+    operations as a single call.  (An artifact generated before this
+    replay existed reported a groomed config with grooming silently
+    off; the returned `effective` dict now records what actually ran,
+    and is written into every result as provenance.)
+
+    Returns (trace, effective)."""
     from math_art.minsurf import plateau
+    import inspect
     kwargs = dict(kwargs)
     groom_every = int(kwargs.pop("groom_every", 0) or 0)
     groom_smooth = kwargs.pop("groom_smooth", 0.25)
+    sig = inspect.signature(plateau.minimize_area)
+    unknown = [k for k in kwargs if k not in sig.parameters]
+    if unknown:
+        raise ValueError(f"plateau_kwargs not accepted by minimize_area: "
+                         f"{unknown}")
+    default_mode = sig.parameters["cotan_mode"].default
+    effective = {
+        "cotan_mode": kwargs.get("cotan_mode", default_mode),
+        "groom_every": groom_every,
+        "grooms_run": 0,
+    }
     if groom_every:
         from math_art.solver import groom as _sg
     trace = [{"iter": 0, "t": 0.0, "E": M.mesh_area(V, T)}]
@@ -99,12 +116,16 @@ def _minimize_area_traced(V, T, fixed, outer_iters, kwargs):
         V0 = V.copy()
         if groom_every and (it - 1) and (it - 1) % groom_every == 0:
             _sg.groom(V, T, fixed=fixed, smooth_lam=groom_smooth)
+            effective["grooms_run"] += 1
         plateau.minimize_area(V, T, fixed, outer_iters=1, **kwargs)
         trace.append({"iter": it, "t": _timer() - t0, "E": M.mesh_area(V, T)})
         move = np.max(np.linalg.norm(V - V0, axis=1))
         if move < 1e-6 * max(1.0, np.max(np.abs(V))):
             break
-    return trace
+    if groom_every and effective["grooms_run"] == 0:
+        raise RuntimeError("groom_every was configured but no groom cycle "
+                           "ran -- refusing to report a null result")
+    return trace, effective
 
 
 # --------------------------------------------------------------------------
@@ -115,7 +136,7 @@ def case_catenoid(config, nring=64, nrow=17):
     V, T, fixed = cylinder_grid(nring, nrow)
     A_exact, c = catenoid_area_analytic()
     kwargs = dict(config.get("plateau_kwargs", {}))
-    trace = _minimize_area_traced(V, T, fixed, 40, kwargs)
+    trace, effective = _minimize_area_traced(V, T, fixed, 40, kwargs)
     mets = _plateau_mesh_metrics(V, T, fixed)
     mets["area_exact"] = A_exact
     mets["area_rel_err"] = (mets["area"] - A_exact) / A_exact
@@ -125,7 +146,7 @@ def case_catenoid(config, nring=64, nrow=17):
     mets["selfx"] = M.selfx_count(V, T)
     mets["iters"] = trace[-1]["iter"]
     return {"metrics": mets, "trace": trace, "time_s": trace[-1]["t"],
-            "n_verts": len(V), "n_tris": len(T)}
+            "n_verts": len(V), "n_tris": len(T), "effective": effective}
 
 
 def case_catenoid_fine(config):
@@ -139,13 +160,14 @@ def case_seifert_span(config, q=5, m=140, rings=24):
     kwargs = dict(config.get("plateau_kwargs", {}))
     iters = int(config.get("seifert_iters", plateau._SEIFERT_MAX_ITERS))
     rim0 = V[fixed].copy()
-    trace = _minimize_area_traced(V, T, fixed, iters, kwargs)
+    trace, effective = _minimize_area_traced(V, T, fixed, iters, kwargs)
     mets = _plateau_mesh_metrics(V, T, fixed)
     mets["selfx"] = M.selfx_count(V, T)
     mets["rim_max_move"] = float(np.max(np.abs(V[fixed] - rim0)))
     mets["iters"] = trace[-1]["iter"]
     return {"metrics": mets, "trace": trace, "time_s": trace[-1]["t"],
-            "n_verts": len(V), "n_tris": len(T), "genus": (q - 1) // 2}
+            "n_verts": len(V), "n_tris": len(T), "genus": (q - 1) // 2,
+            "effective": effective}
 
 
 def case_seifert_sweep(config):
@@ -154,10 +176,19 @@ def case_seifert_sweep(config):
     is the self-intersection count staying 0 everywhere (the documented
     reason for the clamp + iteration cap)."""
     from math_art.minsurf import plateau
+    import inspect
     kwargs = dict(config.get("plateau_kwargs", {}))
     kwargs.pop("groom_every", None)
+    kwargs.pop("groom_smooth", None)
     groom_every = int(config.get("plateau_kwargs", {}).get(
         "groom_every", 0) or 0)
+    sig = inspect.signature(plateau.minimize_area)
+    effective = {
+        "cotan_mode": kwargs.get("cotan_mode",
+                                 sig.parameters["cotan_mode"].default),
+        "groom_every": groom_every,
+        "grooms_run": 0,
+    }
     per = {}
     t_all = _timer()
     worst = 0
@@ -171,6 +202,7 @@ def case_seifert_sweep(config):
             for it in range(plateau._SEIFERT_MAX_ITERS):
                 if it and it % groom_every == 0:
                     _sg.groom(V, T, fixed=fixed)
+                    effective["grooms_run"] += 1
                 plateau.minimize_area(V, T, fixed, outer_iters=1,
                                       **kwargs)
         else:
@@ -182,11 +214,14 @@ def case_seifert_sweep(config):
         per[f"q{q}_m{m}_r{rings}"] = {
             "selfx": sx,
             "min_angle_deg": M.tri_quality(V, T)["min_angle_deg"]}
+    if groom_every and effective["grooms_run"] == 0:
+        raise RuntimeError("groom_every was configured but no groom cycle "
+                           "ran -- refusing to report a null result")
     mets = {"selfx_worst": worst,
             "n_embedded": sum(1 for p in per.values() if p["selfx"] == 0),
             "n_total": len(per)}
     return {"metrics": mets, "per_solid": per, "trace": [],
-            "time_s": _timer() - t_all}
+            "time_s": _timer() - t_all, "effective": effective}
 
 
 def case_seifert_span_q3(config):
@@ -487,6 +522,19 @@ def case_planarize(config):
     return {"metrics": mets, "trace": trace, "time_s": trace[-1]["t"],
             "n_verts": Vn}
 
+
+# Every config key any case reads.  run.py rejects a config containing
+# anything else, so a typo cannot silently benchmark a null change.
+# (Keys irrelevant to a given case are legitimately ignored by that
+# case -- one config file drives the whole suite -- which is why the
+# check is a union at the runner level, plus per-case `effective`
+# provenance in the results for the flags that actually ran.)
+KNOWN_CONFIG_KEYS = {
+    "plateau_kwargs", "seifert_iters", "fair_kwargs", "canonical_mode",
+    "canonical_kwargs", "biscribe_kwargs", "knot_kwargs", "knot_iters",
+    "crochet_kwargs", "crochet_iters", "planarize_map",
+    "planarize_kwargs", "planarize_iters",
+}
 
 CASES = {
     "catenoid": case_catenoid,

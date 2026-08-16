@@ -1,8 +1,9 @@
-# Bench results: sweep_mollify_groom
+# Bench results: sweep_groom
 
 ## seifert_sweep
 
-time: 92.481 s
+time: 96.731 s  
+effective: cotan_mode=mollify, groom_every=4, grooms_run=17
 
 | metric | value |
 |---|---|

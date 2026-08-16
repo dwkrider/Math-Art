@@ -2,7 +2,7 @@
 
 ## seifert_fair
 
-time: 1.060 s, n_verts=9263, n_tris=17952
+time: 1.197 s, n_verts=9263, n_tris=17952
 
 | metric | value |
 |---|---|
@@ -13,8 +13,8 @@ time: 1.060 s, n_verts=9263, n_tris=17952
 | rim_max_move | 0 |
 | interior_mean_move | 0.01023 |
 | selfx | 0 |
-| time_relax_s | 0.2384 |
-| time_fair_s | 0.8212 |
+| time_relax_s | 0.2649 |
+| time_fair_s | 0.932 |
 | H_rms | 0.0503 |
 | H_max | 0.279 |
 | q_min | 0.05965 |

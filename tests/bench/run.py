@@ -24,6 +24,10 @@ RESULTS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
 
 
 def run_cases(names, config):
+    unknown = set(config) - C.KNOWN_CONFIG_KEYS
+    if unknown:
+        raise SystemExit(f"[bench] unknown config keys {sorted(unknown)}; "
+                         f"known: {sorted(C.KNOWN_CONFIG_KEYS)}")
     out = {}
     for name in names:
         fn = C.CASES[name]
@@ -57,6 +61,9 @@ def write_results(results, tag):
             for k in ("n_verts", "n_tris"):
                 if k in res:
                     f.write(f", {k}={res[k]}")
+            if res.get("effective"):
+                f.write("  \neffective: " + ", ".join(
+                    f"{k}={v}" for k, v in res["effective"].items()))
             f.write("\n\n| metric | value |\n|---|---|\n")
             for k, v in res["metrics"].items():
                 f.write(f"| {k} | {_fmt(v)} |\n")
@@ -99,6 +106,11 @@ def ab_table(res_a, res_b, label_a, label_b):
         ta, tb = res_a[case]["time_s"], res_b[case]["time_s"]
         lines.append(f"\n### {case}   time {ta:.2f}s -> {tb:.2f}s "
                      f"(x{tb / max(ta, 1e-9):.2f})")
+        for lab, res in ((label_a, res_a[case]), (label_b, res_b[case])):
+            if res.get("effective"):
+                eff = ", ".join(f"{k}={v}"
+                                for k, v in res["effective"].items())
+                lines.append(f"_{lab} effective: {eff}_  ")
         lines.append(f"| metric | {label_a} | {label_b} | verdict |")
         lines.append("|---|---|---|---|")
         for k in ma:
