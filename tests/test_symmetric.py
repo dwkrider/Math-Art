@@ -409,48 +409,70 @@ clear()
 bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS',
                                        show_polyhedron=True)
 got = {n: [o for o in bpy.data.objects if o.name.startswith(n)]
-       for n in ('SymSculpt Polyhedron', 'SymSculpt Vertex Balls',
+       for n in ('SymSculpt Polyhedron', 'SymSculpt Crossing Balls',
                  'SymSculpt Guide Marks')}
 solid = got['SymSculpt Polyhedron'][0]
-balls = got['SymSculpt Vertex Balls'][0]
+balls = got['SymSculpt Crossing Balls'][0]
 discs = got['SymSculpt Guide Marks'][0]
-marks = ss.vertex_marks('ICOSA', 'P2', 1.0, 3.2)
-nclass = len(set(c for _, _, c in marks))
+cross = ss.crossing_points('ICOSA', 'P2', 1.0, 3.2, 0)
+orbit = ss.crossing_orbit('ICOSA', 'P2', cross, 1.0)
+ntype = len({ss._hue_of(k) for _, _, k in cross})
 ok = (len(solid.data.vertices) == 32 and len(solid.data.polygons) == 30
-      and len(balls.data.materials) == 2
-      and len(discs.data.materials) == nclass
+      and len(discs.data.materials) == ntype
+      and len(balls.data.materials) == ntype
       and all(o.hide_render for o in (solid, balls, discs))
       and all(o.parent and o.parent.name.startswith('SymSculpt')
               for o in (solid, balls, discs)))
 print(f"[polyhedron] V={len(solid.data.vertices)}(32) "
-      f"F={len(solid.data.polygons)}(30) classes={nclass} "
+      f"F={len(solid.data.polygons)}(30) crossing types={ntype} "
       f"{'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('polyhedron')
 
-# the balls sit on the solid, and every disc sits on a guide line
-ball_r = [math.dist(tuple(v.co), (0, 0, 0))
-          for v in balls.data.vertices]
-solid_r = sorted({round(math.dist(tuple(v.co), (0, 0, 0)), 4)
-                  for v in solid.data.vertices})
-ok = min(ball_r) > 0.9 * solid_r[0] and max(ball_r) < 1.1 * solid_r[-1]
-print(f"[balls on solid] r in [{min(ball_r):.3f},{max(ball_r):.3f}] "
-      f"vs solid {solid_r} {'OK' if ok else 'FAIL'}")
+# one disc per crossing, one ball per orbit point -- faces per
+# marker taken from the builders rather than written in by hand
+fpd = len(ss._disc((0.0, 0.0, 0.0), 1.0)[1])
+fpb = len(ss._ball((0.0, 0.0, 0.0), 1.0)[1])
+ok = (len(discs.data.polygons) == fpd * len(cross)
+      and len(balls.data.polygons) == fpb * len(orbit))
+print(f"[marker counts] discs={len(discs.data.polygons) // fpd}"
+      f"({len(cross)}) balls={len(balls.data.polygons) // fpb}"
+      f"({len(orbit)}) {'OK' if ok else 'FAIL'}")
 if not ok:
-    fails.append('balls')
+    fails.append('marker-counts')
 
+# EVERY disc sits on a real crossing -- this is what the old
+# vertex-based marks got wrong on the general planes, where most of
+# them floated in open space
 segs = ss.stellation_lines('ICOSA', 'P2', 1.0, 3.2)
-worst = 0.0
-for x, y, _c in marks:
-    best = min(abs((b[0] - a2[0]) * (a2[1] - y) - (a2[0] - x)
-                   * (b[1] - a2[1]))
-               / max(math.dist(a2, b), 1e-9) for a2, b in segs)
-    worst = max(worst, best)
-ok = worst < 1e-6
-print(f"[marks lie on guide lines] worst offset {worst:.2e} "
-      f"{'OK' if ok else 'FAIL'}")
+
+
+def _line_offsets(x, y):
+    return sorted(abs((b[0] - a2[0]) * (a2[1] - y)
+                      - (a2[0] - x) * (b[1] - a2[1]))
+                  / max(math.dist(a2, b), 1e-9) for a2, b in segs)
+
+
+worst = max(_line_offsets(x, y)[k - 1] for x, y, k in cross)
+print(f"[every mark is a crossing] worst offset {worst:.2e} "
+      f"{'OK' if worst < 1e-6 else 'FAIL'}")
+if worst >= 1e-6:
+    fails.append('marks-on-crossings')
+
+# and the same has to hold for Whimsy's general planes, thinned
+w_cross = ss.crossing_points('ICOSA', 'P1', 1.0, 3.2, 3)
+w_segs = ss.stellation_lines('ICOSA', 'P1', 1.0, 3.2, 3)
+w_worst = 0.0
+for x, y, k in w_cross:
+    offs = sorted(abs((b[0] - a2[0]) * (a2[1] - y)
+                      - (a2[0] - x) * (b[1] - a2[1]))
+                  / max(math.dist(a2, b), 1e-9) for a2, b in w_segs)
+    w_worst = max(w_worst, offs[k - 1])
+ok = len(w_cross) > 0 and w_worst < 1e-6
+print(f"[whimsy marks are crossings] {len(w_cross)} crossings, "
+      f"worst {w_worst:.2e} {'OK' if ok else 'FAIL'}")
 if not ok:
-    fails.append('marks-on-guides')
+    fails.append('whimsy-crossings')
 
 # the solid and its balls rise with the sculpture and keep tracking
 # Lift afterwards; the guide marks belong to the flat diagram and

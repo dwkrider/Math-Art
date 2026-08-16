@@ -291,62 +291,72 @@ def family_polyhedron(kind, family, d=1.0):
     return verts, faces
 
 
-def vertex_classes(verts, tol=1e-4):
-    """Group vertices by distance from the origin.
+def crossing_points(kind, family, d=1.0, extent=3.2, rings=0):
+    """Where the drawn guide lines cross, as (x, y, lines).
 
-    For every solid here that is one orbit under the rotation group --
-    the 5-fold vertices of a rhombic triacontahedron sit at one
-    radius, its 3-fold vertices at another -- so radius is a cheap
-    and exact stand-in for the orbit, and it is also what decides
-    where a vertex lands in the guide diagram."""
-    radii = []
+    These are the points a motif's corners want to sit on: a crossing
+    of k guide lines is a point where k+1 planes of the family meet,
+    so k+1 parts converge there and the joint closes exactly.  `lines`
+    is that k, which is what distinguishes a plain corner from a hub
+    where a whole rosette meets.
+
+    Derived from the segments stellation_lines actually emits, so
+    thinning the pattern with `rings` thins the crossings with it."""
+    segs = stellation_lines(kind, family, d, extent, rings)
+    lines = []
+    for p0, p1 in segs:
+        A = p1[1] - p0[1]
+        B = p0[0] - p1[0]
+        n = sqrt(A * A + B * B)
+        if n < 1e-12:
+            continue
+        lines.append((A / n, B / n, (A * p0[0] + B * p0[1]) / n))
+    pts = []
+    for i in range(len(lines)):
+        a1, b1, c1 = lines[i]
+        for j in range(i + 1, len(lines)):
+            a2, b2, c2 = lines[j]
+            det = a1 * b2 - a2 * b1
+            if abs(det) < 1e-9:
+                continue                  # parallel
+            x = (c1 * b2 - c2 * b1) / det
+            y = (a1 * c2 - a2 * c1) / det
+            if sqrt(x * x + y * y) > extent * d + 1e-9:
+                continue
+            if any(abs(x - px) < 1e-6 and abs(y - py) < 1e-6
+                   for px, py in pts):
+                continue
+            pts.append((x, y))
     out = []
-    for p in verts:
-        r = sqrt(sum(c * c for c in p))
-        for i, s in enumerate(radii):
-            if abs(r - s) < tol:
-                out.append(i)
-                break
-        else:
-            radii.append(r)
-            out.append(len(radii) - 1)
-    order = sorted(range(len(radii)), key=lambda i: radii[i])
-    rank = {o: i for i, o in enumerate(order)}
-    return [rank[c] for c in out], sorted(radii)
+    for x, y in pts:
+        k = sum(1 for A, B, C in lines
+                if abs(A * x + B * y - C) < 1e-6)
+        out.append((x, y, k))
+    return out
 
 
-def vertex_marks(kind, family, d=1.0, extent=3.2):
-    """Where each vertex of the defining solid shows up in the
-    representative plane, as (local x, y, class).
+def crossing_orbit(kind, family, crossings, d=1.0):
+    """Every point equivalent to one of `crossings` under the group,
+    as (point, lines).
 
-    A vertex is carried to the plane along the ray from the origin
-    through it, so a vertex that already lies in this plane maps to
-    itself, and every other one lands where its own axis pierces --
-    which is exactly where the parts meeting at that vertex converge.
-    Vertices whose ray runs nearly parallel to the plane would land
-    absurdly far out and are dropped."""
+    A crossing is a point of the plane arrangement, so it recurs in
+    every plane that passes through it; carrying the representative
+    plane's crossings around the group is what shows where they all
+    sit relative to the defining solid."""
     a, _ = plane_normals(kind, family)
     u, v = _frame(a)
-    verts, _ = family_polyhedron(kind, family, d)
-    cls, _ = vertex_classes(verts)
-    marks = []
-    for p, c in zip(verts, cls):
-        dot = sum(x * y for x, y in zip(p, a))
-        if abs(dot) < 1e-6:
-            continue
-        q = [x * (d * d / dot) for x in p]
-        x = sum(k * l for k, l in zip(q, u))
-        y = sum(k * l for k, l in zip(q, v))
-        if sqrt(x * x + y * y) > extent * d:
-            continue
-        # a vertex and its antipode ride the same line through the
-        # origin, so on a centrally symmetric solid they pierce at
-        # the same spot -- one mark, not two stacked on each other
-        if any(abs(x - mx) < 1e-6 and abs(y - my) < 1e-6
-               for mx, my, _ in marks):
-            continue
-        marks.append((x, y, c))
-    return marks
+    seen = {}
+    out = []
+    for x, y, k in crossings:
+        p = tuple(d * a[i] + x * u[i] + y * v[i] for i in range(3))
+        for R in group_rotations(kind):
+            q = _apply(R, p)
+            key = tuple(round(c, 5) for c in q)
+            if key in seen:
+                continue
+            seen[key] = True
+            out.append((q, k))
+    return out
 
 
 def max_line_foot(kind, family, d=1.0):
@@ -851,11 +861,19 @@ if _IN_BLENDER:
             mat.blend_method = 'BLEND'
         return mat
 
-    # one hue per vertex class, shared by the ball on the solid and
-    # the disc where that vertex lands in the guide diagram
+    # one hue per crossing type, shared by the disc in the guide
+    # diagram and the balls on every point equivalent to it
     _CLASS_HUES = ((0.90, 0.25, 0.20), (0.20, 0.65, 0.35),
                    (0.25, 0.45, 0.95), (0.95, 0.70, 0.15),
                    (0.65, 0.30, 0.85), (0.20, 0.75, 0.80))
+    # a viewport aid should not quietly build a hundred thousand
+    # spheres; the general plane families can reach that
+    _MAX_MARKS = 3000
+
+    def _hue_of(lines):
+        """Crossing of k lines -> colour slot.  Two lines is the
+        plainest corner, so it takes the first hue."""
+        return max(0, min(lines - 2, len(_CLASS_HUES) - 1))
 
     def _class_material(i, alpha=1.0):
         name = f"SymSculpt Class {i}" + ("" if alpha >= 1.0 else " Ghost")
@@ -1251,13 +1269,17 @@ if _IN_BLENDER:
             name="Show Defining Polyhedron", default=False,
             description="Add the semi-transparent solid whose "
                         "extended face planes are this plane family, "
-                        "with a coloured ball on each of its vertices "
-                        "and a disc of the same colour in the guide "
-                        "diagram where that vertex lands. Colour "
-                        "groups the vertices by their distance from "
-                        "the origin, which is what distinguishes the "
-                        "5-fold from the 3-fold ones. Design aid "
-                        "only -- excluded from renders")
+                        "and mark every crossing of the guide lines "
+                        "with a coloured disc -- the points a motif's "
+                        "corners should sit on, since a crossing of "
+                        "k lines is where k+1 planes meet and k+1 "
+                        "parts converge. Colour is that k, so a plain "
+                        "corner and a hub read differently. Balls of "
+                        "the same colour show every point equivalent "
+                        "to those crossings around the solid. Design "
+                        "aid only -- excluded from renders. Guide "
+                        "Rings and Guide Extent thin the crossings "
+                        "along with the lines")
         translucent: BoolProperty(
             name="Translucent Copies", default=False,
             description="Draw the replicated copies in a ghost "
@@ -1409,17 +1431,28 @@ if _IN_BLENDER:
                 solid.parent = obj
                 solid.matrix_parent_inverse = Matrix.Identity(4)
 
-                cls, _radii = vertex_classes(pv)
                 rball = 0.035 * d
+                cross = crossing_points(kind, family, d,
+                                        self.guide_extent,
+                                        self.guide_rings)
+                orbit = crossing_orbit(kind, family, cross, d)
+                if len(orbit) > _MAX_MARKS:
+                    self.report(
+                        {'WARNING'},
+                        f"{len(orbit)} crossing points in 3D -- "
+                        f"showing the {_MAX_MARKS} nearest; raise "
+                        f"Guide Rings or lower Guide Extent to thin "
+                        f"the pattern")
+                    orbit.sort(key=lambda t: sum(c * c for c in t[0]))
+                    orbit = orbit[:_MAX_MARKS]
                 balls = _build_marker_object(
-                    "SymSculpt Vertex Balls",
-                    [(c, _ball(p, rball)) for p, c in zip(pv, cls)],
+                    "SymSculpt Crossing Balls",
+                    [(_hue_of(k), _ball(p, rball)) for p, k in orbit],
                     0.45)
-                marks = vertex_marks(kind, family, d, self.guide_extent)
                 discs = _build_marker_object(
                     "SymSculpt Guide Marks",
-                    [(c, _disc((x, y, 1e-3 * d), rball))
-                     for x, y, c in marks], 1.0)
+                    [(_hue_of(k), _disc((x, y, 1e-3 * d), rball))
+                     for x, y, k in cross], 1.0)
                 for o in (balls, discs):
                     context.collection.objects.link(o)
                     o.matrix_world = Matrix.Identity(4)
@@ -1624,20 +1657,50 @@ def _selftest():
               f"{'OK' if ok else 'BAD'}")
         assert ok, (kind, fam, len(pv), len(pf))
 
-    # and the vertex marks must land where the design actually joins:
-    # on the triacontahedral planes the 3-fold vertices mark phi^2
-    # out and the 5-fold ones phi -- Frabjous's tips and vortices
-    mk = vertex_marks('ICOSA', 'P2', 1.0, 3.2)
-    radii = {}
-    for x, y, c in mk:
-        radii.setdefault(c, set()).add(round(sqrt(x * x + y * y), 5))
-    got = set().union(*radii.values())
-    ok = (round(PHI * PHI, 5) in got and round(PHI, 5) in got
-          and len(mk) == len({(round(x, 6), round(y, 6))
-                              for x, y, _ in mk}))
-    print(f"ICOSA/P2 marks hit phi={PHI:.5f} and phi^2={PHI * PHI:.5f}, "
-          f"{len(mk)} distinct {'OK' if ok else 'BAD'}")
-    assert ok, sorted(got)
+    # every marked point must be a real crossing: k lines through it
+    # by construction, all distinct, all inside the guide disc
+    for kind, fam in (('ICOSA', 'P5'), ('ICOSA', 'P3'),
+                      ('ICOSA', 'P2'), ('OCTA', 'P3')):
+        cr = crossing_points(kind, fam, 1.0, 3.2)
+        segs = stellation_lines(kind, fam, 1.0, 3.2)
+        worst = 0.0
+        for x, y, k in cr:
+            near = sorted(
+                abs((b[0] - a3[0]) * (a3[1] - y)
+                    - (a3[0] - x) * (b[1] - a3[1]))
+                / max(sqrt((b[0] - a3[0]) ** 2 + (b[1] - a3[1]) ** 2),
+                      1e-12)
+                for a3, b in segs)
+            worst = max(worst, near[k - 1])   # k lines must pass here
+        distinct = len({(round(x, 6), round(y, 6)) for x, y, _ in cr})
+        ok = (worst < 1e-6 and distinct == len(cr)
+              and all(k >= 2 for _, _, k in cr)
+              and all(sqrt(x * x + y * y) <= 3.2 + 1e-9
+                      for x, y, _ in cr))
+        print(f"{kind}/{fam}: {len(cr)} crossings, types "
+              f"{sorted(set(k for _, _, k in cr))}, worst line "
+              f"offset {worst:.1e} {'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, worst, distinct, len(cr))
+
+    # the crossings must include the points the designs are drawn to:
+    # on the triacontahedral planes, phi^2 out along local x (where
+    # three Frabjous tips meet) and phi along local y (the vortices)
+    cr = crossing_points('ICOSA', 'P2', 1.0, 3.2)
+    got = {(round(x, 5), round(y, 5)): k for x, y, k in cr}
+    ok = ((round(PHI * PHI, 5), 0.0) in got
+          and (0.0, round(PHI, 5)) in got)
+    print(f"ICOSA/P2 crossings include phi^2 on x and phi on y "
+          f"{'OK' if ok else 'BAD'}")
+    assert ok, sorted(got)[:6]
+
+    # and a crossing of k lines really is a meeting of k+1 planes, so
+    # the orbit lands every equivalent point exactly once
+    orb = crossing_orbit('ICOSA', 'P5', crossing_points(
+        'ICOSA', 'P5', 1.0, 3.2), 1.0)
+    keys = {tuple(round(c, 5) for c in p) for p, _ in orb}
+    print(f"ICOSA/P5 orbit: {len(orb)} points, {len(keys)} distinct "
+          f"{'OK' if len(orb) == len(keys) else 'BAD'}")
+    assert len(orb) == len(keys)
 
     # a motif flat on XY at plane distance d lands at sqrt(r^2+d^2)
     flat = [(0.0, 0.0, 0.0), (3.0, 4.0, 0.0)]
