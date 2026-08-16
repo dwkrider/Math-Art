@@ -275,18 +275,36 @@ print(f"[lift preserves shell] {'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('lift-shell')
 
-# operator defaults: lifted by 3.5x the plane distance, and opaque --
-# the checkbox scales with Plane Distance rather than being absolute
-clear()
-bpy.ops.object.symmetric_sculpture_add(preset='CUSTOM', group='ICOSA',
-                                       family='P3', distance=2.0)
-so = bpy.context.object
-lift_v, tr_v = get_input(so, 'Lift'), get_input(so, 'Translucent')
-ok = abs(lift_v - 7.0) < 1e-6 and not tr_v
-print(f"[operator defaults] lift={lift_v:.2f}(7.00) "
-      f"translucent={bool(tr_v)}(False) {'OK' if ok else 'FAIL'}")
+# the default lift must clear the motif plane by a real margin, for
+# every preset -- measured on the evaluated result, not by re-running
+# the same formula the operator used
+lifts = {}
+for preset in ('TWISTED_RIVERS', 'TUMBLEWEED', 'FRABJOUS', 'WHIMSY'):
+    clear()
+    bpy.ops.object.symmetric_sculpture_add(preset=preset)
+    so = bpy.context.object
+    lifts[preset] = get_input(so, 'Lift')
+    deps = bpy.context.evaluated_depsgraph_get()
+    ev = so.evaluated_get(deps).to_mesh()
+    z0 = min(v.co.z for v in ev.vertices)
+    z1 = max(v.co.z for v in ev.vertices)
+    rad = (z1 - z0) / 2.0
+    ratio = z0 / rad                      # gap as a share of radius
+    ok = z0 > 0.0 and 0.15 < ratio < 0.6
+    print(f"[lift clears {preset}] gap={z0:.3f} radius={rad:.3f} "
+          f"ratio={ratio:.2f} {'OK' if ok else 'FAIL'}")
+    if not ok:
+        fails.append(f'lift-clear-{preset}')
+
+# and it must track the motif's size: Frabjous runs out to phi^2 in
+# its plane, so at the same plane distance it needs a bigger lift
+# than the compact Tumbleweed flower
+ok = lifts['FRABJOUS'] > lifts['TUMBLEWEED']
+print(f"[lift scales with motif] frabjous={lifts['FRABJOUS']:.2f} > "
+      f"tumbleweed={lifts['TUMBLEWEED']:.2f} "
+      f"{'OK' if ok else 'FAIL'}")
 if not ok:
-    fails.append('defaults')
+    fails.append('lift-scaling')
 
 clear()
 bpy.ops.object.symmetric_sculpture_add(preset='CUSTOM', group='ICOSA',
@@ -296,5 +314,42 @@ ok = bool(get_input(so, 'Translucent'))
 print(f"[translucent checkbox] {'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('translucent-checkbox')
+
+# Motif Object: name a mesh and it is replicated instead of the
+# preset motif; name something that is not a mesh and the operator
+# falls back rather than failing
+clear()
+me = bpy.data.meshes.new("Custom")
+# kept clear of the local origin on purpose: a vertex at (0, 0, 0)
+# lands on the plane's centre of symmetry, where all k in-plane
+# copies coincide and weld together (Hart's "center-point")
+me.from_pydata([(0.2, 0.1, 0.0), (0.8, 0.1, 0.0), (0.8, 0.5, 0.0),
+                (0.2, 0.5, 0.0)], [], [[0, 1, 2, 3]])
+me.update()
+custom = bpy.data.objects.new("MyMotif", me)
+bpy.context.collection.objects.link(custom)
+bpy.ops.object.symmetric_sculpture_add(preset='TWISTED_RIVERS',
+                                       motif_object="MyMotif",
+                                       shell=0.0)
+so = bpy.context.object
+deps = bpy.context.evaluated_depsgraph_get()
+ev = so.evaluated_get(deps).to_mesh()
+ok = (len(ev.vertices) == 60 * 4          # our 4-vert quad, 60 copies
+      and not [o for o in bpy.data.objects
+               if o.name.startswith('SymSculpt Motif')])
+print(f"[motif object] {len(ev.vertices)}(240) "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('motif-object')
+
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='TWISTED_RIVERS',
+                                       motif_object="NoSuchObject")
+built = [o for o in bpy.data.objects
+         if o.name.startswith('SymSculpt Motif')]
+print(f"[motif object fallback] built preset motif={bool(built)} "
+      f"{'OK' if built else 'FAIL'}")
+if not built:
+    fails.append('motif-object-fallback')
 
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")

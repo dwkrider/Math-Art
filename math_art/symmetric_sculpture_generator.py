@@ -234,6 +234,35 @@ def stellation_lines(kind, family, d=1.0, extent=3.0):
     return segs
 
 
+def sculpture_radius(verts, d, shell=0.0):
+    """Outer radius of the finished sculpture, from the motif alone.
+
+    The node group maps a motif vertex (x, y, z) onto the
+    representative plane as x*u + y*v + (z + d)*a, and u, v, a are
+    orthonormal -- so that vertex sits sqrt(x^2 + y^2 + (z+d)^2) from
+    the origin.  Every copy is a rotation about the origin, so the
+    whole sculpture is bounded by the largest such radius, and the
+    radial shell scales it by (1 + shell)."""
+    r = 0.0
+    for x, y, z in verts:
+        r = max(r, sqrt(x * x + y * y + (z + d) * (z + d)))
+    return r * (1.0 + shell)
+
+
+def lift_height(verts, d, shell=0.0, margin=0.3):
+    """Lift that clears the motif by `margin` of the sculpture's own
+    radius.
+
+    The sculpture surrounds the origin, so its lowest point sits one
+    radius below the motif plane; raising it by that radius brings it
+    down exactly onto the motif, and the margin opens the gap.  Scaled
+    to the actual geometry rather than a fixed multiple of the plane
+    distance, because a motif reaching far out in its plane (Frabjous
+    runs to phi^2) makes a far bigger sculpture than a compact one
+    (Tumbleweed) at the very same plane distance."""
+    return sculpture_radius(verts, d, shell) * (1.0 + margin)
+
+
 def _ribbon(path, widths):
     """Flat quad-strip mesh (verts, faces) along a 2D centerline
     with per-point half-widths."""
@@ -472,7 +501,8 @@ PRESETS = {
 try:
     import bpy
     from mathutils import Matrix
-    from bpy.props import (FloatProperty, EnumProperty, BoolProperty)
+    from bpy.props import (FloatProperty, EnumProperty, BoolProperty,
+                           StringProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -770,19 +800,22 @@ if _IN_BLENDER:
             description="Raise the sculpture up +Z so it stops "
                         "surrounding the Motif and Guides, which stay "
                         "at the origin where they can be seen and "
-                        "edited. Tune the height afterwards with the "
+                        "edited. The height is measured from the "
+                        "sculpture this motif actually makes, so it "
+                        "clears by the same relative margin whatever "
+                        "the size; tune it afterwards with the "
                         "modifier's Lift input")
         translucent: BoolProperty(
             name="Translucent Copies", default=False,
             description="Draw the replicated copies in a ghost "
                         "material so the editable motif reads through "
                         "them; off = the sculpture's real material")
-        use_active: BoolProperty(
-            name="Use Active Object as Motif", default=False,
-            description="Place the active mesh object into the "
-                        "representative plane instead of creating "
-                        "the demo arc motif (draw it flat in its "
-                        "local XY plane)")
+        motif_object: StringProperty(
+            name="Motif Object", default="",
+            description="Mesh object to replicate instead of the "
+                        "preset motif -- draw it flat on the XY "
+                        "plane. Leave empty to build the preset's "
+                        "own motif")
 
         def execute(self, context):
             motif_builder = demo_motif
@@ -801,14 +834,15 @@ if _IN_BLENDER:
             d = self.distance
 
             motif = None
-            if self.use_active:
-                ao = context.active_object
+            if self.motif_object:
+                ao = bpy.data.objects.get(self.motif_object)
                 if ao is not None and ao.type == 'MESH':
                     motif = ao
                 else:
                     self.report({'WARNING'},
-                                "No active mesh object -- created "
-                                "the demo motif instead")
+                                f"'{self.motif_object}' is not a mesh "
+                                f"object -- built the preset motif "
+                                f"instead")
             if motif is None:
                 verts, faces = motif_builder(d)
                 me = bpy.data.meshes.new("SymSculpt Motif")
@@ -828,6 +862,12 @@ if _IN_BLENDER:
             motif.matrix_world = Matrix.Identity(4)
             if not motif.data.materials:
                 motif.data.materials.append(_motif_material())
+            # how high the sculpture has to go to clear the motif --
+            # measured from the motif that is actually being used, so
+            # a big motif gets a proportionally bigger lift
+            lift_z = lift_height([tuple(v.co) for v in
+                                  motif.data.vertices],
+                                 d, self.shell)
 
             # guide pattern (stellation diagram) in the same plane
             segs = stellation_lines(kind, family, d, self.guide_extent)
@@ -877,9 +917,10 @@ if _IN_BLENDER:
                 elif item.name == 'Shell':
                     mod[item.identifier] = self.shell
                 elif item.name == 'Lift':
-                    # clear of the outermost plane by a good margin;
-                    # still a live modifier input afterwards
-                    mod[item.identifier] = 3.5 * d if self.lift else 0.0
+                    # sized from the sculpture the motif actually
+                    # makes, not from d alone; still a live modifier
+                    # input afterwards
+                    mod[item.identifier] = lift_z if self.lift else 0.0
                 elif item.name == 'Translucent':
                     mod[item.identifier] = self.translucent
                 elif item.name == 'Plane Rotation':
@@ -912,8 +953,9 @@ if _IN_BLENDER:
                 if self.preset == 'CUSTOM':
                     lay.prop(self, k)
             for k in ('distance', 'shell', 'guide_extent', 'lift',
-                      'translucent', 'use_active'):
+                      'translucent'):
                 lay.prop(self, k)
+            lay.prop_search(self, 'motif_object', bpy.data, 'objects')
 
     def _menu_func(self, context):
         self.layout.operator_menu_enum(
@@ -986,3 +1028,26 @@ def _selftest():
     assert max_line_foot('ICOSA', 'P2', 1.0) > PHI * PHI
     assert PHI * PHI < default_extent
     print(f"ICOSA/P2 reaches the phi^2={PHI * PHI:.4f} corner OK")
+
+    # a motif flat on XY at plane distance d lands at sqrt(r^2+d^2)
+    flat = [(0.0, 0.0, 0.0), (3.0, 4.0, 0.0)]
+    r = sculpture_radius(flat, 12.0)
+    print(f"sculpture_radius (3,4,0) at d=12: {r:.4f} "
+          f"{'OK' if abs(r - 13.0) < 1e-9 else 'BAD'}")
+    assert abs(r - 13.0) < 1e-9            # 5-12-13
+    assert abs(sculpture_radius(flat, 12.0, 0.5) - 19.5) < 1e-9
+
+    # the lift must put the sculpture's lowest point exactly `margin`
+    # of a radius above the motif plane, and must grow with the motif
+    for verts, d, shell in ((flat, 12.0, 0.0), (flat, 12.0, 0.04),
+                            ([(0.0, 0.0, 0.0)], 1.0, 0.0)):
+        rad = sculpture_radius(verts, d, shell)
+        gap = lift_height(verts, d, shell, 0.3) - rad
+        assert abs(gap - 0.3 * rad) < 1e-9, (verts, d, shell)
+    small = lift_height([(0.5, 0.0, 0.0)], 1.0)
+    big = lift_height([(PHI * PHI, 0.0, 0.0)], 1.0)
+    print(f"lift scales with motif: {small:.3f} -> {big:.3f} "
+          f"{'OK' if big > small else 'BAD'}")
+    assert big > small
+    # ... and never buries the motif: the lowest point stays clear
+    assert small > sculpture_radius([(0.5, 0.0, 0.0)], 1.0)
