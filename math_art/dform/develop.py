@@ -147,7 +147,11 @@ def mu_from_flat(g):
     """The same mu predicted from the FLAT outlines (Orduno Eq. 1).
 
     Exact and solver-independent -- it depends only on the two outlines
-    and the join point.
+    and the join point.  For an anti-D-form (`hole_seam`) the material
+    lies OUTSIDE the seam polygon, so the material angle at a seam
+    vertex is 2*pi minus the polygon's interior angle; the total then
+    comes out -4*pi (two free rims each carry 2*pi of boundary turning,
+    and Gauss-Bonnet on the chi = 0 collar balances them).
     """
     (A2, _), (B2, _) = g.flat
     n = len(g.seam)
@@ -155,6 +159,9 @@ def mu_from_flat(g):
     # so this walks both boundaries in the order they were glued
     ia = _boundary_interior_angles(A2, g.maps[0], n)
     ib = _boundary_interior_angles(B2, g.maps[1], n)
+    if getattr(g, 'hole_seam', False):
+        ia = 2 * np.pi - ia
+        ib = 2 * np.pi - ib
     return 2 * np.pi - ia - ib
 
 

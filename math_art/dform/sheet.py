@@ -125,6 +125,10 @@ def annulus_mesh(outer, inner, spacing=None):
 
     V, depth, param, loops = [], [], [], []
     for k in range(K + 1):
+        # uniform spacing.  (Grading the rings denser toward the hole
+        # was tried for the anti-D-form's seam boundary layer and made
+        # everything WORSE -- the skinny first quads destabilise the
+        # hinge and the marching -- so: uniform.)
         s = k / K
         V.append((1.0 - s) * I + s * O)
         depth.append(np.full(n, s))
