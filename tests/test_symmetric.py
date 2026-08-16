@@ -19,14 +19,19 @@ def clear():
         bpy.data.objects.remove(o, do_unlink=True)
 
 
-def set_full(obj, val):
-    """Toggle the modifier's Full Sculpture input."""
+def set_input(obj, name, val):
+    """Set one of the modifier's group inputs by name."""
     mod = obj.modifiers[0]
     for it in mod.node_group.interface.items_tree:
-        if it.name == 'Full Sculpture' and it.in_out == 'INPUT':
+        if it.name == name and it.in_out == 'INPUT':
             mod[it.identifier] = val
     obj.update_tag()
     bpy.context.view_layer.update()
+
+
+def set_full(obj, val):
+    """Toggle the modifier's Full Sculpture input."""
+    set_input(obj, 'Full Sculpture', val)
 
 
 # pure math: group orders and plane-family counts
@@ -131,10 +136,15 @@ for g, f, n in (('ICOSA', 'P2', 60), ('OCTA', 'P4', 24),
     if not ok:
         fails.append(f'flat-{g}')
 
-# sculpture presets set the right plane family; Frabjous halves weld
+# sculpture presets set the right plane family; Frabjous is the one
+# preset whose copies actually meet -- its S-halves join across the
+# 2-fold axis and its tips meet in threes -- so 26 verts per copy
+# weld away (1560 of 60x172).  The other three presets are open
+# forms whose parts pass without touching, so nothing merges.
 for preset, fam, merged in (('TWISTED_RIVERS', 'P3', 0),
                             ('TUMBLEWEED', 'P5', 0),
-                            ('FRABJOUS', 'P2', 60)):
+                            ('FRABJOUS', 'P2', 1560),
+                            ('WHIMSY', 'P1', 0)):
     clear()
     bpy.ops.object.symmetric_sculpture_add(preset=preset, shell=0.0)
     so = bpy.context.object
@@ -145,10 +155,73 @@ for preset, fam, merged in (('TWISTED_RIVERS', 'P3', 0),
     deps = bpy.context.evaluated_depsgraph_get()
     ev = so.evaluated_get(deps).to_mesh()
     want = 60 * mv - merged
-    ok = len(ev.vertices) == want
-    print(f"[preset {preset}] verts={len(ev.vertices)}({want}) "
+    got = len(ev.vertices)
+    # the weld must be symmetric: every copy has to lose the same
+    # number of vertices, or the parts are not meeting cleanly
+    ok = (got == want and ss.PRESETS[preset][1] == fam
+          and (60 * mv - got) % 60 == 0)
+    print(f"[preset {preset}] verts={got}({want}) fam={fam} "
           f"{'OK' if ok else 'FAIL'}")
     if not ok:
         fails.append(f'preset-{preset}')
+
+# Lift: raises the modifier result up +Z, leaves the Motif and Guides
+# objects behind at the origin, and keeps the motif's own copy (the
+# sculpture is already clear, so there is nothing to hide).
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='CUSTOM', group='ICOSA',
+                                       family='P3', shell=0.0)
+so = bpy.context.object
+motif = [o for o in bpy.data.objects
+         if o.name.startswith('SymSculpt Motif')][0]
+guides = [o for o in bpy.data.objects
+          if o.name.startswith('SymSculpt Guides')][0]
+mv = len(motif.data.vertices)
+deps = bpy.context.evaluated_depsgraph_get()
+ev = so.evaluated_get(deps).to_mesh()
+z_flat = min(v.co.z for v in ev.vertices)
+ok = len(ev.vertices) == 59 * mv          # unlifted: motif copy hidden
+print(f"[lift off] {len(ev.vertices)}({59 * mv}) "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('lift-off')
+
+set_input(so, 'Lift', 3.0)
+deps = bpy.context.evaluated_depsgraph_get()
+ev = so.evaluated_get(deps).to_mesh()
+z_up = min(v.co.z for v in ev.vertices)
+ok = (len(ev.vertices) == 60 * mv                    # all copies kept
+      and abs((z_up - z_flat) - 3.0) < 1e-5          # moved exactly 3
+      and abs(motif.matrix_world.translation.z) < 1e-9
+      and abs(guides.matrix_world.translation.z) < 1e-9)
+print(f"[lift on] {len(ev.vertices)}({60 * mv}) dz={z_up - z_flat:.4f} "
+      f"motif z={motif.matrix_world.translation.z:.4f} "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('lift-on')
+
+# the lift is applied after the radial shell, so extruding then
+# lifting must equal lifting a rigid copy -- if it ran before the
+# shell it would change every point's distance from the origin
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='CUSTOM', group='ICOSA',
+                                       family='P3', shell=0.04)
+so = bpy.context.object
+set_full(so, True)
+deps = bpy.context.evaluated_depsgraph_get()
+ev = so.evaluated_get(deps).to_mesh()
+flat = sorted((round(v.co.x, 5), round(v.co.y, 5), round(v.co.z, 5))
+              for v in ev.vertices)
+set_input(so, 'Lift', 5.0)
+deps = bpy.context.evaluated_depsgraph_get()
+ev = so.evaluated_get(deps).to_mesh()
+up = sorted((round(v.co.x, 5), round(v.co.y, 5),
+             round(v.co.z - 5.0, 5)) for v in ev.vertices)
+ok = (len(flat) == len(up)
+      and max(abs(p[i] - q[i]) for p, q in zip(flat, up)
+              for i in range(3)) < 1e-4)
+print(f"[lift preserves shell] {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('lift-shell')
 
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")

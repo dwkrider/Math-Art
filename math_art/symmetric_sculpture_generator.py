@@ -3,8 +3,21 @@
 #
 # After George W. Hart's sculpture design program described in
 # "Symmetric sculpture", Journal of Mathematics and the Arts 1(1),
-# 2007 (the tool behind Twisted Rivers, Tumbleweed, Frabjous,
-# Spaghetti Code, ...). A flat motif drawn in ONE representative
+# 2007, pp. 21-28, doi:10.1080/17513470701228040 -- and its
+# precursor, "Sculpture from Symmetrically Arranged Planar
+# Components", Bridges 2003, pp. 315-322 (the tool behind Twisted
+# Rivers, Tumbleweed, Frabjous, Spaghetti Code, ...).
+#
+# References:
+#   G. W. Hart, "Symmetric sculpture", J. Mathematics and the Arts
+#     1(1), 2007, 21-28.  doi:10.1080/17513470701228040
+#   G. W. Hart, "Sculpture from Symmetrically Arranged Planar
+#     Components", Bridges 2003, 315-322.
+#   H. S. M. Coxeter, P. Du Val, H. T. Flather, J. F. Petrie, "The
+#     Fifty-Nine Icosahedra", U. Toronto Press, 1938 -- the
+#     stellation pattern drawn as the editing guides.
+#
+# A flat motif drawn in ONE representative
 # plane is replicated live into a whole family of symmetrically
 # arranged planes -- the extended face planes of an icosahedron,
 # dodecahedron, rhombic triacontahedron or hexecontahedron (or their
@@ -30,7 +43,11 @@
 # from the origin by that fraction of its distance (Hart's ~4%
 # radial extrusion, which preserves planarity and yields a watertight
 # solid for 3D printing); "Weld" merges coincident vertices where
-# copies meet exactly on the plane-intersection lines.
+# copies meet exactly on the plane-intersection lines; "Lift" raises
+# the replicated sculpture up +Z so it no longer surrounds the Motif
+# and Guides, which stay at the origin where they can be drawn on
+# (only the modifier result moves -- the objects themselves stay put,
+# so the sculpture keeps its true position for export).
 
 bl_info = {
     "name": "Symmetric Sculpture",
@@ -481,7 +498,7 @@ if _IN_BLENDER:
         for ng in bpy.data.node_groups:
             if (ng.name.startswith(_NG_NAME)
                     and ng.type == 'GEOMETRY'
-                    and any(it.name == 'Plane Offset'
+                    and any(it.name == 'Lift'
                             for it in ng.interface.items_tree)):
                 return ng
         ng = bpy.data.node_groups.new(_NG_NAME, 'GeometryNodeTree')
@@ -503,6 +520,15 @@ if _IN_BLENDER:
                         "material (for export/render); off = design " \
                         "view with translucent copies and the " \
                         "motif's own copy hidden"
+        s = face("Lift", in_out='INPUT', socket_type='NodeSocketFloat')
+        s.default_value, s.min_value, s.max_value = 0.0, 0.0, 100.0
+        s.description = "Raise the whole sculpture this far up +Z, " \
+                        "leaving the Motif and Guides behind at the " \
+                        "origin so they can be seen and edited " \
+                        "(0 = in place). Only the modifier result " \
+                        "moves, not the objects; while lifted the " \
+                        "motif's own copy is kept, since the " \
+                        "sculpture is already out of the way"
         s = face("Copy Material", in_out='INPUT',
                  socket_type='NodeSocketMaterial')
         s.default_value = _ghost_material()
@@ -530,6 +556,16 @@ if _IN_BLENDER:
         bnot.operation = 'NOT'
         band = n('FunctionNodeBooleanMath')
         band.operation = 'AND'
+        # a lifted sculpture already stands clear of the motif, so the
+        # motif's own copy is only dropped while Lift is zero
+        cmpl = n('FunctionNodeCompare')
+        cmpl.data_type = 'FLOAT'
+        cmpl.operation = 'GREATER_THAN'
+        cmpl.inputs[1].default_value = 1e-6
+        bnotl = n('FunctionNodeBooleanMath')
+        bnotl.operation = 'NOT'
+        bandl = n('FunctionNodeBooleanMath')
+        bandl.operation = 'AND'
         dg = n('GeometryNodeDeleteGeometry')
         dg.domain = 'POINT'
         oi = n('GeometryNodeObjectInfo')
@@ -557,14 +593,24 @@ if _IN_BLENDER:
         cmp.inputs[1].default_value = 1e-5
         sw = n('GeometryNodeSwitch')
         sw.input_type = 'GEOMETRY'
+        # the lift is applied LAST: the radial shell above offsets each
+        # point along its own position vector, so translating before it
+        # would change every point's distance from the origin and
+        # corrupt the extrusion
+        lz = n('ShaderNodeCombineXYZ')
+        lt = n('GeometryNodeTransform')
         go = n('NodeGroupOutput')
 
         ln = ng.links.new
         ln(gi.outputs['Full Sculpture'], bnot.inputs[0])
         ln(nam.outputs['Attribute'], band.inputs[0])
         ln(bnot.outputs['Boolean'], band.inputs[1])
+        ln(gi.outputs['Lift'], cmpl.inputs[0])
+        ln(cmpl.outputs['Result'], bnotl.inputs[0])
+        ln(band.outputs['Boolean'], bandl.inputs[0])
+        ln(bnotl.outputs['Boolean'], bandl.inputs[1])
         ln(gi.outputs['Geometry'], dg.inputs['Geometry'])
-        ln(band.outputs['Boolean'], dg.inputs['Selection'])
+        ln(bandl.outputs['Boolean'], dg.inputs['Selection'])
         ln(dg.outputs['Geometry'], iop.inputs['Points'])
         ln(gi.outputs['Motif'], oi.inputs['Object'])
         ln(oi.outputs['Geometry'], tg.inputs['Geometry'])
@@ -588,10 +634,14 @@ if _IN_BLENDER:
         ln(cmp.outputs['Result'], sw.inputs['Switch'])
         ln(md.outputs['Geometry'], sw.inputs['False'])
         ln(ex.outputs['Mesh'], sw.inputs['True'])
-        ln(sw.outputs['Output'], go.inputs['Geometry'])
-        for i, node in enumerate((gi, nam, bnot, band, dg, oi,
-                                  tg, na, iop, sm, smw, ri, md,
-                                  pos, off, ex, cmp, sw, go)):
+        ln(gi.outputs['Lift'], lz.inputs['Z'])
+        ln(sw.outputs['Output'], lt.inputs['Geometry'])
+        ln(lz.outputs['Vector'], lt.inputs['Translation'])
+        ln(lt.outputs['Geometry'], go.inputs['Geometry'])
+        for i, node in enumerate((gi, nam, bnot, band, cmpl, bnotl,
+                                  bandl, dg, oi, tg, na, iop, sm, smw,
+                                  ri, md, pos, off, ex, cmp, sw, lz,
+                                  lt, go)):
             node.location = (200 * (i % 6), -240 * (i // 6))
         return ng
 
@@ -613,7 +663,7 @@ if _IN_BLENDER:
                     "After Tumbleweed (2006): swirling five-armed "
                     "pinwheels in the 12 dodecahedral planes"),
                    ('FRABJOUS', "Frabjous",
-                    "After Frabjous (2006): 30 S-shaped parts in "
+                    "After Frabjous (2003): 30 S-shaped parts in "
                     "the face planes of the GREAT rhombic "
                     "triacontahedron -- ends meeting in threes at "
                     "the 3-fold corners (phi^2 x the plane "
@@ -668,6 +718,13 @@ if _IN_BLENDER:
             name="Guide Extent", default=2.2, min=1.0, max=8.0,
             description="Radius of the guide pattern, in units of "
                         "the plane distance")
+        lift: BoolProperty(
+            name="Lift Sculpture Clear of Motif", default=False,
+            description="Raise the sculpture up +Z so it stops "
+                        "surrounding the Motif and Guides, which stay "
+                        "at the origin where they can be seen and "
+                        "edited. Tune the height afterwards with the "
+                        "modifier's Lift input")
         use_active: BoolProperty(
             name="Use Active Object as Motif", default=False,
             description="Place the active mesh object into the "
@@ -767,6 +824,10 @@ if _IN_BLENDER:
                     mod[item.identifier] = motif
                 elif item.name == 'Shell':
                     mod[item.identifier] = self.shell
+                elif item.name == 'Lift':
+                    # clear of the outermost plane by a good margin;
+                    # still a live modifier input afterwards
+                    mod[item.identifier] = 2.5 * d if self.lift else 0.0
                 elif item.name == 'Plane Rotation':
                     mod[item.identifier] = list(plane_rot)
                 elif item.name == 'Plane Offset':
@@ -796,7 +857,7 @@ if _IN_BLENDER:
             for k in ('group', 'family'):
                 if self.preset == 'CUSTOM':
                     lay.prop(self, k)
-            for k in ('distance', 'shell', 'guide_extent',
+            for k in ('distance', 'shell', 'guide_extent', 'lift',
                       'use_active'):
                 lay.prop(self, k)
 
