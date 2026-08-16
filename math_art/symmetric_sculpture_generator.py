@@ -234,6 +234,121 @@ def guide_ring_radii(kind, family, d=1.0):
     return sorted(seen)
 
 
+def family_polyhedron(kind, family, d=1.0):
+    """The solid whose extended face planes ARE this plane family:
+    the intersection of the half-spaces {x : x.n <= d} over the
+    family's normals.  Returns (verts, faces).
+
+    Built face by face rather than by intersecting triples of planes:
+    each face starts as a big square lying in its own plane and is
+    clipped by every other half-space, which is O(F^2) instead of
+    O(F^3) and hands back the face polygons already in order."""
+    _, normals = plane_normals(kind, family)
+    big = 40.0 * d
+    verts = []
+    faces = []
+    index = {}
+    for n in normals:
+        u, v = _frame(n)
+        poly = [(-big, -big), (big, -big), (big, big), (-big, big)]
+        for m in normals:
+            if m is n:
+                continue
+            A = sum(x * y for x, y in zip(u, m))
+            B = sum(x * y for x, y in zip(v, m))
+            C = d - d * sum(x * y for x, y in zip(n, m))
+            if abs(A) < 1e-12 and abs(B) < 1e-12:
+                continue                  # parallel: no constraint here
+            out = []
+            k = len(poly)
+            for i in range(k):
+                p0, p1 = poly[i], poly[(i + 1) % k]
+                f0 = A * p0[0] + B * p0[1] - C
+                f1 = A * p1[0] + B * p1[1] - C
+                if f0 <= 1e-12:
+                    out.append(p0)
+                if (f0 > 1e-12) != (f1 > 1e-12):
+                    t = f0 / (f0 - f1)
+                    out.append((p0[0] + t * (p1[0] - p0[0]),
+                                p0[1] + t * (p1[1] - p0[1])))
+            poly = out
+            if len(poly) < 3:
+                break
+        if len(poly) < 3:
+            continue
+        face = []
+        for x, y in poly:
+            p = tuple(d * n[i] + x * u[i] + y * v[i] for i in range(3))
+            key = tuple(round(c, 6) for c in p)
+            if key not in index:
+                index[key] = len(verts)
+                verts.append(p)
+            j = index[key]
+            if j not in face:
+                face.append(j)
+        if len(face) >= 3:
+            faces.append(face)
+    return verts, faces
+
+
+def vertex_classes(verts, tol=1e-4):
+    """Group vertices by distance from the origin.
+
+    For every solid here that is one orbit under the rotation group --
+    the 5-fold vertices of a rhombic triacontahedron sit at one
+    radius, its 3-fold vertices at another -- so radius is a cheap
+    and exact stand-in for the orbit, and it is also what decides
+    where a vertex lands in the guide diagram."""
+    radii = []
+    out = []
+    for p in verts:
+        r = sqrt(sum(c * c for c in p))
+        for i, s in enumerate(radii):
+            if abs(r - s) < tol:
+                out.append(i)
+                break
+        else:
+            radii.append(r)
+            out.append(len(radii) - 1)
+    order = sorted(range(len(radii)), key=lambda i: radii[i])
+    rank = {o: i for i, o in enumerate(order)}
+    return [rank[c] for c in out], sorted(radii)
+
+
+def vertex_marks(kind, family, d=1.0, extent=3.2):
+    """Where each vertex of the defining solid shows up in the
+    representative plane, as (local x, y, class).
+
+    A vertex is carried to the plane along the ray from the origin
+    through it, so a vertex that already lies in this plane maps to
+    itself, and every other one lands where its own axis pierces --
+    which is exactly where the parts meeting at that vertex converge.
+    Vertices whose ray runs nearly parallel to the plane would land
+    absurdly far out and are dropped."""
+    a, _ = plane_normals(kind, family)
+    u, v = _frame(a)
+    verts, _ = family_polyhedron(kind, family, d)
+    cls, _ = vertex_classes(verts)
+    marks = []
+    for p, c in zip(verts, cls):
+        dot = sum(x * y for x, y in zip(p, a))
+        if abs(dot) < 1e-6:
+            continue
+        q = [x * (d * d / dot) for x in p]
+        x = sum(k * l for k, l in zip(q, u))
+        y = sum(k * l for k, l in zip(q, v))
+        if sqrt(x * x + y * y) > extent * d:
+            continue
+        # a vertex and its antipode ride the same line through the
+        # origin, so on a centrally symmetric solid they pierce at
+        # the same spot -- one mark, not two stacked on each other
+        if any(abs(x - mx) < 1e-6 and abs(y - my) < 1e-6
+               for mx, my, _ in marks):
+            continue
+        marks.append((x, y, c))
+    return marks
+
+
 def max_line_foot(kind, family, d=1.0):
     """Largest foot radius over the family's guide lines -- the
     smallest guide extent that still emits every line.
@@ -736,6 +851,110 @@ if _IN_BLENDER:
             mat.blend_method = 'BLEND'
         return mat
 
+    # one hue per vertex class, shared by the ball on the solid and
+    # the disc where that vertex lands in the guide diagram
+    _CLASS_HUES = ((0.90, 0.25, 0.20), (0.20, 0.65, 0.35),
+                   (0.25, 0.45, 0.95), (0.95, 0.70, 0.15),
+                   (0.65, 0.30, 0.85), (0.20, 0.75, 0.80))
+
+    def _class_material(i, alpha=1.0):
+        name = f"SymSculpt Class {i}" + ("" if alpha >= 1.0 else " Ghost")
+        mat = bpy.data.materials.get(name)
+        if mat is not None:
+            return mat
+        rgb = _CLASS_HUES[i % len(_CLASS_HUES)]
+        mat = bpy.data.materials.new(name)
+        mat.diffuse_color = (*rgb, alpha)
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf is not None:
+            bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+            bsdf.inputs["Alpha"].default_value = alpha
+            bsdf.inputs["Roughness"].default_value = 0.4
+        if alpha < 1.0:
+            if hasattr(mat, 'surface_render_method'):
+                mat.surface_render_method = 'BLENDED'
+            elif hasattr(mat, 'blend_method'):
+                mat.blend_method = 'BLEND'
+        return mat
+
+    def _solid_material():
+        name = "SymSculpt Polyhedron"
+        mat = bpy.data.materials.get(name)
+        if mat is not None:
+            return mat
+        mat = bpy.data.materials.new(name)
+        rgba = (0.62, 0.68, 0.78, 0.12)
+        mat.diffuse_color = rgba
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf is not None:
+            bsdf.inputs["Base Color"].default_value = (*rgba[:3], 1.0)
+            bsdf.inputs["Alpha"].default_value = rgba[3]
+            bsdf.inputs["Roughness"].default_value = 0.35
+        if hasattr(mat, 'surface_render_method'):
+            mat.surface_render_method = 'BLENDED'
+        elif hasattr(mat, 'blend_method'):
+            mat.blend_method = 'BLEND'
+        return mat
+
+    def _ball(c, r, seg=8, ring=6):
+        """Low-res UV sphere at c -- a viewport marker, not geometry
+        anyone will render closely."""
+        verts = [(c[0], c[1], c[2] + r)]
+        for j in range(1, ring):
+            phi = pi * j / ring
+            for i in range(seg):
+                th = 2 * pi * i / seg
+                verts.append((c[0] + r * sin(phi) * cos(th),
+                              c[1] + r * sin(phi) * sin(th),
+                              c[2] + r * cos(phi)))
+        verts.append((c[0], c[1], c[2] - r))
+        faces = []
+        last = len(verts) - 1
+        for i in range(seg):
+            faces.append([0, 1 + i, 1 + (i + 1) % seg])
+            faces.append([last, last - seg + (i + 1) % seg,
+                          last - seg + i])
+        for j in range(ring - 2):
+            b0, b1 = 1 + j * seg, 1 + (j + 1) * seg
+            for i in range(seg):
+                k = (i + 1) % seg
+                faces.append([b0 + i, b1 + i, b1 + k, b0 + k])
+        return verts, faces
+
+    def _disc(c, r, n=20):
+        verts = [(c[0], c[1], c[2])]
+        for i in range(n):
+            th = 2 * pi * i / n
+            verts.append((c[0] + r * cos(th), c[1] + r * sin(th), c[2]))
+        return verts, [[0, 1 + i, 1 + (i + 1) % n] for i in range(n)]
+
+    def _build_marker_object(name, chunks, alpha):
+        """One object holding every marker, with a material slot per
+        vertex class so the classes stay distinguishable."""
+        verts = []
+        faces = []
+        slots = []
+        used = {}
+        for cls, (cv, cf) in chunks:
+            if cls not in used:
+                used[cls] = len(slots)
+                slots.append(cls)
+            base = len(verts)
+            verts.extend(cv)
+            faces.extend(([base + i for i in f], used[cls]) for f in cf)
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(verts, [], [f for f, _ in faces])
+        me.validate()
+        me.update()
+        for cls in slots:
+            me.materials.append(_class_material(cls, alpha))
+        for poly, (_, si) in zip(me.polygons, faces):
+            poly.material_index = si
+        obj = bpy.data.objects.new(name, me)
+        return obj
+
     def _motif_material():
         name = "SymSculpt Motif"
         mat = bpy.data.materials.get(name)
@@ -1007,6 +1226,17 @@ if _IN_BLENDER:
                         "clears by the same relative margin whatever "
                         "the size; tune it afterwards with the "
                         "modifier's Lift input")
+        show_polyhedron: BoolProperty(
+            name="Show Defining Polyhedron", default=False,
+            description="Add the semi-transparent solid whose "
+                        "extended face planes are this plane family, "
+                        "with a coloured ball on each of its vertices "
+                        "and a disc of the same colour in the guide "
+                        "diagram where that vertex lands. Colour "
+                        "groups the vertices by their distance from "
+                        "the origin, which is what distinguishes the "
+                        "5-fold from the 3-fold ones. Design aid "
+                        "only -- excluded from renders")
         translucent: BoolProperty(
             name="Translucent Copies", default=False,
             description="Draw the replicated copies in a ghost "
@@ -1136,6 +1366,42 @@ if _IN_BLENDER:
             guides.parent = obj
             guides.matrix_parent_inverse = Matrix.Identity(4)
 
+            if self.show_polyhedron:
+                # the solid whose extended face planes are this
+                # family, plus a ball on every vertex and a disc
+                # where that vertex lands in the guide diagram
+                pv, pf = family_polyhedron(kind, family, d)
+                pme = bpy.data.meshes.new("SymSculpt Polyhedron")
+                pme.from_pydata(pv, [], pf)
+                pme.validate()
+                pme.update()
+                solid = bpy.data.objects.new("SymSculpt Polyhedron",
+                                             pme)
+                solid.data.materials.append(_solid_material())
+                context.collection.objects.link(solid)
+                solid.matrix_world = Matrix.Identity(4)
+                solid.hide_render = True
+                solid.parent = obj
+                solid.matrix_parent_inverse = Matrix.Identity(4)
+
+                cls, _radii = vertex_classes(pv)
+                rball = 0.035 * d
+                balls = _build_marker_object(
+                    "SymSculpt Vertex Balls",
+                    [(c, _ball(p, rball)) for p, c in zip(pv, cls)],
+                    0.45)
+                marks = vertex_marks(kind, family, d, self.guide_extent)
+                discs = _build_marker_object(
+                    "SymSculpt Guide Marks",
+                    [(c, _disc((x, y, 1e-3 * d), rball))
+                     for x, y, c in marks], 1.0)
+                for o in (balls, discs):
+                    context.collection.objects.link(o)
+                    o.matrix_world = Matrix.Identity(4)
+                    o.hide_render = True
+                    o.parent = obj
+                    o.matrix_parent_inverse = Matrix.Identity(4)
+
             for o in context.selected_objects:
                 o.select_set(False)
             obj.select_set(True)
@@ -1159,7 +1425,8 @@ if _IN_BLENDER:
             # replicated into
             lay.prop_search(self, 'motif_object', bpy.data, 'objects')
             for k in ('distance', 'shell', 'guide_extent',
-                      'guide_rings', 'lift', 'translucent'):
+                      'guide_rings', 'show_polyhedron', 'lift',
+                      'translucent'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
@@ -1306,6 +1573,39 @@ def _selftest():
           f"3-fold off {e3:.2e} "
           f"{'OK' if max(e5, e3) < 1e-4 else 'BAD'}")
     assert max(e5, e3) < 1e-4
+
+    # the defining solid of each family must come out as the real
+    # thing -- these are the classical counts, and Euler catches a
+    # half-built face
+    for (kind, fam), (nv, nf) in (
+            (('ICOSA', 'P5'), (20, 12)), (('ICOSA', 'P3'), (12, 20)),
+            (('ICOSA', 'P2'), (32, 30)), (('ICOSA', 'P1'), (92, 60)),
+            (('OCTA', 'P4'), (8, 6)), (('OCTA', 'P3'), (6, 8)),
+            (('OCTA', 'P2'), (14, 12)), (('TETRA', 'P3'), (4, 4)),
+            (('TETRA', 'P2'), (8, 6))):
+        pv, pf = family_polyhedron(kind, fam, 1.0)
+        edges = sum(len(f) for f in pf) // 2
+        ok = (len(pv) == nv and len(pf) == nf
+              and len(pv) - edges + len(pf) == 2)
+        print(f"{kind}/{fam} solid: V={len(pv)}({nv}) F={len(pf)}({nf}) "
+              f"euler={len(pv) - edges + len(pf)} "
+              f"{'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, len(pv), len(pf))
+
+    # and the vertex marks must land where the design actually joins:
+    # on the triacontahedral planes the 3-fold vertices mark phi^2
+    # out and the 5-fold ones phi -- Frabjous's tips and vortices
+    mk = vertex_marks('ICOSA', 'P2', 1.0, 3.2)
+    radii = {}
+    for x, y, c in mk:
+        radii.setdefault(c, set()).add(round(sqrt(x * x + y * y), 5))
+    got = set().union(*radii.values())
+    ok = (round(PHI * PHI, 5) in got and round(PHI, 5) in got
+          and len(mk) == len({(round(x, 6), round(y, 6))
+                              for x, y, _ in mk}))
+    print(f"ICOSA/P2 marks hit phi={PHI:.5f} and phi^2={PHI * PHI:.5f}, "
+          f"{len(mk)} distinct {'OK' if ok else 'BAD'}")
+    assert ok, sorted(got)
 
     # a motif flat on XY at plane distance d lands at sqrt(r^2+d^2)
     flat = [(0.0, 0.0, 0.0), (3.0, 4.0, 0.0)]

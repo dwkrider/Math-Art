@@ -402,6 +402,65 @@ for g, f, n in (('OCTA', 'P3', 8), ('TETRA', 'P2', 6)):
     if not ok:
         fails.append(f'planes-{g}-{f}')
 
+# Show Defining Polyhedron: the solid, a ball per vertex and a disc
+# per mark, all keyed to the same per-class materials, and none of it
+# reaching the render
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS',
+                                       show_polyhedron=True)
+got = {n: [o for o in bpy.data.objects if o.name.startswith(n)]
+       for n in ('SymSculpt Polyhedron', 'SymSculpt Vertex Balls',
+                 'SymSculpt Guide Marks')}
+solid = got['SymSculpt Polyhedron'][0]
+balls = got['SymSculpt Vertex Balls'][0]
+discs = got['SymSculpt Guide Marks'][0]
+marks = ss.vertex_marks('ICOSA', 'P2', 1.0, 3.2)
+nclass = len(set(c for _, _, c in marks))
+ok = (len(solid.data.vertices) == 32 and len(solid.data.polygons) == 30
+      and len(balls.data.materials) == 2
+      and len(discs.data.materials) == nclass
+      and all(o.hide_render for o in (solid, balls, discs))
+      and all(o.parent and o.parent.name.startswith('SymSculpt')
+              for o in (solid, balls, discs)))
+print(f"[polyhedron] V={len(solid.data.vertices)}(32) "
+      f"F={len(solid.data.polygons)}(30) classes={nclass} "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('polyhedron')
+
+# the balls sit on the solid, and every disc sits on a guide line
+ball_r = [math.dist(tuple(v.co), (0, 0, 0))
+          for v in balls.data.vertices]
+solid_r = sorted({round(math.dist(tuple(v.co), (0, 0, 0)), 4)
+                  for v in solid.data.vertices})
+ok = min(ball_r) > 0.9 * solid_r[0] and max(ball_r) < 1.1 * solid_r[-1]
+print(f"[balls on solid] r in [{min(ball_r):.3f},{max(ball_r):.3f}] "
+      f"vs solid {solid_r} {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('balls')
+
+segs = ss.stellation_lines('ICOSA', 'P2', 1.0, 3.2)
+worst = 0.0
+for x, y, _c in marks:
+    best = min(abs((b[0] - a2[0]) * (a2[1] - y) - (a2[0] - x)
+                   * (b[1] - a2[1]))
+               / max(math.dist(a2, b), 1e-9) for a2, b in segs)
+    worst = max(worst, best)
+ok = worst < 1e-6
+print(f"[marks lie on guide lines] worst offset {worst:.2e} "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('marks-on-guides')
+
+# off by default
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS')
+ok = not [o for o in bpy.data.objects
+          if o.name.startswith('SymSculpt Polyhedron')]
+print(f"[polyhedron off by default] {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('polyhedron-default')
+
 # Motif Object: name a mesh and it is replicated instead of the
 # preset motif; name something that is not a mesh and the operator
 # falls back rather than failing
