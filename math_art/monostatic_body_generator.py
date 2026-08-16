@@ -334,9 +334,15 @@ def build_gomboc_sloan(kind='SLOAN_I', beta=0.15, phi_segments=96,
 
 
 try:
+    from .sharp_creases import mark_sharp_by_angle
+except ImportError:                     # flat import outside the package
+    from sharp_creases import mark_sharp_by_angle
+
+try:
     import bpy
     import bmesh
-    from bpy.props import IntProperty, FloatProperty, EnumProperty
+    from bpy.props import (IntProperty, FloatProperty,
+                           EnumProperty, BoolProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -400,6 +406,13 @@ if _IN_BLENDER:
         theta_segments: IntProperty(
             name="Segments", default=176, min=8, max=512,
             description="Segments around the axis")
+        sharp_edges: BoolProperty(
+            name="Sharp Edges", default=True,
+            description="Mark the solid's fold curves sharp (and "
+                        "creased). The Gomboc and its relatives carry a ridge where the two monostatic lobes meet. The surface is smooth "
+                        "everywhere else, so shading straight across "
+                        "the fold rounds off the one feature that "
+                        "defines the shape")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -446,6 +459,8 @@ if _IN_BLENDER:
             bm.free()
             me.polygons.foreach_set('use_smooth',
                                     [True] * len(me.polygons))
+            if self.sharp_edges:
+                mark_sharp_by_angle(me, 30.0)
             me.update()
             obj = bpy.data.objects.new("Monostatic Body", me)
             context.collection.objects.link(obj)

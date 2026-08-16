@@ -62,6 +62,57 @@ def mark_sharp(me, edges, crease=True):
     return len(hit)
 
 
+def mark_sharp_by_angle(me, degrees=35.0, crease=True):
+    """Mark every edge where the surface genuinely folds.
+
+    For generators whose creases are known at build time -- a D-form's
+    seam, a squeeze's bent frames -- pass the edges to `mark_sharp`
+    instead; that is exact and cannot be fooled.  This is for the solids
+    whose folds are a consequence of the construction rather than an
+    input: the bicylinder's two intersection ellipses, a sphericon's
+    turned rims, a Meissner body's ground edges, the Gomboc's ridge.
+    Those are all strong dihedral discontinuities on an otherwise smooth
+    surface, so an angle test finds exactly them and nothing else, and
+    it does not care how the mesh was generated.
+
+    Reads polygon normals directly rather than going through bmesh: the
+    crease attribute has to be written by edge index afterwards, and a
+    bmesh round trip is free to renumber.
+    """
+    import math
+
+    if not me.polygons or not me.edges:
+        return 0
+    ef = {}
+    for p in me.polygons:
+        for k in p.edge_keys:
+            ef.setdefault(k, []).append(p.index)
+
+    thr = math.cos(math.radians(max(0.0, min(179.0, float(degrees)))))
+    hit = []
+    for i, e in enumerate(me.edges):
+        fs = ef.get(e.key)
+        if not fs or len(fs) != 2:
+            continue
+        n1 = me.polygons[fs[0]].normal
+        n2 = me.polygons[fs[1]].normal
+        if n1.dot(n2) < thr:
+            hit.append(i)
+    for i in hit:
+        me.edges[i].use_edge_sharp = True
+
+    if crease and hit:
+        try:
+            att = me.attributes.get("crease_edge")
+            if att is None:
+                att = me.attributes.new("crease_edge", 'FLOAT', 'EDGE')
+            for i in hit:
+                att.data[i].value = 1.0
+        except (RuntimeError, TypeError, AttributeError, KeyError):
+            pass
+    return len(hit)
+
+
 def ring_edges(loop, closed=True):
     """Consecutive index pairs along a polyline (or closed ring)."""
     idx = [int(i) for i in loop]

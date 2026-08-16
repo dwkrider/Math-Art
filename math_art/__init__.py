@@ -309,22 +309,19 @@ class VIEW3D_MT_math_art_odds(bpy.types.Menu):
     bl_label = "Odds & Ends"
 
     def draw(self, context):
+        # Only generators that live nowhere else.  Everything with a
+        # home of its own is listed THERE and not here: the rollers
+        # (oloid, sphericon, Steinmetz, orbis, constant-width, Gomboc)
+        # in Rollers, polytwisters and hyperbolic honeycombs in
+        # Polyhedra, phyllotaxis in Plants.  A generator appearing in
+        # two menus makes both of them harder to read and neither of
+        # them authoritative.
         lay = self.layout
         _op(lay, "mesh.platonic_twist_add", icon='MOD_SCREW')
         _op(lay, "mesh.twisted_torus_add", icon='MESH_TORUS')
-        _op(lay, "mesh.oloid_add", icon='MESH_CAPSULE')
-        _op(lay, "mesh.sphericon_add", icon='MESH_CAPSULE')
-        _op(lay, "mesh.steinmetz_add", icon='MESH_CYLINDER')
-        _op(lay, "mesh.orbis_add", icon='MESH_TORUS')
-        _op(lay, "mesh.constant_width_add", icon='MESH_CIRCLE')
-        _op(lay, "mesh.monostatic_body_add", text="Monostatic Body",
-            icon='MESH_UVSPHERE')
-        _op(lay, "mesh.polytwister_add", icon='MESH_TORUS')
-        _op(lay, "mesh.hyperbolic_honeycomb_add", icon='META_BALL')
         _op(lay, "mesh.stereographic_add", icon='LIGHT_POINT')
         _op(lay, "mesh.orbifold_sphere_add", icon='MOD_MIRROR')
         _op(lay, "mesh.bubble_cluster_add", icon='SPHERE')
-        _op(lay, "mesh.phyllotaxis_add", icon='OUTLINER_OB_POINTCLOUD')
 
 
 class VIEW3D_MT_math_art_patterns(bpy.types.Menu):

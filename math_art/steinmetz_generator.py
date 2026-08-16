@@ -142,10 +142,16 @@ def build_steinmetz_radial(kind='TRICYLINDER', radius=1.0,
 
 
 try:
+    from .sharp_creases import mark_sharp_by_angle
+except ImportError:                     # flat import outside the package
+    from sharp_creases import mark_sharp_by_angle
+
+try:
     import bpy
     import bmesh
     import mathutils
-    from bpy.props import IntProperty, FloatProperty, EnumProperty
+    from bpy.props import (IntProperty, FloatProperty,
+                           EnumProperty, BoolProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -220,6 +226,13 @@ if _IN_BLENDER:
         radius: FloatProperty(
             name="Radius", default=1.0, min=0.05, max=100.0,
             description="Common cylinder radius")
+        sharp_edges: BoolProperty(
+            name="Sharp Edges", default=True,
+            description="Mark the solid's fold curves sharp (and "
+                        "creased). Two cylinders meet along a pair of planar ellipse-like edges; three meet along twelve. The surface is smooth "
+                        "everywhere else, so shading straight across "
+                        "the fold rounds off the one feature that "
+                        "defines the shape")
         segments: IntProperty(
             name="Segments", default=64, min=8, max=512,
             description="Cylinder segments (mesh resolution)")
@@ -254,6 +267,8 @@ if _IN_BLENDER:
             bm.free()
             me.polygons.foreach_set('use_smooth',
                                     [True] * len(me.polygons))
+            if self.sharp_edges:
+                mark_sharp_by_angle(me, 45.0)
             me.update()
             obj = bpy.data.objects.new(f"Steinmetz {self.kind.title()}", me)
             context.collection.objects.link(obj)
