@@ -49,6 +49,7 @@ _MODULE_NAMES = [
     'hyperbolic_surface_generator',
     'crochet_generator',
     'dform_generator',
+    'koman_generator',
     'space_curve_generator',
     'oloid_generator',
     'sphericon_generator',
@@ -317,6 +318,8 @@ class VIEW3D_MT_math_art_odds(bpy.types.Menu):
         # two menus makes both of them harder to read and neither of
         # them authoritative.
         lay = self.layout
+        _op(lay, "mesh.koman_add", text="Koman Developable",
+            icon='MOD_SCREW')
         _op(lay, "mesh.platonic_twist_add", icon='MOD_SCREW')
         _op(lay, "mesh.twisted_torus_add", icon='MESH_TORUS')
         _op(lay, "mesh.stereographic_add", icon='LIGHT_POINT')

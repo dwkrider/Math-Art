@@ -105,15 +105,10 @@ if _IN_BLENDER:
                     "Two overlapping discs folded so their boundaries "
                     "meet, giving one cylindrical and two conical "
                     "patches with curved creases (Mundilova and Wills). "
-                    "Exact -- no solver"),
-                   ('KOMAN_SPIRAL', "Koman Spiral Sculpture",
-                    "Ilhan Koman's spiral developable: a coiling spine "
-                    "with flat blades springing off it, growing as a "
-                    "logarithmic spiral. Exact -- no solver"),
-                   ('KOMAN_CURL', "Koman Curled Strip",
-                    "Ilhan Koman's spiral developable: planar fins in "
-                    "one plane with arched panels between them, each "
-                    "sliding under the next. Exact -- no solver")],
+                    "A RELATIVE of a D-form rather than one: a single "
+                    "sheet, glued to itself, with interior creases "
+                    "(a D-form provably has none) and not convex. "
+                    "Exact -- no solver")],
             default='SEAM')
         vesica_u: FloatProperty(
             name="Disc Offset u", default=0.5, min=0.06, max=0.94,
@@ -127,58 +122,6 @@ if _IN_BLENDER:
                         "height whose unrolled creases are exactly "
                         "circular; the fold only exists up to "
                         "h = 1 - u^2")
-        panels: IntProperty(
-            name="Panels", default=32, min=5, max=160,
-            description="Tongues around the ring. With Close Ring on "
-                        "they always make exactly one full turn")
-        close_ring: BoolProperty(
-            name="Close Ring", default=True,
-            description="Derive the slide so the panels close a full "
-                        "turn (a = 2*pi/n). Off, the slide below is "
-                        "used as given and the ring stops wherever it "
-                        "happens to -- 24 panels at d = 0.06 only get "
-                        "164 degrees round")
-        slide: FloatProperty(
-            name="Slide d", default=0.10, min=0.005, max=0.5,
-            description="How far each tongue slides under its "
-                        "neighbour, when Close Ring is off. The turn "
-                        "per tongue is arctan(2d/h)")
-        skew: FloatProperty(
-            name="Pinwheel Skew", default=0.5, min=-1.4, max=1.4,
-            description="Swing each tongue away from radial, which is "
-                        "what makes the ring read as a pinwheel")
-        tilt: FloatProperty(
-            name="Tongue Lean", default=0.42, min=0.0, max=1.2,
-            description="How far each tongue leans as it rides up on "
-                        "the ones beneath it. At zero they lie coplanar "
-                        "and read as a solid disc")
-        hole: FloatProperty(
-            name="Hole", default=0.45, min=0.05, max=2.0,
-            description="Inner radius, as a fraction of the tongue "
-                        "length")
-        lean: FloatProperty(
-            name="Blade Lean", default=1.0, min=0.0, max=1.57,
-            description="Tilt of each blade out of the coil plane")
-        blade_len: FloatProperty(
-            name="Blade Length", default=1.7, min=0.1, max=4.0,
-            description="Blade length as a multiple of the local "
-                        "spiral radius, so the form stays self-similar")
-        blade_width: FloatProperty(
-            name="Blade Width", default=0.6, min=0.05, max=2.0,
-            description="Blade width, also relative to the local radius")
-        twist: FloatProperty(
-            name="Blade Twist", default=0.0, min=0.0, max=1.5,
-            description="Turn each blade's far edge against its root, "
-                        "for the look of Koman's metal pieces. Note "
-                        "this forfeits developability -- a twisted "
-                        "blade can no longer be cut from flat stock")
-        growth: FloatProperty(
-            name="Spiral Growth", default=0.0, min=-0.12, max=0.12,
-            description="Shrink or grow the tongues geometrically along "
-                        "the ribbon. The ring radius goes as h/2, so "
-                        "this is what opens it into a spiral -- and it "
-                        "is the parameter Koman himself varied")
-
         kind_a: EnumProperty(name="Piece A", items=_CURVE_ITEMS,
                              default='ELLIPSE')
         kind_b: EnumProperty(name="Piece B", items=_CURVE_ITEMS,
@@ -277,20 +220,13 @@ if _IN_BLENDER:
                     hole_aspect_a=self.hole_aspect_a,
                     hole_aspect_b=self.hole_aspect_b,
                     hole_scale=self.hole_scale,
-                    vesica_u=self.vesica_u, vesica_h=self.vesica_h,
-                    panels=self.panels,
-                    slide=(-1.0 if self.close_ring else self.slide),
-                    growth=self.growth, skew=self.skew, hole=self.hole,
-                    tilt=self.tilt, lean=self.lean,
-                    blade_len=self.blade_len,
-                    blade_width=self.blade_width, twist=self.twist)
+                    vesica_u=self.vesica_u, vesica_h=self.vesica_h,)
             except Exception as exc:  # noqa: BLE001 - report, never crash
                 self.report({'ERROR'}, f"D-form failed: {exc}")
                 return {'CANCELLED'}
 
-            name = {'VESICA': "Vesica Fold", 'ANTI': "Anti-D-Form",
-                    'KOMAN_SPIRAL': "Koman Spiral",
-                    'KOMAN_CURL': "Koman Curl"}.get(self.mode, "D-Form")
+            name = {'VESICA': "Vesica Fold",
+                    'ANTI': "Anti-D-Form"}.get(self.mode, "D-Form")
             obj = self._mesh_object(context, name, d.verts, d.faces)
             if self.sharp_seam:
                 self._mark_seam(obj.data, d.sharp_edges)
@@ -333,19 +269,6 @@ if _IN_BLENDER:
                     f"V={len(d.verts)} F={len(d.faces)}  exact fold, "
                     f"u={s['u']:.2f}  h_max={s['h_max']:.3f}  "
                     f"circular creases at h={s['h_circular']:.3f}")
-            elif self.mode == 'KOMAN_SPIRAL':
-                self.report(
-                    {'INFO'},
-                    f"V={len(d.verts)} F={len(d.faces)}  exact, "
-                    f"{s['blades']} blades, growth {s['growth']:.3f}"
-                    + ("  (twisted: not developable)"
-                       if s['twist'] > 0 else "  (blades planar)"))
-            else:
-                self.report(
-                    {'INFO'},
-                    f"V={len(d.verts)} F={len(d.faces)}  exact, "
-                    f"{s['panels']} panels turning "
-                    f"{s['turn_per_panel']*57.2958:.1f} deg each")
             return {'FINISHED'}
 
         def _mesh_object(self, context, name, verts, faces, smooth=None):
@@ -432,28 +355,6 @@ if _IN_BLENDER:
                 lay.prop(self, 'vesica_u')
                 lay.prop(self, 'vesica_h')
                 lay.prop(self, 'segments')
-            elif self.mode == 'KOMAN_SPIRAL':
-                lay.separator()
-                lay.prop(self, 'panels', text="Blades")
-                lay.prop(self, 'growth')
-                lay.prop(self, 'skew')
-                lay.prop(self, 'lean')
-                lay.prop(self, 'blade_len')
-                lay.prop(self, 'blade_width')
-                lay.prop(self, 'twist')
-                lay.prop(self, 'segments')
-            else:
-                lay.separator()
-                lay.prop(self, 'panels')
-                lay.prop(self, 'close_ring')
-                if not self.close_ring:
-                    lay.prop(self, 'slide')
-                lay.prop(self, 'skew')
-                lay.prop(self, 'tilt')
-                lay.prop(self, 'hole')
-                lay.prop(self, 'growth')
-                lay.prop(self, 'segments')
-
             lay.separator()
             lay.prop(self, 'scale')
             if self.mode in ('SEAM', 'ANTI'):

@@ -108,9 +108,7 @@ def _fit(V, scale):
     return (V - 0.5 * (V.max(axis=0) + V.min(axis=0))) * s
 
 
-def _build_analytic(mode, segments, scale, vesica_u, vesica_h, panels,
-                    slide, growth, skew=0.5, hole=0.45, tilt=0.42,
-                    lean=1.0, blade_len=1.7, blade_width=0.6, twist=0.0):
+def _build_analytic(mode, segments, scale, vesica_u, vesica_h):
     """The closed-form modes: no solver, no iteration, no convergence.
 
     These carry creases as well as a seam, so `seam` here means "every
@@ -132,25 +130,6 @@ def _build_analytic(mode, segments, scale, vesica_u, vesica_h, panels,
         stats = {'u': float(vesica_u),
                  'h_max': analytic.vesica_max_height(vesica_u),
                  'h_circular': analytic.vesica_circular_height(vesica_u),
-                 'segments': n}
-    elif mode == 'KOMAN_SPIRAL':
-        V, F = analytic.build_koman_spiral(
-            blades=panels, growth=growth, skew=skew, lean=lean,
-            blade_len=blade_len, blade_width=blade_width, twist=twist,
-            samples=max(2, n // 14))
-        seam, sharp = [], []
-        stats = {'blades': int(panels), 'growth': float(growth),
-                 'twist': float(twist), 'segments': n}
-    else:                                        # KOMAN_CURL
-        V, F = analytic.build_koman_curl(
-            panels=panels, slide=slide, growth=growth, skew=skew,
-            hole=hole, tilt=tilt, arch_samples=max(4, n // 10))
-        seam, sharp = [], []
-        eff = (analytic.koman_slide_to_close(panels)
-               if slide is None or slide < 0 else slide)
-        stats = {'turn_per_panel': analytic.koman_turn(eff, 1.0),
-                 'slide': eff,
-                 'panels': int(panels), 'growth': float(growth),
                  'segments': n}
     stats.update({'strain': 0.0, 'area_error': 0.0, 'interior_defect': 0.0,
                   'mu_total': 4 * np.pi, 'iterations': 0, 'mode': mode})
@@ -197,9 +176,6 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
                 sides_a=3, sides_b=5, corner=0.35, cassini=1.6,
                 segments=72, join_offset=0.25, flip=False, quality=900,
                 scale=1.0, gap=0.08, vesica_u=0.5, vesica_h=-1.0,
-                panels=32, slide=-1.0, growth=0.0, skew=0.5,
-                hole=0.45, tilt=0.42, lean=1.0, blade_len=1.7,
-                blade_width=0.6, twist=0.0,
                 hole_kind_a='ELLIPSE', hole_aspect_a=0.6,
                 hole_kind_b='ELLIPSE', hole_aspect_b=1.0,
                 hole_scale=0.4):
@@ -220,12 +196,7 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
     if mode not in MODES:
         raise ValueError(f"unknown D-form mode {mode!r}")
     if mode in analytic.ANALYTIC_KINDS:
-        return _build_analytic(mode, segments, scale, vesica_u=vesica_u,
-                               vesica_h=vesica_h, panels=panels,
-                               slide=slide, growth=growth, skew=skew,
-                               hole=hole, tilt=tilt, lean=lean,
-                               blade_len=blade_len,
-                               blade_width=blade_width, twist=twist)
+        return _build_analytic(mode, segments, scale, vesica_u, vesica_h)
 
     n = max(16, int(segments))
     A = curves.curve_points(kind_a, aspect=aspect_a, super_n=super_n,
