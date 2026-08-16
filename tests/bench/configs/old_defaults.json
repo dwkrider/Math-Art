@@ -1,0 +1,1 @@
+{"plateau_kwargs": {"cotan_mode": "clamp"}, "fair_kwargs": {"mollify": false}, "biscribe_kwargs": {"line_search": false}, "canonical_kwargs": {"adaptive": false}}

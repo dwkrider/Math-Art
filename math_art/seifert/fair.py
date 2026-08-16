@@ -44,6 +44,14 @@ import numpy as np
 
 from .mesh import Mesh
 
+try:
+    from ..solver import cotan as _solver_cotan
+except ImportError:                      # flat (path-based) headless import
+    try:
+        from solver import cotan as _solver_cotan
+    except ImportError:
+        _solver_cotan = None
+
 __all__ = ["cotangent_laplacian", "minimal_surface", "smooth_boundary"]
 
 
@@ -142,17 +150,93 @@ def _implicit_solve(
     return x
 
 
+def _implicit_solve_cg(
+    V: np.ndarray,
+    T: np.ndarray,
+    rhs: np.ndarray,
+    strength: float,
+    pinned: np.ndarray | None,
+    tol: float = 1e-8,
+    max_iterations: int = 4000,
+) -> np.ndarray:
+    """Solve the same implicit-fairing system in its symmetric form
+    ``(D + strength * (D - W)) X = D X0`` by Jacobi-preconditioned CG,
+    with RAW (mollified-length) cotangent weights -- no positivity
+    floor.  ``D - W`` is the standard cotan Laplacian and is PSD for any
+    real triangulation regardless of the signs of individual weights
+    (it is the Hessian of the Dirichlet energy), so CG applies where
+    the damped-Jacobi argument (diagonal dominance) does not.  ``D`` is
+    floored at a tiny positive value in the mass term only, guarding
+    the rare pathological vertex star with a negative weight sum."""
+    E, W = _solver_cotan.edge_cotan_weights(V, T, mode="mollify")
+    n = len(V)
+    deg = np.zeros(n)
+    np.add.at(deg, E[:, 0], W)
+    np.add.at(deg, E[:, 1], W)
+    scale = float(np.mean(np.abs(deg))) or 1.0
+    D = np.maximum(deg, 1e-9 * scale)
+
+    free = np.ones(n, dtype=bool)
+    if pinned is not None and len(pinned):
+        free[pinned] = False
+
+    def matvec_full(X):
+        y = (1.0 + strength) * D[:, None] * X
+        np.add.at(y, E[:, 0], -strength * W[:, None] * X[E[:, 1]])
+        np.add.at(y, E[:, 1], -strength * W[:, None] * X[E[:, 0]])
+        return y
+
+    Xb = np.where(~free[:, None], rhs, 0.0)
+    b = (D[:, None] * rhs - matvec_full(Xb))[free]
+
+    def matvec(xf):
+        full = np.zeros((n, 3))
+        full[free] = xf
+        return matvec_full(full)[free]
+
+    Minv = 1.0 / ((1.0 + strength) * D[free])[:, None]
+    x = rhs[free].copy()
+    r = b - matvec(x)
+    z = Minv * r
+    p = z.copy()
+    rz = np.sum(r * z, axis=0)
+    b_norm = max(float(np.max(np.sum(b * b, axis=0))), 1e-300)
+    for _ in range(max_iterations):
+        Ap = matvec(p)
+        pAp = np.sum(p * Ap, axis=0)
+        alpha = rz / np.where(np.abs(pAp) > 1e-300, pAp, 1e-300)
+        x += alpha * p
+        r -= alpha * Ap
+        if float(np.max(np.sum(r * r, axis=0))) < tol * tol * b_norm:
+            break
+        z = Minv * r
+        rz_new = np.sum(r * z, axis=0)
+        p = z + (rz_new / np.maximum(rz, 1e-300)) * p
+        rz = rz_new
+    out = rhs.copy()
+    out[free] = x
+    return out
+
+
 def minimal_surface(
     mesh: Mesh,
     strength: float = 12.0,
     iterations: int = 4,
     fix_boundary: bool = True,
+    mollify: bool = True,
 ) -> Mesh:
     """Flow the surface towards zero mean curvature with its rim held fixed.
 
     ``strength`` is the implicit time step: larger means a bigger jump towards
     the minimal surface per solve.  A handful of iterations is plenty, since the
     Laplacian is recomputed each time and the flow converges quickly.
+
+    ``mollify=True`` swaps the floored-weight damped-Jacobi solve for
+    the symmetric raw-cotangent system (intrinsic mollification, Sharp-
+    Crane 2020) solved by preconditioned CG: the historical floor fires
+    on EVERY obtuse corner (~20% of corners on these surfaces, measured
+    in tests/bench), biasing the stationary point away from the true
+    discrete minimal surface.
 
     >>> from seifert.build import seifert_surface
     >>> m = minimal_surface(seifert_surface("AAA"), iterations=2)
@@ -164,11 +248,20 @@ def minimal_surface(
         sorted({v for loop in mesh.boundary_loops() for v in loop}), dtype=int
     )
     pinned = boundary if (fix_boundary and len(boundary)) else None
+    use_cg = mollify and _solver_cotan is not None
+    T = None
+    if use_cg:
+        tri = mesh.triangulated()
+        T = np.asarray(tri.faces, dtype=np.int64)
     for _ in range(iterations):
-        work = Mesh(positions, mesh.faces)
-        laplacian = cotangent_laplacian(work)
         rhs = positions.copy()
-        positions = _implicit_solve(laplacian, rhs, strength, pinned)
+        if use_cg:
+            positions = _implicit_solve_cg(positions, T, rhs, strength,
+                                           pinned)
+        else:
+            work = Mesh(positions, mesh.faces)
+            laplacian = cotangent_laplacian(work)
+            positions = _implicit_solve(laplacian, rhs, strength, pinned)
     return Mesh(positions, list(mesh.faces), list(mesh.face_groups))
 
 
