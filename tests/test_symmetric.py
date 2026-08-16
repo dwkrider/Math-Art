@@ -599,9 +599,68 @@ print(f"[polyhedron unlifted] z={_wz(sv):.3f}(0.000) "
 if not ok:
     fails.append('polyhedron-unlifted')
 
+# Machinable part: a closed solid of the asked-for thickness, laid
+# flat below the XY plane and centred on the Z axis so it can be
+# picked and exported without disturbing the design objects
+for preset, thick in (('WHIMSY', 0.03), ('FRABJOUS', 0.02)):
+    clear()
+    bpy.ops.object.symmetric_sculpture_add(preset=preset,
+                                           show_part=True,
+                                           part_thickness=thick)
+    part = [o for o in bpy.data.objects
+            if o.name.startswith('SymSculpt Part')][0]
+    xs = [v.co.x for v in part.data.vertices]
+    ys = [v.co.y for v in part.data.vertices]
+    zs = [v.co.z for v in part.data.vertices]
+    used = {}
+    for p in part.data.polygons:
+        vs = list(p.vertices)
+        for i in range(len(vs)):
+            e = vs[i], vs[(i + 1) % len(vs)]
+            used[(min(e), max(e))] = used.get((min(e), max(e)), 0) + 1
+    ok = (abs(max(zs) - min(zs) - thick) < 1e-6      # thickness
+          and max(zs) < 0.0                          # below XY
+          and abs(min(xs) + max(xs)) < 1e-6          # centred on Z
+          and abs(min(ys) + max(ys)) < 1e-6
+          and set(used.values()) == {2})             # closed solid
+    print(f"[part {preset}] {len(part.data.vertices)}v "
+          f"thick={max(zs) - min(zs):.4f}({thick}) "
+          f"top z={max(zs):.3f} closed={set(used.values()) == {2}} "
+          f"{'OK' if ok else 'FAIL'}")
+    if not ok:
+        fails.append(f'part-{preset}')
+
+# the part is built from the motif that is actually in use, so a
+# supplied Motif Object is what gets machined
+clear()
+me2 = bpy.data.meshes.new("PartSrc")
+me2.from_pydata([(0.2, 0.1, 0.0), (0.8, 0.1, 0.0), (0.8, 0.5, 0.0),
+                 (0.2, 0.5, 0.0)], [], [[0, 1, 2, 3]])
+me2.update()
+bpy.context.collection.objects.link(
+    bpy.data.objects.new("MyPartMotif", me2))
+bpy.ops.object.symmetric_sculpture_add(preset='TWISTED_RIVERS',
+                                       motif_object="MyPartMotif",
+                                       show_part=True,
+                                       part_thickness=0.05)
+part = [o for o in bpy.data.objects
+        if o.name.startswith('SymSculpt Part')][0]
+zs = [v.co.z for v in part.data.vertices]
+ok = (len(part.data.vertices) == 8
+      and abs(max(zs) - min(zs) - 0.05) < 1e-6)
+print(f"[part from motif object] {len(part.data.vertices)}v(8) "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('part-motif-object')
+
 # off by default
 clear()
 bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS')
+ok = not [o for o in bpy.data.objects
+          if o.name.startswith('SymSculpt Part')]
+print(f"[part off by default] {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('part-default')
 ok = not [o for o in bpy.data.objects
           if o.name.startswith('SymSculpt Polyhedron')]
 print(f"[polyhedron off by default] {'OK' if ok else 'FAIL'}")

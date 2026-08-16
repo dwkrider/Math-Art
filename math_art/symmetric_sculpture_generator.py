@@ -612,35 +612,373 @@ def _earclip(poly):
     return tris
 
 
-def _bridge_holes(outer, holes):
+def bridge_plan(outer, holes):
     """Splice each hole into the outer loop along a bridge, giving one
     simple polygon that ear clipping can chew.
+
+    Returns the traversal as (loop, index) pairs -- loop 0 is `outer`,
+    loop k+1 is `holes[k]` -- rather than as points, so the same
+    stitching can be replayed on any set of loops with the same vertex
+    counts.  A mitred part needs exactly that: its top and bottom
+    outlines are offset copies of the mid one, and they must be
+    triangulated identically or the two faces will not correspond.
 
     The outer loop must run counter-clockwise and each hole clockwise;
     the hole is entered and left at the pair of vertices closest to
     each other, and both are duplicated so the seam has zero width."""
-    poly = list(outer)
+    plan = [(0, i) for i in range(len(outer))]
+    pts = list(outer)
     # rightmost holes first: bridging them outward-in keeps later
     # bridges from having to cross an earlier seam
-    for hole in sorted(holes, key=lambda h: -max(p[0] for p in h)):
+    order = sorted(range(len(holes)),
+                   key=lambda k: -max(p[0] for p in holes[k]))
+    for k in order:
+        hole = holes[k]
         bi = bj = 0
         best = None
-        for i, p in enumerate(poly):
+        for i, p in enumerate(pts):
             for j, q in enumerate(hole):
                 dd = (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2
                 if best is None or dd < best:
                     best, bi, bj = dd, i, j
-        ring = hole[bj:] + hole[:bj + 1]
-        poly = poly[:bi + 1] + ring + poly[bi:]
-    return poly
+        ring_i = list(range(bj, len(hole))) + list(range(0, bj + 1))
+        ring_p = [hole[i] for i in ring_i]
+        plan = (plan[:bi + 1] + [(k + 1, i) for i in ring_i]
+                + plan[bi:])
+        pts = pts[:bi + 1] + ring_p + pts[bi:]
+    return plan
+
+
+def apply_plan(plan, loops):
+    return [loops[a][b] for a, b in plan]
 
 
 def polygon_with_holes(outer, holes):
     """(verts, faces) for a flat region bounded by `outer` with
     `holes` cut out of it."""
-    poly = _bridge_holes(outer, holes)
+    plan = bridge_plan(outer, holes)
+    poly = apply_plan(plan, [outer] + list(holes))
     verts = [(x, y, 0.0) for x, y in poly]
     return verts, [list(t) for t in _earclip(poly)]
+
+
+def boundary_loops(verts, faces, tol=1e-9):
+    """Closed boundary loops of a flat mesh, as lists of (x, y).
+
+    Any motif is a mesh, not a set of outlines -- including one the
+    user supplies -- so the part builder recovers the outlines from
+    it: an edge belonging to a single face is on the boundary, and
+    chaining those gives the loops.  Vertices are welded by position
+    first, since a motif assembled from separate strips repeats its
+    shared corners."""
+    pos = {}
+    remap = []
+    pts = []
+    for p in verts:
+        k = (round(p[0] / tol) * tol, round(p[1] / tol) * tol)
+        if k not in pos:
+            pos[k] = len(pts)
+            pts.append((p[0], p[1]))
+        remap.append(pos[k])
+    use = {}
+    for f in faces:
+        m = len(f)
+        for i in range(m):
+            a2, b2 = remap[f[i]], remap[f[(i + 1) % m]]
+            if a2 == b2:
+                continue
+            key = (a2, b2) if a2 < b2 else (b2, a2)
+            use[key] = use.get(key, 0) + 1
+    nxt = {}
+    for f in faces:
+        m = len(f)
+        for i in range(m):
+            a2, b2 = remap[f[i]], remap[f[(i + 1) % m]]
+            if a2 == b2:
+                continue
+            key = (a2, b2) if a2 < b2 else (b2, a2)
+            if use[key] == 1:
+                nxt.setdefault(a2, []).append(b2)
+    loops = []
+    seen = set()
+    for start in list(nxt):
+        if start in seen:
+            continue
+        loop = [start]
+        seen.add(start)
+        cur = start
+        while True:
+            cands = [c for c in nxt.get(cur, []) if c not in seen]
+            if not cands:
+                break
+            cur = cands[0]
+            seen.add(cur)
+            loop.append(cur)
+        if len(loop) >= 3:
+            loops.append([pts[i] for i in loop])
+    return loops
+
+
+def _signed_area(p):
+    return 0.5 * sum(p[i][0] * p[(i + 1) % len(p)][1]
+                     - p[(i + 1) % len(p)][0] * p[i][1]
+                     for i in range(len(p)))
+
+
+def group_loops(loops):
+    """Sort boundary loops into (outer, [holes]) components.
+
+    A loop sitting inside another is a hole in it; anything else is
+    its own piece.  A motif built from separate strips therefore
+    yields several parts, which is what it physically is."""
+    order = sorted(range(len(loops)),
+                   key=lambda i: -abs(_signed_area(loops[i])))
+    outers = []
+    for i in order:
+        lp = loops[i]
+        host = None
+        for j, (o, _h) in enumerate(outers):
+            if _polygon_contains(o, lp[0]):
+                host = j
+                break
+        if host is None:
+            if _signed_area(lp) < 0:
+                lp = lp[::-1]
+            outers.append((lp, []))
+        else:
+            if _signed_area(lp) > 0:
+                lp = lp[::-1]
+            outers[host][1].append(lp)
+    return outers
+
+
+def mating_planes(kind, family, loops, d=1.0, tol=1e-4):
+    """For each boundary edge, the neighbouring plane it beds against.
+
+    A boundary edge that runs along the intersection of this plane
+    with another is a mating edge: in the assembly the neighbouring
+    part comes up to the same line from the other side, so that edge
+    has to be cut to the dihedral rather than left square.  Every
+    other edge is free and stays square.  Returns a list per loop of
+    the matching normal, or None."""
+    a, normals = plane_normals(kind, family)
+    u, v = _frame(a)
+    lines = []
+    for b in normals:
+        ab = sum(x * y for x, y in zip(a, b))
+        if abs(ab) > 1 - 1e-9:
+            continue
+        A = sum(x * y for x, y in zip(b, u))
+        B = sum(x * y for x, y in zip(b, v))
+        n = sqrt(A * A + B * B)
+        lines.append((A / n, B / n, d * (1 - ab) / n, b))
+    out = []
+    for loop in loops:
+        per = []
+        for i in range(len(loop)):
+            p0 = loop[i]
+            p1 = loop[(i + 1) % len(loop)]
+            hit = None
+            for A, B, C, b in lines:
+                if (abs(A * p0[0] + B * p0[1] - C) < tol
+                        and abs(A * p1[0] + B * p1[1] - C) < tol):
+                    hit = b
+                    break
+            per.append(hit)
+        out.append(per)
+    return out
+
+
+def dihedral_angle(a, b):
+    """Interior angle, in degrees, of the wedge two face planes make
+    along their common edge."""
+    c = sum(x * y for x, y in zip(_normalize(a), _normalize(b)))
+    return 180.0 - math.degrees(math.acos(max(-1.0, min(1.0, c))))
+
+
+def mitred_part(kind, family, loops, d=1.0, thickness=0.04):
+    """One part as a solid slab, its mating edges cut to the dihedral
+    so neighbours butt instead of overlapping.
+
+    Local coordinates: the plane's own x, y with z measured off it,
+    the slab running z in [-thickness/2, +thickness/2] -- so it comes
+    out already lying flat, ready to be cut or printed.
+
+    A mid-plane point p lifted by s along the plane normal misses the
+    bisecting plane x.(n+m) = 2d by s(1 + n.m), and sliding it along
+    the edge's inward normal e closes that by
+
+        lambda = -s (1 + n.m) / (e.m)
+
+    which is the miter.  The outer face is drawn in, the inner face
+    runs proud, and the cut face lands in the bisector -- exactly
+    where the neighbouring part's does."""
+    a, _ = plane_normals(kind, family)
+    mates = mating_planes(kind, family, loops, d)
+    half = thickness / 2.0
+
+    def offset_loop(loop, per, s, is_hole):
+        n = len(loop)
+        # per-edge sideways shift, then meet the shifted edge lines
+        shift = []
+        for i in range(n):
+            b = per[i]
+            if b is None:
+                shift.append(0.0)
+                continue
+            p0, p1 = loop[i], loop[(i + 1) % n]
+            ex, ey = p1[0] - p0[0], p1[1] - p0[1]
+            ln = sqrt(ex * ex + ey * ey) or 1.0
+            # inward normal: the side the part's interior is on
+            nx, ny = -ey / ln, ex / ln
+            mid = ((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2)
+            # material lies inside the outer loop but OUTSIDE a hole
+            inside = _polygon_contains(loop, (mid[0] + nx * 1e-4,
+                                              mid[1] + ny * 1e-4))
+            if inside == is_hole:
+                nx, ny = -nx, -ny
+            m3 = _normalize(b)
+            em = sum(x * y for x, y in
+                     zip(_plane_dir(kind, family, nx, ny), m3))
+            nm = sum(x * y for x, y in zip(_normalize(a), m3))
+            if abs(em) < 1e-9:
+                shift.append(0.0)
+            else:
+                shift.append(-s * (1.0 + nm) / em)
+        def slide(edge, vert):
+            """vertex `vert` moved sideways by edge `edge`'s shift"""
+            q0, q1 = loop[edge], loop[(edge + 1) % n]
+            ex, ey = q1[0] - q0[0], q1[1] - q0[1]
+            ln = sqrt(ex * ex + ey * ey) or 1.0
+            return (loop[vert][0] - ey / ln * shift[edge],
+                    loop[vert][1] + ex / ln * shift[edge])
+
+        out = []
+        for i in range(n):
+            j = (i - 1) % n
+            if shift[j] == 0.0 and shift[i] == 0.0:
+                out.append(loop[i])          # nothing moved here
+                continue
+            p = _meet(loop[j], loop[i], shift[j],
+                      loop[i], loop[(i + 1) % n], shift[i])
+            # A mating edge usually runs into the curved free boundary
+            # almost tangentially, and there the two shifted lines
+            # cross far away.  The corner can only travel about as far
+            # as the shift itself, so anything beyond that is the
+            # blow-up, not a real mitre: fall back to sliding along
+            # the mating edge alone.  The limit scales with the shift,
+            # not with the thickness -- a shallow joint needs a long
+            # bevel and must not be clipped by it.
+            limit = 2.5 * max(abs(shift[j]), abs(shift[i]))
+            if (p[0] - loop[i][0]) ** 2 + (p[1] - loop[i][1]) ** 2 \
+                    > limit * limit:
+                p = slide(j if abs(shift[j]) >= abs(shift[i]) else i, i)
+            out.append(p)
+        return out
+
+    tops = [offset_loop(l, p, +half, i > 0)
+            for i, (l, p) in enumerate(zip(loops, mates))]
+    bots = [offset_loop(l, p, -half, i > 0)
+            for i, (l, p) in enumerate(zip(loops, mates))]
+    assert [len(t) for t in tops] == [len(l) for l in loops]
+
+    # Triangulate the MID outline and reuse that for both faces: the
+    # offsets keep one vertex per mid vertex, so the two caps stay in
+    # correspondence and the fragile step is on the well-behaved
+    # outline rather than an offset one.
+    plan = bridge_plan(loops[0], loops[1:])
+    tri = [list(t) for t in _earclip(apply_plan(plan, loops))]
+    tp = apply_plan(plan, tops)
+    bp = apply_plan(plan, bots)
+    nb = len(tp)
+    verts = ([(x, y, +half) for x, y in tp]
+             + [(x, y, -half) for x, y in bp])
+    faces = [list(t) for t in tri]
+    faces += [[nb + t[2], nb + t[1], nb + t[0]] for t in tri]
+    # side walls, loop by loop: for a mating edge this quad IS the
+    # mitred face, for a free edge it is a square cut
+    for li, lp in enumerate(loops):
+        n = len(lp)
+        pos = {}
+        for k, (la, ix) in enumerate(plan):
+            if la == li and ix not in pos:
+                pos[ix] = k
+        for i in range(n):
+            k0, k1 = pos[i], pos[(i + 1) % n]
+            faces.append([k0, k1, nb + k1, nb + k0])
+    # Bridging a hole duplicates its splice vertices, so the caps and
+    # the side walls reference two indices for one point and the
+    # surface reads as open along every seam.  Weld by position.
+    remap = {}
+    keep = []
+    for i, p in enumerate(verts):
+        k = (round(p[0], 9), round(p[1], 9), round(p[2], 9))
+        if k not in remap:
+            remap[k] = len(keep)
+            keep.append(p)
+        remap[i] = remap[k]
+    verts2 = keep
+    faces2 = []
+    for f in faces:
+        g = []
+        for i in f:
+            j = remap[i]
+            if not g or g[-1] != j:
+                g.append(j)
+        if len(g) > 2 and g[0] == g[-1]:
+            g.pop()
+        if len(g) >= 3:
+            faces2.append(g)
+
+    dihedrals = sorted({round(dihedral_angle(a, b), 4)
+                        for per in mates for b in per if b is not None})
+    return verts2, faces2, dihedrals
+
+
+def _plane_dir(kind, family, x, y):
+    a, _ = plane_normals(kind, family)
+    u, v = _frame(a)
+    return tuple(x * u[i] + y * v[i] for i in range(3))
+
+
+def _polygon_contains(poly, pt):
+    x, y = pt
+    hit = False
+    n = len(poly)
+    for i in range(n):
+        x0, y0 = poly[i]
+        x1, y1 = poly[(i + 1) % n]
+        if (y0 > y) != (y1 > y):
+            if x0 + (y - y0) * (x1 - x0) / (y1 - y0) > x:
+                hit = not hit
+    return hit
+
+
+def _well_crossed(loop, j, i, n, min_sin=0.2):
+    """Do edges j and i meet at enough of an angle to mitre into one
+    corner?  Nearly tangent edges would put the crossing far away."""
+    a0, a1 = loop[j], loop[(j + 1) % n]
+    b0, b1 = loop[i], loop[(i + 1) % n]
+    ax, ay = a1[0] - a0[0], a1[1] - a0[1]
+    bx, by = b1[0] - b0[0], b1[1] - b0[1]
+    la = sqrt(ax * ax + ay * ay) or 1.0
+    lb = sqrt(bx * bx + by * by) or 1.0
+    return abs((ax * by - ay * bx) / (la * lb)) > min_sin
+
+
+def _meet(a0, a1, sa, b0, b1, sb):
+    """Where two edges meet once each is slid sideways by s."""
+    def line(p, q, s):
+        ex, ey = q[0] - p[0], q[1] - p[1]
+        ln = sqrt(ex * ex + ey * ey) or 1.0
+        nx, ny = -ey / ln, ex / ln
+        return (nx, ny, nx * p[0] + ny * p[1] + s)
+    A1, B1, C1 = line(a0, a1, sa)
+    A2, B2, C2 = line(b0, b1, sb)
+    det = A1 * B2 - A2 * B1
+    if abs(det) < 1e-12:
+        return (b0[0] + A1 * sa, b0[1] + B1 * sa)
+    return ((C1 * B2 - C2 * B1) / det, (A1 * C2 - A2 * C1) / det)
 
 
 def frabjous_motif(d=1.0):
@@ -1303,6 +1641,23 @@ if _IN_BLENDER:
                         "clears by the same relative margin whatever "
                         "the size; tune it afterwards with the "
                         "modifier's Lift input")
+        show_part: BoolProperty(
+            name="Build Machinable Part", default=False,
+            description="Add one part as a solid of the given "
+                        "thickness, with every edge that beds against "
+                        "a neighbour cut to half the dihedral so the "
+                        "two butt cleanly. Laid flat below the XY "
+                        "plane and centred on the Z axis, ready to "
+                        "select and export for cutting or printing; "
+                        "the dihedral angles used are reported")
+        part_thickness: FloatProperty(
+            name="Part Thickness", default=0.03, min=0.0005, max=0.5,
+            description="Material thickness, in the same units as "
+                        "Plane Distance. The part is centred on its "
+                        "plane, so this is the full thickness. A "
+                        "shallow joint needs a long bevel -- thick "
+                        "stock on a nearly-flat joint will eat most "
+                        "of the mating edge")
         show_polyhedron: BoolProperty(
             name="Show Defining Polyhedron", default=False,
             description="Add the semi-transparent solid whose "
@@ -1455,6 +1810,54 @@ if _IN_BLENDER:
             guides.parent = obj
             guides.matrix_parent_inverse = Matrix.Identity(4)
 
+            if self.show_part:
+                mloops = boundary_loops(
+                    [tuple(v.co) for v in motif.data.vertices],
+                    [list(p.vertices) for p in motif.data.polygons])
+                pieces = group_loops(mloops)
+                pv2 = []
+                pf2 = []
+                angles = set()
+                for outer, holes in pieces:
+                    lv, lf, dh = mitred_part(
+                        kind, family, [outer] + holes, d,
+                        self.part_thickness)
+                    base = len(pv2)
+                    pv2.extend(lv)
+                    pf2.extend([[base + i for i in f] for f in lf])
+                    angles.update(dh)
+                if pv2:
+                    # centre on the Z axis and drop the whole thing
+                    # below the XY plane, clear of the guide diagram,
+                    # so it can be picked and exported on its own
+                    xs = [p[0] for p in pv2]
+                    ys = [p[1] for p in pv2]
+                    cx = (min(xs) + max(xs)) / 2
+                    cy = (min(ys) + max(ys)) / 2
+                    top = max(p[2] for p in pv2)
+                    dz = -0.25 * d - top
+                    pv2 = [(p[0] - cx, p[1] - cy, p[2] + dz)
+                           for p in pv2]
+                    pme2 = bpy.data.meshes.new("SymSculpt Part")
+                    pme2.from_pydata(pv2, [], pf2)
+                    pme2.validate()
+                    pme2.update()
+                    part = bpy.data.objects.new("SymSculpt Part", pme2)
+                    part.data.materials.append(_motif_material())
+                    context.collection.objects.link(part)
+                    part.matrix_world = Matrix.Identity(4)
+                    part.parent = obj
+                    part.matrix_parent_inverse = Matrix.Identity(4)
+                    self.report(
+                        {'INFO'},
+                        "Part: %d piece(s), %.4g thick, mating "
+                        "dihedrals %s deg"
+                        % (len(pieces), self.part_thickness,
+                           ", ".join(f"{x:.2f}"
+                                     for x in sorted(angles))
+                           or "none (no edge beds against a "
+                              "neighbour)"))
+
             if self.show_polyhedron:
                 # the solid whose extended face planes are this
                 # family, plus a ball on every vertex and a disc
@@ -1580,8 +1983,10 @@ if _IN_BLENDER:
             lay.prop_search(self, 'motif_object', bpy.data, 'objects')
             for k in ('distance', 'shell', 'guide_extent',
                       'guide_rings', 'show_polyhedron', 'lift',
-                      'translucent'):
+                      'translucent', 'show_part'):
                 lay.prop(self, k)
+            if self.show_part:
+                lay.prop(self, 'part_thickness')
 
     def _menu_func(self, context):
         self.layout.operator_menu_enum(
@@ -1837,6 +2242,68 @@ def _selftest():
             rr = {round(sqrt(sum(c * c for c in p)), 6)
                   for p, gg in pts if gg == g}
             assert len(rr) == 1, (kind, fam, g, rr)
+
+    # the machinable part: a closed solid of the right thickness
+    # whose mating faces land exactly on the bisecting planes
+    wv, wf = whimsy_motif(1.0)
+    comps = group_loops(boundary_loops(wv, wf))
+    assert len(comps) == 1 and len(comps[0][1]) == 2, comps
+    lps = [comps[0][0]] + comps[0][1]
+    thick = 0.03
+    mates_ = mating_planes('ICOSA', 'P1', lps, 1.0)
+    nmate = sum(1 for per in mates_ for m in per if m is not None)
+    pv3, pf3, dih = mitred_part('ICOSA', 'P1', lps, 1.0, thick)
+    used = {}
+    for fc3 in pf3:
+        for i in range(len(fc3)):
+            e = fc3[i], fc3[(i + 1) % len(fc3)]
+            k = (min(e), max(e))
+            used[k] = used.get(k, 0) + 1
+    closed = set(used.values()) == {2}
+    zsp = [p[2] for p in pv3]
+    ok = (closed and abs(min(zsp) + thick / 2) < 1e-9
+          and abs(max(zsp) - thick / 2) < 1e-9 and nmate == 4
+          and len(dih) == 2)
+    print(f"whimsy part: {len(pv3)}v {len(pf3)}f, {nmate} mating "
+          f"edges, dihedrals {dih}, closed={closed} "
+          f"{'OK' if ok else 'BAD'}")
+    assert ok, (closed, min(zsp), max(zsp), nmate, dih)
+
+    # each mating wall must lie in the plane bisecting the two faces
+    aa3, _ = plane_normals('ICOSA', 'P1')
+    uu3, vv3 = _frame(aa3)
+
+    def _p3(p):
+        return tuple(p[0] * uu3[i] + p[1] * vv3[i]
+                     + (1.0 + p[2]) * aa3[i] for i in range(3))
+    bis = []
+    for per in mates_:
+        for m in per:
+            if m is None:
+                continue
+            b3 = _normalize(m)
+            nb3 = _normalize([aa3[i] + b3[i] for i in range(3)])
+            off = 2.0 / sqrt(sum((aa3[i] + b3[i]) ** 2
+                                 for i in range(3)))
+            if not any(abs(nb3[0] - q[0][0]) < 1e-9
+                       and abs(nb3[1] - q[0][1]) < 1e-9
+                       and abs(nb3[2] - q[0][2]) < 1e-9 for q in bis):
+                bis.append((nb3, off))
+    worstw = None
+    walls = 0
+    for fc3 in pf3:
+        zz = [pv3[i][2] for i in fc3]
+        if not (max(zz) > 0 > min(zz)):
+            continue
+        pts3 = [_p3(pv3[i]) for i in fc3]
+        best3 = min(max(abs(sum(p[k] * nb3[k] for k in range(3)) - o)
+                        for p in pts3) for nb3, o in bis)
+        if best3 < 1e-4:
+            walls += 1
+            worstw = best3 if worstw is None else max(worstw, best3)
+    print(f"whimsy part: {walls} walls mitred onto a bisector, worst "
+          f"{worstw:.1e} {'OK' if walls == nmate else 'BAD'}")
+    assert walls == nmate, (walls, nmate)
 
     # a motif flat on XY at plane distance d lands at sqrt(r^2+d^2)
     flat = [(0.0, 0.0, 0.0), (3.0, 4.0, 0.0)]
