@@ -52,9 +52,11 @@ bl_info = {
 try:
     from .dform import build_dform
     from .dform.curves import CURVE_KINDS
+    from .sharp_creases import mark_sharp
 except ImportError:  # flat import outside the package
     from dform import build_dform
     from dform.curves import CURVE_KINDS
+    from sharp_creases import mark_sharp
 
 try:
     import bpy
@@ -280,36 +282,17 @@ if _IN_BLENDER:
             return obj
 
         def _mark_seam(self, me, sharp_edges):
-            """Make the folds real edges: sharp for shading, creased for
-            subdivision.
+            """Make the folds real edges: sharp for shading, creased
+            for subdivision.
 
             The seam carries ALL of a D-form's curvature -- the two
             sheets meet there at a genuine angle, which is exactly what
             makes it a D-form -- so smoothing normals across it reads as
-            a soft bulge instead of a folded edge.  The closed-form modes
-            fold the paper as well, and their creases are listed here
-            too.  Since Blender 4.1 the `sharp_edge` attribute drives
-            shading on its own, so no auto-smooth or Edge Split modifier
-            is needed.
+            a soft bulge instead of a folded edge.  The closed-form
+            modes fold the paper as well, and their creases are listed
+            here too.
             """
-            want = {frozenset((int(a), int(b))) for a, b in sharp_edges
-                    if int(a) != int(b)}
-            if not want:
-                return 0
-            hit = [i for i, e in enumerate(me.edges)
-                   if frozenset(e.key) in want]
-            for i in hit:
-                me.edges[i].use_edge_sharp = True
-            # keep it sharp under a Subdivision Surface modifier too
-            try:
-                att = me.attributes.get("crease_edge")
-                if att is None:
-                    att = me.attributes.new("crease_edge", 'FLOAT', 'EDGE')
-                for i in hit:
-                    att.data[i].value = 1.0
-            except (RuntimeError, TypeError, AttributeError):
-                pass        # creases are optional; sharp is the fix
-            return len(hit)
+            return mark_sharp(me, sharp_edges)
 
         def _paint_mu(self, me, d):
             """Angle defect per vertex: the seam's curvature, as colour."""
