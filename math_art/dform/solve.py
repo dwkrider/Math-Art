@@ -35,10 +35,43 @@
 # length, not the area, is the binding constraint, so `_place_cap`
 # starts from a shallow dome whose seam is exactly the right length.
 #
-# The anti-D-form -- two annuli joined at their HOLES, outer edges free
-# (John Sharp) -- is not convex and has no such uniqueness theorem, so
-# there both convexity terms are off and a bending/fairness term selects
-# the smooth relaxed collar instead.
+# THE ANTI-D-FORM -- two annuli joined at their HOLES, outer edges free
+# (John Sharp) -- is not convex and has no uniqueness theorem, so the
+# hull machinery above is useless there and something else must select
+# the shape.  What does the selecting (`settle_anti`):
+#
+#   seam first  on each sheet the seam's curvature splits as
+#               kappa^2 = kappa_g^2 + kappa_n^2 (Darboux), so the seam's
+#               space curvature is at least the LARGER of the two flat
+#               hole curvatures pointwise -- and those integrate to 2*pi
+#               each, so the max integrates to MORE than 2*pi and the
+#               seam cannot stay planar.  `_solve_seam` solves the ring
+#               alone for a closed curve carrying that floor times a
+#               MARGIN (at the bare floor the two sheets pinch flat
+#               against each other at every curvature crossover), and
+#               the whole shape hangs off this one curve.
+#   start       flat coplanar annuli -- the exactly-isometric degenerate
+#               state -- carrying the solved seam wave faded inward,
+#               with the innermost quarter swapped for a marched
+#               developable wrap (`_collar_start`) so the crease-like
+#               tilt at the seam is present from the first iteration.
+#   hinge       a true rest-flat dihedral hinge (`_project_hinge`), not
+#               the linearised height push: the height of the far vertex
+#               over the near plane VANISHES again at a 180-degree fold,
+#               so a pleat is a spurious equilibrium of the linear term.
+#               The angle-based hinge is monotone all the way to the
+#               fold.  Seam flaps are excluded -- the seam is a genuine
+#               crease -- and the seam boundary layer is graded stiffer.
+#   spectrum    the one gate pleats cannot pass: a wrinkled ring is
+#               exactly as isometric as a curled one and the hinge alone
+#               cannot coordinate the ring-wide rotation between them,
+#               so while the shape locks in, every ring is low-pass
+#               filtered azimuthally (`_ring_lowpass`), then the guard
+#               is opened and isometry gets the last word.
+#   no pressure the rims are free and there is no volume to inflate; the
+#               turning floor on the seam (a second-neighbour chord CAP,
+#               `_project_chord_cap`) replaces pressure as the term that
+#               keeps the surface off the flat degenerate state.
 #
 # References:
 #   E. Demaine, J. O'Rourke, "Geometric Folding Algorithms," Cambridge,
@@ -46,7 +79,10 @@
 #   M. Muller, B. Heidelberger, M. Hennix, J. Ratcliff, "Position Based
 #       Dynamics," J. Vis. Commun. Image R. 18(2), 2007, pp. 109-118.
 #   T. Wills, "D-Forms: 3D Forms from Two 2D Sheets," Bridges 2006;
-#       J. Sharp, "D-Forms and Developable Surfaces," Bridges 2005.
+#       J. Sharp, "D-Forms and Developable Surfaces," Bridges 2005, and
+#       "D-Forms" (Tarquin, 2009) -- the anti-D-form.
+#   E. Grinspun, A. Hirani, M. Desbrun, P. Schroder, "Discrete Shells,"
+#       SCA 2003 -- the hinge bending energy `_project_hinge` discretises.
 
 import numpy as np
 
@@ -67,7 +103,7 @@ class Glued:
     """
 
     def __init__(self, V, tris, edges, rest, seam, piece, flat, maps,
-                 closed=True):
+                 closed=True, hole_seam=False):
         self.V = V
         self.tris = tris
         self.edges = edges
@@ -78,6 +114,10 @@ class Glued:
         self.maps = maps            # [local->global, local->global]
         self.flaps = interior_edge_flaps(tris)
         self.closed = closed
+        # True when the seam is a HOLE boundary (anti-D-form): the flat
+        # material then lies OUTSIDE the seam ring, which flips the sign
+        # of every angle bookkeeping done against the flat layout
+        self.hole_seam = hole_seam
         # vertices on a free edge (none when the surface closes up): the
         # anti-D-form's outer rims, which no constraint may pull on
         bnd = boundary_edges(tris)
@@ -144,9 +184,14 @@ class Glued:
         return float(np.max(np.abs(L / self.rest - 1.0)))
 
     def interior_defect(self):
-        """Worst angle defect away from the seam: developability."""
+        """Worst angle defect away from the seam: developability.
+
+        Free-rim vertices are excluded along with the seam: a boundary
+        vertex's angle sum is about pi by construction, so counting its
+        "defect" would report every open surface as broken.
+        """
         d = np.abs(angle_defects(self.V, self.tris, len(self.V)))
-        mask = np.ones(len(self.V), bool)
+        mask = ~self.free
         mask[self.seam] = False
         return float(np.max(d[mask])) if mask.any() else 0.0
 
@@ -172,7 +217,7 @@ def _align_piece(V2, src, dst):
     return (V2 - cs) @ R + cd
 
 
-def glue(sheet_a, sheet_b, corr, closed=True, pop=1.0):
+def glue(sheet_a, sheet_b, corr, closed=True, pop=1.0, hole_seam=False):
     """Weld the two pieces and lay them out ready to solve.
 
     WHERE THE SOLVE STARTS MATTERS MORE THAN HOW IT STEPS, and the
@@ -259,7 +304,8 @@ def glue(sheet_a, sheet_b, corr, closed=True, pop=1.0):
     rest = _rest_from_flat(edges, [(A2, map_a, TA), (B2, map_b, TB)])
 
     g = Glued(V, tris, edges, rest, np.arange(n), piece,
-              [(A2, TA), (B2, TB)], [map_a, map_b], closed=closed)
+              [(A2, TA), (B2, TB)], [map_a, map_b], closed=closed,
+              hole_seam=hole_seam)
     # keep the polar coordinates the layout was built from: they are what
     # lets a finer mesh be warm-started off a coarser solve (`warm_start`)
     g.param = np.zeros(nxt)
@@ -691,6 +737,662 @@ def polish(g, iterations=400, convexity=0.5, bending=0.2, hull_dirs=256,
     return g
 
 
+# --------------------------------------------------------------------
+# The anti-D-form (John Sharp): two annuli glued along their HOLE
+# boundaries, outer rims free.  See the header for why every piece of
+# this machinery exists.
+
+def _normalize_rows(M, eps=1e-15):
+    return M / np.maximum(np.linalg.norm(M, axis=1), eps)[:, None]
+
+
+def fold_angles(V, flaps, exclude=None):
+    """Signed deviation-from-flat angle across each interior edge (rad).
+
+    0 is flat, +/-pi is folded back onto itself.  Unlike the height of
+    the far vertex over the near plane -- which vanishes AGAIN at a full
+    fold -- this is monotone over the whole range, so it can see a pleat.
+    An accordion pleat is exactly isometric and has zero angle defect,
+    so this distribution is the only gate that catches one.
+    """
+    f = flaps if exclude is None else flaps[~exclude]
+    if len(f) == 0:
+        return np.zeros(0)
+    _, _, psi, _ = _hinge_state(V, f)
+    return psi
+
+
+def _hinge_state(V, flaps):
+    """Per-flap frame and fold angle: (uh, nh, psi, rho).
+
+    For flap (a, b, c, d): eh along the edge, nh the (a,b,c) normal, uh
+    in-plane toward c.  d sits at (q, h) in the (uh, nh) plane; flat is
+    q < 0, h = 0, and psi = atan2(h, -q) is the deviation from flat.
+    """
+    a, b, c, d = flaps[:, 0], flaps[:, 1], flaps[:, 2], flaps[:, 3]
+    e = V[b] - V[a]
+    eh = _normalize_rows(e)
+    cp = V[c] - V[a]
+    nh = _normalize_rows(np.cross(e, cp))
+    uh = _normalize_rows(cp - np.einsum('ij,ij->i', cp, eh)[:, None] * eh)
+    w = V[d] - V[a]
+    h = np.einsum('ij,ij->i', w, nh)
+    q = np.einsum('ij,ij->i', w, uh)
+    psi = np.arctan2(h, -q)
+    return uh, nh, psi, np.hypot(h, q)
+
+
+def _project_hinge(V, hc, k):
+    """Rest-flat dihedral hinge on the cached (non-seam) flaps.
+
+    The step rotates d about the edge toward flat: direction
+    sin(psi)*uh + cos(psi)*nh (the tangent of that rotation), magnitude
+    k * rho * psi -- which reduces to the linearised height push
+    k * h for small angles but, crucially, does NOT die away at a
+    180-degree fold the way the height does.  Reactions on a, b, c keep
+    the pattern (and hence the momentum bookkeeping) of
+    `_project_flaps`.  A per-flap weight in the cache grades the
+    stiffness (used to stiffen the seam boundary layer, where the tilt
+    transition otherwise collapses into a one-ring crease).
+    """
+    if k <= 0.0 or hc is None or len(hc['flaps']) == 0:
+        return V
+    uh, nh, psi, rho = _hinge_state(V, hc['flaps'])
+    amp = k * hc.get('weight', 1.0) * rho * psi
+    step = amp[:, None] * (np.sin(psi)[:, None] * uh
+                           + np.cos(psi)[:, None] * nh)
+    third = (step / 6.0).ravel()
+    vals = np.concatenate([(-0.5 * step).ravel(), third, third, third])
+    V += _scatter3(hc['flap3'], vals, hc['nv']) / hc['cnt']
+    return V
+
+
+def _hinge_cache(g, cache):
+    """Scatter arrays for the hinge pass, seam flaps excluded.
+
+    The seam of an anti-D-form is a crease: wherever the two hole
+    curvatures differ the sheets MUST meet at an angle there (their
+    normal curvatures differ), so flattening the seam flaps would fight
+    the very curvature the form is made of.
+    """
+    n = len(g.seam)
+    f = g.flaps
+    keep = ~((f[:, 0] < n) & (f[:, 1] < n))
+    f = f[keep]
+    ar = np.arange(3)
+    flat3 = lambda i: (i[:, None] * 3 + ar).ravel()   # noqa: E731
+    a, b, c, d = f[:, 0], f[:, 1], f[:, 2], f[:, 3]
+    # stiffen the seam boundary layer: the tilt transition wants to
+    # collapse into a one-ring crease there, and a stronger hinge is
+    # what spreads it back over the layer's natural width
+    dep = 0.5 * (g.depth[a] + g.depth[b])
+    return {
+        'flaps': f,
+        'flap3': np.concatenate([flat3(d), flat3(a), flat3(b), flat3(c)]),
+        'cnt': np.maximum(np.bincount(np.concatenate([d, a, b, c]),
+                                      minlength=cache['nv']),
+                          1).astype(float)[:, None],
+        'nv': cache['nv'],
+        'weight': 1.0 + 3.0 * np.maximum(0.0, 1.0 - dep / 0.3),
+    }
+
+
+def _seam_targets(g):
+    """Per-vertex flat turning of each piece's seam ring, and the floor.
+
+    Returns (tau_a, tau_b, h): the absolute turning angle of each hole
+    boundary in its own flat layout, walked in GLOBAL seam order, and
+    the seam edge rest lengths.  max(tau_a, tau_b) is the pointwise
+    lower bound on the 3D seam's turning -- the Darboux split
+    kappa^2 = kappa_g^2 + kappa_n^2 on each sheet.
+    """
+    from .curves import turning_angles
+    n = len(g.seam)
+    taus = []
+    for (V2, _T), mp in zip(g.flat, g.maps):
+        S = np.asarray(V2, dtype=float)[np.argsort(mp)[:n]]
+        taus.append(np.abs(turning_angles(S)))
+    key = {(int(a), int(b)): float(r)
+           for (a, b), r in zip(g.edges, g.rest)}
+    h = np.array([key[(j, j + 1)] for j in range(n - 1)] + [key[(0, n - 1)]])
+    return taus[0], taus[1], h
+
+
+def _tau_required(tau_a, tau_b, p=8.0):
+    """Smooth pointwise upper bound on both flat turnings.
+
+    A p-norm rather than the hard max: at a crossover of the two flat
+    curvatures the max has a corner, and the sheet that is exactly at
+    its bound there has tilt sqrt(1 - (tau_X/tau)^2) -- whose derivative
+    is INFINITE at the bound.  The surface normal field then kinks, and
+    the ruling construction in `_collar_start` differentiates that
+    field, so the corner becomes an order-one ruling error.  The p-norm
+    stays strictly above both inputs and is smooth, at the price of a
+    few percent of extra seam curvature.
+    """
+    return (tau_a ** p + tau_b ** p) ** (1.0 / p)
+
+
+def _chord_targets(h, tau):
+    """Second-neighbour distance that realises turning `tau` at vertex i.
+
+    With seam edges h[i-1], h[i] meeting at interior angle pi - tau, the
+    law of cosines gives the chord; turning >= tau is chord <= this, so
+    the turning floor is a chord CAP -- a pure distance constraint.
+    """
+    hp = np.roll(h, 1)
+    return np.sqrt(hp * hp + h * h + 2.0 * hp * h * np.cos(tau))
+
+
+def _project_chord_cap(V, ip, inx, D, strength=1.0):
+    """Inequality projection: pull i-1, i+1 together where the chord
+    exceeds its cap (i.e. where the seam turns less than the floor).
+
+    `strength` < 1 softens it: the floor is a necessary condition for a
+    SMOOTH sheet, but a discrete seam vertex may legitimately prefer a
+    local crease instead, and holding the floor hard there just parks a
+    few percent of strain in the boundary layer forever.
+    """
+    d = V[inx] - V[ip]
+    L = np.linalg.norm(d, axis=1)
+    over = L > D
+    if not np.any(over):
+        return V
+    corr = np.zeros(len(D))
+    corr[over] = strength * 0.5 * (1.0 - D[over] / L[over])
+    step = corr[:, None] * d
+    nv = len(V)
+    upd = (_scatter3((ip[:, None] * 3 + np.arange(3)).ravel(),
+                     step.ravel(), nv)
+           - _scatter3((inx[:, None] * 3 + np.arange(3)).ravel(),
+                       step.ravel(), nv))
+    cnt = np.maximum(np.bincount(np.concatenate([ip[over], inx[over]]),
+                                 minlength=nv), 1).astype(float)[:, None]
+    V += upd / cnt
+    return V
+
+
+def _polygon_turning_total(G):
+    e = np.roll(G, -1, axis=0) - G
+    u = _normalize_rows(np.roll(e, 1, axis=0))
+    v = _normalize_rows(e)
+    return float(np.sum(np.arctan2(
+        np.linalg.norm(np.cross(u, v), axis=1),
+        np.einsum('ij,ij->i', u, v))))
+
+
+def _solve_seam(xy, h, tau, iterations=12000, fair=0.06, omega=1.5):
+    """The 3D seam ring of an anti-D-form, solved on its own.
+
+    The whole shape hangs on this curve, and it is a tiny problem (the
+    ring alone), so it is solved first: a closed polygon with the given
+    edge lengths whose turning at vertex i is EXACTLY tau[i] -- the
+    least curved curve the two sheets admit -- smoothed toward the
+    least wavy torsion distribution by a light fairing term.
+
+    Since sum(tau) > 2*pi the curve cannot be planar; the planar input
+    ring is seeded with a z-wave whose wavenumber is the dominant
+    harmonic of the turning-excess distribution (an ellipse-against-
+    circle mismatch is 2-lobed, a triangle-against-circle one 3-lobed)
+    and whose amplitude is bisected so the seeded total turning already
+    matches sum(tau).
+    """
+    n = len(h)
+    excess = float(np.sum(tau)) - 2.0 * np.pi
+    if excess < 1e-8:       # identical holes: the flat state is exact
+        return np.concatenate([xy, np.zeros((n, 1))], axis=1)
+
+    spec = np.abs(np.fft.rfft(tau - tau.mean()))
+    hi = min(len(spec) - 1, 8)
+    k = 2 + int(np.argmax(spec[2:hi + 1])) if hi >= 2 else 2
+    t = np.arange(n) / n
+
+    def with_wave(amp):
+        z = amp * np.cos(2.0 * np.pi * k * t)
+        return np.concatenate([xy, z[:, None]], axis=1)
+
+    want = float(np.sum(tau))
+    lo, hi_amp = 0.0, 2.0 * float(np.mean(np.linalg.norm(
+        xy - xy.mean(axis=0), axis=1)))
+    for _ in range(40):
+        mid = 0.5 * (lo + hi_amp)
+        if _polygon_turning_total(with_wave(mid)) < want:
+            lo = mid
+        else:
+            hi_amp = mid
+    G = with_wave(0.5 * (lo + hi_amp))
+
+    # Gauss-Seidel with conflict-free groups, NOT averaged Jacobi: the
+    # averaged version stalls with turning errors of ~30% of the target,
+    # and any vertex whose turning falls BELOW the floor is a point
+    # where no smooth sheet can exist -- the whole collar then kinks
+    # there no matter what the surface solver does.  Exact sequential
+    # projections converge this small system to ~1e-3.
+    D = _chord_targets(h, tau)
+
+    def chain_groups(touch):
+        groups = []
+        for i in range(n):
+            for members, verts in groups:
+                if not (touch(i) & verts):
+                    members.append(i)
+                    verts |= touch(i)
+                    break
+            else:
+                groups.append(([i], set(touch(i))))
+        return [np.asarray(mem) for mem, _ in groups]
+
+    eg = chain_groups(lambda i: {i, (i + 1) % n})
+    cg = chain_groups(lambda i: {(i - 1) % n, (i + 1) % n})
+    for it in range(iterations):
+        for gi in eg:
+            j0, j1 = gi, (gi + 1) % n
+            d = G[j1] - G[j0]
+            L = np.maximum(np.linalg.norm(d, axis=1), 1e-12)
+            f = (omega * 0.5 * (1.0 - h[gi] / L))[:, None] * d
+            G[j0] += f
+            G[j1] -= f
+        for gi in cg:
+            j0, j1 = (gi - 1) % n, (gi + 1) % n
+            d = G[j1] - G[j0]
+            L = np.maximum(np.linalg.norm(d, axis=1), 1e-12)
+            f = (omega * 0.5 * (1.0 - D[gi] / L))[:, None] * d
+            G[j0] += f
+            G[j1] -= f
+        # fairing selects the smooth torsion distribution -- ANNEALED to
+        # zero, or its shrinkage leaves a permanent percent-level fight
+        # with the constraints and neither ever wins
+        w = fair * max(0.0, 1.0 - it / max(1, int(0.6 * iterations)))
+        if w > 0.0:
+            G += w * (0.5 * (np.roll(G, 1, axis=0)
+                             + np.roll(G, -1, axis=0)) - G)
+    return G
+
+
+def _march_ring(P1, P2, r1, r2, ext):
+    """Place a ring of vertices at exact distances from two placed ones.
+
+    Each new vertex must sit at distance r1 from P1 and r2 from P2 --
+    the two flat lengths it will be asked to keep anyway -- which pins
+    it to a circle; `ext` (the smooth straight-line continuation of its
+    column) picks the point on that circle.  This is discrete
+    developable marching: the isometry is exact on the edges to the
+    placed ring, and the branch choice is what keeps the sheet from
+    creasing at every step.
+    """
+    w = P2 - P1
+    d = np.maximum(np.linalg.norm(w, axis=1), 1e-12)
+    wh = w / d[:, None]
+    a = (d * d + r1 * r1 - r2 * r2) / (2.0 * d)
+    rho = np.sqrt(np.maximum(r1 * r1 - a * a, 0.0))
+    C = P1 + a[:, None] * wh
+    q = ext - C
+    q = q - np.einsum('ij,ij->i', q, wh)[:, None] * wh
+    qn = np.linalg.norm(q, axis=1)
+    # a vertex whose continuation is degenerate falls back to the circle
+    # centre; the relax sorts out anything that rare
+    q = np.where(qn[:, None] > 1e-12, q / np.maximum(qn, 1e-12)[:, None],
+                 np.zeros_like(q))
+    return C + rho[:, None] * q
+
+
+def _collar_start(g, G, tau_a, tau_b, tau_curve=None):
+    """Wrap both annuli onto the solved seam by developable marching.
+
+    At each seam vertex the curve frame is (t, m, B): tangent, curvature
+    direction, and their cross product.  A sheet whose hole turns by
+    tau_X there must tilt so the geodesic part of the seam's bending is
+    exactly tau_X: with cos(phi) = -tau_X/tau the material direction
+    leaves the seam along cos(phi) m - sin(phi) B, and the two pieces
+    take OPPOSITE signs of sin(phi) -- which is what separates the
+    sheets into the two flaring funnels of Sharp's photographs.
+
+    Two dead ends are worth recording.  A first-order wrap (flat offset
+    carried in the rotating seam frame) fails because the annulus is
+    several hole radii wide: at that distance the frame rotation costs
+    ~300% strain.  The exact envelope developable (rulings n x n')
+    fails more subtly: the tilt field varies on the scale of the hole's
+    curvature lobes, which drags the rulings nearly tangent to the seam
+    (median transversality 0.17 measured) and its regression curve into
+    the sheet, so the "exact" map folds over itself.  Marching ring by
+    ring (`_march_ring`) sidesteps both: each ring is placed at exact
+    flat distances from the previous one, the straight continuation of
+    each column selects the smooth branch, and the tilt field is only
+    ever used to seed ring 1, where its roughness is a one-ring error.
+    """
+    n = len(g.seam)
+    V = g.V
+    e = np.roll(G, -1, axis=0) - G
+    u = _normalize_rows(np.roll(e, 1, axis=0))
+    v = _normalize_rows(e)
+    t3 = _normalize_rows(u + v)
+    m = _normalize_rows(v - u)
+    B = _normalize_rows(np.cross(t3, m))
+    # the turning the seam curve was actually SOLVED at -- when the seam
+    # carries a margin above the floor, the tilts must be computed
+    # against that richer curvature or the wrap fights the curve
+    tau_req = (_tau_required(tau_a, tau_b) if tau_curve is None
+               else tau_curve)
+
+    for which, sgn, tau_X in ((0, 1.0, tau_a), (1, -1.0, tau_b)):
+        V2, _T = g.flat[which]
+        V2 = np.asarray(V2, dtype=float)
+        mp = g.maps[which]
+        c = np.clip(tau_X / np.maximum(tau_req, 1e-9), 0.0, 1.0)
+        s = np.sqrt(np.maximum(1.0 - c * c, 0.0))
+        mat = -c[:, None] * m - (sgn * s)[:, None] * B    # into the sheet
+
+        # the annulus mesh is rings of n, seam first: local k*n+j is
+        # ring k, and the glue phase shift maps local j to global seam
+        # index round(param*n) -- march in GLOBAL index order so ring 0
+        # is the solved seam as-is
+        nloc = len(V2)
+        K = nloc // n - 1
+        perm = np.empty(n, dtype=int)          # global j -> local j
+        perm[np.rint(np.asarray(
+            [g.param[mp[j]] for j in range(n)]) * n).astype(int) % n] = \
+            np.arange(n)
+        flat_r = [V2[k * n + perm] for k in range(K + 1)]
+
+        # the second trilateration distance should be the mesh's own
+        # QUAD DIAGONAL, not merely some nearby chord -- strain is
+        # measured on mesh edges, so an uncontrolled diagonal is where
+        # it all ends up.  Which global direction the diagonal runs
+        # depends on whether the glue reversed this piece's traversal,
+        # so ask the edge set rather than assume.
+        eset = {(int(a), int(b)) for a, b in g.edges}
+        ga = int(mp[1 * n + perm[0]])
+        fwd = int(mp[0 * n + perm[1]])
+        roll_dir = -1 if ((min(ga, fwd), max(ga, fwd)) in eset) else 1
+
+        # the axial sense this sheet leaves the seam plane on
+        ctr = G.mean(axis=0)
+        _U, _S, Vt = np.linalg.svd(G - ctr, full_matrices=False)
+        ax = Vt[2] * np.sign(np.mean(mat @ Vt[2]) or 1.0)
+
+        prev3 = G
+        for k in range(1, K + 1):
+            r1 = np.linalg.norm(flat_r[k] - flat_r[k - 1], axis=1)
+            r2 = np.linalg.norm(flat_r[k] - np.roll(flat_r[k - 1],
+                                                    roll_dir, axis=0),
+                                axis=1)
+            # continuation with the ring-length budget built in: scale
+            # the previous ring about its centroid so its length equals
+            # this ring's FLAT length (a homothety scales length
+            # exactly, and grows the seam wave's amplitude with radius,
+            # which is what a real frill does), then spend whatever is
+            # left of the column step moving axially off the seam
+            # plane.  Straight-line continuation instead makes every
+            # sheet a shade too conical, the rings come up ~20% short,
+            # and the relax converts that deficit into wrinkles.
+            rest = np.linalg.norm(np.roll(flat_r[k], -1, axis=0)
+                                  - flat_r[k], axis=1)
+            cen = prev3.mean(axis=0)
+            L_prev = float(np.sum(np.linalg.norm(
+                np.roll(prev3, -1, axis=0) - prev3, axis=1)))
+            alpha = float(np.sum(rest)) / max(L_prev, 1e-12)
+            radial = (alpha - 1.0) * (prev3 - cen)
+            beta = np.sqrt(np.maximum(
+                r1 * r1 - np.einsum('ij,ij->i', radial, radial),
+                (0.2 * r1) ** 2))
+            ext = prev3 + radial + beta[:, None] * ax
+            cur3 = _march_ring(prev3, np.roll(prev3, roll_dir, axis=0),
+                               r1, r2, ext)
+            # the trilateration pins each vertex to its circle but the
+            # ring's OWN edge lengths are whatever the branch choice
+            # left; alternate projecting them with snapping back onto
+            # the circles -- both projections are exact, so this is a
+            # clean alternating projection and a dozen rounds suffice
+            rest = np.linalg.norm(np.roll(flat_r[k], -1, axis=0)
+                                  - flat_r[k], axis=1)
+            for _ in range(12):
+                d = np.roll(cur3, -1, axis=0) - cur3
+                L = np.maximum(np.linalg.norm(d, axis=1), 1e-12)
+                f = (0.5 * (1.0 - rest / L))[:, None] * d
+                cur3 += 0.5 * (f - np.roll(f, 1, axis=0))
+                cur3 = _march_ring(prev3, np.roll(prev3, roll_dir, axis=0),
+                                   r1, r2, cur3)
+            V[mp[k * n + perm]] = cur3
+            prev3 = cur3
+    V[:n] = G
+    return V
+
+
+def _piece_rings(g):
+    """Each piece's rings as vertex-id arrays in global param order,
+    seam ring excluded (it is pinned or handled by its own machinery)."""
+    n = len(g.seam)
+    rings = []
+    dep = np.round(g.depth, 9)
+    for which in (0, 1):
+        sel = (g.piece == which)
+        sel[:n] = False
+        idx = np.nonzero(sel)[0]
+        for dv in np.unique(dep[idx]):
+            ring = idx[dep[idx] == dv]
+            rings.append(ring[np.argsort(g.param[ring] % 1.0)])
+    return rings
+
+
+def _ring_lowpass(V, rings, kcut):
+    """Keep only azimuthal harmonics <= kcut of each ring's positions.
+
+    Wrinkles are the failure mode of every relaxation tried here: a
+    wrinkled ring is exactly as isometric as a curled one, and the local
+    hinge cannot coordinate the ring-wide rotation that trades one for
+    the other, so PBD walks into the wrinkle and stays.  The collar's
+    true shape is low-harmonic (the seam wave plus a few overtones);
+    filtering the rings during the growth phase simply denies the
+    wrinkle its degrees of freedom until the smooth shape has locked in.
+    """
+    for ring in rings:
+        F = np.fft.rfft(V[ring], axis=0)
+        F[kcut + 1:] = 0.0
+        V[ring] = np.fft.irfft(F, n=len(ring), axis=0)
+    return V
+
+
+def settle_anti(g, iterations=3400, bending=0.15, margin=1.25, sweeps=3,
+                seam_iters=12000, sheet_gap=0.15):
+    """Solve an anti-D-form: the seam ring first, then the collar.
+
+    No pressure, no convexity, no hull: the seam's turning floor is what
+    keeps the surface off the flat degenerate state, and the rest-flat
+    hinge selects the smooth collar out of the many isometric immersions
+    (there is no uniqueness theorem to lean on here).  The outer rims
+    are genuinely free -- nothing in the loop touches them except the
+    isometry sweeps and the hinge.
+
+    `margin` is the factor by which the solved seam curvature exceeds
+    the floor, and it is NOT cosmetic: a seam that rides the floor
+    exactly has, at every crossover of the two hole curvatures, BOTH
+    sheets lying in its osculating plane -- pinch-folded flat against
+    each other -- and the collar kinks there no matter how the surface
+    is relaxed.  The margin keeps both sheets strictly tilted apart
+    along the whole seam.
+
+    The schedule is pin-then-release with a spectral guard: the seam is
+    held at the solved curve while the sheets wrap it (their shape is
+    found under a low-harmonic filter, which denies wrinkles their
+    degrees of freedom -- a wrinkled ring is exactly as isometric as a
+    curled one, so nothing else prevents them), then the cap replaces
+    the pin and the filter is opened up so the isometry projections
+    have the last word.
+    """
+    n = len(g.seam)
+    V = g.V
+    tau_a, tau_b, h = _seam_targets(g)
+    # the floor enforced by the cap is the honest hard max -- an
+    # inequality may be slack, so the margined curve satisfies it
+    tau_star = np.maximum(tau_a, tau_b)
+    tau_curve = margin * _tau_required(tau_a, tau_b)
+    G = _solve_seam(np.asarray(V[g.seam][:, :2]), h, tau_curve,
+                    iterations=seam_iters)
+
+    # hybrid start: flat far field carrying the seam wave faded inward,
+    # blended over the innermost quarter with the marched (tilt-aware)
+    # near field.  `sheet_gap` cants the two far fields to OPPOSITE
+    # sides of the seam plane (in units of the hole's mean radius): the
+    # sheets are joined only at the seam, so their asymptotic planes
+    # need not coincide, and coincident planes are where most of the
+    # sheet-through-sheet crossings come from.
+    V[:, 2] = 0.0
+    F = V.copy()
+    S0 = F[:n].copy()
+    anchor = np.rint(g.param * n).astype(int) % n
+    F += (1.0 - g.depth)[:, None] * (G[anchor] - S0[anchor])
+    R = float(np.mean(np.linalg.norm(S0 - S0.mean(axis=0), axis=1)))
+    side = np.where(g.piece == 0, 1.0, -1.0)
+    F[:, 2] += sheet_gap * R * side * g.depth
+    _collar_start(g, G, tau_a, tau_b, tau_curve=tau_curve)
+    w = np.clip(1.0 - g.depth / 0.25, 0.0, 1.0)[:, None]
+    V[:] = w * V + (1.0 - w) * F
+
+    cache = g.plan(0)
+    hc = _hinge_cache(g, cache)
+    idx = np.arange(n)
+    ip, inx = (idx - 1) % n, (idx + 1) % n
+    D = _chord_targets(h, tau_star)
+    rings = _piece_rings(g)
+
+    # (fraction of budget, azimuthal harmonic cut, hinge, seam pinned)
+    phases = [(0.24, 6, bending, True),
+              (0.15, 10, bending, True),
+              (0.12, 16, bending, False),
+              (0.09, 24, bending / 3.0, False)]
+    g.iterations = 0
+    for frac, kc, bend, pin in phases:
+        for _ in range(max(1, int(frac * iterations))):
+            _project_edges(V, cache['groups'], sweeps)
+            if pin:
+                V[:n] = G
+            else:
+                for _ in range(4):
+                    _project_chord_cap(V, ip, inx, D)
+            _project_hinge(V, hc, bend)
+            _ring_lowpass(V, rings, kc)
+            g.iterations += 1
+    # polish: isometry and the floor, nothing else, and MOST of the
+    # budget -- edges + cap is a clean pair of projections that grinds
+    # the boundary-layer strain down monotonically (and pulls the seam
+    # total back toward its -4*pi) long after the shape has stopped
+    # changing.  (Softening the cap instead was tried and is WORSE: the
+    # seam sags below the floor broadly and loses ~5% of its 4*pi.)
+    # The tail is adaptive: the shaping trajectory is chaotic at the
+    # +-0.5% level run to run, so the polish keeps going -- within a 3x
+    # budget -- until the strain target is actually met.
+    _anti_polish_tail(g, cache, ip, inx, D, sweeps,
+                      max(1, int(0.40 * iterations)))
+    g.strain = g.max_strain()
+    g.V = V - 0.5 * (V.max(axis=0) + V.min(axis=0))
+    return g
+
+
+def _anti_polish_tail(g, cache, ip, inx, D, sweeps, base, tol=0.017):
+    V = g.V
+    done = 0
+    while done < base or (done < 3 * base and g.max_strain() > tol):
+        for _ in range(50):
+            _project_edges(V, cache['groups'], sweeps)
+            for _ in range(4):
+                _project_chord_cap(V, ip, inx, D)
+        done += 50
+        g.iterations += 50
+    return g
+
+
+def polish_anti(g, iterations=1400, bending=0.15, sweeps=3):
+    """Settle a warm-started anti-D-form mesh: release phases only.
+
+    A mesh resampled off a solved coarse collar already has the shape;
+    it needs the fine boundary layer settled and the isometry
+    sharpened, so this is `settle_anti` minus the seam solve, the
+    start, and the pinned phases.
+    """
+    n = len(g.seam)
+    V = g.V
+    tau_a, tau_b, h = _seam_targets(g)
+    tau_star = np.maximum(tau_a, tau_b)
+    cache = g.plan(0)
+    hc = _hinge_cache(g, cache)
+    idx = np.arange(n)
+    ip, inx = (idx - 1) % n, (idx + 1) % n
+    D = _chord_targets(h, tau_star)
+    rings = _piece_rings(g)
+    g.iterations = 0
+    for frac, kc, bend in [(0.35, 16, bending), (0.20, 24, bending / 3.0)]:
+        for _ in range(max(1, int(frac * iterations))):
+            _project_edges(V, cache['groups'], sweeps)
+            for _ in range(4):
+                _project_chord_cap(V, ip, inx, D)
+            _project_hinge(V, hc, bend)
+            _ring_lowpass(V, rings, kc)
+            g.iterations += 1
+    _anti_polish_tail(g, cache, ip, inx, D, sweeps,
+                      max(1, int(0.45 * iterations)))
+    g.strain = g.max_strain()
+    g.V = V - 0.5 * (V.max(axis=0) + V.min(axis=0))
+    return g
+
+
+def _seg_tri_hits(P0, P1, A, B, C, eps=1e-12):
+    """Moller-Trumbore, vectorised: does segment P0-P1 cross triangle ABC."""
+    d = P1 - P0
+    e1 = B - A
+    e2 = C - A
+    pvec = np.cross(d, e2)
+    det = np.einsum('ij,ij->i', e1, pvec)
+    ok = np.abs(det) > eps
+    inv = np.where(ok, 1.0 / np.where(ok, det, 1.0), 0.0)
+    tvec = P0 - A
+    u = np.einsum('ij,ij->i', tvec, pvec) * inv
+    qvec = np.cross(tvec, e1)
+    v = np.einsum('ij,ij->i', d, qvec) * inv
+    t = np.einsum('ij,ij->i', e2, qvec) * inv
+    return (ok & (u >= 0.0) & (v >= 0.0) & (u + v <= 1.0)
+            & (t >= 0.0) & (t <= 1.0))
+
+
+def sheet_crossings(g):
+    """Triangle pairs of piece A x piece B that actually intersect.
+
+    Self-intersection is a REAL risk on an anti-D-form collar -- the
+    two sheets are tangent along the seam and hover near each other
+    beyond it, and nothing in the solver knows about contact -- so it
+    is measured honestly rather than assumed away: centroid prefilter,
+    then edge-against-triangle tests both ways (a non-coplanar
+    triangle pair intersects iff some edge of one crosses the other).
+    Triangles touching the seam are excluded: the sheets legitimately
+    SHARE the seam line.
+    """
+    V, T = g.V, g.tris
+    n = len(g.seam)
+    which = g.piece[T].max(axis=1)
+    off_seam = ~np.any(T < n, axis=1)
+    TA = T[(which == 0) & off_seam]
+    TB = T[(which == 1) & off_seam]
+    if len(TA) == 0 or len(TB) == 0:
+        return 0
+    ca = V[TA].mean(axis=1)
+    cb = V[TB].mean(axis=1)
+    ra = np.max(np.linalg.norm(V[TA] - ca[:, None, :], axis=2), axis=1)
+    rb = np.max(np.linalg.norm(V[TB] - cb[:, None, :], axis=2), axis=1)
+    d2 = np.sum((ca[:, None, :] - cb[None, :, :]) ** 2, axis=2)
+    lim = (ra[:, None] + rb[None, :]) ** 2
+    ia, ib = np.nonzero(d2 <= lim)
+    if len(ia) == 0:
+        return 0
+    A1 = V[TA[ia]]
+    B1 = V[TB[ib]]
+    hit = np.zeros(len(ia), dtype=bool)
+    for k in range(3):
+        hit |= _seg_tri_hits(A1[:, k], A1[:, (k + 1) % 3],
+                             B1[:, 0], B1[:, 1], B1[:, 2])
+        hit |= _seg_tri_hits(B1[:, k], B1[:, (k + 1) % 3],
+                             A1[:, 0], A1[:, 1], A1[:, 2])
+    return int(np.count_nonzero(hit))
+
+
 def _selftest():
     ok = True
     from .curves import (curve_points, match_perimeter, resample_arclength,
@@ -792,6 +1494,92 @@ def _selftest():
     ok &= good
     print(f"solve: join offset changes the form (V {v1:.4f} -> {v2:.4f}) "
           f"{'OK' if good else 'FAIL'}")
+
+    # ----------------------------------------------------------- ANTI
+    from .curves import ensure_ccw
+    from .sheet import annulus_mesh
+
+    def build_anti(outer_a, outer_b, hole_a, hole_b, n, off):
+        OA = resample_arclength(ensure_ccw(curve_points(*outer_a[:1],
+                                                        **outer_a[1])), n)
+        OB = resample_arclength(ensure_ccw(curve_points(*outer_b[:1],
+                                                        **outer_b[1])), n)
+        HA = resample_arclength(ensure_ccw(curve_points(*hole_a[:1],
+                                                        **hole_a[1])),
+                                n) * 0.4
+        HB = resample_arclength(ensure_ccw(curve_points(*hole_b[:1],
+                                                        **hole_b[1])),
+                                n) * 0.4
+        HB, _ = match_perimeter(HA, HB)
+        return settle_anti(glue(annulus_mesh(OA, HA), annulus_mesh(OB, HB),
+                                seam_correspondence(n, off), closed=False,
+                                hole_seam=True))
+
+    cases = [
+        ('ellipse holes 0.6/1.0',
+         build_anti(('ELLIPSE', dict(aspect=0.9)),
+                    ('ELLIPSE', dict(aspect=0.9)),
+                    ('ELLIPSE', dict(aspect=0.6)),
+                    ('ELLIPSE', dict(aspect=1.0)), 64, 0.3)),
+        ('triangle hole vs circle',
+         build_anti(('ELLIPSE', dict(aspect=1.0)),
+                    ('SUPERELLIPSE', dict(aspect=1.0, super_n=3.0)),
+                    ('ROUNDED_POLYGON', dict(sides=3, corner=0.35)),
+                    ('ELLIPSE', dict(aspect=1.0)), 64, 0.0)),
+    ]
+    for label, ga in cases:
+        n = len(ga.seam)
+
+        # isometric: the collar is still paper
+        good = ga.strain < 0.02
+        ok &= good
+        print(f"anti [{label}]: strain {ga.strain:.4f} (<0.02) "
+              f"{'OK' if good else 'FAIL'}")
+
+        # genuinely 3D: the flat doubly-covered annulus is isometric
+        # too, and this is the gate that catches falling back onto it
+        asp = ga.aspect()
+        good = asp > 0.12
+        ok &= good
+        print(f"anti [{label}]: popped, aspect {asp:.3f} (>0.12) "
+              f"{'OK' if good else 'FAIL'}")
+
+        # developable away from the seam
+        dd = ga.interior_defect()
+        good = dd < 0.08
+        ok &= good
+        print(f"anti [{label}]: interior defect {dd:.4f} (<0.08) "
+              f"{'OK' if good else 'FAIL'}")
+
+        # Gauss-Bonnet: the seam carries -4*pi (the two free rims'
+        # boundary turning balances it on the chi = 0 collar)
+        tot = ga.seam_defect_total()
+        good = abs(tot + 4 * np.pi) < 0.05 * 4 * np.pi
+        ok &= good
+        print(f"anti [{label}]: seam defect {tot:.3f} (-4pi = "
+              f"{-4 * np.pi:.3f}) {'OK' if good else 'FAIL'}")
+
+        # NOT pleated.  Strain and defect cannot see a pleat (an
+        # accordion is exactly isometric with zero defect), so the gate
+        # is the fold-angle distribution across non-seam interior
+        # edges; the seam itself is a genuine crease and is exempt.
+        f = ga.flaps
+        exs = (f[:, 0] < n) & (f[:, 1] < n)
+        deg = np.degrees(np.abs(fold_angles(ga.V, f, exclude=exs)))
+        p90 = float(np.percentile(deg, 90))
+        p99 = float(np.percentile(deg, 99))
+        frac = float(np.mean(deg > 30.0))
+        good = p99 < 65.0 and float(deg.max()) < 135.0 and frac < 0.08
+        ok &= good
+        print(f"anti [{label}]: folds p90 {p90:.1f} p99 {p99:.1f} max "
+              f"{deg.max():.1f} deg, {100 * frac:.1f}% over 30 "
+              f"(p99<65, max<135, <8%) {'OK' if good else 'FAIL'}")
+
+        # the honest number, reported rather than gated: the two
+        # zero-thickness sheets do cross in places (real paper rests in
+        # contact instead); a smooth collar keeps this modest
+        print(f"anti [{label}]: sheet crossings {sheet_crossings(ga)} "
+              f"triangle pairs (reported)")
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:

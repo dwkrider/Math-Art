@@ -6,6 +6,13 @@ gluing them edge to edge.  The result pops into a closed, smoothly curved
 solid whose entire Gaussian curvature lives on the seam, and which is
 developable -- literally paper -- everywhere else.
 
+The ANTI mode is Sharp's anti-D-form: cut a HOLE in each of two flat
+pieces, match the hole perimeters, and glue hole edge to hole edge with
+the outer rims left free.  The result is an open saddle collar carrying
+-4*pi of curvature on the seam (the two free rims balance it under
+Gauss-Bonnet) -- not convex, so none of the D-form uniqueness theory
+applies, and the solver instead works seam-first with a bending energy.
+
 This package is the mathematics, pure Python + numpy and importable
 without Blender; `math_art/dform_generator.py` is the operator over it.
 
@@ -31,9 +38,9 @@ import numpy as np
 
 from . import analytic, curves, develop, sheet, solve
 
-# SEAM is solved for; the rest are closed-form relatives that assemble
-# exactly from cone and cylinder patches (see `analytic.py`)
-MODES = ('SEAM',) + analytic.ANALYTIC_KINDS
+# SEAM and ANTI are solved for; the rest are closed-form relatives that
+# assemble exactly from cone and cylinder patches (see `analytic.py`)
+MODES = ('SEAM', 'ANTI') + analytic.ANALYTIC_KINDS
 
 __all__ = ['DForm', 'MODES', 'analytic', 'build_dform', 'curves', 'develop',
            'sheet', 'solve']
@@ -144,13 +151,48 @@ def _build_analytic(mode, segments, scale, vesica_u, vesica_h, panels,
                  stats, sharp_edges=sharp)
 
 
+# Seam resolution above which the ANTI solve goes coarse-first.  The
+# anti-D-form's convergence falls off with the mesh width even faster
+# than the closed solve's (measured: n=96 direct comes out at 7% strain
+# where n=64 reaches 1.8%), so past this the collar is solved small and
+# resampled up.
+_COARSE_ANTI = 64
+
+
+def _solve_anti(OA, OB, HA, HB, n, join_offset, flip, quality):
+    """Solve an anti-D-form at `n` seam segments, coarse-first if big."""
+    def build(m):
+        HAm = curves.resample_arclength(HA, m)
+        HBm = curves.resample_arclength(HB, m)
+        HBm, _ = curves.match_perimeter(HAm, HBm)
+        OAm = curves.resample_arclength(OA, max(m, 48))
+        OBm = curves.resample_arclength(OB, max(m, 48))
+        return solve.glue(sheet.annulus_mesh(OAm, HAm),
+                          sheet.annulus_mesh(OBm, HBm),
+                          curves.seam_correspondence(m, join_offset, flip),
+                          closed=False, hole_seam=True)
+
+    # the collar needs a larger budget than the closed solve: the same
+    # `quality` knob maps to ~3.8x the iterations (still seconds)
+    iters = max(1800, int(3.8 * quality))
+    if n <= _COARSE_ANTI:
+        return solve.settle_anti(build(n), iterations=iters)
+
+    coarse = solve.settle_anti(build(_COARSE_ANTI), iterations=iters)
+    fine = solve.warm_start(build(n), coarse)
+    return solve.polish_anti(fine, iterations=max(900, iters // 2))
+
+
 def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
                 aspect_a=0.6, aspect_b=1.0, super_n=3.0, egg=0.35,
                 sides_a=3, sides_b=5, corner=0.35, cassini=1.6,
                 segments=72, join_offset=0.25, flip=False, quality=900,
                 scale=1.0, gap=0.08, vesica_u=0.5, vesica_h=-1.0,
                 panels=32, slide=-1.0, growth=0.0, skew=0.5,
-                hole=0.45, tilt=0.42):
+                hole=0.45, tilt=0.42,
+                hole_kind_a='ELLIPSE', hole_aspect_a=0.6,
+                hole_kind_b='ELLIPSE', hole_aspect_b=1.0,
+                hole_scale=0.4):
     """Build a D-form and return it.
 
     `segments` is the seam resolution -- the number of vertices shared by
@@ -158,6 +200,12 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
     outlines are matched to a common perimeter automatically (uniform
     scaling of the second, after Orduno et al.), which is the D-form
     precondition and not something the caller has to arrange.
+
+    In ANTI mode `kind_a`/`kind_b` describe the two OUTER rims (free,
+    perimeters unconstrained) and `hole_kind_*`/`hole_aspect_*` the two
+    holes, whose perimeters are matched -- they become the seam.
+    `hole_scale` sizes the holes relative to the rims, clamped so the
+    hole always fits inside its piece.
     """
     if mode not in MODES:
         raise ValueError(f"unknown D-form mode {mode!r}")
@@ -181,7 +229,25 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
     B = curves.ensure_ccw(B)
 
     quality = max(120, int(quality))
-    g = _solve_at(A, B, n, join_offset, flip, quality)
+    if mode == 'ANTI':
+        HA = curves.ensure_ccw(curves.curve_points(
+            hole_kind_a, aspect=hole_aspect_a, super_n=super_n, egg=egg,
+            sides=sides_a, corner=corner, cassini=cassini))
+        HB = curves.ensure_ccw(curves.curve_points(
+            hole_kind_b, aspect=hole_aspect_b, super_n=super_n, egg=egg,
+            sides=sides_b, corner=corner, cassini=cassini))
+        # the hole must fit strictly inside its rim, whatever the caller
+        # asked for: clamp against the rim's inradius
+        hs = min(max(float(hole_scale), 0.1), 0.8)
+        for O, H in ((A, HA), (B, HB)):
+            r_out = float(np.min(np.linalg.norm(O, axis=1)))
+            r_hole = float(np.max(np.linalg.norm(H, axis=1)))
+            if r_hole > 1e-12:
+                hs = min(hs, 0.8 * r_out / r_hole)
+        g = _solve_anti(A, B, HA * hs, HB * hs, n, join_offset, flip,
+                        quality)
+    else:
+        g = _solve_at(A, B, n, join_offset, flip, quality)
 
     V = g.V
     ext = float(np.max(V.max(axis=0) - V.min(axis=0)))
@@ -194,6 +260,17 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
 
     stats = develop.report(g)
     stats['segments'] = n
+    if mode == 'ANTI':
+        # the honest extras for an open collar: how folded is it off the
+        # seam (pleat watch), and do the two sheets cross each other
+        f = g.flaps
+        ns = len(g.seam)
+        psi = solve.fold_angles(g.V, f,
+                                exclude=((f[:, 0] < ns) & (f[:, 1] < ns)))
+        deg = np.degrees(np.abs(psi))
+        stats['fold_p99'] = float(np.percentile(deg, 99)) if len(deg) else 0.0
+        stats['fold_max'] = float(deg.max()) if len(deg) else 0.0
+        stats['crossings'] = solve.sheet_crossings(g)
     return DForm(V, g.tris, g.seam, develop.seam_mu(g), g.piece, dv, df,
                  stats)
 
@@ -261,6 +338,55 @@ def _selftest():
           f"(extent delta {shape:.3f}, strain {hi.stats['strain']:.4f}, "
           f"seam {hi.stats['mu_total']/(4*np.pi):.3f}x4pi) "
           f"{'OK' if good else 'FAIL'}")
+
+    # ------------------------------------------------------------ ANTI
+    a = build_dform(mode='ANTI', segments=56, quality=800,
+                    kind_a='ELLIPSE', aspect_a=0.9, kind_b='ELLIPSE',
+                    aspect_b=0.9, hole_kind_a='ELLIPSE', hole_aspect_a=0.6,
+                    hole_kind_b='ELLIPSE', hole_aspect_b=1.0,
+                    join_offset=0.3)
+
+    # the public triple: an open collar, its seam, and a two-annuli net
+    good = (len(a.verts) > 0 and len(a.seam) == 56
+            and len(a.dev_faces) == len(a.faces))
+    ok &= good
+    print(f"dform: ANTI built V={len(a.verts)} F={len(a.faces)} "
+          f"net F={len(a.dev_faces)} {'OK' if good else 'FAIL'}")
+
+    # the net is two ANNULI: as a disjoint union its Euler
+    # characteristic is 0 + 0 -- the check that `develop` really can
+    # hand back pieces with two boundary loops
+    de = sheet.edges_from_tris(a.dev_faces)
+    chi = len(a.dev_verts) - len(de) + len(a.dev_faces)
+    good = chi == 0 and float(np.max(np.abs(a.dev_verts[:, 2]))) < 1e-12
+    ok &= good
+    print(f"dform: ANTI net is two flat annuli (chi={chi}, z=0) "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Gauss-Bonnet with free rims: the seam carries -4*pi
+    good = abs(a.stats['mu_total'] + 4 * np.pi) < 0.05 * 4 * np.pi
+    ok &= good
+    print(f"dform: ANTI seam carries -4pi (got {a.stats['mu_total']:.3f}) "
+          f"{'OK' if good else 'FAIL'}")
+
+    # isometric, genuinely 3D, centred in the 2m cube
+    ext = a.verts.max(axis=0) - a.verts.min(axis=0)
+    cen = 0.5 * (a.verts.max(axis=0) + a.verts.min(axis=0))
+    good = (a.stats['strain'] < 0.02
+            and abs(float(np.max(ext)) - 2.0) < 1e-9
+            and float(np.max(np.abs(cen))) < 1e-9
+            and float(np.min(ext) / np.max(ext)) > 0.1)
+    ok &= good
+    print(f"dform: ANTI isometric (strain {a.stats['strain']:.4f}), "
+          f"aspect {float(np.min(ext) / np.max(ext)):.3f} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # not pleated (the crease budget lives on the seam, not the sheets)
+    good = a.stats['fold_p99'] < 65.0 and a.stats['fold_max'] < 135.0
+    ok &= good
+    print(f"dform: ANTI folds p99 {a.stats['fold_p99']:.1f} max "
+          f"{a.stats['fold_max']:.1f} deg; crossings "
+          f"{a.stats['crossings']} (reported) {'OK' if good else 'FAIL'}")
 
     # an unknown mode must fail loudly rather than silently make a pillow
     try:
