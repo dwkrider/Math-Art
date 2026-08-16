@@ -955,6 +955,27 @@ if _IN_BLENDER:
         obj = bpy.data.objects.new(name, me)
         return obj
 
+    def _drive_z_from_lift(obj, sculpt, mod_name, socket):
+        """Tie obj's Z to the modifier's Lift input.
+
+        The solid and its vertex balls are the sculpture's own
+        geometry, so they have to rise with it -- but the lift lives
+        inside the node group and moves only the modifier's result.
+        A driver keeps them together while Lift stays adjustable,
+        where baking the height in would strand them the moment it
+        was touched."""
+        fc = obj.driver_add("location", 2)
+        drv = fc.driver
+        drv.type = 'SCRIPTED'
+        var = drv.variables.new()
+        var.name = "lift"
+        var.type = 'SINGLE_PROP'
+        var.targets[0].id = sculpt
+        var.targets[0].data_path = (f'modifiers["{mod_name}"]'
+                                    f'["{socket}"]')
+        drv.expression = "lift"
+        return fc
+
     def _motif_material():
         name = "SymSculpt Motif"
         mat = bpy.data.materials.get(name)
@@ -1342,6 +1363,10 @@ if _IN_BLENDER:
             mod = obj.modifiers.new("Symmetric Sculpture", 'NODES')
             ng = _node_group()
             mod.node_group = ng
+            lift_socket = None
+            for item in ng.interface.items_tree:
+                if item.in_out == 'INPUT' and item.name == 'Lift':
+                    lift_socket = item.identifier
             for item in ng.interface.items_tree:
                 if item.in_out != 'INPUT':
                     continue
@@ -1401,6 +1426,13 @@ if _IN_BLENDER:
                     o.hide_render = True
                     o.parent = obj
                     o.matrix_parent_inverse = Matrix.Identity(4)
+                # the solid and its balls belong to the sculpture and
+                # rise with it; the discs belong to the flat guide
+                # diagram and stay down at the origin with it
+                if lift_socket is not None:
+                    for o in (solid, balls):
+                        _drive_z_from_lift(o, obj, mod.name,
+                                           lift_socket)
 
             for o in context.selected_objects:
                 o.select_set(False)

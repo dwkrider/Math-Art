@@ -452,6 +452,45 @@ print(f"[marks lie on guide lines] worst offset {worst:.2e} "
 if not ok:
     fails.append('marks-on-guides')
 
+# the solid and its balls rise with the sculpture and keep tracking
+# Lift afterwards; the guide marks belong to the flat diagram and
+# stay down at the origin with the motif and guides
+def _wz(o):
+    dg = bpy.context.evaluated_depsgraph_get()
+    return o.evaluated_get(dg).matrix_world.translation.z
+
+
+lift_now = get_input(bpy.context.object, 'Lift')
+sc_obj2 = bpy.context.object
+ok = (abs(_wz(solid) - lift_now) < 1e-5
+      and abs(_wz(balls) - lift_now) < 1e-5
+      and abs(_wz(discs)) < 1e-5)
+print(f"[polyhedron lifts] solid z={_wz(solid):.3f} "
+      f"balls z={_wz(balls):.3f} marks z={_wz(discs):.3f} "
+      f"(lift={lift_now:.3f}) {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('polyhedron-lift')
+
+set_input(sc_obj2, 'Lift', 9.0)
+ok = (abs(_wz(solid) - 9.0) < 1e-5 and abs(_wz(balls) - 9.0) < 1e-5
+      and abs(_wz(discs)) < 1e-5)
+print(f"[polyhedron tracks lift] solid z={_wz(solid):.3f}(9.000) "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('polyhedron-lift-track')
+
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS',
+                                       show_polyhedron=True,
+                                       lift=False)
+sv = [o for o in bpy.data.objects
+      if o.name.startswith('SymSculpt Polyhedron')][0]
+ok = abs(_wz(sv)) < 1e-5
+print(f"[polyhedron unlifted] z={_wz(sv):.3f}(0.000) "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('polyhedron-unlifted')
+
 # off by default
 clear()
 bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS')
