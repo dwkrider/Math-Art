@@ -69,7 +69,7 @@
 
 import numpy as np
 
-ANALYTIC_KINDS = ('VESICA', 'KOMAN_CURL')
+ANALYTIC_KINDS = ('VESICA', 'KOMAN_CURL', 'KOMAN_SPIRAL')
 
 
 # ---------------------------------------------------------------- vesica
@@ -299,6 +299,81 @@ def build_koman_curl(panels=32, height=1.0, slide=-1.0, width=0.55,
         b0, b1 = rims[i + 1][side]
         _arch(V, F, np.asarray(V[a0]), np.asarray(V[a1]),
               np.asarray(V[b0]), np.asarray(V[b1]), slack[i], m)
+
+    return np.asarray(V, dtype=float), F
+
+
+def build_koman_spiral(blades=80, turn=None, growth=0.034, blade_len=1.70,
+                       blade_width=0.60, skew=0.70, lean=1.00,
+                       twist=0.0, samples=5, core=0.055):
+    """Koman's spiral developable: a coiling spine with blades off it.
+
+    THIS IS THE SCULPTURE, as against the closed wreath of
+    `build_koman_curl`.  Akgun et al.'s Figure 4 cuts the alternating
+    slits into a TRAPEZOID rather than a rectangle, so the ribbon tapers
+    and the coil never closes -- it winds outward as a logarithmic
+    spiral, which is what Koman's own metal pieces are (their Figures 2
+    and 4C).  The paper's account of how: hold the turn per panel `a`
+    constant and shrink the size exponentially along the strip, which is
+    what they conclude Koman did.
+
+    The uncut part of the sheet is a SPINE that coils, and each slit
+    strip is a blade springing from it.  Blades stay planar -- that is
+    the paper's own "blue pieces stay planar", and it is what keeps the
+    surface developable -- so the twisting look of the metal sculptures
+    comes from each blade being turned a little further round the coil
+    than the last, not from bending any one of them.
+
+    Every length scales with the local spiral radius, so the form is
+    self-similar: `blade_len`, `blade_width` and `spine` are all given
+    as multiples of it.  `twist` rotates a blade's far edge against its
+    root for the look of the metal pieces; it is off by default because
+    a twisted blade is a hyperbolic paraboloid, no longer developable
+    and no longer something you can cut from flat stock.
+    """
+    n = max(3, int(blades))
+    a = (2.0 * np.pi / 30.0) if turn is None else float(turn)
+    g = 1.0 + float(growth)
+    m = max(1, int(samples))
+    r = max(float(core), 1e-4)
+
+    V = []
+    F = []
+    roots = []                              # (inner, outer) of each root edge
+
+    for i in range(n):
+        th = i * a
+        er = np.array([np.cos(th), np.sin(th), 0.0])
+        et = np.array([-np.sin(th), np.cos(th), 0.0])
+        u = np.cos(skew) * er + np.sin(skew) * et       # blade long axis
+        vp = -np.sin(skew) * er + np.cos(skew) * et     # blade width, in plane
+        v = np.cos(lean) * vp + np.sin(lean) * np.array([0.0, 0.0, 1.0])
+        B = r * er
+        L, W = blade_len * r, blade_width * r
+
+        base = len(V)
+        for j in range(m + 1):
+            t = j / m
+            # the twist turns the width axis about the blade's own long
+            # axis as we run out along it (Rodrigues about u)
+            ang = twist * t
+            vt = (v * np.cos(ang) + np.cross(u, v) * np.sin(ang)
+                  + u * float(np.dot(u, v)) * (1.0 - np.cos(ang)))
+            root = B + L * t * u
+            V.append(root)
+            V.append(root + W * vt)
+        for j in range(m):
+            q = base + 2 * j
+            F.append((q, q + 2, q + 3, q + 1))
+        roots.append((base, base + 1))
+        r *= g
+
+    # the spine: the uncut band of the sheet, joining each blade's root
+    # to the next.  It is what makes the whole thing one piece of paper.
+    for i in range(n - 1):
+        a0, a1 = roots[i]
+        b0, b1 = roots[i + 1]
+        F.append((a0, b0, b1, a1))
 
     return np.asarray(V, dtype=float), F
 
@@ -542,6 +617,68 @@ def _selftest():
     ok &= good
     print(f"analytic: koman growth opens the ring into a spiral "
           f"({r.max():.2f} -> {rs.max():.2f}) {'OK' if good else 'FAIL'}")
+
+    # --- the spiral (Koman's actual sculpture) ---
+
+    def blade_spine_planarity(tw, nb=40, sm=5):
+        V, F = build_koman_spiral(blades=nb, samples=sm, twist=tw)
+
+        def worst(fs):
+            w = 0.0
+            for f in fs:
+                P = V[list(f)]
+                nrm = np.cross(P[1] - P[0], P[2] - P[0])
+                ln = float(np.linalg.norm(nrm))
+                if ln < 1e-14:
+                    continue
+                w = max(w, abs(float(np.dot(nrm / ln, P[3] - P[0])))
+                        / max(float(np.linalg.norm(P[1] - P[0])), 1e-12))
+            return w
+        return worst(F[:nb * sm]), worst(F[nb * sm:])
+
+    flat_b, _ = blade_spine_planarity(0.0)
+    twist_b, _ = blade_spine_planarity(0.8)
+
+    # The blades must be EXACTLY planar untwisted.  That is the paper's
+    # own "blue pieces stay planar", and it is what makes the sculpture
+    # cuttable from flat stock -- the spiral look comes from each blade
+    # being turned further round the coil, never from bending one.
+    good = flat_b < 1e-9
+    ok &= good
+    print(f"analytic: koman spiral blades exactly planar ({flat_b:.2e}) "
+          f"{'OK' if good else 'FAIL'}")
+
+    # ... and `twist` really does trade that away, which is why it is
+    # off by default; asserting it keeps the docstring honest
+    good = twist_b > 1e-2
+    ok &= good
+    print(f"analytic: koman spiral twist forfeits developability "
+          f"({twist_b:.2e}) {'OK' if good else 'FAIL'}")
+
+    # the coil is logarithmic: every blade sits at a constant ratio
+    # further out than the last, which is the exponential shrink of h
+    # the paper attributes to Koman
+    gr = 0.05
+    Vs, _ = build_koman_spiral(blades=30, growth=gr, samples=1,
+                               blade_len=0.0, blade_width=0.0)
+    # each blade emits 2*(samples+1) vertices, so this is its root
+    rr = np.linalg.norm(Vs[::4, :2], axis=1)
+    ratio = rr[1:] / np.maximum(rr[:-1], 1e-15)
+    good = float(np.max(np.abs(ratio - (1.0 + gr)))) < 1e-9
+    ok &= good
+    print(f"analytic: koman spiral is logarithmic (ratio spread "
+          f"{float(np.max(np.abs(ratio - (1 + gr)))):.2e}) "
+          f"{'OK' if good else 'FAIL'}")
+
+    # and unlike the wreath it does NOT close: it keeps winding, and
+    # grows by a large factor doing it
+    V2, F2 = build_koman_spiral()
+    r2 = np.linalg.norm(V2[:, :2], axis=1)
+    good = (len(F2) > 0 and np.all(np.isfinite(V2))
+            and r2.max() / max(r2.min(), 1e-12) > 5.0)
+    ok &= good
+    print(f"analytic: koman spiral winds open (radius x"
+          f"{r2.max()/max(r2.min(),1e-12):.0f}) {'OK' if good else 'FAIL'}")
 
     # the arc solver must invert sin(x)/x correctly -- it is what sets
     # how far each shortened panel bows

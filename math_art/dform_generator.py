@@ -106,6 +106,10 @@ if _IN_BLENDER:
                     "meet, giving one cylindrical and two conical "
                     "patches with curved creases (Mundilova and Wills). "
                     "Exact -- no solver"),
+                   ('KOMAN_SPIRAL', "Koman Spiral Sculpture",
+                    "Ilhan Koman's spiral developable: a coiling spine "
+                    "with flat blades springing off it, growing as a "
+                    "logarithmic spiral. Exact -- no solver"),
                    ('KOMAN_CURL', "Koman Curled Strip",
                     "Ilhan Koman's spiral developable: planar fins in "
                     "one plane with arched panels between them, each "
@@ -152,6 +156,22 @@ if _IN_BLENDER:
             name="Hole", default=0.45, min=0.05, max=2.0,
             description="Inner radius, as a fraction of the tongue "
                         "length")
+        lean: FloatProperty(
+            name="Blade Lean", default=1.0, min=0.0, max=1.57,
+            description="Tilt of each blade out of the coil plane")
+        blade_len: FloatProperty(
+            name="Blade Length", default=1.7, min=0.1, max=4.0,
+            description="Blade length as a multiple of the local "
+                        "spiral radius, so the form stays self-similar")
+        blade_width: FloatProperty(
+            name="Blade Width", default=0.6, min=0.05, max=2.0,
+            description="Blade width, also relative to the local radius")
+        twist: FloatProperty(
+            name="Blade Twist", default=0.0, min=0.0, max=1.5,
+            description="Turn each blade's far edge against its root, "
+                        "for the look of Koman's metal pieces. Note "
+                        "this forfeits developability -- a twisted "
+                        "blade can no longer be cut from flat stock")
         growth: FloatProperty(
             name="Spiral Growth", default=0.0, min=-0.12, max=0.12,
             description="Shrink or grow the tongues geometrically along "
@@ -261,12 +281,15 @@ if _IN_BLENDER:
                     panels=self.panels,
                     slide=(-1.0 if self.close_ring else self.slide),
                     growth=self.growth, skew=self.skew, hole=self.hole,
-                    tilt=self.tilt)
+                    tilt=self.tilt, lean=self.lean,
+                    blade_len=self.blade_len,
+                    blade_width=self.blade_width, twist=self.twist)
             except Exception as exc:  # noqa: BLE001 - report, never crash
                 self.report({'ERROR'}, f"D-form failed: {exc}")
                 return {'CANCELLED'}
 
             name = {'VESICA': "Vesica Fold", 'ANTI': "Anti-D-Form",
+                    'KOMAN_SPIRAL': "Koman Spiral",
                     'KOMAN_CURL': "Koman Curl"}.get(self.mode, "D-Form")
             obj = self._mesh_object(context, name, d.verts, d.faces)
             if self.sharp_seam:
@@ -310,6 +333,13 @@ if _IN_BLENDER:
                     f"V={len(d.verts)} F={len(d.faces)}  exact fold, "
                     f"u={s['u']:.2f}  h_max={s['h_max']:.3f}  "
                     f"circular creases at h={s['h_circular']:.3f}")
+            elif self.mode == 'KOMAN_SPIRAL':
+                self.report(
+                    {'INFO'},
+                    f"V={len(d.verts)} F={len(d.faces)}  exact, "
+                    f"{s['blades']} blades, growth {s['growth']:.3f}"
+                    + ("  (twisted: not developable)"
+                       if s['twist'] > 0 else "  (blades planar)"))
             else:
                 self.report(
                     {'INFO'},
@@ -401,6 +431,16 @@ if _IN_BLENDER:
                 lay.separator()
                 lay.prop(self, 'vesica_u')
                 lay.prop(self, 'vesica_h')
+                lay.prop(self, 'segments')
+            elif self.mode == 'KOMAN_SPIRAL':
+                lay.separator()
+                lay.prop(self, 'panels', text="Blades")
+                lay.prop(self, 'growth')
+                lay.prop(self, 'skew')
+                lay.prop(self, 'lean')
+                lay.prop(self, 'blade_len')
+                lay.prop(self, 'blade_width')
+                lay.prop(self, 'twist')
                 lay.prop(self, 'segments')
             else:
                 lay.separator()
