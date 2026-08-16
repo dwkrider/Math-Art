@@ -96,6 +96,11 @@ if _IN_BLENDER:
             items=[('SEAM', "Seam (two sheets)",
                     "The classic D-form: two flat pieces of equal "
                     "perimeter glued edge to edge. Solved for"),
+                   ('ANTI', "Anti (holes joined)",
+                    "John Sharp's anti-D-form: two annuli glued along "
+                    "their HOLE edges with the outer rims left free -- "
+                    "an open saddle collar, not convex, carrying -4*pi "
+                    "on the seam. Solved for"),
                    ('VESICA', "Folded Vesica Piscis",
                     "Two overlapping discs folded so their boundaries "
                     "meet, giving one cylindrical and two conical "
@@ -181,6 +186,22 @@ if _IN_BLENDER:
                         "it is no longer convex and the D-form theorems "
                         "no longer apply")
 
+        hole_kind_a: EnumProperty(
+            name="Hole A", items=_CURVE_ITEMS, default='ELLIPSE',
+            description="Outline of the first piece's hole. In ANTI the "
+                        "HOLES are glued, so these two are the pair "
+                        "whose perimeters get matched")
+        hole_kind_b: EnumProperty(
+            name="Hole B", items=_CURVE_ITEMS, default='ELLIPSE')
+        hole_aspect_a: FloatProperty(
+            name="Hole A Aspect", default=0.6, min=0.1, max=1.0)
+        hole_aspect_b: FloatProperty(
+            name="Hole B Aspect", default=1.0, min=0.1, max=1.0)
+        hole_scale: FloatProperty(
+            name="Hole Size", default=0.4, min=0.1, max=0.8,
+            description="Hole size relative to the rim. Clamped so the "
+                        "hole always fits inside its own piece")
+
         segments: IntProperty(
             name="Seam Segments", default=72, min=16, max=240,
             description="Vertices shared by the two pieces along the seam")
@@ -231,6 +252,11 @@ if _IN_BLENDER:
                     corner=self.corner, cassini=self.cassini,
                     segments=self.segments, join_offset=self.join_offset,
                     flip=self.flip, quality=self.quality, scale=self.scale,
+                    hole_kind_a=self.hole_kind_a,
+                    hole_kind_b=self.hole_kind_b,
+                    hole_aspect_a=self.hole_aspect_a,
+                    hole_aspect_b=self.hole_aspect_b,
+                    hole_scale=self.hole_scale,
                     vesica_u=self.vesica_u, vesica_h=self.vesica_h,
                     panels=self.panels,
                     slide=(-1.0 if self.close_ring else self.slide),
@@ -240,7 +266,7 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, f"D-form failed: {exc}")
                 return {'CANCELLED'}
 
-            name = {'VESICA': "Vesica Fold",
+            name = {'VESICA': "Vesica Fold", 'ANTI': "Anti-D-Form",
                     'KOMAN_CURL': "Koman Curl"}.get(self.mode, "D-Form")
             obj = self._mesh_object(context, name, d.verts, d.faces)
             if self.sharp_seam:
@@ -267,6 +293,17 @@ if _IN_BLENDER:
                     f"{100*s['strain']:.2f}%  seam curvature "
                     f"{s['mu_total']/3.14159265:.2f}pi (4pi ideal)  "
                     f"{s['iterations']} its")
+            elif self.mode == 'ANTI':
+                # `crossings` is the honest number: the two sheets are
+                # zero-thickness here and real paper rests in contact,
+                # so they pass through each other in places
+                self.report(
+                    {'INFO'},
+                    f"V={len(d.verts)} F={len(d.faces)}  strain "
+                    f"{100*s['strain']:.2f}%  seam curvature "
+                    f"{s['mu_total']/3.14159265:.2f}pi (-4pi ideal)  "
+                    f"folds p99 {s.get('fold_p99', 0.0):.0f} deg  "
+                    f"{s.get('crossings', 0)} sheet crossings")
             elif self.mode == 'VESICA':
                 self.report(
                     {'INFO'},
@@ -337,13 +374,23 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'mode')
 
-            if self.mode == 'SEAM':
-                col = lay.column(heading="Outlines")
+            if self.mode in ('SEAM', 'ANTI'):
+                head = "Rims" if self.mode == 'ANTI' else "Outlines"
+                col = lay.column(heading=head)
                 col.prop(self, 'kind_a')
                 self._curve_knobs(col, self.kind_a, 'a')
                 col.separator()
                 col.prop(self, 'kind_b')
                 self._curve_knobs(col, self.kind_b, 'b')
+
+                if self.mode == 'ANTI':
+                    col = lay.column(heading="Holes (these are glued)")
+                    col.prop(self, 'hole_kind_a')
+                    col.prop(self, 'hole_aspect_a')
+                    col.separator()
+                    col.prop(self, 'hole_kind_b')
+                    col.prop(self, 'hole_aspect_b')
+                    col.prop(self, 'hole_scale')
 
                 lay.separator()
                 lay.prop(self, 'join_offset')
@@ -369,7 +416,7 @@ if _IN_BLENDER:
 
             lay.separator()
             lay.prop(self, 'scale')
-            if self.mode == 'SEAM':
+            if self.mode in ('SEAM', 'ANTI'):
                 lay.prop(self, 'make_net')
                 lay.prop(self, 'colour_mu')
             lay.prop(self, 'shade_smooth')
