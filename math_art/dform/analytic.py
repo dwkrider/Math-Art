@@ -197,71 +197,138 @@ def koman_turn(d, h):
     return float(np.arctan2(2.0 * float(d), max(float(h), 1e-9)))
 
 
-def build_koman_curl(panels=24, height=1.0, slide=0.06, width=0.35,
-                     arch_samples=16, growth=0.0):
-    """Koman's curled strip: planar fins with arched panels between them.
+def koman_slide_to_close(n, h=1.0):
+    """The slide d that makes `n` panels close the ring exactly.
 
-    `height` is the strip height h and `slide` the amount 2d/2 by which
-    each planar panel slides under its neighbour, so the turn per panel
-    is Eq. (1)'s a = arctan(2d/h) and `panels` of them sweep a*panels.
-    With `growth` non-zero the slide grows geometrically along the
-    strip, which is how the ring opens into a spiral -- the paper varies
-    d (or, it argues, h as Koman himself did) for exactly this.
+    Akgun et al. note that a = 2*pi/n closes the arc into a regular
+    n-gon with n the number of panels; inverting their Eq. 1 gives the
+    slide that does it, d = h tan(a) / 2.  Driving the sculpture from
+    the panel count is much the better handle -- pick d directly and
+    the ring almost never closes.
+    """
+    # a = 2*pi/n, and d = h tan(a) / 2.  n >= 5 keeps a under a right
+    # angle, where the tangent runs away
+    a = 2.0 * np.pi / max(int(n), 5)
+    return 0.5 * float(h) * float(np.tan(a))
 
-    The arched panels are cylinder patches: an arc of flat length L
-    bridging a chord shortened to L - 2d, extruded radially.  That keeps
-    every panel developable, which is the whole point of the sculpture.
+
+def build_koman_curl(panels=32, height=1.0, slide=-1.0, width=0.55,
+                     arch_samples=10, growth=0.0, skew=0.5, hole=0.45,
+                     tilt=0.42, thickness=0.004):
+    """Koman's curled strip: a slit sheet coiled into an overlapping ring.
+
+    THE SHEET IS ONE PIECE.  Akgun et al.'s Figure 3 cuts a rectangle
+    with slits from alternating edges, which turns it into a single long
+    serpentine ribbon; coiling that ribbon is the sculpture.  Every
+    segment of it -- a "tongue" -- stays flat and is pressed into a
+    common plane, each rotated from the last by
+    a = arctan(2d/h) (their Eq. 1), so the tongues overlap like a fanned
+    deck of cards around a central hole and `panels` of them sweep a
+    ring of radius about h/2 (their Eq. 2).
+
+    The paper between two tongues is the part that cannot stay flat.
+    Sliding each tongue under its neighbour by 2d leaves that connector
+    longer than the gap it has to bridge, so it buckles into an arch --
+    those arches are the only genuinely curved surfaces here, and the
+    ribbon being serpentine, they alternate between the outer and the
+    inner rim.
+
+    `skew` swings each tongue away from radial, which is what gives the
+    pinwheel; `growth` grows the slide along the ribbon so the ring
+    opens into a spiral, as Koman's own sculptures do.  `thickness`
+    stacks the tongues by a sheet's worth each so the overlaps read as
+    layers rather than as coincident faces -- a real coil closes
+    slightly out of plane for the same reason.
     """
     n = max(3, int(panels))
     h = max(float(height), 1e-3)
-    w = max(float(width), 1e-4)
-    m = max(4, int(arch_samples))
+    l = max(float(width), 0.05) * h        # tongue width along the ribbon
+    r_in = max(float(hole), 0.02) * h
+    m = max(3, int(arch_samples))
+    step = float(thickness) * h
+    # a negative slide means "whatever closes the ring", which is what
+    # anyone actually wants; a chosen d leaves the ring open at some
+    # arbitrary angle, as 24 panels at d = 0.06 does (164 degrees)
+    if slide is None or float(slide) < 0.0:
+        slide = koman_slide_to_close(n, h)
 
     V = []
     F = []
+    rims = []                              # (outer edge, inner edge) per tongue
+    slack = []                             # each tongue's own 2d
     ang = 0.0
-    d = max(float(slide), 1e-5)
-    r_in = 0.05 * h
-    r_out = r_in + h
+    d0 = max(float(slide), 1e-5)
+    g = 1.0
 
-    def quad(a, b, c, dd):
-        F.append((a, b, c, dd))
+    for i in range(n):
+        # The SPIRAL comes from shrinking h, not from d.  The paper is
+        # explicit: keep a constant (which means holding h/d fixed) and
+        # vary the size, and Koman himself "shrank h exponentially".
+        # Since the ring radius goes as h/2, that is what walks the
+        # tongues inward; scaling d alone only changes the turn rate and
+        # leaves every tongue on the same circle.
+        hi, li, ri, di = h * g, l * g, r_in * g, d0 * g
+        c, s = np.cos(ang), np.sin(ang)
+        u = np.array([np.cos(ang + skew), np.sin(ang + skew), 0.0])
+        # each tongue LEANS: it is lying on top of the ones before it,
+        # so its trailing edge rides up on them.  Coplanar tongues merge
+        # into one flat annulus in a render and the fanned-deck reading
+        # -- which is what the sculpture looks like -- disappears.
+        v = np.array([-np.sin(ang + skew) * np.cos(tilt),
+                      np.cos(ang + skew) * np.cos(tilt),
+                      np.sin(tilt)])
+        base = np.array([ri * c, ri * s, i * step])
+        p0 = base
+        p1 = base + hi * u
+        p2 = p1 + li * v
+        p3 = base + li * v
+        k = len(V)
+        V.extend([p0, p1, p2, p3])
+        F.append((k, k + 1, k + 2, k + 3))
+        rims.append(((k + 1, k + 2), (k, k + 3)))
+        slack.append(2.0 * di)
+        ang += koman_turn(di, hi)          # constant while h/d is
+        g *= (1.0 + float(growth))
 
-    for p in range(n):
-        a = koman_turn(d, h)
-        # the flat panel, radial, in the z = 0 plane
-        c0, s0 = np.cos(ang), np.sin(ang)
-        base = len(V)
-        V.extend([np.array([r_in * c0, r_in * s0, 0.0]),
-                  np.array([r_out * c0, r_out * s0, 0.0]),
-                  np.array([r_out * c0, r_out * s0, w]),
-                  np.array([r_in * c0, r_in * s0, w])])
-        quad(base, base + 1, base + 2, base + 3)
-
-        # the arch between this panel and the next: a circular arc whose
-        # flat length is the panel pitch and whose chord is 2d shorter
-        ang2 = ang + a
-        c1, s1 = np.cos(ang2), np.sin(ang2)
-        chord = np.linalg.norm(np.array([r_out * c1 - r_out * c0,
-                                         r_out * s1 - r_out * s0]))
-        L = chord + 2.0 * d
-        theta = _arc_angle(chord, L)
-        arc = _arc_points(np.array([r_in * c0, r_in * s0, 0.0]),
-                          np.array([r_in * c1, r_in * s1, 0.0]),
-                          np.array([r_out * c0, r_out * s0, 0.0]),
-                          np.array([r_out * c1, r_out * s1, 0.0]),
-                          theta, m)
-        top = len(V)
-        V.extend(arc + np.array([0.0, 0.0, w]))
-        bot = len(V)
-        V.extend(arc)
-        for i in range(m - 1):
-            quad(bot + i, bot + i + 1, top + i + 1, top + i)
-
-        ang = ang2
-        d *= (1.0 + float(growth))
+    # the connectors: tongue i hands over to tongue i+1 at the outer rim
+    # when i is even and at the inner rim when it is odd, because the
+    # ribbon runs out, back, out, back through the slit sheet
+    for i in range(n - 1):
+        side = 0 if i % 2 == 0 else 1
+        a0, a1 = rims[i][side]
+        b0, b1 = rims[i + 1][side]
+        _arch(V, F, np.asarray(V[a0]), np.asarray(V[a1]),
+              np.asarray(V[b0]), np.asarray(V[b1]), slack[i], m)
 
     return np.asarray(V, dtype=float), F
+
+
+def _arch(V, F, a0, a1, b0, b1, slack, m):
+    """A quad strip from edge (a0,a1) to edge (b0,b1), bowed up by
+    `slack` of extra paper.
+
+    The two edges are a turn apart, so the straight bridge between them
+    is shorter than the paper that has to span it; the surplus goes into
+    a circular bow.  Ruling the strip straight across keeps it a
+    cylinder patch, so the connector stays developable.
+    """
+    chord = 0.5 * (float(np.linalg.norm(b0 - a0))
+                   + float(np.linalg.norm(b1 - a1)))
+    rise = 0.0
+    if chord > 1e-9 and slack > 1e-12:
+        th = _arc_angle(chord, chord + slack)
+        R = chord / (2.0 * max(np.sin(th), 1e-9))
+        rise = R * (1.0 - np.cos(th))
+    up = np.array([0.0, 0.0, 1.0])
+    base = len(V)
+    for j in range(m + 1):
+        t = j / m
+        lift = up * (rise * np.sin(np.pi * t))
+        V.append(a0 + t * (b0 - a0) + lift)
+        V.append(a1 + t * (b1 - a1) + lift)
+    for j in range(m):
+        q = base + 2 * j
+        F.append((q, q + 2, q + 3, q + 1))
 
 
 def _arc_angle(chord, length):
@@ -440,22 +507,41 @@ def _selftest():
     print(f"analytic: koman ring radius ~ h/2 (got {r:.4f} for h/2="
           f"{h/2:.4f}) {'OK' if good else 'FAIL'}")
 
-    # the curl builds, and its panels are developable (they are planar
-    # fins and cylinder patches, so every interior angle sum is flat)
-    V, F = build_koman_curl(panels=18, growth=0.0)
-    good = len(V) > 0 and len(F) > 0 and np.all(np.isfinite(V))
+    # the derived slide must CLOSE the ring, for every panel count.
+    # Choosing d by hand almost never does -- the 24 panels at d = 0.06
+    # that looked like a D-form generator bug swept only 164 degrees --
+    # so this is the gate that keeps the default honest.
+    worst = 0.0
+    for n in (8, 16, 24, 32, 48, 90):
+        d = koman_slide_to_close(n)
+        worst = max(worst, abs(koman_turn(d, 1.0) * n - 2 * np.pi))
+    good = worst < 1e-9
     ok &= good
-    print(f"analytic: koman curl builds V={len(V)} F={len(F)} "
+    print(f"analytic: koman panels close a full turn (worst {worst:.2e} "
+          f"rad) {'OK' if good else 'FAIL'}")
+
+    # ... and the built ring really is an annulus: a central hole, and
+    # a flat wreath rather than a tube
+    V, F = build_koman_curl(panels=24)
+    r = np.linalg.norm(V[:, :2], axis=1)
+    ext = V.max(axis=0) - V.min(axis=0)
+    good = (len(F) > 0 and np.all(np.isfinite(V))
+            and r.min() > 0.2 * r.max()          # a real hole
+            and abs(ext[0] - ext[1]) < 0.1 * ext[0]   # round
+            and ext[2] < 0.4 * ext[0])           # a wreath, not a tube
+    ok &= good
+    print(f"analytic: koman curl is a holed wreath (hole "
+          f"{r.min()/r.max():.2f} of radius, rise {ext[2]/ext[0]:.2f}) "
           f"{'OK' if good else 'FAIL'}")
 
     # a positive growth must actually open the ring into a spiral: the
-    # last panel has to sit further out than the first
-    Vs, _ = build_koman_curl(panels=18, growth=0.06)
-    r0 = float(np.linalg.norm(Vs[1][:2]))
-    r1 = float(np.linalg.norm(Vs[-1][:2]))
-    good = np.all(np.isfinite(Vs)) and abs(r1 - r0) >= 0.0
+    # tongues have to walk outward instead of returning to the start
+    Vs, _ = build_koman_curl(panels=24, growth=0.05)
+    rs = np.linalg.norm(Vs[:, :2], axis=1)
+    good = np.all(np.isfinite(Vs)) and rs.max() > 1.02 * r.max()
     ok &= good
-    print(f"analytic: koman growth opens the ring {'OK' if good else 'FAIL'}")
+    print(f"analytic: koman growth opens the ring into a spiral "
+          f"({r.max():.2f} -> {rs.max():.2f}) {'OK' if good else 'FAIL'}")
 
     # the arc solver must invert sin(x)/x correctly -- it is what sets
     # how far each shortened panel bows

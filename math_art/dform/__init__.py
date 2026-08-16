@@ -102,7 +102,7 @@ def _fit(V, scale):
 
 
 def _build_analytic(mode, segments, scale, vesica_u, vesica_h, panels,
-                    slide, growth):
+                    slide, growth, skew=0.5, hole=0.45, tilt=0.42):
     """The closed-form modes: no solver, no iteration, no convergence.
 
     These carry creases as well as a seam, so `seam` here means "every
@@ -127,10 +127,13 @@ def _build_analytic(mode, segments, scale, vesica_u, vesica_h, panels,
                  'segments': n}
     else:                                        # KOMAN_CURL
         V, F = analytic.build_koman_curl(
-            panels=panels, slide=slide, growth=growth,
-            arch_samples=max(6, n // 6))
+            panels=panels, slide=slide, growth=growth, skew=skew,
+            hole=hole, tilt=tilt, arch_samples=max(4, n // 10))
         seam, sharp = [], []
-        stats = {'turn_per_panel': analytic.koman_turn(slide, 1.0),
+        eff = (analytic.koman_slide_to_close(panels)
+               if slide is None or slide < 0 else slide)
+        stats = {'turn_per_panel': analytic.koman_turn(eff, 1.0),
+                 'slide': eff,
                  'panels': int(panels), 'growth': float(growth),
                  'segments': n}
     stats.update({'strain': 0.0, 'area_error': 0.0, 'interior_defect': 0.0,
@@ -146,7 +149,8 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
                 sides_a=3, sides_b=5, corner=0.35, cassini=1.6,
                 segments=72, join_offset=0.25, flip=False, quality=900,
                 scale=1.0, gap=0.08, vesica_u=0.5, vesica_h=-1.0,
-                panels=24, slide=0.06, growth=0.0):
+                panels=32, slide=-1.0, growth=0.0, skew=0.5,
+                hole=0.45, tilt=0.42):
     """Build a D-form and return it.
 
     `segments` is the seam resolution -- the number of vertices shared by
@@ -160,7 +164,8 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
     if mode in analytic.ANALYTIC_KINDS:
         return _build_analytic(mode, segments, scale, vesica_u=vesica_u,
                                vesica_h=vesica_h, panels=panels,
-                               slide=slide, growth=growth)
+                               slide=slide, growth=growth, skew=skew,
+                               hole=hole, tilt=tilt)
 
     n = max(16, int(segments))
     A = curves.curve_points(kind_a, aspect=aspect_a, super_n=super_n,

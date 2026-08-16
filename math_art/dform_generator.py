@@ -119,18 +119,40 @@ if _IN_BLENDER:
                         "circular; the fold only exists up to "
                         "h = 1 - u^2")
         panels: IntProperty(
-            name="Panels", default=24, min=3, max=160,
-            description="Number of planar fins around the curl")
+            name="Panels", default=32, min=5, max=160,
+            description="Tongues around the ring. With Close Ring on "
+                        "they always make exactly one full turn")
+        close_ring: BoolProperty(
+            name="Close Ring", default=True,
+            description="Derive the slide so the panels close a full "
+                        "turn (a = 2*pi/n). Off, the slide below is "
+                        "used as given and the ring stops wherever it "
+                        "happens to -- 24 panels at d = 0.06 only get "
+                        "164 degrees round")
         slide: FloatProperty(
-            name="Slide d", default=0.06, min=0.005, max=0.5,
-            description="How far each fin slides under its neighbour. "
-                        "The turn per panel is arctan(2d/h), so this "
-                        "sets how tightly the strip curls")
+            name="Slide d", default=0.10, min=0.005, max=0.5,
+            description="How far each tongue slides under its "
+                        "neighbour, when Close Ring is off. The turn "
+                        "per tongue is arctan(2d/h)")
+        skew: FloatProperty(
+            name="Pinwheel Skew", default=0.5, min=-1.4, max=1.4,
+            description="Swing each tongue away from radial, which is "
+                        "what makes the ring read as a pinwheel")
+        tilt: FloatProperty(
+            name="Tongue Lean", default=0.42, min=0.0, max=1.2,
+            description="How far each tongue leans as it rides up on "
+                        "the ones beneath it. At zero they lie coplanar "
+                        "and read as a solid disc")
+        hole: FloatProperty(
+            name="Hole", default=0.45, min=0.05, max=2.0,
+            description="Inner radius, as a fraction of the tongue "
+                        "length")
         growth: FloatProperty(
-            name="Spiral Growth", default=0.0, min=-0.15, max=0.15,
-            description="Grow the slide geometrically along the strip: "
-                        "0 closes a ring, non-zero opens it into a "
-                        "spiral (how Koman's own sculptures vary)")
+            name="Spiral Growth", default=0.0, min=-0.12, max=0.12,
+            description="Shrink or grow the tongues geometrically along "
+                        "the ribbon. The ring radius goes as h/2, so "
+                        "this is what opens it into a spiral -- and it "
+                        "is the parameter Koman himself varied")
 
         kind_a: EnumProperty(name="Piece A", items=_CURVE_ITEMS,
                              default='ELLIPSE')
@@ -210,8 +232,10 @@ if _IN_BLENDER:
                     segments=self.segments, join_offset=self.join_offset,
                     flip=self.flip, quality=self.quality, scale=self.scale,
                     vesica_u=self.vesica_u, vesica_h=self.vesica_h,
-                    panels=self.panels, slide=self.slide,
-                    growth=self.growth)
+                    panels=self.panels,
+                    slide=(-1.0 if self.close_ring else self.slide),
+                    growth=self.growth, skew=self.skew, hole=self.hole,
+                    tilt=self.tilt)
             except Exception as exc:  # noqa: BLE001 - report, never crash
                 self.report({'ERROR'}, f"D-form failed: {exc}")
                 return {'CANCELLED'}
@@ -334,7 +358,12 @@ if _IN_BLENDER:
             else:
                 lay.separator()
                 lay.prop(self, 'panels')
-                lay.prop(self, 'slide')
+                lay.prop(self, 'close_ring')
+                if not self.close_ring:
+                    lay.prop(self, 'slide')
+                lay.prop(self, 'skew')
+                lay.prop(self, 'tilt')
+                lay.prop(self, 'hole')
                 lay.prop(self, 'growth')
                 lay.prop(self, 'segments')
 
