@@ -881,9 +881,13 @@ if _IN_BLENDER:
             mat.blend_method = 'BLEND'
         return mat
 
-    # a viewport aid should not quietly build a hundred thousand
-    # spheres; the general plane families can reach that
+    # A viewport aid should not quietly build a hundred thousand
+    # spheres or hundreds of objects, and the general plane families
+    # reach both: Whimsy's undrawn pattern is 953 crossings in 325
+    # orbits over 19028 points.  Orbits are what you switch on and
+    # off, so they are capped in their own right, not just by points.
     _MAX_MARKS = 3000
+    _MAX_ORBITS = 24
 
     def _group_rgb(i):
         """Colour for orbit i.
@@ -1480,7 +1484,8 @@ if _IN_BLENDER:
                     sum(c * c for c in p) for p in pts_by_g[g]))
                 kept, total = [], 0
                 for g in order:
-                    if total + len(pts_by_g[g]) > _MAX_MARKS:
+                    if (len(kept) >= _MAX_ORBITS
+                            or total + len(pts_by_g[g]) > _MAX_MARKS):
                         continue
                     kept.append(g)
                     total += len(pts_by_g[g])
@@ -1488,27 +1493,36 @@ if _IN_BLENDER:
                 if dropped:
                     self.report(
                         {'WARNING'},
-                        f"{len(orbit)} crossing points is past the "
-                        f"{_MAX_MARKS} the aid draws -- showing "
-                        f"{len(kept)} orbits, holding back {dropped} "
-                        f"of the outer ones; raise Guide Rings or "
-                        f"lower Guide Extent to thin the pattern")
+                        f"{len(pts_by_g)} orbits over {len(orbit)} "
+                        f"points is past what the aid draws "
+                        f"({_MAX_ORBITS} orbits, {_MAX_MARKS} "
+                        f"points) -- showing the {len(kept)} nearest "
+                        f"the centre, holding back {dropped}; raise "
+                        f"Guide Rings or lower Guide Extent to thin "
+                        f"the pattern")
+
+                # Number what is actually shown, innermost first.  The
+                # orbit id is only a discovery order, so carrying the
+                # original through would label 55 objects with numbers
+                # running to 295 and read as missing ones.
+                label = {g: i for i, g in enumerate(kept)}
 
                 # one object per orbit, so a group can be switched off
                 # on its own from the outliner
                 orb_coll = bpy.data.collections.new("SymSculpt Orbits")
                 context.collection.children.link(orb_coll)
                 made = []
-                for g in sorted(kept):
+                for g in kept:
+                    i = label[g]
                     b = _build_marker_object(
-                        f"SymSculpt Orbit {g:02d} Balls",
-                        [(g, _ball(p, rball)) for p in pts_by_g[g]],
+                        f"SymSculpt Orbit {i:02d} Balls",
+                        [(i, _ball(p, rball)) for p in pts_by_g[g]],
                         0.45)
                     made.append((b, True))
                     if marks_by_g.get(g):
                         m = _build_marker_object(
-                            f"SymSculpt Orbit {g:02d} Marks",
-                            [(g, _disc((x, y, 1e-3 * d), rball))
+                            f"SymSculpt Orbit {i:02d} Marks",
+                            [(i, _disc((x, y, 1e-3 * d), rball))
                              for x, y in marks_by_g[g]], 1.0)
                         made.append((m, False))
                 for o, rides_lift in made:
@@ -1529,7 +1543,8 @@ if _IN_BLENDER:
                 self.report(
                     {'INFO'},
                     f"{len(cross)} guide crossings in "
-                    f"{len(pts_by_g)} orbits, {total} points in space")
+                    f"{len(pts_by_g)} orbits; drawing {len(kept)} of "
+                    f"them, {total} points in space")
 
             for o in context.selected_objects:
                 o.select_set(False)

@@ -18,6 +18,12 @@ fails = []
 def clear():
     for o in list(bpy.data.objects):
         bpy.data.objects.remove(o, do_unlink=True)
+    # collections outlive their objects, so a leftover empty
+    # "SymSculpt Orbits" would shadow the next run's, which then
+    # lands as "...001"
+    for c in list(bpy.data.collections):
+        if c.name.startswith('SymSculpt'):
+            bpy.data.collections.remove(c)
 
 
 def set_input(obj, name, val):
@@ -482,7 +488,44 @@ print(f"[orbits are equidistant] {'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('orbit-radius')
 
+# orbit numbering must describe what is actually there: contiguous
+# from 00, innermost first, never the raw discovery index
+ids = sorted(int(o.name.split()[2]) for o in ball_objs)
+inner = [min(v.co.length for v in
+             bpy.data.objects[f"SymSculpt Orbit {i:02d} Balls"]
+             .data.vertices) for i in ids]
+ok = ids == list(range(len(ids))) and inner == sorted(inner)
+print(f"[orbit numbering] ids 0..{ids[-1]} contiguous, "
+      f"innermost first {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('orbit-numbering')
+
+# the general planes run to hundreds of orbits, so the aid caps them
+# and says so rather than filling the outliner
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='WHIMSY',
+                                       show_polyhedron=True)
+cap = [o for o in bpy.data.collections['SymSculpt Orbits'].objects
+       if o.name.endswith('Balls')]
+cap_ids = sorted(int(o.name.split()[2]) for o in cap)
+ok = (len(cap) == ss._MAX_ORBITS
+      and cap_ids == list(range(len(cap))))
+print(f"[orbit cap] {len(cap)}({ss._MAX_ORBITS}) orbits, "
+      f"ids 0..{cap_ids[-1]} {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('orbit-cap')
+
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS',
+                                       show_polyhedron=True)
+orb_coll = bpy.data.collections['SymSculpt Orbits']
+ball_objs = sorted((o for o in orb_coll.objects
+                    if o.name.endswith('Balls')), key=lambda o: o.name)
+mark_objs = sorted((o for o in orb_coll.objects
+                    if o.name.endswith('Marks')), key=lambda o: o.name)
 balls, discs = ball_objs[0], mark_objs[0]
+solid = [o for o in bpy.data.objects
+         if o.name.startswith('SymSculpt Polyhedron')][0]
 
 # EVERY disc sits on a real crossing -- this is what the old
 # vertex-based marks got wrong on the general planes, where most of
