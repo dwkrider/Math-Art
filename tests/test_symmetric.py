@@ -29,6 +29,15 @@ def set_input(obj, name, val):
     bpy.context.view_layer.update()
 
 
+def get_input(obj, name):
+    """Read one of the modifier's group inputs by name."""
+    mod = obj.modifiers[0]
+    for it in mod.node_group.interface.items_tree:
+        if it.name == name and it.in_out == 'INPUT':
+            return mod[it.identifier]
+    return None
+
+
 def set_full(obj, val):
     """Toggle the modifier's Full Sculpture input."""
     set_input(obj, 'Full Sculpture', val)
@@ -81,24 +90,47 @@ print(f"[points] {len(sc_obj.data.vertices)}(60) "
 if not ok:
     fails.append('points')
 
-# design view: the motif's own copy is dropped (59 ghosts), shell
-# 0.04 doubles each copy's verts; ghost material on the copies
-deps = bpy.context.evaluated_depsgraph_get()
-ev = sc_obj.evaluated_get(deps).to_mesh()
-ok = len(ev.vertices) == 59 * mv * 2 \
-    and any(m and m.name == 'SymSculpt Copies' for m in ev.materials)
-print(f"[design view] {len(ev.vertices)}({59 * mv * 2}) ghost mat "
-      f"{'OK' if ok else 'FAIL'}")
-if not ok:
-    fails.append('design')
-
-# Full Sculpture: all 60 copies, motif's own material
-set_full(sc_obj, True)
+# default view: lifted, so all 60 copies are kept and none is ghosted
+# -- shell 0.04 doubles each copy's verts
 deps = bpy.context.evaluated_depsgraph_get()
 ev = sc_obj.evaluated_get(deps).to_mesh()
 ok = len(ev.vertices) == 60 * mv * 2 \
     and not any(m and m.name == 'SymSculpt Copies'
-                for m in ev.materials)
+                for m in ev.materials) \
+    and min(v.co.z for v in ev.vertices) > 0.0
+print(f"[default view] {len(ev.vertices)}({60 * mv * 2}) opaque lifted "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('default-view')
+
+# Translucent is its own switch now, independent of Full Sculpture:
+# it only swaps the material, never the copy count
+set_input(sc_obj, 'Translucent', True)
+deps = bpy.context.evaluated_depsgraph_get()
+ev = sc_obj.evaluated_get(deps).to_mesh()
+ok = len(ev.vertices) == 60 * mv * 2 \
+    and any(m and m.name == 'SymSculpt Copies' for m in ev.materials)
+print(f"[translucent on] {len(ev.vertices)}({60 * mv * 2}) ghost mat "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('translucent-on')
+set_input(sc_obj, 'Translucent', False)
+
+# unlifted + Full Sculpture off: the motif's own copy is dropped so
+# the Motif object stands alone in its plane (59 copies)
+set_input(sc_obj, 'Lift', 0.0)
+deps = bpy.context.evaluated_depsgraph_get()
+ev = sc_obj.evaluated_get(deps).to_mesh()
+ok = len(ev.vertices) == 59 * mv * 2
+print(f"[unlifted hides motif copy] {len(ev.vertices)}"
+      f"({59 * mv * 2}) {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('unlifted-hide')
+
+set_full(sc_obj, True)
+deps = bpy.context.evaluated_depsgraph_get()
+ev = sc_obj.evaluated_get(deps).to_mesh()
+ok = len(ev.vertices) == 60 * mv * 2
 print(f"[full sculpture] {len(ev.vertices)}({60 * mv * 2}) "
       f"{'OK' if ok else 'FAIL'}")
 if not ok:
@@ -170,7 +202,8 @@ for preset, fam, merged in (('TWISTED_RIVERS', 'P3', 0),
 # sculpture is already clear, so there is nothing to hide).
 clear()
 bpy.ops.object.symmetric_sculpture_add(preset='CUSTOM', group='ICOSA',
-                                       family='P3', shell=0.0)
+                                       family='P3', shell=0.0,
+                                       lift=False)
 so = bpy.context.object
 motif = [o for o in bpy.data.objects
          if o.name.startswith('SymSculpt Motif')][0]
@@ -205,7 +238,8 @@ if not ok:
 # shell it would change every point's distance from the origin
 clear()
 bpy.ops.object.symmetric_sculpture_add(preset='CUSTOM', group='ICOSA',
-                                       family='P3', shell=0.04)
+                                       family='P3', shell=0.04,
+                                       lift=False)
 so = bpy.context.object
 set_full(so, True)
 deps = bpy.context.evaluated_depsgraph_get()
@@ -223,5 +257,27 @@ ok = (len(flat) == len(up)
 print(f"[lift preserves shell] {'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('lift-shell')
+
+# operator defaults: lifted by 3.5x the plane distance, and opaque --
+# the checkbox scales with Plane Distance rather than being absolute
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='CUSTOM', group='ICOSA',
+                                       family='P3', distance=2.0)
+so = bpy.context.object
+lift_v, tr_v = get_input(so, 'Lift'), get_input(so, 'Translucent')
+ok = abs(lift_v - 7.0) < 1e-6 and not tr_v
+print(f"[operator defaults] lift={lift_v:.2f}(7.00) "
+      f"translucent={bool(tr_v)}(False) {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('defaults')
+
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='CUSTOM', group='ICOSA',
+                                       family='P3', translucent=True)
+so = bpy.context.object
+ok = bool(get_input(so, 'Translucent'))
+print(f"[translucent checkbox] {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('translucent-checkbox')
 
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")

@@ -31,9 +31,10 @@
 # created:
 #
 #   SymSculpt         points + Geometry Nodes modifier (the result)
-#   SymSculpt Motif   flat mesh in the representative plane -- edit
-#                     this (edit mode, or move/rotate the object) and
-#                     every copy updates in real time
+#   SymSculpt Motif   flat mesh on the world XY plane -- edit this
+#                     (edit mode, or move/rotate the object) and every
+#                     copy updates in real time; the node group maps
+#                     it onto the representative plane
 #   SymSculpt Guides  wireframe stellation pattern: the lines where
 #                     the other planes of the family cut this one,
 #                     for snapping/drawing against, as in Hart's 2D
@@ -47,7 +48,9 @@
 # the replicated sculpture up +Z so it no longer surrounds the Motif
 # and Guides, which stay at the origin where they can be drawn on
 # (only the modifier result moves -- the objects themselves stay put,
-# so the sculpture keeps its true position for export).
+# so the sculpture keeps its true position for export); "Translucent"
+# swaps the copies onto a ghost material so the motif reads through
+# them, off by default.
 
 bl_info = {
     "name": "Symmetric Sculpture",
@@ -492,13 +495,14 @@ if _IN_BLENDER:
 
     def _node_group():
         """Get or build the replicator node group: instance the motif
-        object on the rotation points, ghost the copies (unless Full
-        Sculpture), realize, weld, and optionally extrude radially
-        from the origin (preserves planarity)."""
+        object on the rotation points, optionally ghost the copies
+        (Translucent), realize, weld, extrude radially from the origin
+        (preserves planarity), and lift the result clear of the
+        motif."""
         for ng in bpy.data.node_groups:
             if (ng.name.startswith(_NG_NAME)
                     and ng.type == 'GEOMETRY'
-                    and any(it.name == 'Lift'
+                    and any(it.name == 'Translucent'
                             for it in ng.interface.items_tree)):
                 return ng
         ng = bpy.data.node_groups.new(_NG_NAME, 'GeometryNodeTree')
@@ -516,10 +520,19 @@ if _IN_BLENDER:
         s = face("Full Sculpture", in_out='INPUT',
                  socket_type='NodeSocketBool')
         s.default_value = False
-        s.description = "Show all copies with the motif's own " \
-                        "material (for export/render); off = design " \
-                        "view with translucent copies and the " \
-                        "motif's own copy hidden"
+        s.description = "Keep the copy that coincides with the " \
+                        "editable Motif; off drops that one copy so " \
+                        "the Motif object stands alone in its plane. " \
+                        "Only has an effect while Lift is 0 -- a " \
+                        "lifted sculpture is already clear of the " \
+                        "motif, so every copy is kept"
+        s = face("Translucent", in_out='INPUT',
+                 socket_type='NodeSocketBool')
+        s.default_value = False
+        s.description = "Draw the replicated copies in the ghost " \
+                        "Copy Material instead of the motif's own, " \
+                        "so the editable motif reads through them. " \
+                        "Off = the sculpture's real material"
         s = face("Lift", in_out='INPUT', socket_type='NodeSocketFloat')
         s.default_value, s.min_value, s.max_value = 0.0, 0.0, 100.0
         s.description = "Raise the whole sculpture this far up +Z, " \
@@ -532,8 +545,8 @@ if _IN_BLENDER:
         s = face("Copy Material", in_out='INPUT',
                  socket_type='NodeSocketMaterial')
         s.default_value = _ghost_material()
-        s.description = "Material for the replicated copies in " \
-                        "design view"
+        s.description = "Material for the replicated copies while " \
+                        "Translucent is on"
         s = face("Plane Rotation", in_out='INPUT',
                  socket_type='NodeSocketVector')
         s.description = "Euler rotation mapping the motif's XY " \
@@ -620,9 +633,9 @@ if _IN_BLENDER:
         ln(na.outputs['Attribute'], iop.inputs['Rotation'])
         ln(iop.outputs['Instances'], sm.inputs['Geometry'])
         ln(gi.outputs['Copy Material'], sm.inputs['Material'])
-        ln(gi.outputs['Full Sculpture'], smw.inputs['Switch'])
-        ln(sm.outputs['Geometry'], smw.inputs['False'])
-        ln(iop.outputs['Instances'], smw.inputs['True'])
+        ln(gi.outputs['Translucent'], smw.inputs['Switch'])
+        ln(iop.outputs['Instances'], smw.inputs['False'])
+        ln(sm.outputs['Geometry'], smw.inputs['True'])
         ln(smw.outputs['Output'], ri.inputs['Geometry'])
         ln(ri.outputs['Geometry'], md.inputs['Geometry'])
         ln(gi.outputs['Weld'], md.inputs['Distance'])
@@ -719,12 +732,17 @@ if _IN_BLENDER:
             description="Radius of the guide pattern, in units of "
                         "the plane distance")
         lift: BoolProperty(
-            name="Lift Sculpture Clear of Motif", default=False,
+            name="Lift Sculpture Clear of Motif", default=True,
             description="Raise the sculpture up +Z so it stops "
                         "surrounding the Motif and Guides, which stay "
                         "at the origin where they can be seen and "
                         "edited. Tune the height afterwards with the "
                         "modifier's Lift input")
+        translucent: BoolProperty(
+            name="Translucent Copies", default=False,
+            description="Draw the replicated copies in a ghost "
+                        "material so the editable motif reads through "
+                        "them; off = the sculpture's real material")
         use_active: BoolProperty(
             name="Use Active Object as Motif", default=False,
             description="Place the active mesh object into the "
@@ -827,7 +845,9 @@ if _IN_BLENDER:
                 elif item.name == 'Lift':
                     # clear of the outermost plane by a good margin;
                     # still a live modifier input afterwards
-                    mod[item.identifier] = 2.5 * d if self.lift else 0.0
+                    mod[item.identifier] = 3.5 * d if self.lift else 0.0
+                elif item.name == 'Translucent':
+                    mod[item.identifier] = self.translucent
                 elif item.name == 'Plane Rotation':
                     mod[item.identifier] = list(plane_rot)
                 elif item.name == 'Plane Offset':
@@ -858,7 +878,7 @@ if _IN_BLENDER:
                 if self.preset == 'CUSTOM':
                     lay.prop(self, k)
             for k in ('distance', 'shell', 'guide_extent', 'lift',
-                      'use_active'):
+                      'translucent', 'use_active'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
