@@ -433,6 +433,17 @@ def _earclip(poly):
                 if j in (a, b, c):
                     continue
                 px, py = poly[j]
+                # Skip by POSITION, not just by index: bridging a hole
+                # into the outer loop duplicates two vertices, and a
+                # duplicate carries a different index while sitting
+                # exactly on the candidate ear's boundary -- counted
+                # as "inside", it would veto every ear in turn and
+                # stall the triangulation.
+                if ((abs(px - ax) < 1e-12 and abs(py - ay) < 1e-12)
+                        or (abs(px - bx) < 1e-12 and abs(py - by) < 1e-12)
+                        or (abs(px - cx) < 1e-12
+                            and abs(py - cy) < 1e-12)):
+                    continue
                 d1 = (bx - ax) * (py - ay) - (by - ay) * (px - ax)
                 d2 = (cx - bx) * (py - by) - (cy - by) * (px - bx)
                 d3 = (ax - cx) * (py - cy) - (ay - cy) * (px - cx)
@@ -448,6 +459,37 @@ def _earclip(poly):
     if len(idx) == 3:
         tris.append(tuple(idx))
     return tris
+
+
+def _bridge_holes(outer, holes):
+    """Splice each hole into the outer loop along a bridge, giving one
+    simple polygon that ear clipping can chew.
+
+    The outer loop must run counter-clockwise and each hole clockwise;
+    the hole is entered and left at the pair of vertices closest to
+    each other, and both are duplicated so the seam has zero width."""
+    poly = list(outer)
+    # rightmost holes first: bridging them outward-in keeps later
+    # bridges from having to cross an earlier seam
+    for hole in sorted(holes, key=lambda h: -max(p[0] for p in h)):
+        bi = bj = 0
+        best = None
+        for i, p in enumerate(poly):
+            for j, q in enumerate(hole):
+                dd = (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2
+                if best is None or dd < best:
+                    best, bi, bj = dd, i, j
+        ring = hole[bj:] + hole[:bj + 1]
+        poly = poly[:bi + 1] + ring + poly[bi:]
+    return poly
+
+
+def polygon_with_holes(outer, holes):
+    """(verts, faces) for a flat region bounded by `outer` with
+    `holes` cut out of it."""
+    poly = _bridge_holes(outer, holes)
+    verts = [(x, y, 0.0) for x, y in poly]
+    return verts, [list(t) for t in _earclip(poly)]
 
 
 def frabjous_motif(d=1.0):
@@ -508,52 +550,118 @@ def frabjous_motif(d=1.0):
     return verts, faces
 
 
+# Hart's Whimsy blade, traced from the laser-cutting template
+# (Asset 1.svg) and fitted into the face plane of the pentagonal
+# hexecontahedron.  Coordinates are the plane's local (x, y) in units
+# of the plane distance d.
+#
+# The fit is fixed by the piece itself, not chosen: the blade has two
+# sharp tips, and in the assembled sculpture five blades meet at each
+# of the twelve 5-fold hubs while three meet at each of the twenty
+# 3-fold corners (60 parts x 2 tips = 12x5 + 20x3 = 120).  So the
+# tips land on the piercings of the nearest 5-fold and 3-fold axes,
+# which fixes scale, rotation and position.  Which tip goes where is
+# settled by the tip angles -- 67.45 deg and 111.87 deg, against
+# 360/5 = 72 and 360/3 = 120 -- and the sharper tip's two straight
+# edges then reproduce the face pentagon's own corner at the hub to
+# within a quarter of a degree.  The reflection is settled the same
+# way: as traced, the tip edge follows the pentagon edge to within
+# 1.2 deg, where the mirror image is 22.4 deg out.
+#
+# Outline decimated (Douglas-Peucker, 0.05 svg units ~ 0.014% of the
+# blade's length), so the curves are visually exact.
+
+_WHIMSY_OUTER = (
+    (-0.06298, -0.43738), (-0.14110, -0.28131), (-0.14817, -0.28105),
+    (-0.15502, -0.28057), (-0.16229, -0.27976), (-0.16741, -0.27901),
+    (-0.17360, -0.27785), (-0.17897, -0.27663), (-0.18530, -0.27489),
+    (-0.18973, -0.27346), (-0.19452, -0.27169), (-0.20014, -0.26930),
+    (-0.20597, -0.26640), (-0.21057, -0.26378), (-0.21538, -0.26067),
+    (-0.21910, -0.25797), (-0.22266, -0.25513), (-0.22676, -0.25146),
+    (-0.22992, -0.24832), (-0.23384, -0.24393), (-0.23718, -0.23972),
+    (-0.24025, -0.23534), (-0.24355, -0.22997), (-0.24585, -0.22570),
+    (-0.24852, -0.21998), (-0.25016, -0.21591), (-0.25196, -0.21084),
+    (-0.25363, -0.20518), (-0.25514, -0.19892), (-0.25624, -0.19303),
+    (-0.25708, -0.18707), (-0.25771, -0.17998), (-0.25798, -0.17385),
+    (-0.25800, -0.16765), (-0.25758, -0.15828), (-0.25677, -0.14987),
+    (-0.25582, -0.14302), (-0.25399, -0.13297), (-0.25205, -0.12451),
+    (-0.24931, -0.11448), (-0.24631, -0.10504), (-0.24311, -0.09617),
+    (-0.23896, -0.08584), (-0.23557, -0.07818), (-0.23123, -0.06909),
+    (-0.22606, -0.05913), (-0.22056, -0.04933), (-0.21478, -0.03971),
+    (-0.20810, -0.02935), (-0.20176, -0.02011), (-0.19520, -0.01109),
+    (-0.18844, -0.00224), (-0.18080, +0.00726), (-0.17224, +0.01735),
+    (-0.16421, +0.02637), (-0.15454, +0.03672), (-0.14543, +0.04601),
+    (-0.13541, +0.05577), (-0.12446, +0.06596), (-0.11495, +0.07441),
+    (-0.10453, +0.08329), (-0.09645, +0.08993), (-0.08337, +0.10020),
+    (-0.07347, +0.10762), (-0.06263, +0.11540), (-0.05255, +0.12233),
+    (-0.10596, +0.24549), (-0.24018, +0.24179), (-0.26057, +0.20224),
+    (-0.26804, +0.18703), (-0.27474, +0.17265), (-0.27967, +0.16152),
+    (-0.28626, +0.14572), (-0.29170, +0.13174), (-0.29783, +0.11476),
+    (-0.30297, +0.09929), (-0.30812, +0.08244), (-0.31183, +0.06929),
+    (-0.31702, +0.04923), (-0.32096, +0.03239), (-0.32420, +0.01735),
+    (-0.32745, +0.00084), (-0.33097, -0.01934), (-0.33379, -0.03815),
+    (-0.33584, -0.05418), (-0.33773, -0.07206), (-0.33917, -0.08957),
+    (-0.34009, -0.10539), (-0.34077, -0.12393), (-0.34099, -0.13817),
+    (-0.34090, -0.15827), (-0.34040, -0.17714), (-0.33932, -0.19917),
+    (-0.33803, -0.21689), (-0.33632, -0.23444), (-0.33393, -0.25304),
+    (-0.33176, -0.26625), (-0.32949, -0.27772), (-0.32641, -0.29078),
+    (-0.32431, -0.29840), (-0.32164, -0.30710), (-0.31825, -0.31682),
+    (-0.31524, -0.32460), (-0.31199, -0.33228), (-0.30735, -0.34225),
+    (-0.30441, -0.34810), (-0.29938, -0.35748), (-0.29498, -0.36517),
+    (-0.28880, -0.37537), (-0.28334, -0.38397), (-0.27583, -0.39532),
+    (-0.26867, -0.40579), (-0.25856, -0.42014), (-0.23709, -0.44966),
+)
+
+_WHIMSY_HOLE_A = (
+    (-0.13295, +0.20310), (-0.10413, +0.13670), (-0.11649, +0.12718),
+    (-0.12628, +0.11932), (-0.13599, +0.11122), (-0.14560, +0.10289),
+    (-0.15512, +0.09432), (-0.16629, +0.08383), (-0.17443, +0.07589),
+    (-0.18248, +0.06773), (-0.19045, +0.05937), (-0.19830, +0.05079),
+    (-0.20603, +0.04199), (-0.21362, +0.03297), (-0.22105, +0.02371),
+    (-0.22830, +0.01421), (-0.23537, +0.00448), (-0.24223, -0.00551),
+    (-0.24887, -0.01575), (-0.25494, -0.02568), (-0.26046, -0.03529),
+    (-0.26574, -0.04510), (-0.27075, -0.05511), (-0.27546, -0.06530),
+    (-0.27984, -0.07567), (-0.28190, -0.08092), (-0.28574, -0.09155),
+    (-0.28917, -0.10233), (-0.29218, -0.11326), (-0.29351, -0.11877),
+    (-0.29581, -0.12991), (-0.29761, -0.14118), (-0.29860, -0.14966),
+    (-0.29927, -0.15812), (-0.29933, -0.13356), (-0.29908, -0.12139),
+    (-0.29862, -0.10922), (-0.29795, -0.09699), (-0.29706, -0.08466),
+    (-0.29504, -0.06370), (-0.29238, -0.04250), (-0.29031, -0.02860),
+    (-0.28855, -0.01797), (-0.28593, -0.00351), (-0.28374, +0.00755),
+    (-0.27878, +0.03023), (-0.27309, +0.05301), (-0.26680, +0.07525),
+    (-0.26004, +0.09658), (-0.25652, +0.10679), (-0.25244, +0.11790),
+    (-0.24905, +0.12668), (-0.24391, +0.13924), (-0.23536, +0.15867),
+    (-0.22536, +0.17958), (-0.21452, +0.20087),
+)
+
+_WHIMSY_HOLE_B = (
+    (-0.29598, -0.20694), (-0.29352, -0.21709), (-0.29037, -0.22713),
+    (-0.28719, -0.23537), (-0.28363, -0.24315), (-0.27873, -0.25216),
+    (-0.27312, -0.26088), (-0.26680, -0.26922), (-0.26221, -0.27455),
+    (-0.25732, -0.27967), (-0.25213, -0.28456), (-0.24665, -0.28921),
+    (-0.24089, -0.29359), (-0.23484, -0.29769), (-0.22938, -0.30100),
+    (-0.22460, -0.30362), (-0.21970, -0.30608), (-0.21213, -0.30944),
+    (-0.20694, -0.31147), (-0.19895, -0.31421), (-0.19349, -0.31582),
+    (-0.18512, -0.31793), (-0.17654, -0.31966), (-0.16776, -0.32102),
+    (-0.12809, -0.40025), (-0.21708, -0.40654), (-0.23026, -0.38810),
+    (-0.24106, -0.37245), (-0.25005, -0.35881), (-0.25723, -0.34724),
+    (-0.26359, -0.33620), (-0.26919, -0.32552), (-0.27411, -0.31503),
+    (-0.27841, -0.30455), (-0.28225, -0.29360), (-0.28562, -0.28218),
+    (-0.28853, -0.27019), (-0.29103, -0.25754), (-0.29333, -0.24291),
+    (-0.29509, -0.22863), (-0.29652, -0.21389), (-0.29777, -0.19673),
+)
+
+
 def whimsy_motif(d=1.0):
-    """One of the sixty flat parts of Hart's Whimsy, drawn in a
-    face plane of the pentagonal hexecontahedron (the snub
-    dodecahedron's dual).  The pieces are openwork: a web of
-    constant-width curved ribbons -- straight along the long
-    mating edge at the 5-fold hub, following the pentagon rim
-    to the 3-fold corner where three modules meet, with
-    swooping interior ribs -- leaving the large swirling
-    negative spaces of the sculpture.  Corner coordinates are
-    the exact face-pentagon corners in units of the plane
-    distance."""
-    P5 = (-0.06298 * d, -0.43738 * d)   # 5-fold apex
-    G1 = (+0.26728 * d, -0.06800 * d)
-    G2 = (+0.18165 * d, +0.20753 * d)
-    T3 = (-0.10596 * d, +0.24549 * d)   # 3-fold corner
-    G3 = (-0.27561 * d, +0.01017 * d)
-
-    def lerp(A, B, t):
-        return (A[0] + (B[0] - A[0]) * t,
-                A[1] + (B[1] - A[1]) * t)
-
-    strips = [
-        # straight mating ribbon on the long edge P5-G1
-        ([P5, lerp(P5, G1, 0.5), G1], 0.036),
-        # rim ribbon G1 -> G2 -> T3
-        ([G1, (G2[0] * 1.04, G2[1] * 1.04), T3], 0.032),
-        # rim ribbon T3 -> G3 -> P5
-        ([T3, (G3[0] * 1.04, G3[1] * 1.04), P5], 0.032),
-        # interior rib: from the mating edge swooping to the
-        # 3-fold corner
-        ([lerp(P5, G1, 0.45), (0.05 * d, 0.01 * d), T3],
-         0.030),
-        # interior rib: hub apex arcing out to the rim
-        ([P5, (0.09 * d, -0.17 * d),
-          lerp(G1, G2, 0.55)], 0.028),
-    ]
-    verts = []
-    faces = []
-    for ctrl, hw in strips:
-        path = _spline(ctrl, 10)
-        w = [hw * d] * len(path)
-        sv, sf = _ribbon(path, w)
-        base = len(verts)
-        verts.extend(sv)
-        faces.extend([[base + i for i in f] for f in sf])
-    return verts, faces
+    """One of the sixty flat blades of Hart's Whimsy (2014), traced
+    from the cutting template: a curved band pierced by two teardrop
+    openings, running from a 5-fold hub to a 3-fold corner in a face
+    plane of the pentagonal hexecontahedron (the snub dodecahedron's
+    dual).  See the note above for how the placement is pinned."""
+    outer = [(x * d, y * d) for x, y in _WHIMSY_OUTER]
+    holes = [[(x * d, y * d) for x, y in _WHIMSY_HOLE_A],
+             [(x * d, y * d) for x, y in _WHIMSY_HOLE_B]]
+    return polygon_with_holes(outer, holes)
 
 
 # preset -> (group, plane family, motif builder)
@@ -835,9 +943,11 @@ if _IN_BLENDER:
                    ('WHIMSY', "Whimsy",
                     "After Whimsy (2014): 60 flat blades in the "
                     "face planes of the pentagonal "
-                    "hexecontahedron (snub dodecahedron dual), "
-                    "five to a hub, meeting in threes at the "
-                    "3-fold corners"),
+                    "hexecontahedron (snub dodecahedron dual). "
+                    "The blade is traced from the cutting "
+                    "template -- a curved band with two teardrop "
+                    "openings, tipped so five meet at each 5-fold "
+                    "hub and three at each 3-fold corner"),
                    ('CUSTOM', "Custom",
                     "Choose the group and plane family yourself; "
                     "starts from the demo arc motif")],
@@ -1151,6 +1261,51 @@ def _selftest():
         print(f"{kind}/{fam}: {len(radii)} rings, lines {counts[0]}"
               f"..{counts[-1]} of {allsegs} {'OK' if ok else 'BAD'}")
         assert ok, (kind, fam, counts, allsegs)
+
+    # the Whimsy blade: triangulation must cover exactly the material
+    # (outer loop less the two teardrops), with no lost or doubled
+    # area from the hole bridges
+    def _sarea(p):
+        return 0.5 * sum(p[i][0] * p[(i + 1) % len(p)][1]
+                         - p[(i + 1) % len(p)][0] * p[i][1]
+                         for i in range(len(p)))
+    wv, wf = whimsy_motif(1.0)
+    tri = sum(abs(0.5 * ((wv[b][0] - wv[a2][0]) * (wv[c][1] - wv[a2][1])
+                         - (wv[b][1] - wv[a2][1])
+                         * (wv[c][0] - wv[a2][0])))
+              for a2, b, c in wf)
+    want_a = (abs(_sarea(_WHIMSY_OUTER)) - abs(_sarea(_WHIMSY_HOLE_A))
+              - abs(_sarea(_WHIMSY_HOLE_B)))
+    print(f"whimsy area {tri:.6f} vs {want_a:.6f} "
+          f"{'OK' if abs(tri - want_a) < 1e-9 else 'BAD'}")
+    assert abs(tri - want_a) < 1e-9
+    assert len(wf) == len(wv) - 2          # a full fan, no stalled ear
+
+    # and its two tips must sit ON the 5-fold and 3-fold axes -- that
+    # is what makes five blades meet at a hub and three at a corner
+    aa, _ = plane_normals('ICOSA', 'P1')
+    uu, vv = _frame(aa)
+    rots = group_rotations('ICOSA')
+
+    def _on_axis(pt, seed):
+        p = [aa[i] + pt[0] * uu[i] + pt[1] * vv[i] for i in range(3)]
+        p = _normalize(p)
+        s = _normalize(seed)
+        best = 9.9
+        for R in rots:
+            b = _apply(R, s)
+            cr = (p[1] * b[2] - p[2] * b[1], p[2] * b[0] - p[0] * b[2],
+                  p[0] * b[1] - p[1] * b[0])
+            best = min(best, sqrt(sum(c * c for c in cr)))
+        return best
+    tip5 = _WHIMSY_OUTER[0]                # the loop starts at the hub
+    tip3 = max(_WHIMSY_OUTER, key=lambda p: p[1])
+    e5 = _on_axis(tip5, (0.0, 1.0, PHI))
+    e3 = _on_axis(tip3, (1.0, 1.0, 1.0))
+    print(f"whimsy tips on axes: 5-fold off {e5:.2e}, "
+          f"3-fold off {e3:.2e} "
+          f"{'OK' if max(e5, e3) < 1e-4 else 'BAD'}")
+    assert max(e5, e3) < 1e-4
 
     # a motif flat on XY at plane distance d lands at sqrt(r^2+d^2)
     flat = [(0.0, 0.0, 0.0), (3.0, 4.0, 0.0)]

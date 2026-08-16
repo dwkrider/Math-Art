@@ -44,6 +44,57 @@ def set_full(obj, val):
     set_input(obj, 'Full Sculpture', val)
 
 
+def weld_prediction(preset):
+    """Replicate a preset's motif by hand and count the coincident
+    vertices, so the expected weld is derived rather than guessed.
+
+    A point shared by k copies collapses k->1, and by symmetry there
+    are N/k such groups, so a shared class costs N - N/k vertices --
+    48 at the 5-fold hubs, 40 at the 3-fold corners, 30 for a plain
+    pair.  Totals are therefore NOT multiples of the copy count."""
+    kind, fam, builder = ss.PRESETS[preset]
+    mverts, _ = builder(1.0)
+    a, _ = ss.plane_normals(kind, fam)
+    u, v = ss._frame(a)
+    # cluster at the modifier's own Weld distance, and look in the
+    # neighbouring cells too: coincident points are only equal to
+    # within the motif's stored precision, so a plain rounding key
+    # splits a shared tip across two buckets and hides the 5- and
+    # 3-fold groups entirely
+    tol = 1e-4
+    cells = {}
+    counts = []
+    for R in ss.group_rotations(kind):
+        for x, y, z in mverts:
+            p = tuple(a[i] * (1.0 + z) + x * u[i] + y * v[i]
+                      for i in range(3))
+            q = ss._apply(R, p)
+            key = tuple(int(math.floor(c / tol)) for c in q)
+            hit = None
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    for dz in (-1, 0, 1):
+                        for idx, rep in cells.get(
+                                (key[0] + dx, key[1] + dy,
+                                 key[2] + dz), ()):
+                            if math.dist(rep, q) <= tol:
+                                hit = idx
+                                break
+                        if hit is not None:
+                            break
+                    if hit is not None:
+                        break
+                if hit is not None:
+                    break
+            if hit is None:
+                counts.append(1)
+                cells.setdefault(key, []).append((len(counts) - 1, q))
+            else:
+                counts[hit] += 1
+    merged = sum(n - 1 for n in counts)
+    return len(mverts), merged, sorted(set(counts))
+
+
 # pure math: group orders and plane-family counts
 for kind, order in ss._ORDER.items():
     got = len(ss.group_rotations(kind))
@@ -169,15 +220,10 @@ for g, f, n in (('ICOSA', 'P2', 60), ('OCTA', 'P4', 24),
     if not ok:
         fails.append(f'flat-{g}')
 
-# sculpture presets set the right plane family; Frabjous is the one
-# preset whose copies actually meet -- its S-halves join across the
-# 2-fold axis and its tips meet in threes -- so 26 verts per copy
-# weld away (1560 of 60x172).  The other three presets are open
-# forms whose parts pass without touching, so nothing merges.
-for preset, fam, merged in (('TWISTED_RIVERS', 'P3', 0),
-                            ('TUMBLEWEED', 'P5', 0),
-                            ('FRABJOUS', 'P2', 1560),
-                            ('WHIMSY', 'P1', 0)):
+# each preset lands in the right plane family, and the sculpture's
+# vertex count matches a weld predicted from the motif itself
+for preset, fam in (('TWISTED_RIVERS', 'P3'), ('TUMBLEWEED', 'P5'),
+                    ('FRABJOUS', 'P2'), ('WHIMSY', 'P1')):
     clear()
     bpy.ops.object.symmetric_sculpture_add(preset=preset, shell=0.0)
     so = bpy.context.object
@@ -187,14 +233,15 @@ for preset, fam, merged in (('TWISTED_RIVERS', 'P3', 0),
     set_full(so, True)
     deps = bpy.context.evaluated_depsgraph_get()
     ev = so.evaluated_get(deps).to_mesh()
+    pmv, merged, sizes = weld_prediction(preset)
     want = 60 * mv - merged
     got = len(ev.vertices)
-    # the weld must be symmetric: every copy has to lose the same
-    # number of vertices, or the parts are not meeting cleanly
-    ok = (got == want and ss.PRESETS[preset][1] == fam
-          and (60 * mv - got) % 60 == 0)
+    # copies may only meet in the ways the symmetry allows: pairs, or
+    # threes at a 3-fold corner, or fives at a 5-fold hub
+    ok = (got == want and pmv == mv and ss.PRESETS[preset][1] == fam
+          and set(sizes) <= {1, 2, 3, 5})
     print(f"[preset {preset}] verts={got}({want}) fam={fam} "
-          f"{'OK' if ok else 'FAIL'}")
+          f"merged={merged} groups={sizes} {'OK' if ok else 'FAIL'}")
     if not ok:
         fails.append(f'preset-{preset}')
 
