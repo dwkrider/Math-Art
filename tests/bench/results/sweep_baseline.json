@@ -1,0 +1,82 @@
+{
+ "seifert_sweep": {
+  "config": {},
+  "metrics": {
+   "n_embedded": 17,
+   "n_total": 17,
+   "selfx_worst": 0
+  },
+  "per_solid": {
+   "q1_m140_r24": {
+    "min_angle_deg": 0.0031128896245343715,
+    "selfx": 0
+   },
+   "q1_m200_r24": {
+    "min_angle_deg": 0.9182596837794207,
+    "selfx": 0
+   },
+   "q1_m48_r8": {
+    "min_angle_deg": 0.34673109304982824,
+    "selfx": 0
+   },
+   "q1_m96_r24": {
+    "min_angle_deg": 1.5363054458563363,
+    "selfx": 0
+   },
+   "q3_m140_r24": {
+    "min_angle_deg": 1.610398726494236,
+    "selfx": 0
+   },
+   "q3_m200_r24": {
+    "min_angle_deg": 1.1348406407804554,
+    "selfx": 0
+   },
+   "q3_m48_r8": {
+    "min_angle_deg": 3.1251641980799487,
+    "selfx": 0
+   },
+   "q3_m96_r24": {
+    "min_angle_deg": 2.326661425149546,
+    "selfx": 0
+   },
+   "q5_m140_r24": {
+    "min_angle_deg": 1.1611916653809726,
+    "selfx": 0
+   },
+   "q5_m200_r24": {
+    "min_angle_deg": 0.808154093844272,
+    "selfx": 0
+   },
+   "q5_m48_r8": {
+    "min_angle_deg": 1.3922463812308368,
+    "selfx": 0
+   },
+   "q5_m96_r24": {
+    "min_angle_deg": 1.3395189497028392,
+    "selfx": 0
+   },
+   "q7_m140_r24": {
+    "min_angle_deg": 0.779771511256647,
+    "selfx": 0
+   },
+   "q7_m200_r24": {
+    "min_angle_deg": 0.6753617139334023,
+    "selfx": 0
+   },
+   "q7_m48_r8": {
+    "min_angle_deg": 0.812968727258731,
+    "selfx": 0
+   },
+   "q7_m96_r24": {
+    "min_angle_deg": 0.779771511256647,
+    "selfx": 0
+   },
+   "q9_m48_r8": {
+    "min_angle_deg": 0.5363194223747829,
+    "selfx": 0
+   }
+  },
+  "time_s": 83.62495099997614,
+  "trace": []
+ }
+}

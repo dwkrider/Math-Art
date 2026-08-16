@@ -80,12 +80,25 @@ def _minimize_area_traced(V, T, fixed, outer_iters, kwargs):
     """Run plateau.minimize_area one outer iteration at a time (exact:
     each outer iteration recomputes weights from V), recording area vs
     iteration and vs elapsed wall seconds, with the solver's own
-    convergence break replicated."""
+    convergence break replicated.
+
+    With groom_every=g, one solver call grooms before iterations
+    g, 2g, ...; chunking per-iteration would reset that counter and
+    silently disable grooming, so here the groom cycle is invoked
+    explicitly on the same schedule -- provably the same sequence of
+    operations as a single call."""
     from math_art.minsurf import plateau
+    kwargs = dict(kwargs)
+    groom_every = int(kwargs.pop("groom_every", 0) or 0)
+    groom_smooth = kwargs.pop("groom_smooth", 0.25)
+    if groom_every:
+        from math_art.solver import groom as _sg
     trace = [{"iter": 0, "t": 0.0, "E": M.mesh_area(V, T)}]
     t0 = _timer()
     for it in range(1, outer_iters + 1):
         V0 = V.copy()
+        if groom_every and (it - 1) and (it - 1) % groom_every == 0:
+            _sg.groom(V, T, fixed=fixed, smooth_lam=groom_smooth)
         plateau.minimize_area(V, T, fixed, outer_iters=1, **kwargs)
         trace.append({"iter": it, "t": _timer() - t0, "E": M.mesh_area(V, T)})
         move = np.max(np.linalg.norm(V - V0, axis=1))
@@ -133,6 +146,47 @@ def case_seifert_span(config, q=5, m=140, rings=24):
     mets["iters"] = trace[-1]["iter"]
     return {"metrics": mets, "trace": trace, "time_s": trace[-1]["t"],
             "n_verts": len(V), "n_tris": len(T), "genus": (q - 1) // 2}
+
+
+def case_seifert_sweep(config):
+    """Embeddedness gate: the (2,q) Seifert span across the q x samples
+    grid, relaxed the capped 8 passes; the only metric that matters here
+    is the self-intersection count staying 0 everywhere (the documented
+    reason for the clamp + iteration cap)."""
+    from math_art.minsurf import plateau
+    kwargs = dict(config.get("plateau_kwargs", {}))
+    kwargs.pop("groom_every", None)
+    groom_every = int(config.get("plateau_kwargs", {}).get(
+        "groom_every", 0) or 0)
+    per = {}
+    t_all = _timer()
+    worst = 0
+    grid = ([(q, m, 24) for q in (1, 3, 5, 7) for m in (96, 140, 200)]
+            + [(q, 48, 8) for q in (1, 3, 5, 7, 9)])   # toolkit selftest grid
+    for q, m, rings in grid:
+        V, quads, fixed = plateau.build_seifert_span_grid(q, m, rings)
+        T = plateau._quads_to_tris(quads)
+        if groom_every:
+            from math_art.solver import groom as _sg
+            for it in range(plateau._SEIFERT_MAX_ITERS):
+                if it and it % groom_every == 0:
+                    _sg.groom(V, T, fixed=fixed)
+                plateau.minimize_area(V, T, fixed, outer_iters=1,
+                                      **kwargs)
+        else:
+            plateau.minimize_area(
+                V, T, fixed,
+                outer_iters=plateau._SEIFERT_MAX_ITERS, **kwargs)
+        sx = M.selfx_count(V, T)
+        worst = max(worst, sx)
+        per[f"q{q}_m{m}_r{rings}"] = {
+            "selfx": sx,
+            "min_angle_deg": M.tri_quality(V, T)["min_angle_deg"]}
+    mets = {"selfx_worst": worst,
+            "n_embedded": sum(1 for p in per.values() if p["selfx"] == 0),
+            "n_total": len(per)}
+    return {"metrics": mets, "per_solid": per, "trace": [],
+            "time_s": _timer() - t_all}
 
 
 def case_seifert_span_q3(config):
@@ -439,6 +493,7 @@ CASES = {
     "catenoid_fine": case_catenoid_fine,
     "seifert_span_q3": case_seifert_span_q3,
     "seifert_span_q5": case_seifert_span_q5,
+    "seifert_sweep": case_seifert_sweep,
     "seifert_fair": case_seifert_fair,
     "canonical": case_canonical,
     "biscribe": case_biscribe,

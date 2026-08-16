@@ -24,6 +24,11 @@
 import math
 import numpy as np
 
+try:
+    from ..solver import cotan as _sc
+except ImportError:                      # flat (path-based) headless import
+    from solver import cotan as _sc
+
 TAU = 2.0 * math.pi
 
 
@@ -62,39 +67,53 @@ def align_loops(A, B):
     return best[0]
 
 
-def _cotan_weights(V, T):
-    """Per-edge cotangent weights. Returns (edges (e,2), w (e,))."""
-    ijk = [(0, 1, 2), (1, 2, 0), (2, 0, 1)]
-    E = []
-    W = []
-    for (a, b, c) in ijk:
-        u = V[T[:, a]] - V[T[:, c]]
-        v = V[T[:, b]] - V[T[:, c]]
-        cross = np.cross(u, v)
-        denom = np.linalg.norm(cross, axis=1)
-        cot = np.einsum('ij,ij->i', u, v) / np.maximum(denom, 1e-12)
-        # clamp to positive: keeps the system positive-definite (maximum
-        # principle), so the CG solve cannot blow up on degenerate fans
-        cot = np.clip(cot, 0.01, 20.0)
-        E.append(np.stack([T[:, a], T[:, b]], axis=1))
-        W.append(0.5 * cot)
-    return np.concatenate(E), np.concatenate(W)
+def _cotan_weights(V, T, mode="clamp"):
+    """Per-edge cotangent weights. Returns (edges (e,2), w (e,)).
+
+    mode="clamp" (default) clips the cotangents to [0.01, 20] -- the
+    historical behaviour: positive weights keep the maximum principle,
+    so the solve cannot fold a degenerate fan, at the cost of biasing
+    every obtuse corner toward the uniform-weight (Tutte) solution.
+    mode="mollify" uses the true cotangents built from intrinsically
+    mollified edge lengths (Sharp-Crane; see solver/cotan.py): exact
+    Pinkall-Polthier away from degenerate triangles, finite on them."""
+    return _sc.edge_cotan_weights(V, T, mode=mode)
 
 
 def minimize_area(V, T, fixed, outer_iters=30, cg_tol=1e-8, cg_iters=400,
-                  uniform=False):
+                  uniform=False, cotan_mode="mollify", groom_every=0,
+                  groom_smooth=0.25):
     """Pinkall-Polthier: repeatedly solve the cotan-Laplace equation for
     the interior vertices (boundary pinned). V modified in place.
     With uniform=True, unit weights are used instead of cotangents --
     a Tutte-style fairing solve that untangles folded regions (at the
-    cost of exact minimality; follow with a cotan pass)."""
+    cost of exact minimality; follow with a cotan pass).
+
+    cotan_mode: "mollify" (default; true cotangents from intrinsically
+    mollified lengths, see solver/cotan) or "clamp" (the historical
+    [0.01, 20] clip, kept for comparison).  The default changed after
+    tests/bench measured mollify strictly more minimal (catenoid waist
+    error 10x smaller, mean-curvature residual 6-10x smaller on the
+    Seifert spans), faster (fewer CG iterations), and still embedded
+    across the whole Seifert q x samples sweep.
+    groom_every=k > 0 runs a mesh-grooming cycle (Delaunay flips +
+    tangential vertex averaging, solver/groom) every k outer iterations;
+    T is then rewritten in place (counts unchanged), so callers keeping
+    a separate quad list for display are unaffected."""
     n = len(V)
     free = ~fixed
     nfree = int(np.sum(free))
     if nfree == 0:
         return V
-    for _ in range(outer_iters):
-        E, W = _cotan_weights(V, T)
+    if groom_every:
+        try:
+            from ..solver import groom as _sg
+        except ImportError:
+            from solver import groom as _sg
+    for _it in range(outer_iters):
+        if groom_every and _it and _it % groom_every == 0:
+            _sg.groom(V, T, fixed=fixed, smooth_lam=groom_smooth)
+        E, W = _cotan_weights(V, T, mode=cotan_mode)
         if uniform:
             W = np.ones_like(W)
         deg = np.zeros(n)
@@ -138,7 +157,8 @@ def minimize_area(V, T, fixed, outer_iters=30, cg_tol=1e-8, cg_iters=400,
     return V
 
 
-def relax_normal_flow(V, T, fixed, iters=60, lam=0.4):
+def relax_normal_flow(V, T, fixed, iters=60, lam=0.4,
+                      cotan_mode="mollify"):
     """Mean-curvature flow restricted to the surface normal: pulls a
     (slightly perturbed) net back toward the minimal surface without
     tangential sliding, so a fair control net stays fair. Only suitable
@@ -146,7 +166,7 @@ def relax_normal_flow(V, T, fixed, iters=60, lam=0.4):
     free = ~fixed
     n = len(V)
     for _ in range(iters):
-        E, W = _cotan_weights(V, T)
+        E, W = _cotan_weights(V, T, mode=cotan_mode)
         lap = np.zeros((n, 3))
         d = V[E[:, 1]] - V[E[:, 0]]
         np.add.at(lap, E[:, 0], W[:, None] * d)
@@ -584,6 +604,26 @@ def _selftest():
     print(f"plateau: catenoid area {a0:.4f} -> {a1:.4f}, waist={waist:.4f} "
           f"(exp {r0:.4f}), rims pinned ({rim_moved:.1e}) "
           f"{'OK' if good else 'FAIL'}")
+
+    # The same solve with in-loop grooming (flips + tangential
+    # averaging) must still converge to the catenoid with pinned rims,
+    # and the historical clamped mode must keep working as a fallback.
+    for label, kw in (("groomed", dict(groom_every=4)),
+                      ("clamped", dict(cotan_mode="clamp"))):
+        V2 = np.array([[math.cos(t), math.sin(t), z]
+                       for z in zs for t in th])
+        T2 = T.copy()
+        rimA = V2[:nring].copy()
+        minimize_area(V2, T2, fixed, outer_iters=40, **kw)
+        waist2 = float(np.mean(np.hypot(
+            V2[nrow // 2 * nring:(nrow // 2 + 1) * nring, 0],
+            V2[nrow // 2 * nring:(nrow // 2 + 1) * nring, 1])))
+        moved2 = float(np.max(np.abs(V2[:nring] - rimA)))
+        good = (abs(waist2 - r0) < 0.02 and moved2 < 1e-12
+                and bool(np.all(np.isfinite(V2))))
+        ok &= good
+        print(f"plateau: catenoid ({label}) waist={waist2:.4f}, rims "
+              f"pinned ({moved2:.1e}) {'OK' if good else 'FAIL'}")
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
