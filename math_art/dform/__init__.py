@@ -29,12 +29,14 @@ References:
 
 import numpy as np
 
-from . import curves, develop, sheet, solve
+from . import analytic, curves, develop, sheet, solve
 
-MODES = ('SEAM',)
+# SEAM is solved for; the rest are closed-form relatives that assemble
+# exactly from cone and cylinder patches (see `analytic.py`)
+MODES = ('SEAM',) + analytic.ANALYTIC_KINDS
 
-__all__ = ['DForm', 'MODES', 'build_dform', 'curves', 'develop', 'sheet',
-           'solve']
+__all__ = ['DForm', 'MODES', 'analytic', 'build_dform', 'curves', 'develop',
+           'sheet', 'solve']
 
 
 class DForm:
@@ -47,7 +49,7 @@ class DForm:
     """
 
     def __init__(self, verts, faces, seam, mu, piece, dev_verts, dev_faces,
-                 stats):
+                 stats, sharp_edges=None):
         self.verts = verts
         self.faces = faces
         self.seam = seam
@@ -56,6 +58,14 @@ class DForm:
         self.dev_verts = dev_verts
         self.dev_faces = dev_faces
         self.stats = stats
+        # every edge that should shade sharp.  For a solved D-form that
+        # is the seam ring; the closed-form relatives fold the paper as
+        # well, so they add their creases here too.
+        if sharp_edges is None:
+            r = [int(i) for i in seam]
+            sharp_edges = [(r[i], r[(i + 1) % len(r)])
+                           for i in range(len(r))] if len(r) > 1 else []
+        self.sharp_edges = sharp_edges
 
 
 # Seam resolution above which the solve is done coarse-first.  The
@@ -81,11 +91,62 @@ def _solve_at(A, B, n, join_offset, flip, quality):
     return solve.polish(fine, iterations=max(120, quality // 2))
 
 
+def _fit(V, scale):
+    """Centre on the bounding box and fit a 2*scale cube, as the repo's
+    generators all do."""
+    if not len(V):
+        return V
+    ext = float(np.max(V.max(axis=0) - V.min(axis=0)))
+    s = (2.0 * scale / ext) if ext > 1e-12 else 1.0
+    return (V - 0.5 * (V.max(axis=0) + V.min(axis=0))) * s
+
+
+def _build_analytic(mode, segments, scale, vesica_u, vesica_h, panels,
+                    slide, growth):
+    """The closed-form modes: no solver, no iteration, no convergence.
+
+    These carry creases as well as a seam, so `seam` here means "every
+    edge that should be shaded sharp" -- the generator marks it the same
+    way either route, and for the vesica that includes the two creases.
+    """
+    def chain(poly):
+        return [(int(poly[i]), int(poly[i + 1]))
+                for i in range(len(poly) - 1)]
+
+    n = max(24, int(segments))
+    if mode == 'VESICA':
+        h = None if vesica_h < 0 else vesica_h
+        V, F, seam, creases = analytic.build_vesica(
+            u=vesica_u, height=h, samples=n, rings=max(4, n // 12))
+        sharp = chain(seam)
+        for c in creases:
+            sharp += chain(c)
+        stats = {'u': float(vesica_u),
+                 'h_max': analytic.vesica_max_height(vesica_u),
+                 'h_circular': analytic.vesica_circular_height(vesica_u),
+                 'segments': n}
+    else:                                        # KOMAN_CURL
+        V, F = analytic.build_koman_curl(
+            panels=panels, slide=slide, growth=growth,
+            arch_samples=max(6, n // 6))
+        seam, sharp = [], []
+        stats = {'turn_per_panel': analytic.koman_turn(slide, 1.0),
+                 'panels': int(panels), 'growth': float(growth),
+                 'segments': n}
+    stats.update({'strain': 0.0, 'area_error': 0.0, 'interior_defect': 0.0,
+                  'mu_total': 4 * np.pi, 'iterations': 0, 'mode': mode})
+    V = _fit(np.asarray(V, dtype=float), scale)
+    return DForm(V, F, np.asarray(seam, dtype=int), np.zeros(len(seam)),
+                 np.zeros(len(V), dtype=int), np.zeros((0, 3)), [],
+                 stats, sharp_edges=sharp)
+
+
 def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
                 aspect_a=0.6, aspect_b=1.0, super_n=3.0, egg=0.35,
                 sides_a=3, sides_b=5, corner=0.35, cassini=1.6,
                 segments=72, join_offset=0.25, flip=False, quality=900,
-                scale=1.0, gap=0.08):
+                scale=1.0, gap=0.08, vesica_u=0.5, vesica_h=-1.0,
+                panels=24, slide=0.06, growth=0.0):
     """Build a D-form and return it.
 
     `segments` is the seam resolution -- the number of vertices shared by
@@ -96,6 +157,10 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
     """
     if mode not in MODES:
         raise ValueError(f"unknown D-form mode {mode!r}")
+    if mode in analytic.ANALYTIC_KINDS:
+        return _build_analytic(mode, segments, scale, vesica_u=vesica_u,
+                               vesica_h=vesica_h, panels=panels,
+                               slide=slide, growth=growth)
 
     n = max(16, int(segments))
     A = curves.curve_points(kind_a, aspect=aspect_a, super_n=super_n,

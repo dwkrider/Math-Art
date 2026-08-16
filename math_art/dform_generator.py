@@ -93,8 +93,42 @@ if _IN_BLENDER:
             name="Mode",
             items=[('SEAM', "Seam (two sheets)",
                     "The classic D-form: two flat pieces of equal "
-                    "perimeter glued edge to edge")],
+                    "perimeter glued edge to edge. Solved for"),
+                   ('VESICA', "Folded Vesica Piscis",
+                    "Two overlapping discs folded so their boundaries "
+                    "meet, giving one cylindrical and two conical "
+                    "patches with curved creases (Mundilova and Wills). "
+                    "Exact -- no solver"),
+                   ('KOMAN_CURL', "Koman Curled Strip",
+                    "Ilhan Koman's spiral developable: planar fins in "
+                    "one plane with arched panels between them, each "
+                    "sliding under the next. Exact -- no solver")],
             default='SEAM')
+        vesica_u: FloatProperty(
+            name="Disc Offset u", default=0.5, min=0.06, max=0.94,
+            description="Half the distance between the two disc "
+                        "centres. u = 0.5 is the true Vesica Piscis, "
+                        "where each circle passes through the other's "
+                        "centre")
+        vesica_h: FloatProperty(
+            name="Apex Height", default=-1.0, min=-1.0, max=1.0,
+            description="Height of the cone apexes. Leave at -1 for the "
+                        "height whose unrolled creases are exactly "
+                        "circular; the fold only exists up to "
+                        "h = 1 - u^2")
+        panels: IntProperty(
+            name="Panels", default=24, min=3, max=160,
+            description="Number of planar fins around the curl")
+        slide: FloatProperty(
+            name="Slide d", default=0.06, min=0.005, max=0.5,
+            description="How far each fin slides under its neighbour. "
+                        "The turn per panel is arctan(2d/h), so this "
+                        "sets how tightly the strip curls")
+        growth: FloatProperty(
+            name="Spiral Growth", default=0.0, min=-0.15, max=0.15,
+            description="Grow the slide geometrically along the strip: "
+                        "0 closes a ring, non-zero opens it into a "
+                        "spiral (how Koman's own sculptures vary)")
 
         kind_a: EnumProperty(name="Piece A", items=_CURVE_ITEMS,
                              default='ELLIPSE')
@@ -149,6 +183,13 @@ if _IN_BLENDER:
             name="Flat Development", default=False,
             description="Also add the two pieces laid out flat -- the "
                         "exact shapes to cut out and glue")
+        sharp_seam: BoolProperty(
+            name="Sharp Seam", default=True,
+            description="Mark the seam as a sharp edge (and a subdivision "
+                        "crease). A D-form is smooth everywhere EXCEPT "
+                        "the seam, which is where all of its curvature "
+                        "sits, so shading it smooth across the join is "
+                        "wrong -- it is a real crease in the paper")
         colour_mu: BoolProperty(
             name="Seam Curvature Attribute", default=True,
             description="Store the angle defect at each seam vertex as a "
@@ -165,17 +206,23 @@ if _IN_BLENDER:
                     sides_a=self.sides_a, sides_b=self.sides_b,
                     corner=self.corner, cassini=self.cassini,
                     segments=self.segments, join_offset=self.join_offset,
-                    flip=self.flip, quality=self.quality, scale=self.scale)
+                    flip=self.flip, quality=self.quality, scale=self.scale,
+                    vesica_u=self.vesica_u, vesica_h=self.vesica_h,
+                    panels=self.panels, slide=self.slide,
+                    growth=self.growth)
             except Exception as exc:  # noqa: BLE001 - report, never crash
                 self.report({'ERROR'}, f"D-form failed: {exc}")
                 return {'CANCELLED'}
 
-            obj = self._mesh_object(context, "D-Form",
-                                    d.verts, d.faces)
-            if self.colour_mu:
+            name = {'VESICA': "Vesica Fold",
+                    'KOMAN_CURL': "Koman Curl"}.get(self.mode, "D-Form")
+            obj = self._mesh_object(context, name, d.verts, d.faces)
+            if self.sharp_seam:
+                self._mark_seam(obj.data, d.sharp_edges)
+            if self.colour_mu and len(d.seam):
                 self._paint_mu(obj.data, d)
 
-            if self.make_net:
+            if self.make_net and len(d.dev_faces):
                 span = float(d.verts[:, 0].max() - d.verts[:, 0].min())
                 net = self._mesh_object(context, "D-Form Net",
                                         d.dev_verts, d.dev_faces,
@@ -187,12 +234,25 @@ if _IN_BLENDER:
                 context.view_layer.objects.active = obj
 
             s = d.stats
-            self.report(
-                {'INFO'},
-                f"V={len(d.verts)} F={len(d.faces)}  strain "
-                f"{100*s['strain']:.2f}%  seam curvature "
-                f"{s['mu_total']/3.14159265:.2f}pi (4pi ideal)  "
-                f"{s['iterations']} its")
+            if self.mode == 'SEAM':
+                self.report(
+                    {'INFO'},
+                    f"V={len(d.verts)} F={len(d.faces)}  strain "
+                    f"{100*s['strain']:.2f}%  seam curvature "
+                    f"{s['mu_total']/3.14159265:.2f}pi (4pi ideal)  "
+                    f"{s['iterations']} its")
+            elif self.mode == 'VESICA':
+                self.report(
+                    {'INFO'},
+                    f"V={len(d.verts)} F={len(d.faces)}  exact fold, "
+                    f"u={s['u']:.2f}  h_max={s['h_max']:.3f}  "
+                    f"circular creases at h={s['h_circular']:.3f}")
+            else:
+                self.report(
+                    {'INFO'},
+                    f"V={len(d.verts)} F={len(d.faces)}  exact, "
+                    f"{s['panels']} panels turning "
+                    f"{s['turn_per_panel']*57.2958:.1f} deg each")
             return {'FINISHED'}
 
         def _mesh_object(self, context, name, verts, faces, smooth=None):
@@ -219,6 +279,38 @@ if _IN_BLENDER:
             context.view_layer.objects.active = obj
             return obj
 
+        def _mark_seam(self, me, sharp_edges):
+            """Make the folds real edges: sharp for shading, creased for
+            subdivision.
+
+            The seam carries ALL of a D-form's curvature -- the two
+            sheets meet there at a genuine angle, which is exactly what
+            makes it a D-form -- so smoothing normals across it reads as
+            a soft bulge instead of a folded edge.  The closed-form modes
+            fold the paper as well, and their creases are listed here
+            too.  Since Blender 4.1 the `sharp_edge` attribute drives
+            shading on its own, so no auto-smooth or Edge Split modifier
+            is needed.
+            """
+            want = {frozenset((int(a), int(b))) for a, b in sharp_edges
+                    if int(a) != int(b)}
+            if not want:
+                return 0
+            hit = [i for i, e in enumerate(me.edges)
+                   if frozenset(e.key) in want]
+            for i in hit:
+                me.edges[i].use_edge_sharp = True
+            # keep it sharp under a Subdivision Surface modifier too
+            try:
+                att = me.attributes.get("crease_edge")
+                if att is None:
+                    att = me.attributes.new("crease_edge", 'FLOAT', 'EDGE')
+                for i in hit:
+                    att.data[i].value = 1.0
+            except (RuntimeError, TypeError, AttributeError):
+                pass        # creases are optional; sharp is the fix
+            return len(hit)
+
         def _paint_mu(self, me, d):
             """Angle defect per vertex: the seam's curvature, as colour."""
             mu = [0.0] * len(me.vertices)
@@ -238,24 +330,38 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'mode')
 
-            col = lay.column(heading="Outlines")
-            col.prop(self, 'kind_a')
-            self._curve_knobs(col, self.kind_a, 'a')
-            col.separator()
-            col.prop(self, 'kind_b')
-            self._curve_knobs(col, self.kind_b, 'b')
+            if self.mode == 'SEAM':
+                col = lay.column(heading="Outlines")
+                col.prop(self, 'kind_a')
+                self._curve_knobs(col, self.kind_a, 'a')
+                col.separator()
+                col.prop(self, 'kind_b')
+                self._curve_knobs(col, self.kind_b, 'b')
 
-            lay.separator()
-            lay.prop(self, 'join_offset')
-            lay.prop(self, 'flip')
-            lay.prop(self, 'segments')
-            lay.prop(self, 'quality')
+                lay.separator()
+                lay.prop(self, 'join_offset')
+                lay.prop(self, 'flip')
+                lay.prop(self, 'segments')
+                lay.prop(self, 'quality')
+            elif self.mode == 'VESICA':
+                lay.separator()
+                lay.prop(self, 'vesica_u')
+                lay.prop(self, 'vesica_h')
+                lay.prop(self, 'segments')
+            else:
+                lay.separator()
+                lay.prop(self, 'panels')
+                lay.prop(self, 'slide')
+                lay.prop(self, 'growth')
+                lay.prop(self, 'segments')
 
             lay.separator()
             lay.prop(self, 'scale')
-            lay.prop(self, 'make_net')
-            lay.prop(self, 'colour_mu')
+            if self.mode == 'SEAM':
+                lay.prop(self, 'make_net')
+                lay.prop(self, 'colour_mu')
             lay.prop(self, 'shade_smooth')
+            lay.prop(self, 'sharp_seam')
 
         def _curve_knobs(self, col, kind, which):
             col.prop(self, f'aspect_{which}')
