@@ -315,6 +315,46 @@ print(f"[translucent checkbox] {'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('translucent-checkbox')
 
+# Guide Rings thins the pattern: fewer edges than the full set, and
+# what survives is the inner lines
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='WHIMSY')
+full_g = len([o for o in bpy.data.objects
+              if o.name.startswith('SymSculpt Guides')
+              ][0].data.edges)
+clear()
+bpy.ops.object.symmetric_sculpture_add(preset='WHIMSY', guide_rings=3)
+gd = [o for o in bpy.data.objects
+      if o.name.startswith('SymSculpt Guides')][0]
+few_g = len(gd.data.edges)
+ok = 0 < few_g < full_g
+print(f"[guide rings] {few_g} edges of {full_g} "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('guide-rings')
+
+# the family labels have to name the planes the chosen group really
+# makes -- the same P3 is 20 icosahedral planes but 8 octahedral
+ok = ('20 icosahedral' in ss.family_label('ICOSA', 'P3')
+      and '8 octahedral' in ss.family_label('OCTA', 'P3')
+      and '4 tetrahedral' in ss.family_label('TETRA', 'P3'))
+print(f"[family labels group-aware] {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('family-labels')
+for g, f, n in (('OCTA', 'P3', 8), ('TETRA', 'P2', 6)):
+    clear()
+    bpy.ops.object.symmetric_sculpture_add(preset='CUSTOM', group=g,
+                                           family=f, shell=0.0)
+    so = bpy.context.object
+    mv = len([o for o in bpy.data.objects
+              if o.name.startswith('SymSculpt Motif')][0].data.vertices)
+    _, normals = ss.plane_normals(g, f)
+    ok = len(normals) == n
+    print(f"[{g}/{f} planes] {len(normals)}({n}) "
+          f"{'OK' if ok else 'FAIL'}")
+    if not ok:
+        fails.append(f'planes-{g}-{f}')
+
 # Motif Object: name a mesh and it is replicated instead of the
 # preset motif; name something that is not a mesh and the operator
 # falls back rather than failing

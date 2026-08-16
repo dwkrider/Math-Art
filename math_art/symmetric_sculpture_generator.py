@@ -179,6 +179,61 @@ def _frame(a):
     return u, v
 
 
+# Which solid's extended face planes each (group, family) actually
+# is.  A plane perpendicular to a k-fold axis is held by k of the
+# group's N rotations, so the orbit is N/k planes carrying k copies
+# apiece -- the same "P3" therefore means 20 icosahedral planes under
+# the icosahedral group but 8 octahedral ones under the octahedral.
+_FAMILY_SOLID = {
+    ('ICOSA', 'P5'): (12, "dodecahedral"),
+    ('ICOSA', 'P3'): (20, "icosahedral"),
+    ('ICOSA', 'P2'): (30, "triacontahedral"),
+    ('ICOSA', 'P1'): (60, "hexecontahedral"),
+    ('OCTA', 'P4'): (6, "cube"),
+    ('OCTA', 'P3'): (8, "octahedral"),
+    ('OCTA', 'P2'): (12, "rhombic dodecahedral"),
+    ('OCTA', 'P1'): (24, ""),
+    ('TETRA', 'P3'): (4, "tetrahedral"),
+    ('TETRA', 'P2'): (6, "cube"),
+    ('TETRA', 'P1'): (12, ""),
+}
+_FOLD = {'P5': 5, 'P4': 4, 'P3': 3, 'P2': 2, 'P1': 1}
+
+
+def family_label(kind, family):
+    """Human label for a plane family under one particular group."""
+    n, solid = _FAMILY_SOLID[(kind, family)]
+    k = _FOLD[family]
+    where = f"{n} {solid} planes" if solid else f"{n} planes"
+    if k == 1:
+        return f"General: {where}"
+    return f"{k}-fold: {where}"
+
+
+def guide_ring_radii(kind, family, d=1.0):
+    """Sorted distinct foot radii of the family's guide lines.
+
+    The stellation pattern is built of concentric rings of lines: all
+    the lines at one radius are equivalent under the plane's own
+    k-fold symmetry.  Counting rings from the middle outwards gives a
+    natural way to thin the pattern down."""
+    a, normals = plane_normals(kind, family)
+    u, v = _frame(a)
+    seen = []
+    for b in normals:
+        ab = sum(x * y for x, y in zip(a, b))
+        if abs(ab) > 1 - 1e-9:
+            continue
+        Bu = sum(x * y for x, y in zip(b, u))
+        Bv = sum(x * y for x, y in zip(b, v))
+        n2 = Bu * Bu + Bv * Bv
+        c = d * (1 - ab)
+        r = sqrt((c * Bu / n2) ** 2 + (c * Bv / n2) ** 2)
+        if not any(abs(r - s) < 1e-6 for s in seen):
+            seen.append(r)
+    return sorted(seen)
+
+
 def max_line_foot(kind, family, d=1.0):
     """Largest foot radius over the family's guide lines -- the
     smallest guide extent that still emits every line.
@@ -205,14 +260,23 @@ def max_line_foot(kind, family, d=1.0):
     return best
 
 
-def stellation_lines(kind, family, d=1.0, extent=3.0):
+def stellation_lines(kind, family, d=1.0, extent=3.0, rings=0):
     """The guide pattern of Hart's 2D editor: line segments (in the
     representative plane's local xy coordinates) where the other
     planes of the family cut it, clipped to a disc of radius
-    extent * d."""
+    extent * d.
+
+    rings > 0 keeps only the innermost `rings` concentric rings of
+    lines (see guide_ring_radii), thinning a crowded pattern down to
+    the lines nearest the centre.  Note the outer rings are the ones
+    carrying the far corners a motif may reach for, so cutting rings
+    trades reach for legibility."""
     a, normals = plane_normals(kind, family)
     u, v = _frame(a)
     R = extent * d
+    keep = None
+    if rings > 0:
+        keep = guide_ring_radii(kind, family, d)[:rings]
     segs = []
     for b in normals:
         ab = sum(x * y for x, y in zip(a, b))
@@ -223,6 +287,9 @@ def stellation_lines(kind, family, d=1.0, extent=3.0):
         c = d * (1 - ab)
         n2 = Bu * Bu + Bv * Bv
         px, py = c * Bu / n2, c * Bv / n2  # foot of the line
+        if keep is not None and not any(
+                abs(sqrt(px * px + py * py) - s) < 1e-6 for s in keep):
+            continue                      # outside the kept rings
         h2 = R * R - (px * px + py * py)
         if h2 <= 0:
             continue                      # line misses the guide disc
@@ -502,7 +569,7 @@ try:
     import bpy
     from mathutils import Matrix
     from bpy.props import (FloatProperty, EnumProperty, BoolProperty,
-                           StringProperty)
+                           StringProperty, IntProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -511,6 +578,33 @@ except ImportError:
 if _IN_BLENDER:
 
     _NG_NAME = "Math Art Symmetric Sculpture"
+
+    # Blender only borrows the strings a dynamic enum callback
+    # returns, so the list has to stay alive on the Python side or
+    # the UI reads freed memory.
+    _FAMILY_ITEMS = []
+
+    def _family_items(self, context):
+        """Plane families available for the chosen group, named for
+        the planes that group actually produces."""
+        _FAMILY_ITEMS.clear()
+        for fam in ('P5', 'P4', 'P3', 'P2', 'P1'):
+            if (self.group, fam) not in _AXES:
+                continue
+            n, solid = _FAMILY_SOLID[(self.group, fam)]
+            k = _FOLD[fam]
+            desc = (f"{n} planes, no symmetry within each -- one copy "
+                    f"of the motif per plane"
+                    if k == 1 else
+                    f"{n} planes perpendicular to the {k}-fold axes, "
+                    f"{k} copies of the motif in each")
+            # 5-tuples: a dynamic enum can only take an integer
+            # default, so each family carries its fold as the number
+            # and the property defaults to 3 (= P3, the one family
+            # every group has)
+            _FAMILY_ITEMS.append(
+                (fam, family_label(self.group, fam), desc, '', k))
+        return _FAMILY_ITEMS
 
     def _ghost_material():
         """Shared translucent material for the replicated copies, so
@@ -759,23 +853,11 @@ if _IN_BLENDER:
             default='ICOSA')
         family: EnumProperty(
             name="Plane Family",
-            items=[('P5', "5-fold planes (dodecahedral)",
-                    "12 planes, 5-fold symmetry in each "
-                    "(icosahedral group only)"),
-                   ('P4', "4-fold planes (cube)",
-                    "6 planes, 4-fold each (octahedral group only)"),
-                   ('P3', "3-fold planes (icosahedral)",
-                    "Planes perpendicular to the 3-fold axes: 20 for "
-                    "the icosahedral group (Hart's Twisted Rivers), "
-                    "8 octahedral, 4 tetrahedral"),
-                   ('P2', "2-fold planes (triacontahedral)",
-                    "Planes perpendicular to the 2-fold axes: 30 "
-                    "icosahedral (Frabjous), 12 octahedral, 6 "
-                    "tetrahedral"),
-                   ('P1', "General planes (hexecontahedral)",
-                    "A full-orbit family with no in-plane symmetry: "
-                    "60 / 24 / 12 planes")],
-            default='P3')
+            items=_family_items, default=3,
+            description="Which orbit of planes to fill. The list "
+                        "names the planes the chosen Symmetry Group "
+                        "actually produces, and offers only the "
+                        "families that group has")
         distance: FloatProperty(
             name="Plane Distance", default=1.0, min=0.1, max=10.0,
             description="Distance of the plane family from the origin")
@@ -795,6 +877,16 @@ if _IN_BLENDER:
                         "crossing there. The general P1 families run "
                         "much farther out and need a bigger radius "
                         "to draw in full")
+        guide_rings: IntProperty(
+            name="Guide Rings", default=0, min=0, max=24,
+            description="Thin the guide pattern to its innermost N "
+                        "rings of lines (0 = draw them all). The "
+                        "lines sit at a handful of distinct distances "
+                        "from the plane centre, and each such ring is "
+                        "one set equivalent under the plane's own "
+                        "symmetry -- dropping the outer rings clears "
+                        "the clutter, at the cost of the far corners "
+                        "they carry")
         lift: BoolProperty(
             name="Lift Sculpture Clear of Motif", default=True,
             description="Raise the sculpture up +Z so it stops "
@@ -870,7 +962,8 @@ if _IN_BLENDER:
                                  d, self.shell)
 
             # guide pattern (stellation diagram) in the same plane
-            segs = stellation_lines(kind, family, d, self.guide_extent)
+            segs = stellation_lines(kind, family, d, self.guide_extent,
+                                    self.guide_rings)
             gverts = []
             gedges = []
             for (p0, p1) in segs:
@@ -955,8 +1048,8 @@ if _IN_BLENDER:
             # what gets replicated, straight after which planes it is
             # replicated into
             lay.prop_search(self, 'motif_object', bpy.data, 'objects')
-            for k in ('distance', 'shell', 'guide_extent', 'lift',
-                      'translucent'):
+            for k in ('distance', 'shell', 'guide_extent',
+                      'guide_rings', 'lift', 'translucent'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
@@ -1030,6 +1123,34 @@ def _selftest():
     assert max_line_foot('ICOSA', 'P2', 1.0) > PHI * PHI
     assert PHI * PHI < default_extent
     print(f"ICOSA/P2 reaches the phi^2={PHI * PHI:.4f} corner OK")
+
+    # every (group, family) has a label, and the plane count it
+    # claims must be the orbit size actually produced
+    for (kind, fam), (n, _solid) in _FAMILY_SOLID.items():
+        _, normals = plane_normals(kind, fam)
+        lab = family_label(kind, fam)
+        ok = len(normals) == n and str(n) in lab
+        print(f"{kind}/{fam}: '{lab}' vs {len(normals)} planes "
+              f"{'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, lab, len(normals))
+        # and the fold implied by the label is the orbit's stabiliser
+        assert _ORDER[kind] // n == _FOLD[fam], (kind, fam)
+    assert set(_FAMILY_SOLID) == set(_AXES)
+
+    # guide rings: thinning keeps the innermost lines and is monotone
+    for kind, fam in (('ICOSA', 'P3'), ('ICOSA', 'P2'),
+                      ('ICOSA', 'P1')):
+        radii = guide_ring_radii(kind, fam, 1.0)
+        allsegs = len(stellation_lines(kind, fam, 1.0, 40.0))
+        counts = [len(stellation_lines(kind, fam, 1.0, 40.0, r))
+                  for r in range(1, len(radii) + 1)]
+        ok = (counts == sorted(counts) and counts[-1] == allsegs
+              and counts[0] < allsegs
+              and len(stellation_lines(kind, fam, 1.0, 40.0, 0))
+              == allsegs)
+        print(f"{kind}/{fam}: {len(radii)} rings, lines {counts[0]}"
+              f"..{counts[-1]} of {allsegs} {'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, counts, allsegs)
 
     # a motif flat on XY at plane distance d lands at sqrt(r^2+d^2)
     flat = [(0.0, 0.0, 0.0), (3.0, 4.0, 0.0)]
