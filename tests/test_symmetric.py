@@ -408,38 +408,81 @@ for g, f, n in (('OCTA', 'P3', 8), ('TETRA', 'P2', 6)):
 clear()
 bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS',
                                        show_polyhedron=True)
-got = {n: [o for o in bpy.data.objects if o.name.startswith(n)]
-       for n in ('SymSculpt Polyhedron', 'SymSculpt Crossing Balls',
-                 'SymSculpt Guide Marks')}
-solid = got['SymSculpt Polyhedron'][0]
-balls = got['SymSculpt Crossing Balls'][0]
-discs = got['SymSculpt Guide Marks'][0]
+solid = [o for o in bpy.data.objects
+         if o.name.startswith('SymSculpt Polyhedron')][0]
+orb_coll = bpy.data.collections['SymSculpt Orbits']
+ball_objs = sorted((o for o in orb_coll.objects
+                    if o.name.endswith('Balls')), key=lambda o: o.name)
+mark_objs = sorted((o for o in orb_coll.objects
+                    if o.name.endswith('Marks')), key=lambda o: o.name)
 cross = ss.crossing_points('ICOSA', 'P2', 1.0, 3.2, 0)
-orbit = ss.crossing_orbit('ICOSA', 'P2', cross, 1.0)
-ntype = len({ss._hue_of(k) for _, _, k in cross})
+orbit, cgroup = ss.crossing_orbits('ICOSA', 'P2', cross, 1.0)
+norb = len(set(cgroup))
 ok = (len(solid.data.vertices) == 32 and len(solid.data.polygons) == 30
-      and len(discs.data.materials) == ntype
-      and len(balls.data.materials) == ntype
-      and all(o.hide_render for o in (solid, balls, discs))
+      and len(ball_objs) == norb and len(mark_objs) == norb
+      and all(o.hide_render
+              for o in ball_objs + mark_objs + [solid])
       and all(o.parent and o.parent.name.startswith('SymSculpt')
-              for o in (solid, balls, discs)))
+              for o in ball_objs + mark_objs + [solid]))
 print(f"[polyhedron] V={len(solid.data.vertices)}(32) "
-      f"F={len(solid.data.polygons)}(30) crossing types={ntype} "
-      f"{'OK' if ok else 'FAIL'}")
+      f"F={len(solid.data.polygons)}(30) orbits={len(ball_objs)}"
+      f"({norb}) {'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('polyhedron')
 
-# one disc per crossing, one ball per orbit point -- faces per
-# marker taken from the builders rather than written in by hand
+# one object per orbit, each a single colour, and no two orbits
+# sharing one -- that is what makes a group identifiable
+cols = [tuple(round(c, 4) for c in o.data.materials[0].diffuse_color[:3])
+        for o in ball_objs]
+ok = len(set(cols)) == len(cols) and all(
+    len(o.data.materials) == 1 for o in ball_objs + mark_objs)
+print(f"[orbit colours] {len(set(cols))} distinct of {len(cols)} "
+      f"{'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('orbit-colours')
+
+# ... and a ball object's colour matches its own marks object
+pairs = 0
+for b in ball_objs:
+    m = bpy.data.objects.get(b.name.replace('Balls', 'Marks'))
+    if m is None:
+        continue
+    pairs += 1
+    if (tuple(round(c, 4) for c in b.data.materials[0].diffuse_color[:3])
+            != tuple(round(c, 4)
+                     for c in m.data.materials[0].diffuse_color[:3])):
+        pairs = -99
+print(f"[ball/mark colours agree] {pairs} pairs "
+      f"{'OK' if pairs == norb else 'FAIL'}")
+if pairs != norb:
+    fails.append('orbit-pairing')
+
+# every crossing gets a disc and every orbit point a ball -- faces
+# per marker taken from the builders rather than written in by hand
 fpd = len(ss._disc((0.0, 0.0, 0.0), 1.0)[1])
 fpb = len(ss._ball((0.0, 0.0, 0.0), 1.0)[1])
-ok = (len(discs.data.polygons) == fpd * len(cross)
-      and len(balls.data.polygons) == fpb * len(orbit))
-print(f"[marker counts] discs={len(discs.data.polygons) // fpd}"
-      f"({len(cross)}) balls={len(balls.data.polygons) // fpb}"
-      f"({len(orbit)}) {'OK' if ok else 'FAIL'}")
+nd = sum(len(o.data.polygons) for o in mark_objs) // fpd
+nb = sum(len(o.data.polygons) for o in ball_objs) // fpb
+ok = nd == len(cross) and nb == len(orbit)
+print(f"[marker counts] discs={nd}({len(cross)}) "
+      f"balls={nb}({len(orbit)}) {'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('marker-counts')
+
+# each orbit really is one orbit: its balls all sit at one radius
+# from the origin, since a rotation cannot change that
+ok = True
+for o in ball_objs:
+    rs = {round(math.dist(tuple(v.co), (0, 0, 0)), 4)
+          for v in o.data.vertices}
+    # a ball has extent, so allow its own diameter
+    if max(rs) - min(rs) > 0.08:
+        ok = False
+print(f"[orbits are equidistant] {'OK' if ok else 'FAIL'}")
+if not ok:
+    fails.append('orbit-radius')
+
+balls, discs = ball_objs[0], mark_objs[0]
 
 # EVERY disc sits on a real crossing -- this is what the old
 # vertex-based marks got wrong on the general planes, where most of

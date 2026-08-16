@@ -335,28 +335,48 @@ def crossing_points(kind, family, d=1.0, extent=3.2, rings=0):
     return out
 
 
-def crossing_orbit(kind, family, crossings, d=1.0):
-    """Every point equivalent to one of `crossings` under the group,
-    as (point, lines).
+def crossing_orbits(kind, family, crossings, d=1.0):
+    """Sort the crossings into orbits under the rotation group.
 
-    A crossing is a point of the plane arrangement, so it recurs in
-    every plane that passes through it; carrying the representative
-    plane's crossings around the group is what shows where they all
-    sit relative to the defining solid."""
+    Returns (points, groups): `points` is [(3-D point, group)] over
+    every point equivalent to some crossing, and `groups[i]` is the
+    group of `crossings[i]`.
+
+    The orbit is the honest notion of "same kind of point" -- two
+    crossings share a group exactly when a rotation of the sculpture
+    carries one onto the other, so they play identical roles in the
+    design.  Orbits come out at the group's own sizes: 12, 20, 30 or
+    60 for the icosahedral rotations, according to whether the point
+    sits on a 5-, 3- or 2-fold axis or on none.
+
+    A crossing is a point of the plane arrangement and so recurs in
+    every plane through it; carrying the representative plane's
+    crossings around the group is what shows where they all sit
+    relative to the defining solid."""
     a, _ = plane_normals(kind, family)
     u, v = _frame(a)
+    rots = group_rotations(kind)
     seen = {}
-    out = []
-    for x, y, k in crossings:
+    points = []
+    groups = []
+    nxt = 0
+    for x, y, _k in crossings:
         p = tuple(d * a[i] + x * u[i] + y * v[i] for i in range(3))
-        for R in group_rotations(kind):
+        key = tuple(round(c, 5) for c in p)
+        if key in seen:
+            groups.append(seen[key])       # already in an earlier orbit
+            continue
+        g = nxt
+        nxt += 1
+        groups.append(g)
+        for R in rots:
             q = _apply(R, p)
-            key = tuple(round(c, 5) for c in q)
-            if key in seen:
+            kq = tuple(round(c, 5) for c in q)
+            if kq in seen:
                 continue
-            seen[key] = True
-            out.append((q, k))
-    return out
+            seen[kq] = g
+            points.append((q, g))
+    return points, groups
 
 
 def max_line_foot(kind, family, d=1.0):
@@ -861,26 +881,30 @@ if _IN_BLENDER:
             mat.blend_method = 'BLEND'
         return mat
 
-    # one hue per crossing type, shared by the disc in the guide
-    # diagram and the balls on every point equivalent to it
-    _CLASS_HUES = ((0.90, 0.25, 0.20), (0.20, 0.65, 0.35),
-                   (0.25, 0.45, 0.95), (0.95, 0.70, 0.15),
-                   (0.65, 0.30, 0.85), (0.20, 0.75, 0.80))
     # a viewport aid should not quietly build a hundred thousand
     # spheres; the general plane families can reach that
     _MAX_MARKS = 3000
 
-    def _hue_of(lines):
-        """Crossing of k lines -> colour slot.  Two lines is the
-        plainest corner, so it takes the first hue."""
-        return max(0, min(lines - 2, len(_CLASS_HUES) - 1))
+    def _group_rgb(i):
+        """Colour for orbit i.
+
+        Stepping the hue by the golden angle puts consecutive orbits
+        on opposite sides of the wheel, so neighbouring groups stay
+        told apart however many there are -- a fixed palette would
+        run out, since the general planes reach a couple of dozen
+        orbits."""
+        import colorsys
+        h = (i * 0.6180339887498949) % 1.0
+        s = 0.85 if i % 2 else 0.62
+        v = 0.95 if i % 3 else 0.72
+        return colorsys.hsv_to_rgb(h, s, v)
 
     def _class_material(i, alpha=1.0):
-        name = f"SymSculpt Class {i}" + ("" if alpha >= 1.0 else " Ghost")
+        name = f"SymSculpt Orbit {i}" + ("" if alpha >= 1.0 else " Ghost")
         mat = bpy.data.materials.get(name)
         if mat is not None:
             return mat
-        rgb = _CLASS_HUES[i % len(_CLASS_HUES)]
+        rgb = _group_rgb(i)
         mat = bpy.data.materials.new(name)
         mat.diffuse_color = (*rgb, alpha)
         mat.use_nodes = True
@@ -1273,13 +1297,17 @@ if _IN_BLENDER:
                         "with a coloured disc -- the points a motif's "
                         "corners should sit on, since a crossing of "
                         "k lines is where k+1 planes meet and k+1 "
-                        "parts converge. Colour is that k, so a plain "
-                        "corner and a hub read differently. Balls of "
-                        "the same colour show every point equivalent "
-                        "to those crossings around the solid. Design "
-                        "aid only -- excluded from renders. Guide "
-                        "Rings and Guide Extent thin the crossings "
-                        "along with the lines")
+                        "parts converge. Colour is the orbit: two "
+                        "crossings share one exactly when a rotation "
+                        "of the sculpture carries one onto the other, "
+                        "so they play the same role. Balls of that "
+                        "colour show every point equivalent to them "
+                        "around the solid, one object per orbit in a "
+                        "SymSculpt Orbits collection, so a group can "
+                        "be switched off on its own. Design aid only "
+                        "-- excluded from renders. Guide Rings and "
+                        "Guide Extent thin the crossings along with "
+                        "the lines")
         translucent: BoolProperty(
             name="Translucent Copies", default=False,
             description="Draw the replicated copies in a ghost "
@@ -1435,37 +1463,73 @@ if _IN_BLENDER:
                 cross = crossing_points(kind, family, d,
                                         self.guide_extent,
                                         self.guide_rings)
-                orbit = crossing_orbit(kind, family, cross, d)
-                if len(orbit) > _MAX_MARKS:
+                orbit, cgroup = crossing_orbits(kind, family, cross, d)
+
+                pts_by_g = {}
+                for p, g in orbit:
+                    pts_by_g.setdefault(g, []).append(p)
+                marks_by_g = {}
+                for (x, y, _k), g in zip(cross, cgroup):
+                    marks_by_g.setdefault(g, []).append((x, y))
+
+                # If there are too many to draw, drop whole orbits
+                # from the outside in.  Truncating mid-orbit would
+                # leave a group half-drawn, which reads as a gap in
+                # the symmetry rather than as something left out.
+                order = sorted(pts_by_g, key=lambda g: min(
+                    sum(c * c for c in p) for p in pts_by_g[g]))
+                kept, total = [], 0
+                for g in order:
+                    if total + len(pts_by_g[g]) > _MAX_MARKS:
+                        continue
+                    kept.append(g)
+                    total += len(pts_by_g[g])
+                dropped = len(pts_by_g) - len(kept)
+                if dropped:
                     self.report(
                         {'WARNING'},
-                        f"{len(orbit)} crossing points in 3D -- "
-                        f"showing the {_MAX_MARKS} nearest; raise "
-                        f"Guide Rings or lower Guide Extent to thin "
-                        f"the pattern")
-                    orbit.sort(key=lambda t: sum(c * c for c in t[0]))
-                    orbit = orbit[:_MAX_MARKS]
-                balls = _build_marker_object(
-                    "SymSculpt Crossing Balls",
-                    [(_hue_of(k), _ball(p, rball)) for p, k in orbit],
-                    0.45)
-                discs = _build_marker_object(
-                    "SymSculpt Guide Marks",
-                    [(_hue_of(k), _disc((x, y, 1e-3 * d), rball))
-                     for x, y, k in cross], 1.0)
-                for o in (balls, discs):
-                    context.collection.objects.link(o)
+                        f"{len(orbit)} crossing points is past the "
+                        f"{_MAX_MARKS} the aid draws -- showing "
+                        f"{len(kept)} orbits, holding back {dropped} "
+                        f"of the outer ones; raise Guide Rings or "
+                        f"lower Guide Extent to thin the pattern")
+
+                # one object per orbit, so a group can be switched off
+                # on its own from the outliner
+                orb_coll = bpy.data.collections.new("SymSculpt Orbits")
+                context.collection.children.link(orb_coll)
+                made = []
+                for g in sorted(kept):
+                    b = _build_marker_object(
+                        f"SymSculpt Orbit {g:02d} Balls",
+                        [(g, _ball(p, rball)) for p in pts_by_g[g]],
+                        0.45)
+                    made.append((b, True))
+                    if marks_by_g.get(g):
+                        m = _build_marker_object(
+                            f"SymSculpt Orbit {g:02d} Marks",
+                            [(g, _disc((x, y, 1e-3 * d), rball))
+                             for x, y in marks_by_g[g]], 1.0)
+                        made.append((m, False))
+                for o, rides_lift in made:
+                    orb_coll.objects.link(o)
                     o.matrix_world = Matrix.Identity(4)
                     o.hide_render = True
                     o.parent = obj
                     o.matrix_parent_inverse = Matrix.Identity(4)
-                # the solid and its balls belong to the sculpture and
-                # rise with it; the discs belong to the flat guide
-                # diagram and stay down at the origin with it
-                if lift_socket is not None:
-                    for o in (solid, balls):
+                    # the balls belong to the sculpture and rise with
+                    # it; the discs belong to the flat guide diagram
+                    # and stay down at the origin with it
+                    if rides_lift and lift_socket is not None:
                         _drive_z_from_lift(o, obj, mod.name,
                                            lift_socket)
+                if lift_socket is not None:
+                    _drive_z_from_lift(solid, obj, mod.name,
+                                       lift_socket)
+                self.report(
+                    {'INFO'},
+                    f"{len(cross)} guide crossings in "
+                    f"{len(pts_by_g)} orbits, {total} points in space")
 
             for o in context.selected_objects:
                 o.select_set(False)
@@ -1693,14 +1757,32 @@ def _selftest():
           f"{'OK' if ok else 'BAD'}")
     assert ok, sorted(got)[:6]
 
-    # and a crossing of k lines really is a meeting of k+1 planes, so
-    # the orbit lands every equivalent point exactly once
-    orb = crossing_orbit('ICOSA', 'P5', crossing_points(
-        'ICOSA', 'P5', 1.0, 3.2), 1.0)
-    keys = {tuple(round(c, 5) for c in p) for p, _ in orb}
-    print(f"ICOSA/P5 orbit: {len(orb)} points, {len(keys)} distinct "
-          f"{'OK' if len(orb) == len(keys) else 'BAD'}")
-    assert len(orb) == len(keys)
+    # orbits: every point landed exactly once, every crossing given a
+    # group, and each orbit of a size the group can actually produce
+    # -- N/k for a point held by a k-fold stabiliser, so 12, 20, 30
+    # or 60 out of the icosahedral 60, never anything between
+    for kind, fam in (('ICOSA', 'P5'), ('ICOSA', 'P3'),
+                      ('ICOSA', 'P2'), ('TETRA', 'P3')):
+        cps = crossing_points(kind, fam, 1.0, 3.2)
+        pts, grps = crossing_orbits(kind, fam, cps, 1.0)
+        keys = {tuple(round(c, 5) for c in p) for p, _ in pts}
+        sizes = {}
+        for _p, g in pts:
+            sizes[g] = sizes.get(g, 0) + 1
+        n = _ORDER[kind]
+        ok = (len(pts) == len(keys) and len(grps) == len(cps)
+              and set(grps) == set(sizes)
+              and all(n % s == 0 for s in sizes.values()))
+        print(f"{kind}/{fam} orbits: {len(sizes)} groups, sizes "
+              f"{sorted(set(sizes.values()))}, {len(pts)} points "
+              f"{'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, sorted(set(sizes.values())))
+        # every point of one orbit is the same distance out, since a
+        # rotation cannot change a radius
+        for g in sizes:
+            rr = {round(sqrt(sum(c * c for c in p)), 6)
+                  for p, gg in pts if gg == g}
+            assert len(rr) == 1, (kind, fam, g, rr)
 
     # a motif flat on XY at plane distance d lands at sqrt(r^2+d^2)
     flat = [(0.0, 0.0, 0.0), (3.0, 4.0, 0.0)]
