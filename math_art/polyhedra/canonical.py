@@ -48,10 +48,12 @@ def spherize(V, F, iters=0):
     return out
 
 
-def canonicalize(V, F, iters=200, lam_t=0.3, lam_p=0.5):
+def canonicalize(V, F, iters=200, lam_t=0.3, lam_p=0.5, trace=None):
     """George Hart's canonicalization: iterate edge-tangency to the unit
     sphere, recentering on the edge tangency points, and face
-    planarization, until converged (or iters)."""
+    planarization, until converged (or iters).  `trace`, if given, is
+    called as trace(it, P) after every iteration (instrumentation for
+    the benchmark harness; does not alter the numerics)."""
     if np is None:
         return V
     P = np.array(V, dtype=np.float64)
@@ -102,12 +104,14 @@ def canonicalize(V, F, iters=200, lam_t=0.3, lam_p=0.5):
             nrm /= ln
             dist = Qc @ nrm
             P[f] -= lam_p * dist[:, None] * nrm
+        if trace is not None:
+            trace(it, P)
         if np.max(np.linalg.norm(P - prev, axis=1)) < 1e-7:
             break
     return [list(map(float, p)) for p in P]
 
 
-def biscribe(V, F, iters=2500, step=0.1):
+def biscribe(V, F, iters=2500, step=0.1, trace=None):
     """Biscribed form: all vertices on a circumsphere AND all faces tangent
     to a concentric insphere.  Starts from the canonical (edge-tangent)
     form, then drives the vertex radii and the face-plane distances to
@@ -122,7 +126,7 @@ def biscribe(V, F, iters=2500, step=0.1):
     P -= P.mean(axis=0)
     P /= np.mean(np.linalg.norm(P, axis=1)) or 1.0
     Fi = [np.array(f) for f in F]
-    for _ in range(iters):
+    for it in range(iters):
         R = np.linalg.norm(P, axis=1)
         Rb = R.mean()
         dX = (step * ((Rb - R) / np.maximum(R, 1e-9))[:, None]) * P
@@ -148,6 +152,8 @@ def biscribe(V, F, iters=2500, step=0.1):
                 dX[v] += push * n + step * (n @ (cs[fi] - P[v])) * n
         dX -= dX.mean(axis=0)
         P += dX
+        if trace is not None:
+            trace(it, P)
         if R.max() / max(R.min(), 1e-9) > 50:
             return [list(map(float, p)) for p in P], False
         if np.max(np.abs(dX)) < 1e-11:
