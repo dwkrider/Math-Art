@@ -1650,14 +1650,11 @@ if _IN_BLENDER:
                         "plane and centred on the Z axis, ready to "
                         "select and export for cutting or printing; "
                         "the dihedral angles used are reported")
-        part_thickness: FloatProperty(
-            name="Part Thickness", default=0.03, min=0.0005, max=0.5,
-            description="Material thickness, in the same units as "
-                        "Plane Distance. The part is centred on its "
-                        "plane, so this is the full thickness. A "
-                        "shallow joint needs a long bevel -- thick "
-                        "stock on a nearly-flat joint will eat most "
-                        "of the mating edge")
+        # thickness is not its own control: Shell already says how
+        # thick the sculpture is, and a part that disagreed with the
+        # sculpture it comes from would be a trap.  Shell is a radial
+        # fraction, so at the plane it works out to Shell x Distance,
+        # and changing Shell rebuilds the part with it.
         show_polyhedron: BoolProperty(
             name="Show Defining Polyhedron", default=False,
             description="Add the semi-transparent solid whose "
@@ -1811,6 +1808,18 @@ if _IN_BLENDER:
             guides.matrix_parent_inverse = Matrix.Identity(4)
 
             if self.show_part:
+                # Shell is the radial extrusion as a fraction of the
+                # distance from the origin, so at the plane it is this
+                # thick.  Shell 0 leaves the sculpture flat and there
+                # is no solid to machine, so fall back to something
+                # cuttable rather than a zero-thickness part.
+                p_thick = self.shell * d
+                if p_thick < 1e-4:
+                    p_thick = 0.02 * d
+                    self.report({'WARNING'},
+                                "Shell is 0, so the sculpture has no "
+                                "thickness -- the part was built at "
+                                "2% of the plane distance instead")
                 mloops = boundary_loops(
                     [tuple(v.co) for v in motif.data.vertices],
                     [list(p.vertices) for p in motif.data.polygons])
@@ -1820,8 +1829,7 @@ if _IN_BLENDER:
                 angles = set()
                 for outer, holes in pieces:
                     lv, lf, dh = mitred_part(
-                        kind, family, [outer] + holes, d,
-                        self.part_thickness)
+                        kind, family, [outer] + holes, d, p_thick)
                     base = len(pv2)
                     pv2.extend(lv)
                     pf2.extend([[base + i for i in f] for f in lf])
@@ -1835,7 +1843,7 @@ if _IN_BLENDER:
                     cx = (min(xs) + max(xs)) / 2
                     cy = (min(ys) + max(ys)) / 2
                     top = max(p[2] for p in pv2)
-                    dz = -0.25 * d - top
+                    dz = -0.6 * d - top
                     pv2 = [(p[0] - cx, p[1] - cy, p[2] + dz)
                            for p in pv2]
                     pme2 = bpy.data.meshes.new("SymSculpt Part")
@@ -1850,9 +1858,9 @@ if _IN_BLENDER:
                     part.matrix_parent_inverse = Matrix.Identity(4)
                     self.report(
                         {'INFO'},
-                        "Part: %d piece(s), %.4g thick, mating "
-                        "dihedrals %s deg"
-                        % (len(pieces), self.part_thickness,
+                        "Part: %d piece(s), %.4g thick (Shell x "
+                        "Distance), mating dihedrals %s deg"
+                        % (len(pieces), p_thick,
                            ", ".join(f"{x:.2f}"
                                      for x in sorted(angles))
                            or "none (no edge beds against a "
@@ -1985,8 +1993,6 @@ if _IN_BLENDER:
                       'guide_rings', 'show_polyhedron', 'lift',
                       'translucent', 'show_part'):
                 lay.prop(self, k)
-            if self.show_part:
-                lay.prop(self, 'part_thickness')
 
     def _menu_func(self, context):
         self.layout.operator_menu_enum(

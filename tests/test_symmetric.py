@@ -604,9 +604,11 @@ if not ok:
 # picked and exported without disturbing the design objects
 for preset, thick in (('WHIMSY', 0.03), ('FRABJOUS', 0.02)):
     clear()
+    # thickness follows Shell x Distance, so it always agrees with
+    # the sculpture the part came from
     bpy.ops.object.symmetric_sculpture_add(preset=preset,
                                            show_part=True,
-                                           part_thickness=thick)
+                                           shell=thick, distance=1.0)
     part = [o for o in bpy.data.objects
             if o.name.startswith('SymSculpt Part')][0]
     xs = [v.co.x for v in part.data.vertices]
@@ -619,7 +621,7 @@ for preset, thick in (('WHIMSY', 0.03), ('FRABJOUS', 0.02)):
             e = vs[i], vs[(i + 1) % len(vs)]
             used[(min(e), max(e))] = used.get((min(e), max(e)), 0) + 1
     ok = (abs(max(zs) - min(zs) - thick) < 1e-6      # thickness
-          and max(zs) < 0.0                          # below XY
+          and max(zs) < -0.5                         # well below XY
           and abs(min(xs) + max(xs)) < 1e-6          # centred on Z
           and abs(min(ys) + max(ys)) < 1e-6
           and set(used.values()) == {2})             # closed solid
@@ -641,8 +643,7 @@ bpy.context.collection.objects.link(
     bpy.data.objects.new("MyPartMotif", me2))
 bpy.ops.object.symmetric_sculpture_add(preset='TWISTED_RIVERS',
                                        motif_object="MyPartMotif",
-                                       show_part=True,
-                                       part_thickness=0.05)
+                                       show_part=True, shell=0.05)
 part = [o for o in bpy.data.objects
         if o.name.startswith('SymSculpt Part')][0]
 zs = [v.co.z for v in part.data.vertices]
