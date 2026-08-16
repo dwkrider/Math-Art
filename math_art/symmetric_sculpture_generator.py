@@ -949,13 +949,15 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'preset')
-            for k in ('group', 'family'):
-                if self.preset == 'CUSTOM':
-                    lay.prop(self, k)
+            if self.preset == 'CUSTOM':
+                lay.prop(self, 'group')
+                lay.prop(self, 'family')
+            # what gets replicated, straight after which planes it is
+            # replicated into
+            lay.prop_search(self, 'motif_object', bpy.data, 'objects')
             for k in ('distance', 'shell', 'guide_extent', 'lift',
                       'translucent'):
                 lay.prop(self, k)
-            lay.prop_search(self, 'motif_object', bpy.data, 'objects')
 
     def _menu_func(self, context):
         self.layout.operator_menu_enum(
