@@ -68,10 +68,12 @@ try:
     from . import cotan as _cotan
     from . import descent as _descent
     from . import groom as _groom
+    from . import walls as _walls
 except ImportError:                      # flat (path-based) headless import
     import cotan as _cotan               # type: ignore
     import descent as _descent           # type: ignore
     import groom as _groom               # type: ignore
+    import walls as _walls               # type: ignore
 
 
 # --------------------------------------------------------------------------
@@ -178,12 +180,21 @@ def body_pressures(area_grad, grads, weights=None):
 
 
 def restore_volumes(V, T, labels, targets, free=None, max_rounds=10,
-                    tol=1e-12):
+                    tol=1e-12, project=None, tangent=None):
     """Damped Newton on the constraint values, in place (Evolver's
     volume_restore wrapped in project_all's damping): solve
     G mu = (target - V_b), move every vertex by sum_i mu_i grad V_i,
     halve the move if the worst relative deficit grew, recompute the
     gradients each round, give up after max_rounds.
+
+    Wall-constraint hooks (both default None, changing nothing):
+    `tangent(grads, V) -> grads` projects the volume gradients onto the
+    wall tangent spaces so the Newton move slides along the walls, and
+    `project(V)` (in place) re-projects each trial position onto the
+    walls before its volumes are measured -- so the accepted state
+    satisfies the walls at projection tolerance AND the volumes at
+    `tol` (the O(step^2) volume change of the wall re-projection is
+    absorbed by the next Newton round).
 
     Returns (rel_before, rel_after, rounds): worst |V - target|/|target|
     entering and leaving, and the Newton rounds spent."""
@@ -201,13 +212,18 @@ def restore_volumes(V, T, labels, targets, free=None, max_rounds=10,
         if rel < tol:
             return rel_before, rel, rounds
         grads = volume_gradients(V, T, labels, nb, free)
+        if tangent is not None:
+            grads = tangent(grads, V)
         A = gram_matrix(grads)
         mu = _solve_gram(A, deficit)
         step = np.einsum('i,inj->nj', mu, grads)
         s = 1.0
         accepted = False
         for _ in range(8):
-            vols_n = region_volumes(V + s * step, T, labels, nb)
+            V_n = V + s * step
+            if project is not None:
+                project(V_n)
+            vols_n = region_volumes(V_n, T, labels, nb)
             rel_n = float(np.max(np.abs(targets - vols_n) / scale))
             if rel_n < rel:
                 accepted = True
@@ -215,7 +231,7 @@ def restore_volumes(V, T, labels, targets, free=None, max_rounds=10,
             s *= 0.5
         if not accepted:
             return rel_before, rel, rounds     # no direction improves
-        V += s * step
+        V[:] = V_n
     vols = region_volumes(V, T, labels, nb)
     rel = float(np.max(np.abs(targets - vols) / scale))
     return rel_before, rel, max_rounds
@@ -332,7 +348,8 @@ def triple_line_angles(V, T):
 def evolve(V, T, labels, targets=None, iters=200, fixed=None,
            mobility="star", cotan_mode="mollify", cg=True,
            groom_every=0, groom_smooth=0.25,
-           area_tol=1e-10, vol_tol=1e-12, s_init_frac=0.2):
+           area_tol=1e-10, vol_tol=1e-12, s_init_frac=0.2,
+           walls=None, wall_tol=1e-12, ext_energy=None, ext_grad=None):
     """Minimize film area at fixed body volumes.  V is modified in
     place; T is modified in place only when grooming flips edges.
 
@@ -351,9 +368,35 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     tangential smoothing (triple-line and fixed vertices pinned) before
     iterations g, 2g, ..., re-restoring volumes afterwards.
 
-    Every accepted solver step is monotone in area BY CONSTRUCTION: the
-    line search evaluates area at volume-restored trial positions, so
-    an area rise in the history (outside groom iterations) means a bug.
+    Wall constraints (solver/walls): `walls` is a list of (wall, mask)
+    pairs -- boolean vertex masks flagged to level-set walls f(x) = 0.
+    Each step the velocity is wall-tangent-projected, the volume
+    gradients entering the Gram solve are tangent-projected against the
+    two-sided walls (so the Lagrange correction slides along them and
+    the fixed point is the true constrained KKT state), and positions
+    are Newton-projected back onto the walls both before the volume
+    restore and inside its damping loop -- walls first, volumes second,
+    because the restore respects the walls by construction while wall
+    projection knows nothing of volumes.  One-sided walls (f >= 0)
+    project positions only when violating and constrain only on-wall,
+    inward-pointing velocities; their volume gradients are left free
+    (the position projection catches the violation and the restore loop
+    absorbs it), which is the survey's "simple version" by design.
+    History entries then also carry wall_resid (post-step max |f|) and
+    vt_normal_max (tangency residual of the projected velocity over the
+    two-sided rows).
+
+    Extra energy terms: `ext_energy(V) -> float` is added to the film
+    area in the line search (e.g. the wetting energy
+    -cos(theta) * wetted area of a sessile drop) and `ext_grad(V) ->
+    (n,3)` to the area gradient.  With an ext term the monotone
+    quantity is E = area + ext (recorded per iteration as "E" with
+    "E_rise"); without one it is the area itself, exactly as before.
+
+    Every accepted solver step is monotone in the energy BY
+    CONSTRUCTION: the line search evaluates it at wall-projected,
+    volume-restored trial positions, so a rise in the history (outside
+    groom iterations) means a bug.
 
     Returns a dict: iters_run, area, volumes, pressures, targets,
     grooms_run, history (per-iteration area / step / drift / rise)."""
@@ -371,12 +414,39 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     groups = face_groups(labels)
     smooth_pin = ~free | nonmanifold_vertices(T, len(V))
 
-    def _restore(Varr):
-        return restore_volumes(Varr, T, labels, targets, free=free,
-                               tol=vol_tol)
+    wall_list = None
+    wall_ts = None                       # two-sided subset
+    if walls:
+        wall_list = [(w, None if m is None else np.asarray(m, bool))
+                     for w, m in walls]
+        wall_ts = [(w, m) for w, m in wall_list if not w.one_sided]
 
+    def _wproject(Varr):
+        _walls.project_all(Varr, wall_list, tol=wall_tol)
+
+    def _gtangent(G, Varr):
+        # volume gradients slide along the two-sided walls only; the
+        # one-sided walls are enforced by position projection instead
+        for i in range(len(G)):
+            _walls.tangent_all(G[i], Varr, wall_ts)
+        return G
+
+    def _restore(Varr):
+        if wall_list is None:
+            return restore_volumes(Varr, T, labels, targets, free=free,
+                                   tol=vol_tol)
+        return restore_volumes(Varr, T, labels, targets, free=free,
+                               tol=vol_tol, project=_wproject,
+                               tangent=_gtangent)
+
+    def _E_of(Varr, A):
+        return A if ext_energy is None else A + float(ext_energy(Varr))
+
+    if wall_list is not None:
+        _wproject(V)                     # walls first, volumes second
     _restore(V)                          # start ON the constraint manifold
     A_prev = mesh_area(V, T)
+    E_prev = _E_of(V, A_prev)
     history = []
     grooms_run = 0
     s_prev = None
@@ -391,12 +461,17 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         if groom_every and (it - 1) and (it - 1) % groom_every == 0:
             _groom.groom(V, T, fixed=smooth_pin, smooth_lam=groom_smooth,
                          tri_groups=groups)
+            if wall_list is not None:
+                _wproject(V)
             _restore(V)
             grooms_run += 1
             groomed = True
             d_prev = None                # full CG restart on mesh change
             A_prev = mesh_area(V, T)
+            E_prev = _E_of(V, A_prev)
         g = area_gradient(V, T, cotan_mode=cotan_mode)
+        if ext_grad is not None:
+            g = g + ext_grad(V)
         if mobility == "star":
             M = 3.0 / np.maximum(vertex_star_areas(V, T), 1e-300)
         elif mobility == "none":
@@ -405,8 +480,14 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             raise ValueError(f"unknown mobility {mobility!r}")
         M[~free] = 0.0
         v = -M[:, None] * g
+        if wall_list is not None:
+            _walls.tangent_all(v, V, wall_list)
         grads = volume_gradients(V, T, labels, nb, free=free)
+        if wall_list is not None:
+            _gtangent(grads, V)
         vt, lam = project_velocity(v, grads, weights=M)
+        vt_normal_max = (0.0 if wall_list is None
+                         else _walls.normal_component_max(vt, V, wall_ts))
         vmax = float(np.max(np.linalg.norm(vt, axis=1)))
         if vmax < 1e-300:
             break
@@ -425,6 +506,9 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
                 d = vt + gamma * d_prev
                 # the previous direction was tangent to the PREVIOUS
                 # constraint gradients; re-project onto the current ones
+                # (walls first: their normals rotated with the surface)
+                if wall_list is not None:
+                    _walls.tangent_all(d, V, wall_list)
                 d, _ = project_velocity(d, grads, weights=M)
         Lmean = float(np.mean(np.linalg.norm(
             V[T[:, 1]] - V[T[:, 0]], axis=1)))
@@ -436,8 +520,10 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
 
         def energy(x):
             Vc = np.array(x, float)
+            if wall_list is not None:
+                _wproject(Vc)
             _restore(Vc)
-            return mesh_area(Vc, T)
+            return _E_of(Vc, mesh_area(Vc, T))
 
         x1, s, E1, nev = _descent.parabola_line_search(
             energy, V, d, s0, s_max=s_max)
@@ -454,26 +540,42 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         v_prev_ip = vt_ip
         d_prev = d
         V[:] = x1
+        if wall_list is not None:
+            _wproject(V)
         drift_pre, drift_post, _rounds = _restore(V)
         A = mesh_area(V, T)
-        history.append({
+        E = _E_of(V, A)
+        entry = {
             "it": it, "area": A, "s": s, "n_evals": nev,
             "rise": (A - A_prev) / max(A_prev, 1e-300),
             "drift_pre": drift_pre, "drift_post": drift_post,
             "groomed": groomed,
-        })
-        if abs(A - A_prev) < area_tol * A_prev:
+        }
+        if wall_list is not None:
+            entry["wall_resid"] = _walls.wall_residual(V, wall_list)
+            entry["vt_normal_max"] = vt_normal_max
+        if ext_energy is not None:
+            entry["E"] = E
+            entry["E_rise"] = (E - E_prev) / max(abs(E_prev), 1e-300)
+        history.append(entry)
+        if abs(E - E_prev) < area_tol * abs(E_prev):
             flat_streak += 1
             if flat_streak >= 3:
                 A_prev = A
+                E_prev = E
                 break
         else:
             flat_streak = 0
         A_prev = A
+        E_prev = E
         s_prev = s
 
     g = area_gradient(V, T, cotan_mode=cotan_mode)
+    if ext_grad is not None:
+        g = g + ext_grad(V)
     grads = volume_gradients(V, T, labels, nb, free=free)
+    if wall_list is not None:
+        _gtangent(grads, V)
     if mobility == "star":
         M = 3.0 / np.maximum(vertex_star_areas(V, T), 1e-300)
         M[~free] = 0.0
@@ -646,6 +748,58 @@ def _selftest():
           f"area excess {area_exc:.2e} (discrete>=0), pressure err "
           f"{p_err:.2e} vs 2/r, drift {drift:.1e}, max rise {rise:.1e} "
           f"{'OK' if good else 'FAIL'}")
+
+    # --- walls compose with the restore: perturbed two-cube with its
+    # outer x = 2 face constrained to the plane, volumes AND wall both
+    # recovered to tolerance ------------------------------------------
+    V, T, labels = _two_cube_mesh()
+    m = np.abs(V[:, 0] - 2.0) < 1e-9
+    pw = _walls.PlaneWall([2.0, 0.0, 0.0], [1.0, 0.0, 0.0])
+    wl = [(pw, m)]
+    Vp = V + rng.normal(0.0, 0.05, V.shape)
+    _walls.project_all(Vp, wl)
+
+    def _proj(Varr):
+        _walls.project_all(Varr, wl)
+
+    def _tang(G, Varr):
+        for i in range(len(G)):
+            _walls.tangent_all(G[i], Varr, wl)
+        return G
+
+    b4, aft, rounds = restore_volumes(Vp, T, labels, [1.0, 1.0],
+                                      project=_proj, tangent=_tang)
+    wres = _walls.wall_residual(Vp, wl)
+    good = aft < 1e-12 and b4 > 1e-3 and wres < 1e-12
+    ok &= good
+    print(f"volume: restore with plane wall {b4:.2e} -> {aft:.2e} "
+          f"({rounds} rounds), wall residual {wres:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # --- one-sided floor: the squashed bubble dips below z = -0.8;
+    # evolution must end violation-free, volume-exact, monotone, and
+    # still reach the Young-Laplace pressure (the floor goes inactive
+    # as the sphere rounds up and lifts off) ---------------------------
+    SV, SF = _icosphere_mesh(2)
+    Vb = SV * np.array([1.25, 0.8, 1.0])
+    lab = np.zeros((len(SF), 2), dtype=np.int64)
+    lab[:, 1] = 1
+    floor = _walls.PlaneWall([0.0, 0.0, -0.8], [0.0, 0.0, 1.0],
+                             one_sided=True)
+    target = 4.0 * np.pi / 3.0
+    info = evolve(Vb, SF, lab, targets=[target], iters=120,
+                  walls=[(floor, np.ones(len(Vb), dtype=bool))])
+    zmin = float(Vb[:, 2].min())
+    p_err = abs(info["pressures"][0] - 2.0) / 2.0
+    drift = max(hh["drift_post"] for hh in info["history"])
+    rise = max(hh["rise"] for hh in info["history"] if not hh["groomed"])
+    wres = max(hh["wall_resid"] for hh in info["history"])
+    good = (zmin >= -0.8 - 1e-9 and p_err < 2e-2 and drift < 1e-10
+            and rise <= 1e-12 and wres < 1e-9)
+    ok &= good
+    print(f"volume: one-sided floor evolve: min z {zmin:.4f} (>= -0.8), "
+          f"pressure err {p_err:.2e}, drift {drift:.1e}, max rise "
+          f"{rise:.1e}, wall resid {wres:.1e} {'OK' if good else 'FAIL'}")
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
