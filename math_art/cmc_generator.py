@@ -1,8 +1,10 @@
 # CMC / capillary surface generator: liquid bridges (the Delaunay
 # surfaces of revolution -- unduloid and nodoid, with the catenoid and
-# the cylinder as limits) and sessile drops with a prescribed contact
-# angle, produced by genuine constrained area minimization rather than
-# closed-form drawing.
+# the cylinder as limits), sessile drops with a prescribed contact
+# angle -- optionally under gravity, where the drop flattens into a
+# puddle -- and free-boundary soap films spanning a fixed frame and a
+# curved support (sphere or cylinder), all produced by genuine
+# constrained area minimization rather than closed-form drawing.
 #
 # A liquid bridge spans two coaxial rings (pinned rims) at a prescribed
 # enclosed volume: at the catenoid's own volume the relaxed surface IS
@@ -16,11 +18,26 @@
 # (Surface Evolver's technique), and in zero gravity the equilibrium
 # drop is a spherical cap, which is how the result is validated.
 #
-# In both cases the equilibrium satisfies the Young-Laplace law
+# Zero gravity: the equilibrium satisfies the Young-Laplace law
 # p = 2 sigma H with CONSTANT mean curvature H; the solver's Lagrange
 # multiplier is the pressure, reported per run, and tests/bench
 # measures H constancy, p vs 2H, the spherical-cap ground truth and
 # the catenoid limit.
+#
+# Gravity enters as the hydrostatic potential E_g = rho g int z dV
+# through evolve()'s ext_energy/ext_grad hooks (the z-moment and its
+# analytic gradient are exact per-face divergence-theorem sums).  The
+# equilibrium is then no longer CMC, but Young-Laplace with the
+# hydrostatic head makes  2 sigma H + rho g z  constant over the free
+# surface (= the Lagrange pressure at z = 0), which is the measured
+# invariant; the control parameter is the Bond number Bo = rho g R0^2
+# / sigma (R0 the zero-g cap radius), and for Bo >> 1 the drop is a
+# puddle of thickness h = 2 l_c sin(theta/2), l_c = sqrt(sigma/rho g).
+#
+# A free-boundary film on a frictionless support surface meets that
+# support ORTHOGONALLY (the natural boundary condition of the area
+# functional); the film modes measure the achieved contact angle
+# against 90 degrees with an O(h^2) local-quadric normal estimator.
 #
 # Pure-math core (no bpy): mesh builders, volume bookkeeping for open
 # surfaces, wetting energy/gradient, and the measurement instruments
@@ -42,6 +59,13 @@
 #   R. Finn, "Equilibrium Capillary Surfaces", Grundlehren der
 #       mathematischen Wissenschaften 284, Springer (1986) -- sessile
 #       drops and capillary theory.
+#   P.-G. de Gennes, F. Brochard-Wyart, D. Quere, "Capillarity and
+#       Wetting Phenomena" (Springer, 2004) -- capillary length,
+#       Bond number, and the gravity-flattened puddle thickness
+#       h = 2 l_c sin(theta/2).
+#   R. Courant, "Dirichlet's Principle, Conformal Mapping, and Minimal
+#       Surfaces" (Interscience, 1950) -- free boundaries of minimal
+#       surfaces meet the support surface orthogonally.
 #   K. A. Brakke, "The Surface Evolver", Experimental Mathematics 1(2)
 #       (1992) -- constrained evolution; wetting as a contact-line
 #       integral; level-set constraint walls (cnstrnt.c).
@@ -273,6 +297,117 @@ def drop_energy_terms(theta_rad, loop):
     return ext_e, ext_g
 
 
+# --------------------------------------------------------------------
+# Gravity: hydrostatic potential E_g = rho g * integral z dV
+# --------------------------------------------------------------------
+
+def z_moment(V, T, labels, region=1):
+    """integral of z over the region's volume, by the divergence
+    theorem with F = (z^2/2) z_hat: over the region's outward-oriented
+    faces, sum of Az * mean(z^2)/2 with Az the face's signed projected
+    area onto the xy-plane -- exact for flat triangles (midpoint rule
+    on the quadratic z^2).  For the sessile drop the missing floor
+    faces lie in z = 0 and would contribute zero, so the open-cap sum
+    IS the drop's z-moment."""
+    labels = np.asarray(labels)
+    s = ((labels[:, 1] == region).astype(float)
+         - (labels[:, 0] == region))
+    P0, P1, P2 = V[T[:, 0]], V[T[:, 1]], V[T[:, 2]]
+    Az = 0.5 * ((P1[:, 0] - P0[:, 0]) * (P2[:, 1] - P0[:, 1])
+                - (P1[:, 1] - P0[:, 1]) * (P2[:, 0] - P0[:, 0]))
+    z0, z1, z2 = P0[:, 2], P1[:, 2], P2[:, 2]
+    Q = (z0 * z0 + z1 * z1 + z2 * z2
+         + z0 * z1 + z1 * z2 + z2 * z0) / 12.0
+    return float(np.sum(s * Az * Q))
+
+
+def z_moment_grad(V, T, labels, region=1):
+    """Analytic d(z_moment)/d(vertex), shape (n, 3): the xy components
+    differentiate the projected area Az (shoelace), the z component
+    the quadratic z-mean."""
+    labels = np.asarray(labels)
+    s = ((labels[:, 1] == region).astype(float)
+         - (labels[:, 0] == region))
+    P0, P1, P2 = V[T[:, 0]], V[T[:, 1]], V[T[:, 2]]
+    Az = 0.5 * ((P1[:, 0] - P0[:, 0]) * (P2[:, 1] - P0[:, 1])
+                - (P1[:, 1] - P0[:, 1]) * (P2[:, 0] - P0[:, 0]))
+    zs = (P0[:, 2], P1[:, 2], P2[:, 2])
+    Q = (zs[0] * zs[0] + zs[1] * zs[1] + zs[2] * zs[2]
+         + zs[0] * zs[1] + zs[1] * zs[2] + zs[2] * zs[0]) / 12.0
+    sQ = s * Q
+    sAz = s * Az
+    Ps = (P0, P1, P2)
+    g = np.zeros_like(V)
+    for a in range(3):
+        b, c = (a + 1) % 3, (a + 2) % 3
+        contrib = np.empty((len(T), 3))
+        contrib[:, 0] = sQ * 0.5 * (Ps[b][:, 1] - Ps[c][:, 1])
+        contrib[:, 1] = sQ * 0.5 * (Ps[c][:, 0] - Ps[b][:, 0])
+        contrib[:, 2] = sAz * (2.0 * zs[a] + zs[b] + zs[c]) / 12.0
+        np.add.at(g, T[:, a], contrib)
+    return g
+
+
+def gravity_energy_terms(rho_g, T, labels, region=1):
+    """(ext_energy, ext_grad) callables for solver.volume.evolve:
+    E_g = rho_g * integral z dV at sigma = 1 (rho_g = rho * g)."""
+    rg = float(rho_g)
+
+    def ext_e(V):
+        return rg * z_moment(V, T, labels, region)
+
+    def ext_g(V):
+        return rg * z_moment_grad(V, T, labels, region)
+
+    return ext_e, ext_g
+
+
+def capillary_length(rho_g):
+    """l_c = sqrt(sigma / rho g) at sigma = 1."""
+    return 1.0 / math.sqrt(float(rho_g))
+
+
+def puddle_height(theta_rad, rho_g):
+    """Asymptotic (Bo -> inf) puddle thickness 2 l_c sin(theta/2)
+    (de Gennes-Brochard-Wyart-Quere): gravity flattens a large drop to
+    this uniform depth, the balance of hydrostatic spreading against
+    the wetting-limited edge."""
+    return 2.0 * capillary_length(rho_g) * math.sin(0.5 * float(theta_rad))
+
+
+def bond_number(rho_g, theta_rad, volume):
+    """Bo = rho g R0^2 / sigma with R0 the ZERO-gravity spherical-cap
+    radius for this volume and contact angle -- the dimensionless
+    gravity strength (Bo << 1: spherical cap; Bo >> 1: puddle)."""
+    R0 = cap_geometry(theta_rad, volume)["R"]
+    return float(rho_g) * R0 * R0
+
+
+def rho_g_for_bond(bond, theta_rad, volume):
+    """Inverse of bond_number: the rho*g giving the requested Bo."""
+    R0 = cap_geometry(theta_rad, volume)["R"]
+    return float(bond) / (R0 * R0)
+
+
+def cap_angle_for_height(volume, height, lo=5.0, hi=175.0):
+    """Contact angle (degrees) whose spherical cap of the given volume
+    has apex height `height` (bisection; height is monotone in the
+    angle at fixed volume)."""
+    f = lambda th: cap_geometry(math.radians(th), volume)["height"] \
+        - float(height)
+    if f(lo) > 0.0:
+        return lo
+    if f(hi) < 0.0:
+        return hi
+    for _ in range(80):
+        mid = 0.5 * (lo + hi)
+        if f(mid) <= 0.0:
+            lo = mid
+        else:
+            hi = mid
+    return 0.5 * (lo + hi)
+
+
 def sphere_fit(P):
     """Algebraic least-squares sphere: (center, radius, rms residual)."""
     P = np.asarray(P, float)
@@ -317,6 +452,42 @@ def signed_mean_curvature(V, T):
         / (2.0 * np.maximum(Astar, 1e-300))
 
 
+def local_contact_angles(V, T, loop):
+    """Per-vertex contact angle (degrees) of a drop against the floor
+    z = 0, measured LOCALLY at the contact line from O(h^2) quadric
+    surface normals: theta = atan2(-m.z, m.e_out) with m the film's
+    outward boundary conormal and e_out the outward horizontal radial.
+    Unlike the global sphere fit this needs no spherical shape, so it
+    works for gravity-flattened puddles -- Young's angle is a local
+    force balance and must hold at any Bond number."""
+    V = np.asarray(V, float)
+    loop = np.asarray(loop, dtype=np.int64)
+    tv = V[np.roll(loop, -1)] - V[np.roll(loop, 1)]
+    tv /= np.maximum(np.linalg.norm(tv, axis=1, keepdims=True), 1e-300)
+    nf = quadric_vertex_normals(V, T, loop)
+    m = np.cross(nf, tv)
+    m /= np.maximum(np.linalg.norm(m, axis=1, keepdims=True), 1e-300)
+    e_out = V[loop].copy()
+    e_out[:, 2] = 0.0
+    e_out /= np.maximum(np.linalg.norm(e_out, axis=1, keepdims=True),
+                        1e-300)
+    # orient m away from the film: the surface interior must lie on
+    # the -m side (test against the mean of each rim vertex's
+    # off-loop neighbours; works for wetting AND beading angles,
+    # where the radial sign of m legitimately differs)
+    nbr = _vertex_neighbors(T, len(V))
+    on_loop = np.zeros(len(V), dtype=bool)
+    on_loop[loop] = True
+    for row, v in enumerate(loop):
+        ins = [u for u in nbr[v] if not on_loop[u]]
+        if ins:
+            d = np.mean(V[ins], axis=0) - V[v]
+            if float(m[row] @ d) > 0.0:
+                m[row] *= -1.0
+    return np.degrees(np.arctan2(-m[:, 2],
+                                 np.einsum('ij,ij->i', m, e_out)))
+
+
 def measured_contact_angle(V, T):
     """Contact angle (degrees) of a relaxed drop read from the sphere
     fitted to its free surface: cos(theta) = -z_center / R_fit (the
@@ -352,19 +523,35 @@ def relax_bridge(volume_factor=1.15, nring=48, nrow=17, h=0.5, R=1.0,
 
 
 def relax_drop(theta_deg=60.0, volume=2.0 * math.pi / 3.0, nring=48,
-               iters=1000, groom_every=4, seed_theta_deg=90.0):
+               iters=1000, groom_every=4, seed_theta_deg=90.0,
+               rho_g=0.0):
     """Build and evolve a sessile drop: contact line sliding on the
     floor plane (two-sided wall on the rim, one-sided on the interior),
     wetting energy -cos(theta) * wetted area, volume constrained.
     The seed is a spherical cap of angle seed_theta_deg at the target
     volume, so the run demonstrably MOVES the contact line to the
-    prescribed angle.  Returns (V, T, info)."""
+    prescribed angle.  rho_g > 0 adds the hydrostatic energy
+    rho g * int z dV (sigma = 1): the drop flattens toward the puddle
+    of thickness 2 l_c sin(theta/2); with strong gravity the seed cap
+    is automatically squashed toward that height so the run does not
+    have to collapse a tall cap.  rho_g = 0 is byte-identical to the
+    original zero-gravity path.  Returns (V, T, info)."""
+    if rho_g:
+        h_inf = puddle_height(math.radians(theta_deg), rho_g)
+        nat = cap_geometry(math.radians(seed_theta_deg), volume)
+        if nat["height"] > 1.5 * h_inf:
+            seed_theta_deg = cap_angle_for_height(volume, 1.2 * h_inf)
     geo_seed = cap_geometry(math.radians(seed_theta_deg), volume)
     V, T, labels, rim = build_cap_mesh(seed_theta_deg, geo_seed["R"],
                                        nring)
     interior = ~rim
     loop = rim_loop(V, nring)
     ext_e, ext_g = drop_energy_terms(math.radians(theta_deg), loop)
+    if rho_g:
+        ge, gg = gravity_energy_terms(rho_g, T, labels)
+        ew, gw = ext_e, ext_g
+        ext_e = lambda V: ew(V) + ge(V)          # noqa: E731
+        ext_g = lambda V: gw(V) + gg(V)          # noqa: E731
     plane = _swalls.PlaneWall([0.0, 0.0, 0.0], [0.0, 0.0, 1.0])
     floor = _swalls.PlaneWall([0.0, 0.0, 0.0], [0.0, 0.0, 1.0],
                               one_sided=True)
@@ -376,16 +563,288 @@ def relax_drop(theta_deg=60.0, volume=2.0 * math.pi / 3.0, nring=48,
 
 
 # --------------------------------------------------------------------
+# Free-boundary soap films on curved supports (sphere / cylinder)
+# --------------------------------------------------------------------
+
+def build_film_strip(outer, inner, nrow):
+    """Welded annular strip between two closed loops of equal length:
+    row 0 = outer (the fixed frame), row nrow-1 = inner (the free
+    boundary that will slide on the support wall), rows in between
+    linearly interpolated.  Returns (V, T, labels, fixed, freeb) with
+    labels all (0, 0): an OPEN film enclosing no body, so evolve()
+    runs pure area descent (the Gram system is 0 x 0)."""
+    outer = np.asarray(outer, float)
+    inner = np.asarray(inner, float)
+    nphi = len(outer)
+    ts = np.linspace(0.0, 1.0, int(nrow))
+    V = np.concatenate([(1.0 - t) * outer + t * inner for t in ts])
+    T = []
+    for j in range(int(nrow) - 1):
+        for i in range(nphi):
+            a0 = j * nphi + i
+            b0 = j * nphi + (i + 1) % nphi
+            T.append([a0, b0, a0 + nphi])
+            T.append([b0, b0 + nphi, a0 + nphi])
+    T = np.asarray(T, dtype=np.int64)
+    labels = np.zeros((len(T), 2), dtype=np.int64)
+    fixed = np.zeros(len(V), dtype=bool)
+    fixed[:nphi] = True
+    freeb = np.zeros(len(V), dtype=bool)
+    freeb[-nphi:] = True
+    return V, T, labels, fixed, freeb
+
+
+def film_sphere_seed(R_support=0.8, ring_r=1.6, ring_z=0.0, nphi=48,
+                     nrow=None, seed_shift=0.0):
+    """Film spanning from a fixed horizontal ring (radius ring_r at
+    height ring_z) to a sphere of radius R_support at the origin.  The
+    free inner loop is seeded at the radial projection of the ring
+    onto the sphere, optionally biased by seed_shift along z BEFORE
+    normalizing -- so the contact line starts demonstrably off its
+    equilibrium and must slide there.  Returns
+    (V, T, labels, fixed, freeb, wall)."""
+    th = np.linspace(0.0, 2.0 * np.pi, nphi, endpoint=False)
+    outer = np.stack([ring_r * np.cos(th), ring_r * np.sin(th),
+                      np.full(nphi, float(ring_z))], axis=1)
+    dirs = outer.copy()
+    dirs[:, 2] += float(seed_shift)
+    dirs /= np.linalg.norm(dirs, axis=1, keepdims=True)
+    inner = float(R_support) * dirs
+    if nrow is None:
+        gap = float(np.mean(np.linalg.norm(outer - inner, axis=1)))
+        h = 2.0 * math.pi * ring_r / nphi
+        nrow = max(4, int(round(gap / h)) + 1)
+    V, T, labels, fixed, freeb = build_film_strip(outer, inner, nrow)
+    wall = _swalls.SphereWall([0.0, 0.0, 0.0], R_support)
+    return V, T, labels, fixed, freeb, wall
+
+
+def film_cylinder_seed(R_support=0.5, ring_r=1.3, tilt_deg=35.0,
+                       nphi=48, nrow=None):
+    """Film spanning from a fixed TILTED ring (radius ring_r, centered
+    on the axis at z = 0, tilted about x by tilt_deg) inward to a
+    vertical cylindrical column of radius R_support about the z axis
+    -- a sail on a mast.  The free boundary is seeded at the ring's
+    azimuthal projection onto the column.  Returns
+    (V, T, labels, fixed, freeb, wall)."""
+    a = math.radians(float(tilt_deg))
+    th = np.linspace(0.0, 2.0 * np.pi, nphi, endpoint=False)
+    outer = np.stack([ring_r * np.cos(th),
+                      ring_r * np.sin(th) * math.cos(a),
+                      ring_r * np.sin(th) * math.sin(a)], axis=1)
+    psi = np.arctan2(outer[:, 1], outer[:, 0])
+    inner = np.stack([R_support * np.cos(psi), R_support * np.sin(psi),
+                      outer[:, 2]], axis=1)
+    if nrow is None:
+        gap = float(np.mean(np.linalg.norm(outer - inner, axis=1)))
+        h = 2.0 * math.pi * ring_r / nphi
+        nrow = max(4, int(round(gap / h)) + 1)
+    V, T, labels, fixed, freeb = build_film_strip(outer, inner, nrow)
+    wall = _swalls.CylinderWall([0.0, 0.0, 0.0], [0.0, 0.0, 1.0],
+                                R_support)
+    return V, T, labels, fixed, freeb, wall
+
+
+def film_disk_seed(R_support=1.0, nphi=48, tilt=0.25, bulge=0.35):
+    """Disk film spanning INSIDE a cylindrical tube of radius
+    R_support about the z axis: the ENTIRE boundary is free on the
+    wall (no fixed frame at all).  Seeded tilted (boundary
+    z = tilt cos(phi)) and bulged, so the relaxation must flatten it
+    to the perpendicular cross-section disk of area pi R^2.  Returns
+    (V, T, labels, fixed, freeb, wall)."""
+    K = max(3, nphi // 4)
+    V = []
+    for k in range(K):
+        t = k / K
+        r = R_support * (1.0 - t)
+        for p in range(nphi):
+            phi = 2.0 * math.pi * p / nphi
+            V.append([r * math.cos(phi), r * math.sin(phi),
+                      (1.0 - t) * tilt * math.cos(phi) + bulge * t])
+    apex = len(V)
+    V.append([0.0, 0.0, float(bulge)])
+    T = []
+    for k in range(K - 1):
+        for p in range(nphi):
+            p2 = (p + 1) % nphi
+            a0, b0 = k * nphi + p, k * nphi + p2
+            c0, d0 = (k + 1) * nphi + p, (k + 1) * nphi + p2
+            T.append([a0, b0, c0])
+            T.append([b0, d0, c0])
+    last = (K - 1) * nphi
+    for p in range(nphi):
+        T.append([last + p, last + (p + 1) % nphi, apex])
+    V = np.asarray(V, float)
+    T = np.asarray(T, dtype=np.int64)
+    labels = np.zeros((len(T), 2), dtype=np.int64)
+    fixed = np.zeros(len(V), dtype=bool)
+    freeb = np.zeros(len(V), dtype=bool)
+    freeb[:nphi] = True
+    wall = _swalls.CylinderWall([0.0, 0.0, 0.0], [0.0, 0.0, 1.0],
+                                R_support)
+    return V, T, labels, fixed, freeb, wall
+
+
+def redistribute_boundary(V, T, wall, freeb, lam=0.5):
+    """Even out the free-boundary vertex spacing IN PLACE: move each
+    boundary vertex toward its loop-neighbour midpoint, keeping only
+    the component ALONG the local boundary tangent (so the boundary
+    curve itself is preserved to O(h^2)), then Newton-project back
+    onto the wall.  Needed because sliding along the boundary is
+    area-neutral -- the descent leaves the spacing underdetermined and
+    disorder accumulates until the boundary strip degenerates (the
+    same tangential-disorder mechanism the wall-constraints plan
+    documented for interior vertices, which grooming fixes everywhere
+    EXCEPT on the pinned non-manifold/boundary vertices)."""
+    loop = boundary_loop(T, freeb)
+    if len(loop) < 3:
+        return
+    P = V[loop]
+    t = np.roll(P, -1, axis=0) - np.roll(P, 1, axis=0)
+    t /= np.maximum(np.linalg.norm(t, axis=1, keepdims=True), 1e-300)
+    d = 0.5 * (np.roll(P, -1, axis=0) + np.roll(P, 1, axis=0)) - P
+    V[loop] += lam * np.einsum('ij,ij->i', d, t)[:, None] * t
+    _swalls.newton_project(wall, V, freeb)
+
+
+def relax_film(V, T, labels, fixed, wall, freeb, iters=600,
+               groom_every=4):
+    """Relax an open film (labels all (0,0), no volume constraint):
+    pure area descent with the free-boundary vertices sliding on the
+    support wall, and (at groom cadence) the boundary spacing
+    redistributed along the contact curve.  Returns the evolve info
+    dict (pressures empty)."""
+    hook = (None if not groom_every
+            else lambda Vv, Tt: redistribute_boundary(Vv, Tt, wall,
+                                                      freeb))
+    return _svol.evolve(V, T, labels, iters=iters, fixed=fixed,
+                        groom_every=groom_every,
+                        walls=[(wall, freeb)], groom_hook=hook)
+
+
+def boundary_loop(T, mask):
+    """Ordered vertex loop of the open mesh boundary restricted to the
+    masked vertices (edges used by exactly one face).  Robust to
+    grooming: derived from the CURRENT triangulation."""
+    de = np.sort(np.concatenate(
+        [T[:, [0, 1]], T[:, [1, 2]], T[:, [2, 0]]]), axis=1)
+    uniq, counts = np.unique(de, axis=0, return_counts=True)
+    bnd = uniq[counts == 1]
+    mask = np.asarray(mask, bool)
+    bnd = bnd[mask[bnd[:, 0]] & mask[bnd[:, 1]]]
+    if len(bnd) == 0:
+        return np.zeros(0, dtype=np.int64)
+    nxt = {}
+    for a, b in bnd:
+        nxt.setdefault(int(a), []).append(int(b))
+        nxt.setdefault(int(b), []).append(int(a))
+    start = int(bnd[0, 0])
+    loop = [start]
+    prev = -1
+    while True:
+        cands = [c for c in nxt[loop[-1]] if c != prev]
+        if not cands:
+            break
+        prev = loop[-1]
+        loop.append(cands[0])
+        if loop[-1] == start:
+            loop.pop()
+            break
+    return np.asarray(loop, dtype=np.int64)
+
+
+def _vertex_neighbors(T, n):
+    nbr = [set() for _ in range(n)]
+    for a, b, c in T:
+        nbr[a].update((b, c))
+        nbr[b].update((a, c))
+        nbr[c].update((a, b))
+    return nbr
+
+
+def quadric_vertex_normals(V, T, idx):
+    """O(h^2) surface normals at the requested vertices: local frame
+    from the area-weighted vertex normal, least-squares quadric height
+    fit h(u,w) = c0 + c1 u + c2 w + c3 u^2 + c4 uw + c5 w^2 over the
+    2-ring, normal from the fitted gradient at the vertex.  This is
+    the standard cure for the O(h) secant tilt of raw face normals
+    (the same reason the bubble bench fits films before measuring
+    Plateau angles)."""
+    V = np.asarray(V, float)
+    n = len(V)
+    fn = np.cross(V[T[:, 1]] - V[T[:, 0]], V[T[:, 2]] - V[T[:, 0]])
+    vn = np.zeros((n, 3))
+    for k in range(3):
+        np.add.at(vn, T[:, k], fn)
+    nbr = _vertex_neighbors(T, n)
+    out = np.zeros((len(idx), 3))
+    for row, v in enumerate(idx):
+        ring = set(nbr[v])
+        for u in list(ring):
+            ring |= nbr[u]
+        ring.discard(v)
+        P = V[sorted(ring)] - V[v]
+        e3 = vn[v] / max(np.linalg.norm(vn[v]), 1e-300)
+        e1 = np.cross(e3, [1.0, 0.0, 0.0])
+        if np.linalg.norm(e1) < 1e-6:
+            e1 = np.cross(e3, [0.0, 1.0, 0.0])
+        e1 /= np.linalg.norm(e1)
+        e2 = np.cross(e3, e1)
+        u = P @ e1
+        w = P @ e2
+        h = P @ e3
+        A = np.stack([np.ones_like(u), u, w, u * u, u * w, w * w],
+                     axis=1)
+        c, *_ = np.linalg.lstsq(A, h, rcond=None)
+        nl = -c[1] * e1 - c[2] * e2 + e3
+        out[row] = nl / np.linalg.norm(nl)
+    return out
+
+
+def film_contact_angle_dev(V, T, wall, loop):
+    """Deviation (degrees, per free-boundary vertex) of the film-
+    support contact angle from the free-boundary condition's 90:
+    the film's boundary conormal m (surface normal x boundary tangent)
+    must be PARALLEL to the wall normal for orthogonal contact, so the
+    deviation is the angle between m and the wall-normal axis.
+    Returns (dev_fit, dev_raw): surface normals from the O(h^2)
+    quadric fit and from averaged raw incident-face normals (O(h))."""
+    V = np.asarray(V, float)
+    loop = np.asarray(loop, dtype=np.int64)
+    tv = V[np.roll(loop, -1)] - V[np.roll(loop, 1)]
+    tv /= np.maximum(np.linalg.norm(tv, axis=1, keepdims=True), 1e-300)
+    nw = wall.grad(V[loop])
+    nw /= np.maximum(np.linalg.norm(nw, axis=1, keepdims=True), 1e-300)
+    nfit = quadric_vertex_normals(V, T, loop)
+    fn = np.cross(V[T[:, 1]] - V[T[:, 0]], V[T[:, 2]] - V[T[:, 0]])
+    vn = np.zeros_like(V)
+    for k in range(3):
+        np.add.at(vn, T[:, k], fn)
+    nraw = vn[loop]
+    nraw /= np.maximum(np.linalg.norm(nraw, axis=1, keepdims=True),
+                       1e-300)
+    out = []
+    for nf in (nfit, nraw):
+        m = np.cross(nf, tv)
+        m /= np.maximum(np.linalg.norm(m, axis=1, keepdims=True),
+                        1e-300)
+        c = np.abs(np.einsum('ij,ij->i', m, nw))
+        out.append(np.degrees(np.arccos(np.clip(c, 0.0, 1.0))))
+    return out[0], out[1]
+
+
+# --------------------------------------------------------------------
 # Blender operator
 # --------------------------------------------------------------------
 
 if _IN_BLENDER:
 
     class MESH_OT_cmc_capillary_add(bpy.types.Operator):
-        """Constant-mean-curvature capillary surface by constrained
-        evolution: a liquid bridge between two rings (Delaunay's
-        unduloid/nodoid family, catenoid at the right volume) or a
-        sessile drop with a prescribed contact angle on a floor"""
+        """Capillary surface by constrained evolution: a liquid bridge
+        between two rings (Delaunay's unduloid/nodoid family, catenoid
+        at the right volume), a sessile drop with a prescribed contact
+        angle -- optionally flattened by gravity into a puddle -- or a
+        free-boundary soap film sliding on a sphere or column"""
         bl_idname = "mesh.cmc_capillary_add"
         bl_label = "CMC Capillary Surface"
         bl_options = {'REGISTER', 'UNDO'}
@@ -399,7 +858,17 @@ if _IN_BLENDER:
                     "volume of the minimal surface"),
                    ('DROP', "Sessile Drop",
                     "Drop resting on a floor at fixed volume, the "
-                    "contact line sliding to Young's contact angle")],
+                    "contact line sliding to Young's contact angle; "
+                    "with gravity (Bond number > 0) it flattens "
+                    "toward a puddle of depth 2 l_c sin(theta/2)"),
+                   ('FILM_SPHERE', "Film on Sphere",
+                    "Soap film spanning a fixed ring and a sphere, "
+                    "the free boundary sliding on the sphere to meet "
+                    "it at 90 degrees"),
+                   ('FILM_COLUMN', "Film on Column",
+                    "Soap film spanning a fixed tilted ring and a "
+                    "vertical column, the free boundary sliding on "
+                    "the column to meet it at 90 degrees")],
             default='BRIDGE')
         volume_factor: FloatProperty(
             name="Volume Factor", default=1.15, min=0.55, max=1.8,
@@ -418,6 +887,29 @@ if _IN_BLENDER:
             subtype='UNSIGNED',
             description="Young contact angle in degrees (< 90 wets "
                         "the floor, > 90 beads up)")
+        bond: FloatProperty(
+            name="Bond Number", default=0.0, min=0.0, max=60.0,
+            description="Gravity strength Bo = rho g R^2 / sigma "
+                        "(R the zero-gravity drop radius): 0 = "
+                        "spherical cap, >> 1 = flattened puddle of "
+                        "depth 2 l_c sin(theta/2)")
+        support_radius: FloatProperty(
+            name="Support Radius", default=0.55, min=0.15, max=0.9,
+            description="Radius of the supporting sphere / column, "
+                        "as a fraction of the frame ring radius")
+        ring_height: FloatProperty(
+            name="Ring Height", default=0.45, min=-0.85, max=0.85,
+            description="Height of the frame ring above the sphere "
+                        "center (fraction of the ring radius); 0 "
+                        "gives the flat equatorial film")
+        ring_tilt: FloatProperty(
+            name="Ring Tilt", default=35.0, min=0.0, max=60.0,
+            description="Tilt of the frame ring around the column, "
+                        "in degrees (0 gives the flat annulus)")
+        show_support: BoolProperty(
+            name="Support Surface", default=True,
+            description="Also emit the supporting sphere / column "
+                        "surface into the mesh")
         resolution: IntProperty(
             name="Resolution", default=48, min=16, max=128,
             description="Vertices around the rim / contact line")
@@ -430,6 +922,7 @@ if _IN_BLENDER:
                              max=100.0)
 
         def execute(self, context):
+            support = None
             if self.mode == 'BRIDGE':
                 nrow = max(5, 2 * int(round(
                     self.aspect * self.resolution / (2.0 * math.pi)))
@@ -446,16 +939,57 @@ if _IN_BLENDER:
                 Hmean = float(np.mean(Hs[nring:-nring])) \
                     if len(V) > 2 * nring else 0.0
                 extra = f"H={Hmean:.4f}"
-            else:
+            elif self.mode == 'DROP':
+                vol = 2.0 * math.pi / 3.0
+                rho_g = (rho_g_for_bond(
+                    self.bond, math.radians(self.contact_angle), vol)
+                    if self.bond > 0.0 else 0.0)
                 V, T, info = relax_drop(
                     theta_deg=self.contact_angle,
                     nring=self.resolution,
-                    iters=self.iterations)
+                    iters=self.iterations, rho_g=rho_g)
                 name = "Sessile Drop"
-                ang, _rms = measured_contact_angle(V, T)
-                extra = f"contact angle {ang:.2f} deg " \
-                        f"(asked {self.contact_angle:.1f})"
+                if rho_g:
+                    h_inf = puddle_height(
+                        math.radians(self.contact_angle), rho_g)
+                    extra = (f"Bo={self.bond:.1f}, apex "
+                             f"{float(V[:, 2].max()):.3f} (puddle "
+                             f"limit {h_inf:.3f})")
+                else:
+                    ang, _rms = measured_contact_angle(V, T)
+                    extra = f"contact angle {ang:.2f} deg " \
+                            f"(asked {self.contact_angle:.1f})"
+            else:
+                if self.mode == 'FILM_SPHERE':
+                    V, T, labels, fixed, freeb, wall = \
+                        film_sphere_seed(
+                            R_support=self.support_radius,
+                            ring_r=1.0, ring_z=self.ring_height,
+                            nphi=self.resolution)
+                    name = "Film on Sphere"
+                else:
+                    V, T, labels, fixed, freeb, wall = \
+                        film_cylinder_seed(
+                            R_support=self.support_radius,
+                            ring_r=1.0, tilt_deg=self.ring_tilt,
+                            nphi=self.resolution)
+                    name = "Film on Column"
+                info = relax_film(V, T, labels, fixed, wall, freeb,
+                                  iters=self.iterations)
+                loop = boundary_loop(T, freeb)
+                dev_fit, _dev_raw = film_contact_angle_dev(
+                    V, T, wall, loop)
+                rms = float(np.sqrt(np.mean(dev_fit ** 2)))
+                extra = f"contact angle 90 deg +- {rms:.2f} rms"
+                if self.show_support:
+                    support = self._support_mesh(V)
 
+            if support is not None:
+                SV, SF = support
+                base = len(V)
+                V = np.concatenate([V, SV])
+                T = list(map(list, T)) + [[base + i for i in f]
+                                          for f in SF]
             lo = V.min(axis=0)
             hi = V.max(axis=0)
             ctr = 0.5 * (lo + hi)
@@ -477,12 +1011,38 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
-            p = float(info["pressures"][0])
+            ptxt = (f"pressure {float(info['pressures'][0]):.4f}, "
+                    if len(info["pressures"]) else "")
             self.report({'INFO'},
                         f"{name}: {info['iters_run']} iterations, "
-                        f"area {info['area']:.4f}, pressure {p:.4f}, "
-                        f"{extra}")
+                        f"area {info['area']:.4f}, {ptxt}{extra}")
             return {'FINISHED'}
+
+        def _support_mesh(self, filmV):
+            """Mesh of the supporting surface: an icosphere, or a
+            column tube spanning a margin past the film's z range."""
+            R = float(self.support_radius)
+            if self.mode == 'FILM_SPHERE':
+                try:
+                    from .surfaces.primitives import icosphere
+                except ImportError:
+                    from surfaces.primitives import icosphere  # type: ignore
+                SV, SF = icosphere(3, 'per_level')
+                return R * np.asarray(SV, float), \
+                    [list(f) for f in np.asarray(SF)]
+            zlo = float(filmV[:, 2].min()) - 0.35
+            zhi = float(filmV[:, 2].max()) + 0.35
+            n = int(self.resolution)
+            th = np.linspace(0.0, 2.0 * np.pi, n, endpoint=False)
+            ring = np.stack([R * np.cos(th), R * np.sin(th),
+                             np.zeros(n)], axis=1)
+            SV = np.concatenate([ring + [0.0, 0.0, zlo],
+                                 ring + [0.0, 0.0, zhi]])
+            SF = []
+            for i in range(n):
+                j = (i + 1) % n
+                SF.append([i, j, n + j, n + i])
+            return SV, SF
 
         def draw(self, context):
             lay = self.layout
@@ -491,8 +1051,16 @@ if _IN_BLENDER:
             if self.mode == 'BRIDGE':
                 lay.prop(self, 'volume_factor')
                 lay.prop(self, 'aspect')
-            else:
+            elif self.mode == 'DROP':
                 lay.prop(self, 'contact_angle')
+                lay.prop(self, 'bond')
+            else:
+                lay.prop(self, 'support_radius')
+                if self.mode == 'FILM_SPHERE':
+                    lay.prop(self, 'ring_height')
+                else:
+                    lay.prop(self, 'ring_tilt')
+                lay.prop(self, 'show_support')
             for k in ('resolution', 'iterations', 'smooth', 'scale'):
                 lay.prop(self, k)
 
@@ -608,6 +1176,74 @@ def _selftest():
     print(f"cmc: cylinder bridge p={p:.4f} (want ~1), p-2H = "
           f"{p - 2.0 * float(np.mean(Hs)):+.1e}, monotone, drift OK "
           f"{'OK' if good else 'FAIL'}")
+
+    # gravity: the z-moment is exact on the polygonal cap volume of a
+    # PRISM slab z in [0, h] over the rim polygon?  Use the closed cap
+    # mesh directly: for the analytic spherical cap, int z dV has a
+    # closed form; check convergence, and check the analytic gradient
+    # against central differences (the FD is the ground truth here).
+    geoz = cap_geometry(math.radians(75.0), 1.0)
+    Rz, thz = geoz["R"], math.radians(75.0)
+    zc = -Rz * math.cos(thz)
+    # int z dV over the cap (apex up, base in z=0): integrate slices
+    # pi r(z)^2 z dz with r^2 = R^2 - (z - zc)^2, z in [0, height]
+    hh_ = geoz["height"]
+    Mz_exact = math.pi * (
+        (Rz * Rz - zc * zc) * hh_ * hh_ / 2.0
+        + 2.0 * zc * hh_ ** 3 / 3.0 - hh_ ** 4 / 4.0)
+    errs = []
+    for nring in (24, 48):
+        Vc, Tc, Lc, rim = build_cap_mesh(75.0, geoz["R"], nring)
+        errs.append(abs(z_moment(Vc, Tc, Lc) - Mz_exact) / Mz_exact)
+    good = errs[1] < errs[0] / 3.0 and errs[1] < 1.5e-2
+    ok &= good
+    print(f"cmc: z-moment vs analytic cap {errs[0]:.2e} -> "
+          f"{errs[1]:.2e} under refinement {'OK' if good else 'FAIL'}")
+    d = rng.normal(size=Vc.shape)
+    h = 1e-6
+    fd = (z_moment(Vc + h * d, Tc, Lc)
+          - z_moment(Vc - h * d, Tc, Lc)) / (2 * h)
+    an = float(np.sum(z_moment_grad(Vc, Tc, Lc) * d))
+    err = abs(fd - an) / max(abs(fd), 1e-30)
+    good = err < 1e-8
+    ok &= good
+    print(f"cmc: z-moment gradient vs FD rel err {err:.2e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # quadric normal estimator: on a sphere lathe it must beat the raw
+    # face-average normals by an order of magnitude
+    ids = np.arange(48, 2 * 48)          # an interior ring
+    nq = quadric_vertex_normals(Vc, Tc, ids)
+    ns = Vc[ids] - np.array([0.0, 0.0, zc])
+    ns /= np.linalg.norm(ns, axis=1, keepdims=True)
+    devq = float(np.max(np.degrees(np.arccos(np.clip(
+        np.einsum('ij,ij->i', nq, ns), -1.0, 1.0)))))
+    good = devq < 0.05
+    ok &= good
+    print(f"cmc: quadric normals on sphere max dev {devq:.3f} deg "
+          f"{'OK' if good else 'FAIL'}")
+
+    # free-boundary film smoke: tilted bulged disk in a cylinder must
+    # flatten to the cross-section disk and meet the wall orthogonally;
+    # the honest discrete reference is the INSCRIBED POLYGON disk (the
+    # boundary chords the circle), not pi R^2 -- vs pi the residual is
+    # exactly the polygon deficit (2 pi/n)^2/6
+    V, T, labels, fixed, freeb, wall = film_disk_seed(1.0, nphi=32)
+    info = relax_film(V, T, labels, fixed, wall, freeb, iters=300)
+    loop = boundary_loop(T, freeb)
+    dev_fit, dev_raw = film_contact_angle_dev(V, T, wall, loop)
+    a_err = abs(info["area"] - polygon_area(1.0, 32)) / math.pi
+    wres = max(hh["wall_resid"] for hh in info["history"])
+    rise = max(hh["rise"] for hh in info["history"] if not hh["groomed"])
+    good = (a_err < 1e-3 and float(np.sqrt(np.mean(dev_fit ** 2))) < 0.2
+            and wres < 1e-9 and len(info["pressures"]) == 0
+            and rise <= 1e-12)
+    ok &= good
+    print(f"cmc: disk film in cylinder: area vs polygon disk "
+          f"{a_err:.1e}, contact dev rms "
+          f"{float(np.sqrt(np.mean(dev_fit ** 2))):.3f} deg "
+          f"(raw {float(np.sqrt(np.mean(dev_raw ** 2))):.2f}), wall "
+          f"resid {wres:.1e} {'OK' if good else 'FAIL'}")
 
     # sessile drop at 60 degrees from a hemisphere seed: the contact
     # line slides OUT and the achieved angle lands near 60 (the bench

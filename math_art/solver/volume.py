@@ -158,6 +158,8 @@ def project_velocity(vel, grads, weights=None):
     and vel = -M grad E, the fixed point vel_tangent = 0 is exactly the
     KKT condition grad E = sum_i (-lam_i) grad V_i, i.e. the body
     pressures are p = -lam."""
+    if len(grads) == 0:                  # no bodies (open film): no-op
+        return vel, np.zeros(0)
     A = gram_matrix(grads, weights)
     rhs = np.einsum('inj,nj->i', grads, vel)
     lam = _solve_gram(A, rhs)
@@ -171,6 +173,8 @@ def body_pressures(area_grad, grads, weights=None):
     """Least-squares pressures p solving [grad V_i . w grad V_j] p =
     [grad V_i . w grad E]: at equilibrium grad E = sum p_i grad V_i
     exactly, and p obeys Young-Laplace (2/r for a unit-tension sphere)."""
+    if len(grads) == 0:                  # no bodies (open film): no-op
+        return np.zeros(0)
     A = gram_matrix(grads, weights)
     if weights is None:
         rhs = np.einsum('inj,nj->i', grads, area_grad)
@@ -200,6 +204,8 @@ def restore_volumes(V, T, labels, targets, free=None, max_rounds=10,
     entering and leaving, and the Newton rounds spent."""
     targets = np.asarray(targets, float)
     nb = len(targets)
+    if nb == 0:                          # no bodies (open film): no-op
+        return 0.0, 0.0, 0
     scale = np.maximum(np.abs(targets), 1e-300)
     rel_before = None
     rounds = 0
@@ -349,7 +355,8 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
            mobility="star", cotan_mode="mollify", cg=True,
            groom_every=0, groom_smooth=0.25,
            area_tol=1e-10, vol_tol=1e-12, s_init_frac=0.2,
-           walls=None, wall_tol=1e-12, ext_energy=None, ext_grad=None):
+           walls=None, wall_tol=1e-12, ext_energy=None, ext_grad=None,
+           groom_hook=None):
     """Minimize film area at fixed body volumes.  V is modified in
     place; T is modified in place only when grooming flips edges.
 
@@ -385,6 +392,12 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     History entries then also carry wall_resid (post-step max |f|) and
     vt_normal_max (tangency residual of the projected velocity over the
     two-sided rows).
+
+    `groom_hook(V, T)` (default None) runs right after each groom
+    cycle, before the wall projection and volume restore -- the hook
+    for caller-side mesh maintenance the pinned-vertex groom cannot do
+    (e.g. redistributing free-boundary vertices along their boundary
+    curve).
 
     Extra energy terms: `ext_energy(V) -> float` is added to the film
     area in the line search (e.g. the wetting energy
@@ -461,6 +474,14 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         if groom_every and (it - 1) and (it - 1) % groom_every == 0:
             _groom.groom(V, T, fixed=smooth_pin, smooth_lam=groom_smooth,
                          tri_groups=groups)
+            if groom_hook is not None:
+                # caller-supplied groom-time maintenance (e.g. a film
+                # generator redistributing its free-boundary vertices
+                # ALONG the boundary curve, which the pinned-vertex
+                # groom deliberately leaves alone); runs before the
+                # wall projection + restore so its motion is cleaned
+                # up exactly like the groom's own
+                groom_hook(V, T)
             if wall_list is not None:
                 _wproject(V)
             _restore(V)
@@ -800,6 +821,43 @@ def _selftest():
     print(f"volume: one-sided floor evolve: min z {zmin:.4f} (>= -0.8), "
           f"pressure err {p_err:.2e}, drift {drift:.1e}, max rise "
           f"{rise:.1e}, wall resid {wres:.1e} {'OK' if good else 'FAIL'}")
+
+    # --- zero bodies (open film, labels all (0,0)): evolve degrades to
+    # pure area descent -- 0 x 0 Gram, empty pressures, no restore.
+    # A pinned-rim cylinder lathe must shrink toward the catenoid
+    # monotonically with the wall machinery untouched -----------------
+    nring, nrow, hh2 = 24, 9, 0.5
+    th = np.linspace(0.0, 2 * np.pi, nring, endpoint=False)
+    zs = np.linspace(-hh2, hh2, nrow)
+    Vf = np.array([[np.cos(t), np.sin(t), z] for z in zs for t in th])
+    Tf = []
+    for j in range(nrow - 1):
+        for i in range(nring):
+            a0 = j * nring + i
+            b0 = j * nring + (i + 1) % nring
+            Tf.append([a0, b0, a0 + nring])
+            Tf.append([b0, b0 + nring, a0 + nring])
+    Tf = np.asarray(Tf, dtype=np.int64)
+    labf = np.zeros((len(Tf), 2), dtype=np.int64)
+    fixf = np.zeros(len(Vf), dtype=bool)
+    fixf[:nring] = True
+    fixf[-nring:] = True
+    A0 = mesh_area(Vf, Tf)
+    info = evolve(Vf, Tf, labf, iters=100, fixed=fixf)
+    rise = max(hh["rise"] for hh in info["history"] if not hh["groomed"])
+    waist = float(np.mean(np.hypot(
+        Vf[(nrow // 2) * nring:(nrow // 2) * nring + nring, 0],
+        Vf[(nrow // 2) * nring:(nrow // 2) * nring + nring, 1])))
+    # analytic bound: the catenoid between these rings has area ~5.99
+    # = 0.956 * the cylinder's 6.265, so require < 0.97 * A0 and the
+    # waist near the catenoid's c ~ 0.848
+    good = (len(info["pressures"]) == 0 and info["area"] < 0.97 * A0
+            and rise <= 1e-12 and 0.8 < waist < 0.9)
+    ok &= good
+    print(f"volume: zero-body film (cylinder -> catenoid): area "
+          f"{A0:.4f} -> {info['area']:.4f}, waist {waist:.4f}, "
+          f"pressures empty, max rise {rise:.1e} "
+          f"{'OK' if good else 'FAIL'}")
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
