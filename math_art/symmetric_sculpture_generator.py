@@ -3,8 +3,21 @@
 #
 # After George W. Hart's sculpture design program described in
 # "Symmetric sculpture", Journal of Mathematics and the Arts 1(1),
-# 2007 (the tool behind Twisted Rivers, Tumbleweed, Frabjous,
-# Spaghetti Code, ...). A flat motif drawn in ONE representative
+# 2007, pp. 21-28, doi:10.1080/17513470701228040 -- and its
+# precursor, "Sculpture from Symmetrically Arranged Planar
+# Components", Bridges 2003, pp. 315-322 (the tool behind Twisted
+# Rivers, Tumbleweed, Frabjous, Spaghetti Code, ...).
+#
+# References:
+#   G. W. Hart, "Symmetric sculpture", J. Mathematics and the Arts
+#     1(1), 2007, 21-28.  doi:10.1080/17513470701228040
+#   G. W. Hart, "Sculpture from Symmetrically Arranged Planar
+#     Components", Bridges 2003, 315-322.
+#   H. S. M. Coxeter, P. Du Val, H. T. Flather, J. F. Petrie, "The
+#     Fifty-Nine Icosahedra", U. Toronto Press, 1938 -- the
+#     stellation pattern drawn as the editing guides.
+#
+# A flat motif drawn in ONE representative
 # plane is replicated live into a whole family of symmetrically
 # arranged planes -- the extended face planes of an icosahedron,
 # dodecahedron, rhombic triacontahedron or hexecontahedron (or their
@@ -18,9 +31,10 @@
 # created:
 #
 #   SymSculpt         points + Geometry Nodes modifier (the result)
-#   SymSculpt Motif   flat mesh in the representative plane -- edit
-#                     this (edit mode, or move/rotate the object) and
-#                     every copy updates in real time
+#   SymSculpt Motif   flat mesh on the world XY plane -- edit this
+#                     (edit mode, or move/rotate the object) and every
+#                     copy updates in real time; the node group maps
+#                     it onto the representative plane
 #   SymSculpt Guides  wireframe stellation pattern: the lines where
 #                     the other planes of the family cut this one,
 #                     for snapping/drawing against, as in Hart's 2D
@@ -30,7 +44,13 @@
 # from the origin by that fraction of its distance (Hart's ~4%
 # radial extrusion, which preserves planarity and yields a watertight
 # solid for 3D printing); "Weld" merges coincident vertices where
-# copies meet exactly on the plane-intersection lines.
+# copies meet exactly on the plane-intersection lines; "Lift" raises
+# the replicated sculpture up +Z so it no longer surrounds the Motif
+# and Guides, which stay at the origin where they can be drawn on
+# (only the modifier result moves -- the objects themselves stay put,
+# so the sculpture keeps its true position for export); "Translucent"
+# swaps the copies onto a ghost material so the motif reads through
+# them, off by default.
 
 bl_info = {
     "name": "Symmetric Sculpture",
@@ -115,10 +135,16 @@ _AXES = {
     ('ICOSA', 'P5'): (0.0, 1.0, PHI),      # 12 planes, 5-fold each
     ('ICOSA', 'P3'): (1.0, 1.0, 1.0),      # 20 planes, 3-fold
     ('ICOSA', 'P2'): (0.0, 0.0, 1.0),      # 30 planes, 2-fold
-    # 60 planes, no in-plane symmetry; the axis is a snub
-    # dodecahedron vertex direction, so these are the face
-    # planes of the pentagonal hexecontahedron (Hart's Whimsy)
-    ('ICOSA', 'P1'): (0.089963, -0.816073, -0.570904),
+    # 60 planes, no in-plane symmetry: the face planes of the
+    # pentagonal hexecontahedron (Hart's Whimsy).  The axis is a
+    # snub dodecahedron vertex direction, solved for by requiring
+    # the resulting face to carry the hexecontahedron's own angles
+    # -- one corner of 67.45351 deg and four of 118.13662.  An axis
+    # merely near it gives a 60-plane solid that only looks the
+    # part: the earlier value here was 72 deg away in the orbit and
+    # produced a face of 67.21/120.93/114.78/118.27/118.80, which no
+    # exact part can be built to.
+    ('ICOSA', 'P1'): (-0.656480601, -0.674459144, 0.337843283),
     ('OCTA', 'P4'): (0.0, 0.0, 1.0),       # 6 planes (cube), 4-fold
     ('OCTA', 'P3'): (1.0, 1.0, 1.0),       # 8 planes, 3-fold
     ('OCTA', 'P2'): (1.0, 1.0, 0.0),       # 12 planes, 2-fold
@@ -159,14 +185,249 @@ def _frame(a):
     return u, v
 
 
-def stellation_lines(kind, family, d=1.0, extent=3.0):
+# Which solid's extended face planes each (group, family) actually
+# is.  A plane perpendicular to a k-fold axis is held by k of the
+# group's N rotations, so the orbit is N/k planes carrying k copies
+# apiece -- the same "P3" therefore means 20 icosahedral planes under
+# the icosahedral group but 8 octahedral ones under the octahedral.
+_FAMILY_SOLID = {
+    ('ICOSA', 'P5'): (12, "dodecahedral"),
+    ('ICOSA', 'P3'): (20, "icosahedral"),
+    ('ICOSA', 'P2'): (30, "triacontahedral"),
+    ('ICOSA', 'P1'): (60, "hexecontahedral"),
+    ('OCTA', 'P4'): (6, "cube"),
+    ('OCTA', 'P3'): (8, "octahedral"),
+    ('OCTA', 'P2'): (12, "rhombic dodecahedral"),
+    ('OCTA', 'P1'): (24, ""),
+    ('TETRA', 'P3'): (4, "tetrahedral"),
+    ('TETRA', 'P2'): (6, "cube"),
+    ('TETRA', 'P1'): (12, ""),
+}
+_FOLD = {'P5': 5, 'P4': 4, 'P3': 3, 'P2': 2, 'P1': 1}
+
+
+def family_label(kind, family):
+    """Human label for a plane family under one particular group."""
+    n, solid = _FAMILY_SOLID[(kind, family)]
+    k = _FOLD[family]
+    where = f"{n} {solid} planes" if solid else f"{n} planes"
+    if k == 1:
+        return f"General: {where}"
+    return f"{k}-fold: {where}"
+
+
+def guide_ring_radii(kind, family, d=1.0):
+    """Sorted distinct foot radii of the family's guide lines.
+
+    The stellation pattern is built of concentric rings of lines: all
+    the lines at one radius are equivalent under the plane's own
+    k-fold symmetry.  Counting rings from the middle outwards gives a
+    natural way to thin the pattern down."""
+    a, normals = plane_normals(kind, family)
+    u, v = _frame(a)
+    seen = []
+    for b in normals:
+        ab = sum(x * y for x, y in zip(a, b))
+        if abs(ab) > 1 - 1e-9:
+            continue
+        Bu = sum(x * y for x, y in zip(b, u))
+        Bv = sum(x * y for x, y in zip(b, v))
+        n2 = Bu * Bu + Bv * Bv
+        c = d * (1 - ab)
+        r = sqrt((c * Bu / n2) ** 2 + (c * Bv / n2) ** 2)
+        if not any(abs(r - s) < 1e-6 for s in seen):
+            seen.append(r)
+    return sorted(seen)
+
+
+def family_polyhedron(kind, family, d=1.0):
+    """The solid whose extended face planes ARE this plane family:
+    the intersection of the half-spaces {x : x.n <= d} over the
+    family's normals.  Returns (verts, faces).
+
+    Built face by face rather than by intersecting triples of planes:
+    each face starts as a big square lying in its own plane and is
+    clipped by every other half-space, which is O(F^2) instead of
+    O(F^3) and hands back the face polygons already in order."""
+    _, normals = plane_normals(kind, family)
+    big = 40.0 * d
+    verts = []
+    faces = []
+    index = {}
+    for n in normals:
+        u, v = _frame(n)
+        poly = [(-big, -big), (big, -big), (big, big), (-big, big)]
+        for m in normals:
+            if m is n:
+                continue
+            A = sum(x * y for x, y in zip(u, m))
+            B = sum(x * y for x, y in zip(v, m))
+            C = d - d * sum(x * y for x, y in zip(n, m))
+            if abs(A) < 1e-12 and abs(B) < 1e-12:
+                continue                  # parallel: no constraint here
+            out = []
+            k = len(poly)
+            for i in range(k):
+                p0, p1 = poly[i], poly[(i + 1) % k]
+                f0 = A * p0[0] + B * p0[1] - C
+                f1 = A * p1[0] + B * p1[1] - C
+                if f0 <= 1e-12:
+                    out.append(p0)
+                if (f0 > 1e-12) != (f1 > 1e-12):
+                    t = f0 / (f0 - f1)
+                    out.append((p0[0] + t * (p1[0] - p0[0]),
+                                p0[1] + t * (p1[1] - p0[1])))
+            poly = out
+            if len(poly) < 3:
+                break
+        if len(poly) < 3:
+            continue
+        face = []
+        for x, y in poly:
+            p = tuple(d * n[i] + x * u[i] + y * v[i] for i in range(3))
+            key = tuple(round(c, 6) for c in p)
+            if key not in index:
+                index[key] = len(verts)
+                verts.append(p)
+            j = index[key]
+            if j not in face:
+                face.append(j)
+        if len(face) >= 3:
+            faces.append(face)
+    return verts, faces
+
+
+def crossing_points(kind, family, d=1.0, extent=3.2, rings=0):
+    """Where the drawn guide lines cross, as (x, y, lines).
+
+    These are the points a motif's corners want to sit on: a crossing
+    of k guide lines is a point where k+1 planes of the family meet,
+    so k+1 parts converge there and the joint closes exactly.  `lines`
+    is that k, which is what distinguishes a plain corner from a hub
+    where a whole rosette meets.
+
+    Derived from the segments stellation_lines actually emits, so
+    thinning the pattern with `rings` thins the crossings with it."""
+    segs = stellation_lines(kind, family, d, extent, rings)
+    lines = []
+    for p0, p1 in segs:
+        A = p1[1] - p0[1]
+        B = p0[0] - p1[0]
+        n = sqrt(A * A + B * B)
+        if n < 1e-12:
+            continue
+        lines.append((A / n, B / n, (A * p0[0] + B * p0[1]) / n))
+    pts = []
+    for i in range(len(lines)):
+        a1, b1, c1 = lines[i]
+        for j in range(i + 1, len(lines)):
+            a2, b2, c2 = lines[j]
+            det = a1 * b2 - a2 * b1
+            if abs(det) < 1e-9:
+                continue                  # parallel
+            x = (c1 * b2 - c2 * b1) / det
+            y = (a1 * c2 - a2 * c1) / det
+            if sqrt(x * x + y * y) > extent * d + 1e-9:
+                continue
+            if any(abs(x - px) < 1e-6 and abs(y - py) < 1e-6
+                   for px, py in pts):
+                continue
+            pts.append((x, y))
+    out = []
+    for x, y in pts:
+        k = sum(1 for A, B, C in lines
+                if abs(A * x + B * y - C) < 1e-6)
+        out.append((x, y, k))
+    return out
+
+
+def crossing_orbits(kind, family, crossings, d=1.0):
+    """Sort the crossings into orbits under the rotation group.
+
+    Returns (points, groups): `points` is [(3-D point, group)] over
+    every point equivalent to some crossing, and `groups[i]` is the
+    group of `crossings[i]`.
+
+    The orbit is the honest notion of "same kind of point" -- two
+    crossings share a group exactly when a rotation of the sculpture
+    carries one onto the other, so they play identical roles in the
+    design.  Orbits come out at the group's own sizes: 12, 20, 30 or
+    60 for the icosahedral rotations, according to whether the point
+    sits on a 5-, 3- or 2-fold axis or on none.
+
+    A crossing is a point of the plane arrangement and so recurs in
+    every plane through it; carrying the representative plane's
+    crossings around the group is what shows where they all sit
+    relative to the defining solid."""
+    a, _ = plane_normals(kind, family)
+    u, v = _frame(a)
+    rots = group_rotations(kind)
+    seen = {}
+    points = []
+    groups = []
+    nxt = 0
+    for x, y, _k in crossings:
+        p = tuple(d * a[i] + x * u[i] + y * v[i] for i in range(3))
+        key = tuple(round(c, 5) for c in p)
+        if key in seen:
+            groups.append(seen[key])       # already in an earlier orbit
+            continue
+        g = nxt
+        nxt += 1
+        groups.append(g)
+        for R in rots:
+            q = _apply(R, p)
+            kq = tuple(round(c, 5) for c in q)
+            if kq in seen:
+                continue
+            seen[kq] = g
+            points.append((q, g))
+    return points, groups
+
+
+def max_line_foot(kind, family, d=1.0):
+    """Largest foot radius over the family's guide lines -- the
+    smallest guide extent that still emits every line.
+
+    A line is dropped entirely once its foot (the point of the line
+    closest to the plane centre) falls outside the guide disc, so an
+    extent below this silently loses the outermost lines -- and with
+    them the intersections the outer corners of a motif snap to.  For
+    the icosahedral 2-fold planes (Frabjous) this is phi^2 + 1/phi^2
+    ~ 3.078, while the pointed ends of the parts reach out to the
+    3-fold piercings at phi^2 ~ 2.618."""
+    a, normals = plane_normals(kind, family)
+    u, v = _frame(a)
+    best = 0.0
+    for b in normals:
+        ab = sum(x * y for x, y in zip(a, b))
+        if abs(ab) > 1 - 1e-9:
+            continue
+        Bu = sum(x * y for x, y in zip(b, u))
+        Bv = sum(x * y for x, y in zip(b, v))
+        n2 = Bu * Bu + Bv * Bv
+        c = d * (1 - ab)
+        best = max(best, sqrt((c * Bu / n2) ** 2 + (c * Bv / n2) ** 2))
+    return best
+
+
+def stellation_lines(kind, family, d=1.0, extent=3.0, rings=0):
     """The guide pattern of Hart's 2D editor: line segments (in the
     representative plane's local xy coordinates) where the other
     planes of the family cut it, clipped to a disc of radius
-    extent * d."""
+    extent * d.
+
+    rings > 0 keeps only the innermost `rings` concentric rings of
+    lines (see guide_ring_radii), thinning a crowded pattern down to
+    the lines nearest the centre.  Note the outer rings are the ones
+    carrying the far corners a motif may reach for, so cutting rings
+    trades reach for legibility."""
     a, normals = plane_normals(kind, family)
     u, v = _frame(a)
     R = extent * d
+    keep = None
+    if rings > 0:
+        keep = guide_ring_radii(kind, family, d)[:rings]
     segs = []
     for b in normals:
         ab = sum(x * y for x, y in zip(a, b))
@@ -177,6 +438,9 @@ def stellation_lines(kind, family, d=1.0, extent=3.0):
         c = d * (1 - ab)
         n2 = Bu * Bu + Bv * Bv
         px, py = c * Bu / n2, c * Bv / n2  # foot of the line
+        if keep is not None and not any(
+                abs(sqrt(px * px + py * py) - s) < 1e-6 for s in keep):
+            continue                      # outside the kept rings
         h2 = R * R - (px * px + py * py)
         if h2 <= 0:
             continue                      # line misses the guide disc
@@ -186,6 +450,35 @@ def stellation_lines(kind, family, d=1.0, extent=3.0):
         segs.append(((px - h * tx, py - h * ty),
                      (px + h * tx, py + h * ty)))
     return segs
+
+
+def sculpture_radius(verts, d, shell=0.0):
+    """Outer radius of the finished sculpture, from the motif alone.
+
+    The node group maps a motif vertex (x, y, z) onto the
+    representative plane as x*u + y*v + (z + d)*a, and u, v, a are
+    orthonormal -- so that vertex sits sqrt(x^2 + y^2 + (z+d)^2) from
+    the origin.  Every copy is a rotation about the origin, so the
+    whole sculpture is bounded by the largest such radius, and the
+    radial shell scales it by (1 + shell)."""
+    r = 0.0
+    for x, y, z in verts:
+        r = max(r, sqrt(x * x + y * y + (z + d) * (z + d)))
+    return r * (1.0 + shell)
+
+
+def lift_height(verts, d, shell=0.0, margin=0.3):
+    """Lift that clears the motif by `margin` of the sculpture's own
+    radius.
+
+    The sculpture surrounds the origin, so its lowest point sits one
+    radius below the motif plane; raising it by that radius brings it
+    down exactly onto the motif, and the margin opens the gap.  Scaled
+    to the actual geometry rather than a fixed multiple of the plane
+    distance, because a motif reaching far out in its plane (Frabjous
+    runs to phi^2) makes a far bigger sculpture than a compact one
+    (Tumbleweed) at the very same plane distance."""
+    return sculpture_radius(verts, d, shell) * (1.0 + margin)
 
 
 def _ribbon(path, widths):
@@ -226,22 +519,185 @@ def demo_motif(d=1.0):
     return _ribbon(path, widths)
 
 
+# Hart's Tumbleweed part, traced from his own template
+# (tumbleweed-part.gif on georgehart.com) and fitted into a 5-fold
+# plane.  Local (x, y) in units of the plane distance.
+#
+# The part is a five-armed pinwheel, each arm ending in a forked tip
+# -- ten radius maxima round the outline, two per arm, which is what
+# makes it look six- or ten-armed at a glance.  Its symmetry is
+# exactly 5-fold: fitting a k-fold turn to the traced outline scores
+# 19.9 px^2 at k=5 against 537 to 684 at k=2, 3, 4, 6 and 10.
+#
+# The arm tips go on the crossings at 2/phi^2 = 0.76393, where two
+# guide lines cross -- three planes, so three parts meet, which is
+# the dodecahedron's own vertices.  That accounts for every tip
+# exactly: 20 vertices x 3 = 60 = 12 parts x 5 arms.  The other
+# crossings the plane offers, at radius 2 with five parts meeting,
+# would let the arms overshoot into a tangle that looks nothing like
+# the sculpture.
+#
+# The whole part is stored, not a fifth.  The plane's own 5-fold
+# rotation carries it onto itself, so the five copies in each plane
+# coincide and weld to one -- twelve parts, as the sculpture has.
+# That needs the outline to be exactly symmetric, so one fifth is
+# decimated (Douglas-Peucker, 1.5 px on a 405 px image) and the rest
+# generated from it by rotation.  The fifth is cut where the outline
+# actually meets its own turned copy, not at a fifth of the
+# perimeter: the trace is only 5-fold to a few pixels, so equal arc
+# lengths land 3-4 deg out and the copies join by chords straight
+# across the piece.
+
+_TUMBLEWEED_OUTER = (
+    (+0.422358, +0.629899), (+0.396103, +0.626605), (+0.410885, +0.598714),
+    (+0.405970, +0.580661), (+0.369866, +0.582286), (+0.384648, +0.554395),
+    (+0.379750, +0.495315), (+0.324003, +0.383700), (+0.210842, +0.222830),
+    (+0.135388, +0.145668), (+0.133752, +0.134180), (+0.122267, +0.127611),
+    (+0.122264, +0.135816), (+0.107504, +0.114476), (+0.089454, +0.111186),
+    (+0.066489, +0.089843), (+0.055001, +0.091479), (+0.055004, +0.083274),
+    (+0.022187, +0.075054), (+0.009045, +0.106228), (-0.000803, +0.111147),
+    (-0.000810, +0.127557), (-0.055021, +0.257176), (-0.055032, +0.281791),
+    (-0.063240, +0.289993), (-0.058322, +0.299841), (-0.069817, +0.317888),
+    (-0.063255, +0.322814), (-0.071463, +0.331015), (-0.064901, +0.335941),
+    (-0.076397, +0.353988), (-0.069835, +0.358914), (-0.078043, +0.367115),
+    (-0.073125, +0.376964), (-0.086266, +0.408138), (-0.079704, +0.413063),
+    (-0.089556, +0.426187), (-0.089578, +0.475419), (-0.097786, +0.483620),
+    (-0.092871, +0.501674), (-0.101080, +0.509875), (-0.094518, +0.514801),
+    (-0.102727, +0.523003), (-0.096165, +0.527929), (-0.097815, +0.549262),
+    (-0.073217, +0.590298), (-0.061729, +0.588662), (-0.061733, +0.596867),
+    (-0.037121, +0.605083), (+0.067914, +0.585437), (+0.053129, +0.621533),
+    (+0.087586, +0.633035), (+0.084299, +0.642880), (+0.043263, +0.667478),
+    (-0.032227, +0.672368), (-0.053556, +0.662512), (-0.068327, +0.665788),
+    (-0.084720, +0.624755), (-0.107696, +0.628027), (-0.110989, +0.654282),
+    (-0.153640, +0.618161), (-0.165110, +0.578771), (-0.163449, +0.532823),
+    (-0.147018, +0.483599), (-0.151936, +0.473750), (-0.143728, +0.465549),
+    (-0.150290, +0.460623), (-0.138795, +0.442576), (-0.138784, +0.417961),
+    (-0.128932, +0.404837), (-0.133851, +0.394989), (-0.120712, +0.372020),
+    (-0.125631, +0.362171), (-0.112493, +0.339203), (-0.110843, +0.317870),
+    (-0.117405, +0.312944), (-0.145314, +0.339188), (-0.138752, +0.344114),
+    (-0.229062, +0.467153), (-0.245476, +0.475351), (-0.238914, +0.480277),
+    (-0.332497, +0.580339), (-0.414570, +0.629535), (-0.449027, +0.618032),
+    (-0.468553, +0.596336), (-0.473534, +0.570348), (-0.442441, +0.575787),
+    (-0.426789, +0.565534), (-0.439492, +0.531700), (-0.408398, +0.537139),
+    (-0.353724, +0.514225), (-0.264798, +0.426716), (-0.146770, +0.269381),
+    (-0.096701, +0.173775), (-0.086281, +0.168669), (-0.083583, +0.155717),
+    (-0.091387, +0.158249), (-0.075653, +0.137617), (-0.078102, +0.119434),
+    (-0.064900, +0.090997), (-0.070005, +0.080577), (-0.062201, +0.078045),
+    (-0.064525, +0.044294), (-0.098234, +0.041429), (-0.105955, +0.033582),
+    (-0.121565, +0.038647), (-0.261591, +0.027144), (-0.285005, +0.034740),
+    (-0.295342, +0.029467), (-0.303188, +0.037189), (-0.323904, +0.031833),
+    (-0.326561, +0.039596), (-0.336898, +0.034324), (-0.339555, +0.042087),
+    (-0.360270, +0.036731), (-0.362927, +0.044494), (-0.373264, +0.039221),
+    (-0.381110, +0.046943), (-0.414820, +0.044077), (-0.417477, +0.051840),
+    (-0.433003, +0.046526), (-0.479831, +0.061719), (-0.490168, +0.056446),
+    (-0.505819, +0.066700), (-0.516156, +0.061427), (-0.518813, +0.069190),
+    (-0.529150, +0.063918), (-0.531807, +0.071681), (-0.552605, +0.076704),
+    (-0.584032, +0.112778), (-0.578926, +0.123199), (-0.586731, +0.125731),
+    (-0.586939, +0.151677), (-0.535797, +0.245500), (-0.574695, +0.242593),
+    (-0.574987, +0.278918), (-0.585365, +0.278834), (-0.621440, +0.247407),
+    (-0.649419, +0.177123), (-0.646637, +0.153793), (-0.654316, +0.140757),
+    (-0.620357, +0.112487), (-0.630569, +0.091647), (-0.656557, +0.096628),
+    (-0.635383, +0.044902), (-0.601466, +0.021821), (-0.557253, +0.009202),
+    (-0.505361, +0.009618), (-0.497514, +0.001897), (-0.487177, +0.007169),
+    (-0.484520, -0.000594), (-0.463805, +0.004762), (-0.440391, -0.002834),
+    (-0.424865, +0.002480), (-0.417019, -0.005241), (-0.391114, +0.000156),
+    (-0.383268, -0.007565), (-0.357363, -0.002168), (-0.336564, -0.007190),
+    (-0.333907, -0.014953), (-0.367492, -0.033387), (-0.370149, -0.025624),
+    (-0.515073, -0.073493), (-0.527942, -0.086570), (-0.530599, -0.078807),
+    (-0.654683, -0.136889), (-0.726832, -0.199743), (-0.726541, -0.236067),
+    (-0.711940, -0.261343), (-0.688764, -0.274111), (-0.684328, -0.242858),
+    (-0.669740, -0.231141), (-0.641487, -0.253677), (-0.637051, -0.222425),
+    (-0.598363, -0.177507), (-0.487658, -0.119976), (-0.301551, -0.056343),
+    (-0.195153, -0.038269), (-0.187077, -0.029937), (-0.173924, -0.031373),
+    (-0.178744, -0.038013), (-0.154260, -0.029424), (-0.137723, -0.037372),
+    (-0.106599, -0.033603), (-0.098266, -0.041679), (-0.093446, -0.035039),
+    (-0.062065, -0.047679), (-0.069757, -0.080624), (-0.064681, -0.090392),
+    (-0.074321, -0.103672), (-0.106651, -0.240400), (-0.121111, -0.260321),
+    (-0.119291, -0.271781), (-0.129059, -0.276857), (-0.130367, -0.298214),
+    (-0.138571, -0.298342), (-0.136751, -0.309802), (-0.144955, -0.309930),
+    (-0.146263, -0.331287), (-0.154467, -0.331415), (-0.152646, -0.342875),
+    (-0.162415, -0.347951), (-0.170106, -0.380896), (-0.178310, -0.381024),
+    (-0.178054, -0.397433), (-0.206974, -0.437274), (-0.205154, -0.448734),
+    (-0.219742, -0.460451), (-0.217922, -0.471911), (-0.226126, -0.472039),
+    (-0.224306, -0.483499), (-0.232510, -0.483628), (-0.243714, -0.501856),
+    (-0.287735, -0.520597), (-0.296067, -0.512521), (-0.300887, -0.519162),
+    (-0.325628, -0.511342), (-0.399054, -0.433709), (-0.408310, -0.471602),
+    (-0.442947, -0.460655), (-0.446075, -0.470551), (-0.427334, -0.514572),
+    (-0.369136, -0.562900), (-0.346087, -0.567463), (-0.336063, -0.578795),
+    (-0.298682, -0.555234), (-0.282018, -0.571386), (-0.294785, -0.594563),
+    (-0.239048, -0.590410), (-0.206616, -0.565285), (-0.180952, -0.527136),
+    (-0.165313, -0.477654), (-0.155544, -0.472578), (-0.157365, -0.461118),
+    (-0.149160, -0.460990), (-0.147853, -0.439633), (-0.133393, -0.419713),
+    (-0.133649, -0.403304), (-0.123881, -0.398228), (-0.121009, -0.371923),
+    (-0.111241, -0.366847), (-0.108370, -0.340542), (-0.097166, -0.322314),
+    (-0.088961, -0.322186), (-0.081809, -0.359822), (-0.090013, -0.359950),
+    (-0.089270, -0.512574), (-0.080810, -0.528854), (-0.089014, -0.528982),
+    (-0.072119, -0.664941), (-0.034637, -0.752982), (+0.000000, -0.763930),
+    (+0.028550, -0.757855), (+0.047855, -0.739758), (+0.019503, -0.725882),
+    (+0.012867, -0.708387), (+0.043031, -0.688481), (+0.014679, -0.674605),
+    (-0.016085, -0.623930), (-0.036591, -0.500865), (-0.039599, -0.304203),
+    (-0.023909, -0.197427), (-0.029338, -0.187171), (-0.023909, -0.175106),
+    (-0.019083, -0.181742), (-0.019685, -0.155802), (-0.007016, -0.142531),
+    (-0.000982, -0.111765), (+0.009274, -0.106337), (+0.004448, -0.099700),
+    (+0.026166, -0.073761), (+0.055122, -0.091257), (+0.065980, -0.089448),
+    (+0.075632, -0.102720), (+0.195677, -0.175719), (+0.210154, -0.195627),
+    (+0.221616, -0.197437), (+0.223425, -0.208296), (+0.243333, -0.216139),
+    (+0.240919, -0.223982), (+0.252381, -0.225792), (+0.249968, -0.233634),
+    (+0.269875, -0.241477), (+0.267461, -0.249319), (+0.278923, -0.251130),
+    (+0.280733, -0.261988), (+0.309688, -0.279484), (+0.307275, -0.287326),
+    (+0.322959, -0.292153), (+0.351914, -0.331969), (+0.363376, -0.333779),
+    (+0.370011, -0.351274), (+0.381473, -0.353084), (+0.379059, -0.360927),
+    (+0.390521, -0.362737), (+0.388108, -0.370579), (+0.401982, -0.386868),
+    (+0.406203, -0.434525), (+0.395947, -0.439954), (+0.400773, -0.446590),
+    (+0.385691, -0.467704), (+0.289167, -0.513547), (+0.322346, -0.534059),
+    (+0.301230, -0.563618), (+0.309676, -0.569651), (+0.357333, -0.565430),
+    (+0.421280, -0.525014), (+0.432743, -0.504504), (+0.446618, -0.498472),
+    (+0.435761, -0.455641), (+0.456273, -0.444783), (+0.474369, -0.464088),
+    (+0.487643, -0.409795), (+0.473770, -0.371186), (+0.445419, -0.334990),
+    (+0.403192, -0.304825), (+0.401383, -0.293966), (+0.389921, -0.292156),
+    (+0.392334, -0.284314), (+0.372427, -0.276470), (+0.357950, -0.256562),
+    (+0.342265, -0.251736), (+0.340456, -0.240877), (+0.316326, -0.230017),
+    (+0.314517, -0.219159), (+0.290387, -0.208299), (+0.276513, -0.192010),
+    (+0.278926, -0.184168), (+0.316931, -0.188996), (+0.314518, -0.196838),
+    (+0.459901, -0.243295), (+0.477999, -0.240280), (+0.475585, -0.248122),
+    (+0.610110, -0.274068), (+0.705425, -0.265626), (+0.726541, -0.236067),
+    (+0.729585, -0.207037), (+0.718340, -0.183085), (+0.696381, -0.205762),
+    (+0.677692, -0.206666), (+0.668082, -0.171827), (+0.646123, -0.194504),
+    (+0.588422, -0.208103), (+0.465043, -0.189576), (+0.277077, -0.131664),
+    (+0.180376, -0.083748), (+0.168944, -0.085742), (+0.159148, -0.076849),
+    (+0.166950, -0.074310), (+0.142094, -0.066867), (+0.133387, -0.050717),
+    (+0.105992, -0.035471), (+0.103998, -0.024040), (+0.096195, -0.026579),
+    (+0.078237, +0.002092), (+0.103824, +0.024224), (+0.105459, +0.035110),
+    (+0.121064, +0.040188), (+0.227586, +0.131800), (+0.250994, +0.139417),
+    (+0.256257, +0.149758), (+0.267144, +0.148123), (+0.280755, +0.164632),
+    (+0.287467, +0.159914), (+0.292731, +0.170255), (+0.299443, +0.165537),
+    (+0.313054, +0.182046), (+0.319767, +0.177327), (+0.325031, +0.187668),
+    (+0.335917, +0.186034), (+0.361504, +0.208166), (+0.368217, +0.203447),
+    (+0.377654, +0.216872), (+0.424469, +0.232106), (+0.429732, +0.242447),
+    (+0.448421, +0.243351), (+0.453685, +0.253693), (+0.460397, +0.248974),
+    (+0.465661, +0.259316), (+0.472374, +0.254597), (+0.492152, +0.262759),
+    (+0.538782, +0.252046), (+0.540776, +0.240615), (+0.548578, +0.243154),
+    (+0.563997, +0.222285), (+0.577770, +0.116320), (+0.607531, +0.141536),
+    (+0.629118, +0.112320), (+0.637465, +0.118487), (+0.648178, +0.165117),
+    (+0.629501, +0.238423), (+0.613537, +0.255663), (+0.612088, +0.270723),
+    (+0.567998, +0.273633), (+0.564010, +0.296496), (+0.587962, +0.307741),
+    (+0.540428, +0.337143), (+0.499422, +0.335879), (+0.456236, +0.320101),
+    (+0.414499, +0.289262), (+0.403612, +0.290897), (+0.398349, +0.280556),
+    (+0.391636, +0.285274), (+0.378025, +0.268765), (+0.354618, +0.261148),
+    (+0.345181, +0.247723), (+0.334294, +0.249358), (+0.316510, +0.229765),
+    (+0.305623, +0.231400), (+0.287839, +0.211807), (+0.268060, +0.203645),
+    (+0.261347, +0.208363), (+0.277683, +0.243016), (+0.284395, +0.238298),
+    (+0.373504, +0.362209), (+0.376229, +0.380353), (+0.382942, +0.375635),
+    (+0.449188, +0.495558), (+0.470614, +0.588816), (+0.449027, +0.618032),
+)
 def tumbleweed_motif(d=1.0):
-    """One swirling pinwheel arm; the 5-fold symmetry of the
-    dodecahedral planes turns it into the flower of Hart's
-    Tumbleweed (12 planes x 5 arms)."""
-    steps = 32
-    a0 = math.radians(-25)
-    sweep = math.radians(150)
-    path = []
-    widths = []
-    for i in range(steps + 1):
-        t = i / steps
-        ang = a0 + sweep * t ** 1.15    # curl tightens outward
-        r = d * (0.12 + 0.63 * t ** 0.9)
-        path.append((r * cos(ang), r * sin(ang)))
-        widths.append(d * (0.02 + 0.055 * sin(pi * t) ** 0.7))
-    return _ribbon(path, widths)
+    """One of the twelve parts of Hart's Tumbleweed (2006), traced
+    from his template: a five-armed pinwheel with forked tips, lying
+    in a face plane of the dodecahedron with its tips on the 3-fold
+    vertices at 2/phi^2.  See the note above for the placement."""
+    return polygon_with_holes(
+        [(x * d, y * d) for x, y in _TUMBLEWEED_OUTER], [])
+
 
 
 def _spline(pts, m):
@@ -291,6 +747,17 @@ def _earclip(poly):
                 if j in (a, b, c):
                     continue
                 px, py = poly[j]
+                # Skip by POSITION, not just by index: bridging a hole
+                # into the outer loop duplicates two vertices, and a
+                # duplicate carries a different index while sitting
+                # exactly on the candidate ear's boundary -- counted
+                # as "inside", it would veto every ear in turn and
+                # stall the triangulation.
+                if ((abs(px - ax) < 1e-12 and abs(py - ay) < 1e-12)
+                        or (abs(px - bx) < 1e-12 and abs(py - by) < 1e-12)
+                        or (abs(px - cx) < 1e-12
+                            and abs(py - cy) < 1e-12)):
+                    continue
                 d1 = (bx - ax) * (py - ay) - (by - ay) * (px - ax)
                 d2 = (cx - bx) * (py - by) - (cy - by) * (px - bx)
                 d3 = (ax - cx) * (py - cy) - (ay - cy) * (px - cx)
@@ -308,110 +775,595 @@ def _earclip(poly):
     return tris
 
 
-def frabjous_motif(d=1.0):
-    """Half of one of the thirty S-shaped parts of Hart's
-    Frabjous, drawn in a face plane of the GREAT rhombic
-    triacontahedron: the plane at distance d perpendicular to a
-    2-fold axis, with the rhombus corners at the piercings of
-    the neighbouring 3-fold axes (+-phi^2 d on the local x axis,
-    where the pointed ends of three parts meet) and 5-fold axes
-    (+-phi d on the local y axis, the vortex openings the parts
-    swirl around).  The in-plane 2-fold symmetry adds the other
-    half of the S; the teardrop opening near the tip follows
-    Hart's template."""
-    PHI2 = PHI * PHI
-    cl = _spline([(0.0, 0.0), (0.45 * d, 0.20 * d),
-                  (0.95 * d, 0.35 * d), (1.45 * d, 0.44 * d),
-                  (1.90 * d, 0.44 * d), (2.25 * d, 0.33 * d),
-                  (2.50 * d, 0.16 * d), (PHI2 * d, 0.01 * d)],
-                 6)
-    wl = _spline([(0.0, 0.200 * d), (1.0, 0.190 * d),
-                  (2.0, 0.180 * d), (3.0, 0.170 * d),
-                  (4.0, 0.155 * d), (5.0, 0.130 * d),
-                  (6.0, 0.080 * d), (7.0, 0.012 * d)], 6)
-    n = len(cl)
-    verts = []
-    faces = []
-    rows = []
-    for i, (x, y) in enumerate(cl):
-        x0, y0 = cl[max(i - 1, 0)]
-        x1, y1 = cl[min(i + 1, n - 1)]
-        tx, ty = x1 - x0, y1 - y0
-        ln = math.hypot(tx, ty) or 1.0
-        nx, ny = -ty / ln, tx / ln
-        w = wl[i][1]
-        t = i / (n - 1)
-        # teardrop opening near the tip: outer band stays
-        # thick, a thin sliver remains on the inner side
-        if 0.52 < t < 0.94:
-            s = math.sin(math.pi * (t - 0.52) / 0.42)
-            hole = 0.5 * (s ** 0.8)
+def bridge_plan(outer, holes):
+    """Splice each hole into the outer loop along a bridge, giving one
+    simple polygon that ear clipping can chew.
+
+    Returns the traversal as (loop, index) pairs -- loop 0 is `outer`,
+    loop k+1 is `holes[k]` -- rather than as points, so the same
+    stitching can be replayed on any set of loops with the same vertex
+    counts.  A mitred part needs exactly that: its top and bottom
+    outlines are offset copies of the mid one, and they must be
+    triangulated identically or the two faces will not correspond.
+
+    The outer loop must run counter-clockwise and each hole clockwise;
+    the hole is entered and left at the pair of vertices closest to
+    each other, and both are duplicated so the seam has zero width."""
+    plan = [(0, i) for i in range(len(outer))]
+    pts = list(outer)
+    # rightmost holes first: bridging them outward-in keeps later
+    # bridges from having to cross an earlier seam
+    order = sorted(range(len(holes)),
+                   key=lambda k: -max(p[0] for p in holes[k]))
+    for k in order:
+        hole = holes[k]
+        bi = bj = 0
+        best = None
+        for i, p in enumerate(pts):
+            for j, q in enumerate(hole):
+                dd = (p[0] - q[0]) ** 2 + (p[1] - q[1]) ** 2
+                if best is None or dd < best:
+                    best, bi, bj = dd, i, j
+        ring_i = list(range(bj, len(hole))) + list(range(0, bj + 1))
+        ring_p = [hole[i] for i in ring_i]
+        plan = (plan[:bi + 1] + [(k + 1, i) for i in ring_i]
+                + plan[bi:])
+        pts = pts[:bi + 1] + ring_p + pts[bi:]
+    return plan
+
+
+def apply_plan(plan, loops):
+    return [loops[a][b] for a, b in plan]
+
+
+def polygon_with_holes(outer, holes):
+    """(verts, faces) for a flat region bounded by `outer` with
+    `holes` cut out of it."""
+    plan = bridge_plan(outer, holes)
+    poly = apply_plan(plan, [outer] + list(holes))
+    verts = [(x, y, 0.0) for x, y in poly]
+    return verts, [list(t) for t in _earclip(poly)]
+
+
+def boundary_loops(verts, faces, tol=1e-9):
+    """Closed boundary loops of a flat mesh, as lists of (x, y).
+
+    Any motif is a mesh, not a set of outlines -- including one the
+    user supplies -- so the part builder recovers the outlines from
+    it: an edge belonging to a single face is on the boundary, and
+    chaining those gives the loops.  Vertices are welded by position
+    first, since a motif assembled from separate strips repeats its
+    shared corners."""
+    pos = {}
+    remap = []
+    pts = []
+    for p in verts:
+        k = (round(p[0] / tol) * tol, round(p[1] / tol) * tol)
+        if k not in pos:
+            pos[k] = len(pts)
+            pts.append((p[0], p[1]))
+        remap.append(pos[k])
+    use = {}
+    for f in faces:
+        m = len(f)
+        for i in range(m):
+            a2, b2 = remap[f[i]], remap[f[(i + 1) % m]]
+            if a2 == b2:
+                continue
+            key = (a2, b2) if a2 < b2 else (b2, a2)
+            use[key] = use.get(key, 0) + 1
+    nxt = {}
+    for f in faces:
+        m = len(f)
+        for i in range(m):
+            a2, b2 = remap[f[i]], remap[f[(i + 1) % m]]
+            if a2 == b2:
+                continue
+            key = (a2, b2) if a2 < b2 else (b2, a2)
+            if use[key] == 1:
+                nxt.setdefault(a2, []).append(b2)
+    loops = []
+    seen = set()
+    for start in list(nxt):
+        if start in seen:
+            continue
+        loop = [start]
+        seen.add(start)
+        cur = start
+        while True:
+            cands = [c for c in nxt.get(cur, []) if c not in seen]
+            if not cands:
+                break
+            cur = cands[0]
+            seen.add(cur)
+            loop.append(cur)
+        if len(loop) >= 3:
+            loops.append([pts[i] for i in loop])
+    return loops
+
+
+def _signed_area(p):
+    return 0.5 * sum(p[i][0] * p[(i + 1) % len(p)][1]
+                     - p[(i + 1) % len(p)][0] * p[i][1]
+                     for i in range(len(p)))
+
+
+def group_loops(loops):
+    """Sort boundary loops into (outer, [holes]) components.
+
+    A loop sitting inside another is a hole in it; anything else is
+    its own piece.  A motif built from separate strips therefore
+    yields several parts, which is what it physically is."""
+    order = sorted(range(len(loops)),
+                   key=lambda i: -abs(_signed_area(loops[i])))
+    outers = []
+    for i in order:
+        lp = loops[i]
+        host = None
+        for j, (o, _h) in enumerate(outers):
+            if _polygon_contains(o, lp[0]):
+                host = j
+                break
+        if host is None:
+            if _signed_area(lp) < 0:
+                lp = lp[::-1]
+            outers.append((lp, []))
         else:
-            hole = 0.0
-        f_out = 0.40
-        o_edge = (x + nx * w, y + ny * w)
-        h1 = (x + nx * w * (1 - 2 * f_out),
-              y + ny * w * (1 - 2 * f_out))
-        h2 = (x + nx * w * (1 - 2 * f_out - 2 * hole),
-              y + ny * w * (1 - 2 * f_out - 2 * hole))
-        i_edge = (x - nx * w, y - ny * w)
-        base = len(verts)
-        for px, py in (o_edge, h1, h2, i_edge):
-            verts.append((px, py, 0.0))
-        rows.append(base)
-    for i in range(n - 1):
-        b0, b1 = rows[i], rows[i + 1]
-        faces.append([b0, b1, b1 + 1, b0 + 1])
-        faces.append([b0 + 2, b1 + 2, b1 + 3, b0 + 3])
-    return verts, faces
+            if _signed_area(lp) > 0:
+                lp = lp[::-1]
+            outers[host][1].append(lp)
+    return outers
+
+
+def mating_planes(kind, family, loops, d=1.0, tol=1e-4):
+    """For each boundary edge, the neighbouring plane it beds against.
+
+    A boundary edge that runs along the intersection of this plane
+    with another is a mating edge: in the assembly the neighbouring
+    part comes up to the same line from the other side, so that edge
+    has to be cut to the dihedral rather than left square.  Every
+    other edge is free and stays square.  Returns a list per loop of
+    the matching normal, or None."""
+    a, normals = plane_normals(kind, family)
+    u, v = _frame(a)
+    lines = []
+    for b in normals:
+        ab = sum(x * y for x, y in zip(a, b))
+        if abs(ab) > 1 - 1e-9:
+            continue
+        A = sum(x * y for x, y in zip(b, u))
+        B = sum(x * y for x, y in zip(b, v))
+        n = sqrt(A * A + B * B)
+        lines.append((A / n, B / n, d * (1 - ab) / n, b))
+    out = []
+    for loop in loops:
+        per = []
+        for i in range(len(loop)):
+            p0 = loop[i]
+            p1 = loop[(i + 1) % len(loop)]
+            hit = None
+            for A, B, C, b in lines:
+                if (abs(A * p0[0] + B * p0[1] - C) < tol
+                        and abs(A * p1[0] + B * p1[1] - C) < tol):
+                    hit = b
+                    break
+            per.append(hit)
+        out.append(per)
+    return out
+
+
+def dihedral_angle(a, b):
+    """Interior angle, in degrees, of the wedge two face planes make
+    along their common edge."""
+    c = sum(x * y for x, y in zip(_normalize(a), _normalize(b)))
+    return 180.0 - math.degrees(math.acos(max(-1.0, min(1.0, c))))
+
+
+def mitred_part(kind, family, loops, d=1.0, thickness=0.04):
+    """One part as a solid slab, its mating edges cut to the dihedral
+    so neighbours butt instead of overlapping.
+
+    Local coordinates: the plane's own x, y with z measured off it,
+    the slab running z in [-thickness/2, +thickness/2] -- so it comes
+    out already lying flat, ready to be cut or printed.
+
+    A mid-plane point p lifted by s along the plane normal misses the
+    bisecting plane x.(n+m) = 2d by s(1 + n.m), and sliding it along
+    the edge's inward normal e closes that by
+
+        lambda = -s (1 + n.m) / (e.m)
+
+    which is the miter.  The outer face is drawn in, the inner face
+    runs proud, and the cut face lands in the bisector -- exactly
+    where the neighbouring part's does."""
+    a, _ = plane_normals(kind, family)
+    mates = mating_planes(kind, family, loops, d)
+    half = thickness / 2.0
+
+    def offset_loop(loop, per, s, is_hole):
+        n = len(loop)
+        # per-edge sideways shift, then meet the shifted edge lines
+        shift = []
+        for i in range(n):
+            b = per[i]
+            if b is None:
+                shift.append(0.0)
+                continue
+            p0, p1 = loop[i], loop[(i + 1) % n]
+            ex, ey = p1[0] - p0[0], p1[1] - p0[1]
+            ln = sqrt(ex * ex + ey * ey) or 1.0
+            # inward normal: the side the part's interior is on
+            nx, ny = -ey / ln, ex / ln
+            mid = ((p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2)
+            # material lies inside the outer loop but OUTSIDE a hole
+            inside = _polygon_contains(loop, (mid[0] + nx * 1e-4,
+                                              mid[1] + ny * 1e-4))
+            if inside == is_hole:
+                nx, ny = -nx, -ny
+            m3 = _normalize(b)
+            em = sum(x * y for x, y in
+                     zip(_plane_dir(kind, family, nx, ny), m3))
+            nm = sum(x * y for x, y in zip(_normalize(a), m3))
+            if abs(em) < 1e-9:
+                shift.append(0.0)
+            else:
+                shift.append(-s * (1.0 + nm) / em)
+        def slide(edge, vert):
+            """vertex `vert` moved sideways by edge `edge`'s shift"""
+            q0, q1 = loop[edge], loop[(edge + 1) % n]
+            ex, ey = q1[0] - q0[0], q1[1] - q0[1]
+            ln = sqrt(ex * ex + ey * ey) or 1.0
+            return (loop[vert][0] - ey / ln * shift[edge],
+                    loop[vert][1] + ex / ln * shift[edge])
+
+        out = []
+        for i in range(n):
+            j = (i - 1) % n
+            if shift[j] == 0.0 and shift[i] == 0.0:
+                out.append(loop[i])          # nothing moved here
+                continue
+            p = _meet(loop[j], loop[i], shift[j],
+                      loop[i], loop[(i + 1) % n], shift[i])
+            # A mating edge usually runs into the curved free boundary
+            # almost tangentially, and there the two shifted lines
+            # cross far away.  The corner can only travel about as far
+            # as the shift itself, so anything beyond that is the
+            # blow-up, not a real mitre: fall back to sliding along
+            # the mating edge alone.  The limit scales with the shift,
+            # not with the thickness -- a shallow joint needs a long
+            # bevel and must not be clipped by it.
+            limit = 2.5 * max(abs(shift[j]), abs(shift[i]))
+            if (p[0] - loop[i][0]) ** 2 + (p[1] - loop[i][1]) ** 2 \
+                    > limit * limit:
+                p = slide(j if abs(shift[j]) >= abs(shift[i]) else i, i)
+            out.append(p)
+        return out
+
+    tops = [offset_loop(l, p, +half, i > 0)
+            for i, (l, p) in enumerate(zip(loops, mates))]
+    bots = [offset_loop(l, p, -half, i > 0)
+            for i, (l, p) in enumerate(zip(loops, mates))]
+    assert [len(t) for t in tops] == [len(l) for l in loops]
+
+    # Triangulate the MID outline and reuse that for both faces: the
+    # offsets keep one vertex per mid vertex, so the two caps stay in
+    # correspondence and the fragile step is on the well-behaved
+    # outline rather than an offset one.
+    plan = bridge_plan(loops[0], loops[1:])
+    tri = [list(t) for t in _earclip(apply_plan(plan, loops))]
+    tp = apply_plan(plan, tops)
+    bp = apply_plan(plan, bots)
+    nb = len(tp)
+    verts = ([(x, y, +half) for x, y in tp]
+             + [(x, y, -half) for x, y in bp])
+    faces = [list(t) for t in tri]
+    faces += [[nb + t[2], nb + t[1], nb + t[0]] for t in tri]
+    # side walls, loop by loop: for a mating edge this quad IS the
+    # mitred face, for a free edge it is a square cut
+    for li, lp in enumerate(loops):
+        n = len(lp)
+        pos = {}
+        for k, (la, ix) in enumerate(plan):
+            if la == li and ix not in pos:
+                pos[ix] = k
+        for i in range(n):
+            k0, k1 = pos[i], pos[(i + 1) % n]
+            faces.append([k0, k1, nb + k1, nb + k0])
+    # Bridging a hole duplicates its splice vertices, so the caps and
+    # the side walls reference two indices for one point and the
+    # surface reads as open along every seam.  Weld by position.
+    remap = {}
+    keep = []
+    for i, p in enumerate(verts):
+        k = (round(p[0], 9), round(p[1], 9), round(p[2], 9))
+        if k not in remap:
+            remap[k] = len(keep)
+            keep.append(p)
+        remap[i] = remap[k]
+    verts2 = keep
+    faces2 = []
+    for f in faces:
+        g = []
+        for i in f:
+            j = remap[i]
+            if not g or g[-1] != j:
+                g.append(j)
+        if len(g) > 2 and g[0] == g[-1]:
+            g.pop()
+        if len(g) >= 3:
+            faces2.append(g)
+
+    dihedrals = sorted({round(dihedral_angle(a, b), 4)
+                        for per in mates for b in per if b is not None})
+    return verts2, faces2, dihedrals
+
+
+def _plane_dir(kind, family, x, y):
+    a, _ = plane_normals(kind, family)
+    u, v = _frame(a)
+    return tuple(x * u[i] + y * v[i] for i in range(3))
+
+
+def _polygon_contains(poly, pt):
+    x, y = pt
+    hit = False
+    n = len(poly)
+    for i in range(n):
+        x0, y0 = poly[i]
+        x1, y1 = poly[(i + 1) % n]
+        if (y0 > y) != (y1 > y):
+            if x0 + (y - y0) * (x1 - x0) / (y1 - y0) > x:
+                hit = not hit
+    return hit
+
+
+def _well_crossed(loop, j, i, n, min_sin=0.2):
+    """Do edges j and i meet at enough of an angle to mitre into one
+    corner?  Nearly tangent edges would put the crossing far away."""
+    a0, a1 = loop[j], loop[(j + 1) % n]
+    b0, b1 = loop[i], loop[(i + 1) % n]
+    ax, ay = a1[0] - a0[0], a1[1] - a0[1]
+    bx, by = b1[0] - b0[0], b1[1] - b0[1]
+    la = sqrt(ax * ax + ay * ay) or 1.0
+    lb = sqrt(bx * bx + by * by) or 1.0
+    return abs((ax * by - ay * bx) / (la * lb)) > min_sin
+
+
+def _meet(a0, a1, sa, b0, b1, sb):
+    """Where two edges meet once each is slid sideways by s."""
+    def line(p, q, s):
+        ex, ey = q[0] - p[0], q[1] - p[1]
+        ln = sqrt(ex * ex + ey * ey) or 1.0
+        nx, ny = -ey / ln, ex / ln
+        return (nx, ny, nx * p[0] + ny * p[1] + s)
+    A1, B1, C1 = line(a0, a1, sa)
+    A2, B2, C2 = line(b0, b1, sb)
+    det = A1 * B2 - A2 * B1
+    if abs(det) < 1e-12:
+        return (b0[0] + A1 * sa, b0[1] + B1 * sa)
+    return ((C1 * B2 - C2 * B1) / det, (A1 * C2 - A2 * C1) / det)
+
+
+# Hart's Frabjous part, traced from the cutting template
+# (Asset 1.svg) and fitted into a 2-fold plane.  Local (x, y) in
+# units of the plane distance.
+#
+# The S has a sharp tip at each end of 63.4352 and 63.4331 deg,
+# against the golden rhombus's own acute angle of 63.4349 -- so the
+# tips are rhombus corners, and they go on the 3-fold piercings at
+# +-phi^2.  Two guide lines cross there, so three planes meet and
+# three parts converge, which is Hart's "the ends meet in groups of
+# three"; the 5-fold piercings at phi have four lines crossing, five
+# planes, and are the vortices the parts spiral around without
+# touching.  Fitted so, the tips' straight edges lie along those
+# guide lines to 0.001 deg.
+#
+# These are the face planes of the GREAT rhombic triacontahedron:
+# its acute corners are the 3-fold ones, where the plain rhombic
+# triacontahedron's are the 5-fold, and only the former lets three
+# ends meet.
+#
+# The whole S is stored, not a half.  The plane's own 2-fold rotation
+# carries it onto itself, so the two copies in each plane coincide
+# and weld to one -- thirty parts, as the sculpture has.  That only
+# holds if the outline is exactly symmetric, and the drawing is
+# symmetric as a curve but not as sampled points, so one half is
+# decimated (Douglas-Peucker, 0.35 svg units) and the other half is
+# generated from it by rotation.
+
+_FRABJOUS_OUTER = (
+    (+2.618034, +0.000000), (+1.876257, +0.458412), (+1.772463, +0.485679),
+    (+1.670917, +0.508751), (+1.572187, +0.527688), (+1.477862, +0.542759),
+    (+1.382518, +0.555344), (+1.275158, +0.566311), (+1.184578, +0.571944),
+    (+1.091811, +0.573592), (+0.985770, +0.570775), (+0.880898, +0.562955),
+    (+0.784745, +0.550490), (+0.700458, +0.534340), (+0.609608, +0.510699),
+    (+0.520317, +0.481035), (+0.431295, +0.445378), (+0.342723, +0.403819),
+    (+0.273267, +0.366274), (+0.214479, +0.330258), (+0.158178, +0.291305),
+    (+0.097531, +0.243184), (+0.061785, +0.211153), (+0.021184, +0.170762),
+    (-0.029065, +0.113562), (-0.147750, -0.013304), (-0.276414, -0.130671),
+    (-0.319861, -0.166987), (-0.365046, -0.201595), (-0.404328, -0.228322),
+    (-0.437228, -0.248038), (-0.471836, -0.265986), (-0.508571, -0.282107),
+    (-0.537756, -0.292894), (-0.579075, -0.305478), (-0.623391, -0.315876),
+    (-0.658628, -0.322198), (-0.708188, -0.328580), (-0.747141, -0.331696),
+    (-0.842904, -0.333195), (-0.899685, -0.330138), (-0.942773, -0.325883),
+    (-1.028828, -0.312220), (-1.112786, -0.291665), (-1.192639, -0.264488),
+    (-1.266918, -0.231378), (-1.312912, -0.206599), (-1.345513, -0.186823),
+    (-1.415208, -0.137982), (-1.484603, -0.079703), (-1.551452, -0.014233),
+    (-1.626121, +0.070294), (-1.685119, +0.147091), (-1.741181, +0.229790),
+    (-1.799970, +0.325194), (-1.876287, +0.458412), (-2.618034, +0.000000),
+    (-1.876257, -0.458412), (-1.772463, -0.485679), (-1.670917, -0.508751),
+    (-1.572187, -0.527688), (-1.477862, -0.542759), (-1.382518, -0.555344),
+    (-1.275158, -0.566311), (-1.184578, -0.571944), (-1.091811, -0.573592),
+    (-0.985770, -0.570775), (-0.880898, -0.562955), (-0.784745, -0.550490),
+    (-0.700458, -0.534340), (-0.609608, -0.510699), (-0.520317, -0.481035),
+    (-0.431295, -0.445378), (-0.342723, -0.403819), (-0.273267, -0.366274),
+    (-0.214479, -0.330258), (-0.158178, -0.291305), (-0.097531, -0.243184),
+    (-0.061785, -0.211153), (-0.021184, -0.170762), (+0.029065, -0.113562),
+    (+0.147750, +0.013304), (+0.276414, +0.130671), (+0.319861, +0.166987),
+    (+0.365046, +0.201595), (+0.404328, +0.228322), (+0.437228, +0.248038),
+    (+0.471836, +0.265986), (+0.508571, +0.282107), (+0.537756, +0.292894),
+    (+0.579075, +0.305478), (+0.623391, +0.315876), (+0.658628, +0.322198),
+    (+0.708188, +0.328580), (+0.747141, +0.331696), (+0.842904, +0.333195),
+    (+0.899685, +0.330138), (+0.942773, +0.325883), (+1.028828, +0.312220),
+    (+1.112786, +0.291665), (+1.192639, +0.264488), (+1.266918, +0.231378),
+    (+1.312912, +0.206599), (+1.345513, +0.186823), (+1.415208, +0.137982),
+    (+1.484603, +0.079703), (+1.551452, +0.014233), (+1.626121, -0.070294),
+    (+1.685119, -0.147091), (+1.741181, -0.229790), (+1.799970, -0.325194),
+    (+1.876287, -0.458412),
+)
+
+_FRABJOUS_HOLE_A = (
+    (+1.435343, +0.401961), (+1.538598, +0.380507), (+1.643740, +0.351652),
+    (+1.741031, +0.316924), (+1.823880, +0.279799), (+1.909157, +0.233865),
+    (+1.998448, +0.178373), (+2.114946, +0.098220), (+2.247984, +0.000000),
+    (+1.959046, -0.178553), (+1.901846, -0.108438), (+1.840720, -0.037275),
+    (+1.786696, +0.022053), (+1.728716, +0.081770), (+1.671516, +0.136724),
+    (+1.618780, +0.183706), (+1.568741, +0.224247), (+1.519990, +0.259125),
+    (+1.479510, +0.284504), (+1.427163, +0.313059), (+1.369274, +0.340176),
+    (+1.307129, +0.365495), (+1.242618, +0.388687), (+1.167679, +0.412358),
+    (+1.092351, +0.432913), (+1.026431, +0.448314), (+1.225029, +0.430157),
+)
+
+_FRABJOUS_HOLE_B = (
+    (-1.435343, -0.401961), (-1.538598, -0.380507), (-1.643740, -0.351652),
+    (-1.741031, -0.316924), (-1.823880, -0.279799), (-1.909157, -0.233865),
+    (-1.998448, -0.178373), (-2.114946, -0.098220), (-2.247984, -0.000000),
+    (-1.959046, +0.178553), (-1.901846, +0.108438), (-1.840720, +0.037275),
+    (-1.786696, -0.022053), (-1.728716, -0.081770), (-1.671516, -0.136724),
+    (-1.618780, -0.183706), (-1.568741, -0.224247), (-1.519990, -0.259125),
+    (-1.479510, -0.284504), (-1.427163, -0.313059), (-1.369274, -0.340176),
+    (-1.307129, -0.365495), (-1.242618, -0.388687), (-1.167679, -0.412358),
+    (-1.092351, -0.432913), (-1.026431, -0.448314), (-1.225029, -0.430157),
+)
+def frabjous_motif(d=1.0):
+    """One of the thirty S-shaped parts of Hart's Frabjous (2003),
+    traced from the cutting template: a long S pierced by a teardrop
+    near each end, lying in a face plane of the great rhombic
+    triacontahedron with its points on the 3-fold piercings at
+    +-phi^2 d.  See the note above for how the placement is pinned."""
+    outer = [(x * d, y * d) for x, y in _FRABJOUS_OUTER]
+    holes = [[(x * d, y * d) for x, y in _FRABJOUS_HOLE_A],
+             [(x * d, y * d) for x, y in _FRABJOUS_HOLE_B]]
+    return polygon_with_holes(outer, holes)
+
+
+
+# Hart's Whimsy blade, traced from the laser-cutting template
+# (Asset 1.svg) and fitted into the face plane of the pentagonal
+# hexecontahedron.  Coordinates are the plane's local (x, y) in units
+# of the plane distance d.
+#
+# The fit is fixed by the piece itself, not chosen: the blade has two
+# sharp tips, and in the assembled sculpture five blades meet at each
+# of the twelve 5-fold hubs while three meet at each of the twenty
+# 3-fold corners (60 parts x 2 tips = 12x5 + 20x3 = 120).  So the
+# tips land on the piercings of the nearest 5-fold and 3-fold axes,
+# which fixes scale, rotation and position.  Which tip goes where is
+# settled by the tip angles -- 67.45 deg and 111.87 deg, against
+# 360/5 = 72 and 360/3 = 120 -- and the sharper tip's two straight
+# edges then reproduce the face pentagon's own corner at the hub to
+# within a quarter of a degree.  The reflection is settled the same
+# way: as traced, the tip edge follows the pentagon edge to within
+# 1.2 deg, where the mirror image is 22.4 deg out.
+#
+# Outline decimated (Douglas-Peucker, 0.05 svg units ~ 0.014% of the
+# blade's length), so the curves are visually exact.
+
+_WHIMSY_OUTER = (
+    (+0.235712, -0.358949), (+0.237118, -0.173200), (+0.204320, -0.152363),
+    (+0.188403, -0.142587), (+0.176809, -0.135681), (+0.164251, -0.128460),
+    (+0.154754, -0.123232), (+0.143505, -0.117355), (+0.135044, -0.113199),
+    (+0.124742, -0.108477), (+0.118330, -0.105747), (+0.107432, -0.101486),
+    (+0.099061, -0.098551), (+0.090596, -0.095867), (+0.080040, -0.092922),
+    (+0.070627, -0.090671), (+0.062391, -0.088949), (+0.048305, -0.086545),
+    (+0.035978, -0.084905), (+0.021803, -0.083483), (+0.001884, -0.082186),
+    (-0.016871, -0.081545), (-0.035776, -0.081359), (-0.059249, -0.081684),
+    (-0.079331, -0.082412), (-0.100679, -0.083664), (-0.115794, -0.084849),
+    (-0.135445, -0.086810), (-0.152181, -0.088847), (-0.170683, -0.091546),
+    (-0.189547, -0.094743), (-0.206433, -0.097992), (-0.226232, -0.102253),
+    (-0.247432, -0.107339), (-0.264745, -0.111886), (-0.280509, -0.116340),
+    (-0.298124, -0.121654), (-0.319088, -0.128504), (-0.332812, -0.133323),
+    (-0.350364, -0.139923), (-0.366450, -0.146412), (-0.384075, -0.154054),
+    (-0.398565, -0.160774), (-0.414903, -0.168826), (-0.426394, -0.174808),
+    (-0.441222, -0.182888), (-0.456874, -0.191840), (-0.497526, -0.216142),
+    (-0.492478, -0.358949), (-0.358095, -0.407444), (-0.351405, -0.396277),
+    (-0.343864, -0.384243), (-0.336649, -0.373228), (-0.326608, -0.358652),
+    (-0.320104, -0.349620), (-0.311368, -0.337962), (-0.303024, -0.327295),
+    (-0.292938, -0.314988), (-0.283233, -0.303688), (-0.273980, -0.293396),
+    (-0.263630, -0.282430), (-0.254588, -0.273295), (-0.244443, -0.263530),
+    (-0.234865, -0.254777), (-0.225921, -0.247009), (-0.216774, -0.239439),
+    (-0.207388, -0.232091), (-0.196823, -0.224301), (-0.186996, -0.217516),
+    (-0.176956, -0.211018), (-0.166716, -0.204862), (-0.157355, -0.199639),
+    (-0.149441, -0.195531), (-0.138746, -0.190427), (-0.129543, -0.186444),
+    (-0.119714, -0.182619), (-0.109250, -0.179040), (-0.100385, -0.176416),
+    (-0.089834, -0.173799), (-0.082625, -0.172333), (-0.073752, -0.170912),
+    (-0.063821, -0.169839), (-0.057234, -0.169446), (-0.050704, -0.169326),
+    (-0.043138, -0.169522), (-0.036750, -0.170016), (-0.030418, -0.170785),
+    (-0.023672, -0.171969), (-0.017542, -0.173368), (-0.012034, -0.174938),
+    (-0.007607, -0.176413), (-0.001353, -0.178868), (+0.003333, -0.181025),
+    (+0.009258, -0.184169), (+0.014119, -0.187135), (+0.018819, -0.190397),
+    (+0.023735, -0.194275), (+0.027288, -0.197413), (+0.031454, -0.201523),
+    (+0.034713, -0.205115), (+0.037834, -0.208892), (+0.041451, -0.213789),
+    (+0.044549, -0.218505), (+0.048011, -0.224498), (+0.050925, -0.230307),
+    (+0.053125, -0.235281), (+0.054944, -0.239890), (+0.057221, -0.246495),
+    (+0.058873, -0.252113), (+0.060514, -0.258616), (+0.061657, -0.264000),
+    (+0.062998, -0.271670), (+0.063969, -0.278920), (+0.064719, -0.286410),
+)
+
+_WHIMSY_HOLE_A = (
+    (-0.452337, -0.240662), (-0.430450, -0.227723), (-0.408909, -0.215703),
+    (-0.388851, -0.205318), (-0.375845, -0.199024), (-0.366755, -0.194831),
+    (-0.355226, -0.189760), (-0.344618, -0.185336), (-0.322413, -0.176729),
+    (-0.299209, -0.168567), (-0.275390, -0.161000), (-0.251629, -0.154211),
+    (-0.240028, -0.151147), (-0.224848, -0.147393), (-0.213674, -0.144816),
+    (-0.199052, -0.141688), (-0.176705, -0.137446), (-0.154584, -0.133899),
+    (-0.141542, -0.132124), (-0.128602, -0.130596), (-0.115706, -0.129298),
+    (-0.102796, -0.128216), (-0.076700, -0.126636), (-0.085645, -0.127913),
+    (-0.094590, -0.129539), (-0.106434, -0.132201), (-0.118110, -0.135391),
+    (-0.123882, -0.137174), (-0.135290, -0.141095), (-0.146511, -0.145464),
+    (-0.157539, -0.150249), (-0.162978, -0.152787), (-0.173701, -0.158137),
+    (-0.184213, -0.163822), (-0.194506, -0.169813), (-0.204573, -0.176076),
+    (-0.214408, -0.182581), (-0.224559, -0.189694), (-0.234988, -0.197430),
+    (-0.245135, -0.205384), (-0.255005, -0.213540), (-0.264605, -0.221882),
+    (-0.273941, -0.230392), (-0.283022, -0.239054), (-0.291852, -0.247851),
+    (-0.300439, -0.256767), (-0.308789, -0.265785), (-0.316910, -0.274888),
+    (-0.324808, -0.284060), (-0.335202, -0.296624), (-0.343669, -0.307311),
+    (-0.351873, -0.318080), (-0.359822, -0.328930), (-0.367522, -0.339858),
+    (-0.376809, -0.353624), (-0.449262, -0.327443),
+)
+
+_WHIMSY_HOLE_B = (
+    (-0.035590, -0.125648), (-0.017278, -0.125832), (-0.001533, -0.126362),
+    (+0.013749, -0.127279), (+0.029451, -0.128742), (+0.043055, -0.130554),
+    (+0.055977, -0.132847), (+0.068330, -0.135656), (+0.080225, -0.139012),
+    (+0.091643, -0.142875), (+0.103117, -0.147396), (+0.114834, -0.152635),
+    (+0.126983, -0.158651), (+0.139751, -0.165502), (+0.154836, -0.174136),
+    (+0.172180, -0.184568), (+0.192657, -0.197328), (+0.191925, -0.292269),
+    (+0.105110, -0.255433), (+0.103080, -0.246201), (+0.100667, -0.237203),
+    (+0.097869, -0.228454), (+0.095791, -0.222766), (+0.092353, -0.214463),
+    (+0.089848, -0.209085), (+0.085769, -0.201267), (+0.082835, -0.196226),
+    (+0.079731, -0.191326), (+0.075848, -0.185740), (+0.071092, -0.179594),
+    (+0.066052, -0.173765), (+0.060751, -0.168257), (+0.055207, -0.163075),
+    (+0.049442, -0.158220), (+0.043474, -0.153699), (+0.034187, -0.147548),
+    (+0.024559, -0.142166), (+0.014657, -0.137566), (+0.006155, -0.134308),
+    (-0.002814, -0.131482), (-0.013685, -0.128806), (-0.024627, -0.126875),
+)
+
+# outline indices of the two tips: the sharp 67.45 deg hub
+# corner, and the wide end three blades share
+_WHIMSY_TIPS = (0, 48)
 
 
 def whimsy_motif(d=1.0):
-    """One of the sixty flat parts of Hart's Whimsy, drawn in a
-    face plane of the pentagonal hexecontahedron (the snub
-    dodecahedron's dual).  The pieces are openwork: a web of
-    constant-width curved ribbons -- straight along the long
-    mating edge at the 5-fold hub, following the pentagon rim
-    to the 3-fold corner where three modules meet, with
-    swooping interior ribs -- leaving the large swirling
-    negative spaces of the sculpture.  Corner coordinates are
-    the exact face-pentagon corners in units of the plane
-    distance."""
-    P5 = (-0.06298 * d, -0.43738 * d)   # 5-fold apex
-    G1 = (+0.26728 * d, -0.06800 * d)
-    G2 = (+0.18165 * d, +0.20753 * d)
-    T3 = (-0.10596 * d, +0.24549 * d)   # 3-fold corner
-    G3 = (-0.27561 * d, +0.01017 * d)
-
-    def lerp(A, B, t):
-        return (A[0] + (B[0] - A[0]) * t,
-                A[1] + (B[1] - A[1]) * t)
-
-    strips = [
-        # straight mating ribbon on the long edge P5-G1
-        ([P5, lerp(P5, G1, 0.5), G1], 0.036),
-        # rim ribbon G1 -> G2 -> T3
-        ([G1, (G2[0] * 1.04, G2[1] * 1.04), T3], 0.032),
-        # rim ribbon T3 -> G3 -> P5
-        ([T3, (G3[0] * 1.04, G3[1] * 1.04), P5], 0.032),
-        # interior rib: from the mating edge swooping to the
-        # 3-fold corner
-        ([lerp(P5, G1, 0.45), (0.05 * d, 0.01 * d), T3],
-         0.030),
-        # interior rib: hub apex arcing out to the rim
-        ([P5, (0.09 * d, -0.17 * d),
-          lerp(G1, G2, 0.55)], 0.028),
-    ]
-    verts = []
-    faces = []
-    for ctrl, hw in strips:
-        path = _spline(ctrl, 10)
-        w = [hw * d] * len(path)
-        sv, sf = _ribbon(path, w)
-        base = len(verts)
-        verts.extend(sv)
-        faces.extend([[base + i for i in f] for f in sf])
-    return verts, faces
+    """One of the sixty flat blades of Hart's Whimsy (2014), traced
+    from the cutting template: a curved band pierced by two teardrop
+    openings, running from a 5-fold hub to a 3-fold corner in a face
+    plane of the pentagonal hexecontahedron (the snub dodecahedron's
+    dual).  See the note above for how the placement is pinned."""
+    outer = [(x * d, y * d) for x, y in _WHIMSY_OUTER]
+    holes = [[(x * d, y * d) for x, y in _WHIMSY_HOLE_A],
+             [(x * d, y * d) for x, y in _WHIMSY_HOLE_B]]
+    return polygon_with_holes(outer, holes)
 
 
 # preset -> (group, plane family, motif builder)
@@ -426,7 +1378,8 @@ PRESETS = {
 try:
     import bpy
     from mathutils import Matrix
-    from bpy.props import (FloatProperty, EnumProperty, BoolProperty)
+    from bpy.props import (FloatProperty, EnumProperty, BoolProperty,
+                           StringProperty, IntProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -435,6 +1388,33 @@ except ImportError:
 if _IN_BLENDER:
 
     _NG_NAME = "Math Art Symmetric Sculpture"
+
+    # Blender only borrows the strings a dynamic enum callback
+    # returns, so the list has to stay alive on the Python side or
+    # the UI reads freed memory.
+    _FAMILY_ITEMS = []
+
+    def _family_items(self, context):
+        """Plane families available for the chosen group, named for
+        the planes that group actually produces."""
+        _FAMILY_ITEMS.clear()
+        for fam in ('P5', 'P4', 'P3', 'P2', 'P1'):
+            if (self.group, fam) not in _AXES:
+                continue
+            n, solid = _FAMILY_SOLID[(self.group, fam)]
+            k = _FOLD[fam]
+            desc = (f"{n} planes, no symmetry within each -- one copy "
+                    f"of the motif per plane"
+                    if k == 1 else
+                    f"{n} planes perpendicular to the {k}-fold axes, "
+                    f"{k} copies of the motif in each")
+            # 5-tuples: a dynamic enum can only take an integer
+            # default, so each family carries its fold as the number
+            # and the property defaults to 3 (= P3, the one family
+            # every group has)
+            _FAMILY_ITEMS.append(
+                (fam, family_label(self.group, fam), desc, '', k))
+        return _FAMILY_ITEMS
 
     def _ghost_material():
         """Shared translucent material for the replicated copies, so
@@ -458,6 +1438,147 @@ if _IN_BLENDER:
             mat.blend_method = 'BLEND'
         return mat
 
+    # A viewport aid should not quietly build a hundred thousand
+    # spheres or hundreds of objects, and the general plane families
+    # reach both: Whimsy's undrawn pattern is 953 crossings in 325
+    # orbits over 19028 points.  Orbits are what you switch on and
+    # off, so they are capped in their own right, not just by points.
+    _MAX_MARKS = 3000
+    _MAX_ORBITS = 24
+
+    def _group_rgb(i):
+        """Colour for orbit i.
+
+        Stepping the hue by the golden angle puts consecutive orbits
+        on opposite sides of the wheel, so neighbouring groups stay
+        told apart however many there are -- a fixed palette would
+        run out, since the general planes reach a couple of dozen
+        orbits."""
+        import colorsys
+        h = (i * 0.6180339887498949) % 1.0
+        s = 0.85 if i % 2 else 0.62
+        v = 0.95 if i % 3 else 0.72
+        return colorsys.hsv_to_rgb(h, s, v)
+
+    def _class_material(i, alpha=1.0):
+        name = f"SymSculpt Orbit {i}" + ("" if alpha >= 1.0 else " Ghost")
+        mat = bpy.data.materials.get(name)
+        if mat is not None:
+            return mat
+        rgb = _group_rgb(i)
+        mat = bpy.data.materials.new(name)
+        mat.diffuse_color = (*rgb, alpha)
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf is not None:
+            bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+            bsdf.inputs["Alpha"].default_value = alpha
+            bsdf.inputs["Roughness"].default_value = 0.4
+        if alpha < 1.0:
+            if hasattr(mat, 'surface_render_method'):
+                mat.surface_render_method = 'BLENDED'
+            elif hasattr(mat, 'blend_method'):
+                mat.blend_method = 'BLEND'
+        return mat
+
+    def _solid_material():
+        name = "SymSculpt Polyhedron"
+        mat = bpy.data.materials.get(name)
+        if mat is not None:
+            return mat
+        mat = bpy.data.materials.new(name)
+        rgba = (0.62, 0.68, 0.78, 0.12)
+        mat.diffuse_color = rgba
+        mat.use_nodes = True
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf is not None:
+            bsdf.inputs["Base Color"].default_value = (*rgba[:3], 1.0)
+            bsdf.inputs["Alpha"].default_value = rgba[3]
+            bsdf.inputs["Roughness"].default_value = 0.35
+        if hasattr(mat, 'surface_render_method'):
+            mat.surface_render_method = 'BLENDED'
+        elif hasattr(mat, 'blend_method'):
+            mat.blend_method = 'BLEND'
+        return mat
+
+    def _ball(c, r, seg=8, ring=6):
+        """Low-res UV sphere at c -- a viewport marker, not geometry
+        anyone will render closely."""
+        verts = [(c[0], c[1], c[2] + r)]
+        for j in range(1, ring):
+            phi = pi * j / ring
+            for i in range(seg):
+                th = 2 * pi * i / seg
+                verts.append((c[0] + r * sin(phi) * cos(th),
+                              c[1] + r * sin(phi) * sin(th),
+                              c[2] + r * cos(phi)))
+        verts.append((c[0], c[1], c[2] - r))
+        faces = []
+        last = len(verts) - 1
+        for i in range(seg):
+            faces.append([0, 1 + i, 1 + (i + 1) % seg])
+            faces.append([last, last - seg + (i + 1) % seg,
+                          last - seg + i])
+        for j in range(ring - 2):
+            b0, b1 = 1 + j * seg, 1 + (j + 1) * seg
+            for i in range(seg):
+                k = (i + 1) % seg
+                faces.append([b0 + i, b1 + i, b1 + k, b0 + k])
+        return verts, faces
+
+    def _disc(c, r, n=20):
+        verts = [(c[0], c[1], c[2])]
+        for i in range(n):
+            th = 2 * pi * i / n
+            verts.append((c[0] + r * cos(th), c[1] + r * sin(th), c[2]))
+        return verts, [[0, 1 + i, 1 + (i + 1) % n] for i in range(n)]
+
+    def _build_marker_object(name, chunks, alpha):
+        """One object holding every marker, with a material slot per
+        vertex class so the classes stay distinguishable."""
+        verts = []
+        faces = []
+        slots = []
+        used = {}
+        for cls, (cv, cf) in chunks:
+            if cls not in used:
+                used[cls] = len(slots)
+                slots.append(cls)
+            base = len(verts)
+            verts.extend(cv)
+            faces.extend(([base + i for i in f], used[cls]) for f in cf)
+        me = bpy.data.meshes.new(name)
+        me.from_pydata(verts, [], [f for f, _ in faces])
+        me.validate()
+        me.update()
+        for cls in slots:
+            me.materials.append(_class_material(cls, alpha))
+        for poly, (_, si) in zip(me.polygons, faces):
+            poly.material_index = si
+        obj = bpy.data.objects.new(name, me)
+        return obj
+
+    def _drive_z_from_lift(obj, sculpt, mod_name, socket):
+        """Tie obj's Z to the modifier's Lift input.
+
+        The solid and its vertex balls are the sculpture's own
+        geometry, so they have to rise with it -- but the lift lives
+        inside the node group and moves only the modifier's result.
+        A driver keeps them together while Lift stays adjustable,
+        where baking the height in would strand them the moment it
+        was touched."""
+        fc = obj.driver_add("location", 2)
+        drv = fc.driver
+        drv.type = 'SCRIPTED'
+        var = drv.variables.new()
+        var.name = "lift"
+        var.type = 'SINGLE_PROP'
+        var.targets[0].id = sculpt
+        var.targets[0].data_path = (f'modifiers["{mod_name}"]'
+                                    f'["{socket}"]')
+        drv.expression = "lift"
+        return fc
+
     def _motif_material():
         name = "SymSculpt Motif"
         mat = bpy.data.materials.get(name)
@@ -475,13 +1596,16 @@ if _IN_BLENDER:
 
     def _node_group():
         """Get or build the replicator node group: instance the motif
-        object on the rotation points, ghost the copies (unless Full
-        Sculpture), realize, weld, and optionally extrude radially
-        from the origin (preserves planarity)."""
+        object on the rotation points, optionally ghost the copies
+        (Translucent), realize, weld, extrude radially from the origin
+        (preserves planarity), and lift the result clear of the
+        motif."""
         for ng in bpy.data.node_groups:
             if (ng.name.startswith(_NG_NAME)
                     and ng.type == 'GEOMETRY'
-                    and any(it.name == 'Plane Offset'
+                    and any(it.name == 'Translucent'
+                            for it in ng.interface.items_tree)
+                    and any(it.name == 'Shell' and it.min_value < 0
                             for it in ng.interface.items_tree)):
                 return ng
         ng = bpy.data.node_groups.new(_NG_NAME, 'GeometryNodeTree')
@@ -499,15 +1623,33 @@ if _IN_BLENDER:
         s = face("Full Sculpture", in_out='INPUT',
                  socket_type='NodeSocketBool')
         s.default_value = False
-        s.description = "Show all copies with the motif's own " \
-                        "material (for export/render); off = design " \
-                        "view with translucent copies and the " \
-                        "motif's own copy hidden"
+        s.description = "Keep the copy that coincides with the " \
+                        "editable Motif; off drops that one copy so " \
+                        "the Motif object stands alone in its plane. " \
+                        "Only has an effect while Lift is 0 -- a " \
+                        "lifted sculpture is already clear of the " \
+                        "motif, so every copy is kept"
+        s = face("Translucent", in_out='INPUT',
+                 socket_type='NodeSocketBool')
+        s.default_value = False
+        s.description = "Draw the replicated copies in the ghost " \
+                        "Copy Material instead of the motif's own, " \
+                        "so the editable motif reads through them. " \
+                        "Off = the sculpture's real material"
+        s = face("Lift", in_out='INPUT', socket_type='NodeSocketFloat')
+        s.default_value, s.min_value, s.max_value = 0.0, 0.0, 100.0
+        s.description = "Raise the whole sculpture this far up +Z, " \
+                        "leaving the Motif and Guides behind at the " \
+                        "origin so they can be seen and edited " \
+                        "(0 = in place). Only the modifier result " \
+                        "moves, not the objects; while lifted the " \
+                        "motif's own copy is kept, since the " \
+                        "sculpture is already out of the way"
         s = face("Copy Material", in_out='INPUT',
                  socket_type='NodeSocketMaterial')
         s.default_value = _ghost_material()
-        s.description = "Material for the replicated copies in " \
-                        "design view"
+        s.description = "Material for the replicated copies while " \
+                        "Translucent is on"
         s = face("Plane Rotation", in_out='INPUT',
                  socket_type='NodeSocketVector')
         s.description = "Euler rotation mapping the motif's XY " \
@@ -530,6 +1672,16 @@ if _IN_BLENDER:
         bnot.operation = 'NOT'
         band = n('FunctionNodeBooleanMath')
         band.operation = 'AND'
+        # a lifted sculpture already stands clear of the motif, so the
+        # motif's own copy is only dropped while Lift is zero
+        cmpl = n('FunctionNodeCompare')
+        cmpl.data_type = 'FLOAT'
+        cmpl.operation = 'GREATER_THAN'
+        cmpl.inputs[1].default_value = 1e-6
+        bnotl = n('FunctionNodeBooleanMath')
+        bnotl.operation = 'NOT'
+        bandl = n('FunctionNodeBooleanMath')
+        bandl.operation = 'AND'
         dg = n('GeometryNodeDeleteGeometry')
         dg.domain = 'POINT'
         oi = n('GeometryNodeObjectInfo')
@@ -551,20 +1703,36 @@ if _IN_BLENDER:
         ex = n('GeometryNodeExtrudeMesh')
         ex.mode = 'FACES'
         ex.inputs['Individual'].default_value = False
+        # the switch has to look at the SIZE of Shell: a negative
+        # one extrudes the other way and must still be an extrusion,
+        # where a plain "> 0" would silently fall through to the flat
+        # planes
+        cabs = n('ShaderNodeMath')
+        cabs.operation = 'ABSOLUTE'
         cmp = n('FunctionNodeCompare')
         cmp.data_type = 'FLOAT'
         cmp.operation = 'GREATER_THAN'
         cmp.inputs[1].default_value = 1e-5
         sw = n('GeometryNodeSwitch')
         sw.input_type = 'GEOMETRY'
+        # the lift is applied LAST: the radial shell above offsets each
+        # point along its own position vector, so translating before it
+        # would change every point's distance from the origin and
+        # corrupt the extrusion
+        lz = n('ShaderNodeCombineXYZ')
+        lt = n('GeometryNodeTransform')
         go = n('NodeGroupOutput')
 
         ln = ng.links.new
         ln(gi.outputs['Full Sculpture'], bnot.inputs[0])
         ln(nam.outputs['Attribute'], band.inputs[0])
         ln(bnot.outputs['Boolean'], band.inputs[1])
+        ln(gi.outputs['Lift'], cmpl.inputs[0])
+        ln(cmpl.outputs['Result'], bnotl.inputs[0])
+        ln(band.outputs['Boolean'], bandl.inputs[0])
+        ln(bnotl.outputs['Boolean'], bandl.inputs[1])
         ln(gi.outputs['Geometry'], dg.inputs['Geometry'])
-        ln(band.outputs['Boolean'], dg.inputs['Selection'])
+        ln(bandl.outputs['Boolean'], dg.inputs['Selection'])
         ln(dg.outputs['Geometry'], iop.inputs['Points'])
         ln(gi.outputs['Motif'], oi.inputs['Object'])
         ln(oi.outputs['Geometry'], tg.inputs['Geometry'])
@@ -574,9 +1742,9 @@ if _IN_BLENDER:
         ln(na.outputs['Attribute'], iop.inputs['Rotation'])
         ln(iop.outputs['Instances'], sm.inputs['Geometry'])
         ln(gi.outputs['Copy Material'], sm.inputs['Material'])
-        ln(gi.outputs['Full Sculpture'], smw.inputs['Switch'])
-        ln(sm.outputs['Geometry'], smw.inputs['False'])
-        ln(iop.outputs['Instances'], smw.inputs['True'])
+        ln(gi.outputs['Translucent'], smw.inputs['Switch'])
+        ln(iop.outputs['Instances'], smw.inputs['False'])
+        ln(sm.outputs['Geometry'], smw.inputs['True'])
         ln(smw.outputs['Output'], ri.inputs['Geometry'])
         ln(ri.outputs['Geometry'], md.inputs['Geometry'])
         ln(gi.outputs['Weld'], md.inputs['Distance'])
@@ -584,14 +1752,19 @@ if _IN_BLENDER:
         ln(gi.outputs['Shell'], off.inputs['Scale'])
         ln(md.outputs['Geometry'], ex.inputs['Mesh'])
         ln(off.outputs['Vector'], ex.inputs['Offset'])
-        ln(gi.outputs['Shell'], cmp.inputs[0])
+        ln(gi.outputs['Shell'], cabs.inputs[0])
+        ln(cabs.outputs['Value'], cmp.inputs[0])
         ln(cmp.outputs['Result'], sw.inputs['Switch'])
         ln(md.outputs['Geometry'], sw.inputs['False'])
         ln(ex.outputs['Mesh'], sw.inputs['True'])
-        ln(sw.outputs['Output'], go.inputs['Geometry'])
-        for i, node in enumerate((gi, nam, bnot, band, dg, oi,
-                                  tg, na, iop, sm, smw, ri, md,
-                                  pos, off, ex, cmp, sw, go)):
+        ln(gi.outputs['Lift'], lz.inputs['Z'])
+        ln(sw.outputs['Output'], lt.inputs['Geometry'])
+        ln(lz.outputs['Vector'], lt.inputs['Translation'])
+        ln(lt.outputs['Geometry'], go.inputs['Geometry'])
+        for i, node in enumerate((gi, nam, bnot, band, cmpl, bnotl,
+                                  bandl, dg, oi, tg, na, iop, sm, smw,
+                                  ri, md, pos, off, ex, cabs, cmp,
+                                  sw, lz, lt, go)):
             node.location = (200 * (i % 6), -240 * (i // 6))
         return ng
 
@@ -610,10 +1783,14 @@ if _IN_BLENDER:
                     "C-shaped rivers in the 20 icosahedral planes, "
                     "three per plane"),
                    ('TUMBLEWEED', "Tumbleweed",
-                    "After Tumbleweed (2006): swirling five-armed "
-                    "pinwheels in the 12 dodecahedral planes"),
+                    "After Tumbleweed (2006): 12 five-armed "
+                    "pinwheels in the dodecahedral planes, traced "
+                    "from Hart's template. Each arm ends in a "
+                    "forked tip, and three tips meet at each of the "
+                    "20 dodecahedral vertices -- 20x3 = 60 = 12 "
+                    "parts x 5 arms"),
                    ('FRABJOUS', "Frabjous",
-                    "After Frabjous (2006): 30 S-shaped parts in "
+                    "After Frabjous (2003): 30 S-shaped parts in "
                     "the face planes of the GREAT rhombic "
                     "triacontahedron -- ends meeting in threes at "
                     "the 3-fold corners (phi^2 x the plane "
@@ -622,9 +1799,11 @@ if _IN_BLENDER:
                    ('WHIMSY', "Whimsy",
                     "After Whimsy (2014): 60 flat blades in the "
                     "face planes of the pentagonal "
-                    "hexecontahedron (snub dodecahedron dual), "
-                    "five to a hub, meeting in threes at the "
-                    "3-fold corners"),
+                    "hexecontahedron (snub dodecahedron dual). "
+                    "The blade is traced from the cutting "
+                    "template -- a curved band with two teardrop "
+                    "openings, tipped so five meet at each 5-fold "
+                    "hub and three at each 3-fold corner"),
                    ('CUSTOM', "Custom",
                     "Choose the group and plane family yourself; "
                     "starts from the demo arc motif")],
@@ -640,40 +1819,95 @@ if _IN_BLENDER:
             default='ICOSA')
         family: EnumProperty(
             name="Plane Family",
-            items=[('P5', "5-fold planes (dodecahedral)",
-                    "12 planes, 5-fold symmetry in each "
-                    "(icosahedral group only)"),
-                   ('P4', "4-fold planes (cube)",
-                    "6 planes, 4-fold each (octahedral group only)"),
-                   ('P3', "3-fold planes (icosahedral)",
-                    "Planes perpendicular to the 3-fold axes: 20 for "
-                    "the icosahedral group (Hart's Twisted Rivers), "
-                    "8 octahedral, 4 tetrahedral"),
-                   ('P2', "2-fold planes (triacontahedral)",
-                    "Planes perpendicular to the 2-fold axes: 30 "
-                    "icosahedral (Frabjous), 12 octahedral, 6 "
-                    "tetrahedral"),
-                   ('P1', "General planes (hexecontahedral)",
-                    "A full-orbit family with no in-plane symmetry: "
-                    "60 / 24 / 12 planes")],
-            default='P3')
+            items=_family_items, default=3,
+            description="Which orbit of planes to fill. The list "
+                        "names the planes the chosen Symmetry Group "
+                        "actually produces, and offers only the "
+                        "families that group has")
         distance: FloatProperty(
             name="Plane Distance", default=1.0, min=0.1, max=10.0,
             description="Distance of the plane family from the origin")
         shell: FloatProperty(
-            name="Shell", default=0.04, min=0.0, max=1.0,
+            name="Shell", default=0.04, min=-1.0, max=1.0,
             description="Radial extrusion fraction (Hart used ~4%); "
-                        "0 keeps the flat planes")
+                        "0 keeps the flat planes, negative extrudes "
+                        "the other way, towards the origin")
         guide_extent: FloatProperty(
-            name="Guide Extent", default=2.2, min=1.0, max=8.0,
+            name="Guide Extent", default=3.2, min=1.0, max=12.0,
             description="Radius of the guide pattern, in units of "
-                        "the plane distance")
-        use_active: BoolProperty(
-            name="Use Active Object as Motif", default=False,
-            description="Place the active mesh object into the "
-                        "representative plane instead of creating "
-                        "the demo arc motif (draw it flat in its "
-                        "local XY plane)")
+                        "the plane distance. 3.2 covers every line "
+                        "of the 5-, 4-, 3- and 2-fold families "
+                        "(the outermost sits at 3.078, on the "
+                        "icosahedral 2-fold planes) so the outer "
+                        "corners a motif snaps to -- e.g. Frabjous's "
+                        "tips at phi^2 = 2.618 -- have guide lines "
+                        "crossing there. The general P1 families run "
+                        "much farther out and need a bigger radius "
+                        "to draw in full")
+        guide_rings: IntProperty(
+            name="Guide Rings", default=0, min=0, max=24,
+            description="Thin the guide pattern to its innermost N "
+                        "rings of lines (0 = draw them all). The "
+                        "lines sit at a handful of distinct distances "
+                        "from the plane centre, and each such ring is "
+                        "one set equivalent under the plane's own "
+                        "symmetry -- dropping the outer rings clears "
+                        "the clutter, at the cost of the far corners "
+                        "they carry")
+        lift: BoolProperty(
+            name="Lift Sculpture Clear of Motif", default=True,
+            description="Raise the sculpture up +Z so it stops "
+                        "surrounding the Motif and Guides, which stay "
+                        "at the origin where they can be seen and "
+                        "edited. The height is measured from the "
+                        "sculpture this motif actually makes, so it "
+                        "clears by the same relative margin whatever "
+                        "the size; tune it afterwards with the "
+                        "modifier's Lift input")
+        show_part: BoolProperty(
+            name="Build Machinable Part", default=False,
+            description="Add one part as a solid of the given "
+                        "thickness, with every edge that beds against "
+                        "a neighbour cut to half the dihedral so the "
+                        "two butt cleanly. Laid flat below the XY "
+                        "plane and centred on the Z axis, ready to "
+                        "select and export for cutting or printing; "
+                        "the dihedral angles used are reported")
+        # thickness is not its own control: Shell already says how
+        # thick the sculpture is, and a part that disagreed with the
+        # sculpture it comes from would be a trap.  Shell is a radial
+        # fraction, so at the plane it works out to Shell x Distance,
+        # and changing Shell rebuilds the part with it.
+        show_polyhedron: BoolProperty(
+            name="Show Defining Polyhedron", default=False,
+            description="Add the semi-transparent solid whose "
+                        "extended face planes are this plane family, "
+                        "and mark every crossing of the guide lines "
+                        "with a coloured disc -- the points a motif's "
+                        "corners should sit on, since a crossing of "
+                        "k lines is where k+1 planes meet and k+1 "
+                        "parts converge. Colour is the orbit: two "
+                        "crossings share one exactly when a rotation "
+                        "of the sculpture carries one onto the other, "
+                        "so they play the same role. Balls of that "
+                        "colour show every point equivalent to them "
+                        "around the solid, one object per orbit in a "
+                        "SymSculpt Orbits collection, so a group can "
+                        "be switched off on its own. Design aid only "
+                        "-- excluded from renders. Guide Rings and "
+                        "Guide Extent thin the crossings along with "
+                        "the lines")
+        translucent: BoolProperty(
+            name="Translucent Copies", default=False,
+            description="Draw the replicated copies in a ghost "
+                        "material so the editable motif reads through "
+                        "them; off = the sculpture's real material")
+        motif_object: StringProperty(
+            name="Motif Object", default="",
+            description="Mesh object to replicate instead of the "
+                        "preset motif -- draw it flat on the XY "
+                        "plane. Leave empty to build the preset's "
+                        "own motif")
 
         def execute(self, context):
             motif_builder = demo_motif
@@ -692,14 +1926,15 @@ if _IN_BLENDER:
             d = self.distance
 
             motif = None
-            if self.use_active:
-                ao = context.active_object
+            if self.motif_object:
+                ao = bpy.data.objects.get(self.motif_object)
                 if ao is not None and ao.type == 'MESH':
                     motif = ao
                 else:
                     self.report({'WARNING'},
-                                "No active mesh object -- created "
-                                "the demo motif instead")
+                                f"'{self.motif_object}' is not a mesh "
+                                f"object -- built the preset motif "
+                                f"instead")
             if motif is None:
                 verts, faces = motif_builder(d)
                 me = bpy.data.meshes.new("SymSculpt Motif")
@@ -719,9 +1954,16 @@ if _IN_BLENDER:
             motif.matrix_world = Matrix.Identity(4)
             if not motif.data.materials:
                 motif.data.materials.append(_motif_material())
+            # how high the sculpture has to go to clear the motif --
+            # measured from the motif that is actually being used, so
+            # a big motif gets a proportionally bigger lift
+            lift_z = lift_height([tuple(v.co) for v in
+                                  motif.data.vertices],
+                                 d, abs(self.shell))
 
             # guide pattern (stellation diagram) in the same plane
-            segs = stellation_lines(kind, family, d, self.guide_extent)
+            segs = stellation_lines(kind, family, d, self.guide_extent,
+                                    self.guide_rings)
             gverts = []
             gedges = []
             for (p0, p1) in segs:
@@ -760,6 +2002,10 @@ if _IN_BLENDER:
             mod = obj.modifiers.new("Symmetric Sculpture", 'NODES')
             ng = _node_group()
             mod.node_group = ng
+            lift_socket = None
+            for item in ng.interface.items_tree:
+                if item.in_out == 'INPUT' and item.name == 'Lift':
+                    lift_socket = item.identifier
             for item in ng.interface.items_tree:
                 if item.in_out != 'INPUT':
                     continue
@@ -767,6 +2013,13 @@ if _IN_BLENDER:
                     mod[item.identifier] = motif
                 elif item.name == 'Shell':
                     mod[item.identifier] = self.shell
+                elif item.name == 'Lift':
+                    # sized from the sculpture the motif actually
+                    # makes, not from d alone; still a live modifier
+                    # input afterwards
+                    mod[item.identifier] = lift_z if self.lift else 0.0
+                elif item.name == 'Translucent':
+                    mod[item.identifier] = self.translucent
                 elif item.name == 'Plane Rotation':
                     mod[item.identifier] = list(plane_rot)
                 elif item.name == 'Plane Offset':
@@ -776,6 +2029,166 @@ if _IN_BLENDER:
             motif.matrix_parent_inverse = Matrix.Identity(4)
             guides.parent = obj
             guides.matrix_parent_inverse = Matrix.Identity(4)
+
+            if self.show_part:
+                # Shell is the radial extrusion as a fraction of the
+                # distance from the origin, so at the plane it is this
+                # thick.  Shell 0 leaves the sculpture flat and there
+                # is no solid to machine, so fall back to something
+                # cuttable rather than a zero-thickness part.
+                p_thick = abs(self.shell) * d
+                if p_thick < 1e-4:
+                    p_thick = 0.02 * d
+                    self.report({'WARNING'},
+                                "Shell is 0, so the sculpture has no "
+                                "thickness -- the part was built at "
+                                "2% of the plane distance instead")
+                mloops = boundary_loops(
+                    [tuple(v.co) for v in motif.data.vertices],
+                    [list(p.vertices) for p in motif.data.polygons])
+                pieces = group_loops(mloops)
+                pv2 = []
+                pf2 = []
+                angles = set()
+                for outer, holes in pieces:
+                    lv, lf, dh = mitred_part(
+                        kind, family, [outer] + holes, d, p_thick)
+                    base = len(pv2)
+                    pv2.extend(lv)
+                    pf2.extend([[base + i for i in f] for f in lf])
+                    angles.update(dh)
+                if pv2:
+                    # centre on the Z axis and drop the whole thing
+                    # below the XY plane, clear of the guide diagram,
+                    # so it can be picked and exported on its own
+                    xs = [p[0] for p in pv2]
+                    ys = [p[1] for p in pv2]
+                    cx = (min(xs) + max(xs)) / 2
+                    cy = (min(ys) + max(ys)) / 2
+                    top = max(p[2] for p in pv2)
+                    dz = -0.6 * d - top
+                    pv2 = [(p[0] - cx, p[1] - cy, p[2] + dz)
+                           for p in pv2]
+                    pme2 = bpy.data.meshes.new("SymSculpt Part")
+                    pme2.from_pydata(pv2, [], pf2)
+                    pme2.validate()
+                    pme2.update()
+                    part = bpy.data.objects.new("SymSculpt Part", pme2)
+                    part.data.materials.append(_motif_material())
+                    context.collection.objects.link(part)
+                    part.matrix_world = Matrix.Identity(4)
+                    part.parent = obj
+                    part.matrix_parent_inverse = Matrix.Identity(4)
+                    self.report(
+                        {'INFO'},
+                        "Part: %d piece(s), %.4g thick (Shell x "
+                        "Distance), mating dihedrals %s deg"
+                        % (len(pieces), p_thick,
+                           ", ".join(f"{x:.2f}"
+                                     for x in sorted(angles))
+                           or "none (no edge beds against a "
+                              "neighbour)"))
+
+            if self.show_polyhedron:
+                # the solid whose extended face planes are this
+                # family, plus a ball on every vertex and a disc
+                # where that vertex lands in the guide diagram
+                pv, pf = family_polyhedron(kind, family, d)
+                pme = bpy.data.meshes.new("SymSculpt Polyhedron")
+                pme.from_pydata(pv, [], pf)
+                pme.validate()
+                pme.update()
+                solid = bpy.data.objects.new("SymSculpt Polyhedron",
+                                             pme)
+                solid.data.materials.append(_solid_material())
+                context.collection.objects.link(solid)
+                solid.matrix_world = Matrix.Identity(4)
+                solid.hide_render = True
+                solid.parent = obj
+                solid.matrix_parent_inverse = Matrix.Identity(4)
+
+                rball = 0.035 * d
+                cross = crossing_points(kind, family, d,
+                                        self.guide_extent,
+                                        self.guide_rings)
+                orbit, cgroup = crossing_orbits(kind, family, cross, d)
+
+                pts_by_g = {}
+                for p, g in orbit:
+                    pts_by_g.setdefault(g, []).append(p)
+                marks_by_g = {}
+                for (x, y, _k), g in zip(cross, cgroup):
+                    marks_by_g.setdefault(g, []).append((x, y))
+
+                # If there are too many to draw, drop whole orbits
+                # from the outside in.  Truncating mid-orbit would
+                # leave a group half-drawn, which reads as a gap in
+                # the symmetry rather than as something left out.
+                order = sorted(pts_by_g, key=lambda g: min(
+                    sum(c * c for c in p) for p in pts_by_g[g]))
+                kept, total = [], 0
+                for g in order:
+                    if (len(kept) >= _MAX_ORBITS
+                            or total + len(pts_by_g[g]) > _MAX_MARKS):
+                        continue
+                    kept.append(g)
+                    total += len(pts_by_g[g])
+                dropped = len(pts_by_g) - len(kept)
+                if dropped:
+                    self.report(
+                        {'WARNING'},
+                        f"{len(pts_by_g)} orbits over {len(orbit)} "
+                        f"points is past what the aid draws "
+                        f"({_MAX_ORBITS} orbits, {_MAX_MARKS} "
+                        f"points) -- showing the {len(kept)} nearest "
+                        f"the centre, holding back {dropped}; raise "
+                        f"Guide Rings or lower Guide Extent to thin "
+                        f"the pattern")
+
+                # Number what is actually shown, innermost first.  The
+                # orbit id is only a discovery order, so carrying the
+                # original through would label 55 objects with numbers
+                # running to 295 and read as missing ones.
+                label = {g: i for i, g in enumerate(kept)}
+
+                # one object per orbit, so a group can be switched off
+                # on its own from the outliner
+                orb_coll = bpy.data.collections.new("SymSculpt Orbits")
+                context.collection.children.link(orb_coll)
+                made = []
+                for g in kept:
+                    i = label[g]
+                    b = _build_marker_object(
+                        f"SymSculpt Orbit {i:02d} Balls",
+                        [(i, _ball(p, rball)) for p in pts_by_g[g]],
+                        0.45)
+                    made.append((b, True))
+                    if marks_by_g.get(g):
+                        m = _build_marker_object(
+                            f"SymSculpt Orbit {i:02d} Marks",
+                            [(i, _disc((x, y, 1e-3 * d), rball))
+                             for x, y in marks_by_g[g]], 1.0)
+                        made.append((m, False))
+                for o, rides_lift in made:
+                    orb_coll.objects.link(o)
+                    o.matrix_world = Matrix.Identity(4)
+                    o.hide_render = True
+                    o.parent = obj
+                    o.matrix_parent_inverse = Matrix.Identity(4)
+                    # the balls belong to the sculpture and rise with
+                    # it; the discs belong to the flat guide diagram
+                    # and stay down at the origin with it
+                    if rides_lift and lift_socket is not None:
+                        _drive_z_from_lift(o, obj, mod.name,
+                                           lift_socket)
+                if lift_socket is not None:
+                    _drive_z_from_lift(solid, obj, mod.name,
+                                       lift_socket)
+                self.report(
+                    {'INFO'},
+                    f"{len(cross)} guide crossings in "
+                    f"{len(pts_by_g)} orbits; drawing {len(kept)} of "
+                    f"them, {total} points in space")
 
             for o in context.selected_objects:
                 o.select_set(False)
@@ -793,11 +2206,15 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'preset')
-            for k in ('group', 'family'):
-                if self.preset == 'CUSTOM':
-                    lay.prop(self, k)
+            if self.preset == 'CUSTOM':
+                lay.prop(self, 'group')
+                lay.prop(self, 'family')
+            # what gets replicated, straight after which planes it is
+            # replicated into
+            lay.prop_search(self, 'motif_object', bpy.data, 'objects')
             for k in ('distance', 'shell', 'guide_extent',
-                      'use_active'):
+                      'guide_rings', 'show_polyhedron', 'lift',
+                      'translucent', 'show_part'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
@@ -843,3 +2260,299 @@ def _selftest():
     print(f"ICOSA/P3 guide lines: {len(segs)} "
           f"{'OK' if len(segs) == 18 else 'BAD'}")
     assert len(segs) == 18
+
+    # the shipped Guide Extent must emit EVERY line of the k-fold
+    # families -- a line whose foot lies outside the disc is dropped
+    # altogether, taking with it the corner intersections that the
+    # outer tips of a motif are drawn to.
+    default_extent = 3.2
+    for kind, fam in (('ICOSA', 'P5'), ('ICOSA', 'P3'), ('ICOSA', 'P2'),
+                      ('OCTA', 'P4'), ('OCTA', 'P3'), ('OCTA', 'P2'),
+                      ('TETRA', 'P3'), ('TETRA', 'P2')):
+        _, normals = plane_normals(kind, fam)
+        foot = max_line_foot(kind, fam, 1.0)
+        segs = stellation_lines(kind, fam, 1.0, default_extent)
+        want = sum(1 for b in normals
+                   if abs(sum(x * y for x, y in
+                              zip(_normalize(_AXES[(kind, fam)]), b)))
+                   <= 1 - 1e-9)
+        ok = len(segs) == want and foot < default_extent
+        print(f"{kind}/{fam} guides at extent {default_extent}: "
+              f"{len(segs)}/{want} lines, max foot {foot:.3f} "
+              f"{'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, len(segs), want, foot)
+
+    # Frabjous draws its pointed ends to the 3-fold piercings at
+    # phi^2; those must be a real crossing of two guide lines, and
+    # inside the default disc
+    assert max_line_foot('ICOSA', 'P2', 1.0) > PHI * PHI
+    assert PHI * PHI < default_extent
+    print(f"ICOSA/P2 reaches the phi^2={PHI * PHI:.4f} corner OK")
+
+    # every (group, family) has a label, and the plane count it
+    # claims must be the orbit size actually produced
+    for (kind, fam), (n, _solid) in _FAMILY_SOLID.items():
+        _, normals = plane_normals(kind, fam)
+        lab = family_label(kind, fam)
+        ok = len(normals) == n and str(n) in lab
+        print(f"{kind}/{fam}: '{lab}' vs {len(normals)} planes "
+              f"{'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, lab, len(normals))
+        # and the fold implied by the label is the orbit's stabiliser
+        assert _ORDER[kind] // n == _FOLD[fam], (kind, fam)
+    assert set(_FAMILY_SOLID) == set(_AXES)
+
+    # guide rings: thinning keeps the innermost lines and is monotone
+    for kind, fam in (('ICOSA', 'P3'), ('ICOSA', 'P2'),
+                      ('ICOSA', 'P1')):
+        radii = guide_ring_radii(kind, fam, 1.0)
+        allsegs = len(stellation_lines(kind, fam, 1.0, 40.0))
+        counts = [len(stellation_lines(kind, fam, 1.0, 40.0, r))
+                  for r in range(1, len(radii) + 1)]
+        ok = (counts == sorted(counts) and counts[-1] == allsegs
+              and counts[0] < allsegs
+              and len(stellation_lines(kind, fam, 1.0, 40.0, 0))
+              == allsegs)
+        print(f"{kind}/{fam}: {len(radii)} rings, lines {counts[0]}"
+              f"..{counts[-1]} of {allsegs} {'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, counts, allsegs)
+
+    # the Whimsy blade: triangulation must cover exactly the material
+    # (outer loop less the two teardrops), with no lost or doubled
+    # area from the hole bridges
+    def _sarea(p):
+        return 0.5 * sum(p[i][0] * p[(i + 1) % len(p)][1]
+                         - p[(i + 1) % len(p)][0] * p[i][1]
+                         for i in range(len(p)))
+    wv, wf = whimsy_motif(1.0)
+    tri = sum(abs(0.5 * ((wv[b][0] - wv[a2][0]) * (wv[c][1] - wv[a2][1])
+                         - (wv[b][1] - wv[a2][1])
+                         * (wv[c][0] - wv[a2][0])))
+              for a2, b, c in wf)
+    want_a = (abs(_sarea(_WHIMSY_OUTER)) - abs(_sarea(_WHIMSY_HOLE_A))
+              - abs(_sarea(_WHIMSY_HOLE_B)))
+    print(f"whimsy area {tri:.6f} vs {want_a:.6f} "
+          f"{'OK' if abs(tri - want_a) < 1e-9 else 'BAD'}")
+    assert abs(tri - want_a) < 1e-9
+    assert len(wf) == len(wv) - 2          # a full fan, no stalled ear
+
+    # and its two tips must sit ON the 5-fold and 3-fold axes -- that
+    # is what makes five blades meet at a hub and three at a corner
+    aa, _ = plane_normals('ICOSA', 'P1')
+    uu, vv = _frame(aa)
+    rots = group_rotations('ICOSA')
+
+    def _on_axis(pt, seed):
+        p = [aa[i] + pt[0] * uu[i] + pt[1] * vv[i] for i in range(3)]
+        p = _normalize(p)
+        s = _normalize(seed)
+        best = 9.9
+        for R in rots:
+            b = _apply(R, s)
+            cr = (p[1] * b[2] - p[2] * b[1], p[2] * b[0] - p[0] * b[2],
+                  p[0] * b[1] - p[1] * b[0])
+            best = min(best, sqrt(sum(c * c for c in cr)))
+        return best
+    tip5 = _WHIMSY_OUTER[_WHIMSY_TIPS[0]]
+    tip3 = _WHIMSY_OUTER[_WHIMSY_TIPS[1]]
+    e5 = _on_axis(tip5, (0.0, 1.0, PHI))
+    e3 = _on_axis(tip3, (1.0, 1.0, 1.0))
+    print(f"whimsy tips on axes: 5-fold off {e5:.2e}, "
+          f"3-fold off {e3:.2e} "
+          f"{'OK' if max(e5, e3) < 1e-4 else 'BAD'}")
+    assert max(e5, e3) < 1e-4
+
+    # the blade's two straight edges at the hub are mating edges:
+    # they butt against the neighbouring blade along a shared edge of
+    # the solid, so they must lie ON the face's own edges.  This is
+    # what the wrong P1 axis broke -- the edges came out a degree off
+    # and the parts met only at their tips.
+    aa2, _ = plane_normals('ICOSA', 'P1')
+    uu2, vv2 = _frame(aa2)
+    pv2, pf2 = family_polyhedron('ICOSA', 'P1', 1.0)
+    for fc in pf2:
+        if max(abs(sum(pv2[i][k] * aa2[k] for k in range(3)) - 1.0)
+               for i in fc) < 1e-6:
+            break
+    lc = [(sum(pv2[i][k] * uu2[k] for k in range(3)),
+           sum(pv2[i][k] * vv2[k] for k in range(3))) for i in fc]
+    hub = min(lc, key=lambda p: min(
+        sqrt((p[0] - tip5[0]) ** 2 + (p[1] - tip5[1]) ** 2), 9))
+    nb = sorted(lc, key=lambda p: (p[0] - hub[0]) ** 2
+                + (p[1] - hub[1]) ** 2)[1:3]
+
+    def _off(pt, A, B):
+        dx, dy = B[0] - A[0], B[1] - A[1]
+        return abs((pt[0] - A[0]) * dy
+                   - (pt[1] - A[1]) * dx) / sqrt(dx * dx + dy * dy)
+    worst_m = max(min(_off(_WHIMSY_OUTER[i], hub, e) for e in nb)
+                  for i in (1, -1))
+    print(f"whimsy mating edges lie on the face edges: worst "
+          f"{worst_m:.1e} {'OK' if worst_m < 1e-4 else 'BAD'}")
+    assert worst_m < 1e-4
+
+    # the defining solid of each family must come out as the real
+    # thing -- these are the classical counts, and Euler catches a
+    # half-built face
+    for (kind, fam), (nv, nf) in (
+            (('ICOSA', 'P5'), (20, 12)), (('ICOSA', 'P3'), (12, 20)),
+            (('ICOSA', 'P2'), (32, 30)), (('ICOSA', 'P1'), (92, 60)),
+            (('OCTA', 'P4'), (8, 6)), (('OCTA', 'P3'), (6, 8)),
+            (('OCTA', 'P2'), (14, 12)), (('TETRA', 'P3'), (4, 4)),
+            (('TETRA', 'P2'), (8, 6))):
+        pv, pf = family_polyhedron(kind, fam, 1.0)
+        edges = sum(len(f) for f in pf) // 2
+        ok = (len(pv) == nv and len(pf) == nf
+              and len(pv) - edges + len(pf) == 2)
+        print(f"{kind}/{fam} solid: V={len(pv)}({nv}) F={len(pf)}({nf}) "
+              f"euler={len(pv) - edges + len(pf)} "
+              f"{'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, len(pv), len(pf))
+
+    # every marked point must be a real crossing: k lines through it
+    # by construction, all distinct, all inside the guide disc
+    for kind, fam in (('ICOSA', 'P5'), ('ICOSA', 'P3'),
+                      ('ICOSA', 'P2'), ('OCTA', 'P3')):
+        cr = crossing_points(kind, fam, 1.0, 3.2)
+        segs = stellation_lines(kind, fam, 1.0, 3.2)
+        worst = 0.0
+        for x, y, k in cr:
+            near = sorted(
+                abs((b[0] - a3[0]) * (a3[1] - y)
+                    - (a3[0] - x) * (b[1] - a3[1]))
+                / max(sqrt((b[0] - a3[0]) ** 2 + (b[1] - a3[1]) ** 2),
+                      1e-12)
+                for a3, b in segs)
+            worst = max(worst, near[k - 1])   # k lines must pass here
+        distinct = len({(round(x, 6), round(y, 6)) for x, y, _ in cr})
+        ok = (worst < 1e-6 and distinct == len(cr)
+              and all(k >= 2 for _, _, k in cr)
+              and all(sqrt(x * x + y * y) <= 3.2 + 1e-9
+                      for x, y, _ in cr))
+        print(f"{kind}/{fam}: {len(cr)} crossings, types "
+              f"{sorted(set(k for _, _, k in cr))}, worst line "
+              f"offset {worst:.1e} {'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, worst, distinct, len(cr))
+
+    # the crossings must include the points the designs are drawn to:
+    # on the triacontahedral planes, phi^2 out along local x (where
+    # three Frabjous tips meet) and phi along local y (the vortices)
+    cr = crossing_points('ICOSA', 'P2', 1.0, 3.2)
+    got = {(round(x, 5), round(y, 5)): k for x, y, k in cr}
+    ok = ((round(PHI * PHI, 5), 0.0) in got
+          and (0.0, round(PHI, 5)) in got)
+    print(f"ICOSA/P2 crossings include phi^2 on x and phi on y "
+          f"{'OK' if ok else 'BAD'}")
+    assert ok, sorted(got)[:6]
+
+    # orbits: every point landed exactly once, every crossing given a
+    # group, and each orbit of a size the group can actually produce
+    # -- N/k for a point held by a k-fold stabiliser, so 12, 20, 30
+    # or 60 out of the icosahedral 60, never anything between
+    for kind, fam in (('ICOSA', 'P5'), ('ICOSA', 'P3'),
+                      ('ICOSA', 'P2'), ('TETRA', 'P3')):
+        cps = crossing_points(kind, fam, 1.0, 3.2)
+        pts, grps = crossing_orbits(kind, fam, cps, 1.0)
+        keys = {tuple(round(c, 5) for c in p) for p, _ in pts}
+        sizes = {}
+        for _p, g in pts:
+            sizes[g] = sizes.get(g, 0) + 1
+        n = _ORDER[kind]
+        ok = (len(pts) == len(keys) and len(grps) == len(cps)
+              and set(grps) == set(sizes)
+              and all(n % s == 0 for s in sizes.values()))
+        print(f"{kind}/{fam} orbits: {len(sizes)} groups, sizes "
+              f"{sorted(set(sizes.values()))}, {len(pts)} points "
+              f"{'OK' if ok else 'BAD'}")
+        assert ok, (kind, fam, sorted(set(sizes.values())))
+        # every point of one orbit is the same distance out, since a
+        # rotation cannot change a radius
+        for g in sizes:
+            rr = {round(sqrt(sum(c * c for c in p)), 6)
+                  for p, gg in pts if gg == g}
+            assert len(rr) == 1, (kind, fam, g, rr)
+
+    # the machinable part: a closed solid of the right thickness
+    # whose mating faces land exactly on the bisecting planes
+    wv, wf = whimsy_motif(1.0)
+    comps = group_loops(boundary_loops(wv, wf))
+    assert len(comps) == 1 and len(comps[0][1]) == 2, comps
+    lps = [comps[0][0]] + comps[0][1]
+    thick = 0.03
+    mates_ = mating_planes('ICOSA', 'P1', lps, 1.0)
+    nmate = sum(1 for per in mates_ for m in per if m is not None)
+    pv3, pf3, dih = mitred_part('ICOSA', 'P1', lps, 1.0, thick)
+    used = {}
+    for fc3 in pf3:
+        for i in range(len(fc3)):
+            e = fc3[i], fc3[(i + 1) % len(fc3)]
+            k = (min(e), max(e))
+            used[k] = used.get(k, 0) + 1
+    closed = set(used.values()) == {2}
+    zsp = [p[2] for p in pv3]
+    ok = (closed and abs(min(zsp) + thick / 2) < 1e-9
+          and abs(max(zsp) - thick / 2) < 1e-9 and nmate == 4
+          and len(dih) == 2)
+    print(f"whimsy part: {len(pv3)}v {len(pf3)}f, {nmate} mating "
+          f"edges, dihedrals {dih}, closed={closed} "
+          f"{'OK' if ok else 'BAD'}")
+    assert ok, (closed, min(zsp), max(zsp), nmate, dih)
+
+    # each mating wall must lie in the plane bisecting the two faces
+    aa3, _ = plane_normals('ICOSA', 'P1')
+    uu3, vv3 = _frame(aa3)
+
+    def _p3(p):
+        return tuple(p[0] * uu3[i] + p[1] * vv3[i]
+                     + (1.0 + p[2]) * aa3[i] for i in range(3))
+    bis = []
+    for per in mates_:
+        for m in per:
+            if m is None:
+                continue
+            b3 = _normalize(m)
+            nb3 = _normalize([aa3[i] + b3[i] for i in range(3)])
+            off = 2.0 / sqrt(sum((aa3[i] + b3[i]) ** 2
+                                 for i in range(3)))
+            if not any(abs(nb3[0] - q[0][0]) < 1e-9
+                       and abs(nb3[1] - q[0][1]) < 1e-9
+                       and abs(nb3[2] - q[0][2]) < 1e-9 for q in bis):
+                bis.append((nb3, off))
+    worstw = None
+    walls = 0
+    for fc3 in pf3:
+        zz = [pv3[i][2] for i in fc3]
+        if not (max(zz) > 0 > min(zz)):
+            continue
+        pts3 = [_p3(pv3[i]) for i in fc3]
+        best3 = min(max(abs(sum(p[k] * nb3[k] for k in range(3)) - o)
+                        for p in pts3) for nb3, o in bis)
+        if best3 < 1e-4:
+            walls += 1
+            worstw = best3 if worstw is None else max(worstw, best3)
+    print(f"whimsy part: {walls} walls mitred onto a bisector, worst "
+          f"{worstw:.1e} {'OK' if walls == nmate else 'BAD'}")
+    assert walls == nmate, (walls, nmate)
+
+    # a motif flat on XY at plane distance d lands at sqrt(r^2+d^2)
+    flat = [(0.0, 0.0, 0.0), (3.0, 4.0, 0.0)]
+    r = sculpture_radius(flat, 12.0)
+    print(f"sculpture_radius (3,4,0) at d=12: {r:.4f} "
+          f"{'OK' if abs(r - 13.0) < 1e-9 else 'BAD'}")
+    assert abs(r - 13.0) < 1e-9            # 5-12-13
+    assert abs(sculpture_radius(flat, 12.0, 0.5) - 19.5) < 1e-9
+
+    # the lift must put the sculpture's lowest point exactly `margin`
+    # of a radius above the motif plane, and must grow with the motif
+    for verts, d, shell in ((flat, 12.0, 0.0), (flat, 12.0, 0.04),
+                            ([(0.0, 0.0, 0.0)], 1.0, 0.0)):
+        rad = sculpture_radius(verts, d, shell)
+        gap = lift_height(verts, d, shell, 0.3) - rad
+        assert abs(gap - 0.3 * rad) < 1e-9, (verts, d, shell)
+    small = lift_height([(0.5, 0.0, 0.0)], 1.0)
+    big = lift_height([(PHI * PHI, 0.0, 0.0)], 1.0)
+    print(f"lift scales with motif: {small:.3f} -> {big:.3f} "
+          f"{'OK' if big > small else 'BAD'}")
+    assert big > small
+    # ... and never buries the motif: the lowest point stays clear
+    assert small > sculpture_radius([(0.5, 0.0, 0.0)], 1.0)
