@@ -24,6 +24,17 @@
 #   - C. Isenberg, "The Science of Soap Films and Soap Bubbles"
 #     (Dover, 1992); D. Weaire & S. Hutzler, "The Physics of Foams"
 #     (Oxford, 1999).
+#
+# The RELAXED mode (single / double bubble) evolves a welded,
+# region-pair-labeled seed mesh by volume-constrained area descent
+# (`solver/volume.py`), so the equilibrium -- Plateau's 120-degree
+# triple line included -- emerges from the minimization instead of
+# being drawn in closed form.  Additional references for that mode:
+#   - K. A. Brakke, "The Surface Evolver", Experimental Mathematics
+#     1(2) (1992) -- the volume-constraint scheme.
+#   - J. E. Taylor, "The structure of singularities in soap-bubble-like
+#     and soap-film-like minimal surfaces", Annals of Mathematics
+#     103(3) (1976) -- proof of Plateau's laws.
 
 bl_info = {
     "name": "Bubble Cluster",
@@ -55,6 +66,11 @@ try:
     from .surfaces.primitives import icosphere as _icosphere_shared
 except ImportError:  # flat import outside the package
     from surfaces.primitives import icosphere as _icosphere_shared
+
+try:
+    from .solver import volume as _svol
+except ImportError:  # flat import outside the package
+    from solver import volume as _svol
 
 
 def _icosphere(subdiv=0):
@@ -599,6 +615,197 @@ def _seed(name):
     return [tuple(v) for v in V], sorted(edges)
 
 
+# --------------------------------------------------------------------
+# Relaxed (evolved) clusters: analytic geometry, welded labeled seed
+# meshes, and the volume-constrained relaxation.
+# --------------------------------------------------------------------
+
+def _cap_volume(R, h):
+    """Volume of a spherical cap of height h on a sphere of radius R."""
+    return math.pi * h * h * (3.0 * R - h) / 3.0
+
+
+def double_bubble_geometry(r1, r2, d=None):
+    """Exact geometry of the two-bubble cluster with sphere radii r1,
+    r2 at centre separation d (default: the 120-degree equilibrium of
+    the standard double bubble, d = sqrt(r1^2 + r2^2 - r1 r2)).
+
+    The interface through the intersection circle is the Young-Laplace
+    sphere 1/r3 = 1/r_small - 1/r_large (a plane when r1 == r2),
+    bulging into the larger bubble.  Returns a dict:
+      d, a (plane offset from centre 1 along the axis), rho (rim
+      circle radius), r3 (math.inf when flat), h3 (interface bulge
+      height), V1, V2 (exact lobe volumes), A1, A2, A3, A (film areas).
+    """
+    r1 = float(r1)
+    r2 = float(r2)
+    if d is None:
+        d = math.sqrt(r1 * r1 + r2 * r2 - r1 * r2)
+    d = float(d)
+    if not (abs(r1 - r2) < d < r1 + r2):
+        raise ValueError("spheres do not overlap at this separation")
+    a = (d * d + r1 * r1 - r2 * r2) / (2.0 * d)
+    rho = math.sqrt(max(r1 * r1 - a * a, 0.0))
+    # sphere portions on their own side of the rim plane
+    V1 = 4.0 * math.pi * r1 ** 3 / 3.0 - _cap_volume(r1, r1 - a)
+    V2 = 4.0 * math.pi * r2 ** 3 / 3.0 - _cap_volume(r2, r2 - (d - a))
+    A1 = 2.0 * math.pi * r1 * (r1 + a)
+    A2 = 2.0 * math.pi * r2 * (r2 + (d - a))
+    if abs(r1 - r2) < 1e-12 * max(r1, r2):
+        r3 = math.inf
+        h3 = 0.0
+        A3 = math.pi * rho * rho
+    else:
+        r3 = r1 * r2 / abs(r2 - r1)
+        if rho > r3:
+            raise ValueError("Young-Laplace interface sphere smaller "
+                             "than the rim circle")
+        t = math.sqrt(r3 * r3 - rho * rho)
+        h3 = r3 - t
+        A3 = 2.0 * math.pi * r3 * h3
+        v3 = _cap_volume(r3, h3)
+        if r1 < r2:          # bulge into bubble 2: lobe 1 gains the cap
+            V1 += v3
+            V2 -= v3
+        else:
+            V1 -= v3
+            V2 += v3
+    return {"d": d, "a": a, "rho": rho, "r3": r3, "h3": h3,
+            "V1": V1, "V2": V2, "A1": A1, "A2": A2, "A3": A3,
+            "A": A1 + A2 + A3}
+
+
+def build_single_bubble_mesh(radius=1.0, subdiv=3):
+    """One closed bubble as a labeled mesh: (V, T, labels), region 1
+    inside, ambient 0 outside, outward-wound icosphere."""
+    SV, SF = _icosphere(subdiv)
+    V = float(radius) * np.asarray(SV, float)
+    T = np.asarray(SF, dtype=np.int64)
+    labels = np.zeros((len(T), 2), dtype=np.int64)
+    labels[:, 1] = 1
+    return V, T, labels
+
+
+def _lathe_patch(V, tris, rim_idx, pos, K, nphi):
+    """Rings-to-apex patch: interior rings k = 1..K-1 of nphi points
+    from pos(k, phi), closed by the apex pos(K, .); ring 0 is the given
+    shared rim.  Appends to V/tris (consistent winding)."""
+    rings = [list(rim_idx)]
+    for k in range(1, K):
+        base = len(V)
+        for p in range(nphi):
+            V.append(pos(k, 2.0 * math.pi * p / nphi))
+        rings.append(list(range(base, base + nphi)))
+    apex = len(V)
+    V.append(pos(K, 0.0))
+    t0 = len(tris)
+    for k in range(K - 1):
+        prev, nxt = rings[k], rings[k + 1]
+        for p in range(nphi):
+            p2 = (p + 1) % nphi
+            tris.append((prev[p], prev[p2], nxt[p]))
+            tris.append((prev[p2], nxt[p2], nxt[p]))
+    last = rings[-1]
+    for p in range(nphi):
+        tris.append((last[p], last[(p + 1) % nphi], apex))
+    return t0, len(tris)
+
+
+def _orient_patch(V, tris, t0, t1, want):
+    """Flip the (consistently wound) patch slice so its normals agree
+    with the desired direction field `want(centroid) -> vec`."""
+    A = np.asarray(V[tris[t0][0]], float)
+    B = np.asarray(V[tris[t0][1]], float)
+    C = np.asarray(V[tris[t0][2]], float)
+    n = np.cross(B - A, C - A)
+    if float(np.dot(n, want((A + B + C) / 3.0))) < 0.0:
+        for k in range(t0, t1):
+            a, b, c = tris[k]
+            tris[k] = (a, c, b)
+
+
+def build_double_bubble_mesh(r1=1.0, r2=1.0, nphi=48, d=None):
+    """Welded labeled triangle mesh of the two-bubble cluster: the two
+    outer spherical caps and the Young-Laplace interface share the
+    nphi rim vertices on the intersection circle, so the Plateau border
+    is a genuine non-manifold triple line.  Centre 1 at the origin,
+    centre 2 at (d, 0, 0); default d is the 120-degree equilibrium.
+
+    Returns (V, T, labels): labels per face are (front, back) region
+    pairs -- caps (0, 1) and (0, 2), interface (2, 1)."""
+    geo = double_bubble_geometry(r1, r2, d)
+    d, a, rho, r3 = geo["d"], geo["a"], geo["rho"], geo["r3"]
+    u = np.array([1.0, 0.0, 0.0])
+    e1 = np.array([0.0, 1.0, 0.0])
+    e2 = np.array([0.0, 0.0, 1.0])
+    c1 = np.zeros(3)
+    c2 = d * u
+    q = a * u                              # rim-circle centre
+    h = 2.0 * math.pi * rho / nphi         # target edge length
+
+    V = []
+    for p in range(nphi):
+        phi = 2.0 * math.pi * p / nphi
+        V.append(q + rho * (math.cos(phi) * e1 + math.sin(phi) * e2))
+    rim = list(range(nphi))
+    tris = []
+    lab = []
+
+    def cap_pos(center, R, axis, theta_rim):
+        def pos(k, phi, K):
+            th = theta_rim * (1.0 - k / K)
+            dirv = math.cos(phi) * e1 + math.sin(phi) * e2
+            return center + R * (math.cos(th) * axis + math.sin(th) * dirv)
+        return pos
+
+    def add_patch(pos_of, K, want, front, back):
+        t0, t1 = _lathe_patch(V, tris,
+                              rim, lambda k, phi: pos_of(k, phi, K),
+                              K, nphi)
+        _orient_patch(V, tris, t0, t1, want)
+        lab.extend([(front, back)] * (t1 - t0))
+
+    # outer cap of bubble 1 (major cap, axis away from bubble 2)
+    th1 = math.acos(max(-1.0, min(1.0, -a / r1)))
+    K1 = max(2, int(round(th1 * r1 / h)))
+    add_patch(cap_pos(c1, r1, -u, th1), K1,
+              lambda cen: cen - c1, 0, 1)
+    # outer cap of bubble 2
+    th2 = math.acos(max(-1.0, min(1.0, (a - d) / r2)))
+    K2 = max(2, int(round(th2 * r2 / h)))
+    add_patch(cap_pos(c2, r2, u, th2), K2,
+              lambda cen: cen - c2, 0, 2)
+    # interface: plane when equal, Young-Laplace cap into the larger
+    if math.isinf(r3):
+        K3 = max(1, int(round(rho / h)))
+
+        def flat_pos(k, phi, K):
+            dirv = math.cos(phi) * e1 + math.sin(phi) * e2
+            return q + rho * (1.0 - k / K) * dirv
+
+        add_patch(flat_pos, K3, lambda cen: u, 2, 1)
+    else:
+        w = u if r1 < r2 else -u           # bulge into the larger bubble
+        sgn = 1.0 if r1 < r2 else -1.0     # normal must point into body 2
+        t = math.sqrt(r3 * r3 - rho * rho)
+        cf = q - t * w
+        th3 = math.acos(max(-1.0, min(1.0, t / r3)))
+        K3 = max(1, int(round(th3 * r3 / h)))
+        add_patch(cap_pos(cf, r3, w, th3), K3,
+                  lambda cen: sgn * (cen - cf), 2, 1)
+
+    return (np.asarray(V, float), np.asarray(tris, dtype=np.int64),
+            np.asarray(lab, dtype=np.int64))
+
+
+def relax_cluster(V, T, labels, targets=None, iters=150, groom_every=0):
+    """Volume-constrained area relaxation of a labeled cluster mesh
+    (in place); returns the solver.volume.evolve info dict (final
+    area / volumes / pressures / per-iteration history)."""
+    return _svol.evolve(V, T, labels, targets=targets, iters=iters,
+                        groom_every=groom_every)
+
+
 if _IN_BLENDER:
 
     def _mat(name, col):
@@ -863,20 +1070,167 @@ if _IN_BLENDER:
                       'smooth', 'scale'):
                 lay.prop(self, k)
 
+    class MESH_OT_relaxed_bubble_add(bpy.types.Operator):
+        """Single bubble or double bubble relaxed by genuine
+        volume-constrained area minimization: Plateau's 120-degree
+        triple line and the Young-Laplace pressures emerge from the
+        evolution rather than being drawn in closed form"""
+        bl_idname = "mesh.relaxed_bubble_add"
+        bl_label = "Relaxed Bubble (Evolved)"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        bubbles: EnumProperty(
+            name="Bubbles",
+            items=[('SINGLE', "Single Bubble",
+                    "One bubble relaxing to the round sphere"),
+                   ('DOUBLE', "Double Bubble",
+                    "Two bubbles with their Young-Laplace interface "
+                    "and a genuine Plateau border")],
+            default='DOUBLE')
+        ratio: FloatProperty(
+            name="Radius Ratio", default=0.75, min=0.4, max=1.0,
+            description="Small/large bubble radius ratio (double "
+                        "bubble; 1 gives the symmetric cluster with "
+                        "a flat interface)")
+        squash: FloatProperty(
+            name="Seed Squash", default=0.15, min=0.0, max=0.4,
+            description="Anisotropic distortion of the seed before "
+                        "relaxing -- the evolution visibly pulls it "
+                        "back to the equilibrium (0 starts at the "
+                        "closed form)")
+        resolution: IntProperty(
+            name="Resolution", default=48, min=16, max=128,
+            description="Vertices around the Plateau border (double "
+                        "bubble) / icosphere resolution (single)")
+        iterations: IntProperty(
+            name="Evolve Iterations", default=150, min=0, max=2000,
+            description="Volume-constrained area-descent iterations "
+                        "(0 shows the raw seed)")
+        groom_every: IntProperty(
+            name="Groom Every", default=4, min=0, max=50,
+            description="Run label-aware mesh grooming (edge flips + "
+                        "tangential smoothing) every N iterations "
+                        "(0 = off; the default 4 measurably tightens "
+                        "the Plateau angles at equal cost)")
+        color: BoolProperty(
+            name="Color by Pressure", default=True,
+            description="One material per film, colored by the "
+                        "computed pressure jump across it")
+        smooth: BoolProperty(name="Smooth Shading", default=True)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01,
+                             max=100.0)
+
+        def execute(self, context):
+            if self.bubbles == 'SINGLE':
+                subdiv = max(2, min(5, int(round(
+                    math.log2(max(self.resolution, 16) / 3.0)))))
+                V, T, labels = build_single_bubble_mesh(1.0, subdiv)
+                targets = _svol.region_volumes(V, T, labels)
+            else:
+                r1, r2 = self.ratio, 1.0
+                V, T, labels = build_double_bubble_mesh(
+                    r1, r2, nphi=self.resolution)
+                geo = double_bubble_geometry(r1, r2)
+                targets = [geo["V1"], geo["V2"]]
+            if self.squash > 0.0:
+                V *= np.array([1.0 + self.squash,
+                               1.0 - 0.5 * self.squash, 1.0])
+            info = relax_cluster(V, T, labels, targets=targets,
+                                 iters=self.iterations,
+                                 groom_every=self.groom_every)
+            press = list(info["pressures"])
+
+            # centre and fit within a 2*scale cube
+            lo = V.min(axis=0)
+            hi = V.max(axis=0)
+            ctr = 0.5 * (lo + hi)
+            half = float(np.max(hi - lo)) / 2.0 or 1.0
+            s = self.scale / half
+            Vt = (V - ctr) * s
+
+            name = ("Relaxed Bubble" if self.bubbles == 'SINGLE'
+                    else "Relaxed Double Bubble")
+            me = bpy.data.meshes.new(name)
+            me.from_pydata([tuple(p) for p in Vt], [],
+                           [list(t) for t in T])
+            me.validate(clean_customdata=True)
+            me.polygons.foreach_set('use_smooth',
+                                    [self.smooth] * len(me.polygons))
+            npoly = len(me.polygons)
+            if npoly == len(T):
+                a_front = me.attributes.new("region_front", 'INT', 'FACE')
+                a_front.data.foreach_set('value',
+                                         [int(x) for x in labels[:, 0]])
+                a_back = me.attributes.new("region_back", 'INT', 'FACE')
+                a_back.data.foreach_set('value',
+                                        [int(x) for x in labels[:, 1]])
+                pj = me.attributes.new("pressure_jump", 'FLOAT', 'FACE')
+
+                def _p(r):
+                    return press[r - 1] if r >= 1 else 0.0
+
+                pj.data.foreach_set('value',
+                                    [_p(int(b)) - _p(int(f))
+                                     for f, b in labels])
+                if self.color:
+                    films = sorted({(int(f), int(b))
+                                    for f, b in labels})
+                    fidx = {fb: i for i, fb in enumerate(films)}
+                    pmax = max(abs(_p(b) - _p(f))
+                               for f, b in films) or 1.0
+                    for f, b in films:
+                        dp = _p(b) - _p(f)
+                        hue = 0.62 - 0.5 * dp / pmax   # blue -> warm
+                        me.materials.append(_mat(
+                            f"Film {f}|{b} dp={dp:.3f}",
+                            colorsys.hsv_to_rgb(hue % 1.0, 0.55, 0.9)
+                            + (1.0,)))
+                    me.polygons.foreach_set(
+                        'material_index',
+                        [fidx[(int(f), int(b))] for f, b in labels])
+            me.update()
+            obj = bpy.data.objects.new(name, me)
+            context.collection.objects.link(obj)
+            obj.location = context.scene.cursor.location
+            for o in context.selected_objects:
+                o.select_set(False)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            ptxt = ", ".join(f"p{i + 1}={p:.3f}"
+                             for i, p in enumerate(press))
+            self.report({'INFO'},
+                        f"{name}: {info['iters_run']} iterations, "
+                        f"area {info['area']:.4f}, {ptxt}")
+            return {'FINISHED'}
+
+        def draw(self, context):
+            lay = self.layout
+            lay.use_property_split = True
+            lay.prop(self, 'bubbles')
+            if self.bubbles == 'DOUBLE':
+                lay.prop(self, 'ratio')
+            for k in ('squash', 'resolution', 'iterations',
+                      'groom_every', 'color', 'smooth', 'scale'):
+                lay.prop(self, k)
+
     def _menu_func(self, context):
         self.layout.operator("mesh.bubble_cluster_add",
                              icon='SPHERE')
+        self.layout.operator("mesh.relaxed_bubble_add",
+                             icon='META_BALL')
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
     def register():
         bpy.utils.register_class(MESH_OT_bubble_cluster_add)
+        bpy.utils.register_class(MESH_OT_relaxed_bubble_add)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
+        bpy.utils.unregister_class(MESH_OT_relaxed_bubble_add)
         bpy.utils.unregister_class(MESH_OT_bubble_cluster_add)
 
 
@@ -1017,4 +1371,63 @@ def _selftest():
           f"(want the octahedron: 6/8)")
     assert len(cv) == 6 and len(cfs) == 8
     assert film_cell(Pb, Rb, 1) is None
+    # ---- relaxed mode: analytic geometry, welded seeds, evolution ----
+    # equal standard double bubble closed forms: V = 9 pi r^3 / 8,
+    # A = 27 pi r^2 / 4 (per lobe / total), d = r
+    g = double_bubble_geometry(1.0, 1.0)
+    assert abs(g["d"] - 1.0) < 1e-14
+    assert abs(g["V1"] - 9 * math.pi / 8) < 1e-12
+    assert abs(g["A"] - 27 * math.pi / 4) < 1e-12
+    for r1, r2 in ((1.0, 1.0), (0.8, 1.2)):
+        Vd, Td, Ld = build_double_bubble_mesh(r1, r2, nphi=48)
+        geo = double_bubble_geometry(r1, r2)
+        vols = _svol.region_volumes(Vd, Td, Ld)
+        # inscribed discretization deficit is O(h^2) ~ 0.6% at nphi=48
+        verr = max(abs(vols[0] - geo["V1"]) / geo["V1"],
+                   abs(vols[1] - geo["V2"]) / geo["V2"])
+        assert verr < 0.02, verr
+        # every region's outward-oriented faces form a closed surface:
+        # each directed edge appears exactly once with its reverse
+        for reg in (1, 2):
+            sgn = ((Ld[:, 1] == reg).astype(int)
+                   - (Ld[:, 0] == reg))
+            ecnt = {}
+            for f, sf in zip(Td, sgn):
+                if sf == 0:
+                    continue
+                tri = f if sf > 0 else f[::-1]
+                for k in range(3):
+                    e = (int(tri[k]), int(tri[(k + 1) % 3]))
+                    ecnt[e] = ecnt.get(e, 0) + 1
+            assert all(c == 1 and ecnt.get((b, a), 0) == 1
+                       for (a, b), c in ecnt.items()), \
+                f"region {reg} of ({r1},{r2}) not closed"
+        ang = _svol.triple_line_angles(Vd, Td)
+        assert len(ang) == 3 * 48
+        # per-edge sector sums are 360 so the mean is trivially 120;
+        # the informative number is the spread, which at nphi=48 is
+        # dominated by the O(h) face-secant tilt (~5 deg)
+        rms = float(np.sqrt(np.mean((ang - 120.0) ** 2)))
+        assert rms < 8.0, rms
+        print(f"welded double bubble ({r1},{r2}): vol err {verr:.2e}, "
+              f"regions closed, seed angle rms(120) {rms:.2f} deg")
+    # evolution smoke test (the full ground-truth battery lives in
+    # tests/bench): a perturbed equal double bubble must relax with
+    # monotone area, bounded volume drift, and Young-Laplace pressures
+    Vd, Td, Ld = build_double_bubble_mesh(1.0, 1.0, nphi=24)
+    geo = double_bubble_geometry(1.0, 1.0)
+    Vd *= np.array([1.08, 0.96, 1.0])
+    info = relax_cluster(Vd, Td, Ld, targets=[geo["V1"], geo["V2"]],
+                         iters=60)
+    drift = max(h["drift_post"] for h in info["history"])
+    rise = max(h["rise"] for h in info["history"] if not h["groomed"])
+    dp = abs(info["pressures"][0] - info["pressures"][1])
+    perr = abs(info["pressures"][0] - 2.0) / 2.0
+    assert drift < 1e-10, drift
+    assert rise <= 1e-12, rise
+    assert dp < 0.05, dp          # equal bubbles: no pressure jump
+    assert perr < 0.05, perr      # Young-Laplace p = 2/r, r = 1
+    print(f"relaxed double bubble (nphi=24, 60 iters): drift "
+          f"{drift:.1e}, max rise {rise:.1e}, p={info['pressures'][0]:.3f}"
+          f" (want 2.0), |p1-p2|={dp:.1e}")
     print("bubble standalone tests passed")
