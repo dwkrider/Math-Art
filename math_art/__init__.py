@@ -94,6 +94,7 @@ _MODULE_NAMES = [
     'squeeze_generator',
     'vortex_generator',
     'bubble_generator',
+    'cmc_generator',
     'phyllotaxis_generator',
     'helical_surface_generator',
     'ruled_surface_generator',
@@ -332,6 +333,7 @@ class VIEW3D_MT_math_art_odds(bpy.types.Menu):
         _op(lay, "mesh.orbifold_sphere_add", icon='MOD_MIRROR')
         _op(lay, "mesh.bubble_cluster_add", icon='SPHERE')
         _op(lay, "mesh.relaxed_bubble_add", icon='META_BALL')
+        _op(lay, "mesh.cmc_capillary_add", icon='MATFLUID')
 
 
 class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
