@@ -41,8 +41,8 @@ from . import analytic, conical, curves, develop, sheet, solve
 # SEAM and ANTI are solved for (Route I, intrinsic); TRUNCATE and HANDLE
 # are built exactly by slicing a polyhedron (Route II, extrinsic, see
 # `conical.py`); the rest are closed-form relatives (`analytic.py`)
-MODES = ('SEAM', 'ANTI', 'TRUNCATE', 'HANDLE') + analytic.ANALYTIC_KINDS
-CONICAL_KINDS = ('TRUNCATE', 'HANDLE')
+MODES = ('SEAM', 'ANTI', 'TRUNCATE', 'TWISTED') + analytic.ANALYTIC_KINDS
+CONICAL_KINDS = ('TRUNCATE', 'TWISTED')
 
 __all__ = ['CONICAL_KINDS', 'DForm', 'MODES', 'analytic', 'build_dform',
            'conical', 'curves', 'develop', 'sheet', 'solve']
@@ -131,7 +131,7 @@ def _build_conical(mode, scale, seed, edges, rounds, depth, handles,
         V, F, g = conical.build_handle(seed=seed, handles=int(handles),
                                        twist=int(twist),
                                        segments=int(segments), scale=scale)
-    else:                                            # HANDLE / LOOP
+    else:                                            # TWISTED / LOOP
         V, F, g = conical.build_loop(seed=seed, twist=int(twist),
                                      segments=max(48, int(segments) * 2),
                                      pinch=float(pinch),

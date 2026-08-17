@@ -37,7 +37,19 @@
 # a quadratic B-spline; the paper's Figure 4 rounds four edges of a cube
 # and lands on a shape close to the classic two-ellipse D-form.
 #
-# HANDLES.  A twisted prismatic handle joins two faces with the same
+# TWISTED D-FORMS.  Their Figure 5 photographs the construction of the
+# Figure 1 piece and settles what it is: a section carried ONCE around a
+# closed teardrop, twisting as it goes, with the cube supplying the
+# section rather than a body.  `build_loop` does that, and the twist is
+# the corner offset at which the loop closes onto itself.  Two things
+# have to be right or the band tears: the path must carry no cusp at the
+# seam, and the section must never be wider than the bend it is going
+# round -- a teardrop drawn to a point has a radius of curvature there
+# near zero, so the section is tapered to fit, which is also why the
+# sculpture's point is thin.
+#
+# The face-to-face form remains for genus above 1, since closing a loop
+# only ever gives 1.  A twisted prismatic handle joins two faces with the same
 # number of sides, sweeping one into the other along an arc while the
 # corner pairing is rotated by a whole number of steps.  Each handle
 # raises the genus by one.  The sides come out as long, skinny triangles,
@@ -412,12 +424,22 @@ def _face_pairs(V, F, count):
 def teardrop(n, pinch=1.0):
     """The closed path of the paper's Figure 1: a rounded teardrop.
 
-    Their shape is a loop that is round at one end and comes to a point
-    at the other; `pinch` blends between a plain circle (0) and the full
-    teardrop (1).
+    Round at one end, drawn to a point at the other; `pinch` blends
+    from a plain circle (0) toward the point (1).
+
+    The point must stay SMOOTH.  Writing it with |sin(t/2)| gives a true
+    cusp -- the tangent flips through 90 degrees in a single sample --
+    and a band swept along that tears open at the tip instead of bending
+    round it.  This form keeps a finite tangent (0, 1-pinch) there, so
+    the pinch is capped just below 1 and the curve stays C-1.
+
+    The sample run also STARTS at the round end (t = pi), which puts the
+    seam where the loop closes at its calmest point rather than at the
+    tip, where any residual mismatch is most visible.
     """
-    t = np.linspace(0.0, 2.0 * np.pi, int(n), endpoint=False)
-    y = np.sin(t) * (1.0 - pinch + pinch * np.abs(np.sin(0.5 * t)))
+    pinch = min(max(float(pinch), 0.0), 0.95)
+    t = np.linspace(0.0, 2.0 * np.pi, int(n), endpoint=False) + np.pi
+    y = np.sin(t) * (1.0 - pinch * 0.5 * (1.0 + np.cos(t)))
     return np.stack([np.cos(t), y, np.zeros_like(t)], axis=1)
 
 
@@ -451,11 +473,12 @@ def build_loop(seed='CUBE', twist=1, segments=160, pinch=1.0, girth=0.34,
     P = teardrop(n, float(pinch))
     H, L, U = frames(P, mode=PARALLEL, closed=True,
                      twist=360.0 * float(twist) / k)
+    r = _taper(P, girth)
 
     V = []
     for q in range(n):
         for (x, y) in prof:
-            V.append(P[q] + L[q] * x + U[q] * y)
+            V.append(P[q] + (L[q] * x + U[q] * y) * r[q])
     V = np.asarray(V, dtype=float)
 
     F = []
@@ -473,6 +496,40 @@ def build_loop(seed='CUBE', twist=1, segments=160, pinch=1.0, girth=0.34,
             F.append([a0, a1, b1])
             F.append([a0, b1, b0])
     return _fit(V, scale), F, genus(V, F)
+
+
+def _curvature_radius(P):
+    """Radius of the circle through each sample and its neighbours."""
+    Q = np.asarray(P, dtype=float)[:, :2]
+    a, b, c = np.roll(Q, 1, axis=0), Q, np.roll(Q, -1, axis=0)
+    ab = np.linalg.norm(b - a, axis=1)
+    bc = np.linalg.norm(c - b, axis=1)
+    ca = np.linalg.norm(a - c, axis=1)
+    area = np.abs((b[:, 0] - a[:, 0]) * (c[:, 1] - a[:, 1])
+                  - (b[:, 1] - a[:, 1]) * (c[:, 0] - a[:, 0])) * 0.5
+    return ab * bc * ca / np.maximum(4.0 * area, 1e-15)
+
+
+def _taper(P, girth, safety=0.85):
+    """Narrow the section wherever the path bends tighter than it is wide.
+
+    A swept tube passes through ITSELF as soon as its half-width exceeds
+    the centreline's radius of curvature, and a teardrop drawn to a real
+    point has a radius of curvature there approaching zero -- at the
+    default pinch it is about 0.01 against a section of 0.34, so the
+    band folds through itself at the tip.  Tapering to fit is both the
+    fix and the right look: the sculpture's point is thin.
+    """
+    R = _curvature_radius(P)
+    cap = np.clip(safety * R / max(float(girth), 1e-12), 0.0, 1.0)
+    s = cap.copy()
+    # ease the taper in rather than stepping -- but re-apply the cap
+    # after each pass, or the smoothing lifts it back over the bend it
+    # was there to respect and the tip folds through itself again
+    for _ in range(3):
+        s = np.minimum((np.roll(s, 1) + 2.0 * s + np.roll(s, -1)) * 0.25,
+                       cap)
+    return s
 
 
 def _profile(V, face, girth):
@@ -735,15 +792,52 @@ def _selftest():
     print(f"conical: twisted loop closes at genus 1, any twist "
           f"{'OK' if good else 'FAIL twist=' + ','.join(bad)}")
 
-    # the loop must be a LOOP -- a real hole through it, not a squashed
-    # disc.  Measured as the empty column down its middle.
-    Vl, Fl, _ = build_loop('CUBE', twist=1, segments=160)
-    rad = np.linalg.norm(Vl[:, :2] - Vl[:, :2].mean(axis=0), axis=1)
-    good = float(np.min(rad)) > 0.15 * float(np.max(rad))
+    # THE SEAM MUST NOT BE A SPECIAL PLACE.  The loop closes onto itself
+    # turned by `twist` corners, and if that closure is misaligned -- or
+    # if it lands on a corner of the path -- the band tears open there.
+    # It did: the first teardrop was written with |sin(t/2)|, a true
+    # cusp, and the run started ON it, so the closing ring sat eight
+    # segments from its neighbour.  Comparing the seam's ring advance
+    # against the median around the rest of the loop catches both faults
+    # at once, and catches them for ODD twists too -- a square section
+    # is 4-fold symmetric, so an even twist can hide a wrong offset.
+    worst = 0.0
+    for tw in (0, 1, 2, 3):
+        Vs, Fs, _ = build_loop('CUBE', twist=tw, segments=160)
+        kk = len(Vs) // 160
+        R = Vs.reshape(160, kk, 3)
+        step = []
+        for q in range(160):
+            nxt = R[(q + 1) % 160]
+            if q == 159:
+                nxt = np.roll(nxt, -tw, axis=0)
+            step.append(float(np.mean(np.linalg.norm(nxt - R[q], axis=1))))
+        step = np.array(step)
+        worst = max(worst, step[-1] / float(np.median(step)))
+    good = worst < 1.6
     ok &= good
-    print(f"conical: the loop has a hole "
-          f"({float(np.min(rad))/float(np.max(rad)):.2f} of its radius) "
+    print(f"conical: the loop's seam is unremarkable "
+          f"({worst:.2f}x the median ring advance) "
           f"{'OK' if good else 'FAIL'}")
+
+    # THE TUBE MUST NOT PASS THROUGH ITSELF.  Genus 1 already proves a
+    # hole topologically, so the thing left to check is geometric: a
+    # swept section self-intersects the moment its half-width exceeds
+    # the centreline's radius of curvature, and a pointed teardrop's
+    # radius there is ~0.01 against a section of 0.34.  Untapered, the
+    # band folds through itself at the tip and no topological gate
+    # notices.
+    bad = []
+    for pn in (0.0, 0.5, 1.0):
+        P = teardrop(200, pn)
+        R = _curvature_radius(P)
+        eff = 0.34 * _taper(P, 0.34)
+        if float(np.max(eff - R)) > 1e-9:
+            bad.append(f"pinch={pn}")
+    good = not bad
+    ok &= good
+    print(f"conical: the swept section always fits the bend "
+          f"{'OK' if good else 'FAIL ' + ','.join(bad)}")
 
     # the twist has to matter -- an untwisted and a twisted handle are
     # different shapes, not the same one relabelled
