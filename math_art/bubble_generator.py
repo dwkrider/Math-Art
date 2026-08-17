@@ -1107,10 +1107,11 @@ if _IN_BLENDER:
             description="Volume-constrained area-descent iterations "
                         "(0 shows the raw seed)")
         groom_every: IntProperty(
-            name="Groom Every", default=0, min=0, max=50,
+            name="Groom Every", default=4, min=0, max=50,
             description="Run label-aware mesh grooming (edge flips + "
                         "tangential smoothing) every N iterations "
-                        "(0 = off)")
+                        "(0 = off; the default 4 measurably tightens "
+                        "the Plateau angles at equal cost)")
         color: BoolProperty(
             name="Color by Pressure", default=True,
             description="One material per film, colored by the "
