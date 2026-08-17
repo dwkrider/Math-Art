@@ -417,8 +417,7 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         if hasattr(bpy.types, 'OBJECT_OT_symmetric_sculpture_add'):
             lay.operator_menu_enum("object.symmetric_sculpture_add",
                                    "preset",
-                                   text="Symmetric Sculpture "
-                                        "(Experimental)",
+                                   text="Symmetric Sculpture",
                                    icon='MOD_MIRROR')
         lay.menu("VIEW3D_MT_math_art_styles", icon='MOD_SOLIDIFY')
 
