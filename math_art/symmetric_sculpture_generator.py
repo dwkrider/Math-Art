@@ -981,62 +981,108 @@ def _meet(a0, a1, sa, b0, b1, sb):
     return ((C1 * B2 - C2 * B1) / det, (A1 * C2 - A2 * C1) / det)
 
 
+# Hart's Frabjous part, traced from the cutting template
+# (Asset 1.svg) and fitted into a 2-fold plane.  Local (x, y) in
+# units of the plane distance.
+#
+# The S has a sharp tip at each end of 63.4352 and 63.4331 deg,
+# against the golden rhombus's own acute angle of 63.4349 -- so the
+# tips are rhombus corners, and they go on the 3-fold piercings at
+# +-phi^2.  Two guide lines cross there, so three planes meet and
+# three parts converge, which is Hart's "the ends meet in groups of
+# three"; the 5-fold piercings at phi have four lines crossing, five
+# planes, and are the vortices the parts spiral around without
+# touching.  Fitted so, the tips' straight edges lie along those
+# guide lines to 0.001 deg.
+#
+# These are the face planes of the GREAT rhombic triacontahedron:
+# its acute corners are the 3-fold ones, where the plain rhombic
+# triacontahedron's are the 5-fold, and only the former lets three
+# ends meet.
+#
+# The whole S is stored, not a half.  The plane's own 2-fold rotation
+# carries it onto itself, so the two copies in each plane coincide
+# and weld to one -- thirty parts, as the sculpture has.  That only
+# holds if the outline is exactly symmetric, and the drawing is
+# symmetric as a curve but not as sampled points, so one half is
+# decimated (Douglas-Peucker, 0.35 svg units) and the other half is
+# generated from it by rotation.
+
+_FRABJOUS_OUTER = (
+    (+2.618034, +0.000000), (+1.876257, +0.458412), (+1.772463, +0.485679),
+    (+1.670917, +0.508751), (+1.572187, +0.527688), (+1.477862, +0.542759),
+    (+1.382518, +0.555344), (+1.275158, +0.566311), (+1.184578, +0.571944),
+    (+1.091811, +0.573592), (+0.985770, +0.570775), (+0.880898, +0.562955),
+    (+0.784745, +0.550490), (+0.700458, +0.534340), (+0.609608, +0.510699),
+    (+0.520317, +0.481035), (+0.431295, +0.445378), (+0.342723, +0.403819),
+    (+0.273267, +0.366274), (+0.214479, +0.330258), (+0.158178, +0.291305),
+    (+0.097531, +0.243184), (+0.061785, +0.211153), (+0.021184, +0.170762),
+    (-0.029065, +0.113562), (-0.147750, -0.013304), (-0.276414, -0.130671),
+    (-0.319861, -0.166987), (-0.365046, -0.201595), (-0.404328, -0.228322),
+    (-0.437228, -0.248038), (-0.471836, -0.265986), (-0.508571, -0.282107),
+    (-0.537756, -0.292894), (-0.579075, -0.305478), (-0.623391, -0.315876),
+    (-0.658628, -0.322198), (-0.708188, -0.328580), (-0.747141, -0.331696),
+    (-0.842904, -0.333195), (-0.899685, -0.330138), (-0.942773, -0.325883),
+    (-1.028828, -0.312220), (-1.112786, -0.291665), (-1.192639, -0.264488),
+    (-1.266918, -0.231378), (-1.312912, -0.206599), (-1.345513, -0.186823),
+    (-1.415208, -0.137982), (-1.484603, -0.079703), (-1.551452, -0.014233),
+    (-1.626121, +0.070294), (-1.685119, +0.147091), (-1.741181, +0.229790),
+    (-1.799970, +0.325194), (-1.876287, +0.458412), (-2.618034, +0.000000),
+    (-1.876257, -0.458412), (-1.772463, -0.485679), (-1.670917, -0.508751),
+    (-1.572187, -0.527688), (-1.477862, -0.542759), (-1.382518, -0.555344),
+    (-1.275158, -0.566311), (-1.184578, -0.571944), (-1.091811, -0.573592),
+    (-0.985770, -0.570775), (-0.880898, -0.562955), (-0.784745, -0.550490),
+    (-0.700458, -0.534340), (-0.609608, -0.510699), (-0.520317, -0.481035),
+    (-0.431295, -0.445378), (-0.342723, -0.403819), (-0.273267, -0.366274),
+    (-0.214479, -0.330258), (-0.158178, -0.291305), (-0.097531, -0.243184),
+    (-0.061785, -0.211153), (-0.021184, -0.170762), (+0.029065, -0.113562),
+    (+0.147750, +0.013304), (+0.276414, +0.130671), (+0.319861, +0.166987),
+    (+0.365046, +0.201595), (+0.404328, +0.228322), (+0.437228, +0.248038),
+    (+0.471836, +0.265986), (+0.508571, +0.282107), (+0.537756, +0.292894),
+    (+0.579075, +0.305478), (+0.623391, +0.315876), (+0.658628, +0.322198),
+    (+0.708188, +0.328580), (+0.747141, +0.331696), (+0.842904, +0.333195),
+    (+0.899685, +0.330138), (+0.942773, +0.325883), (+1.028828, +0.312220),
+    (+1.112786, +0.291665), (+1.192639, +0.264488), (+1.266918, +0.231378),
+    (+1.312912, +0.206599), (+1.345513, +0.186823), (+1.415208, +0.137982),
+    (+1.484603, +0.079703), (+1.551452, +0.014233), (+1.626121, -0.070294),
+    (+1.685119, -0.147091), (+1.741181, -0.229790), (+1.799970, -0.325194),
+    (+1.876287, -0.458412),
+)
+
+_FRABJOUS_HOLE_A = (
+    (+1.435343, +0.401961), (+1.538598, +0.380507), (+1.643740, +0.351652),
+    (+1.741031, +0.316924), (+1.823880, +0.279799), (+1.909157, +0.233865),
+    (+1.998448, +0.178373), (+2.114946, +0.098220), (+2.247984, +0.000000),
+    (+1.959046, -0.178553), (+1.901846, -0.108438), (+1.840720, -0.037275),
+    (+1.786696, +0.022053), (+1.728716, +0.081770), (+1.671516, +0.136724),
+    (+1.618780, +0.183706), (+1.568741, +0.224247), (+1.519990, +0.259125),
+    (+1.479510, +0.284504), (+1.427163, +0.313059), (+1.369274, +0.340176),
+    (+1.307129, +0.365495), (+1.242618, +0.388687), (+1.167679, +0.412358),
+    (+1.092351, +0.432913), (+1.026431, +0.448314), (+1.225029, +0.430157),
+)
+
+_FRABJOUS_HOLE_B = (
+    (-1.435343, -0.401961), (-1.538598, -0.380507), (-1.643740, -0.351652),
+    (-1.741031, -0.316924), (-1.823880, -0.279799), (-1.909157, -0.233865),
+    (-1.998448, -0.178373), (-2.114946, -0.098220), (-2.247984, -0.000000),
+    (-1.959046, +0.178553), (-1.901846, +0.108438), (-1.840720, +0.037275),
+    (-1.786696, -0.022053), (-1.728716, -0.081770), (-1.671516, -0.136724),
+    (-1.618780, -0.183706), (-1.568741, -0.224247), (-1.519990, -0.259125),
+    (-1.479510, -0.284504), (-1.427163, -0.313059), (-1.369274, -0.340176),
+    (-1.307129, -0.365495), (-1.242618, -0.388687), (-1.167679, -0.412358),
+    (-1.092351, -0.432913), (-1.026431, -0.448314), (-1.225029, -0.430157),
+)
 def frabjous_motif(d=1.0):
-    """Half of one of the thirty S-shaped parts of Hart's
-    Frabjous, drawn in a face plane of the GREAT rhombic
-    triacontahedron: the plane at distance d perpendicular to a
-    2-fold axis, with the rhombus corners at the piercings of
-    the neighbouring 3-fold axes (+-phi^2 d on the local x axis,
-    where the pointed ends of three parts meet) and 5-fold axes
-    (+-phi d on the local y axis, the vortex openings the parts
-    swirl around).  The in-plane 2-fold symmetry adds the other
-    half of the S; the teardrop opening near the tip follows
-    Hart's template."""
-    PHI2 = PHI * PHI
-    cl = _spline([(0.0, 0.0), (0.45 * d, 0.20 * d),
-                  (0.95 * d, 0.35 * d), (1.45 * d, 0.44 * d),
-                  (1.90 * d, 0.44 * d), (2.25 * d, 0.33 * d),
-                  (2.50 * d, 0.16 * d), (PHI2 * d, 0.01 * d)],
-                 6)
-    wl = _spline([(0.0, 0.200 * d), (1.0, 0.190 * d),
-                  (2.0, 0.180 * d), (3.0, 0.170 * d),
-                  (4.0, 0.155 * d), (5.0, 0.130 * d),
-                  (6.0, 0.080 * d), (7.0, 0.012 * d)], 6)
-    n = len(cl)
-    verts = []
-    faces = []
-    rows = []
-    for i, (x, y) in enumerate(cl):
-        x0, y0 = cl[max(i - 1, 0)]
-        x1, y1 = cl[min(i + 1, n - 1)]
-        tx, ty = x1 - x0, y1 - y0
-        ln = math.hypot(tx, ty) or 1.0
-        nx, ny = -ty / ln, tx / ln
-        w = wl[i][1]
-        t = i / (n - 1)
-        # teardrop opening near the tip: outer band stays
-        # thick, a thin sliver remains on the inner side
-        if 0.52 < t < 0.94:
-            s = math.sin(math.pi * (t - 0.52) / 0.42)
-            hole = 0.5 * (s ** 0.8)
-        else:
-            hole = 0.0
-        f_out = 0.40
-        o_edge = (x + nx * w, y + ny * w)
-        h1 = (x + nx * w * (1 - 2 * f_out),
-              y + ny * w * (1 - 2 * f_out))
-        h2 = (x + nx * w * (1 - 2 * f_out - 2 * hole),
-              y + ny * w * (1 - 2 * f_out - 2 * hole))
-        i_edge = (x - nx * w, y - ny * w)
-        base = len(verts)
-        for px, py in (o_edge, h1, h2, i_edge):
-            verts.append((px, py, 0.0))
-        rows.append(base)
-    for i in range(n - 1):
-        b0, b1 = rows[i], rows[i + 1]
-        faces.append([b0, b1, b1 + 1, b0 + 1])
-        faces.append([b0 + 2, b1 + 2, b1 + 3, b0 + 3])
-    return verts, faces
+    """One of the thirty S-shaped parts of Hart's Frabjous (2003),
+    traced from the cutting template: a long S pierced by a teardrop
+    near each end, lying in a face plane of the great rhombic
+    triacontahedron with its points on the 3-fold piercings at
+    +-phi^2 d.  See the note above for how the placement is pinned."""
+    outer = [(x * d, y * d) for x, y in _FRABJOUS_OUTER]
+    holes = [[(x * d, y * d) for x, y in _FRABJOUS_HOLE_A],
+             [(x * d, y * d) for x, y in _FRABJOUS_HOLE_B]]
+    return polygon_with_holes(outer, holes)
+
 
 
 # Hart's Whimsy blade, traced from the laser-cutting template

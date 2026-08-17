@@ -242,10 +242,14 @@ for preset, fam in (('TWISTED_RIVERS', 'P3'), ('TUMBLEWEED', 'P5'),
     pmv, merged, sizes = weld_prediction(preset)
     want = 60 * mv - merged
     got = len(ev.vertices)
-    # copies may only meet in the ways the symmetry allows: pairs, or
-    # threes at a 3-fold corner, or fives at a 5-fold hub
+    # Copies may only meet in the ways the symmetry allows, and by
+    # orbit-stabiliser every group size has to divide the group
+    # order.  Not simply {1,2,3,5}: Frabjous stores a whole S, which
+    # the plane's own 2-fold carries onto itself, so its two copies
+    # per plane coincide and every count is doubled -- 2, 4, 6 rather
+    # than 1, 2, 3.
     ok = (got == want and pmv == mv and ss.PRESETS[preset][1] == fam
-          and set(sizes) <= {1, 2, 3, 5})
+          and all(60 % s == 0 for s in sizes))
     print(f"[preset {preset}] verts={got}({want}) fam={fam} "
           f"merged={merged} groups={sizes} {'OK' if ok else 'FAIL'}")
     if not ok:
