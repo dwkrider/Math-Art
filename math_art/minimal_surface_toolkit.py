@@ -816,7 +816,11 @@ if _IN_BLENDER:
                 V, quads, fixed = build_annulus_grid(A, B, self.rings)
                 rows = self.rings + 1
             T = _quads_to_tris(quads)
-            minimize_area(V, T, fixed, outer_iters=self.iterations)
+            # groom_every: in-loop Delaunay flips + tangential averaging
+            # (solver/groom) -- measured in tests/bench to raise the
+            # 5th-percentile triangle quality ~3x at unchanged area
+            minimize_area(V, T, fixed, outer_iters=self.iterations,
+                          groom_every=4)
             if self.output_nurbs:
                 G = fair_grid_columns(V[:rows * m].reshape(rows, m, 3))
                 G = fair_grid_2d(G)
@@ -966,7 +970,11 @@ if _IN_BLENDER:
                          V[:, 0] * sa + V[:, 1] * ca], axis=1)
                 T = _quads_to_tris(quads)
                 iters = min(self.iterations, _SEIFERT_MAX_ITERS)
-                minimize_area(V, T, fixed, outer_iters=iters)
+                # grooming keeps the collar/sliver quality up; the whole
+                # q x samples sweep stays embedded with it (tests/bench
+                # seifert_sweep: 17/17 selfx == 0)
+                minimize_area(V, T, fixed, outer_iters=iters,
+                              groom_every=4)
                 V = _center_fit(V, 1.0)
                 obj = _new_object(
                     context, f"Knot(2,{self.q})SeifertSpan", V, quads)
@@ -1019,7 +1027,8 @@ if _IN_BLENDER:
                      np.zeros(m)], axis=1)
             V, quads, fixed = build_annulus_grid(knot, circ, self.rings)
             T = _quads_to_tris(quads)
-            minimize_area(V, T, fixed, outer_iters=self.iterations)
+            minimize_area(V, T, fixed, outer_iters=self.iterations,
+                          groom_every=4)
             # center on the origin and fit within a 2 m cube
             V = _center_fit(V, 1.0)
             name = (f"Knot({self.p},{self.q})Span" if self.outer_q == 0
