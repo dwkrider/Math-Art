@@ -330,7 +330,7 @@ def triple_line_angles(V, T):
 # --------------------------------------------------------------------------
 
 def evolve(V, T, labels, targets=None, iters=200, fixed=None,
-           mobility="star", cotan_mode="mollify",
+           mobility="star", cotan_mode="mollify", cg=True,
            groom_every=0, groom_smooth=0.25,
            area_tol=1e-10, vol_tol=1e-12, s_init_frac=0.2):
     """Minimize film area at fixed body volumes.  V is modified in
@@ -340,10 +340,16 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     back; 0 = ambient).  targets: per-body volumes (default: the seed's
     own).  fixed: bool mask of pinned vertices.  mobility "star" divides
     the force by the barycentric vertex area (motion by mean curvature);
-    "none" uses the raw gradient.  groom_every > 0 runs label-aware
-    Delaunay flips + tangential smoothing (triple-line and fixed
-    vertices pinned) before iterations g, 2g, ..., re-restoring volumes
-    afterwards.
+    "none" uses the raw gradient.  cg=True runs Polak-Ribiere conjugate
+    gradient over the projected velocities (Evolver uses CG together
+    with the optimizing-scale line search, never with a fixed step) --
+    plain projected descent stalls on the soft long-wavelength modes,
+    whose decay the stiff short-wavelength stability limit makes
+    excruciating; the safeties are Evolver's: gamma outside [0, 10]
+    resets to 0, and any rejected step or groom cycle restarts the
+    direction.  groom_every > 0 runs label-aware Delaunay flips +
+    tangential smoothing (triple-line and fixed vertices pinned) before
+    iterations g, 2g, ..., re-restoring volumes afterwards.
 
     Every accepted solver step is monotone in area BY CONSTRUCTION: the
     line search evaluates area at volume-restored trial positions, so
@@ -376,6 +382,9 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     s_prev = None
     lam = np.zeros(nb)
     flat_streak = 0
+    d_prev = None                        # CG state
+    v_prev = None
+    v_prev_ip = 1.0
     it = 0
     for it in range(1, iters + 1):
         groomed = False
@@ -385,6 +394,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             _restore(V)
             grooms_run += 1
             groomed = True
+            d_prev = None                # full CG restart on mesh change
             A_prev = mesh_area(V, T)
         g = area_gradient(V, T, cotan_mode=cotan_mode)
         if mobility == "star":
@@ -400,9 +410,26 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         vmax = float(np.max(np.linalg.norm(vt, axis=1)))
         if vmax < 1e-300:
             break
+        # Polak-Ribiere direction over the projected velocities, in the
+        # energy inner product <a, b> = sum a.b/M (velocity . force)
+        Minv = np.where(M > 0.0, 1.0 / np.maximum(M, 1e-300), 0.0)
+        vt_ip = float(np.einsum('nj,n,nj->', vt, Minv, vt))
+        d = vt
+        gamma = 0.0
+        if cg and d_prev is not None and not groomed:
+            gamma = (vt_ip - float(np.einsum('nj,n,nj->', vt, Minv,
+                                             v_prev))) / v_prev_ip
+            if not (0.0 <= gamma <= 10.0):
+                gamma = 0.0              # Evolver's safeties
+            if gamma > 0.0:
+                d = vt + gamma * d_prev
+                # the previous direction was tangent to the PREVIOUS
+                # constraint gradients; re-project onto the current ones
+                d, _ = project_velocity(d, grads, weights=M)
         Lmean = float(np.mean(np.linalg.norm(
             V[T[:, 1]] - V[T[:, 0]], axis=1)))
-        s_max = 4.0 * Lmean / vmax
+        dmax = float(np.max(np.linalg.norm(d, axis=1)))
+        s_max = 4.0 * Lmean / max(dmax, 1e-300)
         if s_prev is None or not (0.0 < s_prev):
             s_prev = s_init_frac * Lmean / vmax
         s0 = min(s_prev, s_max)
@@ -413,9 +440,19 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             return mesh_area(Vc, T)
 
         x1, s, E1, nev = _descent.parabola_line_search(
-            energy, V, vt, s0, s_max=s_max)
+            energy, V, d, s0, s_max=s_max)
+        if s == 0.0 and gamma > 0.0:
+            # CG direction rejected: restart with pure projected descent
+            d = vt
+            gamma = 0.0
+            s_max = 4.0 * Lmean / vmax
+            x1, s, E1, nev = _descent.parabola_line_search(
+                energy, V, d, min(s0, s_max), s_max=s_max)
         if s == 0.0:
             break                        # no downhill scale: converged
+        v_prev = vt
+        v_prev_ip = vt_ip
+        d_prev = d
         V[:] = x1
         drift_pre, drift_post, _rounds = _restore(V)
         A = mesh_area(V, T)
