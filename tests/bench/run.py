@@ -91,6 +91,11 @@ def ab_table(res_a, res_b, label_a, label_b):
         "ropelength_proxy", "turning_rms_deg", "edge_err_rms",
         "edge_err_max", "planar_dev", "crossings", "area_shrink_frac",
         "iters",
+        "area_rel_excess", "radius_cv", "radius_max_rel_dev",
+        "pressure_rel_err", "pressure_rel_err_worst", "angle_rms_fit",
+        "angle_rms_raw", "fit_rms_worst", "curv_resid", "dp_err",
+        "vol_drift_max", "vol_drift_pre_max", "area_max_rise",
+        "groom_max_rise",
     }
     higher_better = {
         "q_min", "q_mean", "q_p05", "min_angle_deg", "min_far_gap",

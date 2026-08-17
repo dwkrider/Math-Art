@@ -173,6 +173,106 @@ def mean_move(V0, V1, mask=None):
 
 
 # --------------------------------------------------------------------------
+# bubble-cluster metrics (volume-constrained evolution)
+# --------------------------------------------------------------------------
+
+def sphere_fit(P):
+    """Algebraic least-squares sphere through the points P: solve the
+    linear system |p|^2 = 2 c.p + (r^2 - |c|^2).  Returns
+    (center, radius, rms_residual) with the residual rms(| |p-c| - r |)."""
+    P = np.asarray(P, float)
+    A = np.concatenate([2.0 * P, np.ones((len(P), 1))], axis=1)
+    b = np.einsum('ij,ij->i', P, P)
+    sol, *_ = np.linalg.lstsq(A, b, rcond=None)
+    c = sol[:3]
+    r = math.sqrt(max(sol[3] + c @ c, 0.0))
+    res = float(np.sqrt(np.mean(
+        (np.linalg.norm(P - c, axis=1) - r) ** 2)))
+    return c, r, res
+
+
+def plane_fit(P):
+    """Least-squares plane: (point, unit normal, rms distance)."""
+    P = np.asarray(P, float)
+    c = P.mean(axis=0)
+    _, _, Vt = np.linalg.svd(P - c, full_matrices=False)
+    n = Vt[2]
+    res = float(np.sqrt(np.mean(((P - c) @ n) ** 2)))
+    return c, n, res
+
+
+def film_fits(V, T, labels):
+    """Fit every film class (unique ordered label pair) with whichever
+    of sphere / plane fits its vertices better.  Returns
+    {pair: {"kind", "r" (inf for a plane), "center"/"normal", "rms"}}."""
+    out = {}
+    labels = np.asarray(labels)
+    for pair in {tuple(int(x) for x in row) for row in labels}:
+        sel = np.all(labels == pair, axis=1)
+        vids = np.unique(T[sel].ravel())
+        P = V[vids]
+        cs, rs, res_s = sphere_fit(P)
+        cp, npl, res_p = plane_fit(P)
+        if res_p <= res_s:
+            out[pair] = {"kind": "plane", "r": math.inf, "point": cp,
+                         "normal": npl, "rms": res_p}
+        else:
+            out[pair] = {"kind": "sphere", "r": rs, "center": cs,
+                         "rms": res_s}
+    return out
+
+
+def fitted_triple_angles(V, T, labels, fits=None):
+    """Sector angles (degrees) at the triple lines, with each film's
+    wing direction taken from its FITTED surface normal (film_fits)
+    instead of the raw face plane -- this removes the O(h) face-secant
+    tilt, leaving only the fit residual and the O(h^2) chord-vs-tangent
+    error of the rim polyline.  Returns a flat array, 3 per edge."""
+    if fits is None:
+        fits = film_fits(V, T, labels)
+    labels = np.asarray(labels)
+    ntri = len(T)
+    de = np.concatenate([T[:, [1, 2]], T[:, [2, 0]], T[:, [0, 1]]])
+    opp = np.concatenate([T[:, 0], T[:, 1], T[:, 2]])
+    key = np.sort(de, axis=1)
+    uniq, inv, counts = np.unique(key, axis=0, return_inverse=True,
+                                  return_counts=True)
+    order = np.argsort(inv, kind='stable')
+    starts = np.zeros(len(uniq), dtype=np.int64)
+    starts[1:] = np.cumsum(counts)[:-1]
+    angles = []
+    for e in np.nonzero(counts == 3)[0]:
+        a, b = uniq[e]
+        ed = V[b] - V[a]
+        ed = ed / max(np.linalg.norm(ed), 1e-300)
+        mid = 0.5 * (V[a] + V[b])
+        f1 = np.cross(ed, [1.0, 0.0, 0.0])
+        if np.linalg.norm(f1) < 1e-6:
+            f1 = np.cross(ed, [0.0, 1.0, 0.0])
+        f1 /= np.linalg.norm(f1)
+        f2 = np.cross(ed, f1)
+        th = []
+        for k in range(3):
+            j = order[starts[e] + k]
+            f = j % ntri
+            fit = fits[tuple(int(x) for x in labels[f])]
+            if fit["kind"] == "sphere":
+                nrm = mid - fit["center"]
+                nrm = nrm / max(np.linalg.norm(nrm), 1e-300)
+            else:
+                nrm = fit["normal"]
+            w = np.cross(nrm, ed)
+            if (w @ (V[opp[j]] - mid)) < 0.0:
+                w = -w
+            th.append(np.arctan2(w @ f2, w @ f1))
+        th = np.sort(th)
+        secs = [th[1] - th[0], th[2] - th[1],
+                2.0 * np.pi - (th[2] - th[0])]
+        angles.extend(np.degrees(secs))
+    return np.asarray(angles)
+
+
+# --------------------------------------------------------------------------
 # polyhedron metrics (canonical / biscribed forms)
 # --------------------------------------------------------------------------
 

@@ -460,6 +460,181 @@ def case_crochet(config):
 
 
 # --------------------------------------------------------------------------
+# volume-constrained bubble evolution (solver/volume.py)
+# --------------------------------------------------------------------------
+
+def _evolve_checked(V, T, labels, targets, kwargs):
+    """Run solver.volume.evolve with the same config discipline as the
+    plateau cases: unknown kwargs raise, and the returned `effective`
+    dict records what actually ran (a configured-but-never-run groom
+    refuses to report a null result)."""
+    from math_art.solver import volume as sv
+    import inspect
+    sig = inspect.signature(sv.evolve)
+    unknown = [k for k in kwargs if k not in sig.parameters
+               or k in ("V", "T", "labels", "targets")]
+    if unknown:
+        raise ValueError(f"bubble_kwargs not accepted by evolve: {unknown}")
+    info = sv.evolve(V, T, labels, targets=targets, **kwargs)
+    effective = {
+        "iters": kwargs.get("iters", sig.parameters["iters"].default),
+        "iters_run": info["iters_run"],
+        "groom_every": kwargs.get("groom_every",
+                                  sig.parameters["groom_every"].default),
+        "grooms_run": info["grooms_run"],
+        "mobility": kwargs.get("mobility",
+                               sig.parameters["mobility"].default),
+        "cotan_mode": kwargs.get("cotan_mode",
+                                 sig.parameters["cotan_mode"].default),
+    }
+    if effective["groom_every"] and info["grooms_run"] == 0:
+        raise RuntimeError("groom_every was configured but no groom cycle "
+                           "ran -- refusing to report a null result")
+    return info, effective
+
+
+def _evolution_metrics(info):
+    """Drift / monotonicity metrics shared by all bubble cases.
+    area_max_rise is over NON-groom steps: the line search evaluates
+    area at volume-restored trial positions, so any rise there is a
+    solver bug (groom steps may legitimately bump the area a little)."""
+    hist = info["history"]
+    solver_rises = [h["rise"] for h in hist if not h["groomed"]]
+    groom_rises = [h["rise"] for h in hist if h["groomed"]]
+    return {
+        "vol_drift_max": max((h["drift_post"] for h in hist), default=0.0),
+        "vol_drift_pre_max": max((h["drift_pre"] for h in hist),
+                                 default=0.0),
+        "area_max_rise": max(solver_rises, default=0.0),
+        "groom_max_rise": max(groom_rises, default=0.0),
+        "iters": info["iters_run"],
+    }
+
+
+def case_bubble_single(config, subdiv=3):
+    """A squashed ellipsoid under a volume constraint must relax to the
+    round sphere: area against the isoperimetric (36 pi V^2)^(1/3), the
+    Lagrange pressure against Young-Laplace 2/r, exact volume
+    conservation, monotone area.  The honest discrete reference is the
+    same-combinatorics icosphere scaled to the target volume: the
+    relaxed area may not beat the smooth bound and should land at
+    (or slightly below) the reference's excess."""
+    from math_art.bubble_generator import build_single_bubble_mesh
+    from math_art.solver import volume as sv
+    kwargs = dict(config.get("bubble_kwargs", {}))
+    kwargs.setdefault("iters", 300)
+    V, T, labels = build_single_bubble_mesh(1.0, subdiv)
+    target = 4.0 * math.pi / 3.0
+    # discrete reference: perfect icosphere scaled to the exact target
+    # DISCRETE volume (the inscribed mesh's volume is below 4 pi/3)
+    v0 = sv.region_volumes(V, T, labels)[0]
+    s = (target / v0) ** (1.0 / 3.0)
+    A_ref = sv.mesh_area(s * V, T)
+    V *= np.array([1.25, 0.8, 1.0])
+    t0 = _timer()
+    info, effective = _evolve_checked(V, T, labels, [target], kwargs)
+    dt = _timer() - t0
+    r_star = (3.0 * target / (4.0 * math.pi)) ** (1.0 / 3.0)
+    A_star = (36.0 * math.pi * target ** 2) ** (1.0 / 3.0)
+    c = V.mean(axis=0)
+    rad = np.linalg.norm(V - c, axis=1)
+    mets = {
+        "area": info["area"],
+        "area_rel_excess": (info["area"] - A_star) / A_star,
+        "area_rel_excess_ref": (A_ref - A_star) / A_star,
+        "radius_cv": float(np.std(rad) / np.mean(rad)),
+        "radius_max_rel_dev": float(np.max(np.abs(rad / np.mean(rad)
+                                                  - 1.0))),
+        "pressure": float(info["pressures"][0]),
+        "pressure_rel_err": abs(float(info["pressures"][0])
+                                - 2.0 / r_star) / (2.0 / r_star),
+    }
+    mets.update(_evolution_metrics(info))
+    trace = [{"iter": h["it"], "E": h["area"]} for h in info["history"]]
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": len(V), "n_tris": len(T), "effective": effective}
+
+
+def case_bubble_single_fine(config):
+    """Same at one more subdivision: the discretization errors (area
+    excess, radius spread, pressure error) must shrink ~4x."""
+    return case_bubble_single(config, subdiv=4)
+
+
+def _case_bubble_double(config, r1, r2, nphi, iters_default=600):
+    """Perturbed standard double bubble relaxing back: dihedral angles
+    at the Plateau border (Taylor: 120 degrees), per-film sphericity,
+    the Young-Laplace curvature relation 1/r3 = 1/r1 - 1/r2, pressures,
+    exact volumes, monotone area.  Targets are the ANALYTIC lobe
+    volumes, so the area comparison is against the closed-form standard
+    double bubble for exactly those volumes (the proven minimizer --
+    Hutchings-Morgan-Ritore-Ros 2002); the discrete excess must be
+    positive and O(h^2)."""
+    from math_art.bubble_generator import (build_double_bubble_mesh,
+                                           double_bubble_geometry)
+    from math_art.solver import volume as sv
+    kwargs = dict(config.get("bubble_kwargs", {}))
+    kwargs.setdefault("iters", iters_default)
+    V, T, labels = build_double_bubble_mesh(r1, r2, nphi=nphi)
+    geo = double_bubble_geometry(r1, r2)
+    ang_seed = sv.triple_line_angles(V, T)
+    V *= np.array([1.10, 0.95, 1.0])
+    t0 = _timer()
+    info, effective = _evolve_checked(V, T, labels,
+                                      [geo["V1"], geo["V2"]], kwargs)
+    dt = _timer() - t0
+    ang_raw = sv.triple_line_angles(V, T)
+    fits = M.film_fits(V, T, labels)
+    ang_fit = M.fitted_triple_angles(V, T, labels, fits)
+    r1f = fits[(0, 1)]["r"]
+    r2f = fits[(0, 2)]["r"]
+    r3f = fits[(2, 1)]["r"]
+    curv_resid = abs((0.0 if math.isinf(r3f) else 1.0 / r3f)
+                     - (1.0 / r1f - 1.0 / r2f))
+    p1, p2 = (float(p) for p in info["pressures"])
+    dp_star = 0.0 if math.isinf(geo["r3"]) else 2.0 / geo["r3"]
+    mets = {
+        "area": info["area"],
+        "area_analytic": geo["A"],
+        "area_rel_excess": (info["area"] - geo["A"]) / geo["A"],
+        "angle_rms_fit": float(np.sqrt(np.mean((ang_fit - 120.0) ** 2))),
+        "angle_min_fit": float(np.min(ang_fit)),
+        "angle_max_fit": float(np.max(ang_fit)),
+        "angle_rms_raw": float(np.sqrt(np.mean((ang_raw - 120.0) ** 2))),
+        "angle_rms_raw_seed": float(np.sqrt(np.mean(
+            (ang_seed - 120.0) ** 2))),
+        "fit_rms_worst": max(f["rms"] for f in fits.values()),
+        "r1_fit": r1f, "r2_fit": r2f,
+        "r3_fit": (r3f if not math.isinf(r3f) else None),
+        "curv_resid": curv_resid,
+        "p1": p1, "p2": p2,
+        "dp_err": abs((p1 - p2) - dp_star),
+        "pressure_rel_err_worst": max(abs(p1 - 2.0 / r1) * r1 / 2.0,
+                                      abs(p2 - 2.0 / r2) * r2 / 2.0),
+    }
+    mets.update(_evolution_metrics(info))
+    trace = [{"iter": h["it"], "E": h["area"]} for h in info["history"]]
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": len(V), "n_tris": len(T), "effective": effective}
+
+
+def case_bubble_double(config):
+    return _case_bubble_double(config, 1.0, 1.0, 48)
+
+
+def case_bubble_double_unequal(config):
+    return _case_bubble_double(config, 0.8, 1.2, 48)
+
+
+def case_bubble_double_fine(config):
+    """The equal double bubble at doubled rim resolution: angle spread,
+    area excess, and curvature residual must shrink with h.  The finer
+    mesh conditions like O(h^-2), so it gets a deeper iteration budget
+    to reach the same converged state."""
+    return _case_bubble_double(config, 1.0, 1.0, 96, iters_default=2400)
+
+
+# --------------------------------------------------------------------------
 # high-genus embedder planarize (research script, not shipped code)
 # --------------------------------------------------------------------------
 
@@ -533,7 +708,7 @@ KNOWN_CONFIG_KEYS = {
     "plateau_kwargs", "seifert_iters", "fair_kwargs", "canonical_mode",
     "canonical_kwargs", "biscribe_kwargs", "knot_kwargs", "knot_iters",
     "crochet_kwargs", "crochet_iters", "planarize_map",
-    "planarize_kwargs", "planarize_iters",
+    "planarize_kwargs", "planarize_iters", "bubble_kwargs",
 }
 
 CASES = {
@@ -549,4 +724,9 @@ CASES = {
     "knot_hopf": case_knot_hopf,
     "crochet": case_crochet,
     "planarize": case_planarize,
+    "bubble_single": case_bubble_single,
+    "bubble_single_fine": case_bubble_single_fine,
+    "bubble_double": case_bubble_double,
+    "bubble_double_unequal": case_bubble_double_unequal,
+    "bubble_double_fine": case_bubble_double_fine,
 }
