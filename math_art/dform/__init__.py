@@ -36,14 +36,16 @@ References:
 
 import numpy as np
 
-from . import analytic, curves, develop, sheet, solve
+from . import analytic, conical, curves, develop, sheet, solve
 
-# SEAM and ANTI are solved for; the rest are closed-form relatives that
-# assemble exactly from cone and cylinder patches (see `analytic.py`)
-MODES = ('SEAM', 'ANTI') + analytic.ANALYTIC_KINDS
+# SEAM and ANTI are solved for (Route I, intrinsic); TRUNCATE and HANDLE
+# are built exactly by slicing a polyhedron (Route II, extrinsic, see
+# `conical.py`); the rest are closed-form relatives (`analytic.py`)
+MODES = ('SEAM', 'ANTI', 'TRUNCATE', 'HANDLE') + analytic.ANALYTIC_KINDS
+CONICAL_KINDS = ('TRUNCATE', 'HANDLE')
 
-__all__ = ['DForm', 'MODES', 'analytic', 'build_dform', 'curves', 'develop',
-           'sheet', 'solve']
+__all__ = ['CONICAL_KINDS', 'DForm', 'MODES', 'analytic', 'build_dform',
+           'conical', 'curves', 'develop', 'sheet', 'solve']
 
 
 class DForm:
@@ -106,6 +108,39 @@ def _fit(V, scale):
     ext = float(np.max(V.max(axis=0) - V.min(axis=0)))
     s = (2.0 * scale / ext) if ext > 1e-12 else 1.0
     return (V - 0.5 * (V.max(axis=0) + V.min(axis=0))) * s
+
+
+def _build_conical(mode, scale, seed, edges, rounds, depth, handles,
+                   twist, segments):
+    """Route II: built by slicing, not solved for.
+
+    Exact in one pass -- no iteration, no convergence -- and the only
+    route here to multi-piece and positive-genus D-forms.  The stats
+    report what the construction guarantees rather than what a solver
+    achieved: faces planar to machine precision, every vertex valence 3
+    (hence conical, hence buildable in thick material), and the genus
+    measured from Euler's formula rather than assumed.
+    """
+    if mode == 'TRUNCATE':
+        V, F = conical.build_truncate(seed=seed, mode=edges,
+                                      rounds=int(rounds),
+                                      depth=float(depth), scale=scale)
+        g = conical.genus(V, F)
+    else:                                            # HANDLE
+        V, F, g = conical.build_handle(seed=seed, handles=int(handles),
+                                       twist=int(twist),
+                                       segments=int(segments), scale=scale)
+    val = conical.valences(V, F)
+    stats = {'mode': mode, 'seed': seed, 'genus': int(g),
+             'planarity': conical.planarity(V, F),
+             'valence3': int(np.sum(val == 3)) == len(V),
+             'strain': 0.0, 'area_error': 0.0, 'interior_defect': 0.0,
+             'mu_total': 4 * np.pi * (1 - g), 'iterations': 0,
+             'segments': len(V)}
+    return DForm(np.asarray(V, dtype=float), F,
+                 np.zeros(0, dtype=int), np.zeros(0),
+                 np.zeros(len(V), dtype=int), np.zeros((0, 3)), [],
+                 stats, sharp_edges=[])
 
 
 def _build_analytic(mode, segments, scale, vesica_u, vesica_h):
@@ -176,6 +211,8 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
                 sides_a=3, sides_b=5, corner=0.35, cassini=1.6,
                 segments=72, join_offset=0.25, flip=False, quality=900,
                 scale=1.0, gap=0.08, vesica_u=0.5, vesica_h=-1.0,
+                seed='CUBE', edges='EQUATOR', rounds=4, depth=0.28,
+                handles=1, twist=1,
                 hole_kind_a='ELLIPSE', hole_aspect_a=0.6,
                 hole_kind_b='ELLIPSE', hole_aspect_b=1.0,
                 hole_scale=0.4):
@@ -195,6 +232,10 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
     """
     if mode not in MODES:
         raise ValueError(f"unknown D-form mode {mode!r}")
+    if mode in CONICAL_KINDS:
+        return _build_conical(mode, scale, seed=seed, edges=edges,
+                              rounds=rounds, depth=depth, handles=handles,
+                              twist=twist, segments=segments)
     if mode in analytic.ANALYTIC_KINDS:
         return _build_analytic(mode, segments, scale, vesica_u, vesica_h)
 

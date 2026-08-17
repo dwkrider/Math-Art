@@ -101,6 +101,17 @@ if _IN_BLENDER:
                     "their HOLE edges with the outer rims left free -- "
                     "an open saddle collar, not convex, carrying -4*pi "
                     "on the seam. Solved for"),
+                   ('TRUNCATE', "Truncated (sliced polyhedron)",
+                    "Route II: slice a convex polyhedron with planes "
+                    "until the cut band reads as a developable strip "
+                    "(Gonen, Akleman and Srinivasan). Exact, and the "
+                    "result is a valence-3 conical mesh -- it can be "
+                    "given real thickness and built in glass or metal"),
+                   ('HANDLE', "Twisted Handles (genus > 0)",
+                    "Route II with twisted prismatic handles joining "
+                    "two faces (Xing, Esquivel and Akleman). Each "
+                    "handle raises the genus by one -- the only mode "
+                    "here that leaves genus 0. Exact"),
                    ('VESICA', "Folded Vesica Piscis",
                     "Two overlapping discs folded so their boundaries "
                     "meet, giving one cylindrical and two conical "
@@ -148,6 +159,52 @@ if _IN_BLENDER:
             description="Below sqrt(2) = 1.414 the oval is waisted, so "
                         "it is no longer convex and the D-form theorems "
                         "no longer apply")
+
+        seed: EnumProperty(
+            name="Seed Polyhedron",
+            items=[('CUBE', "Cube", "Six squares, already valence 3"),
+                   ('TETRA', "Tetrahedron", "Four triangles"),
+                   ('OCTA', "Octahedron",
+                    "Valence 4, so its vertices are truncated first"),
+                   ('DODECA', "Dodecahedron",
+                    "Twelve pentagons, valence 3 -- the paper's own "
+                    "starting point for its multi-piece D-forms"),
+                   ('ICOSA', "Icosahedron",
+                    "Valence 5, so its vertices are truncated first")],
+            default='CUBE')
+        edges: EnumProperty(
+            name="Cut Edges",
+            items=[('EQUATOR', "Band (two caps)",
+                    "Cut only the edges running between two opposite "
+                    "faces, which round into a developable band and "
+                    "leave the caps -- the paper's Figure 4, and the "
+                    "closest thing here to the classic two-piece "
+                    "D-form"),
+                   ('ALL', "All edges",
+                    "Round everything, which is how the multi-piece "
+                    "D-forms arise"),
+                   ('SHARPEST', "Sharpest first",
+                    "Whatever is still sharp, wherever it is")],
+            default='EQUATOR')
+        rounds: IntProperty(
+            name="Truncation Rounds", default=4, min=0, max=12,
+            description="How many times the surviving sharp edges are "
+                        "cut again. The sequence smooths like Chaikin "
+                        "corner cutting, so a handful already reads as "
+                        "a developable band")
+        depth: FloatProperty(
+            name="Cut Depth", default=0.28, min=0.02, max=0.9,
+            description="How deep each cut goes, as a fraction of the "
+                        "room available before it would reach the next "
+                        "vertex")
+        handles: IntProperty(
+            name="Handles", default=1, min=1, max=4,
+            description="Each one joins two faces and raises the genus "
+                        "by one")
+        twist: IntProperty(
+            name="Handle Twist", default=1, min=0, max=8,
+            description="Corner-pairing offset between the two joined "
+                        "faces -- this is what twists the handle")
 
         hole_kind_a: EnumProperty(
             name="Hole A", items=_CURVE_ITEMS, default='ELLIPSE',
@@ -220,13 +277,17 @@ if _IN_BLENDER:
                     hole_aspect_a=self.hole_aspect_a,
                     hole_aspect_b=self.hole_aspect_b,
                     hole_scale=self.hole_scale,
+                    seed=self.seed, edges=self.edges,
+                    rounds=self.rounds, depth=self.depth,
+                    handles=self.handles, twist=self.twist,
                     vesica_u=self.vesica_u, vesica_h=self.vesica_h,)
             except Exception as exc:  # noqa: BLE001 - report, never crash
                 self.report({'ERROR'}, f"D-form failed: {exc}")
                 return {'CANCELLED'}
 
-            name = {'VESICA': "Vesica Fold",
-                    'ANTI': "Anti-D-Form"}.get(self.mode, "D-Form")
+            name = {'VESICA': "Vesica Fold", 'ANTI': "Anti-D-Form",
+                    'TRUNCATE': "Truncated D-Form",
+                    'HANDLE': "Twisted D-Form"}.get(self.mode, "D-Form")
             obj = self._mesh_object(context, name, d.verts, d.faces)
             if self.sharp_seam:
                 self._mark_seam(obj.data, d.sharp_edges)
@@ -263,6 +324,17 @@ if _IN_BLENDER:
                     f"{s['mu_total']/3.14159265:.2f}pi (-4pi ideal)  "
                     f"folds p99 {s.get('fold_p99', 0.0):.0f} deg  "
                     f"{s.get('crossings', 0)} sheet crossings")
+            elif self.mode in ('TRUNCATE', 'HANDLE'):
+                # what the CONSTRUCTION guarantees, not what a solver
+                # reached: exact planarity, and for TRUNCATE the
+                # valence-3 property that makes the mesh conical
+                extra = ("  valence-3 conical" if s['valence3']
+                         else "  (handles are triangulated)")
+                self.report(
+                    {'INFO'},
+                    f"V={len(d.verts)} F={len(d.faces)}  exact, genus "
+                    f"{s['genus']}  faces planar to {s['planarity']:.0e}"
+                    + extra)
             elif self.mode == 'VESICA':
                 self.report(
                     {'INFO'},
@@ -327,7 +399,18 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'mode')
 
-            if self.mode in ('SEAM', 'ANTI'):
+            if self.mode in ('TRUNCATE', 'HANDLE'):
+                lay.separator()
+                lay.prop(self, 'seed')
+                if self.mode == 'TRUNCATE':
+                    lay.prop(self, 'edges')
+                    lay.prop(self, 'rounds')
+                    lay.prop(self, 'depth')
+                else:
+                    lay.prop(self, 'handles')
+                    lay.prop(self, 'twist')
+                    lay.prop(self, 'segments')
+            elif self.mode in ('SEAM', 'ANTI'):
                 head = "Rims" if self.mode == 'ANTI' else "Outlines"
                 col = lay.column(heading=head)
                 col.prop(self, 'kind_a')
