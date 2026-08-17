@@ -96,6 +96,10 @@ def ab_table(res_a, res_b, label_a, label_b):
         "angle_rms_raw", "fit_rms_worst", "curv_resid", "dp_err",
         "vol_drift_max", "vol_drift_pre_max", "area_max_rise",
         "groom_max_rise",
+        "H_cv", "H_row_cv", "p_minus_2H", "F_cv", "pressure_abs",
+        "H_abs_mean",
+        "angle_err_deg", "contact_r_rel_err", "E_rel_err", "fit_rms",
+        "wall_resid_max", "vt_normal_max", "E_max_rise",
     }
     higher_better = {
         "q_min", "q_mean", "q_p05", "min_angle_deg", "min_far_gap",

@@ -474,7 +474,7 @@ def _evolve_checked(V, T, labels, targets, kwargs):
     unknown = [k for k in kwargs if k not in sig.parameters
                or k in ("V", "T", "labels", "targets")]
     if unknown:
-        raise ValueError(f"bubble_kwargs not accepted by evolve: {unknown}")
+        raise ValueError(f"kwargs not accepted by evolve: {unknown}")
     info = sv.evolve(V, T, labels, targets=targets, **kwargs)
     effective = {
         "iters": kwargs.get("iters", sig.parameters["iters"].default),
@@ -646,6 +646,239 @@ def case_bubble_double_fine(config):
 
 
 # --------------------------------------------------------------------------
+# CMC / capillary family (solver/walls.py + cmc_generator.py)
+# --------------------------------------------------------------------------
+
+def _cmc_kwargs(config, defaults):
+    """Merge config['cmc_kwargs'] over per-case defaults, with the same
+    discipline as bubble_kwargs: unknown keys raise in _evolve_checked."""
+    kwargs = dict(defaults)
+    kwargs.update(config.get("cmc_kwargs", {}))
+    return kwargs
+
+
+def _bridge_case(config, volume_factor, nring, nrow, iters_default,
+                 squash=0.0, targets_override=None):
+    """Liquid bridge between pinned rims at a prescribed volume.  The
+    defining CMC checks: H constant over the free surface (vertex cv,
+    plus the row-mean cv on the intact lathe rows), the Young-Laplace
+    cross-check p = 2H between two independently computed quantities
+    (Lagrange pressure vs cotan curvature), and the conserved axial
+    force F(z) = 2 pi r / sqrt(1 + r'^2) - p pi r^2 of a CMC surface
+    of revolution, measured per row.  Row metrics are only meaningful
+    while the lathe structure survives, so they are skipped (None) if
+    a groom config rewired the mesh."""
+    from math_art import cmc_generator as cg
+    from math_art.solver import volume as sv
+    h, R = 0.5, 1.0
+    kwargs = _cmc_kwargs(config, {"iters": iters_default})
+    V, T, labels, fixed = cg.build_bridge_mesh(nring, nrow, h, R)
+    v_lat0 = sv.region_volumes(V, T, labels)[0]
+    if targets_override is not None:
+        target = targets_override
+    else:
+        v_true0 = cg.bridge_true_volume(v_lat0, R, h, nring)
+        target = cg.bridge_lateral_target(volume_factor * v_true0,
+                                          R, h, nring)
+    if squash:
+        fac = 1.0 + squash * np.cos(np.pi * V[:, 2] / (2.0 * h))
+        fac[fixed] = 1.0
+        V[:, 0] *= fac
+        V[:, 1] *= fac
+    kwargs["fixed"] = fixed
+    t0 = _timer()
+    info, effective = _evolve_checked(V, T, labels, [target], kwargs)
+    dt = _timer() - t0
+    free = ~fixed
+    Hs = cg.signed_mean_curvature(V, T)
+    Hin = Hs[free]
+    p = float(info["pressures"][0])
+    mets = {
+        "area": info["area"],
+        "pressure": p,
+        "H_mean": float(np.mean(Hin)),
+        "H_cv": float(np.std(Hin) / max(abs(np.mean(Hin)), 1e-300)),
+        "p_minus_2H": abs(p - 2.0 * float(np.mean(Hin))),
+    }
+    if volume_factor == 1.0:
+        # cylinder ground truth: radius constant at R, p = 1/R
+        rr = np.hypot(V[free, 0], V[free, 1])
+        mets["radius_cv"] = float(np.std(rr) / np.mean(rr))
+        mets["pressure_rel_err"] = abs(p - 1.0 / R) / (1.0 / R)
+    if info["grooms_run"] == 0:
+        # rows intact: row-mean H profile and the axial-force invariant
+        Hrow = Hs.reshape(nrow, nring).mean(axis=1)[2:-2]
+        r = np.hypot(V[:, 0], V[:, 1]).reshape(nrow, nring).mean(axis=1)
+        z = V[:, 2].reshape(nrow, nring).mean(axis=1)
+        rp = np.gradient(r, z)
+        F = (2.0 * np.pi * r / np.sqrt(1.0 + rp * rp)
+             - p * np.pi * r * r)[1:-1]
+        mets["H_row_cv"] = float(np.std(Hrow)
+                                 / max(abs(np.mean(Hrow)), 1e-300))
+        mets["F_cv"] = float(np.std(F) / max(abs(np.mean(F)), 1e-300))
+    else:
+        mets["H_row_cv"] = None
+        mets["F_cv"] = None
+    mets.update(_evolution_metrics(info))
+    trace = [{"iter": hh["it"], "E": hh["area"]}
+             for hh in info["history"]]
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": len(V), "n_tris": len(T), "effective": effective}
+
+
+def case_cmc_bridge_cyl(config):
+    """Radially bulged cylinder at the cylinder's own volume must relax
+    back to the cylinder (the CMC family's exact member): p ~ 1 = 2/R,
+    H ~ 1/(2R), radius constant (radius_cv, pressure_rel_err)."""
+    return _bridge_case(config, 1.0, 48, 17, 400, squash=0.08)
+
+
+def case_cmc_bridge_fat(config):
+    """Unduloid barrel at 1.25 x the cylinder volume (measured budget:
+    interior rows constant to ~5e-4 by 1200 iterations; at 400 the
+    transient still reads ~3e-2 vertex H cv)."""
+    return _bridge_case(config, 1.25, 48, 17, 1200)
+
+
+def case_cmc_bridge_thin(config):
+    """Nodoid-side neck at 0.75 x the cylinder volume (just below the
+    catenoid volume ~0.809 x): the pressure must come out NEGATIVE."""
+    return _bridge_case(config, 0.75, 48, 17, 600)
+
+
+def case_cmc_bridge_fat_fine(config):
+    """The unduloid at doubled resolution: p_minus_2H must shrink ~4x
+    (measured 5.5e-3 -> 1.3e-3).  The vertex H cv does NOT shrink --
+    it is limited by tangential mesh disorder (sliding within the
+    surface is area-neutral, so vertex positions are underdetermined)
+    amplified by the pointwise cotan estimator; the row-mean cv and
+    the p=2H cross-check are the converging instruments.  Recorded
+    honestly rather than tuned away."""
+    return _bridge_case(config, 1.25, 96, 33, 2400)
+
+
+def _catenoid_limit_case(config, nring, nrow, iters_default):
+    """As the bridge volume approaches the catenoid's own volume the
+    relaxed surface must BE the minimal catenoid: analytic area, and a
+    Lagrange pressure indistinguishable from zero at the discretization
+    scale (p = dA/dV = 0 at the minimal surface) -- both O(h^2)."""
+    from math_art import cmc_generator as cg
+    h, R = 0.5, 1.0
+    A_cat, c = cg.catenoid_area(h, R)
+    V_cat = cg.catenoid_volume(h, R)
+    target = cg.bridge_lateral_target(V_cat, R, h, nring)
+    res = _bridge_case(config, None, nring, nrow, iters_default,
+                       targets_override=target)
+    mets = res["metrics"]
+    mets["area_exact"] = A_cat
+    mets["area_rel_err"] = abs(mets["area"] - A_cat) / A_cat
+    mets["pressure_abs"] = abs(mets["pressure"])
+    # a cv against a mean of ~zero is not a number worth reporting:
+    # at the catenoid H -> 0, so the informative spread measure is the
+    # ABSOLUTE mean (both instruments must vanish together, O(h^2))
+    mets["H_abs_mean"] = abs(mets.pop("H_mean"))
+    mets.pop("H_cv")
+    mets.pop("H_row_cv")
+    return res
+
+
+def case_cmc_catenoid(config):
+    return _catenoid_limit_case(config, 48, 17, 400)
+
+
+def case_cmc_catenoid_fine(config):
+    return _catenoid_limit_case(config, 96, 33, 1200)
+
+
+def _drop_case(config, theta_deg, nring, iters_default, seed_theta_deg,
+               groom_default=4):
+    """Sessile drop: contact line sliding on the floor (two-sided wall
+    on the rim, one-sided on the interior), wetting energy
+    -cos(theta) * wetted area, volume constrained.  The zero-gravity
+    ground truth is the spherical cap: achieved contact angle (sphere
+    fit; the seed starts at a DIFFERENT angle so the line demonstrably
+    slides), contact radius, free area, total energy, p = 2/R = 2H.
+    Wall residual and velocity tangency must sit at solver tolerance;
+    the monotone quantity is E = area - cos(theta) A_wet."""
+    from math_art import cmc_generator as cg
+    from math_art.solver import walls as sw
+    kwargs = _cmc_kwargs(config, {"iters": iters_default,
+                                  "groom_every": groom_default})
+    th = math.radians(theta_deg)
+    Vt = 2.0 * math.pi / 3.0
+    geo = cg.cap_geometry(th, Vt)
+    geo_seed = cg.cap_geometry(math.radians(seed_theta_deg), Vt)
+    V, T, labels, rim = cg.build_cap_mesh(seed_theta_deg,
+                                          geo_seed["R"], nring)
+    T = np.ascontiguousarray(T)
+    interior = ~rim
+    loop = cg.rim_loop(V, nring)
+    ext_e, ext_g = cg.drop_energy_terms(th, loop)
+    plane = sw.PlaneWall([0.0, 0.0, 0.0], [0.0, 0.0, 1.0])
+    floor = sw.PlaneWall([0.0, 0.0, 0.0], [0.0, 0.0, 1.0],
+                         one_sided=True)
+    kwargs.update(walls=[(plane, rim), (floor, interior)],
+                  ext_energy=ext_e, ext_grad=ext_g)
+    t0 = _timer()
+    info, effective = _evolve_checked(V, T, labels, [Vt], kwargs)
+    dt = _timer() - t0
+    ang, fit_rms = cg.measured_contact_angle(V, T)
+    a_ach = float(np.mean(np.hypot(V[loop, 0], V[loop, 1])))
+    Hs = cg.signed_mean_curvature(V, T)[interior]
+    p = float(info["pressures"][0])
+    E_final = info["area"] + ext_e(V)
+    hist = info["history"]
+    mets = {
+        "angle_achieved_deg": ang,
+        "angle_err_deg": abs(ang - theta_deg),
+        "contact_r": a_ach,
+        "contact_r_rel_err": abs(a_ach - geo["a"]) / geo["a"],
+        "area": info["area"],
+        "area_rel_err": abs(info["area"] - geo["A_free"])
+        / geo["A_free"],
+        "E_rel_err": abs(E_final - geo["E"]) / abs(geo["E"]),
+        "pressure": p,
+        "pressure_rel_err": abs(p - 2.0 / geo["R"]) / (2.0 / geo["R"]),
+        "H_mean": float(np.mean(Hs)),
+        "H_cv": float(np.std(Hs) / max(abs(np.mean(Hs)), 1e-300)),
+        "p_minus_2H": abs(p - 2.0 * float(np.mean(Hs))),
+        "fit_rms": fit_rms,
+        "wall_resid_max": max(hh["wall_resid"] for hh in hist),
+        "vt_normal_max": max(hh["vt_normal_max"] for hh in hist),
+        "min_interior_z": float(V[interior, 2].min()),
+        "E_max_rise": max((hh["E_rise"] for hh in hist
+                           if not hh["groomed"]), default=0.0),
+        "vol_drift_max": max((hh["drift_post"] for hh in hist),
+                             default=0.0),
+        "iters": info["iters_run"],
+    }
+    trace = [{"iter": hh["it"], "E": hh["E"]} for hh in hist]
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": len(V), "n_tris": len(T), "effective": effective}
+
+
+def case_cmc_drop45(config):
+    """45-degree (wetting) drop seeded as a hemisphere: the contact
+    line slides OUT by ~45% in radius."""
+    return _drop_case(config, 45.0, 48, 1500, 90.0)
+
+
+def case_cmc_drop135(config):
+    """135-degree (beading) drop seeded at 120 degrees: the contact
+    line slides IN and the free surface bulges past vertical.  Slower
+    to converge than the wetting case (measured: the angle error is
+    still ~1.3 deg at 600 iterations, ~0.2-0.3 deg by 3000)."""
+    return _drop_case(config, 135.0, 48, 3000, 120.0)
+
+
+def case_cmc_drop45_fine(config):
+    """The 45-degree drop at doubled contact-line resolution: the
+    achieved-angle error and contact-radius error must shrink ~4x
+    (measured -0.014 -> +0.004 deg and 1.7e-3 -> 3.6e-4)."""
+    return _drop_case(config, 45.0, 96, 3000, 90.0)
+
+
+# --------------------------------------------------------------------------
 # high-genus embedder planarize (research script, not shipped code)
 # --------------------------------------------------------------------------
 
@@ -720,6 +953,7 @@ KNOWN_CONFIG_KEYS = {
     "canonical_kwargs", "biscribe_kwargs", "knot_kwargs", "knot_iters",
     "crochet_kwargs", "crochet_iters", "planarize_map",
     "planarize_kwargs", "planarize_iters", "bubble_kwargs",
+    "cmc_kwargs",
 }
 
 CASES = {
@@ -740,4 +974,13 @@ CASES = {
     "bubble_double": case_bubble_double,
     "bubble_double_unequal": case_bubble_double_unequal,
     "bubble_double_fine": case_bubble_double_fine,
+    "cmc_bridge_cyl": case_cmc_bridge_cyl,
+    "cmc_bridge_fat": case_cmc_bridge_fat,
+    "cmc_bridge_thin": case_cmc_bridge_thin,
+    "cmc_bridge_fat_fine": case_cmc_bridge_fat_fine,
+    "cmc_catenoid": case_cmc_catenoid,
+    "cmc_catenoid_fine": case_cmc_catenoid_fine,
+    "cmc_drop45": case_cmc_drop45,
+    "cmc_drop135": case_cmc_drop135,
+    "cmc_drop45_fine": case_cmc_drop45_fine,
 }
