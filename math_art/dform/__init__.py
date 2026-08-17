@@ -111,7 +111,8 @@ def _fit(V, scale):
 
 
 def _build_conical(mode, scale, seed, edges, rounds, depth, handles,
-                   twist, segments):
+                   twist, segments, handle_form='LOOP', pinch=1.0,
+                   girth=0.34):
     """Route II: built by slicing, not solved for.
 
     Exact in one pass -- no iteration, no convergence -- and the only
@@ -126,10 +127,15 @@ def _build_conical(mode, scale, seed, edges, rounds, depth, handles,
                                       rounds=int(rounds),
                                       depth=float(depth), scale=scale)
         g = conical.genus(V, F)
-    else:                                            # HANDLE
+    elif handle_form == 'BRIDGE':
         V, F, g = conical.build_handle(seed=seed, handles=int(handles),
                                        twist=int(twist),
                                        segments=int(segments), scale=scale)
+    else:                                            # HANDLE / LOOP
+        V, F, g = conical.build_loop(seed=seed, twist=int(twist),
+                                     segments=max(48, int(segments) * 2),
+                                     pinch=float(pinch),
+                                     girth=float(girth), scale=scale)
     val = conical.valences(V, F)
     stats = {'mode': mode, 'seed': seed, 'genus': int(g),
              'planarity': conical.planarity(V, F),
@@ -212,7 +218,8 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
                 segments=72, join_offset=0.25, flip=False, quality=900,
                 scale=1.0, gap=0.08, vesica_u=0.5, vesica_h=-1.0,
                 seed='CUBE', edges='EQUATOR', rounds=4, depth=0.28,
-                handles=1, twist=1,
+                handles=1, twist=1, handle_form='LOOP', pinch=1.0,
+                girth=0.34,
                 hole_kind_a='ELLIPSE', hole_aspect_a=0.6,
                 hole_kind_b='ELLIPSE', hole_aspect_b=1.0,
                 hole_scale=0.4):
@@ -235,7 +242,9 @@ def build_dform(mode='SEAM', kind_a='ELLIPSE', kind_b='ELLIPSE',
     if mode in CONICAL_KINDS:
         return _build_conical(mode, scale, seed=seed, edges=edges,
                               rounds=rounds, depth=depth, handles=handles,
-                              twist=twist, segments=segments)
+                              twist=twist, segments=segments,
+                              handle_form=handle_form, pinch=pinch,
+                              girth=girth)
     if mode in analytic.ANALYTIC_KINDS:
         return _build_analytic(mode, segments, scale, vesica_u, vesica_h)
 

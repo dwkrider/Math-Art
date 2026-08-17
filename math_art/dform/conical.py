@@ -409,6 +409,86 @@ def _face_pairs(V, F, count):
     return pairs
 
 
+def teardrop(n, pinch=1.0):
+    """The closed path of the paper's Figure 1: a rounded teardrop.
+
+    Their shape is a loop that is round at one end and comes to a point
+    at the other; `pinch` blends between a plain circle (0) and the full
+    teardrop (1).
+    """
+    t = np.linspace(0.0, 2.0 * np.pi, int(n), endpoint=False)
+    y = np.sin(t) * (1.0 - pinch + pinch * np.abs(np.sin(0.5 * t)))
+    return np.stack([np.cos(t), y, np.zeros_like(t)], axis=1)
+
+
+def build_loop(seed='CUBE', twist=1, segments=160, pinch=1.0, girth=0.34,
+               scale=1.0):
+    """A twisted prismatic loop -- the shape of Xing et al.'s Figure 1.
+
+    Their construction photographs (Figure 5) settle what the object
+    actually is: a rectangular cross-section carried once around a
+    closed teardrop, twisting as it goes.  "Starting from a single cube"
+    means the cube supplies the square SECTION -- there is no cube body
+    left in the finished piece, which is why bridging two faces of an
+    intact cube gives something quite different.
+
+    So the seed's face is the profile, parallel transport carries it
+    round the loop, and `twist` is how many corners it has turned by the
+    time it closes -- the corner pairing at the join, exactly as the
+    handle's pairing is what twists it.  Genus 1, and the sides are
+    quads split into triangles, hence planar, hence developable.
+    """
+    try:
+        from ..curve_frames.frames import frames, PARALLEL
+    except ImportError:                 # flat import outside the package
+        from curve_frames.frames import frames, PARALLEL
+
+    V0, F0 = _seed(seed)
+    k = max(3, min((len(f) for f in F0), default=4))
+    prof = _profile(V0, [f for f in F0 if len(f) == k][0], girth)
+
+    n = max(24, int(segments))
+    P = teardrop(n, float(pinch))
+    H, L, U = frames(P, mode=PARALLEL, closed=True,
+                     twist=360.0 * float(twist) / k)
+
+    V = []
+    for q in range(n):
+        for (x, y) in prof:
+            V.append(P[q] + L[q] * x + U[q] * y)
+    V = np.asarray(V, dtype=float)
+
+    F = []
+    for q in range(n):
+        a, b = q * k, ((q + 1) % n) * k
+        # the closing ring meets the first one turned by `twist` corners;
+        # that offset IS the twist, and it is what makes the loop close
+        # onto itself rotated rather than flush
+        off = int(twist) if q == n - 1 else 0
+        for m in range(k):
+            m2 = (m + 1) % k
+            a0, a1 = a + m, a + m2
+            b0 = b + (m + off) % k
+            b1 = b + (m2 + off) % k
+            F.append([a0, a1, b1])
+            F.append([a0, b1, b0])
+    return _fit(V, scale), F, genus(V, F)
+
+
+def _profile(V, face, girth):
+    """A seed face as 2-D coordinates in its own plane, scaled to girth."""
+    V = np.asarray(V, dtype=float)
+    P = V[face]
+    c = P.mean(axis=0)
+    n = face_normals(V, [list(face)])[0]
+    u = P[0] - c
+    u = u / max(float(np.linalg.norm(u)), 1e-15)
+    w = np.cross(n, u)
+    xy = np.stack([(P - c) @ u, (P - c) @ w], axis=1)
+    r = float(np.max(np.linalg.norm(xy, axis=1)))
+    return xy * (float(girth) / max(r, 1e-15))
+
+
 def build_handle(seed='CUBE', handles=1, twist=1, segments=48, bulge=1.25,
                  waist=0.62, scale=1.0):
     """A twisted D-form: a polyhedron with prismatic handles (Bridges 2012).
@@ -638,6 +718,32 @@ def _selftest():
     ok &= good
     print(f"conical: handled surface closed and manifold "
           f"({bad} bad edges) {'OK' if good else 'FAIL'}")
+
+    # THE TWISTED LOOP, which is the shape of the paper's Figure 1 and
+    # what its construction photographs (Figure 5) actually show being
+    # built: a section carried once round a teardrop.  Closed, genus 1,
+    # and planar-faced whatever the twist.
+    bad = []
+    for tw in (0, 1, 2, 3):
+        Vl, Fl, gl = build_loop('CUBE', twist=tw, segments=120)
+        ef = edge_faces(Fl)
+        if (gl != 1 or planarity(Vl, Fl) > 1e-9
+                or any(len(fs) != 2 for fs in ef.values())):
+            bad.append(str(tw))
+    good = not bad
+    ok &= good
+    print(f"conical: twisted loop closes at genus 1, any twist "
+          f"{'OK' if good else 'FAIL twist=' + ','.join(bad)}")
+
+    # the loop must be a LOOP -- a real hole through it, not a squashed
+    # disc.  Measured as the empty column down its middle.
+    Vl, Fl, _ = build_loop('CUBE', twist=1, segments=160)
+    rad = np.linalg.norm(Vl[:, :2] - Vl[:, :2].mean(axis=0), axis=1)
+    good = float(np.min(rad)) > 0.15 * float(np.max(rad))
+    ok &= good
+    print(f"conical: the loop has a hole "
+          f"({float(np.min(rad))/float(np.max(rad)):.2f} of its radius) "
+          f"{'OK' if good else 'FAIL'}")
 
     # the twist has to matter -- an untwisted and a twisted handle are
     # different shapes, not the same one relabelled

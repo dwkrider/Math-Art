@@ -197,6 +197,26 @@ if _IN_BLENDER:
             description="How deep each cut goes, as a fraction of the "
                         "room available before it would reach the next "
                         "vertex")
+        handle_form: EnumProperty(
+            name="Handle Form",
+            items=[('LOOP', "Twisted Loop",
+                    "A cross-section carried once around a closed "
+                    "teardrop, twisting as it goes -- the shape of the "
+                    "paper's Figure 1. The seed supplies the SECTION, "
+                    "not a body: there is no cube left in the finished "
+                    "piece"),
+                   ('BRIDGE', "Bridged Faces",
+                    "Join pairs of the seed's faces with handles, "
+                    "leaving the solid itself in place. One handle per "
+                    "pair, so this is the way to genus above 1")],
+            default='LOOP')
+        pinch: FloatProperty(
+            name="Teardrop", default=1.0, min=0.0, max=1.0,
+            description="0 is a plain circular loop, 1 the pointed "
+                        "teardrop of the paper's Figure 1")
+        girth: FloatProperty(
+            name="Section Size", default=0.34, min=0.05, max=1.2,
+            description="How fat the swept cross-section is")
         handles: IntProperty(
             name="Handles", default=1, min=1, max=4,
             description="Each one joins two faces and raises the genus "
@@ -280,6 +300,8 @@ if _IN_BLENDER:
                     seed=self.seed, edges=self.edges,
                     rounds=self.rounds, depth=self.depth,
                     handles=self.handles, twist=self.twist,
+                    handle_form=self.handle_form, pinch=self.pinch,
+                    girth=self.girth,
                     vesica_u=self.vesica_u, vesica_h=self.vesica_h,)
             except Exception as exc:  # noqa: BLE001 - report, never crash
                 self.report({'ERROR'}, f"D-form failed: {exc}")
@@ -407,8 +429,13 @@ if _IN_BLENDER:
                     lay.prop(self, 'rounds')
                     lay.prop(self, 'depth')
                 else:
-                    lay.prop(self, 'handles')
+                    lay.prop(self, 'handle_form')
                     lay.prop(self, 'twist')
+                    if self.handle_form == 'LOOP':
+                        lay.prop(self, 'pinch')
+                        lay.prop(self, 'girth')
+                    else:
+                        lay.prop(self, 'handles')
                     lay.prop(self, 'segments')
             elif self.mode in ('SEAM', 'ANTI'):
                 head = "Rims" if self.mode == 'ANTI' else "Outlines"
