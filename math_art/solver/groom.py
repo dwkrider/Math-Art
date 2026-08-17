@@ -61,7 +61,7 @@ def _tri_min_quality(V, tri_list):
     return q
 
 
-def delaunay_flips(V, T, margin=1e-3, max_sweeps=3):
+def delaunay_flips(V, T, margin=1e-3, max_sweeps=3, tri_groups=None):
     """Equiangulate: flip interior edges whose opposite angles sum to
     more than pi (cot_c + cot_d < -margin), one non-conflicting batch
     per sweep.  Modifies T in place; returns the number of flips.
@@ -69,7 +69,15 @@ def delaunay_flips(V, T, margin=1e-3, max_sweeps=3):
     Vetoes per candidate: the replacement edge must not already exist;
     neither new triangle may be degenerate or worse in min quality than
     the pair it replaces; and the new pair's normals must agree with
-    the old pair's average normal (no inversion)."""
+    the old pair's average normal (no inversion).
+
+    tri_groups (ntri,) restricts flips to pairs in the SAME group --
+    for multi-material (region-pair-labeled) meshes a flip across two
+    different films would corrupt the labeling, so it is refused (the
+    per-face labels then stay valid untouched: a flip rewrites both
+    face slots within one film).  Non-manifold edges (Plateau borders,
+    where three films meet) are never flip candidates in the first
+    place, since only edges shared by exactly two faces qualify."""
     total = 0
     for _ in range(max_sweeps):
         # vectorised edge table: directed corner edges, sorted for the
@@ -97,6 +105,8 @@ def delaunay_flips(V, T, margin=1e-3, max_sweeps=3):
         cc = T[t1s, c1s]
         dd = T[t2s, c2s]
         good = cc != dd
+        if tri_groups is not None:
+            good &= np.asarray(tri_groups)[t1s] == np.asarray(tri_groups)[t2s]
         # cotangents at the two opposite corners, batched
         Ua = V[aa] - V[cc]
         Va = V[bb] - V[cc]
@@ -189,10 +199,13 @@ def tangential_smooth(V, T, fixed=None, lam=0.25, iters=1):
 
 
 def groom(V, T, fixed=None, flips=True, smooth_lam=0.25,
-          flip_margin=1e-3):
+          flip_margin=1e-3, tri_groups=None):
     """One groom cycle: equiangulate, then tangentially smooth.
-    Modifies V and T in place; returns the number of edge flips."""
-    nf = delaunay_flips(V, T, margin=flip_margin) if flips else 0
+    Modifies V and T in place; returns the number of edge flips.
+    tri_groups (see delaunay_flips) keeps flips inside one film on
+    labeled multi-material meshes."""
+    nf = (delaunay_flips(V, T, margin=flip_margin, tri_groups=tri_groups)
+          if flips else 0)
     if smooth_lam > 0.0:
         tangential_smooth(V, T, fixed=fixed, lam=smooth_lam)
     return nf
@@ -222,6 +235,18 @@ def _selftest():
     good = bool(np.all(zs > 0) or np.all(zs < 0))
     ok &= good
     print(f"groom: orientation preserved after flip "
+          f"{'OK' if good else 'FAIL'}")
+
+    # The same non-Delaunay quad with its two triangles in DIFFERENT
+    # groups (two films): the flip must be refused, T untouched.
+    Vg2 = np.array([[0.0, 0.0, 0.0], [4.0, 0.0, 0.0],
+                    [2.0, 0.35, 0.0], [2.0, -0.35, 0.0]])
+    Tg2 = np.array([[0, 1, 2], [1, 0, 3]])
+    T_before = Tg2.copy()
+    nf = delaunay_flips(Vg2, Tg2, tri_groups=np.array([0, 1]))
+    good = nf == 0 and np.array_equal(Tg2, T_before)
+    ok &= good
+    print(f"groom: cross-film flip refused under tri_groups ({nf} flips) "
           f"{'OK' if good else 'FAIL'}")
 
     # A Delaunay mesh must be left alone (hysteresis).

@@ -17,6 +17,11 @@
 #            line search and an adaptive-gain controller.
 #   groom    in-loop mesh quality maintenance: Delaunay edge flips and
 #            tangential vertex smoothing.
+#   volume   volume-constrained evolution: body volumes and gradients on
+#            region-pair-labeled meshes, Gram-matrix Lagrange velocity
+#            projection, damped Newton volume restore, and the `evolve`
+#            driver composing all of the above (Evolver fixvol scheme +
+#            LosTopos labels).
 #
 # The per-solver descent loops themselves deliberately stay bespoke
 # where measurement showed the bespoke loop stronger (the Pinkall-
@@ -25,3 +30,4 @@
 from . import cotan  # noqa: F401
 from . import descent  # noqa: F401
 from . import groom  # noqa: F401
+from . import volume  # noqa: F401
