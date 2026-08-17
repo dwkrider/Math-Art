@@ -307,9 +307,16 @@ def triple_line_angles(V, T):
         f2 = np.cross(ed, f1)
         th = []
         for k in range(3):
-            c = opp[order[starts[e] + k]]
-            w = V[c] - mid
-            w = w - (w @ ed) * ed
+            # in-film direction perpendicular to the edge, from the
+            # face plane (normal x edge), signed toward the face
+            j = order[starts[e] + k]
+            c = opp[j]
+            f = j % len(T)
+            tri = T[f]
+            nf = np.cross(V[tri[1]] - V[tri[0]], V[tri[2]] - V[tri[0]])
+            w = np.cross(nf, ed)
+            if (w @ (V[c] - mid)) < 0.0:
+                w = -w
             th.append(np.arctan2(w @ f2, w @ f1))
         th = np.sort(th)
         secs = [th[1] - th[0], th[2] - th[1],
