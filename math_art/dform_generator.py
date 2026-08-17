@@ -107,12 +107,6 @@ if _IN_BLENDER:
                     "(Gonen, Akleman and Srinivasan). Exact, and the "
                     "result is a valence-3 conical mesh -- it can be "
                     "given real thickness and built in glass or metal"),
-                   ('TWISTED', "Twisted D-Form (genus > 0)",
-                    "Xing, Esquivel and Akleman's twisted D-forms: a "
-                    "section carried round a closed loop, or joined "
-                    "face to face by twisted prismatic handles with "
-                    "developable sides. The only mode here that leaves "
-                    "genus 0. Exact -- no solver"),
                    ('VESICA', "Folded Vesica Piscis",
                     "Two overlapping discs folded so their boundaries "
                     "meet, giving one cylindrical and two conical "
@@ -198,35 +192,6 @@ if _IN_BLENDER:
             description="How deep each cut goes, as a fraction of the "
                         "room available before it would reach the next "
                         "vertex")
-        handle_form: EnumProperty(
-            name="Form",
-            items=[('LOOP', "Twisted Loop",
-                    "A cross-section carried once around a closed "
-                    "teardrop, twisting as it goes -- the shape of the "
-                    "paper's Figure 1. The seed supplies the SECTION, "
-                    "not a body: there is no cube left in the finished "
-                    "piece"),
-                   ('BRIDGE', "Bridged Faces",
-                    "Join pairs of the seed's faces with handles, "
-                    "leaving the solid itself in place. One handle per "
-                    "pair, so this is the way to genus above 1")],
-            default='LOOP')
-        pinch: FloatProperty(
-            name="Teardrop", default=1.0, min=0.0, max=1.0,
-            description="0 is a plain circular loop, 1 the pointed "
-                        "teardrop of the paper's Figure 1")
-        girth: FloatProperty(
-            name="Section Size", default=0.34, min=0.05, max=1.2,
-            description="How fat the swept cross-section is")
-        handles: IntProperty(
-            name="Handles", default=1, min=1, max=4,
-            description="Each one joins two faces and raises the genus "
-                        "by one")
-        twist: IntProperty(
-            name="Twist", default=1, min=0, max=8,
-            description="Corner-pairing offset between the two joined "
-                        "faces -- this is what twists the handle")
-
         hole_kind_a: EnumProperty(
             name="Hole A", items=_CURVE_ITEMS, default='ELLIPSE',
             description="Outline of the first piece's hole. In ANTI the "
@@ -300,17 +265,14 @@ if _IN_BLENDER:
                     hole_scale=self.hole_scale,
                     seed=self.seed, edges=self.edges,
                     rounds=self.rounds, depth=self.depth,
-                    handles=self.handles, twist=self.twist,
-                    handle_form=self.handle_form, pinch=self.pinch,
-                    girth=self.girth,
                     vesica_u=self.vesica_u, vesica_h=self.vesica_h,)
             except Exception as exc:  # noqa: BLE001 - report, never crash
                 self.report({'ERROR'}, f"D-form failed: {exc}")
                 return {'CANCELLED'}
 
             name = {'VESICA': "Vesica Fold", 'ANTI': "Anti-D-Form",
-                    'TRUNCATE': "Truncated D-Form",
-                    'TWISTED': "Twisted D-Form"}.get(self.mode, "D-Form")
+                    'TRUNCATE': "Truncated D-Form"}.get(self.mode,
+                                                        "D-Form")
             obj = self._mesh_object(context, name, d.verts, d.faces)
             if self.sharp_seam:
                 self._mark_seam(obj.data, d.sharp_edges)
@@ -347,12 +309,11 @@ if _IN_BLENDER:
                     f"{s['mu_total']/3.14159265:.2f}pi (-4pi ideal)  "
                     f"folds p99 {s.get('fold_p99', 0.0):.0f} deg  "
                     f"{s.get('crossings', 0)} sheet crossings")
-            elif self.mode in ('TRUNCATE', 'TWISTED'):
+            elif self.mode == 'TRUNCATE':
                 # what the CONSTRUCTION guarantees, not what a solver
                 # reached: exact planarity, and for TRUNCATE the
                 # valence-3 property that makes the mesh conical
-                extra = ("  valence-3 conical" if s['valence3']
-                         else "  (handles are triangulated)")
+                extra = "  valence-3 conical" if s['valence3'] else ""
                 self.report(
                     {'INFO'},
                     f"V={len(d.verts)} F={len(d.faces)}  exact, genus "
@@ -422,22 +383,12 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'mode')
 
-            if self.mode in ('TRUNCATE', 'TWISTED'):
+            if self.mode == 'TRUNCATE':
                 lay.separator()
                 lay.prop(self, 'seed')
-                if self.mode == 'TRUNCATE':
-                    lay.prop(self, 'edges')
-                    lay.prop(self, 'rounds')
-                    lay.prop(self, 'depth')
-                else:
-                    lay.prop(self, 'handle_form')
-                    lay.prop(self, 'twist')
-                    if self.handle_form == 'LOOP':
-                        lay.prop(self, 'pinch')
-                        lay.prop(self, 'girth')
-                    else:
-                        lay.prop(self, 'handles')
-                    lay.prop(self, 'segments')
+                lay.prop(self, 'edges')
+                lay.prop(self, 'rounds')
+                lay.prop(self, 'depth')
             elif self.mode in ('SEAM', 'ANTI'):
                 head = "Rims" if self.mode == 'ANTI' else "Outlines"
                 col = lay.column(heading=head)
