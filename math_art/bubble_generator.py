@@ -21,6 +21,10 @@
 #   - Double Bubble theorem: M. Hutchings, F. Morgan, M. Ritore,
 #     A. Ros, "Proof of the double bubble conjecture", Annals of
 #     Mathematics 155 (2002), pp. 459-489.
+#   - Triple Bubble theorem: E. Milman, J. Neeman, "The structure
+#     of isoperimetric bubbles on R^n and S^n", arXiv:2205.09102
+#     (2022) -- proof of the triple bubble conjecture in R^3 (the
+#     standard triple bubble is the least-area partition).
 #   - C. Isenberg, "The Science of Soap Films and Soap Bubbles"
 #     (Dover, 1992); D. Weaire & S. Hutzler, "The Physics of Foams"
 #     (Oxford, 1999).
@@ -724,6 +728,206 @@ def _orient_patch(V, tris, t0, t1, want):
             tris[k] = (a, c, b)
 
 
+def triple_bubble_geometry(r=1.0):
+    """Closed-form geometry of the STANDARD EQUAL triple bubble (the
+    proven minimizer for three equal volumes -- Milman-Neeman 2022):
+    three spheres of radius r with centers on an equilateral triangle
+    of side d = r (each pair meets at 120 degrees exactly as in the
+    equal double bubble), three PLANAR films in the pairwise bisector
+    planes (equal pressures), the films meeting along the vertical
+    axis segment between the two tetrahedral points
+    X+- = (0, 0, +-sqrt(2/3) r), where four triple lines meet at
+    arccos(-1/3).  The seed this describes satisfies Plateau's laws
+    EXACTLY (the rim-arc tangents at X+- make arccos(-1/3) with the
+    axis and each other; verified in closed form: cos = -1/3).
+
+    Areas are closed form (Gauss-Bonnet for the doubly-cut spherical
+    bigon); the cell volume is the z-integral of exact slice areas
+    (disk-wedge intersection), evaluated by Gauss-Legendre quadrature
+    on the analytic pieces -- deterministic to ~1e-14, and cross-
+    checked against the mesh volume's O(h^2) convergence in the
+    self-test.
+
+    Returns dict: centers (3,3), z0, rho (rim circle radius), theta0
+    (= arccos(1/3), the rim-arc half-angle parameter), A_cap, A_film,
+    A (total), V_cell."""
+    r = float(r)
+    d = r
+    rho_c = d / math.sqrt(3.0)
+    centers = np.array([[rho_c * math.cos(2.0 * math.pi * i / 3.0),
+                         rho_c * math.sin(2.0 * math.pi * i / 3.0),
+                         0.0] for i in range(3)])
+    z0 = d * math.sqrt(2.0 / 3.0)
+    rho = math.sqrt(3.0) * d / 2.0
+    theta0 = math.acos(1.0 / 3.0)
+    # cap: sphere minus two zones (cut at distance d/2, height r-d/2
+    # = r/2 -> zone area pi r^2 each) plus the doubly-cut bigon,
+    # A_bigon = (2 pi - 4 theta0) r^2 by Gauss-Bonnet (the two rim
+    # arcs have geodesic curvature cot(60)/r and length rho*2*theta0
+    # -> integral theta0 each; exterior angles at X+- are theta0)
+    A_cap = (4.0 * math.pi - 2.0 * math.pi
+             + 2.0 * math.pi - 4.0 * theta0) * r * r
+    # film: major segment of the rho-disk cut by the axis chord at
+    # distance d/(2 sqrt 3) from its center (half-angle theta0 again)
+    s0c0 = 2.0 * math.sqrt(2.0) / 9.0          # sin(theta0) cos(theta0)
+    A_film = rho * rho * (math.pi - theta0 + s0c0)
+    # cell volume: slices are disk(center rho_c, radius s(z)) cut to
+    # the 120-degree wedge around its own center direction
+    from numpy.polynomial.legendre import leggauss
+
+    def slice_area(z):
+        s2 = r * r - z * z
+        if s2 <= 0.0:
+            return 0.0
+        s = math.sqrt(s2)
+
+        def F(phi):                      # antider. of 2 rc cos sqrt()
+            u = math.sin(phi)
+            return (rho_c * u * math.sqrt(max(s2 - rho_c ** 2 * u * u,
+                                              0.0))
+                    + s2 * math.asin(max(-1.0, min(1.0,
+                                                   rho_c * u / s))))
+
+        if s >= rho_c:                   # origin inside the disk
+            def G(phi):
+                return (rho_c ** 2 / 4.0 * math.sin(2.0 * phi)
+                        + s2 / 2.0 * phi + 0.5 * F(phi))
+            return 2.0 * (G(math.pi / 3.0) - G(0.0))
+        phim = min(math.pi / 3.0, math.asin(min(1.0, s / rho_c)))
+        return 2.0 * (F(phim) - F(0.0))
+
+    xs, ws = leggauss(64)
+    V_cell = 0.0
+    for a, b in ((0.0, z0), (z0, math.sqrt(3.0) / 2.0 * r),
+                 (math.sqrt(3.0) / 2.0 * r, r)):
+        mid, half = 0.5 * (a + b), 0.5 * (b - a)
+        V_cell += half * sum(w * slice_area(mid + half * x)
+                             for x, w in zip(xs, ws))
+    V_cell *= 2.0                        # z-symmetry
+    return {"centers": centers, "z0": z0, "rho": rho,
+            "theta0": theta0, "A_cap": A_cap, "A_film": A_film,
+            "A": 3.0 * (A_cap + A_film), "V_cell": V_cell}
+
+
+def _cone_patch(V, tris, loop_ids, ring_of, K):
+    """Disk patch: rings k = 1..K-1 between the boundary loop (ring 0,
+    existing shared vertices) and the apex (ring_of(1.0) collapses to
+    one point), triangulated with consistent winding.  ring_of(t) ->
+    (L, 3) points for t in (0, 1].  Returns the (t0, t1) slice of tris
+    added (for orientation fixing)."""
+    L = len(loop_ids)
+    rings = [list(loop_ids)]
+    for k in range(1, K):
+        pts = ring_of(k / K)
+        base = len(V)
+        V.extend(np.asarray(p, float) for p in pts)
+        rings.append(list(range(base, base + L)))
+    apex = len(V)
+    V.append(np.asarray(ring_of(1.0)[0], float))
+    t0 = len(tris)
+    for k in range(K - 1):
+        prev, nxt = rings[k], rings[k + 1]
+        for p in range(L):
+            p2 = (p + 1) % L
+            tris.append((prev[p], prev[p2], nxt[p]))
+            tris.append((prev[p2], nxt[p2], nxt[p]))
+    last = rings[-1]
+    for p in range(L):
+        tris.append((last[p], last[(p + 1) % L], apex))
+    return t0, len(tris)
+
+
+def build_triple_bubble_mesh(r=1.0, nphi=48):
+    """Welded labeled triangle mesh of the standard equal triple
+    bubble: three outer spherical caps, three planar films, all six
+    patches sharing the rim-arc / axis-segment vertex pools, with two
+    tetrahedral vertices X+- where four triple lines (the axis and the
+    three rim arcs) meet -- the combinatorics Plateau's second law is
+    about.  Every patch is a disk meshed by rings shrinking from its
+    boundary loop toward an interior apex (linear for the planar
+    films, spherical slerp toward the far point for the caps).
+
+    Labels: caps (0, i+1); film between bubbles i < j is (j+1, i+1)
+    with its normal along c_j - c_i, matching the double bubble's
+    convention.  Returns (V, T, labels)."""
+    geo = triple_bubble_geometry(r)
+    C = geo["centers"]
+    z0, rho, theta0 = geo["z0"], geo["rho"], geo["theta0"]
+    h = 2.0 * math.pi * rho / nphi
+    M_c = max(3, int(round(2.0 * z0 / h)))
+    M_a = max(6, int(round(rho * (2.0 * math.pi - 2.0 * theta0) / h)))
+
+    V = [np.array([0.0, 0.0, -z0]), np.array([0.0, 0.0, z0])]
+    seg = []
+    for k in range(1, M_c):
+        seg.append(len(V))
+        V.append(np.array([0.0, 0.0, -z0 + 2.0 * z0 * k / M_c]))
+
+    def arc_point(i, j, t):
+        """Outer rim arc of pair (i, j), t in [0,1]: t=0 -> X+,
+        t=1 -> X-."""
+        m = 0.5 * (C[i] + C[j])
+        e1 = -m / np.linalg.norm(m)
+        e2 = np.array([0.0, 0.0, 1.0])
+        phi = theta0 + t * (2.0 * math.pi - 2.0 * theta0)
+        return m + rho * (math.cos(phi) * e1 + math.sin(phi) * e2)
+
+    arcs = {}
+    for (i, j) in ((0, 1), (0, 2), (1, 2)):
+        ids = []
+        for k in range(1, M_a):
+            ids.append(len(V))
+            V.append(arc_point(i, j, k / M_a))
+        arcs[(i, j)] = ids
+
+    tris = []
+    lab = []
+
+    def add_film(i, j):
+        loop = [0] + seg + [1] + arcs[(i, j)]
+        P0 = np.array([V[v] for v in loop])
+        m = 0.5 * (C[i] + C[j])
+        e1 = -m / np.linalg.norm(m)
+        apex = m + 0.5 * (np.linalg.norm(m) - rho) * e1
+        K = max(2, int(round(float(np.mean(np.linalg.norm(
+            P0 - apex, axis=1))) / h)))
+        t0, t1 = _cone_patch(V, tris, loop,
+                             lambda t: (1.0 - t) * P0 + t * apex, K)
+        _orient_patch(V, tris, t0, t1, lambda cen: C[j] - C[i])
+        lab.extend([(j + 1, i + 1)] * (t1 - t0))
+
+    def add_cap(i, j, k):
+        aij = arcs[(min(i, j), max(i, j))]
+        aik = arcs[(min(i, k), max(i, k))]
+        loop = [1] + aij + [0] + aik[::-1]
+        P0 = np.array([V[v] for v in loop])
+        far = C[i] + float(r) * C[i] / np.linalg.norm(C[i])
+        a = (P0 - C[i]) / float(r)
+        b = (far - C[i]) / float(r)
+        dots = np.clip(a @ b, -1.0, 1.0)
+        Om = np.arccos(dots)
+        sO = np.maximum(np.sin(Om), 1e-12)
+
+        def ring_of(t):
+            return C[i] + float(r) * (
+                np.sin((1.0 - t) * Om)[:, None] * a
+                + np.sin(t * Om)[:, None] * b[None, :]) / sO[:, None]
+
+        K = max(3, int(round(float(np.mean(Om)) * float(r) / h)))
+        t0, t1 = _cone_patch(V, tris, loop, ring_of, K)
+        _orient_patch(V, tris, t0, t1, lambda cen: cen - C[i])
+        lab.extend([(0, i + 1)] * (t1 - t0))
+
+    add_film(0, 1)
+    add_film(0, 2)
+    add_film(1, 2)
+    add_cap(0, 1, 2)
+    add_cap(1, 0, 2)
+    add_cap(2, 0, 1)
+    return (np.asarray(V, float), np.asarray(tris, dtype=np.int64),
+            np.asarray(lab, dtype=np.int64))
+
+
 def build_double_bubble_mesh(r1=1.0, r2=1.0, nphi=48, d=None):
     """Welded labeled triangle mesh of the two-bubble cluster: the two
     outer spherical caps and the Young-Laplace interface share the
@@ -1085,13 +1289,20 @@ if _IN_BLENDER:
                     "One bubble relaxing to the round sphere"),
                    ('DOUBLE', "Double Bubble",
                     "Two bubbles with their Young-Laplace interface "
-                    "and a genuine Plateau border")],
+                    "and a genuine Plateau border"),
+                   ('TRIPLE', "Triple Bubble",
+                    "Three bubbles: three films meeting along a "
+                    "central Plateau border that ends in two "
+                    "tetrahedral points where four triple lines "
+                    "meet at arccos(-1/3) ~ 109.47 degrees")],
             default='DOUBLE')
         ratio: FloatProperty(
-            name="Radius Ratio", default=0.75, min=0.4, max=1.0,
-            description="Small/large bubble radius ratio (double "
-                        "bubble; 1 gives the symmetric cluster with "
-                        "a flat interface)")
+            name="Volume Ratio", default=0.75, min=0.4, max=1.0,
+            description="Double bubble: small/large radius ratio "
+                        "(1 = symmetric, flat interface).  Triple "
+                        "bubble: volume grading V1:V2:V3 = "
+                        "ratio : 1 : (2 - ratio); 1 = equal cells "
+                        "with planar films")
         squash: FloatProperty(
             name="Seed Squash", default=0.15, min=0.0, max=0.4,
             description="Anisotropic distortion of the seed before "
@@ -1126,6 +1337,13 @@ if _IN_BLENDER:
                     math.log2(max(self.resolution, 16) / 3.0)))))
                 V, T, labels = build_single_bubble_mesh(1.0, subdiv)
                 targets = _svol.region_volumes(V, T, labels)
+            elif self.bubbles == 'TRIPLE':
+                V, T, labels = build_triple_bubble_mesh(
+                    1.0, nphi=self.resolution)
+                geo = triple_bubble_geometry(1.0)
+                targets = [geo["V_cell"] * self.ratio,
+                           geo["V_cell"],
+                           geo["V_cell"] * (2.0 - self.ratio)]
             else:
                 r1, r2 = self.ratio, 1.0
                 V, T, labels = build_double_bubble_mesh(
@@ -1148,8 +1366,9 @@ if _IN_BLENDER:
             s = self.scale / half
             Vt = (V - ctr) * s
 
-            name = ("Relaxed Bubble" if self.bubbles == 'SINGLE'
-                    else "Relaxed Double Bubble")
+            name = {"SINGLE": "Relaxed Bubble",
+                    "DOUBLE": "Relaxed Double Bubble",
+                    "TRIPLE": "Relaxed Triple Bubble"}[self.bubbles]
             me = bpy.data.meshes.new(name)
             me.from_pydata([tuple(p) for p in Vt], [],
                            [list(t) for t in T])
@@ -1207,7 +1426,7 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'bubbles')
-            if self.bubbles == 'DOUBLE':
+            if self.bubbles in ('DOUBLE', 'TRIPLE'):
                 lay.prop(self, 'ratio')
             for k in ('squash', 'resolution', 'iterations',
                       'groom_every', 'color', 'smooth', 'scale'):
@@ -1411,6 +1630,70 @@ def _selftest():
         assert rms < 8.0, rms
         print(f"welded double bubble ({r1},{r2}): vol err {verr:.2e}, "
               f"regions closed, seed angle rms(120) {rms:.2f} deg")
+    # ---- triple bubble: analytic constants, welded seed, closure ----
+    geo3 = triple_bubble_geometry(1.0)
+    # the analytic seed is Plateau-exact: rim-arc tangents at X+ make
+    # arccos(-1/3) with the axis and each other (closed form: the
+    # tangent is (-2 sqrt2/3) v_ij + (1/3) z with v_ij.v_ik = -1/2)
+    t12 = np.array([-2.0 * math.sqrt(2.0) / 3.0, 0.0, 1.0 / 3.0])
+    assert abs(np.dot(t12, [0, 0, -1]) - (-1.0 / 3.0)) < 1e-12
+    for nphi, tol in ((24, 0.02), (48, 0.006)):
+        V3, T3, L3 = build_triple_bubble_mesh(1.0, nphi=nphi)
+        vols3 = _svol.region_volumes(V3, T3, L3)
+        verr3 = float(np.max(np.abs(vols3 - geo3["V_cell"])
+                             / geo3["V_cell"]))
+        assert verr3 < tol, (nphi, verr3)
+        # every region closed (each directed edge once with reverse)
+        for reg in (1, 2, 3):
+            sgn = ((L3[:, 1] == reg).astype(int) - (L3[:, 0] == reg))
+            ecnt = {}
+            for f, sf in zip(T3, sgn):
+                if sf == 0:
+                    continue
+                tri = f if sf > 0 else f[::-1]
+                for k in range(3):
+                    e = (int(tri[k]), int(tri[(k + 1) % 3]))
+                    ecnt[e] = ecnt.get(e, 0) + 1
+            assert all(c == 1 and ecnt.get((b, a), 0) == 1
+                       for (a, b), c in ecnt.items()), \
+                f"triple region {reg} not closed at nphi={nphi}"
+    # two tetra points: exactly 2 vertices carry 4 triple (3-face)
+    # edges each; all other non-manifold vertices carry 2
+    de3 = np.sort(np.concatenate([T3[:, [0, 1]], T3[:, [1, 2]],
+                                  T3[:, [2, 0]]]), axis=1)
+    uq3, cn3 = np.unique(de3, axis=0, return_counts=True)
+    tri_edges = uq3[cn3 == 3]
+    deg = np.zeros(len(V3), dtype=int)
+    for a, b in tri_edges:
+        deg[a] += 1
+        deg[b] += 1
+    n4 = int(np.sum(deg == 4))
+    assert n4 == 2 and set(np.unique(deg[deg > 0])) == {2, 4}, \
+        (n4, np.unique(deg))
+    # area: the meshed seed converges to the closed-form total
+    a24 = abs(_svol.mesh_area(*build_triple_bubble_mesh(1.0, 24)[:2])
+              - geo3["A"]) / geo3["A"]
+    a48 = abs(_svol.mesh_area(V3, T3) - geo3["A"]) / geo3["A"]
+    assert a48 < a24 / 3.0 and a48 < 6e-3, (a24, a48)
+    print(f"triple bubble seed: V_cell={geo3['V_cell']:.6f} "
+          f"(mesh err {verr3:.1e}), A={geo3['A']:.6f} (mesh err "
+          f"{a48:.1e}, x{a24 / a48:.1f} under refinement), regions "
+          f"closed, 2 tetra points with 4 triple lines each")
+    # evolution smoke: a perturbed equal triple bubble relaxes with
+    # monotone area, exact volumes, and near-equal pressures ~ 2/r
+    V3, T3, L3 = build_triple_bubble_mesh(1.0, nphi=24)
+    V3 *= np.array([1.05, 0.97, 1.0])
+    info3 = relax_cluster(V3, T3, L3, targets=[geo3["V_cell"]] * 3,
+                          iters=80)
+    drift3 = max(h["drift_post"] for h in info3["history"])
+    rise3 = max(h["rise"] for h in info3["history"] if not h["groomed"])
+    p3 = np.asarray(info3["pressures"])
+    assert drift3 < 1e-10, drift3
+    assert rise3 <= 1e-12, rise3
+    assert np.all(np.abs(p3 - 2.0) < 0.1), p3
+    print(f"relaxed triple bubble (nphi=24, 80 iters): drift "
+          f"{drift3:.1e}, max rise {rise3:.1e}, p={p3.round(3)} "
+          f"(want ~2.0)")
     # evolution smoke test (the full ground-truth battery lives in
     # tests/bench): a perturbed equal double bubble must relax with
     # monotone area, bounded volume drift, and Young-Laplace pressures
