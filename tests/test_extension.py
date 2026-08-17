@@ -522,6 +522,10 @@ OPS = [
         seed='TETRA', radius_mode='LOCAL', factor=0.7, subdiv=2)),
     ("bubble merged colored", lambda: bpy.ops.mesh.bubble_cluster_add(
         seed='ICOSA', separate=False, color=True, subdiv=1)),
+    ("relaxed bubble", lambda: bpy.ops.mesh.relaxed_bubble_add()),
+    ("dform", lambda: bpy.ops.mesh.dform_add()),
+    ("dform anti", lambda: bpy.ops.mesh.dform_add(mode='ANTI')),
+    ("dform truncate", lambda: bpy.ops.mesh.dform_add(mode='TRUNCATE')),
     ("helical helicoid", lambda: bpy.ops.mesh.helical_surface_add(
         surface='HYPERBOLIC_HELICOID', resolution=48)),
     ("helical seashell", lambda: bpy.ops.mesh.helical_surface_add(
