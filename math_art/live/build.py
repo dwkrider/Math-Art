@@ -39,10 +39,10 @@ except ImportError:
 
 try:
     from . import clone
-    from .registry import settings_for_object
+    from .registry import info_for_object, settings_for_object
 except ImportError:                     # flat import outside the package
     import clone
-    from registry import settings_for_object
+    from registry import info_for_object, settings_for_object
 
 
 class LiveError(Exception):
@@ -168,9 +168,22 @@ if _IN_BLENDER:
                 pass
 
     def _store_name(block):
-        """Which `bpy.data` collection a datablock belongs to."""
-        return {'Mesh': 'meshes', 'Curve': 'curves',
-                'Material': 'materials'}.get(type(block).__name__, '')
+        """Which `bpy.data` collection a datablock belongs to.
+
+        By TYPE rather than by class name.  Blender has more than one
+        class per collection -- a NURBS surface's data is a
+        `SurfaceCurve`, and text is a `TextCurve`, both of which live in
+        `bpy.data.curves` -- so matching names exactly silently failed to
+        free a Scherk-Collins sculpture's old surface every time its
+        NURBS Output was switched off.
+        """
+        if isinstance(block, bpy.types.Mesh):
+            return 'meshes'
+        if isinstance(block, bpy.types.Curve):
+            return 'curves'
+        if isinstance(block, bpy.types.Material):
+            return 'materials'
+        return ''
 
     def _copy_modifier(src, obj):
         """Recreate one modifier on another object, settings and all."""
@@ -482,6 +495,53 @@ if _IN_BLENDER:
                 ReferenceError):
             return None
 
+    # Objects whose rebuild has been put off until a safe moment, by
+    # NAME: the wait is precisely for a point at which object references
+    # taken now may no longer be valid.
+    _PENDING = set()
+
+    def flush_deferred():
+        """Run every rebuild that was put off.  Returns how many ran.
+
+        Called from a timer in a running Blender, and directly by the
+        headless tests, where no timer ever fires.
+        """
+        names = sorted(_PENDING)
+        _PENDING.clear()
+        done = 0
+        for name in names:
+            obj = bpy.data.objects.get(name)
+            if obj is None:
+                continue
+            if settings_for_object(obj)[0] is None:
+                continue
+            try:
+                rebuild(obj, bpy.context)
+                done += 1
+            except (LiveError, RuntimeError, ValueError, MemoryError,
+                    ReferenceError):
+                pass
+        return done
+
+    def _timer():
+        flush_deferred()
+        return None                      # one shot
+
+    def schedule_rebuild(obj):
+        """Rebuild `obj` at the next safe moment rather than right now.
+
+        Some generators cannot be re-run from inside a property update
+        callback at all: Scherk-Collins builds its NURBS output with
+        `bpy.ops.object.mode_set` and `bpy.ops.curve.make_segment`, and
+        edit-mode operators need a context that a half-finished property
+        write does not provide.  Coming back on a timer costs a frame and
+        makes them safe -- and, because the write has finished by then, a
+        deferred rebuild may also replace the object.
+        """
+        _PENDING.add(obj.name)
+        if not bpy.app.timers.is_registered(_timer):
+            bpy.app.timers.register(_timer, first_interval=0.0)
+
     def auto_update(pg, context):
         """The `update=` attached to every cloned setting.
 
@@ -500,6 +560,11 @@ if _IN_BLENDER:
             return
         if not settings.autobuild:
             return                       # the stale marker says the rest
+        info = info_for_object(obj)
+        if info is not None and getattr(info.op_cls, 'math_art_live_defer',
+                                        False):
+            schedule_rebuild(obj)
+            return
         rebuild_quietly(obj, context)
 
 

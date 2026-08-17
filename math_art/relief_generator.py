@@ -1174,7 +1174,11 @@ if _IN_BLENDER:
         angle: FloatProperty(name="Angle", default=0.0, min=-6.2832,
                              max=6.2832, unit='ROTATION', update=_auto)
         steepness: FloatProperty(name="Steepness", default=0.0, min=0.0,
-                                 max=1.0, update=_auto)
+                                 max=1.0,
+                                 description="Sharpen crests and broaden "
+                                             "troughs, toward the trochoidal "
+                                             "profile of a real wave",
+                                 update=_auto)
         count: IntProperty(name="Waves", default=3, min=1, max=24,
                            update=_auto)
         sources: IntProperty(name="Sources", default=3, min=1, max=32,
@@ -1182,6 +1186,8 @@ if _IN_BLENDER:
         seed: IntProperty(name="Seed", default=1, min=0, max=100000,
                           update=_auto)
         mode_index: IntProperty(name="Mode", default=6, min=1, max=40,
+                                description="Which plate mode, counting from "
+                                            "the first non-rigid-body figure",
                                 update=_auto)
         mode_m: IntProperty(name="m", default=2, min=0, max=24, update=_auto)
         mode_n: IntProperty(name="n", default=3, min=0, max=24, update=_auto)
@@ -1203,22 +1209,46 @@ if _IN_BLENDER:
         octaves: IntProperty(name="Octaves", default=8, min=1, max=16,
                              update=_auto)
         anisotropy: FloatProperty(name="Wind Anisotropy", default=0.0,
-                                  min=0.0, max=1.0, update=_auto)
+                                  min=0.0, max=1.0,
+                                  description="Concentrate the fractal "
+                                              "spectrum around one direction, "
+                                              "so crests run transverse to it "
+                                              "as a dune field's do. 0 is "
+                                              "isotropic",
+                                  update=_auto)
         wind: FloatProperty(name="Wind Direction", default=0.0, min=-6.2832,
                             max=6.2832, unit='ROTATION', update=_auto)
 
         cell_mode: EnumProperty(name="Cells", items=_CELL_ITEMS,
                                 default='CRACK', update=_auto)
         jitter: FloatProperty(name="Jitter", default=1.0, min=0.0, max=1.0,
+                              description="0 puts the feature points on a "
+                                          "regular lattice, giving identical "
+                                          "cells",
                               update=_auto)
         cell_sharp: FloatProperty(name="Wall Profile", default=1.0, min=0.2,
                                   max=4.0, update=_auto)
         regime: EnumProperty(name="Regime", items=_REGIME_ITEMS,
-                             default='MAZE', update=_auto)
+                             default='MAZE',
+                             description="Where in the feed/kill plane the "
+                                         "chemistry sits. Outside a narrow "
+                                         "diagonal band every seed decays and "
+                                         "the panel comes out blank",
+                             update=_auto)
         rd_steps: IntProperty(name="Steps", default=6000, min=100,
-                              max=40000, update=_auto)
+                              max=40000,
+                              description="Reaction-diffusion is grown, not "
+                                          "evaluated; this is how long it "
+                                          "runs",
+                              update=_auto)
         rd_scale: FloatProperty(name="Blobs Across", default=12.0, min=3.0,
-                                max=50.0, update=_auto)
+                                max=50.0,
+                                description="How many pattern features span "
+                                            "the panel. Sets the simulation "
+                                            "lattice; the panel resolution "
+                                            "only decides how finely the "
+                                            "finished skin is sampled",
+                                update=_auto)
         rd_init: EnumProperty(
             name="Seeding",
             items=[('SCATTER', "Scattered", ""), ('CENTRE', "Central", "")],
@@ -1232,23 +1262,41 @@ if _IN_BLENDER:
         freq_max: IntProperty(name="Detail", default=3, min=1, max=8,
                               update=_auto)
         fold: IntProperty(name="Wave Directions", default=5, min=2, max=17,
+                          description="Directions spread over a half-turn, so "
+                                      "five give a ten-fold pattern. "
+                                      "Five-fold order is impossible for any "
+                                      "lattice, which is why it cannot repeat",
                           update=_auto)
         qc_cells: FloatProperty(name="Scale", default=6.0, min=1.0, max=30.0,
                                 update=_auto)
         qc_sharp: FloatProperty(name="Terrace", default=0.0, min=0.0,
                                 max=6.0, update=_auto)
         patch: FloatProperty(name="Patch", default=100.0, min=5.0,
-                             max=1000.0, unit='LENGTH', update=_auto)
+                             max=1000.0, unit='LENGTH',
+                             description="Physical size of the sea being "
+                                         "simulated. With the wind speed this "
+                                         "decides how many waves cross it",
+                             update=_auto)
         wind_speed: FloatProperty(name="Wind", default=8.0, min=1.0,
                                   max=30.0, update=_auto)
         choppy: FloatProperty(name="Choppiness", default=0.0, min=0.0,
-                              max=3.0, update=_auto)
+                              max=3.0,
+                              description="Measured in cusp limits: 1 puts "
+                                          "the steepest crest exactly at the "
+                                          "Stokes cusp, above that the "
+                                          "sharpest crests break",
+                              update=_auto)
         sea_sim: IntProperty(name="Sea Grid", default=256, min=64, max=512,
                              update=_auto)
         gabor_freq: FloatProperty(name="Pitch", default=8.0, min=1.0,
                                   max=60.0, update=_auto)
         gabor_band: FloatProperty(name="Bandwidth", default=0.3, min=0.05,
-                                  max=1.0, update=_auto)
+                                  max=1.0,
+                                  description="Envelope width as a fraction "
+                                              "of the carrier. Well under 1, "
+                                              "or the band is as wide as the "
+                                              "frequency it is centred on",
+                                  update=_auto)
 
         ell_kind: EnumProperty(
             name="Function",
@@ -1274,9 +1322,18 @@ if _IN_BLENDER:
         tile_cells: IntProperty(name="Cells", default=6, min=1, max=64,
                                 update=_auto)
         lane: FloatProperty(name="Lane Width", default=0.25, min=0.02,
-                            max=1.0, update=_auto)
+                            max=1.0,
+                            description="Width of the Truchet arc lane, as a "
+                                        "fraction of the cell",
+                            update=_auto)
         straight: FloatProperty(name="Straight Tiles", default=0.0, min=0.0,
-                                max=1.0, update=_auto)
+                                max=1.0,
+                                description="Fraction of cells drawn with "
+                                            "crossing straight lanes instead "
+                                            "of arcs. A second tile on the "
+                                            "same edge convention, so the "
+                                            "lanes still join smoothly",
+                                update=_auto)
         drum_shape: EnumProperty(
             name="Drum",
             items=[('TRIANGLE', "Equilateral Triangle", ""),
@@ -1289,12 +1346,24 @@ if _IN_BLENDER:
         drum_ratio: FloatProperty(name="Ellipse Ratio", default=0.6,
                                   min=0.1, max=1.0, update=_auto)
         drum_res: IntProperty(name="Solve Grid", default=48, min=20,
-                              max=96, update=_auto)
+                              max=96,
+                              description="Grid the eigenproblem is solved "
+                                          "on. The cost is cubic in the "
+                                          "sample count, so this is the "
+                                          "expensive number, not the panel "
+                                          "resolution",
+                              update=_auto)
         rings: IntProperty(name="Arcs", default=3, min=1, max=12,
                            update=_auto)
         crown: FloatProperty(name="Crown", default=0.55, min=0.1, max=1.0,
+                             description="Fraction of each circle left "
+                                         "visible by the row in front",
                              update=_auto)
         rim: FloatProperty(name="Rim", default=0.08, min=0.0, max=0.5,
+                           description="Width of the edge where a scale laps "
+                                       "over the one behind, as a fraction of "
+                                       "its radius. Zero is a vertical wall, "
+                                       "which no grid can place cleanly",
                            update=_auto)
 
         orient: EnumProperty(name="Orientation", items=_ORIENT_ITEMS,

@@ -39,17 +39,20 @@ except ImportError:                     # flat import outside the package
     from registry import GENERATORS, GenInfo, slug_for
 
 
-# Generators that keep a bespoke sidebar panel of their own.  Relief
-# Panel edits a layer stack and Scherk-Collins predates this framework;
-# both already do what this package does, and tagging their objects too
-# would put two panels on one object.
+# Generators that keep a bespoke sidebar panel of their own, because it
+# does something this framework cannot derive from an Add operator.
 OPT_OUT = frozenset({
+    # The Relief Panel's sidebar is NOT a duplicate of its Add operator:
+    # the operator builds a single field, while the panel composes a
+    # STACK of them, with per-layer amplitude, blend mode, mask and
+    # placement, and it drives an exact plate solver the layered model
+    # does not expose.  Replacing that with the operator's UI would be a
+    # loss of function dressed up as a cleanup, so it keeps its own.
     'mesh.relief_panel_add',
-    'mesh.scherk_collins_add',
 })
 
-# Whole operator families that are not generators: the helpers those two
-# panels drive (add a layer, load a spec file, ...).
+# Whole operator families that are not generators: the helpers a panel
+# drives (add a layer) and the spec-file readers and writers.
 OPT_OUT_PREFIXES = ('relief.', 'scherk.')
 
 

@@ -294,6 +294,12 @@ for idname, info in sorted(GENERATORS.items()):
     #     for anything fast enough, must rebuild without being asked.
     if obj.math_art.autobuild:
         changed = _nudge(pg)
+        # A generator that cannot be re-run from inside a property write
+        # (Scherk-Collins, whose NURBS output drives edit-mode operators)
+        # asks to be rebuilt on a timer instead.  Timers never fire in
+        # background mode, so stand in for one -- this is the same call
+        # the timer makes.
+        build.flush_deferred()
         if changed is not None and build.is_stale(obj):
             # Auto Update swallows a failed rebuild on purpose -- a
             # half-typed value must not throw an error box at someone

@@ -8,10 +8,15 @@ import bpy
 import bmesh
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(PROJ, 'math_art'))
-import scherk_collins_generator as scg  # noqa: E402
+# The whole package, not the module on its own: the sculpture's
+# parameters now live in the Math Art sidebar's per-object settings,
+# which only exist once the package has installed that framework.
+sys.path.insert(0, PROJ)
+import math_art  # noqa: E402
+from math_art import scherk_collins_generator as scg  # noqa: E402
+from math_art.live.registry import settings_for_object  # noqa: E402
 
-scg.register()
+math_art.register()
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 OUT = argv[0] if argv else os.path.join(PROJ, 'renders')
@@ -81,14 +86,14 @@ for name, (kind, arg) in CASES:
         bpy.ops.mesh.scherk_collins_add(preset=arg)
         obj = bpy.context.object
     else:
-        bpy.ops.mesh.scherk_collins_add()
-        obj = bpy.context.object
         with open(arg, 'r', errors='replace') as f:
             d = scg.parse_spec_text(f.read())
-        scg._apply_param_dict(obj.scherk_collins, d)
-        scg.rebuild_object(obj)
+        keys = set(scg.MESH_OT_scherk_collins_add._PARAM_KEYS)
+        bpy.ops.mesh.scherk_collins_add(
+            **{k: v for k, v in d.items() if k in keys})
+        obj = bpy.context.object
     nv, nf, nb, nm = mesh_stats(obj)
-    st = obj.scherk_collins
+    _info, st = settings_for_object(obj)
     p = scg._params_from_props(st)
     closes = scg.ring_closes(p)
     solid = p.thickness > 1e-6

@@ -38,7 +38,7 @@ bl_info = {
     "author": "Math Art project (after Carlo H. Sequin's Sculpture Generator I)",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
-    "location": "View3D > Add > Mesh > Scherk-Collins Sculpture / N-panel 'Scherk'",
+    "location": "View3D > Add > Mesh > Scherk-Collins Sculpture",
     "description": "Generate Scherk-Collins saddle-chain toroid sculptures",
     "category": "Add Mesh",
 }
@@ -97,7 +97,7 @@ try:
     import bmesh
     from mathutils import Matrix
     from bpy.props import (IntProperty, FloatProperty, BoolProperty,
-                           PointerProperty, StringProperty, EnumProperty)
+                           StringProperty, EnumProperty)
     from bpy_extras.io_utils import ImportHelper, ExportHelper
     _IN_BLENDER = True
 except ImportError:
@@ -105,6 +105,27 @@ except ImportError:
 
 
 if _IN_BLENDER:
+
+    def _live_settings(obj):
+        """This object's Scherk-Collins settings, or None.
+
+        The parameters live where the Math Art sidebar keeps every
+        generator's -- on the object, in a settings group derived from
+        the Add operator's own properties.  Reading them from there
+        rather than from a private PropertyGroup of this module's own is
+        the point of folding this generator into that framework: there
+        is one set of properties now, not two to keep in step.
+        """
+        if obj is None:
+            return None
+        try:
+            from .live.registry import settings_for_object
+        except ImportError:              # flat import outside the package
+            from live.registry import settings_for_object
+        info, pg = settings_for_object(obj)
+        if info is None or info.idname != "mesh.scherk_collins_add":
+            return None
+        return pg
 
     def _params_from_props(st):
         detail = st.nurbs_detail if st.output_nurbs else st.detail
@@ -230,46 +251,22 @@ if _IN_BLENDER:
         if prev_active is not None:
             view.objects.active = prev_active
 
-    _PROP_COPY_KEYS = ('is_scherk', 'branches', 'storeys',
-                       'height', 'flange', 'thickness', 'rim_bulge',
-                       'rim_round', 'twist', 'azimuth', 'warp', 'phase',
-                       'detail', 'scale_x',
-                       'scale_y', 'scale_z', 'global_scale', 'output_nurbs',
-                       'nurbs_detail')
+    def write_geometry(obj, st):
+        """Build the sculpture described by `st` into `obj`.
 
-    def _swap_object_type(old_obj, to_surface):
-        """Mesh <-> Surface object types cannot be changed in place;
-        recreate the object, carrying over transform and parameters."""
-        name = old_obj.name
-        saved = {k: getattr(old_obj.scherk_collins, k)
-                 for k in _PROP_COPY_KEYS}
-        mw = old_obj.matrix_world.copy()
-        colls = list(old_obj.users_collection)
-        if to_surface:
-            data = bpy.data.curves.new(name, 'SURFACE')
-            data.dimensions = '3D'
-        else:
-            data = bpy.data.meshes.new(name)
-        bpy.data.objects.remove(old_obj, do_unlink=True)
-        new_obj = bpy.data.objects.new(name, data)
-        for coll in (colls or [bpy.context.collection]):
-            coll.objects.link(new_obj)
-        new_obj.matrix_world = mw
-        st = new_obj.scherk_collins
-        _SUSPEND[0] = True
-        for k in saved:
-            setattr(st, k, saved[k])
-        _SUSPEND[0] = False
-        new_obj.select_set(True)
-        bpy.context.view_layer.objects.active = new_obj
-        return new_obj
+        `st` is anything carrying the parameter properties: the operator
+        while it runs, or the settings the Math Art sidebar stores on the
+        object.  The two are the same set of properties, so this is the
+        one place the sculpture is built and there is no second
+        implementation to keep in step.
 
-    def rebuild_object(obj):
-        st = obj.scherk_collins
+        The caller owns the object's TYPE.  A mesh and a NURBS surface
+        cannot be swapped in place, so choosing between them belongs to
+        whoever creates the object -- `execute` when the sculpture is
+        added, and the sidebar's rebuild (which replaces the object) when
+        NURBS Output is toggled later.
+        """
         p = _params_from_props(st)
-        if st.output_nurbs != (obj.type == 'SURFACE'):
-            obj = _swap_object_type(obj, st.output_nurbs)
-            st = obj.scherk_collins
         if st.output_nurbs:
             _build_nurbs_data(obj, p)
             return obj
@@ -310,103 +307,6 @@ if _IN_BLENDER:
             bpy.data.meshes.remove(old)
         return obj
 
-    # Set while properties are being copied in bulk -- loading a spec, or
-    # duplicating a sculpture -- so the half-copied state does not rebuild
-    # once per property.  This used to be done by switching `auto_update`
-    # off and back on, which meant the guard and a user-facing toggle were
-    # the same switch; with the toggle gone the guard says what it is.
-    _SUSPEND = [False]
-
-    def _prop_update(self, context):
-        if _SUSPEND[0] or not self.is_scherk:
-            return
-        obj = self.id_data
-        if obj is None:
-            return
-        if self.output_nurbs or obj.type == 'SURFACE':
-            # NURBS rebuilds use edit-mode operators and may replace the
-            # object; defer out of the property-update callback
-            name = obj.name
-            def _deferred():
-                o = bpy.data.objects.get(name)
-                if o is not None and o.scherk_collins.is_scherk:
-                    rebuild_object(o)
-                return None
-            bpy.app.timers.register(_deferred, first_interval=0.05)
-        else:
-            rebuild_object(obj)
-
-    class ScherkCollinsProps(bpy.types.PropertyGroup):
-        is_scherk: BoolProperty(default=False, options={'HIDDEN'})
-        branches: IntProperty(
-            name="Branches", description="Order of the saddles (# of branches)",
-            default=2, min=1, max=10, update=_prop_update)
-        storeys: IntProperty(
-            name="Storeys", description="Number of hole/saddle storeys",
-            default=2, min=1, max=16, update=_prop_update)
-        height: FloatProperty(
-            name="Storey Height", description="Height of one storey",
-            default=1.5, min=0.1, max=5.0, update=_prop_update)
-        flange: FloatProperty(
-            name="Flange Width",
-            description="Width of the flanges (holes break open below ~0.88)",
-            default=1.5, min=0.7, max=5.0, update=_prop_update)
-        thickness: FloatProperty(
-            name="Thickness", description="Thickness of the vanes (0 = surface only)",
-            default=0.15, min=0.0, max=0.5, update=_prop_update)
-        rim_bulge: FloatProperty(
-            name="Rim Bulge", description="Amount of bulge on the rim beads",
-            default=1.5, min=0.0, max=4.0, update=_prop_update)
-        rim_round: FloatProperty(
-            name="Rim Round",
-            description="Roundness of the edge: 1 = a rounded bull-nose, "
-                        "0 = a flat/square edge",
-            default=1.0, min=0.0, max=1.0, step=10, update=_prop_update)
-        twist: FloatProperty(
-            name="Twist", description="Overall axial twist (degrees)",
-            default=0.0, min=-900.0, max=1080.0, step=1500, update=_prop_update)
-        azimuth: FloatProperty(
-            name="Azimuth", description="Turn of the profile around the tower axis (degrees)",
-            default=0.0, min=-360.0, max=360.0, step=500, update=_prop_update)
-        warp: FloatProperty(
-            name="Warp", description="Bend of the tower towards an arch/toroid (degrees; 360 = closed ring)",
-            default=0.0, min=0.0, max=1080.0, step=1000, update=_prop_update)
-        phase: FloatProperty(
-            name="Phase",
-            description="Shift the holes along an open tower, in storeys "
-                        "(0 = a flange at each end; 0.5 = a half-hole at "
-                        "each end). No effect on closed rings.",
-            default=0.5, min=0.0, max=0.999, step=10, update=_prop_update)
-        detail: IntProperty(
-            name="Detail", description="Grid detail (tessellation density)",
-            default=5, min=1, max=16, update=_prop_update)
-        scale_x: FloatProperty(
-            name="Stretch X", default=1.0, min=0.2, max=5.0, update=_prop_update)
-        scale_y: FloatProperty(
-            name="Stretch Y", default=1.0, min=0.2, max=5.0, update=_prop_update)
-        scale_z: FloatProperty(
-            name="Stretch Z", default=1.0, min=0.2, max=5.0, update=_prop_update)
-        global_scale: FloatProperty(
-            name="Overall Scale", default=1.0, min=0.05, max=10.0,
-            update=_prop_update)
-        output_nurbs: BoolProperty(
-            name="NURBS Output", default=False,
-            description="Output a compact NURBS surface (mid-surface only; "
-                        "thickness and rim bulge do not apply)",
-            update=_prop_update)
-        nurbs_detail: IntProperty(
-            name="NURBS Detail",
-            description="Control-point density used for NURBS output "
-                        "(the NURBS surface stays smooth at low values)",
-            default=2, min=1, max=16, update=_prop_update)
-
-    def _apply_param_dict(st, d):
-        _SUSPEND[0] = True
-        for k, v in d.items():
-            if hasattr(st, k):
-                setattr(st, k, v)
-        _SUSPEND[0] = False
-
     _RESET_KEYS = ('branches', 'storeys', 'height', 'flange', 'thickness',
                    'rim_bulge', 'rim_round', 'twist', 'azimuth', 'warp',
                    'phase', 'detail', 'scale_x', 'scale_y', 'scale_z',
@@ -430,7 +330,7 @@ if _IN_BLENDER:
 
     class MESH_OT_scherk_collins_add(bpy.types.Operator):
         """Add a Scherk-Collins sculpture (tweak all parameters live in
-        the redo panel, or later in the N-panel 'Scherk' tab)"""
+        the redo panel, or later in the N-panel 'Math Art' tab)"""
         bl_idname = "mesh.scherk_collins_add"
         bl_label = "Scherk-Collins Sculpture"
         bl_options = {'REGISTER', 'UNDO'}
@@ -440,31 +340,48 @@ if _IN_BLENDER:
             items=[('CUSTOM', "Default", "Program defaults")] +
                   [(k, v[0], v[0]) for k, v in PRESETS.items()],
             default='CUSTOM', update=_preset_chosen)
-        branches: IntProperty(name="Branches", default=2, min=1, max=10)
-        storeys: IntProperty(name="Storeys", default=2, min=1, max=16)
-        height: FloatProperty(name="Storey Height", default=1.5,
-                              min=0.1, max=5.0)
-        flange: FloatProperty(name="Flange Width", default=1.5,
-                              min=0.7, max=5.0)
-        thickness: FloatProperty(name="Thickness", default=0.15,
-                                 min=0.0, max=0.5)
-        rim_bulge: FloatProperty(name="Rim Bulge", default=1.5,
-                                 min=0.0, max=4.0)
+        branches: IntProperty(
+            name="Branches", default=2, min=1, max=10,
+            description="Order of the saddles (# of branches)")
+        storeys: IntProperty(
+            name="Storeys", default=2, min=1, max=16,
+            description="Number of hole/saddle storeys")
+        height: FloatProperty(
+            name="Storey Height", default=1.5, min=0.1, max=5.0,
+            description="Height of one storey")
+        flange: FloatProperty(
+            name="Flange Width", default=1.5, min=0.7, max=5.0,
+            description="Width of the flanges (holes break open "
+                        "below ~0.88)")
+        thickness: FloatProperty(
+            name="Thickness", default=0.15, min=0.0, max=0.5,
+            description="Thickness of the vanes (0 = surface only)")
+        rim_bulge: FloatProperty(
+            name="Rim Bulge", default=1.5, min=0.0, max=4.0,
+            description="Amount of bulge on the rim beads")
         rim_round: FloatProperty(
-            name="Rim Round", default=1.0, min=0.0, max=1.0,
-            description="Roundness of the edge: 1 = rounded bull-nose, "
-                        "0 = flat/square edge")
-        twist: FloatProperty(name="Twist", default=0.0,
-                             min=-900.0, max=1080.0)
-        azimuth: FloatProperty(name="Azimuth", default=0.0,
-                               min=-360.0, max=360.0)
-        warp: FloatProperty(name="Warp", default=0.0, min=0.0, max=1080.0)
+            name="Rim Round", default=1.0, min=0.0, max=1.0, step=10,
+            description="Roundness of the edge: 1 = a rounded bull-nose, "
+                        "0 = a flat/square edge")
+        twist: FloatProperty(
+            name="Twist", default=0.0, min=-900.0, max=1080.0, step=1500,
+            description="Overall axial twist (degrees)")
+        azimuth: FloatProperty(
+            name="Azimuth", default=0.0, min=-360.0, max=360.0, step=500,
+            description="Turn of the profile around the tower axis "
+                        "(degrees)")
+        warp: FloatProperty(
+            name="Warp", default=0.0, min=0.0, max=1080.0, step=1000,
+            description="Bend of the tower towards an arch/toroid "
+                        "(degrees; 360 = closed ring)")
         phase: FloatProperty(
-            name="Phase", default=0.5, min=0.0, max=0.999,
+            name="Phase", default=0.5, min=0.0, max=0.999, step=10,
             description="Shift the holes along an open tower, in storeys "
-                        "(0 = flange at each end, 0.5 = half-hole at each "
-                        "end); no effect on closed rings")
-        detail: IntProperty(name="Detail", default=5, min=1, max=16)
+                        "(0 = a flange at each end; 0.5 = a half-hole at "
+                        "each end). No effect on closed rings.")
+        detail: IntProperty(
+            name="Detail", default=5, min=1, max=16,
+            description="Grid detail (tessellation density)")
         scale_x: FloatProperty(name="Stretch X", default=1.0,
                                min=0.2, max=5.0)
         scale_y: FloatProperty(name="Stretch Y", default=1.0,
@@ -475,11 +392,12 @@ if _IN_BLENDER:
                                     min=0.05, max=10.0)
         output_nurbs: BoolProperty(
             name="NURBS Output", default=False,
-            description="Compact NURBS surface instead of a mesh "
-                        "(mid-surface only; no thickness/rims)")
+            description="Output a compact NURBS surface (mid-surface "
+                        "only; thickness and rim bulge do not apply)")
         nurbs_detail: IntProperty(
             name="NURBS Detail", default=2, min=1, max=16,
-            description="Control-point density used for NURBS output")
+            description="Control-point density used for NURBS output "
+                        "(the NURBS surface stays smooth at low values)")
         # set once the preset values have been copied into the sliders,
         # so redo-panel tweaks are not overwritten on re-execute
         preset_applied: BoolProperty(default=False, options={'HIDDEN'})
@@ -490,24 +408,34 @@ if _IN_BLENDER:
                        'scale_y', 'scale_z',
                        'global_scale', 'output_nurbs', 'nurbs_detail')
 
+        # Read by the Math Art sidebar: rebuild on a timer rather than
+        # inside the property-update callback.  The NURBS output is built
+        # with `bpy.ops.object.mode_set` and `bpy.ops.curve.make_segment`,
+        # and edit-mode operators need a settled context that a
+        # half-finished property write does not provide.
+        math_art_live_defer = True
+
         def execute(self, context):
             # menu/scripted invocation sets `preset` without firing its
             # update callback -- apply it here exactly once
             if self.preset != 'CUSTOM' and not self.preset_applied:
                 _preset_chosen(self, context)
-            me = bpy.data.meshes.new("ScherkCollins")
-            obj = bpy.data.objects.new("ScherkCollins", me)
+            # The object's type is fixed by the data it is created with,
+            # so the choice is made here rather than by swapping a mesh
+            # for a surface afterwards.
+            if self.output_nurbs:
+                data = bpy.data.curves.new("ScherkCollins", 'SURFACE')
+                data.dimensions = '3D'
+            else:
+                data = bpy.data.meshes.new("ScherkCollins")
+            obj = bpy.data.objects.new("ScherkCollins", data)
             context.collection.objects.link(obj)
             obj.location = context.scene.cursor.location
             for o in context.selected_objects:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
-            st = obj.scherk_collins
-            st.is_scherk = True
-            _apply_param_dict(st, {k: getattr(self, k)
-                                   for k in self._PARAM_KEYS})
-            rebuild_object(obj)
+            write_geometry(obj, self)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -519,21 +447,6 @@ if _IN_BLENDER:
             for k in self._PARAM_KEYS:
                 if k != skip:
                     col.prop(self, k)
-
-    class SCHERK_OT_regenerate(bpy.types.Operator):
-        """Rebuild the sculpture mesh from its parameters"""
-        bl_idname = "scherk.regenerate"
-        bl_label = "Regenerate"
-        bl_options = {'REGISTER', 'UNDO'}
-
-        @classmethod
-        def poll(cls, context):
-            o = context.object
-            return o is not None and o.scherk_collins.is_scherk
-
-        def execute(self, context):
-            rebuild_object(context.object)
-            return {'FINISHED'}
 
     class SCHERK_OT_load_spec(bpy.types.Operator, ImportHelper):
         """Load a Sculpture Generator spec/demo file (.txt)"""
@@ -554,12 +467,13 @@ if _IN_BLENDER:
             if not d:
                 self.report({'ERROR'}, "No sculpture parameters found in file")
                 return {'CANCELLED'}
-            obj = context.object
-            if obj is None or not obj.scherk_collins.is_scherk:
-                bpy.ops.mesh.scherk_collins_add()
-                obj = context.object
-            _apply_param_dict(obj.scherk_collins, d)
-            rebuild_object(obj)
+            # A spec file describes a whole sculpture, so loading one
+            # adds that sculpture.  Going through the Add operator means
+            # the parameters are recorded on the new object exactly as any
+            # other sculpture's are, and stay editable in the sidebar.
+            keys = set(MESH_OT_scherk_collins_add._PARAM_KEYS)
+            bpy.ops.mesh.scherk_collins_add(
+                **{k: v for k, v in d.items() if k in keys})
             self.report({'INFO'}, f"Loaded {len(d)} parameters")
             return {'FINISHED'}
 
@@ -572,11 +486,14 @@ if _IN_BLENDER:
 
         @classmethod
         def poll(cls, context):
-            o = context.object
-            return o is not None and o.scherk_collins.is_scherk
+            return _live_settings(context.object) is not None
 
         def execute(self, context):
-            p = _params_from_props(context.object.scherk_collins)
+            st = _live_settings(context.object)
+            if st is None:
+                self.report({'ERROR'}, "not a Scherk-Collins sculpture")
+                return {'CANCELLED'}
+            p = _params_from_props(st)
             try:
                 with open(self.filepath, 'w', encoding='utf-8') as f:
                     f.write(spec_text_from(p))
@@ -585,89 +502,25 @@ if _IN_BLENDER:
                 return {'CANCELLED'}
             return {'FINISHED'}
 
-    class VIEW3D_PT_scherk_collins(bpy.types.Panel):
-        bl_label = "Scherk-Collins"
-        bl_space_type = 'VIEW_3D'
-        bl_region_type = 'UI'
-        bl_category = "Math Art"
-        bl_order = 20
-
-        @classmethod
-        def poll(cls, context):
-            # Only for a Scherk-Collins sculpture.  The panel used to offer
-            # an Add button when none was selected, which forced it to stay
-            # visible in every scene; creating one belongs in Add > Mesh,
-            # where every other generator's entry already is.
-            o = context.object
-            return o is not None and o.scherk_collins.is_scherk
-
-        def draw(self, context):
-            lay = self.layout
-            obj = context.object
-            st = obj.scherk_collins
-            col = lay.column(align=True)
-            col.use_property_split = True
-            col.prop(st, "branches")
-            col.prop(st, "storeys")
-            col.prop(st, "height")
-            col.prop(st, "flange")
-            col.prop(st, "thickness")
-            col.prop(st, "rim_bulge")
-            col.prop(st, "rim_round")
-            col.separator()
-            col.prop(st, "twist")
-            col.prop(st, "azimuth")
-            col.prop(st, "warp")
-            col.prop(st, "phase")
-            col.separator()
-            col.prop(st, "nurbs_detail" if st.output_nurbs else "detail")
-            col.prop(st, "scale_x")
-            col.prop(st, "scale_y")
-            col.prop(st, "scale_z")
-            col.prop(st, "global_scale")
-            col.prop(st, "output_nurbs")
-            if st.output_nurbs:
-                col.label(text="NURBS: thickness/rims not applied",
-                          icon='INFO')
-            p = _params_from_props(st)
-            if p.warp > 0:
-                if ring_closes(p):
-                    lay.label(text="Ring closes smoothly", icon='CHECKMARK')
-                else:
-                    b = p.branches
-                    need = (-p.storeys * 180.0 / b) % (360.0 / b)
-                    lay.label(text=f"Seam at ring closure (twist "
-                                   f"{need:.0f} + k*{360.0 / b:.0f} closes)",
-                              icon='ERROR')
-            # No Auto Update toggle, no Regenerate, no Add Another: every
-            # property below rebuilds the mesh as it changes, so the first two
-            # had nothing to do, and making a new sculpture belongs in
-            # Add > Mesh like every other generator's.  Load and Save remain
-            # as operators (F3), off the panel.
-
     def _menu_func(self, context):
         self.layout.operator_menu_enum("mesh.scherk_collins_add", "preset",
                                        text="Scherk-Collins Sculpture",
                                        icon='MESH_TORUS')
 
-    _classes = (ScherkCollinsProps, MESH_OT_scherk_collins_add,
-                SCHERK_OT_regenerate, SCHERK_OT_load_spec,
-                SCHERK_OT_save_spec, VIEW3D_PT_scherk_collins)
+    _classes = (MESH_OT_scherk_collins_add, SCHERK_OT_load_spec,
+                SCHERK_OT_save_spec)
 
     ADD_MENU = True   # the Math Art extension menu sets this False
 
     def register():
         for c in _classes:
             bpy.utils.register_class(c)
-        bpy.types.Object.scherk_collins = PointerProperty(
-            type=ScherkCollinsProps)
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
 
     def unregister():
         if ADD_MENU:
             bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
-        del bpy.types.Object.scherk_collins
         for c in reversed(_classes):
             bpy.utils.unregister_class(c)
 
