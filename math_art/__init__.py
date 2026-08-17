@@ -138,6 +138,12 @@ _MODULE_NAMES = [
 # operator modules.  `pattern_common` used to be listed here; it is now
 # `patterns/common.py`, and its `register` was always a no-op re-exported
 # from `patterns.emit` (ADD_MENU = False), so nothing is lost by dropping it.
+#
+# `live` is absent for a different reason: it is not a generator but a
+# layer over all of them, and it has to be installed AFTER the modules
+# below have registered their operators, since it is built from them.
+
+from . import live                                       # noqa: E402
 
 _MODULES = []
 for _nm in _MODULE_NAMES:
@@ -445,9 +451,21 @@ def register():
     for c in _MENUS:
         bpy.utils.register_class(c)
     bpy.types.VIEW3D_MT_add.append(_menu_func)
+    # Last, and never fatally: the sidebar is built by reading the
+    # operators that were just registered, and an add-on that fails to
+    # load because its panel could not be derived would be a poor trade
+    # for a convenience.
+    try:
+        live.install(_ACTIVE)
+    except Exception as e:
+        print(f"Math Art: live object editing unavailable: {e}")
 
 
 def unregister():
+    try:
+        live.uninstall()
+    except Exception as e:
+        print(f"Math Art: live uninstall failed: {e}")
     bpy.types.VIEW3D_MT_add.remove(_menu_func)
     for c in reversed(_MENUS):
         bpy.utils.unregister_class(c)

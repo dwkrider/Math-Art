@@ -7,12 +7,15 @@ import math
 import bpy
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, os.path.join(PROJ, 'math_art'))
-import scherk_collins_generator as scg  # noqa: E402
-import minimal_surface_toolkit as mst  # noqa: E402
+# The whole package: a Scherk-Collins sculpture's parameters live in the
+# Math Art sidebar's per-object settings, installed by the package.
+sys.path.insert(0, PROJ)
+import math_art  # noqa: E402
+from math_art import scherk_collins_generator as scg  # noqa: E402
+from math_art.live import build as live_build  # noqa: E402
+from math_art.live.registry import settings_for_object  # noqa: E402
 
-scg.register()
-mst.register()
+math_art.register()
 
 argv = sys.argv[sys.argv.index('--') + 1:] if '--' in sys.argv else []
 OUT = argv[0] if argv else os.path.join(PROJ, 'renders')
@@ -57,6 +60,11 @@ def render_object(obj, path, view_dir=(1.0, -1.0, 0.65)):
 
 
 def surf_stats(obj):
+    # A case that produced a mesh where a surface was asked for is a
+    # FAILURE to be reported, not a traceback that stops every later
+    # case from running.
+    if obj.type != 'SURFACE':
+        return 0, 0
     grids = [(sp.point_count_u, sp.point_count_v) for sp in obj.data.splines
              if sp.point_count_u > 1 and sp.point_count_v > 1]
     npts = sum(len(sp.points) for sp in obj.data.splines)
@@ -77,11 +85,12 @@ if not (ok and ngrids == 12):   # 3 storeys x 2 branches x 2 half-wedges
     fails.append('scherk-nurbs')
 render_object(obj, os.path.join(OUT, 'nurbs_trefoil.png'))
 
-# toggle back to mesh through the property + direct rebuild
-st = obj.scherk_collins
-st.auto_update = False
+# Toggle back to mesh through the stored settings.  Mesh and surface
+# are different object TYPES, so this exercises the sidebar's
+# replacement path rather than an in-place data swap.
+_info, st = settings_for_object(obj)
 st.output_nurbs = False
-obj = scg.rebuild_object(obj)
+obj = live_build.rebuild(obj, bpy.context)
 print(f"[scherk toggle back] type={obj.type} verts={len(obj.data.vertices)} "
       f"{'OK' if obj.type == 'MESH' else 'FAIL'}")
 if obj.type != 'MESH':
@@ -92,7 +101,7 @@ clear_objects()
 bpy.ops.mesh.scherk_collins_add(preset='HEX', output_nurbs=True)
 obj = bpy.context.object
 ngrids, npts = surf_stats(obj)
-st = obj.scherk_collins
+_info, st = settings_for_object(obj)
 ok = (obj.type == 'SURFACE' and st.nurbs_detail == 2 and npts < 1500)
 print(f"[scherk nurbs hex default] nurbs_detail={st.nurbs_detail} "
       f"patches={ngrids} ctrl_pts={npts} {'OK' if ok else 'FAIL'}")
