@@ -14,6 +14,9 @@ commands from the repo/worktree root.
 | `ab_poly_ls.md`, `poly_ls_*` | `python tests/bench/run.py canonical biscribe --ab tests/bench/configs/old_defaults.json tests/bench/configs/poly_ls.json --tag poly_ls` |
 | `ab_fair_mollify.md`, `fair_mollify_*` | `python tests/bench/run.py seifert_fair --ab tests/bench/configs/old_defaults.json tests/bench/configs/fair_mollify.json --tag fair_mollify` |
 | `sweep_groom.*` | `python tests/bench/run.py seifert_sweep --config tests/bench/configs/mollify_groom.json --tag sweep_groom` |
+| `bubble.*` | `python tests/bench/run.py bubble_single bubble_single_fine bubble_double bubble_double_unequal bubble_double_fine --tag bubble` |
+| `ab_bubble_cg.md`, `bubble_cg_*` | `python tests/bench/run.py bubble_single bubble_double bubble_double_unequal --ab tests/bench/configs/bubble_nocg.json tests/bench/configs/baseline.json --tag bubble_cg` |
+| `ab_bubble_groom.md`, `bubble_groom_*` | `python tests/bench/run.py bubble_single bubble_double bubble_double_unequal --ab tests/bench/configs/baseline.json tests/bench/configs/bubble_groom.json --tag bubble_groom` |
 
 Config semantics: `{}` / `baseline.json` = **current defaults** (they moved
 when measured winners shipped); `old_defaults.json` = the pre-branch
