@@ -57,9 +57,15 @@ except ImportError:  # flat import outside the package
 
 
 try:
+    from .sharp_creases import mark_sharp_by_angle
+except ImportError:                     # flat import outside the package
+    from sharp_creases import mark_sharp_by_angle
+
+try:
     import bpy
     import bmesh
-    from bpy.props import (IntProperty, FloatProperty, EnumProperty)
+    from bpy.props import (IntProperty, FloatProperty, EnumProperty,
+                           BoolProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -116,6 +122,16 @@ if _IN_BLENDER:
                         "(ellipsoloid)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
+        sharp_edges: BoolProperty(
+            name="Sharp Circle Edges", default=True,
+            description="Mark the two circular arcs sharp (and "
+                        "creased). The oloid and the two-circle roller "
+                        "are convex hulls, so the developable band "
+                        "folds back on itself along each circle -- "
+                        "those arcs are real edges and shading smooth "
+                        "across them rounds the whole form off. The "
+                        "ruled strips have no such fold and are left "
+                        "alone")
 
         def execute(self, context):
             if self.kind == 'OLOID':
@@ -176,6 +192,13 @@ if _IN_BLENDER:
                 bm.free()
             me.polygons.foreach_set('use_smooth',
                                     [True] * len(me.polygons))
+            # Only the closed convex rollers have folds.  ANTIOLOID,
+            # RULED and MOBIUS are smooth ruled strips -- measured, no
+            # interior edge of any of them bends past 6 degrees -- and
+            # the one 176-degree edge the Mobius does report is a
+            # degenerate face at its join, not a crease to mark.
+            if self.sharp_edges and self.kind in ('OLOID', 'ROLLER'):
+                mark_sharp_by_angle(me, 40.0)
             me.update()
             obj = bpy.data.objects.new(f"Oloid {self.kind.title()}",
                                        me)
@@ -202,6 +225,8 @@ if _IN_BLENDER:
             elif self.kind == 'ROLLER':
                 lay.prop(self, 'aspect')
             lay.prop(self, 'scale')
+            if self.kind in ('OLOID', 'ROLLER'):
+                lay.prop(self, 'sharp_edges')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.oloid_add", icon='MESH_CAPSULE')

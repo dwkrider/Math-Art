@@ -38,6 +38,11 @@ from collections import deque
 import numpy as np
 
 try:
+    from .sharp_creases import mark_sharp
+except ImportError:                     # flat import outside the package
+    from sharp_creases import mark_sharp
+
+try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
                            BoolProperty)
@@ -94,11 +99,14 @@ def squeeze_assignment(F, alternate=False):
 
 def build_squeeze(V, F, bend=0.45, m=12, rings=10, iterations=30,
                   alternate=False):
-    """(verts, faces, face_ids): the squeeze surface.  Every edge
-    bows toward the centre of its claiming face (in that face's
+    """(verts, faces, face_ids, creases): the squeeze surface.  Every
+    edge bows toward the centre of its claiming face (in that face's
     plane, by `bend` x the midpoint-to-centre distance, with a
     smooth 4t(1-t) profile); each face is spanned by a membrane
-    over its bent frame."""
+    over its bent frame.  `creases` are the bent frames themselves,
+    as vertex-index pairs: the membranes want smooth shading and the
+    frames between them are folds, so they are returned separately
+    rather than left for a normal-angle guess to rediscover."""
     V = [np.asarray(v, float) for v in V]
     claim = squeeze_assignment(F, alternate)
     centers = [np.mean([V[i] for i in f], axis=0) for f in F]
@@ -136,6 +144,7 @@ def build_squeeze(V, F, bend=0.45, m=12, rings=10, iterations=30,
     verts = []
     faces = []
     fids = []
+    creases = set()
 
     def emit(p, weld):
         if not weld:
@@ -196,10 +205,17 @@ def build_squeeze(V, F, bend=0.45, m=12, rings=10, iterations=30,
                     Q[i] = P[s].mean(axis=0)
                 P[~fixed] += 0.6 * (Q[~fixed] - P[~fixed])
         local = [emit(p, i < nb) for i, p in enumerate(P)]
+        # the first nb points ARE the bent frame, and they are the
+        # welded ones, so the frame loop is where two face membranes
+        # meet -- the crease the whole construction is built around
+        for j in range(nb):
+            a, b = local[j], local[(j + 1) % nb]
+            if a != b:
+                creases.add((a, b) if a < b else (b, a))
         for t in tris:
             faces.append([local[i] for i in t])
             fids.append(fi)
-    return verts, faces, fids
+    return verts, faces, fids, sorted(creases)
 
 
 def _seed(name):
@@ -276,6 +292,13 @@ if _IN_BLENDER:
             name="Alternate Pattern", default=False,
             description="Flip which edge pair each face claims")
         smooth: BoolProperty(name="Smooth Shading", default=False)
+        sharp_frames: BoolProperty(
+            name="Sharp Bent Edges", default=True,
+            description="Mark the bent frames sharp (and creased). "
+                        "They are where two face membranes meet, so "
+                        "with smooth shading on they should stay crisp "
+                        "rather than round over -- the squeeze is the "
+                        "shape")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="Solidify modifier thickness (0 = raw "
@@ -302,7 +325,7 @@ if _IN_BLENDER:
                 name = ("Cubic Squeeze" if self.seed == 'CUBE'
                         else f"Squeeze ({self.seed.title()})")
             try:
-                verts, faces, fids = build_squeeze(
+                verts, faces, fids, creases = build_squeeze(
                     V, F, self.bend, self.samples, self.rings,
                     self.iterations, self.alternate)
             except ValueError as e:
@@ -321,6 +344,8 @@ if _IN_BLENDER:
             me.validate(clean_customdata=True)
             me.polygons.foreach_set(
                 'use_smooth', [self.smooth] * len(me.polygons))
+            if self.sharp_frames:
+                mark_sharp(me, creases)
             attr = me.attributes.new("face_index", 'INT', 'FACE')
             if len(me.polygons) == len(fids):
                 attr.data.foreach_set('value', fids)
@@ -387,7 +412,7 @@ def _selftest():
     print(f"cube: claims/face={per_face} "
           f"each edge once={once} alternating={alt}")
     assert per_face == [2] * 6 and once and alt
-    verts, faces, fids = build_squeeze(
+    verts, faces, fids, creases = build_squeeze(
         CUBE_V, CUBE_F, bend=0.45, m=8, rings=6,
         iterations=20)
     cnt = {}

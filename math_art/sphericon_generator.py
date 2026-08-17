@@ -164,6 +164,11 @@ def build_sphericon(sides=4, steps=1, segments=96, scale=1.0, bulge=0.0):
 
 
 try:
+    from .sharp_creases import mark_sharp_by_angle
+except ImportError:                     # flat import outside the package
+    from sharp_creases import mark_sharp_by_angle
+
+try:
     import bpy
     import bmesh
     from mathutils import Vector
@@ -231,6 +236,13 @@ if _IN_BLENDER:
             default='BANDS')
         smooth_shading: BoolProperty(name="Smooth Shading",
                                      default=True)
+        sharp_edges: BoolProperty(
+            name="Sharp Edges", default=True,
+            description="Mark the solid's fold curves sharp (and "
+                        "creased). A sphericon is two half-cones turned against each other; the rims where they meet are real edges. The surface is smooth "
+                        "everywhere else, so shading straight across "
+                        "the fold rounds off the one feature that "
+                        "defines the shape")
         scale: FloatProperty(
             name="Scale", default=1.0, min=0.01, max=100.0,
             description="Multiplier on the normalized size (1.0 = a "
@@ -293,6 +305,8 @@ if _IN_BLENDER:
 
             me.polygons.foreach_set(
                 'use_smooth', [self.smooth_shading] * len(me.polygons))
+            if self.sharp_edges:
+                mark_sharp_by_angle(me, 25.0)
             me.update()
 
             obj = bpy.data.objects.new("Sphericon", me)

@@ -101,9 +101,15 @@ except ImportError:  # flat import outside the package
 
 
 try:
+    from .sharp_creases import mark_sharp_by_angle
+except ImportError:                     # flat import outside the package
+    from sharp_creases import mark_sharp_by_angle
+
+try:
     import bpy
     import bmesh
-    from bpy.props import IntProperty, FloatProperty, EnumProperty
+    from bpy.props import (IntProperty, FloatProperty,
+                           EnumProperty, BoolProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -260,6 +266,13 @@ if _IN_BLENDER:
             name="Smoothness", default=6, min=4, max=8,
             description="Icosphere subdivisions for the Boolean tetra "
                         "(higher = smoother, slower; 8 is very heavy)")
+        sharp_edges: BoolProperty(
+            name="Sharp Edges", default=True,
+            description="Mark the solid's fold curves sharp (and "
+                        "creased). A Reuleaux rotation or Meissner body carries the sharp edges of the polygon it came from. The surface is smooth "
+                        "everywhere else, so shading straight across "
+                        "the fold rounds off the one feature that "
+                        "defines the shape")
         theta_segments: IntProperty(
             name="Segments", default=160, min=12, max=512,
             description="Revolution: segments around the axis")
@@ -295,6 +308,8 @@ if _IN_BLENDER:
             bm.free()
             me.polygons.foreach_set('use_smooth',
                                     [True] * len(me.polygons))
+            if self.sharp_edges:
+                mark_sharp_by_angle(me, 25.0)
             me.update()
             obj = bpy.data.objects.new("Constant Width", me)
             context.collection.objects.link(obj)

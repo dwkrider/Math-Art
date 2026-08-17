@@ -29,6 +29,11 @@ import math
 import numpy as np
 
 try:
+    from .sharp_creases import mark_sharp
+except ImportError:                     # flat import outside the package
+    from sharp_creases import mark_sharp
+
+try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty, EnumProperty,
                            BoolProperty)
@@ -37,14 +42,20 @@ except ImportError:
     _IN_BLENDER = False
 
 
+def _pair(a, b):
+    return (a, b) if a < b else (b, a)
+
+
 def build_vortex(V, F, bend=0.11, m=12, iterations=30,
                  reverse=False):
-    """(verts, faces, edge_ids): the vortex surface.  Each face's
-    centre-to-vertex spokes bend within the face plane by `bend` x
-    the spoke length (4t(1-t) profile), all with the same
+    """(verts, faces, edge_ids, creases): the vortex surface.  Each
+    face's centre-to-vertex spokes bend within the face plane by
+    `bend` x the spoke length (4t(1-t) profile), all with the same
     chirality; one membrane patch (a Coons patch relaxed toward
     minimal area) spans the four bent spokes around each original
-    edge."""
+    edge.  `creases` are those spokes, as vertex-index pairs: each
+    borders exactly two patches, so it is a fold, while the saddles
+    between them are smooth."""
     V = [np.asarray(v, float) for v in V]
     centers = [np.mean([V[i] for i in f], axis=0) for f in F]
     sgn = -1.0 if reverse else 1.0
@@ -95,6 +106,7 @@ def build_vortex(V, F, bend=0.11, m=12, iterations=30,
     verts = []
     faces = []
     eids = []
+    creases = set()
 
     def emit(p, weld):
         if not weld:
@@ -157,6 +169,17 @@ def build_vortex(V, F, bend=0.11, m=12, iterations=30,
                     Q[i] = P[s].mean(axis=0)
                 P[~fixed] += 0.6 * (Q[~fixed] - P[~fixed])
         local = [emit(p, bool(fixed[i])) for i, p in enumerate(P)]
+        # the patch's four sides ARE the bent spokes, and every spoke
+        # borders exactly two patches, so these welded boundary curves
+        # are the folds between neighbouring saddles
+        for iu in range(m):
+            for col in (0, m):
+                creases.add(_pair(local[iu * n1 + col],
+                                  local[(iu + 1) * n1 + col]))
+        for iv in range(m):
+            for row in (0, m):
+                creases.add(_pair(local[row * n1 + iv],
+                                  local[row * n1 + iv + 1]))
         for t in tris:
             faces.append([local[i] for i in t])
             eids.append(ei)
@@ -168,7 +191,7 @@ def build_vortex(V, F, bend=0.11, m=12, iterations=30,
               for f in faces)
     if vol < 0:
         faces = [f[::-1] for f in faces]
-    return verts, faces, eids
+    return verts, faces, eids, sorted(creases)
 
 
 _EXTRA_SEEDS = {'CO': 'ARCHIMEDEAN', 'TO': 'ARCHIMEDEAN',
@@ -237,6 +260,13 @@ if _IN_BLENDER:
             name="Reverse Swirl", default=False,
             description="Mirror the vortex chirality")
         smooth: BoolProperty(name="Smooth Shading", default=False)
+        sharp_spokes: BoolProperty(
+            name="Sharp Spokes", default=True,
+            description="Mark the bent spokes sharp (and creased). "
+                        "Each spoke borders exactly two saddle patches "
+                        "and is a genuine fold between them, so with "
+                        "smooth shading on it should stay crisp rather "
+                        "than round over")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="Solidify modifier thickness (0 = raw "
@@ -247,7 +277,7 @@ if _IN_BLENDER:
         def execute(self, context):
             V, F = _seed(self.seed)
             try:
-                verts, faces, eids = build_vortex(
+                verts, faces, eids, creases = build_vortex(
                     V, F, self.bend, self.samples,
                     self.iterations, self.reverse)
             except ValueError as e:
@@ -276,6 +306,8 @@ if _IN_BLENDER:
             me.validate(clean_customdata=True)
             me.polygons.foreach_set(
                 'use_smooth', [self.smooth] * len(me.polygons))
+            if self.sharp_spokes:
+                mark_sharp(me, creases)
             attr = me.attributes.new("edge_index", 'INT', 'FACE')
             if len(me.polygons) == len(eids):
                 attr.data.foreach_set('value', eids)
@@ -325,7 +357,7 @@ def _selftest():
               for z in (-1, 1)]
     CUBE_F = [[0, 1, 3, 2], [4, 6, 7, 5], [0, 4, 5, 1],
               [2, 3, 7, 6], [0, 2, 6, 4], [1, 5, 7, 3]]
-    verts, faces, eids = build_vortex(
+    verts, faces, eids, creases = build_vortex(
         CUBE_V, CUBE_F, bend=0.11, m=8, iterations=20)
     # 12 edges -> 12 patches
     assert len(set(eids)) == 12
@@ -353,7 +385,7 @@ def _selftest():
           f"finite={finite} vol={vol:.3f}")
     assert watertight and oriented and finite and vol > 0
     # chirality flips with reverse
-    v2, _, _ = build_vortex(CUBE_V, CUBE_F, bend=0.11, m=8,
+    v2, _, _, _ = build_vortex(CUBE_V, CUBE_F, bend=0.11, m=8,
                             iterations=0, reverse=True)
     assert not np.allclose(np.array(verts)[:10],
                            np.array(v2)[:10])
