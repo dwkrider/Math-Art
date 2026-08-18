@@ -62,6 +62,8 @@
 #   J. Plateau, "Statique experimentale et theorique des liquides
 #       soumis aux seules forces moleculaires" (1873).
 
+import time
+
 import numpy as np
 
 try:
@@ -356,7 +358,9 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
            groom_every=0, groom_smooth=0.25,
            area_tol=1e-10, vol_tol=1e-12, s_init_frac=0.2,
            walls=None, wall_tol=1e-12, ext_energy=None, ext_grad=None,
-           groom_hook=None):
+           groom_hook=None, optimizer=None, lbfgs_m=8,
+           lbfgs_h0="laplacian", lbfgs_h0_eps=1e-3, lbfgs_h0_tol=1e-2,
+           lbfgs_h0_iters=100, lbfgs_step_cap=4.0):
     """Minimize film area at fixed body volumes.  V is modified in
     place; T is modified in place only when grooming flips edges.
 
@@ -411,8 +415,38 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     volume-restored trial positions, so a rise in the history (outside
     groom iterations) means a bug.
 
+    `optimizer` selects the outer optimizer.  None (default) is the
+    established path: projected descent / Polak-Ribiere CG per the `cg`
+    flag, with the Evolver parabola line search -- byte-identical to
+    the pre-optimizer behaviour.  "lbfgs" runs two-loop L-BFGS
+    (solver/descent.LBFGS, history `lbfgs_m`, curvature-guarded) over
+    the constraint-tangent-projected raw gradient with Armijo
+    backtracking from the quasi-Newton unit step; `lbfgs_h0` seeds the
+    inverse Hessian: "laplacian" (default) applies (L + eps D)^-1 by
+    warm-started Jacobi-PCG on the current mollified cotan Laplacian --
+    the area Hessian to leading order (Pinkall-Polthier), which makes
+    the step size approximately mesh-resolution-independent -- and
+    "identity" uses the standard gamma I seed.  Curvature pairs are the
+    differences of consecutive RESTORED states and their projected
+    gradients (the actual steps taken on the constraint manifold);
+    grooming resets the L-BFGS history exactly as it restarts CG.
+    Monotonicity, wall projection, and volume restore are shared with
+    the default path: the Armijo search evaluates the same restored
+    energy, so every accepted step is monotone by construction here
+    too.  `lbfgs_step_cap` bounds the largest per-step vertex move at
+    cap x mean edge length (default 4, the same bracket cap the
+    default path uses); free-boundary problems whose topology is
+    protected only by an energy barrier (e.g. a film whose boundary
+    loop winds a cylinder) need a TIGHTER cap (~0.5) -- the measured
+    failure mode is the quasi-Newton step sliding boundary vertices
+    past each other and unwinding the loop through non-embedded
+    states, monotonically.
+
     Returns a dict: iters_run, area, volumes, pressures, targets,
-    grooms_run, history (per-iteration area / step / drift / rise)."""
+    grooms_run, history (per-iteration area / step / drift / rise;
+    with optimizer="lbfgs" also lbfgs_skips / lbfgs_resets)."""
+    if optimizer not in (None, "cg", "lbfgs"):
+        raise ValueError(f"unknown optimizer {optimizer!r}")
     V = np.asarray(V)
     T = np.asarray(T)
     labels = np.asarray(labels)
@@ -455,11 +489,183 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     def _E_of(Varr, A):
         return A if ext_energy is None else A + float(ext_energy(Varr))
 
+    t0 = time.perf_counter()
     if wall_list is not None:
         _wproject(V)                     # walls first, volumes second
     _restore(V)                          # start ON the constraint manifold
     A_prev = mesh_area(V, T)
     E_prev = _E_of(V, A_prev)
+
+    if optimizer == "lbfgs":
+        # ------------------------------------------------------------------
+        # L-BFGS branch (S2).  Everything constraint-related -- wall
+        # projection, volume restore, monotone-by-construction line
+        # search over restored trial positions -- is shared with the
+        # default path; only the direction and step-size logic differ.
+        # The default path below is untouched (byte-identical).
+        # ------------------------------------------------------------------
+        lb = _descent.LBFGS(m=lbfgs_m)
+        if lbfgs_h0 == "laplacian":
+            h0 = _descent.LaplacianH0(eps=lbfgs_h0_eps, tol=lbfgs_h0_tol,
+                                      max_iters=lbfgs_h0_iters,
+                                      cotan_mode=cotan_mode)
+        elif lbfgs_h0 == "identity":
+            h0 = None
+        else:
+            raise ValueError(f"unknown lbfgs_h0 {lbfgs_h0!r}")
+        history = []
+        grooms_run = 0
+        flat_streak = 0
+        x_prev = None                    # previous restored state...
+        gh_prev = None                   # ...and its projected gradient
+        it = 0
+        for it in range(1, iters + 1):
+            groomed = False
+            if groom_every and (it - 1) and (it - 1) % groom_every == 0:
+                _groom.groom(V, T, fixed=smooth_pin,
+                             smooth_lam=groom_smooth, tri_groups=groups)
+                if groom_hook is not None:
+                    groom_hook(V, T)
+                if wall_list is not None:
+                    _wproject(V)
+                _restore(V)
+                grooms_run += 1
+                groomed = True
+                lb.reset()               # mesh changed: history invalid
+                x_prev = None
+                A_prev = mesh_area(V, T)
+                E_prev = _E_of(V, A_prev)
+            # raw area gradient from the cotan identity, sharing its
+            # weights with the H0 seed (one cotan build per iteration)
+            Ew, Ww = _cotan.edge_cotan_weights(V, T, mode=cotan_mode)
+            g = np.zeros_like(V)
+            contrib = Ww[:, None] * (V[Ew[:, 0]] - V[Ew[:, 1]])
+            np.add.at(g, Ew[:, 0], contrib)
+            np.add.at(g, Ew[:, 1], -contrib)
+            if ext_grad is not None:
+                g = g + ext_grad(V)
+            g[~free] = 0.0
+            if wall_list is not None:
+                _walls.tangent_all(g, V, wall_list)
+            grads = volume_gradients(V, T, labels, nb, free=free)
+            if wall_list is not None:
+                _gtangent(grads, V)
+            gh, _lam = project_velocity(g, grads)    # plain l2 metric
+            if x_prev is not None:
+                # curvature pair from the actual manifold step: the
+                # difference of consecutive RESTORED states and of
+                # their projected gradients (guarded push)
+                lb.push((V - x_prev).ravel(), (gh - gh_prev).ravel())
+            gmax = float(np.max(np.linalg.norm(gh, axis=1)))
+            if gmax < 1e-300:
+                break
+            if h0 is not None:
+                h0.set_weights(Ew, Ww, len(V), free=free)
+
+            def _project_dir(flat):
+                dd = flat.reshape(len(V), 3)
+                dd[~free] = 0.0
+                if wall_list is not None:
+                    _walls.tangent_all(dd, V, wall_list)
+                dd, _ = project_velocity(dd, grads)
+                return dd
+
+            d = _project_dir(-lb.direction(gh.ravel(), h0=h0))
+            slope = float(np.einsum('nj,nj->', gh, d))
+            if not (slope < 0.0):
+                # the quasi-Newton model turned uphill: drop it and
+                # take the seeded steepest-descent direction
+                lb.reset()
+                d = _project_dir(-(h0(gh.ravel()) if h0 is not None
+                                   else gh.ravel().copy()))
+                slope = float(np.einsum('nj,nj->', gh, d))
+            Lmean = float(np.mean(np.linalg.norm(
+                V[T[:, 1]] - V[T[:, 0]], axis=1)))
+            dmax = float(np.max(np.linalg.norm(d, axis=1)))
+            s_max = lbfgs_step_cap * Lmean / max(dmax, 1e-300)
+
+            def energy(x):
+                Vc = np.array(x, float)
+                if wall_list is not None:
+                    _wproject(Vc)
+                _restore(Vc)
+                return _E_of(Vc, mesh_area(Vc, T))
+
+            x1, s, E1, nev = _descent.armijo_backtrack(
+                energy, V, d, slope, s0=min(1.0, s_max), E0=E_prev,
+                s_max=s_max)
+            if s == 0.0:
+                # Armijo exhausted: reset the model and try the seeded
+                # steepest descent under the robust parabola bracket
+                # before declaring convergence
+                lb.reset()
+                d = _project_dir(-(h0(gh.ravel()) if h0 is not None
+                                   else gh.ravel().copy()))
+                dmax = float(np.max(np.linalg.norm(d, axis=1)))
+                s_max = lbfgs_step_cap * Lmean / max(dmax, 1e-300)
+                x1, s, E1, nev2 = _descent.parabola_line_search(
+                    energy, V, d, min(1.0, s_max), s_max=s_max)
+                nev += nev2
+            if s == 0.0:
+                break                    # no downhill scale: converged
+            # tangency residual of the accepted direction, against the
+            # CURRENT wall normals (the cg path measures its projected
+            # velocity the same way, before the step moves V)
+            vt_normal_max = (0.0 if wall_list is None
+                             else _walls.normal_component_max(d, V,
+                                                              wall_ts))
+            x_prev = V.copy()
+            gh_prev = gh
+            V[:] = x1
+            if wall_list is not None:
+                _wproject(V)
+            drift_pre, drift_post, _rounds = _restore(V)
+            A = mesh_area(V, T)
+            E = _E_of(V, A)
+            entry = {
+                "it": it, "area": A, "s": s, "n_evals": nev,
+                "rise": (A - A_prev) / max(A_prev, 1e-300),
+                "drift_pre": drift_pre, "drift_post": drift_post,
+                "groomed": groomed, "t": time.perf_counter() - t0,
+            }
+            if wall_list is not None:
+                entry["wall_resid"] = _walls.wall_residual(V, wall_list)
+                entry["vt_normal_max"] = vt_normal_max
+            if ext_energy is not None:
+                entry["E"] = E
+                entry["E_rise"] = (E - E_prev) / max(abs(E_prev), 1e-300)
+            history.append(entry)
+            if abs(E - E_prev) < area_tol * abs(E_prev):
+                flat_streak += 1
+                if flat_streak >= 3:
+                    A_prev = A
+                    E_prev = E
+                    break
+            else:
+                flat_streak = 0
+            A_prev = A
+            E_prev = E
+
+        g = area_gradient(V, T, cotan_mode=cotan_mode)
+        if ext_grad is not None:
+            g = g + ext_grad(V)
+        grads = volume_gradients(V, T, labels, nb, free=free)
+        if wall_list is not None:
+            _gtangent(grads, V)
+        if mobility == "star":
+            M = 3.0 / np.maximum(vertex_star_areas(V, T), 1e-300)
+            M[~free] = 0.0
+        else:
+            M = None
+        press = body_pressures(g, grads, weights=M)
+        return {
+            "iters_run": it, "area": mesh_area(V, T),
+            "volumes": region_volumes(V, T, labels, nb),
+            "targets": targets, "pressures": press,
+            "grooms_run": grooms_run, "history": history,
+            "lbfgs_skips": lb.skips, "lbfgs_resets": lb.resets,
+        }
+
     history = []
     grooms_run = 0
     s_prev = None
@@ -570,7 +776,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             "it": it, "area": A, "s": s, "n_evals": nev,
             "rise": (A - A_prev) / max(A_prev, 1e-300),
             "drift_pre": drift_pre, "drift_post": drift_post,
-            "groomed": groomed,
+            "groomed": groomed, "t": time.perf_counter() - t0,
         }
         if wall_list is not None:
             entry["wall_resid"] = _walls.wall_residual(V, wall_list)
@@ -769,6 +975,32 @@ def _selftest():
           f"area excess {area_exc:.2e} (discrete>=0), pressure err "
           f"{p_err:.2e} vs 2/r, drift {drift:.1e}, max rise {rise:.1e} "
           f"{'OK' if good else 'FAIL'}")
+
+    # --- optimizer="lbfgs": the same squashed sphere must reach the
+    # same equilibrium (monotone, volume-exact, Young-Laplace) in FEWER
+    # iterations than the CG budget above -- the point of S2 -----------
+    SV2, SF2 = _icosphere_mesh(2)
+    Vl = SV2 * np.array([1.25, 0.8, 1.0])
+    lab2 = np.zeros((len(SF2), 2), dtype=np.int64)
+    lab2[:, 1] = 1
+    info_l = evolve(Vl, SF2, lab2, targets=[target], iters=120,
+                    optimizer="lbfgs")
+    c2 = Vl.mean(axis=0)
+    rad2 = np.linalg.norm(Vl - c2, axis=1)
+    rad_cv2 = float(np.std(rad2) / np.mean(rad2))
+    area_exc2 = (info_l["area"] - A_star) / A_star
+    p_err2 = abs(info_l["pressures"][0] - 2.0) / 2.0
+    drift2 = max(hh["drift_post"] for hh in info_l["history"])
+    rise2 = max(hh["rise"] for hh in info_l["history"]
+                if not hh["groomed"])
+    good = (rad_cv2 < 5e-3 and 0.0 < area_exc2 < 5e-3 and p_err2 < 2e-2
+            and drift2 < 1e-10 and rise2 <= 1e-12
+            and info_l["iters_run"] < 120)
+    ok &= good
+    print(f"volume: lbfgs squashed sphere: {info_l['iters_run']} iters "
+          f"(<120, converged early), radius cv {rad_cv2:.2e}, area "
+          f"excess {area_exc2:.2e}, pressure err {p_err2:.2e}, drift "
+          f"{drift2:.1e}, max rise {rise2:.1e} {'OK' if good else 'FAIL'}")
 
     # --- walls compose with the restore: perturbed two-cube with its
     # outer x = 2 face constrained to the plane, volumes AND wall both
