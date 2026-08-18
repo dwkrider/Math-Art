@@ -17,6 +17,8 @@ commands from the repo/worktree root.
 | `bubble.*` | `python tests/bench/run.py bubble_single bubble_single_fine bubble_double bubble_double_unequal bubble_double_fine --tag bubble` |
 | `ab_bubble_cg.md`, `bubble_cg_*` | `python tests/bench/run.py bubble_single bubble_double bubble_double_unequal --ab tests/bench/configs/bubble_nocg.json tests/bench/configs/baseline.json --tag bubble_cg` |
 | `ab_bubble_groom.md`, `bubble_groom_*` | `python tests/bench/run.py bubble_single bubble_double bubble_double_unequal --ab tests/bench/configs/baseline.json tests/bench/configs/bubble_groom.json --tag bubble_groom` |
+| `tp.*` | `python tests/bench/run.py tp_circle tp_unknot tp_trefoil --tag tp` |
+| `ab_tp_l2.md`, `tp_l2_*` | `python tests/bench/run.py tp_circle tp_unknot tp_trefoil --ab tests/bench/configs/baseline.json tests/bench/configs/tp_l2.json --tag tp_l2` |
 
 Config semantics: `{}` / `baseline.json` = **current defaults** (they moved
 when measured winners shipped); `old_defaults.json` = the pre-branch
