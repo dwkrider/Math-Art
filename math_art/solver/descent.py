@@ -305,7 +305,11 @@ class LaplacianH0:
         except ImportError:                  # flat headless import
             import cotan as _cotan           # type: ignore
         E, W = _cotan.edge_cotan_weights(V, T, mode=self.cotan_mode)
-        n = len(V)
+        self.set_weights(E, W, len(V), free=free)
+
+    def set_weights(self, E, W, n, free=None):
+        """Install prebuilt half-edge cotan weights (a caller that has
+        just assembled the area gradient already holds them)."""
         deg = np.zeros(n)
         np.add.at(deg, E[:, 0], W)
         np.add.at(deg, E[:, 1], W)
