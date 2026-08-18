@@ -245,6 +245,7 @@ OPS = [
     ("prime knot", lambda: bpy.ops.curve.prime_knot_add(
         knot='6_2', iters=60)),
     ("torus knot", lambda: bpy.ops.curve.torus_knot_add(p=3, q=5)),
+    ("tight knot", lambda: bpy.ops.curve.tight_knot_add()),
     ("torus link mesh", lambda: bpy.ops.curve.torus_knot_add(
         p=4, q=6, output='MESH')),
     ("prime knot tube", lambda: bpy.ops.curve.prime_knot_add(
