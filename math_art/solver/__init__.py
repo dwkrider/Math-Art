@@ -22,6 +22,11 @@
 #            projection, damped Newton volume restore, and the `evolve`
 #            driver composing all of the above (Evolver fixvol scheme +
 #            LosTopos labels).
+#   walls    level-set wall constraints (Evolver cnstrnt scheme):
+#            analytic plane/sphere/cylinder + general-callable walls,
+#            vectorized Newton position projection, velocity tangent
+#            projection, one-sided (f >= 0) activation; composed with
+#            the volume machinery by `volume.evolve(walls=...)`.
 #
 # The per-solver descent loops themselves deliberately stay bespoke
 # where measurement showed the bespoke loop stronger (the Pinkall-
@@ -31,3 +36,4 @@ from . import cotan  # noqa: F401
 from . import descent  # noqa: F401
 from . import groom  # noqa: F401
 from . import volume  # noqa: F401
+from . import walls  # noqa: F401

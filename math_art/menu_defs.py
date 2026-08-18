@@ -140,6 +140,7 @@ PLANTS = Menu(
 KNOTS = Menu(
     "VIEW3D_MT_math_art_knots", "Knots & Curves", 'FORCE_VORTEX', [
         _e("curve.prime_knot_add", 'FORCE_VORTEX'),
+        _e("curve.tight_knot_add", 'FORCE_VORTEX'),
         _e("curve.torus_knot_add", 'FORCE_VORTEX'),
         _e("curve.hopf_fibration_add", 'FORCE_MAGNETIC'),
         _e("mesh.hopf_torus_add", 'MESH_TORUS'),
@@ -222,6 +223,7 @@ ODDS = Menu(
         _e("mesh.orbifold_sphere_add", 'MOD_MIRROR'),
         _e("mesh.bubble_cluster_add", 'SPHERE'),
         _e("mesh.relaxed_bubble_add", 'META_BALL'),
+        _e("mesh.cmc_capillary_add", 'MATFLUID'),
     ])
 
 # Styles restyle whatever is already selected rather than adding a
