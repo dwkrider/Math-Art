@@ -68,25 +68,42 @@ def operator_sources():
 
 
 CSS = """\
-body { font: 14px/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 60rem;
+body { font: 14px/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 78rem;
        padding: 0 1rem; color: #1a1a1a; background: #fff; }
 h1 { font-size: 1.4rem; margin: 0 0 .3rem; }
-h2 { font-size: 1rem; margin: 2rem 0 .4rem; }
+h2 { font-size: 1.05rem; margin: 2.2rem 0 .6rem; padding-bottom: .25rem;
+     border-bottom: 2px solid #1a1a1a; }
 p  { color: #555; margin: .2rem 0 1rem; }
 code { font-family: ui-monospace, Consolas, monospace; font-size: .85em; }
-table { border-collapse: collapse; width: 100%; }
-th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #e5e5e5;
-         vertical-align: middle; }
-th { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em;
-     color: #666; font-weight: 600; }
-td.i { width: 1%; white-space: nowrap; }
-td.dark  { background: #1d1d1f; }
-td.light { background: #e8e8ea; }
+
+/* One card per entry.  The render is the subject of review, so it gets
+   the space; the identifiers under it are what a comment cites. */
+.grid { display: grid; gap: .75rem;
+        grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); }
+.card { border: 1px solid #ddd; border-radius: 3px; overflow: hidden;
+        display: flex; flex-direction: column; }
+.shot { display: flex; align-items: stretch; }
+.shot .big   { background: #1d1d1f; padding: 10px; flex: 1;
+               display: grid; place-items: center; }
+.shot .side  { display: flex; flex-direction: column; }
+.shot .side div { display: grid; place-items: center; width: 34px; flex: 1; }
+.shot .on-dark  { background: #1d1d1f; }
+.shot .on-light { background: #e8e8ea; }
+img.l { width: 128px; height: 128px; display: block;
+        image-rendering: pixelated; }
 img.s { width: 20px; height: 20px; display: block; }
-img.l { width: 64px; height: 64px; display: block; }
-.none { color: #999; font-size: .75rem; }
-.st { font-size: .72rem; text-transform: uppercase; letter-spacing: .05em; }
-.baked { color: #1a6b52; } .fallback { color: #8a6d1f; } .pinned { color: #777; }
+.id { padding: .4rem .5rem; border-top: 1px solid #eee; }
+.id b { display: block; font-size: .8rem; font-weight: 600; }
+.id code { display: block; font-size: .68rem; color: #666;
+           overflow-wrap: anywhere; }
+.id .mod { display: block; font-size: .64rem; color: #999;
+           overflow-wrap: anywhere; }
+.miss { background: #fff8e5; color: #8a6d1f; font-size: .72rem;
+        padding: 1.2rem .5rem; text-align: center; }
+.pin  { background: #f2f2f4; color: #666; }
+.warn { background: #fff8e5; border: 1px solid #e8d9a8; padding: .6rem .8rem;
+        border-radius: 3px; margin: 1rem 0; font-size: .85rem; color: #6b5514; }
+</style>
 """
 
 
@@ -119,25 +136,29 @@ def build(out_path):
                 url = html.escape(
                     os.path.relpath(png, rel_root).replace("\\", "/"))
                 alt = html.escape(label)
-                cells = (f'<td class="i dark"><img class="s" src="{url}" alt="{alt}"></td>'
-                         f'<td class="i light"><img class="s" src="{url}" alt=""></td>'
-                         f'<td class="i dark"><img class="l" src="{url}" alt=""></td>')
+                shot = (f'<div class="shot">'
+                        f'<div class="big">'
+                        f'<img class="l" src="{url}" alt="{alt}"></div>'
+                        f'<div class="side">'
+                        f'<div class="on-dark">'
+                        f'<img class="s" src="{url}" alt=""></div>'
+                        f'<div class="on-light">'
+                        f'<img class="s" src="{url}" alt=""></div>'
+                        f'</div></div>')
             else:
-                glyph = f'<span class="none">{html.escape(e.icon)}</span>'
-                cells = (f'<td class="i">{glyph}</td>'
-                         f'<td class="i"></td><td class="i"></td>')
+                shot = (f'<div class="miss{" pin" if e.builtin else ""}">'
+                        f'{"pinned to" if e.builtin else "no render &mdash;"}'
+                        f' <code>{html.escape(e.icon)}</code></div>')
             rows.append(
-                f"<tr>{cells}"
-                f"<td>{html.escape(label)}</td>"
-                f"<td><code>{html.escape(e.op)}</code></td>"
-                f"<td><code>{html.escape(src)}</code></td>"
-                f'<td class="st {state}">{word}</td></tr>')
+                f'<div class="card">{shot}'
+                f'<div class="id"><b>{html.escape(label)}</b>'
+                f'<code>{html.escape(e.op)}</code>'
+                f'<span class="mod">{html.escape(src)}</span>'
+                f'</div></div>')
         body.append(
             f"<h2>{html.escape(menu.label)} "
             f"<code>({count})</code></h2>\n"
-            "<table><tr><th>20px</th><th>20px</th><th>64px</th><th>Entry</th>"
-            "<th>Operator</th><th>Module</th><th></th></tr>\n"
-            + "\n".join(rows) + "</table>")
+            f'<div class="grid">{"".join(rows)}</div>')
 
     total = sum(n.values())
     page = f"""<!doctype html>
@@ -146,14 +167,18 @@ def build(out_path):
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Math Art menu icons</title>
 <style>
-{CSS}</style>
+{CSS}
 <h1>Add &rsaquo; Math Art menu icons</h1>
 <p>{total} entries in {len(menu_defs.ALL_MENUS)} submenus &mdash;
-{n['baked']} baked, {n['fallback']} still drawing a built-in glyph,
-{n['pinned']} pinned to one deliberately.
-The first three columns are the same icon at menu scale on a dark menu,
-at menu scale on a light one, and at full size.
-Rows with no render name the Blender glyph they fall back to.</p>
+{n['baked']} rendered, {n['fallback']} with no render,
+{n['pinned']} pinned to a built-in glyph on purpose.
+Each card shows the render enlarged on a dark menu, with the two small
+squares beside it giving actual menu scale on a dark and a light menu.
+Cite the operator id under a card when you want a render changed.</p>
+<p class="warn"><b>Renders are 64&times;64.</b> The large image is that
+file scaled up with no smoothing, so blockiness here is the icon's real
+resolution and not a fault in the render. Judge framing, pose, contrast
+and whether the form is recognisable &mdash; not sharpness.</p>
 {chr(10).join(body)}
 <p><small>Generated by <code>tools/icon_contact_sheet.py</code>.
 Images are relative, so keep this file at the repository root.</small></p>

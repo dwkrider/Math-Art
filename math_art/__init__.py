@@ -253,7 +253,12 @@ def _draw_gallery(lay, entries):
 
 
 def _make_gallery_menu(spec):
-    """Gallery variant of `spec`, under its own idname and label."""
+    """Gallery variant of `spec`: same label, distinct idname.
+
+    The label is unchanged because the gallery *is* the menu now -- only
+    the class needs a separate idname so it can coexist with the plain
+    row version, which stays registered for comparison.
+    """
     idname = spec.idname + "_gallery"
 
     def draw(self, context):
@@ -261,16 +266,21 @@ def _make_gallery_menu(spec):
 
     return type(idname, (bpy.types.Menu,),
                 {'bl_idname': idname,
-                 'bl_label': spec.label + " (Gallery)",
+                 'bl_label': spec.label,
                  'draw': draw})
 
 
-# Which submenus also get a gallery variant.  Both versions register, so
-# the two can be compared side by side in one build; this is a
-# prototype, not the shipping layout.
-GALLERY_MENUS = (menu_defs.ROLLERS,)
+# Every content submenu is drawn as a gallery.  STYLES is deliberately
+# not: all five of its entries are pinned to built-in glyphs, so its
+# gallery would have nothing to put in the grid and would fall back to
+# exactly the plain menu -- a duplicate class for an identical result.
+#
+# The plain row-per-entry menus stay registered alongside the galleries
+# so a single build can still be compared either way.
+GALLERY_MENUS = menu_defs.MENU_ORDER
 
 _GALLERIES = tuple(_make_gallery_menu(s) for s in GALLERY_MENUS)
+_GALLERY_BY_IDNAME = {g.bl_idname: g for g in _GALLERIES}
 
 
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
@@ -280,12 +290,9 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
     def draw(self, context):
         lay = self.layout
         for spec in menu_defs.MENU_ORDER:
-            lay.menu(spec.idname, icon=spec.icon)
-            # PROTOTYPE: the gallery variant sits directly under the
-            # submenu it mirrors, so the two can be opened back to back.
-            for gal in _GALLERIES:
-                if gal.bl_idname == spec.idname + "_gallery":
-                    lay.menu(gal.bl_idname, icon=spec.icon)
+            gal = _GALLERY_BY_IDNAME.get(spec.idname + "_gallery")
+            lay.menu(gal.bl_idname if gal else spec.idname,
+                     icon=spec.icon)
         lay.separator()
         if hasattr(bpy.types, 'OBJECT_OT_symmetric_sculpture_add'):
             lay.operator_menu_enum("object.symmetric_sculpture_add",
@@ -293,6 +300,7 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
                                    text="Symmetric Sculpture "
                                         "(Experimental)",
                                    icon='MOD_MIRROR')
+        # Styles stays a plain row menu -- see GALLERY_MENUS above.
         lay.menu(menu_defs.STYLES.idname, icon=menu_defs.STYLES.icon)
 
 

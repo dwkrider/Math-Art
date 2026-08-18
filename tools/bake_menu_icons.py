@@ -80,6 +80,12 @@ ORIENT = {
 
 # Operators that cannot be baked at all.  Each needs a reason.
 SKIP = {
+    # Builds the phyllotaxis seed positions as a points-only mesh (120
+    # verts, 0 faces), so Cycles has nothing to shade and the frame comes
+    # back empty.  Giving it faces just for the thumbnail would show
+    # something the operator does not actually produce, so it keeps its
+    # built-in glyph and the gallery draws it as an ordinary row.
+    "mesh.receptacle_add": "points-only mesh, nothing for Cycles to shade",
 }
 
 
@@ -172,16 +178,36 @@ def bake(op):
         _invoke(op, OVERRIDES.get(op, {}))
     except Exception as e:
         return f"operator failed: {e!r}"
-    if not rd.subjects():
+    subjects = rd.subjects()
+    if not subjects:
         return "operator produced no mesh or curve"
+    # Diagnose the empty-frame case up front: a mesh with vertices but no
+    # faces, or a curve with no bevel, renders nothing in Cycles, and
+    # "fully transparent frame" is a confusing way to hear about it.
+    if not any(len(getattr(o.data, 'polygons', ())) for o in subjects
+               if o.type == 'MESH') and \
+            not any(o.type == 'CURVE' for o in subjects):
+        return (f"no renderable faces "
+                f"({sum(len(getattr(o.data, 'vertices', ())) for o in subjects)}"
+                f" verts, 0 faces)")
     if op in ORIENT:
         for o in rd.subjects():
             o.rotation_euler = Euler(ORIENT[op])
     rd.normalize_subjects()
     rd.apply_material()
+    path = menu_icons.icon_path(op)
     try:
-        _render_to(menu_icons.icon_path(op))
+        _render_to(path)
     except Exception as e:
+        # _render_to writes the full-size frame before cropping it, so a
+        # crop that raises leaves an uncropped PNG behind.  Left in
+        # place it would load as a valid-looking icon at the wrong size,
+        # which is worse than having no icon at all.
+        if os.path.isfile(path):
+            try:
+                os.remove(path)
+            except OSError:
+                pass
         return f"render failed: {e!r}"
     return None
 
