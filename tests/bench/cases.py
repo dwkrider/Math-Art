@@ -634,6 +634,10 @@ def _evolve_checked(V, T, labels, targets, kwargs):
                                sig.parameters["mobility"].default),
         "cotan_mode": kwargs.get("cotan_mode",
                                  sig.parameters["cotan_mode"].default),
+        # outer optimizer (S2): None means the established path, whose
+        # identity is the cg flag; "lbfgs" is the opt-in L-BFGS branch
+        "optimizer": (kwargs.get("optimizer")
+                      or ("cg" if kwargs.get("cg", True) else "descent")),
     }
     if effective["groom_every"] and info["grooms_run"] == 0:
         raise RuntimeError("groom_every was configured but no groom cycle "
@@ -710,7 +714,7 @@ def case_bubble_single_fine(config):
 
 
 def _case_bubble_double(config, r1, r2, nphi, iters_default=600,
-                        perturb=(1.10, 0.95, 1.0)):
+                        perturb=(1.10, 0.95, 1.0), trace_t=False):
     """Perturbed standard double bubble relaxing back: dihedral angles
     at the Plateau border (Taylor: 120 degrees), per-film sphericity,
     the Young-Laplace curvature relation 1/r3 = 1/r1 - 1/r2, pressures,
@@ -762,7 +766,15 @@ def _case_bubble_double(config, r1, r2, nphi, iters_default=600,
                                       abs(p2 - 2.0 / r2) * r2 / 2.0),
     }
     mets.update(_evolution_metrics(info))
-    trace = [{"iter": h["it"], "E": h["area"]} for h in info["history"]]
+    if trace_t:
+        # opt-in wall-clock-resolved trace (equal-wall-time A/B curves);
+        # the pre-existing cases keep the iter/E-only format so their
+        # committed artifacts regenerate unchanged
+        trace = [{"iter": h["it"], "t": h.get("t"), "E": h["area"]}
+                 for h in info["history"]]
+    else:
+        trace = [{"iter": h["it"], "E": h["area"]}
+                 for h in info["history"]]
     return {"metrics": mets, "trace": trace, "time_s": dt,
             "n_verts": len(V), "n_tris": len(T), "effective": effective}
 
@@ -791,6 +803,23 @@ def case_bubble_double_fine(config):
     the plan write-up, not hidden by a huge budget here."""
     return _case_bubble_double(config, 1.0, 1.0, 96, iters_default=600,
                                perturb=(1.02, 0.99, 1.0))
+
+
+def case_bubble_double_fine_hard(config):
+    """The S3/S2 deficiency case, committed as a first-class benchmark:
+    the nphi=96 equal double bubble under the LARGE (1.10, 0.95)
+    perturbation -- the high-resolution transient bubble_double_fine's
+    docstring documents dodging.  Under the default optimizer (CG over
+    the mobility-preconditioned projected gradient) this reads ~4 deg
+    fitted-angle rms after 2400 iterations (~130 s measured); the case
+    exists to hold the number that motivated S2's L-BFGS branch and to
+    measure any optimizer against it (A/B via
+    configs/{baseline,lbfgs}.json; measured with lbfgs: 0.012 deg in
+    122 iterations).  Traces carry wall-clock t so the A/B can be read
+    at equal TIME, not equal iterations -- the repo's parabola-vs-Hart
+    lesson."""
+    return _case_bubble_double(config, 1.0, 1.0, 96, iters_default=2400,
+                               perturb=(1.10, 0.95, 1.0), trace_t=True)
 
 
 # --------------------------------------------------------------------------
@@ -1538,4 +1567,5 @@ CASES = {
     "bubble_triple": case_bubble_triple,
     "bubble_triple_fine": case_bubble_triple_fine,
     "bubble_triple_unequal": case_bubble_triple_unequal,
+    "bubble_double_fine_hard": case_bubble_double_fine_hard,
 }
