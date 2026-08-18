@@ -145,6 +145,10 @@ _MODULE_NAMES = [
 
 from . import live                                       # noqa: E402
 
+# The Add-menu tree is data (menu_defs) plus an icon resolver
+# (menu_icons); the classes further down are generated from them.
+from . import menu_defs, menu_icons                       # noqa: E402
+
 _MODULES = []
 for _nm in _MODULE_NAMES:
     try:
@@ -161,238 +165,36 @@ def _op(lay, idname, **kw):
         lay.operator(idname, **kw)
 
 
-class VIEW3D_MT_math_art_minimal(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_minimal"
-    bl_label = "Surfaces"
+def _draw_entries(lay, entries):
+    """Draw one menu's worth of table entries."""
+    for entry in entries:
+        if entry.op is None:
+            lay.separator()
+            continue
+        kw = dict(menu_icons.icon_kwargs(entry))
+        if entry.text is not None:
+            kw['text'] = entry.text
+        _op(lay, entry.op, **kw)
 
+
+def _make_menu(spec):
+    """Build a bpy.types.Menu class from a menu_defs.Menu record."""
+    # `spec` is captured by closure, not passed as a default argument:
+    # Blender rejects a Menu whose draw() takes anything but
+    # (self, context).
     def draw(self, context):
-        lay = self.layout
-        _op(lay, "mesh.scherk_collins_add",
-            text="Scherk-Collins Sculpture", icon='MESH_TORUS')
-        _op(lay, "mesh.parametric_minimal_add",
-            text="Minimal Surfaces", icon='SURFACE_NSPHERE')
-        _op(lay, "mesh.periodic_minimal_add",
-            text="Minimal Surfaces (Periodic)",
-            icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.minimal_knot_span_add", icon='MESH_TORUS')
-        _op(lay, "object.minimal_span", icon='OUTLINER_OB_SURFACE')
-        _op(lay, "mesh.seifert_surface_add",
-            text="Seifert Surface", icon='MOD_SIMPLIFY')
-        _op(lay, "mesh.algebraic_surface_add",
-            icon='SURFACE_NSURFACE')
-        _op(lay, "mesh.topological_surface_add", icon='MESH_TORUS')
-        _op(lay, "mesh.minimal_surface_polyhedron_add",
-            icon='MESH_UVSPHERE')
-        _op(lay, "mesh.squeeze_add", icon='MOD_SIMPLEDEFORM')
-        _op(lay, "mesh.vertex_vortices_add", icon='FORCE_VORTEX')
-        _op(lay, "mesh.helical_surface_add", icon='MOD_SCREW')
-        _op(lay, "mesh.ruled_surface_add", icon='MOD_SCREW')
-        _op(lay, "mesh.dform_add", text="D-Form", icon='MOD_CLOTH')
-        _op(lay, "mesh.curiosity_surface_add",
-            icon='SURFACE_DATA')
-        _op(lay, "mesh.invariant_manifold_add",
-            icon='SURFACE_NSURFACE')
-        _op(lay, "mesh.supershape_add", icon='SURFACE_NSPHERE')
-        _op(lay, "mesh.spherical_harmonic_add",
-            icon='SURFACE_NSPHERE')
-        _op(lay, "mesh.orbital_add", icon='META_BALL')
-        _op(lay, "mesh.hyperbolic_surface_add", icon='MESH_CAPSULE')
-        _op(lay, "mesh.crochet_add", icon='MOD_CLOTH')
+        _draw_entries(self.layout, spec.entries)
+
+    return type(spec.idname, (bpy.types.Menu,),
+                {'bl_idname': spec.idname,
+                 'bl_label': spec.label,
+                 'draw': draw})
 
 
-class VIEW3D_MT_math_art_polyhedra(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_polyhedra"
-    bl_label = "Polyhedra"
-
-    def draw(self, context):
-        lay = self.layout
-        _op(lay, "mesh.regular_solid_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.uniform_polyhedron_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.biscribed_solid_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.polyhedron_compound_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.toroidal_polyhedron_add", icon='MESH_TORUS')
-        _op(lay, "mesh.polyhedral_torus_add", icon='MESH_TORUS')
-        _op(lay, "mesh.notable_polyhedron_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.canonical_polyhedron_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.icosahedron_stellation_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.general_stellation_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.star_prism_add", icon='MESH_CYLINDER')
-        _op(lay, "mesh.conway_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.zonohedron_add", icon='MESH_UVSPHERE')
-        _op(lay, "mesh.waterman_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.symmetrohedron_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.polytope4d_add", icon='MESH_CUBE')
-        _op(lay, "mesh.polytwister_add", icon='MESH_TORUS')
-        _op(lay, "mesh.hyperbolic_honeycomb_add", icon='META_BALL')
-        _op(lay, "mesh.spacefill_add", icon='SNAP_VOLUME')
-        _op(lay, "mesh.interlocking_add", icon='MOD_BUILD')
-        _op(lay, "mesh.geodesic_add", icon='MESH_UVSPHERE')
-        _op(lay, "mesh.spiked_polyhedron_add", icon='LIGHT_SUN')
-
-
-class VIEW3D_MT_math_art_fractals(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_fractals"
-    bl_label = "Fractals"
-
-    def draw(self, context):
-        lay = self.layout
-        _op(lay, "mesh.sponge_add", icon='MESH_CUBE')
-        _op(lay, "mesh.mandelbulb_add", icon='META_BALL')
-        _op(lay, "mesh.snowflake_add", icon='FREEZE')
-        _op(lay, "mesh.apollonian_add", icon='MESH_CIRCLE')
-        _op(lay, "mesh.fractal_polyhedron_add",
-            icon='OUTLINER_OB_POINTCLOUD')
-        _op(lay, "curve.space_filling_add", icon='CURVE_DATA')
-        _op(lay, "curve.lsystem_add", icon='GRAPH')
-        _op(lay, "curve.turtle_curve_add", icon='MOD_CURVE')
-        _op(lay, "curve.fractal_tree_add", icon='GRAPH')
-        _op(lay, "mesh.fractal_tiling_add", icon='MESH_CIRCLE')
-        _op(lay, "mesh.fractal_knotwork_add", icon='OUTLINER_OB_CURVES')
-        _op(lay, "mesh.fractal_reptile_add", icon='MOD_TRIANGULATE')
-        _op(lay, "mesh.ifs_add", icon='MOD_REMESH')
-
-
-class VIEW3D_MT_math_art_knots(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_knots"
-    bl_label = "Knots & Curves"
-
-    def draw(self, context):
-        lay = self.layout
-        _op(lay, "curve.prime_knot_add", icon='FORCE_VORTEX')
-        _op(lay, "curve.torus_knot_add", icon='FORCE_VORTEX')
-        _op(lay, "curve.hopf_fibration_add", icon='FORCE_MAGNETIC')
-        _op(lay, "mesh.hopf_torus_add", icon='MESH_TORUS')
-        _op(lay, "curve.harmonic_knot_add", icon='FORCE_HARMONIC')
-        _op(lay, "curve.petal_knot_add", icon='CURVE_NCIRCLE')
-        _op(lay, "curve.rational_knot_add", icon='MOD_CURVE')
-        _op(lay, "curve.fractal_knot_add", icon='FORCE_VORTEX')
-        _op(lay, "curve.substitution_knot_add", icon='CURVE_NCURVE')
-        _op(lay, "curve.math_link_add", icon='LINKED')
-        _op(lay, "mesh.antoine_add", icon='LINKED')
-        _op(lay, "curve.attractor_add", text="Strange Attractor",
-            icon='RNDCURVE')
-        _op(lay, "curve.dual_helix_add", icon='MOD_SCREW')
-        _op(lay, "mesh.rolling_knot_add", icon='PHYSICS')
-
-
-class VIEW3D_MT_math_art_weaves(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_weaves"
-    bl_label = "Weaves & Tangles"
-
-    def draw(self, context):
-        lay = self.layout
-        _op(lay, "mesh.polylinks_add", icon='MESH_CIRCLE')
-        _op(lay, "mesh.polystix_add", icon='MESH_CYLINDER')
-        _op(lay, "mesh.tangle_add", icon='MOD_BOOLEAN')
-        _op(lay, "mesh.poly_weave_add", icon='MOD_LATTICE')
-        _op(lay, "mesh.rotegrity_add", icon='SPHERE')
-        _op(lay, "mesh.stellated_weave_add", icon='MOD_LATTICE')
-        _op(lay, "curve.celtic_knot_add", icon='MOD_LATTICE')
-        _op(lay, "mesh.woven_polyhedron_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.woven_double_shell_add", icon='MESH_UVSPHERE')
-        _op(lay, "mesh.turks_head_add", icon='CURVE_NCIRCLE')
-
-
-class VIEW3D_MT_math_art_rollers(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_rollers"
-    bl_label = "Rollers"
-
-    def draw(self, context):
-        lay = self.layout
-        # non-spherical shapes that roll ("rolloids"): rollers of
-        # constant width, developable rollers, and balancing solids
-        _op(lay, "mesh.oloid_add", icon='MESH_CAPSULE')
-        _op(lay, "mesh.sphericon_add", icon='MESH_CAPSULE')
-        _op(lay, "mesh.steinmetz_add", icon='MESH_CYLINDER')
-        _op(lay, "mesh.orbis_add", icon='MESH_TORUS')
-        _op(lay, "mesh.constant_width_add", icon='MESH_CIRCLE')
-        _op(lay, "mesh.monostatic_body_add", text="Monostatic Body",
-            icon='MESH_UVSPHERE')
-        _op(lay, "mesh.rolling_knot_add", icon='PHYSICS')
-
-
-class VIEW3D_MT_math_art_odds(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_odds"
-    bl_label = "Odds & Ends"
-
-    def draw(self, context):
-        # Only generators that live nowhere else.  Everything with a
-        # home of its own is listed THERE and not here: the rollers
-        # (oloid, sphericon, Steinmetz, orbis, constant-width, Gomboc)
-        # in Rollers, polytwisters and hyperbolic honeycombs in
-        # Polyhedra, phyllotaxis in Plants.  A generator appearing in
-        # two menus makes both of them harder to read and neither of
-        # them authoritative.
-        lay = self.layout
-        _op(lay, "mesh.koman_add", text="Koman Developable",
-            icon='MOD_SCREW')
-        _op(lay, "mesh.platonic_twist_add", icon='MOD_SCREW')
-        _op(lay, "mesh.twisted_torus_add", icon='MESH_TORUS')
-        _op(lay, "mesh.stereographic_add", icon='LIGHT_POINT')
-        _op(lay, "mesh.orbifold_sphere_add", icon='MOD_MIRROR')
-        _op(lay, "mesh.bubble_cluster_add", icon='SPHERE')
-        _op(lay, "mesh.relaxed_bubble_add", icon='META_BALL')
-
-
-class VIEW3D_MT_math_art_patterns(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_patterns"
-    bl_label = "Patterns"
-
-    def draw(self, context):
-        lay = self.layout
-        _op(lay, "mesh.frieze_add", icon='MOD_ARRAY')
-        _op(lay, "mesh.wallpaper_add", icon='MOD_MIRROR')
-        _op(lay, "mesh.layer_add", icon='MOD_SOLIDIFY')
-        _op(lay, "mesh.modular_screen_add", icon='MOD_WIREFRAME')
-        _op(lay, "mesh.relief_panel_add", icon='MOD_DISPLACE')
-        _op(lay, "mesh.relief_solid_add", icon='MATSPHERE')
-        lay.separator()
-        _op(lay, "mesh.tiling_add", icon='MESH_GRID')
-        _op(lay, "mesh.kuniform_add", icon='MESH_GRID')
-        _op(lay, "mesh.monohedral_add", icon='MESH_PLANE')
-        _op(lay, "mesh.isohedral_add", icon='MOD_UVPROJECT')
-        _op(lay, "mesh.aperiodic_add", icon='MESH_ICOSPHERE')
-        _op(lay, "mesh.reptile_add", icon='MESH_GRID')
-        _op(lay, "mesh.voderberg_add", icon='FORCE_VORTEX')
-        _op(lay, "mesh.spiral_tiling_add", icon='FORCE_VORTEX')
-        _op(lay, "mesh.islamic_pattern_add", icon='SOLO_ON')
-        _op(lay, "mesh.celtic_knot_2d_add", icon='MOD_LATTICE')
-        _op(lay, "mesh.over_under_screen_add", icon='MESH_GRID')
-        _op(lay, "mesh.knot_carpet_add", icon='MESH_CIRCLE')
-        lay.separator()
-        _op(lay, "mesh.hyperbolic_tiling_add", icon='MESH_CIRCLE')
-
-
-class VIEW3D_MT_math_art_plants(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_plants"
-    bl_label = "Plants & Growth"
-
-    def draw(self, context):
-        lay = self.layout
-        _op(lay, "curve.lsystem_add", icon='GRAPH')
-        _op(lay, "curve.inflorescence_add", icon='OUTLINER_OB_CURVES')
-        _op(lay, "mesh.receptacle_add", icon='MESH_UVSPHERE')
-        _op(lay, "mesh.leaf_add", icon='OUTLINER_OB_MESH')
-        _op(lay, "curve.growth_add", icon='OUTLINER_OB_FORCE_FIELD')
-        _op(lay, "mesh.map_lsystem_add", icon='MESH_GRID')
-        _op(lay, "curve.fractal_tree_add", icon='GRAPH')
-        _op(lay, "mesh.phyllotaxis_add", icon='MESH_CIRCLE')
-
-
-class VIEW3D_MT_math_art_styles(bpy.types.Menu):
-    bl_idname = "VIEW3D_MT_math_art_styles"
-    bl_label = "Styles"
-
-    def draw(self, context):
-        lay = self.layout
-        _op(lay, "object.leonardo_add", icon='MESH_ICOSPHERE')
-        _op(lay, "object.curvature_color_add",
-            icon='COLORSET_01_VEC')
-        _op(lay, "object.voronoi_openwork_add",
-            text="Voronoi Openwork (Experimental)", icon='MOD_REMESH')
-        _op(lay, "object.organic_wireframe_add",
-            icon='MOD_WIREFRAME')
-        _op(lay, "object.strahler_add", icon='MOD_SIMPLIFY')
+# The ten submenus are generated from the table in menu_defs.py; only
+# the root menu below is hand-written, since it holds submenu links and
+# the Symmetric Sculpture enum rather than a flat run of operators.
+_SUBMENUS = tuple(_make_menu(s) for s in menu_defs.ALL_MENUS)
 
 
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
@@ -401,18 +203,8 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
 
     def draw(self, context):
         lay = self.layout
-        lay.menu("VIEW3D_MT_math_art_minimal",
-                 icon='SURFACE_NSPHERE')
-        lay.menu("VIEW3D_MT_math_art_polyhedra",
-                 icon='MESH_ICOSPHERE')
-        lay.menu("VIEW3D_MT_math_art_fractals", icon='MESH_CUBE')
-        lay.menu("VIEW3D_MT_math_art_plants",
-                 icon='OUTLINER_OB_CURVES')
-        lay.menu("VIEW3D_MT_math_art_knots", icon='FORCE_VORTEX')
-        lay.menu("VIEW3D_MT_math_art_weaves", icon='MOD_LATTICE')
-        lay.menu("VIEW3D_MT_math_art_patterns", icon='MESH_GRID')
-        lay.menu("VIEW3D_MT_math_art_rollers", icon='MESH_CAPSULE')
-        lay.menu("VIEW3D_MT_math_art_odds", icon='MESH_TORUS')
+        for spec in menu_defs.MENU_ORDER:
+            lay.menu(spec.idname, icon=spec.icon)
         lay.separator()
         if hasattr(bpy.types, 'OBJECT_OT_symmetric_sculpture_add'):
             lay.operator_menu_enum("object.symmetric_sculpture_add",
@@ -420,15 +212,10 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
                                    text="Symmetric Sculpture "
                                         "(Experimental)",
                                    icon='MOD_MIRROR')
-        lay.menu("VIEW3D_MT_math_art_styles", icon='MOD_SOLIDIFY')
+        lay.menu(menu_defs.STYLES.idname, icon=menu_defs.STYLES.icon)
 
 
-_MENUS = (VIEW3D_MT_math_art_minimal, VIEW3D_MT_math_art_polyhedra,
-          VIEW3D_MT_math_art_fractals, VIEW3D_MT_math_art_knots,
-          VIEW3D_MT_math_art_weaves, VIEW3D_MT_math_art_patterns,
-          VIEW3D_MT_math_art_rollers, VIEW3D_MT_math_art_odds,
-          VIEW3D_MT_math_art_plants,
-          VIEW3D_MT_math_art_styles, VIEW3D_MT_math_art_add)
+_MENUS = _SUBMENUS + (VIEW3D_MT_math_art_add,)
 
 
 def _menu_func(self, context):
@@ -449,6 +236,7 @@ def register():
         except Exception as e:
             print(f"Math Art: register failed for "
                   f"{m.__name__}: {e}")
+    menu_icons.load()        # baked icons; a no-op on an un-baked build
     for c in _MENUS:
         bpy.utils.register_class(c)
     bpy.types.VIEW3D_MT_add.append(_menu_func)
@@ -470,6 +258,7 @@ def unregister():
     bpy.types.VIEW3D_MT_add.remove(_menu_func)
     for c in reversed(_MENUS):
         bpy.utils.unregister_class(c)
+    menu_icons.unload()      # Blender leak-checks preview collections
     for m in reversed(_ACTIVE):
         try:
             m.unregister()
