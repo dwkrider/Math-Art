@@ -36,7 +36,9 @@ def clear():
 
 # --- the add operator ------------------------------------------------
 clear()
-bpy.ops.mesh.gem_add()
+# Name the preset: this block tests the REFERENCE design, and the
+# default is free to change as cuts are added.
+bpy.ops.mesh.gem_add(preset='SRB_GEMCAD')
 obj = bpy.context.active_object
 me = obj.data
 
@@ -123,5 +125,66 @@ try:
 except RuntimeError:
     pass                                # operator reported an error
 check("junk import creates nothing", len(bpy.data.objects) == n_before)
+
+# --- the parametric brilliant, measured and graded -------------------
+clear()
+bpy.ops.mesh.gem_add(preset='TOLKOWSKY', size_mm=6.5, sg=3.52)
+tol = bpy.context.active_object
+check("Tolkowsky preset builds", len(tol.data.polygons) == 73,
+      f"{len(tol.data.polygons)} facets")
+check("proportions stored on the object", "gem_proportions" in tol)
+
+# These are MEASURED off the solid, not echoed back from the request.
+pr = tol["gem_proportions"]
+check("table measures 53%", abs(pr["table_pct"] - 0.53) < 5e-3,
+      f"{pr['table_pct'] * 100:.2f}%")
+check("crown angle measures 34.5", abs(pr["crown_angle"] - 34.5) < 0.05,
+      f"{pr['crown_angle']:.2f} deg")
+check("pavilion angle measures 40.75",
+      abs(pr["pavilion_angle"] - 40.75) < 0.05,
+      f"{pr['pavilion_angle']:.2f} deg")
+# Tolkowsky's 1919 ideal grades VERY GOOD, not Excellent, and that is
+# correct rather than a defect: the IDC's Excellent band for table width
+# runs 54-62%, so his calculated 53% table falls just outside it.  Modern
+# taste prefers a slightly larger table than his optics did.  Asserting
+# "Excellent" here would be asserting a mistake.
+check("Tolkowsky's 53% table grades Very Good, per the IDC bands",
+      tol.get("gem_idc_grade") == "Very Good",
+      str(tol.get("gem_idc_grade")))
+check("carat weight is sane", 0.85 < tol["gem_carat"] < 1.15,
+      f"{tol['gem_carat']:.3f} ct at 6.5 mm")
+
+# ... while the modern default proportions do grade Excellent
+clear()
+bpy.ops.mesh.gem_add(preset='ROUND_BRILLIANT')
+mod = bpy.context.active_object
+check("the default modern proportions grade Excellent",
+      mod.get("gem_idc_grade") == "Excellent", str(mod.get("gem_idc_grade")))
+
+# --- the proportions actually steer the solid ------------------------
+clear()
+bpy.ops.mesh.gem_add(preset='ROUND_BRILLIANT', pavilion_angle=43.0)
+deep = min(v.co[2] for v in bpy.context.active_object.data.vertices)
+clear()
+bpy.ops.mesh.gem_add(preset='ROUND_BRILLIANT', pavilion_angle=39.0)
+shallow = min(v.co[2] for v in bpy.context.active_object.data.vertices)
+check("a steeper pavilion deepens the stone", deep < shallow - 1e-3,
+      f"{deep:.4f} vs {shallow:.4f}")
+
+clear()
+bpy.ops.mesh.gem_add(preset='ROUND_BRILLIANT', culet_pct=0.0)
+n57 = len(bpy.context.active_object.data.polygons)
+clear()
+bpy.ops.mesh.gem_add(preset='ROUND_BRILLIANT', culet_pct=2.0)
+n58 = len(bpy.context.active_object.data.polygons)
+check("a culet facet adds exactly one facet", n58 == n57 + 1,
+      f"{n57} -> {n58}")
+
+# --- a published design is not disturbed by the proportion sliders ---
+clear()
+bpy.ops.mesh.gem_add(preset='SRB_GEMCAD', table_pct=45.0)
+check("a literal design ignores the proportion sliders",
+      len(bpy.context.active_object.data.polygons) == 73,
+      f"{len(bpy.context.active_object.data.polygons)} facets")
 
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")

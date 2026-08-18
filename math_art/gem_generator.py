@@ -30,17 +30,20 @@
 #     Annex B 7.2 -- the normative round-brilliant facet arrangement.
 
 try:
-    from .gems import (catalogue, design as gem_design, facets as gem_facets)
+    from .gems import (catalogue, design as gem_design, facets as gem_facets,
+                       measure as gem_measure)
     from .gems.asc import parse_asc, write_asc
     from .polyhedra.fit import fit_cube
 except ImportError:                     # flat import outside the package
-    from gems import catalogue, design as gem_design, facets as gem_facets
+    from gems import (catalogue, design as gem_design, facets as gem_facets,
+                      measure as gem_measure)
     from gems.asc import parse_asc, write_asc
     from polyhedra.fit import fit_cube
 
 try:
     import bpy
-    from bpy.props import EnumProperty, FloatProperty, StringProperty
+    from bpy.props import (EnumProperty, FloatProperty, IntProperty,
+                           StringProperty)
     from bpy_extras.io_utils import ExportHelper, ImportHelper
     _IN_BLENDER = True
 except ImportError:
@@ -75,6 +78,16 @@ def build_gem(cut_design, span=2.0, snap=1e-5):
     info = dict(chk)
     info["volume_design_units"] = gem_facets.volume(P)
     info["dropped"] = len(P.dropped)
+    # Measure the SOLID, not the proportions we were handed: that is what
+    # makes the report a check rather than an echo.
+    try:
+        pr = gem_measure.proportions(P, N, d, tier, fold=cut_design.fold or 8)
+        info["proportions"] = pr
+        info["grades"] = gem_measure.idc_grade(pr)
+        info["warnings"] = gem_measure.warnings(pr, ri=cut_design.ri)
+    except (ValueError, ZeroDivisionError, KeyError):
+        info["proportions"] = info["grades"] = None
+        info["warnings"] = []
     return (verts, [list(f) for f in P.faces],
             [int(tier[j]) for j in P.face_plane], info)
 
@@ -113,13 +126,28 @@ if _IN_BLENDER:
         context.view_layer.objects.active = obj
         return obj, info
 
-    def _report(op, cut_design, info, me):
-        op.report({'INFO'},
-                  f"{cut_design.name or 'gem'}: {len(me.polygons)} facets, "
-                  f"{len(me.vertices)} vertices, "
-                  f"meetpoint residual {info['residual']:.1e}"
-                  + (f", {info['dropped']} facet(s) cut away"
-                     if info["dropped"] else ""))
+    def _report(op, cut_design, info, me, size_mm=0.0, sg=0.0):
+        """Report what was MEASURED off the solid, not what was asked for."""
+        pr, gr = info.get("proportions"), info.get("grades")
+        msg = (f"{cut_design.name or 'gem'}: {len(me.polygons)} facets, "
+               f"{len(me.vertices)} vertices")
+        if pr is not None:
+            msg += (f", table {pr.table_pct * 100:.1f}%, crown "
+                    f"{pr.crown_angle:.1f} deg, pavilion "
+                    f"{pr.pavilion_angle:.2f} deg, depth "
+                    f"{pr.total_depth_pct * 100:.1f}%")
+            if gr:
+                msg += f" -- proportions {gr['overall']}"
+            if size_mm > 0.0 and sg > 0.0:
+                ct = gem_measure.carat_from_diameter(pr, size_mm, sg)
+                msg += f"; {size_mm:.1f} mm = {ct:.2f} ct"
+        if info["dropped"]:
+            msg += f", {info['dropped']} facet(s) cut away"
+        op.report({'INFO'}, msg)
+        # The IDC pathologies are warnings, not errors: a fish-eye stone is
+        # a real stone, and being able to make one on purpose is the point.
+        for w in info.get("warnings", []):
+            op.report({'WARNING'}, w)
 
     class MESH_OT_gem_add(bpy.types.Operator):
         """Add a faceted gemstone cut from its facet planes"""
@@ -130,8 +158,55 @@ if _IN_BLENDER:
         preset: EnumProperty(
             name="Cut",
             items=[(k, lbl, desc) for k, lbl, desc in catalogue.cut_items()],
-            default=catalogue.cut_items()[0][0])
+            # Named, not "whatever sorts first": the menu is ordered by
+            # family and then alphabetically, so adding a cut would
+            # otherwise move the default out from under the user.
+            default='ROUND_BRILLIANT')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        # Soft ranges span the IDC grading table end to end, so the slider
+        # itself shows how much room the trade recognises; the defaults sit
+        # in its Excellent band.
+        table_pct: FloatProperty(
+            name="Table", default=57.0, min=30.0, max=85.0,
+            soft_min=49.0, soft_max=70.0, subtype='PERCENTAGE')
+        crown_angle: FloatProperty(
+            name="Crown Angle", default=34.5, min=10.0, max=60.0,
+            soft_min=26.0, soft_max=40.0,
+            description="Degrees above the girdle plane (IDC Excellent: "
+                        "32.0 to 36.0)")
+        pavilion_angle: FloatProperty(
+            name="Pavilion Angle", default=40.75, min=25.0, max=60.0,
+            soft_min=38.5, soft_max=43.1,
+            description="Degrees below the girdle plane (IDC Excellent: "
+                        "40.6 to 41.8)")
+        girdle_pct: FloatProperty(
+            name="Girdle", default=3.0, min=0.0, max=15.0,
+            soft_min=0.5, soft_max=7.5, subtype='PERCENTAGE')
+        culet_pct: FloatProperty(
+            name="Culet", default=0.0, min=0.0, max=10.0,
+            subtype='PERCENTAGE',
+            description="0 gives a pointed culet and 57 facets; any larger "
+                        "value adds a culet facet, giving 58")
+        star_len: FloatProperty(
+            name="Star Length", default=55.0, min=5.0, max=95.0,
+            subtype='PERCENTAGE',
+            description="How far the stars reach from the table edge "
+                        "towards the girdle")
+        lower_girdle_len: FloatProperty(
+            name="Lower Halves", default=78.0, min=5.0, max=95.0,
+            subtype='PERCENTAGE',
+            description="How far the lower halves reach from the girdle "
+                        "towards the culet")
+        girdle_facets: IntProperty(name="Girdle Facets", default=16,
+                                   min=8, max=128)
+        size_mm: FloatProperty(
+            name="Size (mm)", default=6.5, min=0.1, max=100.0,
+            description="Real diameter. Reported as a carat weight only -- "
+                        "the mesh is still fitted to the 2 m cube")
+        sg: FloatProperty(
+            name="Specific Gravity", default=3.52, min=1.0, max=8.0,
+            description="Of the intended material (diamond 3.52, corundum "
+                        "4.00, quartz 2.65); sets the carat weight")
         snap: FloatProperty(
             name="Meetpoint Tolerance", default=1e-5,
             min=1e-7, max=1e-3, precision=7,
@@ -142,12 +217,45 @@ if _IN_BLENDER:
                         "quite concur; this is how close counts as "
                         "concurrent")
 
+        def _parametric(self):
+            src = catalogue.CUTS[self.preset].source
+            return not isinstance(src, gem_design.CutDesign)
+
+        # (property name, constructor argument, conversion)
+        _PROPS = (('table_pct', 'table', 0.01),
+                  ('crown_angle', 'crown_angle', 1.0),
+                  ('pavilion_angle', 'pavilion_angle', 1.0),
+                  ('girdle_pct', 'girdle_pct', 0.01),
+                  ('culet_pct', 'culet_pct', 0.01),
+                  ('star_len', 'star_len', 0.01),
+                  ('lower_girdle_len', 'lower_girdle_len', 0.01),
+                  ('girdle_facets', 'girdle_facets', 1))
+
+        def _params(self):
+            """Only the proportions the user actually set.
+
+            A preset carries its own proportions -- Tolkowsky's are 53%,
+            34.5 and 40.75 -- and passing every slider on every build would
+            silently overwrite them with this operator's defaults, so
+            picking "Tolkowsky" would quietly not give you Tolkowsky.
+            `is_property_set` is true only for values explicitly supplied,
+            so an untouched slider defers to the preset.
+            """
+            if not self._parametric():
+                return {}
+            out = {}
+            for prop, arg, conv in self._PROPS:
+                if self.properties.is_property_set(prop):
+                    v = getattr(self, prop)
+                    out[arg] = v * conv if isinstance(conv, float) else v
+            return out
+
         def execute(self, context):
             try:
-                D = catalogue.get_cut(self.preset)
+                D = catalogue.get_cut(self.preset, **self._params())
                 obj, info = _emit(context, D, 2.0 * self.scale, self.snap,
                                   catalogue.CUTS[self.preset].label)
-            except (ValueError, KeyError) as e:
+            except (ValueError, KeyError, TypeError) as e:
                 self.report({'ERROR'}, f"could not build the cut: {e}")
                 return {'CANCELLED'}
             if obj is None:
@@ -155,13 +263,38 @@ if _IN_BLENDER:
                             "the facet planes do not close a solid; try a "
                             "larger meetpoint tolerance")
                 return {'CANCELLED'}
-            _report(self, D, info, obj.data)
+            pr, gr = info.get("proportions"), info.get("grades")
+            if pr is not None:
+                # keep the measurement with the stone, so it can be read
+                # back without rebuilding
+                obj["gem_proportions"] = {k: float(v) for k, v
+                                          in pr._asdict().items()}
+                obj["gem_carat"] = gem_measure.carat_from_diameter(
+                    pr, self.size_mm, self.sg)
+            if gr:
+                obj["gem_idc_grade"] = gr["overall"]
+            _report(self, D, info, obj.data, self.size_mm, self.sg)
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'preset')
+            if self._parametric():
+                col = lay.column(align=True)
+                for p, _, _ in self._PROPS:
+                    col.prop(self, p)
+                if not any(self.properties.is_property_set(p)
+                           for p, _, _ in self._PROPS):
+                    lay.label(text="using the preset's own proportions",
+                              icon='INFO')
+            # The measured proportions and their IDC grade are reported in
+            # the status bar on build, and stored on the object.  They are
+            # deliberately NOT recomputed here: draw() runs on every
+            # redraw, and grading means intersecting the half-spaces again.
+            lay.separator()
+            lay.prop(self, 'size_mm')
+            lay.prop(self, 'sg')
             lay.prop(self, 'scale')
             lay.prop(self, 'snap')
 

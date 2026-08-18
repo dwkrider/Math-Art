@@ -28,8 +28,10 @@
 from typing import NamedTuple
 
 try:
+    from .brilliant import round_brilliant
     from .design import SRB_GEMCAD, CutDesign
 except ImportError:                     # flat import outside the package
+    from brilliant import round_brilliant
     from design import SRB_GEMCAD, CutDesign
 
 
@@ -50,6 +52,23 @@ CUTS = {
         description="The 16-sided-outline round brilliant printed as the "
                     "worked example in Strickland's GemCad manual; cut "
                     "for a refractive index of 1.54"),
+    "ROUND_BRILLIANT": CutEntry(
+        label="Round Brilliant (parametric)",
+        family="brilliant",
+        source=(round_brilliant, {}),
+        description="The 57/58-facet standard round brilliant solved from "
+                    "its proportions -- table, crown and pavilion angles, "
+                    "girdle, star and lower-half lengths"),
+    "TOLKOWSKY": CutEntry(
+        label="Tolkowsky Brilliant",
+        family="brilliant",
+        source=(round_brilliant, dict(table=0.53, crown_angle=34.5,
+                                      pavilion_angle=40.75, girdle_pct=0.02,
+                                      star_len=0.55, lower_girdle_len=0.75,
+                                      name="Tolkowsky Brilliant")),
+        description="Marcel Tolkowsky's 1919 proportions: 53% table, 34.5 "
+                    "degree crown, 40.75 degree pavilion -- the calculated "
+                    "ideal the modern brilliant descends from"),
 }
 
 # Display order for the operator's preset menu, grouped by family.
@@ -112,7 +131,7 @@ def _selftest():
 
     # every entry must build, close, and be convex -- the count is
     # measured, never asserted from the entry
-    want = {"SRB_GEMCAD": 73}
+    want = {"SRB_GEMCAD": 73, "TOLKOWSKY": 73, "ROUND_BRILLIANT": 73}
     for key in sorted(CUTS):
         D = get_cut(key)
         N, d, _ = _design.planes(D)
@@ -134,16 +153,29 @@ def _selftest():
         from . import asc as _asc
     except ImportError:
         import asc as _asc
+    # A COMPUTED design cannot survive the file format bit-for-bit: .ASC
+    # carries six decimals of angle and eight of distance, so a solved
+    # tier is rounded on the way out.  What must survive is everything
+    # that changes the stone -- the gear, the symmetry, the name, the
+    # index lists exactly, and the geometry to the format's precision.
     worst = None
     for key in sorted(CUTS):
         D = get_cut(key)
-        if _asc.parse_asc(_asc.write_asc(D)) != D:
+        R = _asc.parse_asc(_asc.write_asc(D))
+        same = (R.gear == D.gear and R.fold == D.fold
+                and R.mirror == D.mirror and R.name == D.name
+                and len(R.tiers) == len(D.tiers)
+                and all(a.indices == b.indices and a.name == b.name
+                        and abs(a.angle_deg - b.angle_deg) < 5e-7
+                        and abs(a.distance - b.distance) < 5e-9
+                        for a, b in zip(R.tiers, D.tiers)))
+        if not same:
             worst = key
             break
     good = worst is None
     ok &= good
-    print(f"gems.catalogue: every entry survives write/parse "
-          f"{'OK' if good else f'{worst} did not'}")
+    print(f"gems.catalogue: every entry survives write/parse to the "
+          f"format's precision {'OK' if good else f'{worst} did not'}")
 
     good = [k for k, _, _ in cut_items()] == sorted(CUTS)
     ok &= good
