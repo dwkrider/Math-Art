@@ -187,4 +187,42 @@ check("a literal design ignores the proportion sliders",
       len(bpy.context.active_object.data.polygons) == 73,
       f"{len(bpy.context.active_object.data.polygons)} facets")
 
+
+# --- the step-cut family ----------------------------------------------
+for preset, want in (('EMERALD', 'keel'), ('ASSCHER', 'point'),
+                     ('BAGUETTE', 'keel'), ('HEXAGON_STEP', None),
+                     ('OCTAGON_STEP', None)):
+    clear()
+    bpy.ops.mesh.gem_add(preset=preset)
+    o = bpy.context.active_object
+    me2 = o.data
+    edges2 = {}
+    for p in me2.polygons:
+        vs = list(p.vertices)
+        for a, b in zip(vs, vs[1:] + vs[:1]):
+            k = (min(a, b), max(a, b))
+            edges2[k] = edges2.get(k, 0) + 1
+    closed = set(edges2.values()) == {2}
+    check(f"{preset} builds closed", closed and len(me2.polygons) > 8,
+          f"{len(me2.polygons)} facets")
+
+    if want:
+        zmin = min(v.co[2] for v in me2.vertices)
+        bottom = [v for v in me2.vertices if abs(v.co[2] - zmin) < 1e-5]
+        if want == 'keel':
+            check(f"{preset} ends in a keel", len(bottom) >= 2,
+                  f"{len(bottom)} vertices at the bottom")
+        else:
+            check(f"{preset} ends in a point", len(bottom) == 1,
+                  f"{len(bottom)} vertices at the bottom")
+
+# an emerald cut is longer than it is wide, and its table is not square
+clear()
+bpy.ops.mesh.gem_add(preset='EMERALD')
+em = bpy.context.active_object.data
+xs = [v.co[0] for v in em.vertices]
+ys = [v.co[1] for v in em.vertices]
+lw = (max(ys) - min(ys)) / (max(xs) - min(xs))
+check("the emerald outline is 1.5:1", abs(lw - 1.5) < 0.02, f"{lw:.3f}:1")
+
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")

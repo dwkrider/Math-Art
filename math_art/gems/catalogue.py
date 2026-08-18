@@ -30,9 +30,11 @@ from typing import NamedTuple
 try:
     from .brilliant import round_brilliant
     from .design import SRB_GEMCAD, CutDesign
+    from .step import asscher, baguette, emerald, polygon_step
 except ImportError:                     # flat import outside the package
     from brilliant import round_brilliant
     from design import SRB_GEMCAD, CutDesign
+    from step import asscher, baguette, emerald, polygon_step
 
 
 class CutEntry(NamedTuple):
@@ -69,6 +71,37 @@ CUTS = {
         description="Marcel Tolkowsky's 1919 proportions: 53% table, 34.5 "
                     "degree crown, 40.75 degree pavilion -- the calculated "
                     "ideal the modern brilliant descends from"),
+    "EMERALD": CutEntry(
+        label="Emerald Cut",
+        family="step",
+        source=(emerald, {}),
+        description="Cut-corner rectangle with concentric rows of step "
+                    "facets; the pavilion converges on a keel rather than "
+                    "a point. Outline after Strickland's worked diagram"),
+    "ASSCHER": CutEntry(
+        label="Asscher (Square Emerald)",
+        family="step",
+        source=(asscher, {}),
+        description="A square step cut with a deep crown and broad cut "
+                    "corners; its pavilion ends in a point, not a keel"),
+    "BAGUETTE": CutEntry(
+        label="Baguette",
+        family="step",
+        source=(baguette, {}),
+        description="A long, plain step cut: one row a side, square "
+                    "corners -- the classic side stone"),
+    "HEXAGON_STEP": CutEntry(
+        label="Hexagon Step Cut",
+        family="step",
+        source=(polygon_step, dict(sides=6, rows=2,
+                                   name="Hexagon Step Cut")),
+        description="A regular-polygon step cut"),
+    "OCTAGON_STEP": CutEntry(
+        label="Octagon Step Cut",
+        family="step",
+        source=(polygon_step, dict(sides=8, rows=2,
+                                   name="Octagon Step Cut")),
+        description="A regular-polygon step cut"),
 }
 
 # Display order for the operator's preset menu, grouped by family.
@@ -131,17 +164,27 @@ def _selftest():
 
     # every entry must build, close, and be convex -- the count is
     # measured, never asserted from the entry
+    # A DROPPED plane -- one that ends up carrying no facet -- means
+    # different things in different families.  In a brilliant every tier
+    # is placed through a meetpoint, so a dropped plane is a mistake.  In
+    # a step cut it is expected: inset a chamfered rectangle far enough
+    # and the corner chamfer is consumed, which is why an emerald cut's
+    # corner facets stop before the keel.  So the check is per family.
     want = {"SRB_GEMCAD": 73, "TOLKOWSKY": 73, "ROUND_BRILLIANT": 73}
     for key in sorted(CUTS):
         D = get_cut(key)
         N, d, _ = _design.planes(D)
         P = _facets.intersect_halfspaces(N, d)
         chk = _facets.polytope_checks(P, N, d)
-        good = chk["closed"] and chk["convex"] and not P.dropped
+        may_drop = CUTS[key].family in ("step",)
+        good = chk["closed"] and chk["convex"] \
+            and (may_drop or not P.dropped)
         ok &= good
         print(f"gems.catalogue: {key} builds closed and convex with "
-              f"{len(P.faces)} facets, none cut away "
-              f"{'OK' if good else 'did not build'}")
+              f"{len(P.faces)} facets"
+              + (f", {len(P.dropped)} plane(s) spent" if P.dropped
+                 else ", none cut away")
+              + f" {'OK' if good else 'did not build'}")
         if key in want:
             good = len(P.faces) == want[key]
             ok &= good
@@ -177,9 +220,16 @@ def _selftest():
     print(f"gems.catalogue: every entry survives write/parse to the "
           f"format's precision {'OK' if good else f'{worst} did not'}")
 
-    good = [k for k, _, _ in cut_items()] == sorted(CUTS)
+    # cut_items is grouped by FAMILY and only then alphabetical, so it is
+    # not a sorted list of keys; what it promises is every cut exactly
+    # once, with families kept together.
+    keys = [k for k, _, _ in cut_items()]
+    fams = [CUTS[k].family for k in keys]
+    grouped = fams == sorted(fams, key=FAMILIES.index)
+    good = sorted(keys) == sorted(CUTS) and len(keys) == len(CUTS) and grouped
     ok &= good
-    print(f"gems.catalogue: cut_items lists every cut "
+    print(f"gems.catalogue: cut_items lists every cut once, grouped by "
+          f"family ({', '.join(dict.fromkeys(fams))}) "
           f"{'OK' if good else 'menu and registry disagree'}")
 
     raised = False
