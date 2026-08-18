@@ -2024,9 +2024,10 @@ if _IN_BLENDER:
                 lay.prop(self, k)
 
     def _menu_func(self, context):
-        self.layout.operator_menu_enum(
-            "object.symmetric_sculpture_add", "preset",
-            text="Symmetric Sculpture", icon='MOD_MIRROR')
+        # one entry, not a submenu of presets: the preset is a setting
+        # like the rest and belongs in the redo panel
+        self.layout.operator("object.symmetric_sculpture_add",
+                             icon='MOD_MIRROR')
 
     ADD_MENU = True
 

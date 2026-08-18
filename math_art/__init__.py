@@ -294,12 +294,10 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
             lay.menu(gal.bl_idname if gal else spec.idname,
                      icon=spec.icon)
         lay.separator()
-        if hasattr(bpy.types, 'OBJECT_OT_symmetric_sculpture_add'):
-            lay.operator_menu_enum("object.symmetric_sculpture_add",
-                                   "preset",
-                                   text="Symmetric Sculpture "
-                                        "(Experimental)",
-                                   icon='MOD_MIRROR')
+        # a plain entry, not operator_menu_enum: the preset belongs in
+        # the redo panel with the rest of the settings, not spilled up
+        # into the Add menu as a submenu of its own
+        _op(lay, "object.symmetric_sculpture_add", icon='MOD_MIRROR')
         # Styles stays a plain row menu -- see GALLERY_MENUS above.
         lay.menu(menu_defs.STYLES.idname, icon=menu_defs.STYLES.icon)
 
