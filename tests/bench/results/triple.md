@@ -2,7 +2,7 @@
 
 ## bubble_triple
 
-time: 66.656 s, n_verts=3489, n_tris=7071  
+time: 60.402 s, n_verts=3489, n_tris=7071  
 effective: iters=1600, iters_run=1600, groom_every=4, grooms_run=399, mobility=star, cotan_mode=mollify
 
 | metric | value |
@@ -33,38 +33,38 @@ effective: iters=1600, iters_run=1600, groom_every=4, grooms_run=399, mobility=s
 
 ## bubble_triple_fine
 
-time: 136.564 s, n_verts=14127, n_tris=28449  
+time: 82.653 s, n_verts=14127, n_tris=28449  
 effective: iters=800, iters_run=800, groom_every=4, grooms_run=199, mobility=star, cotan_mode=mollify
 
 | metric | value |
 |---|---|
 | area | 27.94 |
-| angle_rms_fit | 0.8038 |
-| angle_min_fit | 118.7 |
-| angle_max_fit | 121.2 |
-| angle_rms_raw | 1.427 |
-| tetra_rms_fit | 0.842 |
-| tetra_min_fit | 108.7 |
-| tetra_max_fit | 110.8 |
-| tetra_rms_raw | 2.004 |
+| angle_rms_fit | 0.02268 |
+| angle_min_fit | 120 |
+| angle_max_fit | 120.1 |
+| angle_rms_raw | 1.432 |
+| tetra_rms_fit | 0.02615 |
+| tetra_min_fit | 109.4 |
+| tetra_max_fit | 109.5 |
+| tetra_rms_raw | 1.983 |
 | n_tetra_angles | 12 |
-| fit_rms_worst | 0.002349 |
-| p1 | 1.998 |
+| fit_rms_worst | 7.008e-05 |
+| p1 | 2 |
 | p2 | 2 |
 | p3 | 2 |
-| yl_worst | 0.008216 |
+| yl_worst | 7.738e-11 |
 | area_analytic | 27.93 |
-| area_rel_excess | 0.0001422 |
-| pressure_rel_err_worst | 0.001062 |
-| vol_drift_max | 9.854e-13 |
-| vol_drift_pre_max | 9.106e-08 |
-| area_max_rise | -2.9e-08 |
-| groom_max_rise | -2.891e-08 |
+| area_rel_excess | 0.0001037 |
+| pressure_rel_err_worst | 9.215e-05 |
+| vol_drift_max | 9.947e-13 |
+| vol_drift_pre_max | 6.219e-11 |
+| area_max_rise | -8.594e-11 |
+| groom_max_rise | -8.455e-11 |
 | iters | 800 |
 
 ## bubble_triple_unequal
 
-time: 93.351 s, n_verts=3489, n_tris=7071  
+time: 93.394 s, n_verts=3489, n_tris=7071  
 effective: iters=2400, iters_run=2400, groom_every=4, grooms_run=599, mobility=star, cotan_mode=mollify
 
 | metric | value |
