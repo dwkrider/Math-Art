@@ -101,6 +101,11 @@ except ImportError:                      # flat import outside the package
     from solver import volume as _svol   # type: ignore
     from solver import walls as _swalls  # type: ignore
 
+try:
+    from .sharp_creases import mark_sharp, boundary_edges
+except ImportError:                      # flat import outside the package
+    from sharp_creases import mark_sharp, boundary_edges  # type: ignore
+
 
 # --------------------------------------------------------------------
 # Pure-math core (no bpy)
@@ -918,6 +923,14 @@ if _IN_BLENDER:
             description="Constrained area-descent iterations "
                         "(0 shows the raw seed)")
         smooth: BoolProperty(name="Smooth Shading", default=True)
+        sharp_edges: BoolProperty(
+            name="Sharp Rims", default=True,
+            description="Crease the surface's boundary rims -- the "
+                        "bridge's pinned rings, the drop's contact "
+                        "line, the film's frame ring and free "
+                        "contact line -- so a Subdivision Surface "
+                        "keeps them pinned to the rings / floor / "
+                        "wall instead of shrinking the open boundary")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -984,6 +997,14 @@ if _IN_BLENDER:
                 if self.show_support:
                     support = self._support_mesh(V)
 
+            # every mode's physical crease lines -- pinned rims, the
+            # drop's contact line, the film's frame ring and free
+            # contact line -- are the FILM mesh's open boundary, so
+            # collect them before any support geometry is appended
+            # (the support prop's own truncation rims are cuts, not
+            # physics, and stay uncreased)
+            bedges = boundary_edges(T) if self.sharp_edges else []
+
             if support is not None:
                 SV, SF = support
                 base = len(V)
@@ -1003,6 +1024,15 @@ if _IN_BLENDER:
             me.validate(clean_customdata=True)
             me.polygons.foreach_set('use_smooth',
                                     [self.smooth] * len(me.polygons))
+            # boundary edges have a single face, so sharp shading has
+            # nothing to split there; the crease weight is what
+            # matters (it pins the rims under Subdivision Surface)
+            ncrease = mark_sharp(me, bedges)
+            if self.sharp_edges and ncrease == 0:
+                # all four modes are open surfaces: a zero count
+                # means the crease bookkeeping silently broke
+                self.report({'WARNING'},
+                            "no boundary edges found to crease")
             me.update()
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
@@ -1015,7 +1045,8 @@ if _IN_BLENDER:
                     if len(info["pressures"]) else "")
             self.report({'INFO'},
                         f"{name}: {info['iters_run']} iterations, "
-                        f"area {info['area']:.4f}, {ptxt}{extra}")
+                        f"area {info['area']:.4f}, "
+                        f"{ncrease} rim crease edges, {ptxt}{extra}")
             return {'FINISHED'}
 
         def _support_mesh(self, filmV):
@@ -1061,7 +1092,8 @@ if _IN_BLENDER:
                 else:
                     lay.prop(self, 'ring_tilt')
                 lay.prop(self, 'show_support')
-            for k in ('resolution', 'iterations', 'smooth', 'scale'):
+            for k in ('resolution', 'iterations', 'smooth',
+                      'sharp_edges', 'scale'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
@@ -1117,6 +1149,21 @@ def _selftest():
     ok &= good
     print(f"cmc: cap volume error {errs[0]:.2e} -> {errs[1]:.2e} "
           f"under refinement {'OK' if good else 'FAIL'}")
+
+    # rim creasing: the physical crease lines of every mode are the
+    # open mesh boundary the operator marks; counts must be exact and
+    # NON-ZERO (an empty crease set is the silent regression mode).
+    # bridge: two pinned rims; drop: the contact line (the wetted
+    # disk is not meshed); films: frame ring + free contact line
+    nb = len(boundary_edges(build_bridge_mesh(48, 9, 0.5, 1.0)[1]))
+    nc = len(boundary_edges(Tc))
+    nf = len(boundary_edges(film_sphere_seed(nphi=32)[1]))
+    ncol = len(boundary_edges(film_cylinder_seed(nphi=32)[1]))
+    good = (nb == 2 * 48 and nc == 48 and nf == 64 and ncol == 64)
+    ok &= good
+    print(f"cmc: rim crease edges bridge {nb} (want 96), cap {nc} "
+          f"(want 48), films {nf}/{ncol} (want 64) "
+          f"{'OK' if good else 'FAIL'}")
 
     # wetted-area gradient vs central differences (contact-line rows
     # only, in-plane)

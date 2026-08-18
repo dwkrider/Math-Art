@@ -76,6 +76,11 @@ try:
 except ImportError:  # flat import outside the package
     from solver import volume as _svol
 
+try:
+    from .sharp_creases import mark_sharp, label_junction_edges
+except ImportError:  # flat import outside the package
+    from sharp_creases import mark_sharp, label_junction_edges
+
 
 def _icosphere(subdiv=0):
     """Unit icosphere: the icosahedron subdivided `subdiv` times.
@@ -1328,6 +1333,14 @@ if _IN_BLENDER:
             description="One material per film, colored by the "
                         "computed pressure jump across it")
         smooth: BoolProperty(name="Smooth Shading", default=True)
+        sharp_edges: BoolProperty(
+            name="Sharp Creases", default=True,
+            description="Mark the Plateau borders sharp (and "
+                        "creased): every edge where films of "
+                        "different region pairs meet, read off the "
+                        "evolver's own labels, so smooth shading and "
+                        "Subdivision Surface keep the fold instead "
+                        "of rounding it into a bulge")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
@@ -1407,6 +1420,20 @@ if _IN_BLENDER:
                     me.polygons.foreach_set(
                         'material_index',
                         [fidx[(int(f), int(b))] for f, b in labels])
+            # Plateau borders: mark every film-film junction edge
+            # sharp (and creased), derived from the region labels --
+            # the triple lines, and on TRIPLE the four lines running
+            # into each tetrahedral point, must stay crisp folds
+            # under smooth shading and under a Subdivision Surface
+            ncrease = 0
+            if self.sharp_edges:
+                ncrease = mark_sharp(
+                    me, label_junction_edges(T, labels))
+                if ncrease == 0 and self.bubbles != 'SINGLE':
+                    # a cluster with no junction edges marked is the
+                    # silent failure mode -- say so out loud
+                    self.report({'WARNING'},
+                                "no junction edges found to crease")
             me.update()
             obj = bpy.data.objects.new(name, me)
             context.collection.objects.link(obj)
@@ -1419,7 +1446,8 @@ if _IN_BLENDER:
                              for i, p in enumerate(press))
             self.report({'INFO'},
                         f"{name}: {info['iters_run']} iterations, "
-                        f"area {info['area']:.4f}, {ptxt}")
+                        f"area {info['area']:.4f}, "
+                        f"{ncrease} crease edges, {ptxt}")
             return {'FINISHED'}
 
         def draw(self, context):
@@ -1429,7 +1457,8 @@ if _IN_BLENDER:
             if self.bubbles in ('DOUBLE', 'TRIPLE'):
                 lay.prop(self, 'ratio')
             for k in ('squash', 'resolution', 'iterations',
-                      'groom_every', 'color', 'smooth', 'scale'):
+                      'groom_every', 'color', 'smooth',
+                      'sharp_edges', 'scale'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
@@ -1670,6 +1699,19 @@ def _selftest():
     n4 = int(np.sum(deg == 4))
     assert n4 == 2 and set(np.unique(deg[deg > 0])) == {2, 4}, \
         (n4, np.unique(deg))
+    # Plateau-border creasing: the junction edges read off the labels
+    # (what the operator marks sharp) must be NON-EMPTY and exactly
+    # the non-manifold triple-line edges -- an empty crease set is
+    # the silent regression this guards against
+    jset = {tuple(e) for e in label_junction_edges(T3, L3)}
+    tset = {(int(a), int(b)) for a, b in tri_edges}
+    assert jset and jset == tset, (len(jset), len(tset))
+    jd = {tuple(e) for e in label_junction_edges(Td, Ld)}
+    assert len(jd) == 48, len(jd)   # double: one 48-edge triple line
+    Vs_, Ts_, Ls_ = build_single_bubble_mesh(1.0, 2)
+    assert label_junction_edges(Ts_, Ls_) == []   # sphere: no folds
+    print(f"junction creases: triple {len(jset)} edges (= its "
+          f"triple-line set), double {len(jd)}, single 0")
     # area: the meshed seed converges to the closed-form total
     a24 = abs(_svol.mesh_area(*build_triple_bubble_mesh(1.0, 24)[:2])
               - geo3["A"]) / geo3["A"]
