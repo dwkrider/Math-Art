@@ -13,8 +13,11 @@
 #   cotan    cotangent-Laplacian weight assembly, with intrinsic
 #            mollification as the principled replacement for ad-hoc
 #            positivity clamps.
-#   descent  1-D step-size control: Evolver-style bracketed parabola
-#            line search and an adaptive-gain controller.
+#   descent  step-size control and quasi-Newton descent: Evolver-style
+#            bracketed parabola line search, an adaptive-gain
+#            controller, and the S2 core -- two-loop L-BFGS with a
+#            curvature guard, Armijo backtracking, and an optional
+#            cotan-Laplacian inverse-Hessian seed (LaplacianH0).
 #   groom    in-loop mesh quality maintenance: Delaunay edge flips and
 #            tangential vertex smoothing.
 #   volume   volume-constrained evolution: body volumes and gradients on
