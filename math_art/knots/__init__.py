@@ -44,7 +44,8 @@ principal ones are Artin (1947) for the braid groups, Alexander (1923,
 representation, and Gittings (arXiv:math/0401051, 2004) for the table.
 """
 
-from .alexander import alexander_at, alexander_from_curve
+from .alexander import (alexander_at, alexander_from_curve,
+                        alexander_link_from_curves)
 from .braid import (braid_closure_loops, braid_closure_points,
                     closure_components, parse_letters)
 from .build import build_knot
@@ -52,8 +53,12 @@ from .curves import torus_link_components
 from .relax import linking_number, relax_knot, relax_link
 from .resample import resample_closed, resample_loops
 from .tables import KNOTS
-from .tangent_point import (gm_ropelength, gm_thickness, tighten,
-                            tp_energy, tp_gradient)
+from .tangent_point import (gm_ropelength, gm_ropelength_link,
+                            gm_thickness, gm_thickness_link,
+                            linking_matrix, min_intercomponent_gap,
+                            tighten, tighten_link, tp_energy,
+                            tp_energy_link, tp_gradient,
+                            tp_gradient_link)
 from .tube import closed_tube
 
 __all__ = [
@@ -79,6 +84,15 @@ __all__ = [
     "tighten",
     "gm_thickness",
     "gm_ropelength",
+    # tangent-point flow for links (multi-component)
+    "tp_energy_link",
+    "tp_gradient_link",
+    "tighten_link",
+    "gm_thickness_link",
+    "gm_ropelength_link",
+    "linking_matrix",
+    "min_intercomponent_gap",
+    "alexander_link_from_curves",
     # geometry
     "torus_link_components",
     "closed_tube",
