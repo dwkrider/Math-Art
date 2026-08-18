@@ -272,6 +272,74 @@ def fitted_triple_angles(V, T, labels, fits=None):
     return np.asarray(angles)
 
 
+def tetra_point_angles(V, T, labels, fits=None):
+    """Angles (degrees) between the four triple-line tangents at every
+    vertex where four triple lines meet -- Plateau's second law
+    (Taylor 1976): the tetrahedral angle arccos(-1/3) ~ 109.471.
+
+    Tangent method: each triple line is the meeting of three films, so
+    its tangent at the vertex is the common null direction of the
+    three FITTED film normals there (smallest right-singular vector of
+    the stacked normals) -- the same fitted-surface trick as
+    fitted_triple_angles, avoiding the O(h) chord/secant tilt of raw
+    mesh directions.  Each tangent is oriented away from the vertex
+    along its discrete curve.  Returns (fitted_angles, raw_angles),
+    6 pairwise angles per tetra vertex; raw uses the first-edge chord
+    directions instead (O(h), reported for comparison)."""
+    if fits is None:
+        fits = film_fits(V, T, labels)
+    labels = np.asarray(labels)
+    de = np.sort(np.concatenate(
+        [T[:, [1, 2]], T[:, [2, 0]], T[:, [0, 1]]]), axis=1)
+    face_of = np.tile(np.arange(len(T)), 3)
+    key, inv, counts = np.unique(de, axis=0, return_inverse=True,
+                                 return_counts=True)
+    order = np.argsort(inv, kind='stable')
+    starts = np.zeros(len(key), dtype=np.int64)
+    starts[1:] = np.cumsum(counts)[:-1]
+    tri_e = np.nonzero(counts == 3)[0]
+    deg = {}
+    for e in tri_e:
+        for v in key[e]:
+            deg[int(v)] = deg.get(int(v), 0) + 1
+    tetra = [v for v, dcount in deg.items() if dcount == 4]
+    fit_angles = []
+    raw_angles = []
+    for X in tetra:
+        tans_f = []
+        tans_r = []
+        for e in tri_e:
+            a, b = key[e]
+            if X not in (a, b):
+                continue
+            other = int(b) if int(a) == X else int(a)
+            chord = V[other] - V[X]
+            chord = chord / max(np.linalg.norm(chord), 1e-300)
+            N = []
+            for k in range(3):
+                f = face_of[order[starts[e] + k]]
+                fit = fits[tuple(int(x) for x in labels[f])]
+                if fit["kind"] == "sphere":
+                    nrm = V[X] - fit["center"]
+                    nrm = nrm / max(np.linalg.norm(nrm), 1e-300)
+                else:
+                    nrm = fit["normal"]
+                N.append(nrm)
+            _, _, Vt = np.linalg.svd(np.asarray(N))
+            t = Vt[2]
+            if float(t @ chord) < 0.0:
+                t = -t
+            tans_f.append(t)
+            tans_r.append(chord)
+        for tans, sink in ((tans_f, fit_angles), (tans_r, raw_angles)):
+            for i in range(len(tans)):
+                for j in range(i + 1, len(tans)):
+                    c = float(np.clip(np.dot(tans[i], tans[j]),
+                                      -1.0, 1.0))
+                    sink.append(math.degrees(math.acos(c)))
+    return np.asarray(fit_angles), np.asarray(raw_angles)
+
+
 # --------------------------------------------------------------------------
 # polyhedron metrics (canonical / biscribed forms)
 # --------------------------------------------------------------------------
