@@ -1007,12 +1007,16 @@ def build_double_bubble_mesh(r1=1.0, r2=1.0, nphi=48, d=None):
             np.asarray(lab, dtype=np.int64))
 
 
-def relax_cluster(V, T, labels, targets=None, iters=150, groom_every=0):
+def relax_cluster(V, T, labels, targets=None, iters=150, groom_every=0,
+                  optimizer=None):
     """Volume-constrained area relaxation of a labeled cluster mesh
     (in place); returns the solver.volume.evolve info dict (final
-    area / volumes / pressures / per-iteration history)."""
+    area / volumes / pressures / per-iteration history).  optimizer
+    None = the established CG path; "lbfgs" = the S2 quasi-Newton
+    branch (Laplacian-seeded L-BFGS -- far fewer iterations on fine
+    meshes and large perturbations, at a higher per-iteration cost)."""
     return _svol.evolve(V, T, labels, targets=targets, iters=iters,
-                        groom_every=groom_every)
+                        groom_every=groom_every, optimizer=optimizer)
 
 
 if _IN_BLENDER:
@@ -1328,6 +1332,23 @@ if _IN_BLENDER:
                         "tangential smoothing) every N iterations "
                         "(0 = off; the default 4 measurably tightens "
                         "the Plateau angles at equal cost)")
+        optimizer: EnumProperty(
+            name="Optimizer",
+            items=[('CG', "Conjugate Gradient",
+                    "The established projected Polak-Ribiere "
+                    "descent with the Evolver line search"),
+                   ('LBFGS', "L-BFGS (Laplacian-seeded)",
+                    "Quasi-Newton descent seeded by a cotan-"
+                    "Laplacian solve: reaches equilibrium in far "
+                    "fewer iterations at high resolution or large "
+                    "seed squash (measured: the 96-resolution "
+                    "squashed double bubble converges ~10x faster "
+                    "in wall time), at a higher cost per "
+                    "iteration; with grooming on, a longer groom "
+                    "interval (8-16) suits it better")],
+            default='CG',
+            description="Outer descent algorithm for the "
+                        "volume-constrained evolution")
         color: BoolProperty(
             name="Color by Pressure", default=True,
             description="One material per film, colored by the "
@@ -1368,7 +1389,10 @@ if _IN_BLENDER:
                                1.0 - 0.5 * self.squash, 1.0])
             info = relax_cluster(V, T, labels, targets=targets,
                                  iters=self.iterations,
-                                 groom_every=self.groom_every)
+                                 groom_every=self.groom_every,
+                                 optimizer=("lbfgs"
+                                            if self.optimizer == 'LBFGS'
+                                            else None))
             press = list(info["pressures"])
 
             # centre and fit within a 2*scale cube
@@ -1457,7 +1481,7 @@ if _IN_BLENDER:
             if self.bubbles in ('DOUBLE', 'TRIPLE'):
                 lay.prop(self, 'ratio')
             for k in ('squash', 'resolution', 'iterations',
-                      'groom_every', 'color', 'smooth',
+                      'groom_every', 'optimizer', 'color', 'smooth',
                       'sharp_edges', 'scale'):
                 lay.prop(self, k)
 
