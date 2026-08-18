@@ -652,7 +652,7 @@ if _IN_BLENDER:
         mesh (a built-in Platonic seed or the active mesh object);
         after Adam Newgas's celtic-knot add-on"""
         bl_idname = "curve.celtic_knot_add"
-        bl_label = "Celtic Knot"
+        bl_label = "Celtic Weave"
         bl_options = {'REGISTER', 'UNDO'}
 
         source: EnumProperty(

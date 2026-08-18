@@ -31,8 +31,14 @@ RES = 720
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJ)
+sys.path.insert(0, os.path.join(PROJ, "tools"))
 import math_art  # noqa: E402
 math_art.register()
+
+# Subject parameters, poses and the flat-subject (plan view) set are
+# shared with tools/bake_menu_icons.py, so a figure here and the menu
+# icon for the same operator cannot drift apart.
+import subjects as subject_cfg  # noqa: E402
 IMG = os.path.join(PROJ, "docs", "images")
 os.makedirs(IMG, exist_ok=True)
 
@@ -186,52 +192,57 @@ def styled(base_fn, style_op, **kw):
         ob.select_set(True)
         bpy.context.view_layer.objects.active = ob
         getattr(bpy.ops.object, style_op)(**kw)
+    run.op = getattr(base_fn, 'op', None)   # carry the subject through
     return run
 
 
 def O(op, **kw):
+    """Task that runs `op` with its canonical parameters.
+
+    Parameters come from tools/subjects.py, which the menu-icon baker
+    reads as well, so a figure here and the icon in the Add menu show
+    the same object.  Anything passed as `kw` wins, for the rare figure
+    that deliberately wants a different variant from the icon.
+    """
     mod, _, fn = op.partition('.')
-    return lambda: getattr(getattr(bpy.ops, mod), fn)(**kw)
+    args = subject_cfg.params_for(op, **kw)
+    run = lambda: getattr(getattr(bpy.ops, mod), fn)(**args)   # noqa: E731
+    run.op = op          # so main() can find the subject's pose/view
+    return run
 
 
 TASKS = {
     # --- Surfaces ---
-    "scherk_collins": O("mesh.scherk_collins_add", preset='HEX'),
-    "parametric_minimal": O("mesh.parametric_minimal_add",
-                            surface='ENNEPER'),
+    "scherk_collins": O("mesh.scherk_collins_add"),
+    "parametric_minimal": O("mesh.parametric_minimal_add"),
     "tpms": O("mesh.tpms_add", surface='G', cells=1),
-    "knot_span": O("mesh.minimal_knot_span_add", p=2, q=3),
-    "seifert": O("mesh.seifert_surface_add", preset='TREFOIL'),
-    "algebraic": O("mesh.algebraic_surface_add", preset='CLEBSCH'),
-    "topological": O("mesh.topological_surface_add", preset='KLEIN'),
-    "minimal_polyhedron": O("mesh.minimal_surface_polyhedron_add",
-                            mode='SADDLE'),
+    "knot_span": O("mesh.minimal_knot_span_add"),
+    "seifert": O("mesh.seifert_surface_add"),
+    "algebraic": O("mesh.algebraic_surface_add"),
+    "topological": O("mesh.topological_surface_add"),
+    "minimal_polyhedron": O("mesh.minimal_surface_polyhedron_add"),
     "squeeze": O("mesh.squeeze_add"),
     "vertex_vortices": O("mesh.vertex_vortices_add"),
     "helical_surface": O("mesh.helical_surface_add"),
-    "ruled_surface": O("mesh.ruled_surface_add", mode='HYPERBOLOID',
-                       output='RODS', family='BOTH'),
-    "curiosity_surface": O("mesh.curiosity_surface_add", surface='FRESNEL'),
+    "ruled_surface": O("mesh.ruled_surface_add"),
+    "curiosity_surface": O("mesh.curiosity_surface_add"),
     "invariant_manifold": O("mesh.invariant_manifold_add"),
-    "spherical_harmonic": O("mesh.spherical_harmonic_add",
-                            form='OFFSET', degree=4, order=2),
-    "orbital": O("mesh.orbital_add", mode='ATOMIC', n=3, l=2, m=-2),
+    "spherical_harmonic": O("mesh.spherical_harmonic_add"),
+    "orbital": O("mesh.orbital_add"),
     # --- Polyhedra ---
-    "regular_solids": O("mesh.regular_solid_add", family='ARCHIMEDEAN',
-                        solid='SC'),
+    "regular_solids": O("mesh.regular_solid_add"),
     "conway": O("mesh.conway_add"),
     "zonohedra": O("mesh.zonohedron_add"),
-    "waterman": O("mesh.waterman_add", root=20),
+    "waterman": O("mesh.waterman_add"),
     "symmetrohedron": O("mesh.symmetrohedron_add"),
-    "polytope4d": O("mesh.polytope4d_add", kind='CELL120'),
+    "polytope4d": O("mesh.polytope4d_add"),
     "hyperbolic_honeycomb": O("mesh.hyperbolic_honeycomb_add"),
     "spacefill_solids": O("mesh.spacefill_add"),
     "geodesic": O("mesh.geodesic_add"),
-    "spiked_polyhedron": O("mesh.spiked_polyhedron_add", preset='MODERN'),
+    "spiked_polyhedron": O("mesh.spiked_polyhedron_add"),
     # --- Fractals ---
     "sponge": O("mesh.sponge_add"),
-    "ifs": O("mesh.ifs_add", mode='RADIX',
-               preset='ABC_124'),
+    "ifs": O("mesh.ifs_add"),
     "fractal_polyhedron": O("mesh.fractal_polyhedron_add"),
     "space_filling_curve": O("curve.space_filling_add"),
     "fractal_tree": O("curve.fractal_tree_add"),
@@ -239,31 +250,33 @@ TASKS = {
     "prime_knot": O("curve.prime_knot_add"),
     "torus_knot": O("curve.torus_knot_add"),
     "link": O("curve.math_link_add"),
-    "attractor": O("curve.attractor_add", preset='LORENZ'),
+    "attractor": O("curve.attractor_add"),
     "dual_helix": O("curve.dual_helix_add"),
     "rolling_knot": O("mesh.rolling_knot_add"),
     # --- Weaves & Tangles ---
     "polylinks": O("mesh.polylinks_add"),
-    "tangle": O("mesh.tangle_add", kind='T5'),
-    "weave": O("mesh.poly_weave_add", kind='CUBE'),
-    "rotegrity": O("mesh.rotegrity_add", kind='ICOSA', freq=1),
+    "tangle": O("mesh.tangle_add"),
+    "weave": O("mesh.poly_weave_add"),
+    "rotegrity": O("mesh.rotegrity_add"),
     "stellated_weave": O("mesh.stellated_weave_add"),
     "celtic_knot": O("curve.celtic_knot_add"),
-    "twisted_polyhedron": O("mesh.woven_polyhedron_add", solid='ICOSA'),
+    "twisted_polyhedron": O("mesh.woven_polyhedron_add"),
     # --- Odds & Ends ---
     "platonic_twist": O("mesh.platonic_twist_add"),
-    "twisted_torus": O("mesh.twisted_torus_add", n=6, twist_steps=6),
+    "twisted_torus": O("mesh.twisted_torus_add"),
     "oloid": O("mesh.oloid_add"),
-    "sphericon": O("mesh.sphericon_add", sides=7, coloring='NONE'),
+    "sphericon": O("mesh.sphericon_add"),
     # stereographic uses a custom light-projection scene (see SCENES)
     "hyperbolic_tiling": O("mesh.hyperbolic_tiling_add"),
     "orbifold_sphere": O("mesh.orbifold_sphere_add"),
-    "bubble_cluster": O("mesh.bubble_cluster_add", separate=True,
-                        color=True),
+    "bubble_cluster": O("mesh.bubble_cluster_add"),
     # --- Symmetric Sculpture ---
     "symmetric_sculpture": O("object.symmetric_sculpture_add",
                              preset='FRABJOUS'),
     # --- Styles (applied to a base object) ---
+    # The subject of this figure is the Leonardo style, not the solid --
+    # the truncated icosahedron is just a base whose many faces show the
+    # strut work off.  An explicit variant beats the shared subject.
     "leonardo": styled(O("mesh.regular_solid_add", family='ARCHIMEDEAN',
                          solid='TI'), "leonardo_add"),
     "curvature_color": styled(O("mesh.twisted_torus_add"),
@@ -282,7 +295,6 @@ FORCE_PLASTIC = {"symmetric_sculpture"}
 # per-generator object rotation (radians) for a more legible pose,
 # applied before framing
 ROTATE = {
-    "topological": (math.radians(90), 0.0, math.radians(35)),  # Klein
     "tpms": (math.radians(35), math.radians(20), math.radians(15)),
 }
 
@@ -796,16 +808,27 @@ def main():
         print("SKIP unknown", s)
     if std:
         setup_studio()
+        subject_cfg.capture_rig()
         for slug in std:
             clear_sculpts()
             try:
-                TASKS[slug]()
+                task = TASKS[slug]
+                op = getattr(task, 'op', None)
+                # Flat subjects are shot from overhead in both renderers
+                # -- at 3/4 a tiling collapses to a sliver.
+                subject_cfg.aim_rig(op in subject_cfg.PLAN_VIEW)
+                task()
                 if slug in FORCE_PLASTIC:
                     for o in subjects():
                         o.data.materials.clear()
+                # A slug-specific ROTATE still wins, for a figure that
+                # wants a pose the icon has no use for; otherwise the
+                # subject's shared pose applies.
                 if slug in ROTATE:
                     for o in subjects():
                         o.rotation_euler = Euler(ROTATE[slug])
+                else:
+                    subject_cfg.pose_subjects(op, subjects())
                 normalize_subjects()
                 apply_material()
                 render(slug)
