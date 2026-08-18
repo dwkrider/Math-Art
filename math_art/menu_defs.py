@@ -217,6 +217,7 @@ ROLLERS = Menu(
 GEMS = Menu(
     "VIEW3D_MT_math_art_gems", "Gems", 'MESH_ICOSPHERE', [
         _e("mesh.gem_add", 'MESH_ICOSPHERE', "Faceted Gemstone"),
+        _e("mesh.gem_cabochon_add", 'MESH_CAPSULE', "Cabochon"),
         SEP,
         # rigs, not shapes: a built-in glyph says more than a thumbnail
         _e("mesh.gem_studio_add", 'LIGHT_AREA', "Gem Studio (lighting)",

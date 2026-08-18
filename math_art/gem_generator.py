@@ -32,12 +32,14 @@
 try:
     from .gems import (catalogue, design as gem_design, facets as gem_facets,
                        measure as gem_measure)
+    from .gems import curved as gem_curved
     from .gems import materials as gem_mat
     from .gems.asc import parse_asc, write_asc
     from .polyhedra.fit import fit_cube
     from .styles import gem_material
 except ImportError:                     # flat import outside the package
     from gems import (catalogue, design as gem_design, facets as gem_facets,
+                      curved as gem_curved,
                       materials as gem_mat, measure as gem_measure)
     from gems.asc import parse_asc, write_asc
     from polyhedra.fit import fit_cube
@@ -652,8 +654,94 @@ if _IN_BLENDER:
                         "the internal reflections; EEVEE approximates them")
             return {'FINISHED'}
 
+
+    class MESH_OT_gem_cabochon_add(bpy.types.Operator):
+        """Add a cabochon: a domed stone, cut on a curve rather than facets"""
+        bl_idname = "mesh.gem_cabochon_add"
+        bl_label = "Cabochon"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        preset: EnumProperty(
+            name="Shape",
+            items=[(k, lbl, desc)
+                   for k, lbl, desc in gem_curved.cabochon_items()],
+            default='SINGLE')
+        lw: FloatProperty(name="Length / Width", default=0.0, min=0.0,
+                          max=4.0,
+                          description="0 uses the preset's own outline")
+        height: FloatProperty(
+            name="Dome Height", default=0.0, min=0.0, max=2.0,
+            description="As a fraction of the width; 0 uses the preset's. "
+                        "Asterism and chatoyancy need a tall dome to "
+                        "gather their reflections into a line")
+        dome: FloatProperty(
+            name="Dome Shape", default=0.0, min=0.0, max=6.0,
+            description="The profile's superellipse exponent: below 2 is "
+                        "pointed like a sugarloaf, 2 is a hemisphere, "
+                        "above 2 is a flatter cabochon. 0 uses the preset")
+        rings: IntProperty(name="Rings", default=24, min=3, max=200)
+        segments: IntProperty(name="Segments", default=64, min=6, max=512)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        material: EnumProperty(
+            name="Material",
+            items=[(k, lbl, desc)
+                   for k, lbl, desc in gem_mat.material_items()],
+            default='RUBY',
+            description="Cabochons are cut for material that facets would "
+                        "waste -- opaque or translucent, or phenomenal")
+        assign_material: BoolProperty(name="Assign Material", default=True)
+        size_mm: FloatProperty(name="Size (mm)", default=8.0, min=0.1,
+                               max=100.0)
+
+        def execute(self, context):
+            cab = gem_curved.get(self.preset)
+            if self.lw > 0.0:
+                cab = cab._replace(lw=self.lw)
+            if self.height > 0.0:
+                cab = cab._replace(height=self.height)
+            if self.dome > 0.0:
+                cab = cab._replace(dome=self.dome)
+            try:
+                verts, faces = gem_curved.build_cabochon(
+                    cab, rings=self.rings, segments=self.segments)
+            except ValueError as e:
+                self.report({'ERROR'}, f"could not build the cabochon: {e}")
+                return {'CANCELLED'}
+
+            me = bpy.data.meshes.new(cab.name)
+            me.from_pydata(fit_cube(verts, span=2.0 * self.scale), [], faces)
+            me.validate(clean_customdata=True)
+            # A cabochon is a CURVED surface, so unlike every faceted cut
+            # here it wants smooth shading -- flat shading would turn the
+            # dome back into facets, which is the one thing it is not.
+            me.polygons.foreach_set('use_smooth', [True] * len(me.polygons))
+            me.update()
+            obj = bpy.data.objects.new(cab.name, me)
+            obj["gem_cabochon"] = self.preset
+            context.collection.objects.link(obj)
+            obj.location = context.scene.cursor.location
+            for o in context.selected_objects:
+                o.select_set(False)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+
+            spec = gem_mat.get(self.material)
+            if self.assign_material and gem_material is not None:
+                try:
+                    obj.data.materials.append(gem_material.gem_material(
+                        self.material, size_mm=self.size_mm, bands=3))
+                except Exception as e:
+                    self.report({'WARNING'}, f"material not assigned: {e}")
+            self.report({'INFO'},
+                        f"{cab.name}: {len(me.vertices)} vertices, "
+                        f"{len(me.polygons)} faces, dome "
+                        f"{cab.height * 100:.0f}% of the width, "
+                        f"{spec.label}")
+            return {'FINISHED'}
+
     ADD_MENU = True
-    _CLASSES = (MESH_OT_gem_add, MESH_OT_gem_studio_add,
+    _CLASSES = (MESH_OT_gem_add, MESH_OT_gem_cabochon_add,
+                MESH_OT_gem_studio_add,
                 MESH_OT_gem_aset_rig_add,
                 IMPORT_MESH_OT_gemcad_asc,
                 EXPORT_MESH_OT_gemcad_asc)
