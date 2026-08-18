@@ -879,6 +879,378 @@ def case_cmc_drop45_fine(config):
 
 
 # --------------------------------------------------------------------------
+# gravity: sessile drops under rho g z (cmc_generator hydrostatic terms)
+# --------------------------------------------------------------------------
+
+def _grav_drop_case(config, theta_deg, bond, nring, iters_default,
+                    seed_theta_deg=90.0, groom_default=4):
+    """Sessile drop under gravity.  The surface is no longer CMC, but
+    Young-Laplace with the hydrostatic head makes 2H + rho g z
+    CONSTANT over the free surface (= the Lagrange pressure, i.e. the
+    pressure at z = 0): the measured invariant is its spread, both
+    pointwise (same instrument floor caveats as H_cv) and over z-band
+    means (the converging instrument, like the bridge row-means).
+    Young's contact angle is a LOCAL force balance and must survive
+    gravity: measured with the fit-free local instrument.  Bo -> 0
+    recovers the committed zero-gravity spherical-cap numbers."""
+    from math_art import cmc_generator as cg
+    from math_art.solver import walls as sw
+    kwargs = _cmc_kwargs(config, {"iters": iters_default,
+                                  "groom_every": groom_default})
+    th = math.radians(theta_deg)
+    Vt = 2.0 * math.pi / 3.0
+    rho_g = cg.rho_g_for_bond(bond, th, Vt)
+    geo_seed = cg.cap_geometry(math.radians(seed_theta_deg), Vt)
+    V, T, labels, rim = cg.build_cap_mesh(seed_theta_deg,
+                                          geo_seed["R"], nring)
+    T = np.ascontiguousarray(T)
+    interior = ~rim
+    loop0 = cg.rim_loop(V, nring)
+    ext_e, ext_g = cg.drop_energy_terms(th, loop0)
+    ge, gg = cg.gravity_energy_terms(rho_g, T, labels)
+    plane = sw.PlaneWall([0.0, 0.0, 0.0], [0.0, 0.0, 1.0])
+    floor = sw.PlaneWall([0.0, 0.0, 0.0], [0.0, 0.0, 1.0],
+                         one_sided=True)
+    kwargs.update(walls=[(plane, rim), (floor, interior)],
+                  ext_energy=lambda Vv: ext_e(Vv) + ge(Vv),
+                  ext_grad=lambda Vv: ext_g(Vv) + gg(Vv))
+    t0 = _timer()
+    info, effective = _evolve_checked(V, T, labels, [Vt], kwargs)
+    dt = _timer() - t0
+    effective["bond"] = bond
+    p = float(info["pressures"][0])
+    Hs = cg.signed_mean_curvature(V, T)
+    c = 2.0 * Hs[interior] + rho_g * V[interior, 2]
+    z = V[interior, 2]
+    nb = 12
+    edges = np.linspace(z.min(), z.max() * (1.0 + 1e-9), nb + 1)
+    bands = [c[(z >= edges[i]) & (z < edges[i + 1])]
+             for i in range(nb)]
+    band_means = np.array([b.mean() for b in bands if len(b) > 3])
+    loop = cg.boundary_loop(T, rim)
+    la = cg.local_contact_angles(V, T, loop)
+    hist = info["history"]
+    mets = {
+        "invariant_mean": float(np.mean(c)),
+        "invariant_std": float(np.std(c)),
+        "invariant_band_std": float(np.std(band_means)),
+        "invariant_vs_p": abs(float(np.mean(c)) - p),
+        "pressure": p,
+        "apex_z": float(V[:, 2].max()),
+        "local_angle_mean": float(np.mean(la)),
+        "local_angle_err": abs(float(np.mean(la)) - theta_deg),
+        "contact_r": float(np.mean(np.hypot(V[loop, 0], V[loop, 1]))),
+        "area": info["area"],
+        "wall_resid_max": max(hh["wall_resid"] for hh in hist),
+        "E_max_rise": max((hh["E_rise"] for hh in hist
+                           if not hh["groomed"]), default=0.0),
+        "vol_drift_max": max((hh["drift_post"] for hh in hist),
+                             default=0.0),
+        "iters": info["iters_run"],
+    }
+    if bond <= 0.05:
+        # near-zero gravity: the spherical-cap closed form still holds
+        geo = cg.cap_geometry(th, Vt)
+        ang, _ = cg.measured_contact_angle(V, T)
+        mets["angle_achieved_deg"] = ang
+        mets["angle_err_deg"] = abs(ang - theta_deg)
+        mets["contact_r_rel_err"] = abs(mets["contact_r"] - geo["a"]) \
+            / geo["a"]
+        mets["pressure_rel_err"] = abs(p - 2.0 / geo["R"]) \
+            / (2.0 / geo["R"])
+    trace = [{"iter": hh["it"], "E": hh["E"]} for hh in hist]
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": len(V), "n_tris": len(T),
+            "effective": effective}
+
+
+def case_cmc_drop_grav_tiny(config):
+    """Bo = 1e-3 regression toward the zero-gravity limit: the
+    spherical-cap metrics must reproduce the committed cmc_drop45
+    numbers to within the discretization scatter (the gravity term is
+    correctly ABSENT at Bo -> 0, not merely small)."""
+    return _grav_drop_case(config, 45.0, 1e-3, 48, 1500)
+
+
+def case_cmc_drop_grav(config):
+    """Bo = 2, theta = 60: the working gravity case.  Invariant
+    std(2H + rho g z) pointwise and over z-bands, its mean vs the
+    Lagrange pressure, and the local contact angle vs Young's 60."""
+    return _grav_drop_case(config, 60.0, 2.0, 48, 1500)
+
+
+def case_cmc_drop_grav_fine(config):
+    """Bo = 2 at doubled resolution: the invariant spreads and the
+    local-angle error must shrink (measured ~x3.5 pointwise)."""
+    return _grav_drop_case(config, 60.0, 2.0, 96, 3000)
+
+
+def case_cmc_puddle_sweep(config):
+    """The puddle limit: theta = 120 at increasing Bond number.  The
+    apex height must approach 2 l_c sin(theta/2) from above with the
+    O(l_c) edge correction shrinking (measured excess ~ 0.25/sqrt(Bo)),
+    and the LOCAL contact angle must stay at Young's 120 within the
+    meniscus-resolution error (l_c/h controls it; recorded per row)."""
+    from math_art import cmc_generator as cg
+    th = math.radians(120.0)
+    Vt = 2.0 * math.pi / 3.0
+    kwargs_base = _cmc_kwargs(config, {})
+    per = {}
+    t_all = _timer()
+    ratios = []
+    for bond, nring, iters in ((4.0, 48, 1500), (10.0, 64, 2000),
+                               (25.0, 96, 2500), (50.0, 128, 3000)):
+        rho_g = cg.rho_g_for_bond(bond, th, Vt)
+        h_inf = cg.puddle_height(th, rho_g)
+        V, T, info = cg.relax_drop(
+            theta_deg=120.0, nring=nring,
+            iters=int(kwargs_base.get("iters", iters)),
+            groom_every=int(kwargs_base.get("groom_every", 4)),
+            rho_g=rho_g)
+        loop = cg.boundary_loop(T, np.arange(len(V)) < nring)
+        la = cg.local_contact_angles(V, T, loop)
+        apex = float(V[:, 2].max())
+        lc = cg.capillary_length(rho_g)
+        h_edge = 2.0 * math.pi * float(np.mean(np.hypot(
+            V[loop, 0], V[loop, 1]))) / nring
+        ratios.append(apex / h_inf)
+        per[f"bo{int(bond)}"] = {
+            "h_inf": h_inf, "apex": apex, "ratio": apex / h_inf,
+            "excess_sqrtBo": (apex / h_inf - 1.0) * math.sqrt(bond),
+            "local_angle_mean": float(np.mean(la)),
+            "lc_over_h": lc / h_edge,
+            "drift": max(hh["drift_post"] for hh in info["history"]),
+            "iters": info["iters_run"],
+        }
+    mets = {
+        "ratio_bo4": ratios[0], "ratio_bo10": ratios[1],
+        "ratio_bo25": ratios[2], "ratio_bo50": ratios[3],
+        "approach_monotone": int(ratios[1] > ratios[2] > ratios[3]),
+        "worst_final_ratio_err": abs(ratios[3] - 1.0),
+    }
+    return {"metrics": mets, "per_solid": per, "trace": [],
+            "time_s": _timer() - t_all}
+
+
+# --------------------------------------------------------------------------
+# free-boundary films on curved walls (cmc_generator film modes)
+# --------------------------------------------------------------------------
+
+def _film_case(config, seed_fn, iters_default, area_exact=None,
+               groom_default=4, extra=None):
+    """Common film driver: relax an open film whose free boundary
+    slides on a sphere/cylinder wall, then measure the DEFINING check
+    -- the film meets the support orthogonally (free-boundary
+    condition): deviation from 90 degrees along the contact line from
+    O(h^2) quadric-fitted surface normals (dev_fit; dev_raw = O(h)
+    face-normal version for comparison), plus wall residual at solver
+    tolerance and monotone area."""
+    from math_art import cmc_generator as cg
+    kwargs = _cmc_kwargs(config, {"iters": iters_default,
+                                  "groom_every": groom_default})
+    V, T, labels, fixed, freeb, wall = seed_fn()
+    T = np.ascontiguousarray(T)
+    ge = int(kwargs.pop("groom_every"))
+    hook = (None if not ge
+            else (lambda Vv, Tt: cg.redistribute_boundary(
+                Vv, Tt, wall, freeb)))
+    kwargs.update(fixed=fixed, walls=[(wall, freeb)],
+                  groom_every=ge, groom_hook=hook)
+    t0 = _timer()
+    info, effective = _evolve_checked(V, T, labels, None, kwargs)
+    dt = _timer() - t0
+    loop = cg.boundary_loop(T, freeb)
+    dev_fit, dev_raw = cg.film_contact_angle_dev(V, T, wall, loop)
+    hist = info["history"]
+    mets = {
+        "area": info["area"],
+        "dev90_fit_rms": float(np.sqrt(np.mean(dev_fit ** 2))),
+        "dev90_fit_max": float(np.max(dev_fit)),
+        "dev90_raw_rms": float(np.sqrt(np.mean(dev_raw ** 2))),
+        "wall_resid_max": max(hh["wall_resid"] for hh in hist),
+        "vt_normal_max": max(hh["vt_normal_max"] for hh in hist),
+        "area_max_rise": max((hh["rise"] for hh in hist
+                              if not hh["groomed"]), default=0.0),
+        "n_pressures": len(info["pressures"]),
+        "iters": info["iters_run"],
+    }
+    if area_exact is not None:
+        mets["area_exact"] = area_exact
+        mets["area_rel_err"] = abs(info["area"] - area_exact) \
+            / area_exact
+    if extra is not None:
+        mets.update(extra(V, T, loop))
+    trace = [{"iter": hh["it"], "E": hh["area"]} for hh in hist]
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": len(V), "n_tris": len(T),
+            "effective": effective}
+
+
+def _boundary_zmax(V, T, loop):
+    return {"boundary_abs_z_max": float(np.max(np.abs(V[loop, 2])))}
+
+
+def case_film_sphere_eq(config, nphi=48):
+    """ANALYTIC case: horizontal ring (r = 1.6) in the plane through
+    the center of a 0.8-sphere; the minimal film is the FLAT annulus
+    meeting the sphere at its equator orthogonally: area
+    pi(1.6^2 - 0.8^2), boundary |z| -> 0.  Seeded with the contact
+    loop well off the equator (shift 0.6), so the free boundary
+    demonstrably slides."""
+    from math_art import cmc_generator as cg
+    return _film_case(
+        config,
+        lambda: cg.film_sphere_seed(0.8, 1.6, 0.0, nphi=nphi,
+                                    seed_shift=0.6),
+        800, area_exact=math.pi * (1.6 ** 2 - 0.8 ** 2),
+        extra=_boundary_zmax)
+
+
+def case_film_sphere_eq_fine(config):
+    return case_film_sphere_eq(config, nphi=96)
+
+
+def case_film_sphere_off(config, nphi=48):
+    """Ring (r = 1.2) at z = 0.9 above a 0.8-sphere: a genuinely
+    curved sail with no closed form.  The defining check is the
+    90-degree distribution and its refinement scaling (measured
+    2.7 -> 0.75 deg rms, ~x3.6)."""
+    from math_art import cmc_generator as cg
+    return _film_case(
+        config,
+        lambda: cg.film_sphere_seed(0.8, 1.2, 0.9, nphi=nphi), 1000)
+
+
+def case_film_sphere_off_fine(config):
+    return case_film_sphere_off(config, nphi=96)
+
+
+def case_film_cyl_disk(config, nphi=48):
+    """ANALYTIC case: disk spanning INSIDE a unit cylinder, the whole
+    boundary free on the wall (no fixed vertices at all -- includes a
+    neutral axial translation mode).  Seeded tilted + bulged; must
+    flatten to the perpendicular cross-section.  The honest discrete
+    reference is the INSCRIBED POLYGON disk (the boundary chords the
+    circle): vs pi R^2 the deficit is exactly (2 pi/n)^2/6."""
+    from math_art import cmc_generator as cg
+    return _film_case(
+        config,
+        lambda: cg.film_disk_seed(1.0, nphi=nphi),
+        400, area_exact=cg.polygon_area(1.0, nphi),
+        extra=lambda V, T, loop: {
+            "boundary_z_spread": float(V[loop, 2].max()
+                                       - V[loop, 2].min())})
+
+
+def case_film_cyl_disk_fine(config):
+    return case_film_cyl_disk(config, nphi=96)
+
+
+def case_film_cyl_tilt(config, nphi=48):
+    """35-degree tilted ring (r = 1.3) around a 0.5-column: a curved
+    'sail on a mast' with no closed form; 90-degree distribution and
+    scaling (measured 3.9 -> 1.3 deg rms, ~x3.0)."""
+    from math_art import cmc_generator as cg
+    return _film_case(
+        config,
+        lambda: cg.film_cylinder_seed(0.5, 1.3, 35.0, nphi=nphi),
+        1000)
+
+
+def case_film_cyl_tilt_fine(config):
+    return case_film_cyl_tilt(config, nphi=96)
+
+
+# --------------------------------------------------------------------------
+# triple bubble (bubble_generator three-lens seed)
+# --------------------------------------------------------------------------
+
+def _case_bubble_triple(config, nphi, iters_default,
+                        vol_scale=(1.0, 1.0, 1.0),
+                        perturb=(1.05, 0.97, 1.0), groom_default=4):
+    """Standard triple bubble: the welded three-cell seed with two
+    tetrahedral points relaxes under exact volume constraints.
+    Ground truth is Plateau's laws (Taylor 1976): films meet in threes
+    at 120 degrees along every triple line (fitted-surface instrument,
+    as established for the double bubble), and the four triple lines
+    meeting at each tetra point make arccos(-1/3) ~ 109.471 degrees
+    (tangents from the fitted film normals' common null direction).
+    For the equal case the area is checked against the closed form
+    and the three pressures against 2/r; for unequal volumes the
+    Young-Laplace consistency |dp_ij - 2/r_ij(fit)| is checked across
+    every film."""
+    from math_art.bubble_generator import (build_triple_bubble_mesh,
+                                           triple_bubble_geometry)
+    from math_art.solver import volume as sv
+    kwargs = dict(config.get("bubble_kwargs", {}))
+    kwargs.setdefault("iters", iters_default)
+    kwargs.setdefault("groom_every", groom_default)
+    geo = triple_bubble_geometry(1.0)
+    V, T, labels = build_triple_bubble_mesh(1.0, nphi=nphi)
+    T = np.ascontiguousarray(T)
+    V *= np.array(perturb)
+    targets = [geo["V_cell"] * s for s in vol_scale]
+    t0 = _timer()
+    info, effective = _evolve_checked(V, T, labels, targets, kwargs)
+    dt = _timer() - t0
+    fits = M.film_fits(V, T, labels)
+    ang_fit = M.fitted_triple_angles(V, T, labels, fits)
+    ang_raw = sv.triple_line_angles(V, T)
+    tet_fit, tet_raw = M.tetra_point_angles(V, T, labels, fits)
+    tet = math.degrees(math.acos(-1.0 / 3.0))
+    p = [float(x) for x in info["pressures"]]
+    yl = []
+    for (i, j) in ((1, 2), (1, 3), (2, 3)):
+        key = (j, i)                     # films labeled (front, back)
+        r = fits[key]["r"]
+        dp = abs(p[i - 1] - p[j - 1])
+        yl.append(abs(dp - (0.0 if math.isinf(r) else 2.0 / r)))
+    mets = {
+        "area": info["area"],
+        "angle_rms_fit": float(np.sqrt(np.mean((ang_fit - 120.0) ** 2))),
+        "angle_min_fit": float(np.min(ang_fit)),
+        "angle_max_fit": float(np.max(ang_fit)),
+        "angle_rms_raw": float(np.sqrt(np.mean((ang_raw - 120.0) ** 2))),
+        "tetra_rms_fit": float(np.sqrt(np.mean((tet_fit - tet) ** 2))),
+        "tetra_min_fit": float(np.min(tet_fit)),
+        "tetra_max_fit": float(np.max(tet_fit)),
+        "tetra_rms_raw": float(np.sqrt(np.mean((tet_raw - tet) ** 2))),
+        "n_tetra_angles": len(tet_fit),
+        "fit_rms_worst": max(f["rms"] for f in fits.values()),
+        "p1": p[0], "p2": p[1], "p3": p[2],
+        "yl_worst": max(yl),
+    }
+    if vol_scale == (1.0, 1.0, 1.0):
+        mets["area_analytic"] = geo["A"]
+        mets["area_rel_excess"] = (info["area"] - geo["A"]) / geo["A"]
+        mets["pressure_rel_err_worst"] = max(
+            abs(x - 2.0) / 2.0 for x in p)
+    mets.update(_evolution_metrics(info))
+    trace = [{"iter": h["it"], "E": h["area"]} for h in info["history"]]
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": len(V), "n_tris": len(T), "effective": effective}
+
+
+def case_bubble_triple(config):
+    return _case_bubble_triple(config, 48, 1600)
+
+
+def case_bubble_triple_fine(config):
+    """Doubled resolution, mild perturbation (discretization-scaling
+    case, same rationale as bubble_double_fine)."""
+    return _case_bubble_triple(config, 96, 800,
+                               perturb=(1.02, 0.99, 1.0))
+
+
+def case_bubble_triple_unequal(config):
+    """Graded volumes 0.8 / 1.0 / 1.25 x V_cell: films curve into the
+    lower-pressure cells; Plateau's angles are invariant, and the
+    Young-Laplace consistency across every film is the extra check."""
+    return _case_bubble_triple(config, 48, 2400,
+                               vol_scale=(0.8, 1.0, 1.25))
+
+
+# --------------------------------------------------------------------------
 # high-genus embedder planarize (research script, not shipped code)
 # --------------------------------------------------------------------------
 
@@ -983,4 +1355,19 @@ CASES = {
     "cmc_drop45": case_cmc_drop45,
     "cmc_drop135": case_cmc_drop135,
     "cmc_drop45_fine": case_cmc_drop45_fine,
+    "cmc_drop_grav_tiny": case_cmc_drop_grav_tiny,
+    "cmc_drop_grav": case_cmc_drop_grav,
+    "cmc_drop_grav_fine": case_cmc_drop_grav_fine,
+    "cmc_puddle_sweep": case_cmc_puddle_sweep,
+    "film_sphere_eq": case_film_sphere_eq,
+    "film_sphere_eq_fine": case_film_sphere_eq_fine,
+    "film_sphere_off": case_film_sphere_off,
+    "film_sphere_off_fine": case_film_sphere_off_fine,
+    "film_cyl_disk": case_film_cyl_disk,
+    "film_cyl_disk_fine": case_film_cyl_disk_fine,
+    "film_cyl_tilt": case_film_cyl_tilt,
+    "film_cyl_tilt_fine": case_film_cyl_tilt_fine,
+    "bubble_triple": case_bubble_triple,
+    "bubble_triple_fine": case_bubble_triple_fine,
+    "bubble_triple_unequal": case_bubble_triple_unequal,
 }
