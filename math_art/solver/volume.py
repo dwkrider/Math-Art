@@ -360,7 +360,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
            walls=None, wall_tol=1e-12, ext_energy=None, ext_grad=None,
            groom_hook=None, optimizer=None, lbfgs_m=8,
            lbfgs_h0="laplacian", lbfgs_h0_eps=1e-3, lbfgs_h0_tol=1e-2,
-           lbfgs_h0_iters=100):
+           lbfgs_h0_iters=100, lbfgs_step_cap=4.0):
     """Minimize film area at fixed body volumes.  V is modified in
     place; T is modified in place only when grooming flips edges.
 
@@ -433,7 +433,14 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     Monotonicity, wall projection, and volume restore are shared with
     the default path: the Armijo search evaluates the same restored
     energy, so every accepted step is monotone by construction here
-    too.
+    too.  `lbfgs_step_cap` bounds the largest per-step vertex move at
+    cap x mean edge length (default 4, the same bracket cap the
+    default path uses); free-boundary problems whose topology is
+    protected only by an energy barrier (e.g. a film whose boundary
+    loop winds a cylinder) need a TIGHTER cap (~0.5) -- the measured
+    failure mode is the quasi-Newton step sliding boundary vertices
+    past each other and unwinding the loop through non-embedded
+    states, monotonically.
 
     Returns a dict: iters_run, area, volumes, pressures, targets,
     grooms_run, history (per-iteration area / step / drift / rise;
@@ -575,7 +582,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             Lmean = float(np.mean(np.linalg.norm(
                 V[T[:, 1]] - V[T[:, 0]], axis=1)))
             dmax = float(np.max(np.linalg.norm(d, axis=1)))
-            s_max = 4.0 * Lmean / max(dmax, 1e-300)
+            s_max = lbfgs_step_cap * Lmean / max(dmax, 1e-300)
 
             def energy(x):
                 Vc = np.array(x, float)
@@ -595,7 +602,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
                 d = _project_dir(-(h0(gh.ravel()) if h0 is not None
                                    else gh.ravel().copy()))
                 dmax = float(np.max(np.linalg.norm(d, axis=1)))
-                s_max = 4.0 * Lmean / max(dmax, 1e-300)
+                s_max = lbfgs_step_cap * Lmean / max(dmax, 1e-300)
                 x1, s, E1, nev2 = _descent.parabola_line_search(
                     energy, V, d, min(1.0, s_max), s_max=s_max)
                 nev += nev2

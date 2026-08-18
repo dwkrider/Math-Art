@@ -504,7 +504,7 @@ def measured_contact_angle(V, T):
 
 
 def relax_bridge(volume_factor=1.15, nring=48, nrow=17, h=0.5, R=1.0,
-                 iters=600, groom_every=0, squash=0.0):
+                 iters=600, groom_every=0, squash=0.0, optimizer=None):
     """Build and evolve a liquid bridge at `volume_factor` x the
     cylinder volume (factor catenoid_volume/V_cyl ~ 0.809 for h/R=0.5
     gives the minimal catenoid; more is an unduloid barrel, less a
@@ -523,13 +523,14 @@ def relax_bridge(volume_factor=1.15, nring=48, nrow=17, h=0.5, R=1.0,
         V[:, 0] *= fac
         V[:, 1] *= fac
     info = _svol.evolve(V, T, labels, targets=[target], iters=iters,
-                        fixed=fixed, groom_every=groom_every)
+                        fixed=fixed, groom_every=groom_every,
+                        optimizer=optimizer)
     return V, T, info
 
 
 def relax_drop(theta_deg=60.0, volume=2.0 * math.pi / 3.0, nring=48,
                iters=1000, groom_every=4, seed_theta_deg=90.0,
-               rho_g=0.0):
+               rho_g=0.0, optimizer=None):
     """Build and evolve a sessile drop: contact line sliding on the
     floor plane (two-sided wall on the rim, one-sided on the interior),
     wetting energy -cos(theta) * wetted area, volume constrained.
@@ -563,7 +564,8 @@ def relax_drop(theta_deg=60.0, volume=2.0 * math.pi / 3.0, nring=48,
     info = _svol.evolve(V, T, labels, targets=[volume], iters=iters,
                         groom_every=groom_every,
                         walls=[(plane, rim), (floor, interior)],
-                        ext_energy=ext_e, ext_grad=ext_g)
+                        ext_energy=ext_e, ext_grad=ext_g,
+                        optimizer=optimizer)
     return V, T, info
 
 
@@ -718,7 +720,18 @@ def relax_film(V, T, labels, fixed, wall, freeb, iters=600,
     pure area descent with the free-boundary vertices sliding on the
     support wall, and (at groom cadence) the boundary spacing
     redistributed along the contact curve.  Returns the evolve info
-    dict (pressures empty)."""
+    dict (pressures empty).
+
+    Films deliberately have NO optimizer knob: a free-boundary film
+    whose contact loop winds its support keeps its winding class only
+    through an energy barrier, and L-BFGS was MEASURED to slide
+    boundary vertices past each other and unwind the disk-in-cylinder
+    film monotonically (area 3.13 -> 1e-4 through non-embedded
+    states, winding 1 -> 0.125; a 0.5x step cap still leaves folds
+    that put the area below the pi Douglas bound), while CG preserves
+    the winding even at 4000 iterations -- and on the anchored
+    sphere/column films L-BFGS showed no quality-or-time win to
+    justify the risk."""
     hook = (None if not groom_every
             else lambda Vv, Tt: redistribute_boundary(Vv, Tt, wall,
                                                       freeb))
@@ -922,6 +935,25 @@ if _IN_BLENDER:
             name="Evolve Iterations", default=800, min=0, max=5000,
             description="Constrained area-descent iterations "
                         "(0 shows the raw seed)")
+        optimizer: EnumProperty(
+            name="Optimizer",
+            items=[('CG', "Conjugate Gradient",
+                    "The established projected Polak-Ribiere "
+                    "descent with the Evolver line search"),
+                   ('LBFGS', "L-BFGS (Laplacian-seeded)",
+                    "Quasi-Newton descent seeded by a cotan-"
+                    "Laplacian solve: drops reach their contact "
+                    "angle in far fewer iterations (measured: the "
+                    "135-degree drop converges ~17x faster in wall "
+                    "time); on bridges the vertex distribution can "
+                    "drift tangentially at equilibrium, so CG "
+                    "remains the recommended bridge setting.  Film "
+                    "modes always use CG (measured winding-safety "
+                    "hazard)")],
+            default='CG',
+            description="Outer descent algorithm for the "
+                        "constrained evolution (BRIDGE and DROP "
+                        "modes; films always use CG)")
         smooth: BoolProperty(name="Smooth Shading", default=True)
         sharp_edges: BoolProperty(
             name="Sharp Rims", default=True,
@@ -934,6 +966,9 @@ if _IN_BLENDER:
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
+        def _optimizer(self):
+            return "lbfgs" if self.optimizer == 'LBFGS' else None
+
         def execute(self, context):
             support = None
             if self.mode == 'BRIDGE':
@@ -944,7 +979,8 @@ if _IN_BLENDER:
                     volume_factor=self.volume_factor,
                     nring=self.resolution, nrow=nrow,
                     h=self.aspect, R=1.0,
-                    iters=self.iterations)
+                    iters=self.iterations,
+                    optimizer=self._optimizer())
                 name = "Liquid Bridge"
                 Hs = signed_mean_curvature(V, T)
                 # interior rows only (rims are pinned)
@@ -960,7 +996,8 @@ if _IN_BLENDER:
                 V, T, info = relax_drop(
                     theta_deg=self.contact_angle,
                     nring=self.resolution,
-                    iters=self.iterations, rho_g=rho_g)
+                    iters=self.iterations, rho_g=rho_g,
+                    optimizer=self._optimizer())
                 name = "Sessile Drop"
                 if rho_g:
                     h_inf = puddle_height(
@@ -1092,8 +1129,11 @@ if _IN_BLENDER:
                 else:
                     lay.prop(self, 'ring_tilt')
                 lay.prop(self, 'show_support')
-            for k in ('resolution', 'iterations', 'smooth',
-                      'sharp_edges', 'scale'):
+            lay.prop(self, 'resolution')
+            lay.prop(self, 'iterations')
+            if self.mode in ('BRIDGE', 'DROP'):
+                lay.prop(self, 'optimizer')
+            for k in ('smooth', 'sharp_edges', 'scale'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
