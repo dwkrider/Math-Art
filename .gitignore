@@ -11,6 +11,7 @@ research/**
 
 # Minimal-surface harvest: raw .nb/.pov downloads stay local
 research/msblog_harvest/raw/
+tests/bench/results/
 
 # generated locally by tools/icon_contact_sheet.py
 icon_contact_sheet.html
