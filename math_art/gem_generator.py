@@ -32,18 +32,24 @@
 try:
     from .gems import (catalogue, design as gem_design, facets as gem_facets,
                        measure as gem_measure)
+    from .gems import materials as gem_mat
     from .gems.asc import parse_asc, write_asc
     from .polyhedra.fit import fit_cube
+    from .styles import gem_material
 except ImportError:                     # flat import outside the package
     from gems import (catalogue, design as gem_design, facets as gem_facets,
-                      measure as gem_measure)
+                      materials as gem_mat, measure as gem_measure)
     from gems.asc import parse_asc, write_asc
     from polyhedra.fit import fit_cube
+    try:
+        from styles import gem_material
+    except ImportError:
+        gem_material = None
 
 try:
     import bpy
-    from bpy.props import (EnumProperty, FloatProperty, IntProperty,
-                           StringProperty)
+    from bpy.props import (BoolProperty, EnumProperty, FloatProperty,
+                           IntProperty, StringProperty)
     from bpy_extras.io_utils import ExportHelper, ImportHelper
     _IN_BLENDER = True
 except ImportError:
@@ -203,10 +209,36 @@ if _IN_BLENDER:
             name="Size (mm)", default=6.5, min=0.1, max=100.0,
             description="Real diameter. Reported as a carat weight only -- "
                         "the mesh is still fitted to the 2 m cube")
+        material: EnumProperty(
+            name="Material",
+            items=[(k, lbl, desc)
+                   for k, lbl, desc in gem_mat.material_items()],
+            default=gem_mat.DEFAULT,
+            description="Sets the refractive index, the dispersion that "
+                        "makes the fire, the absorption that makes the "
+                        "colour, and the density that sets carat weight")
+        assign_material: BoolProperty(
+            name="Assign Material", default=True,
+            description="Build and assign a dispersion shader for the "
+                        "chosen species")
+        bands: EnumProperty(
+            name="Dispersion Bands",
+            items=[('3', "3 (RGB)", "One glass BSDF per colour channel"),
+                   ('6', "6", "Finer fire, roughly twice the shading cost"),
+                   ('9', "9", "Finest; for stills of very fiery material")],
+            default='3',
+            description="Blender has no dispersion of its own, so fire is "
+                        "built from this many glass BSDFs at different "
+                        "refractive indices. More bands reduce colour "
+                        "banding at a proportional cost")
+        preview_material: BoolProperty(
+            name="Preview (no dispersion)", default=False,
+            description="A single Principled BSDF at the sodium-D index: "
+                        "cheap and EEVEE-friendly, but with no fire")
         sg: FloatProperty(
-            name="Specific Gravity", default=3.52, min=1.0, max=8.0,
-            description="Of the intended material (diamond 3.52, corundum "
-                        "4.00, quartz 2.65); sets the carat weight")
+            name="Specific Gravity", default=0.0, min=0.0, max=8.0,
+            description="Override the material's own density for the carat "
+                        "weight; 0 uses the species value")
         snap: FloatProperty(
             name="Meetpoint Tolerance", default=1e-5,
             min=1e-7, max=1e-3, precision=7,
@@ -264,6 +296,17 @@ if _IN_BLENDER:
                             "the facet planes do not close a solid; try a "
                             "larger meetpoint tolerance")
                 return {'CANCELLED'}
+            spec = gem_mat.get(self.material)
+            sg = self.sg if self.sg > 0.0 else spec.sg
+            if self.assign_material and gem_material is not None:
+                try:
+                    obj.data.materials.append(gem_material.gem_material(
+                        self.material, size_mm=self.size_mm,
+                        bands=int(self.bands),
+                        simple=self.preview_material))
+                except Exception as e:      # never lose the stone over a shader
+                    self.report({'WARNING'},
+                                f"material not assigned: {e}")
             pr, gr = info.get("proportions"), info.get("grades")
             if pr is not None:
                 # keep the measurement with the stone, so it can be read
@@ -271,10 +314,10 @@ if _IN_BLENDER:
                 obj["gem_proportions"] = {k: float(v) for k, v
                                           in pr._asdict().items()}
                 obj["gem_carat"] = gem_measure.carat_from_diameter(
-                    pr, self.size_mm, self.sg)
+                    pr, self.size_mm, sg)
             if gr:
                 obj["gem_idc_grade"] = gr["overall"]
-            _report(self, D, info, obj.data, self.size_mm, self.sg)
+            _report(self, D, info, obj.data, self.size_mm, sg)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -300,6 +343,12 @@ if _IN_BLENDER:
             # deliberately NOT recomputed here: draw() runs on every
             # redraw, and grading means intersecting the half-spaces again.
             lay.separator()
+            lay.prop(self, 'material')
+            lay.prop(self, 'assign_material')
+            if self.assign_material:
+                lay.prop(self, 'preview_material')
+                if not self.preview_material:
+                    lay.prop(self, 'bands')
             lay.prop(self, 'size_mm')
             lay.prop(self, 'sg')
             lay.prop(self, 'scale')

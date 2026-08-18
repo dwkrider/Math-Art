@@ -90,18 +90,25 @@ class CutDesign(NamedTuple):
 def index_azimuth(index, gear, gear_offset=0.0):
     """Azimuth (radians) of an index position on the gear.
 
-    Index numbering runs counter-clockwise seen from +z (the table side),
-    with index 0 == index `gear` along +x.  `gear_offset` is taken in
-    DEGREES, added to the azimuth.
+    Two conventions here were settled by measurement against the Datavue
+    II design library -- 3,680 published designs -- rather than guessed
+    from the single example in the manual.
 
-    The handedness is a convention, not a fact recoverable from a design
-    file: mirroring it produces the enantiomorph, which for the mirror-
-    symmetric designs in the catalogue is the same solid.  It is pinned
-    for real files by the round-trip and mirror-symmetry checks in
-    `asc.py` rather than assumed here.
+    `gear_offset` is in INDEX UNITS, not degrees.  The library's offsets
+    are 0, 48, 32, 96, 120 and so on: on a 96 gear an offset of 48 is a
+    half turn.  None of the 25 distinct values is a multiple of the 3.75
+    degrees a tooth spans, so reading them as degrees is not merely a
+    different convention, it is wrong -- and 62% of the library carries a
+    non-zero offset, so it is wrong often.
+
+    A NEGATIVE gear count reverses the index direction.  570 designs
+    declare `g -96` and 134 `g -64`, and their tiers enumerate indices
+    descending (0, 63, 62, ...) where a positive gear counts up.  The
+    sign is therefore handedness, not a malformed number.
     """
-    return 2.0 * math.pi * ((index % gear) / float(gear)) \
-        + math.radians(gear_offset)
+    n = abs(int(gear)) or 1
+    sign = -1.0 if gear < 0 else 1.0
+    return sign * 2.0 * math.pi * ((index + gear_offset) / float(n))
 
 
 def facet_plane(angle_deg, distance, phi):
@@ -152,16 +159,16 @@ def expand_indices(fold, mirror, seed, gear=96):
     already list every index explicitly, and `asc.py` keeps those lists
     verbatim rather than re-deriving them.
     """
-    if gear % fold:
+    if abs(gear) % fold:
         raise ValueError(f"{fold}-fold symmetry needs a gear divisible by "
                          f"{fold}, got {gear}")
-    step = gear // fold
+    step = abs(gear) // fold
     out = set()
     for s in seed:
         for k in range(fold):
-            out.add((s + k * step) % gear)
+            out.add((s + k * step) % abs(gear))
             if mirror:
-                out.add((-s + k * step) % gear)
+                out.add((-s + k * step) % abs(gear))
     return tuple(sorted(out))
 
 
