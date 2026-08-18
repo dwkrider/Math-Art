@@ -1242,8 +1242,12 @@ def case_bubble_triple(config):
 
 def case_bubble_triple_fine(config):
     """Doubled resolution, mild perturbation (discretization-scaling
-    case, same rationale as bubble_double_fine)."""
-    return _case_bubble_triple(config, 96, 800,
+    case, same rationale as bubble_double_fine).  Measured budget: at
+    800 iterations the fitted angle rms still reads 0.80 deg -- the
+    S3-documented high-resolution transient (half the coarse budget
+    on a 4x mesh), NOT the floor: the zero-perturbation floor is
+    0.023/0.026 deg, and 2400 iterations reaches it (0.0233/0.0270)."""
+    return _case_bubble_triple(config, 96, 2400,
                                perturb=(1.02, 0.99, 1.0))
 
 
