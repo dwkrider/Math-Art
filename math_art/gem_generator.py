@@ -524,6 +524,13 @@ if _IN_BLENDER:
             name="Add Camera", default=True,
             description="Orthographic, straight down the table -- the view "
                         "an ASET image is made in")
+        use_cycles: BoolProperty(
+            name="Switch to Cycles", default=True,
+            description="The dome is EMISSIVE GEOMETRY, not light objects, "
+                        "because ASET is defined by where light comes from "
+                        "rather than by lamps. Cycles treats emissive mesh "
+                        "as a real source; EEVEE does not light a scene "
+                        "from it, and renders the stone flat grey")
 
         def execute(self, context):
             verts, faces, zone = _aset_dome(self.radius, 24, 64)
@@ -548,10 +555,14 @@ if _IN_BLENDER:
                 co.location = (0.0, 0.0, self.radius * 0.9)
                 context.collection.objects.link(co)
                 context.scene.camera = co
+            if self.use_cycles and context.scene.render.engine != 'CYCLES':
+                context.scene.render.engine = 'CYCLES'
+                self.report({'INFO'}, "switched the scene to Cycles")
             self.report({'INFO'},
                         "ASET rig: green 0-45 deg, red 45-75, blue 75-90. "
-                        "A well-cut stone reads mostly red with a blue "
-                        "centre; render in Cycles")
+                        "The dome is emissive GEOMETRY, so this view needs "
+                        "Cycles and Rendered shading -- in EEVEE, or in "
+                        "Solid view, the stone shows flat grey")
             return {'FINISHED'}
 
     class MESH_OT_gem_studio_add(bpy.types.Operator):
