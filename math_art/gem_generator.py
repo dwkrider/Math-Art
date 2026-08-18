@@ -243,9 +243,10 @@ if _IN_BLENDER:
             """
             if not self._parametric():
                 return {}
+            allowed = catalogue.accepted_params(self.preset)
             out = {}
             for prop, arg, conv in self._PROPS:
-                if self.properties.is_property_set(prop):
+                if arg in allowed and self.properties.is_property_set(prop):
                     v = getattr(self, prop)
                     out[arg] = v * conv if isinstance(conv, float) else v
             return out
@@ -281,11 +282,17 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'preset')
             if self._parametric():
+                # Only the controls this family actually has: a rose has no
+                # table, a step cut takes a list of row angles rather than
+                # one.  Showing a slider that the cut cannot use would be
+                # showing a lie.
+                allowed = catalogue.accepted_params(self.preset)
                 col = lay.column(align=True)
-                for p, _, _ in self._PROPS:
+                shown = [p for p, arg, _ in self._PROPS if arg in allowed]
+                for p in shown:
                     col.prop(self, p)
                 if not any(self.properties.is_property_set(p)
-                           for p, _, _ in self._PROPS):
+                           for p in shown):
                     lay.label(text="using the preset's own proportions",
                               icon='INFO')
             # The measured proportions and their IDC grade are reported in

@@ -25,15 +25,20 @@
 #   Robert W. Strickland, "GemCad for Windows Version 1.0 User's Guide",
 #     GemSoft Enterprises, 2002 -- the Standard Round Brilliant listing.
 
+import inspect
 from typing import NamedTuple
 
 try:
-    from .brilliant import round_brilliant
+    from .brilliant import (old_european, portuguese, round_brilliant,
+                            single_cut)
     from .design import SRB_GEMCAD, CutDesign
+    from .rose import antwerp_rose, dutch_rose
     from .step import asscher, baguette, emerald, polygon_step
 except ImportError:                     # flat import outside the package
-    from brilliant import round_brilliant
+    from brilliant import (old_european, portuguese, round_brilliant,
+                           single_cut)
     from design import SRB_GEMCAD, CutDesign
+    from rose import antwerp_rose, dutch_rose
     from step import asscher, baguette, emerald, polygon_step
 
 
@@ -71,6 +76,39 @@ CUTS = {
         description="Marcel Tolkowsky's 1919 proportions: 53% table, 34.5 "
                     "degree crown, 40.75 degree pavilion -- the calculated "
                     "ideal the modern brilliant descends from"),
+    "SINGLE_CUT": CutEntry(
+        label="Single (Eight) Cut",
+        family="brilliant",
+        source=(single_cut, {}),
+        description="17/18 facets: table, 8 bezels, 8 pavilion mains. The "
+                    "melee cut, where a full brilliant's facets would be "
+                    "smaller than the eye can resolve"),
+    "OLD_EUROPEAN": CutEntry(
+        label="Old European Cut",
+        family="brilliant",
+        source=(old_european, {}),
+        description="The 58-facet brilliant cut for candlelight: small "
+                    "table, tall crown, steep pavilion and a large open "
+                    "culet"),
+    "PORTUGUESE": CutEntry(
+        label="Portuguese Cut",
+        family="brilliant",
+        source=(portuguese, {}),
+        description="161 facets in many rows, each offset half a step from "
+                    "the one below; sixteen pavilion planes converge on "
+                    "the culet"),
+    "DUTCH_ROSE": CutEntry(
+        label="Dutch Rose",
+        family="rose",
+        source=(dutch_rose, {}),
+        description="A flat base under a domed crown of 24 triangular "
+                    "facets, and no pavilion at all -- the cut that "
+                    "preceded the brilliant"),
+    "ANTWERP_ROSE": CutEntry(
+        label="Antwerp Rose",
+        family="rose",
+        source=(antwerp_rose, {}),
+        description="A 6-fold rose with a shallower dome and 12 facets"),
     "EMERALD": CutEntry(
         label="Emerald Cut",
         family="step",
@@ -132,6 +170,20 @@ def get_cut(key, **params):
         raise TypeError(f"{key!r} is a fixed published design and takes no "
                         f"parameters; got {', '.join(sorted(params))}")
     return src
+
+
+def accepted_params(key):
+    """The parameter names the named cut's constructor will accept.
+
+    A literal design accepts none.  The families take different
+    parameters -- a rose has no table and a step cut takes a LIST of row
+    angles rather than one -- so a caller driving this from a fixed set
+    of controls needs to know which of them apply.
+    """
+    src = CUTS[key].source
+    if isinstance(src, CutDesign) or not isinstance(src, tuple):
+        return frozenset()
+    return frozenset(inspect.signature(src[0]).parameters)
 
 
 def cut_items():

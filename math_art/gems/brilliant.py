@@ -386,3 +386,132 @@ def _selftest():
     print("RESULT:", "OK" if ok else "FAILURE")
     if not ok:
         raise AssertionError("gems.brilliant self-test failed")
+
+
+def single_cut(table=0.55, crown_angle=34.5, pavilion_angle=41.0,
+               girdle_pct=0.03, culet_pct=0.0, girdle_facets=8, gear=96,
+               ri=2.417, name="Single Cut"):
+    """The 17/18-facet single (eight) cut: table, 8 bezels, 8 mains.
+
+    A round brilliant with the stars and the halves left off -- the cut
+    used for melee, where a full brilliant's 57 facets would be smaller
+    than the eye can resolve.
+    """
+    if not 0.0 < table < 1.0:
+        raise ValueError(f"table must be a fraction in (0, 1), got {table}")
+    r_g = 1.0
+    r_v = r_g / math.cos(math.pi / girdle_facets)
+    half = girdle_pct * r_v
+    b, a = math.radians(crown_angle), math.radians(pavilion_angle)
+
+    tiers = [Tier(-90.0, r_g,
+                  tuple(_idx((k + 0.5) * 360.0 / girdle_facets, gear)
+                        for k in range(girdle_facets)),
+                  name="G", note=f"{girdle_facets}-sided girdle")]
+    d_pav = math.sin(a) * r_v + math.cos(a) * half
+    tiers.append(Tier(-pavilion_angle, d_pav,
+                      tuple(_idx(k * 45.0, gear) for k in range(8)),
+                      name="P", note="pavilion mains"))
+    if culet_pct > 0.0:
+        tiers.append(Tier(0.0, (culet_pct * r_v * math.sin(a) - d_pav)
+                          / math.cos(a), (_idx(0.0, gear),), name="C",
+                          note="culet"))
+    d_bez = math.sin(b) * r_v + math.cos(b) * half
+    tiers.append(Tier(crown_angle, d_bez,
+                      tuple(_idx(k * 45.0, gear) for k in range(8)),
+                      name="B", note="bezels"))
+    tiers.append(Tier(0.0, half + (r_v - table * r_v) * math.tan(b),
+                      (_idx(0.0, gear),), name="T", note="table"))
+    return CutDesign(name=name, gear=gear, fold=8, mirror=True, ri=ri,
+                     tiers=tuple(tiers),
+                     headings=(name, f"table {table * 100:.0f}%"))
+
+
+def old_european(**over):
+    """The old European cut: a 58-facet brilliant cut for candlelight.
+
+    Same arrangement as the modern round brilliant, different
+    proportions -- a small table, a tall crown, a steep pavilion and a
+    large open culet, which under a point source throws broad flashes
+    rather than the fine scintillation electric light rewards.
+    """
+    kw = dict(table=0.40, crown_angle=40.0, pavilion_angle=42.0,
+              girdle_pct=0.03, culet_pct=0.05, star_len=0.50,
+              lower_girdle_len=0.60, name="Old European Cut")
+    kw.update(over)
+    return round_brilliant(**kw)
+
+
+def portuguese(rows_crown=4, rows_pavilion=5, n=16, table=0.45,
+               crown_angle=40.0, pavilion_angle=43.0, girdle_pct=0.02,
+               gear=96, ri=1.54, name="Portuguese Cut"):
+    """The Portuguese cut: many rows of facets, 161 in all.
+
+    Rows step inward by equal insets, as in a step cut, but each row is
+    offset by HALF a step from the one below, so a facet spans the joint
+    between two facets of the row beneath rather than sitting squarely on
+    one.  With the default 16-fold, 4 crown rows and 5 pavilion rows that
+    comes to 16*4 + 16*5 + 16 girdle + 1 table = 161 facets, the count the
+    cut is known by.
+
+    Two honest caveats.  The row ANGLES are interpolated between a steep
+    first row and a shallow last one rather than taken from a published
+    diagram, so this is a Portuguese cut by construction and facet count,
+    not a reproduction of any particular cutter's stone.  And the facets
+    come out four- to seven-sided rather than the clean triangles a real
+    Portuguese shows: triangles need each row to meet the one below at
+    points, which is a meetpoint construction like the brilliant's stars
+    rather than the constant inset used here.
+
+    It earns its place regardless as the engine's stress case: sixteen
+    pavilion planes converge on the culet, where an eight-decimal design
+    does not quite concur, and resolving that to a single vertex is what
+    the least-squares meetpoint snapping in `facets.py` exists for.
+    """
+    if rows_crown < 1 or rows_pavilion < 1:
+        raise ValueError("a Portuguese cut needs at least one row a side")
+    if not 0.0 < table < 1.0:
+        raise ValueError(f"table must be a fraction in (0, 1), got {table}")
+    r_g = 1.0
+    r_v = r_g / math.cos(math.pi / n)
+    half = girdle_pct * r_v
+    step = 360.0 / n
+
+    tiers = [Tier(-90.0, r_g,
+                  tuple(_idx((k + 0.5) * step, gear) for k in range(n)),
+                  name="G", note=f"{n}-sided girdle")]
+
+    def rows(count, first_angle, last_angle, total_inset, z0, crown, pre):
+        out, z, shrink = [], z0, 0.0
+        dp = total_inset / count
+        sign = 1.0 if crown else -1.0
+        for k in range(count):
+            f = k / max(1, count - 1)
+            ang = first_angle + (last_angle - first_angle) * f
+            a = math.radians(ang)
+            p = r_v - shrink
+            if p <= 1e-9:
+                break
+            # half-step offset on alternate rows: this is what makes the
+            # facets triangles instead of trapezoids
+            off = 0.5 * (k % 2)
+            out.append(Tier(sign * ang, math.sin(a) * p + math.cos(a) * z * sign,
+                            tuple(_idx((j + 0.5 + off) * step, gear)
+                                  for j in range(n)),
+                            name=f"{pre}{k + 1}", note=f"row {k + 1}"))
+            z += sign * dp * math.tan(a)
+            shrink += dp
+        return out, z
+
+    pav, _ = rows(rows_pavilion, pavilion_angle, pavilion_angle * 0.72,
+                  r_v, -half, False, "P")
+    tiers += pav
+    crown, z_table = rows(rows_crown, crown_angle, crown_angle * 0.42,
+                          r_v * (1.0 - table), half, True, "C")
+    tiers += crown
+    tiers.append(Tier(0.0, z_table, (_idx(0.0, gear),), name="T",
+                      note="table"))
+    return CutDesign(name=name, gear=gear, fold=n, mirror=True, ri=ri,
+                     tiers=tuple(tiers),
+                     headings=(name, f"{rows_crown}+{rows_pavilion} rows, "
+                                     f"{n}-fold"))

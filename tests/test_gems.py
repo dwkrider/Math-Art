@@ -225,4 +225,42 @@ ys = [v.co[1] for v in em.vertices]
 lw = (max(ys) - min(ys)) / (max(xs) - min(xs))
 check("the emerald outline is 1.5:1", abs(lw - 1.5) < 0.02, f"{lw:.3f}:1")
 
+
+# --- the rest of the catalogue: every cut builds a closed solid -------
+for preset in ('SINGLE_CUT', 'OLD_EUROPEAN', 'PORTUGUESE',
+               'DUTCH_ROSE', 'ANTWERP_ROSE'):
+    clear()
+    bpy.ops.mesh.gem_add(preset=preset)
+    m = bpy.context.active_object.data
+    e = {}
+    for p in m.polygons:
+        vs = list(p.vertices)
+        for a, b in zip(vs, vs[1:] + vs[:1]):
+            k = (min(a, b), max(a, b))
+            e[k] = e.get(k, 0) + 1
+    check(f"{preset} builds closed", set(e.values()) == {2},
+          f"{len(m.polygons)} facets")
+
+# the Portuguese cut is the engine's stress case: many planes on one culet
+clear()
+bpy.ops.mesh.gem_add(preset='PORTUGUESE')
+pg = bpy.context.active_object.data
+check("Portuguese has 161 facets", len(pg.polygons) == 161,
+      f"{len(pg.polygons)}")
+zmin = min(v.co[2] for v in pg.vertices)
+culet = [v for v in pg.vertices if abs(v.co[2] - zmin) < 1e-4]
+check("its culet resolves to a single vertex", len(culet) == 1,
+      f"{len(culet)} vertices at the culet")
+
+# a rose has no pavilion: its flat base spans the full girdle
+clear()
+bpy.ops.mesh.gem_add(preset='DUTCH_ROSE')
+rs = bpy.context.active_object.data
+zmin = min(v.co[2] for v in rs.vertices)
+rmax = max((v.co[0] ** 2 + v.co[1] ** 2) ** 0.5 for v in rs.vertices)
+rbase = max((v.co[0] ** 2 + v.co[1] ** 2) ** 0.5
+            for v in rs.vertices if abs(v.co[2] - zmin) < 1e-5)
+check("the rose has no pavilion", abs(rbase - rmax) < 1e-4,
+      f"base radius {rbase:.4f} of {rmax:.4f}")
+
 print("\nRESULT:", "ALL OK" if not fails else f"FAILURES: {fails}")
