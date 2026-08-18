@@ -601,6 +601,12 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
                 nev += nev2
             if s == 0.0:
                 break                    # no downhill scale: converged
+            # tangency residual of the accepted direction, against the
+            # CURRENT wall normals (the cg path measures its projected
+            # velocity the same way, before the step moves V)
+            vt_normal_max = (0.0 if wall_list is None
+                             else _walls.normal_component_max(d, V,
+                                                              wall_ts))
             x_prev = V.copy()
             gh_prev = gh
             V[:] = x1
@@ -617,8 +623,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             }
             if wall_list is not None:
                 entry["wall_resid"] = _walls.wall_residual(V, wall_list)
-                entry["vt_normal_max"] = _walls.normal_component_max(
-                    d, V, wall_ts)
+                entry["vt_normal_max"] = vt_normal_max
             if ext_energy is not None:
                 entry["E"] = E
                 entry["E_rise"] = (E - E_prev) / max(abs(E_prev), 1e-300)
