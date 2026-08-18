@@ -197,6 +197,80 @@ def _make_menu(spec):
 _SUBMENUS = tuple(_make_menu(s) for s in menu_defs.ALL_MENUS)
 
 
+# --------------------------------------------------------------------
+# Gallery menu (PROTOTYPE -- under evaluation against the plain rows)
+# --------------------------------------------------------------------
+# A submenu drawn as a grid of large thumbnails instead of 20 px rows.
+# `template_icon` is the only way to draw a preview above icon size, and
+# it comes with two constraints that shape everything here:
+#
+#   * it takes an icon_value and nothing else, so it cannot draw a
+#     built-in glyph -- an entry with no baked render has to fall back
+#     to an ordinary row, listed under the grid; and
+#   * it draws a picture, not a button.  The clickable control is the
+#     operator underneath each thumbnail.
+#
+# At GALLERY_SCALE = 4 the preview lands near 65 px on a 1.0-scale UI,
+# which is what the 64 px bake was sized for.  Going bigger means
+# re-baking at RES = 128 or the thumbnails start to soften.
+GALLERY_COLUMNS = 4
+GALLERY_SCALE = 4.0
+
+
+def _draw_gallery(lay, entries):
+    """Draw entries as a thumbnail grid, plus rows for the un-baked."""
+    withpv = [(e, menu_icons.preview_id(e)) for e in entries
+              if e.op is not None]
+    grid = [(e, pv) for e, pv in withpv if pv]
+    plain = [e for e, pv in withpv if not pv]
+
+    # Blender right-aligns a ragged final row: three items after a row of
+    # four land under columns 2..4 rather than 1..3.  grid_flow does it,
+    # hand-built rows of columns do it, and padding the count out does
+    # not help -- neither label(text="") nor template_icon(icon_value=0)
+    # reserves any width.
+    #
+    # So the grid is built as real columns instead, and the items are
+    # dealt down them: column j takes indices j, j+COLS, j+2*COLS...
+    # Reading across the columns still gives the table's order, every
+    # column is its own layout so the pitch cannot drift, and a short
+    # last row simply leaves its rightmost columns one item shorter.
+    cols = min(GALLERY_COLUMNS, len(grid))
+    row = lay.row(align=False)
+    for j in range(cols):
+        col = row.column(align=False)
+        for entry, pv in grid[j::cols]:
+            cell = col.column(align=True)
+            cell.template_icon(icon_value=pv, scale=GALLERY_SCALE)
+            kw = {'text': entry.text} if entry.text is not None else {}
+            _op(cell, entry.op, **kw)
+
+    if plain:
+        lay.separator()
+        _draw_entries(lay, plain)
+
+
+def _make_gallery_menu(spec):
+    """Gallery variant of `spec`, under its own idname and label."""
+    idname = spec.idname + "_gallery"
+
+    def draw(self, context):
+        _draw_gallery(self.layout, spec.entries)
+
+    return type(idname, (bpy.types.Menu,),
+                {'bl_idname': idname,
+                 'bl_label': spec.label + " (Gallery)",
+                 'draw': draw})
+
+
+# Which submenus also get a gallery variant.  Both versions register, so
+# the two can be compared side by side in one build; this is a
+# prototype, not the shipping layout.
+GALLERY_MENUS = (menu_defs.ROLLERS,)
+
+_GALLERIES = tuple(_make_gallery_menu(s) for s in GALLERY_MENUS)
+
+
 class VIEW3D_MT_math_art_add(bpy.types.Menu):
     bl_idname = "VIEW3D_MT_math_art_add"
     bl_label = "Math Art"
@@ -205,6 +279,11 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay = self.layout
         for spec in menu_defs.MENU_ORDER:
             lay.menu(spec.idname, icon=spec.icon)
+            # PROTOTYPE: the gallery variant sits directly under the
+            # submenu it mirrors, so the two can be opened back to back.
+            for gal in _GALLERIES:
+                if gal.bl_idname == spec.idname + "_gallery":
+                    lay.menu(gal.bl_idname, icon=spec.icon)
         lay.separator()
         if hasattr(bpy.types, 'OBJECT_OT_symmetric_sculpture_add'):
             lay.operator_menu_enum("object.symmetric_sculpture_add",
@@ -215,7 +294,7 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
         lay.menu(menu_defs.STYLES.idname, icon=menu_defs.STYLES.icon)
 
 
-_MENUS = _SUBMENUS + (VIEW3D_MT_math_art_add,)
+_MENUS = _SUBMENUS + _GALLERIES + (VIEW3D_MT_math_art_add,)
 
 
 def _menu_func(self, context):

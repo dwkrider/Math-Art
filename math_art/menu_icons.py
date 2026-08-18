@@ -82,6 +82,20 @@ if _IN_BLENDER:
             bpy.utils.previews.remove(_previews)
             _previews = None
 
+    def preview_id(entry):
+        """Preview icon id for `entry`, or 0 if it has no baked render.
+
+        Gallery menus need this rather than icon_kwargs(): a large icon
+        is drawn with `template_icon`, which takes only an icon_value
+        and cannot render a built-in glyph by name.  A 0 return means
+        the entry has to be drawn as an ordinary row instead.
+        """
+        if entry.builtin or _previews is None:
+            return 0
+        if entry.op not in _previews:
+            return 0
+        return _previews[entry.op].icon_id
+
     def icon_kwargs(entry):
         """Icon keyword for `lay.operator()` -- baked or built-in.
 
@@ -107,6 +121,9 @@ else:                                   # headless: no previews at all
 
     def unload():
         pass
+
+    def preview_id(entry):
+        return 0
 
     def icon_kwargs(entry):
         return {'icon': entry.icon}
