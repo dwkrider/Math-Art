@@ -32,12 +32,14 @@ try:
     from .brilliant import (old_european, portuguese, round_brilliant,
                             single_cut)
     from .design import SRB_GEMCAD, CutDesign
+    from .mixed import barion, princess, radiant
     from .rose import antwerp_rose, dutch_rose
     from .step import asscher, baguette, emerald, polygon_step
 except ImportError:                     # flat import outside the package
     from brilliant import (old_european, portuguese, round_brilliant,
                            single_cut)
     from design import SRB_GEMCAD, CutDesign
+    from mixed import barion, princess, radiant
     from rose import antwerp_rose, dutch_rose
     from step import asscher, baguette, emerald, polygon_step
 
@@ -60,7 +62,7 @@ CUTS = {
                     "worked example in Strickland's GemCad manual; cut "
                     "for a refractive index of 1.54"),
     "ROUND_BRILLIANT": CutEntry(
-        label="Round Brilliant (parametric)",
+        label="Round Brilliant",
         family="brilliant",
         source=(round_brilliant, {}),
         description="The 57/58-facet standard round brilliant solved from "
@@ -166,11 +168,45 @@ CUTS = {
         source=(polygon_step, dict(sides=8, rows=2,
                                    name="Octagon Step Cut")),
         description="A regular-polygon step cut"),
+    # --- mixed cuts: step crown over brilliant pavilion --------------
+    # Unlike the step family, a mixed cut's default proportions are
+    # chosen so no plane is spent: the crowns' cut corners survive to
+    # the table, and every pavilion tier binds.  They therefore stay
+    # OUT of the may_drop set below -- a dropped plane in a default
+    # mixed cut is a regression, not step-cut business as usual.
+    "PRINCESS": CutEntry(
+        label="Princess Cut",
+        family="mixed",
+        source=(princess, {}),
+        description="Sharp-cornered square with rows of V-shaped chevron "
+                    "facets running down the pavilion diagonals (Ambar & "
+                    "Itzkowitz, c. 1980); more chevron rows give finer "
+                    "scintillation, fewer give bolder flashes"),
+    "BARION": CutEntry(
+        label="Barion Cut",
+        family="mixed",
+        source=(barion, {}),
+        description="Basil Watermeyer's 1971 mixed cut: cut-corner square, "
+                    "step crown, brilliant pavilion -- with the signature "
+                    "crescent 'moon' facets hung just below the girdle"),
+    "RADIANT": CutEntry(
+        label="Radiant Cut",
+        family="mixed",
+        source=(radiant, {}),
+        description="Henry Grossbard's 1977 cut-corner rectangle: the "
+                    "barion idea carried onto a length-to-width ratio, a "
+                    "brilliant pavilion giving a square-ish stone a round "
+                    "brilliant's light return"),
 }
 
 # Display order for the operator's preset menu, grouped by family.
 FAMILIES = ("brilliant", "step", "mixed", "rose", "cabochon",
             "fantasy", "teaching")
+
+# Cuts pinned to the head of their family, ahead of the alphabetical
+# remainder.  The round brilliant is the cut every other one is described
+# against, so it leads regardless of where its key happens to sort.
+FIRST = ("ROUND_BRILLIANT",)
 
 
 def get_cut(key, **params):
@@ -217,9 +253,11 @@ def cut_items():
     """`(key, label, description)` triples, grouped by family, for a UI."""
     out = []
     for fam in FAMILIES:
-        for key in sorted(CUTS):
-            if CUTS[key].family == fam:
-                out.append((key, CUTS[key].label, CUTS[key].description))
+        keys = [k for k in FIRST if k in CUTS and CUTS[k].family == fam]
+        keys += [k for k in sorted(CUTS)
+                 if CUTS[k].family == fam and k not in FIRST]
+        for key in keys:
+            out.append((key, CUTS[key].label, CUTS[key].description))
     for key in sorted(CUTS):            # anything in an unlisted family
         if CUTS[key].family not in FAMILIES:
             out.append((key, CUTS[key].label, CUTS[key].description))
@@ -310,6 +348,16 @@ def _selftest():
     print(f"gems.catalogue: cut_items lists every cut once, grouped by "
           f"family ({', '.join(dict.fromkeys(fams))}) "
           f"{'OK' if good else 'menu and registry disagree'}")
+
+    good = keys[0] == "ROUND_BRILLIANT"
+    ok &= good
+    print(f"gems.catalogue: the round brilliant heads the list, not "
+          f"whatever sorts first (got {keys[0]}) "
+          f"{'OK' if good else 'wrong'}")
+    good = "parametric" not in CUTS["ROUND_BRILLIANT"].label.lower()
+    ok &= good
+    print(f"gems.catalogue: it is called '{CUTS['ROUND_BRILLIANT'].label}' "
+          f"{'OK' if good else 'still carries an implementation detail'}")
 
     raised = False
     try:
