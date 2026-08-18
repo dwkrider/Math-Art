@@ -35,7 +35,7 @@ import time
 
 import bpy
 import numpy as np
-from mathutils import Euler
+from mathutils import Euler, Vector
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJ)
@@ -68,6 +68,36 @@ MARGIN = 0.06
 # make a thumbnail that says nothing.  Keep this list short -- an icon
 # should show what the user gets when they click the entry.
 OVERRIDES = {
+    # A bare tetrahedron reads as a flat triangle; the dodecahedron's
+    # pentagons say "regular solid" at a glance.
+    "mesh.regular_solid_add": dict(family='PLATONIC', solid='DODECA'),
+    # And the uniform operator's whole point is what lies beyond the
+    # Platonics, so it gets a Kepler-Poinsot star rather than another
+    # convex solid that would look like the entry above.
+    "mesh.uniform_polyhedron_add": dict(family='KEPLER', solid='34'),
+    # The signature Scherk-Collins form (docs/render_docs.py shoots the
+    # same preset).
+    "mesh.scherk_collins_add": dict(preset='HEX'),
+    # The gyroid is the TPMS everyone recognises.
+    "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', surface='G'),
+}
+
+# Operators whose subject is a flat panel.  The studio rig's 3/4 view
+# collapses these to a thin sliver -- measured bounding-box aspect ran
+# 0.21-0.38 against a median of 0.9 for the solids -- so they are shot
+# from straight overhead instead.  Everything here is a 2D pattern by
+# nature; the Patterns entries with genuine relief (relief panel and
+# solid, the modular screen, layer groups) keep the 3/4 view because
+# their depth is the point.
+PLAN_VIEW = {
+    "mesh.frieze_add", "mesh.wallpaper_add", "mesh.tiling_add",
+    "mesh.kuniform_add", "mesh.monohedral_add", "mesh.isohedral_add",
+    "mesh.aperiodic_add", "mesh.reptile_add", "mesh.voderberg_add",
+    "mesh.spiral_tiling_add", "mesh.fractal_tiling_add",
+    "mesh.fractal_reptile_add", "mesh.islamic_pattern_add",
+    "mesh.celtic_knot_2d_add", "mesh.over_under_screen_add",
+    "mesh.knot_carpet_add", "mesh.hyperbolic_tiling_add",
+    "mesh.map_lsystem_add",
 }
 
 # Per-operator turntable, in radians, for shapes whose default pose is
@@ -94,9 +124,36 @@ def _invoke(op, kwargs):
     getattr(getattr(bpy.ops, mod), fn)(**kwargs)
 
 
+_CAM_POSE = {}          # 'studio' / 'plan' -> (location, rotation_euler)
+
+
+def _capture_camera():
+    """Remember the studio camera pose, and derive the plan-view one.
+
+    Plan view keeps the studio camera's distance from the origin so the
+    two framings are comparable, and points it straight down: a camera
+    with no rotation looks along -Z.
+    """
+    cam = bpy.data.objects.get("Studio Camera")
+    if cam is None:
+        return
+    _CAM_POSE['studio'] = (cam.location.copy(), cam.rotation_euler.copy())
+    dist = cam.location.length
+    _CAM_POSE['plan'] = (Vector((0.0, 0.0, dist)), Euler((0.0, 0.0, 0.0)))
+
+
+def _aim_camera(plan):
+    cam = bpy.data.objects.get("Studio Camera")
+    pose = _CAM_POSE.get('plan' if plan else 'studio')
+    if cam is None or pose is None:
+        return
+    cam.location, cam.rotation_euler = pose[0].copy(), pose[1].copy()
+
+
 def _setup():
     """Studio rig, tuned for a small icon on a transparent background."""
     rd.setup_studio()
+    _capture_camera()
     scene = bpy.context.scene
     # The docs rig shoots against a near-black dome; an icon has to sit
     # on whatever colour the menu happens to be, so drop the backdrop
@@ -174,6 +231,7 @@ def _render_to(path):
 def bake(op):
     """Bake one operator's icon.  Returns None on success, else why not."""
     rd.clear_sculpts()
+    _aim_camera(op in PLAN_VIEW)
     try:
         _invoke(op, OVERRIDES.get(op, {}))
     except Exception as e:
