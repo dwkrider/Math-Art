@@ -29,6 +29,7 @@ render free of user startup settings.  Do not "fix" it by removing the
 flag; do not use this script to check whether a build installed.
 """
 import argparse
+import math
 import os
 import sys
 import time
@@ -64,6 +65,15 @@ SAMPLES = 48
 # setting how much of the icon the shape fills (0.06 -> about 89%).
 MARGIN = 0.06
 
+# Exposure for the plan-view shots.  Lighting a flat panel head-on and
+# dropping AgX's highlight rolloff (see _aim_rig) drove these to the
+# clipping point -- measured mean value 0.99 with 41% of the hyperbolic
+# tiling's pixels pinned at white, which is what washed the colour out.
+# -1.8 is where clipping reaches exactly zero across the coloured
+# subjects; darker than that only dims the icon without adding
+# saturation the pale generator palettes do not have.
+PLAN_EXPOSURE = -1.8
+
 # Operators that need help: a bare call is too slow, or its defaults
 # make a thumbnail that says nothing.  Keep this list short -- an icon
 # should show what the user gets when they click the entry.
@@ -80,6 +90,30 @@ OVERRIDES = {
     "mesh.scherk_collins_add": dict(preset='HEX'),
     # The gyroid is the TPMS everyone recognises.
     "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', surface='G'),
+    # Fold with Blender's own cloth solver rather than the internal
+    # packing: same surface, far better folds to look at.
+    "mesh.crochet_add": dict(physics='CLOTH'),
+    # A cube's twist is hidden by its own faces; a tetrahedron has few
+    # enough that the ribbon reads.
+    "mesh.platonic_twist_add": dict(kind='TETRA'),
+    # docs/render_docs.py shoots the twisted torus at these values.
+    "mesh.twisted_torus_add": dict(n=6, twist_steps=6),
+    # Rods flush with the core hide the interleaving; pushing them out
+    # two cells at each end shows how the sticks thread past each other.
+    "mesh.polystix_add": dict(overhang=2.0),
+    # {7,3} is regular, so every face has the same side count and the
+    # default "by sides" colouring yields exactly one material.  Parity
+    # gives the classic two-tone (with a seam, since q=3 is odd).
+    "mesh.hyperbolic_tiling_add": dict(color_by='PARITY'),
+    # Light up the 13 parastichy arms rather than shipping a grey disc.
+    "mesh.phyllotaxis_add": dict(color_by='PARASTICHY', parastichy=13),
+    # Koch is the one fractal everybody has already seen.
+    "curve.lsystem_add": dict(kind='PENTAPLEXITY'),
+    # EDGE mode offers only the edge-rewriting generators (ANTIKOCH,
+    # CESARO, ELEVEN, KOCH, KOCH_SQUARE, LEVY, MINKOWSKI, QUADKOCH,
+    # SEVEN); the flowsnake lives under FASS.  Minkowski's square bumps
+    # read at icon size and are nobody's mental image of "a fractal".
+    "curve.turtle_curve_add": dict(mode='EDGE', teragon='MINKOWSKI'),
 }
 
 # Operators whose subject is a flat panel.  The studio rig's 3/4 view
@@ -98,6 +132,13 @@ PLAN_VIEW = {
     "mesh.celtic_knot_2d_add", "mesh.over_under_screen_add",
     "mesh.knot_carpet_add", "mesh.hyperbolic_tiling_add",
     "mesh.map_lsystem_add",
+    # curve-based fractals that are drawn in the plane
+    "curve.lsystem_add", "curve.turtle_curve_add",
+    "curve.substitution_knot_add", "mesh.fractal_knotwork_add",
+    "mesh.snowflake_add",
+    # a phyllotaxis head is a flat disc: at 3/4 it foreshortens to a
+    # pale ellipse and the parastichy colouring is wasted
+    "mesh.phyllotaxis_add",
 }
 
 # Per-operator turntable, in radians, for shapes whose default pose is
@@ -106,6 +147,15 @@ PLAN_VIEW = {
 # and it reads as a solid again.
 ORIENT = {
     "mesh.regular_solid_add": (0.0, 0.0, 0.62),
+    # The Klein bottle's default pose puts the handle behind the body,
+    # so the self-intersection -- the whole point of the surface -- is
+    # hidden.  Half a turn brings it to the front.
+    "mesh.topological_surface_add": (0.0, 0.0, math.pi),
+    # The IFS default is SIERP_TETRA, a Sierpinski *tetrahedron* -- a
+    # solid, not a plane figure, so it wants a turn rather than a plan
+    # view (from overhead a tetrahedron just squares off).  An eighth
+    # turn puts an edge forward and the recursion reads down the faces.
+    "mesh.ifs_add": (0.0, 0.0, math.pi / 8),
 }
 
 # Operators that cannot be baked at all.  Each needs a reason.
@@ -125,35 +175,75 @@ def _invoke(op, kwargs):
 
 
 _CAM_POSE = {}          # 'studio' / 'plan' -> (location, rotation_euler)
+_LIGHT_POSE = {}        # light name -> (studio location, plan location)
+
+_LIGHT_NAMES = ("Key Light", "Fill Light", "Rim Light L", "Rim Light R",
+                "Top Light")
 
 
-def _capture_camera():
-    """Remember the studio camera pose, and derive the plan-view one.
+def _capture_rig():
+    """Remember the studio camera and lights, and derive plan-view poses.
 
-    Plan view keeps the studio camera's distance from the origin so the
-    two framings are comparable, and points it straight down: a camera
-    with no rotation looks along -Z.
+    The plan camera keeps the studio camera's distance from the origin
+    so the two framings are comparable, and points straight down: a
+    camera with no rotation looks along -Z.
+
+    The lights get lifted with it.  The studio rig lights a solid from
+    the side, which across a flat panel is grazing light -- it rakes the
+    surface, blows the highlights and leaves the colours pale.  Each
+    light is therefore re-placed at its own distance but high overhead,
+    keeping only a fraction of its horizontal offset, so a panel is lit
+    nearly head-on and its materials read at full saturation.
     """
     cam = bpy.data.objects.get("Studio Camera")
-    if cam is None:
-        return
-    _CAM_POSE['studio'] = (cam.location.copy(), cam.rotation_euler.copy())
-    dist = cam.location.length
-    _CAM_POSE['plan'] = (Vector((0.0, 0.0, dist)), Euler((0.0, 0.0, 0.0)))
+    if cam is not None:
+        _CAM_POSE['studio'] = (cam.location.copy(),
+                               cam.rotation_euler.copy())
+        _CAM_POSE['plan'] = (Vector((0.0, 0.0, cam.location.length)),
+                             Euler((0.0, 0.0, 0.0)))
+    for name in _LIGHT_NAMES:
+        ob = bpy.data.objects.get(name)
+        if ob is None:
+            continue
+        loc = ob.location.copy()
+        dist = max(loc.length, 1e-6)
+        plan = Vector((loc.x * 0.25, loc.y * 0.25, abs(dist)))
+        plan.length = dist          # same distance, mostly overhead
+        _LIGHT_POSE[name] = (loc, plan)
 
 
-def _aim_camera(plan):
+def _aim_rig(plan):
+    """Point camera and lights at the subject for the chosen view."""
     cam = bpy.data.objects.get("Studio Camera")
     pose = _CAM_POSE.get('plan' if plan else 'studio')
-    if cam is None or pose is None:
-        return
-    cam.location, cam.rotation_euler = pose[0].copy(), pose[1].copy()
+    if cam is not None and pose is not None:
+        cam.location, cam.rotation_euler = pose[0].copy(), pose[1].copy()
+    for name, (studio, overhead) in _LIGHT_POSE.items():
+        ob = bpy.data.objects.get(name)
+        if ob is None:
+            continue
+        ob.location = (overhead if plan else studio).copy()
+        # Area lights are aimed by rotation, not constrained, so re-aim
+        # each one at the origin after moving it.
+        ob.rotation_euler = (-ob.location).to_track_quat('-Z', 'Y').to_euler()
+
+    # AgX rolls highlights off towards white, which is the right look for
+    # a 720 px documentation render and the wrong one for a 64 px icon
+    # that has to stay legible by colour.  Plan-view subjects are the
+    # flat, coloured ones, so they get the untouched Standard transform.
+    scene = bpy.context.scene
+    vt = [v.name for v in bpy.types.ColorManagedViewSettings.bl_rna
+          .properties["view_transform"].enum_items]
+    want = "Standard" if plan else ("AgX" if "AgX" in vt else "Standard")
+    if want in vt:
+        scene.view_settings.view_transform = want
+    scene.view_settings.exposure = PLAN_EXPOSURE if plan else -0.5
 
 
 def _setup():
     """Studio rig, tuned for a small icon on a transparent background."""
     rd.setup_studio()
-    _capture_camera()
+    _capture_rig()
     scene = bpy.context.scene
     # The docs rig shoots against a near-black dome; an icon has to sit
     # on whatever colour the menu happens to be, so drop the backdrop
@@ -231,7 +321,7 @@ def _render_to(path):
 def bake(op):
     """Bake one operator's icon.  Returns None on success, else why not."""
     rd.clear_sculpts()
-    _aim_camera(op in PLAN_VIEW)
+    _aim_rig(op in PLAN_VIEW)
     try:
         _invoke(op, OVERRIDES.get(op, {}))
     except Exception as e:
