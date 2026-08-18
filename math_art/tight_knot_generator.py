@@ -72,7 +72,17 @@ def build_tight_knot(braid, samples=140, iters=60, mirror=False,
     P = resample_closed(braid_closure_points(word), samples)
     if mirror:
         P = P * np.array([1.0, 1.0, -1.0])
-    P, info = tighten(P, iters=iters)
+    if samples > 400:
+        # beyond the dense operator ceiling: the lagged-factorization
+        # solver (same math, factorization reused across iterations;
+        # measured ~2x per iteration, converged energy equal to the
+        # dense path to ~1e-6 -- see the tp_scale bench case).  At or
+        # below 400 the exact dense path runs, byte-identical to the
+        # original operator behaviour.
+        comps, info = tighten_link([P], iters=iters, solver="lagged")
+        P = comps[0]
+    else:
+        P, info = tighten(P, iters=iters)
     P = P - P.mean(axis=0)
     m = float(np.abs(P).max())
     if m > 1e-12:
@@ -198,9 +208,10 @@ if _IN_BLENDER:
             description="Letters a..z are braid generators, A..Z "
                         "their inverses (used for Custom)")
         samples: IntProperty(
-            name="Curve Samples", default=140, min=48, max=400,
-            description="Polyline resolution; the dense solver is "
-                        "O(n^3) per step, keep moderate")
+            name="Curve Samples", default=140, min=48, max=800,
+            description="Polyline resolution; up to 400 the exact "
+                        "dense solver runs, above that the "
+                        "accelerated (lagged-factorization) solver")
         iters: IntProperty(
             name="Tighten Iterations", default=60, min=0, max=500,
             description="Tangent-point flow steps (the flow usually "
