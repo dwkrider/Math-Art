@@ -1289,7 +1289,7 @@ if _IN_BLENDER:
         triple line and the Young-Laplace pressures emerge from the
         evolution rather than being drawn in closed form"""
         bl_idname = "mesh.relaxed_bubble_add"
-        bl_label = "Relaxed Bubble (Evolved)"
+        bl_label = "Optimized Bubble"
         bl_options = {'REGISTER', 'UNDO'}
 
         bubbles: EnumProperty(
@@ -1349,10 +1349,17 @@ if _IN_BLENDER:
             default='CG',
             description="Outer descent algorithm for the "
                         "volume-constrained evolution")
-        color: BoolProperty(
-            name="Color by Pressure", default=True,
-            description="One material per film, colored by the "
-                        "computed pressure jump across it")
+        color_mode: EnumProperty(
+            name="Color",
+            items=(('NONE', "None", "No materials"),
+                   ('BUBBLE', "Per Bubble",
+                    "One material per bubble, from the shared "
+                    "generator palette"),
+                   ('PRESSURE', "By Pressure",
+                    "One material per film, colored by the computed "
+                    "pressure jump across it")),
+            default='BUBBLE',
+            description="Material scheme for the generated films")
         smooth: BoolProperty(name="Smooth Shading", default=True)
         sharp_edges: BoolProperty(
             name="Sharp Creases", default=True,
@@ -1403,9 +1410,9 @@ if _IN_BLENDER:
             s = self.scale / half
             Vt = (V - ctr) * s
 
-            name = {"SINGLE": "Relaxed Bubble",
-                    "DOUBLE": "Relaxed Double Bubble",
-                    "TRIPLE": "Relaxed Triple Bubble"}[self.bubbles]
+            name = {"SINGLE": "Optimized Bubble",
+                    "DOUBLE": "Optimized Double Bubble",
+                    "TRIPLE": "Optimized Triple Bubble"}[self.bubbles]
             me = bpy.data.meshes.new(name)
             me.from_pydata([tuple(p) for p in Vt], [],
                            [list(t) for t in T])
@@ -1428,19 +1435,35 @@ if _IN_BLENDER:
                 pj.data.foreach_set('value',
                                     [_p(int(b)) - _p(int(f))
                                      for f, b in labels])
-                if self.color:
+                if self.color_mode != 'NONE':
                     films = sorted({(int(f), int(b))
                                     for f, b in labels})
                     fidx = {fb: i for i, fb in enumerate(films)}
-                    pmax = max(abs(_p(b) - _p(f))
-                               for f, b in films) or 1.0
-                    for f, b in films:
-                        dp = _p(b) - _p(f)
-                        hue = 0.62 - 0.5 * dp / pmax   # blue -> warm
-                        me.materials.append(_mat(
-                            f"Film {f}|{b} dp={dp:.3f}",
-                            colorsys.hsv_to_rgb(hue % 1.0, 0.55, 0.9)
-                            + (1.0,)))
+                    if self.color_mode == 'BUBBLE':
+                        # The closed-form cluster's convention, so the
+                        # two generators read alike: a film against the
+                        # ambient is that bubble's skin and takes its
+                        # golden-ratio palette colour (_color_mat); a
+                        # film between two bubbles is interior and takes
+                        # the plain film grey.  Keying every film by
+                        # max(f, b) instead would paint the separating
+                        # wall the same colour as one of the caps.
+                        for f, b in films:
+                            if min(int(f), int(b)) == 0:
+                                me.materials.append(
+                                    _color_mat(max(int(f), int(b)) - 1))
+                            else:
+                                me.materials.append(_plain_mat())
+                    else:
+                        pmax = max(abs(_p(b) - _p(f))
+                                   for f, b in films) or 1.0
+                        for f, b in films:
+                            dp = _p(b) - _p(f)
+                            hue = 0.62 - 0.5 * dp / pmax  # blue -> warm
+                            me.materials.append(_mat(
+                                f"Film {f}|{b} dp={dp:.3f}",
+                                colorsys.hsv_to_rgb(hue % 1.0, 0.55, 0.9)
+                                + (1.0,)))
                     me.polygons.foreach_set(
                         'material_index',
                         [fidx[(int(f), int(b))] for f, b in labels])
@@ -1481,8 +1504,8 @@ if _IN_BLENDER:
             if self.bubbles in ('DOUBLE', 'TRIPLE'):
                 lay.prop(self, 'ratio')
             for k in ('squash', 'resolution', 'iterations',
-                      'groom_every', 'optimizer', 'color', 'smooth',
-                      'sharp_edges', 'scale'):
+                      'groom_every', 'optimizer', 'color_mode',
+                      'smooth', 'sharp_edges', 'scale'):
                 lay.prop(self, k)
 
     def _menu_func(self, context):
