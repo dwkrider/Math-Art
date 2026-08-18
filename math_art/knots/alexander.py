@@ -16,6 +16,15 @@
 #     geometric flow assert "the knot type did not change" without any
 #     braid bookkeeping: the Alexander polynomial before and after must
 #     agree.
+#   * `alexander_link_from_curves(comps)` -- the same pipeline for a
+#     LINK (several closed polylines), with arcs bookkept per
+#     component and all meridians sent to the one variable t.  The
+#     unit-stripped minor is a link invariant (Fox's fundamental
+#     identity makes the specialized row sums vanish, so column choice
+#     changes only the sign, and Tietze moves change only units); it
+#     vanishes on every split link, so it certifies the Borromean
+#     rings against the three-component unlink -- a distinction the
+#     pairwise linking numbers cannot make.
 #
 # References:
 #   J. W. Alexander, "Topological invariants of knots and links",
@@ -313,6 +322,202 @@ def alexander_from_curve(P, x=10):
     return abs(sum(coef * x ** k for k, coef in enumerate(det)))
 
 
+# ----------------------------------------------------------------------
+# one-variable Alexander invariant of a LINK from its 3D components
+# ----------------------------------------------------------------------
+
+def _project_crossings_link(comps, R):
+    """Crossing data of a link (list of closed polylines) under the
+    rotation R, or None if the projection is not generic.  Mirrors
+    `_project_crossings`, with candidate segment pairs being all pairs
+    except same-component neighbours (circular index separation < 2).
+
+    Returns a list of (comp_u, under_param, comp_o, over_param, sign),
+    parameters measured along the OWNING component in [0, n_k)."""
+    import numpy as np
+    sizes = [len(np.asarray(Q)) for Q in comps]
+    off = [0]
+    for s in sizes:
+        off.append(off[-1] + s)
+    N = off[-1]
+    X = np.concatenate([np.asarray(Q, dtype=float) for Q in comps],
+                       axis=0) @ R.T
+    cid = np.empty(N, dtype=np.int64)
+    nxt = np.arange(1, N + 1)
+    for k in range(len(sizes)):
+        a, b = off[k], off[k + 1]
+        cid[a:b] = k
+        nxt[b - 1] = a
+    xy = X[:, :2]
+    z = X[:, 2]
+    d = xy[nxt] - xy
+    dz = z[nxt] - z
+    scale = float(np.linalg.norm(xy.max(0) - xy.min(0))) or 1.0
+
+    sep = np.full((N, N), 2, dtype=np.int64)
+    for k in range(len(sizes)):
+        a, b = off[k], off[k + 1]
+        nk = b - a
+        idx = np.arange(nk)
+        s0 = np.abs(idx[:, None] - idx[None, :])
+        s0 = np.minimum(s0, nk - s0)
+        sep[a:b, a:b] = s0
+    i, j = np.nonzero(np.triu(sep >= 2, 1))
+
+    w = xy[j] - xy[i]
+    den = d[i, 0] * d[j, 1] - d[i, 1] * d[j, 0]
+    num_s = w[:, 0] * d[j, 1] - w[:, 1] * d[j, 0]
+    num_t = w[:, 0] * d[i, 1] - w[:, 1] * d[i, 0]
+    safe = np.abs(den) > 1e-300
+    s = np.where(safe, num_s / np.where(safe, den, 1.0), -1.0)
+    t = np.where(safe, num_t / np.where(safe, den, 1.0), -1.0)
+    # candidate crossings include a margin band AROUND the segment
+    # ends: a crossing landing exactly on a vertex (s or t == 0 or 1,
+    # which symmetric seeds produce exactly) must reject the
+    # projection, not silently drop the crossing -- an empty or
+    # inconsistent event list would misreport the diagram as split
+    margin = 1e-6
+    cand = ((s > -margin) & (s < 1 + margin)
+            & (t > -margin) & (t < 1 + margin))
+    if np.any(cand & ((s < margin) | (s > 1 - margin)
+                      | (t < margin) | (t > 1 - margin))):
+        return None
+    hit = cand
+    ii, jj = i[hit], j[hit]
+    ss, tt = s[hit], t[hit]
+    li = np.linalg.norm(d[ii], axis=1)
+    lj = np.linalg.norm(d[jj], axis=1)
+    if np.any(np.abs(den[hit]) < 1e-9 * li * lj):
+        return None
+    z1 = z[ii] + ss * dz[ii]
+    z2 = z[jj] + tt * dz[jj]
+    if np.any(np.abs(z1 - z2) < 1e-9 * scale):
+        return None
+    # triple-point guard: two crossings at (nearly) the same planar
+    # location mean >= 3 strand points project together (e.g. a
+    # component seen edge-on doubles over itself), which the pairwise
+    # tests above cannot see -- the diagram is not generic
+    pos = xy[ii] + ss[:, None] * d[ii]
+    if len(pos) > 1:
+        pd = np.linalg.norm(pos[:, None, :] - pos[None, :, :], axis=2)
+        pd[np.arange(len(pos)), np.arange(len(pos))] = np.inf
+        if float(pd.min()) < 1e-6 * scale:
+            return None
+    sgn_det = den[hit]
+    events = []
+    for k in range(len(ii)):
+        c1, c2 = int(cid[ii[k]]), int(cid[jj[k]])
+        p1 = float(ii[k] - off[c1] + ss[k])
+        p2 = float(jj[k] - off[c2] + tt[k])
+        if z1[k] > z2[k]:
+            co, po, cu, pu = c1, p1, c2, p2
+            sgn = 1 if sgn_det[k] > 0 else -1
+        else:
+            co, po, cu, pu = c2, p2, c1, p1
+            sgn = -1 if sgn_det[k] > 0 else 1
+        events.append((cu, pu, co, po, sgn))
+    for k in range(len(comps)):
+        unders = sorted(ev[1] for ev in events if ev[0] == k)
+        for a, b in zip(unders, unders[1:]):
+            if b - a < 1e-9:
+                return None
+    return events
+
+
+def alexander_link_from_curves(comps, x=10):
+    """|one-variable Alexander invariant| at t = x of the link type of
+    the closed 3D polylines `comps`, from a generic planar projection.
+
+    The same Wirtinger -> Fox-calculus -> Bareiss pipeline as
+    `alexander_from_curve`, with arcs bookkept per component.  All
+    meridian generators map to the single variable t; by Fox's
+    fundamental identity the row sums of the Alexander matrix then
+    vanish, so the minors deleting different columns agree up to sign,
+    and Tietze moves change the minor only by units -- the +-t^k-
+    stripped minor is a link invariant.  For a knot it is Delta(t); for
+    a mu-component link it carries an extra (t-1)^(mu-1) factor (Hopf
+    evaluates to |t-1| = 9 at t = 10, hand-checkable from the
+    two-crossing diagram), and for every SPLIT link it is 0 -- which is
+    what lets it certify the Borromean rings (nonzero) against the
+    three-component unlink (zero), a distinction the pairwise linking
+    numbers cannot make.
+
+    A component with no underpasses at all can be lifted off the
+    diagram, so the link is split and the invariant is 0 by the same
+    convention (a crossing-free single curve stays the unknot, 1)."""
+    import math as _math
+
+    import numpy as np
+
+    if len(comps) == 1:
+        return alexander_from_curve(comps[0], x=x)
+
+    def _rot(ax, ay):
+        ca, sa = _math.cos(ax), _math.sin(ax)
+        cb, sb = _math.cos(ay), _math.sin(ay)
+        Rx = np.array([[1, 0, 0], [0, ca, -sa], [0, sa, ca]])
+        Ry = np.array([[cb, 0, sb], [0, 1, 0], [-sb, 0, cb]])
+        return Ry @ Rx
+
+    events = None
+    for ax, ay in ((0.0, 0.0), (0.31, 0.17), (0.53, 0.71),
+                   (0.13, 0.41), (0.87, 0.23), (1.07, 0.61),
+                   (0.29, 0.97), (0.71, 0.37), (1.31, 0.11),
+                   (0.47, 1.19), (0.91, 0.83), (1.13, 1.03)):
+        events = _project_crossings_link(comps, _rot(ax, ay))
+        if events is not None:
+            break
+    if events is None:
+        raise ValueError("no generic projection found for the link")
+    c = len(events)
+    if c == 0:
+        return 0                                 # crossing-free: split
+    K = len(comps)
+    # underpasses per component cut it into arcs; a component with no
+    # underpass lifts off the top of the diagram: split link
+    unders = {k: sorted(ev[1] for ev in events if ev[0] == k)
+              for k in range(K)}
+    if any(len(unders[k]) == 0 for k in range(K)):
+        return 0
+    base = {}
+    acc = 0
+    for k in range(K):
+        base[k] = acc
+        acc += len(unders[k])
+    assert acc == c
+
+    def _arc_of(comp, param):
+        import bisect
+        u = unders[comp]
+        m = bisect.bisect_right(u, param) - 1
+        return base[comp] + m % len(u)
+
+    one_t = [1, -1]                              # 1 - t
+    t_poly = [0, 1]
+    rows = []
+    for (cu, up, co, op, sgn) in sorted(events):
+        import bisect
+        m = bisect.bisect_right(unders[cu], up) - 1   # this underpass
+        a_in = base[cu] + (m - 1) % len(unders[cu])
+        a_out = base[cu] + m
+        over = _arc_of(co, op)
+        row = [[0]] * c
+        if sgn > 0:
+            add = ((over, one_t), (a_in, t_poly), (a_out, [-1]))
+        else:
+            add = ((over, [-1, 1]), (a_in, [1]), (a_out, [0, -1]))
+        for col, poly in add:
+            row[col] = _ptrim(_padd(row[col], poly))
+        rows.append(row)
+    minor = [row[:c - 1] for row in rows[:c - 1]]
+    det = _ptrim(_pbareiss_det(minor))
+    if det == [0]:
+        return 0
+    while det[0] == 0:
+        det = det[1:]
+    return abs(sum(coef * x ** k for k, coef in enumerate(det)))
+
+
 def _selftest():
     ok = True
 
@@ -391,6 +596,73 @@ def _selftest():
     good = got == 1
     ok &= good
     print(f"alexander: from_curve unknot = {got} (exp 1) "
+          f"{'OK' if good else 'FAIL'}")
+
+    # ---- links -------------------------------------------------------
+
+    # The Hopf link's value is hand-checkable: the two-crossing
+    # Wirtinger presentation gives the minor (t - 1), so 9 at t = 10.
+    # The geometric seed's identity projection sees one circle edge-on
+    # (a triple point in the shadow) -- the genericity guard must
+    # reject it and the retilt ladder recover the same 9.  A distant
+    # unlink is split: 0.
+    tl = np.linspace(0.0, 2.0 * np.pi, 60, endpoint=False)
+    ca, sa = np.cos(tl), np.sin(tl)
+    zl = np.zeros_like(tl)
+    A = np.stack([ca, sa, zl], axis=1)
+    B = np.stack([1.0 + ca, zl, sa], axis=1)
+    far = np.stack([4.0 + ca, sa, zl], axis=1)
+    got_h = alexander_link_from_curves([A, B])
+    got_u = alexander_link_from_curves([A, far])
+    good = got_h == 9 and got_u == 0
+    ok &= good
+    print(f"alexander: link Hopf = {got_h} (exp 9), distant unlink = "
+          f"{got_u} (exp 0) {'OK' if good else 'FAIL'}")
+
+    # Braid-closure links, each computed from two different projections
+    # (a global rotation of the curves): the values must agree -- the
+    # unit-stripped minor is an invariant.  Whitehead (closure of
+    # aBaBa) and the Borromean rings (closure of aBaBaB) both have all
+    # pairwise linking numbers zero, yet nonzero invariant -- the
+    # distinction from the unlink that linking numbers cannot make.
+    # 729 = (t-1)^3 and 6561 = (t-1)^4 at t = 10 are regression
+    # anchors from this deterministic pipeline.
+    from .braid import braid_closure_loops
+    from .resample import resample_loops
+
+    def _rotl(P, ax=0.4, az=1.1):
+        c1, s1 = np.cos(ax), np.sin(ax)
+        c2, s2 = np.cos(az), np.sin(az)
+        Rx = np.array([[1, 0, 0], [0, c1, -s1], [0, s1, c1]])
+        Rz = np.array([[c2, -s2, 0], [s2, c2, 0], [0, 0, 1]])
+        return P @ (Rz @ Rx).T
+
+    link_checks = []
+    for word, name, exp in (('aa', 'hopf', 9),
+                            ('aBaBa', 'whitehead', 729),
+                            ('aBaBaB', 'borromean', 6561)):
+        loops = resample_loops(braid_closure_loops(
+            parse_letters(word)), 140)
+        v1 = alexander_link_from_curves(loops)
+        v2 = alexander_link_from_curves([_rotl(Q) for Q in loops])
+        link_checks.append((name, v1, v2, exp))
+    bad = [c for c in link_checks
+           if c[1] != c[2] or c[1] != c[3] or c[1] == 0]
+    good = not bad
+    ok &= good
+    print("alexander: link " + " ".join(f"{n}={v1}" for n, v1, _v2, _e
+                                        in link_checks)
+          + f" (projection-invariant, nonzero) "
+          f"{'OK' if good else 'FAIL ' + str(bad)}")
+
+    # A one-component list delegates to the knot route exactly.
+    from .braid import braid_closure_points
+    from .resample import resample_closed
+    P3 = resample_closed(braid_closure_points(parse_letters('AAA')), 200)
+    got = alexander_link_from_curves([P3])
+    good = got == 91
+    ok &= good
+    print(f"alexander: link route on a knot = {got} (exp 91) "
           f"{'OK' if good else 'FAIL'}")
 
     print("RESULT:", "OK" if ok else "FAIL")
