@@ -2,8 +2,8 @@
 #
 # A shared helper, not a generator: it registers nothing and is imported
 # directly by the modules that need it (`dform_generator`,
-# `squeeze_generator`, `vortex_generator`), the same way
-# `pattern_common` is used.
+# `squeeze_generator`, `vortex_generator`, `bubble_generator`,
+# `cmc_generator`, ...), the same way `pattern_common` is used.
 #
 # WHY IT EXISTS.  Several generators here build surfaces that are smooth
 # in patches but genuinely folded where the patches meet -- a D-form's
@@ -113,6 +113,66 @@ def mark_sharp_by_angle(me, degrees=35.0, crease=True):
     return len(hit)
 
 
+def label_junction_edges(tris, labels):
+    """Edges where faces carrying DIFFERENT region labels meet.
+
+    `tris` are triangles (or any polygons) as vertex-index tuples and
+    `labels` is one `(front, back)` region pair per face -- the
+    labeling the volume-constrained evolver uses.  An edge whose
+    incident faces do not all carry the same pair is exactly a film
+    junction: a Plateau border, a triple line, or a cap-film seam.
+    This is derived from the topology the solver itself maintains, so
+    unlike a dihedral-angle test it cannot be fooled by a junction
+    that happens to be flat (an equal double bubble's planar film
+    meets the caps at 120 degrees, but a film-film junction stays a
+    junction at ANY angle).
+
+    Pairs are compared unordered, so a film is one film regardless of
+    which side the face normal calls "front".  Returns the junction
+    edges as (a, b) vertex-index pairs, ready for `mark_sharp`.
+    Non-manifold edges (three films on one edge -- the generic
+    Plateau border) are handled the same way: any edge with two or
+    more distinct incident labels is a junction.
+    """
+    ed = {}
+    for t, lab in zip(tris, labels):
+        f, b = int(lab[0]), int(lab[1])
+        lk = (f, b) if f <= b else (b, f)
+        n = len(t)
+        for k in range(n):
+            a, c = int(t[k]), int(t[(k + 1) % n])
+            e = (a, c) if a < c else (c, a)
+            s = ed.get(e)
+            if s is None:
+                ed[e] = {lk}
+            else:
+                s.add(lk)
+    return [e for e, ls in ed.items() if len(ls) > 1]
+
+
+def boundary_edges(tris):
+    """Edges used by exactly one face: the open boundary of the mesh.
+
+    For an open surface (a liquid bridge between pinned rims, a
+    sessile drop whose wetted disk is not meshed, a free-boundary
+    film) the physical crease lines -- pinned rims, contact lines --
+    ARE the mesh boundary.  A boundary edge has only one face, so
+    `sharp_edge` cannot split any normals there; what matters is the
+    `crease_edge` weight `mark_sharp` sets alongside it, which stops
+    a Subdivision Surface modifier from shrinking the open boundary
+    away from the ring / floor it is pinned to.  Returns (a, b)
+    vertex-index pairs, ready for `mark_sharp`.
+    """
+    cnt = {}
+    for t in tris:
+        n = len(t)
+        for k in range(n):
+            a, c = int(t[k]), int(t[(k + 1) % n])
+            e = (a, c) if a < c else (c, a)
+            cnt[e] = cnt.get(e, 0) + 1
+    return [e for e, c in cnt.items() if c == 1]
+
+
 def ring_edges(loop, closed=True):
     """Consecutive index pairs along a polyline (or closed ring)."""
     idx = [int(i) for i in loop]
@@ -146,6 +206,33 @@ def _selftest():
     good = mark_sharp(None, []) == 0
     ok &= good
     print(f"sharp_creases: empty edge list is a no-op "
+          f"{'OK' if good else 'FAIL'}")
+
+    # label junctions: two films sharing edge (1, 2) -> that edge and
+    # only that edge; same labels (in either orientation) -> none
+    T2 = [(0, 1, 2), (2, 1, 3)]
+    good = label_junction_edges(T2, [(0, 1), (0, 2)]) == [(1, 2)]
+    good &= label_junction_edges(T2, [(0, 1), (1, 0)]) == []
+    good &= label_junction_edges(T2, [(0, 1), (0, 1)]) == []
+    ok &= good
+    print(f"sharp_creases: label junction edges "
+          f"{'OK' if good else 'FAIL'}")
+
+    # non-manifold Plateau border: three films on one edge
+    T3 = [(0, 1, 2), (0, 1, 3), (0, 1, 4)]
+    good = label_junction_edges(T3, [(0, 1), (0, 2), (1, 2)]) \
+        == [(0, 1)]
+    ok &= good
+    print(f"sharp_creases: non-manifold junction edge "
+          f"{'OK' if good else 'FAIL'}")
+
+    # boundary edges: lone triangle has 3; a shared edge is interior
+    good = sorted(boundary_edges([(0, 1, 2)])) \
+        == [(0, 1), (0, 2), (1, 2)]
+    good &= sorted(boundary_edges(T2)) \
+        == [(0, 1), (0, 2), (1, 3), (2, 3)]
+    ok &= good
+    print(f"sharp_creases: boundary edges "
           f"{'OK' if good else 'FAIL'}")
 
     print("RESULT:", "OK" if ok else "FAIL")
