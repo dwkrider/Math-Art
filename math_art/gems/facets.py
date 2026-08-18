@@ -41,34 +41,57 @@
 # facets.  Enumeration computes every vertex directly from its own
 # defining planes, so no error accumulates from vertex to vertex.
 #
-# Enumeration has a second tolerance, and it is not a formality.  A triple
-# of planes locates a point by solving a 3x3 system whose determinant is
-# the volume of the parallelepiped of the three unit normals; as that
-# volume goes to zero the normals become coplanar and the point runs away.
-# Published designs carry eight decimals, so a plane's offset is uncertain
-# by ~1e-8, and a triple with |det| = d amplifies that to ~1e-8 / d.  For
-# the point to stay inside the merge radius `snap` we therefore need
+# MERGING CANDIDATES IS THE HARD PART, and distance is the wrong
+# criterion for it.  A triple of planes locates a point through a 3x3
+# solve whose determinant is the volume of the parallelepiped of the three
+# unit normals; as that volume shrinks the point runs away, amplifying the
+# design's own precision by 1/det.  Published designs carry FIVE decimals
+# -- measured across 3,680 of them -- so the scatter reaches ~3e-4 of the
+# girdle radius, while genuine distinct vertices are sometimes closer than
+# that.  No radius separates the two populations, which is why tuning the
+# merge distance plateaued at 40% of real designs closing however it was
+# swept.
 #
-#     |det| > (input precision) / (snap radius) ~ 1e-8 / 1e-5 = 1e-3
+# The combinatorial criterion has no such problem.  A vertex IS the set of
+# planes through it, so two candidates are the same vertex when they share
+# three or more incident planes -- three being what determines a point.
+# Scatter changes how far a candidate sits from its planes, never which
+# planes they are.  Merging by incidence first, with distance kept only
+# for points lying on fewer than three planes, takes real designs from 40%
+# to 90% closed and convex.
 #
-# and triples below that carry no information -- the vertex they claim to
-# define is pinned by better-conditioned triples through the same point.
-# Measured on the fixtures below, the window that gets every one of them
-# right is |det| in [1e-3, 1e-2]: under 1e-3 a high-valence culet shatters
-# into a rosette of micro-vertices, and by 3e-2 the enumeration has begun
-# discarding legitimate shallow vertices of the round brilliant.  The
-# default sits at the geometric centre of that window, and the self-test
-# asserts the whole window rather than the single default, so narrowing it
-# is caught rather than discovered later.
+# It also removed the lower bound on the conditioning floor.  Before, a
+# high-valence culet shattered unless |det| was held above ~1e-3; now the
+# Portuguese stress case closes at every floor from 1e-9 to 1e-1, because
+# the scattered points are merged by what they lie on rather than by where
+# they landed.  Only the UPPER bound survives, and for a different reason:
+# by 3e-2 the enumeration is rejecting so many triples that legitimate
+# shallow vertices of the round brilliant go missing.  The self-test
+# asserts both facts.
 #
-# The tolerance that matters, `snap`, is in units of the girdle radius.
-# Its default of 1e-5 sits deliberately between two scales: real cutters
-# place facets to about 0.01 mm and 0.2 degrees (Sasian et al.), i.e.
-# ~1e-3 of the radius, so 1e-5 is a hundred times finer than any physical
-# stone; and float64 noise on these magnitudes is ~1e-15, so it is ten
-# orders coarser than the arithmetic.  Anything in that window should give
-# the same solid, which is what the self-test checks -- stability across a
-# decade of `snap`, not a single residual threshold.
+# The tolerance that matters, `snap`, is in units of the girdle radius,
+# and by default it is INFERRED from the data: `infer_precision` recovers
+# the decimal grid the offsets were printed on, and the merge radius is a
+# small multiple of that quantum, clamped to [1e-5, 3e-4].  The floor is
+# anchored between two scales: real cutters place facets to about 0.01 mm
+# and 0.2 degrees (Sasian et al.), i.e. ~1e-3 of the radius, so 1e-5 is a
+# hundred times finer than any physical stone, yet ten orders coarser than
+# float64 noise (~1e-15).  Anything near the floor should give the same
+# solid, which is what the self-test checks -- stability across a decade
+# of `snap`, not a single residual threshold.
+#
+# One tolerance must NOT ride along with `snap`: the face-membership net
+# used after the least-squares snap.  `snap` has to cover the pre-snap
+# scatter of the candidates, but a SNAPPED vertex sits within the planes'
+# own concurrency residual (about one printed quantum) of every plane
+# through it, so recognising it on its faces needs only a fixed, small
+# margin -- and that margin must stay under the ~1e-3 spacing of the
+# cutter's genuinely distinct features.  Scaling it as 10 x an inferred
+# snap of 2e-4 handed faces a 2e-3 net, and a five-decimal Portuguese cut
+# stopped closing: rings captured neighbouring vertices, and adjacent
+# clusters were given identical incidence sets and least-squares snapped
+# onto coincident duplicate points.  Hence `_FACE_TOL_CAP` below, and a
+# self-test that builds that exact stone.
 #
 # References:
 #   Robert W. Strickland, "GemCad for Windows Version 1.0 User's Guide",
@@ -84,6 +107,15 @@ from collections import defaultdict
 from typing import NamedTuple
 
 import numpy as np
+
+# Ceiling on the face-membership tolerance, in girdle radii.  Vertices are
+# least-squares snapped before faces are assembled, so a vertex sits within
+# the design's own concurrency residual of every plane through it -- the
+# face net never needs to widen past this, however coarse the merge radius
+# `snap` had to be.  It must stay well under ~1e-3, the physical spacing of
+# distinct features (Sasian et al.'s 0.01 mm cutting precision): by 2e-3 a
+# real Portuguese cut's faces start capturing neighbouring vertices.
+_FACE_TOL_CAP = 3e-4
 
 
 class Polytope(NamedTuple):
@@ -153,6 +185,31 @@ def _candidate_vertices(N, d, R, tol, tol_contain):
     return np.vstack(out)
 
 
+def infer_precision(d):
+    """The quantum the offsets were written to, from the offsets themselves.
+
+    A published design is a TEXT file, so its distances carry however many
+    decimals the author printed -- five, across the whole Datavue library.
+    A design computed here carries full double precision.  Those want
+    merge radii two orders apart, and no single default serves both: at
+    1e-4 a 64-sided girdle's finely spaced vertices merge into each other,
+    and at 1e-5 a five-decimal design's scatter never merges at all.
+
+    Rather than make the caller declare it, recover it: find the coarsest
+    grid the offsets all sit on.  Five-decimal data reports 1e-5 and
+    computed data falls through to the floor.
+    """
+    a = np.abs(np.asarray(d, dtype=float))
+    a = a[a > 0]
+    if not len(a):
+        return 1e-12
+    for k in range(2, 10):
+        q = 10.0 ** (-k)
+        if np.all(np.abs(a / q - np.round(a / q)) < 1e-6):
+            return q
+    return 1e-12
+
+
 def _dedupe_points(P, q):
     """Collapse candidates that agree to within `q` before clustering.
 
@@ -170,6 +227,81 @@ def _dedupe_points(P, q):
     key = np.round(P / q).astype(np.int64)
     _, first = np.unique(key, axis=0, return_index=True)
     return P[np.sort(first)]
+
+
+def _merge_by_incidence(P, N, d, R, tol_inc):
+    """Group candidates that lie on the SAME PLANES; returns a label array.
+
+    Distance clustering asks "are these two points close?", and on real
+    design data that question has no good answer: a vertex where facets
+    meet at a shallow angle is located by an ill-conditioned solve, so its
+    copies scatter further than distinct vertices sometimes lie apart.
+    Measured on the Datavue library, the scatter reaches 3e-4 of the
+    girdle radius while genuine vertices can be closer than that -- there
+    is no radius that separates them, which is why every tolerance sweep
+    plateaued at 40%.
+
+    The combinatorial question has a clean answer.  A vertex IS the set of
+    planes through it, so two candidates are the same vertex when they
+    share three or more incident planes -- three because that is what it
+    takes to determine a point.  Scatter cannot change which planes a
+    point lies on, only how far from them it sits, so this criterion is
+    stable exactly where the metric one is not.
+
+    `tol_inc` is deliberately generous: it decides only MEMBERSHIP, and
+    the least-squares snap afterwards decides position.
+    """
+    n = len(P)
+    parent = list(range(n))
+
+    def find(a):
+        while parent[a] != a:
+            parent[a] = parent[parent[a]]
+            a = parent[a]
+        return a
+
+    def union(a, b):
+        ra, rb = find(a), find(b)
+        if ra != rb:
+            parent[max(ra, rb)] = min(ra, rb)
+
+    # which planes does each candidate lie on?
+    near2 = (30.0 * tol_inc * R) ** 2
+    on = np.abs(P @ N.T - d) <= tol_inc * R          # (k, M) booleans
+    inc = [np.nonzero(row)[0] for row in on]
+    by_plane = defaultdict(list)
+    for i, planes_i in enumerate(inc):
+        for pl in planes_i:
+            by_plane[pl].append(i)
+
+    for i, planes_i in enumerate(inc):
+        if len(planes_i) < 3:
+            continue
+        shared = defaultdict(int)
+        for pl in planes_i:
+            for j in by_plane[pl]:
+                if j > i:
+                    shared[j] += 1
+        for j, c in shared.items():
+            # Incidence AND proximity, not incidence alone.  Sharing three
+            # planes is necessary but not sufficient: measured on the
+            # parametric brilliant, 41 genuine vertices collapse to 26 on
+            # the incidence test by itself, because near-coincident planes
+            # let neighbouring vertices report a third shared plane they do
+            # not really lie on.  The distance gate is deliberately loose --
+            # it only has to separate distinct vertices, while incidence
+            # does the work of tolerating scatter.
+            if c >= 3 and np.dot(P[i] - P[j], P[i] - P[j]) <= near2:
+                union(i, j)
+
+    roots, label = {}, np.empty(n, dtype=int)
+    placed = np.array([len(inc[i]) >= 3 for i in range(n)])
+    for i in range(n):
+        r = find(i)
+        if r not in roots:
+            roots[r] = len(roots)
+        label[i] = roots[r]
+    return label, placed
 
 
 def _cluster_points(P, h):
@@ -287,7 +419,7 @@ def _assemble_faces(V, N, d, R, tol_face):
     return tuple(faces), tuple(owner), tuple(dropped)
 
 
-def intersect_halfspaces(N, d, snap=1e-5, tol=3e-3):
+def intersect_halfspaces(N, d, snap=None, tol=3e-3, tol_inc=None):
     """Build the solid {x : N x <= d}.
 
     `snap` is the meetpoint merge radius in units of the girdle radius and
@@ -305,6 +437,14 @@ def intersect_halfspaces(N, d, snap=1e-5, tol=3e-3):
     R = float(np.max(np.abs(d)))
     if not R > 0.0:
         raise ValueError("all facet distances are zero")
+    if snap is None:
+        # 20 quanta: enough to swallow the scatter an ill-conditioned
+        # triple makes of the last printed digit, far less than the gap
+        # between genuine vertices even on a 64-sided girdle.  Clamped at
+        # both ends, because round data misleads the inference -- a cube's
+        # offsets are all exactly 1, which sits on a 0.01 grid and would
+        # otherwise ask for a merge radius that swallows the whole solid.
+        snap = min(3e-4, max(1e-5, 20.0 * infer_precision(d) / R))
 
     keep = _dedupe_planes(N, d, R, tol)
     Nk, dk = N[keep], d[keep]
@@ -315,9 +455,38 @@ def intersect_halfspaces(N, d, snap=1e-5, tol=3e-3):
                          f"do not bound a solid")
 
     P = _dedupe_points(P, snap * R / 16.0)
-    label = _cluster_points(P, snap * R)
-    V, residual = _snap_meetpoints(P, label, Nk, dk, R, tol_face=10.0 * snap)
-    faces, owner, dropped = _assemble_faces(V, Nk, dk, R, tol_face=10.0 * snap)
+    # Incidence is PRIMARY, and distance is not allowed to override it.
+    # Unioning the two partitions was tried and is wrong: a merge radius
+    # coarse enough for five-decimal design data then swallows genuinely
+    # distinct vertices of an exactly-computed one, and the parametric
+    # brilliant collapsed from 41 vertices to 25.  Distance is applied
+    # only to the leftovers -- points lying on fewer than three planes,
+    # which incidence cannot place at all.
+    label, placed = _merge_by_incidence(
+        P, Nk, dk, R,
+        tol_inc=snap if tol_inc is None else tol_inc)
+    loose = np.nonzero(~placed)[0]
+    if len(loose):
+        sub = _cluster_points(P[loose], snap * R)
+        base = int(label.max()) + 1 if len(label) else 0
+        label[loose] = base + sub
+    # renumber densely
+    uniq = {v: k for k, v in enumerate(sorted(set(label.tolist())))}
+    label = np.array([uniq[v] for v in label.tolist()], dtype=int)
+    # The face tolerance answers a different question from `snap` and must
+    # not inflate with it.  `snap` has to cover the PRE-snap scatter of the
+    # candidates; after the least-squares snap a vertex sits within the
+    # planes' own concurrency residual (~ the printed quantum) of every
+    # plane through it, so recognising it there needs only a small, fixed
+    # margin.  Left at 10 * snap, an inferred snap of 2e-4 gave faces a
+    # 2e-3 net -- wide enough to catch NEIGHBOURING vertices of a real
+    # Portuguese cut (features sit ~1e-3 apart, the cutter's own placement
+    # precision), which broke closure two ways at once: rings picked up
+    # foreign vertices, and adjacent clusters were handed identical
+    # incidence sets and snapped onto coincident points.
+    tol_face = min(10.0 * snap, _FACE_TOL_CAP)
+    V, residual = _snap_meetpoints(P, label, Nk, dk, R, tol_face=tol_face)
+    faces, owner, dropped = _assemble_faces(V, Nk, dk, R, tol_face=tol_face)
 
     used = sorted({i for f in faces for i in f})
     if len(used) != len(V):                       # drop unreferenced points
@@ -553,15 +722,75 @@ def _selftest():
     print(f"gems.facets: cube, brilliant and culet all survive the whole "
           f"conditioning window {window} {'OK' if good else 'window broken'}")
 
-    shattered = polytope_checks(intersect_halfspaces(Np, dp, tol=1e-6),
-                                Np, dp)["closed"]
+    # Incidence merging removed the window's LOWER bound: the culet used
+    # to shatter below 1e-3 and now survives every floor down to 1e-9,
+    # because scattered candidates are merged by the planes they lie on
+    # rather than by where they landed.
+    low = all(polytope_checks(intersect_halfspaces(Np, dp, tol=t),
+                              Np, dp)["closed"]
+              for t in (1e-9, 1e-6, 1e-3))
+    ok &= low
+    print(f"gems.facets: the culet survives every conditioning floor from "
+          f"1e-9 up -- incidence merging removed the lower bound "
+          f"{'OK' if low else 'the lower bound is back'}")
+
+    # The UPPER bound is still real, and for a different reason: too high
+    # a floor rejects the triples that locate legitimate shallow vertices.
     starved = intersect_halfspaces(Ns, ds, tol=3e-2)
-    good = (not shattered) and len(starved.faces) < 73
+    good = len(starved.faces) < 73
     ok &= good
-    print(f"gems.facets: outside the window it does break, as documented "
-          f"(1e-6 leaves the culet open; 3e-2 loses "
-          f"{73 - len(starved.faces)} brilliant facets) "
-          f"{'OK' if good else 'window claim is stale'}")
+    print(f"gems.facets: too high a floor still starves the brilliant "
+          f"(3e-2 loses {73 - len(starved.faces)} facets) "
+          f"{'OK' if good else 'upper bound claim is stale'}")
+
+    # --- published precision: the five-decimal Portuguese ------------------
+    # The regression this file once shipped: with offsets carrying five
+    # decimals (what the Datavue library prints), the inferred merge
+    # radius rises to 2e-4, and a face tolerance scaled as 10 x snap
+    # handed every facet a 2e-3 net -- wide enough to catch NEIGHBOURING
+    # vertices of a real Portuguese cut, whose features sit ~1e-3 apart.
+    # The net must widen with nothing: a snapped vertex sits within about
+    # one quantum of its planes, so `_FACE_TOL_CAP` bounds it.
+    global _FACE_TOL_CAP
+    try:
+        from . import brilliant as _brilliant
+    except ImportError:
+        import brilliant as _brilliant
+    Nr, dr, _ = _design.planes(_brilliant.portuguese())
+    dr5 = np.round(dr, 5)
+    R5 = float(np.max(np.abs(dr5)))
+    inferred = min(3e-4, max(1e-5, 20.0 * infer_precision(dr5) / R5))
+    good = inferred >= 1e-4
+    ok &= good
+    print(f"gems.facets: five-decimal offsets inflate the inferred snap "
+          f"(got {inferred:.0e}) {'OK' if good else 'inference is dead'}")
+    G = intersect_halfspaces(Nr, dr5)
+    cg = polytope_checks(G, Nr, dr5, tol=1e-3)
+    apex = G.V[np.argmin(G.V[:, 2])]
+    near = int(np.sum(np.linalg.norm(G.V - apex, axis=1) < 5e-3))
+    sep = np.linalg.norm(G.V[:, None, :] - G.V[None, :, :], axis=2)
+    np.fill_diagonal(sep, np.inf)
+    good = (len(G.faces) == 161 and cg["closed"] and cg["convex"]
+            and near == 1 and float(sep.min()) > 1e-3)
+    ok &= good
+    print(f"gems.facets: a five-decimal Portuguese cut still closes at the "
+          f"inferred defaults -- 161 facets, one culet, no coincident "
+          f"vertices (got {len(G.faces)} faces, culet {near}, min "
+          f"separation {float(sep.min()):.1e}) "
+          f"{'OK' if good else 'the published-precision regression is back'}")
+    # ... and the cap is load-bearing: uncapped, the same stone fails.
+    cap = _FACE_TOL_CAP
+    try:
+        _FACE_TOL_CAP = 1e9
+        loosed = polytope_checks(intersect_halfspaces(Nr, dr5),
+                                 Nr, dr5, tol=1e-3)["closed"]
+    finally:
+        _FACE_TOL_CAP = cap
+    good = not loosed and 10.0 * 1e-5 <= _FACE_TOL_CAP < 1e-3
+    ok &= good
+    print(f"gems.facets: the face-tolerance cap is doing the work -- "
+          f"uncapped, the same stone does not close "
+          f"{'OK' if good else 'cap claim is stale'}")
 
     # --- performance -------------------------------------------------------
     t0 = time.perf_counter()
