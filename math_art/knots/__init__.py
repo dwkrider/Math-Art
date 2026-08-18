@@ -21,6 +21,12 @@ Extracting it here makes the dependency a real one.
     resample    uniform-arclength resampling of closed polylines.
     relax       rope relaxation (repulsion + smoothing) of knots and links,
                 plus the linking number of two components.
+    tangent_point  the tangent-point energy (Buck-Orloff; Yu-Schumacher-
+                Crane discretization) with a dense fractional-Sobolev
+                preconditioner: tight knots and untangling, with
+                Gonzalez-Maddocks thickness/ropelength readouts.  The
+                topology-preserving upgrade of `relax`, which remains
+                the fast preview mode.
     curves      closed-form curves: the (p, q) torus link.
     tube        a closed tube swept along a knot, with the closure holonomy
                 distributed so the seam matches.
@@ -38,7 +44,7 @@ principal ones are Artin (1947) for the braid groups, Alexander (1923,
 representation, and Gittings (arXiv:math/0401051, 2004) for the table.
 """
 
-from .alexander import alexander_at
+from .alexander import alexander_at, alexander_from_curve
 from .braid import (braid_closure_loops, braid_closure_points,
                     closure_components, parse_letters)
 from .build import build_knot
@@ -46,6 +52,8 @@ from .curves import torus_link_components
 from .relax import linking_number, relax_knot, relax_link
 from .resample import resample_closed, resample_loops
 from .tables import KNOTS
+from .tangent_point import (gm_ropelength, gm_thickness, tighten,
+                            tp_energy, tp_gradient)
 from .tube import closed_tube
 
 __all__ = [
@@ -58,12 +66,19 @@ __all__ = [
     "braid_closure_loops",
     # invariants
     "alexander_at",
+    "alexander_from_curve",
     "linking_number",
     # polyline machinery
     "resample_closed",
     "resample_loops",
     "relax_knot",
     "relax_link",
+    # tangent-point energy flow (tight knots / untangling)
+    "tp_energy",
+    "tp_gradient",
+    "tighten",
+    "gm_thickness",
+    "gm_ropelength",
     # geometry
     "torus_link_components",
     "closed_tube",

@@ -21,6 +21,8 @@ commands from the repo/worktree root.
 | `grav.*` | `python tests/bench/run.py cmc_drop_grav_tiny cmc_drop_grav cmc_drop_grav_fine cmc_puddle_sweep --tag grav` |
 | `films.*` | `python tests/bench/run.py film_sphere_eq film_sphere_eq_fine film_sphere_off film_sphere_off_fine film_cyl_disk film_cyl_disk_fine film_cyl_tilt film_cyl_tilt_fine --tag films` |
 | `triple.*` | `python tests/bench/run.py bubble_triple bubble_triple_fine bubble_triple_unequal --tag triple` |
+| `tp.*` | `python tests/bench/run.py tp_circle tp_unknot tp_trefoil --tag tp` |
+| `ab_tp_l2.md`, `tp_l2_*` | `python tests/bench/run.py tp_circle tp_unknot tp_trefoil --ab tests/bench/configs/baseline.json tests/bench/configs/tp_l2.json --tag tp_l2` |
 
 Config semantics: `{}` / `baseline.json` = **current defaults** (they moved
 when measured winners shipped); `old_defaults.json` = the pre-branch

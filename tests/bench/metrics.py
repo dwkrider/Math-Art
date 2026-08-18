@@ -423,6 +423,27 @@ def ropelength_proxy(P, excl=6):
     return curve_length(P) / max(min_far_gap(P, excl), 1e-30)
 
 
+def gm_thickness(P):
+    """Discrete Gonzalez-Maddocks thickness (min of local curvature
+    radius and pairwise tangent-point radius), via the knot engine."""
+    from math_art.knots.tangent_point import gm_thickness as _gm
+    return _gm(P)
+
+
+def gm_ropelength(P):
+    """curve length / GM thickness -- the tightness readout comparable
+    with the ideal-knot literature (ideal trefoil ~ 32.7429)."""
+    from math_art.knots.tangent_point import gm_ropelength as _gm
+    return _gm(P)
+
+
+def alexander10(P):
+    """|Alexander polynomial| at t=10 of the curve's knot type -- the
+    topological gate for curve flows."""
+    from math_art.knots.alexander import alexander_from_curve
+    return int(alexander_from_curve(P))
+
+
 def turning_rms_deg(P):
     """RMS turning angle between consecutive segments (degrees):
     smoothness of the relaxed rope."""

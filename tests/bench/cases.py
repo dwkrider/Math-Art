@@ -437,6 +437,154 @@ def case_knot_hopf(config):
 
 
 # --------------------------------------------------------------------------
+# tangent-point energy flow (knots/tangent_point.py)
+# --------------------------------------------------------------------------
+
+def _tp_tighten_checked(P, config, iters_default):
+    """Run knots.tangent_point.tighten with the standard config
+    discipline: unknown tp_kwargs raise, and the returned `effective`
+    dict records the flags that actually ran."""
+    from math_art.knots import tangent_point as tpm
+    import inspect
+    kwargs = dict(config.get("tp_kwargs", {}))
+    sig = inspect.signature(tpm.tighten)
+    unknown = [k for k in kwargs
+               if k not in sig.parameters or k in ("P", "iters",
+                                                   "callback")]
+    if unknown:
+        raise ValueError(f"tp_kwargs not accepted by tighten: {unknown}")
+    iters = int(config.get("tp_iters", iters_default))
+
+    def _dflt(name):
+        return kwargs.get(name, sig.parameters[name].default)
+
+    effective = {
+        "iters": iters,
+        "precondition": _dflt("precondition"),
+        "length_mode": _dflt("length_mode"),
+        "alpha": _dflt("alpha"),
+        "beta": _dflt("beta"),
+    }
+    times = []
+    t0 = _timer()
+    P_out, info = tpm.tighten(P, iters=iters,
+                              callback=lambda it, x: times.append(
+                                  _timer() - t0), **kwargs)
+    dt = _timer() - t0
+    trace = [{"iter": h["it"], "t": times[k], "E": h["E"],
+              "gap": h["gap"]}
+             for k, h in enumerate(info["history"])]
+    effective["iters_run"] = info["iters_run"]
+    effective["converged"] = info["converged"]
+    return P_out, info, effective, trace, dt
+
+
+def case_tp_circle(config):
+    """Ground truth: for the round circle of radius R the tangent-point
+    kernel is exactly the constant 1/(8 R^3), so the continuous energy
+    is pi^2/(2R).  The discrete energy must converge to it under
+    refinement (the omitted diagonal makes the expected rate first
+    order), and the circle must be a critical point of the constrained
+    flow: the projected Sobolev gradient vanishes and the flow leaves
+    it round to machine precision."""
+    from math_art.knots import tangent_point as tpm
+    E_exact = math.pi ** 2 / 2.0
+    t0 = _timer()
+    errs = []
+    ns = (32, 64, 128, 256)
+    for n in ns:
+        t = np.linspace(0.0, 2 * np.pi, n, endpoint=False)
+        C = np.stack([np.cos(t), np.sin(t), np.zeros_like(t)], axis=1)
+        errs.append(abs(tpm.tp_energy(C) - E_exact) / E_exact)
+    order = math.log2(errs[-2] / errs[-1])
+    t = np.linspace(0.0, 2 * np.pi, 128, endpoint=False)
+    C = np.stack([np.cos(t), np.sin(t), np.zeros_like(t)], axis=1)
+    C_out, info, effective, trace, _dt = _tp_tighten_checked(
+        C, config, iters_default=5)
+    rad = np.linalg.norm(C_out - C_out.mean(0), axis=1)
+    mets = {
+        "E_rel_err_n32": errs[0],
+        "E_rel_err_n256": errs[-1],
+        "conv_order": order,
+        "radius_cv": float(np.std(rad) / np.mean(rad)),
+        "viol_max": info["viol_max"],
+        "rise_max": info["rise_max"],
+    }
+    return {"metrics": mets, "trace": trace, "time_s": _timer() - t0,
+            "n_verts": len(C), "effective": effective}
+
+
+def case_tp_unknot(config):
+    """A tangled unknot (closure of the 7-crossing braid abaBcBC, whose
+    Alexander polynomial is 1 -- and a 7-crossing diagram with trivial
+    Alexander IS the unknot, every nontrivial knot to 10 crossings has
+    a nontrivial polynomial) must untangle to a round circle.  The
+    Alexander polynomial is computed geometrically before and after:
+    the flow may not change it."""
+    from math_art.knots.braid import braid_closure_points, parse_letters
+    from math_art.knots.resample import resample_closed
+    from math_art.knots import tangent_point as tpm
+    P = resample_closed(braid_closure_points(
+        parse_letters('abaBcBC')), 160)
+    alex0 = M.alexander10(P)
+    P_out, info, effective, trace, dt = _tp_tighten_checked(
+        P, config, iters_default=150)
+    alex1 = M.alexander10(P_out)
+    rad = np.linalg.norm(P_out - P_out.mean(0), axis=1)
+    n = len(P_out)
+    # discrete reference: the regular n-gon with the same perimeter
+    L = M.curve_length(P_out)
+    Rg = L / (2.0 * n * math.sin(math.pi / n))
+    t = np.linspace(0.0, 2 * np.pi, n, endpoint=False)
+    ngon = np.stack([Rg * np.cos(t), Rg * np.sin(t),
+                     np.zeros_like(t)], axis=1)
+    E_ngon = tpm.tp_energy(ngon)
+    mets = {
+        "alex_before": alex0,
+        "alex_after": alex1,
+        "alex_preserved": int(alex0 == alex1),
+        "radius_cv": float(np.std(rad) / np.mean(rad)),
+        "E_final": info["E"],
+        "E_over_circle": info["E"] / E_ngon,
+        "min_far_gap": M.min_far_gap(P_out),
+        "viol_max": info["viol_max"],
+        "rise_max": info["rise_max"],
+        "iters": info["iters_run"],
+    }
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": n, "effective": effective}
+
+
+def case_tp_trefoil(config):
+    """Tight trefoil: the tangent-point flow at fixed length pulls the
+    trefoil toward its tight shape; report the Gonzalez-Maddocks
+    ropelength against the ideal-knot literature (~32.7429 for the
+    ideal trefoil -- Ashton-Cantarella-Piatek-Rawdon 2011), the
+    Alexander gate, clearance, and constraint drift."""
+    from math_art.knots.braid import braid_closure_points, parse_letters
+    from math_art.knots.resample import resample_closed
+    P = resample_closed(braid_closure_points(parse_letters('AAA')), 192)
+    alex0 = M.alexander10(P)
+    P_out, info, effective, trace, dt = _tp_tighten_checked(
+        P, config, iters_default=300)
+    alex1 = M.alexander10(P_out)
+    mets = {
+        "alex_before": alex0,
+        "alex_after": alex1,
+        "alex_preserved": int(alex0 == alex1),
+        "ropelength_gm": M.gm_ropelength(P_out),
+        "thickness_gm": M.gm_thickness(P_out),
+        "E_final": info["E"],
+        "min_far_gap": M.min_far_gap(P_out),
+        "viol_max": info["viol_max"],
+        "rise_max": info["rise_max"],
+        "iters": info["iters_run"],
+    }
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": len(P_out), "effective": effective}
+
+
+# --------------------------------------------------------------------------
 # hyperbolic crochet sheet
 # --------------------------------------------------------------------------
 
@@ -1342,6 +1490,7 @@ KNOWN_CONFIG_KEYS = {
     "crochet_kwargs", "crochet_iters", "planarize_map",
     "planarize_kwargs", "planarize_iters", "bubble_kwargs",
     "cmc_kwargs",
+    "tp_kwargs", "tp_iters",
 }
 
 CASES = {
@@ -1355,6 +1504,9 @@ CASES = {
     "biscribe": case_biscribe,
     "knot_trefoil": case_knot_trefoil,
     "knot_hopf": case_knot_hopf,
+    "tp_circle": case_tp_circle,
+    "tp_unknot": case_tp_unknot,
+    "tp_trefoil": case_tp_trefoil,
     "crochet": case_crochet,
     "planarize": case_planarize,
     "bubble_single": case_bubble_single,
