@@ -1125,25 +1125,30 @@ def case_film_sphere_off_fine(config):
     return case_film_sphere_off(config, nphi=96)
 
 
-def case_film_cyl_disk(config, nphi=48):
+def case_film_cyl_disk(config, nphi=48, iters=400):
     """ANALYTIC case: disk spanning INSIDE a unit cylinder, the whole
     boundary free on the wall (no fixed vertices at all -- includes a
-    neutral axial translation mode).  Seeded tilted + bulged; must
-    flatten to the perpendicular cross-section.  The honest discrete
-    reference is the INSCRIBED POLYGON disk (the boundary chords the
-    circle): vs pi R^2 the deficit is exactly (2 pi/n)^2/6."""
+    neutral axial translation mode and a very soft tilt mode, which
+    is why the fine variant needs the deeper budget).  Seeded tilted
+    + bulged; must flatten to the perpendicular cross-section.  The
+    honest discrete reference is the INSCRIBED POLYGON disk (the
+    boundary chords the circle): vs pi R^2 the deficit is exactly
+    (2 pi/n)^2/6."""
     from math_art import cmc_generator as cg
     return _film_case(
         config,
         lambda: cg.film_disk_seed(1.0, nphi=nphi),
-        400, area_exact=cg.polygon_area(1.0, nphi),
+        iters, area_exact=cg.polygon_area(1.0, nphi),
         extra=lambda V, T, loop: {
             "boundary_z_spread": float(V[loop, 2].max()
                                        - V[loop, 2].min())})
 
 
 def case_film_cyl_disk_fine(config):
-    return case_film_cyl_disk(config, nphi=96)
+    """Measured budget: at 400 iterations the nphi=96 disk is still
+    5e-2 above the polygon reference (the soft tilt mode); 2500
+    reaches 1.7e-4."""
+    return case_film_cyl_disk(config, nphi=96, iters=2500)
 
 
 def case_film_cyl_tilt(config, nphi=48):
