@@ -208,6 +208,17 @@ ROLLERS = Menu(
         _e("mesh.rolling_knot_add", 'PHYSICS'),
     ])
 
+# Cut gemstones: convex solids specified as facet PLANES (mast angle +
+# index-gear position) rather than as vertices, and built by half-space
+# intersection.  A menu of their own rather than a corner of Polyhedra,
+# because the family is large -- the brilliant, step, mixed, rose,
+# cabochon and fantasy cuts -- and because they are read from and written
+# to the lapidary trade's own GemCad .ASC format.
+GEMS = Menu(
+    "VIEW3D_MT_math_art_gems", "Gems", 'MESH_ICOSPHERE', [
+        _e("mesh.gem_add", 'MESH_ICOSPHERE', "Faceted Gemstone"),
+    ])
+
 # Only generators that live nowhere else.  Everything with a home of
 # its own is listed THERE and not here: the rollers (oloid, sphericon,
 # Steinmetz, orbis, constant-width, Gomboc) in Rollers, polytwisters
@@ -245,7 +256,7 @@ STYLES = Menu(
 # last by the root menu, after the Symmetric Sculpture entry, so it is
 # not part of this run.
 MENU_ORDER = (SURFACES, POLYHEDRA, FRACTALS, PLANTS, KNOTS, WEAVES,
-              PATTERNS, ROLLERS, ODDS)
+              PATTERNS, ROLLERS, GEMS, ODDS)
 
 # Every menu that gets a generated class, in registration order.
 ALL_MENUS = MENU_ORDER + (STYLES,)
