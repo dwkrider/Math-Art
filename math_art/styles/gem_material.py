@@ -60,6 +60,30 @@ except ImportError:
 GROUP_PREFIX = "Gem Dispersion"
 
 
+def body_colour(material_key, size_mm=6.5):
+    """The species' colour as a plain RGB transmission tint.
+
+    Colour in a gemstone is a VOLUME effect -- Beer-Lambert absorption
+    along whatever path a ray takes -- and that is how the Cycles material
+    carries it, because it is what makes a deep stone read richer than a
+    shallow one.  But any renderer or preview that ignores the volume then
+    shows every species as clear glass, which is exactly what happens in
+    EEVEE and in Material Preview.
+
+    So the same absorption is also collapsed to a single transmitted
+    colour, exp(-alpha * L) over a representative path L, and applied to
+    the surface.  In Cycles it tints a stone whose depth still comes from
+    the volume; everywhere else it is the only colour there is, and a
+    topaz at least looks like a topaz.
+    """
+    m = gem_materials.get(material_key)
+    # a ray crossing a stone takes a path of roughly its diameter, and a
+    # cut one bounces, so half again is a fair representative length
+    path = 1.5 * size_mm
+    rgb = tuple(optics.transmission(a, path) for a in m.alpha_rgb)
+    return rgb
+
+
 def band_plan(material_key, bands=3):
     """(band colour, index) pairs for a material -- the shader's recipe.
 
@@ -142,7 +166,11 @@ if _IN_BLENDER:
         out = nt.nodes.new('ShaderNodeOutputMaterial')
         out.location = (300, 0)
 
-        base = color if color is not None else (1.0, 1.0, 1.0, 1.0)
+        if color is not None:
+            base = color
+        else:
+            tint = body_colour(key, size_mm)
+            base = (tint[0], tint[1], tint[2], 1.0)
         if simple:
             p = nt.nodes.new('ShaderNodeBsdfPrincipled')
             p.location = (0, 0)
@@ -249,6 +277,31 @@ def _selftest():
     ok &= good
     print(f"styles.gem_material: rock crystal is colourless, so it takes no "
           f"absorption {'OK' if good else 'tinted'}")
+
+    # --- the species must be visible WITHOUT a volume ---------------------
+    # Colour lived only in the Volume socket, so EEVEE, Material Preview
+    # and the preview shader all rendered every species as clear glass.
+    clear = body_colour("ROCK_CRYSTAL")
+    topaz = body_colour("TOPAZ")
+    ruby = body_colour("RUBY")
+    good = all(abs(c - 1.0) < 1e-9 for c in clear)
+    ok &= good
+    print(f"styles.gem_material: rock crystal's body colour is clear "
+          f"{'OK' if good else 'tinted'}")
+    good = topaz[2] < topaz[0] and max(topaz) - min(topaz) > 0.05
+    ok &= good
+    print(f"styles.gem_material: topaz has a visible body colour, bluer "
+          f"than it is red ({', '.join(f'{c:.2f}' for c in topaz)}) "
+          f"{'OK' if good else 'colourless'}")
+    good = ruby[0] > ruby[1] and ruby[0] > ruby[2]
+    ok &= good
+    print(f"styles.gem_material: ruby transmits red most "
+          f"({', '.join(f'{c:.2f}' for c in ruby)}) "
+          f"{'OK' if good else 'wrong hue'}")
+    good = body_colour("RUBY", 12.0)[1] < body_colour("RUBY", 3.0)[1]
+    ok &= good
+    print(f"styles.gem_material: a larger stone reads deeper "
+          f"{'OK' if good else 'size ignored'}")
 
     if not _IN_BLENDER:
         print("styles.gem_material: node construction needs Blender -- "
