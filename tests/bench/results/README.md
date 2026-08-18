@@ -23,6 +23,8 @@ commands from the repo/worktree root.
 | `triple.*` | `python tests/bench/run.py bubble_triple bubble_triple_fine bubble_triple_unequal --tag triple` |
 | `tp.*` | `python tests/bench/run.py tp_circle tp_unknot tp_trefoil --tag tp` |
 | `ab_tp_l2.md`, `tp_l2_*` | `python tests/bench/run.py tp_circle tp_unknot tp_trefoil --ab tests/bench/configs/baseline.json tests/bench/configs/tp_l2.json --tag tp_l2` |
+| `tp_links.*` | `python tests/bench/run.py tp_hopf tp_whitehead tp_borromean tp_chain3 tp_scale --tag tp_links` |
+| `ab_tp_link_solver.md`, `tp_link_solver_*` | `python tests/bench/run.py tp_hopf tp_whitehead tp_borromean tp_chain3 --ab tests/bench/configs/baseline.json tests/bench/configs/tp_link_lagged.json --tag tp_link_solver` |
 
 Config semantics: `{}` / `baseline.json` = **current defaults** (they moved
 when measured winners shipped); `old_defaults.json` = the pre-branch
@@ -41,6 +43,14 @@ point minutely.  Both values sit five orders of magnitude below the 1e-5
 convergence criterion; every decision-bearing metric reproduces exactly.
 `baseline.*` as committed IS the fresh old-defaults run against current
 code, so re-runs match it bitwise.
+
+`tp_scale`'s `t_iter_*`, `exp_*` and `speedup_*` metrics are wall-clock
+derived (the case exists to measure the dense-vs-lagged scaling), so
+they carry the usual wall-clock reproduction noise; its
+`E_dense_192`/`E_lagged_192`/`E_rel_diff_192`/`alex_preserved` metrics
+are deterministic like every other quality metric.  Timing artifacts
+committed here were measured with no other compute running -- a
+concurrent heavy process skews the BLAS numbers several-fold.
 
 History note: artifacts predating the final harness (including one whose
 "mollify_groom" column had grooming silently off, and a "sweep_baseline"

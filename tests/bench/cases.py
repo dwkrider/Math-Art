@@ -1478,6 +1478,291 @@ def case_planarize(config):
             "n_verts": Vn}
 
 
+# --------------------------------------------------------------------------
+# tangent-point energy flow for LINKS (knots/tangent_point.py,
+# tighten_link) -- multi-component: Hopf ground truth, Whitehead /
+# Borromean topology gates, chain, and the dense-vs-lagged solver
+# scaling/agreement case
+# --------------------------------------------------------------------------
+
+def _tpl_tighten_checked(comps, config, iters_default):
+    """Run knots.tangent_point.tighten_link with the standard config
+    discipline: unknown tpl_kwargs raise, and the returned `effective`
+    dict records the flags that actually ran (including the solver and
+    how many factorizations it performed)."""
+    from math_art.knots import tangent_point as tpm
+    import inspect
+    kwargs = dict(config.get("tpl_kwargs", {}))
+    sig = inspect.signature(tpm.tighten_link)
+    unknown = [k for k in kwargs
+               if k not in sig.parameters or k in ("comps", "iters",
+                                                   "callback")]
+    if unknown:
+        raise ValueError(f"tpl_kwargs not accepted by tighten_link: "
+                         f"{unknown}")
+    iters = int(config.get("tpl_iters", iters_default))
+
+    def _dflt(name):
+        return kwargs.get(name, sig.parameters[name].default)
+
+    effective = {
+        "iters": iters,
+        "solver": _dflt("solver"),
+        "length_mode": _dflt("length_mode"),
+        "precondition": _dflt("precondition"),
+        "refresh_every": _dflt("refresh_every"),
+        "refresh_drift": _dflt("refresh_drift"),
+    }
+    times = []
+    t0 = _timer()
+    comps_out, info = tpm.tighten_link(
+        comps, iters=iters,
+        callback=lambda it, x: times.append(_timer() - t0), **kwargs)
+    dt = _timer() - t0
+    trace = [{"iter": h["it"], "t": times[k], "E": h["E"],
+              "gap": h["gap"], "inter_gap": h["inter_gap"]}
+             for k, h in enumerate(info["history"])]
+    effective["iters_run"] = info["iters_run"]
+    effective["converged"] = info["converged"]
+    effective["factorizations"] = info["factorizations"]
+    return comps_out, info, effective, trace, dt
+
+
+def _plane_fit_link(P):
+    """Best-fit plane of a component: (center, unit normal, max
+    out-of-plane deviation)."""
+    c = P.mean(0)
+    Q = P - c
+    _w, v = np.linalg.eigh(Q.T @ Q)
+    nrm = v[:, 0]
+    return c, nrm, float(np.abs(Q @ nrm).max())
+
+
+def _link_gate_metrics(comps0, comps1, info):
+    """The topology gate every link case shares: pairwise Gauss linking
+    matrix and the one-variable link Alexander invariant, both before
+    and after (the flow may change neither), per-component knot types
+    preserved, and the clearance/constraint records."""
+    from math_art.knots.tangent_point import linking_matrix, \
+        min_intercomponent_gap
+    from math_art.knots.alexander import alexander_from_curve, \
+        alexander_link_from_curves
+    lk0, dev0 = linking_matrix(comps0)
+    lk1, dev1 = linking_matrix(comps1)
+    alex0 = alexander_link_from_curves(comps0)
+    alex1 = alexander_link_from_curves(comps1)
+    pc0 = [int(alexander_from_curve(Q)) for Q in comps0]
+    pc1 = [int(alexander_from_curve(Q)) for Q in comps1]
+    K = len(comps0)
+    iu = np.triu_indices(K, 1)
+    return {
+        "lk_max_abs_before": int(np.abs(lk0[iu]).max()),
+        "lk_max_abs_after": int(np.abs(lk1[iu]).max()),
+        "lk_preserved": int(np.array_equal(lk0, lk1)),
+        "lk_dev_max": float(max(dev0, dev1)),
+        "alex_link_before": int(alex0),
+        "alex_link_after": int(alex1),
+        "alex_link_preserved": int(alex0 == alex1),
+        "percomp_alex_preserved": int(pc0 == pc1),
+        "inter_gap_min": info["inter_gap_min"],
+        "inter_gap_final": min_intercomponent_gap(comps1),
+        "viol_max": info["viol_max"],
+        "rise_max": info["rise_max"],
+        "E_final": info["E"],
+        "iters": info["iters_run"],
+    }
+
+
+def case_tp_hopf(config):
+    """Ground truth: the ropelength-tight Hopf link is two round
+    circles in perpendicular planes, each through the other's centre
+    (Cantarella-Kusner-Sullivan 2002), i.e. d/R = 1.  The TP-(3,6)
+    minimizer keeps the perpendicular round structure but holds an
+    energy standoff instead of contact, so its centre distance is the
+    minimizer d* of the same discrete energy over the symmetric
+    round-circle family -- computed here independently by a 1-D scan.
+    The flow starts from a tilted off-analytic seed and must reproduce:
+    planes at 90 deg, planar round components, d/R at the family
+    optimum, energy at-or-below the family optimum, linking number and
+    link Alexander invariant (9 = |t-1|) unchanged."""
+    from math_art.knots import tangent_point as tpm
+    n = 80
+    t = np.linspace(0.0, 2 * np.pi, n, endpoint=False)
+    c, s = np.cos(t), np.sin(t)
+    z = np.zeros_like(t)
+    A0 = np.stack([c, s, z], axis=1)
+    phi = 0.5                      # tilt B's plane 28.6 deg off xz
+    B0 = np.stack([1.5 + c * math.cos(phi), c * math.sin(phi), s],
+                  axis=1)
+    comps0 = [A0, B0]
+    t0 = _timer()
+    # independent 1-D scan of the symmetric two-round-circle family at
+    # the same discretization (same per-component polygon lengths)
+    def _family_E(d):
+        A = np.stack([c, s, z], axis=1)
+        B = np.stack([d + c, z, s], axis=1)
+        return tpm.tp_energy_link([A, B])
+    ds = np.linspace(0.6, 1.6, 51)
+    Es = [_family_E(d) for d in ds]
+    k = int(np.argmin(Es))
+    lo, hi = ds[max(0, k - 1)], ds[min(len(ds) - 1, k + 1)]
+    for _ in range(40):            # golden-ish bisection refine
+        d1 = lo + (hi - lo) / 3.0
+        d2 = hi - (hi - lo) / 3.0
+        if _family_E(d1) < _family_E(d2):
+            hi = d2
+        else:
+            lo = d1
+    d_star = 0.5 * (lo + hi)
+    E_star = _family_E(d_star)
+
+    comps1, info, effective, trace, dt = _tpl_tighten_checked(
+        comps0, config, iters_default=150)
+    mets = _link_gate_metrics(comps0, comps1, info)
+    cA, nA, plA = _plane_fit_link(comps1[0])
+    cB, nB, plB = _plane_fit_link(comps1[1])
+    RA = np.linalg.norm(comps1[0] - cA, axis=1)
+    RB = np.linalg.norm(comps1[1] - cB, axis=1)
+    Rm = 0.5 * (RA.mean() + RB.mean())
+    ang = math.degrees(math.acos(min(1.0, abs(float(np.dot(nA, nB))))))
+    d_over_R = float(np.linalg.norm(cA - cB)) / Rm
+    mets.update({
+        "plane_angle_err_deg": abs(90.0 - ang),
+        "planarity_max": max(plA, plB),
+        "radius_cv_max": float(max(RA.std() / RA.mean(),
+                                   RB.std() / RB.mean())),
+        "d_over_R": d_over_R,
+        "d_star_family": float(d_star),
+        "d_vs_family_err": abs(d_over_R - float(d_star)),
+        "E_over_family": info["E"] / E_star,
+    })
+    return {"metrics": mets, "trace": trace, "time_s": _timer() - t0,
+            "n_verts": 2 * n, "effective": effective}
+
+
+def case_tp_whitehead(config):
+    """Whitehead link: linking number 0 yet inseparable -- the link
+    Alexander invariant (729 = (t-1)^3 at t = 10) is what certifies
+    the flow kept it a Whitehead link rather than drifting toward a
+    split pair, and both components must stay unknots."""
+    from math_art.knots.braid import braid_closure_loops, parse_letters
+    from math_art.knots.resample import resample_loops
+    comps0 = resample_loops(braid_closure_loops(
+        parse_letters('aBaBa')), 100)
+    comps1, info, effective, trace, dt = _tpl_tighten_checked(
+        comps0, config, iters_default=150)
+    mets = _link_gate_metrics(comps0, comps1, info)
+    mets["ropelength_gm"] = M.gm_ropelength_link(comps1)
+    mets["thickness_gm"] = M.gm_thickness_link(comps1)
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": sum(len(Q) for Q in comps1),
+            "effective": effective}
+
+
+def case_tp_borromean(config):
+    """Borromean rings: no two components linked (all pairwise lk = 0),
+    yet the whole is inseparable -- exactly the case where pairwise
+    linking numbers cannot distinguish the link from the 3-unlink, and
+    the link Alexander invariant (6561 = (t-1)^4, vs 0 for any split
+    link) can.  All three components must stay unknots and mutually
+    clear."""
+    from math_art.knots.braid import braid_closure_loops, parse_letters
+    from math_art.knots.resample import resample_loops
+    comps0 = resample_loops(braid_closure_loops(
+        parse_letters('aBaBaB')), 84)
+    comps1, info, effective, trace, dt = _tpl_tighten_checked(
+        comps0, config, iters_default=150)
+    mets = _link_gate_metrics(comps0, comps1, info)
+    mets["ropelength_gm"] = M.gm_ropelength_link(comps1)
+    mets["thickness_gm"] = M.gm_thickness_link(comps1)
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": sum(len(Q) for Q in comps1),
+            "effective": effective}
+
+
+def case_tp_chain3(config):
+    """A 3-ring chain seeded too tight (spacing 1.15 < the relaxed
+    standoff): the flow must push the rings apart along the chain
+    while keeping the adjacent linking numbers +-1, the end pair
+    unlinked, and every ring an unknot."""
+    from math_art.knots import tangent_point as tpm
+    n = 64
+    t = np.linspace(0.0, 2 * np.pi, n, endpoint=False)
+    c, s = np.cos(t), np.sin(t)
+    z = np.zeros_like(t)
+    comps0 = [np.stack([c, s, z], axis=1),
+              np.stack([1.15 + c, z, s], axis=1),
+              np.stack([2.3 + c, s, z], axis=1)]
+    comps1, info, effective, trace, dt = _tpl_tighten_checked(
+        comps0, config, iters_default=150)
+    mets = _link_gate_metrics(comps0, comps1, info)
+    from math_art.knots.tangent_point import linking_matrix
+    lk1, _dev = linking_matrix(comps1)
+    mets["lk_adjacent_ok"] = int(abs(int(lk1[0, 1])) == 1
+                                 and abs(int(lk1[1, 2])) == 1)
+    mets["lk_ends_zero"] = int(int(lk1[0, 2]) == 0)
+    _ = tpm
+    return {"metrics": mets, "trace": trace, "time_s": dt,
+            "n_verts": sum(len(Q) for Q in comps1),
+            "effective": effective}
+
+
+def case_tp_scale(config):
+    """The dense-ceiling case.  (a) Timing: seconds/iteration of the
+    exact dense path vs the lagged-factorization path at n = 200, 400,
+    800 on the trefoil seed, with fitted log-log scaling exponents --
+    wall-clock numbers, quoted for ratio judgements only.  (b)
+    Agreement: the accelerated path must land on the dense path's
+    converged energy on identical inputs (trefoil, n = 192, 80 iters)
+    and preserve the same Alexander polynomial -- an approximation
+    that changes the answer would be rejected."""
+    from math_art.knots import tangent_point as tpm
+    from math_art.knots.braid import braid_closure_points, parse_letters
+    from math_art.knots.resample import resample_closed
+    t_start = _timer()
+    mets = {}
+    ns = (200, 400, 800)
+    td_list, tl_list = [], []
+    for n in ns:
+        P = resample_closed(braid_closure_points(
+            parse_letters('AAA')), n)
+        t0 = _timer()
+        _o, i_d = tpm.tighten_link([P], iters=3, solver="dense")
+        td = (_timer() - t0) / max(1, i_d["iters_run"])
+        t0 = _timer()
+        _o, i_l = tpm.tighten_link([P], iters=12, solver="lagged")
+        tl = (_timer() - t0) / max(1, i_l["iters_run"])
+        td_list.append(td)
+        tl_list.append(tl)
+        mets[f"t_iter_dense_{n}"] = td
+        mets[f"t_iter_lagged_{n}"] = tl
+        mets[f"factorizations_lagged_{n}"] = i_l["factorizations"]
+    ln = np.log(np.asarray(ns, dtype=float))
+    mets["exp_dense"] = float(np.polyfit(ln, np.log(td_list), 1)[0])
+    mets["exp_lagged"] = float(np.polyfit(ln, np.log(tl_list), 1)[0])
+    mets["speedup_800"] = td_list[-1] / tl_list[-1]
+
+    P = resample_closed(braid_closure_points(parse_letters('AAA')), 192)
+    alex0 = M.alexander10(P)
+    t0 = _timer()
+    out_d, info_d = tpm.tighten_link([P], iters=80, solver="dense")
+    wall_d = _timer() - t0
+    t0 = _timer()
+    out_l, info_l = tpm.tighten_link([P], iters=80, solver="lagged")
+    wall_l = _timer() - t0
+    mets["E_dense_192"] = info_d["E"]
+    mets["E_lagged_192"] = info_l["E"]
+    mets["E_rel_diff_192"] = abs(info_l["E"] - info_d["E"]) / info_d["E"]
+    mets["alex_preserved"] = int(
+        M.alexander10(out_d[0]) == alex0
+        and M.alexander10(out_l[0]) == alex0)
+    mets["speedup_192_wall"] = wall_d / wall_l
+    return {"metrics": mets, "trace": [], "time_s": _timer() - t_start,
+            "n_verts": 192,
+            "effective": {"ns": list(ns),
+                          "iters_agreement": 80}}
+
+
 # Every config key any case reads.  run.py rejects a config containing
 # anything else, so a typo cannot silently benchmark a null change.
 # (Keys irrelevant to a given case are legitimately ignored by that
@@ -1491,6 +1776,7 @@ KNOWN_CONFIG_KEYS = {
     "planarize_kwargs", "planarize_iters", "bubble_kwargs",
     "cmc_kwargs",
     "tp_kwargs", "tp_iters",
+    "tpl_kwargs", "tpl_iters",
 }
 
 CASES = {
@@ -1538,4 +1824,9 @@ CASES = {
     "bubble_triple": case_bubble_triple,
     "bubble_triple_fine": case_bubble_triple_fine,
     "bubble_triple_unequal": case_bubble_triple_unequal,
+    "tp_hopf": case_tp_hopf,
+    "tp_whitehead": case_tp_whitehead,
+    "tp_borromean": case_tp_borromean,
+    "tp_chain3": case_tp_chain3,
+    "tp_scale": case_tp_scale,
 }

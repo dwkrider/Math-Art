@@ -444,6 +444,19 @@ def alexander10(P):
     return int(alexander_from_curve(P))
 
 
+def gm_thickness_link(comps):
+    """Gonzalez-Maddocks thickness of a LINK (cross-component pairs
+    included), via the knot engine."""
+    from math_art.knots.tangent_point import gm_thickness_link as _gm
+    return _gm(comps)
+
+
+def gm_ropelength_link(comps):
+    """Total length / link thickness."""
+    from math_art.knots.tangent_point import gm_ropelength_link as _gm
+    return _gm(comps)
+
+
 def turning_rms_deg(P):
     """RMS turning angle between consecutive segments (degrees):
     smoothness of the relaxed rope."""
