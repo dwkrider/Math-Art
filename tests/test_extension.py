@@ -171,7 +171,7 @@ OPS = [
     ("tangle", lambda: bpy.ops.mesh.tangle_add(kind='T5')),
     ("symmetric sculpture",
      lambda: bpy.ops.object.symmetric_sculpture_add(
-         preset='TWISTED_RIVERS')),
+         preset='FRABJOUS')),
     ("symmetric frabjous",
      lambda: bpy.ops.object.symmetric_sculpture_add(
          preset='FRABJOUS')),

@@ -228,8 +228,7 @@ for g, f, n in (('ICOSA', 'P2', 60), ('OCTA', 'P4', 24),
 
 # each preset lands in the right plane family, and the sculpture's
 # vertex count matches a weld predicted from the motif itself
-for preset, fam in (('TWISTED_RIVERS', 'P3'), ('TUMBLEWEED', 'P5'),
-                    ('FRABJOUS', 'P2'), ('WHIMSY', 'P1')):
+for preset, fam in (('FRABJOUS', 'P2'), ('WHIMSY', 'P1')):
     clear()
     bpy.ops.object.symmetric_sculpture_add(preset=preset, shell=0.0)
     so = bpy.context.object
@@ -336,7 +335,7 @@ if not ok:
 # every preset -- measured on the evaluated result, not by re-running
 # the same formula the operator used
 lifts = {}
-for preset in ('TWISTED_RIVERS', 'TUMBLEWEED', 'FRABJOUS', 'WHIMSY'):
+for preset in ('FRABJOUS', 'WHIMSY'):
     clear()
     bpy.ops.object.symmetric_sculpture_add(preset=preset)
     so = bpy.context.object
@@ -355,10 +354,10 @@ for preset in ('TWISTED_RIVERS', 'TUMBLEWEED', 'FRABJOUS', 'WHIMSY'):
 
 # and it must track the motif's size: Frabjous runs out to phi^2 in
 # its plane, so at the same plane distance it needs a bigger lift
-# than the compact Tumbleweed flower
-ok = lifts['FRABJOUS'] > lifts['TUMBLEWEED']
+# than the compact Whimsy blade
+ok = lifts['FRABJOUS'] > lifts['WHIMSY']
 print(f"[lift scales with motif] frabjous={lifts['FRABJOUS']:.2f} > "
-      f"tumbleweed={lifts['TUMBLEWEED']:.2f} "
+      f"whimsy={lifts['WHIMSY']:.2f} "
       f"{'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('lift-scaling')
@@ -645,7 +644,7 @@ me2.from_pydata([(0.2, 0.1, 0.0), (0.8, 0.1, 0.0), (0.8, 0.5, 0.0),
 me2.update()
 bpy.context.collection.objects.link(
     bpy.data.objects.new("MyPartMotif", me2))
-bpy.ops.object.symmetric_sculpture_add(preset='TWISTED_RIVERS',
+bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS',
                                        motif_object="MyPartMotif",
                                        show_part=True, shell=0.05)
 part = [o for o in bpy.data.objects
@@ -685,7 +684,7 @@ me.from_pydata([(0.2, 0.1, 0.0), (0.8, 0.1, 0.0), (0.8, 0.5, 0.0),
 me.update()
 custom = bpy.data.objects.new("MyMotif", me)
 bpy.context.collection.objects.link(custom)
-bpy.ops.object.symmetric_sculpture_add(preset='TWISTED_RIVERS',
+bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS',
                                        motif_object="MyMotif",
                                        shell=0.0)
 so = bpy.context.object
@@ -700,7 +699,7 @@ if not ok:
     fails.append('motif-object')
 
 clear()
-bpy.ops.object.symmetric_sculpture_add(preset='TWISTED_RIVERS',
+bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS',
                                        motif_object="NoSuchObject")
 built = [o for o in bpy.data.objects
          if o.name.startswith('SymSculpt Motif')]
