@@ -100,11 +100,14 @@ def ab_table(res_a, res_b, label_a, label_b):
         "H_abs_mean",
         "angle_err_deg", "contact_r_rel_err", "E_rel_err", "fit_rms",
         "wall_resid_max", "vt_normal_max", "E_max_rise",
+        "E_final", "E_over_circle", "E_rel_err_n32", "E_rel_err_n256",
+        "rise_max", "viol_max", "ropelength_gm",
     }
     higher_better = {
         "q_min", "q_mean", "q_p05", "min_angle_deg", "min_far_gap",
         "n_correct", "genus_preserved", "lk_preserved", "aspect",
         "inter_component_gap", "z_extent",
+        "thickness_gm", "alex_preserved",
     }
     lines = []
     wins = losses = ties = 0

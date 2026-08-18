@@ -58,6 +58,7 @@ _MODULE_NAMES = [
     'monostatic_body_generator',
     'constant_width_generator',
     'prime_knot_generator',
+    'tight_knot_generator',
     'regular_solids_generator',
     'uniform_polyhedra_generator',
     'compound_generator',
@@ -260,6 +261,7 @@ class VIEW3D_MT_math_art_knots(bpy.types.Menu):
     def draw(self, context):
         lay = self.layout
         _op(lay, "curve.prime_knot_add", icon='FORCE_VORTEX')
+        _op(lay, "curve.tight_knot_add", icon='FORCE_VORTEX')
         _op(lay, "curve.torus_knot_add", icon='FORCE_VORTEX')
         _op(lay, "curve.hopf_fibration_add", icon='FORCE_MAGNETIC')
         _op(lay, "mesh.hopf_torus_add", icon='MESH_TORUS')
