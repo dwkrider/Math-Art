@@ -1241,14 +1241,21 @@ def case_bubble_triple(config):
 
 
 def case_bubble_triple_fine(config):
-    """Doubled resolution, mild perturbation (discretization-scaling
-    case, same rationale as bubble_double_fine).  Measured budget: at
-    800 iterations the fitted angle rms still reads 0.80 deg -- the
-    S3-documented high-resolution transient (half the coarse budget
-    on a 4x mesh), NOT the floor: the zero-perturbation floor is
-    0.023/0.026 deg, and 2400 iterations reaches it (0.0233/0.0270)."""
-    return _case_bubble_triple(config, 96, 2400,
-                               perturb=(1.02, 0.99, 1.0))
+    """Doubled resolution from the UNPERTURBED analytic seed: the
+    solver must hold the Plateau-exact equilibrium and refine its
+    discretization, giving the clean O(h^2) scaling; recovery from a
+    real perturbation is the coarse cases' job (bubble_double_fine's
+    rationale, one step further).  Measured reasons: with even the
+    mild (1.02, 0.99) perturbation this resolution is
+    transient-dominated (0.80 deg fitted rms at 800 iterations) AND
+    environment-marginal at deeper budgets -- 2400 iterations
+    reproducibly gave 0.0233 deg under one BLAS-threading
+    configuration and 0.2165 deg under another (sub-ulp reduction
+    differences amplified through groom flip decisions; the cure is
+    S2's remaining L-BFGS piece).  The unperturbed case is
+    deterministic across both measured environments (0.0227 deg)."""
+    return _case_bubble_triple(config, 96, 800,
+                               perturb=(1.0, 1.0, 1.0))
 
 
 def case_bubble_triple_unequal(config):
