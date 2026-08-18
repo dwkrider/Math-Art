@@ -397,6 +397,45 @@ def crossing_count(V, T, tol=1e-7):
 # the guards
 # --------------------------------------------------------------------------
 
+def _adjacency_key(E, n):
+    """Packed (min,max) vertex-pair keys of the mesh edges."""
+    a = np.minimum(E[:, 0], E[:, 1]).astype(np.int64)
+    b = np.maximum(E[:, 0], E[:, 1]).astype(np.int64)
+    return np.unique(a * np.int64(n) + b)
+
+
+def _pair_is_adjacent(u, v, adj, n):
+    """True where vertex u and vertex v share a mesh edge."""
+    a = np.minimum(u, v).astype(np.int64)
+    b = np.maximum(u, v).astype(np.int64)
+    return np.isin(a * np.int64(n) + b, adj)
+
+
+def exclude_topological_vt(vi, ti, T, adj, n):
+    """Drop vertex-triangle pairs whose vertex is a mesh neighbour of
+    any triangle corner.  A sheet's own adjacent geometry sits within
+    one edge length by construction -- that is mesh resolution, not a
+    collision -- and counting it as one collapses the minimum
+    separation and throttles the conservative step cap to nothing."""
+    if not len(vi):
+        return vi, ti
+    near = np.zeros(len(vi), dtype=bool)
+    for k in range(3):
+        near |= _pair_is_adjacent(vi, T[ti, k], adj, n)
+    return vi[~near], ti[~near]
+
+
+def exclude_topological_ee(ei, ej, E, adj, n):
+    """Drop edge-edge pairs whose endpoints are mesh neighbours."""
+    if not len(ei):
+        return ei, ej
+    near = np.zeros(len(ei), dtype=bool)
+    for p in range(2):
+        for q in range(2):
+            near |= _pair_is_adjacent(E[ei, p], E[ej, q], adj, n)
+    return ei[~near], ej[~near]
+
+
 class MeshGuard:
     """Simplified-IPC collision guard for a triangle mesh.
 
@@ -414,13 +453,17 @@ class MeshGuard:
     apply the Eq. 24 parallel edge-edge mollifier."""
 
     def __init__(self, dhat="auto", kappa=1.0, ccd_frac=0.4,
-                 auto_frac=0.25, mollify=True):
+                 auto_frac=0.25, mollify=True, pad_frac=1.0,
+                 exclude_adjacent=True):
         self.dhat_spec = dhat
         self.kappa = float(kappa)
         self.ccd_frac = float(ccd_frac)
         self.auto_frac = float(auto_frac)
         self.mollify = bool(mollify)
+        self.pad_frac = float(pad_frac)
+        self.exclude_adjacent = bool(exclude_adjacent)
         self.dhat = None
+        self.pad = None
         self.radius = None
         self._T = None
         self._E = None
@@ -442,10 +485,30 @@ class MeshGuard:
             self.dhat = self.auto_frac * Lmean
         else:
             self.dhat = float(self.dhat_spec)
-        self.radius = 2.0 * self.dhat
+        # Query radius = dhat + pad.  The pad is the safety margin that
+        # bounds how far a vertex may move before an unseen pair could
+        # reach the barrier support, and it is what max_step caps on.
+        # Tying it to dhat (radius = 2 dhat) is safe but throttles ALL
+        # motion to dhat/2 per step even when nothing is remotely close
+        # -- measured: a tilted disk that must flatten then stalls after
+        # 4 iterations at every dhat from 0.05 down to 0.001, because
+        # the cap shrinks with dhat in lockstep.  Sizing the pad by the
+        # mesh instead decouples "how close before repelling" from "how
+        # far may we step", which are different questions.
+        Lm = float(np.mean(np.linalg.norm(V[T[:, 1]] - V[T[:, 0]],
+                                          axis=1)))
+        self.pad = max(self.dhat, self.pad_frac * Lm)
+        self.radius = self.dhat + self.pad
         self._E = mesh_edges(T)
         self._vi, self._ti = vt_candidates(V, T, self.radius)
         self._ei, self._ej = ee_candidates(V, self._E, self.radius)
+        if self.exclude_adjacent:
+            nv = len(V)
+            adj = _adjacency_key(self._E, nv)
+            self._vi, self._ti = exclude_topological_vt(
+                self._vi, self._ti, T, adj, nv)
+            self._ei, self._ej = exclude_topological_ee(
+                self._ei, self._ej, self._E, adj, nv)
         self.n_pairs = len(self._vi) + len(self._ei)
         if self.mollify and len(self._ei):
             E = self._E
@@ -590,7 +653,11 @@ class MeshGuard:
         if dmax < 1e-300:
             return np.inf
         dmin = self.min_distance(V)
-        return min(self.ccd_frac * dmin, 0.5 * self.dhat) / dmax
+        # Two bounds: known pairs may close at most ccd_frac of their
+        # current gap; unknown pairs (>= dhat + pad away) stay outside
+        # the barrier support as long as no vertex moves more than
+        # pad/2 (both ends of a pair may move toward each other).
+        return min(self.ccd_frac * dmin, 0.5 * self.pad) / dmax
 
 
 class CurveGuard:

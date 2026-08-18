@@ -360,7 +360,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
            walls=None, wall_tol=1e-12, ext_energy=None, ext_grad=None,
            groom_hook=None, optimizer=None, lbfgs_m=8,
            lbfgs_h0="laplacian", lbfgs_h0_eps=1e-3, lbfgs_h0_tol=1e-2,
-           lbfgs_h0_iters=100, lbfgs_step_cap=4.0):
+           lbfgs_h0_iters=100, lbfgs_step_cap=4.0, guard=None):
     """Minimize film area at fixed body volumes.  V is modified in
     place; T is modified in place only when grooming flips edges.
 
@@ -486,8 +486,35 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
                                tol=vol_tol, project=_wproject,
                                tangent=_gtangent)
 
+    # Collision guard (solver/collide), opt-in.  The barrier joins the
+    # objective and the conservative cap joins the line-search ceiling.
+    # Both are needed: the barrier alone can be stepped clean over by a
+    # long trial step, landing inverted on the far side with a lower
+    # energy -- which is exactly how L-BFGS tunnelled the films.  The
+    # pair set is rebuilt once per iteration rather than per trial;
+    # rebuilding inside the search would cost a broad phase per
+    # evaluation and make the energy discontinuous in s.
+    _guard = [None]
+
+    def _guard_rebuild(Varr):
+        if guard is not None:
+            _guard[0] = guard.build(Varr, T)
+
+    def _gE(Varr):
+        g0 = _guard[0]
+        return 0.0 if g0 is None else float(g0.energy(Varr))
+
+    def _gG(Varr):
+        g0 = _guard[0]
+        return 0.0 if g0 is None else g0.gradient(Varr)
+
+    def _gcap(Varr, dd, s):
+        g0 = _guard[0]
+        return s if g0 is None else min(s, float(g0.max_step(Varr, dd)))
+
     def _E_of(Varr, A):
-        return A if ext_energy is None else A + float(ext_energy(Varr))
+        E = A if ext_energy is None else A + float(ext_energy(Varr))
+        return E + _gE(Varr)
 
     t0 = time.perf_counter()
     if wall_list is not None:
@@ -519,7 +546,9 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         x_prev = None                    # previous restored state...
         gh_prev = None                   # ...and its projected gradient
         it = 0
+        _guard_rebuild(V)
         for it in range(1, iters + 1):
+            _guard_rebuild(V)
             groomed = False
             if groom_every and (it - 1) and (it - 1) % groom_every == 0:
                 _groom.groom(V, T, fixed=smooth_pin,
@@ -544,6 +573,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             np.add.at(g, Ew[:, 1], -contrib)
             if ext_grad is not None:
                 g = g + ext_grad(V)
+            g = g + _gG(V)
             g[~free] = 0.0
             if wall_list is not None:
                 _walls.tangent_all(g, V, wall_list)
@@ -582,7 +612,8 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             Lmean = float(np.mean(np.linalg.norm(
                 V[T[:, 1]] - V[T[:, 0]], axis=1)))
             dmax = float(np.max(np.linalg.norm(d, axis=1)))
-            s_max = lbfgs_step_cap * Lmean / max(dmax, 1e-300)
+            s_max = _gcap(V, d,
+                          lbfgs_step_cap * Lmean / max(dmax, 1e-300))
 
             def energy(x):
                 Vc = np.array(x, float)
@@ -602,7 +633,8 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
                 d = _project_dir(-(h0(gh.ravel()) if h0 is not None
                                    else gh.ravel().copy()))
                 dmax = float(np.max(np.linalg.norm(d, axis=1)))
-                s_max = lbfgs_step_cap * Lmean / max(dmax, 1e-300)
+                s_max = _gcap(V, d,
+                              lbfgs_step_cap * Lmean / max(dmax, 1e-300))
                 x1, s, E1, nev2 = _descent.parabola_line_search(
                     energy, V, d, min(1.0, s_max), s_max=s_max)
                 nev += nev2
@@ -649,6 +681,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         g = area_gradient(V, T, cotan_mode=cotan_mode)
         if ext_grad is not None:
             g = g + ext_grad(V)
+        g = g + _gG(V)
         grads = volume_gradients(V, T, labels, nb, free=free)
         if wall_list is not None:
             _gtangent(grads, V)
@@ -675,7 +708,9 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     v_prev = None
     v_prev_ip = 1.0
     it = 0
+    _guard_rebuild(V)
     for it in range(1, iters + 1):
+        _guard_rebuild(V)
         groomed = False
         if groom_every and (it - 1) and (it - 1) % groom_every == 0:
             _groom.groom(V, T, fixed=smooth_pin, smooth_lam=groom_smooth,
@@ -699,6 +734,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         g = area_gradient(V, T, cotan_mode=cotan_mode)
         if ext_grad is not None:
             g = g + ext_grad(V)
+        g = g + _gG(V)
         if mobility == "star":
             M = 3.0 / np.maximum(vertex_star_areas(V, T), 1e-300)
         elif mobility == "none":
@@ -740,7 +776,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         Lmean = float(np.mean(np.linalg.norm(
             V[T[:, 1]] - V[T[:, 0]], axis=1)))
         dmax = float(np.max(np.linalg.norm(d, axis=1)))
-        s_max = 4.0 * Lmean / max(dmax, 1e-300)
+        s_max = _gcap(V, d, 4.0 * Lmean / max(dmax, 1e-300))
         if s_prev is None or not (0.0 < s_prev):
             s_prev = s_init_frac * Lmean / vmax
         s0 = min(s_prev, s_max)
