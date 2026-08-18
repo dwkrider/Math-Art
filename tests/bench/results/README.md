@@ -23,6 +23,8 @@ commands from the repo/worktree root.
 | `triple.*` | `python tests/bench/run.py bubble_triple bubble_triple_fine bubble_triple_unequal --tag triple` |
 | `tp.*` | `python tests/bench/run.py tp_circle tp_unknot tp_trefoil --tag tp` |
 | `ab_tp_l2.md`, `tp_l2_*` | `python tests/bench/run.py tp_circle tp_unknot tp_trefoil --ab tests/bench/configs/baseline.json tests/bench/configs/tp_l2.json --tag tp_l2` |
+| `ab_lbfgs_bubble.md`, `lbfgs_bubble_*` | `python tests/bench/run.py bubble_single bubble_double bubble_double_unequal bubble_triple bubble_double_fine_hard --ab tests/bench/configs/baseline.json tests/bench/configs/lbfgs.json --tag lbfgs_bubble` |
+| `ab_lbfgs_cmc.md`, `lbfgs_cmc_*` | `python tests/bench/run.py cmc_bridge_cyl cmc_bridge_fat cmc_drop45 cmc_drop135 film_sphere_eq film_cyl_disk --ab tests/bench/configs/baseline.json tests/bench/configs/lbfgs.json --tag lbfgs_cmc` |
 
 Config semantics: `{}` / `baseline.json` = **current defaults** (they moved
 when measured winners shipped); `old_defaults.json` = the pre-branch
@@ -41,6 +43,16 @@ point minutely.  Both values sit five orders of magnitude below the 1e-5
 convergence criterion; every decision-bearing metric reproduces exactly.
 `baseline.*` as committed IS the fresh old-defaults run against current
 code, so re-runs match it bitwise.
+
+Optimizer provenance: since the S2 L-BFGS branch, every evolve-family
+result's `effective:` line also records `optimizer` (`cg` = the
+established default path, byte-identical to the pre-S2 float sequence;
+`lbfgs` = the opt-in branch enabled by `configs/lbfgs.json`).  The
+lbfgs A/B rows above are pure optimizer A/Bs: both sides run the same
+budgets and every other flag at defaults; `bubble_double_fine_hard`
+additionally carries wall-clock-resolved traces so the comparison can
+be read at equal TIME, not equal iterations.  Wall-clock ratios quoted
+from these artifacts were measured with no other load on the machine.
 
 History note: artifacts predating the final harness (including one whose
 "mollify_groom" column had grooming silently off, and a "sweep_baseline"
