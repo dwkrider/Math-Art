@@ -109,6 +109,32 @@ CUTS = {
         family="rose",
         source=(antwerp_rose, {}),
         description="A 6-fold rose with a shallower dome and 12 facets"),
+    # --- deliberately BAD proportions -------------------------------
+    # Each is the ideal brilliant with ONE parameter moved far enough to
+    # produce a named defect.  They are in the catalogue rather than
+    # hidden behind a debug flag because being able to cut a fish-eye on
+    # purpose, and see why it happens, is the point of a teaching tool.
+    "FISH_EYE": CutEntry(
+        label="Fish-eye (defect demo)",
+        family="teaching",
+        source=(round_brilliant, dict(pavilion_angle=38.0, table=0.68,
+                                      name="Fish-eye Brilliant")),
+        description="A shallow pavilion under a large table: the girdle "
+                    "reflects in the table as a grey ring (IDC 4.2.1)"),
+    "WINDOWED": CutEntry(
+        label="Windowed (defect demo)",
+        family="teaching",
+        source=(round_brilliant, dict(pavilion_angle=36.0, table=0.62,
+                                      name="Windowed Brilliant")),
+        description="Too shallow to hold light by total internal "
+                    "reflection: you see straight through the stone"),
+    "NAILHEAD": CutEntry(
+        label="Nail-head (defect demo)",
+        family="teaching",
+        source=(round_brilliant, dict(pavilion_angle=45.0, table=0.60,
+                                      name="Nail-head Brilliant")),
+        description="A pavilion near 45 degrees makes the stone a "
+                    "retroreflector: the centre goes dark (Sasian 2003)"),
     "EMERALD": CutEntry(
         label="Emerald Cut",
         family="step",
@@ -143,7 +169,8 @@ CUTS = {
 }
 
 # Display order for the operator's preset menu, grouped by family.
-FAMILIES = ("brilliant", "step", "mixed", "rose", "cabochon", "fantasy")
+FAMILIES = ("brilliant", "step", "mixed", "rose", "cabochon",
+            "fantasy", "teaching")
 
 
 def get_cut(key, **params):

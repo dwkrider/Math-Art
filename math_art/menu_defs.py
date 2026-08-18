@@ -217,6 +217,12 @@ ROLLERS = Menu(
 GEMS = Menu(
     "VIEW3D_MT_math_art_gems", "Gems", 'MESH_ICOSPHERE', [
         _e("mesh.gem_add", 'MESH_ICOSPHERE', "Faceted Gemstone"),
+        SEP,
+        # rigs, not shapes: a built-in glyph says more than a thumbnail
+        _e("mesh.gem_studio_add", 'LIGHT_AREA', "Gem Studio (lighting)",
+           builtin=True),
+        _e("mesh.gem_aset_rig_add", 'SHADING_RENDERED', "ASET Rig",
+           builtin=True),
     ])
 
 # Only generators that live nowhere else.  Everything with a home of

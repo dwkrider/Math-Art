@@ -432,8 +432,219 @@ if _IN_BLENDER:
         self.layout.operator("export_mesh.gemcad_asc",
                              text="GemCad Faceting Design (.asc)")
 
+
+
+# --------------------------------------------------------------------------
+# Viewing rigs.
+#
+# A cut stone is almost entirely WHAT IT REFLECTS.  Rendered against a
+# black world it renders black, correctly -- which is the commonest way a
+# gemstone render goes wrong, and no amount of work on the material fixes
+# it.  So the generator ships the lighting rather than leaving it as an
+# exercise.
+#
+# Two rigs, for two different questions.  The STUDIO rig asks "what does
+# this stone look like": a sky for the broad reflections, a small bright
+# key because fire needs a small source, a soft fill because brilliance
+# needs a broad one.  The ASET rig asks "where is this stone's light
+# coming from": the American Gem Society's three-zone hemisphere, green
+# for 0-45 degrees above the horizon, red for 45-75, blue for 75-90 where
+# the observer's own head blocks the light.
+#
+# Neither rig can be embedded IN the stone: lights, worlds and cameras are
+# separate datablocks from a mesh object.  The studio can put everything
+# in one collection instead, which is the level at which Blender does let
+# a lit subject travel as a unit.
+#
+# References:
+#   Peter Yantzer et al., "Foundation, Research Results and Application of
+#     the New AGS Cut Grading System", American Gem Society Laboratories,
+#     2005 -- the ASET zone definition reproduced here.
+#   Jose M. Sasian, Peter Yantzer, Tom Tivol, "The Optical Design of
+#     Gemstones", Optics & Photonics News 14(4), 2003 -- diffuse light
+#     favours brilliance, localized light favours fire; and the 76-90 /
+#     45-75 / 0-44 degree zones.
+# --------------------------------------------------------------------------
+
+    ASET_ZONES = ((0.0, 45.0, (0.05, 0.65, 0.10), "green low indirect"),
+                  (45.0, 75.0, (0.85, 0.06, 0.06), "red bright zone"),
+                  (75.0, 90.0, (0.05, 0.10, 0.80), "blue head obstruction"))
+
+    def _emission(name, rgb, strength):
+        m = bpy.data.materials.new(name)
+        m.use_nodes = True
+        nt = m.node_tree
+        for n in list(nt.nodes):
+            nt.nodes.remove(n)
+        out = nt.nodes.new('ShaderNodeOutputMaterial')
+        em = nt.nodes.new('ShaderNodeEmission')
+        em.inputs['Color'].default_value = (rgb[0], rgb[1], rgb[2], 1.0)
+        em.inputs['Strength'].default_value = strength
+        nt.links.new(em.outputs['Emission'], out.inputs['Surface'])
+        return m
+
+    def _aset_dome(radius, rings, segs):
+        """A hemisphere split into the three ASET elevation zones."""
+        import math as _m
+        verts, faces, zone = [], [], []
+        elev = [90.0 * k / rings for k in range(rings + 1)]
+        for e in elev:
+            t = _m.radians(e)
+            for s in range(segs):
+                a = 2.0 * _m.pi * s / segs
+                verts.append((radius * _m.cos(t) * _m.cos(a),
+                              radius * _m.cos(t) * _m.sin(a),
+                              radius * _m.sin(t)))
+        for r in range(rings):
+            mid = 0.5 * (elev[r] + elev[r + 1])
+            z = 0
+            for i, band in enumerate(ASET_ZONES):
+                if band[0] <= mid < band[1] or (band[1] >= 90.0
+                                                and mid >= band[0]):
+                    z = i
+            for s in range(segs):
+                a = r * segs + s
+                b = r * segs + (s + 1) % segs
+                c = (r + 1) * segs + (s + 1) % segs
+                d = (r + 1) * segs + s
+                faces.append((a, b, c, d))
+                zone.append(z)
+        return verts, faces, zone
+
+    class MESH_OT_gem_aset_rig_add(bpy.types.Operator):
+        """Add the AGS ASET hemisphere: green 0-45, red 45-75, blue 75-90"""
+        bl_idname = "mesh.gem_aset_rig_add"
+        bl_label = "ASET Rig"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        radius: FloatProperty(name="Radius", default=8.0, min=2.0, max=60.0)
+        strength: FloatProperty(name="Strength", default=6.0, min=0.1,
+                                max=100.0)
+        add_camera: BoolProperty(
+            name="Add Camera", default=True,
+            description="Orthographic, straight down the table -- the view "
+                        "an ASET image is made in")
+
+        def execute(self, context):
+            verts, faces, zone = _aset_dome(self.radius, 24, 64)
+            me = bpy.data.meshes.new("ASET Dome")
+            me.from_pydata(verts, [], faces)
+            me.validate(clean_customdata=True)
+            for band in ASET_ZONES:
+                me.materials.append(_emission("ASET " + band[3], band[2],
+                                              self.strength))
+            me.polygons.foreach_set('material_index', zone)
+            me.flip_normals()          # it lights the stone from inside
+            me.update()
+            obj = bpy.data.objects.new("ASET Dome", me)
+            context.collection.objects.link(obj)
+            obj.visible_camera = False     # light the stone, do not film it
+
+            if self.add_camera:
+                cam = bpy.data.cameras.new("ASET Camera")
+                cam.type = 'ORTHO'
+                cam.ortho_scale = 2.4
+                co = bpy.data.objects.new("ASET Camera", cam)
+                co.location = (0.0, 0.0, self.radius * 0.9)
+                context.collection.objects.link(co)
+                context.scene.camera = co
+            self.report({'INFO'},
+                        "ASET rig: green 0-45 deg, red 45-75, blue 75-90. "
+                        "A well-cut stone reads mostly red with a blue "
+                        "centre; render in Cycles")
+            return {'FINISHED'}
+
+    class MESH_OT_gem_studio_add(bpy.types.Operator):
+        """Add a lighting studio for gemstones: sky, key, fill and camera"""
+        bl_idname = "mesh.gem_studio_add"
+        bl_label = "Gem Studio"
+        bl_options = {'REGISTER', 'UNDO'}
+
+        key_size: FloatProperty(
+            name="Key Size", default=0.35, min=0.01, max=10.0,
+            description="Small sources make FIRE -- dispersed colour "
+                        "flashes; broad ones make brilliance. The single "
+                        "most important control over how a stone reads")
+        key_energy: FloatProperty(name="Key Power", default=900.0, min=1.0,
+                                  max=20000.0)
+        fill_energy: FloatProperty(name="Fill Power", default=120.0, min=0.0,
+                                   max=20000.0)
+        sky_strength: FloatProperty(
+            name="Sky", default=1.2, min=0.0, max=20.0,
+            description="The environment IS most of a gem's appearance: a "
+                        "stone with nothing to reflect renders black, and "
+                        "that is physically correct")
+        add_camera: BoolProperty(name="Add Camera", default=True)
+        use_collection: BoolProperty(
+            name="Group in a Collection", default=False,
+            description="Lights and cameras cannot live inside a mesh "
+                        "object, but a collection can hold the stone and "
+                        "its rig together and be saved as an asset")
+
+        def execute(self, context):
+            import math as _m
+            coll = context.collection
+            if self.use_collection:
+                coll = bpy.data.collections.new("Gem Studio")
+                context.scene.collection.children.link(coll)
+
+            w = bpy.data.worlds.new("Gem Studio World")
+            context.scene.world = w
+            w.use_nodes = True
+            nt = w.node_tree
+            for n in list(nt.nodes):
+                nt.nodes.remove(n)
+            out = nt.nodes.new('ShaderNodeOutputWorld')
+            bg = nt.nodes.new('ShaderNodeBackground')
+            bg.inputs['Strength'].default_value = self.sky_strength
+            sky = nt.nodes.new('ShaderNodeTexSky')
+            # NOTE: a Gradient texture driven by Generated coordinates does
+            # NOT work in a world -- it renders flat and the stone comes out
+            # black.  Sky Texture is in world space and does.
+            try:
+                sky.sky_type = 'MULTIPLE_SCATTERING'
+            except TypeError:              # the enum differs across versions
+                pass
+            sky.sun_elevation = 0.9
+            nt.links.new(sky.outputs['Color'], bg.inputs['Color'])
+            nt.links.new(bg.outputs['Background'], out.inputs['Surface'])
+
+            key = bpy.data.lights.new("Gem Key", 'AREA')
+            key.energy = self.key_energy
+            key.size = self.key_size
+            ko = bpy.data.objects.new("Gem Key", key)
+            coll.objects.link(ko)
+            ko.location = (3.2, -2.4, 4.2)
+            ko.rotation_euler = (0.62, 0.32, 0.72)
+
+            if self.fill_energy > 0.0:
+                fill = bpy.data.lights.new("Gem Fill", 'AREA')
+                fill.energy = self.fill_energy
+                fill.size = 4.0
+                fo = bpy.data.objects.new("Gem Fill", fill)
+                coll.objects.link(fo)
+                fo.location = (-3.5, 2.0, 2.0)
+                fo.rotation_euler = (-0.7, -0.4, -0.9)
+
+            if self.add_camera:
+                cam = bpy.data.cameras.new("Gem Camera")
+                cam.lens = 70.0
+                co = bpy.data.objects.new("Gem Camera", cam)
+                coll.objects.link(co)
+                co.location = (0.0, -4.6, 3.4)
+                co.rotation_euler = (_m.radians(52.0), 0.0, 0.0)
+                context.scene.camera = co
+
+            self.report({'INFO'},
+                        "Gem studio: small key for fire, broad fill for "
+                        "brilliance, sky for the reflections. Cycles shows "
+                        "the internal reflections; EEVEE approximates them")
+            return {'FINISHED'}
+
     ADD_MENU = True
-    _CLASSES = (MESH_OT_gem_add, IMPORT_MESH_OT_gemcad_asc,
+    _CLASSES = (MESH_OT_gem_add, MESH_OT_gem_studio_add,
+                MESH_OT_gem_aset_rig_add,
+                IMPORT_MESH_OT_gemcad_asc,
                 EXPORT_MESH_OT_gemcad_asc)
 
     def register():
