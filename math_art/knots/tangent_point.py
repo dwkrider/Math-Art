@@ -859,7 +859,7 @@ class _LaggedSaddleSolver:
     asserted in the self-test)."""
 
     def __init__(self, alpha, beta, mode, precondition, diag_eps,
-                 refresh_every=8, refresh_drift=0.2):
+                 refresh_every=10, refresh_drift=1.0):
         self.args = (alpha, beta, mode, precondition, diag_eps)
         self.refresh_every = max(1, int(refresh_every))
         self.refresh_drift = float(refresh_drift)
@@ -903,7 +903,7 @@ class _LaggedSaddleSolver:
 def tighten_link(comps, iters=100, alpha=3.0, beta=6.0,
                  length_mode="edge", precondition=True, diag_eps=0.0,
                  backproj_tol=1e-6, grad_tol=1e-10, solver="dense",
-                 refresh_every=8, refresh_drift=0.2, callback=None):
+                 refresh_every=10, refresh_drift=1.0, callback=None):
     """Minimize the tangent-point energy of a link (list of closed
     polylines) under a global mass-weighted barycenter plus
     PER-COMPONENT length constraints.  The inter-component kernel terms
