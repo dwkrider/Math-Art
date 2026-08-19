@@ -133,6 +133,7 @@ _MODULE_NAMES = [
     'rational_knot_generator',
     'substitution_knot_generator',
     'fractal_knotwork_generator',
+    'willmore_generator',
 ]
 # NOTE: engine subpackages (`minsurf`, `seifert`, `lsystem`, `knots`,
 # `patterns`, `polyhedra`, `curve_frames`, `ifs`) and the `styles` namespace
