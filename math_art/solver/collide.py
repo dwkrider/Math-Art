@@ -59,10 +59,15 @@
 #     the tangent-point solver validated), so on a comfortably
 #     separated mesh the per-iteration cost of the guard is one O(n)
 #     drift norm and an evaluated set that is typically EMPTY.
-#     Measured on the film_cyl_disk case (577 verts): 96.7% of the
-#     guarded runtime was the guard evaluating ~189k candidate pairs
-#     per call; after the gate + lag the same run is within a few
-#     percent of the unguarded one.
+#     Measured on the film_cyl_disk case (577 verts, 400 guarded
+#     L-BFGS iterations): before, 96.7% of the runtime was the guard
+#     evaluating ~189k candidate pairs per call (~375 s); after the
+#     gate + lag + per-pair step cap the run is 37 s (10x), and 9.9 s
+#     when the boundary is redistributed every iteration (the
+#     remaining cost is genuine near-contact from boundary bunching).
+#     The guard's floor is the rebuild: ~40 ms per build here, paid
+#     once per ~budget/2 of accumulated motion, so slow phases of a
+#     relaxation pay almost nothing.
 #
 #   * Uniform-grid broad phase (np.floor + integer cell keys):
 #     primitives are registered in every cell overlapped by their

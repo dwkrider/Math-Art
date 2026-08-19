@@ -1135,6 +1135,54 @@ def _selftest():
           f"pressures empty, max rise {rise:.1e} "
           f"{'OK' if good else 'FAIL'}")
 
+    # --- collision guard wired through evolve: (a) a sheet pulled
+    # through another by an external force must be blocked (guarded:
+    # zero crossings, unguarded: it passes through); (b) on the
+    # catenoid film, which never approaches itself, the guard must be
+    # inert -- barrier energy exactly 0 at the end and the same
+    # equilibrium as the unguarded run ---------------------------------
+    def _pulled_sheets(use_guard):
+        Vs, Ts, top = _collide._two_sheet_mesh(gap=0.25, n=6)
+        labs = np.zeros((len(Ts), 2), dtype=np.int64)
+        fixs = ~top                               # bottom sheet held
+        rim = top & (np.abs(Vs[:, :2]).max(axis=1) > 1.0 - 1e-9)
+        fixs |= rim                               # top rim held
+        f = 0.6
+
+        def eE(Varr):
+            return f * float(np.sum(Varr[top & ~rim, 2]))
+
+        def eG(Varr):
+            G = np.zeros_like(Varr)
+            G[top & ~rim, 2] = f
+            return G
+
+        g = _collide.MeshGuard(dhat=0.05, kappa=1.0) if use_guard \
+            else None
+        evolve(Vs, Ts, labs, iters=60, fixed=fixs, ext_energy=eE,
+               ext_grad=eG, groom_every=0, guard=g)
+        return _collide.crossing_count(Vs, Ts)
+
+    xg = _pulled_sheets(True)
+    xu = _pulled_sheets(False)
+    good = xg == 0 and xu > 0
+    ok &= good
+    print(f"volume: evolve(guard=) blocks pull-through (guarded "
+          f"crossings {xg}, unguarded {xu}) {'OK' if good else 'FAIL'}")
+
+    Vf2 = np.array([[np.cos(t), np.sin(t), z] for z in zs for t in th])
+    gd = _collide.MeshGuard()
+    info_g = evolve(Vf2, Tf, labf, iters=100, fixed=fixf, guard=gd)
+    area_gap = abs(info_g["area"] - info["area"]) / info["area"]
+    Eb_end = float(gd.ensure(Vf2, Tf).energy(Vf2))
+    rise_g = max(hh["rise"] for hh in info_g["history"]
+                 if not hh["groomed"])
+    good = area_gap < 1e-3 and Eb_end == 0.0 and rise_g <= 1e-12
+    ok &= good
+    print(f"volume: guard inert on catenoid film (area gap "
+          f"{area_gap:.1e}, end barrier {Eb_end}, max rise {rise_g:.1e}) "
+          f"{'OK' if good else 'FAIL'}")
+
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
         raise AssertionError("solver.volume self-test failed")

@@ -1239,8 +1239,13 @@ def _film_case(config, seed_fn, iters_default, area_exact=None,
     loop = cg.boundary_loop(T, freeb)
     dev_fit, dev_raw = cg.film_contact_angle_dev(V, T, wall, loop)
     hist = info["history"]
+    from math_art.solver import collide as _collide
     mets = {
         "area": info["area"],
+        # exact end-state embeddedness (Moeller-Trumbore counter): the
+        # metric the S4 collision guard is judged on -- the unguarded
+        # L-BFGS film collapse shows here as hundreds of crossings
+        "crossings": _collide.crossing_count(V, T),
         "dev90_fit_rms": float(np.sqrt(np.mean(dev_fit ** 2))),
         "dev90_fit_max": float(np.max(dev_fit)),
         "dev90_raw_rms": float(np.sqrt(np.mean(dev_raw ** 2))),
