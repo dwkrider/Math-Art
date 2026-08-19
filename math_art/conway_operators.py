@@ -49,12 +49,14 @@ except ImportError:
 # the canonical forms in `polyhedra.canonical`.
 try:                                  # inside the math_art package
     from .polyhedra.fit import fit_cube as _fit_cube
-    from .polyhedra.canonical import biscribe, canonicalize, spherize
+    from .polyhedra.canonical import (biscribe, canonicalize,
+                                      canonicalize_best, spherize)
     from .polyhedra.conway import (CATALOG, apply_conway, orient_outward,
                                    parse_conway)
 except ImportError:                   # flat import (test runner)
     from polyhedra.fit import fit_cube as _fit_cube
-    from polyhedra.canonical import biscribe, canonicalize, spherize
+    from polyhedra.canonical import (biscribe, canonicalize,
+                                     canonicalize_best, spherize)
     from polyhedra.conway import (CATALOG, apply_conway, orient_outward,
                                   parse_conway)
 
@@ -303,7 +305,7 @@ if _IN_BLENDER:
                                 "could not biscribe this solid -- it may "
                                 "not have a biscribed form")
             elif self.post == 'CANON':
-                V = canonicalize(V, F, iters=self.iterations)
+                V = canonicalize_best(V, F, hart_iters=self.iterations)
             V, F = orient_outward(V, [list(f) for f in F])
             if self.style == 'FACETS':
                 try:

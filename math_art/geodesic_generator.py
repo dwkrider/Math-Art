@@ -83,9 +83,9 @@ def quad_seed(kind):
             from polyhedra import (canonical as _canon, conway as cw,
                                    flags as _flags)
         V, F = cw.apply_conway('aD')
-        V = _canon.canonicalize(V, F, iters=400)
+        V = _canon.canonicalize_best(V, F, hart_iters=400)
         Vd, Fd = _flags.dual(V, F)
-        Vd = _canon.canonicalize(Vd, Fd, iters=600)
+        Vd = _canon.canonicalize_best(Vd, Fd, hart_iters=600)
         return [_unit(v) for v in Vd], [list(f) for f in Fd]
     else:
         raise ValueError(kind)
