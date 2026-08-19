@@ -324,6 +324,60 @@ if _IN_BLENDER:
         "object.minimal_span": _setup_minimal_span,
     }
 
+    # ----------------------------------------------------------------
+    # Render environments
+    # ----------------------------------------------------------------
+    # A setup builds geometry the operator consumes; an environment
+    # changes the world the subject is rendered *in*, and has to stay up
+    # through the render and then be undone.  Gemstones need one: their
+    # appearance is almost entirely what they reflect and refract, so a
+    # stone lit by the plastic-studio rig against no environment renders
+    # black -- correctly, but uselessly.
+
+    def _env_gem_studio():
+        """The add-on's own Gem Studio: sky world, small key, fill.
+
+        `mesh.gem_studio_add` builds the rig the gem generator is meant
+        to be seen under.  The documentation studio's lights are hidden
+        while it is up, since the gem rig brings its own key and fill
+        and doubling them floods out the fire.  Returns a callable that
+        puts the scene back.
+        """
+        scene = bpy.context.scene
+        saved_world, saved_cam = scene.world, scene.camera
+        hidden = []
+        for name in LIGHT_NAMES:
+            ob = bpy.data.objects.get(name)
+            if ob is not None and not ob.hide_render:
+                ob.hide_render = True
+                hidden.append(ob)
+        before = set(bpy.data.objects)
+        bpy.ops.mesh.gem_studio_add()
+        made = [o for o in bpy.data.objects if o not in before]
+
+        def teardown():
+            for ob in made:
+                try:
+                    bpy.data.objects.remove(ob, do_unlink=True)
+                except Exception:
+                    pass
+            for ob in hidden:
+                ob.hide_render = False
+            scene.world = saved_world
+            scene.camera = saved_cam
+
+        return teardown
+
+    ENVIRONMENT = {
+        "mesh.gem_add": _env_gem_studio,
+        "mesh.gem_cabochon_add": _env_gem_studio,
+    }
+
+    def enter_environment(op):
+        """Set up `op`'s render environment; returns a teardown callable."""
+        fn = ENVIRONMENT.get(op)
+        return fn() if fn is not None else (lambda: None)
+
     def run_setup(op):
         """Build `op`'s input geometry.  Returns the objects it made."""
         fn = SETUP.get(op)
