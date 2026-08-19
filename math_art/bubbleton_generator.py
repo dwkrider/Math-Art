@@ -346,6 +346,76 @@ def bubbleton(r, x, y, n, m=1, m_plus=1.0 + 0j, m_minus=1.0 + 0j):
     return qadd(f, qinv(Tinv)), f, (mu, a, b, t)
 
 
+def darboux_beta(N, alpha, a, b):
+    """beta = (1/2)( N alpha (a-1) + alpha b )  -- Theorem 2.4 (2.4).
+
+    The single-bubble transform of Theorem 2.2 is f + T with
+    T^{-1} = (1/2)(N(a-1) + alpha b alpha^{-1}).  The two agree, and it
+    is worth seeing why: T^{-1} alpha = (1/2)(N(a-1)alpha + alpha b),
+    which equals beta only because mu is REAL, so a is real and the
+    scalar (a-1) commutes with the quaternion alpha.  For complex mu
+    they would differ."""
+    return qrmul_c(qadd(qrmul_c(qmul(N, alpha), a - 1.0),
+                        qrmul_c(alpha, b)), 0.5)
+
+
+def multibubbleton(r, x, y, specs):
+    """Bianchi permutability (Theorem 2.4): graft several bubbles onto
+    one Delaunay surface without further integration.
+
+    `specs` is a list of (n, m, m_plus, m_minus) -- one per bubble, each
+    at its own resonance point.  Two bubbles must have DIFFERENT mu, or
+    the common Darboux transform collapses back to f (the paper notes
+    this for mu_1 = mu_2).
+
+    For bubbles 1 and 2 the common transform is
+        alpha = alpha_2 - alpha_1 beta_1^{-1} beta_2 ,
+        beta  = beta_2  - beta_1 alpha_1^{-1} alpha_2 (a_2-1)/(a_1-1) ,
+        f_hat = f_1 + alpha beta^{-1} ,
+    and further bubbles iterate the same step.  Everything is algebraic:
+    the only integration is the one already done for each parallel
+    section.
+
+    The result closes on lcm(m_1, ..., m_l) covers, so the caller must
+    take y over [0, 2 pi lcm]."""
+    if not specs:
+        raise ValueError("multibubbleton needs at least one bubble")
+    f, N, _, _ = delaunay_quaternion(r, x, y)
+
+    sections = []
+    mus = []
+    for (n, m, mp, mm) in specs:
+        al, (mu, a, b, t) = parallel_section(r, x, y, n, m, mp, mm)
+        if any(abs(mu - v) < 1e-9 for v in mus):
+            raise ValueError(
+                f"two bubbles share the spectral parameter mu={mu}; "
+                f"their common Darboux transform is the original "
+                f"surface.  Use different (n, m).")
+        mus.append(mu)
+        sections.append((al, a, b))
+
+    al1, a1, b1 = sections[0]
+    be1 = darboux_beta(N, al1, a1, b1)
+    cur = qadd(f, qmul(al1, qinv(be1)))          # f_1
+    for (al2, a2, b2) in sections[1:]:
+        be2 = darboux_beta(N, al2, a2, b2)
+        alpha = qadd(al2, qrmul_c(qmul(qmul(al1, qinv(be1)), be2), -1.0))
+        beta = qadd(be2, qrmul_c(qmul(qmul(be1, qinv(al1)), al2),
+                                 -(a2 - 1.0) / (a1 - 1.0)))
+        cur = qadd(cur, qmul(alpha, qinv(beta)))
+        # the accumulated surface becomes the base for the next bubble
+        al1, be1, a1 = alpha, beta, a2
+    return cur, f
+
+
+def multibubble_covers(specs):
+    """lcm of the cover counts -- how many times y must run round."""
+    out = 1
+    for sp in specs:
+        out = out * int(sp[1]) // math.gcd(out, int(sp[1]))
+    return out
+
+
 def mean_curvature_xyz(X, hx, hy):
     """Mean curvature of a parametrised surface sampled on a uniform
     (x, y) grid, by central differences: H = (EN - 2FM + GL)/(2(EG-F^2)).
@@ -365,6 +435,14 @@ def mean_curvature_xyz(X, hx, hy):
     M_ = (Xuv * nh).sum(-1)
     N_ = (Xvv * nh).sum(-1)
     return (E * N_ - 2 * F * M_ + G * L) / (2 * (E * G - F * F))
+
+
+def _axial_offset(r, ratio):
+    """Roughly where an integration-constant ratio puts a bubble along
+    the axis.  Measured, not derived: the offset is linear in
+    log|ratio| at about 0.58 units per unit for the cylinder, and this
+    is only used to size the drawing window, never the geometry."""
+    return 0.58 * math.log(max(abs(ratio), 1e-12))
 
 
 def bubble_extent(r, n, m=1, probe=600, margin=1.05):
@@ -400,7 +478,7 @@ def bubble_extent(r, n, m=1, probe=600, margin=1.05):
 
 def build_surface(r=0.5, n=3, m=1, periods=0.0, ures=240, vres=160,
                   m_plus=1.0 + 0j, m_minus=1.0 + 0j, scale=1.0,
-                  pad=3.5):
+                  pad=3.5, extra=()):
     """Mesh one bubbleton.  y runs over [0, 2 m pi] because the section
     closes only on the m-fold cover.
 
@@ -409,14 +487,27 @@ def build_surface(r=0.5, n=3, m=1, periods=0.0, ures=240, vres=160,
     surface to keep; a positive `periods` overrides that with an
     explicit number of Delaunay periods."""
     L = delaunay_period(r)
+    specs = [(n, m, m_plus, m_minus)] + [
+        (en, em, complex(emp), 1.0 + 0j) for (en, em, emp) in extra]
+    covers = multibubble_covers(specs)
     if periods and periods > 0.0:
         half = 0.5 * periods * L
     else:
-        half = pad * bubble_extent(r, n, m)
+        # the window must hold every bubble AND the gap between
+        # them, since the extra bubbles are deliberately slid along the
+        # axis; bubble_extent measures one bubble about its own centre.
+        half = pad * max(bubble_extent(r, sn, sm) for (sn, sm, _, _)
+                         in specs)
+        for (_, _, emp, _) in specs[1:]:
+            half = max(half, 1.3 * abs(_axial_offset(r, emp)))
     x = np.linspace(-half, half, ures)
-    y = np.linspace(0.0, 2.0 * math.pi * m, vres, endpoint=False)
+    y = np.linspace(0.0, 2.0 * math.pi * covers, vres, endpoint=False)
     Xg, Yg = np.meshgrid(x, y, indexing='ij')
-    fh, f, info = bubbleton(r, Xg, Yg, n, m, m_plus, m_minus)
+    if extra:
+        fh, f = multibubbleton(r, Xg, Yg, specs)
+        info = resonance(r, n, m)
+    else:
+        fh, f, info = bubbleton(r, Xg, Yg, n, m, m_plus, m_minus)
     V = q_to_xyz(fh).reshape(-1, 3)
     faces = []
     for i in range(ures - 1):
@@ -483,8 +574,33 @@ if _IN_BLENDER:
                     "a three-lobed bubble on a Delaunay unduloid"),
                    ('TWIST', "Twizzler (3 lobes, 2 covers)",
                     "a bubble that closes only on the double cover, so "
-                    "it winds as it goes round")],
+                    "it winds as it goes round"),
+                   ('DOUBLE_UND', "Double bubbleton (unduloid)",
+                    "two-lobed AND three-lobed bubbles on a Delaunay "
+                    "unduloid, by Bianchi permutability"),
+                   ('SPLASH', "Colliding bubbles (2 and 3)",
+                    "a two-lobed bubble meeting a three-lobed one on a "
+                    "cylinder")],
             default='CYL2')
+        second_lobes: IntProperty(
+            name="Second Bubble Lobes", default=0, min=0, max=12,
+            description="Graft a SECOND bubble with this many lobes by "
+                        "Bianchi permutability.  0 leaves a single "
+                        "bubble.  It must sit at a different resonance "
+                        "point from the first, so a different lobe or "
+                        "cover count")
+        second_covers: IntProperty(
+            name="Second Bubble Covers", default=1, min=1, max=6,
+            description="Cover count of the second bubble; the surface "
+                        "closes on the lowest common multiple of the two")
+        second_shift: FloatProperty(
+            name="Second Bubble Shift", default=-8.0, min=-20.0,
+            max=20.0,
+            description="Slides the second bubble along the axis. Two "
+                        "bubbles with the same shift sit in the same "
+                        "place and merge into one, so a visibly double "
+                        "bubbleton needs them apart; about 0.58 units "
+                        "of axis per unit of shift")
         periods: FloatProperty(
             name="Delaunay Periods", default=0.0, min=0.0, max=12.0,
             description="Axial window in Delaunay periods.  Leave at 0 "
@@ -515,7 +631,13 @@ if _IN_BLENDER:
             'CYL2': (0.5, 2, 1), 'CYL3': (0.5, 3, 1),
             'CYL5': (0.5, 5, 1), 'UND2': (0.3, 2, 1),
             'UND3': (0.3, 3, 1), 'TWIST': (0.5, 3, 2),
+            'DOUBLE_UND': (0.3, 2, 1), 'SPLASH': (0.5, 2, 1),
         }
+        # Presets that graft a SECOND bubble by Bianchi permutability.
+        # The third entry is its axial shift: with the same integration
+        # constants both bubbles sit at the same place and simply merge,
+        # so a separated double bubbleton has to slide one of them.
+        _SECOND = {'DOUBLE_UND': (3, 1, -11.0), 'SPLASH': (3, 1, -6.0)}
 
         def execute(self, context):
             if self.preset != 'CUSTOM':
@@ -523,7 +645,22 @@ if _IN_BLENDER:
             else:
                 necksize, lobes, covers = (self.necksize, self.lobes,
                                            self.covers)
-            self._resolved = (necksize, lobes, covers)
+            if self.preset != 'CUSTOM':
+                extra = ([self._SECOND[self.preset]]
+                         if self.preset in self._SECOND else [])
+            elif self.second_lobes > 0:
+                extra = [(self.second_lobes, self.second_covers,
+                          self.second_shift)]
+            else:
+                extra = []
+            extra = [(en, em, math.exp(esh)) for (en, em, esh) in extra]
+            for (en, em, _) in extra:
+                if not is_admissible(necksize, en, em):
+                    self.report({'ERROR'},
+                                f"second bubble {en}/{em} is not a "
+                                f"resonance point at necksize "
+                                f"{necksize:.3f}")
+                    return {'CANCELLED'}
             if math.gcd(lobes, covers) != 1:
                 self.report({'ERROR'},
                             f"lobes {lobes} and covers "
@@ -551,7 +688,7 @@ if _IN_BLENDER:
                 verts, faces, info = build_surface(
                     necksize, lobes, covers, self.periods,
                     self.ures, self.vres, ratio, 1.0 + 0j, self.scale,
-                    self.pad)
+                    self.pad, tuple(extra))
             except ValueError as exc:
                 self.report({'ERROR'}, str(exc))
                 return {'CANCELLED'}
@@ -573,7 +710,9 @@ if _IN_BLENDER:
             context.view_layer.objects.active = obj
             self.report(
                 {'INFO'},
-                f"Bubbleton n/m = {lobes}/{covers} on "
+                f"Bubbleton n/m = {lobes}/{covers}"
+                f"{'+' + '+'.join(f'{a}/{b}' for a, b, _ in extra) if extra else ''}"
+                f" on "
                 f"necksize {necksize:.3f}: V={len(me.vertices)} "
                 f"F={len(me.polygons)}, resonance mu={mu:.6f}, "
                 f"a={a:.6f}, t={t:.4f}")
@@ -594,6 +733,11 @@ if _IN_BLENDER:
                                        self.covers):
                     lay.label(text="Not a resonance point here",
                               icon='ERROR')
+            if self.preset == 'CUSTOM':
+                lay.prop(self, 'second_lobes')
+                if self.second_lobes > 0:
+                    lay.prop(self, 'second_covers')
+                    lay.prop(self, 'second_shift')
             lay.prop(self, 'pad')
             lay.prop(self, 'periods')
             lay.prop(self, 'shift')
@@ -749,6 +893,60 @@ def _selftest():
         print(f"CMC r={r:+.2f} n/m={n}/{m}: base H={med0:+.6f}, "
               f"bubbleton H={medh:+.6f} IQR {q3 - q1:.1e} "
               f"{'OK' if ok else 'BAD'}")
+
+    # 5b) MULTIBUBBLETONS (Theorem 2.4).  Bianchi permutability must
+    #     again land on a CMC surface -- and this is the sharper test of
+    #     the two, because the permutability formula mixes the two
+    #     parallel sections through quaternionic inverses, so a wrong
+    #     multiplication order survives the single-bubble test but not
+    #     this one.
+    for r, spec in ((0.5, [(2, 1), (3, 1)]),
+                    (0.5, [(3, 1), (5, 1)]),
+                    (0.3, [(2, 1), (3, 1)])):
+        full = [(n, m, 1.0 + 0j, 1.0 + 0j) for (n, m) in spec]
+        cov = multibubble_covers(full)
+        L = delaunay_period(r)
+        hx, hy = 3.0 * L / 360.0, 2.0 * math.pi * cov / 360.0
+        xx = np.arange(-1.5 * L, 1.5 * L, hx)
+        yy = np.arange(0.0, 2.0 * math.pi * cov, hy)
+        Xg, Yg = np.meshgrid(xx, yy, indexing='ij')
+        fh, f0 = multibubbleton(r, Xg, Yg, full)
+        Hh = mean_curvature_xyz(q_to_xyz(fh), hx, hy)
+        H0 = mean_curvature_xyz(q_to_xyz(f0), hx, hy)
+        Hh = Hh[np.isfinite(Hh)]
+        H0 = H0[np.isfinite(H0)]
+        med0, medh = float(np.median(H0)), float(np.median(Hh))
+        q1, q3 = np.percentile(Hh, [25.0, 75.0])
+        ok = abs(medh - med0) < 1e-2 and (q3 - q1) < 5e-2
+        ok_all = ok_all and ok
+        print(f"CMC multi r={r:+.2f} {spec}: base H={med0:+.6f}, "
+              f"multibubbleton H={medh:+.6f} IQR {q3 - q1:.1e} "
+              f"{'OK' if ok else 'BAD'}")
+
+    # two bubbles at the same resonance point must be refused: their
+    # common Darboux transform is the original surface, not a surface
+    # with two bubbles
+    refused = 0
+    for spec in ([(3, 1, 1 + 0j, 1 + 0j), (3, 1, 1 + 0j, 1 + 0j)],):
+        try:
+            xx = np.linspace(-1.0, 1.0, 8)
+            yy = np.linspace(0.0, 2.0 * math.pi, 8, endpoint=False)
+            Xg, Yg = np.meshgrid(xx, yy, indexing='ij')
+            multibubbleton(0.5, Xg, Yg, spec)
+        except ValueError:
+            refused += 1
+    ok = refused == 1
+    ok_all = ok_all and ok
+    print(f"multi guards: {refused}/1 duplicate-mu cases refused "
+          f"{'OK' if ok else 'BAD'}")
+
+    # the cover count is the lcm of the individual ones
+    ok = (multibubble_covers([(3, 1), (5, 1)]) == 1
+          and multibubble_covers([(3, 2), (5, 3)]) == 6
+          and multibubble_covers([(5, 1), (5, 2), (5, 3), (5, 4)]) == 12)
+    ok_all = ok_all and ok
+    print(f"multi covers: lcm rule (12 for the same-lobed n=5 chain) "
+          f"{'OK' if ok else 'BAD'}")
 
     # 6) Closure: the section closes on the m-fold cover and NOT sooner.
     for r, n, m in ((0.5, 3, 1), (0.5, 3, 2), (0.3, 5, 2)):  # closure
