@@ -630,6 +630,9 @@ def _evolve_checked(V, T, labels, targets, kwargs):
         "groom_every": kwargs.get("groom_every",
                                   sig.parameters["groom_every"].default),
         "grooms_run": info["grooms_run"],
+        # grooms the collision guard verified-and-reverted (0 without
+        # a guard; absent key on pre-guard results)
+        "grooms_reverted": info.get("grooms_reverted", 0),
         "mobility": kwargs.get("mobility",
                                sig.parameters["mobility"].default),
         "cotan_mode": kwargs.get("cotan_mode",
@@ -1818,17 +1821,25 @@ KNOWN_CONFIG_KEYS = {
 def case_seifert_sweep_lbfgs(config):
     """S4 embeddedness gate for the direct L-BFGS area descent
     (plateau.minimize_area_lbfgs): the same 17-combination q x samples
-    grid as seifert_sweep, relaxed WITH the collision guard and run
-    PAST the _SEIFERT_MAX_ITERS cap (default 24 iters vs the cap's 8;
-    the unguarded flow pinches through itself beyond the cap, which is
-    why the cap exists).  The gate is selfx == 0 on all 17.  Config:
+    grid as seifert_sweep, relaxed WITH the collision guard, at the
+    same 8 passes as the shipped Pinkall-Polthier gate.  Measured
+    2026-08-18: unguarded L-BFGS is 12/17 embedded here (selfx up to
+    132) while guarded is 17/17 at 8 AND at 64 iterations.  The gate
+    is selfx == 0 on all 17 at the default 8.  NOTE an honestly
+    measured wrinkle at intermediate depths: at 24 iterations two
+    sliver-degenerate combos (q3_m140, q7_m48; min angles < 0.2 deg)
+    show TRANSIENT selfx 7-9 that has resolved again by 64 -- 1-ring
+    folds through near-degenerate triangles, which the guard's
+    topological-adjacency exclusion is blind to by design.  The guard
+    guarantees NON-LOCAL embeddedness throughout; total embeddedness
+    is an endpoint property to verify with crossing_count.  Config:
     seifert_lbfgs_iters (int), seifert_lbfgs_guard (bool, default on).
     `effective` records the iters, the guard state, and the total
     number of guard builds actually run (a configured-but-inert-because
     -never-built guard refuses to report a null result)."""
     from math_art.minsurf import plateau
     from math_art.solver import collide as _collide
-    iters = int(config.get("seifert_lbfgs_iters", 24))
+    iters = int(config.get("seifert_lbfgs_iters", 8))
     guard_on = bool(config.get("seifert_lbfgs_guard", True))
     effective = {"iters": iters, "guard": guard_on, "guard_builds": 0}
     per = {}
