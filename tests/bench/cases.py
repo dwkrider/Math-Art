@@ -1811,7 +1811,52 @@ KNOWN_CONFIG_KEYS = {
     "cmc_kwargs",
     "tp_kwargs", "tp_iters",
     "tpl_kwargs", "tpl_iters",
+    "seifert_lbfgs_iters", "seifert_lbfgs_guard",
 }
+
+
+def case_seifert_sweep_lbfgs(config):
+    """S4 embeddedness gate for the direct L-BFGS area descent
+    (plateau.minimize_area_lbfgs): the same 17-combination q x samples
+    grid as seifert_sweep, relaxed WITH the collision guard and run
+    PAST the _SEIFERT_MAX_ITERS cap (default 24 iters vs the cap's 8;
+    the unguarded flow pinches through itself beyond the cap, which is
+    why the cap exists).  The gate is selfx == 0 on all 17.  Config:
+    seifert_lbfgs_iters (int), seifert_lbfgs_guard (bool, default on).
+    `effective` records the iters, the guard state, and the total
+    number of guard builds actually run (a configured-but-inert-because
+    -never-built guard refuses to report a null result)."""
+    from math_art.minsurf import plateau
+    from math_art.solver import collide as _collide
+    iters = int(config.get("seifert_lbfgs_iters", 24))
+    guard_on = bool(config.get("seifert_lbfgs_guard", True))
+    effective = {"iters": iters, "guard": guard_on, "guard_builds": 0}
+    per = {}
+    worst = 0
+    t_all = _timer()
+    grid = ([(q, m, 24) for q in (1, 3, 5, 7) for m in (96, 140, 200)]
+            + [(q, 48, 8) for q in (1, 3, 5, 7, 9)])   # = seifert_sweep grid
+    for q, m, rings in grid:
+        V, quads, fixed = plateau.build_seifert_span_grid(q, m, rings)
+        T = plateau._quads_to_tris(quads)
+        g = _collide.MeshGuard() if guard_on else None
+        plateau.minimize_area_lbfgs(V, T, fixed, outer_iters=iters,
+                                    guard=g)
+        if g is not None:
+            effective["guard_builds"] += g.n_builds
+        sx = M.selfx_count(V, T)
+        worst = max(worst, sx)
+        per[f"q{q}_m{m}_r{rings}"] = {
+            "selfx": sx,
+            "min_angle_deg": M.tri_quality(V, T)["min_angle_deg"]}
+    if guard_on and effective["guard_builds"] == 0:
+        raise RuntimeError("guard was configured but never built -- "
+                           "refusing to report a null result")
+    mets = {"selfx_worst": worst,
+            "n_embedded": sum(1 for p in per.values() if p["selfx"] == 0),
+            "n_total": len(per)}
+    return {"metrics": mets, "per_solid": per, "trace": [],
+            "time_s": _timer() - t_all, "effective": effective}
 
 CASES = {
     "catenoid": case_catenoid,
@@ -1864,4 +1909,5 @@ CASES = {
     "tp_borromean": case_tp_borromean,
     "tp_chain3": case_tp_chain3,
     "tp_scale": case_tp_scale,
+    "seifert_sweep_lbfgs": case_seifert_sweep_lbfgs,
 }
