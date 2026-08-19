@@ -208,24 +208,6 @@ ROLLERS = Menu(
         _e("mesh.rolling_knot_add", 'PHYSICS'),
     ])
 
-# Cut gemstones: convex solids specified as facet PLANES (mast angle +
-# index-gear position) rather than as vertices, and built by half-space
-# intersection.  A menu of their own rather than a corner of Polyhedra,
-# because the family is large -- the brilliant, step, mixed, rose,
-# cabochon and fantasy cuts -- and because they are read from and written
-# to the lapidary trade's own GemCad .ASC format.
-GEMS = Menu(
-    "VIEW3D_MT_math_art_gems", "Gems", 'MESH_ICOSPHERE', [
-        _e("mesh.gem_add", 'MESH_ICOSPHERE', "Faceted Gemstone"),
-        _e("mesh.gem_cabochon_add", 'MESH_CAPSULE', "Cabochon"),
-        SEP,
-        # rigs, not shapes: a built-in glyph says more than a thumbnail
-        _e("mesh.gem_studio_add", 'LIGHT_AREA', "Gem Studio (lighting)",
-           builtin=True),
-        _e("mesh.gem_aset_rig_add", 'SHADING_RENDERED', "ASET Rig",
-           builtin=True),
-    ])
-
 # Only generators that live nowhere else.  Everything with a home of
 # its own is listed THERE and not here: the rollers (oloid, sphericon,
 # Steinmetz, orbis, constant-width, Gomboc) in Rollers, polytwisters
@@ -234,6 +216,8 @@ GEMS = Menu(
 # and neither of them authoritative.
 ODDS = Menu(
     "VIEW3D_MT_math_art_odds", "Odds & Ends", 'MESH_TORUS', [
+        _e("mesh.gem_add", 'MESH_ICOSPHERE', "Faceted Gemstone"),
+        _e("mesh.gem_cabochon_add", 'MESH_CAPSULE', "Cabochon Gemstone"),
         _e("mesh.koman_add", 'MOD_SCREW', "Koman Developable"),
         _e("mesh.platonic_twist_add", 'MOD_SCREW'),
         _e("mesh.twisted_torus_add", 'MESH_TORUS'),
@@ -263,7 +247,7 @@ STYLES = Menu(
 # last by the root menu, after the Symmetric Sculpture entry, so it is
 # not part of this run.
 MENU_ORDER = (SURFACES, POLYHEDRA, FRACTALS, PLANTS, KNOTS, WEAVES,
-              PATTERNS, ROLLERS, GEMS, ODDS)
+              PATTERNS, ROLLERS, ODDS)
 
 # Every menu that gets a generated class, in registration order.
 ALL_MENUS = MENU_ORDER + (STYLES,)
