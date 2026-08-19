@@ -144,6 +144,7 @@ KNOTS = Menu(
     "VIEW3D_MT_math_art_knots", "Knots & Curves", 'FORCE_VORTEX', [
         _e("curve.prime_knot_add", 'FORCE_VORTEX'),
         _e("curve.tight_knot_add", 'FORCE_VORTEX'),
+        _e("curve.tight_link_add", 'LINKED'),
         _e("curve.torus_knot_add", 'FORCE_VORTEX'),
         _e("curve.hopf_fibration_add", 'FORCE_MAGNETIC'),
         _e("mesh.hopf_torus_add", 'MESH_TORUS'),
