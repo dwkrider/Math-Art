@@ -1860,3 +1860,237 @@ CASES = {
     "tp_chain3": case_tp_chain3,
     "tp_scale": case_tp_scale,
 }
+
+
+# --------------------------------------------------------------------------
+# in-loop grooming with topology ops (groom-split-collapse branch).
+# Appended additively: the span/sweep drivers below interleave
+# plateau.minimize_area chunks (provably identical to a single call --
+# every outer iteration recomputes all state from V) with a
+# configurable grooming stage, so the shipped flips+smoothing and the
+# new split/collapse cycle can be A/B'd per call site under one driver.
+# --------------------------------------------------------------------------
+
+_GROOM_MODES = ("none", "shipped", "topo")
+
+
+def _groom_cfg(config):
+    """Validate config['groom_topo_kwargs'].  Unknown keys raise; a
+    configured mode that then never grooms raises in the driver."""
+    cfg = dict(config.get("groom_topo_kwargs", {}))
+    mode = cfg.pop("mode", "none")
+    every = int(cfg.pop("every", 4))
+    if mode not in _GROOM_MODES:
+        raise ValueError(f"groom_topo_kwargs.mode must be one of "
+                         f"{_GROOM_MODES}, got {mode!r}")
+    allowed = {"target", "low", "high", "autopop_step", "quality_floor",
+               "smooth", "smooth_lam", "smooth_iters", "flip_margin",
+               "selfx_veto", "verify_selfx", "rank_ratio", "cycles",
+               "do_split", "do_collapse", "do_flips"}
+    unknown = set(cfg) - allowed
+    if unknown:
+        raise ValueError(f"groom_topo_kwargs: unknown keys "
+                         f"{sorted(unknown)}")
+    return mode, every, cfg
+
+
+def _span_groom_drive(V, T, fixed, iters, config):
+    """Chunked minimize_area with grooming between chunks.  Returns
+    (V, T, fixed, effective, elapsed_s)."""
+    from math_art.minsurf import plateau
+    from math_art.solver import groom as _sg
+    mode, every, gkw = _groom_cfg(config)
+    effective = {"groom_mode": mode, "groom_every": every,
+                 "grooms_run": 0, "splits": 0, "collapses": 0,
+                 "flips": 0, "veto_total": 0, "cycles_reverted": 0}
+    t0 = _timer()
+    for it in range(iters):
+        if mode != "none" and it and it % every == 0:
+            if mode == "shipped":
+                _sg.groom(V, T, fixed=fixed)
+            else:
+                V, T, fixed, _, info = _sg.groom_topo(
+                    V, T, fixed=fixed, **gkw)
+                effective["splits"] += info["splits"]
+                effective["collapses"] += info["collapses"]
+                effective["flips"] += info["flips"]
+                effective["veto_total"] += sum(info["vetoes"].values())
+                effective["cycles_reverted"] += info["cycles_reverted"]
+            effective["grooms_run"] += 1
+        plateau.minimize_area(V, T, fixed, outer_iters=1)
+    elapsed = _timer() - t0
+    if mode != "none" and effective["grooms_run"] == 0:
+        raise RuntimeError("groom_topo_kwargs configured but no groom "
+                           "cycle ran -- refusing to report a null "
+                           "result")
+    return V, T, fixed, effective, elapsed
+
+
+def _case_span_groom(config, q, m=140, rings=24):
+    from math_art.minsurf import plateau
+    V, quads, fixed = plateau.build_seifert_span_grid(q, m, rings)
+    T = plateau._quads_to_tris(quads)
+    rim0 = V[fixed].copy()
+    n0v, n0t = len(V), len(T)
+    iters = int(config.get("seifert_iters", plateau._SEIFERT_MAX_ITERS))
+    V, T, fixed, effective, elapsed = _span_groom_drive(
+        V, T, fixed, iters, config)
+    mets = _plateau_mesh_metrics(V, T, fixed)
+    mets["selfx"] = M.selfx_count(V, T)
+    rim1 = V[fixed]
+    mets["rim_max_move"] = (float(np.max(np.abs(rim1 - rim0)))
+                            if len(rim1) == len(rim0) else 0.0)
+    return {"metrics": mets, "trace": [], "time_s": elapsed,
+            "n_verts": len(V), "n_tris": len(T),
+            "n_verts0": n0v, "n_tris0": n0t,
+            "effective": effective}
+
+
+def case_span_groom_q3(config):
+    return _case_span_groom(config, q=3)
+
+
+def case_span_groom_q5(config):
+    return _case_span_groom(config, q=5)
+
+
+def case_catenoid_groom(config, nring=64, nrow=17):
+    A_exact, c_exact = catenoid_area_analytic()
+    V, T, fixed = cylinder_grid(nring, nrow)
+    n0v, n0t = len(V), len(T)
+    V, T, fixed, effective, elapsed = _span_groom_drive(
+        V, T, fixed, 30, config)
+    mets = _plateau_mesh_metrics(V, T, fixed)
+    mets["area_rel_err"] = abs(mets["area"] - A_exact) / A_exact
+    interior = ~fixed
+    waist = float(np.min(np.hypot(V[interior, 0], V[interior, 1]))) \
+        if np.any(interior) else 0.0
+    mets["waist_rel_err"] = abs(waist - c_exact) / c_exact
+    mets["selfx"] = M.selfx_count(V, T)
+    return {"metrics": mets, "trace": [], "time_s": elapsed,
+            "n_verts": len(V), "n_tris": len(T),
+            "n_verts0": n0v, "n_tris0": n0t,
+            "effective": effective}
+
+
+def case_sweep_groom(config):
+    """The 17-combination Seifert embeddedness gate under the
+    configured grooming mode.  The only metric that matters is selfx
+    staying 0 on all 17 -- a grooming op that raises it is rejected
+    regardless of triangle quality."""
+    from math_art.minsurf import plateau
+    mode, every, _ = _groom_cfg(config)
+    per = {}
+    t_all = _timer()
+    worst = 0
+    agg = None
+    grid = ([(q, m, 24) for q in (1, 3, 5, 7) for m in (96, 140, 200)]
+            + [(q, 48, 8) for q in (1, 3, 5, 7, 9)])
+    for q, m, rings in grid:
+        V, quads, fixed = plateau.build_seifert_span_grid(q, m, rings)
+        T = plateau._quads_to_tris(quads)
+        V, T, fixed, eff, _el = _span_groom_drive(
+            V, T, fixed, plateau._SEIFERT_MAX_ITERS, config)
+        sx = M.selfx_count(V, T)
+        worst = max(worst, sx)
+        tq = M.tri_quality(V, T)
+        per[f"q{q}_m{m}_r{rings}"] = {
+            "selfx": sx,
+            "min_angle_deg": tq["min_angle_deg"],
+            "q_p05": tq["q_p05"]}
+        if agg is None:
+            agg = dict(eff)
+        else:
+            for k in ("grooms_run", "splits", "collapses", "flips",
+                      "veto_total", "cycles_reverted"):
+                agg[k] += eff[k]
+    mets = {"selfx_worst": worst,
+            "n_embedded": sum(1 for p in per.values()
+                              if p["selfx"] == 0),
+            "n_total": len(per),
+            "q_p05_min": min(p["q_p05"] for p in per.values()),
+            "min_angle_min": min(p["min_angle_deg"]
+                                 for p in per.values())}
+    return {"metrics": mets, "per_solid": per, "trace": [],
+            "time_s": _timer() - t_all, "effective": agg}
+
+
+def case_seifert_pipeline_groom(config):
+    """The seifert-package pipeline (build -> relax -> CC2 -> fair)
+    with the optional grooming stage of pipeline.finish, over two braid
+    words (AAA healthy, ABAB the documented sliver case)."""
+    from math_art.seifert.build import seifert_surface
+    from math_art.seifert import pipeline
+    from math_art.solver import groom as _sg
+    cfg = dict(config.get("pipeline_groom_kwargs", {}))
+    allowed = {"groom_cycles", "groom_fair_steps", "groom_kwargs"}
+    unknown = set(cfg) - allowed
+    if unknown:
+        raise ValueError(f"pipeline_groom_kwargs: unknown keys "
+                         f"{sorted(unknown)}")
+    cycles = int(cfg.get("groom_cycles", 0))
+    per = {}
+    t_all = _timer()
+    eff = {"groom_cycles": cycles, "splits": 0, "collapses": 0,
+           "veto_total": 0, "cycles_reverted": 0}
+    for word in ("AAA", "ABAB"):
+        mesh = seifert_surface(word)
+        genus0 = mesh.info().genus
+        t0 = _timer()
+        out = pipeline.finish(mesh)
+        if cycles:
+            for _ in range(cycles):
+                out, ginfo = pipeline.groom_mesh(
+                    out, **cfg.get("groom_kwargs", {}))
+                eff["splits"] += ginfo.get("splits", 0)
+                eff["collapses"] += ginfo.get("collapses", 0)
+                eff["veto_total"] += sum(
+                    ginfo.get("vetoes", {}).values())
+                eff["cycles_reverted"] += ginfo.get(
+                    "cycles_reverted", 0)
+                out = pipeline.minimal_surface(
+                    out, strength=2.0,
+                    iterations=int(cfg.get("groom_fair_steps", 2)))
+        el = _timer() - t0
+        tri = out.triangulated()
+        T = np.asarray(tri.faces, dtype=np.int64)
+        V = tri.vertices
+        boundary = np.zeros(len(V), dtype=bool)
+        for loop in out.boundary_loops():
+            boundary[np.asarray(loop, dtype=int)] = True
+        mets = {"area": out.area(),
+                "genus_preserved": int(out.info().genus == genus0),
+                "selfx": int(_sg.crossing_count(V, T)),
+                "time_s": el, "n_tris": len(T)}
+        mets.update(M.tri_quality(V, T))
+        mets.update(M.mean_curvature_residual(V, T, free=~boundary))
+        mets["edge_cv"] = M.edge_len_cv(V, T)
+        per[word] = mets
+    if cycles and eff["splits"] + eff["collapses"] == 0:
+        raise RuntimeError("pipeline grooming configured but no op "
+                           "ran -- refusing to report a null result")
+    mets = {
+        "q_p05_min": min(p["q_p05"] for p in per.values()),
+        "min_angle_min": min(p["min_angle_deg"] for p in per.values()),
+        "H_rms_worst": max(p["H_rms"] for p in per.values()),
+        "edge_cv_worst": max(p["edge_cv"] for p in per.values()),
+        "selfx": max(p["selfx"] for p in per.values()),
+        "genus_preserved": min(p["genus_preserved"]
+                               for p in per.values()),
+    }
+    keep = ("area", "q_p05", "min_angle_deg", "H_rms", "edge_cv",
+            "selfx", "genus_preserved", "n_tris", "time_s")
+    per_flat = {w: {k: p[k] for k in keep} for w, p in per.items()}
+    return {"metrics": mets, "per_solid": per_flat, "trace": [],
+            "time_s": _timer() - t_all, "effective": eff}
+
+
+KNOWN_CONFIG_KEYS |= {"groom_topo_kwargs", "pipeline_groom_kwargs"}
+
+CASES.update({
+    "span_groom_q3": case_span_groom_q3,
+    "span_groom_q5": case_span_groom_q5,
+    "catenoid_groom": case_catenoid_groom,
+    "sweep_groom": case_sweep_groom,
+    "seifert_pipeline_groom": case_seifert_pipeline_groom,
+})
