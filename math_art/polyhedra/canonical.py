@@ -339,11 +339,12 @@ def canonicalize_ambo(V, F, iters=10000, factor=0.01, factor_max=0.5,
     all vertex degrees >= 3.
 
     Measured in tests/bench (see
-    research/plans/antiprism-canonicalization-plan.md): reaches
-    machine-precision tangency spreads ~1e3-1e5x tighter than
-    `canonicalize` at a fraction of its wall time on every catalog
-    solid, because the whole iteration vectorizes over a fixed-width
-    (nE, 4) array with no Python face loop."""
+    research/plans/antiprism-canonicalization-plan.md): converges to
+    machine-precision tangency spreads (~5e-16) in 4-8x LESS wall time
+    than 400 iterations of `canonicalize` on every catalog solid --
+    at equal wall time it is 2.6e5x-8.8e13x tighter -- because the
+    whole iteration vectorizes over a fixed-width (nE, 4) array with
+    no Python face loop."""
     if point_type not in ("centroid", "nearpoint"):
         raise ValueError(f"unknown point_type {point_type!r}")
     Fo = _oriented_faces(V, F)
