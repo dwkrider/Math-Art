@@ -71,11 +71,13 @@ try:
     from . import descent as _descent
     from . import groom as _groom
     from . import walls as _walls
+    from . import collide as _collide
 except ImportError:                      # flat (path-based) headless import
     import cotan as _cotan               # type: ignore
     import descent as _descent           # type: ignore
     import groom as _groom               # type: ignore
     import walls as _walls               # type: ignore
+    import collide as _collide           # type: ignore
 
 
 # --------------------------------------------------------------------------
@@ -491,14 +493,19 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     # Both are needed: the barrier alone can be stepped clean over by a
     # long trial step, landing inverted on the far side with a lower
     # energy -- which is exactly how L-BFGS tunnelled the films.  The
-    # pair set is rebuilt once per iteration rather than per trial;
-    # rebuilding inside the search would cost a broad phase per
-    # evaluation and make the energy discontinuous in s.
+    # pair set is ensured once per iteration (a lagged rebuild that
+    # usually reduces to one O(n) drift norm -- see collide.MeshGuard),
+    # never per line-search trial; the guard's step cap bounds every
+    # trial inside the set's validity budget, so the barrier energy the
+    # search sees is exact everywhere it evaluates.  The ensure runs
+    # AFTER any grooming: edge flips change the topology the pair set
+    # is built on, and the groom's vertex motion counts as drift.
+    guard = _collide.make_guard(guard)   # True / dict specs from configs
     _guard = [None]
 
-    def _guard_rebuild(Varr):
+    def _guard_ensure(Varr):
         if guard is not None:
-            _guard[0] = guard.build(Varr, T)
+            _guard[0] = guard.ensure(Varr, T)
 
     def _gE(Varr):
         g0 = _guard[0]
@@ -520,6 +527,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     if wall_list is not None:
         _wproject(V)                     # walls first, volumes second
     _restore(V)                          # start ON the constraint manifold
+    _guard_ensure(V)                     # so E_prev includes the barrier
     A_prev = mesh_area(V, T)
     E_prev = _E_of(V, A_prev)
 
@@ -546,9 +554,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         x_prev = None                    # previous restored state...
         gh_prev = None                   # ...and its projected gradient
         it = 0
-        _guard_rebuild(V)
         for it in range(1, iters + 1):
-            _guard_rebuild(V)
             groomed = False
             if groom_every and (it - 1) and (it - 1) % groom_every == 0:
                 _groom.groom(V, T, fixed=smooth_pin,
@@ -562,6 +568,8 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
                 groomed = True
                 lb.reset()               # mesh changed: history invalid
                 x_prev = None
+            _guard_ensure(V)             # after grooming: flips + motion
+            if groomed:
                 A_prev = mesh_area(V, T)
                 E_prev = _E_of(V, A_prev)
             # raw area gradient from the cotan identity, sharing its
@@ -708,9 +716,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     v_prev = None
     v_prev_ip = 1.0
     it = 0
-    _guard_rebuild(V)
     for it in range(1, iters + 1):
-        _guard_rebuild(V)
         groomed = False
         if groom_every and (it - 1) and (it - 1) % groom_every == 0:
             _groom.groom(V, T, fixed=smooth_pin, smooth_lam=groom_smooth,
@@ -729,6 +735,8 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             grooms_run += 1
             groomed = True
             d_prev = None                # full CG restart on mesh change
+        _guard_ensure(V)                 # after grooming: flips + motion
+        if groomed:
             A_prev = mesh_area(V, T)
             E_prev = _E_of(V, A_prev)
         g = area_gradient(V, T, cotan_mode=cotan_mode)

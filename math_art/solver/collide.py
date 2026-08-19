@@ -40,10 +40,29 @@
 #     pair can close at most 0.8 of its gap per step; combined with
 #     the divergent barrier the minimum separation stays strictly
 #     positive at every iteration.  The cap is additionally bounded by
-#     dhat/2 per step so a pair outside the broad-phase radius
-#     (2*dhat) can never enter the barrier support unseen within one
-#     iteration -- the candidate set built at the iteration start
-#     remains exhaustive for every trial position of its line search.
+#     the remaining drift budget (below) so no pair outside the
+#     evaluated set can enter the barrier support unseen -- the set
+#     stays exhaustive for every trial position of its line search.
+#
+#   * EXACT distance gate + lagged rebuild (the cost model).  The
+#     barrier is identically zero at separation >= dhat, so a pair
+#     measured at d0 >= dhat + gate when the set is built cannot
+#     contribute while every vertex stays within gate/2 of its build
+#     position (a pair closes at most twice the max per-vertex drift).
+#     build() therefore runs the narrow phase ONCE over the broad-phase
+#     candidates and keeps only the pairs with d0 < dhat + gate as the
+#     evaluated set; the exclusion is exact, not an approximation --
+#     the omitted terms are exactly 0 at every position the step cap
+#     can reach.  ensure() then reuses the whole build across
+#     iterations until the measured drift max|V - V0| spends half the
+#     budget (the lagged-factorization-with-a-drift-guard pattern that
+#     the tangent-point solver validated), so on a comfortably
+#     separated mesh the per-iteration cost of the guard is one O(n)
+#     drift norm and an evaluated set that is typically EMPTY.
+#     Measured on the film_cyl_disk case (577 verts): 96.7% of the
+#     guarded runtime was the guard evaluating ~189k candidate pairs
+#     per call; after the gate + lag the same run is within a few
+#     percent of the unguarded one.
 #
 #   * Uniform-grid broad phase (np.floor + integer cell keys):
 #     primitives are registered in every cell overlapped by their
@@ -268,9 +287,14 @@ def _join_cells(keys_a, ids_a, keys_b, ids_b):
     return uniq % na, uniq // na
 
 
-def _self_cell_pairs(keys, ids, n_ids):
-    """All unordered (i < j) id pairs sharing a cell, deduplicated.
-    Batched by group size so no per-cell Python loop survives."""
+def _self_cell_pairs(keys, ids, clo):
+    """All unordered (i < j) id pairs sharing a cell, each exactly
+    once.  Batched by group size so no per-cell Python loop survives.
+    Dedup is by the canonical-cell rule instead of a sort: a pair is
+    kept only in the cell whose coordinates are the component-wise max
+    of the two boxes' lowest cell coordinates `clo` (that cell is
+    always among the shared ones, and only one cell can match), so
+    the O(raw pairs) np.unique this replaced disappears."""
     if not len(keys):
         return (np.zeros(0, dtype=np.int64),) * 2
     order = np.argsort(keys, kind='stable')
@@ -279,7 +303,7 @@ def _self_cell_pairs(keys, ids, n_ids):
     newg = np.concatenate([[True], ks[1:] != ks[:-1]])
     starts = np.flatnonzero(newg)
     counts = np.diff(np.append(starts, len(ks)))
-    pi_l, pj_l = [], []
+    pi_l, pj_l, ck_l = [], [], []
     for c in np.unique(counts):
         if c < 2:
             continue
@@ -288,16 +312,16 @@ def _self_cell_pairs(keys, ids, n_ids):
         iu, ju = np.triu_indices(int(c), k=1)
         pi_l.append(block[:, iu].ravel())
         pj_l.append(block[:, ju].ravel())
+        ck_l.append(np.repeat(ks[gs], len(iu)))
     if not pi_l:
         return (np.zeros(0, dtype=np.int64),) * 2
     pi = np.concatenate(pi_l)
     pj = np.concatenate(pj_l)
-    a = np.minimum(pi, pj)
-    b = np.maximum(pi, pj)
-    keep = a != b
-    a, b = a[keep], b[keep]
-    uniq = np.unique(a * np.int64(n_ids) + b)
-    return uniq // n_ids, uniq % n_ids
+    ck = np.concatenate(ck_l)
+    cc = np.maximum(clo[pi], clo[pj])
+    keep = (_pack(cc[:, 0], cc[:, 1], cc[:, 2]) == ck) & (pi != pj)
+    pi, pj = pi[keep], pj[keep]
+    return np.minimum(pi, pj), np.maximum(pi, pj)
 
 
 def mesh_edges(T):
@@ -310,12 +334,17 @@ def mesh_edges(T):
 def vt_candidates(V, T, radius):
     """(vi, ti) pairs with dist(vertex, triangle) possibly <= radius,
     excluding vertices incident to the triangle.  Exhaustive: every
-    pair actually within `radius` is included (grid guarantee)."""
+    pair actually within `radius` is included for ANY cell size --
+    intersecting inflated boxes always share at least one grid cell --
+    so the cell size is purely a performance knob.  Sizing it by the
+    MEAN box extent (an outlier triangle just registers in more cells)
+    measured ~2.6x fewer spurious candidates than max-extent sizing on
+    the film disk case."""
     P0, P1, P2 = V[T[:, 0]], V[T[:, 1]], V[T[:, 2]]
     lo = np.minimum(np.minimum(P0, P1), P2)
     hi = np.maximum(np.maximum(P0, P1), P2)
-    ext = float(np.max(hi - lo)) if len(T) else 1.0
-    h = max(ext + 2.0 * radius, 1e-12)
+    ext = float(np.mean(np.max(hi - lo, axis=1))) if len(T) else 1.0
+    h = max(ext, radius, 1e-12)
     tk, ti_reg = _bbox_cells(lo - radius, hi + radius, h)
     vk = _pack(*np.floor(V / h).astype(np.int64).T)
     # _join_cells returns (a_ids, b_ids) = (triangle ids, vertex ids)
@@ -332,11 +361,12 @@ def ee_candidates(V, E, radius):
     A, B = V[E[:, 0]], V[E[:, 1]]
     lo = np.minimum(A, B)
     hi = np.maximum(A, B)
-    ext = float(np.max(hi - lo)) if len(E) else 1.0
-    h = max(ext + radius, 1e-12)
+    ext = float(np.mean(np.max(hi - lo, axis=1))) if len(E) else 1.0
+    h = max(ext, radius, 1e-12)
     r2 = 0.5 * radius
     keys, ids = _bbox_cells(lo - r2, hi + r2, h)
-    ei, ej = _self_cell_pairs(keys, ids, len(E))
+    clo = np.floor((lo - r2) / h).astype(np.int64)
+    ei, ej = _self_cell_pairs(keys, ids, clo)
     if len(ei):
         share = ((E[ei, 0] == E[ej, 0]) | (E[ei, 0] == E[ej, 1])
                  | (E[ei, 1] == E[ej, 0]) | (E[ei, 1] == E[ej, 1]))
@@ -405,10 +435,16 @@ def _adjacency_key(E, n):
 
 
 def _pair_is_adjacent(u, v, adj, n):
-    """True where vertex u and vertex v share a mesh edge."""
+    """True where vertex u and vertex v share a mesh edge.  `adj` is
+    sorted (np.unique output), so a direct searchsorted beats np.isin
+    (which would re-sort per call)."""
+    if not len(adj):
+        return np.zeros(len(u), dtype=bool)
     a = np.minimum(u, v).astype(np.int64)
     b = np.maximum(u, v).astype(np.int64)
-    return np.isin(a * np.int64(n) + b, adj)
+    key = a * np.int64(n) + b
+    pos = np.minimum(np.searchsorted(adj, key), len(adj) - 1)
+    return adj[pos] == key
 
 
 def exclude_topological_vt(vi, ti, T, adj, n):
@@ -450,11 +486,17 @@ class MeshGuard:
     stiffness (any positive value preserves the separation guarantee).
     ccd_frac: step cap fraction of the current minimum separation
     (0.4: a pair closes at most 80% of its gap per step).  mollify:
-    apply the Eq. 24 parallel edge-edge mollifier."""
+    apply the Eq. 24 parallel edge-edge mollifier.  lag: reuse a build
+    across iterations (via ensure()) until drift spends the budget.
+
+    Contract under gating: energy()/gradient() are exact for every
+    position whose max per-vertex displacement from the build state
+    stays within the drift budget -- which max_step enforces and
+    ensure() renews.  For arbitrary far positions call build() first."""
 
     def __init__(self, dhat="auto", kappa=1.0, ccd_frac=0.4,
                  auto_frac=0.25, mollify=True, pad_frac=1.0,
-                 exclude_adjacent=True):
+                 exclude_adjacent=True, lag=True):
         self.dhat_spec = dhat
         self.kappa = float(kappa)
         self.ccd_frac = float(ccd_frac)
@@ -462,20 +504,30 @@ class MeshGuard:
         self.mollify = bool(mollify)
         self.pad_frac = float(pad_frac)
         self.exclude_adjacent = bool(exclude_adjacent)
+        self.lag = bool(lag)
         self.dhat = None
         self.pad = None
+        self.gate = None
         self.radius = None
+        self._budget = None
+        self._V0 = None
+        self._Tcopy = None
         self._T = None
         self._E = None
         self._vi = self._ti = None
         self._ei = self._ej = None
         self._eps_x = None
+        self._d0_out_min = np.inf
         self.n_pairs = 0
+        self.n_candidates = 0
+        self.n_builds = 0
 
     def build(self, V, T):
-        """Broad phase: cache candidate pairs within 2*dhat of each
-        other at V; the step cap keeps this set exhaustive for every
-        position reachable within the iteration."""
+        """Broad phase + one narrow phase: cache the pairs that could
+        reach the barrier support (d < dhat) while every vertex stays
+        within the drift budget of V.  The step cap + ensure() keep
+        that premise true, so the cached set is exhaustive AND exact
+        for every position the solver can evaluate."""
         V = np.asarray(V, float)
         T = np.asarray(T)
         self._T = T
@@ -498,18 +550,57 @@ class MeshGuard:
         Lm = float(np.mean(np.linalg.norm(V[T[:, 1]] - V[T[:, 0]],
                                           axis=1)))
         self.pad = max(self.dhat, self.pad_frac * Lm)
-        self.radius = self.dhat + self.pad
+        # Gate, budget, and query radius.  A pair kept out of the
+        # evaluated set is one measured at d0 >= dhat + gate at build
+        # time; it stays outside the barrier support as long as max
+        # drift <= gate/2 (a pair closes at most twice the max
+        # per-vertex drift).  The budget is that gate/2; max_step
+        # spends it, ensure() renews the build once half of it is
+        # gone.  The sufficient query radius is dhat + 2*budget =
+        # dhat + gate -- provisioning beyond that (the first cut used
+        # dhat + pad) only inflates the candidate set quadratically
+        # for no additional guarantee.  Without lag the gate is
+        # infinite (all candidates evaluated) and the budget is the
+        # pad/2 bound of the one-shot scheme.
+        if self.lag:
+            self.gate = 0.5 * self.pad
+            self._budget = 0.5 * self.gate
+            self.radius = self.dhat + self.gate
+        else:
+            self.gate = np.inf
+            self._budget = 0.5 * self.pad
+            self.radius = self.dhat + self.pad
+        self._V0 = V.copy()
         self._E = mesh_edges(T)
-        self._vi, self._ti = vt_candidates(V, T, self.radius)
-        self._ei, self._ej = ee_candidates(V, self._E, self.radius)
+        vi, ti = vt_candidates(V, T, self.radius)
+        ei, ej = ee_candidates(V, self._E, self.radius)
         if self.exclude_adjacent:
             nv = len(V)
             adj = _adjacency_key(self._E, nv)
-            self._vi, self._ti = exclude_topological_vt(
-                self._vi, self._ti, T, adj, nv)
-            self._ei, self._ej = exclude_topological_ee(
-                self._ei, self._ej, self._E, adj, nv)
+            vi, ti = exclude_topological_vt(vi, ti, T, adj, nv)
+            ei, ej = exclude_topological_ee(ei, ej, self._E, adj, nv)
+        self.n_candidates = len(vi) + len(ei)
+        self._d0_out_min = np.inf
+        if len(vi):
+            d0, _ = point_triangle_closest(
+                V[vi], V[T[ti, 0]], V[T[ti, 1]], V[T[ti, 2]])
+            keep = d0 < self.dhat + self.gate
+            if not np.all(keep):
+                self._d0_out_min = float(d0[~keep].min())
+            vi, ti = vi[keep], ti[keep]
+        if len(ei):
+            E = self._E
+            d0, _, _ = segment_segment_closest(
+                V[E[ei, 0]], V[E[ei, 1]], V[E[ej, 0]], V[E[ej, 1]])
+            keep = d0 < self.dhat + self.gate
+            if not np.all(keep):
+                self._d0_out_min = min(self._d0_out_min,
+                                       float(d0[~keep].min()))
+            ei, ej = ei[keep], ej[keep]
+        self._vi, self._ti = vi, ti
+        self._ei, self._ej = ei, ej
         self.n_pairs = len(self._vi) + len(self._ei)
+        self.n_builds += 1
         if self.mollify and len(self._ei):
             E = self._E
             u = V[E[self._ei, 1]] - V[E[self._ei, 0]]
@@ -518,6 +609,28 @@ class MeshGuard:
                                   * np.einsum('ij,ij->i', v, v))
         else:
             self._eps_x = None
+        self._Tcopy = np.array(T, copy=True)
+        return self
+
+    def drift(self, V):
+        """Max per-vertex displacement since the last build."""
+        if self._V0 is None or len(self._V0) != len(V):
+            return np.inf
+        return float(np.max(np.linalg.norm(V - self._V0, axis=1)))
+
+    def ensure(self, V, T):
+        """Lagged build: rebuild only when the topology changed (edge
+        flips from grooming), the vertex count changed, or the drift
+        has spent half the budget.  Call once per solver iteration
+        AFTER any grooming; on a comfortably separated mesh this makes
+        the guard's per-iteration cost one O(n) norm."""
+        V = np.asarray(V, float)
+        T = np.asarray(T)
+        if (not self.lag or self._Tcopy is None
+                or self._Tcopy.shape != T.shape
+                or not np.array_equal(self._Tcopy, T)
+                or self.drift(V) > 0.5 * self._budget):
+            self.build(V, T)
         return self
 
     def _vt(self, V):
@@ -533,10 +646,12 @@ class MeshGuard:
                                        V[E[ej, 0]], V[E[ej, 1]])
 
     def min_distance(self, V):
-        """Minimum separation over the cached candidate pairs; pairs
-        beyond the broad phase are >= self.radius by construction, so
-        the returned value is a true global lower bound."""
-        dmin = self.radius
+        """A true global lower bound on the current separation:
+        evaluated pairs exactly, gated-out pairs by their build-time
+        distance minus twice the drift, unseen pairs by the query
+        radius minus twice the drift."""
+        D2 = 2.0 * self.drift(V)
+        dmin = min(self.radius, self._d0_out_min) - D2
         if len(self._vi):
             d, _ = self._vt(V)
             if len(d):
@@ -645,19 +760,52 @@ class MeshGuard:
         return G
 
     def max_step(self, V, d):
-        """Conservative line-search cap for direction array d (n, 3):
-        one step moves any vertex at most min(ccd_frac * d_min,
-        dhat/2), so no pair can be jumped through and no unseen pair
-        can enter the barrier support."""
+        """Conservative line-search cap for direction array d (n, 3).
+        Two bounds.  (1) Per evaluated pair, a RELATIVE-motion CCD
+        bound: the closest points are convex combinations of the
+        pair's vertices, so the gap closes at most s * max|d_i - d_j|
+        over the pair's vertex cross-differences; capping s there
+        lets each pair close at most 2*ccd_frac of its own gap.
+        Unlike the earlier global ccd_frac*d_min/|d|_max cap this does
+        not throttle coherent motion: a sheet translating rigidly has
+        zero relative motion across its resolution-scale pairs and
+        pays nothing.  (2) The remaining drift budget, which keeps
+        gated-out and unseen pairs provably outside the barrier
+        support.  Renews the build itself if the budget is nearly
+        spent, which is exact (the omitted pairs contribute exactly 0
+        either way)."""
         dmax = float(np.max(np.linalg.norm(d, axis=1)))
         if dmax < 1e-300:
             return np.inf
-        dmin = self.min_distance(V)
-        # Two bounds: known pairs may close at most ccd_frac of their
-        # current gap; unknown pairs (>= dhat + pad away) stay outside
-        # the barrier support as long as no vertex moves more than
-        # pad/2 (both ends of a pair may move toward each other).
-        return min(self.ccd_frac * dmin, 0.5 * self.pad) / dmax
+        D = self.drift(V)
+        if D > 0.5 * self._budget:
+            self.build(V, self._T)
+            D = 0.0
+        s = max(self._budget - D, 0.0) / dmax
+        two_ccd = 2.0 * self.ccd_frac
+        T = self._T
+        E = self._E
+        if len(self._vi):
+            dp, _ = self._vt(V)
+            rel = np.zeros(len(dp))
+            dv = d[self._vi]
+            for k in range(3):
+                rel = np.maximum(rel, np.linalg.norm(
+                    dv - d[T[self._ti, k]], axis=1))
+            m = rel > 1e-300
+            if np.any(m):
+                s = min(s, float(np.min(two_ccd * dp[m] / rel[m])))
+        if len(self._ei):
+            dp, _, _ = self._ee(V)
+            rel = np.zeros(len(dp))
+            for p in range(2):
+                for q in range(2):
+                    rel = np.maximum(rel, np.linalg.norm(
+                        d[E[self._ei, p]] - d[E[self._ej, q]], axis=1))
+            m = rel > 1e-300
+            if np.any(m):
+                s = min(s, float(np.min(two_ccd * dp[m] / rel[m])))
+        return s
 
 
 class CurveGuard:
@@ -669,17 +817,26 @@ class CurveGuard:
     a curve flow crosses them transversally)."""
 
     def __init__(self, dhat="auto", kappa=1.0, ccd_frac=0.4,
-                 auto_frac=0.5, closed=True):
+                 auto_frac=0.5, closed=True, pad_frac=1.0, lag=True):
         self.dhat_spec = dhat
         self.kappa = float(kappa)
         self.ccd_frac = float(ccd_frac)
         self.auto_frac = float(auto_frac)
         self.closed = bool(closed)
+        self.pad_frac = float(pad_frac)
+        self.lag = bool(lag)
         self.dhat = None
+        self.pad = None
+        self.gate = None
         self.radius = None
+        self._budget = None
+        self._P0 = None
         self._S = None
         self._si = self._sj = None
+        self._d0_out_min = np.inf
         self.n_pairs = 0
+        self.n_candidates = 0
+        self.n_builds = 0
 
     def _segments(self, n):
         i = np.arange(n if self.closed else n - 1, dtype=np.int64)
@@ -690,13 +847,51 @@ class CurveGuard:
         S = self._segments(len(P))
         self._S = S
         seg = np.linalg.norm(P[S[:, 1]] - P[S[:, 0]], axis=1)
+        smean = float(np.mean(seg))
         if self.dhat_spec == "auto":
-            self.dhat = self.auto_frac * float(np.mean(seg))
+            self.dhat = self.auto_frac * smean
         else:
             self.dhat = float(self.dhat_spec)
-        self.radius = 2.0 * self.dhat
-        self._si, self._sj = ee_candidates(P, S, self.radius)
+        # Same pad / gate / budget scheme as MeshGuard (which also
+        # decouples the step cap from dhat -- the original dhat/2 cap
+        # had the same lockstep-throttling failure mode measured on
+        # the mesh guard).
+        self.pad = max(self.dhat, self.pad_frac * smean)
+        if self.lag:
+            self.gate = 0.5 * self.pad
+            self._budget = 0.5 * self.gate
+            self.radius = self.dhat + self.gate
+        else:
+            self.gate = np.inf
+            self._budget = 0.5 * self.pad
+            self.radius = self.dhat + self.pad
+        self._P0 = P.copy()
+        si, sj = ee_candidates(P, S, self.radius)
+        self.n_candidates = len(si)
+        self._d0_out_min = np.inf
+        if len(si):
+            d0, _, _ = segment_segment_closest(
+                P[S[si, 0]], P[S[si, 1]], P[S[sj, 0]], P[S[sj, 1]])
+            keep = d0 < self.dhat + self.gate
+            if not np.all(keep):
+                self._d0_out_min = float(d0[~keep].min())
+            si, sj = si[keep], sj[keep]
+        self._si, self._sj = si, sj
         self.n_pairs = len(self._si)
+        self.n_builds += 1
+        return self
+
+    def drift(self, P):
+        if self._P0 is None or len(self._P0) != len(P):
+            return np.inf
+        return float(np.max(np.linalg.norm(P - self._P0, axis=1)))
+
+    def ensure(self, P):
+        """Lagged build; call once per solver iteration."""
+        P = np.asarray(P, float)
+        if (not self.lag or self._P0 is None
+                or self.drift(P) > 0.5 * self._budget):
+            self.build(P)
         return self
 
     def _dd(self, P):
@@ -707,10 +902,13 @@ class CurveGuard:
                                        P[S[self._sj, 1]])
 
     def min_distance(self, P):
-        if not len(self._si):
-            return self.radius
-        d, _, _ = self._dd(P)
-        return min(self.radius, float(d.min())) if len(d) else self.radius
+        D2 = 2.0 * self.drift(P)
+        dmin = min(self.radius, self._d0_out_min) - D2
+        if len(self._si):
+            d, _, _ = self._dd(P)
+            if len(d):
+                dmin = min(dmin, float(d.min()))
+        return dmin
 
     def energy(self, P):
         if not len(self._si):
@@ -742,11 +940,30 @@ class CurveGuard:
         return G
 
     def max_step(self, P, d):
+        """Same two bounds as MeshGuard.max_step: per-pair
+        relative-motion CCD over the evaluated set + remaining drift
+        budget for everything else."""
         dmax = float(np.max(np.linalg.norm(d, axis=1)))
         if dmax < 1e-300:
             return np.inf
-        return min(self.ccd_frac * self.min_distance(P),
-                   0.5 * self.dhat) / dmax
+        D = self.drift(P)
+        if D > 0.5 * self._budget:
+            self.build(P)
+            D = 0.0
+        s = max(self._budget - D, 0.0) / dmax
+        if len(self._si):
+            S = self._S
+            dp, _, _ = self._dd(P)
+            rel = np.zeros(len(dp))
+            for p in range(2):
+                for q in range(2):
+                    rel = np.maximum(rel, np.linalg.norm(
+                        d[S[self._si, p]] - d[S[self._sj, q]], axis=1))
+            m = rel > 1e-300
+            if np.any(m):
+                s = min(s, float(np.min(
+                    2.0 * self.ccd_frac * dp[m] / rel[m])))
+        return s
 
 
 def make_guard(spec):
