@@ -20,6 +20,9 @@
 #            cotan-Laplacian inverse-Hessian seed (LaplacianH0).
 #   groom    in-loop mesh quality maintenance: Delaunay edge flips and
 #            tangential vertex smoothing.
+#   refine   midpoint 1->4 subdivision with constraint projection and
+#            attribute interpolation -- the mesh half of coarse-to-fine
+#            continuation (S5): converge coarse, refine, re-solve.
 #   volume   volume-constrained evolution: body volumes and gradients on
 #            region-pair-labeled meshes, Gram-matrix Lagrange velocity
 #            projection, damped Newton volume restore, and the `evolve`
@@ -38,5 +41,6 @@
 from . import cotan  # noqa: F401
 from . import descent  # noqa: F401
 from . import groom  # noqa: F401
+from . import refine  # noqa: F401
 from . import volume  # noqa: F401
 from . import walls  # noqa: F401
