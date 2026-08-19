@@ -507,6 +507,30 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         if guard is not None:
             _guard[0] = guard.ensure(Varr, T)
 
+    # Grooming moves vertices OUTSIDE the guarded line search (Laplace
+    # smoothing, edge flips, the caller's groom_hook), and a distance
+    # barrier cannot undo a crossing it never saw happen -- once two
+    # sheets interpenetrate, the barrier repels them on the wrong side.
+    # Measured on the guarded film_cyl_disk: 4-11 of 99 groom cycles
+    # created transient edge-through-triangle crossings, one of which
+    # survived to the end.  So under a guard every groom is verified
+    # with the exact Moeller-Trumbore counter and reverted wholesale
+    # (V and T) if it added a crossing; the count is reported as
+    # info["grooms_reverted"].
+    def _groom_guarded(do_groom):
+        if guard is None:
+            do_groom()
+            return False
+        V_pre = V.copy()
+        T_pre = T.copy()
+        x_pre = _collide.crossing_count(V, T)
+        do_groom()
+        if _collide.crossing_count(V, T) > x_pre:
+            V[:] = V_pre
+            T[:] = T_pre
+            return True
+        return False
+
     def _gE(Varr):
         g0 = _guard[0]
         return 0.0 if g0 is None else float(g0.energy(Varr))
@@ -550,6 +574,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             raise ValueError(f"unknown lbfgs_h0 {lbfgs_h0!r}")
         history = []
         grooms_run = 0
+        grooms_reverted = 0
         flat_streak = 0
         x_prev = None                    # previous restored state...
         gh_prev = None                   # ...and its projected gradient
@@ -557,13 +582,17 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         for it in range(1, iters + 1):
             groomed = False
             if groom_every and (it - 1) and (it - 1) % groom_every == 0:
-                _groom.groom(V, T, fixed=smooth_pin,
-                             smooth_lam=groom_smooth, tri_groups=groups)
-                if groom_hook is not None:
-                    groom_hook(V, T)
-                if wall_list is not None:
-                    _wproject(V)
-                _restore(V)
+                def _do_groom():
+                    _groom.groom(V, T, fixed=smooth_pin,
+                                 smooth_lam=groom_smooth,
+                                 tri_groups=groups)
+                    if groom_hook is not None:
+                        groom_hook(V, T)
+                    if wall_list is not None:
+                        _wproject(V)
+                    _restore(V)
+                if _groom_guarded(_do_groom):
+                    grooms_reverted += 1
                 grooms_run += 1
                 groomed = True
                 lb.reset()               # mesh changed: history invalid
@@ -703,12 +732,14 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             "iters_run": it, "area": mesh_area(V, T),
             "volumes": region_volumes(V, T, labels, nb),
             "targets": targets, "pressures": press,
-            "grooms_run": grooms_run, "history": history,
+            "grooms_run": grooms_run, "grooms_reverted": grooms_reverted,
+            "history": history,
             "lbfgs_skips": lb.skips, "lbfgs_resets": lb.resets,
         }
 
     history = []
     grooms_run = 0
+    grooms_reverted = 0
     s_prev = None
     lam = np.zeros(nb)
     flat_streak = 0
@@ -719,19 +750,22 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     for it in range(1, iters + 1):
         groomed = False
         if groom_every and (it - 1) and (it - 1) % groom_every == 0:
-            _groom.groom(V, T, fixed=smooth_pin, smooth_lam=groom_smooth,
-                         tri_groups=groups)
-            if groom_hook is not None:
-                # caller-supplied groom-time maintenance (e.g. a film
-                # generator redistributing its free-boundary vertices
-                # ALONG the boundary curve, which the pinned-vertex
-                # groom deliberately leaves alone); runs before the
-                # wall projection + restore so its motion is cleaned
-                # up exactly like the groom's own
-                groom_hook(V, T)
-            if wall_list is not None:
-                _wproject(V)
-            _restore(V)
+            def _do_groom():
+                _groom.groom(V, T, fixed=smooth_pin,
+                             smooth_lam=groom_smooth, tri_groups=groups)
+                if groom_hook is not None:
+                    # caller-supplied groom-time maintenance (e.g. a
+                    # film generator redistributing its free-boundary
+                    # vertices ALONG the boundary curve, which the
+                    # pinned-vertex groom deliberately leaves alone);
+                    # runs before the wall projection + restore so its
+                    # motion is cleaned up exactly like the groom's own
+                    groom_hook(V, T)
+                if wall_list is not None:
+                    _wproject(V)
+                _restore(V)
+            if _groom_guarded(_do_groom):
+                grooms_reverted += 1
             grooms_run += 1
             groomed = True
             d_prev = None                # full CG restart on mesh change
@@ -857,7 +891,8 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         "iters_run": it, "area": mesh_area(V, T),
         "volumes": region_volumes(V, T, labels, nb),
         "targets": targets, "pressures": press,
-        "grooms_run": grooms_run, "history": history,
+        "grooms_run": grooms_run, "grooms_reverted": grooms_reverted,
+        "history": history,
     }
 
 
