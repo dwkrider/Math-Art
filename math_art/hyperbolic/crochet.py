@@ -435,3 +435,66 @@ def mean_curvature(V, faces):
     defect = 2 * math.pi - ang
     ki = defect[interior] / np.maximum(area[interior], 1e-12)
     return float(np.median(ki)) if ki.size else 0.0
+
+
+def _selftest():
+    rng = np.random.default_rng(5)
+
+    # 1) thin-plate bending gradient vs central finite differences.
+    #    The energy is QUADRATIC in P, so the central difference is
+    #    exact up to roundoff; a large step (1e-2) makes roundoff --
+    #    not truncation -- the only error source.
+    n = 40
+    P = rng.normal(size=(n, 3))
+    E0 = np.arange(n)
+    E1 = (np.arange(n) + 1) % n
+    ex0 = rng.integers(0, n, 30)
+    ex1 = (ex0 + rng.integers(2, n - 2, 30)) % n
+    E0 = np.concatenate([E0, ex0])
+    E1 = np.concatenate([E1, ex1])
+    keep = E0 != E1
+    E0, E1 = E0[keep], E1[keep]
+    val = np.zeros(n)
+    np.add.at(val, E0, 1.0)
+    np.add.at(val, E1, 1.0)
+    val = np.maximum(val, 1.0)[:, None]
+    _e, G = _bend_forces(P, E0, E1, val)
+    gscale = float(np.abs(G).max())
+    eps, worst = 1e-2, 0.0
+    for _ in range(30):
+        i, c = int(rng.integers(0, n)), int(rng.integers(0, 3))
+        Pp = P.copy()
+        Pp[i, c] += eps
+        Pm = P.copy()
+        Pm[i, c] -= eps
+        fd = (_bend_forces(Pp, E0, E1, val)[0]
+              - _bend_forces(Pm, E0, E1, val)[0]) / (2 * eps)
+        worst = max(worst, abs(fd - G[i, c]) / gscale)
+    assert worst < 1e-9, f"bend gradient vs FD: {worst:.2e}"
+
+    # 2) coarse-to-fine continuation invariants on a small sheet
+    r = crochet_c2f(ratio_n=4, rows=8, stitch=0.12, max_stitches=200,
+                    iters=120, smooth=0.06, repel=0.5, bend=0.03,
+                    levels=2)
+    P2, T2 = r["P"], r["tris"]
+    assert np.isfinite(P2).all()
+    # vertex/triangle counts grew ~4x per level
+    sch = r["schedule"]
+    assert len(sch) == 3
+    assert sch[1]["n_tris"] == 4 * sch[0]["n_tris"]
+    assert sch[2]["n_tris"] == 4 * sch[1]["n_tris"]
+    # rest lengths positive and halving with the stitch
+    assert (r["REST"] > 0).all()
+    med = float(np.median(r["REST"]))
+    assert 0.3 * sch[2]["stitch"] < med < 3.0 * sch[2]["stitch"]
+    # the relaxed sheet buckled (3D) with negative median curvature
+    K = mean_curvature(P2, T2)
+    zext = float(P2[:, 2].max() - P2[:, 2].min())
+    assert zext > 0.05 and K < 0
+    # metric distortion no worse than the historical one-shot floor
+    L = np.linalg.norm(P2[r["E1"]] - P2[r["E0"]], axis=1)
+    rel = (L - r["REST"]) / r["REST"]
+    err = float(np.sqrt(np.mean(rel * rel)))
+    assert err < 0.12, f"c2f edge_err_rms {err:.3f}"
+    print(f"crochet: bend-grad FD worst={worst:.2e}  c2f V={len(P2)} "
+          f"err_rms={err:.4f} z={zext:.2f} K={K:+.2f} RESULT: OK")

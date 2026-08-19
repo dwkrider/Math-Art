@@ -80,11 +80,11 @@ import numpy as np
 try:
     from .hyperbolic.crochet import (PRESETS, _bvh_decollide, _center,
                                          _crochet_mesh, _relax, _repel,
-                                         mean_curvature)
+                                         crochet_c2f, mean_curvature)
 except ImportError:  # flat import outside the package
     from hyperbolic.crochet import (PRESETS, _bvh_decollide, _center,
                                         _crochet_mesh, _relax, _repel,
-                                        mean_curvature)
+                                        crochet_c2f, mean_curvature)
 
 
 try:
@@ -157,12 +157,37 @@ def _pack(P, E0, E1, REST, nbr, faces, pin, pin_pos, iters, pull,
 def build_ruffle(ratio_n=4, rows=18, stitch=0.09, max_stitches=600,
                  iters=340, smooth=0.06, repel=0.5, collide=3,
                  anneal=False, stiff=1.0, pack=0, pack_pull=0.03,
-                 grade=0.0, lobes=3):
+                 grade=0.0, lobes=3, refine_levels=0, bend=0.0):
     # `anneal`/`stiff` grow the curvature smoothly from flat and damp
     # the springs (needed for the tight-curvature presets to stay
     # smooth); `pack` folds the relaxed sheet into a ball via gravity +
-    # self-collision. Defaults (all off) reproduce the plain build, so
-    # Wavy/Ruffled are unchanged.
+    # self-collision. `refine_levels` > 0 switches to the coarse-to-fine
+    # continuation (relax coarse, subdivide, re-relax -- larger,
+    # smoother ruffles at less cost) and `bend` adds thin-plate
+    # bending resistance against short-wavelength crumple. Defaults
+    # (all off) reproduce the plain build, so Wavy/Ruffled are
+    # unchanged.
+    ce = max(15, iters // (collide * 4 + 1)) if collide > 0 else 10 ** 9
+    if refine_levels > 0:
+        cff = None
+        if collide > 0 and _IN_BLENDER:
+            def cff(fcs, nb, h):
+                return lambda pp: _bvh_decollide(pp, fcs, nb,
+                                                 0.75 * h, 0.6)
+        res = crochet_c2f(ratio_n=ratio_n, rows=rows, stitch=stitch,
+                          max_stitches=max_stitches, iters=iters,
+                          smooth=smooth, repel=repel, bend=bend,
+                          levels=refine_levels,
+                          seed_scale=0.2 if anneal else 1.0,
+                          grade=grade, lobes=lobes, anneal=anneal,
+                          stiff=stiff, collide_fn_factory=cff,
+                          collide_every=ce)
+        P, faces = res["P"], res["tris"]
+        if pack > 0:
+            P = _pack(P, res["E0"], res["E1"], res["REST"], res["nbr"],
+                      faces, res["pin"], P[res["pin"]].copy(), pack,
+                      pack_pull, stitch, 0.4 * stitch)
+        return _center(P), faces
     P, E0, E1, REST, nbr, faces, pin, pin_pos = _crochet_mesh(
         ratio_n, rows, stitch, max_stitches,
         seed_scale=0.2 if anneal else 1.0, grade=grade, lobes=lobes)
@@ -175,10 +200,9 @@ def build_ruffle(ratio_n=4, rows=18, stitch=0.09, max_stitches=600,
     if collide > 0 and _IN_BLENDER:
         cf = lambda pp: _bvh_decollide(pp, faces, nbr,
                                        0.75 * stitch, 0.6)
-    ce = max(15, iters // (collide * 4 + 1)) if collide > 0 else 10 ** 9
     P = _relax(P, E0, E1, REST, nbr, pin, pin_pos, iters, smooth,
                0.4 * stitch, repel, collide_fn=cf, collide_every=ce,
-               anneal_L0=L0, stiff=stiff)
+               anneal_L0=L0, stiff=stiff, bend=bend)
     if pack > 0:
         P = _pack(P, E0, E1, REST, nbr, faces, pin, pin_pos, pack,
                   pack_pull, stitch, 0.4 * stitch)
@@ -287,6 +311,19 @@ if _IN_BLENDER:
             description="Coarsest ruffle count: the rim breaks into this "
                         "many primary lobes, for a multi-lobed "
                         "hyperbolic form")
+        refine_levels: IntProperty(
+            name="Coarse-to-Fine", default=0, min=0, max=3,
+            description="Continuation levels: relax a coarse sheet "
+                        "first (large waves form there), then "
+                        "subdivide and re-relax. Larger, smoother "
+                        "ruffles at less cost than one-shot; 0 = off "
+                        "(classic single-resolution relax)")
+        bend: FloatProperty(
+            name="Stiffness", default=0.0, min=0.0, max=0.35,
+            description="Thin-plate bending resistance: damps "
+                        "stitch-scale crumple while leaving the large "
+                        "waves intact. Best combined with Coarse-to-"
+                        "Fine; ~0.02-0.06 is a good range, 0 = off")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                             max=100.0)
         shade_smooth: BoolProperty(name="Smooth Shading", default=True)
@@ -300,9 +337,12 @@ if _IN_BLENDER:
                          repel=self.repel, collide=self.collide)
             else:
                 p = dict(PRESETS[self.preset])
-            # cristate grading + lobe count apply on top of any preset
+            # cristate grading + lobe count + continuation/stiffness
+            # apply on top of any preset
             p['grade'] = self.grade
             p['lobes'] = self.lobes
+            p['refine_levels'] = self.refine_levels
+            p['bend'] = self.bend
             if self.physics == 'CLOTH':
                 # hand cloth the procedurally-ruffled flat sheet (full
                 # wave seed, no PBD packing/collision) with only a light
@@ -313,6 +353,7 @@ if _IN_BLENDER:
                 p['anneal'] = False
                 p['collide'] = 0
                 p['iters'] = self.cloth_prep
+                p['refine_levels'] = 0    # cloth folds the sheet itself
             verts, faces = build_ruffle(**p)
             verts = np.asarray(verts) * self.scale
             me = bpy.data.meshes.new("Crochet Coral")
@@ -434,6 +475,9 @@ if _IN_BLENDER:
                     lay.prop(self, k)
             lay.prop(self, 'grade')
             lay.prop(self, 'lobes')
+            if self.physics != 'CLOTH':
+                lay.prop(self, 'refine_levels')
+                lay.prop(self, 'bend')
             lay.prop(self, 'physics')
             if self.physics == 'CLOTH':
                 lay.prop(self, 'cloth_detail')
