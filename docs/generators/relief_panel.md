@@ -115,6 +115,53 @@ Add a relief panel whose height is a pattern field.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/relief_panel__DRAPERY.png" width="200"><br><sub>Drapery</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__DUNES.png" width="200"><br><sub>Dunes</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__POND.png" width="200"><br><sub>Pond</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_panel__TERRAIN.png" width="200"><br><sub>Terrain</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__BANDS.png" width="200"><br><sub>Bands</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__CHLADNI.png" width="200"><br><sub>Chladni Plate</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_panel__CHLADNI_FLOW.png" width="200"><br><sub>Chladni (Melted)</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__DRUMHEAD.png" width="200"><br><sub>Drumhead</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__ZERNIKE.png" width="200"><br><sub>Zernike</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_panel__LASER.png" width="200"><br><sub>Laser Mode</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__SCATTER.png" width="200"><br><sub>Scatter</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__ELLIPTIC_TORUS.png" width="200"><br><sub>Elliptic Torus</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_panel__TRUCHET.png" width="200"><br><sub>Truchet Lanes</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__SEIGAIHA.png" width="200"><br><sub>Seigaiha</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__TRIANGLE_DRUM.png" width="200"><br><sub>Triangle Drum</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_panel__ISOSPECTRAL_A.png" width="200"><br><sub>Isospectral A</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__ISOSPECTRAL_B.png" width="200"><br><sub>Isospectral B</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__TURING_SKIN.png" width="200"><br><sub>Turing Skin</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_panel__CELLULAR.png" width="200"><br><sub>Cellular</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__WALLPAPER_RELIEF.png" width="200"><br><sub>Wallpaper</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__QUASICRYSTAL.png" width="200"><br><sub>Quasicrystal</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_panel__OCEAN.png" width="200"><br><sub>Ocean</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__WEAVE.png" width="200"><br><sub>Gabor Weave</sub></td>
+<td align="center"><img src="../images/variants/relief_panel__SCREEN.png" width="200"><br><sub>Pierced Screen</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

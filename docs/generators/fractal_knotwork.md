@@ -26,6 +26,23 @@ Add a fractal knotwork (self-similar interlaced link on a Fathauer fractal tilin
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/fractal_knotwork__KITE_R6.png" width="200"><br><sub>Kite f-tiling (6-fold)</sub></td>
+<td align="center"><img src="../images/variants/fractal_knotwork__KITE_R8.png" width="200"><br><sub>Kite f-tiling (8-fold)</sub></td>
+<td align="center"><img src="../images/variants/fractal_knotwork__KITE_R12.png" width="200"><br><sub>Kite f-tiling (12-fold)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/fractal_knotwork__SPIRAL_GOLDEN.png" width="200"><br><sub>Golden-triangle spiral</sub></td>
+<td align="center"><img src="../images/variants/fractal_knotwork__SPIRAL_GOLDEN_2.png" width="200"><br><sub>Golden-triangle spiral (2-arm)</sub></td>
+<td align="center"><img src="../images/variants/fractal_knotwork__SPIRAL_EQUILATERAL.png" width="200"><br><sub>Equilateral spiral (5-fold)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

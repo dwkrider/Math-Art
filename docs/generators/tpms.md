@@ -20,6 +20,76 @@ This generator builds triply-periodic minimal surfaces (TPMS) — the space-fill
 
 Renders of each selectable option:
 
+### Singly Periodic
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SCHERK_TOWER.png" width="200"><br><sub>Saddle Tower (Scherk singly periodic)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SADDLE_TOWER_A.png" width="200"><br><sub>Saddle Tower (Karcher, unequal wings)</sub></td>
+<td align="center"><img src="../images/variants/tpms__RIEMANN.png" width="200"><br><sub>Riemann's Minimal Example</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__CHM_PERIODIC.png" width="200"><br><sub>Callahan-Hoffman-Meeks (singly periodic)</sub></td>
+<td align="center"><img src="../images/variants/tpms__GENUS1_HELICOID.png" width="200"><br><sub>Helicoid with Handle (genus 1)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_SIX_SCHERK.png" width="200"><br><sub>Six-Ended Scherk Tower</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SP_ALT_FENCE.png" width="200"><br><sub>Alternating Fence of Half-Catenoids</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_FENCE_CAT.png" width="200"><br><sub>Fence of Catenoids (Karcher)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_HELICOIDAL_SCHERK.png" width="200"><br><sub>Helicoidal Karcher-Scherk (twisted tower)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SP_ENNEPER_3ANN.png" width="200"><br><sub>Translation-Invariant Enneper (3 annular ends)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_PERIODIC_ENNEPER.png" width="200"><br><sub>Periodic Enneper</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_SCHERK_ENNEPER.png" width="200"><br><sub>Scherk-Enneper</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SP_SIX_SCHERK_G1.png" width="200"><br><sub>Six-Ended Scherk Tower (genus 1)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_COSTA_SCHERK_G1.png" width="200"><br><sub>Costa-Scherk Tower (genus 1)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_EIGHT_SCHERK_G2.png" width="200"><br><sub>Eight-Ended Scherk Tower (genus 2)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SP_DASILVA_BATISTA.png" width="200"><br><sub>daSilva-Batista Surface (genus 2)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_CAT_HANDLE_G1.png" width="200"><br><sub>Catenoid Tower with Handle (genus 2)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_CAT_HANDLES_G3.png" width="200"><br><sub>Catenoid Tower with 2 Handles (genus 3)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SP_COSTA_TRANSINV.png" width="200"><br><sub>Translation-Invariant Costa</sub></td>
+<td align="center"><img src="../images/variants/tpms__CHM12_PERIODIC.png" width="200"><br><sub>Callahan-Hoffman-Meeks CHM-(1,2) (genus 4)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_SCREW_CHM.png" width="200"><br><sub>Screw-Motion CHM Tower</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SP_FISCHER_KOCH.png" width="200"><br><sub>Fischer-Koch Tower (translation-invariant)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_FK_FREESE.png" width="200"><br><sub>Fischer-Koch-Freese (twisted)</sub></td>
+<td align="center"><img src="../images/variants/tpms__SP_1CAT_2ANN.png" width="200"><br><sub>Torus with Catenoid + 2 Annular Ends</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SP_2ENN_2ANN.png" width="200"><br><sub>Torus with 2 Enneper + 2 Annular Ends</sub></td>
+</tr>
+</table>
+
+### Doubly Periodic
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/tpms__SCHERK1.png" width="200"><br><sub>Scherk (doubly periodic)</sub></td>
+<td align="center"><img src="../images/variants/tpms__TILT_SCHERK.png" width="200"><br><sub>Tilted Scherk (doubly periodic)</sub></td>
+<td align="center"><img src="../images/variants/tpms__KMR_DOUBLY.png" width="200"><br><sub>Karcher-Meeks-Rosenberg (doubly periodic)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__KMR3_DOUBLY.png" width="200"><br><sub>Karcher-Meeks-Rosenberg (KMR-3, tilted ends)</sub></td>
+<td align="center"><img src="../images/variants/tpms__WEI_DOUBLY.png" width="200"><br><sub>Wei Doubly Periodic (genus 2)</sub></td>
+<td align="center"><img src="../images/variants/tpms__KARCHER_SCHERK_DP.png" width="200"><br><sub>Karcher-Scherk with Handles (doubly periodic)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__WEI_TOWER_DP.png" width="200"><br><sub>Wei Higher-Genus Tower (doubly periodic)</sub></td>
+<td align="center"><img src="../images/variants/tpms__RTW_DP.png" width="200"><br><sub>Rossman-Thayer-Wohlgemuth (doubly periodic)</sub></td>
+<td align="center"><img src="../images/variants/tpms__CONNOR_DP.png" width="200"><br><sub>Connor Experimental (doubly periodic)</sub></td>
+</tr>
+</table>
+
+### Triply Periodic (TPMS)
+
 <table>
 <tr>
 <td align="center"><img src="../images/variants/tpms__P.png" width="200"><br><sub>Schwarz P</sub></td>
@@ -34,7 +104,31 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/tpms__LIDINOID.png" width="200"><br><sub>Lidinoid</sub></td>
 <td align="center"><img src="../images/variants/tpms__SPLITP.png" width="200"><br><sub>Split P</sub></td>
-<td align="center"><img src="../images/variants/tpms__SCHERKT.png" width="200"><br><sub>Scherk Tower</sub></td>
+<td align="center"><img src="../images/variants/tpms__OCTO.png" width="200"><br><sub>Schoen O,C-TO (nodal approximation)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__FK_S.png" width="200"><br><sub>Fischer-Koch S (nodal approximation)</sub></td>
+<td align="center"><img src="../images/variants/tpms__FK_CS.png" width="200"><br><sub>Fischer-Koch C(S) (nodal approximation)</sub></td>
+<td align="center"><img src="../images/variants/tpms__FK_Y.png" width="200"><br><sub>Fischer-Koch Y (nodal approximation)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__FK_PMY.png" width="200"><br><sub>Fischer-Koch +-Y (nodal approximation)</sub></td>
+<td align="center"><img src="../images/variants/tpms__FK_CPMY.png" width="200"><br><sub>Fischer-Koch C(+-Y) (nodal approximation)</sub></td>
+<td align="center"><img src="../images/variants/tpms__FK_CY.png" width="200"><br><sub>Fischer-Koch C(Y) (nodal approximation)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__CD.png" width="200"><br><sub>Complementary D (nodal approximation)</sub></td>
+<td align="center"><img src="../images/variants/tpms__CG.png" width="200"><br><sub>Complementary Gyroid (nodal approximation)</sub></td>
+<td align="center"><img src="../images/variants/tpms__GPRIME.png" width="200"><br><sub>G' Alternating Gyroid (nodal approximation)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__DPRIME.png" width="200"><br><sub>D' (nodal approximation)</sub></td>
+<td align="center"><img src="../images/variants/tpms__KSURF.png" width="200"><br><sub>Karcher K (nodal approximation)</sub></td>
+<td align="center"><img src="../images/variants/tpms__CI2Y.png" width="200"><br><sub>C(I2-Y**) Rod Packing (nodal approximation)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tpms__FRD2.png" width="200"><br><sub>Schoen F-RD (Wohlgemuth variant, nodal)</sub></td>
+<td align="center"><img src="../images/variants/tpms__PGD.png" width="200"><br><sub>Schwarz P-Gyroid-D (exact, Bonnet angle)</sub></td>
 </tr>
 </table>
 

@@ -21,6 +21,21 @@ trapezohedron (Step = 1 gives the ordinary convex form).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/star_prism__PRISM.png" width="200"><br><sub>Prism</sub></td>
+<td align="center"><img src="../images/variants/star_prism__ANTIPRISM.png" width="200"><br><sub>Antiprism</sub></td>
+<td align="center"><img src="../images/variants/star_prism__DIPYRAMID.png" width="200"><br><sub>Dipyramid</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/star_prism__TRAPEZOHEDRON.png" width="200"><br><sub>Trapezohedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

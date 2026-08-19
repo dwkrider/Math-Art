@@ -29,6 +29,28 @@ strand heights through the centre.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/petal_knot__UNKNOT.png" width="200"><br><sub>Unknot</sub></td>
+<td align="center"><img src="../images/variants/petal_knot__TREFOIL.png" width="200"><br><sub>Trefoil 3_1</sub></td>
+<td align="center"><img src="../images/variants/petal_knot__FIGURE8.png" width="200"><br><sub>Figure Eight 4_1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/petal_knot__CINQUEFOIL.png" width="200"><br><sub>Cinquefoil 5_1</sub></td>
+<td align="center"><img src="../images/variants/petal_knot__THREE_TWIST.png" width="200"><br><sub>Three-Twist 5_2</sub></td>
+<td align="center"><img src="../images/variants/petal_knot__T34.png" width="200"><br><sub>Torus Knot T(3,4) = 8_19</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/petal_knot__SEPTAFOIL.png" width="200"><br><sub>Septafoil 7_1</sub></td>
+<td align="center"><img src="../images/variants/petal_knot__T45.png" width="200"><br><sub>Torus Knot T(4,5) = 10_124</sub></td>
+<td align="center"><img src="../images/variants/petal_knot__RANDOM.png" width="200"><br><sub>Random (Petaluma)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

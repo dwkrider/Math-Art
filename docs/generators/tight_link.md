@@ -28,6 +28,22 @@ provably kept; components cannot pass through each other).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/tight_link__HOPF.png" width="200"><br><sub>Hopf Link</sub></td>
+<td align="center"><img src="../images/variants/tight_link__TORUS24.png" width="200"><br><sub>Torus Link (2,4)</sub></td>
+<td align="center"><img src="../images/variants/tight_link__WHITEHEAD.png" width="200"><br><sub>Whitehead Link</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/tight_link__BORROMEAN.png" width="200"><br><sub>Borromean Rings</sub></td>
+<td align="center"><img src="../images/variants/tight_link__CHAIN.png" width="200"><br><sub>Chain</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

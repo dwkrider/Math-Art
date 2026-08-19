@@ -25,6 +25,8 @@ This generator produces the classic gallery of parametric minimal surfaces — E
 
 Renders of each selectable option:
 
+### Classical
+
 <table>
 <tr>
 <td align="center"><img src="../images/variants/parametric_minimal__ENNEPER.png" width="200"><br><sub>Enneper</sub></td>
@@ -38,16 +40,94 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/parametric_minimal__RICHMOND.png" width="200"><br><sub>Richmond</sub></td>
-<td align="center"><img src="../images/variants/parametric_minimal__SCHERK1.png" width="200"><br><sub>Scherk</sub></td>
-<td align="center"><img src="../images/variants/parametric_minimal__COSTA.png" width="200"><br><sub>Costa</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__CATHEL.png" width="200"><br><sub>Catenoid-Helicoid (associate)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__RICHMOND_K.png" width="200"><br><sub>Richmond (generalized, g = z^k)</sub></td>
 </tr>
+</table>
+
+### Tori (genus 1)
+
+<table>
 <tr>
-<td align="center"><img src="../images/variants/parametric_minimal__COSTA_HM.png" width="200"><br><sub>Costa-Hoffman-Meeks (genus 3)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__COSTA.png" width="200"><br><sub>Costa (genus 1)</sub></td>
 <td align="center"><img src="../images/variants/parametric_minimal__CHEN_GACK.png" width="200"><br><sub>Chen-Gackstatter</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__COSTA_HM.png" width="200"><br><sub>Costa-Hoffman-Meeks (genus k)</sub></td>
+</tr>
+</table>
+
+### Spheres (genus 0)
+
+<table>
+<tr>
 <td align="center"><img src="../images/variants/parametric_minimal__KNOID.png" width="200"><br><sub>Jorge-Meeks k-noid</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__DOUBLE_ENNEPER.png" width="200"><br><sub>Double Enneper</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__ENNK.png" width="200"><br><sub>Enneper-ended k-noid</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/parametric_minimal__CATHEL.png" width="200"><br><sub>Catenoid-Helicoid</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__M3_PYR.png" width="200"><br><sub>Pyramidal k-noid</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__M3_PRISM.png" width="200"><br><sub>Prismatic k-noid</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__M3_BIPYR.png" width="200"><br><sub>Bipyramidal k-noid</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__M3_ANTI5.png" width="200"><br><sub>Antiprismatic k-noid (nn=5)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__M3_LOPEZ.png" width="200"><br><sub>Lopez sphere (2 ends of index 2)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__M3_CATENN.png" width="200"><br><sub>Sphere: catenoid + Enneper end</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__M3_FRIEM.png" width="200"><br><sub>Finite Riemann (plane + 2 catenoids)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__ENNEPER_NCAT.png" width="200"><br><sub>Enneper with n Catenoids</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__SYMM_FRIEM.png" width="200"><br><sub>Symmetrized Finite Riemann (2m catenoids)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__SYMM_DBLENN.png" width="200"><br><sub>Symmetrized Double Enneper</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__KNOID_ENN_ENDS.png" width="200"><br><sub>k-Noid with Enneper Ends</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__ANTIPRISM_KNOID.png" width="200"><br><sub>Antiprismatic k-noid (full family)</sub></td>
+</tr>
+</table>
+
+### Non-Orientable
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__MEEKS_MOBIUS.png" width="200"><br><sub>Meeks Mobius Strip</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__HENNEBERG_RP2.png" width="200"><br><sub>Henneberg (one-sided)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__KUSNER_RP2.png" width="200"><br><sub>Kusner Projective Plane (p planar ends)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__LOPEZ_KLEIN.png" width="200"><br><sub>Lopez Minimal Klein Bottle</sub></td>
+</tr>
+</table>
+
+### Higher Genus
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__CG_HIGHER.png" width="200"><br><sub>Chen-Gackstatter (higher genus)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__SYMM_CG.png" width="200"><br><sub>Symmetrized Chen-Gackstatter (k-fold, genus k-1)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__SYMM_CG_G2N.png" width="200"><br><sub>Symmetrized Chen-Gackstatter (2-level, genus 2(k-1))</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__SYMM_CG_G3K.png" width="200"><br><sub>Symmetrized Chen-Gackstatter (3-level, genus 3(k-1))</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__CATENOID_ENNEPER.png" width="200"><br><sub>Catenoid-Enneper (higher genus)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__COSTA_WOHLGEMUTH.png" width="200"><br><sub>Costa-Wohlgemuth (4 ends)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__WOHLGEMUTH_G3.png" width="200"><br><sub>Wohlgemuth Second Surface (genus 3)</sub></td>
+</tr>
+</table>
+
+### Bjorling (curve-seeded)
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__BJ_CYCLOID.png" width="200"><br><sub>Bjorling: Cycloid (Catalan)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__BJ_CIRCLE.png" width="200"><br><sub>Bjorling: Twisted Band (Mobius)</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__BJ_HELIX.png" width="200"><br><sub>Bjorling: Helix Ribbon</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__BJ_TREFOIL.png" width="200"><br><sub>Bjorling: Trefoil Ribbon</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__BJ_ARCH_SPIRAL.png" width="200"><br><sub>Bjorling: Archimedean Spiral</sub></td>
+<td align="center"><img src="../images/variants/parametric_minimal__BJ_LOG_SPIRAL.png" width="200"><br><sub>Bjorling: Logarithmic Spiral</sub></td>
 </tr>
 </table>
 

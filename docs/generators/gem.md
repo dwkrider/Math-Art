@@ -33,6 +33,46 @@ Add a faceted gemstone cut from its facet planes.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/gem__ROUND_BRILLIANT.png" width="200"><br><sub>Round Brilliant</sub></td>
+<td align="center"><img src="../images/variants/gem__OLD_EUROPEAN.png" width="200"><br><sub>Old European Cut</sub></td>
+<td align="center"><img src="../images/variants/gem__PORTUGUESE.png" width="200"><br><sub>Portuguese Cut</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/gem__SINGLE_CUT.png" width="200"><br><sub>Single (Eight) Cut</sub></td>
+<td align="center"><img src="../images/variants/gem__SRB_GEMCAD.png" width="200"><br><sub>Standard Round Brilliant</sub></td>
+<td align="center"><img src="../images/variants/gem__TOLKOWSKY.png" width="200"><br><sub>Tolkowsky Brilliant</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/gem__ASSCHER.png" width="200"><br><sub>Asscher (Square Emerald)</sub></td>
+<td align="center"><img src="../images/variants/gem__BAGUETTE.png" width="200"><br><sub>Baguette</sub></td>
+<td align="center"><img src="../images/variants/gem__EMERALD.png" width="200"><br><sub>Emerald Cut</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/gem__HEXAGON_STEP.png" width="200"><br><sub>Hexagon Step Cut</sub></td>
+<td align="center"><img src="../images/variants/gem__OCTAGON_STEP.png" width="200"><br><sub>Octagon Step Cut</sub></td>
+<td align="center"><img src="../images/variants/gem__BARION.png" width="200"><br><sub>Barion Cut</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/gem__PRINCESS.png" width="200"><br><sub>Princess Cut</sub></td>
+<td align="center"><img src="../images/variants/gem__RADIANT.png" width="200"><br><sub>Radiant Cut</sub></td>
+<td align="center"><img src="../images/variants/gem__ANTWERP_ROSE.png" width="200"><br><sub>Antwerp Rose</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/gem__DUTCH_ROSE.png" width="200"><br><sub>Dutch Rose</sub></td>
+<td align="center"><img src="../images/variants/gem__FISH_EYE.png" width="200"><br><sub>Fish-eye (defect demo)</sub></td>
+<td align="center"><img src="../images/variants/gem__NAILHEAD.png" width="200"><br><sub>Nail-head (defect demo)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/gem__WINDOWED.png" width="200"><br><sub>Windowed (defect demo)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

@@ -18,6 +18,26 @@ Add a toroidal (genus-1) polyhedron: the Csaszar polyhedron
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/toroidal_polyhedron__CSASZAR.png" width="200"><br><sub>Csaszar Polyhedron</sub></td>
+<td align="center"><img src="../images/variants/toroidal_polyhedron__SZILASSI.png" width="200"><br><sub>Szilassi Polyhedron</sub></td>
+<td align="center"><img src="../images/variants/toroidal_polyhedron__REGULAR.png" width="200"><br><sub>Regular-Faced Toroid</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/toroidal_polyhedron__KNOTTED.png" width="200"><br><sub>Knotted Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/toroidal_polyhedron__BORROMEAN.png" width="200"><br><sub>Borromean Rings</sub></td>
+<td align="center"><img src="../images/variants/toroidal_polyhedron__IRIS7.png" width="200"><br><sub>Heptagonal Iris Toroid</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/toroidal_polyhedron__IRIS8.png" width="200"><br><sub>Octagonal Iris Toroid</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

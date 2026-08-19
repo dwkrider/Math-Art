@@ -28,9 +28,12 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/hyperbolic_tiling__DISK.png" width="200"><br><sub>Poincare Disk</sub></td>
-<td align="center"><img src="../images/variants/hyperbolic_tiling__HEMI.png" width="200"><br><sub>Hemisphere</sub></td>
-<td align="center"><img src="../images/variants/hyperbolic_tiling__PSEUDO.png" width="200"><br><sub>Pseudosphere</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_tiling__POINCARE.png" width="200"><br><sub>Poincare Disk</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_tiling__KLEIN.png" width="200"><br><sub>Klein Disk</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_tiling__HEMISPHERE.png" width="200"><br><sub>Hemisphere</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/hyperbolic_tiling__PSEUDOSPHERE.png" width="200"><br><sub>Pseudosphere</sub></td>
 </tr>
 </table>
 

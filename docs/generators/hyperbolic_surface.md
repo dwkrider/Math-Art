@@ -22,6 +22,18 @@ Add a smooth constant-negative-curvature surface
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/hyperbolic_surface__PSEUDOSPHERE.png" width="200"><br><sub>Pseudosphere</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_surface__DINI.png" width="200"><br><sub>Dini Surface</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_surface__KUEN.png" width="200"><br><sub>Kuen Surface</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

@@ -19,6 +19,17 @@ Add a Steinmetz solid -- the intersection of two or three equal cylinders meetin
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/steinmetz__BICYLINDER.png" width="200"><br><sub>Bicylinder (Steinmetz)</sub></td>
+<td align="center"><img src="../images/variants/steinmetz__TRICYLINDER.png" width="200"><br><sub>Tricylinder</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

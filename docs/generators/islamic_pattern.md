@@ -37,6 +37,32 @@ Add an Islamic star pattern (polygons in contact).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/islamic_pattern__STARCROSS8.png" width="200"><br><sub>8-fold Star-and-Cross (4.8.8)</sub></td>
+<td align="center"><img src="../images/variants/islamic_pattern__TWELVE.png" width="200"><br><sub>12-fold Star (3.12.12)</sub></td>
+<td align="center"><img src="../images/variants/islamic_pattern__SIX.png" width="200"><br><sub>6-fold Star (hexagonal)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/islamic_pattern__FOUREIGHT.png" width="200"><br><sub>4/8 Star (square)</sub></td>
+<td align="center"><img src="../images/variants/islamic_pattern__ROSETTE8.png" width="200"><br><sub>8-fold Rosette (4.8.8)</sub></td>
+<td align="center"><img src="../images/variants/islamic_pattern__ROSETTE12.png" width="200"><br><sub>12-fold Rosette (3.12.12)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/islamic_pattern__ROSETTE12B.png" width="200"><br><sub>12-fold Rosette (4.6.12)</sub></td>
+<td align="center"><img src="../images/variants/islamic_pattern__STAR8.png" width="200"><br><sub>8-point Star {8/3} (4.8.8)</sub></td>
+<td align="center"><img src="../images/variants/islamic_pattern__INFER_RHOMBI.png" width="200"><br><sub>Star Weave (Rhombille)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/islamic_pattern__INFER_CAIRO.png" width="200"><br><sub>Star Weave (Cairo)</sub></td>
+<td align="center"><img src="../images/variants/islamic_pattern__GIRIH10.png" width="200"><br><sub>Girih 10-fold (quasiperiodic)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

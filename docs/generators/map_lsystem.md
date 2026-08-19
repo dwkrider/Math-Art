@@ -27,6 +27,17 @@ under turgor pressure.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/map_lsystem__LAYER.png" width="200"><br><sub>Cellular Layer</sub></td>
+<td align="center"><img src="../images/variants/map_lsystem__BALL.png" width="200"><br><sub>Cell Ball</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

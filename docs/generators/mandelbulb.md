@@ -25,6 +25,18 @@ quaternion Julia or Mandelbox) as a solid mesh.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/mandelbulb__MANDELBULB.png" width="200"><br><sub>Mandelbulb</sub></td>
+<td align="center"><img src="../images/variants/mandelbulb__JULIA.png" width="200"><br><sub>Quaternion Julia</sub></td>
+<td align="center"><img src="../images/variants/mandelbulb__MANDELBOX.png" width="200"><br><sub>Mandelbox</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

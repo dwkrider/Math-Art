@@ -43,6 +43,21 @@ self-organizing tree, DLA cluster or Pythagoras tree.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/growth__COLONIZE.png" width="200"><br><sub>Space Colonization</sub></td>
+<td align="center"><img src="../images/variants/growth__SELFORG.png" width="200"><br><sub>Self-Organizing</sub></td>
+<td align="center"><img src="../images/variants/growth__DLA.png" width="200"><br><sub>Diffusion-Limited</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/growth__PYTHAGORAS.png" width="200"><br><sub>Pythagoras Tree</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

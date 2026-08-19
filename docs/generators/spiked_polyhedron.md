@@ -32,8 +32,8 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/spiked_polyhedron__SPIKED.png" width="200"><br><sub>Spiked</sub></td>
-<td align="center"><img src="../images/variants/spiked_polyhedron__HYPER.png" width="200"><br><sub>Hyperbolic</sub></td>
+<td align="center"><img src="../images/variants/spiked_polyhedron__SPIKED.png" width="200"><br><sub>Spiked Polyhedron</sub></td>
+<td align="center"><img src="../images/variants/spiked_polyhedron__HYPER.png" width="200"><br><sub>Hyperbolic Polyhedron</sub></td>
 <td align="center"><img src="../images/variants/spiked_polyhedron__MODERN.png" width="200"><br><sub>Folded Rhombic Hexecontahedron</sub></td>
 </tr>
 <tr>

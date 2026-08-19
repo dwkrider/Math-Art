@@ -26,6 +26,27 @@ Add a cabochon: a domed stone, cut on a curve rather than facets.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/gem_cabochon__BULLET.png" width="200"><br><sub>Bullet Cabochon</sub></td>
+<td align="center"><img src="../images/variants/gem_cabochon__DOUBLE.png" width="200"><br><sub>Double Cabochon</sub></td>
+<td align="center"><img src="../images/variants/gem_cabochon__HEX.png" width="200"><br><sub>Hexagonal Cabochon</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/gem_cabochon__HIGH.png" width="200"><br><sub>High Cabochon</sub></td>
+<td align="center"><img src="../images/variants/gem_cabochon__LENTIL.png" width="200"><br><sub>Lentil Cabochon</sub></td>
+<td align="center"><img src="../images/variants/gem_cabochon__OVAL.png" width="200"><br><sub>Oval Cabochon</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/gem_cabochon__SINGLE.png" width="200"><br><sub>Cabochon</sub></td>
+<td align="center"><img src="../images/variants/gem_cabochon__SUGARLOAF.png" width="200"><br><sub>Sugarloaf</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

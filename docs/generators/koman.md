@@ -33,6 +33,17 @@ coiled into a ring, or wound out as a logarithmic spiral.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/koman__SPIRAL.png" width="200"><br><sub>Spiral Sculpture</sub></td>
+<td align="center"><img src="../images/variants/koman__RING.png" width="200"><br><sub>Closed Ring</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

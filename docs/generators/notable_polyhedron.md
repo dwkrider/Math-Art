@@ -28,6 +28,37 @@ or Klein's genus-3 regular map).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__ECHIDNAHEDRON.png" width="200"><br><sub>Final Stellation of Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__SCHONHARDT.png" width="200"><br><sub>Schonhardt Polyhedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__JESSEN.png" width="200"><br><sub>Jessen's Orthogonal Icosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__DURER.png" width="200"><br><sub>Durer's Solid</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__BILINSKI.png" width="200"><br><sub>Bilinski Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__ESCHER.png" width="200"><br><sub>Escher's Solid</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__TETRATED.png" width="200"><br><sub>Tetrated Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__PENTAGON132.png" width="200"><br><sub>132-Pentagon Polyhedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__ASSOCIAHEDRON.png" width="200"><br><sub>Associahedron (3D, K5)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__KLEIN.png" width="200"><br><sub>Klein Regular Map {3,7} (genus 3)</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__MAP64.png" width="200"><br><sub>Regular Map {6,4} (genus 6)</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__MAP46.png" width="200"><br><sub>Regular Map {4,6} (genus 6)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__HEPTDODEC_A.png" width="200"><br><sub>Heptagonal Dodecahedron A (genus 2)</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__HEPTDODEC_C.png" width="200"><br><sub>Heptagonal Dodecahedron C (genus 2)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

@@ -21,6 +21,27 @@ Add a Fathauer fractal tiling patch.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/fractal_tiling__KITE_R6.png" width="200"><br><sub>Kite (6-fold)</sub></td>
+<td align="center"><img src="../images/variants/fractal_tiling__KITE_R8.png" width="200"><br><sub>Kite (8-fold)</sub></td>
+<td align="center"><img src="../images/variants/fractal_tiling__KITE_R12.png" width="200"><br><sub>Kite (12-fold)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/fractal_tiling__TRI_S6.png" width="200"><br><sub>Triangle Segment (s=6)</sub></td>
+<td align="center"><img src="../images/variants/fractal_tiling__TRI_S8.png" width="200"><br><sub>Triangle Segment (s=8)</sub></td>
+<td align="center"><img src="../images/variants/fractal_tiling__TRI_S12.png" width="200"><br><sub>Triangle Segment (s=12)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/fractal_tiling__TRAP_U6.png" width="200"><br><sub>Trapezoid Segment (u=6)</sub></td>
+<td align="center"><img src="../images/variants/fractal_tiling__TRAP_U10.png" width="200"><br><sub>Trapezoid Segment (u=10)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

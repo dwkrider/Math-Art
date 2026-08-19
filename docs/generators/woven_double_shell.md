@@ -40,6 +40,46 @@ relaxed rope).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/woven_double_shell__TETRA.png" width="200"><br><sub>Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__OCTA.png" width="200"><br><sub>Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/woven_double_shell__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__ICOSA.png" width="200"><br><sub>Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__TT.png" width="200"><br><sub>Truncated Tetrahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/woven_double_shell__CO.png" width="200"><br><sub>Cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__TC.png" width="200"><br><sub>Truncated Cube</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__TO.png" width="200"><br><sub>Truncated Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/woven_double_shell__RCO.png" width="200"><br><sub>Rhombicuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__TCO.png" width="200"><br><sub>Truncated Cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__SC.png" width="200"><br><sub>Snub Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/woven_double_shell__ID.png" width="200"><br><sub>Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__TD.png" width="200"><br><sub>Truncated Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__TI.png" width="200"><br><sub>Truncated Icosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/woven_double_shell__RID.png" width="200"><br><sub>Rhombicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__TID.png" width="200"><br><sub>Truncated Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/woven_double_shell__SD.png" width="200"><br><sub>Snub Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/woven_double_shell__GEODESIC.png" width="200"><br><sub>Geodesic Sphere</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

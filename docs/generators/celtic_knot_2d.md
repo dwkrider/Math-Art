@@ -47,6 +47,26 @@ Add a 2D Celtic knot (grid-and-barriers plait).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/celtic_knot_2d__PLAIN.png" width="200"><br><sub>Plain Plait</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__CROSSBREAK.png" width="200"><br><sub>Cross Break</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__PANEL.png" width="200"><br><sub>Framed Panel</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/celtic_knot_2d__TRIQUETRA.png" width="200"><br><sub>Triquetra (Trinity)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__JOSEPHINE.png" width="200"><br><sub>Josephine Knot</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__KELLS_BORDER.png" width="200"><br><sub>Kells Border</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/celtic_knot_2d__CARPET.png" width="200"><br><sub>Carpet Page</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

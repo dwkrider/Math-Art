@@ -23,6 +23,26 @@ Add a frieze (strip) pattern.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/frieze__p1.png" width="200"><br><sub>Hop  (p1)</sub></td>
+<td align="center"><img src="../images/variants/frieze__p11g.png" width="200"><br><sub>Step (glide)  (p11g)</sub></td>
+<td align="center"><img src="../images/variants/frieze__p1m1.png" width="200"><br><sub>Sidle (vertical mirror)  (p1m1)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/frieze__p11m.png" width="200"><br><sub>Jump (horizontal mirror)  (p11m)</sub></td>
+<td align="center"><img src="../images/variants/frieze__p2.png" width="200"><br><sub>Spinning hop (180)  (p2)</sub></td>
+<td align="center"><img src="../images/variants/frieze__p2mg.png" width="200"><br><sub>Spinning sidle  (p2mg)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/frieze__p2mm.png" width="200"><br><sub>Spinning jump  (p2mm)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

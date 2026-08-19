@@ -27,6 +27,27 @@ Add an aperiodic tiling patch.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/aperiodic__PENROSE_P3.png" width="200"><br><sub>Penrose Rhombs (P3)</sub></td>
+<td align="center"><img src="../images/variants/aperiodic__PENROSE_P2.png" width="200"><br><sub>Penrose Kite & Dart (P2)</sub></td>
+<td align="center"><img src="../images/variants/aperiodic__AMMANN_BEENKER.png" width="200"><br><sub>Ammann-Beenker (Octagonal)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/aperiodic__HAT.png" width="200"><br><sub>Hat (Einstein Monotile)</sub></td>
+<td align="center"><img src="../images/variants/aperiodic__TURTLE.png" width="200"><br><sub>Turtle</sub></td>
+<td align="center"><img src="../images/variants/aperiodic__CHEVRON.png" width="200"><br><sub>Chevron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/aperiodic__COMET.png" width="200"><br><sub>Comet</sub></td>
+<td align="center"><img src="../images/variants/aperiodic__SPECTRE.png" width="200"><br><sub>Spectre (Chiral Monotile)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

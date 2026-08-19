@@ -89,6 +89,51 @@ Add relief carved onto a closed surface.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/relief_solid__PLANET.png" width="200"><br><sub>Planet</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__ASTEROID.png" width="200"><br><sub>Asteroid</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__HARMONIC_BALL.png" width="200"><br><sub>Harmonic Ball</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_solid__SHAGREEN.png" width="200"><br><sub>Shagreen</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__WALLPAPER_TORUS.png" width="200"><br><sub>Wallpaper Torus</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__ELLIPTIC_TORUS.png" width="200"><br><sub>Elliptic Torus</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_solid__OCEAN_TORUS.png" width="200"><br><sub>Ocean Torus</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__TRUCHET_SPHERE.png" width="200"><br><sub>Truchet Sphere</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__TRUCHET_TORUS.png" width="200"><br><sub>Truchet Torus</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_solid__SEIGAIHA_TORUS.png" width="200"><br><sub>Seigaiha Torus</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__GEODESIC_POND.png" width="200"><br><sub>Geodesic Pond</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__ZONAL.png" width="200"><br><sub>Zonal Bands</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_solid__SCATTERED.png" width="200"><br><sub>Scattered</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__TORUS_HARMONIC.png" width="200"><br><sub>Torus Harmonic</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__QUASICRYSTAL.png" width="200"><br><sub>Quasicrystal</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_solid__ICOSAHEDRAL.png" width="200"><br><sub>Icosahedral</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__OCTAHEDRAL.png" width="200"><br><sub>Octahedral</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__TURING_SPHERE.png" width="200"><br><sub>Turing Sphere</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_solid__TURING_TORUS.png" width="200"><br><sub>Turing Torus</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__WOVEN_TORUS.png" width="200"><br><sub>Woven Torus</sub></td>
+<td align="center"><img src="../images/variants/relief_solid__CORAL_TORUS.png" width="200"><br><sub>Coral Torus</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/relief_solid__CARVED_COLUMN.png" width="200"><br><sub>Carved Column</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

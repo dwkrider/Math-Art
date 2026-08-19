@@ -35,6 +35,112 @@ index, or a custom set of Du Val cell shells.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__1.png" width="200"><br><sub> 1. Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__2.png" width="200"><br><sub> 2. First stellation (triakis / small triambic)</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__3.png" width="200"><br><sub> 3. Compound of 5 octahedra</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__4.png" width="200"><br><sub> 4. Third stellation</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__5.png" width="200"><br><sub> 5. Du Val E</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__6.png" width="200"><br><sub> 6. Second stellation</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__7.png" width="200"><br><sub> 7. Great icosahedron</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__8.png" width="200"><br><sub> 8. Final stellation (echidnahedron)</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__9.png" width="200"><br><sub> 9. Du Val e1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__10.png" width="200"><br><sub>10. Du Val f1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__11.png" width="200"><br><sub>11. Du Val g1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__12.png" width="200"><br><sub>12. Du Val e1f1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__13.png" width="200"><br><sub>13. Du Val e1f1g1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__14.png" width="200"><br><sub>14. Du Val f1g1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__15.png" width="200"><br><sub>15. Du Val e2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__16.png" width="200"><br><sub>16. Du Val f2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__17.png" width="200"><br><sub>17. Du Val g2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__18.png" width="200"><br><sub>18. Du Val e2f2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__19.png" width="200"><br><sub>19. Du Val e2f2g2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__20.png" width="200"><br><sub>20. Du Val f2g2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__21.png" width="200"><br><sub>21. Du Val De1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__22.png" width="200"><br><sub>22. Compound of 10 tetrahedra</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__23.png" width="200"><br><sub>23. Du Val Fg1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__24.png" width="200"><br><sub>24. Du Val De1f1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__25.png" width="200"><br><sub>25. Du Val De1f1g1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__26.png" width="200"><br><sub>26. Excavated dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__27.png" width="200"><br><sub>27. Du Val De2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__28.png" width="200"><br><sub>28. Du Val Ef2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__29.png" width="200"><br><sub>29. Du Val Fg2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__30.png" width="200"><br><sub>30. Medial triambic icosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__31.png" width="200"><br><sub>31. Du Val De2f2g2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__32.png" width="200"><br><sub>32. Du Val Ef2g2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__33.png" width="200"><br><sub>33. Du Val f1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__34.png" width="200"><br><sub>34. Du Val e1f1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__35.png" width="200"><br><sub>35. Du Val De1f1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__36.png" width="200"><br><sub>36. Du Val f1g1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__37.png" width="200"><br><sub>37. Du Val e1f1g1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__38.png" width="200"><br><sub>38. Du Val De1f1g1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__39.png" width="200"><br><sub>39. Du Val f1g2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__40.png" width="200"><br><sub>40. Du Val e1f1g2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__41.png" width="200"><br><sub>41. Du Val De1f1g2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__42.png" width="200"><br><sub>42. Du Val f1f2g2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__43.png" width="200"><br><sub>43. Du Val e1f1f2g2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__44.png" width="200"><br><sub>44. Du Val De1f1f2g2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__45.png" width="200"><br><sub>45. Du Val e2f1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__46.png" width="200"><br><sub>46. Du Val De2f1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__47.png" width="200"><br><sub>47. Compound of 5 tetrahedra (chiral)</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__48.png" width="200"><br><sub>48. Du Val e2f1g1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__49.png" width="200"><br><sub>49. Du Val De2f1g1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__50.png" width="200"><br><sub>50. Du Val Ef1g1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__51.png" width="200"><br><sub>51. Du Val e2f1f2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__52.png" width="200"><br><sub>52. Du Val De2f1f2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__53.png" width="200"><br><sub>53. Du Val Ef1f2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__54.png" width="200"><br><sub>54. Du Val e2f1f2g1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__55.png" width="200"><br><sub>55. Du Val De2f1f2g1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__56.png" width="200"><br><sub>56. Du Val Ef1f2g1</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__57.png" width="200"><br><sub>57. Du Val e2f1f2g2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/icosahedron_stellation__58.png" width="200"><br><sub>58. Du Val De2f1f2g2</sub></td>
+<td align="center"><img src="../images/variants/icosahedron_stellation__59.png" width="200"><br><sub>59. Du Val Ef1f2g2</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

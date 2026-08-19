@@ -36,6 +36,21 @@ curved surface; graded for crested/cristate coral forms.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/crochet__WAVY.png" width="200"><br><sub>Wavy</sub></td>
+<td align="center"><img src="../images/variants/crochet__RUFFLED.png" width="200"><br><sub>Ruffled</sub></td>
+<td align="center"><img src="../images/variants/crochet__BENDY.png" width="200"><br><sub>Bendy</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/crochet__TAIMINA.png" width="200"><br><sub>Taimina (ball)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

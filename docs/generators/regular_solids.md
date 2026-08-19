@@ -114,8 +114,8 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/regular_solids__PRISM.png" width="200"><br><sub>Hexagonal Prism</sub></td>
-<td align="center"><img src="../images/variants/regular_solids__ANTIPRISM.png" width="200"><br><sub>Hexagonal Antiprism</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__PRISM.png" width="200"><br><sub>Prism</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__ANTIPRISM.png" width="200"><br><sub>Antiprism</sub></td>
 </tr>
 </table>
 
@@ -158,13 +158,13 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/regular_solids__J21.png" width="200"><br><sub>Elongated Pentagonal Rotunda (J21)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/regular_solids__J26.png" width="200"><br><sub>Gyrobifastigium (J26)</sub></td>
 <td align="center"><img src="../images/variants/regular_solids__J22.png" width="200"><br><sub>Gyroelongated Triangular Cupola (J22)</sub></td>
 <td align="center"><img src="../images/variants/regular_solids__J23.png" width="200"><br><sub>Gyroelongated Square Cupola (J23)</sub></td>
-<td align="center"><img src="../images/variants/regular_solids__J24.png" width="200"><br><sub>Gyroelongated Pentagonal Cupola (J24)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/regular_solids__J24.png" width="200"><br><sub>Gyroelongated Pentagonal Cupola (J24)</sub></td>
 <td align="center"><img src="../images/variants/regular_solids__J25.png" width="200"><br><sub>Gyroelongated Pentagonal Rotunda (J25)</sub></td>
-<td align="center"><img src="../images/variants/regular_solids__J26.png" width="200"><br><sub>Gyrobifastigium (J26)</sub></td>
 <td align="center"><img src="../images/variants/regular_solids__J27.png" width="200"><br><sub>Triangular Orthobicupola (J27)</sub></td>
 </tr>
 <tr>
@@ -201,6 +201,80 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/regular_solids__J46.png" width="200"><br><sub>Gyroelongated Pentagonal Bicupola (J46)</sub></td>
 <td align="center"><img src="../images/variants/regular_solids__J47.png" width="200"><br><sub>Gyroelongated Pentagonal Cupolarotunda (J47)</sub></td>
 <td align="center"><img src="../images/variants/regular_solids__J48.png" width="200"><br><sub>Gyroelongated Pentagonal Birotunda (J48)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J49.png" width="200"><br><sub>Augmented Triangular Prism (J49)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J50.png" width="200"><br><sub>Biaugmented Triangular Prism (J50)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J51.png" width="200"><br><sub>Triaugmented Triangular Prism (J51)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J52.png" width="200"><br><sub>Augmented Pentagonal Prism (J52)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J53.png" width="200"><br><sub>Biaugmented Pentagonal Prism (J53)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J54.png" width="200"><br><sub>Augmented Hexagonal Prism (J54)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J55.png" width="200"><br><sub>Parabiaugmented Hexagonal Prism (J55)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J56.png" width="200"><br><sub>Metabiaugmented Hexagonal Prism (J56)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J57.png" width="200"><br><sub>Triaugmented Hexagonal Prism (J57)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J58.png" width="200"><br><sub>Augmented Dodecahedron (J58)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J59.png" width="200"><br><sub>Parabiaugmented Dodecahedron (J59)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J60.png" width="200"><br><sub>Metabiaugmented Dodecahedron (J60)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J61.png" width="200"><br><sub>Triaugmented Dodecahedron (J61)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J62.png" width="200"><br><sub>Metabidiminished Icosahedron (J62)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J63.png" width="200"><br><sub>Tridiminished Icosahedron (J63)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J64.png" width="200"><br><sub>Augmented Tridiminished Icosahedron (J64)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J65.png" width="200"><br><sub>Augmented Truncated Tetrahedron (J65)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J66.png" width="200"><br><sub>Augmented Truncated Cube (J66)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J67.png" width="200"><br><sub>Biaugmented Truncated Cube (J67)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J68.png" width="200"><br><sub>Augmented Truncated Dodecahedron (J68)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J69.png" width="200"><br><sub>Parabiaugmented Truncated Dodecahedron (J69)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J70.png" width="200"><br><sub>Metabiaugmented Truncated Dodecahedron (J70)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J71.png" width="200"><br><sub>Triaugmented Truncated Dodecahedron (J71)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J72.png" width="200"><br><sub>Gyrate Rhombicosidodecahedron (J72)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J73.png" width="200"><br><sub>Parabigyrate Rhombicosidodecahedron (J73)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J74.png" width="200"><br><sub>Metabigyrate Rhombicosidodecahedron (J74)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J75.png" width="200"><br><sub>Trigyrate Rhombicosidodecahedron (J75)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J76.png" width="200"><br><sub>Diminished Rhombicosidodecahedron (J76)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J77.png" width="200"><br><sub>Paragyrate Diminished Rhombicosidodecahedron (J77)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J78.png" width="200"><br><sub>Metagyrate Diminished Rhombicosidodecahedron (J78)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J79.png" width="200"><br><sub>Bigyrate Diminished Rhombicosidodecahedron (J79)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J80.png" width="200"><br><sub>Parabidiminished Rhombicosidodecahedron (J80)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J81.png" width="200"><br><sub>Metabidiminished Rhombicosidodecahedron (J81)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J82.png" width="200"><br><sub>Gyrate Bidiminished Rhombicosidodecahedron (J82)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J83.png" width="200"><br><sub>Tridiminished Rhombicosidodecahedron (J83)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J84.png" width="200"><br><sub>Snub Disphenoid (J84)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J85.png" width="200"><br><sub>Snub Square Antiprism (J85)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J86.png" width="200"><br><sub>Sphenocorona (J86)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J87.png" width="200"><br><sub>Augmented Sphenocorona (J87)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J88.png" width="200"><br><sub>Sphenomegacorona (J88)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J89.png" width="200"><br><sub>Hebesphenomegacorona (J89)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J90.png" width="200"><br><sub>Disphenocingulum (J90)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/regular_solids__J91.png" width="200"><br><sub>Bilunabirotunda (J91)</sub></td>
+<td align="center"><img src="../images/variants/regular_solids__J92.png" width="200"><br><sub>Triangular Hebesphenorotunda (J92)</sub></td>
 </tr>
 </table>
 

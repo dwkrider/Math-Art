@@ -33,6 +33,21 @@ or cube-billiard curve -- as a curve or tube mesh.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/harmonic_knot__LISSAJOUS_327.png" width="200"><br><sub>Lissajous (3,2,7)</sub></td>
+<td align="center"><img src="../images/variants/harmonic_knot__FOURIER_TREFOIL.png" width="200"><br><sub>Fourier (1,1,2) Trefoil</sub></td>
+<td align="center"><img src="../images/variants/harmonic_knot__CHEBYSHEV_TREFOIL.png" width="200"><br><sub>Chebyshev Trefoil (3,4,5)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/harmonic_knot__BILLIARD_327.png" width="200"><br><sub>Billiard (3,2,7)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

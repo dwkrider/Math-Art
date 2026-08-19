@@ -36,6 +36,26 @@ compound, as a solidifiable mesh.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/leaf__CORDATE.png" width="200"><br><sub>Cordate (heart-shaped)</sub></td>
+<td align="center"><img src="../images/variants/leaf__ELLIPTIC.png" width="200"><br><sub>Elliptic</sub></td>
+<td align="center"><img src="../images/variants/leaf__LANCEOLATE.png" width="200"><br><sub>Lanceolate</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/leaf__OBOVATE.png" width="200"><br><sub>Obovate</sub></td>
+<td align="center"><img src="../images/variants/leaf__OVATE.png" width="200"><br><sub>Ovate</sub></td>
+<td align="center"><img src="../images/variants/leaf__RENIFORM.png" width="200"><br><sub>Reniform (kidney)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/leaf__ROSE.png" width="200"><br><sub>Rose leaflet</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

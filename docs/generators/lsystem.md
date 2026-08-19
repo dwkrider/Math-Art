@@ -49,6 +49,93 @@ models, as bevelled curves or filled blades.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__ARROWHEAD.png" width="200"><br><sub>Sierpinski Arrowhead</sub></td>
+<td align="center"><img src="../images/variants/lsystem__CESARO.png" width="200"><br><sub>Cesaro Curve</sub></td>
+<td align="center"><img src="../images/variants/lsystem__DRAGON.png" width="200"><br><sub>Heighway Dragon</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__DRAGON_TWIN.png" width="200"><br><sub>Twindragon</sub></td>
+<td align="center"><img src="../images/variants/lsystem__GOSPER.png" width="200"><br><sub>Gosper (Flowsnake)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__HILBERT.png" width="200"><br><sub>Hilbert Curve (2-D)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__HILBERT3D.png" width="200"><br><sub>Hilbert Curve (3-D)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__KOCH.png" width="200"><br><sub>Koch Snowflake</sub></td>
+<td align="center"><img src="../images/variants/lsystem__KOCH_ISLAND.png" width="200"><br><sub>Koch Island (quadratic)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__KRISHNA.png" width="200"><br><sub>Krishna Anklets (kolam)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__LEVY.png" width="200"><br><sub>Levy C Curve</sub></td>
+<td align="center"><img src="../images/variants/lsystem__MOORE.png" width="200"><br><sub>Moore Curve (closed Hilbert)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__PEANO.png" width="200"><br><sub>Peano Curve</sub></td>
+<td align="center"><img src="../images/variants/lsystem__PENTAPLEXITY.png" width="200"><br><sub>Pentaplexity</sub></td>
+<td align="center"><img src="../images/variants/lsystem__QUADKOCH.png" width="200"><br><sub>Quadratic Koch (Minkowski sausage)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__SIERPINSKI.png" width="200"><br><sub>Sierpinski Gasket</sub></td>
+<td align="center"><img src="../images/variants/lsystem__TERDRAGON.png" width="200"><br><sub>Terdragon</sub></td>
+<td align="center"><img src="../images/variants/lsystem__ANABAENA.png" width="200"><br><sub>Anabaena catenula (Lindenmayer 1968)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__BUSH3D.png" width="200"><br><sub>3-D Bush (ABOP fig 1.25)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__BUSH_TAPERED.png" width="200"><br><sub>3-D Bush, tapered and colour-graded</sub></td>
+<td align="center"><img src="../images/variants/lsystem__FLOWER.png" width="200"><br><sub>Flowering Plant (ABOP fig 1.26)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__HILBERT_BUSH.png" width="200"><br><sub>Ternary 3-D Tree (ABOP fig 1.27)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__LEAF_POLY.png" width="200"><br><sub>Filled Leaf Blade (ABOP sec 5.2)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__MESOTONIC.png" width="200"><br><sub>Mesotonic Structure (course-2003 sec 6.4)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__PARAMETRIC_TREE.png" width="200"><br><sub>Parametric Tree (continuous taper)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__PLANT.png" width="200"><br><sub>Plant (ABOP fig 1.24f)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__PLANT_A.png" width="200"><br><sub>Bracketed Plant a (ABOP fig 1.24a)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__PLANT_B.png" width="200"><br><sub>Bracketed Plant b (ABOP fig 1.24b)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__PLANT_C.png" width="200"><br><sub>Bracketed Plant c (ABOP fig 1.24c)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__PLANT_D.png" width="200"><br><sub>Bracketed Plant d (ABOP fig 1.24d)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__PLANT_E.png" width="200"><br><sub>Bracketed Plant e (ABOP fig 1.24e)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__SHEDDING.png" width="200"><br><sub>Shedding Crown (course-2003 sec 6.5)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__SIGNAL.png" width="200"><br><sub>Acropetal Signal (SIGGRAPH '88)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__STOCHASTIC_BUSH.png" width="200"><br><sub>Stochastic Bush (ABOP sec 1.7)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__TUNABLE.png" width="200"><br><sub>Tunable Tree (parameter demo)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__HONDA_I.png" width="200"><br><sub>Honda Plate I (main axis lost)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__HONDA_II.png" width="200"><br><sub>Honda Plate II (axis preserved)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__HONDA_III.png" width="200"><br><sub>Honda Plate III (cone to flat crown)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__HONDA_IV.png" width="200"><br><sub>Honda Plate IV (branching angle sweep)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__HONDA_V.png" width="200"><br><sub>Honda Plate V (constant axiality ratio)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__HONDA_VI_CONIC.png" width="200"><br><sub>Honda Plate VI conic (strong apical dominance)</sub></td>
+<td align="center"><img src="../images/variants/lsystem__HONDA_VI_FLAT.png" width="200"><br><sub>Honda Plate VI flat (weak apical dominance)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__NH_ALTERNATE.png" width="200"><br><sub>2019 fig 1f: alternate phyllotaxis</sub></td>
+<td align="center"><img src="../images/variants/lsystem__NH_ALTERNATE_R.png" width="200"><br><sub>2019 fig 1i: alternate, ratio 0.8</sub></td>
+<td align="center"><img src="../images/variants/lsystem__NH_BIFURCATE.png" width="200"><br><sub>2019 fig 1e: bifurcation, equal lengths</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/lsystem__NH_BIFURCATE_R.png" width="200"><br><sub>2019 fig 1h: bifurcation, ratio 0.8</sub></td>
+<td align="center"><img src="../images/variants/lsystem__NH_OPPOSITE.png" width="200"><br><sub>2019 fig 1g: opposite phyllotaxis</sub></td>
+<td align="center"><img src="../images/variants/lsystem__NH_OPPOSITE_R.png" width="200"><br><sub>2019 fig 1j: opposite, ratio 0.8</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

@@ -34,6 +34,38 @@ production templates, with acropetal/basipetal bloom order.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/inflorescence__CAPITULUM.png" width="200"><br><sub>Capitulum (head)</sub></td>
+<td align="center"><img src="../images/variants/inflorescence__CORYMB.png" width="200"><br><sub>Corymb (flat-topped raceme)</sub></td>
+<td align="center"><img src="../images/variants/inflorescence__CYME.png" width="200"><br><sub>Cyme</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/inflorescence__DIBOTRYOID.png" width="200"><br><sub>Dibotryoid (double raceme)</sub></td>
+<td align="center"><img src="../images/variants/inflorescence__DICHASIUM.png" width="200"><br><sub>Dichasium (forked cyme)</sub></td>
+<td align="center"><img src="../images/variants/inflorescence__MONOCHASIUM.png" width="200"><br><sub>Monochasium (helicoid cyme)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/inflorescence__PANICLE.png" width="200"><br><sub>Panicle</sub></td>
+<td align="center"><img src="../images/variants/inflorescence__PLEIOCHASIUM.png" width="200"><br><sub>Pleiochasium</sub></td>
+<td align="center"><img src="../images/variants/inflorescence__RACEME.png" width="200"><br><sub>Raceme</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/inflorescence__SPADIX.png" width="200"><br><sub>Spadix (fleshy spike)</sub></td>
+<td align="center"><img src="../images/variants/inflorescence__SPIKE.png" width="200"><br><sub>Spike (sessile raceme)</sub></td>
+<td align="center"><img src="../images/variants/inflorescence__THYRSUS.png" width="200"><br><sub>Thyrsus (cymose panicle)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/inflorescence__TRIBOTRYOID.png" width="200"><br><sub>Tribotryoid (triple raceme)</sub></td>
+<td align="center"><img src="../images/variants/inflorescence__UMBEL.png" width="200"><br><sub>Umbel</sub></td>
+<td align="center"><img src="../images/variants/inflorescence__VERTICILLAST.png" width="200"><br><sub>Verticillaster (whorled)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

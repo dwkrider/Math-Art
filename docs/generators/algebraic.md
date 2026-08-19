@@ -23,7 +23,7 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/algebraic__CLEBSCH.png" width="200"><br><sub>Clebsch Cubic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CLEBSCH.png" width="200"><br><sub>Clebsch Diagonal Cubic</sub></td>
 <td align="center"><img src="../images/variants/algebraic__CAYLEY.png" width="200"><br><sub>Cayley Nodal Cubic</sub></td>
 <td align="center"><img src="../images/variants/algebraic__KUMMER.png" width="200"><br><sub>Kummer Quartic</sub></td>
 </tr>
@@ -36,6 +36,9 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/algebraic__DINGDONG.png" width="200"><br><sub>Ding-dong</sub></td>
 <td align="center"><img src="../images/variants/algebraic__CHMUTOV.png" width="200"><br><sub>Chmutov Sextic</sub></td>
 <td align="center"><img src="../images/variants/algebraic__TANGLE.png" width="200"><br><sub>Tangle Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__MONKEY.png" width="200"><br><sub>Monkey Saddle (n-fold)</sub></td>
 </tr>
 </table>
 

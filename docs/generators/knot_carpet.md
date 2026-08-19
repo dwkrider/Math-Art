@@ -62,6 +62,28 @@ Add a knot carpet (tileable alternating link of unknots).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/knot_carpet__WAVY_PLAID.png" width="200"><br><sub>Wavy Plaid</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__WARPED_GRID.png" width="200"><br><sub>Warped Grid</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__POLAR.png" width="200"><br><sub>Polar Rosette</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/knot_carpet__GUILLOCHE.png" width="200"><br><sub>Guilloche</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__SMOOTH_PLAIT.png" width="200"><br><sub>Smooth Plait</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__ROSE.png" width="200"><br><sub>Rose / Rhodonea</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/knot_carpet__SPIRAL_NET.png" width="200"><br><sub>Spiral Net</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__LISSAJOUS.png" width="200"><br><sub>Lissajous Net</sub></td>
+<td align="center"><img src="../images/variants/knot_carpet__MOIRE.png" width="200"><br><sub>Moire Bands</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

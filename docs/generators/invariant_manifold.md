@@ -36,6 +36,26 @@ but the same machinery grows the manifold of any equilibrium of any shipped syst
 | Scale | 1.0 | Uniform scale of the result. Range 0.01-100. |
 | Smooth Shading | On | Shade the mesh smooth. |
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/invariant_manifold__LORENZ.png" width="200"><br><sub>Lorenz</sub></td>
+<td align="center"><img src="../images/variants/invariant_manifold__CHEN.png" width="200"><br><sub>Chen-Celikovsky</sub></td>
+<td align="center"><img src="../images/variants/invariant_manifold__RAYLEIGH.png" width="200"><br><sub>Rayleigh-Benard</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/invariant_manifold__SHIMIZU.png" width="200"><br><sub>Shimizu-Morioka</sub></td>
+<td align="center"><img src="../images/variants/invariant_manifold__ROSSLER.png" width="200"><br><sub>Roessler</sub></td>
+<td align="center"><img src="../images/variants/invariant_manifold__HALVORSEN.png" width="200"><br><sub>Halvorsen</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/invariant_manifold__THOMAS.png" width="200"><br><sub>Thomas</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 ### Why the obvious method fails

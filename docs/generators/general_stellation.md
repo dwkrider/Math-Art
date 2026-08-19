@@ -26,6 +26,21 @@ shells.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/general_stellation__icosahedron.png" width="200"><br><sub>Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/general_stellation__dodecahedron.png" width="200"><br><sub>Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/general_stellation__cuboctahedron.png" width="200"><br><sub>Cuboctahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/general_stellation__rhombic_triacontahedron.png" width="200"><br><sub>Rhombic Triacontahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

@@ -34,6 +34,21 @@ free-boundary soap film sliding on a sphere or column.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/cmc_capillary__BRIDGE.png" width="200"><br><sub>Liquid Bridge</sub></td>
+<td align="center"><img src="../images/variants/cmc_capillary__DROP.png" width="200"><br><sub>Sessile Drop</sub></td>
+<td align="center"><img src="../images/variants/cmc_capillary__FILM_SPHERE.png" width="200"><br><sub>Film on Sphere</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/cmc_capillary__FILM_COLUMN.png" width="200"><br><sub>Film on Column</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

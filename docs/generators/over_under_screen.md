@@ -31,6 +31,18 @@ Add a woven over-under screen (Hauer woven web).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/over_under_screen__PLAIN.png" width="200"><br><sub>Plain</sub></td>
+<td align="center"><img src="../images/variants/over_under_screen__TWILL.png" width="200"><br><sub>Twill 2/2</sub></td>
+<td align="center"><img src="../images/variants/over_under_screen__BASKET.png" width="200"><br><sub>Basket 2/2</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

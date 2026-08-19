@@ -18,6 +18,37 @@ After the "comma symmetry spheres" of Henry Segerman's *Visualizing Mathematics 
 | Motif Relief | -0.05 | Negative carves the commas into the sphere (boolean difference); positive raises them above the surface. Range -10 to 10. |
 | Color Reflected Copies | Off | Second material on the mirror-image commas (orientation-reversing copies). |
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/orbifold_sphere__NN.png" width="200"><br><sub>nn - cyclic (Cn)</sub></td>
+<td align="center"><img src="../images/variants/orbifold_sphere__STAR_NN.png" width="200"><br><sub>*nn - pyramidal (Cnv)</sub></td>
+<td align="center"><img src="../images/variants/orbifold_sphere__N_STAR.png" width="200"><br><sub>n* - Cnh</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/orbifold_sphere__NX.png" width="200"><br><sub>nx - rotoreflection (S2n)</sub></td>
+<td align="center"><img src="../images/variants/orbifold_sphere__22N.png" width="200"><br><sub>22n - dihedral (Dn)</sub></td>
+<td align="center"><img src="../images/variants/orbifold_sphere__2STAR_N.png" width="200"><br><sub>2*n - antiprismatic (Dnd)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/orbifold_sphere__STAR_22N.png" width="200"><br><sub>*22n - prismatic (Dnh)</sub></td>
+<td align="center"><img src="../images/variants/orbifold_sphere__332.png" width="200"><br><sub>332 - tetrahedral (T)</sub></td>
+<td align="center"><img src="../images/variants/orbifold_sphere__STAR_332.png" width="200"><br><sub>*332 - full tetrahedral (Td)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/orbifold_sphere__3STAR_2.png" width="200"><br><sub>3*2 - pyritohedral (Th)</sub></td>
+<td align="center"><img src="../images/variants/orbifold_sphere__432.png" width="200"><br><sub>432 - octahedral (O)</sub></td>
+<td align="center"><img src="../images/variants/orbifold_sphere__STAR_432.png" width="200"><br><sub>*432 - full octahedral (Oh)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/orbifold_sphere__532.png" width="200"><br><sub>532 - icosahedral (I)</sub></td>
+<td align="center"><img src="../images/variants/orbifold_sphere__STAR_532.png" width="200"><br><sub>*532 - full icosahedral (Ih)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **Orbifold symmetry groups.** The finite subgroups of $O(3)$ -- the symmetry types of patterns on a sphere -- number exactly 14, named by Conway's orbifold notation. Seven are infinite families parametrized by a main-axis order $n$:

@@ -230,6 +230,7 @@ VARIANT_SELECTOR = {
     "mesh.minimal_surface_polyhedron_add": "seed",
     "mesh.supershape_add": "preset",
     "mesh.crochet_add": "preset",
+    "mesh.willmore_add": "mode",
     # The four closure modes are what change the form; the outline
     # shapes (kind_a/kind_b) are a second axis the page describes in
     # prose rather than multiplying the gallery by 25.
@@ -281,6 +282,7 @@ VARIANT_SELECTOR = {
     "curve.fractal_knot_add": "kind",
     "curve.substitution_knot_add": "base",
     "curve.tight_knot_add": "knot",
+    "curve.tight_link_add": "link",
     "curve.hopf_fibration_add": "preset",
     "mesh.hopf_torus_add": "preset",
     "mesh.rolling_knot_add": "mode",
@@ -375,13 +377,21 @@ VARIANT_SKIP = {
     # default generation count cannot build it (see VARIANT_EXTRA,
     # which renders it at two generations instead).
     "mesh.fractal_polyhedron_add": {"DODECA"},
+    # The polygonal spiral needs its own n/arms/angle triple: at the
+    # shared defaults the operator reports the angles degenerate
+    # (A=50, B=310, C=-180).  It wants a hand-tuned VARIANT_EXTRA
+    # entry from someone who knows the family, not a broken thumbnail.
+    "mesh.spiral_tiling_add": {"POLY"},
 }
 
 # Ids skipped in every gallery.  A "custom" entry is the operator
 # saying "use the sliders below" -- it has no canonical appearance, so
 # its thumbnail would just be whatever the other defaults happen to
-# make, sitting in the grid as if it were a named form.
-GENERIC_SKIP_IDS = {"CUSTOM", "NONE"}
+# make, sitting in the grid as if it were a named form.  "ACTIVE"
+# means "use the selected object", which in a headless render is
+# nothing at all: the operator correctly refuses ("no active mesh
+# object; pick a built-in seed instead").
+GENERIC_SKIP_IDS = {"CUSTOM", "NONE", "ACTIVE"}
 
 # Ceiling on one generator's gallery.  The renderer prints what it
 # dropped rather than truncating quietly -- a silently capped grid
@@ -558,6 +568,30 @@ def load_menu_defs():
     mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
+
+
+def module_for(op):
+    """Path of the generator module that declares `op`, by bl_idname.
+
+    Found by scanning rather than registered anywhere, so it works
+    outside Blender -- which is what lets the docs test tell whether a
+    figure predates the code that draws it.
+    """
+    import os
+    root = os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "math_art")
+    needle = 'bl_idname = "%s"' % op
+    for name in sorted(os.listdir(root)):
+        if not name.endswith(".py"):
+            continue
+        path = os.path.join(root, name)
+        try:
+            with open(path, encoding="utf-8") as fh:
+                if needle in fh.read():
+                    return path
+        except OSError:
+            continue
+    return None
 
 
 def params_for(op, **extra):
@@ -927,6 +961,20 @@ if _IN_BLENDER:
             only = VARIANT_GROUP_ONLY.get(op)
             for gid, items in groups.items():
                 if only and gid not in only:
+                    continue
+                # A module catalogue can be keyed more finely than the
+                # operator's own group enum.  The parametric surface
+                # table carries SINGLY/DOUBLY keys, which are families
+                # of the *periodic* operator -- passing one as
+                # `family=` is a TypeError, and those surfaces already
+                # have their thumbnails on the periodic page.  Group
+                # ids the operator will not accept are not ours.
+                #
+                # Only when there is a static list to check against:
+                # the uniform and canonical operators have a *dynamic*
+                # `family` too, so `labels` is empty for them and the
+                # resolver's ids are the authority.
+                if labels and gid not in labels:
                     continue
                 for vid, label in items:
                     if vid in skip:

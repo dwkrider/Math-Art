@@ -23,6 +23,18 @@ This generator builds parametric $n$-ary fractal trees and hanging mobiles, afte
 | Sphere Size | 0.12 | Radius of the leaf spheres / mobile weights |
 | Output | Mesh | Convert the bevelled curve to a mesh (forced whenever spheres are present), or keep a Curve object with bevel |
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/fractal_tree__TREE.png" width="200"><br><sub>Tree</sub></td>
+<td align="center"><img src="../images/variants/fractal_tree__MOBILE.png" width="200"><br><sub>Mobile</sub></td>
+<td align="center"><img src="../images/variants/fractal_tree__HONDA.png" width="200"><br><sub>Honda</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **Tree mode.** Starting from the origin with the trunk along $+Z$, the tree is built by a recursion that, at each tip of a branch of level $\ell$, emits a segment and then spawns $a$ = *arity* children. A child's direction is the parent direction $\mathbf{d}$ tilted by the branch angle $\phi$ and rotated to azimuth $\psi$ about $\mathbf{d}$:

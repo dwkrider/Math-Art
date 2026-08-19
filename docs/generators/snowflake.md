@@ -23,6 +23,22 @@ automaton and build it as a two-sided hexagonal-relief plate.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/snowflake__DENDRITE.png" width="200"><br><sub>Stellar Dendrite</sub></td>
+<td align="center"><img src="../images/variants/snowflake__FERN.png" width="200"><br><sub>Fern Dendrite</sub></td>
+<td align="center"><img src="../images/variants/snowflake__SECTORED.png" width="200"><br><sub>Sectored Plate</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/snowflake__PLATE.png" width="200"><br><sub>Hexagonal Plate</sub></td>
+<td align="center"><img src="../images/variants/snowflake__STELLAR.png" width="200"><br><sub>Stellar Plate</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

@@ -41,6 +41,51 @@ and superellipsoids from a compact set of parameters.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/supershape__SPHERE.png" width="200"><br><sub>Sphere</sub></td>
+<td align="center"><img src="../images/variants/supershape__STARFISH.png" width="200"><br><sub>Starfish</sub></td>
+<td align="center"><img src="../images/variants/supershape__FLOWER.png" width="200"><br><sub>Flower</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/supershape__GEAR.png" width="200"><br><sub>Gear Blob</sub></td>
+<td align="center"><img src="../images/variants/supershape__SPIKY.png" width="200"><br><sub>Spiky</sub></td>
+<td align="center"><img src="../images/variants/supershape__ROUNDED_CUBE.png" width="200"><br><sub>Rounded Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/supershape__SEED_POD.png" width="200"><br><sub>Seed Pod</sub></td>
+<td align="center"><img src="../images/variants/supershape__TWISTED.png" width="200"><br><sub>Twisted</sub></td>
+<td align="center"><img src="../images/variants/supershape__BULB.png" width="200"><br><sub>Bulb</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/supershape__TORUS.png" width="200"><br><sub>Torus</sub></td>
+<td align="center"><img src="../images/variants/supershape__GEAR_RING.png" width="200"><br><sub>Gear Ring</sub></td>
+<td align="center"><img src="../images/variants/supershape__STAR_TUBE.png" width="200"><br><sub>Star Tube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/supershape__FACETED_RING.png" width="200"><br><sub>Faceted Ring</sub></td>
+<td align="center"><img src="../images/variants/supershape__CONCH.png" width="200"><br><sub>Conch Shell</sub></td>
+<td align="center"><img src="../images/variants/supershape__SNAIL.png" width="200"><br><sub>Snail Shell</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/supershape__TUSK.png" width="200"><br><sub>Tusk Shell</sub></td>
+<td align="center"><img src="../images/variants/supershape__SE_SPHERE.png" width="200"><br><sub>Ellipsoid</sub></td>
+<td align="center"><img src="../images/variants/supershape__SE_CUBE.png" width="200"><br><sub>Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/supershape__SE_CYLINDER.png" width="200"><br><sub>Cylinder</sub></td>
+<td align="center"><img src="../images/variants/supershape__SE_OCTAHEDRON.png" width="200"><br><sub>Octahedron</sub></td>
+<td align="center"><img src="../images/variants/supershape__SE_STAR.png" width="200"><br><sub>Star (Superquad)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/supershape__SE_PILLOW.png" width="200"><br><sub>Pillow</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

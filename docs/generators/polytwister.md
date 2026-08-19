@@ -23,6 +23,51 @@ cycloplanes (Hopf-fibration 4D->3D, after Bowers / Ho).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/polytwister__DYADIC.png" width="200"><br><sub>Dyadic Twister (n)</sub></td>
+<td align="center"><img src="../images/variants/polytwister__TETTER.png" width="200"><br><sub>Tetratwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__QUITTER.png" width="200"><br><sub>Quasitetratwister</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polytwister__BLITTER.png" width="200"><br><sub>Bloated Tetratwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__CUBITER.png" width="200"><br><sub>Cubetwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__QUICTER.png" width="200"><br><sub>Quasicubetwister</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polytwister__BLICTER.png" width="200"><br><sub>Bloated Cubetwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__OCTER.png" width="200"><br><sub>Octatwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__QUOTER.png" width="200"><br><sub>Quasioctatwister</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polytwister__BLOTER.png" width="200"><br><sub>Bloated Octatwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__DOTER.png" width="200"><br><sub>Dodecatwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__QUADOTER.png" width="200"><br><sub>Quasidodecatwister</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polytwister__BLADOTER.png" width="200"><br><sub>Bloated Dodecatwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__IKETER.png" width="200"><br><sub>Icosatwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__QUIKETER.png" width="200"><br><sub>Quasicosatwister</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polytwister__BLIKETER.png" width="200"><br><sub>Bloated Icosatwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__GADITER.png" width="200"><br><sub>Great Dodecatwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__GAQUIDITER.png" width="200"><br><sub>Great Quasidodecatwister</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polytwister__GABLIDITER.png" width="200"><br><sub>Great Bloated Dodecatwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__SISSIDITER.png" width="200"><br><sub>Small Stellated Dodecatwister</sub></td>
+<td align="center"><img src="../images/variants/polytwister__SIQUISSIDITER.png" width="200"><br><sub>Small Quasistellated Dodecatwister</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polytwister__GIKETER.png" width="200"><br><sub>Great Icosatwister</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

@@ -42,7 +42,32 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/scherk_collins__HEPTOROID.png" width="200"><br><sub>Heptoroid</sub></td>
-<td align="center"><img src="../images/variants/scherk_collins__TOWER.png" width="200"><br><sub>Scherk Tower</sub></td>
+<td align="center"><img src="../images/variants/scherk_collins__TOWER.png" width="200"><br><sub>Scherk Tower (straight)</sub></td>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO1.png" width="200"><br><sub>Demo 1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO2.png" width="200"><br><sub>Demo 2</sub></td>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO3.png" width="200"><br><sub>Demo 3</sub></td>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO4.png" width="200"><br><sub>Demo 4</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO6.png" width="200"><br><sub>Demo 6</sub></td>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO7.png" width="200"><br><sub>Demo 7</sub></td>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO8.png" width="200"><br><sub>Demo 8</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO10.png" width="200"><br><sub>Demo 10</sub></td>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO11.png" width="200"><br><sub>Demo 11</sub></td>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO12.png" width="200"><br><sub>Demo 12</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO13.png" width="200"><br><sub>Demo 13</sub></td>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO14.png" width="200"><br><sub>Demo 14</sub></td>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO15.png" width="200"><br><sub>Demo 15</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO16.png" width="200"><br><sub>Demo 16</sub></td>
+<td align="center"><img src="../images/variants/scherk_collins__DEMO20.png" width="200"><br><sub>Demo 20</sub></td>
 </tr>
 </table>
 

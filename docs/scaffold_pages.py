@@ -61,20 +61,9 @@ BORING = {"align", "location", "rotation", "rna_type"}
 
 
 # ------------------------------------------------------------ helpers
-def module_for(op):
-    """The generator module that declares `op`, by its bl_idname."""
-    needle = f'bl_idname = "{op}"'
-    for name in sorted(os.listdir(os.path.join(PROJ, "math_art"))):
-        if not name.endswith(".py"):
-            continue
-        path = os.path.join(PROJ, "math_art", name)
-        try:
-            with open(path, encoding="utf-8") as fh:
-                if needle in fh.read():
-                    return path
-        except OSError:
-            continue
-    return None
+# Shared with tests/test_docs.py, which uses it to spot figures older
+# than the code that draws them.
+module_for = subjects.module_for
 
 
 def references_from(path):

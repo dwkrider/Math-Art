@@ -28,18 +28,84 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/prime_knot__3_1.png" width="200"><br><sub>Trefoil (3.1)</sub></td>
-<td align="center"><img src="../images/variants/prime_knot__4_1.png" width="200"><br><sub>Figure-Eight (4.1)</sub></td>
-<td align="center"><img src="../images/variants/prime_knot__5_1.png" width="200"><br><sub>Cinquefoil (5.1)</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__3_1.png" width="200"><br><sub>3.1</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__4_1.png" width="200"><br><sub>4.1</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__5_1.png" width="200"><br><sub>5.1</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/prime_knot__5_2.png" width="200"><br><sub>Knot 5.2</sub></td>
-<td align="center"><img src="../images/variants/prime_knot__6_1.png" width="200"><br><sub>Knot 6.1</sub></td>
-<td align="center"><img src="../images/variants/prime_knot__6_2.png" width="200"><br><sub>Knot 6.2</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__5_2.png" width="200"><br><sub>5.2</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__6_1.png" width="200"><br><sub>6.1</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__6_2.png" width="200"><br><sub>6.2</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/prime_knot__6_3.png" width="200"><br><sub>Knot 6.3</sub></td>
-<td align="center"><img src="../images/variants/prime_knot__7_1.png" width="200"><br><sub>Knot 7.1</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__6_3.png" width="200"><br><sub>6.3</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__7_1.png" width="200"><br><sub>7.1</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__7_2.png" width="200"><br><sub>7.2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__7_3.png" width="200"><br><sub>7.3</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__7_4.png" width="200"><br><sub>7.4</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__7_5.png" width="200"><br><sub>7.5</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__7_6.png" width="200"><br><sub>7.6</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__7_7.png" width="200"><br><sub>7.7</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_1.png" width="200"><br><sub>8.1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__8_2.png" width="200"><br><sub>8.2</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_3.png" width="200"><br><sub>8.3</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_4.png" width="200"><br><sub>8.4</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__8_5.png" width="200"><br><sub>8.5</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_6.png" width="200"><br><sub>8.6</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_7.png" width="200"><br><sub>8.7</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__8_8.png" width="200"><br><sub>8.8</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_9.png" width="200"><br><sub>8.9</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_10.png" width="200"><br><sub>8.10</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__8_11.png" width="200"><br><sub>8.11</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_12.png" width="200"><br><sub>8.12</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_13.png" width="200"><br><sub>8.13</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__8_14.png" width="200"><br><sub>8.14</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_15.png" width="200"><br><sub>8.15</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_16.png" width="200"><br><sub>8.16</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__8_17.png" width="200"><br><sub>8.17</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_18.png" width="200"><br><sub>8.18</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_19.png" width="200"><br><sub>8.19</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__8_20.png" width="200"><br><sub>8.20</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__8_21.png" width="200"><br><sub>8.21</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__9_1.png" width="200"><br><sub>9.1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__9_2.png" width="200"><br><sub>9.2</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__9_3.png" width="200"><br><sub>9.3</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__9_4.png" width="200"><br><sub>9.4</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__9_5.png" width="200"><br><sub>9.5</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__9_6.png" width="200"><br><sub>9.6</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__9_7.png" width="200"><br><sub>9.7</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__9_8.png" width="200"><br><sub>9.8</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__9_9.png" width="200"><br><sub>9.9</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__9_10.png" width="200"><br><sub>9.10</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/prime_knot__9_11.png" width="200"><br><sub>9.11</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__9_12.png" width="200"><br><sub>9.12</sub></td>
+<td align="center"><img src="../images/variants/prime_knot__9_13.png" width="200"><br><sub>9.13</sub></td>
 </tr>
 </table>
 

@@ -28,6 +28,78 @@ tangent to a concentric insphere (exact symmetric construction).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__tO.png" width="200"><br><sub>Biscribed Truncated Octahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__tI.png" width="200"><br><sub>Biscribed Truncated Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__tCO.png" width="200"><br><sub>Biscribed Truncated Cuboctahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__tID.png" width="200"><br><sub>Biscribed Truncated Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__sC.png" width="200"><br><sub>Biscribed Snub Cube</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__sD.png" width="200"><br><sub>Biscribed Snub Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__kH.png" width="200"><br><sub>Biscribed Tetrakis Hexahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__kD.png" width="200"><br><sub>Biscribed Pentakis Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__mD.png" width="200"><br><sub>Biscribed Disdyakis Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__mT.png" width="200"><br><sub>Biscribed Disdyakis Triacontahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__pI.png" width="200"><br><sub>Biscribed Pentagonal Icositetrahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__pH.png" width="200"><br><sub>Biscribed Pentagonal Hexecontahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__ppT.png" width="200"><br><sub>Biscribed Propello Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__ppC.png" width="200"><br><sub>Biscribed Propello Cube</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__ppO.png" width="200"><br><sub>Biscribed Propello Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__ppD.png" width="200"><br><sub>Biscribed Propello Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__ppI.png" width="200"><br><sub>Biscribed Propello Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__whC.png" width="200"><br><sub>Biscribed Hexpropello Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__dwC.png" width="200"><br><sub>Biscribed Dual Hexpropello Cube</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__whD.png" width="200"><br><sub>Biscribed Hexpropello Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__dwD.png" width="200"><br><sub>Biscribed Dual Hexpropello Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__okpC.png" width="200"><br><sub>Biscribed Orthokis Propello Cube</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__otpO.png" width="200"><br><sub>Biscribed Orthotruncated Propello Octahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__okpD.png" width="200"><br><sub>Biscribed Orthokis Propello Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__otpI.png" width="200"><br><sub>Biscribed Orthotruncated Propello Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__ptrO.png" width="200"><br><sub>Biscribed Propello Truncated Octahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__pkH.png" width="200"><br><sub>Biscribed Propello Tetrakis Hexahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__ptrCO.png" width="200"><br><sub>Biscribed Propello Truncated Cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__pmD.png" width="200"><br><sub>Biscribed Propello Disdyakis Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__ptrI.png" width="200"><br><sub>Biscribed Propello Truncated Icosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__pkD.png" width="200"><br><sub>Biscribed Propello Pentakis Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__sntO.png" width="200"><br><sub>Biscribed Snub Truncated Octahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__dsntO.png" width="200"><br><sub>Biscribed Dual Snub Truncated Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__sntI.png" width="200"><br><sub>Biscribed Snub Truncated Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__dsntI.png" width="200"><br><sub>Biscribed Dual Snub Truncated Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__ptID.png" width="200"><br><sub>Biscribed Propello Truncated Icosidodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/biscribed_solid__pmT.png" width="200"><br><sub>Biscribed Propello Disdyakis Triacontahedron</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__plsC.png" width="200"><br><sub>Biscribed L-Propello L-Snub Cube</sub></td>
+<td align="center"><img src="../images/variants/biscribed_solid__plpI.png" width="200"><br><sub>Biscribed L-Propello R-Pentagonal Icositetrahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

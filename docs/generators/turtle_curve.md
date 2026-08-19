@@ -51,6 +51,23 @@ curves, curves from combinatorial words, or spirolaterals.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/turtle_curve__EDGE.png" width="200"><br><sub>Koch Teragon</sub></td>
+<td align="center"><img src="../images/variants/turtle_curve__FOLD.png" width="200"><br><sub>Paper Fold</sub></td>
+<td align="center"><img src="../images/variants/turtle_curve__FASS.png" width="200"><br><sub>FASS Curve</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/turtle_curve__WORD.png" width="200"><br><sub>Word Curve</sub></td>
+<td align="center"><img src="../images/variants/turtle_curve__SPIRO.png" width="200"><br><sub>Spirolateral</sub></td>
+<td align="center"><img src="../images/variants/turtle_curve__NODE.png" width="200"><br><sub>Node Rewriting</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

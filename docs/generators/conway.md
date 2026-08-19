@@ -28,24 +28,24 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/conway__tI.png" width="200"><br><sub>Truncated Icosahedron</sub></td>
-<td align="center"><img src="../images/variants/conway__sC.png" width="200"><br><sub>Snub Cube</sub></td>
-<td align="center"><img src="../images/variants/conway__eD.png" width="200"><br><sub>Rhombicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/conway__tI.png" width="200"><br><sub>Truncated Icosahedron (tI)</sub></td>
+<td align="center"><img src="../images/variants/conway__sC.png" width="200"><br><sub>Snub Cube (sC)</sub></td>
+<td align="center"><img src="../images/variants/conway__eD.png" width="200"><br><sub>Rhombicosidodecahedron (eD)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/conway__bT.png" width="200"><br><sub>Bevelled Tetrahedron</sub></td>
-<td align="center"><img src="../images/variants/conway__gD.png" width="200"><br><sub>Pentagonal Hexecontahedron</sub></td>
-<td align="center"><img src="../images/variants/conway__cC.png" width="200"><br><sub>Chamfered Cube</sub></td>
+<td align="center"><img src="../images/variants/conway__bT.png" width="200"><br><sub>Bevelled Tetrahedron (bT)</sub></td>
+<td align="center"><img src="../images/variants/conway__gD.png" width="200"><br><sub>Pentagonal Hexecontahedron (gD)</sub></td>
+<td align="center"><img src="../images/variants/conway__cC.png" width="200"><br><sub>Chamfered Cube (cC)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/conway__pC.png" width="200"><br><sub>Propellor Cube</sub></td>
-<td align="center"><img src="../images/variants/conway__pkD.png" width="200"><br><sub>Propellor Pentakis</sub></td>
-<td align="center"><img src="../images/variants/conway__dkt5daD.png" width="200"><br><sub>Ornate</sub></td>
+<td align="center"><img src="../images/variants/conway__pC.png" width="200"><br><sub>Propellor Cube (pC)</sub></td>
+<td align="center"><img src="../images/variants/conway__pkD.png" width="200"><br><sub>Propellor Pentakis (pkD)</sub></td>
+<td align="center"><img src="../images/variants/conway__dkt5daD.png" width="200"><br><sub>Ornate (dkt5daD)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/conway__kD.png" width="200"><br><sub>Pentakis Dodecahedron</sub></td>
-<td align="center"><img src="../images/variants/conway__tkD.png" width="200"><br><sub>Truncated Pentakis</sub></td>
-<td align="center"><img src="../images/variants/conway__ccO.png" width="200"><br><sub>Twice-Chamfered Octahedron</sub></td>
+<td align="center"><img src="../images/variants/conway__kD.png" width="200"><br><sub>Pentakis Dodecahedron (kD)</sub></td>
+<td align="center"><img src="../images/variants/conway__tkD.png" width="200"><br><sub>Truncated Pentakis (tkD)</sub></td>
+<td align="center"><img src="../images/variants/conway__ccO.png" width="200"><br><sub>Twice-Chamfered Octahedron (ccO)</sub></td>
 </tr>
 </table>
 

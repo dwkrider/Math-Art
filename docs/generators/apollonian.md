@@ -29,6 +29,17 @@ Add an Apollonian gasket (2D rings) or sphere packing.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/apollonian__PACKING.png" width="200"><br><sub>Sphere Packing (3D)</sub></td>
+<td align="center"><img src="../images/variants/apollonian__GASKET.png" width="200"><br><sub>Gasket (2D)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

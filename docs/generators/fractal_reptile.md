@@ -26,6 +26,28 @@ prototile.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/fractal_reptile__SQUARE.png" width="200"><br><sub>Square</sub></td>
+<td align="center"><img src="../images/variants/fractal_reptile__HEX.png" width="200"><br><sub>Hex</sub></td>
+<td align="center"><img src="../images/variants/fractal_reptile__IAMOND.png" width="200"><br><sub>Iamond</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/fractal_reptile__RHOMB.png" width="200"><br><sub>Rhomb</sub></td>
+<td align="center"><img src="../images/variants/fractal_reptile__BOLO.png" width="200"><br><sub>Bolo</sub></td>
+<td align="center"><img src="../images/variants/fractal_reptile__KITE.png" width="200"><br><sub>Kite</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/fractal_reptile__RECTANGLE.png" width="200"><br><sub>Rectangle</sub></td>
+<td align="center"><img src="../images/variants/fractal_reptile__REFLECTION.png" width="200"><br><sub>Reflection</sub></td>
+<td align="center"><img src="../images/variants/fractal_reptile__CLASSIC.png" width="200"><br><sub>Classic</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

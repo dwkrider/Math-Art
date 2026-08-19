@@ -81,6 +81,37 @@ are single reference blocks.
   space-filling assemblies require rotation-based grammars (see the
   project backlog).
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/interlocking__TETRA.png" width="200"><br><sub>Interlocking Tetrahedra</sub></td>
+<td align="center"><img src="../images/variants/interlocking__ESCHER.png" width="200"><br><sub>Escher / Osteomorphic</sub></td>
+<td align="center"><img src="../images/variants/interlocking__VERSATILE.png" width="200"><br><sub>Versatile Blocks</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/interlocking__MCSCUBE.png" width="200"><br><sub>Interlocking Cubes</sub></td>
+<td align="center"><img src="../images/variants/interlocking__MCSOCTA.png" width="200"><br><sub>Interlocking Octahedra</sub></td>
+<td align="center"><img src="../images/variants/interlocking__BISQUARE.png" width="200"><br><sub>Bisquare Blocks</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/interlocking__RHOM.png" width="200"><br><sub>Rhom Block (single)</sub></td>
+<td align="center"><img src="../images/variants/interlocking__RHOM_OBV.png" width="200"><br><sub>Rhom Block Obverse (single)</sub></td>
+<td align="center"><img src="../images/variants/interlocking__KITTEN.png" width="200"><br><sub>Tetroctahedrille Kitten</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/interlocking__UFO.png" width="200"><br><sub>Tetroctahedrille UFO (single)</sub></td>
+<td align="center"><img src="../images/variants/interlocking__CUSHION.png" width="200"><br><sub>Tetroctahedrille Cushion (single)</sub></td>
+<td align="center"><img src="../images/variants/interlocking__SL.png" width="200"><br><sub>SL Blocks</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/interlocking__DOME.png" width="200"><br><sub>Interlocking Dome</sub></td>
+<td align="center"><img src="../images/variants/interlocking__HENDECA.png" width="200"><br><sub>Bisymmetric Hendecahedron</sub></td>
+</tr>
+</table>
+
 ## References
 
 - A. V. Dyskin, Y. Estrin, A. J. Kanel-Belov, E. Pasternak, "A new

@@ -35,6 +35,9 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/zonohedra__ENNEACONTA.png" width="200"><br><sub>Rhombic Enneacontahedron</sub></td>
 <td align="center"><img src="../images/variants/zonohedra__CUBE.png" width="200"><br><sub>Cube</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/zonohedra__RANDOM.png" width="200"><br><sub>Random Star</sub></td>
+</tr>
 </table>
 
 ## How it works

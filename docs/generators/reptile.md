@@ -22,6 +22,22 @@ Add a rep-tile substitution tiling.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/reptile__L_TROMINO.png" width="200"><br><sub>L-Tromino (rep-4)</sub></td>
+<td align="center"><img src="../images/variants/reptile__SPHINX.png" width="200"><br><sub>Sphinx Hexiamond (rep-4)</sub></td>
+<td align="center"><img src="../images/variants/reptile__L_TETROMINO.png" width="200"><br><sub>L-Tetromino (rep-4)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/reptile__P_PENTOMINO.png" width="200"><br><sub>P-Pentomino (rep-4)</sub></td>
+<td align="center"><img src="../images/variants/reptile__RIGHT_TRIANGLE.png" width="200"><br><sub>Right Triangle (rep-2)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

@@ -30,6 +30,21 @@ gives that many parallel cords).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/turks_head__RING.png" width="200"><br><sub>Ring (Flat Mat)</sub></td>
+<td align="center"><img src="../images/variants/turks_head__CYLINDER.png" width="200"><br><sub>Cylinder</sub></td>
+<td align="center"><img src="../images/variants/turks_head__TORUS.png" width="200"><br><sub>Torus</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/turks_head__SPHERE.png" width="200"><br><sub>Sphere</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

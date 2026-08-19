@@ -46,6 +46,21 @@ Add a D-form: a solid glued from two flat equal-perimeter sheets.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/dform__SEAM.png" width="200"><br><sub>Seam (two sheets)</sub></td>
+<td align="center"><img src="../images/variants/dform__ANTI.png" width="200"><br><sub>Anti (holes joined)</sub></td>
+<td align="center"><img src="../images/variants/dform__TRUNCATE.png" width="200"><br><sub>Truncated (sliced polyhedron)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/dform__VESICA.png" width="200"><br><sub>Folded Vesica Piscis</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

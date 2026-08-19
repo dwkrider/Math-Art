@@ -23,6 +23,23 @@ Add a 2-uniform Euclidean tiling.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/kuniform__S_TT.png" width="200"><br><sub>3.3.3.3.3.3 / 3.3.3.4.4 (a)</sub></td>
+<td align="center"><img src="../images/variants/kuniform__S_TTT.png" width="200"><br><sub>3.3.3.3.3.3 / 3.3.3.4.4 (b)</sub></td>
+<td align="center"><img src="../images/variants/kuniform__SS_T.png" width="200"><br><sub>4.4.4.4 / 3.3.3.4.4 (a)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/kuniform__SSS_T.png" width="200"><br><sub>4.4.4.4 / 3.3.3.4.4 (b)</sub></td>
+<td align="center"><img src="../images/variants/kuniform__HEX_T.png" width="200"><br><sub>3.6.3.6 / 3.3.3.3.6</sub></td>
+<td align="center"><img src="../images/variants/kuniform__HEXCOL.png" width="200"><br><sub>3.6.3.6 / 3.3.6.6</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

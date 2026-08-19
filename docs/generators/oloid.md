@@ -23,7 +23,7 @@ Renders of each selectable option:
 <table>
 <tr>
 <td align="center"><img src="../images/variants/oloid__OLOID.png" width="200"><br><sub>Oloid</sub></td>
-<td align="center"><img src="../images/variants/oloid__ROLLER.png" width="200"><br><sub>Two-Circle Roller</sub></td>
+<td align="center"><img src="../images/variants/oloid__ROLLER.png" width="200"><br><sub>Two-Circle Roller / Wobbler</sub></td>
 <td align="center"><img src="../images/variants/oloid__ANTIOLOID.png" width="200"><br><sub>Anti-Oloid</sub></td>
 </tr>
 <tr>

@@ -40,14 +40,18 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/seifert__CINQUEFOIL.png" width="200"><br><sub>Cinquefoil (5_1)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/seifert__GRANNY.png" width="200"><br><sub>Granny</sub></td>
-<td align="center"><img src="../images/variants/seifert__SQUARE.png" width="200"><br><sub>Square</sub></td>
-<td align="center"><img src="../images/variants/seifert__HOPF.png" width="200"><br><sub>Hopf link</sub></td>
+<td align="center"><img src="../images/variants/seifert__SEPTAFOIL.png" width="200"><br><sub>(2,7) torus knot 7_1</sub></td>
+<td align="center"><img src="../images/variants/seifert__T34.png" width="200"><br><sub>(3,4) torus knot 8_19</sub></td>
+<td align="center"><img src="../images/variants/seifert__GRANNY.png" width="200"><br><sub>Granny knot</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/seifert__SQUARE.png" width="200"><br><sub>Square knot</sub></td>
+<td align="center"><img src="../images/variants/seifert__HOPF.png" width="200"><br><sub>Hopf link</sub></td>
 <td align="center"><img src="../images/variants/seifert__SOLOMON.png" width="200"><br><sub>Solomon's link</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/seifert__BORROMEAN.png" width="200"><br><sub>Borromean rings</sub></td>
-<td align="center"><img src="../images/variants/seifert__TORUS.png" width="200"><br><sub>Torus knot</sub></td>
+<td align="center"><img src="../images/variants/seifert__TORUS.png" width="200"><br><sub>Torus knot (p,q)</sub></td>
 </tr>
 </table>
 

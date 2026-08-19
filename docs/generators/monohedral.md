@@ -23,6 +23,26 @@ Add a monohedral tiling (single irregular prototile).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/monohedral__TRIANGLE.png" width="200"><br><sub>Triangle</sub></td>
+<td align="center"><img src="../images/variants/monohedral__QUAD.png" width="200"><br><sub>Quadrilateral</sub></td>
+<td align="center"><img src="../images/variants/monohedral__PENT1.png" width="200"><br><sub>Pentagon Type 1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/monohedral__PENT2.png" width="200"><br><sub>Pentagon Type 2</sub></td>
+<td align="center"><img src="../images/variants/monohedral__PENT5.png" width="200"><br><sub>Pentagon Type 5</sub></td>
+<td align="center"><img src="../images/variants/monohedral__HEX1.png" width="200"><br><sub>Hexagon Type 1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/monohedral__HEX2.png" width="200"><br><sub>Hexagon Type 2</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

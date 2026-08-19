@@ -29,6 +29,27 @@ woven over/under diagram -- rope tube mesh or curve.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/rational_knot__FIG8.png" width="200"><br><sub>Figure-Eight 4_1 -- rational [2 2]</sub></td>
+<td align="center"><img src="../images/variants/rational_knot__TREFOIL.png" width="200"><br><sub>Trefoil 3_1 -- rational [3]</sub></td>
+<td align="center"><img src="../images/variants/rational_knot__K5_2.png" width="200"><br><sub>5_2 -- rational [3 2]</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/rational_knot__K6_1.png" width="200"><br><sub>6_1 Stevedore -- twist n=4</sub></td>
+<td align="center"><img src="../images/variants/rational_knot__K7_2.png" width="200"><br><sub>7_2 -- twist n=5</sub></td>
+<td align="center"><img src="../images/variants/rational_knot__P357.png" width="200"><br><sub>Pretzel (3,5,7)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/rational_knot__PM237.png" width="200"><br><sub>Pretzel (-2,3,7)</sub></td>
+<td align="center"><img src="../images/variants/rational_knot__P222.png" width="200"><br><sub>Pretzel (2,2,2) -- 3-component link</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

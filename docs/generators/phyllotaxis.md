@@ -36,6 +36,22 @@ cone, sphere or crest, with emergent Fibonacci spiral arms.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/phyllotaxis__DISK.png" width="200"><br><sub>Disk (sunflower)</sub></td>
+<td align="center"><img src="../images/variants/phyllotaxis__DOME.png" width="200"><br><sub>Dome (cactus)</sub></td>
+<td align="center"><img src="../images/variants/phyllotaxis__CONE.png" width="200"><br><sub>Cone</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/phyllotaxis__SPHERE.png" width="200"><br><sub>Sphere (pineapple)</sub></td>
+<td align="center"><img src="../images/variants/phyllotaxis__CREST.png" width="200"><br><sub>Crest (cristate)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

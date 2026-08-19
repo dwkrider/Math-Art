@@ -26,6 +26,21 @@ into a self-similar fractal knot.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/fractal_knot__TREFOIL.png" width="200"><br><sub>Trefoil</sub></td>
+<td align="center"><img src="../images/variants/fractal_knot__CINQUEFOIL.png" width="200"><br><sub>Cinquefoil (5,2)</sub></td>
+<td align="center"><img src="../images/variants/fractal_knot__T3_4.png" width="200"><br><sub>(3,4) Torus Knot</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/fractal_knot__UNKNOT.png" width="200"><br><sub>Unknot (circle base)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

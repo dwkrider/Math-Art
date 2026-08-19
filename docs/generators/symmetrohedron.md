@@ -32,9 +32,9 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/symmetrohedron__I.png" width="200"><br><sub>Icosahedral</sub></td>
-<td align="center"><img src="../images/variants/symmetrohedron__O.png" width="200"><br><sub>Octahedral</sub></td>
-<td align="center"><img src="../images/variants/symmetrohedron__T.png" width="200"><br><sub>Tetrahedral</sub></td>
+<td align="center"><img src="../images/variants/symmetrohedron__I.png" width="200"><br><sub>Icosahedral (5,3,2)</sub></td>
+<td align="center"><img src="../images/variants/symmetrohedron__O.png" width="200"><br><sub>Octahedral (4,3,2)</sub></td>
+<td align="center"><img src="../images/variants/symmetrohedron__T.png" width="200"><br><sub>Tetrahedral (3,3,2)</sub></td>
 </tr>
 </table>
 

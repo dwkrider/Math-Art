@@ -30,6 +30,22 @@ tristix), after O'Keeffe, Conway and Widmark.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/polystix__TETRASTIX.png" width="200"><br><sub>Tetrastix - square rods, 3 directions</sub></td>
+<td align="center"><img src="../images/variants/polystix__HEMISTIX.png" width="200"><br><sub>Hemistix - square rods, 3 directions (chiral)</sub></td>
+<td align="center"><img src="../images/variants/polystix__HEXASTIX.png" width="200"><br><sub>Hexastix - hexagonal rods, 4 directions (pencils)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polystix__TRISTIX.png" width="200"><br><sub>Tristix / +Omega - triangular rods, 4 dir (chiral)</sub></td>
+<td align="center"><img src="../images/variants/polystix__SIGMA.png" width="200"><br><sub>+Sigma - hexagonal rods, 4 directions (chiral)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

@@ -35,8 +35,8 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/fractal_polyhedron__OCTA.png" width="200"><br><sub>Octahedron</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/fractal_polyhedron__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
 <td align="center"><img src="../images/variants/fractal_polyhedron__ICOSA.png" width="200"><br><sub>Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/fractal_polyhedron__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
 </tr>
 </table>
 

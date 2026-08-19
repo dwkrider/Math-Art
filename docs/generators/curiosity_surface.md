@@ -26,8 +26,8 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/curiosity_surface__FRESNEL.png" width="200"><br><sub>Fresnel Elasticity</sub></td>
-<td align="center"><img src="../images/variants/curiosity_surface__PAPERBAG.png" width="200"><br><sub>Paper Bag</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__FRESNEL.png" width="200"><br><sub>Fresnel Elasticity Surface</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__PAPERBAG.png" width="200"><br><sub>Paper Bag Surface</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__TRIHYPERBOLOID.png" width="200"><br><sub>Trihyperboloid</sub></td>
 </tr>
 </table>

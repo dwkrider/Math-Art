@@ -28,6 +28,109 @@ the Greater Self-Dual Solids, in their edge-tangent canonical form.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+### SELF_DUAL
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__0.png" width="200"><br><sub>Self-Dual Icosioctahedron #1</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__1.png" width="200"><br><sub>Self-Dual Icosioctahedron #2</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__2.png" width="200"><br><sub>Self-Dual Icosioctahedron #3</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__3.png" width="200"><br><sub>Self-Dual Icosioctahedron #4</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__4.png" width="200"><br><sub>Self-Dual Tetracontahedron #1</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__5.png" width="200"><br><sub>Self-Dual Tetracontahedron #2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__6.png" width="200"><br><sub>Self-Dual Tetracontahedron #3</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__7.png" width="200"><br><sub>Self-Dual Tetracontahedron #4</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__8.png" width="200"><br><sub>Self-Dual Tetracontahedron #5</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__9.png" width="200"><br><sub>Self-Dual Tetracontahedron #6</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__10.png" width="200"><br><sub>Self-Dual 76-hedron</sub></td>
+</tr>
+</table>
+
+### SIMPLEST
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__0_1.png" width="200"><br><sub>Ci</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__1_1.png" width="200"><br><sub>Cs</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__2_1.png" width="200"><br><sub>C1</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__3_1.png" width="200"><br><sub>C2</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__4_1.png" width="200"><br><sub>C2h</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__5_1.png" width="200"><br><sub>C2v</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__6_1.png" width="200"><br><sub>C3</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__7_1.png" width="200"><br><sub>C3v</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__8_1.png" width="200"><br><sub>C4</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__9_1.png" width="200"><br><sub>C4v (Square Pyramid)</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__10_1.png" width="200"><br><sub>C5v (Pentagonal Pyramid)</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__11.png" width="200"><br><sub>C6v (Hexagonal Pyramid)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__12.png" width="200"><br><sub>C7v (Heptagonal Pyramid)</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__13.png" width="200"><br><sub>C8v (Octagonal Pyramid)</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__14.png" width="200"><br><sub>C9v (Enneagonal Pyramid)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__15.png" width="200"><br><sub>C10v (Decagonal Pyramid)</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__16.png" width="200"><br><sub>C11v (Hendecagonal Pyramid)</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__17.png" width="200"><br><sub>S4</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__18.png" width="200"><br><sub>S6</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__19.png" width="200"><br><sub>D2</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__20.png" width="200"><br><sub>D2h</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__21.png" width="200"><br><sub>D2v</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__22.png" width="200"><br><sub>D3</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__23.png" width="200"><br><sub>D3h</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__24.png" width="200"><br><sub>D3v</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__25.png" width="200"><br><sub>D4h</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__26.png" width="200"><br><sub>D4v</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__27.png" width="200"><br><sub>D5h</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__28.png" width="200"><br><sub>D5v</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__29.png" width="200"><br><sub>D6h</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__30.png" width="200"><br><sub>D6v</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__31.png" width="200"><br><sub>D7h</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__32.png" width="200"><br><sub>D8h</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__33.png" width="200"><br><sub>D9h</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__34.png" width="200"><br><sub>D10h</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__35.png" width="200"><br><sub>T (Propello Tetrahedron)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__36.png" width="200"><br><sub>Td (Tetrahedron)</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__37.png" width="200"><br><sub>Th</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__38.png" width="200"><br><sub>O</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/canonical_polyhedron__39.png" width="200"><br><sub>Oh</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__40.png" width="200"><br><sub>I</sub></td>
+<td align="center"><img src="../images/variants/canonical_polyhedron__41.png" width="200"><br><sub>Ih</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

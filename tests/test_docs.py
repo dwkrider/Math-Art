@@ -148,6 +148,82 @@ def report_option_drift():
     return warned
 
 
+def _git_time(path):
+    """Commit time of `path`'s last change, or None if untracked."""
+    import subprocess
+    try:
+        out = subprocess.run(
+            ["git", "log", "-1", "--format=%ct", "--", path],
+            cwd=PROJ, capture_output=True, text=True, timeout=30)
+    except Exception:
+        return None
+    out = out.stdout.strip()
+    return int(out) if out.isdigit() else None
+
+
+def _dirty_paths():
+    """Repo-relative paths with uncommitted changes, forward-slashed.
+
+    A figure re-rendered but not yet committed still carries its *old*
+    commit time, so comparing timestamps alone would flag the very
+    images a docs pass just refreshed.  Anything dirty is by definition
+    fresher than the last commit of the module.
+    """
+    import subprocess
+    try:
+        out = subprocess.run(["git", "status", "--porcelain"],
+                             cwd=PROJ, capture_output=True, text=True,
+                             timeout=30).stdout
+    except Exception:
+        return set()
+    paths = set()
+    for line in out.splitlines():
+        p = line[3:].strip().strip('"')
+        if " -> " in p:                       # a rename
+            p = p.split(" -> ", 1)[1]
+        paths.add(p.replace("\\", "/"))
+    return paths
+
+
+def report_stale_figures():
+    """Advisory: figures committed before the generator last changed.
+
+    This is the "which generators did the merge affect" detector.  A new
+    generator is easy to spot -- it has no page.  The case that rots
+    silently is an *existing* generator whose defaults, enum options or
+    geometry changed, leaving a figure that no longer shows what the
+    operator produces.  Comparing commit times catches exactly that,
+    and needs nothing but git.
+    """
+    dirty = _dirty_paths()
+    stale = []
+    for op in sorted(menu_defs.unique_ops()):
+        if op in UNDOCUMENTED:
+            continue
+        img = "docs/images/%s.png" % subjects.slug_for(op)
+        if not os.path.exists(os.path.join(PROJ, img)):
+            continue
+        # Just re-rendered (uncommitted) -- that is a docs pass in
+        # progress, not drift.
+        if img in dirty:
+            continue
+        mod = subjects.module_for(op)
+        if mod is None:
+            continue
+        t_img = _git_time(img)
+        t_mod = _git_time(os.path.relpath(mod, PROJ).replace("\\", "/"))
+        # An untracked figure has never been committed, so there is no
+        # "before" to compare against.
+        if t_img is None or t_mod is None:
+            continue
+        if t_mod > t_img:
+            stale.append((subjects.slug_for(op), os.path.basename(mod)))
+    for slug, mod in stale:
+        print(f"  WARN {slug}.png predates its generator ({mod}) -- "
+              f"re-render it")
+    return len(stale)
+
+
 def main(argv):
     quiet = "--quiet" in argv
     failures = []
@@ -172,6 +248,10 @@ def main(argv):
     warned = report_option_drift()
     print(f"  {warned} page(s) with options the operator has and the "
           f"page does not")
+
+    print("\nstale figures (advisory):")
+    stale = report_stale_figures()
+    print(f"  {stale} figure(s) older than the generator they show")
 
     n_ops = len(menu_defs.unique_ops())
     print(f"\n{len(_pages())} pages for {n_ops} operators "

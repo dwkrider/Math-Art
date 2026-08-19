@@ -27,6 +27,18 @@ at reduced volume, and prescribed-curvature rings.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/willmore__TORUS.png" width="200"><br><sub>Willmore Torus (Clifford)</sub></td>
+<td align="center"><img src="../images/variants/willmore__VESICLE.png" width="200"><br><sub>Vesicle (red blood cell)</sub></td>
+<td align="center"><img src="../images/variants/willmore__RING.png" width="200"><br><sub>Inflated Ring</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

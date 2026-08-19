@@ -28,6 +28,21 @@ Add a Fathauer iterative-substitution fractal knot.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/substitution_knot__TREFOIL.png" width="200"><br><sub>Trefoil (3 slots)</sub></td>
+<td align="center"><img src="../images/variants/substitution_knot__TREFOIL_TWIN.png" width="200"><br><sub>Trefoil Clasp (2 slots)</sub></td>
+<td align="center"><img src="../images/variants/substitution_knot__CINQUEFOIL.png" width="200"><br><sub>Cinquefoil (5 slots)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/substitution_knot__CINQUEFOIL_QUAD.png" width="200"><br><sub>Cinquefoil Clasp (4 slots)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

@@ -37,7 +37,7 @@ Renders of each selectable option:
 <table>
 <tr>
 <td align="center"><img src="../images/variants/polytope4d__CELL5.png" width="200"><br><sub>5-cell</sub></td>
-<td align="center"><img src="../images/variants/polytope4d__CELL8.png" width="200"><br><sub>Tesseract</sub></td>
+<td align="center"><img src="../images/variants/polytope4d__CELL8.png" width="200"><br><sub>Tesseract (8-cell)</sub></td>
 <td align="center"><img src="../images/variants/polytope4d__CELL16.png" width="200"><br><sub>16-cell</sub></td>
 </tr>
 <tr>

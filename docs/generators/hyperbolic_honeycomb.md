@@ -30,14 +30,14 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H435.png" width="200"><br><sub>{4,3,5}</sub></td>
-<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H534.png" width="200"><br><sub>{5,3,4}</sub></td>
-<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H353.png" width="200"><br><sub>{3,5,3}</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H435.png" width="200"><br><sub>{4,3,5} Order-5 Cubic</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H534.png" width="200"><br><sub>{5,3,4} Order-4 Dodecahedral</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H353.png" width="200"><br><sub>{3,5,3} Icosahedral</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H535.png" width="200"><br><sub>{5,3,5}</sub></td>
-<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H633.png" width="200"><br><sub>{6,3,3}</sub></td>
-<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H336.png" width="200"><br><sub>{3,3,6}</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H535.png" width="200"><br><sub>{5,3,5} Order-5 Dodecahedral</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H633.png" width="200"><br><sub>{6,3,3} Hexagonal Tiling Cells</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_honeycomb__H336.png" width="200"><br><sub>{3,3,6} Order-6 Tetrahedral</sub></td>
 </tr>
 </table>
 

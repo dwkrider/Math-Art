@@ -23,6 +23,18 @@ Add a Voderberg spiral tiling patch.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/voderberg__CLASSIC.png" width="200"><br><sub>Classic Double Spiral</sub></td>
+<td align="center"><img src="../images/variants/voderberg__SPIRAL.png" width="200"><br><sub>Spiral (Enclosure Order)</sub></td>
+<td align="center"><img src="../images/variants/voderberg__RADIAL.png" width="200"><br><sub>Radial Rings</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

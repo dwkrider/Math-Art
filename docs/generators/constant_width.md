@@ -21,6 +21,18 @@ Add a surface of constant width -- a Reuleaux solid of revolution, the Reuleaux 
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/constant_width__MEISSNER.png" width="200"><br><sub>Meissner Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/constant_width__REVOLUTION.png" width="200"><br><sub>Reuleaux Solid of Revolution</sub></td>
+<td align="center"><img src="../images/variants/constant_width__REULEAUX.png" width="200"><br><sub>Reuleaux Tetrahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

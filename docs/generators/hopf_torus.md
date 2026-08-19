@@ -25,6 +25,22 @@ closed curve gamma on S^2, stereographically projected to R^3.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/hopf_torus__CIRCLE.png" width="200"><br><sub>Circle</sub></td>
+<td align="center"><img src="../images/variants/hopf_torus__WAVY.png" width="200"><br><sub>Wavy (m-lobed)</sub></td>
+<td align="center"><img src="../images/variants/hopf_torus__ELLIPSE.png" width="200"><br><sub>Ellipse</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/hopf_torus__TREFOIL.png" width="200"><br><sub>Trefoil-like</sub></td>
+<td align="center"><img src="../images/variants/hopf_torus__BAND.png" width="200"><br><sub>Hopf Band</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

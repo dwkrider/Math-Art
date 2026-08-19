@@ -26,6 +26,42 @@ a z-symmetry (shows only in 3D -- use relief or an active mesh).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/layer__p1.png" width="200"><br><sub>p1  (o)</sub></td>
+<td align="center"><img src="../images/variants/layer__p2.png" width="200"><br><sub>p2  (2222)</sub></td>
+<td align="center"><img src="../images/variants/layer__pm.png" width="200"><br><sub>pm  (**)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/layer__pg.png" width="200"><br><sub>pg  (xx)</sub></td>
+<td align="center"><img src="../images/variants/layer__cm.png" width="200"><br><sub>cm  (*x)</sub></td>
+<td align="center"><img src="../images/variants/layer__pmm.png" width="200"><br><sub>pmm  (*2222)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/layer__pmg.png" width="200"><br><sub>pmg  (22*)</sub></td>
+<td align="center"><img src="../images/variants/layer__pgg.png" width="200"><br><sub>pgg  (22x)</sub></td>
+<td align="center"><img src="../images/variants/layer__cmm.png" width="200"><br><sub>cmm  (2*22)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/layer__p4.png" width="200"><br><sub>p4  (442)</sub></td>
+<td align="center"><img src="../images/variants/layer__p4m.png" width="200"><br><sub>p4m  (*442)</sub></td>
+<td align="center"><img src="../images/variants/layer__p4g.png" width="200"><br><sub>p4g  (4*2)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/layer__p3.png" width="200"><br><sub>p3  (333)</sub></td>
+<td align="center"><img src="../images/variants/layer__p3m1.png" width="200"><br><sub>p3m1  (*333)</sub></td>
+<td align="center"><img src="../images/variants/layer__p31m.png" width="200"><br><sub>p31m  (3*3)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/layer__p6.png" width="200"><br><sub>p6  (632)</sub></td>
+<td align="center"><img src="../images/variants/layer__p6m.png" width="200"><br><sub>p6m  (*632)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

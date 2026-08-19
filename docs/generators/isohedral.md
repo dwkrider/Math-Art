@@ -24,6 +24,36 @@ Add an isohedral (Escher-style) tiling.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/isohedral__P1.png" width="200"><br><sub>Translation (p1)</sub></td>
+<td align="center"><img src="../images/variants/isohedral__P2.png" width="200"><br><sub>2-fold (p2)</sub></td>
+<td align="center"><img src="../images/variants/isohedral__PG.png" width="200"><br><sub>Glide (pg)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/isohedral__PGG.png" width="200"><br><sub>Double Glide (pgg)</sub></td>
+<td align="center"><img src="../images/variants/isohedral__CMM.png" width="200"><br><sub>Rhombic (cmm)</sub></td>
+<td align="center"><img src="../images/variants/isohedral__P4.png" width="200"><br><sub>4-fold (p4)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/isohedral__P4G.png" width="200"><br><sub>4-fold Mirror (p4g)</sub></td>
+<td align="center"><img src="../images/variants/isohedral__P4M.png" width="200"><br><sub>4-fold Kaleidoscope (p4m)</sub></td>
+<td align="center"><img src="../images/variants/isohedral__P3.png" width="200"><br><sub>3-fold Pinwheel (p3)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/isohedral__P6.png" width="200"><br><sub>6-fold Pinwheel (p6)</sub></td>
+<td align="center"><img src="../images/variants/isohedral__P6M.png" width="200"><br><sub>6-fold Kaleidoscope (p6m)</sub></td>
+<td align="center"><img src="../images/variants/isohedral__P3M1.png" width="200"><br><sub>3-fold Kaleidoscope (p3m1)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/isohedral__P31M.png" width="200"><br><sub>3-fold Mirror Pinwheel (p31m)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

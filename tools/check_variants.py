@@ -34,6 +34,39 @@ from math_art import menu_defs                             # noqa: E402
 import subjects                                            # noqa: E402
 
 
+# Enums that say how a shape is *presented* rather than which shape it
+# is: a gallery of these would be the same object six times over.
+PRESENTATION = {
+    "style", "coloring", "colour_mode", "color_by", "color_mode",
+    "output", "align", "material", "display", "handedness",
+    "spline_type", "face_color", "interlace_mode", "rig", "bands",
+}
+
+
+def _candidates(op):
+    """Enums on `op` that could plausibly be an undeclared selector."""
+    mod, _, fn = op.partition('.')
+    try:
+        rna = getattr(getattr(bpy.ops, mod), fn).get_rna_type()
+    except Exception:
+        return ""
+    out = []
+    for p in rna.properties:
+        if p.type != 'ENUM' or p.identifier in PRESENTATION:
+            continue
+        try:
+            n = len(p.enum_items)
+        except Exception:
+            continue
+        # 0 means a callback enum, which RNA will not resolve here --
+        # those are two-level selectors and need a VARIANT_GROUP entry.
+        if n >= 3:
+            out.append(f"{p.identifier}({n})")
+        elif n == 0:
+            out.append(f"{p.identifier}(dynamic)")
+    return ("   <-- possible selector: " + ", ".join(out)) if out else ""
+
+
 def main(argv):
     quiet = "--quiet" in argv
     ops = menu_defs.unique_ops()
@@ -66,12 +99,16 @@ def main(argv):
 
     print(f"\n{len(rows)} galleries, {total} variant renders in all")
 
+    # An operator with no gallery is usually a single-form generator,
+    # which needs none.  But a *missed* gallery looks identical in a
+    # bare list, so say which of them still carry a multi-option enum
+    # that might be a selector -- that is how the tight link's six
+    # links and the Willmore modes were caught after a merge.
     no_gallery = sorted(set(ops) - declared - set(subjects.SKIP))
     if no_gallery:
-        print(f"\n{len(no_gallery)} operators with no gallery declared "
-              f"(a single-form generator needs none):")
+        print(f"\n{len(no_gallery)} operators with no gallery declared:")
         for op in no_gallery:
-            print("   ", op)
+            print(f"    {op}{_candidates(op)}")
     if orphan:
         print(f"\n{len(orphan)} galleries for non-menu operators:")
         for op in orphan:

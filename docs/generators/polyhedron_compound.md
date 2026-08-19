@@ -19,6 +19,26 @@ separately).
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__STELLA.png" width="200"><br><sub>Stella Octangula (2 Tetrahedra)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__5TETRA.png" width="200"><br><sub>Compound of 5 Tetrahedra</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__10TETRA.png" width="200"><br><sub>Compound of 10 Tetrahedra</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__5CUBES.png" width="200"><br><sub>Compound of 5 Cubes</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__5OCTA.png" width="200"><br><sub>Compound of 5 Octahedra</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__CUBE_OCTA.png" width="200"><br><sub>Cube + Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__DODECA_ICOSA.png" width="200"><br><sub>Dodecahedron + Icosahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

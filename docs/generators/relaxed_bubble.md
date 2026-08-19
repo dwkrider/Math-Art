@@ -29,6 +29,18 @@ evolution rather than being drawn in closed form.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/relaxed_bubble__SINGLE.png" width="200"><br><sub>Single Bubble</sub></td>
+<td align="center"><img src="../images/variants/relaxed_bubble__DOUBLE.png" width="200"><br><sub>Double Bubble</sub></td>
+<td align="center"><img src="../images/variants/relaxed_bubble__TRIPLE.png" width="200"><br><sub>Triple Bubble</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

@@ -27,22 +27,69 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/attractor__LORENZ.png" width="200"><br><sub>Lorenz</sub></td>
-<td align="center"><img src="../images/variants/attractor__ROSSLER.png" width="200"><br><sub>Rossler</sub></td>
-<td align="center"><img src="../images/variants/attractor__THOMAS.png" width="200"><br><sub>Thomas</sub></td>
+<td align="center"><img src="../images/variants/attractor__AIZAWA.png" width="200"><br><sub>Aizawa</sub></td>
+<td align="center"><img src="../images/variants/attractor__ANISHCHENKO.png" width="200"><br><sub>Anishchenko-Astakhov</sub></td>
+<td align="center"><img src="../images/variants/attractor__ARNEODO.png" width="200"><br><sub>Arneodo</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/attractor__AIZAWA.png" width="200"><br><sub>Aizawa</sub></td>
-<td align="center"><img src="../images/variants/attractor__HALVORSEN.png" width="200"><br><sub>Halvorsen</sub></td>
-<td align="center"><img src="../images/variants/attractor__DADRAS.png" width="200"><br><sub>Dadras</sub></td>
+<td align="center"><img src="../images/variants/attractor__BOUALI.png" width="200"><br><sub>Bouali</sub></td>
+<td align="center"><img src="../images/variants/attractor__BURKESHAW.png" width="200"><br><sub>Burke-Shaw</sub></td>
+<td align="center"><img src="../images/variants/attractor__CHENCELIKOVSKY.png" width="200"><br><sub>Chen-Celikovsky</sub></td>
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/attractor__CHENLEE.png" width="200"><br><sub>Chen-Lee</sub></td>
-<td align="center"><img src="../images/variants/attractor__FOURWING.png" width="200"><br><sub>Four-Wing</sub></td>
-<td align="center"><img src="../images/variants/attractor__NOSEHOOVER.png" width="200"><br><sub>Nose-Hoover</sub></td>
+<td align="center"><img src="../images/variants/attractor__CHUA.png" width="200"><br><sub>Chua</sub></td>
+<td align="center"><img src="../images/variants/attractor__COULLET.png" width="200"><br><sub>Coullet</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/attractor__ARNEODO.png" width="200"><br><sub>Arneodo</sub></td>
+<td align="center"><img src="../images/variants/attractor__COUPLEDLORENZ.png" width="200"><br><sub>Coupled Lorenz</sub></td>
+<td align="center"><img src="../images/variants/attractor__DADRAS.png" width="200"><br><sub>Dadras</sub></td>
+<td align="center"><img src="../images/variants/attractor__DEQUANLI.png" width="200"><br><sub>Dequan Li</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/attractor__FINANCE.png" width="200"><br><sub>Finance</sub></td>
+<td align="center"><img src="../images/variants/attractor__FOURWING.png" width="200"><br><sub>Four-Wing</sub></td>
+<td align="center"><img src="../images/variants/attractor__GENESIOTESI.png" width="200"><br><sub>Genesio-Tesi</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/attractor__HADLEY.png" width="200"><br><sub>Hadley</sub></td>
+<td align="center"><img src="../images/variants/attractor__HALVORSEN.png" width="200"><br><sub>Halvorsen</sub></td>
+<td align="center"><img src="../images/variants/attractor__LIUCHEN.png" width="200"><br><sub>Liu-Chen</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/attractor__LORENZ.png" width="200"><br><sub>Lorenz</sub></td>
+<td align="center"><img src="../images/variants/attractor__LORENZMOD1.png" width="200"><br><sub>Lorenz Mod 1</sub></td>
+<td align="center"><img src="../images/variants/attractor__LORENZMOD2.png" width="200"><br><sub>Lorenz Mod 2</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/attractor__LORENZSTENFLO.png" width="200"><br><sub>Lorenz-Stenflo</sub></td>
+<td align="center"><img src="../images/variants/attractor__LUCHEN.png" width="200"><br><sub>Lu-Chen</sub></td>
+<td align="center"><img src="../images/variants/attractor__NEWTONLEIPNIK.png" width="200"><br><sub>Newton-Leipnik</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/attractor__NOSEHOOVER.png" width="200"><br><sub>Nose-Hoover</sub></td>
+<td align="center"><img src="../images/variants/attractor__QI.png" width="200"><br><sub>Qi</sub></td>
+<td align="center"><img src="../images/variants/attractor__QICHEN.png" width="200"><br><sub>Qi-Chen</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/attractor__RAYLEIGHBENARD.png" width="200"><br><sub>Rayleigh-Benard</sub></td>
+<td align="center"><img src="../images/variants/attractor__ROSSLER.png" width="200"><br><sub>Roessler</sub></td>
+<td align="center"><img src="../images/variants/attractor__RUCKLIDGE.png" width="200"><br><sub>Rucklidge</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/attractor__SAKARYA.png" width="200"><br><sub>Sakarya</sub></td>
+<td align="center"><img src="../images/variants/attractor__SHIMIZUMORIOKA.png" width="200"><br><sub>Shimizu-Morioka</sub></td>
+<td align="center"><img src="../images/variants/attractor__THOMAS.png" width="200"><br><sub>Thomas</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/attractor__TSUCS1.png" width="200"><br><sub>Three-Scroll Unified 1</sub></td>
+<td align="center"><img src="../images/variants/attractor__TSUCS2.png" width="200"><br><sub>Three-Scroll Unified 2</sub></td>
+<td align="center"><img src="../images/variants/attractor__WANGSUN.png" width="200"><br><sub>Wang-Sun</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/attractor__WIMOLBANLUE.png" width="200"><br><sub>Wimol-Banlue</sub></td>
+<td align="center"><img src="../images/variants/attractor__YUWANG.png" width="200"><br><sub>Yu-Wang</sub></td>
+<td align="center"><img src="../images/variants/attractor__ZHOUCHEN.png" width="200"><br><sub>Zhou-Chen</sub></td>
 </tr>
 </table>
 

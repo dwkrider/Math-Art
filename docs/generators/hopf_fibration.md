@@ -30,6 +30,28 @@ projected to R^3 as circles and coloured by base point.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/hopf_fibration__LATITUDES.png" width="200"><br><sub>Latitudes</sub></td>
+<td align="center"><img src="../images/variants/hopf_fibration__FLOWER.png" width="200"><br><sub>Flower</sub></td>
+<td align="center"><img src="../images/variants/hopf_fibration__GREATCIRCLE.png" width="200"><br><sub>Greatcircle</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/hopf_fibration__FIBONACCI.png" width="200"><br><sub>Fibonacci</sub></td>
+<td align="center"><img src="../images/variants/hopf_fibration__TETRA.png" width="200"><br><sub>Tetra</sub></td>
+<td align="center"><img src="../images/variants/hopf_fibration__OCTA.png" width="200"><br><sub>Octa</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/hopf_fibration__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/hopf_fibration__ICOSA.png" width="200"><br><sub>Icosa</sub></td>
+<td align="center"><img src="../images/variants/hopf_fibration__DODECA.png" width="200"><br><sub>Dodeca</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->

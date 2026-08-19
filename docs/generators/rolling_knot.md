@@ -22,6 +22,18 @@ This generator builds a smooth-rolling $(p,2)$ torus knot, after Brodeur, Viduli
 | Smooth Shading | On | Shade the tube smooth |
 | Scale | 1.0 | Overall size (fit within a 2 × Scale cube) |
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/rolling_knot__SMOOTH.png" width="200"><br><sub>Smooth-Rolling</sub></td>
+<td align="center"><img src="../images/variants/rolling_knot__STRETCHED.png" width="200"><br><sub>Stretched</sub></td>
+<td align="center"><img src="../images/variants/rolling_knot__MORTON.png" width="200"><br><sub>Morton</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **Morton's knot.** A $(p,2)$ torus knot in Morton's tritangentless form (trefoil for $p=3$) is, with $b=\sqrt{1-a^2}$, $c=a/(1+b)$ and $\text{den}=1-b\sin 2t$,

@@ -31,6 +31,162 @@ triangulated from their centre so the star shows as a solid.
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+### CONVEX
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__1.png" width="200"><br><sub>U1  Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__2.png" width="200"><br><sub>U2  Truncated Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__5.png" width="200"><br><sub>U5  Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__6.png" width="200"><br><sub>U6  Cube</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__7.png" width="200"><br><sub>U7  Cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__8.png" width="200"><br><sub>U8  Truncated Octahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__9.png" width="200"><br><sub>U9  Truncated Cube</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__10.png" width="200"><br><sub>U10  Rhombicuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__11.png" width="200"><br><sub>U11  Truncated Cuboctahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__12.png" width="200"><br><sub>U12  Snub Cube</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__22.png" width="200"><br><sub>U22  Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__23.png" width="200"><br><sub>U23  Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__24.png" width="200"><br><sub>U24  Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__25.png" width="200"><br><sub>U25  Truncated Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__26.png" width="200"><br><sub>U26  Truncated Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__27.png" width="200"><br><sub>U27  Rhombicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__28.png" width="200"><br><sub>U28  Truncated Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__29.png" width="200"><br><sub>U29  Snub Dodecahedron</sub></td>
+</tr>
+</table>
+
+### KEPLER
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__34.png" width="200"><br><sub>U34  Small Stellated Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__35.png" width="200"><br><sub>U35  Great Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__52.png" width="200"><br><sub>U52  Great Stellated Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__53.png" width="200"><br><sub>U53  Great Icosahedron</sub></td>
+</tr>
+</table>
+
+### HEMI
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__3.png" width="200"><br><sub>U3  Octahemioctahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__4.png" width="200"><br><sub>U4  Tetrahemihexahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__15.png" width="200"><br><sub>U15  Cubohemioctahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__49.png" width="200"><br><sub>U49  Small Icosihemidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__51.png" width="200"><br><sub>U51  Small Dodecahemidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__62.png" width="200"><br><sub>U62  Small Dodecahemicosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__65.png" width="200"><br><sub>U65  Great Dodecahemicosahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__70.png" width="200"><br><sub>U70  Great Dodecahemidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__71.png" width="200"><br><sub>U71  Great Icosihemidodecahedron</sub></td>
+</tr>
+</table>
+
+### STAR_O
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__13.png" width="200"><br><sub>U13  Small Cubicuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__14.png" width="200"><br><sub>U14  Great Cubicuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__16.png" width="200"><br><sub>U16  Cubitruncated Cuboctahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__17.png" width="200"><br><sub>U17  Nonconvex Great Rhombicuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__18.png" width="200"><br><sub>U18  Small Rhombihexahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__19.png" width="200"><br><sub>U19  Stellated Truncated Hexahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__20.png" width="200"><br><sub>U20  Great Truncated Cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__21.png" width="200"><br><sub>U21  Great Rhombihexahedron</sub></td>
+</tr>
+</table>
+
+### STAR_I
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__30.png" width="200"><br><sub>U30  Small Ditrigonal Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__31.png" width="200"><br><sub>U31  Small Icosicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__32.png" width="200"><br><sub>U32  Small Snub Icosicosidodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__33.png" width="200"><br><sub>U33  Small Dodecicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__36.png" width="200"><br><sub>U36  Dodecadodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__37.png" width="200"><br><sub>U37  Truncated Great Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__38.png" width="200"><br><sub>U38  Rhombidodecadodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__39.png" width="200"><br><sub>U39  Small Rhombidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__40.png" width="200"><br><sub>U40  Snub Dodecadodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__41.png" width="200"><br><sub>U41  Ditrigonal Dodecadodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__42.png" width="200"><br><sub>U42  Great Ditrigonal Dodecicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__43.png" width="200"><br><sub>U43  Small Ditrigonal Dodecicosidodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__44.png" width="200"><br><sub>U44  Icosidodecadodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__45.png" width="200"><br><sub>U45  Icositruncated Dodecadodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__46.png" width="200"><br><sub>U46  Snub Icosidodecadodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__47.png" width="200"><br><sub>U47  Great Ditrigonal Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__48.png" width="200"><br><sub>U48  Great Icosicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__50.png" width="200"><br><sub>U50  Small Dodecicosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__54.png" width="200"><br><sub>U54  Great Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__55.png" width="200"><br><sub>U55  Truncated Great Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__56.png" width="200"><br><sub>U56  Rhombicosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__57.png" width="200"><br><sub>U57  Great Snub Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__58.png" width="200"><br><sub>U58  Small Stellated Truncated Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__59.png" width="200"><br><sub>U59  Truncated Dodecadodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__60.png" width="200"><br><sub>U60  Inverted Snub Dodecadodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__61.png" width="200"><br><sub>U61  Great Dodecicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__63.png" width="200"><br><sub>U63  Great Dodecicosahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__64.png" width="200"><br><sub>U64  Great Snub Dodecicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__66.png" width="200"><br><sub>U66  Great Stellated Truncated Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__67.png" width="200"><br><sub>U67  Nonconvex Great Rhombicosidodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__68.png" width="200"><br><sub>U68  Great Truncated Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__69.png" width="200"><br><sub>U69  Great Inverted Snub Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__72.png" width="200"><br><sub>U72  Small Retrosnub Icosicosidodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__73.png" width="200"><br><sub>U73  Great Rhombidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__74.png" width="200"><br><sub>U74  Great Retrosnub Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/uniform_polyhedron__75.png" width="200"><br><sub>U75  Great Dirhombicosidodecahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 <!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
