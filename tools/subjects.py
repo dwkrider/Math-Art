@@ -37,16 +37,32 @@ PARAMS = {
     # convex solid that would duplicate the entry above.
     "mesh.uniform_polyhedron_add": dict(family='KEPLER', solid='34'),
     "mesh.polytope4d_add": dict(kind='CELL120'),
+    # Csaszar and Szilassi are the mathematically famous toroids but
+    # both read as a crumpled scrap at thumbnail size; the Borromean
+    # ring polyhedron says "toroidal" instantly -- three rectangular
+    # rings interlocked, with the holes plainly visible.
+    "mesh.toroidal_polyhedron_add": dict(solid='BORROMEAN'),
     "mesh.waterman_add": dict(root=20),
     "mesh.spiked_polyhedron_add": dict(preset='MODERN'),
     "mesh.woven_polyhedron_add": dict(solid='ICOSA'),
     "mesh.poly_weave_add": dict(kind='CUBE'),
     "mesh.rotegrity_add": dict(kind='ICOSA', freq=1),
     "mesh.tangle_add": dict(kind='T5'),
-    # A cube's twist is hidden behind its own faces; a tetrahedron has
-    # few enough that the ribbon reads.
-    "mesh.platonic_twist_add": dict(kind='TETRA'),
+    # The dodecahedron's twelve pentagons give the twist far more to
+    # act on than a tetrahedron's four triangles, so the spiralling
+    # reads as a twist rather than as a bent triangle.
+    "mesh.platonic_twist_add": dict(kind='DODECA'),
     "mesh.twisted_torus_add": dict(n=6, twist_steps=6),
+    # The Clifford torus is a torus; the vesicle is the shape the
+    # Willmore energy is famous for -- the biconcave discocyte that
+    # the Helfrich model predicts and a red blood cell actually is.
+    # Of the three modes the Clifford torus and the inflated ring both
+    # render as a plain doughnut; the relaxed vesicle is the one with a
+    # shape of its own.  Note it settles to the dumbbell branch at the
+    # default reduced volume -- seed_shape='OBLATE' does not move it to
+    # the biconcave discocyte, so that would need parameter work in the
+    # generator rather than here.
+    "mesh.willmore_add": dict(mode='VESICLE'),
     "mesh.sphericon_add": dict(sides=7, coloring='NONE'),
 
     # -- surfaces -------------------------------------------------
@@ -61,7 +77,9 @@ PARAMS = {
     "mesh.ruled_surface_add": dict(mode='HYPERBOLOID', output='RODS',
                                    family='BOTH'),
     "mesh.spherical_harmonic_add": dict(form='OFFSET', degree=4, order=2),
-    "mesh.orbital_add": dict(mode='ATOMIC', n=3, l=2, m=-2),
+    # 3d_z2: the two-lobes-and-a-torus orbital that is the one everybody
+    # pictures from a chemistry textbook, and unmistakable in silhouette.
+    "mesh.orbital_add": dict(mode='ATOMIC', n=3, l=2, m=0),
     "mesh.topological_surface_add": dict(preset='KLEIN'),
     "mesh.seifert_surface_add": dict(preset='TREFOIL'),
     "mesh.bubble_cluster_add": dict(separate=True, color=True),
@@ -77,6 +95,14 @@ PARAMS = {
     # CESARO, ELEVEN, KOCH, KOCH_SQUARE, LEVY, MINKOWSKI, QUADKOCH,
     # SEVEN); the flowsnake lives under FASS.
     "curve.turtle_curve_add": dict(mode='EDGE', teragon='MINKOWSKI'),
+
+    # A single soap bubble is a sphere; the triple is where the
+    # generator's point lives -- three films meeting at 120 degrees
+    # along a Plateau border.
+    "mesh.relaxed_bubble_add": dict(bubbles='TRIPLE'),
+    # Uncoloured, a gasket is a heap of white spheres and the nesting
+    # is invisible; colouring by radius separates the generations.
+    "mesh.apollonian_add": dict(color_by='SIZE'),
 
     # -- patterns -------------------------------------------------
     # The bare default is a plain relief; a reaction-diffusion field
@@ -119,12 +145,17 @@ ORIENT = {
     # -- straight on, the four lobes overlap into a featureless blob.
     # A quarter turn puts that circle edge-on and the lobes separate.
     "object.minimal_span": (0.0, 0.0, math.pi / 2),
-    # The Clifford torus is FAT (hole radius (sqrt(2)-1)r against an
-    # outer radius (sqrt(2)+1)r): at the studio's shallow 3/4 elevation
-    # the small hole hides behind the tube and the render reads as a
-    # plain bun.  Tipping it well toward the camera shows the hole,
-    # which is the only thing separating it from a sphere at icon size.
+    # The vesicle is a biconcave disc, and face-on that is just a
+    # disc -- the two dimples that make it a discocyte are exactly
+    # what is lost.  Tipping it toward the camera shows the pinched
+    # profile, which is the whole point of the shape.
     "mesh.willmore_add": (1.0, 0.0, 0.0),
+    # A Meissner solid seen down a vertex axis is a Reuleaux triangle:
+    # a flat-looking rounded triangle that says nothing about its being
+    # a solid.  Turned off that axis, the three curved edges and the
+    # tetrahedral structure both read.
+    "mesh.constant_width_add": (math.radians(70), math.radians(15),
+                                math.radians(45)),
 }
 
 
@@ -134,15 +165,18 @@ ORIENT = {
 # The studio rig's 3/4 view collapses a flat panel to a thin sliver --
 # measured bounding-box aspect ran 0.21-0.38 against a median near 0.9
 # for the solids.  The Patterns entries with genuine relief (relief
-# panel and solid, the modular screen, layer groups) are deliberately
-# absent: their depth is the subject.
+# panel and solid, the modular screen, the over-under screen, layer
+# groups) are deliberately absent: their depth is the subject.  The
+# over-under screen especially -- it is a *woven* screen whose whole
+# point is ribbons passing in front of and behind one another, and
+# from straight overhead that reads as a flat pattern.
 PLAN_VIEW = {
     "mesh.frieze_add", "mesh.wallpaper_add", "mesh.tiling_add",
     "mesh.kuniform_add", "mesh.monohedral_add", "mesh.isohedral_add",
     "mesh.aperiodic_add", "mesh.reptile_add", "mesh.voderberg_add",
     "mesh.spiral_tiling_add", "mesh.fractal_tiling_add",
     "mesh.fractal_reptile_add", "mesh.islamic_pattern_add",
-    "mesh.celtic_knot_2d_add", "mesh.over_under_screen_add",
+    "mesh.celtic_knot_2d_add",
     "mesh.knot_carpet_add", "mesh.hyperbolic_tiling_add",
     "mesh.map_lsystem_add",
     # curve-based fractals that are drawn in the plane
@@ -152,6 +186,29 @@ PLAN_VIEW = {
     # a phyllotaxis head is a flat disc: at 3/4 it foreshortens to a
     # pale ellipse and the parastichy colouring is wasted
     "mesh.phyllotaxis_add",
+    # a leaf is a blade with venation -- the outline and the veins are
+    # the subject, and both are only legible face-on
+    "mesh.leaf_add",
+}
+
+
+# --------------------------------------------------------------------
+# Helper objects an operator leaves beside its result
+# --------------------------------------------------------------------
+# Some operators build working geometry alongside the thing they make:
+# a source motif to edit, guide rings to align by.  Those belong in the
+# viewport, not in the figure -- and they do real damage there, because
+# the framing fits the *combined* bounding box.  The symmetric
+# sculpture's motif sits well off to one side, so including it shrank
+# the sculpture to a speck in the middle of the frame.
+#
+# They are HIDDEN, not deleted: the sculpture instances its motif
+# through a Geometry Nodes modifier, so removing the motif removes the
+# geometry too and the frame comes back empty.  Hiding is enough, since
+# the renderer skips hidden objects when it measures the subject.
+HIDE_AFTER = {
+    "object.symmetric_sculpture_add": ("SymSculpt Motif",
+                                       "SymSculpt Guides"),
 }
 
 
@@ -698,11 +755,44 @@ if _IN_BLENDER:
     # out.  -1.8 is where clipping reaches exactly zero across the
     # coloured subjects; darker only dims the icon without recovering
     # saturation the pale generator palettes do not have.
-    PLAN_EXPOSURE = -1.8
+    # Exposure and light level for the plan view.  The rig lifts five
+    # lights -- two of them 750 W rim lights -- to nearly overhead, and
+    # a flat panel facing them comes back washed: measured mean
+    # saturation 0.10 against a palette whose red, (0.85, 0.30, 0.24),
+    # is 0.43 saturated in sRGB.  Sweeping both knobs:
+    #
+    #     exposure  lights   saturation  median value
+    #       -1.8     x1.00      0.103       0.925
+    #       -3.0     x0.25      0.312       0.667
+    #       -3.5     x0.25      ~0.37       ~0.60
+    #       -4.0     x0.25      0.423       0.529
+    #       -5.0     x0.25      0.476       0.376   (too dark)
+    #
+    # -3.5 with quarter lights is the balance: saturation roughly
+    # tripled while the panel still reads as lit rather than murky.
+    PLAN_EXPOSURE = -3.5
+    PLAN_LIGHT_SCALE = 0.25
     STUDIO_EXPOSURE = -0.5
+
+    # Focal lengths, solved rather than chosen.  Subjects are
+    # normalised into a 2 m cube, so the guarantee the frame has to
+    # keep is that the cube fits however it is turned.  Projecting its
+    # eight corners through this rig and requiring the worst to land at
+    # 0.97 of the half-frame (a 3% border) gives these two values -- one
+    # per view, because the overhead camera sits the same distance away
+    # but the cube subtends less from straight above.
+    #
+    # Deriving them from measured silhouettes instead put the real cube
+    # corner at 1.014 and clipped six figures; the cube is what the
+    # normalisation promises, so the cube is what these are solved
+    # against.  Re-solve with tools/solve_lens.py if the rig's distance
+    # or view direction ever changes.
+    STUDIO_LENS = 84.0
+    PLAN_LENS = 117.5
 
     _CAM_POSE = {}
     _LIGHT_POSE = {}
+    _LIGHT_ENERGY = {}
 
     def capture_rig():
         """Record the studio poses and derive the plan-view ones.
@@ -724,6 +814,7 @@ if _IN_BLENDER:
                                    cam.rotation_euler.copy())
             _CAM_POSE['plan'] = (Vector((0.0, 0.0, cam.location.length)),
                                  Euler((0.0, 0.0, 0.0)))
+        _LIGHT_ENERGY.clear()
         for name in LIGHT_NAMES:
             ob = bpy.data.objects.get(name)
             if ob is None:
@@ -733,6 +824,7 @@ if _IN_BLENDER:
             plan = Vector((loc.x * 0.25, loc.y * 0.25, abs(dist)))
             plan.length = dist
             _LIGHT_POSE[name] = (loc, plan)
+            _LIGHT_ENERGY[name] = ob.data.energy
 
     def aim_rig(plan):
         """Point camera, lights and view transform for the chosen view."""
@@ -741,6 +833,7 @@ if _IN_BLENDER:
         if cam is not None and pose is not None:
             cam.location = pose[0].copy()
             cam.rotation_euler = pose[1].copy()
+            cam.data.lens = PLAN_LENS if plan else STUDIO_LENS
         for name, (studio, overhead) in _LIGHT_POSE.items():
             ob = bpy.data.objects.get(name)
             if ob is None:
@@ -750,6 +843,20 @@ if _IN_BLENDER:
             # re-aim each one at the origin after moving it.
             ob.rotation_euler = (-ob.location).to_track_quat(
                 '-Z', 'Y').to_euler()
+            # Kill the specular lobe for the plan view.  A flat panel
+            # lit nearly head-on picks up a broad white sheen across
+            # its whole surface, and white added equally to every
+            # channel is precisely what destroys saturation: the
+            # pattern palette is strongly coloured -- (0.85, 0.30,
+            # 0.24) is a 0.72-saturation red -- yet measured 0.08 in
+            # the render.  Note this cannot be fixed with exposure:
+            # saturation is a ratio between channels, so scaling them
+            # all together leaves it exactly where it was.  Solids at
+            # 3/4 keep their highlights, which is what reads as form.
+            ob.visible_glossy = not plan
+            base = _LIGHT_ENERGY.get(name)
+            if base is not None:
+                ob.data.energy = base * (PLAN_LIGHT_SCALE if plan else 1.0)
 
         # AgX rolls highlights towards white, which is right for a full
         # page figure and wrong for a flat, coloured subject that has to
@@ -1078,6 +1185,22 @@ if _IN_BLENDER:
                   f"-- dropped {[v[0] for v in uniq[cap:]]}")
             uniq = uniq[:cap]
         return uniq
+
+    def hide_helpers(op):
+        """Hide the working objects `op` leaves beside its result.
+
+        Matched by name prefix (see HIDE_AFTER), because the operator
+        names them deterministically and there is no other marker.
+        """
+        prefixes = HIDE_AFTER.get(op)
+        if not prefixes:
+            return 0
+        hidden = 0
+        for ob in bpy.data.objects:
+            if any(ob.name.startswith(p) for p in prefixes):
+                ob.hide_render = True
+                hidden += 1
+        return hidden
 
     def run_setup(op):
         """Build `op`'s input geometry.  Returns the objects it made."""

@@ -4,7 +4,9 @@
 
 Add a rep-tile substitution tiling.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **rep-tile** is a shape that dissects into $N$ smaller congruent copies of *itself* — the L-tromino splits into four half-size L-trominoes, and each of those splits again, forever. Solomon Golomb coined the name in 1962.
+
+Applying the dissection repeatedly is the **deflation** of a substitution tiling, and it fills the original prototile with an ever finer self-similar patch. The construction is the plane-tiling counterpart of a fractal: the same shape at every scale, but tiling exactly rather than approximately, with no gaps and no overlaps at any depth.
 
 ## Options
 
@@ -40,7 +42,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The scale factor is forced.** If a shape of area $A$ dissects into $N$ congruent copies of itself, each copy has area $A/N$. Area scales as the square of length, so every child map is a similarity of ratio
+
+$$r=\frac{1}{\sqrt N}.$$
+
+A rep-4 tile therefore halves at each step, and a rep-2 tile shrinks by $1/\sqrt2$ — which is why the right isosceles triangle, cut along the altitude from its right angle to the hypotenuse, is the simplest rep-tile of all.
+
+**Storage and deflation.** Each rep-tile is stored as its prototile polygon plus a fixed list of $N$ affine maps $f_1,\dots,f_N$, each of ratio $1/\sqrt N$, whose images tile the prototile exactly. One deflation step replaces the patch $P$ by
+
+$$P \mapsto \bigcup_{i=1}^{N} f_i(P),$$
+
+so $k$ iterations yield $N^k$ sub-tiles. The growth is why the iteration count is capped: a rep-4 tile reaches 1024 tiles by step 5 and 4096 by step 6.
+
+**The families.** The **L-tromino** (three unit squares) and **L-tetromino** and **P-pentomino** are all rep-4 on the square lattice. The **right isosceles triangle** is rep-2. The interesting one is the **sphinx** hexiamond — six equilateral triangles in an arrowhead shape — which is rep-4 with a twist: one of its four children is a *mirror image*. That makes it the classic non-lattice substitution tiling, since no amount of translation and rotation alone reproduces it.
+
+**Reading the structure.** Each sub-tile carries a **type** index: the orientation class of its accumulated map, meaning the rotation and reflection built up along the chain $f_{i_k}\circ\dots\circ f_{i_1}$. Colouring by orientation therefore exposes the substitution structure directly — the recursive pattern of how children are turned relative to their parent, which is invisible when every tile is one colour.
+
+Every dissection is coverage-checked in the module's own pure-Python self-test, since a child map that is slightly wrong still produces a plausible-looking patch.
 
 ## References
 

@@ -42,21 +42,26 @@ from mathutils import Vector, Euler
 SAMPLES = 96
 RES = 720
 
-# Framing.  One camera shoots every generator, so the frame has to hold
-# the widest silhouette any of them produces.  That is not the 2 m cube
-# the subjects are normalised into: a cube-like solid fits the cube on
-# every axis and then projects its *diagonal* at the studio's 3/4 view,
-# which is why the fullest subjects measure ~0.75 of the frame while
-# the median measures ~0.52 -- a lot of dead border on most figures.
+# Framing.  Every subject is normalised into a 2 m cube, so the frame
+# must hold that cube however it is turned -- a cube-like solid reaches
+# its corners, and at the studio's 3/4 view one of those corners is the
+# extreme point.  The focal lengths below are therefore *derived*, not
+# chosen: the eight corners of the 2 m cube are projected through this
+# rig and the lens solved so the worst of them lands at 0.97 of the
+# half-frame, leaving a 3% border.
 #
-# Measured over all 129 figures and 1466 variants (largest 0.750,
-# median 0.519), 1.22 brings the widest silhouette to about 0.92 and
-# the median to about 0.63, with margin left for a subject bulkier
-# than anything currently shipped.  It multiplies the focal length
-# rather than moving the camera in, so the perspective -- and hence
-# every existing pose -- is unchanged; only the crop tightens.
+# Getting this from measured silhouettes instead is what went wrong the
+# first time.  The widest subject then in the set filled 0.75 of frame,
+# which suggested a 1.22x tightening -- and that put the true cube
+# corner at 1.014, clipping six figures.  The cube is the guarantee the
+# normalisation actually makes, so the cube is what the lens is solved
+# against.  The old 72 mm put that corner at 0.831, which is the dead
+# border this replaces.
+#
+# The plan-view camera looks straight down from the same distance, so
+# the cube subtends less and needs its own, longer, lens.  Both live in
+# subjects.py beside the exposures, since aim_rig applies them.
 BASE_LENS = 72
-FRAME_TIGHTEN = 1.22
 
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJ)
@@ -125,7 +130,9 @@ def setup_studio():
     world.node_tree.nodes.get("Background").inputs["Color"] \
         .default_value = (0.004, 0.004, 0.005, 1)
     cam_d = bpy.data.cameras.new("Studio Camera")
-    cam_d.lens = BASE_LENS * FRAME_TIGHTEN
+    # aim_rig() sets the working lens per view; this is only the value
+    # in force before the rig has been aimed.
+    cam_d.lens = subject_cfg.STUDIO_LENS
     cam = bpy.data.objects.new("Studio Camera", cam_d)
     scene.collection.objects.link(cam)
     view = Vector((1.35, -2.2, 0.95)).normalized()
@@ -163,6 +170,37 @@ def apply_material():
             o.data.materials.append(_PLASTIC[0])
 
 
+def matte_subjects():
+    """Strip the specular lobe from the subject's own materials.
+
+    For a flat panel shot head-on, the highlight is not a highlight:
+    it spreads across the whole surface and adds white equally to
+    every channel, which is exactly what destroys saturation.  The
+    pattern palette is strongly coloured -- its red is (0.85, 0.30,
+    0.24), sRGB saturation 0.43 -- but measured 0.12 in the render,
+    the green and blue channels each lifted about 0.27 toward white.
+
+    Neither exposure nor light energy can undo that: they scale all
+    three channels together, and saturation is a ratio.  Only removing
+    the additive white term works, so the plan view renders its
+    subjects matte.  Solids at 3/4 keep their specular, which is what
+    reads as form.
+    """
+    for o in subjects():
+        for mat in o.data.materials:
+            if mat is None or not mat.use_nodes:
+                continue
+            node = mat.node_tree.nodes.get("Principled BSDF")
+            if node is None:
+                continue
+            for name in ("Specular IOR Level", "Specular"):
+                if name in node.inputs:
+                    node.inputs[name].default_value = 0.0
+                    break
+            if "Roughness" in node.inputs:
+                node.inputs["Roughness"].default_value = 1.0
+
+
 def clear_sculpts():
     for o in list(bpy.data.objects):
         if o.name not in STUDIO and o.type in ('MESH', 'CURVE'):
@@ -170,8 +208,17 @@ def clear_sculpts():
 
 
 def subjects():
+    """The objects that make up the figure.
+
+    Objects hidden from rendering are excluded: they contribute
+    nothing to the picture, so letting them into the bounding box only
+    mis-frames the ones that do.  The symmetric sculpture ships guide
+    rings that are hidden yet 6 m across, which is exactly the case
+    this prevents.
+    """
     return [o for o in bpy.data.objects
-            if o.name not in STUDIO and o.type in ('MESH', 'CURVE')]
+            if o.name not in STUDIO and o.type in ('MESH', 'CURVE')
+            and not o.hide_render]
 
 
 def normalize_subjects(target=2.0):
@@ -271,16 +318,28 @@ def _menu_tasks():
 # solid with enough faces to show the strut work off.
 STYLED = {
     "leonardo": (O("mesh.regular_solid_add", family='ARCHIMEDEAN',
-                   solid='TI'), "leonardo_add"),
-    "curvature_color": (O("mesh.twisted_torus_add"), "curvature_color_add"),
-    "voronoi_openwork": (O("mesh.geodesic_add"), "voronoi_openwork_add"),
-    "organic_wireframe": (O("mesh.geodesic_add"), "organic_wireframe_add"),
-    "strahler": (O("curve.fractal_tree_add"), "strahler_add"),
+                   solid='TI'), "leonardo_add", {}),
+    # The twisted torus is a polygonal *sheet* (its side count caps at
+    # 16), so its curvature concentrates on the fold lines and the
+    # figure came out mostly flat-white -- which says nothing about
+    # what the style does.  The Klein bottle is smooth and carries both
+    # signs plainly: the bulb is positively curved (red), the neck
+    # where the handle passes through is a saddle (blue).
+    # percentile=60 rather than the operator's 90: the neck's extreme
+    # curvature otherwise sets the scale and washes the whole body to
+    # flat white, which shows nothing.
+    "curvature_color": (O("mesh.spiked_polyhedron_add", preset='HYPER'),
+                        "curvature_color_add", dict(percentile=70.0)),
+    "voronoi_openwork": (O("mesh.geodesic_add"),
+                         "voronoi_openwork_add", {}),
+    "organic_wireframe": (O("mesh.geodesic_add"),
+                          "organic_wireframe_add", {}),
+    "strahler": (O("curve.fractal_tree_add"), "strahler_add", {}),
 }
 
 TASKS = _menu_tasks()
-TASKS.update({slug: styled(base, op)
-              for slug, (base, op) in STYLED.items()})
+TASKS.update({slug: styled(base, op, **kw)
+              for slug, (base, op, kw) in STYLED.items()})
 
 
 # generators whose material is incidental (motif default etc.) -- render
@@ -289,8 +348,10 @@ FORCE_PLASTIC = {"symmetric_sculpture"}
 
 # per-generator object rotation (radians) for a more legible pose,
 # applied before framing
+# The gyroid's characteristic view is its unrotated one: the fins
+# radiate and the channels open toward the camera.  The 35/20/15 pose
+# this replaces turned both away, leaving a cramped blob.
 ROTATE = {
-    "tpms": (math.radians(35), math.radians(20), math.radians(15)),
 }
 
 
@@ -441,6 +502,7 @@ def render_variants(only=None, missing_only=True):
             try:
                 O(op, **kw)()
                 subject_cfg.drop_setup(helpers)
+                subject_cfg.hide_helpers(op)
                 if slug in FORCE_PLASTIC:
                     for o in subjects():
                         o.data.materials.clear()
@@ -451,6 +513,8 @@ def render_variants(only=None, missing_only=True):
                     subject_cfg.pose_subjects(op, subjects())
                 normalize_subjects()
                 apply_material()
+                if op in subject_cfg.PLAN_VIEW:
+                    matte_subjects()
                 scene.render.filepath = path
                 bpy.ops.render.render(write_still=True)
                 print("OK", slug, vid)
@@ -502,6 +566,7 @@ def render_heroes(todo, missing_only):
                 subject_cfg.aim_rig(op in subject_cfg.PLAN_VIEW)
                 task()
                 subject_cfg.drop_setup(helpers)
+                subject_cfg.hide_helpers(op)
                 if slug in FORCE_PLASTIC:
                     for o in subjects():
                         o.data.materials.clear()
@@ -515,6 +580,8 @@ def render_heroes(todo, missing_only):
                     subject_cfg.pose_subjects(op, subjects())
                 normalize_subjects()
                 apply_material()
+                if op in subject_cfg.PLAN_VIEW:
+                    matte_subjects()
                 render(slug)
                 print("OK", slug)
                 done += 1

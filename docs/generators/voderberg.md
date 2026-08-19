@@ -4,7 +4,9 @@
 
 Add a Voderberg spiral tiling patch.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The **Voderberg tiling** (Heinz Voderberg, 1936) was the first spiral tiling ever devised, and it is **monohedral** — the entire spiral is built from congruent copies of a single nine-sided tile. It appears on the cover of Grünbaum and Shephard's *Tilings and Patterns*, and deservedly: a spiral is about as far from the periodic repetition one expects of a tiling as a plane-filling pattern can get, yet it uses one shape.
+
+The tile's remarkable property is that **two copies can completely enclose a third**. That is what lets the tiles wrap around a centre instead of marching in rows, and it is the mechanism from which the spiral arms follow.
 
 ## Options
 
@@ -37,7 +39,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The tile.** Start from an isosceles triangle whose apex angle is exactly
+
+$$\theta=\frac{180^\circ}{15}=12^\circ,$$
+
+chosen so that **30** of them close up around a point ($30\times12^\circ=360^\circ$). Then replace each of the two equal legs by a congruent bent polyline of three segments. The result is a nonconvex **enneagon** — nine sides, but only three distinct edge lengths $(1, x, L)$.
+
+The essential detail is that the two legs are **antisymmetric about their midpoints**: whatever bulge one leg carries outward, the matching leg carries inward. That is what lets copies interlock, and it is what makes two tiles able to enclose a third.
+
+**One parameter.** Following Waldman's *Voderberg Deconstructed* (2014), the whole family is controlled by a single angle $\beta$ — the obtuse angle at the deep notch — valid over
+
+$$111^\circ \le \beta \le 153^\circ,$$
+
+with $\beta=132^\circ$ giving Voderberg's original tile. Outside that range the bent legs no longer interlock and the tiling fails.
+
+**From tile to spiral.** The patches are built by Goldberg's triangle-substitution method, the construction Grünbaum and Shephard use. The un-sheared parent is the **radial** tiling: 30 wedge-sectors of stacked coronas closing into concentric rings about the centre — the 30 coming straight from the $12^\circ$ apex. Applying a Goldberg shift then shears those sectors so that each ring steps around by one tile instead of closing, and the concentric rings open into spiral arms. The shift is an integer, so the number of arms is a choice rather than an accident: shift 0 is the radial tiling, and larger shifts give higher-order spirals.
+
+This is why the spiral is not a separate construction bolted onto a tiling — it is the *same* tiling with its sectors offset, which is the insight Goldberg contributed and the reason a single enneagon can do all of it.
 
 ## References
 

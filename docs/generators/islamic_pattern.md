@@ -4,7 +4,9 @@
 
 Add an Islamic star pattern (polygons in contact).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Islamic geometric **star patterns** — *girih* strapwork — are among the most sophisticated ornamental systems ever devised, and the surprise is how little machinery generates them. E. H. Hankin, working from Mughal monuments in the early 20th century, reverse-engineered the craftsmen's method: lay down a hidden tiling of regular polygons, then draw the visible strapwork from the *midpoints of its edges*. The tiling is never drawn; only its edge midpoints leave a trace.
+
+That single idea, now called **polygons in contact** (PIC), explains why the bands run continuously across the whole design and why one grid yields a family of patterns rather than a single one: the contact angle is free, and sliding it takes the stars from spiky and acute to broad and obtuse without ever breaking the strapwork.
 
 ## Options
 
@@ -65,7 +67,30 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Polygons in contact.** Lay down an underlying tiling of regular polygons. On **every edge**, from its midpoint, send out a pair of rays at a fixed **contact angle** $\theta$ to that edge — one ray into each of the two incident tiles. Inside a tile, each ray runs until it meets the next ray around that tile, and the meeting points close up into the tile's star motif.
+
+Two consequences follow immediately, and together they are the whole reason the method works:
+
+- Because the contact points are **shared edge midpoints**, the band leaving one tile arrives exactly where the neighbouring tile's band starts. The strapwork is continuous across the whole pattern with no matching rules and no bookkeeping.
+- Because the rays are symmetric about the edge midpoint, the pattern inherits the tiling's symmetry group automatically.
+
+**The contact angle is the design.** For a regular $n$-gon, the rays from its $n$ edges meet in a star with $n$ points (or $2n$, depending on how far they run before meeting). Small $\theta$ gives long, spiky, acute stars; large $\theta$ gives short, blunt, obtuse ones. One substrate therefore generates a continuous family, which is exactly the freedom the historical craftsmen exploited.
+
+**Substrates decide the star orders.** The polygon that a star sits in fixes how many points it has, so the choice of underlying tiling chooses the vocabulary:
+
+| Substrate | Stars |
+| --- | --- |
+| Square grid | 4- and 8-point |
+| Triangular | 3- and 6-point |
+| Hexagonal | 6- and 12-point |
+| $4.8.8$ truncated square | the iconic 8-point star-and-cross |
+| $3.12.12$ and $4.6.12$ | twelve-fold |
+
+These are the same [uniform tilings](tiling.md) the tiling generator builds, reused as scaffolding.
+
+**Rosettes.** The classic Islamic **rosette** — an $n$-pointed star ringed by $n$ petals — does not arise from plain PIC on a single polygon. It comes from Kaplan's rosette transform: subdivide the regular $n$-gon into a central $n$-gon plus a surrounding ring of $n$ pentagons, then apply the same contact construction to *those* cells. The petals emerge from the pentagons and the star from the central polygon, so the rosette is PIC applied one level deeper rather than a separate construction.
+
+**Interlace.** Finally the bands are given over-under alternation, which is what turns a flat line drawing into strapwork that reads as woven ribbon.
 
 ## References
 

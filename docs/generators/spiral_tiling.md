@@ -4,7 +4,9 @@
 
 Add a Fathauer logarithmic spiral tiling of triangles.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **logarithmic spiral tiling** fills an annulus with triangles that shrink geometrically as they wind inward, spiralling toward a central point where the tiles become infinitesimally small. Robert Fathauer described the family at Bridges 2021.
+
+Unlike the [Voderberg spiral](voderberg.md), which is monohedral and made of congruent tiles, here every tile is the *same shape at a different size*: the whole tiling is the orbit of one triangle under a single spiral similarity. That makes it self-similar in the strict sense — zoom in by the right factor and rotate, and the picture is unchanged.
 
 ## Options
 
@@ -48,7 +50,21 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The prototile.** One triangle with interior angles $A,B,C$ and opposite sides $a,b,c$. Fixing $c=1$ without loss of generality, the Law of Sines gives the other two:
+
+$$a=\frac{\sin A}{\sin C},\qquad b=\frac{\sin B}{\sin C},\qquad c=1 .$$
+
+**The spiral similarity.** The tiling is the orbit of that one triangle under a similarity $T$ that scales by $s\in(0,1)$ and rotates by $A$ about a fixed point $O$ — the singular centre. Every tile is $T^k(\text{prototile})$ for some integer $k$, which is what makes the tiling self-similar: applying $T$ maps the whole tiling onto itself, one step further in.
+
+**Fathauer's closure condition.** The scale factor is not free. Each next triangle, $s$ times smaller, puts its $C$-corner on the previous triangle's $B$-corner and lays its $b$-edge — now of length $bs$ — along the previous triangle's unit $c$-edge. After $n$ such reduced triangles the spiral has wound once around $O$, and the $n$-th triangle's $a$-edge, of length $as^n$, must lie on the *remaining* part of that same unit edge. Equating the two pieces of the unit side gives Fathauer's Eq. (1):
+
+$$a\,s^{\,n} + b\,s = 1 .$$
+
+Here $n$ is the number of triangles per turn, chosen as an integer, and the equation is then solved numerically for the real root $s\in(0,1)$. Everything else follows: pick the triangle's angles and how many tiles you want per revolution, and the shrink factor is determined.
+
+That single equation is the whole design constraint. Because it must be satisfied *exactly* for the tiles to mate without gaps, $s$ is generally irrational and has to be found by root-finding rather than written in closed form — which is why these tilings were not drawn until they could be computed.
+
+**The patch.** Output is a finite annular band: the spiral is truncated at an inner and outer radius, since the tiles shrink without limit toward $O$ and grow without limit outward. Tiles are coloured by arm, by ring, or uniformly — colouring by arm makes the spiral structure read, while colouring by ring shows the successive scalings.
 
 ## References
 
