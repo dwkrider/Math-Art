@@ -156,10 +156,16 @@ def bake(op):
     """Bake one operator's icon.  Returns None on success, else why not."""
     rd.clear_sculpts()
     subjects.aim_rig(op in subjects.PLAN_VIEW)
+    # Operators that transform a selection need something to act on;
+    # the setup builds it, and it is dropped once consumed so only the
+    # generated surface is framed and rendered.
+    helpers = subjects.run_setup(op)
     try:
         _invoke(op, subjects.params_for(op))
     except Exception as e:
+        subjects.drop_setup(helpers)
         return f"operator failed: {e!r}"
+    subjects.drop_setup(helpers)
     subs = rd.subjects()
     if not subs:
         return "operator produced no mesh or curve"

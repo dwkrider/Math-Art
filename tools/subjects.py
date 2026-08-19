@@ -109,6 +109,11 @@ ORIENT = {
     # solid, not a plane figure, so it wants a turn rather than a plan
     # view (from overhead a tetrahedron simply squares off).
     "mesh.ifs_add": (0.0, 0.0, math.pi / 8),
+    # The spanned saddle is built on a circle in XY and one in XZ, and
+    # the studio camera looks very nearly down the second circle's axis
+    # -- straight on, the four lobes overlap into a featureless blob.
+    # A quarter turn puts that circle edge-on and the lobes separate.
+    "object.minimal_span": (0.0, 0.0, math.pi / 2),
 }
 
 
@@ -282,3 +287,52 @@ if _IN_BLENDER:
         for ob in objects:
             ob.rotation_euler = Euler(rot)
         return True
+
+    # ----------------------------------------------------------------
+    # Input geometry for operators that transform a selection
+    # ----------------------------------------------------------------
+    # Most generators add a shape from nothing.  A few instead act on
+    # whatever is selected, and so have nothing to show until they are
+    # given something to act on.  A setup builds that input, leaves it
+    # selected, and returns the objects it made so the renderer can drop
+    # them once the operator has consumed them.
+
+    def _setup_minimal_span():
+        """Two unit circles at right angles, for the span to bridge.
+
+        `object.minimal_span` polls for one or two selected curves or
+        meshes and builds the minimal surface across them.  Two coaxial
+        circles would give a catenoid; crossing them at a right angle
+        gives the four-lobed saddle, which is the more telling picture
+        of what the operator does.  The circles are created unfilled, so
+        they add no faces of their own to the render.
+        """
+        made = []
+        for rot in ((0.0, 0.0, 0.0), (math.pi / 2, 0.0, 0.0)):
+            bpy.ops.mesh.primitive_circle_add(
+                vertices=128, radius=1.0, fill_type='NOTHING',
+                location=(0.0, 0.0, 0.0), rotation=rot)
+            made.append(bpy.context.active_object)
+        for ob in bpy.context.selected_objects:
+            ob.select_set(False)
+        for ob in made:
+            ob.select_set(True)
+        bpy.context.view_layer.objects.active = made[0]
+        return made
+
+    SETUP = {
+        "object.minimal_span": _setup_minimal_span,
+    }
+
+    def run_setup(op):
+        """Build `op`'s input geometry.  Returns the objects it made."""
+        fn = SETUP.get(op)
+        return list(fn()) if fn is not None else []
+
+    def drop_setup(objects):
+        """Remove setup geometry once the operator has consumed it."""
+        for ob in objects:
+            try:
+                bpy.data.objects.remove(ob, do_unlink=True)
+            except Exception:
+                pass
