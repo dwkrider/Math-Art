@@ -114,6 +114,9 @@ PARAMS = {
     # default by-sides colouring yields exactly one material.  Parity
     # gives the classic two-tone (with a seam, since q=3 is odd).
     "mesh.hyperbolic_tiling_add": dict(color_by='PARITY'),
+    # The bubble is the whole point, and it is localised: too many
+    # Delaunay periods shrink it to a speck on a long pipe.
+    "mesh.bubbleton_add": dict(lobes=3, necksize=0.5, periods=2.2),
     # Light up the 13 parastichy arms rather than shipping a grey disc.
     "mesh.phyllotaxis_add": dict(color_by='PARASTICHY', parastichy=13),
 

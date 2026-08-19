@@ -49,6 +49,7 @@ _MODULE_NAMES = [
     'hyperbolic_surface_generator',
     'delaunay_generator',
     'bryant_generator',
+    'bubbleton_generator',
     'crochet_generator',
     'dform_generator',
     'koman_generator',
