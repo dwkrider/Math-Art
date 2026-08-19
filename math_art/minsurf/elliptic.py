@@ -6,15 +6,103 @@
 # registered Blender operators stay in the flat `minimal_surface_toolkit.py`
 # front-end.
 #
+# Also provides the JACOBI elliptic functions sn/cn/dn and the complete
+# elliptic integrals K(m), E(m) for real argument and real parameter
+# m = k^2 in [0,1), evaluated by the arithmetic-geometric mean rather than
+# by the theta series above.  The AGM is the right tool here: it converges
+# quadratically for every m in range (the nome q -> 1 as m -> 1, where the
+# theta series above would need unboundedly many terms), it needs no
+# lattice object, and it is a dozen lines of numpy.  These are what the
+# spherical elastica of Langer-Singer needs -- its curvature is
+# k(s) = sqrt(a) cn(rs, p) -- so they are used by the Hopf-torus generator
+# to build Pinkall's Willmore tori.
+#
 # References:
 #   Weierstrass P, P' and zeta via Jacobi theta functions: DLMF 23.6
 #   (elliptic functions) and DLMF 20.2 (the theta q-series).
 #   K. Weierstrass, Mathematische Werke (1894-1927).
+#   Jacobi sn/cn/dn by descending Landen/AGM, and K, E from the same
+#   iteration: M. Abramowitz and I. A. Stegun, "Handbook of Mathematical
+#   Functions" (1964), 16.4 (AGM scale) and 17.6 (complete integrals);
+#   DLMF 22.20(ii) and 19.8.  C. G. J. Jacobi, "Fundamenta nova theoriae
+#   functionum ellipticarum" (1829).
 
 import math
 import numpy as np
 
 TAU = 2.0 * math.pi
+
+# --------------------------------------------------------------------------
+# Jacobi elliptic functions and complete elliptic integrals (real, by AGM)
+# --------------------------------------------------------------------------
+# Parameter convention: everything below takes the PARAMETER m = k^2, not
+# the modulus k.  (Both conventions are common and mixing them is the
+# classic way to get a subtly wrong curve; the argument name is `m`
+# throughout, and helpers that want a modulus say so.)
+
+_AGM_MAX = 60          # quadratic convergence: ~7 iterations at m = 1-1e-12
+_AGM_TOL = 1e-16
+
+
+def _agm_scale(m):
+    """Descending AGM for parameter m: returns (a, c) lists with
+    a[0] = 1, b[0] = sqrt(1-m), c[0] = sqrt(m), iterated until c is
+    negligible.  Shared by ellipk/ellipe and jacobi_sncndn."""
+    m = float(m)
+    if not (0.0 <= m < 1.0):
+        raise ValueError(f"parameter m must lie in [0,1), got {m}")
+    a, b, c = 1.0, math.sqrt(1.0 - m), math.sqrt(m)
+    A, C = [a], [c]
+    for _ in range(_AGM_MAX):
+        if abs(c) < _AGM_TOL:
+            break
+        a, b, c = 0.5 * (a + b), math.sqrt(a * b), 0.5 * (a - b)
+        A.append(a)
+        C.append(c)
+    return A, C
+
+
+def ellipk(m):
+    """Complete elliptic integral of the first kind K(m), m = k^2.
+    K = pi / (2 * AGM(1, sqrt(1-m)))."""
+    A, _ = _agm_scale(m)
+    return math.pi / (2.0 * A[-1])
+
+
+def ellipe(m):
+    """Complete elliptic integral of the second kind E(m), m = k^2.
+    E = K * (1 - sum_n 2^(n-1) c_n^2)   (A&S 17.6.4; the n = 0 term is
+    c_0^2/2 = m/2)."""
+    A, C = _agm_scale(m)
+    K = math.pi / (2.0 * A[-1])
+    s = sum(2.0 ** (n - 1) * c * c for n, c in enumerate(C))
+    return K * (1.0 - s)
+
+
+def jacobi_sncndn(u, m):
+    """Jacobi sn(u|m), cn(u|m), dn(u|m) for real u (scalar or ndarray) and
+    real parameter m = k^2 in [0,1).  Returns (sn, cn, dn) as ndarrays of
+    u's shape.
+
+    Descending Landen transformation on the AGM scale (A&S 16.4): carry
+    phi down from phi_N = 2^N a_N u by
+        phi_{n-1} = (phi_n + arcsin((c_n / a_n) sin phi_n)) / 2 ,
+    then sn = sin phi_0, cn = cos phi_0, dn = sqrt(1 - m sn^2).
+
+    dn is taken from the identity rather than accumulated, which keeps
+    m sn^2 + dn^2 = 1 exact to rounding; the clip guards only against a
+    negative epsilon under the root at the turning points."""
+    u = np.asarray(u, dtype=float)
+    A, C = _agm_scale(m)
+    N = len(A) - 1
+    phi = (2.0 ** N) * A[N] * u
+    for n in range(N, 0, -1):
+        phi = 0.5 * (phi + np.arcsin(np.clip((C[n] / A[n]) * np.sin(phi),
+                                             -1.0, 1.0)))
+    sn = np.sin(phi)
+    cn = np.cos(phi)
+    dn = np.sqrt(np.clip(1.0 - m * sn * sn, 0.0, None))
+    return sn, cn, dn
 
 
 # ==========================================================================
@@ -133,6 +221,91 @@ def _selftest():
     print(f"elliptic: max|zeta(z+1)-zeta(z)-2eta1|={quasi:.3e} "
           f"{'OK' if good else 'FAIL'}")
 
+    ok &= _selftest_jacobi()
+
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
         raise AssertionError("elliptic self-test failed")
+
+
+def _selftest_jacobi():
+    """Jacobi sn/cn/dn and the complete integrals.  Every check here is
+    against a value known in closed form or an identity that ties the
+    three functions together, so a swapped a/c index or an m-vs-k mixup
+    fails loudly."""
+    ok = True
+
+    # K and E at m = 0 are pi/2; at m = 1/2 they are the classical
+    # lemniscatic-adjacent constants (DLMF 19.5 / A&S table 17.1).
+    k0 = (abs(ellipk(0.0) - math.pi / 2) < 1e-15
+          and abs(ellipe(0.0) - math.pi / 2) < 1e-15)
+    kh = (abs(ellipk(0.5) - 1.8540746773013719) < 1e-13
+          and abs(ellipe(0.5) - 1.3506438810476755) < 1e-13)
+    good = k0 and kh
+    ok &= good
+    print(f"jacobi: K(0)={ellipk(0.0):.12f} K(.5)={ellipk(0.5):.12f} "
+          f"E(.5)={ellipe(0.5):.12f} {'OK' if good else 'FAIL'}")
+
+    # m = 0 degenerates to circular functions: sn=sin, cn=cos, dn=1.
+    u = np.linspace(-7.0, 7.0, 401)
+    sn, cn, dn = jacobi_sncndn(u, 0.0)
+    deg = float(max(np.max(np.abs(sn - np.sin(u))),
+                    np.max(np.abs(cn - np.cos(u))),
+                    np.max(np.abs(dn - 1.0))))
+    good = deg < 1e-12
+    ok &= good
+    print(f"jacobi: m=0 vs (sin,cos,1) residual={deg:.3e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # The two Pythagorean identities, over a range of m including the
+    # p^2 < 1/2 band the spherical elastica lives in.
+    worst = 0.0
+    for m in (0.05, 0.25, 0.4999, 0.75, 0.95, 0.999):
+        sn, cn, dn = jacobi_sncndn(u, m)
+        worst = max(worst,
+                    float(np.max(np.abs(sn ** 2 + cn ** 2 - 1.0))),
+                    float(np.max(np.abs(m * sn ** 2 + dn ** 2 - 1.0))))
+    good = worst < 1e-12
+    ok &= good
+    print(f"jacobi: max identity residual={worst:.3e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Quarter-period values: sn(K)=1, cn(K)=0, dn(K)=sqrt(1-m)=k'.
+    worst = 0.0
+    for m in (0.1, 0.3, 0.5, 0.8):
+        s, c, d = jacobi_sncndn(ellipk(m), m)
+        worst = max(worst, abs(float(s) - 1.0), abs(float(c)),
+                    abs(float(d) - math.sqrt(1.0 - m)))
+    good = worst < 1e-10
+    ok &= good
+    print(f"jacobi: max|(sn,cn,dn)(K)-(1,0,k')|={worst:.3e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Derivative law d(sn)/du = cn*dn, by central differences.  This is
+    # the check that would catch a wrong Landen descent, since it probes
+    # the u-scaling rather than the pointwise identities.
+    m, h = 0.36, 1e-5
+    x = np.linspace(0.3, 5.0, 200)
+    s1, _, _ = jacobi_sncndn(x + h, m)
+    s0, _, _ = jacobi_sncndn(x - h, m)
+    _, c, d = jacobi_sncndn(x, m)
+    der = float(np.max(np.abs((s1 - s0) / (2 * h) - c * d)))
+    good = der < 1e-8
+    ok &= good
+    print(f"jacobi: max|d(sn)/du - cn*dn|={der:.3e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Periodicity: sn has period 4K, cn has period 4K, dn has period 2K.
+    m = 0.42
+    K = ellipk(m)
+    s0, c0, d0 = jacobi_sncndn(x, m)
+    s4, c4, _ = jacobi_sncndn(x + 4.0 * K, m)
+    _, _, d2 = jacobi_sncndn(x + 2.0 * K, m)
+    per = float(max(np.max(np.abs(s4 - s0)), np.max(np.abs(c4 - c0)),
+                    np.max(np.abs(d2 - d0))))
+    good = per < 1e-9
+    ok &= good
+    print(f"jacobi: max period residual (4K,4K,2K)={per:.3e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    return ok

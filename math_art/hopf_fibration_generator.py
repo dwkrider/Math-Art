@@ -39,6 +39,15 @@
 # - Y. Villarceau (1848): a torus of revolution carries two extra
 #   circles through each point, the "Villarceau circles" -- exactly
 #   the Hopf fibres of a stereographically projected Clifford torus.
+# - Ulrich Pinkall, "Hopf tori in S^3", Invent. Math. 81 (1985),
+#   379-386 (the Hopf torus over a curve on S^2, and the theorem that
+#   it is Willmore exactly over an elastic curve).
+# - Joel Langer and David A. Singer, "The total squared curvature of
+#   closed curves", J. Differential Geom. 20 (1984), 1-22 (closed
+#   elasticae on S^2 in closed form, and their monodromy).
+# - Fernando C. Marques and Andre Neves, "Min-max theory and the
+#   Willmore conjecture", Ann. of Math. 179 (2014), 683-782 (the
+#   Clifford torus really is the minimiser at 2 pi^2).
 
 bl_info = {
     "name": "Hopf Fibration",
@@ -308,14 +317,18 @@ def _fiber_color(base):
 # twist equal to half the spherical area A enclosed by gamma (the
 # holonomy), which we report for reference.
 
-def gamma_curve(preset, n, colat_deg, lobes, amp_deg, ecc):
+def gamma_curve(preset, n, colat_deg, lobes, amp_deg, ecc,
+                el_m=1, el_n=3):
     """A closed curve on S^2 as `n` unit 3-vectors (endpoint
     excluded).  colat_deg sets the mean colatitude; `lobes`/`amp_deg`
-    drive the wavy m-fold curve; `ecc` squashes the ellipse."""
+    drive the wavy m-fold curve; `ecc` squashes the ellipse;
+    `el_m`/`el_n` are the monodromy fraction of the ELASTICA preset."""
     import numpy as np
     b0 = colat_deg * pi / 180.0
     amp = amp_deg * pi / 180.0
     s = np.linspace(0.0, 2.0 * pi, n, endpoint=False)
+    if preset == 'ELASTICA':
+        return spherical_elastica(el_m, el_n, n)
     if preset == 'CIRCLE':
         beta = np.full_like(s, b0)
         lam = s
@@ -345,6 +358,282 @@ def gamma_curve(preset, n, colat_deg, lobes, amp_deg, ecc):
         lam = s
     return [(math.sin(bt) * math.cos(lm), math.sin(bt) * math.sin(lm),
              math.cos(bt)) for bt, lm in zip(beta, lam)]
+
+
+# --------------------------------------------------------------------------
+# Spherical elastica -> Willmore tori
+# --------------------------------------------------------------------------
+# Pinkall's theorem (Sect. 4 of the 1985 paper): the Hopf torus over gamma
+# is a WILLMORE surface -- a critical point of the bending energy -- if and
+# only if gamma is a critical point of the elastic energy
+#   F^lambda(gamma) = closed-integral (kappa^2 + lambda) ds  with lambda = 1.
+# Langer and Singer (J. Diff. Geom. 20 (1984), eq. (1.2)) show such a curve
+# on a surface of Gauss curvature G obeys
+#   2 kappa_ss + kappa^3 + 2 kappa G - lambda kappa = 0 ,
+# which on the unit sphere with lambda = 1 is  2 k_ss + k^3 + k = 0 , and
+# their Table (2.7)(a) integrates it: on a 2-manifold the torsion constant
+# vanishes, so the general solution collapses to the single "wavelike" arc
+#   kappa(s) = sqrt(a) cn(r s, p) ,  p^2 = a/(2a+2) ,  r = sqrt(2a+2)/2 ,
+# one branch per maximum squared curvature a > 0 (p^2 < 1/2 automatically).
+#
+# Closure is a rotation condition, not a length condition.  kappa has
+# period P = 4 K(p)/r, and over one period the spherical Frenet frame is
+# carried by a fixed rotation (the MONODROMY) about the axis of the Killing
+# field that Langer-Singer attach to an elastica.  The curve closes after n
+# periods exactly when that rotation has order dividing n, i.e. when its
+# angle is theta = 2 pi m / n.  theta(a) is measured here directly from the
+# integrated frame; it decreases monotonically from 2 pi (2 - sqrt 2) at
+# a -> 0 to 0 as a -> infinity, so each admissible m/n has exactly one a and
+# bisection cannot miss it.
+#
+# Working with the monodromy ANGLE rather than the unwrapped longitude
+# matters: at a = 1 the curve passes exactly through the pole of its own
+# axis, where an azimuth is undefined and any winding-number bookkeeping
+# breaks down.  The rotation angle is smooth straight through that point.
+
+_ELASTICA_LAMBDA = 1.0          # Pinkall's functional is F^{lambda=1}
+# sup of the monodromy angle, at a -> 0:  2 pi (2 - sqrt 2)
+ELASTICA_RATIO_MAX = 2.0 - sqrt(2.0)
+
+
+def _elastica_kappa(a, s):
+    """Curvature kappa(s) and its s-derivative for the spherical elastica
+    with maximum squared curvature `a`, plus the period of kappa."""
+    import numpy as np
+    from .minsurf.elliptic import ellipk, jacobi_sncndn
+    p2 = a / (2.0 * a + 2.0)
+    r = 0.5 * sqrt(2.0 * a + 2.0)
+    sn, cn, dn = jacobi_sncndn(r * np.asarray(s, dtype=float), p2)
+    root_a = sqrt(a)
+    return root_a * cn, -root_a * r * sn * dn, 4.0 * ellipk(p2) / r
+
+
+def _elastica_frames(a, n_per, nstep):
+    """Integrate the spherical Frenet system
+        gamma' = T ,   T' = kappa (gamma x T) - gamma
+    for `n_per` periods of kappa with RK4, reprojecting onto S^2 each step.
+    Returns (gamma samples, final frame, initial frame, axis, period).
+
+    kappa is sampled on a HALF-step grid so the two midpoint stages get
+    the exact kappa(s + h/2) rather than the average of its endpoints.
+    That distinction is what makes this RK4 rather than an O(h^2) scheme:
+    with the averaged midpoint the monodromy angle converges only like
+    h^2, and the root-find below then needs ~40x more steps for the same
+    accuracy."""
+    import numpy as np
+    P = _elastica_kappa(a, 0.0)[2]
+    total = n_per * P
+    h = total / nstep
+    s = np.linspace(0.0, total, 2 * nstep + 1)   # endpoints AND midpoints
+    kap, kaps, _ = _elastica_kappa(a, s)
+
+    g = np.array([0.0, 0.0, 1.0])
+    t = np.array([1.0, 0.0, 0.0])
+    # Langer-Singer's Killing field J = -2k gamma - 2k_s T + (k^2-lambda) U
+    # is constant along the curve; its direction is the axis of the
+    # monodromy (|J| = a + 1, so it never degenerates).
+    axis = (-2.0 * kap[0] * g - 2.0 * kaps[0] * t
+            + (kap[0] ** 2 - _ELASTICA_LAMBDA) * np.cross(g, t))
+    axis = axis / np.linalg.norm(axis)
+    M0 = np.stack([g, t, np.cross(g, t)], axis=1)
+
+    def dv(g, t, k):
+        return t, k * np.cross(g, t) - g
+
+    pts = [tuple(g)]
+    for i in range(nstep):
+        k0, km, k1 = kap[2 * i], kap[2 * i + 1], kap[2 * i + 2]
+        a1, b1 = dv(g, t, k0)
+        a2, b2 = dv(g + 0.5 * h * a1, t + 0.5 * h * b1, km)
+        a3, b3 = dv(g + 0.5 * h * a2, t + 0.5 * h * b2, km)
+        a4, b4 = dv(g + h * a3, t + h * b3, k1)
+        g = g + (h / 6.0) * (a1 + 2 * a2 + 2 * a3 + a4)
+        t = t + (h / 6.0) * (b1 + 2 * b2 + 2 * b3 + b4)
+        g = g / np.linalg.norm(g)
+        t = t - np.dot(t, g) * g
+        t = t / np.linalg.norm(t)
+        pts.append(tuple(g))
+    M1 = np.stack([g, t, np.cross(g, t)], axis=1)
+    return pts, M1, M0, axis, P
+
+
+def _monodromy_angle(a, nstep=200):
+    """Rotation angle in [0, 2pi) carried by one period of kappa.
+
+    200 RK4 steps put the angle within ~4e-7 of its converged value,
+    which is far finer than the bisection needs and keeps the root-find
+    to a few hundredths of a second."""
+    import numpy as np
+    _, M1, M0, axis, _ = _elastica_frames(a, 1, nstep)
+    R = M1 @ M0.T
+    v = np.array([1.0, 0.0, 0.0]) - axis[0] * axis
+    if np.linalg.norm(v) < 1e-8:
+        v = np.array([0.0, 1.0, 0.0]) - axis[1] * axis
+    v = v / np.linalg.norm(v)
+    Rv = R @ v
+    return math.atan2(float(np.dot(axis, np.cross(v, Rv))),
+                      float(np.dot(v, Rv))) % (2.0 * pi)
+
+
+_ELASTICA_A_CACHE = {}
+
+
+def elastica_a_for(m, n, tol=1e-12):
+    """The maximum squared curvature `a` whose elastica closes after `n`
+    periods with monodromy angle 2 pi m / n.  theta(a) is monotone
+    decreasing onto (0, 2 pi (2 - sqrt 2)), so plain bisection converges;
+    raises ValueError when m/n is outside that range.
+
+    The bisection costs ~80 RK4 sweeps, so results are memoised: the
+    redo panel re-runs execute() on every slider drag and the shape
+    parameter depends only on (m, n)."""
+    cached = _ELASTICA_A_CACHE.get((m, n))
+    if cached is not None:
+        return cached
+    target = 2.0 * pi * m / n
+    if not (0.0 < m / n < ELASTICA_RATIO_MAX):
+        raise ValueError(
+            f"m/n = {m}/{n} = {m / n:.4f} is outside the admissible range "
+            f"(0, 2-sqrt(2)) = (0, {ELASTICA_RATIO_MAX:.4f}); no closed "
+            f"spherical elastica has this monodromy")
+    lo, hi = 1e-9, 1.0                     # theta(lo) > target
+    while _monodromy_angle(hi) > target:   # push hi until theta(hi) < target
+        hi *= 4.0
+        if hi > 1e12:
+            raise ValueError("elastica bracket failed")
+    for _ in range(80):
+        mid = sqrt(lo * hi)                # geometric: `a` spans many decades
+        if _monodromy_angle(mid) > target:
+            lo = mid
+        else:
+            hi = mid
+        if hi - lo < tol * hi:
+            break
+    a = sqrt(lo * hi)
+    _ELASTICA_A_CACHE[(m, n)] = a
+    return a
+
+
+def _clear_of_poles(pts, n_cand=4000):
+    """Rotate a closed spherical curve so that BOTH poles (0,0,+-1) are
+    as far from it as possible, and return the rotated copy.
+
+    This is not cosmetic.  `build_hopf_torus` lifts the base point at
+    colatitude beta to z0 = cos(beta/2) e^{i lam}, z1 = sin(beta/2), and
+    that section of the Hopf bundle degenerates at both ends of the
+    axis:
+
+      * beta = pi lifts to the fibre {(0, 0, cos psi, sin psi)}, which
+        runs straight through the projection centre N = (0,0,0,1) of
+        `stereographic`.  A curve touching the south pole therefore has
+        a fibre escaping to infinity, and one merely passing near it
+        gives a torus thousands of units across whose useful part
+        collapses to a sliver once the mesh is normalised.
+      * beta = 0 leaves lam undefined.  The fibre is still the right
+        circle, but the ring's starting phase swings wildly from one
+        curve sample to the next, shearing the quads into slivers and
+        wrecking the discrete mean curvature even though the surface
+        itself is fine.
+
+    An elastica generically DOES sweep the whole sphere (it starts at
+    (0,0,1) and its lobes reach the far side), so this must be handled
+    rather than assumed away.  A rotation of S^2 lifts to an isometry of
+    S^3, and stereographic projection is conformal, so it changes
+    neither the Willmore energy nor the conformal type of the torus --
+    only which conformal representative in R^3 we draw.
+
+    The optimum is found by max-min search over a golden-angle grid:
+    take the candidate AXIS whose smallest angle to the curve -- measured
+    to the line +-p, so both poles count -- is largest, then map it to z."""
+    import numpy as np
+    G = np.asarray(pts, dtype=float)
+    sub = G[:: max(1, len(G) // 400)]
+    C = np.asarray(fibonacci(n_cand), dtype=float)
+    worst_dot = np.abs(C @ sub.T).max(axis=1)   # cos of the SMALLEST angle
+    best = C[int(np.argmin(worst_dot))]         # smallest max-cos = farthest
+    tgt = np.array([0.0, 0.0, 1.0])
+    v = np.cross(best, tgt)
+    c = float(np.dot(best, tgt))
+    if np.linalg.norm(v) < 1e-12:            # already (anti)aligned
+        R = np.eye(3) if c > 0 else np.diag([1.0, -1.0, -1.0])
+    else:
+        K = np.array([[0.0, -v[2], v[1]],
+                      [v[2], 0.0, -v[0]],
+                      [-v[1], v[0], 0.0]])
+        R = np.eye(3) + K + K @ K / (1.0 + c)
+    return G @ R.T
+
+
+def spherical_elastica(m, n, samples):
+    """Closed elastic curve on S^2 with monodromy 2 pi m / n, sampled at
+    `samples` points (endpoint excluded).  Its Hopf torus is a Willmore
+    surface (Pinkall Sect. 4); the curve has `n` lobes.
+
+    The curve is returned rotated clear of both poles (see
+    `_clear_of_poles`) so that its Hopf torus projects to a bounded
+    region of R^3 on a well-conditioned quad grid."""
+    import numpy as np
+    a = elastica_a_for(m, n)
+    pts, _, _, _, _ = _elastica_frames(a, n, samples)
+    return _clear_of_poles(np.asarray(pts[:-1], dtype=float))
+
+
+def _geodesic_curvature(gamma_pts):
+    """Geodesic curvature kappa(s) and arclength spacing of a closed curve
+    on the unit sphere, sampled at `gamma_pts`.
+
+    For a unit-speed spherical curve the Frenet relation on S^2 is
+        gamma'' = kappa * (gamma x gamma') - gamma ,
+    so kappa = <gamma'', gamma x gamma'>.  The samples are generally NOT
+    equally spaced in arclength (a wavy curve bunches up near its
+    turning points), so the first and second derivatives use the
+    non-uniform centred stencils rather than the equal-spacing ones --
+    with equal-spacing formulas the error does not vanish under
+    refinement and the reported energy converges to the wrong number.
+
+    Returns (kappa, ds, L): per-node curvature, per-node arclength weight
+    (the trapezoid dual of the edge lengths) and the total length."""
+    import numpy as np
+    G = np.asarray(gamma_pts, dtype=float)
+    G = G / np.linalg.norm(G, axis=1, keepdims=True)
+    nxt, prv = np.roll(G, -1, axis=0), np.roll(G, 1, axis=0)
+
+    # Edge lengths as great-circle arcs; h_minus/h_plus straddle a node.
+    e_plus = np.arccos(np.clip(np.sum(G * nxt, axis=1), -1.0, 1.0))
+    e_minus = np.roll(e_plus, 1)
+    hp, hm = e_plus[:, None], e_minus[:, None]
+    hs = hm + hp
+
+    d1 = (-hp / (hm * hs)) * prv + ((hp - hm) / (hm * hp)) * G \
+        + (hm / (hp * hs)) * nxt
+    d2 = 2.0 * (prv / (hm * hs) - G / (hm * hp) + nxt / (hp * hs))
+
+    # Normalise the tangent: the stencil is O(h^2)-accurate, not exactly
+    # unit, and kappa is sensitive to that on coarse samplings.
+    t = d1 / np.linalg.norm(d1, axis=1, keepdims=True)
+    kappa = np.sum(d2 * np.cross(G, t), axis=1)
+    ds = 0.5 * (e_minus + e_plus)
+    return kappa, ds, float(np.sum(e_plus))
+
+
+def willmore_energy(gamma_pts):
+    """Pinkall's Willmore energy of the Hopf torus over the closed
+    spherical curve `gamma_pts`:
+
+        W(M) = pi * closed-integral (1 + kappa^2) ds
+
+    (Pinkall, Invent. Math. 81 (1985), Sect. 4).  Returns (W, L), the
+    energy and the curve's length.
+
+    Reference values: a GREAT circle gives the Clifford torus, kappa = 0
+    and L = 2 pi, hence W = 2 pi^2 = 19.7392, the conjectured (and since
+    Marques-Neves 2014, proven) minimum over all immersed tori.  A
+    latitude circle at colatitude beta has kappa = cot beta and
+    L = 2 pi sin beta, so W = 2 pi^2 / sin beta -- which is the exact
+    closed form the self-test checks against."""
+    kappa, ds, L = _geodesic_curvature(gamma_pts)
+    import numpy as np
+    return float(np.pi * np.sum((1.0 + kappa ** 2) * ds)), L
 
 
 def _enclosed_area(gamma_pts):
@@ -588,6 +877,9 @@ if _IN_BLENDER:
                     "closed curve -> m-fold symmetric Hopf torus"),
                    ('ELLIPSE', "Ellipse", "squashed loop"),
                    ('TREFOIL', "Trefoil-like", "doubly-wound curve"),
+                   ('ELASTICA', "Elastica (Willmore)", "closed "
+                    "elastic curve on S^2 -> a WILLMORE torus: a "
+                    "critical point of the Willmore energy"),
                    ('BAND', "Hopf Band", "open meridian arc -> "
                     "annulus whose two boundary fibres are a Hopf "
                     "link (a Seifert surface for it)")],
@@ -611,18 +903,35 @@ if _IN_BLENDER:
         ecc: FloatProperty(
             name="Ellipse Squash", default=0.5, min=0.0, max=0.95,
             description="Ellipse eccentricity (ELLIPSE)")
+        elastica_m: IntProperty(
+            name="Winding m", default=1, min=1, max=20,
+            description="Numerator of the elastica's monodromy m/n: "
+                        "the curve wraps m times around its axis")
+        elastica_n: IntProperty(
+            name="Lobes n", default=3, min=2, max=40,
+            description="Denominator of the monodromy m/n: the curve "
+                        "has n lobes.  m/n must lie in (0, 2-sqrt 2)")
         shade_smooth: BoolProperty(name="Shade Smooth", default=True)
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
         def execute(self, context):
             import numpy as np
-            gamma = gamma_curve(self.preset, self.n_curve, self.colat,
-                                self.lobes, self.amp, self.ecc)
+            try:
+                gamma = gamma_curve(self.preset, self.n_curve, self.colat,
+                                    self.lobes, self.amp, self.ecc,
+                                    self.elastica_m, self.elastica_n)
+            except ValueError as exc:
+                self.report({'ERROR'}, str(exc))
+                return {'CANCELLED'}
             verts, faces, area = build_hopf_torus(
                 gamma, self.m_psi, closed=(self.preset != 'BAND'))
             verts = (np.asarray(verts) * self.scale).tolist()
-            name = f"Hopf Torus ({self.preset.title()})"
+            if self.preset == 'ELASTICA':
+                name = (f"Willmore Torus ({self.elastica_m}-"
+                        f"{self.elastica_n})")
+            else:
+                name = f"Hopf Torus ({self.preset.title()})"
             me = bpy.data.meshes.new(name)
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
@@ -637,10 +946,14 @@ if _IN_BLENDER:
                 o.select_set(False)
             obj.select_set(True)
             context.view_layer.objects.active = obj
-            self.report(
-                {'INFO'},
-                f"{name}: {len(verts)} verts, enclosed area "
-                f"{area:.3f} sr, closure twist {area / 2.0:.3f} rad")
+            msg = (f"{name}: {len(verts)} verts, enclosed area "
+                   f"{area:.3f} sr, closure twist {area / 2.0:.3f} rad")
+            if self.preset != 'BAND':
+                energy, length = willmore_energy(gamma)
+                msg += (f", Willmore energy {energy:.4f} = "
+                        f"{energy / (2.0 * pi * pi):.4f} x 2pi^2"
+                        f" (gamma length {length:.3f})")
+            self.report({'INFO'}, msg)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -649,7 +962,15 @@ if _IN_BLENDER:
             lay.prop(self, 'preset')
             lay.prop(self, 'n_curve')
             lay.prop(self, 'm_psi')
-            lay.prop(self, 'colat')
+            if self.preset != 'ELASTICA':
+                lay.prop(self, 'colat')
+            if self.preset == 'ELASTICA':
+                lay.prop(self, 'elastica_m')
+                lay.prop(self, 'elastica_n')
+                ratio = self.elastica_m / max(self.elastica_n, 1)
+                if not 0.0 < ratio < ELASTICA_RATIO_MAX:
+                    lay.label(text="m/n must be < 0.5858 (2-sqrt 2)",
+                              icon='ERROR')
             if self.preset in ('WAVY', 'TREFOIL'):
                 lay.prop(self, 'lobes')
             if self.preset in ('WAVY', 'TREFOIL', 'BAND'):
@@ -765,6 +1086,146 @@ def _selftest():
     ok_all = ok_all and ok
     print(f"circle area: num={abs(a_num):.4f} exp={a_exp:.4f} "
           f"{'OK' if ok else 'BAD'}")
+
+    # 5) Willmore energy of the Hopf torus over gamma.  Two exact closed
+    #    forms are available: a GREAT circle gives the Clifford torus at
+    #    W = 2 pi^2, and a latitude circle at colatitude beta gives
+    #    W = 2 pi^2 / sin beta.  (Pinkall 1985, Sect. 4.)
+    two_pi2 = 2.0 * pi * pi
+    for beta, tol in ((90.0, 1e-9), (60.0, 2e-3), (35.0, 2e-2)):
+        g = gamma_curve('CIRCLE', 600, beta, 1, 0.0, 0.0)
+        w, L = willmore_energy(g)
+        w_exp = two_pi2 / math.sin(beta * pi / 180.0)
+        L_exp = 2.0 * pi * math.sin(beta * pi / 180.0)
+        ok = abs(w - w_exp) < tol * w_exp and abs(L - L_exp) < 1e-4
+        ok_all = ok_all and ok
+        print(f"willmore circle beta={beta:5.1f}: W={w:.6f} "
+              f"exp={w_exp:.6f} L={L:.5f} {'OK' if ok else 'BAD'}")
+
+    # 6) The spherical elastica closed form.  kappa(s) = sqrt(a) cn(r s)
+    #    must solve the Euler-Lagrange equation of Pinkall's functional
+    #    F^{lambda} = closed-integral (kappa^2 + lambda) ds on S^2,
+    #        2 kappa_ss + kappa^3 + 2 kappa G - lambda kappa = 0 ,
+    #    with Gauss curvature G = 1 and lambda = 1, i.e.
+    #        2 kappa_ss + kappa^3 + kappa = 0
+    #    (Langer & Singer, J. London Math. Soc. 30 (1984), Sect. 1-2).
+    for a in (0.6, 3.5, 12.8):
+        h = 1e-4
+        s = np.array([0.37, 1.1, 2.9, 4.4])
+        k0, _, _ = _elastica_kappa(a, s)
+        kp, _, _ = _elastica_kappa(a, s + h)
+        km, _, _ = _elastica_kappa(a, s - h)
+        kss = (kp - 2.0 * k0 + km) / (h * h)
+        resid = np.abs(2.0 * kss + k0 ** 3 + k0).max()
+        ok = resid < 1e-5 * max(1.0, abs(a) ** 1.5)
+        ok_all = ok_all and ok
+        print(f"elastica ODE a={a:6.2f}: max|2k_ss+k^3+k|={resid:.2e} "
+              f"{'OK' if ok else 'BAD'}")
+
+    # 7) Closed elasticae: the curve closes up, its monodromy is the
+    #    requested 2 pi m / n, the geodesic curvature recovered from the
+    #    integrated frame matches the closed form, and the resulting
+    #    Willmore energy strictly exceeds the Clifford value 2 pi^2
+    #    (the Clifford torus is the unique minimum, so every other
+    #    Willmore Hopf torus must sit above it).
+    for (m, n) in ((1, 3), (2, 5)):
+        a = elastica_a_for(m, n)
+        raw, _, _, _, _ = _elastica_frames(a, n, 800)
+        closure = float(np.linalg.norm(np.asarray(raw[-1])
+                                       - np.asarray(raw[0])))
+        g = spherical_elastica(m, n, 800)
+        theta = _monodromy_angle(a)
+        d_theta = abs(theta - 2.0 * pi * m / n)
+        kap, _, _ = _geodesic_curvature(g)
+        k_max = float(np.abs(kap).max())
+        d_k = abs(k_max - sqrt(a))
+        w, L = willmore_energy(g)
+        ok = (closure < 1e-4 and d_theta < 1e-6
+              and d_k < 1e-3 * max(1.0, sqrt(a)) and w > two_pi2)
+        ok_all = ok_all and ok
+        print(f"elastica {m}/{n}: a={a:8.4f} closure={closure:.1e} "
+              f"d(theta)={d_theta:.1e} max|k|={k_max:.4f} "
+              f"(exp {sqrt(a):.4f}) W={w / two_pi2:.4f}x2pi^2 "
+              f"{'OK' if ok else 'BAD'}")
+
+    # 8) The admissible monodromy window is (0, 2 - sqrt 2): outside it
+    #    no closed spherical elastica exists and the solver must say so
+    #    rather than return a bogus curve.
+    bad = 0
+    for (m, n) in ((3, 5), (1, 1), (5, 8)):
+        try:
+            elastica_a_for(m, n)
+        except ValueError:
+            bad += 1
+    ok = bad == 3
+    ok_all = ok_all and ok
+    print(f"elastica domain: {bad}/3 out-of-range m/n rejected "
+          f"{'OK' if ok else 'BAD'}")
+
+    # 9) The whole pipeline: the ELASTICA preset builds a closed torus.
+    ge = gamma_curve('ELASTICA', 240, 90.0, 3, 35.0, 0.5, 1, 3)
+    Ve, Fe, area_e = build_hopf_torus(ge, 48)
+    Ve = np.asarray(Ve)
+    ok = (len(Ve) == 240 * 48 and len(Fe) == 240 * 48
+          and np.isfinite(Ve).all())
+    ok_all = ok_all and ok
+    print(f"torus ELASTICA: verts={len(Ve)} faces={len(Fe)} "
+          f"area={area_e:.3f} {'OK' if ok else 'BAD'}")
+
+    # 10) THE acceptance gate.  Everything above tests gamma; this tests
+    #     the SURFACE, and against an independent implementation.
+    #     math_art.solver.willmore carries the discrete Willmore energy
+    #     int H^2 dA and its exact analytic first variation.  Pinkall's
+    #     theorem says the Hopf torus over a closed elastica is a
+    #     critical point of that functional, so the NORMAL component of
+    #     the gradient must vanish -- and since the discrete gradient
+    #     carries O(h^2) truncation error, the real signature is that it
+    #     vanishes UNDER REFINEMENT.  A non-elastic gamma (WAVY) is the
+    #     control: its residual must plateau instead.
+    #     (Only the normal component is meaningful: the discrete energy
+    #     is not invariant under tangential vertex motion, so tangential
+    #     gradient components are a property of the mesh, not the shape.)
+    from .solver.willmore import willmore_gradient, vertex_area_data
+
+    def _criticality(gamma, m_psi):
+        verts, quads, _ = build_hopf_torus(gamma, m_psi)
+        V = np.asarray(verts, dtype=float)
+        T = np.empty((2 * len(quads), 3), dtype=np.int64)
+        Q = np.asarray(quads, dtype=np.int64)
+        T[0::2] = Q[:, [0, 1, 2]]
+        T[1::2] = Q[:, [0, 2, 3]]
+        E, grad = willmore_gradient(V, T)
+        g_area, av, nvec = vertex_area_data(V, T)
+        av = np.maximum(av, 1e-300)
+        nl = np.maximum(np.linalg.norm(nvec, axis=1), 1e-300)
+        gn = np.einsum('ij,ij->i', grad, nvec / nl[:, None])
+        # discrete L^2 norm of delta(int H^2 dA) / delta n
+        return E, float(np.sqrt(np.sum(gn * gn / av)))
+
+    for label, gam in (
+            ("elastica 1/3", lambda k: spherical_elastica(1, 3, k)),
+            ("circle (Clifford)",
+             lambda k: gamma_curve('CIRCLE', k, 90.0, 1, 0.0, 0.0)),
+            ("wavy (control)",
+             lambda k: gamma_curve('WAVY', k, 90.0, 3, 35.0, 0.0))):
+        E1, r1 = _criticality(gam(200), 56)
+        E2, r2 = _criticality(gam(400), 112)
+        rate = math.log2(r1 / r2) if r2 > 0 else 99.0
+        critical = rate > 1.2                # residual -> 0 like h^2
+        want = label != "wavy (control)"
+        ok = critical == want
+        ok_all = ok_all and ok
+        print(f"willmore criticality {label:18s}: |dW/dn| {r1:.3e} -> "
+              f"{r2:.3e} rate {rate:+.2f} -> "
+              f"{'CRITICAL' if critical else 'not critical'} "
+              f"{'OK' if ok else 'BAD'}")
+        # the mesh energy must also agree with the curve integral
+        w_curve = willmore_energy(gam(400))[0]
+        rel = abs(E2 - w_curve) / w_curve
+        ok = rel < 0.02
+        ok_all = ok_all and ok
+        print(f"   int H^2 dA = {E2:.4f} vs pi*int(1+k^2)ds = "
+              f"{w_curve:.4f}  rel {rel:.2e} {'OK' if ok else 'BAD'}")
 
     assert ok_all
     print("hopf fibration standalone tests passed")
