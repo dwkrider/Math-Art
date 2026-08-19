@@ -485,11 +485,24 @@ if _IN_BLENDER:
         nt.links.new(em.outputs['Emission'], out.inputs['Surface'])
         return m
 
-    def _aset_dome(radius, rings, segs):
-        """A hemisphere split into the three ASET elevation zones."""
+    def _aset_dome(radius, rings, segs, skirt=12.0):
+        """A hemisphere split into the three ASET elevation zones.
+
+        ASET proper is defined over the hemisphere ABOVE the stone, 0 to
+        90 degrees, and a dome springing from exactly z = 0 is therefore
+        the literal reading.  It is also wrong in practice: a stone fitted
+        to the 2 m cube hangs its pavilion some 0.6 below the girdle
+        plane, so rays grazing up past the girdle meet nothing and the
+        stone's outline comes back with black bites taken out of it.
+        `skirt` carries the low zone a little below the horizon so that
+        boundary is continuous.  It is a rendering convenience, not part
+        of the AGS definition, which is why it is small and green -- the
+        zone light at that elevation would belong to anyway.
+        """
         import math as _m
+        lo = -abs(skirt)
+        elev = [lo + (90.0 - lo) * k / rings for k in range(rings + 1)]
         verts, faces, zone = [], [], []
-        elev = [90.0 * k / rings for k in range(rings + 1)]
         for e in elev:
             t = _m.radians(e)
             for s in range(segs):
@@ -501,8 +514,10 @@ if _IN_BLENDER:
             mid = 0.5 * (elev[r] + elev[r + 1])
             z = 0
             for i, band in enumerate(ASET_ZONES):
-                if band[0] <= mid < band[1] or (band[1] >= 90.0
-                                                and mid >= band[0]):
+                # the skirt below the horizon belongs to the low zone
+                if (band[0] <= mid < band[1]
+                        or (band[0] == 0.0 and mid < 0.0)
+                        or (band[1] >= 90.0 and mid >= band[0])):
                     z = i
             for s in range(segs):
                 a = r * segs + s
@@ -522,6 +537,13 @@ if _IN_BLENDER:
         radius: FloatProperty(name="Radius", default=8.0, min=2.0, max=60.0)
         strength: FloatProperty(name="Strength", default=6.0, min=0.1,
                                 max=100.0)
+        skirt: FloatProperty(
+            name="Skirt", default=12.0, min=0.0, max=45.0,
+            description="Degrees the low zone is carried BELOW the girdle "
+                        "plane. ASET proper is the hemisphere above the "
+                        "stone, but a pavilion hangs below it, so a dome "
+                        "stopping at exactly zero leaves black notches "
+                        "bitten out of the outline")
         add_camera: BoolProperty(
             name="Add Camera", default=True,
             description="Orthographic, straight down the table -- the view "
@@ -535,7 +557,8 @@ if _IN_BLENDER:
                         "from it, and renders the stone flat grey")
 
         def execute(self, context):
-            verts, faces, zone = _aset_dome(self.radius, 24, 64)
+            verts, faces, zone = _aset_dome(self.radius, 24, 64,
+                                            skirt=self.skirt)
             me = bpy.data.meshes.new("ASET Dome")
             me.from_pydata(verts, [], faces)
             me.validate(clean_customdata=True)
