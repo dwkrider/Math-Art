@@ -2097,3 +2097,179 @@ CASES = {
     "willmore_invariance": case_willmore_invariance,
     "willmore_vesicle": case_willmore_vesicle,
 }
+
+
+# --------------------------------------------------------------------------
+# S5 coarse-to-fine continuation cases (appended; registries updated at
+# the end of this block so concurrent branches merge by union)
+# --------------------------------------------------------------------------
+
+def case_crochet_hard(config):
+    """The buckling headline (S5 + thin-plate bending): a RUFFLED-scale
+    sheet (ratio 4, 16 rows) where the one-shot relax crumples.  Config
+    dict `crochet_hard`: mode "oneshot" (default) or "c2f", plus
+    iters/smooth/bend, and levels/fine_frac (c2f only -- configuring
+    them under oneshot raises rather than silently no-opping).  Both
+    modes are measured with the same metric set: hyperbolic edge
+    distortion (rms/max/p50/p90) against each mesh's own exact rest
+    lengths, dihedral + umbrella smoothness, curvature vs the target
+    K = -1/R0^2, self-intersections, and z extent."""
+    from math_art.hyperbolic import crochet
+    cfg = dict(config.get("crochet_hard", {}))
+    allowed = {"mode", "iters", "smooth", "bend", "levels", "fine_frac"}
+    unknown = set(cfg) - allowed
+    if unknown:
+        raise ValueError(f"crochet_hard config keys not understood: "
+                         f"{sorted(unknown)}")
+    mode = cfg.get("mode", "oneshot")
+    iters = int(cfg.get("iters", 340))
+    smooth = float(cfg.get("smooth", 0.06))
+    bend = float(cfg.get("bend", 0.0))
+    ratio_n, rows, stitch, max_st = 4, 16, 0.09, 600
+    R0 = stitch / math.log(1.0 + 1.0 / ratio_n)
+    t0 = _timer()
+    if mode == "oneshot":
+        for k in ("levels", "fine_frac"):
+            if k in cfg:
+                raise ValueError(f"crochet_hard.{k} configured but "
+                                 f"unused in oneshot mode")
+        P, E0, E1, REST, nbr, tris, pin, pin_pos = crochet._crochet_mesh(
+            ratio_n, rows, stitch, max_st)
+        P = crochet._relax(P, E0, E1, REST, nbr, pin, pin_pos, iters,
+                           smooth, 0.4 * stitch, 0.5, bend=bend)
+        effective = {"mode": mode, "iters": iters, "smooth": smooth,
+                     "bend": bend}
+    elif mode == "c2f":
+        levels = int(cfg.get("levels", 1))
+        fine_frac = float(cfg.get("fine_frac", 0.5))
+        res = crochet.crochet_c2f(
+            ratio_n=ratio_n, rows=rows, stitch=stitch,
+            max_stitches=max_st, iters=iters, smooth=smooth, repel=0.5,
+            bend=bend, levels=levels, fine_frac=fine_frac)
+        P, tris = res["P"], res["tris"]
+        E0, E1, REST = res["E0"], res["E1"], res["REST"]
+        if len(res["schedule"]) != levels + 1:
+            raise RuntimeError("c2f schedule did not run all levels")
+        effective = {"mode": mode, "iters": iters, "smooth": smooth,
+                     "bend": bend, "levels": levels,
+                     "sched": [s["iters"] for s in res["schedule"]]}
+    else:
+        raise ValueError(f"crochet_hard.mode {mode!r} not understood")
+    dt = _timer() - t0
+    tris = np.asarray(tris, dtype=np.int64)
+    mets = dict(M.edge_metric_error(P, E0, E1, REST))
+    mets.update(M.edge_metric_error_dist(P, E0, E1, REST))
+    mets["dih_rms_deg"] = M.dihedral_rms_deg(P, tris)
+    mets["lap_rms"] = M.umbrella_rms(P, E0, E1)
+    mets["selfx"] = M.selfx_count(P, tris)
+    K = crochet.mean_curvature(P, tris)
+    mets["median_K"] = K
+    mets["K_rel_err"] = abs(K - (-1.0 / R0 ** 2)) / (1.0 / R0 ** 2)
+    mets["z_extent"] = float(P[:, 2].max() - P[:, 2].min())
+    return {"metrics": mets, "trace": [], "time_s": dt,
+            "n_verts": len(P), "n_tris": len(tris),
+            "effective": effective}
+
+
+def _load_roundembed():
+    import importlib.util
+    import os
+    root = os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))))
+    cands = [
+        os.path.join(root, "research", "highgenus_embedder"),
+        r"C:\Users\dkrid\Projects\2026_07_21_Math_Art\research\highgenus_embedder",
+    ]
+    home = next((c for c in cands
+                 if os.path.exists(os.path.join(c, "roundembed.py"))),
+                None)
+    if home is None:
+        return None, None
+    spec = importlib.util.spec_from_file_location(
+        "roundembed", os.path.join(home, "roundembed.py"))
+    re_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(re_mod)
+    return re_mod, home
+
+
+def case_untangle(config):
+    """High-genus embedder crossing removal (S5 continuation on the
+    research script): deterministic first-cluster eigenseed +
+    `planarize`, then -- mode "on" -- the coarse-to-fine `untangle`
+    cycles (face-interior sampling + face-disjoint repulsion).  Config
+    dict `untangle`: map, mode "off"/"on", sched ([[levels, iters]..]),
+    repel, repel_rad (the latter three raise under mode "off").
+    Reports crossings before/after (the embedder's known failure),
+    planarity, aspect."""
+    import json as _json
+    import os
+    cfg = dict(config.get("untangle", {}))
+    allowed = {"map", "mode", "sched", "repel", "repel_rad"}
+    unknown = set(cfg) - allowed
+    if unknown:
+        raise ValueError(f"untangle config keys not understood: "
+                         f"{sorted(unknown)}")
+    re_mod, home = _load_roundembed()
+    if re_mod is None:
+        return {"metrics": {"skipped": 1}, "trace": [], "time_s": 0.0,
+                "note": "research/highgenus_embedder not found"}
+    if not hasattr(re_mod, "untangle"):
+        raise RuntimeError("roundembed.py on disk lacks untangle(); "
+                           "the S5 version is required for this case")
+    data = _json.load(open(os.path.join(home,
+                                        "maps_combinatorics.json")))
+    name = cfg.get("map") or "Overarching Octagonal Dodecahedron"
+    rec = data[name]
+    Vn = len(rec["V"]) if not isinstance(rec["V"], int) else rec["V"]
+    F = [list(f) for f in rec["F"]]
+    Lap = re_mod.laplacian(Vn, F)
+    w, vec = np.linalg.eigh(Lap)
+    sub = None
+    for c in re_mod.clusters(w):
+        if len(c) >= 3 and w[c[0]] > 1e-6:
+            sub = c[:3]
+            break
+    if sub is None:
+        sub = [i for i in range(len(w)) if w[i] > 1e-6][:3]
+    X0 = vec[:, sub].copy()
+    mode = cfg.get("mode", "off")
+    t0 = _timer()
+    X = re_mod.planarize(X0, F)
+    cr_before = re_mod.crossings(X, F)
+    effective = {"map": name, "mode": mode}
+    if mode == "on":
+        sched = tuple(tuple(int(v) for v in s)
+                      for s in cfg.get("sched",
+                                       [[1, 100], [1, 100], [2, 40],
+                                        [2, 40], [2, 40]]))
+        repel = float(cfg.get("repel", 0.6))
+        repel_rad = float(cfg.get("repel_rad", 1.5))
+        X, cr_after = re_mod.untangle(X, F, sched=sched, repel=repel,
+                                      repel_rad=repel_rad)
+        effective.update({"sched": list(map(list, sched)),
+                          "repel": repel, "repel_rad": repel_rad})
+    elif mode == "off":
+        for k in ("sched", "repel", "repel_rad"):
+            if k in cfg:
+                raise ValueError(f"untangle.{k} configured but unused "
+                                 f"in mode 'off'")
+        cr_after = cr_before
+    else:
+        raise ValueError(f"untangle.mode {mode!r} not understood")
+    dt = _timer() - t0
+    mets = {
+        "crossings_before": cr_before,
+        "crossings": cr_after,
+        "planar_dev": re_mod.planar_dev(X, F),
+        "aspect": re_mod.aspect(X),
+        "map": name,
+    }
+    return {"metrics": mets, "trace": [], "time_s": dt,
+            "n_verts": Vn, "effective": effective}
+
+
+CASES.update({
+    "crochet_hard": case_crochet_hard,
+    "untangle": case_untangle,
+})
+KNOWN_CONFIG_KEYS |= {"crochet_hard", "untangle"}
