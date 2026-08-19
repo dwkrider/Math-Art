@@ -317,13 +317,17 @@ if _IN_BLENDER:
                         "first (large waves form there), then "
                         "subdivide and re-relax. Larger, smoother "
                         "ruffles at less cost than one-shot; 0 = off "
-                        "(classic single-resolution relax)")
+                        "(classic single-resolution relax). 1 with "
+                        "Stiffness ~0.03 is the measured sweet spot; "
+                        "2 makes still larger waves but wants a "
+                        "Collision pass to keep the deep folds apart")
         bend: FloatProperty(
             name="Stiffness", default=0.0, min=0.0, max=0.35,
             description="Thin-plate bending resistance: damps "
                         "stitch-scale crumple while leaving the large "
                         "waves intact. Best combined with Coarse-to-"
-                        "Fine; ~0.02-0.06 is a good range, 0 = off")
+                        "Fine (~0.02-0.06; measured best 0.03), 0 = "
+                        "off")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                             max=100.0)
         shade_smooth: BoolProperty(name="Smooth Shading", default=True)

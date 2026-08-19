@@ -309,8 +309,8 @@ def _nbr_from_edges(E0, E1, n):
 
 
 def crochet_c2f(ratio_n=4, rows=18, stitch=0.09, max_stitches=600,
-                iters=340, smooth=0.06, repel=0.5, bend=0.12,
-                levels=2, sched=None, fine_frac=0.35, seed_scale=1.0,
+                iters=340, smooth=0.06, repel=0.5, bend=0.03,
+                levels=1, sched=None, fine_frac=0.5, seed_scale=1.0,
                 grade=0.0, lobes=3, anneal=False, stiff=1.0,
                 collide_fn_factory=None, collide_every=40):
     """Coarse-to-fine continuation build+relax of the crochet sheet
@@ -336,6 +336,14 @@ def crochet_c2f(ratio_n=4, rows=18, stitch=0.09, max_stitches=600,
     finer levels continue from an already-buckled state).
     `collide_fn_factory(tris, nbr, stitch_level)` may return a per-level
     collision pass (Blender layer).
+
+    Measured defaults (tests/bench/results/c2f_crochet_sweep.md, the
+    RUFFLED-scale sheet): levels=1 + bend=0.03 + fine_frac=0.5 reaches
+    dihedral crumple 21.8 deg (one-shot: 44.4), hyperbolic edge error
+    0.061 (one-shot: 0.057), and ZERO self-intersections (one-shot: 91)
+    at 0.9x the one-shot wall time.  levels=2 gives still larger,
+    smoother waves (dih ~14-16) but the deep lobes come into contact --
+    use it with a collision pass (the Blender layer's BVH decollide).
 
     Returns a dict: P, tris, E0, E1, REST, nbr, pin, UV, schedule."""
     if levels < 1:

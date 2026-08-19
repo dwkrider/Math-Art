@@ -115,6 +115,12 @@ def ab_table(res_a, res_b, label_a, label_b):
         "inter_gap_min", "inter_gap_final",
         "lk_adjacent_ok", "lk_ends_zero",
     }
+    # S5 coarse-to-fine additions (appended; keep as updates so
+    # concurrent branches merge by union)
+    lower_better.update({
+        "edge_err_p50", "edge_err_p90", "dih_rms_deg", "lap_rms",
+        "K_rel_err", "crossings_before",
+    })
     lines = []
     wins = losses = ties = 0
     for case in res_a:
