@@ -114,6 +114,12 @@ ORIENT = {
     # -- straight on, the four lobes overlap into a featureless blob.
     # A quarter turn puts that circle edge-on and the lobes separate.
     "object.minimal_span": (0.0, 0.0, math.pi / 2),
+    # The Clifford torus is FAT (hole radius (sqrt(2)-1)r against an
+    # outer radius (sqrt(2)+1)r): at the studio's shallow 3/4 elevation
+    # the small hole hides behind the tube and the render reads as a
+    # plain bun.  Tipping it well toward the camera shows the hole,
+    # which is the only thing separating it from a sphere at icon size.
+    "mesh.willmore_add": (1.0, 0.0, 0.0),
 }
 
 
