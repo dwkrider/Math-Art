@@ -81,6 +81,7 @@ SURFACES = Menu(
         _e("mesh.spherical_harmonic_add", 'SURFACE_NSPHERE'),
         _e("mesh.orbital_add", 'META_BALL'),
         _e("mesh.hyperbolic_surface_add", 'MESH_CAPSULE'),
+        _e("mesh.delaunay_surface_add", 'META_CAPSULE'),
         _e("mesh.crochet_add", 'MOD_CLOTH'),
         _e("mesh.willmore_add", 'MESH_TORUS', "Willmore Surface"),
     ])
