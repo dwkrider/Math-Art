@@ -216,6 +216,68 @@ def meridian(mode, neck=0.4, periods=2, n=400, height=2.5):
     return r, z - 0.5 * (z[0] + z[-1])
 
 
+def conic_axes(mode, neck):
+    """(a, b, focal_distance) of the conic whose rolling focus traces
+    this meridian, at H = H_FIXED.
+
+    The conic is pinned by the first integral, not fitted.  Its major
+    (or transverse) axis is 2a = 1/H, and the neck and bulge are the
+    focus's closest and furthest approach to the axis:
+
+      UNDULOID  ellipse    e = 1 - neck,  so  a - ae = neck  and
+                           a + ae = 2 - neck = bulge, and
+                           b^2 = a^2(1 - e^2) = neck * bulge
+      NODOID    hyperbola  e = 1 + neck,  so  ae - a = neck  and
+                           ae + a = 2 + neck = bulge, and
+                           b^2 = a^2(e^2 - 1) = neck * bulge
+
+    -- one formula b = sqrt(neck * bulge) for both, which is Delaunay's
+    construction agreeing with the first integral's c/H."""
+    a = 1.0 / (2.0 * H_FIXED)
+    if mode == 'UNDULOID':
+        bulge = 2.0 * a - neck
+    elif mode == 'NODOID':
+        bulge = 2.0 * a + neck
+    else:
+        raise ValueError(f"{mode!r} has no rolling conic")
+    b = math.sqrt(max(neck * bulge, 0.0))
+    return a, b, math.sqrt(abs(a * a - b * b)) if mode == 'UNDULOID' \
+        else math.sqrt(a * a + b * b)
+
+
+def roll_conic(mode, neck, t):
+    """Roll the conic along the axis without slipping and return
+    (contact_arclength, focus_position, rotation_angle) at parameter t.
+
+    The rolling is done honestly -- arclength along the conic becomes
+    distance along the axis -- rather than by quoting a closed form for
+    the roulette.  That way `build_roulette` and `meridian` are two
+    independent routes to the same curve, and the self-test compares
+    them."""
+    a, b, f = conic_axes(mode, neck)
+    t = np.asarray(t, dtype=float)
+    if mode == 'UNDULOID':
+        P = np.stack([a * np.cos(t), b * np.sin(t)], axis=-1)
+        dP = np.stack([-a * np.sin(t), b * np.cos(t)], axis=-1)
+    else:
+        P = np.stack([a * np.cosh(t), b * np.sinh(t)], axis=-1)
+        dP = np.stack([a * np.sinh(t), b * np.cosh(t)], axis=-1)
+    speed = np.linalg.norm(dP, axis=-1)
+    # cumulative arclength by Simpson on the same grid
+    s = np.zeros_like(speed)
+    if speed.size > 1:
+        h = np.diff(t)
+        s[1:] = np.cumsum(0.5 * h * (speed[:-1] + speed[1:]))
+    ang = -np.arctan2(dP[..., 1], dP[..., 0])
+    ca, sa = np.cos(ang), np.sin(ang)
+    F = np.stack([np.full_like(t, f), np.zeros_like(t)], axis=-1)
+    d = F - P
+    rot = np.stack([ca * d[..., 0] - sa * d[..., 1],
+                    sa * d[..., 0] + ca * d[..., 1]], axis=-1)
+    focus = np.stack([s + rot[..., 0], rot[..., 1]], axis=-1)
+    return s, focus, ang
+
+
 def mean_curvature_profile(r, z):
     """Mean curvature sampled along a meridian, from the geometry alone.
 
@@ -230,6 +292,88 @@ def mean_curvature_profile(r, z):
     kappa_meridian = dpsi / np.maximum(ds, 1e-300)
     kappa_parallel = np.sin(psi) / np.maximum(r, 1e-300)
     return 0.5 * (kappa_meridian + kappa_parallel)
+
+
+def build_roulette(neck=0.4, periods=2, positions=9, n=1200, scale=1.0):
+    """Delaunay's 1841 construction, drawn: the rolling ellipse at a
+    number of positions, the axis it rolls on, the spoke from focus to
+    contact point, and the trace of the focus -- which IS the unduloid
+    meridian.
+
+    Returns a list of (points, closed) POLYLINES in the x-z plane, the
+    same plane the surface's meridian lives in.  Polylines rather than a
+    mesh because the result is a line drawing: an edge-only mesh is
+    invisible to every solid renderer (and the Wireframe modifier builds
+    from faces, so it has nothing to work with either), whereas a curve
+    object with a bevel renders anywhere.
+
+    ONLY the ellipse, i.e. only the unduloid, is drawn.  The nodoid's
+    conic is a hyperbola, whose branch has infinite arclength, so rolling
+    a single branch traces only part of the nodary and never closes --
+    the classical construction has to hand over to the other branch, and
+    the two arcs meet only in the limit.  Measured here at necksize 0.35:
+    one branch covers r up to 0.90 and the other down to 0.92, of a range
+    that should run from 0.35 to 2.35.  Rather than draw a picture that
+    is quietly wrong for half the family, this output is restricted to
+    the unduloid and the operator says so."""
+    a, b, f = conic_axes('UNDULOID', neck)
+    polylines = []
+
+    t = np.linspace(-math.pi, math.pi, n)
+    s_all, F_all, _ = roll_conic('UNDULOID', neck, t)
+    period = float(s_all[-1] - s_all[0])
+    z0 = float(F_all[np.argmin(F_all[:, 1]), 0])
+
+    for k in range(max(1, periods)):
+        off = period * k
+        polylines.append(([(float(F_all[i, 1]), 0.0,
+                            float(F_all[i, 0]) - z0 + off)
+                           for i in range(n)], False))
+
+    zlo = float(F_all[0, 0]) - z0
+    zhi = float(F_all[-1, 0]) - z0 + period * (max(1, periods) - 1)
+    polylines.append(([(0.0, 0.0, zlo), (0.0, 0.0, zhi)], False))
+
+    theta = np.linspace(0.0, 2.0 * math.pi, 160, endpoint=False)
+    for idx in np.linspace(0, n - 1, max(2, positions)).astype(int):
+        tc, sc = float(t[idx]), float(s_all[idx])
+        Pc = np.array([a * math.cos(tc), b * math.sin(tc)])
+        dP = np.array([-a * math.sin(tc), b * math.cos(tc)])
+        ang = -math.atan2(dP[1], dP[0])
+        ca, sa = math.cos(ang), math.sin(ang)
+
+        def place(q, _P=Pc, _ca=ca, _sa=sa, _sc=sc):
+            d = np.asarray(q, dtype=float) - _P
+            return (float(_sa * d[0] + _ca * d[1]), 0.0,
+                    float(_sc + _ca * d[0] - _sa * d[1]) - z0)
+
+        polylines.append(([place((a * math.cos(u), b * math.sin(u)))
+                           for u in theta], True))
+        fr, _, fz = place((f, 0.0))
+        polylines.append(([(fr, 0.0, fz), (0.0, 0.0, sc - z0)], False))
+
+    # centre and fit to the 2 m cube, as every generator here does
+    allp = np.array([p for pts, _ in polylines for p in pts], dtype=float)
+    lo, hi = allp.min(axis=0), allp.max(axis=0)
+    ext = float((hi - lo).max())
+    k = (2.0 / ext if ext > 1e-9 else 1.0) * scale
+    ctr = 0.5 * (lo + hi)
+    return [([tuple((np.asarray(p) - ctr) * k) for p in pts], cl)
+            for pts, cl in polylines]
+
+
+def roulette_edges(polylines):
+    """Flatten roulette polylines into (verts, edges), for the headless
+    self-test and for anything that wants a mesh rather than a curve."""
+    verts, edges = [], []
+    for pts, closed in polylines:
+        base = len(verts)
+        verts.extend(pts)
+        for i in range(len(pts) - 1):
+            edges.append((base + i, base + i + 1))
+        if closed:
+            edges.append((base + len(pts) - 1, base))
+    return np.asarray(verts, dtype=float), edges
 
 
 def build_surface(mode, neck=0.4, periods=2, ures=200, vres=64,
@@ -300,6 +444,24 @@ if _IN_BLENDER:
                    ('CATENOID', "Catenoid", "rolling PARABOLA -- the "
                     "minimal (H = 0) limit of the family")],
             default='UNDULOID')
+        output: EnumProperty(
+            name="Output",
+            items=[('SURFACE', "Surface", "the CMC surface of "
+                    "revolution itself"),
+                   ('ROULETTE', "Rolling Conic", "Delaunay's 1841 "
+                    "construction drawn as a wireframe: the rolling "
+                    "ellipse, the axis, and the focus tracing the "
+                    "meridian.  Unduloid only")],
+            default='SURFACE')
+        line_width: FloatProperty(
+            name="Line Width", default=0.008, min=0.0, max=0.2,
+            description="Bevel radius of the roulette's lines; 0 gives "
+                        "a bare wire that is visible in the viewport "
+                        "but invisible to a solid render")
+        roll_positions: IntProperty(
+            name="Conic Positions", default=5, min=2, max=48,
+            description="How many positions of the rolling conic to "
+                        "draw in the ROULETTE output")
         neck: FloatProperty(
             name="Neck Radius", default=0.4, min=0.02, max=3.0,
             description="Radius of the narrowest parallel.  The "
@@ -331,6 +493,40 @@ if _IN_BLENDER:
                             f"Unduloid needs neck < 1 (got {neck:.2f}); "
                             f"clamped to 0.98")
                 neck = 0.98
+            if self.output == 'ROULETTE':
+                if self.mode != 'UNDULOID':
+                    self.report(
+                        {'WARNING'},
+                        "The rolling-conic drawing is unduloid-only: a "
+                        "hyperbola branch has infinite arclength, so a "
+                        "single-branch roll never closes the nodary")
+                lines = build_roulette(neck, self.periods,
+                                       self.roll_positions,
+                                       scale=self.scale)
+                cu = bpy.data.curves.new("Delaunay Roulette", 'CURVE')
+                cu.dimensions = '3D'
+                cu.bevel_depth = self.line_width
+                cu.bevel_resolution = 2
+                for pts, closed in lines:
+                    sp = cu.splines.new('POLY')
+                    sp.points.add(len(pts) - 1)
+                    for i, q in enumerate(pts):
+                        sp.points[i].co = (q[0], q[1], q[2], 1.0)
+                    sp.use_cyclic_u = closed
+                obj = bpy.data.objects.new("Delaunay Roulette", cu)
+                context.collection.objects.link(obj)
+                obj.location = context.scene.cursor.location
+                for o in context.selected_objects:
+                    o.select_set(False)
+                obj.select_set(True)
+                context.view_layer.objects.active = obj
+                a, b, f = conic_axes('UNDULOID', neck)
+                self.report({'INFO'},
+                            f"Delaunay roulette: rolling ellipse a={a:.4f} "
+                            f"b={b:.4f}, focus at {f:.4f}; the focus "
+                            f"traces the unduloid meridian (neck {neck:.3f}, "
+                            f"bulge {2.0 - neck:.3f})")
+                return {'FINISHED'}
             verts, faces, info = build_surface(
                 self.mode, neck, self.periods, self.ures, self.vres,
                 self.height, self.scale)
@@ -365,6 +561,13 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'mode')
+            lay.prop(self, 'output')
+            if self.output == 'ROULETTE':
+                lay.prop(self, 'roll_positions')
+                lay.prop(self, 'line_width')
+                if self.mode != 'UNDULOID':
+                    lay.label(text="Rolling conic: unduloid only",
+                              icon='ERROR')
             if self.mode in ('UNDULOID', 'NODOID', 'CATENOID'):
                 lay.prop(self, 'neck')
                 if self.mode == 'UNDULOID' and self.neck >= 1.0:
@@ -499,6 +702,43 @@ def _selftest():
         print(f"build {mode:9s}: V={len(V)} F={len(F)} aspect "
               f"{ext.min() / ext.max():.3f} H={info['H_median']:.4f} "
               f"{'OK' if ok else 'BAD'}")
+
+    # 6b) DELAUNAY'S OWN THEOREM, checked against the first integral.
+    #     The module builds meridians from sin(psi) = H r + c/r; the
+    #     roulette rolls an ellipse and follows its focus.  Those are
+    #     independent constructions of the same curve -- 1841 against the
+    #     modern first integral -- so they must agree pointwise, and the
+    #     conic's axes must come out as neck+bulge = 2a and
+    #     b = sqrt(neck*bulge).
+    for neck in (0.15, 0.45, 0.8):
+        a, b, f = conic_axes('UNDULOID', neck)
+        bulge = 2.0 - neck
+        axes_ok = (abs(2.0 * a - (neck + bulge)) < 1e-12
+                   and abs(b - math.sqrt(neck * bulge)) < 1e-12
+                   and abs((a - f) - neck) < 1e-12)
+        t = np.linspace(-math.pi, math.pi, 20001)
+        _, F, _ = roll_conic('UNDULOID', neck, t)
+        rr, zr = F[:, 1], F[:, 0]
+        rm, zm = meridian('UNDULOID', neck, periods=1, n=8000)
+        zm = zm - zm[np.argmin(rm)]
+        zr = zr - zr[np.argmin(rr)]
+        P = np.stack([rr, zr], 1)
+        Q = np.stack([rm, zm], 1)
+        keep = (zr > zm.min()) & (zr < zm.max())
+        d = np.linalg.norm(P[keep][:, None, :] - Q[None, :, :],
+                           axis=2).min(axis=1)
+        rel = float(d.max() / rr.max())
+        ok = axes_ok and rel < 1e-3
+        ok_all = ok_all and ok
+        print(f"Delaunay roulette neck={neck:.2f}: a={a:.4f} b={b:.4f} "
+              f"focus={f:.4f} (a-f={a - f:.4f} = neck), focus trace vs "
+              f"first integral {rel * 100:.4f}% {'OK' if ok else 'BAD'}")
+
+    V, E = roulette_edges(build_roulette(0.4, 2, 7, n=400))
+    ok = len(E) > 0 and np.isfinite(V).all() and len(V) > 0
+    ok_all = ok_all and ok
+    print(f"build ROULETTE   : V={len(V)} E={len(E)} "
+          f"{'OK' if ok else 'BAD'}")
 
     # 7) THE cross-check: the variational CMC solver in cmc_generator.py
     #    relaxes a liquid bridge by constrained area minimisation, which

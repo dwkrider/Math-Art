@@ -105,6 +105,78 @@ def jacobi_sncndn(u, m):
     return sn, cn, dn
 
 
+def jacobi_am(u, m):
+    """Jacobi amplitude am(u|m): the angle phi with sn(u|m) = sin(phi).
+
+    Free from the descending Landen recursion above -- phi_0 IS the
+    amplitude -- and unlike arcsin(sn) it does not fold at the quarter
+    periods, so it keeps growing monotonically with u.  That matters
+    wherever the amplitude appears inside another integral rather than
+    inside a trigonometric function."""
+    u = np.asarray(u, dtype=float)
+    A, C = _agm_scale(m)
+    N = len(A) - 1
+    phi = (2.0 ** N) * A[N] * u
+    for n in range(N, 0, -1):
+        phi = 0.5 * (phi + np.arcsin(np.clip((C[n] / A[n]) * np.sin(phi),
+                                             -1.0, 1.0)))
+    return phi
+
+
+# Gauss-Legendre nodes/weights on [-1, 1], built once by Newton iteration
+# on the Legendre polynomials (numpy's leggauss would do, but this keeps
+# the module's "no scipy, and no surprises" character and is exact to
+# rounding).
+def _leggauss(n):
+    i = np.arange(1, n, dtype=float)
+    beta = i / np.sqrt(4.0 * i * i - 1.0)          # Golub-Welsch
+    J = np.diag(beta, -1) + np.diag(beta, 1)
+    x, V = np.linalg.eigh(J)
+    return x, 2.0 * V[0, :] ** 2
+
+
+_GL_X, _GL_W = _leggauss(48)
+
+
+def ellippi(n, phi, m, segments=None):
+    """Incomplete elliptic integral of the THIRD kind,
+
+        Pi(n; phi | m) = int_0^phi dt / ((1 - n sin^2 t) sqrt(1 - m sin^2 t))
+
+    for real n < 1, real m < 1 and real phi (scalar or ndarray).
+
+    Evaluated by composite 48-point Gauss-Legendre over sub-intervals of
+    length <= pi/2.  The integrand is analytic away from n sin^2 t = 1 and
+    m sin^2 t = 1, so Gauss-Legendre converges spectrally and 48 nodes per
+    half-period is far past machine precision; the subdivision is only
+    there to stop a long phi from making one panel span many oscillations.
+
+    NOT valid for n >= 1, where the integrand has a pole inside the range
+    and the integral is a Cauchy principal value -- that case raises
+    rather than returning a plausible wrong number.  (Carlson's R_J would
+    be the general answer if it is ever needed.)"""
+    if n >= 1.0:
+        raise ValueError(
+            f"ellippi: n = {n} >= 1 puts a pole inside the interval; "
+            f"the principal-value branch is not implemented")
+    if m >= 1.0:
+        raise ValueError(f"ellippi: m = {m} >= 1 is out of range")
+    ph = np.asarray(phi, dtype=float)
+    if segments is None:
+        segments = int(np.ceil(float(np.abs(ph).max()) /
+                               (0.5 * math.pi))) + 1
+    segments = max(1, int(segments))
+    # t = ph * (s + (xi+1)/2) / segments over s = 0 .. segments-1
+    s = np.arange(segments, dtype=float)
+    # nodes for every (sample, segment, gauss-node)
+    frac = (s[:, None] + 0.5 * (_GL_X[None, :] + 1.0)) / segments
+    t = ph[..., None, None] * frac                 # (..., seg, node)
+    st2 = np.sin(t) ** 2
+    f = 1.0 / ((1.0 - n * st2) * np.sqrt(1.0 - m * st2))
+    w = _GL_W[None, :] * 0.5 / segments
+    return ph * np.sum(f * w, axis=(-2, -1))
+
+
 # ==========================================================================
 # Weierstrass elliptic-function engine (Jacobi-theta series, numpy only)
 # ==========================================================================
@@ -222,6 +294,7 @@ def _selftest():
           f"{'OK' if good else 'FAIL'}")
 
     ok &= _selftest_jacobi()
+    ok &= _selftest_ellippi()
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
@@ -306,6 +379,90 @@ def _selftest_jacobi():
     good = per < 1e-9
     ok &= good
     print(f"jacobi: max period residual (4K,4K,2K)={per:.3e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    return ok
+
+
+def _selftest_ellippi():
+    """The amplitude and the third-kind integral, each against a closed
+    form that does NOT go through the same quadrature."""
+    ok = True
+
+    # 1) am is the true amplitude: sin(am(u)) = sn(u), and unlike
+    #    arcsin(sn) it keeps increasing rather than folding at each
+    #    quarter period.
+    for m in (0.0, 0.3, 0.75, 0.96):
+        u = np.linspace(-9.0, 9.0, 401)
+        phi = jacobi_am(u, m)
+        sn = jacobi_sncndn(u, m)[0]
+        dev = float(np.abs(np.sin(phi) - sn).max())
+        monotone = bool(np.all(np.diff(phi) > 0.0))
+        good = dev < 1e-12 and monotone
+        ok &= good
+        print(f"ellippi: am m={m:.2f} max|sin(am)-sn|={dev:.2e} "
+              f"monotone={monotone} {'OK' if good else 'FAIL'}")
+
+    # 2) Pi(n; phi | 0) = arctan(sqrt(1-n) tan phi)/sqrt(1-n), continued
+    #    across the branch -- exact, and independent of the quadrature.
+    for n in (-2.0, -0.4, 0.0, 0.35, 0.8):
+        phi = np.linspace(0.05, 1.4, 40)
+        got = ellippi(n, phi, 0.0)
+        r = math.sqrt(1.0 - n)
+        want = np.arctan(r * np.tan(phi)) / r
+        dev = float(np.abs(got - want).max())
+        good = dev < 1e-13
+        ok &= good
+        print(f"ellippi: Pi(n={n:+.2f}; phi|0) vs closed form "
+              f"max dev {dev:.2e} {'OK' if good else 'FAIL'}")
+
+    # 3) The COMPLETE case at n = m: Pi(m | m) = E(m)/(1-m), which ties
+    #    the new quadrature to the AGM series for E.
+    for m in (0.1, 0.4, 0.7, 0.9):
+        got = float(ellippi(m, math.pi / 2.0, m))
+        want = ellipe(m) / (1.0 - m)
+        dev = abs(got - want)
+        good = dev < 1e-12
+        ok &= good
+        print(f"ellippi: Pi(m={m:.1f}|m)={got:.12f} vs E/(1-m)="
+              f"{want:.12f} dev {dev:.1e} {'OK' if good else 'FAIL'}")
+
+    # 4) n = 0 reduces to the first kind, whose inverse is the amplitude:
+    #    am(F(phi|m) | m) = phi.  This closes the loop between the new
+    #    quadrature and the AGM recursion, with no shared arithmetic.
+    for m in (0.2, 0.55, 0.88):
+        phi = np.linspace(0.1, 3.0, 30)
+        F = ellippi(0.0, phi, m)
+        dev = float(np.abs(jacobi_am(F, m) - phi).max())
+        good = dev < 1e-12
+        ok &= good
+        print(f"ellippi: am(F(phi|m)|m) == phi, m={m:.2f} max dev "
+              f"{dev:.2e} {'OK' if good else 'FAIL'}")
+
+    # 5) additivity across a quarter period, i.e. the composite panels
+    #    agree with a single long integration
+    m, n = 0.6, 0.25
+    a = float(ellippi(n, 2.5, m))
+    b = float(ellippi(n, 1.0, m)) + float(
+        ellippi(n, 2.5, m) - ellippi(n, 1.0, m))
+    long_ = float(ellippi(n, 12.0, m, segments=40))
+    short = float(ellippi(n, 12.0, m, segments=200))
+    dev = abs(long_ - short)
+    good = abs(a - b) < 1e-14 and dev < 1e-12
+    ok &= good
+    print(f"ellippi: panel independence over phi=12 dev {dev:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # 6) n >= 1 is a principal value and must be refused, not guessed
+    refused = 0
+    for bad in (1.0, 2.5):
+        try:
+            ellippi(bad, 1.0, 0.5)
+        except ValueError:
+            refused += 1
+    good = refused == 2
+    ok &= good
+    print(f"ellippi: {refused}/2 principal-value cases refused "
           f"{'OK' if good else 'FAIL'}")
 
     return ok

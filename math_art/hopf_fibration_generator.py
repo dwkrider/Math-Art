@@ -1209,7 +1209,60 @@ def _selftest():
               f"{defect:9.6f} ({'equality' if tight else 'strict'}) "
               f"{'OK' if ok else 'BAD'}")
 
-    # 11) THE acceptance gate.  Everything above tests gamma; this tests
+    # 11) Pinkall's Proposition 1: the Hopf torus over gamma is a FLAT
+    #     torus in S^3, conformally C / Gamma with the lattice
+    #         Gamma = < (2 pi, 0), (A/2, L/2) > ,
+    #     A the spherical area gamma encloses and L its length.
+    #
+    #     Both halves are checked on the S^3 torus itself, before the
+    #     stereographic projection -- projection is conformal, so it
+    #     preserves the conformal type but wrecks the metric, and this is
+    #     a statement about the metric.
+    #
+    #     The halving is not a typo.  The Hopf fibration is a Riemannian
+    #     submersion onto a sphere of radius 1/2, while `gamma_curve`
+    #     returns curves on the UNIT sphere, so a curve of length L here
+    #     lifts horizontally to length L/2 -- which is exactly where
+    #     Pinkall's L/2 and A/2 come from.  The lattice therefore has
+    #     covolume 2 pi * L/2 = pi L, and that is the sharpest scalar
+    #     consequence available: the S^3 area of the torus must be pi L.
+    for label, gam in (("circle b=90", gamma_curve('CIRCLE', 600, 90.0,
+                                                   1, 0.0, 0.0)),
+                       ("circle b=55", gamma_curve('CIRCLE', 600, 55.0,
+                                                   1, 0.0, 0.0)),
+                       ("wavy", gamma_curve('WAVY', 600, 90.0, 3,
+                                            35.0, 0.0)),
+                       ("elastica 1/3", spherical_elastica(1, 3, 600))):
+        G = np.asarray(gam, dtype=float)
+        L = willmore_energy(G)[1]
+        M = 96
+        psi = np.linspace(0.0, 2.0 * pi, M, endpoint=False)
+        cp, sp = np.cos(psi), np.sin(psi)
+        lift = np.empty((len(G), M, 4))
+        for i, g in enumerate(G):
+            x, y, z = g
+            beta = math.acos(max(-1.0, min(1.0, z)))
+            lam = math.atan2(y, x)
+            cb, sb = math.cos(beta / 2.0), math.sin(beta / 2.0)
+            z0r, z0i = cb * math.cos(lam), cb * math.sin(lam)
+            lift[i] = np.stack([cp * z0r - sp * z0i, sp * z0r + cp * z0i,
+                                cp * sb, sp * sb], axis=1)
+        # metric in the (s, psi) grid, with s the arclength of gamma
+        du = np.roll(lift, -1, axis=0) - lift
+        dv = np.roll(lift, -1, axis=1) - lift
+        E = np.einsum('ijk,ijk->ij', du, du)
+        F = np.einsum('ijk,ijk->ij', du, dv)
+        Gm = np.einsum('ijk,ijk->ij', dv, dv)
+        area = float(np.sum(np.sqrt(np.maximum(E * Gm - F * F, 0.0))))
+        want = pi * L
+        rel = abs(area - want) / want
+        ok = rel < 5e-3
+        ok_all = ok_all and ok
+        print(f"Pinkall lattice {label:13s}: S^3 area {area:.5f} vs "
+              f"covolume pi L = {want:.5f} (L={L:.4f}) rel {rel:.1e} "
+              f"{'OK' if ok else 'BAD'}")
+
+    # 12) THE acceptance gate.  Everything above tests gamma; this tests
     #     the SURFACE, and against an independent implementation.
     #     math_art.solver.willmore carries the discrete Willmore energy
     #     int H^2 dA and its exact analytic first variation.  Pinkall's
