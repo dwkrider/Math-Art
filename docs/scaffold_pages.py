@@ -24,6 +24,9 @@ Run:
     ... -- --only mesh.gem_add    one operator
     ... -- --refresh              rebuild Options tables in pages that
                                   carry the generated-block markers
+    ... -- --adopt                convert a hand-written Options table
+                                  into a generated block (Options only;
+                                  prose sections are never touched)
     ... -- --snapshot-only        just rewrite options_snapshot.json
 
 New pages land with TODO markers in the prose sections.  They are
@@ -242,6 +245,42 @@ def refresh(path, op):
     return True
 
 
+def adopt(path, op):
+    """Convert a hand-written Options table into a generated block.
+
+    The older pages predate the generated block, and their tables have
+    fallen behind the operators -- one is missing 51 options.  This
+    replaces the *table* with the RNA-built one and wraps it in the
+    markers, so it stays current from now on.
+
+    Only the Options section is touched.  Overview, How it works and
+    References are hand-written mathematics and are left exactly as
+    they are: regenerating those would replace real prose with TODO
+    markers, which is not "up to date", it is worse.
+
+    A section carrying explanatory prose as well as a table is skipped
+    and reported rather than flattened -- that prose is someone's
+    writing, and losing it silently is the failure mode this whole
+    exercise exists to prevent.
+    """
+    text = open(path, encoding="utf-8").read()
+    if BEGIN in text:
+        return "already"
+    m = re.search(r"(## Options\s*\n)(.*?)(?=\n## |\Z)", text, re.DOTALL)
+    if not m:
+        return "no-options-section"
+    body = m.group(2)
+    prose = [ln for ln in body.splitlines()
+             if ln.strip() and not ln.lstrip().startswith(("|", "<!--"))
+             and not ln.startswith("_This generator takes no options._")]
+    if prose:
+        return "has-prose"
+    new = m.group(1) + "\n" + block(op) + "\n"
+    open(path, "w", encoding="utf-8").write(
+        text[:m.start()] + new + text[m.end():])
+    return "adopted"
+
+
 def write_snapshot():
     """Option names per operator, for the no-Blender docs test."""
     snap = {}
@@ -265,8 +304,9 @@ def main(argv):
         write_snapshot()
         return 0
 
-    made = refreshed = 0
+    made = refreshed = adopted = 0
     missing = []
+    skipped = []
     for op in menu_defs.unique_ops():
         if only and op != only:
             continue
@@ -277,6 +317,13 @@ def main(argv):
         if not os.path.exists(path):
             missing.append((op, slug))
             continue
+        if "--adopt" in argv:
+            r = adopt(path, op)
+            if r == "adopted":
+                print("  adopted", slug)
+                adopted += 1
+            elif r in ("has-prose", "no-options-section"):
+                skipped.append((slug, r))
         if "--refresh" in argv and refresh(path, op):
             print("  refreshed", slug)
             refreshed += 1
@@ -297,7 +344,11 @@ def main(argv):
         made += 1
 
     write_snapshot()
-    print(f"DONE created={made} refreshed={refreshed}")
+    if skipped:
+        print(f"\n{len(skipped)} page(s) left alone:")
+        for slug, why in skipped:
+            print(f"    {slug}: {why}")
+    print(f"DONE created={made} refreshed={refreshed} adopted={adopted}")
     return 0
 
 

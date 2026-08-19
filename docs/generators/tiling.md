@@ -4,7 +4,9 @@
 
 Add a uniform Euclidean tiling.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **uniform tiling** covers the plane edge-to-edge with regular polygons and is vertex-transitive: every vertex looks the same as every other. There are exactly **11** — the 3 regular tilings, by triangles, squares or hexagons, and the 8 Archimedean (semiregular) ones that mix polygon types. Kepler drew them systematically in *Harmonices Mundi* in 1619, four centuries before the modern classification.
+
+Their **duals**, the 8 Laves tilings, are the other half of the family: not vertex- but *tile*-transitive, built from a single repeated tile that need not be regular. This generator produces all 19, with the Laves tilings computed as genuine duals rather than transcribed, so only the 11 base tilings carry hand-placed coordinates.
 
 ## Options
 
@@ -65,7 +67,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Why only eleven.** A vertex where regular $n_1,\dots,n_k$-gons meet must have its interior angles sum to a full turn. A regular $n$-gon has interior angle $\pi(n-2)/n$, so
+
+$$\sum_{i=1}^{k}\frac{n_i-2}{n_i}=2 .$$
+
+That Diophantine condition has only 17 solutions as multisets — 21 once distinct cyclic arrangements are counted separately — and most of them go no further: a vertex figure that closes arithmetically need not extend to a consistent tiling of the whole plane. $(3,7,42)$ and $(4,5,20)$ are legitimate solutions that tile nothing. Requiring the same configuration at *every* vertex cuts the 21 to 11. Each is named by its **vertex configuration**, the cyclic list of polygons around a vertex: $3^6$ for triangles, $4^4$ for squares, $6^3$ for hexagons, and mixed ones like $3.6.3.6$ (the trihexagonal tiling) or $4.8^2$ (truncated square).
+
+**Building one.** Each tiling is stored as a translational **unit cell**: lattice vectors $b_1,b_2$ plus a short list of regular polygons of edge length 1 placed inside the cell. The patch is then
+
+$$P=\bigcup_{i,j} T(i\,b_1+j\,b_2)\,(\text{cell tiles}),$$
+
+with duplicate tiles at shared cell boundaries welded on merge. Because the tiles are regular polygons of unit edge, their coordinates follow from the centre, radius and a starting angle, so the hand-entered data per tiling is small.
+
+**The Laves duals.** The dual of a tiling exchanges vertices and faces: place a new vertex at the centroid of every polygon, and join the centroids of all polygons meeting at a common vertex. That polygon-around-a-vertex becomes one dual tile. Concretely, for each interior vertex $v$ of the Archimedean patch, gather the incident faces, take their centroids, and sort them by angle about $v$:
+
+$$\text{dual tile}(v)=\Big[\,\operatorname{centroid}(f)\ :\ v\in f\,\Big]\ \text{sorted by}\ \operatorname{atan2}(c_y-v_y,\;c_x-v_x).$$
+
+Only *interior* vertices qualify — a vertex on the patch boundary has some of its faces missing, and would produce a truncated, wrong tile. This is why the generator builds a patch larger than the requested extent and trims afterwards. The duals of the 3 regular tilings are regular again (the square tiling is self-dual, triangles and hexagons swap), which is why the Laves list has 8 new members rather than 11.
 
 ## References
 
