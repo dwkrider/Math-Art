@@ -31,6 +31,8 @@ curved surface; graded for crested/cristate coral forms.
 | Cloth Detail | 1500 | Cloth mode: target vertex count for the SIM (the sheet is decimated to this before folding). Self-collision cost grows fast with vertex count, so lower = much faster; the fold smoothing hides the coarseness Range 300-12000. |
 | Cristate Grade | 0 | Grade the curvature across the sheet: > 0 = a flatter centre with the ruffling concentrated at the rim (a crested / cristate form, as in a crested cactus or brain coral); < 0 = ruffled centre, calmer rim. 0 = uniform curvature Range -0.9-2. |
 | Lobes | 3 | Coarsest ruffle count: the rim breaks into this many primary lobes, for a multi-lobed hyperbolic form Range 2-12. |
+| Coarse-to-Fine | 0 | Continuation levels: relax a coarse sheet first (large waves form there), then subdivide and re-relax. Larger, smoother ruffles at less cost than one-shot; 0 = off (classic single-resolution relax). 1 with Stiffness ~0.03 is the measured sweet spot; 2 makes still larger waves but wants a Collision pass to keep the deep folds apart Range 0-3. |
+| Stiffness | 0 | Thin-plate bending resistance: damps stitch-scale crumple while leaving the large waves intact. Best combined with Coarse-to-Fine (~0.02-0.06; measured best 0.03), 0 = off Range 0-0.35. |
 | Scale | 1 | Range 0.01-100. |
 | Smooth Shading | On | -- |
 

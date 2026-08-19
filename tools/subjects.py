@@ -79,6 +79,11 @@ PARAMS = {
     "curve.turtle_curve_add": dict(mode='EDGE', teragon='MINKOWSKI'),
 
     # -- patterns -------------------------------------------------
+    # The bare default is a plain relief; a reaction-diffusion field
+    # wrapped on a torus shows what the generator is actually for --
+    # the pattern reads at a glance and the hole says "solid", not
+    # "panel", which is the distinction against the relief panel.
+    "mesh.relief_solid_add": dict(preset='TURING_SPHERE', regime='MAZE'),
     # {7,3} is regular, so every face has the same side count and the
     # default by-sides colouring yields exactly one material.  Parity
     # gives the classic two-tone (with a seam, since q=3 is odd).
@@ -830,9 +835,59 @@ if _IN_BLENDER:
             if ob is not None and not ob.hide_render:
                 ob.hide_render = True
                 hidden.append(ob)
+        # The backdrop dome is a radius-30 sphere enclosing the scene,
+        # so it also seals the stone off from the sky world the gem rig
+        # installs -- and that sky is not decoration, it is the thing
+        # the stone reflects and refracts.  Sealing it in is most of why
+        # both gem figures rendered black.
+        #
+        # Hiding the dome outright would fix the stone and wreck the
+        # picture: the sky would then be the background, and the gems
+        # would be the only two figures in the gallery not shot against
+        # black velvet.  So drop the dome out of the *reflection* rays
+        # only and leave it visible to the camera -- the stone sees the
+        # sky, the reader sees the same backdrop as everywhere else.
+        dome = bpy.data.objects.get("Backdrop Dome")
+        dome_rays = dome_mats = None
+        if dome is not None:
+            dome_rays = (dome.visible_diffuse, dome.visible_glossy,
+                         dome.visible_transmission)
+            dome.visible_diffuse = False
+            dome.visible_glossy = False
+            dome.visible_transmission = False
+            # ...and the velvet has to stop being *lit*, too.  The gem
+            # sky is bright, and a 0.006-albedo surface under it comes
+            # back mid-grey (measured 0.246), not black.  A zero
+            # emission shader ignores lighting entirely, so the camera
+            # sees the same black behind a gem as behind everything
+            # else, whatever the rig does to the world.
+            dome_mats = list(dome.data.materials)
+            black = bpy.data.materials.new("Gem Backdrop Black")
+            black.use_nodes = True
+            nt = black.node_tree
+            nt.nodes.clear()
+            out = nt.nodes.new("ShaderNodeOutputMaterial")
+            em = nt.nodes.new("ShaderNodeEmission")
+            em.inputs["Strength"].default_value = 0.0
+            nt.links.new(em.outputs["Emission"], out.inputs["Surface"])
+            dome.data.materials.clear()
+            dome.data.materials.append(black)
         before = set(bpy.data.objects)
-        bpy.ops.mesh.gem_studio_add()
+        # add_camera=False is essential, not tidiness: the operator
+        # otherwise points scene.camera at its own Gem Camera, which is
+        # framed for a stone at the size the gem generator makes one.
+        # The docs rig then scales the stone to the 2 m cube and films
+        # it with a camera aimed somewhere else entirely -- which is
+        # how both gem figures came out pure black (measured mean
+        # 0.0003) while the render still "succeeded".  We want the gem
+        # studio's world and lights; we keep our own camera.
+        bpy.ops.mesh.gem_studio_add(add_camera=False)
         made = [o for o in bpy.data.objects if o not in before]
+        # Whatever the rig arrives hidden for, it is no use to us that
+        # way: these are the only lights left once the studio's are off.
+        for ob in made:
+            if ob.type == 'LIGHT':
+                ob.hide_render = False
 
         def teardown():
             for ob in made:
@@ -842,6 +897,12 @@ if _IN_BLENDER:
                     pass
             for ob in hidden:
                 ob.hide_render = False
+            if dome is not None and dome_rays is not None:
+                (dome.visible_diffuse, dome.visible_glossy,
+                 dome.visible_transmission) = dome_rays
+                dome.data.materials.clear()
+                for m in dome_mats:
+                    dome.data.materials.append(m)
             scene.world = saved_world
             scene.camera = saved_cam
 

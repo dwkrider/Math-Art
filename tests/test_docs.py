@@ -108,6 +108,83 @@ def check_page_shape(fail):
                 fail(f"{slug}.md: no '{section}' section")
 
 
+def _load_snapshot(path):
+    """options_snapshot.json, tolerating the pre-label format.
+
+    The snapshot used to be {op: [option names]}; it is now
+    {op: {"label": ..., "options": [...]}}.  Reading both means the
+    test still runs against a snapshot written before the change,
+    rather than failing on someone else's stale file.
+    """
+    raw = json.load(open(path, encoding="utf-8"))
+    out = {}
+    for op, v in raw.items():
+        out[op] = v if isinstance(v, dict) else {"label": None,
+                                                 "options": v}
+    return out
+
+
+# Pages whose title deliberately differs from the operator's label.
+# The check exists to catch a *rename* that never reached the page --
+# "Celtic Knot" outliving an operator renamed "Celtic Weave".  Editorial
+# choices are not that, and left unlisted they would bury the real
+# thing under nine lines of noise.  Adding an entry is a decision that
+# the page title is right and the difference is intended.
+TITLE_OK = {
+    # A page names the whole family it documents; the menu row names
+    # the one operator.
+    "link": "page covers links and connected sums together",
+    "conway": "page is about the operators, not one polyhedron",
+    "parametric_minimal": "page title distinguishes it from the periodic page",
+    "tpms": "keeps the acronym readers search for",
+    # Plural page, singular operator -- the page documents the family.
+    "waterman": "plural: the page covers the whole family",
+    "zonohedra": "plural: the page covers the whole family",
+    "polylinks": "operator's 'Regular' qualifier is implied by the page",
+    # The menu row carries a qualifier the page states in prose instead.
+    "organic_wireframe": "qualifier '(Voronoi)' explained in the page body",
+    "voronoi_openwork": "qualifier '(Experimental)' stated in the page body",
+}
+
+
+def report_title_drift():
+    """Advisory: pages whose H1 no longer matches the operator's label.
+
+    The page title is also the gallery label, so a rename that lands in
+    the operator without reaching the page shows up twice over.  This
+    is how "Celtic Knot" survived on a page whose operator had been
+    called "Celtic Weave" for some time.
+    """
+    snap_path = os.path.join(DOCS, "options_snapshot.json")
+    if not os.path.exists(snap_path):
+        return 0
+    snap = _load_snapshot(snap_path)
+    drift = 0
+    for op in sorted(menu_defs.unique_ops()):
+        if op in UNDOCUMENTED:
+            continue
+        want = (snap.get(op) or {}).get("label")
+        if not want:
+            continue
+        slug = subjects.slug_for(op)
+        if slug in TITLE_OK:
+            continue
+        path = os.path.join(GEN, slug + ".md")
+        if not os.path.exists(path):
+            continue
+        with open(path, encoding="utf-8") as fh:
+            title = next((ln[2:].strip() for ln in fh
+                          if ln.startswith("# ")), None)
+        # A page may legitimately title itself more fully than a menu
+        # row can ("Oloid & Ruled Surfaces" for "Oloid"); only flag a
+        # title that does not contain the operator's label at all.
+        if title and want.lower() not in title.lower():
+            drift += 1
+            print(f"  WARN {subjects.slug_for(op)}.md: titled "
+                  f"{title!r} but the operator is {want!r}")
+    return drift
+
+
 def report_option_drift():
     """Advisory: pages whose Options table has fallen behind the operator.
 
@@ -119,7 +196,7 @@ def report_option_drift():
         print("  (no options_snapshot.json -- run docs/scaffold_pages.py "
               "under Blender to create it)")
         return 0
-    snap = json.load(open(snap_path, encoding="utf-8"))
+    snap = _load_snapshot(snap_path)
     warned = 0
     for op in sorted(menu_defs.unique_ops()):
         if op in UNDOCUMENTED or op not in snap:
@@ -137,7 +214,7 @@ def report_option_drift():
         listed -= {"Option", "---"}
         if not listed:
             continue
-        expected = set(snap[op])
+        expected = set(snap[op]["options"])
         missing = expected - listed
         if missing:
             warned += 1
@@ -248,6 +325,10 @@ def main(argv):
     warned = report_option_drift()
     print(f"  {warned} page(s) with options the operator has and the "
           f"page does not")
+
+    print("\ntitle drift (advisory):")
+    titles = report_title_drift()
+    print(f"  {titles} page(s) titled differently from their operator")
 
     print("\nstale figures (advisory):")
     stale = report_stale_figures()

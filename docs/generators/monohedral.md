@@ -4,7 +4,9 @@
 
 Add a monohedral tiling (single irregular prototile).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **monohedral** tiling uses a single prototile — one shape, repeated — but drops the requirement that it be regular. That small relaxation opens a surprisingly deep problem. *Every* triangle tiles the plane, and so does *every* quadrilateral, convex or not. But only **3** convex hexagons tile, and exactly **15** convex pentagons.
+
+The pentagon count is the interesting one. Reinhardt found the first 5 in 1918, Kershner added more in 1968, the amateur mathematician Marjorie Rice discovered several in the 1970s working in her kitchen with a notation of her own devising, and the list was only proved complete by Michael Rao's exhaustive computer search in 2017 — ninety-nine years after it was started.
 
 ## Options
 
@@ -45,7 +47,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Why every triangle and every quadrilateral works.** Take any triangle $T$ and rotate a copy by $180^\circ$ about the midpoint of one edge. The two together form a parallelogram, and parallelograms tile by pure translation. The same trick does more work than it looks: for *any* quadrilateral $Q$, rotating by $180^\circ$ about the midpoint of each of its four edges surrounds it with four copies, and the four angles of the quadrilateral — which sum to $2\pi$ — arrive at each vertex exactly once:
+
+$$\alpha+\beta+\gamma+\delta = 2\pi .$$
+
+That is the entire proof, and it holds even when $Q$ is non-convex, which is why the quadrilateral case has no exceptions to enumerate. Half-turns about edge midpoints produce a centrally symmetric hexagonal dimer that then tiles by translation.
+
+**Why pentagons are hard.** For convex pentagons the angle sum is $3\pi$, which does not divide $2\pi$ evenly, so no single vertex arrangement is forced. Each of the 15 types is instead pinned down by its own set of angle and edge constraints — Type 1 needs only two adjacent angles summing to $\pi$, while later types carry conditions such as
+
+$$2A + B = 2\pi,\qquad 2C + D = 2\pi,\qquad a = b = e,$$
+
+relating both angles and edge lengths. Different types satisfy different systems, which is exactly why the enumeration resisted proof for a century: there is no single mechanism to argue about, only a large finite search over how the constraints can interlock.
+
+**The unit cell.** Whatever the family, each tiling is stored the same way: two lattice vectors $b_1,b_2$ and the list of tile copies — each a rotation, reflection or glide of the prototile — that fill one cell. The patch is
+
+$$P=\bigcup_{i,j} T(i\,b_1+j\,b_2)\,(\text{cell copies}),$$
+
+replicated over an $n_x\times n_y$ run. Every copy carries a **type index** recording which orientation orbit it belongs to, so the TYPE colour mode paints the prototile's dance across the plane — with a single shape in a single colour, a monohedral tiling can be nearly impossible to read, and colouring by orbit is what makes the underlying symmetry visible.
 
 ## References
 

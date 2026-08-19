@@ -282,11 +282,18 @@ def adopt(path, op):
 
 
 def write_snapshot():
-    """Option names per operator, for the no-Blender docs test."""
+    """Per-operator label and option names, for the no-Blender docs test.
+
+    The label is here so the test can notice a page whose title no
+    longer matches the operator's own -- the Celtic Weave operator was
+    renamed and its page kept saying "Celtic Knot", which nothing was
+    watching for.
+    """
     snap = {}
     for op in menu_defs.unique_ops():
         try:
-            snap[op] = [r[0] for r in option_rows(op)]
+            snap[op] = {"label": label_for(op),
+                        "options": [r[0] for r in option_rows(op)]}
         except Exception as e:
             print("  snapshot FAILED", op, repr(e))
     with open(SNAPSHOT, "w", encoding="utf-8") as fh:
