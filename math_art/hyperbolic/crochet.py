@@ -13,6 +13,16 @@
 # References:
 # - D. W. Henderson and D. Taimina, "Crocheting the hyperbolic plane",
 #   The Mathematical Intelligencer 23, 2001, pp. 17-28.
+# - Thin-plate (bi-Laplacian) bending via the umbrella operator:
+#   L. Kobbelt, S. Campagna, J. Vorsatz, H.-P. Seidel, "Interactive
+#   multi-resolution modeling on arbitrary meshes", SIGGRAPH 1998,
+#   pp. 105-114; M. Botsch, L. Kobbelt, "An intuitive framework for
+#   real-time freeform modeling", ACM Trans. Graph. 23(3), 2004.
+# - Coarse-to-fine continuation for buckling-unstable relaxation:
+#   W. L. Briggs, V. E. Henson, S. F. McCormick, "A Multigrid
+#   Tutorial", 2nd ed., SIAM, 2000 (nested iteration); K. A. Brakke,
+#   "The Surface Evolver", Experimental Mathematics 1(2), 1992
+#   (converge-then-refine workflow).
 
 import math
 import numpy as np
@@ -41,8 +51,34 @@ def _join_rings(sa, na, sb, nb):
     return faces
 
 
+def _graded_R(rho, R0, grade, rho_max):
+    """Graded curvature radius: grade>0 flattens the CENTRE (larger R)
+    while the rim stays at the base curvature R0, so the ruffling
+    concentrates at the rim -- Fathauer's flat-centred, ruffled-rim
+    cristate form -- without over-stitching (spiking) the rim.
+    grade<0 does the reverse (ruffled centre, calmer rim)."""
+    f = 1.0 + grade * (1.0 - rho / rho_max)
+    return R0 * np.maximum(f, 0.4)
+
+
+def _rest_lengths(UV, E0, E1, R0, grade, rho_max):
+    """Exact hyperbolic rest length per edge from the intrinsic flat
+    chart UV (the crochet layout: polar radius = hyperbolic distance
+    from the centre, angle = crochet angle), using the graded per-edge
+    curvature radius.  This is the hyperbolic law of cosines
+    cosh(d/R) = cosh(r0/R) cosh(r1/R) - sinh(r0/R) sinh(r1/R) cos(dth)
+    evaluated at the edge's mean radius."""
+    rr = np.linalg.norm(UV, axis=1)
+    th = np.arctan2(UV[:, 1], UV[:, 0])
+    Re = _graded_R(0.5 * (rr[E0] + rr[E1]), R0, grade, rho_max)
+    ch = (np.cosh(rr[E0] / Re) * np.cosh(rr[E1] / Re)
+          - np.sinh(rr[E0] / Re) * np.sinh(rr[E1] / Re)
+          * np.cos(th[E0] - th[E1]))
+    return Re * np.arccosh(np.maximum(ch, 1.0))
+
+
 def _crochet_mesh(ratio_n, rows, stitch, max_stitches, seed_scale=1.0,
-                  grade=0.0, lobes=3):
+                  grade=0.0, lobes=3, R0=None):
     """Build the crochet mesh: exponentially growing stitch count per
     row (constant stitch size h), cascade-seeded ruffles, and true
     hyperbolic edge rest lengths.
@@ -51,19 +87,20 @@ def _crochet_mesh(ratio_n, rows, stitch, max_stitches, seed_scale=1.0,
     flatter centre and a tighter, more ruffled rim -- Fathauer's cristate
     / crested-cactus look; grade<0 does the reverse (ruffled centre, calm
     rim). `lobes` sets the coarsest ruffle wavenumber, so the rim breaks
-    into that many primary lobes (a multi-lobed hyperbolic form)."""
+    into that many primary lobes (a multi-lobed hyperbolic form).
+
+    `R0` overrides the base curvature radius (default: derived from the
+    stitch size and increase ratio as h / ln(1 + 1/N)).  The override is
+    what lets a COARSE mesh (large stitch) target the FINE metric during
+    coarse-to-fine continuation -- without it, halving the resolution
+    would also halve the curvature of the surface being solved."""
     h = stitch
-    R0 = h / math.log(1.0 + 1.0 / ratio_n)
+    if R0 is None:
+        R0 = h / math.log(1.0 + 1.0 / ratio_n)
     rho_max = max(1e-6, rows * h)
 
     def _R(rho):
-        # graded curvature radius: grade>0 flattens the CENTRE (larger R)
-        # while the rim stays at the base curvature R0, so the ruffling
-        # concentrates at the rim -- Fathauer's flat-centred, ruffled-rim
-        # cristate form -- without over-stitching (spiking) the rim.
-        # grade<0 does the reverse (ruffled centre, calmer rim).
-        f = 1.0 + grade * (1.0 - rho / rho_max)
-        return R0 * np.maximum(f, 0.4)
+        return _graded_R(rho, R0, grade, rho_max)
 
     rng = np.random.default_rng(0)
     m0 = max(2, int(lobes))                       # cascade base = lobes
@@ -114,13 +151,7 @@ def _crochet_mesh(ratio_n, rows, stitch, max_stitches, seed_scale=1.0,
     edges = list(eset)
     E0 = np.array([e[0] for e in edges])
     E1 = np.array([e[1] for e in edges])
-    rr = np.linalg.norm(P[:, :2], axis=1)
-    th = np.arctan2(P[:, 1], P[:, 0])
-    Re = _R(0.5 * (rr[E0] + rr[E1]))              # per-edge graded R
-    ch = (np.cosh(rr[E0] / Re) * np.cosh(rr[E1] / Re)
-          - np.sinh(rr[E0] / Re) * np.sinh(rr[E1] / Re)
-          * np.cos(th[E0] - th[E1]))
-    REST = Re * np.arccosh(np.maximum(ch, 1.0))
+    REST = _rest_lengths(P[:, :2], E0, E1, R0, grade, rho_max)
     nbr = [set() for _ in range(len(P))]
     for a, b in edges:
         nbr[a].add(int(b))
@@ -193,15 +224,44 @@ def _bvh_decollide(P, faces, nbr, thick, strength):
     return P + 0.5 * dP
 
 
+def _bend_forces(P, E0, E1, valence):
+    """Thin-plate (bi-Laplacian) bending energy and its EXACT gradient.
+
+    E = 1/2 sum_i || (L P)_i ||^2   with the umbrella operator
+    L = I - D^-1 A  (A the adjacency matrix, D the valence diagonal),
+    so  dE/dP = L^T (L P) = (I - A D^-1)(L P).
+
+    Unlike the plain Laplacian `smooth` term (gradient descent on the
+    Dirichlet energy, which shrinks and flattens the sheet -- measured
+    in research/hyperbolic-mesh-embedding-lessons.md), this penalizes
+    the *curvature proxy* |L P| itself: short-wavelength crumple is
+    damped ~ wavenumber^4 while large-scale waves and area are left
+    nearly intact -- the standard thin-plate discretization (Kobbelt et
+    al. 1998; Botsch-Kobbelt 2004).  Returns (E, G)."""
+    nsum = np.zeros_like(P)
+    np.add.at(nsum, E0, P[E1])
+    np.add.at(nsum, E1, P[E0])
+    Lp = P - nsum / valence
+    E = 0.5 * float(np.sum(Lp * Lp))
+    Q = Lp / valence
+    asum = np.zeros_like(P)
+    np.add.at(asum, E0, Q[E1])
+    np.add.at(asum, E1, Q[E0])
+    return E, Lp - asum
+
+
 def _relax(P, E0, E1, REST, nbr, pin, pin_pos, iters, smooth,
            repel_r, repel_s, collide_fn=None, collide_every=40,
-           anneal_L0=None, anneal_frac=0.75, stiff=1.0):
+           anneal_L0=None, anneal_frac=0.75, stiff=1.0, bend=0.0):
     """Jacobi stitch-length constraints + Laplacian bending + periodic
     self-repulsion (and optional BVHTree collision); inner ring pinned.
     With `anneal_L0` (flat starting edge lengths) the target rest grows
     smoothly from flat to hyperbolic over `anneal_frac` of the run, so
     the sheet buckles as a continuous deformation; `stiff` damps the
     compression term to stop compressed edges flinging into spikes.
+    `bend` > 0 adds thin-plate (bi-Laplacian) bending resistance --
+    explicit gradient descent on `_bend_forces`, stable for bend < ~0.4
+    (the umbrella's spectrum is [0, 2], so ||L^T L|| <= 4).
     Defaults reproduce the plain relaxation exactly."""
     n = len(P)
     valence = np.zeros(n)
@@ -228,6 +288,9 @@ def _relax(P, E0, E1, REST, nbr, pin, pin_pos, iters, smooth,
             np.add.at(nsum, E0, P[E1])
             np.add.at(nsum, E1, P[E0])
             P = P + smooth * (nsum / valence - P)
+        if bend > 0.0:
+            _eb, G = _bend_forces(P, E0, E1, valence)
+            P = P - bend * G
         if t > 0.9:
             if repel_s > 0.0 and it % 3 == 0 and it > 0:
                 P = P + _repel(P, nbr, repel_r, repel_s)
@@ -237,6 +300,98 @@ def _relax(P, E0, E1, REST, nbr, pin, pin_pos, iters, smooth,
     return P
 
 
+def _nbr_from_edges(E0, E1, n):
+    nbr = [set() for _ in range(n)]
+    for a, b in zip(E0.tolist(), E1.tolist()):
+        nbr[a].add(int(b))
+        nbr[b].add(int(a))
+    return nbr
+
+
+def crochet_c2f(ratio_n=4, rows=18, stitch=0.09, max_stitches=600,
+                iters=340, smooth=0.06, repel=0.5, bend=0.12,
+                levels=2, sched=None, fine_frac=0.35, seed_scale=1.0,
+                grade=0.0, lobes=3, anneal=False, stiff=1.0,
+                collide_fn_factory=None, collide_every=40):
+    """Coarse-to-fine continuation build+relax of the crochet sheet
+    (S5 of research/geometric-solver-survey.md).
+
+    Builds the crochet mesh at 1/2**levels of the target resolution --
+    with the curvature radius R0 pinned to the TARGET stitch size, so
+    the coarse solve relaxes toward the same hyperbolic surface -- and
+    relaxes it there, where short-wavelength crumple modes simply do
+    not exist.  Then, per level: midpoint 1->4 subdivision (positions
+    AND the intrinsic chart UV), exact hyperbolic rest lengths
+    recomputed from the refined chart (the metric constraint is
+    re-projected, never interpolated), thresholds rescaled
+    (repel radius follows the stitch: 0.4 * h_level), and a shorter
+    re-relax that adds fine detail on top of the inherited
+    long-wavelength waves.
+
+    `sched` (levels+1 entries, coarse -> fine) overrides the default
+    iteration schedule [iters, iters//2, ..., iters * fine_frac]; the
+    coarse iterations are nearly free (16x fewer vertices two levels
+    down), the fine ones dominate the wall clock.  `anneal` applies the
+    flat->hyperbolic rest-length ramp at the COARSEST level only (the
+    finer levels continue from an already-buckled state).
+    `collide_fn_factory(tris, nbr, stitch_level)` may return a per-level
+    collision pass (Blender layer).
+
+    Returns a dict: P, tris, E0, E1, REST, nbr, pin, UV, schedule."""
+    if levels < 1:
+        raise ValueError("levels must be >= 1; use _relax for one-shot")
+    try:
+        from ..solver import refine as _refine
+    except ImportError:                    # flat import outside the package
+        from solver import refine as _refine
+    R0 = stitch / math.log(1.0 + 1.0 / ratio_n)
+    rho_max = max(1e-6, rows * stitch)
+    rows_c = max(3, int(round(rows / 2 ** levels)))
+    stitch_c = rho_max / rows_c            # preserve the domain exactly
+    ms_c = max(12, int(math.ceil(max_stitches / 2 ** levels)))
+    P, E0, E1, REST, nbr, tris, pin, pin_pos = _crochet_mesh(
+        ratio_n, rows_c, stitch_c, ms_c, seed_scale=seed_scale,
+        grade=grade, lobes=lobes, R0=R0)
+    UV = P[:, :2].copy()                   # intrinsic chart of the layout
+    if sched is None:
+        sched = ([int(iters)] + [max(20, int(iters) // 2)] * (levels - 1)
+                 + [max(20, int(round(iters * fine_frac)))])
+    sched = [int(s) for s in sched]
+    if len(sched) != levels + 1:
+        raise ValueError(f"sched needs {levels + 1} entries "
+                         f"(coarse->fine), got {len(sched)}")
+    pinm = np.zeros(len(P), dtype=bool)
+    pinm[pin] = True
+    h_k = stitch_c
+    schedule = []
+    for lev in range(levels + 1):
+        it_k = sched[lev]
+        L0 = None
+        if anneal and lev == 0:
+            L0 = np.linalg.norm(UV[E1] - UV[E0], axis=1)
+        cf = (collide_fn_factory(tris, nbr, h_k)
+              if collide_fn_factory is not None else None)
+        pin_k = np.where(pinm)[0]
+        P = _relax(P, E0, E1, REST, nbr, pin_k, P[pin_k].copy(),
+                   it_k, smooth, 0.4 * h_k, repel, collide_fn=cf,
+                   collide_every=collide_every, anneal_L0=L0,
+                   stiff=stiff, bend=bend)
+        schedule.append(dict(level=lev, n_verts=len(P),
+                             n_tris=len(tris), iters=it_k,
+                             stitch=float(h_k)))
+        if lev == levels:
+            break
+        P, tris, parents = _refine.subdivide(P, tris)
+        UV = _refine.interp(UV, parents)
+        E = _refine.edges_of(tris)
+        E0, E1 = E[:, 0], E[:, 1]
+        REST = _rest_lengths(UV, E0, E1, R0, grade, rho_max)
+        nbr = _nbr_from_edges(E0, E1, len(P))
+        pinm = np.concatenate(
+            [pinm, pinm[parents[:, 0]] & pinm[parents[:, 1]]])
+        h_k *= 0.5
+    return dict(P=P, tris=tris, E0=E0, E1=E1, REST=REST, nbr=nbr,
+                pin=np.where(pinm)[0], UV=UV, schedule=schedule)
 
 
 
