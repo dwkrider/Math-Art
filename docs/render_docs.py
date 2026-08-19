@@ -42,6 +42,22 @@ from mathutils import Vector, Euler
 SAMPLES = 96
 RES = 720
 
+# Framing.  One camera shoots every generator, so the frame has to hold
+# the widest silhouette any of them produces.  That is not the 2 m cube
+# the subjects are normalised into: a cube-like solid fits the cube on
+# every axis and then projects its *diagonal* at the studio's 3/4 view,
+# which is why the fullest subjects measure ~0.75 of the frame while
+# the median measures ~0.52 -- a lot of dead border on most figures.
+#
+# Measured over all 129 figures and 1466 variants (largest 0.750,
+# median 0.519), 1.22 brings the widest silhouette to about 0.92 and
+# the median to about 0.63, with margin left for a subject bulkier
+# than anything currently shipped.  It multiplies the focal length
+# rather than moving the camera in, so the perspective -- and hence
+# every existing pose -- is unchanged; only the crop tightens.
+BASE_LENS = 72
+FRAME_TIGHTEN = 1.22
+
 PROJ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJ)
 sys.path.insert(0, os.path.join(PROJ, "tools"))
@@ -109,7 +125,7 @@ def setup_studio():
     world.node_tree.nodes.get("Background").inputs["Color"] \
         .default_value = (0.004, 0.004, 0.005, 1)
     cam_d = bpy.data.cameras.new("Studio Camera")
-    cam_d.lens = 72
+    cam_d.lens = BASE_LENS * FRAME_TIGHTEN
     cam = bpy.data.objects.new("Studio Camera", cam_d)
     scene.collection.objects.link(cam)
     view = Vector((1.35, -2.2, 0.95)).normalized()
@@ -448,7 +464,14 @@ def render_variants(only=None, missing_only=True):
           % (done, failed, skipped))
 
 def render_heroes(todo, missing_only):
-    std = [s for s in todo if s in TASKS]
+    # A slug can be both a menu operator and a custom scene -- the
+    # stereographic sphere is, since the operator makes the perforated
+    # ball and the scene lights it to cast its projection.  Without the
+    # dedupe below it was rendered four times over, each pass throwing
+    # away the last one's work.  The scene wins: it is the figure that
+    # shows what the generator is for.
+    todo = list(dict.fromkeys(todo))
+    std = [s for s in todo if s in TASKS and s not in SCENES]
     scenes = [s for s in todo if s in SCENES]
     for s in todo:
         if s not in TASKS and s not in SCENES:

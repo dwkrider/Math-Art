@@ -4,7 +4,9 @@
 
 Add an aperiodic tiling patch.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+An **aperiodic** tiling covers the plane with a small set of tiles that *cannot* be arranged periodically. Every finite patch recurs infinitely often, yet no translation ever maps the whole tiling to itself — order without repetition. Penrose found his two-tile sets in the 1970s, and the question they answer is genuinely surprising: a shape can force non-periodicity, so "tiles the plane" and "tiles the plane periodically" are different properties.
+
+The physical sequel is better still. Penrose tilings show sharp diffraction peaks with **five-fold** symmetry, which the crystallographic restriction theorem forbids in any periodic crystal. When Dan Shechtman measured exactly that in a real alloy in 1982 he was widely disbelieved; quasicrystals earned him the 2011 Nobel Prize in Chemistry.
 
 ## Options
 
@@ -50,7 +52,19 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Deflation.** All three families are built by *substitution*: start from a small seed patch, replace every tile by a scaled-down group of tiles, and repeat. The patch grows and the tiles shrink, and in the limit the whole plane is covered. Crucially the subdivision rule is not applied to the rhombs directly but to the **Robinson triangles** they are cut from, because those subdivide cleanly.
+
+**Penrose P3 (thick and thin rhombs).** The two Robinson triangles are the acute *golden triangle* (apex $36^\circ$) and the obtuse *golden gnomon* (apex $108^\circ$), so named because in both the ratio of long side to short is the golden ratio
+
+$$\varphi=\frac{1+\sqrt5}{2}=2\cos\frac{\pi}{5}.$$
+
+Each deflation step subdivides every triangle into children $\varphi$ times smaller — a thin triangle into one thin plus one thick, a thick into two thick plus one thin — starting from a ten-triangle "sun" seed. The resulting edge-to-edge triangle mesh is then merged back along shared base edges into the thin ($36^\circ/144^\circ$) and thick ($72^\circ/108^\circ$) rhombs.
+
+**Penrose P2 (kite and dart).** The same machinery on its own half-tiles: the half-kite ($36$–$72$–$72$) and the half-dart ($36$–$36$–$108$), from a seed of ten half-kites — five kites around the origin. A half-kite becomes two half-kites plus a half-dart, a half-dart becomes one of each, every child $\varphi$ times smaller. Mirror halves are then merged across their symmetry axis into the full **kite**, a convex quadrilateral with angles $72/72/144/72$, and the **dart**, an arrowhead with angles $72/36/216/36$ and one reflex vertex. Both tiles use only two edge lengths, in golden ratio.
+
+**Why $\varphi$ forces aperiodicity.** After $n$ deflations the ratio of thick to thin tiles tends to $\varphi$, and $\varphi$ is irrational. A periodic tiling would have to repeat a finite unit cell containing a whole number of each tile, giving a *rational* ratio. So no periodic arrangement of these tiles exists — the irrationality of the golden ratio is the obstruction.
+
+**Ammann–Beenker.** The eight-fold analogue, tiling with squares and $45^\circ$ rhombs. Its inflation factor is the silver ratio $1+\sqrt2$ instead of $\varphi$, and the same irrationality argument applies.
 
 ## References
 
