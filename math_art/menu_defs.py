@@ -62,8 +62,10 @@ SURFACES = Menu(
         _e("mesh.periodic_minimal_add", 'MESH_ICOSPHERE',
            "Minimal Surfaces (Periodic)"),
         _e("mesh.minimal_knot_span_add", 'MESH_TORUS'),
-        # a relaxation tool applied to an existing mesh, not a shape
-        _e("object.minimal_span", 'OUTLINER_OB_SURFACE', builtin=True),
+        # Spans whatever curves are selected rather than adding a shape,
+        # so it has no subject of its own -- the baker builds it two
+        # crossed circles to bridge (tools/subjects.py SETUP).
+        _e("object.minimal_span", 'OUTLINER_OB_SURFACE'),
         _e("mesh.seifert_surface_add", 'MOD_SIMPLIFY', "Seifert Surface"),
         _e("mesh.algebraic_surface_add", 'SURFACE_NSURFACE'),
         _e("mesh.topological_surface_add", 'MESH_TORUS'),
@@ -216,6 +218,8 @@ ROLLERS = Menu(
 # and neither of them authoritative.
 ODDS = Menu(
     "VIEW3D_MT_math_art_odds", "Odds & Ends", 'MESH_TORUS', [
+        _e("mesh.gem_add", 'MESH_ICOSPHERE', "Faceted Gemstone"),
+        _e("mesh.gem_cabochon_add", 'MESH_CAPSULE', "Cabochon Gemstone"),
         _e("mesh.koman_add", 'MOD_SCREW', "Koman Developable"),
         _e("mesh.platonic_twist_add", 'MOD_SCREW'),
         _e("mesh.twisted_torus_add", 'MESH_TORUS'),
