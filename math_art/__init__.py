@@ -52,6 +52,7 @@ _MODULE_NAMES = [
     'koman_generator',
     'space_curve_generator',
     'oloid_generator',
+    'gem_generator',
     'sphericon_generator',
     'steinmetz_generator',
     'orbis_generator',
