@@ -417,6 +417,44 @@ def canonicalize_ambo(V, F, iters=10000, factor=0.01, factor_max=0.5,
     return [list(map(float, p)) for p in Vout]
 
 
+def _tangent_spread_of(V, F):
+    """Relative spread of the edge-tangency distances (the module's own
+    convergence gauge, shared by the self-test and the bench)."""
+    P = np.asarray(V, dtype=np.float64)
+    d = []
+    for f in F:
+        for i in range(len(f)):
+            a, b = f[i], f[(i + 1) % len(f)]
+            if a < b:
+                A, B = P[a], P[b]
+                AB = B - A
+                t = -float(np.dot(A, AB)) / max(float(np.dot(AB, AB)),
+                                                1e-30)
+                t = min(1.0, max(0.0, t))
+                d.append(float(np.linalg.norm(A + t * AB)))
+    d = np.asarray(d)
+    return float((d.max() - d.min()) / max(d.mean(), 1e-12))
+
+
+def canonicalize_best(V, F, hart_iters=200):
+    """Best-available canonicalization for generator call sites: the
+    circle-packing ambo method (canonicalize_ambo) run to its own
+    convergence -- measured in tests/bench to be several times FASTER
+    than even 400 Hart iterations while reaching machine-precision
+    tangency (see research/plans/antiprism-canonicalization-plan.md) --
+    with the Hart relaxation (`hart_iters` iterations) as the fallback
+    when the input is not a closed orientable polyhedron (the ambo
+    change of variables needs one) or the ambo iteration fails to
+    actually converge (tangency spread checked, not assumed)."""
+    try:
+        Va = canonicalize_ambo(V, F)
+        if _tangent_spread_of(Va, F) < 1e-9:
+            return Va
+    except ValueError:
+        pass
+    return canonicalize(V, F, iters=hart_iters)
+
+
 def _face_planes(P, Fi):
     """Outward unit Newell normals, origin distances and centroids of
     every face of P."""
@@ -450,7 +488,8 @@ def _biscribe_energy(P, Fi):
     return E
 
 
-def biscribe(V, F, iters=2500, step=0.1, trace=None, line_search=True):
+def biscribe(V, F, iters=2500, step=0.1, trace=None, line_search=True,
+             init="ambo"):
     """Biscribed form: all vertices on a circumsphere AND all faces tangent
     to a concentric insphere.  Starts from the canonical (edge-tangent)
     form, then drives the vertex radii and the face-plane distances to
@@ -469,10 +508,23 @@ def biscribe(V, F, iters=2500, step=0.1, trace=None, line_search=True):
     conditions alone are also satisfied by self-intersecting
     pseudo-solutions (the truncated cube finds one), which are not
     biscribed forms.  line_search=False keeps the historical fixed-step
-    loop."""
+    loop.
+
+    init selects the canonical-form initialisation: "ambo" (default;
+    the circle-packing method with Hart fallback -- measured in
+    tests/bench: existence classification 8/8 unchanged, residual
+    spreads tied at ~1e-14, total catalog wall time 1.6x lower because
+    the init dominates it) or "hart" (the historical init, kept
+    A/B-able and pinning the pre-branch behaviour bitwise)."""
     if np is None:
         return V, False
-    P = np.array(canonicalize(V, F), dtype=np.float64)
+    if init == "ambo":
+        P0 = canonicalize_best(V, F)
+    elif init == "hart":
+        P0 = canonicalize(V, F)
+    else:
+        raise ValueError(f"unknown biscribe init {init!r}")
+    P = np.array(P0, dtype=np.float64)
     P -= P.mean(axis=0)
     P /= np.mean(np.linalg.norm(P, axis=1)) or 1.0
     Fi = [np.array(f) for f in F]
