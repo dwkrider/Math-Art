@@ -384,7 +384,17 @@ def gamma_curve(preset, n, colat_deg, lobes, amp_deg, ecc,
 # angle is theta = 2 pi m / n.  theta(a) is measured here directly from the
 # integrated frame; it decreases monotonically from 2 pi (2 - sqrt 2) at
 # a -> 0 to 0 as a -> infinity, so each admissible m/n has exactly one a and
-# bisection cannot miss it.
+# bisection cannot miss it.  Hence the admissible monodromies are exactly
+# the fractions m/n in (0, 2 - sqrt 2); nothing outside closes.
+#
+# That upper endpoint is not fitted, it is forced.  As a -> 0 the curve
+# degenerates to a great circle while the period of kappa tends to
+# 4 K(0)/r = 2 pi sqrt 2, so one "lobe" runs sqrt 2 times around a closed
+# geodesic and leaves a residual frame rotation of 2 pi (sqrt 2 - 1);
+# measured with the axis as oriented here that reads 2 pi (2 - sqrt 2).
+# Note this window is for lambda = 1 -- Pinkall's functional -- and so
+# differs from the familiar (1/2, 1/sqrt 2) window of the FREE (lambda = 0)
+# spherical elasticae; the two families are not the same curves.
 #
 # Working with the monodromy ANGLE rather than the unwrapped longitude
 # matters: at a = 1 the curve passes exactly through the pole of its own
@@ -906,7 +916,9 @@ if _IN_BLENDER:
         elastica_m: IntProperty(
             name="Winding m", default=1, min=1, max=20,
             description="Numerator of the elastica's monodromy m/n: "
-                        "the curve wraps m times around its axis")
+                        "one lobe carries the frame 2 pi m/n around "
+                        "the axis, so the closed curve accumulates m "
+                        "full turns")
         elastica_n: IntProperty(
             name="Lobes n", default=3, min=2, max=40,
             description="Denominator of the monodromy m/n: the curve "
@@ -1172,7 +1184,32 @@ def _selftest():
     print(f"torus ELASTICA: verts={len(Ve)} faces={len(Fe)} "
           f"area={area_e:.3f} {'OK' if ok else 'BAD'}")
 
-    # 10) THE acceptance gate.  Everything above tests gamma; this tests
+    # 10) Pinkall's isoperimetric inequality (14) for a closed curve on
+    #     S^2 bounding area A with length L:  L^2 - 4 pi A + A^2 >= 0,
+    #     with equality exactly for a circle.  (The OCR of the 1985 scan
+    #     renders the last term -A^2; +A^2 is what the page image says.)
+    #     Every generated gamma must satisfy it, and the CIRCLE preset
+    #     must sit on the equality.
+    for label, gam in (("circle", gamma_curve('CIRCLE', 800, 55.0,
+                                              1, 0.0, 0.0)),
+                       ("wavy", gamma_curve('WAVY', 800, 90.0,
+                                            3, 35.0, 0.0)),
+                       ("elastica 1/3", spherical_elastica(1, 3, 800)),
+                       ("elastica 2/5", spherical_elastica(2, 5, 800))):
+        L = willmore_energy(gam)[1]
+        A = abs(_enclosed_area(gam))
+        # relative, because the circle sits ON the equality: there the
+        # sign of the defect is decided by the O(h^2) polygon error in L
+        # and A, not by the inequality.
+        defect = (L * L - 4.0 * pi * A + A * A) / (L * L)
+        tight = abs(defect) < 2e-3
+        ok = defect > -2e-3 and (tight == (label == "circle"))
+        ok_all = ok_all and ok
+        print(f"isoperimetric {label:13s}: (L^2-4piA+A^2)/L^2 = "
+              f"{defect:9.6f} ({'equality' if tight else 'strict'}) "
+              f"{'OK' if ok else 'BAD'}")
+
+    # 11) THE acceptance gate.  Everything above tests gamma; this tests
     #     the SURFACE, and against an independent implementation.
     #     math_art.solver.willmore carries the discrete Willmore energy
     #     int H^2 dA and its exact analytic first variation.  Pinkall's
