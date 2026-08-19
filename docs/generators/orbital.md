@@ -38,32 +38,32 @@ Hydrogenic atomic orbitals and LCAO molecular orbitals, drawn as isosurfaces of 
 
 ## Variants
 
-Renders of a selection of the presets:
+Renders of each selectable option:
 
 <table>
 <tr>
 <td align="center"><img src="../images/variants/orbital__1s.png" width="200"><br><sub>1s</sub></td>
 <td align="center"><img src="../images/variants/orbital__2s.png" width="200"><br><sub>2s (radial node)</sub></td>
-<td align="center"><img src="../images/variants/orbital__2pz.png" width="200"><br><sub>2p<sub>z</sub></sub></td>
-<td align="center"><img src="../images/variants/orbital__3pz.png" width="200"><br><sub>3p<sub>z</sub></sub></td>
+<td align="center"><img src="../images/variants/orbital__2pz.png" width="200"><br><sub>2p_z</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/orbital__3dxy.png" width="200"><br><sub>3d<sub>xy</sub></sub></td>
-<td align="center"><img src="../images/variants/orbital__3dz2.png" width="200"><br><sub>3d<sub>z²</sub></sub></td>
-<td align="center"><img src="../images/variants/orbital__4fz3.png" width="200"><br><sub>4f<sub>z³</sub></sub></td>
-<td align="center"><img src="../images/variants/orbital__sigma1s.png" width="200"><br><sub>σ 1s</sub></td>
+<td align="center"><img src="../images/variants/orbital__3pz.png" width="200"><br><sub>3p_z</sub></td>
+<td align="center"><img src="../images/variants/orbital__3dxy.png" width="200"><br><sub>3d_xy</sub></td>
+<td align="center"><img src="../images/variants/orbital__3dz2.png" width="200"><br><sub>3d_z2</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/orbital__sigmastar1s.png" width="200"><br><sub>σ* 1s</sub></td>
-<td align="center"><img src="../images/variants/orbital__pi2px.png" width="200"><br><sub>π 2p<sub>x</sub></sub></td>
-<td align="center"><img src="../images/variants/orbital__sp3.png" width="200"><br><sub>sp³ hybrid</sub></td>
-<td align="center"><img src="../images/variants/orbital__benzene.png" width="200"><br><sub>benzene π</sub></td>
+<td align="center"><img src="../images/variants/orbital__4fz3.png" width="200"><br><sub>4f_z3</sub></td>
+<td align="center"><img src="../images/variants/orbital__sigma1s.png" width="200"><br><sub>sigma 1s</sub></td>
+<td align="center"><img src="../images/variants/orbital__sigmastar1s.png" width="200"><br><sub>sigma* 1s</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/orbital__cloud.png" width="200"><br><sub>π 2p<sub>x</sub> probability cloud</sub></td>
-<td></td>
-<td></td>
-<td></td>
+<td align="center"><img src="../images/variants/orbital__pi2px.png" width="200"><br><sub>pi 2p_x</sub></td>
+<td align="center"><img src="../images/variants/orbital__sp3.png" width="200"><br><sub>sp3 hybrid</sub></td>
+<td align="center"><img src="../images/variants/orbital__water.png" width="200"><br><sub>H2O lone pair</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/orbital__benzene.png" width="200"><br><sub>benzene pi</sub></td>
+<td align="center"><img src="../images/variants/orbital__cloud.png" width="200"><br><sub>pi 2p_x probability cloud</sub></td>
 </tr>
 </table>
 

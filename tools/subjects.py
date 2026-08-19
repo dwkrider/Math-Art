@@ -156,6 +156,404 @@ SKIP = {
 }
 
 
+# --------------------------------------------------------------------
+# Documentation slugs: operator id -> docs/generators/<slug>.md
+# --------------------------------------------------------------------
+# One slug names three things: the page file, the hero render in
+# docs/images/<slug>.png, and that generator's variant renders under
+# docs/images/variants/<slug>__<id>.png.
+#
+# The slug is derived mechanically -- drop the `mesh.` / `curve.` /
+# `object.` prefix and the `_add` suffix -- so a new generator needs no
+# entry here at all.  Only pages whose historical name differs from
+# that rule are listed, which is 14 of them; renaming a page is a
+# one-line edit.  The alternative, a full 128-row table, is a second
+# copy of menu_defs.py that would rot the moment someone forgot it.
+SLUG_OVERRIDE = {
+    "mesh.algebraic_surface_add": "algebraic",
+    "mesh.minimal_knot_span_add": "knot_span",
+    "curve.math_link_add": "link",
+    "mesh.minimal_surface_polyhedron_add": "minimal_polyhedron",
+    "mesh.regular_solid_add": "regular_solids",
+    "mesh.seifert_surface_add": "seifert",
+    "curve.space_filling_add": "space_filling_curve",
+    "mesh.spacefill_add": "spacefill_solids",
+    "mesh.topological_surface_add": "topological",
+    "mesh.woven_polyhedron_add": "twisted_polyhedron",
+    "mesh.poly_weave_add": "weave",
+    "mesh.zonohedron_add": "zonohedra",
+    # The operator was renamed `tpms_add` -> `periodic_minimal_add`;
+    # the page keeps the acronym everyone searches for, and keeps its
+    # URL.  This override is what stops the two drifting apart again.
+    "mesh.periodic_minimal_add": "tpms",
+    "object.symmetric_sculpture_add": "symmetric_sculpture",
+}
+
+
+def slug_for(op):
+    """docs/generators/<slug>.md for `op` (see SLUG_OVERRIDE)."""
+    if op in SLUG_OVERRIDE:
+        return SLUG_OVERRIDE[op]
+    base = op.partition('.')[2]
+    return base[:-4] if base.endswith('_add') else base
+
+
+# --------------------------------------------------------------------
+# Variant galleries: which property makes this "a different shape"
+# --------------------------------------------------------------------
+# A generator's doc page carries a grid of every option of its main
+# selector.  Those ids and labels are already declared once, in the
+# operator's own EnumProperty, so naming the property is enough -- the
+# renderer reads `enum_items` for the rest.  Transcribing them by hand
+# (the previous approach, ~350 lines) meant a label could disagree with
+# the menu, and every added enum option silently missed the gallery.
+# Every property name below was read back off the registered operator
+# (tools/check_variants.py re-checks them), not guessed: a stale name
+# here silently produces an empty gallery.
+VARIANT_SELECTOR = {
+    # -- surfaces --
+    "mesh.scherk_collins_add": "preset",
+    "mesh.seifert_surface_add": "preset",
+    "mesh.algebraic_surface_add": "preset",
+    "mesh.topological_surface_add": "preset",
+    "mesh.curiosity_surface_add": "surface",
+    "mesh.helical_surface_add": "surface",
+    "mesh.hyperbolic_surface_add": "preset",
+    "mesh.squeeze_add": "seed",
+    "mesh.vertex_vortices_add": "seed",
+    "mesh.minimal_surface_polyhedron_add": "seed",
+    "mesh.supershape_add": "preset",
+    "mesh.crochet_add": "preset",
+    # The four closure modes are what change the form; the outline
+    # shapes (kind_a/kind_b) are a second axis the page describes in
+    # prose rather than multiplying the gallery by 25.
+    "mesh.dform_add": "mode",
+    # -- polyhedra --
+    "mesh.zonohedron_add": "kind",
+    "mesh.polytope4d_add": "kind",
+    "mesh.spiked_polyhedron_add": "preset",
+    "mesh.hyperbolic_honeycomb_add": "preset",
+    "mesh.spacefill_add": "kind",
+    "mesh.symmetrohedron_add": "group",
+    "mesh.conway_add": "example",
+    "mesh.polytwister_add": "shape",
+    "mesh.toroidal_polyhedron_add": "solid",
+    "mesh.polyhedron_compound_add": "compound",
+    "mesh.notable_polyhedron_add": "solid",
+    "mesh.biscribed_solid_add": "solid",
+    "mesh.icosahedron_stellation_add": "solid",
+    "mesh.general_stellation_add": "seed",
+    "mesh.star_prism_add": "form",
+    "mesh.polyhedral_torus_add": "tiling",
+    "mesh.interlocking_add": "family",
+    # -- fractals --
+    "mesh.sponge_add": "kind",
+    "mesh.fractal_polyhedron_add": "kind",
+    "curve.space_filling_add": "kind",
+    "mesh.mandelbulb_add": "preset",
+    "mesh.snowflake_add": "preset",
+    "mesh.apollonian_add": "mode",
+    "curve.lsystem_add": "kind",
+    "curve.turtle_curve_add": "mode",
+    "mesh.fractal_tiling_add": "kind",
+    "mesh.fractal_reptile_add": "family",
+    "mesh.fractal_knotwork_add": "substrate",
+    # -- plants --
+    "curve.inflorescence_add": "archetype",
+    "mesh.leaf_add": "shape",
+    "curve.growth_add": "mode",
+    "mesh.map_lsystem_add": "mode",
+    "mesh.phyllotaxis_add": "form",
+    "curve.fractal_tree_add": "mode",
+    # -- knots --
+    "curve.prime_knot_add": "knot",
+    "curve.attractor_add": "preset",
+    "curve.math_link_add": "preset",
+    "curve.harmonic_knot_add": "preset",
+    "curve.petal_knot_add": "preset",
+    "curve.rational_knot_add": "preset",
+    "curve.fractal_knot_add": "kind",
+    "curve.substitution_knot_add": "base",
+    "curve.tight_knot_add": "knot",
+    "curve.hopf_fibration_add": "preset",
+    "mesh.hopf_torus_add": "preset",
+    "mesh.rolling_knot_add": "mode",
+    "mesh.invariant_manifold_add": "system",
+    # -- weaves --
+    "mesh.polylinks_add": "preset",
+    "mesh.tangle_add": "kind",
+    "mesh.poly_weave_add": "kind",
+    "mesh.rotegrity_add": "kind",
+    "mesh.woven_polyhedron_add": "solid",
+    "mesh.woven_double_shell_add": "solid",
+    "mesh.turks_head_add": "surface",
+    # `preset` carries a CUSTOM entry and duplicates; the packing is
+    # the actual family of stick arrangements.
+    "mesh.polystix_add": "packing",
+    "curve.celtic_knot_add": "source",
+    # -- patterns --
+    "mesh.frieze_add": "group",
+    "mesh.wallpaper_add": "group",
+    "mesh.layer_add": "group",
+    "mesh.tiling_add": "tiling",
+    "mesh.kuniform_add": "tiling",
+    "mesh.monohedral_add": "tiling",
+    "mesh.isohedral_add": "tiling",
+    "mesh.aperiodic_add": "kind",
+    "mesh.reptile_add": "kind",
+    "mesh.voderberg_add": "kind",
+    "mesh.spiral_tiling_add": "family",
+    "mesh.islamic_pattern_add": "preset",
+    "mesh.celtic_knot_2d_add": "preset",
+    "mesh.over_under_screen_add": "weave",
+    "mesh.knot_carpet_add": "source",
+    "mesh.modular_screen_add": "preset",
+    "mesh.relief_panel_add": "preset",
+    "mesh.relief_solid_add": "preset",
+    "mesh.hyperbolic_tiling_add": "model",
+    # -- rollers / odds --
+    "mesh.oloid_add": "kind",
+    "mesh.platonic_twist_add": "kind",
+    "mesh.stereographic_add": "pattern",
+    "mesh.constant_width_add": "kind",
+    "mesh.monostatic_body_add": "kind",
+    "mesh.steinmetz_add": "kind",
+    "mesh.koman_add": "kind",
+    "mesh.gem_add": "preset",
+    "mesh.gem_cabochon_add": "preset",
+    "mesh.bubble_cluster_add": "seed",
+    "mesh.relaxed_bubble_add": "bubbles",
+    "mesh.cmc_capillary_add": "mode",
+    "mesh.orbifold_sphere_add": "signature",
+    "object.symmetric_sculpture_add": "preset",
+}
+
+# Two-level selectors: (group property, item property).  The item enum
+# is a callback that depends on the group -- reading it off the type
+# yields nothing -- so the renderer sets the group on an operator
+# properties instance first, then reads the item list.  The grouping
+# is also what gives the page its "### Platonic / ### Archimedean"
+# subheadings.
+VARIANT_GROUP = {
+    "mesh.regular_solid_add": ("family", "solid"),
+    "mesh.uniform_polyhedron_add": ("family", "solid"),
+    "mesh.canonical_polyhedron_add": ("family", "solid"),
+    "mesh.parametric_minimal_add": ("family", "surface"),
+    "mesh.periodic_minimal_add": ("periodicity", "surface"),
+}
+
+# Groups to render, where a two-level selector reaches further than the
+# page usefully can.  The regular-solids operator grew derived families
+# (hulls, propellors, chamfers) that are Conway operations on the
+# classical ones rather than new solids to enumerate; the page covers
+# the six classical families and says so.
+VARIANT_GROUP_ONLY = {
+    "mesh.regular_solid_add": ("PLATONIC", "ARCHIMEDEAN", "CATALAN",
+                               "KEPLER", "PRISM", "JOHNSON"),
+}
+
+# Kwargs applied to every variant of a generator, where the gallery
+# needs a setting held constant to stay comparable.
+VARIANT_COMMON = {
+    "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE'),
+    "mesh.bubble_cluster_add": dict(separate=True, color=True),
+    "mesh.sphericon_add": dict(coloring='NONE'),
+    "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', cells=1),
+    "mesh.spherical_harmonic_add": dict(degree=4, order=2),
+}
+
+# Enum ids to leave out of a gallery, with a reason.  Keep this short:
+# an option worth shipping is usually worth a thumbnail.
+VARIANT_SKIP = {
+    # 20 vertices cubed exceeds the generator's own copy cap, so the
+    # default generation count cannot build it (see VARIANT_EXTRA,
+    # which renders it at two generations instead).
+    "mesh.fractal_polyhedron_add": {"DODECA"},
+}
+
+# Ids skipped in every gallery.  A "custom" entry is the operator
+# saying "use the sliders below" -- it has no canonical appearance, so
+# its thumbnail would just be whatever the other defaults happen to
+# make, sitting in the grid as if it were a named form.
+GENERIC_SKIP_IDS = {"CUSTOM", "NONE"}
+
+# Ceiling on one generator's gallery.  The renderer prints what it
+# dropped rather than truncating quietly -- a silently capped grid
+# reads as "this is the complete set" when it is not.  Raise it per
+# operator where the complete set genuinely is the point of the page.
+VARIANT_MAX_DEFAULT = 48
+VARIANT_MAX = {
+    # The 59 stellations of the icosahedron are a named, closed,
+    # historically complete list (Coxeter et al.); a partial gallery
+    # would misrepresent it.
+    "mesh.icosahedron_stellation_add": 64,
+    # Likewise the 92 Johnson solids, across all families on one page.
+    "mesh.regular_solid_add": 160,
+    "mesh.uniform_polyhedron_add": 96,
+    # Minimal surfaces are what this project is chiefly about, and the
+    # families are the point of the page; do not truncate them.
+    "mesh.parametric_minimal_add": 96,
+    "mesh.periodic_minimal_add": 96,
+    "mesh.canonical_polyhedron_add": 96,
+}
+
+# Galleries whose entries are combinations of properties rather than
+# one enum, so there is nothing to introspect.  Same 3-tuple shape the
+# renderer builds internally: (id, label, kwargs).
+VARIANT_EXTRA = {
+    "mesh.fractal_polyhedron_add": [
+        ("DODECA", "Dodecahedron", dict(kind='DODECA', generations=2)),
+    ],
+    "mesh.geodesic_add": [
+        ("ICOSA", "Icosahedron", dict(base='ICOSA')),
+        ("OCTA", "Octahedron", dict(base='OCTA')),
+        ("TETRA", "Tetrahedron", dict(base='TETRA')),
+        ("GOLDBERG", "Goldberg Dual", dict(base='ICOSA', dual=True)),
+    ],
+    "curve.torus_knot_add": [
+        ("2_3", "Trefoil (2, 3)", dict(p=2, q=3)),
+        ("2_5", "Cinquefoil (2, 5)", dict(p=2, q=5)),
+        ("2_7", "(2, 7)", dict(p=2, q=7)),
+        ("3_4", "(3, 4)", dict(p=3, q=4)),
+        ("3_5", "(3, 5)", dict(p=3, q=5)),
+        ("5_2", "(5, 2)", dict(p=5, q=2)),
+    ],
+    "mesh.sphericon_add": [
+        (str(n), lab, dict(sides=n))
+        for n, lab in ((3, "Triangular (3)"), (4, "Sphericon (4)"),
+                       (5, "Pentagonal (5)"), (6, "Hexagonal (6)"),
+                       (7, "Heptagonal (7)"), (8, "Octagonal (8)"))
+    ],
+    "mesh.spherical_harmonic_add": [
+        (f, lab, dict(form=f))
+        for f, lab in (("OFFSET", "Offset Sphere"),
+                       ("ABS", "Absolute Lobes"),
+                       ("SIGNED", "Signed Lobes"),
+                       ("BOURKE", "Bourke Family"))
+    ],
+    "mesh.ruled_surface_add": [
+        ("HYPERBOLOID", "Stick Hyperboloid", dict(mode='HYPERBOLOID')),
+        ("HYPERBOLOID_RODS", "Stick Hyperboloid (Rulings)",
+         dict(mode='HYPERBOLOID', output='RODS', family='BOTH')),
+        ("HELICAL_CONE", "Compound Helical Cone",
+         dict(mode='HELICAL_CONE')),
+        ("SPIRAL", "Spiral Ruled", dict(mode='SPIRAL')),
+        ("SPIRAL_ROSETTE", "Spiral Ruled (Rosette)",
+         dict(mode='SPIRAL', tightness=0.0, petals=5, petal_amp=0.4)),
+        ("PLUCKER", "Plucker Cylindroid",
+         dict(mode='CONOID', conoid_kind='PLUCKER')),
+        ("WALLIS", "Wallis Conical Edge",
+         dict(mode='CONOID', conoid_kind='WALLIS')),
+        ("WHITNEY", "Whitney Umbrella",
+         dict(mode='CONOID', conoid_kind='WHITNEY')),
+        ("TANGENT_DEV", "Tangent Developable", dict(mode='TANGENT_DEV')),
+        ("HELICOID", "Helicoid", dict(mode='HELICOID')),
+        ("TWIST_STRIP", "Twisted Strip (Mobius)",
+         dict(mode='TWIST_STRIP', half_twists=1)),
+        ("HYPAR", "Hyperbolic Paraboloid", dict(mode='HYPAR')),
+    ],
+    # The atomic half is indexed by the quantum numbers (n, l, m), not
+    # by an enum, so there is nothing to introspect; the molecular half
+    # has a 17-entry `preset` but mixing the two lists by hand is what
+    # puts them in teaching order on the page.
+    "mesh.orbital_add": [
+        ("1s", "1s", dict(mode='ATOMIC', n=1, l=0, m=0)),
+        ("2s", "2s (radial node)", dict(mode='ATOMIC', n=2, l=0, m=0)),
+        ("2pz", "2p_z", dict(mode='ATOMIC', n=2, l=1, m=0)),
+        ("3pz", "3p_z", dict(mode='ATOMIC', n=3, l=1, m=0)),
+        ("3dxy", "3d_xy", dict(mode='ATOMIC', n=3, l=2, m=-2)),
+        ("3dz2", "3d_z2", dict(mode='ATOMIC', n=3, l=2, m=0)),
+        ("4fz3", "4f_z3", dict(mode='ATOMIC', n=4, l=3, m=0)),
+        ("sigma1s", "sigma 1s",
+         dict(mode='MOLECULAR', preset='SIGMA_1S')),
+        ("sigmastar1s", "sigma* 1s",
+         dict(mode='MOLECULAR', preset='SIGMA_STAR_1S')),
+        ("pi2px", "pi 2p_x", dict(mode='MOLECULAR', preset='PI_2PX')),
+        ("sp3", "sp3 hybrid", dict(mode='MOLECULAR', preset='SP3')),
+        ("water", "H2O lone pair",
+         dict(mode='MOLECULAR', preset='WATER_LONE_PAIR')),
+        ("benzene", "benzene pi",
+         dict(mode='MOLECULAR', preset='BENZENE_PI', huckel_k=0)),
+        ("cloud", "pi 2p_x probability cloud",
+         dict(mode='MOLECULAR', preset='PI_2PX', display='CLOUD',
+              shells=3)),
+    ],
+    "mesh.ifs_add": [
+        ("ABC124", "ABC tile (1,2,4)",
+         dict(mode='RADIX', preset='ABC_124')),
+        ("ABC128", "ABC tile (1,2,8), self-similar",
+         dict(mode='RADIX', preset='ABC_128')),
+        ("ABC134", "ABC tile (1,3,4)",
+         dict(mode='RADIX', preset='ABC_134')),
+        ("TWINA", "Twindragon A", dict(mode='RADIX', preset='TWIN_A')),
+        ("TWIND", "Twindragon D", dict(mode='RADIX', preset='TWIN_D')),
+        ("TWING", "Twindragon G", dict(mode='RADIX', preset='TWIN_G')),
+        ("GASKET", "Cube gasket (4 holes)",
+         dict(mode='RADIX', preset='CUBE', holes=4)),
+        ("EXACT", "ABC (1,2,4), exact level-k cubes",
+         dict(mode='RADIX', preset='ABC_124', tile_output='EXACT')),
+        ("SIERPTETRA", "Sierpinski tetrahedron",
+         dict(mode='IFS', dimension='3', ifs_preset='SIERP_TETRA',
+              output='SOLIDS')),
+        ("MENGER", "Menger sponge",
+         dict(mode='IFS', dimension='3', ifs_preset='MENGER',
+              output='SOLIDS', seed_solid='CUBE', depth=3)),
+        ("VOXEL", "Sierpinski octahedron (voxels)",
+         dict(mode='IFS', dimension='3', ifs_preset='SIERP_OCTA',
+              output='VOXEL')),
+        ("ISO", "Sierpinski tetrahedron (smooth)",
+         dict(mode='IFS', dimension='3', ifs_preset='SIERP_TETRA',
+              output='ISO')),
+        ("BMMSIERP", "Sierpinski triangle in 3D (Bandt et al.)",
+         dict(mode='IFS', dimension='3', ifs_preset='BMM_SIERP',
+              output='ISO')),
+        ("BMMSIERPREV", "...and its reverse fractal",
+         dict(mode='IFS', dimension='3', ifs_preset='BMM_SIERP',
+              output='ISO', reverse=True)),
+        ("BMMTETRA", "Modified fractal tetrahedron (Bandt et al.)",
+         dict(mode='IFS', dimension='3', ifs_preset='BMM_TETRA',
+              output='ISO')),
+        ("BMMCUBE", "Modified cube (Bandt et al.)",
+         dict(mode='IFS', dimension='3', ifs_preset='BMM_CUBE',
+              output='ISO')),
+        ("FERN", "Barnsley fern (2-D)",
+         dict(mode='IFS', dimension='2', ifs_preset='FERN2D',
+              output='RELIEF')),
+        ("SIERPTRI", "Sierpinski triangle (2-D)",
+         dict(mode='IFS', dimension='2', ifs_preset='SIERP_TRI',
+              output='RELIEF')),
+        ("DRAGON", "Heighway dragon (2-D)",
+         dict(mode='IFS', dimension='2', ifs_preset='DRAGON',
+              output='RELIEF')),
+        ("LEVY", "Levy C curve (2-D)",
+         dict(mode='IFS', dimension='2', ifs_preset='LEVY',
+              output='RELIEF')),
+        ("KOCH", "Koch curve (2-D)",
+         dict(mode='IFS', dimension='2', ifs_preset='KOCH',
+              output='RELIEF')),
+    ],
+}
+
+
+def load_menu_defs():
+    """`math_art.menu_defs` without importing the package.
+
+    `math_art/__init__.py` imports bpy, so a plain
+    `from math_art import menu_defs` only works inside Blender.  The
+    menu table itself is deliberately bpy-free, so the documentation
+    tools and the docs test -- which run under plain Python -- load it
+    straight off disk instead.
+    """
+    import importlib.util
+    import os
+    path = os.path.join(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))), "math_art", "menu_defs.py")
+    spec = importlib.util.spec_from_file_location("_menu_defs", path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def params_for(op, **extra):
     """Canonical kwargs for `op`, with `extra` taking precedence."""
     kw = dict(PARAMS.get(op, ()))
@@ -186,8 +584,49 @@ def _selftest():
         raise AssertionError("an operator is both skipped and plan view")
     if params_for("mesh.polystix_add", overhang=9.0)["overhang"] != 9.0:
         raise AssertionError("params_for() does not honour overrides")
+
+    # -- documentation tables ------------------------------------
+    if slug_for("mesh.oloid_add") != "oloid":
+        raise AssertionError("slug_for() default rule is broken")
+    if slug_for("mesh.periodic_minimal_add") != "tpms":
+        raise AssertionError("slug_for() ignores SLUG_OVERRIDE")
+    if slug_for("object.minimal_span") != "minimal_span":
+        raise AssertionError("slug_for() mishandles an op with no _add")
+    slugs = {}
+    for op in list(SLUG_OVERRIDE):
+        s = slug_for(op)
+        if s in slugs:
+            raise AssertionError(f"slug {s!r}: {op} and {slugs[s]}")
+        slugs[s] = op
+    for name, table in (("VARIANT_SELECTOR", VARIANT_SELECTOR),
+                        ("VARIANT_COMMON", VARIANT_COMMON),
+                        ("VARIANT_EXTRA", VARIANT_EXTRA),
+                        ("VARIANT_GROUP", VARIANT_GROUP),
+                        ("VARIANT_MAX", VARIANT_MAX)):
+        for op in table:
+            prefix, _, rest = op.partition('.')
+            if prefix not in ('mesh', 'curve', 'object') or not rest:
+                raise AssertionError(f"{name}: bad operator id {op!r}")
+    # One operator cannot be both a one-enum gallery and a two-level
+    # one; the renderer would have to guess which table wins.
+    both = set(VARIANT_SELECTOR) & set(VARIANT_GROUP)
+    if both:
+        raise AssertionError(f"selector and group both set: {sorted(both)}")
+    for op, entries in VARIANT_EXTRA.items():
+        ids = [e[0] for e in entries]
+        if len(ids) != len(set(ids)):
+            raise AssertionError(f"VARIANT_EXTRA[{op}]: duplicate ids")
+        for e in entries:
+            if len(e) != 3 or not isinstance(e[2], dict):
+                raise AssertionError(f"VARIANT_EXTRA[{op}]: bad entry {e}")
+    for op in VARIANT_GROUP_ONLY:
+        if op not in VARIANT_GROUP:
+            raise AssertionError(f"VARIANT_GROUP_ONLY[{op}] has no group")
+    n_gal = len(set(VARIANT_SELECTOR) | set(VARIANT_GROUP)
+                | set(VARIANT_EXTRA))
     print(f"subjects: {len(PARAMS)} parameterised, {len(ORIENT)} posed, "
-          f"{len(PLAN_VIEW)} plan view, {len(SKIP)} skipped")
+          f"{len(PLAN_VIEW)} plan view, {len(SKIP)} skipped, "
+          f"{len(SLUG_OVERRIDE)} slug overrides, {n_gal} galleries")
 
 
 # --------------------------------------------------------------------
@@ -377,6 +816,153 @@ if _IN_BLENDER:
         """Set up `op`'s render environment; returns a teardown callable."""
         fn = ENVIRONMENT.get(op)
         return fn() if fn is not None else (lambda: None)
+
+    # ----------------------------------------------------------------
+    # Resolving a gallery to a concrete list of renders
+    # ----------------------------------------------------------------
+    # A static EnumProperty can be read straight off the operator's RNA.
+    # A *dynamic* one -- items supplied by a callback -- cannot: RNA
+    # only invokes the callback for a live UI, so `enum_items` comes
+    # back empty in background Blender (verified; this is why the
+    # two-level galleries need the resolvers below rather than the same
+    # code path).  Each resolver reads the generator module's own
+    # catalogue, which is the list the callback itself is built from.
+
+    import importlib                                       # noqa: E402
+
+    class _Shim:
+        """Stand-in for an operator instance, for an items callback.
+
+        The callbacks take (self, context) and read one property off
+        `self`.  Handing them an object with just that property is
+        enough, and avoids depending on a live operator.
+        """
+
+        def __init__(self, **kw):
+            self.__dict__.update(kw)
+
+    def _mod(name):
+        return importlib.import_module("math_art." + name)
+
+    def _pairs(items):
+        return [(it[0], it[1]) for it in items]
+
+    def _groups_regular_solid():
+        m = _mod("regular_solids_generator")
+        return {fam[0]: _pairs(m._solid_items(_Shim(family=fam[0]), None))
+                for fam in m.FAMILIES}
+
+    def _groups_by_family(modname):
+        """uniform / canonical: both levels are callbacks."""
+        def resolve():
+            m = _mod(modname)
+            out = {}
+            for fid, _label, *_ in m._family_items(_Shim(), None):
+                out[fid] = _pairs(m._solid_items(_Shim(family=fid), None))
+            return out
+        return resolve
+
+    def _groups_parametric():
+        # `_surface_items` deliberately returns the *union* list in a
+        # background context (scripted calls must not be family-
+        # filtered), so grouping has to come from the catalogue dict
+        # the callback filters against, not from the callback.
+        m = _mod("minimal_surface_toolkit")
+        return {fam: _pairs(items)
+                for fam, items in m._SURF_ITEMS_FAM.items()}
+
+    def _groups_periodic():
+        m = _mod("minimal_surface_toolkit")
+        return {per: _pairs(items)
+                for per, items in m._PERIODIC_ITEMS.items()}
+
+    GROUP_RESOLVER = {
+        "mesh.regular_solid_add": _groups_regular_solid,
+        "mesh.uniform_polyhedron_add":
+            _groups_by_family("uniform_polyhedra_generator"),
+        "mesh.canonical_polyhedron_add":
+            _groups_by_family("canonical_polyhedra_generator"),
+        "mesh.parametric_minimal_add": _groups_parametric,
+        "mesh.periodic_minimal_add": _groups_periodic,
+    }
+
+    def _static_enum_items(op, prop):
+        """(id, label) pairs for a plain static EnumProperty."""
+        mod, _, fn = op.partition('.')
+        rna = getattr(getattr(bpy.ops, mod), fn).get_rna_type()
+        if prop not in rna.properties:
+            raise KeyError(f"{op}: no property {prop!r}")
+        p = rna.properties[prop]
+        if p.type != 'ENUM':
+            raise TypeError(f"{op}.{prop} is {p.type}, not ENUM")
+        return [(i.identifier, i.name) for i in p.enum_items]
+
+    def variants_for(op):
+        """Resolve `op`'s doc gallery to [(id, label, kwargs, group)].
+
+        `group` is None for a flat gallery and the group's label for a
+        two-level one, which is what puts the "### Archimedean"
+        subheadings on the page.  Returns [] when the operator has no
+        gallery declared.  Raises on a gallery that is declared but
+        resolves to nothing -- a stale property name must be loud, not
+        silently produce an empty grid.
+        """
+        common = dict(VARIANT_COMMON.get(op, ()))
+        skip = set(VARIANT_SKIP.get(op, ())) | GENERIC_SKIP_IDS
+        out = []
+
+        if op in VARIANT_GROUP:
+            gprop, iprop = VARIANT_GROUP[op]
+            resolver = GROUP_RESOLVER.get(op)
+            if resolver is None:
+                raise KeyError(f"{op}: VARIANT_GROUP with no resolver")
+            groups = resolver()
+            labels = dict(_static_enum_items(op, gprop))
+            only = VARIANT_GROUP_ONLY.get(op)
+            for gid, items in groups.items():
+                if only and gid not in only:
+                    continue
+                for vid, label in items:
+                    if vid in skip:
+                        continue
+                    out.append((vid, label,
+                                dict(common, **{gprop: gid, iprop: vid}),
+                                labels.get(gid, gid)))
+        elif op in VARIANT_SELECTOR:
+            prop = VARIANT_SELECTOR[op]
+            for vid, label in _static_enum_items(op, prop):
+                if vid in skip:
+                    continue
+                out.append((vid, label, dict(common, **{prop: vid}), None))
+
+        # VARIANT_SKIP is deliberately NOT applied here.  Its usual job
+        # is to drop an option the default parameters cannot build, and
+        # the matching VARIANT_EXTRA entry is how that option comes
+        # back with parameters that work -- filtering it out again
+        # would undo the fix.
+        for vid, label, kw in VARIANT_EXTRA.get(op, ()):
+            out.append((vid, label, dict(common, **kw), None))
+
+        if (op in VARIANT_SELECTOR or op in VARIANT_GROUP) and not out:
+            raise ValueError(
+                f"{op}: gallery declared but resolved to nothing -- "
+                f"stale property name in subjects.VARIANT_*?")
+
+        # A two-level gallery can repeat an id across groups (the same
+        # solid id in two families); qualify those so the rendered file
+        # names stay unique.
+        seen, uniq = {}, []
+        for vid, label, kw, grp in out:
+            n = seen.get(vid, 0)
+            seen[vid] = n + 1
+            uniq.append((vid if not n else f"{vid}_{n}", label, kw, grp))
+
+        cap = VARIANT_MAX.get(op, VARIANT_MAX_DEFAULT)
+        if len(uniq) > cap:
+            print(f"  NOTE {op}: {len(uniq)} variants, capped at {cap} "
+                  f"-- dropped {[v[0] for v in uniq[cap:]]}")
+            uniq = uniq[:cap]
+        return uniq
 
     def run_setup(op):
         """Build `op`'s input geometry.  Returns the objects it made."""

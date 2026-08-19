@@ -29,19 +29,20 @@ A perforated architectural screen wall in the modular-constructivist tradition o
 
 ## Variants
 
-Renders of each Design:
+Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/modular_screen__DESIGN5.png" width="200"><br><sub>Saddle Lattice (Design 5)</sub></td>
+<td align="center"><img src="../images/variants/modular_screen__DESIGN5.png" width="200"><br><sub>Saddle Lattice (after Design 5)</sub></td>
 <td align="center"><img src="../images/variants/modular_screen__PINWHEEL.png" width="200"><br><sub>Pinwheel (chiral)</sub></td>
-<td align="center"><img src="../images/variants/modular_screen__DESIGN1.png" width="200"><br><sub>Bilayer Weave (Design 1)</sub></td>
+<td align="center"><img src="../images/variants/modular_screen__DESIGN1.png" width="200"><br><sub>Bilayer Weave (after Design 1)</sub></td>
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/modular_screen__WEAVE.png" width="200"><br><sub>Woven Undulation</sub></td>
-<tr>
 <td align="center"><img src="../images/variants/modular_screen__DIAGONAL.png" width="200"><br><sub>Diagonal Brace</sub></td>
-<td align="center"><img src="../images/variants/modular_screen__DESIGN6.png" width="200"><br><sub>Relief Wall (Design 6)</sub></td>
+<td align="center"><img src="../images/variants/modular_screen__DESIGN6.png" width="200"><br><sub>Relief Wall (after Design 6)</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/modular_screen__HYPAR.png" width="200"><br><sub>Hypar (Carlberg)</sub></td>
 </tr>
 </table>

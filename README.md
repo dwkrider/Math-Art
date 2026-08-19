@@ -1,6 +1,6 @@
 # Math Art — Blender Extension
 
-A Blender **4.2+ / 5.x** extension bundling **50+ generators** for
+A Blender **4.2+ / 5.x** extension bundling **125+ generators** for
 mathematical sculpture: minimal surfaces, polyhedra (Platonic through
 Archimedean to four‑dimensional polytopes), knots and links, fractals,
 woven and tangled compounds, hyperbolic tilings, and much more. Each
@@ -42,17 +42,29 @@ blender --command extension build --source-dir math_art \
 Each module in `math_art/` also works on its own as a classic
 single‑file add‑on via *Install from Disk*.
 
-## Regenerating the renders
+## Regenerating the docs
 
 Every documentation image is produced by one consistent studio script
 (black‑velvet backdrop, soft studio lighting, white‑plastic material on
-uncolored shapes while generator colors are preserved):
+uncolored shapes while generator colors are preserved). The figure set
+is the Add menu itself, so nothing needs listing by hand:
 
 ```sh
 blender --background --factory-startup --python docs/render_docs.py
 ```
 
-Pass slugs to render a subset, e.g. `-- tangle polytope4d`.
+It renders only what is missing; pass `-- --all` to re-render, slugs to
+pick a subset (`-- tangle polytope4d`), or `-- variants` for the
+per‑option galleries. `-- --list` shows coverage without rendering.
+
+The rest of the pipeline:
+
+```sh
+blender --background --factory-startup --python docs/scaffold_pages.py
+python docs/insert_variants.py     # galleries into the pages
+python docs/build_index.py         # regenerate docs/README.md
+python tests/test_docs.py          # coverage gate
+```
 
 ## License
 

@@ -36,9 +36,9 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/spherical_harmonic__OFFSET.png" width="200"><br><sub>Offset Sphere</sub></td>
 <td align="center"><img src="../images/variants/spherical_harmonic__ABS.png" width="200"><br><sub>Absolute Lobes</sub></td>
+<td align="center"><img src="../images/variants/spherical_harmonic__SIGNED.png" width="200"><br><sub>Signed Lobes</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/spherical_harmonic__SIGNED.png" width="200"><br><sub>Signed Lobes</sub></td>
 <td align="center"><img src="../images/variants/spherical_harmonic__BOURKE.png" width="200"><br><sub>Bourke Family</sub></td>
 </tr>
 </table>

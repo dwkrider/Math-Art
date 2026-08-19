@@ -295,10 +295,11 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
             lay.menu(gal.bl_idname if gal else spec.idname,
                      icon=spec.icon)
         lay.separator()
-        # a plain entry, not operator_menu_enum: the preset belongs in
-        # the redo panel with the rest of the settings, not spilled up
-        # into the Add menu as a submenu of its own
-        _op(lay, "object.symmetric_sculpture_add", icon='MOD_MIRROR')
+        # Plain entries, not operator_menu_enum: a preset belongs in the
+        # redo panel with the rest of the settings, not spilled up into
+        # the Add menu as a submenu of its own.  The list lives in
+        # menu_defs so the icon baker and the docs gate can see it.
+        _draw_entries(lay, menu_defs.ROOT_ENTRIES)
         # Styles stays a plain row menu -- see GALLERY_MENUS above.
         lay.menu(menu_defs.STYLES.idname, icon=menu_defs.STYLES.icon)
 

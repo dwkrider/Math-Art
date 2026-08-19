@@ -1565,5 +1565,197 @@
    "HYPAR",
    "Hyperbolic Paraboloid"
   ]
+ ],
+ "ifs": [
+  [
+   "ABC124",
+   "ABC tile (1,2,4)"
+  ],
+  [
+   "ABC128",
+   "ABC tile (1,2,8), self-similar"
+  ],
+  [
+   "ABC134",
+   "ABC tile (1,3,4)"
+  ],
+  [
+   "TWINA",
+   "Twindragon A"
+  ],
+  [
+   "TWIND",
+   "Twindragon D"
+  ],
+  [
+   "TWING",
+   "Twindragon G"
+  ],
+  [
+   "GASKET",
+   "Cube gasket (4 holes)"
+  ],
+  [
+   "EXACT",
+   "ABC (1,2,4), exact level-k cubes"
+  ],
+  [
+   "SIERPTETRA",
+   "Sierpinski tetrahedron"
+  ],
+  [
+   "MENGER",
+   "Menger sponge"
+  ],
+  [
+   "VOXEL",
+   "Sierpinski octahedron (voxels)"
+  ],
+  [
+   "ISO",
+   "Sierpinski tetrahedron (smooth)"
+  ],
+  [
+   "BMMSIERP",
+   "Sierpinski triangle in 3D (Bandt et al.)"
+  ],
+  [
+   "BMMSIERPREV",
+   "...and its reverse fractal"
+  ],
+  [
+   "BMMTETRA",
+   "Modified fractal tetrahedron (Bandt et al.)"
+  ],
+  [
+   "BMMCUBE",
+   "Modified cube (Bandt et al.)"
+  ],
+  [
+   "FERN",
+   "Barnsley fern (2-D)"
+  ],
+  [
+   "SIERPTRI",
+   "Sierpinski triangle (2-D)"
+  ],
+  [
+   "DRAGON",
+   "Heighway dragon (2-D)"
+  ],
+  [
+   "LEVY",
+   "Levy C curve (2-D)"
+  ],
+  [
+   "KOCH",
+   "Koch curve (2-D)"
+  ]
+ ],
+ "modular_screen": [
+  [
+   "DESIGN5",
+   "Saddle Lattice (after Design 5)"
+  ],
+  [
+   "PINWHEEL",
+   "Pinwheel (chiral)"
+  ],
+  [
+   "DESIGN1",
+   "Bilayer Weave (after Design 1)"
+  ],
+  [
+   "WEAVE",
+   "Woven Undulation"
+  ],
+  [
+   "DIAGONAL",
+   "Diagonal Brace"
+  ],
+  [
+   "DESIGN6",
+   "Relief Wall (after Design 6)"
+  ],
+  [
+   "HYPAR",
+   "Hypar (Carlberg)"
+  ]
+ ],
+ "orbital": [
+  [
+   "1s",
+   "1s"
+  ],
+  [
+   "2s",
+   "2s (radial node)"
+  ],
+  [
+   "2pz",
+   "2p_z"
+  ],
+  [
+   "3pz",
+   "3p_z"
+  ],
+  [
+   "3dxy",
+   "3d_xy"
+  ],
+  [
+   "3dz2",
+   "3d_z2"
+  ],
+  [
+   "4fz3",
+   "4f_z3"
+  ],
+  [
+   "sigma1s",
+   "sigma 1s"
+  ],
+  [
+   "sigmastar1s",
+   "sigma* 1s"
+  ],
+  [
+   "pi2px",
+   "pi 2p_x"
+  ],
+  [
+   "sp3",
+   "sp3 hybrid"
+  ],
+  [
+   "water",
+   "H2O lone pair"
+  ],
+  [
+   "benzene",
+   "benzene pi"
+  ],
+  [
+   "cloud",
+   "pi 2p_x probability cloud"
+  ]
+ ],
+ "spherical_harmonic": [
+  [
+   "OFFSET",
+   "Offset Sphere"
+  ],
+  [
+   "ABS",
+   "Absolute Lobes"
+  ],
+  [
+   "SIGNED",
+   "Signed Lobes"
+  ],
+  [
+   "BOURKE",
+   "Bourke Family"
+  ]
  ]
 }

@@ -40,36 +40,43 @@ Attractors of iterated function systems, in two and three dimensions, across thr
 
 ## Variants
 
+Renders of each selectable option:
+
 <table>
 <tr>
 <td align="center"><img src="../images/variants/ifs__ABC124.png" width="200"><br><sub>ABC tile (1,2,4)</sub></td>
 <td align="center"><img src="../images/variants/ifs__ABC128.png" width="200"><br><sub>ABC tile (1,2,8), self-similar</sub></td>
 <td align="center"><img src="../images/variants/ifs__ABC134.png" width="200"><br><sub>ABC tile (1,3,4)</sub></td>
-<td align="center"><img src="../images/variants/ifs__TWINA.png" width="200"><br><sub>Twindragon A (non-fractal)</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/ifs__TWINA.png" width="200"><br><sub>Twindragon A</sub></td>
 <td align="center"><img src="../images/variants/ifs__TWIND.png" width="200"><br><sub>Twindragon D</sub></td>
 <td align="center"><img src="../images/variants/ifs__TWING.png" width="200"><br><sub>Twindragon G</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/ifs__GASKET.png" width="200"><br><sub>Cube gasket (4 holes)</sub></td>
+<td align="center"><img src="../images/variants/ifs__EXACT.png" width="200"><br><sub>ABC (1,2,4), exact level-k cubes</sub></td>
 <td align="center"><img src="../images/variants/ifs__SIERPTETRA.png" width="200"><br><sub>Sierpinski tetrahedron</sub></td>
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/ifs__MENGER.png" width="200"><br><sub>Menger sponge</sub></td>
 <td align="center"><img src="../images/variants/ifs__VOXEL.png" width="200"><br><sub>Sierpinski octahedron (voxels)</sub></td>
 <td align="center"><img src="../images/variants/ifs__ISO.png" width="200"><br><sub>Sierpinski tetrahedron (smooth)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/ifs__BMMSIERP.png" width="200"><br><sub>Sierpinski triangle in 3D (Bandt et al.)</sub></td>
+<td align="center"><img src="../images/variants/ifs__BMMSIERPREV.png" width="200"><br><sub>...and its reverse fractal</sub></td>
+<td align="center"><img src="../images/variants/ifs__BMMTETRA.png" width="200"><br><sub>Modified fractal tetrahedron (Bandt et al.)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/ifs__BMMCUBE.png" width="200"><br><sub>Modified cube (Bandt et al.)</sub></td>
 <td align="center"><img src="../images/variants/ifs__FERN.png" width="200"><br><sub>Barnsley fern (2-D)</sub></td>
-</tr>
-<tr>
 <td align="center"><img src="../images/variants/ifs__SIERPTRI.png" width="200"><br><sub>Sierpinski triangle (2-D)</sub></td>
-<td align="center"><img src="../images/variants/ifs__DRAGON.png" width="200"><br><sub>Heighway dragon (2-D)</sub></td>
-<td align="center"><img src="../images/variants/ifs__LEVY.png" width="200"><br><sub>Lévy C curve (2-D)</sub></td>
-<td align="center"><img src="../images/variants/ifs__KOCH.png" width="200"><br><sub>Koch curve (2-D)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/ifs__EXACT.png" width="200"><br><sub>ABC (1,2,4), exact level-k cubes</sub></td>
-<td></td>
-<td></td>
-<td></td>
+<td align="center"><img src="../images/variants/ifs__DRAGON.png" width="200"><br><sub>Heighway dragon (2-D)</sub></td>
+<td align="center"><img src="../images/variants/ifs__LEVY.png" width="200"><br><sub>Levy C curve (2-D)</sub></td>
+<td align="center"><img src="../images/variants/ifs__KOCH.png" width="200"><br><sub>Koch curve (2-D)</sub></td>
 </tr>
 </table>
 
