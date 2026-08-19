@@ -22,6 +22,7 @@ shown with a consistent studio render (regenerate them with
 | [<img src="images/ruled_surface.png" width="240">](generators/ruled_surface.md)<br>**[Ruled Surfaces](generators/ruled_surface.md)** | **[D-Form](generators/dform.md)**<br><sub>(figure pending)</sub> | [<img src="images/curiosity_surface.png" width="240">](generators/curiosity_surface.md)<br>**[Miscellaneous Surfaces](generators/curiosity_surface.md)** |
 | [<img src="images/invariant_manifold.png" width="240">](generators/invariant_manifold.md)<br>**[Invariant Manifold](generators/invariant_manifold.md)** | **[Supershape](generators/supershape.md)**<br><sub>(figure pending)</sub> | [<img src="images/spherical_harmonic.png" width="240">](generators/spherical_harmonic.md)<br>**[Spherical Harmonic](generators/spherical_harmonic.md)** |
 | [<img src="images/orbital.png" width="240">](generators/orbital.md)<br>**[Atomic & Molecular Orbital](generators/orbital.md)** | **[Hyperbolic Surface](generators/hyperbolic_surface.md)**<br><sub>(figure pending)</sub> | **[Crochet/Coral](generators/crochet.md)**<br><sub>(figure pending)</sub> |
+| **[Willmore Surface](generators/willmore.md)**<br><sub>(figure pending)</sub> |  |  |
 
 ## Polyhedra
 
@@ -57,11 +58,12 @@ shown with a consistent studio render (regenerate them with
 
 | | | |
 |:--:|:--:|:--:|
-| [<img src="images/prime_knot.png" width="240">](generators/prime_knot.md)<br>**[Prime Knot](generators/prime_knot.md)** | **[Tight Knot](generators/tight_knot.md)**<br><sub>(figure pending)</sub> | [<img src="images/torus_knot.png" width="240">](generators/torus_knot.md)<br>**[Torus Knot](generators/torus_knot.md)** |
-| **[Hopf Fibration](generators/hopf_fibration.md)**<br><sub>(figure pending)</sub> | **[Hopf Torus](generators/hopf_torus.md)**<br><sub>(figure pending)</sub> | **[Harmonic Knot](generators/harmonic_knot.md)**<br><sub>(figure pending)</sub> |
-| **[Petal Knot](generators/petal_knot.md)**<br><sub>(figure pending)</sub> | **[Rational / Pretzel Knot](generators/rational_knot.md)**<br><sub>(figure pending)</sub> | **[Fractal Knot](generators/fractal_knot.md)**<br><sub>(figure pending)</sub> |
-| **[Substitution Fractal Knot](generators/substitution_knot.md)**<br><sub>(figure pending)</sub> | [<img src="images/link.png" width="240">](generators/link.md)<br>**[Links & Connected Sums](generators/link.md)** | **[Antoine's Necklace](generators/antoine.md)**<br><sub>(figure pending)</sub> |
-| [<img src="images/attractor.png" width="240">](generators/attractor.md)<br>**[Strange Attractor](generators/attractor.md)** | [<img src="images/dual_helix.png" width="240">](generators/dual_helix.md)<br>**[Dual Helix](generators/dual_helix.md)** | [<img src="images/rolling_knot.png" width="240">](generators/rolling_knot.md)<br>**[Rolling Knot](generators/rolling_knot.md)** |
+| [<img src="images/prime_knot.png" width="240">](generators/prime_knot.md)<br>**[Prime Knot](generators/prime_knot.md)** | **[Tight Knot](generators/tight_knot.md)**<br><sub>(figure pending)</sub> | **[Tight Link](generators/tight_link.md)**<br><sub>(figure pending)</sub> |
+| [<img src="images/torus_knot.png" width="240">](generators/torus_knot.md)<br>**[Torus Knot](generators/torus_knot.md)** | **[Hopf Fibration](generators/hopf_fibration.md)**<br><sub>(figure pending)</sub> | **[Hopf Torus](generators/hopf_torus.md)**<br><sub>(figure pending)</sub> |
+| **[Harmonic Knot](generators/harmonic_knot.md)**<br><sub>(figure pending)</sub> | **[Petal Knot](generators/petal_knot.md)**<br><sub>(figure pending)</sub> | **[Rational / Pretzel Knot](generators/rational_knot.md)**<br><sub>(figure pending)</sub> |
+| **[Fractal Knot](generators/fractal_knot.md)**<br><sub>(figure pending)</sub> | **[Substitution Fractal Knot](generators/substitution_knot.md)**<br><sub>(figure pending)</sub> | [<img src="images/link.png" width="240">](generators/link.md)<br>**[Links & Connected Sums](generators/link.md)** |
+| **[Antoine's Necklace](generators/antoine.md)**<br><sub>(figure pending)</sub> | [<img src="images/attractor.png" width="240">](generators/attractor.md)<br>**[Strange Attractor](generators/attractor.md)** | [<img src="images/dual_helix.png" width="240">](generators/dual_helix.md)<br>**[Dual Helix](generators/dual_helix.md)** |
+| [<img src="images/rolling_knot.png" width="240">](generators/rolling_knot.md)<br>**[Rolling Knot](generators/rolling_knot.md)** |  |  |
 
 ## Weaves & Tangles
 

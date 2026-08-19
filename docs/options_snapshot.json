@@ -300,6 +300,19 @@
   "Tube Sides",
   "Scale"
  ],
+ "curve.tight_link_add": [
+  "Link",
+  "Braid Word",
+  "Chain Rings",
+  "Samples Per Component",
+  "Tighten Iterations",
+  "Output",
+  "Radius From Thickness",
+  "Tube Radius",
+  "Bevel Resolution",
+  "Tube Sides",
+  "Scale"
+ ],
  "curve.torus_knot_add": [
   "p",
   "q",
@@ -537,6 +550,8 @@
   "Cloth Detail",
   "Cristate Grade",
   "Lobes",
+  "Coarse-to-Fine",
+  "Stiffness",
   "Scale",
   "Smooth Shading"
  ],
@@ -2048,6 +2063,18 @@
   "Bevel Gap",
   "Explode",
   "Separate Meshes",
+  "Scale"
+ ],
+ "mesh.willmore_add": [
+  "Mode",
+  "Resolution",
+  "Sphere Subdivision",
+  "Start Ratio",
+  "Reduced Volume",
+  "Seed",
+  "Spontaneous Curvature",
+  "Iterations",
+  "Smooth Shading",
   "Scale"
  ],
  "mesh.woven_double_shell_add": [
