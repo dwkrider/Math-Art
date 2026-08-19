@@ -1,0 +1,4 @@
+{
+  "bubble_kwargs": {"optimizer": "lbfgs", "guard": true},
+  "cmc_kwargs": {"optimizer": "lbfgs", "guard": true}
+}

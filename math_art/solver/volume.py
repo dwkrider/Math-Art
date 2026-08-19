@@ -71,11 +71,13 @@ try:
     from . import descent as _descent
     from . import groom as _groom
     from . import walls as _walls
+    from . import collide as _collide
 except ImportError:                      # flat (path-based) headless import
     import cotan as _cotan               # type: ignore
     import descent as _descent           # type: ignore
     import groom as _groom               # type: ignore
     import walls as _walls               # type: ignore
+    import collide as _collide           # type: ignore
 
 
 # --------------------------------------------------------------------------
@@ -360,7 +362,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
            walls=None, wall_tol=1e-12, ext_energy=None, ext_grad=None,
            groom_hook=None, optimizer=None, lbfgs_m=8,
            lbfgs_h0="laplacian", lbfgs_h0_eps=1e-3, lbfgs_h0_tol=1e-2,
-           lbfgs_h0_iters=100, lbfgs_step_cap=4.0):
+           lbfgs_h0_iters=100, lbfgs_step_cap=4.0, guard=None):
     """Minimize film area at fixed body volumes.  V is modified in
     place; T is modified in place only when grooming flips edges.
 
@@ -486,13 +488,70 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
                                tol=vol_tol, project=_wproject,
                                tangent=_gtangent)
 
+    # Collision guard (solver/collide), opt-in.  The barrier joins the
+    # objective and the conservative cap joins the line-search ceiling.
+    # Both are needed: the barrier alone can be stepped clean over by a
+    # long trial step, landing inverted on the far side with a lower
+    # energy -- which is exactly how L-BFGS tunnelled the films.  The
+    # pair set is ensured once per iteration (a lagged rebuild that
+    # usually reduces to one O(n) drift norm -- see collide.MeshGuard),
+    # never per line-search trial; the guard's step cap bounds every
+    # trial inside the set's validity budget, so the barrier energy the
+    # search sees is exact everywhere it evaluates.  The ensure runs
+    # AFTER any grooming: edge flips change the topology the pair set
+    # is built on, and the groom's vertex motion counts as drift.
+    guard = _collide.make_guard(guard)   # True / dict specs from configs
+    _guard = [None]
+
+    def _guard_ensure(Varr):
+        if guard is not None:
+            _guard[0] = guard.ensure(Varr, T)
+
+    # Grooming moves vertices OUTSIDE the guarded line search (Laplace
+    # smoothing, edge flips, the caller's groom_hook), and a distance
+    # barrier cannot undo a crossing it never saw happen -- once two
+    # sheets interpenetrate, the barrier repels them on the wrong side.
+    # Measured on the guarded film_cyl_disk: 4-11 of 99 groom cycles
+    # created transient edge-through-triangle crossings, one of which
+    # survived to the end.  So under a guard every groom is verified
+    # with the exact Moeller-Trumbore counter and reverted wholesale
+    # (V and T) if it added a crossing; the count is reported as
+    # info["grooms_reverted"].
+    def _groom_guarded(do_groom):
+        if guard is None:
+            do_groom()
+            return False
+        V_pre = V.copy()
+        T_pre = T.copy()
+        x_pre = _collide.crossing_count(V, T)
+        do_groom()
+        if _collide.crossing_count(V, T) > x_pre:
+            V[:] = V_pre
+            T[:] = T_pre
+            return True
+        return False
+
+    def _gE(Varr):
+        g0 = _guard[0]
+        return 0.0 if g0 is None else float(g0.energy(Varr))
+
+    def _gG(Varr):
+        g0 = _guard[0]
+        return 0.0 if g0 is None else g0.gradient(Varr)
+
+    def _gcap(Varr, dd, s):
+        g0 = _guard[0]
+        return s if g0 is None else min(s, float(g0.max_step(Varr, dd)))
+
     def _E_of(Varr, A):
-        return A if ext_energy is None else A + float(ext_energy(Varr))
+        E = A if ext_energy is None else A + float(ext_energy(Varr))
+        return E + _gE(Varr)
 
     t0 = time.perf_counter()
     if wall_list is not None:
         _wproject(V)                     # walls first, volumes second
     _restore(V)                          # start ON the constraint manifold
+    _guard_ensure(V)                     # so E_prev includes the barrier
     A_prev = mesh_area(V, T)
     E_prev = _E_of(V, A_prev)
 
@@ -515,6 +574,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             raise ValueError(f"unknown lbfgs_h0 {lbfgs_h0!r}")
         history = []
         grooms_run = 0
+        grooms_reverted = 0
         flat_streak = 0
         x_prev = None                    # previous restored state...
         gh_prev = None                   # ...and its projected gradient
@@ -522,17 +582,23 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         for it in range(1, iters + 1):
             groomed = False
             if groom_every and (it - 1) and (it - 1) % groom_every == 0:
-                _groom.groom(V, T, fixed=smooth_pin,
-                             smooth_lam=groom_smooth, tri_groups=groups)
-                if groom_hook is not None:
-                    groom_hook(V, T)
-                if wall_list is not None:
-                    _wproject(V)
-                _restore(V)
+                def _do_groom():
+                    _groom.groom(V, T, fixed=smooth_pin,
+                                 smooth_lam=groom_smooth,
+                                 tri_groups=groups)
+                    if groom_hook is not None:
+                        groom_hook(V, T)
+                    if wall_list is not None:
+                        _wproject(V)
+                    _restore(V)
+                if _groom_guarded(_do_groom):
+                    grooms_reverted += 1
                 grooms_run += 1
                 groomed = True
                 lb.reset()               # mesh changed: history invalid
                 x_prev = None
+            _guard_ensure(V)             # after grooming: flips + motion
+            if groomed:
                 A_prev = mesh_area(V, T)
                 E_prev = _E_of(V, A_prev)
             # raw area gradient from the cotan identity, sharing its
@@ -544,6 +610,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             np.add.at(g, Ew[:, 1], -contrib)
             if ext_grad is not None:
                 g = g + ext_grad(V)
+            g = g + _gG(V)
             g[~free] = 0.0
             if wall_list is not None:
                 _walls.tangent_all(g, V, wall_list)
@@ -582,7 +649,8 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             Lmean = float(np.mean(np.linalg.norm(
                 V[T[:, 1]] - V[T[:, 0]], axis=1)))
             dmax = float(np.max(np.linalg.norm(d, axis=1)))
-            s_max = lbfgs_step_cap * Lmean / max(dmax, 1e-300)
+            s_max = _gcap(V, d,
+                          lbfgs_step_cap * Lmean / max(dmax, 1e-300))
 
             def energy(x):
                 Vc = np.array(x, float)
@@ -602,7 +670,8 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
                 d = _project_dir(-(h0(gh.ravel()) if h0 is not None
                                    else gh.ravel().copy()))
                 dmax = float(np.max(np.linalg.norm(d, axis=1)))
-                s_max = lbfgs_step_cap * Lmean / max(dmax, 1e-300)
+                s_max = _gcap(V, d,
+                              lbfgs_step_cap * Lmean / max(dmax, 1e-300))
                 x1, s, E1, nev2 = _descent.parabola_line_search(
                     energy, V, d, min(1.0, s_max), s_max=s_max)
                 nev += nev2
@@ -649,6 +718,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         g = area_gradient(V, T, cotan_mode=cotan_mode)
         if ext_grad is not None:
             g = g + ext_grad(V)
+        g = g + _gG(V)
         grads = volume_gradients(V, T, labels, nb, free=free)
         if wall_list is not None:
             _gtangent(grads, V)
@@ -662,12 +732,14 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
             "iters_run": it, "area": mesh_area(V, T),
             "volumes": region_volumes(V, T, labels, nb),
             "targets": targets, "pressures": press,
-            "grooms_run": grooms_run, "history": history,
+            "grooms_run": grooms_run, "grooms_reverted": grooms_reverted,
+            "history": history,
             "lbfgs_skips": lb.skips, "lbfgs_resets": lb.resets,
         }
 
     history = []
     grooms_run = 0
+    grooms_reverted = 0
     s_prev = None
     lam = np.zeros(nb)
     flat_streak = 0
@@ -678,27 +750,33 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
     for it in range(1, iters + 1):
         groomed = False
         if groom_every and (it - 1) and (it - 1) % groom_every == 0:
-            _groom.groom(V, T, fixed=smooth_pin, smooth_lam=groom_smooth,
-                         tri_groups=groups)
-            if groom_hook is not None:
-                # caller-supplied groom-time maintenance (e.g. a film
-                # generator redistributing its free-boundary vertices
-                # ALONG the boundary curve, which the pinned-vertex
-                # groom deliberately leaves alone); runs before the
-                # wall projection + restore so its motion is cleaned
-                # up exactly like the groom's own
-                groom_hook(V, T)
-            if wall_list is not None:
-                _wproject(V)
-            _restore(V)
+            def _do_groom():
+                _groom.groom(V, T, fixed=smooth_pin,
+                             smooth_lam=groom_smooth, tri_groups=groups)
+                if groom_hook is not None:
+                    # caller-supplied groom-time maintenance (e.g. a
+                    # film generator redistributing its free-boundary
+                    # vertices ALONG the boundary curve, which the
+                    # pinned-vertex groom deliberately leaves alone);
+                    # runs before the wall projection + restore so its
+                    # motion is cleaned up exactly like the groom's own
+                    groom_hook(V, T)
+                if wall_list is not None:
+                    _wproject(V)
+                _restore(V)
+            if _groom_guarded(_do_groom):
+                grooms_reverted += 1
             grooms_run += 1
             groomed = True
             d_prev = None                # full CG restart on mesh change
+        _guard_ensure(V)                 # after grooming: flips + motion
+        if groomed:
             A_prev = mesh_area(V, T)
             E_prev = _E_of(V, A_prev)
         g = area_gradient(V, T, cotan_mode=cotan_mode)
         if ext_grad is not None:
             g = g + ext_grad(V)
+        g = g + _gG(V)
         if mobility == "star":
             M = 3.0 / np.maximum(vertex_star_areas(V, T), 1e-300)
         elif mobility == "none":
@@ -740,7 +818,7 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         Lmean = float(np.mean(np.linalg.norm(
             V[T[:, 1]] - V[T[:, 0]], axis=1)))
         dmax = float(np.max(np.linalg.norm(d, axis=1)))
-        s_max = 4.0 * Lmean / max(dmax, 1e-300)
+        s_max = _gcap(V, d, 4.0 * Lmean / max(dmax, 1e-300))
         if s_prev is None or not (0.0 < s_prev):
             s_prev = s_init_frac * Lmean / vmax
         s0 = min(s_prev, s_max)
@@ -813,7 +891,8 @@ def evolve(V, T, labels, targets=None, iters=200, fixed=None,
         "iters_run": it, "area": mesh_area(V, T),
         "volumes": region_volumes(V, T, labels, nb),
         "targets": targets, "pressures": press,
-        "grooms_run": grooms_run, "history": history,
+        "grooms_run": grooms_run, "grooms_reverted": grooms_reverted,
+        "history": history,
     }
 
 
@@ -1089,6 +1168,54 @@ def _selftest():
     print(f"volume: zero-body film (cylinder -> catenoid): area "
           f"{A0:.4f} -> {info['area']:.4f}, waist {waist:.4f}, "
           f"pressures empty, max rise {rise:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # --- collision guard wired through evolve: (a) a sheet pulled
+    # through another by an external force must be blocked (guarded:
+    # zero crossings, unguarded: it passes through); (b) on the
+    # catenoid film, which never approaches itself, the guard must be
+    # inert -- barrier energy exactly 0 at the end and the same
+    # equilibrium as the unguarded run ---------------------------------
+    def _pulled_sheets(use_guard):
+        Vs, Ts, top = _collide._two_sheet_mesh(gap=0.25, n=6)
+        labs = np.zeros((len(Ts), 2), dtype=np.int64)
+        fixs = ~top                               # bottom sheet held
+        rim = top & (np.abs(Vs[:, :2]).max(axis=1) > 1.0 - 1e-9)
+        fixs |= rim                               # top rim held
+        f = 0.6
+
+        def eE(Varr):
+            return f * float(np.sum(Varr[top & ~rim, 2]))
+
+        def eG(Varr):
+            G = np.zeros_like(Varr)
+            G[top & ~rim, 2] = f
+            return G
+
+        g = _collide.MeshGuard(dhat=0.05, kappa=1.0) if use_guard \
+            else None
+        evolve(Vs, Ts, labs, iters=60, fixed=fixs, ext_energy=eE,
+               ext_grad=eG, groom_every=0, guard=g)
+        return _collide.crossing_count(Vs, Ts)
+
+    xg = _pulled_sheets(True)
+    xu = _pulled_sheets(False)
+    good = xg == 0 and xu > 0
+    ok &= good
+    print(f"volume: evolve(guard=) blocks pull-through (guarded "
+          f"crossings {xg}, unguarded {xu}) {'OK' if good else 'FAIL'}")
+
+    Vf2 = np.array([[np.cos(t), np.sin(t), z] for z in zs for t in th])
+    gd = _collide.MeshGuard()
+    info_g = evolve(Vf2, Tf, labf, iters=100, fixed=fixf, guard=gd)
+    area_gap = abs(info_g["area"] - info["area"]) / info["area"]
+    Eb_end = float(gd.ensure(Vf2, Tf).energy(Vf2))
+    rise_g = max(hh["rise"] for hh in info_g["history"]
+                 if not hh["groomed"])
+    good = area_gap < 1e-3 and Eb_end == 0.0 and rise_g <= 1e-12
+    ok &= good
+    print(f"volume: guard inert on catenoid film (area gap "
+          f"{area_gap:.1e}, end barrier {Eb_end}, max rise {rise_g:.1e}) "
           f"{'OK' if good else 'FAIL'}")
 
     print("RESULT:", "OK" if ok else "FAIL")
