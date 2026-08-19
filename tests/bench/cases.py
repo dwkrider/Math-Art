@@ -295,7 +295,14 @@ def case_canonical(config):
     from math_art.polyhedra import canonical
     from math_art.polyhedra.conway import apply_conway
     mode = config.get("canonical_mode", "hart")
+    if mode not in ("hart", "bd", "ambo"):
+        raise ValueError(f"unknown canonical_mode {mode!r}")
     kwargs = dict(config.get("canonical_kwargs", {}))
+    # iteration CAP (solvers still stop at their own tolerance): 400 is
+    # the historical budget; canonical_iters raises it for methods
+    # whose per-iteration cost is far smaller (the ambo mode converges
+    # to machine precision in ~600-950 cheap iterations)
+    iters = int(config.get("canonical_iters", 400))
     per = {}
     total_t = 0.0
     for text in _CANON_SOLIDS:
@@ -303,17 +310,19 @@ def case_canonical(config):
         snaps = []
         if mode == "bd":
             fn = lambda V, F, **kw: canonical.canonicalize_bd(V, F, **kw)
+        elif mode == "ambo":
+            fn = canonical.canonicalize_ambo
         else:
             fn = canonical.canonicalize
         # timing run (no trace)
         t0 = _timer()
-        Vc = fn(V, F, iters=400, **kwargs)
+        Vc = fn(V, F, iters=iters, **kwargs)
         dt = _timer() - t0
         total_t += dt
         # trace run (same path, counts iterations via the opt-in hook)
         iters_used = None
         try:
-            fn(V, F, iters=400, trace=lambda it, P: snaps.append(it),
+            fn(V, F, iters=iters, trace=lambda it, P: snaps.append(it),
                **kwargs)
             iters_used = (snaps[-1] + 1) if snaps else 0
         except TypeError:
@@ -334,7 +343,9 @@ def case_canonical(config):
                        else None),
     }
     return {"metrics": agg, "per_solid": per, "trace": [],
-            "time_s": total_t}
+            "time_s": total_t,
+            "effective": {"canonical_mode": mode,
+                          "canonical_iters": iters}}
 
 
 def case_biscribe(config):
@@ -1486,6 +1497,16 @@ def case_planarize(config):
         sub = nz[:3]
     X0 = vec[:, sub].copy()
     kwargs = dict(config.get("planarize_kwargs", {}))
+    import inspect
+    sig = inspect.signature(re_mod.planarize)
+    unknown = [k for k in kwargs if k not in sig.parameters]
+    if unknown:
+        raise ValueError(f"planarize_kwargs not accepted by planarize: "
+                         f"{unknown}")
+    if "mode" in sig.parameters:
+        eff_mode = kwargs.get("mode", sig.parameters["mode"].default)
+    else:
+        eff_mode = "svd"                 # historical single-path build
     total = int(config.get("planarize_iters", 500))
     chunk = 50
     trace = [{"iter": 0, "t": 0.0, "E": re_mod.planar_dev(X0, F)}]
@@ -1504,7 +1525,7 @@ def case_planarize(config):
         "map": name,
     }
     return {"metrics": mets, "trace": trace, "time_s": trace[-1]["t"],
-            "n_verts": Vn}
+            "n_verts": Vn, "effective": {"mode": eff_mode}}
 
 
 # --------------------------------------------------------------------------
@@ -1806,6 +1827,7 @@ KNOWN_CONFIG_KEYS = {
     "cmc_kwargs",
     "tp_kwargs", "tp_iters",
     "tpl_kwargs", "tpl_iters",
+    "canonical_iters",
 }
 
 CASES = {
