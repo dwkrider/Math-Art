@@ -17,6 +17,69 @@ fails = []
 assert hasattr(bpy.types, 'VIEW3D_MT_math_art_add'), "unified menu missing"
 print("[menu] VIEW3D_MT_math_art_add registered OK")
 
+
+# --------------------------------------------------------------------
+# Menu coverage: every operator this add-on registers has to be
+# reachable from the Add menu, or be listed below as deliberately not.
+#
+# A generator whose operator registers but has no menu entry is
+# invisible: it works from the search bar and nowhere else, and nothing
+# else in the suite notices.  That is how curve.tight_link_add shipped
+# unreachable.  Adding a generator therefore means adding an entry to
+# math_art/menu_defs.py, and this check is what says so out loud.
+#
+# Icons are NOT gated here on purpose: a menu entry with no baked PNG
+# falls back to its built-in glyph by design, and `blender --background
+# --factory-startup --python tools/bake_menu_icons.py` picks up whatever
+# is missing whenever someone gets round to it.
+# --------------------------------------------------------------------
+PANEL_ONLY = {
+    # Reached from the minimal-surface toolkit's own N-panel, which is
+    # where its parameters live; a bare Add-menu entry would have no
+    # surface to act on.
+    "mesh.tpms_add": "toolkit N-panel",
+    # Relaxes an existing Seifert surface, so it belongs beside that
+    # surface's controls rather than in a list of things to add.
+    "mesh.seifert_minimize": "acts on an existing Seifert surface",
+}
+
+
+def _registered_ops():
+    """Operator ids this add-on registered, as 'mesh.foo_add'."""
+    out = set()
+    for prefix, mod in (("MESH_OT_", "mesh"), ("CURVE_OT_", "curve"),
+                        ("OBJECT_OT_", "object")):
+        for name in dir(bpy.types):
+            if not name.startswith(prefix):
+                continue
+            cls = getattr(bpy.types, name, None)
+            owner = getattr(cls, '__module__', '') or ''
+            # installed as an extension the package is bl_ext.<repo>.math_art
+            if 'math_art' in owner:
+                out.add(f"{mod}.{name[len(prefix):]}")
+    return out
+
+
+_listed = set(math_art.menu_defs.unique_ops())
+_listed.add(math_art.ROOT_ICON_OP)          # borrowed by the Add-menu link
+_listed.add("object.symmetric_sculpture_add")   # drawn by the root menu
+_unreachable = sorted(_registered_ops() - _listed - set(PANEL_ONLY))
+if _unreachable:
+    for _op in _unreachable:
+        print(f"[menu coverage] FAIL {_op} registers but is in no menu")
+    print("    Add an entry for it to math_art/menu_defs.py, or list it "
+          "in PANEL_ONLY above with the reason it is not in a menu.")
+    fails.append(f"menu coverage: {_unreachable}")
+else:
+    print(f"[menu coverage] OK ({len(_listed)} listed, "
+          f"{len(PANEL_ONLY)} deliberately panel-only)")
+
+# A stale PANEL_ONLY entry is a smaller problem but still a lie in the
+# source, so say so without failing the run.
+for _op in sorted(set(PANEL_ONLY) - _registered_ops()):
+    print(f"[menu coverage] NOTE PANEL_ONLY lists {_op}, which no longer "
+          f"registers -- drop it")
+
 OPS = [
     ("scherk", lambda: bpy.ops.mesh.scherk_collins_add(preset='TREFOIL')),
     ("scherk demo preset",
