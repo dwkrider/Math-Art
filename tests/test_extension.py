@@ -41,6 +41,11 @@ PANEL_ONLY = {
     # Relaxes an existing Seifert surface, so it belongs beside that
     # surface's controls rather than in a list of things to add.
     "mesh.seifert_minimize": "acts on an existing Seifert surface",
+    # The ASET rig and photo studio are chosen per-stone from the gem
+    # operator's own selector (redo panel) rather than added on their own:
+    # each builds a lighting/camera rig around an existing gem, not a mesh.
+    "mesh.gem_aset_rig_add": "per-stone selector on the gem, not a menu add",
+    "mesh.gem_studio_add": "per-stone selector on the gem, not a menu add",
 }
 
 
