@@ -25,6 +25,10 @@
 #            projection, damped Newton volume restore, and the `evolve`
 #            driver composing all of the above (Evolver fixvol scheme +
 #            LosTopos labels).
+#   willmore Willmore / spontaneous-curvature bending energy with its
+#            exact discrete gradient (area-Hessian first variation) and
+#            a constrained L-BFGS minimizer (fixed volume/area) -- the
+#            S6.4 generator-grade curvature energy.
 #   walls    level-set wall constraints (Evolver cnstrnt scheme):
 #            analytic plane/sphere/cylinder + general-callable walls,
 #            vectorized Newton position projection, velocity tangent
@@ -40,3 +44,4 @@ from . import descent  # noqa: F401
 from . import groom  # noqa: F401
 from . import volume  # noqa: F401
 from . import walls  # noqa: F401
+from . import willmore  # noqa: F401
