@@ -238,6 +238,8 @@ OPS = [
         kind='MOORE3D', order=3)),
     ("oloid", lambda: bpy.ops.mesh.oloid_add(kind='OLOID')),
     ("oloid roller", lambda: bpy.ops.mesh.oloid_add(kind='ROLLER')),
+    ("gem", lambda: bpy.ops.mesh.gem_add()),
+    ("gem cabochon", lambda: bpy.ops.mesh.gem_cabochon_add()),
     ("orbis", lambda: bpy.ops.mesh.orbis_add()),
     ("polytwister", lambda: bpy.ops.mesh.polytwister_add()),
     ("hopf torus", lambda: bpy.ops.mesh.hopf_torus_add()),

@@ -157,6 +157,63 @@ if _IN_BLENDER:
         for w in info.get("warnings", []):
             op.report({'WARNING'}, w)
 
+
+
+    RIG_ITEMS = (
+        ('CUSTOM', "Custom",
+         "Leave the scene's lighting, world and camera exactly as they are"),
+        ('STUDIO', "Gem Studio",
+         "Sky, a small bright key for fire and a broad fill for brilliance"),
+        ('ASET', "ASET Rig",
+         "The AGS three-zone hemisphere: where the returned light came "
+         "from. Needs Cycles -- the dome is emissive geometry"),
+    )
+
+    def _apply_rig(context, kind):
+        """Show one rig and hide the others, building it if it is absent.
+
+        Rigs are found by a `gem_rig` tag rather than by name, so a user
+        who renames or duplicates one keeps working.  Switching HIDES the
+        rig it replaces rather than deleting it: a rig may have been
+        adjusted -- the key moved, the dome resized -- and throwing that
+        away because someone looked at the other view would be rude.
+        `CUSTOM` hides every rig and touches nothing else, which is what
+        makes it safe as the default on an operator that re-runs on every
+        redo.
+        """
+        for o in bpy.data.objects:
+            tag = o.get("gem_rig")
+            if tag:
+                o.hide_viewport = o.hide_render = (tag != kind)
+        if kind == 'CUSTOM':
+            return
+        if not any(o.get("gem_rig") == kind for o in bpy.data.objects):
+            if kind == 'STUDIO':
+                bpy.ops.mesh.gem_studio_add()
+            else:
+                bpy.ops.mesh.gem_aset_rig_add()
+        # point the camera and the world at the rig now in force
+        for o in bpy.data.objects:
+            if o.type == 'CAMERA' and o.get("gem_rig") == kind:
+                context.scene.camera = o
+        if kind == 'ASET':
+            # the dome IS the light; a lit world would wash its zones out
+            w = bpy.data.worlds.get("ASET World")
+            if w is None:
+                w = bpy.data.worlds.new("ASET World")
+                w["gem_rig"] = 'ASET'
+                w.use_nodes = True
+                for n in w.node_tree.nodes:
+                    if n.type == 'BACKGROUND':
+                        n.inputs['Color'].default_value = (0, 0, 0, 1)
+                        n.inputs['Strength'].default_value = 0.0
+            context.scene.world = w
+        else:
+            w = next((x for x in bpy.data.worlds
+                      if x.get("gem_rig") == 'STUDIO'), None)
+            if w is not None:
+                context.scene.world = w
+
     class MESH_OT_gem_add(bpy.types.Operator):
         """Add a faceted gemstone cut from its facet planes"""
         bl_idname = "mesh.gem_add"
@@ -170,6 +227,11 @@ if _IN_BLENDER:
             # family and then alphabetically, so adding a cut would
             # otherwise move the default out from under the user.
             default='ROUND_BRILLIANT')
+        rig: EnumProperty(
+            name="Viewing Rig", items=RIG_ITEMS, default='CUSTOM',
+            description="Lighting to build around the stone. Custom leaves "
+                        "the scene alone; the others hide whichever rig "
+                        "they replace rather than deleting it")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
         # Soft ranges span the IDC grading table end to end, so the slider
         # itself shows how much room the trade recognises; the defaults sit
@@ -319,6 +381,10 @@ if _IN_BLENDER:
                     pr, self.size_mm, sg)
             if gr:
                 obj["gem_idc_grade"] = gr["overall"]
+            try:
+                _apply_rig(context, self.rig)
+            except Exception as e:      # never lose the stone over a rig
+                self.report({'WARNING'}, f"rig not applied: {e}")
             _report(self, D, info, obj.data, self.size_mm, sg)
             return {'FINISHED'}
 
@@ -345,6 +411,7 @@ if _IN_BLENDER:
             # deliberately NOT recomputed here: draw() runs on every
             # redraw, and grading means intersecting the half-spaces again.
             lay.separator()
+            lay.prop(self, 'rig')
             lay.prop(self, 'material')
             lay.prop(self, 'assign_material')
             if self.assign_material:
@@ -571,6 +638,7 @@ if _IN_BLENDER:
             obj = bpy.data.objects.new("ASET Dome", me)
             context.collection.objects.link(obj)
             obj.visible_camera = False     # light the stone, do not film it
+            obj["gem_rig"] = 'ASET'
 
             if self.add_camera:
                 cam = bpy.data.cameras.new("ASET Camera")
@@ -579,6 +647,7 @@ if _IN_BLENDER:
                 co = bpy.data.objects.new("ASET Camera", cam)
                 co.location = (0.0, 0.0, self.radius * 0.9)
                 context.collection.objects.link(co)
+                co["gem_rig"] = 'ASET'
                 context.scene.camera = co
             if self.use_cycles and context.scene.render.engine != 'CYCLES':
                 context.scene.render.engine = 'CYCLES'
@@ -625,6 +694,7 @@ if _IN_BLENDER:
                 context.scene.collection.children.link(coll)
 
             w = bpy.data.worlds.new("Gem Studio World")
+            w["gem_rig"] = 'STUDIO'
             context.scene.world = w
             w.use_nodes = True
             nt = w.node_tree
@@ -650,6 +720,7 @@ if _IN_BLENDER:
             key.size = self.key_size
             ko = bpy.data.objects.new("Gem Key", key)
             coll.objects.link(ko)
+            ko["gem_rig"] = 'STUDIO'
             ko.location = (3.2, -2.4, 4.2)
             ko.rotation_euler = (0.62, 0.32, 0.72)
 
@@ -659,6 +730,7 @@ if _IN_BLENDER:
                 fill.size = 4.0
                 fo = bpy.data.objects.new("Gem Fill", fill)
                 coll.objects.link(fo)
+                fo["gem_rig"] = 'STUDIO'
                 fo.location = (-3.5, 2.0, 2.0)
                 fo.rotation_euler = (-0.7, -0.4, -0.9)
 
@@ -667,6 +739,7 @@ if _IN_BLENDER:
                 cam.lens = 70.0
                 co = bpy.data.objects.new("Gem Camera", cam)
                 coll.objects.link(co)
+                co["gem_rig"] = 'STUDIO'
                 co.location = (0.0, -4.6, 3.4)
                 co.rotation_euler = (_m.radians(52.0), 0.0, 0.0)
                 context.scene.camera = co
@@ -715,6 +788,10 @@ if _IN_BLENDER:
         assign_material: BoolProperty(name="Assign Material", default=True)
         size_mm: FloatProperty(name="Size (mm)", default=8.0, min=0.1,
                                max=100.0)
+        rig: EnumProperty(
+            name="Viewing Rig", items=RIG_ITEMS, default='CUSTOM',
+            description="Lighting to build around the stone. Custom leaves "
+                        "the scene alone")
 
         def execute(self, context):
             cab = gem_curved.get(self.preset)
@@ -755,6 +832,10 @@ if _IN_BLENDER:
                         self.material, size_mm=self.size_mm, bands=3))
                 except Exception as e:
                     self.report({'WARNING'}, f"material not assigned: {e}")
+            try:
+                _apply_rig(context, self.rig)
+            except Exception as e:
+                self.report({'WARNING'}, f"rig not applied: {e}")
             self.report({'INFO'},
                         f"{cab.name}: {len(me.vertices)} vertices, "
                         f"{len(me.polygons)} faces, dome "
