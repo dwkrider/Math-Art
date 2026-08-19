@@ -203,6 +203,13 @@ def untangle_maps(slow=False):
         print(f"  {name}: {cr0} -> {crb} crossings "
               f"(pd={rowsout[-1][4]:.1e}, asp={rowsout[-1][5]:.3f}, "
               f"{dt:.0f}s)")
+        slug = ("".join(ch if ch.isalnum() else "_"
+                        for ch in name)).strip("_").lower()
+        with open(os.path.join(RESULTS,
+                               f"c2f_untangle_{slug}.json"), "w") as f:
+            json.dump({"map": name, "crossings": crb,
+                       "V": [[float(v) for v in p] for p in Xb],
+                       "F": F}, f)
     path = os.path.join(RESULTS, "c2f_untangle_maps.md")
     with open(path, "w") as f:
         f.write("# High-genus embedder: crossings, planarize alone vs "
