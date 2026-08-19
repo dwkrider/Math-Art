@@ -306,9 +306,21 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
 _MENUS = _SUBMENUS + _GALLERIES + (VIEW3D_MT_math_art_add,)
 
 
+# The "Math Art" line in Blender's own Add menu borrows a baked render
+# rather than a built-in glyph, so the add-on is recognisable before any
+# of its submenus are open.  The Polyhedral Tangle reads well at the
+# ~20 px an Add-menu row gives it: dense, symmetric, and unmistakably
+# not one of Blender's primitives.  MATSHADERBALL is the fallback for an
+# un-baked build.
+ROOT_ICON_OP = "mesh.tangle_add"
+ROOT_ICON_FALLBACK = 'MATSHADERBALL'
+
+
 def _menu_func(self, context):
     self.layout.separator()
-    self.layout.menu("VIEW3D_MT_math_art_add", icon='MATSHADERBALL')
+    self.layout.menu("VIEW3D_MT_math_art_add",
+                     **menu_icons.op_icon_kwargs(ROOT_ICON_OP,
+                                                 ROOT_ICON_FALLBACK))
 
 
 _ACTIVE = []
