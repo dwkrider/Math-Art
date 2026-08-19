@@ -1792,6 +1792,214 @@ def case_tp_scale(config):
                           "iters_agreement": 80}}
 
 
+# --------------------------------------------------------------------------
+# S6 fairing stack: bi-harmonic / cMCF fairing A-vs-MCF, Willmore energy
+# --------------------------------------------------------------------------
+
+def _fair_prepped_mesh(word="AAA"):
+    """The exact mesh case_seifert_fair fairs, so the three fairing
+    modes' metrics are directly comparable across cases."""
+    from math_art.seifert.build import seifert_surface
+    from math_art.seifert.relax import relax
+    from math_art.seifert.subdivide import catmull_clark
+    mesh = seifert_surface(word)
+    genus0 = mesh.info().genus
+    mesh = relax(mesh, iterations=100)
+    mesh = catmull_clark(mesh, 2)
+    return mesh, genus0
+
+
+def _fair_metrics(mesh_before, faired, genus0, t_fair):
+    tri = faired.triangulated()
+    T = np.asarray(tri.faces, dtype=np.int64)
+    V = tri.vertices
+    boundary = np.zeros(len(V), dtype=bool)
+    bidx = [v for loop in faired.boundary_loops() for v in loop]
+    boundary[bidx] = True
+    mets = {
+        "area_before_fair": mesh_before.area(),
+        "area": faired.area(),
+        "area_shrink_frac": 1.0 - faired.area()
+        / max(mesh_before.area(), 1e-30),
+        "genus_preserved": int(faired.info().genus == genus0),
+        "rim_max_move": M.max_move(mesh_before.vertices,
+                                   faired.vertices, boundary),
+        "interior_mean_move": M.mean_move(mesh_before.vertices,
+                                          faired.vertices, ~boundary),
+        "selfx": M.selfx_count(V, T),
+        "time_fair_s": t_fair,
+    }
+    mets.update(M.mean_curvature_residual(V, T, free=~boundary))
+    mets.update(M.tri_quality(V, T))
+    return mets, len(V), len(T)
+
+
+def case_fair_biharm(config):
+    """Botsch-Kobbelt k=2 pinned-rim fairing on the seifert_fair mesh:
+    the shrink-free alternative to the MCF fairing that case (baseline
+    config) measures.  Compare area_shrink_frac / rim_max_move /
+    interior_mean_move across the two cases."""
+    from math_art.seifert import fair
+    kwargs = dict(config.get("fair2_kwargs", {}))
+    mesh, genus0 = _fair_prepped_mesh()
+    t0 = _timer()
+    faired = fair.biharmonic_fair(mesh, **kwargs)
+    t_fair = _timer() - t0
+    mets, nv, nt = _fair_metrics(mesh, faired, genus0, t_fair)
+    return {"metrics": mets, "trace": [], "time_s": t_fair,
+            "n_verts": nv, "n_tris": nt,
+            "effective": {"fair2_kwargs": kwargs}}
+
+
+def case_fair_cmcf(config):
+    """Conformalized-MCF fairing (frozen Laplacian) on the same mesh,
+    at the same strength/iteration budget as the MCF baseline."""
+    from math_art.seifert import fair
+    kwargs = dict(config.get("fair2_kwargs", {}))
+    kwargs.setdefault("strength", 2.0)
+    kwargs.setdefault("iterations", 10)
+    mesh, genus0 = _fair_prepped_mesh()
+    t0 = _timer()
+    faired = fair.cmcf_fair(mesh, **kwargs)
+    t_fair = _timer() - t0
+    mets, nv, nt = _fair_metrics(mesh, faired, genus0, t_fair)
+    return {"metrics": mets, "trace": [], "time_s": t_fair,
+            "n_verts": nv, "n_tris": nt,
+            "effective": {"fair2_kwargs": kwargs}}
+
+
+def case_willmore_clifford(config):
+    """The Marques-Neves ground truth: a 48x24 torus of revolution at
+    ratio 3 flows to the Willmore minimizer.  Exact targets: aspect
+    ratio sqrt(2), energy 2 pi^2 (up to the measured discretization
+    offset of the star energy at this resolution)."""
+    from math_art.solver import willmore as W
+    kwargs = dict(config.get("willmore_kwargs", {}))
+    kwargs.setdefault("iters", 600)
+    kwargs.setdefault("groom_every", 10)
+    kwargs.setdefault("step_cap", 0.5)
+    V, T = W.torus_mesh(48, 24, R=3.0, r=1.0)
+    T = T.copy()
+    E_start = W.willmore_energy(V, T)
+    t0 = _timer()
+    info = W.minimize_willmore(V, T, **kwargs)
+    dt = _timer() - t0
+    R, rm, rcv, ratio = W.fit_torus_of_revolution(V)
+    twopi2 = 2.0 * math.pi * math.pi
+    mets = {
+        "E_start": E_start,
+        "E_final": info["E"],
+        "E_abs_rel_err": abs(info["E"] - twopi2) / twopi2,
+        "clifford_ratio": ratio,
+        "ratio_rel_err": abs(ratio - math.sqrt(2.0)) / math.sqrt(2.0),
+        "tube_cv": rcv,
+        "rise_max": info["rise_max"],
+        "iters": info["iters_run"],
+        "grooms_run": info["grooms_run"],
+        "selfx": M.selfx_count(V, T),
+    }
+    mets.update(M.tri_quality(V, T))
+    return {"metrics": mets, "trace": [], "time_s": dt,
+            "n_verts": len(V), "n_tris": len(T),
+            "effective": {"willmore_kwargs": kwargs}}
+
+
+def case_willmore_invariance(config):
+    """No flow -- the energy itself against its exact invariants:
+    sphere -> 4 pi and torus -> pi^2 t^2/sqrt(t^2-1) under refinement,
+    Mobius (sphere-inversion) invariance residual at two resolutions,
+    and the analytic gradient against central differences for both
+    variants and both h0 = 0 / h0 != 0."""
+    from math_art.solver import willmore as W
+    from math_art.surfaces.primitives import icosphere
+    t0 = _timer()
+    fourpi = 4.0 * math.pi
+    mets = {}
+    for sub in (3, 4):
+        SV, SF = icosphere(sub, 'per_level')
+        SV = np.asarray(SV, float)
+        SF = np.asarray(SF, np.int64)
+        mets[f"sphere_rel_err_sub{sub}"] = abs(
+            W.willmore_energy(SV, SF) - fourpi) / fourpi
+    Ean = W.torus_willmore_analytic(3.0)
+    for (nu, nv) in ((32, 16), (64, 32)):
+        Vt, Tt = W.torus_mesh(nu, nv, R=3.0, r=1.0)
+        mets[f"torus_rel_err_{nu}"] = abs(
+            W.willmore_energy(Vt, Tt) - Ean) / Ean
+    for (nu, nv) in ((32, 16), (64, 32)):
+        Vt, Tt = W.torus_mesh(nu, nv, R=2.0, r=1.0)
+        E1 = W.willmore_energy(Vt, Tt)
+        Vm = W.mobius_invert(Vt, center=[4.5, 0.0, 0.0], radius=2.0)
+        mets[f"mobius_resid_{nu}"] = abs(
+            W.willmore_energy(Vm, Tt) - E1) / E1
+    rng = np.random.default_rng(5)
+    SV, SF = icosphere(1, 'per_level')
+    Vh = np.asarray(SV, float) + 0.05 * rng.normal(
+        size=np.asarray(SV).shape)
+    SF = np.asarray(SF, np.int64)
+    worst = 0.0
+    for variant in ("star", "perp"):
+        for h0 in (0.0, 1.3):
+            _E, grad = W.willmore_gradient(Vh, SF, h0, variant)
+            d = rng.normal(size=Vh.shape)
+            d /= float(np.max(np.abs(d)))
+            h = 3e-6
+            fd = (W.willmore_energy(Vh + h * d, SF, h0, variant)
+                  - W.willmore_energy(Vh - h * d, SF, h0, variant)) \
+                / (2.0 * h)
+            an = float(np.sum(grad * d))
+            worst = max(worst, abs(fd - an) / max(abs(fd), 1e-300))
+    mets["grad_fd_err"] = worst
+    return {"metrics": mets, "trace": [], "time_s": _timer() - t0}
+
+
+def case_willmore_vesicle(config):
+    """Helfrich vesicle at reduced volume 0.60 (firmly on the
+    discocyte branch), fixed area + volume, icosphere subdiv 3:
+    E > 4 pi strictly, constraints at solver tolerance, oblate with
+    dimples."""
+    from math_art.solver import willmore as W
+    from math_art.solver import volume as SVOL
+    from math_art.surfaces.primitives import icosphere
+    kwargs = dict(config.get("willmore_kwargs", {}))
+    kwargs.setdefault("iters", 400)
+    kwargs.setdefault("groom_every", 10)
+    kwargs.setdefault("step_cap", 0.5)
+    SV, SF = icosphere(3, 'per_level')
+    SV = np.asarray(SV, float)
+    SF = np.asarray(SF, np.int64)
+    lab = np.zeros((len(SF), 2), dtype=np.int64)
+    lab[:, 1] = 1
+    area0 = SVOL.mesh_area(SV, SF)
+    vol0 = float(SVOL.region_volumes(SV, SF, lab, 1)[0])
+    red = 0.60
+    V = SV * np.array([1.0, 1.0, red])
+    T = SF.copy()
+    t0 = _timer()
+    info = W.minimize_willmore(V, T, vol_target=red * vol0,
+                               area_target=area0, **kwargs)
+    dt = _timer() - t0
+    ext = V.max(axis=0) - V.min(axis=0)
+    rho = np.hypot(V[:, 0] - V[:, 0].mean(), V[:, 1] - V[:, 1].mean())
+    zc = V[:, 2] - V[:, 2].mean()
+    axis_pts = rho < 0.15 * ext[0]
+    mets = {
+        "E_final": info["E"],
+        "E_over_sphere": info["E"] / (4.0 * math.pi),
+        "z_over_x": float(ext[2] / ext[0]),
+        "dimple": (float(zc[axis_pts].max()) / float(zc.max())
+                   if axis_pts.any() else 1.0),
+        "rise_max": info["rise_max"],
+        "vol_drift_max": info["drift_max"],
+        "iters": info["iters_run"],
+        "selfx": M.selfx_count(V, T),
+    }
+    mets.update(M.tri_quality(V, T))
+    return {"metrics": mets, "trace": [], "time_s": dt,
+            "n_verts": len(V), "n_tris": len(T),
+            "effective": {"willmore_kwargs": kwargs}}
+
+
 # Every config key any case reads.  run.py rejects a config containing
 # anything else, so a typo cannot silently benchmark a null change.
 # (Keys irrelevant to a given case are legitimately ignored by that
@@ -1806,6 +2014,8 @@ KNOWN_CONFIG_KEYS = {
     "cmc_kwargs",
     "tp_kwargs", "tp_iters",
     "tpl_kwargs", "tpl_iters",
+    "fair2_kwargs",
+    "willmore_kwargs",
 }
 
 CASES = {
@@ -1859,4 +2069,9 @@ CASES = {
     "tp_borromean": case_tp_borromean,
     "tp_chain3": case_tp_chain3,
     "tp_scale": case_tp_scale,
+    "fair_biharm": case_fair_biharm,
+    "fair_cmcf": case_fair_cmcf,
+    "willmore_clifford": case_willmore_clifford,
+    "willmore_invariance": case_willmore_invariance,
+    "willmore_vesicle": case_willmore_vesicle,
 }

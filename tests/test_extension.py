@@ -527,6 +527,12 @@ OPS = [
         seed='ICOSA', separate=False, color=True, subdiv=1)),
     ("relaxed bubble", lambda: bpy.ops.mesh.relaxed_bubble_add()),
     ("cmc capillary", lambda: bpy.ops.mesh.cmc_capillary_add()),
+    ("willmore torus", lambda: bpy.ops.mesh.willmore_add(
+        mode='TORUS', resolution=24, iterations=150)),
+    ("willmore vesicle", lambda: bpy.ops.mesh.willmore_add(
+        mode='VESICLE', subdiv=2, reduced_volume=0.6, iterations=100)),
+    ("willmore ring", lambda: bpy.ops.mesh.willmore_add(
+        mode='RING', resolution=24, h0=1.0, iterations=100)),
     ("dform", lambda: bpy.ops.mesh.dform_add()),
     ("dform anti", lambda: bpy.ops.mesh.dform_add(mode='ANTI')),
     ("dform truncate", lambda: bpy.ops.mesh.dform_add(mode='TRUNCATE')),
