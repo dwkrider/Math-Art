@@ -5,7 +5,9 @@
 Add a wallpaper-group pattern (flat colored motif, chosen
 by orbifold signature).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **wallpaper group** is the symmetry group of a pattern that repeats by translation in two independent directions. There are exactly **17** of them in the Euclidean plane — a classification proved by Fedorov in 1891 and rediscovered by Pólya and Niggli in 1924, and one of the more surprising finiteness results in elementary geometry: however elaborate a repeating pattern looks, its symmetry is one of seventeen.
+
+Groups are chosen here by their **Conway–Thurston orbifold signature** rather than the crystallographers' IUC names, because the signature is not merely a label — it is computable. The same grammar names the spherical point groups and the hyperbolic tilings, and a single arithmetic rule decides which of the three geometries a signature belongs to. That is why the sibling generators for [orbifold spheres](orbifold_sphere.md) and [hyperbolic tilings](hyperbolic_tiling.md) speak the same language.
 
 ## Options
 
@@ -63,7 +65,26 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The signature.** An orbifold signature is a short string built from four symbols: a digit $n$ for an order-$n$ gyration point, `*` for a mirror boundary, `x` for a glide cross, and `o` for a torus handle. So `632` is the group with 6-, 3- and 2-fold rotation centres and no reflections (p6), while `*632` adds mirrors through them (p6m).
+
+**The magic theorem.** Conway assigns each feature a *cost*:
+
+$$\texttt{o}\to 2,\qquad \texttt{*},\ \texttt{x}\to 1,\qquad
+n \to \frac{n-1}{n},\qquad n \text{ after a } \texttt{*} \to \frac{n-1}{2n}$$
+
+and the total decides the geometry:
+
+$$\sum \text{cost} \;\begin{cases} <2 & \text{spherical (a finite point group)}\\\\ =2 & \text{Euclidean (a wallpaper group)}\\\\ >2 & \text{hyperbolic}\end{cases}$$
+
+The 17 wallpaper groups are precisely the signatures costing exactly 2. Check `632`: $\tfrac56+\tfrac23+\tfrac12 = 2$. Check `*632`: $1+\tfrac5{12}+\tfrac13+\tfrac14 = 2$. The two costs for a digit are why a rotation centre "cheapens" by half once it lies on a mirror — it becomes a corner reflector, and only half of it is new.
+
+**Building the pattern.** As with the [frieze groups](frieze.md), the translation lattice is infinite but the quotient by it is finite, so each group is stored as lattice vectors $b_1,b_2$ plus one coset representative per element of the point group. The block of $N_x\times N_y$ cells is
+
+$$P=\bigcup_{u=0}^{N_x-1}\ \bigcup_{v=0}^{N_y-1}\ \bigcup_{j} T(u\,b_1+v\,b_2)\;g_j\,(\text{motif}).$$
+
+Two subtleties live in that table. The lattice is not always square: `*x` (cm) uses the **centred rhombic** lattice $b_1=(1,1)$, $b_2=(1,-1)$, because the centring translation is what supplies the glide parallel to its mirror. And several groups need their mirrors *off* the rotation centres — `22*` (pmg) places its vertical mirrors at $x=\tfrac14$. Get either wrong and the pattern still renders; it simply is not that group. The engine therefore self-tests **closure** — composing any two representatives must land back in the group modulo the lattice — for all 17 signatures, which is a test of the mathematics rather than of the picture.
+
+**Reading the symmetry.** A motif with its own symmetry hides the group, so the supplied motifs are chiral. Colouring by *unit* gives each point-group copy a distinct colour repeated identically in every cell, so the repeat unit reads at a glance; colouring by *handedness* separates direct isometries from mirrored ones, which is what makes reflections and glides visible.
 
 ## References
 

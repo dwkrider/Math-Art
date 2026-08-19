@@ -4,7 +4,9 @@
 
 Add a 2-uniform Euclidean tiling.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **2-uniform tiling** covers the plane edge-to-edge with regular polygons, but its vertices fall into exactly **two** transitivity classes instead of one — a single step less regular than the 11 [uniform tilings](tiling.md). There are 20 of them, enumerated by Krötenheerdt in 1969.
+
+They occupy an appealing middle ground: regular enough to look deliberate, irregular enough to be surprising. Many of the handsomest are *layered* — periodic stacks of two 1-uniform strips, such as a row of squares alternating with a double band of triangles — and those layered families are what this generator builds.
 
 ## Options
 
@@ -42,7 +44,21 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**What "$k$-uniform" counts.** Every vertex of an edge-to-edge tiling by regular polygons still satisfies the angle condition
+
+$$\sum_i \frac{n_i-2}{n_i}=2,$$
+
+so each individual vertex is one of the 21 admissible configurations. What changes with $k$ is how many *orbits* the symmetry group has on the vertices. A 1-uniform tiling has one — the group carries any vertex to any other. A 2-uniform tiling has two: there are genuinely two kinds of place to stand, and no symmetry of the pattern maps one to the other. Note this is a statement about the symmetry group, not about appearance: two vertices may share the same configuration and still lie in different orbits.
+
+**Layered cells.** The tilings built here are constructed as periodic stacks of 1-uniform strips. Take a row of squares ($4^4$ locally) and a double band of triangles ($3^6$ locally); each band alone is uniform, but stacking them alternately makes the vertices along the seam inequivalent to those inside a band, and the result is 2-uniform. Each tiling is stored as a translational unit cell — lattice vectors $b_1,b_2$ and a list of unit-edge regular polygons — replicated as
+
+$$P=\bigcup_{i,j} T(i\,b_1+j\,b_2)\,(\text{cell tiles}).$$
+
+The lattice vectors follow from the strip heights: a triangle band of unit edge contributes $\sqrt3/2$ per row, a square band contributes 1, so a cell stacking one square row on two triangle rows has $b_2=(0,\,1+\sqrt3)$ — with the horizontal offset chosen so the seams register.
+
+**Coverage, not appearance, is the test.** A unit cell derived by hand can look right and still leave a sliver uncovered or overlap at a seam, and at a glance neither is visible. Each cell is therefore coverage-verified by sampling: a $35\times35$ grid of points across the patch, each nudged by a small irrational offset so no sample lands exactly on an edge, must lie in **exactly one** tile. A point in none is a gap; a point in two or more is an overlap; both count as defects and both must be zero.
+
+A second check counts the distinct interior vertex figures — the canonicalised cyclic sequence of side counts around each vertex. A genuine 2-uniform tiling has exactly two. Together these test the tiling rather than the picture, which is what a hand-derived cell needs.
 
 ## References
 

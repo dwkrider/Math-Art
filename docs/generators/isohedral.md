@@ -4,7 +4,9 @@
 
 Add an isohedral (Escher-style) tiling.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A tiling is **isohedral** when its symmetry group acts transitively on the tiles: every tile is equivalent to every other under a symmetry of the pattern, so the whole plane is one tile repeated. Grünbaum and Shephard classified these into 81 types, IH1–IH81; this generator implements a curated, coverage-verified selection spanning the principal wallpaper symmetries.
+
+The interesting control is **edge deformation**. A prototile's boundary edges come in matched pairs related by a group isometry, and if both edges of a pair carry the same profile, the deformed tile still tiles the plane with no gaps. That is precisely the mechanism behind M. C. Escher's interlocking lizards, birds and fish — the tile can be bent into almost any silhouette and will still interlock, because the deformation is applied to the symmetry, not to the shape.
 
 ## Options
 
@@ -56,7 +58,17 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The prototile is a fundamental domain.** Each isohedral type starts from one polygon that is a fundamental domain of a wallpaper group $G$: the plane is covered by $\{g(P) : g \in G\}$, each point landing in exactly one image. Because $G$ is transitive on those images, every tile is the same tile.
+
+**Matched edges.** The tile's boundary decomposes into edges that come in pairs. If edge $e$ is carried to edge $e'$ by the group element $g$, then $e'=g(e)$, and the two are shared with the same neighbour from opposite sides. Deform $e$ by any profile $\varphi$ and the tiling survives **provided the partner is deformed by the transported profile**:
+
+$$e \mapsto \varphi(e), \qquad e' \mapsto g\big(\varphi(e)\big).$$
+
+Whatever bulge is added on one side of an edge is subtracted from the neighbour that shares it, so area and adjacency are preserved exactly. This is the whole of "Escherization": the silhouette becomes arbitrary while the tiling property is untouched, because the constraint lives in the group, not in the outline.
+
+**The rigid exception.** One edge type cannot move. An edge lying *on a mirror line* is fixed by that reflection, $g(e)=e$, so the condition above forces $\varphi(e)=g(\varphi(e))$ — the profile must be its own mirror image about the line, and a profile that is symmetric about the line it lies on is the line. Hence the pure kaleidoscope tilings, whose fundamental triangle has all three sides on mirrors — p4m, p6m, p3m1 — are **rigid**: the shape control moves nothing at all. That is not a limitation of the implementation but a fact about those groups, and it is worth knowing before reaching for the slider and concluding it is broken.
+
+Every other type here has at least one deformable edge pair, which is why the Escher-like tiles come from the groups with rotations and glides rather than from the most symmetric ones.
 
 ## References
 
