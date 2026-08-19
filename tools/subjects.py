@@ -109,6 +109,11 @@ ORIENT = {
     # solid, not a plane figure, so it wants a turn rather than a plan
     # view (from overhead a tetrahedron simply squares off).
     "mesh.ifs_add": (0.0, 0.0, math.pi / 8),
+    # The spanned saddle is built on a circle in XY and one in XZ, and
+    # the studio camera looks very nearly down the second circle's axis
+    # -- straight on, the four lobes overlap into a featureless blob.
+    # A quarter turn puts that circle edge-on and the lobes separate.
+    "object.minimal_span": (0.0, 0.0, math.pi / 2),
 }
 
 
@@ -282,3 +287,106 @@ if _IN_BLENDER:
         for ob in objects:
             ob.rotation_euler = Euler(rot)
         return True
+
+    # ----------------------------------------------------------------
+    # Input geometry for operators that transform a selection
+    # ----------------------------------------------------------------
+    # Most generators add a shape from nothing.  A few instead act on
+    # whatever is selected, and so have nothing to show until they are
+    # given something to act on.  A setup builds that input, leaves it
+    # selected, and returns the objects it made so the renderer can drop
+    # them once the operator has consumed them.
+
+    def _setup_minimal_span():
+        """Two unit circles at right angles, for the span to bridge.
+
+        `object.minimal_span` polls for one or two selected curves or
+        meshes and builds the minimal surface across them.  Two coaxial
+        circles would give a catenoid; crossing them at a right angle
+        gives the four-lobed saddle, which is the more telling picture
+        of what the operator does.  The circles are created unfilled, so
+        they add no faces of their own to the render.
+        """
+        made = []
+        for rot in ((0.0, 0.0, 0.0), (math.pi / 2, 0.0, 0.0)):
+            bpy.ops.mesh.primitive_circle_add(
+                vertices=128, radius=1.0, fill_type='NOTHING',
+                location=(0.0, 0.0, 0.0), rotation=rot)
+            made.append(bpy.context.active_object)
+        for ob in bpy.context.selected_objects:
+            ob.select_set(False)
+        for ob in made:
+            ob.select_set(True)
+        bpy.context.view_layer.objects.active = made[0]
+        return made
+
+    SETUP = {
+        "object.minimal_span": _setup_minimal_span,
+    }
+
+    # ----------------------------------------------------------------
+    # Render environments
+    # ----------------------------------------------------------------
+    # A setup builds geometry the operator consumes; an environment
+    # changes the world the subject is rendered *in*, and has to stay up
+    # through the render and then be undone.  Gemstones need one: their
+    # appearance is almost entirely what they reflect and refract, so a
+    # stone lit by the plastic-studio rig against no environment renders
+    # black -- correctly, but uselessly.
+
+    def _env_gem_studio():
+        """The add-on's own Gem Studio: sky world, small key, fill.
+
+        `mesh.gem_studio_add` builds the rig the gem generator is meant
+        to be seen under.  The documentation studio's lights are hidden
+        while it is up, since the gem rig brings its own key and fill
+        and doubling them floods out the fire.  Returns a callable that
+        puts the scene back.
+        """
+        scene = bpy.context.scene
+        saved_world, saved_cam = scene.world, scene.camera
+        hidden = []
+        for name in LIGHT_NAMES:
+            ob = bpy.data.objects.get(name)
+            if ob is not None and not ob.hide_render:
+                ob.hide_render = True
+                hidden.append(ob)
+        before = set(bpy.data.objects)
+        bpy.ops.mesh.gem_studio_add()
+        made = [o for o in bpy.data.objects if o not in before]
+
+        def teardown():
+            for ob in made:
+                try:
+                    bpy.data.objects.remove(ob, do_unlink=True)
+                except Exception:
+                    pass
+            for ob in hidden:
+                ob.hide_render = False
+            scene.world = saved_world
+            scene.camera = saved_cam
+
+        return teardown
+
+    ENVIRONMENT = {
+        "mesh.gem_add": _env_gem_studio,
+        "mesh.gem_cabochon_add": _env_gem_studio,
+    }
+
+    def enter_environment(op):
+        """Set up `op`'s render environment; returns a teardown callable."""
+        fn = ENVIRONMENT.get(op)
+        return fn() if fn is not None else (lambda: None)
+
+    def run_setup(op):
+        """Build `op`'s input geometry.  Returns the objects it made."""
+        fn = SETUP.get(op)
+        return list(fn()) if fn is not None else []
+
+    def drop_setup(objects):
+        """Remove setup geometry once the operator has consumed it."""
+        for ob in objects:
+            try:
+                bpy.data.objects.remove(ob, do_unlink=True)
+            except Exception:
+                pass

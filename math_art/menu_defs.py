@@ -62,8 +62,10 @@ SURFACES = Menu(
         _e("mesh.periodic_minimal_add", 'MESH_ICOSPHERE',
            "Minimal Surfaces (Periodic)"),
         _e("mesh.minimal_knot_span_add", 'MESH_TORUS'),
-        # a relaxation tool applied to an existing mesh, not a shape
-        _e("object.minimal_span", 'OUTLINER_OB_SURFACE', builtin=True),
+        # Spans whatever curves are selected rather than adding a shape,
+        # so it has no subject of its own -- the baker builds it two
+        # crossed circles to bridge (tools/subjects.py SETUP).
+        _e("object.minimal_span", 'OUTLINER_OB_SURFACE'),
         _e("mesh.seifert_surface_add", 'MOD_SIMPLIFY', "Seifert Surface"),
         _e("mesh.algebraic_surface_add", 'SURFACE_NSURFACE'),
         _e("mesh.topological_surface_add", 'MESH_TORUS'),
