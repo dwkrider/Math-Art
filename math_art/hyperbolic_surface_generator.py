@@ -11,6 +11,50 @@
 #                 twisting helical band (twist exposed as a parameter)
 #   KUEN          Kuen's surface -- a bounded K = -1 surface with a
 #                 characteristic bulb and cusp
+#   MINDING_BULGE and MINDING_SPINDLE -- the other two K = -1 surfaces
+#                 of revolution (see below)
+#   BREATHER      the surface of the sine-Gordon BREATHER: a bound
+#                 soliton/antisoliton pair, cusped and many-lobed
+#
+# Pseudospherical surfaces and the sine-Gordon equation are the same
+# subject twice over.  In Chebyshev (asymptotic) coordinates a K = -1
+# surface has I = du^2 + 2 cos(phi) du dv + dv^2 and II = 2 sin(phi) du dv
+# with phi the angle between the asymptotic lines, and the Gauss-Codazzi
+# equations reduce to exactly phi_uv = sin(phi).  So each soliton
+# solution is a surface: the 1-soliton is Dini's, and the breather --
+# the solution that stays localised and oscillates rather than
+# travelling -- is the BREATHER preset here.
+#
+# The three surfaces of revolution.  Writing a surface of revolution
+# with the metric ds^2 = du^2 + f(u)^2 dv^2 (so u is arclength along the
+# meridian), the Gauss curvature is K = -f''/f, so K = -1 forces
+#     f'' = f ,   hence   f(u) = A cosh u + B sinh u ,
+# and the sign of A^2 - B^2 splits the K = -1 surfaces of revolution
+# into exactly THREE types -- a classification due to Minding (1839):
+#
+#   A^2 = B^2  parabolic    f = C e^{-u}    the pseudosphere (above)
+#   A^2 > B^2  hyperbolic   f = a cosh u    the MINDING BULGE
+#   A^2 < B^2  conic        f = a sinh u    the MINDING SPINDLE
+#
+# Embedded as r(u) = f(u), z(u) = integral sqrt(1 - f'(u)^2) du, which
+# is real only while |f'| <= 1.  That bound is the whole story of these
+# surfaces and is exposed rather than hidden: the bulge runs out at
+# |u| = asinh(1/a) in a pair of flared rims, and the spindle at
+# u = acosh(1/a) in an equator, past which no isometric embedding in
+# R^3 continues.  Both therefore realise only a STRIP of the hyperbolic
+# plane -- the same Hilbert obstruction as the pseudosphere -- and the
+# spindle additionally closes up at two conical points, where it is not
+# an immersion at all.  All three are locally isometric to each other
+# and to the hyperbolic plane; they differ only in how they are placed
+# in R^3, which is Minding's point.
+#
+# Expect a visible crease around the spindle's equator: it is real, not
+# a meshing artifact.  Where |f'| -> 1 the meridian meets that circle
+# with a VERTICAL tangent -- writing s for the arclength short of it,
+# r_max - r ~ s while z_eq - z ~ s^{3/2}, so dr/dz blows up like
+# s^{-1/2}.  The two mirrored halves therefore share a tangent line but
+# not a curvature, and the closed spindle is C^1 and not C^2.  The
+# bulge shows the same thing, less obtrusively, at its two rims.
 #
 # By Hilbert's theorem there is no complete C^2 isometric immersion of
 # the whole hyperbolic plane in R^3, so each of these covers only a
@@ -27,6 +71,24 @@
 #   Kruemmungsmass", Sitzungsber. Bayer. Akad. Wiss., 1884.
 # - Hilbert's theorem: D. Hilbert, "Ueber Flaechen von constanter
 #   Gausscher Kruemmung", Trans. AMS 2, 1901, pp. 87-99.
+# - Minding bulge and spindle: Ferdinand Minding, "Wie sich entscheiden
+#   laesst, ob zwei gegebene krumme Flaechen auf einander abwickelbar
+#   sind oder nicht; nebst Bemerkungen ueber die Flaechen von
+#   unveraenderlichem Kruemmungsmasse", J. reine angew. Math. (Crelle)
+#   19 (1839), 370-387 -- the classification of the constant-curvature
+#   surfaces of revolution into the parabolic, hyperbolic and conic
+#   types, and the theorem that all surfaces of equal constant
+#   curvature are locally isometric.
+# - Breather surface: the sine-Gordon breather goes back to Bour (1862)
+#   and Backlund (1883) for the transformation theory; the modern
+#   soliton-surface framing (Lax pair, Sym's immersion formula, and the
+#   spectral classification in which "breather" names a conjugate pair
+#   of branch points) is
+#   A. I. Bobenko, "Surfaces in terms of 2 by 2 matrices: old and new
+#   integrable cases", in Harmonic Maps and Integrable Systems, Vieweg
+#   1994, Sect. 8; and M. Melko and I. Sterling, "Application of soliton
+#   theory to the construction of pseudospherical surfaces in R^3",
+#   Ann. Global Anal. Geom. 11 (1993), 65-107.
 
 bl_info = {
     "name": "Hyperbolic Surfaces",
@@ -34,8 +96,8 @@ bl_info = {
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Hyperbolic Surface",
-    "description": "Pseudosphere, Dini and Kuen constant-negative-"
-                   "curvature surfaces",
+    "description": "Pseudosphere, Dini, Kuen, Minding and breather "
+                   "constant-negative-curvature surfaces",
     "category": "Add Mesh",
 }
 
@@ -44,21 +106,174 @@ import math
 import numpy as np
 
 
-def _pseudosphere(U, V, twist=0.0):
+def _pseudosphere(U, V, twist=0.0, a=0.5, breather_a=0.4):
     x = np.cosh(U) ** -1 * np.cos(V)
     y = np.cosh(U) ** -1 * np.sin(V)
     z = U - np.tanh(U)
     return x, y, z
 
 
-def _dini(U, V, twist=0.2):
+def _dini(U, V, twist=0.2, a=0.5, breather_a=0.4):
     x = np.cos(V) * np.sin(U)
     y = np.sin(V) * np.sin(U)
     z = np.cos(U) + np.log(np.tan(U / 2.0)) + twist * V
     return x, y, z
 
 
-def _kuen(U, V, twist=0.0):
+def _cum_simpson(g, t):
+    """Cumulative integral of the callable `g` over the uniform grid
+    `t`, Simpson's rule per interval (so O(h^4), with `g` also sampled
+    at the interval midpoints).  Returns an array the length of `t`
+    starting at 0."""
+    h = float(t[1] - t[0])
+    y = g(t)
+    ym = g(0.5 * (t[:-1] + t[1:]))
+    seg = (h / 6.0) * (y[:-1] + 4.0 * ym + y[1:])
+    return np.concatenate([[0.0], np.cumsum(seg)])
+
+
+def _minding_profile(kind, a, n=2001):
+    """Meridian of a Minding surface as tables (t, r, z), with the
+    normalised profile parameter t running over [-1, 1].
+
+    Both meridians are integrated in a variable that makes the
+    integrand SMOOTH, because the naive one is not.  With u the
+    arclength, z' = sqrt(1 - f'(u)^2) vanishes like a square root where
+    |f'| -> 1, so quadrature in u converges only like h^{3/2} at
+    exactly the rim that gives these surfaces their shape.  Substituting
+    f'(u) = sin(phi) removes it:
+
+      BULGE   f = a cosh u,  f' = a sinh u = sin(phi),  phi in [-pi/2, pi/2]
+              r = sqrt(a^2 + sin^2 phi)
+              dz = cos^2(phi) dphi / sqrt(a^2 + sin^2 phi)
+              -- smooth on the closed interval; t = 2 phi / pi.
+
+      SPINDLE f = a sinh u,  f' = a cosh u = sin(phi),  phi in [asin a, pi/2]
+              r = sqrt(sin^2 phi - a^2)
+              dz = cos^2(phi) dphi / sqrt(sin^2 phi - a^2)
+              -- now singular at the TIP instead (u |-> phi has a
+              critical point there), cured by the second substitution
+              phi = phi0 + tau^2, under which dz/dtau and r are both
+              smooth and vanish linearly.  The half meridian tip ->
+              equator is then mirrored to close the spindle.
+
+    So each surface is integrated in the variable that is smooth for it,
+    rather than one shared variable that is smooth for neither."""
+    if kind == 'MINDING_BULGE':
+        # t in [-1, 1] <-> phi in [-pi/2, pi/2]
+        t = np.linspace(-1.0, 1.0, n)
+        phi = t * (math.pi / 2.0)
+        r = np.sqrt(a * a + np.sin(phi) ** 2)
+
+        def dz_dt(tt):
+            p = tt * (math.pi / 2.0)
+            s = np.sin(p)
+            return (math.pi / 2.0) * np.cos(p) ** 2 / np.sqrt(a * a + s * s)
+
+        z = _cum_simpson(dz_dt, t)
+        return t, r, z - 0.5 * (z[0] + z[-1])       # centre the waist
+
+    if kind != 'MINDING_SPINDLE':
+        raise ValueError(f"not a Minding surface: {kind!r}")
+
+    phi0 = math.asin(min(max(a, 1e-9), 1.0 - 1e-12))
+    span = math.pi / 2.0 - phi0
+    if span <= 1e-12:                                # a -> 1: degenerate
+        span = 1e-12
+    T = math.sqrt(span)
+    tau = np.linspace(0.0, T, n)                     # 0 = tip, T = equator
+
+    def _phi(tt):
+        return phi0 + tt * tt
+
+    def _r_of(tt):
+        s = np.sin(_phi(tt))
+        return np.sqrt(np.maximum(s * s - a * a, 0.0))
+
+    def dz_dtau(tt):
+        p = _phi(tt)
+        s = np.sin(p)
+        rad = np.sqrt(np.maximum(s * s - a * a, 0.0))
+        # limit at the tip: sin^2 phi - a^2 ~ 2 a cos(phi0) tau^2, so
+        # dz/dtau -> 2 cos^2(phi0) / sqrt(2 a cos phi0), a finite value.
+        lim = 2.0 * math.cos(phi0) ** 2 / math.sqrt(
+            2.0 * a * math.cos(phi0)) if a > 0 else 0.0
+        out = np.full_like(np.asarray(tt, dtype=float), lim)
+        good = rad > 1e-14
+        out[good] = (2.0 * tt[good] * np.cos(p[good]) ** 2 / rad[good])
+        return out
+
+    W = _cum_simpson(dz_dtau, tau)                   # height above the tip
+    z_half = W[-1] - W                               # height below equator
+    r_half = _r_of(tau)
+    s_half = 1.0 - tau / T                           # 1 at tip, 0 at equator
+
+    order = np.argsort(s_half)                       # make t increasing
+    sp, rp, zp = s_half[order], r_half[order], z_half[order]
+    t = np.concatenate([-sp[::-1][:-1], sp])
+    r = np.concatenate([rp[::-1][:-1], rp])
+    z = np.concatenate([-zp[::-1][:-1], zp])
+    return t, r, z
+
+
+def _minding(kind):
+    """Build the (U, V, twist, a) surface function for a Minding type.
+    The profile tables are rebuilt per call because they depend on `a`;
+    at n = 2001 that is well under a millisecond."""
+    def fn(U, V, twist=0.0, a=0.5, breather_a=0.4):
+        t, r, z = _minding_profile(kind, a)
+        ru = np.interp(U, t, r)
+        zu = np.interp(U, t, z)
+        return ru * np.cos(V), ru * np.sin(V), zu
+    return fn
+
+
+def _breather(U, V, twist=0.0, a=0.5, breather_a=0.4):
+    """The breather surface: the pseudospherical surface built from the
+    BREATHER solution of the sine-Gordon equation.
+
+    Pseudospherical surfaces correspond to solutions of phi_uv = sin phi
+    through Chebyshev (asymptotic) coordinates, in which
+        I  = du^2 + 2 cos(phi) du dv + dv^2 ,
+        II = 2 sin(phi) du dv ,
+    so K = -1 for every solution.  The one-soliton gives Dini's surface
+    (already here); the breather -- a soliton/antisoliton pair bound
+    into a localised oscillation -- integrates in closed form to
+
+        w   = sqrt(1 - b^2) ,
+        D   = b [ w^2 cosh^2(b u) + b^2 sin^2(w v) ] ,
+        x   = -u + 2 w^2 cosh(b u) sinh(b u) / D ,
+        y + i z = 2 w cosh(b u) e^{i v} (w cos(w v) - i sin(w v)) / D ,
+
+    with the breather parameter 0 < b < 1 setting how tightly bound it
+    is.  D is bounded below by b w^2 > 0, so the formula has no poles;
+    the surface is nevertheless NOT an immersion everywhere -- it
+    carries cusp edges where EG - F^2 -> 0, which is generic for
+    soliton surfaces and is a feature of the picture, not a defect of
+    the parametrisation.
+
+    U and V arrive NORMALISED to [-1, 1] and are rescaled here, because
+    the useful window depends on b.  The bulb decays like
+    1/cosh^2(b u), so it spans |u| ~ 1/b, while x carries a bare -u that
+    keeps growing: take u too wide and the whole surface renders as a
+    thin needle with a speck of structure at the middle (at b = 0.8 the
+    classic |u| <= 13 window is 96% needle).  In v the lobes come from
+    sin(w v), of period pi/w, so that extent scales like 1/w."""
+    b = min(max(breather_a, 1e-3), 1.0 - 1e-6)
+    w = math.sqrt(1.0 - b * b)
+    U = U * (1.6 / b)
+    V = V * (11.0 / w)
+    ca, sa = np.cosh(b * U), np.sinh(b * U)
+    cw, sw = np.cos(w * V), np.sin(w * V)
+    cv, sv = np.cos(V), np.sin(V)
+    D = b * (w * w * ca * ca + b * b * sw * sw)
+    x = -U + 2.0 * w * w * ca * sa / D
+    y = 2.0 * w * ca * (w * cw * cv + sw * sv) / D
+    z = 2.0 * w * ca * (w * cw * sv - sw * cv) / D
+    return x, y, z
+
+
+def _kuen(U, V, twist=0.0, a=0.5, breather_a=0.4):
     denom = 1.0 + (U * np.sin(V)) ** 2
     x = 2.0 * (np.cos(U) + U * np.sin(U)) * np.sin(V) / denom
     y = 2.0 * (np.sin(U) - U * np.cos(U)) * np.sin(V) / denom
@@ -74,6 +289,21 @@ PRESETS = {
              (0.0, 12.0 * math.pi), False),
     'KUEN': ("Kuen Surface", _kuen, (-4.5, 4.5),
              (0.08, math.pi - 0.08), False),
+    # u is the NORMALISED profile parameter t of _minding_profile, not
+    # arclength -- the arclength extent depends on `a`.  The spindle
+    # stops a hair short of +-1 because r -> 0 there: meshing the two
+    # conical points exactly would collapse a whole ring of vertices
+    # onto one another and hand Blender a fan of degenerate quads.  At
+    # 0.999 the remaining opening is ~0.1% of the equatorial radius.
+    'MINDING_BULGE': ("Minding Bulge", _minding('MINDING_BULGE'),
+                      (-1.0, 1.0), (0.0, 2 * math.pi), True),
+    'MINDING_SPINDLE': ("Minding Spindle", _minding('MINDING_SPINDLE'),
+                        (-0.999, 0.999), (0.0, 2 * math.pi), True),
+    # u decays like 1/cosh^2(b u), so a modest u window already holds
+    # the whole breather; v runs over several beats of the two
+    # incommensurate frequencies 1 and w = sqrt(1 - b^2).
+    'BREATHER': ("Breather Surface", _breather, (-1.0, 1.0),
+                 (-1.0, 1.0), False),
 }
 
 
@@ -93,13 +323,14 @@ def _grid_faces(nu, nv, wrap_v):
     return faces
 
 
-def build_surface(kind, ures, vres, twist=0.2, scale=1.0):
+def build_surface(kind, ures, vres, twist=0.2, scale=1.0,
+                  minding_a=0.5, breather_a=0.4):
     label, fn, (u0, u1), (v0, v1), wrap = PRESETS[kind]
     us = np.linspace(u0, u1, ures)
     vs = (np.linspace(v0, v1, vres, endpoint=False) if wrap
           else np.linspace(v0, v1, vres))
     U, Vv = np.meshgrid(us, vs, indexing='ij')
-    x, y, z = fn(U, Vv, twist)
+    x, y, z = fn(U, Vv, twist, minding_a, breather_a)
     V = np.stack([x.ravel(), y.ravel(), z.ravel()], axis=-1)
     faces = _grid_faces(ures, vres, wrap)
     return _center(V) * scale, faces
@@ -171,15 +402,34 @@ if _IN_BLENDER:
             name="Twist", default=0.2, min=0.0, max=2.0,
             description="Helical shear of Dini's surface "
                         "(curvature = -1/(1+twist^2))")
+        breather_a: FloatProperty(
+            name="Breather b", default=0.4, min=0.05, max=0.95,
+            description="Breather parameter b in (0, 1): small b gives "
+                        "a long, loosely bound breather with many "
+                        "lobes; b near 1 a short tightly bound one")
+        minding_a: FloatProperty(
+            name="Waist / Girth", default=0.5, min=0.05, max=3.0,
+            description="Shape parameter a of the Minding surfaces: "
+                        "the bulge is r = a cosh(u), so a is its waist "
+                        "radius; the spindle is r = a sinh(u) and needs "
+                        "a < 1, its equator sitting at sqrt(1 - a^2)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                             max=100.0)
         shade_smooth: BoolProperty(name="Smooth Shading", default=True)
 
         def execute(self, context):
             label = PRESETS[self.preset][0]
+            a = self.minding_a
+            if self.preset == 'MINDING_SPINDLE' and a >= 1.0:
+                # r = a sinh(u) needs |f'| = a cosh(u) <= 1, which is
+                # unsatisfiable for a >= 1: there is no spindle at all.
+                self.report({'WARNING'},
+                            f"Minding spindle needs a < 1 (got {a:.2f}); "
+                            f"clamped to 0.95")
+                a = 0.95
             verts, faces = build_surface(self.preset, self.ures,
                                          self.vres, self.twist,
-                                         self.scale)
+                                         self.scale, a, self.breather_a)
             me = bpy.data.meshes.new("HyperbolicSurface")
             me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
                            [tuple(int(i) for i in f) for f in faces])
@@ -208,6 +458,13 @@ if _IN_BLENDER:
             lay.prop(self, 'vres')
             if self.preset == 'DINI':
                 lay.prop(self, 'twist')
+            if self.preset == 'BREATHER':
+                lay.prop(self, 'breather_a')
+            if self.preset in ('MINDING_BULGE', 'MINDING_SPINDLE'):
+                lay.prop(self, 'minding_a')
+                if (self.preset == 'MINDING_SPINDLE'
+                        and self.minding_a >= 1.0):
+                    lay.label(text="Spindle needs a < 1", icon='ERROR')
             lay.prop(self, 'scale')
             lay.prop(self, 'shade_smooth')
 
@@ -228,9 +485,48 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_hyperbolic_surface_add)
 
 
+def gauss_curvature_param(fn, u, v, twist=0.2, a=0.5, breather_a=0.4,
+                          h=1e-3):
+    """Gaussian curvature K = (LN - M^2)/(EG - F^2) computed from the
+    PARAMETRISATION by central differences, at the sample points
+    (u, v).
+
+    Far sharper than the mesh angle-defect estimate in
+    `mean_curvature` -- it converges like h^2 and reaches ~1e-6 -- so it
+    is the right instrument for checking a closed-form surface really is
+    pseudospherical.  Only valid for the closed-form presets: the
+    Minding profiles are table-interpolated, and differentiating a
+    linear interpolant twice returns noise."""
+    def X(uu, vv):
+        x, y, z = fn(uu, vv, twist, a, breather_a)
+        return np.stack([x, y, z], axis=-1)
+
+    Xu = (X(u + h, v) - X(u - h, v)) / (2 * h)
+    Xv = (X(u, v + h) - X(u, v - h)) / (2 * h)
+    Xuu = (X(u + h, v) - 2 * X(u, v) + X(u - h, v)) / (h * h)
+    Xvv = (X(u, v + h) - 2 * X(u, v) + X(u, v - h)) / (h * h)
+    Xuv = (X(u + h, v + h) - X(u + h, v - h)
+           - X(u - h, v + h) + X(u - h, v - h)) / (4 * h * h)
+    nrm = np.cross(Xu, Xv)
+    nrm = nrm / np.maximum(np.linalg.norm(nrm, axis=-1, keepdims=True),
+                           1e-300)
+    E = (Xu * Xu).sum(-1)
+    F = (Xu * Xv).sum(-1)
+    G = (Xv * Xv).sum(-1)
+    L = (Xuu * nrm).sum(-1)
+    M = (Xuv * nrm).sum(-1)
+    N = (Xvv * nrm).sum(-1)
+    return (L * N - M * M) / (E * G - F * F)
+
+
 def _selftest():
-    # each surface has constant Gaussian curvature ~ -1
-    # (Dini with twist 0.2 -> -1/(1+0.2^2) = -0.96)
+    ok_all = True
+
+    # 1) each surface has constant Gaussian curvature ~ -1
+    #    (Dini with twist 0.2 -> -1/(1+0.2^2) = -0.96)
+    want = {'PSEUDOSPHERE': -1.0, 'DINI': -1.0 / 1.04, 'KUEN': -1.0,
+            'MINDING_BULGE': -1.0, 'MINDING_SPINDLE': -1.0,
+            'BREATHER': -1.0}
     for kind in PRESETS:
         fn = PRESETS[kind][1]
         _, _, (u0, u1), (v0, v1), wrap = PRESETS[kind]
@@ -238,9 +534,126 @@ def _selftest():
         vs = (np.linspace(v0, v1, 80, endpoint=False) if wrap
               else np.linspace(v0, v1, 80))
         U, Vv = np.meshgrid(us, vs, indexing='ij')
-        x, y, z = fn(U, Vv, 0.2)
+        x, y, z = fn(U, Vv, 0.2, 0.5)
         Vraw = np.stack([x.ravel(), y.ravel(), z.ravel()], -1)
         faces = _grid_faces(80, 80, wrap)
         K = mean_curvature(Vraw, faces)
-        print(f"{kind:13s}: V={len(Vraw)} F={len(faces)} "
-              f"meanK={K:+.3f}")
+        ok = abs(K - want[kind]) < 0.05
+        ok_all = ok_all and ok
+        print(f"{kind:16s}: V={len(Vraw)} F={len(faces)} "
+              f"meanK={K:+.3f} (want {want[kind]:+.3f}) "
+              f"{'OK' if ok else 'BAD'}")
+
+    # 2) The Minding profiles, checked against the ODE they come from
+    #    rather than against a curvature estimate.  Re-deriving the
+    #    arclength u from the generated (r, z) table and comparing r(u)
+    #    with a cosh u / a sinh u exercises the whole substitution and
+    #    quadrature chain, and is far sharper than an angle-defect
+    #    measurement on a mesh.
+    for kind, f_exact in (('MINDING_BULGE', np.cosh),
+                          ('MINDING_SPINDLE', np.sinh)):
+        for a in (0.3, 0.5, 0.8):
+            t, r, z = _minding_profile(kind, a, n=4001)
+            if kind == 'MINDING_SPINDLE':
+                t, r, z = t[len(t) // 2:], r[len(r) // 2:], z[len(z) // 2:]
+            # arclength along the meridian, measured from the waist
+            # (bulge) or from the equator (spindle)
+            seg = np.hypot(np.diff(r), np.diff(z))
+            u = np.concatenate([[0.0], np.cumsum(seg)])
+            if kind == 'MINDING_BULGE':
+                u = u - np.interp(0.0, t, u)      # u = 0 at the waist
+                # the table spans BOTH rims, |u| <= asinh(1/a)
+                u_end = 2.0 * math.asinh(1.0 / a)
+            else:
+                u = u[-1] - u                     # u = 0 at the tip
+                u_end = math.acosh(1.0 / a)       # tip -> equator only
+            r_exact = a * f_exact(u)
+            err = float(np.abs(r - r_exact).max())
+            # the arclength extent must also hit the analytic |f'| <= 1
+            # bound, which is what makes these strips and not planes
+            span_err = abs(abs(u[0] - u[-1]) - u_end)
+            ok = err < 5e-4 and span_err < 5e-4
+            ok_all = ok_all and ok
+            print(f"{kind:16s} a={a:.1f}: max|r - a {f_exact.__name__} u| "
+                  f"= {err:.2e}  arclength {abs(u[0] - u[-1]):.5f} vs "
+                  f"{u_end:.5f} {'OK' if ok else 'BAD'}")
+
+    # 3) |f'| <= 1 everywhere on the generated profile -- outside that
+    #    bound z' = sqrt(1 - f'^2) is imaginary and there is no surface.
+    #    Equivalently: the profile is nowhere steeper than 45 degrees in
+    #    dr/du, i.e. |dr| <= |ds| along the meridian.
+    for kind in ('MINDING_BULGE', 'MINDING_SPINDLE'):
+        for a in (0.2, 0.6, 0.9):
+            t, r, z = _minding_profile(kind, a, n=4001)
+            ds = np.hypot(np.diff(r), np.diff(z))
+            slope = float(np.max(np.abs(np.diff(r)) / np.maximum(ds, 1e-15)))
+            ok = slope <= 1.0 + 1e-9 and np.isfinite(z).all()
+            ok_all = ok_all and ok
+            print(f"{kind:16s} a={a:.1f}: max|dr/ds| = {slope:.6f} "
+                  f"(must be <= 1) {'OK' if ok else 'BAD'}")
+
+    # 4) the spindle really closes to a point at both ends, and the
+    #    bulge really does not (its waist is r = a)
+    t, r, _ = _minding_profile('MINDING_SPINDLE', 0.5, n=4001)
+    ok = r[0] < 1e-6 and r[-1] < 1e-6 and abs(r.max()
+                                              - math.sqrt(1 - 0.25)) < 1e-6
+    ok_all = ok_all and ok
+    print(f"spindle ends    : r(tips)={r[0]:.2e}/{r[-1]:.2e} "
+          f"r(equator)={r.max():.6f} (want {math.sqrt(0.75):.6f}) "
+          f"{'OK' if ok else 'BAD'}")
+    t, r, _ = _minding_profile('MINDING_BULGE', 0.5, n=4001)
+    ok = abs(r.min() - 0.5) < 1e-9 and abs(r.max()
+                                           - math.sqrt(1.25)) < 1e-9
+    ok_all = ok_all and ok
+    print(f"bulge waist/rim : {r.min():.6f} / {r.max():.6f} "
+          f"(want 0.500000 / {math.sqrt(1.25):.6f}) "
+          f"{'OK' if ok else 'BAD'}")
+
+    # 5) The closed-form surfaces, checked against K = -1 analytically.
+    #    This is the acceptance gate for the BREATHER: a pseudospherical
+    #    surface is exactly a solution of the sine-Gordon equation seen
+    #    through Chebyshev coordinates, so if the closed form is right
+    #    K is identically -1 and if a single coefficient is wrong it is
+    #    not.  (The first candidate transcription of the breather gave
+    #    median K = -0.18, which is how the slip was caught.)
+    #
+    #    The MEDIAN is the statistic, not the max: the breather carries
+    #    genuine cusp edges where EG - F^2 -> 0 and the finite-difference
+    #    estimate blows up there.  That is the surface's real singular
+    #    locus, not an error in the formula.
+    rng = np.random.default_rng(20260819)
+    cases = [('PSEUDOSPHERE', _pseudosphere, (0.2, 3.0), (0.0, 6.2),
+              0.0, -1.0),
+             ('DINI twist 0', _dini, (0.2, 1.4), (0.0, 6.2), 0.0, -1.0),
+             ('DINI twist 0.5', _dini, (0.2, 1.4), (0.0, 6.2), 0.5,
+              -1.0 / 1.25),
+             ('KUEN', _kuen, (-4.0, 4.0), (0.3, 2.8), 0.0, -1.0)]
+    for b in (0.2, 0.4, 0.6, 0.8):
+        cases.append((f'BREATHER b={b}', _breather, (-0.9, 0.9),
+                      (-0.9, 0.9), 0.0, -1.0))
+    for i, (label, fn, (u0, u1), (v0, v1), tw, K_want) in enumerate(cases):
+        uu = rng.uniform(u0, u1, 500)
+        vv = rng.uniform(v0, v1, 500)
+        ba = (0.2, 0.4, 0.6, 0.8)[i - 4] if label.startswith('BREATHER') \
+            else 0.4
+        K = gauss_curvature_param(fn, uu, vv, twist=tw, breather_a=ba)
+        K = K[np.isfinite(K)]
+        med = float(np.median(K))
+        # interquartile spread, immune to the cusp outliers
+        q1, q3 = np.percentile(K, [25.0, 75.0])
+        ok = abs(med - K_want) < 2e-4 and (q3 - q1) < 5e-3
+        ok_all = ok_all and ok
+        print(f"K(analytic) {label:16s}: median {med:+.7f} "
+              f"(want {K_want:+.7f}) IQR {q3 - q1:.2e} "
+              f"{'OK' if ok else 'BAD'}")
+
+    # 6) the mesher runs for every preset and produces finite geometry
+    for kind in PRESETS:
+        V, F = build_surface(kind, 40, 48, 0.2, 1.0, 0.5)
+        ok = len(V) == 40 * 48 and len(F) > 0 and np.isfinite(V).all()
+        ok_all = ok_all and ok
+        print(f"build {kind:16s}: V={len(V)} F={len(F)} "
+              f"{'OK' if ok else 'BAD'}")
+
+    assert ok_all
+    print("hyperbolic surface standalone tests passed")

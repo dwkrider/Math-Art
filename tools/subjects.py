@@ -287,6 +287,8 @@ VARIANT_SELECTOR = {
     "mesh.curiosity_surface_add": "surface",
     "mesh.helical_surface_add": "surface",
     "mesh.hyperbolic_surface_add": "preset",
+    "mesh.delaunay_surface_add": "mode",
+    "mesh.bryant_surface_add": "mode",
     "mesh.squeeze_add": "seed",
     "mesh.vertex_vortices_add": "seed",
     "mesh.minimal_surface_polyhedron_add": "seed",
