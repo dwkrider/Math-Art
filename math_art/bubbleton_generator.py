@@ -367,12 +367,53 @@ def mean_curvature_xyz(X, hx, hy):
     return (E * N_ - 2 * F * M_ + G * L) / (2 * (E * G - F * F))
 
 
-def build_surface(r=0.5, n=3, m=1, periods=3.0, ures=240, vres=160,
-                  m_plus=1.0 + 0j, m_minus=1.0 + 0j, scale=1.0):
-    """Mesh one bubbleton.  y runs over [0, 2 m pi] because the section
-    closes only on the m-fold cover."""
+def bubble_extent(r, n, m=1, probe=600, margin=1.05):
+    """Half-width in x of the region where the bubble actually bulges,
+    i.e. where the transformed radius exceeds the underlying Delaunay
+    surface's widest by `margin`.
+
+    Needed because the bubble's axial size is not a fixed number of
+    Delaunay periods -- it shrinks sharply as lobes are added (3.79
+    units at n = 2 on the cylinder against 0.71 at n = 5, a factor of
+    five).  Framing by period count therefore buries the bubble in pipe
+    for high lobe counts, which is what a fixed window did.
+
+    The test is against the base surface's own maximum radius rather
+    than a pointwise difference, because a bubbleton is asymptotic to a
+    TRANSLATED copy of its Delaunay surface: on a cylinder there is no
+    phase to shift and a pointwise difference does decay, but on an
+    unduloid it never does, and a pointwise criterion silently reports
+    the whole domain."""
     L = delaunay_period(r)
-    x = np.linspace(-0.5 * periods * L, 0.5 * periods * L, ures)
+    x = np.linspace(-3.0 * L, 3.0 * L, probe)
+    y = np.linspace(0.0, 2.0 * math.pi * m, 64, endpoint=False)
+    Xg, Yg = np.meshgrid(x, y, indexing='ij')
+    fh, f0, _ = bubbleton(r, Xg, Yg, n, m)
+    rad = np.hypot(q_to_xyz(fh)[:, :, 1], q_to_xyz(fh)[:, :, 2]).max(1)
+    base = float(np.hypot(q_to_xyz(f0)[:, :, 1],
+                          q_to_xyz(f0)[:, :, 2]).max())
+    idx = np.where(rad > margin * base)[0]
+    if idx.size == 0:
+        return 0.5 * L
+    return max(0.5 * float(x[idx[-1]] - x[idx[0]]), 1e-3)
+
+
+def build_surface(r=0.5, n=3, m=1, periods=0.0, ures=240, vres=160,
+                  m_plus=1.0 + 0j, m_minus=1.0 + 0j, scale=1.0,
+                  pad=3.5):
+    """Mesh one bubbleton.  y runs over [0, 2 m pi] because the section
+    closes only on the m-fold cover.
+
+    With `periods` <= 0 the axial window is fitted to the bubble (see
+    `bubble_extent`) and `pad` says how much surrounding Delaunay
+    surface to keep; a positive `periods` overrides that with an
+    explicit number of Delaunay periods."""
+    L = delaunay_period(r)
+    if periods and periods > 0.0:
+        half = 0.5 * periods * L
+    else:
+        half = pad * bubble_extent(r, n, m)
+    x = np.linspace(-half, half, ures)
     y = np.linspace(0.0, 2.0 * math.pi * m, vres, endpoint=False)
     Xg, Yg = np.meshgrid(x, y, indexing='ij')
     fh, f, info = bubbleton(r, Xg, Yg, n, m, m_plus, m_minus)
@@ -425,10 +466,35 @@ if _IN_BLENDER:
             description="The section closes only on the m-fold cover, "
                         "so y runs over [0, 2 m pi].  Must be coprime "
                         "to the lobe count")
+        preset: EnumProperty(
+            name="Preset",
+            items=[('CUSTOM', "Custom", "use the sliders below"),
+                   ('CYL2', "Cylinder, 2 lobes",
+                    "the classic bubbleton: a two-lobed bubble on a "
+                    "straight cylinder"),
+                   ('CYL3', "Cylinder, 3 lobes",
+                    "a three-lobed bubble on a straight cylinder"),
+                   ('CYL5', "Cylinder, 5 lobes",
+                    "five lobes -- the bubble tightens as lobes are "
+                    "added"),
+                   ('UND2', "Unduloid, 2 lobes",
+                    "a two-lobed bubble riding on a Delaunay unduloid"),
+                   ('UND3', "Unduloid, 3 lobes",
+                    "a three-lobed bubble on a Delaunay unduloid"),
+                   ('TWIST', "Twizzler (3 lobes, 2 covers)",
+                    "a bubble that closes only on the double cover, so "
+                    "it winds as it goes round")],
+            default='CYL2')
         periods: FloatProperty(
-            name="Delaunay Periods", default=3.0, min=0.5, max=12.0,
-            description="How much of the underlying Delaunay surface to "
-                        "draw around the bubble")
+            name="Delaunay Periods", default=0.0, min=0.0, max=12.0,
+            description="Axial window in Delaunay periods.  Leave at 0 "
+                        "to fit the window to the bubble automatically "
+                        "-- the bubble's size varies fivefold with the "
+                        "lobe count, so a fixed window buries it")
+        pad: FloatProperty(
+            name="Surroundings", default=3.5, min=1.0, max=10.0,
+            description="With automatic framing, how much Delaunay "
+                        "surface to keep either side of the bubble")
         shift: FloatProperty(
             name="Bubble Shift", default=0.0, min=-6.0, max=6.0,
             description="Slides the bubble along the axis: the ratio of "
@@ -445,24 +511,35 @@ if _IN_BLENDER:
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
+        _PRESETS = {
+            'CYL2': (0.5, 2, 1), 'CYL3': (0.5, 3, 1),
+            'CYL5': (0.5, 5, 1), 'UND2': (0.3, 2, 1),
+            'UND3': (0.3, 3, 1), 'TWIST': (0.5, 3, 2),
+        }
+
         def execute(self, context):
-            if math.gcd(self.lobes, self.covers) != 1:
+            if self.preset != 'CUSTOM':
+                necksize, lobes, covers = self._PRESETS[self.preset]
+            else:
+                necksize, lobes, covers = (self.necksize, self.lobes,
+                                           self.covers)
+            self._resolved = (necksize, lobes, covers)
+            if math.gcd(lobes, covers) != 1:
                 self.report({'ERROR'},
-                            f"lobes {self.lobes} and covers "
-                            f"{self.covers} must be coprime")
+                            f"lobes {lobes} and covers "
+                            f"{covers} must be coprime")
                 return {'CANCELLED'}
-            if not is_admissible(self.necksize, self.lobes,
-                                 self.covers):
+            if not is_admissible(necksize, lobes, covers):
                 self.report(
                     {'ERROR'},
-                    f"n/m = {self.lobes}/{self.covers} is not a "
+                    f"n/m = {lobes}/{covers} is not a "
                     f"resonance point at necksize "
-                    f"{self.necksize:.3f}: the spectral parameter comes "
+                    f"{necksize:.3f}: the spectral parameter comes "
                     f"out complex, or Pi needs a principal value.  "
                     f"A cylinder needs n > m; nodoids are not "
                     f"supported (their characteristic exceeds 1)")
                 return {'CANCELLED'}
-            if abs(self.necksize) < 1e-3:
+            if abs(necksize) < 1e-3:
                 self.report({'ERROR'},
                             "necksize r = 0 is excluded (the resonance "
                             "point divides by 2r(1-r))")
@@ -472,8 +549,9 @@ if _IN_BLENDER:
                 math.sin(math.radians(self.spin)))
             try:
                 verts, faces, info = build_surface(
-                    self.necksize, self.lobes, self.covers, self.periods,
-                    self.ures, self.vres, ratio, 1.0 + 0j, self.scale)
+                    necksize, lobes, covers, self.periods,
+                    self.ures, self.vres, ratio, 1.0 + 0j, self.scale,
+                    self.pad)
             except ValueError as exc:
                 self.report({'ERROR'}, str(exc))
                 return {'CANCELLED'}
@@ -495,8 +573,8 @@ if _IN_BLENDER:
             context.view_layer.objects.active = obj
             self.report(
                 {'INFO'},
-                f"Bubbleton n/m = {self.lobes}/{self.covers} on "
-                f"necksize {self.necksize:.3f}: V={len(me.vertices)} "
+                f"Bubbleton n/m = {lobes}/{covers} on "
+                f"necksize {necksize:.3f}: V={len(me.vertices)} "
                 f"F={len(me.polygons)}, resonance mu={mu:.6f}, "
                 f"a={a:.6f}, t={t:.4f}")
             return {'FINISHED'}
@@ -504,16 +582,19 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
-            lay.prop(self, 'necksize')
-            lay.prop(self, 'lobes')
-            lay.prop(self, 'covers')
-            if math.gcd(self.lobes, self.covers) != 1:
-                lay.label(text="Lobes and covers must be coprime",
-                          icon='ERROR')
-            elif not is_admissible(self.necksize, self.lobes,
-                                   self.covers):
-                lay.label(text="Not a resonance point here",
-                          icon='ERROR')
+            lay.prop(self, 'preset')
+            if self.preset == 'CUSTOM':
+                lay.prop(self, 'necksize')
+                lay.prop(self, 'lobes')
+                lay.prop(self, 'covers')
+                if math.gcd(self.lobes, self.covers) != 1:
+                    lay.label(text="Lobes and covers must be coprime",
+                              icon='ERROR')
+                elif not is_admissible(self.necksize, self.lobes,
+                                       self.covers):
+                    lay.label(text="Not a resonance point here",
+                              icon='ERROR')
+            lay.prop(self, 'pad')
             lay.prop(self, 'periods')
             lay.prop(self, 'shift')
             lay.prop(self, 'spin')
