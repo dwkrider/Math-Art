@@ -17,6 +17,8 @@
 #   reine und angewandte Mathematik 69, 1868 -- the diagonal surface.
 # - W. Barth, "Two projective surfaces with many nodes admitting the
 #   symmetries of the icosahedron", J. Algebraic Geometry 5, 1996.
+# - H. Hauser, "Bildergalerie algebraischer Flaechen", Universitaet
+#   Wien -- the named gallery surfaces in the _HAUSER block below.
 
 import math
 import numpy as np
@@ -162,6 +164,374 @@ PRESETS = {
 }
 
 
+# ======================================================================
+# Herwig Hauser's gallery of algebraic surfaces
+# ======================================================================
+# Sixty-three surfaces from Hauser's "Bildergalerie algebraischer
+# Flaechen", each the zero set of one low-degree polynomial and each
+# named for what it looks like rather than for a theorem -- Zitrus,
+# Seepferdchen, Schneeflocke, Himmel und Hoelle.  Several are singular
+# by construction (Kreuz is xyz = 0, three coordinate planes; Kegel and
+# Diabolo are cones), so unlike the classical surfaces above they are
+# NOT expected to mesh watertight, and the rim where they leave the
+# clip box is a real boundary rather than a defect.
+#
+# Every row carries the equation AS PRINTED in the gallery caption
+# alongside the lambda.  That is not decoration: `_selftest` parses the
+# printed form back into an expression and checks it agrees with the
+# lambda numerically.  Both are written from the same caption, so this
+# does not validate the source -- it stops the two copies drifting
+# apart later, which is the failure mode that would otherwise ship a
+# plausible-looking wrong surface without erroring.
+#
+# Deliberately NOT transcribed:
+#   Quaste, Croissant, Wendel, Moebius -- the gallery names these but
+#       prints no equation for them (image-only cells).
+#   Zweiloch -- the gallery prints xyz + yz + 2z^5 = 0 for BOTH
+#       Zeppelin and Zweiloch.  One of the two is wrong at the source
+#       and there is no way to tell which, so only Zeppelin ships.
+#   Torus, Sphaere, Zylinder, Cylinder -- trivial; already primitives.
+#   Dingdong -- already shipped above as DINGDONG.
+#
+# The clip extent on each row was chosen by measurement rather than by
+# eye: a sweep over BOX/BALL and several radii, keeping the smallest
+# that yields a solid patch whose bounding box is not a degenerate slab.
+#
+# References:
+# - H. Hauser, "Bildergalerie algebraischer Flaechen", Universitaet
+#   Wien.  https://homepage.univie.ac.at/herwig.hauser/bildergalerie/
+# - S. Amethyst, 3D-printed renderings of the same gallery,
+#   https://silviana.org/gallery/hauser/
+#
+# Row layout: (key, label, equation as printed, clip shape, clip, F)
+_HAUSER = (
+    ('CALYX', "Calyx",
+     "x^2+y^2z^3 = z^4",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**2 + y**2 * z**3) - (z**4)),
+    ('CALYPSO', "Calypso",
+     "x^2+y^2z = z^2",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**2 + y**2 * z) - (z**2)),
+    ('COLUMPIUS', "Columpius",
+     "x^3y+xz^3+y^3z+z^3+7z^2+5z=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         x**3 * y + x * z**3 + y**3 * z + z**3 + 7 * z**2 + 5 * z),
+    ('CUBE', "Cube",
+     "x^6+y^6+z^6=1",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**6 + y**6 + z**6) - (1)),
+    ('DATTEL', "Dattel",
+     "3x^2+3y^2+z^2=1",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (3 * x**2 + 3 * y**2 + z**2) - (1)),
+    ('DAISY', "Daisy",
+     "(x^2 - y^3)^2=(z^2-y^2)^3",
+     'BOX', 1.2,
+     lambda x, y, z, mu: ((x**2 - y**3)**2) - ((z**2 - y**2)**3)),
+    ('DISTEL', "Distel",
+     "x^2+y^2+z^2+1000 (x^2+y^2)(x^2+z^2)(y^2+z^2)=1",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         (x**2 + y**2 + z**2 + 1000 * (x**2 + y**2) * (x**2 + z**2)
+         * (y**2 + z**2)) - (1)),
+    ('DURCHBLICK', "Durchblick",
+     "x^3y+xz^3+y^3z+z^3+5z = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**3 * y + x * z**3 + y**3 * z + z**3 + 5 * z),
+    ('EISTUETE', "Eistuete",
+     "(x^2+y^2)^3 = 4x^2y^2(z^2+1)",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         ((x**2 + y**2)**3) - (4 * x**2 * y**2 * (z**2 + 1))),
+    ('EVE', "Eve",
+     "5x^2 + 2xz^2 + 5y^6 + 15y^4 + 5z^2 = 15y^5 + 5y^3",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         (5 * x**2 + 2 * x * z**2 + 5 * y**6 + 15 * y**4 + 5 *
+         z**2) - (15 * y**5 + 5 * y**3)),
+    ('FLIRT', "Flirt",
+     "x^2-x^3+y^2+y^4+z^3-10z^4=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 - x**3 + y**2 + y**4 + z**3 - 10 * z**4),
+    ('GEISHA', "Geisha",
+     "x^2yz + x^2z^2 = y^3z + y^3",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         (x**2 * y * z + x**2 * z**2) - (y**3 * z + y**3)),
+    ('HARLEKIN', "Harlekin",
+     "x^3z + 10x^2y + xy^2 + yz^2 = z^3",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         (x**3 * z + 10 * x**2 * y + x * y**2 + y * z**2) - (z**3)),
+    ('HELIX', "Helix",
+     "6x^2 - 2x^4 = y^2z^2",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (6 * x**2 - 2 * x**4) - (y**2 * z**2)),
+    ('HERZ', "Herz",
+     "y^2+z^3-z^4-x^2z^2 = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: y**2 + z**3 - z**4 - x**2 * z**2),
+    ('HIMMEL_UND_HOELLE', "Himmel und Hoelle",
+     "x^2-y^2z^2=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 - y**2 * z**2),
+    ('KOLIBRI', "Kolibri",
+     "x^3 + x^2z^2 - y^2",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**3 + x**2 * z**2 - y**2),
+    ('LEOPOLD', "Leopold",
+     "x^2y^2z^2+3x^2+3y^2+z^2=1",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         (x**2 * y**2 * z**2 + 3 * x**2 + 3 * y**2 + z**2) - (1)),
+    ('OCTDONG', "Octdong",
+     "x^2 + y^2 + z^4 = z^2",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**2 + y**2 + z**4) - (z**2)),
+    ('PLOP', "Plop",
+     "x^2 + (z+y^2)^3 = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 + (z + y**2)**3),
+    ('SEEPFERDCHEN', "Seepferdchen",
+     "(x^2-y^3)^2=(x+y^2)z^3",
+     'BOX', 1.2,
+     lambda x, y, z, mu: ((x**2 - y**3)**2) - ((x + y**2) * z**3)),
+    ('SOFA', "Sofa",
+     "x^2+y^3+z^5 = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 + y**3 + z**5),
+    ('SOLITUDE', "Solitude",
+     "x^2yz +xy^2+y^3+y^3z=x^2z^2",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         (x**2 * y * z + x * y**2 + y**3 + y**3 * z) - (x**2 *
+         z**2)),
+    ('SUESS', "Suess",
+     "(x^2+9/4y^2+z^2-1)^3 - x^2z^3-9/80y^2z^3=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         (x**2 + 9 / 4 * y**2 + z**2 - 1)**3 - x**2 * z**3 - 9 / 80
+         * y**2 * z**3),
+    ('TANZ', "Tanz",
+     "x^4-x^2-y^2z^2=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**4 - x**2 - y**2 * z**2),
+    ('TAUBE', "Taube",
+     "256z^3-128x^2z^2+16x^4z+144xy^2z - 4x^3y^2-27y^4 =0",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         256 * z**3 - 128 * x**2 * z**2 + 16 * x**4 * z + 144 * x *
+         y**2 * z - 4 * x**3 * y**2 - 27 * y**4),
+    ('SPITZ', "Spitz",
+     "(y^3-x^2-z^2)^3 = 27x^2y^3z^2",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         ((y**3 - x**2 - z**2)**3) - (27 * x**2 * y**3 * z**2)),
+    ('TOBEL', "Tobel",
+     "x^3 z + x^2 + yz^3 + z^4 = 3xyz",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         (x**3 * z + x**2 + y * z**3 + z**4) - (3 * x * y * z)),
+    ('VIS_A_VIS', "Vis a vis",
+     "x^2-x^3+y^2+y^4+z^3-z^4=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 - x**3 + y**2 + y**4 + z**3 - z**4),
+    ('WEDELN', "Wedeln",
+     "x^3 = y (1-z^2)^2",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**3) - (y * (1 - z**2)**2)),
+    ('WINDKANAL', "Windkanal",
+     "- x^2 + y^4 + z^4 - xyz = 100",
+     'BOX', 3.0,
+     lambda x, y, z, mu: (-x**2 + y**4 + z**4 - x * y * z) - (100)),
+    ('XANO', "Xano",
+     "x^4 +z^3 = yz^2",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**4 + z**3) - (y * z**2)),
+    ('ZITRUS', "Zitrus",
+     "x^2+z^2 = y^3(y-1)^3",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**2 + z**2) - (y**3 * (y - 1)**3)),
+    ('DROMEDAR', "Dromedar",
+     "x^4 - 3x^2 + y^2+z^3 = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**4 - 3 * x**2 + y**2 + z**3),
+    ('ZEPPELIN', "Zeppelin",
+     "xyz+yz+2z^5= 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x * y * z + y * z + 2 * z**5),
+    ('MICHELANGELO', "Michelangelo",
+     "x^2+y^4+y^3z^2=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 + y**4 + y**3 * z**2),
+    ('STERN', "Stern",
+     "x^2y^2 + y^2z^2 + x^2z^2 + 100 ( x^2 + y^2 + z^2 - 1)^3 = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         x**2 * y**2 + y**2 * z**2 + x**2 * z**2 + 100 * (x**2 +
+         y**2 + z**2 - 1)**3),
+    ('LIMAO', "Limao",
+     "x^2-y^3z^3 = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 - y**3 * z**3),
+    ('WHITNEY', "Whitney",
+     "x^2-y^2z=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 - y**2 * z),
+    ('BUGGLE', "Buggle",
+     "x^4y^2+y^4x^2-x^2y^2+z^6=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**4 * y**2 + y**4 * x**2 - x**2 * y**2 + z**6),
+    ('DIABOLO', "Diabolo",
+     "x^2 = (y^2+ z^2)^2",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**2) - ((y**2 + z**2)**2)),
+    ('DULLO', "Dullo",
+     "(x^2+y^2+z^2)^2-(x^2+y^2) = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**2 + y**2 + z**2)**2 - (x**2 + y**2)),
+    ('MIAU', "Miau",
+     "x^2yz + x^2z^2 + 2 y^3z + 3 y^3 = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu:
+         x**2 * y * z + x**2 * z**2 + 2 * y**3 * z + 3 * y**3),
+    ('TRICHTER', "Trichter",
+     "x^2 + z^3 = y^2z^2",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**2 + z**3) - (y**2 * z**2)),
+    ('NEPALI', "Nepali",
+     "(xy-z^3-1)^2 + (x^2+y^2-1)^3 = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x * y - z**3 - 1)**2 + (x**2 + y**2 - 1)**3),
+    ('PILZCHEN', "Pilzchen",
+     "(z^3 - 1)^2 + (x^2+y^2-1)^3=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (z**3 - 1)**2 + (x**2 + y**2 - 1)**3),
+    ('SUBWAY', "Subway",
+     "x^2y^2 = (z^2-1)^3",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**2 * y**2) - ((z**2 - 1)**3)),
+    ('POLSTERZIPF', "Polsterzipf",
+     "(x^3-1)^2 + (y^3-1)^2+ (z^2-1)^3 = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**3 - 1)**2 + (y**3 - 1)**2 + (z**2 - 1)**3),
+    ('CRIXXI', "Crixxi",
+     "(y^2+z^2-1)^2 +(x^2+y^2-1)^3 = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (y**2 + z**2 - 1)**2 + (x**2 + y**2 - 1)**3),
+    ('BERG', "Berg",
+     "x^2+y^2z^2+z^3 = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 + y**2 * z**2 + z**3),
+    ('GUPF', "Gupf",
+     "x^2+y^2+z=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 + y**2 + z),
+    ('KEGEL', "Kegel",
+     "x^2+y^2-z^2=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 + y**2 - z**2),
+    ('WIGWAM', "Wigwam",
+     "x^2+y^2z^3=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 + y**2 * z**3),
+    ('TUELLE', "Tuelle",
+     "yz(x^2+y-z) = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: y * z * (x**2 + y - z)),
+    ('PIPE', "Pipe",
+     "x^2-z=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 - z),
+    ('FANFARE', "Fanfare",
+     "-x^3+z^2+y^2=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: -x**3 + z**2 + y**2),
+    ('KREUZ', "Kreuz",
+     "xyz=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x * y * z),
+    ('SPINDEL', "Spindel",
+     "x^2+y^2-z^2= 1",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (x**2 + y**2 - z**2) - (1)),
+    ('TWILIGHT', "Twilight",
+     "(z^3-2)^2 +(x^2+y^2-3)^3 =0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (z**3 - 2)**2 + (x**2 + y**2 - 3)**3),
+    ('UFO', "Ufo",
+     "z^2-x^2-y^2 = 1",
+     'BOX', 1.2,
+     lambda x, y, z, mu: (z**2 - x**2 - y**2) - (1)),
+    ('ZECK', "Zeck",
+     "x^2+y^2-z^3(1-z) = 0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 + y**2 - z**3 * (1 - z)),
+    ('SATTEL', "Sattel",
+     "x^2+y^2z+z^3=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**2 + y**2 * z + z**3),
+    ('SCHNEEFLOCKE', "Schneeflocke",
+     "x^3+y^2z^3+yz^4=0",
+     'BOX', 1.2,
+     lambda x, y, z, mu: x**3 + y**2 * z**3 + y * z**4),
+)
+
+for _key, _label, _eq, _shape, _clip, _fn in _HAUSER:
+    PRESETS[_key] = (_label, _fn, _shape, _clip)
+
+HAUSER_EQUATION = {k: eq for (k, _l, eq, _s, _c, _f) in _HAUSER}
+
+
+# Caption-parsing patterns for _printed_expr (module level so the
+# backslashes live in exactly one place).
+POW = r'\^(\d+)'
+NUMVAR = r'(\d)(?=[xyz(])'
+VARVAR = r'([xyz)])(?=[xyz(])'
+PARNUM = r'(\))(?=\d)'
+
+
+def _printed_expr(eq):
+    """Parse a printed gallery equation into a Python expression.
+
+    Handles the two things the captions do that Python does not:
+    superscripts (x^2) and implicit multiplication (xyz, 3x, 9/4y^2,
+    ")("), and folds "lhs = rhs" into "lhs - rhs".  Only `_selftest`
+    uses this -- it is the cross-check against each row's lambda, not
+    a runtime path."""
+    import re
+
+    def side(s):
+        s = s.replace(' ', '')
+        # x^2 -> x**2
+        s = re.sub(POW, lambda m: '**' + m.group(1), s)
+        # 3x -> 3*x,  xy -> x*y,  )2 -> )*2
+        for pat in (NUMVAR, VARVAR, PARNUM):
+            s = re.sub(pat, lambda m: m.group(1) + '*', s)
+        return s
+
+    if '=' in eq:
+        lhs, rhs = eq.split('=', 1)
+        return '(%s) - (%s)' % (side(lhs), side(rhs))
+    return side(eq)
+
+
+# Which family each preset belongs to.  The operator turns this into a
+# Family dropdown that filters the Surface list: an 80-entry flat enum
+# is unusable, and the families are how the sources group them anyway.
+FAMILIES = (
+    ('CLASSICAL', "Classical"),
+    ('HAUSER', "Hauser Gallery"),
+)
+
+SURFACE_FAMILY = {k: 'CLASSICAL' for k in
+                  ('CLEBSCH', 'CAYLEY', 'KUMMER', 'BARTH', 'TOGLIATTI',
+                   'HEART', 'DINGDONG', 'CHMUTOV', 'TANGLE', 'MONKEY')}
+SURFACE_FAMILY.update({k: 'HAUSER' for (k, _l, _e, _s, _c, _f) in _HAUSER})
+
+
 def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3):
     """Mesh the zero level set of a preset. Returns (verts, tris).
     marching_tets simply leaves the level set open where it crosses
@@ -197,3 +567,72 @@ def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3):
         verts = (verts - 0.5 * (lo + hi)) * (2.0 / ext if ext > 1e-9
                                              else 1.0)
     return verts * scale, tris
+
+
+def _selftest():
+    """Three gates, in increasing cost.
+
+    1. Every Hauser lambda agrees with the caption printed beside it.
+       Both are written from the same gallery cell, so this does not
+       validate the source -- it stops the two copies drifting apart,
+       which is the failure that would otherwise ship a wrong surface
+       silently (a mistyped exponent raises nothing; it just moves the
+       zero set).
+    2. Every preset is reachable from exactly one family.
+    3. Every preset meshes to a solid, finite, well-proportioned patch
+       inside the 2 m cube.  Aspect ratio is checked because a bad clip
+       collapses a surface to a slab while leaving the face count
+       healthy -- topology alone would not notice.
+    """
+    ok = True
+    rng = np.random.default_rng(20260820)
+    pts = rng.uniform(-1.1, 1.1, size=(3, 400))
+
+    bad = []
+    for key, label, eq, _shape, _clip, fn in _HAUSER:
+        expr = _printed_expr(eq)
+        try:
+            ref = eval('lambda x, y, z: ' + expr,
+                       {"__builtins__": {}}, {})
+            a = np.asarray(fn(pts[0], pts[1], pts[2], 1.3), dtype=float)
+            b = np.asarray(ref(pts[0], pts[1], pts[2]), dtype=float)
+            scale = max(1.0, float(np.max(np.abs(b))))
+            dev = float(np.max(np.abs(a - b))) / scale
+            if not np.isfinite(dev) or dev > 1e-12:
+                bad.append('%s:%.1e' % (key, dev))
+        except Exception as exc:                     # pragma: no cover
+            bad.append('%s:%s' % (key, exc))
+    ok &= not bad
+    print("algebraic: %d Hauser lambdas match their printed equation %s"
+          % (len(_HAUSER), 'OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    orphan = sorted(set(PRESETS) - set(SURFACE_FAMILY))
+    fams = {f for f, _ in FAMILIES}
+    stray = sorted(f for f in set(SURFACE_FAMILY.values()) if f not in fams)
+    good = not orphan and not stray
+    ok &= good
+    print("algebraic: %d presets all mapped to a declared family %s"
+          % (len(PRESETS), 'OK' if good else
+             'FAIL orphan=%s stray=%s' % (orphan, stray)))
+
+    thin, empty = [], []
+    for key in PRESETS:
+        V, T = build_algebraic(key, 40)
+        if len(V) < 100 or len(T) < 200 or not np.all(np.isfinite(V)):
+            empty.append(key)
+            continue
+        ext = V.max(axis=0) - V.min(axis=0)
+        if float(ext.max()) > 2.0 + 1e-6:
+            empty.append(key + '(oversize)')
+        elif float(ext.min() / ext.max()) < 0.05:
+            thin.append('%s:%.3f' % (key, ext.min() / ext.max()))
+    good = not thin and not empty
+    ok &= good
+    print("algebraic: %d presets mesh solid, finite, in the 2 m cube %s"
+          % (len(PRESETS), 'OK' if good else
+             'FAIL empty=%s thin=%s' % (empty, thin)))
+
+    print("RESULT:", "OK" if ok else "FAIL")
+    if not ok:
+        raise AssertionError("algebraic surfaces self-test failed")
+

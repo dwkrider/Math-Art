@@ -321,7 +321,6 @@ VARIANT_SELECTOR = {
     # -- surfaces --
     "mesh.scherk_collins_add": "preset",
     "mesh.seifert_surface_add": "preset",
-    "mesh.algebraic_surface_add": "preset",
     "mesh.topological_surface_add": "preset",
     "mesh.curiosity_surface_add": "surface",
     "mesh.helical_surface_add": "surface",
@@ -451,6 +450,7 @@ VARIANT_GROUP = {
     "mesh.canonical_polyhedron_add": ("family", "solid"),
     "mesh.parametric_minimal_add": ("family", "surface"),
     "mesh.periodic_minimal_add": ("periodicity", "surface"),
+    "mesh.algebraic_surface_add": ("family", "preset"),
 }
 
 # Groups to render, where a two-level selector reaches further than the
@@ -514,6 +514,9 @@ VARIANT_MAX = {
     "mesh.parametric_minimal_add": 96,
     "mesh.periodic_minimal_add": 96,
     "mesh.canonical_polyhedron_add": 96,
+    # 10 classical + 63 Hauser; the Hauser family is a named gallery
+    # and a partial one would misrepresent it.
+    "mesh.algebraic_surface_add": 96,
 }
 
 # Galleries whose entries are combinations of properties rather than
@@ -1149,6 +1152,15 @@ if _IN_BLENDER:
         return {per: _pairs(items)
                 for per, items in m._PERIODIC_ITEMS.items()}
 
+    def _groups_algebraic():
+        # Same shape as _groups_parametric: `_preset_items` returns
+        # the union list in a background context on purpose, so the
+        # grouping comes from the per-family catalogue the callback
+        # filters against.
+        m = _mod("algebraic_surface_generator")
+        return {fam: _pairs(items)
+                for fam, items in m._PRESET_ITEMS_FAM.items()}
+
     GROUP_RESOLVER = {
         "mesh.regular_solid_add": _groups_regular_solid,
         "mesh.uniform_polyhedron_add":
@@ -1157,6 +1169,7 @@ if _IN_BLENDER:
             _groups_by_family("canonical_polyhedra_generator"),
         "mesh.parametric_minimal_add": _groups_parametric,
         "mesh.periodic_minimal_add": _groups_periodic,
+        "mesh.algebraic_surface_add": _groups_algebraic,
     }
 
     def _static_enum_items(op, prop):

@@ -14,6 +14,13 @@
 #   Taubin heart, Ding-dong, Chmutov sextic, Tangle cube
 #   Monkey saddle           (n-fold: z = Re((x+iy)^n), n = 3 classic)
 #
+# plus the sixty-three named surfaces of Herwig Hauser's gallery --
+# Zitrus, Seepferdchen, Kreuz, Himmel und Hoelle and the rest -- which
+# are chosen for their shapes rather than their theorems and several of
+# which are deliberately singular (Kreuz is xyz = 0, three planes).
+# A Family dropdown picks the group; the Preset list is filtered to it,
+# because one flat enum of eighty entries is unusable.
+#
 # Geometry only; materials and rendering are left to Blender.
 #
 # References:
@@ -28,6 +35,12 @@
 #       classic monkey saddle z = x^3 - 3xy^2. Ceramic renditions of
 #       these saddle sheets recur in Robert Fathauer's mathematical
 #       ceramics (his n-fold saddle forms).
+#   The Hauser family: H. Hauser, "Bildergalerie algebraischer
+#       Flaechen", Universitaet Wien -- equations transcribed from the
+#       gallery captions; see the _HAUSER block in
+#       math_art/surfaces/algebraic.py for the per-row provenance and
+#       for the four surfaces the gallery names but does not give an
+#       equation for.
 
 bl_info = {
     "name": "Algebraic Surface Generator",
@@ -45,9 +58,11 @@ import numpy as np
 # The mathematics lives in the sibling `surfaces` engine package;
 # this module is the Blender layer over it.
 try:
-    from .surfaces.algebraic import (PRESETS, build_algebraic)
+    from .surfaces.algebraic import (PRESETS, build_algebraic, FAMILIES,
+                                     SURFACE_FAMILY, HAUSER_EQUATION)
 except ImportError:  # flat import outside the package
-    from surfaces.algebraic import (PRESETS, build_algebraic)
+    from surfaces.algebraic import (PRESETS, build_algebraic, FAMILIES,
+                                    SURFACE_FAMILY, HAUSER_EQUATION)
 
 
 
@@ -119,17 +134,51 @@ if _IN_BLENDER:
         context.view_layer.objects.active = obj
         return obj
 
+    # Preset lists, built once: the full union and one list per family.
+    # An enum whose items come from a callback cannot carry a static
+    # default, so CLEBSCH stays the effective default by being first in
+    # PRESETS -- keep it there.
+    _PRESET_ITEMS_ALL = [
+        (k, v[0], HAUSER_EQUATION.get(k, v[0])) for k, v in PRESETS.items()]
+    _PRESET_ITEMS_FAM = {}
+    for _k, _v in PRESETS.items():
+        _PRESET_ITEMS_FAM.setdefault(
+            SURFACE_FAMILY.get(_k, 'CLASSICAL'), []).append(
+                (_k, _v[0], HAUSER_EQUATION.get(_k, _v[0])))
+    _FAMILY_ITEMS = [
+        (f, lab, "%s (%d surfaces)" % (lab, len(_PRESET_ITEMS_FAM.get(f, ()))))
+        for f, lab in FAMILIES if _PRESET_ITEMS_FAM.get(f)]
+
+    def _preset_items(self, context):
+        # Fall back to the FULL union whenever there is no UI area
+        # (context None, or a background/scripted call).  Scripted use
+        # -- mesh.algebraic_surface_add(preset='KREUZ') -- and the
+        # headless icon/doc renders must not be filtered out by the
+        # family, and the stored enum index has to map against the same
+        # list on both set and get.
+        if context is None or getattr(context, 'area', None) is None:
+            return _PRESET_ITEMS_ALL
+        return _PRESET_ITEMS_FAM.get(self.family, _PRESET_ITEMS_ALL)
+
     class MESH_OT_algebraic_surface_add(bpy.types.Operator):
         """Add a classical algebraic surface (implicit level set
-        meshed by marching tetrahedra)"""
+        meshed by marching tetrahedra). Pick a Family, then a Preset
+        within it."""
         bl_idname = "mesh.algebraic_surface_add"
         bl_label = "Algebraic Surface"
         bl_options = {'REGISTER', 'UNDO'}
 
+        family: EnumProperty(
+            name="Family",
+            items=_FAMILY_ITEMS,
+            default='CLASSICAL',
+            description="Which group of surfaces to choose from; "
+                        "filters the Preset list")
         preset: EnumProperty(
             name="Preset",
-            items=[(k, v[0], v[0]) for k, v in PRESETS.items()],
-            default='CLEBSCH')
+            items=_preset_items,
+            description="The surface to build; the tooltip gives its "
+                        "defining equation where one is printed")
         resolution: IntProperty(
             name="Resolution", default=80, min=16, max=256,
             description="Sample grid resolution per axis (algebraic "
@@ -179,7 +228,13 @@ if _IN_BLENDER:
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
+            lay.prop(self, 'family')
             lay.prop(self, 'preset')
+            eq = HAUSER_EQUATION.get(self.preset)
+            if eq:
+                row = lay.row()
+                row.enabled = False
+                row.label(text=eq)
             lay.prop(self, 'resolution')
             if self.preset == 'KUMMER':
                 lay.prop(self, 'mu')
