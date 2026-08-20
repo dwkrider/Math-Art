@@ -181,20 +181,30 @@ def _taubin(pts, closed, passes):
         pts = step(pts, _TAUBIN_LAMBDA)
         pts = step(pts, _TAUBIN_MU)
 
-    # Cap how far any point may travel.  Taubin does not shrink the
-    # curve as a whole, but it still cuts corners, and a rim that turns
-    # sharply -- the woven polyhedra turn at every band crossing -- lifts
-    # off the edge there while the rest of the loop stays on it, which
-    # is exactly the failure that shows up as a gap in the viewport.
+    # Cap how far any point may travel -- but scale the budget to how
+    # ragged the curve actually is, not to its point spacing.
     #
-    # The budget is a QUARTER of the local spacing, not a whole cell.  A
-    # whole cell sounds right for a fine staircase, but these rims are
-    # not all fine: on the woven polyhedra the boundary is a coarse
-    # 140-gon whose segments are longer than the drift being bounded, so
-    # a one-cell cap never binds and the corner-cutting survives.  A
-    # quarter keeps the curve inside the tube it is sweeping.
-    seg = np.linalg.norm(np.diff(orig, axis=0), axis=1)
-    cap = 0.25 * float(np.median(seg)) if len(seg) else 0.0
+    # A fixed fraction of the spacing cannot serve both cases here, and
+    # trying it broke one to fix the other.  A marching-tetrahedra rim
+    # zigzags by about a grid cell perpendicular to its own direction,
+    # so flattening it needs a budget of that order; a woven-polyhedron
+    # rim is a coarse polygon with genuine corners, where the same
+    # budget lets the smoother cut them and lift off the surface.
+    #
+    # The discriminator is the high-frequency content itself.  The
+    # Laplacian residual |0.5(prev + next) - p| is exactly the local
+    # zigzag amplitude: large on a staircase, near zero on a smooth
+    # polygon however sharply it turns overall.  Twice its median is
+    # therefore enough to flatten the ragged case and almost nothing in
+    # the coarse one.
+    if closed:
+        lap0 = 0.5 * (np.roll(orig, 1, axis=0)
+                      + np.roll(orig, -1, axis=0)) - orig
+    else:
+        lap0 = np.zeros_like(orig)
+        lap0[1:-1] = 0.5 * (orig[:-2] + orig[2:]) - orig[1:-1]
+    rough = float(np.median(np.linalg.norm(lap0, axis=1)))
+    cap = 2.0 * rough
     if cap > 0.0:
         d = pts - orig
         dist = np.linalg.norm(d, axis=1)
