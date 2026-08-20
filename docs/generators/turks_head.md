@@ -7,7 +7,9 @@ bights, woven strictly alternately over and under, as a rope
 tube on a ring, cylinder, torus or sphere (gcd(L, B) > 1
 gives that many parallel cords).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The **Turk's head** is the classic decorative rope knot — a single cord wound around a surface in $L$ **leads** (passes the long way) and $B$ **bights** (scallops the other way), woven strictly over-and-under.
+
+Sailors have tied them for centuries and describe them exactly this way, by their two counts. The pleasing fact is that the craft description is already the mathematical one: a Turk's head $THK(B,L)$ is precisely the **alternating diagram of the $(L,B)$ torus knot**, and the rope-worker's rule that the cord returns to its start only for certain $L,B$ pairs is the condition $\gcd(L,B)=1$.
 
 ## Options
 
@@ -47,7 +49,19 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The shadow.** The cord's path on the surface is the standard rose diagram of the torus knot $T(L,B)$: wind around at $\theta = Lt$ while oscillating transversely as $\cos(Bt)$. So $L$ counts complete passes the long way and $B$ counts the scallops — exactly the rope-worker's leads and bights.
+
+**One cord or several.** The path closes into a **single** cord if and only if
+
+$$\gcd(L,B)=1.$$
+
+Otherwise it closes early and repeats, giving $\gcd(L,B)$ separate cords — which is the same arithmetic that governs [star polygons](star_prism.md) and, in the plane, the [Celtic plait](celtic_knot_2d.md)'s loop count. A $5\times3$ Turk's head is one continuous cord; a $6\times4$ is two interwoven ones, which a rope-worker discovers by running out of cord in the wrong place.
+
+**Alternating weave.** Every crossing is woven strictly one-over-one-under along the cord. That alternation is what makes it the *alternating* diagram of $T(L,B)$ rather than some other diagram of the same knot, and it is also what makes the physical knot hold: an alternating weave is what gives the friction that stops it slipping.
+
+**Surfaces.** The same $(L,B)$ winding is laid on a ring, a cylinder, a torus or a sphere. The sphere is the one that changes character — the winding must accommodate two poles, so the bights crowd toward them, giving the woven-ball forms rather than a band.
+
+**Output** sweeps the cord as a round rope tube, with the over/under applied as a radial offset so the rope visibly passes over and under itself rather than intersecting.
 
 ## References
 

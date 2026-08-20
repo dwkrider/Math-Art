@@ -4,7 +4,11 @@
 
 Add a faceted gemstone cut from its facet planes.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Cut gemstones built the way a **lapidary** actually specifies them — as facet *planes*, each placed by a mast angle and a position on the index gear — and turned into a solid by intersecting the resulting half-spaces.
+
+This is the faceter's own coordinate system, not a modeller's. A cutting machine holds the stone at an angle to the lap and rotates it to indexed positions on a gear; a design is therefore a list of (angle, index) pairs, and the stone is whatever those cuts leave behind. Building it the same way means the geometry is the design, and the thousands of published faceting designs in GemCad's `.ASC` format can be read directly.
+
+The reference design is the **Standard Round Brilliant** as printed in Strickland's GemCad manual — 57 or 58 facets, table 53–57%, crown $34.5°$, pavilion $40.75°$.
 
 ## Options
 
@@ -75,7 +79,25 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**A facet is a half-space.** Each cut is specified by a **mast angle** $\theta$ from the vertical and an **index** $i$ on a gear of $n$ positions, giving an outward normal
+
+$$\mathbf{n}=\big(\sin\theta\cos\tfrac{2\pi i}{n},\ \sin\theta\sin\tfrac{2\pi i}{n},\ \cos\theta\big)$$
+
+and the facet is the plane $\mathbf{n}\cdot\mathbf{x}=d$, cutting away everything beyond it. The stone is the intersection
+
+$$K=\bigcap_j \{\mathbf{x} : \mathbf{n}_j\cdot\mathbf{x}\le d_j\},$$
+
+a convex polytope. Because intersecting half-spaces can only ever remove material, the construction cannot produce an impossible stone — every design is cuttable by definition, which is precisely why lapidaries specify them this way.
+
+**Meetpoints.** The craft difficulty is that facets are supposed to meet exactly at points, not to leave slivers. Since $d_j$ controls how deep each cut goes, a design fixes the angles and lets the depths be solved so that specified facets share a vertex. Getting a meetpoint wrong by a fraction of a degree leaves a visible sliver facet on a real stone, and the same is true here.
+
+**Why flat shading is deliberate.** Facets are emitted as single $n$-gons and left flat-shaded on purpose. A gemstone's optical behaviour — its brilliance and fire — is *entirely* a matter of the angles between flat mirrors and the total internal reflection they produce. Smooth shading, or a bevel modifier rounding the edges, destroys the only thing the geometry is for. A rounded-off gem is not a slightly worse gem; it is a lump of glass.
+
+**Rendering.** For the same reason a stone needs an environment to reflect: with nothing to reflect it renders black, which is physically correct and useless. The gem rig supplies a sky world and a small key light, which is what the documentation figure is shot under.
+
+**Materials** carry real dispersion and refractive indices — diamond, moissanite, ruby, zircon and twenty more — since fire is the *difference* in refractive index across wavelengths, and a stone cut for diamond's $n=2.42$ behaves quite differently in quartz.
+
+See [Cabochon](gem_cabochon.md) for stones cut on a curve rather than in facets.
 
 ## References
 

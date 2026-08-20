@@ -5,7 +5,9 @@
 Add a Pinkall Hopf torus: the preimage h^{-1}(gamma) of a
 closed curve gamma on S^2, stereographically projected to R^3.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Take a closed curve on the 2-sphere and collect **all** the [Hopf fibres](hopf_fibration.md) lying over it. The result is a torus in $S^3$; projected into $\mathbb{R}^3$ it becomes a **Hopf torus** — a ruffled, twisting surface whose form is decided entirely by the curve you chose.
+
+These are the surfaces Ulrich Pinkall used in 1985 to construct Willmore tori of every conformal type: a Hopf torus over a spherical curve has Willmore energy determined by that curve's length and enclosed area, which turns a hard variational problem into a question about curves on a sphere. A circle of latitude gives an ordinary torus of revolution; anything else gives the characteristic rippling.
 
 ## Options
 
@@ -43,7 +45,25 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The preimage of a curve.** The Hopf map $h:S^3\to S^2$ sends each fibre — a great circle — to a point. So the preimage $h^{-1}(\gamma)$ of a *closed curve* $\gamma\subset S^2$ is a one-parameter family of circles: a torus, swept by carrying a circle along $\gamma$ and back to its start.
+
+It is genuinely a torus rather than a Klein bottle or a cylinder because the fibre circle returns to itself with orientation preserved — the circle action has no fixed points and no reversal.
+
+**Parametrising it.** For a point $\gamma(s)=(\sin\alpha\cos\beta,\ \sin\alpha\sin\beta,\ \cos\alpha)$ on the sphere, the fibre above it can be written
+
+$$\big(\cos\tfrac{\alpha}{2}e^{i(\theta+\beta)},\ \ \sin\tfrac{\alpha}{2}e^{i\theta}\big),\qquad \theta\in[0,2\pi),$$
+
+so sweeping $s$ along $\gamma$ and $\theta$ around the fibre gives the torus in $S^3$. Stereographic projection then brings it into $\mathbb{R}^3$.
+
+The half-angles are the reason the surface twists. Going once around a loop on $S^2$ moves $\alpha/2$ and $\beta$ by *half* what the curve does, so the fibre circle comes back rotated — the surface closes up only after that rotation is accounted for, and the visible ripple is that accumulated turning.
+
+**Pinkall's result.** For a spherical curve of length $L$ enclosing area $A$, the Hopf torus above it has Willmore energy
+
+$$\mathcal{W}=\tfrac{1}{4}\!\int (2H)^2\,dA = \pi\!\left(L^2 + \ldots\right)$$
+
+depending only on $L$ and $A$, not on the curve's detailed shape. That reduction — a functional on surfaces becoming a functional on curves — is what let Pinkall construct Willmore tori of every conformal class, and it connects this generator directly to the [Willmore surfaces](willmore.md).
+
+**Choosing the curve.** A circle of latitude gives a plain torus of revolution; a curve with $n$-fold symmetry gives $n$ lobes; a curve that wanders near a pole produces tight, sharply pinched ripples, since fibres over nearby points on $S^2$ are close in $S^3$ but can project far apart.
 
 ## References
 

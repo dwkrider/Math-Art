@@ -4,7 +4,9 @@
 
 Add a surface of constant width -- a Reuleaux solid of revolution, the Reuleaux tetrahedron, or a Meissner tetrahedron.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A body of **constant width** measures the same across in every direction, exactly as a sphere does — so it rolls smoothly under a flat board, holding it at a constant height, without being round. The Reuleaux triangle is the plane version; these are its solid counterparts.
+
+The **Meissner tetrahedron** is the celebrated one. Take a Reuleaux tetrahedron — the intersection of four balls centred at a regular tetrahedron's vertices — and it is *not* quite of constant width; three of its curved edges must be replaced by spindle-shaped patches to make it so. Meissner and Schilling built the models in 1912, and the resulting bodies are conjectured to have the **smallest volume** of any solid of constant width, a conjecture still open after more than a century.
 
 ## Options
 
@@ -35,7 +37,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**What constant width means.** For a convex body with support function $h(u)$, the width in direction $u$ is $h(u)+h(-u)$. Constant width $w$ is therefore the condition
+
+$$h(u)+h(-u)=w \quad\text{for every } u,$$
+
+which is a statement about *opposite* pairs of directions — not about being round. That is why non-spherical solutions exist at all.
+
+**Reuleaux polygons and their rotation.** A Reuleaux polygon is built on a regular $n$-gon with **odd** $n$: each arc is centred on the opposite vertex, at radius equal to the width. Odd $n$ is essential — it is what guarantees every vertex has an opposite *edge* to be the centre of, so each direction pairs a vertex with an arc. The **Reuleaux solid of revolution** simply spins such a polygon about an axis of symmetry, and constant width survives the revolution.
+
+**Why the Reuleaux tetrahedron fails.** The obvious 3-D analogue — intersect four balls of radius $w$ centred at the vertices of a regular tetrahedron of edge $w$ — is *not* of constant width. Measured between the midpoints of two opposite curved edges it exceeds $w$ by a factor
+
+$$\sqrt{3}-\frac{\sqrt2}{2}\approx 1.025,$$
+
+about 2.5% too wide. The naive generalisation of a plane construction to space does not work, which is exactly what makes the case interesting.
+
+**Meissner's repair.** Replace **three** of the six curved edges — either three meeting at one vertex, or three forming a triangle — with spindle-shaped surface patches, swept so that each excess is exactly removed. The result satisfies $h(u)+h(-u)=w$ everywhere. Only three edges are altered, and which three gives the two Meissner bodies; the choice matters for the shape but not for the width.
+
+**Construction here.** The Reuleaux tetrahedron is formed by Boolean intersection of four spheres on a subdivided icosphere, with the smoothness parameter setting the subdivision level — a real cost, since the Boolean's accuracy at the sharp fold curves depends on it. The sharp fold edges are then marked as creases, because a Meissner body genuinely *has* sharp edges where the arcs meet, and shading smoothly across them would round off the one feature that defines the shape.
 
 ## References
 

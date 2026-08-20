@@ -7,7 +7,9 @@ volume-constrained area minimization: Plateau's 120-degree
 triple line and the Young-Laplace pressures emerge from the
 evolution rather than being drawn in closed form.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Soap-bubble clusters found by **relaxation** rather than construction: the films are relaxed to minimise area at fixed enclosed volumes, so the equilibrium shape is discovered, and Plateau's laws come out as consequences instead of being imposed.
+
+The double and triple bubbles are the interesting cases. That the familiar double bubble really is the least-area way to enclose two given volumes was proved only in 2002, by Hutchings, Morgan, Ritoré and Ros — a statement everyone believed for a century and nobody could establish. The triple bubble in $\mathbb{R}^3$ was settled more recently still.
 
 ## Options
 
@@ -43,7 +45,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The variational problem.** Minimise total film area subject to each chamber holding a fixed volume. The Lagrange multiplier for each volume constraint is that chamber's **pressure**, and the first variation gives Young–Laplace:
+
+$$\Delta p = 2\sigma H,$$
+
+so every film has constant mean curvature, with the curvature set by the pressure difference across it. A film between two chambers of equal pressure is therefore *flat*, and one between unequal pressures is a sphere bulging into the lower-pressure side, with
+
+$$\frac{1}{r} = \frac{1}{r_{\text{small}}} - \frac{1}{r_{\text{large}}} .$$
+
+**Plateau's laws as output, not input.** Nothing in the setup says films must meet three at a time at $120°$, or that those Plateau borders must meet four at a time at the tetrahedral angle $\arccos(-\tfrac13)\approx109.47°$. Those are what the relaxation *produces*, because any other arrangement can be reduced in area by a local rearrangement. Seeing them emerge is the check that the solver is doing physics rather than drawing.
+
+**The optimiser.** Descent on area under the volume constraints, by conjugate gradient or L-BFGS. The choice matters more than it might seem: the constrained problem is stiff near equilibrium, since moving a film costs area at second order while violating a volume costs at first, so an unpreconditioned descent stalls along the constraint surface.
+
+**Modes.** `SINGLE` gives the sphere — the isoperimetric solution, and a sanity check with a known answer. `DOUBLE` gives the standard double bubble: two spherical caps with a third, gently curved film between them, meeting along a circle at $120°$. `TRIPLE` gives three chambers with genuine Plateau borders where the films meet.
+
+**Colouring** by chamber or by **pressure** — the latter makes the physics visible, since the smaller bubble is always at higher pressure, which is why the dividing film bulges the way it does.
+
+For the constructive counterpart, where the films are placed analytically rather than relaxed, see [Bubble Cluster](bubble_cluster.md).
 
 ## References
 

@@ -5,7 +5,9 @@
 Add fibres of the Hopf fibration of S^3, stereographically
 projected to R^3 as circles and coloured by base point.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The **Hopf fibration** is the map $h: S^3 \to S^2$ whose fibres are great circles of the 3-sphere, and it is one of the most consequential objects in topology — Heinz Hopf's 1931 discovery that a sphere can be fibred by circles in a way that cannot be untangled, which founded homotopy theory's interest in higher spheres.
+
+Its geometry is startlingly concrete: **any two distinct fibres are linked exactly once**, forming a Hopf link. Project the whole thing stereographically into $\mathbb{R}^3$ and every fibre becomes an ordinary circle — a Villarceau circle — except the one through the projection pole, which straightens into the central axis. Fibres over a circle of latitude fill a torus, and sweeping the latitude fills space with nested, pairwise linked tori.
 
 ## Options
 
@@ -54,7 +56,19 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The map.** Write a point of $S^3\subset\mathbb{C}^2$ as a pair $(z_1,z_2)$ with $|z_1|^2+|z_2|^2=1$. The Hopf map sends it to
+
+$$h(z_1,z_2)=\big(2z_1\bar z_2,\ |z_1|^2-|z_2|^2\big)\in S^2,$$
+
+and the fibre over a point is the circle $(e^{i\theta}z_1, e^{i\theta}z_2)$ — multiplying both coordinates by the same unit complex number. So the fibres are exactly the orbits of the circle action, which is why they are great circles and why they partition $S^3$ with none left over.
+
+**Why any two fibres link once.** Two distinct fibres are two disjoint great circles in $S^3$; their linking number is the degree of a map that turns out to be exactly 1. That number is the **Hopf invariant**, and it being non-zero is precisely the statement that the fibration is non-trivial — $S^3$ is not $S^2\times S^1$. This is the discovery: a map $S^3\to S^2$ that cannot be deformed to a constant, which was the first non-trivial higher homotopy group ever found.
+
+**Projecting to $\mathbb{R}^3$.** Stereographic projection from a pole of $S^3$ carries circles to circles, so each fibre becomes a genuine round circle in space — the Villarceau circles of a torus. The single fibre passing through the projection pole is the exception: it becomes a straight line, the central axis, since projection sends the pole to infinity.
+
+**Nested tori.** All the fibres over one circle of latitude on $S^2$ sweep out a torus of revolution. The equator gives the "middle" torus; latitudes toward one pole give tori nesting inside it, toward the other pole tori outside — and the two poles themselves give the central axis and the unit circle. Sweeping latitude therefore fills all of $\mathbb{R}^3$ with disjoint, pairwise-linked tori, which is the canonical picture of the fibration.
+
+**Hopf tori.** See [Hopf Torus](hopf_torus.md) for the surface swept by the fibres over an arbitrary *closed curve* on $S^2$ rather than over a circle of latitude.
 
 ## References
 
