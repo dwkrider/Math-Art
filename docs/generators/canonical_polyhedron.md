@@ -153,8 +153,6 @@ The second condition removes the Möbius freedom that would otherwise let the wh
 
 ## References
 
-- Catalog & naming: David I. McCooey, "Visual Polyhedra"
-- (dmccooey.com/polyhedra), "Greater Self-Dual Solids" category.
-- Canonical form: George W. Hart, "Calculating Canonical Polyhedra",
-- Mathematica in Education and Research 6(3), 1997 (edge-tangent
-- midsphere; also used by conway_operators.canonicalize).
+- Catalog & naming: David I. McCooey, "Visual Polyhedra" (dmccooey.com/polyhedra), "Greater Self-Dual Solids" category.
+- Canonical form: George W. Hart, "Calculating Canonical Polyhedra", Mathematica in Education and Research 6(3), 1997 (edge-tangent midsphere; also used by conway_operators.canonicalize).
+

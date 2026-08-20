@@ -43,6 +43,6 @@ Implementation: the generator enumerates candidate integer points in the boundin
 
 ## References
 
-- Steve Waterman, *Waterman Polyhedra* — <http://watermanpolyhedron.com/>
-- Adrian Rossiter, *Antiprism* and its `waterman` program — <https://www.antiprism.com>, <https://github.com/antiprism/antiprism> (GPL; the construction followed here).
-- P. Bourke, *Waterman Polyhedra* — <http://paulbourke.net/geometry/waterman/> (illustrated description of the FCC-hull construction).
+- Waterman polyhedra: Steve Waterman (convex hulls of close-packed lattice points within a given radius).
+- Antiprism (Adrian Rossiter), the `waterman` program.
+

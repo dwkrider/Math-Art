@@ -25,19 +25,19 @@
 # module is the Blender layer over it.
 #
 # References:
-#   T. Wills, "D-Forms: 3D Forms from Two 2D Sheets," Bridges 2006,
-#       pp. 503-510.
-#   J. Sharp, "D-Forms and Developable Surfaces," Bridges 2005,
-#       pp. 121-128; "D-Forms" (Tarquin, 2009) -- also the source of the
-#       anti-D-form.
-#   R. R. Orduno, N. Winard, S. Bierwagen, D. Shell, N. Kalantar,
-#       A. Borhani, E. Akleman, "A Mathematical Approach to Obtain
-#       Isoperimetric Shapes for D-Form Construction," Bridges 2016,
-#       pp. 277-284.
-#   E. Demaine, J. O'Rourke, "Geometric Folding Algorithms" (Cambridge,
-#       2007), ch. 25 -- Alexandrov gluings.
-#   H. Pottmann, J. Wallner, "Computational Line Geometry" (Springer,
-#       2001) -- poses the D-form shape question.
+# - T. Wills, "D-Forms: 3D Forms from Two 2D Sheets," Bridges 2006,
+#   pp. 503-510.
+# - J. Sharp, "D-Forms and Developable Surfaces," Bridges 2005,
+#   pp. 121-128; "D-Forms" (Tarquin, 2009) -- also the source of the
+#   anti-D-form.
+# - R. R. Orduno, N. Winard, S. Bierwagen, D. Shell, N. Kalantar,
+#   A. Borhani, E. Akleman, "A Mathematical Approach to Obtain
+#   Isoperimetric Shapes for D-Form Construction," Bridges 2016,
+#   pp. 277-284.
+# - E. Demaine, J. O'Rourke, "Geometric Folding Algorithms" (Cambridge,
+#   2007), ch. 25 -- Alexandrov gluings.
+# - H. Pottmann, J. Wallner, "Computational Line Geometry" (Springer,
+#   2001) -- poses the D-form shape question.
 
 bl_info = {
     "name": "D-Forms",

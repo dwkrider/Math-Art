@@ -96,27 +96,27 @@
 # and Meehan.
 #
 # References:
-#   George Bain, "Celtic Art: The Methods of Construction" (1951) -- the
-#     grid-and-plait method taught to a century of Celtic artists.
-#   Iain Bain, "Celtic Knotwork" (1986) -- the systematic grid, breaks
-#     and border construction reproduced here.
-#   Andrew Glassner, "Celtic Knotwork" (Andrew Glassner's Notebook, IEEE
-#     Computer Graphics & Applications 19(5)-(6), 1999) -- the algorithmic
-#     grid / barrier / crossing formulation.
-#   Christian Mercat, "Les entrelacs des enluminures celtes" (2005) and
-#     "Celtic Knotwork" -- the mathematical (mirror-curve) treatment.
-#   Peter R. Cromwell, "Celtic Knotwork: Mathematical Art" (Mathematical
-#     Intelligencer 15(1), 1993) -- the topology of the plait and its
-#     components.
-#   Aidan Meehan, "Celtic Design: Knotwork" (1991) -- the grid-cell
-#     drawing tradition.
-#   Slavik V. Jablan, "Mirror curves" and "Symmetry, Ornament and
-#     Modularity" (2002) -- knotwork as billiard / mirror curves, and the
-#     component count of the plain plait.
-#   Christian Mercat, "Knots and links from a graph" / "Les entrelacs des
-#     enluminures celtes" -- the construction of an interlaced knot on the
-#     medial graph of ANY planar graph, generalizing the grid plait to
-#     arbitrary tilings (used here for the non-square substrates).
+# - George Bain, "Celtic Art: The Methods of Construction" (1951) -- the
+#   grid-and-plait method taught to a century of Celtic artists.
+# - Iain Bain, "Celtic Knotwork" (1986) -- the systematic grid, breaks
+#   and border construction reproduced here.
+# - Andrew Glassner, "Celtic Knotwork" (Andrew Glassner's Notebook, IEEE
+#   Computer Graphics & Applications 19(5)-(6), 1999) -- the algorithmic
+#   grid / barrier / crossing formulation.
+# - Christian Mercat, "Les entrelacs des enluminures celtes" (2005) and
+#   "Celtic Knotwork" -- the mathematical (mirror-curve) treatment.
+# - Peter R. Cromwell, "Celtic Knotwork: Mathematical Art" (Mathematical
+#   Intelligencer 15(1), 1993) -- the topology of the plait and its
+#   components.
+# - Aidan Meehan, "Celtic Design: Knotwork" (1991) -- the grid-cell
+#   drawing tradition.
+# - Slavik V. Jablan, "Mirror curves" and "Symmetry, Ornament and
+#   Modularity" (2002) -- knotwork as billiard / mirror curves, and the
+#   component count of the plain plait.
+# - Christian Mercat, "Knots and links from a graph" / "Les entrelacs des
+#   enluminures celtes" -- the construction of an interlaced knot on the
+#   medial graph of ANY planar graph, generalizing the grid plait to
+#   arbitrary tilings (used here for the non-square substrates).
 
 bl_info = {
     "name": "Celtic Knot 2D",

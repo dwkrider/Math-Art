@@ -52,5 +52,6 @@ At the join points ($t=0$ and $t=1$) both arcs are at radius $r_{\text{join}}$ a
 
 ## References
 
-- **Tom Lawton**, *[Wonder](https://tomlawton.medium.com/tom-lawtons-wonder-d517d4d479b5)* — the sculpture that inspired this generator. Lawton's *Wonder* is a copper-and-bronze kinetic ribbon that flows endlessly up and down like a torus, permanently installed inside Malmesbury Abbey, Wiltshire, England (a tabletop "Baby Wonder" edition also exists). The dual counter-rotating helix construction here abstracts that endlessly-flowing loop into an adjustable parametric curve.
-- The parametrization (raised-cosine radius blend, signed-power cosine height profile, whole-turn closure condition) is original to the Math Art project and is documented in the module and on this page.
+- Two nested counter-rotating helices joined into a closed loop is a classical curve construction; the parametrization here (raised-cosine radius blend, signed-power cosine height, whole-turn closure) is original to this project.
+- Form inspired by Tom Lawton's kinetic sculpture "Wonder".
+

@@ -61,3 +61,4 @@ about 2.5% too wide. The naive generalisation of a plane construction to space d
 - Bernd Kawohl & Christof Weber, "Meissner's Mysterious Bodies", Math. Intelligencer 33 (2011), no. 3, 94-101.
 - T. Bonnesen & W. Fenchel, "Theorie der konvexen Koerper", Springer 1934 (the minimal-volume conjecture).
 - Wikipedia, "Surface of constant width" and "Reuleaux triangle".
+

@@ -86,3 +86,4 @@ The convergents of that expansion are exactly the ratios of consecutive **Fibona
 - H. S. M. Coxeter, "Introduction to Geometry", 2nd ed., Wiley, 1969, Sec. 11.5 -- the golden angle 360/phi^2 and continued fractions.
 - R. W. Fathauer, "Crested Cactuses and Mathematical Sculpture", Bridges 2022 Conference Proceedings, pp. 111-118 -- phyllotactic and fasciated ("cristate", line-of-growth) ceramic forms.
 - A. Gonzalez, "Measurement of areas on a sphere using Fibonacci and latitude-longitude lattices", Math. Geosci. 42 (2010), pp. 49-64 -- the equal-area spherical Fibonacci lattice (3).
+

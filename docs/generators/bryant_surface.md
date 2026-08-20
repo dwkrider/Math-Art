@@ -90,15 +90,7 @@ which set the hypergeometric parameters $a=\alpha+\tau+\rho$, $b=\alpha+\tau-\rh
 
 ## References
 
-- Robert L. Bryant, "Surfaces of mean curvature one in hyperbolic
-- space", Asterisque 154-155 (1987), 321-347.  Theorem A (the
-- representation f = F (conj F)^T), Theorem B (the polynomial data on
-- C), Example 1 (Enneper's cousin, p. 341), Example 2 (the catenoid
-- cousins, pp. 341-342).
-- A. I. Bobenko, T. V. Pavlyukevich, B. A. Springborn, "Hyperbolic
-- constant mean curvature one surfaces: spinor representation and
-- trinoids in hypergeometric functions", Math. Z. 245 (2003), 63-91 --
-- the spinor form of the same representation, and explicit trinoids.
-- M. Umehara and K. Yamada, "Complete surfaces of constant mean
-- curvature 1 in the hyperbolic 3-space", Ann. of Math. 137 (1993),
-- 611-638 -- the global theory these examples opened up.
+- Robert L. Bryant, "Surfaces of mean curvature one in hyperbolic space", Asterisque 154-155 (1987), 321-347.  Theorem A (the representation f = F (conj F)^T), Theorem B (the polynomial data on C), Example 1 (Enneper's cousin, p. 341), Example 2 (the catenoid cousins, pp. 341-342).
+- A. I. Bobenko, T. V. Pavlyukevich, B. A. Springborn, "Hyperbolic constant mean curvature one surfaces: spinor representation and trinoids in hypergeometric functions", Math. Z. 245 (2003), 63-91; arXiv:math/0206021 -- the spinor form of the same representation and the explicit trinoids the TRINOID mode implements (see math_art/trinoid.py for the construction, gates and details).
+- M. Umehara and K. Yamada, "Complete surfaces of constant mean curvature 1 in the hyperbolic 3-space", Ann. of Math. 137 (1993), 611-638 -- the global theory these examples opened up.
+

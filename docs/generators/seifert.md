@@ -85,7 +85,10 @@ The headless tests confirm the generated mesh's own $V - E + F$ equals $n - L$ f
 
 ## References
 
-- J. J. van Wijk, A. M. Cohen, *Visualization of Seifert Surfaces*, IEEE Transactions on Visualization and Computer Graphics 12(4), 2006 — SeifertView: <https://vanwijk.win.tue.nl/seifertview/> (braid-word input, wedding-cake layout, dynamic relaxation).
-- H. Seifert, *Über das Geschlecht von Knoten*, Mathematische Annalen 110, 1934 (the algorithm itself).
-- R. Scharein, *KnotPlot* — <https://knotplot.com/> (the physical-model smoothing SeifertView's dynamic relaxation is based on).
-- U. Pinkall, K. Polthier, *Computing Discrete Minimal Surfaces and Their Conjugates*, Experimental Mathematics 2(1), 1993 (the pinned area-minimization used for smoothing).
+- Seifert's algorithm and the genus of a knot: Herbert Seifert, "Ueber das Geschlecht von Knoten", Math. Ann. 110, 1934.
+- Stacked disk/band layout: J. J. van Wijk & A. M. Cohen, "Visualization of Seifert Surfaces", IEEE TVCG 12(4), 2006, 485-496.
+- Braid generators s_i after Emil Artin (braid groups B_n).
+- Non-orientable state surfaces: E. Kalfagianni, "State surfaces of links", arXiv:1804.05281, Lemma 2.2 (bipartite orientability criterion).
+- Implicit mean-curvature fairing: M. Desbrun, M. Meyer, P. Schroeder, A. H. Barr, "Implicit Fairing of Irregular Meshes using Diffusion and Curvature Flow", SIGGRAPH 1999.  Cotangent weights: U. Pinkall & K. Polthier, "Computing Discrete Minimal Surfaces and Their Conjugates", Experiment. Math. 2(1), 1993.
+- Rotation-minimising band frames: W. Wang, B. Juttler, D. Zheng, Y. Liu, "Computation of Rotation Minimizing Frames", ACM TOG 27(1), 2008.
+

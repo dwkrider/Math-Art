@@ -46,5 +46,5 @@ topologically connected **bands**, each visiting $n/g$ of the $n$ angular **stri
 
 ## References
 
-- G. W. Hart, *Twisted Torus* example, https://www.georgehart.com/ (and the vibe-coded program examples, https://www.georgehart.com/vibecode/).
-- Twisted-torus generator after the programs on Hart's vibecode page.
+- George W. Hart, "Twisted Torus" example, https://www.georgehart.com/ (the twisted prismatic torus this follows).  The swept/twisted prismatic torus is otherwise a classical toroidal construction.
+

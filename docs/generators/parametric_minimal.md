@@ -158,8 +158,8 @@ Surfaces whose ends run to infinity are trimmed: a parameter-space validity mask
 
 ## References
 
-- Jürgen Meier, *Minimalflächen* — parametric surface gallery, 3d-meier.de tut25: <http://www.3d-meier.de/tut25/Seite0.html>
-- DLMF (NIST Digital Library of Mathematical Functions), §23.6 (Weierstrass elliptic functions in terms of theta functions) and §20.2 (theta-function $q$-series): <https://dlmf.nist.gov/>
-- Alfred Gray / Paul Nylander — closed form for Costa's minimal surface.
-- L. P. Jorge, W. H. Meeks III, *The topology of complete minimal surfaces of finite total Gaussian curvature*, Topology 22 (1983) — the $k$-noid / $n$-noid family.
-- C. C. Chen, F. Gackstatter, *Elliptische und hyperelliptische Funktionen und vollständige Minimalflächen vom Enneperschen Typ*, Math. Ann. 259 (1982).
+- Weierstrass-Enneper representation: K. Weierstrass (1866) and A. Enneper (1864); the catenoid (surface of Euler, 1744) was shown minimal by J. B. C. Meusnier (1776).
+- Costa surface: C. J. Costa (1982); embeddedness by D. Hoffman and W. H. Meeks III (1985). Chen-Gackstatter: C. C. Chen and F. Gackstatter (1982). Jorge-Meeks k-noids: L. P. Jorge and W. H. Meeks III (1983).
+- Triply-periodic families: H. A. Schwarz (P, D; Gesammelte Math. Abhandlungen, 1890), A. H. Schoen (gyroid, I-WP, F-RD; NASA TN D-5541, 1970), E. R. Neovius (1883). Cotangent-Laplacian area flow after U. Pinkall and K. Polthier (1993).
+- Seifert surfaces: H. Seifert, "Ueber das Geschlecht von Knoten", Mathematische Annalen 110 (1934). Visualization of Seifert surfaces as disks joined by twisted bands after J. J. van Wijk and A. M. Cohen, IEEE TVCG 12(4) (2006).
+

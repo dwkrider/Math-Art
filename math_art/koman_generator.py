@@ -36,15 +36,15 @@
 # turned further round the coil than the last, never from bending one.
 #
 # References:
-#   T. Akgun, I. Kaya, A. Koman, E. Akleman, "Spiral Developable
-#       Sculptures of Ilhan Koman," Bridges 2007, pp. 47-52 -- Eqs. (1)
-#       and (2), and Figures 3-6, which are the construction.  Local
-#       copy: research/journals/bridges/2007/bridges2007-47/.
-#   T. Akgun, A. Koman, E. Akleman, "Developable Sculptural Forms of
-#       Ilhan Koman," Bridges 2006, pp. 343-350.  Local copy:
-#       research/journals/bridges/2006/bridges2006-343/.
-#   I. Koman and F. Ribeyrolles, "On My Approach to Making Nonfigurative
-#       Static and Kinetic Sculpture," Leonardo 12(1), 1979, pp. 1-4.
+# - T. Akgun, I. Kaya, A. Koman, E. Akleman, "Spiral Developable
+#   Sculptures of Ilhan Koman," Bridges 2007, pp. 47-52 -- Eqs. (1)
+#   and (2), and Figures 3-6, which are the construction.  Local
+#   copy: research/journals/bridges/2007/bridges2007-47/.
+# - T. Akgun, A. Koman, E. Akleman, "Developable Sculptural Forms of
+#   Ilhan Koman," Bridges 2006, pp. 343-350.  Local copy:
+#   research/journals/bridges/2006/bridges2006-343/.
+# - I. Koman and F. Ribeyrolles, "On My Approach to Making Nonfigurative
+#   Static and Kinetic Sculpture," Leonardo 12(1), 1979, pp. 1-4.
 
 bl_info = {
     "name": "Koman Developable Sculptures",

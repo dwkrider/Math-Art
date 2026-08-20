@@ -19,18 +19,18 @@
 # layer over it.
 #
 # References:
-#   Carl Friedrich Gauss, "Disquisitiones generales circa superficies
-#     curvas", 1827 -- the Theorema Egregium.
-#   J. P. Lewis, "Algorithms for Solid Noise Synthesis", SIGGRAPH 1989,
-#     263-270 -- noise defined in space, so it restricts to any surface.
-#   Steven Worley, "A Cellular Texture Basis Function", SIGGRAPH 1996,
-#     291-294.
-#   Benoit B. Mandelbrot, "The Fractal Geometry of Nature", Freeman, 1982;
-#     Dietmar Saupe, "Algorithms for random fractals", in "The Science of
-#     Fractal Images", Springer, 1988 -- spectral synthesis.
-#   E. W. Hobson, "The Theory of Spherical and Ellipsoidal Harmonics",
-#     Cambridge University Press, 1931 -- spherical harmonics, the sphere's
-#     own vibration modes.
+# - Carl Friedrich Gauss, "Disquisitiones generales circa superficies
+#   curvas", 1827 -- the Theorema Egregium.
+# - J. P. Lewis, "Algorithms for Solid Noise Synthesis", SIGGRAPH 1989,
+#   263-270 -- noise defined in space, so it restricts to any surface.
+# - Steven Worley, "A Cellular Texture Basis Function", SIGGRAPH 1996,
+#   291-294.
+# - Benoit B. Mandelbrot, "The Fractal Geometry of Nature", Freeman, 1982;
+#   Dietmar Saupe, "Algorithms for random fractals", in "The Science of
+#   Fractal Images", Springer, 1988 -- spectral synthesis.
+# - E. W. Hobson, "The Theory of Spherical and Ellipsoidal Harmonics",
+#   Cambridge University Press, 1931 -- spherical harmonics, the sphere's
+#   own vibration modes.
 
 bl_info = {
     "name": "Solid Relief",

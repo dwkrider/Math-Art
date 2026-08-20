@@ -70,5 +70,10 @@ segments; Depth is clamped down (with a warning) to stay under the 8000-segment 
 
 ## References
 
-- Henry Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press (2016) — the Mahler–Segerman ternary tree mobile, fig. 7-2. <https://www.3dprintmath.com/>
-- Sabetta Matsumoto, Henry Segerman, Laura Taalman (Mahler & Segerman, "Ternary tree mobile") — the printed sculpture the Mobile mode reproduces.
+- Aristid Lindenmayer, "Mathematical models for cellular interactions in development" (1968) -- L-systems.
+- Przemyslaw Prusinkiewicz & Aristid Lindenmayer, "The Algorithmic Beauty of Plants" (Springer, 1990).
+- Hisao Honda, "Description of the Form of Trees by the Parameters of the Tree-like Body: Effects of the Branching Angle and the Branch Length on the Shape of the Tree-like Body", Journal of Theoretical Biology 31 (1971), pp. 331-338 -- the HONDA mode's assumptions (a)-(e), end-point formula and Plates I-VI.
+- Leonardo da Vinci, Notebooks, and Cecil D. Murray, J. General Physiology 9 (1926) -- the width law behind `width_exponent`.
+- Recursive branching in the tradition of the Pythagoras tree (Albert E. Bosman, 1942).
+- Henry Segerman, "Visualizing Mathematics with 3D Printing" (Johns Hopkins University Press, 2016) -- the Mahler-Segerman ternary tree mobile (fig. 7-2) reproduced by the Mobile mode.
+

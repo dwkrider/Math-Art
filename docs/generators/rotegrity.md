@@ -61,6 +61,8 @@ Each strap's arc length $\arccos(A\cdot B)$ is recorded, and straps are grouped 
 
 ## References
 
-- Adrian Rossiter, *Antiprism* and its `rotegrity` program — <https://www.antiprism.com>, <https://github.com/antiprism/antiprism> (GPL; the reference implementation this follows).
-- Dick Fischbeck, *Rotegrity* — the term and physical strap-sphere models.
-- O. Baverel et al., nexorade / reciprocal-frame structures (the "nexorade" terminology).
+- Adrian Rossiter, Antiprism and its `rotegrity` program (https://www.antiprism.com) -- the reference implementation.
+- The term "rotegrity" was introduced by Richard (Dick) Boyt, "Rotegrity" (1970); modern strap-sphere models by Dick Fischbeck.
+- "Tensegrity" is Buckminster Fuller's term for the floating- compression structures of Kenneth Snelson.
+- "Nexorade" / reciprocal-frame terminology after Olivier Baverel et al., "Nexorades" (mutually supporting members).
+

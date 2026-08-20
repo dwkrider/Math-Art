@@ -80,3 +80,4 @@ Note the half-cell offsets: p11g glides by $\tfrac12$ of the translation, and p2
 
 - The 7 frieze (strip) groups -- classical crystallographic result.
 - John H. Conway, Heidi Burgiel & Chaim Goodman-Strauss, "The Symmetries of Things" (2008) -- the orbifold signature notation (and the hop/step/sidle/jump naming).
+

@@ -112,20 +112,20 @@
 # ring closes with no visible seam.
 #
 # References:
-#   Robert G. Scharein, "Interactive Topological Drawing" (PhD
-#     thesis, The University of British Columbia, 1998) -- the
-#     KnotPlot program.
-#   Robert G. Scharein, KnotPlot knot carpets --
-#     https://knotplot.com/carpets -- periodic alternating links of
-#     symmetric unknots, the construction reproduced here.
-#   George Bain, "Celtic Art: The Methods of Construction" (1951) --
-#     the interlace tradition of woven closed cords.
-#   Peter R. Cromwell, "Celtic Knotwork: Mathematical Art"
-#     (Mathematical Intelligencer 15(1), 1993) -- the topology of
-#     alternating interlace.
-#   Slavik V. Jablan, "Mirror curves" and "Symmetry, Ornament and
-#     Modularity" (2002) -- knotwork diagrams and their alternating
-#     over/under structure.
+# - Robert G. Scharein, "Interactive Topological Drawing" (PhD
+#   thesis, The University of British Columbia, 1998) -- the
+#   KnotPlot program.
+# - Robert G. Scharein, KnotPlot knot carpets --
+#   https://knotplot.com/carpets -- periodic alternating links of
+#   symmetric unknots, the construction reproduced here.
+# - George Bain, "Celtic Art: The Methods of Construction" (1951) --
+#   the interlace tradition of woven closed cords.
+# - Peter R. Cromwell, "Celtic Knotwork: Mathematical Art"
+#   (Mathematical Intelligencer 15(1), 1993) -- the topology of
+#   alternating interlace.
+# - Slavik V. Jablan, "Mirror curves" and "Symmetry, Ornament and
+#   Modularity" (2002) -- knotwork diagrams and their alternating
+#   over/under structure.
 
 bl_info = {
     "name": "Knot Carpet",

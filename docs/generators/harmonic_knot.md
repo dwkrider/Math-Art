@@ -76,16 +76,11 @@ so on $[-1,1]$ a Chebyshev knot is a Lissajous curve reparametrised — the poly
 
 ## References
 
-- M. G. V. Bogle, J. E. Hearst, V. F. R. Jones, L. Stoilov,
-- "Lissajous knots", J. Knot Theory Ramif. 3(2):121-140, 1994.
+- M. G. V. Bogle, J. E. Hearst, V. F. R. Jones, L. Stoilov, "Lissajous knots", J. Knot Theory Ramif. 3(2):121-140, 1994.
 - L. H. Kauffman, "Fourier Knots", arXiv:q-alg/9711013, 1997.
-- A. K. Trautwein, "Harmonic Knots", PhD thesis, University of
-- Iowa, 1995.
-- J. Hoste, "Torus knots are Fourier-(1,1,2) knots",
-- arXiv:0708.3590, 2007.
-- P.-V. Koseleff, D. Pecker, "Chebyshev knots", J. Knot Theory
-- Ramif. 20(4):575-593, 2011; arXiv:0812.1089.
-- V. F. R. Jones, J. H. Przytycki, "Lissajous knots and billiard
-- knots", Banach Center Publ. 42:145-163, 1998.
-- P.-V. Koseleff, D. Pecker, "Every knot is a billiard knot",
-- arXiv:1106.5600, 2011.
+- A. K. Trautwein, "Harmonic Knots", PhD thesis, University of Iowa, 1995.
+- J. Hoste, "Torus knots are Fourier-(1,1,2) knots", arXiv:0708.3590, 2007.
+- P.-V. Koseleff, D. Pecker, "Chebyshev knots", J. Knot Theory Ramif. 20(4):575-593, 2011; arXiv:0812.1089.
+- V. F. R. Jones, J. H. Przytycki, "Lissajous knots and billiard knots", Banach Center Publ. 42:145-163, 1998.
+- P.-V. Koseleff, D. Pecker, "Every knot is a billiard knot", arXiv:1106.5600, 2011.
+

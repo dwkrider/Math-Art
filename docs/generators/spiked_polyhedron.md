@@ -77,7 +77,9 @@ Raising *top* above 1 lifts each rhombus tip, folding the rhombus along its long
 
 ## References
 
-- Stan Wagon, "Rhombic hexecontahedron," and Eric W. Weisstein, "Rhombic Hexecontahedron," *MathWorld*: <https://mathworld.wolfram.com/RhombicHexecontahedron.html> — the 60-golden-rhombus solid as a stellation of the rhombic triacontahedron / union of 20 acute golden rhombohedra.
-- Eric W. Weisstein, "Golden Rhombohedron," *MathWorld*: <https://mathworld.wolfram.com/GoldenRhombohedron.html>
-- H. Martyn Cundy and A. P. Rollett, *Mathematical Models*, 2nd ed., Oxford University Press, 1961 — deltahedra and face-augmented (pyramid-capped) Platonic solids.
-- H. S. M. Coxeter, *Regular Polytopes*, 3rd ed., Dover, 1973 — the golden ratio in the icosahedron/dodecahedron and the rhombic zonohedra.
+- Deltahedra and face-augmented (pyramid-capped) Platonic solids: H. Martyn Cundy and A. P. Rollett, "Mathematical Models", 2nd ed., Oxford University Press, 1961.
+- Rhombic hexecontahedron (60 golden rhombi, a stellation of the rhombic triacontahedron / union of 20 acute golden rhombohedra): see Stan Wagon; E. W. Weisstein, "Rhombic Hexecontahedron", MathWorld.
+- Golden ratio in the icosahedron/dodecahedron and the rhombic zonohedra: H. S. M. Coxeter, "Regular Polytopes", 3rd ed., 1973.
+- Goldberg polyhedra: Michael Goldberg, "A class of multi-symmetric polyhedra", Tohoku Mathematical Journal 43 (1937), 104-108.
+- Spiked Goldberg forms after Robert Fathauer's "Pollen Form" and "Fungus Form" ceramic sculptures.
+

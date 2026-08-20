@@ -103,3 +103,4 @@ These are the same [uniform tilings](tiling.md) the tiling generator builds, reu
 - Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (1987) -- the uniform tilings used as PIC substrates.
 - Peter J. Lu & Paul J. Steinhardt, "Decagonal and Quasi-Crystalline Tilings in Medieval Islamic Architecture" (Science 315, 2007) -- the girih tiles and the quasiperiodic 10-fold strapwork, realized here as polygons-in-contact decoration of a Penrose quasilattice.
 - Peter R. Cromwell, "The Search for Quasi-Periodicity in Islamic Art" (Mathematical Intelligencer 31, 2009) -- girih construction.
+

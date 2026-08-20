@@ -84,3 +84,4 @@ The **Seam Curvature** colour attribute paints exactly that quantity, so the red
 - R. R. Orduno, N. Winard, S. Bierwagen, D. Shell, N. Kalantar, A. Borhani, E. Akleman, "A Mathematical Approach to Obtain Isoperimetric Shapes for D-Form Construction," Bridges 2016, pp. 277-284.
 - E. Demaine, J. O'Rourke, "Geometric Folding Algorithms" (Cambridge, 2007), ch. 25 -- Alexandrov gluings.
 - H. Pottmann, J. Wallner, "Computational Line Geometry" (Springer, 2001) -- poses the D-form shape question.
+

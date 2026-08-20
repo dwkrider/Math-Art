@@ -71,8 +71,8 @@ All presets are centered and fit within a 2 m cube, then Scaled; immersed preset
 
 ## References
 
-- H. Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press, 2016 (chapter 6, figs 6-1..6-7).
-- R. Bryant and R. Kusner parametrization of Boy's surface; see R. Kusner, "Conformal geometry and complete minimal surfaces," *Bull. Amer. Math. Soc.* 17 (1987), pp. 291-295.
-- W. Boy, "Über die Curvatura integra und die Topologie geschlossener Flächen," *Mathematische Annalen* 57 (1903), pp. 151-184.
-- J. Steiner, Roman surface; see D. Hilbert and S. Cohn-Vossen, *Geometry and the Imagination*, Chelsea, 1952.
-- Weierstrass/nodal genus construction and marching tetrahedra as used by the sibling Minimal Surface Toolkit (Ken Brakke's periodic-surface pages, https://kenbrakke.com/evolver).
+- Klein bottle: F. Klein (1882). Boy's surface: W. Boy, Math. Ann. 57 (1903), here via the R. Bryant - R. Kusner parametrization.
+- Cross-cap and Roman surface: two immersions of RP^2 due to J. Steiner (Rome, 1844). Mobius band: A. F. Mobius (1858).
+- Sudanese Mobius band: H. B. Lawson, "Complete Minimal Surfaces in S^3", Ann. of Math. 92 (1970), 335-374; named for Sue Goodman and Daniel Asimov (cf. G. Francis, "A Topological Picturebook", Springer 1987).
+- Menagerie after ch. 6 of H. Segerman, "Visualizing Mathematics with 3D Printing" (2016).
+

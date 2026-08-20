@@ -66,7 +66,8 @@ Each base triangle becomes $f^2$ small triangles. Vertices shared along an edge 
 
 ## References
 
-- Henry Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press, 2016 (figs 4-5, 4-6, geodesic spheres and domes). ISBN 978-1-4214-2035-6.
-- Michael Goldberg, "A class of multi-symmetric polyhedra," *Tôhoku Mathematical Journal* 43 (1937), 104–108 — the Goldberg polyhedra $GP(m,n)$, duals of the geodesic spheres.
-- Hugh Kenner, *Geodesic Math and How to Use It*, University of California Press, 1976 — Class I and Class II (alternate and triacon) breakdown frequencies.
-- R. Buckminster Fuller, U.S. Patent 2,682,235, "Building Construction" (geodesic dome), 1954.
+- Geodesic domes: R. Buckminster Fuller.
+- Geodesic/Goldberg (h,k) classification: M. Goldberg, "A class of multi-symmetric polyhedra", Tohoku Math. J. 43 (1937); Caspar & Klug (1962) for the triangulation number T = h²+hk+k².
+- Goldberg polyhedra (the duals): Michael Goldberg (1937).
+- Henry Segerman, "Visualizing Mathematics with 3D Printing" (2016), figs 4-5, 4-6.
+

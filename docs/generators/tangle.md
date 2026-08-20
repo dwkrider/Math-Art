@@ -68,7 +68,7 @@ Every emitted face is tagged with its component index (a `component_index` face 
 
 ## References
 
-- Alan Holden, *Orderly Tangles: Cloverleafs, Gordian Knots, and Regular Polylinks*, Columbia University Press, 1983.
-- Robert J. Lang, *Polypolyhedra* — designs of interwoven edge-strut polyhedral compounds (the Edge Struts style).
-- Leonardo da Vinci, open-faced ("vacuus") polyhedron illustrations for Luca Pacioli, *De divina proportione*, 1509; see also George W. Hart, *Leonardo da Vinci's Polyhedra* — <https://www.georgehart.com/virtual-polyhedra/leonardo.html> (the Hollow Faces style).
-- M. C. Escher, *Waterfall* / compound of three cubes (the 3 Cubes compound).
+- Alan Holden, "Orderly Tangles: Cloverleafs, Gordian Knots, and Regular Polylinks", Columbia University Press, 1983.
+- George W. Hart, "Orderly Tangles Revisited" (regular polylinks, e.g. the five-tetrahedra polylink), Bridges 2005.
+- The five-tetrahedra compound / stella octangula are classical polyhedral compounds (see e.g. H. S. M. Coxeter).
+

@@ -60,12 +60,8 @@ The seam closes exactly because the torus *is* the plane modulo a lattice: a per
 
 ## References
 
-- Akos Csaszar, "A polyhedron without diagonals", Acta Sci. Math.
-- Szeged 13 (1949-50), 140-142.
-- Lajos Szilassi, "Regular toroids", Structural Topology 13 (1986),
-- 69-80; and "On three classes of regular toroids".
-- B. M. Stewart, "Adventures Among the Toroids" (1970/1980), for the
-- toroidal-polyhedron tradition.
-- Johannes Kepler, "Harmonices Mundi" (1619); Branko Grunbaum & G. C.
-- Shephard, "Tilings and Patterns" (1987) -- the uniform tilings wrapped
-- onto the torus here (see tiling_generator.py).
+- Akos Csaszar, "A polyhedron without diagonals", Acta Sci. Math. Szeged 13 (1949-50), 140-142.
+- Lajos Szilassi, "Regular toroids", Structural Topology 13 (1986), 69-80; and "On three classes of regular toroids".
+- B. M. Stewart, "Adventures Among the Toroids" (1970/1980), for the toroidal-polyhedron tradition.
+- Johannes Kepler, "Harmonices Mundi" (1619); Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (1987) -- the uniform tilings wrapped onto the torus here (see tiling_generator.py).
+

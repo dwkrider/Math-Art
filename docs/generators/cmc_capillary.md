@@ -85,3 +85,4 @@ Under gravity the drop flattens into a puddle; with gravity off the equilibrium 
 - P.-G. de Gennes, F. Brochard-Wyart, D. Quere, "Capillarity and Wetting Phenomena" (Springer, 2004) -- capillary length, Bond number, and the gravity-flattened puddle thickness h = 2 l_c sin(theta/2).
 - R. Courant, "Dirichlet's Principle, Conformal Mapping, and Minimal Surfaces" (Interscience, 1950) -- free boundaries of minimal surfaces meet the support surface orthogonally.
 - K. A. Brakke, "The Surface Evolver", Experimental Mathematics 1(2) (1992) -- constrained evolution; wetting as a contact-line integral; level-set constraint walls (cnstrnt.c).
+

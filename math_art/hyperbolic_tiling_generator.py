@@ -75,13 +75,13 @@
 # (the snub, full of triangles, is likewise not 2-colorable).
 #
 # References:
-#   W. A. Wythoff -- the Wythoff (kaleidoscopic) construction of uniform
-#     tilings from a triangle reflection group.
-#   H. S. M. Coxeter, "Regular Polytopes" (1948) and his work on
-#     reflection groups and the {p,q} Schlafli symbol.
-#   Henri Poincare -- the conformal disk model of the hyperbolic plane.
-#   Henry Segerman, "Visualizing Mathematics with 3D Printing" (2016) --
-#     hyperbolic surface models.
+# - W. A. Wythoff -- the Wythoff (kaleidoscopic) construction of uniform
+#   tilings from a triangle reflection group.
+# - H. S. M. Coxeter, "Regular Polytopes" (1948) and his work on
+#   reflection groups and the {p,q} Schlafli symbol.
+# - Henri Poincare -- the conformal disk model of the hyperbolic plane.
+# - Henry Segerman, "Visualizing Mathematics with 3D Printing" (2016) --
+#   hyperbolic surface models.
 
 bl_info = {
     "name": "Hyperbolic Tiling",

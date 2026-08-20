@@ -122,9 +122,10 @@ Anything else can be typed into the LCAO field directly, e.g. `2pz@0,0,-1.2 1; 2
 
 ## References
 
-- E. Schrödinger, "Quantisierung als Eigenwertproblem (Erste Mitteilung)," *Annalen der Physik* 384(4), 1926, pp. 361-376.
-- L. Pauling and E. B. Wilson, *Introduction to Quantum Mechanics with Applications to Chemistry*, McGraw-Hill, 1935 (the standard treatment of $R_{n\ell}$, the real orbital forms and the LCAO method).
-- J. C. Slater, "Atomic Shielding Constants," *Physical Review* 36, 1930, pp. 57-64 (effective nuclear charge / Slater-type exponents).
-- F. Hund, "Zur Deutung der Molekelspektren," *Zeitschrift für Physik*, 1927-1928 (series), and R. S. Mulliken, "Electronic Structures of Polyatomic Molecules and Valence," *Physical Review*, 1932 — the LCAO molecular-orbital method.
-- E. Hückel, "Quantentheoretische Beiträge zum Benzolproblem," *Zeitschrift für Physik* 70, 1931 (the benzene π system).
-- M. Abramowitz and I. A. Stegun, *Handbook of Mathematical Functions*, Dover, 1965, chapter 22 (the generalised Laguerre recurrence used here).
+- Hydrogen wavefunctions: E. Schroedinger, "Quantisierung als Eigenwertproblem (Erste Mitteilung)", Annalen der Physik 384(4), 1926, pp. 361-376.
+- Standard treatment of R_nl, the real orbital forms and the LCAO method: L. Pauling and E. B. Wilson, "Introduction to Quantum Mechanics with Applications to Chemistry", McGraw-Hill, 1935.
+- Effective nuclear charge / Slater-type exponents: J. C. Slater, "Atomic Shielding Constants", Physical Review 36, 1930, pp. 57-64.
+- Molecular orbitals as linear combinations of atomic orbitals: F. Hund, "Zur Deutung der Molekelspektren", Zeitschrift fuer Physik, 1927-1928 (series); R. S. Mulliken, "Electronic Structures of Polyatomic Molecules and Valence", Physical Review, 1932.
+- The benzene pi system: E. Hueckel, "Quantentheoretische Beitraege zum Benzolproblem", Zeitschrift fuer Physik 70, 1931.
+- Generalised Laguerre recurrence: M. Abramowitz and I. A. Stegun, "Handbook of Mathematical Functions", Dover, 1965, chapter 22.
+

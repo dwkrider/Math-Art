@@ -75,3 +75,4 @@ Every other type here has at least one deformable edge pair, which is why the Es
 - Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H. Freeman, 1987) -- the classification of the 81 isohedral tiling types IH1..IH81.
 - M. C. Escher -- the interlocking-figure ("Escherization") tradition of symmetry-matched edge deformation.
 - Craig S. Kaplan & David H. Salesin, "Escherization" (SIGGRAPH 2000); Kaplan, "Introductory Tiling Theory for Computer Graphics" (2009) and the "Tactile" isohedral-tiling library -- algorithmic edge deformation.
+

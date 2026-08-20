@@ -105,3 +105,4 @@ See [Cabochon](gem_cabochon.md) for stones cut on a curve rather than in facets.
 - Robert W. Strickland, "GemCad for Windows Version 1.0 User's Guide", GemSoft Enterprises, 2002 -- the .ASC format and the Standard Round Brilliant.
 - Robert H. Long & Norman W. Steele, "Introduction to Meetpoint Faceting", Seattle Faceting Books, 1985.
 - CIBJO Diamond Commission, "The Diamond Book" (Blue Book 2024-1), Annex B 7.2 -- the normative round-brilliant facet arrangement.
+

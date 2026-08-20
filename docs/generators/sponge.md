@@ -55,8 +55,10 @@ gives $4$ copies per step for the tetrahedron and $6$ for the octahedron. The fi
 
 ## References
 
-- Karl Menger, "Allgemeine Räume und Cartesische Räume. Zweite Mitteilung: Über umfassendste $n$-dimensionale Mengen," *Proc. Akad. Wetensch. Amsterdam* 29 (1926), 1125–1128 — the Menger sponge (Menger curve in three dimensions).
-- Wacław Sierpiński, "Sur une courbe cantorienne qui contient une image biunivoque et continue de toute courbe donnée," *C. R. Acad. Sci. Paris* 162 (1916), 629–632 — the Sierpiński carpet; the tetrahedron/octahedron are its 3D analogues.
-- Tamás Vicsek, "Fractal models for diffusion controlled aggregation," *J. Phys. A: Math. Gen.* 16 (1983), L647–L652 — the Vicsek (box) fractal.
-- Benoît B. Mandelbrot, *The Fractal Geometry of Nature*, W. H. Freeman, 1982 — self-similar dimension $\ln N/\ln s$.
-- Eric W. Weisstein, "Menger Sponge," *MathWorld*: <https://mathworld.wolfram.com/MengerSponge.html>
+- Menger sponge: Karl Menger, "Allgemeine Raeume und Cartesische Raeume", Proc. Akad. Wetensch. Amsterdam 29, 1926, pp. 1125-1128.
+- Sierpinski carpet (and its 3D tetra/octa analogues): Waclaw Sierpinski, C. R. Acad. Sci. Paris 162, 1916, pp. 629-632.
+- Vicsek fractal: Tamas Vicsek, "Fractal models for diffusion controlled aggregation", J. Phys. A 16, 1983, pp. L647-L652.
+- Mosely snowflake: named for Jeannine Mosely (of business-card Menger-sponge fame); the Sierpinski-Menger snowflake family is surveyed in M. Kalinski, "On the variations of the Sierpinski and Menger sponges and the Mosely snowflake" (2017).
+- Cantor dust: the 3-fold Cartesian product of Georg Cantor's set, "Ueber unendliche, lineare Punktmannigfaltigkeiten V", Math. Ann. 21, 1883, pp. 545-591.
+- Self-similar dimension: Benoit B. Mandelbrot, "The Fractal Geometry of Nature", W. H. Freeman, 1982.
+

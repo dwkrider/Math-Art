@@ -92,6 +92,5 @@ That is why bloom order is a real, animatable quantity here rather than a label:
 
 ## References
 
-- Table 3.1; Frijters and Lindenmayer (1976); Prusinkiewicz, Hammel,
-- Hanan and Mech, SIGGRAPH 1988; Prusinkiewicz, Muendermann, Karwowski
-- and Lane, SIGGRAPH 2001, sections 6 and 8.
+- Table 3.1; Frijters and Lindenmayer (1976); Prusinkiewicz, Hammel, Hanan and Mech, SIGGRAPH 1988; Prusinkiewicz, Muendermann, Karwowski and Lane, SIGGRAPH 2001, sections 6 and 8.
+

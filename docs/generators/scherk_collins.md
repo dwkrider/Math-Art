@@ -106,9 +106,6 @@ Because Séquin's C source is not public, the tessellation layout and the exact 
 
 ## References
 
-- C. H. Séquin, *Virtual Prototyping of Scherk-Collins Saddle Rings*, Leonardo, Vol. 30, No. 2, pp. 89–96, 1997.
-- C. H. Séquin, H. Meshkin, L. Downs, *Interactive Generation of Scherk-Collins Sculptures*, Proc. I3D '97.
-- C. H. Séquin, *15 Years of Scherk-Collins Saddle Chains*, Technical Report UCB/EECS-2010-41.
-- C. H. Séquin, *Sculpture Generator I*, UC Berkeley — <https://people.eecs.berkeley.edu/~sequin/SCULPTS/scherk.html>
-- Parameter semantics validated against the `demo*.txt` files shipped with the original *Sculpture Generator* Windows program.
-- Paul Nylander, *Scherk-Collins surface notes* (twist/warp transformations) — <https://nylander.wordpress.com/2009/02/10/scherk-collins-surface/>
+- H. F. Scherk, "Bemerkungen ueber die kleinste Flaeche innerhalb gegebener Grenzen", J. reine angew. Math. (Crelle) 13, 1835
+- - the singly-periodic saddle-tower minimal surface. Sculptural form after the collaboration of sculptor Brent Collins and Carlo H. Sequin (see the Leonardo and I3D papers above).
+

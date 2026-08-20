@@ -139,20 +139,10 @@ in $H^2$ instead. The mathematics (Weierstrass closed forms, closure, gauges) li
 
 ## References
 
-- Charles-Eugene Delaunay, "Sur la surface de revolution dont la
-- courbure moyenne est constante", J. Math. Pures Appl. 6 (1841),
-- 309-314 (the classification and the rolling-conic theorem).
-- M. Sturm, note appended to Delaunay's paper (1841), 315-320 -- the
-- first integral used here.
-- James Eells, "The surfaces of Delaunay", Math. Intelligencer 9
-- (1987), 53-57 (a modern account of the roulette construction).
-- Nicholas J. Korevaar, Rob Kusner, Bruce Solomon, "The structure of
-- complete embedded surfaces with constant mean curvature", J. Diff.
-- Geom. 30 (1989), 465-503 -- Delaunay surfaces as the ends of every
-- complete embedded CMC surface, which is why this family matters
-- beyond its own good looks.
-- Joseph Cho, Katrin Leschke, Yuta Ogata, "New explicit CMC cylinders and same-lobed CMC multibubbletons", arXiv:2205.14675 (2022) -- the closed-form parallel sections (Thm. 3.1) and the algebraic Darboux transform (Thm. 2.2) behind the **Bubbleton** mode.
-- Henry C. Wente, "Counterexample to a conjecture of H. Hopf", Pacific J. Math. 121 (1986), 193-243 -- the existence of a closed CMC torus (the **Wente Torus** mode).
-- Rolf Walter, "Explicit examples to the H-problem of Heinz Hopf", Geom. Dedicata 23 (1987), 187-213 -- the isothermic description, the separable solution used here, and the closure condition $l/n \in (1,2)$.
-- Lynn Heller, "Constrained Willmore tori and elastic curves in 2-dimensional space forms", Comm. Anal. Geom. 22 (2014), no. 2; arXiv:1303.1445 -- the **Elastic Torus (S3)** mode: elastic curves in $H^2$ in Weierstrass closed form, their closure, and the CMC-in-$S^3$ classification of the revolved tori.
+- Charles-Eugene Delaunay, "Sur la surface de revolution dont la courbure moyenne est constante", J. Math. Pures Appl. 6 (1841), 309-314 (the classification and the rolling-conic theorem).
+- M. Sturm, note appended to Delaunay's paper (1841), 315-320 -- the first integral used here.
+- James Eells, "The surfaces of Delaunay", Math. Intelligencer 9 (1987), 53-57 (a modern account of the roulette construction).
+- Nicholas J. Korevaar, Rob Kusner, Bruce Solomon, "The structure of complete embedded surfaces with constant mean curvature", J. Diff. Geom. 30 (1989), 465-503 -- Delaunay surfaces as the ends of every complete embedded CMC surface, which is why this family matters beyond its own good looks.
+- Lynn Heller, "Constrained Willmore tori and elastic curves in 2-dimensional space forms", Comm. Anal. Geom. 22 (2014), no. 2; arXiv:1303.1445 -- the ELASTIC_TORUS mode: elastic curves in H^2 in Weierstrass closed form (Thm. 2), their closure (Thm. 4), and the CMC-in-S^3 classification of the revolved tori (Prop. 6).
 - Joel Langer, David A. Singer, "Curves in the hyperbolic plane and mean curvature of tori in 3-space", Bull. London Math. Soc. 16 (1984), 531-534 -- a torus of revolution is Willmore-critical exactly when its profile curve is elastic in the hyperbolic plane.
+

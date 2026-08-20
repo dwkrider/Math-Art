@@ -82,6 +82,5 @@ Both modes are here rather than one because they reach the **same** excurrent-to
 
 ## References
 
-- Runions, Lane and Prusinkiewicz (2007); Palubicki et al., SIGGRAPH
-- 2009; Borchert and Honda (1984); Witten and Sander (1981); Bosman
-- (1942); ABOP chapter 6, equation (6.11).
+- Runions, Lane and Prusinkiewicz (2007); Palubicki et al., SIGGRAPH 2009; Borchert and Honda (1984); Witten and Sander (1981); Bosman (1942); ABOP chapter 6, equation (6.11).
+

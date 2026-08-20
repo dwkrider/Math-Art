@@ -60,7 +60,7 @@ about the normal of the cut plane. Because the regular $n$-gon has $n$-fold rota
 
 ## References
 
-- David Swart, *Arcs on Spheres and Snakes on Planes*, Bridges 2024 Conference Proceedings, pp. 353–356 — <https://archive.bridgesmathart.org/2024/bridges2024-353.html> (the sphericon as the solid of revolution of a regular polygon, halved with its cross-section rotated onto itself; the developed surface as a "snake" of arcs).
-- **Polysphericons**, Heidelberg Institute for Theoretical Studies (H-ITS) — <https://www.h-its.org/projects/polysphericons/> (the $(n,k)$ family, rolling condition, odd-vs-even axis).
-- C. J. Roberts, *sphericon*; see also Wikipedia, *Sphericon* — <https://en.wikipedia.org/wiki/Sphericon> (history and the classic $(4,1)$ construction).
-- Complements the extension's [Oloid](oloid.md), the other developable roller in *Odds & Ends*.
+- David Swart, "Arcs on Spheres and Snakes on Planes", Bridges 2024 (the sphericon = solid of revolution of a regular polygon, halved and its cross-section rotated onto itself).
+- I. Sabitov / P. Roberts (polysphericons); H-ITS Polysphericons project, https://www.h-its.org/projects/polysphericons/ .
+- Sphericon invented by Colin J. Roberts (Baldock, England); popularized by Ian Stewart, "Cone with a Twist", Mathematical Recreations, Scientific American, October 1999.  See also Wikipedia "sphericon".
+

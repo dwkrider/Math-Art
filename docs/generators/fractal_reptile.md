@@ -68,40 +68,12 @@ The seed follows just as directly: two such triangles sharing their hypotenuse f
 
 ## References
 
-- Andrew Vince, "Rep-tiling Euclidean space", Aequationes
-- Mathematicae 50, 1995, pp. 191-213.  The radix-system catalog:
-- Fig 3 (rep-2 twindragon, base -1+i), Fig 4/7 (rep-7 flowsnake /
-- Gosper island, Eisenstein base 3+omega), Fig 5 (rep-5 dragon,
-- base -2+i, symmetric digits), Fig 6 (rep-4, base 2, digits
-- {0,1,i,-1-i}).
-- Martin Gardner, "Mathematical Games: In which 'monster' curves
-- force redefinition of the word 'curve'", Scientific American 235,
-- Dec 1976, pp. 124-133.  Names the flowsnake (Gosper's curve);
-- see also Benoit B. Mandelbrot, "The Fractal Geometry of Nature",
-- W. H. Freeman, 1982, ch. 6.
-- Paul Levy, "Les courbes planes ou gauches et les surfaces
-- composees de parties semblables au tout", Journal de l'Ecole
-- Polytechnique II-19, 1938, pp. 227-291.  The Levy C curve /
-- dragon, the earliest reflection-generated rep-tile.
-- Christoph Bandt, "Self-similar sets 5. Integer matrices and fractal
-- tilings of R^n", Proceedings of the AMS 112, 1991, pp. 549-562.
-- The integer-matrix + residue-digit-set theorem behind all the
-- complex-base tiles.
-- Solomon W. Golomb, "Replicating figures in the plane",
-- Mathematical Gazette 48, 1964, pp. 403-412.  Defines rep-k figures.
-- Dmitry Mekhontsev, "The aspect ratio of the Twin Dragon is
-- 1/phi", arXiv:2604.05010, 2026.  Aspect ratios of collinear-digit
-- dragons over Z[i]: (5,4) base 2+i AR 1/phi^3; (5,2) base 1+2i AR
-- sqrt(2)-1; symmetric-digit base -2+i AR 1/phi.
-- Mohammad Sajid, Akhlaq Husain, Krishnendra S. Kumar, "Fractal
-- rep-tiles of the plane via reflections and integer matrices",
-- Frontiers in Physics 14:1699796, 2026.  Extends the digit-system
-- maps with reflections/rotations from the symmetry group of the
-- matrix: the Levy dragon (Fig 2c), the leaf rep-tile (Fig 2d) and
-- the foldable chiral rep-4 family (Theorem 4.4) implemented here.
-- Robert W. Fathauer, "Fractal Tilings Based on Dissections of
-- Polyominoes", Bridges 2006, pp. 293-300; "Fractal gaskets:
-- rep-tiles, Hamiltonian cycles, and spatial development", Bridges
-- 2016, pp. 217-224.  The f-tiling grower and the pentabolo
-- 5-isometry inflation.  Online: Fractal Tiling Encyclopedia,
-- https://www.mathartfun.com/encyclopedia/Introduction.html .
+- Andrew Vince, "Rep-tiling Euclidean space", Aequationes Mathematicae 50, 1995, pp. 191-213.  The radix-system catalog: Fig 3 (rep-2 twindragon, base -1+i), Fig 4/7 (rep-7 flowsnake / Gosper island, Eisenstein base 3+omega), Fig 5 (rep-5 dragon, base -2+i, symmetric digits), Fig 6 (rep-4, base 2, digits {0,1,i,-1-i}).
+- Martin Gardner, "Mathematical Games: In which 'monster' curves force redefinition of the word 'curve'", Scientific American 235, Dec 1976, pp. 124-133.  Names the flowsnake (Gosper's curve); see also Benoit B. Mandelbrot, "The Fractal Geometry of Nature", W. H. Freeman, 1982, ch. 6.
+- Paul Levy, "Les courbes planes ou gauches et les surfaces composees de parties semblables au tout", Journal de l'Ecole Polytechnique II-19, 1938, pp. 227-291.  The Levy C curve / dragon, the earliest reflection-generated rep-tile.
+- Christoph Bandt, "Self-similar sets 5. Integer matrices and fractal tilings of R^n", Proceedings of the AMS 112, 1991, pp. 549-562. The integer-matrix + residue-digit-set theorem behind all the complex-base tiles.
+- Solomon W. Golomb, "Replicating figures in the plane", Mathematical Gazette 48, 1964, pp. 403-412.  Defines rep-k figures.
+- Dmitry Mekhontsev, "The aspect ratio of the Twin Dragon is 1/phi", arXiv:2604.05010, 2026.  Aspect ratios of collinear-digit dragons over Z[i]: (5,4) base 2+i AR 1/phi^3; (5,2) base 1+2i AR sqrt(2)-1; symmetric-digit base -2+i AR 1/phi.
+- Mohammad Sajid, Akhlaq Husain, Krishnendra S. Kumar, "Fractal rep-tiles of the plane via reflections and integer matrices", Frontiers in Physics 14:1699796, 2026.  Extends the digit-system maps with reflections/rotations from the symmetry group of the matrix: the Levy dragon (Fig 2c), the leaf rep-tile (Fig 2d) and the foldable chiral rep-4 family (Theorem 4.4) implemented here.
+- Robert W. Fathauer, "Fractal Tilings Based on Dissections of Polyominoes", Bridges 2006, pp. 293-300; "Fractal gaskets: rep-tiles, Hamiltonian cycles, and spatial development", Bridges 2016, pp. 217-224.  The f-tiling grower and the pentabolo 5-isometry inflation.  Online: Fractal Tiling Encyclopedia, https://www.mathartfun.com/encyclopedia/Introduction.html .
+

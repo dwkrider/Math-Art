@@ -91,12 +91,15 @@ def references_from(path):
             body = line[1:].rstrip()
             if not body.strip():
                 break
-            indent = len(body) - len(body.lstrip())
             text = body.strip()
-            # Some headers already bullet their references and some do
-            # not; strip the marker so this script owns the list
-            # formatting and the page never shows "- - Author".
-            starts_entry = indent <= 3 or text.startswith(("-", "*"))
+            # The convention (enforced across every module header): each
+            # reference begins with a `-` marker and its continuation
+            # lines are indented with NO marker.  So a new entry is
+            # exactly a line that starts with the marker; everything else
+            # is a continuation and is rejoined into the current entry.
+            # (The marker is stripped so the page owns the list format and
+            # never shows "- - Author".)
+            starts_entry = text.startswith(("-", "*"))
             text = re.sub(r"^[-*]\s*", "", text)
             if starts_entry or not out:
                 out.append(text)

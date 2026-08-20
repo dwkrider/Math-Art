@@ -64,3 +64,4 @@ Each intersection shaves the cube closer to the sphere without ever reaching it.
 - Archimedes, "The Method of Mechanical Theorems" (c. 250 BC); T. L. Heath (ed.), "The Works of Archimedes", Cambridge, 1897.
 - M. Moore, "Symmetrical Intersections of Right Circular Cylinders", The Mathematical Gazette 58 (1974), 181-185.
 - K. Brecher, "Rolloids", Bridges 2023 Conference Proceedings, 345-352 (the bicylinder as a straight-line roller; local copy at research/bridges/2023/bridges2023-345/).
+
