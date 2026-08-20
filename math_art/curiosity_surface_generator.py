@@ -42,6 +42,19 @@
 #    torus rather than from a memorised parametrisation, so the
 #    defining circle property is inherited rather than asserted.
 #
+# 5. Three classical odds and ends, each built from its DEFINITION
+#    rather than from a remembered equation, and each checked against an
+#    independent statement of the same surface:
+#      Bohemian dome -- a circle swept along a circle in a perpendicular
+#        plane; checked by confirming every swept circle really is a
+#        circle of the right radius and centre.
+#      Astroidal ellipsoid -- the surface whose sections through the
+#        axes are astroids; the parametrisation is checked against the
+#        implicit (x/a)^(2/3)+(y/b)^(2/3)+(z/c)^(2/3) = 1.
+#      Gabriel's horn -- y = 1/x revolved; checked on the property that
+#        makes it famous, finite volume pi(1 - 1/L) with a lateral area
+#        that diverges like 2 pi ln L.
+#
 # References for 4: C. Dupin, "Applications de Geometrie et de
 #    Mechanique", Paris 1822.  B. Odehnal, "Ortho-Circles of Dupin
 #    Cyclides", J. Geometry Graphics 10 (2006) 1-21 -- states the
@@ -141,6 +154,105 @@ def build_trihyperboloid(segments=96, rings=48):
     watertight."""
     return build_radial(trihyperboloid_radius, segments, rings)
 
+
+def build_bohemian_dome(a=1.0, b=1.0, c=0.7, segments=96, rings=48):
+    """The Bohemian dome: a circle swept along a circle in a plane
+    perpendicular to it.
+
+    Defined by the sweep rather than by a quartic, because the sweep is
+    the definition -- the moving circle of radius c rides the fixed
+    circle of radii a, b and stays in a plane orthogonal to it:
+
+        x = a cos u,  y = b sin u + c cos v,  z = c sin v
+
+    Closed in both parameters, so the mesh is a torus-topology quad grid
+    with both seams welded; it self-intersects, which is the surface's
+    own business and not a meshing fault.
+    """
+    verts = []
+    for i in range(segments):
+        u = 2.0 * math.pi * i / segments
+        for j in range(rings):
+            v = 2.0 * math.pi * j / rings
+            verts.append((a * math.cos(u),
+                          b * math.sin(u) + c * math.cos(v),
+                          c * math.sin(v)))
+    faces = []
+    for i in range(segments):
+        i1 = (i + 1) % segments
+        for j in range(rings):
+            j1 = (j + 1) % rings
+            faces.append((i * rings + j, i1 * rings + j,
+                          i1 * rings + j1, i * rings + j1))
+    return verts, faces
+
+
+def build_astroidal_ellipsoid(a=1.0, b=1.0, c=1.0, segments=96,
+                              rings=48):
+    """The astroidal ellipsoid, the surface whose plane sections through
+    the axes are astroids:
+
+        x = a(cos u cos v)^3,  y = b(sin u cos v)^3,  z = c(sin v)^3
+
+    Equivalently the implicit (x/a)^(2/3) + (y/b)^(2/3) + (z/c)^(2/3) = 1,
+    which `_selftest` uses to check the parametrisation rather than
+    trusting it -- the two forms are independent statements of the same
+    surface, so agreement is evidence and not a tautology.
+
+    The four cusped edges and the six vertices are genuine features of
+    the surface, not meshing artifacts.
+    """
+    verts = []
+    for i in range(segments):
+        u = 2.0 * math.pi * i / segments
+        cu, su = math.cos(u), math.sin(u)
+        for j in range(rings + 1):
+            v = -math.pi / 2.0 + math.pi * j / rings
+            cv, sv = math.cos(v), math.sin(v)
+            # the semi-axis multiplies the cube, it is not inside it:
+            # x = a(cos u cos v)^3 gives (x/a)^(2/3) = (cos u cos v)^2,
+            # which is what makes the three terms sum to one
+            verts.append((a * (cu * cv) ** 3, b * (su * cv) ** 3,
+                          c * sv ** 3))
+    faces = []
+    for i in range(segments):
+        i1 = (i + 1) % segments
+        for j in range(rings):
+            faces.append((i * (rings + 1) + j, i1 * (rings + 1) + j,
+                          i1 * (rings + 1) + j + 1,
+                          i * (rings + 1) + j + 1))
+    return verts, faces
+
+
+def build_gabriels_horn(length=6.0, segments=96, rings=120):
+    """Gabriel's horn: y = 1/x revolved about the x-axis, x in [1, L].
+
+    The point of the object is that it encloses a finite volume,
+    pi(1 - 1/L) -> pi, while its lateral area diverges like 2 pi ln L.
+    `_selftest` measures both, because a horn meshed with the wrong
+    profile would still look like a horn.
+
+    Left open at both ends: the wide mouth is a genuine boundary, and
+    capping the narrow end would misrepresent a surface whose whole
+    interest is that it never closes.
+    """
+    verts = []
+    for j in range(rings + 1):
+        # bunch samples toward the mouth, where the profile bends
+        t = j / float(rings)
+        x = 1.0 + (length - 1.0) * (t ** 2)
+        r = 1.0 / x
+        for i in range(segments):
+            th = 2.0 * math.pi * i / segments
+            verts.append((x, r * math.cos(th), r * math.sin(th)))
+    faces = []
+    for j in range(rings):
+        for i in range(segments):
+            i1 = (i + 1) % segments
+            faces.append((j * segments + i, j * segments + i1,
+                          (j + 1) * segments + i1,
+                          (j + 1) * segments + i))
+    return verts, faces
 
 def build_cyclide(kind='RING', ring=1.0, tube=0.45, centre=1.9,
                   power=1.6, segments=96, rings=48):
@@ -281,6 +393,15 @@ if _IN_BLENDER:
                     "Boundary of the solid enclosed by the "
                     "three hyperboloids x^2+y^2-z^2 <= 1 "
                     "(cyclic); volume 8 ln 2"),
+                   ('BOHEMIAN', "Bohemian Dome",
+                    "A circle swept along a circle in a "
+                    "perpendicular plane; self-intersecting"),
+                   ('ASTROIDAL', "Astroidal Ellipsoid",
+                    "(x/a)^(2/3) + (y/b)^(2/3) + (z/c)^(2/3) = 1, "
+                    "with astroid sections and six cusps"),
+                   ('GABRIEL', "Gabriel's Horn",
+                    "y = 1/x revolved: finite volume, infinite "
+                    "lateral area"),
                    ('CYCLIDE_RING', "Dupin Cyclide (ring)",
                     "Inversion of a ring torus (R > r); every "
                     "line of curvature is a circle"),
@@ -310,6 +431,15 @@ if _IN_BLENDER:
             min=-10.0, max=10.0,
             description="Coefficient b in y = (v + b u) sin u "
                         "(-1.26 in the classic plot)")
+        bohemian_c: FloatProperty(
+            name="Swept Circle", default=0.7, min=0.01, max=10.0,
+            description="Radius c of the moving circle (Bohemian dome "
+                        "only)")
+        horn_length: FloatProperty(
+            name="Horn Length", default=6.0, min=1.2, max=200.0,
+            description="Upper limit L of x in y = 1/x; the enclosed "
+                        "volume tends to pi as L grows while the "
+                        "lateral area diverges (Gabriel's horn only)")
         cyclide_ring: FloatProperty(
             name="Ring Radius", default=1.0, min=0.05, max=10.0,
             description="Radius R of the torus centre circle "
@@ -352,6 +482,20 @@ if _IN_BLENDER:
                 verts, faces = build_paper_bag(
                     self.bag_a, self.bag_b, 2 * res, res)
                 name = "Paper Bag Surface"
+            elif self.surface == 'BOHEMIAN':
+                verts, faces = build_bohemian_dome(
+                    self.semi_a, self.semi_b, self.bohemian_c,
+                    2 * res, res)
+                name = "Bohemian Dome"
+            elif self.surface == 'ASTROIDAL':
+                verts, faces = build_astroidal_ellipsoid(
+                    self.semi_a, self.semi_b, self.semi_c,
+                    2 * res, res)
+                name = "Astroidal Ellipsoid"
+            elif self.surface == 'GABRIEL':
+                verts, faces = build_gabriels_horn(
+                    self.horn_length, 2 * res, 3 * res)
+                name = "Gabriel's Horn"
             elif self.surface.startswith('CYCLIDE_'):
                 kind = self.surface.split('_', 1)[1]
                 verts, faces = build_cyclide(
@@ -559,5 +703,74 @@ def _selftest():
     assert not bad, "cyclide check failed: " + ", ".join(bad)
     print("cyclides: ring/horn/spindle -- every line of curvature is a "
           "circle (dev < 1e-9), meshes watertight")
+
+
+    # ---- the three classical odds and ends -------------------------
+    # Each is checked against an INDEPENDENT statement of the same
+    # surface, so agreement is evidence rather than a restatement of
+    # the code that produced it.
+
+    # Bohemian dome: every v-curve must be a circle of radius c whose
+    # centre rides the fixed ellipse (a cos u, b sin u, 0).
+    a, b, c = 1.0, 1.0, 0.7
+    V, F = build_bohemian_dome(a, b, c, 64, 48)
+    worst = 0.0
+    for i in range(64):
+        ring = V[i * 48:(i + 1) * 48]
+        u = 2.0 * math.pi * i / 64
+        cen = (a * math.cos(u), b * math.sin(u), 0.0)
+        for q in ring:
+            worst = max(worst, abs(math.dist(q, cen) - c))
+    good = worst < 1e-12 and _finite(V) and _valid(V, F)
+    assert good, "bohemian dome sweep off by %.2e" % worst
+    print("bohemian dome: every swept circle has radius c (max error "
+          "%.1e)" % worst)
+
+    # Astroidal ellipsoid: the parametrisation must satisfy the
+    # implicit form.  Poles and cusps are excluded, where the 2/3 power
+    # of a vanishing coordinate is numerically delicate rather than
+    # wrong.
+    aa, bb, cc = 1.0, 0.8, 1.3
+    V, F = build_astroidal_ellipsoid(aa, bb, cc, 60, 40)
+    worst = 0.0
+    for (x, y, z) in V:
+        t = ((abs(x) / aa) ** (2.0 / 3.0) + (abs(y) / bb) ** (2.0 / 3.0)
+             + (abs(z) / cc) ** (2.0 / 3.0))
+        worst = max(worst, abs(t - 1.0))
+    good = worst < 1e-9 and _finite(V) and _valid(V, F)
+    assert good, "astroidal ellipsoid implicit residual %.2e" % worst
+    print("astroidal ellipsoid: parametrisation satisfies "
+          "(x/a)^(2/3)+(y/b)^(2/3)+(z/c)^(2/3)=1 (max %.1e)" % worst)
+
+    # Gabriel's horn.  The divergence theorem does NOT apply here --
+    # the horn is open at both ends on purpose -- so the volume is
+    # integrated from the profile by disks instead, and the profile
+    # itself is checked first: r * x must be 1 everywhere, which is
+    # what says the meridian really is y = 1/x.
+    for L in (4.0, 40.0):
+        V, F = build_gabriels_horn(L, 96, 400)
+        worst = max(abs(math.hypot(q[1], q[2]) * q[0] - 1.0) for q in V)
+        assert worst < 1e-9, "gabriel profile off by %.2e" % worst
+        # rings, in the order the builder emits them
+        segs, rows = 96, 401
+        prof = []
+        for j in range(rows):
+            q = V[j * segs]
+            prof.append((q[0], math.hypot(q[1], q[2])))
+        vol = 0.0
+        area = 0.0
+        for (x0, r0), (x1, r1) in zip(prof[:-1], prof[1:]):
+            dx = x1 - x0
+            vol += math.pi * 0.5 * (r0 * r0 + r1 * r1) * dx
+            ds = math.hypot(dx, r1 - r0)
+            area += math.pi * (r0 + r1) * ds
+        want_v = math.pi * (1.0 - 1.0 / L)
+        want_a = 2.0 * math.pi * math.log(L)        # a lower bound
+        assert abs(vol - want_v) < 0.01 * want_v,             "gabriel L=%.0f volume %.4f want %.4f" % (L, vol, want_v)
+        assert area > want_a,             "gabriel L=%.0f area %.3f should exceed %.3f" % (L, area,
+                                                             want_a)
+        print("gabriel's horn L=%-5.0f profile r*x=1 to %.0e, volume "
+              "%.4f (exact %.4f), lateral area %.2f (> 2 pi ln L = "
+              "%.2f)" % (L, worst, vol, want_v, area, want_a))
 
     print("miscellaneous surfaces standalone tests passed")
