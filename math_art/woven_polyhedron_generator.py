@@ -1,4 +1,9 @@
 
+try:
+    from . import rim_curve as _rim
+except ImportError:  # flat import outside the package
+    import rim_curve as _rim
+
 # Woven Polyhedron generator for Blender.
 #
 # A dual-polyhedron sculpture generalized to any Platonic or
@@ -602,6 +607,9 @@ if _IN_BLENDER:
         bl_idname = "mesh.woven_polyhedron_add"
         bl_label = "Twisted Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
 
         solid: EnumProperty(
             name="Outer Solid", items=SOLID_ITEMS, default='DODECA',
@@ -733,6 +741,12 @@ if _IN_BLENDER:
             self.report({'INFO'},
                         f"Twisted {self.solid.title()}: "
                         f"V={len(me.vertices)} F={len(me.polygons)}")
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -754,6 +768,7 @@ if _IN_BLENDER:
             lay.prop(self, "smooth_shading")
             lay.prop(self, "scale")
 
+            _rim.draw_rim(lay, self)
     def _menu_func(self, context):
         self.layout.operator("mesh.woven_polyhedron_add",
                              icon='MESH_ICOSPHERE')
