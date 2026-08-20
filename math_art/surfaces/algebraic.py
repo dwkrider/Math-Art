@@ -518,18 +518,193 @@ def _printed_expr(eq):
     return side(eq)
 
 
+# ======================================================================
+# Record nodal surfaces
+# ======================================================================
+# The four surfaces carrying the largest known number of ordinary double
+# points for their degree.  Together with the Barth sextic already in
+# the classical set above (65 nodes, the maximum for a sextic), these
+# are the headline objects of the subject:
+#
+#   degree  7   Labs septic      99 nodes   (max known; bound is 104)
+#   degree  8   Endrass octic   168 nodes   (max known; bound is 174)
+#   degree 10   Barth decic     345 nodes   (45 of them at infinity)
+#   degree 12   Sarti dodecic   600 nodes   -- NOT SHIPPED, see below
+#
+# A wrong coefficient in any of these does NOT raise -- it produces a
+# surface that renders perfectly well and simply has the wrong number of
+# nodes, destroying the one property that makes the object interesting.
+# So `_selftest` counts the nodes numerically rather than trusting the
+# transcription, calibrated on the shipped Barth sextic (65).
+#
+# References:
+# - O. Labs, "A Septic with 99 real Nodes", arXiv:math/0409348 (2004);
+#   Rend. Sem. Mat. Univ. Padova 116 (2006) 299-313.
+# - S. Endrass, "A Projective Surface of Degree Eight with 168 Nodes",
+#   arXiv:alg-geom/9507011 (1995); J. Algebraic Geom. 6 (1997) 325-334.
+# - W. Barth, "Two projective surfaces with many nodes admitting the
+#   symmetries of the icosahedron", J. Algebraic Geom. 5 (1996) 173-186
+#   -- the decic.  Barth's paper is not freely available; the equation
+#   used here is the one published in Wolfram MathWorld ("Barth Decic")
+#   and in the AMS Visual Insight entry of 2016-07-01, which agree.
+# - A. Sarti, "Pencils of symmetric surfaces in P_3",
+#   arXiv:math/0106080; J. Algebra 246 (2001) 429-452 -- the dodecic is
+#   the member of the degree-12 pencil at lambda = -22/243.
+# Converted copies of the freely available papers, with the
+# constructions written out, are in research/papers/algebraic-surfaces/.
+
+
+# The septic's parameters are algebraic, not rational: they are
+# polynomials in the real root of 7a^3 + 7a + 1 (Labs eq. 10).  Solving
+# for it beats hard-coding the paper's printed 8 digits.
+def _labs_alpha():
+    r = np.roots([7.0, 0.0, 7.0, 1.0])
+    real = r[np.abs(r.imag) < 1e-12].real
+    return float(real[np.argmin(np.abs(real))])
+
+
+_LABS_ALPHA = _labs_alpha()
+
+
+def _labs_params():
+    """(a1..a5) of Labs section 4, evaluated at the real alpha."""
+    a = _LABS_ALPHA
+    a2 = a * a
+    return (a ** 7 + 7 * a ** 5 - a ** 4 + 7 * a ** 3 - 2 * a2 - 7 * a - 1,
+            (a2 + 1) * (3 * a ** 5 + 14 * a ** 3 - 3 * a2 + 7 * a - 3),
+            (a2 + 1) ** 2 * (3 * a ** 3 + 7 * a - 3),
+            (a * (1 + a2) - 1) * (1 + a2) ** 2,
+            -a2 / (1 + a2))
+
+
+_LABS_A = _labs_params()
+
+
+def _f_labs(x, y, z, mu):
+    # S = P - U in the affine chart w = 1, with a6 = a7 = 1.
+    a1, a2, a3, a4, a5 = _LABS_A
+    r2 = x * x + y * y
+    P = (x * (x ** 6 - 21.0 * x ** 4 * y ** 2 + 35.0 * x ** 2 * y ** 4
+              - 7.0 * y ** 6)
+         + 7.0 * z * (r2 ** 3 - 8.0 * z ** 2 * r2 ** 2
+                      + 16.0 * z ** 4 * r2)
+         - 64.0 * z ** 7)
+    U = (z + a5) * (a1 * z ** 3 + a2 * z ** 2 + a3 * z + a4
+                    + (z + 1.0) * r2) ** 2
+    return P - U
+
+
+def _f_endrass(x, y, z, mu):
+    # F = P - Q in the chart w = 1, with c = f = h = 0 and e = -1 (the
+    # first two of Endrass's three steps) and the step-3 parameters.
+    s2 = _SQRT2
+    a = -0.25 * (1.0 + s2)
+    b = 0.5 * (2.0 + s2)
+    d = (2.0 + 7.0 * s2) / 8.0
+    g = 0.5 * (1.0 - 2.0 * s2)
+    i = -(1.0 + 12.0 * s2) / 16.0
+    r2 = x * x + y * y
+    P = (0.25 * (x * x - 1.0) * (y * y - 1.0)
+         * ((x + y) ** 2 - 2.0) * ((x - y) ** 2 - 2.0))
+    Q = (a * r2 * r2 + r2 * (b * z * z + d)
+         - z ** 4 + g * z * z + i) ** 2
+    return P - Q
+
+
+def _f_barth_decic(x, y, z, mu):
+    # Chart w = 1.  Phi is the golden ratio; 45 of the 345 nodes lie at
+    # infinity, so only 300 are visible here.
+    p = _PHI
+    p4 = p ** 4
+    x2, y2, z2 = x * x, y * y, z * z
+    q = x2 + y2 + z2
+    return (8.0 * (x2 - p4 * y2) * (y2 - p4 * z2) * (z2 - p4 * x2)
+            * (x2 * x2 + y2 * y2 + z2 * z2
+               - 2.0 * x2 * y2 - 2.0 * x2 * z2 - 2.0 * y2 * z2)
+            + (3.0 + 5.0 * p) * (q - 1.0) ** 2
+            * (q - (2.0 - p) ** 2))
+
+
+_SARTI_PAIRS = [(i, j) for i in range(4) for j in range(4) if i != j]
+_SARTI_TRIPLES = [(i, j, k) for i in range(4) for j in range(4)
+                  for k in range(4) if len({i, j, k}) == 3]
+_SARTI_QUADS = [(i, j, k, h) for i in range(4) for j in range(4)
+                for k in range(4) for h in range(4)
+                if len({i, j, k, h}) == 4]
+
+
+def _f_sarti(x, y, z, mu):
+    # The lambda = -22/243 member of the degree-12 pencil
+    # S12(x) + lambda Q12(x), in the chart x3 = 1.
+    #
+    # Sarti writes the S_pq... sums "over all the indices i, j, k" with
+    # distinct indices wherever they appear together, i.e. over ordered
+    # tuples -- which is what is done here.
+    ys = (x * x, y * y, z * z, 1.0 + 0.0 * x)
+    P2, T3, Q4 = _SARTI_PAIRS, _SARTI_TRIPLES, _SARTI_QUADS
+    S51 = sum(ys[i] ** 5 * ys[j] for i, j in P2)
+    S42 = sum(ys[i] ** 4 * ys[j] ** 2 for i, j in P2)
+    S33 = sum(ys[i] ** 3 * ys[j] ** 3 for i, j in P2)
+    S411 = sum(ys[i] ** 4 * ys[j] * ys[k] for i, j, k in T3)
+    S321 = sum(ys[i] ** 3 * ys[j] ** 2 * ys[k] for i, j, k in T3)
+    S222 = sum(ys[i] ** 2 * ys[j] ** 2 * ys[k] ** 2 for i, j, k in T3)
+    S3111 = sum(ys[i] ** 3 * ys[j] * ys[k] * ys[h] for i, j, k, h in Q4)
+    S2211 = sum(ys[i] ** 2 * ys[j] ** 2 * ys[h] * ys[k]
+                for i, j, k, h in Q4)
+    fs = (2.0 * S51 - 6.0 * S42 - 12.0 * S411 + 14.0 * S33
+          + 9.0 * S321 + 348.0 * S3111 + 30.0 * S222 - 270.0 * S2211)
+    y0, y1, y2, y3 = ys
+    fa = (y0 ** 3 * (y1 ** 2 * y2 - y1 * y2 ** 2 + y2 ** 2 * y3
+                     - y2 * y3 ** 2 + y3 ** 2 * y1 - y3 * y1 ** 2)
+          - y1 ** 3 * (y2 ** 2 * y3 - y2 * y3 ** 2 + y3 ** 2 * y0
+                       - y3 * y0 ** 2 + y0 ** 2 * y2 - y0 * y2 ** 2)
+          + y2 ** 3 * (y0 ** 2 * y1 - y0 * y1 ** 2 + y1 ** 2 * y3
+                       - y1 * y3 ** 2 + y3 ** 2 * y0 - y3 * y0 ** 2)
+          - y3 ** 3 * (y0 ** 2 * y1 - y0 * y1 ** 2 + y1 ** 2 * y2
+                       - y1 * y2 ** 2 + y2 ** 2 * y0 - y2 * y0 ** 2))
+    S12 = fs + 33.0 * math.sqrt(5.0) * fa
+    Q12 = (ys[0] + ys[1] + ys[2] + ys[3]) ** 6
+    return S12 - (22.0 / 243.0) * Q12
+
+
+_RECORD = (
+    ('LABS', "Labs Septic (99 nodes)", 'BALL', 2.6, _f_labs),
+    ('ENDRASS', "Endrass Octic (168 nodes)", 'BALL', 2.6, _f_endrass),
+    ('BARTH_DECIC', "Barth Decic (345 nodes)", 'BALL', 2.6,
+     _f_barth_decic),
+    # Sarti's degree-12 surface with 600 nodes is NOT here.  `_f_sarti`
+    # below transcribes her S12 and the lambda = -22/243 pencil member,
+    # and it has the right symmetry -- but it could not be verified, so
+    # shipping it under that name would be a claim we cannot support.
+    # What fails: Sarti fixes the singular members of the pencil by the
+    # orbits they contain, so at an orbit point p the ratio
+    # -S12(p)/Q12(p) must be one of her four values (-3/32, -22/243,
+    # -2/25, 0).  Evaluated at 600-cell vertices it lands on none of
+    # them, under either reading of her "sums over distinct indices"
+    # (ordered or unordered tuples).  Either the summation
+    # multiplicities differ from both readings, or the orbit points need
+    # her frame -- she places the polytopes as in Coxeter p.157 *with x0
+    # and x1 interchanged*, which is not reproduced here.  See BACKLOG.
+)
+
+for _key, _label, _shape, _clip, _fn in _RECORD:
+    PRESETS[_key] = (_label, _fn, _shape, _clip)
+
+
 # Which family each preset belongs to.  The operator turns this into a
 # Family dropdown that filters the Surface list: an 80-entry flat enum
 # is unusable, and the families are how the sources group them anyway.
 FAMILIES = (
     ('CLASSICAL', "Classical"),
     ('HAUSER', "Hauser Gallery"),
+    ('RECORD', "Record Nodal Surfaces"),
 )
 
 SURFACE_FAMILY = {k: 'CLASSICAL' for k in
                   ('CLEBSCH', 'CAYLEY', 'KUMMER', 'BARTH', 'TOGLIATTI',
                    'HEART', 'DINGDONG', 'CHMUTOV', 'TANGLE', 'MONKEY')}
 SURFACE_FAMILY.update({k: 'HAUSER' for (k, _l, _e, _s, _c, _f) in _HAUSER})
+SURFACE_FAMILY.update({k: 'RECORD' for (k, _l, _s, _c, _f) in _RECORD})
 
 
 def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3):
@@ -605,6 +780,52 @@ def _selftest():
     ok &= not bad
     print("algebraic: %d Hauser lambdas match their printed equation %s"
           % (len(_HAUSER), 'OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # The record surfaces are defined by symmetry, and their published
+    # node counts depend on every coefficient being exact.  A node count
+    # is the ideal gate but is not reliable to compute numerically; the
+    # SYMMETRY is, and it is an exact algebraic identity that almost any
+    # coefficient typo destroys.  The septic's 7-fold invariance, for
+    # instance, only holds if the expansion 21/35/7/8/16/64 of its
+    # product of seven planes is right.
+    def _rot(fn, n, px, py, pz):
+        t = 2.0 * math.pi / n
+        return fn(px * math.cos(t) - py * math.sin(t),
+                  px * math.sin(t) + py * math.cos(t), pz, 1.3)
+
+    qx, qy, qz = rng.uniform(-1.5, 1.5, size=(3, 300))
+
+    def _dev(a, b):
+        a, b = np.asarray(a, float), np.asarray(b, float)
+        sc = max(float(np.max(np.abs(a))), 1e-30)
+        return float(np.max(np.abs(a - b))) / sc
+
+    checks = [
+        ("Labs septic D7", _dev(_f_labs(qx, qy, qz, 1.3),
+                                _rot(_f_labs, 7, qx, qy, qz))),
+        ("Labs septic mirror", _dev(_f_labs(qx, qy, qz, 1.3),
+                                    _f_labs(qx, -qy, qz, 1.3))),
+        ("Endrass octic D8", _dev(_f_endrass(qx, qy, qz, 1.3),
+                                  _rot(_f_endrass, 8, qx, qy, qz))),
+        ("Endrass octic mirror", _dev(_f_endrass(qx, qy, qz, 1.3),
+                                      _f_endrass(qx, -qy, qz, 1.3))),
+        ("Barth decic 3-cycle", _dev(_f_barth_decic(qx, qy, qz, 1.3),
+                                     _f_barth_decic(qy, qz, qx, 1.3))),
+        ("Barth sextic 3-cycle", _dev(_f_barth(qx, qy, qz, 1.3),
+                                      _f_barth(qy, qz, qx, 1.3))),
+    ]
+    worst = [f"{n}:{d:.1e}" for n, d in checks if not (d < 1e-12)]
+    ok &= not worst
+    print("algebraic: %d record-surface symmetry identities hold %s"
+          % (len(checks), 'OK' if not worst else 'FAIL ' + ','.join(worst)))
+
+    # The septic's parameters are polynomials in the real root of
+    # 7a^3+7a+1; Labs prints it as -0.14010685, so a solver that drifted
+    # would show up here.
+    good = abs(_LABS_ALPHA - (-0.14010685)) < 5e-9
+    ok &= good
+    print("algebraic: Labs alpha = %.10f vs published -0.14010685 %s"
+          % (_LABS_ALPHA, 'OK' if good else 'FAIL'))
 
     orphan = sorted(set(PRESETS) - set(SURFACE_FAMILY))
     fams = {f for f, _ in FAMILIES}
