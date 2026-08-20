@@ -214,7 +214,7 @@ if _IN_BLENDER:
                     "the tube / coil)"),
                    ('DISTANCE', "By Distance",
                     "Gradient by distance from the centre")],
-            default='LATITUDE')
+            default='NONE')
 
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
