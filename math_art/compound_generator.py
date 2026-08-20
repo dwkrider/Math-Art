@@ -251,6 +251,25 @@ def _selftest():
     # five cubes separate into a generic thirty
     assert len(build_compound('H_5CUBES', phase=17.0)) > 5
 
+    # --- star prisms ----------------------------------------------------
+    # These carry Skilling's rows 36, 37 and 41.  Their vertices are an
+    # ordinary prism's, only rescaled, so the compound COUNTS cannot tell
+    # a correct star circuit from a wrong one -- the count check above
+    # would pass on a {5/2} face wound as a pentagon.  Check the faces
+    # directly: the circuit must visit every vertex, and every edge must
+    # come out unit, which happens only at the star's own circumradius.
+    for n, m, star in ((5, 2, 5), (10, 3, 10)):
+        V, F = _cmp.star_prism_solid(n, m)
+        assert len(V) == 2 * n and len(F) == n + 2, (n, m, len(V), len(F))
+        rings = [f for f in F if len(f) == star]
+        assert len(rings) == 2, (n, m, sorted(len(f) for f in F))
+        for r in rings:
+            assert sorted(i % n for i in r) == list(range(n)), (n, m, r)
+        lens = [_math.dist(V[f[i]], V[f[(i + 1) % len(f)]])
+                for f in F for i in range(len(f))]
+        assert max(lens) - min(lens) < 1e-9, (n, m, min(lens), max(lens))
+        assert abs(lens[0] - 1.0) < 1e-9, (n, m, lens[0])
+
     # --- prism / antiprism with its dual --------------------------------
     # `prism_and_dual` raises if the solid has no midsphere, so the whole
     # of Hart's range exercising cleanly is itself the edge-tangency

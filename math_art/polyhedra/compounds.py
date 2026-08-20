@@ -226,11 +226,19 @@ for _n in (3, 4, 5, 6, 8, 10, 12):
     COMPONENT_AXES['PRISM%d' % _n] = {_n: (0.0, 0.0, 1.0)}
     COMPONENT_AXES['ANTI%d' % _n] = {_n: (0.0, 0.0, 1.0)}
 del _n
+#: star prisms {n/m}, whose axis is still the n-fold one
+for _n, _m in ((5, 2), (10, 3)):
+    COMPONENT_AXES['PRISM%d_%d' % (_n, _m)] = {_n: (0.0, 0.0, 1.0)}
+del _n, _m
 
 
 def _component(kind):
     if kind.startswith('PRISM'):
-        return prism_solid(int(kind[5:]), anti=False)
+        spec = kind[5:]
+        if '_' in spec:                    # PRISM<n>_<m>, a star prism
+            n, m = (int(t) for t in spec.split('_'))
+            return star_prism_solid(n, m)
+        return prism_solid(int(spec), anti=False)
     if kind.startswith('ANTI'):
         return prism_solid(int(kind[4:]), anti=True)
     tetra, cube, octa = _seeds()
@@ -414,6 +422,28 @@ def prism_solid(n, anti=False):
     return V, _hull_faces(V)
 
 
+def star_prism_solid(n, m):
+    """The uniform prism on the star polygon {n/m}, axis on z.
+
+    Its VERTICES are those of the ordinary n-prism, only rescaled -- the
+    star's unit edge spans m steps, so R = 1/(2 sin(m pi/n)) instead of
+    1/(2 sin(pi/n)).  That is why Skilling gives the star rows the same
+    constituent counts as their convex partners (36/37 match 34/35, and
+    41 matches 40): the placement and the stabilizer see the same vertex
+    set up to scale, and only the FACES differ.
+    """
+    if math.gcd(n, m) != 1 or not 1 < m < n / 2:
+        raise ValueError('{%d/%d} is not a star polygon' % (n, m))
+    R = 0.5 / math.sin(m * math.pi / n)
+    V = [(R * math.cos(2 * math.pi * k / n),
+          R * math.sin(2 * math.pi * k / n), 0.5) for k in range(n)]
+    V += [(x, y, -0.5) for x, y, _z in V]
+    top = [(k * m) % n for k in range(n)]        # the star circuit
+    F = [top, [n + i for i in reversed(top)]]
+    F += [[k, (k + m) % n, n + (k + m) % n, n + k] for k in range(n)]
+    return V, F
+
+
 def prism_and_dual(n, anti=False):
     """The compound of a uniform n-prism (or n-antiprism) and its dual."""
     V, F = prism_solid(n, anti)
@@ -513,6 +543,12 @@ AXIS_COMPOUNDS = [
      'ANTI4', 'O', 4, 4, PERP, 3),
     ('S43_4ANTI', "Skilling 43: 6 Square Antiprisms (Oh)",
      'ANTI4', 'Oh', 4, 4, PERP, 6),
+    ('S36_5_2PRISM', "Skilling 36: 6 Pentagrammic Prisms (I)",
+     'PRISM5_2', 'I', 5, 5, PERP, 6),
+    ('S37_5_2PRISM', "Skilling 37: 12 Pentagrammic Prisms (Ih)",
+     'PRISM5_2', 'Ih', 5, 5, PERP, 12),
+    ('S41_10_3PRISM', "Skilling 41: 6 Decagrammic Prisms (Ih)",
+     'PRISM10_3', 'Ih', 10, 5, PERP, 6),
 ]
 
 _AXIS_BY_KEY = {r[0]: r for r in AXIS_COMPOUNDS}
