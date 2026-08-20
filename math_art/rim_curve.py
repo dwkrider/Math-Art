@@ -17,6 +17,8 @@
 # not an error -- a cyclide, a Hauser tube or a triply-periodic cell is
 # closed by construction, and the option is a no-op there.
 
+import math
+
 import numpy as np
 
 try:
@@ -378,6 +380,19 @@ if _IN_BLENDER:
             sp.use_cyclic_u = bool(closed)
         rim = bpy.data.objects.new(label + " Rim", cu)
         context.collection.objects.link(rim)
+        if profile == 'SQUARE':
+            # A square tube shaded smooth is a round tube: the shading
+            # averages across the four corners and erases the only
+            # thing that makes the profile square.  Splitting edges
+            # above a threshold creases those corners while leaving the
+            # tube smooth ALONG its length, which is what flat shading
+            # would throw away.  30 degrees clears the 90-degree
+            # corners comfortably and stays well above the angle
+            # between successive segments of a swept curve.
+            sharp = rim.modifiers.new("Sharpen", 'EDGE_SPLIT')
+            sharp.split_angle = math.radians(30.0)
+            sharp.use_edge_angle = True
+            sharp.use_edge_sharp = False
         rim.matrix_world = obj.matrix_world.copy()
         rim.parent = obj
         rim.matrix_parent_inverse = obj.matrix_world.inverted()
