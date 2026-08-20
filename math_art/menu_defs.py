@@ -109,6 +109,7 @@ POLYHEDRA = Menu(
         # Zonohedrification, zonish polyhedra and the rhombohedral
         # dissections are one seed-plus-star construction, so one entry.
         _e("mesh.zonish_add", 'MESH_ICOSPHERE', "Zonohedrification"),
+        _e("mesh.transpolyhedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.waterman_add", 'MESH_ICOSPHERE'),
         _e("mesh.symmetrohedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.polytope4d_add", 'MESH_CUBE'),

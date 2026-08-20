@@ -38,6 +38,11 @@ PARAMS = {
     # opened up and colour-matched by zone triple.
     "mesh.zonish_add": dict(mode='DISSECTION', seed='ICOSA',
                             explode=0.45, color=True),
+    # Halfway is the whole point of the operator -- either end
+    # is just a solid we already ship.  The cuboctahedron reads
+    # clearly at icon size and its dual is the rhombic
+    # dodecahedron, so both families are recognisable.
+    "mesh.transpolyhedron_add": dict(seed='CO', blend=0.5),
     # The uniform operator's whole point is what lies beyond the
     # Platonics, so it gets a Kepler-Poinsot star rather than another
     # convex solid that would duplicate the entry above.

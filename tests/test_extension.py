@@ -594,6 +594,9 @@ OPS = [
     ("bubble merged colored", lambda: bpy.ops.mesh.bubble_cluster_add(
         seed='ICOSA', separate=False, color=True, subdiv=1)),
     ("zonohedrification", lambda: bpy.ops.mesh.zonish_add()),
+    ("transpolyhedron", lambda: bpy.ops.mesh.transpolyhedron_add()),
+    ("transpolyhedron prism", lambda: bpy.ops.mesh.transpolyhedron_add(
+        seed='A7', blend=0.35)),
     ("zonish polyhedron", lambda: bpy.ops.mesh.zonish_add(
         mode='ZONISH', seed='ID', length=0.4)),
     ("rhombohedral dissection", lambda: bpy.ops.mesh.zonish_add(
