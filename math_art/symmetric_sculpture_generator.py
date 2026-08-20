@@ -1173,6 +1173,84 @@ _WHIMSY_HOLE_B = (
 _WHIMSY_TIPS = (0, 48)
 
 
+# Krull, a small-stellated-dodecahedron star, traced from the cutting
+# template (stellated_dodecahedron.svg / .dxf) and fitted into a
+# 5-fold plane.  Local (x, y) in units of the plane distance.
+#
+# The small stellated dodecahedron {5/2, 5} is the first stellation
+# of the dodecahedron, so its twelve pentagram faces lie in the very
+# planes this family is built from.  The plane shows that pentagram
+# in its crossings: five at 2/phi^2 = 0.76393, where two guide lines
+# cross and three planes meet -- the pentagram's inner pentagon, on
+# the dodecahedron's own vertices -- and five at radius 2, where four
+# lines cross and FIVE planes meet, which are its points and the
+# solid's twelve vertices.  Their ratio is phi^2, the pentagram's own.
+#
+# Five faces meeting is what picks the outer crossing out: the star's
+# arms end there, at radius 2 and 18 + 72k deg, and each of the
+# solid's twelve vertices is a spike built from five arms.  That
+# accounts for every arm: 12 faces x 5 points = 60 = 12 vertices x 5.
+# (The great stellated dodecahedron {5/2, 3} lives in these same
+# planes with the pentagram the other way up -- points at 2*phi^2
+# where only THREE planes meet.  It is a different sculpture.)
+#
+# The whole part is stored, not a fifth.  The plane's own 5-fold
+# rotation carries it onto itself, so the five copies in each plane
+# coincide and weld to one -- twelve parts, one per face.  The fifth
+# is decimated (Douglas-Peucker, 0.3 svg units) and the rest turned
+# from it, and it is cut where the outline meets its own turned copy
+# (0.07 px) rather than at a fifth of the perimeter.
+
+_KRULL_OUTER = (
+    (+1.902113, +0.618034), (+1.545542, +0.615291), (+1.212697, +0.508471),
+    (+1.122324, +0.461245), (+1.031662, +0.398983), (+0.684304, +0.109536),
+    (+0.586182, +0.050217), (+0.507563, +0.017422), (+0.435135, +0.001481),
+    (+0.363595, +0.001581), (+0.176362, +0.057321), (+0.278976, +0.199923),
+    (+0.321354, +0.288876), (+0.349460, +0.416306), (+0.350960, +0.559949),
+    (+0.337392, +0.655009), (+0.310847, +0.754326), (+0.179072, +1.074073),
+    (+0.129851, +1.227620), (+0.112782, +1.333252), (+0.108485, +1.659308),
+    (+0.000000, +2.000000), (-0.107578, +1.660034), (-0.108841, +1.310469),
+    (-0.091853, +1.209926), (-0.060654, +1.104462), (+0.107287, +0.684660),
+    (+0.133381, +0.573010), (+0.140276, +0.488105), (+0.133056, +0.414295),
+    (+0.110854, +0.346288), (-0.000017, +0.185443), (-0.103930, +0.327101),
+    (-0.175433, +0.394893), (-0.287942, +0.461002), (-0.424091, +0.506817),
+    (-0.518691, +0.523288), (-0.621350, +0.528733), (-0.966168, +0.502214),
+    (-1.127410, +0.502851), (-1.233146, +0.519260), (-1.544572, +0.615929),
+    (-1.902113, +0.618034), (-1.612029, +0.410666), (-1.279964, +0.301443),
+    (-1.179092, +0.286531), (-1.069149, +0.283612), (-0.617997, +0.313608),
+    (-0.503748, +0.303923), (-0.420867, +0.284243), (-0.352902, +0.254568),
+    (-0.295084, +0.212437), (-0.176372, +0.057289), (-0.343208, +0.002236),
+    (-0.429778, -0.044818), (-0.527417, -0.131392), (-0.613063, -0.246719),
+    (-0.657961, -0.331600), (-0.694862, -0.427551), (-0.776197, -0.763688),
+    (-0.826628, -0.916841), (-0.874909, -1.012331), (-1.063083, -1.278643),
+    (-1.175571, -1.618034), (-0.888711, -1.406228), (-0.682220, -1.124167),
+    (-0.636866, -1.032841), (-0.600116, -0.929180), (-0.489230, -0.490840),
+    (-0.444715, -0.385176), (-0.400386, -0.312433), (-0.351161, -0.256964),
+    (-0.293226, -0.214995), (-0.108987, -0.150037), (-0.108184, -0.325719),
+    (-0.090184, -0.422592), (-0.038020, -0.542206), (+0.045197, -0.659298),
+    (+0.112049, -0.728228), (+0.191901, -0.792974), (+0.486452, -0.974199),
+    (+0.616525, -1.069490), (+0.692423, -1.144915), (+0.887551, -1.406174),
+    (+1.175571, -1.618034), (+1.062776, -1.279763), (+0.858329, -0.996217),
+    (+0.785487, -0.924861), (+0.698257, -0.857877), (+0.315636, -0.616964),
+    (+0.228899, -0.541975), (+0.173415, -0.477337), (+0.135872, -0.413380),
+    (+0.113861, -0.345311), (+0.109014, -0.150017), (+0.276347, -0.203542),
+    (+0.374041, -0.216358), (+0.503920, -0.203710), (+0.640996, -0.160749),
+    (+0.727211, -0.118470), (+0.813464, -0.062534), (+1.076841, +0.161600),
+    (+1.207662, +0.255860), (+1.302850, +0.304735), (+1.611619, +0.409579),
+)
+
+
+def krull_motif(d=1.0):
+    """One of the twelve parts of Krull, a small-stellated-
+    dodecahedron sculpture, traced from the cutting template: a
+    five-armed star lying in a face plane of the dodecahedron, its
+    arms ending on the crossings at radius 2 where five planes meet.
+    See the note above."""
+    return polygon_with_holes(
+        [(x * d, y * d) for x, y in _KRULL_OUTER], [])
+
+
+
 def whimsy_motif(d=1.0):
     """One of the sixty flat blades of Hart's Whimsy (2014), traced
     from the cutting template: a curved band pierced by two teardrop
@@ -1188,6 +1266,7 @@ def whimsy_motif(d=1.0):
 # preset -> (group, plane family, motif builder)
 PRESETS = {
     'FRABJOUS': ('ICOSA', 'P2', frabjous_motif),
+    'KRULL': ('ICOSA', 'P5', krull_motif),
     'WHIMSY': ('ICOSA', 'P1', whimsy_motif),
 }
 
@@ -1602,6 +1681,13 @@ if _IN_BLENDER:
                     "the 3-fold corners (phi^2 x the plane "
                     "distance), five-fold vortices at the 5-fold "
                     "corners (phi x)"),
+                   ('KRULL', "Krull",
+                    "A small stellated dodecahedron {5/2, 5}: 12 "
+                    "five-armed stars in the dodecahedral planes, "
+                    "traced from the cutting template. The arms end "
+                    "on the crossings at twice the plane distance, "
+                    "where five planes meet, so each of the solid's "
+                    "12 spikes is built from five arms"),
                    ('WHIMSY', "Whimsy",
                     "After Whimsy (2014): 60 flat blades in the "
                     "face planes of the pentagonal "
@@ -1767,8 +1853,23 @@ if _IN_BLENDER:
                                   motif.data.vertices],
                                  d, abs(self.shell))
 
+            # Guides have to reach at least as far as the motif they
+            # are drawn for, or its outer corners have no lines to sit
+            # on.  A motif can run well past the default -- the
+            # stellated star's points reach 2*phi^2 -- so widen the
+            # disc to cover whatever motif is actually in use.
+            r_motif = max((sqrt(v.co[0] ** 2 + v.co[1] ** 2)
+                           for v in motif.data.vertices), default=0.0)
+            extent = max(self.guide_extent, 1.05 * r_motif / d)
+            if extent > self.guide_extent + 1e-9:
+                self.report(
+                    {'INFO'},
+                    f"Motif reaches {r_motif / d:.2f}x the plane "
+                    f"distance, so the guides were widened from "
+                    f"{self.guide_extent:.2f} to {extent:.2f}")
+
             # guide pattern (stellation diagram) in the same plane
-            segs = stellation_lines(kind, family, d, self.guide_extent,
+            segs = stellation_lines(kind, family, d, extent,
                                     self.guide_rings)
             gverts = []
             gedges = []
@@ -1914,8 +2015,7 @@ if _IN_BLENDER:
                 solid.matrix_parent_inverse = Matrix.Identity(4)
 
                 rball = 0.035 * d
-                cross = crossing_points(kind, family, d,
-                                        self.guide_extent,
+                cross = crossing_points(kind, family, d, extent,
                                         self.guide_rings)
                 orbit, cgroup = crossing_orbits(kind, family, cross, d)
 

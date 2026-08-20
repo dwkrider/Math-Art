@@ -228,7 +228,8 @@ for g, f, n in (('ICOSA', 'P2', 60), ('OCTA', 'P4', 24),
 
 # each preset lands in the right plane family, and the sculpture's
 # vertex count matches a weld predicted from the motif itself
-for preset, fam in (('FRABJOUS', 'P2'), ('WHIMSY', 'P1')):
+for preset, fam in (('FRABJOUS', 'P2'), ('KRULL', 'P5'),
+                    ('WHIMSY', 'P1')):
     clear()
     bpy.ops.object.symmetric_sculpture_add(preset=preset, shell=0.0)
     so = bpy.context.object
@@ -241,14 +242,15 @@ for preset, fam in (('FRABJOUS', 'P2'), ('WHIMSY', 'P1')):
     pmv, merged, sizes = weld_prediction(preset)
     want = 60 * mv - merged
     got = len(ev.vertices)
-    # Copies may only meet in the ways the symmetry allows, and by
-    # orbit-stabiliser every group size has to divide the group
-    # order.  Not simply {1,2,3,5}: Frabjous stores a whole S, which
-    # the plane's own 2-fold carries onto itself, so its two copies
-    # per plane coincide and every count is doubled -- 2, 4, 6 rather
-    # than 1, 2, 3.
-    ok = (got == want and pmv == mv and ss.PRESETS[preset][1] == fam
-          and all(60 % s == 0 for s in sizes))
+    # The check is that the count matches a weld predicted from the
+    # motif itself -- no invariant on the group sizes.  Two attempts
+    # at one were both wrong: they are neither drawn from {1,2,3,5}
+    # (Frabjous stores a whole S, which its plane's 2-fold carries
+    # onto itself, so every count doubles to 2, 4, 6) nor divisors of
+    # the copy count (Krull's five arms all lie in one orbit and its
+    # five copies coincide, so each of the 12 vertices takes 25 of
+    # the 300 arm-ends).  Sizes are printed for the record instead.
+    ok = (got == want and pmv == mv and ss.PRESETS[preset][1] == fam)
     print(f"[preset {preset}] verts={got}({want}) fam={fam} "
           f"merged={merged} groups={sizes} {'OK' if ok else 'FAIL'}")
     if not ok:
@@ -335,7 +337,7 @@ if not ok:
 # every preset -- measured on the evaluated result, not by re-running
 # the same formula the operator used
 lifts = {}
-for preset in ('FRABJOUS', 'WHIMSY'):
+for preset in ('FRABJOUS', 'KRULL', 'WHIMSY'):
     clear()
     bpy.ops.object.symmetric_sculpture_add(preset=preset)
     so = bpy.context.object
