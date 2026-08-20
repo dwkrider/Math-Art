@@ -4,7 +4,18 @@
 
 ## Overview
 
-This generator builds the $(p,q)$ torus knots and links as rope curves lying on a torus of configurable major/minor radius. The curve winds $p$ times around the torus axis while looping $q$ times through the hole; when $\gcd(p,q)=d>1$ the result is a torus **link** of $d$ components (e.g. $(2,2)$ is the Hopf link, $(2,4)$ Solomon's link, $(3,3)$ three fibres of the Hopf fibration), emitted as $d$ splines or merged tube meshes with optional per-component colouring. Output styles match the Prime Knots generator: Bézier / Poly / NURBS curve or swept tube mesh.
+Add a $(p,q)$ torus knot — a rope that lies on the surface of a doughnut, winding $p$ times around it one way and $q$ times the other — or, when $p$ and $q$ share a factor, the torus link it becomes.
+
+The two whole numbers $p$ and $q$ are the whole design: they say how many times the strand travels around the torus's axis versus through its central hole, and every such pair gives a clean, closed, self-similar curve. When $p$ and $q$ are coprime the result is a single knot (the trefoil is $(2,3)$, the cinquefoil $(2,5)$); when they share a common factor $d$ the strand splits into $d$ separate but interlocked loops — a **link**.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Knots & Curves ▸ Torus Knot*.
+2. **Set p and q** — the two winding numbers. **p** counts turns around the torus axis (the long way), **q** loops through the hole (the short way). Coprime $p,q$ give a knot; when $\gcd(p,q)=d>1$ you get a link of $d$ components — for example $(2,2)$ is the Hopf link, $(2,4)$ Solomon's link, $(3,3)$ three fibres of the Hopf fibration. Swapping $p$ and $q$ gives the same knot type in a differently proportioned embedding.
+3. **Shape the host torus.** **Major Radius** is the doughnut's centre-line radius and **Minor Radius** the radius of its tube; the knot rides exactly on that surface, so a fat minor radius gives a chunky, deeply-wound knot and a thin one a flatter, ring-like curve.
+4. **Set the resolution.** **Samples** is the number of points per component — raise it for high $p$ or $q$, where the strand travels a long way and can look faceted at low sample counts.
+5. **Choose the Output.** **Bezier / Poly / NURBS Curve** emit curves with a round bevel of **Tube Radius** (smoothness from **Bevel Resolution**); **Mesh Tube** sweeps a solid tube with **Tube Sides** facets. For a link, **Color Components** gives each of the $d$ loops its own coloured material so they read apart. **Scale** sets the overall size.
+6. **Read the report.** The operator prints how many components were built ($1$ for a knot, $d$ for a link) and the sample count per component — an immediate check of whether your $p,q$ produced a knot or a link.
 
 ## Options
 
@@ -46,13 +57,19 @@ Renders of each selectable option:
 
 ## How it works
 
-A $(p,q)$ torus knot lies on the surface of a torus of major radius $R$ and minor radius $r$, winding $p$ times the long way (around the axis) and $q$ times the short way (through the hole). It is parametrized by
+**In plain terms.** Imagine wrapping a single strand of thread around a doughnut. You can send it round the outside — the long way around the central hole — and you can thread it through the hole — the short way around the tube. A *torus knot* is what you get when you do both at once, in a fixed rhythm: go around the long way $p$ times in exactly the time it takes to loop through the hole $q$ times, then join the end back to the start. Because the two counts are locked together, the thread never wanders — it lays itself down in a perfectly regular over-and-around pattern and closes up into one tidy loop. The only subtlety is what happens when $p$ and $q$ share a common factor: then the thread meets its own starting point *early*, closing off one loop before the pattern is complete, and you have to lay down several parallel threads to fill in the rest — which is why those cases come out as a link of separate rings rather than a single knot.
+
+**The parametrisation.** A $(p,q)$ torus knot lies on the surface of a torus of major radius $R$ and minor radius $r$, winding $p$ times the long way (around the axis) and $q$ times the short way (through the hole). A single angle $t$ drives both motions at once — $pt$ carries the point around the axis while $qt$ carries it around the tube — giving
 
 $$\big((R + r\cos qt)\cos pt,\;\; (R + r\cos qt)\sin pt,\;\; r\sin qt\big),\qquad t\in[0,2\pi).$$
 
-Every sampled point satisfies $\big(\sqrt{x^2+y^2}-R\big)^2 + z^2 = r^2$, i.e. it lies exactly on the torus.
+Read the pieces geometrically: $r\cos qt$ and $r\sin qt$ trace a small circle of radius $r$ — the point's position *on the tube's cross-section* as it loops through the hole $q$ times — and that whole small circle is then swung around the $z$-axis at radius $R$ by the $\cos pt,\sin pt$ factors, carrying it $p$ times around. Substituting into the torus equation confirms the point never leaves the surface: every sample satisfies
 
-**Links.** When $d=\gcd(p,q)>1$ the closed curve breaks into $d$ disjoint components, each a reduced $(p/d,\,q/d)$ torus knot. On the flat torus the components are parallel lines of slope $q'/p'$ (with $p'=p/d,\ q'=q/d$); spacing them by $2\pi/p$ in the tube angle gives distinct disjoint curves. Component $k$ therefore uses a phase offset $\varphi_k = 2\pi k/p$:
+$$\big(\sqrt{x^2+y^2}-R\big)^2 + z^2 = r^2,$$
+
+which the self-test checks to machine precision, so the curve is guaranteed to ride exactly on the chosen torus rather than merely near it.
+
+**Links.** The single loop closes up only when $p$ and $q$ have no common factor. When $d=\gcd(p,q)>1$ the parameter returns to its start after just $2\pi/d$, so the curve above closes early and traces only *one* of $d$ disjoint components — each a reduced $(p/d,\,q/d)$ torus knot. To recover the whole link, think of the torus surface cut open and unrolled into a flat square with opposite edges glued: the components become parallel straight lines of slope $q'/p'$ (with $p'=p/d,\ q'=q/d$), and evenly offsetting their starting height separates them cleanly. Translated back, component $k$ carries a phase offset $\varphi_k = 2\pi k/p$ in the tube angle:
 
 $$r_k(t) = R + r\cos(q' t + \varphi_k),\quad
 P_k(t) = \big(r_k\cos p't,\; r_k\sin p't,\; r\sin(q' t + \varphi_k)\big).$$

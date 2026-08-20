@@ -6,6 +6,15 @@
 
 This generator draws the trajectory of a chaotic dynamical system as a curve. It ships all 38 strange attractors of Chaotic Atmospheres' *MATHRULES* art series (plus Zhou–Chen from the same collection) as presets: the ODE systems and parameter values follow Jürgen Meier's compilation, the artist's stated source, with Lorenz / Rössler / Chua transcribed from the posters. Each system is integrated with a fixed-step RK4 (Euler where the reference render depends on numerical dissipation), the transient discarded, and the trajectory emitted as a curve — optionally arc-length resampled, with the tube radius modulated by local speed so slow regions thicken, matching the look of the original renders.
 
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Knots & Curves ▸ Strange Attractor* and pick a system from the fly-out. Every name in that list is the same operator carrying a different preset, so you can always change your mind afterwards.
+2. **Choose the Attractor.** The 39 presets each supply their own equations, constants, starting point and step count — Lorenz is the default, and the redo panel's **Attractor** dropdown swaps to any other. This is the one control that changes *which* shape you get; everything else changes how it is drawn.
+3. **Set the size and how much to trace.** **Size** is the largest bounding-box extent the finished curve is scaled to. **Steps** overrides how many integration steps to take (0 keeps the preset's tuned default), and **Time Step Scale** multiplies the integration step — smaller for a finer, smoother trace, larger to cover more of the attractor faster.
+4. **Reach for the mode-specific knobs** — the operator only shows a control when it applies. **Speed Taper** appears only when **Resample** is 0, because arc-length resampling erases the speed information the taper needs. **Bevel Resolution** and **Profile Sides** appear only once **Tube Radius** is above 0, since a wire has no cross-section to refine.
+5. **Pick the output.** **Spline** draws the curve as a **Poly** line (one point per sample) or a smoother **Bezier**; **Tube Radius** thickens it into a solid tube (0 leaves a wire); **Resample** re-spaces the curve to $N$ evenly spaced points.
+6. **Read the report.** The status line prints the system name and the point count, e.g. `Lorenz: 12000 points`. If a system's trajectory runs away past $10^6$ in any coordinate it stops with `integration failed … try a smaller Time Step Scale` — the fix named in the message.
+
 ## Options
 
 
@@ -100,11 +109,13 @@ Renders of each selectable option:
 
 ## How it works
 
-A strange attractor is the long-term set that trajectories of a chaotic autonomous ODE
+**In plain terms.** Drop a marble into a bowl and it rolls to the bottom and stops — the bottom is an *attractor*, the state the system settles into. Give a playground swing a push and it eventually settles into the same repeating back-and-forth — a looping attractor. Some systems, though, never settle onto a point or a loop: they wander forever along a path that stays inside a bounded region but never crosses itself and never repeats, endlessly folding back on the same intricate shape. That shape is a **strange attractor**, and the wandering is *chaos* — two paths starting a hair's breadth apart drift completely apart, which is exactly why weather is unpredictable. Lorenz's famous butterfly is one of these. Each preset here is a rule saying how a moving point's velocity depends on where it currently is; the generator just releases a point under that rule and records the trail it leaves, which traces out the attractor.
+
+More precisely, a strange attractor is the long-term set that trajectories of a chaotic autonomous ODE
 
 $$\dot{\mathbf{x}} = f(\mathbf{x}), \qquad \mathbf{x}\in\mathbb{R}^n,$$
 
-settle onto. Each preset supplies $f$, its parameters, an initial state $\mathbf{x}_0$, a time step $\mathrm{d}t$, a step count, and a transient length. The canonical **Lorenz** system, for instance, is
+settle onto — the right-hand side $f$ is the "velocity depends on position" rule, and because it does not depend on time (autonomous) the same point always moves the same way, so the picture is fully determined by where you start. Each preset supplies $f$, its parameters, an initial state $\mathbf{x}_0$, a time step $\mathrm{d}t$, a step count, and a transient length. The canonical **Lorenz** system, for instance, is
 
 $$\dot x = a(y-x),\quad \dot y = x(b-z)-y,\quad \dot z = xy - cz,$$
 
