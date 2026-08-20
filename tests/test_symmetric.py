@@ -228,7 +228,8 @@ for g, f, n in (('ICOSA', 'P2', 60), ('OCTA', 'P4', 24),
 
 # each preset lands in the right plane family, and the sculpture's
 # vertex count matches a weld predicted from the motif itself
-for preset, fam in (('FRABJOUS', 'P2'), ('WHIMSY', 'P1')):
+for preset, fam in (('FRABJOUS', 'P2'), ('KRULL', 'P5'),
+                    ('WHIMSY', 'P1')):
     clear()
     bpy.ops.object.symmetric_sculpture_add(preset=preset, shell=0.0)
     so = bpy.context.object
@@ -241,14 +242,15 @@ for preset, fam in (('FRABJOUS', 'P2'), ('WHIMSY', 'P1')):
     pmv, merged, sizes = weld_prediction(preset)
     want = 60 * mv - merged
     got = len(ev.vertices)
-    # Copies may only meet in the ways the symmetry allows, and by
-    # orbit-stabiliser every group size has to divide the group
-    # order.  Not simply {1,2,3,5}: Frabjous stores a whole S, which
-    # the plane's own 2-fold carries onto itself, so its two copies
-    # per plane coincide and every count is doubled -- 2, 4, 6 rather
-    # than 1, 2, 3.
-    ok = (got == want and pmv == mv and ss.PRESETS[preset][1] == fam
-          and all(60 % s == 0 for s in sizes))
+    # The check is that the count matches a weld predicted from the
+    # motif itself -- no invariant on the group sizes.  Two attempts
+    # at one were both wrong: they are neither drawn from {1,2,3,5}
+    # (Frabjous stores a whole S, which its plane's 2-fold carries
+    # onto itself, so every count doubles to 2, 4, 6) nor divisors of
+    # the copy count (Krull's five arms all lie in one orbit and its
+    # five copies coincide, so each of the 12 vertices takes 25 of
+    # the 300 arm-ends).  Sizes are printed for the record instead.
+    ok = (got == want and pmv == mv and ss.PRESETS[preset][1] == fam)
     print(f"[preset {preset}] verts={got}({want}) fam={fam} "
           f"merged={merged} groups={sizes} {'OK' if ok else 'FAIL'}")
     if not ok:
@@ -335,7 +337,7 @@ if not ok:
 # every preset -- measured on the evaluated result, not by re-running
 # the same formula the operator used
 lifts = {}
-for preset in ('FRABJOUS', 'WHIMSY'):
+for preset in ('FRABJOUS', 'KRULL', 'WHIMSY'):
     clear()
     bpy.ops.object.symmetric_sculpture_add(preset=preset)
     so = bpy.context.object
@@ -605,7 +607,8 @@ if not ok:
 # Machinable part: a closed solid of the asked-for thickness, laid
 # flat below the XY plane and centred on the Z axis so it can be
 # picked and exported without disturbing the design objects
-for preset, thick in (('WHIMSY', 0.03), ('FRABJOUS', 0.02)):
+for preset, thick in (('WHIMSY', 0.03), ('FRABJOUS', 0.02),
+                      ('KRULL', 0.05)):
     clear()
     # thickness follows Shell x Distance, so it always agrees with
     # the sculpture the part came from
@@ -635,8 +638,13 @@ for preset, thick in (('WHIMSY', 0.03), ('FRABJOUS', 0.02)):
     if not ok:
         fails.append(f'part-{preset}')
 
-# the part is built from the motif that is actually in use, so a
-# supplied Motif Object is what gets machined
+# The part is built from the motif that is actually in use, so a
+# supplied Motif Object is what gets machined -- and it is machined
+# WHOLE.  This quad is off-centre and carries none of the plane's own
+# 2-fold symmetry, so the sculpture puts two of it in every plane and
+# the part is both slabs: 8 verts each, the second the first turned a
+# half turn.  Machining only the drawn one would leave half the
+# material in that plane uncut.
 clear()
 me2 = bpy.data.meshes.new("PartSrc")
 me2.from_pydata([(0.2, 0.1, 0.0), (0.8, 0.1, 0.0), (0.8, 0.5, 0.0),
@@ -650,10 +658,14 @@ bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS',
 part = [o for o in bpy.data.objects
         if o.name.startswith('SymSculpt Part')][0]
 zs = [v.co.z for v in part.data.vertices]
-ok = (len(part.data.vertices) == 8
-      and abs(max(zs) - min(zs) - 0.05) < 1e-6)
-print(f"[part from motif object] {len(part.data.vertices)}v(8) "
-      f"{'OK' if ok else 'FAIL'}")
+xy = [(v.co.x, v.co.y) for v in part.data.vertices]
+turned = all(any(abs(x + p) < 1e-5 and abs(y + q) < 1e-5
+                 for p, q in xy) for x, y in xy)
+ok = (len(part.data.vertices) == 16
+      and abs(max(zs) - min(zs) - 0.05) < 1e-6
+      and turned)
+print(f"[part from motif object] {len(part.data.vertices)}v(16) "
+      f"half-turn pair={turned} {'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('part-motif-object')
 
