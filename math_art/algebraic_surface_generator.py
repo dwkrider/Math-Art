@@ -57,11 +57,13 @@ import numpy as np
 # The mathematics lives in the sibling `surfaces` engine package;
 # this module is the Blender layer over it.
 try:
-    from .surfaces.algebraic import (PRESETS, build_algebraic, FAMILIES,
-                                     SURFACE_FAMILY, HAUSER_EQUATION)
+    from .surfaces.algebraic import (
+        PRESETS, build_algebraic, FAMILIES, SURFACE_FAMILY,
+        HAUSER_EQUATION, FAMILY_RESOLUTION, FAMILY_RESOLUTION_DEFAULT)
 except ImportError:  # flat import outside the package
-    from surfaces.algebraic import (PRESETS, build_algebraic, FAMILIES,
-                                    SURFACE_FAMILY, HAUSER_EQUATION)
+    from surfaces.algebraic import (
+        PRESETS, build_algebraic, FAMILIES, SURFACE_FAMILY,
+        HAUSER_EQUATION, FAMILY_RESOLUTION, FAMILY_RESOLUTION_DEFAULT)
 
 
 
@@ -159,6 +161,33 @@ if _IN_BLENDER:
             return _PRESET_ITEMS_ALL
         return _PRESET_ITEMS_FAM.get(self.family, _PRESET_ITEMS_ALL)
 
+    def _family_default(fam):
+        """First preset of a family, and the resolution it wants."""
+        items = _PRESET_ITEMS_FAM.get(fam) or _PRESET_ITEMS_ALL
+        return items[0][0], FAMILY_RESOLUTION.get(
+            fam, FAMILY_RESOLUTION_DEFAULT)
+
+    def _on_family_change(self, context):
+        """Switching family must move `preset` with it.
+
+        A dynamic enum stores an INDEX into whatever list the items
+        callback last returned, so after the list is swapped the old
+        index either points at an unrelated surface or at nothing --
+        which is how `PRESETS[self.preset]` came to raise a KeyError on
+        an empty string.  Landing on the family's first entry is both
+        the fix and the obvious behaviour.
+
+        The resolution moves too: the record nodal surfaces are packed
+        with double points and need a finer grid than the rest (this
+        overwrites a hand-set resolution, which is the intent -- the
+        family switch is a change of subject).
+        """
+        key, res = _family_default(self.family)
+        if self.preset != key:
+            self.preset = key
+        if self.resolution != res:
+            self.resolution = res
+
     class MESH_OT_algebraic_surface_add(bpy.types.Operator):
         """Add a classical algebraic surface (implicit level set
         meshed by marching tetrahedra). Pick a Family, then a Preset
@@ -171,6 +200,7 @@ if _IN_BLENDER:
             name="Family",
             items=_FAMILY_ITEMS,
             default='CLASSICAL',
+            update=_on_family_change,
             description="Which group of surfaces to choose from; "
                         "filters the Preset list")
         preset: EnumProperty(
@@ -179,9 +209,11 @@ if _IN_BLENDER:
             description="The surface to build; the tooltip gives its "
                         "defining equation where one is printed")
         resolution: IntProperty(
-            name="Resolution", default=80, min=16, max=256,
+            name="Resolution", default=FAMILY_RESOLUTION_DEFAULT,
+            min=16, max=256,
             description="Sample grid resolution per axis (algebraic "
-                        "surfaces need more than TPMS)")
+                        "surfaces need more than TPMS; the record "
+                        "nodal surfaces need more again)")
         scale: FloatProperty(
             name="Scale", default=1.0, min=0.01, max=100.0)
         mu: FloatProperty(
@@ -205,9 +237,17 @@ if _IN_BLENDER:
             name="Smooth Shading", default=True)
 
         def execute(self, context):
-            label = PRESETS[self.preset][0]
+            # belt and braces against a stale enum index: the
+            # update callback above keeps preset and family in
+            # step, but a re-run from an old redo state (or a
+            # scripted call naming a preset that has since gone)
+            # must not crash the operator.
+            key = self.preset
+            if key not in PRESETS:
+                key = _family_default(self.family)[0]
+            label = PRESETS[key][0]
             verts, tris = build_algebraic(
-                self.preset, self.resolution, mu=self.mu,
+                key, self.resolution, mu=self.mu,
                 clip=self.clip, scale=self.scale, fold=self.fold)
             if len(tris) == 0:
                 self.report({'ERROR'}, "Empty level set")

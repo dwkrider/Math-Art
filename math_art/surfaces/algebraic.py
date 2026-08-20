@@ -813,6 +813,14 @@ FAMILIES = (
     ('NAMED', "Named Implicit Surfaces"),
 )
 
+# Sampling resolution each family wants by default.  The record nodal
+# surfaces are degree 7 to 10 and carry hundreds of double points packed
+# into a small region; at the general-purpose 80 that structure turns to
+# mush, and the whole point of them is the singularities.
+FAMILY_RESOLUTION_DEFAULT = 80
+FAMILY_RESOLUTION = {'RECORD': 120}
+
+
 SURFACE_FAMILY = {k: 'CLASSICAL' for k in
                   ('CLEBSCH', 'CAYLEY', 'KUMMER', 'BARTH', 'TOGLIATTI',
                    'HEART', 'DINGDONG', 'CHMUTOV', 'TANGLE', 'MONKEY')}
