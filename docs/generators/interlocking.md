@@ -24,19 +24,27 @@ interlock to modular space-filling blocks and a spherical shell:
   tiles the plane, so copies interlock. A **sine** profile reproduces
   Estrin's *osteomorphic* saddle block; **tent**, **S-curve** and
   **step** profiles give Versatile-style blocks.
-- **Versatile Block** (single) — the exact block of Akpanya,
-  Goertzen, Wiesenhütter, Niemeyer & Nönnig (Bridges 2023): the
-  interpolation between a square and a 1×2 rectangle. Its
-  space-filling assembly mixes translations and rotations classified
-  by Truchet tiles, so the block is shown on its own.
+- **Versatile Blocks** — the exact block of Akpanya, Goertzen,
+  Wiesenhütter, Niemeyer & Nönnig (Bridges 2023): the interpolation
+  between a square and a 1×2 rectangle. It is tiled by translation
+  over the diamond lattice into a framed **interlocking layer**
+  (checkerboard-coloured for the Truchet look), one block per
+  fundamental domain.
+- **Interlocking Cubes / Octahedra** — the Kanel-Belov / Dyskin
+  *moving-cross-section* layer: cubes (or octahedra) with a body-
+  diagonal 3-fold axis vertical, placed as identical translates on a
+  honeycomb. Each cell's faces tilt ±35.26° (cube) or ±19.47°
+  (octahedron), and because neighbours meet across an edge that
+  reverses the tilt sense, adjacent cells share every inclined plane —
+  so the framed layer locks.
 - **Tetroctahedrille Kitten** — a non-convex block (one octahedron +
   two tetrahedra) glued on the octet-truss (tetrahedral-octahedral)
   lattice, after Akpanya, Goertzen & Niemeyer (2024). It **tiles
   space by pure translation** over the FCC basis and is assembled into
   a space-filling patch.
 - **Tetroctahedrille UFO / Cushion** (single) — one octahedron + four
-  tetrahedra (volume 8/3); shown as a single block, since they admit
-  no integer translation lattice.
+  tetrahedra; shown as a single block, since they admit no integer
+  translation lattice.
 - **SL Blocks** — self-interlocking octocubes (Shih 2018): an
   S-tetracube fused to an L-tetracube (each a contiguous unit cell).
   Two blocks form a conjugate pair (one turned 180° about a y-axis
@@ -45,9 +53,21 @@ interlock to modular space-filling blocks and a spherical shell:
   the a⁴ loop. Verified cube-disjoint.
 
 The result is centred at the origin and fit within a cube of the
-chosen **Size**. TETRA, Escher, Kitten and the SL strand are verified
-non-overlapping assemblies; the Versatile, UFO and Cushion families
-are single reference blocks.
+chosen **Size**. The Tetrahedra, Escher, Versatile and moving-cross-
+section (Cubes / Octahedra) layers are verified framed-interior
+interlocks; the Kitten patch, the Bisquare layer, the SL strand, the
+interlocking dome and the hendecahedron cluster are verified
+non-overlapping assemblies; the Rhom, Rhom Obverse, UFO and Cushion
+families are single reference blocks.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Topological Interlocking*.
+2. **Pick the Family.** The genuinely locking layers are **Interlocking Tetrahedra** (the default), **Escher / Osteomorphic**, **Versatile Blocks**, and **Interlocking Cubes / Octahedra** — for these the operator reports *interlocking (framed interior)*. **Bisquare Blocks**, **Tetroctahedrille Kitten**, **SL Blocks**, **Interlocking Dome** and **Bisymmetric Hendecahedron** are further verified assemblies, and **Rhom / Rhom Obverse / UFO / Cushion** are shown as single reference blocks.
+3. **Set the extent.** The layer families take *Cells X* and *Cells Y* (the Kitten also uses *Cells Z* for stacked layers); more cells make a larger framed patch.
+4. **Dial the mode-specific controls** that appear only for the family you chose: the **Escher** *Profile* (sine → osteomorphic saddle, tent → Versatile-style, plus S-curve and step), its *Deform Depth* (how deep the interlock bites), *Edge Samples* and *Block Height*; the **SL** *Mode* (single block, engaged pair, or the periodic square strand) with its *Engagement* and *Frame Order*; the **Dome** *Seed* (icosahedron / dodecahedron), *Edge Deform* and *Shell Thickness*; and the **Hendecahedron** *Cells* count.
+5. **Finish the look.** *Gap Factor* shrinks each block about its centroid (1.0 = blocks touch); *Scale* fits a 2 m cube; *Colouring* is *By Block Type* (Truchet two-tone), *Highlight Frame* (paints the fixed peripheral ring apart, so you can see what must be held), or *None*; and *Separate Objects* outputs every block as its own mesh.
+6. **Read the report.** Each build prints the family with a rigour tag — *interlocking (framed interior)* for the four locking layers, *modular blocks* otherwise — followed by the vertex and face counts.
 
 ## Options
 
@@ -85,10 +105,10 @@ are single reference blocks.
   colouring marks. Without a frame any finite assembly can be taken
   apart from its boundary.
 - **Assemblies vs. single blocks.** The Tetrahedra layer, the Escher
-  loft, the Kitten and the SL strand are verified non-overlapping
-  space-filling / interlocking assemblies; the Escher tiling is
-  checked to cover the plane exactly once at every height, and the SL
-  strand is checked to be cube-disjoint. The Versatile, UFO and
+  loft, the Versatile layer, the Kitten and the SL strand are verified
+  non-overlapping space-filling / interlocking assemblies; the Escher
+  tiling is checked to cover the plane exactly once at every height,
+  and the SL strand is checked to be cube-disjoint. The UFO and
   Cushion families are shown as single reference blocks, because their
   space-filling assemblies require rotation-based grammars (see the
   project backlog).
@@ -123,6 +143,30 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/interlocking__HENDECA.png" width="200"><br><sub>Bisymmetric Hendecahedron</sub></td>
 </tr>
 </table>
+
+## How it works
+
+**In plain terms.** *Topological interlocking* is the trick of making solid blocks hold one another in place by shape alone — no glue, no screws, no notch that pins them. Think of a flat ring of stones in an arch: hold the outer ring fixed and no inner stone can fall out, because every direction it might move is blocked by a neighbour. These blocks do the same in a slab. The secret is that each block is shaped so that a horizontal slice through it, taken at the right height, is a tile that covers the floor — so at that height the block is completely ringed by its neighbours. A block cannot rise, because its slanted top is trapped under a neighbour's overhang; it cannot sink, because a *different* neighbour traps it from the other side. Fix the outer frame and the whole interior is locked. Everything below makes "shaped so a slice tiles" precise for each family.
+
+**Why a frame.** A finite patch only locks if its peripheral ring is held: without the frame you could always slide a boundary block off sideways and unzip the assembly from the edge. So the rigorous families flag their outer ring as a *frame* (the **Highlight Frame** colouring paints it), and the locking claim is always about the *framed interior*. The module reserves the report tag *interlocking (framed interior)* for the families it proves lock this way, and calls the rest *modular blocks*.
+
+**Interlocking tetrahedra.** Take a regular tetrahedron and set it so that its two opposite edges are both horizontal and mutually perpendicular — the top edge (at height $+H$) along $x$, the bottom edge (at $-H$) along $y$. For a regular tetrahedron whose opposite edges have length $2$ the slant edges force
+
+$$\sqrt{2 + 4H^2} = 2 \quad\Longrightarrow\quad H = \tfrac{1}{\sqrt2},$$
+
+and — the key fact — its horizontal mid-section at $z=0$ is exactly a **unit square**. Put type A on the white squares of a checkerboard and type B (A turned $90°$) on the black, and those unit-square mid-sections tile the plane, so every cell is surrounded. Now the two directions do different jobs: a cell's $x$-neighbours sit under its rising top edge and block it from lifting, while its $y$-neighbours block it from sinking — the asymmetry of the tetrahedron is precisely what makes "up" and "down" both dead ends.
+
+**Moving cross-section: cubes and octahedra.** A second route (Kanel-Belov / Dyskin) starts from the common horizontal section — a regular hexagon — and erects a tilted plane over each of its six edges, alternating the tilt sense $+,-,+,-,+,-$ around the ring. Intersecting those six half-spaces closes the solid, and the tilt angle chooses which Platonic solid you get:
+
+$$\beta = \arcsin\tfrac{1}{\sqrt3} \approx 35.26° \ \text{(cube)}, \qquad \beta = \arcsin\tfrac13 \approx 19.47° \ \text{(octahedron, with horizontal caps)} .$$
+
+The hexagon is the section normal to the solid's 3-fold (body-diagonal) axis, held vertical. All cells are *identical* pure translates on the triangular lattice $t_1=(\tfrac32,\tfrac{\sqrt3}{2}),\ t_2=(0,\sqrt3)$; the interlock needs no two-colour scheme because a neighbour sits across a hexagon *edge*, mapping that edge to the neighbour's *opposite* edge — which carries the opposite tilt sense — so the two cells automatically share each inclined face-plane. That shared slanted wall is exactly the overhang that traps its neighbour.
+
+**The Escher trick: osteomorphic and Versatile lofts.** Here the tile does the work directly. Take the unit square $[0,1]^2$, a $p4$ fundamental domain, and deform its four edges with a single profile — because the four edges are $90°$ images of one another, one profile fixes all four (this is the *Escher trick*). Place the deformed square $M$ at $z=0$, its $90°$ rotation $M'$ at $z=\tfrac12$, and $M$ again at $z=1$, and loft between them. Every horizontal section is then a copy of a deformed-square tiling, so copies on the integer lattice fill each slab — and the half-height $90°$ twist is what makes the loft interlock rather than merely stack (the generator checks this by confirming each section tiles with coverage exactly one). Checkerboard parity flips the twist sense and yields the two Truchet colours. A **sine** profile is Estrin's *osteomorphic* saddle block; a **tent** profile a Versatile-style block. The exact literature blocks are built the same way but from published vertex tables: the **Versatile** block interpolates a square into a $1\times2$ rectangle and tiles by translation over the diamond lattice, and the **Bisquare** block (Frézier, 1737) rises from a square base to a two-tent roof, a $p4$ layer of volume $\tfrac32$ per cell — the missing quarter being the valleys between the roofs, so the layer has a flat floor and a tented top rather than filling solid.
+
+**SL octocubes.** The self-interlocking blocks are built from cubes. Fuse an S-shaped tetracube to an L-shaped tetracube, sharing three faces, and you get one contiguous **octocube** spanning three $z$-levels. Blocks engage by one of six rigid motions $a,h,s,t,d,y$, each a world-frame affine map $p\mapsto Rp+t$ (for instance $a$ is $R_z(-90°)$ then $T(1,-1,0)$). A *strand* is a word in these letters; it is a periodic, self-locking loop exactly when the product of its transforms is the identity, so the block returns to where it started. The simplest such loop is $a^4$ — the tight square strand — and the general square frames are $(a\,h^{2n})^4$. Because the pieces are integer polycubes, "no overlap" is an *exact* question about shared unit cubes, and the strand is verified globally cube-disjoint.
+
+**Verification.** None of these locking claims are taken on faith. The module's self-test rebuilds every family and gates it: the convex-primitive layers (tetrahedra, cubes, octahedra, kitten) pass an interior-penetration test, the SL polycubes an exact integer-disjointness test, the Bisquare layer a ray-cast coverage test, and the space-fillers (Escher sections, the hendecahedron boat-and-lattice) a coverage-exactly-one test — printing `RESULT: OK` only when no assembly interpenetrates and every tiling covers space once.
 
 ## References
 

@@ -6,6 +6,16 @@
 
 The Scherk-Collins generator builds the saddle-chain toroid sculptures that Carlo H. Séquin designed with the sculptor Brent Collins in his *Sculpture Generator I* program — pieces such as *Hyperbolic Hexagon II*, the *Heptoroid*, and the *Minimal Trefoil*. Each sculpture is a stack of "storeys" cut from the singly-periodic Scherk minimal surface, optionally twisted and warped into a closed ring. It is a faithful re-implementation of the original program's geometry engine, and reads and writes the original's spec/demo files.
 
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Scherk-Collins Sculpture*.
+2. **Start from a Preset.** *Default* gives the program defaults; the named presets reproduce specific sculptures — *Hyperbolic Hexagon*, *Minimal Trefoil*, *Monkey-Saddle Trefoil*, *Heptoroid*, *Scherk Tower (straight)* — and *Demo 1…20* are the original program's shipped demo files. A preset only *seeds* the sliders below; every one stays freely editable afterwards, so a preset is a starting point, not a lock.
+3. **Set the two structural counts.** **Branches** is the order of each saddle — how many vanes meet and flare out at a hole (2 is the ordinary Scherk saddle, higher values give monkey-saddle and beyond). **Storeys** is how many hole/saddle levels stack up the tower, and **Storey Height** how tall each one is.
+4. **Shape the vanes and their edges.** **Flange Width** is the truncation half-width of each vane; the holes break open once it drops below about 0.88 (the slider bottoms out at 0.7). **Thickness** turns the single surface ($0$) into a solid slab ($>0$); **Rim Bulge** and **Rim Round** style the beaded edge, and **Detail** sets the tessellation density.
+5. **Bend the tower into a ring.** **Warp** bends the straight tower toward an arch and closes it into a toroid at $360°$; **Twist** adds overall axial twist, **Azimuth** turns the profile about the axis, and **Phase** slides the holes along an *open* tower (it has no effect once the ring is closed). For a closed ring to join seam-to-seam without a mismatch, the twist must satisfy $(\text{twist} + \text{storeys}\cdot 180/b)\bmod (360/b) = 0$.
+6. **Choose the output and size.** Leave **NURBS Output** off for the default watertight, manifold solid mesh (ready for 3D printing); turn it on for a compact NURBS mid-surface, whose control-point density is set by **NURBS Detail** (thickness and rim beads do not apply to it). **Stretch X/Y/Z** and **Overall Scale** finish the sizing.
+7. **Round-trip the original's files.** *Load Spec File* imports a *Sculpture Generator I* spec/demo `.txt` as a new sculpture with its parameters recorded on the object, and *Save Spec File* writes the current parameters back out in the same format.
+
 ## Options
 
 
@@ -78,29 +88,31 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** Picture the surface a Pringle chip makes — a saddle that curves *up* front-to-back and *down* side-to-side at the same time. Now imagine an endless tower of them: at every level the surface dives through a hole with vanes flaring out like the arms of a four-way road junction, and the tower repeats that saddle-and-hole pattern upward forever. This infinite tower is a real minimal surface — the singly-periodic **Scherk surface** — the shape a soap film would take if it had to thread that repeating stack of holes. Séquin's trick is to cut a *finite* stack of storeys out of it, give each level a small turn, and then bend the whole column round in a circle until the top meets the bottom. The result is a closed bronze-looking ring of interlocking saddles — a Scherk-Collins sculpture. Everything below is how one saddle cross-section is drawn from an equation, how saddles with more than two arms are made, and how the bending is arranged so the ring closes up watertight.
+
 The tower template is the exact singly-periodic **Scherk minimal surface**
 
 $$\sin z = \sinh x \,\sinh y.$$
 
-Each height level $c = \sin z$ contributes a cross-section curve, parametrized as
+Reading it as "slice the surface at each height and see what curve you get" is exactly what the mesher does: fix a height, and the level constant $c = \sin z$ turns the implicit equation into a relation between $x$ and $y$ that traces one cross-section. Each such level contributes a cross-section curve, parametrized as
 
 $$x(\sigma) = \operatorname{asinh}\!\big(\sqrt{c}\; e^{\,\sigma\Lambda}\big), \qquad
 y(\sigma) = \operatorname{asinh}\!\big(\sqrt{c}\; e^{-\sigma\Lambda}\big), \qquad
 \Lambda = \ln\!\frac{\sinh W}{\sqrt{c}}, \qquad \sigma \in [-1, 1],$$
 
-where $W$ is the flange (truncation) half-width. This choice of $\Lambda$ lands the curve ends exactly on the truncation planes $x = W$ and $y = W$. When $c > \sinh^2 W$ the level lies inside an opened hole and is omitted, which is why holes break open once $W$ drops below $\operatorname{asinh}(1) \approx 0.881$ (the original slider bottoms out near 0.7).
+where $W$ is the flange (truncation) half-width. The two coordinates move in opposite directions as $\sigma$ sweeps — one $\operatorname{asinh}$ grows while the other shrinks — which is precisely the hyperbolic seesaw $\sinh x\,\sinh y = c$ that defines the surface, so the curve stays exactly on it. The particular scale $\Lambda = \ln(\sinh W/\sqrt{c})$ is chosen so that at the ends $\sigma = \pm 1$ the point lands on the truncation planes $x = W$ and $y = W$: it is the value that makes the vane stop exactly at the flange width rather than at some arbitrary place. When $c > \sinh^2 W$ there is no room left between the truncation planes — the level lies inside an opened hole — and it is omitted; this is why the holes break open once $W$ drops below $\operatorname{asinh}(1) \approx 0.881$ (the original slider bottoms out near 0.7).
 
-Rows within a storey are **cosine-clustered** in $z$ so extra resolution concentrates near the saddle levels where curvature is highest; the saddle levels themselves ($c = 0$) degenerate the cross-section to the two vane segments $[0, W]$.
+Rows within a storey are **cosine-clustered** in $z$, so samples bunch up near the saddle levels and thin out through the flat flange stretches. This puts resolution where the surface actually bends hardest — curvature peaks at the saddle — and spends few triangles where it is nearly flat. At the saddle levels themselves ($c = 0$) the cross-section degenerates: the two branches collapse onto the vane segments $[0, W]$, which is the geometric fact that the hole pinches shut to a crossing point there.
 
-**Higher-order saddles** (branches $b$) are produced by compressing the $90°$ wedge of the base curve into a $180°/b$ wedge, using the angular map $f = \operatorname{atan2}(y, x)/(\pi/2)$ to place each point within that wedge. Consecutive storeys are rotated by $180°/b$, so a warped ring joins smoothly precisely when
+**Higher-order saddles** (branches $b$) come from a simple reshaping of that base curve. The ordinary Scherk saddle fills a $90°$ wedge with two arms; to get $b$ arms instead, the code compresses that $90°$ wedge into a $180°/b$ wedge, using the angular map $f = \operatorname{atan2}(y, x)/(\pi/2)$ to read off where a point sits within the wedge and then re-place it in the narrower one. Copies of that narrow wedge, fanned around, give the $2b$-armed monkey-style saddle. Consecutive storeys are then rotated by $180°/b$ so each level's arms nest into the gaps of the one below — and this staggering is exactly what a closed ring has to reconcile. Bending the tower back on itself lines the last storey up with the first only if the accumulated twist is a whole number of arm-slots, i.e.
 
 $$\big(\text{twist} + \text{storeys}\cdot 180/b\big) \bmod (360/b) = 0.$$
 
-The N-panel reports whether the current twist closes the ring. After the template cross-section point is placed, an affine pipeline applies azimuth + linear twist (rotation growing with normalized height $z_n$), then the warp bends the tower around a circle of radius $R = H_{\text{out}}/\text{warp}$ that preserves arc length, and finally the per-axis stretches and overall scale.
+When this holds the seam is invisible; when it does not, the ring joins with a visible mismatch, so it is the one arithmetic condition to respect when dialling Warp to $360°$. After each template cross-section point is placed, an affine pipeline finishes it: azimuth plus a **linear twist** (a rotation that grows with the normalized height $z_n$, so the tower spirals evenly), then the **warp** bends the tower around a circle of radius $R = H_{\text{out}}/\text{warp}$ chosen to *preserve arc length* — the column is rolled up like a strip of tape, neither stretched nor compressed along its length — and finally the per-axis stretches and overall scale.
 
-**Thickness** is applied as a two-sided normal offset of $\pm t/2$ about the mid-surface. Boundary (cut/flange) edges get semicircular **rim tubes**, elongated by the rim-bulge factor, welded on via a shared canonical-normal registry so neighbouring grids join watertight — including correctly through Möbius (single-sided) configurations, where grid windings flip across the closure seam. The finished mesh is welded (`remove_doubles`) and its normals recalculated, yielding a watertight, manifold solid suitable for 3D printing.
+**Thickness** is applied as a two-sided normal offset of $\pm t/2$ about the mid-surface, so the single film fattens symmetrically into a slab centred on the original surface. Boundary (cut/flange) edges are capped with semicircular **rim tubes**, elongated by the rim-bulge factor, so the slab ends in a rounded bead rather than a raw edge. These are welded on via a shared canonical-normal registry — a common rule for which way "outward" points along a shared edge — so neighbouring grids join seamlessly even through Möbius (single-sided) configurations, where the grid windings flip across the closure seam and a naive join would tear. The finished mesh is welded (`remove_doubles`) and its normals recalculated, yielding a watertight, manifold solid suitable for 3D printing.
 
-**NURBS output** instead emits one clamped NURBS patch per half-wedge of each storey (split at the wedge bisector so adjacent patches share identical edge control sequences), giving the smooth mid-surface with far fewer control points.
+**NURBS output** instead emits one clamped NURBS patch per half-wedge of each storey, split at the wedge bisector so that adjacent patches share identical edge control sequences and meet without a crack. This hands back the same smooth mid-surface with far fewer control points — a light, editable surface rather than a dense triangle mesh.
 
 Because Séquin's C source is not public, the tessellation layout and the exact flange/bulge profiles here are re-derivations rather than byte-identical copies; the shapes match the published sculptures and all 20 demo files shipped with the original program.
 

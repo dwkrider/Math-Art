@@ -3,7 +3,19 @@
 ![Polyhedron Vertex Vortices](../images/vertex_vortices.png)
 
 ## Overview
-Each face of a polyhedron is divided by spokes from its centre to each vertex, the spokes are bent within the face plane with equal chirality (a pinwheel), the original edges are deleted, and a minimal surface spans each group of four bent spokes -- inspired by Robert Fathauer's "Vertices Vortices" sculpture. Every original edge yields exactly one saddle patch, and every spoke borders exactly two patches, so the welded result is a closed surface with swirling vortices meeting at the polyhedron's vertices.
+
+Each face of a polyhedron is divided by spokes from its centre to each vertex, the spokes are bent within the face plane with equal chirality (a pinwheel), the original edges are deleted, and a minimal surface spans each group of four bent spokes — inspired by Robert Fathauer's "Vertices Vortices" sculpture.
+
+Every original edge yields exactly one saddle patch, and every spoke borders exactly two patches, so the welded result is a closed surface with swirling vortices meeting at the polyhedron's vertices.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Polyhedron Vertex Vortices*.
+2. **Pick the Seed.** Twelve solids are built in: the five Platonics; the Archimedeans Cuboctahedron, Truncated Octahedron, Snub Cube, Icosidodecahedron and Truncated Icosahedron (the soccer ball); and the Catalans Rhombic Dodecahedron and Rhombic Triacontahedron. The default **Dodecahedron** is the original sculpture. Whatever the seed, it must be a closed manifold mesh with consistent winding, or the operator reports an error.
+3. **Set the Bend.** The sideways swing of each spoke, as a fraction of its length — about 0.11 in Fathauer's sculpture, up to 0.6 here. This is how tight the vortices curl; 0 leaves straight spokes and flat patches.
+4. **Reverse the swirl if you like.** **Reverse Swirl** mirrors the chirality of every pinwheel at once, so the vortices spin the other way.
+5. **Set the mesh density.** **Spoke Samples** subdivides each bent spoke, and **Solver Iterations** is how many Plateau area-minimization passes relax each saddle patch (0 leaves the raw Coons patch).
+6. **Keep the folds crisp and thicken.** **Sharp Spokes** marks the bent spokes sharp and creased so each fold between two patches stays knife-edged even with Smooth Shading on; **Thickness** adds a Solidify shell. The operator reports the vertex and face counts.
 
 ## Options
 
@@ -53,13 +65,15 @@ Renders of each selectable option:
 
 ## How it works
 
-**Bent spokes.** For each face, its outward Newell normal $\hat n$ and centroid $C$ are computed. Each vertex $v$ of the face defines a spoke $C\!\to\!v$ with direction $\mathbf d = V_v - C$ of length $L$. The spoke is bent sideways in the face plane, along the perpendicular $\hat p = \hat n \times \hat{\mathbf d}\cdot\text{sgn}$ (sgn flips with `Reverse Swirl`), by a $4t(1-t)$ profile:
-$$P(t) = C + \mathbf d\,t + \hat p\,\big(\text{bend}\cdot L\cdot 4t(1-t)\big),\quad t=\tfrac{j}{m}.$$
-All spokes on a face turn the same way -- a pinwheel of common chirality.
+**In plain terms.** Stand at the centre of one face of a polyhedron and draw a straight spoke out to each corner. Now curve every spoke the same way round, like the arms of a pinwheel or a spiral galaxy, and rub out the polyhedron's original edges. Where an edge used to be, four of these curved spokes — two reaching in from the face on each side — enclose a little four-sided window, and a soap-film stretched across that window is a gentle saddle. Do this for every edge and the saddles knit together into a single closed, swirling surface whose whirlpools all spin into the old corners. Everything below is just where the spokes go and how each window is filled.
 
-**One patch per edge.** For each undirected edge $\{a,b\}$ shared by faces $f_a$ (which runs $a\!\to\!b$) and $f_b$ (which runs $b\!\to\!a$), the four bent spokes $C_a\!\to\!a$, $C_a\!\to\!b$, $C_b\!\to\!a$, $C_b\!\to\!b$ form a curved quadrilateral frame straddling the deleted edge. A **Coons patch** interpolates the four boundary curves into an initial membrane grid:
+**Bent spokes.** For each face the code first needs a consistent "up" and a centre: the outward **Newell normal** $\hat n$ (an averaged normal that stays well-defined even when a face is slightly non-planar) and the centroid $C$. Each vertex $v$ then defines a spoke from $C$ out to $v$, with direction $\mathbf d = V_v - C$ and length $L$. The spoke is bent sideways *within the face plane*, along the perpendicular $\hat p = \hat n \times \hat{\mathbf d}\cdot\text{sgn}$ (the sign flips with `Reverse Swirl`), by the same $4t(1-t)$ bump this whole family uses:
+$$P(t) = C + \mathbf d\,t + \hat p\,\big(\text{bend}\cdot L\cdot 4t(1-t)\big),\quad t=\tfrac{j}{m}.$$
+Because $\hat p$ turns the same rotational way for every spoke on the face, they all curve with a common handedness — a pinwheel. And because the bump vanishes at $t=0$ and $t=1$, each spoke still begins exactly at the centre and ends exactly on its corner; only the middle swings aside.
+
+**One patch per edge.** Deleting the original edges leaves a four-sided gap around each. For an undirected edge $\{a,b\}$, the two faces sharing it — $f_a$, which runs $a\!\to\!b$, and $f_b$, which runs $b\!\to\!a$ — contribute the four bent spokes $C_a\!\to\!a$, $C_a\!\to\!b$, $C_b\!\to\!a$, $C_b\!\to\!b$, and these form a curved quadrilateral frame straddling the missing edge. A **Coons patch** fills the frame by blending its four boundary curves into an interior grid:
 $$P(u,v) = (1-v)\,\text{bot}(u) + v\,\text{top}(u) + (1-u)\,\text{lef}(v) + u\,\text{rig}(v) - \big[\text{bilinear blend of the four corners}\big].$$
-The four boundary rows/columns are pinned and the interior is relaxed toward minimal area by the toolkit's `minimize_area` (Pinkall-Polthier cotangent-Laplacian, conjugate-gradient solve), with a uniform-Laplacian fallback. The seed must be a closed manifold mesh with consistent winding (checked via the directed-edge set). After all patches are built, the whole surface is oriented outward by checking its signed volume, then centered, fit within a $2\times\text{scale}$ cube, tagged with an `edge_index` attribute, and optionally given a Solidify shell.
+The two linear interpolations — one per parameter direction — each satisfy two of the four sides, but adding them double-counts the corners; subtracting the bilinear corner blend cancels that double-count, leaving a surface that meets all four bent spokes exactly. That patch is only the starting shape: its boundary rows and columns are pinned and the interior is relaxed toward minimal area by the toolkit's `minimize_area` (Pinkall–Polthier cotangent-Laplacian, conjugate-gradient solve), with a uniform-Laplacian fallback, turning the blended quad into a true saddle. The seed must be a closed manifold mesh with consistent winding, checked via the directed-edge set — every directed edge must occur once and its reverse must also appear. After all patches are built, the whole surface is oriented outward by the sign of its signed volume, then centred, fit within a $2\times\text{scale}$ cube, tagged with an `edge_index` attribute, and optionally given a Solidify shell.
 
 ## References
 

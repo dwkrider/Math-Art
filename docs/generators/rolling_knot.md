@@ -6,6 +6,15 @@
 
 This generator builds a smooth-rolling $(p,2)$ torus knot, after Brodeur, Vidulis, Dandy & Pauly's *Smooth-Rolling Knots* (Bridges 2025), building on Morton's tritangentless trefoils, the rolling analysis of Eget, Lucas & Taalman, and the smooth-rolling Two-Disk Rollers of Engelhardt & Ucke. Morton's $(p,2)$ knots roll on a plane but their centre of mass bobs up and down; following the paper, the knot is stretched and its two exterior lobes are pinned onto the two orthogonal ellipses of a Two-Disk Roller, with the interior morphed smoothly inside the roller's convex hull, so the centre of mass stays at constant height while rolling. Crucially, this implementation also optimizes for the **actual tube thickness**: where strands fuse it measures the resulting centre-of-mass shift and rebalances the knot so the physical solid still rolls smoothly.
 
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Knots & Curves ▸ Rolling Knot* (it also appears under *Add ▸ Mesh ▸ Math Art ▸ Rollers*, since a smooth-rolling knot is a roller).
+2. **Pick the Mode** — the control that decides how far the construction is taken. **Morton** is the raw $(p,2)$ torus knot: it rolls, but its centre of mass bobs up and down. **Stretched** applies only the optimal vertical stretch that best fits the knot to a roller. **Smooth-Rolling** (the default) carries out the full construction — the two outer lobes are pinned onto a two-disk roller and the interior is re-solved — so the centre of mass holds a constant height as it rolls.
+3. **Set the knot shape.** **Lobes p** is the torus-knot parameter (must be odd; 3 is the trefoil, even values round down), and **Shape a** is Morton's shape parameter controlling how pinched or open the lobes are.
+4. **Tune the smooth-rolling solve** (these bite only in Smooth-Rolling mode). **Tube Radius** is the physical thickness, and with **Optimize For Thickness** on the interior is rebalanced so the *thick* solid — counting fused strands once — is what rolls smoothly, not just the ideal centreline. **Min Gap** forces a minimum surface-to-surface clearance so strands don't touch and fuse (0 lets them), and **Smoothness** is the interior fairing weight: higher makes the interior curves wider and calmer at some cost to knot-shape fidelity.
+5. **Pick the output.** **Curve Samples** sets how finely the centreline is sampled, **Tube Sides** the tube's cross-section resolution, plus **Smooth Shading** and **Scale** (the result is fit to a $2\times\text{Scale}$ cube at the origin).
+6. **Read the report.** Each build prints the rolling roughness $\rho$ (range-to-average of the centre-of-mass height, where $0$ is perfect smooth rolling) for the raw Morton knot, the optimized ideal curve, and the thick solid, together with the strand-**overlap** fraction and the achieved minimum **gap** — so you can see both that the ideal curve rolls smoothly and that the physical tube still does.
+
 ## Options
 
 
@@ -40,6 +49,8 @@ Renders of each selectable option:
 </table>
 
 ## How it works
+
+**In plain terms.** A wheel rolls smoothly because it is round: its centre stays exactly the same height off the ground the whole way, so nothing bobs. Most shapes don't do that — an egg or a bumpy wheel rolls, but its middle rises and falls, and you feel every bump. A knot bent from stiff wire will roll too, and by default it bobs the same way. The trick behind this generator is an old physics toy called a *two-disk roller* (or "wobbler"): two round disks slotted together at right angles that, despite not being a ball, roll with their centre held at a constant height. The knot is reshaped so that its two outer bulges ride along exactly the curves of such a roller, which makes the knot roll as evenly as a wheel. One extra real-world wrinkle: actual rope has thickness, and where two strands of the knot press together they merge into one lump of material — that shifts the knot's balance point, so the generator measures the shift and nudges the shape back until the *solid* rope, not just an idealized centre-line, rolls level.
 
 **Morton's knot.** A $(p,2)$ torus knot in Morton's tritangentless form (trefoil for $p=3$) is, with $b=\sqrt{1-a^2}$, $c=a/(1+b)$ and $\text{den}=1-b\sin 2t$,
 

@@ -3,7 +3,19 @@
 ![Polyhedron Squeeze Surface](../images/squeeze.png)
 
 ## Overview
-A polyhedron whose edges are replaced by curves bending inward along one of their two faces, with minimal surfaces spanning the bent frames -- inspired by Robert Fathauer's "Cubic Squeeze" sculpture. Every edge is claimed by exactly one of its two faces and bows toward that face's centre; around each face the claimed edges alternate with edges claimed by neighbours. On a square face the claimed pair are opposite edges squeezing toward each other (the "squeeze"), which is only possible when every face has an even number of edges.
+
+A polyhedron whose edges are replaced by curves bending inward along one of their two faces, with minimal surfaces spanning the bent frames — inspired by Robert Fathauer's "Cubic Squeeze" sculpture.
+
+Every edge is claimed by exactly one of its two faces and bows toward that face's centre; around each face the claimed edges alternate with edges claimed by neighbours. On a square face the claimed pair are opposite edges squeezing toward each other (the "squeeze"), which is only possible when every face has an even number of edges.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Polyhedron Squeeze Surface*.
+2. **Pick the Seed.** Cube (the Cubic Squeeze), Rhombic Dodecahedron, Truncated Octahedron, Hexagonal Prism, or **Active Object** (the selected mesh). Every face must have an even number of edges — the operator rejects an odd-faced seed such as a tetrahedron, or any non-manifold mesh, with an error rather than a broken result.
+3. **Set the Bend.** How far each claimed edge bows toward its face centre, as a fraction of the midpoint-to-centre distance (0–0.95). This is the "squeeze" itself; 0 leaves the edges straight.
+4. **Flip the pattern if you like.** **Alternate Pattern** swaps which of the two edge pairs each face claims — the complementary squeeze (on a cube, the other pair of opposite edges).
+5. **Set the mesh density.** **Edge Samples** subdivides each bent edge, **Rings** is how many concentric rings the spanning membrane uses toward each face centre, and **Solver Iterations** is how many Plateau area-minimization passes relax each face (0 leaves the raw ringed fan).
+6. **Keep the folds crisp and thicken.** **Sharp Bent Edges** marks the bent frames sharp and creased so they stay knife-edged even with Smooth Shading on (they are where two membranes meet); **Thickness** adds a Solidify shell. The operator reports the vertex and face counts, or the reason no consistent squeeze pattern could be found.
 
 ## Options
 
@@ -42,15 +54,17 @@ Renders of each selectable option:
 
 ## How it works
 
-**Parity assignment.** The core problem is choosing, for each edge, which of its two faces claims it, so that (a) every edge is claimed exactly once and (b) claims alternate around every face. The generator assigns each face a phase $p_f\in\{0,1\}$ and declares slot $i$ claimed iff $(i+p_f)$ is even. For an edge shared by slot $i$ of face $f$ and slot $j$ of face $g$, "claimed once" requires
-$$(i+p_f) + (j+p_g) \equiv 1 \pmod 2.$$
-This is solved by **breadth-first parity propagation** over the face graph. It requires every face to have an even number of edges (odd faces are rejected immediately), a closed manifold mesh (each edge in exactly two faces), and no incompatible cycle; otherwise a `ValueError` is reported. `Alternate Pattern` flips all phases.
+**In plain terms.** Picture a cube's twelve edges as taut strings. Fathauer's idea is to let each edge sag inward toward the middle of just one of the two faces it borders, then stretch a soap-film across each face's now-curved boundary. The tricky part is fairness: every edge must sag toward exactly one face, and around any single face the edges it "owns" have to alternate with edges owned by its neighbours, like a checkerboard running around the rim. On a square that means two opposite edges bow toward the centre and pinch together — the "squeeze". So the generator does three things in turn: hand out those ownerships consistently, bend the owned edges, and stretch a least-area membrane over each bent boundary.
 
-**Bending.** Each claimed edge $A\!\to\!B$ bows toward its face centre. Let $\mathbf d$ be the centre-minus-midpoint vector, projected in-plane orthogonal to the edge direction. The bent samples are
+**Parity assignment.** The ownership problem is a fair hand-out: each edge picks one of its two faces, every edge is picked exactly once, and around each face the picks alternate. The generator gives each face a single bit — a phase $p_f\in\{0,1\}$ — and declares slot $i$ of that face "claimed" exactly when $i+p_f$ is even, which by itself guarantees the claims alternate around the face. Fairness across a shared edge, joining slot $i$ of face $f$ to slot $j$ of face $g$, then becomes one parity equation,
+$$(i+p_f) + (j+p_g) \equiv 1 \pmod 2,$$
+saying exactly one of the two slots is even. This is a two-colouring of the face graph: fix one face's phase and every neighbour's phase is forced by the edge they share, so the phases spread outward by **breadth-first search**. It can only close up consistently when every face has an even number of edges (odd faces are rejected immediately), the mesh is a closed manifold (each edge in exactly two faces), and no cycle of faces demands a contradiction; otherwise a `ValueError` is reported. `Alternate Pattern` flips every phase, swapping each face's claimed pair for the other.
+
+**Bending.** Each claimed edge $A\!\to\!B$ bows toward its face centre. Let $\mathbf d$ be the centre-minus-midpoint vector, projected in-plane orthogonal to the edge direction so the bow stays in the face and pushes straight at the centre. The bent samples are
 $$P(t) = A + (B-A)\,t + \mathbf d\,\big(\text{bend}\cdot 4t(1-t)\big),\quad t=\tfrac{j}{m},$$
-a smooth $4t(1-t)$ profile peaking at the midpoint. Edge samples are shared verbatim between neighbouring faces, so the welded result is watertight with crisp creases along the bent edges.
+a straight edge plus a bump: the factor $4t(1-t)$ is zero at both endpoints and peaks at $1$ at the midpoint, so the endpoints stay welded to the polyhedron's corners while the middle swings inward by `bend` times the midpoint-to-centre distance. Because an edge's samples are computed once and shared verbatim by both faces meeting along it, neighbouring membranes join on identical points — the welded result is watertight, with a crisp crease exactly where the two sheets fold.
 
-**Spanning membrane.** For each face, the bent edges are concatenated into a closed boundary loop $B$ of $n_b$ points. An initial fan of `rings` concentric rings is built by scaling the loop toward its centroid, plus a single centre vertex, and triangulated. The boundary ring is pinned (`fixed`) and the interior is relaxed by the toolkit's `minimize_area` -- a Plateau area minimizer (Pinkall-Polthier cotangent-Laplacian iteration solved by conjugate gradients). If the toolkit is unavailable it falls back to uniform Laplacian smoothing ($P \leftarrow P + 0.6(\overline{P}-P)$ on free vertices). Finally the mesh is centered, fit within a $2\times\text{scale}$ cube, tagged with a `face_index` attribute, and optionally given a Solidify shell.
+**Spanning membrane.** For each face, the bent edges are concatenated into a closed boundary loop $B$ of $n_b$ points. A starting surface is built as a fan of `Rings` concentric loops, each the boundary scaled part-way toward its centroid, capped by a single centre vertex and triangulated — a coarse dome to be relaxed onto the frame. The boundary ring is pinned (`fixed`) and the interior is moved toward least area by the toolkit's `minimize_area`, a Plateau minimizer that repeatedly solves the cotangent-Laplacian (Pinkall–Polthier) with conjugate gradients; each pass is a step of mean-curvature flow that shrinks area while the fixed rim holds the boundary. If the toolkit is unavailable it falls back to plain uniform Laplacian smoothing ($P \leftarrow P + 0.6(\overline{P}-P)$ on the free vertices). Finally the mesh is centred, fit within a $2\times\text{scale}$ cube, tagged with a `face_index` attribute, and optionally given a Solidify shell.
 
 ## References
 
