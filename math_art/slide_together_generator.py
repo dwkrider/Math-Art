@@ -112,8 +112,8 @@ MODELS = [
     ('P12', "12 Pentagons", 'DODECA', 5, 1, 1.38, 20.0),
     ('D12', "12 Decagons", 'DODECA', 10, 1, 1.30, 9.0),
     ('H20', "20 Hexagons", 'ICOSA', 6, 1, 0.59, 10.0),
-    ('SD12', "12 Star Decagons {10/3}", 'DODECA', 10, 3, 2.10, 9.0),
-    ('PG12', "12 Pentagrams", 'DODECA', 5, 2, 3.00, 20.0),
+    ('SD12', "12 Star Decagons {10/3}", 'DODECA', 10, 3, 1.30, 9.0),
+    ('PG12', "12 Pentagrams", 'DODECA', 5, 2, 1.20, 20.0),
 ]
 
 _MODEL = {m[0]: m for m in MODELS}
@@ -177,36 +177,63 @@ def _polygon(n, d, radius, normal, turn, offset=0.0):
     e2 = _cross(normal, e1)
     t = math.radians(turn)
     cen = _mul(normal, offset)
+
+    def at(rad, ang):
+        return _add(cen, _add(_mul(e1, rad * math.cos(ang)),
+                              _mul(e2, rad * math.sin(ang))))
+
+    if d == 1:
+        return [at(radius, t + 2 * math.pi * k / n) for k in range(n)]
+
+    # A star polygon {n/d} walked vertex-to-vertex is a self-crossing
+    # path, and a self-crossing loop is not a face -- Blender tessellates
+    # it into a tangle.  A physical star panel is the OUTLINE: a simple
+    # 2n-gon alternating the outer radius with the inner radius where
+    # consecutive chords of the star meet,
+    #     r / R = cos(pi d / n) / cos(pi (d - 1) / n),
+    # which is 1/phi^2 for the pentagram, as it should be.
+    inner = radius * (math.cos(math.pi * d / n)
+                      / math.cos(math.pi * (d - 1) / n))
     pts = []
     for k in range(n):
-        a = t + 2 * math.pi * d * k / n
-        pts.append(_add(cen, _add(_mul(e1, radius * math.cos(a)),
-                                  _mul(e2, radius * math.sin(a)))))
+        pts.append(at(radius, t + 2 * math.pi * k / n))
+        pts.append(at(inner, t + 2 * math.pi * (k + 0.5) / n))
     return pts
 
 
-def _seg_polygon_span(P, nrm, origin, direction):
-    """Parameter interval of the line origin + s*direction that lies
-    inside the convex hull of the planar polygon P (used to find where
-    two panels overlap)."""
-    lo, hi = -1e9, 1e9
+def _inside_intervals(P, nrm, origin, direction):
+    """Parameter intervals of the line origin + s*direction that lie
+    INSIDE the planar polygon P.
+
+    Clipping against each edge as a half-plane only works for a convex
+    polygon, and a star panel's outline is not convex -- it would report
+    the whole convex hull, including the notches between the points.  So
+    collect every crossing of the line with an edge, sort them, and take
+    alternate intervals: for a simple closed polygon the line is inside
+    between the 1st and 2nd crossing, the 3rd and 4th, and so on.
+    """
     m = len(P)
+    hits = []
+    side = _cross(nrm, direction)
     for k in range(m):
         a, b = P[k], P[(k + 1) % m]
-        edge = _sub(b, a)
-        out = _cross(edge, nrm)             # inward/outward test vector
-        den = _dot(out, direction)
-        num = _dot(out, _sub(a, origin))
-        if abs(den) < 1e-12:
-            if num < -1e-9:
-                return None
+        da = _dot(side, _sub(a, origin))
+        db = _dot(side, _sub(b, origin))
+        if (da > 1e-12 and db > 1e-12) or (da < -1e-12 and db < -1e-12):
+            continue                        # edge wholly on one side
+        if abs(da - db) < 1e-15:
+            continue                        # edge along the line
+        t = da / (da - db)
+        if t < -1e-9 or t > 1 + 1e-9:
             continue
-        s = num / den
-        if den > 0:
-            hi = min(hi, s)
-        else:
-            lo = max(lo, s)
-    return (lo, hi) if hi - lo > 1e-9 else None
+        pt = _add(a, _mul(_sub(b, a), t))
+        hits.append(_dot(_sub(pt, origin), direction))
+    hits.sort()
+    out = []
+    for i in range(0, len(hits) - 1, 2):
+        if hits[i + 1] - hits[i] > 1e-9:
+            out.append((hits[i], hits[i + 1]))
+    return out
 
 
 def crossings(panels):
@@ -232,14 +259,18 @@ def crossings(panels):
             dd = _dot(raw_dir, raw_dir)
             org = _mul(_add(_mul(_cross(nj, raw_dir), hi_),
                             _mul(_cross(raw_dir, ni), hj_)), 1.0 / dd)
-            si = _seg_polygon_span(Pi, ni, org, dirv)
-            sj = _seg_polygon_span(Pj, nj, org, dirv)
-            if si is None or sj is None:
+            si = _inside_intervals(Pi, ni, org, dirv)
+            sj = _inside_intervals(Pj, nj, org, dirv)
+            best = None
+            for ai, bi in si:              # longest shared stretch
+                for aj, bj in sj:
+                    lo, hi = max(ai, aj), min(bi, bj)
+                    if hi - lo > 1e-6 and (best is None
+                                           or hi - lo > best[1] - best[0]):
+                        best = (lo, hi)
+            if best is None:
                 continue
-            lo = max(si[0], sj[0])
-            hi = min(si[1], sj[1])
-            if hi - lo < 1e-6:
-                continue
+            lo, hi = best
             mid = _add(org, _mul(dirv, 0.5 * (lo + hi)))
             out.append((i, j, mid, _add(org, _mul(dirv, lo)),
                         _add(org, _mul(dirv, hi))))
@@ -269,15 +300,24 @@ def _slit_outline(P, nrm, cuts, width):
         per_edge.setdefault(best, []).append((bt, bfoot, target))
     out = []
     for k in range(m):
-        out.append(list(P[k]))
+        a, b = P[k], P[(k + 1) % m]
+        edge = _unit(_sub(b, a))
+        out.append(list(a))
         for _t, foot, target in sorted(per_edge.get(k, []),
                                        key=lambda r: r[0]):
             axis = _unit(_sub(target, foot))
             side = _mul(_unit(_cross(nrm, axis)), width * 0.5)
-            out.append(_sub(foot, side))
-            out.append(_sub(target, side))
-            out.append(_add(target, side))
+            # Walk INTO the slot on whichever side the boundary reaches
+            # first.  Always entering on the same side sends the notch
+            # backwards along the rim half the time, and the outline
+            # crosses itself -- which is what a face made from it looks
+            # like: a tangle rather than a slot.
+            if _dot(side, edge) > 0:
+                side = _mul(side, -1.0)
             out.append(_add(foot, side))
+            out.append(_add(target, side))
+            out.append(_sub(target, side))
+            out.append(_sub(foot, side))
     return out
 
 
@@ -509,6 +549,29 @@ def _selftest():
                                         sorted(deg.values())[:3])
         assert max(deg.values()) <= 9,             (key, "panels saw through far too many neighbours",
              sorted(deg.values())[-3:])
+
+        # No panel outline may cross itself.  This is the check that
+        # matters most: a self-crossing loop is still a "face" as far as
+        # from_pydata is concerned, and Blender tessellates it into a
+        # tangle of slivers -- which is exactly what a star panel walked
+        # vertex-to-vertex, or a slot spliced in backwards, produces.
+        for P, nv in panels:
+            mm = len(P)
+            for x in range(mm):
+                for y in range(x + 2, mm):
+                    if x == 0 and y == mm - 1:
+                        continue
+                    a1, b1 = P[x], P[(x + 1) % mm]
+                    a2, b2 = P[y], P[(y + 1) % mm]
+                    r1, r2 = _sub(b1, a1), _sub(b2, a2)
+                    den = _dot(_cross(r1, r2), nv)
+                    if abs(den) < 1e-12:
+                        continue
+                    w = _sub(a2, a1)
+                    t = _dot(_cross(w, r2), nv) / den
+                    u = _dot(_cross(w, r1), nv) / den
+                    assert not (1e-6 < t < 1 - 1e-6
+                                and 1e-6 < u < 1 - 1e-6),                         (key, "panel outline crosses itself")
 
         # panels lie in distinct planes
         seen = set()

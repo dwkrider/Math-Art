@@ -741,7 +741,7 @@ _FAMILIES = [
     ('HEMI', "Hemipolyhedra"),
     ('STAR_O', "Star (Octahedral)"),
     ('STAR_I', "Star (Icosahedral)"),
-    ('SKILLING', "Beyond the 75 (Skilling's Figure)"),
+    ('SKILLING', "Skilling's Figure"),
 ]
 
 
