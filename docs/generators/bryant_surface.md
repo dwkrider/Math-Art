@@ -43,6 +43,9 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/bryant_surface__ENNEPER_COUSIN.png" width="200"><br><sub>Enneper Cousin</sub></td>
 <td align="center"><img src="../images/variants/bryant_surface__POLYNOMIAL.png" width="200"><br><sub>Polynomial Data</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/bryant_surface__TRINOID.png" width="200"><br><sub>Trinoid</sub></td>
+</tr>
 </table>
 
 ## How it works

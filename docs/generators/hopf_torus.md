@@ -48,6 +48,10 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/hopf_torus__TREFOIL.png" width="200"><br><sub>Trefoil-like</sub></td>
+<td align="center"><img src="../images/variants/hopf_torus__ELASTICA.png" width="200"><br><sub>Elastica (Willmore)</sub></td>
+<td align="center"><img src="../images/variants/hopf_torus__CONSTRAINED.png" width="200"><br><sub>Constrained Elastica</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/hopf_torus__BAND.png" width="200"><br><sub>Hopf Band</sub></td>
 </tr>
 </table>

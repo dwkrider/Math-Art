@@ -1893,6 +1893,10 @@
    "Frabjous"
   ],
   [
+   "KRULL",
+   "Krull"
+  ],
+  [
    "WHIMSY",
    "Whimsy"
   ]
@@ -4278,6 +4282,14 @@
    "Trefoil-like"
   ],
   [
+   "ELASTICA",
+   "Elastica (Willmore)"
+  ],
+  [
+   "CONSTRAINED",
+   "Constrained Elastica"
+  ],
+  [
    "BAND",
    "Hopf Band"
   ]
@@ -4294,6 +4306,22 @@
   [
    "KUEN",
    "Kuen Surface"
+  ],
+  [
+   "MINDING_BULGE",
+   "Minding Bulge"
+  ],
+  [
+   "MINDING_SPINDLE",
+   "Minding Spindle"
+  ],
+  [
+   "BREATHER",
+   "Breather Surface"
+  ],
+  [
+   "AMSLER",
+   "Amsler Surface"
   ]
  ],
  "icosahedron_stellation": [
@@ -6465,6 +6493,10 @@
   [
    "POLYNOMIAL",
    "Polynomial Data"
+  ],
+  [
+   "TRINOID",
+   "Trinoid"
   ]
  ],
  "delaunay_surface": [
@@ -6487,6 +6519,18 @@
   [
    "CATENOID",
    "Catenoid"
+  ],
+  [
+   "BUBBLETON",
+   "Bubbleton"
+  ],
+  [
+   "WENTE",
+   "Wente Torus"
+  ],
+  [
+   "ELASTIC_TORUS",
+   "Elastic Torus (S3)"
   ]
  ]
 }

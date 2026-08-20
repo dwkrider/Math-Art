@@ -52,6 +52,7 @@ Renders of each selectable option:
 <table>
 <tr>
 <td align="center"><img src="../images/variants/symmetric_sculpture__FRABJOUS.png" width="200"><br><sub>Frabjous</sub></td>
+<td align="center"><img src="../images/variants/symmetric_sculpture__KRULL.png" width="200"><br><sub>Krull</sub></td>
 <td align="center"><img src="../images/variants/symmetric_sculpture__WHIMSY.png" width="200"><br><sub>Whimsy</sub></td>
 </tr>
 </table>

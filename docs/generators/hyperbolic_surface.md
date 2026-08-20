@@ -39,6 +39,14 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/hyperbolic_surface__DINI.png" width="200"><br><sub>Dini Surface</sub></td>
 <td align="center"><img src="../images/variants/hyperbolic_surface__KUEN.png" width="200"><br><sub>Kuen Surface</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/hyperbolic_surface__MINDING_BULGE.png" width="200"><br><sub>Minding Bulge</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_surface__MINDING_SPINDLE.png" width="200"><br><sub>Minding Spindle</sub></td>
+<td align="center"><img src="../images/variants/hyperbolic_surface__BREATHER.png" width="200"><br><sub>Breather Surface</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/hyperbolic_surface__AMSLER.png" width="200"><br><sub>Amsler Surface</sub></td>
+</tr>
 </table>
 
 ## How it works

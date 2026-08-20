@@ -71,6 +71,11 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/delaunay_surface__CYLINDER.png" width="200"><br><sub>Cylinder</sub></td>
 <td align="center"><img src="../images/variants/delaunay_surface__CATENOID.png" width="200"><br><sub>Catenoid</sub></td>
+<td align="center"><img src="../images/variants/delaunay_surface__BUBBLETON.png" width="200"><br><sub>Bubbleton</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/delaunay_surface__WENTE.png" width="200"><br><sub>Wente Torus</sub></td>
+<td align="center"><img src="../images/variants/delaunay_surface__ELASTIC_TORUS.png" width="200"><br><sub>Elastic Torus (S3)</sub></td>
 </tr>
 </table>
 
