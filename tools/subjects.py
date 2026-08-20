@@ -121,6 +121,11 @@ PARAMS = {
     # default by-sides colouring yields exactly one material.  Parity
     # gives the classic two-tone (with a seam, since q=3 is odd).
     "mesh.hyperbolic_tiling_add": dict(color_by='PARITY'),
+    # The bubble is the whole point, and it is localised: too many
+    # Delaunay periods shrink it to a speck on a long pipe.
+    # The default Willmore (1,3) member at render-grade sampling: three
+    # lobes wrap into a cleanly readable trefoil-like sleeve, and the
+    # Willmore shape is the mathematically canonical representative.
     # Light up the 13 parastichy arms rather than shipping a grey disc.
     "mesh.phyllotaxis_add": dict(color_by='PARASTICHY', parastichy=13),
 

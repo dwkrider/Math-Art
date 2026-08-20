@@ -29,7 +29,7 @@
 # of the Weierstrass data being null in R^3, and it is why these surfaces
 # are as computable as minimal surfaces.
 #
-# THREE FAMILIES ARE BUILT HERE:
+# FOUR FAMILIES ARE BUILT HERE:
 #
 #   CATENOID_COUSIN  Bryant's Example 2, a surface of REVOLUTION with a
 #                    real parameter mu > -1/2, mu != 0.  Its profile is
@@ -48,6 +48,17 @@
 #                    with total curvature -4 pi k.  Exposed here as
 #                    r1 = z^n, r2 = c, which contains Enneper's cousin at
 #                    n = 1 and generalises it upward.
+#   TRINOID          Bobenko-Pavlyukevich-Springborn: the complete CMC-1
+#                    surfaces of genus 0 with THREE catenoidal ends, in
+#                    closed form via Gauss hypergeometric functions.  A
+#                    three-parameter family in the moduli (d0, d1, d_inf)
+#                    of the ends, admissible exactly when the monodromy
+#                    of the underlying Fuchsian system is unitarizable
+#                    (their Theorem 6 / Proposition 2); inadmissible
+#                    parameters are refused, not approximated.  The
+#                    numeric core lives in math_art/trinoid.py; the
+#                    symmetric family d0 = d1 = d_inf changes from
+#                    embedded to self-intersecting at d0 ~ 0.2332.
 #
 # Example 2 is closed form.  Writing z = r e^{i theta} and rho = |z|^2,
 # the matrix product f = F (conj F)^T collapses to
@@ -83,8 +94,10 @@
 #   cousins, pp. 341-342).
 # - A. I. Bobenko, T. V. Pavlyukevich, B. A. Springborn, "Hyperbolic
 #   constant mean curvature one surfaces: spinor representation and
-#   trinoids in hypergeometric functions", Math. Z. 245 (2003), 63-91 --
-#   the spinor form of the same representation, and explicit trinoids.
+#   trinoids in hypergeometric functions", Math. Z. 245 (2003), 63-91;
+#   arXiv:math/0206021 -- the spinor form of the same representation and
+#   the explicit trinoids the TRINOID mode implements (see
+#   math_art/trinoid.py for the construction, gates and details).
 # - M. Umehara and K. Yamada, "Complete surfaces of constant mean
 #   curvature 1 in the hyperbolic 3-space", Ann. of Math. 137 (1993),
 #   611-638 -- the global theory these examples opened up.
@@ -104,7 +117,9 @@ import math
 
 import numpy as np
 
-MODES = ('CATENOID_COUSIN', 'ENNEPER_COUSIN', 'POLYNOMIAL')
+from . import trinoid as _trinoid
+
+MODES = ('CATENOID_COUSIN', 'ENNEPER_COUSIN', 'POLYNOMIAL', 'TRINOID')
 MODELS = ('POINCARE', 'KLEIN', 'HYPERBOLOID')
 
 # Minkowski metric of R^{3,1}, signature (-,+,+,+)
@@ -230,7 +245,7 @@ def polynomial_bryant(X, Y, degree=1, c=1.0, steps=64):
 
 
 def surface_points(mode, u, v, mu=-0.3, lam=1.0, degree=1, c=1.0,
-                   steps=64):
+                   steps=64, d0=0.16, d1=0.18, dinf=0.20, domain=1):
     """Hyperboloid points for a parameter grid (u, v)."""
     if mode == 'CATENOID_COUSIN':
         return catenoid_cousin(u, v, mu)
@@ -238,6 +253,9 @@ def surface_points(mode, u, v, mu=-0.3, lam=1.0, degree=1, c=1.0,
         return enneper_cousin(u, v, lam)
     if mode == 'POLYNOMIAL':
         return polynomial_bryant(u, v, degree, c, steps)
+    if mode == 'TRINOID':
+        # (u, v) is the log-polar chart of one of the three end domains
+        return _trinoid.trinoid_points(u, v, d0, d1, dinf, domain)
     raise ValueError(f"unknown mode {mode!r}")
 
 
@@ -298,34 +316,45 @@ DOMAINS = {
     'CATENOID_COUSIN': ((-2.2, 2.2), (0.0, 2.0 * math.pi), True),
     'ENNEPER_COUSIN': ((-1.6, 1.6), (-1.6, 1.6), False),
     'POLYNOMIAL': ((-1.5, 1.5), (-1.5, 1.5), False),
+    # log-polar chart of one end domain, u = log|wt| (kept off the
+    # domain-boundary circle |wt| = 1, where the corner umbilics live)
+    'TRINOID': ((math.log(0.04), -0.05), (0.0, 2.0 * math.pi), True),
 }
 
 
 def build_surface(mode='CATENOID_COUSIN', ures=96, vres=96,
                   model='POINCARE', mu=-0.3, lam=1.0, degree=1, c=1.0,
-                  extent=1.0, steps=64, scale=1.0):
+                  extent=1.0, steps=64, scale=1.0,
+                  d0=0.16, d1=0.18, dinf=0.20, rmin=0.03):
     """Mesh a Bryant surface in the chosen model of H^3."""
-    (u0, u1), (v0, v1), wrap = DOMAINS[mode]
-    u0, u1 = u0 * extent, u1 * extent
-    if not wrap:
-        v0, v1 = v0 * extent, v1 * extent
-    us = np.linspace(u0, u1, ures)
-    vs = (np.linspace(v0, v1, vres, endpoint=False) if wrap
-          else np.linspace(v0, v1, vres))
-    U, V = np.meshgrid(us, vs, indexing='ij')
-    X = surface_points(mode, U, V, mu=mu, lam=lam, degree=degree, c=c,
-                       steps=steps)
-    P = to_model(X, model).reshape(-1, 3)
-    faces = []
-    for i in range(ures - 1):
-        for j in range(vres - (0 if wrap else 1)):
-            j1 = (j + 1) % vres
-            faces.append((i * vres + j, i * vres + j1,
-                          (i + 1) * vres + j1, (i + 1) * vres + j))
+    if mode == 'TRINOID':
+        # three welded end-domain annuli; extent scales the end depth
+        rm = float(np.clip(rmin ** extent, 1e-3, 0.5))
+        P, faces, info = _trinoid.build_trinoid_mesh(
+            d0, d1, dinf, nr=ures, nth=vres, rmin=rm, model=model)
+        det_dev = info['det_dev']
+    else:
+        (u0, u1), (v0, v1), wrap = DOMAINS[mode]
+        u0, u1 = u0 * extent, u1 * extent
+        if not wrap:
+            v0, v1 = v0 * extent, v1 * extent
+        us = np.linspace(u0, u1, ures)
+        vs = (np.linspace(v0, v1, vres, endpoint=False) if wrap
+              else np.linspace(v0, v1, vres))
+        U, V = np.meshgrid(us, vs, indexing='ij')
+        X = surface_points(mode, U, V, mu=mu, lam=lam, degree=degree, c=c,
+                           steps=steps)
+        P = to_model(X, model).reshape(-1, 3)
+        faces = []
+        for i in range(ures - 1):
+            for j in range(vres - (0 if wrap else 1)):
+                j1 = (j + 1) % vres
+                faces.append((i * vres + j, i * vres + j1,
+                              (i + 1) * vres + j1, (i + 1) * vres + j))
+        det_dev = float(hyperboloid_residual(X).max())
     lo, hi = P.min(axis=0), P.max(axis=0)
     ext = float((hi - lo).max())
     P = (P - 0.5 * (lo + hi)) * ((2.0 / ext if ext > 1e-9 else 1.0) * scale)
-    det_dev = float(hyperboloid_residual(X).max())
     return P, faces, {'det_dev': det_dev}
 
 
@@ -363,7 +392,15 @@ if _IN_BLENDER:
                    ('POLYNOMIAL', "Polynomial Data",
                     "Bryant's Theorem B: integrate F' = F A(z) for "
                     "r1 = z^n, r2 = c -- Enneper's cousin at n = 1 and "
-                    "higher-order cousins above it")],
+                    "higher-order cousins above it"),
+                   ('TRINOID', "Trinoid",
+                    "Bobenko-Pavlyukevich-Springborn: the CMC-1 "
+                    "surfaces with three catenoidal ends, in closed "
+                    "form via hypergeometric functions.  The end "
+                    "moduli (d0, d1, d_inf) must satisfy the "
+                    "unitarizable-monodromy condition; symmetric "
+                    "trinoids (all equal) are embedded below "
+                    "d0 = 0.2332 and self-intersect above it")],
             default='CATENOID_COUSIN')
         model: EnumProperty(
             name="Model",
@@ -395,6 +432,21 @@ if _IN_BLENDER:
             name="r2 = c", default=1.0, min=0.05, max=4.0,
             description="the constant polynomial r2 in the Theorem B "
                         "data")
+        trinoid_d0: FloatProperty(
+            name="d0", default=0.16, min=0.01, max=1.2,
+            description="Modulus of the end at z = 0 (the conical order "
+                        "of its metric singularity); with d1 and d_inf "
+                        "it must satisfy the unitarizable-monodromy "
+                        "condition of Bobenko-Pavlyukevich-Springborn "
+                        "Prop. 2, or there is no trinoid to draw")
+        trinoid_d1: FloatProperty(
+            name="d1", default=0.18, min=0.01, max=1.2,
+            description="Modulus of the end at z = 1; set all three "
+                        "equal for a symmetric trinoid (embedded below "
+                        "0.2332, self-intersecting above)")
+        trinoid_dinf: FloatProperty(
+            name="d_inf", default=0.20, min=0.01, max=1.2,
+            description="Modulus of the end at z = infinity")
         extent: FloatProperty(
             name="Domain Extent", default=1.0, min=0.1, max=3.0,
             description="Scales the parameter domain: larger reaches "
@@ -419,13 +471,23 @@ if _IN_BLENDER:
                 self.report({'WARNING'},
                             "mu = 0 is degenerate; nudged to -0.05")
                 mu = -0.05
+            if self.mode == 'TRINOID':
+                # refuse inadmissible moduli rather than draw a
+                # plausible wrong surface (BPS Theorem 6 / Prop. 2)
+                ok, why = _trinoid.admissible(
+                    self.trinoid_d0, self.trinoid_d1, self.trinoid_dinf)
+                if not ok:
+                    self.report({'ERROR'}, f"Not a trinoid: {why}")
+                    return {'CANCELLED'}
             verts, faces, info = build_surface(
                 self.mode, self.ures, self.vres, self.model, mu,
                 self.lam, self.degree, self.poly_c, self.extent,
-                self.ode_steps, self.scale)
+                self.ode_steps, self.scale, d0=self.trinoid_d0,
+                d1=self.trinoid_d1, dinf=self.trinoid_dinf)
             label = dict(CATENOID_COUSIN="Catenoid Cousin",
                          ENNEPER_COUSIN="Enneper Cousin",
-                         POLYNOMIAL="Bryant Surface")[self.mode]
+                         POLYNOMIAL="Bryant Surface",
+                         TRINOID="CMC-1 Trinoid")[self.mode]
             me = bpy.data.meshes.new(label)
             me.from_pydata([tuple(v) for v in verts], [],
                            [tuple(int(i) for i in f) for f in faces])
@@ -467,6 +529,14 @@ if _IN_BLENDER:
                 lay.prop(self, 'degree')
                 lay.prop(self, 'poly_c')
                 lay.prop(self, 'ode_steps')
+            if self.mode == 'TRINOID':
+                lay.prop(self, 'trinoid_d0')
+                lay.prop(self, 'trinoid_d1')
+                lay.prop(self, 'trinoid_dinf')
+                ok, why = _trinoid.admissible(
+                    self.trinoid_d0, self.trinoid_d1, self.trinoid_dinf)
+                if not ok:
+                    lay.label(text=why[:64], icon='ERROR')
             lay.prop(self, 'extent')
             lay.prop(self, 'ures')
             lay.prop(self, 'vres')
@@ -506,7 +576,10 @@ def _selftest():
              ('ENNEPER_COUSIN', dict(lam=1.0), 1e-13),
              ('ENNEPER_COUSIN', dict(lam=2.5), 1e-13),
              ('POLYNOMIAL', dict(degree=1, c=1.0), 1e-9),
-             ('POLYNOMIAL', dict(degree=3, c=0.8), 1e-9)]
+             ('POLYNOMIAL', dict(degree=3, c=0.8), 1e-9),
+             # trinoid: hypergeometric machinery, det preserved exactly
+             ('TRINOID', dict(d0=0.16, d1=0.18, dinf=0.20), 1e-10),
+             ('TRINOID', dict(d0=0.2332, d1=0.2332, dinf=0.2332), 1e-10)]
     for mode, kw, tol in cases:
         (u0, u1), (v0, v1), _ = DOMAINS[mode]
         u = rng.uniform(u0, u1, 300)
@@ -530,7 +603,12 @@ def _selftest():
                      ('ENNEPER_COUSIN', dict(lam=2.0)),
                      ('POLYNOMIAL', dict(degree=1, c=1.0)),
                      ('POLYNOMIAL', dict(degree=2, c=1.0)),
-                     ('POLYNOMIAL', dict(degree=3, c=0.8))):
+                     ('POLYNOMIAL', dict(degree=3, c=0.8)),
+                     ('TRINOID', dict(d0=0.16, d1=0.18, dinf=0.20)),
+                     ('TRINOID', dict(d0=0.16, d1=0.18, dinf=0.20,
+                                      domain=0)),
+                     ('TRINOID', dict(d0=0.16, d1=0.18, dinf=0.20,
+                                      domain=2))):
         (u0, u1), (v0, v1), _ = DOMAINS[mode]
         # stay off the domain edges, where the FD stencil would leave it
         u = rng.uniform(0.75 * u0, 0.75 * u1, 120)

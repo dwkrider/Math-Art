@@ -595,6 +595,9 @@ OPS = [
         seed='ICOSA', separate=False, color=True, subdiv=1)),
     ("relaxed bubble", lambda: bpy.ops.mesh.relaxed_bubble_add()),
     ("cmc capillary", lambda: bpy.ops.mesh.cmc_capillary_add()),
+    ("bryant surface", lambda: bpy.ops.mesh.bryant_surface_add()),
+    ("bryant trinoid", lambda: bpy.ops.mesh.bryant_surface_add(mode='TRINOID')),
+    ("delaunay surface", lambda: bpy.ops.mesh.delaunay_surface_add()),
     ("willmore torus", lambda: bpy.ops.mesh.willmore_add(
         mode='TORUS', resolution=24, iterations=150)),
     ("willmore vesicle", lambda: bpy.ops.mesh.willmore_add(

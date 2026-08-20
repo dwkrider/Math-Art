@@ -81,7 +81,11 @@ SURFACES = Menu(
         _e("mesh.spherical_harmonic_add", 'SURFACE_NSPHERE'),
         _e("mesh.orbital_add", 'META_BALL'),
         _e("mesh.hyperbolic_surface_add", 'MESH_CAPSULE'),
-        _e("mesh.delaunay_surface_add", 'META_CAPSULE'),
+        # One constant-mean-curvature generator: Delaunay surfaces and
+        # their roulettes, bubbletons grafted onto them, Wente's closed
+        # torus, and the elastic tori of the spherical space form.
+        _e("mesh.delaunay_surface_add", 'META_CAPSULE',
+           "CMC Surfaces"),
         _e("mesh.bryant_surface_add", 'MESH_UVSPHERE'),
         _e("mesh.crochet_add", 'MOD_CLOTH'),
         _e("mesh.willmore_add", 'MESH_TORUS', "Willmore Surface"),
@@ -149,7 +153,11 @@ KNOTS = Menu(
         _e("curve.tight_link_add", 'LINKED'),
         _e("curve.torus_knot_add", 'FORCE_VORTEX'),
         _e("curve.hopf_fibration_add", 'FORCE_MAGNETIC'),
-        _e("mesh.hopf_torus_add", 'MESH_TORUS'),
+        # Hopf tori, Willmore tori (over free elasticae) and
+        # constrained Willmore tori (over constrained elasticae) are
+        # one construction with one dial, so they are one entry.
+        _e("mesh.hopf_torus_add", 'MESH_TORUS',
+           "Hopf & Willmore Tori"),
         _e("curve.harmonic_knot_add", 'FORCE_HARMONIC'),
         _e("curve.petal_knot_add", 'CURVE_NCIRCLE'),
         _e("curve.rational_knot_add", 'MOD_CURVE'),

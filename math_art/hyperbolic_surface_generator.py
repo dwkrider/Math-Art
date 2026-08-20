@@ -106,14 +106,16 @@ import math
 import numpy as np
 
 
-def _pseudosphere(U, V, twist=0.0, a=0.5, breather_a=0.4):
+def _pseudosphere(U, V, twist=0.0, a=0.5, breather_a=0.4,
+                  amsler_angle=90.0):
     x = np.cosh(U) ** -1 * np.cos(V)
     y = np.cosh(U) ** -1 * np.sin(V)
     z = U - np.tanh(U)
     return x, y, z
 
 
-def _dini(U, V, twist=0.2, a=0.5, breather_a=0.4):
+def _dini(U, V, twist=0.2, a=0.5, breather_a=0.4,
+          amsler_angle=90.0):
     x = np.cos(V) * np.sin(U)
     y = np.sin(V) * np.sin(U)
     z = np.cos(U) + np.log(np.tan(U / 2.0)) + twist * V
@@ -220,7 +222,8 @@ def _minding(kind):
     """Build the (U, V, twist, a) surface function for a Minding type.
     The profile tables are rebuilt per call because they depend on `a`;
     at n = 2001 that is well under a millisecond."""
-    def fn(U, V, twist=0.0, a=0.5, breather_a=0.4):
+    def fn(U, V, twist=0.0, a=0.5, breather_a=0.4,
+           amsler_angle=90.0):
         t, r, z = _minding_profile(kind, a)
         ru = np.interp(U, t, r)
         zu = np.interp(U, t, z)
@@ -228,7 +231,8 @@ def _minding(kind):
     return fn
 
 
-def _breather(U, V, twist=0.0, a=0.5, breather_a=0.4):
+def _breather(U, V, twist=0.0, a=0.5, breather_a=0.4,
+              amsler_angle=90.0):
     """The breather surface: the pseudospherical surface built from the
     BREATHER solution of the sine-Gordon equation.
 
@@ -273,7 +277,154 @@ def _breather(U, V, twist=0.0, a=0.5, breather_a=0.4):
     return x, y, z
 
 
-def _kuen(U, V, twist=0.0, a=0.5, breather_a=0.4):
+# --------------------------------------------------------------------------
+# Amsler's surface: the pseudospherical surface through two straight lines
+# --------------------------------------------------------------------------
+# Amsler characterised the K = -1 surface containing two intersecting
+# STRAIGHT LINES.  It is the Lorentz-invariant reduction of sine-Gordon:
+# in asymptotic coordinates put phi(u,v) = omega(uv), and since
+# phi_uv = (s omega')' with s = uv, the equation phi_uv = sin(phi)
+# collapses to the ordinary differential equation
+#
+#     d/dr ( r domega/dr ) = sin(omega) ,          r = u v ,
+#
+# a Painleve III equation.  r = 0 is a regular singular point: writing
+# w = r omega_r the system is omega_r = w/r, w_r = sin(omega), and the
+# series through it is omega = omega_0 + sin(omega_0) r + O(r^2).  So the
+# family is indexed by the single angle omega_0 = omega(0), which is
+# exactly the angle at which the two straight lines cross.
+#
+# That the lines ARE straight falls out of the frame system rather than
+# being imposed.  Along v = 0 we have phi_u = omega'(uv) v = 0, so the
+# u-equations reduce to e1' = 0 with X_u = e1: the u-axis image is a
+# straight line.  Along u = 0 the same happens in v, and X_v there is the
+# constant vector cos(omega_0) e1 + sin(omega_0) e2 -- a second straight
+# line, meeting the first at angle omega_0.
+#
+# The surface runs into a cuspidal edge where sin(phi) = 0, i.e. where
+# omega reaches 0 or pi, because II = 2 sin(phi) du dv degenerates there.
+# omega moves away from omega_0 in both directions along r, so the domain
+# is fitted to keep omega strictly inside (0, pi) rather than fixed.
+
+
+def _amsler_omega(omega0, r_max, n=8001):
+    """Solve d/dr(r omega_r) = sin(omega) outward from the regular
+    singular point r = 0 in both directions.  Returns (r, omega) with r
+    increasing, ready for np.interp.
+
+    The equation is NOT symmetric in r: replacing r by -r turns it into
+    (s omega_s)_s = r sin(omega), so the halves are integrated
+    separately and the solution is not an even function of r.  An even
+    omega is the signature of having coded w_r = r sin(omega) instead of
+    w_r = sin(omega), which is worth checking for -- it is the mistake
+    that first produced K = -0.4 here instead of -1."""
+    def half(sign):
+        r0 = sign * 1e-7
+        w = math.sin(omega0) * r0
+        om = omega0 + math.sin(omega0) * r0
+        rs = np.linspace(r0, sign * r_max, n)
+        h = rs[1] - rs[0]
+        outo = np.empty(n)
+        outo[0] = om
+        for k in range(n - 1):
+            r = rs[k]
+
+            def d(rr, oo, ww):
+                return (ww / rr, math.sin(oo))
+
+            k1 = d(r, om, w)
+            k2 = d(r + 0.5 * h, om + 0.5 * h * k1[0], w + 0.5 * h * k1[1])
+            k3 = d(r + 0.5 * h, om + 0.5 * h * k2[0], w + 0.5 * h * k2[1])
+            k4 = d(r + h, om + h * k3[0], w + h * k3[1])
+            om += (h / 6.0) * (k1[0] + 2 * k2[0] + 2 * k3[0] + k4[0])
+            w += (h / 6.0) * (k1[1] + 2 * k2[1] + 2 * k3[1] + k4[1])
+            outo[k + 1] = om
+        return rs, outo
+
+    rp, op = half(+1.0)
+    rm, om_ = half(-1.0)
+    r = np.concatenate([rm[::-1], [0.0], rp])
+    o = np.concatenate([om_[::-1], [omega0], op])
+    return r, o
+
+
+def amsler_span(omega0, margin=0.08, r_max=6.0):
+    """Half-width a of the (u, v) square on which omega stays inside
+    (margin, pi - margin), so the patch stops short of its cuspidal
+    edges.  |uv| <= a^2 over that square, hence the square root."""
+    r, o = _amsler_omega(omega0, r_max, 4001)
+    bad = (o > math.pi - margin) | (o < margin)
+    rr = float(np.abs(r[bad]).min()) if bad.any() else r_max
+    return math.sqrt(max(min(rr, r_max), 1e-6))
+
+
+def _amsler(U, V, twist=0.0, a=0.5, breather_a=0.4, amsler_angle=90.0):
+    """Amsler's surface on the NORMALISED square U, V in [-1, 1], scaled
+    internally to the largest square clear of the cuspidal edges.
+
+    The immersion comes from integrating the frame system of asymptotic
+    coordinates.  For
+        I  = du^2 + 2 cos(phi) du dv + dv^2 ,  II = 2 sin(phi) du dv
+    and the frame e1 = X_u, e3 = N, e2 = e3 x e1, the conditions
+    |X_u| = |X_v| = 1, X_uu . N = X_vv . N = 0 (the lines are asymptotic)
+    and X_uv . N = sin(phi) force
+
+        d_u:  e1' = -phi_u e2 ,  e2' = phi_u e1 + e3 ,  e3' = -e2
+        d_v:  e1' = sin(phi) e3 , e2' = -cos(phi) e3 ,
+              e3' = -sin(phi) e1 + cos(phi) e2
+        X_u = e1 ,   X_v = cos(phi) e1 + sin(phi) e2 .
+
+    Only the v-equations need integrating: along v = 0 the u-equations
+    have phi_u = 0 and solve in closed form (e1 constant, e2 and e3
+    rotating), which is precisely the straight line the surface is named
+    for, so it serves as an exact initial condition."""
+    om0 = math.radians(min(max(amsler_angle, 5.0), 175.0))
+    span = amsler_span(om0)
+    u = np.ascontiguousarray(U[:, 0]) * span
+    v = np.ascontiguousarray(V[0, :]) * span
+    R, OM = _amsler_omega(om0, span * span + 0.5)
+
+    nu, nv = len(u), len(v)
+    e1 = np.tile(np.array([1.0, 0.0, 0.0]), (nu, 1))
+    e2 = np.stack([np.zeros(nu), np.cos(u), np.sin(u)], axis=1)
+    e3 = np.stack([np.zeros(nu), -np.sin(u), np.cos(u)], axis=1)
+    X = np.stack([u, np.zeros(nu), np.zeros(nu)], axis=1)
+
+    def deriv(st, vv):
+        E1, E2, E3, _ = st
+        ph = np.interp(u * vv, R, OM)[:, None]
+        sn, cs = np.sin(ph), np.cos(ph)
+        return (sn * E3, -cs * E3, -sn * E1 + cs * E2, cs * E1 + sn * E2)
+
+    def rk4(st, vv, h):
+        k1 = deriv(st, vv)
+        s2 = tuple(st[i] + 0.5 * h * k1[i] for i in range(4))
+        k2 = deriv(s2, vv + 0.5 * h)
+        s3 = tuple(st[i] + 0.5 * h * k2[i] for i in range(4))
+        k3 = deriv(s3, vv + 0.5 * h)
+        s4 = tuple(st[i] + h * k3[i] for i in range(4))
+        k4 = deriv(s4, vv + h)
+        return tuple(st[i] + (h / 6.0)
+                     * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i])
+                     for i in range(4))
+
+    j0 = int(np.argmin(np.abs(v)))
+    out = [None] * nv
+    out[j0] = X.copy()
+    cur = (e1, e2, e3, X)
+    for j in range(j0, nv - 1):
+        cur = rk4(cur, v[j], v[j + 1] - v[j])
+        out[j + 1] = cur[3].copy()
+    cur = (e1, e2, e3, X)
+    for j in range(j0, 0, -1):
+        cur = rk4(cur, v[j], v[j - 1] - v[j])
+        out[j - 1] = cur[3].copy()
+    P = np.transpose(np.array(out), (1, 0, 2))
+    return P[..., 0], P[..., 1], P[..., 2]
+
+
+def _kuen(U, V, twist=0.0, a=0.5, breather_a=0.4,
+          amsler_angle=90.0):
     denom = 1.0 + (U * np.sin(V)) ** 2
     x = 2.0 * (np.cos(U) + U * np.sin(U)) * np.sin(V) / denom
     y = 2.0 * (np.sin(U) - U * np.cos(U)) * np.sin(V) / denom
@@ -304,6 +455,10 @@ PRESETS = {
     # incommensurate frequencies 1 and w = sqrt(1 - b^2).
     'BREATHER': ("Breather Surface", _breather, (-1.0, 1.0),
                  (-1.0, 1.0), False),
+    # normalised square; _amsler scales it to the largest patch
+    # that stays clear of the cuspidal edges for this angle
+    'AMSLER': ("Amsler Surface", _amsler, (-1.0, 1.0),
+               (-1.0, 1.0), False),
 }
 
 
@@ -324,13 +479,15 @@ def _grid_faces(nu, nv, wrap_v):
 
 
 def build_surface(kind, ures, vres, twist=0.2, scale=1.0,
-                  minding_a=0.5, breather_a=0.4):
+                  minding_a=0.5, breather_a=0.4,
+                  amsler_angle=90.0):
     label, fn, (u0, u1), (v0, v1), wrap = PRESETS[kind]
     us = np.linspace(u0, u1, ures)
     vs = (np.linspace(v0, v1, vres, endpoint=False) if wrap
           else np.linspace(v0, v1, vres))
     U, Vv = np.meshgrid(us, vs, indexing='ij')
-    x, y, z = fn(U, Vv, twist, minding_a, breather_a)
+    x, y, z = fn(U, Vv, twist, minding_a, breather_a,
+                 amsler_angle)
     V = np.stack([x.ravel(), y.ravel(), z.ravel()], axis=-1)
     faces = _grid_faces(ures, vres, wrap)
     return _center(V) * scale, faces
@@ -402,6 +559,12 @@ if _IN_BLENDER:
             name="Twist", default=0.2, min=0.0, max=2.0,
             description="Helical shear of Dini's surface "
                         "(curvature = -1/(1+twist^2))")
+        amsler_angle: FloatProperty(
+            name="Crossing Angle", default=90.0, min=10.0, max=170.0,
+            description="Angle (degrees) at which Amsler's two straight "
+                        "lines cross.  It is the whole parameter: the "
+                        "surface is the unique K = -1 surface through "
+                        "two lines meeting at this angle")
         breather_a: FloatProperty(
             name="Breather b", default=0.4, min=0.05, max=0.95,
             description="Breather parameter b in (0, 1): small b gives "
@@ -429,7 +592,8 @@ if _IN_BLENDER:
                 a = 0.95
             verts, faces = build_surface(self.preset, self.ures,
                                          self.vres, self.twist,
-                                         self.scale, a, self.breather_a)
+                                         self.scale, a, self.breather_a,
+                                         self.amsler_angle)
             me = bpy.data.meshes.new("HyperbolicSurface")
             me.from_pydata([tuple(v) for v in np.asarray(verts)], [],
                            [tuple(int(i) for i in f) for f in faces])
@@ -460,6 +624,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'twist')
             if self.preset == 'BREATHER':
                 lay.prop(self, 'breather_a')
+            if self.preset == 'AMSLER':
+                lay.prop(self, 'amsler_angle')
             if self.preset in ('MINDING_BULGE', 'MINDING_SPINDLE'):
                 lay.prop(self, 'minding_a')
                 if (self.preset == 'MINDING_SPINDLE'
@@ -526,7 +692,7 @@ def _selftest():
     #    (Dini with twist 0.2 -> -1/(1+0.2^2) = -0.96)
     want = {'PSEUDOSPHERE': -1.0, 'DINI': -1.0 / 1.04, 'KUEN': -1.0,
             'MINDING_BULGE': -1.0, 'MINDING_SPINDLE': -1.0,
-            'BREATHER': -1.0}
+            'BREATHER': -1.0, 'AMSLER': -1.0}
     for kind in PRESETS:
         fn = PRESETS[kind][1]
         _, _, (u0, u1), (v0, v1), wrap = PRESETS[kind]
@@ -645,6 +811,74 @@ def _selftest():
         ok_all = ok_all and ok
         print(f"K(analytic) {label:16s}: median {med:+.7f} "
               f"(want {K_want:+.7f}) IQR {q3 - q1:.2e} "
+              f"{'OK' if ok else 'BAD'}")
+
+    # 5b) AMSLER.  Two checks, both of them the definition rather than a
+    #     restatement of the construction.
+    #
+    #     (a) K = -1 on the RAW surface.  It has to be the raw one:
+    #         build_surface rescales every generator into the 2 m cube,
+    #         and a uniform scaling by lambda sends K to -1/lambda^2, so
+    #         the meshed surface reports about -1.73 while being
+    #         perfectly correct.  What survives scaling is that K is
+    #         CONSTANT, and that is checked too.
+    #
+    #     (b) The two straight lines.  Amsler's surface is characterised
+    #         by containing them, and they are not put in by hand -- they
+    #         come out of the frame system, so their straightness is a
+    #         real test of it.  Their crossing angle must be omega_0.
+    for ang in (50.0, 90.0, 130.0):
+        span = amsler_span(math.radians(ang))
+        nn = 161
+        t = np.linspace(-1.0, 1.0, nn)
+        U, Vv = np.meshgrid(t, t, indexing='ij')
+        x, y, z = _amsler(U, Vv, amsler_angle=ang)
+        X = np.stack([x, y, z], axis=-1)
+        h = (t[1] - t[0]) * span
+        Xu = (X[2:, 1:-1] - X[:-2, 1:-1]) / (2 * h)
+        Xv = (X[1:-1, 2:] - X[1:-1, :-2]) / (2 * h)
+        Xuu = (X[2:, 1:-1] - 2 * X[1:-1, 1:-1] + X[:-2, 1:-1]) / h ** 2
+        Xvv = (X[1:-1, 2:] - 2 * X[1:-1, 1:-1] + X[1:-1, :-2]) / h ** 2
+        Xuv = (X[2:, 2:] - X[2:, :-2] - X[:-2, 2:]
+               + X[:-2, :-2]) / (4 * h * h)
+        nv_ = np.cross(Xu, Xv)
+        nv_ = nv_ / np.maximum(np.linalg.norm(nv_, axis=-1, keepdims=True),
+                               1e-300)
+        E = (Xu * Xu).sum(-1)
+        F = (Xu * Xv).sum(-1)
+        G = (Xv * Xv).sum(-1)
+        L = (Xuu * nv_).sum(-1)
+        M = (Xuv * nv_).sum(-1)
+        N = (Xvv * nv_).sum(-1)
+        K = (L * N - M * M) / (E * G - F * F)
+        K = K[np.isfinite(K)]
+        med = float(np.median(K))
+        q1, q3 = np.percentile(K, [25.0, 75.0])
+        ok = abs(med + 1.0) < 5e-3 and (q3 - q1) < 1e-4
+        ok_all = ok_all and ok
+        print(f"AMSLER angle={ang:5.1f}: span={span:.4f} K median "
+              f"{med:+.6f} IQR {q3 - q1:.1e} {'OK' if ok else 'BAD'}")
+
+        # the two asymptotic lines through the origin must be straight,
+        # and must cross at omega_0
+        mid = nn // 2
+        line_u = X[:, mid, :]
+        line_v = X[mid, :, :]
+        def straightness(P):
+            d = P[1:] - P[:-1]
+            d = d / np.maximum(np.linalg.norm(d, axis=-1, keepdims=True),
+                               1e-300)
+            return float(np.abs(d - d[len(d) // 2]).max())
+        su, sv = straightness(line_u), straightness(line_v)
+        du = line_u[-1] - line_u[0]
+        dv = line_v[-1] - line_v[0]
+        cosang = float(np.dot(du, dv)
+                       / (np.linalg.norm(du) * np.linalg.norm(dv)))
+        got = math.degrees(math.acos(max(-1.0, min(1.0, cosang))))
+        ok = su < 1e-6 and sv < 1e-6 and abs(got - ang) < 1e-3
+        ok_all = ok_all and ok
+        print(f"   straight lines: deviation {su:.1e} / {sv:.1e}, "
+              f"crossing angle {got:.4f} deg (want {ang:.1f}) "
               f"{'OK' if ok else 'BAD'}")
 
     # 6) the mesher runs for every preset and produces finite geometry
