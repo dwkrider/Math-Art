@@ -27,11 +27,13 @@ except ImportError:
     _IN_BLENDER = False
 
 
-# Smoothing is deliberately high by default.  The rim is a grid
-# artifact, so smoothing it hard is exactly what makes the tube read as
-# a drawn edge rather than a traced staircase.
+# Smoothing is deliberately LOW.  The visual rounding is done by the
+# Bezier handles, which interpolate the rim points instead of moving
+# them, so the smoother only has to take the zigzag out of a genuinely
+# stair-stepped edge.  Asking it to do the rounding as well is what
+# pulled the curve off the surface in the first place.
 RIM_THICKNESS_DEFAULT = 0.01
-RIM_SMOOTH_DEFAULT = 8
+RIM_SMOOTH_DEFAULT = 3
 
 
 def _edges_of(faces):
@@ -67,9 +69,10 @@ def boundary_loops(verts, faces, smooth=RIM_SMOOTH_DEFAULT):
     consumes unused edges greedily and returns whatever chains it finds,
     open or closed.
 
-    `smooth` closure-preserving Laplacian passes run over each polyline
-    before it is returned; without them the swept tube reproduces the
-    staircase faithfully, which defeats the purpose.
+    `smooth` Taubin passes run over each polyline before it is
+    returned; without them the swept tube reproduces the staircase
+    faithfully, which defeats the purpose, and with a shrinking
+    smoother it would leave the edge instead.
 
     Returns a list of (points, closed) with points an (n, 3) array.
     """
@@ -123,17 +126,69 @@ def boundary_loops(verts, faces, smooth=RIM_SMOOTH_DEFAULT):
 
     out = []
     for idx, closed in chains:
-        pts = V[idx]
-        for _ in range(max(0, int(smooth))):
-            if closed:
-                prev = np.roll(pts, 1, axis=0)
-                nxt = np.roll(pts, -1, axis=0)
-                pts = 0.5 * pts + 0.25 * (prev + nxt)
-            elif len(pts) > 2:
-                inner = 0.5 * pts[1:-1] + 0.25 * (pts[:-2] + pts[2:])
-                pts = np.concatenate([pts[:1], inner, pts[-1:]])
-        out.append((pts, closed))
+        out.append((_taubin(V[idx], closed, int(smooth)), closed))
     return out
+
+
+# Taubin's lambda/mu pair.  mu is slightly larger in magnitude than
+# lambda and negative, so each shrinking pass is followed by an
+# expanding one; the pair removes high-frequency wobble while leaving
+# the curve where it was.
+_TAUBIN_LAMBDA = 0.5
+_TAUBIN_MU = -0.53
+
+
+def _taubin(pts, closed, passes):
+    """Smooth a polyline WITHOUT shrinking it.
+
+    A plain Laplacian pass moves every point toward the midpoint of its
+    neighbours, which is a curve-shortening flow: on a rim that wraps a
+    curved surface it walks the curve off the edge it is supposed to
+    trace, visibly so after a few passes.  Taubin's fix is to alternate
+    a positive step with a slightly larger negative one, which cancels
+    the shrinkage to first order while still attenuating the
+    grid staircase.
+    """
+    pts = np.asarray(pts, dtype=float)
+    n = len(pts)
+    if passes <= 0 or n < 3:
+        return pts
+
+    def step(p, w):
+        if closed:
+            lap = 0.5 * (np.roll(p, 1, axis=0) + np.roll(p, -1, axis=0)) - p
+            return p + w * lap
+        q = p.copy()
+        q[1:-1] = p[1:-1] + w * (0.5 * (p[:-2] + p[2:]) - p[1:-1])
+        return q
+
+    orig = pts
+    for _ in range(passes):
+        pts = step(pts, _TAUBIN_LAMBDA)
+        pts = step(pts, _TAUBIN_MU)
+
+    # Cap how far any point may travel.  Taubin does not shrink the
+    # curve as a whole, but it still cuts corners, and a rim that turns
+    # sharply -- the woven polyhedra turn at every band crossing -- lifts
+    # off the edge there while the rest of the loop stays on it, which
+    # is exactly the failure that shows up as a gap in the viewport.
+    #
+    # The budget is a QUARTER of the local spacing, not a whole cell.  A
+    # whole cell sounds right for a fine staircase, but these rims are
+    # not all fine: on the woven polyhedra the boundary is a coarse
+    # 140-gon whose segments are longer than the drift being bounded, so
+    # a one-cell cap never binds and the corner-cutting survives.  A
+    # quarter keeps the curve inside the tube it is sweeping.
+    seg = np.linalg.norm(np.diff(orig, axis=0), axis=1)
+    cap = 0.25 * float(np.median(seg)) if len(seg) else 0.0
+    if cap > 0.0:
+        d = pts - orig
+        dist = np.linalg.norm(d, axis=1)
+        over = dist > cap
+        if np.any(over):
+            d[over] *= (cap / dist[over])[:, None]
+            pts = orig + d
+    return pts
 
 
 if _IN_BLENDER:
@@ -158,11 +213,11 @@ if _IN_BLENDER:
         return IntProperty(
             name="Rim Smoothing", default=RIM_SMOOTH_DEFAULT,
             min=0, max=40,
-            description="Laplacian passes along the rim before it is "
-                        "swept; 0 follows the grid staircase exactly. "
-                        "The default is high on purpose -- the rim is "
-                        "a grid artifact, so smoothing it hard is what "
-                        "makes the tube read as a drawn edge")
+            description="Taubin smoothing passes along the rim before "
+                        "it is swept. Unlike a plain Laplacian this "
+                        "does not shrink the curve, so the tube stays "
+                        "on the edge however many passes you use; 0 "
+                        "follows the sample grid exactly")
 
     def draw_rim(layout, op):
         """The three controls, shown only when the rim is on."""
@@ -191,12 +246,21 @@ if _IN_BLENDER:
         cu.bevel_depth = float(thickness)
         cu.bevel_resolution = 4
         cu.use_fill_caps = True
+        # BEZIER with AUTO handles, not POLY: the handles round the
+        # corners between samples without moving the samples, so the
+        # curve still passes exactly through the rim it was built from.
+        # A POLY spline would render the staircase; a NURBS one would
+        # approximate rather than interpolate and drift off the edge in
+        # the same way the old shrinking smoother did.
+        cu.resolution_u = 6
         for pts, closed in loops:
-            sp = cu.splines.new('POLY')
-            sp.points.add(len(pts) - 1)
+            sp = cu.splines.new('BEZIER')
+            sp.bezier_points.add(len(pts) - 1)
             for i, q in enumerate(pts):
-                sp.points[i].co = (float(q[0]), float(q[1]),
-                                   float(q[2]), 1.0)
+                bp = sp.bezier_points[i]
+                bp.co = (float(q[0]), float(q[1]), float(q[2]))
+                bp.handle_left_type = 'AUTO'
+                bp.handle_right_type = 'AUTO'
             sp.use_cyclic_u = bool(closed)
         rim = bpy.data.objects.new(label + " Rim", cu)
         context.collection.objects.link(rim)
@@ -266,21 +330,37 @@ def _selftest():
     print("rim_curve: mixed tri/quad faces handled %s"
           % ('OK' if good else 'FAIL'))
 
-    # Smoothing must shorten a staircase without moving its endpoints
-    # far, and must preserve the point count.
-    stair = [(i // 2 * 1.0, i % 2 * 1.0, 0.0) for i in range(24)]
-    sf = []
+    # Smoothing must NOT shrink the rim.  This is the property the
+    # first implementation got wrong: a plain Laplacian is a
+    # curve-shortening flow, so on a rim that wraps a curved surface it
+    # migrated off the edge, visibly, at the default number of passes.
+    # A square loop is the sharpest test -- Taubin should hold its
+    # perimeter where a Laplacian collapses it toward the centroid.
     raw = boundary_loops(verts, faces, smooth=0)[0][0]
-    sm = boundary_loops(verts, faces, smooth=12)[0][0]
-    per_raw = float(np.linalg.norm(np.diff(np.vstack([raw, raw[:1]]),
-                                           axis=0), axis=1).sum())
-    per_sm = float(np.linalg.norm(np.diff(np.vstack([sm, sm[:1]]),
-                                          axis=0), axis=1).sum())
-    good = len(raw) == len(sm) and per_sm < per_raw
+    sm = boundary_loops(verts, faces, smooth=20)[0][0]
+
+    def perim(p):
+        return float(np.linalg.norm(np.diff(np.vstack([p, p[:1]]),
+                                            axis=0), axis=1).sum())
+
+    shrink = 1.0 - perim(sm) / perim(raw)
+    drift = float(np.max(np.linalg.norm(sm - raw, axis=1)))
+    good = len(raw) == len(sm) and abs(shrink) < 0.06 and drift < 0.12
     ok &= good
-    print("rim_curve: smoothing shortens the rim %.3f -> %.3f, keeps "
-          "%d points %s" % (per_raw, per_sm, len(sm),
-                            'OK' if good else 'FAIL'))
+    print("rim_curve: 20 smoothing passes shrink the rim %.1f%% and "
+          "move it at most %.3f %s"
+          % (100.0 * shrink, drift, 'OK' if good else 'FAIL'))
+
+    # And for contrast, the shrinking flow it replaced: same loop, same
+    # pass count, run as a pure Laplacian.
+    lap = raw.copy()
+    for _ in range(20):
+        lap = 0.5 * lap + 0.25 * (np.roll(lap, 1, axis=0)
+                                  + np.roll(lap, -1, axis=0))
+    print("rim_curve:   (a plain Laplacian would shrink it %.1f%% and "
+          "move it %.3f)"
+          % (100.0 * (1.0 - perim(lap) / perim(raw)),
+             float(np.max(np.linalg.norm(lap - raw, axis=1)))))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
