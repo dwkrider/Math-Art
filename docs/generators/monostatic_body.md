@@ -6,7 +6,19 @@ Add a monostatic body -- the gomboc, a convex homogeneous self-righting solid wi
 
 A **gömböc** is a convex, homogeneous solid that is *mono-monostatic*: it has exactly **one** stable and **one** unstable balance point, so it always rolls back to the same resting pose — like a self-righting toy, but with no added weight and no hollow. Uniform density throughout.
 
-Vladimir Arnold conjectured in 1995 that such a body could exist. Gábor Domokos and Péter Várkonyi proved it and built the first one in 2006. The shape is necessarily close to a sphere — the tolerance is famously tight, on the order of a tenth of a millimetre on a 10 cm body — because a body far from spherical has room for extra equilibria.
+Vladimir Arnold conjectured in 1995 that such a body could exist. Gábor Domokos and Péter Várkonyi proved it and built the first one in 2006. The shape is necessarily close to a sphere — the tolerance is famously tight, on the order of a tenth of a millimetre on a 10 cm body — because a body far from spherical has room for extra equilibria. That tension, between the iconic recognisable object and the near-spherical shapes that are provably monostatic, is why this generator offers several forms.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Rollers ▸ Monostatic Body*.
+2. **Pick the Form.** **Gömböc** builds the iconic fabricated shape — instantly recognisable, but reproducing the *look* rather than a certified balance count. **Domokos-Varkonyi (2006)** is the construction from the existence proof, provably mono-monostatic at a tiny deviation from the sphere and exaggerated here so the shape is visible. **Analytic - Sloan I** and **Analytic - Sloan II** are closed-form near-spheres that provably have exactly two equilibria.
+3. **Dial the mode-specific controls** — each Form shows only its own:
+   - **Gömböc**: **Edge Rounding** (the heat-kernel rounding radius on the sphere of normals; smaller keeps the tennis-ball seam edges crisper) and **Subdivisions** (icosphere resolution of the normal sphere).
+   - **Domokos-Varkonyi**: **Separatrix c** (shapes the tennis-ball-seam curve) and **Deviation d** (how far from the sphere; the genuine body needs $d < 5\times10^{-5}$, so the default deliberately exaggerates).
+   - **Sloan I / II**: **Perturbation beta** (keep $\lesssim 0.15$ for I, $\lesssim 0.17$ for II).
+4. **Set resolution and size.** The three non-Gömböc forms expose **Rings** (pole-to-pole segments) and **Segments** (around the axis); the Gömböc form hides these because it meshes on its own normal-sphere. **Scale** fits the body into a 2 m cube times the scale factor.
+5. **Output.** You get one watertight, convex mesh centred at the origin. The ridge where the two lobes meet is marked as a crease by default, so it stays sharp rather than being rounded off by smooth shading.
+6. **Read the result.** The report prints the vertex and face totals (`V=… F=…`). No equilibrium count is certified at build time, so treat the forms accordingly: the Domokos-Varkonyi (at small deviation) and Sloan forms are *provably* mono-monostatic, whereas the Gömböc form faithfully reproduces the shape but is **not** a certified one-stable / one-unstable solid — see the caveat below.
 
 ## Options
 
@@ -44,23 +56,45 @@ Renders of each selectable option:
 
 ## How it works
 
-**Equilibria as critical points.** Resting the body on a plane with outward direction $e$, the potential energy is
+**In plain terms.** A "self-righting" shape is one that, however you set it down, always wobbles back to the same resting spot — like those weighted round-bottomed toys that pop upright when you push them over. The catch is that those toys cheat: they hide a lump of metal in the base. A **gömböc** does it with shape alone — the same material all the way through, no hollow, no weight. It manages this by having exactly *one* place it likes to rest and exactly *one* place where it can (just barely) balance upside-down, and nothing in between; from anywhere else it has no choice but to roll toward its resting spot. Getting a shape with *only* those two balance points, and no extra ledges to get stuck on, is astonishingly hard, and the mathematics below is really the story of that "no extra ledges" condition.
 
-$$V(e)=\mathbf{c}\cdot e + h(-e),$$
+**Equilibria as critical points.** Rest the body on a flat plane so that the direction pointing straight down (outward from the contact) is $e$. Its potential energy in that pose is
 
-where $\mathbf{c}$ is the centre of mass and $h(u)=\max_{x\in K} x\cdot u$ is the **support function**. Balance points are the critical points of $V$: minima are stable, maxima unstable, saddles are the unstable-in-one-direction cases. A true gömböc has exactly one minimum and one maximum and nothing else — and since $V$ is a function on the sphere, Morse theory forces $\#\min-\#\text{saddle}+\#\max=2$, so with one of each there can be **no saddles at all**. That is the constraint that makes such bodies so hard to find.
+$$V(e) = \mathbf{c}\cdot e + h(-e),$$
 
-**The gömböc form.** There is an important gap between the mathematics and the iconic object, and this generator is explicit about it. The makers describe the fabricated gömböc as a "tennis-ball" assembly of segments of simple surfaces — cylinder, ellipsoid, cone — and planes joined along crease edges. It has **no single closed-form equation**.
+where $\mathbf{c}$ is the centre of mass and $h(u) = \max_{x\in K} x\cdot u$ is the **support function** — the reach of the body in direction $u$. Balance points are exactly the critical points of $V$ over the sphere of directions: a **minimum** is a stable rest, a **maximum** an unstable one, and a **saddle** is the balance-on-an-edge case, stable one way and unstable the other. A true gömböc must have one minimum, one maximum, and *nothing else*. The obstruction is topological: because $V$ lives on the sphere, the Poincaré–Hopf/Morse relation forces
 
-So the shape here comes from its digitised **support function**, stored as spherical-harmonic coefficients and smoothed by the spherical heat kernel — damping coefficient $\ell$ by
+$$\#\min - \#\mathrm{saddle} + \#\max = \chi(S^2) = 2,$$
+
+so with a single minimum and a single maximum there can be **no saddles at all**. Every stray dimple or flat spot creates a min–saddle or max–saddle pair, and this counting rule is what makes mono-monostatic bodies so rare and so close to spherical.
+
+**The Gömböc form — from a digitised support function.** There is an honest gap between the mathematics and the iconic object. Its makers describe the fabricated gömböc as a "tennis-ball" assembly of pieces of simple surfaces — cylinder, ellipsoid, cone — and planes joined along crease edges; it has **no single closed-form equation**. So this form starts from the object's *digitised* support function, stored as real spherical-harmonic coefficients, and smooths it by the spherical **heat kernel**, which damps the degree-$\ell$ coefficients by
 
 $$\exp\!\big(-\ell(\ell+1)\sigma^2/2\big).$$
 
-That smoothing is chosen rather than convenient: convolving a support function with a nonnegative zonal kernel is a **rotational Minkowski average** of the body, so the result is *provably* again the support function of a convex body. The crease edges come out rounded at radius $\approx\sigma$ with no ringing, no faceting and no pole pinch — which naive smoothing of the surface itself would not guarantee.
+That smoothing is principled, not merely convenient: convolving a support function with a nonnegative zonal kernel is a **rotational Minkowski average** of the body, so the smoothed function is *provably* again the support function of some convex body. Geometrically, the crease edges round off at radius $\approx\sigma$ (the **Edge Rounding** control) with no ringing, faceting, or pinch at the poles — artefacts that smoothing the *surface* directly would introduce. The surface is then recovered by the classical normal parametrisation
 
-**Meshing.** The surface is recovered by the normal parametrisation $x(u)=\nabla H(u)$ of the 1-homogeneous extension $H(p)=|p|\,h(p/|p|)$, evaluated on an icosphere of directions. Because directions are sampled uniformly, vertices concentrate naturally where curvature is high — along the seam and the beak.
+$$x(u) = \nabla H(u), \qquad H(p) = |p|\,h\!\left(p/|p|\right),$$
 
-> **Caveat, stated plainly.** This form reproduces the *shape*: smooth, strictly convex, one mirror plane, about 40% off a sphere. It is **not** a certified mono-monostatic solid. Verifying that would mean confirming $V(e)$ has exactly one minimum and one maximum for the meshed body's own centre of mass, which the smoothing does not preserve.
+the "reverse spherical image": for each outward normal $u$, $\nabla H$ returns the surface point wearing that normal. It is evaluated on an icosphere of directions, and because those directions are sampled uniformly, mesh vertices concentrate right where the curvature is high — along the seam and the beak — for free.
+
+> **Caveat, stated plainly.** This form reproduces the *shape*: smooth, strictly convex, one mirror plane, about 40% off a sphere. It is **not** a certified mono-monostatic solid. Digitising $h$ from a low-resolution reference leaves a residual roughness of order $10^{-3}\,h$ — the same order as the *real* gömböc's famously tight tolerance — so the energy landscape carries extra shallow equilibria and the exact one-min/one-max count cannot be certified here. For a provably mono-monostatic body use the Domokos–Várkonyi or Sloan forms below.
+
+**The Domokos–Várkonyi form — the existence proof.** This is the actual 2006 construction. In spherical coordinates the boundary is written as a small deformation of the unit sphere,
+
+$$R(\theta,\phi) = 1 + d\,\delta R(\theta,\phi),$$
+
+where $\delta R$ is built from a latitude-warp map that lays down a **tennis-ball-seam separatrix** — the single curve dividing the basin of the stable point from that of the unstable one. **Separatrix c** controls the warp that shapes that seam; **Deviation d** scales how far the body strays from the sphere. The genuine class-$\{1,1\}$ body needs $d < 5\times 10^{-5}$ and then looks indistinguishable from a ball, so — exactly as in the paper's own figures — the default $d$ is exaggerated to make the shape visible; at $d = 0$ the surface is precisely the sphere.
+
+**The Sloan forms — closed-form near-spheres.** Sloan's two analytic gömböcs trade recognisability for a clean formula and provable behaviour. Their radius satisfies
+
+$$r^4 = 1 + 4\beta\,\sin\theta\,\cos\!\big(\phi - P(\theta)\big),$$
+
+with $\theta$ the polar angle, $\phi$ the azimuth, and a twist profile
+
+$$P(\theta) = 5\theta \quad(\text{Sloan I}), \qquad P(\theta) = \tfrac{3\pi}{2}\!\left(\cos\theta - \tfrac{1}{3}\cos^3\theta\right) \quad(\text{Sloan II}).$$
+
+The single $\cos(\phi - P(\theta))$ term places one bulge and one dimple that spiral around the axis, and $P(\theta)$ is chosen precisely so that the energy $V$ has exactly one minimum and one maximum — genuinely mono-monostatic and infinitely differentiable. The **Perturbation beta** sets the deviation from the sphere, capped at about $0.15$ (I) and $0.17$ (II); past those bounds extra equilibria appear. Like the Domokos–Várkonyi body at admissible $d$, these are only small perturbations of a sphere, so they do not resemble the fabricated object — the very tension that makes the gömböc remarkable.
 
 ## References
 

@@ -4,7 +4,18 @@
 
 ## Overview
 
-Woven-strand spheres built from a seed polyhedron, a Blender take on Antiprism's `poly_weave` including its **weave pattern language**. The seed's flag (barycentric) subdivision is walked by a small pattern program; the visited pattern points become closed weave strands that are swept as ribbons over the sphere. A short pattern string chooses everything from a plain over-under weave to rings around vertices or faces, curved segments, and raised or wavy weaves.
+Woven-strand spheres built from a seed polyhedron and a short pattern program, a Blender take on Antiprism's `poly_weave` including its **weave pattern language**.
+
+The seed's flag (barycentric) subdivision is walked by a small pattern program; the visited pattern points become closed weave strands that are swept as ribbons or rope tubes over the sphere. A short pattern string chooses everything from a plain over-under weave to rings around vertices or faces, curved segments, and raised or wavy weaves.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Weaves & Tangles ▸ Polyhedral Weave*.
+2. **Pick the Seed** — Cube, Icosahedron, Octahedron, Tetrahedron or Dodecahedron. For the triangular seeds (Tetrahedron, Octahedron, Icosahedron) a **Geodesic Frequency** control appears that subdivides each triangle into a finer mesh for denser weaves.
+3. **Choose a Pattern.** The **Pattern Preset** menu (Classic Weave `vfe`, Corner Weave `FEV`, Vertex Rings, Face Rings, Face Pairs, Curved, Raised Weave, and more) fills the **Pattern** string with a ready program; pick **Custom** to type your own into the Pattern field. The syntax is `[C|L][bV,bE,bF][:up,side,along…]steps[tl|tr|tb]`, with steps drawn from `V E F v e f R -`.
+4. **Pick the Output.** **Ribbon** gives flat strands sized by **Strand Width** and **Strand Thickness**; **Tube (Rope)** gives round tubes sized by **Tube Radius** and **Tube Sides**, with **Relax Iterations** and **Rope Clearance** to settle the ropes so they round their clasps and keep clear of each other.
+5. **Shape the weave.** **Weave Amplitude** sets the alternating over/under lift at each pattern point (set it to 0 when the pattern's own `up` values already do the weaving); **Path Subdivision** and **Smoothing** refine the strand curves.
+6. **Choose the output styling** — **Coloring** is **Per Strand** or **None**, and **Radius** sets the overall size. The status bar reports how many strands were woven; an unparseable pattern reports an error instead of building.
 
 ## Options
 
@@ -49,6 +60,8 @@ Renders of each selectable option:
 </table>
 
 ## How it works
+
+**In plain terms.** Think of basket-weaving wrapped around a ball. First cut every face of the polyhedron into little triangles by drawing lines from the face centre out to each corner and each edge midpoint. From any one of these triangles there are just three moves: flip across a corner, flip across an edge, or step over into the neighbouring face. A weave "pattern" is nothing more than a short recipe of those moves — say "corner, edge, vertex, repeat" — and following the recipe traces a strand that loops all the way around the ball and closes up. Run the same recipe starting from every triangle and the loops lace over and under one another into a woven sphere; the code then thickens each loop into a flat ribbon or a round rope. The notation below (`v`, `e`, `f` and their capitals) is just how those moves are written down.
 
 The seed polyhedron is projected onto the unit sphere; triangular seeds are optionally refined by a **Class-I geodesic** subdivision of frequency $\nu$, splitting each triangle $ABC$ into $\nu^2$ smaller triangles at barycentric points $\tfrac{iA+jB+kC}{\nu}$ (with $i+j+k=\nu$) re-projected to the sphere.
 

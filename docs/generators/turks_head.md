@@ -2,14 +2,18 @@
 
 ## Overview
 
-Add a Turk's-head knot -- a cord wound in L leads and B
-bights, woven strictly alternately over and under, as a rope
-tube on a ring, cylinder, torus or sphere (gcd(L, B) > 1
-gives that many parallel cords).
+A Turk's-head knot: one cord wound around a surface in $L$ **leads** (passes the long way) and $B$ **bights** (scallops the other way), woven strictly over-and-under and swept as a round rope tube.
 
-The **Turk's head** is the classic decorative rope knot — a single cord wound around a surface in $L$ **leads** (passes the long way) and $B$ **bights** (scallops the other way), woven strictly over-and-under.
+Sailors have tied these decorative knots for centuries and describe them by exactly those two counts. The pleasing fact is that the craft description is already the mathematical one: a Turk's head $THK(B,L)$ is precisely the **alternating diagram of the $(L,B)$ torus knot**, and the rope-worker's rule that the cord returns to its start only for certain $L,B$ pairs is the condition $\gcd(L,B)=1$.
 
-Sailors have tied them for centuries and describe them exactly this way, by their two counts. The pleasing fact is that the craft description is already the mathematical one: a Turk's head $THK(B,L)$ is precisely the **alternating diagram of the $(L,B)$ torus knot**, and the rope-worker's rule that the cord returns to its start only for certain $L,B$ pairs is the condition $\gcd(L,B)=1$.
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Weaves & Tangles ▸ Turk's-Head Knot*.
+2. **Pick the Surface** the cord is wound on. **Ring (Flat Mat)** opens the classic cylindrical knot out flat into a woven annular mat; **Cylinder** wraps it round a rail, as tied on a woggle; **Torus** dresses it around the outer face of a ring core; **Sphere** crowds the bights toward two poles into a woven ball cover.
+3. **Set Leads and Bights** — the two counts that name the knot. **Leads** is how many times the cord passes the long way around (the braid's strand count); **Bights** is how many scallops it makes along each edge. Their greatest common divisor sets the number of separate cords: coprime values give one continuous cord, and $\gcd(L,B)=d>1$ gives $d$ parallel cords woven together.
+4. **Adjust the mode-specific controls.** **Tube Radius (Torus)** appears only for the Torus surface and sets the minor radius of the ring core. **Color Cords** appears only when the counts share a factor (a multi-cord knot); it gives each cord its own colored material so you can tell the interwoven strands apart.
+5. **Shape and sweep the rope.** **Radius** is the main radius of the scaffold surface; **Spread** is how far the bights swing across it; **Weave Depth** is the over/under amplitude (floored at $1.3\times$ the rope radius so strands always clear each other); **Rope Radius** and **Rope Sides** set the swept tube's thickness and cross-section; **Samples** is the point count per cord.
+6. **Read the report.** Each build prints the cord count, the number of crossings, and whether the strictly alternating over/under weave came out consistent (`OK`) — it always should, since every planar diagram admits an alternating assignment.
 
 ## Options
 
@@ -49,19 +53,27 @@ Renders of each selectable option:
 
 ## How it works
 
-**The shadow.** The cord's path on the surface is the standard rose diagram of the torus knot $T(L,B)$: wind around at $\theta = Lt$ while oscillating transversely as $\cos(Bt)$. So $L$ counts complete passes the long way and $B$ counts the scallops — exactly the rope-worker's leads and bights.
+**In plain terms.** Imagine wrapping a single long cord round and round a napkin ring. If you just wound it straight it would make plain parallel loops; instead you let the cord *swing* side to side as it goes around, so its edge scallops in and out, and every time it meets a strand already there you tuck it alternately **over, under, over, under**. Two whole numbers describe the result completely: how many times the cord travels the long way around (the **leads**) and how many scallops it makes (the **bights**). Everything below turns those two counts into a curve the computer can draw, works out where the cord crosses itself, and decides at each crossing which strand rides on top — and it turns out the sailor's rules match the mathematics of knots exactly.
 
-**One cord or several.** The path closes into a **single** cord if and only if
+**The cord as a wound curve.** Write the cord with a single parameter $t$ running once around, $t\in[0,2\pi)$. It advances the long way at a steady rate while its distance from the centreline oscillates, so its **shadow** on the surface (the flat diagram every surface shares) is the rose curve
+
+$$r(t) = 1 + a\cos\big(\tfrac{B}{d}\,t\big),\qquad \theta(t) = \tfrac{L}{d}\,t,\qquad d=\gcd(L,B),$$
+
+with a small transverse amplitude $a=0.35$. The angular part $\theta$ turning $L/d$ times while the radial part $\cos$ completes $B/d$ scallops is exactly the standard diagram of the **$(L,B)$ torus knot**: $L$ counts the passes the long way and $B$ the scallops, precisely the rope-worker's leads and bights. Dividing both counts by $d$ reduces one cord to its shortest closed winding; when there is more than one cord the extras are the same curve started at a shifted phase $2\pi k/L$.
+
+**One cord or several.** Following the cord around, it returns to its exact starting point only after the winding closes, and the winding closes into a **single** cord if and only if
 
 $$\gcd(L,B)=1.$$
 
-Otherwise it closes early and repeats, giving $\gcd(L,B)$ separate cords — which is the same arithmetic that governs [star polygons](star_prism.md) and, in the plane, the [Celtic plait](celtic_knot_2d.md)'s loop count. A $5\times3$ Turk's head is one continuous cord; a $6\times4$ is two interwoven ones, which a rope-worker discovers by running out of cord in the wrong place.
+Otherwise it closes early and the whole pattern is retraced by $d=\gcd(L,B)$ separate cords, each a reduced $(L/d,\,B/d)$ winding offset in phase — the same arithmetic that governs [star polygons](star_prism.md) and, in the plane, the [Celtic plait](celtic_knot_2d.md)'s loop count. A $5\times3$ Turk's head is one continuous cord; a $6\times4$ is two interwoven ones, which a rope-worker discovers by running out of cord in the wrong place. The number of crossings in the diagram works out to $B(L-1)$.
 
-**Alternating weave.** Every crossing is woven strictly one-over-one-under along the cord. That alternation is what makes it the *alternating* diagram of $T(L,B)$ rather than some other diagram of the same knot, and it is also what makes the physical knot hold: an alternating weave is what gives the friction that stops it slipping.
+**Finding the crossings.** Because all four surfaces share the same $(\theta,\cos\psi)$ parameter domain, the flat-annulus diagram is drawn once and its self-intersections are found there — every crossing of the cord with itself (and, for a multi-cord knot, with the other cords) is an exact segment–segment intersection of the closed polyline. Two segments $P_i\to P_{i+1}$ and $P_j\to P_{j+1}$ meet where their line parameters both land in $[0,1)$; the half-open interval counts each crossing once and adjacent segments are skipped. The amplitude $a$ never changes *which* parameter pairs meet, only how far apart they sit, so these are the crossings on every surface.
 
-**Surfaces.** The same $(L,B)$ winding is laid on a ring, a cylinder, a torus or a sphere. The sphere is the one that changes character — the winding must accommodate two poles, so the bights crowd toward them, giving the woven-ball forms rather than a band.
+**The alternating weave, as a parity problem.** "Strictly one-over-one-under along the cord" means that as you walk any cord, the over/under sense must **flip at every crossing you reach**. Assign one bit per crossing — say the first-listed strand rides over — and the flip rule becomes a pure parity relation between consecutive crossings: two crossings met in a row must carry opposite senses. That system is solved with a **parity union-find**, which threads the constraints together and reports whether they are jointly satisfiable. Every planar diagram admits such a checkerboard-consistent assignment, so the weave always comes out consistent — the reported `OK` is the confirmation, not a coin-toss. This alternation is exactly what makes the object the *alternating* diagram of $T(L,B)$ rather than some other diagram of the same knot, and physically it is what supplies the friction that stops the real knot slipping.
 
-**Output** sweeps the cord as a round rope tube, with the over/under applied as a radial offset so the rope visibly passes over and under itself rather than intersecting.
+**The four surfaces.** The same $(L,B)$ winding is then lifted from the shared flat diagram onto whichever scaffold you chose — ring, cylinder, torus or sphere — by mapping the transverse coordinate $\cos\psi$ across the surface, its reach set by **Spread**. Three of the four keep the band-like character; the **sphere** is the one that changes character, because the winding has to accommodate two poles, so the bights crowd toward them and give the woven-ball forms rather than a strip.
+
+**Lifting off the surface and sweeping the rope.** If the strands lay flat on the surface they would merely intersect, not weave. So at each crossing the cord is pushed a signed distance $\pm\,\text{depth}$ along the **surface normal** — $+\text{depth}$ where it rides over, $-\text{depth}$ where it rides under — and between consecutive crossings the offset is smooth-stepped ($u^2(3-2u)$) along the cord's own 3-D arclength, so the rope rises and dips smoothly instead of kinking. The depth is floored at $1.3\times$ the rope radius so the tubes always clear each other. Finally each woven centreline is swept into a round tube (a rotation-minimising sweep of a **Rope Sides**-gon of radius **Rope Radius**), and the whole thing is recentred and scaled to fit the standard 2 m cube.
 
 ## References
 

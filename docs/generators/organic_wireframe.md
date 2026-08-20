@@ -4,7 +4,16 @@
 
 ## Overview
 
-Organic Wireframe is a **Styles operator applied to a selected existing object**, not a standalone add-mesh generator: with a mesh active, it gives that mesh the classic "parametric Voronoi sphere" look as a live, non-destructive modifier stack (Triangulate → Decimate collapse → Wireframe → Subdivision). The render image was produced by applying the style to a base shape. Everything stays editable in the modifier stack afterwards — the operator only builds the stack and sets smooth shading — and it works on any mesh, including open minimal-surface patches, whose rims are kept.
+Organic Wireframe is a *style* — it restyles the object you already have rather than adding new geometry. It gives a mesh the classic "parametric Voronoi sphere" look, built as a live, non-destructive stack of four standard modifiers (Triangulate → Decimate collapse → Wireframe → Subdivision).
+
+### Using it
+
+1. **Select the target first.** Click the mesh you want to restyle so it is the active object, be in *Object* mode, then choose *Add ▸ Mesh ▸ Math Art ▸ Styles ▸ Organic Wireframe (Voronoi)*. The style needs an active **mesh** and works on any of them, including open minimal-surface patches, whose rims are kept.
+2. **It attaches, it does not replace.** The operator only builds a modifier stack on the object and sets smooth shading; nothing is baked, so every knob below stays live in the modifier panel, and applying the stack makes it permanent.
+3. **Set the Cell Coarseness.** This is the main knob — the Decimate collapse ratio. Lower values keep fewer, larger cells (a bold, open cage); higher values keep a finer, busier mesh.
+4. **Set strut and smoothing.** **Strut Thickness** is the width of the wireframe struts; **Smoothing Levels** is the number of subdivision passes that round the angular lattice into smooth branches.
+5. **Toggle the two shaping options.** **Triangulate First** (on) triangulates before decimating, so a regular quad grid melts into irregular cells rather than stripes; **Even Thickness** keeps the strut width uniform at sharp corners.
+6. **What it produces.** The same object, now carrying the four-modifier stack and shaded smooth. The report confirms the stack was added and reminds you to tune it in the modifier properties or apply it to make it permanent.
 
 ## Options
 
@@ -23,17 +32,19 @@ Organic Wireframe is a **Styles operator applied to a selected existing object**
 
 ## How it works
 
-The whole effect is a chain of four standard Blender modifiers stacked on the active object; nothing is baked, so each stage stays adjustable in the modifier panel.
+**In plain terms.** Take any surface and first chop it into a mess of triangles. Then deliberately *simplify* that mesh hard — collapse it down until only a fraction of the triangles remain — and because the collapse merges points unevenly, what is left is a patchwork of irregular blobby cells that look hand-drawn, much like a Voronoi foam or the veins in a leaf. Replace every cell's face with a rounded strut running along its edges and throw away the panels, and you are left with a lacy cage. The trick is that all of this is done with four of Blender's stock modifiers stacked on the object, so nothing is baked and every setting stays live — slide a value and the whole cage re-forms.
 
-1. **Triangulate** (optional, on by default, with `min_vertices = 4`). Converts faces to triangles first, so a regular quad grid melts into irregular cells under the collapse instead of collapsing into stripes.
+The whole effect is a chain of four standard modifiers on the active object; because none of it is applied, each stage stays adjustable in the modifier panel.
 
-2. **Decimate — Collapse** at ratio $r$ = **Cell Coarseness**. Collapsing the even triangulation at a low ratio merges vertices unevenly, producing irregular, Voronoi-looking cells. Lower $r$ keeps fewer, larger cells; higher $r$ keeps a finer mesh.
+1. **Triangulate** (optional, on by default, with `min_vertices = 4`). Converting faces to triangles first is what makes the next step interesting: a regular quad grid, collapsed, tends to fold along its rows into stripes, whereas an even triangulation collapses into scattered, irregular cells.
 
-3. **Wireframe** with thickness = **Strut Thickness**, `use_replace` on (faces are replaced by the lattice), `use_boundary` on (open surfaces keep their rim), and `use_even_offset` = **Even Thickness** (keeps strut width uniform at sharp corners). This replaces each cell face with a frame of struts along the cell edges.
+2. **Decimate — Collapse** at ratio $r$ = **Cell Coarseness**. Collapse decimation repeatedly merges the shortest edges until it hits the target ratio. Doing this to the even triangulation at a low ratio merges vertices unevenly across the surface, and the surviving faces are the irregular, Voronoi-*looking* cells that give the style its name. Lower $r$ keeps fewer, larger cells; higher $r$ keeps a finer mesh.
 
-4. **Subdivision Surface** at levels = **Smoothing Levels** (render levels are at least 2). Catmull–Clark subdivision rounds the angular lattice into smooth, organic branches. Finally every polygon is set to smooth shading.
+3. **Wireframe** with thickness = **Strut Thickness**, `use_replace` on (the cell faces are replaced by a lattice of struts along their edges), `use_boundary` on (so an open surface keeps its rim rather than unravelling), and `use_even_offset` = **Even Thickness** (which keeps the strut cross-section uniform where edges meet at a sharp angle). After this step the panels are gone and only the strut skeleton of the cell layout remains.
 
-Because the cell layout comes from a *Decimate collapse* of the triangulated mesh rather than a true Voronoi diagram, the cells are only Voronoi-*looking*; the appeal is that the entire pipeline is procedural and live — tune any slider, or apply the stack to make it permanent.
+4. **Subdivision Surface** at levels = **Smoothing Levels** (render levels forced to at least 2). Catmull–Clark subdivision rounds the hard-edged lattice into smooth, tubular, organic branches. Finally every polygon is set to smooth shading so the tubes shade without facets.
+
+Because the cell layout comes from a *Decimate collapse* of the triangulated mesh rather than a true Voronoi diagram, the cells are only Voronoi-*looking* — a real Voronoi tessellation would need scattered seeds and exact cell boundaries (which the [Voronoi Openwork](voronoi_openwork.md) style does instead). The appeal here is different: the entire pipeline is procedural and live, so you can tune any slider, or apply the stack to bake it.
 
 ## References
 

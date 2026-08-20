@@ -4,7 +4,21 @@
 
 ## Overview
 
-Orderly tangles of regular polygons, after George W. Hart's **regular polylinks**: one polygonal frame is placed on every face plane of a Platonic solid, each rotated about its face normal, scaled, and pushed along the normal so the frames interlock. Classic examples are 4 triangles (tetrahedron), 6 squares (cube), 8 or 20 triangles (octahedron / icosahedron), and 6 or 12 pentagons (dodecahedron). Beyond the flat polygon frame, each link can also be a radius-modulated wavy circle or a torus knot swept as a tube (both after Shengyi Wang's polylink add-on).
+Orderly tangles of regular polygons: one polygon frame is laid on every face-plane of a Platonic solid, then rotated, scaled and pushed together until the frames thread through one another and lock, after George W. Hart's **regular polylinks**.
+
+The classic tangles are 4 triangles (tetrahedron), 6 squares (cube), 8 or 20 triangles (octahedron / icosahedron), and 6 or 12 pentagons (dodecahedron). Beyond the flat polygon frame, each link can instead be a radius-modulated wavy circle or a torus knot swept as a tube (both after Shengyi Wang's polylink add-on).
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Weaves & Tangles ▸ Regular Polylinks*.
+2. **Pick a Preset.** The six named presets (**4 Triangles**, **6 Squares**, **8 Triangles**, **6 Pentagons**, **12 Pentagons**, **20 Triangles**) each set the Solid and its framing for one of Hart's classic tangles; **Custom** leaves every control free.
+3. **Choose the Solid** — Tetrahedron, Cube, Octahedron, Dodecahedron or Icosahedron. One frame is placed on each face, so the solid fixes how many frames there are and their symmetry.
+4. **Set the shape knobs.** **Frame Size** scales each frame, **Rotation** turns it about its face normal (the twist that makes neighbouring frames pass *through* each other rather than merely stack), and **Plane Offset** slides every frame along its normal — negative values pull them inward toward the centre so they interlock.
+5. **Pick a Link Shape** and dial the controls that appear for it:
+   - **Polygon Frame** — flat mitred rings; **Frame Width** and **Frame Thickness** set the ring's profile.
+   - **Wavy Circle** — round rings with **Wave Amplitude** ripples repeating **Wave Factor** times per side; **Tube Sides** and **Link Segments** set the swept tube.
+   - **Torus Knot** — a $(p,q)$ knot about each face axis with **Knot p** windings and **Knot q Factor** (times the side count), **Wave Amplitude** as its minor radius, again with **Tube Sides** and **Link Segments**.
+6. **Choose the output styling.** **Antipodal Half** keeps only one face of each opposite pair; **Coloring** is **Per Link** (a colour per frame), **Per Parallel Pair** (Hart's convention — parallel frames share a colour, e.g. 6 squares in 3 colours) or **None**. The status bar reports how many frames were built.
 
 ## Options
 
@@ -50,6 +64,8 @@ Renders of each selectable option:
 </table>
 
 ## How it works
+
+**In plain terms.** Take a die and lay a cardboard triangle (or square) flat against each face. Now give every panel the same little twist in its own plane and slide it inward a touch. Do that on all the faces at once and the panels stop sitting apart — they begin to weave through one another, each frame passing between the corners of its neighbours like links in a chain mail. Nothing is glued, yet nothing can be pulled free: that woven cage of polygons is a **polylink**. Everything below is just the bookkeeping that says *where* to put each frame and *how far* to twist it so the weave comes out symmetric.
 
 The seed Platonic solid gives vertices $V$ and faces $F$. For each face $f$ the centroid is
 

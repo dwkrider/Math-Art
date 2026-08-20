@@ -3,7 +3,19 @@
 ![Platonic Twist](../images/platonic_twist.png)
 
 ## Overview
-After George W. Hart's *Platonic Twist* construction: the faces of a Platonic solid are shrunk and pushed radially outward, then every original edge is spanned by a ribbon that makes a half turn (or several) on its way between the two neighbouring face plates. The result is a single, exactly welded surface -- an airy, paper-sculpture-like form -- that can be given a printable wall via the Thickness (Solidify) option. Odd numbers of half twists produce non-orientable, Mobius-like ribbons, handled by a non-manifold solidify mode.
+
+Add George W. Hart's *Platonic Twist*: a Platonic solid's faces are shrunk and pushed outward, then every original edge is re-spanned by a twisting ribbon, welded into one airy surface.
+
+The result is a single, exactly welded shell — an airy, paper-sculpture-like form — that can be given a printable wall thickness. Odd numbers of half twists produce non-orientable, Möbius-like ribbons, handled automatically by a non-manifold solidify mode.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Odds & Ends ▸ Platonic Twist*.
+2. **Pick the Solid.** **Tetrahedron**, **Cube**, **Octahedron**, **Dodecahedron** or **Icosahedron** — this chooses the seed whose faces become plates and whose edges become ribbons, so it sets both the plate shape (triangles, squares, pentagons) and how many ribbons meet at each corner.
+3. **Set the two placement knobs.** **Face Shrink** contracts each face toward its own centre (smaller plates leave more open space and longer ribbons), and **Face Push** slides each plate radially outward from the solid (more push opens the form up and lengthens the gaps the ribbons must bridge).
+4. **Choose the twist and bulge.** **Half Twists** is the number of half turns each ribbon makes crossing from one plate to the next: even counts arrive un-flipped, **odd counts arrive reversed and make each ribbon a Möbius band**. **Ribbon Bulge** controls how far the ribbons bow outward between plates. **Smooth Joins (C1)** makes each ribbon leave and arrive *within* its plate's plane so there is no crease; turning it off reverts to the older creased join, whose plate/ribbon boundaries are then marked sharp.
+5. **Set resolution and output.** **Ribbon Rows** and **Ribbon Columns** are the mesh density along and across each ribbon; **Thickness** drives a Solidify modifier to give the surface a printable wall (0 leaves it a pure zero-thickness surface); **Scale** fits the result to the cube.
+6. **Read the report.** The build prints the number of ribbons created — one per edge of the chosen solid (6 for the tetrahedron, 12 for the cube and octahedron, 30 for the dodecahedron and icosahedron) — a quick confirmation that every original edge was spanned.
 
 ## Options
 
@@ -43,11 +55,17 @@ Renders of each selectable option:
 
 ## How it works
 
-**Seed and plates.** Each Platonic solid is generated from exact coordinates (the icosahedron from the golden-ratio $\varphi=(1+\sqrt5)/2$ cyclic triples; the dodecahedron as the dual of the icosahedron, its vertices the icosa face centroids ordered by angle). For a face with vertex centroid $\mathbf c$ and unit normal $\mathbf n=\mathbf c/\lVert\mathbf c\rVert$, the plate centre is pushed out radially,
+**In plain terms.** Start with a solid like a cube. Peel each face off, shrink it a little, and float it outward from the centre so the faces no longer touch — you now have six small square plates hovering where the cube's faces used to be, with gaps where the edges used to be. Now, for every edge that used to join two faces, stretch a flexible strip of paper across the gap between the two plates that face sat between, and give that strip a half-twist as it crosses, like the twist in a Möbius band. Stitch every strip to its plates and the strips to nothing else, and the whole thing becomes one continuous, airy surface — plates linked by twisting ribbons, all in a single piece. The rest of this section is just the bookkeeping that makes the strips meet the plates seamlessly and decides how much they twist.
+
+**Seed and plates.** Each Platonic solid is generated from exact coordinates (the icosahedron from the golden-ratio $\varphi=(1+\sqrt5)/2$ cyclic triples; the dodecahedron as the dual of the icosahedron, its vertices the icosa face centroids ordered by angle). For a face with vertex centroid $\mathbf c$ and unit normal $\mathbf n=\mathbf c/\lVert\mathbf c\rVert$, the plate centre is pushed *radially* outward — straight along the line from the solid's centre through the face — by
+
 $$\mathbf c' = \mathbf n\,(\lVert\mathbf c\rVert + \text{push}),$$
-and each corner is contracted toward it,
-$$\mathbf v' = \mathbf c' + \text{shrink}\,(\mathbf v - \mathbf c).$$
-Each plate edge is subdivided into *Ribbon Columns* segments, so the plate rim vertices are shared exactly by the ribbons (the surface is welded, not merely coincident).
+
+so **Face Push** literally adds to the face's distance from the centre while keeping it square-on. Each corner $\mathbf v$ of the face is then contracted toward that new centre,
+
+$$\mathbf v' = \mathbf c' + \text{shrink}\,(\mathbf v - \mathbf c),$$
+
+which scales the plate about $\mathbf c'$ by the **Face Shrink** factor: it keeps the plate's shape and orientation but pulls its rim in, opening the gaps the ribbons will later bridge. Each plate edge is subdivided into *Ribbon Columns* segments, and — crucially — the ribbon spanning an edge reuses those very rim vertices rather than new coincident ones, so the surface is **welded** into one mesh, not two surfaces resting against each other.
 
 **The antiprism-like twist.** A shrunken-and-pushed Platonic solid, with its faces reconnected, is topologically the same move that turns a prism into an *antiprism*: adjacent faces are offset in rotation and bridged by a band that carries a relative twist. Here the band spans one original edge between face plates with unit normals $\mathbf n_1,\mathbf n_2$. Two rotations are composed along the ribbon parameter $t\in[0,1]$, both driven by the smoothstep $\sigma(t)=t^2(3-2t)$ (whose zero end-derivatives keep the joins $C^1$):
 

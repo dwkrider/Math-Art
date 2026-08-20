@@ -2,14 +2,17 @@
 
 ## Overview
 
-Add a woven double shell: rope rosettes on an outer and an
-inner sphere joined by rope bridges that weave over and under
-through the gap (the Twisted Polyhedron bridge topology as
-relaxed rope).
+Two concentric spheres of rope rosettes tied into one woven fabric: a medallion over every face of a scaffold solid on the outer sphere, one at every vertex on the inner sphere, joined by rope bridges that weave over and under through the gap between them.
 
-Two concentric spheres of rope rosettes tied into one woven fabric. On the **outer** sphere a rosette medallion sits over every face of a chosen Platonic, Archimedean or geodesic scaffold; on the **inner** sphere a medallion sits at every scaffold *vertex*. Rope bridges dive through the gap between them, joining each outer port to its paired inner one.
+### Using it
 
-The neat part is that the inner layer is automatically the **dual** solid's face arrangement — vertices of a solid are faces of its dual. So a cube scaffold gives an octahedral inner shell, an Archimedean one gives its Catalan dual, and a geodesic sphere gives its Goldberg dual. The two shells are not chosen independently; picking one determines the other.
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Weaves & Tangles ▸ Woven Double Shell*.
+2. **Pick the Scaffold** solid — any Platonic or Archimedean solid, or *Geodesic Sphere*. One choice fixes both shells at once: the outer shell gets one medallion per **face**, the inner shell one per **vertex**, and because a solid's vertices are its dual's faces the inner layer is automatically the dual arrangement (a cube gives an octahedral inner shell, an Archimedean solid gives its Catalan dual, a geodesic sphere its Goldberg dual). For *Geodesic Sphere* set the **Frequency** — that control appears only for this scaffold.
+3. **Set the two structural knobs.** *Inner Radius* is how far in the inner shell sits (the outer is fixed at 1), setting the gap the bridges span. *Advance* rotates the bridge pairing around each inner medallion: at 0 every strand closes into a short chain-mail stitch ring around one scaffold edge, while 1 and up chain them into long snaking strands.
+4. **Shape the rosettes and bridges.** *Outer/Inner Overlap* grow the medallions relative to their neighbour spacing; *Lobe Amplitude* deepens the rosette lobes (0 = plain circles); *Port Gap* sets how much of each lobe corner is cut open where the rope dives to a bridge; *Spin* turns the inner medallions; *Bridge Twist* swirls neighbouring bridges so they cross in the gap; *Handle (Outer)* and *Handle (Inner)* set how the bridge curves leave each port.
+5. **Set resolution and relaxation.** *Samples* and *Bridge Samples* set bead density; *Rope Radius* and *Tube Sides* size the tubes; *Weave Gap* pushes crossings apart radially into a clean over/under; *Clearance* is a strand-to-strand repulsion that keeps ropes from intersecting; *Relax Iterations* runs the bead/stick relaxation that settles the raw weave (0 leaves the raw radial seed).
+6. **Choose the Output.** *Rope Tubes*, *Ribbon Straps* or *Centerline Curves*; *Color By* strand, uniform, or element (outer arcs / bridges / inner arcs); *Separate Strands* emits one object per closed strand.
+7. **Read the report.** It prints the strand and crossing counts and whether the whole weave closed up strictly one-over-one-under (`alternating=yes`) or only partially (`partial`).
 
 ## Options
 
@@ -84,15 +87,23 @@ Renders of each selectable option:
 
 ## How it works
 
-**The two shells.** Choose a scaffold solid. Its **faces** carry the outer medallions, at radius 1; its **vertices** carry the inner ones, at `inner_radius`. Since the vertices of a polyhedron correspond to the faces of its dual, the inner shell is the dual's face arrangement — Platonic duals are Platonic, Archimedean duals are Catalan, and a geodesic sphere's dual is its Goldberg polyhedron.
+**In plain terms.** Imagine two woven balls, one nested inside the other, connected by ropes threading through the gap between them. On the outer ball every flat face is covered by a little round woven medallion, like a rope doily; the inner ball's medallions sit at the *corners* of the outer one. Ropes then dive from the rim of an outer medallion, down through the gap, into an inner medallion, and climb back out — always passing alternately over and under wherever two ropes meet. Follow one rope and it never ends: it loops across the outer sphere, dives in, crosses the inner sphere, and climbs back out, over and over, so the whole thing is a *single* continuous woven fabric rather than two decorated balls with struts between them. As a last step the ropes are let go slack and allowed to settle, like a knot pulled gently taut, so they lie in smooth, evenly spaced curves instead of the stiff radial pattern they started in.
 
-**Ports and bridges.** Each medallion is cut open at its lobe corners into **ports**, and a rope **bridge** dives through the gap from every outer port to a paired inner port. The pairing is the point of difficulty: it must be *rotation-proof*, meaning the correspondence survives the symmetry group acting on the solid, or the bridges cross incorrectly for some faces and the weave breaks.
+**The two shells and duality.** Choose a scaffold solid. Its **faces** carry the outer medallions, at radius 1; its **vertices** carry the inner ones, at `inner_radius`. This is where the duality does the work for free: the vertices of a polyhedron correspond exactly to the faces of its **dual**, so placing a medallion at every scaffold vertex *is* placing one on every face of the dual solid. The inner shell is therefore never chosen separately — it is the dual's face arrangement, which is why a Platonic scaffold gives a Platonic inner shell, an Archimedean one gives its Catalan dual, and a geodesic sphere gives its Goldberg polyhedron.
 
-The pairing used is outer-**edge** to inner-**edge**. Every edge of the scaffold separates two faces and joins two vertices, so an edge names one outer medallion pair and one inner medallion pair simultaneously — a correspondence that is defined by the combinatorics rather than by position, and therefore commutes with every symmetry. Pairing by nearest neighbour instead would work for the symmetric cases and fail quietly on the ones with several face types.
+**Ports and bridges.** Each medallion is cut open at its lobe corners into **ports**, and a rope **bridge** dives through the gap from every outer port to a paired inner port. The pairing is the crux of the whole construction: it must be *rotation-proof*, meaning the correspondence survives the symmetry group acting on the solid. If it did not, the bridges would cross correctly on some faces and incorrectly on others, and the weave would break wherever the solid has more than one kind of face.
 
-**Why the counts work out.** Euler's formula guarantees the bookkeeping: with $V$ vertices, $E$ edges and $F$ faces, there are $F$ outer medallions, $V$ inner ones, and $2E$ bridge ends — each edge contributing one at each end. Every port is used exactly once because each face has as many ports as it has edges, and $\sum_{\text{faces}} (\text{edges per face}) = 2E$.
+The pairing used is outer-**edge** to inner-**edge**. Every edge of the scaffold separates two faces and joins two vertices, so a single edge names one outer medallion pair and one inner medallion pair *simultaneously* — a correspondence fixed by the combinatorics rather than by position, and therefore one that commutes with every symmetry of the solid. Pairing instead by nearest neighbour would look fine on the highly symmetric Platonic cases and then fail quietly on the Archimedean solids, where several face types sit at different distances.
 
-**Weaving.** The rosettes are woven strictly over-and-under within each medallion, and the bridges maintain the alternation as they pass between shells, so the whole double shell is one continuous fabric rather than two decorated spheres with struts between them.
+**Why the counts work out.** Euler's formula is what guarantees the bookkeeping closes. For a solid homeomorphic to the sphere,
+
+$$V - E + F = 2,$$
+
+and the build uses $F$ outer medallions, $V$ inner ones, and $2E$ bridge ends — one at each end of every edge. Every port is used exactly once because each face has as many ports as it has edges, and summing edges around all faces double-counts every edge: $\sum_{\text{faces}} (\text{edges per face}) = 2E$. So the ports and the bridge ends match up with none left over, on any scaffold.
+
+**The strand walk.** Threading a strand — outer arc, down a bridge, inner arc, up a bridge, and on — is a permutation on the medallion arcs, so it *always* closes into loops; there are no dangling ends for any setting. The **Advance** control rotates the "up" pairing around each inner medallion by a whole number of ring slots. At advance 0 the walk closes every strand into a short chain-mail stitch ring around a single scaffold edge — exactly $E$ separate components, one per edge — while advance 1 and higher merge those rings into long snaking strands (advance 1 gives one strand per scaffold face on the Platonic solids). Because it stays a permutation for every advance, the strands never fail to close.
+
+**Weaving and relaxing.** Wherever two ropes cross — bridge over bridge in the gap, medallion over medallion on a shell, or bridge over medallion at a dive — the over/under choice is assigned by a parity union-find (the same engine as the Knot Carpet), so the whole field is coloured strictly one-over-one-under; the `alternating=yes` report means that colouring closed up consistently everywhere, `partial` that a few crossings could not be reconciled. The raw result is a stiff radial weave, so it is then physically **relaxed** with a KnotPlot bead/stick model: springs pull the beads to an even spacing, a fairing term smooths each strand, a high-order ($1/r^4$) repulsion (exposed as **Clearance**) keeps different strands from intersecting, a radial over/under separation at each crossing (**Weave Gap**) opens clean gaps, and a per-bead target radius holds the two shells apart. The outcome is one continuous rope fabric that hangs the way real cord would.
 
 ## References
 

@@ -3,7 +3,17 @@
 ![Twisted Torus](../images/twisted_torus.png)
 
 ## Overview
-A regular polygon swept around a circle while rotating about the sweep path -- the classic twisted prismatic torus from George W. Hart's pages. When the total twist is an integer number of $360/n$ steps the seam stays exact, so the polygon's faces join into long helical bands that spiral around the ring; the number of distinct bands is $\gcd(n,\text{steps})$. Corner rounding morphs the profile continuously from a crisp polygon to a circle, and a *Triangle Shrink* below 1 separates the swept faces into one solid ribbon per band.
+
+A regular polygon swept around a ring while it slowly turns, so its flat faces spiral into helical bands — the classic twisted prismatic torus from George W. Hart's pages.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Odds & Ends ▸ Twisted Torus*.
+2. **Set the two band knobs.** **Polygon Sides** $n$ is the cross-section — a triangle, square, pentagon, up to a 16-gon — and **Twist Steps** is how far the profile turns over one trip round the ring, counted in whole $360/n$ symmetry steps (so the seam always closes). Together they fix the pattern: the faces spiral into $\gcd(n,\text{steps})$ separate helical bands, and Twist Steps may be negative to spiral the other way.
+3. **Choose the output form with Triangle Shrink.** Left at **1** the polygon's sides share edges and you get one continuous twisted tube. Below **1** each side is pulled in toward its own midpoint and swept as a *solid ribbon*, so the tube splits into one free-standing object per band — and only then does **Sheet Thickness** appear, setting how thick those ribbons are.
+4. **Shape the ring.** **Ring Radius** is the size of the loop, **Profile Radius** the size of the polygon on it, and **Corner Rounding** morphs the cross-section continuously from a crisp polygon (0) to a circle (1).
+5. **Pick the Coloring.** **Per Strip** gives each of the $n$ angular slots its own colour, **Per Band** one colour per connected band (a single colour when $n$ and the twist are coprime), or **None**. Both `strip_index` and `band_index` are written as face attributes regardless.
+6. **Read the report.** The operator prints how many bands it made and whether they came out as one contiguous mesh or as separate band objects, so you can confirm the band count matches $\gcd(n,\text{steps})$.
 
 ## Options
 
@@ -28,21 +38,25 @@ A regular polygon swept around a circle while rotating about the sweep path -- t
 
 ## How it works
 
-**Profile.** The cross-section is a regular $n$-gon of circumradius `minor`, sampled at $m = n\cdot(\text{profile\_res})$ points. Corner rounding blends each polygon-edge point toward the inscribing circle: for a sample at fractional polygon-corner coordinate, with the crisp edge point $\mathbf e$ and the circle point $\mathbf{circ}=(\cos\alpha,\sin\alpha)$,
+**In plain terms.** Take a long stick whose cross-section is a triangle — imagine a Toblerone bar. Bend it into a ring so the two ends meet, and as you bend it, keep slowly rolling the bar about its own length. Because you rolled it, a face that starts on the outside of the ring is no longer on the outside by the time you come back to the start; it has slid over to where its neighbour began. So the flat faces don't line up end-to-end into three straight strips — instead each face flows smoothly into the *next* one and they wind around the ring in a spiral, like the stripes on a barber's pole or a candy cane. The whole trick is to twist by *just the right amount* so that when the two ends meet, corner still lands exactly on corner. That right amount is a whole number of "clicks", where one click is one $n$-th of a full turn — the angle that carries the polygon onto itself. Everything below turns that picture into the exact coordinates the code sweeps out, and works out how many separate spirals you end up with.
+
+**Profile.** The cross-section is a regular $n$-gon of circumradius `minor`, sampled at $m = n\cdot(\text{profile\_res})$ points spread evenly around its edges. Corner rounding blends each polygon-edge point toward the point straight out at the same angle on the inscribing circle: for a sample at fractional polygon-corner coordinate, with the crisp edge point $\mathbf e$ and the circle point $\mathbf{circ}=(\cos\alpha,\sin\alpha)$,
 $$\mathbf p = \big((1-r)\,\mathbf e + r\,\mathbf{circ}\big)\cdot\text{minor},\qquad r=\text{rounding}.$$
-$r=0$ gives the polygon, $r=1$ the circle.
+$r=0$ leaves the point on the straight edge and gives the polygon; $r=1$ pushes it all the way out to the circle. Geometrically the rounding is a straight-line interpolation between two shapes that share the same corners, so the corners stay put and only the flats bow outward — which is why the silhouette changes continuously with no jump at $r=0$ or $r=1$.
 
-**Twisted sweep.** Let $R$ be the ring radius (`major`) and $u=2\pi s/\text{segments}$ the sweep angle. As the profile travels around the ring it is rotated about the sweep tangent by the accumulated twist
+**Twisted sweep.** Let $R$ be the ring radius (`major`) and $u=2\pi s/\text{segments}$ the angle around the ring at step $s$. As the profile travels around the ring it is rotated about the sweep tangent by the accumulated twist
 $$\theta(s) = \frac{2\pi\,\text{twist\_steps}}{n}\cdot\frac{s}{\text{segments}} .$$
-A profile point $(p_x,p_y)$ becomes $(x,y)=\big(p_x\cos\theta-p_y\sin\theta,\;p_x\sin\theta+p_y\cos\theta\big)$, and the surface point is
+This $\theta$ is the "rolling" of the Toblerone: it grows in lockstep with $u$, so twisting and going round happen at a fixed ratio. A profile point $(p_x,p_y)$ is first spun in its own plane by $\theta$,
+$$(x,y)=\big(p_x\cos\theta-p_y\sin\theta,\;p_x\sin\theta+p_y\cos\theta\big),$$
+and then that turned cross-section is lifted onto the ring, the in-plane $x$ pushing the point radially in or out and $y$ becoming height:
 $$\big((R+x)\cos u,\;(R+x)\sin u,\;y\big).$$
-Over one full revolution the profile has turned by exactly $\text{twist\_steps}\cdot(360/n)$, an integer number of $n$-gon symmetry steps, so the last ring column matches the first under an index shift of $(m/n)\cdot\text{twist\_steps}$ -- the seam is exact and the mesh closes into a genuine torus ($\chi=0$, checked in the self-test).
+Over one full revolution ($s=\text{segments}$) the profile has turned by exactly $\theta = 2\pi\,\text{twist\_steps}/n$, i.e. $\text{twist\_steps}\cdot(360/n)$ degrees — an integer number of $n$-gon symmetry rotations. A rotation by a symmetry angle carries the polygon's vertex list onto itself, merely relabelled: vertex $i$ sits where vertex $i + (m/n)\cdot\text{twist\_steps}$ started. So the last ring column matches the first under exactly that index shift, and stitching the seam with the shift closes the tube into a genuine torus with no tear and no seam edge ($\chi = V-E+F = 0$, checked in the self-test). Had the twist been a *fractional* number of clicks, corner would meet flat and the seam could not close — which is why Twist Steps is an integer.
 
-**Bands and strips.** Following one polygon side continuously around the ring, it returns to a side of the same polygon only after the accumulated twist is a whole number of turns, i.e. after $n/\gcd(n,\text{steps})$ revolutions. Hence there are
-$$g = \gcd(n,\text{twist\_steps})$$
-topologically connected **bands**, each visiting $n/g$ of the $n$ angular **strips**. *Per Strip* colouring assigns a material to each of the $n$ visible strips; *Per Band* to each of the $g$ connected bands (so when $n$ and the twist are coprime, $g=1$ and the whole torus is one band). Both `strip_index` and `band_index` face attributes are always written.
+**Bands and strips.** Fix your eye on one of the $n$ polygon sides — call the angular slot it occupies a **strip** — and follow it continuously as it spirals round. After one lap the twist has advanced it by $\text{twist\_steps}$ strips, so it lands in a *different* slot; it only returns to its own starting slot once the accumulated shift is a whole number of full turns of the polygon, which first happens after $n/\gcd(n,\text{steps})$ laps. Everything visited along the way is one connected piece, so the number of separate connected pieces is
+$$g = \gcd(n,\text{twist\_steps}),$$
+each **band** threading through $n/g$ of the $n$ angular strips. This is the same arithmetic that governs a star polygon or the cycles of "advance by $k$ around a clock of $n$": the orbit length is $n/\gcd$ and the number of orbits is $\gcd$. *Per Strip* colouring assigns a material to each of the $n$ visible strips; *Per Band* to each of the $g$ connected bands — so when $n$ and the twist are coprime $g=1$ and the whole torus is a single band of one colour. Both `strip_index` and `band_index` face attributes are always written, whichever colouring you pick.
 
-**Separated ribbons.** With *Triangle Shrink* $<1$, each polygon side is shrunk about its own midpoint and swept as a *solid* ribbon of thickness `sheet_thickness`; the ribbons chain across the twist seam into $g$ closed bands, each emitted as its own mesh object with sharp border edges. At shrink $=1$ the classic single contiguous tube is produced instead.
+**Separated ribbons.** With *Triangle Shrink* $<1$, each polygon side is pulled in toward its own midpoint before sweeping, opening a gap between neighbouring sides; each shrunk side is then swept as a *solid* ribbon of thickness `sheet_thickness` (the sweep offsets the profile in and out along its 2D normal to give the ribbon its two walls, closed off at the borders). The ribbons chain across the twist seam into the same $g$ closed bands, but now each band is emitted as its own separate mesh object, with the border edges marked sharp so the shading does not round them off. At shrink $=1$ the sides still share their edges and the classic single contiguous tube is produced instead.
 
 ## References
 

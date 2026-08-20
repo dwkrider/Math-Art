@@ -4,7 +4,17 @@
 
 ## Overview
 
-Rotegrity (also **nexorade**) sphere models, after Antiprism's `rotegrity`: every edge of a spherical polyhedron becomes a curved strap lying on the sphere, rotated about its midpoint and lengthened so that neighbouring strap ends overlap in a woven, tensegrity-like arrangement. Twist and extension are free sliders — tune them until the strap ends meet cleanly. Straps are coloured by length class, as in physical rotegrity kits, since a geodesic breakdown produces only a few distinct edge lengths.
+A rotegrity (also **nexorade**) strap-sphere: every edge of a spherical polyhedron becomes a curved strap that rides over one neighbour and under the next, rotated about its own midpoint and lengthened until the overlapping ends interlock into a woven, tensegrity-like frame.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Weaves & Tangles ▸ Rotegrity*.
+2. **Pick the Seed** — *Icosahedron*, *Octahedron*, *Tetrahedron*, *Cube* or *Dodecahedron*. This is the spherical polyhedron whose edges become straps, so it sets how many straps there are and how the weave is organised (the icosahedron gives the familiar 30-strap ball).
+3. **Refine with Geodesic Frequency** for a denser sphere. This control appears only for the three triangular seeds (icosahedron, octahedron, tetrahedron): a frequency $\nu$ splits every triangle into $\nu^2$ smaller ones, multiplying the strap count. The cube and dodecahedron have non-triangular faces and are used unsubdivided, so the control is hidden for them.
+4. **Tune Twist and Extension together** — the two shape knobs, with no automatic solve. *Twist* rotates each strap about its midpoint (the move that makes it weave over and under); *Extension* lengthens it past its edge. Adjust the pair until the overlapping strap ends meet cleanly at every junction.
+5. **Set the cross-section** — *Strap Width* across the strap, *Strap Thickness* through it, and *Segments* for how finely each strap is sampled along its arc.
+6. **Choose Coloring and Radius.** *By Strap Length* assigns one material per length class (matching how physical kits ship a few strap lengths in distinct colours), *Per Strap* cycles the palette, *None* leaves it bare; *Radius* scales the whole sphere.
+7. **Read the report.** The operator prints the strap count (for example "30 straps"), so you can confirm the breakdown you expected.
 
 ## Options
 
@@ -43,21 +53,23 @@ Renders of each selectable option:
 
 ## How it works
 
-The seed polyhedron's vertices are projected to the unit sphere, and triangular seeds are optionally refined by a **Class-I geodesic** subdivision of frequency $\nu$: each triangle $ABC$ is split into $\nu^2$ triangles at barycentric points $\tfrac{iA+jB+kC}{\nu}$ re-projected to the sphere. The set of undirected edges of the resulting spherical mesh is collected; **one strap is built per edge.**
+**In plain terms.** Picture a woven ball made of flat springy strips, the kind you might weave from paper or cane. Each strip lies along one edge of a ball-shaped scaffold, but instead of sitting flat it is given a little twist about its own middle, so one end tips up and the other tips down. That twist makes the strip ride *over* one neighbour and *under* the next — exactly the move that locks a woven basket together. Lengthen each strip a bit past its edge and its ends reach far enough to overlap its neighbours, and the whole thing holds itself in tension: it stands up as a rigid sphere with nothing but the straps pressing on one another, no glue and no hub. There is also no automatic solve — you turn the *twist* and *extension* dials by eye until the ends meet.
 
-For an edge with unit endpoints $A,B$, the midpoint direction is $\hat m = \widehat{A+B}$. Both endpoints are rotated about $\hat m$ by the **Twist** angle $\theta$ using Rodrigues' formula,
+**The scaffold and its edges.** The seed polyhedron's vertices are projected outward onto the unit sphere, and if a **Class-I geodesic** subdivision of frequency $\nu$ is requested, each triangular face $ABC$ is split into $\nu^2$ small triangles at the barycentric points $\tfrac{iA+jB+kC}{\nu}$, every one re-projected back to the sphere so the mesh stays spherical. The construction then forgets the faces entirely and keeps only the set of undirected **edges**: **one strap is built per edge**, because in a nexorade it is the edges, not the faces, that carry the physical members.
+
+**Twisting a strap about its centre.** Take an edge with unit endpoints $A$ and $B$. Its midpoint direction $\hat m = \widehat{A+B}$ — the point on the sphere halfway between them — is the pivot. Both endpoints are rotated about $\hat m$ by the **Twist** angle $\theta$ with Rodrigues' rotation formula,
 
 $$A' = A\cos\theta + (\hat m\times A)\sin\theta + \hat m\,(\hat m\cdot A)(1-\cos\theta),$$
 
-and likewise for $B'$. This turn about the strap centre is what makes each strap ride over one neighbour and under the next, the defining move of a nexorade. The strap's "pole" direction (across its width) is $\hat p = \widehat{A'\times B'}$.
+and likewise for $B'$. Rotating *both* ends about the midpoint, rather than sliding the strap sideways, is the essential move: it tips the strap out of the plane of its neighbours so that it passes over the strap on one side and under the strap on the other — the defining crossing of a nexorade. The strap's "pole" direction, across its width, is taken perpendicular to the turned edge as $\hat p = \widehat{A'\times B'}$.
 
-The strap centreline is a great-circle arc through $A'$ and $B'$, sampled by spherical linear interpolation and **extended past both endpoints** so the ends reach their neighbours:
+**Extending and sweeping the centreline.** The strap's centreline is the great-circle arc through $A'$ and $B'$, sampled by spherical linear interpolation (slerp) and deliberately run *past* both endpoints so the ends reach their neighbours:
 
 $$t = -\text{extension} + (1 + 2\,\text{extension})\,\frac{i}{n},\qquad P_i = \operatorname{slerp}(A',B',t),\quad i=0,\dots,n.$$
 
-At each sample the point is offset by $\pm\tfrac{\text{width}}{2}$ along $\hat p$ and scaled to the inner and outer radii $1\mp\tfrac{\text{thickness}}{2}$, giving a four-sided ring; consecutive rings are bridged into a closed solid strap with flat end caps. Because **Twist** and **Extension** are independent, they are tuned together until the overlapping ends interlock (there is no automatic solve).
+At $t=0$ and $t=1$ the samples sit at the rotated endpoints; the negative start and greater-than-one end are the overhang set by **Extension**. At each sample the point is pushed sideways by $\pm\tfrac{\text{width}}{2}$ along $\hat p$ and scaled to the inner and outer radii $1\mp\tfrac{\text{thickness}}{2}$, giving a four-cornered ring; consecutive rings are bridged into a closed solid strap with flat end caps. Because **Twist** and **Extension** act independently — one tips the strap, the other stretches it — they are tuned together until the overlapping ends interlock, with no solver in the loop.
 
-Each strap's arc length $\arccos(A\cdot B)$ is recorded, and straps are grouped into **length classes**; faces carry `strap_index` and `length_class` attributes. **By Strap Length** colouring assigns one material per class (matching how physical kits ship a few strap lengths in distinct colours), while **Per Strap** simply cycles the palette.
+**Colouring by length class.** Each strap records its arc length $\arccos(A\cdot B)$, and straps are grouped into **length classes** by rounding that value; every face carries `strap_index` and `length_class` attributes. A geodesic breakdown produces only a handful of distinct edge lengths, so **By Strap Length** — one material per class — reproduces the few-colour look of physical rotegrity kits, where each strap length ships in its own colour, while **Per Strap** simply cycles the palette strap by strap.
 
 ## References
 

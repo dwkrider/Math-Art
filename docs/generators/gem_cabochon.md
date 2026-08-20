@@ -2,11 +2,18 @@
 
 ## Overview
 
-Add a cabochon: a domed stone, cut on a curve rather than facets.
+Add a cabochon: a domed stone, cut on a curve rather than in facets.
 
-A **cabochon** is a stone cut on a curve rather than in facets — domed and polished smooth, the oldest way of finishing a gem and still the right one for a great many stones.
+A **cabochon** is domed and polished smooth — the oldest way of finishing a gem and still the right one for a great many stones. The choice is not merely traditional: [faceting](gem.md) works by total internal reflection and needs a transparent, high-index material to be worth doing, while an opaque or translucent stone returns nothing from its interior. What a dome does instead is gather light into a single broad reflection, which is what makes the optical effects that *depend* on a curved surface possible — the star of a **star sapphire** (asterism) and the moving slit of a cat's eye (**chatoyancy**) both exist only because the dome sweeps a line of reflection across aligned inclusions inside the stone.
 
-The choice is not merely traditional. [Faceting](gem.md) works by total internal reflection and needs a transparent, high-index material to be worth doing; an opaque or translucent stone returns nothing from its interior. What a dome does instead is gather light into a single broad reflection, which is what makes the optical effects that *depend* on a curved surface possible: the star of a **star sapphire** (asterism) and the moving slit of a cat's eye (**chatoyancy**) both exist only because the dome sweeps a line of reflection across aligned inclusions inside the stone.
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Odds & Ends ▸ Cabochon Gemstone*.
+2. **Pick the Shape.** Each preset carries both an *outline* and a *dome*: **Cabochon** is the plain round single dome, **Oval** and **Hexagonal Cabochon** change the outline, **High**, **Lentil** and **Sugarloaf** change the dome from tall through flat to pointed, **Bullet** is a tall pointed oval, and **Double Cabochon** domes both faces instead of leaving the back flat.
+3. **Override the shape knobs when you want to depart from the preset.** All three take **0 to mean "use the preset's own value"**: **Length / Width** stretches the outline's aspect, **Dome Height** sets how tall the dome stands as a fraction of the width, and **Dome Shape** sets the profile's superellipse exponent — below 2 pulls toward a point, 2 is a hemisphere, above 2 flattens the top.
+4. **Raise the dome for a phenomenal stone.** Asterism and chatoyancy need a *tall* dome: the star or eye is a reflection gathered across a fan of surface normals, so the Dome Height control notes that a low cabochon smears the effect while a high one concentrates it into a defined line. This is the one control with a real optical, not just cosmetic, consequence.
+5. **Set resolution, material and lighting.** **Rings** and **Segments** control mesh density along and around the dome; **Material** (defaulting to Ruby, since cabochons are cut for the very stones faceting would waste) with **Assign Material** and **Size (mm)** set the look and reported size; the **Viewing Rig** builds studio lighting around the stone, or **Custom** leaves your scene alone.
+6. **Read the report.** The build prints the vertex and face counts, the dome height as a percentage of the width actually built, and the material — a quick confirmation you got the dome you asked for.
 
 ## Options
 
@@ -51,13 +58,17 @@ Renders of each selectable option:
 
 ## How it works
 
-**Outline and dome, separately.** A cabochon is specified the way a lapidary describes one: an **outline** — round, oval, cushion, pear, marquise — and a **dome profile** raised over it. The two are independent, so the same oval outline carries a low, a high or a bullet dome.
+**In plain terms.** A cabochon is just a smooth mound sitting on a flat base — think of the rounded top of an egg, or a polished river pebble. Two decisions make it: the *shape of its footprint* seen from above (a circle, an oval, a hexagon) and the *shape of its bump* seen from the side (tall and pointed, or low and flat). Keep those two ideas separate and you can drop any bump onto any footprint — a low dome or a tall bullet over the same oval outline. The maths below is only a tidy way of writing "how the bump rises", with a single dial that runs it from a gentle mound to a sharp point.
 
-**The dome curve.** The profile is a superelliptic arc,
+**Outline and dome, separately.** A cabochon is specified the way a lapidary describes one: an **outline** — round, oval, cushion, pear, marquise — and a **dome profile** raised over it. Keeping them independent is what lets the operator's presets recombine freely, and it is why the same oval outline can carry a low, a high or a bullet dome without a separate preset for each pairing.
+
+**The dome curve.** The side profile is a **superelliptic** arc — an ellipse with its exponent set free,
 
 $$\left(\frac{r}{R}\right)^{p}+\left(\frac{z}{H}\right)^{p}=1,$$
 
-with the exponent $p$ setting the character: $p=2$ gives a plain ellipse, higher values flatten the top and turn the shoulders down more sharply, lower values pull it toward a point. This one parameter runs from a flat-topped *lentil* through the standard cabochon to a *bullet*, which is why it is exposed rather than a set of presets.
+where $r$ is the horizontal distance out from the centre, $z$ the height, $R$ the half-width and $H$ the dome height. The single exponent $p$ sets the whole character. At $p=2$ the two terms are ordinary squares and the arc is a plain ellipse — a hemisphere when $R=H$. Push $p$ above 2 and, because a large base raised to a high power stays near zero until $r$ is close to $R$, the curve holds its height across the top and then turns the shoulders down sharply: a flat-topped *lentil*. Pull $p$ below 2 and the reverse happens — the profile falls away immediately and rushes to a point, a *sugarloaf* or *bullet*. That one continuous parameter is why the dome is a slider rather than a fixed menu of shapes: every stone between lentil and bullet is a single value of $p$.
+
+**Single and double.** A single cabochon is domed on top and flat beneath — the usual form, made to sit in a bezel with light entering and leaving through the dome. A **double** cabochon mirrors the same profile below the girdle, doming both sides, which is used for translucent stones meant to be lit from behind so light passes through rather than reflecting off a flat back.
 
 **Single and double.** A single cabochon is domed on top and flat beneath — the usual form, made to sit in a bezel. A **double** cabochon domes both sides, used for translucent stones meant to be lit from behind.
 

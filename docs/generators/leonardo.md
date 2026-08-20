@@ -4,7 +4,15 @@
 
 ## Overview
 
-Leonardo Style is a **modifier applied to a selected existing object**, not a standalone add-mesh generator: with a mesh active, `Object > Leonardo Style` attaches a reusable Geometry Nodes group that turns any (closed) mesh into a Leonardo da Vinci style open-faced model, as in the polyhedron illustrations Leonardo drew for Luca Pacioli's *De divina proportione* (1509). Every face becomes a solid panel with a polygonal opening, joined to its neighbours along the shared edges. The render image was produced by applying the style to a base polyhedron. The `Border` and `Thickness` inputs stay editable on the modifier afterwards, and the same shared node group is reused by other Math Art generators (e.g. the zonohedron generator's Leonardo style).
+Leonardo Style is a *style* — it restyles the object you already have rather than adding new geometry. It turns any closed mesh into a Leonardo da Vinci style open-faced model, as in the polyhedron illustrations Leonardo drew for Luca Pacioli's *De divina proportione* (1509): every face becomes a solid panel with a polygonal opening, joined to its neighbours along the shared edges.
+
+### Using it
+
+1. **Select the target first.** Click the mesh you want to restyle so it is the active object, then choose *Add ▸ Mesh ▸ Math Art ▸ Styles ▸ Leonardo Style*. The style needs an active **mesh** — ideally a *closed* one (a polyhedron or solid), since it has nothing to open up on a flat single face.
+2. **It attaches, it does not replace.** The operator adds a live *Geometry Nodes* modifier named "Leonardo Style" and leaves the original mesh data untouched. The two inputs stay editable on the modifier afterwards, so you can tune the look without re-running the operator; applying the modifier bakes it in.
+3. **Set the Border.** This is the main shape knob: the width of the solid frame left around each face, as a fraction of the face. A small Border leaves a large opening and a thin wire cage; Border near 1 leaves an almost-solid panel pierced by a small hole.
+4. **Set the Thickness.** How far each frame is extruded along its face normal, giving the panels real slab depth rather than zero-thickness ribbons.
+5. **What it produces.** A watertight, two-sided open-faced solid — the same "vacuus" polyhedron Leonardo drew, generated procedurally. The report line confirms the modifier was added to the object. (The same shared node group is reused by other Math Art generators, such as the zonohedron generator's Leonardo style.)
 
 ## Options
 
@@ -20,17 +28,19 @@ Leonardo Style is a **modifier applied to a selected existing object**, not a st
 
 ## How it works
 
-The construction is pure Geometry Nodes, performed per face:
+**In plain terms.** Picture a solid like a cube or a dodecahedron. On each flat face, draw a smaller copy of that face floating just inside its rim — like a picture inside a picture frame — and then cut away the middle, leaving only the frame: a flat ring the shape of the face with a hole in it. Give that ring a little thickness so it becomes a real slab you could hold, and do the same to every face. Because touching faces share an edge, their frames meet edge-to-edge and the whole thing becomes a see-through skeleton of the original solid — exactly the open "vacuus" polyhedra Leonardo drew for Pacioli. Everything below is that recipe expressed as the four Geometry Nodes steps the modifier performs, in order, on every face at once.
 
-1. **Inset every face.** Each face is extruded individually with zero offset, producing a coincident top copy of every face; that top copy is then scaled about its own centre by a uniform factor $1 - b$, where $b$ is the **Border** fraction. The gap between the original face rim and the shrunken copy is the solid frame of width $b$ (as a fraction of the face); the shrunken interior is the future opening.
+The construction is pure Geometry Nodes and never edits vertices by hand; each step is one node, so the whole thing stays live and re-tunable.
 
-2. **Cut the openings.** The inset centre faces (the `Top` selection from the extrude) are deleted, leaving only the ring-shaped frame surface of each face.
+1. **Inset every face.** Each face is extruded individually with **zero** offset. Extruding by nothing sounds pointless, but it does something useful: it leaves a second, coincident copy of every face sitting exactly on top of the original, tagged as the extrude's `Top` selection. That top copy is then scaled about its own centre by a uniform factor $1 - b$, where $b$ is the **Border** fraction. Shrinking the top copy opens a gap between the original face rim and the shrunken copy; that gap is the solid frame, and its width is $b$ as a fraction of the face. A border of $0.3$ shrinks the interior to $70\%$ of the face and leaves a frame $30\%$ wide.
 
-3. **Thicken into a shell.** The remaining frame surface is extruded (non-individually) along its normals by **Thickness**, giving each frame a solid slab with an outer and inner surface plus side walls around both the outer edge and the opening.
+2. **Cut the openings.** The shrunken interior faces — still the `Top` selection — are deleted. What remains of each face is the ring between the original rim and where the interior used to be: a flat, hole-punched frame, with no geometry across the middle.
 
-4. **Flip the interior.** The original, untouched frame faces are now the *interior* surface of the shell, so their normals point inward. Selecting everything that is **not** a newly created `Top` or `Side` face and flipping it makes all normals point out of the solid, yielding a clean, two-sided watertight panel.
+3. **Thicken into a shell.** The frame rings are now extruded again, this time *non*-individually, along their normals by **Thickness**. This lifts each frame off its own plane into a solid slab with an outer surface, an inner surface, and side walls wrapping both the outer edge of the panel and the inner edge of the opening. The result per face is a closed picture-frame box rather than a paper-thin ribbon.
 
-Because neighbouring faces share edges and each keeps the same border fraction, the frames meet along mitred edges, reproducing the open "vacuus" polyhedra Leonardo illustrated. Setting Border small leaves a large opening (a thin wire-frame cage); Border near 1 leaves an almost solid panel with a small hole.
+4. **Flip the interior.** After the second extrude, the *original* frame faces — the ones present before this step — have become the **interior** surface of the shell, so their normals point inward, the wrong way for a solid. The node group selects everything that is **not** one of the newly created `Top` or `Side` faces (a boolean $\text{NOT}\,(\text{Top}\ \text{OR}\ \text{Side})$) and flips it. Now every normal points out of the solid, yielding a clean, two-sided, watertight panel that renders and 3D-prints correctly.
+
+Because neighbouring faces share an edge and each keeps the same border fraction, their frames meet along mitred edges with matching widths, and the union is a single connected open-faced model. Turning **Border** toward $0$ gives a delicate wireframe cage; turning it toward $1$ gives near-solid panels with small windows.
 
 ## References
 
