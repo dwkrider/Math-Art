@@ -65,8 +65,6 @@ Otherwise it closes early and repeats, giving $\gcd(L,B)$ separate cords — whi
 
 ## References
 
-- Clifford W. Ashley, "The Ashley Book of Knots" (Doubleday, 1944), ch. 17 -- the Turk's-head: leads, bights, the gcd(L, B) = 1 single-cord rule ("the law of the common divisor"), cylindrical and spherical forms.
-- Robert G. Scharein, "Interactive Topological Drawing" (PhD thesis, The University of British Columbia, 1998), sec. 6.2
-- - the Turk's head as the torus-knot shadow rewoven alternately (the DT code with its minus signs removed).
-- "Turk's head knots and links: a survey", arXiv:2409.20106 (2024) -- THK(B, L) as alternating (L, B) torus-knot diagrams, component count gcd(L, B), crossing count B (L - 1).
-- Dale Rolfsen, "Knots and Links" (1976) -- torus knots T(p, q).
+- Clifford W. Ashley, "The Ashley Book of Knots" (Doubleday, 1944), ch. 17 -- the Turk's-head: leads, bights, the gcd(L, B) = 1 single-cord rule ("the law of the common divisor"), cylindrical and spherical forms. Robert G. Scharein, "Interactive Topological Drawing" (PhD thesis, The University of British Columbia, 1998), sec. 6.2
+- - the Turk's head as the torus-knot shadow rewoven alternately (the DT code with its minus signs removed). "Turk's head knots and links: a survey", arXiv:2409.20106 (2024) -- THK(B, L) as alternating (L, B) torus-knot diagrams, component count gcd(L, B), crossing count B (L - 1). Dale Rolfsen, "Knots and Links" (1976) -- torus knots T(p, q).
+

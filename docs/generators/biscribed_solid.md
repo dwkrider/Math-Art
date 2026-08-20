@@ -126,13 +126,7 @@ The pattern worth noticing: the amount of freedom a family has is exactly the nu
 
 ## References
 
-- D. McCooey, "Biscribed (Non-)Chiral Solids", Visual Polyhedra,
-- dmccooey.com/polyhedra/BiscribedNonChiral.html and BiscribedChiral.html
-- (catalog matched here; Propello Cube circumradius reproduced to 1e-10).
-- G. W. Hart, "Calculating Canonical Polyhedra", Mathematica in Education
-- and Research 6(3), 1997 (canonical/midscribed background); and Hart's
-- propellor operator.  Whirl / hexpropellor = Goldberg-Coxeter c(2,1):
-- M. Goldberg, "A class of multi-symmetric polyhedra", Tohoku Math. J. 43
-- (1937).
-- I. Rivin, "A characterization of ideal polyhedra in hyperbolic 3-space"
-- (inscribability), arXiv:math/9210218.
+- D. McCooey, "Biscribed (Non-)Chiral Solids", Visual Polyhedra, dmccooey.com/polyhedra/BiscribedNonChiral.html and BiscribedChiral.html (catalog matched here; Propello Cube circumradius reproduced to 1e-10).
+- G. W. Hart, "Calculating Canonical Polyhedra", Mathematica in Education and Research 6(3), 1997 (canonical/midscribed background); and Hart's propellor operator.  Whirl / hexpropellor = Goldberg-Coxeter c(2,1): M. Goldberg, "A class of multi-symmetric polyhedra", Tohoku Math. J. 43 (1937).
+- I. Rivin, "A characterization of ideal polyhedra in hyperbolic 3-space" (inscribability), arXiv:math/9210218.
+

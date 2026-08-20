@@ -71,5 +71,7 @@ so the strand passing **over** lifts by `weave_up` and the one passing **under**
 
 ## References
 
-- Adam Newgas, *Celtic Knot* Blender add-on — <https://github.com/BorisTheBrave/celtic-knot> (MIT license; the add-on this ports).
-- E. Akleman, J. Chen, Q. Xing, J. L. Gross, *Cyclic Twill-Woven Objects*, Computers & Graphics 35(3), 2011, pp. 623–631 (the over-two/under-two twill colouring heuristic).
+- Adam Newgas, "Celtic Knot" Blender add-on (original algorithm), github.com/BorisTheBrave/celtic-knot, MIT license.
+- Twill weaving after E. Akleman, J. Chen, Q. Xing & J. L. Gross, "Cyclic Twill-Woven Objects", Computers & Graphics 35(3), 2011, pp. 623-631.
+- Mathematical background on Celtic interlace: Peter R. Cromwell, "Celtic Knotwork: Mathematical Art", Math. Intelligencer 15(1), 1993, pp. 36-47.
+

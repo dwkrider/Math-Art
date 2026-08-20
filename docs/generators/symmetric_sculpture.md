@@ -85,5 +85,7 @@ clipped to a disc of radius (Guide Extent $\times d$). Motifs whose corners land
 
 ## References
 
-- G. W. Hart, *Symmetric Sculpture*, Journal of Mathematics and the Arts 1(1), 2007, pp. 21–28 — <https://www.georgehart.com/sculpture/Symmetric-Sculpture.pdf> (the plane-family replication, stellation-pattern guides, and radial extrusion are modelled on the software described there).
-- George W. Hart, sculpture gallery — <https://www.georgehart.com/> (the shipped presets follow *Frabjous* 2003 and *Whimsy* 2014; *Krull* traces the small stellated dodecahedron. Hart's *Twisted Rivers, Knotted Sea* 2001 and *Tumbleweed* 2006 come from the same tool).
+- G. W. Hart, "Symmetric sculpture", J. Mathematics and the Arts 1(1), 2007, 21-28.  doi:10.1080/17513470701228040
+- G. W. Hart, "Sculpture from Symmetrically Arranged Planar Components", Bridges 2003, 315-322.
+- H. S. M. Coxeter, P. Du Val, H. T. Flather, J. F. Petrie, "The Fifty-Nine Icosahedra", U. Toronto Press, 1938 -- the stellation pattern drawn as the editing guides.
+

@@ -77,14 +77,7 @@ The radii at which the doubling happens are the surface's **distributed branch p
 
 ## References
 
-- Daina Taimina, "Crocheting Adventures with Hyperbolic Planes",
-- A K Peters, 2009; David W. Henderson and Daina Taimina,
-- "Crocheting the hyperbolic plane", Math. Intelligencer 23(2),
-- 2001, pp. 17-28.
-- Self-similar buckling / distributed branch points of constant-
-- negative-curvature elastic sheets: John A. Gemmer, E. Sharon,
-- S. C. Venkataramani et al., "Distributed branch points and the
-- shape of elastic surfaces with constant negative curvature",
-- arXiv:2006.14461.
-- Hilbert's theorem (no complete C^2 isometric immersion of H^2 in
-- R^3): D. Hilbert, Trans. AMS 2, 1901, pp. 87-99.
+- Daina Taimina, "Crocheting Adventures with Hyperbolic Planes", A K Peters, 2009; David W. Henderson and Daina Taimina, "Crocheting the hyperbolic plane", Math. Intelligencer 23(2), 2001, pp. 17-28.
+- Self-similar buckling / distributed branch points of constant- negative-curvature elastic sheets: John A. Gemmer, E. Sharon, S. C. Venkataramani et al., "Distributed branch points and the shape of elastic surfaces with constant negative curvature", arXiv:2006.14461.
+- Hilbert's theorem (no complete C^2 isometric immersion of H^2 in R^3): D. Hilbert, Trans. AMS 2, 1901, pp. 87-99.
+

@@ -80,6 +80,7 @@ $$\pi(\mathbf v) = \frac{1}{d - w}\,(x, y, z),\qquad \text{local scale } s = \fr
 
 ## References
 
-- H. Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press, 2016 (figs. 3-20/22/23, 3-25, 3-29 — stereographic 4-polytope projections, half-models, dual compounds, and the Hopf-ring construction reproduced here).
-- H. S. M. Coxeter, *Regular Polytopes*, 3rd ed., Dover, 1973 (the six regular 4-polytopes and their coordinates).
-- J. H. Conway and D. A. Smith, *On Quaternions and Octonions*, A K Peters, 2003 (the icosians / binary icosahedral group $2I$ underlying the Hopf rings).
+- The six regular convex 4-polytopes: Ludwig Schlafli (c. 1852).
+- H. S. M. Coxeter, "Regular Polytopes".
+- Schlegel diagrams: Victor Schlegel (1883).
+

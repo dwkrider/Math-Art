@@ -193,25 +193,11 @@ For the same idea on closed surfaces, where there is no rectangle to be a functi
 
 ## References
 
-- Robert T. Frankot and Rama Chellappa, "A Method for Enforcing
-- Integrability in Shape from Shading Algorithms", IEEE Transactions
-- on Pattern Analysis and Machine Intelligence 10(4), 1988, 439-451
-- - the spectral least-squares phase integration that lets a wave
-- follow a direction field.
-- Felix Knoeppel, Keenan Crane, Ulrich Pinkall and Peter Schroeder,
-- "Stripe Patterns on Surfaces", ACM Transactions on Graphics 34(4)
-- (SIGGRAPH 2015), article 39 -- the complex-phase formulation whose
-- branch points are the bifurcations seen in carved drapery.
-- Ken Perlin, "An Image Synthesizer", Computer Graphics 19(3)
-- (SIGGRAPH 1985), 287-296 -- gradient noise and phase perturbation.
-- Franz Josef von Gerstner (1802); Alain Fournier and William T.
-- Reeves, "A Simple Model of Ocean Waves", Computer Graphics 20(4)
-- (SIGGRAPH 1986), 75-84; Jerry Tessendorf, "Simulating Ocean Water",
-- SIGGRAPH course notes, 1999-2004 -- the trochoidal profile with
-- sharp crests and broad troughs that the Steepness control emulates.
-- Benoit B. Mandelbrot, "The Fractal Geometry of Nature", Freeman,
-- 1982; Dietmar Saupe, "Algorithms for random fractals", in Peitgen
-- and Saupe (eds.), "The Science of Fractal Images", Springer, 1988.
-- Mary D. Waller, "Chladni Figures: A Study in Symmetry", G. Bell and
-- Sons, 1961 -- sand collects on the nodal lines, fine powder at the
-- antinodes: the physical reading of the Valleys/Ridges transfer pair.
+- Robert T. Frankot and Rama Chellappa, "A Method for Enforcing Integrability in Shape from Shading Algorithms", IEEE Transactions on Pattern Analysis and Machine Intelligence 10(4), 1988, 439-451
+- - the spectral least-squares phase integration that lets a wave follow a direction field.
+- Felix Knoeppel, Keenan Crane, Ulrich Pinkall and Peter Schroeder, "Stripe Patterns on Surfaces", ACM Transactions on Graphics 34(4) (SIGGRAPH 2015), article 39 -- the complex-phase formulation whose branch points are the bifurcations seen in carved drapery.
+- Ken Perlin, "An Image Synthesizer", Computer Graphics 19(3) (SIGGRAPH 1985), 287-296 -- gradient noise and phase perturbation.
+- Franz Josef von Gerstner (1802); Alain Fournier and William T. Reeves, "A Simple Model of Ocean Waves", Computer Graphics 20(4) (SIGGRAPH 1986), 75-84; Jerry Tessendorf, "Simulating Ocean Water", SIGGRAPH course notes, 1999-2004 -- the trochoidal profile with sharp crests and broad troughs that the Steepness control emulates.
+- Benoit B. Mandelbrot, "The Fractal Geometry of Nature", Freeman, 1982; Dietmar Saupe, "Algorithms for random fractals", in Peitgen and Saupe (eds.), "The Science of Fractal Images", Springer, 1988.
+- Mary D. Waller, "Chladni Figures: A Study in Symmetry", G. Bell and Sons, 1961 -- sand collects on the nodal lines, fine powder at the antinodes: the physical reading of the Valleys/Ridges transfer pair.
+

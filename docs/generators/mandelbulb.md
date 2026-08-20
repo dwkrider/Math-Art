@@ -65,12 +65,8 @@ then convert back to Cartesian and add $c$. This is not a ring homomorphism — 
 
 ## References
 
-- Mandelbulb: Daniel White and Paul Nylander (2009), the spherical
-- power-p map popularised at fractalforums.com.
-- Quaternion Julia sets: Alan Norton, "Generation and display of
-- geometric fractals in 3-D", Computer Graphics (SIGGRAPH) 16(3),
-- 1982, pp. 61-67.
+- Mandelbulb: Daniel White and Paul Nylander (2009), the spherical power-p map popularised at fractalforums.com.
+- Quaternion Julia sets: Alan Norton, "Generation and display of geometric fractals in 3-D", Computer Graphics (SIGGRAPH) 16(3), 1982, pp. 61-67.
 - Mandelbox: Tom Lowe (2010), fractalforums.com.
-- Distance estimation of escape-time fractals: John C. Hart, Daniel
-- J. Sandin and Louis H. Kauffman, "Ray tracing deterministic 3-D
-- fractals", Computer Graphics (SIGGRAPH) 23(3), 1989, pp. 289-296.
+- Distance estimation of escape-time fractals: John C. Hart, Daniel J. Sandin and Louis H. Kauffman, "Ray tracing deterministic 3-D fractals", Computer Graphics (SIGGRAPH) 23(3), 1989, pp. 289-296.
+

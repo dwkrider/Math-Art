@@ -86,24 +86,11 @@ with a length multiplier $\mu$ and an *area* multiplier $\lambda$ on the sphere 
 
 ## References
 
-- Heinz Hopf, "Ueber die Abbildungen der dreidimensionalen Sphaere
-- auf die Kugelflaeche", Math. Ann. 104 (1931), 637-665 (the
-- fibration and its linking invariant).
-- D. W. Lyons, "An Elementary Introduction to the Hopf Fibration",
-- Math. Mag. 76 (2003), 87-98.
-- N. Johnson, "Visualization of the Hopf fibration" (2011),
-- https://nilesjohnson.net/hopf.html (the colour/latitude-torus
-- rendering imitated here).
-- Y. Villarceau (1848): a torus of revolution carries two extra
-- circles through each point, the "Villarceau circles" -- exactly
-- the Hopf fibres of a stereographically projected Clifford torus.
-- Ulrich Pinkall, "Hopf tori in S^3", Invent. Math. 81 (1985),
-- 379-386 (the Hopf torus over a curve on S^2, Willmore exactly
-- over an elastic curve).
-- Joel Langer and David A. Singer, "The total squared curvature of
-- closed curves", J. Differential Geom. 20 (1984), 1-22 (closed
-- spherical elasticae in closed form; the Elastica/Willmore preset).
-- Lynn Heller, "Constrained Willmore tori and elastic curves in
-- 2-dimensional space forms", Comm. Anal. Geom. 22 (2014), no. 2;
-- arXiv:1303.1445 (the sigma/zeta closed form for constrained
-- elastic curves behind the Constrained Elastica preset).
+- Heinz Hopf, "Ueber die Abbildungen der dreidimensionalen Sphaere auf die Kugelflaeche", Math. Ann. 104 (1931), 637-665 (the fibration and its linking invariant).
+- D. W. Lyons, "An Elementary Introduction to the Hopf Fibration", Math. Mag. 76 (2003), 87-98.
+- N. Johnson, "Visualization of the Hopf fibration" (2011), https://nilesjohnson.net/hopf.html (the colour/latitude-torus rendering imitated here).
+- Y. Villarceau (1848): a torus of revolution carries two extra circles through each point, the "Villarceau circles" -- exactly the Hopf fibres of a stereographically projected Clifford torus.
+- Ulrich Pinkall, "Hopf tori in S^3", Invent. Math. 81 (1985), 379-386 (the Hopf torus over a curve on S^2, and the theorem that it is Willmore exactly over an elastic curve).
+- Joel Langer and David A. Singer, "The total squared curvature of closed curves", J. Differential Geom. 20 (1984), 1-22 (closed elasticae on S^2 in closed form, and their monodromy).
+- Fernando C. Marques and Andre Neves, "Min-max theory and the Willmore conjecture", Ann. of Math. 179 (2014), 683-782 (the Clifford torus really is the minimiser at 2 pi^2).
+

@@ -77,27 +77,13 @@ Each solid is built from its own definition rather than from a shared constructi
 
 ## References
 
-- M. C. Escher, "Waterfall" (1961) and "Study for Stars" (1948); the
-- solid is the first stellation of the rhombic dodecahedron.
-- J. D. Stasheff, "Homotopy associativity of H-spaces", Trans. AMS 108
-- (1963); J.-L. Loday, "Realization of the Stasheff polytope", Arch.
-- Math. 83 (2004) -- the associahedron realization used here.
-- E. Schulte & J. M. Wills, higher-genus regular-map realizations (see
-- the Klein reference below); the {6,4}/{4,6} genus-6 pair.
-- J. C. P. Miller / H. S. M. Coxeter, P. Du Val, H. T. Flather &
-- J. F. Petrie, "The Fifty-Nine Icosahedra" (1938); the final stellation
-- is Wenninger model W42. Echidnahedron connectivity from A. Hume's netlib
-- polyhedra database (file 141).
-- E. Schonhardt, "Ueber die Zerlegung von Dreieckspolyedern in
-- Tetraeder", Math. Ann. 98 (1928), 309-312.
+- M. C. Escher, "Waterfall" (1961) and "Study for Stars" (1948); the solid is the first stellation of the rhombic dodecahedron.
+- J. D. Stasheff, "Homotopy associativity of H-spaces", Trans. AMS 108 (1963); J.-L. Loday, "Realization of the Stasheff polytope", Arch. Math. 83 (2004) -- the associahedron realization used here.
+- E. Schulte & J. M. Wills, higher-genus regular-map realizations (see the Klein reference below); the {6,4}/{4,6} genus-6 pair.
+- J. C. P. Miller / H. S. M. Coxeter, P. Du Val, H. T. Flather & J. F. Petrie, "The Fifty-Nine Icosahedra" (1938); the final stellation is Wenninger model W42. Echidnahedron connectivity from A. Hume's netlib polyhedra database (file 141).
+- E. Schonhardt, "Ueber die Zerlegung von Dreieckspolyedern in Tetraeder", Math. Ann. 98 (1928), 309-312.
 - B. Jessen, "Orthogonal icosahedra", Nordisk Mat. Tidskr. 15 (1967).
 - A. Durer, "Melencolia I" (1514); analysis: see Weitzel, Schreiber.
-- S. Bilinski, "Ueber die Rhombenisoeder", Glasnik Mat.-Fiz. Astr. 15
-- (1960), 251-263.
-- F. Klein, "Ueber die Transformation siebenter Ordnung der elliptischen
-- Functionen", Math. Ann. 14 (1878) (the quartic / map {3,7}_8);
-- polyhedral realization: E. Schulte & J. M. Wills, "A polyhedral
-- realization of Felix Klein's map {3,7}_8 on a Riemann surface of genus
-- 3", J. London Math. Soc. 32 (1985), 539-547.  (The Klein coordinates
-- here are a construction on two homothetic truncated tetrahedra,
-- verified to carry the full 168 automorphisms of {3,7}_8.)
+- S. Bilinski, "Ueber die Rhombenisoeder", Glasnik Mat.-Fiz. Astr. 15 (1960), 251-263.
+- F. Klein, "Ueber die Transformation siebenter Ordnung der elliptischen Functionen", Math. Ann. 14 (1878) (the quartic / map {3,7}_8); polyhedral realization: E. Schulte & J. M. Wills, "A polyhedral realization of Felix Klein's map {3,7}_8 on a Riemann surface of genus 3", J. London Math. Soc. 32 (1985), 539-547.  (The Klein coordinates here are a construction on two homothetic truncated tetrahedra, verified to carry the full 168 automorphisms of {3,7}_8.)
+

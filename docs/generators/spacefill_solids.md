@@ -77,7 +77,8 @@ and the whole block is centred at the origin and scaled so one lattice step maps
 
 ## References
 
-- Henry Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press, 2016 (figs 4-17 – 4-20, space-filling solids). ISBN 978-1-4214-2035-6.
-- Russell Towle, "Spirallohedra" and polar-zonohedron notebooks — rhombic spirallohedra $S(n,w)$ from the polar zonohedron construction. See the archived Mathematica material and the *Wolfram Demonstrations* entry "Zonohedra": <https://demonstrations.wolfram.com/Zonohedra/>
-- Adrian Rossiter, *Antiprism* polyhedron-modelling software — `make_polar_zonohedron` / `zono -P` (the spirallohedron preset equals `zono -P 12,4`): <https://www.antiprism.com>
-- H. S. M. Coxeter, *Regular Polytopes*, 3rd ed., Dover, 1973 — the alternated cubic (octet) and bitruncated cubic honeycombs and the Voronoi cells of the cubic, BCC and FCC lattices.
+- Henry Segerman, "Visualizing Mathematics with 3D Printing", Johns Hopkins University Press, 2016 (figs 4-17..4-20, space-filling solids).
+- Rhombic spirallohedra S(n,w) via the polar-zonohedron construction: Russell Towle (Spirallohedra / polar-zonohedron notebooks).
+- The alternated cubic (octet) and bitruncated cubic honeycombs and the Voronoi cells of the cubic, BCC and FCC lattices: H. S. M. Coxeter, "Regular Polytopes", 3rd ed., Dover, 1973.
+- The obtetrahedrille (Conway's oblate tetrahedrille / tetragonal disphenoid honeycomb, each rhombic dodecahedron split into 24 disphenoids): J. H. Conway, H. Burgiel, C. Goodman-Strauss, "The Symmetries of Things", A K Peters, 2008; and Tom Verhoeff & Koos Verhoeff, "The Obtetrahedrille as a Modular Building Block for 3D Mathematical Art", Bridges 2019, 407-410.
+

@@ -75,16 +75,7 @@ The supplied permutations were derived and verified for this exact geometry — 
 
 ## References
 
-- Colin Adams, Thomas Crawford, Benjamin DeMeo, Michael Landry,
-- Alex Tong Lin, MurphyKate Montee, Seojung Park, Saraswathi
-- Venkatesh, Farrah Yhee, "Knot projections with a single
-- multi-crossing", Journal of Knot Theory and Its Ramifications
-- 24(3), 1550011, 2015 (arXiv:1208.5742) -- petal projections and
-- the petal number.
-- Chaim Even-Zohar, Joel Hass, Nathan Linial, Tahl Nowik,
-- "Invariants of random knots and links", Discrete & Computational
-- Geometry 56(2), 274-314, 2016 (arXiv:1411.3308) -- the Petaluma
-- model: random knots from random petal permutations.
-- Chaim Even-Zohar, "Models of random knots", Journal of Applied
-- and Computational Topology 1, 263-296, 2017 -- survey, including
-- the petal-permutation model.
+- Colin Adams, Thomas Crawford, Benjamin DeMeo, Michael Landry, Alex Tong Lin, MurphyKate Montee, Seojung Park, Saraswathi Venkatesh, Farrah Yhee, "Knot projections with a single multi-crossing", Journal of Knot Theory and Its Ramifications 24(3), 1550011, 2015 (arXiv:1208.5742) -- petal projections and the petal number.
+- Chaim Even-Zohar, Joel Hass, Nathan Linial, Tahl Nowik, "Invariants of random knots and links", Discrete & Computational Geometry 56(2), 274-314, 2016 (arXiv:1411.3308) -- the Petaluma model: random knots from random petal permutations.
+- Chaim Even-Zohar, "Models of random knots", Journal of Applied and Computational Topology 1, 263-296, 2017 -- survey, including the petal-permutation model.
+

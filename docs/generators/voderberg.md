@@ -63,3 +63,4 @@ This is why the spiral is not a separate construction bolted onto a tiling — i
 - Michael Goldberg, "Central tessellations" (1955) -- the triangle- substitution (Goldberg-shift) construction of the spirals.
 - Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H. Freeman, 1987) -- the enclosure family (cover illustration).
 - Stefan Waldman, "Voderberg Deconstructed & Triangle Substitution Tiling" (2014) -- the beta parameterization used here.
+

@@ -90,13 +90,10 @@ Renders of each selectable option:
 
 - Helge von Koch (1904); Ernesto Cesaro (1906); Paul Levy (1938).
 - Benoit Mandelbrot, "The Fractal Geometry of Nature", 1982, ch. 6-7.
-- Przemyslaw Prusinkiewicz, Aristid Lindenmayer and F. David Fracchia,
-- "Synthesis of Space-Filling Curves on the Square Grid", 1991.
+- Przemyslaw Prusinkiewicz, Aristid Lindenmayer and F. David Fracchia, "Synthesis of Space-Filling Curves on the Square Grid", 1991.
 - Frank Odds, "Spirolaterals", Mathematics Teacher 66(2), 1973.
-- Robert Krawczyk, "Spirolaterals, Complexity from Simplicity",
-- Bridges 2000.
-- Harold Abelson and Andrea diSessa, "Turtle Geometry", MIT Press,
-- 1981, ch. 4 -- the Closed-Path Theorem and Whitney-Graustein.
+- Robert Krawczyk, "Spirolaterals, Complexity from Simplicity", Bridges 2000.
+- Harold Abelson and Andrea diSessa, "Turtle Geometry", MIT Press, 1981, ch. 4 -- the Closed-Path Theorem and Whitney-Graustein.
 - Alexis Monnerot-Dumaine, "The Fibonacci word fractal", 2009.
-- Jun Ma and Judy Holdener, "When Thue-Morse meets Koch", Fractals
-- 13(3), 2005.
+- Jun Ma and Judy Holdener, "When Thue-Morse meets Koch", Fractals 13(3), 2005.
+

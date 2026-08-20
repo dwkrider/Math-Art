@@ -68,3 +68,4 @@ That smoothing is chosen rather than convenient: convolving a support function w
 - M. L. Sloan, "An Analytical Gomboc" (technical note, with the guidance of G. Domokos); see also Wolfram MathWorld, "Gomboc", https://mathworld.wolfram.com/Gomboc.html .
 - The fabricated gomboc and its tennis-ball segment construction: G. Domokos & P. Varkonyi, gomboc.eu.
 - Support functions, Minkowski combinations and their convolution by nonnegative zonal kernels: R. Schneider, "Convex Bodies: The Brunn-Minkowski Theory", 2nd ed., Cambridge Univ. Press, 2014 (ch. 1.7-1.8; the normal parametrisation x = h u + grad_S h is the classical "reverse spherical image").
+

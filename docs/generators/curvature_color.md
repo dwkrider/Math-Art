@@ -45,4 +45,5 @@ a diverging color ramp with white at $\kappa = 0$. The result is written to a `F
 
 ## References
 
-- H. Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press, 2016 — the diverging red/white/blue Gaussian-curvature coloring (fig. 4-4).
+- Gaussian curvature and its intrinsic character: C. F. Gauss, "Theorema Egregium" (Disquisitiones generales circa superficies curvas, 1827). The angle-deficit estimate is the discrete Gauss-Bonnet / Descartes total-angular-defect form.
+

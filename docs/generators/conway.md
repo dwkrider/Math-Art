@@ -94,7 +94,7 @@ Faces are colored by side count using Hart's palette (triangle red, square blue,
 
 ## References
 
-- J. H. Conway, H. Burgiel, C. Goodman-Strauss, *The Symmetries of Things*, A K Peters, 2008 (Conway's operator notation).
-- G. W. Hart, *Conway Notation for Polyhedra* — <https://www.georgehart.com/virtual-polyhedra/conway_notation.html> (the extended operator set, including propellor).
-- G. W. Hart, *Calculating Canonical Polyhedra*, Mathematica in Education and Research 6(3), pp. 5–10, 1997 (the canonicalization algorithm).
-- Adrian Rossiter, *Antiprism* and its `conway` program — <https://www.antiprism.com>, <https://github.com/antiprism/antiprism> (GPL; the reference implementation this follows).
+- Conway polyhedron notation: John H. Conway; extended and popularized by George W. Hart ("Conway Notation for Polyhedra").
+- Canonicalization algorithm: George W. Hart, "Calculating Canonical Polyhedra", Mathematica in Education and Research 6(3), 1997, pp. 5-10.
+- Antiprism (Adrian Rossiter), the `conway` program.
+

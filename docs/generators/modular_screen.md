@@ -75,7 +75,8 @@ Renders of each selectable option:
 
 ## References
 
-- Erwin Hauer, *Continua -- Architectural Screens and Walls*, Princeton Architectural Press, 2004 -- the screen designs (numbered Design 1-7, 1950-57) and Hauer's saddle-surface method.
-- Norman Carlberg and Erwin Hauer -- co-originators of Modular Constructivism (units designed to be multiplied); Carlberg's ruled, hard-edged saddle modules.
-- H. F. Scherk, "Bemerkungen über die kleinste Fläche innerhalb gegebener Grenzen", *J. reine angew. Math.* **13** (1835), 185-208 -- the doubly-periodic minimal surface behind the saddle lattice.
-- A. H. Schoen, *Infinite Periodic Minimal Surfaces Without Self-Intersections*, NASA TN D-5541, 1970 -- the I-WP surface later identified with Hauer's fully three-dimensional modules.
+- Erwin Hauer, "Continua -- Architectural Screens and Walls", Princeton Architectural Press, 2004 -- the screen designs (numbered Design 1-7, 1950-57) and Hauer's saddle-surface method.
+- Norman Carlberg and Erwin Hauer -- co-originators of Modular Constructivism (units designed to be multiplied); Carlberg's ruled/hard-edged saddle modules (e.g. "Minimal Surface Form 6").
+- H. F. Scherk, "Bemerkungen ueber die kleinste Flaeche innerhalb gegebener Grenzen", J. reine angew. Math. 13 (1835), 185-208 -- the doubly-periodic minimal surface behind the saddle lattice.
+- A. H. Schoen, "Infinite Periodic Minimal Surfaces Without Self- Intersections", NASA TN D-5541, 1970 -- the I-WP surface later identified with Hauer's fully three-dimensional modules.
+

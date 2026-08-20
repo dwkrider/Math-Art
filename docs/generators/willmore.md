@@ -66,3 +66,4 @@ All three families come from genuine constrained descent on the curvature energy
 - W. Helfrich, "Elastic properties of lipid bilayers: theory and possible experiments", Z. Naturforsch. C 28 (1973), 693-703.
 - U. Seifert, K. Berndl, R. Lipowsky, "Shape transformations of vesicles", Physical Review A 44 (1991), 1182-1202 -- the discocyte/prolate/stomatocyte phase diagram at reduced volume < 1.
 - C. Zhu, C. T. Lee, P. Rangamani, "Mem3DG: Modeling membrane mechanochemical dynamics in 3D using discrete differential geometry", Biophysical Reports 2(3), 100062 (2022).
+

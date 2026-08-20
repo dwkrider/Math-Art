@@ -13,12 +13,12 @@
 # Part of the Pattern Engine (see the `patterns` package).
 #
 # References:
-#   Johannes Kepler, "Harmonices Mundi" (1619) -- first systematic
-#     depiction of the regular and Archimedean (semiregular) tilings by
-#     regular polygons.
-#   Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H.
-#     Freeman, 1987) -- modern classification of the uniform tilings and
-#     their Laves (dual) tilings.
+# - Johannes Kepler, "Harmonices Mundi" (1619) -- first systematic
+#   depiction of the regular and Archimedean (semiregular) tilings by
+#   regular polygons.
+# - Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H.
+#   Freeman, 1987) -- modern classification of the uniform tilings and
+#   their Laves (dual) tilings.
 
 bl_info = {
     "name": "Uniform Tiling",

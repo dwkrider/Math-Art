@@ -74,11 +74,7 @@ Each preset carries its own **clip region** framing the interesting part of the 
 
 ## References
 
-- W. Fischer (ed.), *Mathematical Models: From the Collections of Universities and Museums*, Vieweg, 1986 (Clebsch, Cayley, Kummer surfaces).
-- A. Cayley, "A Memoir on Cubic Surfaces," *Philosophical Transactions of the Royal Society of London*, 159 (1869), pp. 231-326.
-- W. Barth, "Two projective surfaces with many nodes, admitting the symmetries of the icosahedron," *Journal of Algebraic Geometry* 5 (1996), pp. 173-186.
-- E. G. Togliatti, "Una notevole superficie di 5° ordine con soli punti doppi isolati," *Vierteljschr. Naturforsch. Ges. Zürich* 85 (1940), pp. 127-132.
-- G. Taubin, "Distance approximations for rasterizing implicit curves," *ACM Transactions on Graphics* 13(1), 1994 (the heart surface).
-- V. Chmutov, surfaces with many singularities; see the algebraic-surface gallery at https://homepage.univie.ac.at/herwig.hauser/gallery.html
-- Imaginary / Herwig Hauser algebraic surface gallery: https://imaginary.org/gallery/herwig-hauser-classic
-- A. B. Bloomenthal et al., *Introduction to Implicit Surfaces*, Morgan Kaufmann, 1997 (marching-cell isosurface extraction).
+- Clebsch diagonal cubic: A. Clebsch (1871). Cayley nodal cubic: A. Cayley (1869). Kummer quartic: E. E. Kummer (1864).
+- Barth sextic (65 nodes): W. Barth (1996). Togliatti quintic (31 nodes): E. G. Togliatti (1940). Chmutov surfaces: S. V. Chmutov. Heart surface after G. Taubin (1994).
+- N-fold monkey saddles z = rho^n cos(n*phi) = Re((x+iy)^n) are the graphs of the degree-n harmonic polynomials (real parts of the holomorphic w^n); n = 2 is the ordinary saddle, n = 3 the classic monkey saddle z = x^3 - 3xy^2. Ceramic renditions of these saddle sheets recur in Robert Fathauer's mathematical ceramics (his n-fold saddle forms).
+

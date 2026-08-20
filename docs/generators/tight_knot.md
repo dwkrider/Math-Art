@@ -134,15 +134,9 @@ For multi-component curves see [Tight Link](tight_link.md), which adds inter-com
 
 ## References
 
-- G. Buck and J. Orloff, "A simple energy function for knots",
-- Topology Appl. 61 (1995) -- the tangent-point energy.
-- C. Yu, H. Schumacher, K. Crane, "Repulsive Curves", ACM Trans.
-- Graph. 40(2) (2021) -- the fractional Sobolev-Slobodeckij
-- preconditioned flow implemented in `knots/tangent_point.py`.
-- O. Gonzalez and J. H. Maddocks, "Global curvature, thickness, and
-- the ideal shapes of knots", PNAS 96 (1999) -- thickness/ropelength.
-- Thomas A. Gittings, "Minimum braids: a complete invariant of knots
-- and links", arXiv:math/0401051, 2004 (Table 1 braid words).
-- J. Cantarella, R. B. Kusner, J. M. Sullivan, "On the minimum
-- ropelength of knots and links", Invent. Math. 150 (2002) -- the
-- tight Hopf link and chain geometry the link presets relax toward.
+- G. Buck and J. Orloff, "A simple energy function for knots", Topology Appl. 61 (1995) -- the tangent-point energy.
+- C. Yu, H. Schumacher, K. Crane, "Repulsive Curves", ACM Trans. Graph. 40(2) (2021) -- the fractional Sobolev-Slobodeckij preconditioned flow implemented in `knots/tangent_point.py`.
+- O. Gonzalez and J. H. Maddocks, "Global curvature, thickness, and the ideal shapes of knots", PNAS 96 (1999) -- thickness/ropelength.
+- Thomas A. Gittings, "Minimum braids: a complete invariant of knots and links", arXiv:math/0401051, 2004 (Table 1 braid words).
+- J. Cantarella, R. B. Kusner, J. M. Sullivan, "On the minimum ropelength of knots and links", Invent. Math. 150 (2002) -- the tight Hopf link and chain geometry the link presets relax toward.
+

@@ -90,12 +90,7 @@ This module is a faithful port of Nathan Ho's reference toolchain, whose realize
 
 ## References
 
-- Jonathan Bowers, "Polytwisters" (c. 2007),
-- https://www.polytope.net/hedrondude/twisters.htm (discovery; names and
-- the 222 + 3 infinite families).
-- Nathan Ho, "Polytwisters", https://nathan.ho.name/pages/polytwisters/
-- and github.com/polytwisters/{polytwisters, polytwister-mesher,
-- polytwisters.com} (the cycloplane cross-section and Boolean DSL ported
-- here).
-- Heinz Hopf, Math. Ann. 104 (1931) 637-665 (the fibration underlying the
-- cycloplane construction).
+- Jonathan Bowers, "Polytwisters" (c. 2007), https://www.polytope.net/hedrondude/twisters.htm (discovery; names and the 222 + 3 infinite families).
+- Nathan Ho, "Polytwisters", https://nathan.ho.name/pages/polytwisters/ and github.com/polytwisters/{polytwisters, polytwister-mesher, polytwisters.com} (the cycloplane cross-section and Boolean DSL ported here).
+- Heinz Hopf, Math. Ann. 104 (1931) 637-665 (the fibration underlying the cycloplane construction).
+

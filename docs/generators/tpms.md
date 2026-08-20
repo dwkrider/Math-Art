@@ -172,9 +172,8 @@ For a triply-periodic surface the box spans $\text{cells}\times 2\pi$ per axis a
 
 ## References
 
-- Ken Brakke, *Triply Periodic Minimal Surfaces* — <https://kenbrakke.com/evolver/examples/periodic/periodic.html> (the surface inventory) and the *Surface Evolver* — <https://kenbrakke.com/evolver/evolver.html>
-- A. H. Schoen, *Infinite Periodic Minimal Surfaces Without Self-Intersections*, NASA Technical Note TN D-5541, 1970 (the Gyroid, I-WP, F-RD).
-- H. A. Schwarz, *Gesammelte Mathematische Abhandlungen*, 1890 (the P and D surfaces).
-- Nodal (level-set) approximations after H. G. von Schnering & R. Nesper and subsequent literature.
-- W. E. Lorensen, H. E. Cline, *Marching Cubes* (and the marching-tetrahedra variant) — the isosurface-extraction method adapted here.
-- *xyzdims* — TPMS 3D-printing experiments: <https://xyzdims.com/tag/triply-periodic-minimal-surface/>
+- Weierstrass-Enneper representation: K. Weierstrass (1866) and A. Enneper (1864); the catenoid (surface of Euler, 1744) was shown minimal by J. B. C. Meusnier (1776).
+- Costa surface: C. J. Costa (1982); embeddedness by D. Hoffman and W. H. Meeks III (1985). Chen-Gackstatter: C. C. Chen and F. Gackstatter (1982). Jorge-Meeks k-noids: L. P. Jorge and W. H. Meeks III (1983).
+- Triply-periodic families: H. A. Schwarz (P, D; Gesammelte Math. Abhandlungen, 1890), A. H. Schoen (gyroid, I-WP, F-RD; NASA TN D-5541, 1970), E. R. Neovius (1883). Cotangent-Laplacian area flow after U. Pinkall and K. Polthier (1993).
+- Seifert surfaces: H. Seifert, "Ueber das Geschlecht von Knoten", Mathematische Annalen 110 (1934). Visualization of Seifert surfaces as disks joined by twisted bands after J. J. van Wijk and A. M. Cohen, IEEE TVCG 12(4) (2006).
+

@@ -19,15 +19,15 @@
 # tiling_generator.cells_from_polys assembler.
 #
 # References:
-#   Karl Reinhardt, "Uber die Zerlegung der Ebene in Polygone" (doctoral
-#     dissertation, 1918) -- the 3 convex hexagon types and first 5
-#     convex pentagon types that tile the plane.
-#   Richard B. Kershner, "On paving the plane" (1968) -- further pentagon
-#     types.
-#   Marjorie Rice -- amateur discovery of additional pentagon types
-#     (1970s).
-#   Michael Rao, "Exhaustive search of convex pentagons which tile the
-#     plane" (2017) -- proof that exactly 15 convex pentagon types exist.
+# - Karl Reinhardt, "Uber die Zerlegung der Ebene in Polygone" (doctoral
+#   dissertation, 1918) -- the 3 convex hexagon types and first 5
+#   convex pentagon types that tile the plane.
+# - Richard B. Kershner, "On paving the plane" (1968) -- further pentagon
+#   types.
+# - Marjorie Rice -- amateur discovery of additional pentagon types
+#   (1970s).
+# - Michael Rao, "Exhaustive search of convex pentagons which tile the
+#   plane" (2017) -- proof that exactly 15 convex pentagon types exist.
 
 bl_info = {
     "name": "Monohedral Tiling",

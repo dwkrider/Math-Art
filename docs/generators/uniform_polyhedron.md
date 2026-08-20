@@ -212,13 +212,10 @@ See [Regular Solids](regular_solids.md) for the convex families organised by nam
 
 ## References
 
-- W. A. Wythoff, "A relation between the polytopes of the C600-family",
-- Koninklijke Akademie van Wetenschappen te Amsterdam (1918).
-- H. S. M. Coxeter, M. S. Longuet-Higgins, J. C. P. Miller, "Uniform
-- polyhedra", Phil. Trans. Royal Soc. A 246 (1954), 401-450.
-- S. P. Skilling, "The complete set of uniform polyhedra", Phil. Trans.
-- Royal Soc. A 278 (1975) (completeness).
-- Zvi Har'El, "Uniform Solution for Uniform Polyhedra", Geometriae
-- Dedicata 47 (1993), 57-110 (the construction algorithm followed here).
+- W. A. Wythoff, "A relation between the polytopes of the C600-family", Koninklijke Akademie van Wetenschappen te Amsterdam (1918).
+- H. S. M. Coxeter, M. S. Longuet-Higgins, J. C. P. Miller, "Uniform polyhedra", Phil. Trans. Royal Soc. A 246 (1954), 401-450.
+- S. P. Skilling, "The complete set of uniform polyhedra", Phil. Trans. Royal Soc. A 278 (1975) (completeness).
+- Zvi Har'El, "Uniform Solution for Uniform Polyhedra", Geometriae Dedicata 47 (1993), 57-110 (the construction algorithm followed here).
 - Magnus Wenninger, "Polyhedron Models", Cambridge (1971).
 - Numbering (U1-U75) after Roman Maeder's Kaleido / Mathematica package.
+

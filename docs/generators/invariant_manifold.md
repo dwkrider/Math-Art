@@ -128,7 +128,8 @@ Chord-length resampling **cuts across sharp folds** as the manifold develops its
 
 ## References
 
-- E. N. Lorenz, "Deterministic nonperiodic flow," *Journal of the Atmospheric Sciences* 20(2), 1963, pp. 130-141.
-- B. Krauskopf and H. M. Osinga, "Computing geodesic level sets on global (un)stable manifolds of vector fields," *SIAM Journal on Applied Dynamical Systems* 2(4), 2003, pp. 546-569.
-- H. M. Osinga and B. Krauskopf, "Crocheting the Lorenz manifold," *The Mathematical Intelligencer* 26(4), 2004, pp. 25-37.
-- P. R. Bishop, S. Chenoweth, E. Fleurantin, A. Ogueda-Oliva, E. Sander and J. Seay, "3D printing of invariant manifolds in dynamical systems," *Notices of the American Mathematical Society*, 2026; preprint [arXiv:2504.15884](https://arxiv.org/abs/2504.15884). The arclength-reparametrized growth used here, and the parameterization method for the local piece.
+- The system: E. N. Lorenz, "Deterministic nonperiodic flow", Journal of the Atmospheric Sciences 20(2), 1963, pp. 130-141.
+- Geodesic level-set algorithm: B. Krauskopf and H. M. Osinga, "Computing geodesic level sets on global (un)stable manifolds of vector fields", SIAM Journal on Applied Dynamical Systems 2(4), 2003, pp. 546-569.
+- The manifold as an object to make: H. M. Osinga and B. Krauskopf, "Crocheting the Lorenz manifold", The Mathematical Intelligencer 26(4), 2004, pp. 25-37.
+- The arclength-reparametrized growth used here, and the parameterization method for the local piece: P. R. Bishop, S. Chenoweth, E. Fleurantin, A. Ogueda-Oliva, E. Sander and J. Seay, "3D printing of invariant manifolds in dynamical systems", Notices of the American Mathematical Society, 2026; preprint arXiv:2504.15884.
+

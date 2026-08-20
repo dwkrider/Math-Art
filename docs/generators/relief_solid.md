@@ -164,3 +164,4 @@ sampled at the surface's own vertices and displaced along the normal. Two things
 - Steven Worley, "A Cellular Texture Basis Function", SIGGRAPH 1996, 291-294.
 - Benoit B. Mandelbrot, "The Fractal Geometry of Nature", Freeman, 1982; Dietmar Saupe, "Algorithms for random fractals", in "The Science of Fractal Images", Springer, 1988 -- spectral synthesis.
 - E. W. Hobson, "The Theory of Spherical and Ellipsoidal Harmonics", Cambridge University Press, 1931 -- spherical harmonics, the sphere's own vibration modes.
+

@@ -55,26 +55,26 @@
 # welded by index; apex/pinch collapses are handled per mode.
 #
 # References:
-#   G. W. Hart, "Curved, yet Straight: Stick Hyperboloids," Bridges
-#       2023 Conference Proceedings, pp. 251-258.
-#   E. Jannasch & J. Macnab, "The Compound Helical Cone as Kinematic
-#       Trace," Bridges 2023 Conference Proceedings, pp. 15-22.
-#   F. A. Farris, "Spiral Ruled Surfaces," Bridges 2022 Conference
-#       Proceedings, pp. 289-292; and F. A. Farris, "Creating
-#       Symmetry" (Princeton Univ. Press, 2015).
-#   J. Plucker, "On a New Geometry of Space" (1865); H. Whitney,
-#       "The general type of singularity of a set of 2n-1 smooth
-#       functions of n variables" (1943).
-#   S. A. Coons, "Surfaces for Computer-Aided Design of Space Forms,"
-#       MIT Project MAC TR-41 (1967) -- the bilinear patch.
-#   Torus knots (p, q): classical; see e.g. C. C. Adams, "The Knot
-#       Book" (1994).  The knot-to-knot span is adapted here as a pure
-#       ruled surface (cf. the soap-film version in the minimal-surface
-#       toolkit).
-#   Classical background: M. do Carmo, "Differential Geometry of
-#       Curves and Surfaces" (1976); A. Gray, "Modern Differential
-#       Geometry of Curves and Surfaces" (1997); D. Struik, "Lectures
-#       on Classical Differential Geometry" (1950).
+# - G. W. Hart, "Curved, yet Straight: Stick Hyperboloids," Bridges
+#   2023 Conference Proceedings, pp. 251-258.
+# - E. Jannasch & J. Macnab, "The Compound Helical Cone as Kinematic
+#   Trace," Bridges 2023 Conference Proceedings, pp. 15-22.
+# - F. A. Farris, "Spiral Ruled Surfaces," Bridges 2022 Conference
+#   Proceedings, pp. 289-292; and F. A. Farris, "Creating
+#   Symmetry" (Princeton Univ. Press, 2015).
+# - J. Plucker, "On a New Geometry of Space" (1865); H. Whitney,
+#   "The general type of singularity of a set of 2n-1 smooth
+#   functions of n variables" (1943).
+# - S. A. Coons, "Surfaces for Computer-Aided Design of Space Forms,"
+#   MIT Project MAC TR-41 (1967) -- the bilinear patch.
+# - Torus knots (p, q): classical; see e.g. C. C. Adams, "The Knot
+#   Book" (1994).  The knot-to-knot span is adapted here as a pure
+#   ruled surface (cf. the soap-film version in the minimal-surface
+#   toolkit).
+# - Classical background: M. do Carmo, "Differential Geometry of
+#   Curves and Surfaces" (1976); A. Gray, "Modern Differential
+#   Geometry of Curves and Surfaces" (1997); D. Struik, "Lectures
+#   on Classical Differential Geometry" (1950).
 
 bl_info = {
     "name": "Ruled Surfaces",

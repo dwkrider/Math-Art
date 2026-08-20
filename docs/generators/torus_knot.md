@@ -65,5 +65,6 @@ P_k(t) = \big(r_k\cos p't,\; r_k\sin p't,\; r\sin(q' t + \varphi_k)\big).$$
 
 ## References
 
-- *Torus knot* — parametrization and $\gcd(p,q)$ component count: <https://en.wikipedia.org/wiki/Torus_knot>
-- Regular Polytopes / *Add Torus Knot* — the classic Blender Torus Knot Plus add-on whose output styles this generator follows.
+- Torus knots and links T(p,q): a classical construction of knot theory (see e.g. Dale Rolfsen, "Knots and Links", 1976).
+- The Hopf fibration of S^3, whose fibres are (1,1) torus circles: Heinz Hopf, "Ueber die Abbildungen der dreidimensionalen Sphaere auf die Kugelflaeche", Math. Ann. 104, 1931.
+

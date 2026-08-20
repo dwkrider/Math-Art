@@ -160,15 +160,9 @@ The limitation was not a shortage of presets. Multi-character module names — `
 
 ## References
 
-- Aristid Lindenmayer, "Mathematical models for cellular interactions
-- in development", J. Theoretical Biology 18, 1968.
-- Przemyslaw Prusinkiewicz and Aristid Lindenmayer, "The Algorithmic
-- Beauty of Plants", Springer, 1990 (turtle interpretation, most of
-- these production rules, and Appendix C's symbol table).
-- Przemyslaw Prusinkiewicz, Jim Hanan, Mark Hammel and Radomir Mech,
-- "L-systems: from the Theory to Visual Models of Plants", SIGGRAPH
-- 2003 course notes, chapter 2-1.
-- Grzegorz Rozenberg and Arto Salomaa, "The Mathematical Theory of
-- L Systems", Academic Press, 1980 (growth functions).
-- Gosper curve / flowsnake: Martin Gardner, "Mathematical Games",
-- Scientific American 235(6), 1976 (after William Gosper).
+- Aristid Lindenmayer, "Mathematical models for cellular interactions in development", J. Theoretical Biology 18, 1968.
+- Przemyslaw Prusinkiewicz and Aristid Lindenmayer, "The Algorithmic Beauty of Plants", Springer, 1990 (turtle interpretation, most of these production rules, and Appendix C's symbol table).
+- Przemyslaw Prusinkiewicz, Jim Hanan, Mark Hammel and Radomir Mech, "L-systems: from the Theory to Visual Models of Plants", SIGGRAPH 2003 course notes, chapter 2-1.
+- Grzegorz Rozenberg and Arto Salomaa, "The Mathematical Theory of L Systems", Academic Press, 1980 (growth functions).
+- Gosper curve / flowsnake: Martin Gardner, "Mathematical Games", Scientific American 235(6), 1976 (after William Gosper).
+

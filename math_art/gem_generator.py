@@ -19,15 +19,15 @@
 # edges -- destroys the only thing the geometry is for.
 #
 # References:
-#   Marcel Tolkowsky, "Diamond Design: A Study of the Reflection and
-#     Refraction of Light in a Diamond", E. & F. N. Spon, London, 1919.
-#   Robert W. Strickland, "GemCad for Windows Version 1.0 User's Guide",
-#     GemSoft Enterprises, 2002 -- the .ASC format and the Standard Round
-#     Brilliant.
-#   Robert H. Long & Norman W. Steele, "Introduction to Meetpoint
-#     Faceting", Seattle Faceting Books, 1985.
-#   CIBJO Diamond Commission, "The Diamond Book" (Blue Book 2024-1),
-#     Annex B 7.2 -- the normative round-brilliant facet arrangement.
+# - Marcel Tolkowsky, "Diamond Design: A Study of the Reflection and
+#   Refraction of Light in a Diamond", E. & F. N. Spon, London, 1919.
+# - Robert W. Strickland, "GemCad for Windows Version 1.0 User's Guide",
+#   GemSoft Enterprises, 2002 -- the .ASC format and the Standard Round
+#   Brilliant.
+# - Robert H. Long & Norman W. Steele, "Introduction to Meetpoint
+#   Faceting", Seattle Faceting Books, 1985.
+# - CIBJO Diamond Commission, "The Diamond Book" (Blue Book 2024-1),
+#   Annex B 7.2 -- the normative round-brilliant facet arrangement.
 
 try:
     from .gems import (catalogue, design as gem_design, facets as gem_facets,

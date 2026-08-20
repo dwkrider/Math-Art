@@ -24,23 +24,22 @@
 # Geometry only; materials and rendering are left to Blender.
 #
 # References:
-#   Clebsch diagonal cubic: A. Clebsch (1871). Cayley nodal cubic:
-#       A. Cayley (1869). Kummer quartic: E. E. Kummer (1864).
-#   Barth sextic (65 nodes): W. Barth (1996). Togliatti quintic
-#       (31 nodes): E. G. Togliatti (1940). Chmutov surfaces:
-#       S. V. Chmutov. Heart surface after G. Taubin (1994).
-#   N-fold monkey saddles z = rho^n cos(n*phi) = Re((x+iy)^n) are the
-#       graphs of the degree-n harmonic polynomials (real parts of the
-#       holomorphic w^n); n = 2 is the ordinary saddle, n = 3 the
-#       classic monkey saddle z = x^3 - 3xy^2. Ceramic renditions of
-#       these saddle sheets recur in Robert Fathauer's mathematical
-#       ceramics (his n-fold saddle forms).
-#   The Hauser family: H. Hauser, "Bildergalerie algebraischer
-#       Flaechen", Universitaet Wien -- equations transcribed from the
-#       gallery captions; see the _HAUSER block in
-#       math_art/surfaces/algebraic.py for the per-row provenance and
-#       for the four surfaces the gallery names but does not give an
-#       equation for.
+# - Clebsch diagonal cubic: A. Clebsch (1871). Cayley nodal cubic:
+#   A. Cayley (1869). Kummer quartic: E. E. Kummer (1864).
+# - Barth sextic (65 nodes): W. Barth (1996). Togliatti quintic
+#   (31 nodes): E. G. Togliatti (1940). Chmutov surfaces:
+#   S. V. Chmutov. Heart surface after G. Taubin (1994).
+# - N-fold monkey saddles z = rho^n cos(n*phi) = Re((x+iy)^n) are the
+#   graphs of the degree-n harmonic polynomials (real parts of the
+#   holomorphic w^n); n = 2 is the ordinary saddle, n = 3 the
+#   classic monkey saddle z = x^3 - 3xy^2. Ceramic renditions of
+#   these saddle sheets recur in Robert Fathauer's mathematical
+#   ceramics (his n-fold saddle forms).
+# - The Hauser family: H. Hauser, "Bildergalerie algebraischer
+#   Flaechen", Universitaet Wien -- equations transcribed from the
+#   gallery captions; see the _HAUSER block in
+#   math_art/surfaces/algebraic.py for the per-row provenance and
+#   for the four surfaces the gallery names but gives no equation.
 
 bl_info = {
     "name": "Algebraic Surface Generator",

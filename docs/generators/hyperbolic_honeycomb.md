@@ -76,7 +76,7 @@ which is exactly what makes the infinite honeycomb appear to thin and crowd into
 
 ## References
 
-- Henry Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press, 2016 (figs 4-21 – 4-23, hyperbolic honeycombs in the Poincaré ball). ISBN 978-1-4214-2035-6.
-- H. S. M. Coxeter, *Regular Polytopes*, 3rd ed., Dover, 1973 — Schläfli symbols $\{p,q,r\}$ and the regular honeycombs of spherical, Euclidean and hyperbolic space.
-- H. S. M. Coxeter, "Regular honeycombs in hyperbolic space," *Proceedings of the International Congress of Mathematicians* (Amsterdam, 1954), vol. III, pp. 155–169 — the compact and paracompact hyperbolic honeycombs.
-- Poincaré ball / hyperboloid models of $H^3$: J. W. Cannon, W. J. Floyd, R. Kenyon, W. R. Parry, "Hyperbolic Geometry," in *Flavors of Geometry*, MSRI Publications 31 (1997): <https://library.msri.org/books/Book31/files/cannon.pdf>
+- Regular hyperbolic honeycombs via Schlafli symbols {p,q,r}; H. S. M. Coxeter, "Regular Honeycombs in Hyperbolic Space" (1954).
+- Visualization after Roice Nelson & Henry Segerman, "Visualizing Hyperbolic Honeycombs" (2015).
+- Henry Segerman, "Visualizing Mathematics with 3D Printing" (2016), figs 4-21..4-23.
+

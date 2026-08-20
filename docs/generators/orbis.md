@@ -39,3 +39,4 @@ The fold angle is the whole design. At $0°$ the rings coincide; at $90°$ they 
 
 - P. Clahsen, "Objeux", Naef Herstellung und Verlag, 1967/1976 (the two-ring "Orbis" play object).
 - K. Brecher, "Rolloids", Bridges 2023 Conference Proceedings, 345-352 (the "Orbis" and the "Holey Roller"; local copy at research/bridges/2023/bridges2023-345/, Figure 11).
+

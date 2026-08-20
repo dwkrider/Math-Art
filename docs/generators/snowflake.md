@@ -64,11 +64,7 @@ That separation is the crucial modelling step. Water already committed to the cr
 
 ## References
 
-- Clifford A. Reiter, "A local cellular model for snow crystal
-- growth", Chaos, Solitons & Fractals 23, 2005, pp. 1111-1119.
-- Related, physically richer models: Janko Gravner and David
-- Griffeath, "Modeling snow crystal growth II: A mesoscopic lattice
-- map with plausible dynamics", Physica D 237, 2008, pp. 385-404.
-- Snow-crystal morphology (the temperature/supersaturation habit
-- diagram): Ukichiro Nakaya, "Snow Crystals: Natural and
-- Artificial", Harvard University Press, 1954.
+- Clifford A. Reiter, "A local cellular model for snow crystal growth", Chaos, Solitons & Fractals 23, 2005, pp. 1111-1119.
+- Related, physically richer models: Janko Gravner and David Griffeath, "Modeling snow crystal growth II: A mesoscopic lattice map with plausible dynamics", Physica D 237, 2008, pp. 385-404.
+- Snow-crystal morphology (the temperature/supersaturation habit diagram): Ukichiro Nakaya, "Snow Crystals: Natural and Artificial", Harvard University Press, 1954.
+

@@ -62,14 +62,14 @@
 # braided bundle.
 #
 # References:
-#   Robert W. Fathauer, "Fractal Knots Created by Iterative
-#     Substitution", Bridges 2007 Conference Proceedings, pp. 335-342.
-#     https://archive.bridgesmathart.org/2007/bridges2007-335.html
-#   Robert W. Fathauer, "A New Method for Designing Iterated Knots",
-#     Bridges 2009 Conference Proceedings.
-#   Robert W. Fathauer, "Compendium of Fractal Knots",
-#     https://www.mathartfun.com/FractalKnots/index.html
-#   (Earlier iterated knots that Fathauer credits: Carlo Sequin's 2005
+# - Robert W. Fathauer, "Fractal Knots Created by Iterative
+#   Substitution", Bridges 2007 Conference Proceedings, pp. 335-342.
+#   https://archive.bridgesmathart.org/2007/bridges2007-335.html
+# - Robert W. Fathauer, "A New Method for Designing Iterated Knots",
+#   Bridges 2009 Conference Proceedings.
+# - Robert W. Fathauer, "Compendium of Fractal Knots",
+#   https://www.mathartfun.com/FractalKnots/index.html
+# - (Earlier iterated knots that Fathauer credits: Carlo Sequin's 2005
 #   examples and Paul Gailiunas' Sierpinski-gasket knot, Bridges 2006.)
 
 bl_info = {

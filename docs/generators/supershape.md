@@ -117,3 +117,4 @@ This is the classic 3-D supershape: a genus-0 blob with two poles, where one for
 - Gielis, J. (2003). "A generic geometric transformation that unifies a wide range of natural and abstract shapes." American Journal of Botany 90(3), 333-338. doi:10.3732/ajb.90.3.333 -- the paper that introduced the superformula.
 - Bourke, P. "Supershapes / SuperFormula." https://paulbourke.net/geometry/supershape/ -- the 3D spherical product, shell and toroidal mappings this module follows.
 - Barr, A. H. (1981). "Superquadrics and Angle-Preserving Transformations." IEEE Computer Graphics & Applications 1(1), 11-23 -- the superellipsoid (SUPERELLIPSOID mode).
+

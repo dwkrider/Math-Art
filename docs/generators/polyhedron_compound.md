@@ -58,9 +58,6 @@ Each component keeps its **own colour**, since with the copies interpenetrating 
 ## References
 
 - Stella octangula: Johannes Kepler, "Harmonices Mundi" (1619).
-- The regular compounds (5 tetrahedra, 5 cubes, ...): Edmund Hess
-- (1876); Max Bruckner (1900); catalogued in H. S. M. Coxeter,
-- "Regular Polytopes" (1948).
-- Full enumeration of uniform compounds: John Skilling, "Uniform
-- compounds of uniform polyhedra", Math. Proc. Camb. Phil. Soc. 79
-- (1976).
+- The regular compounds (5 tetrahedra, 5 cubes, ...): Edmund Hess (1876); Max Bruckner (1900); catalogued in H. S. M. Coxeter, "Regular Polytopes" (1948).
+- Full enumeration of uniform compounds: John Skilling, "Uniform compounds of uniform polyhedra", Math. Proc. Camb. Phil. Soc. 79 (1976).
+

@@ -68,6 +68,8 @@ Every emitted tile is its own watertight closed shell (top, reversed bottom, and
 
 ## References
 
-- H. Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press, 2016 (chapter 4, figs 4-2, 4-8..4-14 -- disk plaque, hemisphere and pseudosphere hyperbolic tilings).
-- The hyperboloid / Minkowski model of $\mathbb H^2$ and $(p,q,2)$ triangle reflection groups: standard hyperbolic geometry (e.g. J. G. Ratcliffe, *Foundations of Hyperbolic Manifolds*, Springer).
-- Pseudosphere (tractricoid) as a surface of constant curvature $-1$; the $y=\cosh u$ isometry with the upper half plane is derived in full in the module header.
+- W. A. Wythoff -- the Wythoff (kaleidoscopic) construction of uniform tilings from a triangle reflection group.
+- H. S. M. Coxeter, "Regular Polytopes" (1948) and his work on reflection groups and the {p,q} Schlafli symbol.
+- Henri Poincare -- the conformal disk model of the hyperbolic plane.
+- Henry Segerman, "Visualizing Mathematics with 3D Printing" (2016) -- hyperbolic surface models.
+

@@ -317,8 +317,9 @@ via Cramer's rule. When the neighbour planes are all parallel to a common axis (
 
 ## References
 
-- N. W. Johnson, *Convex Polyhedra with Regular Faces*, Canadian Journal of Mathematics 18, pp. 169–200, 1966 (the Johnson solid enumeration).
-- G. W. Hart, *Calculating Canonical Polyhedra*, Mathematica in Education and Research 6(3), pp. 5–10, 1997 (the canonicalization algorithm).
-- G. W. Hart, *Conway Notation for Polyhedra* — <https://www.georgehart.com/virtual-polyhedra/conway_notation.html>
-- Adrian Rossiter, *Antiprism* polyhedron modelling software — <https://www.antiprism.com> (the Conway / canonicalization approach followed here).
-- L. Poinsot, *Mémoire sur les polygones et les polyèdres*, Journal de l'École Polytechnique 10, 1810 (the four regular star polyhedra).
+- Platonic solids: Euclid, "Elements" Book XIII (construction attributed to Theaetetus).
+- Archimedean solids: Archimedes (work lost); reconstructed by Johannes Kepler, "Harmonices Mundi" (1619).
+- Catalan solids (the duals): Eugene Catalan (1865).
+- Kepler-Poinsot star polyhedra: Johannes Kepler (1619) and Louis Poinsot, "Memoire sur les polygones et les polyedres" (1810).
+- Johnson solids: Norman W. Johnson (1966); completeness proved by Victor Zalgaller (1969).
+

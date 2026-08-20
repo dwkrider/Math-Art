@@ -44,31 +44,31 @@
 # (sphere fit, signed mean curvature) -- all reused by tests/bench.
 #
 # References:
-#   C. E. Delaunay, "Sur la surface de revolution dont la courbure
-#       moyenne est constante", Journal de Mathematiques Pures et
-#       Appliquees 6 (1841), 309-314 -- the classification of CMC
-#       surfaces of revolution (unduloid, nodoid, catenoid, cylinder,
-#       sphere).
-#   T. Young, "An essay on the cohesion of fluids", Philosophical
-#       Transactions of the Royal Society 95 (1805), 65-87 -- the
-#       contact-angle condition.
-#   P. S. de Laplace, "Traite de mecanique celeste", Supplement au
-#       livre X (1806) -- the Young-Laplace pressure law.
-#   J. Plateau, "Statique experimentale et theorique des liquides
-#       soumis aux seules forces moleculaires" (1873).
-#   R. Finn, "Equilibrium Capillary Surfaces", Grundlehren der
-#       mathematischen Wissenschaften 284, Springer (1986) -- sessile
-#       drops and capillary theory.
-#   P.-G. de Gennes, F. Brochard-Wyart, D. Quere, "Capillarity and
-#       Wetting Phenomena" (Springer, 2004) -- capillary length,
-#       Bond number, and the gravity-flattened puddle thickness
-#       h = 2 l_c sin(theta/2).
-#   R. Courant, "Dirichlet's Principle, Conformal Mapping, and Minimal
-#       Surfaces" (Interscience, 1950) -- free boundaries of minimal
-#       surfaces meet the support surface orthogonally.
-#   K. A. Brakke, "The Surface Evolver", Experimental Mathematics 1(2)
-#       (1992) -- constrained evolution; wetting as a contact-line
-#       integral; level-set constraint walls (cnstrnt.c).
+# - C. E. Delaunay, "Sur la surface de revolution dont la courbure
+#   moyenne est constante", Journal de Mathematiques Pures et
+#   Appliquees 6 (1841), 309-314 -- the classification of CMC
+#   surfaces of revolution (unduloid, nodoid, catenoid, cylinder,
+#   sphere).
+# - T. Young, "An essay on the cohesion of fluids", Philosophical
+#   Transactions of the Royal Society 95 (1805), 65-87 -- the
+#   contact-angle condition.
+# - P. S. de Laplace, "Traite de mecanique celeste", Supplement au
+#   livre X (1806) -- the Young-Laplace pressure law.
+# - J. Plateau, "Statique experimentale et theorique des liquides
+#   soumis aux seules forces moleculaires" (1873).
+# - R. Finn, "Equilibrium Capillary Surfaces", Grundlehren der
+#   mathematischen Wissenschaften 284, Springer (1986) -- sessile
+#   drops and capillary theory.
+# - P.-G. de Gennes, F. Brochard-Wyart, D. Quere, "Capillarity and
+#   Wetting Phenomena" (Springer, 2004) -- capillary length,
+#   Bond number, and the gravity-flattened puddle thickness
+#   h = 2 l_c sin(theta/2).
+# - R. Courant, "Dirichlet's Principle, Conformal Mapping, and Minimal
+#   Surfaces" (Interscience, 1950) -- free boundaries of minimal
+#   surfaces meet the support surface orthogonally.
+# - K. A. Brakke, "The Surface Evolver", Experimental Mathematics 1(2)
+#   (1992) -- constrained evolution; wetting as a contact-line
+#   integral; level-set constraint walls (cnstrnt.c).
 
 bl_info = {
     "name": "CMC Capillary Surface",

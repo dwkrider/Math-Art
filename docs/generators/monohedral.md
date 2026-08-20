@@ -71,3 +71,4 @@ replicated over an $n_x\times n_y$ run. Every copy carries a **type index** reco
 - Richard B. Kershner, "On paving the plane" (1968) -- further pentagon types.
 - Marjorie Rice -- amateur discovery of additional pentagon types (1970s).
 - Michael Rao, "Exhaustive search of convex pentagons which tile the plane" (2017) -- proof that exactly 15 convex pentagon types exist.
+

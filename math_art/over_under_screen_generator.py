@@ -72,25 +72,25 @@
 # asymmetric plain structure above.
 #
 # References:
-#   Erwin Hauer, "Continua -- Architectural Screens and Walls",
-#     Princeton Architectural Press, 2004 -- the perforated modular
-#     screen designs (Designs 1-7, 1950-57): flowing perforated
-#     webs with woven-over ribbons and star-shaped openings, the
-#     structure realized here.
-#   Norman Carlberg and Erwin Hauer -- co-originators of Modular
-#     Constructivism (sculptural units designed to be multiplied).
-#   E. Catmull and J. Clark, "Recursively Generated B-spline
-#     Surfaces on Arbitrary Topological Meshes", Computer-Aided
-#     Design 10(6), 1978 -- the subdivision scheme used to evaluate
-#     the bicubic patch network.
-#   Branko Grunbaum and G. C. Shephard, "Satins and Twills: An
-#     Introduction to the Geometry of Fabrics", Mathematics
-#     Magazine 53(3), 1980 -- the parity / draft description of
-#     plain, twill and basket weaves (the checkerboard phase of the
-#     blue family, and the drafts of the ribbon mode).
-#   Gabriel Taubin, "A Signal Processing Approach to Fair Surface
-#     Design", SIGGRAPH 1995 -- the non-shrinking lambda|mu fairing
-#     of the taut mode.
+# - Erwin Hauer, "Continua -- Architectural Screens and Walls",
+#   Princeton Architectural Press, 2004 -- the perforated modular
+#   screen designs (Designs 1-7, 1950-57): flowing perforated
+#   webs with woven-over ribbons and star-shaped openings, the
+#   structure realized here.
+# - Norman Carlberg and Erwin Hauer -- co-originators of Modular
+#   Constructivism (sculptural units designed to be multiplied).
+# - E. Catmull and J. Clark, "Recursively Generated B-spline
+#   Surfaces on Arbitrary Topological Meshes", Computer-Aided
+#   Design 10(6), 1978 -- the subdivision scheme used to evaluate
+#   the bicubic patch network.
+# - Branko Grunbaum and G. C. Shephard, "Satins and Twills: An
+#   Introduction to the Geometry of Fabrics", Mathematics
+#   Magazine 53(3), 1980 -- the parity / draft description of
+#   plain, twill and basket weaves (the checkerboard phase of the
+#   blue family, and the drafts of the ribbon mode).
+# - Gabriel Taubin, "A Signal Processing Approach to Fair Surface
+#   Design", SIGGRAPH 1995 -- the non-shrinking lambda|mu fairing
+#   of the taut mode.
 
 bl_info = {
     "name": "Over-Under Screen",

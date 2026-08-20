@@ -75,20 +75,10 @@ a Painlevé III equation with a regular singular point at $r=0$. The whole famil
 
 ## References
 
-- Pseudosphere: Eugenio Beltrami, "Saggio di interpretazione della
-- geometria non-euclidea", Giornale di Matematiche 6, 1868.
+- Pseudosphere: Eugenio Beltrami, "Saggio di interpretazione della geometria non-euclidea", Giornale di Matematiche 6, 1868.
 - Dini's surface: Ulisse Dini, 1865.
-- Kuen's surface: Theodor Kuen, "Ueber Flaechen von constantem
-- Kruemmungsmass", Sitzungsber. Bayer. Akad. Wiss., 1884.
-- Hilbert's theorem: D. Hilbert, "Ueber Flaechen von constanter
-- Gausscher Kruemmung", Trans. AMS 2, 1901, pp. 87-99.
-- Minding bulge and spindle: Ferdinand Minding, "Wie sich entscheiden
-  laesst, ob zwei gegebene krumme Flaechen auf einander abwickelbar sind
-  oder nicht ...", J. reine angew. Math. (Crelle) 19 (1839), 370-387.
-- Breather surface: the sine-Gordon breather goes back to Bour (1862) and
-  Bäcklund (1883) for the transformation theory; the modern soliton-surface
-  framing is A. I. Bobenko, "Surfaces in terms of 2 by 2 matrices: old and
-  new integrable cases", in Harmonic Maps and Integrable Systems, Vieweg
-  1994, Sect. 8; and M. Melko and I. Sterling, "Application of soliton
-  theory to the construction of pseudospherical surfaces in R^3", Ann.
-  Global Anal. Geom. 11 (1993), 65-107.
+- Kuen's surface: Theodor Kuen, "Ueber Flaechen von constantem Kruemmungsmass", Sitzungsber. Bayer. Akad. Wiss., 1884.
+- Hilbert's theorem: D. Hilbert, "Ueber Flaechen von constanter Gausscher Kruemmung", Trans. AMS 2, 1901, pp. 87-99.
+- Minding bulge and spindle: Ferdinand Minding, "Wie sich entscheiden laesst, ob zwei gegebene krumme Flaechen auf einander abwickelbar sind oder nicht; nebst Bemerkungen ueber die Flaechen von unveraenderlichem Kruemmungsmasse", J. reine angew. Math. (Crelle) 19 (1839), 370-387 -- the classification of the constant-curvature surfaces of revolution into the parabolic, hyperbolic and conic types, and the theorem that all surfaces of equal constant curvature are locally isometric.
+- Breather surface: the sine-Gordon breather goes back to Bour (1862) and Backlund (1883) for the transformation theory; the modern soliton-surface framing (Lax pair, Sym's immersion formula, and the spectral classification in which "breather" names a conjugate pair of branch points) is A. I. Bobenko, "Surfaces in terms of 2 by 2 matrices: old and new integrable cases", in Harmonic Maps and Integrable Systems, Vieweg 1994, Sect. 8; and M. Melko and I. Sterling, "Application of soliton theory to the construction of pseudospherical surfaces in R^3", Ann. Global Anal. Geom. 11 (1993), 65-107.
+

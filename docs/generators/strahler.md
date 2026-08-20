@@ -44,16 +44,8 @@ Pruning by order is the other common use, and it is what makes a dense [DLA clus
 
 ## References
 
-- Robert E. Horton, "Erosional development of streams and their
-- drainage basins: hydrophysical approach to quantitative morphology",
-- Bulletin of the Geological Society of America 56, 1945, pp. 275-370.
-- Arthur N. Strahler, "Hypsometric (area-altitude) analysis of
-- erosional topography", Bulletin of the Geological Society of America
-- 63, 1952, pp. 1117-1142.
-- Przemyslaw Prusinkiewicz and Aristid Lindenmayer, "The Algorithmic
-- Beauty of Plants", Springer, 1990, Figure 1.21 (Strahler order on a
-- bracketed structure).
-- Wojciech Palubicki, Kipp Horel, Steven Longay, Adam Runions, Brendan
-- Lane, Radomir Mech and Przemyslaw Prusinkiewicz, "Self-organizing
-- tree models for image synthesis", ACM TOG 28(3), SIGGRAPH 2009 --
-- pipe-model girth with memory of shed branches.
+- Robert E. Horton, "Erosional development of streams and their drainage basins: hydrophysical approach to quantitative morphology", Bulletin of the Geological Society of America 56, 1945, pp. 275-370.
+- Arthur N. Strahler, "Hypsometric (area-altitude) analysis of erosional topography", Bulletin of the Geological Society of America 63, 1952, pp. 1117-1142.
+- Przemyslaw Prusinkiewicz and Aristid Lindenmayer, "The Algorithmic Beauty of Plants", Springer, 1990, Figure 1.21 (Strahler order on a bracketed structure).
+- Wojciech Palubicki, Kipp Horel, Steven Longay, Adam Runions, Brendan Lane, Radomir Mech and Przemyslaw Prusinkiewicz, "Self-organizing tree models for image synthesis", ACM TOG 28(3), SIGGRAPH 2009 -- pipe-model girth with memory of shed branches.
+

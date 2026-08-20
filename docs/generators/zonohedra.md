@@ -73,7 +73,8 @@ Finally the mesh is welded (`remove_doubles`), its normals recalculated, and it 
 
 ## References
 
-- Russell Towle, *Zonohedra* and his rhombic spirallohedron work — <http://www.zonohedra.com/>
-- Adrian Rossiter, *Antiprism* and its `zono` program (`base/zonohedron.cc`, `make_polar_zonohedron`) — <https://www.antiprism.com>, <https://github.com/antiprism/antiprism> (GPL; the direct port source).
-- H. S. M. Coxeter, *Regular Polytopes*, 3rd ed., Dover, 1973 (zonohedra as Minkowski sums / zones).
-- G. C. Shephard, *Space-filling zonotopes*, Mathematika 21, pp. 261–269, 1974.
+- Zonohedra / zonotopes: E. S. Fedorov (1885).
+- Zonohedra as Minkowski sums / zones: H. S. M. Coxeter, "Regular Polytopes", 3rd ed., Dover, 1973.
+- Polar zonohedra and rhombic spirallohedra: Russell Towle (zonohedra.com).
+- Antiprism (Adrian Rossiter), the `zono` program.
+

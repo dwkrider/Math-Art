@@ -126,24 +126,13 @@ Renders of each selectable option:
 
 ## References
 
-- A. V. Dyskin, Y. Estrin, A. J. Kanel-Belov, E. Pasternak, "A new
-  concept in design of materials and structures: assemblies of
-  interlocked tetrahedron-shaped elements", *Scripta Materialia* 44
-  (2001) 2689–2694.
-- A. J. Kanel-Belov, A. V. Dyskin, Y. Estrin, E. Pasternak,
-  I. A. Ivanov-Pogodaev, "Interlocking of convex polyhedra: towards a
-  geometric theory of fragmented solids", *Moscow Math. J.* 10(2)
-  (2010) 337–342 (arXiv:0812.5089).
-- Y. Estrin, A. V. Dyskin, E. Pasternak et al., "Fracture resistant
-  structures based on topological interlocking with non-planar
-  contacts", *Adv. Eng. Materials* 5(3) (2003) 116–119.
-- R. Akpanya, T. Goertzen, S. Wiesenhütter, A. C. Niemeyer,
-  J. Nönnig, "Topological Interlocking, Truchet Tiles and
-  Self-Assemblies", *Bridges 2023*, 61–68.
-- R. Akpanya, T. Goertzen, A. C. Niemeyer, "From Tilings of Orientable
-  Surfaces to Topological Interlocking Assemblies", *Applied Sciences*
-  14(16):7276 (2024).
-- R. Akpanya, T. Goertzen, A. C. Niemeyer, "Topologically Interlocking
-  Blocks inside the Tetroctahedrille", arXiv:2405.01944 (2024).
-- S.-G. Shih, "The Art and Mathematics of Self-Interlocking SL
-  Blocks", *Bridges 2018*, 107–114.
+- A. V. Dyskin, Y. Estrin, A. J. Kanel-Belov, E. Pasternak, "A new concept in design of materials and structures: assemblies of interlocked tetrahedron-shaped elements", Scripta Materialia 44 (2001) 2689-2694.
+- A. J. Kanel-Belov, A. V. Dyskin, Y. Estrin, E. Pasternak, I. A. Ivanov-Pogodaev, "Interlocking of convex polyhedra: towards a geometric theory of fragmented solids", Moscow Math. J. 10(2) (2010) 337-342 (arXiv:0812.5089).
+- Y. Estrin, A. V. Dyskin, E. Pasternak et al., "Fracture resistant structures based on topological interlocking with non-planar contacts", Adv. Eng. Materials 5(3) (2003) 116-119 (osteomorphic blocks).
+- R. Akpanya, T. Goertzen, S. Wiesenhuetter, A. C. Niemeyer, J. Noennig, "Topological Interlocking, Truchet Tiles and Self-Assemblies", Bridges 2023, 61-68 (Versatile block).
+- R. Akpanya, T. Goertzen, A. C. Niemeyer, "From Tilings of Orientable Surfaces to Topological Interlocking Assemblies", Applied Sciences 14(16):7276 (2024) (the Escher-loft framework and the interlocking dome).
+- R. Akpanya, T. Goertzen, A. C. Niemeyer, "Topologically Interlocking Blocks inside the Tetroctahedrille", arXiv:2405.01944 (2024) (kitten / UFO / cushion).
+- M. Weiss, A. C. Niemeyer, "Construction Methods for Space-Filling Heterogeneous Topological Interlocking Assemblies", arXiv:2604.22475 (2026) (Bisquare and Rhom blocks; A.-F. Frezier, 1737, for the original Bisquare block).
+- Shen-Guan Shih, "The Art and Mathematics of Self-Interlocking SL Blocks", Bridges 2018, 107-114.
+- G. Inchbald, "Five Space-filling Polyhedra", The Mathematical Gazette 80 (489) (1996) 466-475; J. Wu & G. Inchbald, "Folding the Space-Filling Bisymmetric Hendecahedron for a Large-Scale Art Installation", Bridges 2018, 483-486 (hendecahedron).
+

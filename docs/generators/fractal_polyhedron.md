@@ -69,6 +69,10 @@ This is a self-affine IFS: the attractor is the fixed set of the family of contr
 
 ## References
 
-- George W. Hart, "Fractal / recursive polyhedra," *Virtual Polyhedra* and sculpture pages: <https://www.georgehart.com/virtual-polyhedra/vp.html> and <https://www.georgehart.com/>
-- Michael F. Barnsley, *Fractals Everywhere*, 2nd ed., Academic Press, 1993 — iterated function systems and self-affine attractors.
-- Wacław Sierpiński (1916) / the Sierpinski tetrahedron as the vertex-mode, scale-$\tfrac12$ IFS on a tetrahedron; see Eric W. Weisstein, "Tetrix," *MathWorld*: <https://mathworld.wolfram.com/Tetrix.html>
+- Recursive Platonic-solid clusters: after George W. Hart.
+- Sierpinski tetrahedron / triangle: Waclaw Sierpinski (1916), self-similar fractal.
+- R.-J. Haüy, "Essai d'une théorie sur la structure des crystaux", 1784 -- crystal forms built by stacking congruent blocks ("molécules intégrantes"); basis of the crystal presets.
+- R. W. Fathauer, H. Kaczmarski, N. Duchnowski, "A Fractal Crystal Comprised of Cubes and Some Related Fractal Arrangements of other Platonic Solids", Bridges 2008, pp. 289-296. https://archive.bridgesmathart.org/2008/bridges2008-289.pdf
+- R. W. Fathauer, "Iterative Arrangements of Polyhedra -- Relationships to Classical Fractals and Haüy Constructions", Bridges 2013, pp. 175-182. https://archive.bridgesmathart.org/2013/bridges2013-175.pdf
+- C. Goodman-Strauss, "Dodecafoam and Substitution Tilings", Computers & Graphics 23 (1999), pp. 917-924 -- the dodecahedron arrangement here is a subset of dodecafoam.
+

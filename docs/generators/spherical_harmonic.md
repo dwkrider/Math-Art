@@ -92,8 +92,8 @@ The radius is evaluated on a $(\theta,\varphi)$ grid, the two poles are collapse
 
 ## References
 
-- P. S. Laplace, "Théorie des attractions des sphéroïdes et de la figure des planètes," *Mémoires de l'Académie royale des Sciences*, 1785.
-- A.-M. Legendre, "Recherches sur l'attraction des sphéroïdes homogènes," *Mémoires de Mathématique et de Physique*, 1785.
-- E. U. Condon and G. H. Shortley, *The Theory of Atomic Spectra*, Cambridge University Press, 1935 (the real form, normalisation and the phase convention).
-- M. Abramowitz and I. A. Stegun, *Handbook of Mathematical Functions*, Dover, 1965, chapter 8 (the associated Legendre recurrences used here).
-- P. Bourke, "Spherical Harmonics," February 1990, http://paulbourke.net/geometry/sphericalh/ — the source of the eight-parameter form. The parameter sets shipped as presets here are project-chosen, not his.
+- Spherical harmonics: P. S. Laplace, "Theorie des attractions des spheroides et de la figure des planetes", Memoires de l'Academie royale des Sciences, 1785; A.-M. Legendre, "Recherches sur l'attraction des spheroides homogenes", Memoires de Mathematique et de Physique, 1785.
+- Real form, normalisation and the Condon-Shortley phase: E. U. Condon and G. H. Shortley, "The Theory of Atomic Spectra", Cambridge University Press, 1935.
+- The associated Legendre recurrences used here: M. Abramowitz and I. A. Stegun, "Handbook of Mathematical Functions", Dover, 1965, chapter 8.
+- The eight-parameter sculptural family r = sin(m0 phi)^m1 + cos(m2 phi)^m3 + sin(m4 theta)^m5 + cos(m6 theta)^m7 is Paul Bourke's "Spherical Harmonics" form (February 1990), http://paulbourke.net/geometry/sphericalh/ .  The parameter sets offered as presets below are project-chosen, not his.
+

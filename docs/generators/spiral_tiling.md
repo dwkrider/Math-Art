@@ -71,3 +71,4 @@ That single equation is the whole design constraint. Because it must be satisfie
 - Robert W. Fathauer, "Logarithmic Spiral Tilings of Triangles", Bridges 2021 Conference Proceedings, pp. 55-62 -- the construction, equations and named families reproduced here.
 - C. Waldman, "Gnomon is an Island" (2016) and private communication -- the side-to-side isosceles family (any n > 2) and the observation that these tilings are self-dual.
 - Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H. Freeman, 1987) -- spiral tilings and their singular points.
+

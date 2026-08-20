@@ -62,11 +62,7 @@ Both the curvature and the curvature-weighted centre are simple linear combinati
 
 ## References
 
-- Rene Descartes (1643, letter to Princess Elisabeth); rediscovered
-- by Frederick Soddy, "The Kiss Precise", Nature 137, 1936, p. 1021
-- (verse giving both the 2D theorem and its 3D sphere version).
-- Apollonius of Perga, "Tangencies" (lost; c. 200 BC), the classical
-- problem of tangent circles.
-- Jeffrey C. Lagarias, Colin L. Mallows and Allan R. Wilf, "Beyond
-- the Descartes Circle Theorem", Amer. Math. Monthly 109, 2002,
-- pp. 338-361 (the curvature-centre / reflection formulation).
+- Rene Descartes (1643, letter to Princess Elisabeth); rediscovered by Frederick Soddy, "The Kiss Precise", Nature 137, 1936, p. 1021 (verse giving both the 2D theorem and its 3D sphere version).
+- Apollonius of Perga, "Tangencies" (lost; c. 200 BC), the classical problem of tangent circles.
+- Jeffrey C. Lagarias, Colin L. Mallows and Allan R. Wilf, "Beyond the Descartes Circle Theorem", Amer. Math. Monthly 109, 2002, pp. 338-361 (the curvature-centre / reflection formulation).
+

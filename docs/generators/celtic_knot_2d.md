@@ -106,3 +106,4 @@ So a $6\times4$ panel is two interlocked cords and a $5\times3$ panel is a singl
 - Aidan Meehan, "Celtic Design: Knotwork" (1991) -- the grid-cell drawing tradition.
 - Slavik V. Jablan, "Mirror curves" and "Symmetry, Ornament and Modularity" (2002) -- knotwork as billiard / mirror curves, and the component count of the plain plait.
 - Christian Mercat, "Knots and links from a graph" / "Les entrelacs des enluminures celtes" -- the construction of an interlaced knot on the medial graph of ANY planar graph, generalizing the grid plait to arbitrary tilings (used here for the non-square substrates).
+

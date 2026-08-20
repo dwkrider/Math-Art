@@ -50,5 +50,7 @@ Material is kept where $g < 0$ (within a strut half-width of a boundary). Becaus
 
 ## References
 
-- Primož Gabrijelčič, *voronoizer* — <https://github.com/gabr42/voronoizer> (the Voronoi-perforation idea this operator reworks, boolean-free and geodesic).
-- E. W. Dijkstra, *A Note on Two Problems in Connexion with Graphs*, Numerische Mathematik 1, 1959 (the shortest-path algorithm used for the geodesic distances and farthest-point sampling).
+- Voronoi diagram: Georgy F. Voronoi (1908); the equivalent Dirichlet tessellation, Lejeune Dirichlet (1850); the dual Delaunay triangulation, Boris N. Delaunay (1934).
+- E. W. Dijkstra, "A Note on Two Problems in Connexion with Graphs", Numerische Mathematik 1 (1959) -- the shortest-path algorithm used here for the graph-geodesic distances.
+- Primoz Gabrijelcic, "voronoizer" (https://github.com/gabr42/voronoizer) -- the Voronoi- perforation idea this operator reworks.
+

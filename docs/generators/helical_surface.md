@@ -60,6 +60,5 @@ In all three, the mesh is centered and fit within a $2\times\text{scale}$ cube, 
 
 ## References
 
-- J. Meier, minimal-surface and parametric-surface gallery, https://www.3d-meier.de/ (hyperbolic helicoid and related parametrizations).
-- A. Gray, E. Abbena, S. Salamon, *Modern Differential Geometry of Curves and Surfaces with Mathematica*, 3rd ed., Chapman & Hall/CRC, 2006 (seashell and helicoidal parametrizations).
-- Wolfram MathWorld, "Seashell" and "Helicoid," https://mathworld.wolfram.com/
+- The helicoid is a classical minimal and ruled surface (J. B. C. Meusnier, 1776); the hyperbolic helicoid, conical seashell and twisted-sphere forms here are standard parametric surfaces. See A. Gray, E. Abbena, S. Salamon, "Modern Differential Geometry of Curves and Surfaces with Mathematica" (3rd ed., 2006), and J. Meier's gallery (3d-meier.de).
+
