@@ -33,6 +33,21 @@
 #    least 1/3, so the boundary is the radial graph
 #    r = 1/sqrt(q_max) with 1 <= r <= sqrt(3) -- meshed exactly
 #    as a displaced UV sphere (watertight).
+#
+# 4. Dupin cyclides (Dupin 1822): the surfaces all of whose lines of
+#    curvature are circles.  They are exactly the inversions of tori
+#    (and of cylinders and cones) of revolution, and the three
+#    classical types come from the three types of torus -- ring
+#    (R > r), horn (R = r) and spindle (R < r).  Built by inverting the
+#    torus rather than from a memorised parametrisation, so the
+#    defining circle property is inherited rather than asserted.
+#
+# References for 4: C. Dupin, "Applications de Geometrie et de
+#    Mechanique", Paris 1822.  B. Odehnal, "Ortho-Circles of Dupin
+#    Cyclides", J. Geometry Graphics 10 (2006) 1-21 -- states the
+#    inversion construction and the ring / horn / spindle
+#    classification used here; a converted copy is in
+#    research/papers/classical-surfaces/.
 
 bl_info = {
     "name": "Miscellaneous Surfaces",
@@ -41,7 +56,8 @@ bl_info = {
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Math Art > Surfaces",
     "description": "Fresnel's elasticity surface, the paper bag "
-                   "surface, and the trihyperboloid",
+                   "surface, the trihyperboloid and the Dupin "
+                   "cyclides",
     "category": "Add Mesh",
 }
 
@@ -126,6 +142,96 @@ def build_trihyperboloid(segments=96, rings=48):
     return build_radial(trihyperboloid_radius, segments, rings)
 
 
+def build_cyclide(kind='RING', ring=1.0, tube=0.45, centre=1.9,
+                  power=1.6, segments=96, rings=48):
+    """A Dupin cyclide, as the inversion of a torus of revolution.
+
+    Dupin cyclides are exactly the images of tori (and cylinders and
+    cones of revolution) under an inversion, and the three classical
+    types come from the three types of torus:
+
+        ring    R > r   ring torus     ->  ring cyclide
+        horn    R = r   horn torus     ->  horn cyclide
+        spindle R < r   spindle torus  ->  spindle cyclide
+
+    Building them this way rather than from a memorised (a, b, c, d)
+    parametrisation is deliberate.  Inversion carries circles to
+    circles, so the property that DEFINES a Dupin cyclide -- every line
+    of curvature is a circle -- is inherited from the torus for free,
+    and `_selftest` can check it directly by fitting circles to the
+    parameter curves.
+
+    `centre` places the centre of inversion on the x-axis and `power`
+    is its radius; the centre must not lie on the torus, or the image
+    runs off to infinity.
+    """
+    R, r = float(ring), float(tube)
+    if kind == 'HORN':
+        r = R
+    elif kind == 'SPINDLE':
+        r = max(r, R * 1.6)
+    cx, k2 = float(centre), float(power) ** 2
+
+    verts = []
+    for i in range(segments):
+        u = 2.0 * math.pi * i / segments
+        cu, su = math.cos(u), math.sin(u)
+        for j in range(rings):
+            v = 2.0 * math.pi * j / rings
+            rad = R + r * math.cos(v)
+            px, py, pz = rad * cu, rad * su, r * math.sin(v)
+            dx, dy, dz = px - cx, py, pz
+            d2 = dx * dx + dy * dy + dz * dz
+            if d2 < 1e-12:                      # centre sits on Phi
+                d2 = 1e-12
+            s = k2 / d2
+            verts.append((cx + dx * s, dy * s, dz * s))
+
+    faces = []
+    for i in range(segments):
+        i1 = (i + 1) % segments
+        for j in range(rings):
+            j1 = (j + 1) % rings
+            faces.append((i * rings + j, i1 * rings + j,
+                          i1 * rings + j1, i * rings + j1))
+    return verts, faces
+
+
+def cyclide_parameter_curves(kind='RING', ring=1.0, tube=0.45,
+                             centre=1.9, power=1.6, n=72):
+    """Sample the two families of parameter curves, as point lists.
+
+    These are the images of the torus's lines of curvature, so on a
+    genuine Dupin cyclide every one of them is a circle.
+    """
+    R, r = float(ring), float(tube)
+    if kind == 'HORN':
+        r = R
+    elif kind == 'SPINDLE':
+        r = max(r, R * 1.6)
+    cx, k2 = float(centre), float(power) ** 2
+
+    def invert(px, py, pz):
+        dx, dy, dz = px - cx, py, pz
+        d2 = max(dx * dx + dy * dy + dz * dz, 1e-12)
+        s = k2 / d2
+        return (cx + dx * s, dy * s, dz * s)
+
+    def point(u, v):
+        rad = R + r * math.cos(v)
+        return invert(rad * math.cos(u), rad * math.sin(u),
+                      r * math.sin(v))
+
+    fixed_u = []
+    for u in (0.0, 0.7, 1.9, 3.5):
+        fixed_u.append([point(u, 2.0 * math.pi * t / n)
+                        for t in range(n)])
+    fixed_v = []
+    for v in (0.0, 1.1, 2.6, 4.4):
+        fixed_v.append([point(2.0 * math.pi * t / n, v)
+                        for t in range(n)])
+    return fixed_u, fixed_v
+
 def build_paper_bag(a=2.47, b=-1.26, segments=96, rings=48,
                     depth=2.0):
     """(verts, faces): the paper bag surface x = v cos u,
@@ -174,7 +280,16 @@ if _IN_BLENDER:
                    ('TRIHYPERBOLOID', "Trihyperboloid",
                     "Boundary of the solid enclosed by the "
                     "three hyperboloids x^2+y^2-z^2 <= 1 "
-                    "(cyclic); volume 8 ln 2")],
+                    "(cyclic); volume 8 ln 2"),
+                   ('CYCLIDE_RING', "Dupin Cyclide (ring)",
+                    "Inversion of a ring torus (R > r); every "
+                    "line of curvature is a circle"),
+                   ('CYCLIDE_HORN', "Dupin Cyclide (horn)",
+                    "Inversion of a horn torus (R = r), which "
+                    "touches itself on the axis"),
+                   ('CYCLIDE_SPINDLE', "Dupin Cyclide (spindle)",
+                    "Inversion of a spindle torus (R < r), the "
+                    "self-intersecting one")],
             default='FRESNEL')
         semi_a: FloatProperty(
             name="Semi-Axis A", default=1.0, min=0.01, max=10.0,
@@ -195,6 +310,25 @@ if _IN_BLENDER:
             min=-10.0, max=10.0,
             description="Coefficient b in y = (v + b u) sin u "
                         "(-1.26 in the classic plot)")
+        cyclide_ring: FloatProperty(
+            name="Ring Radius", default=1.0, min=0.05, max=10.0,
+            description="Radius R of the torus centre circle "
+                        "(Dupin cyclides only)")
+        cyclide_tube: FloatProperty(
+            name="Tube Radius", default=0.45, min=0.01, max=10.0,
+            description="Tube radius r of the torus; the ring / horn "
+                        "/ spindle type overrides it where the type "
+                        "fixes the ratio (Dupin cyclides only)")
+        cyclide_centre: FloatProperty(
+            name="Inversion Centre", default=1.9,
+            min=-10.0, max=10.0,
+            description="Centre of inversion on the x-axis; it must "
+                        "not lie on the torus, or the image runs off "
+                        "to infinity (Dupin cyclides only)")
+        cyclide_power: FloatProperty(
+            name="Inversion Radius", default=1.6, min=0.05, max=10.0,
+            description="Radius of the sphere of inversion "
+                        "(Dupin cyclides only)")
         resolution: IntProperty(
             name="Resolution", default=48, min=6, max=256,
             description="Rings across the surface (twice as "
@@ -218,6 +352,13 @@ if _IN_BLENDER:
                 verts, faces = build_paper_bag(
                     self.bag_a, self.bag_b, 2 * res, res)
                 name = "Paper Bag Surface"
+            elif self.surface.startswith('CYCLIDE_'):
+                kind = self.surface.split('_', 1)[1]
+                verts, faces = build_cyclide(
+                    kind, self.cyclide_ring, self.cyclide_tube,
+                    self.cyclide_centre, self.cyclide_power,
+                    2 * res, res)
+                name = "Dupin Cyclide (%s)" % kind.lower()
             else:
                 verts, faces = build_trihyperboloid(2 * res, res)
                 name = "Trihyperboloid"
@@ -374,5 +515,49 @@ def _selftest():
           f"watertight=True vol={vol:.4f} "
           f"(exact 8 ln 2 = {want:.4f})")
     assert abs(vol - want) < 0.15
+
+
+    # ---- Dupin cyclides -------------------------------------------
+    # The defining property: every line of curvature is a circle.  The
+    # parameter curves ARE those lines (they are the images of the
+    # torus's own curvature circles), so fitting a circle through three
+    # of their points and checking that the rest lie on it tests the
+    # construction itself, not merely the meshing.
+    def _circumcentre(a, b, c):
+        u = tuple(b[i] - a[i] for i in range(3))
+        v = tuple(c[i] - a[i] for i in range(3))
+        uu = sum(t * t for t in u)
+        vv = sum(t * t for t in v)
+        uv = sum(u[i] * v[i] for i in range(3))
+        d = 2.0 * (uu * vv - uv * uv)
+        if abs(d) < 1e-30:
+            return None
+        s0 = (uu * vv - uv * vv) / d
+        t0 = (vv * uu - uv * uu) / d
+        return tuple(a[i] + s0 * u[i] + t0 * v[i] for i in range(3))
+
+    def _circle_dev(pts):
+        n = len(pts)
+        cen = _circumcentre(pts[0], pts[n // 3], pts[2 * n // 3])
+        if cen is None:
+            return 1.0
+        rr = [math.dist(q, cen) for q in pts]
+        R = sum(rr) / len(rr)
+        if R < 1e-12:
+            return 1.0
+        return max(abs(x - R) for x in rr) / R
+
+    bad = []
+    for kind in ('RING', 'HORN', 'SPINDLE'):
+        fu, fv = cyclide_parameter_curves(kind)
+        dev = max(_circle_dev(c) for c in fu + fv)
+        if not (dev < 1e-9):
+            bad.append('%s:%.1e' % (kind, dev))
+        V, F = build_cyclide(kind, segments=64, rings=32)
+        if not (_finite(V) and _valid(V, F) and _watertight(F)):
+            bad.append(kind + ':mesh')
+    assert not bad, "cyclide check failed: " + ", ".join(bad)
+    print("cyclides: ring/horn/spindle -- every line of curvature is a "
+          "circle (dev < 1e-9), meshes watertight")
 
     print("miscellaneous surfaces standalone tests passed")
