@@ -3,7 +3,19 @@
 ![Minimal Surface Polyhedron](../images/minimal_polyhedron.png)
 
 ## Overview
-A polyhedron whose faces are pierced and relaxed into a smooth minimal-surface-like membrane stretched over a softly held edge frame. It generalizes the classic pierced-cube tutorial to any polyhedron: subdivide the faces, open a hole (or dent them inward), then relax with Laplacian smoothing while pinning the seed skeleton so the form still reads as its polyhedron. Works on the built-in Platonic seeds or the active mesh object.
+
+A polyhedron whose faces are pierced and relaxed into a smooth minimal-surface-like membrane stretched over a softly held edge frame — the classic pierced-cube tutorial generalized to any polyhedron, and to inward saddle bulges as well as holes.
+
+The recipe is always the same: subdivide the faces, open a hole (or dent them inward), then relax with Laplacian smoothing while pinning the seed skeleton so the form still reads as its polyhedron. It works on the built-in Platonic seeds or on the active mesh object.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Minimal Surface Polyhedron*.
+2. **Pick the Seed.** Cube, Tetrahedron, Octahedron, Dodecahedron or Icosahedron use a built-in Platonic frame; **Active Object** pierces the faces of whatever mesh is selected instead, so any Conway, Johnson or Catalan solid can be treated the same way.
+3. **Choose the Mode.** **Face Openings** cuts a hole through the middle of each face, and its rim tightens into a soap-film ring as the surface relaxes; **Inward Bulge** leaves the faces closed and instead dents each one inward into a saddle that hangs from the edges.
+4. **Set the shape knobs.** **Subdivisions** (1–5) is how finely each face is meshed before anything is cut — more gives a smoother membrane at the cost of a heavier mesh. In Face Openings, **Hole Size** is the opening radius as a fraction of the face inradius (0 = no hole, up to 0.95), and **Openings** pierces Every Face, Every Other Face, or None. In Inward Bulge, **Bulge Depth** sets how deep each face dents, in units of its inradius.
+5. **Choose what is held.** **Hold** pins the seed's whole **Edge Frame** (the "cast in the mould" look), only its **Corners** (spiky points with deeply relaxed webs), or **Nothing** (the form slumps toward a blob). **Corner Softness** is the radius, in edge lengths, over which the pinning fades out — small keeps sharp points, large rounds them off.
+6. **Relax and thicken.** **Relax Iterations** is how many smoothing passes are applied, and **Thickness** adds a Solidify shell (0 leaves the raw single-sided surface). The operator reports the final vertex and face counts.
 
 ## Options
 
@@ -45,19 +57,19 @@ Renders of each selectable option:
 
 ## How it works
 
-The construction has four stages.
+**In plain terms.** Bend a stiff wire into the skeleton of a cube and dip it in soapy water: a film spans each square opening and, pulled taut by surface tension, settles into the smoothest, least-area shape it can, bowing inward wherever nothing holds it. This generator imitates that in a few moves. It takes a solid polyhedron and chops each flat face into a fine grid of little tiles; it either punches a hole through the middle of each face or presses the face inward; then it repeatedly slides every grid point a little toward the average position of its neighbours. That averaging is a stand-in for surface tension — do it enough times and bumps flatten, holes round out, and the sheet hangs as a taut membrane — while the polyhedron's edges (or just its corners) are held fixed so the whole thing still reads as a cube. The rest of this section is those moves made exact, in four stages.
 
-**1. Subdivide.** Every face is linearly split into quads `levels` times by `linear_subdivide`: each $n$-gon becomes $n$ quads of the form (corner, edge-midpoint, face-centre, edge-midpoint). This is Catmull-Clark topology *without* the smoothing -- the geometry stays exactly on the seed polyhedron. Each descendant sub-face remembers which original seed face it came from.
+**1. Subdivide.** A flat polygon has only its corners and edges — no interior for a membrane to sag into — so the first step is to manufacture one. Every face is linearly split into quads `Subdivisions` times by `linear_subdivide`: each $n$-gon becomes $n$ quads of the form (corner, edge-midpoint, face-centre, edge-midpoint), and each further pass quarters every quad again, multiplying the free interior points geometrically. This is Catmull–Clark topology *without* the smoothing step, so every new vertex lands exactly on the original flat face — the polyhedron's shape is untouched, only its resolution grows. Each descendant sub-face remembers which seed face it came from, which the next two stages both need.
 
-**2. Open holes** (HOLES mode). For a sub-face whose centroid $c$ lies within $\text{hole}\times r_{\text{in}}$ of the face centre $f_c$ (measured in-plane, projecting out the face normal $\hat n$), the sub-face is deleted, leaving a hole. Here $r_{\text{in}}$ is the face inradius, approximated as the minimum distance from the centre to an edge. The pattern selects all faces, alternating faces, or none.
+**2. Open holes** (Face Openings). For each sub-face, take its centroid $c$ and measure how far it sits from its parent face's centre $f_c$ — but only *within the plane of the face*, projecting out the component along the face normal $\hat n$ so a tilted face is measured fairly. If that in-plane distance is less than $\text{hole}\times r_{\text{in}}$, the sub-face is deleted, opening a hole. Here $r_{\text{in}}$ is the face inradius, approximated as the shortest distance from the centre to any edge, so `Hole Size` reads cleanly as "how far the hole reaches from the centre toward the rim". The `Openings` pattern chooses whether every face, every other face, or none is pierced.
 
-**3. Dent inward** (SADDLE mode). Instead of piercing, each vertex interior to exactly one seed face is displaced along that face's inward normal by
-$$\Delta = \text{depth}\cdot r_{\text{in}}\cdot s(w),\qquad w=\min\!\left(1,\frac{d_{\text{rim}}}{r_{\text{in}}}\right),\quad s(w)=w^2(3-2w)$$
-a smoothstep of its distance $d_{\text{rim}}$ to the face's own rim. Rim and corner vertices (shared between faces) stay put, so the sheets hang from the edge frame and nothing is anchored at the polyhedron centre.
+**3. Dent inward** (Inward Bulge). Instead of piercing, each vertex interior to exactly one seed face is pushed along that face's inward normal by
+$$\Delta = \text{depth}\cdot r_{\text{in}}\cdot s(w),\qquad w=\min\!\left(1,\frac{d_{\text{rim}}}{r_{\text{in}}}\right),\quad s(w)=w^2(3-2w),$$
+where $d_{\text{rim}}$ is the vertex's distance to the face's own rim and $s$ is the smoothstep function. The smoothstep is what shapes the dent: since $s(0)=0$ and $s(1)=1$ with zero slope at both ends, a vertex on the rim does not move at all, one deep in the interior sinks the full depth, and the transition between the two is gently rounded rather than creased. Rim and corner vertices are shared between faces, so they stay put — the sheets hang from the edge frame with nothing anchored at the polyhedron centre.
 
-**4. Relax.** A **soft pin weight** $w_i\in[0,1]$ ramps from 0 on the pinned skeleton to 1 over a fraction of the mean edge length. With `pin='CORNERS'` the skeleton is the seed vertices; with `pin='EDGES'` it is the whole seed edge frame (distance to the nearest edge segment), which gives the "cast in the mold" look. Then uniform **Laplacian smoothing** with free boundaries is iterated:
+**4. Relax.** A **soft pin weight** $w_i\in[0,1]$ decides how free each vertex is to move: it is $0$ on the pinned skeleton and ramps up to $1$ over a fraction of the mean edge length set by `Corner Softness`. With `Hold = Corners Only` the skeleton is just the seed's vertices; with `Hold = Edge Frame` it is the whole seed edge frame (distance measured to the nearest edge segment), which is what gives the "cast in the mould" look — free in the face interiors but clamped all along the original edges. Then uniform **Laplacian smoothing** with free boundaries is iterated:
 $$P_i \leftarrow P_i + \lambda\, w_i\,\big(\overline{P}_{\mathcal N(i)} - P_i\big),$$
-where $\overline{P}_{\mathcal N(i)}$ is the average of vertex $i$'s neighbours and $\lambda$ is `smooth_lambda`. Free hole rims tighten like a stretched membrane with free edges. Finally the mesh is centered, fit within a $2\times\text{scale}$ cube, and given a Solidify shell if Thickness > 0.
+where $\overline{P}_{\mathcal N(i)}$ is the average position of vertex $i$'s neighbours and $\lambda$ is the smoothing rate. Each pass slides a vertex a fraction $\lambda w_i$ of the way toward its neighbours' centre of mass; repeated, this is discrete diffusion — the same averaging that evens out temperature in a metal plate — and it drives the sheet toward the least-area, zero-mean-curvature shape a real membrane would take. The weight $w_i$ multiplies in so pinned points never move and nearby points move only slowly, holding the polyhedron's silhouette while the interiors relax. Free hole rims, clamped on no boundary, contract and smooth like a soap film with a free edge. Finally the mesh is centred, fit within a $2\times\text{scale}$ cube, and given a Solidify shell if Thickness > 0.
 
 ## References
 

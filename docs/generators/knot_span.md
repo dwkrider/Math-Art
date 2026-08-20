@@ -6,6 +6,16 @@
 
 This generator builds the classic Plateau-problem demonstration: the minimal surface (soap film) spanning between a $(p,q)$ **torus knot** as its inner boundary and a **circle** as its outer boundary — a trefoil-to-circle span by default. Because the outer circle is wound $p$ times to line up with the knot's strands, the film is a multiply-wound annulus whose sheets pass through one another. It can also span between two torus knots, and can be output as a mesh, a NURBS patch, or as separate one-winding sheet objects.
 
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Knot to Knot Surface*.
+2. **Set the inner boundary.** **Knot p** and **Knot q** choose the $(p,q)$ torus knot (the default $(2,3)$ is the trefoil); **Knot q = 0** degenerates it to a flat circle wound $p$ times. **Knot Scale** sizes it, **Inner Height** scales its vertical waviness (0 flattens it into a wavy-radius ring), **Inner Lift** shifts it up or down, and **Inner Rotation** turns it relative to the outer loop, twisting the ruling between them.
+3. **Set the outer boundary.** By default it is a round **Circle** of **Circle Radius**, wound $p$ times so its strands line up with the knot. Raising **Outer Knot q** above 0 makes the outer boundary a second torus knot instead — then **Outer Knot p**, **Outer Knot Scale** and **Outer Height** appear to shape it (a knot-to-knot span).
+4. **Choose the Span Topology** (shown for a $p = 2$, odd-$q$ knot over the plain circle). **Single Sheet (Seifert)** builds one embedded, self-intersection-free surface of genus $(q-1)/2$; **Wound Annulus (crossing sheets)** builds the classic ruled annulus whose $p$ windings pass through one another. With $p > 1$, **Split Sheets** emits those windings as $p$ separate one-winding objects that share their seam edges.
+5. **Set the solver controls.** **Boundary Samples**, **Interior Rings** and **Solver Iterations** trade cost for smoothness. In Single-Sheet mode they are *requests* — the solver floors the samples and caps the rings and iterations to keep the sheet embedded.
+6. **Choose the output.** Leave **NURBS Output** off for a dense mesh; turn it on for a compact NURBS patch (which may ripple where the surface curls tightly near a knot — raise rings/samples if so).
+7. **Read the report.** Each build prints the resulting **mesh area** in the status bar. Single-Sheet builds also report the sheet's genus (and note when relaxation was capped to stay embedded); Split-Sheets builds report the number of sheets emitted.
+
 ## Options
 
 
@@ -35,19 +45,21 @@ This generator builds the classic Plateau-problem demonstration: the minimal sur
 
 ## How it works
 
+**In plain terms.** Bend a stiff wire into a knotted loop — a trefoil, say — set a plain ring around it, and dip the pair into soapy water: a film springs across the gap and, because a soap film is lazy, it settles into the shape with the *least area* it can manage while still touching both wires. This generator does exactly that, but numerically. It first strings a crude starting "sheet" between the two loops like a rubber membrane, then repeatedly nudges every interior point toward the spot that would shrink the surrounding area a little more, and keeps nudging until the sheet stops moving — the taut, minimal shape. One quirk: to line the film up with a knot's several strands, the outer ring has to be traced around more than once, so the finished film winds around several times and its sheets pass through each other, just as a real soap film on such a frame cannot avoid doing.
+
 A **$(p,q)$ torus knot** is sampled as
 
 $$\big(x, y, z\big) = \Big(r\cos(p\,t),\; r\sin(p\,t),\; -\sin(q\,t)\Big), \qquad r = 2 + \cos(q\,t),\quad t \in [0, 2\pi),$$
 
-(scaled by *Knot Scale*, with the $z$-oscillation multiplied by *Inner Height* and shifted by *Inner Lift*). This is the inner boundary. The outer boundary is either a plain circle wound $p$ times, $\big(R\cos(p\,t), R\sin(p\,t), 0\big)$ — the winding matching the knot's $p$ so the ruling lines up — or a second torus knot when *Outer Knot q* > 0.
+(scaled by *Knot Scale*, with the $z$-oscillation multiplied by *Inner Height* and shifted by *Inner Lift*). The $p$ inside $\cos(p\,t)$ and $\sin(p\,t)$ counts how many times the strand travels around the main axis, while $q$ (through $r = 2 + \cos(q\,t)$ and the $z$-wave) counts how many times it winds over the tube — the two numbers together are what tie the knot. This is the inner boundary. The outer boundary is either a plain circle wound $p$ times, $\big(R\cos(p\,t), R\sin(p\,t), 0\big)$ — the same $p$ as the knot, so that as $t$ runs the two loops advance in lockstep and the film between them does not shear — or a second torus knot when *Outer Knot q* > 0.
 
-An initial **ruled annulus** is built by linearly interpolating between the two aligned loops across *Interior Rings* rows, with both boundary loops pinned. The surface is then relaxed toward minimal area by the **Pinkall-Polthier** cotangent-Laplacian iteration: each outer iteration recomputes per-edge cotangent weights
+An initial **ruled annulus** is built by linearly interpolating between the two aligned loops across *Interior Rings* rows, with both boundary loops pinned. That gives a valid but baggy first guess; the real work is relaxing it toward minimal area by the **Pinkall-Polthier** cotangent-Laplacian iteration. Each outer iteration recomputes per-edge cotangent weights
 
 $$w_{ij} = \tfrac12\cot\theta_{ij}$$
 
-(clamped positive to keep the linear system positive-definite) and solves the discrete Laplace equation $L\,x = 0$ for the free (interior) vertices with the boundary held fixed, using a conjugate-gradient core. The cotangent Laplacian is the gradient of discrete surface area, so fixed-point iteration drives the mesh to a discrete minimal surface. The result is centered on the origin and fit within a 2 m cube.
+from the angles opposite each edge (clamped positive so the linear system stays positive-definite and the solve cannot blow up), then solves the discrete Laplace equation $L\,x = 0$ for the free interior vertices with the boundary held fixed, using a conjugate-gradient core. The key fact that makes this *area* minimization rather than mere smoothing is that the cotangent Laplacian is precisely the **gradient of discrete surface area**: setting $L\,x = 0$ asks for the configuration where area stops changing, so iterating the solve drives the mesh to a discrete minimal surface — a faithful numerical stand-in for the soap film. Re-deriving the weights each pass keeps them honest as the triangles change shape. The result is centered on the origin and fit within a 2 m cube.
 
-Because the outer boundary winds $p$ times, the span's sheets genuinely pass through one another. **Split Sheets** instead slices the solver grid into $p$ blocks of columns (neighbouring sheets sharing their seam columns) and emits each single-winding sheet as its own object. **NURBS output** fairs the solved grid first — per-column arc-length resampling to remove the solver's shear, light 2D net smoothing, and a normal-only mean-curvature polish — then uses it as the control net of a single cyclic NURBS patch.
+Because the outer boundary winds $p$ times, the span's sheets genuinely pass through one another — an embedded (non-crossing) annulus between a knotted loop and a round circle simply cannot exist. **Split Sheets** leans into that by slicing the solver grid into $p$ blocks of columns (neighbouring sheets sharing their seam columns) and emitting each single-winding sheet as its own object, so the interpenetrating whole can be inspected one clean sheet at a time. The alternative **Single Sheet (Seifert)** topology sidesteps the crossings for $p = 2$, odd-$q$ knots by building instead an *embedded* surface — Seifert's algorithm applied to the round knot diagram, whose genus is $(q-1)/2$ — trading self-intersection for a handle or two. **NURBS output** fairs the solved grid first — per-column arc-length resampling to remove the solver's shear, light 2D net smoothing, and a normal-only mean-curvature polish — then uses it as the control net of a single cyclic NURBS patch.
 
 ## References
 

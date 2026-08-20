@@ -3,7 +3,16 @@
 ![Miscellaneous Surfaces](../images/curiosity_surface.png)
 
 ## Overview
-Three classic surfaces from the geometry literature: Fresnel's elasticity surface (a quartic radial surface from optics), the paper bag surface (a crimped inflated-bag plot), and the trihyperboloid (the boundary of the solid enclosed by three mutually perpendicular hyperboloids, with exact volume $\ln 256 = 8\ln 2$). The two radial surfaces are meshed as displaced UV spheres and come out watertight; the paper bag stays open like a real bag.
+
+Three classic surfaces from the geometry literature: Fresnel's **elasticity surface** (a quartic radial surface from crystal optics), the **paper bag surface** (a crimped inflated-bag plot), and the **trihyperboloid** (the boundary of the solid where three mutually perpendicular hyperboloids overlap, with exact volume $\ln 256 = 8\ln 2$). The two radial surfaces are meshed as displaced UV spheres and come out watertight; the paper bag stays open at both ends like a real bag.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Miscellaneous Surface*.
+2. **Pick the Surface** — **Fresnel Elasticity Surface**, **Paper Bag Surface**, or **Trihyperboloid**.
+3. **Set that surface's knobs.** Fresnel exposes three semi-axes, **Semi-Axis A / B / C**, and the three coordinate axes then poke out to exactly $r = a, b, c$. The paper bag exposes the two classic constants, **Height Coefficient** ($a = 2.47$ in the standard plot) and **Crimp Coefficient** ($b = -1.26$). The trihyperboloid is fixed — its shape has no free parameters.
+4. **Dial Resolution** — the number of rings across the surface (twice as many segments around) — then **Thickness** to add a solid shell via a Solidify modifier, and **Scale**. The whole mesh is centred and fit inside a $2\times\text{scale}$ cube.
+5. **Read the report.** The operator prints the vertex and face counts of what it built.
 
 ## Options
 
@@ -39,21 +48,23 @@ Renders of each selectable option:
 
 ## How it works
 
-**Radial surfaces.** Both the Fresnel surface and the trihyperboloid are *radial graphs* over the sphere of directions: a radius function $r(l,m,n)$ evaluated on unit directions $(l,m,n)$ and meshed as a displaced UV sphere (`build_radial`) with poles and the $\theta$ seam welded, so the mesh is watertight and winds outward.
+**In plain terms.** These three shapes share nothing except that each is a small classic worth seeing in 3D. Two of them are built the same clever way — as a **radial surface**. Imagine standing at the centre and looking out in every direction; a rule tells you, for each direction, how far away the surface sits that way. Sweep the rule over all directions and you get a closed, lumpy shell, much as a potato's skin is "one distance for each direction out of the middle." The third, the paper bag, is drawn the ordinary way instead — a formula that places each point directly — and is left open at top and bottom like a bag whose mouth never closes.
+
+**Radial surfaces.** Both the Fresnel surface and the trihyperboloid are *radial graphs* over the sphere of directions: a radius function $r(l,m,n)$ evaluated on unit directions $(l,m,n)$ and meshed as a displaced UV sphere (`build_radial`), with the poles and the $\theta$ seam welded so the mesh is watertight and every face winds outward.
 
 **Fresnel's elasticity surface** (von Seggern 1993, p. 304) is the quartic
 $$(x^2+y^2+z^2)^2 = a^2 x^2 + b^2 y^2 + c^2 z^2,$$
-equivalently the radial surface $r(l,m,n) = \sqrt{a^2 l^2 + b^2 m^2 + c^2 n^2}$ where $(l,m,n)$ is the unit direction of the radius vector. The three coordinate axes hit $r = a, b, c$.
+which is just the radial surface $r(l,m,n) = \sqrt{a^2 l^2 + b^2 m^2 + c^2 n^2}$ in disguise — square both sides of $r = \sqrt{\cdots}$ and multiply through by $r^2$, using $x = r l$ and so on. Reading it as "distance $=\sqrt{a^2 l^2+\cdots}$" makes the meaning plain: along each coordinate axis only one term survives, so the axes poke out to exactly $r = a, b, c$. It comes from crystal optics, where those three lengths are the principal speeds of light through the crystal.
 
 **Paper bag surface** (Robin 2004; plotted after Trott 2004, p. 103) is the crimped-bag parametrization
 $$x = v\cos u,\quad y = (v + b u)\sin u,\quad z = a v^2,$$
-for $u\in[0,2\pi]$, $v\in[0,\text{depth}]$ (depth = 2), with the classic constants $a = 2.47$ (height coefficient) and $b = -1.26$ (crimp coefficient). The $u=0$ and $u=2\pi$ boundary curves coincide in space and are welded; the surface stays **open** at $v=0$ and $v=\text{depth}$ like a real bag.
+for $u\in[0,2\pi]$, $v\in[0,\text{depth}]$ (depth = 2), with the classic constants $a = 2.47$ (height coefficient) and $b = -1.26$ (crimp coefficient). The $bu$ term shears the $y$-coordinate a little further with every turn of $u$, which is what pushes the lop-sided crimp into the rim; the $z = a v^2$ lifts the mouth into a parabolic bowl. The $u=0$ and $u=2\pi$ boundary curves coincide in space and are welded, but the surface is deliberately left **open** at $v=0$ and $v=\text{depth}$ like a real bag.
 
-**Trihyperboloid** (Knill 2017; Villarino and Varilly 2024) is the boundary of the solid enclosed by the three hyperboloids
+**Trihyperboloid** (Knill 2017; Villarino and Varilly 2024) is the boundary of the solid where all three perpendicular hyperboloids overlap,
 $$x^2+y^2-z^2\le 1,\quad y^2+z^2-x^2\le 1,\quad z^2+x^2-y^2\le 1,$$
-shaped like a stella octangula with webs hung across adjacent faces. Along a unit direction $(l,m,n)$ the largest of the three quadratic forms
-$$q_{\max} = \max\big(l^2+m^2-n^2,\; m^2+n^2-l^2,\; n^2+l^2-m^2\big)$$
-is at least $1/3$, so the boundary is the radial graph $r = 1/\sqrt{q_{\max}}$ with $1\le r\le\sqrt3$. The enclosed volume is exactly $\ln 256 = 8\ln 2$.
+a stella-octangula-like body with webs slung across adjacent faces. Along a unit direction $(l,m,n)$ the binding constraint is whichever of the three quadratic forms is largest,
+$$q_{\max} = \max\big(l^2+m^2-n^2,\; m^2+n^2-l^2,\; n^2+l^2-m^2\big),$$
+and a little algebra shows $q_{\max}\ge 1/3$ always, so the boundary is the *finite* radial graph $r = 1/\sqrt{q_{\max}}$ with $1\le r\le\sqrt3$ — never running off to infinity the way a single hyperboloid would. The enclosed volume works out to exactly $\ln 256 = 8\ln 2$, and the self-test measures the mesh volume against that closed form.
 
 In every case the mesh is centered and fit within a $2\times\text{scale}$ cube, then optionally given a Solidify shell.
 
