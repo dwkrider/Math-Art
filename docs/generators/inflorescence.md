@@ -2,12 +2,16 @@
 
 ## Overview
 
-Add an inflorescence: the whole chapter-3 taxonomy from two
-production templates, with acropetal/basipetal bloom order.
+An inflorescence is a cluster of flowers, and the fifteen classical kinds — raceme, spike, spadix, corymb, umbel, capitulum, verticillaster, panicle, dibotryoid, tribotryoid, monochasium, dichasium, cyme, thyrsus, pleiochasium — are all built here from **two production templates** with different constants (ABOP Table 3.1). The difference between a raceme and a cyme is *where growth continues*, not a different kind of plant.
 
-The botanical taxonomy of flower clusters — raceme, spike, spadix, corymb, umbel, capitulum, verticillaster, panicle, dibotryoid, tribotryoid, monochasium, dichasium, cyme, thyrsus, pleiochasium — as one operator.
+### Using it
 
-Those fifteen names are not fifteen constructions. They are **two production templates** with different constants, which is the observation that makes the taxonomy tractable rather than a list to be memorised: the difference between a raceme and a cyme is where the growth continues, not a different kind of plant.
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Plants & Growth ▸ Inflorescence*.
+2. **Choose the Source.** **Architecture** picks one of the fifteen Table 3.1 forms from the **Architecture** menu; **Species** picks a published reconstruction (Lilac, Lychnis, Capsella, Crocus), which is simply an archetype with its constants overridden. A live info box reports the chosen form's $n$, $m$ and whether it is determinate.
+3. **Set the size.** **Orders** is the recursion depth (order 0 is the main axis, order 1 its laterals, and so on) and **Nodes** the number of internodes on the main axis. **Branch Angle** and **Length Ratio** default to $-1$, meaning "use the architecture's own value"; set them non-negative to override. **Divergence** is the roll between successive laterals (137.5° is the golden angle).
+4. **Drive the bloom.** **Rate u** (age gained per internode along an axis) and **Rate v** (age gained per branching order) together fix the flowering *direction* through the sign of $D=un-vm$ — the info box reports $D$ and whether the result is acropetal, basipetal or divergent. The **Bloom** slider then reveals flowers up to a point in that sequence; keyframe it to animate the bloom sweeping through the structure. **Flowers** toggles the flower geometry and **Flower Size** scales it.
+5. **Tune the look.** **Branch Mapping** makes a short axis behave like the *tip* of a long one of the same order (leave it on for plant-like results). **Stem Radius**, **Bevel Resolution**, **Order Taper** (stem-radius ratio between successive orders) and **Scale** set the stems; the whole model is fit to a 2 m cube.
+6. **Read the report.** The operator prints the form's $n$ and $m$, whether it is determinate, the internode and flower counts, and $D$ with the resulting bloom order (e.g. `D=+2.00 -> basipetal`) — so the flowering behaviour is reported, not guessed. The output is two objects: the stems as a bevelled curve and the flowers as a small mesh, each flower carrying its bloom age as a vertex attribute.
 
 ## Options
 
@@ -70,25 +74,38 @@ Renders of each selectable option:
 
 ## How it works
 
-**Two templates, many names.** The taxonomy comes from the two production rules of ABOP Table 3.1, following Frijters and Lindenmayer (1976). One template keeps the main axis growing and produces flowers on lateral branches — the **monopodial** forms, giving racemes, spikes, corymbs and umbels. The other terminates the axis in a flower and continues from lateral buds — the **sympodial** forms, giving cymes, monochasia and dichasia. Everything else is a matter of the constants: how many laterals per node, how internode length is graded, how many orders of branching.
+**In plain terms.** A cluster of flowers — a spike of lavender, the head of a sunflower, the flat white top of Queen Anne's lace — looks like a whole zoo of different designs, but almost all of them come from one simple habit of growth: a stalk makes side-stalks, each side-stalk makes its own side-stalks, and somewhere along the way the tips turn into flowers. The single most important choice is whether the *main* stalk keeps growing on and on, or caps itself off with a flower and hands the job to its side branches. That one yes/no switch — together with how many side branches each node makes — is enough to tell a lilac apart from a forget-me-not. Below, "template" just means a growth rule written down precisely enough for a computer to follow, and there are only two of them.
 
-**Bloom order as a computed quantity.** Each flower carries an age, and the sign of
+**Two templates, many names.** The taxonomy comes from the two production rules of ABOP Table 3.1, following Frijters and Lindenmayer (1976):
 
-$$D = u\,n - v\,m$$
+$$
+\begin{aligned}
+A &\to I\,[B]^n\,[X]^m\,X && \text{(indeterminate: the axis keeps going)}\\
+A &\to I\,[B]^n\,[X]^m\,C && \text{(determinate: a terminal flower stops it)}
+\end{aligned}
+$$
 
-decides the direction the structure flowers — where $m,n$ are the plastochron and flowering delays and $u,v$ the corresponding rates. Positive, negative and zero give the three botanical cases:
+Here $I$ is an internode, $B$ a lateral branch, $X$ a continuation of the same axis, and $C$ a terminal flower. An architecture is fixed by just four things: the number of laterals per node $n$, the number of axis copies per node $m$, whether the axis terminates, and how the internode length and branch angle vary with order. That is the whole reason fifteen botanical names collapse to an enum over a few integers — a raceme is $n=1, m=0$, indeterminate; a dichasium $n=2, m=0$, determinate; a tribotryoid $n=1, m=2$, and so on.
+
+**Monopodial vs sympodial.** The indeterminate template grows from a single persistent apex — this is a *monopodial* structure, giving racemes, spikes, corymbs and umbels. The determinate template kills its apex with a terminal flower, so growth can only continue from lateral buds — a *sympodial* structure, giving cymes, monochasia and dichasia. That single bit, whether or not the axis terminates, is the deepest division in the entire taxonomy, and here it is one boolean.
+
+**Bloom order as a computed quantity.** Each flower carries an *age*. Walking outward from the base, a flower gains $u$ of age for every internode stepped along its axis and $v$ for every branching order descended, so its age is $T=u\,i+v\,j$ for position $i$ along the axis and order $j$. The *direction* the whole structure flowers is then decided by the single scalar
+
+$$D = u\,n - v\,m,$$
+
+with $n$ the laterals-per-node and $m$ the axis-copies-per-node of the architecture. Its sign gives the three botanical cases — and note this is exactly the sign convention in the code:
 
 | $D$ | Bloom order |
 | --- | --- |
-| $D>0$ | **acropetal** — opens from the base upward |
-| $D<0$ | **basipetal** — opens from the tip downward |
-| $D=0$ | **divergent** — opens from the middle outward |
+| $D<0$ | **acropetal** — the base blooms first, flowering climbs toward the tip |
+| $D>0$ | **basipetal** — the tip blooms first, flowering descends |
+| $D=0$ | **divergent** — both ends bloom at once, meeting in the middle |
 
-That is why bloom order is a real, animatable quantity here rather than a label: the **Bloom** slider reveals flowers up to an age threshold, so the sequence can be keyframed and watched, and the direction follows from the model instead of being chosen.
+One number reproduces a distinction that reads as three unrelated behaviours. That is why bloom order is a real, animatable quantity here rather than a label: the **Bloom** slider reveals flowers up to an age threshold, so the sequence can be keyframed and watched, and the direction follows from the model instead of being chosen. Because a dibotryoid has $n=m=1$, its $D=u-v$ depends only on which of the two rates is larger — the *same* architecture flowers acropetally, basipetally or divergently as $u$ and $v$ trade places.
 
-**Branch mapping** makes all axes of a given order share one set of gradients, so a short branch matches the *tip* of a long one rather than being a scaled copy of the whole. This is what makes a panicle look like a plant instead of like a fractal: in real inflorescences the small branches resemble the ends of the big ones.
+**Branch mapping** makes all axes of a given order share one set of gradients, so a short branch matches the *tip* of a long one rather than being a shrunken copy of the whole. It works by expressing position as a fraction $\text{rel}=s/\text{max\_len[order]}$ and starting a short axis part way along that range, at $s=\text{max\_len}-\text{length}$, instead of at zero. The biology is that apical meristems sit at the distal end, so a branch that developed for less time genuinely resembles the tip of one that developed longer — and this is what makes a panicle look like a plant instead of like a fractal, because in real inflorescences the small branches resemble the ends of the big ones.
 
-**Species reconstructions** are built from the archetypes by choosing constants, not by hand-placing flowers — so a named species is a point in the same parameter space as the abstract forms.
+**Species reconstructions** are built from the archetypes by choosing constants — orders, angle, taper, divergence, and the rates $u,v$ — not by hand-placing flowers. Lilac, for instance, is a thyrsus base with $u=1, v=3$, so $D=un-vm=1\cdot 2-3\cdot 1=-1<0$ and it blooms acropetally. A named species is thus a point in the same parameter space as the abstract forms.
 
 ## References
 
