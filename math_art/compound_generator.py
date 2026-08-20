@@ -251,6 +251,16 @@ def _selftest():
     # five cubes separate into a generic thirty
     assert len(build_compound('H_5CUBES', phase=17.0)) > 5
 
+    # --- Hart's central-freedom cubes -----------------------------------
+    # Nothing is aligned, so the stabilizer is trivial and the count is
+    # the whole group order.  Checking that it holds at SEVERAL angles is
+    # the point: a count that changed with the angle would mean the
+    # "general position" had accidentally hit a special one.
+    for k, lbl, grp, want in _cmp.FREE_COMPOUNDS:
+        for ph in (17.0, 31.0, 43.0):
+            comps = build_compound(k, phase=ph)
+            assert len(comps) == want, (k, ph, len(comps), want)
+
     # --- Skilling 68-75, duplication of enantiomorphs -------------------
     # Two constituents is true by construction here, so the assertion
     # that carries weight is the CHIRALITY: each of these eight must

@@ -284,6 +284,25 @@ def _align_rotation(src, dst):
     return np.eye(3) + vx + vx @ vx / (1 + c)
 
 
+def free_orientation_compound(component, group, tilt=23.0, phase=17.0,
+                              scale=1.0):
+    """A component in GENERAL position, replicated over the group.
+
+    Hart's "central freedom" families: nothing about the constituent is
+    aligned with anything, so its stabilizer in the group is trivial and
+    the count is the full group order -- 12, 24 or 60 cubes for T, O
+    and I.  The two angles are arbitrary and only have to avoid the
+    special positions; they are exposed so the operator's Turn dial still
+    moves the whole family.
+    """
+    V, F = _component(component)
+    R = (_rot((0.0, 0.0, 1.0), math.radians(phase))
+         @ _rot((1.0, 0.0, 0.0), math.radians(tilt)))
+    seed = ([tuple(scale * (R @ np.array(v, float))) for v in V],
+            [list(f) for f in F])
+    return _orbit(seed, GROUPS[group]())
+
+
 def _two_fold_axes(G):
     """Axes of the half-turns in a group, as unit vectors."""
     out = []
@@ -337,6 +356,37 @@ def perpendicular_phase(component, group, comp_order, group_order):
             continue                      # not perpendicular
         a = math.degrees(math.atan2(float(n2.dot(side)),
                                     float(n2.dot(ref)))) % 180.0
+        if best is None or a < best:
+            best = a
+    if best is None:
+        raise ValueError('%s has no half-turn axis perpendicular to its '
+                         '%d-fold axis' % (group, group_order))
+    return best
+
+
+def perp_phase_from(component, group, comp_order, group_order, ref):
+    """Turn carrying the component half-turn axis `ref` onto a group one.
+
+    The general form of `perpendicular_phase`, for components whose own
+    half-turn axis is not at azimuth 0 in their frame -- a cube aligned
+    on its THREE-fold axis, say, whose perpendicular half-turns are its
+    edge axes like (1, -1, 0).  `ref` is that axis in the component's own
+    frame; only its component perpendicular to the alignment axis counts.
+    """
+    ax = np.array(GROUP_AXES[group][group_order], float)
+    ax = ax / np.linalg.norm(ax)
+    A = _align_rotation(COMPONENT_AXES[component][comp_order],
+                        GROUP_AXES[group][group_order])
+    r = A @ np.array(ref, float)
+    r = r - r.dot(ax) * ax
+    r = r / np.linalg.norm(r)
+    side = np.cross(ax, r)
+    best = None
+    for n2 in _two_fold_axes(GROUPS[group]()):
+        if abs(float(n2.dot(ax))) > 1e-6:
+            continue
+        a = math.degrees(math.atan2(float(n2.dot(side)),
+                                    float(n2.dot(r)))) % 180.0
         if best is None or a < best:
             best = a
     if best is None:
@@ -673,6 +723,15 @@ ENANTIOMORPHS = [
 
 _ENANT_BY_KEY = {r[0]: r for r in ENANTIOMORPHS}
 
+#: Hart's "central freedom" cubes -- (key, label, group, count)
+FREE_COMPOUNDS = [
+    ('HC_12CUBES_FREE', "Hart: 12 Cubes, central freedom", 'T', 12),
+    ('HC_24CUBES', "Hart: 24 Cubes, central freedom", 'O', 24),
+    ('HC_60CUBES', "Hart: 60 Cubes, central freedom", 'I', 60),
+]
+
+_FREE_BY_KEY = {r[0]: r for r in FREE_COMPOUNDS}
+
 
 INSCRIBED = [
     ('INS_TETRA_CUBE', "Tetrahedron Inscribed in Cube"),
@@ -754,6 +813,45 @@ AXIS_COMPOUNDS = [
      'PRISM5_2', 'Ih', 5, 5, PERP, 12),
     ('S41_10_3PRISM', "Skilling 41: 6 Decagrammic Prisms (Ih)",
      'PRISM10_3', 'Ih', 10, 5, PERP, 6),
+    # --- Hart's compounds of cubes ------------------------------------
+    # Hart labels these "count | G x I / H x I", which IS the
+    # subgroup-embedding rule: constituent placed so H is a subgroup of
+    # both its own symmetry and the compound's, count = |G| / |H|.  The
+    # C_n rows are the axis rule with a free turn (Hart's "rotational
+    # freedom"); the D_n rows are the same with the turn locked to where
+    # a cube two-fold also lands on a group two-fold.
+    #
+    # Those locked angles are NOT what perpendicular_phase() returns.  It
+    # measures from the component's +x, which is a half-turn axis for a
+    # prism but not for a cube on its three-fold axis, and its
+    # smallest-candidate rule lands on the FULLY aligned position, where
+    # the stabilizer is the whole group and the compound collapses to a
+    # single cube.  Each angle below was found by scanning and is checked
+    # against Hart's own count.
+    ('HC_6CUBES_C4', "Hart: 6 Cubes, 4-fold (free)",
+     'CUBE', 'O', 4, 4, 11.0, 6),
+    ('HC_3CUBES', "Hart: 3 Cubes", 'CUBE', 'O', 4, 4, 45.0, 3),
+    ('HC_8CUBES', "Hart: 8 Cubes (free)", 'CUBE', 'O', 3, 3, 11.0, 8),
+    ('HC_4CUBES', "Hart: 4 Cubes (Bakos')", 'CUBE', 'O', 3, 3, 60.0, 4),
+    ('HC_12CUBES_C2', "Hart: 12 Cubes (free)",
+     'CUBE', 'O', 2, 2, 11.0, 12),
+    ('HC_6CUBES_D2', "Hart: 6 Cubes, 2-fold", 'CUBE', 'O', 2, 2, 90.0, 6),
+    ('HC_20CUBES', "Hart: 20 Cubes (free)", 'CUBE', 'I', 3, 3, 11.0, 20),
+    ('HC_30CUBES_C2', "Hart: 30 Cubes (free)",
+     'CUBE', 'I', 2, 2, 11.0, 30),
+    ('HC_15CUBES', "Hart: 15 Cubes", 'CUBE', 'I', 2, 2, 45.0, 15),
+    # 22.2388..., computed rather than written down: it is the turn about
+    # a three-fold axis carrying a cube EDGE half-turn axis onto an
+    # icosahedral one.  A 0.05-degree scan steps straight over it and
+    # reports the row unreachable -- the same 0.2388 fraction that made
+    # the icosahedral prism rows look impossible.
+    ('HC_10CUBES', "Hart: 10 Cubes", 'CUBE', 'I', 3, 3,
+     perp_phase_from('CUBE', 'I', 3, 3, (1.0, -1.0, 0.0)), 10),
+    ('HC_4CUBES_T', "Hart: 4 Cubes, tetrahedral (free)",
+     'CUBE', 'T', 3, 3, 11.0, 4),
+    ('HC_6CUBES_T', "Hart: 6 Cubes, tetrahedral (free)",
+     'CUBE', 'T', 2, 2, 11.0, 6),
+
     ('S28_5_3ANTI', "Skilling 28: 12 Pentagrammic Crossed Antiprisms (free)",
      'ANTI5_3', 'Ih', 5, 5, 9.0, 12),
     ('S29_5_3ANTI', "Skilling 29: 6 Pentagrammic Crossed Antiprisms",
@@ -775,6 +873,7 @@ COMPOUNDS = [
     ('ANTIPRISM_DUAL', "Antiprism + Dual Trapezohedron"),
 ] + list(INSCRIBED) \
     + [(k, lbl) for k, lbl, *_rest in ENANTIOMORPHS] \
+    + [(k, lbl) for k, lbl, *_rest in FREE_COMPOUNDS] \
     + [(k, lbl) for k, lbl, *_rest in AXIS_COMPOUNDS]
 
 _INSCRIBED_KEYS = {k for k, _lbl in INSCRIBED}
@@ -797,6 +896,10 @@ def build_compound(kind, phase=None, sides=5):
         return inscribed(kind)
     if kind in _ENANT_BY_KEY:
         return enantiomorph_pair(_ENANT_BY_KEY[kind][2])
+    if kind in _FREE_BY_KEY:
+        _k, _lbl, grp, _n = _FREE_BY_KEY[kind]
+        return free_orientation_compound(
+            'CUBE', grp, phase=17.0 if phase is None else phase)
     if kind in _AXIS_BY_KEY:
         _k, _lbl, comp, grp, ca, ga, ph, _n = _AXIS_BY_KEY[kind]
         return build_axis_compound(comp, grp, ca, ga,
