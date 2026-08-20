@@ -229,7 +229,7 @@ del _n
 #: star prisms {n/m}, whose axis is still the n-fold one
 for _n, _m in ((5, 2), (10, 3)):
     COMPONENT_AXES['PRISM%d_%d' % (_n, _m)] = {_n: (0.0, 0.0, 1.0)}
-COMPONENT_AXES['ANTI5_2'] = {5: (0.0, 0.0, 1.0)}
+COMPONENT_AXES['ANTI5_3'] = {5: (0.0, 0.0, 1.0)}
 del _n, _m
 
 
@@ -461,10 +461,23 @@ def star_antiprism_solid(n, m):
     neighbour, so it does not close at all; only the attachment two steps
     round does, and it fixes h at 0.5257, not the 0.9457 the nearest
     attachment would want.
+
+    For n = 5 the two star circuits {5/2} and {5/3} share an edge set and
+    their triangles relabel onto each other, so both arguments return the
+    SAME solid -- and that solid has no horizontal mirror, so it is the
+    D_5d one.  Skilling's rows 22/24 give the rule (|2 2 n/m is D_nd for
+    m odd and D_nh for m even), which identifies it as the CROSSED
+    antiprism |2 2 5/3 of his entries 28 and 29.  The D_5h partner
+    |2 2 5/2 of entries 44/45 is a different solid this does not build.
     """
-    if math.gcd(n, m) != 1 or not 1 < m < n / 2:
+    # m may exceed n/2 here, unlike the prism: {5/3} is the retrograde
+    # reading of the same pentagram and is the symbol Skilling uses for
+    # the crossed antiprism, so it has to be accepted rather than
+    # normalised away.
+    if math.gcd(n, m) != 1 or not 1 < m < n - 1:
         raise ValueError('{%d/%d} is not a star polygon' % (n, m))
-    R = 0.5 / math.sin(m * math.pi / n)
+    m = min(m, n - m)                     # {n/m} and {n/(n-m)} are the
+    R = 0.5 / math.sin(m * math.pi / n)   # same circuit, opposite sense
     c = 1.0 - 2.0 * R * R * (1.0 - math.cos(3.0 * math.pi / n))
     if c <= 1e-12:
         raise ValueError('{%d/%d} admits no uniform antiprism' % (n, m))
@@ -655,6 +668,10 @@ AXIS_COMPOUNDS = [
      'PRISM5_2', 'Ih', 5, 5, PERP, 12),
     ('S41_10_3PRISM', "Skilling 41: 6 Decagrammic Prisms (Ih)",
      'PRISM10_3', 'Ih', 10, 5, PERP, 6),
+    ('S28_5_3ANTI', "Skilling 28: 12 Pentagrammic Crossed Antiprisms (free)",
+     'ANTI5_3', 'Ih', 5, 5, 9.0, 12),
+    ('S29_5_3ANTI', "Skilling 29: 6 Pentagrammic Crossed Antiprisms",
+     'ANTI5_3', 'Ih', 5, 5, 18.0, 6),
 ]
 
 _AXIS_BY_KEY = {r[0]: r for r in AXIS_COMPOUNDS}

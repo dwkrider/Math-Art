@@ -327,7 +327,7 @@ def _selftest():
     # means, whose symmetry includes a horizontal mirror that this one
     # lacks; keeping the check makes that groundwork honest rather than
     # dead.
-    V, F = _cmp.star_antiprism_solid(5, 2)
+    V, F = _cmp.star_antiprism_solid(5, 3)
     assert len(V) == 10 and len(F) == 12, (len(V), len(F))
     assert sorted(len(f) for f in F) == [3] * 10 + [5] * 2, \
         sorted(len(f) for f in F)
