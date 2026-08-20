@@ -2,11 +2,19 @@
 
 ## Overview
 
-Add an Apollonian gasket (2D rings) or sphere packing.
-
 Begin with mutually tangent circles, inscribe a new circle in every curvilinear gap, and recurse forever. The **Apollonian gasket** is the result — an exactly self-similar fractal in which gaps are filled at every scale, going back to Apollonius of Perga in the third century BC. The 3-D analogue packs mutually tangent **Soddy spheres**.
 
 Its striking feature is arithmetic rather than geometric. If the starting curvatures are integers, then *every* circle in the infinite packing has integer curvature — a fractal that generates whole numbers, which is why Apollonian packings turn up in number theory as often as in geometry.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Fractals ▸ Apollonian Gasket*.
+2. **Pick the Mode.** **Sphere Packing (3D)** fills space with mutually tangent Soddy spheres; **Gasket (2D)** draws the classic Apollonian circles in the plane. The mode decides which of the controls below appear.
+3. **Set how deep it fills** with the three knobs that apply to both modes: **Depth** is the number of gap-filling generations; **Min Radius** stops inscribing once new elements fall below it ($0$ takes a per-mode default); and **Max Count** is a hard cap — the packing fills the *largest* gaps first up to this many, since it can never fill space completely.
+4. **Dial the mode-specific controls.** In **Gasket (2D)**, **Circle Style** is **Filled Discs** or **Tube Rings**; choosing Tube Rings reveals **Ring Tube** (tube radius as a fraction of the circle's) and **Tube Segments**, and **Ring Segments** sets each circle's smoothness. In **Sphere Packing (3D)**, **Sphere Resolution** subdivides each icosphere (higher rounds them so tangent spheres actually touch) and **Sphere Inflate** grows spheres slightly to fuse their contacts for printing.
+5. **Colour it** with **Color By** — **Size** (by radius), **Depth** (by inscription generation), or **Uniform** — assigned as a palette material per element; colouring is what makes the nested generations legible.
+6. **Choose the output.** **Separate Levels** emits each inscription generation as its own object under a shared parent empty, so a level can be hidden or deleted on its own; otherwise everything is one mesh. **Scale** and **Smooth Shading** finish it, centred and fit to the 2 m cube.
+7. **Read the report.** The operator prints the element count and either the vertex/face totals or, with Separate Levels on, how many per-level objects it made.
 
 ## Options
 
@@ -44,21 +52,23 @@ Renders of each selectable option:
 
 ## How it works
 
-**Descartes' circle theorem.** For four mutually tangent circles with curvatures $k_i=1/r_i$ (negative for the enclosing circle),
+**In plain terms.** Start with a few circles that just touch each other, and look at the little curved-triangle gap trapped between them. There is exactly one circle that fits snugly into that gap, kissing all three sides at once; draw it. Now that new circle has created three *smaller* curved gaps against its neighbours — so fit a circle into each of those, then into the still-smaller gaps those make, and keep going forever. The plane fills with circles shrinking without end, the same nested picture repeating at every magnification, which is what makes it a fractal. The one piece of arithmetic you need is a rule for the size of each new circle. Mathematicians measure a circle by its *curvature* — one divided by its radius, so a tiny tight circle has a big curvature and a huge lazy one a small curvature — and Descartes found a clean equation tying together the curvatures of any four circles that mutually touch. That equation is the engine; feed it three touching circles and it hands you the fourth. The astonishing bonus is that if the circles you start with have whole-number curvatures, so does *every* circle that ever appears.
+
+**Descartes' circle theorem.** For four mutually tangent circles with curvatures $k_i=1/r_i$ (taken **negative** for a circle that encloses the others, since it curves the opposite way),
 
 $$(k_1+k_2+k_3+k_4)^2 = 2\big(k_1^2+k_2^2+k_3^2+k_4^2\big).$$
 
-Solving for $k_4$ gives a quadratic, hence two roots — the two circles tangent to the same three. The **Soddy–Gosper** generalisation extends this to spheres in 3-D.
+Read as a quadratic in the unknown $k_4$, it has two roots — geometrically the two circles tangent to the same three, one nestled in the near gap and one wrapped around the far side. The **Soddy–Gosper** generalisation carries the same shape into $n$ dimensions: for $d{+}2$ mutually tangent spheres the identity becomes $\big(\sum k_i\big)^2 = d\sum k_i^2$, so in 3-D five tangent spheres satisfy $\big(\sum_{i=1}^{5} k_i\big)^2 = 3\sum k_i^2$.
 
-**The sign-free reflection form.** Rather than solve that quadratic and choose a root — which needs a square root and a sign decision at every step, and is where such constructions usually go wrong numerically — this generator uses the fact that the two solutions are related by reflection. Given a set of mutually tangent elements and one further tangent element $c_0$, the *other* element tangent to the same set is
+**The sign-free reflection form.** One could solve that quadratic and pick a root, but that means a square root and a sign decision at every single step — exactly where such constructions accumulate floating-point error and occasionally choose the wrong circle. The escape is Vieta's formula: the two roots of the Descartes quadratic sum to $2\sum_i k_i$ (the coefficient of the linear term), so if one tangent element $k_0$ is already known, the *other* is just its reflection about that sum,
 
-$$k' = 2\sum_i k_i - k_0, \qquad k'c' = 2\sum_i k_i c_i - k_0 c_0 .$$
+$$k' = 2\sum_i k_i - k_0, \qquad k'c' = 2\sum_i k_i c_i - k_0 c_0 ,$$
 
-Both the curvature and the curvature-weighted centre are simple linear combinations, so each gap is filled exactly, with no square root and no sign ambiguity. Iterating from a seed configuration fills every gap at every level, and each new circle immediately becomes part of the tangent set for its own children.
+and the identical linear relation holds for the curvature-weighted centre $k\,c$ (Lagarias–Mallows–Wilf). Both quantities are now plain linear combinations of numbers already in hand: each gap is filled exactly, with no square root and no sign ambiguity to get wrong. Iterating from a seed configuration fills every gap at every level, and each freshly inscribed circle immediately joins the tangent set that generates its own children — the recursion the *Depth* control counts.
 
-**Why the curvatures stay integral.** The reflection form is what makes the integrality obvious: $k'=2\sum k_i - k_0$ is an integer whenever the $k_i$ are. There is no rounding, no accumulation of error, and no need to test for it — the arithmetic property follows from the same equation that generates the packing.
+**Why the curvatures stay integral.** The reflection form is what makes the integrality self-evident: $k'=2\sum k_i - k_0$ is a sum and difference of integers whenever the $k_i$ are integers, so it is an integer too — no rounding, no drifting error, and nothing to test for. The whole-number miracle is not a coincidence layered on top of the geometry; it falls straight out of the same equation that draws the packing, which is why these gaskets are studied in number theory as much as in geometry.
 
-**Colouring.** By radius or by recursion depth. Uncoloured, a gasket is a heap of white spheres and its nesting is invisible; colouring by size separates the generations, which is what makes the self-similarity legible in a render.
+**Colouring.** By radius, by recursion depth, or a single uniform tone. Left uncoloured, a gasket is a heap of white circles whose nesting is invisible; colouring by size or depth separates the generations, which is what makes the self-similarity legible in a render.
 
 ## References
 

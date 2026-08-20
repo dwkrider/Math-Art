@@ -6,9 +6,16 @@ Add a golden-angle phyllotaxis form: N florets placed by the
 Vogel spiral (theta = i*137.5 deg, r = sqrt(i)) on a disk, dome,
 cone, sphere or crest, with emergent Fibonacci spiral arms.
 
-The spiral packing of a sunflower head, a pine cone or a daisy — florets placed one after another, each turned by the **golden angle** from the last. The spiral arms you see are not placed; they are an artefact of the eye grouping neighbours, and their counts are always consecutive Fibonacci numbers.
+The spiral packing of a sunflower head, a pine cone or a daisy — florets placed one after another, each turned by the **golden angle** from the last. The spiral arms you see are not placed; they are an artefact of the eye grouping neighbours, and their counts are always consecutive Fibonacci numbers because the golden angle is the "most irrational" fraction of a turn there is.
 
-The reason is that the golden angle is the "most irrational" rotation there is. Turn by any rational fraction of a circle and florets fall into a few radial spokes with wasted space between them; turn by an irrational one and they never repeat, but a *nearly* rational one produces near-spokes. The golden ratio is the hardest number to approximate by fractions, so its angle is the one that packs most evenly.
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Plants & Growth ▸ Phyllotaxis*.
+2. **Pick the Form.** **Disk (sunflower)** is the flat Vogel spiral; **Dome (cactus)** and **Cone** drape it over a curved cap; **Sphere (pineapple)** replaces it with the equal-area spherical Fibonacci lattice; **Crest (cristate)** corrugates the disk into fasciated ridges.
+3. **Set the main knobs.** **Florets** is the number of points placed; **Divergence** is the turn between successive florets (137.508° = the golden angle, and small detunings visibly change the spiral-arm counts); **Handedness** flips the whole head between a right- and left-winding spiral.
+4. **Reach for the controls that appear only for some choices.** **Height** shows up only for Dome, Cone and Crest; **Crest Waves** and **Crest Depth** only for Crest. When **Output** is *Floret Solids*, a **Floret** type appears with its own controls — Seed Bump adds **Bump Flatten** and **Bump Detail**, Areole Spike adds **Spike Height** and **Segments**, Disc Floret adds **Segments**. **Floret Fill** and **Size Grading** size the florets against the local packing; picking **Color By ▸ Parastichy Arms** reveals **Parastichy k**.
+5. **Choose the output.** **Floret Solids** builds a real mesh of bumps, spikes or discs (with **Smooth Shading**); **Points Only** emits just a vertex per floret carrying `parastichy` (int), `surface_normal` (vector) and `floret_size` (float) attributes, so you can instance your own object on them. **Scale** fits the head to a 2 m cube.
+6. **Read the report.** For solids the status line prints `Phyllotaxis <form>: N florets  V=… F=…`; for points, `Phyllotaxis <form>: N points`. Colour by **Parastichy k**: choose a Fibonacci number (8, 13, 21, 34…) and the spiral arms light up cleanly — any other $k$ scatters the colouring, a direct check that the counts really are Fibonacci.
 
 ## Options
 
@@ -56,6 +63,8 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** Picture a plant tip adding new buds one at a time, and imagine it sits on a turntable that clicks around by the *same fixed angle* before each new bud drops. If that angle were a simple fraction of a full turn — say a quarter — then every fourth bud would land on top of the first, and the buds would pile into four crowded spokes with wasted space between them. To avoid that, the tip needs a turn that *never* brings a bud back into line with an earlier one. The best possible such angle is the **golden angle**, about $137.5°$, because it is built from the golden ratio, the number hardest of all to approximate by simple fractions. Turning by it, each new bud tucks into the largest gap left by the ones before, and the head fills up evenly all the way out. The curving "arms" your eye picks out in a sunflower are not drawn on purpose — they are just your brain connecting each bud to its nearest neighbours, and their number always turns out to be a Fibonacci number (8, 13, 21, 34…). The rest of this section shows why, with a little arithmetic.
+
 **Vogel's model.** The $i$-th primordium sits at polar angle
 
 $$\theta_i = i\times 137.50776\ldots°$$
@@ -68,15 +77,23 @@ and at radius
 
 $$r_i = c\sqrt{i}.$$
 
-**Why $\sqrt{i}$.** Area grows as $r^2$, so if the $i$-th floret is to sit at the edge of a disc containing $i$ florets at uniform density, its radius must go as $\sqrt{i}$. Equal numbers of florets then fall in equal areas — the packing is uniform all the way out, rather than crowded at the centre or sparse at the rim.
+Two rules, then, do all the placing: an *angle* rule that spins each new floret around, and a *radius* rule that pushes it outward. Take them one at a time.
 
-**Why the golden angle specifically.** A divergence angle of $p/q$ turns puts every $q$-th floret on the same ray, so the head collapses into $q$ spokes with gaps between them. To avoid spokes at *every* scale, the angle must be badly approximable by rationals — and $\varphi$ is the worst-approximable number there is, since its continued fraction is all ones:
+**Why $\sqrt{i}$.** The radius rule is the easy one, and it is pure bookkeeping about area. A disc of radius $r$ has area $\pi r^2$, which grows as the *square* of the radius. If the head is to have uniform density — the same number of florets per unit area everywhere — then a disc holding $i$ florets must have area proportional to $i$, so $r^2 \propto i$ and therefore $r_i = c\sqrt{i}$. Geometrically this is exactly the spacing that keeps every annular ring equally busy: the ring between floret $i$ and floret $i+1$ has the same area as any other, so florets are neither jammed together at the centre nor stranded thinly at the rim. Grow the radius any faster (say linearly in $i$) and the middle goes bald; any slower and the centre clots. The $\sqrt{i}$ law is the unique choice that spreads $i$ points over an area that grows like $i$.
+
+**Why the golden angle specifically.** The angle rule is the subtle one, and it is where the Fibonacci numbers hide. Suppose the divergence were a rational fraction $p/q$ of a turn. Then after exactly $q$ florets the accumulated rotation is a whole number $p$ of full turns, so floret $q$ lands on the same ray as floret $0$, floret $q+1$ on the same ray as floret $1$, and so on — the entire head collapses onto just $q$ radial spokes with empty wedges between them. Wasted space. To avoid spokes at *every* scale the divergence must be an angle that no simple fraction approximates well — and the golden ratio $\varphi$ is, provably, the worst-approximable number there is, because its continued fraction is all ones and therefore converges as slowly as a continued fraction possibly can:
 
 $$\varphi=1+\cfrac{1}{1+\cfrac{1}{1+\cdots}}.$$
 
-The convergents of that expansion are exactly the ratios of consecutive **Fibonacci** numbers, which is why the visible spiral arms come in Fibonacci counts: each near-rational approximation $F_{n-1}/F_n$ to the golden angle produces a family of $F_n$ near-spokes, and the eye reads them as parastichies.
+But "worst approximable" does not mean "unrelated to fractions" — it means its *best* rational approximations, the convergents of that expansion, are as good as they can be while still being poor, and those convergents are exactly the ratios of consecutive **Fibonacci** numbers $F_{n-1}/F_n$. This is the punchline. At any given radius the eye groups each floret with its nearest neighbours, and the near-alignments it finds are governed by whichever convergent $F_{n-1}/F_n$ the golden angle currently resembles most closely; that convergent produces a family of $F_n$ gently-winding **near-spokes**, the parastichies. As you move outward the relevant convergent steps up ($8\to13\to21\to34$), so the visible arm count climbs through the Fibonacci sequence — not because anything counts them, but because those are the only fractions the golden angle ever comes close to.
 
-**Parastichy colouring.** The `color_by='PARASTICHY'` mode tints florets by which arm of a chosen family they belong to — floret $i$ is coloured by $i \bmod m$ for the parastichy number $m$. With $m$ a Fibonacci number the arms light up cleanly; with any other value the colouring scatters, which is a direct visual demonstration of the arithmetic above.
+**Draping and the sphere.** The flat Vogel disc is only the starting point. For **Dome**, **Cone** and **Crest** the same $(\theta_i, r_i)$ layout is lifted onto a curved surface — a paraboloid cap, a cone, or a corrugated ridge field — and each floret is instanced tangent to that surface with the local surface normal, so the spiral wraps a cactus body or a fasciated crest instead of lying flat. For **Sphere** the disc is abandoned entirely in favour of the equal-area **spherical Fibonacci lattice**,
+
+$$z_i = 1 - \frac{2i+1}{N},\qquad \rho_i=\sqrt{1-z_i^2},\qquad (x_i,y_i)=\rho_i(\cos\theta_i,\sin\theta_i),$$
+
+which marches the height $z_i$ down the sphere in equal steps while the same golden-angle $\theta_i$ spins around — equal steps in $z$ give equal *area* per floret on a sphere (a fact going back to Archimedes), so the pineapple-style head is as uniform as the flat disc. Flipping the sign of $\theta_i$ mirrors the whole head, which is the **Handedness** control.
+
+**Parastichy colouring.** The `color_by='PARASTICHY'` mode makes the arithmetic above visible: floret $i$ is tinted by its residue class $i \bmod m$ for the chosen parastichy number $m$, so all florets on one arm of the $m$-family share a colour. With $m$ a Fibonacci number the arms are genuine near-spokes and light up as clean spirals; with any other $m$ the residue classes cut across the real neighbour structure and the colouring scatters into noise — a direct visual proof that the spiral families really do come in Fibonacci counts and nothing else.
 
 ## References
 

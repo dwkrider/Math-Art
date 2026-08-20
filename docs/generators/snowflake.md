@@ -2,12 +2,19 @@
 
 ## Overview
 
-Grow a realistic snow crystal with Reiter's cellular
-automaton and build it as a two-sided hexagonal-relief plate.
-
-Snow crystals grown by **Reiter's cellular automaton** (2005) — not drawn, but simulated. From a single frozen cell, two parameters produce the full range of real snow-crystal habits: hexagonal plates, sectored plates, stellar dendrites and the fern-like forms.
+Snow crystals grown by **Reiter's cellular automaton** (2005) — not drawn, but simulated. From a single frozen cell, a handful of growth constants produce the full range of real snow-crystal habits: hexagonal plates, sectored plates, stellar dendrites and the fern-like forms.
 
 The reason a rule this simple works is that snowflake growth is genuinely a diffusion-limited process: water vapour must reach the crystal to freeze onto it, and the tips reach further into the undepleted vapour than the notches do. That instability is what makes dendrites, and it is all the automaton encodes. The six-fold symmetry is not imposed — it follows from the lattice.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Fractals ▸ Snowflake*.
+2. **Pick the Habit.** This is the key choice: each habit is a preset of the automaton's growth constants tuned to a real crystal type — **Stellar Dendrite** (a branchy six-arm star), **Fern Dendrite** (feathery side-branches down each arm), **Sectored Plate** (broad arms grooved into sectors), **Hexagonal Plate** (a solid six-sided plate), and **Stellar Plate** (a plate with short blunt arms). Lower vapour starves the crystal into thin dendrites, higher vapour fills it out into plates.
+3. **Set the Radius** — the lattice radius in cells. Growth runs outward and stops when the crystal nears this edge, so a larger radius yields a bigger, finer crystal (at higher cost).
+4. **Cap the Max Steps** if needed — an upper bound on automaton steps; growth normally halts on its own when it reaches the radius, so this only matters for slow-filling habits.
+5. **Shape the relief.** The flat pattern is lifted into a two-sided plate by two knobs: **Base Thickness** (the prism height of a just-frozen cell) and **Mass Relief** (extra height per unit of accumulated ice mass, which raises the ridges and plateaus over the denser regions). Every control applies to every habit — there are no mode-specific options.
+6. **Finish** with **Scale** and **Smooth Shading** (off by default, so the crystal's facets stay crisp). The plate is symmetric about $z=0$ and centred in the 2 m cube.
+7. **Read the report.** The operator prints how many cells froze, how many steps it took, and the vertex/face counts; if nothing froze it reports *"Crystal did not grow"* and adds nothing.
 
 ## Options
 
@@ -43,24 +50,26 @@ Renders of each selectable option:
 
 ## How it works
 
-**The lattice and the state.** Cells sit on a triangular (hexagonal) lattice, each holding an amount of water $s$. A cell is **frozen** — part of the crystal — once $s\ge1$, and **receptive** if it is frozen or touches a frozen cell.
+**In plain terms.** A snowflake grows by *catching* water vapour out of the air and freezing it on. Now notice the geometry: the tip of an arm pokes out into fresh air still full of vapour, while the inner notches between the arms sit in air the crystal has already picked clean. So the tips grow faster than the notches — and the further ahead a tip gets, the more fresh air it reaches and the faster it pulls ahead. That runaway is why arms sprout side-branches and why a crystal ends up lacy instead of a plain blob. The automaton models the air as a honeycomb of cells, each holding a little "water." A cell turns to ice once it has collected enough; frozen cells and their neighbours keep grabbing vapour, while the water in the still-empty cells slowly spreads out to even itself out. Run that on a grid and the lacy branching appears on its own — nobody draws the arms. Everything below is that picture written as an exact update rule.
 
-**One step.** The water at each cell is split in two according to receptivity:
+**The lattice and the state.** Cells sit on a triangular (hexagonal) lattice — the natural grid for a six-fold crystal, since each cell has exactly six equidistant neighbours — and each holds an amount of water $s$. A cell is **frozen** (part of the crystal) once $s\ge1$, and **receptive** if it is frozen or touches a frozen cell. The receptive set is thus a one-cell-thick skin wrapping the crystal: the only place where freezing and vapour capture happen.
 
-- the **receptive** part stays put and gains a constant vapour input $\gamma$ — this is the crystal absorbing water from the surrounding air;
-- the **non-receptive** part diffuses to the six neighbours with coefficient $\alpha$,
+**One step.** The water at each cell is split into two parcels by receptivity, and the two obey different physics:
+
+- the **receptive** parcel $v$ stays put and gains a constant vapour input $\gamma$ — the crystal absorbing water from the surrounding air, $v_i = s_i + \gamma$ on the skin;
+- the **non-receptive** parcel $u$ (the free vapour away from the crystal) diffuses toward its neighbours with coefficient $\alpha$,
 
 $$u_{i}^{\text{new}} = u_i + \frac{\alpha}{2}\left(\overline{u}_i - u_i\right),$$
 
-where $\overline{u}_i$ is the average over the six neighbours — the standard discrete Laplacian. The two parts are then recombined.
+where $\overline{u}_i$ is the average over the six neighbours — the standard discrete Laplacian, which relaxes the field toward local flatness exactly as real diffusion smooths a concentration. The two parcels are then recombined into the new $s$.
 
-That separation is the crucial modelling step. Water already committed to the crystal's neighbourhood does not diffuse away, so the crystal both consumes vapour and shields the region behind its tips — which is precisely the diffusion instability that makes branches branch.
+That split is the crucial modelling step, and it is worth seeing why. Water once counted as receptive is *frozen in place* — it cannot diffuse back out to feed the notches — so the growing skin both consumes vapour and casts a "shadow" of depleted air behind each tip. A tip therefore starves the region it overhangs, guaranteeing that any small bump grows into a longer bump: precisely the Mullins–Sekerka diffusion instability that makes branches branch.
 
-**What the two parameters do.** $\alpha$ sets how fast vapour redistributes and $\gamma$ how much arrives; between them they select the habit. Low $\gamma$ starves the growth into thin dendrites, higher $\gamma$ fills the crystal out into plates, and intermediate values give the sectored plates that lie between.
+**What the growth constants do.** Reiter's rule carries three: the diffusion rate $\alpha$, the background vapour level $\beta$ that every cell starts at (and that the outer reservoir holds fixed), and the addition $\gamma$ captured on the skin each step. The presets are nothing but choices of $(\alpha,\beta,\gamma)$ picked to land on distinct real habits — starving $\beta$ and $\gamma$ gives the thin stellar and fern dendrites, a richer $\beta$ fills the crystal out into hexagonal plates, and the sectored plates sit in between; raising $\alpha$ (as the stellar-plate preset does) speeds redistribution and blunts the arms.
 
-**Why the symmetry is exact.** Nothing enforces six-fold symmetry. The lattice update is **isotropic** — all six neighbours are treated identically — so a single seed grows a crystal whose symmetry is the lattice's own. The result is exactly six-fold, not approximately, which is also why real snowflakes are symmetric: each arm experiences the same conditions at the same time.
+**Why the symmetry is exact.** Nothing in the rule enforces six-fold symmetry. The update is **isotropic** — all six neighbours enter the average with equal weight, and the seed is a single central cell — so the only symmetry the crystal can inherit is the lattice's own six-fold symmetry, and it inherits it *exactly*, not to within a rounding tolerance. This is also the real reason snowflakes are symmetric: every arm of one crystal rides through the same temperature and vapour history at the same moment, so all six grow alike.
 
-**Into geometry.** Each frozen cell is extruded to give the crystal thickness, so the automaton's occupancy grid becomes a solid plate with the dendrite structure carried in its outline.
+**Into geometry.** Each frozen cell is extruded into a hexagonal prism whose height tracks the ice mass accumulated there, and abutting caps share their corner vertices, so the automaton's occupancy grid becomes a single watertight, two-sided plate — the dendrite structure carried in its outline and the mass differences raised as surface relief.
 
 ## References
 

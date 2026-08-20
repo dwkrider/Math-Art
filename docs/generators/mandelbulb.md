@@ -2,12 +2,18 @@
 
 ## Overview
 
-Add an escape-time volumetric fractal (Mandelbulb,
-quaternion Julia or Mandelbox) as a solid mesh.
-
 Solid three-dimensional **escape-time fractals** — the Mandelbulb, quaternion Julia sets and the Mandelbox — meshed as watertight objects rather than rendered as clouds.
 
 The Mandelbulb (Daniel White and Paul Nylander, 2009) is the best-known attempt to answer a question that had been open since the Mandelbrot set became famous: what is the 3-D version? There is no three-dimensional number system with the right multiplication, so the Mandelbulb *defines* one — raising a point to a power by multiplying its spherical angles — and the resulting surface has the organic, foliated look that no straightforward generalisation produced.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Fractals ▸ Escape-time Fractal*.
+2. **Pick the Fractal.** **Mandelbulb** is the organic, foliated lobe familiar from the name; **Quaternion Julia** is a 3-D slice of a genuinely 4-D set built in the quaternions, so it comes out smoother and less frilly; **Mandelbox** is a fold-and-scale map that gives boxy, architectural structure instead of lobes.
+3. **Set the Resolution** — the main quality knob. It is the number of sample-grid cells per axis; cost grows as the cube of it, so 96–160 is the useful range (finer only sharpens fine filaments).
+4. **Dial the mode-specific control** that appears for your choice. **Bulb Power** shows only for the Mandelbulb — the exponent $p$ of its map, with $8$ the classic bulb and other values giving more or fewer lobes. **Julia Slice (w)** shows only for the Quaternion Julia — which $w=\text{const}$ 3-D cross-section of the 4-D set to mesh. **Iterations** (all modes) is how many times the orbit is stepped; $0$ takes the per-preset default, and raising it sharpens the boundary at extra cost.
+5. **Choose the output.** **Largest Part Only** (on by default) keeps just the biggest connected blob, dropping the isolated specks these sets shed. **Thickness** $>0$ adds a Solidify modifier to hollow the surface into a printable shell. **Smooth Shading** and **Scale** finish the object, which is centred and fit to the 2 m cube.
+6. **Read the report.** On success the operator prints the built vertex and face counts; if your settings leave nothing inside the set it reports *"Empty set at these settings"* and adds nothing, the signal to lower the resolution's cropping or the iteration count.
 
 ## Options
 
@@ -41,27 +47,29 @@ Renders of each selectable option:
 
 ## How it works
 
-**Escape time.** Every point of a sample grid is iterated under the fractal map. Orbits that stay bounded are **inside** the set; orbits that escape are **outside**. That much is the classic algorithm — but it yields only a yes/no per voxel, which meshes into a blocky shell.
+**In plain terms.** Take a point in space and feed it through the same little rule over and over — square it and add a fixed offset, say. One of two things happens: the point either hangs around near where it started forever (its path stays *bounded*), or it eventually goes flying off toward infinity (it *escapes*). Colour the "stays" points black and the "flies off" points white, and the fractal is the ragged frontier between the two territories. The catch is that a plain stays/flies-off answer is one bit per sample, and stacking bits into a mesh gives you a wall of tiny cubes, like a Minecraft version of the shape. The trick that makes it smooth is to ask not just *whether* a point escapes but *how close it was to the edge* on its way out — a smoothly varying number instead of a hard yes/no. Contouring that number where it crosses zero gives a clean, printable surface. The rest of this section is the exact rule for each shape and the exact "how close to the edge" estimate.
 
-**The distance estimate.** The fix is to give the outside points a *distance* rather than a flag. The Hart–Sandin–Kauffman estimator tracks the derivative of the iteration alongside the orbit and converts the escape into a sub-voxel distance to the boundary:
+**Escape time.** Every point $c$ of a sample grid is used as the constant of an iteration $z\mapsto F(z)+c$ (or, for a Julia set, as the starting $z$ with $c$ fixed). Orbits that stay bounded are **inside** the set; orbits whose magnitude passes a bailout radius are **outside**. That much is the classic algorithm — but on its own it yields only a yes/no per voxel, and the boundary between yes-voxels and no-voxels meshes into a blocky shell, because a hard indicator function has no sub-voxel information to interpolate.
 
-$$d \approx \frac{|z|\log|z|}{|z'|}.$$
+**The distance estimate.** The fix is to give the outside points a *distance* rather than a flag. Alongside the orbit one carries its derivative $z'$ with respect to the seed point (the running variable `dr` in the code, updated by the chain rule at every step), and the Hart–Sandin–Kauffman estimator converts the escaped orbit into a sub-voxel distance to the boundary,
 
-That turns the yes/no into a **signed field**, and the zero level set of a smooth field is a smooth surface. Extracted by the [Minimal Surface Toolkit](tpms.md)'s `marching_tets`, the result is printable rather than voxelised — which is the whole reason these can be solids here instead of raymarched images.
+$$d \approx \frac{|z|\log|z|}{2\,|z'|},$$
+
+the ratio measuring how fast the orbit is being flung outward: a point whose derivative is huge sits on a steep part of the escape landscape and is therefore very close to the black set, while a small derivative means the edge is still far. Interior points are stamped with a small negative sentinel instead, so the field is **negative inside and a positive distance outside** — a signed field whose zero level set is a smooth surface. It is contoured by the [Minimal Surface Toolkit](tpms.md)'s `marching_tets`, which is what lets these be printable solids here rather than the raymarched images the name usually conjures.
 
 **The maps.**
 
-**Mandelbulb** — $z\mapsto z^p+c$ in White–Nylander spherical form. There being no 3-D division algebra, the power is *defined* geometrically: multiply the spherical angles and raise the radius,
+**Mandelbulb** — $z\mapsto z^p+c$ in White–Nylander spherical form. There being no 3-D division algebra (no way to multiply triples of numbers that behaves like ordinary multiplication), the power is *defined* geometrically: write the point in spherical coordinates, multiply the two angles by $p$ and raise the radius to the $p$,
 
 $$(r,\theta,\varphi)^p=\big(r^p,\ p\theta,\ p\varphi\big),$$
 
-then convert back to Cartesian and add $c$. This is not a ring homomorphism — it is not associative or distributive — which is exactly why the object has no clean algebraic theory and had to be found by experiment.
+then convert back to Cartesian and add $c$. Multiplying the angles is what spins the lobes around $p$ times, giving the flower-like $p{=}8$ symmetry; but the operation is not a ring homomorphism — not associative, not distributive — which is exactly why the object has no clean algebraic theory and had to be found by experiment rather than derived.
 
-**Quaternion Julia sets** use a genuine division algebra, so $z\mapsto z^2+c$ means what it says. They are mathematically the more legitimate 3-D analogue, and visually the smoother, less foliated one.
+**Quaternion Julia sets** iterate $z\mapsto z^2+c$ in the quaternions, a genuine four-dimensional division algebra, so the squaring means what it says and the map is honestly differentiable. That legitimacy shows in the geometry: the surface is the smoother, less foliated analogue, and because the set truly lives in 4-D what you mesh is a 3-D cross-section at a chosen fourth coordinate $w$ (the **Julia Slice**).
 
-**Mandelbox** is a fold-and-scale map — reflect coordinates outside a box, invert inside a sphere, scale — producing boxy, architectural structure rather than organic lobes.
+**Mandelbox** is a fold-and-scale map: reflect any coordinate that has strayed outside a box back inside (the box fold), invert points that fell inside a small sphere back outward (the ball fold), then scale. Because each fold is piecewise linear its distance estimate needs no logarithm — the code uses the plain $d = |z|/|z'|$ — and the repeated reflections stack into boxy, architectural structure rather than organic lobes.
 
-**Cleanup.** These sets throw off isolated specks that are genuinely in the set but disconnected from the body. An optional largest-connected-component pass drops them, leaving a single closed solid centred in the 2 m cube.
+**Cleanup.** These sets throw off isolated specks that are genuinely in the set but disconnected from the main body. An optional largest-connected-component pass (a union–find over the mesh edges, keeping only the biggest component) drops them, leaving a single closed solid centred in the 2 m cube.
 
 ## References
 
