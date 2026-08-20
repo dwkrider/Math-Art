@@ -229,6 +229,7 @@ del _n
 #: star prisms {n/m}, whose axis is still the n-fold one
 for _n, _m in ((5, 2), (10, 3)):
     COMPONENT_AXES['PRISM%d_%d' % (_n, _m)] = {_n: (0.0, 0.0, 1.0)}
+COMPONENT_AXES['ANTI5_2'] = {5: (0.0, 0.0, 1.0)}
 del _n, _m
 
 
@@ -240,7 +241,11 @@ def _component(kind):
             return star_prism_solid(n, m)
         return prism_solid(int(spec), anti=False)
     if kind.startswith('ANTI'):
-        return prism_solid(int(kind[4:]), anti=True)
+        spec = kind[4:]
+        if '_' in spec:                    # ANTI<n>_<m>, a star antiprism
+            n, m = (int(t) for t in spec.split('_'))
+            return star_antiprism_solid(n, m)
+        return prism_solid(int(spec), anti=True)
     tetra, cube, octa = _seeds()
     if kind == 'TETRA':
         return tetra
@@ -441,6 +446,38 @@ def star_prism_solid(n, m):
     top = [(k * m) % n for k in range(n)]        # the star circuit
     F = [top, [n + i for i in reversed(top)]]
     F += [[k, (k + m) % n, n + (k + m) % n, n + k] for k in range(n)]
+    return V, F
+
+
+def star_antiprism_solid(n, m):
+    """The uniform antiprism on the star polygon {n/m}, axis on z.
+
+    Unlike the star PRISM, this one does not close for every plausible
+    wiring, and the failures are informative.  A lateral triangle sits on
+    one base edge (T_k, T_{k+m}) and reaches one vertex of the other
+    base, so that vertex must be a lateral neighbour of BOTH ends.  For
+    {5/2} the obvious "nearest bottom vertex" attachment -- the one that
+    makes an ordinary antiprism -- leaves T_0 and T_2 with no common
+    neighbour, so it does not close at all; only the attachment two steps
+    round does, and it fixes h at 0.5257, not the 0.9457 the nearest
+    attachment would want.
+    """
+    if math.gcd(n, m) != 1 or not 1 < m < n / 2:
+        raise ValueError('{%d/%d} is not a star polygon' % (n, m))
+    R = 0.5 / math.sin(m * math.pi / n)
+    c = 1.0 - 2.0 * R * R * (1.0 - math.cos(3.0 * math.pi / n))
+    if c <= 1e-12:
+        raise ValueError('{%d/%d} admits no uniform antiprism' % (n, m))
+    h = math.sqrt(c)
+    V = [(R * math.cos(2 * math.pi * k / n),
+          R * math.sin(2 * math.pi * k / n), h / 2.0) for k in range(n)]
+    V += [(R * math.cos(2 * math.pi * k / n + math.pi / n),
+           R * math.sin(2 * math.pi * k / n + math.pi / n), -h / 2.0)
+          for k in range(n)]
+    star = [(k * m) % n for k in range(n)]
+    F = [star, [n + i for i in reversed(star)]]
+    F += [[k, (k + m) % n, n + (k + m + 1) % n] for k in range(n)]
+    F += [[n + k, n + (k + m) % n, (k - 1) % n] for k in range(n)]
     return V, F
 
 

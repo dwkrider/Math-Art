@@ -320,6 +320,28 @@ def _selftest():
         assert max(lens) - min(lens) < 1e-9, (n, m, min(lens), max(lens))
         assert abs(lens[0] - 1.0) < 1e-9, (n, m, lens[0])
 
+    # The star ANTIprism is groundwork for Skilling's rows 28/29/44/45,
+    # which are NOT shipped -- see BACKLOG.md.  The solid itself is
+    # correct and checked here: it closes, every edge is unit and lies in
+    # exactly two faces.  What it is not is the constituent Skilling
+    # means, whose symmetry includes a horizontal mirror that this one
+    # lacks; keeping the check makes that groundwork honest rather than
+    # dead.
+    V, F = _cmp.star_antiprism_solid(5, 2)
+    assert len(V) == 10 and len(F) == 12, (len(V), len(F))
+    assert sorted(len(f) for f in F) == [3] * 10 + [5] * 2, \
+        sorted(len(f) for f in F)
+    ecount = {}
+    for f in F:
+        for i in range(len(f)):
+            e = tuple(sorted((f[i], f[(i + 1) % len(f)])))
+            ecount[e] = ecount.get(e, 0) + 1
+    assert len(ecount) == 20 and set(ecount.values()) == {2}, \
+        (len(ecount), sorted(set(ecount.values())))
+    lens = [_math.dist(V[a], V[b]) for a, b in ecount]
+    assert max(lens) - min(lens) < 1e-9 and abs(lens[0] - 1.0) < 1e-9, \
+        (min(lens), max(lens))
+
     # --- prism / antiprism with its dual --------------------------------
     # `prism_and_dual` raises if the solid has no midsphere, so the whole
     # of Hart's range exercising cleanly is itself the edge-tangency
