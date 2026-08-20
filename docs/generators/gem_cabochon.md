@@ -4,7 +4,9 @@
 
 Add a cabochon: a domed stone, cut on a curve rather than facets.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **cabochon** is a stone cut on a curve rather than in facets — domed and polished smooth, the oldest way of finishing a gem and still the right one for a great many stones.
+
+The choice is not merely traditional. [Faceting](gem.md) works by total internal reflection and needs a transparent, high-index material to be worth doing; an opaque or translucent stone returns nothing from its interior. What a dome does instead is gather light into a single broad reflection, which is what makes the optical effects that *depend* on a curved surface possible: the star of a **star sapphire** (asterism) and the moving slit of a cat's eye (**chatoyancy**) both exist only because the dome sweeps a line of reflection across aligned inclusions inside the stone.
 
 ## Options
 
@@ -49,7 +51,19 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Outline and dome, separately.** A cabochon is specified the way a lapidary describes one: an **outline** — round, oval, cushion, pear, marquise — and a **dome profile** raised over it. The two are independent, so the same oval outline carries a low, a high or a bullet dome.
+
+**The dome curve.** The profile is a superelliptic arc,
+
+$$\left(\frac{r}{R}\right)^{p}+\left(\frac{z}{H}\right)^{p}=1,$$
+
+with the exponent $p$ setting the character: $p=2$ gives a plain ellipse, higher values flatten the top and turn the shoulders down more sharply, lower values pull it toward a point. This one parameter runs from a flat-topped *lentil* through the standard cabochon to a *bullet*, which is why it is exposed rather than a set of presets.
+
+**Single and double.** A single cabochon is domed on top and flat beneath — the usual form, made to sit in a bezel. A **double** cabochon domes both sides, used for translucent stones meant to be lit from behind.
+
+**Why dome height matters optically.** Asterism and chatoyancy need a **tall** dome. The star or the eye is the reflection of the light source in a family of aligned needle inclusions, and its sharpness depends on the range of surface normals the dome presents: a flat cabochon shows the effect smeared across the top, while a high dome concentrates it into a defined line or star. That is a real constraint on the cut, and it is why the dome height control notes it.
+
+**Meshing.** The surface is a revolution or a lofted sweep of the profile around the outline, closed with a flat or domed base, and smooth-shaded — the opposite of the [faceted stone](gem.md), where flat shading is essential. Here the curvature *is* the optics.
 
 ## References
 

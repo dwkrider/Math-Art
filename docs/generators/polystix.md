@@ -5,7 +5,11 @@
 Non-intersecting cubic rod packing (hexastix / tetrastix /
 tristix), after O'Keeffe, Conway and Widmark.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+**Polystix** are symmetric bundles of straight rods running in three or four directions, interlocking through space **without ever touching**. They are the rod packings of crystallography, cut down to a finite sculptural cell.
+
+Conway's nomenclature is worth knowing before reading the names: the prefix counts the **sides of the rod's cross-section**, not the number of directions. So *tetrastix* is square rods (four sides) in three directions, and *hexastix* is hexagonal rods in four.
+
+These are distinct from the [polylinks](polylinks.md): there the elements are linked closed loops, here they are infinite straight rods on a crystallographic lattice. Nothing is knotted or linked — the interlocking is purely a matter of the rods being unable to separate without passing through one another.
 
 ## Options
 
@@ -48,7 +52,29 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The five packings.**
+
+| Packing | Rods | Directions | Fills | Notes |
+| --- | --- | --- | --- | --- |
+| **tetrastix** | square | 3, the cube axes $\langle100\rangle$ | $3/4$ | primitive cubic, O'Keeffe's $\Pi^*$ |
+| **hemistix** | square | the same 3 | $3/8$ | chiral, $I4_132$, exactly *half* of tetrastix — the "hemi" |
+| **hexastix** | hexagonal | 4, the body diagonals $\langle111\rangle$ | $3/4$ | the garnet packing, $Ia\bar3d$ — the "bundle of pencils" |
+| **tristix** | triangular | the same 4 $\langle111\rangle$ | — | chiral, O'Keeffe's $+\Omega$ |
+| **$+\Sigma$** | — | 4 $\langle111\rangle$ | — | a second chiral four-direction packing |
+
+Hemistix is not a variation on tetrastix but the *only other* cubic square-rod packing, with six rods per cell and half the filling — a genuine classification result rather than a design choice.
+
+**The four-direction geometry.** All the $\langle111\rangle$ packings share the same four direction vectors — the body diagonals of the cube — and differ **only in the registration**, the relative offset of the four families. That is the whole design space: change the offsets and you move between garnet, tristix and $+\Sigma$.
+
+Those four directions meet pairwise at the tetrahedral angle
+
+$$\arccos\!\left(\tfrac13\right)=70.5288°,$$
+
+and in the plane perpendicular to any one direction the rod centres of that family form a triangular lattice, with the other three families threading through its gaps. The hexagonal cross-section of hexastix is exactly what tiles that triangular lattice, which is why hexagonal rods reach the $3/4$ filling where round ones could not.
+
+**Why they cannot touch.** Each family's rods are separated by the lattice, and the registration is chosen so that the minimum distance between axes of *different* families exceeds the rod diameter. The packing is therefore rigid without contact: no rod can be withdrawn, because the others block every direction it could travel, yet nothing bears on anything.
+
+**Clipping.** The rods are infinite; the sculpture is what survives clipping to a finite cell — a cube, rhombic dodecahedron, truncated octahedron or sphere. The **overhang** parameter pushes the rods out past the clip so the interleaving is visible at the ends; flush with the cell, the packing reads as a solid block.
 
 ## References
 

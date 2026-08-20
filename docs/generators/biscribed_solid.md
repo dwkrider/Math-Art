@@ -5,7 +5,9 @@
 Add a biscribed solid: vertices on a circumsphere AND faces
 tangent to a concentric insphere (exact symmetric construction).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **biscribed** solid has all its vertices on a circumsphere *and* all its faces tangent to a concentric insphere. Ordinary Archimedean solids manage only the first: their faces come in several orbits at different distances from the centre, so no single insphere touches them all.
+
+Restoring that second property means deforming the solid until the face orbits agree — which is possible for some families and provably impossible for others. The interesting part of this generator is therefore as much what it *cannot* build as what it can.
 
 ## Options
 
@@ -102,7 +104,25 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+For a vertex-transitive family the circumsphere is automatic — one vertex orbit means one distance from the centre. So biscribing reduces to a single condition: **equalise the face-orbit plane distances** using whatever shape parameters the family has. Each family is solved on its own terms.
+
+**Truncations** ($tT$, $tC$, $tO$, $tD$, $tI$) have one parameter, the truncation depth $t$, cutting each edge at $(1-t)A+tB$; $t=\tfrac12$ is full rectification. The base-face plane distance is constant in $t$ while the new vertex-face distance varies, so a biscribed form exists exactly when
+
+$$g(t)=d_{\text{vertex face}}(t)-d_{\text{base face}}$$
+
+has a root in $(0,\tfrac12)$. That is found by bisection — and if $g$ has no sign change on the interval, **no biscribed form exists**, which is reported rather than approximated.
+
+**Rectified solids** — the cuboctahedron and icosidodecahedron — have *zero* parameters and two unequal face-orbit distances. There is nothing to solve with, so no biscribed form exists.
+
+**Omnitruncates** (truncated cuboctahedron and icosidodecahedron) are the clean case. Their faces lie in planes perpendicular to the 2-, 3- and $n$-fold axes, with the three plane offsets $(d_2 : d_3 : d_n)$ as shape parameters up to scale. Every vertex is the meet of one plane of each type, so setting
+
+$$d_2=d_3=d_n=1$$
+
+*is* the biscribed form — exactly, with no numerics at all.
+
+**Snubs** take the vertex orbit of a free point under the rotation group, giving enough parameters to impose the tangency condition and solve.
+
+The pattern worth noticing: the amount of freedom a family has is exactly the number of independent face orbits it must reconcile, which is why the parameterless solids simply have no such form.
 
 ## References
 

@@ -4,7 +4,9 @@
 
 Add an Apollonian gasket (2D rings) or sphere packing.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Begin with mutually tangent circles, inscribe a new circle in every curvilinear gap, and recurse forever. The **Apollonian gasket** is the result — an exactly self-similar fractal in which gaps are filled at every scale, going back to Apollonius of Perga in the third century BC. The 3-D analogue packs mutually tangent **Soddy spheres**.
+
+Its striking feature is arithmetic rather than geometric. If the starting curvatures are integers, then *every* circle in the infinite packing has integer curvature — a fractal that generates whole numbers, which is why Apollonian packings turn up in number theory as often as in geometry.
 
 ## Options
 
@@ -42,7 +44,21 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Descartes' circle theorem.** For four mutually tangent circles with curvatures $k_i=1/r_i$ (negative for the enclosing circle),
+
+$$(k_1+k_2+k_3+k_4)^2 = 2\big(k_1^2+k_2^2+k_3^2+k_4^2\big).$$
+
+Solving for $k_4$ gives a quadratic, hence two roots — the two circles tangent to the same three. The **Soddy–Gosper** generalisation extends this to spheres in 3-D.
+
+**The sign-free reflection form.** Rather than solve that quadratic and choose a root — which needs a square root and a sign decision at every step, and is where such constructions usually go wrong numerically — this generator uses the fact that the two solutions are related by reflection. Given a set of mutually tangent elements and one further tangent element $c_0$, the *other* element tangent to the same set is
+
+$$k' = 2\sum_i k_i - k_0, \qquad k'c' = 2\sum_i k_i c_i - k_0 c_0 .$$
+
+Both the curvature and the curvature-weighted centre are simple linear combinations, so each gap is filled exactly, with no square root and no sign ambiguity. Iterating from a seed configuration fills every gap at every level, and each new circle immediately becomes part of the tangent set for its own children.
+
+**Why the curvatures stay integral.** The reflection form is what makes the integrality obvious: $k'=2\sum k_i - k_0$ is an integer whenever the $k_i$ are. There is no rounding, no accumulation of error, and no need to test for it — the arithmetic property follows from the same equation that generates the packing.
+
+**Colouring.** By radius or by recursion depth. Uncoloured, a gasket is a heap of white spheres and its nesting is invisible; colouring by size separates the generations, which is what makes the self-similarity legible in a render.
 
 ## References
 

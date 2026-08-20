@@ -5,7 +5,9 @@
 Add a canonical polyhedron (geometry fixed by its combinatorics):
 the Greater Self-Dual Solids, in their edge-tangent canonical form.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A polyhedron's **canonical form** is the remarkable fact that combinatorics alone can fix geometry. Give only the list of which faces meet which — no coordinates, no lengths, no angles — and there is essentially **one** way to realise it with all edges tangent to a common sphere. The shape is a consequence of the incidence pattern, not an additional choice.
+
+Two families are built here: the **Greater Self-Dual Solids**, eleven self-dual polyhedra of tetrahedral symmetry, and the **simplest canonical polyhedron of each of the 42 three-dimensional point groups** — one representative per symmetry type. Coordinates are derived rather than transcribed, so each is computed from its combinatorics here.
 
 ## Options
 
@@ -133,7 +135,21 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**What "canonical" asks for.** A polyhedron is in canonical form when
+
+1. every **edge is tangent to a common sphere** (the midsphere), and
+2. the centroid of the tangency points is the sphere's centre.
+
+The second condition removes the Möbius freedom that would otherwise let the whole configuration be slid around the sphere, which is what makes the form unique rather than merely possible.
+
+**Getting a starting shape.** The algorithm needs coordinates to refine, but the input is only a face-incidence list. A **graph-Laplacian spectral seed** supplies them: build the polyhedron's adjacency graph, take the eigenvectors of its Laplacian belonging to the first few non-trivial eigenvalues, and use them as $(x,y,z)$. That is the standard spectral embedding, and it produces a roughly convex, roughly correct arrangement — enough for the refinement to converge, and derived from the combinatorics rather than looked up.
+
+**Canonicalisation.** George Hart's algorithm then iterates to the fixed point: nudge each vertex so its incident edges move toward tangency with the unit sphere, and recentre so the tangency points' centroid returns to the origin. Repeated to convergence, this arrives at the canonical form — the same routine the [Conway operators](conway.md) use to regularise their output.
+
+**The two families.**
+
+- **Greater Self-Dual Solids** — eleven polyhedra with $V=F$ and tetrahedral symmetry: four icosioctahedra with $V=F=28$, six tetracontahedra with $V=F=40$, and a 76-hedron. Self-duality is exactly the kind of property that is a statement about combinatorics, so canonical form is its natural geometric expression: the canonical solid and its dual are congruent.
+- **Simplest canonical per symmetry** — the smallest canonical polyhedron realising each of the 42 point-group types, which makes the set a tour of three-dimensional symmetry rather than of any one family.
 
 ## References
 

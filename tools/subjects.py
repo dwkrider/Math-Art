@@ -58,18 +58,25 @@ PARAMS = {
     # the Helfrich model predicts and a red blood cell actually is.
     # Of the three modes the Clifford torus and the inflated ring both
     # render as a plain doughnut; the relaxed vesicle is the one with a
-    # shape of its own.  Note it settles to the dumbbell branch at the
-    # default reduced volume -- seed_shape='OBLATE' does not move it to
-    # the biconcave discocyte, so that would need parameter work in the
-    # generator rather than here.
+    # shape of its own.  It settles to the prolate CAPSULE branch, not
+    # the biconcave discocyte the module header describes: measured
+    # dimensions are (2.0, 0.55, 0.55) for seed_shape='OBLATE' and
+    # 'PROLATE' alike, at reduced volume 0.65 and 0.60.  No pose is set
+    # for it -- the capsule is a solid of revolution, so rotating about
+    # its own axis does nothing and any other angle just foreshortens
+    # it.
     "mesh.willmore_add": dict(mode='VESICLE'),
     "mesh.sphericon_add": dict(sides=7, coloring='NONE'),
 
     # -- surfaces -------------------------------------------------
     "mesh.scherk_collins_add": dict(preset='HEX'),
     "mesh.parametric_minimal_add": dict(surface='ENNEPER'),
-    # The gyroid is the TPMS everyone recognises.
-    "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', surface='G'),
+    # The gyroid is the TPMS everyone recognises.  Two cells per axis
+    # rather than one: a single cell is a fragment, while the 2x2x2
+    # block shows the channels threading through one another, which is
+    # the thing about a gyroid.
+    "mesh.periodic_minimal_add": dict(periodicity='TRIPLY', surface='G',
+                                      cells=2),
     "mesh.minimal_knot_span_add": dict(p=2, q=3),
     "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE'),
     "mesh.algebraic_surface_add": dict(preset='CLEBSCH'),
@@ -139,6 +146,9 @@ PARAMS = {
 # --------------------------------------------------------------------
 import math                                              # noqa: E402
 
+# The gyroid's own pose, shared by its hero and its gallery entries.
+GYROID_POSE = (-0.1967, 0.1944, -1.8216)
+
 ORIENT = {
     # A tetrahedron sitting face-on reads as a flat triangle; a sixth
     # of a turn puts an edge toward the camera and it reads as a solid.
@@ -155,17 +165,41 @@ ORIENT = {
     # -- straight on, the four lobes overlap into a featureless blob.
     # A quarter turn puts that circle edge-on and the lobes separate.
     "object.minimal_span": (0.0, 0.0, math.pi / 2),
-    # The vesicle is a biconcave disc, and face-on that is just a
-    # disc -- the two dimples that make it a discocyte are exactly
-    # what is lost.  Tipping it toward the camera shows the pinched
-    # profile, which is the whole point of the shape.
-    "mesh.willmore_add": (1.0, 0.0, 0.0),
+    # Posed in the Blender viewport and converted to the studio
+    # camera's frame (R = q_studio . q_view^-1).  Looks down the
+    # channels so the openings read as holes rather than as dents.
+    # The hero is the gyroid, so the operator-level pose is the
+    # gyroid's; the gallery poses per surface (see VARIANT_ORIENT).
+    "mesh.periodic_minimal_add": GYROID_POSE,
     # A Meissner solid seen down a vertex axis is a Reuleaux triangle:
     # a flat-looking rounded triangle that says nothing about its being
     # a solid.  Turned off that axis, the three curved edges and the
     # tetrahedral structure both read.
     "mesh.constant_width_add": (math.radians(70), math.radians(15),
                                 math.radians(45)),
+}
+
+
+# --------------------------------------------------------------------
+# Per-variant poses
+# --------------------------------------------------------------------
+# ORIENT is keyed by operator, which is right for a hero -- one
+# operator, one subject -- but too blunt for a gallery, where the
+# entries are genuinely different surfaces.  The gyroid pose looks down
+# the gyroid's channels; applied to Schwarz P or Neovius it is just an
+# arbitrary tilt of a different shape.
+#
+# An operator listed here takes its gallery poses from THIS table and
+# does not fall back to ORIENT, so a variant left out gets no pose at
+# all.  That is the point: only the surfaces named are posed.
+VARIANT_ORIENT = {
+    "mesh.periodic_minimal_add": {
+        "G": GYROID_POSE,           # Gyroid
+        "CG": GYROID_POSE,          # Complementary Gyroid
+        "GPRIME": GYROID_POSE,      # G' Alternating Gyroid
+        # PGD is the P-Gyroid-D Bonnet family and defaults to the P
+        # end of it, so it is deliberately not posed as a gyroid.
+    },
 }
 
 
@@ -733,6 +767,14 @@ def _selftest():
         for e in entries:
             if len(e) != 3 or not isinstance(e[2], dict):
                 raise AssertionError(f"VARIANT_EXTRA[{op}]: bad entry {e}")
+    for op, table in VARIANT_ORIENT.items():
+        prefix, _, rest = op.partition('.')
+        if prefix not in ('mesh', 'curve', 'object') or not rest:
+            raise AssertionError(f"VARIANT_ORIENT: bad operator id {op!r}")
+        for vid, rot in table.items():
+            if len(rot) != 3 or not all(isinstance(a, float) for a in rot):
+                raise AssertionError(
+                    f"VARIANT_ORIENT[{op}][{vid}] is not three floats")
     for op in VARIANT_GROUP_ONLY:
         if op not in VARIANT_GROUP:
             raise AssertionError(f"VARIANT_GROUP_ONLY[{op}] has no group")
@@ -885,6 +927,22 @@ if _IN_BLENDER:
     def pose_subjects(op, objects):
         """Apply the canonical pose for `op` to `objects`, if any."""
         rot = ORIENT.get(op)
+        if rot is None:
+            return False
+        for ob in objects:
+            ob.rotation_euler = Euler(rot)
+        return True
+
+    def pose_variant(op, vid, objects):
+        """Pose one gallery entry.
+
+        An operator with a VARIANT_ORIENT table is posed per variant
+        and does NOT inherit its operator-level ORIENT: the gallery
+        entries are different surfaces, and one surface's pose is
+        meaningless on another.
+        """
+        table = VARIANT_ORIENT.get(op)
+        rot = table.get(vid) if table is not None else ORIENT.get(op)
         if rot is None:
             return False
         for ob in objects:

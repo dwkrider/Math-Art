@@ -5,7 +5,9 @@
 Add cellular tissue grown by developmental division, relaxed
 under turgor pressure.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Tissue grown by **cell division**. A map L-system rewrites a planar map — a network of cells and walls — by splitting cells rather than by rewriting a string, so the result is a sheet of cells with a developmental history.
+
+This add-on already makes cells three other ways, and all of them **partition**: [Voronoi openwork](voronoi_openwork.md), [organic wireframe](organic_wireframe.md) and [bubble clusters](bubble_cluster.md) each take a region and cut it up. Division is a different object. The tissue's cell sizes are graded by age, its walls meet at angles that came from the order they were laid down, and its outline **emerges** rather than being the boundary you started with. Voronoi looks scattered; this looks grown, and that difference is the whole reason it exists alongside them.
 
 ## Options
 
@@ -40,7 +42,20 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Rewriting a map, not a string.** The state is a planar map: cells, the walls between them, and the vertices where walls meet. A production divides a cell by inserting a new wall between two points on its boundary. All cells are rewritten in parallel, generation by generation, exactly as an ordinary [L-system](lsystem.md) rewrites all symbols at once — the difference is that the object being rewritten is two-dimensional.
+
+**The one dial that does the shape work** is the **periclinal / anticlinal ratio** $P/A$ — the relative likelihood that a new wall is laid *parallel* to the tissue surface (periclinal) or *perpendicular* to it (anticlinal). These are the botanist's terms for the two ways a cell can divide, and the ratio between them decides whether a sheet thickens or spreads:
+
+- **anticlinal-dominant** — divisions perpendicular to the surface, so the tissue extends sideways and stays a layer;
+- **periclinal-dominant** — divisions parallel to the surface, so layers stack and the tissue thickens into a mass.
+
+Everything from a single-layered epidermis to a bulky parenchyma is that one ratio.
+
+**Two constraints** hold the map together, and they are what make this a formalism rather than a heuristic: a new wall must run between two points on the *same* cell's boundary, and walls must remain consistent across shared edges, so that a division seen from one cell agrees with what its neighbour sees. `lsystem/maps.py` states both precisely.
+
+**Geometry from a pressure solver.** Rewriting gives the map's *combinatorics* — which cell borders which — but not where anything sits. The positions come from a mass-spring relaxation with internal pressure: walls behave as springs, each cell pushes outward with a pressure set by its area, and the tissue settles into equilibrium.
+
+That is why the walls meet at sensible angles and the outline bulges the way a real sheet of cells does: the shape is a force balance over a history of divisions, not a drawing.
 
 ## References
 

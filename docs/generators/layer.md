@@ -5,7 +5,11 @@
 Add a layer-group pattern: a wallpaper group augmented with
 a z-symmetry (shows only in 3D -- use relief or an active mesh).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The three-dimensional extension of the [wallpaper groups](wallpaper.md). A **layer group** describes a pattern periodic in two directions — a slab — whose symmetries may involve the *third* axis: a horizontal mirror through the layer plane, a 2-fold axis lying in the plane, or a centre of inversion.
+
+There are 80 of them in full. This generator takes the tractable **z-augmentation** route: pick one of the 17 in-plane wallpaper groups and add a $z$-symmetry, so copies can flip up and down as well as rotate and reflect within the plane.
+
+Because the third dimension is the entire point, a layer pattern only reads in 3-D — with a relief height or with the active mesh as the repeated unit. Flat, it is indistinguishable from its wallpaper group.
 
 ## Options
 
@@ -64,7 +68,24 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Z-augmentation.** Start from a wallpaper group $G$ acting in the plane, and extend each of its elements to act on the slab. Every in-plane isometry is lifted to $\mathbb{R}^3$ by acting trivially on $z$, and then the group is augmented by one of the $z$-symmetries:
+
+| Augmentation | Operation | Effect |
+| --- | --- | --- |
+| none | $z\mapsto z$ | a plain slab, the wallpaper group extruded |
+| $z$-mirror | $z\mapsto -z$ | top/bottom symmetric — a screen |
+| 2-fold in plane | $(x,y,z)\mapsto(x,-y,-z)$ | copies flipped over |
+| inversion | $\mathbf{p}\mapsto-\mathbf{p}$ | a centre of symmetry |
+
+The lifted elements compose with the in-plane ones exactly as before, so the augmented set is a group provided the added symmetry is compatible with $G$ — which is why not every wallpaper group admits every augmentation, and why the full count is 80 rather than $17\times4$.
+
+**Building the pattern.** As with the wallpaper generator, the group is stored as coset representatives modulo the translation lattice, and the slab is
+
+$$P=\bigcup_{u,v}\ \bigcup_{j} T(u\,b_1+v\,b_2)\ g_j\,(\text{unit}),$$
+
+with the unit now a three-dimensional object — a relief-height motif or the active mesh — rather than a flat polygon.
+
+**Why the z-mirror is the useful one.** Adding $z\mapsto-z$ makes a slab identical from above and below, which is exactly what an architectural screen wants: it reads the same from either side and can be cast or printed without a preferred face. The other augmentations are more interesting mathematically and less often what you want to build.
 
 ## References
 

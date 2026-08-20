@@ -5,7 +5,11 @@
 Add one of Ilhan Koman's developable sculptures: a slit sheet
 coiled into a ring, or wound out as a logarithmic spiral.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+İlhan Koman's **developable sculptures**: forms cut from a single flat sheet, slit and coiled, with nothing glued and no seam anywhere. The sheet is never stretched, so the surface is developable throughout — it could be flattened back out, in principle, by uncoiling it.
+
+Koman (1921–1986) never wrote his method down. Akgün, Kaya, Koman and Akleman reconstructed it from the surviving sculptures in 2007.
+
+These are **not** [D-forms](dform.md), despite the shared theme of shapes made from unstretched flat sheet, and they are kept apart here for that reason. A D-form glues *two* pieces of equal perimeter edge to edge and comes out convex, with all its curvature on one seam and no interior creases. These are cut from *one* sheet, with nothing glued boundary to boundary at all.
 
 ## Options
 
@@ -46,7 +50,21 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Slit and coil.** Cut a sheet from **alternating** edges — a slit in from the left, then from the right, then the left again — so it becomes one long serpentine ribbon that is still a single connected piece. Then coil that ribbon so each segment, a **tongue**, lies flat and slides under its neighbour by a distance $2d$.
+
+**The turn per slide.** Each slide turns the ribbon by
+
+$$a=\arctan\!\left(\frac{2d}{h}\right),$$
+
+for tongue height $h$. After $n$ slides the ribbon has turned through $na$, and it closes into a ring when that reaches a full turn, giving a radius of about $h/2$ — with the tongues overlapping like a fanned deck of cards.
+
+**Where the curvature is.** The tongues themselves stay **planar**. The paper between two tongues cannot: it is longer than the gap it now has to bridge, so it **arches**. Those arches are the only curved surfaces in the entire piece.
+
+That is the property that keeps the sculpture cuttable from flat stock. The blades are flat by construction and the curvature is confined to the webs between them, which is why a design can be laser-cut and then simply coiled rather than formed.
+
+**The spiral.** Cut the same slits into a **trapezoid** instead of a rectangle and the ribbon tapers, so the coil never closes — it winds outward as a logarithmic spiral, which is what Koman's own metal pieces are. The mechanism is direct: hold the turn per slide constant and shrink $h$ exponentially along the strip. Since the radius goes as $h/2$, shrinking $h$ geometrically walks the blades steadily outward, and a constant turn with an exponentially changing radius is precisely a logarithmic spiral.
+
+**Two modes,** then: `RING` closes on itself from a rectangular sheet, `SPIRAL` opens outward from a trapezoidal one — the same cut and the same coil, differing only in whether the strip tapers.
 
 ## References
 

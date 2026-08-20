@@ -4,7 +4,9 @@
 
 Add a monostatic body -- the gomboc, a convex homogeneous self-righting solid with one stable and one unstable balance point.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **gömböc** is a convex, homogeneous solid that is *mono-monostatic*: it has exactly **one** stable and **one** unstable balance point, so it always rolls back to the same resting pose — like a self-righting toy, but with no added weight and no hollow. Uniform density throughout.
+
+Vladimir Arnold conjectured in 1995 that such a body could exist. Gábor Domokos and Péter Várkonyi proved it and built the first one in 2006. The shape is necessarily close to a sphere — the tolerance is famously tight, on the order of a tenth of a millimetre on a 10 cm body — because a body far from spherical has room for extra equilibria.
 
 ## Options
 
@@ -42,7 +44,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Equilibria as critical points.** Resting the body on a plane with outward direction $e$, the potential energy is
+
+$$V(e)=\mathbf{c}\cdot e + h(-e),$$
+
+where $\mathbf{c}$ is the centre of mass and $h(u)=\max_{x\in K} x\cdot u$ is the **support function**. Balance points are the critical points of $V$: minima are stable, maxima unstable, saddles are the unstable-in-one-direction cases. A true gömböc has exactly one minimum and one maximum and nothing else — and since $V$ is a function on the sphere, Morse theory forces $\#\min-\#\text{saddle}+\#\max=2$, so with one of each there can be **no saddles at all**. That is the constraint that makes such bodies so hard to find.
+
+**The gömböc form.** There is an important gap between the mathematics and the iconic object, and this generator is explicit about it. The makers describe the fabricated gömböc as a "tennis-ball" assembly of segments of simple surfaces — cylinder, ellipsoid, cone — and planes joined along crease edges. It has **no single closed-form equation**.
+
+So the shape here comes from its digitised **support function**, stored as spherical-harmonic coefficients and smoothed by the spherical heat kernel — damping coefficient $\ell$ by
+
+$$\exp\!\big(-\ell(\ell+1)\sigma^2/2\big).$$
+
+That smoothing is chosen rather than convenient: convolving a support function with a nonnegative zonal kernel is a **rotational Minkowski average** of the body, so the result is *provably* again the support function of a convex body. The crease edges come out rounded at radius $\approx\sigma$ with no ringing, no faceting and no pole pinch — which naive smoothing of the surface itself would not guarantee.
+
+**Meshing.** The surface is recovered by the normal parametrisation $x(u)=\nabla H(u)$ of the 1-homogeneous extension $H(p)=|p|\,h(p/|p|)$, evaluated on an icosphere of directions. Because directions are sampled uniformly, vertices concentrate naturally where curvature is high — along the seam and the beak.
+
+> **Caveat, stated plainly.** This form reproduces the *shape*: smooth, strictly convex, one mirror plane, about 40% off a sphere. It is **not** a certified mono-monostatic solid. Verifying that would mean confirming $V(e)$ has exactly one minimum and one maximum for the meshed body's own centre of mass, which the smoothing does not preserve.
 
 ## References
 

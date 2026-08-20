@@ -6452,5 +6452,41 @@
    "RING",
    "Inflated Ring"
   ]
+ ],
+ "bryant_surface": [
+  [
+   "CATENOID_COUSIN",
+   "Catenoid Cousin"
+  ],
+  [
+   "ENNEPER_COUSIN",
+   "Enneper Cousin"
+  ],
+  [
+   "POLYNOMIAL",
+   "Polynomial Data"
+  ]
+ ],
+ "delaunay_surface": [
+  [
+   "UNDULOID",
+   "Unduloid"
+  ],
+  [
+   "NODOID",
+   "Nodoid"
+  ],
+  [
+   "SPHERE",
+   "Sphere Chain"
+  ],
+  [
+   "CYLINDER",
+   "Cylinder"
+  ],
+  [
+   "CATENOID",
+   "Catenoid"
+  ]
  ]
 }

@@ -502,6 +502,23 @@
    "Scale"
   ]
  },
+ "mesh.bryant_surface_add": {
+  "label": "Bryant Surface",
+  "options": [
+   "Surface",
+   "Model",
+   "mu",
+   "lambda",
+   "Degree n",
+   "r2 = c",
+   "Domain Extent",
+   "U Resolution",
+   "V Resolution",
+   "ODE Steps",
+   "Smooth Shading",
+   "Scale"
+  ]
+ },
  "mesh.bubble_cluster_add": {
   "label": "Bubble Cluster",
   "options": [
@@ -663,6 +680,19 @@
    "Resolution",
    "Smooth Shading",
    "Thickness",
+   "Scale"
+  ]
+ },
+ "mesh.delaunay_surface_add": {
+  "label": "Delaunay Surface",
+  "options": [
+   "Surface",
+   "Neck Radius",
+   "Periods",
+   "Profile Samples",
+   "Revolution Samples",
+   "Height",
+   "Smooth Shading",
    "Scale"
   ]
  },
@@ -877,6 +907,8 @@
    "Lobes",
    "Amplitude",
    "Ellipse Squash",
+   "Winding m",
+   "Lobes n",
    "Shade Smooth",
    "Scale"
   ]
@@ -906,6 +938,8 @@
    "U Resolution",
    "V Resolution",
    "Twist",
+   "Breather b",
+   "Waist / Girth",
    "Scale",
    "Smooth Shading"
   ]

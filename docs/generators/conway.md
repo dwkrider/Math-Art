@@ -70,7 +70,7 @@ A notation string is parsed right-to-left as *operators, then a seed with an opt
 Each **operator** rewrites the vertex/face structure:
 
 - **dual** ($d$) — a vertex at every face centroid; new faces walk the faces around each old vertex.
-- **ambo** ($a$) — a vertex at every edge midpoint; the dual pair $(dd = e{-}$style rectification).
+- **ambo** ($a$) — a vertex at every edge midpoint; rectification, the operator for which $aa = e$.
 - **kis** ($k$, optionally $kN$ restricted to $N$-gons) — raise a pyramid on each face, apex offset along the Newell normal by `Kis Height` × mean edge length.
 - **gyro** ($g$) — the chiral operator that turns each $n$-gon into $n$ pentagons, using edge points one-third along each directed edge plus a face centroid.
 - **chamfer** ($c$) — shrink each face toward its centroid and bridge the gaps with hexagons along the old edges.

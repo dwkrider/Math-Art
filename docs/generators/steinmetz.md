@@ -4,7 +4,11 @@
 
 Add a Steinmetz solid -- the intersection of two or three equal cylinders meeting at right angles.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **Steinmetz solid** is the intersection of equal-radius circular cylinders whose axes meet at right angles. Two cylinders give the **bicylinder** — a shape bounded by two cylindrical lune patches meeting along a pair of ellipse-like edges — and three give the **tricylinder**, a rounded cube with twelve curved edges.
+
+Archimedes found the bicylinder's volume in *The Method*, and it is one of the loveliest results in the subject: $16r^3/3$, exactly, with no $\pi$ in it at all — a volume bounded entirely by curved surfaces that is nonetheless rational in $r$.
+
+The bicylinder is also a **rolloid**: placed on an incline and nudged, it rolls in a straight line.
 
 ## Options
 
@@ -32,7 +36,28 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The solids.** With cylinders of radius $r$ along the coordinate axes, the bicylinder is $\{x^2+y^2\le r^2\}\cap\{x^2+z^2\le r^2\}$ and the tricylinder adds $\{y^2+z^2\le r^2\}$.
+
+**Archimedes' volume, by slicing.** Cut the bicylinder by a plane $z=c$. Each cylinder contributes a strip, and their intersection is a **square** of half-width $\sqrt{r^2-c^2}$. So
+
+$$V=\int_{-r}^{r}\Big(2\sqrt{r^2-c^2}\Big)^2 dc=4\int_{-r}^{r}(r^2-c^2)\,dc=\frac{16r^3}{3}.$$
+
+The $\pi$ vanishes because every cross-section is a square rather than a disc — the curvature is all in how the square shrinks, not in the section itself. Archimedes reached the same answer mechanically, by balancing slices against a cone and a cylinder on a lever.
+
+The tricylinder's volume is $8(2-\sqrt2)r^3$. The four values are worth comparing at $r=1$:
+
+| Solid | Volume |
+| --- | --- |
+| Cube, side $2r$ | $8.000$ |
+| Bicylinder | $5.333$ |
+| Tricylinder | $4.686$ |
+| Inscribed sphere | $4.189$ |
+
+Each intersection shaves the cube closer to the sphere without ever reaching it.
+
+**Why the bicylinder rolls straight.** Its surface consists of two cylindrical patches, and a cylinder rolling on its curved side travels in a straight line. The bicylinder alternates between the two patches as it turns, but both are cylinders of the same radius, so the contact geometry is the same throughout and the path stays straight — unlike the [oloid](oloid.md) or [sphericon](sphericon.md), whose rolling meanders precisely because their patches are not congruent cylinders.
+
+**Meshing.** Both solids are built from the exact surface patches rather than by Boolean intersection of tessellated cylinders, so the curved edges are clean curves rather than the ragged seam a mesh Boolean leaves where two nearly tangent surfaces meet.
 
 ## References
 

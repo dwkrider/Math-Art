@@ -4,7 +4,9 @@
 
 Add a D-form: a solid glued from two flat equal-perimeter sheets.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **D-form** is made by cutting two flat pieces whose outlines have the *same perimeter* and gluing them edge to edge. They cannot lie flat once joined, so the join pops into a closed solid — curved everywhere, yet stretched nowhere. It is paper across its whole surface, and **all** of its Gaussian curvature lives on the single seam.
+
+Tony Wills invented them and John Sharp brought them to the mathematical-art community. Demaine and O'Rourke proved the crucial fact: the resulting solid is the **convex hull of its own seam curve**, which is what makes the shape well posed at all — the two outlines and the point at which they are joined determine it uniquely.
 
 ## Options
 
@@ -63,7 +65,17 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Two outlines, one perimeter.** Pick two closed plane curves of equal perimeter — ellipses, superellipses, egg curves, rounded polygons, Cassini ovals — and pair them off by arclength: the point at distance $s$ along one is glued to the point at distance $s$ along the other. Equal perimeter is what makes that pairing well defined all the way round.
+
+**Why it must pop out.** Each piece is flat, so it has zero Gaussian curvature everywhere in its interior, and gluing does not stretch it — the pieces stay developable. But a closed surface must have total curvature $4\pi$ by Gauss–Bonnet. With the interiors contributing nothing, **all** of it is concentrated on the seam, and a surface with curvature on a curve cannot be flat there: the join is forced into space.
+
+**The shape is the hull of the seam.** Demaine and O'Rourke's result says the solid is exactly the convex hull of the seam curve. This is what makes the construction computable: find where the seam goes and the surface follows, rather than having to solve for a developable surface directly.
+
+**The join point is the interesting control.** Rotating one outline relative to the other before gluing — starting the arclength pairing at a different place — does **not** add or remove curvature. Gauss–Bonnet pins the total at $4\pi$ whatever you do. It only **slides the curvature around the seam**, redistributing where the solid is sharply bent and where it is nearly flat. Same two pieces, same total, wholly different object.
+
+The **Seam Curvature** colour attribute paints exactly that quantity, so the redistribution is visible as the join point moves.
+
+**The other modes** vary the closure rather than the outlines: an anti-form joins with reversed orientation, a truncation cuts the seam short, and a vesica pairs two identical outlines to give the lens-shaped classic.
 
 ## References
 

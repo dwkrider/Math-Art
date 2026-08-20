@@ -5,7 +5,9 @@
 Add a structure grown into a space: space colonization,
 self-organizing tree, DLA cluster or Pythagoras tree.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Form decided by the **environment** rather than by a grammar. The [L-system](lsystem.md) operators rewrite a string and read it as turtle commands, so the productions decide the shape. These four work the other way round: a structure grows *into* a space, and its form is a consequence of that space.
+
+The distinction is not stylistic. With a grammar, a tree's habit is a parameter you set. Here it is an outcome — change the region the structure has to fill, and the habit changes with no habit parameter existing at all.
 
 ## Options
 
@@ -60,7 +62,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**COLONIZE — space colonisation.** Scatter attractor points through an envelope. At each step, every attractor votes for its nearest branch tip; each tip that received votes grows one segment toward the average direction of its voters; attractors within a kill radius of a tip are removed. Branching happens where a tip's voters pull in two directions.
+
+The habit is entirely the **envelope's** doing. A tall narrow envelope produces an excurrent tree with a dominant leader; a broad one produces a decurrent, spreading crown. There is no parameter named "habit" — the shape of the space is the parameter.
+
+**SELFORG — self-organising resource allocation.** The other route to the same range. Each branch competes for a resource flowing up from the base, distributed at each fork by a single constant $\lambda$: the more vigorous branch takes a share
+
+$$\frac{\lambda\,v}{\lambda\,v+(1-\lambda)(1-v)}$$
+
+and the weaker one the rest. Small $\lambda$ shares resource evenly and the crown spreads; large $\lambda$ concentrates it in the leader and the tree becomes excurrent.
+
+Both modes are here rather than one because they reach the **same** excurrent-to-decurrent range from opposite directions — one from the geometry of the available space, one from a single physiological constant. Having both makes clear that tree habit is not one mechanism.
+
+**DLA — diffusion-limited aggregation.** Particles random-walk until they touch the cluster and stick, producing the ramified, fractal forms of mineral dendrites and electrodeposits. Available in 2-D and 3-D, on a lattice or off it — the lattice version shows the anisotropy of its grid, the off-lattice one does not, which is a useful demonstration that DLA's familiar shapes are partly an artefact of the lattice.
+
+**PYTHAGORAS** — the Pythagoras tree, squares branching recursively at a fixed angle, included as the deterministic counterpoint to the three stochastic modes.
+
+**Envelopes and seeds.** Sphere, crown, cone, box, cylinder and mushroom envelopes; point, line, ring, disk and sphere seeds. Between them the same algorithm produces a shrub, a hedge, a column or a canopy.
 
 ## References
 

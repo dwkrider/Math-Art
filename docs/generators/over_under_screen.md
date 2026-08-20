@@ -4,7 +4,9 @@
 
 Add a woven over-under screen (Hauer woven web).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A woven screen rendered as **one visually continuous smooth relief**, in the modular-constructivist tradition of Erwin Hauer and Norman Carlberg — the woven screens of Hauer's *Continua*.
+
+The difficulty, and the interest, is that a woven screen is not really woven here. A true weave is two separate sheets passing through one another, which cannot be cast as a single continuous surface. Hauer's solution was an **asymmetric** weave: where one family would ride on top, it instead descends and *merges* with the other, so the whole screen fuses into one flowing back-web with the other family arching over it. The result reads as woven while being a single connected relief with no planar region anywhere.
 
 ## Options
 
@@ -45,7 +47,26 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The asymmetric weave.** Two families of diagonal ribbons — call them red and blue — cross on a square lattice of crossovers, but they are not treated alike:
+
+- **Red** stays in the back half throughout: an undulating floor, lowest at the merges and rising gently under the arches, curved everywhere and never a flat slab.
+- **Blue** weaves. At successive crossings it alternates, in checkerboard phase, between the front level $+h$ and the back level $-h$.
+- Where **blue is up** it arches *over* red: two separate sheets with a real gap between them. These are the only two-sheet places in the whole screen.
+- Where **blue is down** it lands on red's level and **merges** with it — a single fused junction at $-h$.
+
+Equivalently: start from a plain weave and, wherever red would ride on top, force it down beside blue instead. Those forced points are the merges.
+
+**Hubs and bridges.** Each merge is a broad **hub** — a curved saddle-bowl where four arms meet, its ring swirled tangentially with one chirality across the whole field, giving the pinwheel motif. Hubs are joined to their diagonal neighbours by **bridge necks** that are monotonic quarter-turn helicoid segments: horizontal where they ease into one hub's top face, rotating steadily across, and landing *on edge* — a vertical wall — in the adjoining hub's thickness band.
+
+So each neck reads clockwise from one hub and counterclockwise from the other, while every neck twists the same rotational way. That single global handedness is what makes the field read as a coherent pinwheel rather than a patchwork.
+
+**The coordinates.** In the $45°$-rotated frame
+
+$$p=x+y,\qquad q=y-x$$
+
+the two diagonal families become axis-aligned bands on the integer lines, crossing at every integer $(P,Q)$. Blue is **up** where $P+Q$ is even and **down**, hence merged, where it is odd — the checkerboard phase is simply a parity test in the rotated frame, which is why the construction is stated there.
+
+**The surface.** Everything is an explicit bicubic B-spline control net: flat red strips at $-1$; blue strips whose longitudinal profile is the sampled cosine $-\cos(\pi s)$, running trough at each merge centre, up to an arch at $+1$, and back to trough; and a $3\times3$ **merge patch** at every blue-down crossing shaped as that cosine's valley. Because it is one control net, the red ribbons, the blue-down segments, the hubs and the bridges fuse into a single flowing back-web — with the blue-up segments arching over it and teardrop openings swept around each arch.
 
 ## References
 

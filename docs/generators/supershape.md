@@ -5,7 +5,9 @@
 Gielis superformula: 3D supershapes, supertoroids, seashells
 and superellipsoids from a compact set of parameters.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Johan Gielis's **superformula** is a single polar equation that, by varying a handful of parameters, produces circles, polygons, stars, flowers, starfish, seed pods and gears — an unreasonable range of outlines from one expression. Gielis proposed it in 2003 as a unifying description of natural form.
+
+The claim is worth taking with some salt: a formula flexible enough to fit almost any shape explains none of them. But as a *generator* it is genuinely powerful, and this module builds the 2-D outline up into solids four different ways.
 
 ## Options
 
@@ -88,7 +90,27 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The superformula.** In polar coordinates,
+
+$$r(\varphi)=\left(\left|\frac{\cos(m\varphi/4)}{a}\right|^{n_2}+\left|\frac{\sin(m\varphi/4)}{b}\right|^{n_3}\right)^{-1/n_1}.$$
+
+The parameter $m$ sets the **symmetry** — how many lobes go round, since $m\varphi/4$ completes $m$ quarter-cycles per turn. The exponents set the character: $n_1=n_2=n_3=2$ with $m=4$ gives a circle, large exponents square the outline off, and exponents below 1 pull the sides concave to give stars and starfish. It is a generalisation of the superellipse, which is itself the $m=4$ case.
+
+**Building solids.** Four routes, each combining superformulas differently:
+
+**Supershape 3D** — the *spherical product* of two superformulas, one in longitude and one in latitude:
+
+$$\mathbf{x}(\theta,\varphi)=\big(r_1(\theta)\cos\theta\, r_2(\varphi)\cos\varphi,\ \ r_1(\theta)\sin\theta\, r_2(\varphi)\cos\varphi,\ \ r_2(\varphi)\sin\varphi\big).$$
+
+This is the classic 3-D supershape: a genus-0 blob with two poles, where one formula controls the horizontal profile and the other the vertical.
+
+**Supertoroid** — the same two formulas mapped onto torus topology instead, giving a genus-1 ring whose outline is lobed and whose tube is faceted.
+
+**Shell** — a superformula cross-section swept along a **logarithmic spiral**, which is the growth curve molluscs actually follow: the shell keeps its shape while scaling, so a fixed cross-section on an exponential spiral produces conch and snail forms.
+
+**Superellipsoid** — Barr's superquadric, running continuously from cube through sphere to octahedron and on to pinched stars as the two exponents vary. This is the one with a life outside art: superquadrics are a standard primitive in solid modelling and shape fitting.
+
+**A numerical note.** The absolute values in the formula make $r$ continuous but not smooth: at each lobe boundary the derivative jumps, so a mesh sampled at uniform $\varphi$ shows faceting exactly where the outline turns most sharply. Denser sampling is the remedy, since the corner is genuinely in the function rather than in the mesh.
 
 ## References
 

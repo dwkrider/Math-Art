@@ -4,7 +4,9 @@
 
 Add a Fathauer fractal tiling patch.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Robert Fathauer's **fractal tilings** — "f-tilings" — are edge-to-edge tilings by a single prototile appearing in progressively smaller similar copies. The interesting inversion is where the fractal lives: the **interior** is a clean, gap-free tiling at every depth, and only the **limit boundary** is fractal, crinkling into self-similar lobes with singular wrap-around points.
+
+That is the reverse of the usual arrangement. A Koch snowflake has a fractal boundary around a trivial interior; a Penrose tiling has an intricate interior with a boundary that is merely where you stopped. An f-tiling is genuinely both: a perfectly ordinary tiling whose edge cannot be reached in finitely many steps.
 
 ## Options
 
@@ -44,7 +46,27 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The prototile.** A right kite, for even rotational order $k$: apex angle $A=360°/k$ between the two **long** edges, two $90°$ side corners, and a tip of $180°-A$ between the two **short** edges. Its contraction ratio is
+
+$$s=\frac{\text{short}}{\text{long}}=\tan\!\left(\frac{180°}{k}\right).$$
+
+That ratio is not chosen — it is what the right angles force, and it is what makes the recursion fit.
+
+**Generation 0.** Place $k$ kites apex-to-apex around a central point, each long edge paired with a neighbour's. Their union is a regular $k$-gon — a hexagon for $k=6$ — whose corners are the kite tips and whose side midpoints are the $90°$ corners.
+
+**The recursion, and why it closes exactly.** At a lone exposed tip the exterior angle is
+
+$$360° - (180° - A) = 180° + A = \left(\tfrac{k}{2}+1\right)A,$$
+
+so a **fan of $n=k/2+1$ children**, each scaled by $s$ with its apex at that tip, fills the angle *exactly* — no gap, no overlap, because the angle is an exact multiple of the apex angle.
+
+The edges match too. A child's long edge is $s\times$ the parent's long edge, which by the definition of $s$ equals the parent's **short** edge — so the two outermost children in each fan glue a long edge onto the parent's short edges endpoint to endpoint, while consecutive children within a fan pair long edges with each other. Where neighbouring fans meet, the two $90°$ corners complete a straight angle.
+
+Every one of those coincidences traces back to the single relation $s=\tan(180°/k)$, which is why the construction works for even $k$ and not in general.
+
+**Where the fractal is.** Each generation adds a halo of tiles $s$ times smaller. Since $s<1$ the total extent converges, so the patch approaches a limiting region — but the boundary acquires a finer crinkle at every level and in the limit is a fractal curve, with singular points where infinitely many generations accumulate. The interior, meanwhile, is exactly tiled at every finite depth.
+
+See [Fractal Rep-Tile](fractal_reptile.md) for the same idea driven by rep-tile prototiles instead of kites, and [Fractal Knotwork](fractal_knotwork.md) for an interlaced link woven over one of these substrates.
 
 ## References
 

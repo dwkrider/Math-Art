@@ -4,7 +4,9 @@
 
 Add Antoine's necklace: nested chains of interlocked tori.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+**Antoine's necklace** (Louis Antoine, 1921) is a Cantor set that is *knotted into space*. Take a solid torus; replace it by a chain of smaller solid tori linked through its hole; replace each of those by a chain of smaller ones still; continue forever. What remains in the limit is a Cantor set — totally disconnected, uncountable, of measure zero.
+
+The point is what surrounds it. An ordinary Cantor set sitting on a line has simply connected complement: any loop in the surrounding space can be shrunk to a point. Antoine's cannot — a loop threaded through the original torus's hole is trapped by the chains at every level. So two sets can be homeomorphic to each other and yet sit in space in genuinely different ways, which is the discovery that opened up **wild** topology.
 
 ## Options
 
@@ -25,7 +27,19 @@ Add Antoine's necklace: nested chains of interlocked tori.
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**One stage of the construction.** Around each parent torus's core circle, `count` child tori are placed at equal angular spacing. Their axes **alternate** between the parent's axis and the radial direction, which is what makes consecutive children interlock: two rings whose axes are perpendicular and whose centres are a ring-radius apart pass through one another like the links of a chain.
+
+The chain closes on itself around the parent's core, and — this is the essential part — the closed chain **threads the parent's hole**. That is what a loop through the hole cannot escape: to shrink, it would have to pass through the chain, and the chain is itself a closed loop around the same hole.
+
+**Recursion.** Each child becomes a parent at the next stage, with its own chain of still smaller, still interlocked tori. Stage $n$ holds $c^{\,n}$ rings for a chain of $c$, so the count grows geometrically and the radii shrink geometrically; the generator renders the rings of the deepest stage as tube tori.
+
+**The limit.** The nested intersection
+
+$$A=\bigcap_{n\ge 0} T_n,\qquad T_{n+1}\subset T_n$$
+
+of all stages is the necklace itself. It is a Cantor set: each stage separates the previous one into disjoint pieces, the diameters go to zero, and nothing connected survives. It is *wild* because the complement's fundamental group is non-trivial at every level — the linking that makes each chain thread its parent is never undone by going deeper.
+
+An alternating axis pattern requires an even `count`; with an odd one the chain fails to close consistently, and consecutive rings at the seam share an axis instead of interlocking.
 
 ## References
 

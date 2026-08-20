@@ -47,12 +47,12 @@ Renders of each selectable option:
 
 **Isometries as matrices.** Every plane isometry is stored as a $3\times3$ homogeneous matrix acting on $(x,y,1)^{\mathsf T}$, so that composing two of them is just matrix multiplication:
 
-$$T(t_x,t_y)=\begin{pmatrix}1&0&t_x\\\\0&1&t_y\\\\0&0&1\end{pmatrix},\qquad
-R(\theta)=\begin{pmatrix}\cos\theta&-\sin\theta&0\\\\ \sin\theta&\cos\theta&0\\\\0&0&1\end{pmatrix}$$
+$$T(t_x,t_y)=\begin{pmatrix}1&0&t_x\\0&1&t_y\\0&0&1\end{pmatrix},\qquad
+R(\theta)=\begin{pmatrix}\cos\theta&-\sin\theta&0\\ \sin\theta&\cos\theta&0\\0&0&1\end{pmatrix}$$
 
 A reflection in the line through the origin at angle $\alpha$ is
 
-$$M(\alpha)=\begin{pmatrix}\cos 2\alpha&\sin 2\alpha&0\\\\ \sin 2\alpha&-\cos 2\alpha&0\\\\0&0&1\end{pmatrix},$$
+$$M(\alpha)=\begin{pmatrix}\cos 2\alpha&\sin 2\alpha&0\\ \sin 2\alpha&-\cos 2\alpha&0\\0&0&1\end{pmatrix},$$
 
 rotations and mirrors about a general centre $c$ are conjugated into place as $T(c)\,X\,T(-c)$, and a **glide** is a reflection followed by a translation along its own axis, $G(\alpha,d)=T(d\cos\alpha,\,d\sin\alpha)\,M(\alpha)$.
 

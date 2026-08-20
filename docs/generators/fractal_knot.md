@@ -5,7 +5,9 @@
 Add an iterated cable knot -- a base knot recursively wound
 into a self-similar fractal knot.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+An iterated knot reached by **cabling**: take a base knot, then replace it by a thinner strand that winds helically around it at a higher frequency and smaller radius. Repeat, and each pass adds a finer level of coiling, so the limit curve is self-similar at every scale.
+
+This is the satellite-knot route to a fractal knot, distinct from the planar tile-substitution of the [substitution knot](substitution_knot.md) generator though it produces a similar coiled family. Its advantage is that it lives in genuine 3-space rather than in a diagram, which removes the hardest part of the problem — see below.
 
 ## Options
 
@@ -43,7 +45,19 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**One cabling pass.** Given a base curve $\gamma(t)$, the next level winds around it:
+
+$$\gamma_{k+1}(t)=\gamma_k(t)+r_k\big(\cos(\omega_k t)\,\mathbf{u}(t)+\sin(\omega_k t)\,\mathbf{v}(t)\big)$$
+
+where $\mathbf{u},\mathbf{v}$ span the plane normal to the curve at $t$. Each pass raises the winding frequency $\omega$ and shrinks the radius $r$ geometrically, which is what makes the levels self-similar.
+
+**The frame problem.** The normal plane has no canonical pair of axes, and the obvious choice — the Frenet frame — is useless here: it is undefined wherever the curvature vanishes and it spins wildly near inflections, which would make the cable lurch. The construction instead uses a **rotation-minimising (Bishop) frame**, which transports the normal plane along the curve with no unnecessary twist.
+
+A Bishop frame carried around a closed loop generally does **not** come back to itself; it returns rotated by the holonomy angle. Left uncorrected, the cable would meet its own start at an angle and show a visible seam. The frame is therefore corrected by distributing that closing defect uniformly along the loop, so the cable joins seamlessly.
+
+**Why no crossing bookkeeping is needed.** This is the real advantage over the planar method. Because the winding radii shrink geometrically, each level's tube fits strictly inside the tube of the level before it, and the curve stays **embedded** — it never intersects itself. The over/under weaving that a diagram-based construction must track explicitly here falls out of the 3-D geometry: render the tube and the crossings are correct because the curve is genuinely disjoint from itself in space.
+
+The shrinking radii are also what bound the construction. Each level must fit inside the previous level's tube, so $r_{k+1}$ must be small enough relative to $r_k$ and to the base curve's own reach; push the ratio too high and the cable self-intersects, losing both the knot type and the automatic weave.
 
 ## References
 

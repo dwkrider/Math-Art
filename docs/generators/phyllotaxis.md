@@ -6,7 +6,9 @@ Add a golden-angle phyllotaxis form: N florets placed by the
 Vogel spiral (theta = i*137.5 deg, r = sqrt(i)) on a disk, dome,
 cone, sphere or crest, with emergent Fibonacci spiral arms.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The spiral packing of a sunflower head, a pine cone or a daisy — florets placed one after another, each turned by the **golden angle** from the last. The spiral arms you see are not placed; they are an artefact of the eye grouping neighbours, and their counts are always consecutive Fibonacci numbers.
+
+The reason is that the golden angle is the "most irrational" rotation there is. Turn by any rational fraction of a circle and florets fall into a few radial spokes with wasted space between them; turn by an irrational one and they never repeat, but a *nearly* rational one produces near-spokes. The golden ratio is the hardest number to approximate by fractions, so its angle is the one that packs most evenly.
 
 ## Options
 
@@ -54,7 +56,27 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Vogel's model.** The $i$-th primordium sits at polar angle
+
+$$\theta_i = i\times 137.50776\ldots°$$
+
+where the golden angle is
+
+$$360°\times(2-\varphi)=\frac{360°}{\varphi^2},\qquad \varphi=\frac{1+\sqrt5}{2},$$
+
+and at radius
+
+$$r_i = c\sqrt{i}.$$
+
+**Why $\sqrt{i}$.** Area grows as $r^2$, so if the $i$-th floret is to sit at the edge of a disc containing $i$ florets at uniform density, its radius must go as $\sqrt{i}$. Equal numbers of florets then fall in equal areas — the packing is uniform all the way out, rather than crowded at the centre or sparse at the rim.
+
+**Why the golden angle specifically.** A divergence angle of $p/q$ turns puts every $q$-th floret on the same ray, so the head collapses into $q$ spokes with gaps between them. To avoid spokes at *every* scale, the angle must be badly approximable by rationals — and $\varphi$ is the worst-approximable number there is, since its continued fraction is all ones:
+
+$$\varphi=1+\cfrac{1}{1+\cfrac{1}{1+\cdots}}.$$
+
+The convergents of that expansion are exactly the ratios of consecutive **Fibonacci** numbers, which is why the visible spiral arms come in Fibonacci counts: each near-rational approximation $F_{n-1}/F_n$ to the golden angle produces a family of $F_n$ near-spokes, and the eye reads them as parastichies.
+
+**Parastichy colouring.** The `color_by='PARASTICHY'` mode tints florets by which arm of a chosen family they belong to — floret $i$ is coloured by $i \bmod m$ for the parastichy number $m$. With $m$ a Fibonacci number the arms light up cleanly; with any other value the colouring scatters, which is a direct visual demonstration of the arithmetic above.
 
 ## References
 

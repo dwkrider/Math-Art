@@ -8,7 +8,9 @@ at the right volume), a sessile drop with a prescribed contact
 angle -- optionally flattened by gravity into a puddle -- or a
 free-boundary soap film sliding on a sphere or column.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The shapes liquid actually takes: **liquid bridges** spanning two rings, **sessile drops** resting on a surface at a prescribed contact angle, and **free-boundary soap films** spanning a fixed frame and sliding on a curved support.
+
+All of them are produced by genuine constrained **area minimisation** rather than closed-form drawing — the surface is relaxed under the same constraints physics imposes, so the equilibrium shape is discovered rather than prescribed. That makes the results checkable against known answers: in zero gravity a sessile drop must relax to a spherical cap, and at the catenoid's own volume a liquid bridge must relax to the catenoid.
 
 ## Options
 
@@ -51,7 +53,27 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Why area minimisation gives constant mean curvature.** Minimising area at fixed enclosed volume introduces a Lagrange multiplier for the volume constraint, and the first variation says that multiplier *is* the mean curvature. So the equilibrium of a soap film with pressure difference across it necessarily has $H$ constant — the physics and the geometry are the same statement, and the multiplier is the pressure.
+
+**Liquid bridges.** A surface spans two coaxial rings with pinned rims at a prescribed enclosed volume. Sweeping the volume walks the [Delaunay family](delaunay_surface.md):
+
+- at the catenoid's own volume the Lagrange pressure comes out $\approx 0$ and the relaxed surface **is** the minimal catenoid,
+- more volume gives the barrel-shaped unduloid,
+- less gives the necked nodoid arc.
+
+That the pressure falls to zero exactly at the catenoid is a useful check on the solver, since nothing in the setup tells it about catenoids.
+
+**Sessile drops.** The drop rests on a floor plane with its contact line **free to slide** on the wall — a level-set constraint rather than a pinned boundary. Young's contact angle $\theta$ is imposed energetically, by adding a wetting term
+
+$$E_{\text{wet}} = -\cos\theta \times (\text{wetted area}),$$
+
+so the angle emerges from minimising total energy rather than being enforced geometrically. The wetted area is computed as a **line integral around the contact line** via the divergence theorem — Surface Evolver's technique — which avoids having to mesh or track the wetted region at all.
+
+Under gravity the drop flattens into a puddle; with gravity off the equilibrium must be a spherical cap, and that is how the implementation is validated.
+
+**Free-boundary films** span a fixed frame while sliding freely on a curved support such as a sphere or cylinder. Where the film meets the support it must do so at a right angle — the free-boundary condition — which again falls out of the variation rather than being imposed.
+
+**Relation to the closed form.** The [Delaunay generator](delaunay_surface.md) reaches the surfaces of revolution exactly, including the self-intersecting nodoids that no minimiser can produce. This module reaches shapes no closed form covers — drops, gravity, free boundaries. Between them the overlap is where each checks the other.
 
 ## References
 

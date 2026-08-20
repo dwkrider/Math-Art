@@ -4,7 +4,9 @@
 
 Add a knot carpet (tileable alternating link of unknots).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Rob Scharein's **knot carpets** (from KnotPlot): "an infinitely complex link consisting of an infinite number of unknots". A doubly periodic field of closed loops, one on every lattice node, each overlapping its neighbours, the whole woven strictly over-and-under into an alternating link.
+
+The point is the inversion. **No loop is knotted on its own** — every component is an unknot, and pulled free of the rest it would relax to a circle. All the complexity lives in how the infinite family interlocks. It is knot theory rendered as wallpaper: the local picture is trivial and only the global one is not.
 
 ## Options
 
@@ -86,7 +88,15 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The lattice.** One closed loop is centred on every node of a **square** lattice, basis $(1,0),(0,1)$, or a **triangular** one, basis $(1,0),(\tfrac12,\tfrac{\sqrt3}{2})$. Each loop has $n$-fold symmetry about its own centre, and is drawn large enough to overlap its neighbours — the overlap is where the crossings come from, so a loop small enough to clear its neighbours gives a field of disjoint circles and no link at all.
+
+**Alternating by construction.** Along each cord, over and under strictly alternate. On a doubly periodic field this is a global consistency condition, not a local choice: it is satisfiable exactly when the crossings can be two-coloured, which the lattice's structure guarantees. Getting it right is what makes the carpet an *alternating* link rather than an arbitrary weave — and alternating links are the class about which knot theory can actually prove things.
+
+**Why every component is unknotted.** Each loop is a simple closed curve in its own plane, perturbed only in $z$ by the weave. A curve whose projection is a simple closed curve — no self-crossings — is unknotted regardless of how it is lifted, because the crossings it participates in are all with *other* loops. So the carpet is a link of unknots whose linking is entirely mutual.
+
+**Substrates beyond the plane.** The same construction runs on other scaffolds: polyhedral and spherical frameworks, tori, uniform tilings and general UV meshes, so the carpet can be wrapped onto a surface while keeping its alternating weave.
+
+**Weaving and output.** The over/under bit becomes a $z$ offset smoothstepped along each strand between crossings, and the result is swept with a proximity-welded, rotation-minimising frame — the same machinery the [rational knot](rational_knot.md) generator reuses. Output as ribbons, tubes, bare curves or filled faces.
 
 ## References
 

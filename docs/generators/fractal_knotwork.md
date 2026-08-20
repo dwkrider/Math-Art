@@ -4,7 +4,9 @@
 
 Add a fractal knotwork (self-similar interlaced link on a Fathauer fractal tiling).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+An infinite, self-similar over-under **link** woven across a fractal tiling. Take a [Fathauer f-tiling](fractal_tiling.md) — a patch of similar kites shrinking generation by generation toward a fractal boundary — and decorate it with classic medial knotwork: a crossing on every edge midpoint, cords routed around the faces, woven strictly one-over-one-under.
+
+Because the substrate is self-similar, so is the interlace. Every deeper generation adds a finer halo of smaller cords, crossings and components around the previous ones — Celtic knotwork that never stops getting more detailed, in the spirit of Fathauer's iterated-substitution fractal knots.
 
 ## Options
 
@@ -45,7 +47,20 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The substrate** is a kite f-tiling — the same construction as [Fractal Tiling](fractal_tiling.md), with rotational order 6, 8 or 12, or one of the golden and equilateral spiral variants.
+
+**The medial construction.** Knotwork is placed by the classic mirror-curve rule: put one **crossing at every edge midpoint** of the tiling, and route the cords around the faces so that each cord enters a face at one edge midpoint and leaves at the next. This is the same "polygons in contact" principle the [Islamic star patterns](islamic_pattern.md) use — the tiling is scaffolding that is never drawn, and only its edge midpoints leave a trace.
+
+Two properties come free, and they are why the medial construction is the right one here:
+
+- **Continuity.** Because contact points are shared edge midpoints, a cord leaving one face arrives exactly where the neighbouring face's cord begins. The interlace is continuous across the whole patch without any matching rules.
+- **Consistent weave.** Alternating over and under at successive crossings along a cord is globally consistent on a tiling whose faces can be two-coloured, which the f-tiling's edge-to-edge structure guarantees.
+
+**Why it becomes self-similar.** The tiling's generations are similar copies scaled by $s=\tan(180°/k)$, and the decoration is defined purely in terms of tiling edges and faces. So the knotwork on generation $n+1$ is the knotwork on generation $n$ scaled by $s$ — the interlace inherits the substrate's self-similarity rather than being constructed recursively in its own right.
+
+**Components.** Each generation contributes its own closed cords, so the number of link components grows with depth. What is drawn is a finite truncation; the limit object is a link with infinitely many components, accumulating on the tiling's fractal boundary.
+
+**Output** is ribbons, tubes or bare curves, with the over-under offset applied as a $z$ displacement smoothstepped between crossings — the same weave machinery as the [knot carpet](knot_carpet.md).
 
 ## References
 

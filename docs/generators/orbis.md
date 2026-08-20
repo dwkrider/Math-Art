@@ -4,7 +4,9 @@
 
 Add an Orbis / Holey Roller -- two torus rings hinged at 45 degrees and fused into one rolling solid.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Two torus rings joined at a hinge into a single rigid two-holed solid. Peer Clahsen designed the **Orbis** — two wooden rings fused where they meet, their planes folded to about $45°$ — as one of his *Objeux* play objects for the Swiss toy company Naef. Kenneth Brecher and the woodworker Randy Rhine later built a large sculptural version, the **Holey Roller**.
+
+It rolls on the outer rims of its two rings, and the path it takes wobbles and meanders rather than running straight — the contact alternates between rings whose planes are tilted relative to one another, so the axis of rotation keeps changing.
 
 ## Options
 
@@ -23,7 +25,15 @@ Add an Orbis / Holey Roller -- two torus rings hinged at 45 degrees and fused in
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The fold.** The two ring planes share a **hinge line** and are folded to a dihedral angle — about $45°$ in Clahsen's original. Each ring is an ordinary torus of major radius $R$ and minor radius $r$, centred so that the hinge line is a common chord: the rings meet along it, and fusing them there makes one rigid body of genus 2.
+
+The fold angle is the whole design. At $0°$ the rings coincide; at $90°$ they are perpendicular and the object becomes symmetric enough to roll predictably. The intermediate angle is what produces the wobble — the two contact circles are tilted relative to each other, so as the solid transfers from one rim to the other the instantaneous axis swings, and the path curves.
+
+**Rolling on the rims.** Contact is on the outer equator of each ring, a circle of radius $R+r$. A single such ring rolling alone would trace a straight line, as a wheel does. What makes the Orbis meander is that it never rolls on one ring for long: the tilt means the contact point migrates around the rim and eventually transfers to the other ring, whose plane points elsewhere. The result is a path made of arcs rather than a line — deterministic, but not obviously so to watch.
+
+**Genus and rigidity.** Fusing the rings at the hinge gives a single connected solid with two holes, so its surface has genus 2 and Euler characteristic $-2$. It is a *rigid* object, not a linkage: the hinge is a name for where the planes meet, not a joint.
+
+**Construction.** Both tori are generated at the same major and minor radii, rotated to their respective planes about the shared hinge line, and merged; the intersection region is welded so the result is one watertight manifold rather than two overlapping shells.
 
 ## References
 

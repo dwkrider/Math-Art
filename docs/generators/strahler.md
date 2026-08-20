@@ -5,7 +5,9 @@
 Style a branching object by Horton-Strahler order: thickness,
 colour, or pruning of the low orders.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+**Horton–Strahler ordering** answers the question "which of these limbs are structural, and which are decoration?" for any branching object — L-system plants, fractal trees, knotwork strands, DLA clusters, space-colonisation skeletons.
+
+It was devised for river networks: Horton in 1945 and Strahler in 1952 needed a way to say that a mighty river is not merely a long stream. The insight is that order should rise only where two *comparably developed* branches meet — a great river joined by a trickle is still the same river, but two equal rivers joining make something new. That single rule turns out to characterise branching structure across biology, hydrology and computer science alike.
 
 ## Options
 
@@ -23,7 +25,22 @@ colour, or pruning of the low orders.
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The ordering.** Number every tip 1. At a junction, look at the orders of the branches meeting there:
+
+- if the largest is **unique**, the parent keeps it;
+- if the largest is **shared** by two or more, the parent takes it $+1$.
+
+Formally, for children of orders $s_1,\dots,s_k$ with maximum $m$,
+
+$$s_{\text{parent}}=\begin{cases} m & \text{if exactly one child has order } m,\\ m+1 & \text{if two or more do.}\end{cases}$$
+
+So order rises only where two comparably developed branches meet. A long chain of side-twigs off a single trunk leaves the trunk's order unchanged, however many twigs there are — which is exactly the property that makes the measure meaningful rather than just a depth count.
+
+**What it is not.** Depth from the root would call every twig on a long branch important. Counting descendants would rank a bushy tuft above a structural limb. Strahler order does neither: it is invariant to how many low-order tributaries attach, and it increases only at genuine confluences. The maximum order over the whole structure is a measure of its branching complexity.
+
+**As a style.** The operator computes the order for each segment of whatever branching object is selected and uses it to drive appearance — segment radius, colour, or pruning below a threshold. Tapering by order gives a tree the correct structural hierarchy automatically: trunks thick, twigs thin, and the transition happening where branches actually merge rather than at an arbitrary depth.
+
+Pruning by order is the other common use, and it is what makes a dense [DLA cluster](growth.md) or space-colonisation skeleton legible — dropping everything below order 3 leaves the structural skeleton and discards the fuzz.
 
 ## References
 

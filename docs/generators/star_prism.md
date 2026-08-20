@@ -5,7 +5,9 @@
 Add a uniform {p/q} star prism, antiprism, dipyramid or
 trapezohedron (Step = 1 gives the ordinary convex form).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The infinite families of the uniform polyhedra, built on a **star polygon** base instead of a convex one. Where an ordinary prism caps a pentagon at each end, a star prism caps a pentagram — and the same substitution gives star antiprisms, star dipyramids and star trapezohedra.
+
+These matter because the 75 uniform polyhedra are only the *finite* part of the classification. The prismatic families run on forever, one for each admissible $\{p/q\}$, and they are uniform by exactly the same standard: regular faces, one vertex orbit.
 
 ## Options
 
@@ -38,7 +40,26 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The star polygon $\{p/q\}$** visits $p$ points on a circle, stepping $q$ each time. It closes into a single circuit exactly when $\gcd(p,q)=1$; otherwise it degenerates into $\gcd(p,q)$ separate polygons — the hexagram $\{6/2\}$ is two triangles, not one figure. The step is therefore coerced to a valid value, and $q=1$ recovers the ordinary convex polygon, so a prism is just the $q=1$ case rather than a separate code path.
+
+**Sizing.** For unit edge length the circumradius is
+
+$$R=\frac{1}{2\sin(q\pi/p)},$$
+
+the $q$ in the sine being what distinguishes a pentagram from a pentagon: the chord subtends $q$ steps rather than one. As $q$ approaches $p/2$ the sine approaches 1 and the star becomes as sharp as it can be.
+
+**The four families.** Two bases at $z=\pm\tfrac12$ joined by a band:
+
+| Family | Side faces | $V$ | $E$ | $F$ |
+| --- | --- | --- | --- | --- |
+| Star prism | $p$ squares | $2p$ | $3p$ | $p+2$ |
+| Star antiprism | $2p$ triangles | $2p$ | $4p$ | $2p+2$ |
+| Star dipyramid | — (two apexes) | $p+2$ | $3p$ | $2p$ |
+| Star trapezohedron | $2p$ kites | $2p+2$ | $4p$ | $2p$ |
+
+The dipyramid and trapezohedron are the **duals** of the prism and antiprism, which is why their $V$ and $F$ are swapped. All four counts satisfy $V-E+F=2$, and the self-test checks them against these formulas for several $\{p/q\}$ rather than trusting the construction.
+
+**Density.** Each face is stored with its winding **density** alongside its vertex indices, so a $\{7/3\}$ base renders as the three-times-winding star it is rather than as a filled heptagon — the same requirement as in the [uniform polyhedra](uniform_polyhedron.md).
 
 ## References
 

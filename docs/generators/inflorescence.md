@@ -5,7 +5,9 @@
 Add an inflorescence: the whole chapter-3 taxonomy from two
 production templates, with acropetal/basipetal bloom order.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The botanical taxonomy of flower clusters — raceme, spike, spadix, corymb, umbel, capitulum, verticillaster, panicle, dibotryoid, tribotryoid, monochasium, dichasium, cyme, thyrsus, pleiochasium — as one operator.
+
+Those fifteen names are not fifteen constructions. They are **two production templates** with different constants, which is the observation that makes the taxonomy tractable rather than a list to be memorised: the difference between a raceme and a cyme is where the growth continues, not a different kind of plant.
 
 ## Options
 
@@ -68,7 +70,25 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Two templates, many names.** The taxonomy comes from the two production rules of ABOP Table 3.1, following Frijters and Lindenmayer (1976). One template keeps the main axis growing and produces flowers on lateral branches — the **monopodial** forms, giving racemes, spikes, corymbs and umbels. The other terminates the axis in a flower and continues from lateral buds — the **sympodial** forms, giving cymes, monochasia and dichasia. Everything else is a matter of the constants: how many laterals per node, how internode length is graded, how many orders of branching.
+
+**Bloom order as a computed quantity.** Each flower carries an age, and the sign of
+
+$$D = u\,n - v\,m$$
+
+decides the direction the structure flowers — where $m,n$ are the plastochron and flowering delays and $u,v$ the corresponding rates. Positive, negative and zero give the three botanical cases:
+
+| $D$ | Bloom order |
+| --- | --- |
+| $D>0$ | **acropetal** — opens from the base upward |
+| $D<0$ | **basipetal** — opens from the tip downward |
+| $D=0$ | **divergent** — opens from the middle outward |
+
+That is why bloom order is a real, animatable quantity here rather than a label: the **Bloom** slider reveals flowers up to an age threshold, so the sequence can be keyframed and watched, and the direction follows from the model instead of being chosen.
+
+**Branch mapping** makes all axes of a given order share one set of gradients, so a short branch matches the *tip* of a long one rather than being a scaled copy of the whole. This is what makes a panicle look like a plant instead of like a fractal: in real inflorescences the small branches resemble the ends of the big ones.
+
+**Species reconstructions** are built from the archetypes by choosing constants, not by hand-placing flowers — so a named species is a point in the same parameter space as the abstract forms.
 
 ## References
 

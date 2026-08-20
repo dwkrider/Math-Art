@@ -6,7 +6,13 @@ Minimize the bending energy of a closed surface: Willmore
 tori converging to the Clifford shape, red-blood-cell vesicles
 at reduced volume, and prescribed-curvature rings.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The **Willmore energy** measures how much a surface bends:
+
+$$E=\int (H-h_0)^2\,dA .$$
+
+Minimising it asks the purely geometric question "what is the least-bent surface of this topology?" — and among all tori the answer was conjectured by Willmore in 1965 to be the stereographically projected **Clifford torus**, of aspect ratio $\sqrt2$ and energy $2\pi^2$. It stood for nearly fifty years until Marques and Neves proved it in 2014.
+
+The same energy, constrained instead by fixed area and volume, is the **Helfrich membrane** model — and its equilibria are the shapes of red blood cells. One functional, a pure geometry problem at one end and cell biology at the other.
 
 ## Options
 
@@ -41,7 +47,17 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+All three families come from genuine constrained descent on the curvature energy, not from closed-form drawing.
+
+**Willmore torus.** Start from *any* torus of revolution and flow the energy with $h_0=0$ and no constraints — the energy is scale-invariant, so nothing needs pinning. The flow converges to the Clifford torus, and the generator **reports what it achieved**: the final energy against $2\pi^2\approx19.739$ and the fitted aspect ratio against $\sqrt2\approx1.414$. Those two numbers are the check that the descent found the true minimiser rather than stalling, and they make the Marques–Neves theorem something you can watch happen.
+
+**Vesicle.** Fix the **area** and the **volume** — their ratio is the *reduced volume* $v<1$, the degree of deflation — and minimise bending energy. This is the Helfrich problem. An optional spontaneous curvature $h_0$ biases which branch the descent finds.
+
+> **Note on the branch.** The module describes an oblate start descending to the biconcave discocyte and a prolate start to a capsule. In practice this generator returns the **capsule** in both cases: measured dimensions are $(2.0, 0.55, 0.55)$ for `seed_shape='OBLATE'` and `'PROLATE'` alike, at reduced volume 0.65 and 0.60. The figure above therefore shows the capsule, which is what the operator produces; the discocyte branch appears not to be reachable at present.
+
+**Inflated ring.** A torus expanded under the same energy, which relaxes toward a rounder tube.
+
+**Why a plain descent will not do.** The Willmore energy is fourth order in the surface — its gradient involves the Laplacian of the mean curvature — so an explicit step is stiff to the fourth power of the mesh resolution, and a naive flow either crawls or explodes. The solver therefore descends in a preconditioned metric, the same idea that makes the [tight knot](tight_knot.md) flow practical: rescale the gradient so that short-wavelength modes do not dominate the step size.
 
 ## References
 

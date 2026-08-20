@@ -7,7 +7,9 @@ inner sphere joined by rope bridges that weave over and under
 through the gap (the Twisted Polyhedron bridge topology as
 relaxed rope).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Two concentric spheres of rope rosettes tied into one woven fabric. On the **outer** sphere a rosette medallion sits over every face of a chosen Platonic, Archimedean or geodesic scaffold; on the **inner** sphere a medallion sits at every scaffold *vertex*. Rope bridges dive through the gap between them, joining each outer port to its paired inner one.
+
+The neat part is that the inner layer is automatically the **dual** solid's face arrangement — vertices of a solid are faces of its dual. So a cube scaffold gives an octahedral inner shell, an Archimedean one gives its Catalan dual, and a geodesic sphere gives its Goldberg dual. The two shells are not chosen independently; picking one determines the other.
 
 ## Options
 
@@ -82,7 +84,15 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The two shells.** Choose a scaffold solid. Its **faces** carry the outer medallions, at radius 1; its **vertices** carry the inner ones, at `inner_radius`. Since the vertices of a polyhedron correspond to the faces of its dual, the inner shell is the dual's face arrangement — Platonic duals are Platonic, Archimedean duals are Catalan, and a geodesic sphere's dual is its Goldberg polyhedron.
+
+**Ports and bridges.** Each medallion is cut open at its lobe corners into **ports**, and a rope **bridge** dives through the gap from every outer port to a paired inner port. The pairing is the point of difficulty: it must be *rotation-proof*, meaning the correspondence survives the symmetry group acting on the solid, or the bridges cross incorrectly for some faces and the weave breaks.
+
+The pairing used is outer-**edge** to inner-**edge**. Every edge of the scaffold separates two faces and joins two vertices, so an edge names one outer medallion pair and one inner medallion pair simultaneously — a correspondence that is defined by the combinatorics rather than by position, and therefore commutes with every symmetry. Pairing by nearest neighbour instead would work for the symmetric cases and fail quietly on the ones with several face types.
+
+**Why the counts work out.** Euler's formula guarantees the bookkeeping: with $V$ vertices, $E$ edges and $F$ faces, there are $F$ outer medallions, $V$ inner ones, and $2E$ bridge ends — each edge contributing one at each end. Every port is used exactly once because each face has as many ports as it has edges, and $\sum_{\text{faces}} (\text{edges per face}) = 2E$.
+
+**Weaving.** The rosettes are woven strictly over-and-under within each medallion, and the bridges maintain the alternation as they pass between shells, so the whole double shell is one continuous fabric rather than two decorated spheres with struts between them.
 
 ## References
 
