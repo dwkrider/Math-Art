@@ -5,7 +5,9 @@
 Add a compound of regular polyhedra (each component coloured
 separately).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **polyhedron compound** is several copies of a solid interpenetrating in a symmetric arrangement — the copies share a centre and often their vertices, and the union has a symmetry the individual solid does not. Kepler drew the first, the **stella octangula** (two tetrahedra forming an eight-pointed star), in *Harmonices Mundi* in 1619.
+
+The icosahedral ones are the striking members: **five tetrahedra**, whose union is chiral and whose twenty vertices are exactly a dodecahedron's; **five cubes**; **five octahedra**. Hess and Brückner catalogued them in the nineteenth century, and Skilling completed the enumeration of the uniform compounds in 1976.
 
 ## Options
 
@@ -41,7 +43,17 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**A compound is an orbit.** Take a seed solid $S$ and a rotation group $G$, and form
+
+$$C=\bigcup_{g\in G/H} g(S),$$
+
+where $H$ is the subgroup of rotations that map $S$ to itself. The quotient is what makes the count come out right: the five-tetrahedra compound uses the icosahedral rotation group of order 60 against a tetrahedron whose own rotation subgroup has order 12, giving $60/12 = 5$ copies. Nothing is positioned by hand — placing the seed and choosing the group determines everything.
+
+**Why the frame matters.** The rotation groups are generated in the **standard cube / dodecahedron frame**, so that an axis-aligned seed lands correctly. This is the step that decides whether a compound is beautiful or merely overlapping: the five cubes work because each cube's body diagonals align with five of the dodecahedron's axes, and that only happens if the seed and the group are expressed in the same frame. Rotate the seed arbitrarily first and the copies still form a symmetric arrangement, but not one whose vertices coincide.
+
+**Dual pairs.** Cube + octahedron and dodecahedron + icosahedron are compounds of a solid with its dual, scaled so the dual's vertices sit over the original's face centres. Their intersection is the corresponding rectified solid — the cuboctahedron and icosidodecahedron — and their convex hull is the dual's dual, which is why these pairs look like a single stellated form rather than two solids sharing space.
+
+Each component keeps its **own colour**, since with the copies interpenetrating there is otherwise no way to see which face belongs to which solid — the compound reads as one complicated polyhedron instead of several simple ones.
 
 ## References
 

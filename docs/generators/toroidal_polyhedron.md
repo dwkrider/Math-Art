@@ -5,7 +5,9 @@
 Add a toroidal (genus-1) polyhedron: the Csaszar polyhedron
 (no diagonals) or its dual the Szilassi polyhedron.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **toroidal polyhedron** has genus 1 — a polyhedral surface with a hole, so $V-E+F=0$ rather than the familiar 2. The family contains two of the most remarkable individual polyhedra known.
+
+The **Császár polyhedron** has 7 vertices, 21 edges and 14 triangles, and **no diagonals at all**: every pair of vertices is joined by an edge, so its edge graph is the complete graph $K_7$. Apart from the tetrahedron, it is the only known polyhedron with that property. Its dual, the **Szilassi polyhedron**, has 7 hexagonal faces of which *every pair shares an edge* — the toroidal analogue of the tetrahedron, and the reason seven colours are needed to colour a map on a torus.
 
 ## Options
 
@@ -40,7 +42,21 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Why genus 1 is what allows it.** Euler's formula for a surface of genus $g$ reads
+
+$$V-E+F=2-2g,$$
+
+so a torus gives $V-E+F=0$. Check Császár: $7-21+14=0$. On a sphere, a polyhedron whose graph is $K_7$ is impossible — $K_7$ is not planar — so the hole is not decoration but a requirement. The same constraint is why the map-colouring number on a torus is 7 rather than 4, and Szilassi's seven mutually adjacent faces realise that bound concretely.
+
+**Császár and Szilassi** are stored from their published coordinates, then centred and fitted to the 2 m cube. Their coordinates are not free: the combinatorics admits only a small family of embeddings, and a naive attempt produces self-intersections.
+
+**Regular toroids** are built parametrically as a ring of congruent polygon cross-sections — a prism or antiprism ring closed into a loop.
+
+**Tiled toroids** are the general construction, and the neat one. Any uniform plane tiling from the [tiling engine](tiling.md) — the regular triangular, square and hexagonal tilings, the Archimedean ones, or their Laves duals — is wrapped **seamlessly** onto a torus by mapping the tiling's two lattice vectors to the major and minor circles:
+
+$$(u,v)\ \longmapsto\ \big((R+r\cos 2\pi v)\cos 2\pi u,\ (R+r\cos 2\pi v)\sin 2\pi u,\ r\sin 2\pi v\big).$$
+
+The seam closes exactly because the torus *is* the plane modulo a lattice: a periodic tiling is already defined on that quotient, so wrapping it introduces no mismatch — provided the number of cells around each circle is a whole number of lattice periods. The result is a genuine genus-1 polyhedron with $V-E+F=0$, which the generator's own check confirms.
 
 ## References
 

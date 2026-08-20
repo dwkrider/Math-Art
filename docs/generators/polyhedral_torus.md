@@ -7,7 +7,9 @@ cross-sections (prism / antiprism ring), or a uniform tiling
 (triangles, hexagons, and the other Archimedean/Laves patterns
 from the tiling engine) wrapped onto the torus.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A torus paved with a **uniform tiling** — the regular triangular, square or hexagonal tilings, an Archimedean one, or a Laves dual — wrapped so that the pattern closes seamlessly with no seam and no distortion of its combinatorics.
+
+This works because a torus *is* the plane modulo a lattice. A periodic tiling is already defined on that quotient, so wrapping it round is not an approximation: the tiles that meet across the join meet exactly as they did in the plane, and the result is a genuine genus-1 polyhedron with $V-E+F=0$.
 
 ## Options
 
@@ -76,7 +78,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The wrap.** The tiling's two lattice vectors are mapped to the torus's two circles — the first around the major circle, the second around the minor one. A tiling vertex at lattice coordinates $(u,v)$, each taken modulo 1, lands at
+
+$$\big((R+r\cos 2\pi v)\cos 2\pi u,\ \ (R+r\cos 2\pi v)\sin 2\pi u,\ \ r\sin 2\pi v\big).$$
+
+**Why the seam vanishes.** Wrapping identifies $u\equiv u+1$ and $v\equiv v+1$, which is exactly the identification that defines the quotient torus $\mathbb{R}^2/\Lambda$. A periodic tiling is invariant under $\Lambda$ by definition, so the tiles arriving at the join from either side already agree — the identification is a no-op on the combinatorics.
+
+The one requirement is that a **whole number** of lattice periods goes around each circle. With a fractional count the tiling meets itself out of step and the join is a genuine defect, not a seam that can be welded.
+
+**Genus and the count.** Because the wrap neither adds nor removes cells, the tiling's per-period counts carry straight over. A square tiling wrapped $m\times n$ gives $V=mn$, $E=2mn$, $F=mn$, and
+
+$$V-E+F=mn-2mn+mn=0,$$
+
+the Euler characteristic of a torus — confirming genus 1 rather than assuming it.
+
+**Distortion.** The map is not an isometry: the outer equator is stretched and the inner one compressed, by the factor $(R+r\cos 2\pi v)/R$. So the tiles are combinatorially uniform but not congruent — regular hexagons in the plane arrive as hexagons of varying size. Raising $R/r$ flattens the variation.
+
+See [Toroidal Polyhedra](toroidal_polyhedron.md) for the Császár and Szilassi solids, where genus 1 is not decorative but forced.
 
 ## References
 

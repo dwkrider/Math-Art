@@ -7,7 +7,9 @@ cuboctahedron, or rhombic triacontahedron) -- built from the bounded
 cells of the seed's face-plane arrangement, grouped into symmetry
 shells.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The stellation machinery of [the fifty-nine icosahedra](icosahedron_stellation.md), generalised to an arbitrary convex seed. Extend the seed's face planes, sort the bounded cells they carve out into symmetry shells, and choose which shells to make solid.
+
+Going beyond the icosahedron is not simply a matter of changing a constant. The icosahedron is isohedral — one face orbit, all planes the same distance from the centre, no degenerate intersections — and each of those conveniences fails for a general seed. Four assumptions have to be replaced.
 
 ## Options
 
@@ -43,7 +45,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+The core strategy is the icosahedron engine's: enumerate the bounded cells of the face-plane arrangement by **sign-vector breadth-first search**, with a large bounding cube for the boundedness test; group cells into symmetry orbits ("shells"); and build the outward boundary of any union of orbits.
+
+What changes is everything the icosahedron let you assume.
+
+**Per-plane distances.** The planes become
+
+$$\mathbf{n}_i\cdot\mathbf{x}=d_i$$
+
+with a distance *per plane*. An isohedral seed has one $d$; a cuboctahedron has two face-distance classes (triangles and squares sit at different distances), so a single shared distance would misplace half the arrangement.
+
+**A rank-3 check.** In a general symmetric arrangement, some candidate regions are **degenerate** — flat or lower-dimensional slivers where several planes happen to be coincident or concurrent. These are not cells and must be rejected, so each candidate is tested for full dimensionality rather than assumed solid.
+
+**Convex-hull facet cycling.** The icosahedron engine builds each face by sorting its vertices by angle about the centroid. That fails in general, because a triple-intersection point can lie strictly *inside* a facet rather than on its boundary — angle-sorting would thread the face through it and produce a self-crossing polygon. Facets are instead cycled from the convex hull, which cannot make that mistake.
+
+**Exact symmetry.** The seed's symmetry group is computed from its vertex set and made to act on cells **by permuting planes** rather than by comparing floating-point centroids. Two cells are in the same shell when one plane-permutation carries one to the other — an exact, integer test. Matching cells by centroid position would misclassify near-coincident cells, and near-coincidence is common in symmetric arrangements.
+
+The pattern in all four: the icosahedron's regularity hid the distinction between "geometrically close" and "combinatorially the same", and a general seed forces you to work with the combinatorics.
 
 ## References
 

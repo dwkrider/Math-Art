@@ -6,7 +6,9 @@ Add a notable individual polyhedron (the echidnahedron / final
 stellation of the icosahedron, Schonhardt, Jessen, Durer, Bilinski,
 or Klein's genus-3 regular map).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A gallery of famous individual polyhedra that belong to no parametric family — each is here because of a specific property, usually a counterexample to something one would expect to be true.
+
+The **Schönhardt polyhedron** is a twisted octahedron that cannot be cut into tetrahedra without adding new vertices, disproving the natural assumption that every polyhedron can be triangulated as every polygon can. **Jessen's orthogonal icosahedron** has all dihedral angles right-angled and is *shaky* — infinitesimally flexible though rigid. Also here: Dürer's solid from *Melencolia I*, the Bilinski dodecahedron (the "other" rhombic dodecahedron, whose existence Kepler missed), Escher's stellated rhombic dodecahedron from *Waterfall*, the 3-D associahedron, and polyhedral realisations of Klein's genus-3 regular map $\{3,7\}_8$ and the Schulte–Wills genus-6 maps.
 
 ## Options
 
@@ -61,7 +63,17 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+Each solid is built from its own definition rather than from a shared construction — that is what makes them "other". The ones worth understanding:
+
+**Schönhardt.** Take a triangular antiprism — two parallel triangles, one rotated relative to the other — and twist further until each of the three rectangular side faces folds inward along a diagonal, becoming two triangles meeting at a **reflex** edge. The result is a non-convex hexahedron with 6 vertices and 8 triangular faces in which *no* two non-adjacent vertices can be joined by a segment lying inside the solid. Since any tetrahedron of a triangulation would need such a diagonal, the polyhedron admits no triangulation without new vertices. The twist angle must exceed the point where the diagonals pass outside; below it the shape is still convex and triangulates normally.
+
+**Jessen's icosahedron.** A non-convex icosahedron with 8 equilateral and 12 obtuse isosceles triangles, whose dihedral angles are all exactly $90°$. Its edge lengths satisfy the right-angle condition exactly, not approximately. It is **shaky**: the rigidity matrix is singular, so it flexes to first order, but any actual motion is obstructed at second order — rigid, yet not infinitesimally rigid.
+
+**The final stellation (echidnahedron)** is the outermost member of the [fifty-nine icosahedra](icosahedron_stellation.md), included here because it is famous in its own right.
+
+**Bilinski dodecahedron.** Twelve golden rhombi, like the rhombic dodecahedron — but a *different* solid, with two distinct vertex types instead of one. Its existence shows that a rhombic dodecahedron is not determined by "twelve congruent golden rhombi" alone, a fact overlooked for three centuries after Kepler.
+
+**Regular maps.** Klein's $\{3,7\}_8$ (genus 3) and the Schulte–Wills $\{6,4\}$ / $\{4,6\}$ (genus 6) are combinatorial surfaces with more symmetry than any embedding in 3-space can display; the realisations here make them touchable at the cost of some of that symmetry. A pair of genus-2 heptagonal dodecahedra, 12 heptagons each, rounds out the high-genus set.
 
 ## References
 

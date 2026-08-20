@@ -6,7 +6,9 @@ Add a stellation of the icosahedron -- any of the 59 (Coxeter/
 Du Val/Flather/Petrie, "The Fifty-Nine Icosahedra"), by Crennell
 index, or a custom set of Du Val cell shells.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+To **stellate** a polyhedron is to extend its face planes until they meet again, and take the solid bounded by the new intersections. The icosahedron's twenty planes produce the most famous result in the subject: Coxeter, Du Val, Flather and Petrie's *The Fifty-Nine Icosahedra* (1938), which enumerated them under a specific set of rules about which combinations count as a legitimate stellation.
+
+The number is a convention, not a fact of nature — different rules give different counts — but the geometry is exact, and the family contains some of the best-known shapes in polyhedral art, from the great icosahedron to the spiky echidnahedron that ends the series.
 
 ## Options
 
@@ -143,7 +145,19 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+These are computed from the plane arrangement, not stored as coordinate lists. The engine is pure Python — no numpy, no scipy — and proceeds in four steps.
+
+**1. The planes.** Build the twenty face planes of a unit-inradius icosahedron. Every stellation's faces lie in these planes; that is the definition, and nothing outside them can appear.
+
+**2. Enumerate the cells.** Twenty planes cut space into many regions. Each region is identified by its **sign vector** — which side of each plane it lies on — and the bounded ones are found by breadth-first search across shared faces, using a large bounding cube to decide boundedness. This is the expensive step and the one that makes the result a derivation rather than a transcription.
+
+**3. Sort into shells.** The bounded cells fall into concentric symmetry classes, Du Val's $a, b, c, \dots$ Cells are assigned to a shell by their **power** — how many face planes separate the cell from the core — so shells are determined combinatorially rather than by measuring distances, which would be fragile where cells are nearly equidistant.
+
+**4. Choose and build.** A stellation is a declaration of which shells are solid. The engine takes the union of the chosen cells and extracts its **outward boundary**, discarding the internal faces where two solid cells meet. That boundary is the polyhedron.
+
+Because a stellation is just a subset of shells, the whole family is one enumeration with 59 selections applied to it — the well-known members like the great icosahedron and the final stellation are particular shell sets, not special cases in the code.
+
+For the same machinery generalised beyond the icosahedron, see [General Stellation](general_stellation.md).
 
 ## References
 

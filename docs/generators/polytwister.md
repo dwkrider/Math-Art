@@ -5,7 +5,9 @@
 Add the 3D cross-section of a polytwister -- a Boolean tree over
 cycloplanes (Hopf-fibration 4D->3D, after Bowers / Ho).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **polytwister** is a curved four-dimensional shape built from a polyhedron through the Hopf fibration. Jonathan Bowers discovered them around 2007 and enumerated 222 uniform ones plus three infinite families.
+
+The idea is a substitution. A polyhedron is an intersection of half-spaces, one per face. A polytwister replaces each half-space by a **cycloplane** — the Hopf preimage of a spherical cap — and intersects those instead. Because cycloplanes live in $\mathbb{R}^4$ and are invariant under the Hopf circle action, the result is a 4-D solid that can only be seen by slicing: what you get here is a 3-space cross-section, and sweeping the slice coordinate animates the shape passing through our space.
 
 ## Options
 
@@ -70,7 +72,21 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Cycloplanes.** The Hopf fibration maps $S^3\subset\mathbb{R}^4$ to $S^2$, each point of the sphere pulling back to a circle. A **cycloplane** is the preimage of a spherical *cap* — so where a polyhedron's face contributes a flat half-space, a polytwister's face contributes this curved, circle-invariant region. A "hard" polytwister is then a Boolean tree over cycloplanes: intersections, unions, differences and rotated copies, exactly mirroring how the polyhedron is assembled from half-spaces.
+
+**The load-bearing closed form.** Everything rests on one fact that makes the shape computable at all: the 3-space cross-section of a *single* cycloplane is a **transformed cylinder**. For a cycloplane with zenith $z$ and azimuth $a$, writing $\theta=z/2$, the section at slice $w$ is obtained from a unit $Z$-axis cylinder by
+
+1. rotate $+90°$ about $X$,
+2. scale $X$ by $1/\cos\theta$,
+3. translate along $X$ by $w\tan\theta$,
+4. rotate by $-\theta$ about $X$,
+5. rotate by the azimuth $a$.
+
+That is why the construction is tractable: slicing a curved 4-D region would normally require sampling, but here each primitive sections to an exact cylinder, so the whole Boolean tree can be evaluated with ordinary solid modelling in 3-space. The $1/\cos\theta$ and $\tan\theta$ terms both diverge as $\theta\to\pi/2$ — a cycloplane whose cap approaches a hemisphere sections to an unbounded region.
+
+**Sweeping $w$.** The slice coordinate is the fourth dimension. Animating it shows the polytwister entering, passing through and leaving our 3-space — the 4-D analogue of watching a sphere cross a plane as a circle that grows and shrinks, except that the cross-sections here twist as they go, which is what the name records.
+
+This module is a faithful port of Nathan Ho's reference toolchain, whose realizer walks a JSON-able tree of `{cycloplane, intersection, union, difference, rotated_copies}` nodes.
 
 ## References
 

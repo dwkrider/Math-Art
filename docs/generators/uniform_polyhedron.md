@@ -6,7 +6,9 @@ Add a uniform polyhedron by Wythoff construction: convex,
 Kepler-Poinsot and non-convex star uniforms.  Star faces are
 triangulated from their centre so the star shows as a solid.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **uniform polyhedron** has regular faces and is vertex-transitive — every vertex looks the same as every other. Drop the requirement that faces be convex and there are exactly **75** of them: the five Platonic solids, the thirteen Archimedean, the prisms and antiprisms, the four Kepler–Poinsot star regulars, and a long tail of non-convex stars including the hemipolyhedra, whose faces pass through the centre.
+
+What makes them a single family rather than a list is that nearly all are produced by one construction. Wythoff's kaleidoscope puts a point inside a spherical triangle of mirrors and lets the reflections do the rest — so the solid is not designed, it is the orbit of a point under a symmetry group.
 
 ## Options
 
@@ -189,7 +191,24 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The Schwarz triangle.** Every solid starts from a spherical triangle $(p\,q\,r)$ with angles
+
+$$\frac{\pi}{p},\qquad \frac{\pi}{q},\qquad \frac{\pi}{r}$$
+
+whose three sides are mirrors. Reflecting in those three planes generates a finite group precisely when the triangle tiles the sphere — which happens for the tetrahedral, octahedral and icosahedral groups, and for the dihedral families that give prisms and antiprisms. Allowing $p,q,r$ to be *fractions* admits the star triangles, and with them the Kepler–Poinsot and star uniform solids.
+
+**Wythoff's construction.** The **Wythoff symbol** says where to put a generator point: it is equidistant from the "active" mirrors and lies on the inactive ones. The orbit of that point under the group is the vertex set. Each face is then the cyclic or dihedral orbit of the point about one rotation axis — an $\{n/d\}$ polygon, and a **star** polygon whenever the density $d>1$.
+
+The whole solid therefore follows from a triangle and a bar position; nothing is placed by hand.
+
+**Where the construction stops.** Two cases resist it, and both are handled differently here rather than being fudged:
+
+- The **11 snubs** and the **great dirhombicosidodecahedron** have a generator point defined by a *snub* condition — equal edge lengths under an alternating subgroup — whose solution is transcendental rather than constructible. These are built from stored vertex coordinates evaluated from their published exact constructions.
+- Everything else (Wythoff symbols with the bar not first) is built procedurally by the construction above.
+
+**Rendering star faces.** A face of density $d>1$ winds around its centre more than once, so a naive triangulation fills the wrong region. Each face's **winding density is detected** so the star faces render as the pentagram or hexagram they are, rather than as filled pentagons.
+
+See [Regular Solids](regular_solids.md) for the convex families organised by name, and [Star Prisms](star_prism.md) for the dihedral star family.
 
 ## References
 
