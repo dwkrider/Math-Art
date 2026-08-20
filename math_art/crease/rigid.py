@@ -10,42 +10,61 @@
 # automatic (the panels never appear in the unknowns, so they can never
 # stretch) and shrinks the problem from 3V unknowns to E.
 #
-# THE CONSTRAINT.  Walk once around an interior vertex.  Between
-# consecutive creases you turn by the sector angle; at each crease you
-# fold by its dihedral angle.  Returning to the start must be the
-# identity:
+# THE CONSTRAINT, AND WHY IT IS NOT WRITTEN SEPARATELY FROM THE
+# PLACEMENT.  A rigid folding is one where the paper closes up around
+# every interior vertex.  Walk the faces around a vertex, stepping over
+# each incident crease, and the accumulated rotation must be the
+# identity.  Every crease at the vertex passes through it, so the
+# translations drop out and the product is a pure rotation -- three
+# numbers, taken as the axis-angle of its skew part.
 #
-#     M(rho) = prod_i [ Rx(rho_i) . Rz(alpha_i) ] = I
+# Crucially, `residual` and `place` step across a crease using the SAME
+# primitive, `_cross`.  Earlier versions derived the two independently
+# and they silently disagreed: a configuration could satisfy the
+# constraint to 1e-16 and still TEAR THE SHEET when placed, with edge
+# lengths off by 0.57 on unit panels.  Sharing the primitive makes "the
+# residual vanishes" and "the placement walk closes" the same statement
+# by construction.
 #
-# with the creases in counter-clockwise order and alpha_i the sector
-# between crease i and crease i+1.  Two properties make this the right
-# object to solve:
+# THREE CONVENTION TRAPS, all of which bit:
 #
-#   * at rho = 0 it reduces to Rz(sum of alpha_i) = Rz(2*pi) = I, so the
-#     UNFOLDED sheet satisfies it exactly when the vertex is developable;
-#   * it is a rotation, so the residual is three numbers, not nine -- we
-#     take the axis-angle (vee of the skew part), which vanishes iff
-#     M = I.
+#   * An edge's two sides must be named by its STORED direction a -> b,
+#     never by a face's winding.  Winding is how a face happened to be
+#     written down; left and right are properties of the edge, and only
+#     those survive being reached from another direction.
+#   * The internal angle's sign is defined against that stored direction,
+#     which is arbitrary, so it does NOT agree with the FOLD convention
+#     (valley positive) edge by edge.  `_valley_sign` measures the
+#     relation per crease rather than assuming a global one.
+#   * "At rho = 0 the residual vanishes" is TRUE FOR EVERY ordering of
+#     the vertex walk, so it cannot distinguish a correct convention from
+#     a wrong one.  It is necessary and worthless alone.  The self-test
+#     therefore checks a FOLDED state against Schenk and Guest's closed
+#     form, which is the only thing that actually settled this.
 #
-# SOLVING IT.  Newton on the residual, with the step taken by
-# least squares rather than a square solve.  This matters: the constraint
-# Jacobian of a real pattern is RANK DEFICIENT.  A quad-mesh Miura is
-# overconstrained -- redundant constraints are precisely why it has one
-# degree of freedom -- so forming J.J^T and inverting it, as a naive
-# reading of the projection method suggests, hits a singular matrix on
-# the very family the solver exists to fold.  `np.linalg.lstsq` returns
-# the minimum-norm solution and does not care about the rank.
+# SOLVING IT.  Newton on the residual, with the step taken by least
+# squares rather than a square solve, because the Jacobian is RANK
+# DEFICIENT: a quad-mesh Miura is overconstrained -- redundant
+# constraints are precisely why it has one degree of freedom -- so
+# forming J.J^T and inverting it hits a singular matrix on the very
+# family the solver exists to fold.
 #
-# The nullity of J is also the honest DOF count.  The textbook
-# bookkeeping formula DOF = N - 3M holds only at full rank, and goes
-# NEGATIVE for the Miura, so it is reported here as a diagnostic and
-# never used as a test.
+# The nullity of J is the honest DOF count.  The bookkeeping formula
+# DOF = N - 3M holds only at full rank and is NEGATIVE for the Miura, so
+# it is a diagnostic here and never a test.
 #
-# DRIVING AND CONTINUATION.  One crease is nominated the driver and its
-# angle appended to the residual as a hard row.  The fold path is walked
-# by continuation -- step the driver a little, re-converge, repeat --
-# which both keeps Newton in its basin and produces the sequence of
-# states an animation needs.
+# LEAVING THE FLAT STATE.  Flat is a bifurcation point: the nullity there
+# is 8 for a 4x6 Miura and drops to 1 the instant the sheet moves.  A
+# least-norm step from flat slides onto a degenerate but VALID branch --
+# every straight row line folding like an accordion while the zigzags
+# stay dead flat -- because the two row-line creases at a Miura vertex
+# are collinear, so folding them alone just bends the sheet along a
+# line.  Escaping needs three things: a seed direction with the right
+# relative magnitudes (mountain/valley signs alone are not enough, since
+# the two families fold at a ratio of cos(alpha)); a correction step
+# taken ORTHOGONAL to the tangent, or it undoes the step it is
+# correcting; and a step scaled by the tangent's leading component, so
+# a large pattern advances as far per step as a small one.
 #
 # PLACING THE PAPER.  Fold angles do not by themselves give coordinates.
 # A breadth-first walk over the face adjacency graph does: start a face
@@ -204,36 +223,81 @@ class RigidFolder:
         self.n_vars = len(self.free)
         self.n_rows = 3 * len(self.vertices)
 
+        # ONE CONVENTION, SHARED.  Every crossing of a crease -- whether
+        # done by `place` to lay the paper out, or by `residual` to ask
+        # whether the paper closes up around a vertex -- goes through
+        # `_cross`.  That is deliberate and it is the whole point of this
+        # arrangement: an earlier version derived the two independently
+        # and they disagreed, so a configuration could satisfy the
+        # constraint exactly (residual 1e-16) and still tear the sheet
+        # when placed (edge lengths off by 0.57).  Sharing the primitive
+        # makes "the residual vanishes" and "the walk closes" the same
+        # statement by construction rather than by hope.
+        #
+        # An edge's two sides are named by its STORED direction a -> b,
+        # not by any face's winding: the face whose third vertex lies to
+        # the left of a -> b is `left_of[k]`, the other `right_of[k]`.
+        # Winding is a property of how a face was written down; left and
+        # right are properties of the edge itself, and only the latter
+        # survives being reached from a different direction.
+        self.left_of = {}
+        self.right_of = {}
+        for fi, fc in enumerate(self.faces):
+            m = len(fc)
+            for n in range(m):
+                a, b = int(fc[n]), int(fc[(n + 1) % m])
+                k = self.edge_of[(a, b)]
+                ka, kb = (int(self.edges[k][0]), int(self.edges[k][1]))
+                other = [w for w in fc if w not in (ka, kb)]
+                if not other:
+                    continue
+                u = self.verts0[kb] - self.verts0[ka]
+                w = self.verts0[other[0]] - self.verts0[ka]
+                if u[0] * w[1] - u[1] * w[0] > 0.0:
+                    self.left_of[k] = fi
+                else:
+                    self.right_of[k] = fi
+
+    def _cross(self, k, rho_k, to_left):
+        """3x3 rotation for stepping across crease `k`.
+
+        Positive `rho_k` rotates the RIGHT side about the edge's stored
+        direction a -> b by +rho; going the other way undoes it.  Both
+        `place` and `residual` step with this and nothing else.
+        """
+        a, b = int(self.edges[k][0]), int(self.edges[k][1])
+        axis = np.append(self.verts0[b] - self.verts0[a], 0.0)
+        return _axis_rotation(axis, -rho_k if to_left else rho_k)
+
+    def _angle_of(self, rho, k):
+        i = self.var_of.get(k)
+        return 0.0 if i is None else float(rho[i])
+
     # -- the constraint ---------------------------------------------
     def residual(self, rho, driver=None, target=0.0):
-        """Closure residual at every interior vertex, plus the driver row."""
+        """How far the paper fails to close up around each interior vertex.
+
+        Walk the faces around the vertex, stepping across each incident
+        crease with `_cross`, and come back to where you started.  The
+        accumulated rotation must be the identity.  Every crease at the
+        vertex passes through it, so the translations drop out and the
+        product is a pure rotation -- three numbers, taken as the
+        axis-angle of the skew part.
+
+        Because the steps are literally the ones `place` takes, a zero
+        residual here MEANS the placement walk is path-independent
+        around that vertex.  There is no second convention to get wrong.
+        """
         out = np.empty(self.n_rows + (1 if driver is not None else 0))
-        for n, (v, ring, ang) in enumerate(self.vertices):
-            # TRAVERSAL DIRECTION AND SECTOR PAIRING, both of which are
-            # easy to get wrong and hard to notice.  The walk goes
-            # CLOCKWISE (the rings are stored counter-clockwise, hence
-            # the reversal), and the sector paired with crease t is the
-            # one BEHIND it, not ahead.
-            #
-            # Verified the only way that actually settles it: evaluate
-            # Schenk and Guest's closed-form folded Miura, read the
-            # dihedral off every crease, and require the residual to
-            # vanish there.  It does, at 2e-15.  Three of the four
-            # plausible orderings give 2.2 or 3.3 instead.
-            #
-            # Note that checking "the flat state is a solution" CANNOT
-            # catch an error here: at rho = 0 every ordering collapses to
-            # Rz(sum of sector angles) = Rz(2*pi) = I.  That check is
-            # necessary and worthless on its own, which is how the wrong
-            # convention survived until a folded state was tested.
-            ring_cw = list(ring)[::-1]
-            ang_cw = list(ang)[::-1]
-            m = len(ring_cw)
+        for n, (v, ring, _ang) in enumerate(self.vertices):
             M = np.eye(3)
-            for t in range(m):
-                k = self.edge_of[(v, int(ring_cw[t]))]
-                i = self.var_of.get(k)
-                M = M @ _rx(0.0 if i is None else rho[i]) @ _rz(ang_cw[t - 1])
+            for u in ring:
+                k = self.edge_of[(v, int(u))]
+                # Going counter-clockwise about v, each crease is crossed
+                # from its right side to its left when the edge points
+                # away from v, and the other way when it points back.
+                to_left = int(self.edges[k][0]) == v
+                M = M @ self._cross(k, self._angle_of(rho, k), to_left)
             out[3 * n:3 * n + 3] = _vee(M)
         if driver is not None:
             out[-1] = rho[driver] - target
@@ -256,6 +320,28 @@ class RigidFolder:
                        self.residual(rho - step, driver, target)) / (2 * h)
         return J
 
+    def _valley_sign(self, k):
+        """+1 if a positive internal angle at crease `k` is a VALLEY.
+
+        The internal angle is defined against each edge's STORED
+        direction a -> b, and that order is whatever the pattern builder
+        happened to emit -- so the relation between it and the FOLD
+        convention (valley positive) flips from edge to edge.  Measuring
+        it is one cheap test: rotate the right-hand face a little and see
+        which way its far vertex goes.  Up is a valley.
+        """
+        lo, ro = self.left_of.get(k), self.right_of.get(k)
+        if lo is None or ro is None:
+            return 1.0
+        a, b = int(self.edges[k][0]), int(self.edges[k][1])
+        far = [w for w in self.faces[ro] if w not in (a, b)]
+        if not far:
+            return 1.0
+        R = self._cross(k, 1e-3, to_left=False)
+        p = np.append(self.verts0[far[0]], 0.0)
+        a3 = np.append(self.verts0[a], 0.0)
+        return 1.0 if float((R @ (p - a3))[2]) > 0.0 else -1.0
+
     def seed_direction(self):
         """The direction to leave the flat state along.
 
@@ -269,12 +355,17 @@ class RigidFolder:
         """
         seed = self.frame.meta.get("fold_seed")
         if seed is not None and len(seed) == len(self.edges):
-            return np.asarray(seed, dtype=float)[self.free]
-        assign = self.frame.assignment
-        if assign is None:
-            return np.ones(self.n_vars)
-        return np.array([-1.0 if str(assign[k]) == MOUNTAIN else 1.0
-                         for k in self.free])
+            fold = np.asarray(seed, dtype=float)[self.free]
+        else:
+            assign = self.frame.assignment
+            if assign is None:
+                return np.ones(self.n_vars)
+            fold = np.array([-1.0 if str(assign[k]) == MOUNTAIN else 1.0
+                             for k in self.free])
+        # The seed is stated in the FOLD convention (valley positive);
+        # translate it edge by edge into the internal one.
+        sgn = np.array([self._valley_sign(int(k)) for k in self.free])
+        return fold * sgn
 
     def tangent(self, rho, prev=None, bias=None):
         """Unit tangent to the constraint manifold at `rho`.
@@ -405,23 +496,18 @@ class RigidFolder:
     def place(self, rho, anchor=True):
         """Vertex positions in 3-D for a converged set of fold angles.
 
+        Breadth-first over the faces, stepping across each shared crease
+        with `_cross` -- the same primitive the residual uses, so a
+        configuration that satisfies the constraint lays out without
+        tearing.
+
         With `anchor` (the default) the result is rigidly best-fit back
-        onto the flat pattern.  Without it the walk leaves the sheet
-        hanging off whichever face happened to be placed first, so the
-        model appears to swing about that face's corner as it folds --
-        which is an artefact of the traversal, not of the fold.
+        onto the flat pattern; without it the sheet hangs off whichever
+        face was placed first and appears to swing as it folds.
         """
         n_faces = len(self.faces)
         if not n_faces:
             raise FoldFailure("no faces to place")
-
-        # face adjacency across shared edges
-        face_of_edge = {}
-        for fi, f in enumerate(self.faces):
-            for n in range(len(f)):
-                p, q = int(f[n]), int(f[(n + 1) % len(f)])
-                face_of_edge.setdefault(self.edge_of[(p, q)], []).append(
-                    (fi, p, q))
 
         placed = np.zeros(n_faces, dtype=bool)
         T = [np.eye(4) for _ in range(n_faces)]
@@ -431,27 +517,25 @@ class RigidFolder:
         while head < len(order):
             fi = order[head]
             head += 1
-            f = self.faces[fi]
-            for n in range(len(f)):
-                p, q = int(f[n]), int(f[(n + 1) % len(f)])
-                k = self.edge_of[(p, q)]
-                for (gj, _p2, _q2) in face_of_edge.get(k, ()):
-                    if gj == fi or placed[gj]:
-                        continue
-                    i = self.var_of.get(k)
-                    ang = 0.0 if i is None else float(rho[i])
-                    # Rotate about the shared crease, oriented by the
-                    # PARENT's winding so the two faces disagree in sign
-                    # exactly as they should.
-                    a3 = np.append(self.verts0[p], 0.0)
-                    b3 = np.append(self.verts0[q], 0.0)
-                    R = _axis_rotation(b3 - a3, ang)
-                    A = np.eye(4)
-                    A[:3, :3] = R
-                    A[:3, 3] = a3 - R @ a3
-                    T[gj] = T[fi] @ A
-                    placed[gj] = True
-                    order.append(gj)
+            fc = self.faces[fi]
+            m = len(fc)
+            for n in range(m):
+                k = self.edge_of[(int(fc[n]), int(fc[(n + 1) % m]))]
+                lo, ro = self.left_of.get(k), self.right_of.get(k)
+                if lo is None or ro is None:
+                    continue                       # boundary crease
+                gj = ro if fi == lo else lo
+                if gj == fi or placed[gj]:
+                    continue
+                R = self._cross(k, self._angle_of(rho, k),
+                                to_left=(gj == lo))
+                a3 = np.append(self.verts0[int(self.edges[k][0])], 0.0)
+                A = np.eye(4)
+                A[:3, :3] = R
+                A[:3, 3] = a3 - R @ a3
+                T[gj] = T[fi] @ A
+                placed[gj] = True
+                order.append(gj)
 
         if not placed.all():
             raise FoldFailure(
@@ -465,8 +549,8 @@ class RigidFolder:
             for v in self.faces[fi]:
                 if seen[v]:
                     continue
-                p = np.append(self.verts0[v], 0.0)
-                out[v] = (M[:3, :3] @ p) + M[:3, 3]
+                q = np.append(self.verts0[v], 0.0)
+                out[v] = (M[:3, :3] @ q) + M[:3, 3]
                 seen[v] = True
         return _anchor_to_flat(out, self.verts0) if anchor else out
 
@@ -618,6 +702,57 @@ def _selftest():
     flat_again = folder.place(np.zeros(folder.n_vars))
     assert np.allclose(flat_again[:, :2], mi.verts[:, :2], atol=1e-9)
     assert np.abs(flat_again[:, 2]).max() < 1e-9
+
+    # -- THE ORACLE.  Compare the WHOLE folded state, vertex by vertex,
+    # -- against Schenk and Guest's closed form.
+    #
+    # This is the check that matters, and its absence is what let three
+    # separate convention errors survive.  Sampling a few distances did
+    # not catch them; neither did "the flat state is a solution", which
+    # is true for every ordering of the vertex walk.  Only a FOLDED state
+    # measured against an independent source distinguishes right from
+    # plausible.
+    def _schenk(th, R, C, av, bv, gv):
+        H = av * np.sin(th) * np.sin(gv)
+        ct, tg = np.cos(th), np.tan(gv)
+        S = bv * ct * tg / np.sqrt(1 + ct * ct * tg * tg)
+        L = av * np.sqrt(1 - np.sin(th) ** 2 * np.sin(gv) ** 2)
+        Vv = bv / np.sqrt(1 + ct * ct * tg * tg)
+        return np.array([[i * S,
+                          j * L + (Vv / 2) * (1 - (-1) ** i),
+                          (H / 2) * (1 - (-1) ** j)]
+                         for i in range(R + 1) for j in range(C + 1)])
+
+    def _vid(frame, i, j, av, bv, gv):
+        w = (j * av + (i % 2) * bv * np.cos(gv), i * bv * np.sin(gv))
+        hit = np.nonzero((np.abs(frame.verts[:, 0] - w[0]) < 1e-9) &
+                         (np.abs(frame.verts[:, 1] - w[1]) < 1e-9))[0]
+        return int(hit[0])
+
+    for (rr, cc, gd) in ((4, 4, 60.0), (4, 6, 60.0), (3, 5, 45.0)):
+        gv = np.deg2rad(gd)
+        mm = patterns.miura(rows=rr, cols=cc, panel_a=1.0, panel_b=1.0,
+                            alpha=gv)
+        mm.faces = build_faces(mm.verts, mm.edges)
+        PP, _rr2, _pp = fold(mm, np.deg2rad(70.0), steps=16)
+        idx = [_vid(mm, i, j, 1.0, 1.0, gv)
+               for i in range(rr + 1) for j in range(cc + 1)]
+        Q = PP[idx]
+
+        def _dev(th):
+            T = _schenk(th, rr, cc, 1.0, 1.0, gv)
+            qc, tc = Q.mean(0), T.mean(0)
+            U2, _s2, Vt2 = np.linalg.svd((Q - qc).T @ (T - tc))
+            dd = np.sign(np.linalg.det(Vt2.T @ U2.T))
+            Rt = Vt2.T @ np.diag([1.0, 1.0, dd]) @ U2.T
+            return np.linalg.norm(((Rt @ (Q - qc).T).T + tc) - T,
+                                  axis=1).max()
+
+        grid = np.linspace(0.01, 1.55, 200)
+        best = min(float(_dev(t)) for t in grid)
+        assert best < 5e-3, (
+            f"{rr}x{cc} alpha={gd}: best fit to the Schenk closed form is "
+            f"{best:.2e} -- the solver is not producing a Miura")
 
     print("RESULT: OK  crease.rigid")
 
