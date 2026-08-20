@@ -241,13 +241,14 @@ def characteristics(r, n, m=1):
 
     Measured across the family, N < 1 for the CYLINDER (where M = 0 and
     N vanishes identically) and for every UNDULOID, and N > 1 for every
-    NODOID -- e.g. r = -0.4, n = 2 gives N_+ = 6.43.  So bubbletons on
-    nodoids need the Cauchy principal value of Pi, which
-    minsurf.elliptic.ellippi deliberately refuses rather than
-    approximating; they are rejected up front instead of returning a
-    plausible wrong surface.  Very thin unduloids approach the same
-    limit from below (r = 0.1 already gives N_- = 0.952), which is why
-    this is tested numerically rather than as a rule about the sign
+    NODOID -- e.g. r = -0.4, n = 2 gives N_+ = 6.43.  N >= 1 puts a pole
+    of 1/(1 - N sn^2) inside the range, so Pi there is a Cauchy
+    PRINCIPAL VALUE; minsurf.elliptic.ellippi now supplies it via
+    Carlson's R_J, so nodoids are supported.  The flag is kept because
+    the two routes differ in cost and because N = 1 exactly is still
+    degenerate -- and very thin unduloids approach it from below
+    (r = 0.1 already gives N_- = 0.952), which is why this is measured
+    per parameter set rather than stated as a rule about the sign
     of r."""
     k = float(r) * (1.0 - float(r))
     a = 1.0 + ((n / m) ** 2 - 1.0) / (2.0 * k)
@@ -260,7 +261,7 @@ def characteristics(r, n, m=1):
         if abs(d0) < 1e-12:
             return (float('inf'), float('inf'), False)
         out.append((a - 1.0) * (1.0 - r) ** 2 * M / d0)
-    return (out[0], out[1], max(out) < 1.0 - 1e-9)
+    return (out[0], out[1], abs(max(out) - 1.0) > 1e-9)
 
 
 def resonance(r, n, m=1):
@@ -575,6 +576,9 @@ if _IN_BLENDER:
                    ('TWIST', "Twizzler (3 lobes, 2 covers)",
                     "a bubble that closes only on the double cover, so "
                     "it winds as it goes round"),
+                   ('NOD2', "Nodoid, 2 lobes",
+                    "a two-lobed bubble on a Delaunay nodoid -- needs "
+                    "the principal value of the third-kind integral"),
                    ('DOUBLE_UND', "Double bubbleton (unduloid)",
                     "two-lobed AND three-lobed bubbles on a Delaunay "
                     "unduloid, by Bianchi permutability"),
@@ -632,6 +636,7 @@ if _IN_BLENDER:
             'CYL5': (0.5, 5, 1), 'UND2': (0.3, 2, 1),
             'UND3': (0.3, 3, 1), 'TWIST': (0.5, 3, 2),
             'DOUBLE_UND': (0.3, 2, 1), 'SPLASH': (0.5, 2, 1),
+            'NOD2': (-0.4, 2, 1),
         }
         # Presets that graft a SECOND bubble by Bianchi permutability.
         # The third entry is its axial shift: with the same integration
@@ -672,9 +677,9 @@ if _IN_BLENDER:
                     f"n/m = {lobes}/{covers} is not a "
                     f"resonance point at necksize "
                     f"{necksize:.3f}: the spectral parameter comes "
-                    f"out complex, or Pi needs a principal value.  "
-                    f"A cylinder needs n > m; nodoids are not "
-                    f"supported (their characteristic exceeds 1)")
+                    f"out complex, or the elliptic characteristic "
+                    f"lands exactly on 1.  A cylinder needs n > m; "
+                    f"nodoids admit n < m")
                 return {'CANCELLED'}
             if abs(necksize) < 1e-3:
                 self.report({'ERROR'},
@@ -875,7 +880,8 @@ def _selftest():
     #    construction.  A wrong quaternion order or a wrong Pi branch
     #    breaks this immediately while still looking bubble-like.
     for r, n, m in ((0.5, 2, 1), (0.5, 3, 1), (0.3, 3, 1),
-                    (0.15, 3, 1), (0.5, 3, 2), (0.3, 5, 2)):
+                    (0.15, 3, 1), (0.5, 3, 2), (0.3, 5, 2),
+                    (-0.4, 2, 1), (-0.5, 3, 1), (-1.5, 5, 1)):
         L = delaunay_period(r)
         hx, hy = 3.0 * L / 400.0, 2.0 * math.pi * m / 400.0
         x = np.arange(-1.5 * L, 1.5 * L, hx)
@@ -993,11 +999,11 @@ def _selftest():
     cyl_ok = characteristics(0.5, 3, 1)[2]
     und_ok = characteristics(0.3, 3, 1)[2]
     nod = characteristics(-0.4, 2, 1)
-    ok = cyl_ok and und_ok and (not nod[2]) and nod[0] > 1.0
+    ok = cyl_ok and und_ok and nod[2] and nod[0] > 1.0
     ok_all = ok_all and ok
     print(f"characteristic: cylinder usable={cyl_ok}, unduloid "
           f"usable={und_ok}, nodoid r=-0.4 N+={nod[0]:.3f} "
-          f"usable={nod[2]} {'OK' if ok else 'BAD'}")
+          f"usable={nod[2]} (principal value) {'OK' if ok else 'BAD'}")
 
     # 8) Guards: non-coprime and degenerate parameters must be refused
     refused = 0
@@ -1006,14 +1012,15 @@ def _selftest():
             resonance(*args)
         except ValueError:
             refused += 1
-    rejected = sum(1 for a in ((0.0, 3, 1), (0.5, 2, 4), (0.5, 2, 3),
-                               (-0.4, 2, 1), (-1.5, 5, 1))
+    rejected = sum(1 for a in ((0.0, 3, 1), (0.5, 2, 4), (0.5, 2, 3))
                    if not is_admissible(*a))
-    ok = refused == 2 and rejected == 5
+    accepted = sum(1 for a in ((-0.4, 2, 1), (-1.5, 5, 1), (-0.5, 3, 1))
+                   if is_admissible(*a))
+    ok = refused == 2 and rejected == 3 and accepted == 3
     ok_all = ok_all and ok
     print(f"guards: {refused}/2 degenerate necksizes raise, "
-          f"{rejected}/5 inadmissible pairs rejected "
-          f"{'OK' if ok else 'BAD'}")
+          f"{rejected}/3 inadmissible rejected, {accepted}/3 nodoids "
+          f"now accepted {'OK' if ok else 'BAD'}")
 
     # 9) the mesher runs and is not collapsed
     V, F, info = build_surface(0.5, 3, 1, periods=3.0, ures=80, vres=60)

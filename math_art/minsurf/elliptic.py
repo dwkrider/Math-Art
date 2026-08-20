@@ -138,6 +138,172 @@ def _leggauss(n):
 _GL_X, _GL_W = _leggauss(48)
 
 
+# --------------------------------------------------------------------------
+# Carlson symmetric forms -- for the third-kind integral past n = 1
+# --------------------------------------------------------------------------
+# The Gauss-Legendre `ellippi` below is exact and fast while n < 1, but at
+# n >= 1 the integrand 1/((1 - n sin^2 t) sqrt(1 - m sin^2 t)) has a pole
+# inside the range and the integral is a Cauchy PRINCIPAL VALUE, which no
+# amount of quadrature refinement will produce.  Carlson's R_J takes its
+# fourth argument negative precisely for that case and returns the
+# principal value by construction, so the two together cover the whole
+# parameter range.
+#
+# That case is not academic here: a bubbleton on a NODOID has
+# characteristic n = 6.43 at necksize -0.4 (see
+# math_art/bubbleton_generator.py), so without the principal value the
+# nodoid half of the bubbleton family is unreachable.
+#
+# Reference: B. C. Carlson, "Numerical computation of real or complex
+# elliptic integrals", Numer. Algorithms 10 (1995), 13-26; duplication
+# algorithms as in Press et al., Numerical Recipes, Sect. 6.11.
+
+_RC_ERRTOL = 1.2e-3
+_RF_ERRTOL = 8.0e-4
+_RJ_ERRTOL = 1.5e-3
+
+
+def carlson_rc(x, y):
+    """Degenerate symmetric integral R_C(x, y) = R_F(x, y, y).
+    Handles y < 0 by the principal value."""
+    if y > 0.0:
+        xt, yt, w = x, y, 1.0
+    else:                               # principal value for y < 0
+        xt, yt = x - y, -y
+        w = math.sqrt(x) / math.sqrt(xt) if x > 0.0 else 0.0
+    while True:
+        alamb = 2.0 * math.sqrt(xt) * math.sqrt(yt) + yt
+        xt = 0.25 * (xt + alamb)
+        yt = 0.25 * (yt + alamb)
+        ave = (xt + yt + yt) / 3.0
+        sfac = (yt - ave) / ave
+        if abs(sfac) <= _RC_ERRTOL:
+            break
+    poly = 1.0 + sfac * sfac * (0.3 + sfac * (1.0 / 7.0
+                                              + sfac * (0.375
+                                                        + sfac * 9.0 / 22.0)))
+    return w * poly / math.sqrt(ave)
+
+
+def carlson_rf(x, y, z):
+    """Symmetric elliptic integral of the FIRST kind,
+    R_F = (1/2) int_0^inf dt / sqrt((t+x)(t+y)(t+z))."""
+    while True:
+        sx, sy, sz = math.sqrt(x), math.sqrt(y), math.sqrt(z)
+        alamb = sx * (sy + sz) + sy * sz
+        x = 0.25 * (x + alamb)
+        y = 0.25 * (y + alamb)
+        z = 0.25 * (z + alamb)
+        ave = (x + y + z) / 3.0
+        dx, dy, dz = (ave - x) / ave, (ave - y) / ave, (ave - z) / ave
+        if max(abs(dx), abs(dy), abs(dz)) <= _RF_ERRTOL:
+            break
+    e2 = dx * dy - dz * dz
+    e3 = dx * dy * dz
+    return (1.0 + (e2 / 24.0 - 0.1 - 3.0 * e3 / 44.0) * e2
+            + e3 / 14.0) / math.sqrt(ave)
+
+
+def carlson_rj(x, y, z, p):
+    """Symmetric elliptic integral of the THIRD kind,
+    R_J = (3/2) int_0^inf dt / ((t+p) sqrt((t+x)(t+y)(t+z))).
+
+    p < 0 returns the Cauchy principal value -- that branch is the whole
+    point of using Carlson here."""
+    a = b = rcx = 0.0
+    if p > 0.0:
+        xt, yt, zt, pt = x, y, z, p
+    else:
+        xt, zt = min(x, y, z), max(x, y, z)
+        yt = x + y + z - xt - zt
+        a = 1.0 / (yt - p)
+        b = a * (zt - yt) * (yt - xt)
+        pt = yt + b
+        rho = xt * zt / yt
+        tau = p * pt / yt
+        rcx = carlson_rc(rho, tau)
+    total, fac = 0.0, 1.0
+    while True:
+        sx, sy, sz = math.sqrt(xt), math.sqrt(yt), math.sqrt(zt)
+        alamb = sx * (sy + sz) + sy * sz
+        alpha = (pt * (sx + sy + sz) + sx * sy * sz) ** 2
+        beta = pt * (pt + alamb) ** 2
+        total += fac * carlson_rc(alpha, beta)
+        fac *= 0.25
+        xt = 0.25 * (xt + alamb)
+        yt = 0.25 * (yt + alamb)
+        zt = 0.25 * (zt + alamb)
+        pt = 0.25 * (pt + alamb)
+        ave = 0.2 * (xt + yt + zt + pt + pt)
+        dx = (ave - xt) / ave
+        dy = (ave - yt) / ave
+        dz = (ave - zt) / ave
+        dp = (ave - pt) / ave
+        if max(abs(dx), abs(dy), abs(dz), abs(dp)) <= _RJ_ERRTOL:
+            break
+    c1, c2, c3, c4 = 3.0 / 14.0, 1.0 / 3.0, 3.0 / 22.0, 3.0 / 26.0
+    c5, c6, c7, c8 = 0.75 * c3, 1.5 * c4, 0.5 * c2, c3 + c3
+    ea = dx * (dy + dz) + dy * dz
+    eb = dx * dy * dz
+    ec = dp * dp
+    ed = ea - 3.0 * ec
+    ee = eb + 2.0 * dp * (ea - ec)
+    ans = 3.0 * total + fac * (
+        1.0 + ed * (-c1 + c5 * ed - c6 * ee)
+        + eb * (c7 + dp * (-c8 + dp * c4))
+        + dp * ea * (c2 - dp * c3) - c2 * dp * ec) / (ave * math.sqrt(ave))
+    if p <= 0.0:
+        ans = a * (b * ans + 3.0 * (rcx - carlson_rf(xt, yt, zt)))
+    return ans
+
+
+def _ellippi_quarter(n, phi, m):
+    """Pi(n; phi | m) for a single phi in [0, pi/2], via Carlson."""
+    if phi <= 0.0:
+        return 0.0
+    sp = math.sin(phi)
+    cp2 = math.cos(phi) ** 2
+    q = 1.0 - m * sp * sp
+    p4 = 1.0 - n * sp * sp
+    return (sp * carlson_rf(cp2, q, 1.0)
+            + (n / 3.0) * sp ** 3 * carlson_rj(cp2, q, 1.0, p4))
+
+
+def ellippi_pv(n, phi, m):
+    """Pi(n; phi | m) valid for ANY real n, including n >= 1 where the
+    integral is a Cauchy principal value.  Scalar or array `phi`.
+
+    Carlson's formula is stated for an amplitude in [0, pi/2], so a
+    general phi is folded down first.  The integrand is pi-periodic and
+    symmetric about pi/2, giving
+        Pi(phi + k pi) = Pi(phi) + 2 k Pi_complete ,
+        Pi(pi - phi)   = 2 Pi_complete - Pi(phi) ,
+        Pi(-phi)       = -Pi(phi) ,
+    and folding is what makes this usable on the long, monotonically
+    growing amplitudes that come out of `jacobi_am`."""
+    if m >= 1.0:
+        raise ValueError(f"ellippi_pv: m = {m} is out of range")
+    ph = np.asarray(phi, dtype=float)
+    scalar = (ph.ndim == 0)
+    flat = np.atleast_1d(ph).ravel()
+    complete = _ellippi_quarter(n, 0.5 * math.pi, m)
+    out = np.empty_like(flat)
+    for i, val in enumerate(flat):
+        sgn = 1.0
+        t = float(val)
+        if t < 0.0:
+            sgn, t = -1.0, -t
+        k = math.floor(t / math.pi)
+        t -= k * math.pi                       # t now in [0, pi)
+        if t <= 0.5 * math.pi:
+            base = _ellippi_quarter(n, t, m)
+        else:
+            base = 2.0 * complete - _ellippi_quarter(n, math.pi - t, m)
+        out[i] = sgn * (2.0 * k * complete + base)
+    res = out.reshape(np.atleast_1d(ph).shape)
+    return float(res[0]) if scalar else res
+
+
 def ellippi(n, phi, m, segments=None):
     """Incomplete elliptic integral of the THIRD kind,
 
@@ -151,14 +317,15 @@ def ellippi(n, phi, m, segments=None):
     half-period is far past machine precision; the subdivision is only
     there to stop a long phi from making one panel span many oscillations.
 
-    NOT valid for n >= 1, where the integrand has a pole inside the range
-    and the integral is a Cauchy principal value -- that case raises
-    rather than returning a plausible wrong number.  (Carlson's R_J would
-    be the general answer if it is ever needed.)"""
+    For n >= 1 the integrand has a pole inside the range and the
+    integral is a Cauchy principal value, which no refinement of a
+    quadrature can produce; those calls are delegated to `ellippi_pv`,
+    which gets it from Carlson's R_J.  The Gauss-Legendre route is kept
+    for n < 1 because it is faster and vectorised."""
     if n >= 1.0:
-        raise ValueError(
-            f"ellippi: n = {n} >= 1 puts a pole inside the interval; "
-            f"the principal-value branch is not implemented")
+        # a pole sits inside the range; hand over to the Carlson route,
+        # which returns the Cauchy principal value by construction
+        return ellippi_pv(n, phi, m)
     if m >= 1.0:
         raise ValueError(f"ellippi: m = {m} >= 1 is out of range")
     ph = np.asarray(phi, dtype=float)
@@ -453,16 +620,51 @@ def _selftest_ellippi():
     print(f"ellippi: panel independence over phi=12 dev {dev:.1e} "
           f"{'OK' if good else 'FAIL'}")
 
-    # 6) n >= 1 is a principal value and must be refused, not guessed
-    refused = 0
-    for bad in (1.0, 2.5):
-        try:
-            ellippi(bad, 1.0, 0.5)
-        except ValueError:
-            refused += 1
-    good = refused == 2
+    # 6) Carlson agrees with Gauss-Legendre wherever BOTH are valid.
+    #    Two independent algorithms -- duplication theorem against
+    #    spectral quadrature -- so agreement is real evidence.
+    worst = 0.0
+    for n in (-3.0, -0.5, 0.0, 0.4, 0.9):
+        for m in (0.0, 0.3, 0.85):
+            phi = np.linspace(-7.0, 7.0, 25)
+            a = ellippi(n, phi, m)
+            b = ellippi_pv(n, phi, m)
+            worst = max(worst, float(np.abs(a - b).max()
+                                     / max(1.0, np.abs(a).max())))
+    good = worst < 1e-9
     ok &= good
-    print(f"ellippi: {refused}/2 principal-value cases refused "
+    print(f"ellippi: Carlson vs Gauss-Legendre, max relative "
+          f"{worst:.2e} {'OK' if good else 'FAIL'}")
+
+    # 7) The principal-value branch (n >= 1) against its own closed form
+    #    at m = 0, where
+    #    Pi(n; phi|0) = atanh(sqrt(n-1) tan phi)/sqrt(n-1) for n > 1.
+    worst = 0.0
+    for n in (1.7, 4.0, 9.0):
+        rt = math.sqrt(n - 1.0)
+        phi = np.linspace(0.05, 1.4, 30)
+        got = ellippi_pv(n, phi, 0.0)
+        want = np.arctanh(np.clip(rt * np.tan(phi), -0.999999999,
+                                  0.999999999)) / rt
+        # only compare below the pole, where the principal value and the
+        # elementary form describe the same branch
+        keep = rt * np.tan(phi) < 0.98
+        worst = max(worst, float(np.abs(got[keep] - want[keep]).max()))
+    good = worst < 1e-9
+    ok &= good
+    print(f"ellippi: principal value vs atanh form (n > 1, m = 0) max "
+          f"dev {worst:.2e} {'OK' if good else 'FAIL'}")
+
+    # 8) The fold is consistent: Pi(phi + k pi) = Pi(phi) + 2 k Pi_c,
+    #    which is what makes long amplitudes usable.
+    n, m = 3.5, 0.6
+    pc = ellippi_pv(n, math.pi / 2.0, m)
+    base = ellippi_pv(n, 0.7, m)
+    dev = max(abs(float(ellippi_pv(n, 0.7 + k * math.pi, m))
+                  - (base + 2.0 * k * pc)) for k in (1, 2, 5))
+    good = dev < 1e-9
+    ok &= good
+    print(f"ellippi: pi-fold consistency (n = 3.5 > 1) dev {dev:.1e} "
           f"{'OK' if good else 'FAIL'}")
 
     return ok
