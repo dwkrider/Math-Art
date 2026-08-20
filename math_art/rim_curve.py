@@ -205,6 +205,50 @@ def _taubin(pts, closed, passes):
     return pts
 
 
+
+def resample(pts, closed, spacing):
+    """Re-space a polyline by arc length.
+
+    A swept tube self-intersects wherever the curve turns inside its own
+    bevel radius, and a rim traced off a mesh has points spaced by the
+    grid, not by the tube.  At a thickness of 0.04 on a rim whose points
+    sit 0.005 apart, every small wiggle folds the sweep over itself and
+    the tube comes out lumpy -- the failure looks like a caterpillar
+    rather than a pipe.  Re-spacing the control points to roughly the
+    tube diameter removes the cause instead of hiding it.
+    """
+    P = np.asarray(pts, dtype=float)
+    if spacing <= 0.0 or len(P) < 3:
+        return P
+    Q = np.vstack([P, P[:1]]) if closed else P
+    seg = np.linalg.norm(np.diff(Q, axis=0), axis=1)
+    s = np.concatenate([[0.0], np.cumsum(seg)])
+    total = float(s[-1])
+    if total <= 0.0:
+        return P
+    n = int(round(total / spacing))
+    n = max(8, min(n, len(P)))          # never ADD detail, only thin it
+    t = (np.linspace(0.0, total, n, endpoint=False) if closed
+         else np.linspace(0.0, total, n))
+    out = np.empty((len(t), 3))
+    for k in range(3):
+        out[:, k] = np.interp(t, s, Q[:, k])
+
+    # Equal steps in ARC LENGTH are not equal steps in space: where the
+    # rim doubles back on itself the path advances while the point
+    # barely moves, so a few gaps come out far shorter than the target
+    # and the tube folds there anyway.  Drop those directly.
+    keep = [0]
+    lo = 0.5 * spacing
+    for i in range(1, len(out)):
+        if float(np.linalg.norm(out[i] - out[keep[-1]])) >= lo:
+            keep.append(i)
+    if closed and len(keep) > 2:
+        if float(np.linalg.norm(out[keep[-1]] - out[keep[0]])) < lo:
+            keep.pop()
+    return out[keep] if len(keep) >= 4 else out
+
+
 if _IN_BLENDER:
 
     def rim_prop():
@@ -283,6 +327,12 @@ if _IN_BLENDER:
         if smooth is None:
             smooth = RIM_SMOOTH_DEFAULT
         loops = boundary_loops(verts, faces, smooth=smooth)
+        if not loops:
+            return 0
+        # space the control points to the tube, not to the sample grid
+        loops = [(resample(pts, closed, 1.6 * float(thickness)), closed)
+                 for pts, closed in loops]
+        loops = [(p, c) for p, c in loops if len(p) >= 4]
         if not loops:
             return 0
         cu = bpy.data.curves.new(label + " Rim", 'CURVE')
