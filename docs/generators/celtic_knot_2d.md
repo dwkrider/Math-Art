@@ -4,7 +4,9 @@
 
 Add a 2D Celtic knot (grid-and-barriers plait).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Classic grid-and-barriers **Celtic knotwork**: an interlaced plait laid on a rectangular grid, woven strictly over-and-under, and carved into bordered panels and knots by internal **barriers**. This is the construction the Insular and Pictish stone-carvers actually used, as formalised by the modern mathematical accounts.
+
+The elegant reading is Jablan's: a barrier is a **mirror**, and the cord is a light ray bouncing around a box of mirrors. Where a wall carries no barrier the two strands crossing there pass through one another; where it does, the strand reflects. That single reinterpretation turns a craft tradition into a computable object — and yields facts like the loop count of a plain $W\times H$ bordered plait being exactly $\gcd(W,H)$.
 
 ## Options
 
@@ -69,7 +71,30 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The grid.** Work on an integer lattice $(i,j)$ with $0\le i\le 2W$, $0\le j\le 2H$, over a $W\times H$ array of cells each two units wide. The parity of the coordinates classifies every point:
+
+| Point | Parity | Role |
+| --- | --- | --- |
+| **Primary** | $i,j$ both even | the cell corners |
+| **Secondary** | $i,j$ both odd | the cell centres, about which the cord crosses |
+| **Edge-midpoint** | $i+j$ odd | the midpoints of the cell walls |
+
+The cord threads the grid through the edge-midpoints, running as straight $45°$ diagonal strands between them. Every **barrier** occupies one edge-midpoint.
+
+**The mirror rule.** At each wall the cord does one of two things:
+
+- **no barrier** — the two strands crossing there pass straight through one another, making a crossing;
+- **barrier** — the strand cannot pass and **reflects**, turning through $90°$.
+
+Which is exactly a light ray in a box of mirrors, and why the construction is called a mirror curve. The outer border is a full ring of barriers, which is what makes a bordered panel; internal barriers carve the design into separate knots and motifs.
+
+**The loop count.** For a plain $W\times H$ bordered plait with no internal barriers, the number of separate closed cords is
+
+$$\gcd(W,H).$$
+
+So a $6\times4$ panel is two interlocked cords and a $5\times3$ panel is a single unbroken one — which is why traditional designs favour coprime dimensions when a single continuous cord is wanted, a rule the carvers knew empirically. Adding internal barriers changes the count, and that is the design lever: barriers both shape the outline and decide how many separate cords the finished piece contains.
+
+**Weaving.** Over and under alternate strictly along each strand, applied as a $z$ offset so the plait reads as woven ribbon rather than as crossing lines.
 
 ## References
 

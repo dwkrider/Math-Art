@@ -4,7 +4,9 @@
 
 Add a relief panel whose height is a pattern field.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A relief panel is a surface whose height is a scalar field $h(x,y)$ — a plate carved by mathematics rather than assembled from parts. The field is built **compositionally**, from pattern, orientation, warp and transfer, so that the organic and the geometric can be mixed rather than chosen between: a drumhead mode pushed through a smooth domain warp and a crest-sharpening transfer becomes drapery without ceasing to be a drumhead mode.
+
+The design idea the generator turns on is that ridges which fan, split and sweep across a panel are an **orientation** phenomenon, not an amplitude one. A wave with a single global direction cannot produce them however its amplitude is modulated — the direction field has to vary.
 
 ## Options
 
@@ -164,7 +166,30 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The pipeline.** Height is assembled in four stages rather than chosen from a list:
+
+$$h(x,y) \;=\; T\Big(\,P\big(W(x,y);\ \Theta(x,y)\big)\Big)$$
+
+- **Pattern $P$** — the base field: a wave, a drumhead mode, a cellular or Gabor noise, a harmonic, a quasicrystal, a reaction–diffusion (Turing) field, a lattice.
+- **Orientation $\Theta$** — a *direction field* the pattern is evaluated along, which is the load-bearing idea below.
+- **Warp $W$** — a smooth deformation of the domain before evaluation, which bends and gathers the pattern without changing its character.
+- **Transfer $T$** — a remapping of the resulting height: absolute value to make creases, ridge and terrace curves to sharpen crests, gamma and S-curves to bias light and shade.
+
+Because the stages compose, a pattern is not a preset. The same drumhead mode is drapery, corduroy or a rippled pond depending on what is wrapped around it.
+
+**Why orientation is the crux.** A plane wave
+
+$$h=\cos\!\big(k\,(x\cos\alpha + y\sin\alpha)\big)$$
+
+with a single global $\alpha$ gives parallel straight ridges, and no amount of amplitude modulation makes them fan or split — modulating amplitude only fades ridges in and out, leaving them parallel. Letting $\alpha$ vary with position,
+
+$$h=\cos\!\big(k\,\phi(x,y)\big),\qquad \nabla\phi \parallel \big(\cos\alpha(x,y),\ \sin\alpha(x,y)\big),$$
+
+makes the ridges follow the direction field. Where the field converges they crowd and merge; where it diverges they fan; and at its singular points they **split** — which is precisely where a dislocation in the wave pattern appears. Fanning, splitting and sweeping are all consequences of the orientation field's topology, which is why they cannot be faked with amplitude.
+
+**Curves and thickness.** The height field is sampled on a grid, thickened into a slab, and optionally given sharp creases where the transfer produces a fold. The result is a closed, printable solid rather than a displaced plane.
+
+For the same idea on closed surfaces, where there is no rectangle to be a function of, see [Solid Relief](relief_solid.md).
 
 ## References
 

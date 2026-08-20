@@ -4,7 +4,9 @@
 
 Add relief carved onto a closed surface.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Relief carved onto **closed** surfaces — spheres, tori, cylinders. A separate generator from the [relief panel](relief_panel.md), and deliberately so: the panel answers $h(x,y)$ on a rectangle, and a closed surface has no rectangle to answer on.
+
+That is not a matter of convenience. By Gauss's *Theorema Egregium* a sphere cannot be flattened without distortion, so projecting a planar field onto one is wrong in a way no better projection repairs. The fix is to stop projecting: evaluate the field in 3-D at the surface's own points.
 
 ## Options
 
@@ -136,7 +138,24 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The problem with projecting.** A lat–long parametrisation crowds badly at the poles, and the distortion was measured rather than assumed: faces near the pole came out at **a tenth** the area of those at the equator, and **130 vertices** crowded into a five-degree cap that should hold about fifteen. A relief evaluated on those coordinates is correspondingly stretched near the equator and compressed to noise at the poles.
+
+No reparametrisation fixes this. Theorema Egregium says Gaussian curvature is intrinsic, so a sphere ($K>0$) and a plane ($K=0$) are not isometric — some distortion is unavoidable, and choosing a different projection only moves it around.
+
+**Evaluating in 3-D instead.** The field is a function of the *spatial* point,
+
+$$h=f\big(\mathbf{p}\big),\qquad \mathbf{p}\in\mathbb{R}^3,$$
+
+sampled at the surface's own vertices and displaced along the normal. Two things follow immediately:
+
+- **The mesh carries no poles.** With no parametrisation to be singular, the surface can be meshed evenly — an icosphere rather than a lat–long grid — so vertex density is uniform and the relief has the same resolution everywhere.
+- **Spatial continuity costs nothing.** A function of $\mathbf{p}$ is automatically continuous across any seam, because there is no seam: the wrap-around that a $(u,v)$ field must be made periodic in simply does not arise.
+
+**Fields.** Fractal and cellular noise, Gabor, harmonics, wallpaper and spherical symmetry groups, elliptic functions, Truchet tiles, seigaiha waves, ocean spectra, ripples, quasicrystals, lattices and **Turing** reaction–diffusion patterns — the last in regimes named for what they produce: spots, worms, maze, coral, holes.
+
+**Spherical symmetry groups.** Where the panel offers the 17 wallpaper groups, a closed surface offers the *spherical* ones — $332$, $432$, $532$ and their starred variants — which is the same [orbifold signature](wallpaper.md) language applied where the total cost is below 2.
+
+**Output** is a thickened, watertight solid, fitted to the 2 m cube.
 
 ## References
 
