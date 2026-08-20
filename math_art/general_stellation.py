@@ -1081,15 +1081,25 @@ NAMED_PRESETS = {
          'the simplest Archimedean dual'),
         ('first', 'First stellation', ['a', 's01'], ''),
         ('second', 'Second stellation', ['a', 's01', 's02'], ''),
+        ('third', 'Third stellation', ['a', 's01', 's02', 's03'], ''),
+        ('fourth', 'Fourth stellation',
+         ['a', 's01', 's02', 's03', 's04', 's05'],
+         'the chiral shell s05 enters here'),
+        ('fifth', 'Fifth stellation',
+         ['a', 's01', 's02', 's03', 's04', 's05', 's06'], ''),
         ('final', 'Final stellation', ['all'], ''),
     ],
     'dodecahedron_tetrahedral': [
         ('core', 'Dodecahedron', ['a'],
          'Platonic seed, under the tetrahedral subgroup'),
         ('first', 'First tetrahedral stellation', ['a', 's01'], ''),
-        ('second', 'Second tetrahedral stellation', ['a', 's01', 's02'],
-         'the size-6 shell added -- a shell the icosahedral grouping '
-         'cannot separate'),
+        # There was a 'second' here, ['a','s01','s02'].  It built a solid
+        # geometrically IDENTICAL to 'first' -- s02 lies inside the hull
+        # of a+s01, so adding it moves no visible face.  Only three
+        # distinct closed stellations exist for this seed at shell
+        # granularity (core, first, final); Hart's 39 are cut finer than
+        # whole shells and need his diagrams.  _verify_presets_distinct()
+        # now fails on any repeat of this.
         ('final', 'Final stellation', ['all'], ''),
     ],
     'rhombic_triacontahedron': [
@@ -1448,6 +1458,50 @@ def _verify_presets_close(ck):
     print()
 
 
+def _verify_presets_distinct(ck):
+    """No two presets of a seed may build the same solid.
+
+    Closing is necessary but not sufficient: a shell lying INSIDE the
+    hull of the shells beneath it closes perfectly well and moves no
+    visible face, so the preset is a duplicate entry in the menu that
+    silently does nothing.  `dodecahedron_tetrahedral`'s 'second' was
+    exactly that -- identical to 'first' -- and shipped for some time,
+    because every check being run asked whether a preset was a valid
+    surface and none asked whether it was a NEW one.
+
+    The signature has to cover FACES as well as vertices, and both of the
+    obvious cheaper choices give false alarms:
+
+    * V/E/F counts alone -- `dodecahedron_tetrahedral`'s 'first' and
+      'final' both have 32 vertices and 60 faces and are different
+      solids;
+    * vertex radii alone -- the small stellated dodecahedron and the
+      great dodecahedron are built on the SAME twelve icosahedral
+      vertices and differ only in how the faces run, as do the five- and
+      ten-tetrahedra compounds.
+
+    So compare the vertex radius spectrum together with the face centroid
+    spectrum, which separates solids that share a vertex set.
+    """
+    print('named presets: pairwise distinct')
+    for seed in SEEDS:
+        seen = {}
+        for key, _title, _code, _note in named_presets(seed):
+            V, F = build_named(seed, key)
+
+            def _rad(p):
+                return round(math.sqrt(sum(c * c for c in p)), 6)
+            cen = []
+            for f in F:
+                m = [sum(V[i][k] for i in f) / len(f) for k in range(3)]
+                cen.append((len(f), _rad(m)))
+            sig = (tuple(sorted(_rad(v) for v in V)), tuple(sorted(cen)))
+            ck(sig not in seen,
+               '%s/%s distinct from %s' % (seed, key, seen.get(sig, '-')))
+            seen[sig] = key
+    print()
+
+
 def _self_test():
     print('GENERAL STELLATION ENGINE -- verification transcript')
     print()
@@ -1457,6 +1511,7 @@ def _self_test():
     _verify_cuboctahedron(ck)
     _verify_rt(ck)
     _verify_presets_close(ck)
+    _verify_presets_distinct(ck)
     print('=' * 74)
     if ck.fails:
         print('RESULT: FAIL (%d)' % len(ck.fails))
