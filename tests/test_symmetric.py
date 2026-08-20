@@ -637,8 +637,13 @@ for preset, thick in (('WHIMSY', 0.03), ('FRABJOUS', 0.02)):
     if not ok:
         fails.append(f'part-{preset}')
 
-# the part is built from the motif that is actually in use, so a
-# supplied Motif Object is what gets machined
+# The part is built from the motif that is actually in use, so a
+# supplied Motif Object is what gets machined -- and it is machined
+# WHOLE.  This quad is off-centre and carries none of the plane's own
+# 2-fold symmetry, so the sculpture puts two of it in every plane and
+# the part is both slabs: 8 verts each, the second the first turned a
+# half turn.  Machining only the drawn one would leave half the
+# material in that plane uncut.
 clear()
 me2 = bpy.data.meshes.new("PartSrc")
 me2.from_pydata([(0.2, 0.1, 0.0), (0.8, 0.1, 0.0), (0.8, 0.5, 0.0),
@@ -652,10 +657,14 @@ bpy.ops.object.symmetric_sculpture_add(preset='FRABJOUS',
 part = [o for o in bpy.data.objects
         if o.name.startswith('SymSculpt Part')][0]
 zs = [v.co.z for v in part.data.vertices]
-ok = (len(part.data.vertices) == 8
-      and abs(max(zs) - min(zs) - 0.05) < 1e-6)
-print(f"[part from motif object] {len(part.data.vertices)}v(8) "
-      f"{'OK' if ok else 'FAIL'}")
+xy = [(v.co.x, v.co.y) for v in part.data.vertices]
+turned = all(any(abs(x + p) < 1e-5 and abs(y + q) < 1e-5
+                 for p, q in xy) for x, y in xy)
+ok = (len(part.data.vertices) == 16
+      and abs(max(zs) - min(zs) - 0.05) < 1e-6
+      and turned)
+print(f"[part from motif object] {len(part.data.vertices)}v(16) "
+      f"half-turn pair={turned} {'OK' if ok else 'FAIL'}")
 if not ok:
     fails.append('part-motif-object')
 

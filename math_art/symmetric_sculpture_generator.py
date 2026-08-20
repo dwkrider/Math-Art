@@ -734,6 +734,98 @@ def group_loops(loops):
     return outers
 
 
+def _weld(points, tol=1e-6):
+    """Cluster points within tol; returns (kept, index remap).
+
+    A spatial hash on floor(coord / tol) with a sweep of the 27
+    neighbouring cells -- not a plain rounded key, which splits a
+    cluster that happens to straddle a cell boundary and so misses
+    exactly the coincidences it was asked to find."""
+    cells = {}
+    keep = []
+    remap = []
+    for p in points:
+        k0 = tuple(int(math.floor(c / tol)) for c in p)
+        hit = None
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for dz in (-1, 0, 1):
+                    for j in cells.get((k0[0] + dx, k0[1] + dy,
+                                        k0[2] + dz), ()):
+                        q = keep[j]
+                        if (abs(p[0] - q[0]) < tol
+                                and abs(p[1] - q[1]) < tol
+                                and abs(p[2] - q[2]) < tol):
+                            hit = j
+                            break
+                    if hit is not None:
+                        break
+                if hit is not None:
+                    break
+            if hit is not None:
+                break
+        if hit is None:
+            hit = len(keep)
+            keep.append(tuple(p))
+            cells.setdefault(k0, []).append(hit)
+        remap.append(hit)
+    return keep, remap
+
+
+def fold_motif(verts, faces, fold, tol=1e-6):
+    """The whole part a motif stands for, turned about the plane axis.
+
+    A motif may be drawn either as a whole part or as one sector of
+    the plane's own k-fold symmetry -- Krull's five-armed star is
+    stored as a single arm.  The sculpture itself does not care, since
+    the k rotations that hold the plane supply the missing sectors
+    either way, but anything reasoning about a PART rather than the
+    assembly -- the machinable solid and the outlines it is cut from
+    -- needs the whole of it.
+
+    Turning the motif through each k-th of a turn and welding gives
+    that, and is a no-op on a motif that already carries the symmetry:
+    those copies land back on the original and are dropped, so the
+    same call is right for a sector and for a whole part."""
+    verts = [tuple(p) for p in verts]
+    faces = [list(f) for f in faces]
+    if fold <= 1 or not verts or not faces:
+        return verts, faces
+
+    turned = []
+    sizes = []
+    for k in range(fold):
+        t = 2.0 * math.pi * k / fold
+        c, s = math.cos(t), math.sin(t)
+        img = [(c * x - s * y, s * x + c * y, z) for x, y, z in verts]
+        # this copy is one already taken when adding it to that one
+        # introduces no point the other did not have
+        dup = any(len(_weld(prev + img, tol)[0]) == n
+                  for prev, n in zip(turned, sizes))
+        if not dup:
+            turned.append(img)
+            sizes.append(len(_weld(img, tol)[0]))
+    if len(turned) == 1:
+        return verts, faces
+
+    allv = [p for img in turned for p in img]
+    kept, remap = _weld(allv, tol)
+    out = []
+    seen = set()
+    for c, img in enumerate(turned):
+        base = c * len(verts)
+        for f in faces:
+            idx = [remap[base + i] for i in f]
+            # a face is a duplicate when it spans the same welded
+            # corners as one already emitted, whatever order it is in
+            key = frozenset(idx)
+            if len(key) < 3 or key in seen:
+                continue
+            seen.add(key)
+            out.append(idx)
+    return kept, out
+
+
 def mating_planes(kind, family, loops, d=1.0, tol=1e-4):
     """For each boundary edge, the neighbouring plane it beds against.
 
@@ -1194,60 +1286,52 @@ _WHIMSY_TIPS = (0, 48)
 # planes with the pentagram the other way up -- points at 2*phi^2
 # where only THREE planes meet.  It is a different sculpture.)
 #
-# The whole part is stored, not a fifth.  The plane's own 5-fold
-# rotation carries it onto itself, so the five copies in each plane
-# coincide and weld to one -- twelve parts, one per face.  The fifth
-# is decimated (Douglas-Peucker, 0.3 svg units) and the rest turned
-# from it, and it is cut where the outline meets its own turned copy
-# (0.07 px) rather than at a fifth of the perimeter.
+# ONE ARM is stored, not the whole star: a fifth is all the plane's
+# own 5-fold rotation needs, since the group supplies the other four
+# and lands them in the same twelve planes either way.  Storing the
+# sector is what makes the preset reproducible from the Custom UI --
+# draw one arm in the guide plane, pick the 5-fold family, and the
+# sculpture is the same to within 2e-6 -- and it means editing the
+# arm keeps all five in step, which editing a whole star does not.
+#
+# The arc runs neck-to-neck: it starts and ends at the innermost
+# points of the outline (radius 0.185443, at 18 and 90 deg), out to
+# the point at radius 2 and back.  Closing it through the centre
+# makes a true fundamental domain -- five of them tile the star with
+# no overlap (area x5 matches the whole outline to 3e-7), where
+# closing tip-to-tip instead would cover it 3.7 times over.  The two
+# radial edges are interior once the five meet, so they weld away.
+#
+# The arc is decimated (Douglas-Peucker, 0.3 svg units) from the
+# traced template, and cut where the outline meets its own turned
+# copy (0.07 px) rather than at a fifth of the perimeter.
 
-_KRULL_OUTER = (
-    (+1.902113, +0.618034), (+1.545542, +0.615291), (+1.212697, +0.508471),
-    (+1.122324, +0.461245), (+1.031662, +0.398983), (+0.684304, +0.109536),
-    (+0.586182, +0.050217), (+0.507563, +0.017422), (+0.435135, +0.001481),
-    (+0.363595, +0.001581), (+0.176362, +0.057321), (+0.278976, +0.199923),
-    (+0.321354, +0.288876), (+0.349460, +0.416306), (+0.350960, +0.559949),
-    (+0.337392, +0.655009), (+0.310847, +0.754326), (+0.179072, +1.074073),
-    (+0.129851, +1.227620), (+0.112782, +1.333252), (+0.108485, +1.659308),
-    (+0.000000, +2.000000), (-0.107578, +1.660034), (-0.108841, +1.310469),
-    (-0.091853, +1.209926), (-0.060654, +1.104462), (+0.107287, +0.684660),
-    (+0.133381, +0.573010), (+0.140276, +0.488105), (+0.133056, +0.414295),
-    (+0.110854, +0.346288), (-0.000017, +0.185443), (-0.103930, +0.327101),
-    (-0.175433, +0.394893), (-0.287942, +0.461002), (-0.424091, +0.506817),
-    (-0.518691, +0.523288), (-0.621350, +0.528733), (-0.966168, +0.502214),
-    (-1.127410, +0.502851), (-1.233146, +0.519260), (-1.544572, +0.615929),
-    (-1.902113, +0.618034), (-1.612029, +0.410666), (-1.279964, +0.301443),
-    (-1.179092, +0.286531), (-1.069149, +0.283612), (-0.617997, +0.313608),
-    (-0.503748, +0.303923), (-0.420867, +0.284243), (-0.352902, +0.254568),
-    (-0.295084, +0.212437), (-0.176372, +0.057289), (-0.343208, +0.002236),
-    (-0.429778, -0.044818), (-0.527417, -0.131392), (-0.613063, -0.246719),
-    (-0.657961, -0.331600), (-0.694862, -0.427551), (-0.776197, -0.763688),
-    (-0.826628, -0.916841), (-0.874909, -1.012331), (-1.063083, -1.278643),
-    (-1.175571, -1.618034), (-0.888711, -1.406228), (-0.682220, -1.124167),
-    (-0.636866, -1.032841), (-0.600116, -0.929180), (-0.489230, -0.490840),
-    (-0.444715, -0.385176), (-0.400386, -0.312433), (-0.351161, -0.256964),
-    (-0.293226, -0.214995), (-0.108987, -0.150037), (-0.108184, -0.325719),
-    (-0.090184, -0.422592), (-0.038020, -0.542206), (+0.045197, -0.659298),
-    (+0.112049, -0.728228), (+0.191901, -0.792974), (+0.486452, -0.974199),
-    (+0.616525, -1.069490), (+0.692423, -1.144915), (+0.887551, -1.406174),
-    (+1.175571, -1.618034), (+1.062776, -1.279763), (+0.858329, -0.996217),
-    (+0.785487, -0.924861), (+0.698257, -0.857877), (+0.315636, -0.616964),
-    (+0.228899, -0.541975), (+0.173415, -0.477337), (+0.135872, -0.413380),
-    (+0.113861, -0.345311), (+0.109014, -0.150017), (+0.276347, -0.203542),
-    (+0.374041, -0.216358), (+0.503920, -0.203710), (+0.640996, -0.160749),
-    (+0.727211, -0.118470), (+0.813464, -0.062534), (+1.076841, +0.161600),
-    (+1.207662, +0.255860), (+1.302850, +0.304735), (+1.611619, +0.409579),
+_KRULL_ARM = (
+    (+0.176362, +0.057321), (+0.278976, +0.199923), (+0.321354, +0.288876),
+    (+0.349460, +0.416306), (+0.350960, +0.559949), (+0.337392, +0.655009),
+    (+0.310847, +0.754326), (+0.179072, +1.074073), (+0.129851, +1.227620),
+    (+0.112782, +1.333252), (+0.108485, +1.659308), (+0.000000, +2.000000),
+    (-0.107578, +1.660034), (-0.108841, +1.310469), (-0.091853, +1.209926),
+    (-0.060654, +1.104462), (+0.107287, +0.684660), (+0.133381, +0.573010),
+    (+0.140276, +0.488105), (+0.133056, +0.414295), (+0.110854, +0.346288),
 )
 
 
 def krull_motif(d=1.0):
-    """One of the twelve parts of Krull, a small-stellated-
-    dodecahedron sculpture, traced from the cutting template: a
-    five-armed star lying in a face plane of the dodecahedron, its
-    arms ending on the crossings at radius 2 where five planes meet.
-    See the note above."""
-    return polygon_with_holes(
-        [(x * d, y * d) for x, y in _KRULL_OUTER], [])
+    """One arm of Krull, a small-stellated-dodecahedron sculpture
+    traced from the cutting template: a blade rising from the hub of
+    a dodecahedral face plane to a point on the crossing at radius 2
+    where five planes meet.  The plane's own 5-fold rotation lays five
+    of these into the star, and the group lands that star in each of
+    the twelve planes.  See the note above."""
+    arm = [(x * d, y * d) for x, y in _KRULL_ARM]
+    # Close the sector through the hub.  The far neck is the near one
+    # turned by a fifth -- computed rather than tabulated so the two
+    # radial edges agree exactly and weld when the five arms meet.
+    c, s = math.cos(0.4 * math.pi), math.sin(0.4 * math.pi)
+    x0, y0 = arm[0]
+    arm.append((c * x0 - s * y0, s * x0 + c * y0))
+    return polygon_with_holes([(0.0, 0.0)] + arm, [])
 
 
 
@@ -1273,7 +1357,7 @@ PRESETS = {
 
 try:
     import bpy
-    from mathutils import Matrix
+    from mathutils import Matrix, Vector
     from bpy.props import (FloatProperty, EnumProperty, BoolProperty,
                            StringProperty, IntProperty)
     _IN_BLENDER = True
@@ -1453,6 +1537,75 @@ if _IN_BLENDER:
             poly.material_index = si
         obj = bpy.data.objects.new(name, me)
         return obj
+
+    def _distinct_placements(rots, mverts, plane_rot, plane_off,
+                             tol=1e-4):
+        """Keep one rotation per distinct image of the motif.
+
+        Two rotations are the same placement when they carry the motif
+        onto the same point set, which happens exactly when the motif
+        is invariant under the rotation between them.  Compared by a
+        signature of the placed points rather than by inspecting the
+        motif's symmetry, so it holds for a supplied motif too."""
+        if not mverts:
+            return rots
+        M = Matrix.LocRotScale(Matrix.Translation(plane_off).
+                               to_translation(), plane_rot, None)
+        # every vertex, not a sample: a subsample of a symmetric point
+        # set is not itself symmetric, so sampled signatures never
+        # match and nothing is ever recognised as a duplicate
+        placed = [M @ Vector(p) for p in mverts]
+
+        def cells_of(points):
+            grid = {}
+            for q in points:
+                key = (int(math.floor(q.x / tol)),
+                       int(math.floor(q.y / tol)),
+                       int(math.floor(q.z / tol)))
+                grid.setdefault(key, []).append(q)
+            return grid
+
+        def same(grid, points):
+            """Every point matched within tol, neighbours included.
+
+            Compared by distance rather than by a rounded key: two
+            coordinates a hair apart can fall either side of a cell
+            boundary, and a key-based test then calls identical
+            placements different -- which left 24 of Krull's 60
+            rotations standing where 12 are distinct."""
+            for q in points:
+                k0 = (int(math.floor(q.x / tol)),
+                      int(math.floor(q.y / tol)),
+                      int(math.floor(q.z / tol)))
+                hit = False
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        for dz in (-1, 0, 1):
+                            for r in grid.get((k0[0] + dx, k0[1] + dy,
+                                               k0[2] + dz), ()):
+                                if (q - r).length <= tol:
+                                    hit = True
+                                    break
+                            if hit:
+                                break
+                        if hit:
+                            break
+                    if hit:
+                        break
+                if not hit:
+                    return False
+            return True
+
+        keep = []
+        grids = []
+        for R in rots:
+            RM = Matrix(R)
+            pl = [RM @ p for p in placed]
+            if any(same(g, pl) for g in grids):
+                continue
+            keep.append(R)
+            grids.append(cells_of(pl))
+        return keep
 
     def _drive_z_from_lift(obj, sculpt, mod_name, socket):
         """Tie obj's Z to the modifier's Lift input.
@@ -1816,6 +1969,11 @@ if _IN_BLENDER:
             a, normals = plane_normals(kind, family)
             u, v = _frame(a)
             d = self.distance
+            # how many rotations hold the representative plane -- the
+            # in-plane symmetry a motif may be drawn a sector of.
+            # Taken before the dedupe below, which is free to thin the
+            # rotation list right down to one per plane.
+            fold = len(rots) // len(normals)
 
             motif = None
             if self.motif_object:
@@ -1887,6 +2045,20 @@ if _IN_BLENDER:
             guides.hide_render = True
 
             # the sculpture: one point per rotation, euler attribute
+            # Drop rotations that would land the motif exactly where
+            # another already put it.  A motif carrying the plane's
+            # own k-fold symmetry -- as every traced part here does,
+            # since each is a whole part rather than a fundamental
+            # domain -- is mapped onto itself by k of the rotations.
+            # Keeping them stacks k coincident copies of every face:
+            # the weld weeds out the duplicate vertices but not the
+            # duplicate faces, and Shell then has a k-deep stack to
+            # extrude, which collapses into a plain scaling instead
+            # of a thickness.
+            rots = _distinct_placements(
+                rots, [tuple(v.co) for v in motif.data.vertices],
+                plane_rot, plane_off)
+
             pts = bpy.data.meshes.new("SymSculpt")
             pts.from_pydata([(0.0, 0.0, 0.0)] * len(rots), [], [])
             attr = pts.attributes.new("sym_rot", 'FLOAT_VECTOR',
@@ -1950,9 +2122,15 @@ if _IN_BLENDER:
                                 "Shell is 0, so the sculpture has no "
                                 "thickness -- the part was built at "
                                 "2% of the plane distance instead")
-                mloops = boundary_loops(
+                # The part to machine is the WHOLE part, even when the
+                # motif is only one sector of it -- Krull is cut as
+                # twelve stars, not sixty arms.  Folding first is a
+                # no-op on a motif that is already whole.
+                wv, wf = fold_motif(
                     [tuple(v.co) for v in motif.data.vertices],
-                    [list(p.vertices) for p in motif.data.polygons])
+                    [list(p.vertices) for p in motif.data.polygons],
+                    fold)
+                mloops = boundary_loops(wv, wf)
                 pieces = group_loops(mloops)
                 pv2 = []
                 pf2 = []
@@ -2101,7 +2279,6 @@ if _IN_BLENDER:
             obj.select_set(True)
             motif.select_set(True)
             context.view_layer.objects.active = obj
-            fold = len(rots) // len(normals)
             self.report(
                 {'INFO'},
                 f"{len(normals)} planes x {fold}-fold: edit the "
@@ -2223,6 +2400,41 @@ def _selftest():
         print(f"{kind}/{fam}: {len(radii)} rings, lines {counts[0]}"
               f"..{counts[-1]} of {allsegs} {'OK' if ok else 'BAD'}")
         assert ok, (kind, fam, counts, allsegs)
+
+    # Krull is stored as one arm, so folding it by the plane's own
+    # 5-fold rotation must tile the star: five arms' worth of area,
+    # no overlap, and the fold has to be idempotent -- running it on
+    # the star again must give that same star back, or a whole-part
+    # motif would be stacked five deep.
+    kv, kf = krull_motif(1.0)
+
+    def _tri_area(vs, fs):
+        return sum(abs(0.5 * ((vs[b][0] - vs[a2][0])
+                              * (vs[c][1] - vs[a2][1])
+                              - (vs[b][1] - vs[a2][1])
+                              * (vs[c][0] - vs[a2][0])))
+                   for a2, b, c in fs)
+
+    arm_a = _tri_area(kv, kf)
+    sv, sf = fold_motif(kv, kf, 5)
+    star_a = _tri_area(sv, sf)
+    again_v, again_f = fold_motif(sv, sf, 5)
+    ok = (abs(star_a - 5.0 * arm_a) < 1e-9
+          and len(again_v) == len(sv) and len(again_f) == len(sf)
+          and abs(_tri_area(again_v, again_f) - star_a) < 1e-9)
+    print(f"krull arm {arm_a:.6f} x5 -> star {star_a:.6f} "
+          f"({len(sv)} verts, {len(sf)} faces), refold "
+          f"{len(again_v)}/{len(again_f)} {'OK' if ok else 'BAD'}")
+    assert ok, (arm_a, star_a, len(sv), len(again_v), len(again_f))
+    # and the star it makes really is five-fold about the origin
+    turn = 0.4 * math.pi
+    c5, s5 = math.cos(turn), math.sin(turn)
+    worst = max(min(max(abs(c5 * p[0] - s5 * p[1] - q[0]),
+                        abs(s5 * p[0] + c5 * p[1] - q[1]))
+                    for q in sv) for p in sv)
+    print(f"krull star 5-fold residual {worst:.2e} "
+          f"{'OK' if worst < 1e-6 else 'BAD'}")
+    assert worst < 1e-6, worst
 
     # the Whimsy blade: triangulation must cover exactly the material
     # (outer loop less the two teardrops), with no lost or doubled
