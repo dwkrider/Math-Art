@@ -87,6 +87,7 @@ SURFACES = Menu(
         _e("mesh.wente_torus_add", 'MESH_TORUS'),
         _e("mesh.crochet_add", 'MOD_CLOTH'),
         _e("mesh.willmore_add", 'MESH_TORUS', "Willmore Surface"),
+        _e("mesh.constrained_willmore_torus_add", 'MESH_TORUS'),
     ])
 
 POLYHEDRA = Menu(

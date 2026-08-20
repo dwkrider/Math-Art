@@ -120,6 +120,10 @@ PARAMS = {
     # 5/4 is the fraction Walter's own figures use, and its four
     # lobes read at icon size where a higher n turns to mush.
     "mesh.wente_torus_add": dict(lobes_l=5, lobes_n=4),
+    # The default Willmore (1,3) member at render-grade sampling: three
+    # lobes wrap into a cleanly readable trefoil-like sleeve, and the
+    # Willmore shape is the mathematically canonical representative.
+    "mesh.constrained_willmore_torus_add": dict(n_curve=384, m_psi=96),
     # Light up the 13 parastichy arms rather than shipping a grey disc.
     "mesh.phyllotaxis_add": dict(color_by='PARASTICHY', parastichy=13),
 
