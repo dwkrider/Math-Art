@@ -50,6 +50,7 @@ _MODULE_NAMES = [
     'delaunay_generator',
     'bryant_generator',
     'crochet_generator',
+    'fold_generator',
     'dform_generator',
     'koman_generator',
     'space_curve_generator',
