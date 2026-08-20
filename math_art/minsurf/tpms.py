@@ -404,90 +404,260 @@ def _orientation_flags():
 _ORIENT = None
 
 
-def marching_tets(field, box_min, box_max, res):
+def _empty():
+    """Fresh empty result.  Deliberately not a shared module-level
+    constant: callers own what they are handed and some edit it in
+    place, so handing out the same two arrays twice would let one
+    caller's edit surface in another's result."""
+    return np.zeros((0, 3)), np.zeros((0, 3), dtype=np.int64)
+
+# Grid points per slab (see marching_tets).  The whole extraction is
+# driven slab-wise so that peak memory is O(nx*ny*slab) rather than
+# O(nx*ny*nz); a grid below this size is a single slab and takes exactly
+# the same code path, so there is no separate "small" case to get wrong.
+_SLAB_POINTS = 4_000_000
+
+_BIG = 1e30             # stand-in for a non-finite sample
+
+
+def marching_tets(field, box_min, box_max, res, nudge=1e-9):
     """Extract the zero level set of `field` on a res[0]xres[1]xres[2]
     sample grid over the box. Returns (verts (n,3), tris (m,3)) with
-    triangle winding oriented along the field gradient."""
+    triangle winding oriented along the field gradient.
+
+    `field` is either a callable f(X, Y, Z) -> values, or an already
+    sampled (nx, ny, nz) array of values on exactly that grid.  The
+    array form exists so an expensive field is not re-evaluated: the
+    orbital builder marches several level sets of ONE LCAO field, and
+    the IFS density builders already hold their grid.
+
+    Samples landing exactly on the surface -- Schwarz P at its lattice
+    points, say -- give degenerate crossings, so they are displaced by
+    `nudge`.  That is an ABSOLUTE value, deliberately: making it
+    relative to the field's amplitude would make the result depend on
+    how the grid was split into slabs.  A field working at a very small
+    amplitude (everywhere below `nudge`) would collapse to an empty
+    mesh, so such a caller must scale this down to match.
+    """
     nx, ny, nz = (r + 1 for r in res)
     xs = np.linspace(box_min[0], box_max[0], nx)
     ys = np.linspace(box_min[1], box_max[1], ny)
     zs = np.linspace(box_min[2], box_max[2], nz)
-    X, Y, Z = np.meshgrid(xs, ys, zs, indexing='ij')
-    vals = field(X, Y, Z).ravel()
-    # samples landing exactly on the surface (e.g. Schwarz P at the
-    # lattice points) produce degenerate crossings; nudge them off
-    vals = np.where(np.abs(vals) < 1e-9, 1e-9, vals)
-    pos = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=-1)
+    npt = nx * ny * nz          # grid points; also the edge-key radix
 
-    ii, jj, kk = np.meshgrid(np.arange(nx - 1), np.arange(ny - 1),
-                             np.arange(nz - 1), indexing='ij')
-    ii, jj, kk = ii.ravel(), jj.ravel(), kk.ravel()
-
-    def flat(i, j, k):
-        return (i * ny + j) * nz + k
-
-    corner = [flat(ii + o[0], jj + o[1], kk + o[2]) for o in _CUBE]
+    grid = None
+    if not callable(field):
+        grid = np.asarray(field, dtype=float)
+        if grid.shape != (nx, ny, nz):
+            raise ValueError('sampled field has shape %r, expected %r'
+                             % (grid.shape, (nx, ny, nz)))
 
     global _ORIENT
     if _ORIENT is None:
         _ORIENT = _orientation_flags()
 
-    tri_pts = []          # list of (3, ntri, 3) blocks
-    for ti, (a, b, c, d) in enumerate(_TETS):
-        A, B, C, D = corner[a], corner[b], corner[c], corner[d]
-        fa, fb, fc, fd = vals[A], vals[B], vals[C], vals[D]
-        code = ((fa < 0).astype(np.int8) | ((fb < 0) << 1)
-                | ((fc < 0) << 2) | ((fd < 0) << 3))
-        tet = np.stack([A, B, C, D], axis=0)
+    layers = max(1, min(nz - 1, int(_SLAB_POINTS // max(nx * ny, 1))))
 
-        def interp(sel, ci, cj):
-            ia, ib = tet[ci][sel], tet[cj][sel]
-            va, vb = vals[ia], vals[ib]
-            t = va / (va - vb)
-            return pos[ia] + t[:, None] * (pos[ib] - pos[ia])
+    key_blocks, pos_blocks, tri_blocks = [], [], []
+    nvert = 0
+    prev = None            # last plane already evaluated, carried forward
+    for k0 in range(0, nz - 1, layers):
+        k1 = min(k0 + layers, nz - 1)          # cell layers [k0, k1)
+        # planes k0..k1 inclusive bound those cells; the shared plane is
+        # CARRIED from the previous slab, never re-evaluated, so every
+        # sample is computed exactly once and the crossings on that
+        # plane come out bitwise identical in both slabs
+        first = k0 if prev is None else k0 + 1
+        sub = _sample(field, grid, xs, ys, zs, first, k1 + 1, nudge)
+        if prev is not None:
+            sub = np.concatenate([prev[:, :, None], sub], axis=2)
+        prev = sub[:, :, -1].copy()
 
-        for cd, (lone, others) in _ONE.items():
-            sel = np.nonzero(code == cd)[0]
-            if len(sel) == 0:
-                continue
-            p0 = interp(sel, lone, others[0])
-            p1 = interp(sel, lone, others[1])
-            p2 = interp(sel, lone, others[2])
-            if _ORIENT[(ti, cd)]:
-                p1, p2 = p2, p1
-            tri_pts.append(np.stack([p0, p1, p2], axis=1))
-        for cd, ((n0, n1), (pp0, pp1)) in _TWO.items():
-            sel = np.nonzero(code == cd)[0]
-            if len(sel) == 0:
-                continue
-            q0 = interp(sel, n0, pp0)
-            q1 = interp(sel, n0, pp1)
-            q2 = interp(sel, n1, pp1)
-            q3 = interp(sel, n1, pp0)
-            if _ORIENT[(ti, cd)]:
-                q1, q3 = q3, q1
-            tri_pts.append(np.stack([q0, q1, q2], axis=1))
-            tri_pts.append(np.stack([q0, q2, q3], axis=1))
+        keys = _slab_tris(sub, k0, ny, nz, npt)
+        if keys is None:
+            continue
+        uniq, inv = np.unique(keys.ravel(), return_inverse=True)
+        key_blocks.append(uniq)
+        pos_blocks.append(_edge_points(uniq, npt, sub, k0,
+                                       xs, ys, zs, ny, nz))
+        tri_blocks.append(inv.reshape(-1, 3).astype(np.int64) + nvert)
+        nvert += len(uniq)
 
-    if not tri_pts:
-        return np.zeros((0, 3)), np.zeros((0, 3), dtype=np.int64)
-    tris_xyz = np.concatenate(tri_pts, axis=0)      # (ntri, 3, 3)
+    if not key_blocks:
+        return _empty()
 
-    # weld: quantize and unique
-    flatv = tris_xyz.reshape(-1, 3)
+    # one global weld across slabs: an edge lying in a shared plane is
+    # emitted by both neighbours, with the same key and the same
+    # position, so it collapses here
+    allkeys = np.concatenate(key_blocks)
+    verts = np.concatenate(pos_blocks, axis=0)
+    tris = np.concatenate(tri_blocks, axis=0)
+    _, keep, back = np.unique(allkeys, return_index=True,
+                              return_inverse=True)
+    verts = verts[keep]
+    tris = back.ravel()[tris]
+
+    # Second, COSMETIC weld: distinct lattice edges can still produce
+    # crossings at (nearly) the same point -- systematically so for the
+    # TPMS fields whose zero set passes exactly through lattice points,
+    # where the nudge below puts t ~ 1e-9 and a whole fan of edges
+    # around one grid point collapses to it.  Merging those and dropping
+    # the resulting degenerate triangles is what the old quantized weld
+    # did; keeping it avoids regressing the shipped TPMS meshes with
+    # zero-area slivers.
+    #
+    # This pass CANNOT reopen the surface the way welding on position
+    # alone could: watertightness is already guaranteed one layer down
+    # by the edge keys, so a quantization bin boundary that separates
+    # two near-coincident vertices merely leaves them separate.  It also
+    # runs over the unique crossings (~nverts) rather than over every
+    # triangle corner (3*ntri), which is ~6x less work.
     eps = max(np.max(box_max) - np.min(box_min), 1.0) * 1e-6
-    keys = np.round(flatv / eps).astype(np.int64)
-    uniq, inv = np.unique(keys, axis=0, return_index=False,
-                          return_inverse=True)
-    order = np.zeros(len(uniq), dtype=np.int64)
-    order[inv] = np.arange(len(flatv))              # a representative
-    verts = flatv[order]
-    tris = inv.reshape(-1, 3)
+    q = np.round(verts / eps).astype(np.int64)
+    _, first, back = np.unique(q, axis=0, return_index=True,
+                               return_inverse=True)
+    verts = verts[first]
+    tris = back.ravel()[tris]
     good = ((tris[:, 0] != tris[:, 1]) & (tris[:, 1] != tris[:, 2])
             & (tris[:, 0] != tris[:, 2]))
-    tris = tris[good]
+    return verts, tris[good]
 
-    return verts, tris
+
+def _sample(field, grid, xs, ys, zs, k0, k1, nudge):
+    """Field values on planes z[k0:k1], as an array we own.
+
+    Never writes into the caller's grid, and never leaves a non-finite
+    value in play: NaN reads as "outside" (+_BIG) and +-inf keeps its
+    sign, so a blown-up field yields empty or clipped geometry instead
+    of NaN vertices."""
+    if grid is not None:
+        sub = grid[:, :, k0:k1]
+    else:
+        X, Y, Z = np.meshgrid(xs, ys, zs[k0:k1], indexing='ij')
+        sub = np.asarray(field(X, Y, Z), dtype=float)
+    bad = ~np.isfinite(sub)
+    if bad.any():
+        sub = np.where(bad, np.where(sub < 0.0, -_BIG, _BIG), sub)
+    # np.where allocates, so this also decouples us from `grid`
+    return np.where(np.abs(sub) < nudge, nudge, sub)
+
+
+def _slab_tris(sub, k0, ny, nz, npt):
+    """Triangles of one z-slab, as (ntri, 3) GLOBAL lattice-edge keys.
+
+    Returns None when the slab holds no crossing at all."""
+    snx, sny, snz = sub.shape
+    cx, cy, cz = snx - 1, sny - 1, snz - 1
+
+    # ---- active-cell compression -------------------------------------
+    # A cube whose 8 corners share a sign emits nothing: codes 0 and 15
+    # appear in neither _ONE nor _TWO.  Finding those up front, from 8
+    # strided boolean VIEWS of the sign grid (no index arrays, no
+    # copies), makes every downstream array O(surface) instead of
+    # O(volume) -- typically 1-15% of the cells.  The corner offsets
+    # collapse to scalars because the flat index is affine in (i,j,k):
+    #   flat(i+oi, j+oj, k+ok) = flat(i,j,k) + flat(oi,oj,ok).
+    neg = sub < 0.0
+    any_neg = np.zeros((cx, cy, cz), dtype=bool)
+    all_neg = np.ones((cx, cy, cz), dtype=bool)
+    for oi, oj, ok in _CUBE:
+        c = neg[oi:oi + cx, oj:oj + cy, ok:ok + cz]
+        any_neg |= c
+        all_neg &= c
+    active = np.flatnonzero(any_neg & ~all_neg)
+    del neg, any_neg, all_neg
+    if active.size == 0:
+        return None
+
+    ai, rem = np.divmod(active, cy * cz)
+    aj, ak = np.divmod(rem, cz)
+    del active, rem
+    # local index addresses this slab's samples; global index addresses
+    # the whole grid and is what the edge keys are built from, so keys
+    # agree across slab boundaries
+    loc = (ai * sny + aj) * snz + ak
+    glo = (ai * ny + aj) * nz + (ak + k0)
+    del ai, aj, ak
+    lcorner = [loc + (o[0] * sny + o[1]) * snz + o[2] for o in _CUBE]
+    gcorner = [glo + (o[0] * ny + o[1]) * nz + o[2] for o in _CUBE]
+
+    flat = sub.ravel()
+    out = []
+    for ti, (a, b, c, d) in enumerate(_TETS):
+        fa = flat[lcorner[a]]
+        fb = flat[lcorner[b]]
+        fc = flat[lcorner[c]]
+        fd = flat[lcorner[d]]
+        code = ((fa < 0).astype(np.int8) | ((fb < 0) << 1)
+                | ((fc < 0) << 2) | ((fd < 0) << 3))
+        tet = (gcorner[a], gcorner[b], gcorner[c], gcorner[d])
+        # one pass tells us which of the 14 cases are actually present,
+        # instead of 14 full comparisons against the active set
+        present = np.bincount(code.ravel(), minlength=16)
+
+        def edge(sel, ci, cj):
+            """Identify a crossing by the LATTICE EDGE it lies on, as the
+            packed key min*npt + max.  Welding on this rather than on a
+            quantized position makes the mesh watertight by
+            construction: the same crossing reached from two different
+            tetrahedra yields the same key, whereas interpolating it as
+            a->b in one and b->a in the other gives t and 1-t -- equal in
+            exact arithmetic but NOT bitwise, so a pair straddling a
+            quantization bin used to weld apart and open the surface."""
+            ia, ib = tet[ci][sel], tet[cj][sel]
+            return np.minimum(ia, ib) * npt + np.maximum(ia, ib)
+
+        for cd, (lone, others) in _ONE.items():
+            if not present[cd]:
+                continue
+            sel = np.nonzero(code == cd)[0]
+            p0 = edge(sel, lone, others[0])
+            p1 = edge(sel, lone, others[1])
+            p2 = edge(sel, lone, others[2])
+            if _ORIENT[(ti, cd)]:
+                p1, p2 = p2, p1
+            out.append(np.stack([p0, p1, p2], axis=1))
+        for cd, ((n0, n1), (pp0, pp1)) in _TWO.items():
+            if not present[cd]:
+                continue
+            sel = np.nonzero(code == cd)[0]
+            q0 = edge(sel, n0, pp0)
+            q1 = edge(sel, n0, pp1)
+            q2 = edge(sel, n1, pp1)
+            q3 = edge(sel, n1, pp0)
+            if _ORIENT[(ti, cd)]:
+                q1, q3 = q3, q1
+            out.append(np.stack([q0, q1, q2], axis=1))
+            out.append(np.stack([q0, q2, q3], axis=1))
+
+    return np.concatenate(out, axis=0) if out else None
+
+
+def _edge_points(keys, npt, sub, k0, xs, ys, zs, ny, nz):
+    """Interpolate ONE crossing per unique lattice edge.
+
+    Doing this after the weld rather than before is the second half of
+    the edge-keying win: a crossing is shared by ~6 triangles, so the
+    interpolation and its gathers run ~6x less often.  Endpoint
+    coordinates come from index arithmetic, which is why no (npt, 3)
+    position array is ever built."""
+    sny, snz = sub.shape[1], sub.shape[2]
+    flat = sub.ravel()
+
+    def where(idx):
+        i, rem = np.divmod(idx, ny * nz)
+        j, k = np.divmod(rem, nz)
+        # every point an edge of this slab touches lies inside the slab
+        return i, j, k, (i * sny + j) * snz + (k - k0)
+
+    mn, mx = np.divmod(keys, npt)
+    ia, ja, ka, la = where(mn)
+    ib, jb, kb, lb = where(mx)
+    va, vb = flat[la], flat[lb]
+    t = va / (va - vb)
+    pa = np.stack([xs[ia], ys[ja], zs[ka]], axis=-1)
+    pb = np.stack([xs[ib], ys[jb], zs[kb]], axis=-1)
+    return pa + t[:, None] * (pb - pa)
 
 
 def _cells_xyz(cells):
@@ -613,6 +783,60 @@ def _selftest():
     ok &= good
     print(f"tpms: sphere V={len(V)} T={len(T)} chi={chi} nonmanifold={boundary}"
           f" area={area:.4f} (exp {4*math.pi:.4f}) max|r-1|={radial:.4f} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # The extraction runs slab-wise to cap peak memory.  The slab size must
+    # be invisible in the output: the shared plane between two slabs is
+    # carried, not re-evaluated, and the lattice-edge keys are global, so a
+    # crossing on that plane welds across the seam.  Splitting the grid into
+    # single-cell layers is the harshest version of that test.
+    def _sig(v, t):
+        order = np.lexsort((v[:, 2], v[:, 1], v[:, 0]))
+        p = v[t]
+        a = float(np.sum(np.linalg.norm(
+            np.cross(p[:, 1] - p[:, 0], p[:, 2] - p[:, 0]), axis=1)) * 0.5)
+        return v[order], len(t), a
+
+    global _SLAB_POINTS
+    keep_slab = _SLAB_POINTS
+    devs = []
+    for sp in (1, 3000):
+        _SLAB_POINTS = sp
+        Vc, Tc = marching_tets(sphere, (-1.5,) * 3, (1.5,) * 3, (40,) * 3)
+        s0, s1 = _sig(V, T), _sig(Vc, Tc)
+        devs.append(s0[1] == s1[1] and s0[0].shape == s1[0].shape
+                    and float(np.max(np.abs(s0[0] - s1[0]))) == 0.0
+                    and abs(s0[2] - s1[2]) < 1e-12)
+    _SLAB_POINTS = keep_slab
+    good = all(devs)
+    ok &= good
+    print(f"tpms: slab size invisible in output (1, 3000 pts/slab) "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Handing in an already-sampled grid must be identical to letting the
+    # extractor call the field -- that is the whole point of the array form
+    # (orbital marches several level sets of one expensive field).
+    ax = np.linspace(-1.5, 1.5, 41)
+    Xg, Yg, Zg = np.meshgrid(ax, ax, ax, indexing='ij')
+    Vg, Tg = marching_tets(sphere(Xg, Yg, Zg), (-1.5,) * 3, (1.5,) * 3,
+                           (40,) * 3)
+    good = (Vg.shape == V.shape and np.array_equal(Tg, T)
+            and float(np.max(np.abs(Vg - V))) == 0.0)
+    ok &= good
+    print(f"tpms: sampled-grid input matches callable input "
+          f"{'OK' if good else 'FAIL'}")
+
+    # A field that blows up must not leak NaN into the mesh: NaN reads as
+    # outside, +-inf keeps its sign.
+    def nasty(x, y, z):
+        v = sphere(x, y, z)
+        v = np.where(np.abs(x - 0.45) < 1e-12, np.nan, v)
+        return np.where(y > 1.4, np.inf, v)
+
+    Vn, Tn = marching_tets(nasty, (-1.5,) * 3, (1.5,) * 3, (24,) * 3)
+    good = len(Tn) > 50 and bool(np.all(np.isfinite(Vn)))
+    ok &= good
+    print(f"tpms: non-finite samples give finite verts (V={len(Vn)}) "
           f"{'OK' if good else 'FAIL'}")
 
     # The nodal fields are triply periodic with period 2*pi -- a sign slip or
