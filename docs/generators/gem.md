@@ -2,13 +2,18 @@
 
 ## Overview
 
-Add a faceted gemstone cut from its facet planes.
+Add a faceted gemstone cut the way a lapidary specifies one — as facet *planes*, each placed by a mast angle and a gear index, intersected into a solid.
 
-Cut gemstones built the way a **lapidary** actually specifies them — as facet *planes*, each placed by a mast angle and a position on the index gear — and turned into a solid by intersecting the resulting half-spaces.
+This is the faceter's own coordinate system, not a modeller's. A cutting machine holds the stone at an angle to the lap and rotates it to indexed positions on a gear; a design is therefore a list of (angle, index) pairs, and the stone is whatever those cuts leave behind. Building it the same way means the geometry *is* the design, and the thousands of published faceting designs in GemCad's `.ASC` format can be read directly. The reference design is the **Standard Round Brilliant** as printed in Strickland's GemCad manual — 57 or 58 facets, table 53–57%, crown $34.5°$, pavilion $40.75°$.
 
-This is the faceter's own coordinate system, not a modeller's. A cutting machine holds the stone at an angle to the lap and rotates it to indexed positions on a gear; a design is therefore a list of (angle, index) pairs, and the stone is whatever those cuts leave behind. Building it the same way means the geometry is the design, and the thousands of published faceting designs in GemCad's `.ASC` format can be read directly.
+### Using it
 
-The reference design is the **Standard Round Brilliant** as printed in Strickland's GemCad manual — 57 or 58 facets, table 53–57%, crown $34.5°$, pavilion $40.75°$.
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Odds & Ends ▸ Faceted Gemstone*.
+2. **Pick the Cut.** The **Round Brilliant**, **Tolkowsky Brilliant** and the other round designs are *parametric* — their proportions are computed from a handful of angles, so they expose sliders. The named designs read from a stored `.ASC` (the **Standard Round Brilliant**, the step and rose cuts) carry their own fixed geometry and show no sliders; three deliberate defects (**Fish-eye**, **Nail-head**, **Windowed**) are there to demonstrate what a mis-proportioned stone looks like.
+3. **Shape it with the proportion knobs** — the main handles on a round cut are **Crown Angle** (how steeply the top rises), **Pavilion Angle** (how deep the point goes), **Table** (the width of the flat top facet) and **Girdle** (the thickness of the rim). Every untouched slider *defers to the preset*: the operator only overrides a proportion you actually move, so choosing "Tolkowsky" and leaving the sliders alone really gives you Tolkowsky's 53% / 34.5° / 40.75°, not the operator's defaults.
+4. **Reach the tier-specific controls that only some cuts have.** The UI shows a slider only when the chosen cut has that tier: **Star Length**, **Lower Halves**, **Girdle Facets** and **Culet** appear for a brilliant, but a rose (which has no table) or a step cut (which takes a list of row angles) hides the ones it cannot use. A Culet of 0 gives a pointed 57-facet stone; any larger value adds the small bottom facet, making 58.
+5. **Choose material and lighting.** **Material** sets the refractive index, dispersion, colour and density; **Assign Material** builds the shader, **Dispersion Bands** (3/6/9, shown only when Preview is off) trade fire against render cost, and **Preview (no dispersion)** swaps in a single cheap BSDF. A cut stone is almost entirely *what it reflects*, so the **Viewing Rig** — Gem Studio (a sky, key and fill) or the ASET Rig (the AGS three-zone hemisphere) — matters as much as the geometry; **Custom** leaves your scene untouched.
+6. **Read the report.** Every build *measures the solid it cut* rather than echoing the inputs: it prints the table %, crown and pavilion angles and total depth actually achieved, an IDC proportion grade, and — from **Size (mm)** and the material's density — a carat weight. Facets cut away and any pathology (fish-eye, nail-head, windowed) are reported as warnings, so a bad stone announces itself.
 
 ## Options
 
@@ -79,19 +84,21 @@ Renders of each selectable option:
 
 ## How it works
 
-**A facet is a half-space.** Each cut is specified by a **mast angle** $\theta$ from the vertical and an **index** $i$ on a gear of $n$ positions, giving an outward normal
+**In plain terms.** Picture a rough pebble held against a spinning flat grinding wheel. Each time the cutter presses it down, one flat face — a *facet* — is ground onto the stone; that facet slices off everything on the far side of the flat. To place a facet the cutter tilts the stone by a set angle and rotates it to one of the notched positions on a gear, so a whole design is just a list of "tilt this much, turn to this notch, grind". Do that a few dozen times and the finished gem is simply whatever solid core is left after all the flats have sliced their pieces away. That is exactly what the code does — no sculpting of a surface, just a stack of flat cuts — which is why the shape it makes is guaranteed to be something a real cutter could produce.
 
-$$\mathbf{n}=\big(\sin\theta\cos\tfrac{2\pi i}{n},\ \sin\theta\sin\tfrac{2\pi i}{n},\ \cos\theta\big)$$
+**A facet is a half-space.** Each cut is specified by a **mast angle** $\theta$ from the vertical and an **index** $i$ on a gear of $n$ positions. Those two numbers are spherical coordinates for the direction the facet faces, so the outward normal is
 
-and the facet is the plane $\mathbf{n}\cdot\mathbf{x}=d$, cutting away everything beyond it. The stone is the intersection
+$$\mathbf{n}=\big(\sin\theta\cos\tfrac{2\pi i}{n},\ \sin\theta\sin\tfrac{2\pi i}{n},\ \cos\theta\big):$$
+
+the mast angle tilts the normal down from the vertical axis by $\theta$, and the index sweeps it around that axis in steps of $2\pi/n$, one step per notch on the gear. The facet itself is the plane $\mathbf{n}\cdot\mathbf{x}=d$ — every point whose projection onto that direction is exactly $d$ — and grinding keeps only the side that projects *less*, the half-space $\mathbf{n}\cdot\mathbf{x}\le d$. The stone is what survives all the cuts at once, the intersection
 
 $$K=\bigcap_j \{\mathbf{x} : \mathbf{n}_j\cdot\mathbf{x}\le d_j\},$$
 
-a convex polytope. Because intersecting half-spaces can only ever remove material, the construction cannot produce an impossible stone — every design is cuttable by definition, which is precisely why lapidaries specify them this way.
+which, being a finite intersection of half-spaces, is a **convex polytope** — and the operator builds it exactly that way, computing the vertices where triples of facet planes meet. The geometric payoff of this description is a guarantee: intersecting half-spaces can only ever *remove* material, never invent an overhang or a re-entrant pocket, so the construction cannot produce an uncuttable stone. Every design is cuttable by definition, which is precisely why lapidaries specify facets as planes rather than as surfaces to be modelled.
 
-**Meetpoints.** The craft difficulty is that facets are supposed to meet exactly at points, not to leave slivers. Since $d_j$ controls how deep each cut goes, a design fixes the angles and lets the depths be solved so that specified facets share a vertex. Getting a meetpoint wrong by a fraction of a degree leaves a visible sliver facet on a real stone, and the same is true here.
+**Meetpoints.** The craft difficulty hides in the depths $d_j$. Each $d_j$ says how far down its facet bites, and facets are supposed to meet *exactly* at shared points — three or more planes concurring at a single vertex — not to overshoot and leave thin sliver facets between them. A design therefore fixes the angles $\mathbf{n}_j$ and solves for the depths so that the specified facets concur. Published designs quote those depths to eight decimals, and even so the planes around a culet do not land perfectly on one point; the **Meetpoint Tolerance** is the radius, as a fraction of the girdle, within which the builder treats near-coincident vertices as one. Set it too tight and the culet frays into slivers exactly as a mis-cut stone would; the self-test confirms the Standard Round Brilliant closes to its full 73-facet count under the default.
 
-**Why flat shading is deliberate.** Facets are emitted as single $n$-gons and left flat-shaded on purpose. A gemstone's optical behaviour — its brilliance and fire — is *entirely* a matter of the angles between flat mirrors and the total internal reflection they produce. Smooth shading, or a bevel modifier rounding the edges, destroys the only thing the geometry is for. A rounded-off gem is not a slightly worse gem; it is a lump of glass.
+**Why flat shading is deliberate.** Facets are emitted as single $n$-gons and left flat-shaded on purpose. A gemstone's optical behaviour — its brilliance and fire — is *entirely* a matter of the angles between flat mirrors. Light entering the table strikes a pavilion facet from inside, and if it hits that flat below the material's **critical angle** it undergoes *total internal reflection*, bouncing to a second pavilion facet and back up out of the crown; the pavilion angle chosen above is what tunes those bounces to return light rather than leak it out the bottom. Every one of those reflections depends on the surface normal being genuinely constant across the facet. Smooth shading interpolates a fictitious curved normal, and a bevel modifier rounds the crisp edges into radii — either one smears the mirror and destroys the only thing the geometry is for. A rounded-off gem is not a slightly worse gem; it is a lump of glass.
 
 **Rendering.** For the same reason a stone needs an environment to reflect: with nothing to reflect it renders black, which is physically correct and useless. The gem rig supplies a sky world and a small key light, which is what the documentation figure is shot under.
 
