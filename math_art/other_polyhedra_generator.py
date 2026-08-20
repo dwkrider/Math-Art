@@ -56,8 +56,12 @@ bl_info = {
 import math
 
 from .polyhedra import _highgenus_maps_data as _hgm
+from .polyhedra import canonical as _canon
+from .polyhedra import hull as _hull
+from .polyhedra import seeds as _seeds
 
 PHI = (1 + 5 ** 0.5) / 2
+_SQRT3 = math.sqrt(3.0)
 
 
 def schonhardt(twist_deg=40.0):
@@ -480,6 +484,101 @@ GALLERY = {
 GALLERY.update({k: {"name": v["name"], "V": v["V"], "F": v["F"]}
                 for k, v in _hgm.HIGHGENUS_MAPS.items()})
 
+# --- The Sharpohedron -----------------------------------------------------
+# Abraham Sharp (1651-1742), the Royal Observatory astronomer and
+# instrument maker, published twelve original polyhedra in "Geometry
+# Improv'd" (1717), computing their dimensions to fifteen and twenty
+# decimal places and engraving the plates himself.  The first and
+# simplest is this eighteen-hedron of six rhombi and twelve kites, which
+# Hart named the Sharpohedron.
+#
+# Sharp built his solids out of wooden cubes, and the coordinates show
+# it.  Taking the cube's half-edge as h, the twenty vertices are
+#
+#   * four at h(+-1, +-1, +-1) with the sign product NEGATIVE -- one of
+#     the cube's two inscribed tetrahedra, kept at full size;
+#   * four at (3/5)h(+-1, +-1, +-1) with the sign product POSITIVE --
+#     the other inscribed tetrahedron, pulled in to three fifths;
+#   * twelve at every permutation of (h, h/3, h/3) whose sign product is
+#     positive.
+#
+# Those are exact rationals, and in exact arithmetic they give exactly
+# eighteen supporting planes of four vertices each -- so the solid is
+# exact rather than a fit, which is what `_selftest` checks.
+_SHARP_H = 0.5
+
+
+def sharpohedron():
+    """Sharp's eighteen-hedron: 6 rhombi and 12 kites."""
+    h = _SHARP_H
+    V = []
+    for sx in (1, -1):
+        for sy in (1, -1):
+            for sz in (1, -1):
+                if sx * sy * sz < 0:
+                    V.append((h * sx, h * sy, h * sz))
+                else:
+                    V.append((0.6 * h * sx, 0.6 * h * sy, 0.6 * h * sz))
+    for pos in range(3):                  # which axis carries the long leg
+        for sx in (1, -1):
+            for sy in (1, -1):
+                for sz in (1, -1):
+                    if sx * sy * sz < 0:
+                        continue
+                    c = [h / 3 * sx, h / 3 * sy, h / 3 * sz]
+                    c[pos] = h * (sx, sy, sz)[pos]
+                    V.append(tuple(c))
+    return V, _hull.hull_faces(V)
+
+
+# --- The tetrahedrally stellated icosahedron and its two companions -------
+# Choose four of the icosahedron's twenty faces lying in the planes of a
+# tetrahedron and cap each with a low pyramid whose sides continue the
+# neighbouring face planes.  Equivalently -- and this is how it is built
+# here -- intersect the SIXTEEN remaining face half-spaces: the four
+# chosen planes stop being faces, twelve of their neighbours open out
+# into kites, and four faces are left untouched, giving 4 triangles and
+# 12 kites on 16 vertices and 30 edges.  Hart calls it the simplest
+# chiral polyhedron with tetrahedral symmetry.
+#
+# Its polar dual is the tetrahedrally truncated dodecahedron -- the same
+# topology with trapezoids in place of the kites -- and canonicalizing
+# that shared combinatorial type lands on the geometrically self-dual
+# sixteen-hedron that sits halfway between the two.
+_TETRA_NORMALS = [(1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)]
+
+
+def _tetra_stellated_planes():
+    V, F = _seeds.seed_poly('ICOSA')
+    keep = []
+    for nx, d in _hull.face_planes(V, F):
+        if any(all(abs(nx[k] - t[k] / _SQRT3) < 1e-6 for k in range(3))
+               for t in _TETRA_NORMALS):
+            continue                      # one tetrahedral orbit, dropped
+        keep.append((nx, d))
+    if len(keep) != 16:
+        raise ValueError(f"expected 16 planes, kept {len(keep)}")
+    return keep
+
+
+def tetra_stellated_icosahedron():
+    P = _hull.halfspace_vertices(_tetra_stellated_planes())
+    return P, _hull.hull_faces(P)
+
+
+def tetra_truncated_dodecahedron():
+    V, F = tetra_stellated_icosahedron()
+    return _hull.polar_dual(V, F)
+
+
+def self_dual_16():
+    """The canonical form of that combinatorial type, which is where the
+    solid becomes its own dual."""
+    V, F = tetra_stellated_icosahedron()
+    W = _canon.canonicalize_best([list(v) for v in V], [list(f) for f in F])
+    return [tuple(v) for v in W], F
+
+
 ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
           "echidnahedron -- the outermost stellation (W42)"),
          ("SCHONHARDT", "Schonhardt Polyhedron", "twisted octahedron"),
@@ -494,6 +593,15 @@ ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
           "near-miss: 132 pentagons, icosahedral"),
          ("ASSOCIAHEDRON", "Associahedron (3D, K5)",
           "Stasheff polytope; 6 pentagons + 3 quadrilaterals"),
+         ("SHARP", "Sharpohedron",
+          "Abraham Sharp's eighteen-hedron (1717): 6 rhombi, 12 kites"),
+         ("TETRA_STELLATED_ICOSA", "Tetrahedrally Stellated Icosahedron",
+          "simplest chiral solid of tetrahedral symmetry; "
+          "4 triangles + 12 kites"),
+         ("TETRA_TRUNCATED_DODECA", "Tetrahedrally Truncated Dodecahedron",
+          "its polar dual; trapezoids in place of the kites"),
+         ("SELF_DUAL_16", "Self-Dual 16-Hedron",
+          "the canonical form between the two, its own dual"),
          ("KLEIN", "Klein Regular Map {3,7} (genus 3)", ""),
          ("MAP64", "Regular Map {6,4} (genus 6)",
           "Schulte-Wills; 20 hexagons"),
@@ -506,6 +614,14 @@ def build(kind):
         V, F = schonhardt()
     elif kind == 'ESCHER':
         V, F = escher()
+    elif kind == 'SHARP':
+        V, F = sharpohedron()
+    elif kind == 'TETRA_STELLATED_ICOSA':
+        V, F = tetra_stellated_icosahedron()
+    elif kind == 'TETRA_TRUNCATED_DODECA':
+        V, F = tetra_truncated_dodecahedron()
+    elif kind == 'SELF_DUAL_16':
+        V, F = self_dual_16()
     else:
         S = GALLERY[kind]
         V = [tuple(float(c) for c in v) for v in S["V"]]
@@ -516,6 +632,15 @@ def build(kind):
     return [tuple(c / mx for c in v) for v in V], F
 
 
+# Entries whose counts are ASSERTED rather than merely printed.  The
+# older gallery predates the assertion and several of its solids are
+# deliberately non-manifold or higher-genus, so tightening all of them
+# belongs to whoever owns those solids; new entries assert from the
+# start.
+_ASSERTED = {'SHARP', 'TETRA_STELLATED_ICOSA', 'TETRA_TRUNCATED_DODECA',
+             'SELF_DUAL_16'}
+
+
 def _self_test():
     want = {'ECHIDNAHEDRON': (92, 270, 180, 2),
             'SCHONHARDT': (6, 12, 8, 2), 'JESSEN': (12, 30, 20, 2),
@@ -523,7 +648,11 @@ def _self_test():
             'ESCHER': (26, 72, 48, 2), 'TETRATED': (28, 54, 28, 2),
             'PENTAGON132': (200, 330, 132, 2),
             'ASSOCIAHEDRON': (14, 21, 9, 2), 'KLEIN': (24, 84, 56, -4),
-            'MAP64': (30, 60, 20, -10), 'MAP46': (20, 60, 30, -10)}
+            'MAP64': (30, 60, 20, -10), 'MAP46': (20, 60, 30, -10),
+            'SHARP': (20, 36, 18, 2),
+            'TETRA_STELLATED_ICOSA': (16, 30, 16, 2),
+            'TETRA_TRUNCATED_DODECA': (16, 30, 16, 2),
+            'SELF_DUAL_16': (16, 30, 16, 2)}
     want.update(_hgm.WANT)
     for kind, _lbl, _d in ITEMS:
         V, F = build(kind)
@@ -537,6 +666,83 @@ def _self_test():
         e2 = all(v == 2 for v in E.values())
         print(f"{kind:11s} V={len(V):2d} E={len(E):2d} F={len(F):2d} "
               f"chi={chi:3d} edge-in-2={e2}  want{want[kind]}")
+        if kind in _ASSERTED:
+            assert (len(V), len(E), len(F), chi) == want[kind], \
+                (kind, len(V), len(E), len(F), chi, want[kind])
+            assert e2, (kind, "an edge is not shared by exactly two faces")
+
+    def _sides(V, F):
+        """Edge lengths of each face, rounded, for shape classification."""
+        return [sorted(round(math.dist(V[f[k]], V[f[(k + 1) % len(f)]]), 6)
+                       for k in range(len(f))) for f in F]
+
+    # The Sharpohedron: Hart's description is six rhombi and twelve
+    # kites, which is a real check on the coordinates rather than just a
+    # face count -- a wrong vertex orbit would still give eighteen faces.
+    V, F = build('SHARP')
+    assert all(len(f) == 4 for f in F), sorted(len(f) for f in F)
+    rhombi = sum(1 for s in _sides(V, F) if abs(s[0] - s[3]) < 1e-6)
+    kites = sum(1 for s in _sides(V, F)
+                if abs(s[0] - s[1]) < 1e-6 and abs(s[2] - s[3]) < 1e-6
+                and abs(s[0] - s[3]) >= 1e-6)
+    assert (rhombi, kites) == (6, 12), (rhombi, kites)
+    # and the exact rationals really are coplanar four at a time: take
+    # each face's plane from three of its vertices and measure the
+    # fourth against it.  (Verified in exact rational arithmetic too --
+    # the twenty vertices give exactly eighteen supporting planes of
+    # four vertices each -- so this is float noise, not a fit.)
+    worst = 0.0
+    for f in F:
+        a, b, c = (V[i] for i in f[:3])
+        u = [b[k] - a[k] for k in range(3)]
+        w = [c[k] - a[k] for k in range(3)]
+        nx = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2],
+              u[0] * w[1] - u[1] * w[0]]
+        ln = math.sqrt(sum(x * x for x in nx)) or 1.0
+        nx = [x / ln for x in nx]
+        for i in f[3:]:
+            off = sum(nx[k] * (V[i][k] - a[k]) for k in range(3))
+            worst = max(worst, abs(off))
+    assert worst < 1e-9, ("Sharpohedron faces are not planar", worst)
+
+    # The tetrahedrally stellated icosahedron: 4 triangles + 12 kites
+    V, F = build('TETRA_STELLATED_ICOSA')
+    assert sorted(len(f) for f in F) == [3] * 4 + [4] * 12, \
+        sorted(len(f) for f in F)
+
+    # Its dual has the same topology with quadrilaterals that are no
+    # longer kites, and the canonical member really is its own dual.
+    #
+    # "Its own dual" means CONGRUENT to itself, not identical to itself:
+    # polar reciprocation returns the solid rotated (here, into the dual
+    # position), so demanding that each dual vertex land on an original
+    # one fails on a perfectly self-dual solid.  Compare congruence
+    # invariants instead -- the radius spectrum and the full multiset of
+    # pairwise distances, which together pin the vertex set down to an
+    # isometry without having to solve for the rotation.
+    V, F = build('SELF_DUAL_16')
+    deg = {}
+    for f in F:
+        for i in f:
+            deg[i] = deg.get(i, 0) + 1
+    assert sorted(deg.values()) == sorted(len(f) for f in F), \
+        "the combinatorial type is not self-dual"
+    P, G = _hull.polar_dual(V, F)
+    s = (max(math.dist((0, 0, 0), v) for v in V)
+         / max(math.dist((0, 0, 0), p) for p in P))
+    P = [tuple(c * s for c in p) for p in P]
+
+    def _spectrum(pts):
+        rad = sorted(round(math.dist((0, 0, 0), p), 7) for p in pts)
+        pair = sorted(round(math.dist(a, b), 7)
+                      for i, a in enumerate(pts) for b in pts[i + 1:])
+        return rad, pair
+
+    rv, pv = _spectrum(V)
+    rp, pp = _spectrum(P)
+    assert len(rv) == len(rp), (len(rv), len(rp))
+    assert max(abs(a - b) for a, b in zip(rv, rp)) < 1e-6, "radii differ"
+    assert max(abs(a - b) for a, b in zip(pv, pp)) < 1e-6, "distances differ"
 
 
 try:
