@@ -3,7 +3,21 @@
 ![Hyperbolic Tiling](../images/hyperbolic_tiling.png)
 
 ## Overview
-Regular $\{p,q\}$ tilings of the hyperbolic plane -- $q$ regular $p$-gons meeting at every vertex -- realized as printable relief models after Henry Segerman. The tiling is generated in the hyperboloid model of $\mathbb H^2$ via the $(p,q,2)$ reflection group, two-coloured by word parity, and then mapped into one of three pictures: the conformal **Poincare disk** plaque, the **hemisphere** model, or the **pseudosphere** (tractricoid), onto which a strip of $\mathbb H^2$ is wrapped genuinely isometrically.
+
+Add a hyperbolic tiling: any Wythoff uniform tiling of the hyperbolic plane, as a flat disk plaque or wrapped onto a curved 3D surface.
+
+Regular $\{p,q\}$ tilings of the hyperbolic plane -- $q$ regular $p$-gons meeting at every vertex -- are the tilings that cannot exist on a flat floor, because too many polygons crowd each corner. Realized here as printable relief models after Henry Segerman, the tiling is generated in the hyperboloid model of $\mathbb H^2$ via the $(p,q,2)$ reflection group, two-coloured by word parity, and then mapped into one of four pictures: the conformal **Poincare disk** or projective **Klein disk** plaques, the **hemisphere** model, or the **pseudosphere** (tractricoid), onto which a strip of $\mathbb H^2$ is wrapped genuinely isometrically.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Patterns ▸ Hyperbolic Tiling*.
+2. **Set p and q** — the Schlafli symbol $\{p,q\}$: $q$ regular $p$-gons meet at every vertex. Leave **r** at 2 (the right triangle that gives the classic regular families) or raise it for the general $(p,q,r)$ group. The triple must be genuinely hyperbolic, $\tfrac1p+\tfrac1q+\tfrac1r<1$; if it is not, the operator reports the error and cancels.
+3. **Pick a Form.** **Regular {p,q}** is the plain tiling; the other six are its Wythoff relatives — **Truncated**, **Rectified**, **Bitruncated**, **Cantellated**, **Omnitruncated** and the chiral **Snub** — each obtained by activating a different set of the triangle's mirrors.
+4. **Pick a Model.** **Poincare Disk** and **Klein Disk** are the two flat 2D pictures (Poincare keeps angles and curves the edges; Klein keeps geodesics straight); **Hemisphere** and **Pseudosphere** are the curved 3D surfaces.
+5. **Grow the tiling** with **Depth** (how long a reflection word is explored) and **Max Group Elements** (the hard cap). The hyperbolic plane is infinite, so these decide how much of it you build.
+6. **Colour it** with **Color By** — By Sides, By Tile Type, **Parity (Alternating)** or Uniform. Parity two-tones the faces across every edge and reveals **Hide Off-Parity Tiles**, which drops one colour class entirely.
+7. **Set the model-specific controls.** The flat models expose **Margin** (grout lines), **Relief Height** and a **Backing Disk** (with **Base Thickness**); the curved models expose **Shell Thickness**, and the pseudosphere adds a **Cusp Cap** that clips its thinning horn.
+8. **Choose Separate Tiles** to emit each tile as its own object. The operator reports the form and the vertex/face (or tile) count it built.
 
 ## Options
 
@@ -48,21 +62,25 @@ Renders of each selectable option:
 
 ## How it works
 
-**When is $\{p,q\}$ hyperbolic?** The angle sum condition. A regular $p$-gon with vertex angle $2\pi/q$ tiles the sphere, plane, or hyperbolic plane according as
-$$\tfrac1p+\tfrac1q \;>,\;=,\;<\;\tfrac12 .$$
-Equivalently, in terms of the $(p,q,2)$ triangle, the tiling is hyperbolic iff $\cos(\pi/q)>\sin(\pi/p)$.
+**In plain terms.** On a flat floor you can tile with squares — four at each corner — or with triangles or hexagons, but the choices run out fast: try to fit four pentagons around a point and they overlap, because their corners add up to more than a full turn. The **hyperbolic plane** is a surface with extra room built in everywhere, curving away from itself like an endlessly ruffled lettuce leaf or a crocheted coral, and in that extra room the impossible tilings fit — seven triangles, or five squares, around every single vertex. That is what the symbol $\{p,q\}$ names: $q$ regular $p$-gons meeting at each corner. Because a ruffled surface cannot be laid out flat without distortion, we squash the whole infinite tiling into a disk — tiles shrinking as they crowd toward the rim — or drape a strip of it over a curved horn.
 
-**Hyperboloid model and the reflection group.** The tiling is built in the hyperboloid model of $\mathbb H^2$ sitting in Minkowski space $\mathbb R^{2,1}$ with inner product $\langle x,y\rangle = x_1y_1+x_2y_2-x_3y_3$; points of $\mathbb H^2$ satisfy $\langle x,x\rangle=-1$, $t>0$. The $(p,q,2)$ group is realized by three mirrors with unit spacelike normals $\mathbf n_0,\mathbf n_1,\mathbf n_2$ whose pairwise Gram products encode the triangle angles:
+**When is $\{p,q\}$ hyperbolic?** It comes down to the angle sum at a vertex. A regular $p$-gon cut to have vertex angle $2\pi/q$ tiles the sphere, the flat plane, or the hyperbolic plane according as
+$$\tfrac1p+\tfrac1q \;>,\;=,\;<\;\tfrac12 ,$$
+because $q$ such corners overfill, exactly fill, or underfill the $2\pi$ around a vertex — and that underfilling is the "extra room" only a negatively curved surface can supply. Equivalently, in terms of the $(p,q,2)$ triangle whose reflections generate the tiling, it is hyperbolic iff $\cos(\pi/q)>\sin(\pi/p)$.
+
+**The hyperboloid model and the reflection group.** Everything is built in the hyperboloid model of $\mathbb H^2$, which sits in Minkowski space $\mathbb R^{2,1}$ with the indefinite inner product $\langle x,y\rangle = x_1y_1+x_2y_2-x_3y_3$; the plane itself is the upper sheet $\langle x,x\rangle=-1$, $t>0$. This model is chosen because hyperbolic isometries become ordinary linear maps here — reflections are matrices — so generating the tiling is just matrix multiplication. The $(p,q,2)$ group is realized by three mirrors with unit spacelike normals $\mathbf n_0,\mathbf n_1,\mathbf n_2$ whose pairwise Gram products encode the triangle angles:
 $$\langle\mathbf n_0,\mathbf n_1\rangle=-\cos\tfrac\pi p,\quad \langle\mathbf n_1,\mathbf n_2\rangle=-\cos\tfrac\pi q,\quad \langle\mathbf n_0,\mathbf n_2\rangle=0\ (\text{the right angle}).$$
-Reflection in a mirror is $x\mapsto x-2\langle x,\mathbf n\rangle\,\mathbf n$. A breadth-first search over reflection words generates all tiles up to *Depth*, each represented by its group matrix; duplicates are pruned by the rounded ambient centroid, and the word length modulo 2 gives the two-colouring. Every fundamental triangle is barycentrically subdivided ($2^{\text{subdiv}}$) and each point reprojected to $\langle x,x\rangle=-1$, so edges follow geodesics after mapping into the target model.
+Reflection in a mirror is $x\mapsto x-2\langle x,\mathbf n\rangle\,\mathbf n$, geometrically the mirror-image of $x$ across that mirror plane. A breadth-first search over reflection words generates all tiles up to *Depth*, each represented by its group matrix; duplicates are pruned by the rounded ambient centroid, and the word length modulo 2 gives the two-colouring. Every fundamental triangle is barycentrically subdivided ($2^{\text{subdiv}}$) and each point reprojected to $\langle x,x\rangle=-1$, so edges follow true geodesics after mapping into the target model.
 
-**Poincare disk.** The hyperboloid maps to the conformal disk by $(x,y,t)\mapsto(x,y)/(1+t)$. Tiles of one parity are raised to `relief` above a backing slab of radius $\approx1$.
+**The Wythoff forms.** A uniform tiling is the orbit of a single **seed** point in the fundamental triangle, and *which* corner (or edge, or interior point) the seed sits at is what distinguishes the Form. Ringing one mirror pins the seed to the opposite corner and gives the **Regular** $\{p,q\}$; ringing two puts it on an edge and truncates or rectifies; ringing all three puts it at the incentre for the **Omnitruncated** tiling; and keeping only the rotation subgroup (dropping the mirrors) gives the chiral **Snub**. A corner of order $n$ with $k$ of its two mirrors active contributes a face there — an $n$-gon when $k=1$, a $2n$-gon when $k=2$ — so one seed choice reshapes every tile at once.
 
-**Hemisphere.** Klein-disk coordinates $H_{xy}/H_t$ are lifted vertically onto the upper unit hemisphere $z=\sqrt{1-x^2-y^2}$, and tiles are offset radially by parity, giving a shell.
+**Poincare and Klein disks.** The infinite plane is shown in a finite disk two ways. The **Klein** map $(x,y,t)\mapsto(x,y)/t$ sends geodesics to straight chords, so each face is drawn as a straight-edged polygon of its corners — it distorts angles but keeps lines honest. The **Poincare** map $(x,y,t)\mapsto(x,y)/(1+t)$ is conformal — it preserves angles at the cost of bending geodesics into circular arcs, so every edge is subdivided along the true hyperboloid geodesic before projecting, giving the familiar arcs that meet the rim at right angles. Tiles of one parity are raised to `relief` above a backing slab of radius $\approx1$.
 
-**Pseudosphere isometry.** The tractricoid
+**Hemisphere.** The Klein-disk coordinates are lifted vertically onto the upper unit hemisphere $z=\sqrt{1-x^2-y^2}$, and tiles are offset radially by parity into a shell. This is the halfway house between the two disks: projecting the hemisphere straight down to the equatorial plane recovers the Klein disk, while projecting it stereographically from the south pole recovers the Poincare disk.
+
+**Pseudosphere isometry.** The other curved model is genuinely isometric — it bends a strip of $\mathbb H^2$ into 3D without stretching it anywhere. The tractricoid
 $$\sigma(u,v)=(\operatorname{sech}u\cos v,\ \operatorname{sech}u\sin v,\ u-\tanh u),\quad u\ge0,$$
-has first fundamental form $ds^2=\tanh^2u\,du^2+\operatorname{sech}^2u\,dv^2$. Substituting $x=v,\ y=\cosh u$ into the upper-half-plane metric $(dx^2+dy^2)/y^2$ yields the **same** form, so $y=\cosh u$ (not $y=e^u$, which gives a different, horocyclic chart) wraps the UHP region $y\ge1$, $x$ taken mod $2\pi$, isometrically onto the pseudosphere -- a genuinely isometric embedding of a strip of $\mathbb H^2$. The tiling is carried from the disk to the UHP by the Cayley map, then Moebius-shifted to centre the view; tiles are clipped to $1\le y\le y_{\text{cap}}$ (the $u=0$ rim to the thinning cusp) over one seam period $0\le x\le2\pi$.
+has first fundamental form $ds^2=\tanh^2u\,du^2+\operatorname{sech}^2u\,dv^2$. Substituting $x=v,\ y=\cosh u$ into the upper-half-plane metric $(dx^2+dy^2)/y^2$ yields the **same** form, so $y=\cosh u$ (not $y=e^u$, which gives a different, horocyclic chart) wraps the UHP region $y\ge1$, $x$ taken mod $2\pi$, isometrically onto the pseudosphere -- a genuinely isometric embedding of a strip of $\mathbb H^2$. The tiling is carried from the disk to the UHP by the Cayley map, then Moebius-shifted to centre the view; tiles are clipped to $1\le y\le y_{\text{cap}}$ (the $u=0$ rim out to the thinning cusp) over one seam period $0\le x\le2\pi$ — which is why the horn cannot be drawn all the way to its infinitely long tip.
 
 Every emitted tile is its own watertight closed shell (top, reversed bottom, and wall quads along the boundary); for printing the shells overlap so a slicer/boolean union is trivial.
 
