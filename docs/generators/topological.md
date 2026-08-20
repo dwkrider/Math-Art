@@ -3,7 +3,17 @@
 ![Topological Surface](../images/topological.png)
 
 ## Overview
-The classic topology menagerie: Klein bottles, the two RP² immersions (cross-cap and Steiner's Roman surface), Boy's surface, orientable genus-$g$ handlebodies, and solid closed strips with $n$ half-twists (the $n=1$ Mobius band is printable). The presets follow chapter 6 of Henry Segerman's *Visualizing Mathematics with 3D Printing*. Non-orientable surfaces cannot embed in 3-space, so the Klein and RP² presets are immersions with self-intersections; boundary identifications are made by vertex index so each mesh carries the correct Euler characteristic.
+
+The classic **topology menagerie**: Klein bottles, the two $\mathbb{RP}^2$ immersions (cross-cap and Steiner's Roman surface), Boy's surface, orientable genus-$g$ handlebodies, and solid closed strips with $n$ half-twists (the $n=1$ Möbius band is printable). The presets follow chapter 6 of Henry Segerman's *Visualizing Mathematics with 3D Printing*. Non-orientable surfaces cannot embed in 3-space, so the Klein and $\mathbb{RP}^2$ presets are **immersions** with self-intersections; the boundary identifications are made by vertex index, so each mesh still carries the exact Euler characteristic of the abstract surface it models.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Topological Surface* and choose a surface from the submenu (or switch it later with **Surface** in the redo panel).
+2. **Pick the Surface.** The eight presets fall into four groups: the two **Klein bottles** (the iconic bottle and the figure-8 / twisted-torus form) — closed one-sided surfaces of Euler characteristic $0$; the **$\mathbb{RP}^2$ immersions** (Cross-Cap, Roman Surface, Boy's Surface) — three ways to squeeze the projective plane into space, Euler characteristic $1$; the **Genus-g Surface** — an ordinary orientable handlebody with $g$ holes; and the **Twisted Strip (solid)** — a printable band, a Möbius band when the twist count is odd. The Sudanese Möbius Band is Lawson's minimal Möbius band, the one embedded (self-intersection-free) member.
+3. **Set the grid density with Resolution U / V** — samples around ($u$) and across ($v$) the parametric surfaces (for the genus handlebody, U doubles as the implicit-grid density).
+4. **Dial the mode-specific controls.** **Genus** sets the number of handles (1–5) for the Genus-g surface. For the Twisted Strip, **Half-Twists** is the number of half-turns per lap (1 = Möbius), and **Strip Width**, **Strip Thickness** and **Center Ridge** shape its solid cross-section.
+5. **Choose the output.** **Scale** resizes the result; **Smooth Shading** toggles shading normals; **Thickness** (immersed non-orientable presets only) adds a Solidify shell — note this thickens the surface into its orientable *double* wherever it passes through itself, which is fine for viewing and printing.
+6. **On the reported check:** there is no per-build read-out here — the meshes are index-glued so that each carries the correct Euler characteristic *by construction* ($0$ for the Klein bottles, $1$ for the $\mathbb{RP}^2$ models, $2-2g$ for the genus-$g$ boundary), a property the headless tests verify rather than the operator printing it.
 
 ## Options
 
@@ -49,7 +59,9 @@ Renders of each selectable option:
 
 ## How it works
 
-Each preset is a distinct construction; all are welded (or index-identified) so their combinatorial topology is exact.
+**In plain terms.** Topology is the study of shape when you are allowed to bend and stretch but never cut or glue — so a coffee mug and a doughnut count as the same surface, since each has exactly one hole. Some famous surfaces are perfectly sensible as *abstract* objects but simply do not fit inside our three-dimensional space without passing through themselves: the Klein bottle's neck has to plunge through its own wall, and the projective plane can only be shown as a self-crossing knot of a surface. A drawing that lets a surface pass through itself like this is called an **immersion** — honest everywhere locally, cheating only along the crossing curve. The trick this generator uses is to keep the *bookkeeping* correct even where the picture cheats: it decides which edge of the sheet is glued to which by matching up **vertex numbers**, not by fusing points that happen to land in the same place, so the mesh remembers it is (say) a Klein bottle even though it looks like a bottle poured through its own side. The single number that pins down which surface you have is the **Euler characteristic** $\chi = V - E + F$ (vertices minus edges plus faces) — a count that survives all the bending and stretching, so getting it right is the proof the construction is faithful.
+
+Each preset is a distinct construction; all are welded (or index-identified) so their combinatorial topology is exact — meaning $V-E+F$ comes out at the abstract surface's true $\chi$, not the $\chi$ of whatever self-intersecting picture is drawn.
 
 **Klein bottle** (the iconic bottle shape) uses the standard smooth closed-form immersion over $u\in[0,\pi]$, $v\in[0,2\pi]$: a degree-high trigonometric parametrization $x(u,v),y(u,v),z=\tfrac{2}{15}\sin v\,(3+5\cos u\sin u)$. The $u=\pi$ rim coincides with $u=0$ under $v\mapsto\pi-v$, but the seam is left **split** (coincident duplicate vertices, no index gluing): welding it would flip the winding there and darken the shading crease. Cut along that rim the surface is an orientable cylinder, so $\chi=0$.
 
