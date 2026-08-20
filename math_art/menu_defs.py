@@ -81,10 +81,12 @@ SURFACES = Menu(
         _e("mesh.spherical_harmonic_add", 'SURFACE_NSPHERE'),
         _e("mesh.orbital_add", 'META_BALL'),
         _e("mesh.hyperbolic_surface_add", 'MESH_CAPSULE'),
-        _e("mesh.delaunay_surface_add", 'META_CAPSULE'),
+        # One constant-mean-curvature generator: Delaunay surfaces and
+        # their roulettes, bubbletons grafted onto them, Wente's closed
+        # torus, and the elastic tori of the spherical space form.
+        _e("mesh.delaunay_surface_add", 'META_CAPSULE',
+           "CMC Surfaces"),
         _e("mesh.bryant_surface_add", 'MESH_UVSPHERE'),
-        _e("mesh.bubbleton_add", 'META_BALL'),
-        _e("mesh.wente_torus_add", 'MESH_TORUS'),
         _e("mesh.crochet_add", 'MOD_CLOTH'),
         _e("mesh.willmore_add", 'MESH_TORUS', "Willmore Surface"),
     ])

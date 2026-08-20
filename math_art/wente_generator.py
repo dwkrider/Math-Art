@@ -97,7 +97,10 @@
 #   terms of theta-functions", Math. Ann. 290 (1991), 209-245 -- the
 #   general theory these are the simplest case of.
 
-bl_info = {
+# LIBRARY, not a generator: no operator of its own.  Wente tori are
+# a mode of `mesh.delaunay_surface_add`, which is the repository's
+# constant-mean-curvature generator.
+_UNUSED_bl_info = {
     "name": "Wente Torus",
     "author": "Math Art project",
     "version": (1, 0, 0),
@@ -356,104 +359,6 @@ def mean_curvature_grid(X, hx, hy):
 # ==========================================================================
 # Blender layer
 # ==========================================================================
-
-try:
-    import bpy
-    from bpy.props import IntProperty, FloatProperty, BoolProperty
-    _IN_BLENDER = True
-except ImportError:
-    _IN_BLENDER = False
-
-
-if _IN_BLENDER:
-
-    class MESH_OT_wente_torus_add(bpy.types.Operator):
-        """Add a Wente torus: a closed constant-mean-curvature torus,
-        the counterexample to Hopf's conjecture"""
-        bl_idname = "mesh.wente_torus_add"
-        bl_label = "Wente Torus"
-        bl_options = {'REGISTER', 'UNDO'}
-
-        lobes_l: IntProperty(
-            name="Closure l", default=5, min=2, max=24,
-            description="Numerator of the closure fraction l/n, which "
-                        "must lie strictly between 1 and 2.  Walter's "
-                        "own figures use 5/4")
-        lobes_n: IntProperty(
-            name="Lobes", default=4, min=1, max=24,
-            description="Denominator n of the closure fraction l/n, and "
-                        "the lobe count: the torus "
-                        "closes after n periods of the profile")
-        ures: IntProperty(name="Along Profile", default=240, min=24,
-                          max=1200)
-        vres: IntProperty(name="Around", default=120, min=12, max=800)
-        shade_smooth: BoolProperty(name="Smooth Shading", default=True)
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
-
-        def execute(self, context):
-            ratio = self.lobes_l / self.lobes_n
-            if not 1.0 < ratio < 2.0:
-                self.report(
-                    {'ERROR'},
-                    f"l/n = {self.lobes_l}/{self.lobes_n} = {ratio:.4f} "
-                    f"must lie strictly between 1 and 2 -- outside that "
-                    f"range Walter's period condition has no solution")
-                return {'CANCELLED'}
-            verts, faces, info = build_surface(
-                self.lobes_l, self.lobes_n, self.ures, self.vres,
-                self.scale)
-            me = bpy.data.meshes.new("Wente Torus")
-            me.from_pydata([tuple(v) for v in verts], [],
-                           [tuple(int(i) for i in f) for f in faces])
-            me.validate(clean_customdata=True)
-            if self.shade_smooth:
-                me.polygons.foreach_set('use_smooth',
-                                        [True] * len(me.polygons))
-            me.update()
-            obj = bpy.data.objects.new("Wente Torus", me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
-            for o in context.selected_objects:
-                o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            self.report(
-                {'INFO'},
-                f"Wente torus l/n = {self.lobes_l}/{self.lobes_n}: "
-                f"V={len(me.vertices)} F={len(me.polygons)}, shape angle "
-                f"{info['theta']:.5f} deg, period rotation "
-                f"{info['omega']:.4f} deg, H = {H_FIXED}")
-            return {'FINISHED'}
-
-        def draw(self, context):
-            lay = self.layout
-            lay.use_property_split = True
-            lay.prop(self, 'lobes_l')
-            lay.prop(self, 'lobes_n')
-            ratio = self.lobes_l / max(self.lobes_n, 1)
-            if not 1.0 < ratio < 2.0:
-                lay.label(text="l/n must be strictly between 1 and 2",
-                          icon='ERROR')
-            lay.prop(self, 'ures')
-            lay.prop(self, 'vres')
-            lay.prop(self, 'shade_smooth')
-            lay.prop(self, 'scale')
-
-    def _menu_func(self, context):
-        self.layout.operator("mesh.wente_torus_add", icon='MESH_TORUS')
-
-    ADD_MENU = True    # the Math Art extension menu sets this False
-
-    def register():
-        bpy.utils.register_class(MESH_OT_wente_torus_add)
-        if ADD_MENU:
-            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
-
-    def unregister():
-        if ADD_MENU:
-            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
-        bpy.utils.unregister_class(MESH_OT_wente_torus_add)
 
 
 def _selftest():

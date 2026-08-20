@@ -453,7 +453,7 @@ if _IN_BLENDER:
         """Add a Delaunay surface: a surface of revolution of constant
         mean curvature, traced by the focus of a rolling conic"""
         bl_idname = "mesh.delaunay_surface_add"
-        bl_label = "Delaunay Surface"
+        bl_label = "CMC Surface"
         bl_options = {'REGISTER', 'UNDO'}
 
         mode: EnumProperty(
@@ -471,6 +471,14 @@ if _IN_BLENDER:
                     "constant-radius member"),
                    ('CATENOID', "Catenoid", "rolling PARABOLA -- the "
                     "minimal (H = 0) limit of the family"),
+                   ('BUBBLETON', "Bubbleton",
+                    "a Delaunay surface with bubbles grafted on at "
+                    "unchanged mean curvature -- the soliton of the "
+                    "sinh-Gordon equation governing CMC surfaces"),
+                   ('WENTE', "Wente Torus",
+                    "a CLOSED CMC torus: Wente's counterexample to "
+                    "Hopf's conjecture that every closed CMC surface "
+                    "is a round sphere"),
                    ('ELASTIC_TORUS', "Elastic Torus (S3)", "closed "
                     "elastic curve of the HYPERBOLIC PLANE, revolved -- "
                     "the compact member of the family: a constrained "
@@ -550,11 +558,94 @@ if _IN_BLENDER:
             name="Height", default=2.5, min=0.2, max=40.0,
             description="Extent of the cylinder and catenoid, which "
                         "have no period of their own")
+        # -- Bubbleton mode.  Identifiers carry a bub_ prefix where they
+        # would collide with the Delaunay/elastic-torus ones; the visible
+        # labels stay plain nouns.
+        bub_preset: EnumProperty(
+            name="Preset",
+            items=[('CUSTOM', "Custom", "use the sliders below"),
+                   ('CYL2', "Cylinder, 2 lobes",
+                    "the classic bubbleton: a two-lobed bubble on a "
+                    "straight cylinder"),
+                   ('CYL3', "Cylinder, 3 lobes", "three lobes"),
+                   ('CYL5', "Cylinder, 5 lobes",
+                    "five lobes -- the bubble tightens as lobes are "
+                    "added"),
+                   ('UND2', "Unduloid, 2 lobes",
+                    "a two-lobed bubble riding on an unduloid"),
+                   ('UND3', "Unduloid, 3 lobes", "three lobes"),
+                   ('NOD2', "Nodoid, 2 lobes",
+                    "on a nodoid -- needs the principal value of the "
+                    "third-kind elliptic integral"),
+                   ('TWIST', "Twizzler (3 lobes, 2 covers)",
+                    "closes only on the double cover, so it winds"),
+                   ('DOUBLE_UND', "Double bubbleton (unduloid)",
+                    "two-lobed AND three-lobed bubbles, by Bianchi "
+                    "permutability"),
+                   ('SPLASH', "Colliding bubbles (2 and 3)",
+                    "a two-lobed bubble meeting a three-lobed one")],
+            default='CYL2')
+        bub_necksize: FloatProperty(
+            name="Necksize", default=0.5, min=-3.0, max=0.5,
+            description="Necksize r of the underlying Delaunay surface: "
+                        "0.5 is the cylinder, (0, 0.5) unduloids, "
+                        "negative nodoids.  r = 0 is excluded")
+        bub_lobes: IntProperty(
+            name="Lobes", default=3, min=2, max=12,
+            description="Lobes n on the bubble; the resonance point is "
+                        "fixed by t = n/m")
+        bub_covers: IntProperty(
+            name="Covers", default=1, min=1, max=6,
+            description="The section closes only on the m-fold cover; "
+                        "must be coprime to the lobe count")
+        bub_second_lobes: IntProperty(
+            name="Second Bubble Lobes", default=0, min=0, max=12,
+            description="Graft a SECOND bubble with this many lobes by "
+                        "Bianchi permutability; 0 leaves one bubble")
+        bub_second_covers: IntProperty(
+            name="Second Bubble Covers", default=1, min=1, max=6,
+            description="Cover count of the second bubble")
+        bub_second_shift: FloatProperty(
+            name="Second Bubble Shift", default=-8.0, min=-20.0,
+            max=20.0,
+            description="Slides the second bubble along the axis; two "
+                        "bubbles at the same shift merge into one")
+        bub_periods: FloatProperty(
+            name="Delaunay Periods", default=0.0, min=0.0, max=12.0,
+            description="Axial window in Delaunay periods; 0 fits the "
+                        "window to the bubble automatically")
+        bub_pad: FloatProperty(
+            name="Surroundings", default=3.5, min=1.0, max=10.0,
+            description="With automatic framing, how much surface to "
+                        "keep either side of the bubble")
+        bub_shift: FloatProperty(
+            name="Bubble Shift", default=0.0, min=-6.0, max=6.0,
+            description="Slides the bubble along the axis")
+        bub_spin: FloatProperty(
+            name="Bubble Spin", default=0.0, min=-180.0, max=180.0,
+            description="Rotates the bubble about the axis (degrees)")
+
+        # -- Wente mode
+        wente_l: IntProperty(
+            name="Closure l", default=5, min=2, max=24,
+            description="Numerator of the closure fraction l/n, which "
+                        "must lie strictly between 1 and 2.  Walter's "
+                        "own figures use 5/4")
+        wente_n: IntProperty(
+            name="Lobes", default=4, min=1, max=24,
+            description="Denominator n of the closure fraction l/n, and "
+                        "the lobe count: the torus closes after n "
+                        "periods of the profile")
+
         shade_smooth: BoolProperty(name="Smooth Shading", default=True)
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
 
         def execute(self, context):
+            if self.mode == 'BUBBLETON':
+                return self._build_bubbleton(context)
+            if self.mode == 'WENTE':
+                return self._build_wente(context)
             if self.mode == 'ELASTIC_TORUS':
                 # the spherical member of the family: mathematics in
                 # constrained_willmore_generator (see module header)
@@ -671,10 +762,129 @@ if _IN_BLENDER:
                 f"(exact {0.0 if self.mode == 'CATENOID' else H_FIXED})")
             return {'FINISHED'}
 
+        def _finish(self, context, verts, faces, name, msg):
+            me = bpy.data.meshes.new(name)
+            me.from_pydata([tuple(v) for v in verts], [],
+                           [tuple(int(i) for i in f) for f in faces])
+            me.validate(clean_customdata=True)
+            if self.shade_smooth:
+                me.polygons.foreach_set('use_smooth',
+                                        [True] * len(me.polygons))
+            me.update()
+            obj = bpy.data.objects.new(name, me)
+            context.collection.objects.link(obj)
+            obj.location = context.scene.cursor.location
+            for o in context.selected_objects:
+                o.select_set(False)
+            obj.select_set(True)
+            context.view_layer.objects.active = obj
+            self.report({'INFO'}, msg)
+            return {'FINISHED'}
+
+        def _build_bubbleton(self, context):
+            from . import bubbleton_generator as bub
+            if self.bub_preset != 'CUSTOM':
+                r, n, m = bub.PRESETS[self.bub_preset]
+                extra = ([bub.SECOND[self.bub_preset]]
+                         if self.bub_preset in bub.SECOND else [])
+            else:
+                r, n, m = (self.bub_necksize, self.bub_lobes,
+                           self.bub_covers)
+                extra = ([(self.bub_second_lobes, self.bub_second_covers,
+                           self.bub_second_shift)]
+                         if self.bub_second_lobes > 0 else [])
+            extra = [(en, em, math.exp(esh)) for (en, em, esh) in extra]
+            if math.gcd(n, m) != 1:
+                self.report({'ERROR'},
+                            f"lobes {n} and covers {m} must be coprime")
+                return {'CANCELLED'}
+            if abs(r) < 1e-3:
+                self.report({'ERROR'},
+                            "necksize r = 0 is excluded (the resonance "
+                            "point divides by 2 r (1 - r))")
+                return {'CANCELLED'}
+            for (en, em, _) in [(n, m, 0)] + list(extra):
+                if not bub.is_admissible(r, en, em):
+                    self.report(
+                        {'ERROR'},
+                        f"{en}/{em} is not a resonance point at necksize "
+                        f"{r:.3f}: the spectral parameter comes out "
+                        f"complex, or the elliptic characteristic lands "
+                        f"exactly on 1.  A cylinder needs n > m; nodoids "
+                        f"admit n < m")
+                    return {'CANCELLED'}
+            ratio = math.exp(self.bub_shift) * complex(
+                math.cos(math.radians(self.bub_spin)),
+                math.sin(math.radians(self.bub_spin)))
+            verts, faces, info = bub.build_surface(
+                r, n, m, self.bub_periods, self.ures, self.vres, ratio,
+                1.0 + 0j, self.scale, self.bub_pad, tuple(extra))
+            mu, a, b, t = info
+            tag = ('+' + '+'.join(f'{x}/{y}' for x, y, _ in extra)
+                   if extra else '')
+            return self._finish(
+                context, verts, faces, "Bubbleton",
+                f"Bubbleton n/m = {n}/{m}{tag} on necksize {r:.3f}: "
+                f"V={len(verts)} F={len(faces)}, resonance mu={mu:.6f}, "
+                f"t={t:.4f}")
+
+        def _build_wente(self, context):
+            from . import wente_generator as wen
+            ratio = self.wente_l / max(self.wente_n, 1)
+            if not 1.0 < ratio < 2.0:
+                self.report(
+                    {'ERROR'},
+                    f"l/n = {self.wente_l}/{self.wente_n} = {ratio:.4f} "
+                    f"must lie strictly between 1 and 2 -- outside that "
+                    f"range Walter's period condition has no solution")
+                return {'CANCELLED'}
+            verts, faces, info = wen.build_surface(
+                self.wente_l, self.wente_n, self.ures, self.vres,
+                self.scale)
+            return self._finish(
+                context, verts, faces, "Wente Torus",
+                f"Wente torus l/n = {self.wente_l}/{self.wente_n}: "
+                f"V={len(verts)} F={len(faces)}, shape angle "
+                f"{info['theta']:.5f} deg, period rotation "
+                f"{info['omega']:.4f} deg, H = {wen.H_FIXED}")
+
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'mode')
+            if self.mode == 'BUBBLETON':
+                lay.prop(self, 'bub_preset')
+                if self.bub_preset == 'CUSTOM':
+                    lay.prop(self, 'bub_necksize')
+                    lay.prop(self, 'bub_lobes')
+                    lay.prop(self, 'bub_covers')
+                    if math.gcd(self.bub_lobes, self.bub_covers) != 1:
+                        lay.label(text="Lobes and covers must be coprime",
+                                  icon='ERROR')
+                    lay.prop(self, 'bub_second_lobes')
+                    if self.bub_second_lobes > 0:
+                        lay.prop(self, 'bub_second_covers')
+                        lay.prop(self, 'bub_second_shift')
+                lay.prop(self, 'bub_pad')
+                lay.prop(self, 'bub_periods')
+                lay.prop(self, 'bub_shift')
+                lay.prop(self, 'bub_spin')
+                lay.prop(self, 'ures')
+                lay.prop(self, 'vres')
+                lay.prop(self, 'shade_smooth')
+                lay.prop(self, 'scale')
+                return
+            if self.mode == 'WENTE':
+                lay.prop(self, 'wente_l')
+                lay.prop(self, 'wente_n')
+                if not 1.0 < self.wente_l / max(self.wente_n, 1) < 2.0:
+                    lay.label(text="l/n must be strictly between 1 and 2",
+                              icon='ERROR')
+                lay.prop(self, 'ures')
+                lay.prop(self, 'vres')
+                lay.prop(self, 'shade_smooth')
+                lay.prop(self, 'scale')
+                return
             if self.mode == 'ELASTIC_TORUS':
                 lay.prop(self, 'lobes')
                 lay.prop(self, 'winding')

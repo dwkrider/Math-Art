@@ -99,7 +99,11 @@
 #   math_art/delaunay_generator.py, which builds them independently from
 #   the first integral and agrees with this module's profile.
 
-bl_info = {
+# LIBRARY, not a generator: no operator of its own.  Bubbletons are
+# a mode of `mesh.delaunay_surface_add` -- a bubbleton IS a Delaunay
+# surface with bubbles grafted on, and this module already builds
+# its own Delaunay profile to graft them onto.
+_UNUSED_bl_info = {
     "name": "Bubbletons",
     "author": "Math Art project",
     "version": (1, 0, 0),
@@ -417,6 +421,21 @@ def multibubble_covers(specs):
     return out
 
 
+# Operator-facing presets, kept here beside the mathematics they select.
+# (r, lobes, covers) per preset:
+PRESETS = {
+    'CYL2': (0.5, 2, 1), 'CYL3': (0.5, 3, 1), 'CYL5': (0.5, 5, 1),
+    'UND2': (0.3, 2, 1), 'UND3': (0.3, 3, 1), 'TWIST': (0.5, 3, 2),
+    'DOUBLE_UND': (0.3, 2, 1), 'SPLASH': (0.5, 2, 1), 'NOD2': (-0.4, 2, 1),
+}
+
+# Presets that graft a SECOND bubble by Bianchi permutability.  The third
+# entry is its axial shift: with the same integration constants both
+# bubbles sit at the same place and simply merge, so a separated double
+# bubbleton has to slide one of them.
+SECOND = {'DOUBLE_UND': (3, 1, -11.0), 'SPLASH': (3, 1, -6.0)}
+
+
 def mean_curvature_xyz(X, hx, hy):
     """Mean curvature of a parametrised surface sampled on a uniform
     (x, y) grid, by central differences: H = (EN - 2FM + GL)/(2(EG-F^2)).
@@ -525,247 +544,6 @@ def build_surface(r=0.5, n=3, m=1, periods=0.0, ures=240, vres=160,
 # ==========================================================================
 # Blender layer
 # ==========================================================================
-
-try:
-    import bpy
-    from bpy.props import (IntProperty, FloatProperty, EnumProperty,
-                           BoolProperty)
-    _IN_BLENDER = True
-except ImportError:
-    _IN_BLENDER = False
-
-
-if _IN_BLENDER:
-
-    class MESH_OT_bubbleton_add(bpy.types.Operator):
-        """Add a CMC bubbleton: a Delaunay surface with bubbles grafted
-        on, built as a Darboux transform at a resonance point"""
-        bl_idname = "mesh.bubbleton_add"
-        bl_label = "Bubbleton"
-        bl_options = {'REGISTER', 'UNDO'}
-
-        necksize: FloatProperty(
-            name="Necksize r", default=0.5, min=-3.0, max=0.5,
-            description="Necksize of the underlying Delaunay surface: "
-                        "0.5 is the cylinder, (0, 0.5) unduloids, "
-                        "negative nodoids.  r = 0 is excluded")
-        lobes: IntProperty(
-            name="Lobes", default=3, min=2, max=12,
-            description="Number of lobes on the bubble; the resonance "
-                        "point is fixed by t = n/m")
-        covers: IntProperty(
-            name="Covers", default=1, min=1, max=6,
-            description="The section closes only on the m-fold cover, "
-                        "so y runs over [0, 2 m pi].  Must be coprime "
-                        "to the lobe count")
-        preset: EnumProperty(
-            name="Preset",
-            items=[('CUSTOM', "Custom", "use the sliders below"),
-                   ('CYL2', "Cylinder, 2 lobes",
-                    "the classic bubbleton: a two-lobed bubble on a "
-                    "straight cylinder"),
-                   ('CYL3', "Cylinder, 3 lobes",
-                    "a three-lobed bubble on a straight cylinder"),
-                   ('CYL5', "Cylinder, 5 lobes",
-                    "five lobes -- the bubble tightens as lobes are "
-                    "added"),
-                   ('UND2', "Unduloid, 2 lobes",
-                    "a two-lobed bubble riding on a Delaunay unduloid"),
-                   ('UND3', "Unduloid, 3 lobes",
-                    "a three-lobed bubble on a Delaunay unduloid"),
-                   ('TWIST', "Twizzler (3 lobes, 2 covers)",
-                    "a bubble that closes only on the double cover, so "
-                    "it winds as it goes round"),
-                   ('NOD2', "Nodoid, 2 lobes",
-                    "a two-lobed bubble on a Delaunay nodoid -- needs "
-                    "the principal value of the third-kind integral"),
-                   ('DOUBLE_UND', "Double bubbleton (unduloid)",
-                    "two-lobed AND three-lobed bubbles on a Delaunay "
-                    "unduloid, by Bianchi permutability"),
-                   ('SPLASH', "Colliding bubbles (2 and 3)",
-                    "a two-lobed bubble meeting a three-lobed one on a "
-                    "cylinder")],
-            default='CYL2')
-        second_lobes: IntProperty(
-            name="Second Bubble Lobes", default=0, min=0, max=12,
-            description="Graft a SECOND bubble with this many lobes by "
-                        "Bianchi permutability.  0 leaves a single "
-                        "bubble.  It must sit at a different resonance "
-                        "point from the first, so a different lobe or "
-                        "cover count")
-        second_covers: IntProperty(
-            name="Second Bubble Covers", default=1, min=1, max=6,
-            description="Cover count of the second bubble; the surface "
-                        "closes on the lowest common multiple of the two")
-        second_shift: FloatProperty(
-            name="Second Bubble Shift", default=-8.0, min=-20.0,
-            max=20.0,
-            description="Slides the second bubble along the axis. Two "
-                        "bubbles with the same shift sit in the same "
-                        "place and merge into one, so a visibly double "
-                        "bubbleton needs them apart; about 0.58 units "
-                        "of axis per unit of shift")
-        periods: FloatProperty(
-            name="Delaunay Periods", default=0.0, min=0.0, max=12.0,
-            description="Axial window in Delaunay periods.  Leave at 0 "
-                        "to fit the window to the bubble automatically "
-                        "-- the bubble's size varies fivefold with the "
-                        "lobe count, so a fixed window buries it")
-        pad: FloatProperty(
-            name="Surroundings", default=3.5, min=1.0, max=10.0,
-            description="With automatic framing, how much Delaunay "
-                        "surface to keep either side of the bubble")
-        shift: FloatProperty(
-            name="Bubble Shift", default=0.0, min=-6.0, max=6.0,
-            description="Slides the bubble along the axis: the ratio of "
-                        "the two integration constants m+ and m-")
-        spin: FloatProperty(
-            name="Bubble Spin", default=0.0, min=-180.0, max=180.0,
-            description="Rotates the bubble about the axis (degrees), "
-                        "the phase of the same ratio")
-        ures: IntProperty(name="Axial Samples", default=240, min=24,
-                          max=1200)
-        vres: IntProperty(name="Around Samples", default=160, min=12,
-                          max=800)
-        shade_smooth: BoolProperty(name="Smooth Shading", default=True)
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
-
-        _PRESETS = {
-            'CYL2': (0.5, 2, 1), 'CYL3': (0.5, 3, 1),
-            'CYL5': (0.5, 5, 1), 'UND2': (0.3, 2, 1),
-            'UND3': (0.3, 3, 1), 'TWIST': (0.5, 3, 2),
-            'DOUBLE_UND': (0.3, 2, 1), 'SPLASH': (0.5, 2, 1),
-            'NOD2': (-0.4, 2, 1),
-        }
-        # Presets that graft a SECOND bubble by Bianchi permutability.
-        # The third entry is its axial shift: with the same integration
-        # constants both bubbles sit at the same place and simply merge,
-        # so a separated double bubbleton has to slide one of them.
-        _SECOND = {'DOUBLE_UND': (3, 1, -11.0), 'SPLASH': (3, 1, -6.0)}
-
-        def execute(self, context):
-            if self.preset != 'CUSTOM':
-                necksize, lobes, covers = self._PRESETS[self.preset]
-            else:
-                necksize, lobes, covers = (self.necksize, self.lobes,
-                                           self.covers)
-            if self.preset != 'CUSTOM':
-                extra = ([self._SECOND[self.preset]]
-                         if self.preset in self._SECOND else [])
-            elif self.second_lobes > 0:
-                extra = [(self.second_lobes, self.second_covers,
-                          self.second_shift)]
-            else:
-                extra = []
-            extra = [(en, em, math.exp(esh)) for (en, em, esh) in extra]
-            for (en, em, _) in extra:
-                if not is_admissible(necksize, en, em):
-                    self.report({'ERROR'},
-                                f"second bubble {en}/{em} is not a "
-                                f"resonance point at necksize "
-                                f"{necksize:.3f}")
-                    return {'CANCELLED'}
-            if math.gcd(lobes, covers) != 1:
-                self.report({'ERROR'},
-                            f"lobes {lobes} and covers "
-                            f"{covers} must be coprime")
-                return {'CANCELLED'}
-            if not is_admissible(necksize, lobes, covers):
-                self.report(
-                    {'ERROR'},
-                    f"n/m = {lobes}/{covers} is not a "
-                    f"resonance point at necksize "
-                    f"{necksize:.3f}: the spectral parameter comes "
-                    f"out complex, or the elliptic characteristic "
-                    f"lands exactly on 1.  A cylinder needs n > m; "
-                    f"nodoids admit n < m")
-                return {'CANCELLED'}
-            if abs(necksize) < 1e-3:
-                self.report({'ERROR'},
-                            "necksize r = 0 is excluded (the resonance "
-                            "point divides by 2r(1-r))")
-                return {'CANCELLED'}
-            ratio = math.exp(self.shift) * complex(
-                math.cos(math.radians(self.spin)),
-                math.sin(math.radians(self.spin)))
-            try:
-                verts, faces, info = build_surface(
-                    necksize, lobes, covers, self.periods,
-                    self.ures, self.vres, ratio, 1.0 + 0j, self.scale,
-                    self.pad, tuple(extra))
-            except ValueError as exc:
-                self.report({'ERROR'}, str(exc))
-                return {'CANCELLED'}
-            mu, a, b, t = info
-            me = bpy.data.meshes.new("Bubbleton")
-            me.from_pydata([tuple(v) for v in verts], [],
-                           [tuple(int(i) for i in f) for f in faces])
-            me.validate(clean_customdata=True)
-            if self.shade_smooth:
-                me.polygons.foreach_set('use_smooth',
-                                        [True] * len(me.polygons))
-            me.update()
-            obj = bpy.data.objects.new("Bubbleton", me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
-            for o in context.selected_objects:
-                o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            self.report(
-                {'INFO'},
-                f"Bubbleton n/m = {lobes}/{covers}"
-                f"{'+' + '+'.join(f'{a}/{b}' for a, b, _ in extra) if extra else ''}"
-                f" on "
-                f"necksize {necksize:.3f}: V={len(me.vertices)} "
-                f"F={len(me.polygons)}, resonance mu={mu:.6f}, "
-                f"a={a:.6f}, t={t:.4f}")
-            return {'FINISHED'}
-
-        def draw(self, context):
-            lay = self.layout
-            lay.use_property_split = True
-            lay.prop(self, 'preset')
-            if self.preset == 'CUSTOM':
-                lay.prop(self, 'necksize')
-                lay.prop(self, 'lobes')
-                lay.prop(self, 'covers')
-                if math.gcd(self.lobes, self.covers) != 1:
-                    lay.label(text="Lobes and covers must be coprime",
-                              icon='ERROR')
-                elif not is_admissible(self.necksize, self.lobes,
-                                       self.covers):
-                    lay.label(text="Not a resonance point here",
-                              icon='ERROR')
-            if self.preset == 'CUSTOM':
-                lay.prop(self, 'second_lobes')
-                if self.second_lobes > 0:
-                    lay.prop(self, 'second_covers')
-                    lay.prop(self, 'second_shift')
-            lay.prop(self, 'pad')
-            lay.prop(self, 'periods')
-            lay.prop(self, 'shift')
-            lay.prop(self, 'spin')
-            lay.prop(self, 'ures')
-            lay.prop(self, 'vres')
-            lay.prop(self, 'shade_smooth')
-            lay.prop(self, 'scale')
-
-    def _menu_func(self, context):
-        self.layout.operator("mesh.bubbleton_add", icon='META_BALL')
-
-    ADD_MENU = True    # the Math Art extension menu sets this False
-
-    def register():
-        bpy.utils.register_class(MESH_OT_bubbleton_add)
-        if ADD_MENU:
-            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
-
-    def unregister():
-        if ADD_MENU:
-            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
-        bpy.utils.unregister_class(MESH_OT_bubbleton_add)
 
 
 def _selftest():

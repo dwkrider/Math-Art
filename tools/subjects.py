@@ -123,10 +123,6 @@ PARAMS = {
     "mesh.hyperbolic_tiling_add": dict(color_by='PARITY'),
     # The bubble is the whole point, and it is localised: too many
     # Delaunay periods shrink it to a speck on a long pipe.
-    "mesh.bubbleton_add": dict(lobes=3, necksize=0.5, periods=2.2),
-    # 5/4 is the fraction Walter's own figures use, and its four
-    # lobes read at icon size where a higher n turns to mush.
-    "mesh.wente_torus_add": dict(lobes_l=5, lobes_n=4),
     # The default Willmore (1,3) member at render-grade sampling: three
     # lobes wrap into a cleanly readable trefoil-like sleeve, and the
     # Willmore shape is the mathematically canonical representative.
