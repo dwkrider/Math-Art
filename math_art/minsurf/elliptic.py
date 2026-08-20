@@ -390,6 +390,7 @@ class _Lattice:
         t1_0 = 2.0 * np.sum(a * k)                      # theta1'(0)
         t3_0 = -2.0 * np.sum(a * k ** 3)               # theta1'''(0)
         self.eta1 = -(math.pi ** 2 / (12.0 * self.w1)) * (t3_0 / t1_0)
+        self.t1p0 = t1_0            # theta1'(0), needed by sigma
 
     def zeta(self, z):
         z = np.asarray(z, dtype=complex)
@@ -401,6 +402,24 @@ class _Lattice:
         t0, t1, t2, _ = _theta1_series(self.c * z, self.q)
         r1 = t1 / t0
         return -self.eta1 / self.w1 - self.c ** 2 * (t2 / t0 - r1 ** 2)
+
+    def sigma(self, z):
+        """Weierstrass sigma, from the same theta series:
+
+            sigma(z) = (2 w1 / pi) exp(eta1 z^2 / (2 w1))
+                       theta1(pi z / (2 w1)) / theta1'(0) .
+
+        Normalised so that sigma(z)/z -> 1 as z -> 0 -- the standard
+        convention, and the one Heller's closed-form elastic curve
+        assumes (his paper prints the limit at infinity, which is a
+        typo).  Unlike P and zeta, sigma is NOT elliptic; it is only
+        quasi-periodic, which is exactly why it can build a curve that
+        does not close until a period condition is imposed."""
+        z = np.asarray(z, dtype=complex)
+        t0, _, _, _ = _theta1_series(self.c * z, self.q)
+        return ((2.0 * self.w1 / math.pi)
+                * np.exp(self.eta1 * z * z / (2.0 * self.w1))
+                * t0 / self.t1p0)
 
     def wp_prime(self, z):
         z = np.asarray(z, dtype=complex)
@@ -462,6 +481,7 @@ def _selftest():
 
     ok &= _selftest_jacobi()
     ok &= _selftest_ellippi()
+    ok &= _selftest_sigma()
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
@@ -667,4 +687,34 @@ def _selftest_ellippi():
     print(f"ellippi: pi-fold consistency (n = 3.5 > 1) dev {dev:.1e} "
           f"{'OK' if good else 'FAIL'}")
 
+    return ok
+
+
+def _selftest_sigma():
+    """Weierstrass sigma, against the two identities that pin it."""
+    ok = True
+    for w1, tau in ((0.5, 1j), (0.5, 0.8j), (0.7, 1.6j)):
+        L = _Lattice(w1, tau)
+        z = np.array([0.07 + 0.03j, 0.13 - 0.09j, 0.21 + 0.17j])
+
+        # sigma'/sigma = zeta -- the defining relation
+        h = 1e-6
+        dlog = (np.log(L.sigma(z + h)) - np.log(L.sigma(z - h))) / (2 * h)
+        d1 = float(np.abs(dlog - L.zeta(z)).max())
+
+        # normalisation sigma(z)/z -> 1 as z -> 0 (NOT as z -> infinity,
+        # which is what Heller's paper prints; that is a typo there)
+        t = np.array([1e-5, 3e-5, 1e-4])
+        d2 = float(np.abs(L.sigma(t) / t - 1.0).max())
+
+        # quasi-periodicity sigma(z + 2w1) = -exp(2 eta1 (z + w1)) sigma(z)
+        lhs = L.sigma(z + 2.0 * w1)
+        rhs = -np.exp(2.0 * L.eta1 * (z + w1)) * L.sigma(z)
+        d3 = float(np.abs(lhs - rhs).max())
+
+        good = d1 < 1e-7 and d2 < 1e-9 and d3 < 1e-12
+        ok &= good
+        print(f"sigma w1={w1} tau={tau}: |sigma'/sigma - zeta|={d1:.1e}, "
+              f"|sigma(z)/z - 1|={d2:.1e}, quasi-period {d3:.1e} "
+              f"{'OK' if good else 'FAIL'}")
     return ok
