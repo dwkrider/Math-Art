@@ -171,6 +171,28 @@ def waterbomb(rows=3, cols=4, cell=1.0):
     symmetric case and its folded tube; here only the flat pattern is
     produced.
     """
+    # THE ASSIGNMENT, and why it is not symmetric.  Three kinds of
+    # interior vertex have to satisfy Maekawa at once, and they pull in
+    # different directions:
+    #
+    #   cell centre  degree 6 -- four diagonals and two mid-line halves.
+    #                Chen et al. call this the six-crease base and record
+    #                it as TWO mountain, FOUR valley, so the diagonals are
+    #                valley and the mid-line is mountain.
+    #   edge midpoint  degree 4 -- the two mid-line halves (both mountain,
+    #                from the rule above) plus the vertical above and
+    #                below.  Two mountains already, so the verticals must
+    #                split 1-1 to reach 3-1.
+    #   grid corner  degree 8 -- four diagonals (all valley), two
+    #                horizontals, and the vertical above and below.  With
+    #                the verticals split, horizontals both mountain gives
+    #                3 mountain against 5 valley, and |M - V| = 2.
+    #
+    # So the verticals alternate by HALF-ROW: the lower half of a cell's
+    # side is mountain and the upper half valley.  Making both halves
+    # alike -- the obvious first guess -- leaves every edge midpoint at
+    # 2-2 and every corner at 4-4, which is what the earlier version of
+    # this function did and what the self-test below now catches.
     B = _Builder()
     half = 0.5 * cell
     for r in range(rows):
@@ -183,18 +205,21 @@ def waterbomb(rows=3, cols=4, cell=1.0):
             ml, mr = B.v(x0, ym), B.v(x1, ym)
             ctr = B.v(xm, ym)
 
-            # cell rim -- boundary only on the sheet's outer edge
-            B.e(a, b, BOUNDARY if r == 0 else VALLEY)
-            B.e(d, e, BOUNDARY if r == rows - 1 else VALLEY)
+            # horizontal grid lines: mountain
+            B.e(a, b, BOUNDARY if r == 0 else MOUNTAIN)
+            B.e(d, e, BOUNDARY if r == rows - 1 else MOUNTAIN)
+            # vertical sides, split at the midpoint: lower mountain,
+            # upper valley, so the two halves meeting at a grid corner
+            # always disagree
             B.e(a, ml, BOUNDARY if c == 0 else MOUNTAIN)
-            B.e(ml, d, BOUNDARY if c == 0 else MOUNTAIN)
+            B.e(ml, d, BOUNDARY if c == 0 else VALLEY)
             B.e(b, mr, BOUNDARY if c == cols - 1 else MOUNTAIN)
-            B.e(mr, e, BOUNDARY if c == cols - 1 else MOUNTAIN)
+            B.e(mr, e, BOUNDARY if c == cols - 1 else VALLEY)
             # the horizontal mid-line, and the four half-diagonals
-            B.e(ml, ctr, VALLEY)
-            B.e(ctr, mr, VALLEY)
+            B.e(ml, ctr, MOUNTAIN)
+            B.e(ctr, mr, MOUNTAIN)
             for corner in (a, b, d, e):
-                B.e(corner, ctr, MOUNTAIN)
+                B.e(corner, ctr, VALLEY)
     return B.frame("Waterbomb Tessellation")
 
 
@@ -312,18 +337,30 @@ def _selftest():
     assert rep.n_interior == 0 and rep
 
     # --- waterbomb and yoshimura: faces recover, degrees are even ----
+    # Full validity, not just "no odd degrees": three kinds of interior
+    # vertex (centre, edge midpoint, grid corner) must satisfy Maekawa
+    # simultaneously, and a lenient check here let a 2-2 assignment ship.
+    for rc in ((2, 2), (3, 4), (2, 5)):
+        wb = waterbomb(rows=rc[0], cols=rc[1])
+        wb.faces = build_faces(wb.verts, wb.edges)
+        assert wb.n_faces == rc[0] * rc[1] * 6, wb.n_faces
+        rep = validate(wb)
+        assert rep.checked and rep.n_interior > 0
+        assert rep, f"waterbomb {rc}: {rep.summary()}"
+    # and the six-crease base really is 2 mountain / 4 valley at a centre
     wb = waterbomb(rows=2, cols=2)
-    wb.faces = build_faces(wb.verts, wb.edges)
-    assert wb.n_faces == 2 * 2 * 6, wb.n_faces      # 6 triangles per cell
-    rep = validate(wb)
-    assert rep.checked
-    assert rep.count("odd_degree") == 0, rep.summary()
-    assert rep.count("developability") == 0, rep.summary()
+    centre = [i for i, p in enumerate(wb.verts)
+              if abs(p[0] - 0.5) < 1e-9 and abs(p[1] - 0.5) < 1e-9][0]
+    inc = [k for k, (a, b) in enumerate(wb.edges) if centre in (a, b)]
+    kinds = [str(wb.assignment[k]) for k in inc]
+    assert len(inc) == 6, inc
+    assert kinds.count("M") == 2 and kinds.count("V") == 4, kinds
 
-    ym = yoshimura(rows=2, cols=3)
-    ym.faces = build_faces(ym.verts, ym.edges)
-    assert ym.n_faces > 0
-    assert validate(ym).count("developability") == 0
+    for rc in ((2, 3), (4, 6)):
+        ym = yoshimura(rows=rc[0], cols=rc[1])
+        ym.faces = build_faces(ym.verts, ym.edges)
+        assert ym.n_faces > 0
+        assert validate(ym), f"yoshimura {rc}: {validate(ym).summary()}"
 
     # --- hypar builds, and is honest about not folding rigidly -------
     hp = hypar(rings=3, sides=4)

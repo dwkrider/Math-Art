@@ -235,7 +235,6 @@ ROLLERS = Menu(
 FOLDS = Menu(
     "VIEW3D_MT_math_art_folds", "Folds", 'MOD_SIMPLIFY', [
         _e("mesh.crease_pattern_add", 'MESH_GRID'),
-        _e("object.fold_solve", 'MOD_SIMPLEDEFORM', builtin=True),
     ])
 
 ODDS = Menu(
@@ -264,6 +263,7 @@ STYLES = Menu(
            "Voronoi Openwork (Experimental)", builtin=True),
         _e("object.organic_wireframe_add", 'MOD_WIREFRAME', builtin=True),
         _e("object.strahler_add", 'MOD_SIMPLIFY', builtin=True),
+        _e("object.fold_solve", 'MOD_SIMPLEDEFORM', builtin=True),
     ])
 
 
