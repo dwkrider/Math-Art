@@ -829,6 +829,95 @@ SURFACE_FAMILY.update({k: 'RECORD' for (k, _l, _s, _c, _f) in _RECORD})
 SURFACE_FAMILY.update({k: 'NAMED' for (k, _l, _g, _s, _c, _f) in _NAMED})
 
 
+def boundary_loops(verts, tris, smooth=2):
+    """Ordered vertex loops along the open edge of a triangle mesh.
+
+    A clipped level set is cut off wherever it leaves the sample box, so
+    its rim is a stair-step through the marching-tetrahedra grid rather
+    than a smooth curve.  Sweeping a tube along that rim tidies it and
+    gives the surface a deliberate edge; this returns the polylines to
+    sweep, as lists of point arrays.
+
+    Edges used by exactly one triangle are the boundary.  They are then
+    chained into paths: on a clean manifold-with-boundary every rim
+    vertex has exactly two of them and every chain closes, but several
+    of these surfaces are deliberately singular (Kreuz is three planes),
+    so a vertex can carry four or more.  The walk therefore just
+    consumes unused edges greedily and returns whatever chains it finds,
+    open or closed, rather than assuming the tidy case.
+
+    `smooth` passes of a closure-preserving Laplacian take the
+    grid-stepping out of the polyline before it is swept, which is the
+    point of the exercise -- an unsmoothed rim tube reproduces the
+    staircase faithfully.
+    """
+    import numpy as np
+
+    V = np.asarray(verts, dtype=float)
+    T = np.asarray(tris)
+    if len(T) == 0:
+        return []
+
+    e = np.concatenate([T[:, [0, 1]], T[:, [1, 2]], T[:, [2, 0]]])
+    e = np.sort(e, axis=1)
+    uniq, counts = np.unique(e, axis=0, return_counts=True)
+    rim = uniq[counts == 1]
+    if not len(rim):
+        return []
+
+    adj = {}
+    for a, b in rim:
+        adj.setdefault(int(a), []).append(int(b))
+        adj.setdefault(int(b), []).append(int(a))
+
+    used = set()
+
+    def take(p, q):
+        key = (p, q) if p < q else (q, p)
+        if key in used:
+            return False
+        used.add(key)
+        return True
+
+    loops = []
+    for a0, b0 in rim:
+        a0, b0 = int(a0), int(b0)
+        if not take(a0, b0):
+            continue
+        chain = [a0, b0]
+        while True:
+            cur = chain[-1]
+            nxt = None
+            for cand in adj.get(cur, ()):
+                if take(cur, cand):
+                    nxt = cand
+                    break
+            if nxt is None:
+                break
+            chain.append(nxt)
+            if nxt == chain[0]:
+                break
+        if len(chain) < 4:
+            continue
+        closed = chain[-1] == chain[0]
+        if closed:
+            chain = chain[:-1]
+        loops.append((np.asarray(chain, dtype=np.int64), closed))
+
+    out = []
+    for idx, closed in loops:
+        pts = V[idx]
+        for _ in range(max(0, int(smooth))):
+            if closed:
+                prev = np.roll(pts, 1, axis=0)
+                nxt = np.roll(pts, -1, axis=0)
+                pts = 0.5 * pts + 0.25 * (prev + nxt)
+            elif len(pts) > 2:
+                inner = 0.5 * pts[1:-1] + 0.25 * (pts[:-2] + pts[2:])
+                pts = np.concatenate([pts[:1], inner, pts[-1:]])
+        out.append((pts, closed))
+    return out
+
 def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3):
     """Mesh the zero level set of a preset. Returns (verts, tris).
     marching_tets simply leaves the level set open where it crosses
@@ -986,6 +1075,33 @@ def _selftest():
     print("algebraic: %d named implicit surfaces have their documented "
           "genus %s" % (len(NAMED_GENUS),
                         'OK' if not wrong else 'FAIL ' + ','.join(wrong)))
+
+    # The rim curve sweeps the open edge, so it must find exactly the
+    # boundary edges and nothing else.  Checked two ways: a closed
+    # surface must yield no loops at all, and on an open one the edges
+    # of the returned chains must be precisely the once-used edges.
+    def _rim_ok(key):
+        V, T = build_algebraic(key, 48)
+        e = np.concatenate([T[:, [0, 1]], T[:, [1, 2]], T[:, [2, 0]]])
+        e = np.sort(e, axis=1)
+        u, c = np.unique(e, axis=0, return_counts=True)
+        nb = int((c == 1).sum())
+        loops = boundary_loops(V, T, smooth=0)
+        got = sum(len(p) if closed else len(p) - 1 for p, closed in loops)
+        return nb, got
+
+    bad = []
+    for key in ('CLEBSCH', 'KREUZ', 'LABS'):
+        nb, got = _rim_ok(key)
+        if nb == 0 or got != nb:
+            bad.append('%s:%d/%d' % (key, got, nb))
+    for key in ('VMM_ORTHOCIRCLES', 'VMM_BRETZEL5'):
+        V, T = build_algebraic(key, 48)
+        if boundary_loops(V, T):
+            bad.append(key + ':closed-surface-has-rim')
+    ok &= not bad
+    print("algebraic: rim curve spans exactly the open edge %s"
+          % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
 
     orphan = sorted(set(PRESETS) - set(SURFACE_FAMILY))
     fams = {f for f, _ in FAMILIES}

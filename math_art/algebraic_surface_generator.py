@@ -58,12 +58,14 @@ import numpy as np
 # this module is the Blender layer over it.
 try:
     from .surfaces.algebraic import (
-        PRESETS, build_algebraic, FAMILIES, SURFACE_FAMILY,
-        HAUSER_EQUATION, FAMILY_RESOLUTION, FAMILY_RESOLUTION_DEFAULT)
+        PRESETS, build_algebraic, boundary_loops, FAMILIES,
+        SURFACE_FAMILY, HAUSER_EQUATION, FAMILY_RESOLUTION,
+        FAMILY_RESOLUTION_DEFAULT)
 except ImportError:  # flat import outside the package
     from surfaces.algebraic import (
-        PRESETS, build_algebraic, FAMILIES, SURFACE_FAMILY,
-        HAUSER_EQUATION, FAMILY_RESOLUTION, FAMILY_RESOLUTION_DEFAULT)
+        PRESETS, build_algebraic, boundary_loops, FAMILIES,
+        SURFACE_FAMILY, HAUSER_EQUATION, FAMILY_RESOLUTION,
+        FAMILY_RESOLUTION_DEFAULT)
 
 
 
@@ -188,6 +190,38 @@ if _IN_BLENDER:
         if self.resolution != res:
             self.resolution = res
 
+
+    def _add_rim_curve(context, obj, label, verts, tris, thickness,
+                       smooth):
+        """Sweep a bevelled curve along the surface's open edge.
+
+        Parented to the surface so the pair moves as one.  Returns the
+        number of rim loops found -- zero for a closed surface, which
+        is not an error: a cyclide or a Hauser tube simply has no edge.
+        """
+        loops = boundary_loops(verts, tris, smooth=smooth)
+        if not loops:
+            return 0
+        cu = bpy.data.curves.new(label + " Rim", 'CURVE')
+        cu.dimensions = '3D'
+        cu.fill_mode = 'FULL'
+        cu.bevel_depth = float(thickness)
+        cu.bevel_resolution = 4
+        cu.use_fill_caps = True
+        for pts, closed in loops:
+            sp = cu.splines.new('POLY')
+            sp.points.add(len(pts) - 1)
+            for i, q in enumerate(pts):
+                sp.points[i].co = (float(q[0]), float(q[1]),
+                                   float(q[2]), 1.0)
+            sp.use_cyclic_u = bool(closed)
+        rim = bpy.data.objects.new(label + " Rim", cu)
+        context.collection.objects.link(rim)
+        rim.matrix_world = obj.matrix_world.copy()
+        rim.parent = obj
+        rim.matrix_parent_inverse = obj.matrix_world.inverted()
+        return len(loops)
+
     class MESH_OT_algebraic_surface_add(bpy.types.Operator):
         """Add a classical algebraic surface (implicit level set
         meshed by marching tetrahedra). Pick a Family, then a Preset
@@ -235,6 +269,22 @@ if _IN_BLENDER:
                         "thickness")
         smooth: BoolProperty(
             name="Smooth Shading", default=True)
+        rim: BoolProperty(
+            name="Rim Curve", default=False,
+            description="Sweep a tube along the open edge where the "
+                        "surface leaves the clip region. That edge is "
+                        "a stair-step through the sample grid, so the "
+                        "tube both tidies it and gives the surface a "
+                        "deliberate border; closed surfaces have no "
+                        "edge and get no curve")
+        rim_thickness: FloatProperty(
+            name="Rim Thickness", default=0.02, min=0.0, max=1.0,
+            description="Bevel radius of the rim tube (0 leaves a bare "
+                        "curve)")
+        rim_smooth: IntProperty(
+            name="Rim Smoothing", default=2, min=0, max=20,
+            description="Laplacian passes along the rim before it is "
+                        "swept; 0 follows the grid staircase exactly")
 
         def execute(self, context):
             # belt and braces against a stale enum index: the
@@ -259,9 +309,15 @@ if _IN_BLENDER:
                 mod.thickness = self.thickness
                 mod.offset = 0.0
             me = obj.data
+            nrim = 0
+            if self.rim:
+                nrim = _add_rim_curve(
+                    context, obj, label, verts, tris,
+                    self.rim_thickness, self.rim_smooth)
             self.report({'INFO'},
                         f"{label}: {len(me.vertices)} verts, "
-                        f"{len(me.polygons)} faces")
+                        f"{len(me.polygons)} faces"
+                        + (f", rim {nrim} loop(s)" if self.rim else ""))
             return {'FINISHED'}
 
         def draw(self, context):
@@ -281,6 +337,10 @@ if _IN_BLENDER:
                 lay.prop(self, 'fold')
             for k in ('clip', 'scale', 'thickness', 'smooth'):
                 lay.prop(self, k)
+            lay.prop(self, 'rim')
+            if self.rim:
+                lay.prop(self, 'rim_thickness')
+                lay.prop(self, 'rim_smooth')
 
     def _menu_func(self, context):
         self.layout.operator("mesh.algebraic_surface_add",
