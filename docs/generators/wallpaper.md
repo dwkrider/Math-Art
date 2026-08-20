@@ -74,7 +74,7 @@ n \to \frac{n-1}{n},\qquad n \text{ after a } \texttt{*} \to \frac{n-1}{2n}$$
 
 and the total decides the geometry:
 
-$$\sum \text{cost} \;\begin{cases} <2 & \text{spherical (a finite point group)}\\\\ =2 & \text{Euclidean (a wallpaper group)}\\\\ >2 & \text{hyperbolic}\end{cases}$$
+$$\sum \text{cost} \;\begin{cases} <2 & \text{spherical (a finite point group)}\\ =2 & \text{Euclidean (a wallpaper group)}\\ >2 & \text{hyperbolic}\end{cases}$$
 
 The 17 wallpaper groups are precisely the signatures costing exactly 2. Check `632`: $\tfrac56+\tfrac23+\tfrac12 = 2$. Check `*632`: $1+\tfrac5{12}+\tfrac13+\tfrac14 = 2$. The two costs for a digit are why a rotation centre "cheapens" by half once it lies on a mirror — it becomes a corner reflector, and only half of it is new.
 

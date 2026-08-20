@@ -46,7 +46,7 @@ Renders of each selectable option:
 
 **Hyperbolic space as matrices.** Model $H^3$ as the positive-definite Hermitian $2\times2$ matrices of determinant 1:
 
-$$f=\begin{pmatrix} x_0+x_3 & x_1+ix_2\\\\ x_1-ix_2 & x_0-x_3\end{pmatrix},\qquad \det f = x_0^2-x_1^2-x_2^2-x_3^2 = 1,$$
+$$f=\begin{pmatrix} x_0+x_3 & x_1+ix_2\\ x_1-ix_2 & x_0-x_3\end{pmatrix},\qquad \det f = x_0^2-x_1^2-x_2^2-x_3^2 = 1,$$
 
 which is the upper sheet of the Minkowski hyperboloid $\langle x,x\rangle=-1$. The point of this model is that the isometries of $H^3$ become matrix conjugation, so the whole construction can be done with linear algebra.
 
@@ -72,7 +72,7 @@ which — unlike the Euclidean case — is **not quantised**. In $\mathbb{R}^3$ 
 
 **Polynomial family** — Bryant's Theorem B. For polynomials $r_1, r_2$ with no common zero, integrating
 
-$$F'=F\begin{pmatrix} r_1r_2 & -r_2^{\,2}\\\\ r_1^{\,2} & -r_1r_2\end{pmatrix},\qquad F(0)=I$$
+$$F'=F\begin{pmatrix} r_1r_2 & -r_2^{\,2}\\ r_1^{\,2} & -r_1r_2\end{pmatrix},\qquad F(0)=I$$
 
 gives a complete CMC-1 immersion of $\mathbb{C}$ with total curvature $-4\pi k$. Note the matrix has determinant $r_1^2r_2^2-r_1^2r_2^2=0$ identically — the nullity condition holds by construction, for any polynomials. Exposed here as $r_1=z^n$, $r_2=c$, which contains the Enneper cousin at $n=1$ and generalises upward.
 

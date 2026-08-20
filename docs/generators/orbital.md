@@ -96,7 +96,7 @@ The same pass also reports the box the contour actually needs, which is then use
 
 A single contour is a hard shell, which is exactly what an electron density is not. Cloud mode instead draws several **nested** contours — for three shells at 90%, the surfaces enclosing 30%, 60% and 90% of the density — and gives each its own transparent material, nearly solid at the core and a faint haze at the rim, so the falloff reads as a falloff.
 
-Two details make it work. All shells are marched over the **same** sample box and put through **one** centre-and-fit at the end; fitting each to the 2 m cube on its own would scale them to identical size and stack them exactly. And a single sampling pass yields every level at once, so choosing three contours costs no more than choosing one. Sign colouring is kept, so a cloud of an antibonding orbital has $2\times$shells material slots and each lobe still shows its phase.
+Two details make it work. All shells are marched over the **same** sample box and put through **one** centre-and-fit at the end; fitting each to the 2 m cube on its own would scale them to identical size and stack them exactly. And a single sampling pass yields every level at once, so choosing three contours costs no more than choosing one. Sign colouring is kept, so a cloud of an antibonding orbital has $2\times$ `shells` material slots and each lobe still shows its phase.
 
 The transparency is set on the Principled BSDF's Alpha input, with the material's blend mode switched to blended — under whichever name the running Blender uses, since EEVEE Next renamed the switch in 4.2. Cycles honours the alpha directly.
 
