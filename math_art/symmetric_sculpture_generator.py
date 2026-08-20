@@ -734,15 +734,102 @@ def group_loops(loops):
     return outers
 
 
-def mating_planes(kind, family, loops, d=1.0, tol=1e-4):
-    """For each boundary edge, the neighbouring plane it beds against.
+def _weld(points, tol=1e-6):
+    """Cluster points within tol; returns (kept, index remap).
 
-    A boundary edge that runs along the intersection of this plane
-    with another is a mating edge: in the assembly the neighbouring
-    part comes up to the same line from the other side, so that edge
-    has to be cut to the dihedral rather than left square.  Every
-    other edge is free and stays square.  Returns a list per loop of
-    the matching normal, or None."""
+    A spatial hash on floor(coord / tol) with a sweep of the 27
+    neighbouring cells -- not a plain rounded key, which splits a
+    cluster that happens to straddle a cell boundary and so misses
+    exactly the coincidences it was asked to find."""
+    cells = {}
+    keep = []
+    remap = []
+    for p in points:
+        k0 = tuple(int(math.floor(c / tol)) for c in p)
+        hit = None
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                for dz in (-1, 0, 1):
+                    for j in cells.get((k0[0] + dx, k0[1] + dy,
+                                        k0[2] + dz), ()):
+                        q = keep[j]
+                        if (abs(p[0] - q[0]) < tol
+                                and abs(p[1] - q[1]) < tol
+                                and abs(p[2] - q[2]) < tol):
+                            hit = j
+                            break
+                    if hit is not None:
+                        break
+                if hit is not None:
+                    break
+            if hit is not None:
+                break
+        if hit is None:
+            hit = len(keep)
+            keep.append(tuple(p))
+            cells.setdefault(k0, []).append(hit)
+        remap.append(hit)
+    return keep, remap
+
+
+def fold_motif(verts, faces, fold, tol=1e-6):
+    """The whole part a motif stands for, turned about the plane axis.
+
+    A motif may be drawn either as a whole part or as one sector of
+    the plane's own k-fold symmetry -- Krull's five-armed star is
+    stored as a single arm.  The sculpture itself does not care, since
+    the k rotations that hold the plane supply the missing sectors
+    either way, but anything reasoning about a PART rather than the
+    assembly -- the machinable solid and the outlines it is cut from
+    -- needs the whole of it.
+
+    Turning the motif through each k-th of a turn and welding gives
+    that, and is a no-op on a motif that already carries the symmetry:
+    those copies land back on the original and are dropped, so the
+    same call is right for a sector and for a whole part."""
+    verts = [tuple(p) for p in verts]
+    faces = [list(f) for f in faces]
+    if fold <= 1 or not verts or not faces:
+        return verts, faces
+
+    turned = []
+    sizes = []
+    for k in range(fold):
+        t = 2.0 * math.pi * k / fold
+        c, s = math.cos(t), math.sin(t)
+        img = [(c * x - s * y, s * x + c * y, z) for x, y, z in verts]
+        # this copy is one already taken when adding it to that one
+        # introduces no point the other did not have
+        dup = any(len(_weld(prev + img, tol)[0]) == n
+                  for prev, n in zip(turned, sizes))
+        if not dup:
+            turned.append(img)
+            sizes.append(len(_weld(img, tol)[0]))
+    if len(turned) == 1:
+        return verts, faces
+
+    allv = [p for img in turned for p in img]
+    kept, remap = _weld(allv, tol)
+    out = []
+    seen = set()
+    for c, img in enumerate(turned):
+        base = c * len(verts)
+        for f in faces:
+            idx = [remap[base + i] for i in f]
+            # a face is a duplicate when it spans the same welded
+            # corners as one already emitted, whatever order it is in
+            key = frozenset(idx)
+            if len(key) < 3 or key in seen:
+                continue
+            seen.add(key)
+            out.append(idx)
+    return kept, out
+
+
+def _plane_lines(kind, family, d=1.0):
+    """Where the family's other planes cut this one, as (A, B, C, b)
+    with A^2 + B^2 = 1, in the motif's own flat frame.  These are the
+    guide lines the stellation pattern is drawn from."""
     a, normals = plane_normals(kind, family)
     u, v = _frame(a)
     lines = []
@@ -754,6 +841,44 @@ def mating_planes(kind, family, loops, d=1.0, tol=1e-4):
         B = sum(x * y for x, y in zip(b, v))
         n = sqrt(A * A + B * B)
         lines.append((A / n, B / n, d * (1 - ab) / n, b))
+    return lines
+
+
+def near_mating_edges(kind, family, loops, d=1.0, tol=1e-4, slack=0.01):
+    """Boundary edges that ALMOST bed against a neighbouring plane.
+
+    A drawn or traced motif seldom lands its mating edges exactly on
+    the guide lines, and an edge that misses by more than tol counts
+    as free and is left square -- so a part comes back unmitred with
+    nothing visibly wrong with it.  Krull's traced points missed by
+    0.002, twenty times the tolerance and a fiftieth of the gap to
+    the next-nearest edge, which is the signature of artwork that
+    means to sit on a line and doesn't quite.  Returns (loop, edge,
+    distance) for each near miss so the caller can say so."""
+    lines = _plane_lines(kind, family, d)
+    near = []
+    for li, loop in enumerate(loops):
+        for i in range(len(loop)):
+            p0 = loop[i]
+            p1 = loop[(i + 1) % len(loop)]
+            best = min(max(abs(A * p0[0] + B * p0[1] - C),
+                           abs(A * p1[0] + B * p1[1] - C))
+                       for A, B, C, _b in lines)
+            if tol <= best <= slack * d:
+                near.append((li, i, best))
+    return near
+
+
+def mating_planes(kind, family, loops, d=1.0, tol=1e-4):
+    """For each boundary edge, the neighbouring plane it beds against.
+
+    A boundary edge that runs along the intersection of this plane
+    with another is a mating edge: in the assembly the neighbouring
+    part comes up to the same line from the other side, so that edge
+    has to be cut to the dihedral rather than left square.  Every
+    other edge is free and stays square.  Returns a list per loop of
+    the matching normal, or None."""
+    lines = _plane_lines(kind, family, d)
     out = []
     for loop in loops:
         per = []
@@ -843,6 +968,25 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04):
                 continue
             p = _meet(loop[j], loop[i], shift[j],
                       loop[i], loop[(i + 1) % n], shift[i])
+            # Where two MATING edges meet, the corner is a genuine
+            # point of the solid -- three bisecting planes and the
+            # face all pass through it -- however far out it lands.
+            # Two edges closing to an angle phi put it 1/sin(phi/2)
+            # shifts away, so Krull's 36 deg point sits 3.24 out and
+            # any fixed cap clips it; the corner then slides along
+            # one of the two edges, which keeps that wall planar and
+            # drops the other off its bisector.  Only near-collinear
+            # edges are genuinely ill-conditioned here.
+            e0 = (loop[i][0] - loop[j][0], loop[i][1] - loop[j][1])
+            e1 = (loop[(i + 1) % n][0] - loop[i][0],
+                  loop[(i + 1) % n][1] - loop[i][1])
+            l0 = sqrt(e0[0] * e0[0] + e0[1] * e0[1]) or 1.0
+            l1 = sqrt(e1[0] * e1[0] + e1[1] * e1[1]) or 1.0
+            if (per[j] is not None and per[i] is not None
+                    and abs(e0[0] * e1[1] - e0[1] * e1[0])
+                    / (l0 * l1) > 1e-3):
+                out.append(p)
+                continue
             # A mating edge usually runs into the curved free boundary
             # almost tangentially, and there the two shifted lines
             # cross far away.  The corner can only travel about as far
@@ -1173,6 +1317,86 @@ _WHIMSY_HOLE_B = (
 _WHIMSY_TIPS = (0, 48)
 
 
+# Krull, a small-stellated-dodecahedron star, traced from the cutting
+# template (stellated_dodecahedron.svg / .dxf) and fitted into a
+# 5-fold plane.  Local (x, y) in units of the plane distance.
+#
+# The small stellated dodecahedron {5/2, 5} is the first stellation
+# of the dodecahedron, so its twelve pentagram faces lie in the very
+# planes this family is built from.  The plane shows that pentagram
+# in its crossings: five at 2/phi^2 = 0.76393, where two guide lines
+# cross and three planes meet -- the pentagram's inner pentagon, on
+# the dodecahedron's own vertices -- and five at radius 2, where four
+# lines cross and FIVE planes meet, which are its points and the
+# solid's twelve vertices.  Their ratio is phi^2, the pentagram's own.
+#
+# Five faces meeting is what picks the outer crossing out: the star's
+# arms end there, at radius 2 and 18 + 72k deg, and each of the
+# solid's twelve vertices is a spike built from five arms.  That
+# accounts for every arm: 12 faces x 5 points = 60 = 12 vertices x 5.
+# (The great stellated dodecahedron {5/2, 3} lives in these same
+# planes with the pentagram the other way up -- points at 2*phi^2
+# where only THREE planes meet.  It is a different sculpture.)
+#
+# ONE ARM is stored, not the whole star: a fifth is all the plane's
+# own 5-fold rotation needs, since the group supplies the other four
+# and lands them in the same twelve planes either way.  Storing the
+# sector is what makes the preset reproducible from the Custom UI --
+# draw one arm in the guide plane, pick the 5-fold family, and the
+# sculpture is the same to within 2e-6 -- and it means editing the
+# arm keeps all five in step, which editing a whole star does not.
+#
+# The arc runs neck-to-neck: it starts and ends at the innermost
+# points of the outline (radius 0.185443, at 18 and 90 deg), out to
+# the point at radius 2 and back.  Closing it through the centre
+# makes a true fundamental domain -- five of them tile the star with
+# no overlap (area x5 matches the whole outline to 3e-7), where
+# closing tip-to-tip instead would cover it 3.7 times over.  The two
+# radial edges are interior once the five meet, so they weld away.
+#
+# The arc is decimated (Douglas-Peucker, 0.3 svg units) from the
+# traced template, and cut where the outline meets its own turned
+# copy (0.07 px) rather than at a fifth of the perimeter.
+#
+# The two points either side of the tip are snapped onto the guide
+# lines the tip sits on, which the trace missed by 0.0021 and 0.0027.
+# That is the artwork's error, not the construction's, but it has two
+# visible consequences: the point came out at 35.222 deg instead of
+# the pentagram's 36 (four lines cross at the tip, pairwise 36 and 72
+# deg apart), and the two edges running into the tip are where this
+# part beds against its neighbours -- 0.002 off the line is 20x the
+# mating tolerance, so they read as free edges and the machinable
+# part came out square at the points instead of mitred.
+
+_KRULL_ARM = (
+    (+0.176362, +0.057321), (+0.278976, +0.199923), (+0.321354, +0.288876),
+    (+0.349460, +0.416306), (+0.350960, +0.559949), (+0.337392, +0.655009),
+    (+0.310847, +0.754326), (+0.179072, +1.074073), (+0.129851, +1.227620),
+    (+0.112782, +1.333252), (+0.110486, +1.659958), (+0.000000, +2.000000),
+    (-0.110186, +1.660881), (-0.108841, +1.310469), (-0.091853, +1.209926),
+    (-0.060654, +1.104462), (+0.107287, +0.684660), (+0.133381, +0.573010),
+    (+0.140276, +0.488105), (+0.133056, +0.414295), (+0.110854, +0.346288),
+)
+
+
+def krull_motif(d=1.0):
+    """One arm of Krull, a small-stellated-dodecahedron sculpture
+    traced from the cutting template: a blade rising from the hub of
+    a dodecahedral face plane to a point on the crossing at radius 2
+    where five planes meet.  The plane's own 5-fold rotation lays five
+    of these into the star, and the group lands that star in each of
+    the twelve planes.  See the note above."""
+    arm = [(x * d, y * d) for x, y in _KRULL_ARM]
+    # Close the sector through the hub.  The far neck is the near one
+    # turned by a fifth -- computed rather than tabulated so the two
+    # radial edges agree exactly and weld when the five arms meet.
+    c, s = math.cos(0.4 * math.pi), math.sin(0.4 * math.pi)
+    x0, y0 = arm[0]
+    arm.append((c * x0 - s * y0, s * x0 + c * y0))
+    return polygon_with_holes([(0.0, 0.0)] + arm, [])
+
+
+
 def whimsy_motif(d=1.0):
     """One of the sixty flat blades of Hart's Whimsy (2014), traced
     from the cutting template: a curved band pierced by two teardrop
@@ -1188,13 +1412,14 @@ def whimsy_motif(d=1.0):
 # preset -> (group, plane family, motif builder)
 PRESETS = {
     'FRABJOUS': ('ICOSA', 'P2', frabjous_motif),
+    'KRULL': ('ICOSA', 'P5', krull_motif),
     'WHIMSY': ('ICOSA', 'P1', whimsy_motif),
 }
 
 
 try:
     import bpy
-    from mathutils import Matrix
+    from mathutils import Matrix, Vector
     from bpy.props import (FloatProperty, EnumProperty, BoolProperty,
                            StringProperty, IntProperty)
     _IN_BLENDER = True
@@ -1374,6 +1599,75 @@ if _IN_BLENDER:
             poly.material_index = si
         obj = bpy.data.objects.new(name, me)
         return obj
+
+    def _distinct_placements(rots, mverts, plane_rot, plane_off,
+                             tol=1e-4):
+        """Keep one rotation per distinct image of the motif.
+
+        Two rotations are the same placement when they carry the motif
+        onto the same point set, which happens exactly when the motif
+        is invariant under the rotation between them.  Compared by a
+        signature of the placed points rather than by inspecting the
+        motif's symmetry, so it holds for a supplied motif too."""
+        if not mverts:
+            return rots
+        M = Matrix.LocRotScale(Matrix.Translation(plane_off).
+                               to_translation(), plane_rot, None)
+        # every vertex, not a sample: a subsample of a symmetric point
+        # set is not itself symmetric, so sampled signatures never
+        # match and nothing is ever recognised as a duplicate
+        placed = [M @ Vector(p) for p in mverts]
+
+        def cells_of(points):
+            grid = {}
+            for q in points:
+                key = (int(math.floor(q.x / tol)),
+                       int(math.floor(q.y / tol)),
+                       int(math.floor(q.z / tol)))
+                grid.setdefault(key, []).append(q)
+            return grid
+
+        def same(grid, points):
+            """Every point matched within tol, neighbours included.
+
+            Compared by distance rather than by a rounded key: two
+            coordinates a hair apart can fall either side of a cell
+            boundary, and a key-based test then calls identical
+            placements different -- which left 24 of Krull's 60
+            rotations standing where 12 are distinct."""
+            for q in points:
+                k0 = (int(math.floor(q.x / tol)),
+                      int(math.floor(q.y / tol)),
+                      int(math.floor(q.z / tol)))
+                hit = False
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        for dz in (-1, 0, 1):
+                            for r in grid.get((k0[0] + dx, k0[1] + dy,
+                                               k0[2] + dz), ()):
+                                if (q - r).length <= tol:
+                                    hit = True
+                                    break
+                            if hit:
+                                break
+                        if hit:
+                            break
+                    if hit:
+                        break
+                if not hit:
+                    return False
+            return True
+
+        keep = []
+        grids = []
+        for R in rots:
+            RM = Matrix(R)
+            pl = [RM @ p for p in placed]
+            if any(same(g, pl) for g in grids):
+                continue
+            keep.append(R)
+            grids.append(cells_of(pl))
+        return keep
 
     def _drive_z_from_lift(obj, sculpt, mod_name, socket):
         """Tie obj's Z to the modifier's Lift input.
@@ -1602,6 +1896,13 @@ if _IN_BLENDER:
                     "the 3-fold corners (phi^2 x the plane "
                     "distance), five-fold vortices at the 5-fold "
                     "corners (phi x)"),
+                   ('KRULL', "Krull",
+                    "A small stellated dodecahedron {5/2, 5}: 12 "
+                    "five-armed stars in the dodecahedral planes, "
+                    "traced from the cutting template. The arms end "
+                    "on the crossings at twice the plane distance, "
+                    "where five planes meet, so each of the solid's "
+                    "12 spikes is built from five arms"),
                    ('WHIMSY', "Whimsy",
                     "After Whimsy (2014): 60 flat blades in the "
                     "face planes of the pentagonal "
@@ -1730,6 +2031,11 @@ if _IN_BLENDER:
             a, normals = plane_normals(kind, family)
             u, v = _frame(a)
             d = self.distance
+            # how many rotations hold the representative plane -- the
+            # in-plane symmetry a motif may be drawn a sector of.
+            # Taken before the dedupe below, which is free to thin the
+            # rotation list right down to one per plane.
+            fold = len(rots) // len(normals)
 
             motif = None
             if self.motif_object:
@@ -1767,8 +2073,23 @@ if _IN_BLENDER:
                                   motif.data.vertices],
                                  d, abs(self.shell))
 
+            # Guides have to reach at least as far as the motif they
+            # are drawn for, or its outer corners have no lines to sit
+            # on.  A motif can run well past the default -- the
+            # stellated star's points reach 2*phi^2 -- so widen the
+            # disc to cover whatever motif is actually in use.
+            r_motif = max((sqrt(v.co[0] ** 2 + v.co[1] ** 2)
+                           for v in motif.data.vertices), default=0.0)
+            extent = max(self.guide_extent, 1.05 * r_motif / d)
+            if extent > self.guide_extent + 1e-9:
+                self.report(
+                    {'INFO'},
+                    f"Motif reaches {r_motif / d:.2f}x the plane "
+                    f"distance, so the guides were widened from "
+                    f"{self.guide_extent:.2f} to {extent:.2f}")
+
             # guide pattern (stellation diagram) in the same plane
-            segs = stellation_lines(kind, family, d, self.guide_extent,
+            segs = stellation_lines(kind, family, d, extent,
                                     self.guide_rings)
             gverts = []
             gedges = []
@@ -1786,6 +2107,20 @@ if _IN_BLENDER:
             guides.hide_render = True
 
             # the sculpture: one point per rotation, euler attribute
+            # Drop rotations that would land the motif exactly where
+            # another already put it.  A motif carrying the plane's
+            # own k-fold symmetry -- as every traced part here does,
+            # since each is a whole part rather than a fundamental
+            # domain -- is mapped onto itself by k of the rotations.
+            # Keeping them stacks k coincident copies of every face:
+            # the weld weeds out the duplicate vertices but not the
+            # duplicate faces, and Shell then has a k-deep stack to
+            # extrude, which collapses into a plain scaling instead
+            # of a thickness.
+            rots = _distinct_placements(
+                rots, [tuple(v.co) for v in motif.data.vertices],
+                plane_rot, plane_off)
+
             pts = bpy.data.meshes.new("SymSculpt")
             pts.from_pydata([(0.0, 0.0, 0.0)] * len(rots), [], [])
             attr = pts.attributes.new("sym_rot", 'FLOAT_VECTOR',
@@ -1849,9 +2184,15 @@ if _IN_BLENDER:
                                 "Shell is 0, so the sculpture has no "
                                 "thickness -- the part was built at "
                                 "2% of the plane distance instead")
-                mloops = boundary_loops(
+                # The part to machine is the WHOLE part, even when the
+                # motif is only one sector of it -- Krull is cut as
+                # twelve stars, not sixty arms.  Folding first is a
+                # no-op on a motif that is already whole.
+                wv, wf = fold_motif(
                     [tuple(v.co) for v in motif.data.vertices],
-                    [list(p.vertices) for p in motif.data.polygons])
+                    [list(p.vertices) for p in motif.data.polygons],
+                    fold)
+                mloops = boundary_loops(wv, wf)
                 pieces = group_loops(mloops)
                 pv2 = []
                 pf2 = []
@@ -1894,6 +2235,25 @@ if _IN_BLENDER:
                                      for x in sorted(angles))
                            or "none (no edge beds against a "
                               "neighbour)"))
+                    # An edge drawn nearly-but-not-quite along a guide
+                    # line is treated as free and left square, which
+                    # looks like the mitre simply failing.  Say so
+                    # rather than let it pass silently.
+                    near = []
+                    for outer, holes in pieces:
+                        near.extend(near_mating_edges(
+                            kind, family, [outer] + holes, d))
+                    if near:
+                        worst = max(x[2] for x in near)
+                        self.report(
+                            {'WARNING'},
+                            "%d edge(s) run close to a guide line but "
+                            "miss it by up to %.4g (%.2f%% of the "
+                            "plane distance), so they were left "
+                            "square instead of mitred -- snap those "
+                            "points onto the crossing lines to have "
+                            "them bed against the neighbour"
+                            % (len(near), worst, 100.0 * worst / d))
 
             if self.show_polyhedron:
                 # the solid whose extended face planes are this
@@ -1914,8 +2274,7 @@ if _IN_BLENDER:
                 solid.matrix_parent_inverse = Matrix.Identity(4)
 
                 rball = 0.035 * d
-                cross = crossing_points(kind, family, d,
-                                        self.guide_extent,
+                cross = crossing_points(kind, family, d, extent,
                                         self.guide_rings)
                 orbit, cgroup = crossing_orbits(kind, family, cross, d)
 
@@ -2001,7 +2360,6 @@ if _IN_BLENDER:
             obj.select_set(True)
             motif.select_set(True)
             context.view_layer.objects.active = obj
-            fold = len(rots) // len(normals)
             self.report(
                 {'INFO'},
                 f"{len(normals)} planes x {fold}-fold: edit the "
@@ -2123,6 +2481,111 @@ def _selftest():
         print(f"{kind}/{fam}: {len(radii)} rings, lines {counts[0]}"
               f"..{counts[-1]} of {allsegs} {'OK' if ok else 'BAD'}")
         assert ok, (kind, fam, counts, allsegs)
+
+    # Krull is stored as one arm, so folding it by the plane's own
+    # 5-fold rotation must tile the star: five arms' worth of area,
+    # no overlap, and the fold has to be idempotent -- running it on
+    # the star again must give that same star back, or a whole-part
+    # motif would be stacked five deep.
+    kv, kf = krull_motif(1.0)
+
+    def _tri_area(vs, fs):
+        return sum(abs(0.5 * ((vs[b][0] - vs[a2][0])
+                              * (vs[c][1] - vs[a2][1])
+                              - (vs[b][1] - vs[a2][1])
+                              * (vs[c][0] - vs[a2][0])))
+                   for a2, b, c in fs)
+
+    arm_a = _tri_area(kv, kf)
+    sv, sf = fold_motif(kv, kf, 5)
+    star_a = _tri_area(sv, sf)
+    again_v, again_f = fold_motif(sv, sf, 5)
+    ok = (abs(star_a - 5.0 * arm_a) < 1e-9
+          and len(again_v) == len(sv) and len(again_f) == len(sf)
+          and abs(_tri_area(again_v, again_f) - star_a) < 1e-9)
+    print(f"krull arm {arm_a:.6f} x5 -> star {star_a:.6f} "
+          f"({len(sv)} verts, {len(sf)} faces), refold "
+          f"{len(again_v)}/{len(again_f)} {'OK' if ok else 'BAD'}")
+    assert ok, (arm_a, star_a, len(sv), len(again_v), len(again_f))
+    # The arm's point is where five planes meet, so its two edges run
+    # into the tip along two of the four guide lines crossing there.
+    # Those lines are 36 and 72 deg apart, and the arm takes the 36:
+    # a pentagram point.  The trace came in at 35.222, which is also
+    # what stopped the tip mitring -- 0.002 off a line reads as a
+    # free edge -- so pin the angle and the mating count together.
+    _tip = _KRULL_ARM[11]
+    assert abs(_tip[0]) < 1e-9 and abs(_tip[1] - 2.0) < 1e-9, _tip
+    _e1 = (_KRULL_ARM[10][0] - _tip[0], _KRULL_ARM[10][1] - _tip[1])
+    _e2 = (_KRULL_ARM[12][0] - _tip[0], _KRULL_ARM[12][1] - _tip[1])
+    _c = ((_e1[0] * _e2[0] + _e1[1] * _e2[1])
+          / (math.hypot(*_e1) * math.hypot(*_e2)))
+    apex = math.degrees(math.acos(max(-1.0, min(1.0, _c))))
+    star_loops = group_loops(boundary_loops(sv, sf))
+    lps5 = [star_loops[0][0]] + star_loops[0][1]
+    mates5 = mating_planes('ICOSA', 'P5', lps5, 1.0)
+    nmate5 = sum(1 for per in mates5 for m in per if m is not None)
+    dihs = sorted({round(dihedral_angle(a5, b5), 4)
+                   for a5, b5 in ((plane_normals('ICOSA', 'P5')[0], m)
+                                  for per in mates5 for m in per
+                                  if m is not None)})
+    near5 = near_mating_edges('ICOSA', 'P5', lps5, 1.0)
+    ok = (abs(apex - 36.0) < 1e-3 and nmate5 == 10 and not near5)
+    print(f"krull tip {apex:.4f} deg (36), {nmate5} mating edges "
+          f"(10), dihedrals {dihs}, {len(near5)} near misses (0) "
+          f"{'OK' if ok else 'BAD'}")
+    assert ok, (apex, nmate5, near5)
+
+    # and the part really is cut on those lines: each wall raised on
+    # a mating edge has to land on the bisecting plane between the
+    # two faces, which is what lets the points of five stars butt
+    # into a spike instead of overlapping
+    kpv, kpf, _kdih = mitred_part('ICOSA', 'P5', lps5, 1.0, 0.05)
+    aa5 = plane_normals('ICOSA', 'P5')[0]
+    uu5, vv5 = _frame(aa5)
+
+    def _p5(p):
+        return tuple(p[0] * uu5[i] + p[1] * vv5[i]
+                     + (1.0 + p[2]) * aa5[i] for i in range(3))
+
+    bis5 = []
+    for per in mates5:
+        for m in per:
+            if m is None:
+                continue
+            b5 = _normalize(m)
+            nb5 = _normalize([aa5[i] + b5[i] for i in range(3)])
+            off5 = 2.0 / sqrt(sum((aa5[i] + b5[i]) ** 2
+                                  for i in range(3)))
+            if not any(all(abs(nb5[k] - q[0][k]) < 1e-9
+                           for k in range(3)) for q in bis5):
+                bis5.append((nb5, off5))
+    walls5 = 0
+    worst5 = 0.0
+    for fc5 in kpf:
+        zz5 = [kpv[i][2] for i in fc5]
+        if not (max(zz5) > 0 > min(zz5)):
+            continue
+        pts5 = [_p5(kpv[i]) for i in fc5]
+        best5 = min(max(abs(sum(p[k] * nb[k] for k in range(3)) - o)
+                        for p in pts5) for nb, o in bis5)
+        if best5 < 1e-4:
+            walls5 += 1
+            worst5 = max(worst5, best5)
+    ok = walls5 == 10
+    print(f"krull part: {len(kpv)}v {len(kpf)}f, {walls5} walls "
+          f"mitred onto a bisector (10), worst {worst5:.1e} "
+          f"{'OK' if ok else 'BAD'}")
+    assert ok, (walls5, worst5)
+
+    # and the star it makes really is five-fold about the origin
+    turn = 0.4 * math.pi
+    c5, s5 = math.cos(turn), math.sin(turn)
+    worst = max(min(max(abs(c5 * p[0] - s5 * p[1] - q[0]),
+                        abs(s5 * p[0] + c5 * p[1] - q[1]))
+                    for q in sv) for p in sv)
+    print(f"krull star 5-fold residual {worst:.2e} "
+          f"{'OK' if worst < 1e-6 else 'BAD'}")
+    assert worst < 1e-6, worst
 
     # the Whimsy blade: triangulation must cover exactly the material
     # (outer loop less the two teardrops), with no lost or doubled

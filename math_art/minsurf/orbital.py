@@ -567,12 +567,19 @@ def build_orbital(mode='ATOMIC', n=2, l=1, m=0, zeta=1.0,
     # each to the 2 m cube separately and they would stop nesting
     all_v, all_t, all_sign, all_shell = [], [], [], []
     open_edges, base = 0, 0
+    # |psi| is the same field for EVERY shell -- only the level moves --
+    # so sample it once and hand the extractor the grid.  Marching each
+    # shell from a callable re-ran the whole LCAO evaluation per shell,
+    # which is by far the most expensive part of this build.
+    ax = np.linspace(-half, half, res + 1)
+    Xg, Yg, Zg = np.meshgrid(ax, ax, ax, indexing='ij')
+    absmap = np.abs(evaluate_lcao(basis, Xg, Yg, Zg))
+    del Xg, Yg, Zg
     for si, level in enumerate(levels):
         if level <= 0.0:
             continue
         verts, tris = mst.marching_tets(
-            lambda X, Y, Z: level - np.abs(evaluate_lcao(basis,
-                                                         X, Y, Z)),
+            level - absmap,
             (-half, -half, -half), (half, half, half),
             (res, res, res))
         if not len(tris):
