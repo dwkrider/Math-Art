@@ -64,9 +64,11 @@ import math
 try:
     from .polyhedra import hull as _hull
     from .polyhedra import fit as _fit
+    from .styles import shell as _shell
 except ImportError:                       # flat-file / headless import
     from polyhedra import hull as _hull
     from polyhedra import fit as _fit
+    from styles import shell as _shell
 
 PHI = (1 + 5 ** 0.5) / 2
 
@@ -336,6 +338,7 @@ if _IN_BLENDER:
             description="Depth of the prism inserted into the rhombic "
                         "dodecahedron; zero gives it back unchanged")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        __annotations__.update(_shell.style_properties())
 
         def execute(self, context):
             try:
@@ -346,21 +349,11 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
             V = _fit.fit_cube(V, 2.0 * self.scale)
-            me = bpy.data.meshes.new("Twelve-Faced Solid")
-            me.from_pydata([tuple(v) for v in V], [],
-                           [tuple(f) for f in F])
-            me.validate(clean_customdata=True)
-            me.polygons.foreach_set('use_smooth', [False] * len(me.polygons))
-            me.update()
-            obj = bpy.data.objects.new("Twelve-Faced Solid", me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
-            for o in context.selected_objects:
-                o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            self.report({'INFO'},
-                        f"V={len(me.vertices)} F={len(me.polygons)}")
+            obj = _shell.apply(self, context, V, F, "Twelve-Faced Solid")
+            if obj is None:
+                self.report({'INFO'}, f"{len(F)} face segments")
+            else:
+                self.report({'INFO'}, f"V={len(V)} F={len(F)}")
             return {'FINISHED'}
 
         def draw(self, context):
@@ -381,6 +374,7 @@ if _IN_BLENDER:
                 lay.prop(self, 'height')
             if self.solid == 'ELONGATED':
                 lay.prop(self, 'stretch')
+            _shell.draw_style(self, lay)
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):

@@ -54,10 +54,12 @@ try:
     from .polyhedra import zonotope as zt
     from .polyhedra import seeds as _seeds
     from .polyhedra import fit as _fit
+    from .styles import shell as _shell
 except ImportError:                       # flat-file / headless import
     from polyhedra import zonotope as zt
     from polyhedra import seeds as _seeds
     from polyhedra import fit as _fit
+    from styles import shell as _shell
 
 
 # --------------------------------------------------------------------------
@@ -295,6 +297,7 @@ if _IN_BLENDER:
             name="Separate Blocks", default=False,
             description="One object per block instead of a single mesh")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        __annotations__.update(_shell.style_properties())
 
         def execute(self, context):
             try:
@@ -311,16 +314,11 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
             V = _fit.fit_cube(V, 2.0 * self.scale)
-            me = _mesh_from(name, V, F)
-            obj = bpy.data.objects.new(name, me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
-            for o in context.selected_objects:
-                o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            self.report({'INFO'},
-                        f"V={len(me.vertices)} F={len(me.polygons)}")
+            obj = _shell.apply(self, context, V, F, name)
+            if obj is None:
+                self.report({'INFO'}, f"{len(F)} face segments")
+            else:
+                self.report({'INFO'}, f"V={len(V)} F={len(F)}")
             return {'FINISHED'}
 
         def _dissection(self, context):
@@ -385,6 +383,10 @@ if _IN_BLENDER:
                 lay.prop(self, 'explode')
                 lay.prop(self, 'color')
                 lay.prop(self, 'separate')
+            else:
+                # the dissection is already an assembly of solid blocks;
+                # the shell finishes only make sense on a single shell
+                _shell.draw_style(self, lay)
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):

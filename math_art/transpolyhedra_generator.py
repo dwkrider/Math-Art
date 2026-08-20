@@ -61,10 +61,12 @@ try:
     from .polyhedra import canonical as _canon
     from .polyhedra import seeds as _seeds
     from .polyhedra import fit as _fit
+    from .styles import shell as _shell
 except ImportError:                       # flat-file / headless import
     from polyhedra import canonical as _canon
     from polyhedra import seeds as _seeds
     from polyhedra import fit as _fit
+    from styles import shell as _shell
 
 
 # --------------------------------------------------------------------------
@@ -319,6 +321,7 @@ if _IN_BLENDER:
                         "the three families the construction puts together "
                         "can be told apart")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        __annotations__.update(_shell.style_properties())
 
         def execute(self, context):
             try:
@@ -329,11 +332,7 @@ if _IN_BLENDER:
             Vs, Fs = seed_solid(self.seed)
             nf, nv = len(Fs), len(Vs)
             V = _fit.fit_cube(V, 2.0 * self.scale)
-            me = bpy.data.meshes.new("Transpolyhedron")
-            me.from_pydata([tuple(v) for v in V], [],
-                           [tuple(f) for f in F])
-            me.validate(clean_customdata=True)
-            me.polygons.foreach_set('use_smooth', [False] * len(me.polygons))
+            mats, idx = [], None
             if self.colors:
                 for name, rgba in (("Trans Seed", (0.85, 0.30, 0.20, 1.0)),
                                    ("Trans Dual", (0.20, 0.45, 0.80, 1.0)),
@@ -346,20 +345,16 @@ if _IN_BLENDER:
                         b = mat.node_tree.nodes.get("Principled BSDF")
                         if b is not None:
                             b.inputs["Base Color"].default_value = rgba
-                    me.materials.append(mat)
+                    mats.append(mat)
                 idx = [0] * nf + [1] * nv + [2] * (len(F) - nf - nv)
-                me.polygons.foreach_set('material_index', idx)
-            me.update()
-            obj = bpy.data.objects.new("Transpolyhedron", me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
-            for o in context.selected_objects:
-                o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            self.report({'INFO'}, f"V={len(me.vertices)} F={len(me.polygons)}"
-                                  f" ({nf} seed + {nv} dual + "
-                                  f"{len(F) - nf - nv} rectangles)")
+            obj = _shell.apply(self, context, V, F, "Transpolyhedron",
+                               materials=mats, material_index=idx)
+            if obj is None:
+                self.report({'INFO'}, f"{len(F)} face segments")
+            else:
+                self.report({'INFO'},
+                            f"V={len(V)} F={len(F)} ({nf} seed + {nv} dual"
+                            f" + {len(F) - nf - nv} rectangles)")
             return {'FINISHED'}
 
         def draw(self, context):
@@ -368,6 +363,7 @@ if _IN_BLENDER:
             lay.prop(self, 'seed')
             lay.prop(self, 'blend')
             lay.prop(self, 'colors')
+            _shell.draw_style(self, lay)
             lay.prop(self, 'scale')
 
     def _menu_func(self, context):
