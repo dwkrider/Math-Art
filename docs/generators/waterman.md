@@ -4,7 +4,14 @@
 
 ## Overview
 
-Waterman polyhedra, discovered by Steve Waterman, are the convex hulls of the clusters of spheres in a face-centred cubic (FCC) packing that fit inside a ball of a given radius about the origin. Indexed by an integer "root," they form an endless family of many-faced solids: root 1 is the cuboctahedron, and as the root grows the hull acquires more and more small facets and approaches a sphere. This generator takes the FCC lattice points within radius $\sqrt{2\cdot\text{root}}$ and returns their convex hull, with Solid / Leonardo / Wireframe styles.
+A **Waterman polyhedron** (Steve Waterman) is the convex hull of a cluster of equal spheres packed as tightly as possible — face-centred cubic (FCC) packing — keeping every sphere centre that fits inside a ball of a chosen radius about the origin. A single integer, the **root**, sets that radius and so picks the solid: root 1 is the cuboctahedron, and larger roots gather more shells of spheres into hulls with ever more, ever smaller facets that close in on a round ball.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Waterman Polyhedron*.
+2. **Set the Root.** This is the one shape knob: the ball's squared radius is $2\times\text{root}$, so raising the root enlarges the ball and admits more lattice points. Root 1 is the cuboctahedron; a few dozen gives a rounded many-faced solid; the maximum (1000) approaches a faceted sphere.
+3. **Choose the Style.** **Solid** is the plain closed hull; **Leonardo** opens each face into a framed panel (with **Border** / **Thickness**); **Struts** / **Ball and Stick** / **Wireframe** render the edges; **Face Segments** splits it into one inward-extruded, beveled tile per face (**Depth**, **Bevel Gap**, **Explode**, **Separate Meshes**).
+4. **Read the report.** The build prints the root with the resulting vertex and face counts, e.g. `W10: V=… F=…`. Whatever the root, the solid is centred on the origin and fit to a 2 m cube (times **Scale**).
 
 ## Options
 
@@ -29,17 +36,21 @@ Waterman polyhedra, discovered by Steve Waterman, are the convex hulls of the cl
 
 ## How it works
 
-The **face-centred cubic (FCC) lattice** is the set of integer points $\mathbf p = (x, y, z)$ whose coordinate sum is even:
+**In plain terms.** Stack cannonballs the way a greengrocer stacks oranges — each layer nestled into the dimples of the one below. That is the densest way to pack equal spheres, called *cubic close packing*, and the centres of all those spheres form a tidy 3D grid. Now draw a big imaginary ball around one chosen centre and keep only the spheres whose centres fall inside it. Shrink-wrap that cluster — take its **convex hull** — and the faceted shell you get is a Waterman polyhedron. Grow the ball and you swallow more spheres, so the shell gains more little faces and rounds off toward a globe.
+
+**The lattice.** The centres of a face-centred cubic packing are exactly the integer points $\mathbf p = (x, y, z)$ whose coordinates add up to an even number:
 
 $$x + y + z \equiv 0 \pmod 2.$$
 
-These are the sphere centres of cubic close packing. A Waterman polyhedron of **root** $n$ collects every FCC point lying within the ball of squared radius $2n$,
+That parity rule throws away half of the ordinary integer grid, and what remains is the FCC lattice — the checkerboard's 3D analogue, in which every point has twelve equally near neighbours, the fingerprint of close packing.
 
-$$W_n = \operatorname{conv}\{\,\mathbf p \in \text{FCC} : x^2 + y^2 + z^2 \le 2n\,\},$$
+**The ball, and the root.** A Waterman polyhedron of **root** $n$ keeps every FCC point lying within the ball of squared radius $2n$ and hulls them:
 
-and takes the **convex hull** of that finite point set. The factor of 2 comes from the FCC packing: choosing $r^2 = 2n$ makes the shells land on the natural coordination radii of the lattice, so each integer root corresponds to a complete spherical shell of packing spheres. Root 1 keeps the twelve nearest neighbours of the origin (plus the origin), whose hull is the **cuboctahedron**; larger roots enclose more shells and yield hulls with progressively more, and smaller, faces that converge toward a sphere.
+$$W_n = \operatorname{conv}\{\,\mathbf p \in \text{FCC} : x^2 + y^2 + z^2 \le 2n\,\}.$$
 
-Implementation: the generator enumerates candidate integer points in the bounding box $[-m, m]^3$ with $m = \lfloor\sqrt{2n}\rfloor + 1$, keeps those satisfying both the radius and the even-sum conditions, and hands them to Blender's `bmesh` convex-hull operator. Interior points that end up unused are deleted, a limit-dissolve merges coplanar hull triangles into the true polygonal faces, normals are recalculated, and the solid is scaled so its circumradius is `Scale` (dividing coordinates by $\sqrt{2n}$).
+The factor of two is not cosmetic. Squared distances between FCC points are always even integers, so choosing the cutoff at $r^2 = 2n$ makes the boundary land exactly on a natural shell of the lattice rather than slicing through one, and each whole-number root corresponds to completing one more spherical shell of packing spheres. Root 1 keeps the origin and its twelve nearest neighbours — the permutations of $(\pm1, \pm1, 0)$, all at squared distance $2$ — whose hull is the **cuboctahedron**; larger roots enclose more shells and yield hulls with progressively more, and smaller, faces that converge toward a sphere.
+
+**Building it.** The generator scans candidate integer points in the box $[-m, m]^3$ with $m = \lfloor\sqrt{2n}\rfloor + 1$, keeps those satisfying both the radius and the even-sum conditions, and hands the survivors to Blender's `bmesh` convex-hull operator. Points that end up strictly inside are deleted, a limit-dissolve merges the coplanar hull triangles into the true polygonal faces, and normals are recalculated. Finally the actual hull is centred and scaled so its bounding box spans $2\times$ `Scale` — fitting the *real* extent of the solid, not the sphere its points were drawn from. (Scaling by the lattice radius $\sqrt{2n}$ instead would leave every Waterman short of the cube, because that radius bounds the enclosing ball, which sticks out past the flat-faced hull.)
 
 ## References
 

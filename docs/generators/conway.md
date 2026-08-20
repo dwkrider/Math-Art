@@ -4,7 +4,16 @@
 
 ## Overview
 
-Build a polyhedron by applying a string of **Conway/Hart operators** to a seed solid — `dkC`, `taD`, `k3sT`, `eP5`, and so on — in the spirit of George Hart's notation and Antiprism's `conway` program. Seeds are the five Platonic solids plus parametric prisms, antiprisms and pyramids; operators (dual, ambo, kis, gyro, chamfer, reflect, propellor, and the derived truncate / join / expand / ortho / bevel / meta / snub / needle / zip) transform them combinatorially. Optional Hart-style **canonicalization** or spherization cleans up the geometry, with per-face-size coloring, spherical UVs, and Solid / Leonardo / Wireframe styles.
+Build a polyhedron by applying a string of **Conway/Hart operators** to a seed solid — `dkC`, `taD`, `k3sT`, `eP5`, and so on — in the spirit of George Hart's notation and Antiprism's `conway` program. Seeds are the five Platonic solids plus parametric prisms, antiprisms and pyramids; the primitive operators (dual, ambo, kis, gyro, chamfer, reflect, propellor, whirl) and the derived ones built from them (truncate, join, expand, ortho, bevel, meta, snub, needle, zip) transform them combinatorially. An optional geometry pass — **canonicalization**, biscription or spherization — cleans up the shape, with per-face-size coloring, spherical UVs, and Solid / Leonardo / Struts / Ball-and-Stick / Wireframe / Face-Segments styles.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Conway Polyhedron*.
+2. **Start from an Example, or type Notation.** The **Example** dropdown fills in a ready word (Truncated Icosahedron `tI`, Snub Cube `sC`, Rhombicosidodecahedron `eD`, and so on); choosing one writes it into **Notation**. Or set Example to **Custom** and type your own. A word is *operators, then a seed, applied right to left*: the seed is a capital `T C O D I` (Platonic) or `P`/`A`/`Y` with a side count (prism/antiprism/pyramid, e.g. `P5`), and everything before it is the operator chain read from the seed outward — so `dkC` is "cube, then kis, then dual." Only `k` (and derived operators that expand to it) take a number, e.g. `k3` for "kis the triangles only."
+3. **Tune the one numeric operator knob.** **Kis Height** sets how far each kis pyramid's apex is pushed out (as a fraction of the mean edge length); negative values dimple the faces inward.
+4. **Pick the Geometry pass.** **Canonical** (default) relaxes the raw result to the canonical form — every edge tangent to one common sphere, faces planar; **Biscribed** drives it to vertices-on-a-sphere *and* faces-tangent-to-a-sphere (not every solid has one — a warning shows if it can't converge); **Spherized** just projects the vertices onto a sphere; **Raw** leaves whatever the operators produced. **Canonical Iterations** caps the fallback relaxation.
+5. **Colour, map, and style.** **Coloring** *by face sides* gives one material per polygon size (Hart's convention) and also writes an `ngon_sides` face attribute for shaders/Geometry Nodes; **Spherical UV Map** lays down seam-corrected equirectangular UVs. **Style** offers Solid, Leonardo (**Border**, **Thickness**), Struts (**Thickness**), Ball and Stick (**Strut Radius**, **Node Radius**), Wireframe, and Face Segments (**Depth**, **Bevel Gap**, **Explode**, **Separate Meshes**). **Scale** fits the result to a cube of that size (operators change size unpredictably, so it is fit, not multiplied).
+6. **Read the report.** Each build prints the word with its `V=… F=…` counts; a malformed notation is rejected with an error rather than a broken mesh.
 
 ## Options
 
@@ -62,35 +71,47 @@ Renders of each selectable option:
 
 ## How it works
 
-A notation string is parsed right-to-left as *operators, then a seed with an optional number*: `dkC` = dual of kis of cube, `k3sT` = kis (on 3-gons only) of snub tetrahedron. Seeds are
+**In plain terms.** Conway's operators (truncate a cube, kis a dodecahedron, snub a tetrahedron) look like eight unrelated sculpting moves. The surprise is that they are all *the same move* applied differently. Cut every polygon of a solid into little triangles by drawing, in each face, a line from each corner to the edge midpoints and to the face's centre. Each of those small triangles is called a **flag** — it is one corner of a face together with a nearby edge — and a solid with $E$ edges has exactly $4E$ of them. Every Conway operator is then just a *recipe for regrouping the flags into the polygons of a new solid*: which of the marked points (corners, edge midpoints, face centres) survive, and how the triangles clump together into faces. Duality, truncation, chamfering — all of it — is one mechanism reading the same triangles different ways, which is why the engine implements them once, over the flags, instead of as eight hand-written constructions.
 
-- `T C O D I` — the Platonic solids (built from exact coordinates; the icosahedron and dodecahedron use $\varphi = \tfrac{1+\sqrt5}{2}$);
-- `Pn`, `An`, `Yn` — the $n$-gonal prism, antiprism and pyramid.
+**The flag complex.** Formally a flag is an incident triple *(vertex, edge, face)*: a corner of a face taken with one of the two edges meeting there. Three **involutions** act on the flags, each changing exactly one element of the triple and leaving the other two fixed:
 
-Each **operator** rewrites the vertex/face structure:
+- $s_0$ — the *other vertex* on the same edge and face,
+- $s_1$ — the *other edge* at the same vertex and face,
+- $s_2$ — the same vertex and edge, in the *other face* across that edge.
 
-- **dual** ($d$) — a vertex at every face centroid; new faces walk the faces around each old vertex.
-- **ambo** ($a$) — a vertex at every edge midpoint; rectification, the operator for which $aa = e$.
-- **kis** ($k$, optionally $kN$ restricted to $N$-gons) — raise a pyramid on each face, apex offset along the Newell normal by `Kis Height` × mean edge length.
-- **gyro** ($g$) — the chiral operator that turns each $n$-gon into $n$ pentagons, using edge points one-third along each directed edge plus a face centroid.
-- **chamfer** ($c$) — shrink each face toward its centroid and bridge the gaps with hexagons along the old edges.
+They generate the connection (flag) group and satisfy
+
+$$s_0^2 = s_1^2 = s_2^2 = \mathrm{id}, \qquad (s_0 s_2)^2 = \mathrm{id}.$$
+
+The last relation — that $s_0$ and $s_2$ **commute** — says vertex and face lie "far apart" in the incidence chain, and it is what makes **duality a relabelling rather than a construction**: swapping $s_0 \leftrightarrow s_2$ preserves every relation, so it carries a polyhedron to its dual. Ambo is likewise the swap $s_0 \leftrightarrow s_1$. Geometry rides along by **barycentric subdivision**: each flag names one triangle (its vertex, its edge midpoint, its face centroid), so once an operator says which flags group into a face, the output mesh is fully determined. The remaining operators draw on two further families of point the flags name — each face's **centroid**, and, per *directed* edge, the point **one-third of the way along it**; because the directed edges $(a,b)$ and $(b,a)$ are different flags, they give different points, and that asymmetry is exactly where chirality comes from.
+
+**The seeds** the operators start from are `T C O D I` — the Platonic solids from exact coordinates (the icosahedron and dodecahedron using $\varphi = \tfrac{1+\sqrt5}{2}$) — and `Pn`, `An`, `Yn`, the $n$-gonal prism, antiprism and pyramid. A notation string is parsed right-to-left as *operators, then a seed with an optional number*: `dkC` = dual of kis of cube, `k3sT` = kis (on 3-gons only) of snub tetrahedron.
+
+**The primitive operators**, each a flag regrouping realised geometrically as:
+
+- **dual** ($d$) — a vertex at every face centroid; new faces walk the faces around each old vertex. On flags, the $s_0 \leftrightarrow s_2$ swap.
+- **ambo** ($a$) — a vertex at every edge midpoint (rectification); the $s_0 \leftrightarrow s_1$ swap, and the operator for which $aa = e$.
+- **kis** ($k$, optionally $kN$ restricted to $N$-gons) — raise a pyramid on each face, apex offset along the Newell normal by `Kis Height` × the face's mean edge length; each face becomes a fan of triangles.
+- **gyro** ($g$) — the chiral operator turning each $n$-gon into $n$ pentagons, from the face centroid and both one-third points of every edge.
 - **propellor** ($p$) — a smaller rotated copy of each $n$-gon surrounded by $n$ quadrilaterals (chiral; $dp = pd$).
-- **reflect** ($r$) — mirror through the $x=0$ plane and reverse windings.
+- **whirl** ($w$) — the Goldberg–Coxeter $c(2,1)$ "hexpropellor": a rotated central $n$-gon surrounded by $n$ hexagons.
+- **chamfer** ($c$) — shrink each face toward its centroid and bridge the gaps with one hexagon per old edge (which needs $s_2$: the hexagon draws corner points from *both* faces on that edge).
+- **reflect** ($r$) — mirror through the $x=0$ plane and reverse every winding, so outward normals stay outward.
 
 **Derived operators** expand into primitives before application:
 
 $$t = dk\,d,\quad j = da,\quad e = aa,\quad o = dada,\quad b = dk\,da,\quad m = k\,da,\quad s = dg,\quad n = kd,\quad z = dk.$$
 
-(A number attached to $t$, $b$, $m$, $n$, $z$ passes through to the internal $k$, e.g. $tN = dk_Nd$.) After every operator the faces are re-oriented outward by flipping any whose Newell normal points toward the solid's centroid.
+(A number attached to $t$, $b$, $m$, $n$, $z$ passes through to the internal $k$, e.g. $tN = dk_N d$.) After every operator the faces are re-oriented outward by flipping any whose Newell normal points toward the solid's centroid.
 
-**Canonicalization** (Hart) then finds the canonical form in which all edges are tangent to a common unit sphere and all faces are planar. Each iteration:
+**Cleaning up the geometry.** The operators fix the *combinatorics* but leave a lopsided shape; the **Canonical** pass pulls it into the distinguished form in which every edge is tangent to one common sphere (the *midsphere*) and every face is planar — the form that exists and is unique for any polyhedral graph (Steinitz). The primary method is a **circle-packing relaxation** (Rossiter's Antiprism `canonical`, after Hart; the midsphere as two orthogonal circle packings, Schramm's 1992 "caging an egg"): it iterates on the edge-tangency points, where unit-sphere tangency and the tangent-point centroid become *exact* projections each step, leaving only face coplanarity and circle orthogonality as small relaxed residuals under an adaptive gain, and recovers the solid by polar reciprocation — reaching machine-precision tangency. When the input is not a closed orientable polyhedron (so the change of variables cannot be set up) or that iteration fails to converge, it falls back to **Hart's relaxation**, which alternates two soft nudges for up to **Canonical Iterations** steps:
 
-1. For every edge $AB$ finds the closest point $C$ to the origin on the segment, recentres the whole solid on the mean of these tangent points, and nudges each edge so its tangent point moves toward the unit sphere by the correction $C\,(1 - \lVert C\rVert)/\lVert C\rVert$, applied with relaxation $\lambda_t = 0.3$ and averaged per vertex.
-2. Planarizes each face by projecting its vertices onto their best-fit plane (normal from the Newell sum), with relaxation $\lambda_p = 0.5$.
+1. for every edge it finds the point $C$ nearest the origin on the segment, recentres the solid on the mean of those tangent points, and nudges each edge toward the unit sphere by $C\,(1 - \lVert C\rVert)/\lVert C\rVert$ with relaxation $\lambda_t = 0.3$, averaged per vertex;
+2. planarizes each face onto its best-fit plane (Newell normal), with relaxation $\lambda_p = 0.5$;
 
-Iteration stops when the largest vertex move falls below $10^{-7}$ or the iteration cap is reached. **Spherized** geometry instead simply projects every vertex to the unit sphere about the centroid.
+stopping when the largest vertex move falls below $10^{-7}$. **Biscribed** geometry goes further, driving the vertices onto one sphere *and* the faces tangent to a concentric one (not every solid has such a form — rectified solids and several truncations do not, so a warning is shown if it cannot converge). **Spherized** simply projects every vertex to a sphere about the centroid, and **Raw** keeps whatever the operators produced.
 
-Faces are colored by side count using Hart's palette (triangle red, square blue, pentagon green, hexagon gold, …), with a golden-angle HSV fallback for uncommon sizes, and the side count is also written as an `ngon_sides` face attribute usable in shaders and Geometry Nodes. Correctness is verified against 17 textbook polyhedra (cube 8/6, ambo cube 12/14, snub cube 24/38, truncated icosahedron 60/32, rhombicosidodecahedron 60/62, propellor duals `dpC = pdC`, …).
+Faces are colored by side count using Hart's palette (triangle red, square blue, pentagon green, hexagon gold, …), with a golden-angle HSV fallback for uncommon sizes, and the side count is also written as an `ngon_sides` face attribute usable in shaders and Geometry Nodes. Correctness is checked at three levels: the flag complex verifies its own relations ($|\text{flags}| = 4E$, the involutions, $(s_0 s_2)^2 = \mathrm{id}$) and that all eight operators reproduce the earlier hand-written constructions on every Platonic seed; the notation layer checks $V - E + F = 2$ and closure over more than a hundred words; and the operator module cross-checks textbook counts (cube 8/6, ambo cube 12/14, snub cube 24/38, truncated icosahedron 60/32, rhombicosidodecahedron 60/62, propellor duals `dpC = pdC`, …).
 
 ## References
 
