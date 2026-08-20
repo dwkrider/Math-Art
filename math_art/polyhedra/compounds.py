@@ -255,6 +255,100 @@ def build_axis_compound(component, group, comp_order, group_order,
     return _orbit(seed, GROUPS[group]())
 
 
+# --- a prism or antiprism together with its dual --------------------------
+# Hart closes his pyramids chapter with fifteen of these -- prisms with
+# their dual dipyramids for n = 3..10, and antiprisms with their dual
+# trapezohedra for n = 4..10 -- so they are one parametric pair here
+# rather than fifteen stored meshes.
+#
+# What makes the pair meaningful is that BOTH uniform families are
+# already edge-tangent, which is not obvious and is worth the two lines
+# of algebra.  Write R for the circumradius of the n-gon of unit edge,
+# R = 1 / (2 sin(pi/n)).  For the prism the vertical edge midpoints sit
+# at radius R and z = 0, and the polygon edge midpoints at radius
+# R cos(pi/n) and z = +-1/2; those agree exactly because
+# R sin(pi/n) = 1/2 is the definition of R.  For the antiprism, height h
+# is fixed by making the lateral edges unit, h^2 = 1 - 4 R^2 sin^2(pi/2n),
+# and then
+#
+#     d_polygon^2 - d_lateral^2
+#         = R^2 (cos^2(pi/n) - cos^2(pi/2n)) + h^2/4
+#         = R^2 (cos^2(pi/n) - cos^2(pi/2n) + sin^2(pi/n) - sin^2(pi/2n))
+#         = 0.
+#
+# So each solid has a genuine midsphere and needs no canonicalization
+# first: reciprocating in that sphere puts every dual edge crossing its
+# own primal edge at a right angle, at the point where both touch it,
+# which is the interlocked look Hart's models have.  Reciprocating in
+# any other sphere would still give the right dual SHAPE but the wrong
+# relative size, and the two would not touch.
+def edge_touch(a, b):
+    """Foot of the perpendicular from the centre onto the line ab.
+
+    Where an edge touches the midsphere, which is NOT its midpoint in
+    general -- it is for the prism, whose edges are symmetric about their
+    closest point, but not for the dipyramid, whose apex and equator sit
+    at different radii.  Assuming the midpoint there is a real trap: it
+    reports a bipyramid tangent to a sphere it is not tangent to.
+    """
+    d = [b[k] - a[k] for k in range(3)]
+    dd = sum(x * x for x in d)
+    t = -sum(a[k] * d[k] for k in range(3)) / dd if dd else 0.0
+    return [a[k] + t * d[k] for k in range(3)]
+
+
+def prism_and_dual(n, anti=False):
+    """The compound of a uniform n-prism (or n-antiprism) and its dual."""
+    if n < 3:
+        raise ValueError('a prism needs at least 3 sides')
+    if anti and n < 3:
+        raise ValueError('an antiprism needs at least 3 sides')
+    R = 0.5 / math.sin(math.pi / n)
+    if anti:
+        h = math.sqrt(max(1.0 - 4.0 * R * R
+                          * math.sin(math.pi / (2.0 * n)) ** 2, 0.0))
+        off = math.pi / n
+    else:
+        h = 1.0
+        off = 0.0
+    V = [(R * math.cos(2 * math.pi * k / n),
+          R * math.sin(2 * math.pi * k / n), h / 2.0) for k in range(n)]
+    V += [(R * math.cos(2 * math.pi * k / n + off),
+           R * math.sin(2 * math.pi * k / n + off), -h / 2.0)
+          for k in range(n)]
+    F = _hull_faces(V)
+
+    # the midsphere radius, measured rather than assumed
+    mids = [math.sqrt(sum(c * c for c in edge_touch(V[f[i]],
+                                                    V[f[(i + 1) % len(f)]])))
+            for f in F for i in range(len(f))]
+    if max(mids) - min(mids) > 1e-9:
+        raise ValueError('the %d-gonal %s has no midsphere (%.3g spread)'
+                         % (n, 'antiprism' if anti else 'prism',
+                            max(mids) - min(mids)))
+    rho = mids[0]
+
+    # polar reciprocation in that midsphere: one dual vertex per face,
+    # at rho^2 n / d.  The dual of a convex solid is convex, so hulling
+    # the poles recovers its faces.
+    P = []
+    for f in F:
+        cen = [sum(V[i][k] for i in f) / len(f) for k in range(3)]
+        a, b, c = (V[i] for i in f[:3])
+        u = [b[k] - a[k] for k in range(3)]
+        w = [c[k] - a[k] for k in range(3)]
+        nx = [u[1] * w[2] - u[2] * w[1], u[2] * w[0] - u[0] * w[2],
+              u[0] * w[1] - u[1] * w[0]]
+        ln = math.sqrt(sum(x * x for x in nx))
+        nx = [x / ln for x in nx]
+        d = sum(nx[k] * cen[k] for k in range(3))
+        if d < 0:
+            nx = [-x for x in nx]
+            d = -d
+        P.append(tuple(rho * rho * x / d for x in nx))
+    return [(V, F), (P, _hull_faces(P))]
+
+
 # Named compounds reachable by the rule.  Each row is
 # (key, label, component, group, component axis, group axis, phase),
 # and every count is asserted in the self-test -- transcription is the
@@ -293,10 +387,15 @@ COMPOUNDS = [
     ('5OCTA', "Compound of 5 Octahedra"),
     ('CUBE_OCTA', "Cube + Octahedron"),
     ('DODECA_ICOSA', "Dodecahedron + Icosahedron"),
+    ('PRISM_DUAL', "Prism + Dual Dipyramid"),
+    ('ANTIPRISM_DUAL', "Antiprism + Dual Trapezohedron"),
 ] + [(k, lbl) for k, lbl, *_rest in AXIS_COMPOUNDS]
 
+#: compounds whose shape is set by the side count rather than a preset
+SIDED = {'PRISM_DUAL': False, 'ANTIPRISM_DUAL': True}
 
-def build_compound(kind, phase=None):
+
+def build_compound(kind, phase=None, sides=5):
     """Return a list of components, each (V, F).
 
     `phase` overrides a named compound's own turn angle, which is what
@@ -304,6 +403,8 @@ def build_compound(kind, phase=None):
     away from the named angle the components separate and the count
     generally rises.
     """
+    if kind in SIDED:
+        return prism_and_dual(sides, anti=SIDED[kind])
     if kind in _AXIS_BY_KEY:
         _k, _lbl, comp, grp, ca, ga, ph, _n = _AXIS_BY_KEY[kind]
         return build_axis_compound(comp, grp, ca, ga,

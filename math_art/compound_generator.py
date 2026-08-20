@@ -47,9 +47,11 @@ except ImportError:
 # The mathematics lives in the sibling `polyhedra` engine package;
 # this module is the Blender layer over it.
 try:
+    from .polyhedra import compounds as _cmp
     from .polyhedra.compounds import (AXIS_COMPOUNDS, COMPOUNDS,
                                       build_compound)
 except ImportError:  # flat import outside the package
+    from polyhedra import compounds as _cmp
     from polyhedra.compounds import (AXIS_COMPOUNDS, COMPOUNDS,
                                      build_compound)
 
@@ -85,7 +87,8 @@ except ImportError:  # flat import outside the package
 
 try:
     import bpy
-    from bpy.props import EnumProperty, FloatProperty, BoolProperty
+    from bpy.props import (BoolProperty, EnumProperty, FloatProperty,
+                           IntProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -134,13 +137,18 @@ if _IN_BLENDER:
                         "and the count usually rises, which is the "
                         "rotational freedom several of these families "
                         "have")
+        sides: IntProperty(
+            name="Sides", default=5, min=3, max=24,
+            description="Side count of the prism or antiprism, for the "
+                        "two compounds built from one. Hart draws prisms "
+                        "for 3 to 10 sides and antiprisms for 4 to 10")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def execute(self, context):
             try:
                 axis_kind = any(self.compound == r[0] for r in AXIS_COMPOUNDS)
                 comps = build_compound(
-                    self.compound,
+                    self.compound, sides=self.sides,
                     phase=self.phase if axis_kind and self.phase else None)
             except Exception as e:      # noqa: BLE001
                 self.report({'ERROR'}, str(e))
@@ -242,4 +250,52 @@ def _selftest():
     # turning off the named angle is what the freedom families do: the
     # five cubes separate into a generic thirty
     assert len(build_compound('H_5CUBES', phase=17.0)) > 5
+
+    # --- prism / antiprism with its dual --------------------------------
+    # `prism_and_dual` raises if the solid has no midsphere, so the whole
+    # of Hart's range exercising cleanly is itself the edge-tangency
+    # claim being checked -- for prisms n = 3..10 and antiprisms n = 4..10,
+    # plus the ends of the operator's wider slider.
+    for n in list(range(3, 11)) + [24]:
+        for anti in (False, True):
+            (V, F), (P, G) = build_compound(
+                'ANTIPRISM_DUAL' if anti else 'PRISM_DUAL', sides=n)
+            # the prism has 2n vertices and n+2 faces, and its dual
+            # swaps the two; the antiprism has 2n vertices and 2n+2
+            assert len(V) == 2 * n, (n, anti, len(V))
+            assert len(F) == (2 * n + 2 if anti else n + 2), (n, anti,
+                                                              len(F))
+            assert len(P) == len(F) and len(G) == len(V), (n, anti)
+
+            # The point of reciprocating in the MIDSPHERE rather than in
+            # any sphere: each dual edge must cross its primal edge, at
+            # right angles, at the point where both touch that sphere.
+            #
+            # Compare TANGENT points, not midpoints.  A prism's edges are
+            # symmetric about their closest point so the two coincide
+            # there, but a dipyramid's are not -- its apex and equator sit
+            # at different radii -- and the midpoint version of this test
+            # fails on a perfectly correct compound.
+            def touch(VV, FF):
+                out = {}
+                for f in FF:
+                    for i in range(len(f)):
+                        a, b = VV[f[i]], VV[f[(i + 1) % len(f)]]
+                        m = tuple(round(c, 7) + 0.0
+                                  for c in _cmp.edge_touch(a, b))
+                        out[m] = tuple(b[k] - a[k] for k in range(3))
+                return out
+
+            mv, mp = touch(V, F), touch(P, G)
+            assert set(mv) == set(mp), (n, anti, len(mv), len(mp))
+            rho = _math.dist((0, 0, 0), next(iter(mv)))
+            for m, d1 in mv.items():
+                assert abs(_math.dist((0, 0, 0), m) - rho) < 1e-7, (n, anti, m)
+                d2 = mp[m]
+                c = sum(d1[k] * d2[k] for k in range(3))
+                n1 = _math.sqrt(sum(x * x for x in d1))
+                n2 = _math.sqrt(sum(x * x for x in d2))
+                assert abs(c) / (n1 * n2) < 1e-7, (n, anti, m, c)
+    print("PRISM_DUAL/ANTIPRISM_DUAL  n=3..10,24: dual edges cross primal "
+          "edges perpendicularly at the shared midsphere tangent points")
     print("RESULT: OK")
