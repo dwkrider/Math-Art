@@ -35,9 +35,12 @@ PARAMS = {
     # The bare default is a rhombic triacontahedron, which the zonohedra
     # entry above already shows.  The dissection is what this operator
     # adds that nothing else has: Kowalewski's twenty golden rhombohedra,
-    # opened up and colour-matched by zone triple.
+    # colour-matched by zone triple.  Assembled rather than exploded --
+    # the blocks close up into the solid exactly, so the icon reads as a
+    # polyhedron whose faces are colour-coded by the block behind them,
+    # which is the point; exploded it reads as debris at 64 px.
     "mesh.zonish_add": dict(mode='DISSECTION', seed='ICOSA',
-                            explode=0.45, color=True),
+                            explode=0.0, color=True),
     # Halfway is the whole point of the operator -- either end
     # is just a solid we already ship.  The cuboctahedron reads
     # clearly at icon size and its dual is the rhombic
