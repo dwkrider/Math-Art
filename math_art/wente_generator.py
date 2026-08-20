@@ -375,13 +375,14 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         lobes_l: IntProperty(
-            name="l", default=5, min=2, max=24,
+            name="Closure l", default=5, min=2, max=24,
             description="Numerator of the closure fraction l/n, which "
                         "must lie strictly between 1 and 2.  Walter's "
                         "own figures use 5/4")
         lobes_n: IntProperty(
-            name="n", default=4, min=1, max=24,
-            description="Denominator of the closure fraction: the torus "
+            name="Lobes", default=4, min=1, max=24,
+            description="Denominator n of the closure fraction l/n, and "
+                        "the lobe count: the torus "
                         "closes after n periods of the profile")
         ures: IntProperty(name="Along Profile", default=240, min=24,
                           max=1200)

@@ -550,11 +550,11 @@ if _IN_BLENDER:
                         "0.5 is the cylinder, (0, 0.5) unduloids, "
                         "negative nodoids.  r = 0 is excluded")
         lobes: IntProperty(
-            name="Lobes n", default=3, min=2, max=12,
+            name="Lobes", default=3, min=2, max=12,
             description="Number of lobes on the bubble; the resonance "
                         "point is fixed by t = n/m")
         covers: IntProperty(
-            name="Covers m", default=1, min=1, max=6,
+            name="Covers", default=1, min=1, max=6,
             description="The section closes only on the m-fold cover, "
                         "so y runs over [0, 2 m pi].  Must be coprime "
                         "to the lobe count")

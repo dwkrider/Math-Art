@@ -946,13 +946,13 @@ if _IN_BLENDER:
             name="Ellipse Squash", default=0.5, min=0.0, max=0.95,
             description="Ellipse eccentricity (ELLIPSE)")
         elastica_m: IntProperty(
-            name="Winding m", default=1, min=1, max=20,
+            name="Winding", default=1, min=1, max=20,
             description="Numerator of the elastica's monodromy m/n: "
                         "one lobe carries the frame 2 pi m/n around "
                         "the axis, so the closed curve accumulates m "
                         "full turns")
         elastica_n: IntProperty(
-            name="Lobes n", default=3, min=2, max=40,
+            name="Lobes", default=3, min=2, max=40,
             description="Denominator of the monodromy m/n: the curve "
                         "has n lobes.  m/n must lie in (0, 2-sqrt 2)")
         cw_family: EnumProperty(
@@ -972,26 +972,26 @@ if _IN_BLENDER:
                     "slides Heller's isospectral family")],
             default='WILLMORE')
         cw_lobes: IntProperty(
-            name="CW Lobes", default=3, min=2, max=24,
+            name="Lobes", default=3, min=2, max=24,
             description="Lobe count n of the constrained elastic curve")
         cw_winding: IntProperty(
-            name="CW Winding", default=1, min=1, max=23,
+            name="Winding", default=1, min=1, max=23,
             description="Winding w, coprime to the lobe count")
         cw_shape: FloatProperty(
-            name="CW Shape", default=0.55, min=0.05, max=3.0,
+            name="Shape", default=0.55, min=0.05, max=3.0,
             description="Lattice shape parameter (custom families only)")
         cw_branch: EnumProperty(
-            name="CW Branch",
+            name="Branch",
             items=[('UPPER', "Upper (gentler)", "the gentler root"),
                    ('LOWER', "Lower (curlier)", "the curlier root")],
             default='UPPER')
         cw_phase: FloatProperty(
-            name="CW Phase", default=0.5, min=0.02, max=0.98,
+            name="Phase", default=0.5, min=0.02, max=0.98,
             description="Phase x0 as a fraction of the imaginary "
                         "half-period; 0.5 is lambda = 0, off-centre "
                         "sweeps genuinely constrained curves")
         cw_high_wrap: BoolProperty(
-            name="CW High Wrap", default=False,
+            name="High Wrap", default=False,
             description="Use the high-wrap branch m = 2n + w")
         shade_smooth: BoolProperty(name="Shade Smooth", default=True)
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
