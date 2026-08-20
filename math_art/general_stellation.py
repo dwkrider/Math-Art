@@ -1011,6 +1011,19 @@ def five_cubes_cells(engine):
 # code entries: shell labels, 'all', or ('hand', shell_label, hand_index)
 # for one hand of a chiral shell.  Shell labels are the engine's generic
 # ones (deterministic: sorted by power, then mean radius).
+#
+# Two of the icosahedron's stellations are NOBLE -- isohedral and
+# isogonal at once, the property that singles out the nine regulars --
+# and Coxeter, Du Val, Flather & Petrie's letters name them directly:
+# D = a+b+c+d and H = every cell.  Because the engine's own orbit table
+# prints its generic labels against Du Val's (s01=b, s02=c, s03=d, ...),
+# those two need no shell hunting; they are read off it.
+#
+# The other two noble stellations Hart lists are of the rhombic
+# triacontahedron and are named K and 2B in MESSER's notation, which is a
+# different enumeration from the shells this engine finds.  Without that
+# paper there is no way to say which cells they are, so they are absent
+# rather than guessed -- see BACKLOG.md.
 SEEDS = ('icosahedron', 'dodecahedron', 'dodecahedron_tetrahedral',
          'cuboctahedron', 'rhombic_dodecahedron', 'triakis_tetrahedron',
          'rhombic_triacontahedron')
@@ -1028,11 +1041,14 @@ NAMED_PRESETS = {
         ('five_tetrahedra', 'Compound of five tetrahedra (chiral)',
          ['a', 's01', 's02', 's03', 's04', 's05', ('hand', 's07', 0)],
          'Du Val Ef1 with one hand of f1; Crennell 47'),
+        ('duval_d', 'Du Val D (noble stellation)',
+         ['a', 's01', 's02', 's03'],
+         'noble -- isohedral AND isogonal; Du Val D = a+b+c+d'),
         ('great', 'Great icosahedron',
          ['a', 's01', 's02', 's03', 's04', 's05', 's06', 's07', 's08',
           's09'], 'Du Val G; Crennell 7'),
         ('final', 'Final stellation (echidnahedron)', ['all'],
-         'Du Val H; Crennell 8'),
+         'Du Val H; Crennell 8; the other noble icosahedral stellation'),
     ],
     'dodecahedron': [
         ('core', 'Dodecahedron', ['a'], 'Platonic seed'),
