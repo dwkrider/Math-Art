@@ -5,7 +5,9 @@
 Add an escape-time volumetric fractal (Mandelbulb,
 quaternion Julia or Mandelbox) as a solid mesh.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Solid three-dimensional **escape-time fractals** — the Mandelbulb, quaternion Julia sets and the Mandelbox — meshed as watertight objects rather than rendered as clouds.
+
+The Mandelbulb (Daniel White and Paul Nylander, 2009) is the best-known attempt to answer a question that had been open since the Mandelbrot set became famous: what is the 3-D version? There is no three-dimensional number system with the right multiplication, so the Mandelbulb *defines* one — raising a point to a power by multiplying its spherical angles — and the resulting surface has the organic, foliated look that no straightforward generalisation produced.
 
 ## Options
 
@@ -39,7 +41,27 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Escape time.** Every point of a sample grid is iterated under the fractal map. Orbits that stay bounded are **inside** the set; orbits that escape are **outside**. That much is the classic algorithm — but it yields only a yes/no per voxel, which meshes into a blocky shell.
+
+**The distance estimate.** The fix is to give the outside points a *distance* rather than a flag. The Hart–Sandin–Kauffman estimator tracks the derivative of the iteration alongside the orbit and converts the escape into a sub-voxel distance to the boundary:
+
+$$d \approx \frac{|z|\log|z|}{|z'|}.$$
+
+That turns the yes/no into a **signed field**, and the zero level set of a smooth field is a smooth surface. Extracted by the [Minimal Surface Toolkit](tpms.md)'s `marching_tets`, the result is printable rather than voxelised — which is the whole reason these can be solids here instead of raymarched images.
+
+**The maps.**
+
+**Mandelbulb** — $z\mapsto z^p+c$ in White–Nylander spherical form. There being no 3-D division algebra, the power is *defined* geometrically: multiply the spherical angles and raise the radius,
+
+$$(r,\theta,\varphi)^p=\big(r^p,\ p\theta,\ p\varphi\big),$$
+
+then convert back to Cartesian and add $c$. This is not a ring homomorphism — it is not associative or distributive — which is exactly why the object has no clean algebraic theory and had to be found by experiment.
+
+**Quaternion Julia sets** use a genuine division algebra, so $z\mapsto z^2+c$ means what it says. They are mathematically the more legitimate 3-D analogue, and visually the smoother, less foliated one.
+
+**Mandelbox** is a fold-and-scale map — reflect coordinates outside a box, invert inside a sphere, scale — producing boxy, architectural structure rather than organic lobes.
+
+**Cleanup.** These sets throw off isolated specks that are genuinely in the set but disconnected from the body. An optional largest-connected-component pass drops them, leaving a single closed solid centred in the 2 m cube.
 
 ## References
 

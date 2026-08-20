@@ -5,7 +5,9 @@
 Grow a realistic snow crystal with Reiter's cellular
 automaton and build it as a two-sided hexagonal-relief plate.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Snow crystals grown by **Reiter's cellular automaton** (2005) — not drawn, but simulated. From a single frozen cell, two parameters produce the full range of real snow-crystal habits: hexagonal plates, sectored plates, stellar dendrites and the fern-like forms.
+
+The reason a rule this simple works is that snowflake growth is genuinely a diffusion-limited process: water vapour must reach the crystal to freeze onto it, and the tips reach further into the undepleted vapour than the notches do. That instability is what makes dendrites, and it is all the automaton encodes. The six-fold symmetry is not imposed — it follows from the lattice.
 
 ## Options
 
@@ -41,7 +43,24 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The lattice and the state.** Cells sit on a triangular (hexagonal) lattice, each holding an amount of water $s$. A cell is **frozen** — part of the crystal — once $s\ge1$, and **receptive** if it is frozen or touches a frozen cell.
+
+**One step.** The water at each cell is split in two according to receptivity:
+
+- the **receptive** part stays put and gains a constant vapour input $\gamma$ — this is the crystal absorbing water from the surrounding air;
+- the **non-receptive** part diffuses to the six neighbours with coefficient $\alpha$,
+
+$$u_{i}^{\text{new}} = u_i + \frac{\alpha}{2}\left(\overline{u}_i - u_i\right),$$
+
+where $\overline{u}_i$ is the average over the six neighbours — the standard discrete Laplacian. The two parts are then recombined.
+
+That separation is the crucial modelling step. Water already committed to the crystal's neighbourhood does not diffuse away, so the crystal both consumes vapour and shields the region behind its tips — which is precisely the diffusion instability that makes branches branch.
+
+**What the two parameters do.** $\alpha$ sets how fast vapour redistributes and $\gamma$ how much arrives; between them they select the habit. Low $\gamma$ starves the growth into thin dendrites, higher $\gamma$ fills the crystal out into plates, and intermediate values give the sectored plates that lie between.
+
+**Why the symmetry is exact.** Nothing enforces six-fold symmetry. The lattice update is **isotropic** — all six neighbours are treated identically — so a single seed grows a crystal whose symmetry is the lattice's own. The result is exactly six-fold, not approximately, which is also why real snowflakes are symmetric: each arm experiences the same conditions at the same time.
+
+**Into geometry.** Each frozen cell is extruded to give the crystal thickness, so the automaton's occupancy grid becomes a solid plate with the dendrite structure carried in its outline.
 
 ## References
 

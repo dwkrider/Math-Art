@@ -5,7 +5,9 @@
 Add a Fathauer fractal tiling built from a rep-tile
 prototile.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The same [fractal tiling](fractal_tiling.md) idea — a gap-free interior with a fractal limit boundary — built from **rep-tile** prototiles instead of kites and darts.
+
+That substitution does something neat. A [rep-tile](reptile.md) dissects into scaled copies of itself, which means its edge lengths already stand in the right ratios: the "long" edge of a child glues exactly onto the "short" edge of its parent. The generation ratio is therefore not a free parameter to be tuned but a consequence of the prototile's own self-similarity.
 
 ## Options
 
@@ -50,7 +52,19 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The ratio comes from the prototile.** Take the isosceles right triangle. Its hypotenuse is $\sqrt2$ times a leg, so a child scaled by
+
+$$s=\frac{1}{\sqrt2}$$
+
+has a hypotenuse exactly equal to the parent's leg — child long edge meets parent short edge, endpoint to endpoint. Nothing is fitted; the $45$–$45$–$90$ triangle's own proportions fix the generation ratio.
+
+The seed follows just as directly: two such triangles sharing their hypotenuse form a unit square, which is the generation-0 patch.
+
+**Growth.** Each generation glues a ring of $s$-scaled children onto the exposed short edges of the previous one, edge-to-edge. Because the ratio is exact, the interior stays gap-free at every depth; because $s<1$, the extent converges and the accumulated boundary crinkles into a fractal curve in the limit.
+
+**The families.** Squares, hexes, iamonds, rhombs, bolos, kites, rectangles and reflection variants — nine in all. Each is a rep-tile in its own right, and each brings its own ratio: the ratio is $1/\sqrt{N}$ for a rep-$N$ tile, since $N$ copies must have the parent's area.
+
+**Colouring by type** paints each tile by its orientation class — which rotation and reflection produced it. With one shape repeated at many scales the substitution structure is otherwise nearly impossible to read, and the colouring makes the generations and their turnings visible at a glance.
 
 ## References
 
