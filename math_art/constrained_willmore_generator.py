@@ -1,6 +1,18 @@
 
-# Constrained Willmore Hopf tori -- Heller's equivariant family in closed
-# form (Weierstrass elliptic functions), meshed through the Hopf fibration.
+# Constrained Willmore tori -- Heller's equivariant families in closed
+# form (Weierstrass elliptic functions).  Two constructions from the same
+# paper share this module:
+#
+#   ROUTE A (Hopf tori):        constrained elastic curves on S^2, lifted
+#                               through the Hopf fibration; exposed as the
+#                               CONSTRAINED preset on mesh.hopf_torus_add.
+#   ROUTE B (tori of revolution): elastic curves in the hyperbolic plane,
+#                               rotated about an axis; exposed as the
+#                               ELASTIC_TORUS mode on
+#                               mesh.delaunay_surface_add (they are the
+#                               CMC surfaces of revolution of the SPHERICAL
+#                               space form, so they extend the Delaunay
+#                               family there).
 #
 # A Hopf torus (Pinkall 1985) is the preimage under the Hopf fibration of a
 # closed curve gamma on S^2; it is constrained Willmore -- a critical point
@@ -77,6 +89,71 @@
 #  * ENERGY (Theorem 5).  W = (16 n eta1 - 8 n omega1 E) pi / sqrt(G),
 #    reproduced by the meshed torus and by the analytic curvature integral.
 #
+# ROUTE B -- constrained Willmore TORI OF REVOLUTION (Heller Sect. 3.5-6).
+# Rotating a closed curve of the upper half plane about the x-axis gives a
+# torus that is constrained Willmore exactly when the curve is ELASTIC
+# (lambda = 0) in the upper half plane viewed as H^2 (Langer-Singer 1984).
+# The same Theorem-2 formulas deliver these curves; what changes:
+#
+#  * LATTICE.  Closed elastic curves in H^2 are ORBITLIKE (D > 0), so the
+#    lattice is RECTANGULAR: periods 2 and 2iT, omega1 = 1, omega3 = iT,
+#    real roots e1 > e2 > e3 of P3.  The wavelike case D < 0 admits at
+#    most one closed curve, the elastic figure-eight (Heller Prop. 5 /
+#    Example 1), which yields NO Willmore torus; the rectangular lattice
+#    excludes it structurally.
+#
+#  * CLOSURE (Theorem 4).  rho = omega1 + iy, y in (0, T); the closing
+#    function g = eta1 rho - zeta(rho) omega1 is then PURELY IMAGINARY,
+#    rising monotonically (measured, all shapes) from 0 at y -> 0 to
+#    pi/2 at omega3 -- so unlike Route A every target m pi/(2n) with
+#    0 < m < n, gcd(m, n) = 1, has exactly one root at every lattice
+#    shape, and the n-lobed curve exists for all n > 1 (Heller Thm. 4).
+#    E = P(rho) sweeps (e2, e1), so P3(E) < 0 ALWAYS on this branch:
+#    by Proposition 6 every torus built here is CMC in S^3 (the H^3
+#    branches of Prop. 6 need P3(E) > 0 or a wavelike curve, neither of
+#    which closes here).
+#
+#  * MODEL (Sect. 3.4).  g imaginary <=> the monodromy of [ghat1:ghat2]
+#    is a ROTATION about 0, so the curve lives in the POINCARE DISC with
+#    0 the fixed point -- not the upper half plane (a real g would give a
+#    dilation z -> rz, the half-plane's isometry).  The 3.4 gauge is the
+#    disc analogue of Route A's: r^2 is THE constant making
+#        |ghat2|^2 - r^2 |ghat1|^2   constant along the curve
+#    (sign flipped against the S^2 case), and then w = r ghat1/ghat2
+#    stays inside the unit disc and runs at constant Poincare speed
+#    sqrt(-G), G = 4(e3 - E) = 8b - 4E < 0.  x0 = omega3/2 again gives
+#    exactly lambda = 0 (b = e3/2 to machine precision), which is the
+#    ONLY admissible phase here: an off-centre x0 makes the curve
+#    constrained (lambda != 0) elastic, and its revolution torus is NOT
+#    constrained Willmore -- so Route B does not expose the phase.
+#
+#  * SURFACE.  Cayley-map the disc to the upper half plane (0 -> i) and
+#    revolve about the boundary axis: p = (u, v cos phi, v sin phi).
+#    The disc rotation freedom (an S^3 isometry -- it is the elliptic
+#    rotation about i of the profile plane) is spent balancing the
+#    profile, minimising max |z| so the stereographic picture is compact.
+#    The n-lobed symmetry pins the curve's elliptic centre to the disc
+#    centre, whose Cayley image i is the profile-plane trace of the
+#    great circle fixed by the revolution -- which is why this placement,
+#    and no rescaling of it, is the one where the torus is CMC in the
+#    UNIT 3-sphere (checked to 1e-13: H_S3 = (1+|p|^2) H_R3 / 2 + nu . p
+#    is constant along the profile).  The n = 2 family interpolates the
+#    embedded two-lobed CMC tori between the doubled geodesic sphere
+#    (W -> 8 pi as T -> 0) and the bifurcation homogeneous torus at
+#    H = 1/sqrt(3) (W -> 4 pi^2 / sqrt(3) as T -> inf) -- both limits are
+#    closed-form anchors the self-test pins.
+#
+#  * ENERGY (Theorem 5, revolution case).  As printed the paper gives
+#    W = 8 n eta1 pi - 4 n omega1 P(omega3) pi, which is the bending
+#    energy (pi/2) int kappa^2 ds read in CURVATURE-G units; the Willmore
+#    energy of the actual surface -- int H^2 dA over the revolution torus
+#    in R^3, which is what the mesh integrates -- carries the same
+#    1/sqrt(-G) normalisation the paper writes explicitly in its Hopf
+#    formula:
+#        W(f) = (8 n eta1 - 4 n omega1 P(omega3)) pi / sqrt(-G) ,
+#    verified here three independent ways (closed form, analytic
+#    curvature integral, finite differences on the sampled profile).
+#
 # References:
 # - Lynn Heller, "Constrained Willmore tori and elastic curves in
 #   2-dimensional space forms", Comm. Anal. Geom. 22 (2014), no. 2;
@@ -96,16 +173,28 @@
 # - Joel Langer, David A. Singer, "The total squared curvature of closed
 #   curves", J. Diff. Geom. 20 (1984), 1-22 -- the elastica ODE and the
 #   free/Willmore closure windows the self-test reduces to.
+# - Joel Langer, David A. Singer, "Curves in the hyperbolic plane and mean
+#   curvature of tori in 3-space", Bull. London Math. Soc. 16 (1984),
+#   531-534 -- a torus of revolution is Willmore-critical exactly when its
+#   profile is elastic in H^2, and W = (pi/2) int kappa^2 ds (Route B).
+# - Ulrich Pinkall, Ivan Sterling, "On the classification of constant mean
+#   curvature tori", Ann. of Math. 130 (1989), 407-451 -- the CMC tori in
+#   S^3 that Route B's Proposition-6 branch produces are the rotational
+#   members of this classification.
 # - NIST DLMF ch. 23 (Weierstrass functions): the sigma/zeta/P quasi-
 #   periodicity used for argument reduction.
 
 # This module is a LIBRARY, not a generator: it has no operator of its
-# own.  Its curves are exposed as presets on `mesh.hopf_torus_add`
+# own.  Route A's curves are exposed as presets on `mesh.hopf_torus_add`
 # (math_art/hopf_fibration_generator.py), because a constrained
-# Willmore torus IS a Hopf torus -- over a constrained elastic curve
-# rather than a free one.  Keeping the operator there keeps one menu
-# entry for one construction; keeping the mathematics here keeps a
-# large, self-contained numeric core out of the Hopf module.
+# Willmore Hopf torus IS a Hopf torus -- over a constrained elastic
+# curve rather than a free one.  Route B's tori are exposed as the
+# ELASTIC_TORUS mode on `mesh.delaunay_surface_add`
+# (math_art/delaunay_generator.py), because they are exactly the CMC
+# surfaces of revolution of the spherical space form -- the members of
+# the Delaunay family that close into compact tori, which the rolling
+# conics of R^3 can never do.  One menu entry per construction; the
+# large numeric core stays here.
 
 _UNUSED_bl_info = {
     "name": "Constrained Willmore Torus",
@@ -233,6 +322,356 @@ def _closure_roots(lat, target, ngrid=1600):
 
 def _pick_root(roots, branch):
     return roots[-1] if branch == 'UPPER' else roots[0]
+
+
+# --------------------------------------------------------------------------
+# Route B: rectangular (orbitlike, D > 0) lattice with argument reduction
+# --------------------------------------------------------------------------
+
+class _Rectangular:
+    """Weierstrass P, P', zeta, sigma on the rectangular lattice with
+    periods 2 and 2iT (omega1 = 1 real, omega3 = iT imaginary), evaluated
+    at arbitrary complex arguments by reduction to the fundamental cell.
+    Real invariants with D = g2^3 - 27 g3^2 > 0: the ORBITLIKE case, the
+    only one whose elastic curves close in H^2 (Heller Thm. 4 vs Prop. 5)."""
+
+    def __init__(self, t):
+        self.t = float(t)
+        self.tau = 1j * self.t
+        self.p1 = 2.0                      # real period
+        self.p2 = 2j * self.t              # imaginary period
+        self.w3 = 1j * self.t              # imaginary half period
+        self.L = _Lattice(1.0, self.tau)
+        self.eta1 = float(np.real(self.L.eta1))   # zeta(1); real
+        # zeta(w3) by Legendre:  eta1 * w3 - eta3 * 1 = pi i / 2
+        self.eta3 = self.eta1 * self.w3 - 0.5j * pi
+        self.d1 = 2.0 * self.eta1
+        self.d3 = 2.0 * self.eta3
+
+    def _reduce(self, z):
+        z = np.asarray(z, dtype=complex)
+        k = np.rint(z.imag / (2.0 * self.t))
+        j = np.rint(0.5 * z.real)
+        return z - j * self.p1 - k * self.p2, j, k
+
+    def wp(self, z):
+        zr, _, _ = self._reduce(z)
+        return self.L.wp(zr)
+
+    def wp_prime(self, z):
+        zr, _, _ = self._reduce(z)
+        return self.L.wp_prime(zr)
+
+    def zeta(self, z):
+        zr, j, k = self._reduce(z)
+        return self.L.zeta(zr) + j * self.d1 + k * self.d3
+
+    def sigma(self, z):
+        zr, j, k = self._reduce(z)
+        Om = j * self.p1 + k * self.p2
+        H = j * self.d1 + k * self.d3
+        eps = np.where(((j + k + j * k).astype(np.int64) % 2) == 0,
+                       1.0, -1.0)
+        return eps * self.L.sigma(zr) * np.exp(H * (zr + 0.5 * Om))
+
+    def invariants(self):
+        """(g2, g3) from P'^2 = 4P^3 - g2 P - g3 at two generic points."""
+        zs = np.array([0.31 + 0.17j, 0.52 + 0.41j])
+        P = self.wp(zs)
+        rhs = self.wp_prime(zs) ** 2 - 4.0 * P ** 3
+        A = np.stack([-P, -np.ones_like(P)], axis=1)
+        g2, g3 = np.linalg.solve(A, rhs)
+        return g2, g3
+
+
+def _h2_closure_roots(lat, target, ngrid=1200):
+    """All rho = omega1 + iy, y in (0, T), with Im g(rho) = target, where
+    g = eta1 rho - zeta(rho) omega1 (Heller Thm. 4; purely imaginary on
+    this segment).  Im g rises from 0 (y -> 0) to pi/2 (y -> T); measured
+    monotone at every lattice shape, but scanned rather than trusted."""
+    T = lat.t
+    ys = np.linspace(T * 1e-6, T * (1.0 - 1e-9), ngrid)
+    rho = 1.0 + 1j * ys
+
+    def gval(r):
+        return (lat.eta1 * r - lat.zeta(r)).imag
+
+    g = gval(rho) - target
+    roots = []
+    for c in np.nonzero(np.sign(g[1:]) != np.sign(g[:-1]))[0]:
+        ylo, yhi = ys[c], ys[c + 1]
+        glo = g[c]
+        for _ in range(90):
+            ym = 0.5 * (ylo + yhi)
+            if (gval(1.0 + 1j * ym) - target) * glo > 0.0:
+                ylo = ym
+            else:
+                yhi = ym
+        roots.append(0.5 * (ylo + yhi))
+    return roots
+
+
+def _h2_eval(lat, rho, r, x0, x):
+    """The disc curve w = r ghat1/ghat2 of Heller (3.5) and its first two
+    x-derivatives, all in closed form (log-derivatives are zeta sums,
+    their derivatives P sums)."""
+    zx = np.asarray(x, dtype=float) + x0
+    zr = lat.zeta(rho)
+    s0 = lat.sigma(zx)
+    g1 = lat.sigma(zx - rho) / s0 * np.exp(zr * zx)
+    g2 = lat.sigma(zx + rho) / s0 * np.exp(-zr * zx)
+    lg1 = lat.zeta(zx - rho) - lat.zeta(zx) + zr
+    lg2 = lat.zeta(zx + rho) - lat.zeta(zx) - zr
+    w = r * g1 / g2
+    wp = w * (lg1 - lg2)
+    dlg1 = -lat.wp(zx - rho) + lat.wp(zx)
+    dlg2 = -lat.wp(zx + rho) + lat.wp(zx)
+    wpp = wp * (lg1 - lg2) + w * (dlg1 - dlg2)
+    return w, wp, wpp, (g1, g2, lg1, lg2)
+
+
+def heller_h2_curve(t, n, m, samples=1024, branch=0):
+    """Closed elastic curve in the hyperbolic plane (Poincare disc model).
+
+    t        rectangular lattice shape (omega3 = it);
+    n        lobes = periods of P until closure (n >= 2);
+    m        winding number, 1 <= m < n, gcd(m, n) = 1;
+    samples  points along the curve (endpoint excluded);
+    branch   which closure root if several (measured: always one).
+
+    Returns (w, info): w complex samples in the unit disc, info a dict
+    with the lattice data, G < 0, E, e3, the analytic derivatives, and
+    every diagnostic the self-test gates on.  The phase is pinned to
+    x0 = omega3/2, the unique lambda = 0 (elastic) phase; off-centre
+    phases give constrained elastic curves whose revolution tori are NOT
+    constrained Willmore, so Route B has no phase freedom to expose."""
+    n, m = int(n), int(m)
+    if n < 2:
+        raise ValueError("tori of revolution need lobes n >= 2 "
+                         "(Heller Thm. 4)")
+    if not (1 <= m < n) or gcd(m, n) != 1:
+        raise ValueError(f"winding must be coprime to lobes and in "
+                         f"1..{n - 1}; got {m}/{n}")
+    lat = _Rectangular(t)
+    g2i, g3i = lat.invariants()
+    D = float((g2i ** 3 - 27.0 * g3i ** 2).real)
+    if D <= 0.0:
+        # unreachable on a rectangular lattice; kept as the Prop.-5 guard
+        raise ValueError(
+            "wavelike lattice (D <= 0): the only closed elastic curve "
+            "there is the figure-eight, which yields no Willmore torus "
+            "(Heller Prop. 5, Example 1)")
+    target = m * pi / (2.0 * n)
+    roots = _h2_closure_roots(lat, target)
+    if not roots:
+        raise ValueError(f"no closure root for target {target:.4f} at "
+                         f"shape {t}")
+    rho = 1.0 + 1j * roots[min(int(branch), len(roots) - 1)]
+    E = float(lat.wp(rho).real)
+    e1 = float(lat.wp(1.0).real)
+    e2 = float(lat.wp(1.0 + lat.w3).real)
+    e3 = float(lat.wp(lat.w3).real)
+    P3E = 4.0 * E ** 3 - float(g2i.real) * E - float(g3i.real)
+    x0 = 0.5 * lat.w3                     # lambda = 0, and nothing else
+
+    x = np.arange(samples) * (2.0 * n / samples)
+    w1, _, _, (g1v, g2v, lg1, lg2) = _h2_eval(lat, rho, 1.0, x0, x)
+
+    # Wronskian det(ghat, ghat') -- constant for an exact solution pair
+    Wr = g1v * g2v * (lg2 - lg1)
+    wr_dev = float(np.abs(Wr - Wr.mean()).max() / np.abs(Wr.mean()))
+
+    # Sect. 3.4 gauge, disc version: |g2|^2 - r^2 |g1|^2 = const
+    p = np.abs(g1v) ** 2
+    q = np.abs(g2v) ** 2
+    vp = p - p.mean()
+    r2 = float(np.dot(q - q.mean(), vp) / np.dot(vp, vp))
+    if r2 <= 0.0:
+        raise ValueError("gauge failed: not a disc (H^2) curve here")
+    r = math.sqrt(r2)
+    flat = float(np.std(q - r2 * p) / abs((q - r2 * p).mean()))
+
+    w, wp, wpp, _ = _h2_eval(lat, rho, r, x0, x)
+    if float(np.abs(w).max()) >= 1.0:
+        raise ValueError("curve leaves the Poincare disc: shape too "
+                         "extreme for the theta series")
+
+    # constant Poincare speed = sqrt(-G)
+    speed = 2.0 * np.abs(wp) / (1.0 - np.abs(w) ** 2)
+    G_speed = -float(speed.mean()) ** 2
+    speed_dev = float(speed.std() / speed.mean())
+
+    # Lemma 2: kappa_G = 4 Im zeta + C ;  Re P + kappa^2/8 + b = 0
+    zx = x + x0
+    v = lat.zeta(zx).imag
+    u = lat.wp(zx).real + 2.0 * v ** 2
+    vv = v - v.mean()
+    C = -float(np.dot(u - u.mean(), vv) / np.dot(vv, vv))
+    b = -(float((u + C * v).mean()) + C * C / 8.0)
+    G_b = 8.0 * b - 4.0 * E
+    G_dev = abs(G_speed - G_b) / abs(G_b)
+    sG = math.sqrt(-G_b)
+    kappa_h = (4.0 * v + C) / sG      # geodesic curvature, H^2 (G = -1)
+
+    # Euler-Lagrange fit in H^2 units: k'' + k^3/2 + (mu + G) k + lam = 0
+    kpp = -4.0 * lat.wp_prime(zx).imag / (sG ** 3)
+    rhs = -(kpp + 0.5 * kappa_h ** 3)
+    A = np.stack([kappa_h, np.ones_like(kappa_h)], axis=1)
+    (muG, lam), *_ = np.linalg.lstsq(A, rhs, rcond=None)
+    el_res = float(np.abs(kpp + 0.5 * kappa_h ** 3 + muG * kappa_h + lam)
+                   .max() / max(np.abs(kpp).max(), 1.0))
+
+    # closure of the point curve and its tangent
+    we, wpe, _, _ = _h2_eval(lat, rho, r, x0, np.array([0.0, 2.0 * n]))
+    closure = float(abs(we[1] - we[0]))
+    t_closure = float(abs(wpe[1] - wpe[0]))
+
+    # Theorem 5 energy with the 1/sqrt(-G) surface normalisation, and the
+    # analytic curvature integral it must equal
+    W_closed = (8.0 * n * lat.eta1 - 4.0 * n * e3) * pi / sG
+    dx = 2.0 * n / samples
+    W_analytic = 0.5 * pi * sG * dx * float(np.sum(kappa_h ** 2))
+
+    info = dict(lat=lat, rho=rho, r=r, x0=x0, E=E, e1=e1, e2=e2, e3=e3,
+                D=D, P3E=P3E, G=G_b, b=b, muG=float(muG), lam=float(lam),
+                kappa=kappa_h, length=2.0 * n * sG, n=n, m=m,
+                W_closed=W_closed, W_analytic=W_analytic,
+                wronskian_dev=wr_dev, norm_flat=flat, G_dev=G_dev,
+                speed_dev=speed_dev, el_res=el_res, closure=closure,
+                t_closure=t_closure, roots=roots, wp=wp, wpp=wpp)
+    return w, info
+
+
+def _disc_to_profile(w, wp, wpp, theta):
+    """Rotate the disc by theta, Cayley-map to the upper half plane
+    (0 -> i) and return the profile z = u + iv (v > 0) with derivatives."""
+    ph = np.exp(1j * float(theta))
+    wr, wpr, wppr = w * ph, wp * ph, wpp * ph
+    z = 1j * (1.0 + wr) / (1.0 - wr)
+    zp = 2j * wpr / (1.0 - wr) ** 2
+    zpp = 2j * (wppr * (1.0 - wr) + 2.0 * wpr ** 2) / (1.0 - wr) ** 3
+    return z, zp, zpp
+
+
+def _profile_invariants(z, zp, zpp):
+    """(H_R3, H_S3, speed) along the profile of the revolution torus
+    p = (u, v cos phi, v sin phi), from the analytic derivatives.
+    H_S3 = (1 + |p|^2) H_R3 / 2 + nu . p  is the mean curvature of the
+    stereographic preimage in the UNIT 3-sphere; it is phi-invariant, and
+    CONSTANT exactly when the torus is CMC in S^3 (Heller Prop. 6)."""
+    uu, vv = z.real, z.imag
+    sp = np.abs(zp)
+    tg = zp / sp
+    k1 = (zpp * np.conj(zp)).imag / sp ** 3       # meridian curvature
+    k2 = -tg.real / vv                            # parallel curvature
+    H3 = 0.5 * (k1 + k2)
+    nu = 1j * tg                                  # profile normal
+    HS3 = (0.5 * (1.0 + uu * uu + vv * vv) * H3
+           + nu.real * uu + nu.imag * vv)
+    return H3, HS3, sp
+
+
+def _balance_theta(w, coarse=360):
+    """Disc rotation minimising max |z| of the Cayley image -- the
+    S^3-isometric placement with the most compact stereographic picture."""
+    ths = np.linspace(0.0, TAU, coarse, endpoint=False)
+    best_t, best_m = 0.0, np.inf
+    for th in ths:
+        wr = w * np.exp(1j * th)
+        mx = float(np.abs(1j * (1.0 + wr) / (1.0 - wr)).max())
+        if mx < best_m:
+            best_t, best_m = float(th), mx
+    lo, hi = best_t - TAU / coarse, best_t + TAU / coarse
+    for _ in range(40):
+        for th in (0.5 * (lo + best_t), 0.5 * (best_t + hi)):
+            wr = w * np.exp(1j * th)
+            mx = float(np.abs(1j * (1.0 + wr) / (1.0 - wr)).max())
+            if mx < best_m:
+                best_t, best_m = th, mx
+        lo, hi = 0.5 * (lo + best_t), 0.5 * (best_t + hi)
+    return best_t
+
+
+def build_revolution_torus(t, n, m, ures=256, vres=64, scale=1.0,
+                           branch=0, spin=0.0):
+    """Route B surface: the constrained Willmore torus of revolution over
+    the closed n-lobed elastic curve in H^2, meshed in R^3 and fitted to
+    the 2 m cube.  Returns (verts, faces, info).
+
+    `spin` (radians) turns the profile plane's elliptic placement away
+    from the balanced position: an ISOMETRY of S^3 (rotation about the
+    great circle the revolution fixes), so every invariant -- H in S^3,
+    Willmore energy, conformal type -- is untouched; only the
+    stereographic appearance in R^3 changes.  spin = 0 is the compact
+    symmetric picture; increasing it slides one lobe toward the
+    projection pole, reproducing the stacked-bubble views of Heller's
+    Figure 1 (rendered by N. Schmitt).
+
+    The profile is resampled uniformly in EUCLIDEAN arclength (the curve
+    is arclength in H^2, whose Euclidean speed varies by an order of
+    magnitude), by inverting the cumulative arclength on a dense grid and
+    re-evaluating the closed form -- no interpolation of positions."""
+    w, info = heller_h2_curve(t, n, m, samples=max(1024, 4 * ures),
+                              branch=branch)
+    theta = _balance_theta(w) + float(spin)
+    lat, rho, r, x0 = info['lat'], info['rho'], info['r'], info['x0']
+
+    # dense pass for the arclength table
+    xs = np.arange(w.size) * (2.0 * n / w.size)
+    z, zp, zpp = _disc_to_profile(w, info['wp'], info['wpp'], theta)
+    sp = np.abs(zp)
+    dx = 2.0 * n / w.size
+    s_cum = np.concatenate([[0.0], np.cumsum(0.5 * (sp[1:] + sp[:-1])
+                                             * dx)])
+    s_tot = float(s_cum[-1] + 0.5 * (sp[-1] + sp[0]) * dx)
+    s_want = np.arange(ures) * (s_tot / ures)
+    x_res = np.interp(s_want, s_cum, xs)
+
+    wR, wpR, wppR, _ = _h2_eval(lat, rho, r, x0, x_res)
+    zR, zpR, zppR = _disc_to_profile(wR, wpR, wppR, theta)
+    H3, HS3, spR = _profile_invariants(zR, zpR, zppR)
+
+    # Willmore energy over the sampled surface, geometry only: PERIODIC
+    # central differences on the resampled profile points (independent of
+    # the analytic derivatives above; the profile is closed, so one-sided
+    # endpoint stencils would poison the quadrature)
+    uu, vv = zR.real, zR.imag
+
+    def d1(f):
+        return 0.5 * (np.roll(f, -1) - np.roll(f, 1))
+
+    def d2(f):
+        return np.roll(f, -1) - 2.0 * f + np.roll(f, 1)
+
+    du, dv = d1(uu), d1(vv)
+    ds = np.hypot(du, dv)
+    kg = (du * d2(vv) - dv * d2(uu)) / ds ** 3
+    Hg = 0.5 * (kg - du / (ds * vv))
+    W_mesh = 2.0 * pi * float(np.sum(Hg ** 2 * vv * ds))
+
+    phi = np.arange(vres) * (TAU / vres)
+    V = np.empty((ures * vres, 3))
+    V[:, 0] = np.repeat(uu, vres)
+    V[:, 1] = (vv[:, None] * np.cos(phi)[None, :]).ravel()
+    V[:, 2] = (vv[:, None] * np.sin(phi)[None, :]).ravel()
+    faces = []
+    for i in range(ures):
+        i1 = (i + 1) % ures
+        for j in range(vres):
+            j1 = (j + 1) % vres
+            faces.append((i * vres + j, i * vres + j1,
+                          i1 * vres + j1, i1 * vres + j))
+    lo, hi = V.min(axis=0), V.max(axis=0)
+    ext = float((hi - lo).max())
+    V = (V - 0.5 * (lo + hi)) * ((2.0 / ext if ext > 1e-9 else 1.0)
+                                 * scale)
+    info.update(theta=theta,
+                H_S3=float(HS3.mean()),
+                H_S3_dev=float(np.abs(HS3 - HS3.mean()).max()),
+                W_mesh=W_mesh,
+                W_rel=abs(W_mesh - info['W_closed']) / info['W_closed'],
+                profile=zR)
+    return V, faces, info
 
 
 # --------------------------------------------------------------------------
@@ -598,6 +1037,118 @@ def _selftest():
     ok_all = ok_all and good
     print(f"cw: non-Willmore control falloff x{fall_c:.2f} (< 1.5, "
           f"plateau) {'OK' if good else 'BAD'}")
+
+    # ------------------------------------------------------------------
+    # Route B: tori of revolution over elastic curves in H^2
+    # ------------------------------------------------------------------
+
+    # 7) rectangular lattice engine identities
+    for t in (0.6, 1.1):
+        lat = _Rectangular(t)
+        z = np.array([0.23 + 0.11j, -0.4 + 0.35j, 1.7 - 0.6j, 3.1 + 1.9j])
+        h = 1e-6
+        fd = (lat.sigma(z + h) - lat.sigma(z - h)) / (2 * h * lat.sigma(z))
+        check(f"rB t={t} sigma'/sigma - zeta",
+              float(np.abs(fd - lat.zeta(z)).max()), 1e-8)
+        q2 = np.abs(lat.sigma(z + lat.p2) + lat.sigma(z)
+                    * np.exp(lat.d3 * (z + lat.p2 / 2)))
+        check(f"rB t={t} sigma quasi-periodicity",
+              float((q2 / np.abs(lat.sigma(z + lat.p2))).max()), 1e-10)
+        g2, g3 = lat.invariants()
+        zz = np.array([0.2 + 0.3j, 1.1 + 0.7j])
+        ode = np.abs(lat.wp_prime(zz) ** 2
+                     - (4 * lat.wp(zz) ** 3 - g2 * lat.wp(zz) - g3))
+        check(f"rB t={t} P ODE residual",
+              float((ode / np.abs(lat.wp(zz)) ** 3).max()), 1e-10)
+        check(f"rB t={t} D>0 (orbitlike)",
+              -float(np.sign((g2 ** 3 - 27 * g3 ** 2).real)), 0.0,
+              fmt="{:+.0f}")
+
+    # 8) the n=2, m=1 elastic curve in H^2: every curve-level gate
+    wB, bi = heller_h2_curve(0.8, 2, 1, samples=2048)
+    check("rB Wronskian dev", bi['wronskian_dev'], 1e-12)
+    check("rB 3.4-gauge flatness", bi['norm_flat'], 1e-12)
+    check("rB speed constancy", bi['speed_dev'], 1e-12)
+    check("rB G(speed) vs G(8b-4E)", bi['G_dev'], 1e-12)
+    check("rB lambda=0 pin |b - e3/2|",
+          abs(bi['b'] - 0.5 * bi['e3']), 1e-10)
+    check("rB EL residual", bi['el_res'], 1e-12)
+    check("rB |lambda|", abs(bi['lam']), 1e-12)
+    check("rB mu+G fit vs 6 e3/(-G)",
+          abs(bi['muG'] - 6.0 * bi['e3'] / (-bi['G'])), 1e-10)
+    check("rB curve closure", bi['closure'], 1e-10)
+    check("rB tangent closure", bi['t_closure'], 1e-10)
+    check("rB in disc: 1 - max|w|", -(float(np.abs(wB).max()) - 1.0),
+          1.0, fmt="{:.3f}")
+    kb = bi['kappa']
+    lobB = int(np.sum((kb > np.roll(kb, 1)) & (kb > np.roll(kb, -1))))
+    check("rB lobe count |n-2|", abs(lobB - 2), 0.5, fmt="{:.0f}")
+    check("rB orbitlike P3(E) < 0", float(np.sign(bi['P3E'])), 0.0,
+          fmt="{:+.0f}")
+
+    # 9) Theorem 5 energy: closed form (surface-normalised by 1/sqrt(-G))
+    #    against the analytic curvature integral, and the family's two
+    #    closed-form anchors -- W -> 8 pi at the doubled-sphere end and
+    #    W -> 4 pi^2 / sqrt(3) at the H = 1/sqrt(3) homogeneous-torus
+    #    bifurcation (the sanity anchors of the 2-lobed CMC family)
+    check("rB W closed form vs analytic",
+          abs(bi['W_closed'] - bi['W_analytic']) / bi['W_closed'], 1e-9)
+    _, biS = heller_h2_curve(0.35, 2, 1, samples=2048)
+    check("rB sphere-doubling limit |W - 8pi|/8pi",
+          abs(biS['W_closed'] - 8.0 * pi) / (8.0 * pi), 1e-3)
+    _, biC = heller_h2_curve(5.0, 2, 1, samples=2048)
+    Wbif = 4.0 * pi * pi / math.sqrt(3.0)
+    check("rB bifurcation limit |W - 4pi^2/sqrt3|/W",
+          abs(biC['W_closed'] - Wbif) / Wbif, 1e-3)
+
+    # 10) the H_S3 formula itself, against ground truth: the flat torus
+    #     |z1|^2 = c2 in S^3 has H_S3 = (2 c2 - 1)/(2 sqrt(c2 (1 - c2)));
+    #     its stereographic image is a round torus of revolution
+    c2 = 0.3
+    cc, ss = math.sqrt(c2), math.sqrt(1.0 - c2)
+    aF = np.linspace(0.1, 2.0 * pi + 0.1, 257)
+    zF = (cc * np.sin(aF) + 1j * ss) / (1.0 - cc * np.cos(aF))
+    zpF = (cc * np.cos(aF) * (1.0 - cc * np.cos(aF))
+           - (cc * np.sin(aF) + 1j * ss) * cc * np.sin(aF)) \
+        / (1.0 - cc * np.cos(aF)) ** 2
+    hF = 1e-5
+    zppF = ((cc * np.sin(aF + hF) + 1j * ss) / (1 - cc * np.cos(aF + hF))
+            - 2.0 * zF
+            + (cc * np.sin(aF - hF) + 1j * ss)
+            / (1 - cc * np.cos(aF - hF))) / hF ** 2
+    _, HS3F, _ = _profile_invariants(zF, zpF, zppF)
+    HwantF = (2.0 * c2 - 1.0) / (2.0 * cc * ss)
+    check("rB H_S3 formula vs flat torus",
+          float(np.abs(np.abs(HS3F) - abs(HwantF)).max()), 1e-4)
+
+    # 11) Proposition 6, the point of it all: the built tori are CMC in
+    #     the unit S^3 -- H_S3 constant along the profile
+    for (tt, nn, mm) in ((0.8, 2, 1), (0.8, 3, 1), (1.2, 3, 2)):
+        VB, FB, ib = build_revolution_torus(tt, nn, mm, ures=220, vres=48)
+        check(f"rB CMC in S^3 ({nn},{mm}) t={tt}: H dev",
+              ib['H_S3_dev'] / max(abs(ib['H_S3']), 0.1), 1e-8)
+        check(f"rB W mesh vs closed ({nn},{mm})", ib['W_rel'], 5e-3)
+        VB = np.asarray(VB)
+        extB = VB.max(0) - VB.min(0)
+        good = (len(FB) == 220 * 48 and np.isfinite(VB).all()
+                and float(extB.max()) <= 2.0 + 1e-9
+                and float(extB.min() / extB.max()) > 0.15)
+        ok_all = ok_all and good
+        print(f"cw: rB build ({nn},{mm}): V={len(VB)} F={len(FB)} "
+              f"aspect {extB.min() / extB.max():.3f} "
+              f"H_S3={ib['H_S3']:+.4f} {'OK' if good else 'BAD'}")
+
+    # 12) spin is an S^3 isometry: it must change the R^3 picture and
+    #     change NOTHING measured in S^3
+    _, _, ia = build_revolution_torus(0.8, 2, 1, ures=200, vres=32)
+    _, _, ic = build_revolution_torus(0.8, 2, 1, ures=200, vres=32,
+                                      spin=0.9)
+    check("rB spin invariance of H_S3",
+          abs(ia['H_S3'] - ic['H_S3']), 1e-10)
+    check("rB spin: still CMC", ic['H_S3_dev'], 1e-8)
+    check("rB spin invariance of W (closed)",
+          abs(ia['W_closed'] - ic['W_closed']), 1e-12)
+    check("rB spin W mesh vs closed", ic['W_rel'], 5e-3)
 
     assert ok_all, "constrained_willmore_generator self-test FAILED"
     print("cw: all checks OK")

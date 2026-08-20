@@ -93,6 +93,25 @@
 # the normalisation above divides by H; there sin(psi) = c/r integrates
 # to the catenary r = c cosh(z/c) outright.
 #
+# THE SPHERICAL MEMBERS -- the ELASTIC_TORUS mode.  Delaunay's rolling
+# conics exhaust the CMC surfaces of revolution of EUCLIDEAN space, and
+# none of them is compact (the sphere chain touches itself).  The CMC
+# surfaces of revolution of the SPHERICAL space form do close up into
+# compact tori, and they are reached by a completely different route
+# (Heller 2013): rotate a closed n-lobed ELASTIC curve of the hyperbolic
+# plane -- a critical point of int kappa^2 ds -- about the boundary axis
+# of the upper half plane.  The resulting torus is constrained Willmore,
+# and it has constant mean curvature in the round 3-sphere (checked per
+# build: the INFO line reports the measured H_S3 and its deviation, plus
+# the Willmore energy against Heller's Theorem-5 closed form).  The
+# first-integral machinery above plays no role there: sin(psi) = Hr + c/r
+# presumes H constant in R^3, which these tori are not -- their meridian
+# obeys the elastica equation kappa'' + kappa^3/2 + (mu - 1) kappa = 0 in
+# H^2 instead.  The mathematics (Weierstrass closed forms, closure,
+# gauges, gates) lives in math_art/constrained_willmore_generator.py;
+# this operator is only its revolution front-end, because "CMC surface of
+# revolution" is one family and should be one menu entry.
+#
 # References:
 # - Charles-Eugene Delaunay, "Sur la surface de revolution dont la
 #   courbure moyenne est constante", J. Math. Pures Appl. 6 (1841),
@@ -106,6 +125,15 @@
 #   Geom. 30 (1989), 465-503 -- Delaunay surfaces as the ends of every
 #   complete embedded CMC surface, which is why this family matters
 #   beyond its own good looks.
+# - Lynn Heller, "Constrained Willmore tori and elastic curves in
+#   2-dimensional space forms", Comm. Anal. Geom. 22 (2014), no. 2;
+#   arXiv:1303.1445 -- the ELASTIC_TORUS mode: elastic curves in H^2 in
+#   Weierstrass closed form (Thm. 2), their closure (Thm. 4), and the
+#   CMC-in-S^3 classification of the revolved tori (Prop. 6).
+# - Joel Langer, David A. Singer, "Curves in the hyperbolic plane and
+#   mean curvature of tori in 3-space", Bull. London Math. Soc. 16
+#   (1984), 531-534 -- a torus of revolution is Willmore-critical exactly
+#   when its profile curve is elastic in the hyperbolic plane.
 
 bl_info = {
     "name": "Delaunay Surfaces",
@@ -442,7 +470,13 @@ if _IN_BLENDER:
                    ('CYLINDER', "Cylinder", "rolling CIRCLE -- the "
                     "constant-radius member"),
                    ('CATENOID', "Catenoid", "rolling PARABOLA -- the "
-                    "minimal (H = 0) limit of the family")],
+                    "minimal (H = 0) limit of the family"),
+                   ('ELASTIC_TORUS', "Elastic Torus (S3)", "closed "
+                    "elastic curve of the HYPERBOLIC PLANE, revolved -- "
+                    "the compact member of the family: a constrained "
+                    "Willmore torus with constant mean curvature in the "
+                    "round 3-sphere (Heller), which no rolling conic "
+                    "reaches")],
             default='UNDULOID')
         output: EnumProperty(
             name="Output",
@@ -472,6 +506,42 @@ if _IN_BLENDER:
             name="Periods", default=2, min=1, max=12,
             description="Neck-to-neck repeats (ignored for the "
                         "cylinder and catenoid)")
+        lobes: IntProperty(
+            name="Lobes", default=2, min=2, max=9,
+            description="Lobe count n of the elastic profile curve in "
+                        "the hyperbolic plane: the curve closes after n "
+                        "periods of its curvature, and the torus shows n "
+                        "bulges around the meridian.  n = 2 gives the "
+                        "embedded two-lobed CMC tori")
+        winding: IntProperty(
+            name="Winding", default=1, min=1, max=8,
+            description="Winding number m of the profile curve about "
+                        "its centre; must be coprime to the lobe count "
+                        "and smaller than it.  1 keeps the profile "
+                        "embedded, higher values wrap it into star-like "
+                        "self-crossing meridians")
+        shape: FloatProperty(
+            name="Shape", default=1.5, min=0.3, max=6.0,
+            description="Spectral lattice shape (imaginary half-period "
+                        "of the Weierstrass torus).  Sweeps the "
+                        "conformal family: small values approach the "
+                        "doubled geodesic sphere (Willmore energy 8 pi), "
+                        "large ones the homogeneous-torus bifurcation "
+                        "at mean curvature 1/sqrt(3) in S^3")
+        spin: FloatProperty(
+            name="Spin", default=0.0, min=0.0, max=1.5533430342749532,
+            subtype='ANGLE',   # radians under the hood, degrees in UI;
+                               # capped just under 90 deg, where one lobe
+                               # reaches the projection pole and the
+                               # picture blows up
+            description="Placement angle in the 3-sphere before "
+                        "projecting to R^3 -- an isometry of S^3, so the "
+                        "mean curvature, Willmore energy and conformal "
+                        "type are all unchanged; only the stereographic "
+                        "appearance turns.  0 is the compact symmetric "
+                        "view; larger angles slide one lobe toward the "
+                        "projection pole, giving the stacked-bubble "
+                        "views of Heller's Figure 1")
         ures: IntProperty(name="Profile Samples", default=200, min=16,
                           max=2000)
         vres: IntProperty(name="Revolution Samples", default=64, min=6,
@@ -485,6 +555,50 @@ if _IN_BLENDER:
                              max=100.0)
 
         def execute(self, context):
+            if self.mode == 'ELASTIC_TORUS':
+                # the spherical member of the family: mathematics in
+                # constrained_willmore_generator (see module header)
+                try:
+                    from .constrained_willmore_generator import \
+                        build_revolution_torus
+                except ImportError:
+                    from constrained_willmore_generator import \
+                        build_revolution_torus
+                try:
+                    verts, faces, info = build_revolution_torus(
+                        self.shape, self.lobes, self.winding,
+                        self.ures, self.vres, self.scale,
+                        spin=self.spin)
+                except ValueError as exc:
+                    self.report({'ERROR'}, str(exc))
+                    return {'CANCELLED'}
+                name = f"Elastic Torus ({self.lobes},{self.winding})"
+                me = bpy.data.meshes.new(name)
+                me.from_pydata([tuple(v) for v in verts], [],
+                               [tuple(int(i) for i in f) for f in faces])
+                me.validate(clean_customdata=True)
+                if self.shade_smooth:
+                    me.polygons.foreach_set('use_smooth',
+                                            [True] * len(me.polygons))
+                me.update()
+                obj = bpy.data.objects.new(name, me)
+                context.collection.objects.link(obj)
+                obj.location = context.scene.cursor.location
+                for o in context.selected_objects:
+                    o.select_set(False)
+                obj.select_set(True)
+                context.view_layer.objects.active = obj
+                self.report(
+                    {'INFO'},
+                    f"{name}: V={len(me.vertices)} F={len(me.polygons)}; "
+                    f"orbitlike profile, P3(E)={info['P3E']:+.3f}<0 -> "
+                    f"CMC in S^3 (Heller Prop. 6): measured "
+                    f"H={info['H_S3']:+.4f} (dev {info['H_S3_dev']:.1e}); "
+                    f"Willmore W={info['W_mesh']:.4f} vs closed form "
+                    f"{info['W_closed']:.4f} (Thm. 5), "
+                    f"{info['W_closed'] / (2.0 * math.pi ** 2):.3f} x "
+                    f"2pi^2; curve length {info['length']:.3f} in H^2")
+                return {'FINISHED'}
             neck = self.neck
             if self.mode == 'UNDULOID' and neck >= 1.0:
                 # neck + bulge = 2, so neck >= 1 is the cylinder or
@@ -561,6 +675,20 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'mode')
+            if self.mode == 'ELASTIC_TORUS':
+                lay.prop(self, 'lobes')
+                lay.prop(self, 'winding')
+                lay.prop(self, 'shape')
+                lay.prop(self, 'spin')
+                if (self.winding >= self.lobes
+                        or math.gcd(self.winding, self.lobes) != 1):
+                    lay.label(text="Winding must be coprime to lobes "
+                                   "and smaller", icon='ERROR')
+                lay.prop(self, 'ures')
+                lay.prop(self, 'vres')
+                lay.prop(self, 'shade_smooth')
+                lay.prop(self, 'scale')
+                return
             lay.prop(self, 'output')
             if self.output == 'ROULETTE':
                 lay.prop(self, 'roll_positions')
@@ -802,6 +930,28 @@ def _selftest():
                   f"{c_meas:+.5f} (spread {c_spread:.1e}) {mode}, "
                   f"neck {neck:.4f}; curves agree to {rel * 100:.3f}% "
                   f"{'OK' if ok else 'BAD'}")
+
+    # 8) the spherical member (ELASTIC_TORUS mode): the deep gates live
+    #    in constrained_willmore_generator._selftest; here the front-end
+    #    checks that a build through this operator's code path delivers a
+    #    sane mesh whose measured invariants pass their own thresholds.
+    try:
+        from .constrained_willmore_generator import build_revolution_torus
+    except ImportError:
+        from constrained_willmore_generator import build_revolution_torus
+    V, F, info = build_revolution_torus(0.8, 2, 1, ures=200, vres=48)
+    V = np.asarray(V)
+    ext = V.max(0) - V.min(0)
+    ok = (len(F) == 200 * 48 and np.isfinite(V).all()
+          and float(ext.max()) <= 2.0 + 1e-9
+          and float(ext.min() / ext.max()) > 0.15
+          and info['H_S3_dev'] / max(abs(info['H_S3']), 0.1) < 1e-8
+          and info['W_rel'] < 5e-3)
+    ok_all = ok_all and ok
+    print(f"build ELASTIC_TORUS: V={len(V)} F={len(F)} aspect "
+          f"{ext.min() / ext.max():.3f} H_S3={info['H_S3']:+.4f} "
+          f"(dev {info['H_S3_dev']:.1e}) W rel {info['W_rel']:.1e} "
+          f"{'OK' if ok else 'BAD'}")
 
     assert ok_all
     print("delaunay surface standalone tests passed")
