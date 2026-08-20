@@ -47,6 +47,7 @@ _MODULE_NAMES = [
     'fractal_knot_generator',
     'apollonian_generator',
     'hyperbolic_surface_generator',
+    'spherical_surface_generator',
     'delaunay_generator',
     'bryant_generator',
     'crochet_generator',

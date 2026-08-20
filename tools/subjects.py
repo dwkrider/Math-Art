@@ -42,6 +42,11 @@ PARAMS = {
     # ring polyhedron says "toroidal" instantly -- three rectangular
     # rings interlocked, with the holes plainly visible.
     "mesh.toroidal_polyhedron_add": dict(solid='BORROMEAN'),
+    # The K = +1 family defaults to the sphere, which at icon size is
+    # a plain ball and says nothing the UV-sphere primitive does not.
+    # The spindle -- a lemon with a conical tip at each pole -- is the
+    # one that reads as "constant curvature, not a sphere".
+    "mesh.spherical_surface_add": dict(preset='SPINDLE'),
     "mesh.waterman_add": dict(root=20),
     "mesh.spiked_polyhedron_add": dict(preset='MODERN'),
     "mesh.woven_polyhedron_add": dict(solid='ICOSA'),

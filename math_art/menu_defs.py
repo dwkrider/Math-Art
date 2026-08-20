@@ -81,6 +81,10 @@ SURFACES = Menu(
         _e("mesh.spherical_harmonic_add", 'SURFACE_NSPHERE'),
         _e("mesh.orbital_add", 'META_BALL'),
         _e("mesh.hyperbolic_surface_add", 'MESH_CAPSULE'),
+        # the K = +1 half of Minding's classification; kept a
+        # separate operator because "Hyperbolic Surface" is the
+        # wrong label to show a user for a sphere.
+        _e("mesh.spherical_surface_add", 'MESH_UVSPHERE'),
         # One constant-mean-curvature generator: Delaunay surfaces and
         # their roulettes, bubbletons grafted onto them, Wente's closed
         # torus, and the elastic tori of the spherical space form.

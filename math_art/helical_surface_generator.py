@@ -45,6 +45,11 @@ import math
 import numpy as np
 
 try:
+    from . import rim_curve as _rim
+except ImportError:  # flat import outside the package
+    import rim_curve as _rim
+
+try:
     import bpy
     from bpy.props import (IntProperty, FloatProperty,
                            EnumProperty, BoolProperty)
@@ -176,6 +181,9 @@ if _IN_BLENDER:
         bl_idname = "mesh.helical_surface_add"
         bl_label = "Helical Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
 
         surface: EnumProperty(
             name="Surface", items=_SURFACES,
@@ -266,6 +274,12 @@ if _IN_BLENDER:
             self.report({'INFO'},
                         f"{name}: V={len(me.vertices)} "
                         f"F={len(me.polygons)}")
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -283,6 +297,7 @@ if _IN_BLENDER:
                              'thickness', 'scale'):
                 lay.prop(self, k)
 
+            _rim.draw_rim(lay, self)
     def _menu_func(self, context):
         self.layout.operator("mesh.helical_surface_add",
                              icon='MOD_SCREW')

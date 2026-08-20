@@ -76,6 +76,11 @@ bl_info = {
 import math
 import numpy as np
 
+try:
+    from . import rim_curve as _rim
+except ImportError:  # flat import outside the package
+    import rim_curve as _rim
+
 from .minsurf.domain import _center_fit
 from .minsurf.elliptic import _SQUARE
 from .minsurf.parametric import (ANGLE_PARAM, COUNT_PARAM, FAMILIES,
@@ -346,6 +351,9 @@ if _IN_BLENDER:
         bl_idname = "mesh.parametric_minimal_add"
         bl_label = "Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
 
         family: EnumProperty(
             name="Family",
@@ -427,6 +435,12 @@ if _IN_BLENDER:
                 _new_object(context, label, V, quads,
                             weld=1e-5 * max(1.0, self.scale),
                             loop_uv=cuv)
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -453,6 +467,7 @@ if _IN_BLENDER:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
             lay.prop(self, 'scale')
+            _rim.draw_rim(lay, self)
 
     class MESH_OT_tpms_add(bpy.types.Operator):
         """Add a triply-periodic minimal surface (nodal approximation)"""
@@ -519,6 +534,9 @@ if _IN_BLENDER:
         bl_idname = "mesh.periodic_minimal_add"
         bl_label = "Periodic Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
 
         periodicity: EnumProperty(
             name="Periodicity",
@@ -668,6 +686,12 @@ if _IN_BLENDER:
                     mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                     mod.thickness = self.thickness
                     mod.offset = 0.0
+                if self.rim:
+                    _ob = context.active_object
+                    if _ob is not None:
+                        _rim.add_rim_from_object(
+                            context, _ob, _ob.name,
+                            self.rim_thickness, self.rim_smooth)
                 return {'FINISHED'}
             if surf in TPMS:
                 cxyz = (cu, cv, cw)
@@ -684,6 +708,12 @@ if _IN_BLENDER:
                     mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                     mod.thickness = self.thickness
                     mod.offset = 0.0
+                if self.rim:
+                    _ob = context.active_object
+                    if _ob is not None:
+                        _rim.add_rim_from_object(
+                            context, _ob, _ob.name,
+                            self.rim_thickness, self.rim_smooth)
                 return {'FINISHED'}
             if surf not in PARAMETRIC:
                 self.report({'ERROR'}, f"Unknown surface '{surf}'")
@@ -712,6 +742,12 @@ if _IN_BLENDER:
                 _new_object(context, label, V, quads,
                             weld=1e-5 * max(1.0, self.scale),
                             loop_uv=cuv)
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -769,6 +805,7 @@ if _IN_BLENDER:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
             lay.prop(self, 'scale')
+            _rim.draw_rim(lay, self)
 
     class OBJECT_OT_minimal_span(bpy.types.Operator):
         """Span a minimal surface across the selected curve (1 object:
@@ -776,6 +813,9 @@ if _IN_BLENDER:
         bl_idname = "object.minimal_span"
         bl_label = "Span Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
 
         samples: IntProperty(
             name="Boundary Samples", default=128, min=16, max=512)
@@ -837,6 +877,12 @@ if _IN_BLENDER:
             obj.location = (0, 0, 0)   # loops are in world space
             self.report({'INFO'},
                         f"area = {mesh_area(V, T):.4f}")
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -844,6 +890,7 @@ if _IN_BLENDER:
             lay.use_property_split = True
             for k in ('samples', 'rings', 'iterations', 'output_nurbs'):
                 lay.prop(self, k)
+            _rim.draw_rim(lay, self)
 
     class MESH_OT_knot_span_add(bpy.types.Operator):
         """Minimal surface between a circle and a (p,q) torus knot
@@ -851,6 +898,9 @@ if _IN_BLENDER:
         bl_idname = "mesh.minimal_knot_span_add"
         bl_label = "Knot to Knot Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
 
         p: IntProperty(name="Knot p", default=2, min=1, max=8)
         q: IntProperty(
@@ -985,6 +1035,12 @@ if _IN_BLENDER:
                     {'INFO'},
                     f"single sheet, genus {(self.q - 1) // 2}, "
                     f"area = {mesh_area(V, T):.4f}{capped}")
+                if self.rim:
+                    _ob = context.active_object
+                    if _ob is not None:
+                        _rim.add_rim_from_object(
+                            context, _ob, _ob.name,
+                            self.rim_thickness, self.rim_smooth)
                 return {'FINISHED'}
             if (self.span_topology == 'SEIFERT' and self.outer_q == 0
                     and self.p > 1):
@@ -1070,6 +1126,12 @@ if _IN_BLENDER:
                 self.report({'INFO'},
                             f"{self.p} sheets, area = "
                             f"{mesh_area(V, T):.4f}")
+                if self.rim:
+                    _ob = context.active_object
+                    if _ob is not None:
+                        _rim.add_rim_from_object(
+                            context, _ob, _ob.name,
+                            self.rim_thickness, self.rim_smooth)
                 return {'FINISHED'}
             if self.output_nurbs:
                 G = fair_grid_columns(V.reshape(self.rings + 1, m, 3))
@@ -1082,6 +1144,12 @@ if _IN_BLENDER:
             else:
                 obj = _new_object(context, name, V, quads)
             self.report({'INFO'}, f"area = {mesh_area(V, T):.4f}")
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -1111,6 +1179,7 @@ if _IN_BLENDER:
     # Add > Mesh > Minimal Surfaces already, so it was a second copy
     # of the menu taking up the tab -- and the tab is for editing the
     # selected object, not for making new ones.
+            _rim.draw_rim(lay, self)
 
     class VIEW3D_MT_math_art_minimal_zoo(bpy.types.Menu):
         """The minimal-surface catalog, one entry per family (each

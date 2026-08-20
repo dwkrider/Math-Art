@@ -54,6 +54,11 @@ bl_info = {
 }
 import numpy as np
 
+try:
+    from . import rim_curve as _rim
+except ImportError:  # flat import outside the package
+    import rim_curve as _rim
+
 # The mathematics lives in the sibling `surfaces` engine package;
 # this module is the Blender layer over it.
 try:
@@ -269,22 +274,9 @@ if _IN_BLENDER:
                         "thickness")
         smooth: BoolProperty(
             name="Smooth Shading", default=True)
-        rim: BoolProperty(
-            name="Rim Curve", default=False,
-            description="Sweep a tube along the open edge where the "
-                        "surface leaves the clip region. That edge is "
-                        "a stair-step through the sample grid, so the "
-                        "tube both tidies it and gives the surface a "
-                        "deliberate border; closed surfaces have no "
-                        "edge and get no curve")
-        rim_thickness: FloatProperty(
-            name="Rim Thickness", default=0.02, min=0.0, max=1.0,
-            description="Bevel radius of the rim tube (0 leaves a bare "
-                        "curve)")
-        rim_smooth: IntProperty(
-            name="Rim Smoothing", default=2, min=0, max=20,
-            description="Laplacian passes along the rim before it is "
-                        "swept; 0 follows the grid staircase exactly")
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
 
         def execute(self, context):
             # belt and braces against a stale enum index: the
@@ -337,10 +329,7 @@ if _IN_BLENDER:
                 lay.prop(self, 'fold')
             for k in ('clip', 'scale', 'thickness', 'smooth'):
                 lay.prop(self, k)
-            lay.prop(self, 'rim')
-            if self.rim:
-                lay.prop(self, 'rim_thickness')
-                lay.prop(self, 'rim_smooth')
+            _rim.draw_rim(lay, self)
 
     def _menu_func(self, context):
         self.layout.operator("mesh.algebraic_surface_add",
