@@ -43,6 +43,10 @@ PARAMS = {
     # clearly at icon size and its dual is the rhombic
     # dodecahedron, so both families are recognisable.
     "mesh.transpolyhedron_add": dict(seed='CO', blend=0.5),
+    # The pyritohedron at its default 1/phi IS the regular dodecahedron,
+    # which the regular-solid entry already shows.  Pulled off that
+    # value it becomes the pyrite crystal form, which is the point.
+    "mesh.twelve_faced_add": dict(solid='PYRITOHEDRON', shape=0.35),
     # The uniform operator's whole point is what lies beyond the
     # Platonics, so it gets a Kepler-Poinsot star rather than another
     # convex solid that would duplicate the entry above.

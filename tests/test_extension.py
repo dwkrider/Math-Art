@@ -594,6 +594,23 @@ OPS = [
     ("bubble merged colored", lambda: bpy.ops.mesh.bubble_cluster_add(
         seed='ICOSA', separate=False, color=True, subdiv=1)),
     ("zonohedrification", lambda: bpy.ops.mesh.zonish_add()),
+    ("twelve-faced pyritohedron", lambda: bpy.ops.mesh.twelve_faced_add()),
+    ("twelve-faced tetartoid", lambda: bpy.ops.mesh.twelve_faced_add(
+        solid='TETARTOID')),
+    ("elongated dodecahedron", lambda: bpy.ops.mesh.twelve_faced_add(
+        solid='ELONGATED')),
+    ("skilling figure", lambda: bpy.ops.mesh.uniform_polyhedron_add(
+        family='SKILLING', solid='76')),
+    ("sharpohedron", lambda: bpy.ops.mesh.notable_polyhedron_add(
+        solid='SHARP')),
+    ("tetrahedrally stellated icosahedron",
+     lambda: bpy.ops.mesh.notable_polyhedron_add(
+        solid='TETRA_STELLATED_ICOSA')),
+    ("hexagonal prism honeycomb", lambda: bpy.ops.mesh.spacefill_add(
+        kind='HEXPRISM', nx=2, ny=2, nz=2)),
+    ("elongated dodecahedron honeycomb",
+     lambda: bpy.ops.mesh.spacefill_add(
+        kind='ELONGDODEC', nx=2, ny=2, nz=2)),
     ("transpolyhedron", lambda: bpy.ops.mesh.transpolyhedron_add()),
     ("transpolyhedron prism", lambda: bpy.ops.mesh.transpolyhedron_add(
         seed='A7', blend=0.35)),

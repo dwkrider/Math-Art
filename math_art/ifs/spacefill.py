@@ -19,6 +19,7 @@
 #   Things", A K Peters, 2008 -- the honeycomb classification.
 
 import itertools
+import math
 
 import numpy as np
 
@@ -217,6 +218,79 @@ def _tiling_basis(V, F, vol):
     raise ValueError("no lattice basis matches the cell volume")
 
 
+# --- the remaining two parallelohedra ------------------------------------
+# Fedorov's five convex solids that tile space by TRANSLATION alone are
+# the cube, the hexagonal prism, the rhombic dodecahedron, the elongated
+# dodecahedron and the truncated octahedron.  Three were already here;
+# these are the other two.
+
+def _hex_prism_cell(height=1.0):
+    """Regular hexagonal prism, circumradius 1.
+
+    Built from its planes like every other cell here, so the faces come
+    out planar AND wound outward -- winding them by hand gave a negative,
+    wrong volume and the lattice solver rejected the cell.
+    """
+    h = height / 2.0
+    planes = [((math.cos(math.radians(30 + 60 * k)),
+                math.sin(math.radians(30 + 60 * k)), 0.0),
+               math.sqrt(3.0) / 2.0) for k in range(6)]
+    planes += [((0.0, 0.0, 1.0), h), ((0.0, 0.0, -1.0), h)]
+    ring = [(math.cos(math.pi * k / 3), math.sin(math.pi * k / 3))
+            for k in range(6)]
+    V = np.array([(x, y, h) for x, y in ring]
+                 + [(x, y, -h) for x, y in ring], float)
+    return V, _plane_faces(V, planes)
+
+
+def _elongated_dodeca_cell(stretch=0.5):
+    """The elongated dodecahedron: a rhombic dodecahedron sliced across a
+    4-fold axis with a prism inserted, giving 8 rhombi and 4 hexagons."""
+    e = float(stretch)
+    pts = []
+    for sx in (1, -1):
+        for sy in (1, -1):
+            for sz in (1, -1):
+                pts.append((sx * 1.0, sy * 1.0, sz * (1.0 + e)))
+    pts += [(0.0, 0.0, 2.0 + e), (0.0, 0.0, -(2.0 + e))]
+    for sx, sy in ((2, 0), (-2, 0), (0, 2), (0, -2)):
+        pts.append((float(sx), float(sy), e))
+        pts.append((float(sx), float(sy), -e))
+    out = []
+    for q in pts:
+        if not any(all(abs(q[k] - r[k]) < 1e-9 for k in range(3))
+                   for r in out):
+            out.append(q)
+    try:
+        from ..polyhedra import hull as _hull
+    except ImportError:
+        from polyhedra import hull as _hull
+    V = np.array(out, float)
+    # Take the combinatorics from the hull but re-cut the faces from the
+    # hull's own outward planes, so the winding matches the convention
+    # the volume and lattice code here expects.
+    planes = [(tuple(n), d)
+              for n, d in _hull.face_planes(out, _hull.hull_faces(out))]
+    return V, _plane_faces(V, planes)
+
+
+def _parallelohedron_data(kind, stretch=0.5, height=1.0):
+    """(local_verts, faces, basis, pitch) for the two added cells.  The
+    translation lattice is DERIVED from the cell by _tiling_basis rather
+    than written down, so a changed proportion cannot put the cells out
+    of step with their own lattice."""
+    if kind == 'HEXPRISM':
+        V, F = _hex_prism_cell(height)
+        pitch = math.sqrt(3.0)
+    else:
+        V, F = _elongated_dodeca_cell(stretch)
+        pitch = 2.0
+    V = V - V.mean(axis=0)
+    vol = _mesh_volume(V, F)
+    B = _tiling_basis(V, F, vol)
+    return V, F, B, pitch
+
+
 def _spiral_data(kind, segments=12, pitch=55.0):
     """(local_verts, faces, basis, height, volume) of the
     S(n, n/arms) cell, centred on the midpoint of its two apexes;
@@ -305,6 +379,12 @@ def build_block(kind, nx, ny, nz, spiral_segments=12,
                 for tc, V, F, tag in _OBTET_CELLS:
                     cells.append((c + tc, V, F, tag))
         return cells, 2.0
+    if kind in ('HEXPRISM', 'ELONGDODEC'):
+        V, F, B, pitch = _parallelohedron_data(kind)
+        for i, j, k in P(range(nx), range(ny), range(nz)):
+            cells.append((i * B[0] + j * B[1] + k * B[2],
+                          V, F, (i + j + k) % 2))
+        return cells, pitch
     if kind in _SPIRAL_ARMS:
         # translates over the derived tiling lattice; tag by
         # lattice parity for the optional two-tone coloring
@@ -353,6 +433,9 @@ def block_volume(kind, nx, ny, nz, size=1.0, spiral_segments=12,
     cells, pitch = build_block(kind, nx, ny, nz, spiral_segments,
                                spiral_pitch)
     s3 = (size / pitch) ** 3
+    if kind in ('HEXPRISM', 'ELONGDODEC'):
+        V, F, _B, _p = _parallelohedron_data(kind)
+        return len(cells) * _mesh_volume(V, F) * s3
     if kind in _SPIRAL_ARMS:
         vol = _spiral_data(kind, spiral_segments, spiral_pitch)[4]
         return len(cells) * vol * s3

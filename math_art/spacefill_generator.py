@@ -12,6 +12,11 @@
 #               orientations) filling the gaps, ratio 1:2 in bulk
 #   TRUNCOCT    bitruncated cubic: truncated octahedra on BCC
 #   RHOMBDODEC  rhombic dodecahedra on FCC
+#   HEXPRISM    hexagonal prisms on the hexagonal lattice
+#   ELONGDODEC  elongated dodecahedra on the body-centred tetragonal
+#               lattice.  With these two, all five of Fedorov's
+#               parallelohedra -- the convex solids that tile space by
+#               translation alone -- are here.
 #   SPIRAL3     3-armed rhombic spirallohedra S(12, 4) (Towle)
 #   SPIRAL4     4-armed rhombic spirallohedra S(12, 3)
 #
@@ -96,6 +101,8 @@ if _IN_BLENDER:
     _LABEL = {'CUBIC': "Cubes", 'OCTET': "Octet",
               'TRUNCOCT': "Truncated Octahedra",
               'RHOMBDODEC': "Rhombic Dodecahedra",
+              'HEXPRISM': "Hexagonal Prisms",
+              'ELONGDODEC': "Elongated Dodecahedra",
               'OBTET': "Obtetrahedrille",
               'SPIRAL3': "Spirallohedra (3-Armed)",
               'SPIRAL4': "Spirallohedra (4-Armed)"}
@@ -137,6 +144,14 @@ if _IN_BLENDER:
                     "lattice"),
                    ('RHOMBDODEC', "Rhombic Dodecahedra",
                     "Rhombic dodecahedra on the FCC lattice"),
+                   ('HEXPRISM', "Hexagonal Prisms",
+                    "Hexagonal prisms on the hexagonal lattice -- "
+                    "the second of Fedorov's five parallelohedra"),
+                   ('ELONGDODEC', "Elongated Dodecahedra",
+                    "Elongated dodecahedra (8 rhombi + 4 hexagons) on "
+                    "the body-centred tetragonal lattice -- the fourth "
+                    "parallelohedron, and the one that completes the "
+                    "five here"),
                    ('OBTET', "Obtetrahedrille",
                     "The tetragonal disphenoid honeycomb: each FCC "
                     "rhombic dodecahedron split into 24 congruent "
@@ -316,6 +331,7 @@ def _selftest():
     # at gap = 1 the numeric mesh volume must equal the
     # analytic total cell volume for every honeycomb
     for kind in ('CUBIC', 'OCTET', 'TRUNCOCT', 'RHOMBDODEC',
+                 'HEXPRISM', 'ELONGDODEC',
                  'OBTET', 'SPIRAL3', 'SPIRAL4'):
         v, f, t = build_mesh(kind, 3, 3, 2, gap=1.0)
         num = _mesh_volume(v, f)

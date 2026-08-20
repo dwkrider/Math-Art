@@ -23,13 +23,23 @@
 # Star faces are rendered by fanning each {n/d} polygon from its centre,
 # so the star outline shows as a solid.
 #
+# One further object sits outside that set. Relaxing "two faces to an
+# edge" to "an even number" admits exactly one more uniform figure --
+# Skilling's great disnub dirhombidodecahedron, four faces deep along
+# half of its edges -- and it is built here from U75 by Hart's XOR with
+# the compound of twenty octahedra (see build_skilling).
+#
 # References:
 # - W. A. Wythoff, "A relation between the polytopes of the C600-family",
 #   Koninklijke Akademie van Wetenschappen te Amsterdam (1918).
 # - H. S. M. Coxeter, M. S. Longuet-Higgins, J. C. P. Miller, "Uniform
 #   polyhedra", Phil. Trans. Royal Soc. A 246 (1954), 401-450.
 # - S. P. Skilling, "The complete set of uniform polyhedra", Phil. Trans.
-#   Royal Soc. A 278 (1975) (completeness).
+#   Royal Soc. A 278 (1975) -- completeness, and the great disnub
+#   dirhombidodecahedron that the relaxed definition admits.
+# - George W. Hart, "Great Disnub Dirhombidodecahedron", Virtual Polyhedra
+#   (georgehart.com/virtual-polyhedra/), for the exclusive-OR construction
+#   used here.
 # - Zvi Har'El, "Uniform Solution for Uniform Polyhedra", Geometriae
 #   Dedicata 47 (1993), 57-110 (the construction algorithm followed here).
 # - Magnus Wenninger, "Polyhedron Models", Cambridge (1971).
@@ -43,7 +53,8 @@ bl_info = {
     "location": "View3D > Add > Mesh > Math Art > Polyhedra",
     "description": "All 75 uniform polyhedra (Wythoff construction): "
                    "convex, Kepler-Poinsot, hemipolyhedra and star "
-                   "uniforms, with duals and star prisms",
+                   "uniforms, with duals and star prisms; plus "
+                   "Skilling's figure",
     "category": "Add Mesh",
 }
 
@@ -389,6 +400,76 @@ def build_snub(u, scale=1.0):
     return V, faces
 
 
+# --------------------------------------------------------------------------
+# Skilling's figure -- the one beyond the seventy-five
+# --------------------------------------------------------------------------
+# Relax "exactly two faces meet at each edge" to "an even number do", and
+# Skilling's computer search found exactly ONE new uniform object: the
+# great disnub dirhombidodecahedron, with four faces along some edges.
+# It is therefore not one of the 75, and it is the only thing the wider
+# definition adds.
+#
+# Hart's construction is an exclusive-OR of the great dirhombicosi-
+# dodecahedron (U75) with the compound of twenty octahedra, and the
+# compound never has to be built separately: U75's own sixty vertices
+# already carry it.  They form thirty antipodal diameters, and the twenty
+# triples of MUTUALLY ORTHOGONAL diameters are exactly the twenty
+# octahedra -- each diameter lying in two of them.  Every one of U75's
+# forty triangles turns out to be one of the compound's 160, so the XOR
+# cancels them and leaves 120 triangles, which with U75's 60 squares and
+# 24 pentagrams gives 204 faces on 60 vertices and 240 edges.
+#
+# The four-faces-to-an-edge property is why this figure needs its own
+# check: a self-test asserting every edge is used exactly twice would
+# reject a correct build, so the assertion is EVEN multiplicity.
+
+def _skilling_octahedra(V, tol=1e-5):
+    """The twenty octahedra hiding in U75's vertex set, as index triples
+    of antipodal diameters."""
+    diam = []
+    taken = set()
+    for i, v in enumerate(V):
+        if i in taken:
+            continue
+        for j in range(i + 1, len(V)):
+            if j in taken:
+                continue
+            if all(abs(v[k] + V[j][k]) < tol for k in range(3)):
+                taken.add(i)
+                taken.add(j)
+                diam.append((i, j))
+                break
+    out = []
+    for a in range(len(diam)):
+        for b in range(a + 1, len(diam)):
+            for c in range(b + 1, len(diam)):
+                u, w, x = V[diam[a][0]], V[diam[b][0]], V[diam[c][0]]
+                if (abs(sum(u[k] * w[k] for k in range(3))) < tol
+                        and abs(sum(u[k] * x[k] for k in range(3))) < tol
+                        and abs(sum(w[k] * x[k] for k in range(3))) < tol):
+                    out.append((diam[a], diam[b], diam[c]))
+    return out
+
+
+def build_skilling(scale=1.0):
+    """The great disnub dirhombidodecahedron (Skilling's figure)."""
+    if _snub_data is None:
+        raise RuntimeError("snub coordinate data not available")
+    S = _snub_data.SNUBS[75]
+    V = [tuple(c * scale for c in v) for v in S["V"]]
+    tri = set()
+    for da, db, dc in _skilling_octahedra(S["V"]):
+        for ia in da:
+            for ib in db:
+                for ic in dc:
+                    tri.add(frozenset((ia, ib, ic)))
+    drop = {frozenset(f) for f in S["F"] if len(f) == 3}
+    faces = [(list(t), 1) for t in sorted(tri - drop, key=sorted)]
+    faces += [(list(f), _face_density(S["V"], f))
+              for f in S["F"] if len(f) != 3]
+    return V, faces
+
+
 def build_dual(V, faces, big=6.0):
     """Dual by polar reciprocation about the unit sphere: one dual vertex
     per face (its pole), one dual face per original vertex (the poles of
@@ -633,10 +714,19 @@ def _expand_faces(verts, faces):
 
 # solids this build can construct: the non-snub Wythoff cases plus the
 # snub / special solids for which stored coordinates are available.
+# Skilling's figure is not one of the 75 (four faces meet at some of its
+# edges), so it sits outside UNIFORMS and is appended to BUILDABLE with
+# its own id and family.
+SKILLING_U = 76
+SKILLING_ROW = (SKILLING_U, "Great Disnub Dirhombidodecahedron",
+                "| 3/2 5/3 3 5/2", ["3/2", "5/3", "3", "5/2"], 60, 240, 204)
+
 _SNUB_U = set(_snub_data.SNUBS) if _snub_data else set()
 BUILDABLE = [row for row in UNIFORMS
              if row[0] in _SNUB_U
              or (not row[2].strip().startswith('|') and len(row[3]) == 3)]
+if _snub_data is not None:
+    BUILDABLE.append(SKILLING_ROW)
 
 
 # --- families (to organise the UI) --------------------------------------
@@ -651,6 +741,7 @@ _FAMILIES = [
     ('HEMI', "Hemipolyhedra"),
     ('STAR_O', "Star (Octahedral)"),
     ('STAR_I', "Star (Icosahedral)"),
+    ('SKILLING', "Beyond the 75 (Skilling's Figure)"),
 ]
 
 
@@ -664,6 +755,8 @@ def _symmetry(pqr):
 
 
 def _category(u, name, pqr):
+    if u == SKILLING_U:
+        return 'SKILLING'
     if 'hemi' in name.lower():
         return 'HEMI'
     if u in _KEPLER_POINSOT:
@@ -682,7 +775,9 @@ def _self_test():
     ok = 0
     bad = 0
     for (u, name, wy, pqr, Ve, Ee, Fe) in BUILDABLE:
-        if u in _SNUB_U:
+        if u == SKILLING_U:
+            V, F = build_skilling()
+        elif u in _SNUB_U:
             V, F = build_snub(u)
         else:
             V, F = build_uniform(wy, pqr)
@@ -893,7 +988,9 @@ if _IN_BLENDER:
                        BUILDABLE[0])
             u, name, wy, pqr, Ve, Ee, Fe = row
             try:
-                if u in _SNUB_U:
+                if u == SKILLING_U:
+                    V, F = build_skilling()
+                elif u in _SNUB_U:
                     V, F = build_snub(u)
                 else:
                     V, F = build_uniform(wy, pqr)
