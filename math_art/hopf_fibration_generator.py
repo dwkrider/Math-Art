@@ -27,6 +27,15 @@
 # base point on S^2 -- hue from the longitude, value from the
 # latitude -- so nearby fibres share a colour.
 #
+# WHAT THIS GENERATOR IS NOT.  `mesh.willmore_add` also says
+# "Willmore", and the two do opposite things.  That one DESCENDS the
+# bending energy and lands on its MINIMISER -- the Clifford torus at
+# 2 pi^2.  The Elastica and Constrained presets here CONSTRUCT
+# critical points that are not minimisers, which a descent slides
+# straight off and so can never produce.  Between them they span the
+# picture: one finds the minimum, the other draws the saddles around
+# it.
+#
 # References:
 # - Heinz Hopf, "Ueber die Abbildungen der dreidimensionalen Sphaere
 #   auf die Kugelflaeche", Math. Ann. 104 (1931), 637-665 (the
@@ -318,7 +327,7 @@ def _fiber_color(base):
 # holonomy), which we report for reference.
 
 def gamma_curve(preset, n, colat_deg, lobes, amp_deg, ecc,
-                el_m=1, el_n=3):
+                el_m=1, el_n=3, cw=None):
     """A closed curve on S^2 as `n` unit 3-vectors (endpoint
     excluded).  colat_deg sets the mean colatitude; `lobes`/`amp_deg`
     drive the wavy m-fold curve; `ecc` squashes the ellipse;
@@ -329,6 +338,25 @@ def gamma_curve(preset, n, colat_deg, lobes, amp_deg, ecc,
     s = np.linspace(0.0, 2.0 * pi, n, endpoint=False)
     if preset == 'ELASTICA':
         return spherical_elastica(el_m, el_n, n)
+    if preset == 'CONSTRAINED':
+        # Heller's constrained elastic curves, in closed form on a
+        # rhombic Weierstrass lattice.  The mathematics lives in its own
+        # module because it is large; the OPERATOR is this one, because
+        # a constrained Willmore torus is a Hopf torus over a
+        # constrained elastic curve -- the same construction as the
+        # ELASTICA preset with the Lagrange multiplier switched on.
+        from .constrained_willmore_generator import (heller_curve,
+                                                     resolve_params)
+        kw = dict(cw or {})
+        t, m_wind, branch, x0f = resolve_params(
+            kw.get('lobes', 3), kw.get('winding', 1),
+            kw.get('family', 'WILLMORE'), kw.get('shape', 0.55),
+            kw.get('branch', 'UPPER'), kw.get('phase', 0.5),
+            kw.get('high_wrap', False))
+        # heller_curve returns (points, info); gamma_curve's contract is
+        # just the points, so the diagnostics are dropped here
+        return heller_curve(t, kw.get('lobes', 3), m_wind, branch, x0f,
+                            n)[0]
     if preset == 'CIRCLE':
         beta = np.full_like(s, b0)
         lam = s
@@ -890,6 +918,10 @@ if _IN_BLENDER:
                    ('ELASTICA', "Elastica (Willmore)", "closed "
                     "elastic curve on S^2 -> a WILLMORE torus: a "
                     "critical point of the Willmore energy"),
+                   ('CONSTRAINED', "Constrained Elastica",
+                    "constrained elastic curve on S^2 -> a CONSTRAINED "
+                    "WILLMORE torus (Heller): the same construction as "
+                    "Elastica with the area multiplier switched on"),
                    ('BAND', "Hopf Band", "open meridian arc -> "
                     "annulus whose two boundary fibres are a Hopf "
                     "link (a Seifert surface for it)")],
@@ -914,15 +946,53 @@ if _IN_BLENDER:
             name="Ellipse Squash", default=0.5, min=0.0, max=0.95,
             description="Ellipse eccentricity (ELLIPSE)")
         elastica_m: IntProperty(
-            name="Winding m", default=1, min=1, max=20,
+            name="Winding", default=1, min=1, max=20,
             description="Numerator of the elastica's monodromy m/n: "
                         "one lobe carries the frame 2 pi m/n around "
                         "the axis, so the closed curve accumulates m "
                         "full turns")
         elastica_n: IntProperty(
-            name="Lobes n", default=3, min=2, max=40,
+            name="Lobes", default=3, min=2, max=40,
             description="Denominator of the monodromy m/n: the curve "
                         "has n lobes.  m/n must lie in (0, 2-sqrt 2)")
+        cw_family: EnumProperty(
+            name="Family",
+            items=[('WILLMORE', "Willmore",
+                    "shape solved so the torus is WILLMORE (mu = -G/2) "
+                    "-- the same surfaces the Elastica preset builds, "
+                    "by an independent route"),
+                   ('FREE', "Free elastica",
+                    "shape solved so the curve is a FREE elastica "
+                    "(mu = 0)"),
+                   ('ELASTIC', "Elastic (custom shape)",
+                    "elastic curve (lambda = 0) at a chosen lattice "
+                    "shape"),
+                   ('CONSTRAINED', "Constrained elastic",
+                    "genuinely constrained (lambda != 0): the phase "
+                    "slides Heller's isospectral family")],
+            default='WILLMORE')
+        cw_lobes: IntProperty(
+            name="Lobes", default=3, min=2, max=24,
+            description="Lobe count n of the constrained elastic curve")
+        cw_winding: IntProperty(
+            name="Winding", default=1, min=1, max=23,
+            description="Winding w, coprime to the lobe count")
+        cw_shape: FloatProperty(
+            name="Shape", default=0.55, min=0.05, max=3.0,
+            description="Lattice shape parameter (custom families only)")
+        cw_branch: EnumProperty(
+            name="Branch",
+            items=[('UPPER', "Upper (gentler)", "the gentler root"),
+                   ('LOWER', "Lower (curlier)", "the curlier root")],
+            default='UPPER')
+        cw_phase: FloatProperty(
+            name="Phase", default=0.5, min=0.02, max=0.98,
+            description="Phase x0 as a fraction of the imaginary "
+                        "half-period; 0.5 is lambda = 0, off-centre "
+                        "sweeps genuinely constrained curves")
+        cw_high_wrap: BoolProperty(
+            name="High Wrap", default=False,
+            description="Use the high-wrap branch m = 2n + w")
         shade_smooth: BoolProperty(name="Shade Smooth", default=True)
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
                              max=100.0)
@@ -930,9 +1000,13 @@ if _IN_BLENDER:
         def execute(self, context):
             import numpy as np
             try:
-                gamma = gamma_curve(self.preset, self.n_curve, self.colat,
-                                    self.lobes, self.amp, self.ecc,
-                                    self.elastica_m, self.elastica_n)
+                gamma = gamma_curve(
+                    self.preset, self.n_curve, self.colat, self.lobes,
+                    self.amp, self.ecc, self.elastica_m, self.elastica_n,
+                    dict(lobes=self.cw_lobes, winding=self.cw_winding,
+                         family=self.cw_family, shape=self.cw_shape,
+                         branch=self.cw_branch, phase=self.cw_phase,
+                         high_wrap=self.cw_high_wrap))
             except ValueError as exc:
                 self.report({'ERROR'}, str(exc))
                 return {'CANCELLED'}
@@ -942,6 +1016,9 @@ if _IN_BLENDER:
             if self.preset == 'ELASTICA':
                 name = (f"Willmore Torus ({self.elastica_m}-"
                         f"{self.elastica_n})")
+            elif self.preset == 'CONSTRAINED':
+                name = (f"Constrained Willmore Torus "
+                        f"({self.cw_lobes}-{self.cw_winding})")
             else:
                 name = f"Hopf Torus ({self.preset.title()})"
             me = bpy.data.meshes.new(name)
@@ -974,8 +1051,18 @@ if _IN_BLENDER:
             lay.prop(self, 'preset')
             lay.prop(self, 'n_curve')
             lay.prop(self, 'm_psi')
-            if self.preset != 'ELASTICA':
+            if self.preset not in ('ELASTICA', 'CONSTRAINED'):
                 lay.prop(self, 'colat')
+            if self.preset == 'CONSTRAINED':
+                lay.prop(self, 'cw_family')
+                lay.prop(self, 'cw_lobes')
+                lay.prop(self, 'cw_winding')
+                if self.cw_family in ('ELASTIC', 'CONSTRAINED'):
+                    lay.prop(self, 'cw_shape')
+                    lay.prop(self, 'cw_branch')
+                if self.cw_family == 'CONSTRAINED':
+                    lay.prop(self, 'cw_phase')
+                lay.prop(self, 'cw_high_wrap')
             if self.preset == 'ELASTICA':
                 lay.prop(self, 'elastica_m')
                 lay.prop(self, 'elastica_n')
@@ -1209,7 +1296,60 @@ def _selftest():
               f"{defect:9.6f} ({'equality' if tight else 'strict'}) "
               f"{'OK' if ok else 'BAD'}")
 
-    # 11) THE acceptance gate.  Everything above tests gamma; this tests
+    # 11) Pinkall's Proposition 1: the Hopf torus over gamma is a FLAT
+    #     torus in S^3, conformally C / Gamma with the lattice
+    #         Gamma = < (2 pi, 0), (A/2, L/2) > ,
+    #     A the spherical area gamma encloses and L its length.
+    #
+    #     Both halves are checked on the S^3 torus itself, before the
+    #     stereographic projection -- projection is conformal, so it
+    #     preserves the conformal type but wrecks the metric, and this is
+    #     a statement about the metric.
+    #
+    #     The halving is not a typo.  The Hopf fibration is a Riemannian
+    #     submersion onto a sphere of radius 1/2, while `gamma_curve`
+    #     returns curves on the UNIT sphere, so a curve of length L here
+    #     lifts horizontally to length L/2 -- which is exactly where
+    #     Pinkall's L/2 and A/2 come from.  The lattice therefore has
+    #     covolume 2 pi * L/2 = pi L, and that is the sharpest scalar
+    #     consequence available: the S^3 area of the torus must be pi L.
+    for label, gam in (("circle b=90", gamma_curve('CIRCLE', 600, 90.0,
+                                                   1, 0.0, 0.0)),
+                       ("circle b=55", gamma_curve('CIRCLE', 600, 55.0,
+                                                   1, 0.0, 0.0)),
+                       ("wavy", gamma_curve('WAVY', 600, 90.0, 3,
+                                            35.0, 0.0)),
+                       ("elastica 1/3", spherical_elastica(1, 3, 600))):
+        G = np.asarray(gam, dtype=float)
+        L = willmore_energy(G)[1]
+        M = 96
+        psi = np.linspace(0.0, 2.0 * pi, M, endpoint=False)
+        cp, sp = np.cos(psi), np.sin(psi)
+        lift = np.empty((len(G), M, 4))
+        for i, g in enumerate(G):
+            x, y, z = g
+            beta = math.acos(max(-1.0, min(1.0, z)))
+            lam = math.atan2(y, x)
+            cb, sb = math.cos(beta / 2.0), math.sin(beta / 2.0)
+            z0r, z0i = cb * math.cos(lam), cb * math.sin(lam)
+            lift[i] = np.stack([cp * z0r - sp * z0i, sp * z0r + cp * z0i,
+                                cp * sb, sp * sb], axis=1)
+        # metric in the (s, psi) grid, with s the arclength of gamma
+        du = np.roll(lift, -1, axis=0) - lift
+        dv = np.roll(lift, -1, axis=1) - lift
+        E = np.einsum('ijk,ijk->ij', du, du)
+        F = np.einsum('ijk,ijk->ij', du, dv)
+        Gm = np.einsum('ijk,ijk->ij', dv, dv)
+        area = float(np.sum(np.sqrt(np.maximum(E * Gm - F * F, 0.0))))
+        want = pi * L
+        rel = abs(area - want) / want
+        ok = rel < 5e-3
+        ok_all = ok_all and ok
+        print(f"Pinkall lattice {label:13s}: S^3 area {area:.5f} vs "
+              f"covolume pi L = {want:.5f} (L={L:.4f}) rel {rel:.1e} "
+              f"{'OK' if ok else 'BAD'}")
+
+    # 12) THE acceptance gate.  Everything above tests gamma; this tests
     #     the SURFACE, and against an independent implementation.
     #     math_art.solver.willmore carries the discrete Willmore energy
     #     int H^2 dA and its exact analytic first variation.  Pinkall's

@@ -105,6 +105,428 @@ def jacobi_sncndn(u, m):
     return sn, cn, dn
 
 
+def jacobi_am(u, m):
+    """Jacobi amplitude am(u|m): the angle phi with sn(u|m) = sin(phi).
+
+    Free from the descending Landen recursion above -- phi_0 IS the
+    amplitude -- and unlike arcsin(sn) it does not fold at the quarter
+    periods, so it keeps growing monotonically with u.  That matters
+    wherever the amplitude appears inside another integral rather than
+    inside a trigonometric function."""
+    u = np.asarray(u, dtype=float)
+    A, C = _agm_scale(m)
+    N = len(A) - 1
+    phi = (2.0 ** N) * A[N] * u
+    for n in range(N, 0, -1):
+        phi = 0.5 * (phi + np.arcsin(np.clip((C[n] / A[n]) * np.sin(phi),
+                                             -1.0, 1.0)))
+    return phi
+
+
+# Gauss-Legendre nodes/weights on [-1, 1], built once by Newton iteration
+# on the Legendre polynomials (numpy's leggauss would do, but this keeps
+# the module's "no scipy, and no surprises" character and is exact to
+# rounding).
+def _leggauss(n):
+    i = np.arange(1, n, dtype=float)
+    beta = i / np.sqrt(4.0 * i * i - 1.0)          # Golub-Welsch
+    J = np.diag(beta, -1) + np.diag(beta, 1)
+    x, V = np.linalg.eigh(J)
+    return x, 2.0 * V[0, :] ** 2
+
+
+_GL_X, _GL_W = _leggauss(48)
+
+
+# --------------------------------------------------------------------------
+# Carlson symmetric forms -- for the third-kind integral past n = 1
+# --------------------------------------------------------------------------
+# The Gauss-Legendre `ellippi` below is exact and fast while n < 1, but at
+# n >= 1 the integrand 1/((1 - n sin^2 t) sqrt(1 - m sin^2 t)) has a pole
+# inside the range and the integral is a Cauchy PRINCIPAL VALUE, which no
+# amount of quadrature refinement will produce.  Carlson's R_J takes its
+# fourth argument negative precisely for that case and returns the
+# principal value by construction, so the two together cover the whole
+# parameter range.
+#
+# That case is not academic here: a bubbleton on a NODOID has
+# characteristic n = 6.43 at necksize -0.4 (see
+# math_art/bubbleton_generator.py), so without the principal value the
+# nodoid half of the bubbleton family is unreachable.
+#
+# Reference: B. C. Carlson, "Numerical computation of real or complex
+# elliptic integrals", Numer. Algorithms 10 (1995), 13-26; duplication
+# algorithms as in Press et al., Numerical Recipes, Sect. 6.11.
+
+_RC_ERRTOL = 1.2e-3
+_RF_ERRTOL = 8.0e-4
+_RJ_ERRTOL = 1.5e-3
+
+
+def carlson_rc(x, y):
+    """Degenerate symmetric integral R_C(x, y) = R_F(x, y, y).
+    Handles y < 0 by the principal value."""
+    if y > 0.0:
+        xt, yt, w = x, y, 1.0
+    else:                               # principal value for y < 0
+        xt, yt = x - y, -y
+        w = math.sqrt(x) / math.sqrt(xt) if x > 0.0 else 0.0
+    while True:
+        alamb = 2.0 * math.sqrt(xt) * math.sqrt(yt) + yt
+        xt = 0.25 * (xt + alamb)
+        yt = 0.25 * (yt + alamb)
+        ave = (xt + yt + yt) / 3.0
+        sfac = (yt - ave) / ave
+        if abs(sfac) <= _RC_ERRTOL:
+            break
+    poly = 1.0 + sfac * sfac * (0.3 + sfac * (1.0 / 7.0
+                                              + sfac * (0.375
+                                                        + sfac * 9.0 / 22.0)))
+    return w * poly / math.sqrt(ave)
+
+
+def carlson_rf(x, y, z):
+    """Symmetric elliptic integral of the FIRST kind,
+    R_F = (1/2) int_0^inf dt / sqrt((t+x)(t+y)(t+z))."""
+    while True:
+        sx, sy, sz = math.sqrt(x), math.sqrt(y), math.sqrt(z)
+        alamb = sx * (sy + sz) + sy * sz
+        x = 0.25 * (x + alamb)
+        y = 0.25 * (y + alamb)
+        z = 0.25 * (z + alamb)
+        ave = (x + y + z) / 3.0
+        dx, dy, dz = (ave - x) / ave, (ave - y) / ave, (ave - z) / ave
+        if max(abs(dx), abs(dy), abs(dz)) <= _RF_ERRTOL:
+            break
+    e2 = dx * dy - dz * dz
+    e3 = dx * dy * dz
+    return (1.0 + (e2 / 24.0 - 0.1 - 3.0 * e3 / 44.0) * e2
+            + e3 / 14.0) / math.sqrt(ave)
+
+
+def carlson_rj(x, y, z, p):
+    """Symmetric elliptic integral of the THIRD kind,
+    R_J = (3/2) int_0^inf dt / ((t+p) sqrt((t+x)(t+y)(t+z))).
+
+    p < 0 returns the Cauchy principal value -- that branch is the whole
+    point of using Carlson here."""
+    a = b = rcx = 0.0
+    if p > 0.0:
+        xt, yt, zt, pt = x, y, z, p
+    else:
+        xt, zt = min(x, y, z), max(x, y, z)
+        yt = x + y + z - xt - zt
+        a = 1.0 / (yt - p)
+        b = a * (zt - yt) * (yt - xt)
+        pt = yt + b
+        rho = xt * zt / yt
+        tau = p * pt / yt
+        rcx = carlson_rc(rho, tau)
+    total, fac = 0.0, 1.0
+    while True:
+        sx, sy, sz = math.sqrt(xt), math.sqrt(yt), math.sqrt(zt)
+        alamb = sx * (sy + sz) + sy * sz
+        alpha = (pt * (sx + sy + sz) + sx * sy * sz) ** 2
+        beta = pt * (pt + alamb) ** 2
+        total += fac * carlson_rc(alpha, beta)
+        fac *= 0.25
+        xt = 0.25 * (xt + alamb)
+        yt = 0.25 * (yt + alamb)
+        zt = 0.25 * (zt + alamb)
+        pt = 0.25 * (pt + alamb)
+        ave = 0.2 * (xt + yt + zt + pt + pt)
+        dx = (ave - xt) / ave
+        dy = (ave - yt) / ave
+        dz = (ave - zt) / ave
+        dp = (ave - pt) / ave
+        if max(abs(dx), abs(dy), abs(dz), abs(dp)) <= _RJ_ERRTOL:
+            break
+    c1, c2, c3, c4 = 3.0 / 14.0, 1.0 / 3.0, 3.0 / 22.0, 3.0 / 26.0
+    c5, c6, c7, c8 = 0.75 * c3, 1.5 * c4, 0.5 * c2, c3 + c3
+    ea = dx * (dy + dz) + dy * dz
+    eb = dx * dy * dz
+    ec = dp * dp
+    ed = ea - 3.0 * ec
+    ee = eb + 2.0 * dp * (ea - ec)
+    ans = 3.0 * total + fac * (
+        1.0 + ed * (-c1 + c5 * ed - c6 * ee)
+        + eb * (c7 + dp * (-c8 + dp * c4))
+        + dp * ea * (c2 - dp * c3) - c2 * dp * ec) / (ave * math.sqrt(ave))
+    if p <= 0.0:
+        ans = a * (b * ans + 3.0 * (rcx - carlson_rf(xt, yt, zt)))
+    return ans
+
+
+def _ellippi_quarter(n, phi, m):
+    """Pi(n; phi | m) for a single phi in [0, pi/2], via Carlson."""
+    if phi <= 0.0:
+        return 0.0
+    sp = math.sin(phi)
+    cp2 = math.cos(phi) ** 2
+    q = 1.0 - m * sp * sp
+    p4 = 1.0 - n * sp * sp
+    return (sp * carlson_rf(cp2, q, 1.0)
+            + (n / 3.0) * sp ** 3 * carlson_rj(cp2, q, 1.0, p4))
+
+
+def ellippi_pv(n, phi, m):
+    """Pi(n; phi | m) valid for ANY real n, including n >= 1 where the
+    integral is a Cauchy principal value.  Scalar or array `phi`.
+
+    Carlson's formula is stated for an amplitude in [0, pi/2], so a
+    general phi is folded down first.  The integrand is pi-periodic and
+    symmetric about pi/2, giving
+        Pi(phi + k pi) = Pi(phi) + 2 k Pi_complete ,
+        Pi(pi - phi)   = 2 Pi_complete - Pi(phi) ,
+        Pi(-phi)       = -Pi(phi) ,
+    and folding is what makes this usable on the long, monotonically
+    growing amplitudes that come out of `jacobi_am`."""
+    if m >= 1.0:
+        raise ValueError(f"ellippi_pv: m = {m} is out of range")
+    ph = np.asarray(phi, dtype=float)
+    scalar = (ph.ndim == 0)
+    flat = np.atleast_1d(ph).ravel()
+    complete = _ellippi_quarter(n, 0.5 * math.pi, m)
+    out = np.empty_like(flat)
+    for i, val in enumerate(flat):
+        sgn = 1.0
+        t = float(val)
+        if t < 0.0:
+            sgn, t = -1.0, -t
+        k = math.floor(t / math.pi)
+        t -= k * math.pi                       # t now in [0, pi)
+        if t <= 0.5 * math.pi:
+            base = _ellippi_quarter(n, t, m)
+        else:
+            base = 2.0 * complete - _ellippi_quarter(n, math.pi - t, m)
+        out[i] = sgn * (2.0 * k * complete + base)
+    res = out.reshape(np.atleast_1d(ph).shape)
+    return float(res[0]) if scalar else res
+
+
+def ellippi(n, phi, m, segments=None):
+    """Incomplete elliptic integral of the THIRD kind,
+
+        Pi(n; phi | m) = int_0^phi dt / ((1 - n sin^2 t) sqrt(1 - m sin^2 t))
+
+    for real n < 1, real m < 1 and real phi (scalar or ndarray).
+
+    Evaluated by composite 48-point Gauss-Legendre over sub-intervals of
+    length <= pi/2.  The integrand is analytic away from n sin^2 t = 1 and
+    m sin^2 t = 1, so Gauss-Legendre converges spectrally and 48 nodes per
+    half-period is far past machine precision; the subdivision is only
+    there to stop a long phi from making one panel span many oscillations.
+
+    For n >= 1 the integrand has a pole inside the range and the
+    integral is a Cauchy principal value, which no refinement of a
+    quadrature can produce; those calls are delegated to `ellippi_pv`,
+    which gets it from Carlson's R_J.  The Gauss-Legendre route is kept
+    for n < 1 because it is faster and vectorised."""
+    if n >= 1.0:
+        # a pole sits inside the range; hand over to the Carlson route,
+        # which returns the Cauchy principal value by construction
+        return ellippi_pv(n, phi, m)
+    if m >= 1.0:
+        raise ValueError(f"ellippi: m = {m} >= 1 is out of range")
+    ph = np.asarray(phi, dtype=float)
+    if segments is None:
+        segments = int(np.ceil(float(np.abs(ph).max()) /
+                               (0.5 * math.pi))) + 1
+    segments = max(1, int(segments))
+    # t = ph * (s + (xi+1)/2) / segments over s = 0 .. segments-1
+    s = np.arange(segments, dtype=float)
+    # nodes for every (sample, segment, gauss-node)
+    frac = (s[:, None] + 0.5 * (_GL_X[None, :] + 1.0)) / segments
+    t = ph[..., None, None] * frac                 # (..., seg, node)
+    st2 = np.sin(t) ** 2
+    f = 1.0 / ((1.0 - n * st2) * np.sqrt(1.0 - m * st2))
+    w = _GL_W[None, :] * 0.5 / segments
+    return ph * np.sum(f * w, axis=(-2, -1))
+
+
+# ==========================================================================
+# Complex gamma and the Gauss hypergeometric function 2F1 (numpy only)
+# ==========================================================================
+# Added for the CMC-1 trinoids (math_art/trinoid.py): the canonical
+# solutions of their Fuchsian system are built from 2F1, and the
+# connection matrices and the unitarising constant r involve gamma
+# ratios.  Blender ships numpy but not scipy, so both live here.
+#
+# References:
+#   C. Lanczos, "A precision approximation of the gamma function",
+#   J. SIAM Numer. Anal. B 1 (1964), 86-96 (the g = 7, n = 9 coefficient
+#   set popularised by Numerical Recipes / Boost).
+#   Gauss 2F1 series and its connection formulas: DLMF 15.2.1 (series),
+#   15.8.1 (Pfaff), 15.8.2 (z -> 1/z), 15.8.4 (z -> 1-z); also
+#   Abramowitz & Stegun 15.3.4-15.3.9.
+
+_LANCZOS_G = 7.0
+_LANCZOS_C = (0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+              771.32342877765313, -176.61502916214059, 12.507343278686905,
+              -0.13857109526572012, 9.9843695780195716e-6,
+              1.5056327351493116e-7)
+
+
+def cgamma(z):
+    """Gamma(z) for complex scalar or ndarray z, by the Lanczos
+    approximation (g = 7, 9 terms) with the reflection formula for
+    Re z < 1/2.  Relative accuracy ~1e-13 away from the poles.  Validated
+    in the self-test against the duplication formula, |Gamma(1+iy)|^2 =
+    pi y / sinh(pi y), and integer factorials -- none of which share the
+    Lanczos algebra."""
+    z = np.asarray(z, dtype=complex)
+    refl = z.real < 0.5
+    zz = np.where(refl, 1.0 - z, z)
+    x = np.full_like(zz, _LANCZOS_C[0])
+    for k, ck in enumerate(_LANCZOS_C[1:], start=1):
+        x = x + ck / (zz - 1.0 + k)
+    t = zz - 0.5 + _LANCZOS_G
+    g = math.sqrt(2.0 * math.pi) * t ** (zz - 0.5) * np.exp(-t) * x
+    with np.errstate(divide='ignore', invalid='ignore'):
+        out = np.where(refl, math.pi / (np.sin(math.pi * z) * g), g)
+    return out
+
+
+def rcgamma(z):
+    """1 / Gamma(z), which unlike Gamma itself is ENTIRE: it vanishes at
+    the non-positive integers instead of blowing up.  Used for the
+    denominators of the 2F1 connection coefficients, where a pole of a
+    denominator gamma legitimately means 'this coefficient is zero' and
+    must not produce inf/nan."""
+    z = np.asarray(z, dtype=complex)
+    lower = z.real < 0.5
+    # 1/Gamma(z) = sin(pi z) Gamma(1-z) / pi  where Gamma(z) may have
+    # poles; plain reciprocal where it cannot (Re z >= 1/2).
+    return np.where(lower,
+                    np.sin(math.pi * z) * cgamma(1.0 - z) / math.pi,
+                    1.0 / cgamma(np.where(lower, 1.0, z)))
+
+
+_HYP_MAXTERMS = 8000
+_HYP_TOL = 1e-15
+
+
+def _hyp_series(a, b, c, w):
+    """The defining series sum (a)_n (b)_n / ((c)_n n!) w^n over a flat
+    complex ndarray w with |w| < 1.  Terminates when every term is below
+    _HYP_TOL relative to its partial sum."""
+    s = np.ones_like(w)
+    t = np.ones_like(w)
+    n = 0
+    while n < _HYP_MAXTERMS:
+        t = t * ((a + n) * (b + n) / ((c + n) * (n + 1.0))) * w
+        s = s + t
+        n += 1
+        if n < 48 or n % 16 == 0:
+            if np.all(np.abs(t) <= _HYP_TOL * np.abs(s)):
+                return s
+    raise RuntimeError(
+        f"hyp2f1 series did not converge (max |w| = {np.abs(w).max():.6f});"
+        " the argument is too close to exp(+-i pi/3), where all Kummer"
+        " transformations degenerate")
+
+
+def _hyp_direct(a, b, c, z):
+    """2F1 on the region covered by the series and the Pfaff
+    transformation F(a,b;c;z) = (1-z)^(-a) F(a, c-b; c; z/(z-1))
+    (DLMF 15.8.1); per point, whichever argument is smaller."""
+    out = np.empty_like(z)
+    wp = z / (z - 1.0)
+    m = np.abs(wp) < np.abs(z)
+    if np.any(~m):
+        out[~m] = _hyp_series(a, b, c, z[~m])
+    if np.any(m):
+        out[m] = (1.0 - z[m]) ** (-a) * _hyp_series(a, c - b, c, wp[m])
+    return out
+
+
+def _near_int(x, tol=1e-8):
+    x = complex(x)
+    return abs(x.imag) < tol and abs(x.real - round(x.real)) < tol
+
+
+def hyp2f1(a, b, c, z):
+    """Gauss hypergeometric function 2F1(a, b; c; z) for complex scalar
+    parameters and complex scalar-or-ndarray z, on the principal branch
+    (cut along [1, infinity)).
+
+    Algorithm: per point, the argument is moved into the unit disk by
+    whichever of the Kummer transformations gives the smallest modulus --
+    the identity (series), Pfaff z/(z-1) (DLMF 15.8.1), the z -> 1-z
+    connection (DLMF 15.8.4), or the z -> 1/z connection (DLMF 15.8.2),
+    the last two combined with Pfaff on their sub-series.  Together these
+    reach every z except a neighbourhood of the two points
+    exp(+-i pi/3), where ALL six Kummer arguments have modulus 1 and the
+    series is refused rather than returned half-converged.
+
+    Limitations (raised, not mis-answered): c must not be a non-positive
+    integer; the z -> 1-z route needs c-a-b non-integer and the
+    z -> 1/z route needs a-b non-integer (the log-degenerate cases of
+    DLMF 15.8.8/15.8.10 are not implemented).  When the best route is
+    degenerate the next-best non-degenerate route is used if its
+    argument still lies inside the disk.
+
+    Validated in the self-test against closed forms ((1-z)^(-a),
+    -log(1-z)/z, arcsin(z)/z), Gauss's theorem at z = 1, the Euler
+    transformation, the hypergeometric ODE itself at scattered points in
+    every region, and route-against-route agreement across the region
+    boundaries."""
+    a, b, c = complex(a), complex(b), complex(c)
+    if _near_int(c) and c.real <= 0.5:
+        raise ValueError(f"hyp2f1: c = {c} is a non-positive integer")
+    z = np.asarray(z, dtype=complex)
+    scalar = (z.ndim == 0)
+    flat = np.atleast_1d(z).ravel().copy()
+    out = np.empty_like(flat)
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        m_dir = np.minimum(np.abs(flat), np.abs(flat / (flat - 1.0)))
+        m_1mz = np.minimum(np.abs(1.0 - flat), np.abs(1.0 - 1.0 / flat))
+        m_inv = np.minimum(np.abs(1.0 / flat), np.abs(1.0 / (1.0 - flat)))
+    m_1mz = np.where(np.isfinite(m_1mz), m_1mz, np.inf)
+    m_inv = np.where(np.isfinite(m_inv), m_inv, np.inf)
+    deg_1mz = _near_int(c - a - b)
+    deg_inv = _near_int(a - b)
+    if deg_1mz:
+        m_1mz = np.full_like(m_1mz, np.inf)
+    if deg_inv:
+        m_inv = np.full_like(m_inv, np.inf)
+    route = np.argmin(np.stack([m_dir, m_1mz, m_inv]), axis=0)
+
+    sel = route == 0
+    if np.any(sel):
+        out[sel] = _hyp_direct(a, b, c, flat[sel])
+
+    sel = route == 1                        # z -> 1-z  (DLMF 15.8.4)
+    if np.any(sel):
+        w = 1.0 - flat[sel]
+        cab = c - a - b
+        # denominator gammas via rcgamma: a pole there means the
+        # coefficient is zero, not inf
+        k1 = complex(cgamma(c) * cgamma(cab)
+                     * rcgamma(c - a) * rcgamma(c - b))
+        k2 = complex(cgamma(c) * cgamma(-cab) * rcgamma(a) * rcgamma(b))
+        out[sel] = (k1 * _hyp_direct(a, b, a + b - c + 1.0, w)
+                    + k2 * w ** cab
+                    * _hyp_direct(c - a, c - b, cab + 1.0, w))
+
+    sel = route == 2                        # z -> 1/z  (DLMF 15.8.2)
+    if np.any(sel):
+        zz = flat[sel]
+        w = 1.0 / zz
+        k1 = complex(cgamma(c) * cgamma(b - a)
+                     * rcgamma(b) * rcgamma(c - a))
+        k2 = complex(cgamma(c) * cgamma(a - b)
+                     * rcgamma(a) * rcgamma(c - b))
+        out[sel] = (k1 * (-zz) ** (-a)
+                    * _hyp_direct(a, a - c + 1.0, a - b + 1.0, w)
+                    + k2 * (-zz) ** (-b)
+                    * _hyp_direct(b, b - c + 1.0, b - a + 1.0, w))
+
+    res = out.reshape(np.atleast_1d(z).shape)
+    return complex(res.ravel()[0]) if scalar else res
+
+
 # ==========================================================================
 # Weierstrass elliptic-function engine (Jacobi-theta series, numpy only)
 # ==========================================================================
@@ -151,6 +573,7 @@ class _Lattice:
         t1_0 = 2.0 * np.sum(a * k)                      # theta1'(0)
         t3_0 = -2.0 * np.sum(a * k ** 3)               # theta1'''(0)
         self.eta1 = -(math.pi ** 2 / (12.0 * self.w1)) * (t3_0 / t1_0)
+        self.t1p0 = t1_0            # theta1'(0), needed by sigma
 
     def zeta(self, z):
         z = np.asarray(z, dtype=complex)
@@ -162,6 +585,24 @@ class _Lattice:
         t0, t1, t2, _ = _theta1_series(self.c * z, self.q)
         r1 = t1 / t0
         return -self.eta1 / self.w1 - self.c ** 2 * (t2 / t0 - r1 ** 2)
+
+    def sigma(self, z):
+        """Weierstrass sigma, from the same theta series:
+
+            sigma(z) = (2 w1 / pi) exp(eta1 z^2 / (2 w1))
+                       theta1(pi z / (2 w1)) / theta1'(0) .
+
+        Normalised so that sigma(z)/z -> 1 as z -> 0 -- the standard
+        convention, and the one Heller's closed-form elastic curve
+        assumes (his paper prints the limit at infinity, which is a
+        typo).  Unlike P and zeta, sigma is NOT elliptic; it is only
+        quasi-periodic, which is exactly why it can build a curve that
+        does not close until a period condition is imposed."""
+        z = np.asarray(z, dtype=complex)
+        t0, _, _, _ = _theta1_series(self.c * z, self.q)
+        return ((2.0 * self.w1 / math.pi)
+                * np.exp(self.eta1 * z * z / (2.0 * self.w1))
+                * t0 / self.t1p0)
 
     def wp_prime(self, z):
         z = np.asarray(z, dtype=complex)
@@ -222,6 +663,9 @@ def _selftest():
           f"{'OK' if good else 'FAIL'}")
 
     ok &= _selftest_jacobi()
+    ok &= _selftest_ellippi()
+    ok &= _selftest_sigma()
+    ok &= _selftest_hyp2f1()
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
@@ -308,4 +752,288 @@ def _selftest_jacobi():
     print(f"jacobi: max period residual (4K,4K,2K)={per:.3e} "
           f"{'OK' if good else 'FAIL'}")
 
+    return ok
+
+
+def _selftest_ellippi():
+    """The amplitude and the third-kind integral, each against a closed
+    form that does NOT go through the same quadrature."""
+    ok = True
+
+    # 1) am is the true amplitude: sin(am(u)) = sn(u), and unlike
+    #    arcsin(sn) it keeps increasing rather than folding at each
+    #    quarter period.
+    for m in (0.0, 0.3, 0.75, 0.96):
+        u = np.linspace(-9.0, 9.0, 401)
+        phi = jacobi_am(u, m)
+        sn = jacobi_sncndn(u, m)[0]
+        dev = float(np.abs(np.sin(phi) - sn).max())
+        monotone = bool(np.all(np.diff(phi) > 0.0))
+        good = dev < 1e-12 and monotone
+        ok &= good
+        print(f"ellippi: am m={m:.2f} max|sin(am)-sn|={dev:.2e} "
+              f"monotone={monotone} {'OK' if good else 'FAIL'}")
+
+    # 2) Pi(n; phi | 0) = arctan(sqrt(1-n) tan phi)/sqrt(1-n), continued
+    #    across the branch -- exact, and independent of the quadrature.
+    for n in (-2.0, -0.4, 0.0, 0.35, 0.8):
+        phi = np.linspace(0.05, 1.4, 40)
+        got = ellippi(n, phi, 0.0)
+        r = math.sqrt(1.0 - n)
+        want = np.arctan(r * np.tan(phi)) / r
+        dev = float(np.abs(got - want).max())
+        good = dev < 1e-13
+        ok &= good
+        print(f"ellippi: Pi(n={n:+.2f}; phi|0) vs closed form "
+              f"max dev {dev:.2e} {'OK' if good else 'FAIL'}")
+
+    # 3) The COMPLETE case at n = m: Pi(m | m) = E(m)/(1-m), which ties
+    #    the new quadrature to the AGM series for E.
+    for m in (0.1, 0.4, 0.7, 0.9):
+        got = float(ellippi(m, math.pi / 2.0, m))
+        want = ellipe(m) / (1.0 - m)
+        dev = abs(got - want)
+        good = dev < 1e-12
+        ok &= good
+        print(f"ellippi: Pi(m={m:.1f}|m)={got:.12f} vs E/(1-m)="
+              f"{want:.12f} dev {dev:.1e} {'OK' if good else 'FAIL'}")
+
+    # 4) n = 0 reduces to the first kind, whose inverse is the amplitude:
+    #    am(F(phi|m) | m) = phi.  This closes the loop between the new
+    #    quadrature and the AGM recursion, with no shared arithmetic.
+    for m in (0.2, 0.55, 0.88):
+        phi = np.linspace(0.1, 3.0, 30)
+        F = ellippi(0.0, phi, m)
+        dev = float(np.abs(jacobi_am(F, m) - phi).max())
+        good = dev < 1e-12
+        ok &= good
+        print(f"ellippi: am(F(phi|m)|m) == phi, m={m:.2f} max dev "
+              f"{dev:.2e} {'OK' if good else 'FAIL'}")
+
+    # 5) additivity across a quarter period, i.e. the composite panels
+    #    agree with a single long integration
+    m, n = 0.6, 0.25
+    a = float(ellippi(n, 2.5, m))
+    b = float(ellippi(n, 1.0, m)) + float(
+        ellippi(n, 2.5, m) - ellippi(n, 1.0, m))
+    long_ = float(ellippi(n, 12.0, m, segments=40))
+    short = float(ellippi(n, 12.0, m, segments=200))
+    dev = abs(long_ - short)
+    good = abs(a - b) < 1e-14 and dev < 1e-12
+    ok &= good
+    print(f"ellippi: panel independence over phi=12 dev {dev:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # 6) Carlson agrees with Gauss-Legendre wherever BOTH are valid.
+    #    Two independent algorithms -- duplication theorem against
+    #    spectral quadrature -- so agreement is real evidence.
+    worst = 0.0
+    for n in (-3.0, -0.5, 0.0, 0.4, 0.9):
+        for m in (0.0, 0.3, 0.85):
+            phi = np.linspace(-7.0, 7.0, 25)
+            a = ellippi(n, phi, m)
+            b = ellippi_pv(n, phi, m)
+            worst = max(worst, float(np.abs(a - b).max()
+                                     / max(1.0, np.abs(a).max())))
+    good = worst < 1e-9
+    ok &= good
+    print(f"ellippi: Carlson vs Gauss-Legendre, max relative "
+          f"{worst:.2e} {'OK' if good else 'FAIL'}")
+
+    # 7) The principal-value branch (n >= 1) against its own closed form
+    #    at m = 0, where
+    #    Pi(n; phi|0) = atanh(sqrt(n-1) tan phi)/sqrt(n-1) for n > 1.
+    worst = 0.0
+    for n in (1.7, 4.0, 9.0):
+        rt = math.sqrt(n - 1.0)
+        phi = np.linspace(0.05, 1.4, 30)
+        got = ellippi_pv(n, phi, 0.0)
+        want = np.arctanh(np.clip(rt * np.tan(phi), -0.999999999,
+                                  0.999999999)) / rt
+        # only compare below the pole, where the principal value and the
+        # elementary form describe the same branch
+        keep = rt * np.tan(phi) < 0.98
+        worst = max(worst, float(np.abs(got[keep] - want[keep]).max()))
+    good = worst < 1e-9
+    ok &= good
+    print(f"ellippi: principal value vs atanh form (n > 1, m = 0) max "
+          f"dev {worst:.2e} {'OK' if good else 'FAIL'}")
+
+    # 8) The fold is consistent: Pi(phi + k pi) = Pi(phi) + 2 k Pi_c,
+    #    which is what makes long amplitudes usable.
+    n, m = 3.5, 0.6
+    pc = ellippi_pv(n, math.pi / 2.0, m)
+    base = ellippi_pv(n, 0.7, m)
+    dev = max(abs(float(ellippi_pv(n, 0.7 + k * math.pi, m))
+                  - (base + 2.0 * k * pc)) for k in (1, 2, 5))
+    good = dev < 1e-9
+    ok &= good
+    print(f"ellippi: pi-fold consistency (n = 3.5 > 1) dev {dev:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    return ok
+
+
+def _selftest_hyp2f1():
+    """cgamma and hyp2f1, each against closed forms and identities that
+    do NOT share the implementation."""
+    ok = True
+
+    # -- gamma --------------------------------------------------------
+    # factorials, Gamma(1/2), and the closed form
+    # |Gamma(1+iy)|^2 = pi y / sinh(pi y); none of these run through the
+    # reflection/Lanczos path being checked in the same way.
+    d1 = max(abs(complex(cgamma(n + 1)) - math.factorial(n))
+             / math.factorial(n) for n in range(1, 11))
+    d2 = abs(complex(cgamma(0.5)) - math.sqrt(math.pi))
+    ys = np.array([0.3, 1.1, 2.7])
+    d3 = float(np.abs(np.abs(cgamma(1.0 + 1j * ys)) ** 2
+                      - math.pi * ys / np.sinh(math.pi * ys)).max())
+    # duplication formula at complex points (tests both half-planes)
+    zs = np.array([0.3 + 0.7j, -1.4 + 0.9j, 2.2 - 1.3j, -0.7 - 0.2j])
+    dup = (cgamma(2.0 * zs) - 2.0 ** (2.0 * zs - 1.0) / math.sqrt(math.pi)
+           * cgamma(zs) * cgamma(zs + 0.5))
+    d4 = float((np.abs(dup) / np.abs(cgamma(2.0 * zs))).max())
+    good = d1 < 1e-12 and d2 < 1e-13 and d3 < 1e-12 and d4 < 1e-11
+    ok &= good
+    print(f"cgamma: factorials {d1:.1e}, sqrt(pi) {d2:.1e}, "
+          f"|G(1+iy)| {d3:.1e}, duplication {d4:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # -- hyp2f1 closed forms, spanning all three routes -----------------
+    # 2F1(a, b; b; z) = (1-z)^(-a) holds on the whole cut plane; with
+    # a - b and c - a - b non-integer it exercises direct, 1-z and 1/z.
+    a, b = 0.31 + 0.14j, 1.62
+    pts = np.array([0.3 + 0.2j, -0.7 + 0.1j, 0.9 + 0.05j, 0.97 - 0.4j,
+                    -4.0 + 2.0j, 3.0 + 4.0j, 12.0 - 5.0j, -25.0 - 1.0j,
+                    0.55 + 0.83j, 0.55 - 0.83j])   # last two near e^(i pi/3)
+    got = hyp2f1(a, b, b, pts)
+    want = (1.0 - pts) ** (-a)
+    d1 = float((np.abs(got - want) / np.abs(want)).max())
+    good = d1 < 1e-11
+    ok &= good
+    print(f"hyp2f1: (1-z)^(-a) closed form, all routes, max rel "
+          f"{d1:.1e} {'OK' if good else 'FAIL'}")
+
+    # 2F1(1,1;2;z) = -log(1-z)/z (principal log) -- the log-degenerate
+    # parameter case, so only the direct/Pfaff region applies.
+    pts = np.array([0.4 + 0.3j, -0.8 - 0.5j, 0.85 + 0.1j, -0.2 + 0.9j])
+    got = hyp2f1(1.0, 1.0, 2.0, pts)
+    want = -np.log(1.0 - pts) / pts
+    d2 = float((np.abs(got - want) / np.abs(want)).max())
+    # 2F1(1/2,1/2;3/2;z^2) = arcsin(z)/z
+    zs = np.array([0.3, 0.55, 0.8 + 0.1j, 0.2 - 0.6j])
+    got = hyp2f1(0.5, 0.5, 1.5, zs * zs)
+    want = np.arcsin(zs) / zs
+    d3 = float((np.abs(got - want) / np.abs(want)).max())
+    good = d2 < 1e-12 and d3 < 1e-12
+    ok &= good
+    print(f"hyp2f1: -log(1-z)/z {d2:.1e}, arcsin(z)/z {d3:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Gauss's theorem: 2F1(a,b;c;1) = G(c)G(c-a-b) / (G(c-a)G(c-b)),
+    # summed DIRECTLY (tail ~ n^(a+b-c-1), convergent for c-a-b > 0) --
+    # ties the series to cgamma with no connection formula involved.
+    a, b, c = 0.3, 0.45, 2.2
+    n = np.arange(400000, dtype=float)
+    ratios = (a + n) * (b + n) / ((c + n) * (1.0 + n))
+    direct = 1.0 + float(np.cumprod(ratios).sum())
+    gauss = complex(cgamma(c) * cgamma(c - a - b)
+                    / (cgamma(c - a) * cgamma(c - b))).real
+    d4 = abs(direct - gauss) / gauss
+    good = d4 < 1e-7                     # tail ~ N^-(c-a-b) = 5e-9
+    ok &= good
+    print(f"hyp2f1: Gauss theorem at z=1, series vs gamma ratio, rel "
+          f"{d4:.1e} {'OK' if good else 'FAIL'}")
+
+    # Euler transformation F(a,b;c;z) = (1-z)^(c-a-b) F(c-a,c-b;c;z):
+    # different parameters, different series, same value.
+    a, b, c = 0.27, 1.13, 1.71
+    pts = np.array([0.35 + 0.45j, -0.6 - 0.3j, 0.92 + 0.02j, 2.5 + 1.5j])
+    lhs = hyp2f1(a, b, c, pts)
+    rhs = (1.0 - pts) ** (c - a - b) * hyp2f1(c - a, c - b, c, pts)
+    d5 = float((np.abs(lhs - rhs) / np.abs(lhs)).max())
+    good = d5 < 1e-11
+    ok &= good
+    print(f"hyp2f1: Euler transformation, max rel {d5:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # The hypergeometric ODE z(1-z)F'' + (c-(a+b+1)z)F' - abF = 0 at
+    # scattered points in EVERY region -- independent of all the
+    # identities used to build the evaluator.
+    a, b, c = 0.42, 0.87 + 0.33j, 1.29
+    worst = 0.0
+    h = 1e-4      # balances FD truncation against roundoff in f''
+    for z0 in (0.31 + 0.22j, -0.62 + 0.41j, 0.93 + 0.31j, 0.93 - 0.31j,
+               1.62 + 0.35j, 1.62 - 0.35j, -3.1 + 1.2j, 4.2 - 2.2j):
+        f0 = hyp2f1(a, b, c, z0)
+        fp = hyp2f1(a, b, c, z0 + h)
+        fm = hyp2f1(a, b, c, z0 - h)
+        d1n = (fp - fm) / (2.0 * h)
+        d2n = (fp - 2.0 * f0 + fm) / (h * h)
+        resid = z0 * (1.0 - z0) * d2n + (c - (a + b + 1.0) * z0) * d1n \
+            - a * b * f0
+        scale = max(abs(a * b * f0), abs(d1n), 1.0)
+        worst = max(worst, abs(resid) / scale)
+    # FD-limited: roundoff in the second difference is ~4 eps/h^2 = 9e-8
+    # amplified by |z(1-z)| up to ~25 at the far sample points; a wrong
+    # route or branch would fail this at O(1).
+    good = worst < 1e-5
+    ok &= good
+    print(f"hyp2f1: ODE residual over all regions, max {worst:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Smoothness ACROSS the region boundaries, where the evaluator
+    # switches routes: sample a radial triplet straddling |z| = 1 (the
+    # direct <-> 1/z boundary) and |1-z| = |z| (direct <-> 1-z).  If a
+    # route joins with the wrong branch or coefficient, the second
+    # difference jumps to O(1); a correct join leaves only the smooth
+    # F'' h^2 ~ 1e-6.  (Params must keep c-a-b and a-b non-integer, or
+    # the connection routes are rightly disabled and the direct series
+    # rightly refuses |z| -> 1.)
+    a, b, c = 0.42, 0.79, 1.31
+    h = 1e-3
+    worst = 0.0
+    for th in np.linspace(0.45, 2.7, 9):     # avoid z = 1 itself
+        e = np.exp(1j * th)
+        f = [hyp2f1(a, b, c, r * e) for r in (1.0 - h, 1.0, 1.0 + h)]
+        worst = max(worst, abs(f[0] - 2.0 * f[1] + f[2]) / abs(f[1]))
+    for y in np.linspace(0.35, 2.0, 7):      # the Re z = 1/2 boundary
+        f = [hyp2f1(a, b, c, x + 1j * y) for x in (0.5 - h, 0.5, 0.5 + h)]
+        worst = max(worst, abs(f[0] - 2.0 * f[1] + f[2]) / abs(f[1]))
+    good = worst < 1e-4
+    ok &= good
+    print(f"hyp2f1: route-boundary smoothness (2nd diff), max "
+          f"{worst:.1e} {'OK' if good else 'FAIL'}")
+
+    return ok
+
+
+def _selftest_sigma():
+    """Weierstrass sigma, against the two identities that pin it."""
+    ok = True
+    for w1, tau in ((0.5, 1j), (0.5, 0.8j), (0.7, 1.6j)):
+        L = _Lattice(w1, tau)
+        z = np.array([0.07 + 0.03j, 0.13 - 0.09j, 0.21 + 0.17j])
+
+        # sigma'/sigma = zeta -- the defining relation
+        h = 1e-6
+        dlog = (np.log(L.sigma(z + h)) - np.log(L.sigma(z - h))) / (2 * h)
+        d1 = float(np.abs(dlog - L.zeta(z)).max())
+
+        # normalisation sigma(z)/z -> 1 as z -> 0 (NOT as z -> infinity,
+        # which is what Heller's paper prints; that is a typo there)
+        t = np.array([1e-5, 3e-5, 1e-4])
+        d2 = float(np.abs(L.sigma(t) / t - 1.0).max())
+
+        # quasi-periodicity sigma(z + 2w1) = -exp(2 eta1 (z + w1)) sigma(z)
+        lhs = L.sigma(z + 2.0 * w1)
+        rhs = -np.exp(2.0 * L.eta1 * (z + w1)) * L.sigma(z)
+        d3 = float(np.abs(lhs - rhs).max())
+
+        good = d1 < 1e-7 and d2 < 1e-9 and d3 < 1e-12
+        ok &= good
+        print(f"sigma w1={w1} tau={tau}: |sigma'/sigma - zeta|={d1:.1e}, "
+              f"|sigma(z)/z - 1|={d2:.1e}, quasi-period {d3:.1e} "
+              f"{'OK' if good else 'FAIL'}")
     return ok
