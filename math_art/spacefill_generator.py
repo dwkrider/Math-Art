@@ -191,9 +191,9 @@ if _IN_BLENDER:
                     "as small spheres (ball-and-stick model)")],
             default='SOLID')
         border: FloatProperty(
-            name="Border", default=0.3, min=0.02, max=0.95,
-            description="Leonardo face frame width (fraction of "
-                        "the face)")
+            name="Border", default=0.06, min=0.005, max=1.0,
+            description="Leonardo face frame width, the same on every "
+                        "face whatever its size")
         thickness: FloatProperty(
             name="Thickness", default=0.06, min=0.001, max=1.0,
             description="Leonardo panel thickness")
