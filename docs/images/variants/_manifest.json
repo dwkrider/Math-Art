@@ -2,11 +2,11 @@
  "curiosity_surface": [
   [
    "FRESNEL",
-   "Fresnel Elasticity"
+   "Fresnel Elasticity Surface"
   ],
   [
    "PAPERBAG",
-   "Paper Bag"
+   "Paper Bag Surface"
   ],
   [
    "TRIHYPERBOLOID",
@@ -50,99 +50,576 @@
   ],
   [
    "TOWER",
-   "Scherk Tower"
+   "Scherk Tower (straight)"
+  ],
+  [
+   "DEMO1",
+   "Demo 1"
+  ],
+  [
+   "DEMO2",
+   "Demo 2"
+  ],
+  [
+   "DEMO3",
+   "Demo 3"
+  ],
+  [
+   "DEMO4",
+   "Demo 4"
+  ],
+  [
+   "DEMO6",
+   "Demo 6"
+  ],
+  [
+   "DEMO7",
+   "Demo 7"
+  ],
+  [
+   "DEMO8",
+   "Demo 8"
+  ],
+  [
+   "DEMO10",
+   "Demo 10"
+  ],
+  [
+   "DEMO11",
+   "Demo 11"
+  ],
+  [
+   "DEMO12",
+   "Demo 12"
+  ],
+  [
+   "DEMO13",
+   "Demo 13"
+  ],
+  [
+   "DEMO14",
+   "Demo 14"
+  ],
+  [
+   "DEMO15",
+   "Demo 15"
+  ],
+  [
+   "DEMO16",
+   "Demo 16"
+  ],
+  [
+   "DEMO20",
+   "Demo 20"
   ]
  ],
  "parametric_minimal": [
   [
    "ENNEPER",
-   "Enneper"
+   "Enneper",
+   "Classical"
   ],
   [
    "CATENOID",
-   "Catenoid"
+   "Catenoid",
+   "Classical"
   ],
   [
    "HELICOID",
-   "Helicoid"
+   "Helicoid",
+   "Classical"
   ],
   [
    "HENNEBERG",
-   "Henneberg"
+   "Henneberg",
+   "Classical"
   ],
   [
    "CATALAN",
-   "Catalan"
+   "Catalan",
+   "Classical"
   ],
   [
    "BOUR",
-   "Bour"
+   "Bour",
+   "Classical"
   ],
   [
    "RICHMOND",
-   "Richmond"
-  ],
-  [
-   "SCHERK1",
-   "Scherk"
-  ],
-  [
-   "COSTA",
-   "Costa"
-  ],
-  [
-   "COSTA_HM",
-   "Costa-Hoffman-Meeks (genus 3)"
-  ],
-  [
-   "CHEN_GACK",
-   "Chen-Gackstatter"
-  ],
-  [
-   "KNOID",
-   "Jorge-Meeks k-noid"
+   "Richmond",
+   "Classical"
   ],
   [
    "CATHEL",
-   "Catenoid-Helicoid"
+   "Catenoid-Helicoid (associate)",
+   "Classical"
+  ],
+  [
+   "RICHMOND_K",
+   "Richmond (generalized, g = z^k)",
+   "Classical"
+  ],
+  [
+   "COSTA",
+   "Costa (genus 1)",
+   "Tori (genus 1)"
+  ],
+  [
+   "CHEN_GACK",
+   "Chen-Gackstatter",
+   "Tori (genus 1)"
+  ],
+  [
+   "COSTA_HM",
+   "Costa-Hoffman-Meeks (genus k)",
+   "Tori (genus 1)"
+  ],
+  [
+   "KNOID",
+   "Jorge-Meeks k-noid",
+   "Spheres (genus 0)"
+  ],
+  [
+   "DOUBLE_ENNEPER",
+   "Double Enneper",
+   "Spheres (genus 0)"
+  ],
+  [
+   "ENNK",
+   "Enneper-ended k-noid",
+   "Spheres (genus 0)"
+  ],
+  [
+   "M3_PYR",
+   "Pyramidal k-noid",
+   "Spheres (genus 0)"
+  ],
+  [
+   "M3_PRISM",
+   "Prismatic k-noid",
+   "Spheres (genus 0)"
+  ],
+  [
+   "M3_BIPYR",
+   "Bipyramidal k-noid",
+   "Spheres (genus 0)"
+  ],
+  [
+   "M3_ANTI5",
+   "Antiprismatic k-noid (nn=5)",
+   "Spheres (genus 0)"
+  ],
+  [
+   "M3_LOPEZ",
+   "Lopez sphere (2 ends of index 2)",
+   "Spheres (genus 0)"
+  ],
+  [
+   "M3_CATENN",
+   "Sphere: catenoid + Enneper end",
+   "Spheres (genus 0)"
+  ],
+  [
+   "M3_FRIEM",
+   "Finite Riemann (plane + 2 catenoids)",
+   "Spheres (genus 0)"
+  ],
+  [
+   "ENNEPER_NCAT",
+   "Enneper with n Catenoids",
+   "Spheres (genus 0)"
+  ],
+  [
+   "SYMM_FRIEM",
+   "Symmetrized Finite Riemann (2m catenoids)",
+   "Spheres (genus 0)"
+  ],
+  [
+   "SYMM_DBLENN",
+   "Symmetrized Double Enneper",
+   "Spheres (genus 0)"
+  ],
+  [
+   "KNOID_ENN_ENDS",
+   "k-Noid with Enneper Ends",
+   "Spheres (genus 0)"
+  ],
+  [
+   "ANTIPRISM_KNOID",
+   "Antiprismatic k-noid (full family)",
+   "Spheres (genus 0)"
+  ],
+  [
+   "MEEKS_MOBIUS",
+   "Meeks Mobius Strip",
+   "Non-Orientable"
+  ],
+  [
+   "HENNEBERG_RP2",
+   "Henneberg (one-sided)",
+   "Non-Orientable"
+  ],
+  [
+   "KUSNER_RP2",
+   "Kusner Projective Plane (p planar ends)",
+   "Non-Orientable"
+  ],
+  [
+   "LOPEZ_KLEIN",
+   "Lopez Minimal Klein Bottle",
+   "Non-Orientable"
+  ],
+  [
+   "CG_HIGHER",
+   "Chen-Gackstatter (higher genus)",
+   "Higher Genus"
+  ],
+  [
+   "SYMM_CG",
+   "Symmetrized Chen-Gackstatter (k-fold, genus k-1)",
+   "Higher Genus"
+  ],
+  [
+   "SYMM_CG_G2N",
+   "Symmetrized Chen-Gackstatter (2-level, genus 2(k-1))",
+   "Higher Genus"
+  ],
+  [
+   "SYMM_CG_G3K",
+   "Symmetrized Chen-Gackstatter (3-level, genus 3(k-1))",
+   "Higher Genus"
+  ],
+  [
+   "CATENOID_ENNEPER",
+   "Catenoid-Enneper (higher genus)",
+   "Higher Genus"
+  ],
+  [
+   "COSTA_WOHLGEMUTH",
+   "Costa-Wohlgemuth (4 ends)",
+   "Higher Genus"
+  ],
+  [
+   "WOHLGEMUTH_G3",
+   "Wohlgemuth Second Surface (genus 3)",
+   "Higher Genus"
+  ],
+  [
+   "BJ_CYCLOID",
+   "Bjorling: Cycloid (Catalan)",
+   "Bjorling (curve-seeded)"
+  ],
+  [
+   "BJ_CIRCLE",
+   "Bjorling: Twisted Band (Mobius)",
+   "Bjorling (curve-seeded)"
+  ],
+  [
+   "BJ_HELIX",
+   "Bjorling: Helix Ribbon",
+   "Bjorling (curve-seeded)"
+  ],
+  [
+   "BJ_TREFOIL",
+   "Bjorling: Trefoil Ribbon",
+   "Bjorling (curve-seeded)"
+  ],
+  [
+   "BJ_ARCH_SPIRAL",
+   "Bjorling: Archimedean Spiral",
+   "Bjorling (curve-seeded)"
+  ],
+  [
+   "BJ_LOG_SPIRAL",
+   "Bjorling: Logarithmic Spiral",
+   "Bjorling (curve-seeded)"
   ]
  ],
  "tpms": [
   [
+   "SCHERK_TOWER",
+   "Saddle Tower (Scherk singly periodic)",
+   "Singly Periodic"
+  ],
+  [
+   "SADDLE_TOWER_A",
+   "Saddle Tower (Karcher, unequal wings)",
+   "Singly Periodic"
+  ],
+  [
+   "RIEMANN",
+   "Riemann's Minimal Example",
+   "Singly Periodic"
+  ],
+  [
+   "CHM_PERIODIC",
+   "Callahan-Hoffman-Meeks (singly periodic)",
+   "Singly Periodic"
+  ],
+  [
+   "GENUS1_HELICOID",
+   "Helicoid with Handle (genus 1)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_SIX_SCHERK",
+   "Six-Ended Scherk Tower",
+   "Singly Periodic"
+  ],
+  [
+   "SP_ALT_FENCE",
+   "Alternating Fence of Half-Catenoids",
+   "Singly Periodic"
+  ],
+  [
+   "SP_FENCE_CAT",
+   "Fence of Catenoids (Karcher)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_HELICOIDAL_SCHERK",
+   "Helicoidal Karcher-Scherk (twisted tower)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_ENNEPER_3ANN",
+   "Translation-Invariant Enneper (3 annular ends)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_PERIODIC_ENNEPER",
+   "Periodic Enneper",
+   "Singly Periodic"
+  ],
+  [
+   "SP_SCHERK_ENNEPER",
+   "Scherk-Enneper",
+   "Singly Periodic"
+  ],
+  [
+   "SP_SIX_SCHERK_G1",
+   "Six-Ended Scherk Tower (genus 1)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_COSTA_SCHERK_G1",
+   "Costa-Scherk Tower (genus 1)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_EIGHT_SCHERK_G2",
+   "Eight-Ended Scherk Tower (genus 2)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_DASILVA_BATISTA",
+   "daSilva-Batista Surface (genus 2)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_CAT_HANDLE_G1",
+   "Catenoid Tower with Handle (genus 2)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_CAT_HANDLES_G3",
+   "Catenoid Tower with 2 Handles (genus 3)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_COSTA_TRANSINV",
+   "Translation-Invariant Costa",
+   "Singly Periodic"
+  ],
+  [
+   "CHM12_PERIODIC",
+   "Callahan-Hoffman-Meeks CHM-(1,2) (genus 4)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_SCREW_CHM",
+   "Screw-Motion CHM Tower",
+   "Singly Periodic"
+  ],
+  [
+   "SP_FISCHER_KOCH",
+   "Fischer-Koch Tower (translation-invariant)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_FK_FREESE",
+   "Fischer-Koch-Freese (twisted)",
+   "Singly Periodic"
+  ],
+  [
+   "SP_1CAT_2ANN",
+   "Torus with Catenoid + 2 Annular Ends",
+   "Singly Periodic"
+  ],
+  [
+   "SP_2ENN_2ANN",
+   "Torus with 2 Enneper + 2 Annular Ends",
+   "Singly Periodic"
+  ],
+  [
+   "SCHERK1",
+   "Scherk (doubly periodic)",
+   "Doubly Periodic"
+  ],
+  [
+   "TILT_SCHERK",
+   "Tilted Scherk (doubly periodic)",
+   "Doubly Periodic"
+  ],
+  [
+   "KMR_DOUBLY",
+   "Karcher-Meeks-Rosenberg (doubly periodic)",
+   "Doubly Periodic"
+  ],
+  [
+   "KMR3_DOUBLY",
+   "Karcher-Meeks-Rosenberg (KMR-3, tilted ends)",
+   "Doubly Periodic"
+  ],
+  [
+   "WEI_DOUBLY",
+   "Wei Doubly Periodic (genus 2)",
+   "Doubly Periodic"
+  ],
+  [
+   "KARCHER_SCHERK_DP",
+   "Karcher-Scherk with Handles (doubly periodic)",
+   "Doubly Periodic"
+  ],
+  [
+   "WEI_TOWER_DP",
+   "Wei Higher-Genus Tower (doubly periodic)",
+   "Doubly Periodic"
+  ],
+  [
+   "RTW_DP",
+   "Rossman-Thayer-Wohlgemuth (doubly periodic)",
+   "Doubly Periodic"
+  ],
+  [
+   "CONNOR_DP",
+   "Connor Experimental (doubly periodic)",
+   "Doubly Periodic"
+  ],
+  [
    "P",
-   "Schwarz P"
+   "Schwarz P",
+   "Triply Periodic (TPMS)"
   ],
   [
    "D",
-   "Schwarz D"
+   "Schwarz D",
+   "Triply Periodic (TPMS)"
   ],
   [
    "G",
-   "Gyroid"
+   "Gyroid",
+   "Triply Periodic (TPMS)"
   ],
   [
    "NEOVIUS",
-   "Neovius"
+   "Neovius",
+   "Triply Periodic (TPMS)"
   ],
   [
    "IWP",
-   "Schoen I-WP"
+   "Schoen I-WP",
+   "Triply Periodic (TPMS)"
   ],
   [
    "FRD",
-   "Schoen F-RD"
+   "Schoen F-RD",
+   "Triply Periodic (TPMS)"
   ],
   [
    "LIDINOID",
-   "Lidinoid"
+   "Lidinoid",
+   "Triply Periodic (TPMS)"
   ],
   [
    "SPLITP",
-   "Split P"
+   "Split P",
+   "Triply Periodic (TPMS)"
   ],
   [
-   "SCHERKT",
-   "Scherk Tower"
+   "OCTO",
+   "Schoen O,C-TO (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "FK_S",
+   "Fischer-Koch S (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "FK_CS",
+   "Fischer-Koch C(S) (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "FK_Y",
+   "Fischer-Koch Y (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "FK_PMY",
+   "Fischer-Koch +-Y (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "FK_CPMY",
+   "Fischer-Koch C(+-Y) (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "FK_CY",
+   "Fischer-Koch C(Y) (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "CD",
+   "Complementary D (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "CG",
+   "Complementary Gyroid (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "GPRIME",
+   "G' Alternating Gyroid (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "DPRIME",
+   "D' (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "KSURF",
+   "Karcher K (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "CI2Y",
+   "C(I2-Y**) Rod Packing (nodal approximation)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "FRD2",
+   "Schoen F-RD (Wohlgemuth variant, nodal)",
+   "Triply Periodic (TPMS)"
+  ],
+  [
+   "PGD",
+   "Schwarz P-Gyroid-D (exact, Bonnet angle)",
+   "Triply Periodic (TPMS)"
   ]
  ],
  "seifert": [
@@ -159,12 +636,20 @@
    "Cinquefoil (5_1)"
   ],
   [
+   "SEPTAFOIL",
+   "(2,7) torus knot 7_1"
+  ],
+  [
+   "T34",
+   "(3,4) torus knot 8_19"
+  ],
+  [
    "GRANNY",
-   "Granny"
+   "Granny knot"
   ],
   [
    "SQUARE",
-   "Square"
+   "Square knot"
   ],
   [
    "HOPF",
@@ -180,13 +665,13 @@
   ],
   [
    "TORUS",
-   "Torus knot"
+   "Torus knot (p,q)"
   ]
  ],
  "algebraic": [
   [
    "CLEBSCH",
-   "Clebsch Cubic"
+   "Clebsch Diagonal Cubic"
   ],
   [
    "CAYLEY",
@@ -219,6 +704,10 @@
   [
    "TANGLE",
    "Tangle Cube"
+  ],
+  [
+   "MONKEY",
+   "Monkey Saddle (n-fold)"
   ]
  ],
  "topological": [
@@ -228,7 +717,11 @@
   ],
   [
    "KLEIN8",
-   "Klein Bottle (Fig-8)"
+   "Klein Bottle (Figure-8)"
+  ],
+  [
+   "SUDANESE",
+   "Sudanese Mobius Band"
   ],
   [
    "CROSSCAP",
@@ -248,7 +741,7 @@
   ],
   [
    "TWIST_STRIP",
-   "Twisted Strip"
+   "Twisted Strip (solid)"
   ]
  ],
  "regular_solids": [
@@ -429,12 +922,12 @@
   ],
   [
    "PRISM",
-   "Hexagonal Prism",
+   "Prism",
    "Prisms & Antiprisms"
   ],
   [
    "ANTIPRISM",
-   "Hexagonal Antiprism",
+   "Antiprism",
    "Prisms & Antiprisms"
   ],
   [
@@ -543,6 +1036,11 @@
    "Johnson"
   ],
   [
+   "J26",
+   "Gyrobifastigium (J26)",
+   "Johnson"
+  ],
+  [
    "J22",
    "Gyroelongated Triangular Cupola (J22)",
    "Johnson"
@@ -560,11 +1058,6 @@
   [
    "J25",
    "Gyroelongated Pentagonal Rotunda (J25)",
-   "Johnson"
-  ],
-  [
-   "J26",
-   "Gyrobifastigium (J26)",
    "Johnson"
   ],
   [
@@ -676,6 +1169,226 @@
    "J48",
    "Gyroelongated Pentagonal Birotunda (J48)",
    "Johnson"
+  ],
+  [
+   "J49",
+   "Augmented Triangular Prism (J49)",
+   "Johnson"
+  ],
+  [
+   "J50",
+   "Biaugmented Triangular Prism (J50)",
+   "Johnson"
+  ],
+  [
+   "J51",
+   "Triaugmented Triangular Prism (J51)",
+   "Johnson"
+  ],
+  [
+   "J52",
+   "Augmented Pentagonal Prism (J52)",
+   "Johnson"
+  ],
+  [
+   "J53",
+   "Biaugmented Pentagonal Prism (J53)",
+   "Johnson"
+  ],
+  [
+   "J54",
+   "Augmented Hexagonal Prism (J54)",
+   "Johnson"
+  ],
+  [
+   "J55",
+   "Parabiaugmented Hexagonal Prism (J55)",
+   "Johnson"
+  ],
+  [
+   "J56",
+   "Metabiaugmented Hexagonal Prism (J56)",
+   "Johnson"
+  ],
+  [
+   "J57",
+   "Triaugmented Hexagonal Prism (J57)",
+   "Johnson"
+  ],
+  [
+   "J58",
+   "Augmented Dodecahedron (J58)",
+   "Johnson"
+  ],
+  [
+   "J59",
+   "Parabiaugmented Dodecahedron (J59)",
+   "Johnson"
+  ],
+  [
+   "J60",
+   "Metabiaugmented Dodecahedron (J60)",
+   "Johnson"
+  ],
+  [
+   "J61",
+   "Triaugmented Dodecahedron (J61)",
+   "Johnson"
+  ],
+  [
+   "J62",
+   "Metabidiminished Icosahedron (J62)",
+   "Johnson"
+  ],
+  [
+   "J63",
+   "Tridiminished Icosahedron (J63)",
+   "Johnson"
+  ],
+  [
+   "J64",
+   "Augmented Tridiminished Icosahedron (J64)",
+   "Johnson"
+  ],
+  [
+   "J65",
+   "Augmented Truncated Tetrahedron (J65)",
+   "Johnson"
+  ],
+  [
+   "J66",
+   "Augmented Truncated Cube (J66)",
+   "Johnson"
+  ],
+  [
+   "J67",
+   "Biaugmented Truncated Cube (J67)",
+   "Johnson"
+  ],
+  [
+   "J68",
+   "Augmented Truncated Dodecahedron (J68)",
+   "Johnson"
+  ],
+  [
+   "J69",
+   "Parabiaugmented Truncated Dodecahedron (J69)",
+   "Johnson"
+  ],
+  [
+   "J70",
+   "Metabiaugmented Truncated Dodecahedron (J70)",
+   "Johnson"
+  ],
+  [
+   "J71",
+   "Triaugmented Truncated Dodecahedron (J71)",
+   "Johnson"
+  ],
+  [
+   "J72",
+   "Gyrate Rhombicosidodecahedron (J72)",
+   "Johnson"
+  ],
+  [
+   "J73",
+   "Parabigyrate Rhombicosidodecahedron (J73)",
+   "Johnson"
+  ],
+  [
+   "J74",
+   "Metabigyrate Rhombicosidodecahedron (J74)",
+   "Johnson"
+  ],
+  [
+   "J75",
+   "Trigyrate Rhombicosidodecahedron (J75)",
+   "Johnson"
+  ],
+  [
+   "J76",
+   "Diminished Rhombicosidodecahedron (J76)",
+   "Johnson"
+  ],
+  [
+   "J77",
+   "Paragyrate Diminished Rhombicosidodecahedron (J77)",
+   "Johnson"
+  ],
+  [
+   "J78",
+   "Metagyrate Diminished Rhombicosidodecahedron (J78)",
+   "Johnson"
+  ],
+  [
+   "J79",
+   "Bigyrate Diminished Rhombicosidodecahedron (J79)",
+   "Johnson"
+  ],
+  [
+   "J80",
+   "Parabidiminished Rhombicosidodecahedron (J80)",
+   "Johnson"
+  ],
+  [
+   "J81",
+   "Metabidiminished Rhombicosidodecahedron (J81)",
+   "Johnson"
+  ],
+  [
+   "J82",
+   "Gyrate Bidiminished Rhombicosidodecahedron (J82)",
+   "Johnson"
+  ],
+  [
+   "J83",
+   "Tridiminished Rhombicosidodecahedron (J83)",
+   "Johnson"
+  ],
+  [
+   "J84",
+   "Snub Disphenoid (J84)",
+   "Johnson"
+  ],
+  [
+   "J85",
+   "Snub Square Antiprism (J85)",
+   "Johnson"
+  ],
+  [
+   "J86",
+   "Sphenocorona (J86)",
+   "Johnson"
+  ],
+  [
+   "J87",
+   "Augmented Sphenocorona (J87)",
+   "Johnson"
+  ],
+  [
+   "J88",
+   "Sphenomegacorona (J88)",
+   "Johnson"
+  ],
+  [
+   "J89",
+   "Hebesphenomegacorona (J89)",
+   "Johnson"
+  ],
+  [
+   "J90",
+   "Disphenocingulum (J90)",
+   "Johnson"
+  ],
+  [
+   "J91",
+   "Bilunabirotunda (J91)",
+   "Johnson"
+  ],
+  [
+   "J92",
+   "Triangular Hebesphenorotunda (J92)",
+   "Johnson"
   ]
  ],
  "zonohedra": [
@@ -702,6 +1415,10 @@
   [
    "CUBE",
    "Cube"
+  ],
+  [
+   "RANDOM",
+   "Random Star"
   ]
  ],
  "polytope4d": [
@@ -711,7 +1428,7 @@
   ],
   [
    "CELL8",
-   "Tesseract"
+   "Tesseract (8-cell)"
   ],
   [
    "CELL16",
@@ -733,11 +1450,11 @@
  "spiked_polyhedron": [
   [
    "SPIKED",
-   "Spiked"
+   "Spiked Polyhedron"
   ],
   [
    "HYPER",
-   "Hyperbolic"
+   "Hyperbolic Polyhedron"
   ],
   [
    "MODERN",
@@ -751,27 +1468,27 @@
  "hyperbolic_honeycomb": [
   [
    "H435",
-   "{4,3,5}"
+   "{4,3,5} Order-5 Cubic"
   ],
   [
    "H534",
-   "{5,3,4}"
+   "{5,3,4} Order-4 Dodecahedral"
   ],
   [
    "H353",
-   "{3,5,3}"
+   "{3,5,3} Icosahedral"
   ],
   [
    "H535",
-   "{5,3,5}"
+   "{5,3,5} Order-5 Dodecahedral"
   ],
   [
    "H633",
-   "{6,3,3}"
+   "{6,3,3} Hexagonal Tiling Cells"
   ],
   [
    "H336",
-   "{3,3,6}"
+   "{3,3,6} Order-6 Tetrahedral"
   ]
  ],
  "spacefill_solids": [
@@ -792,54 +1509,174 @@
    "Rhombic Dodecahedra"
   ],
   [
+   "OBTET",
+   "Obtetrahedrille"
+  ],
+  [
    "SPIRAL3",
-   "Spirallohedra (3-arm)"
+   "Rhombic Spirallohedra (3-Armed)"
   ],
   [
    "SPIRAL4",
-   "Spirallohedra (4-arm)"
+   "Rhombic Spirallohedra (4-Armed)"
   ]
  ],
  "attractor": [
-  [
-   "LORENZ",
-   "Lorenz"
-  ],
-  [
-   "ROSSLER",
-   "Rossler"
-  ],
-  [
-   "THOMAS",
-   "Thomas"
-  ],
   [
    "AIZAWA",
    "Aizawa"
   ],
   [
-   "HALVORSEN",
-   "Halvorsen"
+   "ANISHCHENKO",
+   "Anishchenko-Astakhov"
   ],
   [
-   "DADRAS",
-   "Dadras"
+   "ARNEODO",
+   "Arneodo"
+  ],
+  [
+   "BOUALI",
+   "Bouali"
+  ],
+  [
+   "BURKESHAW",
+   "Burke-Shaw"
+  ],
+  [
+   "CHENCELIKOVSKY",
+   "Chen-Celikovsky"
   ],
   [
    "CHENLEE",
    "Chen-Lee"
   ],
   [
+   "CHUA",
+   "Chua"
+  ],
+  [
+   "COULLET",
+   "Coullet"
+  ],
+  [
+   "COUPLEDLORENZ",
+   "Coupled Lorenz"
+  ],
+  [
+   "DADRAS",
+   "Dadras"
+  ],
+  [
+   "DEQUANLI",
+   "Dequan Li"
+  ],
+  [
+   "FINANCE",
+   "Finance"
+  ],
+  [
    "FOURWING",
    "Four-Wing"
+  ],
+  [
+   "GENESIOTESI",
+   "Genesio-Tesi"
+  ],
+  [
+   "HADLEY",
+   "Hadley"
+  ],
+  [
+   "HALVORSEN",
+   "Halvorsen"
+  ],
+  [
+   "LIUCHEN",
+   "Liu-Chen"
+  ],
+  [
+   "LORENZ",
+   "Lorenz"
+  ],
+  [
+   "LORENZMOD1",
+   "Lorenz Mod 1"
+  ],
+  [
+   "LORENZMOD2",
+   "Lorenz Mod 2"
+  ],
+  [
+   "LORENZSTENFLO",
+   "Lorenz-Stenflo"
+  ],
+  [
+   "LUCHEN",
+   "Lu-Chen"
+  ],
+  [
+   "NEWTONLEIPNIK",
+   "Newton-Leipnik"
   ],
   [
    "NOSEHOOVER",
    "Nose-Hoover"
   ],
   [
-   "ARNEODO",
-   "Arneodo"
+   "QI",
+   "Qi"
+  ],
+  [
+   "QICHEN",
+   "Qi-Chen"
+  ],
+  [
+   "RAYLEIGHBENARD",
+   "Rayleigh-Benard"
+  ],
+  [
+   "ROSSLER",
+   "Roessler"
+  ],
+  [
+   "RUCKLIDGE",
+   "Rucklidge"
+  ],
+  [
+   "SAKARYA",
+   "Sakarya"
+  ],
+  [
+   "SHIMIZUMORIOKA",
+   "Shimizu-Morioka"
+  ],
+  [
+   "THOMAS",
+   "Thomas"
+  ],
+  [
+   "TSUCS1",
+   "Three-Scroll Unified 1"
+  ],
+  [
+   "TSUCS2",
+   "Three-Scroll Unified 2"
+  ],
+  [
+   "WANGSUN",
+   "Wang-Sun"
+  ],
+  [
+   "WIMOLBANLUE",
+   "Wimol-Banlue"
+  ],
+  [
+   "YUWANG",
+   "Yu-Wang"
+  ],
+  [
+   "ZHOUCHEN",
+   "Zhou-Chen"
   ]
  ],
  "link": [
@@ -865,7 +1702,7 @@
   ],
   [
    "TORUS",
-   "Torus Link"
+   "Torus Link (p,q)"
   ],
   [
    "CHAIN",
@@ -1052,14 +1889,6 @@
  ],
  "symmetric_sculpture": [
   [
-   "TWISTED_RIVERS",
-   "Twisted Rivers"
-  ],
-  [
-   "TUMBLEWEED",
-   "Tumbleweed"
-  ],
-  [
    "FRABJOUS",
    "Frabjous"
   ],
@@ -1075,7 +1904,7 @@
   ],
   [
    "ROLLER",
-   "Two-Circle Roller"
+   "Two-Circle Roller / Wobbler"
   ],
   [
    "ANTIOLOID",
@@ -1092,80 +1921,84 @@
  ],
  "hyperbolic_tiling": [
   [
-   "DISK",
+   "POINCARE",
    "Poincare Disk"
   ],
   [
-   "HEMI",
+   "KLEIN",
+   "Klein Disk"
+  ],
+  [
+   "HEMISPHERE",
    "Hemisphere"
   ],
   [
-   "PSEUDO",
+   "PSEUDOSPHERE",
    "Pseudosphere"
   ]
  ],
  "conway": [
   [
    "tI",
-   "Truncated Icosahedron"
+   "Truncated Icosahedron (tI)"
   ],
   [
    "sC",
-   "Snub Cube"
+   "Snub Cube (sC)"
   ],
   [
    "eD",
-   "Rhombicosidodecahedron"
+   "Rhombicosidodecahedron (eD)"
   ],
   [
    "bT",
-   "Bevelled Tetrahedron"
+   "Bevelled Tetrahedron (bT)"
   ],
   [
    "gD",
-   "Pentagonal Hexecontahedron"
+   "Pentagonal Hexecontahedron (gD)"
   ],
   [
    "cC",
-   "Chamfered Cube"
+   "Chamfered Cube (cC)"
   ],
   [
    "pC",
-   "Propellor Cube"
+   "Propellor Cube (pC)"
   ],
   [
    "pkD",
-   "Propellor Pentakis"
+   "Propellor Pentakis (pkD)"
   ],
   [
    "dkt5daD",
-   "Ornate"
+   "Ornate (dkt5daD)"
   ],
   [
    "kD",
-   "Pentakis Dodecahedron"
+   "Pentakis Dodecahedron (kD)"
   ],
   [
    "tkD",
-   "Truncated Pentakis"
+   "Truncated Pentakis (tkD)"
   ],
   [
    "ccO",
-   "Twice-Chamfered Octahedron"
+   "Twice-Chamfered Octahedron (ccO)"
   ]
  ],
  "symmetrohedron": [
   [
    "I",
-   "Icosahedral"
+   "Icosahedral (5,3,2)"
   ],
   [
    "O",
-   "Octahedral"
+   "Octahedral (4,3,2)"
   ],
   [
    "T",
-   "Tetrahedral"
+   "Tetrahedral (3,3,2)"
   ]
  ],
  "space_filling_curve": [
@@ -1197,35 +2030,195 @@
  "prime_knot": [
   [
    "3_1",
-   "Trefoil (3.1)"
+   "3.1"
   ],
   [
    "4_1",
-   "Figure-Eight (4.1)"
+   "4.1"
   ],
   [
    "5_1",
-   "Cinquefoil (5.1)"
+   "5.1"
   ],
   [
    "5_2",
-   "Knot 5.2"
+   "5.2"
   ],
   [
    "6_1",
-   "Knot 6.1"
+   "6.1"
   ],
   [
    "6_2",
-   "Knot 6.2"
+   "6.2"
   ],
   [
    "6_3",
-   "Knot 6.3"
+   "6.3"
   ],
   [
    "7_1",
-   "Knot 7.1"
+   "7.1"
+  ],
+  [
+   "7_2",
+   "7.2"
+  ],
+  [
+   "7_3",
+   "7.3"
+  ],
+  [
+   "7_4",
+   "7.4"
+  ],
+  [
+   "7_5",
+   "7.5"
+  ],
+  [
+   "7_6",
+   "7.6"
+  ],
+  [
+   "7_7",
+   "7.7"
+  ],
+  [
+   "8_1",
+   "8.1"
+  ],
+  [
+   "8_2",
+   "8.2"
+  ],
+  [
+   "8_3",
+   "8.3"
+  ],
+  [
+   "8_4",
+   "8.4"
+  ],
+  [
+   "8_5",
+   "8.5"
+  ],
+  [
+   "8_6",
+   "8.6"
+  ],
+  [
+   "8_7",
+   "8.7"
+  ],
+  [
+   "8_8",
+   "8.8"
+  ],
+  [
+   "8_9",
+   "8.9"
+  ],
+  [
+   "8_10",
+   "8.10"
+  ],
+  [
+   "8_11",
+   "8.11"
+  ],
+  [
+   "8_12",
+   "8.12"
+  ],
+  [
+   "8_13",
+   "8.13"
+  ],
+  [
+   "8_14",
+   "8.14"
+  ],
+  [
+   "8_15",
+   "8.15"
+  ],
+  [
+   "8_16",
+   "8.16"
+  ],
+  [
+   "8_17",
+   "8.17"
+  ],
+  [
+   "8_18",
+   "8.18"
+  ],
+  [
+   "8_19",
+   "8.19"
+  ],
+  [
+   "8_20",
+   "8.20"
+  ],
+  [
+   "8_21",
+   "8.21"
+  ],
+  [
+   "9_1",
+   "9.1"
+  ],
+  [
+   "9_2",
+   "9.2"
+  ],
+  [
+   "9_3",
+   "9.3"
+  ],
+  [
+   "9_4",
+   "9.4"
+  ],
+  [
+   "9_5",
+   "9.5"
+  ],
+  [
+   "9_6",
+   "9.6"
+  ],
+  [
+   "9_7",
+   "9.7"
+  ],
+  [
+   "9_8",
+   "9.8"
+  ],
+  [
+   "9_9",
+   "9.9"
+  ],
+  [
+   "9_10",
+   "9.10"
+  ],
+  [
+   "9_11",
+   "9.11"
+  ],
+  [
+   "9_12",
+   "9.12"
+  ],
+  [
+   "9_13",
+   "9.13"
   ]
  ],
  "squeeze": [
@@ -1330,6 +2323,18 @@
   [
    "CARPET",
    "Sierpinski Carpet"
+  ],
+  [
+   "MOSELY",
+   "Mosely Snowflake"
+  ],
+  [
+   "MOSELYL",
+   "Mosely Snowflake (light)"
+  ],
+  [
+   "CANTOR",
+   "Cantor Dust"
   ]
  ],
  "fractal_polyhedron": [
@@ -1346,12 +2351,12 @@
    "Octahedron"
   ],
   [
-   "DODECA",
-   "Dodecahedron"
-  ],
-  [
    "ICOSA",
    "Icosahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
   ]
  ],
  "torus_knot": [
@@ -1564,6 +2569,3924 @@
   [
    "HYPAR",
    "Hyperbolic Paraboloid"
+  ]
+ ],
+ "ifs": [
+  [
+   "ABC124",
+   "ABC tile (1,2,4)"
+  ],
+  [
+   "ABC128",
+   "ABC tile (1,2,8), self-similar"
+  ],
+  [
+   "ABC134",
+   "ABC tile (1,3,4)"
+  ],
+  [
+   "TWINA",
+   "Twindragon A"
+  ],
+  [
+   "TWIND",
+   "Twindragon D"
+  ],
+  [
+   "TWING",
+   "Twindragon G"
+  ],
+  [
+   "GASKET",
+   "Cube gasket (4 holes)"
+  ],
+  [
+   "EXACT",
+   "ABC (1,2,4), exact level-k cubes"
+  ],
+  [
+   "SIERPTETRA",
+   "Sierpinski tetrahedron"
+  ],
+  [
+   "MENGER",
+   "Menger sponge"
+  ],
+  [
+   "VOXEL",
+   "Sierpinski octahedron (voxels)"
+  ],
+  [
+   "ISO",
+   "Sierpinski tetrahedron (smooth)"
+  ],
+  [
+   "BMMSIERP",
+   "Sierpinski triangle in 3D (Bandt et al.)"
+  ],
+  [
+   "BMMSIERPREV",
+   "...and its reverse fractal"
+  ],
+  [
+   "BMMTETRA",
+   "Modified fractal tetrahedron (Bandt et al.)"
+  ],
+  [
+   "BMMCUBE",
+   "Modified cube (Bandt et al.)"
+  ],
+  [
+   "FERN",
+   "Barnsley fern (2-D)"
+  ],
+  [
+   "SIERPTRI",
+   "Sierpinski triangle (2-D)"
+  ],
+  [
+   "DRAGON",
+   "Heighway dragon (2-D)"
+  ],
+  [
+   "LEVY",
+   "Levy C curve (2-D)"
+  ],
+  [
+   "KOCH",
+   "Koch curve (2-D)"
+  ]
+ ],
+ "modular_screen": [
+  [
+   "DESIGN5",
+   "Saddle Lattice (after Design 5)"
+  ],
+  [
+   "PINWHEEL",
+   "Pinwheel (chiral)"
+  ],
+  [
+   "DESIGN1",
+   "Bilayer Weave (after Design 1)"
+  ],
+  [
+   "WEAVE",
+   "Woven Undulation"
+  ],
+  [
+   "DIAGONAL",
+   "Diagonal Brace"
+  ],
+  [
+   "DESIGN6",
+   "Relief Wall (after Design 6)"
+  ],
+  [
+   "HYPAR",
+   "Hypar (Carlberg)"
+  ]
+ ],
+ "orbital": [
+  [
+   "1s",
+   "1s"
+  ],
+  [
+   "2s",
+   "2s (radial node)"
+  ],
+  [
+   "2pz",
+   "2p_z"
+  ],
+  [
+   "3pz",
+   "3p_z"
+  ],
+  [
+   "3dxy",
+   "3d_xy"
+  ],
+  [
+   "3dz2",
+   "3d_z2"
+  ],
+  [
+   "4fz3",
+   "4f_z3"
+  ],
+  [
+   "sigma1s",
+   "sigma 1s"
+  ],
+  [
+   "sigmastar1s",
+   "sigma* 1s"
+  ],
+  [
+   "pi2px",
+   "pi 2p_x"
+  ],
+  [
+   "sp3",
+   "sp3 hybrid"
+  ],
+  [
+   "water",
+   "H2O lone pair"
+  ],
+  [
+   "benzene",
+   "benzene pi"
+  ],
+  [
+   "cloud",
+   "pi 2p_x probability cloud"
+  ]
+ ],
+ "spherical_harmonic": [
+  [
+   "OFFSET",
+   "Offset Sphere"
+  ],
+  [
+   "ABS",
+   "Absolute Lobes"
+  ],
+  [
+   "SIGNED",
+   "Signed Lobes"
+  ],
+  [
+   "BOURKE",
+   "Bourke Family"
+  ]
+ ],
+ "fractal_knot": [
+  [
+   "TREFOIL",
+   "Trefoil"
+  ],
+  [
+   "CINQUEFOIL",
+   "Cinquefoil (5,2)"
+  ],
+  [
+   "T3_4",
+   "(3,4) Torus Knot"
+  ],
+  [
+   "UNKNOT",
+   "Unknot (circle base)"
+  ]
+ ],
+ "fractal_tree": [
+  [
+   "TREE",
+   "Tree"
+  ],
+  [
+   "MOBILE",
+   "Mobile"
+  ],
+  [
+   "HONDA",
+   "Honda"
+  ]
+ ],
+ "growth": [
+  [
+   "COLONIZE",
+   "Space Colonization"
+  ],
+  [
+   "SELFORG",
+   "Self-Organizing"
+  ],
+  [
+   "DLA",
+   "Diffusion-Limited"
+  ],
+  [
+   "PYTHAGORAS",
+   "Pythagoras Tree"
+  ]
+ ],
+ "harmonic_knot": [
+  [
+   "LISSAJOUS_327",
+   "Lissajous (3,2,7)"
+  ],
+  [
+   "FOURIER_TREFOIL",
+   "Fourier (1,1,2) Trefoil"
+  ],
+  [
+   "CHEBYSHEV_TREFOIL",
+   "Chebyshev Trefoil (3,4,5)"
+  ],
+  [
+   "BILLIARD_327",
+   "Billiard (3,2,7)"
+  ]
+ ],
+ "hopf_fibration": [
+  [
+   "LATITUDES",
+   "Latitudes"
+  ],
+  [
+   "FLOWER",
+   "Flower"
+  ],
+  [
+   "GREATCIRCLE",
+   "Greatcircle"
+  ],
+  [
+   "FIBONACCI",
+   "Fibonacci"
+  ],
+  [
+   "TETRA",
+   "Tetra"
+  ],
+  [
+   "OCTA",
+   "Octa"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "ICOSA",
+   "Icosa"
+  ],
+  [
+   "DODECA",
+   "Dodeca"
+  ]
+ ],
+ "inflorescence": [
+  [
+   "CAPITULUM",
+   "Capitulum (head)"
+  ],
+  [
+   "CORYMB",
+   "Corymb (flat-topped raceme)"
+  ],
+  [
+   "CYME",
+   "Cyme"
+  ],
+  [
+   "DIBOTRYOID",
+   "Dibotryoid (double raceme)"
+  ],
+  [
+   "DICHASIUM",
+   "Dichasium (forked cyme)"
+  ],
+  [
+   "MONOCHASIUM",
+   "Monochasium (helicoid cyme)"
+  ],
+  [
+   "PANICLE",
+   "Panicle"
+  ],
+  [
+   "PLEIOCHASIUM",
+   "Pleiochasium"
+  ],
+  [
+   "RACEME",
+   "Raceme"
+  ],
+  [
+   "SPADIX",
+   "Spadix (fleshy spike)"
+  ],
+  [
+   "SPIKE",
+   "Spike (sessile raceme)"
+  ],
+  [
+   "THYRSUS",
+   "Thyrsus (cymose panicle)"
+  ],
+  [
+   "TRIBOTRYOID",
+   "Tribotryoid (triple raceme)"
+  ],
+  [
+   "UMBEL",
+   "Umbel"
+  ],
+  [
+   "VERTICILLAST",
+   "Verticillaster (whorled)"
+  ]
+ ],
+ "lsystem": [
+  [
+   "ARROWHEAD",
+   "Sierpinski Arrowhead"
+  ],
+  [
+   "CESARO",
+   "Cesaro Curve"
+  ],
+  [
+   "DRAGON",
+   "Heighway Dragon"
+  ],
+  [
+   "DRAGON_TWIN",
+   "Twindragon"
+  ],
+  [
+   "GOSPER",
+   "Gosper (Flowsnake)"
+  ],
+  [
+   "HILBERT",
+   "Hilbert Curve (2-D)"
+  ],
+  [
+   "HILBERT3D",
+   "Hilbert Curve (3-D)"
+  ],
+  [
+   "KOCH",
+   "Koch Snowflake"
+  ],
+  [
+   "KOCH_ISLAND",
+   "Koch Island (quadratic)"
+  ],
+  [
+   "KRISHNA",
+   "Krishna Anklets (kolam)"
+  ],
+  [
+   "LEVY",
+   "Levy C Curve"
+  ],
+  [
+   "MOORE",
+   "Moore Curve (closed Hilbert)"
+  ],
+  [
+   "PEANO",
+   "Peano Curve"
+  ],
+  [
+   "PENTAPLEXITY",
+   "Pentaplexity"
+  ],
+  [
+   "QUADKOCH",
+   "Quadratic Koch (Minkowski sausage)"
+  ],
+  [
+   "SIERPINSKI",
+   "Sierpinski Gasket"
+  ],
+  [
+   "TERDRAGON",
+   "Terdragon"
+  ],
+  [
+   "ANABAENA",
+   "Anabaena catenula (Lindenmayer 1968)"
+  ],
+  [
+   "BUSH3D",
+   "3-D Bush (ABOP fig 1.25)"
+  ],
+  [
+   "BUSH_TAPERED",
+   "3-D Bush, tapered and colour-graded"
+  ],
+  [
+   "FLOWER",
+   "Flowering Plant (ABOP fig 1.26)"
+  ],
+  [
+   "HILBERT_BUSH",
+   "Ternary 3-D Tree (ABOP fig 1.27)"
+  ],
+  [
+   "LEAF_POLY",
+   "Filled Leaf Blade (ABOP sec 5.2)"
+  ],
+  [
+   "MESOTONIC",
+   "Mesotonic Structure (course-2003 sec 6.4)"
+  ],
+  [
+   "PARAMETRIC_TREE",
+   "Parametric Tree (continuous taper)"
+  ],
+  [
+   "PLANT",
+   "Plant (ABOP fig 1.24f)"
+  ],
+  [
+   "PLANT_A",
+   "Bracketed Plant a (ABOP fig 1.24a)"
+  ],
+  [
+   "PLANT_B",
+   "Bracketed Plant b (ABOP fig 1.24b)"
+  ],
+  [
+   "PLANT_C",
+   "Bracketed Plant c (ABOP fig 1.24c)"
+  ],
+  [
+   "PLANT_D",
+   "Bracketed Plant d (ABOP fig 1.24d)"
+  ],
+  [
+   "PLANT_E",
+   "Bracketed Plant e (ABOP fig 1.24e)"
+  ],
+  [
+   "SHEDDING",
+   "Shedding Crown (course-2003 sec 6.5)"
+  ],
+  [
+   "SIGNAL",
+   "Acropetal Signal (SIGGRAPH '88)"
+  ],
+  [
+   "STOCHASTIC_BUSH",
+   "Stochastic Bush (ABOP sec 1.7)"
+  ],
+  [
+   "TUNABLE",
+   "Tunable Tree (parameter demo)"
+  ],
+  [
+   "HONDA_I",
+   "Honda Plate I (main axis lost)"
+  ],
+  [
+   "HONDA_II",
+   "Honda Plate II (axis preserved)"
+  ],
+  [
+   "HONDA_III",
+   "Honda Plate III (cone to flat crown)"
+  ],
+  [
+   "HONDA_IV",
+   "Honda Plate IV (branching angle sweep)"
+  ],
+  [
+   "HONDA_V",
+   "Honda Plate V (constant axiality ratio)"
+  ],
+  [
+   "HONDA_VI_CONIC",
+   "Honda Plate VI conic (strong apical dominance)"
+  ],
+  [
+   "HONDA_VI_FLAT",
+   "Honda Plate VI flat (weak apical dominance)"
+  ],
+  [
+   "NH_ALTERNATE",
+   "2019 fig 1f: alternate phyllotaxis"
+  ],
+  [
+   "NH_ALTERNATE_R",
+   "2019 fig 1i: alternate, ratio 0.8"
+  ],
+  [
+   "NH_BIFURCATE",
+   "2019 fig 1e: bifurcation, equal lengths"
+  ],
+  [
+   "NH_BIFURCATE_R",
+   "2019 fig 1h: bifurcation, ratio 0.8"
+  ],
+  [
+   "NH_OPPOSITE",
+   "2019 fig 1g: opposite phyllotaxis"
+  ],
+  [
+   "NH_OPPOSITE_R",
+   "2019 fig 1j: opposite, ratio 0.8"
+  ]
+ ],
+ "petal_knot": [
+  [
+   "UNKNOT",
+   "Unknot"
+  ],
+  [
+   "TREFOIL",
+   "Trefoil 3_1"
+  ],
+  [
+   "FIGURE8",
+   "Figure Eight 4_1"
+  ],
+  [
+   "CINQUEFOIL",
+   "Cinquefoil 5_1"
+  ],
+  [
+   "THREE_TWIST",
+   "Three-Twist 5_2"
+  ],
+  [
+   "T34",
+   "Torus Knot T(3,4) = 8_19"
+  ],
+  [
+   "SEPTAFOIL",
+   "Septafoil 7_1"
+  ],
+  [
+   "T45",
+   "Torus Knot T(4,5) = 10_124"
+  ],
+  [
+   "RANDOM",
+   "Random (Petaluma)"
+  ]
+ ],
+ "rational_knot": [
+  [
+   "FIG8",
+   "Figure-Eight 4_1 -- rational [2 2]"
+  ],
+  [
+   "TREFOIL",
+   "Trefoil 3_1 -- rational [3]"
+  ],
+  [
+   "K5_2",
+   "5_2 -- rational [3 2]"
+  ],
+  [
+   "K6_1",
+   "6_1 Stevedore -- twist n=4"
+  ],
+  [
+   "K7_2",
+   "7_2 -- twist n=5"
+  ],
+  [
+   "P357",
+   "Pretzel (3,5,7)"
+  ],
+  [
+   "PM237",
+   "Pretzel (-2,3,7)"
+  ],
+  [
+   "P222",
+   "Pretzel (2,2,2) -- 3-component link"
+  ]
+ ],
+ "substitution_knot": [
+  [
+   "TREFOIL",
+   "Trefoil (3 slots)"
+  ],
+  [
+   "TREFOIL_TWIN",
+   "Trefoil Clasp (2 slots)"
+  ],
+  [
+   "CINQUEFOIL",
+   "Cinquefoil (5 slots)"
+  ],
+  [
+   "CINQUEFOIL_QUAD",
+   "Cinquefoil Clasp (4 slots)"
+  ]
+ ],
+ "tight_knot": [
+  [
+   "3_1",
+   "3.1"
+  ],
+  [
+   "4_1",
+   "4.1"
+  ],
+  [
+   "5_1",
+   "5.1"
+  ],
+  [
+   "5_2",
+   "5.2"
+  ],
+  [
+   "6_1",
+   "6.1"
+  ],
+  [
+   "6_2",
+   "6.2"
+  ],
+  [
+   "6_3",
+   "6.3"
+  ],
+  [
+   "7_1",
+   "7.1"
+  ],
+  [
+   "7_2",
+   "7.2"
+  ],
+  [
+   "7_3",
+   "7.3"
+  ],
+  [
+   "7_4",
+   "7.4"
+  ],
+  [
+   "7_5",
+   "7.5"
+  ],
+  [
+   "7_6",
+   "7.6"
+  ],
+  [
+   "7_7",
+   "7.7"
+  ],
+  [
+   "8_1",
+   "8.1"
+  ],
+  [
+   "8_2",
+   "8.2"
+  ],
+  [
+   "8_3",
+   "8.3"
+  ],
+  [
+   "8_4",
+   "8.4"
+  ],
+  [
+   "8_5",
+   "8.5"
+  ],
+  [
+   "8_6",
+   "8.6"
+  ],
+  [
+   "8_7",
+   "8.7"
+  ],
+  [
+   "8_8",
+   "8.8"
+  ],
+  [
+   "8_9",
+   "8.9"
+  ],
+  [
+   "8_10",
+   "8.10"
+  ],
+  [
+   "8_11",
+   "8.11"
+  ],
+  [
+   "8_12",
+   "8.12"
+  ],
+  [
+   "8_13",
+   "8.13"
+  ],
+  [
+   "8_14",
+   "8.14"
+  ],
+  [
+   "8_15",
+   "8.15"
+  ],
+  [
+   "8_16",
+   "8.16"
+  ],
+  [
+   "8_17",
+   "8.17"
+  ],
+  [
+   "8_18",
+   "8.18"
+  ],
+  [
+   "8_19",
+   "8.19"
+  ],
+  [
+   "8_20",
+   "8.20"
+  ],
+  [
+   "8_21",
+   "8.21"
+  ],
+  [
+   "9_1",
+   "9.1"
+  ],
+  [
+   "9_2",
+   "9.2"
+  ],
+  [
+   "9_3",
+   "9.3"
+  ],
+  [
+   "9_4",
+   "9.4"
+  ],
+  [
+   "9_5",
+   "9.5"
+  ],
+  [
+   "9_6",
+   "9.6"
+  ],
+  [
+   "9_7",
+   "9.7"
+  ],
+  [
+   "9_8",
+   "9.8"
+  ],
+  [
+   "9_9",
+   "9.9"
+  ],
+  [
+   "9_10",
+   "9.10"
+  ],
+  [
+   "9_11",
+   "9.11"
+  ],
+  [
+   "9_12",
+   "9.12"
+  ],
+  [
+   "9_13",
+   "9.13"
+  ]
+ ],
+ "turtle_curve": [
+  [
+   "EDGE",
+   "Koch Teragon"
+  ],
+  [
+   "FOLD",
+   "Paper Fold"
+  ],
+  [
+   "FASS",
+   "FASS Curve"
+  ],
+  [
+   "WORD",
+   "Word Curve"
+  ],
+  [
+   "SPIRO",
+   "Spirolateral"
+  ],
+  [
+   "NODE",
+   "Node Rewriting"
+  ]
+ ],
+ "aperiodic": [
+  [
+   "PENROSE_P3",
+   "Penrose Rhombs (P3)"
+  ],
+  [
+   "PENROSE_P2",
+   "Penrose Kite & Dart (P2)"
+  ],
+  [
+   "AMMANN_BEENKER",
+   "Ammann-Beenker (Octagonal)"
+  ],
+  [
+   "HAT",
+   "Hat (Einstein Monotile)"
+  ],
+  [
+   "TURTLE",
+   "Turtle"
+  ],
+  [
+   "CHEVRON",
+   "Chevron"
+  ],
+  [
+   "COMET",
+   "Comet"
+  ],
+  [
+   "SPECTRE",
+   "Spectre (Chiral Monotile)"
+  ]
+ ],
+ "apollonian": [
+  [
+   "PACKING",
+   "Sphere Packing (3D)"
+  ],
+  [
+   "GASKET",
+   "Gasket (2D)"
+  ]
+ ],
+ "biscribed_solid": [
+  [
+   "tO",
+   "Biscribed Truncated Octahedron"
+  ],
+  [
+   "tI",
+   "Biscribed Truncated Icosahedron"
+  ],
+  [
+   "tCO",
+   "Biscribed Truncated Cuboctahedron"
+  ],
+  [
+   "tID",
+   "Biscribed Truncated Icosidodecahedron"
+  ],
+  [
+   "sC",
+   "Biscribed Snub Cube"
+  ],
+  [
+   "sD",
+   "Biscribed Snub Dodecahedron"
+  ],
+  [
+   "kH",
+   "Biscribed Tetrakis Hexahedron"
+  ],
+  [
+   "kD",
+   "Biscribed Pentakis Dodecahedron"
+  ],
+  [
+   "mD",
+   "Biscribed Disdyakis Dodecahedron"
+  ],
+  [
+   "mT",
+   "Biscribed Disdyakis Triacontahedron"
+  ],
+  [
+   "pI",
+   "Biscribed Pentagonal Icositetrahedron"
+  ],
+  [
+   "pH",
+   "Biscribed Pentagonal Hexecontahedron"
+  ],
+  [
+   "ppT",
+   "Biscribed Propello Tetrahedron"
+  ],
+  [
+   "ppC",
+   "Biscribed Propello Cube"
+  ],
+  [
+   "ppO",
+   "Biscribed Propello Octahedron"
+  ],
+  [
+   "ppD",
+   "Biscribed Propello Dodecahedron"
+  ],
+  [
+   "ppI",
+   "Biscribed Propello Icosahedron"
+  ],
+  [
+   "whC",
+   "Biscribed Hexpropello Cube"
+  ],
+  [
+   "dwC",
+   "Biscribed Dual Hexpropello Cube"
+  ],
+  [
+   "whD",
+   "Biscribed Hexpropello Dodecahedron"
+  ],
+  [
+   "dwD",
+   "Biscribed Dual Hexpropello Dodecahedron"
+  ],
+  [
+   "okpC",
+   "Biscribed Orthokis Propello Cube"
+  ],
+  [
+   "otpO",
+   "Biscribed Orthotruncated Propello Octahedron"
+  ],
+  [
+   "okpD",
+   "Biscribed Orthokis Propello Dodecahedron"
+  ],
+  [
+   "otpI",
+   "Biscribed Orthotruncated Propello Icosahedron"
+  ],
+  [
+   "ptrO",
+   "Biscribed Propello Truncated Octahedron"
+  ],
+  [
+   "pkH",
+   "Biscribed Propello Tetrakis Hexahedron"
+  ],
+  [
+   "ptrCO",
+   "Biscribed Propello Truncated Cuboctahedron"
+  ],
+  [
+   "pmD",
+   "Biscribed Propello Disdyakis Dodecahedron"
+  ],
+  [
+   "ptrI",
+   "Biscribed Propello Truncated Icosahedron"
+  ],
+  [
+   "pkD",
+   "Biscribed Propello Pentakis Dodecahedron"
+  ],
+  [
+   "sntO",
+   "Biscribed Snub Truncated Octahedron"
+  ],
+  [
+   "dsntO",
+   "Biscribed Dual Snub Truncated Octahedron"
+  ],
+  [
+   "sntI",
+   "Biscribed Snub Truncated Icosahedron"
+  ],
+  [
+   "dsntI",
+   "Biscribed Dual Snub Truncated Icosahedron"
+  ],
+  [
+   "ptID",
+   "Biscribed Propello Truncated Icosidodecahedron"
+  ],
+  [
+   "pmT",
+   "Biscribed Propello Disdyakis Triacontahedron"
+  ],
+  [
+   "plsC",
+   "Biscribed L-Propello L-Snub Cube"
+  ],
+  [
+   "plpI",
+   "Biscribed L-Propello R-Pentagonal Icositetrahedron"
+  ]
+ ],
+ "canonical_polyhedron": [
+  [
+   "0",
+   "Self-Dual Icosioctahedron #1",
+   "SELF_DUAL"
+  ],
+  [
+   "1",
+   "Self-Dual Icosioctahedron #2",
+   "SELF_DUAL"
+  ],
+  [
+   "2",
+   "Self-Dual Icosioctahedron #3",
+   "SELF_DUAL"
+  ],
+  [
+   "3",
+   "Self-Dual Icosioctahedron #4",
+   "SELF_DUAL"
+  ],
+  [
+   "4",
+   "Self-Dual Tetracontahedron #1",
+   "SELF_DUAL"
+  ],
+  [
+   "5",
+   "Self-Dual Tetracontahedron #2",
+   "SELF_DUAL"
+  ],
+  [
+   "6",
+   "Self-Dual Tetracontahedron #3",
+   "SELF_DUAL"
+  ],
+  [
+   "7",
+   "Self-Dual Tetracontahedron #4",
+   "SELF_DUAL"
+  ],
+  [
+   "8",
+   "Self-Dual Tetracontahedron #5",
+   "SELF_DUAL"
+  ],
+  [
+   "9",
+   "Self-Dual Tetracontahedron #6",
+   "SELF_DUAL"
+  ],
+  [
+   "10",
+   "Self-Dual 76-hedron",
+   "SELF_DUAL"
+  ],
+  [
+   "0_1",
+   "Ci",
+   "SIMPLEST"
+  ],
+  [
+   "1_1",
+   "Cs",
+   "SIMPLEST"
+  ],
+  [
+   "2_1",
+   "C1",
+   "SIMPLEST"
+  ],
+  [
+   "3_1",
+   "C2",
+   "SIMPLEST"
+  ],
+  [
+   "4_1",
+   "C2h",
+   "SIMPLEST"
+  ],
+  [
+   "5_1",
+   "C2v",
+   "SIMPLEST"
+  ],
+  [
+   "6_1",
+   "C3",
+   "SIMPLEST"
+  ],
+  [
+   "7_1",
+   "C3v",
+   "SIMPLEST"
+  ],
+  [
+   "8_1",
+   "C4",
+   "SIMPLEST"
+  ],
+  [
+   "9_1",
+   "C4v (Square Pyramid)",
+   "SIMPLEST"
+  ],
+  [
+   "10_1",
+   "C5v (Pentagonal Pyramid)",
+   "SIMPLEST"
+  ],
+  [
+   "11",
+   "C6v (Hexagonal Pyramid)",
+   "SIMPLEST"
+  ],
+  [
+   "12",
+   "C7v (Heptagonal Pyramid)",
+   "SIMPLEST"
+  ],
+  [
+   "13",
+   "C8v (Octagonal Pyramid)",
+   "SIMPLEST"
+  ],
+  [
+   "14",
+   "C9v (Enneagonal Pyramid)",
+   "SIMPLEST"
+  ],
+  [
+   "15",
+   "C10v (Decagonal Pyramid)",
+   "SIMPLEST"
+  ],
+  [
+   "16",
+   "C11v (Hendecagonal Pyramid)",
+   "SIMPLEST"
+  ],
+  [
+   "17",
+   "S4",
+   "SIMPLEST"
+  ],
+  [
+   "18",
+   "S6",
+   "SIMPLEST"
+  ],
+  [
+   "19",
+   "D2",
+   "SIMPLEST"
+  ],
+  [
+   "20",
+   "D2h",
+   "SIMPLEST"
+  ],
+  [
+   "21",
+   "D2v",
+   "SIMPLEST"
+  ],
+  [
+   "22",
+   "D3",
+   "SIMPLEST"
+  ],
+  [
+   "23",
+   "D3h",
+   "SIMPLEST"
+  ],
+  [
+   "24",
+   "D3v",
+   "SIMPLEST"
+  ],
+  [
+   "25",
+   "D4h",
+   "SIMPLEST"
+  ],
+  [
+   "26",
+   "D4v",
+   "SIMPLEST"
+  ],
+  [
+   "27",
+   "D5h",
+   "SIMPLEST"
+  ],
+  [
+   "28",
+   "D5v",
+   "SIMPLEST"
+  ],
+  [
+   "29",
+   "D6h",
+   "SIMPLEST"
+  ],
+  [
+   "30",
+   "D6v",
+   "SIMPLEST"
+  ],
+  [
+   "31",
+   "D7h",
+   "SIMPLEST"
+  ],
+  [
+   "32",
+   "D8h",
+   "SIMPLEST"
+  ],
+  [
+   "33",
+   "D9h",
+   "SIMPLEST"
+  ],
+  [
+   "34",
+   "D10h",
+   "SIMPLEST"
+  ],
+  [
+   "35",
+   "T (Propello Tetrahedron)",
+   "SIMPLEST"
+  ],
+  [
+   "36",
+   "Td (Tetrahedron)",
+   "SIMPLEST"
+  ],
+  [
+   "37",
+   "Th",
+   "SIMPLEST"
+  ],
+  [
+   "38",
+   "O",
+   "SIMPLEST"
+  ],
+  [
+   "39",
+   "Oh",
+   "SIMPLEST"
+  ],
+  [
+   "40",
+   "I",
+   "SIMPLEST"
+  ],
+  [
+   "41",
+   "Ih",
+   "SIMPLEST"
+  ]
+ ],
+ "celtic_knot_2d": [
+  [
+   "PLAIN",
+   "Plain Plait"
+  ],
+  [
+   "CROSSBREAK",
+   "Cross Break"
+  ],
+  [
+   "PANEL",
+   "Framed Panel"
+  ],
+  [
+   "TRIQUETRA",
+   "Triquetra (Trinity)"
+  ],
+  [
+   "JOSEPHINE",
+   "Josephine Knot"
+  ],
+  [
+   "KELLS_BORDER",
+   "Kells Border"
+  ],
+  [
+   "CARPET",
+   "Carpet Page"
+  ]
+ ],
+ "cmc_capillary": [
+  [
+   "BRIDGE",
+   "Liquid Bridge"
+  ],
+  [
+   "DROP",
+   "Sessile Drop"
+  ],
+  [
+   "FILM_SPHERE",
+   "Film on Sphere"
+  ],
+  [
+   "FILM_COLUMN",
+   "Film on Column"
+  ]
+ ],
+ "constant_width": [
+  [
+   "MEISSNER",
+   "Meissner Tetrahedron"
+  ],
+  [
+   "REVOLUTION",
+   "Reuleaux Solid of Revolution"
+  ],
+  [
+   "REULEAUX",
+   "Reuleaux Tetrahedron"
+  ]
+ ],
+ "crochet": [
+  [
+   "WAVY",
+   "Wavy"
+  ],
+  [
+   "RUFFLED",
+   "Ruffled"
+  ],
+  [
+   "BENDY",
+   "Bendy"
+  ],
+  [
+   "TAIMINA",
+   "Taimina (ball)"
+  ]
+ ],
+ "dform": [
+  [
+   "SEAM",
+   "Seam (two sheets)"
+  ],
+  [
+   "ANTI",
+   "Anti (holes joined)"
+  ],
+  [
+   "TRUNCATE",
+   "Truncated (sliced polyhedron)"
+  ],
+  [
+   "VESICA",
+   "Folded Vesica Piscis"
+  ]
+ ],
+ "fractal_knotwork": [
+  [
+   "KITE_R6",
+   "Kite f-tiling (6-fold)"
+  ],
+  [
+   "KITE_R8",
+   "Kite f-tiling (8-fold)"
+  ],
+  [
+   "KITE_R12",
+   "Kite f-tiling (12-fold)"
+  ],
+  [
+   "SPIRAL_GOLDEN",
+   "Golden-triangle spiral"
+  ],
+  [
+   "SPIRAL_GOLDEN_2",
+   "Golden-triangle spiral (2-arm)"
+  ],
+  [
+   "SPIRAL_EQUILATERAL",
+   "Equilateral spiral (5-fold)"
+  ]
+ ],
+ "fractal_reptile": [
+  [
+   "SQUARE",
+   "Square"
+  ],
+  [
+   "HEX",
+   "Hex"
+  ],
+  [
+   "IAMOND",
+   "Iamond"
+  ],
+  [
+   "RHOMB",
+   "Rhomb"
+  ],
+  [
+   "BOLO",
+   "Bolo"
+  ],
+  [
+   "KITE",
+   "Kite"
+  ],
+  [
+   "RECTANGLE",
+   "Rectangle"
+  ],
+  [
+   "REFLECTION",
+   "Reflection"
+  ],
+  [
+   "CLASSIC",
+   "Classic"
+  ]
+ ],
+ "fractal_tiling": [
+  [
+   "KITE_R6",
+   "Kite (6-fold)"
+  ],
+  [
+   "KITE_R8",
+   "Kite (8-fold)"
+  ],
+  [
+   "KITE_R12",
+   "Kite (12-fold)"
+  ],
+  [
+   "TRI_S6",
+   "Triangle Segment (s=6)"
+  ],
+  [
+   "TRI_S8",
+   "Triangle Segment (s=8)"
+  ],
+  [
+   "TRI_S12",
+   "Triangle Segment (s=12)"
+  ],
+  [
+   "TRAP_U6",
+   "Trapezoid Segment (u=6)"
+  ],
+  [
+   "TRAP_U10",
+   "Trapezoid Segment (u=10)"
+  ]
+ ],
+ "frieze": [
+  [
+   "p1",
+   "Hop  (p1)"
+  ],
+  [
+   "p11g",
+   "Step (glide)  (p11g)"
+  ],
+  [
+   "p1m1",
+   "Sidle (vertical mirror)  (p1m1)"
+  ],
+  [
+   "p11m",
+   "Jump (horizontal mirror)  (p11m)"
+  ],
+  [
+   "p2",
+   "Spinning hop (180)  (p2)"
+  ],
+  [
+   "p2mg",
+   "Spinning sidle  (p2mg)"
+  ],
+  [
+   "p2mm",
+   "Spinning jump  (p2mm)"
+  ]
+ ],
+ "gem": [
+  [
+   "ROUND_BRILLIANT",
+   "Round Brilliant"
+  ],
+  [
+   "OLD_EUROPEAN",
+   "Old European Cut"
+  ],
+  [
+   "PORTUGUESE",
+   "Portuguese Cut"
+  ],
+  [
+   "SINGLE_CUT",
+   "Single (Eight) Cut"
+  ],
+  [
+   "SRB_GEMCAD",
+   "Standard Round Brilliant"
+  ],
+  [
+   "TOLKOWSKY",
+   "Tolkowsky Brilliant"
+  ],
+  [
+   "ASSCHER",
+   "Asscher (Square Emerald)"
+  ],
+  [
+   "BAGUETTE",
+   "Baguette"
+  ],
+  [
+   "EMERALD",
+   "Emerald Cut"
+  ],
+  [
+   "HEXAGON_STEP",
+   "Hexagon Step Cut"
+  ],
+  [
+   "OCTAGON_STEP",
+   "Octagon Step Cut"
+  ],
+  [
+   "BARION",
+   "Barion Cut"
+  ],
+  [
+   "PRINCESS",
+   "Princess Cut"
+  ],
+  [
+   "RADIANT",
+   "Radiant Cut"
+  ],
+  [
+   "ANTWERP_ROSE",
+   "Antwerp Rose"
+  ],
+  [
+   "DUTCH_ROSE",
+   "Dutch Rose"
+  ],
+  [
+   "FISH_EYE",
+   "Fish-eye (defect demo)"
+  ],
+  [
+   "NAILHEAD",
+   "Nail-head (defect demo)"
+  ],
+  [
+   "WINDOWED",
+   "Windowed (defect demo)"
+  ]
+ ],
+ "gem_cabochon": [
+  [
+   "BULLET",
+   "Bullet Cabochon"
+  ],
+  [
+   "DOUBLE",
+   "Double Cabochon"
+  ],
+  [
+   "HEX",
+   "Hexagonal Cabochon"
+  ],
+  [
+   "HIGH",
+   "High Cabochon"
+  ],
+  [
+   "LENTIL",
+   "Lentil Cabochon"
+  ],
+  [
+   "OVAL",
+   "Oval Cabochon"
+  ],
+  [
+   "SINGLE",
+   "Cabochon"
+  ],
+  [
+   "SUGARLOAF",
+   "Sugarloaf"
+  ]
+ ],
+ "general_stellation": [
+  [
+   "icosahedron",
+   "Icosahedron"
+  ],
+  [
+   "dodecahedron",
+   "Dodecahedron"
+  ],
+  [
+   "cuboctahedron",
+   "Cuboctahedron"
+  ],
+  [
+   "rhombic_triacontahedron",
+   "Rhombic Triacontahedron"
+  ]
+ ],
+ "hopf_torus": [
+  [
+   "CIRCLE",
+   "Circle"
+  ],
+  [
+   "WAVY",
+   "Wavy (m-lobed)"
+  ],
+  [
+   "ELLIPSE",
+   "Ellipse"
+  ],
+  [
+   "TREFOIL",
+   "Trefoil-like"
+  ],
+  [
+   "BAND",
+   "Hopf Band"
+  ]
+ ],
+ "hyperbolic_surface": [
+  [
+   "PSEUDOSPHERE",
+   "Pseudosphere"
+  ],
+  [
+   "DINI",
+   "Dini Surface"
+  ],
+  [
+   "KUEN",
+   "Kuen Surface"
+  ]
+ ],
+ "icosahedron_stellation": [
+  [
+   "1",
+   " 1. Icosahedron"
+  ],
+  [
+   "2",
+   " 2. First stellation (triakis / small triambic)"
+  ],
+  [
+   "3",
+   " 3. Compound of 5 octahedra"
+  ],
+  [
+   "4",
+   " 4. Third stellation"
+  ],
+  [
+   "5",
+   " 5. Du Val E"
+  ],
+  [
+   "6",
+   " 6. Second stellation"
+  ],
+  [
+   "7",
+   " 7. Great icosahedron"
+  ],
+  [
+   "8",
+   " 8. Final stellation (echidnahedron)"
+  ],
+  [
+   "9",
+   " 9. Du Val e1"
+  ],
+  [
+   "10",
+   "10. Du Val f1"
+  ],
+  [
+   "11",
+   "11. Du Val g1"
+  ],
+  [
+   "12",
+   "12. Du Val e1f1"
+  ],
+  [
+   "13",
+   "13. Du Val e1f1g1"
+  ],
+  [
+   "14",
+   "14. Du Val f1g1"
+  ],
+  [
+   "15",
+   "15. Du Val e2"
+  ],
+  [
+   "16",
+   "16. Du Val f2"
+  ],
+  [
+   "17",
+   "17. Du Val g2"
+  ],
+  [
+   "18",
+   "18. Du Val e2f2"
+  ],
+  [
+   "19",
+   "19. Du Val e2f2g2"
+  ],
+  [
+   "20",
+   "20. Du Val f2g2"
+  ],
+  [
+   "21",
+   "21. Du Val De1"
+  ],
+  [
+   "22",
+   "22. Compound of 10 tetrahedra"
+  ],
+  [
+   "23",
+   "23. Du Val Fg1"
+  ],
+  [
+   "24",
+   "24. Du Val De1f1"
+  ],
+  [
+   "25",
+   "25. Du Val De1f1g1"
+  ],
+  [
+   "26",
+   "26. Excavated dodecahedron"
+  ],
+  [
+   "27",
+   "27. Du Val De2"
+  ],
+  [
+   "28",
+   "28. Du Val Ef2"
+  ],
+  [
+   "29",
+   "29. Du Val Fg2"
+  ],
+  [
+   "30",
+   "30. Medial triambic icosahedron"
+  ],
+  [
+   "31",
+   "31. Du Val De2f2g2"
+  ],
+  [
+   "32",
+   "32. Du Val Ef2g2"
+  ],
+  [
+   "33",
+   "33. Du Val f1"
+  ],
+  [
+   "34",
+   "34. Du Val e1f1"
+  ],
+  [
+   "35",
+   "35. Du Val De1f1"
+  ],
+  [
+   "36",
+   "36. Du Val f1g1"
+  ],
+  [
+   "37",
+   "37. Du Val e1f1g1"
+  ],
+  [
+   "38",
+   "38. Du Val De1f1g1"
+  ],
+  [
+   "39",
+   "39. Du Val f1g2"
+  ],
+  [
+   "40",
+   "40. Du Val e1f1g2"
+  ],
+  [
+   "41",
+   "41. Du Val De1f1g2"
+  ],
+  [
+   "42",
+   "42. Du Val f1f2g2"
+  ],
+  [
+   "43",
+   "43. Du Val e1f1f2g2"
+  ],
+  [
+   "44",
+   "44. Du Val De1f1f2g2"
+  ],
+  [
+   "45",
+   "45. Du Val e2f1"
+  ],
+  [
+   "46",
+   "46. Du Val De2f1"
+  ],
+  [
+   "47",
+   "47. Compound of 5 tetrahedra (chiral)"
+  ],
+  [
+   "48",
+   "48. Du Val e2f1g1"
+  ],
+  [
+   "49",
+   "49. Du Val De2f1g1"
+  ],
+  [
+   "50",
+   "50. Du Val Ef1g1"
+  ],
+  [
+   "51",
+   "51. Du Val e2f1f2"
+  ],
+  [
+   "52",
+   "52. Du Val De2f1f2"
+  ],
+  [
+   "53",
+   "53. Du Val Ef1f2"
+  ],
+  [
+   "54",
+   "54. Du Val e2f1f2g1"
+  ],
+  [
+   "55",
+   "55. Du Val De2f1f2g1"
+  ],
+  [
+   "56",
+   "56. Du Val Ef1f2g1"
+  ],
+  [
+   "57",
+   "57. Du Val e2f1f2g2"
+  ],
+  [
+   "58",
+   "58. Du Val De2f1f2g2"
+  ],
+  [
+   "59",
+   "59. Du Val Ef1f2g2"
+  ]
+ ],
+ "interlocking": [
+  [
+   "TETRA",
+   "Interlocking Tetrahedra"
+  ],
+  [
+   "ESCHER",
+   "Escher / Osteomorphic"
+  ],
+  [
+   "VERSATILE",
+   "Versatile Blocks"
+  ],
+  [
+   "MCSCUBE",
+   "Interlocking Cubes"
+  ],
+  [
+   "MCSOCTA",
+   "Interlocking Octahedra"
+  ],
+  [
+   "BISQUARE",
+   "Bisquare Blocks"
+  ],
+  [
+   "RHOM",
+   "Rhom Block (single)"
+  ],
+  [
+   "RHOM_OBV",
+   "Rhom Block Obverse (single)"
+  ],
+  [
+   "KITTEN",
+   "Tetroctahedrille Kitten"
+  ],
+  [
+   "UFO",
+   "Tetroctahedrille UFO (single)"
+  ],
+  [
+   "CUSHION",
+   "Tetroctahedrille Cushion (single)"
+  ],
+  [
+   "SL",
+   "SL Blocks"
+  ],
+  [
+   "DOME",
+   "Interlocking Dome"
+  ],
+  [
+   "HENDECA",
+   "Bisymmetric Hendecahedron"
+  ]
+ ],
+ "invariant_manifold": [
+  [
+   "LORENZ",
+   "Lorenz"
+  ],
+  [
+   "CHEN",
+   "Chen-Celikovsky"
+  ],
+  [
+   "RAYLEIGH",
+   "Rayleigh-Benard"
+  ],
+  [
+   "SHIMIZU",
+   "Shimizu-Morioka"
+  ],
+  [
+   "ROSSLER",
+   "Roessler"
+  ],
+  [
+   "HALVORSEN",
+   "Halvorsen"
+  ],
+  [
+   "THOMAS",
+   "Thomas"
+  ]
+ ],
+ "islamic_pattern": [
+  [
+   "STARCROSS8",
+   "8-fold Star-and-Cross (4.8.8)"
+  ],
+  [
+   "TWELVE",
+   "12-fold Star (3.12.12)"
+  ],
+  [
+   "SIX",
+   "6-fold Star (hexagonal)"
+  ],
+  [
+   "FOUREIGHT",
+   "4/8 Star (square)"
+  ],
+  [
+   "ROSETTE8",
+   "8-fold Rosette (4.8.8)"
+  ],
+  [
+   "ROSETTE12",
+   "12-fold Rosette (3.12.12)"
+  ],
+  [
+   "ROSETTE12B",
+   "12-fold Rosette (4.6.12)"
+  ],
+  [
+   "STAR8",
+   "8-point Star {8/3} (4.8.8)"
+  ],
+  [
+   "INFER_RHOMBI",
+   "Star Weave (Rhombille)"
+  ],
+  [
+   "INFER_CAIRO",
+   "Star Weave (Cairo)"
+  ],
+  [
+   "GIRIH10",
+   "Girih 10-fold (quasiperiodic)"
+  ]
+ ],
+ "isohedral": [
+  [
+   "P1",
+   "Translation (p1)"
+  ],
+  [
+   "P2",
+   "2-fold (p2)"
+  ],
+  [
+   "PG",
+   "Glide (pg)"
+  ],
+  [
+   "PGG",
+   "Double Glide (pgg)"
+  ],
+  [
+   "CMM",
+   "Rhombic (cmm)"
+  ],
+  [
+   "P4",
+   "4-fold (p4)"
+  ],
+  [
+   "P4G",
+   "4-fold Mirror (p4g)"
+  ],
+  [
+   "P4M",
+   "4-fold Kaleidoscope (p4m)"
+  ],
+  [
+   "P3",
+   "3-fold Pinwheel (p3)"
+  ],
+  [
+   "P6",
+   "6-fold Pinwheel (p6)"
+  ],
+  [
+   "P6M",
+   "6-fold Kaleidoscope (p6m)"
+  ],
+  [
+   "P3M1",
+   "3-fold Kaleidoscope (p3m1)"
+  ],
+  [
+   "P31M",
+   "3-fold Mirror Pinwheel (p31m)"
+  ]
+ ],
+ "knot_carpet": [
+  [
+   "WAVY_PLAID",
+   "Wavy Plaid"
+  ],
+  [
+   "WARPED_GRID",
+   "Warped Grid"
+  ],
+  [
+   "POLAR",
+   "Polar Rosette"
+  ],
+  [
+   "GUILLOCHE",
+   "Guilloche"
+  ],
+  [
+   "SMOOTH_PLAIT",
+   "Smooth Plait"
+  ],
+  [
+   "ROSE",
+   "Rose / Rhodonea"
+  ],
+  [
+   "SPIRAL_NET",
+   "Spiral Net"
+  ],
+  [
+   "LISSAJOUS",
+   "Lissajous Net"
+  ],
+  [
+   "MOIRE",
+   "Moire Bands"
+  ]
+ ],
+ "koman": [
+  [
+   "SPIRAL",
+   "Spiral Sculpture"
+  ],
+  [
+   "RING",
+   "Closed Ring"
+  ]
+ ],
+ "kuniform": [
+  [
+   "S_TT",
+   "3.3.3.3.3.3 / 3.3.3.4.4 (a)"
+  ],
+  [
+   "S_TTT",
+   "3.3.3.3.3.3 / 3.3.3.4.4 (b)"
+  ],
+  [
+   "SS_T",
+   "4.4.4.4 / 3.3.3.4.4 (a)"
+  ],
+  [
+   "SSS_T",
+   "4.4.4.4 / 3.3.3.4.4 (b)"
+  ],
+  [
+   "HEX_T",
+   "3.6.3.6 / 3.3.3.3.6"
+  ],
+  [
+   "HEXCOL",
+   "3.6.3.6 / 3.3.6.6"
+  ]
+ ],
+ "layer": [
+  [
+   "p1",
+   "p1  (o)"
+  ],
+  [
+   "p2",
+   "p2  (2222)"
+  ],
+  [
+   "pm",
+   "pm  (**)"
+  ],
+  [
+   "pg",
+   "pg  (xx)"
+  ],
+  [
+   "cm",
+   "cm  (*x)"
+  ],
+  [
+   "pmm",
+   "pmm  (*2222)"
+  ],
+  [
+   "pmg",
+   "pmg  (22*)"
+  ],
+  [
+   "pgg",
+   "pgg  (22x)"
+  ],
+  [
+   "cmm",
+   "cmm  (2*22)"
+  ],
+  [
+   "p4",
+   "p4  (442)"
+  ],
+  [
+   "p4m",
+   "p4m  (*442)"
+  ],
+  [
+   "p4g",
+   "p4g  (4*2)"
+  ],
+  [
+   "p3",
+   "p3  (333)"
+  ],
+  [
+   "p3m1",
+   "p3m1  (*333)"
+  ],
+  [
+   "p31m",
+   "p31m  (3*3)"
+  ],
+  [
+   "p6",
+   "p6  (632)"
+  ],
+  [
+   "p6m",
+   "p6m  (*632)"
+  ]
+ ],
+ "leaf": [
+  [
+   "CORDATE",
+   "Cordate (heart-shaped)"
+  ],
+  [
+   "ELLIPTIC",
+   "Elliptic"
+  ],
+  [
+   "LANCEOLATE",
+   "Lanceolate"
+  ],
+  [
+   "OBOVATE",
+   "Obovate"
+  ],
+  [
+   "OVATE",
+   "Ovate"
+  ],
+  [
+   "RENIFORM",
+   "Reniform (kidney)"
+  ],
+  [
+   "ROSE",
+   "Rose leaflet"
+  ]
+ ],
+ "mandelbulb": [
+  [
+   "MANDELBULB",
+   "Mandelbulb"
+  ],
+  [
+   "JULIA",
+   "Quaternion Julia"
+  ],
+  [
+   "MANDELBOX",
+   "Mandelbox"
+  ]
+ ],
+ "map_lsystem": [
+  [
+   "LAYER",
+   "Cellular Layer"
+  ],
+  [
+   "BALL",
+   "Cell Ball"
+  ]
+ ],
+ "monohedral": [
+  [
+   "TRIANGLE",
+   "Triangle"
+  ],
+  [
+   "QUAD",
+   "Quadrilateral"
+  ],
+  [
+   "PENT1",
+   "Pentagon Type 1"
+  ],
+  [
+   "PENT2",
+   "Pentagon Type 2"
+  ],
+  [
+   "PENT5",
+   "Pentagon Type 5"
+  ],
+  [
+   "HEX1",
+   "Hexagon Type 1"
+  ],
+  [
+   "HEX2",
+   "Hexagon Type 2"
+  ]
+ ],
+ "monostatic_body": [
+  [
+   "FABRICATED",
+   "G\u00f6mb\u00f6c"
+  ],
+  [
+   "DV",
+   "Domokos-Varkonyi (2006)"
+  ],
+  [
+   "SLOAN_I",
+   "Analytic - Sloan I"
+  ],
+  [
+   "SLOAN_II",
+   "Analytic - Sloan II"
+  ]
+ ],
+ "notable_polyhedron": [
+  [
+   "ECHIDNAHEDRON",
+   "Final Stellation of Icosahedron"
+  ],
+  [
+   "SCHONHARDT",
+   "Schonhardt Polyhedron"
+  ],
+  [
+   "JESSEN",
+   "Jessen's Orthogonal Icosahedron"
+  ],
+  [
+   "DURER",
+   "Durer's Solid"
+  ],
+  [
+   "BILINSKI",
+   "Bilinski Dodecahedron"
+  ],
+  [
+   "ESCHER",
+   "Escher's Solid"
+  ],
+  [
+   "TETRATED",
+   "Tetrated Dodecahedron"
+  ],
+  [
+   "PENTAGON132",
+   "132-Pentagon Polyhedron"
+  ],
+  [
+   "ASSOCIAHEDRON",
+   "Associahedron (3D, K5)"
+  ],
+  [
+   "KLEIN",
+   "Klein Regular Map {3,7} (genus 3)"
+  ],
+  [
+   "MAP64",
+   "Regular Map {6,4} (genus 6)"
+  ],
+  [
+   "MAP46",
+   "Regular Map {4,6} (genus 6)"
+  ],
+  [
+   "HEPTDODEC_A",
+   "Heptagonal Dodecahedron A (genus 2)"
+  ],
+  [
+   "HEPTDODEC_C",
+   "Heptagonal Dodecahedron C (genus 2)"
+  ]
+ ],
+ "orbifold_sphere": [
+  [
+   "NN",
+   "nn - cyclic (Cn)"
+  ],
+  [
+   "STAR_NN",
+   "*nn - pyramidal (Cnv)"
+  ],
+  [
+   "N_STAR",
+   "n* - Cnh"
+  ],
+  [
+   "NX",
+   "nx - rotoreflection (S2n)"
+  ],
+  [
+   "22N",
+   "22n - dihedral (Dn)"
+  ],
+  [
+   "2STAR_N",
+   "2*n - antiprismatic (Dnd)"
+  ],
+  [
+   "STAR_22N",
+   "*22n - prismatic (Dnh)"
+  ],
+  [
+   "332",
+   "332 - tetrahedral (T)"
+  ],
+  [
+   "STAR_332",
+   "*332 - full tetrahedral (Td)"
+  ],
+  [
+   "3STAR_2",
+   "3*2 - pyritohedral (Th)"
+  ],
+  [
+   "432",
+   "432 - octahedral (O)"
+  ],
+  [
+   "STAR_432",
+   "*432 - full octahedral (Oh)"
+  ],
+  [
+   "532",
+   "532 - icosahedral (I)"
+  ],
+  [
+   "STAR_532",
+   "*532 - full icosahedral (Ih)"
+  ]
+ ],
+ "over_under_screen": [
+  [
+   "PLAIN",
+   "Plain"
+  ],
+  [
+   "TWILL",
+   "Twill 2/2"
+  ],
+  [
+   "BASKET",
+   "Basket 2/2"
+  ]
+ ],
+ "phyllotaxis": [
+  [
+   "DISK",
+   "Disk (sunflower)"
+  ],
+  [
+   "DOME",
+   "Dome (cactus)"
+  ],
+  [
+   "CONE",
+   "Cone"
+  ],
+  [
+   "SPHERE",
+   "Sphere (pineapple)"
+  ],
+  [
+   "CREST",
+   "Crest (cristate)"
+  ]
+ ],
+ "polyhedral_torus": [
+  [
+   "TRI",
+   "Triangular (3.3.3.3.3.3)"
+  ],
+  [
+   "SQUARE",
+   "Square (4.4.4.4)"
+  ],
+  [
+   "HEX",
+   "Hexagonal (6.6.6)"
+  ],
+  [
+   "TRIHEX",
+   "Trihexagonal (3.6.3.6)"
+  ],
+  [
+   "SNUBSQ",
+   "Snub Square (3.3.4.3.4)"
+  ],
+  [
+   "SNUBHEX",
+   "Snub Hexagonal (3.3.3.3.6)"
+  ],
+  [
+   "ELONGTRI",
+   "Elongated Triangular (3.3.3.4.4)"
+  ],
+  [
+   "RHOMBITRIHEX",
+   "Rhombitrihexagonal (3.4.6.4)"
+  ],
+  [
+   "TRUNCHEX",
+   "Truncated Hexagonal (3.12.12)"
+  ],
+  [
+   "TRUNCSQ",
+   "Truncated Square (4.8.8)"
+  ],
+  [
+   "TRUNCTRIHEX",
+   "Truncated Trihexagonal (4.6.12)"
+  ],
+  [
+   "CAIRO",
+   "Cairo Pentagonal (dual 3.3.4.3.4)"
+  ],
+  [
+   "FLORET",
+   "Floret Pentagonal (dual 3.3.3.3.6)"
+  ],
+  [
+   "PRISMATIC",
+   "Prismatic Pentagonal (dual 3.3.3.4.4)"
+  ],
+  [
+   "DELTOIDAL",
+   "Deltoidal Trihexagonal (dual 3.4.6.4)"
+  ],
+  [
+   "TRIAKIS",
+   "Triakis Triangular (dual 3.12.12)"
+  ],
+  [
+   "TETRAKIS",
+   "Tetrakis Square (dual 4.8.8)"
+  ],
+  [
+   "KISRHOMBILLE",
+   "Kisrhombille (dual 4.6.12)"
+  ]
+ ],
+ "polyhedron_compound": [
+  [
+   "STELLA",
+   "Stella Octangula (2 Tetrahedra)"
+  ],
+  [
+   "5TETRA",
+   "Compound of 5 Tetrahedra"
+  ],
+  [
+   "10TETRA",
+   "Compound of 10 Tetrahedra"
+  ],
+  [
+   "5CUBES",
+   "Compound of 5 Cubes"
+  ],
+  [
+   "5OCTA",
+   "Compound of 5 Octahedra"
+  ],
+  [
+   "CUBE_OCTA",
+   "Cube + Octahedron"
+  ],
+  [
+   "DODECA_ICOSA",
+   "Dodecahedron + Icosahedron"
+  ]
+ ],
+ "polystix": [
+  [
+   "TETRASTIX",
+   "Tetrastix - square rods, 3 directions"
+  ],
+  [
+   "HEMISTIX",
+   "Hemistix - square rods, 3 directions (chiral)"
+  ],
+  [
+   "HEXASTIX",
+   "Hexastix - hexagonal rods, 4 directions (pencils)"
+  ],
+  [
+   "TRISTIX",
+   "Tristix / +Omega - triangular rods, 4 dir (chiral)"
+  ],
+  [
+   "SIGMA",
+   "+Sigma - hexagonal rods, 4 directions (chiral)"
+  ]
+ ],
+ "polytwister": [
+  [
+   "DYADIC",
+   "Dyadic Twister (n)"
+  ],
+  [
+   "TETTER",
+   "Tetratwister"
+  ],
+  [
+   "QUITTER",
+   "Quasitetratwister"
+  ],
+  [
+   "BLITTER",
+   "Bloated Tetratwister"
+  ],
+  [
+   "CUBITER",
+   "Cubetwister"
+  ],
+  [
+   "QUICTER",
+   "Quasicubetwister"
+  ],
+  [
+   "BLICTER",
+   "Bloated Cubetwister"
+  ],
+  [
+   "OCTER",
+   "Octatwister"
+  ],
+  [
+   "QUOTER",
+   "Quasioctatwister"
+  ],
+  [
+   "BLOTER",
+   "Bloated Octatwister"
+  ],
+  [
+   "DOTER",
+   "Dodecatwister"
+  ],
+  [
+   "QUADOTER",
+   "Quasidodecatwister"
+  ],
+  [
+   "BLADOTER",
+   "Bloated Dodecatwister"
+  ],
+  [
+   "IKETER",
+   "Icosatwister"
+  ],
+  [
+   "QUIKETER",
+   "Quasicosatwister"
+  ],
+  [
+   "BLIKETER",
+   "Bloated Icosatwister"
+  ],
+  [
+   "GADITER",
+   "Great Dodecatwister"
+  ],
+  [
+   "GAQUIDITER",
+   "Great Quasidodecatwister"
+  ],
+  [
+   "GABLIDITER",
+   "Great Bloated Dodecatwister"
+  ],
+  [
+   "SISSIDITER",
+   "Small Stellated Dodecatwister"
+  ],
+  [
+   "SIQUISSIDITER",
+   "Small Quasistellated Dodecatwister"
+  ],
+  [
+   "GIKETER",
+   "Great Icosatwister"
+  ]
+ ],
+ "relaxed_bubble": [
+  [
+   "SINGLE",
+   "Single Bubble"
+  ],
+  [
+   "DOUBLE",
+   "Double Bubble"
+  ],
+  [
+   "TRIPLE",
+   "Triple Bubble"
+  ]
+ ],
+ "relief_panel": [
+  [
+   "DRAPERY",
+   "Drapery"
+  ],
+  [
+   "DUNES",
+   "Dunes"
+  ],
+  [
+   "POND",
+   "Pond"
+  ],
+  [
+   "TERRAIN",
+   "Terrain"
+  ],
+  [
+   "BANDS",
+   "Bands"
+  ],
+  [
+   "CHLADNI",
+   "Chladni Plate"
+  ],
+  [
+   "CHLADNI_FLOW",
+   "Chladni (Melted)"
+  ],
+  [
+   "DRUMHEAD",
+   "Drumhead"
+  ],
+  [
+   "ZERNIKE",
+   "Zernike"
+  ],
+  [
+   "LASER",
+   "Laser Mode"
+  ],
+  [
+   "SCATTER",
+   "Scatter"
+  ],
+  [
+   "ELLIPTIC_TORUS",
+   "Elliptic Torus"
+  ],
+  [
+   "TRUCHET",
+   "Truchet Lanes"
+  ],
+  [
+   "SEIGAIHA",
+   "Seigaiha"
+  ],
+  [
+   "TRIANGLE_DRUM",
+   "Triangle Drum"
+  ],
+  [
+   "ISOSPECTRAL_A",
+   "Isospectral A"
+  ],
+  [
+   "ISOSPECTRAL_B",
+   "Isospectral B"
+  ],
+  [
+   "TURING_SKIN",
+   "Turing Skin"
+  ],
+  [
+   "CELLULAR",
+   "Cellular"
+  ],
+  [
+   "WALLPAPER_RELIEF",
+   "Wallpaper"
+  ],
+  [
+   "QUASICRYSTAL",
+   "Quasicrystal"
+  ],
+  [
+   "OCEAN",
+   "Ocean"
+  ],
+  [
+   "WEAVE",
+   "Gabor Weave"
+  ],
+  [
+   "SCREEN",
+   "Pierced Screen"
+  ]
+ ],
+ "relief_solid": [
+  [
+   "PLANET",
+   "Planet"
+  ],
+  [
+   "ASTEROID",
+   "Asteroid"
+  ],
+  [
+   "HARMONIC_BALL",
+   "Harmonic Ball"
+  ],
+  [
+   "SHAGREEN",
+   "Shagreen"
+  ],
+  [
+   "WALLPAPER_TORUS",
+   "Wallpaper Torus"
+  ],
+  [
+   "ELLIPTIC_TORUS",
+   "Elliptic Torus"
+  ],
+  [
+   "OCEAN_TORUS",
+   "Ocean Torus"
+  ],
+  [
+   "TRUCHET_SPHERE",
+   "Truchet Sphere"
+  ],
+  [
+   "TRUCHET_TORUS",
+   "Truchet Torus"
+  ],
+  [
+   "SEIGAIHA_TORUS",
+   "Seigaiha Torus"
+  ],
+  [
+   "GEODESIC_POND",
+   "Geodesic Pond"
+  ],
+  [
+   "ZONAL",
+   "Zonal Bands"
+  ],
+  [
+   "SCATTERED",
+   "Scattered"
+  ],
+  [
+   "TORUS_HARMONIC",
+   "Torus Harmonic"
+  ],
+  [
+   "QUASICRYSTAL",
+   "Quasicrystal"
+  ],
+  [
+   "ICOSAHEDRAL",
+   "Icosahedral"
+  ],
+  [
+   "OCTAHEDRAL",
+   "Octahedral"
+  ],
+  [
+   "TURING_SPHERE",
+   "Turing Sphere"
+  ],
+  [
+   "TURING_TORUS",
+   "Turing Torus"
+  ],
+  [
+   "WOVEN_TORUS",
+   "Woven Torus"
+  ],
+  [
+   "CORAL_TORUS",
+   "Coral Torus"
+  ],
+  [
+   "CARVED_COLUMN",
+   "Carved Column"
+  ]
+ ],
+ "reptile": [
+  [
+   "L_TROMINO",
+   "L-Tromino (rep-4)"
+  ],
+  [
+   "SPHINX",
+   "Sphinx Hexiamond (rep-4)"
+  ],
+  [
+   "L_TETROMINO",
+   "L-Tetromino (rep-4)"
+  ],
+  [
+   "P_PENTOMINO",
+   "P-Pentomino (rep-4)"
+  ],
+  [
+   "RIGHT_TRIANGLE",
+   "Right Triangle (rep-2)"
+  ]
+ ],
+ "rolling_knot": [
+  [
+   "SMOOTH",
+   "Smooth-Rolling"
+  ],
+  [
+   "STRETCHED",
+   "Stretched"
+  ],
+  [
+   "MORTON",
+   "Morton"
+  ]
+ ],
+ "snowflake": [
+  [
+   "DENDRITE",
+   "Stellar Dendrite"
+  ],
+  [
+   "FERN",
+   "Fern Dendrite"
+  ],
+  [
+   "SECTORED",
+   "Sectored Plate"
+  ],
+  [
+   "PLATE",
+   "Hexagonal Plate"
+  ],
+  [
+   "STELLAR",
+   "Stellar Plate"
+  ]
+ ],
+ "spiral_tiling": [
+  [
+   "EQUILATERAL",
+   "Equilateral (plastic number)"
+  ],
+  [
+   "GOLDEN",
+   "Golden Triangle"
+  ],
+  [
+   "ISO_SS",
+   "Isosceles, side-to-side (B = C)"
+  ],
+  [
+   "ISO_SB",
+   "Isosceles, side-to-base (A = B)"
+  ],
+  [
+   "ISO_BS",
+   "Isosceles, base-to-side (A = C)"
+  ],
+  [
+   "RIGHT_LH",
+   "Right, leg-to-hypotenuse (C = 90)"
+  ],
+  [
+   "RIGHT_HL",
+   "Right, hypotenuse-to-leg (B = 90)"
+  ],
+  [
+   "ISO_ANY",
+   "Any Isosceles (m = n = 2)"
+  ],
+  [
+   "GENERAL",
+   "General / Custom"
+  ]
+ ],
+ "star_prism": [
+  [
+   "PRISM",
+   "Prism"
+  ],
+  [
+   "ANTIPRISM",
+   "Antiprism"
+  ],
+  [
+   "DIPYRAMID",
+   "Dipyramid"
+  ],
+  [
+   "TRAPEZOHEDRON",
+   "Trapezohedron"
+  ]
+ ],
+ "steinmetz": [
+  [
+   "BICYLINDER",
+   "Bicylinder (Steinmetz)"
+  ],
+  [
+   "TRICYLINDER",
+   "Tricylinder"
+  ]
+ ],
+ "supershape": [
+  [
+   "SPHERE",
+   "Sphere"
+  ],
+  [
+   "STARFISH",
+   "Starfish"
+  ],
+  [
+   "FLOWER",
+   "Flower"
+  ],
+  [
+   "GEAR",
+   "Gear Blob"
+  ],
+  [
+   "SPIKY",
+   "Spiky"
+  ],
+  [
+   "ROUNDED_CUBE",
+   "Rounded Cube"
+  ],
+  [
+   "SEED_POD",
+   "Seed Pod"
+  ],
+  [
+   "TWISTED",
+   "Twisted"
+  ],
+  [
+   "BULB",
+   "Bulb"
+  ],
+  [
+   "TORUS",
+   "Torus"
+  ],
+  [
+   "GEAR_RING",
+   "Gear Ring"
+  ],
+  [
+   "STAR_TUBE",
+   "Star Tube"
+  ],
+  [
+   "FACETED_RING",
+   "Faceted Ring"
+  ],
+  [
+   "CONCH",
+   "Conch Shell"
+  ],
+  [
+   "SNAIL",
+   "Snail Shell"
+  ],
+  [
+   "TUSK",
+   "Tusk Shell"
+  ],
+  [
+   "SE_SPHERE",
+   "Ellipsoid"
+  ],
+  [
+   "SE_CUBE",
+   "Cube"
+  ],
+  [
+   "SE_CYLINDER",
+   "Cylinder"
+  ],
+  [
+   "SE_OCTAHEDRON",
+   "Octahedron"
+  ],
+  [
+   "SE_STAR",
+   "Star (Superquad)"
+  ],
+  [
+   "SE_PILLOW",
+   "Pillow"
+  ]
+ ],
+ "tiling": [
+  [
+   "TRI",
+   "Triangular (3.3.3.3.3.3)"
+  ],
+  [
+   "SQUARE",
+   "Square (4.4.4.4)"
+  ],
+  [
+   "HEX",
+   "Hexagonal (6.6.6)"
+  ],
+  [
+   "TRIHEX",
+   "Trihexagonal (3.6.3.6)"
+  ],
+  [
+   "SNUBSQ",
+   "Snub Square (3.3.4.3.4)"
+  ],
+  [
+   "SNUBHEX",
+   "Snub Hexagonal (3.3.3.3.6)"
+  ],
+  [
+   "ELONGTRI",
+   "Elongated Triangular (3.3.3.4.4)"
+  ],
+  [
+   "RHOMBITRIHEX",
+   "Rhombitrihexagonal (3.4.6.4)"
+  ],
+  [
+   "TRUNCHEX",
+   "Truncated Hexagonal (3.12.12)"
+  ],
+  [
+   "TRUNCSQ",
+   "Truncated Square (4.8.8)"
+  ],
+  [
+   "TRUNCTRIHEX",
+   "Truncated Trihexagonal (4.6.12)"
+  ],
+  [
+   "RHOMBILLE",
+   "Rhombille (dual 3.6.3.6)"
+  ],
+  [
+   "CAIRO",
+   "Cairo Pentagonal (dual 3.3.4.3.4)"
+  ],
+  [
+   "FLORET",
+   "Floret Pentagonal (dual 3.3.3.3.6)"
+  ],
+  [
+   "PRISMATIC",
+   "Prismatic Pentagonal (dual 3.3.3.4.4)"
+  ],
+  [
+   "DELTOIDAL",
+   "Deltoidal Trihexagonal (dual 3.4.6.4)"
+  ],
+  [
+   "TRIAKIS",
+   "Triakis Triangular (dual 3.12.12)"
+  ],
+  [
+   "TETRAKIS",
+   "Tetrakis Square (dual 4.8.8)"
+  ],
+  [
+   "KISRHOMBILLE",
+   "Kisrhombille (dual 4.6.12)"
+  ]
+ ],
+ "toroidal_polyhedron": [
+  [
+   "CSASZAR",
+   "Csaszar Polyhedron"
+  ],
+  [
+   "SZILASSI",
+   "Szilassi Polyhedron"
+  ],
+  [
+   "REGULAR",
+   "Regular-Faced Toroid"
+  ],
+  [
+   "KNOTTED",
+   "Knotted Dodecahedron"
+  ],
+  [
+   "BORROMEAN",
+   "Borromean Rings"
+  ],
+  [
+   "IRIS7",
+   "Heptagonal Iris Toroid"
+  ],
+  [
+   "IRIS8",
+   "Octagonal Iris Toroid"
+  ]
+ ],
+ "turks_head": [
+  [
+   "RING",
+   "Ring (Flat Mat)"
+  ],
+  [
+   "CYLINDER",
+   "Cylinder"
+  ],
+  [
+   "TORUS",
+   "Torus"
+  ],
+  [
+   "SPHERE",
+   "Sphere"
+  ]
+ ],
+ "uniform_polyhedron": [
+  [
+   "1",
+   "U1  Tetrahedron",
+   "CONVEX"
+  ],
+  [
+   "2",
+   "U2  Truncated Tetrahedron",
+   "CONVEX"
+  ],
+  [
+   "5",
+   "U5  Octahedron",
+   "CONVEX"
+  ],
+  [
+   "6",
+   "U6  Cube",
+   "CONVEX"
+  ],
+  [
+   "7",
+   "U7  Cuboctahedron",
+   "CONVEX"
+  ],
+  [
+   "8",
+   "U8  Truncated Octahedron",
+   "CONVEX"
+  ],
+  [
+   "9",
+   "U9  Truncated Cube",
+   "CONVEX"
+  ],
+  [
+   "10",
+   "U10  Rhombicuboctahedron",
+   "CONVEX"
+  ],
+  [
+   "11",
+   "U11  Truncated Cuboctahedron",
+   "CONVEX"
+  ],
+  [
+   "12",
+   "U12  Snub Cube",
+   "CONVEX"
+  ],
+  [
+   "22",
+   "U22  Icosahedron",
+   "CONVEX"
+  ],
+  [
+   "23",
+   "U23  Dodecahedron",
+   "CONVEX"
+  ],
+  [
+   "24",
+   "U24  Icosidodecahedron",
+   "CONVEX"
+  ],
+  [
+   "25",
+   "U25  Truncated Icosahedron",
+   "CONVEX"
+  ],
+  [
+   "26",
+   "U26  Truncated Dodecahedron",
+   "CONVEX"
+  ],
+  [
+   "27",
+   "U27  Rhombicosidodecahedron",
+   "CONVEX"
+  ],
+  [
+   "28",
+   "U28  Truncated Icosidodecahedron",
+   "CONVEX"
+  ],
+  [
+   "29",
+   "U29  Snub Dodecahedron",
+   "CONVEX"
+  ],
+  [
+   "34",
+   "U34  Small Stellated Dodecahedron",
+   "KEPLER"
+  ],
+  [
+   "35",
+   "U35  Great Dodecahedron",
+   "KEPLER"
+  ],
+  [
+   "52",
+   "U52  Great Stellated Dodecahedron",
+   "KEPLER"
+  ],
+  [
+   "53",
+   "U53  Great Icosahedron",
+   "KEPLER"
+  ],
+  [
+   "3",
+   "U3  Octahemioctahedron",
+   "HEMI"
+  ],
+  [
+   "4",
+   "U4  Tetrahemihexahedron",
+   "HEMI"
+  ],
+  [
+   "15",
+   "U15  Cubohemioctahedron",
+   "HEMI"
+  ],
+  [
+   "49",
+   "U49  Small Icosihemidodecahedron",
+   "HEMI"
+  ],
+  [
+   "51",
+   "U51  Small Dodecahemidodecahedron",
+   "HEMI"
+  ],
+  [
+   "62",
+   "U62  Small Dodecahemicosahedron",
+   "HEMI"
+  ],
+  [
+   "65",
+   "U65  Great Dodecahemicosahedron",
+   "HEMI"
+  ],
+  [
+   "70",
+   "U70  Great Dodecahemidodecahedron",
+   "HEMI"
+  ],
+  [
+   "71",
+   "U71  Great Icosihemidodecahedron",
+   "HEMI"
+  ],
+  [
+   "13",
+   "U13  Small Cubicuboctahedron",
+   "STAR_O"
+  ],
+  [
+   "14",
+   "U14  Great Cubicuboctahedron",
+   "STAR_O"
+  ],
+  [
+   "16",
+   "U16  Cubitruncated Cuboctahedron",
+   "STAR_O"
+  ],
+  [
+   "17",
+   "U17  Nonconvex Great Rhombicuboctahedron",
+   "STAR_O"
+  ],
+  [
+   "18",
+   "U18  Small Rhombihexahedron",
+   "STAR_O"
+  ],
+  [
+   "19",
+   "U19  Stellated Truncated Hexahedron",
+   "STAR_O"
+  ],
+  [
+   "20",
+   "U20  Great Truncated Cuboctahedron",
+   "STAR_O"
+  ],
+  [
+   "21",
+   "U21  Great Rhombihexahedron",
+   "STAR_O"
+  ],
+  [
+   "30",
+   "U30  Small Ditrigonal Icosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "31",
+   "U31  Small Icosicosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "32",
+   "U32  Small Snub Icosicosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "33",
+   "U33  Small Dodecicosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "36",
+   "U36  Dodecadodecahedron",
+   "STAR_I"
+  ],
+  [
+   "37",
+   "U37  Truncated Great Dodecahedron",
+   "STAR_I"
+  ],
+  [
+   "38",
+   "U38  Rhombidodecadodecahedron",
+   "STAR_I"
+  ],
+  [
+   "39",
+   "U39  Small Rhombidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "40",
+   "U40  Snub Dodecadodecahedron",
+   "STAR_I"
+  ],
+  [
+   "41",
+   "U41  Ditrigonal Dodecadodecahedron",
+   "STAR_I"
+  ],
+  [
+   "42",
+   "U42  Great Ditrigonal Dodecicosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "43",
+   "U43  Small Ditrigonal Dodecicosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "44",
+   "U44  Icosidodecadodecahedron",
+   "STAR_I"
+  ],
+  [
+   "45",
+   "U45  Icositruncated Dodecadodecahedron",
+   "STAR_I"
+  ],
+  [
+   "46",
+   "U46  Snub Icosidodecadodecahedron",
+   "STAR_I"
+  ],
+  [
+   "47",
+   "U47  Great Ditrigonal Icosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "48",
+   "U48  Great Icosicosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "50",
+   "U50  Small Dodecicosahedron",
+   "STAR_I"
+  ],
+  [
+   "54",
+   "U54  Great Icosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "55",
+   "U55  Truncated Great Icosahedron",
+   "STAR_I"
+  ],
+  [
+   "56",
+   "U56  Rhombicosahedron",
+   "STAR_I"
+  ],
+  [
+   "57",
+   "U57  Great Snub Icosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "58",
+   "U58  Small Stellated Truncated Dodecahedron",
+   "STAR_I"
+  ],
+  [
+   "59",
+   "U59  Truncated Dodecadodecahedron",
+   "STAR_I"
+  ],
+  [
+   "60",
+   "U60  Inverted Snub Dodecadodecahedron",
+   "STAR_I"
+  ],
+  [
+   "61",
+   "U61  Great Dodecicosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "63",
+   "U63  Great Dodecicosahedron",
+   "STAR_I"
+  ],
+  [
+   "64",
+   "U64  Great Snub Dodecicosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "66",
+   "U66  Great Stellated Truncated Dodecahedron",
+   "STAR_I"
+  ],
+  [
+   "67",
+   "U67  Nonconvex Great Rhombicosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "68",
+   "U68  Great Truncated Icosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "69",
+   "U69  Great Inverted Snub Icosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "72",
+   "U72  Small Retrosnub Icosicosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "73",
+   "U73  Great Rhombidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "74",
+   "U74  Great Retrosnub Icosidodecahedron",
+   "STAR_I"
+  ],
+  [
+   "75",
+   "U75  Great Dirhombicosidodecahedron",
+   "STAR_I"
+  ]
+ ],
+ "voderberg": [
+  [
+   "CLASSIC",
+   "Classic Double Spiral"
+  ],
+  [
+   "SPIRAL",
+   "Spiral (Enclosure Order)"
+  ],
+  [
+   "RADIAL",
+   "Radial Rings"
+  ]
+ ],
+ "wallpaper": [
+  [
+   "p1",
+   "p1  (o)"
+  ],
+  [
+   "p2",
+   "p2  (2222)"
+  ],
+  [
+   "pm",
+   "pm  (**)"
+  ],
+  [
+   "pg",
+   "pg  (xx)"
+  ],
+  [
+   "cm",
+   "cm  (*x)"
+  ],
+  [
+   "pmm",
+   "pmm  (*2222)"
+  ],
+  [
+   "pmg",
+   "pmg  (22*)"
+  ],
+  [
+   "pgg",
+   "pgg  (22x)"
+  ],
+  [
+   "cmm",
+   "cmm  (2*22)"
+  ],
+  [
+   "p4",
+   "p4  (442)"
+  ],
+  [
+   "p4m",
+   "p4m  (*442)"
+  ],
+  [
+   "p4g",
+   "p4g  (4*2)"
+  ],
+  [
+   "p3",
+   "p3  (333)"
+  ],
+  [
+   "p3m1",
+   "p3m1  (*333)"
+  ],
+  [
+   "p31m",
+   "p31m  (3*3)"
+  ],
+  [
+   "p6",
+   "p6  (632)"
+  ],
+  [
+   "p6m",
+   "p6m  (*632)"
+  ]
+ ],
+ "woven_double_shell": [
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "OCTA",
+   "Octahedron"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "ICOSA",
+   "Icosahedron"
+  ],
+  [
+   "TT",
+   "Truncated Tetrahedron"
+  ],
+  [
+   "CO",
+   "Cuboctahedron"
+  ],
+  [
+   "TC",
+   "Truncated Cube"
+  ],
+  [
+   "TO",
+   "Truncated Octahedron"
+  ],
+  [
+   "RCO",
+   "Rhombicuboctahedron"
+  ],
+  [
+   "TCO",
+   "Truncated Cuboctahedron"
+  ],
+  [
+   "SC",
+   "Snub Cube"
+  ],
+  [
+   "ID",
+   "Icosidodecahedron"
+  ],
+  [
+   "TD",
+   "Truncated Dodecahedron"
+  ],
+  [
+   "TI",
+   "Truncated Icosahedron"
+  ],
+  [
+   "RID",
+   "Rhombicosidodecahedron"
+  ],
+  [
+   "TID",
+   "Truncated Icosidodecahedron"
+  ],
+  [
+   "SD",
+   "Snub Dodecahedron"
+  ],
+  [
+   "GEODESIC",
+   "Geodesic Sphere"
+  ]
+ ],
+ "tight_link": [
+  [
+   "HOPF",
+   "Hopf Link"
+  ],
+  [
+   "TORUS24",
+   "Torus Link (2,4)"
+  ],
+  [
+   "WHITEHEAD",
+   "Whitehead Link"
+  ],
+  [
+   "BORROMEAN",
+   "Borromean Rings"
+  ],
+  [
+   "CHAIN",
+   "Chain"
+  ]
+ ],
+ "willmore": [
+  [
+   "TORUS",
+   "Willmore Torus (Clifford)"
+  ],
+  [
+   "VESICLE",
+   "Vesicle (red blood cell)"
+  ],
+  [
+   "RING",
+   "Inflated Ring"
+  ]
+ ],
+ "bryant_surface": [
+  [
+   "CATENOID_COUSIN",
+   "Catenoid Cousin"
+  ],
+  [
+   "ENNEPER_COUSIN",
+   "Enneper Cousin"
+  ],
+  [
+   "POLYNOMIAL",
+   "Polynomial Data"
+  ]
+ ],
+ "delaunay_surface": [
+  [
+   "UNDULOID",
+   "Unduloid"
+  ],
+  [
+   "NODOID",
+   "Nodoid"
+  ],
+  [
+   "SPHERE",
+   "Sphere Chain"
+  ],
+  [
+   "CYLINDER",
+   "Cylinder"
+  ],
+  [
+   "CATENOID",
+   "Catenoid"
   ]
  ]
 }

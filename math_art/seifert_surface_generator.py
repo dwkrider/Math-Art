@@ -430,6 +430,18 @@ if _IN_BLENDER:
                 ('RELAX', "Relax (membrane)",
                  "Particle-model membrane relaxation: the whole surface and "
                  "its knot boundary evolve together"),
+                ('BIHARMONIC', "Fair (thin plate, no shrink)",
+                 "Botsch-Kobbelt bi-harmonic fairing: one equilibrium "
+                 "solve with the rim and its first ring locked -- smooths "
+                 "without the shrink toward the rim that mean-curvature "
+                 "flow has, and keeps the surface tangent-continuous at "
+                 "the rim"),
+                ('CMCF', "Fair (conformalized MCF)",
+                 "Mean-curvature flow with the Laplacian frozen at the "
+                 "starting surface (Kazhdan-Solomon-Ben-Chen): robust "
+                 "against the neck-pinching and weight blowup of long "
+                 "plain-MCF runs; converges to the harmonic span of the "
+                 "rim in the starting metric"),
             ],
             default='FAIR')
         fair_steps: IntProperty(name="Fair Steps", default=10, min=1, max=60)
@@ -462,6 +474,11 @@ if _IN_BLENDER:
                     mesh = sv.relax(
                         mesh, sv.RelaxParams(pin_boundary=self.pin_boundary),
                         iterations=self.relax_steps)
+                elif self.method == 'BIHARMONIC':
+                    mesh = sv.biharmonic_fair(mesh)
+                elif self.method == 'CMCF':
+                    mesh = sv.cmcf_fair(mesh, strength=self.fair_strength,
+                                        iterations=self.fair_steps)
                 else:
                     mesh = sv.minimal_surface(mesh, strength=self.fair_strength,
                                               iterations=self.fair_steps)

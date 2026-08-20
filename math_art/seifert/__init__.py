@@ -21,7 +21,7 @@ from .braid import Braid, Crossing, torus_knot
 from .build import (
     SurfaceParams, spanning_surface, seifert_surface, state_surface,
 )
-from .fair import minimal_surface, smooth_boundary
+from .fair import biharmonic_fair, cmcf_fair, minimal_surface, smooth_boundary
 from .mesh import Mesh, MeshInfo
 from .pipeline import finish, surface
 from .relax import RelaxParams, relax
@@ -54,6 +54,8 @@ __all__ = [
     "catmull_clark",
     "minimal_surface",
     "smooth_boundary",
+    "biharmonic_fair",
+    "cmcf_fair",
 ]
 
 __version__ = "1.1.0"

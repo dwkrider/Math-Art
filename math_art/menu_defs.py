@@ -62,8 +62,10 @@ SURFACES = Menu(
         _e("mesh.periodic_minimal_add", 'MESH_ICOSPHERE',
            "Minimal Surfaces (Periodic)"),
         _e("mesh.minimal_knot_span_add", 'MESH_TORUS'),
-        # a relaxation tool applied to an existing mesh, not a shape
-        _e("object.minimal_span", 'OUTLINER_OB_SURFACE', builtin=True),
+        # Spans whatever curves are selected rather than adding a shape,
+        # so it has no subject of its own -- the baker builds it two
+        # crossed circles to bridge (tools/subjects.py SETUP).
+        _e("object.minimal_span", 'OUTLINER_OB_SURFACE'),
         _e("mesh.seifert_surface_add", 'MOD_SIMPLIFY', "Seifert Surface"),
         _e("mesh.algebraic_surface_add", 'SURFACE_NSURFACE'),
         _e("mesh.topological_surface_add", 'MESH_TORUS'),
@@ -79,7 +81,10 @@ SURFACES = Menu(
         _e("mesh.spherical_harmonic_add", 'SURFACE_NSPHERE'),
         _e("mesh.orbital_add", 'META_BALL'),
         _e("mesh.hyperbolic_surface_add", 'MESH_CAPSULE'),
+        _e("mesh.delaunay_surface_add", 'META_CAPSULE'),
+        _e("mesh.bryant_surface_add", 'MESH_UVSPHERE'),
         _e("mesh.crochet_add", 'MOD_CLOTH'),
+        _e("mesh.willmore_add", 'MESH_TORUS', "Willmore Surface"),
     ])
 
 POLYHEDRA = Menu(
@@ -141,6 +146,7 @@ KNOTS = Menu(
     "VIEW3D_MT_math_art_knots", "Knots & Curves", 'FORCE_VORTEX', [
         _e("curve.prime_knot_add", 'FORCE_VORTEX'),
         _e("curve.tight_knot_add", 'FORCE_VORTEX'),
+        _e("curve.tight_link_add", 'LINKED'),
         _e("curve.torus_knot_add", 'FORCE_VORTEX'),
         _e("curve.hopf_fibration_add", 'FORCE_MAGNETIC'),
         _e("mesh.hopf_torus_add", 'MESH_TORUS'),
@@ -216,6 +222,8 @@ ROLLERS = Menu(
 # and neither of them authoritative.
 ODDS = Menu(
     "VIEW3D_MT_math_art_odds", "Odds & Ends", 'MESH_TORUS', [
+        _e("mesh.gem_add", 'MESH_ICOSPHERE', "Faceted Gemstone"),
+        _e("mesh.gem_cabochon_add", 'MESH_CAPSULE', "Cabochon Gemstone"),
         _e("mesh.koman_add", 'MOD_SCREW', "Koman Developable"),
         _e("mesh.platonic_twist_add", 'MOD_SCREW'),
         _e("mesh.twisted_torus_add", 'MESH_TORUS'),
@@ -242,13 +250,25 @@ STYLES = Menu(
 
 
 # Draw order of the submenus under Add > Math Art.  STYLES is listed
-# last by the root menu, after the Symmetric Sculpture entry, so it is
-# not part of this run.
+# last by the root menu, after the ROOT_ENTRIES below, so it is not
+# part of this run.
 MENU_ORDER = (SURFACES, POLYHEDRA, FRACTALS, PLANTS, KNOTS, WEAVES,
               PATTERNS, ROLLERS, ODDS)
 
 # Every menu that gets a generated class, in registration order.
 ALL_MENUS = MENU_ORDER + (STYLES,)
+
+# Operators drawn directly on the root "Math Art" menu rather than in
+# any submenu.  Symmetric Sculpture is a single operator with no family
+# around it, so a submenu of one would be noise -- but it still has to
+# be listed *here* rather than only in __init__.py's draw(), because
+# this module is what the icon baker and the documentation coverage
+# gate enumerate.  An operator drawn straight by __init__.py and absent
+# from this table is invisible to both: it silently gets no baked icon
+# and no doc page, which is exactly what happened to this entry.
+ROOT_ENTRIES = (
+    _e("object.symmetric_sculpture_add", 'MOD_MIRROR'),
+)
 
 
 def iter_entries():
@@ -256,12 +276,16 @@ def iter_entries():
 
     Entries repeated across menus (an L-system is both a fractal and a
     plant) are yielded once per appearance; use `unique_ops()` when a
-    single pass per operator is wanted, as the icon baker needs.
+    single pass per operator is wanted, as the icon baker needs.  The
+    root-level entries come last, matching their draw order.
     """
     for menu in ALL_MENUS:
         for entry in menu.entries:
             if entry.op is not None:
                 yield entry
+    for entry in ROOT_ENTRIES:
+        if entry.op is not None:
+            yield entry
 
 
 def unique_ops():
@@ -319,6 +343,20 @@ def _selftest():
                 raise AssertionError(f"{entry.op}: icon not upper-case")
             if not isinstance(entry.builtin, bool):
                 raise AssertionError(f"{entry.op}: builtin not a bool")
+
+    # Root-level entries get the same structural checks as menu ones,
+    # and must not duplicate an operator that already has a submenu home.
+    submenu_ops = {e.op for m in ALL_MENUS for e in m.entries if e.op}
+    for entry in ROOT_ENTRIES:
+        if entry.op is None:
+            raise AssertionError("ROOT_ENTRIES holds a separator")
+        prefix, _, rest = entry.op.partition('.')
+        if prefix not in ('mesh', 'curve', 'object') or not rest:
+            raise AssertionError(f"bad root operator id: {entry.op}")
+        if not entry.icon or entry.icon != entry.icon.upper():
+            raise AssertionError(f"{entry.op}: bad/missing fallback icon")
+        if entry.op in submenu_ops:
+            raise AssertionError(f"{entry.op}: drawn at root AND in a submenu")
 
     # The root ordering must cover every menu exactly once.  Menu is a
     # namedtuple holding a list, so it is unhashable -- compare on the

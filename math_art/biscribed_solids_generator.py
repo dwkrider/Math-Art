@@ -804,8 +804,9 @@ def solve_chiral_g(spec, sym, restarts=24, canon_iters=400):
 
     inits = [rep0]
     try:                                             # canonical-form init
-        Vc = np.array(_canon.canonicalize([list(v) for v in V0],
-                                      [list(f) for f in F], iters=canon_iters))
+        Vc = np.array(_canon.canonicalize_best(
+            [list(v) for v in V0], [list(f) for f in F],
+            hart_iters=canon_iters))
         Uc = Vc / np.linalg.norm(Vc, axis=1, keepdims=True)
         inits.append([Uc[r].copy() for r in reps])
     except Exception:

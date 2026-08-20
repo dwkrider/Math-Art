@@ -295,7 +295,14 @@ def case_canonical(config):
     from math_art.polyhedra import canonical
     from math_art.polyhedra.conway import apply_conway
     mode = config.get("canonical_mode", "hart")
+    if mode not in ("hart", "bd", "ambo"):
+        raise ValueError(f"unknown canonical_mode {mode!r}")
     kwargs = dict(config.get("canonical_kwargs", {}))
+    # iteration CAP (solvers still stop at their own tolerance): 400 is
+    # the historical budget; canonical_iters raises it for methods
+    # whose per-iteration cost is far smaller (the ambo mode converges
+    # to machine precision in ~600-950 cheap iterations)
+    iters = int(config.get("canonical_iters", 400))
     per = {}
     total_t = 0.0
     for text in _CANON_SOLIDS:
@@ -303,17 +310,19 @@ def case_canonical(config):
         snaps = []
         if mode == "bd":
             fn = lambda V, F, **kw: canonical.canonicalize_bd(V, F, **kw)
+        elif mode == "ambo":
+            fn = canonical.canonicalize_ambo
         else:
             fn = canonical.canonicalize
         # timing run (no trace)
         t0 = _timer()
-        Vc = fn(V, F, iters=400, **kwargs)
+        Vc = fn(V, F, iters=iters, **kwargs)
         dt = _timer() - t0
         total_t += dt
         # trace run (same path, counts iterations via the opt-in hook)
         iters_used = None
         try:
-            fn(V, F, iters=400, trace=lambda it, P: snaps.append(it),
+            fn(V, F, iters=iters, trace=lambda it, P: snaps.append(it),
                **kwargs)
             iters_used = (snaps[-1] + 1) if snaps else 0
         except TypeError:
@@ -334,7 +343,9 @@ def case_canonical(config):
                        else None),
     }
     return {"metrics": agg, "per_solid": per, "trace": [],
-            "time_s": total_t}
+            "time_s": total_t,
+            "effective": {"canonical_mode": mode,
+                          "canonical_iters": iters}}
 
 
 def case_biscribe(config):
@@ -630,6 +641,9 @@ def _evolve_checked(V, T, labels, targets, kwargs):
         "groom_every": kwargs.get("groom_every",
                                   sig.parameters["groom_every"].default),
         "grooms_run": info["grooms_run"],
+        # grooms the collision guard verified-and-reverted (0 without
+        # a guard; absent key on pre-guard results)
+        "grooms_reverted": info.get("grooms_reverted", 0),
         "mobility": kwargs.get("mobility",
                                sig.parameters["mobility"].default),
         "cotan_mode": kwargs.get("cotan_mode",
@@ -1239,8 +1253,13 @@ def _film_case(config, seed_fn, iters_default, area_exact=None,
     loop = cg.boundary_loop(T, freeb)
     dev_fit, dev_raw = cg.film_contact_angle_dev(V, T, wall, loop)
     hist = info["history"]
+    from math_art.solver import collide as _collide
     mets = {
         "area": info["area"],
+        # exact end-state embeddedness (Moeller-Trumbore counter): the
+        # metric the S4 collision guard is judged on -- the unguarded
+        # L-BFGS film collapse shows here as hundreds of crossings
+        "crossings": _collide.crossing_count(V, T),
         "dev90_fit_rms": float(np.sqrt(np.mean(dev_fit ** 2))),
         "dev90_fit_max": float(np.max(dev_fit)),
         "dev90_raw_rms": float(np.sqrt(np.mean(dev_raw ** 2))),
@@ -1486,6 +1505,16 @@ def case_planarize(config):
         sub = nz[:3]
     X0 = vec[:, sub].copy()
     kwargs = dict(config.get("planarize_kwargs", {}))
+    import inspect
+    sig = inspect.signature(re_mod.planarize)
+    unknown = [k for k in kwargs if k not in sig.parameters]
+    if unknown:
+        raise ValueError(f"planarize_kwargs not accepted by planarize: "
+                         f"{unknown}")
+    if "mode" in sig.parameters:
+        eff_mode = kwargs.get("mode", sig.parameters["mode"].default)
+    else:
+        eff_mode = "svd"                 # historical single-path build
     total = int(config.get("planarize_iters", 500))
     chunk = 50
     trace = [{"iter": 0, "t": 0.0, "E": re_mod.planar_dev(X0, F)}]
@@ -1504,7 +1533,7 @@ def case_planarize(config):
         "map": name,
     }
     return {"metrics": mets, "trace": trace, "time_s": trace[-1]["t"],
-            "n_verts": Vn}
+            "n_verts": Vn, "effective": {"mode": eff_mode}}
 
 
 # --------------------------------------------------------------------------
@@ -1792,6 +1821,214 @@ def case_tp_scale(config):
                           "iters_agreement": 80}}
 
 
+# --------------------------------------------------------------------------
+# S6 fairing stack: bi-harmonic / cMCF fairing A-vs-MCF, Willmore energy
+# --------------------------------------------------------------------------
+
+def _fair_prepped_mesh(word="AAA"):
+    """The exact mesh case_seifert_fair fairs, so the three fairing
+    modes' metrics are directly comparable across cases."""
+    from math_art.seifert.build import seifert_surface
+    from math_art.seifert.relax import relax
+    from math_art.seifert.subdivide import catmull_clark
+    mesh = seifert_surface(word)
+    genus0 = mesh.info().genus
+    mesh = relax(mesh, iterations=100)
+    mesh = catmull_clark(mesh, 2)
+    return mesh, genus0
+
+
+def _fair_metrics(mesh_before, faired, genus0, t_fair):
+    tri = faired.triangulated()
+    T = np.asarray(tri.faces, dtype=np.int64)
+    V = tri.vertices
+    boundary = np.zeros(len(V), dtype=bool)
+    bidx = [v for loop in faired.boundary_loops() for v in loop]
+    boundary[bidx] = True
+    mets = {
+        "area_before_fair": mesh_before.area(),
+        "area": faired.area(),
+        "area_shrink_frac": 1.0 - faired.area()
+        / max(mesh_before.area(), 1e-30),
+        "genus_preserved": int(faired.info().genus == genus0),
+        "rim_max_move": M.max_move(mesh_before.vertices,
+                                   faired.vertices, boundary),
+        "interior_mean_move": M.mean_move(mesh_before.vertices,
+                                          faired.vertices, ~boundary),
+        "selfx": M.selfx_count(V, T),
+        "time_fair_s": t_fair,
+    }
+    mets.update(M.mean_curvature_residual(V, T, free=~boundary))
+    mets.update(M.tri_quality(V, T))
+    return mets, len(V), len(T)
+
+
+def case_fair_biharm(config):
+    """Botsch-Kobbelt k=2 pinned-rim fairing on the seifert_fair mesh:
+    the shrink-free alternative to the MCF fairing that case (baseline
+    config) measures.  Compare area_shrink_frac / rim_max_move /
+    interior_mean_move across the two cases."""
+    from math_art.seifert import fair
+    kwargs = dict(config.get("fair2_kwargs", {}))
+    mesh, genus0 = _fair_prepped_mesh()
+    t0 = _timer()
+    faired = fair.biharmonic_fair(mesh, **kwargs)
+    t_fair = _timer() - t0
+    mets, nv, nt = _fair_metrics(mesh, faired, genus0, t_fair)
+    return {"metrics": mets, "trace": [], "time_s": t_fair,
+            "n_verts": nv, "n_tris": nt,
+            "effective": {"fair2_kwargs": kwargs}}
+
+
+def case_fair_cmcf(config):
+    """Conformalized-MCF fairing (frozen Laplacian) on the same mesh,
+    at the same strength/iteration budget as the MCF baseline."""
+    from math_art.seifert import fair
+    kwargs = dict(config.get("fair2_kwargs", {}))
+    kwargs.setdefault("strength", 2.0)
+    kwargs.setdefault("iterations", 10)
+    mesh, genus0 = _fair_prepped_mesh()
+    t0 = _timer()
+    faired = fair.cmcf_fair(mesh, **kwargs)
+    t_fair = _timer() - t0
+    mets, nv, nt = _fair_metrics(mesh, faired, genus0, t_fair)
+    return {"metrics": mets, "trace": [], "time_s": t_fair,
+            "n_verts": nv, "n_tris": nt,
+            "effective": {"fair2_kwargs": kwargs}}
+
+
+def case_willmore_clifford(config):
+    """The Marques-Neves ground truth: a 48x24 torus of revolution at
+    ratio 3 flows to the Willmore minimizer.  Exact targets: aspect
+    ratio sqrt(2), energy 2 pi^2 (up to the measured discretization
+    offset of the star energy at this resolution)."""
+    from math_art.solver import willmore as W
+    kwargs = dict(config.get("willmore_kwargs", {}))
+    kwargs.setdefault("iters", 600)
+    kwargs.setdefault("groom_every", 10)
+    kwargs.setdefault("step_cap", 0.5)
+    V, T = W.torus_mesh(48, 24, R=3.0, r=1.0)
+    T = T.copy()
+    E_start = W.willmore_energy(V, T)
+    t0 = _timer()
+    info = W.minimize_willmore(V, T, **kwargs)
+    dt = _timer() - t0
+    R, rm, rcv, ratio = W.fit_torus_of_revolution(V)
+    twopi2 = 2.0 * math.pi * math.pi
+    mets = {
+        "E_start": E_start,
+        "E_final": info["E"],
+        "E_abs_rel_err": abs(info["E"] - twopi2) / twopi2,
+        "clifford_ratio": ratio,
+        "ratio_rel_err": abs(ratio - math.sqrt(2.0)) / math.sqrt(2.0),
+        "tube_cv": rcv,
+        "rise_max": info["rise_max"],
+        "iters": info["iters_run"],
+        "grooms_run": info["grooms_run"],
+        "selfx": M.selfx_count(V, T),
+    }
+    mets.update(M.tri_quality(V, T))
+    return {"metrics": mets, "trace": [], "time_s": dt,
+            "n_verts": len(V), "n_tris": len(T),
+            "effective": {"willmore_kwargs": kwargs}}
+
+
+def case_willmore_invariance(config):
+    """No flow -- the energy itself against its exact invariants:
+    sphere -> 4 pi and torus -> pi^2 t^2/sqrt(t^2-1) under refinement,
+    Mobius (sphere-inversion) invariance residual at two resolutions,
+    and the analytic gradient against central differences for both
+    variants and both h0 = 0 / h0 != 0."""
+    from math_art.solver import willmore as W
+    from math_art.surfaces.primitives import icosphere
+    t0 = _timer()
+    fourpi = 4.0 * math.pi
+    mets = {}
+    for sub in (3, 4):
+        SV, SF = icosphere(sub, 'per_level')
+        SV = np.asarray(SV, float)
+        SF = np.asarray(SF, np.int64)
+        mets[f"sphere_rel_err_sub{sub}"] = abs(
+            W.willmore_energy(SV, SF) - fourpi) / fourpi
+    Ean = W.torus_willmore_analytic(3.0)
+    for (nu, nv) in ((32, 16), (64, 32)):
+        Vt, Tt = W.torus_mesh(nu, nv, R=3.0, r=1.0)
+        mets[f"torus_rel_err_{nu}"] = abs(
+            W.willmore_energy(Vt, Tt) - Ean) / Ean
+    for (nu, nv) in ((32, 16), (64, 32)):
+        Vt, Tt = W.torus_mesh(nu, nv, R=2.0, r=1.0)
+        E1 = W.willmore_energy(Vt, Tt)
+        Vm = W.mobius_invert(Vt, center=[4.5, 0.0, 0.0], radius=2.0)
+        mets[f"mobius_resid_{nu}"] = abs(
+            W.willmore_energy(Vm, Tt) - E1) / E1
+    rng = np.random.default_rng(5)
+    SV, SF = icosphere(1, 'per_level')
+    Vh = np.asarray(SV, float) + 0.05 * rng.normal(
+        size=np.asarray(SV).shape)
+    SF = np.asarray(SF, np.int64)
+    worst = 0.0
+    for variant in ("star", "perp"):
+        for h0 in (0.0, 1.3):
+            _E, grad = W.willmore_gradient(Vh, SF, h0, variant)
+            d = rng.normal(size=Vh.shape)
+            d /= float(np.max(np.abs(d)))
+            h = 3e-6
+            fd = (W.willmore_energy(Vh + h * d, SF, h0, variant)
+                  - W.willmore_energy(Vh - h * d, SF, h0, variant)) \
+                / (2.0 * h)
+            an = float(np.sum(grad * d))
+            worst = max(worst, abs(fd - an) / max(abs(fd), 1e-300))
+    mets["grad_fd_err"] = worst
+    return {"metrics": mets, "trace": [], "time_s": _timer() - t0}
+
+
+def case_willmore_vesicle(config):
+    """Helfrich vesicle at reduced volume 0.60 (firmly on the
+    discocyte branch), fixed area + volume, icosphere subdiv 3:
+    E > 4 pi strictly, constraints at solver tolerance, oblate with
+    dimples."""
+    from math_art.solver import willmore as W
+    from math_art.solver import volume as SVOL
+    from math_art.surfaces.primitives import icosphere
+    kwargs = dict(config.get("willmore_kwargs", {}))
+    kwargs.setdefault("iters", 400)
+    kwargs.setdefault("groom_every", 10)
+    kwargs.setdefault("step_cap", 0.5)
+    SV, SF = icosphere(3, 'per_level')
+    SV = np.asarray(SV, float)
+    SF = np.asarray(SF, np.int64)
+    lab = np.zeros((len(SF), 2), dtype=np.int64)
+    lab[:, 1] = 1
+    area0 = SVOL.mesh_area(SV, SF)
+    vol0 = float(SVOL.region_volumes(SV, SF, lab, 1)[0])
+    red = 0.60
+    V = SV * np.array([1.0, 1.0, red])
+    T = SF.copy()
+    t0 = _timer()
+    info = W.minimize_willmore(V, T, vol_target=red * vol0,
+                               area_target=area0, **kwargs)
+    dt = _timer() - t0
+    ext = V.max(axis=0) - V.min(axis=0)
+    rho = np.hypot(V[:, 0] - V[:, 0].mean(), V[:, 1] - V[:, 1].mean())
+    zc = V[:, 2] - V[:, 2].mean()
+    axis_pts = rho < 0.15 * ext[0]
+    mets = {
+        "E_final": info["E"],
+        "E_over_sphere": info["E"] / (4.0 * math.pi),
+        "z_over_x": float(ext[2] / ext[0]),
+        "dimple": (float(zc[axis_pts].max()) / float(zc.max())
+                   if axis_pts.any() else 1.0),
+        "rise_max": info["rise_max"],
+        "vol_drift_max": info["drift_max"],
+        "iters": info["iters_run"],
+        "selfx": M.selfx_count(V, T),
+    }
+    mets.update(M.tri_quality(V, T))
+    return {"metrics": mets, "trace": [], "time_s": dt,
+            "n_verts": len(V), "n_tris": len(T),
+            "effective": {"willmore_kwargs": kwargs}}
+
+
 # Every config key any case reads.  run.py rejects a config containing
 # anything else, so a typo cannot silently benchmark a null change.
 # (Keys irrelevant to a given case are legitimately ignored by that
@@ -1806,7 +2043,63 @@ KNOWN_CONFIG_KEYS = {
     "cmc_kwargs",
     "tp_kwargs", "tp_iters",
     "tpl_kwargs", "tpl_iters",
+    "fair2_kwargs",
+    "willmore_kwargs",
+    "canonical_iters",
+    "seifert_lbfgs_iters", "seifert_lbfgs_guard",
 }
+
+
+def case_seifert_sweep_lbfgs(config):
+    """S4 embeddedness gate for the direct L-BFGS area descent
+    (plateau.minimize_area_lbfgs): the same 17-combination q x samples
+    grid as seifert_sweep, relaxed WITH the collision guard, at the
+    same 8 passes as the shipped Pinkall-Polthier gate.  Measured
+    2026-08-18: unguarded L-BFGS is 12/17 embedded here (selfx up to
+    132) while guarded is 17/17 at 8 AND at 64 iterations.  The gate
+    is selfx == 0 on all 17 at the default 8.  NOTE an honestly
+    measured wrinkle at intermediate depths: at 24 iterations two
+    sliver-degenerate combos (q3_m140, q7_m48; min angles < 0.2 deg)
+    show TRANSIENT selfx 7-9 that has resolved again by 64 -- 1-ring
+    folds through near-degenerate triangles, which the guard's
+    topological-adjacency exclusion is blind to by design.  The guard
+    guarantees NON-LOCAL embeddedness throughout; total embeddedness
+    is an endpoint property to verify with crossing_count.  Config:
+    seifert_lbfgs_iters (int), seifert_lbfgs_guard (bool, default on).
+    `effective` records the iters, the guard state, and the total
+    number of guard builds actually run (a configured-but-inert-because
+    -never-built guard refuses to report a null result)."""
+    from math_art.minsurf import plateau
+    from math_art.solver import collide as _collide
+    iters = int(config.get("seifert_lbfgs_iters", 8))
+    guard_on = bool(config.get("seifert_lbfgs_guard", True))
+    effective = {"iters": iters, "guard": guard_on, "guard_builds": 0}
+    per = {}
+    worst = 0
+    t_all = _timer()
+    grid = ([(q, m, 24) for q in (1, 3, 5, 7) for m in (96, 140, 200)]
+            + [(q, 48, 8) for q in (1, 3, 5, 7, 9)])   # = seifert_sweep grid
+    for q, m, rings in grid:
+        V, quads, fixed = plateau.build_seifert_span_grid(q, m, rings)
+        T = plateau._quads_to_tris(quads)
+        g = _collide.MeshGuard() if guard_on else None
+        plateau.minimize_area_lbfgs(V, T, fixed, outer_iters=iters,
+                                    guard=g)
+        if g is not None:
+            effective["guard_builds"] += g.n_builds
+        sx = M.selfx_count(V, T)
+        worst = max(worst, sx)
+        per[f"q{q}_m{m}_r{rings}"] = {
+            "selfx": sx,
+            "min_angle_deg": M.tri_quality(V, T)["min_angle_deg"]}
+    if guard_on and effective["guard_builds"] == 0:
+        raise RuntimeError("guard was configured but never built -- "
+                           "refusing to report a null result")
+    mets = {"selfx_worst": worst,
+            "n_embedded": sum(1 for p in per.values() if p["selfx"] == 0),
+            "n_total": len(per)}
+    return {"metrics": mets, "per_solid": per, "trace": [],
+            "time_s": _timer() - t_all, "effective": effective}
 
 CASES = {
     "catenoid": case_catenoid,
@@ -1859,4 +2152,417 @@ CASES = {
     "tp_borromean": case_tp_borromean,
     "tp_chain3": case_tp_chain3,
     "tp_scale": case_tp_scale,
+    "fair_biharm": case_fair_biharm,
+    "fair_cmcf": case_fair_cmcf,
+    "willmore_clifford": case_willmore_clifford,
+    "willmore_invariance": case_willmore_invariance,
+    "willmore_vesicle": case_willmore_vesicle,
+    "seifert_sweep_lbfgs": case_seifert_sweep_lbfgs,
 }
+
+
+# --------------------------------------------------------------------------
+# S5 coarse-to-fine continuation cases (appended; registries updated at
+# the end of this block so concurrent branches merge by union)
+# --------------------------------------------------------------------------
+
+def case_crochet_hard(config):
+    """The buckling headline (S5 + thin-plate bending): a RUFFLED-scale
+    sheet (ratio 4, 16 rows) where the one-shot relax crumples.  Config
+    dict `crochet_hard`: mode "oneshot" (default) or "c2f", plus
+    iters/smooth/bend, and levels/fine_frac (c2f only -- configuring
+    them under oneshot raises rather than silently no-opping).  Both
+    modes are measured with the same metric set: hyperbolic edge
+    distortion (rms/max/p50/p90) against each mesh's own exact rest
+    lengths, dihedral + umbrella smoothness, curvature vs the target
+    K = -1/R0^2, self-intersections, and z extent."""
+    from math_art.hyperbolic import crochet
+    cfg = dict(config.get("crochet_hard", {}))
+    allowed = {"mode", "iters", "smooth", "bend", "levels", "fine_frac"}
+    unknown = set(cfg) - allowed
+    if unknown:
+        raise ValueError(f"crochet_hard config keys not understood: "
+                         f"{sorted(unknown)}")
+    mode = cfg.get("mode", "oneshot")
+    iters = int(cfg.get("iters", 340))
+    smooth = float(cfg.get("smooth", 0.06))
+    bend = float(cfg.get("bend", 0.0))
+    ratio_n, rows, stitch, max_st = 4, 16, 0.09, 600
+    R0 = stitch / math.log(1.0 + 1.0 / ratio_n)
+    t0 = _timer()
+    if mode == "oneshot":
+        for k in ("levels", "fine_frac"):
+            if k in cfg:
+                raise ValueError(f"crochet_hard.{k} configured but "
+                                 f"unused in oneshot mode")
+        P, E0, E1, REST, nbr, tris, pin, pin_pos = crochet._crochet_mesh(
+            ratio_n, rows, stitch, max_st)
+        P = crochet._relax(P, E0, E1, REST, nbr, pin, pin_pos, iters,
+                           smooth, 0.4 * stitch, 0.5, bend=bend)
+        effective = {"mode": mode, "iters": iters, "smooth": smooth,
+                     "bend": bend}
+    elif mode == "c2f":
+        levels = int(cfg.get("levels", 1))
+        fine_frac = float(cfg.get("fine_frac", 0.5))
+        res = crochet.crochet_c2f(
+            ratio_n=ratio_n, rows=rows, stitch=stitch,
+            max_stitches=max_st, iters=iters, smooth=smooth, repel=0.5,
+            bend=bend, levels=levels, fine_frac=fine_frac)
+        P, tris = res["P"], res["tris"]
+        E0, E1, REST = res["E0"], res["E1"], res["REST"]
+        if len(res["schedule"]) != levels + 1:
+            raise RuntimeError("c2f schedule did not run all levels")
+        effective = {"mode": mode, "iters": iters, "smooth": smooth,
+                     "bend": bend, "levels": levels,
+                     "sched": [s["iters"] for s in res["schedule"]]}
+    else:
+        raise ValueError(f"crochet_hard.mode {mode!r} not understood")
+    dt = _timer() - t0
+    tris = np.asarray(tris, dtype=np.int64)
+    mets = dict(M.edge_metric_error(P, E0, E1, REST))
+    mets.update(M.edge_metric_error_dist(P, E0, E1, REST))
+    mets["dih_rms_deg"] = M.dihedral_rms_deg(P, tris)
+    mets["lap_rms"] = M.umbrella_rms(P, E0, E1)
+    mets["selfx"] = M.selfx_count(P, tris)
+    K = crochet.mean_curvature(P, tris)
+    mets["median_K"] = K
+    mets["K_rel_err"] = abs(K - (-1.0 / R0 ** 2)) / (1.0 / R0 ** 2)
+    mets["z_extent"] = float(P[:, 2].max() - P[:, 2].min())
+    return {"metrics": mets, "trace": [], "time_s": dt,
+            "n_verts": len(P), "n_tris": len(tris),
+            "effective": effective}
+
+
+def _load_roundembed():
+    import importlib.util
+    import os
+    root = os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.abspath(__file__))))
+    cands = [
+        os.path.join(root, "research", "highgenus_embedder"),
+        r"C:\Users\dkrid\Projects\2026_07_21_Math_Art\research\highgenus_embedder",
+    ]
+    home = next((c for c in cands
+                 if os.path.exists(os.path.join(c, "roundembed.py"))),
+                None)
+    if home is None:
+        return None, None
+    spec = importlib.util.spec_from_file_location(
+        "roundembed", os.path.join(home, "roundembed.py"))
+    re_mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(re_mod)
+    return re_mod, home
+
+
+def case_untangle(config):
+    """High-genus embedder crossing removal (S5 continuation on the
+    research script): deterministic first-cluster eigenseed +
+    `planarize`, then -- mode "on" -- the coarse-to-fine `untangle`
+    cycles (face-interior sampling + face-disjoint repulsion).  Config
+    dict `untangle`: map, mode "off"/"on", sched ([[levels, iters]..]),
+    repel, repel_rad (the latter three raise under mode "off").
+    Reports crossings before/after (the embedder's known failure),
+    planarity, aspect."""
+    import json as _json
+    import os
+    cfg = dict(config.get("untangle", {}))
+    allowed = {"map", "mode", "sched", "repel", "repel_rad"}
+    unknown = set(cfg) - allowed
+    if unknown:
+        raise ValueError(f"untangle config keys not understood: "
+                         f"{sorted(unknown)}")
+    re_mod, home = _load_roundembed()
+    if re_mod is None:
+        return {"metrics": {"skipped": 1}, "trace": [], "time_s": 0.0,
+                "note": "research/highgenus_embedder not found"}
+    if not hasattr(re_mod, "untangle"):
+        raise RuntimeError("roundembed.py on disk lacks untangle(); "
+                           "the S5 version is required for this case")
+    data = _json.load(open(os.path.join(home,
+                                        "maps_combinatorics.json")))
+    name = cfg.get("map") or "Overarching Octagonal Dodecahedron"
+    rec = data[name]
+    Vn = len(rec["V"]) if not isinstance(rec["V"], int) else rec["V"]
+    F = [list(f) for f in rec["F"]]
+    Lap = re_mod.laplacian(Vn, F)
+    w, vec = np.linalg.eigh(Lap)
+    sub = None
+    for c in re_mod.clusters(w):
+        if len(c) >= 3 and w[c[0]] > 1e-6:
+            sub = c[:3]
+            break
+    if sub is None:
+        sub = [i for i in range(len(w)) if w[i] > 1e-6][:3]
+    X0 = vec[:, sub].copy()
+    mode = cfg.get("mode", "off")
+    t0 = _timer()
+    X = re_mod.planarize(X0, F)
+    cr_before = re_mod.crossings(X, F)
+    effective = {"map": name, "mode": mode}
+    if mode == "on":
+        sched = tuple(tuple(int(v) for v in s)
+                      for s in cfg.get("sched",
+                                       [[1, 100], [1, 100], [2, 40],
+                                        [2, 40], [2, 40]]))
+        repel = float(cfg.get("repel", 0.6))
+        repel_rad = float(cfg.get("repel_rad", 1.5))
+        X, cr_after = re_mod.untangle(X, F, sched=sched, repel=repel,
+                                      repel_rad=repel_rad)
+        effective.update({"sched": list(map(list, sched)),
+                          "repel": repel, "repel_rad": repel_rad})
+    elif mode == "off":
+        for k in ("sched", "repel", "repel_rad"):
+            if k in cfg:
+                raise ValueError(f"untangle.{k} configured but unused "
+                                 f"in mode 'off'")
+        cr_after = cr_before
+    else:
+        raise ValueError(f"untangle.mode {mode!r} not understood")
+    dt = _timer() - t0
+    mets = {
+        "crossings_before": cr_before,
+        "crossings": cr_after,
+        "planar_dev": re_mod.planar_dev(X, F),
+        "aspect": re_mod.aspect(X),
+        "map": name,
+    }
+    return {"metrics": mets, "trace": [], "time_s": dt,
+            "n_verts": Vn, "effective": effective}
+
+
+CASES.update({
+    "crochet_hard": case_crochet_hard,
+    "untangle": case_untangle,
+})
+KNOWN_CONFIG_KEYS |= {"crochet_hard", "untangle"}
+# in-loop grooming with topology ops (groom-split-collapse branch).
+# Appended additively: the span/sweep drivers below interleave
+# plateau.minimize_area chunks (provably identical to a single call --
+# every outer iteration recomputes all state from V) with a
+# configurable grooming stage, so the shipped flips+smoothing and the
+# new split/collapse cycle can be A/B'd per call site under one driver.
+# --------------------------------------------------------------------------
+
+_GROOM_MODES = ("none", "shipped", "topo")
+
+
+def _groom_cfg(config):
+    """Validate config['groom_topo_kwargs'].  Unknown keys raise; a
+    configured mode that then never grooms raises in the driver."""
+    cfg = dict(config.get("groom_topo_kwargs", {}))
+    mode = cfg.pop("mode", "none")
+    every = int(cfg.pop("every", 4))
+    if mode not in _GROOM_MODES:
+        raise ValueError(f"groom_topo_kwargs.mode must be one of "
+                         f"{_GROOM_MODES}, got {mode!r}")
+    allowed = {"target", "low", "high", "autopop_step", "quality_floor",
+               "smooth", "smooth_lam", "smooth_iters", "flip_margin",
+               "selfx_veto", "verify_selfx", "rank_ratio", "cycles",
+               "do_split", "do_collapse", "do_flips"}
+    unknown = set(cfg) - allowed
+    if unknown:
+        raise ValueError(f"groom_topo_kwargs: unknown keys "
+                         f"{sorted(unknown)}")
+    return mode, every, cfg
+
+
+def _span_groom_drive(V, T, fixed, iters, config):
+    """Chunked minimize_area with grooming between chunks.  Returns
+    (V, T, fixed, effective, elapsed_s)."""
+    from math_art.minsurf import plateau
+    from math_art.solver import groom as _sg
+    mode, every, gkw = _groom_cfg(config)
+    effective = {"groom_mode": mode, "groom_every": every,
+                 "grooms_run": 0, "splits": 0, "collapses": 0,
+                 "flips": 0, "veto_total": 0, "cycles_reverted": 0}
+    t0 = _timer()
+    for it in range(iters):
+        if mode != "none" and it and it % every == 0:
+            if mode == "shipped":
+                _sg.groom(V, T, fixed=fixed)
+            else:
+                V, T, fixed, _, info = _sg.groom_topo(
+                    V, T, fixed=fixed, **gkw)
+                effective["splits"] += info["splits"]
+                effective["collapses"] += info["collapses"]
+                effective["flips"] += info["flips"]
+                effective["veto_total"] += sum(info["vetoes"].values())
+                effective["cycles_reverted"] += info["cycles_reverted"]
+            effective["grooms_run"] += 1
+        plateau.minimize_area(V, T, fixed, outer_iters=1)
+    elapsed = _timer() - t0
+    if mode != "none" and effective["grooms_run"] == 0:
+        raise RuntimeError("groom_topo_kwargs configured but no groom "
+                           "cycle ran -- refusing to report a null "
+                           "result")
+    return V, T, fixed, effective, elapsed
+
+
+def _case_span_groom(config, q, m=140, rings=24):
+    from math_art.minsurf import plateau
+    V, quads, fixed = plateau.build_seifert_span_grid(q, m, rings)
+    T = plateau._quads_to_tris(quads)
+    rim0 = V[fixed].copy()
+    n0v, n0t = len(V), len(T)
+    iters = int(config.get("seifert_iters", plateau._SEIFERT_MAX_ITERS))
+    V, T, fixed, effective, elapsed = _span_groom_drive(
+        V, T, fixed, iters, config)
+    mets = _plateau_mesh_metrics(V, T, fixed)
+    mets["selfx"] = M.selfx_count(V, T)
+    rim1 = V[fixed]
+    mets["rim_max_move"] = (float(np.max(np.abs(rim1 - rim0)))
+                            if len(rim1) == len(rim0) else 0.0)
+    return {"metrics": mets, "trace": [], "time_s": elapsed,
+            "n_verts": len(V), "n_tris": len(T),
+            "n_verts0": n0v, "n_tris0": n0t,
+            "effective": effective}
+
+
+def case_span_groom_q3(config):
+    return _case_span_groom(config, q=3)
+
+
+def case_span_groom_q5(config):
+    return _case_span_groom(config, q=5)
+
+
+def case_catenoid_groom(config, nring=64, nrow=17):
+    A_exact, c_exact = catenoid_area_analytic()
+    V, T, fixed = cylinder_grid(nring, nrow)
+    n0v, n0t = len(V), len(T)
+    V, T, fixed, effective, elapsed = _span_groom_drive(
+        V, T, fixed, 30, config)
+    mets = _plateau_mesh_metrics(V, T, fixed)
+    mets["area_rel_err"] = abs(mets["area"] - A_exact) / A_exact
+    interior = ~fixed
+    waist = float(np.min(np.hypot(V[interior, 0], V[interior, 1]))) \
+        if np.any(interior) else 0.0
+    mets["waist_rel_err"] = abs(waist - c_exact) / c_exact
+    mets["selfx"] = M.selfx_count(V, T)
+    return {"metrics": mets, "trace": [], "time_s": elapsed,
+            "n_verts": len(V), "n_tris": len(T),
+            "n_verts0": n0v, "n_tris0": n0t,
+            "effective": effective}
+
+
+def case_sweep_groom(config):
+    """The 17-combination Seifert embeddedness gate under the
+    configured grooming mode.  The only metric that matters is selfx
+    staying 0 on all 17 -- a grooming op that raises it is rejected
+    regardless of triangle quality."""
+    from math_art.minsurf import plateau
+    mode, every, _ = _groom_cfg(config)
+    per = {}
+    t_all = _timer()
+    worst = 0
+    agg = None
+    grid = ([(q, m, 24) for q in (1, 3, 5, 7) for m in (96, 140, 200)]
+            + [(q, 48, 8) for q in (1, 3, 5, 7, 9)])
+    for q, m, rings in grid:
+        V, quads, fixed = plateau.build_seifert_span_grid(q, m, rings)
+        T = plateau._quads_to_tris(quads)
+        V, T, fixed, eff, _el = _span_groom_drive(
+            V, T, fixed, plateau._SEIFERT_MAX_ITERS, config)
+        sx = M.selfx_count(V, T)
+        worst = max(worst, sx)
+        tq = M.tri_quality(V, T)
+        per[f"q{q}_m{m}_r{rings}"] = {
+            "selfx": sx,
+            "min_angle_deg": tq["min_angle_deg"],
+            "q_p05": tq["q_p05"]}
+        if agg is None:
+            agg = dict(eff)
+        else:
+            for k in ("grooms_run", "splits", "collapses", "flips",
+                      "veto_total", "cycles_reverted"):
+                agg[k] += eff[k]
+    mets = {"selfx_worst": worst,
+            "n_embedded": sum(1 for p in per.values()
+                              if p["selfx"] == 0),
+            "n_total": len(per),
+            "q_p05_min": min(p["q_p05"] for p in per.values()),
+            "min_angle_min": min(p["min_angle_deg"]
+                                 for p in per.values())}
+    return {"metrics": mets, "per_solid": per, "trace": [],
+            "time_s": _timer() - t_all, "effective": agg}
+
+
+def case_seifert_pipeline_groom(config):
+    """The seifert-package pipeline (build -> relax -> CC2 -> fair)
+    with the optional grooming stage of pipeline.finish, over two braid
+    words (AAA healthy, ABAB the documented sliver case)."""
+    from math_art.seifert.build import seifert_surface
+    from math_art.seifert import pipeline
+    from math_art.solver import groom as _sg
+    cfg = dict(config.get("pipeline_groom_kwargs", {}))
+    allowed = {"groom_cycles", "groom_fair_steps", "groom_kwargs"}
+    unknown = set(cfg) - allowed
+    if unknown:
+        raise ValueError(f"pipeline_groom_kwargs: unknown keys "
+                         f"{sorted(unknown)}")
+    cycles = int(cfg.get("groom_cycles", 0))
+    per = {}
+    t_all = _timer()
+    eff = {"groom_cycles": cycles, "splits": 0, "collapses": 0,
+           "veto_total": 0, "cycles_reverted": 0}
+    for word in ("AAA", "ABAB"):
+        mesh = seifert_surface(word)
+        genus0 = mesh.info().genus
+        t0 = _timer()
+        out = pipeline.finish(mesh)
+        if cycles:
+            for _ in range(cycles):
+                out, ginfo = pipeline.groom_mesh(
+                    out, **cfg.get("groom_kwargs", {}))
+                eff["splits"] += ginfo.get("splits", 0)
+                eff["collapses"] += ginfo.get("collapses", 0)
+                eff["veto_total"] += sum(
+                    ginfo.get("vetoes", {}).values())
+                eff["cycles_reverted"] += ginfo.get(
+                    "cycles_reverted", 0)
+                out = pipeline.minimal_surface(
+                    out, strength=2.0,
+                    iterations=int(cfg.get("groom_fair_steps", 2)))
+        el = _timer() - t0
+        tri = out.triangulated()
+        T = np.asarray(tri.faces, dtype=np.int64)
+        V = tri.vertices
+        boundary = np.zeros(len(V), dtype=bool)
+        for loop in out.boundary_loops():
+            boundary[np.asarray(loop, dtype=int)] = True
+        mets = {"area": out.area(),
+                "genus_preserved": int(out.info().genus == genus0),
+                "selfx": int(_sg.crossing_count(V, T)),
+                "time_s": el, "n_tris": len(T)}
+        mets.update(M.tri_quality(V, T))
+        mets.update(M.mean_curvature_residual(V, T, free=~boundary))
+        mets["edge_cv"] = M.edge_len_cv(V, T)
+        per[word] = mets
+    if cycles and eff["splits"] + eff["collapses"] == 0:
+        raise RuntimeError("pipeline grooming configured but no op "
+                           "ran -- refusing to report a null result")
+    mets = {
+        "q_p05_min": min(p["q_p05"] for p in per.values()),
+        "min_angle_min": min(p["min_angle_deg"] for p in per.values()),
+        "H_rms_worst": max(p["H_rms"] for p in per.values()),
+        "edge_cv_worst": max(p["edge_cv"] for p in per.values()),
+        "selfx": max(p["selfx"] for p in per.values()),
+        "genus_preserved": min(p["genus_preserved"]
+                               for p in per.values()),
+    }
+    keep = ("area", "q_p05", "min_angle_deg", "H_rms", "edge_cv",
+            "selfx", "genus_preserved", "n_tris", "time_s")
+    per_flat = {w: {k: p[k] for k in keep} for w, p in per.items()}
+    return {"metrics": mets, "per_solid": per_flat, "trace": [],
+            "time_s": _timer() - t_all, "effective": eff}
+
+
+KNOWN_CONFIG_KEYS |= {"groom_topo_kwargs", "pipeline_groom_kwargs"}
+
+CASES.update({
+    "span_groom_q3": case_span_groom_q3,
+    "span_groom_q5": case_span_groom_q5,
+    "catenoid_groom": case_catenoid_groom,
+    "sweep_groom": case_sweep_groom,
+    "seifert_pipeline_groom": case_seifert_pipeline_groom,
+})

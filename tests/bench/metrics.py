@@ -478,3 +478,61 @@ def edge_metric_error(P, E0, E1, REST):
     rel = (L - REST) / np.maximum(REST, 1e-30)
     return {"edge_err_rms": float(np.sqrt(np.mean(rel * rel))),
             "edge_err_max": float(np.max(np.abs(rel)))}
+
+
+def edge_metric_error_dist(P, E0, E1, REST):
+    """Distribution readouts for the hyperbolic edge distortion (the
+    rms/max alone can hide whether error is broad or concentrated)."""
+    L = np.linalg.norm(P[E1] - P[E0], axis=1)
+    rel = np.abs(L - REST) / np.maximum(REST, 1e-30)
+    return {"edge_err_p50": float(np.percentile(rel, 50)),
+            "edge_err_p90": float(np.percentile(rel, 90))}
+
+
+def dihedral_rms_deg(V, T):
+    """RMS dihedral deviation from flat (degrees) across interior
+    edges: the crumple signature.  Stitch-scale crumple folds the mesh
+    at large angles edge-to-edge; smooth large-wavelength ruffles bend
+    only a few degrees per edge.  Reported together with the metric
+    distortion because either alone can be gamed (a flat sheet is
+    perfectly smooth; a crumpled one can be perfectly isometric)."""
+    T = np.asarray(T, np.int64)
+    V = np.asarray(V, float)
+    n = len(V)
+    ea = T[:, [0, 1, 2]].ravel()
+    eb = T[:, [1, 2, 0]].ravel()
+    opp = T[:, [2, 0, 1]].ravel()
+    key = np.minimum(ea, eb) * np.int64(n) + np.maximum(ea, eb)
+    order = np.argsort(key, kind="stable")
+    key_s, opp_s = key[order], opp[order]
+    same = key_s[1:] == key_s[:-1]
+    idx = np.where(same)[0]
+    a = key_s[idx] // n
+    b = key_s[idx] % n
+    o1, o2 = opp_s[idx], opp_s[idx + 1]
+    e = V[b] - V[a]
+    n1 = np.cross(e, V[o1] - V[a])
+    n2 = np.cross(V[o2] - V[a], e)
+    nn1 = n1 / np.maximum(np.linalg.norm(n1, axis=1, keepdims=True), 1e-30)
+    nn2 = n2 / np.maximum(np.linalg.norm(n2, axis=1, keepdims=True), 1e-30)
+    cosd = np.clip((nn1 * nn2).sum(1), -1.0, 1.0)
+    ang = np.degrees(np.arccos(cosd))
+    return float(np.sqrt(np.mean(ang * ang)))
+
+
+def umbrella_rms(P, E0, E1):
+    """RMS umbrella-Laplacian magnitude, nondimensionalised by the mean
+    edge length: a second smoothness readout (the quantity the
+    thin-plate bending term penalises)."""
+    P = np.asarray(P, float)
+    n = len(P)
+    val = np.zeros(n)
+    np.add.at(val, E0, 1.0)
+    np.add.at(val, E1, 1.0)
+    val = np.maximum(val, 1.0)[:, None]
+    nsum = np.zeros_like(P)
+    np.add.at(nsum, E0, P[E1])
+    np.add.at(nsum, E1, P[E0])
+    Lp = P - nsum / val
+    lm = float(np.mean(np.linalg.norm(P[E1] - P[E0], axis=1)))
+    return float(np.sqrt(np.mean((Lp ** 2).sum(1)))) / max(lm, 1e-30)

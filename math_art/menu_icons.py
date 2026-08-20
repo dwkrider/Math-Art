@@ -96,6 +96,20 @@ if _IN_BLENDER:
             return 0
         return _previews[entry.op].icon_id
 
+    def op_icon_kwargs(op, fallback):
+        """Icon keyword for any layout call, keyed by operator id.
+
+        `icon_kwargs` takes a menu Entry; this takes a bare operator id,
+        for places that want a baked render without being a menu entry
+        themselves -- the "Math Art" link in Blender's Add menu borrows
+        one rather than carrying a glyph of its own.
+        """
+        if _previews is not None and op in _previews:
+            icon_id = _previews[op].icon_id
+            if icon_id:
+                return {'icon_value': icon_id}
+        return {'icon': fallback}
+
     def icon_kwargs(entry):
         """Icon keyword for `lay.operator()` -- baked or built-in.
 
@@ -124,6 +138,9 @@ else:                                   # headless: no previews at all
 
     def preview_id(entry):
         return 0
+
+    def op_icon_kwargs(op, fallback):
+        return {'icon': fallback}
 
     def icon_kwargs(entry):
         return {'icon': entry.icon}

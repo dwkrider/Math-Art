@@ -105,6 +105,10 @@ def ab_table(res_a, res_b, label_a, label_b):
         "plane_angle_err_deg", "planarity_max", "radius_cv_max",
         "d_vs_family_err", "E_over_family", "lk_dev_max",
         "E_rel_diff_192",
+        "E_abs_rel_err", "ratio_rel_err", "tube_cv",
+        "sphere_rel_err_sub3", "sphere_rel_err_sub4",
+        "torus_rel_err_32", "torus_rel_err_64",
+        "mobius_resid_32", "mobius_resid_64", "grad_fd_err",
     }
     higher_better = {
         "q_min", "q_mean", "q_p05", "min_angle_deg", "min_far_gap",
@@ -115,6 +119,12 @@ def ab_table(res_a, res_b, label_a, label_b):
         "inter_gap_min", "inter_gap_final",
         "lk_adjacent_ok", "lk_ends_zero",
     }
+    # S5 coarse-to-fine additions (appended; keep as updates so
+    # concurrent branches merge by union)
+    lower_better.update({
+        "edge_err_p50", "edge_err_p90", "dih_rms_deg", "lap_rms",
+        "K_rel_err", "crossings_before",
+    })
     lines = []
     wins = losses = ties = 0
     for case in res_a:

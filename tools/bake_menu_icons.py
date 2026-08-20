@@ -153,13 +153,33 @@ def _render_to(path):
 
 
 def bake(op):
-    """Bake one operator's icon.  Returns None on success, else why not."""
+    """Bake one operator's icon.  Returns None on success, else why not.
+
+    A few subjects render in an environment of their own -- a gemstone
+    lit by the plastic-studio rig with nothing to reflect comes out
+    black.  It has to stay up through the render, so it is torn down
+    here rather than inside `_bake`, whichever way that returns.
+    """
+    teardown = subjects.enter_environment(op)
+    try:
+        return _bake(op)
+    finally:
+        teardown()
+
+
+def _bake(op):
     rd.clear_sculpts()
     subjects.aim_rig(op in subjects.PLAN_VIEW)
+    # Operators that transform a selection need something to act on;
+    # the setup builds it, and it is dropped once consumed so only the
+    # generated surface is framed and rendered.
+    helpers = subjects.run_setup(op)
     try:
         _invoke(op, subjects.params_for(op))
     except Exception as e:
+        subjects.drop_setup(helpers)
         return f"operator failed: {e!r}"
+    subjects.drop_setup(helpers)
     subs = rd.subjects()
     if not subs:
         return "operator produced no mesh or curve"

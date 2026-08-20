@@ -39,11 +39,7 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/symmetric_sculpture__TWISTED_RIVERS.png" width="200"><br><sub>Twisted Rivers</sub></td>
-<td align="center"><img src="../images/variants/symmetric_sculpture__TUMBLEWEED.png" width="200"><br><sub>Tumbleweed</sub></td>
 <td align="center"><img src="../images/variants/symmetric_sculpture__FRABJOUS.png" width="200"><br><sub>Frabjous</sub></td>
-</tr>
-<tr>
 <td align="center"><img src="../images/variants/symmetric_sculpture__WHIMSY.png" width="200"><br><sub>Whimsy</sub></td>
 </tr>
 </table>

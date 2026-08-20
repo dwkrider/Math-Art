@@ -47,11 +47,14 @@ _MODULE_NAMES = [
     'fractal_knot_generator',
     'apollonian_generator',
     'hyperbolic_surface_generator',
+    'delaunay_generator',
+    'bryant_generator',
     'crochet_generator',
     'dform_generator',
     'koman_generator',
     'space_curve_generator',
     'oloid_generator',
+    'gem_generator',
     'sphericon_generator',
     'steinmetz_generator',
     'orbis_generator',
@@ -133,6 +136,7 @@ _MODULE_NAMES = [
     'rational_knot_generator',
     'substitution_knot_generator',
     'fractal_knotwork_generator',
+    'willmore_generator',
 ]
 # NOTE: engine subpackages (`minsurf`, `seifert`, `lsystem`, `knots`,
 # `patterns`, `polyhedra`, `curve_frames`, `ifs`) and the `styles` namespace
@@ -294,10 +298,11 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
             lay.menu(gal.bl_idname if gal else spec.idname,
                      icon=spec.icon)
         lay.separator()
-        # a plain entry, not operator_menu_enum: the preset belongs in
-        # the redo panel with the rest of the settings, not spilled up
-        # into the Add menu as a submenu of its own
-        _op(lay, "object.symmetric_sculpture_add", icon='MOD_MIRROR')
+        # Plain entries, not operator_menu_enum: a preset belongs in the
+        # redo panel with the rest of the settings, not spilled up into
+        # the Add menu as a submenu of its own.  The list lives in
+        # menu_defs so the icon baker and the docs gate can see it.
+        _draw_entries(lay, menu_defs.ROOT_ENTRIES)
         # Styles stays a plain row menu -- see GALLERY_MENUS above.
         lay.menu(menu_defs.STYLES.idname, icon=menu_defs.STYLES.icon)
 
@@ -305,9 +310,21 @@ class VIEW3D_MT_math_art_add(bpy.types.Menu):
 _MENUS = _SUBMENUS + _GALLERIES + (VIEW3D_MT_math_art_add,)
 
 
+# The "Math Art" line in Blender's own Add menu borrows a baked render
+# rather than a built-in glyph, so the add-on is recognisable before any
+# of its submenus are open.  The Polyhedral Tangle reads well at the
+# ~20 px an Add-menu row gives it: dense, symmetric, and unmistakably
+# not one of Blender's primitives.  MATSHADERBALL is the fallback for an
+# un-baked build.
+ROOT_ICON_OP = "mesh.tangle_add"
+ROOT_ICON_FALLBACK = 'MATSHADERBALL'
+
+
 def _menu_func(self, context):
     self.layout.separator()
-    self.layout.menu("VIEW3D_MT_math_art_add", icon='MATSHADERBALL')
+    self.layout.menu("VIEW3D_MT_math_art_add",
+                     **menu_icons.op_icon_kwargs(ROOT_ICON_OP,
+                                                 ROOT_ICON_FALLBACK))
 
 
 _ACTIVE = []

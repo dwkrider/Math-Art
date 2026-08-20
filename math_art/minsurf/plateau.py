@@ -26,8 +26,12 @@ import numpy as np
 
 try:
     from ..solver import cotan as _sc
+    from ..solver import descent as _sd
+    from ..solver import collide as _scol
 except ImportError:                      # flat (path-based) headless import
     from solver import cotan as _sc
+    from solver import descent as _sd
+    from solver import collide as _scol
 
 TAU = 2.0 * math.pi
 
@@ -154,6 +158,96 @@ def minimize_area(V, T, fixed, outer_iters=30, cg_tol=1e-8, cg_iters=400,
         V[free] = x
         if move < 1e-6 * max(1.0, np.max(np.abs(V))):
             break
+    return V
+
+
+def minimize_area_lbfgs(V, T, fixed, outer_iters=200, m=8, step_cap=4.0,
+                        cotan_mode="mollify", guard=None, tol=1e-10,
+                        h0_eps=1e-3, h0_tol=1e-2, h0_iters=100):
+    """Direct L-BFGS area descent over the free vertices (Laplacian H0
+    seed, Armijo backtracking), the measured upgrade path over the
+    Pinkall-Polthier iteration above: on the catenoid it reaches the
+    same area ~2.7x faster in wall clock with a mean-curvature residual
+    200-380x smaller (see research/plans/lbfgs-descent-core-plan.md).
+    V is modified in place and returned.
+
+    guard: optional collision guard (solver/collide) -- True, an options
+    dict, or a MeshGuard.  The simplified-IPC barrier joins the energy
+    and gradient and its conservative cap bounds every trial step, so
+    the sheet cannot pass through itself no matter how long the flow
+    runs.  That matters here because the least-area surface in a class
+    like the Seifert spans is NOT embedded: the unguarded flow must be
+    stopped by an iteration cap (_SEIFERT_MAX_ITERS) before it pinches
+    through, while the guarded flow settles against its own contact
+    barrier instead."""
+    fixed = np.asarray(fixed, bool)
+    free = ~fixed
+    if not np.any(free):
+        return V
+    guard = _scol.make_guard(guard)
+    lb = _sd.LBFGS(m=m)
+    h0 = _sd.LaplacianH0(eps=h0_eps, tol=h0_tol, max_iters=h0_iters)
+
+    def _garea(Vv):
+        E, W = _cotan_weights(Vv, T, mode=cotan_mode)
+        g = np.zeros_like(Vv)
+        contrib = W[:, None] * (Vv[E[:, 0]] - Vv[E[:, 1]])
+        np.add.at(g, E[:, 0], contrib)
+        np.add.at(g, E[:, 1], -contrib)
+        return g
+
+    def _E(Vv):
+        Eb = 0.0 if guard is None else guard.energy(Vv)
+        return mesh_area(Vv, T) + Eb
+
+    x_prev = None
+    g_prev = None
+    if guard is not None:
+        guard.ensure(V, T)
+    E_prev = _E(V)
+    flat = 0
+    for _it in range(1, outer_iters + 1):
+        if guard is not None:
+            # A rebuild does not change the energy VALUE (the gate is
+            # exact), so E_prev from the last acceptance stays valid.
+            guard.ensure(V, T)
+        g = _garea(V)
+        if guard is not None:
+            g = g + guard.gradient(V)
+        g[fixed] = 0.0
+        if x_prev is not None:
+            lb.push((V - x_prev).ravel(), (g - g_prev).ravel())
+        h0.update(V, T, free=free)
+        d = -lb.direction(g.ravel(), h0=h0).reshape(-1, 3)
+        d[fixed] = 0.0
+        slope = float(np.einsum('nj,nj->', g, d))
+        if not (slope < 0.0):
+            lb.reset()
+            d = -h0(g.ravel()).reshape(-1, 3)
+            d[fixed] = 0.0
+            slope = float(np.einsum('nj,nj->', g, d))
+            if not (slope < 0.0):
+                break
+        Lmean = float(np.mean(np.linalg.norm(
+            V[T[:, 1]] - V[T[:, 0]], axis=1)))
+        dmax = float(np.max(np.linalg.norm(d, axis=1)))
+        s_max = step_cap * Lmean / max(dmax, 1e-300)
+        if guard is not None:
+            s_max = min(s_max, float(guard.max_step(V, d)))
+        x1, s, E1, _ne = _sd.armijo_backtrack(
+            _E, V, d, slope, s0=min(1.0, s_max), E0=E_prev, s_max=s_max)
+        if s == 0.0:
+            break
+        x_prev = V.copy()
+        g_prev = g
+        V[:] = x1
+        if abs(E1 - E_prev) < tol * max(E_prev, 1e-300):
+            flat += 1
+            if flat >= 3:
+                break
+        else:
+            flat = 0
+        E_prev = E1
     return V
 
 

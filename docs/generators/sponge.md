@@ -29,6 +29,11 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/sponge__VICSEK.png" width="200"><br><sub>Vicsek Fractal</sub></td>
 <td align="center"><img src="../images/variants/sponge__CARPET.png" width="200"><br><sub>Sierpinski Carpet</sub></td>
+<td align="center"><img src="../images/variants/sponge__MOSELY.png" width="200"><br><sub>Mosely Snowflake</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/sponge__MOSELYL.png" width="200"><br><sub>Mosely Snowflake (light)</sub></td>
+<td align="center"><img src="../images/variants/sponge__CANTOR.png" width="200"><br><sub>Cantor Dust</sub></td>
 </tr>
 </table>
 

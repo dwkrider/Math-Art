@@ -20,11 +20,18 @@
 #            cotan-Laplacian inverse-Hessian seed (LaplacianH0).
 #   groom    in-loop mesh quality maintenance: Delaunay edge flips and
 #            tangential vertex smoothing.
+#   refine   midpoint 1->4 subdivision with constraint projection and
+#            attribute interpolation -- the mesh half of coarse-to-fine
+#            continuation (S5): converge coarse, refine, re-solve.
 #   volume   volume-constrained evolution: body volumes and gradients on
 #            region-pair-labeled meshes, Gram-matrix Lagrange velocity
 #            projection, damped Newton volume restore, and the `evolve`
 #            driver composing all of the above (Evolver fixvol scheme +
 #            LosTopos labels).
+#   willmore Willmore / spontaneous-curvature bending energy with its
+#            exact discrete gradient (area-Hessian first variation) and
+#            a constrained L-BFGS minimizer (fixed volume/area) -- the
+#            S6.4 generator-grade curvature energy.
 #   walls    level-set wall constraints (Evolver cnstrnt scheme):
 #            analytic plane/sphere/cylinder + general-callable walls,
 #            vectorized Newton position projection, velocity tangent
@@ -38,5 +45,7 @@
 from . import cotan  # noqa: F401
 from . import descent  # noqa: F401
 from . import groom  # noqa: F401
+from . import refine  # noqa: F401
 from . import volume  # noqa: F401
 from . import walls  # noqa: F401
+from . import willmore  # noqa: F401
