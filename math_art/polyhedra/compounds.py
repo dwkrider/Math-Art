@@ -9,6 +9,14 @@ import math
 import itertools
 import numpy as np
 
+try:                                    # stored snub coordinates
+    from . import _uniform_snub_data as _snub_data
+except ImportError:                     # flat import (test runner)
+    try:
+        import _uniform_snub_data as _snub_data
+    except ImportError:
+        _snub_data = None
+
 
 PHI = (1 + 5 ** 0.5) / 2
 
@@ -588,6 +596,84 @@ def inscribed(kind):
     raise ValueError(kind)
 
 
+# --- Skilling's Table 1, entries 68-75: duplication of enantiomorphs -----
+# The whole band is one idea: a CHIRAL uniform polyhedron has only
+# rotations in its symmetry group, so adding the centre of inversion
+# turns it into a compound of the solid and its mirror image.  Skilling's
+# columns say exactly that -- used symmetry O or I, compound symmetry
+# O_h or I_h, two constituents throughout -- and `_orbit` under the full
+# group produces it without any placement decision at all, because a
+# chiral solid in the standard frame is already correctly positioned.
+#
+# The eight constituents are all snubs, and the repo already stores their
+# coordinates.  Matching Skilling's Wythoff symbols to the U numbers is
+# the only real work, and it is by multiset since the two sources order
+# the generators differently (Skilling's |2 3 5/2 is U57's | 2 5/2 3):
+#
+#   68 |2 3 4      CLM 24 -> U12  snub cube
+#   69 |2 3 5      CLM 32 -> U29  snub dodecahedron
+#   70 |2 3 5/2    CLM 73 -> U57  great snub icosidodecahedron
+#   71 |2 3 5/3    CLM 88 -> U69  great inverted snub icosidodecahedron
+#   72 |2 3/2 5/3  CLM 90 -> U74  great retrosnub icosidodecahedron
+#   73 |2 5/2 5    CLM 49 -> U40  snub dodecadodecahedron
+#   74 |2 5/3 5    CLM 76 -> U60  inverted snub dodecadodecahedron
+#   75 |3 5/3 5    CLM 58 -> U46  snub icosidodecadodecahedron
+#
+# The two snubs the repo has that are NOT here -- U32 and U72 -- are the
+# achiral ones, which is the consistency check on the mapping: an
+# achiral solid would give one constituent, not two, so it cannot appear
+# in this band.
+def enantiomorph_pair(u):
+    """A chiral uniform polyhedron together with its mirror image.
+
+    Mirror the solid directly rather than orbiting it under the full
+    group.  Orbiting is what the rest of this module does, but it assumes
+    the constituent sits in the same frame as `_icosa_rotations()`, and
+    the STORED SNUB COORDINATES DO NOT -- U29 happens to, but the star
+    snubs are oriented differently and orbiting them returns 10 or 28
+    copies instead of 2.  Inversion needs no frame at all.
+
+    The count is then 2 by construction, so it proves nothing; what is
+    worth asserting is the chirality that makes the compound exist.  A
+    chiral solid's mirror is a genuinely different vertex set and the
+    dedup keeps both; an ACHIRAL one mirrors onto itself and collapses
+    to a single constituent, which is exactly why the two achiral snubs
+    in the data (U32, U72) are absent from Skilling's band.
+    """
+    if _snub_data is None:
+        raise RuntimeError('snub coordinate data not available')
+    S = _snub_data.SNUBS[u]
+    V = [tuple(float(c) for c in v) for v in S['V']]
+    F = [list(f) for f in S['F']]
+    # inversion reverses orientation, so the faces are re-wound to keep
+    # the mirror's normals pointing outward like the original's
+    W = [(-x, -y, -z) for x, y, z in V]
+    key = frozenset(tuple(np.round(v, 4)) for v in V)
+    if frozenset(tuple(np.round(v, 4)) for v in W) == key:
+        return [(V, F)]                   # achiral: the mirror IS itself
+    return [(V, F), (W, [list(reversed(f)) for f in F])]
+
+
+#: (key, label, U number, compound group, Skilling's constituent count)
+ENANTIOMORPHS = [
+    ('S68_SNUB_CUBE', "Skilling 68: 2 Snub Cubes", 12, 'Oh', 2),
+    ('S69_SNUB_DODECA', "Skilling 69: 2 Snub Dodecahedra", 29, 'Ih', 2),
+    ('S70_GT_SNUB_ID', "Skilling 70: 2 Great Snub Icosidodecahedra",
+     57, 'Ih', 2),
+    ('S71_GT_INV_SNUB_ID',
+     "Skilling 71: 2 Great Inverted Snub Icosidodecahedra", 69, 'Ih', 2),
+    ('S72_GT_RETRO_SNUB_ID',
+     "Skilling 72: 2 Great Retrosnub Icosidodecahedra", 74, 'Ih', 2),
+    ('S73_SNUB_DD', "Skilling 73: 2 Snub Dodecadodecahedra", 40, 'Ih', 2),
+    ('S74_INV_SNUB_DD', "Skilling 74: 2 Inverted Snub Dodecadodecahedra",
+     60, 'Ih', 2),
+    ('S75_SNUB_IDD', "Skilling 75: 2 Snub Icosidodecadodecahedra",
+     46, 'Ih', 2),
+]
+
+_ENANT_BY_KEY = {r[0]: r for r in ENANTIOMORPHS}
+
+
 INSCRIBED = [
     ('INS_TETRA_CUBE', "Tetrahedron Inscribed in Cube"),
     ('INS_2TETRA_CUBE', "Two Tetrahedra Inscribed in Cube"),
@@ -687,7 +773,9 @@ COMPOUNDS = [
     ('DODECA_ICOSA', "Dodecahedron + Icosahedron"),
     ('PRISM_DUAL', "Prism + Dual Dipyramid"),
     ('ANTIPRISM_DUAL', "Antiprism + Dual Trapezohedron"),
-] + list(INSCRIBED) + [(k, lbl) for k, lbl, *_rest in AXIS_COMPOUNDS]
+] + list(INSCRIBED) \
+    + [(k, lbl) for k, lbl, *_rest in ENANTIOMORPHS] \
+    + [(k, lbl) for k, lbl, *_rest in AXIS_COMPOUNDS]
 
 _INSCRIBED_KEYS = {k for k, _lbl in INSCRIBED}
 
@@ -707,6 +795,8 @@ def build_compound(kind, phase=None, sides=5):
         return prism_and_dual(sides, anti=SIDED[kind])
     if kind in _INSCRIBED_KEYS:
         return inscribed(kind)
+    if kind in _ENANT_BY_KEY:
+        return enantiomorph_pair(_ENANT_BY_KEY[kind][2])
     if kind in _AXIS_BY_KEY:
         _k, _lbl, comp, grp, ca, ga, ph, _n = _AXIS_BY_KEY[kind]
         return build_axis_compound(comp, grp, ca, ga,

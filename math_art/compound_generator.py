@@ -251,6 +251,26 @@ def _selftest():
     # five cubes separate into a generic thirty
     assert len(build_compound('H_5CUBES', phase=17.0)) > 5
 
+    # --- Skilling 68-75, duplication of enantiomorphs -------------------
+    # Two constituents is true by construction here, so the assertion
+    # that carries weight is the CHIRALITY: each of these eight must
+    # mirror onto a different vertex set, and the two achiral snubs the
+    # data also holds must mirror onto themselves.  That asymmetry is
+    # what validates the Wythoff-symbol-to-U-number mapping, since an
+    # achiral solid cannot appear in Skilling's band at all.
+    for k, lbl, u, grp, want in _cmp.ENANTIOMORPHS:
+        comps = build_compound(k)
+        assert len(comps) == want, (k, len(comps), want)
+        a = {tuple(round(c, 4) for c in v) for v in comps[0][0]}
+        b = {tuple(round(c, 4) for c in v) for v in comps[1][0]}
+        assert a != b, (k, 'the mirror image is not distinct')
+        assert len(a) == len(b), (k, len(a), len(b))
+    for u in (32, 72):                    # the achiral snubs in the data
+        assert len(_cmp.enantiomorph_pair(u)) == 1, \
+            (u, 'an achiral snub produced a two-part compound')
+    print("ENANTIOMORPHS  Skilling 68-75, all chiral, 2 constituents; "
+          "U32 and U72 correctly collapse to 1")
+
     # --- Hart's inscribed pieces ----------------------------------------
     # The claim these models make is a containment, so that is what gets
     # checked -- component counts would pass on two solids merely sitting
