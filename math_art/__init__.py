@@ -22,6 +22,7 @@ _MODULE_NAMES = [
     'zonish_generator',
     'transpolyhedra_generator',
     'dodecahedra_generator',
+    'slide_together_generator',
     'waterman_generator',
     'rotegrity_generator',
     'weave_generator',

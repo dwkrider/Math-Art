@@ -111,6 +111,7 @@ POLYHEDRA = Menu(
         _e("mesh.zonish_add", 'MESH_ICOSPHERE', "Zonohedrification"),
         _e("mesh.transpolyhedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.twelve_faced_add", 'MESH_ICOSPHERE'),
+        _e("mesh.slide_together_add", 'MOD_BOOLEAN'),
         _e("mesh.waterman_add", 'MESH_ICOSPHERE'),
         _e("mesh.symmetrohedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.polytope4d_add", 'MESH_CUBE'),

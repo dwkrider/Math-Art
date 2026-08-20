@@ -47,6 +47,10 @@ PARAMS = {
     # which the regular-solid entry already shows.  Pulled off that
     # value it becomes the pyrite crystal form, which is the point.
     "mesh.twelve_faced_add": dict(solid='PYRITOHEDRON', shape=0.35),
+    # Thirty squares is the slide-together everyone recognises, and the
+    # colour rotation is how the paper models are actually made.
+    "mesh.slide_together_add": dict(model='S30', colors=True,
+                                    thickness=0.03),
     # The uniform operator's whole point is what lies beyond the
     # Platonics, so it gets a Kepler-Poinsot star rather than another
     # convex solid that would duplicate the entry above.

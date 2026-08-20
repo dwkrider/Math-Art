@@ -594,6 +594,11 @@ OPS = [
     ("bubble merged colored", lambda: bpy.ops.mesh.bubble_cluster_add(
         seed='ICOSA', separate=False, color=True, subdiv=1)),
     ("zonohedrification", lambda: bpy.ops.mesh.zonish_add()),
+    ("slide-together squares", lambda: bpy.ops.mesh.slide_together_add()),
+    ("slide-together pentagrams", lambda: bpy.ops.mesh.slide_together_add(
+        model='PG12')),
+    ("harman compound", lambda: bpy.ops.mesh.polyhedron_compound_add(
+        compound='H_5CUBES')),
     ("twelve-faced pyritohedron", lambda: bpy.ops.mesh.twelve_faced_add()),
     ("twelve-faced tetartoid", lambda: bpy.ops.mesh.twelve_faced_add(
         solid='TETARTOID')),
