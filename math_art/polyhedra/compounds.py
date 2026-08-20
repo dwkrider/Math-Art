@@ -180,7 +180,26 @@ def _tetra_rotations():
     return out
 
 
-GROUPS = {'T': _tetra_rotations, 'O': _octa_rotations, 'I': _icosa_rotations}
+def _with_inversion(rots):
+    """A rotation group extended by the centre, giving the full group.
+
+    Needed because Skilling's Table 1 distinguishes O from O_h and I from
+    I_h throughout, and the count of constituents differs between them --
+    a triangular prism on a three-fold axis gives 4 copies in O and 8 in
+    O_h, since O_h contains no mirror perpendicular to a three-fold axis
+    and so cannot absorb the prism's own sigma_h.
+    """
+    return list(rots) + [-M for M in rots]
+
+
+GROUPS = {
+    'T': _tetra_rotations,
+    'O': _octa_rotations,
+    'I': _icosa_rotations,
+    'Oh': lambda: _with_inversion(_octa_rotations()),
+    'Ih': lambda: _with_inversion(_icosa_rotations()),
+    'Th': lambda: _with_inversion(_tetra_rotations()),
+}
 
 # One representative axis of each order, per symmetry group.
 GROUP_AXES = {
@@ -188,6 +207,9 @@ GROUP_AXES = {
     'O': {2: (1.0, 1.0, 0.0), 3: (1.0, 1.0, 1.0), 4: (0.0, 0.0, 1.0)},
     'I': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0), 5: (0.0, 1.0, PHI)},
 }
+GROUP_AXES['Th'] = GROUP_AXES['T']
+GROUP_AXES['Oh'] = GROUP_AXES['O']
+GROUP_AXES['Ih'] = GROUP_AXES['I']
 
 # and of each component solid, in its own frame
 COMPONENT_AXES = {
@@ -198,8 +220,19 @@ COMPONENT_AXES = {
     'ICOSA': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0), 5: (0.0, 1.0, PHI)},
 }
 
+#: prisms and antiprisms as components, keyed PRISM<n> / ANTI<n>.  Their
+#: only alignable axis is the prism axis, which `prism_solid` puts on z.
+for _n in (3, 4, 5, 6, 8, 10, 12):
+    COMPONENT_AXES['PRISM%d' % _n] = {_n: (0.0, 0.0, 1.0)}
+    COMPONENT_AXES['ANTI%d' % _n] = {_n: (0.0, 0.0, 1.0)}
+del _n
+
 
 def _component(kind):
+    if kind.startswith('PRISM'):
+        return prism_solid(int(kind[5:]), anti=False)
+    if kind.startswith('ANTI'):
+        return prism_solid(int(kind[4:]), anti=True)
     tetra, cube, octa = _seeds()
     if kind == 'TETRA':
         return tetra
@@ -230,6 +263,67 @@ def _align_rotation(src, dst):
     return np.eye(3) + vx + vx @ vx / (1 + c)
 
 
+def _two_fold_axes(G):
+    """Axes of the half-turns in a group, as unit vectors."""
+    out = []
+    for M in G:
+        if abs(np.trace(M) + 1) > 1e-9 or abs(np.linalg.det(M) - 1) > 1e-9:
+            continue                      # not a proper half-turn
+        w, v = np.linalg.eig(M)
+        for i in range(3):
+            if abs(w[i] - 1) < 1e-9:
+                a = np.real(v[:, i])
+                out.append(a / np.linalg.norm(a))
+    return out
+
+
+#: phase sentinel -- "turn until the component's own half-turn axis lands
+#: on one of the group's"
+PERP = 'PERP'
+
+
+def perpendicular_phase(component, group, comp_order, group_order):
+    """The turn that puts the component's half-turn axis on the group's.
+
+    Several of Skilling's prism compounds need the constituent's own
+    two-fold axes to coincide with two-fold axes of the compound group,
+    not merely its main axis with the main axis -- that is what takes the
+    stabilizer from C_n up to D_n and so halves the constituent count.
+    For the octahedral rows the angle is a round 15 degrees, but the
+    icosahedral ones need 37.2388..., which no plausible guess and no
+    scan on a round grid will find.  So it is COMPUTED: take the group's
+    half-turn axes perpendicular to the alignment axis and measure the
+    azimuth of one of them from the component's own.
+    """
+    ax = np.array(GROUP_AXES[group][group_order], float)
+    ax = ax / np.linalg.norm(ax)
+    A = _align_rotation(COMPONENT_AXES[component][comp_order],
+                        GROUP_AXES[group][group_order])
+    # where the COMPONENT's own half-turn axis lies, in its own frame.  A
+    # prism's run through its vertical edge midpoints, at a vertex
+    # azimuth; an antiprism's bisect a top and a bottom vertex and so sit
+    # half a step round, at pi/2n.  Using the vertex azimuth for both
+    # silently mis-phases every antiprism row by that half step.
+    a0 = (math.pi / (2.0 * int(component[4:]))
+          if component.startswith('ANTI') else 0.0)
+    ref = A @ np.array([math.cos(a0), math.sin(a0), 0.0])
+    ref = ref - ref.dot(ax) * ax
+    ref = ref / np.linalg.norm(ref)
+    side = np.cross(ax, ref)
+    best = None
+    for n2 in _two_fold_axes(GROUPS[group]()):
+        if abs(float(n2.dot(ax))) > 1e-6:
+            continue                      # not perpendicular
+        a = math.degrees(math.atan2(float(n2.dot(side)),
+                                    float(n2.dot(ref)))) % 180.0
+        if best is None or a < best:
+            best = a
+    if best is None:
+        raise ValueError('%s has no half-turn axis perpendicular to its '
+                         '%d-fold axis' % (group, group_order))
+    return best
+
+
 def build_axis_compound(component, group, comp_order, group_order,
                         phase=0.0, scale=1.0):
     """Harman's rule, as a function.
@@ -247,6 +341,9 @@ def build_axis_compound(component, group, comp_order, group_order,
     if ga is None:
         raise ValueError('group %s has no %d-fold axis' % (group,
                                                            group_order))
+    if phase == PERP:
+        phase = perpendicular_phase(component, group, comp_order,
+                                    group_order)
     V, F = _component(component)
     R = _align_rotation(ca, ga)
     R = _rot(ga, math.radians(phase)) @ R
@@ -297,12 +394,10 @@ def edge_touch(a, b):
     return [a[k] + t * d[k] for k in range(3)]
 
 
-def prism_and_dual(n, anti=False):
-    """The compound of a uniform n-prism (or n-antiprism) and its dual."""
+def prism_solid(n, anti=False):
+    """A uniform n-gonal prism or antiprism of unit edge, axis on z."""
     if n < 3:
         raise ValueError('a prism needs at least 3 sides')
-    if anti and n < 3:
-        raise ValueError('an antiprism needs at least 3 sides')
     R = 0.5 / math.sin(math.pi / n)
     if anti:
         h = math.sqrt(max(1.0 - 4.0 * R * R
@@ -316,7 +411,12 @@ def prism_and_dual(n, anti=False):
     V += [(R * math.cos(2 * math.pi * k / n + off),
            R * math.sin(2 * math.pi * k / n + off), -h / 2.0)
           for k in range(n)]
-    F = _hull_faces(V)
+    return V, _hull_faces(V)
+
+
+def prism_and_dual(n, anti=False):
+    """The compound of a uniform n-prism (or n-antiprism) and its dual."""
+    V, F = prism_solid(n, anti)
 
     # the midsphere radius, measured rather than assumed
     mids = [math.sqrt(sum(c * c for c in edge_touch(V[f[i]],
@@ -374,6 +474,45 @@ AXIS_COMPOUNDS = [
     ('H_30CUBES', "30 Cubes (Icosahedral)", 'CUBE', 'I', 4, 5, 0.0, 30),
     ('H_60DODECA', "60 Dodecahedra (Icosahedral)", 'DODECA', 'I', 5, 3,
      0.0, 60),
+
+    # --- Skilling's Table 1, the prism/antiprism-in-polyhedral band ----
+    # Entries 26-45 of Skilling (1976) are prism symmetry embedded in
+    # octahedral or icosahedral symmetry, which is exactly the axis rule
+    # above -- so they are rows, not new machinery.  The subset here is
+    # the one whose constituents are ORDINARY prisms and antiprisms; the
+    # rest of the band needs star prisms (5/2, 10/3), which the component
+    # table does not yet carry.
+    #
+    # Every count is Skilling's own, read off Table 1, and asserted.  The
+    # constituent count is the real check on a row: it is |G| divided by
+    # the stabilizer the placement actually achieves, so a mis-phased row
+    # comes out at twice the right number rather than merely looking odd.
+    ('S26_5ANTI', "Skilling 26: 12 Pentagonal Antiprisms (free)",
+     'ANTI5', 'Ih', 5, 5, 9.0, 12),
+    ('S27_5ANTI', "Skilling 27: 6 Pentagonal Antiprisms",
+     'ANTI5', 'Ih', 5, 5, PERP, 6),
+    ('S30_3PRISM', "Skilling 30: 4 Triangular Prisms (O)",
+     'PRISM3', 'O', 3, 3, PERP, 4),
+    ('S31_3PRISM', "Skilling 31: 8 Triangular Prisms (Oh)",
+     'PRISM3', 'Oh', 3, 3, PERP, 8),
+    ('S32_3PRISM', "Skilling 32: 10 Triangular Prisms (I)",
+     'PRISM3', 'I', 3, 3, PERP, 10),
+    ('S33_3PRISM', "Skilling 33: 20 Triangular Prisms (Ih)",
+     'PRISM3', 'Ih', 3, 3, PERP, 20),
+    ('S34_5PRISM', "Skilling 34: 6 Pentagonal Prisms (I)",
+     'PRISM5', 'I', 5, 5, PERP, 6),
+    ('S35_5PRISM', "Skilling 35: 12 Pentagonal Prisms (Ih)",
+     'PRISM5', 'Ih', 5, 5, PERP, 12),
+    ('S38_6PRISM', "Skilling 38: 4 Hexagonal Prisms (Oh)",
+     'PRISM6', 'Oh', 6, 3, PERP, 4),
+    ('S39_6PRISM', "Skilling 39: 10 Hexagonal Prisms (Ih)",
+     'PRISM6', 'Ih', 6, 3, PERP, 10),
+    ('S40_10PRISM', "Skilling 40: 6 Decagonal Prisms (Ih)",
+     'PRISM10', 'Ih', 10, 5, PERP, 6),
+    ('S42_4ANTI', "Skilling 42: 3 Square Antiprisms (O)",
+     'ANTI4', 'O', 4, 4, PERP, 3),
+    ('S43_4ANTI', "Skilling 43: 6 Square Antiprisms (Oh)",
+     'ANTI4', 'Oh', 4, 4, PERP, 6),
 ]
 
 _AXIS_BY_KEY = {r[0]: r for r in AXIS_COMPOUNDS}
