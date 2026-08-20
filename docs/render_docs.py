@@ -510,7 +510,8 @@ def render_variants(only=None, missing_only=True):
                     for o in subjects():
                         o.rotation_euler = Euler(ROTATE[slug])
                 else:
-                    subject_cfg.pose_subjects(op, subjects())
+                    # per-variant, not per-operator: see VARIANT_ORIENT
+                    subject_cfg.pose_variant(op, vid, subjects())
                 normalize_subjects()
                 apply_material()
                 if op in subject_cfg.PLAN_VIEW:
