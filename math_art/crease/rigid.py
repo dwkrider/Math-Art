@@ -209,11 +209,31 @@ class RigidFolder:
         """Closure residual at every interior vertex, plus the driver row."""
         out = np.empty(self.n_rows + (1 if driver is not None else 0))
         for n, (v, ring, ang) in enumerate(self.vertices):
+            # TRAVERSAL DIRECTION AND SECTOR PAIRING, both of which are
+            # easy to get wrong and hard to notice.  The walk goes
+            # CLOCKWISE (the rings are stored counter-clockwise, hence
+            # the reversal), and the sector paired with crease t is the
+            # one BEHIND it, not ahead.
+            #
+            # Verified the only way that actually settles it: evaluate
+            # Schenk and Guest's closed-form folded Miura, read the
+            # dihedral off every crease, and require the residual to
+            # vanish there.  It does, at 2e-15.  Three of the four
+            # plausible orderings give 2.2 or 3.3 instead.
+            #
+            # Note that checking "the flat state is a solution" CANNOT
+            # catch an error here: at rho = 0 every ordering collapses to
+            # Rz(sum of sector angles) = Rz(2*pi) = I.  That check is
+            # necessary and worthless on its own, which is how the wrong
+            # convention survived until a folded state was tested.
+            ring_cw = list(ring)[::-1]
+            ang_cw = list(ang)[::-1]
+            m = len(ring_cw)
             M = np.eye(3)
-            for u, a in zip(ring, ang):
-                k = self.edge_of[(v, int(u))]
+            for t in range(m):
+                k = self.edge_of[(v, int(ring_cw[t]))]
                 i = self.var_of.get(k)
-                M = M @ _rx(0.0 if i is None else rho[i]) @ _rz(a)
+                M = M @ _rx(0.0 if i is None else rho[i]) @ _rz(ang_cw[t - 1])
             out[3 * n:3 * n + 3] = _vee(M)
         if driver is not None:
             out[-1] = rho[driver] - target
