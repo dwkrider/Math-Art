@@ -19,6 +19,7 @@ _MODULE_NAMES = [
     'seifert_surface_generator',
     'conway_operators',
     'zonohedra_generator',
+    'zonish_generator',
     'waterman_generator',
     'rotegrity_generator',
     'weave_generator',

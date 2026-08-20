@@ -593,6 +593,11 @@ OPS = [
         seed='TETRA', radius_mode='LOCAL', factor=0.7, subdiv=2)),
     ("bubble merged colored", lambda: bpy.ops.mesh.bubble_cluster_add(
         seed='ICOSA', separate=False, color=True, subdiv=1)),
+    ("zonohedrification", lambda: bpy.ops.mesh.zonish_add()),
+    ("zonish polyhedron", lambda: bpy.ops.mesh.zonish_add(
+        mode='ZONISH', seed='ID', length=0.4)),
+    ("rhombohedral dissection", lambda: bpy.ops.mesh.zonish_add(
+        mode='DISSECTION', seed='ICOSA', explode=0.3)),
     ("relaxed bubble", lambda: bpy.ops.mesh.relaxed_bubble_add()),
     ("cmc capillary", lambda: bpy.ops.mesh.cmc_capillary_add()),
     ("bryant surface", lambda: bpy.ops.mesh.bryant_surface_add()),

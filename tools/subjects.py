@@ -32,6 +32,12 @@ PARAMS = {
     # rather than regular; the dodecahedron suits the operator's name
     # better in both places.)
     "mesh.regular_solid_add": dict(family='PLATONIC', solid='DODECA'),
+    # The bare default is a rhombic triacontahedron, which the zonohedra
+    # entry above already shows.  The dissection is what this operator
+    # adds that nothing else has: Kowalewski's twenty golden rhombohedra,
+    # opened up and colour-matched by zone triple.
+    "mesh.zonish_add": dict(mode='DISSECTION', seed='ICOSA',
+                            explode=0.45, color=True),
     # The uniform operator's whole point is what lies beyond the
     # Platonics, so it gets a Kepler-Poinsot star rather than another
     # convex solid that would duplicate the entry above.
