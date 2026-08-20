@@ -5,7 +5,9 @@
 Add a crocheted hyperbolic plane -- a ruffled, negatively
 curved surface; graded for crested/cristate coral forms.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The **crocheted hyperbolic plane**, after Daina Taimina's 1997 discovery that the surface [smooth geometry cannot embed](hyperbolic_surface.md) can simply be made out of yarn. Crochet a constant *rate* of increase — one extra stitch every $N$ — and each row's circumference grows exponentially. The fabric cannot lie flat, so it buckles into ruffles, and those ruffles are the hyperbolic plane's excess area having to go somewhere.
+
+It is a genuinely useful model precisely because it gives up on being flat. Hilbert's theorem forbids a complete smooth embedding; a physical fabric evades it by crumpling, and the result is a hyperbolic plane you can hold and measure geodesics on with a ruler.
 
 ## Options
 
@@ -55,7 +57,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The mesh is the actual crochet.** Each row's stitch count grows with the hyperbolic circumference
+
+$$C(\rho)=2\pi R\sinh\!\big(\rho/R\big),$$
+
+every stitch the same size. That $\sinh$ is the whole phenomenon: in the Euclidean plane circumference grows like $2\pi\rho$, but hyperbolically it grows *exponentially* with radius, so a fabric of fixed stitch size must gain stitches at a constant ratio to keep up.
+
+**Curvature from the increase rate.** Increasing one stitch every $N$ sets the curvature radius
+
+$$R=\frac{h}{\ln(1+1/N)}\ \approx\ N h$$
+
+for stitch height $h$. Small $N$ crochets a tightly folded, very bendy plane; large $N$ a gently wavy one — the single number a crocheter actually chooses is the curvature.
+
+**Where the ruffles come from.** A row with more circumference than its predecessor can accommodate must buckle, and it buckles at some wavenumber $m$. As radius grows, the excess outruns wavenumber $m$ and the fabric switches to $2m$, then $4m$ — a **period-doubling cascade**. Each ring is pre-seeded with exactly that cascade, phase-coherent, with successive wavenumbers switched on as the excess length grows.
+
+The radii at which the doubling happens are the surface's **distributed branch points**, and they are the source of the self-similar kale-or-lettuce morphology: the same ruffle shape appears at every scale because the same buckling instability recurs at every doubling.
+
+**Relaxation.** The seeded sheet is then relaxed with a position-based solver, so the final folds are settled by the constraint that stitches keep their size rather than by the seeding — the cascade supplies the right topology of folds and the relaxation supplies their shape.
 
 ## References
 

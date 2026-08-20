@@ -5,7 +5,17 @@
 Add a Delaunay surface: a surface of revolution of constant
 mean curvature, traced by the focus of a rolling conic.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The **Delaunay surfaces** are the surfaces of revolution with constant mean curvature — the shapes a liquid bridge takes between two rings. Delaunay classified them completely in 1841 and, remarkably, gave a purely mechanical recipe for drawing them: **roll a conic along a line without slipping, and the path traced by one focus is the meridian.**
+
+Which conic you roll picks the surface, and the whole family falls out of one construction:
+
+| Rolled conic | Surface |
+| --- | --- |
+| Ellipse | **Unduloid** — a periodic chain of bulges |
+| Circle | **Cylinder** (degenerate ellipse) |
+| Ellipse, $e\to1$ | **Sphere** — a bead chain of tangent spheres |
+| Parabola | **Catenoid** — the minimal, $H=0$ limit |
+| Hyperbola | **Nodoid** — self-intersecting loops |
 
 ## Options
 
@@ -42,7 +52,31 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+Not the 1841 roulette, but its modern **first integral** — exact, short, and numerically well behaved.
+
+**Setting up.** Write the meridian in arclength $s$ as $(r(s), z(s))$ with tangent angle $\psi$, so $r'=\cos\psi$ and $z'=\sin\psi$. For a surface of revolution the two principal curvatures are $\psi'$ along the meridian and $\sin\psi/r$ along the parallel, so constant mean curvature $H$ means
+
+$$\psi' + \frac{\sin\psi}{r} = 2H .$$
+
+**The integral.** Multiply by $r$ and the left side turns out to be a total derivative:
+
+$$\frac{d}{ds}\big(r\sin\psi\big)=\cos\psi\,\big(\sin\psi + r\psi'\big)=2Hrr'=H\,\frac{d}{ds}\big(r^2\big),$$
+
+so the whole system collapses to
+
+$$r\sin\psi = Hr^2 + c,\qquad\text{that is}\qquad \sin\psi = Hr + \frac{c}{r}.$$
+
+Every Delaunay surface is one pair $(H, c)$, with $c$ the **Delaunay weight** — the flux through a parallel — and Delaunay's classification is nothing more than the sign of $c$.
+
+**Bounded by the roots.** Fixing $H=\tfrac12$, so every mode shares one mean curvature and the family really is one family, gives $\sin\psi = r/2 + c/r$. Since $|\sin\psi|\le 1$, the radius is confined between the roots of
+
+$$\tfrac{1}{2}r^2 \mp r + c = 0,$$
+
+which is why an unduloid bulges and necks between two fixed radii instead of running away — the turning points are where $|\sin\psi|=1$ and the meridian doubles back.
+
+**Why this exists alongside the relaxation route.** The [CMC / capillary generator](cmc_capillary.md) reaches CMC surfaces by constrained area minimisation. That is genuine CMC, but it cannot produce the **nodoids** — a minimiser is never self-intersecting — and it cannot be aimed at a prescribed weight. Delaunay's construction is exact, covers the whole family including the nodoids, and takes $c$ as an input.
+
+Having both matters more than having either: the closed form and the relaxation are independent derivations of the same surfaces, so each checks the other.
 
 ## References
 

@@ -5,7 +5,11 @@
 Add a smooth constant-negative-curvature surface
 (pseudosphere, Dini or Kuen).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Surfaces of **constant negative curvature** $K=-1$ — the pseudospherical surfaces, which are as close as smooth geometry in $\mathbb{R}^3$ gets to a picture of the hyperbolic plane.
+
+Only *as close as*. Hilbert proved in 1901 that no complete surface of constant negative curvature can be embedded in Euclidean space at all, so every member of this family is necessarily incomplete: each runs into a cusp, an edge, or a singular circle. What they show is a *patch* of hyperbolic geometry, and the ways they fail to continue are as characteristic as the surfaces themselves.
+
+The family is governed by the **sine-Gordon equation**, so its members correspond to solitons — the Dini surface to a travelling one, the breather surface to a bound soliton–antisoliton pair.
 
 ## Options
 
@@ -36,7 +40,21 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The pseudosphere.** The surface of revolution of a **tractrix** — the curve a weight follows when dragged by a taut string whose end moves along a line, so its tangent length to the axis is constant. Revolving it gives $K=-1$ everywhere, which is why Beltrami used it in 1868 as the first concrete model of the hyperbolic plane, and why it ends in a sharp circular edge: the tractrix meets the axis at a cusp, and the surface cannot continue past it.
+
+**Dini's surface** shears the pseudosphere into a twisting helical band, adding a screw motion along the axis while preserving $K=-1$. The twist is exposed as a parameter, so the family runs continuously from the pseudosphere outward.
+
+**Kuen's surface** is a bounded $K=-1$ surface with a characteristic bulb and cusp — notable because it is *bounded* where the pseudosphere runs off to infinity.
+
+**Minding's bulge and spindle** complete the picture: together with the pseudosphere, these are the only three surfaces of revolution with $K=-1$, distinguished by whether the profile curve meets the axis, closes, or runs away.
+
+**The breather.** The sine-Gordon equation
+
+$$u_{xx}-u_{tt}=\sin u$$
+
+governs surfaces of constant negative curvature via the Bäcklund transformation, and each of its solutions corresponds to one. The **breather** solution is a bound soliton–antisoliton pair oscillating in place, and its surface is the cusped, many-lobed shape here — the geometry of a soliton made visible.
+
+**Why they all end.** Hilbert's theorem is the reason every surface in this family is cut off somewhere. A complete $K=-1$ surface cannot be immersed in $\mathbb{R}^3$, so the cusps and edges are not artefacts of the parametrisation or the meshing — they are forced. For an unbounded picture of hyperbolic geometry you need a model that gives up on isometry, such as the [Poincaré disc](hyperbolic_tiling.md), or a physical fabric that buckles instead, which is what [crochet](crochet.md) does.
 
 ## References
 

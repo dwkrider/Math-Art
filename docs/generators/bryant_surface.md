@@ -5,7 +5,9 @@
 Add a Bryant surface: constant mean curvature ONE in
 hyperbolic 3-space, drawn in the Poincare or Klein ball.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+Every other generator in this add-on lives in Euclidean space. These do not: **Bryant surfaces** have constant mean curvature $H=1$ in *hyperbolic* 3-space, drawn here through a model — the Poincaré ball by default — that packs the whole of $H^3$ into a finite picture.
+
+$H=1$ is the distinguished value in hyperbolic space the way $H=0$ is in Euclidean space. It is the threshold at which a CMC surface stops behaving like a soap bubble and starts behaving like a minimal surface, and Robert Bryant proved in 1987 that these surfaces have a **Weierstrass-type representation** exactly as minimal surfaces in $\mathbb{R}^3$ do — the same holomorphic-data recipe, transplanted into curved space.
 
 ## Options
 
@@ -42,7 +44,37 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Hyperbolic space as matrices.** Model $H^3$ as the positive-definite Hermitian $2\times2$ matrices of determinant 1:
+
+$$f=\begin{pmatrix} x_0+x_3 & x_1+ix_2\\\\ x_1-ix_2 & x_0-x_3\end{pmatrix},\qquad \det f = x_0^2-x_1^2-x_2^2-x_3^2 = 1,$$
+
+which is the upper sheet of the Minkowski hyperboloid $\langle x,x\rangle=-1$. The point of this model is that the isometries of $H^3$ become matrix conjugation, so the whole construction can be done with linear algebra.
+
+**Bryant's representation (1987, Theorem A).** For *any* holomorphic **null** immersion $F$ into $SL(2,\mathbb{C})$ — null meaning
+
+$$\det\big(F^{-1}\,dF\big)=0$$
+
+— the product
+
+$$f = F\,\overline{F}^{\,\mathsf T}$$
+
+is a conformal immersion into $H^3$ of mean curvature 1; and every such surface arises this way. That nullity condition is the exact analogue of Weierstrass data being null in $\mathbb{R}^3$, and it is why these surfaces are as computable as minimal surfaces: the problem reduces to choosing holomorphic functions and integrating.
+
+**Three families.**
+
+**Catenoid cousin** — Bryant's Example 2, a surface of revolution with a real parameter $\mu>-\tfrac12$, $\mu\ne0$. Its profile is embedded for $-\tfrac12<\mu<0$ and has exactly **one** self-intersection for $\mu>0$: a visible, checkable change of shape as $\mu$ crosses zero. Its total curvature is
+
+$$-4\pi(2\mu+1),$$
+
+which — unlike the Euclidean case — is **not quantised**. In $\mathbb{R}^3$ a complete minimal surface of finite total curvature must have it an integer multiple of $4\pi$; here it varies continuously with $\mu$, which is one of the genuinely hyperbolic features of the family.
+
+**Enneper cousin** — Bryant's Example 1. Its induced metric is the one Enneper's surface induces on $\mathbb{C}$, hence the name, with total curvature $-4\pi$.
+
+**Polynomial family** — Bryant's Theorem B. For polynomials $r_1, r_2$ with no common zero, integrating
+
+$$F'=F\begin{pmatrix} r_1r_2 & -r_2^{\,2}\\\\ r_1^{\,2} & -r_1r_2\end{pmatrix},\qquad F(0)=I$$
+
+gives a complete CMC-1 immersion of $\mathbb{C}$ with total curvature $-4\pi k$. Note the matrix has determinant $r_1^2r_2^2-r_1^2r_2^2=0$ identically — the nullity condition holds by construction, for any polynomials. Exposed here as $r_1=z^n$, $r_2=c$, which contains the Enneper cousin at $n=1$ and generalises upward.
 
 ## References
 

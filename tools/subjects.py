@@ -58,10 +58,13 @@ PARAMS = {
     # the Helfrich model predicts and a red blood cell actually is.
     # Of the three modes the Clifford torus and the inflated ring both
     # render as a plain doughnut; the relaxed vesicle is the one with a
-    # shape of its own.  Note it settles to the dumbbell branch at the
-    # default reduced volume -- seed_shape='OBLATE' does not move it to
-    # the biconcave discocyte, so that would need parameter work in the
-    # generator rather than here.
+    # shape of its own.  It settles to the prolate CAPSULE branch, not
+    # the biconcave discocyte the module header describes: measured
+    # dimensions are (2.0, 0.55, 0.55) for seed_shape='OBLATE' and
+    # 'PROLATE' alike, at reduced volume 0.65 and 0.60.  No pose is set
+    # for it -- the capsule is a solid of revolution, so rotating about
+    # its own axis does nothing and any other angle just foreshortens
+    # it.
     "mesh.willmore_add": dict(mode='VESICLE'),
     "mesh.sphericon_add": dict(sides=7, coloring='NONE'),
 
@@ -152,11 +155,6 @@ ORIENT = {
     # -- straight on, the four lobes overlap into a featureless blob.
     # A quarter turn puts that circle edge-on and the lobes separate.
     "object.minimal_span": (0.0, 0.0, math.pi / 2),
-    # The vesicle is a biconcave disc, and face-on that is just a
-    # disc -- the two dimples that make it a discocyte are exactly
-    # what is lost.  Tipping it toward the camera shows the pinched
-    # profile, which is the whole point of the shape.
-    "mesh.willmore_add": (1.0, 0.0, 0.0),
     # Posed in the Blender viewport and converted to the studio
     # camera's frame (R = q_studio . q_view^-1).  Looks down the
     # channels so the openings read as holes rather than as dents.
