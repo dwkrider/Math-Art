@@ -117,6 +117,9 @@ PARAMS = {
     # The bubble is the whole point, and it is localised: too many
     # Delaunay periods shrink it to a speck on a long pipe.
     "mesh.bubbleton_add": dict(lobes=3, necksize=0.5, periods=2.2),
+    # 5/4 is the fraction Walter's own figures use, and its four
+    # lobes read at icon size where a higher n turns to mush.
+    "mesh.wente_torus_add": dict(lobes_l=5, lobes_n=4),
     # Light up the 13 parastichy arms rather than shipping a grey disc.
     "mesh.phyllotaxis_add": dict(color_by='PARASTICHY', parastichy=13),
 

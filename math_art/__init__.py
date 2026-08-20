@@ -50,6 +50,7 @@ _MODULE_NAMES = [
     'delaunay_generator',
     'bryant_generator',
     'bubbleton_generator',
+    'wente_generator',
     'crochet_generator',
     'dform_generator',
     'koman_generator',
