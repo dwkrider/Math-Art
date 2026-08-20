@@ -3,7 +3,19 @@
 ![Oloid & Ruled Surfaces](../images/oloid.png)
 
 ## Overview
-A small family of surfaces built from two perpendicular circles. The **oloid** (Paul Schatz, 1929) is the convex hull of two unit circles in perpendicular planes, each passing through the other's centre; its lateral surface is a *developable* (flat-unrollable) ruled surface, meshed here from the exact ruling of Dirnboeck & Stachel. Also included: the **two-circle roller**, the non-developable **anti-oloid**, and Kit Wallace's straight-ruled **circle strips** and true one-edged **ruled Mobius strip**.
+
+A small family of ruled surfaces built from two perpendicular circles — the **oloid** and its developable, rolling, and one-edged relatives.
+
+The **oloid** (Paul Schatz, 1929) is the convex hull of two unit circles that sit in perpendicular planes, each passing through the other's centre. Its lateral surface is a *developable* ruled surface — one you can unroll flat without stretching — meshed here from the exact ruling of Dirnboeck & Stachel. Alongside it the generator offers the **two-circle roller** (a "wobbler"), the non-developable **anti-oloid**, and Kit Wallace's straight-ruled **circle strips** and true one-edged **ruled Mobius strip**.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Rollers ▸ Oloid*.
+2. **Pick the Shape.** **Oloid** is the classic convex hull — a developable band that folds back along each circle. **Two-Circle Roller / Wobbler** moves the circle centres $\sqrt2$ apart and takes the convex hull, so the solid rolls with its centre of mass at constant height. **Anti-Oloid** rules the band *through* the interior of the same two circles (two-sided and non-developable). **Ruled Circle Strip** lays straight rulings between two perpendicular circles you can slide and tilt. **Ruled Mobius Strip** is Wallace's genuine one-edged surface.
+3. **Set Segments** for the mesh resolution around the circles (the Mobius build floors this at 48 so its double loop stays clean).
+4. **Dial the mode-specific controls**, which the panel shows only for the shape that uses them. The **Ruled Circle Strip** exposes **Separation** (gap between the two circle centres), **Inclination** (tilt of the second circle, in degrees) and **Phase** (which sample on circle 2 each ruling reaches, as a fraction of a turn). The **Anti-Oloid** exposes **Phase** alone. The **Two-Circle Roller** exposes **Disc Aspect** — 1.0 for round discs, and $\ne 1$ to stretch them into Hirsch's elliptical "ellipsoloid".
+5. **Choose the output finish.** **Scale** sets the overall size (the form is fit to a 2 m cube first, then scaled). **Sharp Circle Edges** — offered only for the **Oloid** and **Two-Circle Roller**, the two closed convex hulls that genuinely fold along their circles — creases those arcs so smooth shading doesn't round the whole form off; the open ruled strips have no such fold and ignore it.
+6. **Read the report.** Each build prints its vertex and face counts (`V=… F=…`) to the status bar.
 
 ## Options
 
@@ -41,22 +53,26 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** Hold two identical rings at right angles and push them together until each rim passes through the other's centre. Stretch a taut skin over the pair and you have the **oloid** — a solid whose surface is woven entirely from *straight lines*, even though its outline is all curves. Those straight lines are the whole trick. A surface you can sweep out with a moving straight edge is called *ruled*, and when that edge also turns without the skin ever having to stretch, you can peel the skin off and lay it out flat, the way an unrolled paper cone lies flat. That "unrolls flat" property (mathematicians say *developable*) is exactly why the oloid rolls so oddly: as it tumbles it lays its **entire** surface against the floor, one straight ruling at a time, instead of spinning on a fixed circle the way a wheel does. The other shapes in this family keep the two-circle idea but change which points the straight rulings join — trading developability for a wobble, a one-sided twist, or an open strip.
+
 **The oloid (developable ruling).** Take two unit circles: one in the $z=0$ plane centred at $(0,-\tfrac12,0)$, one in the $x=0$ plane centred at $(0,\tfrac12,0)$, so each passes through the other's centre. Dirnboeck & Stachel give the boundary of the developable lateral surface as a pair of curves joined by straight rulings,
 $$A(t) = (\sin t,\; -\tfrac12 - \cos t,\; 0),\qquad t\in[-\tfrac{2\pi}{3},\tfrac{2\pi}{3}],$$
 $$B(t) = \Big(0,\; \tfrac12 - \frac{\cos t}{1+\cos t},\; \pm\frac{\sqrt{1+2\cos t}}{1+\cos t}\Big).$$
-Every ruling segment $A(t)\,B(t)$ has the **constant length $\sqrt3$** -- the hallmark of the oloid, verified to machine precision in the self-test. Because the rulings have constant length and turn without stretching, the surface is *developable*: it can be unrolled flat, and physically an oloid rolls developing its whole surface across the ground. Two mirror strips ($\pm$ branch) are welded along the two circular arcs into a watertight solid.
+Here $A(t)$ runs along one circle while $B(t)$ picks out the *matching* point on the other, and the segment $A(t)B(t)$ is one ruling of the surface. The parameter is deliberately cut off at $t=\pm\tfrac{2\pi}{3}$ — that $120^\circ$ arc is the exact stretch of each circle that the convex hull's flat band actually touches, which is why an oloid is skinned by only part of each ring, not the whole of it. The remarkable fact, and the signature of the oloid, is that every ruling has the **constant length**
+$$\big|A(t)-B(t)\big| = \sqrt3$$
+for all $t$ — verified to machine precision in the self-test. Constant ruling length is more than a curiosity: because each straight line keeps its length as it pivots from one position to the next, neighbouring rulings can be flattened side by side with no gap or overlap, which is the geometric meaning of *developable*. Physically that is why a rolling oloid develops its whole surface across the ground. The code builds both mirror halves (the $\pm$ branch of $B$) and welds them along the two circular arcs into a single watertight solid.
 
-**Two-circle roller.** The same two circles but with centres $\sqrt2$ apart; the convex hull is taken in Blender. At that separation the solid's centre of mass stays at constant height as it rolls -- a "wobbler".
+**Two-circle roller.** The same two circles, but now with their centres a distance $\sqrt2$ apart, and instead of the exact ruled band the operator simply takes the **convex hull** of the two rings in Blender. That precise separation is what tunes the balance: at $\sqrt2$ the solid's centre of mass holds a constant height as the shape rolls, so it neither climbs nor sinks but sways from side to side — the "wobbler". Setting **Disc Aspect** $\ne 1$ replaces the round discs with ellipses, giving Hirsch's "ellipsoloid" variant of the same balancing trick.
 
-**Anti-oloid.** The ruled band between the *same* two circles as the oloid, but with rulings connecting points travelling around the **full** circles in step (a half-turn phase offset), sweeping through the interior. Parametrized by
-$$A(t)=(\sin t,\,-\tfrac12-\cos t,\,0),\quad B(t)=(0,\,\tfrac12+\cos t,\,\sin t),$$
-with $B$ shifted by $\pi+2\pi\,\text{phase}$. Unlike the Mobius strip it is two-sided, and unlike the oloid it is **not** developable.
+**Anti-oloid.** The ruled band between the *same* two circles as the oloid, but with the rulings now joining points that travel around the **full** circles in lockstep — a half-turn phase offset — so the band sweeps through the interior rather than wrapping the outside. It is parametrized by
+$$A(t)=(\sin t,\,-\tfrac12-\cos t,\,0),\qquad B(t)=(0,\,\tfrac12+\cos t,\,\sin t),$$
+with $B$ advanced by $\pi + 2\pi\,\text{phase}$ around its circle. Because the two endpoints march around complete circles in step, the rulings no longer keep a constant length, so the surface is **not** developable; and because the band never flips its normal, it is two-sided — the opposite of the Mobius strip below.
 
-**Ruled circle strips.** Straight rulings from circle 1 in the $xy$-plane to circle 2 in the $xz$-plane, offset by `separation` along $x$, optionally inclined about $z$ by `incline`, connecting sample $i$ to sample $i+\text{phase}$. This is Kit Wallace's experimental family; varying separation, inclination and phase sweeps between disc-like, saddle-like and twisted ruled surfaces.
+**Ruled circle strips.** Straight rulings run from circle 1 in the $xy$-plane to circle 2 in the $xz$-plane, with the second circle pushed a distance `separation` along $x$, optionally tilted about $z$ by `incline`, and each ruling joining sample $i$ on the first circle to sample $i+\text{phase}$ on the second. This is Kit Wallace's experimental family: sweeping those three knobs carries the surface continuously between disc-like, saddle-like and twisted ruled shapes, all built from the same straight-line recipe.
 
-**Ruled Mobius strip.** Wallace's genuine one-edged ruled surface: a single double-loop edge curve
-$$f(x) = \big(r\cos 4\pi x,\; r\sin 4\pi x,\; 0.2\cos 2\pi x\big),\quad r = 1 - 0.15\sin(2\pi x + 30^\circ),$$
-with rulings joining $f(x)$ to $f(x+\tfrac12)$. The result has Euler characteristic $\chi=0$ and a **single** boundary loop, confirmed by the standalone boundary-walk test.
+**Ruled Mobius strip.** Wallace's genuine one-edged ruled surface is spanned across a single **double-loop** edge curve
+$$f(x) = \big(r\cos 4\pi x,\; r\sin 4\pi x,\; 0.2\cos 2\pi x\big),\qquad r = 1 - 0.15\sin(2\pi x + 30^\circ),$$
+with rulings joining $f(x)$ to the point half a loop away, $f(x+\tfrac12)$. The $4\pi x$ means the curve winds twice around before closing, and joining opposite points of that double loop introduces exactly one half-twist — so the finished band has a **single** boundary loop and Euler characteristic $\chi=0$, the topological fingerprint of a Mobius strip, both confirmed by the standalone boundary-walk test.
 
 ## References
 

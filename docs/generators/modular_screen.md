@@ -3,7 +3,16 @@
 ![Modular Screen](../images/modular_screen.png)
 
 ## Overview
-A perforated architectural screen wall in the modular-constructivist tradition of **Erwin Hauer** and **Norman Carlberg**. One curvilinear saddle module is tiled seamlessly across a rectangle; because neighbouring cells share their boundary curves, the tiled midsurface is a single continuous undulating sheet -- the "undulating webbing" of a Hauer screen. That sheet is thickened into a solid slab and perforated with a smooth aperture through each module. The result is a single watertight, orientable manifold suitable for rendering or 3D printing. The saddle surface is the essential ingredient: its opposite curvatures let a module's boundary match its neighbour's on all four sides, so a single unit propagates without ever closing the form. The interwoven **Bilayer Weave (after Design 1)** -- which no single-valued height field can express -- is built instead as two families of undulating ribbons woven over and under one another. A finished screen can be left flat, **curved** onto a cylinder, or wrapped into a **column**, as in the built installations.
+A perforated architectural screen wall in the modular-constructivist tradition of **Erwin Hauer** and **Norman Carlberg**: one curvilinear saddle module, tiled seamlessly across a rectangle, thickened into a slab, perforated, and optionally curved into a column. Because neighbouring cells share their boundary curves, the tiling becomes a single continuous undulating sheet -- the "undulating webbing" of a Hauer screen -- and the finished object is a single watertight, orientable manifold suitable for rendering or 3D printing.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Patterns ▸ Modular Screen (Hauer-Carlberg)*.
+2. **Pick the Design.** *Saddle Lattice (after Design 5)* is the classic egg-crate saddle; *Woven Undulation* and *Diagonal Brace* are gentler saddle fields; *Relief Wall (after Design 6)* is a solid, unperforated undulating wall; *Hypar (Carlberg)* uses hard-edged ruled hyperbolic-paraboloid tiles; *Pinwheel (chiral)* is a one-handed swirling relief; and *Bilayer Weave (after Design 1)* is two families of ribbons woven over and under -- the one design no single height field can express.
+3. **Set the tiling and depth.** *Cells X* and *Cells Y* are the module counts across and down; **Relief Depth** is the undulation amplitude and **Thickness** the wall (or ribbon) thickness.
+4. **Dial the controls that appear for your Design.** *Pinwheel* adds **Swirl** (how hard the arms curl) and **Handedness** (left/right). *Bilayer Weave* adds **Ribbon Width**. The perforated saddle designs add **Aperture** (hole radius per module, 0 for a solid wall), **Aperture Squareness** (circle -> rounded square), and **Solid Border** (keep the outer ring of modules as an unperforated frame); the Relief Wall and the Bilayer Weave, never perforated, hide these. **Resolution** sets samples per cell. Except for the Bilayer Weave, **Rim Bulge** rounds the aperture and border edges into a bull-nose, and when it is on **Rim Segments** sets how many facets round it.
+5. **Choose the Form.** *Flat Panel*, *Curved Screen* (bent onto a cylinder through a **Wrap Angle** that only then appears), or *Column* (wrapped a full turn into a tube). **Smooth Shading** and **Scale** finish the object, which fits a 2 m cube at scale 1.
+6. **Read the report.** The status line echoes the design and the finished vertex/face count. Internally the build guarantees a closed, watertight manifold -- every interior edge shared by exactly two faces -- with one clean aperture per perforated module.
 
 ## Options
 
@@ -54,6 +63,8 @@ Renders of each selectable option:
 </table>
 
 ## How it works
+
+**In plain terms.** Picture the pierced breeze-blocks in a mid-century garden wall, or a screen built by repeating one gently curved tile. The tile is shaped like a saddle -- or a Pringle crisp: it rises along one pair of opposite edges and dips along the other. That opposite curving is the whole trick, because the wavy edge of one tile is the exact match of its neighbour's, so the tiles lock together edge to edge into one endless rippling sheet with no seams. Give that thin sheet some thickness, the way you would roll a wavy surface into a slab of dough, punch a smooth hole through the middle of each tile, and round the cut edges, and you have a screen wall that is a single solid, watertight shell -- one continuous surface with no gaps, ready to render or 3D-print. Everything below is how each of those steps becomes a mesh.
 
 **Tiled saddle midsurface.** The midsurface is a periodic height field $h(x,y)$ of unit period. For the smooth designs it is a doubly-periodic saddle field -- $h=\text{amp}\cdot\cos\pi x\,\cos\pi y$ (Saddle Lattice), $\tfrac{\text{amp}}2(\cos\pi x+\cos\pi y)$ (Weave), or $\text{amp}\cdot\cos\pi(x{+}y)\,\cos\pi(x{-}y)$ (Diagonal). Each is $C^1$ and continuous across cell boundaries, so tiling it produces a single seamless undulating sheet.
 

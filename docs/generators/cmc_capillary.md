@@ -2,15 +2,21 @@
 
 ## Overview
 
-Capillary surface by constrained evolution: a liquid bridge
-between two rings (Delaunay's unduloid/nodoid family, catenoid
-at the right volume), a sessile drop with a prescribed contact
-angle -- optionally flattened by gravity into a puddle -- or a
-free-boundary soap film sliding on a sphere or column.
+The shapes liquid actually takes, produced by constrained **area minimisation**: **liquid bridges** spanning two rings, **sessile drops** resting on a floor at a prescribed contact angle, and **free-boundary soap films** slung on a fixed frame and sliding on a curved support.
 
-The shapes liquid actually takes: **liquid bridges** spanning two rings, **sessile drops** resting on a surface at a prescribed contact angle, and **free-boundary soap films** spanning a fixed frame and sliding on a curved support.
+None of these is drawn from a formula — the surface is relaxed under the same constraints physics imposes, so the equilibrium shape is discovered rather than prescribed. That also makes the results self-checking against known answers: in zero gravity a sessile drop must relax to a spherical cap, and at the catenoid's own volume a liquid bridge must relax to the catenoid.
 
-All of them are produced by genuine constrained **area minimisation** rather than closed-form drawing — the surface is relaxed under the same constraints physics imposes, so the equilibrium shape is discovered rather than prescribed. That makes the results checkable against known answers: in zero gravity a sessile drop must relax to a spherical cap, and at the catenoid's own volume a liquid bridge must relax to the catenoid.
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Odds & Ends ▸ CMC Capillary Surface*.
+2. **Pick the Surface.** *Liquid Bridge* spans two coaxial rings; *Sessile Drop* rests on a floor; *Film on Sphere* and *Film on Column* sling a soap film between a fixed ring and a curved support. The panel then shows only the controls that apply to the chosen mode.
+3. **Set the mode's shape knobs.**
+   - **Liquid Bridge** — **Volume Factor** is the main dial (as a fraction of the enclosing cylinder's volume: $1$ = cylinder, $\approx 0.809$ = catenoid, more = barrel-shaped unduloid, less = necked nodoid arc), and **Half-Height / Radius** sets the ring aspect (the Goldschmidt limit $0.6627$ is where no catenoid can span the rings any more).
+   - **Sessile Drop** — **Contact Angle** is Young's angle ($<90°$ wets and spreads, $>90°$ beads up), and **Bond Number** turns on gravity ($0$ = a clean spherical cap, $\gg 1$ = a flattened puddle).
+   - **Film on Sphere / Column** — **Support Radius** sizes the sphere or column, and **Ring Height** (sphere) or **Ring Tilt** (column) places the fixed frame ring.
+4. **Set the common controls.** **Resolution** is the vertex count around the rim, **Evolve Iterations** how far the descent runs ($0$ shows the raw seed), and **Optimizer** (conjugate gradient or L-BFGS) appears for the *Bridge* and *Drop* modes — the film modes always use CG for winding safety.
+5. **Choose the output.** **Support Surface** (film modes) also emits the sphere or column; **Smooth Shading** and **Sharp Rims** control shading and whether Subdivision Surface keeps the open boundaries pinned to their rings, floor or wall.
+6. **Read the report.** Each mode prints a per-build check: the bridge reports its measured mean curvature $H$; the drop reports the achieved contact angle against the one you asked for (or, under gravity, the Bond number, the apex height and the asymptotic puddle limit); the films report their support contact angle against the ideal $90°$ as an rms deviation. The Lagrange **pressure** is printed alongside — near zero exactly at the catenoid.
 
 ## Options
 
@@ -53,7 +59,9 @@ Renders of each selectable option:
 
 ## How it works
 
-**Why area minimisation gives constant mean curvature.** Minimising area at fixed enclosed volume introduces a Lagrange multiplier for the volume constraint, and the first variation says that multiplier *is* the mean curvature. So the equilibrium of a soap film with pressure difference across it necessarily has $H$ constant — the physics and the geometry are the same statement, and the multiplier is the pressure.
+**In plain terms.** Liquid held by surface tension is lazy in exactly the way a soap bubble is: it settles into whatever shape has the least amount of skin for the amount of liquid it is holding. A free droplet beads into a ball; a little liquid stretched between two rings bulges out into a barrel or pinches into a waist depending on how much there is; a soap film hung on a wire frame pulls itself as taut as the frame allows. This generator never writes those shapes down. It starts from a rough guess and lets a virtual surface creep, point by point, toward less and less area — but under a rule the liquid must also obey, whether that is "keep this exact volume", "sit on this floor at this angle", or "stay stuck to this frame but slide freely on that sphere". When the surface can shrink no further without breaking its rule, that stopping shape is the real capillary surface, and the classic families (Delaunay's bridges, spherical-cap drops, gravity puddles) come out of the *same* machine just by changing the rule. The mathematics below says why "least area at fixed volume" is the same thing as "equal tautness everywhere".
+
+**Why area minimisation gives constant mean curvature.** Minimising area at fixed enclosed volume introduces a Lagrange multiplier for the volume constraint, and the first variation says that multiplier *is* the mean curvature. So the equilibrium of a soap film with pressure difference across it necessarily has $H$ constant — the physics and the geometry are the same statement, and the multiplier is the pressure the report prints.
 
 **Liquid bridges.** A surface spans two coaxial rings with pinned rims at a prescribed enclosed volume. Sweeping the volume walks the [Delaunay family](delaunay_surface.md):
 

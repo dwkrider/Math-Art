@@ -2,12 +2,18 @@
 
 ## Overview
 
-Add a wallpaper-group pattern (flat colored motif, chosen
-by orbifold signature).
+Add a wallpaper pattern: one asymmetric motif replicated across a two-dimensional lattice by every symmetry of a chosen plane-symmetry group, coloured so the symmetry reads.
 
-A **wallpaper group** is the symmetry group of a pattern that repeats by translation in two independent directions. There are exactly **17** of them in the Euclidean plane — a classification proved by Fedorov in 1891 and rediscovered by Pólya and Niggli in 1924, and one of the more surprising finiteness results in elementary geometry: however elaborate a repeating pattern looks, its symmetry is one of seventeen.
+A **wallpaper group** is the symmetry group of a pattern that repeats by translation in two independent directions. There are exactly **17** of them in the Euclidean plane — classified by Fedorov in 1891 and rediscovered by Pólya and Niggli in 1924, and one of the more surprising finiteness results in elementary geometry: however elaborate a repeating pattern looks, its symmetry is one of seventeen. The groups are named here by their **Conway–Thurston orbifold signature** rather than the crystallographers' IUC symbols, because the signature is not merely a label — it is computable, and the same grammar names the spherical point groups and the hyperbolic tilings, which is why the sibling [orbifold sphere](orbifold_sphere.md) and [hyperbolic tiling](hyperbolic_tiling.md) generators speak the same language.
 
-Groups are chosen here by their **Conway–Thurston orbifold signature** rather than the crystallographers' IUC names, because the signature is not merely a label — it is computable. The same grammar names the spherical point groups and the hyperbolic tilings, and a single arithmetic rule decides which of the three geometries a signature belongs to. That is why the sibling generators for [orbifold spheres](orbifold_sphere.md) and [hyperbolic tilings](hyperbolic_tiling.md) speak the same language.
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Patterns ▸ Wallpaper Group*.
+2. **Pick the Group** from the 17, each shown as its IUC name with the orbifold signature in parentheses — e.g. *p4m (\*442)*, the default, a square pattern with mirrors, or *p6 (632)* with pure six-fold rotation. Every choice fills the block with a visibly different symmetry.
+3. **Set Cells X and Cells Y** — how many lattice cells to tile in each direction, the size of the finished block.
+4. **Choose the Motif.** The built-in chiral shapes (Arrow, F, L, Comma, Zig, Triangle) each expose a **Relief Height** that extrudes the flat pattern into a low relief. Choosing **Object** instead hides Relief Height and reveals an **Object** picker: that mesh (or the active/selected one when left empty) tiles at its own size, and its reflected copies become true mirror images.
+5. **Colour and space the copies.** *Color By* tints by **Symmetry Copy** (each point-group copy its own colour, repeated in every cell so the repeat unit reads at a glance), **Operation Type**, **Handedness** (direct vs. mirrored) or **Lattice Cell**. **Margin** opens a gap around each unit; **Separate Cells** emits each copy as its own object for individual editing.
+6. **Read the report.** The status line echoes the group and the vertex/face count (or cell count with Separate Cells) of the block just built.
 
 ## Options
 
@@ -65,26 +71,28 @@ Renders of each selectable option:
 
 ## How it works
 
-**The signature.** An orbifold signature is a short string built from four symbols: a digit $n$ for an order-$n$ gyration point, `*` for a mirror boundary, `x` for a glide cross, and `o` for a torus handle. So `632` is the group with 6-, 3- and 2-fold rotation centres and no reflections (p6), while `*632` adds mirrors through them (p6m).
+**In plain terms.** Think of patterned gift-wrap or a tiled bathroom floor: a single small design stamped over and over in two directions. It looks endlessly varied, yet mathematicians proved that *every* such pattern — Roman mosaics, Escher prints, Alhambra tilework — has one of only **17** symmetry types. To tell them apart, imagine folding the infinite pattern back onto the one little tile it was printed from, gluing together every pair of points the symmetry declares "the same". The folded-up shape is called an **orbifold**, and it comes with a short receipt — its *signature* — listing its corners, creases and folds. A single budgeting rule on that receipt decides not only which of the 17 you have, but whether a pattern with that receipt belongs on the flat plane at all, or on a sphere, or in the hyperbolic world.
 
-**The magic theorem.** Conway assigns each feature a *cost*:
+**The signature.** An orbifold signature is a short string over four symbols: a digit $n$ for an order-$n$ gyration (rotation) point, `*` for a mirror boundary, `x` for a glide cross, and `o` for a translation handle. So `632` is the group with 6-, 3- and 2-fold rotation centres and no reflections (p6), while `*632` puts mirror lines through them (p6m). The string fully describes the folded tile; it is a construction plan, not just a name.
+
+**The magic theorem.** Conway attaches a *cost* — an amount of curvature the feature soaks up — to each symbol:
 
 $$\texttt{o}\to 2,\qquad \texttt{*},\ \texttt{x}\to 1,\qquad
 n \to \frac{n-1}{n},\qquad n \text{ after a } \texttt{*} \to \frac{n-1}{2n}$$
 
-and the total decides the geometry:
+and the running total decides the geometry:
 
 $$\sum \text{cost} \;\begin{cases} <2 & \text{spherical (a finite point group)}\\ =2 & \text{Euclidean (a wallpaper group)}\\ >2 & \text{hyperbolic}\end{cases}$$
 
-The 17 wallpaper groups are precisely the signatures costing exactly 2. Check `632`: $\tfrac56+\tfrac23+\tfrac12 = 2$. Check `*632`: $1+\tfrac5{12}+\tfrac13+\tfrac14 = 2$. The two costs for a digit are why a rotation centre "cheapens" by half once it lies on a mirror — it becomes a corner reflector, and only half of it is new.
+The threshold isn't arbitrary: the cost is $2-\chi$ for the orbifold's Euler characteristic $\chi$, and a flat, plane-filling pattern is exactly the case $\chi=0$, i.e. cost $=2$ — the two-dimensional Gauss–Bonnet balance. The 17 wallpaper groups are precisely the signatures totalling 2. Check `632`: $\tfrac56+\tfrac23+\tfrac12 = 2$. Check `*632`: $1+\tfrac5{12}+\tfrac13+\tfrac14 = 2$. The two different costs for a digit explain a subtlety of the geometry — a rotation centre "cheapens" by half once it lies on a mirror, because there it becomes a corner reflector and only half of its turning is genuinely new.
 
-**Building the pattern.** As with the [frieze groups](frieze.md), the translation lattice is infinite but the quotient by it is finite, so each group is stored as lattice vectors $b_1,b_2$ plus one coset representative per element of the point group. The block of $N_x\times N_y$ cells is
+**Building the pattern.** As with the [frieze groups](frieze.md), the lattice of translations is infinite but the quotient by it is finite, so each group is stored as two lattice vectors $b_1,b_2$ plus one coset representative per element of the point group. The block of $N_x\times N_y$ cells is the triple union
 
-$$P=\bigcup_{u=0}^{N_x-1}\ \bigcup_{v=0}^{N_y-1}\ \bigcup_{j} T(u\,b_1+v\,b_2)\;g_j\,(\text{motif}).$$
+$$P=\bigcup_{u=0}^{N_x-1}\ \bigcup_{v=0}^{N_y-1}\ \bigcup_{j} T(u\,b_1+v\,b_2)\;g_j\,(\text{motif}),$$
 
-Two subtleties live in that table. The lattice is not always square: `*x` (cm) uses the **centred rhombic** lattice $b_1=(1,1)$, $b_2=(1,-1)$, because the centring translation is what supplies the glide parallel to its mirror. And several groups need their mirrors *off* the rotation centres — `22*` (pmg) places its vertical mirrors at $x=\tfrac14$. Get either wrong and the pattern still renders; it simply is not that group. The engine therefore self-tests **closure** — composing any two representatives must land back in the group modulo the lattice — for all 17 signatures, which is a test of the mathematics rather than of the picture.
+the inner union stamping the point-group copies inside one cell, the outer two sliding that cell across the lattice. Two subtleties hide in the group table. The lattice is not always rectangular: `*x` (cm) uses the **centred rhombic** lattice $b_1=(1,1)$, $b_2=(1,-1)$, because it is the centring translation that supplies a glide running parallel to the mirror. And several groups need their mirrors *off* the rotation centres — `22*` (pmg) sets its vertical mirrors at $x=\tfrac14$. Get either wrong and the pattern still renders; it simply is not that group. The engine therefore self-tests **closure** — composing any two representatives must return to the group modulo the lattice — across all 17 signatures, a test of the mathematics rather than of the picture.
 
-**Reading the symmetry.** A motif with its own symmetry hides the group, so the supplied motifs are chiral. Colouring by *unit* gives each point-group copy a distinct colour repeated identically in every cell, so the repeat unit reads at a glance; colouring by *handedness* separates direct isometries from mirrored ones, which is what makes reflections and glides visible.
+**Reading the symmetry.** A motif with symmetry of its own would hide the group, so the supplied motifs are chiral. Colouring by **Symmetry Copy** gives each point-group copy a distinct colour, repeated identically in every cell, so the repeat unit reads at a glance; colouring by **Handedness** separates the direct isometries from the mirrored ones, which is what makes reflections and glides visible. A **Relief Height** extrudes the flat faces into prisms, and an active-mesh unit turns the reflected copies into real three-dimensional mirror images.
 
 ## References
 

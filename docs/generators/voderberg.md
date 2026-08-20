@@ -2,11 +2,20 @@
 
 ## Overview
 
-Add a Voderberg spiral tiling patch.
+Add a Voderberg spiral tiling patch: a spiral built from congruent copies of one bent nine-sided tile.
 
 The **Voderberg tiling** (Heinz Voderberg, 1936) was the first spiral tiling ever devised, and it is **monohedral** — the entire spiral is built from congruent copies of a single nine-sided tile. It appears on the cover of Grünbaum and Shephard's *Tilings and Patterns*, and deservedly: a spiral is about as far from the periodic repetition one expects of a tiling as a plane-filling pattern can get, yet it uses one shape.
 
 The tile's remarkable property is that **two copies can completely enclose a third**. That is what lets the tiles wrap around a centre instead of marching in rows, and it is the mechanism from which the spiral arms follow.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Patterns ▸ Voderberg Tiling*.
+2. **Pick the Tiling.** **Classic Double Spiral** is the original 1936 two-arm spiral (a Goldberg shift of one tile); **Spiral (Enclosure Order)** is the same double spiral at a chosen enclosure order; **Radial Rings** is the un-sheared parent — concentric rings of enneagons with no spiral at all.
+3. **Set the shape knobs.** **Coils** is how many rings (coronas) the pattern winds out to, and **Tile Angle (beta)** deforms the tile: the obtuse notch angle, valid over $111^\circ$–$153^\circ$, with $132^\circ$ the classic Voderberg tile.
+4. **Dial the mode-specific control.** **Arms / Order** appears only for **Spiral (Enclosure Order)**: it sets the Goldberg enclosure order $g$ (how many tiles a pair encloses at the core; $g=1$ reproduces the classic). Note the *topological* arm count stays 2 for every setting — only the enclosure order changes.
+5. **Choose Color By.** **By Arm** colours the two spiral arms (the two half-planes of the cut); **By Tile Type** colours the two interlocking orientations of the enneagon (apex-in vs apex-out), which reveals the individual tile boundaries; **Uniform** is one material.
+6. **Set the output.** **Margin** insets each tile to leave grout lines, **Relief Height** extrudes flat tiles into 3D, and **Separate Tiles** emits each tile as its own object. The operator's info line reports the vertex/face count (or tile count when separated).
 
 ## Options
 
@@ -39,23 +48,25 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** Picture floor tiles all cut to one peculiar nine-sided shape. Two of them can wrap so completely around a third that it disappears inside, like cupped hands closing over a coin. A tile that can do that does not have to line up in straight rows — it can curl around a central point instead. Stack the tiles into a disc of concentric rings and you get a bullseye; now give the disc a single half-turn cut and slide one side forward by exactly one tile, and the rings can no longer close into circles. They spill over into arms that wind outward from the centre — a spiral — all built from that one shape. Everything below makes "one peculiar shape" and "slide by one tile" precise.
+
 **The tile.** Start from an isosceles triangle whose apex angle is exactly
 
 $$\theta=\frac{180^\circ}{15}=12^\circ,$$
 
-chosen so that **30** of them close up around a point ($30\times12^\circ=360^\circ$). Then replace each of the two equal legs by a congruent bent polyline of three segments. The result is a nonconvex **enneagon** — nine sides, but only three distinct edge lengths $(1, x, L)$.
+chosen so that **30** of them close up around a point ($30\times12^\circ=360^\circ$) — this is where the 30 sectors of the finished disc come from. Then replace each of the two equal legs by a congruent bent polyline of three segments. The result is a nonconvex **enneagon**: nine sides, but only three distinct edge lengths $(1, x, L)$, the two longer ones $x$ and $L$ fixed from the base length $1$ by the law-of-sines closure of the bent legs (Waldman's Eqs. 1). The essential detail is that the two legs are **antisymmetric about their midpoints**: whatever bulge one leg pushes outward, the matching leg pulls inward by the same amount. A neighbour's outward bulge then drops exactly into this tile's inward notch, which is what lets copies interlock — and it is precisely what makes two tiles able to swallow a third.
 
-The essential detail is that the two legs are **antisymmetric about their midpoints**: whatever bulge one leg carries outward, the matching leg carries inward. That is what lets copies interlock, and it is what makes two tiles able to enclose a third.
-
-**One parameter.** Following Waldman's *Voderberg Deconstructed* (2014), the whole family is controlled by a single angle $\beta$ — the obtuse angle at the deep notch — valid over
+**One parameter.** Following Waldman's *Voderberg Deconstructed* (2014), the whole family of tiles is controlled by a single angle $\beta$, the obtuse angle at the deep notch, valid over
 
 $$111^\circ \le \beta \le 153^\circ,$$
 
-with $\beta=132^\circ$ giving Voderberg's original tile. Outside that range the bent legs no longer interlock and the tiling fails.
+with $\beta=132^\circ$ giving Voderberg's original tile. As $\beta$ moves, the two long edge lengths $x$ and $L$ slide with it while the interlock is preserved, so every value in the range is a genuinely different but still perfectly meshing tile; outside the range the bent legs cross or gap and the tiling fails.
 
-**From tile to spiral.** The patches are built by Goldberg's triangle-substitution method, the construction Grünbaum and Shephard use. The un-sheared parent is the **radial** tiling: 30 wedge-sectors of stacked coronas closing into concentric rings about the centre — the 30 coming straight from the $12^\circ$ apex. Applying a Goldberg shift then shears those sectors so that each ring steps around by one tile instead of closing, and the concentric rings open into spiral arms. The shift is an integer, so the number of arms is a choice rather than an accident: shift 0 is the radial tiling, and larger shifts give higher-order spirals.
+**From tile to spiral.** The patches are built by Goldberg's triangle-substitution method — the construction Grünbaum and Shephard use for the cover of *Tilings and Patterns*. The un-sheared parent is the **radial** tiling: 30 wedge-sectors, each a column of stacked *coronas* (rings) that alternate the two tile aspects — apex-in $V$ and apex-out $A$ — closing up into concentric rings about the centre. Each corona sits one row-height $\delta_y=\tfrac1{2}\cot(\theta/2)$ further out than the last, and the 30 sectors come straight from the $12^\circ$ apex.
 
-This is why the spiral is not a separate construction bolted onto a tiling — it is the *same* tiling with its sectors offset, which is the insight Goldberg contributed and the reason a single enneagon can do all of it.
+A **Goldberg shift** then cuts the disc along a diameter and slides one half-plane outward along the cut by an integer number of leg-lengths $\delta_x=\tfrac1{2}\csc(\theta/2)$. Because the tiles interlock, the two halves re-mesh perfectly everywhere — but a ring can no longer close on itself: it steps around by the shift and joins the *next* ring instead, so the concentric circles unwind into spiral arms about the recentred 2-fold symmetry point. The shift being an integer is what makes the enclosure order a clean choice rather than an accident: shift $0$ is the radial tiling, shift $1$ is the classic double spiral (the famous pair-encloses-one core), and shift $g$ gives a double spiral whose central pair encloses $g$ tiles. Every such patch is a *two*-arm spiral — that is a property of the single diametral cut — so the **Arms / Order** control varies the enclosure order $g$, not the topological arm count, which stays 2 (genuine monohedral spirals with more arms are not constructible this way).
+
+This is why the spiral is not a separate construction bolted onto a tiling: it is the *same* radial tiling with its two halves offset by one integer step. That is the insight Goldberg contributed, and the reason a single enneagon can produce the whole family. The module's self-test confirms it — every tile in every patch is verified congruent to the prototile, the coverage is gap- and overlap-free, and the central seed tile is checked to be fully enclosed by its neighbours.
 
 ## References
 
