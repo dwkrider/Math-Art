@@ -6,7 +6,7 @@ Add a monostatic body -- the gomboc, a convex homogeneous self-righting solid wi
 
 A **gömböc** is a convex, homogeneous solid that is *mono-monostatic*: it has exactly **one** stable and **one** unstable balance point, so it always rolls back to the same resting pose — like a self-righting toy, but with no added weight and no hollow. Uniform density throughout.
 
-Vladimir Arnold conjectured in 1995 that such a body could exist. Gábor Domokos and Péter Várkonyi proved it and built the first one in 2006. The shape is necessarily close to a sphere — the tolerance is famously tight, on the order of a tenth of a millimetre on a $10\,$cm body — because a body far from spherical has room for extra equilibria.
+Vladimir Arnold conjectured in 1995 that such a body could exist. Gábor Domokos and Péter Várkonyi proved it and built the first one in 2006. The shape is necessarily close to a sphere — the tolerance is famously tight, on the order of a tenth of a millimetre on a 10 cm body — because a body far from spherical has room for extra equilibria.
 
 ## Options
 

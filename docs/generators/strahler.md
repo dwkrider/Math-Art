@@ -32,7 +32,7 @@ It was devised for river networks: Horton in 1945 and Strahler in 1952 needed a 
 
 Formally, for children of orders $s_1,\dots,s_k$ with maximum $m$,
 
-$$s_{\text{parent}}=\begin{cases} m & \text{if exactly one child has order } m,\\\\ m+1 & \text{if two or more do.}\end{cases}$$
+$$s_{\text{parent}}=\begin{cases} m & \text{if exactly one child has order } m,\\ m+1 & \text{if two or more do.}\end{cases}$$
 
 So order rises only where two comparably developed branches meet. A long chain of side-twigs off a single trunk leaves the trunk's order unchanged, however many twigs there are — which is exactly the property that makes the measure meaningful rather than just a depth count.
 
