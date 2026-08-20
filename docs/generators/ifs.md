@@ -12,6 +12,15 @@ Attractors of iterated function systems, in two and three dimensions, across thr
 
 **Planar systems** — the Barnsley fern, the Sierpinski triangle, the Heighway dragon, the Lévy C curve, the Koch curve — are recognised as flat and meshed as a watertight slab one cell thick, at *plane* resolution. This is not a lesser case: a 512×512 grid is a quarter of a million cells, where a 512³ volume grid is out of reach and would leave all but a sliver of it empty. The result prints, and Solidify gives it real depth.
 
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Fractals ▸ Iterated Function System*.
+2. **Pick the Mode.** **Self-Affine Tile** builds a lattice tile from an expanding integer matrix and a digit set (the ABC tiles and twindragons); **IFS Attractor** builds the attractor of a set of contractive maps (Sierpinski solids, Menger sponge, the planar systems, or maps you type in). The two modes expose entirely different controls, so choose this first.
+3. **Self-Affine Tile path.** Choose the **Tile** preset, then the **Tile Output**: *Voxels* (a watertight blocky solid — the printable default), *Smooth Contour* (a marching-tetrahedra surface), or *Exact Level-k Cubes* (the exact union of cells, volume exactly 1, but which flattens into plates as the level rises). **Holes** drops digits to turn the tile into a gasket. *Exact* mode exposes **Level**; the sampled outputs expose **Resolution**, **Points** and **Seed** instead, and *Smooth Contour* adds **Largest Piece Only**.
+4. **IFS Attractor path.** Set the **Dimension** (2D or 3D) first — it filters both the **System** list and the available **Output**s. Pick a **System** (or *Custom* and type **Maps** as `nine matrix entries | three translations | probability`, one map per semicolon); the *Sierpinski triangle in 3D* system adds **Polygon Sides** and **Polygon Ratio**, and **Reverse** replaces every map $f$ by $-f$. Choose the **Output**: in 3D, *Solid Copies* (exact copies, with **Seed Solid** and **Depth**), *Voxels* (with **Min Points per Cell**), or *Smooth Contour* (with **Cover** and **Largest Piece Only**); in 2D the only output is *Relief*, meshed at **Plane Resolution**. The sampled outputs use **Points** and **Seed**.
+5. **Finish the mesh.** **Scale** sizes the object, **Thickness** adds a Solidify modifier (useful because these figures touch at edges and corners), and **Smooth Shading** toggles normals.
+6. **Read the reports.** Each build reports what it made and how faithful it is: the sampled tiles report the **percentage of the true tile extent** reached, *Exact* mode reports **cell count, volume and cell aspect ratio** (warning when the cells have become slivers), and every output checks the surface — warning if it has boundary edges (not closed) or non-manifold edges where cells meet only edge-to-edge, so you know to thicken before printing.
+
 ## Options
 
 
@@ -89,6 +98,10 @@ Renders of each selectable option:
 </table>
 
 ## How it works
+
+**In plain terms.** Suppose you have a copying machine with several lenses, and every lens shrinks whatever you feed it and drops the smaller copy somewhere on the page. Feed the page back into the machine, over and over, and the picture stops changing: it settles onto one shape that is made of shrunken copies of itself. That limiting shape is the **attractor** of the machine, and the set of lenses is an **iterated function system (IFS)**. A remarkable fact — Hutchinson's theorem — is that as long as every lens genuinely shrinks, there is exactly one such shape, and it does not matter where you start: the machine always converges to it. The Sierpinski triangle, the Barnsley fern and the Menger sponge are all just different sets of lenses. This generator has two ways to draw that shape. The direct way stamps down the actual shrunken copies; the fast way plays the **chaos game** — drop a single point and repeatedly send it through a lens picked at random — which, astonishingly, traces out the very same attractor and is far cheaper to compute. A second family, the **self-affine tiles**, comes from the same idea run on a whole-number grid, where the copies fit together to tile space perfectly.
+
+Everything below makes that picture exact: how the tiles are computed on the integer lattice without rounding, why the tile is *sampled* rather than assembled from cubes, and how each construction is meshed into something you can print.
 
 ### Self-affine tiles, exactly
 
