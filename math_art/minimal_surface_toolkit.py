@@ -474,6 +474,9 @@ if _IN_BLENDER:
         bl_idname = "mesh.tpms_add"
         bl_label = "Periodic Minimal Surface (TPMS)"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
 
         surface: EnumProperty(
             name="Surface",
@@ -517,6 +520,12 @@ if _IN_BLENDER:
                 mod = obj.modifiers.new("Solidify", 'SOLIDIFY')
                 mod.thickness = self.thickness
                 mod.offset = 0.0
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -525,6 +534,7 @@ if _IN_BLENDER:
             for k in ('surface', 'cells', 'resolution', 'cell_size',
                       'thickness', 'level_offset', 'cell_aspect'):
                 lay.prop(self, k)
+            _rim.draw_rim(lay, self)
 
     class MESH_OT_periodic_minimal_add(bpy.types.Operator):
         """Add a periodic minimal surface.  Pick the Periodicity
