@@ -224,7 +224,15 @@ COMPONENT_AXES = {
     'TETRA': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0)},
     'CUBE': {2: (1.0, 1.0, 0.0), 3: (1.0, 1.0, 1.0), 4: (0.0, 0.0, 1.0)},
     'OCTA': {2: (1.0, 1.0, 0.0), 3: (1.0, 1.0, 1.0), 4: (0.0, 0.0, 1.0)},
-    'DODECA': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0), 5: (0.0, 1.0, PHI)},
+    # NB the dodecahedron's five-fold axis is (0, PHI, 1), NOT (0, 1, PHI)
+    # like the icosahedron's.  `_dodeca()` is built out from the cube
+    # (+-1, +-1, +-1) and its face normals come out along the OTHER cyclic
+    # set, so it is not the dual of `_icosa()` in this frame but a turned
+    # copy.  The wrong axis here does not change any component COUNT --
+    # a bogus axis and a five-fold-on-three-fold alignment both leave the
+    # stabilizer trivial -- so only checking the axis against the solid
+    # catches it.
+    'DODECA': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0), 5: (0.0, PHI, 1.0)},
     'ICOSA': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0), 5: (0.0, 1.0, PHI)},
 }
 
@@ -813,6 +821,17 @@ AXIS_COMPOUNDS = [
      'PRISM5_2', 'Ih', 5, 5, PERP, 12),
     ('S41_10_3PRISM', "Skilling 41: 6 Decagrammic Prisms (Ih)",
      'PRISM10_3', 'Ih', 10, 5, PERP, 6),
+    # --- compounds of the other regulars ------------------------------
+    # Reachable only after the dodecahedron's five-fold axis was
+    # corrected above; with the old (0, 1, PHI) the five-fold rows just
+    # produced 60 loose copies.  The phases are the candidate angles that
+    # put a constituent half-turn axis on a group one, chosen by the
+    # resulting count.
+    ('H_6DODECA', "6 Dodecahedra", 'DODECA', 'I', 5, 5, 72.0, 6),
+    ('H_5ICOSA', "5 Icosahedra", 'ICOSA', 'I', 2, 2, 90.0, 5),
+    ('H_6ICOSA', "6 Icosahedra", 'ICOSA', 'I', 5, 5, 36.0, 6),
+    ('H_10ICOSA', "10 Icosahedra", 'ICOSA', 'I', 3, 3, 60.0, 10),
+
     # --- Hart's compounds of cubes ------------------------------------
     # Hart labels these "count | G x I / H x I", which IS the
     # subgroup-embedding rule: constituent placed so H is a subgroup of

@@ -251,6 +251,33 @@ def _selftest():
     # five cubes separate into a generic thirty
     assert len(build_compound('H_5CUBES', phase=17.0)) > 5
 
+    # --- every declared axis must really BE one -------------------------
+    # COMPONENT_AXES and GROUP_AXES are asserted geometry, and a wrong
+    # entry is close to invisible: the dodecahedron's five-fold axis was
+    # recorded as (0, 1, PHI) -- the ICOSAHEDRON's -- and every component
+    # count still came out right, because a bogus axis and an honest
+    # five-fold-on-three-fold alignment both leave the stabilizer
+    # trivial.  Only turning the solid about the axis and checking it
+    # lands on itself finds it.
+    def _fixes(V, axis, order):
+        R = _cmp._rot(axis, 2 * _math.pi / order)
+        S = {tuple(np.round(v, 4)) for v in V}
+        return {tuple(np.round(R @ np.array(v, float), 4)) for v in V} == S
+
+    for comp, axes in _cmp.COMPONENT_AXES.items():
+        V, _F = _cmp._component(comp)
+        for order, axis in axes.items():
+            assert _fixes(V, axis, order), \
+                (comp, order, axis, 'not a symmetry axis of the component')
+    for grp, axes in _cmp.GROUP_AXES.items():
+        G = _cmp.GROUPS[grp]()
+        for order, axis in axes.items():
+            R = _cmp._rot(axis, 2 * _math.pi / order)
+            assert any(np.allclose(R, M, atol=1e-9) for M in G), \
+                (grp, order, axis, 'not a rotation axis of the group')
+    print("AXES  every declared component and group axis verified against "
+          "the solid it belongs to")
+
     # --- Hart's central-freedom cubes -----------------------------------
     # Nothing is aligned, so the stabilizer is trivial and the count is
     # the whole group order.  Checking that it holds at SEVERAL angles is
