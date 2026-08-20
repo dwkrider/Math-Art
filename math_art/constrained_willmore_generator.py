@@ -99,7 +99,15 @@
 # - NIST DLMF ch. 23 (Weierstrass functions): the sigma/zeta/P quasi-
 #   periodicity used for argument reduction.
 
-bl_info = {
+# This module is a LIBRARY, not a generator: it has no operator of its
+# own.  Its curves are exposed as presets on `mesh.hopf_torus_add`
+# (math_art/hopf_fibration_generator.py), because a constrained
+# Willmore torus IS a Hopf torus -- over a constrained elastic curve
+# rather than a free one.  Keeping the operator there keeps one menu
+# entry for one construction; keeping the mathematics here keeps a
+# large, self-contained numeric core out of the Hopf module.
+
+_UNUSED_bl_info = {
     "name": "Constrained Willmore Torus",
     "author": "Math Art project",
     "version": (1, 0, 0),
@@ -116,14 +124,6 @@ import math
 from math import gcd, pi
 
 import numpy as np
-
-try:
-    import bpy
-    from bpy.props import (IntProperty, FloatProperty, EnumProperty,
-                           BoolProperty)
-    _IN_BLENDER = True
-except ImportError:
-    _IN_BLENDER = False
 
 try:
     from .minsurf.elliptic import _Lattice
@@ -467,173 +467,6 @@ def resolve_params(lobes, winding, family, shape, branch, phase,
 
 # --------------------------------------------------------------------------
 # Blender operator
-# --------------------------------------------------------------------------
-
-if _IN_BLENDER:
-
-    class MESH_OT_constrained_willmore_torus_add(bpy.types.Operator):
-        """Add a constrained Willmore Hopf torus: the Hopf preimage of a
-        closed (constrained) elastic curve on S^2, from Heller's
-        Weierstrass closed form"""
-        bl_idname = "mesh.constrained_willmore_torus_add"
-        bl_label = "Constrained Willmore Torus"
-        bl_options = {'REGISTER', 'UNDO'}
-
-        family: EnumProperty(
-            name="Family",
-            items=[
-                ('WILLMORE', "Willmore",
-                 "Shape solved so the torus is a WILLMORE surface "
-                 "(mu = -G/2): Pinkall's tori over Langer-Singer "
-                 "elasticae, winding/lobes < 2 - sqrt(2)"),
-                ('FREE', "Free elastica",
-                 "Shape solved so the curve is a FREE elastica (mu = 0), "
-                 "winding/lobes in (1/2, 1/sqrt(2))"),
-                ('ELASTIC', "Elastic (custom shape)",
-                 "Elastic curve (lambda = 0) at a chosen lattice shape: "
-                 "the length multiplier mu sweeps with the shape"),
-                ('CONSTRAINED', "Constrained elastic",
-                 "Genuinely constrained elastic curve (lambda != 0): the "
-                 "phase slides Heller's isospectral family, deforming the "
-                 "curve at fixed closure and enclosed-area multiplier "
-                 "lambda"),
-            ],
-            default='WILLMORE')
-        lobes: IntProperty(
-            name="Lobes", default=3, min=2, max=9,
-            description="Number of curvature lobes n of the profile "
-                        "curve (periods of the Weierstrass function "
-                        "until closure)")
-        winding: IntProperty(
-            name="Winding", default=1, min=1, max=8,
-            description="Geometric winding w of the curve about its "
-                        "axis; must be coprime to the lobe count "
-                        "(Heller's closure integer is m = 2n - w)")
-        shape: FloatProperty(
-            name="Shape", default=0.8, min=0.34, max=3.2, precision=3,
-            description="Rhombic lattice shape Im(tau) (ELASTIC / "
-                        "CONSTRAINED): sweeps the length multiplier mu "
-                        "of the elastic curve at fixed closure")
-        branch: EnumProperty(
-            name="Branch",
-            items=[('UPPER', "Upper (gentler)",
-                    "Larger spectral point E: smaller curvature G, the "
-                    "branch carrying the Willmore and free curves"),
-                   ('LOWER', "Lower (curlier)",
-                    "Smaller spectral point E: rounder sphere, tighter "
-                    "curve")],
-            default='UPPER',
-            description="Which of the two closure roots to use (the "
-                        "closing function is not monotone)")
-        phase: FloatProperty(
-            name="Area Phase", default=0.42, min=0.02, max=0.98,
-            precision=3,
-            description="Imaginary phase x0 as a fraction of the half "
-                        "period: 0.5 gives lambda = 0 (plain elastic); "
-                        "off-centre values give constrained elastic "
-                        "curves with lambda != 0 (CONSTRAINED family)")
-        high_wrap: BoolProperty(
-            name="High Wrap", default=False,
-            description="Use the closure branch m = 2n + w: the curve "
-                        "winds m times about its axis (ELASTIC / "
-                        "CONSTRAINED only)")
-        n_curve: IntProperty(
-            name="Curve Samples", default=256, min=32, max=2048,
-            description="Samples along the profile curve (torus "
-                        "meridians)")
-        m_psi: IntProperty(
-            name="Fibre Samples", default=48, min=6, max=512,
-            description="Samples around each Hopf fibre (torus "
-                        "longitudes)")
-        shade_smooth: BoolProperty(name="Shade Smooth", default=True)
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
-
-        def execute(self, context):
-            try:
-                t, m, branch, x0f = resolve_params(
-                    self.lobes, self.winding, self.family, self.shape,
-                    self.branch, self.phase, self.high_wrap)
-                P, info = heller_curve(t, self.lobes, m, branch, x0f,
-                                       self.n_curve)
-            except ValueError as exc:
-                self.report({'ERROR'}, str(exc))
-                return {'CANCELLED'}
-            gamma = _clear_of_poles(P)
-            verts, faces, _area = build_hopf_torus(gamma, self.m_psi)
-            verts = (np.asarray(verts) * self.scale).tolist()
-            name = (f"Constrained Willmore Torus "
-                    f"({self.winding},{self.lobes})")
-            me = bpy.data.meshes.new(name)
-            me.from_pydata(verts, [], faces)
-            me.validate(clean_customdata=True)
-            if self.shade_smooth:
-                me.polygons.foreach_set(
-                    'use_smooth', [True] * len(me.polygons))
-            me.update()
-            obj = bpy.data.objects.new(name, me)
-            context.collection.objects.link(obj)
-            obj.location = context.scene.cursor.location
-            for o in context.selected_objects:
-                o.select_set(False)
-            obj.select_set(True)
-            context.view_layer.objects.active = obj
-            self.report(
-                {'INFO'},
-                f"{name}: t={t:.4f}, G={info['G']:.3f}, "
-                f"mu/G={info['mu1'] - 1.0:+.4f}, "
-                f"lambda={info['lam']:+.4f}, "
-                f"W={info['W_closed']:.4f} = "
-                f"{info['W_closed'] / (2 * pi * pi):.4f} x 2pi^2")
-            return {'FINISHED'}
-
-        def draw(self, context):
-            lay = self.layout
-            lay.use_property_split = True
-            lay.prop(self, 'family')
-            lay.prop(self, 'lobes')
-            lay.prop(self, 'winding')
-            w, n = self.winding, self.lobes
-            if gcd(w, n) != 1:
-                lay.label(text="winding and lobes must be coprime",
-                          icon='ERROR')
-            elif self.family == 'WILLMORE' and w / n >= _WILLMORE_MAX:
-                lay.label(text="Willmore needs w/n < 0.5858",
-                          icon='ERROR')
-            elif self.family == 'FREE' and not (
-                    _FREE_WINDOW[0] < w / n < _FREE_WINDOW[1]):
-                lay.label(text="free needs 1/2 < w/n < 0.7071",
-                          icon='ERROR')
-            if self.family in ('ELASTIC', 'CONSTRAINED'):
-                lay.prop(self, 'shape')
-                lay.prop(self, 'branch')
-                lay.prop(self, 'high_wrap')
-            if self.family == 'CONSTRAINED':
-                lay.prop(self, 'phase')
-            lay.prop(self, 'n_curve')
-            lay.prop(self, 'm_psi')
-            lay.prop(self, 'shade_smooth')
-            lay.prop(self, 'scale')
-
-    def _menu_func(self, context):
-        self.layout.operator("mesh.constrained_willmore_torus_add",
-                             icon='MESH_TORUS')
-
-    ADD_MENU = True   # the Math Art extension menu sets this False
-
-    def register():
-        bpy.utils.register_class(MESH_OT_constrained_willmore_torus_add)
-        if ADD_MENU:
-            bpy.types.VIEW3D_MT_mesh_add.append(_menu_func)
-
-    def unregister():
-        if ADD_MENU:
-            bpy.types.VIEW3D_MT_mesh_add.remove(_menu_func)
-        bpy.utils.unregister_class(MESH_OT_constrained_willmore_torus_add)
-
-
-# --------------------------------------------------------------------------
-# Self-test
 # --------------------------------------------------------------------------
 
 def _selftest():

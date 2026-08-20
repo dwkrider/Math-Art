@@ -51,7 +51,6 @@ _MODULE_NAMES = [
     'bryant_generator',
     'bubbleton_generator',
     'wente_generator',
-    'constrained_willmore_generator',
     'crochet_generator',
     'dform_generator',
     'koman_generator',
