@@ -579,6 +579,232 @@ def self_dual_16():
     return [tuple(v) for v in W], F
 
 
+# --- The pseudo great rhombicuboctahedron --------------------------------
+# The rhombicuboctahedron has a famous impostor.  Cut it along its
+# octagonal band and give one square cupola a 45-degree turn: every face
+# is still regular and every vertex still reads 3.4.4.4, yet the solid is
+# no longer vertex-transitive, so it is a Johnson solid (J37, the
+# elongated square gyrobicupola) and not an Archimedean one.  Mistaking
+# it for Archimedean is the error Grunbaum traced through three
+# centuries of the literature.
+#
+# R. Hughes Jones observed that the same turn works on the NONCONVEX
+# great rhombicuboctahedron (U17, the quasirhombicuboctahedron), whose
+# square cupolas are CROSSED -- each cupola's top square lies on the far
+# side of the centre from that cupola's own octagonal rim.  Turning one
+# of them through 45 degrees gives the pseudo great rhombicuboctahedron:
+# 8 triangles and 18 squares on 24 vertices, one vertex figure
+# throughout, and no vertex-transitivity.  Its symmetry drops from the
+# octahedral O_h to the antiprismatic D_4d.
+#
+# U17's vertices are every permutation of (+-1, +-1, +-xi) with
+# xi = 1 - sqrt(2), which puts every edge at length 2 and every one of
+# the 26 face planes at POSITIVE distance from the centre -- so "outward"
+# is well defined face by face even though the solid is not convex:
+#
+#     8 triangles      s . x = 2 + xi                (s a sign vector)
+#     6 "axis" squares x_k = sigma xi
+#    12 "pair" squares sigma_i x_i + sigma_j x_j = 1 + xi
+#
+# Writing each vertex as (k, s) -- xi in slot k, signs s -- makes the
+# cupola split exact rather than geometric.  The cupola whose rim lies at
+# z = -1 is precisely the twelve vertices with s[2] = -1, and its nine
+# faces are precisely the faces all of whose vertices have s[2] = -1; the
+# other eight squares are the band, and they are what holds still while
+# the cupola turns.
+#
+# The turn itself needs no new geometry, which is what makes this cheap:
+# 45 degrees about z carries the rim octagon onto itself, so only the
+# cupola's own square moves.  Its eight remaining faces just re-index
+# onto the rim vertex one step around, and the band keeps the rim it
+# already had.
+#
+# References:
+# - R. Hughes Jones, "The pseudo-great rhombicuboctahedron",
+#   Mathematical Scientist 19(1) (June 1994), 60-63 (Letters to the
+#   Editor).  The discovery and the 45-degree construction; the letter
+#   gives no coordinates.
+# - B. Grunbaum, "An enduring error", Elemente der Mathematik 64 (2009),
+#   89-101 -- the pseudorhombicuboctahedron among other repeated
+#   miscounts in the enumeration of polyhedra.
+# - Norman W. Johnson (1966), who catalogued the convex case as J37;
+#   completeness of the list proved by Victor Zalgaller (1969).
+_PGR_XI = 1.0 - math.sqrt(2.0)
+
+#: sign vectors, in one fixed order
+_PGR_SIGNS = [(a, b, c) for a in (1, -1) for b in (1, -1) for c in (1, -1)]
+
+
+def _pgr_key(p):
+    return tuple(round(c, 7) + 0.0 for c in p)
+
+
+def _pgr_vertices():
+    """U17's 24 vertices, and the (xi-slot, signs) -> index map.
+
+    Slot k carries the xi, so the point is every permutation of
+    (+-1, +-1, +-xi) exactly once.
+    """
+    V, idx = [], {}
+    for k in range(3):
+        for s in _PGR_SIGNS:
+            idx[(k, s)] = len(V)
+            V.append(tuple(s[m] * (_PGR_XI if m == k else 1.0)
+                           for m in range(3)))
+    return V, idx
+
+
+def _pgr_faces(idx):
+    """U17's 26 faces as (vertex indices, cupola tag).
+
+    The tag is the sign of z shared by every vertex of the face, which is
+    +-1 exactly on the two crossed cupolas and 0 on the eight band
+    squares that join their rims.
+    """
+    out = []
+    for s in _PGR_SIGNS:                    # 8 triangles, s . x = 2 + xi
+        out.append(([idx[(k, s)] for k in range(3)], s[2]))
+    for k in range(3):                      # 6 squares, x_k = sigma xi
+        for sk in (1, -1):
+            f = [idx[(k, s)] for s in _PGR_SIGNS if s[k] == sk]
+            out.append((f, sk if k == 2 else 0))
+    for i in range(3):                      # 12 squares,
+        for j in range(i + 1, 3):           # s_i x_i + s_j x_j = 1 + xi
+            for si in (1, -1):
+                for sj in (1, -1):
+                    f = [idx[(m, s)] for m in (i, j) for s in _PGR_SIGNS
+                         if s[i] == si and s[j] == sj]
+                    out.append((f, sj if j == 2 else 0))
+    return out
+
+
+def _pgr_wind(V, f):
+    """Order one face into a cycle wound outward from the centre.
+
+    Each of the 26 faces is a regular polygon centred on its own plane's
+    normal, so the centroid direction IS that normal -- no orientation
+    guess is needed, which matters because the solid is not convex and a
+    hull cannot supply one.
+    """
+    cen = [sum(V[i][k] for i in f) / len(f) for k in range(3)]
+    ln = math.sqrt(sum(c * c for c in cen))
+    n = [c / ln for c in cen]
+    d = [V[f[0]][k] - cen[k] for k in range(3)]
+    ln = math.sqrt(sum(c * c for c in d))
+    u = [c / ln for c in d]
+    w = [n[1] * u[2] - n[2] * u[1], n[2] * u[0] - n[0] * u[2],
+         n[0] * u[1] - n[1] * u[0]]
+
+    def az(i):
+        e = [V[i][k] - cen[k] for k in range(3)]
+        return math.atan2(sum(w[k] * e[k] for k in range(3)),
+                          sum(u[k] * e[k] for k in range(3)))
+    return sorted(f, key=az)
+
+
+def _pgr_gyrate(V, faces, idx):
+    """Turn the cupola whose rim lies at z = -1 through 45 degrees.
+
+    Its square moves to new coordinates; its rim maps onto itself, so
+    those vertices are re-indexed instead of duplicated and the band --
+    which shares them -- is left alone.
+    """
+    ca = sa = math.sqrt(0.5)
+
+    def rot(p):
+        return (ca * p[0] - sa * p[1], sa * p[0] + ca * p[1], p[2])
+
+    key = {_pgr_key(p): i for i, p in enumerate(V)}
+    W = list(V)
+    perm = list(range(len(V)))
+    for (k, s), i in idx.items():
+        if s[2] != -1:
+            continue
+        q = rot(V[i])
+        if k == 2:                          # the cupola's own square
+            W[i] = q
+        else:                               # the rim turns onto itself
+            j = key.get(_pgr_key(q))
+            if j is None:
+                raise ValueError("the rim octagon is not 45-degree "
+                                 "symmetric")
+            perm[i] = j
+    out = [[perm[i] for i in f] if tag == -1 else list(f)
+           for f, tag in faces]
+    return W, out
+
+
+def pseudo_great_rhombicuboctahedron(gyrate=True):
+    """Hughes Jones's solid, or plain U17 when `gyrate` is False."""
+    V, idx = _pgr_vertices()
+    faces = [(_pgr_wind(V, f), tag) for f, tag in _pgr_faces(idx)]
+    if not gyrate:
+        return V, [f for f, _t in faces]
+    return _pgr_gyrate(V, faces, idx)
+
+
+def _symmetry_perms(V, F):
+    """Every orthogonal map carrying (V, F) to itself, as index permutations.
+
+    The point of the pseudo solid is a negative claim -- that it is NOT
+    vertex-transitive despite one vertex figure throughout -- and a
+    negative claim needs the whole symmetry group, not a sample of it.
+    So the group is found rather than assumed: fix a spanning pair of
+    vertices, and for every image pair with the same Gram entries the map
+    is determined up to the handedness of the third axis.  Try both
+    handednesses, keep the maps that permute the vertices AND carry faces
+    to faces, and the result is exhaustive.
+    """
+    def dot(p, q):
+        return p[0] * q[0] + p[1] * q[1] + p[2] * q[2]
+
+    def cross(p, q):
+        return (p[1] * q[2] - p[2] * q[1], p[2] * q[0] - p[0] * q[2],
+                p[0] * q[1] - p[1] * q[0])
+
+    def unit(p):
+        ln = math.sqrt(dot(p, p))
+        return (p[0] / ln, p[1] / ln, p[2] / ln)
+
+    def frame(p, q, sgn):
+        e0 = unit(p)
+        t = tuple(q[k] - dot(q, e0) * e0[k] for k in range(3))
+        e1 = unit(t)
+        e2 = cross(e0, e1)
+        return e0, e1, tuple(sgn * c for c in e2)
+
+    key = {_pgr_key(p): i for i, p in enumerate(V)}
+    faces = {frozenset(f) for f in F}
+    a = V[0]
+    b = next(p for p in V if dot(cross(a, p), cross(a, p)) > 1e-12)
+    src = frame(a, b, 1)
+    out = set()
+    for p in V:
+        if abs(dot(p, p) - dot(a, a)) > 1e-6:
+            continue
+        for q in V:
+            if abs(dot(q, q) - dot(b, b)) > 1e-6 or \
+                    abs(dot(p, q) - dot(a, b)) > 1e-6:
+                continue
+            for sgn in (1, -1):
+                dst = frame(p, q, sgn)
+                M = [[sum(dst[t][r] * src[t][k] for t in range(3))
+                      for k in range(3)] for r in range(3)]
+                img = []
+                for v in V:
+                    w = _pgr_key(tuple(sum(M[r][k] * v[k] for k in range(3))
+                                       for r in range(3)))
+                    if w not in key:
+                        break
+                    img.append(key[w])
+                if len(img) != len(V) or len(set(img)) != len(V):
+                    continue
+                if any(frozenset(img[i] for i in f) not in faces for f in F):
+                    continue
+                out.add(tuple(img))
+    return sorted(out)
+
+
 ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
           "echidnahedron -- the outermost stellation (W42)"),
          ("SCHONHARDT", "Schonhardt Polyhedron", "twisted octahedron"),
@@ -602,6 +828,10 @@ ITEMS = [("ECHIDNAHEDRON", "Final Stellation of Icosahedron",
           "its polar dual; trapezoids in place of the kites"),
          ("SELF_DUAL_16", "Self-Dual 16-Hedron",
           "the canonical form between the two, its own dual"),
+         ("PSEUDO_GRCO", "Pseudo Great Rhombicuboctahedron",
+          "Hughes Jones (1994): one crossed cupola of the nonconvex "
+          "great rhombicuboctahedron turned 45 degrees, so the vertex "
+          "figure is uniform but the solid is not"),
          ("KLEIN", "Klein Regular Map {3,7} (genus 3)", ""),
          ("MAP64", "Regular Map {6,4} (genus 6)",
           "Schulte-Wills; 20 hexagons"),
@@ -622,6 +852,8 @@ def build(kind):
         V, F = tetra_truncated_dodecahedron()
     elif kind == 'SELF_DUAL_16':
         V, F = self_dual_16()
+    elif kind == 'PSEUDO_GRCO':
+        V, F = pseudo_great_rhombicuboctahedron()
     else:
         S = GALLERY[kind]
         V = [tuple(float(c) for c in v) for v in S["V"]]
@@ -638,7 +870,7 @@ def build(kind):
 # belongs to whoever owns those solids; new entries assert from the
 # start.
 _ASSERTED = {'SHARP', 'TETRA_STELLATED_ICOSA', 'TETRA_TRUNCATED_DODECA',
-             'SELF_DUAL_16'}
+             'SELF_DUAL_16', 'PSEUDO_GRCO'}
 
 
 def _self_test():
@@ -652,7 +884,8 @@ def _self_test():
             'SHARP': (20, 36, 18, 2),
             'TETRA_STELLATED_ICOSA': (16, 30, 16, 2),
             'TETRA_TRUNCATED_DODECA': (16, 30, 16, 2),
-            'SELF_DUAL_16': (16, 30, 16, 2)}
+            'SELF_DUAL_16': (16, 30, 16, 2),
+            'PSEUDO_GRCO': (24, 48, 26, 2)}
     want.update(_hgm.WANT)
     for kind, _lbl, _d in ITEMS:
         V, F = build(kind)
@@ -743,6 +976,75 @@ def _self_test():
     assert len(rv) == len(rp), (len(rv), len(rp))
     assert max(abs(a - b) for a, b in zip(rv, rp)) < 1e-6, "radii differ"
     assert max(abs(a - b) for a, b in zip(pv, pp)) < 1e-6, "distances differ"
+
+    # --- The pseudo great rhombicuboctahedron ---------------------------
+    # The un-gyrated build must be U17 itself, because the whole
+    # construction rests on the claim that permutations of
+    # (+-1, +-1, +-xi) with the plane families above really do give the
+    # nonconvex great rhombicuboctahedron.  Check it against the
+    # independent Wythoff construction rather than against itself: the
+    # radius spectrum plus the full multiset of pairwise distances pins
+    # a vertex set down to an isometry without solving for the rotation.
+    U, UF = pseudo_great_rhombicuboctahedron(gyrate=False)
+    assert sorted(len(f) for f in UF) == [3] * 8 + [4] * 18, \
+        sorted(len(f) for f in UF)
+    try:
+        from . import uniform_polyhedra_generator as _uni
+    except ImportError:                     # flat import (test runner)
+        try:
+            import uniform_polyhedra_generator as _uni
+        except ImportError:
+            _uni = None
+    if _uni is not None and getattr(_uni, 'np', None) is not None:
+        W = [tuple(float(c) for c in v)
+             for v in _uni.build_uniform("3/2 4 | 2", ["3/2", "4", "2"])[0]]
+        su = max(math.dist((0, 0, 0), v) for v in U)
+        sw = max(math.dist((0, 0, 0), v) for v in W)
+        ru, du = _spectrum([tuple(c / su for c in v) for v in U])
+        rw, dw = _spectrum([tuple(c / sw for c in v) for v in W])
+        assert len(ru) == len(rw) == 24, (len(ru), len(rw))
+        assert max(abs(x - y) for x, y in zip(ru, rw)) < 1e-6, \
+            "the exact coordinates are not U17's (radii)"
+        assert max(abs(x - y) for x, y in zip(du, dw)) < 1e-6, \
+            "the exact coordinates are not U17's (distances)"
+
+    # Every face regular and all of one edge length, gyrated or not --
+    # this is what makes the impostor convincing.
+    V, F = build('PSEUDO_GRCO')
+    assert sorted(len(f) for f in F) == [3] * 8 + [4] * 18, \
+        sorted(len(f) for f in F)
+    lens = [math.dist(V[f[k]], V[f[(k + 1) % len(f)]])
+            for f in F for k in range(len(f))]
+    assert max(lens) - min(lens) < 1e-9, (min(lens), max(lens))
+
+    # And the gyration is not a symmetry in disguise: the turned cupola
+    # really does move the solid to a new one.
+    su = max(math.dist((0, 0, 0), v) for v in U)
+    U = [tuple(c / su for c in v) for v in U]
+    assert sorted(_pgr_key(v) for v in U) != sorted(_pgr_key(v) for v in V), \
+        "the 45-degree turn left the vertex set unchanged"
+
+    # The headline: one vertex figure throughout, yet not
+    # vertex-transitive.  U17 has all 24 vertices in one orbit under its
+    # 48 symmetries; the pseudo solid keeps a single vertex figure but
+    # its group collapses to the antiprismatic D_4d of order 16, which
+    # breaks the vertices into the 16 on the two rims and the 8 on the
+    # two cupola squares.
+    for tag, (PV, PF), order, orbits in (
+            ("U17", (U, UF), 48, [24]),
+            ("pseudo", (V, F), 16, [8, 16])):
+        G = _symmetry_perms(PV, PF)
+        assert len(G) == order, (tag, len(G), order)
+        seen, sizes = set(), []
+        for i in range(len(PV)):
+            if i in seen:
+                continue
+            orb = {g[i] for g in G}
+            seen |= orb
+            sizes.append(len(orb))
+        assert sorted(sizes) == orbits, (tag, sorted(sizes), orbits)
+    print("PSEUDO_GRCO  8 triangles + 18 squares, one edge length, "
+          "|sym| 48 -> 16, vertex orbits [24] -> [8, 16]")
 
 
 try:
