@@ -117,25 +117,40 @@ def miura(rows=4, cols=6, panel_a=1.0, panel_b=1.0, alpha=np.deg2rad(60.0)):
     idx = [[B.v(j * panel_a + (i % 2) * s, i * h) for j in range(cols + 1)]
            for i in range(rows + 1)]
 
+    # THE ASSIGNMENT, read off the closed-form folded state rather than
+    # guessed.  Evaluating Schenk and Guest's p(i, j) and measuring the
+    # dihedral angle across each crease gives:
+    #
+    #   straight row lines   sign alternates with (i + j) -- so it flips
+    #                        ALONG a row, segment by segment, not merely
+    #                        from one row to the next
+    #   zigzag columns       sign depends on j alone, constant down the
+    #                        whole zigzag
+    #
+    # Maekawa then comes out at every interior vertex: the two row-line
+    # segments meeting there have consecutive (i + j) and so disagree
+    # (1-1), while the two zigzag segments share a column and so agree
+    # (2 of a kind), giving 3-1.
+    #
+    # This matters beyond validity.  An assignment can satisfy Maekawa
+    # and Kawasaki everywhere and still not be the Miura: making the row
+    # lines depend on i alone passes both checks, but its infinitesimal
+    # fold mode has NO support on the zigzag creases, so a solver started
+    # from flat slides onto a degenerate branch -- every straight line
+    # folding like an accordion while the zigzags stay dead flat.  The
+    # local conditions are necessary, not sufficient, and this is what
+    # that costs in practice.
     for i in range(rows + 1):
         for j in range(cols + 1):
-            # horizontal run: straight lines, alternating M/V by row
+            # straight row line: alternates with (i + j)
             if j < cols:
                 kind = BOUNDARY if i in (0, rows) else (
-                    MOUNTAIN if i % 2 else VALLEY)
+                    MOUNTAIN if (i + j) % 2 == 0 else VALLEY)
                 B.e(idx[i][j], idx[i][j + 1], kind)
-            # Vertical zigzag: alternates by ROW index, so the crease
-            # entering a vertex from below and the one leaving above
-            # always disagree.  That is what makes Maekawa come out: the
-            # two horizontal creases at a vertex lie on one straight
-            # line and so share an assignment (2 of a kind), and the two
-            # vertical ones split 1-1, giving 3-1 and |M - V| = 2.
-            # Assigning both verticals alike gives 2-2 and fails at
-            # every interior vertex -- which is what the self-test below
-            # exists to catch.
+            # zigzag column: depends on j alone
             if i < rows:
                 kind = BOUNDARY if j in (0, cols) else (
-                    MOUNTAIN if i % 2 else VALLEY)
+                    VALLEY if j % 2 else MOUNTAIN)
                 B.e(idx[i][j], idx[i + 1][j], kind)
     return B.frame("Miura-ori")
 

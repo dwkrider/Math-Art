@@ -410,6 +410,28 @@ def _selftest():
     P, rho, path = fold(mi, np.deg2rad(70.0), steps=10)
     assert len(path) == 11
 
+    # -- EVERY crease must fold.  KNOWN FAILURE, and the point of this
+    # -- assertion is that it fails: see BRANCH SELECTION below.
+    #
+    # The flat state is a bifurcation point -- the Jacobian's nullity
+    # here is 6, not 1 -- and a least-norm Newton step from it slides
+    # onto a DEGENERATE BUT VALID branch: every straight row line folds
+    # like an accordion while the zigzag creases stay dead flat.  That
+    # really is a rigid folding of this crease pattern, because the two
+    # row-line segments at a Miura vertex are collinear, so folding them
+    # alone is just bending the sheet along one straight line.  It is
+    # simply not the Miura.
+    #
+    # The distance oracle below does NOT catch it: it samples a few
+    # vertex pairs that happen to stay consistent, which is why this
+    # check is stated separately and in terms of the creases themselves.
+    zig = np.array([abs(mi.verts[p][1] - mi.verts[q][1]) > 1e-9
+                    for (p, q) in mi.edges[folder.free]])
+    folded_zig = int((np.abs(rho[zig]) > 1e-6).sum())
+    assert folded_zig == int(zig.sum()), (
+        f"only {folded_zig} of {int(zig.sum())} zigzag creases folded -- "
+        "the solver picked the accordion branch, not the Miura")
+
     # rigidity: no crease changed length
     for (p, q) in mi.edges:
         d0 = np.linalg.norm(mi.verts[p][:2] - mi.verts[q][:2])
