@@ -218,7 +218,7 @@ class OBJECT_OT_fold_solve(bpy.types.Operator):
             if not folder.n_vars:
                 raise crease.rigid.FoldFailure(
                     "no foldable creases: every edge is boundary or flat")
-            path = folder.fold_path(0, float(self.fold_angle),
+            path = folder.fold_path(float(self.fold_angle),
                                     steps=int(self.steps))
             states = [folder.place(r) for r in path]
         except (crease.FoldError, crease.rigid.FoldFailure) as exc:

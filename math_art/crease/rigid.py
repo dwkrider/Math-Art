@@ -70,7 +70,7 @@
 
 import numpy as np
 
-from .fold_io import BOUNDARY, FLAT
+from .fold_io import BOUNDARY, FLAT, MOUNTAIN
 from .graph import vertex_rings
 from .validate import sector_angles
 
@@ -236,6 +236,75 @@ class RigidFolder:
                        self.residual(rho - step, driver, target)) / (2 * h)
         return J
 
+    def seed_direction(self):
+        """The direction to leave the flat state along.
+
+        A pattern that knows its own kinematics records relative fold
+        magnitudes in `meta["fold_seed"]`; otherwise fall back to the
+        mountain/valley signs, which fix every sign but assume every
+        crease folds at the same rate.  For the Miura that assumption is
+        wrong -- the two families differ by cos(alpha) -- and picking the
+        wrong direction here is exactly what sends the solver onto the
+        accordion branch.
+        """
+        seed = self.frame.meta.get("fold_seed")
+        if seed is not None and len(seed) == len(self.edges):
+            return np.asarray(seed, dtype=float)[self.free]
+        assign = self.frame.assignment
+        if assign is None:
+            return np.ones(self.n_vars)
+        return np.array([-1.0 if str(assign[k]) == MOUNTAIN else 1.0
+                         for k in self.free])
+
+    def tangent(self, rho, prev=None, bias=None):
+        """Unit tangent to the constraint manifold at `rho`.
+
+        Chosen by projecting `prev` (or `bias` at the start) onto the
+        null space, which is what keeps a continuation on ONE branch
+        rather than hopping between the several that meet at the flat
+        state.
+        """
+        ref = prev if prev is not None else bias
+        J = self.jacobian(rho)
+        if J.size == 0 or not self.n_rows:
+            # No interior vertices means no closure conditions at all --
+            # an accordion is the canonical case.  Every fold is valid,
+            # so the seed direction IS the tangent.
+            return ref / (np.linalg.norm(ref) or 1.0)
+        U, S, Vt = np.linalg.svd(J)
+        if not len(S) or S[0] <= 0:
+            return ref / (np.linalg.norm(ref) or 1.0)
+        tol = max(max(J.shape) * np.finfo(float).eps * S[0], 1e-9)
+        null = Vt[int((S > tol).sum()):]
+        if null.shape[0] == 0:
+            return None
+        t = null.T @ (null @ ref)
+        if np.linalg.norm(t) < 1e-12:
+            t = null[0]
+        t = t / np.linalg.norm(t)
+        if np.dot(t, ref) < 0:
+            t = -t
+        return t
+
+    def _correct(self, rho, t, iters=30, tol=1e-12):
+        """Newton back onto the manifold, ORTHOGONAL to the tangent.
+
+        A plain minimum-norm correction is orthogonal to the null space
+        at the current point -- which at the flat state is 8-dimensional
+        and includes the very mode being followed, so the correction
+        undoes the step.  Constraining it against the tangent keeps the
+        progress that the step just made.
+        """
+        for _ in range(iters):
+            r = self.residual(rho)
+            if np.linalg.norm(r) < tol:
+                break
+            A = np.vstack([self.jacobian(rho), t[None, :]])
+            rhs = np.concatenate([-r, [0.0]])
+            d, *_ = np.linalg.lstsq(A, rhs, rcond=None)
+            rho = rho + d
+        return rho
+
     def solve(self, rho, driver, target, iters=40, tol=1e-10):
         """Newton-project onto the constraint manifold at a driver angle."""
         rho = np.array(rho, dtype=float)
@@ -257,19 +326,42 @@ class RigidFolder:
             f"did not converge: residual {np.linalg.norm(r):.3e} after "
             f"{iters} iterations")
 
-    def fold_path(self, driver, target, steps=12, rho0=None):
-        """Continuation from flat to `target`, returning every state.
+    def fold_path(self, target, steps=24):
+        """Continuation from flat until the largest fold angle hits `target`.
 
-        The intermediate states are the point, not a side effect: they
-        are what an animation caches, and stepping is also what keeps
-        Newton inside its basin of attraction.
+        Returns every state along the way -- those are the point, not a
+        side effect: they are what an animation caches, and stepping is
+        also what keeps Newton in its basin.
+
+        `target` is the biggest dihedral angle anywhere in the model,
+        which is the quantity a user can actually see, rather than the
+        angle of one arbitrarily chosen crease.
         """
-        rho = np.zeros(self.n_vars) if rho0 is None else np.array(rho0, float)
+        target = abs(float(target))
+        rho = np.zeros(self.n_vars)
         out = [rho.copy()]
-        for s in range(1, steps + 1):
-            t = target * s / steps
-            rho, _ = self.solve(rho, driver, t)
+        t = self.tangent(rho, bias=self.seed_direction())
+        if t is None:
+            return out
+        # The step is an arclength in fold-angle space, but the caller
+        # asked for an ANGLE.  A unit tangent spreads its length over
+        # every crease, so its largest component shrinks as the pattern
+        # grows -- a fixed arclength step would advance a 6x8 sheet far
+        # less per step than a 2x3 one, and larger patterns would stop
+        # short of the target.  Scaling by the tangent's largest
+        # component makes each step advance the biggest angle by the same
+        # amount whatever the size.
+        want = target / max(1, steps)
+        for _ in range(steps * 8):
+            lead = float(np.abs(t).max()) or 1.0
+            rho = self._correct(rho + (want / lead) * t, t)
             out.append(rho.copy())
+            if float(np.abs(rho).max()) >= target:
+                break
+            nxt = self.tangent(rho, prev=t)
+            if nxt is None:
+                break
+            t = nxt
         return out
 
     def dof(self, rho):
@@ -359,18 +451,15 @@ class RigidFolder:
         return _anchor_to_flat(out, self.verts0) if anchor else out
 
 
-def fold(frame, target, driver=None, steps=12):
-    """Fold a flat pattern to a driver angle; return (positions, rho, path).
+def fold(frame, target, steps=24):
+    """Fold a flat pattern; return (positions, rho, path).
 
-    `target` is the driving crease's fold angle in radians.  `driver` is
-    an index into the free creases; the first free crease is used when it
-    is not given.
+    `target` is the largest dihedral angle to reach, in radians.
     """
     f = RigidFolder(frame)
     if not f.n_vars:
         raise FoldFailure("this pattern has no foldable creases")
-    d = 0 if driver is None else int(driver)
-    path = f.fold_path(d, float(target), steps=steps)
+    path = f.fold_path(float(target), steps=steps)
     return f.place(path[-1]), path[-1], path
 
 
@@ -383,7 +472,7 @@ def _selftest():
     ac.faces = build_faces(ac.verts, ac.edges)
     f = RigidFolder(ac)
     assert f.n_rows == 0, "an accordion has no interior vertices"
-    P, rho, path = fold(ac, np.deg2rad(60.0), steps=4)
+    P, rho, path = fold(ac, np.deg2rad(60.0), steps=8)
     assert P.shape == (ac.n_verts, 3)
     assert np.abs(P[:, 2]).max() > 1e-3, "the accordion did not leave the plane"
     # panels stayed rigid: every crease keeps its flat length
@@ -407,8 +496,8 @@ def _selftest():
     # N - 3M would be 24 - 27 = -3 here, which is why it is not used.
     assert folder.n_vars - 3 * len(folder.vertices) < 0
 
-    P, rho, path = fold(mi, np.deg2rad(70.0), steps=10)
-    assert len(path) == 11
+    P, rho, path = fold(mi, np.deg2rad(70.0), steps=24)
+    assert len(path) > 2
 
     # -- EVERY crease must fold.  KNOWN FAILURE, and the point of this
     # -- assertion is that it fails: see BRANCH SELECTION below.

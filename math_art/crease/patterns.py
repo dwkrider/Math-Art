@@ -75,8 +75,9 @@ class _Builder:
         return self._key[k]
 
     def e(self, i, j, kind):
+        """Add an edge; return True if it was new (so a seed lines up)."""
         if i == j:
-            return
+            return False
         a, b = (i, j) if i < j else (j, i)
         for n, (p, q) in enumerate(self.edges):
             if (p, q) == (a, b):
@@ -84,9 +85,10 @@ class _Builder:
                 # the sheet is the rim however many cells touch it.
                 if kind == BOUNDARY:
                     self.assign[n] = BOUNDARY
-                return
+                return False
         self.edges.append((a, b))
         self.assign.append(kind)
+        return True
 
     def frame(self, title, angles=None):
         fr = Frame(
@@ -140,19 +142,41 @@ def miura(rows=4, cols=6, panel_a=1.0, panel_b=1.0, alpha=np.deg2rad(60.0)):
     # folding like an accordion while the zigzags stay dead flat.  The
     # local conditions are necessary, not sufficient, and this is what
     # that costs in practice.
+    # THE SEED, and why the assignment alone is not enough.  A crease
+    # pattern's mountain/valley labels give the SIGN of each fold angle
+    # but say nothing about relative MAGNITUDE, and the two Miura crease
+    # families do not fold at the same rate.  Measuring the closed-form
+    # folded state as the fold parameter goes to zero gives
+    #
+    #     |row-line angle| / |zigzag angle|  ->  cos(alpha)
+    #
+    # (0.5000 at alpha = 60 degrees, 0.7071 at 45).  The solver needs
+    # that ratio to leave the flat state along the Miura mode instead of
+    # the accordion one, so it is recorded here as a seed DIRECTION --
+    # relative magnitudes with the right signs, not actual angles.
+    seed = []
     for i in range(rows + 1):
         for j in range(cols + 1):
             # straight row line: alternates with (i + j)
             if j < cols:
-                kind = BOUNDARY if i in (0, rows) else (
+                on_rim = i in (0, rows)
+                kind = BOUNDARY if on_rim else (
                     MOUNTAIN if (i + j) % 2 == 0 else VALLEY)
-                B.e(idx[i][j], idx[i][j + 1], kind)
+                if B.e(idx[i][j], idx[i][j + 1], kind):
+                    seed.append(0.0 if on_rim else
+                                (-1.0 if kind == MOUNTAIN else 1.0)
+                                * np.cos(alpha))
             # zigzag column: depends on j alone
             if i < rows:
-                kind = BOUNDARY if j in (0, cols) else (
+                on_rim = j in (0, cols)
+                kind = BOUNDARY if on_rim else (
                     VALLEY if j % 2 else MOUNTAIN)
-                B.e(idx[i][j], idx[i + 1][j], kind)
-    return B.frame("Miura-ori")
+                if B.e(idx[i][j], idx[i + 1][j], kind):
+                    seed.append(0.0 if on_rim else
+                                (-1.0 if kind == MOUNTAIN else 1.0))
+    fr = B.frame("Miura-ori")
+    fr.meta["fold_seed"] = seed
+    return fr
 
 
 def accordion(count=8, length=2.0, spacing=0.25):
