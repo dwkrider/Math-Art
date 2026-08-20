@@ -24,9 +24,15 @@ API:
   named_presets(seed_name) -> [(key, title, code, note), ...]  (verified)
   build_named(seed_name, key) -> (V, F)  convenience for the presets
 Built-in seeds (SEEDS): 'icosahedron', 'dodecahedron', 'cuboctahedron',
-'rhombic_triacontahedron' (constructed as the polar dual of the
-icosidodecahedron).  Custom convex seeds: pass a vertex array (origin
-must be interior; at most 60 face planes).
+'rhombic_triacontahedron', 'rhombic_dodecahedron' and
+'triakis_tetrahedron' (the last three constructed as polar duals of the
+icosidodecahedron, cuboctahedron and truncated tetrahedron), plus
+'dodecahedron_tetrahedral' -- the dodecahedron with its symmetry
+RESTRICTED to the tetrahedral subgroup, which is what makes the
+tetrahedral stellations possible: under its own icosahedral group the
+twelve face planes form a single orbit and no merely-tetrahedral
+stellation can be selected.  Custom convex seeds: pass a vertex array
+(origin must be interior; at most 60 face planes).
 
 Verification (via _selftest()):  for every seed the self-test
 checks that the core cell reproduces the seed exactly, and validates the
@@ -144,11 +150,48 @@ def _rhombic_triacontahedron_V():
     return N / D[:, None]
 
 
+def _rhombic_dodecahedron_V():
+    """RD as the polar dual of the cuboctahedron -- the same trick the RT
+    uses, one symmetry down."""
+    W = _cuboctahedron_V()
+    N, D = hull_planes(W)
+    return N / D[:, None]
+
+
+def _triakis_tetrahedron_V():
+    """The simplest Archimedean dual: the polar dual of the truncated
+    tetrahedron."""
+    a = 1.0 / 3.0
+    W = []
+    for sx, sy, sz in ((1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)):
+        for perm in ((a, sy * 1.0, sz * 1.0), (sx * 1.0, a, sz * 1.0),
+                     (sx * 1.0, sy * 1.0, a)):
+            W.append([perm[0] * sx if abs(perm[0]) == a else perm[0],
+                      perm[1], perm[2]])
+    # truncated tetrahedron: all permutations of (+-1, +-1, +-3) with an
+    # even number of minus signs, scaled
+    W = []
+    for sx in (1, -1):
+        for sy in (1, -1):
+            for sz in (1, -1):
+                if sx * sy * sz < 0:
+                    continue
+                for perm in range(3):
+                    v = [sx * 1.0, sy * 1.0, sz * 3.0]
+                    v = v[-perm:] + v[:-perm] if perm else v
+                    W.append([v[0] * (1 if perm == 0 else 1), v[1], v[2]])
+    W = np.asarray(W, float)
+    N, D = hull_planes(W)
+    return N / D[:, None]
+
+
 _SEED_BUILDERS = {
     'icosahedron': _icosahedron_V,
     'dodecahedron': _dodecahedron_V,
     'cuboctahedron': _cuboctahedron_V,
     'rhombic_triacontahedron': _rhombic_triacontahedron_V,
+    'rhombic_dodecahedron': _rhombic_dodecahedron_V,
+    'triakis_tetrahedron': _triakis_tetrahedron_V,
 }
 
 
@@ -214,7 +257,8 @@ def _facet_cycle(pts, outward, eps=1e-9):
 # --------------------------------------------------------------------------
 class StellationEngine(object):
 
-    def __init__(self, V, name='custom', big=_BIG, verbose=False):
+    def __init__(self, V, name='custom', big=_BIG, verbose=False,
+                 subgroup=None):
         V = np.asarray(V, float)
         N, D = hull_planes(V)
         if len(N) > 60:
@@ -231,6 +275,8 @@ class StellationEngine(object):
         self._points()
         self._enumerate()
         self._symmetry()
+        if subgroup:
+            self._restrict(subgroup)
         self._orbits()
 
     # ---- seed faces (vertex rings per plane) -----------------------------
@@ -383,6 +429,36 @@ class StellationEngine(object):
                         imps[key] = R
         self.rotations = list(rots.values())
         self.impropers = list(imps.values())
+
+    def _restrict(self, subgroup):
+        """Keep only the symmetries in a named SUBGROUP of the seed's own
+        group, so the cells fall into finer orbits.
+
+        The tetrahedral stellations of the dodecahedron need exactly this:
+        `_symmetry` always finds the FULL group from the vertex set, which
+        for the dodecahedron is icosahedral, and under it the twelve face
+        planes form one orbit -- there is then no way to make a stellation
+        that is merely tetrahedral.  Restricting to the tetrahedral
+        subgroup splits that orbit and the finer stellations appear.
+
+        A rotation belongs to the tetrahedral subgroup when it maps the
+        chosen tetrahedron's four vertex directions onto themselves.
+        """
+        if subgroup not in ('tetrahedral', 'chiral_tetrahedral'):
+            raise ValueError('unknown subgroup %r' % (subgroup,))
+        T = np.array([[1.0, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]])
+        T = T / np.linalg.norm(T[0])
+
+        def keeps(R):
+            RT = T @ R.T
+            d2 = ((RT[:, None, :] - T[None, :, :]) ** 2).sum(-1)
+            return bool(d2.min(axis=1).max() < 1e-9)
+
+        self.rotations = [R for R in self.rotations if keeps(R)]
+        self.impropers = ([] if subgroup == 'chiral_tetrahedral'
+                          else [R for R in self.impropers if keeps(R)])
+        if not self.rotations:
+            raise ValueError('the subgroup is trivial for this seed')
 
     def _plane_perm(self, R):
         RN = self.N @ R.T
@@ -611,20 +687,34 @@ _DUVAL_BY_POWER_SIZE = {
 _ENGINE_CACHE = {}
 
 
-def stellations_of(seed, verbose=False):
+# Seeds that are a named seed PLUS a symmetry restriction.  The
+# tetrahedral stellations of the dodecahedron are the reason the
+# subgroup machinery exists: under the dodecahedron's own icosahedral
+# group its twelve face planes form a single orbit, and only the
+# tetrahedral subgroup splits them finely enough for these to appear.
+_SEED_SUBGROUPS = {
+    'dodecahedron_tetrahedral': ('dodecahedron', 'tetrahedral'),
+}
+
+
+def stellations_of(seed, verbose=False, subgroup=None):
     """Return a StellationEngine for a convex seed.
 
     seed: a name from the built-in library ('icosahedron', 'dodecahedron',
     'cuboctahedron', 'rhombic_triacontahedron'), a (V, F) pair, or a bare
     vertex array (faces are recomputed from the hull either way)."""
+    if isinstance(seed, str) and seed.lower() in _SEED_SUBGROUPS:
+        seed, subgroup = _SEED_SUBGROUPS[seed.lower()]
     if isinstance(seed, str):
-        key = seed.lower()
+        key = seed.lower() if not subgroup else '%s@%s' % (seed.lower(),
+                                                           subgroup)
         if key not in _ENGINE_CACHE:
-            if key not in _SEED_BUILDERS:
+            if seed.lower() not in _SEED_BUILDERS:
                 raise KeyError('unknown seed %r (have %s)'
                                % (seed, sorted(_SEED_BUILDERS)))
             _ENGINE_CACHE[key] = StellationEngine(
-                _SEED_BUILDERS[key](), name=key, verbose=verbose)
+                _SEED_BUILDERS[seed.lower()](), name=key, verbose=verbose,
+                subgroup=subgroup)
         return _ENGINE_CACHE[key]
     if isinstance(seed, tuple) and len(seed) == 2:
         return StellationEngine(np.asarray(seed[0], float), name='custom',
@@ -921,7 +1011,8 @@ def five_cubes_cells(engine):
 # code entries: shell labels, 'all', or ('hand', shell_label, hand_index)
 # for one hand of a chiral shell.  Shell labels are the engine's generic
 # ones (deterministic: sorted by power, then mean radius).
-SEEDS = ('icosahedron', 'dodecahedron', 'cuboctahedron',
+SEEDS = ('icosahedron', 'dodecahedron', 'dodecahedron_tetrahedral',
+         'cuboctahedron', 'rhombic_dodecahedron', 'triakis_tetrahedron',
          'rhombic_triacontahedron')
 
 NAMED_PRESETS = {
@@ -961,6 +1052,29 @@ NAMED_PRESETS = {
         ('cube_octahedron', 'Compound of cube and octahedron',
          ['a', 's01', 's02'], 'Wenninger 43'),
         ('final', 'Final stellation of the cuboctahedron', ['all'], ''),
+    ],
+    'rhombic_dodecahedron': [
+        ('core', 'Rhombic dodecahedron', ['a'], 'Catalan seed'),
+        ('first', "First stellation (Escher's solid)", ['a', 's01'],
+         "the stellated rhombic dodecahedron of Escher's Waterfall"),
+        ('second', 'Second stellation', ['a', 's01', 's02'], ''),
+        ('final', 'Third (final) stellation', ['all'], ''),
+    ],
+    'triakis_tetrahedron': [
+        ('core', 'Triakis tetrahedron', ['a'],
+         'the simplest Archimedean dual'),
+        ('first', 'First stellation', ['a', 's01'], ''),
+        ('second', 'Second stellation', ['a', 's01', 's02'], ''),
+        ('final', 'Final stellation', ['all'], ''),
+    ],
+    'dodecahedron_tetrahedral': [
+        ('core', 'Dodecahedron', ['a'],
+         'Platonic seed, under the tetrahedral subgroup'),
+        ('first', 'First tetrahedral stellation', ['a', 's01'], ''),
+        ('second', 'Second tetrahedral stellation', ['a', 's01', 's02'],
+         'the size-6 shell added -- a shell the icosahedral grouping '
+         'cannot separate'),
+        ('final', 'Final stellation', ['all'], ''),
     ],
     'rhombic_triacontahedron': [
         ('core', 'Rhombic triacontahedron', ['a'],
@@ -1297,6 +1411,27 @@ def _verify_rt(ck):
     print()
 
 
+def _verify_presets_close(ck):
+    """Every named preset must be a genuine stellation: a closed surface
+    with every edge in exactly two faces.
+
+    Not every set of shells is one.  Taking the dodecahedron's size-6
+    tetrahedral shell WITHOUT the shell beneath it gives chi = 8 and six
+    edges with four faces round them -- cells touching along edges rather
+    than a supported solid.  This check is what caught that, and it is
+    the check any new preset has to pass.
+    """
+    print('named presets: closed surfaces')
+    for seed in SEEDS:
+        for key, title, code, _note in named_presets(seed):
+            V, F = build_named(seed, key)
+            st = surface_stats(V, F)
+            ck(st['chi'] == 2 and st['closed_2'] and not st['nan'],
+               '%s/%s closed (chi=%d, edges %s)'
+               % (seed, key, st['chi'], sorted(st['edge_mult'])))
+    print()
+
+
 def _self_test():
     print('GENERAL STELLATION ENGINE -- verification transcript')
     print()
@@ -1305,6 +1440,7 @@ def _self_test():
     _verify_dodecahedron(ck)
     _verify_cuboctahedron(ck)
     _verify_rt(ck)
+    _verify_presets_close(ck)
     print('=' * 74)
     if ck.fails:
         print('RESULT: FAIL (%d)' % len(ck.fails))
