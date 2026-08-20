@@ -345,6 +345,189 @@ def ellippi(n, phi, m, segments=None):
 
 
 # ==========================================================================
+# Complex gamma and the Gauss hypergeometric function 2F1 (numpy only)
+# ==========================================================================
+# Added for the CMC-1 trinoids (math_art/trinoid.py): the canonical
+# solutions of their Fuchsian system are built from 2F1, and the
+# connection matrices and the unitarising constant r involve gamma
+# ratios.  Blender ships numpy but not scipy, so both live here.
+#
+# References:
+#   C. Lanczos, "A precision approximation of the gamma function",
+#   J. SIAM Numer. Anal. B 1 (1964), 86-96 (the g = 7, n = 9 coefficient
+#   set popularised by Numerical Recipes / Boost).
+#   Gauss 2F1 series and its connection formulas: DLMF 15.2.1 (series),
+#   15.8.1 (Pfaff), 15.8.2 (z -> 1/z), 15.8.4 (z -> 1-z); also
+#   Abramowitz & Stegun 15.3.4-15.3.9.
+
+_LANCZOS_G = 7.0
+_LANCZOS_C = (0.99999999999980993, 676.5203681218851, -1259.1392167224028,
+              771.32342877765313, -176.61502916214059, 12.507343278686905,
+              -0.13857109526572012, 9.9843695780195716e-6,
+              1.5056327351493116e-7)
+
+
+def cgamma(z):
+    """Gamma(z) for complex scalar or ndarray z, by the Lanczos
+    approximation (g = 7, 9 terms) with the reflection formula for
+    Re z < 1/2.  Relative accuracy ~1e-13 away from the poles.  Validated
+    in the self-test against the duplication formula, |Gamma(1+iy)|^2 =
+    pi y / sinh(pi y), and integer factorials -- none of which share the
+    Lanczos algebra."""
+    z = np.asarray(z, dtype=complex)
+    refl = z.real < 0.5
+    zz = np.where(refl, 1.0 - z, z)
+    x = np.full_like(zz, _LANCZOS_C[0])
+    for k, ck in enumerate(_LANCZOS_C[1:], start=1):
+        x = x + ck / (zz - 1.0 + k)
+    t = zz - 0.5 + _LANCZOS_G
+    g = math.sqrt(2.0 * math.pi) * t ** (zz - 0.5) * np.exp(-t) * x
+    with np.errstate(divide='ignore', invalid='ignore'):
+        out = np.where(refl, math.pi / (np.sin(math.pi * z) * g), g)
+    return out
+
+
+def rcgamma(z):
+    """1 / Gamma(z), which unlike Gamma itself is ENTIRE: it vanishes at
+    the non-positive integers instead of blowing up.  Used for the
+    denominators of the 2F1 connection coefficients, where a pole of a
+    denominator gamma legitimately means 'this coefficient is zero' and
+    must not produce inf/nan."""
+    z = np.asarray(z, dtype=complex)
+    lower = z.real < 0.5
+    # 1/Gamma(z) = sin(pi z) Gamma(1-z) / pi  where Gamma(z) may have
+    # poles; plain reciprocal where it cannot (Re z >= 1/2).
+    return np.where(lower,
+                    np.sin(math.pi * z) * cgamma(1.0 - z) / math.pi,
+                    1.0 / cgamma(np.where(lower, 1.0, z)))
+
+
+_HYP_MAXTERMS = 8000
+_HYP_TOL = 1e-15
+
+
+def _hyp_series(a, b, c, w):
+    """The defining series sum (a)_n (b)_n / ((c)_n n!) w^n over a flat
+    complex ndarray w with |w| < 1.  Terminates when every term is below
+    _HYP_TOL relative to its partial sum."""
+    s = np.ones_like(w)
+    t = np.ones_like(w)
+    n = 0
+    while n < _HYP_MAXTERMS:
+        t = t * ((a + n) * (b + n) / ((c + n) * (n + 1.0))) * w
+        s = s + t
+        n += 1
+        if n < 48 or n % 16 == 0:
+            if np.all(np.abs(t) <= _HYP_TOL * np.abs(s)):
+                return s
+    raise RuntimeError(
+        f"hyp2f1 series did not converge (max |w| = {np.abs(w).max():.6f});"
+        " the argument is too close to exp(+-i pi/3), where all Kummer"
+        " transformations degenerate")
+
+
+def _hyp_direct(a, b, c, z):
+    """2F1 on the region covered by the series and the Pfaff
+    transformation F(a,b;c;z) = (1-z)^(-a) F(a, c-b; c; z/(z-1))
+    (DLMF 15.8.1); per point, whichever argument is smaller."""
+    out = np.empty_like(z)
+    wp = z / (z - 1.0)
+    m = np.abs(wp) < np.abs(z)
+    if np.any(~m):
+        out[~m] = _hyp_series(a, b, c, z[~m])
+    if np.any(m):
+        out[m] = (1.0 - z[m]) ** (-a) * _hyp_series(a, c - b, c, wp[m])
+    return out
+
+
+def _near_int(x, tol=1e-8):
+    x = complex(x)
+    return abs(x.imag) < tol and abs(x.real - round(x.real)) < tol
+
+
+def hyp2f1(a, b, c, z):
+    """Gauss hypergeometric function 2F1(a, b; c; z) for complex scalar
+    parameters and complex scalar-or-ndarray z, on the principal branch
+    (cut along [1, infinity)).
+
+    Algorithm: per point, the argument is moved into the unit disk by
+    whichever of the Kummer transformations gives the smallest modulus --
+    the identity (series), Pfaff z/(z-1) (DLMF 15.8.1), the z -> 1-z
+    connection (DLMF 15.8.4), or the z -> 1/z connection (DLMF 15.8.2),
+    the last two combined with Pfaff on their sub-series.  Together these
+    reach every z except a neighbourhood of the two points
+    exp(+-i pi/3), where ALL six Kummer arguments have modulus 1 and the
+    series is refused rather than returned half-converged.
+
+    Limitations (raised, not mis-answered): c must not be a non-positive
+    integer; the z -> 1-z route needs c-a-b non-integer and the
+    z -> 1/z route needs a-b non-integer (the log-degenerate cases of
+    DLMF 15.8.8/15.8.10 are not implemented).  When the best route is
+    degenerate the next-best non-degenerate route is used if its
+    argument still lies inside the disk.
+
+    Validated in the self-test against closed forms ((1-z)^(-a),
+    -log(1-z)/z, arcsin(z)/z), Gauss's theorem at z = 1, the Euler
+    transformation, the hypergeometric ODE itself at scattered points in
+    every region, and route-against-route agreement across the region
+    boundaries."""
+    a, b, c = complex(a), complex(b), complex(c)
+    if _near_int(c) and c.real <= 0.5:
+        raise ValueError(f"hyp2f1: c = {c} is a non-positive integer")
+    z = np.asarray(z, dtype=complex)
+    scalar = (z.ndim == 0)
+    flat = np.atleast_1d(z).ravel().copy()
+    out = np.empty_like(flat)
+
+    with np.errstate(divide='ignore', invalid='ignore'):
+        m_dir = np.minimum(np.abs(flat), np.abs(flat / (flat - 1.0)))
+        m_1mz = np.minimum(np.abs(1.0 - flat), np.abs(1.0 - 1.0 / flat))
+        m_inv = np.minimum(np.abs(1.0 / flat), np.abs(1.0 / (1.0 - flat)))
+    m_1mz = np.where(np.isfinite(m_1mz), m_1mz, np.inf)
+    m_inv = np.where(np.isfinite(m_inv), m_inv, np.inf)
+    deg_1mz = _near_int(c - a - b)
+    deg_inv = _near_int(a - b)
+    if deg_1mz:
+        m_1mz = np.full_like(m_1mz, np.inf)
+    if deg_inv:
+        m_inv = np.full_like(m_inv, np.inf)
+    route = np.argmin(np.stack([m_dir, m_1mz, m_inv]), axis=0)
+
+    sel = route == 0
+    if np.any(sel):
+        out[sel] = _hyp_direct(a, b, c, flat[sel])
+
+    sel = route == 1                        # z -> 1-z  (DLMF 15.8.4)
+    if np.any(sel):
+        w = 1.0 - flat[sel]
+        cab = c - a - b
+        # denominator gammas via rcgamma: a pole there means the
+        # coefficient is zero, not inf
+        k1 = complex(cgamma(c) * cgamma(cab)
+                     * rcgamma(c - a) * rcgamma(c - b))
+        k2 = complex(cgamma(c) * cgamma(-cab) * rcgamma(a) * rcgamma(b))
+        out[sel] = (k1 * _hyp_direct(a, b, a + b - c + 1.0, w)
+                    + k2 * w ** cab
+                    * _hyp_direct(c - a, c - b, cab + 1.0, w))
+
+    sel = route == 2                        # z -> 1/z  (DLMF 15.8.2)
+    if np.any(sel):
+        zz = flat[sel]
+        w = 1.0 / zz
+        k1 = complex(cgamma(c) * cgamma(b - a)
+                     * rcgamma(b) * rcgamma(c - a))
+        k2 = complex(cgamma(c) * cgamma(a - b)
+                     * rcgamma(a) * rcgamma(c - b))
+        out[sel] = (k1 * (-zz) ** (-a)
+                    * _hyp_direct(a, a - c + 1.0, a - b + 1.0, w)
+                    + k2 * (-zz) ** (-b)
+                    * _hyp_direct(b, b - c + 1.0, b - a + 1.0, w))
+
+    res = out.reshape(np.atleast_1d(z).shape)
+    return complex(res.ravel()[0]) if scalar else res
+
+
+# ==========================================================================
 # Weierstrass elliptic-function engine (Jacobi-theta series, numpy only)
 # ==========================================================================
 # Provides Weierstrass P, P' and zeta for a lattice given by half-periods,
@@ -482,6 +665,7 @@ def _selftest():
     ok &= _selftest_jacobi()
     ok &= _selftest_ellippi()
     ok &= _selftest_sigma()
+    ok &= _selftest_hyp2f1()
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
@@ -686,6 +870,141 @@ def _selftest_ellippi():
     ok &= good
     print(f"ellippi: pi-fold consistency (n = 3.5 > 1) dev {dev:.1e} "
           f"{'OK' if good else 'FAIL'}")
+
+    return ok
+
+
+def _selftest_hyp2f1():
+    """cgamma and hyp2f1, each against closed forms and identities that
+    do NOT share the implementation."""
+    ok = True
+
+    # -- gamma --------------------------------------------------------
+    # factorials, Gamma(1/2), and the closed form
+    # |Gamma(1+iy)|^2 = pi y / sinh(pi y); none of these run through the
+    # reflection/Lanczos path being checked in the same way.
+    d1 = max(abs(complex(cgamma(n + 1)) - math.factorial(n))
+             / math.factorial(n) for n in range(1, 11))
+    d2 = abs(complex(cgamma(0.5)) - math.sqrt(math.pi))
+    ys = np.array([0.3, 1.1, 2.7])
+    d3 = float(np.abs(np.abs(cgamma(1.0 + 1j * ys)) ** 2
+                      - math.pi * ys / np.sinh(math.pi * ys)).max())
+    # duplication formula at complex points (tests both half-planes)
+    zs = np.array([0.3 + 0.7j, -1.4 + 0.9j, 2.2 - 1.3j, -0.7 - 0.2j])
+    dup = (cgamma(2.0 * zs) - 2.0 ** (2.0 * zs - 1.0) / math.sqrt(math.pi)
+           * cgamma(zs) * cgamma(zs + 0.5))
+    d4 = float((np.abs(dup) / np.abs(cgamma(2.0 * zs))).max())
+    good = d1 < 1e-12 and d2 < 1e-13 and d3 < 1e-12 and d4 < 1e-11
+    ok &= good
+    print(f"cgamma: factorials {d1:.1e}, sqrt(pi) {d2:.1e}, "
+          f"|G(1+iy)| {d3:.1e}, duplication {d4:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # -- hyp2f1 closed forms, spanning all three routes -----------------
+    # 2F1(a, b; b; z) = (1-z)^(-a) holds on the whole cut plane; with
+    # a - b and c - a - b non-integer it exercises direct, 1-z and 1/z.
+    a, b = 0.31 + 0.14j, 1.62
+    pts = np.array([0.3 + 0.2j, -0.7 + 0.1j, 0.9 + 0.05j, 0.97 - 0.4j,
+                    -4.0 + 2.0j, 3.0 + 4.0j, 12.0 - 5.0j, -25.0 - 1.0j,
+                    0.55 + 0.83j, 0.55 - 0.83j])   # last two near e^(i pi/3)
+    got = hyp2f1(a, b, b, pts)
+    want = (1.0 - pts) ** (-a)
+    d1 = float((np.abs(got - want) / np.abs(want)).max())
+    good = d1 < 1e-11
+    ok &= good
+    print(f"hyp2f1: (1-z)^(-a) closed form, all routes, max rel "
+          f"{d1:.1e} {'OK' if good else 'FAIL'}")
+
+    # 2F1(1,1;2;z) = -log(1-z)/z (principal log) -- the log-degenerate
+    # parameter case, so only the direct/Pfaff region applies.
+    pts = np.array([0.4 + 0.3j, -0.8 - 0.5j, 0.85 + 0.1j, -0.2 + 0.9j])
+    got = hyp2f1(1.0, 1.0, 2.0, pts)
+    want = -np.log(1.0 - pts) / pts
+    d2 = float((np.abs(got - want) / np.abs(want)).max())
+    # 2F1(1/2,1/2;3/2;z^2) = arcsin(z)/z
+    zs = np.array([0.3, 0.55, 0.8 + 0.1j, 0.2 - 0.6j])
+    got = hyp2f1(0.5, 0.5, 1.5, zs * zs)
+    want = np.arcsin(zs) / zs
+    d3 = float((np.abs(got - want) / np.abs(want)).max())
+    good = d2 < 1e-12 and d3 < 1e-12
+    ok &= good
+    print(f"hyp2f1: -log(1-z)/z {d2:.1e}, arcsin(z)/z {d3:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Gauss's theorem: 2F1(a,b;c;1) = G(c)G(c-a-b) / (G(c-a)G(c-b)),
+    # summed DIRECTLY (tail ~ n^(a+b-c-1), convergent for c-a-b > 0) --
+    # ties the series to cgamma with no connection formula involved.
+    a, b, c = 0.3, 0.45, 2.2
+    n = np.arange(400000, dtype=float)
+    ratios = (a + n) * (b + n) / ((c + n) * (1.0 + n))
+    direct = 1.0 + float(np.cumprod(ratios).sum())
+    gauss = complex(cgamma(c) * cgamma(c - a - b)
+                    / (cgamma(c - a) * cgamma(c - b))).real
+    d4 = abs(direct - gauss) / gauss
+    good = d4 < 1e-7                     # tail ~ N^-(c-a-b) = 5e-9
+    ok &= good
+    print(f"hyp2f1: Gauss theorem at z=1, series vs gamma ratio, rel "
+          f"{d4:.1e} {'OK' if good else 'FAIL'}")
+
+    # Euler transformation F(a,b;c;z) = (1-z)^(c-a-b) F(c-a,c-b;c;z):
+    # different parameters, different series, same value.
+    a, b, c = 0.27, 1.13, 1.71
+    pts = np.array([0.35 + 0.45j, -0.6 - 0.3j, 0.92 + 0.02j, 2.5 + 1.5j])
+    lhs = hyp2f1(a, b, c, pts)
+    rhs = (1.0 - pts) ** (c - a - b) * hyp2f1(c - a, c - b, c, pts)
+    d5 = float((np.abs(lhs - rhs) / np.abs(lhs)).max())
+    good = d5 < 1e-11
+    ok &= good
+    print(f"hyp2f1: Euler transformation, max rel {d5:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # The hypergeometric ODE z(1-z)F'' + (c-(a+b+1)z)F' - abF = 0 at
+    # scattered points in EVERY region -- independent of all the
+    # identities used to build the evaluator.
+    a, b, c = 0.42, 0.87 + 0.33j, 1.29
+    worst = 0.0
+    h = 1e-4      # balances FD truncation against roundoff in f''
+    for z0 in (0.31 + 0.22j, -0.62 + 0.41j, 0.93 + 0.31j, 0.93 - 0.31j,
+               1.62 + 0.35j, 1.62 - 0.35j, -3.1 + 1.2j, 4.2 - 2.2j):
+        f0 = hyp2f1(a, b, c, z0)
+        fp = hyp2f1(a, b, c, z0 + h)
+        fm = hyp2f1(a, b, c, z0 - h)
+        d1n = (fp - fm) / (2.0 * h)
+        d2n = (fp - 2.0 * f0 + fm) / (h * h)
+        resid = z0 * (1.0 - z0) * d2n + (c - (a + b + 1.0) * z0) * d1n \
+            - a * b * f0
+        scale = max(abs(a * b * f0), abs(d1n), 1.0)
+        worst = max(worst, abs(resid) / scale)
+    # FD-limited: roundoff in the second difference is ~4 eps/h^2 = 9e-8
+    # amplified by |z(1-z)| up to ~25 at the far sample points; a wrong
+    # route or branch would fail this at O(1).
+    good = worst < 1e-5
+    ok &= good
+    print(f"hyp2f1: ODE residual over all regions, max {worst:.1e} "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Smoothness ACROSS the region boundaries, where the evaluator
+    # switches routes: sample a radial triplet straddling |z| = 1 (the
+    # direct <-> 1/z boundary) and |1-z| = |z| (direct <-> 1-z).  If a
+    # route joins with the wrong branch or coefficient, the second
+    # difference jumps to O(1); a correct join leaves only the smooth
+    # F'' h^2 ~ 1e-6.  (Params must keep c-a-b and a-b non-integer, or
+    # the connection routes are rightly disabled and the direct series
+    # rightly refuses |z| -> 1.)
+    a, b, c = 0.42, 0.79, 1.31
+    h = 1e-3
+    worst = 0.0
+    for th in np.linspace(0.45, 2.7, 9):     # avoid z = 1 itself
+        e = np.exp(1j * th)
+        f = [hyp2f1(a, b, c, r * e) for r in (1.0 - h, 1.0, 1.0 + h)]
+        worst = max(worst, abs(f[0] - 2.0 * f[1] + f[2]) / abs(f[1]))
+    for y in np.linspace(0.35, 2.0, 7):      # the Re z = 1/2 boundary
+        f = [hyp2f1(a, b, c, x + 1j * y) for x in (0.5 - h, 0.5, 0.5 + h)]
+        worst = max(worst, abs(f[0] - 2.0 * f[1] + f[2]) / abs(f[1]))
+    good = worst < 1e-4
+    ok &= good
+    print(f"hyp2f1: route-boundary smoothness (2nd diff), max "
+          f"{worst:.1e} {'OK' if good else 'FAIL'}")
 
     return ok
 
