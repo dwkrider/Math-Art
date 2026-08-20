@@ -1,5 +1,7 @@
 # Layer Group
 
+## Overview
+
 Add a layer-group pattern: a wallpaper group given an extra third-axis symmetry, so the repeated unit can flip up and down as well as move within the plane. It only reads in 3D — give it relief height or an active mesh.
 
 A **layer group** is the three-dimensional cousin of the [wallpaper groups](wallpaper.md): a pattern still periodic in two directions — a slab — but whose symmetries may involve the *third* axis, a horizontal mirror through the layer plane, a two-fold axis lying in the plane, or a centre of inversion. There are 80 in full; this generator takes the tractable **z-augmentation** route, pairing one of the 17 in-plane wallpaper groups with one added $z$-symmetry. Flat, a layer pattern is indistinguishable from its wallpaper group — the third dimension is the whole point, so it must be built with real height.

@@ -1,5 +1,7 @@
 # Frieze Group
 
+## Overview
+
 Add a frieze pattern: one asymmetric motif repeated along a strip by every symmetry of a chosen frieze group, coloured so the symmetry reads.
 
 A **frieze group** is the symmetry group of a strip pattern — one that repeats by translation in a single direction. Restricting the plane's isometries to those that preserve an infinite band leaves only four kinds of move: translation along the strip, the half-turn, reflection in the strip's axis or perpendicular to it, and glide reflection. Every consistent combination collapses into exactly **seven** groups, a classical result of crystallography; the memorable names used here — *hop*, *step*, *sidle*, *jump* and their "spinning" variants — are Conway's. The motif is deliberately **asymmetric**, because a mirror-symmetric one would make several of the seven groups draw identical pictures and hide the very distinctions the classification is about.

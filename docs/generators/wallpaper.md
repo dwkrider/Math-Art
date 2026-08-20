@@ -1,5 +1,7 @@
 # Wallpaper Group
 
+## Overview
+
 Add a wallpaper pattern: one asymmetric motif replicated across a two-dimensional lattice by every symmetry of a chosen plane-symmetry group, coloured so the symmetry reads.
 
 A **wallpaper group** is the symmetry group of a pattern that repeats by translation in two independent directions. There are exactly **17** of them in the Euclidean plane — classified by Fedorov in 1891 and rediscovered by Pólya and Niggli in 1924, and one of the more surprising finiteness results in elementary geometry: however elaborate a repeating pattern looks, its symmetry is one of seventeen. The groups are named here by their **Conway–Thurston orbifold signature** rather than the crystallographers' IUC symbols, because the signature is not merely a label — it is computable, and the same grammar names the spherical point groups and the hyperbolic tilings, which is why the sibling [orbifold sphere](orbifold_sphere.md) and [hyperbolic tiling](hyperbolic_tiling.md) generators speak the same language.
