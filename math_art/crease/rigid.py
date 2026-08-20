@@ -104,6 +104,44 @@ def _axis_rotation(axis, angle):
             (1.0 - np.cos(angle)) * (K @ K))
 
 
+def _anchor_to_flat(folded, flat_xy):
+    """Rigidly best-fit a folded state back onto the flat pattern.
+
+    WHY THIS IS NEEDED.  A fold is only determined up to a rigid motion:
+    the constraints say how the panels sit relative to EACH OTHER and
+    nothing about where the sheet is in space.  The breadth-first walk
+    resolves that arbitrarily, by pinning whichever face it happened to
+    start from -- so the model appears to pivot about that face's corner
+    as the fold progresses, and worse, the apparent pivot drifts along
+    the fold path, which reads as the paper swinging rather than folding.
+
+    Fixing it is the orthogonal Procrustes problem: find the rotation R
+    and translation t minimising |R q + t - p| over the flat positions p
+    and folded positions q.  Kabsch's solution is the SVD of the
+    cross-covariance, with a sign guard so a reflection is never
+    returned -- a reflected "fit" would turn the paper inside out and is
+    a worse answer than a poor rotation.
+
+    The effect is that the sheet stays centred and its mid-surface stays
+    in the plane it started in, contracting and rising rather than
+    swinging.  For a Miura that is exactly the familiar picture.
+
+    References:
+      W. Kabsch, "A solution for the best rotation to relate two sets of
+          vectors," Acta Crystallographica A32, 1976, pp. 922-923.
+    """
+    P = np.hstack([np.asarray(flat_xy, dtype=float),
+                   np.zeros((len(flat_xy), 1))])
+    Q = np.asarray(folded, dtype=float)
+    pc, qc = P.mean(axis=0), Q.mean(axis=0)
+    H = (Q - qc).T @ (P - pc)
+    U, _s, Vt = np.linalg.svd(H)
+    d = np.sign(np.linalg.det(Vt.T @ U.T))
+    D = np.diag([1.0, 1.0, d if d != 0 else 1.0])
+    R = Vt.T @ D @ U.T
+    return (R @ (Q - qc).T).T + pc
+
+
 class RigidFolder:
     """A crease pattern prepared for folding.
 
@@ -252,8 +290,15 @@ class RigidFolder:
         return self.n_vars - rank
 
     # -- placing the paper ------------------------------------------
-    def place(self, rho):
-        """Vertex positions in 3-D for a converged set of fold angles."""
+    def place(self, rho, anchor=True):
+        """Vertex positions in 3-D for a converged set of fold angles.
+
+        With `anchor` (the default) the result is rigidly best-fit back
+        onto the flat pattern.  Without it the walk leaves the sheet
+        hanging off whichever face happened to be placed first, so the
+        model appears to swing about that face's corner as it folds --
+        which is an artefact of the traversal, not of the fold.
+        """
         n_faces = len(self.faces)
         if not n_faces:
             raise FoldFailure("no faces to place")
@@ -311,7 +356,7 @@ class RigidFolder:
                 p = np.append(self.verts0[v], 0.0)
                 out[v] = (M[:3, :3] @ p) + M[:3, 3]
                 seen[v] = True
-        return out
+        return _anchor_to_flat(out, self.verts0) if anchor else out
 
 
 def fold(frame, target, driver=None, steps=12):
@@ -413,6 +458,35 @@ def _selftest():
     mags = [float(np.abs(r).max()) for r in path]
     assert mags[0] == 0.0
     assert all(x <= y + 1e-9 for x, y in zip(mags, mags[1:])), mags
+
+    # --- anchoring: the sheet stays put instead of swinging ---------
+    # Unanchored, the walk pins whichever face it started from, so the
+    # centroid wanders as the fold proceeds.  Anchored, it does not.
+    raw = [folder.place(r, anchor=False) for r in path]
+    fix = [folder.place(r, anchor=True) for r in path]
+
+    # the anchored states are all centred on the flat sheet's centroid
+    flat_c = np.append(mi.verts[:, :2].mean(axis=0), 0.0)
+    for p in fix:
+        assert np.allclose(p.mean(axis=0), flat_c, atol=1e-9)
+    # ... while the raw ones drift away from it as the fold proceeds
+    drift = [float(np.linalg.norm(p.mean(axis=0) - flat_c)) for p in raw]
+    assert drift[-1] > 1e-3, drift[-1]
+
+    # anchoring is a RIGID motion, so it cannot change the shape: every
+    # pairwise distance is preserved exactly
+    for r, fx in ((raw[-1], fix[-1]), (raw[len(raw) // 2],
+                                       fix[len(fix) // 2])):
+        for _ in range(20):
+            i, j = np.random.default_rng(3).integers(0, len(r), 2)
+            if i != j:
+                assert abs(np.linalg.norm(r[i] - r[j]) -
+                           np.linalg.norm(fx[i] - fx[j])) < 1e-9
+    # and it never reflects: a reflected fit would turn the paper inside
+    # out, so check the flat state comes back as itself
+    flat_again = folder.place(np.zeros(folder.n_vars))
+    assert np.allclose(flat_again[:, :2], mi.verts[:, :2], atol=1e-9)
+    assert np.abs(flat_again[:, 2]).max() < 1e-9
 
     print("RESULT: OK  crease.rigid")
 

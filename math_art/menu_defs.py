@@ -232,9 +232,21 @@ ROLLERS = Menu(
 # imported as FOLD from the editors that specialise in them -- so this
 # menu holds the classical patterns, which are folk mathematics with
 # nothing to download, and the operators that fold what you have.
-FOLDS = Menu(
-    "VIEW3D_MT_math_art_folds", "Folds", 'MOD_SIMPLIFY', [
+#
+# Everything origami lives here, including the importer and the fold
+# operator, even though one reads a file and the other restyles a
+# selection.  Splitting them across File > Import and Styles is tidier
+# by type and worse to use: someone looking for origami should find the
+# whole workflow -- make a pattern, open one, fold it -- in one place.
+# The importer keeps its File > Import entry as well, since that is
+# where anyone looks for an importer first.
+ORIGAMI = Menu(
+    "VIEW3D_MT_math_art_origami", "Origami", 'MOD_SIMPLIFY', [
         _e("mesh.crease_pattern_add", 'MESH_GRID'),
+        _e("mesh.fold_import", 'IMPORT', "Import Crease Pattern",
+           builtin=True),
+        SEP,
+        _e("object.fold_solve", 'MOD_SIMPLEDEFORM', builtin=True),
     ])
 
 ODDS = Menu(
@@ -263,7 +275,6 @@ STYLES = Menu(
            "Voronoi Openwork (Experimental)", builtin=True),
         _e("object.organic_wireframe_add", 'MOD_WIREFRAME', builtin=True),
         _e("object.strahler_add", 'MOD_SIMPLIFY', builtin=True),
-        _e("object.fold_solve", 'MOD_SIMPLEDEFORM', builtin=True),
     ])
 
 
@@ -271,7 +282,7 @@ STYLES = Menu(
 # last by the root menu, after the ROOT_ENTRIES below, so it is not
 # part of this run.
 MENU_ORDER = (SURFACES, POLYHEDRA, FRACTALS, PLANTS, KNOTS, WEAVES,
-              PATTERNS, FOLDS, ROLLERS, ODDS)
+              PATTERNS, ORIGAMI, ROLLERS, ODDS)
 
 # Every menu that gets a generated class, in registration order.
 ALL_MENUS = MENU_ORDER + (STYLES,)

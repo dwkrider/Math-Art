@@ -46,10 +46,6 @@ PANEL_ONLY = {
     # each builds a lighting/camera rig around an existing gem, not a mesh.
     "mesh.gem_aset_rig_add": "per-stone selector on the gem, not a menu add",
     "mesh.gem_studio_add": "per-stone selector on the gem, not a menu add",
-    # Reads a crease pattern off disk, so it belongs in File > Import
-    # beside the other importers -- an Add-menu entry would have nothing
-    # to add until a file is chosen.
-    "mesh.fold_import": "File > Import, not an Add-menu shape",
 }
 
 
