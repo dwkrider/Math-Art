@@ -826,15 +826,10 @@ def fold_motif(verts, faces, fold, tol=1e-6):
     return kept, out
 
 
-def mating_planes(kind, family, loops, d=1.0, tol=1e-4):
-    """For each boundary edge, the neighbouring plane it beds against.
-
-    A boundary edge that runs along the intersection of this plane
-    with another is a mating edge: in the assembly the neighbouring
-    part comes up to the same line from the other side, so that edge
-    has to be cut to the dihedral rather than left square.  Every
-    other edge is free and stays square.  Returns a list per loop of
-    the matching normal, or None."""
+def _plane_lines(kind, family, d=1.0):
+    """Where the family's other planes cut this one, as (A, B, C, b)
+    with A^2 + B^2 = 1, in the motif's own flat frame.  These are the
+    guide lines the stellation pattern is drawn from."""
     a, normals = plane_normals(kind, family)
     u, v = _frame(a)
     lines = []
@@ -846,6 +841,44 @@ def mating_planes(kind, family, loops, d=1.0, tol=1e-4):
         B = sum(x * y for x, y in zip(b, v))
         n = sqrt(A * A + B * B)
         lines.append((A / n, B / n, d * (1 - ab) / n, b))
+    return lines
+
+
+def near_mating_edges(kind, family, loops, d=1.0, tol=1e-4, slack=0.01):
+    """Boundary edges that ALMOST bed against a neighbouring plane.
+
+    A drawn or traced motif seldom lands its mating edges exactly on
+    the guide lines, and an edge that misses by more than tol counts
+    as free and is left square -- so a part comes back unmitred with
+    nothing visibly wrong with it.  Krull's traced points missed by
+    0.002, twenty times the tolerance and a fiftieth of the gap to
+    the next-nearest edge, which is the signature of artwork that
+    means to sit on a line and doesn't quite.  Returns (loop, edge,
+    distance) for each near miss so the caller can say so."""
+    lines = _plane_lines(kind, family, d)
+    near = []
+    for li, loop in enumerate(loops):
+        for i in range(len(loop)):
+            p0 = loop[i]
+            p1 = loop[(i + 1) % len(loop)]
+            best = min(max(abs(A * p0[0] + B * p0[1] - C),
+                           abs(A * p1[0] + B * p1[1] - C))
+                       for A, B, C, _b in lines)
+            if tol <= best <= slack * d:
+                near.append((li, i, best))
+    return near
+
+
+def mating_planes(kind, family, loops, d=1.0, tol=1e-4):
+    """For each boundary edge, the neighbouring plane it beds against.
+
+    A boundary edge that runs along the intersection of this plane
+    with another is a mating edge: in the assembly the neighbouring
+    part comes up to the same line from the other side, so that edge
+    has to be cut to the dihedral rather than left square.  Every
+    other edge is free and stays square.  Returns a list per loop of
+    the matching normal, or None."""
+    lines = _plane_lines(kind, family, d)
     out = []
     for loop in loops:
         per = []
@@ -935,6 +968,25 @@ def mitred_part(kind, family, loops, d=1.0, thickness=0.04):
                 continue
             p = _meet(loop[j], loop[i], shift[j],
                       loop[i], loop[(i + 1) % n], shift[i])
+            # Where two MATING edges meet, the corner is a genuine
+            # point of the solid -- three bisecting planes and the
+            # face all pass through it -- however far out it lands.
+            # Two edges closing to an angle phi put it 1/sin(phi/2)
+            # shifts away, so Krull's 36 deg point sits 3.24 out and
+            # any fixed cap clips it; the corner then slides along
+            # one of the two edges, which keeps that wall planar and
+            # drops the other off its bisector.  Only near-collinear
+            # edges are genuinely ill-conditioned here.
+            e0 = (loop[i][0] - loop[j][0], loop[i][1] - loop[j][1])
+            e1 = (loop[(i + 1) % n][0] - loop[i][0],
+                  loop[(i + 1) % n][1] - loop[i][1])
+            l0 = sqrt(e0[0] * e0[0] + e0[1] * e0[1]) or 1.0
+            l1 = sqrt(e1[0] * e1[0] + e1[1] * e1[1]) or 1.0
+            if (per[j] is not None and per[i] is not None
+                    and abs(e0[0] * e1[1] - e0[1] * e1[0])
+                    / (l0 * l1) > 1e-3):
+                out.append(p)
+                continue
             # A mating edge usually runs into the curved free boundary
             # almost tangentially, and there the two shifted lines
             # cross far away.  The corner can only travel about as far
@@ -1305,13 +1357,23 @@ _WHIMSY_TIPS = (0, 48)
 # The arc is decimated (Douglas-Peucker, 0.3 svg units) from the
 # traced template, and cut where the outline meets its own turned
 # copy (0.07 px) rather than at a fifth of the perimeter.
+#
+# The two points either side of the tip are snapped onto the guide
+# lines the tip sits on, which the trace missed by 0.0021 and 0.0027.
+# That is the artwork's error, not the construction's, but it has two
+# visible consequences: the point came out at 35.222 deg instead of
+# the pentagram's 36 (four lines cross at the tip, pairwise 36 and 72
+# deg apart), and the two edges running into the tip are where this
+# part beds against its neighbours -- 0.002 off the line is 20x the
+# mating tolerance, so they read as free edges and the machinable
+# part came out square at the points instead of mitred.
 
 _KRULL_ARM = (
     (+0.176362, +0.057321), (+0.278976, +0.199923), (+0.321354, +0.288876),
     (+0.349460, +0.416306), (+0.350960, +0.559949), (+0.337392, +0.655009),
     (+0.310847, +0.754326), (+0.179072, +1.074073), (+0.129851, +1.227620),
-    (+0.112782, +1.333252), (+0.108485, +1.659308), (+0.000000, +2.000000),
-    (-0.107578, +1.660034), (-0.108841, +1.310469), (-0.091853, +1.209926),
+    (+0.112782, +1.333252), (+0.110486, +1.659958), (+0.000000, +2.000000),
+    (-0.110186, +1.660881), (-0.108841, +1.310469), (-0.091853, +1.209926),
     (-0.060654, +1.104462), (+0.107287, +0.684660), (+0.133381, +0.573010),
     (+0.140276, +0.488105), (+0.133056, +0.414295), (+0.110854, +0.346288),
 )
@@ -2173,6 +2235,25 @@ if _IN_BLENDER:
                                      for x in sorted(angles))
                            or "none (no edge beds against a "
                               "neighbour)"))
+                    # An edge drawn nearly-but-not-quite along a guide
+                    # line is treated as free and left square, which
+                    # looks like the mitre simply failing.  Say so
+                    # rather than let it pass silently.
+                    near = []
+                    for outer, holes in pieces:
+                        near.extend(near_mating_edges(
+                            kind, family, [outer] + holes, d))
+                    if near:
+                        worst = max(x[2] for x in near)
+                        self.report(
+                            {'WARNING'},
+                            "%d edge(s) run close to a guide line but "
+                            "miss it by up to %.4g (%.2f%% of the "
+                            "plane distance), so they were left "
+                            "square instead of mitred -- snap those "
+                            "points onto the crossing lines to have "
+                            "them bed against the neighbour"
+                            % (len(near), worst, 100.0 * worst / d))
 
             if self.show_polyhedron:
                 # the solid whose extended face planes are this
@@ -2426,6 +2507,76 @@ def _selftest():
           f"({len(sv)} verts, {len(sf)} faces), refold "
           f"{len(again_v)}/{len(again_f)} {'OK' if ok else 'BAD'}")
     assert ok, (arm_a, star_a, len(sv), len(again_v), len(again_f))
+    # The arm's point is where five planes meet, so its two edges run
+    # into the tip along two of the four guide lines crossing there.
+    # Those lines are 36 and 72 deg apart, and the arm takes the 36:
+    # a pentagram point.  The trace came in at 35.222, which is also
+    # what stopped the tip mitring -- 0.002 off a line reads as a
+    # free edge -- so pin the angle and the mating count together.
+    _tip = _KRULL_ARM[11]
+    assert abs(_tip[0]) < 1e-9 and abs(_tip[1] - 2.0) < 1e-9, _tip
+    _e1 = (_KRULL_ARM[10][0] - _tip[0], _KRULL_ARM[10][1] - _tip[1])
+    _e2 = (_KRULL_ARM[12][0] - _tip[0], _KRULL_ARM[12][1] - _tip[1])
+    _c = ((_e1[0] * _e2[0] + _e1[1] * _e2[1])
+          / (math.hypot(*_e1) * math.hypot(*_e2)))
+    apex = math.degrees(math.acos(max(-1.0, min(1.0, _c))))
+    star_loops = group_loops(boundary_loops(sv, sf))
+    lps5 = [star_loops[0][0]] + star_loops[0][1]
+    mates5 = mating_planes('ICOSA', 'P5', lps5, 1.0)
+    nmate5 = sum(1 for per in mates5 for m in per if m is not None)
+    dihs = sorted({round(dihedral_angle(a5, b5), 4)
+                   for a5, b5 in ((plane_normals('ICOSA', 'P5')[0], m)
+                                  for per in mates5 for m in per
+                                  if m is not None)})
+    near5 = near_mating_edges('ICOSA', 'P5', lps5, 1.0)
+    ok = (abs(apex - 36.0) < 1e-3 and nmate5 == 10 and not near5)
+    print(f"krull tip {apex:.4f} deg (36), {nmate5} mating edges "
+          f"(10), dihedrals {dihs}, {len(near5)} near misses (0) "
+          f"{'OK' if ok else 'BAD'}")
+    assert ok, (apex, nmate5, near5)
+
+    # and the part really is cut on those lines: each wall raised on
+    # a mating edge has to land on the bisecting plane between the
+    # two faces, which is what lets the points of five stars butt
+    # into a spike instead of overlapping
+    kpv, kpf, _kdih = mitred_part('ICOSA', 'P5', lps5, 1.0, 0.05)
+    aa5 = plane_normals('ICOSA', 'P5')[0]
+    uu5, vv5 = _frame(aa5)
+
+    def _p5(p):
+        return tuple(p[0] * uu5[i] + p[1] * vv5[i]
+                     + (1.0 + p[2]) * aa5[i] for i in range(3))
+
+    bis5 = []
+    for per in mates5:
+        for m in per:
+            if m is None:
+                continue
+            b5 = _normalize(m)
+            nb5 = _normalize([aa5[i] + b5[i] for i in range(3)])
+            off5 = 2.0 / sqrt(sum((aa5[i] + b5[i]) ** 2
+                                  for i in range(3)))
+            if not any(all(abs(nb5[k] - q[0][k]) < 1e-9
+                           for k in range(3)) for q in bis5):
+                bis5.append((nb5, off5))
+    walls5 = 0
+    worst5 = 0.0
+    for fc5 in kpf:
+        zz5 = [kpv[i][2] for i in fc5]
+        if not (max(zz5) > 0 > min(zz5)):
+            continue
+        pts5 = [_p5(kpv[i]) for i in fc5]
+        best5 = min(max(abs(sum(p[k] * nb[k] for k in range(3)) - o)
+                        for p in pts5) for nb, o in bis5)
+        if best5 < 1e-4:
+            walls5 += 1
+            worst5 = max(worst5, best5)
+    ok = walls5 == 10
+    print(f"krull part: {len(kpv)}v {len(kpf)}f, {walls5} walls "
+          f"mitred onto a bisector (10), worst {worst5:.1e} "
+          f"{'OK' if ok else 'BAD'}")
+    assert ok, (walls5, worst5)
+
     # and the star it makes really is five-fold about the origin
     turn = 0.4 * math.pi
     c5, s5 = math.cos(turn), math.sin(turn)

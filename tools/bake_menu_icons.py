@@ -180,18 +180,39 @@ def _bake(op):
         subjects.drop_setup(helpers)
         return f"operator failed: {e!r}"
     subjects.drop_setup(helpers)
+    # Working geometry an operator leaves beside its result -- an
+    # editable motif, guide rings -- must come out of the frame before
+    # anything is measured, because the framing fits the COMBINED
+    # bounding box.  render_docs.py does this for the hero and variant
+    # shots; without it here the icon and the hero disagree, and the
+    # symmetric sculpture's icon shrank to a speck above its guides.
+    subjects.hide_helpers(op)
     subs = rd.subjects()
     if not subs:
         return "operator produced no mesh or curve"
     # Diagnose the empty-frame case up front: a mesh with vertices but no
     # faces, or a curve with no bevel, renders nothing in Cycles, and
     # "fully transparent frame" is a confusing way to hear about it.
-    if not any(len(getattr(o.data, 'polygons', ())) for o in subs
-               if o.type == 'MESH') and \
+    # Counted on the EVALUATED object: a generator may store nothing but
+    # a point cloud and build every face in a Geometry Nodes modifier --
+    # the symmetric sculpture instances its motif over 30 rotation
+    # points -- so the stored mesh says "0 faces" for a subject that
+    # renders perfectly well.
+    deps = bpy.context.evaluated_depsgraph_get()
+
+    def _counts(o):
+        try:
+            data = o.evaluated_get(deps).data
+        except Exception:
+            data = o.data
+        return (len(getattr(data, 'vertices', ())),
+                len(getattr(data, 'polygons', ())))
+
+    tally = [_counts(o) for o in subs if o.type == 'MESH']
+    if not any(f for _v, f in tally) and \
             not any(o.type == 'CURVE' for o in subs):
         return (f"no renderable faces "
-                f"({sum(len(getattr(o.data, 'vertices', ())) for o in subs)}"
-                f" verts, 0 faces)")
+                f"({sum(v for v, _f in tally)} verts, 0 faces)")
     subjects.pose_subjects(op, rd.subjects())
     rd.normalize_subjects()
     rd.apply_material()

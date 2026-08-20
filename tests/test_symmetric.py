@@ -607,7 +607,8 @@ if not ok:
 # Machinable part: a closed solid of the asked-for thickness, laid
 # flat below the XY plane and centred on the Z axis so it can be
 # picked and exported without disturbing the design objects
-for preset, thick in (('WHIMSY', 0.03), ('FRABJOUS', 0.02)):
+for preset, thick in (('WHIMSY', 0.03), ('FRABJOUS', 0.02),
+                      ('KRULL', 0.05)):
     clear()
     # thickness follows Shell x Distance, so it always agrees with
     # the sculpture the part came from
