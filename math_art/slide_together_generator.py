@@ -99,17 +99,42 @@ def _unit(a):
 #   DODECA the 12 face normals of a dodecahedron
 #   ID30   the 30 two-fold axes an icosidodecahedron's edges pick out
 
+# key, label, planes, n, d, radius, turn.  Each radius is the largest one
+# at which EVERY panel has the same number of crossings, which matters
+# more than it looks: a slide-together is one shape cut one way, so if
+# panels crossed different numbers of neighbours they would need
+# different slit patterns and would no longer be identical pieces.  Grow
+# a panel past this and the outer ones start sawing through neighbours
+# they should miss; shrink it and they float free.
 MODELS = [
-    ('T20', "20 Triangles", 'ICOSA', 3, 1, 1.42, 12.0),
-    ('S30', "30 Squares", 'ID30', 4, 1, 1.30, 18.0),
-    ('P12', "12 Pentagons", 'DODECA', 5, 1, 1.35, 20.0),
-    ('D12', "12 Decagons", 'DODECA', 10, 1, 1.18, 9.0),
-    ('H20', "20 Hexagons", 'ICOSA', 6, 1, 1.22, 10.0),
-    ('SD12', "12 Star Decagons {10/3}", 'DODECA', 10, 3, 1.60, 9.0),
-    ('PG12', "12 Pentagrams", 'DODECA', 5, 2, 1.75, 20.0),
+    ('T20', "20 Triangles", 'ICOSA', 3, 1, 0.61, 12.0),
+    ('S30', "30 Squares", 'ID30', 4, 1, 0.60, 18.0),
+    ('P12', "12 Pentagons", 'DODECA', 5, 1, 1.38, 20.0),
+    ('D12', "12 Decagons", 'DODECA', 10, 1, 1.30, 9.0),
+    ('H20', "20 Hexagons", 'ICOSA', 6, 1, 0.59, 10.0),
+    ('SD12', "12 Star Decagons {10/3}", 'DODECA', 10, 3, 2.10, 9.0),
+    ('PG12', "12 Pentagrams", 'DODECA', 5, 2, 3.00, 20.0),
 ]
 
 _MODEL = {m[0]: m for m in MODELS}
+
+# How far each face plane sits from the centre.  Taken from the solid the
+# planes come from, so a panel really does lie in a face plane.
+_MODEL_OFFSET = {}
+
+
+def _plane_offset(kind):
+    if kind in _MODEL_OFFSET:
+        return _MODEL_OFFSET[kind]
+    if kind == 'ID30':
+        val = 1.0
+    else:
+        V, F = _seeds.seed_poly('ICOSA' if kind == 'ICOSA' else 'DODECA')
+        planes = _hull.face_planes(V, F)
+        r = max(_norm(v) for v in V)
+        val = planes[0][1] / r           # inradius, circumradius = 1
+    _MODEL_OFFSET[kind] = val
+    return val
 
 
 def plane_normals(kind):
@@ -136,20 +161,27 @@ def plane_normals(kind):
     raise ValueError(kind)
 
 
-def _polygon(n, d, radius, normal, turn):
-    """A regular {n/d} polygon of `radius` in the plane through the origin
-    with the given normal, turned by `turn` degrees."""
+def _polygon(n, d, radius, normal, turn, offset=0.0):
+    """A regular {n/d} polygon of `radius` centred on `normal * offset`,
+    lying in that face plane and turned by `turn` degrees.
+
+    The offset is the whole point: a slide-together puts each panel in a
+    FACE PLANE of the solid, not through its centre.  Panels through the
+    centre would all cut through one another at the origin, and the
+    number of crossings would not depend on how big they are.
+    """
     e1 = [1.0, 0.0, 0.0]
     if abs(_dot(e1, normal)) > 0.9:
         e1 = [0.0, 1.0, 0.0]
     e1 = _unit(_sub(e1, _mul(normal, _dot(e1, normal))))
     e2 = _cross(normal, e1)
     t = math.radians(turn)
+    cen = _mul(normal, offset)
     pts = []
     for k in range(n):
         a = t + 2 * math.pi * d * k / n
-        pts.append(_add(_mul(e1, radius * math.cos(a)),
-                        _mul(e2, radius * math.sin(a))))
+        pts.append(_add(cen, _add(_mul(e1, radius * math.cos(a)),
+                                  _mul(e2, radius * math.sin(a)))))
     return pts
 
 
@@ -185,12 +217,21 @@ def crossings(panels):
         Pi, ni = panels[i]
         for j in range(i + 1, len(panels)):
             Pj, nj = panels[j]
-            dirv = _cross(ni, nj)
-            if _norm(dirv) < 1e-9:
+            raw_dir = _cross(ni, nj)
+            if _norm(raw_dir) < 1e-9:
                 continue                    # parallel planes never cross
-            dirv = _unit(dirv)
-            # a point on both planes (both pass through the origin here)
-            org = [0.0, 0.0, 0.0]
+            dirv = _unit(raw_dir)
+            # A point on the line where the two face planes meet.  This
+            # formula is NOT scale-invariant -- numerator linear in the
+            # cross product, denominator quadratic -- so it needs the RAW
+            # cross product, not the unit direction.  Feeding it the unit
+            # vector puts the point off both planes by a factor of
+            # sin(angle between them).
+            hi_ = _dot(ni, Pi[0])
+            hj_ = _dot(nj, Pj[0])
+            dd = _dot(raw_dir, raw_dir)
+            org = _mul(_add(_mul(_cross(nj, raw_dir), hi_),
+                            _mul(_cross(raw_dir, ni), hj_)), 1.0 / dd)
             si = _seg_polygon_span(Pi, ni, org, dirv)
             sj = _seg_polygon_span(Pj, nj, org, dirv)
             if si is None or sj is None:
@@ -245,7 +286,8 @@ def build_model(key, radius_scale=1.0, turn_delta=0.0, slit_width=0.05):
     key, _lbl, axes, n, d, rad, turn = _MODEL[key]
     normals = plane_normals(axes)
     r = rad * radius_scale
-    panels = [(_polygon(n, d, r, nv, turn + turn_delta), nv)
+    off = _plane_offset(axes)
+    panels = [(_polygon(n, d, r, nv, turn + turn_delta, off), nv)
               for nv in normals]
     cx = crossings(panels)
     # The chord runs from end_lo to end_hi through BOTH panels, so those
@@ -442,7 +484,8 @@ def _selftest():
 
         # the panels must actually interlock -- a slide-together with no
         # crossings is just a heap of loose polygons
-        raw = [(_polygon(n, d, _r, nv, _t), nv) for nv in normals]
+        raw = [(_polygon(n, d, _r, nv, _t, _plane_offset(axes)), nv)
+               for nv in normals]
         cx = crossings(raw)
         assert cx, (key, "no panel crossings: nothing would interlock")
 
@@ -452,15 +495,20 @@ def _selftest():
             assert _norm(_sub(hi, lo)) > 1e-6, (key, "degenerate chord")
             for who in (i, j):
                 P, nv = raw[who]
-                assert abs(_dot(nv, mid)) < 1e-6, (key, "chord off-plane")
+                # the chord lies in BOTH face planes, which sit at the
+                # solid's inradius -- not through the centre
+                assert abs(_dot(nv, mid) - _plane_offset(axes)) < 1e-6,                     (key, "chord off-plane")
 
         # each panel meets several others, not just one
         deg = {}
         for i, j, _m, _lo, _hi in cx:
             deg[i] = deg.get(i, 0) + 1
             deg[j] = deg.get(j, 0) + 1
-        assert min(deg.values()) >= 2, (key, "a panel is barely held",
+        assert len(deg) == want_panels[key],             (key, "a panel crosses nothing", len(deg))
+        assert min(deg.values()) >= 3, (key, "a panel is barely held",
                                         sorted(deg.values())[:3])
+        assert max(deg.values()) <= 9,             (key, "panels saw through far too many neighbours",
+             sorted(deg.values())[-3:])
 
         # panels lie in distinct planes
         seen = set()
