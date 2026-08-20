@@ -57,6 +57,8 @@ import numpy as np
 try:
     from .minsurf.topology import (build_boy, build_crosscap,
                                        build_genus, build_klein_bottle,
+                                      build_nonorientable,
+                                       build_nonorientable,
                                        build_klein_figure8, build_roman,
                                        build_sudanese_mobius,
                                        build_twist_strip, edge_face_counts)
@@ -177,6 +179,11 @@ PRESET_ITEMS = [
      "Steiner's Roman surface (projective plane)"),
     ('BOY', "Boy's Surface",
      "Boy's surface, Bryant-Kusner parametrization"),
+    ('NONORIENT', "Non-Orientable Genus-k",
+     "The closed non-orientable surface N_k: a sphere with k "
+     "cross-caps. k = 1 is the projective plane, k = 2 the Klein "
+     "bottle, k = 3 Dyck's surface. Immersed, with a segment of "
+     "double points per cross-cap -- none of them embeds in 3-space"),
     ('GENUS', "Genus-g Surface",
      "Orientable genus-g handlebody surface (implicit)"),
     ('TWIST_STRIP', "Twisted Strip (solid)",
@@ -224,6 +231,16 @@ if _IN_BLENDER:
         genus: IntProperty(
             name="Genus", default=2, min=1, max=5,
             description="Number of handles (verified for 1-5)")
+        cross_caps: IntProperty(
+            name="Cross-Caps k", default=3, min=1, max=8,
+            description="Number of cross-caps: N_k has Euler "
+                        "characteristic 2 - k. 1 = projective plane, "
+                        "2 = Klein bottle, 3 = Dyck's surface")
+        cap_pinch: FloatProperty(
+            name="Cross-Cap Pinch", default=0.55, min=0.0, max=1.5,
+            description="How far each cross-cap is lifted over its "
+                        "double-point segment; 0 leaves the two sheets "
+                        "coincident and unreadable")
         twists: IntProperty(
             name="Half-Twists", default=1, min=0, max=12,
             description="Half-twists per revolution; 1 = Mobius band")
@@ -262,6 +279,11 @@ if _IN_BLENDER:
             elif p == 'BOY':
                 V, F = build_boy(self.res_u, self.res_v)
                 name = "Boy Surface"
+            elif p == 'NONORIENT':
+                V, F = build_nonorientable(
+                    self.cross_caps, max(16, self.res_u),
+                    max(8, self.res_v // 2), pinch=self.cap_pinch)
+                name = f"Non-Orientable N{self.cross_caps}"
             elif p == 'GENUS':
                 cell = 8.0 / max(self.res_u, 16)
                 V, F = build_genus(self.genus, cell)
@@ -293,7 +315,12 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'preset')
             p = self.preset
-            if p == 'GENUS':
+            if p == 'NONORIENT':
+                lay.prop(self, 'cross_caps')
+                lay.prop(self, 'cap_pinch')
+                lay.prop(self, 'res_u')
+                lay.prop(self, 'res_v')
+            elif p == 'GENUS':
                 lay.prop(self, 'genus')
                 lay.prop(self, 'res_u')
             elif p == 'TWIST_STRIP':

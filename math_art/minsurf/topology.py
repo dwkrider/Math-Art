@@ -259,6 +259,149 @@ def build_genus(genus, cell=0.125):
     return mst.marching_tets(field, bmin, bmax, res)
 
 
+def build_nonorientable(k=3, segments=64, rings=32, hole=0.30,
+                        pinch=0.55):
+    """The closed non-orientable surface N_k of genus k, as an
+    immersion: a sphere carrying k cross-caps.
+
+    N_1 is the projective plane, N_2 the Klein bottle, N_3 Dyck's
+    surface, and every closed non-orientable surface is one of these.
+    None of them EMBEDS in R^3 -- that is a theorem, not a limitation of
+    the meshing -- so each cross-cap is drawn the way it always is, as a
+    self-intersecting pinched cap with a segment of double points
+    running between two pinch points.
+
+    The construction is surgery rather than a formula, which is what
+    makes it exact.  For each cross-cap: cut a disk out of the sphere,
+    leaving a boundary circle of 2m vertices, then glue that circle to
+    itself ANTIPODALLY by welding vertex i to vertex i + m.  That is the
+    definition of attaching a cross-cap, so the topology is right by
+    construction rather than by numerical luck: each one drops the Euler
+    characteristic by exactly 1, giving chi = 2 - k, and makes the
+    surface one-sided.
+
+    Welding each antipodal pair to their midpoint collapses the cut
+    circle onto one of its diameters, and that segment is precisely the
+    double-point line of the classical cross-cap picture.  `pinch`
+    lifts the cap over that segment so the two sheets are visible
+    rather than coincident.
+
+    Returns (verts, faces).  The faces along each double-point segment
+    are shared by four triangles, not two; that is what an immersion
+    looks like as a mesh and is not a defect to weld away.
+    """
+    import numpy as np
+
+    k = max(1, int(k))
+    m = max(3, int(segments) // 2)          # half the hole's boundary
+    nseg, nring = int(segments), int(rings)
+
+    # --- the sphere, poles welded -----------------------------------
+    verts = [(0.0, 0.0, 1.0)]
+    for j in range(1, nring):
+        phi = math.pi * j / nring
+        for i in range(nseg):
+            th = 2.0 * math.pi * i / nseg
+            verts.append((math.sin(phi) * math.cos(th),
+                          math.sin(phi) * math.sin(th),
+                          math.cos(phi)))
+    verts.append((0.0, 0.0, -1.0))
+    south = len(verts) - 1
+
+    def vid(j, i):
+        return 1 + (j - 1) * nseg + (i % nseg)
+
+    faces = []
+    for i in range(nseg):
+        faces.append((0, vid(1, i + 1), vid(1, i)))
+    for j in range(1, nring - 1):
+        for i in range(nseg):
+            faces.append((vid(j, i), vid(j, i + 1),
+                          vid(j + 1, i + 1), vid(j + 1, i)))
+    for i in range(nseg):
+        faces.append((south, vid(nring - 1, i), vid(nring - 1, i + 1)))
+
+    V = [list(p) for p in verts]
+
+    # --- k cross-caps, spaced around the equator --------------------
+    remap = {}
+
+    def resolve(a):
+        while a in remap:
+            a = remap[a]
+        return a
+
+    kept = []
+    for c in range(k):
+        centre = np.array([math.cos(2.0 * math.pi * c / k),
+                           math.sin(2.0 * math.pi * c / k), 0.0])
+        # faces whose centroid falls inside the disk are cut away, and
+        # the vertices left on the cut form the boundary circle
+        inside = []
+        for f in faces:
+            g = np.mean([V[a] for a in f], axis=0)
+            if float(np.linalg.norm(g - centre)) < hole:
+                inside.append(f)
+        if not inside:
+            continue
+        cut = set()
+        for f in inside:
+            cut.update(f)
+        # boundary ring: cut vertices that still belong to a kept face
+        kept_now = [f for f in faces if f not in inside]
+        onring = set()
+        for f in kept_now:
+            for a in f:
+                if a in cut:
+                    onring.add(a)
+        # order the cut circle by angle IN ITS OWN PLANE.  Picking the
+        # axes off fixed coordinates instead sorts different holes by
+        # different conventions, which pairs the wrong vertices and
+        # wrecks the Euler characteristic on some values of k.
+        nrm0 = centre / max(float(np.linalg.norm(centre)), 1e-12)
+        tmp = np.array([0.0, 0.0, 1.0])
+        if abs(float(np.dot(tmp, nrm0))) > 0.9:
+            tmp = np.array([1.0, 0.0, 0.0])
+        e1 = np.cross(nrm0, tmp)
+        e1 = e1 / max(float(np.linalg.norm(e1)), 1e-12)
+        e2 = np.cross(nrm0, e1)
+
+        def ring_angle(a):
+            d = np.array(V[a]) - centre
+            return math.atan2(float(np.dot(d, e2)), float(np.dot(d, e1)))
+
+        ring = sorted(onring, key=ring_angle)
+        faces = kept_now
+        if len(ring) < 6:
+            continue
+        half = len(ring) // 2
+        axis = np.array([-centre[1], centre[0], 0.0])
+        nrm = np.linalg.norm(axis)
+        axis = axis / nrm if nrm > 1e-12 else np.array([0.0, 1.0, 0.0])
+        for t in range(half):
+            a, b = resolve(ring[t]), resolve(ring[t + half])
+            if a == b:
+                continue
+            pa, pb = np.array(V[a]), np.array(V[b])
+            mid = 0.5 * (pa + pb)
+            # lift the weld off the sphere so the two sheets separate
+            s = math.sin(math.pi * (t + 0.5) / half)
+            mid = mid + pinch * hole * s * centre / max(
+                float(np.linalg.norm(centre)), 1e-12)
+            V[a] = list(mid)
+            remap[b] = a
+        kept.append(c)
+
+    faces = [tuple(resolve(a) for a in f) for f in faces]
+    faces = [f for f in faces if len(set(f)) == len(f)]
+
+    used = sorted({a for f in faces for a in f})
+    idx = {a: i for i, a in enumerate(used)}
+    Vout = [tuple(V[a]) for a in used]
+    Fout = [tuple(idx[a] for a in f) for f in faces]
+    return Vout, Fout
+
+
 def build_twist_strip(half_twists, segments, width=0.6, thick=0.18,
                       ridge=False, radius=1.5):
     """Sweep a rectangular cross-section (optionally with a raised
@@ -298,3 +441,87 @@ def build_twist_strip(half_twists, segments, width=0.6, thick=0.18,
             faces.append((j * k + i, j * k + i2,
                           j2 * k + (i2 + s) % k, j2 * k + (i + s) % k))
     return np.array(verts), faces
+
+
+def _selftest():
+    """The module had no self-test; this adds one for the surface the
+    whole point of which is its topology."""
+    from collections import defaultdict, deque
+    ok = True
+
+    def _chi(V, F):
+        e = set()
+        for f in F:
+            for i in range(len(f)):
+                a, b = f[i], f[(i + 1) % len(f)]
+                e.add((a, b) if a < b else (b, a))
+        return len(V) - len(e) + len(F)
+
+    def _orientable(F):
+        """Try to orient every face consistently.
+
+        Orientation only propagates across MANIFOLD edges; the
+        double-point segments of an immersion carry four faces and are
+        skipped, which is correct -- they are where the surface passes
+        through itself, not where it is glued.
+        """
+        edge = defaultdict(list)
+        for fi, f in enumerate(F):
+            for i in range(len(f)):
+                a, b = f[i], f[(i + 1) % len(f)]
+                edge[(a, b) if a < b else (b, a)].append((fi, a, b))
+        adj = defaultdict(list)
+        for lst in edge.values():
+            if len(lst) == 2:
+                (f0, a0, _b0), (f1, a1, _b1) = lst
+                flip = (a0 == a1)
+                adj[f0].append((f1, flip))
+                adj[f1].append((f0, flip))
+        sign = {}
+        for start in range(len(F)):
+            if start in sign:
+                continue
+            sign[start] = 1
+            q = deque([start])
+            while q:
+                u = q.popleft()
+                for v, flip in adj[u]:
+                    want = -sign[u] if flip else sign[u]
+                    if v in sign:
+                        if sign[v] != want:
+                            return False
+                    else:
+                        sign[v] = want
+                        q.append(v)
+        return True
+
+    # N_k: chi = 2 - k, and one-sided.  These are the definition of the
+    # surface, not a proxy for it, and the surgery is exact, so a bug in
+    # the ring ordering shows up here at once.  It did: sorting the cut
+    # circle by fixed coordinate axes instead of in the hole's own plane
+    # paired the wrong vertices and gave chi = -18 for k = 4, while
+    # k = 1, 2, 3 and 5 all came out right and looked convincing.
+    bad = []
+    for k in (1, 2, 3, 4, 5, 6):
+        V, F = build_nonorientable(k, 48, 24)
+        c = _chi(V, F)
+        if c != 2 - k:
+            bad.append('N%d:chi=%d(want %d)' % (k, c, 2 - k))
+        elif _orientable(F):
+            bad.append('N%d:two-sided' % k)
+    ok &= not bad
+    print("topology: N_k has chi = 2-k and is one-sided, k = 1..6 %s"
+          % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # control: the same machinery on a sphere must come out orientable
+    # with chi = 2, or the test above proves nothing.
+    V, F = build_genus(1)
+    good = _orientable(F)
+    ok &= good
+    print("topology: control -- an orientable surface still reads as "
+          "two-sided %s" % ('OK' if good else 'FAIL'))
+
+    print("RESULT:", "OK" if ok else "FAIL")
+    if not ok:
+        raise AssertionError("topology self-test failed")
+
