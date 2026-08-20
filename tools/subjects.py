@@ -53,6 +53,9 @@ PARAMS = {
     # reads as a twist rather than as a bent triangle.
     "mesh.platonic_twist_add": dict(kind='DODECA'),
     "mesh.twisted_torus_add": dict(n=6, twist_steps=6),
+    # The Miura is the crease pattern everyone recognises, and its
+    # zigzag reads at icon size where a waterbomb grid does not.
+    "mesh.crease_pattern_add": dict(pattern='MIURA', rows=4, cols=6),
     # The Clifford torus is a torus; the vesicle is the shape the
     # Willmore energy is famous for -- the biconcave discocyte that
     # the Helfrich model predicts and a red blood cell actually is.

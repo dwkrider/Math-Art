@@ -228,6 +228,16 @@ ROLLERS = Menu(
 # and hyperbolic honeycombs in Polyhedra, phyllotaxis in Plants.  A
 # generator appearing in two menus makes both of them harder to read
 # and neither of them authoritative.
+# Origami.  The add-on does not design crease patterns -- those are
+# imported as FOLD from the editors that specialise in them -- so this
+# menu holds the classical patterns, which are folk mathematics with
+# nothing to download, and the operators that fold what you have.
+FOLDS = Menu(
+    "VIEW3D_MT_math_art_folds", "Folds", 'MOD_SIMPLIFY', [
+        _e("mesh.crease_pattern_add", 'MESH_GRID'),
+        _e("object.fold_solve", 'MOD_SIMPLEDEFORM', builtin=True),
+    ])
+
 ODDS = Menu(
     "VIEW3D_MT_math_art_odds", "Odds & Ends", 'MESH_TORUS', [
         _e("mesh.gem_add", 'MESH_ICOSPHERE', "Faceted Gemstone"),
@@ -261,7 +271,7 @@ STYLES = Menu(
 # last by the root menu, after the ROOT_ENTRIES below, so it is not
 # part of this run.
 MENU_ORDER = (SURFACES, POLYHEDRA, FRACTALS, PLANTS, KNOTS, WEAVES,
-              PATTERNS, ROLLERS, ODDS)
+              PATTERNS, FOLDS, ROLLERS, ODDS)
 
 # Every menu that gets a generated class, in registration order.
 ALL_MENUS = MENU_ORDER + (STYLES,)

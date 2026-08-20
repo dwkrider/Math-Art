@@ -19,6 +19,9 @@ the operator over it.
                   per vertex, never silently repaired
     layers.py     the stacking a file states, and nothing more; computing
                   an order is NP-hard and belongs to Flat-Folder
+    patterns.py   the classical crease patterns, parametrically
+    rigid.py      rigid folding: Newton in fold-angle space, then the
+                  breadth-first walk that places the paper
 
 `load_pattern` is the ordinary entry point: read a file, recover faces
 if the file omitted them, and check it.
@@ -45,7 +48,7 @@ References:
       2007), ch. 11-14.
 """
 
-from . import fold_io, graph, layers, validate
+from . import fold_io, graph, layers, patterns, rigid, validate
 from .fold_io import (ASSIGNMENTS, BOUNDARY, CREASES, FLAT, MOUNTAIN,
                       UNASSIGNED, VALLEY, FoldError, Frame, read_fold,
                       write_fold)
@@ -59,6 +62,7 @@ __all__ = [
     "FoldError", "Frame", "GraphError", "LayerOrder", "Report",
     "build_faces", "check", "load_pattern", "read_fold",
     "read_layer_order", "triangulate", "vertex_rings", "write_fold",
+    "patterns", "rigid",
 ]
 
 

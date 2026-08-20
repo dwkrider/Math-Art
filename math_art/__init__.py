@@ -51,6 +51,7 @@ _MODULE_NAMES = [
     'bryant_generator',
     'crochet_generator',
     'fold_generator',
+    'fold_pattern_generator',
     'dform_generator',
     'koman_generator',
     'space_curve_generator',
