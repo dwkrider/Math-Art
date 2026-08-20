@@ -2,14 +2,14 @@
 
 ## Overview
 
-Add a smooth constant-negative-curvature surface
-(pseudosphere, Dini or Kuen).
+Add a smooth constant-negative-curvature surface: the pseudosphere, Dini,
+Kuen, Minding bulge and spindle, breather, or Amsler surface.
 
 Surfaces of **constant negative curvature** $K=-1$ — the pseudospherical surfaces, which are as close as smooth geometry in $\mathbb{R}^3$ gets to a picture of the hyperbolic plane.
 
 Only *as close as*. Hilbert proved in 1901 that no complete surface of constant negative curvature can be embedded in Euclidean space at all, so every member of this family is necessarily incomplete: each runs into a cusp, an edge, or a singular circle. What they show is a *patch* of hyperbolic geometry, and the ways they fail to continue are as characteristic as the surfaces themselves.
 
-The family is governed by the **sine-Gordon equation**, so its members correspond to solitons — the Dini surface to a travelling one, the breather surface to a bound soliton–antisoliton pair.
+The family is governed by the **sine-Gordon equation**, so its members correspond to solitons — the Dini surface to a travelling one, the breather surface to a bound soliton–antisoliton pair, and the Amsler surface to the Lorentz-invariant reduction that passes through two intersecting straight lines.
 
 ## Options
 
@@ -17,10 +17,13 @@ The family is governed by the **sine-Gordon equation**, so its members correspon
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Pseudosphere | Pseudosphere, Dini Surface, Kuen Surface. |
+| Surface | Pseudosphere | Pseudosphere, Dini Surface, Kuen Surface, Minding Bulge, Minding Spindle, Breather Surface, Amsler Surface. |
 | U Resolution | 64 | Range 8-400. |
 | V Resolution | 96 | Range 8-400. |
-| Twist | 0.2 | Helical shear of Dini's surface (curvature = -1/(1+twist^2)) Range 0-2. |
+| Twist | 0.2 | Helical shear of Dini's surface (curvature = -1/(1+twist^2)) Range 0-2. Shown for Dini. |
+| Crossing Angle | 90 | Angle (degrees) at which Amsler's two straight lines cross. It is the whole parameter: the surface is the unique K = -1 surface through two lines meeting at this angle. Range 10-170. Shown for Amsler. |
+| Breather b | 0.4 | Breather parameter b in (0, 1): small b gives a long, loosely bound breather with many lobes; b near 1 a short tightly bound one. Range 0.05-0.95. Shown for Breather. |
+| Waist / Girth | 0.5 | Shape parameter a of the Minding surfaces: the bulge is r = a cosh(u), so a is its waist radius; the spindle is r = a sinh(u) and needs a < 1, its equator sitting at sqrt(1 - a^2). Range 0.05-3. Shown for the Minding surfaces. |
 | Scale | 1 | Range 0.01-100. |
 | Smooth Shading | On | -- |
 
@@ -52,7 +55,13 @@ Renders of each selectable option:
 
 $$u_{xx}-u_{tt}=\sin u$$
 
-governs surfaces of constant negative curvature via the Bäcklund transformation, and each of its solutions corresponds to one. The **breather** solution is a bound soliton–antisoliton pair oscillating in place, and its surface is the cusped, many-lobed shape here — the geometry of a soliton made visible.
+governs surfaces of constant negative curvature via the Bäcklund transformation, and each of its solutions corresponds to one. The **breather** solution is a bound soliton–antisoliton pair oscillating in place, and its surface is the cusped, many-lobed shape here — the geometry of a soliton made visible. Its single parameter $b\in(0,1)$ sets how tightly the pair is bound: small $b$ gives a long, many-lobed breather, $b$ near $1$ a short, tight one.
+
+**Amsler's surface** is the $K=-1$ surface that contains **two intersecting straight lines**. It is the Lorentz-invariant reduction of sine-Gordon: setting $\phi(u,v)=\omega(uv)$ collapses $\phi_{uv}=\sin\phi$ to the ordinary differential equation
+
+$$\frac{d}{dr}\!\left(r\,\frac{d\omega}{dr}\right)=\sin\omega,\qquad r=uv,$$
+
+a Painlevé III equation with a regular singular point at $r=0$. The whole family is therefore indexed by the single angle $\omega_0=\omega(0)$ — which is exactly the angle at which the two straight lines cross, exposed here as the *Crossing Angle*. The two lines are not imposed: they fall out of the frame system as the images of the coordinate axes, and the patch is fitted to stop short of the cuspidal edges where $\sin\phi\to 0$.
 
 **Why they all end.** Hilbert's theorem is the reason every surface in this family is cut off somewhere. A complete $K=-1$ surface cannot be immersed in $\mathbb{R}^3$, so the cusps and edges are not artefacts of the parametrisation or the meshing — they are forced. For an unbounded picture of hyperbolic geometry you need a model that gives up on isometry, such as the [Poincaré disc](hyperbolic_tiling.md), or a physical fabric that buckles instead, which is what [crochet](crochet.md) does.
 
@@ -65,3 +74,13 @@ governs surfaces of constant negative curvature via the Bäcklund transformation
 - Kruemmungsmass", Sitzungsber. Bayer. Akad. Wiss., 1884.
 - Hilbert's theorem: D. Hilbert, "Ueber Flaechen von constanter
 - Gausscher Kruemmung", Trans. AMS 2, 1901, pp. 87-99.
+- Minding bulge and spindle: Ferdinand Minding, "Wie sich entscheiden
+  laesst, ob zwei gegebene krumme Flaechen auf einander abwickelbar sind
+  oder nicht ...", J. reine angew. Math. (Crelle) 19 (1839), 370-387.
+- Breather surface: the sine-Gordon breather goes back to Bour (1862) and
+  Bäcklund (1883) for the transformation theory; the modern soliton-surface
+  framing is A. I. Bobenko, "Surfaces in terms of 2 by 2 matrices: old and
+  new integrable cases", in Harmonic Maps and Integrable Systems, Vieweg
+  1994, Sect. 8; and M. Melko and I. Sterling, "Application of soliton
+  theory to the construction of pseudospherical surfaces in R^3", Ann.
+  Global Anal. Geom. 11 (1993), 65-107.

@@ -15,13 +15,22 @@ These are the surfaces Ulrich Pinkall used in 1985 to construct Willmore tori of
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Curve on S^2 | Wavy (m-lobed) | Circle, Wavy (m-lobed), Ellipse, Trefoil-like, Hopf Band. |
+| Curve on S^2 | Wavy (m-lobed) | Circle, Wavy (m-lobed), Ellipse, Trefoil-like, Elastica (Willmore), Constrained Elastica, Hopf Band. |
 | Curve Samples | 200 | Samples along gamma (the torus meridians) Range 12-2000. |
 | Fibre Samples | 64 | Samples around each Hopf fibre (the torus longitudes) Range 6-512. |
-| Mean Colatitude | 90 | Mean colatitude of gamma on S^2 (deg) Range 10-170. |
+| Mean Colatitude | 90 | Mean colatitude of gamma on S^2 (deg); hidden for the elastica presets Range 10-170. |
 | Lobes | 3 | Number of lobes (WAVY / TREFOIL) Range 1-12. |
 | Amplitude | 35 | Lobe amplitude in colatitude (deg) Range 0-80. |
 | Ellipse Squash | 0.5 | Ellipse eccentricity (ELLIPSE) Range 0-0.95. |
+| Winding | 1 | Elastica (Willmore): numerator m of the monodromy m/n Range 1-20. |
+| Lobes | 3 | Elastica (Willmore): denominator n of the monodromy m/n; n lobes, m/n must lie in (0, 2-sqrt 2) Range 2-40. |
+| Family | Willmore | Constrained Elastica: Willmore (mu = -G/2), Free elastica (mu = 0), Elastic (custom shape), Constrained elastic (lambda != 0). |
+| Lobes | 3 | Constrained Elastica: lobe count n of the constrained elastic curve Range 2-24. |
+| Winding | 1 | Constrained Elastica: winding w, coprime to the lobe count Range 1-23. |
+| Shape | 0.55 | Constrained Elastica: lattice shape parameter (custom families only) Range 0.05-3.0. |
+| Branch | Upper (gentler) | Constrained Elastica: Upper (gentler root) or Lower (curlier root). |
+| Phase | 0.5 | Constrained Elastica: phase x0 as a fraction of the imaginary half-period; 0.5 is lambda = 0, off-centre sweeps genuinely constrained curves Range 0.02-0.98. |
+| High Wrap | Off | Constrained Elastica: use the high-wrap closure branch m = 2n + w. |
 | Shade Smooth | On | -- |
 | Scale | 1 | Range 0.01-100. |
 
@@ -63,6 +72,12 @@ $$\mathcal{W}=\tfrac{1}{4}\!\int (2H)^2\,dA = \pi\!\left(L^2 + \ldots\right)$$
 
 depending only on $L$ and $A$, not on the curve's detailed shape. That reduction — a functional on surfaces becoming a functional on curves — is what let Pinkall construct Willmore tori of every conformal class, and it connects this generator directly to the [Willmore surfaces](willmore.md).
 
+**Willmore vs constrained-Willmore: which curve is critical.** The reduction turns each surface criticality into a curve-elasticity condition, and the two elastica presets pick out the two flavours. The Hopf torus over $\gamma$ is an *unconstrained* **Willmore** surface exactly when $\gamma$ is a critical point of the elastic energy $F^{\lambda}=\oint(\kappa^2+\lambda)\,ds$ at $\lambda=1$ — the Langer–Singer closed spherical elasticae, whose curvature is a single Jacobi-$\mathrm{cn}$ wave $\kappa(s)=\sqrt{a}\,\mathrm{cn}(rs,p)$ that closes only for monodromies $m/n\in(0,\,2-\sqrt2)$. That is the *Elastica (Willmore)* preset. Allowing the surface to vary only *conformally* enlarges the critical set to the **constrained-Willmore** tori, and the matching curve condition prescribes both the length *and* the enclosed area: $\gamma$ is a **constrained elastic** curve solving
+
+$$\kappa'' + \tfrac12\kappa^3 + (\mu+G)\,\kappa + \lambda = 0,$$
+
+with a length multiplier $\mu$ and an *area* multiplier $\lambda$ on the sphere of Gauss curvature $G$. The free-elastica case is just $\lambda=0$ (with $\mu=-G/2$ recovering Pinkall's Willmore tori); switching $\lambda$ on slides off it into the genuinely constrained families. Heller parametrises *all* of these curves in closed form — a horizontal Hopf lift written directly in Weierstrass $\sigma$/$\zeta$ functions on a rhombic lattice, so the torus needs no ODE integration at all — and the *Constrained Elastica* preset evaluates that family (its **Phase** slider is the multiplier $\lambda$: $0.5$ is $\lambda=0$, off-centre is constrained). The two presets overlap on purpose: at the Willmore point they draw the same surfaces by independent routes.
+
 **Choosing the curve.** A circle of latitude gives a plain torus of revolution; a curve with $n$-fold symmetry gives $n$ lobes; a curve that wanders near a pole produces tight, sharply pinched ripples, since fibres over nearby points on $S^2$ are close in $S^3$ but can project far apart.
 
 ## References
@@ -78,3 +93,13 @@ depending only on $L$ and $A$, not on the curve's detailed shape. That reduction
 - Y. Villarceau (1848): a torus of revolution carries two extra
 - circles through each point, the "Villarceau circles" -- exactly
 - the Hopf fibres of a stereographically projected Clifford torus.
+- Ulrich Pinkall, "Hopf tori in S^3", Invent. Math. 81 (1985),
+- 379-386 (the Hopf torus over a curve on S^2, Willmore exactly
+- over an elastic curve).
+- Joel Langer and David A. Singer, "The total squared curvature of
+- closed curves", J. Differential Geom. 20 (1984), 1-22 (closed
+- spherical elasticae in closed form; the Elastica/Willmore preset).
+- Lynn Heller, "Constrained Willmore tori and elastic curves in
+- 2-dimensional space forms", Comm. Anal. Geom. 22 (2014), no. 2;
+- arXiv:1303.1445 (the sigma/zeta closed form for constrained
+- elastic curves behind the Constrained Elastica preset).
