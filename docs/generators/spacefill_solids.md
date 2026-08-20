@@ -4,7 +4,16 @@
 
 ## Overview
 
-Blocks of the classical space-filling honeycombs, with every cell shrunk by a gap factor about its own centroid so the packing reads as a stack of separate solids — after Henry Segerman, *Visualizing Mathematics with 3D Printing* (figs 4-17 – 4-20). Choices are cubes, the octet truss (regular octahedra plus tetrahedra), truncated octahedra on the BCC lattice, rhombic dodecahedra on the FCC lattice, and Russell Towle's three- and four-armed rhombic spirallohedra. At gap $=1$ adjacent cells share their faces exactly; the default gap $<1$ gives the printed-separately look.
+Blocks of the classical space-filling honeycombs — the polyhedra that tile 3-D space with no gaps — with every cell shrunk by a gap factor about its own centroid so the packing reads as a stack of separate solids, after Henry Segerman, *Visualizing Mathematics with 3D Printing* (figs 4-17 – 4-20). Choices are cubes, the octet truss (regular octahedra plus tetrahedra), truncated octahedra on the BCC lattice, rhombic dodecahedra on the FCC lattice, the obtetrahedrille, and Russell Towle's three- and four-armed rhombic spirallohedra. At gap $=1$ adjacent cells share their faces exactly; the default gap $<1$ gives the printed-separately look.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Space-Filling Solids*.
+2. **Pick the Honeycomb.** **Cubes** is the plain cubic lattice; **Octahedra + Tetrahedra** is the octet truss (the default), one regular octahedron to two tetrahedra; **Truncated Octahedra** is the Kelvin cell on the BCC lattice; **Rhombic Dodecahedra** is the FCC Voronoi cell; **Obtetrahedrille** splits each rhombic dodecahedron into 24 congruent disphenoids, six-coloured by orientation; and the two **Rhombic Spirallohedra** are Russell Towle's three- and four-armed spiral cells, which tile by pure translation over a lattice the generator derives from the cell itself.
+3. **Set the block extent** with *Cells X / Y / Z*, and the **Gap Factor** — the scale of each cell about its own centroid. At $1.0$ neighbours share faces exactly (a solid fill); below $1.0$ every cell pulls away from its neighbours so the packing reads as separate printed solids. *Scale* sizes the whole block ($1.0$ fits a 2 m cube centred at the origin).
+4. **Choose a Style.** *Solid* is plain filled cells; *Leonardo* replaces each face with an open da-Vinci panel frame (exposing *Border* and *Thickness*); *Ball and Stick* draws edges as cylindrical struts and vertices as spheres (exposing *Strut Radius* and *Node Radius*).
+5. **Dial the mode-specific controls.** The spirallohedra add *Spiral Segments* (star vectors of the cell, rounded to a multiple of the arm count) and *Spiral Pitch* (the polar-star cone angle). *Two Materials* two-tones the octet (octahedra vs. tetrahedra) or the spirallohedra (by lattice parity) — the other honeycombs have no honest two-colouring, so it does nothing for them.
+6. **Read the report.** Each build prints the honeycomb name with its vertex and face counts (`… V=… F=…`).
 
 ## Options
 
@@ -52,14 +61,18 @@ Renders of each selectable option:
 
 ## How it works
 
-**Space-filling honeycombs.** Each preset is a solid that tiles $\mathbb{R}^3$ by translations (and, for the octet, two orientations). The generator stores each cell in integer *canonical* lattice coordinates, so at gap $=1$ the faces shared between neighbours coincide to the bit; a self-test checks that the numeric mesh volume equals the analytic total cell volume for every honeycomb.
+**In plain terms.** Some solids stack to fill space with no gaps and no overlaps, the way cubes fill a box — but cubes are not the only ones. A handful of more interesting shapes do it too: octahedra and tetrahedra taking turns, the soccer-ball-ish truncated octahedron (the shape of a soap-bubble foam cell), the rhombic dodecahedron (the shape a pile of equal spheres squashes into), and a couple of spiralling cells. This generator lays out a block of any of them on its natural repeating grid, then shrinks each cell a little toward its own centre so you can see the individual solids instead of one seamless mass — the same trick you would use to 3-D print the pieces separately. The key to getting the packing exact is to keep every cell in whole-number "grid" coordinates, so the faces two neighbours share land on precisely the same plane.
 
-- **Cubic** — unit cubes on the integer lattice $\mathbb{Z}^3$; one cell per lattice point.
-- **Octet (alternated cubic honeycomb).** Regular octahedra sit on one FCC sublattice and regular tetrahedra (in two mirror orientations, chosen by cube parity) fill the gaps, in the bulk ratio $1$ octahedron $:2$ tetrahedra. The octahedron has vertices on the axes; the tetrahedra are the even- and odd-parity corners of a unit cube. Per canonical cell the volumes are $\tfrac{4}{3}$ (octahedron) and $\tfrac13$ (tetrahedron).
-- **Truncated octahedra (bitruncated cubic honeycomb).** The permutohedron with vertices at all permutations of $(0,\pm1,\pm2)$ — six squares and eight hexagons — is the Voronoi cell of the BCC lattice. Cells sit on a primary grid plus a second grid at the cube centres, spacing $4$.
-- **Rhombic dodecahedra.** Twelve rhombi normal to the $\langle1,1,0\rangle$ neighbour directions form the Voronoi cell of the FCC lattice; cells occupy the even-parity integer points of a box, lattice spacing $2$.
+**Space-filling honeycombs.** Each preset is a solid that tiles $\mathbb{R}^3$ by translations (and, for the octet, two orientations). The generator stores each cell in integer *canonical* lattice coordinates, so that at gap $=1$ the faces shared between neighbours coincide to the bit — exact integer arithmetic is what avoids the hairline cracks a floating-point placement would leave. A self-test checks the packing is honest by confirming the numeric mesh volume equals the analytic total cell volume for every honeycomb.
 
-**Rhombic spirallohedra (Russell Towle).** These cells are cut from the *polar zonohedron* construction: a polar star of $n$ vectors evenly spaced on a cone of pitch angle $\vartheta$ generates a zonohedron, and taking $w=n/\text{arms}$ layers yields the spiralling bundle of rhombi $S(n,w)$ — the three-armed cell is $S(12,4)$, the four-armed $S(12,3)$. Rather than hardcode a lattice, the generator *derives* the tiling from the cell itself: for each rhombic face it finds the translation carrying it onto the opposite (anti-normal) face of the same cell,
+- **Cubic** — unit cubes on the integer lattice $\mathbb{Z}^3$; one cell per lattice point, the baseline everything else is measured against.
+- **Octet (alternated cubic honeycomb).** Regular octahedra sit on one FCC sublattice and regular tetrahedra (in two mirror orientations, chosen by cube parity) fill the gaps between them, in the bulk ratio $1$ octahedron $:2$ tetrahedra — the octet truss familiar from lightweight structures. The octahedron has its vertices on the axes; the tetrahedra are the even- and odd-parity corners of a unit cube, which is why alternating cube parity supplies exactly the two mirror orientations needed. Per canonical cell the volumes are $\tfrac{4}{3}$ (octahedron) and $\tfrac13$ (tetrahedron), and $\tfrac43 : 2\cdot\tfrac13$ is the $1:2$ ratio made quantitative.
+- **Truncated octahedra (bitruncated cubic honeycomb).** The permutohedron with vertices at all permutations of $(0,\pm1,\pm2)$ — six squares and eight hexagons — is the Voronoi cell of the BCC lattice, i.e. the region closer to a given BCC point than to any other, so copies tile automatically. Cells sit on a primary grid plus a second grid at the cube centres, spacing $4$ (that second grid is the body-centring of BCC).
+- **Rhombic dodecahedra.** Twelve rhombi normal to the $\langle1,1,0\rangle$ neighbour directions form the Voronoi cell of the FCC lattice — the shape equal spheres deform into when a close packing is compressed until the gaps vanish. Cells occupy the even-parity integer points of a box, lattice spacing $2$, which is precisely the FCC sublattice.
+
+The **obtetrahedrille** (Conway's oblate tetrahedrille) is the odd one out: it is not a fresh lattice but a *dissection* — each FCC rhombic dodecahedron is split along its faces into 24 congruent tetragonal disphenoids, so the block is the rhombic-dodecahedron packing carved into its 24-per-cell pieces and six-coloured by disphenoid orientation.
+
+**Rhombic spirallohedra (Russell Towle).** These cells are cut from the *polar zonohedron* construction: a polar star of $n$ vectors evenly spaced on a cone of pitch angle $\vartheta$ generates a zonohedron (the solid swept by summing those vectors in every combination), and taking $w=n/\text{arms}$ layers yields the spiralling bundle of rhombi $S(n,w)$ — the three-armed cell is $S(12,4)$, the four-armed $S(12,3)$. The interesting part is that these do not sit on any textbook lattice, so rather than hardcode one the generator *derives* the tiling from the cell itself. Every rhombic face of a translational tiler must be matched by a parallel face pointing the opposite way, so for each face it looks for the translation carrying it onto that opposite (anti-normal) partner face of the same cell,
 
 $$t = c_{\text{face}} - c_{\text{opp}},\qquad \mathbf{n}_{\text{face}} + \mathbf{n}_{\text{opp}} = 0,$$
 
@@ -67,17 +80,18 @@ collects those translations, and picks three whose determinant equals the cell v
 
 $$\bigl|\det[\,t_1\ t_2\ t_3\,]\bigr| = V_{\text{cell}},$$
 
-as the lattice basis $B$ (verified so that every face translation is an integer combination of $B$). The cell tiles $\mathbb{R}^3$ by pure translations over $B$; a `ValueError` is raised if a face has no translation partner.
+as the lattice basis $B$ — the volume test is exactly the statement that one cell fills one fundamental domain, with no double cover. It is further verified that every face translation is an integer combination of $B$, and a `ValueError` is raised if any face has no translation partner (that cell would not be a translational tiler at all).
 
-**Assembling the block.** Cells are laid out at $i\,B_0+j\,B_1+k\,B_2$ (or the fixed lattice for the classical honeycombs). Every cell's vertices are then scaled about its own centroid by the gap factor,
+**Assembling the block.** Cells are laid out at $i\,B_0+j\,B_1+k\,B_2$ over the requested Cells X/Y/Z (or on the fixed lattice for the classical honeycombs). Every cell's vertices are then pulled toward its own centroid $c$ by the gap factor $g$,
 
 $$v \ \longmapsto\ c + g\,(v-c),$$
 
-and the whole block is centred at the origin and scaled so one lattice step maps to the chosen Cell Size. The optional Leonardo style replaces each solid face with an open panel frame via a shared Geometry Nodes modifier.
+which is what opens the seams between neighbours at $g<1$ while leaving each cell's shape unchanged. Finally the whole block is centred at the origin and uniformly scaled to fit a 2 m cube (times the **Scale** property), so any honeycomb and block size arrives at a consistent on-screen size. The optional **Leonardo** style then replaces each solid face with an open da-Vinci panel frame via a shared Geometry Nodes modifier, and **Ball and Stick** rebuilds the block as cylindrical edge struts with spheres at the vertices.
 
 ## References
 
-- Henry Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press, 2016 (figs 4-17 – 4-20, space-filling solids). ISBN 978-1-4214-2035-6.
-- Russell Towle, "Spirallohedra" and polar-zonohedron notebooks — rhombic spirallohedra $S(n,w)$ from the polar zonohedron construction. See the archived Mathematica material and the *Wolfram Demonstrations* entry "Zonohedra": <https://demonstrations.wolfram.com/Zonohedra/>
-- Adrian Rossiter, *Antiprism* polyhedron-modelling software — `make_polar_zonohedron` / `zono -P` (the spirallohedron preset equals `zono -P 12,4`): <https://www.antiprism.com>
-- H. S. M. Coxeter, *Regular Polytopes*, 3rd ed., Dover, 1973 — the alternated cubic (octet) and bitruncated cubic honeycombs and the Voronoi cells of the cubic, BCC and FCC lattices.
+- Henry Segerman, "Visualizing Mathematics with 3D Printing", Johns Hopkins University Press, 2016 (figs 4-17..4-20, space-filling solids).
+- Rhombic spirallohedra S(n,w) via the polar-zonohedron construction: Russell Towle (Spirallohedra / polar-zonohedron notebooks).
+- The alternated cubic (octet) and bitruncated cubic honeycombs and the Voronoi cells of the cubic, BCC and FCC lattices: H. S. M. Coxeter, "Regular Polytopes", 3rd ed., Dover, 1973.
+- The obtetrahedrille (Conway's oblate tetrahedrille / tetragonal disphenoid honeycomb, each rhombic dodecahedron split into 24 disphenoids): J. H. Conway, H. Burgiel, C. Goodman-Strauss, "The Symmetries of Things", A K Peters, 2008; and Tom Verhoeff & Koos Verhoeff, "The Obtetrahedrille as a Modular Building Block for 3D Mathematical Art", Bridges 2019, 407-410.
+

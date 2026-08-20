@@ -64,3 +64,4 @@ A second check counts the distinct interior vertex figures — the canonicalised
 
 - Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H. Freeman, 1987) -- classification of k-uniform tilings by regular polygons.
 - Otto Krotenheerdt, enumeration of the k-uniform (in particular the 20 two-uniform) tilings, 1969.
+

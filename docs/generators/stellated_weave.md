@@ -43,4 +43,6 @@ Finally all polygons are welded (coincident vertices merged at 8-decimal precisi
 
 ## References
 
-- Shengyi Wang (txyyss), *Stellated Surface Weave* — <https://txyyss.github.io/math-art/stellated-surface-weave>, source at <https://github.com/txyyss/math-art> (the construction this ports).
+- Shengyi Wang (txyyss), "Stellated Surface Weave" (txyyss.github.io/math-art/stellated-surface-weave; source at github.com/txyyss/math-art) -- the construction this ports.
+- Underlying solid: the small stellated dodecahedron, one of the Kepler-Poinsot star polyhedra (Johannes Kepler, 1619).
+

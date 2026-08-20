@@ -53,14 +53,14 @@
 # Goldberg cut) for coloring.
 #
 # References:
-#   Heinz Voderberg, "Zur Zerlegung der Umgebung eines ebenen Bereiches
-#     in kongruente" (1936) -- the original spiral tiling and enneagon.
-#   Michael Goldberg, "Central tessellations" (1955) -- the triangle-
-#     substitution (Goldberg-shift) construction of the spirals.
-#   Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H.
-#     Freeman, 1987) -- the enclosure family (cover illustration).
-#   Stefan Waldman, "Voderberg Deconstructed & Triangle Substitution
-#     Tiling" (2014) -- the beta parameterization used here.
+# - Heinz Voderberg, "Zur Zerlegung der Umgebung eines ebenen Bereiches
+#   in kongruente" (1936) -- the original spiral tiling and enneagon.
+# - Michael Goldberg, "Central tessellations" (1955) -- the triangle-
+#   substitution (Goldberg-shift) construction of the spirals.
+# - Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H.
+#   Freeman, 1987) -- the enclosure family (cover illustration).
+# - Stefan Waldman, "Voderberg Deconstructed & Triangle Substitution
+#   Tiling" (2014) -- the beta parameterization used here.
 
 bl_info = {
     "name": "Voderberg Spiral Tiling",

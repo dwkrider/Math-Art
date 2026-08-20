@@ -19,11 +19,11 @@
 # of tiling_generator.py and reuses its geometry helpers.
 #
 # References:
-#   Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H.
-#     Freeman, 1987) -- classification of k-uniform tilings by regular
-#     polygons.
-#   Otto Krotenheerdt, enumeration of the k-uniform (in particular the
-#     20 two-uniform) tilings, 1969.
+# - Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H.
+#   Freeman, 1987) -- classification of k-uniform tilings by regular
+#   polygons.
+# - Otto Krotenheerdt, enumeration of the k-uniform (in particular the
+#   20 two-uniform) tilings, 1969.
 
 bl_info = {
     "name": "2-Uniform Tiling",

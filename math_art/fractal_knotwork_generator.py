@@ -59,20 +59,20 @@
 # Colors: uniform, per link component, or an over/under checker.
 #
 # References:
-#   Robert W. Fathauer, "Fractal Knots Created by Iterative
-#     Substitution", Bridges Donostia: Mathematics, Music, Art,
-#     Architecture, Culture (2007), pp. 335-342 -- self-similar knots
-#     and links built by iterated substitution of a knotted motif.
-#   Robert W. Fathauer, "Fractal tilings based on kite- and dart-
-#     shaped prototiles" (Computers & Graphics 24, 2000) -- the
-#     f-tiling substrate reproduced by fractal_tiling_generator.
-#   Christian Mercat, "Les entrelacs des enluminures celtes" (2005) /
-#     "Knots and links from a graph" -- the medial construction of an
-#     interlaced knot on ANY planar graph (one crossing per edge),
-#     shared with celtic_knot_2d_generator.
-#   Slavik V. Jablan, "Mirror curves" and "Symmetry, Ornament and
-#     Modularity" (2002) -- mirror curves as alternating knot and link
-#     diagrams on arbitrary graphs.
+# - Robert W. Fathauer, "Fractal Knots Created by Iterative
+#   Substitution", Bridges Donostia: Mathematics, Music, Art,
+#   Architecture, Culture (2007), pp. 335-342 -- self-similar knots
+#   and links built by iterated substitution of a knotted motif.
+# - Robert W. Fathauer, "Fractal tilings based on kite- and dart-
+#   shaped prototiles" (Computers & Graphics 24, 2000) -- the
+#   f-tiling substrate reproduced by fractal_tiling_generator.
+# - Christian Mercat, "Les entrelacs des enluminures celtes" (2005) /
+#   "Knots and links from a graph" -- the medial construction of an
+#   interlaced knot on ANY planar graph (one crossing per edge),
+#   shared with celtic_knot_2d_generator.
+# - Slavik V. Jablan, "Mirror curves" and "Symmetry, Ornament and
+#   Modularity" (2002) -- mirror curves as alternating knot and link
+#   diagrams on arbitrary graphs.
 
 bl_info = {
     "name": "Fractal Knotwork",

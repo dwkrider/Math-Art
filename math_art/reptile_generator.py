@@ -30,10 +30,10 @@
 # by the pure-Python self-test at the bottom of this file.
 #
 # References:
-#   Solomon W. Golomb, "Replicating figures in the plane" (Mathematical
-#     Gazette, 1964) -- coined the term "rep-tile".
-#   Martin Gardner, "Mathematical Games" (Scientific American, 1963) --
-#     popularized rep-tiles, including the sphinx.
+# - Solomon W. Golomb, "Replicating figures in the plane" (Mathematical
+#   Gazette, 1964) -- coined the term "rep-tile".
+# - Martin Gardner, "Mathematical Games" (Scientific American, 1963) --
+#   popularized rep-tiles, including the sphinx.
 
 bl_info = {
     "name": "Rep-Tile Tiling",

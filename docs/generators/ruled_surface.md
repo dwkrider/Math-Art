@@ -4,26 +4,52 @@
 
 ## Overview
 
-The family of surfaces swept by a **single straight line** — a *ruling* —
-moving through space. Every mode is built from the general ruled-surface
-recipe $S(u,v) = b(u) + v\,d(u)$ (a directrix $b$ plus $v$ times a ruling
-direction $d$), from the right-conoid variant $S(u,v)=(v\cos u,\,v\sin u,\,h(u))$,
-or from a bilinear patch spanning four skew points. Because the generator
-is always a straight segment, each surface can be rendered three ways: as
-the filled **surface**, as its literal **rulings turned into rods** (the
-look of string / stick sculptures), or as **bare curves** (a wireframe of
-the rulings only).
+The whole family of surfaces you can sweep out with a **single moving
+straight line** — a *ruling*. Slide, tilt and spin one stick as it travels
+and its trail is the surface. Every mode here is one rule for moving the
+stick, built from the general recipe $S(u,v) = b(u) + v\,d(u)$ (a base
+curve, or *directrix*, $b$ plus $v$ along a ruling direction $d$), from the
+right-conoid variant $S(u,v)=(v\cos u,\,v\sin u,\,h(u))$, or from a
+bilinear patch spanning four skew points. Because the generator is always a
+straight segment, each surface can be shown three ways: as the filled
+**surface**, as its literal **rulings turned into rods** (the look of
+string / stick sculptures), or as **bare curves** (a wireframe of the
+rulings only).
 
 The star of the family is the **stick hyperboloid** (George Hart, Bridges
 2023): a hyperboloid of one sheet strung as straight rods between two
 coaxial circles, the top circle twisted relative to the bottom. The twist
 alone sets the waist — $a = R\cos(\tfrac{\text{twist}}{2})$ — from a
 cylinder (0°) down to a pinched double cone (180°). It is *doubly ruled*:
-two opposite-handed families of rods cross to weave the same surface. This
-complements the ruled surfaces already in the extension (the developable
-[oloid](oloid.md) strips, the [modular screen](../generators/) hypar
-saddles, the [helical surfaces](helical_surface.md)) with the missing
-straight-ruling core.
+two opposite-handed families of rods cross to weave the same surface.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Ruled Surface*.
+2. **Pick the Surface.** Nine modes: **Stick Hyperboloid**, **Compound
+   Helical Cone** (a spirally-fluted Solomonic column), **Spiral Ruled**
+   (Farris' log-spiral / rosette sweep), **Conoid**, **Tangent
+   Developable**, **Helicoid**, **Twisted Strip**, **Hyperbolic
+   Paraboloid**, and **Concentric Toroidal Knots**. Choosing **Conoid**
+   opens a second **Conoid** menu — Plücker Cylindroid, n-Fold, Wallis
+   Conical Edge, or the Whitney Umbrella.
+3. **Set that mode's shape knobs.** Only the ones that apply are shown:
+   the hyperboloid's **Twist** (which sets the waist), the helical cone's
+   **Flutes / Flute Depth / Spiral Twist / Taper**, the spiral's **Spiral
+   Tightness / Symmetry / Rosette Amount**, the twisted strip's **Half
+   Twists** (odd = a Möbius band), the hypar's **From 4 Corner Points**
+   toggle, and so on.
+4. **Choose the Output.** **Surface** fills it in; **Rulings as Rods**
+   turns each straight generator into a solid rod (the string-sculpture
+   look), sized by **Rod Count** and **Rod Radius**; **Bare Curves** draws
+   the rulings as an edge-only wireframe. The hyperboloid adds a **Ruling
+   Family** choice (Both = the crossing sculpture, or one handedness), and
+   **Include Boundary Curves** adds the rails the rulings are strung
+   between (the two end circles, the two torus knots). Rods and curves are
+   available for every mode except the helical cone.
+5. **Read the report.** The hyperboloid prints its measured waist
+   ` waist a=…`; asking for rulings on a mode that has none (the helical
+   cone) reports ` [rulings N/A for this mode]`.
 
 ## Options
 
@@ -122,13 +148,48 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** Take a single straight stick and move it through the
+air — slide it sideways, tilt it, let it spin as it goes. The wall of
+positions it sweeps out is a **ruled surface**, and the stick in any one
+position is a *ruling*. This is the geometry of string art and thread
+sculpture: every thread is dead straight, yet the surface they conjure —
+the waist of a lampshade, the flare of a cooling tower, a twisting ribbon —
+is curved. The surprise the family keeps delivering is how *much* curvature
+you can build from nothing but straight lines, and that a few of these
+surfaces can even be **unrolled flat** onto a table without stretching,
+because a moving straight line is exactly what a bending sheet of paper does
+along its creases. Everything below is one formula for where the stick goes
+at each moment.
+
+**The recipe.** March a parameter $u$ along a **base curve** (directrix)
+$b(u)$ — that is where the stick's foot sits — and at each $u$ point the
+stick along a **ruling direction** $d(u)$. A point of the surface is then
+
+$$S(u,v) = b(u) + v\,d(u),$$
+
+with $v$ sliding along the stick. Change $b$ and $d$ and you change the
+surface; the modes below are just different choices of that pair. A surface
+is **doubly ruled** when *two* different straight families cover it — the
+hyperboloid and the saddle are the only curved surfaces that are, which is
+exactly why each can be strung two ways.
+
+**When does it unroll flat?** A ruled surface is **developable** (unrolls
+without distortion, Gaussian curvature $K\equiv0$) precisely when the three
+vectors $b'(u)$, $d(u)$, $d'(u)$ are coplanar — that is, when
+$\det[\,b',\,d,\,d'\,]=0$ all along it. Geometrically that condition says
+neighbouring rulings meet (or stay parallel) rather than skewing past each
+other, so the surface is a smoothly-bent sheet instead of a doubly-curved
+one. The module carries this determinant as a shared predicate: it vanishes
+for the tangent developable and equals the pitch for the helicoid, cleanly
+separating the paper-like modes from the rest.
+
 **Stick hyperboloid.** Two coaxial circles of radius $R$ sit at $z=\pm H$;
 the top circle is rotated by the twist angle $2\varphi$. A straight ruling
 joins the bottom point at angle $\theta-\varphi$ to the top point at
 $\theta+\varphi$, so linearly interpolating gives the surface point
 $S(\theta,v) = (1-v)\,b(\theta) + v\,t(\theta)$. Every such rod lies on the
 hyperboloid of one sheet whose waist radius is $a = R\cos\varphi$: at
-$\varphi=0$ the rods are vertical (a cylinder), and as $\varphi\to90°$ the
+$\varphi=0$ the rods stand vertical (a cylinder), and as $\varphi\to90°$ the
 waist pinches to a point (a double cone). The two families — top rotated
 $+2\varphi$ versus $-2\varphi$ — are the left- and right-handed rulings of
 the **doubly ruled** surface; drawn together as rods they reproduce Hart's
@@ -148,57 +209,63 @@ single welded point.
 replaced by a base curve $b(u)=e^{ku}\,(\cos u + A\cos(pu),\,\sin u + A\sin(pu))$
 — a logarithmic spiral for $p=1,A=0$, or an $n$-fold rosette otherwise —
 and swept with a tangent-plus-vertical ruling $S = b(u) + v\,b'(u)$ with
-$z = \text{slope}\cdot v$. Tightness $k=0$ recovers a hyperboloid.
+$z = \text{slope}\cdot v$. The factor $e^{ku}$ makes the base curve grow as
+it turns, so the surface spirals outward; tightness $k=0$ kills the growth
+and recovers a hyperboloid, which is why this reads as the hyperboloid's
+spiralling cousin.
 
-**Conoids.** Right conoids take the form $S(u,v)=(v\cos u,\,v\sin u,\,h(u))$:
-the height profile $h(u)$ is the whole design freedom. $h=\text{amp}\,\sin 2u$
-is **Plücker's cylindroid** (two leaves); $h=\text{amp}\,\sin(nu)$ its
-$n$-leaved generalization; $h=\text{amp}\sqrt{a^2-b^2\cos^2u}$ the **Wallis
-conical edge**. The **Whitney umbrella** $S=(uv,\,u,\,v^2)$ is the classic
-pinch-point ruled surface (a self-intersection line along the axis above
-its singular point).
+**Conoids.** A *right conoid* keeps every ruling horizontal and pinned to a
+central vertical axis: $S(u,v)=(v\cos u,\,v\sin u,\,h(u))$, so the height
+profile $h(u)$ — how high the axis-point rides as the ruling swings around —
+is the entire design freedom. $h=\text{amp}\,\sin 2u$ is **Plücker's
+cylindroid** (two leaves); $h=\text{amp}\,\sin(nu)$ its $n$-leaved
+generalization; $h=\text{amp}\sqrt{a^2-b^2\cos^2u}$ the **Wallis conical
+edge**. The **Whitney umbrella** $S=(uv,\,u,\,v^2)$ is the classic
+pinch-point ruled surface — a single point where the sheet crosses itself,
+the generic singularity of a smooth map from the plane into space.
 
-**Tangent developable.** $T(u,v)=c(u)+v\,c'(u)$ of the circular helix
+**Tangent developable.** Sweep the *tangent lines* of a curve:
+$T(u,v)=c(u)+v\,c'(u)$ of the circular helix
 $c(u)=(R\cos u, R\sin u, \text{pitch}\cdot u)$. Because the ruling is the
-curve's own tangent, the surface is **developable** — it unrolls flat
-without distortion ($K\equiv0$). The helix itself ($v=0$) is the cuspidal
-**edge of regression** where the surface folds, so $v$ starts at a small
-positive Edge Gap. A shared *developability predicate*
-$\det[\,b'(u),\,d(u),\,d'(u)\,]\stackrel{?}{=}0$ distinguishes such
-flat-unrollable surfaces from the doubly-curved ones (the self-test
-confirms it vanishes for the tangent developable and equals the pitch for
-the right helicoid).
+curve's own tangent, neighbouring rulings meet and the surface is
+**developable** — it unrolls flat without distortion ($K\equiv0$). The helix
+itself ($v=0$) is the cuspidal **edge of regression** where the sheet folds
+back on itself, so $v$ starts at a small positive **Edge Gap** to keep off
+the crease. This is the mode for which the developability predicate
+$\det[\,b',\,d,\,d'\,]$ vanishes.
 
 **Helicoid.** A radial ruling $S(u,v)=(v\cos u,\,v\sin u,\,\text{pitch}\cdot u+\text{slope}\cdot v)$
-screws up the axis; slope 0 is the **right helicoid** (a minimal surface),
-non-zero slope tilts the rulings into an **oblique helicoid**.
+screws up the axis — a spiral staircase whose steps are the straight
+rulings. Slope 0 is the **right helicoid**, the only ruled minimal surface;
+non-zero slope tilts the rulings off the horizontal into an **oblique
+helicoid**.
 
-**Twisted strip.** $b(u)=(R\cos u,R\sin u,0)$ with ruling
-$d(u)=(\cos\tfrac{nu}{2}\cos u,\,\cos\tfrac{nu}{2}\sin u,\,\sin\tfrac{nu}{2})$
-gives an $n$-half-twist band. Odd $n$ is a one-sided **Möbius band**; even
-$n$ an orientable twisted annulus.
+**Twisted strip.** Around a circle $b(u)=(R\cos u,R\sin u,0)$, spin the
+ruling $d(u)=(\cos\tfrac{nu}{2}\cos u,\,\cos\tfrac{nu}{2}\sin u,\,\sin\tfrac{nu}{2})$
+so it makes $n$ half-turns per lap of the circle. Odd $n$ closes up
+one-sided — a **Möbius band**; even $n$ an orientable twisted annulus.
 
 **Hyperbolic paraboloid.** The doubly-ruled saddle, either as the graph
 $z=c((x/a)^2-(y/b)^2)$ or as the **bilinear (Coons) patch** through four
 skew corner points, $S(s,t)=(1-s)(1-t)P_{00}+s(1-t)P_{10}+(1-s)t\,P_{01}+st\,P_{11}$
-— whose $s$- and $t$-edges are straight, so the surface spanning *any* four
-points in general position is a hypar.
+— whose $s$- and $t$-edges are straight lines, so the surface spanning *any*
+four points in general position is a hypar. This is why a warped
+quadrilateral of taut string always reads as a saddle.
+
+**Concentric toroidal knots.** Two concentric $(p,q)$ torus knots become
+the two rails, and a straight ruling interpolates between them:
+$S(u,v)=(1-v)\,\text{inner}(u)+v\,\text{outer}(u)$ — the hyperboloid's
+straight interpolation with knotted rails in place of circles. When the
+outer $q=0$ its rail degenerates to a plain circle wound $p$ times, so the
+rulings still line up cleanly with the inner knot.
 
 ## References
 
-- G. W. Hart, "Curved, yet Straight: Stick Hyperboloids," *Bridges 2023
-  Conference Proceedings*, pp. 251–258. <https://archive.bridgesmathart.org/2023/bridges2023-251.html>
-- E. Jannasch and J. Macnab, "The Compound Helical Cone as Kinematic
-  Trace," *Bridges 2023 Conference Proceedings*, pp. 15–22.
-- F. A. Farris, "Spiral Ruled Surfaces," *Bridges 2022 Conference
-  Proceedings*, pp. 289–292; and F. A. Farris, *Creating Symmetry*
-  (Princeton Univ. Press, 2015).
-- J. Plücker, *On a New Geometry of Space* (1865); H. Whitney, "The general
-  type of singularity of a set of $2n-1$ smooth functions of $n$ variables,"
-  *Duke Math. J.* 10 (1943).
-- S. A. Coons, "Surfaces for Computer-Aided Design of Space Forms," MIT
-  Project MAC TR-41 (1967) — the bilinear patch.
-- Classical background: M. do Carmo, *Differential Geometry of Curves and
-  Surfaces* (1976); A. Gray, *Modern Differential Geometry of Curves and
-  Surfaces* (1997); D. Struik, *Lectures on Classical Differential
-  Geometry* (1950).
+- G. W. Hart, "Curved, yet Straight: Stick Hyperboloids," Bridges 2023 Conference Proceedings, pp. 251-258.
+- E. Jannasch & J. Macnab, "The Compound Helical Cone as Kinematic Trace," Bridges 2023 Conference Proceedings, pp. 15-22.
+- F. A. Farris, "Spiral Ruled Surfaces," Bridges 2022 Conference Proceedings, pp. 289-292; and F. A. Farris, "Creating Symmetry" (Princeton Univ. Press, 2015).
+- J. Plucker, "On a New Geometry of Space" (1865); H. Whitney, "The general type of singularity of a set of 2n-1 smooth functions of n variables" (1943).
+- S. A. Coons, "Surfaces for Computer-Aided Design of Space Forms," MIT Project MAC TR-41 (1967) -- the bilinear patch.
+- Torus knots (p, q): classical; see e.g. C. C. Adams, "The Knot Book" (1994).  The knot-to-knot span is adapted here as a pure ruled surface (cf. the soap-film version in the minimal-surface toolkit).
+- Classical background: M. do Carmo, "Differential Geometry of Curves and Surfaces" (1976); A. Gray, "Modern Differential Geometry of Curves and Surfaces" (1997); D. Struik, "Lectures on Classical Differential Geometry" (1950).
+

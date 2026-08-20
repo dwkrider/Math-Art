@@ -69,4 +69,5 @@ Each rotation click is implemented as two elementary crossings whose order sets 
 
 ## References
 
-- Adrian Rossiter, *Antiprism* and its `poly_weave` program and pattern language — <https://www.antiprism.com>, examples at <https://www.antiprism.com/examples/200_programs/700_poly_weave/imagelist.html> (GPL; the reference implementation this follows).
+- Adrian Rossiter, Antiprism and its `poly_weave` program and pattern language (https://www.antiprism.com) -- the reference implementation this follows.  The over-under plain/twill weave over a surface is an otherwise classical basketry construction.
+

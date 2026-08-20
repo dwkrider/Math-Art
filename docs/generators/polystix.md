@@ -85,3 +85,4 @@ and in the plane perpendicular to any one direction the rod centres of that fami
 - A. Widmark, "Sculpture Design with Hexastix and Related Non-Intersecting Cylinder Packings", Bridges 2021, pp. 293-296. https://archive.bridgesmathart.org/2021/bridges2021-293.html
 - A. Widmark, "Polystix Sculpture Design Revisited", Bridges 2022, pp. 379-382. https://archive.bridgesmathart.org/2022/bridges2022-379.html
 - K. Hui & J. S. Purcell, "On the geometry of rod packings in the 3-torus", arXiv:2212.04662 (2023) -- explicit O'Keeffe coordinates.
+

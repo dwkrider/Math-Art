@@ -4,7 +4,16 @@ This operator works on **1 or 2 selected closed curves** (Curve objects or close
 
 ## Overview
 
-The Span operator solves the **Plateau problem** in Blender: given one or two closed boundary curves, it finds the minimal surface (soap film) that spans them. It is a lightweight in-Blender analogue of Ken Brakke's Surface Evolver — pin the boundary, minimize area. The solver has been validated against exact solutions: a planar circle relaxes to a flat disk (area $\pi$ to 0.07%), and two parallel rings relax to a catenoid (waist radius correct to 0.06%).
+The Span operator solves the **Plateau problem** in Blender: given one or two closed boundary curves, it finds the minimal surface (soap film) that spans them. It is a lightweight in-Blender analogue of Ken Brakke's Surface Evolver — pin the boundary, minimise area. The solver has been validated against exact solutions: a planar circle relaxes to a flat disk (area $\pi$ to 0.07%), and two parallel rings relax to a catenoid (waist radius correct to 0.06%).
+
+### Using it
+
+1. **Select the boundary first, then run it.** Unlike the other generators this one does not add a primitive — it spans whatever you have selected. Select **one** closed curve (a Curve object or a closed mesh edge loop) and it drapes a **disk**-type film across it; select **two** and it stretches an **annulus**-type film (a catenoid, for two parallel rings) between them. Then invoke *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Span Minimal Surface*. The operator is greyed out unless exactly one or two curve/mesh objects are selected.
+2. **Set Boundary Samples** — how many points each boundary loop is resampled to (by uniform arc length). More points trace a wiggly or knotted boundary more faithfully at the cost of a heavier mesh.
+3. **Set Interior Rings** — how many rows of vertices span the *inside* of the film: concentric rings from the boundary in to the centre for a disk, or rows bridging the two loops for an annulus. This is the across-the-film resolution.
+4. **Raise Solver Iterations** for a truer film — each pass is one cotangent-Laplacian area-minimisation step, so more passes settle closer to the exact minimal surface (at more compute); the default 40 is plenty for smooth boundaries.
+5. **Choose the output.** Leave **NURBS Output** off for a dense triangle/quad mesh; turn it on to emit a compact faired NURBS patch whose control net is the solved grid (handy for clean, smooth geometry, though it can ripple where the film curls tightly — raise rings/samples there, or fall back to mesh output).
+6. **Read the report.** On finishing, the operator prints the final surface **area**. Because a minimal surface is the *least*-area film on its boundary, you can watch that number and compare it against a known answer — a flat disk should land near $\pi r^2$, the catenoid at its exact area.
 
 ## Options
 
@@ -22,22 +31,33 @@ The Span operator solves the **Plateau problem** in Blender: given one or two cl
 
 ## How it works
 
-Each selected curve or mesh object is first traced into an ordered closed polyline (every point must join exactly two segments — a single closed loop) in world space, then **resampled by uniform arc length** to *Boundary Samples* points.
+**In plain terms.** Dip a bent wire loop into soapy water and pull it out: the film that clings to it is not just any surface — it is the one with the *smallest possible area* that still hangs on the whole wire. That is because surface tension pulls the film taut, and least area is what "taut" means. This operator reproduces that experiment on the computer. It takes your curve as the wire, throws up a rough first guess of a film across it, then nudges the film's interior downhill — a little at a time, always toward less area — while the wire itself stays pinned exactly where you drew it. When the nudging settles, what is left is the mathematical soap film: the **minimal surface** spanning your boundary. A single loop gives a stretched disk; two loops give the waisted catenoid a soap film makes between two rings.
 
-**One curve → a disk.** An initial spanning disk is built as concentric rings shrinking from the boundary toward its centroid, with the boundary ring pinned and the interior free.
+**Tracing and resampling the boundary.** Each selected curve or mesh object is first traced into an ordered closed polyline in world space — every point must join exactly two segments, so it really is a single closed loop and not a branching or open path. That loop is then **resampled by uniform arc length** to *Boundary Samples* points, so the samples are spread evenly along the wire rather than bunching where the original had dense control points; even spacing keeps the downstream mesh well-proportioned.
 
-**Two curves → an annulus.** The second loop is cyclically shifted and optionally reversed to best match the first (minimizing $\sum_i \lVert A_i - B_i\rVert^2$), then an initial ruled surface is built by linear interpolation across *Interior Rings* rows, with both boundary loops pinned.
+**Seeding the first guess.** The relaxation only *improves* a surface, so it needs somewhere to start.
 
-The initial surface is then relaxed toward minimal area by the **Pinkall-Polthier** cotangent-Laplacian iteration. Each outer iteration recomputes per-edge cotangent weights
+- **One curve → a disk.** The initial film is built as concentric rings shrinking from the boundary in toward its centroid — a fanned-out disk — with the outer ring **pinned** to the wire and every interior vertex **free** to move.
+- **Two curves → an annulus.** The second loop is first cyclically shifted and optionally reversed to line up best with the first (it minimises $\sum_i \lVert A_i - B_i\rVert^2$, so the ruling lines run the short way across instead of shearing round the tube), then an initial ruled surface is laid down by linear interpolation across *Interior Rings* rows, both boundary loops pinned. Getting this alignment right is what lets the two-ring case relax cleanly to a catenoid instead of a twisted mess.
 
-$$w_{ij} = \tfrac12\cot\theta_{ij}$$
+**Relaxing to least area.** The seed is then driven toward minimal area by the **Pinkall–Polthier** cotangent-Laplacian iteration. Each outer pass recomputes a weight for every mesh edge from the two angles $\theta_{ij}$ facing it,
 
-(clamped positive so the system stays positive-definite and the CG solve cannot blow up on degenerate fans), assembles the discrete Laplacian, and solves $L\,x = 0$ for the free vertices with the boundary pinned, using a conjugate-gradient core (numpy required). Because the cotangent Laplacian is the gradient of discrete surface area, iterating this pin-and-solve step converges to a discrete minimal surface. The operator reports the final mesh area.
+$$w_{ij} = \tfrac12\cot\theta_{ij},$$
+
+then assembles the discrete Laplacian $L$ from those weights and solves
+
+$$L\,x = 0$$
+
+for the free vertices with the boundary held fixed, using a conjugate-gradient core (NumPy required). The weights are **clamped positive** so the linear system stays positive-definite and the CG solve cannot blow up on a degenerate triangle fan. The reason this particular weighting is the right one: the cotangent Laplacian is exactly the **gradient of discrete surface area**, so setting $Lx=0$ on the interior asks for the configuration where area stops changing — a critical point of area, which is what "minimal surface" means. Iterating the pin-and-solve step therefore walks the mesh down to a discrete minimal surface, and the operator reports its final area so you can read off how taut it became.
+
+**Grooming.** Between passes the solver also does light in-loop grooming — Delaunay edge flips and tangential vertex averaging — which the bench measurements show roughly triples the 5th-percentile triangle quality at unchanged area, keeping the mesh clean without moving the surface.
 
 **NURBS output** fairs the solved grid — per-column arc-length resampling (points stay on the solved surface but the solver's severe shear is equalized), light 2D net smoothing, and a normal-only mean-curvature polish to restore minimality — then uses the grid as the control net of a single NURBS patch (cyclic across the boundary direction; the disk case caps the pole with the centre point).
 
 ## References
 
-- U. Pinkall, K. Polthier, *Computing Discrete Minimal Surfaces and Their Conjugates*, Experimental Mathematics 2(1), 1993 (the area-minimization algorithm).
-- Ken Brakke, *Surface Evolver* — <https://kenbrakke.com/evolver/evolver.html> (the reference Plateau-problem solver this is a lightweight in-Blender analogue of); see also SE-FIT — <https://www.se-fit.com/>
-- J. Plateau, *Statique expérimentale et théorique des liquides soumis aux seules forces moléculaires*, 1873 (the physical minimal-surface problem).
+- Weierstrass-Enneper representation: K. Weierstrass (1866) and A. Enneper (1864); the catenoid (surface of Euler, 1744) was shown minimal by J. B. C. Meusnier (1776).
+- Costa surface: C. J. Costa (1982); embeddedness by D. Hoffman and W. H. Meeks III (1985). Chen-Gackstatter: C. C. Chen and F. Gackstatter (1982). Jorge-Meeks k-noids: L. P. Jorge and W. H. Meeks III (1983).
+- Triply-periodic families: H. A. Schwarz (P, D; Gesammelte Math. Abhandlungen, 1890), A. H. Schoen (gyroid, I-WP, F-RD; NASA TN D-5541, 1970), E. R. Neovius (1883). Cotangent-Laplacian area flow after U. Pinkall and K. Polthier (1993).
+- Seifert surfaces: H. Seifert, "Ueber das Geschlecht von Knoten", Mathematische Annalen 110 (1934). Visualization of Seifert surfaces as disks joined by twisted bands after J. J. van Wijk and A. M. Cohen, IEEE TVCG 12(4) (2006).
+

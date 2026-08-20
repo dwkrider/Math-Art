@@ -109,6 +109,6 @@ with the interior handles leaving each edge along its tangent, at lengths **Stif
 
 ## References
 
-- **Bathsheba Grossman**, *[Quintrino](https://www.bathsheba.com/sculpt/quintrino/)* — the direct inspiration for this generator. Quintrino is a metal sculpture built on a dodecahedron, with strap-like arms swirling around its several fivefold and twofold rotational-symmetry axes; it belongs to Grossman's *Ora* family of dual-symmetry pieces. The twisted ribbons weaving an outer solid to its dual here are a generalization of that idea to every Platonic, Archimedean and geodesic solid.
-- The generalized twisted dual-weave construction (arbitrary outer solid woven to its dual, with topological edge pairing and orientability repair) is original to the Math Art project; it extends the classic "Platonic solid woven to its dual" sculpture to all Platonic, Archimedean (with Catalan duals) and geodesic (with Goldberg duals) solids.
-- Archimedean geometry reuses the extension's Conway/Hart canonicalized `regular_solids` builder; the geodesic sphere reuses the extension's geodesic generator.
+- Inspired by Bathsheba Grossman's "Quintrino" (and her "Ora" family of dual-symmetry sculptures): strap-like arms swirling around the rotational-symmetry axes of a dodecahedron. This generalizes that idea to any Platonic or Archimedean solid woven to its dual.
+- Polyhedron/dual pairing: the dual of a Platonic solid is Platonic; the dual of an Archimedean solid is its Catalan solid.
+

@@ -4,7 +4,17 @@
 
 ## Overview
 
-Geodesic spheres and domes built by subdividing a triangular Platonic seed (icosahedron, octahedron or tetrahedron) and projecting the result to the sphere — Class I $(f,0)$ or Class II $(f,f)$ breakdowns, oriented vertex-up and optionally cut to a hemisphere or 5/8 dome. An optional **Dual (Goldberg)** switch outputs the geodesic's dual: hexagons and twelve pentagons, i.e. a Goldberg polyhedron. Styles include a welded shell (with optional Solidify thickness), a strut-and-node frame, Leonardo open panels, and inset dome panels. After Segerman, *Visualizing Mathematics with 3D Printing* (figs 4-5 / 4-6).
+A geodesic sphere is the familiar triangulated dome: start from a Platonic solid, subdivide each face into a fine grid, and push every new point straight out onto a sphere so the whole thing bulges into a faceted ball. Domes cut a piece off the bottom; the optional **Dual (Goldberg)** turns the triangles into the hexagon-and-pentagon "soccer-ball" honeycomb. After Segerman, *Visualizing Mathematics with 3D Printing* (figs 4-5 / 4-6).
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Geodesic Sphere / Dome*.
+2. **Pick the Base.** Icosahedron is the usual choice (its triangles subdivide most uniformly); Octahedron and Tetrahedron give coarser, more visibly seamed spheres. Cube and Rhombic Triacontahedron are *quad* geodesics — their faces subdivide into squares / rhombi instead of triangles.
+3. **Choose the Class and Frequency.** Frequency $f$ is how finely each face is split, so higher $f$ means more, smaller cells. Class I $(f,0)$ is the straight alternate breakdown; Class II $(f,f)$ is the triacon pattern (a mid-face split first, so its effective frequency is $2f$); Class III $(h,k)$ is the chiral (pinwheel) breakdown, with $h=$ Frequency and the extra index $k$.
+4. **Optionally take the Dual (Goldberg).** Off gives the triangulated sphere; On outputs its dual — hexagons plus exactly twelve pentagons, a Goldberg polyhedron (the honeycomb / soccer-ball form).
+5. **Cut a dome.** Full Sphere, Hemisphere Dome, or 5/8 Dome. For either dome you can enable a **Base Ring** (with **Ring Width**) to thicken the open rim into a flat band.
+6. **Choose the Style.** Shell (welded surface, with Thickness driving a Solidify shell), Struts (wireframe frame), Ball and Stick (edge cylinders and vertex spheres, sized by Strut / Node Radius), Leonardo (open framed panels, via Border), or Panels (each facet inset by Panel Gap and given Thickness). Set the overall Radius.
+7. **Read the report.** The operator prints the built counts as `V=… E=… F=…` (vertices, edges, faces) in the status bar — a quick check that, say, a Class I icosahedron gave the expected $10f^2+2$ vertices.
 
 ## Options
 
@@ -48,25 +58,30 @@ Renders of each selectable option:
 
 ## How it works
 
-**Seed and orientation.** The seed is one of the three triangular-faced Platonic solids, each vertex normalized to the unit sphere. The icosahedron's twelve vertices are the cyclic coordinates $(0,\pm1,\pm\varphi)$, $\varphi=\tfrac{1+\sqrt5}{2}$; its faces are recovered as all vertex triples at minimal mutual distance. The seed is then rotated so its topmost vertex sits exactly on $+Z$ (vertex-up).
+**In plain terms.** Take a simple solid whose faces are triangles — an icosahedron, the twenty-sided die. Its triangles are big and flat, so it only roughly resembles a ball. To get closer to a sphere, chop each triangle into a grid of many small triangles, then slide every new corner straight outward until it lands on the surface of a ball. The more pieces you cut each face into, the rounder the result — that count is the *frequency*. A geodesic *dome* is just this sphere with the bottom sliced off, and the *Goldberg dual* is what you get by putting a dot at the middle of every little triangle and joining neighbouring dots: the triangles become hexagons, with twelve pentagons left over — the classic soccer-ball pattern. Everything below makes "slide outward onto the ball" precise.
+
+**Seed and orientation.** The seed is one of the triangular-faced Platonic solids (icosahedron, octahedron, tetrahedron), each vertex normalized to the unit sphere — so "slide outward onto the ball" is nothing more than *rescale the vector to length 1*. The icosahedron's twelve vertices are the cyclic coordinates $(0,\pm1,\pm\varphi)$, $\varphi=\tfrac{1+\sqrt5}{2}$; its faces are recovered as all vertex triples at minimal mutual distance (edges are the shortest vertex-to-vertex spans, and a face is three vertices all pairwise adjacent). The seed is then rotated so its topmost vertex sits exactly on $+Z$, which puts a clean point at the apex — the natural orientation for a dome. (Cube and Rhombic Triacontahedron follow the same recipe with quad faces, subdividing each face bilinearly instead of barycentrically.)
 
 **Class I breakdown $(f,0)$.** Each triangle $ABC$ is filled with a barycentric grid of frequency $f$ and every grid point is projected radially to the sphere:
 
 $$p_{ijk}=\frac{i\,A+j\,B+k\,C}{f},\qquad i+j+k=f,\qquad \hat p=\frac{p_{ijk}}{\lVert p_{ijk}\rVert}.$$
 
-Each base triangle becomes $f^2$ small triangles. Vertices shared along an edge are deduped exactly, since the barycentric sums are bitwise identical from both adjacent faces. For the icosahedron this gives $10f^2+2$ vertices and $20f^2$ triangles.
+Read geometrically, $i,j,k$ measure how far the point leans toward each of the three corners, so the grid tiles the flat face evenly; dividing by $\lVert p_{ijk}\rVert$ is the outward slide onto the sphere. Each base triangle becomes $f^2$ small triangles. Vertices shared along an edge are deduped exactly, since the barycentric sum is bitwise identical computed from either adjacent face — the two grids meet along the shared edge with no cracks or doubled points. For the icosahedron this gives $10f^2+2$ vertices and $20f^2$ triangles (each of the 20 faces contributing $f^2$).
 
-**Class II breakdown $(f,f)$.** First a *kis* (mid-face) operation splits every triangle into three about its projected centroid; a Class I subdivision at frequency $f$ then follows. The composition yields the triacon-style $(f,f)$ triangulation — $3f^2$ triangles per original face, effective frequency $2f$ (for the icosahedron $30f^2+2$ vertices).
+**Class II breakdown $(f,f)$.** First a *kis* (mid-face) operation splits every triangle into three about its projected centroid; a Class I subdivision at frequency $f$ then follows. The kis step seeds a point at the centre of each original face, so the finished mesh has a small triangle pointing straight out from every face-centre — the hallmark "triacon" look. The composition yields the $(f,f)$ triangulation — $3f^2$ triangles per original face, effective frequency $2f$ (for the icosahedron $30f^2+2$ vertices).
 
-**Goldberg dual.** The dual places a vertex at each triangle's spherical centroid and builds one polygon around each original vertex from its incident face-centroids, ordered by angle in the tangent plane. A degree-6 vertex gives a hexagon and the twelve original degree-5 vertices give pentagons — exactly a Goldberg polyhedron $GP(m,n)$, the "honeycomb" dual of the geodesic sphere (and, at frequency 1 on the icosahedron, the truncated icosahedron / soccer ball). Boundary vertices on a cut dome have no closed ring and are skipped.
+**Class III breakdown $(h,k)$.** The chiral case. Instead of a grid aligned with the edges, each base triangle carries a triangular lattice and the subdivision cell is reached by walking $h$ steps one way and $k$ steps the other across that lattice. Because $(h,k)$ with $h\neq k$ is a skewed step, the pattern spirals with a definite handedness — a pinwheel — rather than lining up with the edges. The lattice points falling inside each face are projected to the sphere and their convex hull is taken as the mesh. The count of small triangles per face is the triangulation number $T=h^2+hk+k^2$ of Caspar and Klug, giving $10T+2$ vertices for the icosahedron; $k=0$ recovers Class I and $h=k$ recovers Class II, so this one $(h,k)$ description already contains all three classes.
 
-**Dome cutting and base ring.** A dome keeps only faces whose centroid lies above a cut height: $z\ge0$ for a hemisphere, $z\ge-0.25R$ for the 5/8 dome (a clean strut ring on the 3v icosahedron). The open rim loops are found from the boundary edges (edges belonging to a single face); the optional base ring widens each rim loop outward in $XY$ by the ring width into a flat band.
+**Goldberg dual.** The dual places a vertex at each triangle's spherical centroid and builds one polygon around each original vertex from its incident face-centroids, ordered by angle in the tangent plane (so the polygon's corners run cleanly around the vertex instead of zig-zagging). A degree-6 vertex gives a hexagon and the twelve original degree-5 vertices — the icosahedron's own corners, which no subdivision can remove — give pentagons, exactly a Goldberg polyhedron $GP(m,n)$, the "honeycomb" dual of the geodesic sphere (and, at frequency 1 on the icosahedron, the truncated icosahedron / soccer ball). Boundary vertices on a cut dome have no closed ring of faces around them and are skipped.
 
-**Output styles.** *Shell* welds the triangles into one surface, adding a Solidify modifier for thickness. *Ball and Stick* renders every edge as a cylinder and every vertex as a small sphere (the shared ball-and-stick style used across the polyhedron generators). *Leonardo* opens each face into a framed panel via the shared Leonardo modifier. *Panels* insets each triangle about its centroid by the gap and extrudes it into a thin prism along its outward normal.
+**Dome cutting and base ring.** A dome keeps only faces whose centroid lies above a cut height: $z\ge0$ for a hemisphere, $z\ge-0.25R$ for the 5/8 dome (chosen to land on a clean strut ring on the 3v icosahedron). The open rim loops are found from the boundary edges — edges belonging to a single face, since an interior edge is always shared by two — and the optional base ring widens each rim loop outward in $XY$ by the ring width into a flat band, like the footing of a real dome.
+
+**Output styles.** *Shell* welds the triangles into one surface, adding a Solidify modifier for thickness. *Struts* keeps that same welded mesh but renders only its edges, through a Wireframe modifier. *Ball and Stick* renders every edge as a cylinder and every vertex as a small sphere (the shared ball-and-stick style used across the polyhedron generators). *Leonardo* opens each face into a framed panel via the shared Leonardo modifier. *Panels* insets each triangle about its centroid by the gap and extrudes it into a thin prism along its outward normal.
 
 ## References
 
-- Henry Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press, 2016 (figs 4-5, 4-6, geodesic spheres and domes). ISBN 978-1-4214-2035-6.
-- Michael Goldberg, "A class of multi-symmetric polyhedra," *Tôhoku Mathematical Journal* 43 (1937), 104–108 — the Goldberg polyhedra $GP(m,n)$, duals of the geodesic spheres.
-- Hugh Kenner, *Geodesic Math and How to Use It*, University of California Press, 1976 — Class I and Class II (alternate and triacon) breakdown frequencies.
-- R. Buckminster Fuller, U.S. Patent 2,682,235, "Building Construction" (geodesic dome), 1954.
+- Geodesic domes: R. Buckminster Fuller.
+- Geodesic/Goldberg (h,k) classification: M. Goldberg, "A class of multi-symmetric polyhedra", Tohoku Math. J. 43 (1937); Caspar & Klug (1962) for the triangulation number T = h²+hk+k².
+- Goldberg polyhedra (the duals): Michael Goldberg (1937).
+- Henry Segerman, "Visualizing Mathematics with 3D Printing" (2016), figs 4-5, 4-6.
+

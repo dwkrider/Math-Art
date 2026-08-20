@@ -17,6 +17,14 @@ but the same machinery grows the manifold of any equilibrium of any shipped syst
 | **Lorenz** ($\sigma,\rho,\beta$) | Origin, $C^+$, $C^-$ | Origin: the stable side is 2-D (eigenvalues $-22.83$, $-8/3$); the unstable side is a *curve* and is refused. $C^\pm$ are **spiral saddles** — eigenvalues $-13.855$ and $0.094 \pm 10.195i$, so their 2-D unstable eigenspace comes from a complex pair. |
 | **Rössler** ($a,b,c$) | Inner, Outer | The roots of $ay^2 + cy + b = 0$. |
 
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Invariant Manifold*.
+2. **Pick the System** — Lorenz, Chen-Celikovsky, Rayleigh-Benard, Shimizu-Morioka, Roessler, Halvorsen, or Thomas — and set its three **Parameters** (relabelled per system; switching system loads that system's own defaults).
+3. **Choose the Equilibrium and the Manifold side.** Both dropdowns are filtered to what is actually valid: only equilibria are listed, each annotated with which side is a surface, and **Manifold** offers only the Stable / Unstable side that is genuinely two-dimensional — the wrong combination is unreachable rather than an error you discover.
+4. **Set how far to grow.** **Arclength** is the main knob — distance measured along trajectories, not time. **Seed Radius** is the starting circle in the eigenplane (its linear error is of order the square), **Seed Points** its resolution, **Ring Spacing** how often a ring is recorded, and **Target Edge** the wanted spacing along a ring — drop it to 0.1 or below past long arclengths so the sharp folds are not cut across. **Step** is the integrator's arclength step; **Max Ring Points** caps a ring.
+5. **Finish and read the report.** **Thickness** adds a Solidify shell (these are surfaces and need one to print); **Scale** fits the result to a 2 m cube. The report gives the ring count, grown arclength, vertex / face counts, the eigenvalues, and whether the equilibrium is a spiral saddle (complex pair) or a real pair — plus warnings if the ring passed near another equilibrium or hit its point cap.
+
 ## Options
 
 
@@ -64,6 +72,21 @@ Renders of each selectable option:
 </table>
 
 ## How it works
+
+**In plain terms.** Balance a marble on a saddle. Some ways of nudging it
+send the marble rolling straight back to the balance point; others send it
+sliding off. A chaotic flow like the Lorenz system has balance points
+(**equilibria**) of exactly this kind, and the set of all starting spots
+whose trajectories roll *into* one of them — not off onto the butterfly —
+is a whole curved surface passing through the balance point: its **stable
+manifold**. (Run the flow the other way, and the spots that fall *away* trace
+the **unstable manifold**.) Right next to the balance point the surface is
+essentially flat, lying in the plane the linear algebra hands you; the art
+is to grow it outward far from there, where the flow bends it into the
+famous scrolled sheet. The way to grow it is to release a tiny ring of
+points around the balance point and trace each one along the flow, letting
+the ring sweep out the surface as it travels — and everything below is about
+doing that trace without the mesh tearing itself apart.
 
 ### Why the obvious method fails
 
@@ -128,7 +151,8 @@ Chord-length resampling **cuts across sharp folds** as the manifold develops its
 
 ## References
 
-- E. N. Lorenz, "Deterministic nonperiodic flow," *Journal of the Atmospheric Sciences* 20(2), 1963, pp. 130-141.
-- B. Krauskopf and H. M. Osinga, "Computing geodesic level sets on global (un)stable manifolds of vector fields," *SIAM Journal on Applied Dynamical Systems* 2(4), 2003, pp. 546-569.
-- H. M. Osinga and B. Krauskopf, "Crocheting the Lorenz manifold," *The Mathematical Intelligencer* 26(4), 2004, pp. 25-37.
-- P. R. Bishop, S. Chenoweth, E. Fleurantin, A. Ogueda-Oliva, E. Sander and J. Seay, "3D printing of invariant manifolds in dynamical systems," *Notices of the American Mathematical Society*, 2026; preprint [arXiv:2504.15884](https://arxiv.org/abs/2504.15884). The arclength-reparametrized growth used here, and the parameterization method for the local piece.
+- The system: E. N. Lorenz, "Deterministic nonperiodic flow", Journal of the Atmospheric Sciences 20(2), 1963, pp. 130-141.
+- Geodesic level-set algorithm: B. Krauskopf and H. M. Osinga, "Computing geodesic level sets on global (un)stable manifolds of vector fields", SIAM Journal on Applied Dynamical Systems 2(4), 2003, pp. 546-569.
+- The manifold as an object to make: H. M. Osinga and B. Krauskopf, "Crocheting the Lorenz manifold", The Mathematical Intelligencer 26(4), 2004, pp. 25-37.
+- The arclength-reparametrized growth used here, and the parameterization method for the local piece: P. R. Bishop, S. Chenoweth, E. Fleurantin, A. Ogueda-Oliva, E. Sander and J. Seay, "3D printing of invariant manifolds in dynamical systems", Notices of the American Mathematical Society, 2026; preprint arXiv:2504.15884.
+

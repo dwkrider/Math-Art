@@ -96,22 +96,9 @@ The pairing used is outer-**edge** to inner-**edge**. Every edge of the scaffold
 
 ## References
 
-- Inspired by Bathsheba Grossman's "Quintrino" and her "Ora" family
-- of dual-symmetry sculptures: strap-like arms swirling between a
-- dodecahedron and its dual.  This renders that bridge topology as
-- woven rope over any Platonic / Archimedean / geodesic scaffold.
-- Polyhedral duality: the dual of a Platonic solid is Platonic; the
-- dual of an Archimedean solid is its Catalan solid (Archimedes,
-- work lost; Johannes Kepler, "Harmonices Mundi", 1619; Eugene
-- Catalan, 1865).  R. Buckminster Fuller, U.S. Patent 2,682,235
-- (1954) -- the geodesic subdivision of the icosahedron.
-- Robert G. Scharein, "Interactive Topological Drawing" (PhD
-- thesis, The University of British Columbia, 1998), ch. 7 -- the
-- KnotPlot bead/stick relaxation reused here (springs, high-order
-- repulsion, critical damping, the d_max step bound).
-- J. K. Simon, "Energy functions for polygonal knots", J. Knot
-- Theory Ramifications 3(3), 1994; G. Buck & J. Orloff, Topology
-- Appl. 51 (1993) / 61 (1995) -- the knot energies the repulsion
-- approximates.
-- Peter R. Cromwell, "Knots and Links" (CUP, 2004) -- alternating
-- diagrams, the one-over-one-under discipline enforced here.
+- Inspired by Bathsheba Grossman's "Quintrino" and her "Ora" family of dual-symmetry sculptures: strap-like arms swirling between a dodecahedron and its dual.  This renders that bridge topology as woven rope over any Platonic / Archimedean / geodesic scaffold.
+- Polyhedral duality: the dual of a Platonic solid is Platonic; the dual of an Archimedean solid is its Catalan solid (Archimedes, work lost; Johannes Kepler, "Harmonices Mundi", 1619; Eugene Catalan, 1865).  R. Buckminster Fuller, U.S. Patent 2,682,235 (1954) -- the geodesic subdivision of the icosahedron.
+- Robert G. Scharein, "Interactive Topological Drawing" (PhD thesis, The University of British Columbia, 1998), ch. 7 -- the KnotPlot bead/stick relaxation reused here (springs, high-order repulsion, critical damping, the d_max step bound).
+- J. K. Simon, "Energy functions for polygonal knots", J. Knot Theory Ramifications 3(3), 1994; G. Buck & J. Orloff, Topology Appl. 51 (1993) / 61 (1995) -- the knot energies the repulsion approximates.
+- Peter R. Cromwell, "Knots and Links" (CUP, 2004) -- alternating diagrams, the one-over-one-under discipline enforced here.
+

@@ -79,6 +79,6 @@ Each frame's face membership is written as a `link_index` face attribute. **Per 
 
 ## References
 
-- George W. Hart, *Orderly Tangles Revisited* — <https://www.georgehart.com/orderly-tangles-revisited/tangles.htm>
-- Alan Holden, *Orderly Tangles: Cloverleafs, Gordian Knots, and Regular Polylinks*, Columbia University Press, 1983.
-- Shengyi Wang (txyyss), *polylink* Blender add-on — <https://github.com/txyyss/polylink> (the wavy-circle and torus-knot link variants and the rotation-minimizing tube sweep).
+- Alan Holden, "Orderly Tangles: Cloverleafs, Gordian Knots, and Regular Polylinks" (Columbia University Press, 1983) -- the symmetric interlocked-polygon arrangements.
+- George W. Hart, "Orderly Tangles Revisited", https://www.georgehart.com/orderly-tangles-revisited/tangles.htm (the regular polylinks this follows).
+

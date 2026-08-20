@@ -5,9 +5,16 @@
 Add a toroidal (genus-1) polyhedron: the Csaszar polyhedron
 (no diagonals) or its dual the Szilassi polyhedron.
 
-A **toroidal polyhedron** has genus 1 — a polyhedral surface with a hole, so $V-E+F=0$ rather than the familiar 2. The family contains two of the most remarkable individual polyhedra known.
+A **toroidal polyhedron** has genus 1 — a polyhedral surface with a hole through it, so $V-E+F=0$ rather than the familiar 2. This operator serves seven of them from stored coordinates, starting with two of the most remarkable individual polyhedra known.
 
-The **Császár polyhedron** has 7 vertices, 21 edges and 14 triangles, and **no diagonals at all**: every pair of vertices is joined by an edge, so its edge graph is the complete graph $K_7$. Apart from the tetrahedron, it is the only known polyhedron with that property. Its dual, the **Szilassi polyhedron**, has 7 hexagonal faces of which *every pair shares an edge* — the toroidal analogue of the tetrahedron, and the reason seven colours are needed to colour a map on a torus.
+The **Császár polyhedron** has 7 vertices, 21 edges and 14 triangles, and **no diagonals at all**: every pair of vertices is joined by an edge, so its edge graph is the complete graph $K_7$. Apart from the tetrahedron, it is the only known polyhedron with that property. Its dual, the **Szilassi polyhedron**, has 7 hexagonal faces of which *every pair shares an edge* — the toroidal analogue of the tetrahedron, and the reason seven colours are needed to colour a map on a torus. Alongside them the menu carries a Stewart-style **regular-faced toroid**, a **knotted dodecahedron**, the **Borromean rings**, and two **iris toroids**.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Polyhedra ▸ Toroidal Polyhedron*.
+2. **Pick the Solid.** Seven genus-1 solids are stored here. **Császár Polyhedron** (7 vertices, 14 triangles, the $K_7$ solid with no diagonals) and its dual the **Szilassi Polyhedron** (7 mutually adjacent hexagons) are the two crown jewels. The **Regular-Faced Toroid** is a Stewart toroid whose faces are *all* regular polygons — 6 triangles, 9 squares and 9 hexagons. The **Knotted Dodecahedron** winds its 12 faces (6 quadrilaterals + 6 hexagons) in a knotted band around the hole. The **Borromean Rings** interlock three rectangular loops into the classic link in which no two rings are joined yet the three cannot separate. The **Heptagonal** and **Octagonal Iris Toroids** are pleated bands of squares and triangles with 7-fold and 8-fold symmetry.
+3. **Set the Scale.** It is the only other control: every solid arrives centred on the 3-D cursor and fitted to the 2 m cube, and Scale multiplies that size.
+4. **Read the report.** Each build prints the vertex and face counts and confirms `(genus 1)`, so you can check $V-E+F=0$ for the solid you just made.
 
 ## Options
 
@@ -42,30 +49,26 @@ Renders of each selectable option:
 
 ## How it works
 
-**Why genus 1 is what allows it.** Euler's formula for a surface of genus $g$ reads
+**In plain terms.** A polyhedron is a solid whose skin is flat panels — a cube, a pyramid, a soccer-ball shape. Almost all of them are, deep down, *balls*: inflate one and it rounds off into a sphere. The solids on this page are different. Each has a hole running straight through it, like a bagel or a picture frame, and that single hole is not decoration. It changes the arithmetic of corners, edges and faces, and it lets shapes exist that no ball-shaped polyhedron could ever manage. The count of holes has a name, the *genus*: a bagel is genus 1, a two-holed pretzel genus 2. Everything here is genus 1 — one hole apiece.
+
+**The bookkeeping the hole changes.** Euler noticed that for any ball-shaped polyhedron the corners, edges and faces always balance the same way: $V-E+F=2$, whether you count a cube ($8-12+6$) or a soccer ball. Punch a hole through and that total drops by exactly 2 per hole, giving the general rule for a surface of genus $g$,
 
 $$V-E+F=2-2g,$$
 
-so a torus gives $V-E+F=0$. Check Császár: $7-21+14=0$. On a sphere, a polyhedron whose graph is $K_7$ is impossible — $K_7$ is not planar — so the hole is not decoration but a requirement. The same constraint is why the map-colouring number on a torus is 7 rather than 4, and Szilassi's seven mutually adjacent faces realise that bound concretely.
+so a torus ($g=1$) obeys $V-E+F=0$. Check Császár: $7-21+14=0$. This is the ledger that has to balance before any of these solids can exist, and each build reports its own counts so you can see it close.
 
-**Császár and Szilassi** are stored from their published coordinates, then centred and fitted to the 2 m cube. Their coordinates are not free: the combinatorics admits only a small family of embeddings, and a naive attempt produces self-intersections.
+**Why the hole is forced, not chosen.** Császár's edge graph is $K_7$, the graph in which all $\binom{7}{2}=21$ pairs of its seven vertices are joined. That graph is famously **non-planar** — it cannot be drawn on a sphere without edges crossing — so no ball-shaped polyhedron can carry it. A torus has just enough room: the handle lets the "extra" edges route around the hole instead of crossing. The very same slack is why a map drawn on a torus can need **seven** colours rather than the four a flat map needs, and Szilassi's seven hexagons, *every* pair sharing an edge, realise that record concretely — seven countries all mutually bordering.
 
-**Regular toroids** are built parametrically as a ring of congruent polygon cross-sections — a prism or antiprism ring closed into a loop.
+**How the solids are stored.** Each of the seven arrives as a fixed table of coordinates — published values for Császár, Szilassi and the regular-faced toroid, independently relaxed realisations for the knotted dodecahedron and the iris toroids — which the operator then centres at the origin and scales to fit the 2 m cube. These numbers are not free to nudge: for a given face-incidence pattern only a small, rigid family of embeddings keeps the faces flat and the surface free of self-crossings, so the stored coordinates sit essentially at the only places that work. A naïve guess at vertex positions for the same combinatorics produces a tangle, not a toroid.
 
-**Tiled toroids** are the general construction, and the neat one. Any uniform plane tiling from the [tiling engine](tiling.md) — the regular triangular, square and hexagonal tilings, the Archimedean ones, or their Laves duals — is wrapped **seamlessly** onto a torus by mapping the tiling's two lattice vectors to the major and minor circles:
+**What each solid is doing with its hole.** The **regular-faced toroid** is a Stewart toroid: all its faces are regular polygons of one edge length, and edge-equality alone (which it satisfies to about $10^{-8}$) pins the shape, so the clean coordinates *are* the canonical object. The **knotted dodecahedron** threads a band of 12 faces around the hole so the band itself is knotted, its coordinates relaxed to exactly planar faces under a free three-fold ($D_3$) rotation. The **Borromean rings** are three rectangular loops — each a genus-1 ring — interlocked so no two are linked yet all three hold together, the standard Borromean link built as polyhedral tubes. The two **iris toroids** pleat squares and triangles into $D_7$ and $D_8$ bands, like a camera iris frozen mid-close. In every case the operator's check confirms $V-E+F=0$: the genus is measured from the finished mesh, not assumed.
 
-$$(u,v)\ \longmapsto\ \big((R+r\cos 2\pi v)\cos 2\pi u,\ (R+r\cos 2\pi v)\sin 2\pi u,\ r\sin 2\pi v\big).$$
-
-The seam closes exactly because the torus *is* the plane modulo a lattice: a periodic tiling is already defined on that quotient, so wrapping it introduces no mismatch — provided the number of cells around each circle is a whole number of lattice periods. The result is a genuine genus-1 polyhedron with $V-E+F=0$, which the generator's own check confirms.
+For toroids paved with a repeating *tiling*, or swept as parametric *polygon rings*, see [Polyhedral Torus](polyhedral_torus.md).
 
 ## References
 
-- Akos Csaszar, "A polyhedron without diagonals", Acta Sci. Math.
-- Szeged 13 (1949-50), 140-142.
-- Lajos Szilassi, "Regular toroids", Structural Topology 13 (1986),
-- 69-80; and "On three classes of regular toroids".
-- B. M. Stewart, "Adventures Among the Toroids" (1970/1980), for the
-- toroidal-polyhedron tradition.
-- Johannes Kepler, "Harmonices Mundi" (1619); Branko Grunbaum & G. C.
-- Shephard, "Tilings and Patterns" (1987) -- the uniform tilings wrapped
-- onto the torus here (see tiling_generator.py).
+- Akos Csaszar, "A polyhedron without diagonals", Acta Sci. Math. Szeged 13 (1949-50), 140-142.
+- Lajos Szilassi, "Regular toroids", Structural Topology 13 (1986), 69-80; and "On three classes of regular toroids".
+- B. M. Stewart, "Adventures Among the Toroids" (1970/1980), for the toroidal-polyhedron tradition.
+- Johannes Kepler, "Harmonices Mundi" (1619); Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (1987) -- the uniform tilings wrapped onto the torus here (see tiling_generator.py).
+

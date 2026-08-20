@@ -66,6 +66,5 @@ The tiling and flower patterns are extracted by **marching squares** on their si
 
 ## References
 
-- H. Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press, 2016 (chapter 3, figs 3-11..3-14 -- the stereographic-projection shadow sculptures).
-- H. Segerman, "Stereographic projection" sculptures, https://www.segerman.org/.
-- Stereographic projection as a conformal map $S^2\setminus\{N\}\to\mathbb R^2$: standard complex analysis / differential geometry.
+- Stereographic projection is a classical construction (known to Hipparchus and Ptolemy in antiquity). Shadow-casting sculpture application after H. Segerman, "Visualizing Mathematics with 3D Printing" (2016), figs 3-11..3-14.
+

@@ -59,6 +59,5 @@ That is why the walls meet at sensible angles and the outline bulges the way a r
 
 ## References
 
-- and Salomaa (1980) ch. 27; Fracchia, Prusinkiewicz and de Boer (1990);
-- Prusinkiewicz and Runions, New Phytologist 193, 2012, section IV.1;
-- Errera (1886).
+- and Salomaa (1980) ch. 27; Fracchia, Prusinkiewicz and de Boer (1990); Prusinkiewicz and Runions, New Phytologist 193, 2012, section IV.1; Errera (1886).
+

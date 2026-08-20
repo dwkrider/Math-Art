@@ -136,7 +136,8 @@ and **self-repulsion**: any two points closer than `repel` that are not near-nei
 
 ## References
 
-- Thomas A. Gittings, *Minimum braids: a complete invariant of knots and links*, arXiv:math/0401051, Table 1: <https://arxiv.org/abs/math/0401051>
-- Dale Rolfsen, *Knots and Links*, Publish or Perish (1976) — the prime knot table.
-- Joan S. Birman, *Braids, Links, and Mapping Class Groups*, Annals of Math. Studies 82, Princeton (1974) — braid groups, Burau representation, closures.
-- KnotPlot (Robert Scharein) — reference for the relaxed, rounded knot presentation: <https://knotplot.com/>
+- Dale Rolfsen, "Knots and Links", Publish or Perish, 1976 (the Rolfsen table and its knot numbering).
+- Knot nomenclature n_k after J. W. Alexander & G. B. Briggs (1926/27), extending P. G. Tait's 19th-century enumeration.
+- Thomas A. Gittings, "Minimum braids: a complete invariant of knots and links", arXiv:math/0401051, 2004 (Table 1 braid words).
+- Verification via the Alexander polynomial (J. W. Alexander, 1928) computed from the reduced Burau representation (Werner Burau, 1935).
+

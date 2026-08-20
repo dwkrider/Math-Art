@@ -78,6 +78,8 @@ $$P_k(t) = \big((R+r\cos\varphi)\cos\theta,\;(R+r\cos\varphi)\sin\theta,\; r\sin
 
 ## References
 
-- Henry Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press (2016) — knot/link chapter, figs 5-7, 5-10, 5-12. <https://www.3dprintmath.com/>
-- *Whitehead link*, *Borromean rings*, *Solomon's knot* — link tables and constructions: <https://en.wikipedia.org/wiki/Whitehead_link>, <https://en.wikipedia.org/wiki/Borromean_rings>
-- The braid-closure, resampling and rope-relaxation machinery is shared with the Prime Knots generator (`math_art/prime_knot_generator.py`); see its references for Gittings' minimum braids and the Burau/Alexander verification.
+- Henry Segerman, "Visualizing Mathematics with 3D Printing", Johns Hopkins University Press, 2016 (knot/link chapter, figs 5-7 ff.).
+- Braid words after Emil Artin, "Theorie der Zopfe" (1925) / "Theory of braids" (Ann. of Math., 1947); braid groups B_n.
+- Link tables and nomenclature: Dale Rolfsen, "Knots and Links" (1976); Thistlethwaite link table (Morwen Thistlethwaite).
+- Classical links: Hopf link (Heinz Hopf, 1931), Borromean rings, Whitehead link (after J. H. C. Whitehead), Solomon's (2,4) link.
+

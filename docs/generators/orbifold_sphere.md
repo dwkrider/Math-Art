@@ -78,6 +78,7 @@ and seven are the "oddities" tied to the Platonic solids: $332$ ($T$, 12), $\ast
 
 ## References
 
-- H. Segerman, *Visualizing Mathematics with 3D Printing*, Johns Hopkins University Press, 2016 (chapter 1, figs 1.19-1.29 -- the comma symmetry spheres).
-- J. H. Conway, H. Burgiel, C. Goodman-Strauss, *The Symmetries of Things*, A K Peters, 2008 (orbifold notation and the enumeration of spherical symmetry groups).
-- Point groups $C_n, C_{nv}, C_{nh}, S_{2n}, D_n, D_{nd}, D_{nh}, T, T_d, T_h, O, O_h, I, I_h$: standard group theory / crystallography.
+- Henry Segerman, "Visualizing Mathematics with 3D Printing" (Johns Hopkins University Press, 2016), ch. 1, figs 1.19-1.29
+- - the comma symmetry spheres.
+- John H. Conway, Heidi Burgiel, Chaim Goodman-Strauss, "The Symmetries of Things" (A K Peters, 2008) -- Conway-Thurston orbifold notation, the magic theorem, and the enumeration of the 14 spherical symmetry types.
+

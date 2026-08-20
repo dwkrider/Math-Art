@@ -73,18 +73,18 @@
 #       each "mystic" (Gamma) cluster.
 #
 # References:
-#   Roger Penrose, "The role of aesthetics in pure and applied
-#     mathematical research" (1974) -- the P2 and P3 aperiodic tilings.
-#   N. G. de Bruijn, "Algebraic theory of Penrose's non-periodic tilings
-#     of the plane" (1981) -- the multigrid / pentagrid dual method used
-#     here for Ammann-Beenker.
-#   Robert Ammann and F. P. M. Beenker -- the octagonal Ammann-Beenker
-#     tiling (Beenker report, 1982).
-#   David Smith, Joseph Samuel Myers, Craig S. Kaplan & Chaim
-#     Goodman-Strauss, "An aperiodic monotile" and "A chiral aperiodic
-#     monotile" (2023) -- the "hat" and "spectre" einsteins, the
-#     continuous Tile(a,b) family that interpolates hat, turtle, chevron
-#     and comet, and the curved-edge Spectre that is strictly chiral.
+# - Roger Penrose, "The role of aesthetics in pure and applied
+#   mathematical research" (1974) -- the P2 and P3 aperiodic tilings.
+# - N. G. de Bruijn, "Algebraic theory of Penrose's non-periodic tilings
+#   of the plane" (1981) -- the multigrid / pentagrid dual method used
+#   here for Ammann-Beenker.
+# - Robert Ammann and F. P. M. Beenker -- the octagonal Ammann-Beenker
+#   tiling (Beenker report, 1982).
+# - David Smith, Joseph Samuel Myers, Craig S. Kaplan & Chaim
+#   Goodman-Strauss, "An aperiodic monotile" and "A chiral aperiodic
+#   monotile" (2023) -- the "hat" and "spectre" einsteins, the
+#   continuous Tile(a,b) family that interpolates hat, turtle, chevron
+#   and comet, and the curved-edge Spectre that is strictly chiral.
 
 bl_info = {
     "name": "Aperiodic Tiling",

@@ -191,9 +191,9 @@ Planarity is **measured, not assumed** — the generator samples the attractor a
 
 ## References
 
-- C. Bandt, Mai The Duy and M. Mesing, "Three-Dimensional Fractals," *The Mathematical Intelligencer* 32, 2010, pp. 12-18. [doi:10.1007/s00283-009-9110-6](https://doi.org/10.1007/s00283-009-9110-6)
-- C. Bandt, "Self-similar sets 5. Integer matrices and fractal tilings of $\mathbb{R}^n$," *Proceedings of the American Mathematical Society* 112, 1991, pp. 549-562 — the integer-matrix plus residue-digit-set theorem behind every radix tile here.
-- C. Bandt, "Combinatorial topology of three-dimensional self-affine tiles," arXiv:1002.0710, 2010 — the seven twindragon cases.
-- J. M. Thuswaldner and S.-Q. Zhang, "On self-affine tiles that are homeomorphic to a ball," arXiv:2107.12076 — the ABC normal form.
-- J. E. Hutchinson, "Fractals and self similarity," *Indiana University Mathematics Journal* 30, 1981 — existence and uniqueness of the attractor of a contractive IFS.
-- M. F. Barnsley, *Fractals Everywhere*, 2nd ed., Academic Press, 1993 — the chaos game, and the fern.
+- C. Bandt, "Self-similar sets 5. Integer matrices and fractal tilings of R^n", Proceedings of the American Mathematical Society 112, 1991, pp. 549-562.
+- C. Bandt, Mai The Duy and M. Mesing, "Three-Dimensional Fractals", The Mathematical Intelligencer 32, 2010, pp. 12-18. doi:10.1007/s00283-009-9110-6
+- J. M. Thuswaldner and S.-Q. Zhang, "On self-affine tiles that are homeomorphic to a ball", arXiv:2107.12076.
+- J. E. Hutchinson, "Fractals and self similarity", Indiana University Mathematics Journal 30, 1981.
+- M. F. Barnsley, "Fractals Everywhere", 2nd ed., Academic Press, 1993.
+

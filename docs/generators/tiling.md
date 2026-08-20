@@ -89,3 +89,4 @@ Only *interior* vertices qualify — a vertex on the patch boundary has some of 
 
 - Johannes Kepler, "Harmonices Mundi" (1619) -- first systematic depiction of the regular and Archimedean (semiregular) tilings by regular polygons.
 - Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (W. H. Freeman, 1987) -- modern classification of the uniform tilings and their Laves (dual) tilings.
+

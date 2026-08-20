@@ -15,11 +15,11 @@
 # Part of the Pattern Engine (see the `patterns` package).
 #
 # References:
-#   The 80 layer (diperiodic) groups -- "International Tables for
-#     Crystallography", Volume E: Subperiodic Groups.
-#   John H. Conway, Heidi Burgiel & Chaim Goodman-Strauss, "The
-#     Symmetries of Things" (2008) -- the wallpaper-group / orbifold
-#     foundation this z-augmentation builds on.
+# - The 80 layer (diperiodic) groups -- "International Tables for
+#   Crystallography", Volume E: Subperiodic Groups.
+# - John H. Conway, Heidi Burgiel & Chaim Goodman-Strauss, "The
+#   Symmetries of Things" (2008) -- the wallpaper-group / orbifold
+#   foundation this z-augmentation builds on.
 
 bl_info = {
     "name": "Layer Group",

@@ -28,19 +28,19 @@
 # derivation and the measured stability story).
 #
 # References:
-#   T. J. Willmore, "Note on embedded surfaces", An. Sti. Univ. "Al.
-#       I. Cuza" Iasi Sect. I a Mat. 11B (1965), 493-496.
-#   F. C. Marques and A. Neves, "Min-max theory and the Willmore
-#       conjecture", Annals of Mathematics 179(2) (2014), 683-782.
-#   W. Helfrich, "Elastic properties of lipid bilayers: theory and
-#       possible experiments", Z. Naturforsch. C 28 (1973), 693-703.
-#   U. Seifert, K. Berndl, R. Lipowsky, "Shape transformations of
-#       vesicles", Physical Review A 44 (1991), 1182-1202 -- the
-#       discocyte/prolate/stomatocyte phase diagram at reduced
-#       volume < 1.
-#   C. Zhu, C. T. Lee, P. Rangamani, "Mem3DG: Modeling membrane
-#       mechanochemical dynamics in 3D using discrete differential
-#       geometry", Biophysical Reports 2(3), 100062 (2022).
+# - T. J. Willmore, "Note on embedded surfaces", An. Sti. Univ. "Al.
+#   I. Cuza" Iasi Sect. I a Mat. 11B (1965), 493-496.
+# - F. C. Marques and A. Neves, "Min-max theory and the Willmore
+#   conjecture", Annals of Mathematics 179(2) (2014), 683-782.
+# - W. Helfrich, "Elastic properties of lipid bilayers: theory and
+#   possible experiments", Z. Naturforsch. C 28 (1973), 693-703.
+# - U. Seifert, K. Berndl, R. Lipowsky, "Shape transformations of
+#   vesicles", Physical Review A 44 (1991), 1182-1202 -- the
+#   discocyte/prolate/stomatocyte phase diagram at reduced
+#   volume < 1.
+# - C. Zhu, C. T. Lee, P. Rangamani, "Mem3DG: Modeling membrane
+#   mechanochemical dynamics in 3D using discrete differential
+#   geometry", Biophysical Reports 2(3), 100062 (2022).
 
 bl_info = {
     "name": "Willmore Surface",

@@ -43,9 +43,6 @@ An alternating axis pattern requires an even `count`; with an odd one the chain 
 
 ## References
 
-- Louis Antoine, "Sur l'homeomorphie de deux figures et de leurs
-- voisinages", Journal de Mathematiques Pures et Appliquees (8) 4,
-- 1921, pp. 221-325 (Antoine's necklace).
-- R. H. Bing, "A homeomorphism between the 3-sphere and the sum of
-- two solid horned spheres", Annals of Mathematics 56, 1952 (context
-- for wild embeddings).
+- Louis Antoine, "Sur l'homeomorphie de deux figures et de leurs voisinages", Journal de Mathematiques Pures et Appliquees (8) 4, 1921, pp. 221-325 (Antoine's necklace).
+- R. H. Bing, "A homeomorphism between the 3-sphere and the sum of two solid horned spheres", Annals of Mathematics 56, 1952 (context for wild embeddings).
+

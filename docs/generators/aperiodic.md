@@ -72,3 +72,4 @@ Each deflation step subdivides every triangle into children $\varphi$ times smal
 - N. G. de Bruijn, "Algebraic theory of Penrose's non-periodic tilings of the plane" (1981) -- the multigrid / pentagrid dual method used here for Ammann-Beenker.
 - Robert Ammann and F. P. M. Beenker -- the octagonal Ammann-Beenker tiling (Beenker report, 1982).
 - David Smith, Joseph Samuel Myers, Craig S. Kaplan & Chaim Goodman-Strauss, "An aperiodic monotile" and "A chiral aperiodic monotile" (2023) -- the "hat" and "spectre" einsteins, the continuous Tile(a,b) family that interpolates hat, turtle, chevron and comet, and the curved-edge Spectre that is strictly chiral.
+

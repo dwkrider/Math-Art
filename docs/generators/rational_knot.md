@@ -70,18 +70,10 @@ That bit is realised geometrically as a $z$ offset smoothstepped along each stra
 
 ## References
 
-- J. H. Conway, "An enumeration of knots and links, and some of
-- their algebraic properties", in Computational Problems in
-- Abstract Algebra, Pergamon, 1970 -- rational tangles, the
-- continued-fraction notation.
-- H. Schubert, "Knoten mit zwei Bruecken", Math. Z. 65:133-170,
-- 1956 -- the classification of 2-bridge knots by p/q.
-- L. H. Kauffman & S. Lambropoulou, "On the classification of
-- rational knots", Enseign. Math. 49:357-410, 2003 -- an elementary
-- proof of Schubert's theorem via tangle calculus.
-- H. F. Trotter, "Non-invertible knots exist", Topology 2:275-280,
-- 1963 -- the pretzel knots P(p, q, r).
-- C. C. Adams, "The Knot Book", W. H. Freeman, 1994 -- twist
-- knots, pretzel links, rational tangles (ch. 2).
-- D. Rolfsen, "Knots and Links", Publish or Perish, 1976 -- the
-- knot table names (4_1, 5_2, 6_1, ...) used for the presets.
+- J. H. Conway, "An enumeration of knots and links, and some of their algebraic properties", in Computational Problems in Abstract Algebra, Pergamon, 1970 -- rational tangles, the continued-fraction notation.
+- H. Schubert, "Knoten mit zwei Bruecken", Math. Z. 65:133-170, 1956 -- the classification of 2-bridge knots by p/q.
+- L. H. Kauffman & S. Lambropoulou, "On the classification of rational knots", Enseign. Math. 49:357-410, 2003 -- an elementary proof of Schubert's theorem via tangle calculus.
+- H. F. Trotter, "Non-invertible knots exist", Topology 2:275-280, 1963 -- the pretzel knots P(p, q, r).
+- C. C. Adams, "The Knot Book", W. H. Freeman, 1994 -- twist knots, pretzel links, rational tangles (ch. 2).
+- D. Rolfsen, "Knots and Links", Publish or Perish, 1976 -- the knot table names (4_1, 5_2, 6_1, ...) used for the presets.
+

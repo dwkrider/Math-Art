@@ -3,7 +3,18 @@
 ![Algebraic Surface](../images/algebraic.png)
 
 ## Overview
-Classical algebraic surfaces -- celebrated cubics, quartics, quintics and sextics -- built as implicit level sets $f(x,y,z)=0$ and meshed with the marching-tetrahedra extractor from the sibling Minimal Surface Toolkit. The presets are the famous node-record surfaces (Clebsch, Cayley, Kummer, Barth, Togliatti) together with a handful of visually striking shapes (Taubin heart, Ding-dong, Chmutov sextic, tangle cube). Geometry only; materials and rendering are left to Blender.
+
+Classical **algebraic surfaces** — the shapes carved out by a single polynomial equation $f(x,y,z)=0$. The presets are the celebrated node-record surfaces (Clebsch's cubic on which all 27 lines are real, Cayley's 4-node cubic, Kummer's 16-node quartic, Barth's 65-node sextic, Togliatti's 31-node quintic) together with a handful of visually striking shapes (Taubin heart, Ding-dong, Chmutov sextic, tangle cube, the $n$-fold monkey saddle). Each is built as an implicit level set and meshed with the marching-tetrahedra extractor from the sibling Minimal Surface Toolkit; geometry only, materials and rendering are left to Blender.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Algebraic Surface*.
+2. **Pick the Preset.** Two flavours share the menu: the **node-record surfaces** (Clebsch, Cayley, Kummer, Barth, Togliatti) — each the extreme case that packs the *most possible* singular points onto a surface of its degree — and the **shape presets** (Taubin heart, Ding-dong, Chmutov sextic, tangle cube, monkey saddle) chosen for their looks rather than a record. The preset alone fixes the polynomial.
+3. **Raise the Resolution** if the surface looks blocky. It is the sample-grid density per axis; the node surfaces pinch to points and run thin necks between lobes, so they need a finer grid than a smooth minimal surface would (default 80, up to 256 — the cost grows as the cube of this number).
+4. **Dial the mode-specific control** that appears only for two presets: **Kummer Mu** sharpens or softens the 16 nodes of the Kummer quartic, and **Fold n** sets how many times the monkey saddle rises and falls around its centre (2 is an ordinary saddle, 3 the classic monkey saddle, higher gives $n$-fold saddles).
+5. **Frame the surface with Clip Override.** Most of these surfaces are infinite; each preset carries a default clip region (a ball or a box) that keeps the interesting part. Clip Override replaces that radius / half-extent by hand; 0 keeps the preset's own default.
+6. **Choose the output.** **Thickness** > 0 adds a Solidify shell (turning the infinitely-thin level set into a printable solid); **Scale** resizes it; **Smooth Shading** toggles the shading normals.
+7. **Read the report.** Each build prints the vertex and face count — a quick check that the level set was non-empty and that the grid actually resolved it (a count that collapses to near zero means the surface slipped between grid samples, so raise the Resolution).
 
 ## Options
 
@@ -50,7 +61,9 @@ Renders of each selectable option:
 
 ## How it works
 
-Each preset is a real polynomial $f(x,y,z)$ whose **zero level set** $\{f=0\}$ is the surface. The generator samples $f$ on a regular $\text{res}\times\text{res}\times\text{res}$ grid over a cube and extracts the isosurface with **marching tetrahedra** (`marching_tets` from the Minimal Surface Toolkit): each grid cube is split into tetrahedra, and where $f$ changes sign along a tetrahedron edge a vertex is placed by linear interpolation, with triangle winding oriented along the field gradient.
+**In plain terms.** Imagine a formula that hands every point in space a single number — the way every spot in a room has a temperature. Here that number comes from a polynomial in the point's coordinates $x, y, z$. Somewhere the number is positive, somewhere negative, and in between runs the dividing wall where it is exactly zero. That dividing wall is the surface — just as a coastline is the line where the land's height crosses sea level, land on one side, seabed on the other. Every preset is a different formula, so it draws a different wall: a smooth cubic, a heart, a lattice with sixty-five sharp pinch points where the wall crosses through itself. The computer never draws the formula directly; it tastes the number at a dense grid of test points and, wherever neighbouring tastes flip from positive to negative, it knows the wall passes between them and stitches a triangle there.
+
+**Level sets and marching tetrahedra.** Each preset is a real polynomial $f(x,y,z)$ whose **zero level set** $\{f=0\}$ is the surface. Because that set is defined by a condition, not a parametrization, there is no formula that lists its points — so the generator samples $f$ on a regular $\text{res}\times\text{res}\times\text{res}$ grid of points filling a cube, turning the continuous field into a $\text{res}^3$ table of numbers. It then extracts the isosurface with **marching tetrahedra** (`marching_tets` from the Minimal Surface Toolkit): each little grid cube is split into tetrahedra, and along any tetrahedron edge whose two endpoints have opposite signs the surface must cross exactly once, so a vertex is placed there — positioned by **linear interpolation** between the endpoints, i.e. at the fraction of the way where the straight-line estimate of $f$ hits zero, which puts the vertex close to the true crossing and keeps the mesh smooth. The triangles that join these edge-vertices are wound so their normals point along the field gradient $\nabla f$ (toward increasing $f$), giving the whole surface a consistent outside. Splitting into tetrahedra rather than marching the cubes directly is what removes the classic topological ambiguities of marching cubes, so the extracted mesh is always watertight and correctly connected.
 
 The polynomials (as commented in the code):
 
@@ -74,11 +87,7 @@ Each preset carries its own **clip region** framing the interesting part of the 
 
 ## References
 
-- W. Fischer (ed.), *Mathematical Models: From the Collections of Universities and Museums*, Vieweg, 1986 (Clebsch, Cayley, Kummer surfaces).
-- A. Cayley, "A Memoir on Cubic Surfaces," *Philosophical Transactions of the Royal Society of London*, 159 (1869), pp. 231-326.
-- W. Barth, "Two projective surfaces with many nodes, admitting the symmetries of the icosahedron," *Journal of Algebraic Geometry* 5 (1996), pp. 173-186.
-- E. G. Togliatti, "Una notevole superficie di 5° ordine con soli punti doppi isolati," *Vierteljschr. Naturforsch. Ges. Zürich* 85 (1940), pp. 127-132.
-- G. Taubin, "Distance approximations for rasterizing implicit curves," *ACM Transactions on Graphics* 13(1), 1994 (the heart surface).
-- V. Chmutov, surfaces with many singularities; see the algebraic-surface gallery at https://homepage.univie.ac.at/herwig.hauser/gallery.html
-- Imaginary / Herwig Hauser algebraic surface gallery: https://imaginary.org/gallery/herwig-hauser-classic
-- A. B. Bloomenthal et al., *Introduction to Implicit Surfaces*, Morgan Kaufmann, 1997 (marching-cell isosurface extraction).
+- Clebsch diagonal cubic: A. Clebsch (1871). Cayley nodal cubic: A. Cayley (1869). Kummer quartic: E. E. Kummer (1864).
+- Barth sextic (65 nodes): W. Barth (1996). Togliatti quintic (31 nodes): E. G. Togliatti (1940). Chmutov surfaces: S. V. Chmutov. Heart surface after G. Taubin (1994).
+- N-fold monkey saddles z = rho^n cos(n*phi) = Re((x+iy)^n) are the graphs of the degree-n harmonic polynomials (real parts of the holomorphic w^n); n = 2 is the ordinary saddle, n = 3 the classic monkey saddle z = x^3 - 3xy^2. Ceramic renditions of these saddle sheets recur in Robert Fathauer's mathematical ceramics (his n-fold saddle forms).
+

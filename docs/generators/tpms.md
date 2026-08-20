@@ -4,7 +4,16 @@
 
 ## Overview
 
-This generator builds triply-periodic minimal surfaces (TPMS) — the space-filling, crystallographically periodic minimal surfaces such as Schwarz P and D, Schoen's Gyroid, I-WP and F-RD, the Neovius surface, the Lidinoid and Split P — plus the singly-periodic Scherk tower. Each is meshed from its standard nodal (level-set) approximation by a vectorized marching-tetrahedra extractor, tileable over several unit cells per axis, and can carry an optional Solidify thickness for 3D-printable lattices.
+This generator builds triply-periodic minimal surfaces (TPMS) — the space-filling, crystallographically periodic minimal surfaces such as Schwarz P and D, Schoen's Gyroid, I-WP and F-RD, the Neovius surface, the Lidinoid and Split P — plus the singly- and doubly-periodic Weierstrass-Enneper members (Scherk towers, saddle towers, Karcher-Meeks-Rosenberg, and more). The triply-periodic surfaces are meshed from their standard nodal (level-set) approximation by a vectorized marching-tetrahedra extractor, tileable over several unit cells per axis, and can carry an optional Solidify thickness for 3D-printable lattices.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Minimal Surfaces (Periodic)*.
+2. **Pick a Periodicity, then a Surface.** **Periodicity** — *Singly Periodic*, *Doubly Periodic*, *Triply Periodic (TPMS)* — filters the **Surface** list to that translational symmetry. Singly and doubly periodic members come from the Weierstrass-Enneper catalog; triply periodic are the nodal TPMS approximations. The Variants gallery below is grouped the same way.
+3. **Tile a triply-periodic surface.** Set **Cells X / Y / Z** for how many unit cells to repeat along each axis, **Resolution / Cell** for the sample-grid density inside one cell, and **Cell Size** for its edge length. **Level Offset** sweeps the field's offset companion family (thickening one labyrinth at the other's expense); **Cell Aspect (c/a)** stretches the cell tetragonally. A nonzero **Thickness** adds a Solidify modifier, turning the infinitely thin sheet into a printable wall.
+4. **For the iconic exact P / Gyroid / D entry, use the Preset.** *Schwarz P*, *Gyroid* and *Schwarz D* by name pick the three special Bonnet angles; *Custom angle* drives the raw **Associate Angle** slider through the exact P → G → D morph.
+5. **For a singly- or doubly-periodic (Weierstrass) surface,** set **Order / Count** (period or wing count where the surface uses it), **Cells U** (and **Cells V** for doubly periodic) for how many periods to array, **Domain Radius**, and **Associate Angle** where it applies. Choose **Output** — *Mesh* (a dense polygon mesh at Resolution U × V) or *NURBS* (a compact patch).
+6. **Size it.** **Scale** multiplies the normalized size, where $1.0$ fits the surface to a 2 m cube centred on the origin.
 
 ## Options
 
@@ -155,7 +164,9 @@ Renders of each selectable option:
 
 ## How it works
 
-Each surface is approximated by its **nodal (level-set) surface** — the zero set $\{F(x,y,z) = 0\}$ of a short trigonometric polynomial that is periodic with period $2\pi$. These are the standard first-order Fourier approximations to the exact TPMS. The implemented fields include:
+**In plain terms.** Some minimal surfaces repeat forever in *all three* directions at once, like an endlessly reproduced piece of coral or the scaffold inside a bone: carve one boxy "unit cell" and it slots seamlessly into copies of itself on every side — left, right, up, down, front and back. These are the **triply-periodic minimal surfaces** (TPMS), and they split space into two interlocking labyrinths separated by a single tense wall. The exact shapes (Schwarz P, the gyroid, and their kin) are painful to write down, but each is captured almost perfectly by a beautifully simple trick: take a short sum of sine and cosine waves, and the surface is just the place where that wave-sum crosses zero — one side positive, the other negative, the wall exactly at the crossing. Everything below is *which* wave-sums, and how the code carves the crossing surface out of a three-dimensional grid of samples.
+
+Each surface is approximated by its **nodal (level-set) surface** — the zero set $\{F(x,y,z) = 0\}$ of a short trigonometric polynomial that is periodic with period $2\pi$. These are the standard first-order Fourier approximations to the exact TPMS: they keep only the lowest-frequency terms that respect the surface's crystallographic symmetry, which is enough to reproduce its shape and connectivity faithfully even though the true minimal surface has a more complicated spectrum. The implemented fields include:
 
 - **Schwarz P:** $\cos x + \cos y + \cos z = 0$
 - **Schwarz D:** $\sin x\sin y\sin z + \sin x\cos y\cos z + \cos x\sin y\cos z + \cos x\cos y\sin z = 0$
@@ -164,17 +175,20 @@ Each surface is approximated by its **nodal (level-set) surface** — the zero s
 - **Schoen I-WP:** $2(\cos x\cos y + \cos y\cos z + \cos z\cos x) - (\cos 2x + \cos 2y + \cos 2z) = 0$
 - **Schoen F-RD**, **Lidinoid**, and **Split P** by their respective higher-harmonic level-set polynomials.
 
-The singly-periodic **Scherk tower** uses $\sin z - \sinh x\,\sinh y = 0$ and is periodic only in $z$, so its $x, y$ extents are clipped to a finite box rather than tiled.
+Reading a field tells you a lot at a glance: Schwarz P's $\cos x + \cos y + \cos z$ is symmetric in all three axes, which is why its labyrinth is the simple cubic "plumber's nightmare"; the gyroid's mixed $\sin\!\cos$ terms have no reflection symmetry, which is exactly why it is chiral and has no mirror planes. The **Level Offset** control sets the field to $F = c$ instead of $F = 0$: at $c = 0$ the two labyrinths are balanced and the surface is (approximately) minimal, and moving $c$ off zero fattens one side at the other's expense, sweeping the offset companion family. The singly-periodic **Scherk tower** uses $\sin z - \sinh x\,\sinh y = 0$; because $\sinh$ grows without bound it is periodic only in $z$, so its $x, y$ extents are clipped to a finite box rather than tiled.
 
-The zero level set is extracted by **marching tetrahedra**: the sample box is divided into a grid of cubes, each cube split into 6 tetrahedra sharing the main diagonal. For every tetrahedron the sign pattern of $F$ at its four corners selects a crossing case (one corner isolated → one triangle; two-and-two → a quad split into two triangles), and the crossing points are found by **linear interpolation** along each edge: for corner values $v_a, v_b$ of opposite sign the crossing sits at parameter $t = v_a/(v_a - v_b)$. Triangle winding is oriented to follow the field gradient using a set of combinatorial orientation flags calibrated once on an exact linear field (so they are immune to sliver triangles). Samples landing exactly on the surface are nudged off zero to avoid degenerate crossings, and the resulting triangle soup is welded by quantizing and uniquing vertex positions.
+The zero level set is extracted by **marching tetrahedra**. The sample box is divided into a grid of cubes, and each cube is split into 6 tetrahedra sharing the main diagonal — tetrahedra rather than cubes because a tetrahedron has no ambiguous saddle cases, so the surface it produces is guaranteed watertight with no holes. For every tetrahedron the sign pattern of $F$ at its four corners selects a crossing case (one corner isolated from the other three → one triangle; a two-and-two split → a quadrilateral cut into two triangles), and the crossing points are found by **linear interpolation** along each edge: for corner values $v_a, v_b$ of opposite sign the crossing sits at parameter
 
-For a triply-periodic surface the box spans $\text{cells}\times 2\pi$ per axis at resolution $\text{cells}\times(\text{res per cell})$; the mesh is finally scaled so one period equals the chosen cell size ($s = \text{scale}/2\pi$). A Solidify modifier gives the sheet a printable wall thickness when requested.
+$$t = \frac{v_a}{v_a - v_b},$$
+
+i.e. the fraction of the way along the edge where the straight-line estimate of $F$ hits zero — the finer the grid, the closer that estimate is to the true surface. Triangle winding is oriented to follow the field gradient (so every normal points consistently out of the "solid" side) using a set of combinatorial orientation flags calibrated once on an exact linear field, which makes them immune to the sliver triangles that would otherwise flip a normal. Samples landing exactly on the surface are nudged off zero to avoid degenerate zero-length crossings, and the resulting triangle soup is welded into a connected mesh by quantizing and uniquing vertex positions.
+
+For a triply-periodic surface the box spans $\text{cells}\times 2\pi$ per axis at resolution $\text{cells}\times(\text{res per cell})$ — one full $2\pi$ period is one unit cell, so asking for more cells simply widens the box by whole periods — and the mesh is finally scaled so one period equals the chosen cell size ($s = \text{scale}/2\pi$). A Solidify modifier gives the infinitely thin sheet a printable wall thickness when requested.
 
 ## References
 
-- Ken Brakke, *Triply Periodic Minimal Surfaces* — <https://kenbrakke.com/evolver/examples/periodic/periodic.html> (the surface inventory) and the *Surface Evolver* — <https://kenbrakke.com/evolver/evolver.html>
-- A. H. Schoen, *Infinite Periodic Minimal Surfaces Without Self-Intersections*, NASA Technical Note TN D-5541, 1970 (the Gyroid, I-WP, F-RD).
-- H. A. Schwarz, *Gesammelte Mathematische Abhandlungen*, 1890 (the P and D surfaces).
-- Nodal (level-set) approximations after H. G. von Schnering & R. Nesper and subsequent literature.
-- W. E. Lorensen, H. E. Cline, *Marching Cubes* (and the marching-tetrahedra variant) — the isosurface-extraction method adapted here.
-- *xyzdims* — TPMS 3D-printing experiments: <https://xyzdims.com/tag/triply-periodic-minimal-surface/>
+- Weierstrass-Enneper representation: K. Weierstrass (1866) and A. Enneper (1864); the catenoid (surface of Euler, 1744) was shown minimal by J. B. C. Meusnier (1776).
+- Costa surface: C. J. Costa (1982); embeddedness by D. Hoffman and W. H. Meeks III (1985). Chen-Gackstatter: C. C. Chen and F. Gackstatter (1982). Jorge-Meeks k-noids: L. P. Jorge and W. H. Meeks III (1983).
+- Triply-periodic families: H. A. Schwarz (P, D; Gesammelte Math. Abhandlungen, 1890), A. H. Schoen (gyroid, I-WP, F-RD; NASA TN D-5541, 1970), E. R. Neovius (1883). Cotangent-Laplacian area flow after U. Pinkall and K. Polthier (1993).
+- Seifert surfaces: H. Seifert, "Ueber das Geschlecht von Knoten", Mathematische Annalen 110 (1934). Visualization of Seifert surfaces as disks joined by twisted bands after J. J. van Wijk and A. M. Cohen, IEEE TVCG 12(4) (2006).
+

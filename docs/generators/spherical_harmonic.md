@@ -8,6 +8,15 @@ The spherical harmonics $Y_\ell^m$ are the eigenfunctions of the Laplace-Beltram
 
 For the radial part that turns an angular lobe picture into an actual wavefunction, see the sibling [Atomic & Molecular Orbital](orbital.md) generator.
 
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Spherical Harmonic*.
+2. **Pick the Form.** **Offset Sphere** deforms a round sphere by the harmonic and stays embedded (the safe, printable default); **Absolute (lobes)** is the classic balloon of tangent lobes; **Signed lobes** is the same balloon with the two signs of $Y$ coloured into separate material slots (the picture chemists draw); **Bourke Family** switches to the eight-integer trigonometric relative rather than a true harmonic.
+3. **Choose the harmonic** with **Degree l** and **Order m** (the operator clamps $|m|\le\ell$ and warns if you exceed it). Degree sets how finely the sphere is subdivided into nodal bands; order shifts that detail between rings of latitude and slices of longitude — $Y_\ell^m$ carries $\ell-|m|$ nodal circles and $2|m|$ nodal meridians.
+4. **Shape the chosen form.** Offset exposes **Base Radius** (the undeformed sphere) and **Amplitude** (how hard the harmonic pushes it — keep it below Base Radius over $\max|Y|$ to stay embedded). Absolute and Signed expose **Nodal Gap**, a small radius added at the nodal circles so they do not pinch to coincident vertices; Signed adds **Split Lobes**, which deletes the band straddling each nodal line and lets the lobes fall apart into loose parts.
+5. **For the Bourke Family**, pick a **Bourke Set** preset or Custom, which exposes the eight integer exponents **m0–m7**; **Absolute Radius** takes $|r|$ so the surface cannot fold through the origin.
+6. **Resolution and finishing.** **Resolution (polar)** and **Resolution (azimuth)** set the grid; **Thickness** above 0 adds a Solidify modifier; the mesh is centred and fit to a 2 m cube, then multiplied by **Scale**. The status line reports the harmonic label and the vertex/face counts.
+
 ## Options
 
 
@@ -57,6 +66,8 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** Pluck a guitar string and it can only ring at certain pitches — a whole-string wave, a half-string wave, a third, and so on. A sphere works the same way, but in two directions at once: it has a discrete menu of "ringing patterns," and the **spherical harmonics** are exactly that menu. Each pattern paints the globe with alternating raised and lowered patches separated by curves where nothing moves — the **nodal lines**. Some of those lines are rings of latitude, some are slices of longitude, and the two whole numbers $\ell$ and $m$ count them: bigger $\ell$ means more patches overall, and $m$ shifts the detail between latitude rings and longitude slices. To turn a pattern into a solid, we simply push the sphere's surface out where the pattern is positive and pull it in where it is negative — the more of the pattern, the more the sphere bulges and dimples.
+
 ### The real harmonics
 
 Blender ships no scipy, so the associated Legendre functions are built from the classical three-term recurrences, evaluated on whole numpy arrays at once:
@@ -71,9 +82,9 @@ $$Y_\ell^0 = \sqrt{\tfrac{2\ell+1}{4\pi}}\,P_\ell(\cos\theta),$$
 
 $$Y_\ell^{m} = \sqrt{2}\,N_{\ell m}\,P_\ell^{m}(\cos\theta)\cos(m\varphi), \qquad Y_\ell^{-m} = \sqrt{2}\,N_{\ell m}\,P_\ell^{m}(\cos\theta)\sin(m\varphi)$$
 
-for $m>0$, with $N_{\ell m} = \sqrt{\frac{2\ell+1}{4\pi}\frac{(\ell-m)!}{(\ell+m)!}}$ computed through `lgamma` so that large $\ell$ cannot overflow. This is the basis in which $(\ell,m) = (1,0)$ is $p_z$, $(1,1)$ is $p_x$ and $(1,-1)$ is $p_y$.
+for $m>0$, with $N_{\ell m} = \sqrt{\frac{2\ell+1}{4\pi}\frac{(\ell-m)!}{(\ell+m)!}}$ computed through `lgamma` so that large $\ell$ cannot overflow. The formula splits cleanly into a latitude factor and a longitude factor, and each controls one family of nodal lines: $P_\ell^m(\cos\theta)$ carries the $\ell-|m|$ sign changes that become **nodal circles of latitude**, while the $\cos(m\varphi)$ or $\sin(m\varphi)$ carries the $2|m|$ sign changes that become **nodal meridians**. Adding those, the surface is divided into a checkerboard of raised and lowered tiles — which is exactly the picture above. This is the real basis in which $(\ell,m) = (1,0)$ is $p_z$, $(1,1)$ is $p_x$ and $(1,-1)$ is $p_y$; using the sine partner for $m<0$ is what rotates $p_x$ into $p_y$.
 
-$Y_\ell^m$ has $\ell - |m|$ nodal circles of latitude and $2|m|$ nodal meridians; the module's self-test counts both and checks orthonormality on the sphere to $10^{-6}$.
+The module's self-test counts both families of nodal lines and checks orthonormality on the sphere to $10^{-6}$ — orthonormality being the precise statement that these patterns are the *independent* modes, none of them a blend of the others.
 
 ### The four forms
 
@@ -92,8 +103,8 @@ The radius is evaluated on a $(\theta,\varphi)$ grid, the two poles are collapse
 
 ## References
 
-- P. S. Laplace, "Théorie des attractions des sphéroïdes et de la figure des planètes," *Mémoires de l'Académie royale des Sciences*, 1785.
-- A.-M. Legendre, "Recherches sur l'attraction des sphéroïdes homogènes," *Mémoires de Mathématique et de Physique*, 1785.
-- E. U. Condon and G. H. Shortley, *The Theory of Atomic Spectra*, Cambridge University Press, 1935 (the real form, normalisation and the phase convention).
-- M. Abramowitz and I. A. Stegun, *Handbook of Mathematical Functions*, Dover, 1965, chapter 8 (the associated Legendre recurrences used here).
-- P. Bourke, "Spherical Harmonics," February 1990, http://paulbourke.net/geometry/sphericalh/ — the source of the eight-parameter form. The parameter sets shipped as presets here are project-chosen, not his.
+- Spherical harmonics: P. S. Laplace, "Theorie des attractions des spheroides et de la figure des planetes", Memoires de l'Academie royale des Sciences, 1785; A.-M. Legendre, "Recherches sur l'attraction des spheroides homogenes", Memoires de Mathematique et de Physique, 1785.
+- Real form, normalisation and the Condon-Shortley phase: E. U. Condon and G. H. Shortley, "The Theory of Atomic Spectra", Cambridge University Press, 1935.
+- The associated Legendre recurrences used here: M. Abramowitz and I. A. Stegun, "Handbook of Mathematical Functions", Dover, 1965, chapter 8.
+- The eight-parameter sculptural family r = sin(m0 phi)^m1 + cos(m2 phi)^m3 + sin(m4 theta)^m5 + cos(m6 theta)^m7 is Paul Bourke's "Spherical Harmonics" form (February 1990), http://paulbourke.net/geometry/sphericalh/ .  The parameter sets offered as presets below are project-chosen, not his.
+

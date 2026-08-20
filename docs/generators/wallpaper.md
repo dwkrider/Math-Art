@@ -90,3 +90,4 @@ Two subtleties live in that table. The lattice is not always square: `*x` (cm) u
 
 - E. S. Fedorov (1891); George Polya and Paul Niggli (1924) -- the classification of the 17 wallpaper (plane crystallographic) groups.
 - John H. Conway, Heidi Burgiel & Chaim Goodman-Strauss, "The Symmetries of Things" (2008) -- the orbifold signature notation used here.
+

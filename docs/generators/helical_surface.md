@@ -3,7 +3,19 @@
 ![Helical Surface](../images/helical_surface.png)
 
 ## Overview
-Three classic helical / spiral parametric surfaces: the hyperbolic helicoid (a twisted band), a conical seashell shell, and the corkscrew "twisted sphere." Each is built by a pure-Python parametrization; seams where a parameter wraps are welded by index so the meshes are seamless, and the seashell's apex is emitted as a single vertex with a triangle fan.
+
+Three classic helical / spiral parametric surfaces: the hyperbolic helicoid (a twisted band), a conical seashell, and the corkscrew "twisted sphere."
+
+Each is built by a pure-Python parametrization; seams where a parameter wraps are welded by index so the meshes are seamless, and the seashell's apex is emitted as a single vertex with a triangle fan.
+
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Helical Surface*.
+2. **Pick the Surface.** **Hyperbolic Helicoid**, **Seashell** or **Corkscrew** — the three share only the helical theme, and each has its own shape knobs (the panel shows only the ones that apply to the current choice).
+3. **For the Hyperbolic Helicoid,** set **Torsion** (turns of the band per unit of the spine parameter, 0–20 — how fast it winds around its axis) and **Extent** (the half-range of both parameters, i.e. how much of the infinite band is drawn).
+4. **For the Seashell,** set **Whorls** (turns of the spiral to the apex), **Tube Aspect** (vertical stretch of the tube cross-section, $a$), **Height** (total rise mouth to apex, $b$) and **Opening** (an offset radius that keeps the mouth from closing to a point, $c$).
+5. **For the Corkscrew,** set **Sphere Radius** ($a$) and **Twist Rise** (the axial climb $b$ per radian of twist — 0 gives a plain sphere).
+6. **Common controls.** **Resolution** is the number of segments along each parametric direction, plus **Smooth Shading** and **Thickness** (a Solidify shell; 0 leaves the raw surface). The operator reports the vertex and face counts.
 
 ## Options
 
@@ -42,24 +54,25 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** All three shapes are made the same way — the way you would wrap a sheet of graph paper onto a form. Pick two sliding coordinates, call them $u$ and $v$; for every pair $(u,v)$ a formula says where that grid point lands in space, and joining neighbouring grid points into quads stitches up the surface. Here the three formulas trace, in turn, a ribbon twisted around an axis, a tapering tube that coils up to a point like a seashell, and a sphere sheared upward as it spins so it screws along like a corkscrew. Wherever a coordinate returns to its start — going once around a tube, say — the two ends are welded onto the same vertices, so there is no visible seam. The formulas themselves follow.
+
 Each surface is a direct parametric mesh over a $u,v$ grid.
 
-**Hyperbolic helicoid** -- the helicoid's hyperbolic cousin, a twisted band whose points all share the denominator $1+\cosh u\cosh v$:
+**Hyperbolic helicoid** — the helicoid's hyperbolic cousin, a twisted band whose points all share the denominator $1+\cosh u\cosh v$:
 $$x = \frac{\sinh v\,\cos(\tau u)}{1+\cosh u\cosh v},\quad y = \frac{\sinh v\,\sin(\tau u)}{1+\cosh u\cosh v},\quad z = \frac{\cosh v\,\sinh u}{1+\cosh u\cosh v},$$
-over $u,v\in[-\text{extent},\text{extent}]$. The torsion $\tau$ sets how fast the band winds around its axis. No parameter wraps, so there is no seam; the shared denominator is $\ge 2$ everywhere, so every point is finite.
+over $u,v\in[-\text{extent},\text{extent}]$. The pair $\cos(\tau u),\sin(\tau u)$ in $x$ and $y$ means that advancing along $u$ rotates the point about the vertical axis, and the torsion $\tau$ sets how many turns that takes — the twist of the band — while $v$ sweeps across its width. The shared denominator is the trick that keeps the surface compact: $\cosh$ grows very fast, so far-out points are reeled back toward the origin instead of escaping, and since $\cosh\ge 1$ the denominator is $\ge 2$ everywhere and never vanishes, so every point is finite. Neither $u$ nor $v$ wraps, so the band has two free edges and no seam.
 
-**Seashell** -- a conical spiral shell: a circular tube whose radius shrinks linearly to an apex while it winds $n$ whorls around the axis. With taper $= 1 - v/2\pi$,
+**Seashell** — a conical spiral shell: a circular tube whose radius shrinks linearly to an apex while it winds $n$ whorls around the axis. With taper $= 1 - v/2\pi$,
 $$r(u,v) = \text{taper}\,(1+\cos u) + c,\quad x = r\cos(nv),\quad y = r\sin(nv),\quad z = \frac{b\,v}{2\pi} + a\sin(u)\,\text{taper},$$
-for $u,v\in[0,2\pi]$, where $n$ = whorls, $a$ = tube aspect, $b$ = height, $c$ = opening. The tube direction $u$ wraps and is welded by index; at $v=2\pi$ the whole tube collapses to the apex $(c\cos 2\pi n,\, c\sin 2\pi n,\, b)$, emitted once and fanned with triangles.
+for $u,v\in[0,2\pi]$, where $n$ = whorls, $a$ = tube aspect, $b$ = height, $c$ = opening. Read it in three parts: $u$ runs around the tube's circular cross-section (radius $1+\cos u$), while $v$ carries that tube around the axis through $\cos(nv),\sin(nv)$ — $n$ times, the whorls — and simultaneously lifts it by $bv/2\pi$, so the coil climbs as it turns. The linear taper is what makes it a shell rather than a spring: it falls from $1$ at the mouth ($v=0$) to $0$ at the apex ($v=2\pi$), shrinking the tube to nothing. The tube direction $u$ wraps and is welded by index; at $v=2\pi$ the whole tube collapses to the apex $(c\cos 2\pi n,\, c\sin 2\pi n,\, b)$, emitted once and fanned with triangles rather than left as a ring of coincident points. The offset $c$ (opening) keeps the mouth of the shell from pinching shut.
 
-**Corkscrew** -- the "twisted sphere": a sphere stretched along a diameter and sheared upward while it turns, so each meridian circle climbs by $b$ per radian:
+**Corkscrew** — the "twisted sphere": a sphere stretched along a diameter and sheared upward while it turns, so each meridian circle climbs by $b$ per radian:
 $$x = a\cos u\cos v,\quad y = a\sin u\cos v,\quad z = a\sin v + b\,u,$$
-for $u,v\in[0,2\pi]$, with $a$ the sphere radius and $b$ the axial rise per radian of twist. Each meridian circle (fixed $u$, $v$ wrapping) is welded by index; $u$ is left open because the twist offsets its two ends by $2\pi b$ in $z$.
+for $u,v\in[0,2\pi]$, with $a$ the sphere radius and $b$ the axial rise per radian of twist. Without the last term this is just a sphere in ordinary longitude–latitude coordinates: $u$ the longitude, $v$ the latitude. The added $b\,u$ in $z$ lifts each meridian by an amount proportional to its longitude, shearing the sphere into a screw that rises $2\pi b$ over a full turn. Each meridian circle (fixed $u$, $v$ wrapping) closes and is welded by index; $u$ is left open because the twist offsets its two ends by $2\pi b$ in $z$, so they no longer coincide.
 
 In all three, the mesh is centered and fit within a $2\times\text{scale}$ cube, then optionally given a Solidify shell.
 
 ## References
 
-- J. Meier, minimal-surface and parametric-surface gallery, https://www.3d-meier.de/ (hyperbolic helicoid and related parametrizations).
-- A. Gray, E. Abbena, S. Salamon, *Modern Differential Geometry of Curves and Surfaces with Mathematica*, 3rd ed., Chapman & Hall/CRC, 2006 (seashell and helicoidal parametrizations).
-- Wolfram MathWorld, "Seashell" and "Helicoid," https://mathworld.wolfram.com/
+- The helicoid is a classical minimal and ruled surface (J. B. C. Meusnier, 1776); the hyperbolic helicoid, conical seashell and twisted-sphere forms here are standard parametric surfaces. See A. Gray, E. Abbena, S. Salamon, "Modern Differential Geometry of Curves and Surfaces with Mathematica" (3rd ed., 2006), and J. Meier's gallery (3d-meier.de).
+

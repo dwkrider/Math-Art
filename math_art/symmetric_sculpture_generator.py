@@ -9,13 +9,13 @@
 # Rivers, Tumbleweed, Frabjous, Spaghetti Code, ...).
 #
 # References:
-#   G. W. Hart, "Symmetric sculpture", J. Mathematics and the Arts
-#     1(1), 2007, 21-28.  doi:10.1080/17513470701228040
-#   G. W. Hart, "Sculpture from Symmetrically Arranged Planar
-#     Components", Bridges 2003, 315-322.
-#   H. S. M. Coxeter, P. Du Val, H. T. Flather, J. F. Petrie, "The
-#     Fifty-Nine Icosahedra", U. Toronto Press, 1938 -- the
-#     stellation pattern drawn as the editing guides.
+# - G. W. Hart, "Symmetric sculpture", J. Mathematics and the Arts
+#   1(1), 2007, 21-28.  doi:10.1080/17513470701228040
+# - G. W. Hart, "Sculpture from Symmetrically Arranged Planar
+#   Components", Bridges 2003, 315-322.
+# - H. S. M. Coxeter, P. Du Val, H. T. Flather, J. F. Petrie, "The
+#   Fifty-Nine Icosahedra", U. Toronto Press, 1938 -- the
+#   stellation pattern drawn as the editing guides.
 #
 # A flat motif drawn in ONE representative
 # plane is replicated live into a whole family of symmetrically

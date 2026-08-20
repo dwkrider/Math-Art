@@ -91,3 +91,4 @@ with the unit now a three-dimensional object — a relief-height motif or the ac
 
 - The 80 layer (diperiodic) groups -- "International Tables for Crystallography", Volume E: Subperiodic Groups.
 - John H. Conway, Heidi Burgiel & Chaim Goodman-Strauss, "The Symmetries of Things" (2008) -- the wallpaper-group / orbifold foundation this z-augmentation builds on.
+

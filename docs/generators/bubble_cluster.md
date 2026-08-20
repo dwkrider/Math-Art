@@ -60,6 +60,9 @@ Each pair carries sign factors so that a bubble's own centre is on the positive 
 
 ## References
 
-- Young-Laplace law and soap-film / foam geometry: see C. Isenberg, *The Science of Soap Films and Soap Bubbles*, Dover, 1992; and D. Weaire and S. Hutzler, *The Physics of Foams*, Oxford University Press, 1999.
-- Plateau's laws (triple junctions at $120^\circ$, and the equilibrium of films) underlie the trimming that produces the triple-junction network.
-- The interface-curvature rule $1/r = 1/r_{\text{small}} - 1/r_{\text{large}}$ for the film between two unequal bubbles follows from equating the Laplace pressure jumps across the two caps and the interface.
+- Joseph Plateau, "Statique experimentale et theorique des liquides soumis aux seules forces moleculaires" (1873) -- Plateau's laws for soap films (120-degree triple junctions).
+- Young-Laplace law for the pressure jump across a curved film.
+- Double Bubble theorem: M. Hutchings, F. Morgan, M. Ritore, A. Ros, "Proof of the double bubble conjecture", Annals of Mathematics 155 (2002), pp. 459-489.
+- Triple Bubble theorem: E. Milman, J. Neeman, "The structure of isoperimetric bubbles on R^n and S^n", arXiv:2205.09102 (2022) -- proof of the triple bubble conjecture in R^3 (the standard triple bubble is the least-area partition).
+- C. Isenberg, "The Science of Soap Films and Soap Bubbles" (Dover, 1992); D. Weaire & S. Hutzler, "The Physics of Foams" (Oxford, 1999).
+

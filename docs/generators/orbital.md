@@ -8,6 +8,17 @@ Hydrogenic atomic orbitals and LCAO molecular orbitals, drawn as isosurfaces of 
 
 **What these are and are not.** Every orbital here is a hydrogenic (or Slater-type, via the $\zeta$ exponent) function, and every molecular orbital is a fixed, symmetry-adapted combination of such functions. They are the qualitative pictures of an inorganic chemistry textbook, **not** self-consistent Hartree-Fock or DFT orbitals: the coefficients are chosen by symmetry (or by Hückel theory), not variationally optimised. They are drawn for their shape.
 
+### Using it
+
+1. **Add it** from *Add ▸ Mesh ▸ Math Art ▸ Surfaces ▸ Atomic & Molecular Orbital*.
+2. **Pick the Mode.** **Atomic** draws one orbital on one nucleus; **Molecular** draws a combination of atomic orbitals spread over several nuclei.
+3. **In Atomic mode**, set the quantum numbers **n**, **l** and **m** (the operator enforces $\ell<n$ and $|m|\le\ell$), and **Zeta** — the effective nuclear charge, 1 for hydrogen, larger to contract the orbital as a Slater-type basis function. The count of radial nodes is then $n-\ell-1$, so 3s shows its inner shells and 3p its nested lobes.
+4. **In Molecular mode**, choose a **Molecule** preset (the σ/σ\*, π/π\* diatomics, the sp/sp²/sp³ hybrids, two water orbitals, benzene π), set the **Bond Length**, pick which **Hueckel MO** of benzene to draw, or type any combination straight into the **LCAO** field as `orbital@x,y,z[:zeta] coefficient`, semicolon separated.
+5. **Choose the contour.** The isosurface is set by **Enclosed Probability** — the fraction of the electron density it wraps — so one control serves both a compact 1s and a diffuse 5g; **Level Override** above 0 fixes a raw $|\psi|$ level instead.
+6. **Set the sampling.** **Resolution** is the grid per axis (cost grows as the cube); **Box Override** above 0 pins the sample box, otherwise it is fitted to the orbital. **Despeckle** drops grid-scale fragments where the contour grazes a sample plane.
+7. **Choose the display.** **Single Surface** is one hard shell; **Probability Cloud** draws several nested transparent shells (count set by **Cloud Shells**, faintness by **Outer Opacity**) so the density reads as a falloff. **Sign Colours** puts the $+$ and $-$ lobes of $\psi$ in two material slots, **Nuclei & Bonds** appends a ball-and-stick skeleton in molecular mode, and **Largest Lobe Only** discards all but the biggest connected piece.
+8. **Read the reported check.** Before meshing, the operator predicts analytically how many closed surfaces the orbital *must* have; if the grid is too coarse to resolve a thin radial node it says so and names the resolution to try (3s is such a case at the default settings). Molecular mode also reports the Hückel energy of the chosen benzene orbital in the status line.
+
 ## Options
 
 
@@ -74,6 +85,8 @@ Renders of each selectable option:
 
 ## How it works
 
+**In plain terms.** An electron in an atom does not sit at a point; it is smeared into a cloud, and an **orbital** is a picture of where that cloud is dense enough to matter. The mathematics behind the cloud is the **wavefunction** $\psi$ — a number attached to every point in space that is positive in some regions and negative in others (that sign is the "phase," drawn here as the two lobe colours). Squaring it, $|\psi|^2$, gives the actual chance of finding the electron there. To turn that fuzzy cloud into a solid surface we pick a density level and draw the single skin that encloses, say, 90% of the electron — like the contour line on a map that rings the densest part of a city. The surface's lobes are the directions the cloud reaches out in, and the hollow shells nested inside it are **radial nodes**: spheres where the electron is simply never found. Everything below is how the code builds $\psi$, chooses that level, and finds the skin.
+
 ### The wavefunction
 
 In atomic units ($a_0 = 1$),
@@ -122,9 +135,10 @@ Anything else can be typed into the LCAO field directly, e.g. `2pz@0,0,-1.2 1; 2
 
 ## References
 
-- E. Schrödinger, "Quantisierung als Eigenwertproblem (Erste Mitteilung)," *Annalen der Physik* 384(4), 1926, pp. 361-376.
-- L. Pauling and E. B. Wilson, *Introduction to Quantum Mechanics with Applications to Chemistry*, McGraw-Hill, 1935 (the standard treatment of $R_{n\ell}$, the real orbital forms and the LCAO method).
-- J. C. Slater, "Atomic Shielding Constants," *Physical Review* 36, 1930, pp. 57-64 (effective nuclear charge / Slater-type exponents).
-- F. Hund, "Zur Deutung der Molekelspektren," *Zeitschrift für Physik*, 1927-1928 (series), and R. S. Mulliken, "Electronic Structures of Polyatomic Molecules and Valence," *Physical Review*, 1932 — the LCAO molecular-orbital method.
-- E. Hückel, "Quantentheoretische Beiträge zum Benzolproblem," *Zeitschrift für Physik* 70, 1931 (the benzene π system).
-- M. Abramowitz and I. A. Stegun, *Handbook of Mathematical Functions*, Dover, 1965, chapter 22 (the generalised Laguerre recurrence used here).
+- Hydrogen wavefunctions: E. Schroedinger, "Quantisierung als Eigenwertproblem (Erste Mitteilung)", Annalen der Physik 384(4), 1926, pp. 361-376.
+- Standard treatment of R_nl, the real orbital forms and the LCAO method: L. Pauling and E. B. Wilson, "Introduction to Quantum Mechanics with Applications to Chemistry", McGraw-Hill, 1935.
+- Effective nuclear charge / Slater-type exponents: J. C. Slater, "Atomic Shielding Constants", Physical Review 36, 1930, pp. 57-64.
+- Molecular orbitals as linear combinations of atomic orbitals: F. Hund, "Zur Deutung der Molekelspektren", Zeitschrift fuer Physik, 1927-1928 (series); R. S. Mulliken, "Electronic Structures of Polyatomic Molecules and Valence", Physical Review, 1932.
+- The benzene pi system: E. Hueckel, "Quantentheoretische Beitraege zum Benzolproblem", Zeitschrift fuer Physik 70, 1931.
+- Generalised Laguerre recurrence: M. Abramowitz and I. A. Stegun, "Handbook of Mathematical Functions", Dover, 1965, chapter 22.
+

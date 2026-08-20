@@ -61,11 +61,7 @@ The shrinking radii are also what bound the construction. Each level must fit in
 
 ## References
 
-- Robert W. Fathauer, "Fractal Knots Created by Iterative
-- Substitution", Bridges 2007, pp. 335-342; "A New Method for
-- Designing Iterated Knots", Bridges 2009, pp. 251-258 (the concept
-- of iterated/recursive knots).
-- Satellite and cable knots: Dale Rolfsen, "Knots and Links",
-- Publish or Perish, 1976 (Ch. 4).
-- Rotation-minimizing frames: Wenping Wang et al., "Computation of
-- rotation minimizing frames", ACM Trans. Graphics 27(1), 2008.
+- Robert W. Fathauer, "Fractal Knots Created by Iterative Substitution", Bridges 2007, pp. 335-342; "A New Method for Designing Iterated Knots", Bridges 2009, pp. 251-258 (the concept of iterated/recursive knots).
+- Satellite and cable knots: Dale Rolfsen, "Knots and Links", Publish or Perish, 1976 (Ch. 4).
+- Rotation-minimizing frames: Wenping Wang et al., "Computation of rotation minimizing frames", ACM Trans. Graphics 27(1), 2008.
+

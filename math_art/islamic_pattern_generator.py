@@ -53,28 +53,28 @@
 # Celtic and Islamic interlace choose which strand rides on top.
 #
 # References:
-#   E. H. Hankin, "The Drawing of Geometric Patterns in Saracenic Art"
-#     (Memoirs of the Archaeological Survey of India, no. 15, 1925) --
-#     the "polygons in contact" construction.
-#   Craig S. Kaplan, "Computer Generated Islamic Star Patterns"
-#     (Bridges 2000) -- the algorithmic PIC formulation reused here.
-#   Craig S. Kaplan, "Islamic Star Patterns from Polygons in Contact"
-#     (Graphics Interface 2005) -- motif inference and the rosette.
-#   Craig S. Kaplan, "Computer Graphics and Geometric Ornamental
-#     Design" (Ph.D. dissertation, University of Washington, 2002) --
-#     the rosette transform and inference algorithms implemented here.
-#   A. J. Lee, "Islamic Star Patterns" (Muqarnas 4, 1987) -- the
-#     traditional rosette (star + petal ring) construction.
-#   Jay Bonner, "Islamic Geometric Patterns: Their Historical
-#     Development and Traditional Methods of Construction" (2017).
-#   Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (1987) --
-#     the uniform tilings used as PIC substrates.
-#   Peter J. Lu & Paul J. Steinhardt, "Decagonal and Quasi-Crystalline
-#     Tilings in Medieval Islamic Architecture" (Science 315, 2007) --
-#     the girih tiles and the quasiperiodic 10-fold strapwork, realized
-#     here as polygons-in-contact decoration of a Penrose quasilattice.
-#   Peter R. Cromwell, "The Search for Quasi-Periodicity in Islamic Art"
-#     (Mathematical Intelligencer 31, 2009) -- girih construction.
+# - E. H. Hankin, "The Drawing of Geometric Patterns in Saracenic Art"
+#   (Memoirs of the Archaeological Survey of India, no. 15, 1925) --
+#   the "polygons in contact" construction.
+# - Craig S. Kaplan, "Computer Generated Islamic Star Patterns"
+#   (Bridges 2000) -- the algorithmic PIC formulation reused here.
+# - Craig S. Kaplan, "Islamic Star Patterns from Polygons in Contact"
+#   (Graphics Interface 2005) -- motif inference and the rosette.
+# - Craig S. Kaplan, "Computer Graphics and Geometric Ornamental
+#   Design" (Ph.D. dissertation, University of Washington, 2002) --
+#   the rosette transform and inference algorithms implemented here.
+# - A. J. Lee, "Islamic Star Patterns" (Muqarnas 4, 1987) -- the
+#   traditional rosette (star + petal ring) construction.
+# - Jay Bonner, "Islamic Geometric Patterns: Their Historical
+#   Development and Traditional Methods of Construction" (2017).
+# - Branko Grunbaum & G. C. Shephard, "Tilings and Patterns" (1987) --
+#   the uniform tilings used as PIC substrates.
+# - Peter J. Lu & Paul J. Steinhardt, "Decagonal and Quasi-Crystalline
+#   Tilings in Medieval Islamic Architecture" (Science 315, 2007) --
+#   the girih tiles and the quasiperiodic 10-fold strapwork, realized
+#   here as polygons-in-contact decoration of a Penrose quasilattice.
+# - Peter R. Cromwell, "The Search for Quasi-Periodicity in Islamic Art"
+#   (Mathematical Intelligencer 31, 2009) -- girih construction.
 
 bl_info = {
     "name": "Islamic Star Pattern",
