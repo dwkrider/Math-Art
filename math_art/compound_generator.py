@@ -251,6 +251,56 @@ def _selftest():
     # five cubes separate into a generic thirty
     assert len(build_compound('H_5CUBES', phase=17.0)) > 5
 
+    # --- Hart's inscribed pieces ----------------------------------------
+    # The claim these models make is a containment, so that is what gets
+    # checked -- component counts would pass on two solids merely sitting
+    # near each other.
+    for k in ('INS_TETRA_CUBE', 'INS_2TETRA_CUBE', 'INS_CUBE_DODECA',
+              'INS_TETRA_DODECA'):
+        comps = build_compound(k)
+        host = {tuple(round(x, 7) for x in v) for v in comps[-1][0]}
+        for V, _F in comps[:-1]:
+            assert all(tuple(round(x, 7) for x in v) in host for v in V), \
+                (k, 'an inscribed vertex is not a vertex of the host')
+
+    # The icosahedron-in-octahedron is the one that is not a selection:
+    # each of its vertices must sit ON an octahedron EDGE, one per edge,
+    # cutting it in the golden ratio.  Landing on a FACE instead would
+    # still look plausible and is the easy way to get this wrong.
+    for k in ('INS_ICOSA_OCTA', 'INS_2ICOSA_OCTA'):
+        comps = build_compound(k)
+        OV, OF = comps[-1]
+        E = set()
+        for f in OF:
+            for i in range(len(f)):
+                E.add(tuple(sorted((f[i], f[(i + 1) % len(f)]))))
+        assert len(E) == 12, (k, len(E))
+        used, ratios = set(), set()
+        for V, _F in comps[:-1]:
+            for v in V:
+                on = None
+                for a, b in E:
+                    A, B = OV[a], OV[b]
+                    d = [B[i] - A[i] for i in range(3)]
+                    L = sum(x * x for x in d)
+                    t = sum((v[i] - A[i]) * d[i] for i in range(3)) / L
+                    if not -1e-9 <= t <= 1 + 1e-9:
+                        continue
+                    q = [A[i] + t * d[i] for i in range(3)]
+                    if _math.dist(q, v) < 1e-9:
+                        on = ((a, b), round(t, 6))
+                        break
+                assert on, (k, v, 'vertex is not on any octahedron edge')
+                used.add(on[0])
+                ratios.add(on[1])
+            assert len(used) == 12, (k, len(used))
+            used.clear()
+        phi = (1 + 5 ** 0.5) / 2
+        assert ratios == {round(1 / phi, 6), round(1 / (phi * phi), 6)}, \
+            (k, ratios, 'the division is not the golden ratio')
+    print("INSCRIBED  6 models; icosahedron cuts all 12 octahedron edges "
+          "in the golden ratio")
+
     # --- star prisms ----------------------------------------------------
     # These carry Skilling's rows 36, 37 and 41.  Their vertices are an
     # ordinary prism's, only rescaled, so the compound COUNTS cannot tell

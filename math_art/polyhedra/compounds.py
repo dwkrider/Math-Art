@@ -479,6 +479,75 @@ def prism_and_dual(n, anti=False):
     return [(V, F), (P, _hull_faces(P))]
 
 
+# --- Hart's "inscribed pieces" -------------------------------------------
+# Six models showing one regular solid sitting inside another, sharing
+# its vertices with some of the larger one's.  These are not orbits of
+# anything -- they are two named solids in a fixed relative position --
+# so they get coordinates rather than a rule.
+#
+# Five of the six are immediate in the seed frames this module already
+# uses, which is the point of choosing those frames:
+#
+#   * `_dodeca()` literally CONTAINS the cube (+-1, +-1, +-1) as eight of
+#     its twenty vertices, so cube-in-dodecahedron is a selection, and
+#     tetrahedron-in-dodecahedron selects four of those eight.
+#   * the cube's two inscribed tetrahedra are its alternate vertices.
+#
+# The sixth needs one line of algebra.  Each vertex of an icosahedron
+# inscribed in an octahedron divides an octahedron EDGE in the golden
+# ratio -- twelve edges, twelve vertices, one each.  Taking `_icosa()`'s
+# cyclic coordinates, the vertex (1, phi, 0) must lie on the edge running
+# from (d, 0, 0) to (0, d, 0), i.e. on x + y = d, so
+#
+#     d = 1 + phi = phi^2.
+#
+# That the CYCLIC set works and the full permutation set does not is
+# exactly why the figure is chiral, and why Hart lists a two-icosahedra
+# version: the mirror set (0, +-phi, +-1) inscribes in the same
+# octahedron the other way round.
+def inscribed(kind):
+    """One of Hart's six inscribed-piece models, as [(V, F), ...]."""
+    tetra, cube, octa = _seeds()
+    if kind == 'INS_TETRA_CUBE':
+        return [tetra, cube]
+    if kind == 'INS_2TETRA_CUBE':
+        tv, tf = tetra
+        mirror = ([(-x, -y, -z) for x, y, z in tv], tf)
+        return [tetra, mirror, cube]
+    dv, df = _dodeca()
+    if kind in ('INS_CUBE_DODECA', 'INS_TETRA_DODECA'):
+        cv = [v for v in dv if all(abs(abs(c) - 1) < 1e-9 for c in v)]
+        if len(cv) != 8:
+            raise ValueError('the dodecahedron seed lost its inscribed cube')
+        if kind == 'INS_TETRA_DODECA':
+            cv = [v for v in cv if v[0] * v[1] * v[2] > 0]
+        return [(cv, _hull_faces(cv)), (dv, df)]
+    if kind in ('INS_ICOSA_OCTA', 'INS_2ICOSA_OCTA'):
+        d = PHI * PHI
+        # the unit octahedron from _seeds(), scaled out to phi^2 -- its
+        # face list is explicit there, and _hull_faces cannot supply one
+        # for a solid whose vertices are this degenerate on the axes
+        ov = ([tuple(d * c for c in v) for v in octa[0]], octa[1])
+        iv, if_ = _icosa()
+        out = [(iv, if_)]
+        if kind == 'INS_2ICOSA_OCTA':          # the other hand
+            mv = [(x, z, y) for x, y, z in iv]
+            out.append((mv, _hull_faces(mv)))
+        out.append(ov)
+        return out
+    raise ValueError(kind)
+
+
+INSCRIBED = [
+    ('INS_TETRA_CUBE', "Tetrahedron Inscribed in Cube"),
+    ('INS_2TETRA_CUBE', "Two Tetrahedra Inscribed in Cube"),
+    ('INS_CUBE_DODECA', "Cube Inscribed in Dodecahedron"),
+    ('INS_TETRA_DODECA', "Tetrahedron Inscribed in Dodecahedron"),
+    ('INS_ICOSA_OCTA', "Icosahedron Inscribed in Octahedron"),
+    ('INS_2ICOSA_OCTA', "Two Icosahedra Inscribed in Octahedron"),
+]
+
+
 # Named compounds reachable by the rule.  Each row is
 # (key, label, component, group, component axis, group axis, phase),
 # and every count is asserted in the self-test -- transcription is the
@@ -564,7 +633,9 @@ COMPOUNDS = [
     ('DODECA_ICOSA', "Dodecahedron + Icosahedron"),
     ('PRISM_DUAL', "Prism + Dual Dipyramid"),
     ('ANTIPRISM_DUAL', "Antiprism + Dual Trapezohedron"),
-] + [(k, lbl) for k, lbl, *_rest in AXIS_COMPOUNDS]
+] + list(INSCRIBED) + [(k, lbl) for k, lbl, *_rest in AXIS_COMPOUNDS]
+
+_INSCRIBED_KEYS = {k for k, _lbl in INSCRIBED}
 
 #: compounds whose shape is set by the side count rather than a preset
 SIDED = {'PRISM_DUAL': False, 'ANTIPRISM_DUAL': True}
@@ -580,6 +651,8 @@ def build_compound(kind, phase=None, sides=5):
     """
     if kind in SIDED:
         return prism_and_dual(sides, anti=SIDED[kind])
+    if kind in _INSCRIBED_KEYS:
+        return inscribed(kind)
     if kind in _AXIS_BY_KEY:
         _k, _lbl, comp, grp, ca, ga, ph, _n = _AXIS_BY_KEY[kind]
         return build_axis_compound(comp, grp, ca, ga,
