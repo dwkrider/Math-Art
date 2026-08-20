@@ -9,8 +9,18 @@
 # dodecahedron frame so an axis-aligned seed lands on the compound's
 # shared vertices; each component keeps its own colour.
 #
+# The axis-alignment rule (polyhedra/compounds.py) generalises all of
+# this: align the component's n-fold axis with the compound's m-fold
+# axis, turn it, replicate over the group, drop duplicates. Michael
+# Harman's 1974 construction, and the Turn dial is the rotational
+# freedom several of Hart's families have -- the five cubes separate
+# into a generic thirty as soon as it leaves the named angle.
+#
 # References:
 # - Stella octangula: Johannes Kepler, "Harmonices Mundi" (1619).
+# - The axis-alignment construction: Michael G. Harman, unpublished
+#   (1974), as described by George W. Hart, "Compounds - Harman's",
+#   Virtual Polyhedra (georgehart.com/virtual-polyhedra/).
 # - The regular compounds (5 tetrahedra, 5 cubes, ...): Edmund Hess
 #   (1876); Max Bruckner (1900); catalogued in H. S. M. Coxeter,
 #   "Regular Polytopes" (1948).
@@ -37,9 +47,11 @@ except ImportError:
 # The mathematics lives in the sibling `polyhedra` engine package;
 # this module is the Blender layer over it.
 try:
-    from .polyhedra.compounds import (COMPOUNDS, build_compound)
+    from .polyhedra.compounds import (AXIS_COMPOUNDS, COMPOUNDS,
+                                      build_compound)
 except ImportError:  # flat import outside the package
-    from polyhedra.compounds import (COMPOUNDS, build_compound)
+    from polyhedra.compounds import (AXIS_COMPOUNDS, COMPOUNDS,
+                                     build_compound)
 
 
 
@@ -114,11 +126,22 @@ if _IN_BLENDER:
             name="Separate Objects", default=False,
             description="One object per component instead of a single "
                         "coloured mesh")
+        phase: FloatProperty(
+            name="Turn", default=0.0, min=-180.0, max=180.0,
+            description="Turn each component about the axis it was "
+                        "aligned on. The named compounds sit at one "
+                        "angle; away from it the components separate "
+                        "and the count usually rises, which is the "
+                        "rotational freedom several of these families "
+                        "have")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def execute(self, context):
             try:
-                comps = build_compound(self.compound)
+                axis_kind = any(self.compound == r[0] for r in AXIS_COMPOUNDS)
+                comps = build_compound(
+                    self.compound,
+                    phase=self.phase if axis_kind and self.phase else None)
             except Exception as e:      # noqa: BLE001
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -185,9 +208,38 @@ if _IN_BLENDER:
 
 
 def _selftest():
+    import math as _math
     for k, lbl in COMPOUNDS:
         comps = build_compound(k)
         nv = len(set(tuple(round(c, 4) for c in v)
                      for V, _F in comps for v in V))
         print(f"{k:14s} {len(comps):2d} components, {nv:3d} distinct verts"
               f"  ({lbl})")
+
+    # The axis-rule compounds assert their component counts: the rule
+    # itself is sound, so what can go wrong is the five-tuple describing
+    # a named model, and a wrong axis pair changes the count.
+    for k, lbl, _c, _g, _ca, _ga, _ph, want in AXIS_COMPOUNDS:
+        comps = build_compound(k)
+        assert len(comps) == want, (k, len(comps), want)
+
+        # every component must be congruent to the first -- same radius
+        # spectrum and same pairwise-distance multiset, which pins the
+        # vertex set to an isometry without solving for the rotation
+        def spectrum(V):
+            rad = sorted(round(_math.dist((0, 0, 0), v), 6) for v in V)
+            pair = sorted(round(_math.dist(a, b), 6)
+                          for i, a in enumerate(V) for b in V[i + 1:])
+            return rad, pair
+
+        ref = spectrum(comps[0][0])
+        for V, _F in comps[1:]:
+            got = spectrum(V)
+            assert len(got[0]) == len(ref[0]), k
+            assert max(abs(a - b) for a, b in zip(got[0], ref[0])) < 1e-6, k
+            assert max(abs(a - b) for a, b in zip(got[1], ref[1])) < 1e-6, k
+
+    # turning off the named angle is what the freedom families do: the
+    # five cubes separate into a generic thirty
+    assert len(build_compound('H_5CUBES', phase=17.0)) > 5
+    print("RESULT: OK")

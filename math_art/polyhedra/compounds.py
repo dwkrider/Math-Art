@@ -145,6 +145,146 @@ def _orbit(seed, G):
     return out
 
 
+# --------------------------------------------------------------------------
+# The axis-alignment rule
+# --------------------------------------------------------------------------
+# Michael Harman's systematic construction (unpublished, 1974; described
+# on Hart's compounds pages) makes a compound out of one rule:
+#
+#   align the COMPONENT's n-fold axis with the COMPOUND's m-fold axis,
+#   turn the component about that axis, replicate over every m-fold axis
+#   of the compound's symmetry group, and drop duplicates.
+#
+# So it is one parametric operator rather than a table of meshes: pick a
+# component, a symmetry group, which axis of each to match, and a phase.
+# Two of the choices are discrete (which axis class, which of two mirror
+# phases), which is why the named models still need a small table -- but
+# the table holds five-tuples, not coordinates.
+#
+# Turning the phase continuously is exactly the "rotational freedom" of
+# Hart's cube compounds: at generic angles the components stay distinct,
+# and at special angles pairs coincide and the count drops, which the
+# frozenset dedup in _orbit handles on its own.
+
+def _tetra_rotations():
+    """The twelve rotations preserving one of the cube's two inscribed
+    tetrahedra -- a subgroup of the octahedral group, filtered rather
+    than rebuilt."""
+    T = np.array([[1.0, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]])
+    out = []
+    for M in _octa_rotations():
+        W = T @ M.T
+        d2 = ((W[:, None, :] - T[None, :, :]) ** 2).sum(-1)
+        if d2.min(axis=1).max() < 1e-9:
+            out.append(M)
+    return out
+
+
+GROUPS = {'T': _tetra_rotations, 'O': _octa_rotations, 'I': _icosa_rotations}
+
+# One representative axis of each order, per symmetry group.
+GROUP_AXES = {
+    'T': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0)},
+    'O': {2: (1.0, 1.0, 0.0), 3: (1.0, 1.0, 1.0), 4: (0.0, 0.0, 1.0)},
+    'I': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0), 5: (0.0, 1.0, PHI)},
+}
+
+# and of each component solid, in its own frame
+COMPONENT_AXES = {
+    'TETRA': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0)},
+    'CUBE': {2: (1.0, 1.0, 0.0), 3: (1.0, 1.0, 1.0), 4: (0.0, 0.0, 1.0)},
+    'OCTA': {2: (1.0, 1.0, 0.0), 3: (1.0, 1.0, 1.0), 4: (0.0, 0.0, 1.0)},
+    'DODECA': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0), 5: (0.0, 1.0, PHI)},
+    'ICOSA': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0), 5: (0.0, 1.0, PHI)},
+}
+
+
+def _component(kind):
+    tetra, cube, octa = _seeds()
+    if kind == 'TETRA':
+        return tetra
+    if kind == 'CUBE':
+        return cube
+    if kind == 'OCTA':
+        V, F = octa
+        return ([tuple(math.sqrt(3.0) * c for c in v) for v in V], F)
+    if kind == 'DODECA':
+        return _dodeca()
+    if kind == 'ICOSA':
+        return _icosa()
+    raise ValueError(kind)
+
+
+def _align_rotation(src, dst):
+    """Rotation carrying direction `src` onto `dst` by the shortest turn."""
+    a = np.array(src, float)
+    b = np.array(dst, float)
+    a = a / np.linalg.norm(a)
+    b = b / np.linalg.norm(b)
+    v = np.cross(a, b)
+    c = float(a @ b)
+    if np.linalg.norm(v) < 1e-12:
+        return np.eye(3) if c > 0 else _rot((1, 0, 0) if abs(a[0]) < 0.9
+                                            else (0, 1, 0), math.pi)
+    vx = np.array([[0, -v[2], v[1]], [v[2], 0, -v[0]], [-v[1], v[0], 0]])
+    return np.eye(3) + vx + vx @ vx / (1 + c)
+
+
+def build_axis_compound(component, group, comp_order, group_order,
+                        phase=0.0, scale=1.0):
+    """Harman's rule, as a function.
+
+    Align the component's `comp_order`-fold axis with the compound's
+    `group_order`-fold axis, turn it by `phase` degrees about that axis,
+    and take the orbit under the group.  Returns the distinct components.
+    """
+    if group not in GROUPS:
+        raise ValueError('unknown group %r' % (group,))
+    ca = COMPONENT_AXES[component].get(comp_order)
+    ga = GROUP_AXES[group].get(group_order)
+    if ca is None:
+        raise ValueError('%s has no %d-fold axis' % (component, comp_order))
+    if ga is None:
+        raise ValueError('group %s has no %d-fold axis' % (group,
+                                                           group_order))
+    V, F = _component(component)
+    R = _align_rotation(ca, ga)
+    R = _rot(ga, math.radians(phase)) @ R
+    seed = ([tuple(scale * (R @ np.array(v, float))) for v in V],
+            [list(f) for f in F])
+    return _orbit(seed, GROUPS[group]())
+
+
+# Named compounds reachable by the rule.  Each row is
+# (key, label, component, group, component axis, group axis, phase),
+# and every count is asserted in the self-test -- transcription is the
+# real risk here, not the geometry.
+AXIS_COMPOUNDS = [
+    ('H_2TETRA', "2 Tetrahedra (Stella Octangula)", 'TETRA', 'O', 3, 3,
+     0.0, 2),
+    ('H_5TETRA', "5 Tetrahedra", 'TETRA', 'I', 2, 2, 0.0, 5),
+    ('H_5CUBES', "5 Cubes", 'CUBE', 'I', 3, 3, 0.0, 5),
+    ('H_5OCTA', "5 Octahedra", 'OCTA', 'I', 3, 3, 0.0, 5),
+    ('H_2DODECA', "2 Dodecahedra (Octahedral)", 'DODECA', 'O', 3, 3,
+     0.0, 2),
+    ('H_2ICOSA', "2 Icosahedra (Octahedral)", 'ICOSA', 'O', 3, 3, 0.0, 2),
+    ('H_5DODECA', "5 Dodecahedra", 'DODECA', 'I', 3, 3, 0.0, 5),
+    ('H_12DODECA', "12 Dodecahedra (Octahedral)", 'DODECA', 'O', 2, 2,
+     0.0, 12),
+    ('H_12ICOSA', "12 Icosahedra (Octahedral)", 'ICOSA', 'O', 2, 2,
+     0.0, 12),
+    ('H_12CUBES', "12 Cubes (Octahedral)", 'CUBE', 'O', 4, 3, 0.0, 12),
+    ('H_12TETRA', "12 Tetrahedra (Octahedral)", 'TETRA', 'O', 2, 2,
+     0.0, 12),
+    ('H_12ICOSA_4', "12 Icosahedra (4-fold)", 'ICOSA', 'O', 5, 4, 0.0, 12),
+    ('H_30CUBES', "30 Cubes (Icosahedral)", 'CUBE', 'I', 4, 5, 0.0, 30),
+    ('H_60DODECA', "60 Dodecahedra (Icosahedral)", 'DODECA', 'I', 5, 3,
+     0.0, 60),
+]
+
+_AXIS_BY_KEY = {r[0]: r for r in AXIS_COMPOUNDS}
+
+
 COMPOUNDS = [
     ('STELLA', "Stella Octangula (2 Tetrahedra)"),
     ('5TETRA', "Compound of 5 Tetrahedra"),
@@ -153,11 +293,21 @@ COMPOUNDS = [
     ('5OCTA', "Compound of 5 Octahedra"),
     ('CUBE_OCTA', "Cube + Octahedron"),
     ('DODECA_ICOSA', "Dodecahedron + Icosahedron"),
-]
+] + [(k, lbl) for k, lbl, *_rest in AXIS_COMPOUNDS]
 
 
-def build_compound(kind):
-    """Return a list of components, each (V, F)."""
+def build_compound(kind, phase=None):
+    """Return a list of components, each (V, F).
+
+    `phase` overrides a named compound's own turn angle, which is what
+    turns the rigid presets into Hart's rotational-freedom families:
+    away from the named angle the components separate and the count
+    generally rises.
+    """
+    if kind in _AXIS_BY_KEY:
+        _k, _lbl, comp, grp, ca, ga, ph, _n = _AXIS_BY_KEY[kind]
+        return build_axis_compound(comp, grp, ca, ga,
+                                   ph if phase is None else phase)
     if np is None:
         raise RuntimeError("compounds need NumPy")
     tetra, cube, octa = _seeds()
