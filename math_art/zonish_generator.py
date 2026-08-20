@@ -188,6 +188,22 @@ if _IN_BLENDER:
          "twenty golden rhombohedra for the rhombic triacontahedron"),
     ]
 
+    COLORINGS = [
+        ('NONE', "None", "One material, or none at all"),
+        ('ZONES', "Zone Pair",
+         "Every face of a zonohedron lies in the plane of exactly two "
+         "zones, so colouring by that pair shows the zone structure the "
+         "solid is built from. On a zonish polyhedron the seed's own "
+         "faces belong to no zone pair and take a colour of their own"),
+        ('SIDES', "Face Size",
+         "One material per edge count, as in Hart's coloured models -- "
+         "most telling on a zonish solid, where the seed's odd-sided "
+         "faces sit among the centrally symmetric ones the zones add"),
+        ('BLOCK', "Block",
+         "Dissection only: one material per zone triple, so blocks of "
+         "the same shape and orientation match"),
+    ]
+
     SOURCES = [
         ('VERTS', "Vertices", "One zone per vertex direction"),
         ('FACES', "Face Normals", "One zone per face normal"),
@@ -233,6 +249,22 @@ if _IN_BLENDER:
         F = [[idx[v] for v in f.verts] for f in bm.faces]
         bm.free()
         return V, F
+
+    def _centrally_symmetric(V, f, tol=1e-6):
+        """Does this face have a centre of symmetry?  True exactly when
+        it has an even number of sides and every edge is matched by the
+        opposite one, reversed."""
+        m = len(f)
+        if m < 4 or m % 2:
+            return False
+        h = m // 2
+        for k in range(h):
+            e1 = zt._sub(V[f[(k + 1) % m]], V[f[k]])
+            e2 = zt._sub(V[f[(k + h + 1) % m]], V[f[(k + h) % m]])
+            if zt._norm(zt._add(e1, e2)) > tol * max(1.0, zt._norm(e1)):
+                return False
+        return True
+
 
     def _mesh_from(name, V, F):
         me = bpy.data.meshes.new(name)
@@ -288,11 +320,9 @@ if _IN_BLENDER:
             description="Push the dissection's blocks out along their own "
                         "centres, opening the solid up to show how it is "
                         "built")
-        color: BoolProperty(
-            name="Colours", default=True,
-            description="Colour the dissection's blocks by the zone triple "
-                        "that generated each one, so blocks of the same "
-                        "shape and orientation match")
+        color: EnumProperty(
+            name="Colour By", items=COLORINGS, default='NONE',
+            description="What the face colours mean")
         separate: BoolProperty(
             name="Separate Blocks", default=False,
             description="One object per block instead of a single mesh")
@@ -314,7 +344,9 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
             V = _fit.fit_cube(V, 2.0 * self.scale)
-            obj = _shell.apply(self, context, V, F, name)
+            mats, midx = self._shell_colors(V, F)
+            obj = _shell.apply(self, context, V, F, name,
+                               materials=mats, material_index=midx)
             if obj is None:
                 self.report({'INFO'}, f"{len(F)} face segments")
             else:
@@ -330,7 +362,8 @@ if _IN_BLENDER:
             blocks = [([next(it) for _ in V], F, k, t)
                       for V, F, k, t in blocks]
             mats = []
-            if self.color:
+            want = self.color != 'NONE'
+            if want:
                 triples = sorted({t for _V, _F, _k, t in blocks})
                 order = {t: i for i, t in enumerate(triples)}
                 mats = [_material(f"Zone Block {i}",
@@ -340,7 +373,7 @@ if _IN_BLENDER:
             if self.separate:
                 for i, (V, F, kind, t) in enumerate(blocks):
                     me = _mesh_from(f"Block {i}", V, F)
-                    if self.color:
+                    if want:
                         me.materials.append(mats[order[t]])
                     made.append(bpy.data.objects.new(f"Block {i}", me))
             else:
@@ -350,11 +383,11 @@ if _IN_BLENDER:
                     off = len(V)
                     V += Vb
                     F += [[i + off for i in f] for f in Fb]
-                    mat_of += [order[t] if self.color else 0] * len(Fb)
+                    mat_of += [order[t] if want else 0] * len(Fb)
                 me = _mesh_from("Dissection", V, F)
                 for m in mats:
                     me.materials.append(m)
-                if self.color and me.materials:
+                if want and me.materials:
                     me.polygons.foreach_set('material_index', mat_of)
                     me.update()
                 made.append(bpy.data.objects.new("Dissection", me))
@@ -371,6 +404,64 @@ if _IN_BLENDER:
                         f"{len(blocks)} blocks ({acute} acute, {flat} flat)")
             return {'FINISHED'}
 
+        def _shell_colors(self, V, F):
+            """Materials and a per-face index for the two shell modes.
+
+            ZONES needs to know which pair of zones spans each face. In
+            ZONOHEDRON mode the engine hands that over directly; in
+            ZONISH the faces come out of a convex hull, so a face is
+            matched to a zone pair by its NORMAL -- a zone face's normal
+            is the cross product of its two zones, and any face that
+            matches nothing is one of the seed's own, which is exactly
+            the distinction worth seeing on a zonish solid.
+            """
+            if self.color in ('NONE', 'BLOCK'):
+                return [], None
+            keys = []
+            if self.color == 'SIDES':
+                keys = [len(f) for f in F]
+            else:
+                star = seed_star(self.seed, self.source)
+                if self.mode == 'ZONOHEDRON':
+                    keys = zt.zonotope_labels(star)
+                else:
+                    pairs = []
+                    for i in range(len(star)):
+                        for j in range(i + 1, len(star)):
+                            nx = zt._cross(star[i], star[j])
+                            if zt._norm(nx) > 1e-9:
+                                pairs.append((zt._unit(nx), (i, j)))
+                    for f in F:
+                        # Hart's own characterisation: on a zonish solid
+                        # every face that is NOT the seed's is centrally
+                        # symmetric and part of a zone.  Testing that
+                        # first matters -- a seed face's normal can line
+                        # up with some pair's cross product by symmetry
+                        # alone (a cross of two 5-fold axes falls on a
+                        # 2-fold one), and matching on the normal by
+                        # itself scattered the seed's faces across thirty
+                        # colours instead of leaving them one family.
+                        if not _centrally_symmetric(V, f):
+                            keys.append('seed')
+                            continue
+                        a, b, c = V[f[0]], V[f[1]], V[f[2]]
+                        nx = zt._unit(zt._cross(zt._sub(b, a),
+                                                zt._sub(c, a)))
+                        hit = None
+                        for u, key in pairs:
+                            if zt._norm(zt._cross(u, nx)) < 1e-6:
+                                hit = key
+                                break
+                        keys.append(hit if hit is not None else 'seed')
+            order, mats = {}, []
+            for k in keys:
+                if k not in order:
+                    order[k] = len(order)
+                    mats.append(_material(f"Zone Face {len(order) - 1}",
+                                          _PALETTE[(len(order) - 1)
+                                                   % len(_PALETTE)]))
+            return mats, [order[k] for k in keys]
+
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
@@ -379,9 +470,9 @@ if _IN_BLENDER:
             lay.prop(self, 'source')
             if self.mode == 'ZONISH':
                 lay.prop(self, 'length')
+            lay.prop(self, 'color')
             if self.mode == 'DISSECTION':
                 lay.prop(self, 'explode')
-                lay.prop(self, 'color')
                 lay.prop(self, 'separate')
             else:
                 # the dissection is already an assembly of solid blocks;

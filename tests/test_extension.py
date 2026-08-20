@@ -622,7 +622,11 @@ OPS = [
     ("zonish polyhedron", lambda: bpy.ops.mesh.zonish_add(
         mode='ZONISH', seed='ID', length=0.4)),
     ("rhombohedral dissection", lambda: bpy.ops.mesh.zonish_add(
-        mode='DISSECTION', seed='ICOSA', explode=0.3)),
+        mode='DISSECTION', seed='ICOSA', explode=0.3, color='BLOCK')),
+    ("zonohedron by zone pair", lambda: bpy.ops.mesh.zonish_add(
+        color='ZONES')),
+    ("zonish by face size", lambda: bpy.ops.mesh.zonish_add(
+        mode='ZONISH', seed='ID', length=0.4, color='SIDES')),
     ("relaxed bubble", lambda: bpy.ops.mesh.relaxed_bubble_add()),
     ("cmc capillary", lambda: bpy.ops.mesh.cmc_capillary_add()),
     ("bryant surface", lambda: bpy.ops.mesh.bryant_surface_add()),

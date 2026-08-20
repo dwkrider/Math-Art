@@ -304,6 +304,29 @@ def _weld(polys, tol=1e-6):
     return V, F
 
 
+def zonotope_labels(star, tol=1e-7):
+    """The zone pair spanning each face, in the order `zonotope` emits.
+
+    Every face of a zonohedron lies in the plane of exactly two zones
+    (more when zones are coplanar, in which case the bundle's first two
+    name it), so this is the natural thing to colour a zonohedron by: it
+    shows the zone structure the solid is made of.
+    """
+    out = []
+    n = len(star)
+    for i, j in combinations(range(n), 2):
+        nrm = _cross(star[i], star[j])
+        if _norm(nrm) < tol:
+            continue
+        nrm = _unit(nrm)
+        coplanar = [l for l in range(n) if abs(_dot(nrm, star[l])) <= tol]
+        if (i, j) != (coplanar[0], coplanar[1]):
+            continue
+        out.append((i, j))                 # the +n face
+        out.append((i, j))                 # and its antipode
+    return out
+
+
 def zonotope(star, center=True, tol=1e-7):
     """The zonohedron of `star`, as (V, F)."""
     faces = zonotope_faces(star, tol)
@@ -518,6 +541,16 @@ def _selftest():
                 a, b = f[k], f[(k + 1) % len(f)]
                 E.add((min(a, b), max(a, b)))
         assert len(V) - len(E) + len(F) == 2, (len(V), len(E), len(F))
+
+    # labels line up with the faces, one zone pair each
+    for st in (rd_star, tri_star, polar_star(8, 55.0)):
+        V, F = zonotope(st)
+        lab = zonotope_labels(st)
+        assert len(lab) == len(F), (len(lab), len(F))
+        assert all(0 <= a < len(st) and 0 <= b < len(st) for a, b in lab)
+        # each pair appears exactly twice -- a face and its antipode
+        from collections import Counter
+        assert set(Counter(lab).values()) == {2}, Counter(lab).most_common(3)
 
     # --- coplanar bundles open the rhombi into 2m-gons -----------------
     # three coplanar vectors plus one off-plane: the plane's face is a

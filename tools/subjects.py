@@ -40,7 +40,7 @@ PARAMS = {
     # polyhedron whose faces are colour-coded by the block behind them,
     # which is the point; exploded it reads as debris at 64 px.
     "mesh.zonish_add": dict(mode='DISSECTION', seed='ICOSA',
-                            explode=0.0, color=True),
+                            explode=0.0, color='BLOCK'),
     # Halfway is the whole point of the operator -- either end
     # is just a solid we already ship.  The cuboctahedron reads
     # clearly at icon size and its dual is the rhombic
