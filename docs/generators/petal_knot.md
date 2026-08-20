@@ -6,7 +6,9 @@ Add a petal (petaluma) knot: 2k+1 petals around a single
 multi-crossing, the knot type given by the permutation of
 strand heights through the centre.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **petal projection** is a knot diagram with exactly **one** crossing point — every strand passes through the same spot, and the cord loops away from it in petals arranged like a daisy. Colin Adams and collaborators showed that *every* knot has such a projection; the fewest petals it needs is its **petal number**.
+
+The consequence is startling. With all the crossings collapsed into a single point, the only information left is the order in which the strands stack there — so a knot is completely determined by one permutation of $\{1,\dots,2k+1\}$. The whole of knot theory, for that diagram, compresses into a list of integers.
 
 ## Options
 
@@ -53,7 +55,23 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The shadow.** The flat diagram is a rose curve
+
+$$r=\cos(N\theta),\qquad \theta\in[0,\pi),\qquad N=2k+1 \text{ odd},$$
+
+whose $N$ petals are equally spaced, and whose $N$ passes through the origin run along straight lines at angles $(2j+1)\pi/(2N)$. The odd $N$ is essential: an even one would trace each petal twice.
+
+**One cord, not several.** The traversal visits the petal tips with angular stride $(N+1)/2$. That stride is always coprime to $N$, so stepping repeatedly reaches every petal before returning to the start, and the shadow is a **single** closed cord rather than several interlinked ones.
+
+**Lifting into space.** A flat rose is not a knot — all $N$ strands meet at the origin. Each pass is therefore lifted to its own height by the permutation, using the profile
+
+$$z=h_j\,\sin^2(N\theta),$$
+
+which rises to $h_j\propto \mathrm{perm}[j]$ at the centre and returns to the base plane at every petal tip. Because $\sin^2$ has zero derivative there, the lifted curve is $C^1$ — the strands rejoin smoothly rather than kinking. Distinct heights make the curve embedded, and its shadow is exactly the petal diagram.
+
+**Why the permutation is the knot.** In an ordinary diagram, each crossing independently records which strand is on top. Here there is only one crossing point, so the entire over/under structure is the single stacking order at that point. Change the permutation and you change the knot; nothing else in the construction carries any information.
+
+The supplied permutations were derived and verified for this exact geometry — the lifted curve is projected along a generic tilted direction and the resulting knot identified, rather than assumed from the permutation alone.
 
 ## References
 

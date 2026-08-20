@@ -5,7 +5,9 @@
 Add a tight knot: the braid-table seed relaxed under the
 self-avoiding tangent-point energy (knot type provably kept).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **tight knot** is the shape a knot settles into when you pull a rope of fixed thickness as taut as it will go. Every knot has such an *ideal* form, and it is a genuine geometric invariant — the trefoil has a definite tight length, a definite shape, and a definite ropelength, independent of how you first tied it.
+
+Reaching it is the hard part, and this generator does it honestly: it minimises the **tangent-point energy**, which diverges as the rope approaches touching itself. That divergence is the guarantee — the flow physically cannot push one strand through another, so the knot type is preserved throughout. A tangled unknot relaxes all the way back to a round circle; a trefoil never can.
 
 ## Options
 
@@ -116,7 +118,19 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The energy.** The curve is driven downhill in the **tangent-point energy**, which penalises pairs of points that are close in space but far apart along the curve. It is built from the radius of the sphere tangent to the curve at one point and passing through another: as two strands approach contact that radius goes to zero and the energy to infinity.
+
+That blow-up is the whole design. A gradient flow cannot cross an infinite barrier, so no strand can pass through another and the knot type is an invariant of the flow, not something checked afterwards. The seed comes from the braid table and relaxes to the canonical tight shape; a deliberately tangled unknot such as the braid $abaBcBC$ untangles all the way to a round circle, which is the visible proof that the flow is doing topology and not merely smoothing.
+
+**Constraints.** The flow runs under fixed **length** and fixed **barycentre** — without them the cheapest way to reduce the energy is to shrink the curve to a point or drift it away.
+
+**Preconditioning.** A naive gradient step on a curve energy is dominated by the stiffest, shortest-wavelength modes, so the flow crawls. The descent is therefore preconditioned by a **fractional Sobolev ($H^s$)** inner product, which rescales the gradient so that all wavelengths move at comparable rates. This is what makes the relaxation converge in a practical number of steps rather than thousands.
+
+**Thickness.** The rope radius can be set from the measured **Gonzalez–Maddocks thickness** of the relaxed curve — the largest radius at which the tube remains embedded. Sweeping at exactly that radius renders the maximal-thickness rope of the tight shape, which is what "ideal knot" means.
+
+**Relation to the fast path.** The [prime knot](prime_knot.md) generator's smoothing-plus-repulsion relaxer remains available as a quick preview. It is faster but offers no topological guarantee; this is the version that cannot change the knot.
+
+For multi-component curves see [Tight Link](tight_link.md), which adds inter-component terms and asserts the pairwise linking numbers unchanged.
 
 ## References
 

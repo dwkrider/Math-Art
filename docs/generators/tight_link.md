@@ -6,7 +6,9 @@ Add a tight link: several closed components relaxed under
 the multi-component tangent-point energy (linking numbers
 provably kept; components cannot pass through each other).
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+The multi-component counterpart of the [tight knot](tight_knot.md): several closed ropes, each of fixed length, pulled taut against one another until the whole link reaches its ideal shape. The Hopf link tightens into two perpendicular stadium-shaped loops; the Borromean rings into a form with no two components touching in a way that could be pulled apart.
+
+The same tangent-point energy does the work, and the same guarantee applies — the energy diverges as any two strands approach, so components cannot pass through each other, and the link type survives the flow.
 
 ## Options
 
@@ -46,7 +48,15 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+The machinery is the [tight knot](tight_knot.md)'s — tangent-point energy, fixed length and barycentre, fractional Sobolev preconditioning — extended in three ways that a link needs and a knot does not.
+
+**Inter-component terms.** The energy is summed over pairs of points on *different* components as well as on the same one. Those cross terms are what keep two rings from sliding through one another; without them each component would tighten happily and independently, and the link would fall apart.
+
+**Per-component length.** Each component keeps its **own** length constraint. A single global constraint would let the flow pay for tightening one ring by feeding rope to it from another, which changes the link's proportions rather than tightening it.
+
+**Verified invariants.** The pairwise **linking numbers** are computed and asserted unchanged across the flow. The energy barrier should make a crossing impossible; checking the linking numbers is how that is confirmed rather than assumed, since a large enough time step could in principle jump the barrier.
+
+**Solver.** Above roughly 400 total samples the flow switches to a **lagged-factorization** solver, which reuses the preconditioner's factorisation across several steps instead of rebuilding it each time. It was measured against the exact dense path before being trusted.
 
 ## References
 

@@ -4,7 +4,9 @@
 
 Add a Fathauer iterative-substitution fractal knot.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **fractal knot** built the way Robert Fathauer devised it (Bridges 2007): draw a knot so that some of the gaps in its diagram are similar in shape to the whole diagram, then replace the strand's passage through each gap with a shrunken copy of the entire knot — and repeat.
+
+Because every copy brings its own gaps, the process never terminates. The limit has infinitely many crossings, which makes it a **wild** knot: not equivalent to any diagram with finitely many crossings, and so outside ordinary knot theory altogether. It is a knot within a knot within a knot, and unlike most fractal constructions it stays a single unbroken cord throughout.
 
 ## Options
 
@@ -45,7 +47,22 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**The base motifs.** The starting diagrams are the standard star projections of the $(2,p)$ torus knots for odd $p$ — the trefoil $3_1$ and the cinquefoil $5_1$ — drawn as the polar curve
+
+$$r = R + a\cos\!\big(\tfrac{p\,\theta}{2}\big),\qquad \theta\in[0,4\pi).$$
+
+The $4\pi$ range is the point: with $p$ odd the curve does **not** close after one turn, and only after two does it return to its start. The result is a single unicursal strand with $p$ lobes and $p$ alternating crossings.
+
+**Substitution slots.** Certain gaps in that diagram are similar in shape to the diagram as a whole. Each is treated as a slot: the strand's straight passage through it is deleted and replaced by a scaled-down copy of the entire knot — rotated or reflected as the slot requires — with the copy's two free ends spliced into the parent strand. Iterating substitutes into every slot of every copy.
+
+**Two invariants the construction must preserve**, and they are what make the method work rather than merely look recursive:
+
+- The diagram stays **valence-4**: every crossing has exactly four strand-ends meeting, because a copy is scaled to fit *inside* its slot and so its crossings never collide with the parent's.
+- The diagram stays **alternating**: over and under strictly alternate along the strand. The splice joins the copy's ends to the parent so that the alternation carries through the join, which is what keeps the whole limit a consistent weave rather than a diagram with an arbitrary crossing pattern.
+
+**Why it is wild.** Each substitution multiplies the crossing number, so after $n$ iterations the diagram has on the order of $p^{\,n}$ crossings. The limit has infinitely many and cannot be reduced to a finite diagram — the defining property of a wild knot, and the same phenomenon as [Antoine's necklace](antoine.md) arriving from the other direction.
+
+The [fractal knot](fractal_knot.md) generator reaches a similar coiled, self-similar family by a different route — cabling in 3-space rather than substituting in the plane.
 
 ## References
 

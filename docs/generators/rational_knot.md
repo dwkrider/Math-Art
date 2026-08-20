@@ -5,7 +5,9 @@
 Add a rational (2-bridge), pretzel or twist knot as a
 woven over/under diagram -- rope tube mesh or curve.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+**Rational knots** — also called 2-bridge knots — are the best-understood family in knot theory, and they are classified by a fraction. John Conway's tangle calculus builds each one from a continued fraction of half-twists, and **Schubert's theorem** says that the resulting knot $K(p/q)$ is determined precisely by $p/q$: two continued fractions give the same knot exactly when their fractions agree (up to a standard equivalence). A knot, reduced to a rational number.
+
+**Pretzel knots** are the sibling family, made by hanging several twisted strands side by side. Between them these account for most of the knots in the small tables, and their diagrams are drawn here as genuine over/under knotwork rather than as flat line art.
 
 ## Options
 
@@ -52,7 +54,19 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Growing a rational tangle.** Start from the trivial 0-tangle and read the continued fraction $[a_1,\dots,a_n]$ left to right. Entry $a_i$ adds $|a_i|$ signed half-twists, appended as a **horizontal** twist region on the right when $i$ is odd and a **vertical** one at the bottom when $i$ is even — Conway's alternating construction. The convention here is
+
+$$\frac{p}{q}=a_n+\cfrac{1}{a_{n-1}+\cfrac{1}{\ddots+\cfrac{1}{a_1}}},$$
+
+so $[3]\to 3/1$ is the trefoil, $[2,2]\to 5/2$ the figure-eight, and $[3,2]\to 7/3$ the knot $5_2$.
+
+**Closing it up.** The finished tangle has four loose ends. It is closed with the **numerator** closure (NW to NE above, SW to SE below) when the sequence ended on a horizontal region, and the **denominator** closure (NW–SW, NE–SE) when it ended on a vertical one. Matching the closure to the parity is what makes both cases realise the same $K(p/q)$. By Schubert's theorem the result is a knot when $p$ is odd and a two-component link when $p$ is even.
+
+**The other two families.** A **pretzel** link $P(p_1,\dots,p_n)$ hangs $n$ vertical twist regions side by side, region $i$ carrying $p_i$ half-twists, joined along the top and bottom by return arcs. A **twist knot** $C(n,2)$ is one twist region closed by a two-crossing clasp — realised here as the rational tangle $[n,2]$ with fraction $(2n+1)/n$, giving the trefoil, figure-eight, $5_2$, the stevedore $6_1$, $7_2$ and onward as $n$ increases.
+
+**Why no crossing solver is needed.** Within a twist region the two strands swap once per half-twist, and the sign of the entry fixes which strand goes over. A twist region of constant sign is therefore automatically **alternating** along each strand, so an all-positive continued fraction — or an all-positive pretzel — produces the classical alternating diagram, which the self-test checks. Every over/under bit follows deterministically from the twist signs; there is no global consistency problem to solve, unlike in a general knot diagram.
+
+That bit is realised geometrically as a $z$ offset smoothstepped along each strand between crossings — the same weave the [knot carpet](knot_carpet.md) uses — and the tube mesh reuses its proximity-welded, rotation-minimising sweep.
 
 ## References
 

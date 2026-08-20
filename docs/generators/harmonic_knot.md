@@ -5,7 +5,9 @@
 Add a harmonic knot -- a Lissajous, Fourier, Chebyshev
 or cube-billiard curve -- as a curve or tube mesh.
 
-<!-- TODO: what the shape is, who devised it, why it is interesting. Two or three sentences. -->
+A **harmonic knot** is a closed space curve whose three coordinates are each a pure oscillation — sines, cosines, or polynomials in them. The remarkable fact is that such simple ingredients suffice: every knot can be written this way, and the different harmonic families each capture the whole of knot theory from a different direction.
+
+The most striking members are the **Lissajous knots** (Bogle, Hearst, Jones and Stoilov, 1994) — the 3-D analogue of the oscilloscope figures — and the **billiard knots**, which are the trajectory of a ball bouncing forever inside a cube. Those two turn out to be exactly the same family, which is not obvious from either description.
 
 ## Options
 
@@ -50,7 +52,27 @@ Renders of each selectable option:
 
 ## How it works
 
-<!-- TODO: the construction, with the equations that matter. Pull the mathematics from the module header and the project's docs/ notes rather than reconstructing it. -->
+**Lissajous.** Each coordinate is a single cosine:
+
+$$\big(\cos(n_x t+\phi_x),\ \cos(n_y t+\phi_y),\ \cos(n_z t+\phi_z)\big),\qquad t\in[0,2\pi)$$
+
+with the frequencies $n_x,n_y,n_z$ **pairwise coprime** — if two shared a factor the curve would close early and retrace itself rather than forming a single strand. The phases decide which knot appears.
+
+**Fourier.** Generalise each coordinate to a finite sum of cosines. Allowing one extra harmonic in $z$ gives the *Fourier-(1,1,2)* knots, and Hoste proved that **every torus knot** is one of them. The built-in preset realises the $(2,3)$ trefoil this way; its phases were fitted numerically, and the module's self-test verifies the resulting knot type by computing its determinant rather than trusting the fit.
+
+**Chebyshev.** Polynomial arcs in the Chebyshev polynomials of the first kind,
+
+$$\big(T_a(s),\ T_b(s),\ T_c(s+\phi)\big),$$
+
+closed by a single bridging arc routed above the diagram. **Every** knot arises this way. And these are the harmonics again in disguise, because
+
+$$T_n(\cos t)=\cos(nt),$$
+
+so on $[-1,1]$ a Chebyshev knot is a Lissajous curve reparametrised — the polynomial and trigonometric families are two views of one thing.
+
+**Billiard.** Replace every cosine by the **triangle wave** of the same frequency and phase. The result is exactly the path of a billiard ball bouncing inside a cube, reflecting off each wall forever. Billiard knots in a cube are precisely the Lissajous knots: rounding the corners of the triangle wave into a cosine deforms the trajectory without ever passing a strand through another, so the knot type is unchanged.
+
+**Output.** As with the [torus knots](torus_knot.md), the curve can be emitted as a Bézier, poly or NURBS curve, or swept into a tube mesh.
 
 ## References
 
