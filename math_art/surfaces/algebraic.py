@@ -691,6 +691,118 @@ for _key, _label, _shape, _clip, _fn in _RECORD:
     PRESETS[_key] = (_label, _fn, _shape, _clip)
 
 
+# ======================================================================
+# Named implicit surfaces from the 3D-XplorMath / Virtual Math Museum
+# ======================================================================
+# Compact level sets chosen for their TOPOLOGY: each is a thickened tube
+# around a curve or a union of curves, so the genus is the point of the
+# surface rather than a by-product.  Unlike everything above they are
+# levels f = ff, not zero sets, so `ff` is a real parameter -- pushing
+# it up eventually fattens the tube until the holes close and the genus
+# collapses.
+#
+# `_selftest` measures the genus of every row from the meshed Euler
+# characteristic and compares it against the value the source documents.
+# That is a much sharper gate than "it meshed": it is the defining
+# property of these surfaces, it is sensitive to both the formula and
+# the level, and it is what would break first if either were wrong.
+#
+# References:
+# - 3DXM Consortium, "Functions with compact levels in 3D-XplorMath",
+#   virtualmathmuseum.org/docs/ImplicitCompact.pdf -- the formulas and
+#   the default parameters used here.  A converted copy is in
+#   research/papers/algebraic-surfaces/vmm-implicit-surfaces-compact/.
+# - H. Karcher and R. Palais, 3D-XplorMath / Virtual Math Museum
+#   surface gallery, virtualmathmuseum.org/Surface/.
+#
+# One correction to the source, deliberate: the reference calls
+# Orthocircles "a genus 5 tube around three intersecting orthogonal
+# circles".  It is genus 7.  Three unit circles, one per coordinate
+# plane, meet pairwise in 2 points, so the graph they form has V = 6 and
+# E = 12 (each circle carries 4 of the points and is cut into 4 arcs),
+# giving first Betti number E - V + 1 = 7; a tube around it has that
+# genus.  The mesh measures 7, so the gate below expects 7 and the
+# source's 5 is taken to be a slip.
+
+
+def _f_vmm_pretzel(x, y, z, mu):
+    # f := h^2 + (1+cc) z^2,  h the quotient of the two circle factors
+    cc = 1.0
+    num = ((x - cc) ** 2 + y * y - 1.0) * ((x + cc) ** 2 + y * y - 1.0)
+    h = num / (1.0 + (1.0 + cc) * (x * x + y * y))
+    return h * h + (1.0 + cc) * z * z - 0.05
+
+
+def _f_vmm_bretzel2(x, y, z, mu):
+    # genus 2 tube around a figure eight; genus 0 for large ff
+    bb = 1.0
+    num = ((1.0 - x * x) * x * x - y * y) ** 2 + z * z / 2.0
+    return num / (1.0 + bb * (x * x + y * y + z * z)) - 0.025
+
+
+def _f_vmm_bretzel5(x, y, z, mu):
+    # genus 5 tube around two intersecting ellipses
+    return (((x * x + y * y / 4.0 - 1.0)
+             * (x * x / 4.0 + y * y - 1.0)) ** 2
+            + z * z / 2.0 - 0.075)
+
+
+def _f_vmm_pilz(x, y, z, mu):
+    # genus 3 tube around a circle and an orthogonal ellipse
+    aa, bb, cc, dd = 1.0, 1.0, 0.03, 0.28
+    return (((x * x + y * y - 1.0) ** 2 + (z - 0.5) ** 2)
+            * ((y * y / (aa * aa) + (z + cc) ** 2 - 1.0) ** 2 + x * x)
+            - dd * dd * (1.0 + bb * (z - 0.5) ** 2))
+
+
+def _f_vmm_orthocircles(x, y, z, mu):
+    # tube around the three unit circles of the coordinate planes
+    aa, ff = 1.0, 0.05
+    return (((x * x / aa + y * y - 1.0) ** 2 + z * z)
+            * ((y * y / aa + z * z - 1.0) ** 2 + x * x)
+            * ((z * z / aa + x * x - 1.0) ** 2 + y * y) - ff)
+
+
+def _f_vmm_decocube(x, y, z, mu):
+    # tube around six circles of radius cc on the faces of a cube
+    cc, ff = 0.8, 0.02
+    c2 = cc * cc
+    return (((x * x + y * y - c2) ** 2 + (z * z - 1.0) ** 2)
+            * ((y * y + z * z - c2) ** 2 + (x * x - 1.0) ** 2)
+            * ((z * z + x * x - c2) ** 2 + (y * y - 1.0) ** 2) - ff)
+
+
+def _f_vmm_join2tori(x, y, z, mu):
+    # two tori joined by a handle; below ff ~ 0.1 they come apart again
+    aa, bb, cc, ff = 1.0, 0.35, 1.1, 0.2
+    r2 = y * y + z * z
+    tor_r = ((x - cc) ** 2 + r2 - aa * aa - bb * bb) ** 2 \
+        + 4.0 * aa * aa * (z * z - bb * bb)
+    tor_l = ((x + cc) ** 2 + r2 - aa * aa - bb * bb) ** 2 \
+        + 4.0 * aa * aa * (z * z - bb * bb)
+    den = 1.0 + (x - cc) ** 2 + (x + cc) ** 2 + y * y + z * z / 2.0
+    return tor_r * tor_l / den - ff
+
+
+# (key, label, documented genus, clip shape, clip, F)
+_NAMED = (
+    ('VMM_PRETZEL', "Pretzel", 2, 'BOX', 3.0, _f_vmm_pretzel),
+    ('VMM_BRETZEL2', "Bretzel2", 2, 'BOX', 1.6, _f_vmm_bretzel2),
+    ('VMM_BRETZEL5', "Bretzel5", 5, 'BOX', 2.6, _f_vmm_bretzel5),
+    ('VMM_PILZ', "Pilz Surface", 3, 'BOX', 2.0, _f_vmm_pilz),
+    ('VMM_ORTHOCIRCLES', "Orthocircles", 7, 'BOX', 1.6,
+     _f_vmm_orthocircles),
+    ('VMM_DECOCUBE', "Deco-Cube", 13, 'BOX', 1.6, _f_vmm_decocube),
+    ('VMM_JOIN2TORI', "Join of Two Tori", 2, 'BOX', 3.0,
+     _f_vmm_join2tori),
+)
+
+NAMED_GENUS = {k: g for (k, _l, g, _s, _c, _f) in _NAMED}
+
+for _key, _label, _g, _shape, _clip, _fn in _NAMED:
+    PRESETS[_key] = (_label, _fn, _shape, _clip)
+
+
 # Which family each preset belongs to.  The operator turns this into a
 # Family dropdown that filters the Surface list: an 80-entry flat enum
 # is unusable, and the families are how the sources group them anyway.
@@ -698,6 +810,7 @@ FAMILIES = (
     ('CLASSICAL', "Classical"),
     ('HAUSER', "Hauser Gallery"),
     ('RECORD', "Record Nodal Surfaces"),
+    ('NAMED', "Named Implicit Surfaces"),
 )
 
 SURFACE_FAMILY = {k: 'CLASSICAL' for k in
@@ -705,6 +818,7 @@ SURFACE_FAMILY = {k: 'CLASSICAL' for k in
                    'HEART', 'DINGDONG', 'CHMUTOV', 'TANGLE', 'MONKEY')}
 SURFACE_FAMILY.update({k: 'HAUSER' for (k, _l, _e, _s, _c, _f) in _HAUSER})
 SURFACE_FAMILY.update({k: 'RECORD' for (k, _l, _s, _c, _f) in _RECORD})
+SURFACE_FAMILY.update({k: 'NAMED' for (k, _l, _g, _s, _c, _f) in _NAMED})
 
 
 def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3):
@@ -826,6 +940,44 @@ def _selftest():
     ok &= good
     print("algebraic: Labs alpha = %.10f vs published -0.14010685 %s"
           % (_LABS_ALPHA, 'OK' if good else 'FAIL'))
+
+    # These are tubes around curves, so the genus IS the surface.  Check
+    # it from the meshed Euler characteristic rather than trusting the
+    # level: too large an ff fattens the tube until holes close and the
+    # genus silently drops (the source documents exactly that for
+    # Bretzel2), which no other gate here would notice.
+    def _genus(V, T):
+        e = np.concatenate([T[:, [0, 1]], T[:, [1, 2]], T[:, [2, 0]]])
+        e = np.sort(e, axis=1)
+        u, cnt = np.unique(e, axis=0, return_counts=True)
+        if int((cnt != 2).sum()):
+            return None                      # not closed; genus undefined
+        parent = list(range(len(V)))
+
+        def find(a):
+            while parent[a] != a:
+                parent[a] = parent[parent[a]]
+                a = parent[a]
+            return a
+
+        for a, b in u:
+            ra, rb = find(int(a)), find(int(b))
+            if ra != rb:
+                parent[ra] = rb
+        comps = len({find(i) for i in range(len(V))})
+        chi = len(V) - len(u) + len(T)
+        return (2 * comps - chi) // 2
+
+    wrong = []
+    for key, want in NAMED_GENUS.items():
+        Vg, Tg = build_algebraic(key, 96)
+        got = _genus(Vg, Tg) if len(Tg) else None
+        if got != want:
+            wrong.append('%s:%s!=%d' % (key, got, want))
+    ok &= not wrong
+    print("algebraic: %d named implicit surfaces have their documented "
+          "genus %s" % (len(NAMED_GENUS),
+                        'OK' if not wrong else 'FAIL ' + ','.join(wrong)))
 
     orphan = sorted(set(PRESETS) - set(SURFACE_FAMILY))
     fams = {f for f, _ in FAMILIES}
