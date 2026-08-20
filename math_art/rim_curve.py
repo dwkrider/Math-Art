@@ -21,7 +21,8 @@ import numpy as np
 
 try:
     import bpy
-    from bpy.props import BoolProperty, FloatProperty, IntProperty
+    from bpy.props import (BoolProperty, EnumProperty,
+                           FloatProperty, IntProperty)
     _IN_BLENDER = True
 except ImportError:
     _IN_BLENDER = False
@@ -59,24 +60,16 @@ def _edges_of(faces):
     return np.sort(e, axis=1)
 
 
-def boundary_loops(verts, faces, smooth=RIM_SMOOTH_DEFAULT):
-    """Ordered polylines along the open edge of a mesh.
+def boundary_index_loops(faces):
+    """The rim as chains of VERTEX INDICES, before any smoothing.
 
-    Edges used by exactly one face are the boundary.  Chaining them
-    assumes nothing about manifoldness: several surfaces here are
-    deliberately singular (the algebraic Kreuz is three planes), so a
-    rim vertex can carry four boundary edges rather than two.  The walk
-    consumes unused edges greedily and returns whatever chains it finds,
-    open or closed.
+    Separate from `boundary_loops` because a caller that wants to
+    refresh an existing curve after the mesh moves needs the indices,
+    not the positions -- the Seifert generator does exactly that after
+    it minimises a surface.
 
-    `smooth` Taubin passes run over each polyline before it is
-    returned; without them the swept tube reproduces the staircase
-    faithfully, which defeats the purpose, and with a shrinking
-    smoother it would leave the edge instead.
-
-    Returns a list of (points, closed) with points an (n, 3) array.
+    Returns a list of (index array, closed).
     """
-    V = np.asarray(verts, dtype=float)
     e = _edges_of(faces)
     if not len(e):
         return []
@@ -123,7 +116,28 @@ def boundary_loops(verts, faces, smooth=RIM_SMOOTH_DEFAULT):
         if closed:
             chain = chain[:-1]
         chains.append((np.asarray(chain, dtype=np.int64), closed))
+    return chains
 
+
+def boundary_loops(verts, faces, smooth=RIM_SMOOTH_DEFAULT):
+    """Ordered polylines along the open edge of a mesh.
+
+    Edges used by exactly one face are the boundary.  Chaining them
+    assumes nothing about manifoldness: several surfaces here are
+    deliberately singular (the algebraic Kreuz is three planes), so a
+    rim vertex can carry four boundary edges rather than two.  The walk
+    consumes unused edges greedily and returns whatever chains it finds,
+    open or closed.
+
+    `smooth` Taubin passes run over each polyline before it is
+    returned; without them the swept tube reproduces the staircase
+    faithfully, which defeats the purpose, and with a shrinking
+    smoother it would leave the edge instead.
+
+    Returns a list of (points, closed) with points an (n, 3) array.
+    """
+    V = np.asarray(verts, dtype=float)
+    chains = boundary_index_loops(faces)
     out = []
     for idx, closed in chains:
         out.append((_taubin(V[idx], closed, int(smooth)), closed))
@@ -219,15 +233,46 @@ if _IN_BLENDER:
                         "on the edge however many passes you use; 0 "
                         "follows the sample grid exactly")
 
+    def rim_profile_prop():
+        return EnumProperty(
+            name="Rim Profile",
+            items=[('ROUND', "Circular",
+                    "Round tube -- the curve's own bevel depth"),
+                   ('SQUARE', "Square",
+                    "Square tube, swept from a four-point bevel "
+                    "object that is created alongside and hidden")],
+            default='ROUND',
+            description="Cross-section swept along the rim")
+
+    def _square_bevel(name, half):
+        """A closed square used as a curve's bevel object.
+
+        Blender sweeps a round tube from `bevel_depth` alone, but any
+        other cross-section has to be an actual curve object, so one is
+        made per rim and hidden.  It is parented to the rim so deleting
+        the surface takes the whole assembly with it.
+        """
+        cu = bpy.data.curves.new(name, 'CURVE')
+        cu.dimensions = '2D'
+        sp = cu.splines.new('POLY')
+        sp.points.add(3)
+        for i, (x, y) in enumerate(((-half, -half), (half, -half),
+                                    (half, half), (-half, half))):
+            sp.points[i].co = (x, y, 0.0, 1.0)
+        sp.use_cyclic_u = True
+        return bpy.data.objects.new(name, cu)
+
     def draw_rim(layout, op):
         """The three controls, shown only when the rim is on."""
         layout.prop(op, 'rim')
         if getattr(op, 'rim', False):
             layout.prop(op, 'rim_thickness')
+            if hasattr(op, 'rim_profile'):
+                layout.prop(op, 'rim_profile')
             layout.prop(op, 'rim_smooth')
 
     def add_rim_curve(context, obj, label, verts, faces, thickness=None,
-                      smooth=None):
+                      smooth=None, profile='ROUND'):
         """Sweep a bevelled curve along the mesh's open edge.
 
         Parented to `obj` so the pair moves as one.  Returns the number
@@ -243,9 +288,18 @@ if _IN_BLENDER:
         cu = bpy.data.curves.new(label + " Rim", 'CURVE')
         cu.dimensions = '3D'
         cu.fill_mode = 'FULL'
-        cu.bevel_depth = float(thickness)
-        cu.bevel_resolution = 4
         cu.use_fill_caps = True
+        if profile == 'SQUARE':
+            bev = _square_bevel(label + " Rim Profile", float(thickness))
+            context.collection.objects.link(bev)
+            bev.hide_viewport = True
+            bev.hide_render = True
+            cu.bevel_mode = 'OBJECT'
+            cu.bevel_object = bev
+        else:
+            bev = None
+            cu.bevel_depth = float(thickness)
+            cu.bevel_resolution = 4
         # BEZIER with AUTO handles, not POLY: the handles round the
         # corners between samples without moving the samples, so the
         # curve still passes exactly through the rim it was built from.
@@ -267,10 +321,12 @@ if _IN_BLENDER:
         rim.matrix_world = obj.matrix_world.copy()
         rim.parent = obj
         rim.matrix_parent_inverse = obj.matrix_world.inverted()
+        if bev is not None:
+            bev.parent = rim
         return len(loops)
 
     def add_rim_from_object(context, obj, label, thickness=None,
-                            smooth=None):
+                            smooth=None, profile=None):
         """Same, reading the geometry back off an existing mesh object.
 
         For generators that build their object through a path this
@@ -283,8 +339,10 @@ if _IN_BLENDER:
             return 0
         verts = [tuple(v.co) for v in me.vertices]
         faces = [tuple(p.vertices) for p in me.polygons]
+        if profile is None:
+            profile = 'ROUND'
         return add_rim_curve(context, obj, label, verts, faces,
-                             thickness, smooth)
+                             thickness, smooth, profile)
 
 
 def _selftest():

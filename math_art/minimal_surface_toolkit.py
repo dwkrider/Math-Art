@@ -354,6 +354,7 @@ if _IN_BLENDER:
         rim: _rim.rim_prop()
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
 
         family: EnumProperty(
             name="Family",
@@ -440,7 +441,8 @@ if _IN_BLENDER:
                 if _ob is not None:
                     _rim.add_rim_from_object(
                         context, _ob, _ob.name,
-                        self.rim_thickness, self.rim_smooth)
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -477,6 +479,7 @@ if _IN_BLENDER:
         rim: _rim.rim_prop()
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
 
         surface: EnumProperty(
             name="Surface",
@@ -525,7 +528,8 @@ if _IN_BLENDER:
                 if _ob is not None:
                     _rim.add_rim_from_object(
                         context, _ob, _ob.name,
-                        self.rim_thickness, self.rim_smooth)
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -547,6 +551,7 @@ if _IN_BLENDER:
         rim: _rim.rim_prop()
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
 
         periodicity: EnumProperty(
             name="Periodicity",
@@ -701,7 +706,8 @@ if _IN_BLENDER:
                     if _ob is not None:
                         _rim.add_rim_from_object(
                             context, _ob, _ob.name,
-                            self.rim_thickness, self.rim_smooth)
+                            self.rim_thickness, self.rim_smooth,
+                        self.rim_profile)
                 return {'FINISHED'}
             if surf in TPMS:
                 cxyz = (cu, cv, cw)
@@ -723,7 +729,8 @@ if _IN_BLENDER:
                     if _ob is not None:
                         _rim.add_rim_from_object(
                             context, _ob, _ob.name,
-                            self.rim_thickness, self.rim_smooth)
+                            self.rim_thickness, self.rim_smooth,
+                        self.rim_profile)
                 return {'FINISHED'}
             if surf not in PARAMETRIC:
                 self.report({'ERROR'}, f"Unknown surface '{surf}'")
@@ -757,7 +764,8 @@ if _IN_BLENDER:
                 if _ob is not None:
                     _rim.add_rim_from_object(
                         context, _ob, _ob.name,
-                        self.rim_thickness, self.rim_smooth)
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -826,6 +834,7 @@ if _IN_BLENDER:
         rim: _rim.rim_prop()
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
 
         samples: IntProperty(
             name="Boundary Samples", default=128, min=16, max=512)
@@ -892,7 +901,8 @@ if _IN_BLENDER:
                 if _ob is not None:
                     _rim.add_rim_from_object(
                         context, _ob, _ob.name,
-                        self.rim_thickness, self.rim_smooth)
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -911,6 +921,7 @@ if _IN_BLENDER:
         rim: _rim.rim_prop()
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
 
         p: IntProperty(name="Knot p", default=2, min=1, max=8)
         q: IntProperty(
@@ -1050,7 +1061,8 @@ if _IN_BLENDER:
                     if _ob is not None:
                         _rim.add_rim_from_object(
                             context, _ob, _ob.name,
-                            self.rim_thickness, self.rim_smooth)
+                            self.rim_thickness, self.rim_smooth,
+                        self.rim_profile)
                 return {'FINISHED'}
             if (self.span_topology == 'SEIFERT' and self.outer_q == 0
                     and self.p > 1):
@@ -1141,7 +1153,8 @@ if _IN_BLENDER:
                     if _ob is not None:
                         _rim.add_rim_from_object(
                             context, _ob, _ob.name,
-                            self.rim_thickness, self.rim_smooth)
+                            self.rim_thickness, self.rim_smooth,
+                        self.rim_profile)
                 return {'FINISHED'}
             if self.output_nurbs:
                 G = fair_grid_columns(V.reshape(self.rings + 1, m, 3))
@@ -1159,7 +1172,8 @@ if _IN_BLENDER:
                 if _ob is not None:
                     _rim.add_rim_from_object(
                         context, _ob, _ob.name,
-                        self.rim_thickness, self.rim_smooth)
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile)
             return {'FINISHED'}
 
         def draw(self, context):

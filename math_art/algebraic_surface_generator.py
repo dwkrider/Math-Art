@@ -196,37 +196,6 @@ if _IN_BLENDER:
             self.resolution = res
 
 
-    def _add_rim_curve(context, obj, label, verts, tris, thickness,
-                       smooth):
-        """Sweep a bevelled curve along the surface's open edge.
-
-        Parented to the surface so the pair moves as one.  Returns the
-        number of rim loops found -- zero for a closed surface, which
-        is not an error: a cyclide or a Hauser tube simply has no edge.
-        """
-        loops = boundary_loops(verts, tris, smooth=smooth)
-        if not loops:
-            return 0
-        cu = bpy.data.curves.new(label + " Rim", 'CURVE')
-        cu.dimensions = '3D'
-        cu.fill_mode = 'FULL'
-        cu.bevel_depth = float(thickness)
-        cu.bevel_resolution = 4
-        cu.use_fill_caps = True
-        for pts, closed in loops:
-            sp = cu.splines.new('POLY')
-            sp.points.add(len(pts) - 1)
-            for i, q in enumerate(pts):
-                sp.points[i].co = (float(q[0]), float(q[1]),
-                                   float(q[2]), 1.0)
-            sp.use_cyclic_u = bool(closed)
-        rim = bpy.data.objects.new(label + " Rim", cu)
-        context.collection.objects.link(rim)
-        rim.matrix_world = obj.matrix_world.copy()
-        rim.parent = obj
-        rim.matrix_parent_inverse = obj.matrix_world.inverted()
-        return len(loops)
-
     class MESH_OT_algebraic_surface_add(bpy.types.Operator):
         """Add a classical algebraic surface (implicit level set
         meshed by marching tetrahedra). Pick a Family, then a Preset
@@ -277,6 +246,7 @@ if _IN_BLENDER:
         rim: _rim.rim_prop()
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
 
         def execute(self, context):
             # belt and braces against a stale enum index: the
@@ -303,9 +273,10 @@ if _IN_BLENDER:
             me = obj.data
             nrim = 0
             if self.rim:
-                nrim = _add_rim_curve(
+                nrim = _rim.add_rim_curve(
                     context, obj, label, verts, tris,
-                    self.rim_thickness, self.rim_smooth)
+                    self.rim_thickness, self.rim_smooth,
+                    self.rim_profile)
             self.report({'INFO'},
                         f"{label}: {len(me.vertices)} verts, "
                         f"{len(me.polygons)} faces"

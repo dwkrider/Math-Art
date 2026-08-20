@@ -270,6 +270,7 @@ if _IN_BLENDER:
         rim: _rim.rim_prop()
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
 
         def draw(self, context):
             lay = self.layout

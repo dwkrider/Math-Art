@@ -184,6 +184,7 @@ if _IN_BLENDER:
         rim: _rim.rim_prop()
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
 
         surface: EnumProperty(
             name="Surface", items=_SURFACES,
@@ -279,7 +280,8 @@ if _IN_BLENDER:
                 if _ob is not None:
                     _rim.add_rim_from_object(
                         context, _ob, _ob.name,
-                        self.rim_thickness, self.rim_smooth)
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile)
             return {'FINISHED'}
 
         def draw(self, context):
