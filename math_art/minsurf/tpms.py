@@ -735,10 +735,15 @@ def build_tpms(kind, cells, res_per_cell, scale, offset=0.0, aspect=1.0):
 # _pgd_tile_cell docstrings in weierstrass.
 
 from . import weierstrass as _we_pgd
+from . import hexagonal as _we_hex
 
 # key -> (menu label, builder(cells, res_per_cell, scale, theta))
 TPMS_EXACT = {
     'PGD': ("Schwarz P-Gyroid-D (exact, Bonnet angle)", _we_pgd.pgd_build),
+    # Schwarz H has no published nodal formula at all -- it is the one
+    # row here that could not have been reached any other way, so it is
+    # exact-Weierstrass or nothing.
+    'H': ("Schwarz H (exact, hexagonal)", _we_hex.h_build),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
