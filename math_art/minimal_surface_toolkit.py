@@ -420,8 +420,12 @@ if _IN_BLENDER:
                         "taking the dual; without it the boundary "
                         "cells are eaten away")
         even_thickness: BoolProperty(
-            name="Even Thickness", default=True,
-            description="Maintain strut thickness at sharp corners")
+            name="Even Thickness", default=False,
+            description="Maintain strut width at sharp corners. Off by "
+                        "default: the correction grows without bound as "
+                        "a corner gets more acute, so at larger Strut "
+                        "Thickness it shoots spikes out of the sliver "
+                        "cells along an open rim")
 
         def execute(self, context):
             # When the Family changes, the dynamic Surface enum is

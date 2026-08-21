@@ -61,12 +61,28 @@
 # Canonical names of the operator properties this style reads, with the
 # defaults an adopting generator should declare.  Keeping every
 # generator on the same names is what lets `apply_from` work.
+#
+# `even_thickness` defaults OFF deliberately.  Wireframe's even offset
+# scales as 1/sin(theta/2), so it explodes at acute corners -- and an
+# open surface's rim is exactly where the dual leaves sliver cells with
+# acute corners.  Measured on a catenoid-helicoid, the furthest a strut
+# vertex strays from the surface it should hug:
+#
+#     even offset ON    1.6t (t=0.03) -> 3.0t (0.06) -> 4.1t (0.09)
+#     even offset OFF   0.4t          -> 0.4t        -> 0.4t
+#
+# and with the rounding Subdivision switched off the ON case reaches
+# 11.7t: long needles shooting out of the rim.  The OFF case is flat in
+# t, so struts stay put at any thickness and the only cost is slightly
+# pinched width at sharp corners.  (Welding the sliver cells away first
+# was tried and is not a fix -- it is erratic, and at some thresholds
+# makes the spikes worse before destroying the lattice.)
 PROPS = (
     ("cell_size", 0.12),
     ("strut_thickness", 0.03),
     ("smoothing", 1),
     ("keep_boundaries", True),
-    ("even_thickness", True),
+    ("even_thickness", False),
 )
 
 _GROUP_NAME = "Math Art Dual Mesh"
@@ -117,7 +133,7 @@ def dual_node_group():
 
 
 def apply(obj, cell_size=0.12, strut_thickness=0.03, smoothing=1,
-          keep_boundaries=True, even_thickness=True, triangulate=True,
+          keep_boundaries=True, even_thickness=False, triangulate=True,
           scale=1.0, prefix="Lattice"):
     """Build the live cell-lattice modifier stack on `obj`.
 
