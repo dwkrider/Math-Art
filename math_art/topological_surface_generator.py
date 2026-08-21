@@ -236,6 +236,12 @@ if _IN_BLENDER:
             description="Number of cross-caps: N_k has Euler "
                         "characteristic 2 - k. 1 = projective plane, "
                         "2 = Klein bottle, 3 = Dyck's surface")
+        cap_size: FloatProperty(
+            name="Cross-Cap Size", default=0.0, min=0.0, max=1.2,
+            description="Radius of the disk each cross-cap replaces; "
+                        "0 sizes it from k, large for one cap and "
+                        "small enough to keep several clear of one "
+                        "another")
         cap_pinch: FloatProperty(
             name="Cross-Cap Pinch", default=0.55, min=0.0, max=1.5,
             description="How far each cross-cap is lifted over its "
@@ -282,7 +288,8 @@ if _IN_BLENDER:
             elif p == 'NONORIENT':
                 V, F = build_nonorientable(
                     self.cross_caps, max(16, self.res_u),
-                    max(8, self.res_v // 2), pinch=self.cap_pinch)
+                    max(8, self.res_v // 2), hole=self.cap_size,
+                    pinch=self.cap_pinch)
                 name = f"Non-Orientable N{self.cross_caps}"
             elif p == 'GENUS':
                 cell = 8.0 / max(self.res_u, 16)
@@ -317,6 +324,7 @@ if _IN_BLENDER:
             p = self.preset
             if p == 'NONORIENT':
                 lay.prop(self, 'cross_caps')
+                lay.prop(self, 'cap_size')
                 lay.prop(self, 'cap_pinch')
                 lay.prop(self, 'res_u')
                 lay.prop(self, 'res_v')

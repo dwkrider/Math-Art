@@ -259,7 +259,7 @@ def build_genus(genus, cell=0.125):
     return mst.marching_tets(field, bmin, bmax, res)
 
 
-def build_nonorientable(k=3, segments=64, rings=32, hole=0.30,
+def build_nonorientable(k=3, segments=64, rings=32, hole=0.0,
                         pinch=0.55):
     """The closed non-orientable surface N_k of genus k, as an
     immersion: a sphere carrying k cross-caps.
@@ -293,6 +293,14 @@ def build_nonorientable(k=3, segments=64, rings=32, hole=0.30,
     import numpy as np
 
     k = max(1, int(k))
+    # How big each cross-cap should be.  A fixed radius makes N_1 read
+    # as a sphere with a dent rather than as the projective plane: with
+    # one cross-cap the cap IS the surface's whole character and should
+    # dominate, while with six they must stay clear of one another.
+    # Adjacent centres sit 2 sin(pi/k) apart on the equator, so that
+    # sets the ceiling; 0.9 is the free choice when there is only one.
+    if hole <= 0.0:
+        hole = 0.95 if k == 1 else min(0.95, 0.80 * math.sin(math.pi / k))
     m = max(3, int(segments) // 2)          # half the hole's boundary
     nseg, nring = int(segments), int(rings)
 
