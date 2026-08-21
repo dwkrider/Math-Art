@@ -179,10 +179,15 @@ _J = [
      ('cup', 5), 0),
     (31, "Pentagonal Gyrobicupola (J31)", ('cup', 5), None,
      ('cup', 5), 1),
+    # NB the twist that means "ortho" for a bicupola means "gyro" for a
+    # cupola-ROTUNDA pair: a rotunda's decagonal rim alternates triangle /
+    # pentagon where a cupola's alternates triangle / square, so the two rims
+    # line up half a step apart.  J32/J33 and J40/J41 therefore carry the
+    # opposite twist to J30/J31 and J38/J39.
     (32, "Pentagonal Orthocupolarotunda (J32)", ('rot',), None,
-     ('cup', 5), 0),
-    (33, "Pentagonal Gyrocupolarotunda (J33)", ('rot',), None,
      ('cup', 5), 1),
+    (33, "Pentagonal Gyrocupolarotunda (J33)", ('rot',), None,
+     ('cup', 5), 0),
     (34, "Pentagonal Orthobirotunda (J34)", ('rot',), None,
      ('rot',), 0),
     (35, "Elongated Triangular Orthobicupola (J35)", ('cup', 3),
@@ -196,9 +201,9 @@ _J = [
     (39, "Elongated Pentagonal Gyrobicupola (J39)", ('cup', 5),
      'prism', ('cup', 5), 1),
     (40, "Elongated Pentagonal Orthocupolarotunda (J40)", ('rot',),
-     'prism', ('cup', 5), 0),
+     'prism', ('cup', 5), 1),          # see the J32/J33 note above
     (41, "Elongated Pentagonal Gyrocupolarotunda (J41)", ('rot',),
-     'prism', ('cup', 5), 1),
+     'prism', ('cup', 5), 0),
     (42, "Elongated Pentagonal Orthobirotunda (J42)", ('rot',),
      'prism', ('rot',), 0),
     (43, "Elongated Pentagonal Gyrobirotunda (J43)", ('rot',),
@@ -706,9 +711,41 @@ def _augment_cupola(V, F, fi, shift=0, edge=1.0):
     return V, NF
 
 
-def _augment_cupola_faces(V, F, idxs, shift=0):
+def _edge_neighbour_size(V, F, fi, k):
+    """Number of sides of the face across edge k of face fi."""
+    f = F[fi]
+    a, b = f[k % len(f)], f[(k + 1) % len(f)]
+    for j, g in enumerate(F):
+        if j == fi or a not in g or b not in g:
+            continue
+        m = len(g)
+        if any({g[t], g[(t + 1) % m]} == {a, b} for t in range(m)):
+            return m
+    return 0
+
+
+def _cupola_shift_for(V, F, fi):
+    """The shift that seats a cupola on face fi the way the Johnson solids do.
+
+    A truncated solid's 2n-gon has edges that ALTERNATE between a large
+    neighbour and a triangle; the cupola must land with its triangles over the
+    large-neighbour edges and its squares over the triangle edges.  Which
+    literal shift value achieves that depends on where the face's vertex list
+    happens to start, so it is measured here rather than assumed -- passing a
+    fixed shift is correct only by luck, and silently produces the wrong solid
+    for every face whose list starts on the other parity.
+    """
+    return 0 if (_edge_neighbour_size(V, F, fi, 0)
+                 >= _edge_neighbour_size(V, F, fi, 1)) else 1
+
+
+def _augment_cupola_faces(V, F, idxs, shift=None):
+    """Glue cupolas onto the given faces.  `shift=None` (the default) picks
+    each cupola's orientation from the base's local structure, which is what
+    keeps multi-augmentation correct."""
     for fi in sorted(idxs, reverse=True):
-        V, F = _augment_cupola(V, F, fi, shift=shift)
+        s = _cupola_shift_for(V, F, fi) if shift is None else shift
+        V, F = _augment_cupola(V, F, fi, shift=s)
     return V, F
 
 
@@ -1112,9 +1149,26 @@ def build_johnson_ext(num, scale=1.0):
         for i in dim_i:
             V, F = _diminish_cap(V, F, _find_face_by_dir(V, F, dirs[i], 5))
         for i in gyr_i:
-            V, F = _diminish_cap(V, F, _find_face_by_dir(V, F, dirs[i], 5))
+            # Gyrating means re-gluing the cupola in the OTHER of its two
+            # orientations.  `_augment_cupola`'s `shift` counts ring steps
+            # from the decagon's first listed vertex, and that starting
+            # vertex is arbitrary -- it moves when an earlier cap is
+            # diminished -- so a hard-coded shift gyrates for some solids and
+            # silently restores the original for others.  Decide it by
+            # geometry instead: remember where the cap's pentagon was, and
+            # take whichever shift does not put it back there.
+            fi5 = _find_face_by_dir(V, F, dirs[i], 5)
+            before = {tuple(round(c, 6) for c in V[k]) for k in F[fi5]}
+            V, F = _diminish_cap(V, F, fi5)
             di = _find_face_by_dir(V, F, dirs[i], 10)
-            V, F = _augment_cupola(V, F, di, shift=1)
+            for _sh in (0, 1):
+                V2, F2 = _augment_cupola(V, F, di, shift=_sh)
+                after = {tuple(round(c, 6) for c in V2[k]) for k in F2[-1]}
+                if after != before:
+                    V, F = V2, F2
+                    break
+            else:                       # both orientations coincide: impossible
+                raise ValueError(f"J{num}: cupola gyration had no effect")
     else:
         raise ValueError(f"J{num} not available")
     cen = [sum(v[c] for v in V) / len(V) for c in range(3)]
@@ -2281,8 +2335,17 @@ def _selftest():
                 a, b = f[i], f[(i + 1) % len(f)]
                 e2[(min(a, b), max(a, b))].append(len(f))
         return sum(1 for s in e2.values() if s == [3, 3])
+    # Triangle-triangle contacts across the join distinguish ortho from gyro
+    # -- but the sense REVERSES between a bicupola and a cupolarotunda, and
+    # assuming otherwise is what made J32/J33 come out swapped.  A cupola's rim
+    # alternates triangle/square, a rotunda's triangle/pentagon, so "ortho"
+    # there seats triangles against pentagons and leaves NO triangle pair.
+    # Confirmed independently by two sources: netlib's Johnson records give
+    # J32 the vertex figure (3.4.3.5) -- alternating, no adjacent triangles --
+    # against J33's (3^2.4.5); and D. McCooey's tables give the same
+    # face-contact counts.
     for num, expect in ((27, True), (28, True), (29, False),
-                        (32, True), (33, False), (34, True)):
+                        (32, False), (33, True), (34, True)):
         has = titi(num) > 0
         ok = has == expect
         print(f"J{num} tri-tri contacts={has} (expect {expect}) "
