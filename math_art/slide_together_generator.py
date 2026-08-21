@@ -109,11 +109,11 @@ def _unit(a):
 MODELS = [
     ('T20', "20 Triangles", 'U30TRI', 3, 1, 1.00, 0.0),
     ('S30', "30 Squares", 'U38SQ', 4, 1, 1.00, 0.0),
-    ('P12', "12 Pentagons", 'DODECA', 5, 1, 1.38, 20.0),
+    ('P12', "12 Pentagons", 'U54PEN', 5, 1, 1.00, 0.0),
     ('D12', "12 Decagons", 'U33DEC', 10, 1, 1.00, 0.0),
-    ('H20', "20 Hexagons", 'ICOSA', 6, 1, 0.59, 10.0),
-    ('SD12', "12 Star Decagons {10/3}", 'DODECA', 10, 3, 1.30, 9.0),
-    ('PG12', "12 Pentagrams", 'DODECA', 5, 2, 1.20, 20.0),
+    ('H20', "20 Hexagons", 'U50HEX', 6, 1, 1.00, 0.0),
+    ('SD12', "12 Star Decagons {10/3}", 'U73DEC', 10, 3, 1.00, 0.0),
+    ('PG12', "12 Pentagrams", 'U54PEN', 5, 2, 1.00, 0.0),
 ]
 
 _MODEL = {m[0]: m for m in MODELS}
@@ -194,7 +194,16 @@ def uniform_face_frames(wythoff, pqr, sides):
             continue
         P = [tuple(c / R for c in V[i]) for i in f]
         cen = [sum(p[k] for p in P) / float(sides) for k in range(3)]
-        nrm = _unit(_cross(_sub(P[1], P[0]), _sub(P[2], P[0])))
+        # Newell rather than a single cross product: on a STAR circuit
+        # three consecutive vertices can be nearly collinear and the
+        # cross product then points anywhere.
+        nx = [0.0, 0.0, 0.0]
+        for k in range(sides):
+            a, b = P[k], P[(k + 1) % sides]
+            nx[0] += (a[1] - b[1]) * (a[2] + b[2])
+            nx[1] += (a[2] - b[2]) * (a[0] + b[0])
+            nx[2] += (a[0] - b[0]) * (a[1] + b[1])
+        nrm = _unit(nx)
         if _dot(nrm, cen) < 0:
             nrm = _mul(nrm, -1.0)
         out.append((nrm, cen, _unit(_sub(P[0], cen)),
@@ -228,7 +237,29 @@ FACE_SOURCES = {
     # + 12 decagons, and the decagons agree to the last digit -- plane
     # distance 0.689152, circumradius 0.724617.  U33 is used here.
     'U33DEC': ('3/2 5 | 5', ['3/2', '5', '5'], 10),
+    # "This is part of the small dodecicosahedron and the small icosic
+    # icosidodecahedron" -- U50 (20 hexagons + 12 decagons) and U31
+    # (20 triangles + 12 pentagons + 20 hexagons).  Both carry 20
+    # hexagons, as he says.
+    'U50HEX': ('3/2 3 5 |', ['3/2', '3', '5'], 6),
+    # "a subset of the faces of the great rhombidodecahedron and the
+    # great dodecicosidodecahedron" -- U73 (30 squares + 12 decagrams)
+    # and U61 (20 triangles + 12 pentagons + 12 decagrams).
+    'U73DEC': ('3/2 5/3 2 |', ['3/2', '5/3', '2'], 10),
+    # "part of the great dodecahemidodecahedron and the great
+    # icosidodecahedron" -- U54 is 20 triangles + 12 pentagrams.
+    'U54PEN': ('2 | 3 5/2', ['2', '3', '5/2'], 5),
 }
+
+# The TWELVE PENTAGONS are the only model Hart names no solid for -- he
+# says just "a close cousin is this one, made of twelve regular
+# pentagons".  His own X3D model settles it: its panels lie at plane
+# distance 0.5258 of the circumradius, which is exactly where the
+# PENTAGRAM model's panels lie (0.525731, U54).  A regular pentagon and a
+# pentagram share a plane and a circumradius, so the two models use the
+# same twelve planes and the same twelve positions, drawn convex in one
+# and starred in the other.  That is the "close cousin", literally.  So
+# P12 and PG12 share a face source and differ only in the density d.
 
 
 def u38_square_frames():
@@ -726,6 +757,31 @@ def _verify_five_cubes_edges():
     return len(te)
 
 
+#: plane distance of each model's panels, as a fraction of the
+#: circumradius, MEASURED OFF HART'S OWN MODELS.  His site's VRML files
+#: are gone (the vrml/ directory 404s), but the earlier X3D exports
+#: survive as slider-0 .. slider-6, and every panel plane in them agrees
+#: with the source solid used here to five decimals.  These are the
+#: numbers that decide whether a placement is right; the crossing counts
+#: beside them do not, since several wrong placements also give uniform
+#: crossings.
+HART_PLANE_DISTANCE = {
+    'T20': 0.7454, 'S30': 0.8452, 'P12': 0.5258, 'D12': 0.6891,
+    'H20': 0.8140, 'SD12': 0.5067, 'PG12': 0.5257,
+}
+
+
+def _verify_against_hart():
+    """Every model's panel plane must sit where Hart's own model puts it."""
+    bad = []
+    for key, want in HART_PLANE_DISTANCE.items():
+        got = _plane_offset(_MODEL[key][2])
+        if abs(got - want) > 2e-3:
+            bad.append((key, got, want))
+    assert not bad, ('panel planes disagree with Hart', bad)
+    return len(HART_PLANE_DISTANCE)
+
+
 def _selftest():
     want_panels = {'T20': 20, 'S30': 30, 'P12': 12, 'D12': 12,
                    'H20': 20, 'SD12': 12, 'PG12': 12}
@@ -765,7 +821,11 @@ def _selftest():
         assert len(deg) == want_panels[key],             (key, "a panel crosses nothing", len(deg))
         assert min(deg.values()) >= 3, (key, "a panel is barely held",
                                         sorted(deg.values())[:3])
-        assert max(deg.values()) <= 9,             (key, "panels saw through far too many neighbours",
+        # 10 because that is what Hart's own star-decagon model does --
+        # twelve large {10/3} panels each crossing ten of the other
+        # eleven.  The old cap of 9 was fitted to the earlier, wrong
+        # placement and would now reject the correct one.
+        assert max(deg.values()) <= 10,             (key, "panels saw through far too many neighbours",
              sorted(deg.values())[-3:])
 
         # No panel outline may cross itself.  This is the check that
@@ -798,6 +858,9 @@ def _selftest():
             assert k not in seen, (key, "two panels share a plane")
             seen.add(k)
 
+    nh = _verify_against_hart()
+    print("PLANES  all %d models sit at Hart's own panel-plane distances"
+          % nh)
     n = _verify_five_cubes_edges()
     print("T20  %d triangle edges congruent to the compound of five "
           "cubes (Hart's check)" % n)
