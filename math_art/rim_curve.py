@@ -38,6 +38,10 @@ except ImportError:
 RIM_THICKNESS_DEFAULT = 0.01
 RIM_SMOOTH_DEFAULT = 3
 
+# How deep the C's mouth and the H's slots are cut, as a fraction of the
+# section's OVERALL width (not of the half-width).
+RIM_INDENT = 0.25
+
 
 def _edges_of(faces):
     """(n, 2) array of sorted vertex pairs, one row per face corner.
@@ -367,8 +371,15 @@ def profile_points(half, kind, twist=0.0):
     rims are used at.
     """
     h = float(half)
-    w = 0.5 * h                              # wall / flange
-    c = 0.5 * w                              # half the cross-bar
+    # `half` is the half-width, so the section is 2h across.  The
+    # INDENTATION -- how deep the channel's mouth is bitten out of the C,
+    # and how deep the slots are cut into the H -- is a quarter of that
+    # overall width.  The earlier version cut three quarters of the way
+    # through, which left a C that was mostly mouth and read as a thin
+    # bent strip rather than a channel.
+    d = RIM_INDENT * (2.0 * h)               # indentation depth
+    w = 0.5 * h                              # arm / upright thickness
+    c = h - d                                # half the H's cross-bar
     if kind == 'C':
         # Square with a bite out of the -X side.
         #
@@ -381,8 +392,8 @@ def profile_points(half, kind, twist=0.0):
         # what this option is for, so the section follows the render and
         # this note follows the discrepancy: something between the
         # conormal and the eye reverses, and it has not been run down.
-        pts = ((h, -h), (-h, -h), (-h, -h + w), (h - w, -h + w),
-               (h - w, h - w), (-h, h - w), (-h, h), (h, h))
+        pts = ((h, -h), (-h, -h), (-h, -h + w), (-h + d, -h + w),
+               (-h + d, h - w), (-h, h - w), (-h, h), (h, h))
     elif kind == 'H':
         # two uprights joined by a cross-bar, so the openings face
         # +Y and -Y -- along the surface normal, above and below it
@@ -1179,7 +1190,10 @@ def _selftest():
         S2 = np.stack([rel[i] @ X[i], rel[i] @ Y[i]], axis=1)
         cxs.append(section_centroid(S2)[0])
     off = np.array(cxs) / 0.05
-    good = float(np.min(off)) > 0.1
+    # a shallower mouth removes less material, so the centroid sits
+    # nearer the middle than it did when the bite went three quarters
+    # of the way through -- the SIGN is the property being gated
+    good = float(np.min(off)) > 0.03
     ok &= good
     print("rim_curve: swept C spine sits %.3f thicknesses to +conormal "
           "(worst %.3f) %s"
