@@ -356,6 +356,14 @@ if _IN_BLENDER:
         surface: EnumProperty(
             name="Surface",
             items=_surface_items)
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "The surface itself, as a "
+                                      "continuous sheet"),
+                   ('LATTICE', "Cell Lattice",
+                    "A sparse openwork net of struts along the cells "
+                    "of the surface's dual, as a live modifier stack")],
+            default='SOLID')
         output: EnumProperty(
             name="Output",
             items=[('MESH', "Mesh", "Dense polygon mesh"),
@@ -392,6 +400,28 @@ if _IN_BLENDER:
             name="Scale", default=1.0, min=0.01, max=100.0,
             description="Multiplier on the normalized size (1.0 = a 2 m "
                         "cube, centered on the origin)")
+        # Cell Lattice style -- the canonical names cell_lattice.PROPS
+        # declares, so styles.cell_lattice.apply_from picks them up.
+        cell_size: FloatProperty(
+            name="Cell Size", default=0.12, min=0.005, max=1.0,
+            description="Fraction of the surface's triangles kept "
+                        "before taking the dual: lower leaves fewer, "
+                        "larger cells")
+        strut_thickness: FloatProperty(
+            name="Strut Thickness", default=0.03, min=0.001, max=1.0,
+            description="Thickness of the lattice struts, in the "
+                        "unscaled surface's units")
+        smoothing: IntProperty(
+            name="Smoothing", default=1, min=0, max=4,
+            description="Subdivision levels rounding the struts")
+        keep_boundaries: BoolProperty(
+            name="Keep Boundaries", default=True,
+            description="Keep the rim of an open surface intact when "
+                        "taking the dual; without it the boundary "
+                        "cells are eaten away")
+        even_thickness: BoolProperty(
+            name="Even Thickness", default=True,
+            description="Maintain strut thickness at sharp corners")
 
         def execute(self, context):
             # When the Family changes, the dynamic Surface enum is
@@ -406,8 +436,12 @@ if _IN_BLENDER:
             label = PARAMETRIC[surf][0]
             theta = (self.assoc_angle if surf in ANGLE_PARAM
                      else 0.0)
-            # some surfaces are assembled meshes with no NURBS/grid form
-            if self.output == 'NURBS' and surf not in MESH_PARAM:
+            # some surfaces are assembled meshes with no NURBS/grid form;
+            # the lattice is a modifier stack, so it needs the mesh form
+            # too -- a NURBS patch has no faces to take the dual of
+            lattice = self.style == 'LATTICE'
+            if self.output == 'NURBS' and not lattice \
+                    and surf not in MESH_PARAM:
                 G, wrap_u, wrap_v = build_parametric_grid(
                     surf, self.ctrl_u, self.ctrl_v,
                     self.order, self.radius, self.scale, theta)
@@ -424,9 +458,20 @@ if _IN_BLENDER:
                                        with_uv=True, cells=(self.storeys, 1))
                 V, quads = out[0], out[1]
                 cuv = out[2] if len(out) > 2 else None
-                _new_object(context, label, V, quads,
-                            weld=1e-5 * max(1.0, self.scale),
-                            loop_uv=cuv)
+                obj = _new_object(context, label, V, quads,
+                                  weld=1e-5 * max(1.0, self.scale),
+                                  loop_uv=cuv)
+                if lattice:
+                    try:
+                        from .styles import cell_lattice
+                    except ImportError:
+                        from styles import cell_lattice
+                    cell_lattice.apply_from(obj, self, scale=self.scale)
+                    self.report(
+                        {'INFO'},
+                        "cell lattice added as a live modifier stack; "
+                        "tune it in the modifier properties or apply "
+                        "to make it permanent")
             return {'FINISHED'}
 
         def draw(self, context):
@@ -434,10 +479,14 @@ if _IN_BLENDER:
             lay.use_property_split = True
             lay.prop(self, 'family')
             lay.prop(self, 'surface')
+            lay.prop(self, 'style')
+            lattice = self.style == 'LATTICE'
             mesh_only = self.surface in MESH_PARAM
-            if not mesh_only:
+            # NURBS has no faces to take a dual of, so the Output choice
+            # is meaningless while the lattice is on
+            if not mesh_only and not lattice:
                 lay.prop(self, 'output')
-            if self.output == 'NURBS' and not mesh_only:
+            if self.output == 'NURBS' and not lattice and not mesh_only:
                 lay.prop(self, 'ctrl_u')
                 lay.prop(self, 'ctrl_v')
             else:
@@ -453,6 +502,12 @@ if _IN_BLENDER:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
             lay.prop(self, 'scale')
+            if lattice:
+                try:
+                    from .styles import cell_lattice
+                except ImportError:
+                    from styles import cell_lattice
+                cell_lattice.draw_props(lay, self)
 
     class MESH_OT_tpms_add(bpy.types.Operator):
         """Add a triply-periodic minimal surface (nodal approximation)"""
