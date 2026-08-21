@@ -27,7 +27,8 @@ TAU = 2.0 * math.pi
 from . import weierstrass as _we
 from .domain import (_center_fit, _circularize_outer, _inliers,
                      _largest_component, _puncture_mask, _smooth_boundary,
-                     _torus_grid, area_cov, equal_area_resample)
+                     _torus_grid, area_cov, equal_area_resample,
+                     mesh_area_cov)
 
 # How finely the domain is sampled before equal-area resampling measures
 # the area element on it.  The measurement is only as good as the grid it
@@ -648,6 +649,41 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0,
 
 def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
                      with_uv=False, cells=(1, 1), equal_areas=False):
+    """Mesh (V, quads) for `kind` -- see `_build_parametric` for the full
+    contract.  This wrapper owns the equal-area DECISION.
+
+    Judging the resampling on the grid alone is not good enough: the rim
+    smoothing, circularization and welding that run afterwards move
+    boundary vertices, and equalizing thins the boundary bands so those
+    steps bite harder.  Measured on Catalan, a grid that equalized from
+    0.632 to 0.033 still delivered a mesh that was WORSE than the plain
+    one (0.708 against 0.631).  So when the option is on, build the
+    surface both ways and ship whichever mesh actually has the more even
+    faces.  The second build only happens for an opt-in flag."""
+    if not equal_areas:
+        return _build_parametric(kind, nu, nv, order, radius, scale, theta,
+                                 with_uv, cells, equal_areas=False)
+
+    global LAST_EQ_AREA_COV
+    out_eq = _build_parametric(kind, nu, nv, order, radius, scale, theta,
+                               with_uv, cells, equal_areas=True)
+    grid = LAST_EQ_AREA_COV
+    if grid is None or not grid[2]:
+        # never reached the grid seam, or already stood down there
+        return out_eq
+    out_pl = _build_parametric(kind, nu, nv, order, radius, scale, theta,
+                               with_uv, cells, equal_areas=False)
+    cov_eq = mesh_area_cov(out_eq[0], out_eq[1])
+    cov_pl = mesh_area_cov(out_pl[0], out_pl[1])
+    if cov_eq < cov_pl:
+        LAST_EQ_AREA_COV = (cov_pl, cov_eq, True)
+        return out_eq
+    LAST_EQ_AREA_COV = (cov_pl, cov_pl, False)
+    return out_pl
+
+
+def _build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
+                      with_uv=False, cells=(1, 1), equal_areas=False):
     """Mesh (V, quads) for `kind`; with_uv=True additionally returns a
     per-face-corner UV array (sum of face lengths, 2).  Minimal
     surfaces are conformally parametrized by their Weierstrass data,

@@ -388,6 +388,34 @@ def equal_area_resample(G, nu, nv, mask=None):
     return out, mask2, _cov_kept(G, mask), _cov_kept(out, mask2)
 
 
+def mesh_area_cov(V, faces):
+    """Area CoV over a finished (V, faces) mesh.
+
+    The grid CoV is the right measure of the resampling itself, but it is
+    NOT what ships: rim smoothing, circularization and welding all run
+    afterwards and move boundary vertices.  Equalizing thins the boundary
+    bands, which makes those steps bite harder, so a grid that equalized
+    beautifully can still deliver a worse mesh.  Judge the mesh."""
+    V = np.asarray(V, dtype=float)
+    if len(V) == 0 or not faces:
+        return 0.0
+    areas = []
+    for f in faces:
+        p = V[list(f)]
+        if len(p) < 3:
+            continue
+        a = 0.0
+        for i in range(1, len(p) - 1):
+            a += 0.5 * float(np.linalg.norm(
+                np.cross(p[i] - p[0], p[i + 1] - p[0])))
+        if np.isfinite(a) and a > 1e-14:
+            areas.append(a)
+    if len(areas) < 2:
+        return 0.0
+    areas = np.asarray(areas)
+    return float(areas.std() / areas.mean())
+
+
 def _cov_kept(G, mask):
     """Area CoV over cells whose four corners are finite and kept."""
     a = _cell_areas(G)
