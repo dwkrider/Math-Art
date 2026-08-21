@@ -85,6 +85,7 @@
     "convex": true,
     "self_dual": false,
     "dual": "pentagonal-icositetrahedron",
+    "coincident_vertices": 0,
     "vertex_density": 1,
     "convex_hull": {
       "is_self": true,
@@ -769,6 +770,11 @@
       "M. Wenninger, 'Polyhedron Models', Cambridge (1971), model 17."
     ],
     "cross_checked": [
+      {
+        "source": "mccooey",
+        "agrees": true,
+        "detail": "full match: radii dev 0.00e+00, distance dev 0.00e+00, dihedral dev 0.0e+00 deg (scale 1.000000)"
+      },
       {
         "source": "harel-1993",
         "agrees": true,

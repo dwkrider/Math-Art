@@ -71,6 +71,7 @@
     "convex": false,
     "self_dual": false,
     "dual": "snub-icosidodecadodecahedron",
+    "coincident_vertices": 0,
     "vertex_density": [
       1,
       1,
@@ -1669,7 +1670,13 @@
       "M. Wenninger, 'Dual Models', Cambridge (1983).",
       "Z. Har'El, 'Uniform Solution for Uniform Polyhedra', Geometriae Dedicata 47 (1993), 57-110 (dual names and prototiles)."
     ],
-    "cross_checked": [],
+    "cross_checked": [
+      {
+        "source": "mccooey",
+        "agrees": true,
+        "detail": "full match: radii dev 3.83e-10, distance dev 8.81e-10, dihedral dev 0.0e+00 deg (scale 0.990197)"
+      }
+    ],
     "verified": {
       "euler": true,
       "closed_manifold": true,

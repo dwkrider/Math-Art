@@ -175,6 +175,15 @@ def assemble(V, F, meta):
     # surface as a confusing failure at write time rather than at build time.
     V = [tuple(float(c) for c in v) for v in V]
     F = [[int(i) for i in f] for f in F]
+    # Merge coincident vertices. Polar reciprocation can emit the same point
+    # twice (two parent faces sharing a plane give one dual vertex), and a
+    # duplicated point makes the vertex->index map non-injective -- which
+    # silently defeats symmetry detection, collapsing icosahedral duals to the
+    # trivial group. A vertex table should not list the same point twice
+    # anyway.
+    _n_before = len(V)
+    V, F = ME.weld(V, F)
+    coincident = _n_before - len(V)
     V, mode = normalise(V, F)
     V = [tuple(_round(v)) for v in V]
     F, orientable = ME.orient(V, F)
@@ -347,12 +356,14 @@ def assemble(V, F, meta):
             "vertex_types": meta.get("vertex_types") or [],
             "euler_characteristic": chi,
             "orientable": meta.get("orientable", True),
-            "genus": ((2 - chi) // 2 if meta.get("orientable", True)
-                      and (2 - chi) % 2 == 0 else None),
+            "genus": (None if meta.get("compound") else
+                      ((2 - chi) // 2 if meta.get("orientable", True)
+                       and (2 - chi) % 2 == 0 else None)),
             "density": meta.get("density"),
             "convex": meta.get("convex", True),
             "self_dual": meta.get("self_dual", False),
             "dual": meta.get("dual"),
+            "coincident_vertices": coincident,
             "vertex_density": vertex_density,
             "convex_hull": convex_hull,
             "dual_unbounded": ME.has_central_face(V, F),
@@ -374,6 +385,7 @@ def assemble(V, F, meta):
         "face_groups": ME.face_groups(V, F, fg),
         "vertex_groups": {"symmetry_orbit": [list(g) for g in vg]},
         "edge_groups": {"symmetry_orbit": [list(g) for g in eg]},
+        "compound": meta.get("compound"),
         "space_filling": CU.space_filling_for(meta["slug"]),
         "construction": meta.get("construction", {}),
         "provenance": {
@@ -788,6 +800,95 @@ def build_prism_family(kind, n, dual, existing):
     return assemble(V, F, meta)
 
 
+# {p/q} bases for the star prism families.
+#
+# (5, 3) is deliberately ABSENT. As a polygon {5/3} is {5/2} traversed the
+# other way, so the {5/3} PRISM, dipyramid and trapezohedron are the same
+# solids as the {5/2} ones and would be duplicate records. The pentagrammic
+# CROSSED antiprism {5/3} genuinely is distinct -- Har'El's Table 4 gives it
+# density 3 against the {5/2} antiprism's 2 -- but
+# `uniform_polyhedra_generator.build_star_antiprism` currently returns
+# identical geometry for q = 2 and q = 3, so it cannot be built correctly.
+# Emitting it would mean shipping one shape under two names with two
+# different densities. See BACKLOG.
+STAR_PRISM_PQ = ((5, 2), (7, 2), (7, 3), (8, 3), (10, 3))
+
+
+def stage_star_prism(limit=None):
+    """Star prisms and antiprisms {p/q}, and their duals.
+
+    These are uniform polyhedra too -- the dihedral families with star bases --
+    and Skilling's compounds are built from them, so without these records
+    those compounds have components that link to nothing.
+    """
+    existing = set()
+    base = os.path.join(OUT, "solids")
+    for root, _d, files in os.walk(base):
+        for fn in files:
+            if fn.endswith(".json"):
+                existing.add(fn[:-5])
+
+    ORD = {5: "Pentagrammic", 7: "Heptagrammic", 8: "Octagrammic",
+           10: "Decagrammic"}
+    out = []
+    for (p, q) in STAR_PRISM_PQ[:limit]:
+        for kind in ("prism", "antiprism", "dipyramid", "trapezohedron"):
+            word = ORD.get(p)
+            if not word:
+                continue
+            crossed = " Crossed" if (kind == "antiprism" and 2 * q > p) else ""
+            name = "%s%s %s" % (word, crossed, kind.capitalize())
+            if q == 3 and p == 5 and kind == "antiprism":
+                name = "Pentagrammic Crossed Antiprism"
+            slug = slugify(name)
+            if slug in existing:
+                continue
+            try:
+                if kind == "prism":
+                    V, F = UP.build_star_prism(p, q)
+                elif kind == "antiprism":
+                    V, F = UP.build_star_antiprism(p, q)
+                elif kind == "dipyramid":
+                    V, F = UP.build_star_dipyramid(p, q)
+                else:
+                    V, F = UP.build_star_trapezohedron(p, q)
+            except Exception as exc:                        # noqa: BLE001
+                print("  FAIL %-40s %r" % (name[:40], exc))
+                continue
+            F = [list(f[0]) if isinstance(f, tuple) else list(f) for f in F]
+            meta = {
+                "slug": slug, "name": name,
+                "families": ["prism-family", "star", "uniform"],
+                "ids": {"uniform": None, "wenninger": None, "coxeter_clm": None,
+                        "mccooey": camel(name), "johnson": None, "netlib": None,
+                        "bowers": None, "wikipedia": None, "wolfram": None},
+                "notation": {"schlafli": "{%d/%d}" % (p, q), "wythoff": None,
+                             "coxeter_diagram": None, "conway": None,
+                             "vertex_configuration": [],
+                             "face_configuration": None},
+                "orientable": True, "density": q, "convex": False, "dual": None,
+                "orientation": "principal axis along z, centred at the centroid",
+                "construction": {"generator": "math_art.uniform_polyhedra_generator",
+                                 "operator_id": "mesh.star_prism_add",
+                                 "conway_from": None, "wythoff_from": None},
+                "coordinates": ("derived: uniform {%d/%d} star %s, via "
+                                "math_art.uniform_polyhedra_generator"
+                                % (p, q, kind)),
+                "sources": [
+                    "Z. Har'El, 'Uniform Solution for Uniform Polyhedra', "
+                    "Geometriae Dedicata 47 (1993), Appendix II Table 4 "
+                    "(the dihedral uniform polyhedra).",
+                    "H. S. M. Coxeter, 'Regular Polytopes', 3rd ed. (1973).",
+                ],
+            }
+            try:
+                out.append(assemble(V, F, meta))
+                existing.add(slug)
+            except Exception as exc:                        # noqa: BLE001
+                print("  FAIL %-40s assemble: %r" % (name[:40], exc))
+    return out
+
+
 def stage_prism(limit=None, nmax=12):
     existing = set()
     base = os.path.join(OUT, "solids")
@@ -1110,6 +1211,163 @@ def stage_geodesic(limit=None, freqs=(2, 3, 4)):
     return out
 
 
+def _compound_meta(key, label):
+    """Catalogue cross-references parsed from the generator's key and label.
+
+    Deliberately an ARRAY of references rather than one number: the compound
+    catalogues are not a single sequence. Skilling (1976) is complete for
+    UNIFORM compounds only; Harman's rule generates families with no canonical
+    numbering and was never published; and the '(free)' families carry a
+    continuous parameter, so no enumeration exists for them at all.
+    """
+    enum, params = [], None
+    m = re.match(r"^S(\d+)_", key)
+    if m:
+        enum.append({"catalogue": "skilling-1976", "index": "UC%s" % m.group(1),
+                     "via": None,
+                     "complete_for": "uniform compounds (vertex-transitive, "
+                                     "uniform components)"})
+    if key.startswith("H"):
+        enum.append({"catalogue": "harman-1974", "index": None,
+                     "via": "G. W. Hart, Virtual Polyhedra",
+                     "complete_for": None})
+    if key in ("STELLA", "5TETRA", "10TETRA", "5CUBES", "5OCTA"):
+        enum.append({"catalogue": "coxeter-regular", "index": None, "via": None,
+                     "complete_for": "the five regular compounds"})
+    if "(free)" in label or "free" in label.lower():
+        params = {"free": True, "angle_degrees": None, "repeat": None,
+                  "note": "A continuously parameterised family: the component "
+                          "may be rotated freely about its axis. The stored "
+                          "record is one member; special angles collapse "
+                          "components."}
+    who = pub = None
+    if key.startswith("H"):
+        who, pub = "Michael G. Harman", "unpublished (1974); described by G. W. Hart"
+    elif re.match(r"^S\d+_", key):
+        who, pub = "John Skilling", "1976"
+    elif key in ("STELLA",):
+        who, pub = "Johannes Kepler", "1619"
+    elif key in ("5TETRA", "10TETRA", "5CUBES", "5OCTA"):
+        who, pub = "Edmund Hess / Max Bruckner", "1876 / 1900"
+    return enum, params, who, pub
+
+
+def stage_compound(limit=None):
+    """Compounds: several polyhedra sharing a centre.
+
+    Not a single solid, so the record carries a `compound` block: the
+    components (as face-index sets, which survive welding), the catalogue
+    cross-references, and any free parameter. chi is the sum over components
+    and genus is left null.
+    """
+    from polyhedra.compounds import COMPOUNDS, build_compound
+
+    # `slugify` drops parenthesised text, which is right for "Square Pyramid
+    # (J1)" but wrong here: Hart distinguishes "12 Icosahedra (Octahedral)"
+    # from "12 Icosahedra (4-fold)" precisely by the parenthetical. Keep the
+    # clean slug where it is unambiguous and fall back to the full form only
+    # for the names that would otherwise collide.
+    plain = {}
+    for key, label in COMPOUNDS:
+        nm = re.sub(r"\s*\(free\)\s*$", "", label).strip()
+        plain.setdefault(slugify(nm), []).append(key)
+    ambiguous = {k for k, v in plain.items() if len(v) > 1}
+
+    def compound_slug(nm):
+        s = slugify(nm)
+        if s in ambiguous:
+            s = slugify(nm.replace("(", " ").replace(")", " "))
+        return s
+
+    out = []
+    for key, label in COMPOUNDS[:limit]:
+        try:
+            comps = build_compound(key)
+        except Exception as exc:                            # noqa: BLE001
+            print("  FAIL %-44s %r" % (label[:44], exc))
+            continue
+        if not comps or len(comps) < 2:
+            continue
+        V, F, spans = [], [], []
+        for cv, cf in comps:
+            cv = [tuple(float(c) for c in v) for v in cv]
+            cf = [[int(i) for i in f] for f in cf]
+            # The snub components inherit six-decimal stored coordinates. The
+            # compound as a whole is not vertex-transitive, but each COMPONENT
+            # is, so re-solve the parts and then assemble.
+            #
+            # Gate on edge uniformity as well as planarity: a snub cube's faces
+            # are triangles and squares, and a triangle is planar whatever its
+            # vertices, so planarity alone passes a solid whose edges are still
+            # wrong by 1e-7 -- which then fails to match its own record.
+            _e = ME.edges_of(cf)
+            _L = ME.edge_lengths(cv, _e) if _e else [1.0]
+            _spread = (max(_L) - min(_L)) / max(_L) if _L else 0.0
+            if RF.planarity(cv, cf) > 1e-9 or _spread > 1e-9:
+                W, _info = RF.refine_vertex_transitive(cv, cf)
+                if W is not None:
+                    cv = W
+            off = len(V)
+            start = len(F)
+            V += cv
+            F += [[i + off for i in f] for f in cf]
+            spans.append((start, len(F), len(cv), len(cf)))
+        name = re.sub(r"\s*\(free\)\s*$", "", label).strip()
+        enum, params, who, pub = _compound_meta(key, label)
+        parts = []
+        for (s0, s1, nv, nf) in spans:
+            sub = F[s0:s1]
+            ne = len({frozenset((a, b)) for f in sub
+                      for a, b in zip(f, f[1:] + f[:1])})
+            parts.append({"slug": None,
+                          "counts": {"vertices": nv, "edges": ne, "faces": nf},
+                          "faces": list(range(s0, s1))})
+        meta = {
+            "slug": compound_slug(name), "name": name,
+            "families": ["compound"],
+            "ids": {"uniform": None, "wenninger": None, "coxeter_clm": None,
+                    "mccooey": None, "johnson": None, "netlib": None,
+                    "bowers": None, "wikipedia": None, "wolfram": None},
+            "notation": {"schlafli": None, "wythoff": None,
+                         "coxeter_diagram": None, "conway": None,
+                         "vertex_configuration": [], "face_configuration": None},
+            "orientable": True, "density": None, "convex": False, "dual": None,
+            "genus": None,
+            "orientation": "as produced by the compound construction, centred at the centroid",
+            "construction": {"generator": "math_art.compound_generator",
+                             "operator_id": "mesh.compound_add",
+                             "conway_from": None, "wythoff_from": None},
+            "coordinates": ("derived: orbit of the component solid under the "
+                            "compound's rotation group, via "
+                            "math_art.polyhedra.compounds"),
+            "sources": [
+                "J. Skilling, 'Uniform compounds of uniform polyhedra', Math. "
+                "Proc. Camb. Phil. Soc. 79 (1976), 447-457 (complete for "
+                "uniform compounds).",
+                "H. S. M. Coxeter, 'Regular Polytopes', 3rd ed. (1973) (the "
+                "five regular compounds).",
+                "G. W. Hart, 'Virtual Polyhedra' (Harman's compounds, "
+                "otherwise unpublished).",
+            ],
+            "compound": {
+                "component_count": len(comps),
+                "components": parts,
+                "components_congruent": len({(p["counts"]["vertices"],
+                                              p["counts"]["faces"])
+                                             for p in parts}) == 1,
+                "enumeration": enum,
+                "parameters": params,
+                "discovered_by": who,
+                "first_published": pub,
+            },
+        }
+        try:
+            out.append(assemble(V, F, meta))
+        except Exception as exc:                            # noqa: BLE001
+            print("  FAIL %-44s assemble: %r" % (label[:44], exc))
+    return out
+
+
 def stage_crosscheck(limit=None):
     """Re-run the source cross-checks over the emitted corpus, in place.
 
@@ -1264,9 +1522,122 @@ def stage_link(limit=None):
             with open(p3, "w", encoding="utf-8") as fh:
                 json.dump(r3, fh, indent=2)
             fwd += 1
-    print("   linked %d convex_hull, %d biscribed forms, %d proven non-existent"
-          % (linked, fwd, bis))
+    # Compound components -> the record for that solid, matched on geometry
+    # (counts, then the full faces-and-dihedrals test) rather than on name.
+    comp_linked = comp_axis = 0
+    for slug, (p2, r2) in recs.items():
+        block = r2.get("compound")
+        if not block or not block.get("components"):
+            continue
+        V = r2["geometry"]["vertices"]
+        F = r2["geometry"]["faces"]
+        changed = False
+        cache = {}
+        for part in block["components"]:
+            if part.get("slug"):
+                continue
+            sub = [F[i] for i in part["faces"]]
+            used = sorted({i for f in sub for i in f})
+            remap = {o: n for n, o in enumerate(used)}
+            pv = [V[i] for i in used]
+            pf = [[remap[i] for i in f] for f in sub]
+            key = (len(pv), part["counts"]["edges"], len(pf))
+            if key in cache:
+                part["slug"] = cache[key]
+                changed = changed or cache[key] is not None
+                continue
+            hit = None
+            for cand in by_counts.get(key, []):
+                cr = recs[cand][1]
+                if cr.get("compound"):
+                    continue
+                ok, _d = CC.same_shape(pv, cr["geometry"]["vertices"],
+                                       pf, cr["geometry"]["faces"])
+                if ok:
+                    hit = cand
+                    break
+            cache[key] = hit
+            if hit:
+                part["slug"] = hit
+                changed = True
+        # Harman's construction aligns an n-fold axis of the COMPONENT with an
+        # m-fold axis of the COMPOUND. Both orders are computable, so record
+        # them as derived geometry. Deliberately NOT written into
+        # `enumeration.index`: matching Hart's own labelling would mean
+        # transcribing his table, and an unverified index is worse than none.
+        if block.get("axis_alignment") is None and block["components"]:
+            a = _axis_alignment(V, F, block["components"][0],
+                                r2["symmetry"]["schoenflies"])
+            if a:
+                block["axis_alignment"] = a
+                comp_axis += 1
+                changed = True
+        if changed:
+            comp_linked += 1
+            with open(p2, "w", encoding="utf-8") as fh:
+                json.dump(r2, fh, indent=2)
+
+    print("   linked %d convex_hull, %d biscribed forms, %d proven "
+          "non-existent, %d compounds (%d axis alignments)"
+          % (linked, fwd, bis, comp_linked, comp_axis))
     return []
+
+
+_GROUP_LETTER = {"I": "i", "Ih": "i", "O": "c", "Oh": "c",
+                 "T": "t", "Td": "t", "Th": "t"}
+
+
+def _axis_alignment(V, F, part, compound_schoenflies):
+    """Orders of the component and compound rotation axes that coincide.
+
+    Harman's `nX/mY` notation names an n-fold axis of the component's group X
+    seated on an m-fold axis of the compound's group Y. Both halves are
+    recoverable from the geometry: detect each group, list its rotation axes
+    with their orders, and find a shared direction.
+    """
+    try:
+        import numpy as np
+    except ImportError:
+        return None
+    sub = [F[i] for i in part["faces"]]
+    used = sorted({i for f in sub for i in f})
+    remap = {o: n for n, o in enumerate(used)}
+    pv = ME.recentre([V[i] for i in used])
+    pf = [[remap[i] for i in f] for f in sub]
+
+    def axes_of(Vx, Fx):
+        G = SY.find_group(Vx, F=Fx)
+        out = {}
+        for R in G:
+            if np.linalg.det(R) <= 0:
+                continue
+            ax, n = SY._axis_and_order(R)
+            if ax is None or n < 2:
+                continue
+            k = tuple(round(float(c), 4) for c in ax)
+            out[k] = max(out.get(k, 1), n)
+        return out
+
+    comp_axes = axes_of(pv, pf)
+    whole_axes = axes_of(ME.recentre(V), F)
+    if not comp_axes or not whole_axes:
+        return None
+    best = None
+    for k, n in comp_axes.items():
+        for k2, m in whole_axes.items():
+            d = abs(sum(k[i] * k2[i] for i in range(3)))
+            if d > 1 - 1e-4 and (best is None or n * m > best[0] * best[1]):
+                best = (n, m)
+    if best is None:
+        return None
+    csym = SY.classify(SY.find_group(pv, F=pf))["schoenflies"]
+    x = _GROUP_LETTER.get(csym, "?")
+    y = _GROUP_LETTER.get(compound_schoenflies, "?")
+    return {"component_axis_order": best[0], "compound_axis_order": best[1],
+            "component_group": csym, "compound_group": compound_schoenflies,
+            "harman_style": "%d%s/%d%s" % (best[0], x, best[1], y),
+            "note": "Derived from the geometry, not transcribed from Hart; "
+                    "not verified against his own labelling."}
 
 
 STAGES = {}
@@ -1296,17 +1667,20 @@ STAGES["uniform"] = stage_uniform
 STAGES["dual"] = stage_dual
 STAGES["johnson"] = stage_johnson
 STAGES["prism"] = stage_prism
+STAGES["starprism"] = stage_star_prism
 STAGES["biscribed"] = stage_biscribed
 STAGES["toroid"] = stage_toroid
 STAGES["zonohedron"] = stage_zonohedron
 STAGES["geodesic"] = stage_geodesic
+STAGES["compound"] = stage_compound
 STAGES["crosscheck"] = stage_crosscheck
 STAGES["link"] = stage_link
 
 
 # -- emit -------------------------------------------------------------------
 
-FAMILY_DIR = {"geodesic": "geodesic", "toroid": "toroid",
+FAMILY_DIR = {"compound": "compound", "geodesic": "geodesic",
+              "toroid": "toroid",
               "zonohedron": "zonohedron",
               "biscribed": "biscribed", "prism-family": "prism-family",
               "catalan": "catalan", "uniform-dual": "uniform-dual",
@@ -1398,8 +1772,8 @@ def main(argv):
         args.append(argv[i])
         i += 1
     names = args or ["uniform", "dual", "johnson", "prism",
-                     "biscribed", "toroid", "zonohedron", "geodesic",
-                     "link"]
+                     "starprism", "biscribed", "toroid", "zonohedron",
+                     "geodesic", "compound", "link"]
     total = 0
     for n in names:
         if n not in STAGES:

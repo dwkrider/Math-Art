@@ -81,6 +81,7 @@
     "convex": true,
     "self_dual": true,
     "dual": "tetrahedron",
+    "coincident_vertices": 0,
     "vertex_density": 1,
     "convex_hull": {
       "is_self": true,

@@ -77,6 +77,7 @@
     "convex": false,
     "self_dual": false,
     "dual": "small-stellated-dodecahedron",
+    "coincident_vertices": 0,
     "vertex_density": 2,
     "convex_hull": {
       "is_self": false,
