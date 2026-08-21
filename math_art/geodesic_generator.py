@@ -497,8 +497,8 @@ if _IN_BLENDER:
         thickness: FloatProperty(
             name="Thickness", default=0.05, min=0.0, max=1.0,
             description="Shell / panel thickness (0 = single surface)")
-        border: FloatProperty(name="Border", default=0.3, min=0.02,
-                              max=0.95)
+        border: FloatProperty(name="Border", default=0.06, min=0.005,
+                              max=1.0)
         strut_radius: FloatProperty(name="Strut Radius", default=0.02,
                                     min=0.001, max=0.5)
         node_radius: FloatProperty(name="Node Radius", default=0.035,

@@ -440,9 +440,9 @@ if _IN_BLENDER:
                     "circle)")],
             default='EDGES')
         border: FloatProperty(
-            name="Border", default=0.35, min=0.02, max=0.95,
+            name="Border", default=0.06, min=0.005, max=1.0,
             description="Leonardo panel frame width (fraction of "
-                        "the face)")
+                        "face whatever its size")
         panel_thickness: FloatProperty(
             name="Panel Thickness", default=0.03, min=0.002, max=0.5,
             step=1, precision=3)

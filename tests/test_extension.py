@@ -593,6 +593,40 @@ OPS = [
         seed='TETRA', radius_mode='LOCAL', factor=0.7, subdiv=2)),
     ("bubble merged colored", lambda: bpy.ops.mesh.bubble_cluster_add(
         seed='ICOSA', separate=False, color=True, subdiv=1)),
+    ("zonohedrification", lambda: bpy.ops.mesh.zonish_add()),
+    ("slide-together squares", lambda: bpy.ops.mesh.slide_together_add()),
+    ("slide-together pentagrams", lambda: bpy.ops.mesh.slide_together_add(
+        model='PG12')),
+    ("harman compound", lambda: bpy.ops.mesh.polyhedron_compound_add(
+        compound='H_5CUBES')),
+    ("twelve-faced pyritohedron", lambda: bpy.ops.mesh.twelve_faced_add()),
+    ("twelve-faced tetartoid", lambda: bpy.ops.mesh.twelve_faced_add(
+        solid='TETARTOID')),
+    ("elongated dodecahedron", lambda: bpy.ops.mesh.twelve_faced_add(
+        solid='ELONGATED')),
+    ("skilling figure", lambda: bpy.ops.mesh.uniform_polyhedron_add(
+        family='SKILLING', solid='76')),
+    ("sharpohedron", lambda: bpy.ops.mesh.notable_polyhedron_add(
+        solid='SHARP')),
+    ("tetrahedrally stellated icosahedron",
+     lambda: bpy.ops.mesh.notable_polyhedron_add(
+        solid='TETRA_STELLATED_ICOSA')),
+    ("hexagonal prism honeycomb", lambda: bpy.ops.mesh.spacefill_add(
+        kind='HEXPRISM', nx=2, ny=2, nz=2)),
+    ("elongated dodecahedron honeycomb",
+     lambda: bpy.ops.mesh.spacefill_add(
+        kind='ELONGDODEC', nx=2, ny=2, nz=2)),
+    ("transpolyhedron", lambda: bpy.ops.mesh.transpolyhedron_add()),
+    ("transpolyhedron prism", lambda: bpy.ops.mesh.transpolyhedron_add(
+        seed='A7', blend=0.35)),
+    ("zonish polyhedron", lambda: bpy.ops.mesh.zonish_add(
+        mode='ZONISH', seed='ID', length=0.4)),
+    ("rhombohedral dissection", lambda: bpy.ops.mesh.zonish_add(
+        mode='DISSECTION', seed='ICOSA', explode=0.3, color='BLOCK')),
+    ("zonohedron by zone pair", lambda: bpy.ops.mesh.zonish_add(
+        color='ZONES')),
+    ("zonish by face size", lambda: bpy.ops.mesh.zonish_add(
+        mode='ZONISH', seed='ID', length=0.4, color='SIDES')),
     ("relaxed bubble", lambda: bpy.ops.mesh.relaxed_bubble_add()),
     ("cmc capillary", lambda: bpy.ops.mesh.cmc_capillary_add()),
     ("bryant surface", lambda: bpy.ops.mesh.bryant_surface_add()),

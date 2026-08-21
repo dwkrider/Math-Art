@@ -25,6 +25,11 @@ dicts); the rig helpers at the bottom appear only when bpy is present.
 # should show what you get when you click the entry -- so only the ones
 # whose defaults under-sell them are listed.
 PARAMS = {
+    # A bare noble faceting is a self-intersecting wireframe-ish solid
+    # and reads as mush when shaded; the great dodecahedron -- faceting
+    # 1 of the icosahedral vertex set -- has big obvious pentagons and
+    # says "this is a polyhedron through someone else's vertices".
+    "mesh.noble_faceting_add": dict(seed='ICOSA', index=1),
     # -- solids ---------------------------------------------------
     # A bare tetrahedron reads as a flat triangle at icon size; the
     # dodecahedron's pentagons say "regular solid" at a glance.  (The
@@ -32,6 +37,35 @@ PARAMS = {
     # rather than regular; the dodecahedron suits the operator's name
     # better in both places.)
     "mesh.regular_solid_add": dict(family='PLATONIC', solid='DODECA'),
+    # The bare default is a rhombic triacontahedron, which the zonohedra
+    # entry above already shows.  The dissection is what this operator
+    # adds that nothing else has: Kowalewski's twenty golden rhombohedra,
+    # colour-matched by zone triple.  Assembled rather than exploded --
+    # the blocks close up into the solid exactly, so the icon reads as a
+    # polyhedron whose faces are colour-coded by the block behind them,
+    # which is the point; exploded it reads as debris at 64 px.
+    "mesh.zonish_add": dict(mode='DISSECTION', seed='ICOSA',
+                            explode=0.0, color='BLOCK'),
+    # Halfway is the whole point of the operator -- either end
+    # is just a solid we already ship.  The cuboctahedron reads
+    # clearly at icon size and its dual is the rhombic
+    # dodecahedron, so both families are recognisable.
+    "mesh.transpolyhedron_add": dict(seed='CO', blend=0.5),
+    # The pyritohedron at its default 1/phi IS the regular dodecahedron,
+    # which the regular-solid entry already shows.  Pulled off that
+    # value it becomes the pyrite crystal form, which is the point.
+    "mesh.twelve_faced_add": dict(solid='PYRITOHEDRON', shape=0.35),
+    # Thirty squares is the slide-together everyone recognises, and the
+    # colour rotation is how the paper models are actually made.
+    # The twenty triangles, not the thirty squares.  Once the squares
+    # were placed correctly on the rhombidodecadodecahedron they pack
+    # almost closed, and at 128 px the icon became a pale ball with no
+    # hint of what the generator does.  The triangle model keeps Hart's
+    # "prominent stars" open, so the panels and the interlocking stay
+    # legible.  Thickness is nudged up from the operator default of 0.01,
+    # which suits a printable template but vanishes at icon size.
+    "mesh.slide_together_add": dict(model='T20', colors=True,
+                                    thickness=0.03),
     # The uniform operator's whole point is what lies beyond the
     # Platonics, so it gets a Kepler-Poinsot star rather than another
     # convex solid that would duplicate the entry above.
@@ -353,6 +387,7 @@ VARIANT_SELECTOR = {
     "mesh.biscribed_solid_add": "solid",
     "mesh.icosahedron_stellation_add": "solid",
     "mesh.general_stellation_add": "seed",
+    "mesh.noble_faceting_add": "seed",
     "mesh.star_prism_add": "form",
     "mesh.polyhedral_torus_add": "tiling",
     "mesh.interlocking_add": "family",
