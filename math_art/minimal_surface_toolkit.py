@@ -94,6 +94,10 @@ from .minsurf.tpms import (TPMS, TPMS2_HEX_LATTICE, TPMS_EXACT,
                            tpms2_DEFAULT_OFFSET, tpms2_LATTICE)
 # the catalog module itself, for the self-test's CHM-modulus reference
 from .minsurf import zoo as _zoo
+# the parametric module itself, to read back what the last equal-area
+# resample achieved (LAST_EQ_AREA_COV is rebound per build, so it has to
+# be read through the module rather than imported by value)
+from .minsurf import parametric as _pm
 
 TAU = 2.0 * math.pi
 
@@ -356,12 +360,28 @@ if _IN_BLENDER:
         surface: EnumProperty(
             name="Surface",
             items=_surface_items)
+        style: EnumProperty(
+            name="Style",
+            items=[('SOLID', "Solid", "The surface itself, as a "
+                                      "continuous sheet"),
+                   ('LATTICE', "Cell Lattice",
+                    "A sparse openwork net of struts along the cells "
+                    "of the surface's dual, as a live modifier stack")],
+            default='SOLID')
         output: EnumProperty(
             name="Output",
             items=[('MESH', "Mesh", "Dense polygon mesh"),
                    ('NURBS', "NURBS", "Compact NURBS surface patch "
                                       "(control grid = Resolution U x V)")],
             default='MESH')
+        equal_areas: BoolProperty(
+            name="Equal Areas", default=False,
+            description="Space the grid lines by equal surface area "
+                        "instead of equal parameter, so faces come out "
+                        "the same size instead of bunching where the "
+                        "parametrization contracts. Reports the spread "
+                        "it achieved, and leaves the surface alone if "
+                        "it cannot improve on the plain grid")
         res_u: IntProperty(name="Resolution U", default=64, min=8, max=512)
         res_v: IntProperty(name="Resolution V", default=64, min=8, max=512)
         ctrl_u: IntProperty(
@@ -392,6 +412,32 @@ if _IN_BLENDER:
             name="Scale", default=1.0, min=0.01, max=100.0,
             description="Multiplier on the normalized size (1.0 = a 2 m "
                         "cube, centered on the origin)")
+        # Cell Lattice style -- the canonical names cell_lattice.PROPS
+        # declares, so styles.cell_lattice.apply_from picks them up.
+        cell_size: FloatProperty(
+            name="Cell Size", default=0.12, min=0.005, max=1.0,
+            description="Fraction of the surface's triangles kept "
+                        "before taking the dual: lower leaves fewer, "
+                        "larger cells")
+        strut_thickness: FloatProperty(
+            name="Strut Thickness", default=0.03, min=0.001, max=1.0,
+            description="Thickness of the lattice struts, in the "
+                        "unscaled surface's units")
+        smoothing: IntProperty(
+            name="Smoothing", default=1, min=0, max=4,
+            description="Subdivision levels rounding the struts")
+        keep_boundaries: BoolProperty(
+            name="Keep Boundaries", default=True,
+            description="Keep the rim of an open surface intact when "
+                        "taking the dual; without it the boundary "
+                        "cells are eaten away")
+        even_thickness: BoolProperty(
+            name="Even Thickness", default=False,
+            description="Maintain strut width at sharp corners. Off by "
+                        "default: the correction grows without bound as "
+                        "a corner gets more acute, so at larger Strut "
+                        "Thickness it shoots spikes out of the sliver "
+                        "cells along an open rim")
 
         def execute(self, context):
             # When the Family changes, the dynamic Surface enum is
@@ -406,43 +452,99 @@ if _IN_BLENDER:
             label = PARAMETRIC[surf][0]
             theta = (self.assoc_angle if surf in ANGLE_PARAM
                      else 0.0)
-            # some surfaces are assembled meshes with no NURBS/grid form
-            if self.output == 'NURBS' and surf not in MESH_PARAM:
+            # some surfaces are assembled meshes with no NURBS/grid form;
+            # the lattice is a modifier stack, so it needs the mesh form
+            # too -- a NURBS patch has no faces to take the dual of
+            lattice = self.style == 'LATTICE'
+            if self.output == 'NURBS' and not lattice \
+                    and surf not in MESH_PARAM:
                 G, wrap_u, wrap_v = build_parametric_grid(
                     surf, self.ctrl_u, self.ctrl_v,
-                    self.order, self.radius, self.scale, theta)
+                    self.order, self.radius, self.scale, theta,
+                    equal_areas=self.equal_areas)
                 if wrap_u:          # drop duplicated periodic endpoint
                     G = G[:-1]
                 if wrap_v:
                     G = G[:, :-1]
                 _nurbs_grid_object(context, label, G,
                                    cyclic_u=wrap_u, cyclic_v=wrap_v)
+                self._report_equal_areas()
             else:
                 out = build_parametric(surf, self.res_u,
                                        self.res_v, self.order,
                                        self.radius, self.scale, theta,
-                                       with_uv=True, cells=(self.storeys, 1))
+                                       with_uv=True, cells=(self.storeys, 1),
+                                       equal_areas=self.equal_areas)
                 V, quads = out[0], out[1]
                 cuv = out[2] if len(out) > 2 else None
-                _new_object(context, label, V, quads,
-                            weld=1e-5 * max(1.0, self.scale),
-                            loop_uv=cuv)
+                obj = _new_object(context, label, V, quads,
+                                  weld=1e-5 * max(1.0, self.scale),
+                                  loop_uv=cuv)
+                self._report_equal_areas()
+                if lattice:
+                    try:
+                        from .styles import cell_lattice
+                    except ImportError:
+                        from styles import cell_lattice
+                    cell_lattice.apply_from(obj, self, scale=self.scale)
+                    self.report(
+                        {'INFO'},
+                        "cell lattice added as a live modifier stack; "
+                        "tune it in the modifier properties or apply "
+                        "to make it permanent")
             return {'FINISHED'}
+
+        def _report_equal_areas(self):
+            """Say what the equal-area pass actually achieved.
+
+            Three outcomes, all worth distinguishing: it improved the
+            spread (report by how much), it could not improve on the
+            plain grid and stood down (Costa punctures its ends at
+            interior points, so resampled cells bridge a hole), or the
+            surface never reaches the grid seam at all because it is
+            built as a finished mesh."""
+            if not self.equal_areas:
+                return
+            cov = getattr(_pm, 'LAST_EQ_AREA_COV', None)
+            if cov is None:
+                self.report({'WARNING'},
+                            "Equal Areas does not apply to this surface: "
+                            "it is assembled as a finished mesh rather "
+                            "than sampled on a parameter grid")
+                return
+            before, after, applied = cov
+            if not applied:
+                self.report({'WARNING'},
+                            "Equal Areas left this surface alone: its "
+                            "domain is punctured, and equalizing made "
+                            f"the area spread worse (stayed at "
+                            f"{before:.3f})")
+            else:
+                gain = before / after if after > 1e-9 else float('inf')
+                self.report({'INFO'},
+                            f"equal areas: face-area spread "
+                            f"{before:.3f} -> {after:.4f} ({gain:.0f}x "
+                            f"more even)")
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'family')
             lay.prop(self, 'surface')
+            lay.prop(self, 'style')
+            lattice = self.style == 'LATTICE'
             mesh_only = self.surface in MESH_PARAM
-            if not mesh_only:
+            # NURBS has no faces to take a dual of, so the Output choice
+            # is meaningless while the lattice is on
+            if not mesh_only and not lattice:
                 lay.prop(self, 'output')
-            if self.output == 'NURBS' and not mesh_only:
+            if self.output == 'NURBS' and not lattice and not mesh_only:
                 lay.prop(self, 'ctrl_u')
                 lay.prop(self, 'ctrl_v')
             else:
                 lay.prop(self, 'res_u')
                 lay.prop(self, 'res_v')
+            lay.prop(self, 'equal_areas')
             if self.surface in COUNT_PARAM:
                 lay.prop(self, 'order', text=COUNT_PARAM[self.surface])
             elif self.surface not in ANGLE_PARAM:
@@ -453,6 +555,12 @@ if _IN_BLENDER:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
             lay.prop(self, 'scale')
+            if lattice:
+                try:
+                    from .styles import cell_lattice
+                except ImportError:
+                    from styles import cell_lattice
+                cell_lattice.draw_props(lay, self)
 
     class MESH_OT_tpms_add(bpy.types.Operator):
         """Add a triply-periodic minimal surface (nodal approximation)"""
