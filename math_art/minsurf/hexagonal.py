@@ -247,7 +247,7 @@ def _halfturn(p, v):
     return M
 
 
-def _snap_hex(v, tol=1e-2):
+def _snap_axis(v, step=30.0, tol=1e-2):
     """Snap a direction to the nearest hexagonal axis.
 
     The measured normals and axis directions come out within 1e-5 of
@@ -268,10 +268,10 @@ def _snap_hex(v, tol=1e-2):
     if abs(v[2]) > tol:
         return v                                 # not an axis we know
     ang = math.degrees(math.atan2(v[1], v[0]))
-    k = round(ang / 30.0)
-    if abs(ang - 30.0 * k) > 30.0 * tol:
+    k = round(ang / step)
+    if abs(ang - step * k) > step * tol:
         return v
-    a = math.radians(30.0 * k)
+    a = math.radians(step * k)
     return np.array([math.cos(a), math.sin(a), 0.0])
 
 
@@ -293,13 +293,13 @@ def h_generators(P, tol=1e-3):
             # behind them, and a chord through them misses the fitted
             # line by enough that the half-turn no longer maps the edge
             # onto itself to the precision the weld needs.
-            v = _snap_hex(np.linalg.svd(C - C.mean(0),
+            v = _snap_axis(np.linalg.svd(C - C.mean(0),
                                         full_matrices=False)[2][0])
             p = C.mean(0)
             gens.append(_halfturn(p, v))
             kinds.append((name, 'halfturn', straight))
         elif planar < tol:
-            n = _snap_hex(nrm)
+            n = _snap_axis(nrm)
             gens.append(_mirror(n, float(np.dot(cen, n))))
             kinds.append((name, 'mirror', planar))
         else:
@@ -393,8 +393,13 @@ def h_lattice(elems, tol=1e-5):
     T = np.array(T)
     basis = []
     for i in np.argsort(np.linalg.norm(T, axis=1)):
-        trial = basis + [T[i]]
-        if np.linalg.matrix_rank(np.array(trial), tol=1e-6) == len(trial):
+        trial = np.array(basis + [T[i]])
+        # RELATIVE rank test.  An absolute tolerance accepts a vector
+        # that is the negative of one already in the basis to within the
+        # generators' own error -- which produced a "rank 3" basis whose
+        # determinant was zero, and a cell that could not tile.
+        sv = np.linalg.svd(trial, compute_uv=False)
+        if sv[-1] > 1e-3 * sv[0]:
             basis.append(T[i])
             if len(basis) == 3:
                 return np.array(basis)
@@ -483,6 +488,44 @@ _SPECS = {
                               (a - tau / 2.0, 0.5), (-a - tau / 2.0, -0.5)),
         const=0.5 * 1j * math.pi / 2.0,          # log sqrt(i)
         xlim=(0.0, 0.5), ylim=lambda t: (0.0, np.imag(t) / 4.0),
+        # The y = 0 edge runs THROUGH the branch point at x = a, and the
+        # two halves are different symmetry elements -- Weber turns each
+        # into its own 2-fold axis, StraightLine[fc(0), fc(a)] and
+        # StraightLine[fc(.5), fc(a)].  Treating the edge as one curve
+        # is what left the group with a rank-1 translation lattice.
+        splits=(0.15,), split_edge='y0',
+        # Which boundary curve is which symmetry element, and which are
+        # not used at all, taken from Weber's assembly rather than
+        # inferred.  His fr1..fr3b are: mirror in the plane of the top
+        # edge, half-turns about StraightLine[fc(0), fc(a)] and
+        # StraightLine[fc(.5), fc(a)] -- the two halves of the bottom
+        # edge -- and a half-turn about the left edge.  The right edge
+        # is not a generator.
+        #
+        # Declaring this beats classifying it here.  The patch is
+        # integrated from y = eps rather than y = 0, so the bottom edge
+        # bends very slightly near the branch point at x = a, and the
+        # straightness test fails on curves that are straight in exact
+        # arithmetic -- which downgrades two axes to mirrors and leaves
+        # the group unable to close.
+        elements=(('y=1', 'mirror'),
+                  ('y=0#0', 'halfturn'),
+                  ('y=0#1', 'halfturn'),
+                  ('x=0', 'halfturn')),
+        snap_deg=45.0,                           # tetragonal, not hex
+        # The periods, taken from Weber's fr5/fr6 rather than searched
+        # for.  He translates by 2{1,-1,0}*trans and 2{1,1,0}*trans with
+        # trans = fc(.5), and by {0,0,2 y1}.  Deriving them instead
+        # found only ONE of the two in-plane vectors -- the reflection
+        # group reaches the other only through words longer than the
+        # closure explores -- and the search then paired it with its own
+        # negative and called that a basis.
+        lattice=lambda P, tau: np.array([
+            [2.0 * (P[-1, 0] - P[0, 0])[0],
+             -2.0 * (P[-1, 0] - P[0, 0])[1], 0.0],
+            [2.0 * (P[-1, 0] - P[0, 0])[0],
+             2.0 * (P[-1, 0] - P[0, 0])[1], 0.0],
+            [0.0, 0.0, float(np.imag(tau))]]),
         # Weber plots CLP from the IMAGINARY part, i.e. the conjugate
         # surface; Im(int w) = Re(int e^{-i pi/2} w), so it is simply
         # the associate at -90 degrees and needs no separate code path.
@@ -512,6 +555,119 @@ _SPECS = {
 }
 
 
+def spec_curves(key, P):
+    """The boundary curves of a spec patch, split where the spec says.
+
+    The generic version takes the four edges whole.  That is right when
+    each edge is a single symmetry element, and wrong when one runs
+    through a branch point: CLP's y = 0 edge is two straight 2-fold axes
+    meeting at x = a, and read as one curve it classifies as a single
+    plane and contributes one generator instead of two.  With only that
+    one, the group's translations come out rank 1 and the surface cannot
+    be assembled at all.
+    """
+    sp = _SPECS[key]
+    curves = [('x=0', P[0, :]), ('x=1', P[-1, :]), ('y=1', P[:, -1])]
+    splits = sp.get('splits', ())
+    if not splits:
+        curves.append(('y=0', P[:, 0]))
+        return curves
+    xs = _spec_nodes(key, P.shape[0])[0]
+    x1 = sp['xlim'][1]
+    edge = P[:, 0] if sp.get('split_edge', 'y0') == 'y0' else P[:, -1]
+    # Named by SEGMENT INDEX, not by formatted coordinates: the graded
+    # nodes put the first one at -2.8e-17 rather than 0, which formats
+    # as "-2.78e-17" and silently stopped matching the spec's element
+    # list -- dropping a generator and with it the whole assembly.
+    lo = 0
+    for k, c in enumerate(list(splits) + [x1]):
+        hi = int(np.argmin(np.abs(xs - c)))
+        if hi - lo >= 3:
+            curves.append(('y=0#%d' % k, edge[lo:hi + 1]))
+        lo = hi
+    return curves
+
+
+def spec_generators(key, P, tol=1e-3):
+    """Schwarz generators for a spec patch.
+
+    A spec may DECLARE which curve is which element (and which to leave
+    out); otherwise each is classified, as it is for H.
+    """
+    sp = _SPECS[key]
+    step = sp.get('snap_deg', 30.0)
+    curves = dict(spec_curves(key, P))
+    want = sp.get('elements')
+    if want is None:
+        want = [(nm, None) for nm in curves]
+    gens, kinds = [], []
+    for name, forced in want:
+        C = curves.get(name)
+        if C is None or len(C) < 3:
+            continue
+        straight, planar, nrm, cen = _classify(C)
+        kind = forced
+        if kind is None:
+            kind = ('halfturn' if straight < tol
+                    else 'mirror' if planar < tol else None)
+        if kind == 'halfturn':
+            v = _snap_axis(np.linalg.svd(C - C.mean(0),
+                                         full_matrices=False)[2][0], step)
+            gens.append(_halfturn(C.mean(0), v))
+            kinds.append((name, 'halfturn', straight))
+        elif kind == 'mirror':
+            n = _snap_axis(nrm, step)
+            gens.append(_mirror(n, float(np.dot(cen, n))))
+            kinds.append((name, 'mirror', planar))
+        else:
+            kinds.append((name, 'neither', min(straight, planar)))
+    return gens, kinds
+
+
+def _spec_nodes(key, nu):
+    """The x nodes and their dx/du weights for a spec patch."""
+    sp = _SPECS[key]
+    x0, x1 = sp['xlim']
+    cuts = [x0] + [float(c) for c in sp.get('splits', ())] + [x1]
+    seg = int(max(4, round(nu / (len(cuts) - 1))))
+    # Each segment is graded into the branch point it ENDS at, and the
+    # row quadrature runs in the graded variable.  Placing a node on the
+    # branch point without doing this is worse than not splitting at
+    # all: it samples the integrand at its worst and the patch grows
+    # without bound (diameter 11 -> 7.4 -> 5.0 as the grid refined).
+    #
+    # The theta factor there carries exponent -1/2, so the integrand
+    # goes like s^(-1/2) in the distance s to the point; substituting
+    # s = u^2 gives s^(-1/2) ds/du = 2, bounded, and the ordinary
+    # trapezoid is second order again.  Same idea as `_domain_u`, one
+    # power different.
+    pieces, weights = [], []
+    for i in range(len(cuts) - 1):
+        lo, hi = cuts[i], cuts[i + 1]
+        at_hi = (i + 1) < len(cuts) - 1        # a split ends this piece
+        at_lo = i > 0
+        w = math.sqrt(abs(hi - lo))
+        if at_hi:
+            u = np.linspace(w, 0.0, seg)
+            u[-1] = w * 1e-6
+            xp, dxdu = hi - u ** 2, 2.0 * u
+        elif at_lo:
+            u = np.linspace(0.0, w, seg)
+            u[0] = w * 1e-6
+            xp, dxdu = lo + u ** 2, 2.0 * u
+        else:
+            xp = np.linspace(lo, hi, seg)
+            dxdu = np.ones_like(xp)
+        order = np.argsort(xp)
+        pieces.append(xp[order])
+        weights.append(np.abs(dxdu[order]))
+    xs = np.concatenate(pieces)
+    wts = np.concatenate(weights)
+    keep = np.concatenate([[True], np.diff(xs) > 1e-14])
+    xs, wts = xs[keep], wts[keep]
+    return xs, wts
+
+
 def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
     """Fundamental patch for one of the theta-family surfaces.
 
@@ -530,7 +686,13 @@ def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
     y0, y1 = sp['ylim'](tau)
     ang = sp['theta'] if theta is None else float(theta)
 
-    xs = np.linspace(x0, x1, int(nu))
+    # Break the x grid at every point the spec says the boundary
+    # splits, so the split lands exactly on a node.  Weber does the same
+    # thing -- his XR is the union of ranges over Sort[{0, a, .5}] --
+    # and it is not cosmetic: the sub-curves either side of a split are
+    # different symmetry elements, and a node has to separate them.
+    xs, wts = _spec_nodes(key, nu)
+
     # BOTH ends of the y range are held off the edge, not just the
     # bottom.  The theta factors vanish on the lattice, and for the
     # Lidinoid and rPD the domain reaches a second row of lattice points
@@ -553,9 +715,14 @@ def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
     dy = ys[1] - ys[0]
     col = W[0]
     F[0, 1:] = np.cumsum(0.5 * (col[:-1] + col[1:]) * (1j * dy), axis=0)
-    dx = np.diff(xs)[:, None, None]
+    # Rows integrate in the graded variable: dx = (dx/du) du, so the
+    # trapezoid is taken on W * dx/du against a uniform du, recovered
+    # here as the ratio of the actual node spacing to the weight.
+    du = np.diff(xs) / np.maximum(
+        0.5 * (wts[:-1] + wts[1:]), 1e-300)
+    V = W * wts[:, None, None]
     F[1:] = F[0][None, :, :] + np.cumsum(
-        0.5 * (W[:-1] + W[1:]) * dx, axis=0)
+        0.5 * (V[:-1] + V[1:]) * du[:, None, None], axis=0)
     return np.real(F)
 
 
@@ -573,7 +740,11 @@ def spec_build(key, cells, res_per_cell, scale, theta):
     nv = max(24, int(round(res_per_cell)))
     named = abs(float(theta)) < 1e-9
     P = _spec_patch(key, nu, nv, None if named else float(theta))
-    built = _assemble(P) if named else None
+    lat = _SPECS[key].get('lattice')
+    built = _assemble(
+        P, gens=spec_generators(key, P)[0],
+        lattice=None if lat is None else lat(P, _SPECS[key]['tau'])
+    ) if named else None
     if built is None:
         V = P.reshape(-1, 3)
         Q = _patch_quads(P.shape[0], P.shape[1])
@@ -613,7 +784,7 @@ def h_unit(nu, nv, theta, maxlen=8):
     return _assemble(h_patch(nu, nv, theta), maxlen=maxlen)
 
 
-def _assemble(P, maxlen=8):
+def _assemble(P, maxlen=8, gens=None, lattice=None):
     """Reflect a fundamental patch out into one translational cell.
 
     Shared by every surface in this module: the Schwarz principle does
@@ -622,12 +793,13 @@ def _assemble(P, maxlen=8):
     a rank-3 lattice, which the caller reads as "not periodic at this
     angle" rather than as a failure.
     """
-    gens, kinds = h_generators(P)
+    if gens is None:
+        gens = h_generators(P)[0]
     if len(gens) < 4:
         return None
     elems = h_group(gens, maxlen=maxlen)
-    B = h_lattice(elems)
-    if B is None:
+    B = h_lattice(elems) if lattice is None else np.asarray(lattice, float)
+    if B is None or abs(float(np.linalg.det(B))) < 1e-9:
         return None
     Binv = np.linalg.inv(B.T)
 
@@ -921,11 +1093,29 @@ def _selftest():
     # boundary curves generate translations of rank 1, so `_assemble`
     # declines and `spec_build` falls back, which is the intended and
     # documented behaviour rather than a failure.
-    V, faces = spec_build('CLP', 1, 40, 1.0, 0.0)
-    good = len(V) > 0 and len(faces) > 0
+    V, faces = spec_build('CLP', 1, 50, 1.0, 0.0)
+    V2, faces2 = spec_build('CLP', (2, 1, 1), 50, 1.0, 0.0)
+    ec = {}
+    for f in faces:
+        for i in range(len(f)):
+            x, y = int(f[i]), int(f[(i + 1) % len(f)])
+            k = (x, y) if x < y else (y, x)
+            ec[k] = ec.get(k, 0) + 1
+    over = sum(1 for c in ec.values() if c > 2)
+    bnd = sum(1 for c in ec.values() if c == 1)
+    good = len(V) > 0 and len(faces) > 0 and len(faces2) > len(faces)
     ok &= good
-    print("hexagonal: CLP piece %d verts %d faces %s"
-          % (len(V), len(faces), 'OK' if good else 'FAIL'))
+    print("hexagonal: CLP cell %d verts %d faces, open %.2f%%, "
+          "over-shared %d, 2x1x1 -> %d faces %s"
+          % (len(V), len(faces), 100.0 * bnd / max(len(ec), 1), over,
+             len(faces2), 'OK' if good else 'FAIL'))
+    # Deliberately NOT gated: the assembled CLP cell is not finished.
+    # It closes on Weber's declared periods and reads as crossed layers
+    # of parallel sheets -- which is what CLP means -- but part of the
+    # cell comes out as flat plate where it should be saddle, so the
+    # over-shared count above wanders with resolution instead of
+    # sitting at zero the way H's does.  Reported rather than asserted,
+    # so the debt stays visible; see BACKLOG.
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
