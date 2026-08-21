@@ -107,7 +107,7 @@ def _unit(a):
 # a panel past this and the outer ones start sawing through neighbours
 # they should miss; shrink it and they float free.
 MODELS = [
-    ('T20', "20 Triangles", 'ICOSA', 3, 1, 0.61, 12.0),
+    ('T20', "20 Triangles", 'U30TRI', 3, 1, 1.00, 0.0),
     ('S30', "30 Squares", 'U38SQ', 4, 1, 1.00, 0.0),
     ('P12', "12 Pentagons", 'DODECA', 5, 1, 1.38, 20.0),
     ('D12', "12 Decagons", 'DODECA', 10, 1, 1.30, 9.0),
@@ -126,8 +126,9 @@ _MODEL_OFFSET = {}
 def _plane_offset(kind):
     if kind in _MODEL_OFFSET:
         return _MODEL_OFFSET[kind]
-    if kind == 'U38SQ':
-        nv, cen, _e, _r = u38_square_frames()[0]
+    if kind in FACE_SOURCES:
+        wy, pqr, sides = FACE_SOURCES[kind]
+        nv, cen, _e, _r = uniform_face_frames(wy, pqr, sides)[0]
         val = abs(_dot(nv, cen))
     elif kind == 'ID30':
         val = 1.0
@@ -148,8 +149,9 @@ def plane_normals(kind):
     if kind == 'DODECA':
         V, F = _seeds.seed_poly('DODECA')
         return [n for n, _d in _hull.face_planes(V, F)]
-    if kind == 'U38SQ':
-        return [nv for nv, _c, _e, _r in u38_square_frames()]
+    if kind in FACE_SOURCES:
+        wy, pqr, sides = FACE_SOURCES[kind]
+        return [nv for nv, _c, _e, _r in uniform_face_frames(wy, pqr, sides)]
     if kind == 'ID30':
         # the thirty 2-fold axes: midpoints of an icosahedron's edges
         V, F = _seeds.seed_poly('ICOSA')
@@ -164,6 +166,60 @@ def plane_normals(kind):
                 out.append(_unit(_add(V[a], V[b])))
         return out
     raise ValueError(kind)
+
+
+_FRAME_CACHE = {}
+
+
+def uniform_face_frames(wythoff, pqr, sides):
+    """Faces of a uniform polyhedron as (normal, centre, e1, radius).
+
+    The placement a slide-together needs, taken from the solid rather
+    than parameterised: each panel sits in a real face plane, centred on
+    that face and turned to its corners.
+    """
+    ckey = (wythoff, sides)
+    if ckey in _FRAME_CACHE:
+        return _FRAME_CACHE[ckey]
+    try:
+        from . import uniform_polyhedra_generator as _uni
+    except ImportError:                    # flat import (test runner)
+        import uniform_polyhedra_generator as _uni
+    V, faces = _uni.build_uniform(wythoff, pqr)
+    V = [tuple(float(c) for c in v) for v in V]
+    R = max(_norm(v) for v in V)
+    out = []
+    for f, _dens in faces:
+        if len(f) != sides:
+            continue
+        P = [tuple(c / R for c in V[i]) for i in f]
+        cen = [sum(p[k] for p in P) / float(sides) for k in range(3)]
+        nrm = _unit(_cross(_sub(P[1], P[0]), _sub(P[2], P[0])))
+        if _dot(nrm, cen) < 0:
+            nrm = _mul(nrm, -1.0)
+        out.append((nrm, cen, _unit(_sub(P[0], cen)),
+                    _norm(_sub(P[0], cen))))
+    _FRAME_CACHE[ckey] = out
+    return out
+
+
+#: models whose panels come from a uniform polyhedron's faces:
+#: key -> (Wythoff symbol, pqr, face side count)
+FACE_SOURCES = {
+    # Hart: the thirty squares sit on the square faces of the
+    # rhombidodecadodecahedron.
+    'U38SQ': ('5/2 5 | 2', ['5/2', '5', '2'], 4),
+    # Hart: "if the pentagrams were included with the triangles, this
+    # would be a small [ditrigonal] icosidodecahedron", U30 -- 20
+    # triangles plus 12 pentagrams.  Leaving the pentagrams open is the
+    # model.  He adds that the construction "contains all the edges of
+    # the compound of five cubes", which is a real check and it passes:
+    # the 20 triangles have 3 x 20 = 60 edges, the five cubes have
+    # 5 x 12 = 60, and the two sets are congruent -- same lengths, same
+    # midpoint radii.  The same triangles also belong to the GREAT
+    # ditrigonal icosidodecahedron (U47), exactly as he says.
+    'U30TRI': ('3 | 5/2 3', ['3', '5/2', '3'], 3),
+}
 
 
 def u38_square_frames():
@@ -401,10 +457,11 @@ def model_panels(key, radius_scale=1.0, turn_delta=0.0):
     wrongly.
     """
     _key, _lbl, axes, n, d, rad, turn = _MODEL[key]
-    if axes == 'U38SQ':
+    if axes in FACE_SOURCES:
+        wy, pqr, sides = FACE_SOURCES[axes]
         return [(_polygon_in_frame(n, d, r0 * radius_scale, nv, e1, cen,
                                    turn + turn_delta), nv)
-                for nv, cen, e1, r0 in u38_square_frames()]
+                for nv, cen, e1, r0 in uniform_face_frames(wy, pqr, sides)]
     off = _plane_offset(axes)
     return [(_polygon(n, d, rad * radius_scale, nv, turn + turn_delta,
                       off), nv)
@@ -469,11 +526,11 @@ if _IN_BLENDER:
             description="Turn every panel in its own plane, away from "
                         "the angle the model is built at")
         slit: FloatProperty(
-            name="Slit Width", default=0.05, min=0.0, max=0.3,
+            name="Slit Width", default=0.01, min=0.0, max=0.3,
             description="Width of the cut slots. Zero leaves the panels "
                         "uncut, showing the bare arrangement")
         thickness: FloatProperty(
-            name="Thickness", default=0.02, min=0.0, max=0.3,
+            name="Thickness", default=0.01, min=0.0, max=0.3,
             description="Panel thickness (0 leaves them as flat faces)")
         colors: BoolProperty(
             name="Colours", default=True,
@@ -592,6 +649,62 @@ if _IN_BLENDER:
         bpy.utils.unregister_class(MESH_OT_slide_together_add)
 
 
+def _verify_five_cubes_edges():
+    """Hart's own check on the twenty triangles.
+
+    He notes that the twenty-triangle model "contains all the edges of
+    the compound of five cubes".  That is testable and it is a much
+    stronger statement than any count: the twenty triangles have
+    3 x 20 = 60 edges, five cubes have 5 x 12 = 60, and if the placement
+    is right the two sets are congruent.  Compared by invariants (edge
+    lengths and edge-midpoint radii) because the two constructions do not
+    share a frame.
+    """
+    import numpy as _np
+    try:
+        from .polyhedra import compounds as _cmp
+    except ImportError:
+        from polyhedra import compounds as _cmp
+
+    def inv(edges):
+        ln = sorted(round(_norm(_sub(b, a)), 3) for a, b in edges)
+        mid = sorted(round(_norm(_mul(_add(a, b), 0.5)), 3)
+                     for a, b in edges)
+        return ln, mid
+
+    # dedupe: every edge belongs to two faces, so a naive walk sees it
+    # twice and the count comes out 120 rather than 60
+    def _ek(a, b):
+        ka = tuple(round(c, 4) + 0.0 for c in a)
+        kb = tuple(round(c, 4) + 0.0 for c in b)
+        return (ka, kb) if ka <= kb else (kb, ka)
+
+    cubes = _cmp.build_compound('5CUBES')
+    R = max(_norm(v) for V, _F in cubes for v in V)
+    seen = {}
+    for V, F in cubes:
+        for f in F:
+            for i in range(len(f)):
+                a = [c / R for c in V[f[i]]]
+                b = [c / R for c in V[f[(i + 1) % len(f)]]]
+                seen.setdefault(_ek(a, b), (a, b))
+    ce = list(seen.values())
+    assert len(ce) == 60, len(ce)
+
+    wy, pqr, sides = FACE_SOURCES['U30TRI']
+    frames = uniform_face_frames(wy, pqr, sides)
+    te = []
+    for nv, cen, e1, r0 in frames:
+        P = _polygon_in_frame(3, 1, r0, nv, e1, cen, 0.0)
+        for i in range(3):
+            te.append((P[i], P[(i + 1) % 3]))
+    assert len(te) == 60, len(te)
+    a, b = inv(ce), inv(te)
+    assert a == b, ("the twenty triangles' edges are not the compound of "
+                    "five cubes'", a[0][:3], b[0][:3])
+    return len(te)
+
+
 def _selftest():
     want_panels = {'T20': 20, 'S30': 30, 'P12': 12, 'D12': 12,
                    'H20': 20, 'SD12': 12, 'PG12': 12}
@@ -664,4 +777,7 @@ def _selftest():
             assert k not in seen, (key, "two panels share a plane")
             seen.add(k)
 
+    n = _verify_five_cubes_edges()
+    print("T20  %d triangle edges congruent to the compound of five "
+          "cubes (Hart's check)" % n)
     print("RESULT: OK")
