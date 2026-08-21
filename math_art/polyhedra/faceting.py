@@ -43,6 +43,10 @@ import math
 import numpy as np
 
 
+#: faces with at most this many sides get the exhaustive circuit search
+ALL_CYCLES_UP_TO = 6
+
+
 def _key(p, nd=5):
     return tuple(round(float(c), nd) + 0.0 for c in p)
 
@@ -102,7 +106,27 @@ def _cycles_on_plane(V, nx, on):
         if math.gcd(k, d) != 1:
             continue
         out.append([order[(d * t) % k] for t in range(k)])
+    # Constant-step circuits give the star polygons {k/d}, which covers
+    # every face whose vertices are equally spaced.  It does NOT cover a
+    # face like Smith's "alternate-sided hexagon, three of whose sides
+    # are diameters", where the circuit alternates a short step with a
+    # long one.  For small faces enumerate ALL circuits instead -- up to
+    # rotation and reflection there are (k-1)!/2, which is 60 at k = 6
+    # and only worth doing while it stays that cheap.
+    if k <= ALL_CYCLES_UP_TO:
+        first = order[0]
+        rest = order[1:]
+        for perm in itertools.permutations(rest):
+            if perm[0] > perm[-1]:            # drop the reversal
+                continue
+            cyc = [first] + list(perm)
+            if any(cyc == c for c in out):
+                continue
+            out.append(cyc)
     return out
+
+
+
 
 
 def _edges(face):
@@ -174,6 +198,64 @@ def noble_facetings(V, G, min_sides=3, max_sides=12):
             if len({i for f in faces for i in f}) != len(V):
                 continue
             out.append((faces, nx, len(on)))
+    return out
+
+
+def facetings(V, G, max_orbits=2, min_sides=3, max_sides=12,
+              limit=64):
+    """Facetings whose faces form UP TO `max_orbits` orbits under G.
+
+    The noble search above insists on a single face orbit, which makes a
+    solid isohedral.  Drop that and the isogonal-but-not-isohedral
+    facetings appear -- Smith's dual of A+B+C+E, for instance, whose
+    faces are equilateral triangles AND "alternate-sided hexagons, three
+    of whose sides are diameters", so two orbits rather than one.
+
+    The search is the same one orbit deeper: collect every candidate face
+    orbit, then try combinations of them, keeping those where each edge
+    is used exactly twice and every vertex is used.  Combinations grow
+    fast, so `limit` caps how many candidate orbits are combined; the
+    single-orbit results are returned first and are exactly
+    `noble_facetings`.
+    """
+    idx = {_key(v) for v in V}
+    for M in G:
+        if {_key(M @ np.array(v, float)) for v in V} != idx:
+            raise ValueError('the group does not preserve the vertex set '
+                             '-- wrong frame?')
+    cands = []
+    seen = set()
+    for nx, _d, on in vertex_planes(V):
+        if not min_sides <= len(on) <= max_sides:
+            continue
+        for cyc in _cycles_on_plane(V, nx, on):
+            faces = face_orbit(V, cyc, G)
+            if not faces:
+                continue
+            sig = frozenset(frozenset(_edges(f)) for f in faces)
+            if sig in seen:
+                continue
+            seen.add(sig)
+            cands.append(faces)
+    cands = cands[:limit]
+
+    def closes(groups):
+        mult = {}
+        for faces in groups:
+            for f in faces:
+                for e in _edges(f):
+                    mult[e] = mult.get(e, 0) + 1
+        if set(mult.values()) != {2}:
+            return False
+        used = {i for faces in groups for f in faces for i in f}
+        return len(used) == len(V)
+
+    out = []
+    for k in range(1, max_orbits + 1):
+        for combo in itertools.combinations(range(len(cands)), k):
+            groups = [cands[i] for i in combo]
+            if closes(groups):
+                out.append([f for faces in groups for f in faces])
     return out
 
 
@@ -259,4 +341,21 @@ def _selftest():
     assert len(reg) == 2, ('expected the two regulars', len(reg))
     assert all(len(f[0]) == 12 and len(f[0][0]) == 5 for f in reg), \
         'the regulars should be twelve five-sided faces'
+    # The multi-orbit search must AGREE with the noble one at k = 1 --
+    # that is the check that the generalisation did not change the
+    # single-orbit case -- and must find strictly more at k = 2, since
+    # isogonal-but-not-isohedral facetings only exist there.
+    k1 = facetings(V, G, max_orbits=1)
+    k2 = facetings(V, G, max_orbits=2)
+    assert len(k1) == len(found), (len(k1), len(found))
+    assert len(k2) > len(k1), (len(k1), len(k2))
+    for faces in k2:
+        mult = {}
+        for f in faces:
+            for e in _edges(f):
+                mult[e] = mult.get(e, 0) + 1
+        assert set(mult.values()) == {2}, 'multi-orbit face set is not closed'
+        assert {i for f in faces for i in f} == set(range(len(V)))
+    print('multi-orbit: k=1 agrees with noble (%d), k<=2 finds %d'
+          % (len(k1), len(k2)))
     print('RESULT: OK')
