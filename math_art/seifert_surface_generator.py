@@ -179,7 +179,7 @@ if _IN_BLENDER:
         """
         n = _rim.add_rim_curve(context, obj, "Knot", verts, faces,
                                thickness=radius, smooth=0,
-                               profile=profile)
+                               profile=profile, method='ANCHORED')
         return n or None
 
         knot.location = (0, 0, 0)

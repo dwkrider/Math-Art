@@ -121,7 +121,8 @@ def boundary_index_loops(faces):
     return chains
 
 
-def boundary_loops(verts, faces, smooth=RIM_SMOOTH_DEFAULT):
+def boundary_loops(verts, faces, smooth=RIM_SMOOTH_DEFAULT,
+                   method='ANCHORED'):
     """Ordered polylines along the open edge of a mesh.
 
     Edges used by exactly one face are the boundary.  Chaining them
@@ -142,8 +143,38 @@ def boundary_loops(verts, faces, smooth=RIM_SMOOTH_DEFAULT):
     chains = boundary_index_loops(faces)
     out = []
     for idx, closed in chains:
-        out.append((_taubin(V[idx], closed, int(smooth)), closed))
+        pts = V[idx]
+        if method == 'RELAXED':
+            pts = _laplacian(pts, closed, int(smooth))
+        else:
+            pts = _taubin(pts, closed, int(smooth))
+        out.append((pts, closed))
     return out
+
+
+def _laplacian(pts, closed, passes):
+    """The original smoother: a plain, unconstrained Laplacian.
+
+    This is a curve-SHORTENING flow, so it pulls the rim inward and off
+    a curved surface -- which is why it was replaced for the woven
+    polyhedra, whose coarse rims it visibly detached.  It is kept as a
+    choice because on a fine, ragged rim it is the better of the two:
+    nothing constrains it, so it flattens the grid staircase completely
+    and the swept tube comes out clean.  Which behaviour is wanted
+    depends on the rim, not on the code, so the caller picks.
+    """
+    pts = np.asarray(pts, dtype=float)
+    if passes <= 0 or len(pts) < 3:
+        return pts
+    for _ in range(passes):
+        if closed:
+            prev = np.roll(pts, 1, axis=0)
+            nxt = np.roll(pts, -1, axis=0)
+            pts = 0.5 * pts + 0.25 * (prev + nxt)
+        elif len(pts) > 2:
+            inner = 0.5 * pts[1:-1] + 0.25 * (pts[:-2] + pts[2:])
+            pts = np.concatenate([pts[:1], inner, pts[-1:]])
+    return pts
 
 
 # Taubin's lambda/mu pair.  mu is slightly larger in magnitude than
@@ -328,8 +359,21 @@ if _IN_BLENDER:
             layout.prop(op, 'rim_smooth')
 
     def add_rim_curve(context, obj, label, verts, faces, thickness=None,
-                      smooth=None, profile='ROUND'):
+                      smooth=None, profile='ROUND', method='RELAXED'):
         """Sweep a bevelled curve along the mesh's open edge.
+
+        `method` is chosen by the CALLING GENERATOR, not by the user --
+        it depends on the kind of rim that generator produces, which
+        the generator knows and the user should not have to:
+
+          RELAXED  free smoothing, swept as a polyline.  Right for the
+                   fine, ragged edges a level set leaves, where the
+                   staircase is the whole problem and the rim has no
+                   real corners to preserve.
+          ANCHORED non-shrinking smoothing, a drift cap and control
+                   points re-spaced to the tube.  Right for coarse rims
+                   with genuine corners -- the woven polyhedra -- where
+                   free smoothing lifts the tube off the surface.
 
         Parented to `obj` so the pair moves as one.  Returns the number
         of rim loops, zero meaning the surface was closed.
@@ -338,15 +382,20 @@ if _IN_BLENDER:
             thickness = RIM_THICKNESS_DEFAULT
         if smooth is None:
             smooth = RIM_SMOOTH_DEFAULT
-        loops = boundary_loops(verts, faces, smooth=smooth)
+        loops = boundary_loops(verts, faces, smooth=smooth,
+                               method=method)
         if not loops:
             return 0
-        # space the control points to the tube, not to the sample grid
-        loops = [(resample(pts, closed, 1.6 * float(thickness)), closed)
-                 for pts, closed in loops]
-        loops = [(p, c) for p, c in loops if len(p) >= 4]
-        if not loops:
-            return 0
+        # Re-spacing only belongs to the anchored fit.  In the smooth
+        # fit the rim has been flattened outright, so its points are
+        # already benign, and thinning them would only coarsen a curve
+        # that is doing its job.
+        if method == 'ANCHORED':
+            loops = [(resample(pts, closed, 1.6 * float(thickness)),
+                      closed) for pts, closed in loops]
+            loops = [(p, c) for p, c in loops if len(p) >= 4]
+            if not loops:
+                return 0
         cu = bpy.data.curves.new(label + " Rim", 'CURVE')
         cu.dimensions = '3D'
         cu.fill_mode = 'FULL'
@@ -368,16 +417,31 @@ if _IN_BLENDER:
         # A POLY spline would render the staircase; a NURBS one would
         # approximate rather than interpolate and drift off the edge in
         # the same way the old shrinking smoother did.
+        # The spline type follows the fit.  RELAXED has already
+        # flattened the rim, so a POLY spline through those points is
+        # both faithful and clean -- this is what the rim looked like
+        # before the anchored fit existed.  ANCHORED deliberately leaves
+        # the rim where it found it, staircase and all, so it needs
+        # BEZIER handles to round the corners between samples without
+        # moving them.
         cu.resolution_u = 6
         for pts, closed in loops:
-            sp = cu.splines.new('BEZIER')
-            sp.bezier_points.add(len(pts) - 1)
-            for i, q in enumerate(pts):
-                bp = sp.bezier_points[i]
-                bp.co = (float(q[0]), float(q[1]), float(q[2]))
-                bp.handle_left_type = 'AUTO'
-                bp.handle_right_type = 'AUTO'
+            if method == 'ANCHORED':
+                sp = cu.splines.new('BEZIER')
+                sp.bezier_points.add(len(pts) - 1)
+                for i, q in enumerate(pts):
+                    bp = sp.bezier_points[i]
+                    bp.co = (float(q[0]), float(q[1]), float(q[2]))
+                    bp.handle_left_type = 'AUTO'
+                    bp.handle_right_type = 'AUTO'
+            else:
+                sp = cu.splines.new('POLY')
+                sp.points.add(len(pts) - 1)
+                for i, q in enumerate(pts):
+                    sp.points[i].co = (float(q[0]), float(q[1]),
+                                       float(q[2]), 1.0)
             sp.use_cyclic_u = bool(closed)
+
         rim = bpy.data.objects.new(label + " Rim", cu)
         context.collection.objects.link(rim)
         if profile == 'SQUARE':
@@ -401,7 +465,7 @@ if _IN_BLENDER:
         return len(loops)
 
     def add_rim_from_object(context, obj, label, thickness=None,
-                            smooth=None, profile=None):
+                            smooth=None, profile=None, method=None):
         """Same, reading the geometry back off an existing mesh object.
 
         For generators that build their object through a path this
@@ -416,8 +480,10 @@ if _IN_BLENDER:
         faces = [tuple(p.vertices) for p in me.polygons]
         if profile is None:
             profile = 'ROUND'
+        if method is None:
+            method = 'RELAXED'
         return add_rim_curve(context, obj, label, verts, faces,
-                             thickness, smooth, profile)
+                             thickness, smooth, profile, method)
 
 
 def _selftest():
