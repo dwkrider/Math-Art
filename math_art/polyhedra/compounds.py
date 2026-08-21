@@ -200,8 +200,28 @@ def _with_inversion(rots):
     return list(rots) + [-M for M in rots]
 
 
+def _tetra_full():
+    """T_d -- the full symmetry of one inscribed tetrahedron, order 24.
+
+    NOT the same as T_h: T_d contains the S4 rotoreflections and the
+    diagonal mirrors but no centre, while T_h contains the centre but no
+    S4.  Skilling's band 1-19 uses S4 as the generating subgroup, so it
+    is T_d that is needed there.  Filter the full octahedral group rather
+    than rebuild.
+    """
+    T = np.array([[1.0, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]])
+    out = []
+    for M in _with_inversion(_octa_rotations()):
+        W = T @ M.T
+        d2 = ((W[:, None, :] - T[None, :, :]) ** 2).sum(-1)
+        if d2.min(axis=1).max() < 1e-9:
+            out.append(M)
+    return out
+
+
 GROUPS = {
     'T': _tetra_rotations,
+    'Td': _tetra_full,
     'O': _octa_rotations,
     'I': _icosa_rotations,
     'Oh': lambda: _with_inversion(_octa_rotations()),
@@ -215,6 +235,7 @@ GROUP_AXES = {
     'O': {2: (1.0, 1.0, 0.0), 3: (1.0, 1.0, 1.0), 4: (0.0, 0.0, 1.0)},
     'I': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0), 5: (0.0, 1.0, PHI)},
 }
+GROUP_AXES['Td'] = GROUP_AXES['T']
 GROUP_AXES['Th'] = GROUP_AXES['T']
 GROUP_AXES['Oh'] = GROUP_AXES['O']
 GROUP_AXES['Ih'] = GROUP_AXES['I']
@@ -274,6 +295,22 @@ def to_standard_frame(V, F):
         for i in range(len(f)):
             a, b = V[f[i]], V[f[(i + 1) % len(f)]]
             cands.append(np.array([(a[k] + b[k]) / 2.0 for k in range(3)]))
+    # Cross products of the direct candidates, because a rotation axis
+    # need not lie along ANY vertex, face centre or edge midpoint.  The
+    # octahemioctahedron is the case that forced this: its four-fold axes
+    # are the coordinate axes, but its faces are 8 triangles and 4
+    # hexagons THROUGH THE CENTRE, so the hexagon centroids are the
+    # origin and get skipped, and no other feature points that way.
+    # Without the crosses the aligner falls back to two-folds, leaves the
+    # solid 45 degrees out, and the orbit returns 15 instead of 5.
+    direct = [d / np.linalg.norm(d) for d in cands
+              if np.linalg.norm(d) > 1e-9]
+    for i, a in enumerate(direct):
+        for b in direct[i + 1:]:
+            x = np.cross(a, b)
+            if np.linalg.norm(x) > 1e-6:
+                cands.append(x)
+
     axes = []                             # (max rotation order, axis)
     for d in cands:
         ln = np.linalg.norm(d)
@@ -310,6 +347,12 @@ def to_standard_frame(V, F):
     raise ValueError('the solid has no orthogonal pair of rotation axes')
 
 
+#: built constituents, keyed by kind.  `to_standard_frame` is O(n^2) in
+#: the candidate directions once the cross products are included, and the
+#: same handful of uniforms is rebuilt for row after row.
+_COMPONENT_CACHE = {}
+
+
 def _uniform_component(u):
     """Uniform polyhedron U<u> as (V, F), for use as a constituent.
 
@@ -327,8 +370,13 @@ def _uniform_component(u):
 
 
 def _component(kind):
+    if kind in _COMPONENT_CACHE:
+        V, F = _COMPONENT_CACHE[kind]
+        return ([tuple(v) for v in V], [list(f) for f in F])
     if kind.startswith('U') and kind[1:].isdigit():
-        return _uniform_component(int(kind[1:]))
+        out = _uniform_component(int(kind[1:]))
+        _COMPONENT_CACHE[kind] = out
+        return ([tuple(v) for v in out[0]], [list(f) for f in out[1]])
     if kind.startswith('PRISM'):
         spec = kind[5:]
         if '_' in spec:                    # PRISM<n>_<m>, a star prism
@@ -913,8 +961,31 @@ _ENANT_BY_KEY = {r[0]: r for r in ENANTIOMORPHS}
 # The one thing that has to be right is the FRAME -- see
 # `to_standard_frame`, without which these came out 15, 24, 30 and 60.
 def subgroup_compound(component, group):
-    """A constituent in its own standard frame, orbited under `group`."""
-    return _orbit(_component(component), GROUPS[group]())
+    """A constituent in its own standard frame, orbited under `group`.
+
+    One correction is needed for the rows whose constituent has the SAME
+    symmetry group as the compound -- the icosahedral ones, entries 47,
+    49, 51 and 53.  Those want the constituent placed in a DIFFERENT
+    icosahedral group sharing only the tetrahedral subgroup, giving 5
+    copies; if it lands in the reference group instead, the orbit is a
+    single copy and the compound collapses.
+
+    Whether `to_standard_frame` lands in the reference group or a
+    conjugate depends on which solid it is (the great icosahedron did,
+    the small stellated dodecahedron did not), so detect it rather than
+    tabulate it: a one-copy orbit means the frames coincided, and a
+    quarter turn about z fixes it.  That turn is a provably correct
+    choice, not a fudge -- it lies in O_h, so it normalizes T_h and keeps
+    the shared tetrahedral subgroup, but it is not in I_h, so it does
+    move the constituent to a different icosahedral group.
+    """
+    V, F = _component(component)
+    comps = _orbit((V, F), GROUPS[group]())
+    if len(comps) == 1:
+        R = _rot((0.0, 0.0, 1.0), math.pi / 2)
+        comps = _orbit(([tuple(R @ np.array(v, float)) for v in V], F),
+                       GROUPS[group]())
+    return comps
 
 
 #: (key, label, component, group, Skilling's constituent count)
@@ -935,6 +1006,38 @@ SUBGROUP_COMPOUNDS = [
      'U10', 'Ih', 5),
     ('S67_NONCONVEX_GRCO',
      "Skilling 67: 5 Nonconvex Great Rhombicuboctahedra", 'U17', 'Ih', 5),
+    # Entry 18 sits in the "miscellaneous" band but is built the same
+    # way.  Entry 19, the compound of 20 tetrahemihexahedra, is NOT here:
+    # Skilling singles it out as the only uniform compound that cannot be
+    # reached by adding symmetry to a group in which the constituent is
+    # uniform.  It needs the bi-uniform C_3 placement in which the six
+    # vertices fall into two classes and then coalesce in pairs.
+    ('S18_TETRAHEMIHEX', "Skilling 18: 5 Tetrahemihexahedra (I)",
+     'U4', 'I', 5),
+    ('S48_GT_DODECA', "Skilling 48: 2 Great Dodecahedra (Oh)",
+     'U35', 'Oh', 2),
+    ('S49_GT_DODECA', "Skilling 49: 5 Great Dodecahedra (Ih)",
+     'U35', 'Ih', 5),
+    ('S50_SM_STELL_DODECA',
+     "Skilling 50: 2 Small Stellated Dodecahedra (Oh)", 'U34', 'Oh', 2),
+    ('S51_SM_STELL_DODECA',
+     "Skilling 51: 5 Small Stellated Dodecahedra (Ih)", 'U34', 'Ih', 5),
+    ('S52_GT_ICOSA', "Skilling 52: 2 Great Icosahedra (Oh)",
+     'U53', 'Oh', 2),
+    ('S53_GT_ICOSA', "Skilling 53: 5 Great Icosahedra (Ih)",
+     'U53', 'Ih', 5),
+    ('S60_CUBOHEMIOCTA', "Skilling 60: 5 Cubohemioctahedra",
+     'U15', 'Ih', 5),
+    ('S61_OCTAHEMIOCTA', "Skilling 61: 5 Octahemioctahedra",
+     'U3', 'Ih', 5),
+    ('S64_SM_CUBICUBOCTA', "Skilling 64: 5 Small Cubicuboctahedra",
+     'U13', 'Ih', 5),
+    ('S65_GT_CUBICUBOCTA', "Skilling 65: 5 Great Cubicuboctahedra",
+     'U14', 'Ih', 5),
+    # Entries 63 and 66 are absent: their constituents have four-part
+    # Wythoff symbols (2 4 3/2 4/2 | and 2 4/3 3/2 4/2 |), which
+    # `build_uniform` does not construct.  Nothing else blocks them --
+    # add the constituent and the row follows.
 ]
 
 _SUBGROUP_BY_KEY = {r[0]: r for r in SUBGROUP_COMPOUNDS}
@@ -1029,6 +1132,39 @@ AXIS_COMPOUNDS = [
      'PRISM5_2', 'Ih', 5, 5, PERP, 12),
     ('S41_10_3PRISM', "Skilling 41: 6 Decagrammic Prisms (Ih)",
      'PRISM10_3', 'Ih', 10, 5, PERP, 6),
+    # --- Skilling's Table 1, entries 1-19 ------------------------------
+    # "Miscellaneous", but really one idea: add symmetry to a solid
+    # generated by S4 (tetrahedra), C4h (cubes) or S6 (octahedra).  Those
+    # are rotoreflection subgroups, so the placement is the axis rule
+    # with a free turn, and the special cases are particular angles.
+    #
+    # Several of the band already ship under their classical names and
+    # are NOT duplicated here: 4 is the stella octangula (`STELLA`), 5
+    # and 6 the five and ten tetrahedra, 7 and 8 the six and three cubes
+    # (`HC_6CUBES_C4`, `HC_3CUBES`), 9 the five cubes, 17 the five
+    # octahedra.
+    ('S01_TETRA', "Skilling 1: 6 Tetrahedra, Td (free)",
+     'TETRA', 'Td', 2, 2, 11.0, 6),
+    ('S02_TETRA', "Skilling 2: 12 Tetrahedra, Oh (free)",
+     'TETRA', 'Oh', 2, 4, 11.0, 12),
+    ('S03_TETRA', "Skilling 3: 6 Tetrahedra, Oh", 'TETRA', 'Oh', 2, 4,
+     45.0, 6),
+    ('S10_OCTA', "Skilling 10: 4 Octahedra, Th (free)",
+     'OCTA', 'Th', 3, 3, 11.0, 4),
+    ('S11_OCTA', "Skilling 11: 8 Octahedra, Oh (free)",
+     'OCTA', 'Oh', 3, 3, 11.0, 8),
+    ('S12_OCTA', "Skilling 12: 4 Octahedra, Oh", 'OCTA', 'Oh', 3, 3,
+     60.0, 4),
+    ('S13_OCTA', "Skilling 13: 20 Octahedra, Ih (free)",
+     'OCTA', 'Ih', 3, 3, 11.0, 20),
+    # Entry 15 (and its partner 16, the other orientation of Skilling's
+    # figure 5, which needs that figure to tell apart).  The angle is the
+    # icosahedral 22.2388... again, so a scan on any round grid reports
+    # this row unreachable.
+    ('S15_OCTA', "Skilling 15: 10 Octahedra, Ih", 'OCTA', 'Ih', 3, 3,
+     perp_phase_from('OCTA', 'Ih', 3, 3,
+                     perp_half_turn_axis('OCTA', 3)), 10),
+
     # --- compounds of the other regulars ------------------------------
     # Reachable only after the dodecahedron's five-fold axis was
     # corrected above; with the old (0, 1, PHI) the five-fold rows just
