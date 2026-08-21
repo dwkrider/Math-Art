@@ -673,12 +673,13 @@ if _IN_BLENDER:
         return FloatProperty(
             name="Rim Twist", default=0.0, min=-180.0, max=180.0,
             step=100, precision=1, subtype='ANGLE',
-            description="Rotate the swept profile about the rim. Only "
-                        "matters for the profiles that are not "
-                        "symmetric -- the C and the H -- where it "
-                        "decides which way the opening faces; the "
-                        "swept frame follows the curve's own twist, "
-                        "which is not something the surface fixes")
+            description="Rotate the swept profile about the rim. Set it "
+                        "to 180 to reverse which way a channel opens or "
+                        "which face a reed is milled into. Which way "
+                        "looks right is not fixed by the surface: the "
+                        "same outward direction reads as out of an "
+                        "Enneper edge and into a clipped periodic cell, "
+                        "so this is the control for it")
 
     def _square_bevel(name, half):
         """A closed square used as a curve's bevel object.
@@ -712,7 +713,8 @@ if _IN_BLENDER:
             # twist only does anything to a profile that is not
             # symmetric under a quarter turn
             if (hasattr(op, 'rim_twist')
-                    and getattr(op, 'rim_profile', '') in ('C', 'H')):
+                    and getattr(op, 'rim_profile', '') in ('C', 'H',
+                                                           'REED')):
                 layout.prop(op, 'rim_twist')
             if (hasattr(op, 'rim_reeds')
                     and getattr(op, 'rim_profile', '') == 'REED'):
