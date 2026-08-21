@@ -110,7 +110,7 @@ MODELS = [
     ('T20', "20 Triangles", 'U30TRI', 3, 1, 1.00, 0.0),
     ('S30', "30 Squares", 'U38SQ', 4, 1, 1.00, 0.0),
     ('P12', "12 Pentagons", 'DODECA', 5, 1, 1.38, 20.0),
-    ('D12', "12 Decagons", 'DODECA', 10, 1, 1.30, 9.0),
+    ('D12', "12 Decagons", 'U33DEC', 10, 1, 1.00, 0.0),
     ('H20', "20 Hexagons", 'ICOSA', 6, 1, 0.59, 10.0),
     ('SD12', "12 Star Decagons {10/3}", 'DODECA', 10, 3, 1.30, 9.0),
     ('PG12', "12 Pentagrams", 'DODECA', 5, 2, 1.20, 20.0),
@@ -219,6 +219,15 @@ FACE_SOURCES = {
     # midpoint radii.  The same triangles also belong to the GREAT
     # ditrigonal icosidodecahedron (U47), exactly as he says.
     'U30TRI': ('3 | 5/2 3', ['3', '5/2', '3'], 3),
+    # Hart on the twelve decagons: "the edges of the decagons form
+    # pentagons, squares, and triangles.  If we include the squares only,
+    # we get the small rhombidodecahedron; if we include the pentagons
+    # and triangles only, we get the small dodecicosidodecahedron."
+    # Both solids therefore carry the SAME twelve decagons, and they do:
+    # U39 is 30 squares + 12 decagons, U33 is 20 triangles + 12 pentagons
+    # + 12 decagons, and the decagons agree to the last digit -- plane
+    # distance 0.689152, circumradius 0.724617.  U33 is used here.
+    'U33DEC': ('3/2 5 | 5', ['3/2', '5', '5'], 10),
 }
 
 
@@ -356,10 +365,22 @@ def _inside_intervals(P, nrm, origin, direction):
         pt = _add(a, _mul(_sub(b, a), t))
         hits.append(_dot(_sub(pt, origin), direction))
     hits.sort()
+    # A line through a VERTEX meets both edges that share it, so that one
+    # boundary crossing is registered twice.  The doubled entry shifts
+    # every following pair and the alternate-interval walk collapses --
+    # which is exactly what happened to the twelve decagons at their true
+    # size, where adjacent panels share edges and so the chord ends land
+    # on vertices: the model reported zero crossings at 1.000 and thirty
+    # at 0.9999 and 1.0001.  Merge coincident hits so a vertex counts
+    # once.
+    merged = []
+    for h in hits:
+        if not merged or h - merged[-1] > 1e-9:
+            merged.append(h)
     out = []
-    for i in range(0, len(hits) - 1, 2):
-        if hits[i + 1] - hits[i] > 1e-9:
-            out.append((hits[i], hits[i + 1]))
+    for i in range(0, len(merged) - 1, 2):
+        if merged[i + 1] - merged[i] > 1e-9:
+            out.append((merged[i], merged[i + 1]))
     return out
 
 
