@@ -439,6 +439,20 @@ def _inside_intervals(P, nrm, origin, direction):
     collect every crossing of the line with an edge, sort them, and take
     alternate intervals: for a simple closed polygon the line is inside
     between the 1st and 2nd crossing, the 3rd and 4th, and so on.
+
+    Vertices ON the line are the whole difficulty, and they are not rare
+    here -- a slide-together's chords run through the panels' corners all
+    the time.  The rule below is the standard half-open one: an edge
+    counts when its two ends fall on different sides, with "on the line"
+    filed as the NEGATIVE side.  A vertex the boundary really crosses
+    then scores once, and a vertex it merely touches scores twice (or
+    not at all), so the running parity stays right and the
+    alternate-interval walk never slips a place.  Counting a touched
+    vertex once instead -- which an earlier "merge coincident hits" pass
+    did -- loses a hit, makes the count odd, and silently drops the last
+    interval: that is what threw away one of the two arms a pentagram's
+    chord passes through, leaving those panels slit differently from one
+    another.
     """
     m = len(P)
     hits = []
@@ -447,33 +461,29 @@ def _inside_intervals(P, nrm, origin, direction):
         a, b = P[k], P[(k + 1) % m]
         da = _dot(side, _sub(a, origin))
         db = _dot(side, _sub(b, origin))
-        if (da > 1e-12 and db > 1e-12) or (da < -1e-12 and db < -1e-12):
-            continue                        # edge wholly on one side
+        if abs(da) < 1e-12:
+            da = 0.0
+        if abs(db) < 1e-12:
+            db = 0.0
+        if (da > 0.0) == (db > 0.0):
+            continue                        # both sides the same
         if abs(da - db) < 1e-15:
             continue                        # edge along the line
         t = da / (da - db)
-        if t < -1e-9 or t > 1 + 1e-9:
-            continue
         pt = _add(a, _mul(_sub(b, a), t))
         hits.append(_dot(_sub(pt, origin), direction))
     hits.sort()
-    # A line through a VERTEX meets both edges that share it, so that one
-    # boundary crossing is registered twice.  The doubled entry shifts
-    # every following pair and the alternate-interval walk collapses --
-    # which is exactly what happened to the twelve decagons at their true
-    # size, where adjacent panels share edges and so the chord ends land
-    # on vertices: the model reported zero crossings at 1.000 and thirty
-    # at 0.9999 and 1.0001.  Merge coincident hits so a vertex counts
-    # once.
-    merged = []
-    for h in hits:
-        if not merged or h - merged[-1] > 1e-9:
-            merged.append(h)
     out = []
-    for i in range(0, len(merged) - 1, 2):
-        if merged[i + 1] - merged[i] > 1e-9:
-            out.append((merged[i], merged[i + 1]))
-    return out
+    for i in range(0, len(hits) - 1, 2):
+        lo, hi = hits[i], hits[i + 1]
+        # Two arms that meet at a notch vertex the line runs through give
+        # two intervals sharing an endpoint.  The panels overlap right
+        # across that point, so it is one crossing and wants one slot.
+        if out and lo - out[-1][1] < 1e-9:
+            out[-1] = (out[-1][0], hi)
+        else:
+            out.append((lo, hi))
+    return [(lo, hi) for lo, hi in out if hi - lo > 1e-9]
 
 
 def crossings(panels):
@@ -501,29 +511,34 @@ def crossings(panels):
                             _mul(_cross(raw_dir, ni), hj_)), 1.0 / dd)
             si = _inside_intervals(Pi, ni, org, dirv)
             sj = _inside_intervals(Pj, nj, org, dirv)
-            best = None
-            for ai, bi in si:              # longest shared stretch
+            # EVERY shared stretch is a crossing, not just the longest.
+            # Two convex panels overlap in one interval, so keeping the
+            # longest was harmless there -- but a STAR panel is entered
+            # and left several times along one chord, once per arm, and
+            # each of those overlaps is a separate place the two sheets
+            # pass through one another and so needs its own pair of
+            # slits.  Hart's pentagram template shows TEN slits per
+            # panel; keeping only the longest gave five, left the
+            # pattern varying from panel to panel (so the pieces were
+            # not one template), and let a slot span a notch.
+            shared = []
+            for ai, bi in si:
                 for aj, bj in sj:
                     lo, hi = max(ai, aj), min(bi, bj)
-                    if hi - lo > 1e-6 and (best is None
-                                           or hi - lo > best[1] - best[0]):
-                        best = (lo, hi, ai, bi, aj, bj)
-            if best is None:
-                continue
-            lo, hi, ai, bi, aj, bj = best
-            mid = _add(org, _mul(dirv, 0.5 * (lo + hi)))
-            # Each slit has to start on ITS OWN panel's rim.  Returning
-            # the shared stretch's ends instead is subtly wrong whenever
-            # the two panels reach different distances along the chord:
-            # the far end then lies on the OTHER panel's rim, which for
-            # this one is an interior point, and `_slit_outline` -- which
-            # snaps an entry to the nearest edge -- drops the slot at
-            # whatever rim point happens to be closest.  On a star panel
-            # that is often across a notch, and the slot is cut running
-            # out through the spikes.  So hand back bi for panel i and aj
-            # for panel j, which are where the chord leaves each panel.
-            out.append((i, j, mid, _add(org, _mul(dirv, aj)),
-                        _add(org, _mul(dirv, bi))))
+                    if hi - lo > 1e-6:
+                        shared.append((lo, hi, ai, bi, aj, bj))
+            # Each slit starts on ITS OWN panel's rim.  Handing back the
+            # shared stretch's ends is wrong whenever the two panels
+            # reach different distances along the chord: the far end then
+            # lies on the OTHER panel's rim, which for this one is an
+            # interior point, and `_slit_outline` -- which snaps an entry
+            # to the nearest edge -- drops the slot at whatever rim point
+            # is closest, often across a notch.  So use bi for panel i
+            # and aj for panel j, where the chord leaves each panel.
+            for lo, hi, ai, bi, aj, bj in shared:
+                mid = _add(org, _mul(dirv, 0.5 * (lo + hi)))
+                out.append((i, j, mid, _add(org, _mul(dirv, aj)),
+                            _add(org, _mul(dirv, bi))))
     return out
 
 
@@ -915,6 +930,76 @@ def _verify_against_hart():
     return len(HART_PLANE_DISTANCE)
 
 
+def _slit_pattern(panels, cx, idx):
+    """Where panel `idx` is slit, as (radius, azimuth) in its own frame."""
+    P, nv = panels[idx]
+    cen = [sum(q[t] for q in P) / len(P) for t in range(3)]
+    e1 = _unit(_sub(P[0], cen))
+    e2 = _cross(nv, e1)
+    out = []
+    for i, j, _mid, lo, hi in cx:
+        for who, end in ((i, hi), (j, lo)):
+            if who != idx:
+                continue
+            v = _sub(end, cen)
+            out.append((_norm(v),
+                        math.degrees(math.atan2(_dot(v, e2), _dot(v, e1)))
+                        % 360.0))
+    return out
+
+
+def _verify_one_template():
+    """Every panel of a model must be slit the SAME way.
+
+    This is the defining property of a slide-together and the sharpest
+    test there is of the whole construction: the model is built from many
+    copies of ONE piece, so a maker cuts one template and traces it.  If
+    two panels came out with slits at different radii, or a different
+    number of them, the thing could not be made -- and the arrangement
+    would be wrong, because the symmetry that carries one panel onto
+    another has to carry its slits along too.
+
+    It is also a strong check on the code, since it fails the moment a
+    step stops being equivariant: an in-plane axis invented from a global
+    direction rather than taken from the solid, a slit end chosen by
+    array index rather than by geometry, or a boundary crossing miscounted
+    at a vertex all break it, and all three have.
+    """
+    checked = 0
+    for key, _lbl, _ax, n, _d, _r, _t in MODELS:
+        panels = model_panels(key)
+        cx = crossings(panels)
+        ref = _slit_pattern(panels, cx, 0)
+        for idx in range(1, len(panels)):
+            other = _slit_pattern(panels, cx, idx)
+            assert len(other) == len(ref),                 (key, "panels are slit a different number of times",
+                 idx, len(other), len(ref))
+            # a panel's own rotations are the only freedom: its {n/d}
+            # outline turns onto itself in steps of 360/n degrees (and of
+            # 360/2n for a star, whose outline has 2n corners), so the
+            # patterns need only agree up to one of those turns.
+            for step in range(2 * n):
+                pool = list(other)
+                shift = 360.0 * step / (2 * n)
+                for r, az in ref:
+                    for t, (r2, az2) in enumerate(pool):
+                        gap = abs(az - (az2 + shift)) % 360.0
+                        if abs(r - r2) < 1e-3 and min(gap, 360.0 - gap) < 0.05:
+                            pool.pop(t)
+                            break
+                    else:
+                        break
+                if not pool:
+                    break
+            else:
+                raise AssertionError(
+                    (key, "panel %d is not slit like panel 0" % idx,
+                     sorted((round(r, 4), round(a, 2)) for r, a in ref),
+                     sorted((round(r, 4), round(a, 2)) for r, a in other)))
+        checked += 1
+    return checked
+
+
 def _selftest():
     want_panels = {'T20': 20, 'S30': 30, 'P12': 12, 'D12': 12,
                    'H20': 20, 'SD12': 12, 'PG12': 12,
@@ -996,6 +1081,8 @@ def _selftest():
 
     _verify_slits_inside()
     print("SLITS   no slit extends beyond its own panel")
+    nt = _verify_one_template()
+    print("SAME    all %d models cut every panel from one template" % nt)
     nh = _verify_against_hart()
     print("PLANES  all %d models sit at Hart's own panel-plane distances"
           % nh)
