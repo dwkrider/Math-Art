@@ -291,8 +291,14 @@ def _selftest():
     # because a construction that happened to be right at r = 2 and wrong
     # elsewhere would be the easy mistake here.
     for k, lbl in _cmp.FAMILY_LABELS:
-        _anti, reflect = _cmp.FAMILIES[k]
-        for n in (3, 5, 6, 8):
+        _anti, reflect, star_m = _cmp.FAMILIES[k]
+        # The m-even star antiprism (entries 24/25) exists only where
+        # Coxeter's crossed trapezoid does, 2 < p < 3, i.e. n < 3m.  With
+        # m = 2 that leaves n = 5 alone, so {5/2} is the only base these
+        # two families have -- they are "infinite" in the repeat count r,
+        # not in n.
+        ns = (5,) if star_m else (3, 5, 6, 8)
+        for n in ns:
             for r in (1, 2, 3, 4):
                 got = len(build_compound(k, sides=n, repeat=r))
                 want = 2 * r if reflect else r

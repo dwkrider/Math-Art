@@ -209,7 +209,7 @@ def cyclic_rotations(n):
     return [_rot((0.0, 0.0, 1.0), 2 * math.pi * k / n) for k in range(n)]
 
 
-def prism_family(n, r, anti=False, reflect=False, phase=0.0):
+def prism_family(n, r, anti=False, reflect=False, phase=0.0, star_m=0):
     """Skilling 20-25: a prism or antiprism repeated r times about its
     own axis.
 
@@ -218,7 +218,16 @@ def prism_family(n, r, anti=False, reflect=False, phase=0.0):
     count is what Skilling tabulates, and it is the reason these are
     families rather than models -- both n and r are free.
     """
-    V, F = prism_solid(n, anti)
+    # star_m selects a star base: entries 24/25 are the m-EVEN antiprism,
+    # which is the ALIGNED-base second antiprism, not the staggered one
+    # (Skilling's rows 22/24 give the rule -- D_nd for m odd, D_nh for m
+    # even).  m = 0 means the ordinary convex prism or antiprism.
+    if star_m:
+        V, F = (star_antiprism_second(n, star_m) if star_m % 2 == 0
+                else star_antiprism_solid(n, star_m)) if anti \
+            else star_prism_solid(n, star_m)
+    else:
+        V, F = prism_solid(n, anti)
     comps = []
     seen = set()
     steps = 2 * r if reflect else r
@@ -248,12 +257,16 @@ def prism_family(n, r, anti=False, reflect=False, phase=0.0):
 #   22  antiprism, S_2n used, 2r constituents, rotational freedom
 #   23  antiprism, S_2n used,  r constituents, the special case
 #
-#: key -> (antiprism?, reflect? -> 2r rather than r)
+#: key -> (antiprism?, reflect? -> 2r rather than r, star numerator)
+#: 24/25 use the m-EVEN star antiprism, whose bases are ALIGNED, giving
+#: D_nh where the staggered one gives D_nd.
 FAMILIES = {
-    'S20_PRISM_FAMILY': (False, True),
-    'S21_PRISM_FAMILY': (False, False),
-    'S22_ANTI_FAMILY': (True, True),
-    'S23_ANTI_FAMILY': (True, False),
+    'S20_PRISM_FAMILY': (False, True, 0),
+    'S21_PRISM_FAMILY': (False, False, 0),
+    'S22_ANTI_FAMILY': (True, True, 0),
+    'S23_ANTI_FAMILY': (True, False, 0),
+    'S24_ANTI_FAMILY': (True, True, 2),
+    'S25_ANTI_FAMILY': (True, False, 2),
 }
 
 FAMILY_LABELS = [
@@ -261,6 +274,10 @@ FAMILY_LABELS = [
     ('S21_PRISM_FAMILY', "Skilling 21: r Prisms"),
     ('S22_ANTI_FAMILY', "Skilling 22: 2r Antiprisms (free)"),
     ('S23_ANTI_FAMILY', "Skilling 23: r Antiprisms"),
+    ('S24_ANTI_FAMILY',
+     "Skilling 24: 2r Pentagrammic Antiprisms (free, Sides=5)"),
+    ('S25_ANTI_FAMILY',
+     "Skilling 25: r Pentagrammic Antiprisms (Sides=5)"),
 ]
 
 
@@ -1347,9 +1364,10 @@ def build_compound(kind, phase=None, sides=5, repeat=2):
     generally rises.
     """
     if kind in FAMILIES:
-        anti, reflect = FAMILIES[kind]
+        anti, reflect, star_m = FAMILIES[kind]
         return prism_family(sides, repeat, anti=anti, reflect=reflect,
-                            phase=0.0 if phase is None else phase)
+                            phase=0.0 if phase is None else phase,
+                            star_m=star_m)
     if kind in SIDED:
         return prism_and_dual(sides, anti=SIDED[kind])
     if kind in _INSCRIBED_KEYS:
