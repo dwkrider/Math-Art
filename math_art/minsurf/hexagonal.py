@@ -817,7 +817,115 @@ def clp_assembly(P):
             'BLOCK': (s6, B)}
 
 
-CLP_ARRANGEMENTS = ('PATCH', 'UNIT', 'BLOCK')
+CLP_ARRANGEMENTS = ('PATCH', 'UNIT', 'BLOCK',
+                    'CONJUGATE', 'CONJUGATE_BLOCK')
+
+
+def _clp_far_point(nu, nv, x_at, y_to, theta=0.0):
+    """Evaluate the Weierstrass integral at a point ABOVE the patch.
+
+    Weber's conjugate assembly needs f(a + tau/2), whose imaginary part
+    is twice the patch's own height, so the value does not exist on the
+    patch grid.  It is obtained by integrating over a taller rectangle
+    that starts from the same corner, which puts it in the same frame as
+    the patch rather than in one of its own.
+    """
+    sp = _SPECS['CLP']
+    keep = sp['ylim']
+    sp['ylim'] = lambda t, _y=y_to: (0.0, _y)
+    try:
+        P = _spec_patch('CLP', nu, nv, theta=theta)
+    finally:
+        sp['ylim'] = keep
+    xs = _spec_nodes('CLP', nu)[0]
+    return P[int(np.argmin(np.abs(xs - x_at))), -1]
+
+
+def clp_conjugate(nu, nv, maxlen=6):
+    """The CONJUGATE CLP surface: patch, generators and assembly.
+
+    Weber shows this beside the original on every parameter set, and it
+    is a genuinely different surface rather than a rotation of the same
+    one -- the page calls it "an array of singly periodic Scherk
+    surfaces", which is what it looks like, against the original's
+    crossed sheets.  Both are triply periodic and of genus 3.
+
+    It is the associate at ninety degrees from the original, so it is
+    the SAME Weierstrass data read from the real part instead of the
+    imaginary one (theta = 0 against the original's -pi/2).
+
+    Its symmetries have to be re-derived rather than reused, and the
+    page says why: the conjugate surfaces "usually lack the horizontal
+    straight lines but have vertical symmetry planes instead".  Measured
+    on the patch, exactly that happens -- the two halves of the bottom
+    edge and the left edge, all three STRAIGHT on the original, come out
+    planar here, while the top edge turns from planar to straight.  So
+    the conjugate classifies its own boundary rather than being told, as
+    the original is.
+
+    Closing a group over its boundary curves does NOT work here -- it
+    was tried, and produced a scattered heap of overlapping copies
+    (135 over-shared edges, nothing like Weber's render).  His conjugate
+    assembly is its own chain and is followed literally, exactly as the
+    original's is:
+
+        fr1 = fr0 u rotate(fr0, StraightLine[f(y1 i/2), f(.5+y1 i/2)])
+        fr2 = fr1 u reflect(fr1, Plane[{0,0,1}, .5])
+        fr3 = fr2 u reflect(fr2, Plane[{1,0,0}, f(a+tau/2)_x])
+        fr4 = fr3 u reflect(fr3, Plane[{0,1,0}, f(0)_y])
+        fr5 = fr4 u translate(fr4, {disx,0,0})
+        fr6 = fr5 u translate(fr5, {0,disy,0})
+        fr7 = fr6 u translate(fr6, {0,0,-1})
+
+    with disx = 2(f[a+tau/2] - f[a])_x and disy = 2 f[a+tau/2]_y.  All
+    but one element is measured off the patch; f(a+tau/2) sits above it
+    and comes from `_clp_far_point`.
+    """
+    def m(*mats):
+        out = np.eye(4)
+        for M in mats:
+            out = M @ out
+        return out
+
+    P = _spec_patch('CLP', nu, nv, theta=0.0)
+    tau = _SPECS['CLP']['tau']
+    a = _SPECS['CLP']['a']
+    xs = _spec_nodes('CLP', P.shape[0])[0]
+    ia = int(np.argmin(np.abs(xs - a)))
+
+    top = P[:, -1]                               # z = x + i y1
+    v = _snap_axis(np.linalg.svd(top - top.mean(0),
+                                 full_matrices=False)[2][0], 45.0)
+    rot = _halfturn(top.mean(0), v)
+
+    right = P[-1, :]                             # z = .5 + i y
+    _, _, nrm, cen = _classify(right)
+    mz = _mirror(_snap_axis(nrm, 45.0), float(np.dot(cen, nrm)))
+
+    far = _clp_far_point(P.shape[0], P.shape[1], a,
+                         float(np.imag(tau)) / 2.0)
+    mx = _mirror(np.array([1.0, 0.0, 0.0]), float(far[0]))
+    my = _mirror(np.array([0.0, 1.0, 0.0]), float(P[0, 0][1]))
+
+    disx = 2.0 * (far - P[ia, 0])[0]
+    disy = 2.0 * far[1]
+    zext = float(P[..., 2].max() - P[..., 2].min())
+    t1 = np.eye(4); t1[:3, 3] = [disx, 0.0, 0.0]
+    t2 = np.eye(4); t2[:3, 3] = [0.0, disy, 0.0]
+    t3 = np.eye(4); t3[:3, 3] = [0.0, 0.0, -2.0 * zext]
+
+    s1 = [np.eye(4)]
+    s1 = s1 + [m(x, rot) for x in s1]
+    s2 = s1 + [m(x, mz) for x in s1]
+    s3 = s2 + [m(x, mx) for x in s2]
+    s4 = s3 + [m(x, my) for x in s3]
+    s5 = s4 + [m(x, t1) for x in s4]
+    s6 = s5 + [m(x, t2) for x in s5]
+    s7 = s6 + [m(x, t3) for x in s6]
+    B = np.array([[2.0 * disx, 0.0, 0.0],
+                  [0.0, 2.0 * disy, 0.0],
+                  [0.0, 0.0, 4.0 * zext]])
+    return P, {'UNIT': s4, 'BLOCK': s7}, B
 
 
 def spec_build(key, cells, res_per_cell, scale, theta,
@@ -836,7 +944,21 @@ def spec_build(key, cells, res_per_cell, scale, theta,
     named = abs(float(theta)) < 1e-9
     P = _spec_patch(key, nu, nv, None if named else float(theta))
     built = None
-    if named and key == 'CLP':
+    if named and key == 'CLP' and arrangement.startswith('CONJUGATE'):
+        P, sets, B = clp_conjugate(nu, nv)
+        ops = sets['BLOCK' if arrangement.endswith('BLOCK') else 'UNIT']
+        V0 = P.reshape(-1, 3)
+        Q0 = _patch_quads(P.shape[0], P.shape[1])
+        Vs, Qs, base = [], [], 0
+        for M in ops:
+            Vs.append(_apply(M, V0))
+            q = Q0 + base
+            if np.linalg.det(M[:3, :3]) < 0.0:
+                q = q[:, ::-1]
+            Qs.append(q)
+            base += len(V0)
+        built = (np.concatenate(Vs, 0), np.concatenate(Qs, 0), B)
+    elif named and key == 'CLP':
         ops, B = clp_assembly(P)[arrangement]
         V0 = P.reshape(-1, 3)
         Q0 = _patch_quads(P.shape[0], P.shape[1])
@@ -1222,6 +1344,45 @@ def _selftest():
     # over-shared count above wanders with resolution instead of
     # sitting at zero the way H's does.  Reported rather than asserted,
     # so the debt stays visible; see BACKLOG.
+
+    # The conjugate.  It is a different surface, not a re-view of the
+    # same one, so it gets its own check: the page says it "usually
+    # lacks the horizontal straight lines but has vertical symmetry
+    # planes instead", and that is exactly what the boundary
+    # classification must show -- the edges that are STRAIGHT on the
+    # original coming out planar here, and the top edge going the other
+    # way.  If that ever inverts, the associate angle has been applied
+    # in the wrong direction and the "conjugate" is the original again.
+    Po = _spec_patch('CLP', 60, 60)                     # original
+    Pc = _spec_patch('CLP', 60, 60, theta=0.0)          # conjugate
+    co = dict(spec_curves('CLP', Po))
+    cc = dict(spec_curves('CLP', Pc))
+    swapped = 0
+    for nm in ('y=0#0', 'y=0#1', 'x=0'):
+        so = _classify(co[nm])[0]
+        sc = _classify(cc[nm])[0]
+        if so < 1e-3 and sc > 1e-2:
+            swapped += 1
+    top_o = _classify(co['y=1'])[0]
+    top_c = _classify(cc['y=1'])[0]
+    good = swapped == 3 and top_o > 1e-3 and top_c < 1e-6
+    ok &= good
+    print("hexagonal: CLP conjugate swaps its symmetries -- %d of 3 "
+          "straight edges become planar, top edge %.0e -> %.0e %s"
+          % (swapped, top_o, top_c, 'OK' if good else 'FAIL'))
+
+    Vc, fc_ = spec_build('CLP', 1, 40, 1.0, 0.0, 'CONJUGATE')
+    ec = {}
+    for f in fc_:
+        for i in range(len(f)):
+            x, y = int(f[i]), int(f[(i + 1) % len(f)])
+            k = (x, y) if x < y else (y, x)
+            ec[k] = ec.get(k, 0) + 1
+    overc = sum(1 for c in ec.values() if c > 2)
+    good = len(fc_) > 0 and overc == 0
+    ok &= good
+    print("hexagonal: CLP conjugate unit %d verts %d faces, over-shared "
+          "%d %s" % (len(Vc), len(fc_), overc, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
