@@ -123,6 +123,14 @@ MODELS = [
      1.00, 0.0),
     ('D12B', "12 Decagons (great truncated icosidodeca)", 'U68DEC', 10, 1,
      1.00, 0.0),
+    ('P12C', "12 Pentagons (rhombidodecadodeca)", 'U38PEN', 5, 1,
+     1.00, 0.0),
+    ('PG12C', "12 Pentagrams (rhombidodecadodeca)", 'U38PEN', 5, 2,
+     1.00, 0.0),
+    ('P12D', "12 Pentagons (great icosicosidodeca)", 'U48PEN', 5, 1,
+     1.00, 0.0),
+    ('PG12D', "12 Pentagrams (great icosicosidodeca)", 'U48PEN', 5, 2,
+     1.00, 0.0),
 ]
 
 _MODEL = {m[0]: m for m in MODELS}
@@ -136,8 +144,10 @@ def _plane_offset(kind):
     if kind in _MODEL_OFFSET:
         return _MODEL_OFFSET[kind]
     if kind in FACE_SOURCES:
-        wy, pqr, sides = FACE_SOURCES[kind]
-        nv, cen, _e, _r = uniform_face_frames(wy, pqr, sides)[0]
+        spec = FACE_SOURCES[kind]
+        wy, pqr, sides = spec[:3]
+        cls = spec[3] if len(spec) > 3 else 0
+        nv, cen, _e, _r = uniform_face_frames(wy, pqr, sides, cls)[0]
         val = abs(_dot(nv, cen))
     elif kind == 'ID30':
         val = 1.0
@@ -159,8 +169,11 @@ def plane_normals(kind):
         V, F = _seeds.seed_poly('DODECA')
         return [n for n, _d in _hull.face_planes(V, F)]
     if kind in FACE_SOURCES:
-        wy, pqr, sides = FACE_SOURCES[kind]
-        return [nv for nv, _c, _e, _r in uniform_face_frames(wy, pqr, sides)]
+        spec = FACE_SOURCES[kind]
+        wy, pqr, sides = spec[:3]
+        cls = spec[3] if len(spec) > 3 else 0
+        return [nv for nv, _c, _e, _r
+                in uniform_face_frames(wy, pqr, sides, cls)]
     if kind == 'ID30':
         # the thirty 2-fold axes: midpoints of an icosahedron's edges
         V, F = _seeds.seed_poly('ICOSA')
@@ -180,14 +193,14 @@ def plane_normals(kind):
 _FRAME_CACHE = {}
 
 
-def uniform_face_frames(wythoff, pqr, sides):
+def uniform_face_frames(wythoff, pqr, sides, cls=0):
     """Faces of a uniform polyhedron as (normal, centre, e1, radius).
 
     The placement a slide-together needs, taken from the solid rather
     than parameterised: each panel sits in a real face plane, centred on
     that face and turned to its corners.
     """
-    ckey = (wythoff, sides)
+    ckey = (wythoff, sides, cls)
     if ckey in _FRAME_CACHE:
         return _FRAME_CACHE[ckey]
     try:
@@ -217,6 +230,18 @@ def uniform_face_frames(wythoff, pqr, sides):
             nrm = _mul(nrm, -1.0)
         out.append((nrm, cen, _unit(_sub(P[0], cen)),
                     _norm(_sub(P[0], cen))))
+    # A side count is NOT always one face class: the
+    # rhombidodecadodecahedron has twelve pentagons AND twelve
+    # pentagrams, both five-sided, at different plane distances.  Taking
+    # them together gives 24 "panels" of which only half interlock, and
+    # the per-panel crossing count comes out [0, 5] -- not a
+    # slide-together at all.  Split by plane distance and let the caller
+    # pick, innermost class first.
+    groups = {}
+    for fr in out:
+        groups.setdefault(round(abs(_dot(fr[0], fr[1])), 5), []).append(fr)
+    keys = sorted(groups)
+    out = groups[keys[min(cls, len(keys) - 1)]] if keys else []
     _FRAME_CACHE[ckey] = out
     return out
 
@@ -279,6 +304,12 @@ FACE_SOURCES = {
     'U59SQ': ('2 5 5/3 |', ['2', '5', '5/3'], 4),
     'U61PEN': ('5/2 3 | 5/3', ['5/2', '3', '5/3'], 5),
     'U68DEC': ('2 3 5/3 |', ['2', '3', '5/3'], 10),
+    # Two more five-sided placements, each usable convex OR starred.
+    # U38 has TWO five-sided classes and only the outer one interlocks,
+    # hence the class index: its 0.9176 pentagons never meet.  U44
+    # carries the same 0.7658 class as U38, so they are one placement.
+    'U38PEN': ('5/2 5 | 2', ['5/2', '5', '2'], 5, 0),
+    'U48PEN': ('3/2 5 | 3', ['3/2', '5', '3'], 5, 0),
 }
 
 # The TWELVE PENTAGONS are the only model Hart names no solid for -- he
@@ -476,13 +507,23 @@ def crossings(panels):
                     lo, hi = max(ai, aj), min(bi, bj)
                     if hi - lo > 1e-6 and (best is None
                                            or hi - lo > best[1] - best[0]):
-                        best = (lo, hi)
+                        best = (lo, hi, ai, bi, aj, bj)
             if best is None:
                 continue
-            lo, hi = best
+            lo, hi, ai, bi, aj, bj = best
             mid = _add(org, _mul(dirv, 0.5 * (lo + hi)))
-            out.append((i, j, mid, _add(org, _mul(dirv, lo)),
-                        _add(org, _mul(dirv, hi))))
+            # Each slit has to start on ITS OWN panel's rim.  Returning
+            # the shared stretch's ends instead is subtly wrong whenever
+            # the two panels reach different distances along the chord:
+            # the far end then lies on the OTHER panel's rim, which for
+            # this one is an interior point, and `_slit_outline` -- which
+            # snaps an entry to the nearest edge -- drops the slot at
+            # whatever rim point happens to be closest.  On a star panel
+            # that is often across a notch, and the slot is cut running
+            # out through the spikes.  So hand back bi for panel i and aj
+            # for panel j, which are where the chord leaves each panel.
+            out.append((i, j, mid, _add(org, _mul(dirv, aj)),
+                        _add(org, _mul(dirv, bi))))
     return out
 
 
@@ -510,10 +551,22 @@ def _slit_outline(P, nrm, cuts, width):
     out = []
     for k in range(m):
         a, b = P[k], P[(k + 1) % m]
-        edge = _unit(_sub(b, a))
+        ab = _sub(b, a)
+        L = _norm(ab) or 1.0
+        edge = _unit(ab)
         out.append(list(a))
-        for _t, foot, target in sorted(per_edge.get(k, []),
-                                       key=lambda r: r[0]):
+        # Keep the slot's MOUTH clear of both ends of its edge.  The two
+        # mouth corners sit half a slit-width either side of the entry
+        # point, so an entry within half a width of a corner throws one
+        # of them past the vertex and outside the panel -- which is what
+        # made the decagon and star-decagon panels show slots poking out
+        # through their points.
+        margin = min(0.5 * width / L, 0.45)
+        for _t, foot, target in sorted(
+                [(min(max(t, margin), 1.0 - margin),
+                  _add(a, _mul(ab, min(max(t, margin), 1.0 - margin))),
+                  tgt) for t, _f, tgt in per_edge.get(k, [])],
+                key=lambda r: r[0]):
             axis = _unit(_sub(target, foot))
             side = _mul(_unit(_cross(nrm, axis)), width * 0.5)
             # Walk INTO the slot on whichever side the boundary reaches
@@ -523,10 +576,28 @@ def _slit_outline(P, nrm, cuts, width):
             # like: a tangle rather than a slot.
             if _dot(side, edge) > 0:
                 side = _mul(side, -1.0)
-            out.append(_add(foot, side))
+
+            # The slot's two MOUTH corners must sit on the rim.  `side`
+            # is perpendicular to the slit AXIS, not to the edge, so on an
+            # oblique chord `foot +- side` lifts off the edge -- one
+            # corner inward, the other out past the rim, which is the
+            # overshoot the ten-sided panels showed.  Slide each side-line
+            # of the slot along the axis until it meets the edge, and
+            # CLAMP to the segment: on a star panel the unclamped
+            # intersection can be far outside the edge it belongs to.
+            n2 = _cross(nrm, axis)
+            den = _dot(ab, n2)
+
+            def _mouth(pt):
+                if abs(den) < 1e-12:
+                    return list(pt)
+                sN = min(max(_dot(_sub(pt, a), n2) / den, 0.0), 1.0)
+                return _add(a, _mul(ab, sN))
+
+            out.append(_mouth(_add(target, side)))
             out.append(_add(target, side))
             out.append(_sub(target, side))
-            out.append(_sub(foot, side))
+            out.append(_mouth(_sub(target, side)))
     return out
 
 
@@ -540,10 +611,13 @@ def model_panels(key, radius_scale=1.0, turn_delta=0.0):
     """
     _key, _lbl, axes, n, d, rad, turn = _MODEL[key]
     if axes in FACE_SOURCES:
-        wy, pqr, sides = FACE_SOURCES[axes]
+        spec = FACE_SOURCES[axes]
+        wy, pqr, sides = spec[:3]
+        cls = spec[3] if len(spec) > 3 else 0
         return [(_polygon_in_frame(n, d, r0 * radius_scale, nv, e1, cen,
                                    turn + turn_delta), nv)
-                for nv, cen, e1, r0 in uniform_face_frames(wy, pqr, sides)]
+                for nv, cen, e1, r0
+                in uniform_face_frames(wy, pqr, sides, cls)]
     off = _plane_offset(axes)
     return [(_polygon(n, d, rad * radius_scale, nv, turn + turn_delta,
                       off), nv)
@@ -801,6 +875,35 @@ HART_PLANE_DISTANCE = {
 }
 
 
+def _verify_slits_inside():
+    """No slit may extend beyond the panel it is cut into.
+
+    The defect this catches was visible on screen: slots on the decagon
+    and star-decagon panels ran out through the spikes.  Two causes, both
+    fixed, both silent to every other check --
+
+    * `crossings` handed back the ends of the SHARED stretch, so the far
+      end lay on the OTHER panel's rim; for this panel that is an
+      interior point, and the slot got dropped at whatever rim point was
+      nearest, often across a notch.  Each panel now gets its own rim
+      crossing.
+    * the mouth corners sit half a slit-width either side of the entry
+      along a direction perpendicular to the slit AXIS, not to the edge,
+      so on an oblique chord one corner lifted off the rim and out.  They
+      are now slid along the axis onto the edge and clamped to it.
+    """
+    worst = 0.0
+    for key, _lbl, _ax, _n, _d, _r, _t in MODELS:
+        bare = model_panels(key)
+        slit = build_model(key, slit_width=0.01)
+        for (P, _nv), (O, _n2) in zip(bare, slit):
+            cen = [sum(q[t] for q in P) / len(P) for t in range(3)]
+            rmax = max(_norm(_sub(q, cen)) for q in P)
+            worst = max(worst, max(_norm(_sub(q, cen)) for q in O) - rmax)
+    assert worst < 1e-9, ('a slit extends outside its panel', worst)
+    return worst
+
+
 def _verify_against_hart():
     """Every model's panel plane must sit where Hart's own model puts it."""
     bad = []
@@ -816,7 +919,8 @@ def _selftest():
     want_panels = {'T20': 20, 'S30': 30, 'P12': 12, 'D12': 12,
                    'H20': 20, 'SD12': 12, 'PG12': 12,
                    'T20B': 20, 'H20B': 20, 'S30B': 30, 'P12B': 12,
-                   'D12B': 12}
+                   'D12B': 12, 'P12C': 12, 'PG12C': 12, 'P12D': 12,
+                   'PG12D': 12}
     for key, lbl, axes, n, d, _r, _t in MODELS:
         normals = plane_normals(axes)
         assert len(normals) == want_panels[key], (key, len(normals))
@@ -890,6 +994,8 @@ def _selftest():
             assert k not in seen, (key, "two panels share a plane")
             seen.add(k)
 
+    _verify_slits_inside()
+    print("SLITS   no slit extends beyond its own panel")
     nh = _verify_against_hart()
     print("PLANES  all %d models sit at Hart's own panel-plane distances"
           % nh)
