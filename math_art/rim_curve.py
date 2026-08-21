@@ -214,30 +214,30 @@ def _taubin(pts, closed, passes):
         pts = step(pts, _TAUBIN_LAMBDA)
         pts = step(pts, _TAUBIN_MU)
 
-    # Cap how far any point may travel -- but scale the budget to how
-    # ragged the curve actually is, not to its point spacing.
+    # Cap how far any point may travel, as a fixed fraction of the
+    # point spacing.
     #
-    # A fixed fraction of the spacing cannot serve both cases here, and
-    # trying it broke one to fix the other.  A marching-tetrahedra rim
-    # zigzags by about a grid cell perpendicular to its own direction,
-    # so flattening it needs a budget of that order; a woven-polyhedron
-    # rim is a coarse polygon with genuine corners, where the same
-    # budget lets the smoother cut them and lift off the surface.
+    # This budget was briefly made adaptive -- twice the median
+    # Laplacian residual -- on the theory that the residual measures
+    # raggedness and is "near zero on a smooth polygon however sharply
+    # it turns overall".  That theory is wrong: the residual on a
+    # coarse polygon of n points and radius R is about 2 pi^2 R / n^2,
+    # which for a rim of a couple of dozen points is LARGER than the
+    # residual of a fine zigzag, not smaller.  The adaptive cap
+    # therefore never bound on anything, and quietly removed the only
+    # thing holding a coarse rim onto its corners.
     #
-    # The discriminator is the high-frequency content itself.  The
-    # Laplacian residual |0.5(prev + next) - p| is exactly the local
-    # zigzag amplitude: large on a staircase, near zero on a smooth
-    # polygon however sharply it turns overall.  Twice its median is
-    # therefore enough to flatten the ragged case and almost nothing in
-    # the coarse one.
+    # It is not needed either, and never was: the ragged case it was
+    # reaching for belongs to the RELAXED fit now, which does not come
+    # through here at all.  Everything reaching this smoother is a
+    # coarse rim that wants to stay put, so a plain fraction of the
+    # spacing is both sufficient and what worked before.
     if closed:
-        lap0 = 0.5 * (np.roll(orig, 1, axis=0)
-                      + np.roll(orig, -1, axis=0)) - orig
+        seg = np.linalg.norm(np.diff(np.vstack([orig, orig[:1]]),
+                                     axis=0), axis=1)
     else:
-        lap0 = np.zeros_like(orig)
-        lap0[1:-1] = 0.5 * (orig[:-2] + orig[2:]) - orig[1:-1]
-    rough = float(np.median(np.linalg.norm(lap0, axis=1)))
-    cap = 2.0 * rough
+        seg = np.linalg.norm(np.diff(orig, axis=0), axis=1)
+    cap = 0.25 * float(np.median(seg)) if len(seg) else 0.0
     if cap > 0.0:
         d = pts - orig
         dist = np.linalg.norm(d, axis=1)
@@ -250,46 +250,44 @@ def _taubin(pts, closed, passes):
 
 
 def resample(pts, closed, spacing):
-    """Re-space a polyline by arc length.
+    """Thin a polyline so no two control points sit closer than
+    `spacing`, by DROPPING points -- never by moving them.
 
     A swept tube self-intersects wherever the curve turns inside its own
     bevel radius, and a rim traced off a mesh has points spaced by the
     grid, not by the tube.  At a thickness of 0.04 on a rim whose points
     sit 0.005 apart, every small wiggle folds the sweep over itself and
     the tube comes out lumpy -- the failure looks like a caterpillar
-    rather than a pipe.  Re-spacing the control points to roughly the
-    tube diameter removes the cause instead of hiding it.
+    rather than a pipe.
+
+    The first version fixed that by re-interpolating the rim at equal
+    steps of arc length, which is the wrong tool: on a coarse rim with
+    unequal edges it slides EVERY control point along its chords, off
+    the corners the points were traced from -- measured at ~19% of a
+    point spacing on a woven rim, which is more than the tube radius and
+    reads directly as waviness.  Worse, it did that even when the rim
+    was already spaced comfortably wider than the tube and needed no
+    thinning at all.
+
+    Choosing a subset instead cannot introduce that error: a point that
+    sat on a corner either survives, exactly where it was, or goes.  On
+    a rim already coarser than the tube nothing is dropped and this is
+    the identity, which is the correct answer for the woven and twisted
+    polyhedra.  Measuring the gap to the last KEPT point (rather than to
+    the previous one) also handles a rim doubling back on itself, where
+    arc length advances while the point barely moves.
     """
     P = np.asarray(pts, dtype=float)
     if spacing <= 0.0 or len(P) < 3:
         return P
-    Q = np.vstack([P, P[:1]]) if closed else P
-    seg = np.linalg.norm(np.diff(Q, axis=0), axis=1)
-    s = np.concatenate([[0.0], np.cumsum(seg)])
-    total = float(s[-1])
-    if total <= 0.0:
-        return P
-    n = int(round(total / spacing))
-    n = max(8, min(n, len(P)))          # never ADD detail, only thin it
-    t = (np.linspace(0.0, total, n, endpoint=False) if closed
-         else np.linspace(0.0, total, n))
-    out = np.empty((len(t), 3))
-    for k in range(3):
-        out[:, k] = np.interp(t, s, Q[:, k])
-
-    # Equal steps in ARC LENGTH are not equal steps in space: where the
-    # rim doubles back on itself the path advances while the point
-    # barely moves, so a few gaps come out far shorter than the target
-    # and the tube folds there anyway.  Drop those directly.
     keep = [0]
-    lo = 0.5 * spacing
-    for i in range(1, len(out)):
-        if float(np.linalg.norm(out[i] - out[keep[-1]])) >= lo:
+    for i in range(1, len(P)):
+        if float(np.linalg.norm(P[i] - P[keep[-1]])) >= spacing:
             keep.append(i)
     if closed and len(keep) > 2:
-        if float(np.linalg.norm(out[keep[-1]] - out[keep[0]])) < lo:
+        if float(np.linalg.norm(P[keep[-1]] - P[keep[0]])) < spacing:
             keep.pop()
-    return out[keep] if len(keep) >= 4 else out
+    return P[keep] if len(keep) >= 4 else P
 
 
 if _IN_BLENDER:
@@ -560,6 +558,64 @@ def _selftest():
           "move it %.3f)"
           % (100.0 * (1.0 - perim(lap) / perim(raw)),
              float(np.max(np.linalg.norm(lap - raw, axis=1)))))
+
+    # A coarse rim with unequal edges and real corners -- what a woven or
+    # twisted polyhedron actually produces.  The square loop above is too
+    # kind to catch either of the two regressions below, because its
+    # points are already equally spaced.
+    k = np.arange(24)
+    ang = 2.0 * math.pi * (k + 0.35 * math.sin(1.0) * np.sin(
+        3.0 * 2.0 * math.pi * k / 24.0)) / 24.0
+    rad = 1.0 + 0.12 * np.where(k % 2 == 0, 1.0, -1.0)
+    coarse = np.stack([rad * np.cos(ang), rad * np.sin(ang),
+                       0.15 * np.sin(2.0 * 2.0 * math.pi * k / 24.0)],
+                      axis=1)
+    seg = np.linalg.norm(np.diff(np.vstack([coarse, coarse[:1]]),
+                                 axis=0), axis=1)
+    med = float(np.median(seg))
+
+    # 1. The drift cap must BIND on such a rim.  When it was scaled to
+    #    the median Laplacian residual instead of to the point spacing
+    #    it never bound on anything -- the residual on a coarse polygon
+    #    is larger than on a fine zigzag, not smaller -- and the rim
+    #    drifted off its corners by better than a third of a spacing.
+    moved = float(np.max(np.linalg.norm(
+        _taubin(coarse, True, 8) - coarse, axis=1)))
+    good = moved <= 0.25 * med + 1e-12
+    ok &= good
+    print("rim_curve: coarse rim drifts %.4f under 8 passes, cap %.4f "
+          "(%.0f%% of a point spacing) %s"
+          % (moved, 0.25 * med, 100.0 * moved / med,
+             'OK' if good else 'FAIL'))
+
+    # 2. Re-spacing must never invent a position.  Every point it
+    #    returns has to BE one of the points it was given, and on a rim
+    #    already coarser than the tube it must return all of them --
+    #    the interpolating version slid every point ~19% of a spacing
+    #    along its chords, including when no thinning was needed.
+    thinned = resample(coarse, True, 1.6 * 0.01)
+    off = float(np.max(np.min(np.linalg.norm(
+        thinned[:, None, :] - coarse[None, :, :], axis=2), axis=1)))
+    good = off == 0.0 and len(thinned) == len(coarse)
+    ok &= good
+    print("rim_curve: re-spacing a coarse rim keeps %d/%d points and "
+          "moves them %.1e %s"
+          % (len(thinned), len(coarse), off, 'OK' if good else 'FAIL'))
+
+    # ... and on a rim finer than the tube it must actually thin, still
+    # without moving anything.
+    fine = np.stack([np.cos(np.linspace(0, 2 * math.pi, 600,
+                                        endpoint=False)),
+                     np.sin(np.linspace(0, 2 * math.pi, 600,
+                                        endpoint=False)),
+                     np.zeros(600)], axis=1)
+    tf = resample(fine, True, 1.6 * 0.04)
+    off = float(np.max(np.min(np.linalg.norm(
+        tf[:, None, :] - fine[None, :, :], axis=2), axis=1)))
+    good = len(tf) < len(fine) and off == 0.0
+    ok &= good
+    print("rim_curve: re-spacing a fine rim thins %d -> %d, moves %.1e %s"
+          % (len(fine), len(tf), off, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
