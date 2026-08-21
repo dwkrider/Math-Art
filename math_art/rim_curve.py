@@ -368,6 +368,13 @@ def _tangents(pts, closed):
     return T / np.maximum(np.linalg.norm(T, axis=1, keepdims=True), 1e-30)
 
 
+#: How many turns of the bevel profile about the rim map it onto
+#: itself.  0 means CONTINUOUS -- a circle, which has no orientation, so
+#: there is nothing to aim and aiming it is actively harmful (see
+#: `add_rim_curve`).
+PROFILE_FOLD = {'ROUND': 0, 'NONE': 0, 'SQUARE': 4}
+
+
 def aim_tilt(pts, closed, want):
     """Per-point tilt that turns the swept profile's local +X onto
     `want`.
@@ -935,8 +942,33 @@ if _IN_BLENDER:
         # moving them.
         cu.resolution_u = 6
         tw = float(twist)
+        # A ROUND profile is a CIRCLE: it has no orientation, so there
+        # is nothing for `aim_tilt` to aim, and aiming it anyway is what
+        # made the rim visibly twist.  `aim_tilt` measures against a
+        # frame built from the tangent and global Z, which degenerates
+        # where the rim runs vertically -- and it guards only the
+        # EXACTLY degenerate case.  On a Goursat sextic the rim reaches
+        # |tangent . z| = 0.9997, which is nowhere near that guard, yet
+        # swings the computed tilt through 180 degrees between two
+        # adjacent control points.  The circle is symmetric so that
+        # costs nothing geometrically -- but the bevel is a POLYGON
+        # approximating the circle, and half a turn of a 20-gon between
+        # two rings shears every quad between them.  That is the twist.
+        #
+        # So a rotationally symmetric profile takes a CONSTANT tilt and
+        # lets Blender carry the frame itself, which is exactly what
+        # the minimum-twist mode is for.  Only a profile with something
+        # to aim keeps Z_UP, because that is the frame `aim_tilt` is
+        # written against.
+        #
+        # The identifier is 'MINIMUM', not the 'MINIMUM_TWIST' the UI
+        # label suggests; the enum is ('Z_UP', 'MINIMUM', 'TANGENT').
+        fold = PROFILE_FOLD.get(profile, 1)
+        if fold == 0:
+            cu.twist_mode = 'MINIMUM'
         for pts, closed, corner, out in loops:
-            tilt = aim_tilt(pts, closed, out) + tw
+            tilt = (np.full(len(pts), tw) if fold == 0
+                    else aim_tilt(pts, closed, out) + tw)
             if method == 'ANCHORED':
                 sp = cu.splines.new('BEZIER')
                 sp.bezier_points.add(len(pts) - 1)
@@ -1200,6 +1232,51 @@ def _selftest():
     ok &= good
     print("rim_curve: tilt aims the profile at the outward direction to "
           "%.1e %s" % (err, 'OK' if good else 'FAIL'))
+
+    # A ROTATIONALLY SYMMETRIC profile must NOT be aimed.
+    #
+    # `aim_tilt` is exact, as the gate above shows, but it is exact
+    # about something that only matters for a profile with an
+    # orientation.  Its frame is built from the tangent and global Z,
+    # and where the rim runs vertically that frame is undefined -- it
+    # guards the EXACTLY degenerate case and nothing near it.  A rim
+    # that merely passes CLOSE to vertical therefore swings the tilt
+    # through half a turn between two adjacent control points.  For a
+    # circle that is geometrically nothing, but the bevel is a POLYGON
+    # approximating the circle, so half a turn of it between two rings
+    # shears every quad between them, and the tube reads as twisted.
+    #
+    # Reproduced here rather than remembered.  The simplest rim that
+    # does it is a CIRCLE IN THE XZ-PLANE: its tangent passes through
+    # vertical twice, and X0 = normalize(T x Zhat) reverses as it does,
+    # taking Y0 with it -- so the tilt, measured in that frame, jumps by
+    # exactly pi.  Note the failure is a FLIP, not a swing: the median
+    # step is 0 and the maximum is 180, which is why smoothing the tilt
+    # would not have helped and why the profile's symmetry is the right
+    # thing to reason about.
+    #
+    # The sample offset keeps any sample from landing exactly on the
+    # pole, so the existing guard in `aim_tilt` (which catches only the
+    # exactly degenerate frame) stays out of the way -- which is the
+    # whole point: the shipped rim never landed on it either.
+    _vn = 200
+    _vt = (np.linspace(0.0, 2.0 * math.pi, _vn, endpoint=False)
+           + math.pi / _vn)
+    _vspine = np.stack([np.cos(_vt), 0.0 * _vt, np.sin(_vt)], axis=1)
+    _vwant = np.stack([np.cos(_vt), 0.0 * _vt, np.sin(_vt)], axis=1)
+    near = float(np.max(np.abs(_tangents(_vspine, True)[:, 2])))
+    steps = np.abs(np.diff(aim_tilt(_vspine, True, _vwant)))
+    jump = float(np.degrees(np.max(steps)))
+    median_step = float(np.degrees(np.median(steps)))
+    # the fix: a continuous profile declares fold 0 and is left alone
+    good = (PROFILE_FOLD['ROUND'] == 0 and PROFILE_FOLD['NONE'] == 0
+            and PROFILE_FOLD.get('SQUARE', 0) == 4
+            and near > 0.999 and jump > 170.0 and median_step < 1.0)
+    ok &= good
+    print("rim_curve: aiming FLIPS where the rim crosses vertical "
+          "(|T.z| = %.4f, median step %.2f deg but max %.0f deg), so "
+          "ROUND and NONE declare no orientation and are not aimed %s"
+          % (near, median_step, jump, 'OK' if good else 'FAIL'))
 
     # The C channel must open AWAY from the surface and the H must
     # straddle it.  Both follow from one thing -- the swept frame's +X

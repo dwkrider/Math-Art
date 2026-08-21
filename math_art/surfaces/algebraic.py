@@ -950,7 +950,7 @@ GOURSAT_COEFF_NAMES = {
     'OCT4': ("k", "k'", "k''"),
     'TET3': ("k", "k'"),
     'TET4': (),
-    'DODEC6': ("k", "k'", "k'@", "k'@@"),
+    'DODEC6': ("k", "k'", "k''", "k'''"),
 }
 
 GOURSAT_PRESETS = {}
