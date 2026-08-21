@@ -19,3 +19,6 @@ icon_contact_sheet.html
 # Downloaded third-party polyhedron tables: used as a verification oracle
 # only, never republished. See data/polyhedra/README.md.
 .polydb_cache/
+
+# Local agent handoff notes, never published
+data/polyhedra/HANDOFF.md
