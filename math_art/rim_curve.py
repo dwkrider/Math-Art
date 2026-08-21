@@ -263,7 +263,48 @@ def _taubin(pts, closed, passes, pin=None):
 
 
 
-def outward_field(verts, faces, idx):
+def neighbour_means(verts, faces):
+    """Mean position of each vertex's face-neighbours, for every vertex.
+
+    Vectorised, and computed ONCE for the whole mesh.  Both of those
+    matter: this used to be a Python loop over every face, re-run for
+    each rim chain, and it was the entire cost of the rim -- 2.8 s per
+    chain on a 552k-face gyroid, seven chains, 20 s of a 24 s build.
+
+    Faces are grouped by width so each group is one array operation, and
+    the accumulation is a bincount rather than np.add.at, which is much
+    faster for this shape.  A face of width k contributes, to each of
+    its corners, the sum of the OTHER k-1 corners -- that is the face
+    sum minus the corner itself, which is why no per-face work is
+    needed.
+    """
+    V = np.asarray(verts, dtype=float)
+    n = len(V)
+    tot = np.zeros((n, 3))
+    cnt = np.zeros(n)
+    by_width = {}
+    for f in faces:
+        k = len(f)
+        if k >= 3:
+            by_width.setdefault(k, []).append(f)
+    for k, group in by_width.items():
+        Fk = np.asarray(group, dtype=np.int64)
+        S = V[Fk].sum(axis=1)                     # (m, 3) face sums
+        for j in range(k):
+            col = Fk[:, j]
+            w = S - V[col]                        # the other corners
+            for c in range(3):
+                tot[:, c] += np.bincount(col, weights=w[:, c],
+                                         minlength=n)
+            # k - 1 neighbours per incidence, not one: the count has
+            # to match the number of positions actually summed into
+            # `tot`, or the mean is scaled wrong and the direction can
+            # come out reversed.
+            cnt += (k - 1) * np.bincount(col, minlength=n)
+    return tot / np.maximum(cnt, 1.0)[:, None]
+
+
+def outward_field(verts, faces, idx, means=None):
     """Unit vectors along the rim pointing AWAY from the surface.
 
     An asymmetric swept section -- the C channel, the H beam -- has to
@@ -282,22 +323,12 @@ def outward_field(verts, faces, idx):
     """
     V = np.asarray(verts, dtype=float)
     idx = np.asarray(idx, dtype=np.int64)
-    nbr_sum = np.zeros((len(V), 3))
-    nbr_cnt = np.zeros(len(V))
-    for f in faces:
-        n = len(f)
-        if n < 3:
-            continue
-        a = np.asarray(f, dtype=np.int64)
-        c = V[a].sum(0)
-        for k in range(n):
-            nbr_sum[a[k]] += c - V[a[k]]
-            nbr_cnt[a[k]] += n - 1
-    # nbr_sum holds the summed POSITIONS of the neighbours, so the mean
-    # of those is a point, and the outward step is the rim vertex minus
-    # that point -- not the negated mean, which is not even a direction.
-    cnt = np.maximum(nbr_cnt[idx], 1.0)[:, None]
-    out = V[idx] - nbr_sum[idx] / cnt
+    if means is None:
+        means = neighbour_means(V, faces)
+    # `means` holds the mean POSITION of each vertex's neighbours, so
+    # the outward step is the rim vertex minus that point -- not the
+    # negated mean, which is not even a direction.
+    out = V[idx] - means[idx]
     T = _tangents(V[idx], True)
     out = out - T * np.sum(out * T, axis=1, keepdims=True)
     n = np.linalg.norm(out, axis=1, keepdims=True)
@@ -802,6 +833,10 @@ if _IN_BLENDER:
         chains = boundary_index_loops(faces)
         if not chains:
             return 0
+        # Once for the whole mesh, not once per chain.  This is the
+        # difference between a rim that costs a second and one that
+        # costs twenty on a big surface.
+        means = neighbour_means(V, faces)
 
         # Drop loops too tight to sweep.  A closed rim of total length L
         # encloses something of radius about L / 2 pi, so once that falls
@@ -824,7 +859,7 @@ if _IN_BLENDER:
             # level-set rim the same test fires on every staircase step.
             corner = (corner_mask(pts, closed) if method == 'ANCHORED'
                       else np.zeros(len(pts), dtype=bool))
-            out = outward_field(V, faces, idx)
+            out = outward_field(V, faces, idx, means)
             if method == 'RELAXED':
                 pts = _laplacian(pts, closed, int(smooth), pin=corner)
             else:
@@ -1238,6 +1273,30 @@ def _selftest():
     print("rim_curve: reed profile steps between %.2f and %.2f with %d "
           "transitions (%d ridges) %s"
           % (lo, hi, runs, reeds, 'OK' if good else 'FAIL'))
+
+    # The vectorised neighbour means must agree with the per-face
+    # accumulation they replaced.  This is the check that caught the
+    # rewrite counting one neighbour per incidence instead of k - 1,
+    # which scaled the mean wrong and reversed some directions
+    # outright -- a 1.96 deviation on unit vectors, i.e. pointing the
+    # opposite way.
+    mixed = faces[:-3] + [(0, 1, n + 1)]
+    Vg = np.asarray(verts, float)
+    fast = neighbour_means(Vg, mixed)
+    tot = np.zeros((len(Vg), 3))
+    cnt = np.zeros(len(Vg))
+    for f in mixed:
+        aa = np.asarray(f, dtype=np.int64)
+        c = Vg[aa].sum(0)
+        for k in range(len(f)):
+            tot[aa[k]] += c - Vg[aa[k]]
+            cnt[aa[k]] += len(f) - 1
+    slow = tot / np.maximum(cnt, 1.0)[:, None]
+    dev = float(np.max(np.abs(fast - slow)))
+    good = dev < 1e-9
+    ok &= good
+    print("rim_curve: vectorised neighbour means match the per-face sum "
+          "to %.1e (mixed tri/quad) %s" % (dev, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
