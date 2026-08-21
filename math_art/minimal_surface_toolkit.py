@@ -769,8 +769,19 @@ if _IN_BLENDER:
             return {'FINISHED'}
 
         def draw(self, context):
+            # The body returns early for the triply-periodic branch, and
+            # for a while that quietly swallowed the rim controls: the
+            # properties existed and every execute() exit honoured them,
+            # but a TPMS never DREW the checkbox, so there was no way to
+            # switch it on.  Splitting the body out means the rim is
+            # drawn on the way out of draw() itself, where no branch of
+            # the body can skip it.
             lay = self.layout
             lay.use_property_split = True
+            self._draw_body(lay)
+            _rim.draw_rim(lay, self)
+
+        def _draw_body(self, lay):
             lay.prop(self, 'periodicity')
             lay.prop(self, 'surface')
             if (self.periodicity == 'TRIPLY' or self.surface in TPMS
@@ -823,7 +834,6 @@ if _IN_BLENDER:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
             lay.prop(self, 'scale')
-            _rim.draw_rim(lay, self)
 
     class OBJECT_OT_minimal_span(bpy.types.Operator):
         """Span a minimal surface across the selected curve (1 object:
