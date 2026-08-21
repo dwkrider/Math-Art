@@ -888,6 +888,89 @@ for _key, _label, _shape, _clip, _fn in _MATHCURVE:
     PRESETS[_key] = (_label, _fn, _shape, _clip)
 
 
+# ======================================================================
+# Goursat's surfaces: a Platonic symmetry group, at each degree
+# ======================================================================
+# These arrived as an operator of their own and were folded in here,
+# because they are the same kind of object as everything above -- the
+# zero set of one polynomial, meshed by the same marching tetrahedra,
+# clipped and rimmed by the same controls -- and because keeping them
+# apart HID three duplicates.  Goursat's tetrahedral cubic at k = 4,
+# rescaled by 4a, is exactly the Cayley preset above; his k' = 0 member
+# is exactly the Titeica one; and his dodecahedral (0, 5/4, -5/2, 5/4)
+# is Barth's sextic in a different frame.  In one catalogue those read
+# as the same surface reached two ways, which is true and is the
+# interesting part; across two operators they just looked like padding.
+#
+# They differ from every other row here in ONE way: they are FAMILIES,
+# continuous in their coefficients, so the interest is partly in
+# dragging them.  That is what `PRESET_PARAMS` below is for.
+#
+# The mathematics, the coefficient tables and the gates stay in
+# `math_art/surfaces/goursat.py`.
+
+
+def _goursat():
+    try:
+        from . import goursat as g
+    except ImportError:                  # flat import outside the package
+        import goursat as g
+    return g
+
+
+def _goursat_field(family, defaults):
+    """A field for one Goursat row, with its coefficients LIVE.
+
+    The row's own tuple is the default; the operator may override any of
+    them.  Written as a closure per row rather than a branch in
+    `build_algebraic` so that a Goursat preset is an ordinary row of
+    `PRESETS` and nothing downstream has to know it is special.
+    """
+    n = len(defaults)
+
+    def field(x, y, z, mu, k0=None, k1=None, k2=None, k3=None, size=1.0):
+        ks = (k0, k1, k2, k3)
+        co = tuple(defaults[i] if ks[i] is None else float(ks[i])
+                   for i in range(n))
+        return _goursat().FAMILY_FIELD[family](x, y, z, co, float(size))
+
+    return field
+
+
+#: Goursat family key -> (algebraic family key, label)
+_GOURSAT_FAMILY = {
+    'OCT4': ('GOURSAT_OCT', "Goursat (Octahedral)"),
+    'TET3': ('GOURSAT_TET', "Goursat (Tetrahedral)"),
+    'TET4': ('GOURSAT_TET', "Goursat (Tetrahedral)"),
+    'DODEC6': ('GOURSAT_DODEC', "Goursat (Dodecahedral)"),
+}
+
+#: what each Goursat family calls its coefficients, in order
+GOURSAT_COEFF_NAMES = {
+    'OCT4': ("k", "k'", "k''"),
+    'TET3': ("k", "k'"),
+    'TET4': (),
+    'DODEC6': ("k", "k'", "k'@", "k'@@"),
+}
+
+GOURSAT_PRESETS = {}
+
+
+def _load_goursat():
+    """Fold every Goursat row into PRESETS.  Done in a function so the
+    import stays lazy and this module still loads if the engine is
+    absent (the flat-import fallbacks elsewhere rely on that)."""
+    g = _goursat()
+    rows = {}
+    for key in g.PRESET_ORDER:
+        label, fam, co, clip, desc = g.PRESETS[key]
+        afam, _flabel = _GOURSAT_FAMILY[fam]
+        PRESETS[key] = (label, _goursat_field(fam, co), 'BALL', clip)
+        SURFACE_FAMILY[key] = afam
+        rows[key] = (fam, co, desc)
+    return rows
+
+
 # Which family each preset belongs to.  The operator turns this into a
 # Family dropdown that filters the Surface list: an 80-entry flat enum
 # is unusable, and the families are how the sources group them anyway.
@@ -897,6 +980,9 @@ FAMILIES = (
     ('RECORD', "Record Nodal Surfaces"),
     ('NAMED', "Named Implicit Surfaces"),
     ('MATHCURVE', "Encyclopedia Surfaces"),
+    ('GOURSAT_OCT', "Goursat (Octahedral)"),
+    ('GOURSAT_TET', "Goursat (Tetrahedral)"),
+    ('GOURSAT_DODEC', "Goursat (Dodecahedral)"),
 )
 
 # Sampling resolution each family wants by default.
@@ -919,7 +1005,58 @@ SURFACE_FAMILY = {k: 'CLASSICAL' for k in
 SURFACE_FAMILY.update({k: 'HAUSER' for (k, _l, _e, _s, _c, _f) in _HAUSER})
 SURFACE_FAMILY.update({k: 'RECORD' for (k, _l, _s, _c, _f) in _RECORD})
 SURFACE_FAMILY.update({k: 'NAMED' for (k, _l, _g, _s, _c, _f) in _NAMED})
-SURFACE_FAMILY.update({k: 'MATHCURVE' for (k, _l, _s, _c, _f) in _MATHCURVE})
+SURFACE_FAMILY.update({k: 'MATHCURVE' for (k, _l, _s, _c, _f)
+                       in _MATHCURVE})
+
+GOURSAT_PRESETS.update(_load_goursat())
+
+
+# ======================================================================
+# per-preset parameters
+# ======================================================================
+# Almost every preset here is a fixed zero set and takes nothing.  A few
+# are families with live parameters, and each declares what it takes
+# rather than the operator carrying a hard-coded branch per such preset.
+#
+# That is not new machinery for Goursat's sake -- it RETIRES the two
+# branches that were already there, the Kummer quartic's node-sharpness
+# and the monkey saddle's fold count, which the operator drew and passed
+# by name.  The operator now draws exactly what a row declares and
+# forwards it, so the next parameterised surface costs a table row.
+#
+# Row: (attribute, label, kind, default, lo, hi, description)
+PRESET_PARAMS = {
+    'KUMMER': (
+        ('mu', "Node Sharpness", 'FLOAT', 1.3, 1.05, 2.0,
+         "Kummer quartic parameter; it moves the sixteen nodes"),),
+    'MONKEY': (
+        ('fold', "Folds", 'INT', 3, 2, 8,
+         "Saddle fold count: 2 is the ordinary saddle, 3 the monkey "
+         "saddle, higher the n-fold saddles"),),
+}
+
+_GOURSAT_LIMITS = ((-40.0, 40.0), (-40.0, 40.0),
+                   (-100.0, 100.0), (-200.0, 200.0))
+
+for _k, (_fam, _co, _desc) in GOURSAT_PRESETS.items():
+    _rows = []
+    for _i, _nm in enumerate(GOURSAT_COEFF_NAMES[_fam]):
+        _lo, _hi = _GOURSAT_LIMITS[_i]
+        _rows.append(('k%d' % _i, _nm, 'FLOAT', float(_co[_i]), _lo, _hi,
+                      "Coefficient %s of the family; the surface is "
+                      "continuous in it, so dragging it walks the "
+                      "family through its transitions" % _nm))
+    _rows.append(
+        ('size', "Size", 'FLOAT', 1.0, 0.05, 10.0,
+         "The length a the coefficients are measured against. It "
+         "rescales the surface inside the clip ball rather than the "
+         "finished object, so it changes how much is shown"))
+    PRESET_PARAMS[_k] = tuple(_rows)
+
+
+def preset_params(kind):
+    """The parameter rows a preset declares, or ()."""
+    return PRESET_PARAMS.get(kind, ())
 
 
 def boundary_loops(verts, tris, smooth=2):
@@ -938,7 +1075,8 @@ def boundary_loops(verts, tris, smooth=2):
 
 
 @_geom_cache.memoise(version=1)
-def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3):
+def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3,
+                    **params):
     """Mesh the zero level set of a preset. Returns (verts, tris).
     marching_tets simply leaves the level set open where it crosses
     the sample box, which for the BOX presets is exactly the wanted
@@ -949,9 +1087,14 @@ def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3):
     monkey-saddle fold count n (MONKEY preset only)."""
     label, fn, shape, clip_default = PRESETS[kind]
     r = clip if clip > 0.0 else clip_default
+    # A row that declares a `size` measures its clip radius in units of
+    # it, so the window follows the surface instead of cropping it.
+    r = r * float(params.get('size', 1.0))
     if kind == 'MONKEY':
-        n = max(2, int(round(fold)))
+        n = max(2, int(round(params.get('fold', fold))))
         field = lambda X, Y, Z: fn(X, Y, Z, mu, n)
+    elif params:
+        field = lambda X, Y, Z: fn(X, Y, Z, mu, **params)
     else:
         field = lambda X, Y, Z: fn(X, Y, Z, mu)
     mst = _toolkit()

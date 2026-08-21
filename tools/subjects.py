@@ -85,13 +85,6 @@ PARAMS = {
     "mesh.minimal_knot_span_add": dict(p=2, q=3),
     "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE'),
     "mesh.algebraic_surface_add": dict(preset='CLEBSCH'),
-    # The default octahedral quartic is a lumpy blob at icon size, and
-    # the rounded dodecahedron is nearly a ball.  The icosidodecahedral
-    # PENTAGON sextic is the member that reads as a symmetry group at a
-    # glance: twelve separate caps sitting on the pentagonal faces, with
-    # the thirty nodes between them visible in silhouette.
-    "mesh.goursat_surface_add": dict(family='DODEC6',
-                                     preset='DODEC_PENTAGONS'),
     "mesh.curiosity_surface_add": dict(surface='FRESNEL'),
     "mesh.ruled_surface_add": dict(mode='HYPERBOLOID', output='RODS',
                                    family='BOTH'),
@@ -463,7 +456,6 @@ VARIANT_GROUP = {
     "mesh.parametric_minimal_add": ("family", "surface"),
     "mesh.periodic_minimal_add": ("periodicity", "surface"),
     "mesh.algebraic_surface_add": ("family", "preset"),
-    "mesh.goursat_surface_add": ("family", "preset"),
 }
 
 # Groups to render, where a two-level selector reaches further than the
@@ -530,9 +522,6 @@ VARIANT_MAX = {
     # 10 classical + 63 Hauser; the Hauser family is a named gallery
     # and a partial one would misrepresent it.
     "mesh.algebraic_surface_add": 96,
-    # 22 named members across four symmetry groups; the point of the
-    # page is that the whole classification is here, so do not truncate.
-    "mesh.goursat_surface_add": 96,
 }
 
 # Galleries whose entries are combinations of properties rather than

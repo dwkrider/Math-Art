@@ -65,12 +65,12 @@ try:
     from .surfaces.algebraic import (
         PRESETS, build_algebraic, boundary_loops, FAMILIES,
         SURFACE_FAMILY, HAUSER_EQUATION, FAMILY_RESOLUTION,
-        FAMILY_RESOLUTION_DEFAULT)
+        FAMILY_RESOLUTION_DEFAULT, preset_params)
 except ImportError:  # flat import outside the package
     from surfaces.algebraic import (
         PRESETS, build_algebraic, boundary_loops, FAMILIES,
         SURFACE_FAMILY, HAUSER_EQUATION, FAMILY_RESOLUTION,
-        FAMILY_RESOLUTION_DEFAULT)
+        FAMILY_RESOLUTION_DEFAULT, preset_params)
 
 
 
@@ -174,6 +174,21 @@ if _IN_BLENDER:
         return items[0][0], FAMILY_RESOLUTION.get(
             fam, FAMILY_RESOLUTION_DEFAULT)
 
+    def _sync_params(op, key):
+        """Load a preset's declared defaults into the shared slots.
+
+        Without this, switching from one member of a family to another
+        would leave the previous member's coefficients in place and
+        silently build a surface that is neither.
+        """
+        for attr, _lab, kind, dflt, _lo, _hi, _d in preset_params(key):
+            v = int(dflt) if kind == 'INT' else float(dflt)
+            if getattr(op, attr, None) != v:
+                setattr(op, attr, v)
+
+    def _on_preset_change(self, context):
+        _sync_params(self, self.preset)
+
     def _on_family_change(self, context):
         """Switching family must move `preset` with it.
 
@@ -196,6 +211,7 @@ if _IN_BLENDER:
             self.preset = key
         if self.resolution != res:
             self.resolution = res
+        _sync_params(self, key)
 
 
     class MESH_OT_algebraic_surface_add(bpy.types.Operator):
@@ -216,6 +232,7 @@ if _IN_BLENDER:
         preset: EnumProperty(
             name="Preset",
             items=_preset_items,
+            update=_on_preset_change,
             description="The surface to build; the tooltip gives its "
                         "defining equation where one is printed")
         resolution: IntProperty(
@@ -228,15 +245,39 @@ if _IN_BLENDER:
                         "coarse grid rounds exactly those away")
         scale: FloatProperty(
             name="Scale", default=1.0, min=0.01, max=100.0)
+        # The parameterised presets declare what they take in
+        # `PRESET_PARAMS`, and these are the slots that carry it.  The
+        # LABEL each is drawn under is the declaring row's, so adding a
+        # parameterised surface is a table row rather than another
+        # branch here.  The RANGE is not: a property's limits are fixed
+        # at registration and cannot be retuned per preset, so each slot
+        # carries the widest range any family that uses it needs, and
+        # the table's own lo/hi document the intent rather than binding
+        # the widget.  `mu` and `fold` keep their own names because they
+        # were already public API for scripted calls.
         mu: FloatProperty(
-            name="Kummer Mu", default=1.3, min=1.05, max=2.0,
-            description="Kummer quartic parameter (node sharpness); "
-                        "used by the Kummer preset only")
+            name="Node Sharpness", default=1.3, min=1.05, max=2.0,
+            description="Kummer quartic parameter (node sharpness)")
         fold: IntProperty(
-            name="Fold n", default=3, min=2, max=8,
+            name="Folds", default=3, min=2, max=8,
             description="Saddle fold count: 2 = ordinary saddle, "
-                        "3 = monkey saddle, higher = n-fold saddles; "
-                        "Monkey Saddle preset only")
+                        "3 = monkey saddle, higher = n-fold saddles")
+        k0: FloatProperty(name="k", default=0.0, min=-40.0, max=40.0,
+                          step=10, description="Family coefficient")
+        k1: FloatProperty(name="k'", default=0.0, min=-40.0, max=40.0,
+                          step=10, description="Family coefficient")
+        k2: FloatProperty(name="k''", default=0.0, min=-100.0,
+                          max=100.0, step=10,
+                          description="Family coefficient")
+        k3: FloatProperty(name="k'''", default=0.0, min=-200.0,
+                          max=200.0, step=10,
+                          description="Family coefficient")
+        size: FloatProperty(
+            name="Size", default=1.0, min=0.05, max=10.0,
+            description="The length the family's coefficients are "
+                        "measured against; it changes how much of the "
+                        "surface the clip ball shows, not the size of "
+                        "the finished object")
         clip: FloatProperty(
             name="Clip Override", default=0.0, min=0.0, max=20.0,
             description="Clip ball radius / box half-extent; "
@@ -264,9 +305,17 @@ if _IN_BLENDER:
             if key not in PRESETS:
                 key = _family_default(self.family)[0]
             label = PRESETS[key][0]
+            extra = {attr: (int(getattr(self, attr)) if kind == 'INT'
+                            else float(getattr(self, attr)))
+                     for attr, _l, kind, _d, _lo, _hi, _dsc
+                     in preset_params(key)}
+            # `mu` and `fold` stay named arguments: they were public
+            # before this table existed and scripted calls use them.
+            extra.pop('mu', None)
             verts, tris = build_algebraic(
                 key, self.resolution, mu=self.mu,
-                clip=self.clip, scale=self.scale, fold=self.fold)
+                clip=self.clip, scale=self.scale, fold=self.fold,
+                **extra)
             if len(tris) == 0:
                 self.report({'ERROR'}, "Empty level set")
                 return {'CANCELLED'}
@@ -301,10 +350,11 @@ if _IN_BLENDER:
                 row.enabled = False
                 row.label(text=eq)
             lay.prop(self, 'resolution')
-            if self.preset == 'KUMMER':
-                lay.prop(self, 'mu')
-            if self.preset == 'MONKEY':
-                lay.prop(self, 'fold')
+            # exactly the parameters this preset declares, under the
+            # names its own family gives them
+            for attr, lab, _k, _d, _lo, _hi, _dsc in preset_params(
+                    self.preset):
+                lay.prop(self, attr, text=lab)
             for k in ('clip', 'scale', 'thickness', 'smooth'):
                 lay.prop(self, k)
             _rim.draw_rim(lay, self)
