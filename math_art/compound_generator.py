@@ -96,6 +96,16 @@ except ImportError:
 
 if _IN_BLENDER:
 
+    def _grouped_enum_items():
+        """COMPOUNDS as enum items, grouped under family headings."""
+        items = []
+        for heading, rows in _cmp.compound_groups():
+            if items:
+                items.append(None)                 # separator
+            items.append(("", heading, ""))        # heading
+            items.extend((k, lbl, "") for k, lbl in rows)
+        return items
+
     _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
                 (0.30, 0.69, 0.42), (0.95, 0.77, 0.29),
                 (0.62, 0.40, 0.75), (0.25, 0.72, 0.72),
@@ -122,9 +132,15 @@ if _IN_BLENDER:
         bl_label = "Polyhedron Compound"
         bl_options = {'REGISTER', 'UNDO'}
 
+        # Grouped, not flat.  117 entries in the order the source tables
+        # happened to be concatenated ran Skilling 62, 67, 18, 48 down
+        # consecutive columns; an empty identifier gives a heading and a
+        # None a separator, so the families read as families.  The
+        # default has to be named explicitly now, since the first item is
+        # a heading rather than a compound.
         compound: EnumProperty(
-            name="Compound",
-            items=[(k, lbl, "") for k, lbl in COMPOUNDS])
+            name="Compound", default='STELLA',
+            items=_grouped_enum_items())
         separate: BoolProperty(
             name="Separate Objects", default=False,
             description="One object per component instead of a single "

@@ -1553,6 +1553,80 @@ COMPOUNDS = [
     + [(k, lbl) for k, lbl, *_rest in FREE_COMPOUNDS]     + [(k, lbl) for k, lbl, *_rest in SUBGROUP_COMPOUNDS] \
     + [(k, lbl) for k, lbl, *_rest in AXIS_COMPOUNDS]
 
+#: The families the dropdown is grouped into, in menu order.  The list
+#: had grown to 117 entries in the order the source tables happened to be
+#: concatenated, which put Skilling 62, 67, 18 and 48 in consecutive
+#: columns and made the thing unreadable.
+#:
+#: The five Skilling bands are HIS OWN, printed at the head of Table 1
+#: ("1-19 miscellaneous, 20-25 prism symmetry embedded in prism
+#: symmetry, ...") -- so the grouping is the paper's rather than one
+#: invented here, and a row lands in its band by its own number.
+_GROUP_ORDER = [
+    ('Classical compounds',
+     ['STELLA', '5TETRA', '10TETRA', '5CUBES', '5OCTA']),
+    ('A solid with its dual',
+     ['CUBE_OCTA', 'DODECA_ICOSA', 'PRISM_DUAL', 'ANTIPRISM_DUAL']),
+    ('One solid inscribed in another', None),      # filled from INSCRIBED
+    ('Regular solids on shared axes', None),       # the H_ rows
+    ("Hart's cube compounds", None),               # the HC_ rows
+    ('Skilling 1-19: miscellaneous', None),
+    ('Skilling 20-25: prism symmetry in prism symmetry', None),
+    ('Skilling 26-45: prism symmetry in octahedral or icosahedral', None),
+    ('Skilling 46-67: tetrahedral symmetry in octahedral or icosahedral',
+     None),
+    ('Skilling 68-75: duplication of enantiomorphs', None),
+]
+
+
+def _skilling_number(label):
+    """The Table 1 row a label names, or None."""
+    if not label.startswith('Skilling '):
+        return None
+    head = label[9:].split(':', 1)[0].strip()
+    return int(head) if head.isdigit() else None
+
+
+def compound_groups():
+    """The dropdown contents as [(heading, [(key, label), ...]), ...].
+
+    Grouping only -- every key and label is passed through untouched, so
+    the object a build is named after still carries its full name.
+    """
+    by_key = dict(COMPOUNDS)
+    inscribed = [k for k, _l in INSCRIBED]
+    placed = set()
+    out = []
+    for heading, fixed in _GROUP_ORDER:
+        if fixed is not None:
+            rows = [(k, by_key[k]) for k in fixed if k in by_key]
+        elif heading.startswith('One solid'):
+            rows = [(k, by_key[k]) for k in inscribed if k in by_key]
+        elif heading.startswith('Regular solids'):
+            rows = [(k, l) for k, l in COMPOUNDS
+                    if k.startswith('H_') and _skilling_number(l) is None]
+        elif heading.startswith("Hart's cube"):
+            rows = [(k, l) for k, l in COMPOUNDS if k.startswith('HC_')]
+        else:
+            lo, hi = (int(x) for x in
+                      heading.split(':')[0].split()[1].split('-'))
+            rows = sorted(
+                ((k, l) for k, l in COMPOUNDS
+                 if lo <= (_skilling_number(l) or -1) <= hi),
+                key=lambda kl: _skilling_number(kl[1]))
+        rows = [r for r in rows if r[0] not in placed]
+        placed.update(k for k, _l in rows)
+        if rows:
+            out.append((heading, rows))
+    # Nothing may go missing: a key that matched no rule would simply
+    # vanish from the menu, and the operator would still accept it, so
+    # only a count catches it.
+    left = [(k, l) for k, l in COMPOUNDS if k not in placed]
+    if left:
+        out.append(('Other', left))
+    return out
+
+
 _INSCRIBED_KEYS = {k for k, _lbl in INSCRIBED}
 
 #: compounds whose shape is set by the side count rather than a preset
