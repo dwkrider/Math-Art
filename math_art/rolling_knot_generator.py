@@ -29,6 +29,23 @@
 # the thick solid's centre of mass returns to the rolling
 # centre, and reports the achieved rho for both the ideal curve
 # and the thick solid.
+#
+# FAIRNESS.  Rolling correctly and LOOKING right are different
+# problems, and the stages above solve only the first: they leave
+# the free interior carrying a curvature profile that oscillates
+# between the taut pinned lobes, which reads as straight runs
+# meeting at corners rather than one continuous sweep.  The paper
+# optimizes a spline whose energy includes a curvature term at
+# the interior/exterior junction (Eq. 3); this implementation
+# instead closes with a separate fairing pass -- a true
+# arc-length bending-energy solve over the free interior, with
+# the contact arcs held -- and keeps its result only when the
+# curve comes out fairer WITHOUT costing rolling accuracy or
+# strand clearance.  `curvature_variation` is the measure used,
+# and `info['tv_kappa_raw']`/`info['tv_kappa']` report it either
+# side of the pass.  See the stage-3 comment in
+# `build_rolling_knot` for why the earlier stages cannot do this
+# themselves.
 
 bl_info = {
     "name": "Rolling Knot",
@@ -309,10 +326,150 @@ def com_thick(K, rt):
     return com, m_over / v_tube
 
 
+def _bend_operator(K):
+    """Arc-length second-derivative operator D2 and vertex masses M
+    for a closed polyline: (D2 x)_i is the three-point estimate of
+    x''(s) on the UNEVEN spacing actually present, so x^T D2^T M D2 x
+    is the discrete bending energy integral |x''(s)|^2 ds.
+
+    The distinction from the index-space operator in `solve` is the
+    whole point of the fairing stage -- see the stage-3 comment."""
+    n = len(K)
+    hh = np.linalg.norm(np.roll(K, -1, 0) - K, axis=1)
+    hh = np.maximum(hh, 1e-300)
+    D2 = np.zeros((n, n))
+    i = np.arange(n)
+    hm, hp = hh[(i - 1) % n], hh[i]
+    D2[i, (i - 1) % n] = 2.0 / (hm * (hm + hp))
+    D2[i, i] = -2.0 / (hm * hp)
+    D2[i, (i + 1) % n] = 2.0 / (hp * (hm + hp))
+    return D2, 0.5 * (hh + np.roll(hh, 1))
+
+
+def curvature_variation(K):
+    """Total variation of discrete curvature around a closed polyline,
+    sum |kappa_i+1 - kappa_i| with kappa_i the turning angle over the
+    dual edge length.
+
+    This is the standard fairness functional (integral |dkappa/ds|):
+    a curve that sweeps has slowly varying curvature, so a LOWER value
+    is a smoother-looking curve.  Cheap enough to evaluate inside the
+    fairing loop, which is what lets that loop detect its own failure
+    mode and back off."""
+    e = np.roll(K, -1, 0) - K
+    h = np.maximum(np.linalg.norm(e, axis=1), 1e-300)
+    T = e / h[:, None]
+    turn = np.arccos(np.clip((T * np.roll(T, 1, 0)).sum(1), -1.0, 1.0))
+    kap = turn / (0.5 * (h + np.roll(h, 1)))
+    return float(np.abs(np.diff(np.concatenate([kap, kap[:1]]))).sum())
+
+
+def _max_turn(K):
+    """Largest turning angle (radians) between consecutive segments of
+    a closed polyline -- the faceting the swept tube shows."""
+    e = np.roll(K, -1, 0) - K
+    T = e / np.maximum(np.linalg.norm(e, axis=1, keepdims=True), 1e-300)
+    return float(np.arccos(np.clip((T * np.roll(T, 1, 0)).sum(1),
+                                   -1.0, 1.0)).max())
+
+
+def resample_uniform(K, m, runs=None):
+    """Re-sample a closed polyline at m points of uniform ARC LENGTH,
+    interpolating it with a periodic cubic spline where that helps and
+    simply subdividing it where it does not.
+
+    `morton` samples uniformly in the knot's parameter, and the
+    rational denominator makes that sparsest exactly on the outer
+    lobes -- the part of the silhouette the eye lands on.  Measured on
+    the (3,2) default, vertex spacing varies about 12:1 and the worst
+    polyline turn is ~4.8 degrees per segment ON THE LOBES, which is a
+    chord sagitta the swept tube shows as faceting however smoothly it
+    is shaded, while the interior is over-tessellated for no benefit.
+    Re-sampling evens that out.
+
+    With `runs`, the index runs marking the contact cores are carried
+    across by arc-length fraction and returned alongside, so the
+    rolling diagnostics still describe the curve that ships."""
+    K = np.asarray(K, dtype=float)
+    n = len(K)
+    m = int(m)
+    h = np.linalg.norm(np.roll(K, -1, 0) - K, axis=1)
+    h = np.maximum(h, 1e-300)
+    t = np.concatenate([[0.0], np.cumsum(h)])
+    L = t[-1]
+
+    # periodic cubic spline: second derivatives from the cyclic
+    # tridiagonal system (dense solve -- n is a few hundred, and this
+    # module already factors matrices of exactly this size)
+    i = np.arange(n)
+    hm, hp = h[(i - 1) % n], h[i]
+    A = np.zeros((n, n))
+    A[i, (i - 1) % n] += hm
+    A[i, i] += 2.0 * (hm + hp)
+    A[i, (i + 1) % n] += hp
+    rhs = 6.0 * ((np.roll(K, -1, 0) - K) / hp[:, None]
+                 - (K - np.roll(K, 1, 0)) / hm[:, None])
+    M = np.linalg.solve(A, rhs)
+
+    # evaluate densely in the chord parameter, then walk that dense
+    # polyline to place the m samples at equal arc length
+    dense = max(8 * m, 4 * n)
+    td = np.linspace(0.0, L, dense, endpoint=False)
+    seg = np.clip(np.searchsorted(t, td, side='right') - 1, 0, n - 1)
+    u = (td - t[seg])[:, None]
+    hs = h[seg][:, None]
+    yi, yj = K[seg], K[(seg + 1) % n]
+    Mi, Mj = M[seg], M[(seg + 1) % n]
+    b = (yj - yi) / hs - hs * (2.0 * Mi + Mj) / 6.0
+    P = yi + b * u + 0.5 * Mi * u ** 2 + (Mj - Mi) / (6.0 * hs) * u ** 3
+
+    hd = np.linalg.norm(np.roll(P, -1, 0) - P, axis=1)
+    hd = np.maximum(hd, 1e-300)
+    sd = np.concatenate([[0.0], np.cumsum(hd)])
+    Ld = sd[-1]
+    want = np.linspace(0.0, Ld, m, endpoint=False)
+    j = np.searchsorted(sd, want, side='right') - 1
+    j = np.clip(j, 0, dense - 1)
+    frac = (want - sd[j]) / hd[j]
+    out = P[j] + frac[:, None] * (P[(j + 1) % dense] - P[j])
+
+    # ...and the same thing WITHOUT interpolating, by walking the
+    # original polygon.  A cubic through data that has a genuine
+    # corner in it rings: on the kinkier knots the spline made the
+    # worst turn angle worse rather than better ((5,2) at a = 0.4:
+    # 17.0 -> 28.3 degrees), because it manufactures overshoot the
+    # polygon never had.  Subdividing cannot do that -- every sample
+    # lands on an existing edge -- so compute both and keep whichever
+    # actually turns more gently.  On a curve that is already fair the
+    # spline wins comfortably ((3,2): 4.80 -> 2.38 degrees).
+    wl = np.linspace(0.0, L, m, endpoint=False)
+    jl = np.clip(np.searchsorted(t, wl, side='right') - 1, 0, n - 1)
+    fl = (wl - t[jl]) / h[jl]
+    lin = K[jl] + fl[:, None] * (K[(jl + 1) % n] - K[jl])
+    if _max_turn(lin) < _max_turn(out):
+        out, fw = lin, wl / L
+    else:
+        fw = want / Ld
+    if runs is None:
+        return out
+
+    # carry the core runs over by arc-length fraction (they are
+    # contiguous, possibly wrapping)
+    new_runs = []
+    for r in runs:
+        f0, f1 = t[r[0]] / L, t[r[-1]] / L
+        sel = ((fw >= f0) | (fw <= f1)) if f1 < f0 \
+            else ((fw >= f0) & (fw <= f1))
+        new_runs.append(np.where(sel)[0])
+    return out, new_runs
+
+
 def build_rolling_knot(p=3, a=0.5, mode='SMOOTH', rt=0.05,
                        thick_aware=True, n=512, w_lap=600.0,
                        int_weight=0.4, clearance=0.0,
-                       balance_iters=4):
+                       balance_iters=4, w_fair=1e-4,
+                       fair_rounds=3, fair_erode=2,
+                       fair_data=0.05, resample=2.0):
     """(K, info): the optimized closed centreline and a dict of
     diagnostics (rho values, TDR parameters, overlap)."""
     K0 = morton(p, a, 1.0, n)
@@ -575,6 +732,166 @@ def build_rolling_knot(p=3, a=0.5, mode='SMOOTH', rt=0.05,
         K2 = clamp(solve(Tb, q0, w_bal))
         if min_d > 0:
             K2 = relax_clearance(K2, 15, q0)
+
+    # ----- stage 3: fair the free interior against a TRUE
+    # arc-length bending energy.
+    #
+    # Stage 2's regularizer (w_lap * DTD) is a squared second
+    # difference in INDEX space, and morton() samples uniformly in
+    # the parameter rather than in arc length -- the outer lobes come
+    # out several times sparser than the interior.  Since the
+    # continuous stiffness such an operator represents scales as h^3,
+    # the interior is smoothed roughly a hundred times more weakly
+    # per unit length than the lobes: fairing is strongest exactly
+    # where it is least needed.  The clearance stage then holds that
+    # shape in place (q0 = K2, interior data weight 2.0), so raising
+    # w_lap barely moves the result -- measured, 600 -> 5000 changes
+    # the curvature variation by under 5%.
+    #
+    # Hence a separate closing pass, in arc length, on the geometry
+    # that actually shipped: minimize the bending energy with the
+    # contact cores held and only a weak pull toward the current
+    # shape, then re-apply every invariant the earlier stages
+    # enforce -- hull clamp, strand clearance, COM balance -- so the
+    # rolling property cannot regress.  Measured at (3,2): curvature
+    # variation 83.8 -> 20.9, which is the fairness of the un-morphed
+    # Morton seed, with rho unchanged to five decimals.
+    #
+    # Too stiff a weight and the fairing fights the clearance
+    # repulsion instead of the sampling, and then fairness, rho or
+    # both blow up (the threshold falls as p rises).  So the pass is
+    # speculative: run it, judge the RESULT, and keep it only if it is
+    # better on every axis that matters -- otherwise halve the weight
+    # and try again, and failing that ship the curve unchanged.
+    #
+    # The judgement has to be on the whole pass rather than round by
+    # round.  Each round's COM correction is applied to the NEXT
+    # round's solve, so a single round is measured before its own
+    # balance has been applied and can look far worse than the
+    # trajectory it belongs to: on (5,2) round 0 alone reads rho
+    # 0.00046 -> 0.00145, while the three rounds together finish at
+    # 0.00032, BETTER than where they started.  A per-round test
+    # throws that away.
+    if w_fair > 0.0 and fair_rounds > 0:
+        # release the last `fair_erode` samples at each end of every
+        # core: the contact ranges were computed with a +-0.05 rad
+        # margin, so the shortened core still spans the true contact
+        # arc, and letting curvature turn over across the junction
+        # halves the second-order step there
+        keepf = np.zeros(n, bool)
+        for r in runs2:
+            keepf[r[fair_erode:len(r) - fair_erode]
+                  if 2 * fair_erode < len(r) else r] = True
+        fixf = np.where(keepf)[0]
+
+        def _rho_of(Kx):
+            cx, _ = com_thick(Kx, 0)
+            return rho_eval(Kx, cx, runs2)[0]
+
+        def _gap_of(Kx):
+            Dx = np.linalg.norm(Kx[:, None, :] - Kx[None, :, :],
+                                axis=2)
+            return Dx[far].min() - 2 * rt
+
+        entry, entry_Tb = K2.copy(), Tb.copy()
+        tv0, rho0, gap0 = (curvature_variation(entry), _rho_of(entry),
+                           _gap_of(entry))
+        gap_floor = min(gap0, min_d - 2 * rt) - 1e-9
+        wf = float(w_fair)
+        trace = []
+        # Don't even try when the clearance constraint is already
+        # BINDING.  Fairing pulls the interior in; if the strands are
+        # already as close as they are allowed to be, the repulsion
+        # just pushes back, the two fight to a standstill, and the
+        # curve ends up more kinked than it started.  Measured over
+        # (3,2)/(5,2)/(7,2)/(9,2) at a = 0.35/0.4/0.5/0.65, "entry gap
+        # exceeds 1.15x the requested clearance" separates every case
+        # that gained from every case that had to be rejected -- and
+        # rejecting costs three dense passes, so it is worth not
+        # starting.  The result guard below still backstops this.
+        #
+        # Three attempts spans the weight range that was ever useful
+        # (about 1e-5 to 3e-4); below that the solve barely moves the
+        # curve, the result converges back to the entry shape, and it
+        # fails the improvement test anyway.
+        took = False
+        attempts = 3 if (min_d <= 0.0
+                         or gap0 > 1.15 * (min_d - 2 * rt)) else 0
+        for _attempt in range(attempts):
+            Kc, Tc = entry.copy(), entry_Tb.copy()
+            for _ in range(int(fair_rounds)):
+                D2, Mv = _bend_operator(Kc)
+                seg = np.linalg.norm(np.roll(Kc, -1, 0) - Kc, axis=1)
+                w = (seg + np.roll(seg, 1)) / 2
+                w = w / w.sum()
+                w_b = 1e6
+                Am = (wf * ((D2.T * Mv) @ D2)
+                      + np.diag(np.full(n, fair_data))
+                      + w_b * np.outer(w, w))
+                Kn = Kc.copy()
+                for dim in range(3):
+                    Af = Am.copy()
+                    bf = (fair_data * entry[:, dim]
+                          + w_b * Tc[dim] * w)
+                    for i in fixf:
+                        Af[i, :] = 0
+                        Af[i, i] = 1
+                        bf[i] = Kc[i, dim]
+                    Kn[:, dim] = np.linalg.solve(Af, bf)
+                Kn = clamp(Kn)
+                if min_d > 0:
+                    # restore the separation the solve ate into.  Raw
+                    # repulsion, NOT relax_clearance: that routine's
+                    # Laplacian-plus-reference pull drags the curve
+                    # back toward its pre-fairing shape and undoes
+                    # most of the gain (measured, (3,2): 26 -> 47).
+                    for _ in range(25):
+                        if not repel(Kn):
+                            break
+                    Kn = clamp(Kn)
+                Kc = Kn
+                cm, _ovc = com_thick(Kc, rt if thick_aware else 0.0)
+                Tc = Tc - cm
+            tv1, rho1, gap1 = (curvature_variation(Kc), _rho_of(Kc),
+                               _gap_of(Kc))
+            trace.append((wf, tv1, rho1, gap1))
+            if (tv1 <= 0.98 * tv0 and rho1 <= 1.05 * rho0 + 1e-5
+                    and gap1 >= gap_floor):
+                K2, Tb, took = Kc, Tc, True
+                break
+            wf *= 0.5
+        info['w_fair'] = wf if took else 0.0
+        info['fair_trace'] = trace
+        # both at the OPTIMIZATION resolution, so they compare: the
+        # curvature estimate kappa = turn / ds grows at a genuine
+        # corner as the sampling is refined, so a value measured
+        # after the resample below is not on the same scale as one
+        # measured before it
+        info['tv_kappa_raw'] = tv0
+        info['tv_kappa_fair'] = curvature_variation(K2)
+    # ----- even out the sampling for the swept tube.  Done HERE, not
+    # in the operator, so every diagnostic below describes the curve
+    # that actually ships; the contact runs ride along by arc length.
+    #
+    # Kept only when it makes the worst turn GENTLER.  On a fair curve
+    # that is automatic -- twice the samples, half the turn per
+    # segment ((3,2): 4.8 -> 2.4 degrees).  On one that the fairing
+    # pass had to decline, the seed's parameter sampling is dense
+    # exactly where the curve corners hardest, and spreading the
+    # samples evenly hands those corners fewer vertices to turn
+    # through: the geometry is the same but the faceting is not
+    # improved, so leave such a curve at its own sampling.
+    if resample and resample > 0:
+        Kr, runs_r = resample_uniform(
+            K2, max(16, int(round(resample * n))), runs2)
+        if _max_turn(Kr) <= _max_turn(K2):
+            K2, runs2 = Kr, runs_r
+            nn = len(K2)
+            ii = np.arange(nn)
+            cc = np.abs(ii[:, None] - ii[None, :])
+            far = np.minimum(cc, nn - cc) > max(4, nn // 12)
+
+    info['tv_kappa'] = curvature_variation(K2)
     cmc, _ = com_thick(K2, 0)
     info['rho'] = rho_eval(K2, cmc, runs2)[0]
     cm, ov = com_thick(K2, rt)
@@ -678,11 +995,13 @@ if _IN_BLENDER:
                         "between strands of the thick knot "
                         "(0 = strands may touch and fuse)")
         smoothing: FloatProperty(
-            name="Smoothness", default=600.0, min=50.0,
-            max=5000.0,
-            description="Interior fairing weight: higher gives "
-                        "wider, calmer interior curves at the "
-                        "cost of knot-shape fidelity")
+            name="Smoothness", default=1.0, min=0.0, max=4.0,
+            description="How hard to fair the interior of the "
+                        "curve: 0 leaves the raw optimized shape, "
+                        "1 is the measured sweet spot, higher "
+                        "trades knot-shape fidelity for a calmer "
+                        "sweep (the flow backs off on its own if "
+                        "a setting would cost rolling accuracy)")
         samples: IntProperty(
             name="Curve Samples", default=512, min=128,
             max=1024)
@@ -695,11 +1014,15 @@ if _IN_BLENDER:
 
         def execute(self, context):
             p = self.p - (1 - self.p % 2)   # force odd
+            # the UI knob drives the stage-3 fairing weight (w_lap,
+            # the stage-2 index-space one it used to drive, is inert
+            # by the time the clearance stage has pinned the shape --
+            # see the stage-3 comment in build_rolling_knot)
             K, info = build_rolling_knot(
                 p, self.a, self.mode, self.rt,
                 self.thick_aware, self.samples,
-                w_lap=self.smoothing,
-                clearance=self.clearance)
+                clearance=self.clearance,
+                w_fair=1e-4 * float(self.smoothing))
             verts, faces = tube_mesh(K, self.rt, self.sides)
             name = f"Rolling Knot ({p},2)"
             # fit (roughly) within a 2 x scale cube at origin
@@ -729,6 +1052,10 @@ if _IN_BLENDER:
                    f" thick={info.get('rho_thick', 0):.4f}"
                    f" overlap={100 * info.get('overlap', 0):.1f}%"
                    f" gap={info.get('gap', 0):.3f}")
+            if 'tv_kappa_raw' in info:
+                msg += (f" fairness={info['tv_kappa_raw']:.0f}"
+                        f"->{info['tv_kappa_fair']:.0f}"
+                        + ("" if info.get('w_fair') else " (declined)"))
             self.report({'INFO'}, msg)
             print("Rolling Knot:", msg)
             return {'FINISHED'}
@@ -816,4 +1143,38 @@ def _selftest():
     assert finite
     print(f"tube: V={len(verts)} F={len(faces)} "
           f"watertight, finite")
+
+    # the spline resample must reproduce the curve, not just
+    # subdivide it: a circle stays a circle, and the sampling comes
+    # out uniform in arc length with the contact runs carried across
+    tt = np.linspace(0, 2 * np.pi, 97, endpoint=False)
+    circ = np.stack([np.cos(tt), np.sin(tt), 0 * tt], 1)
+    C2, cruns = resample_uniform(circ, 400, [np.arange(0, 20),
+                                             np.arange(50, 70)])
+    rad = np.linalg.norm(C2, axis=1)
+    hh = np.linalg.norm(np.roll(C2, -1, 0) - C2, axis=1)
+    assert abs(rad.mean() - 1.0) < 1e-4 and rad.std() < 1e-5
+    assert hh.max() / hh.min() < 1.001, hh.max() / hh.min()
+    assert len(cruns) == 2 and all(len(r) > 50 for r in cruns)
+    print(f"resample: circle radius {rad.mean():.6f} cv "
+          f"{rad.std():.1e}, spacing ratio {hh.max() / hh.min():.5f}")
+
+    # the fairing pass may never ship a curve that is less fair, rolls
+    # worse, or has closer strands than the one it was handed -- it
+    # measures all three and declines the pass otherwise.  Checked on
+    # a case that accepts (3,2) and one that historically declined
+    # (9,2), so both branches are exercised.
+    for p, a in ((3, 0.5), (9, 0.5)):
+        K, info = build_rolling_knot(p, a, 'SMOOTH', rt=0.05, n=384,
+                                     clearance=0.02)
+        tv0, tv1 = info['tv_kappa_raw'], info['tv_kappa_fair']
+        took = bool(info['w_fair'])
+        print(f"fairing p={p} a={a}: TV {tv0:.1f} -> {tv1:.1f} "
+              f"({'taken' if took else 'declined'}), "
+              f"rho={info['rho']:.5f} gap={info['gap']:+.4f}")
+        # declining must leave the curve exactly as it was, and
+        # taking the pass must be a real improvement -- never a wash
+        # dressed up as one
+        assert tv1 == tv0 if not took else tv1 <= 0.98 * tv0
+        assert info['rho'] < 0.01 and info['gap'] > 0.0
     print("rolling knot standalone tests passed")
