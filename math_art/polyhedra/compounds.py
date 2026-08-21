@@ -1127,10 +1127,27 @@ SUBGROUP_COMPOUNDS = [
      'U13', 'Ih', 5),
     ('S65_GT_CUBICUBOCTA', "Skilling 65: 5 Great Cubicuboctahedra",
      'U14', 'Ih', 5),
-    # Entries 63 and 66 are absent: their constituents have four-part
-    # Wythoff symbols (2 4 3/2 4/2 | and 2 4/3 3/2 4/2 |), which
-    # `build_uniform` does not construct.  Nothing else blocks them --
-    # add the constituent and the row follows.
+    # Entries 63 and 66 were long recorded here as blocked on
+    # constituents "with four-part Wythoff symbols that build_uniform
+    # does not construct".  That was a misreading of the symbol, not a
+    # gap in the engine.  Skilling writes them `2 4 3/2 4/2 |` and
+    # `2 4/3 3/2 4/2 |`, the form in which the repeated generator records
+    # that Wythoff's construction traverses each face TWICE; the same two
+    # solids are written `3/2 2 4 |` and `4/3 3/2 2 |` in this repo's
+    # table, and both have always built.  They are the small and great
+    # RHOMBIHEXAHEDRA, U18 and U21.
+    #
+    # Coxeter, Longuet-Higgins & Miller settle it beyond the symbol.
+    # Skilling cites their figures 60 and 82, and CLM's Table 7 gives
+    # figure 60 as 24 vertices, 48 edges, 12{4} + 6{8} and figure 82 as
+    # 24, 48, 12{4} + 6{8/3} -- which are exactly U18 and U21, faces and
+    # counts alike.  Skilling's own remark column agrees a third time: he
+    # groups 62, 63, 64 as "shared vertices and edge length" and U10,
+    # U18, U13 do share a vertex set, as do U14, U21, U17 for 65, 66, 67.
+    ('S63_SM_RHOMBIHEX', "Skilling 63: 5 Small Rhombihexahedra",
+     'U18', 'Ih', 5),
+    ('S66_GT_RHOMBIHEX', "Skilling 66: 5 Great Rhombihexahedra",
+     'U21', 'Ih', 5),
 ]
 
 _SUBGROUP_BY_KEY = {r[0]: r for r in SUBGROUP_COMPOUNDS}

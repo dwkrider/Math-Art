@@ -1214,14 +1214,26 @@ NAMED_PRESETS = {
         ('five_tetrahedra', 'Compound of five tetrahedra (chiral)',
          ['a', 's01', 's02', 's03', 's04', 's05', ('hand', 's07', 0)],
          'Du Val Ef1 with one hand of f1; Crennell 47'),
+        # Both noble stellations have 60 true vertices, each on three of
+        # the twenty face planes, so each dual is a 60-TRIANGLE faceting
+        # of the dodecahedron -- and the dodecahedral vertex set carries
+        # exactly two of those, one per stellation.  They are built by
+        # `mesh.noble_faceting_add`, and `noble_faceting_generator.
+        # noble_dual_index` re-derives which is which rather than
+        # trusting an enumeration order.  Note the dual cannot be had by
+        # reciprocating what `build` emits: that is the VISIBLE
+        # BOUNDARY, whose corners include every intersection point of
+        # the surface and not just the polyhedron's own vertices.
         ('duval_d', 'Du Val D (noble stellation)',
          ['a', 's01', 's02', 's03'],
-         'noble -- isohedral AND isogonal; Du Val D = a+b+c+d'),
+         'noble -- isohedral AND isogonal; Du Val D = a+b+c+d; '
+         'dual is Dodecahedron faceting 2'),
         ('great', 'Great icosahedron',
          ['a', 's01', 's02', 's03', 's04', 's05', 's06', 's07', 's08',
           's09'], 'Du Val G; Crennell 7'),
         ('final', 'Final stellation (echidnahedron)', ['all'],
-         'Du Val H; Crennell 8; the other noble icosahedral stellation'),
+         'Du Val H; Crennell 8; the other noble icosahedral stellation; '
+         'dual is Dodecahedron faceting 5'),
     ],
     'dodecahedron': [
         ('core', 'Dodecahedron', ['a'], 'Platonic seed'),

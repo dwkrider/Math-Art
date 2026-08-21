@@ -22,6 +22,28 @@
 # dodecahedron and the great icosahedron.  Choosing the Icosahedron seed
 # below walks that set.
 #
+# THE TWO NOBLE ICOSAHEDRAL DUALS ARE HERE, on the Dodecahedron seed.
+# Beyond the regular ones, the icosahedron has exactly two noble
+# stellations -- Du Val's D and H, H being the final stellation -- and
+# their duals were long recorded as unbuildable, because reciprocating
+# the VISIBLE BOUNDARY a stellation engine emits gives the wrong solid:
+# that boundary's "vertices" are every intersection point of the
+# surface, not the polyhedron's true corners.  Faceting sidesteps the
+# problem entirely by never reciprocating anything.
+#
+# Both duals turn out to be 60-triangle facetings of the dodecahedron
+# (V=20, E=90, F=60, chi=-10), and the dodecahedral vertex set carries
+# exactly two such, so the match is forced rather than chosen.  They are
+# told apart by the shape of that triangle, with the dodecahedron scaled
+# to circumradius 1 and its edge a = 2/(sqrt(3)*phi) = 0.71364:
+#
+#   dual of Du Val D    isosceles (a, 2sqrt2/sqrt3, 2sqrt2/sqrt3)
+#   dual of Du Val H    isosceles (2sqrt2/sqrt3, 2sqrt2/sqrt3, phi^2 a)
+#
+# so the two share their long pair of sides and differ in the base.
+# `_verify_noble_duals` re-derives the correspondence on every run,
+# rather than trusting the enumeration order.
+#
 # The mathematics lives in `polyhedra/faceting.py`; this module is the
 # Blender layer over it.
 #
@@ -69,7 +91,8 @@ SEEDS = [
     ('ICOSA', "Icosahedron (12 vertices)",
      "carries the four regular polyhedra with icosahedral vertices"),
     ('DODECA', "Dodecahedron (20 vertices)",
-     "carries the dodecahedron and great stellated dodecahedron"),
+     "carries the dodecahedron, the great stellated dodecahedron and "
+     "the duals of the icosahedron's two noble stellations"),
     ('CUBE', "Cube (8 vertices)", "octahedral vertex set"),
     ('OCTA', "Octahedron (6 vertices)", "octahedral vertex set"),
 ]
@@ -126,6 +149,69 @@ def build(kind, index):
     return [tuple(c / mx for c in v) for v in V], [list(f) for f in faces]
 
 
+def noble_dual_index(preset):
+    """Which Dodecahedron faceting is the dual of icosahedron stellation
+    `preset` ('duval_d' or 'final'), or None.
+
+    Derived, not tabulated.  A noble stellation is isogonal, so all its
+    true vertices lie on one sphere -- and the engine's extra boundary
+    points lie strictly inside it, so the OUTERMOST emitted points are
+    exactly the true vertices and nothing else is.  Each of those sits on
+    three of the icosahedron's twenty face planes, so under polar
+    reciprocation it becomes a triangle on the three dual vertices those
+    planes reciprocate to.  Collect those triangles and the dual's whole
+    face set is in hand, with no reciprocation of the boundary mesh
+    anywhere in it.
+    """
+    try:
+        from . import general_stellation as _gs
+    except ImportError:                      # flat import (test runner)
+        import general_stellation as _gs
+    import numpy as _np
+    eng = _gs.StellationEngine(_gs._icosahedron_V(), name='icosahedron')
+    code = next((c for k, _t, c, _n in _gs.named_presets('icosahedron')
+                 if k == preset), None)
+    if code is None:
+        return None
+    V, _F = eng.build(_gs.expand_code(eng, code), scale=False)
+    V = _np.array(V)
+    r = _np.linalg.norm(V, axis=1)
+    true = V[r.max() - r < 1e-6]
+
+    DV, found = facetings_of('DODECA')
+    where = {tuple(round(float(c), 5) for c in v): j for j, v in enumerate(DV)}
+    pmap = [where[tuple(round(float(c), 5) for c in n)] for n in eng.N]
+    proj = true @ eng.N.T
+    want = {frozenset(pmap[i] for i in
+                      _np.nonzero(_np.abs(proj[k] - eng.D) < 1e-6)[0])
+            for k in range(len(true))}
+    for j, (faces, _nx, _k) in enumerate(found):
+        if {frozenset(f) for f in faces} == want:
+            return j
+    return None
+
+
+def _verify_noble_duals():
+    """The duals of Du Val D and H are two distinct Dodecahedron
+    facetings, and the dodecahedral vertex set carries no others of that
+    shape -- which is what makes the identification forced."""
+    DV, found = facetings_of('DODECA')
+    tri = [j for j, (faces, _n, _k) in enumerate(found)
+           if len(faces) == 60 and len(faces[0]) == 3]
+    assert len(tri) == 2, ('expected exactly two 60-triangle noble '
+                           'facetings of the dodecahedron', tri)
+    idx = {}
+    for preset in ('duval_d', 'final'):
+        j = noble_dual_index(preset)
+        assert j is not None, (preset, 'dual not found among the facetings')
+        assert j in tri, (preset, j, 'dual is not one of the 60-triangle '
+                                     'facetings')
+        idx[preset] = j
+    assert idx['duval_d'] != idx['final'], \
+        ('the two noble stellations must have different duals', idx)
+    return idx
+
+
 def _selftest():
     for kind, _lbl, _d in SEEDS:
         V, found = facetings_of(kind)
@@ -155,6 +241,10 @@ def _selftest():
                 (kind, i, 'a vertex went unused')
             assert max(abs(c) for v in V for c in v) <= 1.0 + 1e-9, \
                 (kind, i, 'not fitted to the 2 m cube')
+
+    idx = _verify_noble_duals()
+    print('DUALS   Du Val D -> Dodecahedron faceting %d, Du Val H '
+          '(final) -> %d' % (idx['duval_d'], idx['final']))
     print('RESULT: OK')
 
 

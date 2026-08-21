@@ -326,6 +326,37 @@ def _selftest():
     print("SUBGROUP  Skilling 46-67 sample: constituents aligned and "
           "orbited, all counts as tabulated")
 
+    # Skilling's REMARKS column is an independent check, and a sharp one:
+    # he brackets 62, 63, 64 as "shared vertices and edge length", and
+    # likewise 65, 66, 67.  Constituent counts cannot catch a wrong
+    # constituent here -- all six rows are 5 copies -- but a shared
+    # vertex set can, since it holds only if the right solid is in the
+    # right frame at the right scale.  This is what confirms that his
+    # `2 4 3/2 4/2 |` and `2 4/3 3/2 4/2 |` are the small and great
+    # rhombihexahedra (U18, U21), written with the repeated generator
+    # that records Wythoff's construction traversing each face twice.
+    for band in (('S62_RHOMBICUBOCTA', 'S63_SM_RHOMBIHEX',
+                  'S64_SM_CUBICUBOCTA'),
+                 ('S65_GT_CUBICUBOCTA', 'S66_GT_RHOMBIHEX',
+                  'S67_NONCONVEX_GRCO')):
+        ref_v = ref_e = None
+        for k in band:
+            pts = [v for vv, _ff in build_compound(k) for v in vv]
+            R = max(_math.sqrt(sum(x * x for x in q)) for q in pts)
+            vs = sorted(tuple(round(x / R, 5) for x in q) for q in pts)
+            es = set()
+            for vv, ff in build_compound(k):
+                for f in ff:
+                    for i in range(len(f)):
+                        a, b = vv[f[i]], vv[f[(i + 1) % len(f)]]
+                        es.add(round(_math.dist(a, b) / R, 5))
+            if ref_v is None:
+                ref_v, ref_e = vs, sorted(es)
+            assert vs == ref_v, (k, band[0], 'vertices not shared')
+            assert sorted(es) == ref_e, (k, band[0], 'edge length differs')
+    print("SKILLING  62/63/64 and 65/66/67 share vertices and edge "
+          "length, as his remarks column says")
+
     # --- Hart's central-freedom cubes -----------------------------------
     # Nothing is aligned, so the stabilizer is trivial and the count is
     # the whole group order.  Checking that it holds at SEVERAL angles is
