@@ -381,19 +381,17 @@ def profile_points(half, kind, twist=0.0):
     w = 0.5 * h                              # arm / upright thickness
     c = h - d                                # half the H's cross-bar
     if kind == 'C':
-        # Square with a bite out of the -X side.
+        # Square with a bite out of the +X side, so the channel opens
+        # along the outward conormal -- away from the surface.
         #
-        # The bite is authored on -X, not +X, and that is worth
-        # recording because the arithmetic says the opposite: +X is the
-        # outward conormal, measured to agree with "away from the
-        # object's bulk" on 100% of rim samples for both a flat patch
-        # and the exact Schwarz H cell.  On screen, though, the channel
-        # built that way faces INTO the surface.  The rendered result is
-        # what this option is for, so the section follows the render and
-        # this note follows the discrepancy: something between the
-        # conormal and the eye reverses, and it has not been run down.
-        pts = ((h, -h), (-h, -h), (-h, -h + w), (-h + d, -h + w),
-               (-h + d, h - w), (-h, h - w), (-h, h), (h, h))
+        # This is where the arithmetic said it should be all along: +X
+        # is measured to agree with "away from the object's bulk" on
+        # 100% of rim samples, on a flat patch, the exact Schwarz H cell
+        # and a clipped gyroid alike.  It was briefly mirrored on a
+        # report that it faced inward, which then made it wrong
+        # everywhere; the measurement was right and the mirror is gone.
+        pts = ((-h, -h), (h, -h), (h, -h + w), (h - d, -h + w),
+               (h - d, h - w), (h, h - w), (h, h), (-h, h))
     elif kind == 'H':
         # two uprights joined by a cross-bar, so the openings face
         # +Y and -Y -- along the surface normal, above and below it
@@ -1162,7 +1160,7 @@ def _selftest():
     # not be delivered through Blender's curve bevel: aimed by per-point
     # tilt, the C's spine came out on the OUTWARD side at 94% of samples
     # on a real three-dimensional rim.
-    for kind, want_x, want_y in (('C', 1, 0), ('H', 0, 0),
+    for kind, want_x, want_y in (('C', -1, 0), ('H', 0, 0),
                                  ('SQUARE', 0, 0)):
         S = profile_points(0.05, kind)
         cx, cy = section_centroid(S)
@@ -1190,14 +1188,16 @@ def _selftest():
         S2 = np.stack([rel[i] @ X[i], rel[i] @ Y[i]], axis=1)
         cxs.append(section_centroid(S2)[0])
     off = np.array(cxs) / 0.05
-    # a shallower mouth removes less material, so the centroid sits
-    # nearer the middle than it did when the bite went three quarters
-    # of the way through -- the SIGN is the property being gated
-    good = float(np.min(off)) > 0.03
+    # A shallower mouth removes less material, so the centroid sits
+    # nearer the middle than it did when the bite went three quarters of
+    # the way through -- the SIGN is the property being gated, and it
+    # says the solid body is on the inward side with the mouth facing
+    # out, which is what the channel is for.
+    good = float(np.max(off)) < -0.03
     ok &= good
-    print("rim_curve: swept C spine sits %.3f thicknesses to +conormal "
-          "(worst %.3f) %s"
-          % (float(off.mean()), float(np.min(off)),
+    print("rim_curve: swept C spine sits %.3f thicknesses inward, mouth "
+          "facing out (worst %.3f) %s"
+          % (float(off.mean()), float(np.max(off)),
              'OK' if good else 'FAIL'))
 
     # the H's openings must face along the normal, not across it
