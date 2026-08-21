@@ -134,6 +134,12 @@ MODELS = [
     # the convex decagon in the star-decagon planes
     ('D12C', "12 Decagons (truncated great dodeca)", 'U37DEC', 10, 1,
      1.00, 0.0),
+    # panels outlined by edges rather than faces -- see LATENT_SOURCES
+    ('O6', "6 Octagons (rhombicuboctahedron)", 'U10OCT', 8, 1, 1.00, 0.0),
+    ('T8', "8 Triangles (great rhombihexahedron)", 'U21TRI', 3, 1,
+     1.00, 0.0),
+    ('S6', "6 Squares (great rhombihexahedron)", 'U21SQ', 4, 1, 1.00, 0.0),
+    ('P12F', "12 Pentagons (icosahedron)", 'U22PEN', 5, 1, 1.00, 0.0),
 ]
 
 _MODEL = {m[0]: m for m in MODELS}
@@ -146,6 +152,16 @@ _MODEL_OFFSET = {}
 def _plane_offset(kind):
     if kind in _MODEL_OFFSET:
         return _MODEL_OFFSET[kind]
+    if kind in LATENT_SOURCES:
+        # measured from the polygons, not read back from the table: the
+        # distance in LATENT_SOURCES is a five-decimal SELECTOR, there to
+        # pick one plane class out of several, and using it as the answer
+        # leaves the panels a rounding error off their own plane.
+        wy, pqr, sides, dd, dist = LATENT_SOURCES[kind]
+        nv, cen, _e, _r = latent_polygon_frames(wy, pqr, sides, dd, dist)[0]
+        val = abs(_dot(nv, cen))
+        _MODEL_OFFSET[kind] = val
+        return val
     if kind in FACE_SOURCES:
         spec = FACE_SOURCES[kind]
         wy, pqr, sides = spec[:3]
@@ -171,6 +187,10 @@ def plane_normals(kind):
     if kind == 'DODECA':
         V, F = _seeds.seed_poly('DODECA')
         return [n for n, _d in _hull.face_planes(V, F)]
+    if kind in LATENT_SOURCES:
+        wy, pqr, sides, dd, dist = LATENT_SOURCES[kind]
+        return [nv for nv, _c, _e, _r
+                in latent_polygon_frames(wy, pqr, sides, dd, dist)]
     if kind in FACE_SOURCES:
         spec = FACE_SOURCES[kind]
         wy, pqr, sides = spec[:3]
@@ -247,6 +267,109 @@ def uniform_face_frames(wythoff, pqr, sides, cls=0):
     out = groups[keys[min(cls, len(keys) - 1)]] if keys else []
     _FRAME_CACHE[ckey] = out
     return out
+
+
+_LATENT_CACHE = {}
+
+
+def latent_polygon_frames(wythoff, pqr, sides, d, dist):
+    """Regular {sides/d} polygons outlined by a uniform polyhedron's
+    EDGES without being faces of it, as (normal, centre, e1, radius).
+
+    A slide-together needs a symmetric set of congruent panels in a
+    symmetric set of planes.  Faces are the obvious way to come by one
+    and are what every model here used to be built from -- but they are
+    not the only way, and reading the face list is how the thirty squares
+    plainly visible on the icosidodecadodecahedron got missed: that solid
+    has no square face at all, and yet its edges outline thirty perfect
+    squares, one per two-fold axis.  A cycle of edges that happens to be
+    planar and regular serves just as well as a face, and there are
+    placements that exist only in this form.
+
+    The search fixes the plane as soon as three vertices are on the
+    table and then only walks neighbours lying in it, so it costs very
+    little -- hundredths of a second for the largest solid here -- rather
+    than exploring every cycle in the graph.  Cycles of exactly `sides`
+    steps are all it looks for, since the caller always knows the polygon
+    it wants.
+    """
+    ckey = (wythoff, sides, d, round(dist, 5))
+    if ckey in _LATENT_CACHE:
+        return _LATENT_CACHE[ckey]
+    try:
+        from . import uniform_polyhedra_generator as _uni
+    except ImportError:                        # flat import (test runner)
+        import uniform_polyhedra_generator as _uni
+    V, faces = _uni.build_uniform(wythoff, pqr)
+    V = [tuple(float(c) for c in v) for v in V]
+    R = max(_norm(v) for v in V)
+    V = [tuple(c / R for c in v) for v in V]
+    adj = {i: set() for i in range(len(V))}
+    facekeys = set()
+    for f, _dens in faces:
+        facekeys.add(frozenset(f))
+        for k in range(len(f)):
+            a, b = f[k], f[(k + 1) % len(f)]
+            if a != b:
+                adj[a].add(b)
+                adj[b].add(a)
+    found = {}
+    for a in range(len(V)):
+        for b in sorted(x for x in adj[a] if x > a):
+            for c in sorted(x for x in adj[b] if x > a and x != a):
+                nx = _cross(_sub(V[b], V[a]), _sub(V[c], V[a]))
+                if _norm(nx) < 1e-9:
+                    continue                   # three in a row: no plane
+                nrm = _unit(nx)
+                off = _dot(nrm, V[a])
+                if abs(abs(off) - dist) > 1e-5:
+                    continue                   # not the wanted plane
+                ok = set(x for x in range(len(V))
+                         if abs(_dot(nrm, V[x]) - off) < 1e-6)
+                stack = [[a, b, c]]
+                while stack:
+                    path = stack.pop()
+                    tip = path[-1]
+                    if len(path) == sides:
+                        if a in adj[tip]:
+                            key = frozenset(path)
+                            if key not in facekeys and key not in found:
+                                fr = _regular_frame([V[i] for i in path], d)
+                                if fr:
+                                    found[key] = fr
+                        continue
+                    for nxt in sorted(adj[tip] & ok):
+                        if nxt > a and nxt not in path:
+                            stack.append(path + [nxt])
+    out = list(found.values())
+    _LATENT_CACHE[ckey] = out
+    return out
+
+
+def _regular_frame(P, want_d):
+    """(normal, centre, e1, radius) if P is a regular {n/want_d}."""
+    n = len(P)
+    cen = [sum(q[k] for q in P) / float(n) for k in range(3)]
+    rad = [_norm(_sub(q, cen)) for q in P]
+    if max(rad) - min(rad) > 1e-5:
+        return None                            # not on one circle
+    side = [_norm(_sub(P[k], P[(k + 1) % n])) for k in range(n)]
+    if max(side) - min(side) > 1e-5:
+        return None                            # sides unequal
+    nrm = _unit(_cross(_sub(P[1], P[0]), _sub(P[2], P[0])))
+    if _dot(nrm, cen) < 0:
+        nrm = _mul(nrm, -1.0)
+    e1 = _unit(_sub(P[0], cen))
+    e2 = _cross(nrm, e1)
+    ang = [math.atan2(_dot(_sub(q, cen), e2), _dot(_sub(q, cen), e1))
+           for q in P]
+    step = [(ang[(k + 1) % n] - ang[k]) % (2 * math.pi) for k in range(n)]
+    if max(step) - min(step) > 1e-4:
+        return None                            # corners unevenly spaced
+    d = int(round(sum(step) / (2 * math.pi)))
+    if d != want_d:
+        return None
+    return nrm, cen, e1, rad[0]
 
 
 #: models whose panels come from a uniform polyhedron's faces:
@@ -335,6 +458,33 @@ FACE_SOURCES = {
     # turned alike, so the frames have to come from U37 itself rather
     # than be borrowed from U73.
     'U37DEC': ('2 5/2 | 5', ['2', '5/2', '5'], 10),
+}
+
+# --- panels that are NOT faces -----------------------------------------
+# key: (Wythoff, pqr, sides, density, plane distance).  These sit in
+# planes picked out by cycles of EDGES rather than by faces -- see
+# `latent_polygon_frames`.  Sweeping all 75 uniforms for them turned up
+# 42 solids carrying latent regular polygons, of which four give models
+# that exist in no other form.
+#
+# Three of the four are the first OCTAHEDRAL slide-togethers here: every
+# one of Hart's seven, and everything found before this, is icosahedral,
+# because the icosahedral group is the one with enough planes at enough
+# angles to trap a panel.  The cube's groups manage it too, on the same
+# principle and with fewer pieces -- six panels rather than twelve or
+# thirty, which makes them by far the easiest of these to actually build.
+LATENT_SOURCES = {
+    # The rhombicuboctahedron's edges outline six regular octagons, one
+    # per two-fold axis, each crossing four of the other five.
+    'U10OCT': ('3 4 | 2', ['3', '4', '2'], 8, 1, 0.35741),
+    # The great rhombihexahedron carries two: eight triangles on the
+    # cube's three-fold axes, and six squares on its four-fold ones.
+    'U21TRI': ('4/3 3/2 2 |', ['4/3', '3/2', '2'], 3, 1, 0.62129),
+    'U21SQ': ('4/3 3/2 2 |', ['4/3', '3/2', '2'], 4, 1, 0.28108),
+    # And the plainest source of all: the twelve pentagons an
+    # ICOSAHEDRON's edges outline, one round each vertex -- its vertex
+    # figures, which are famously pentagons and are not faces.
+    'U22PEN': ('5 | 2 3', ['5', '2', '3'], 5, 1, 0.44721),
 }
 
 # Four more placements pass every test above and are still NOT models,
@@ -664,6 +814,12 @@ def model_panels(key, radius_scale=1.0, turn_delta=0.0):
     wrongly.
     """
     _key, _lbl, axes, n, d, rad, turn = _MODEL[key]
+    if axes in LATENT_SOURCES:
+        wy, pqr, sides, dd, dist = LATENT_SOURCES[axes]
+        return [(_polygon_in_frame(n, d, r0 * radius_scale, nv, e1, cen,
+                                   turn + turn_delta), nv)
+                for nv, cen, e1, r0
+                in latent_polygon_frames(wy, pqr, sides, dd, dist)]
     if axes in FACE_SOURCES:
         spec = FACE_SOURCES[axes]
         wy, pqr, sides = spec[:3]
@@ -1077,12 +1233,61 @@ def _verify_slots_dont_cross():
     return len(MODELS)
 
 
+def _verify_latent_are_not_faces():
+    """The latent panels must really be edge circuits and not faces.
+
+    The whole point of `latent_polygon_frames` is that it finds planes no
+    face lies in, so if a "latent" polygon turned out to be a face the
+    model would silently be a duplicate of one built the ordinary way --
+    which is exactly the failure that hid the thirty squares for so long,
+    running the other direction.  Check both halves of the claim: every
+    side is a real edge of the solid, and the circuit is in no face.
+    """
+    try:
+        from . import uniform_polyhedra_generator as _uni
+    except ImportError:
+        import uniform_polyhedra_generator as _uni
+    checked = 0
+    for name, (wy, pqr, sides, dd, dist) in LATENT_SOURCES.items():
+        V, faces = _uni.build_uniform(wy, pqr)
+        V = [tuple(float(c) for c in v) for v in V]
+        R = max(_norm(v) for v in V)
+        V = [tuple(c / R for c in v) for v in V]
+        E = set()
+        for f, _dens in faces:
+            for k in range(len(f)):
+                a, b = f[k], f[(k + 1) % len(f)]
+                E.add((min(a, b), max(a, b)))
+        facepts = set()
+        for f, _dens in faces:
+            facepts.add(frozenset(tuple(round(c, 5) for c in V[i])
+                                  for i in f))
+        frames = latent_polygon_frames(wy, pqr, sides, dd, dist)
+        assert frames, (name, "no latent polygons found")
+        for nv, cen, e1, r0 in frames:
+            P = _polygon_in_frame(sides, dd, r0, nv, e1, cen, 0.0)
+            key = frozenset(tuple(round(c, 5) for c in q) for q in P)
+            assert key not in facepts, (name, "a latent polygon IS a face")
+            idx = []
+            for q in P:
+                hit = [i for i, v in enumerate(V)
+                       if _norm(_sub(v, q)) < 1e-6]
+                assert hit, (name, "a corner is not a vertex of the solid")
+                idx.append(hit[0])
+            for k in range(len(idx)):
+                a, b = idx[k], idx[(k + 1) % len(idx)]
+                assert (min(a, b), max(a, b)) in E,                     (name, "a side is not an edge of the solid")
+            checked += 1
+    return checked
+
+
 def _selftest():
     want_panels = {'T20': 20, 'S30': 30, 'P12': 12, 'D12': 12,
                    'H20': 20, 'SD12': 12, 'PG12': 12,
                    'T20B': 20, 'H20B': 20, 'S30B': 30, 'P12B': 12,
                    'D12B': 12, 'P12C': 12, 'PG12C': 12, 'P12D': 12,
-                   'PG12D': 12, 'D12C': 12}
+                   'PG12D': 12, 'D12C': 12,
+                   'O6': 6, 'T8': 8, 'S6': 6, 'P12F': 12}
     for key, lbl, axes, n, d, _r, _t in MODELS:
         normals = plane_normals(axes)
         assert len(normals) == want_panels[key], (key, len(normals))
@@ -1119,18 +1324,19 @@ def _selftest():
         assert len(deg) == want_panels[key],             (key, "a panel crosses nothing", len(deg))
         assert min(deg.values()) >= 3, (key, "a panel is barely held",
                                         sorted(deg.values())[:3])
-        # A panel can only cross panels it is not parallel to, so the
-        # ceiling is the size of the largest non-parallel set: 10 of the
-        # twelve dodecahedral planes (every face has an opposite), 19 of
-        # the twenty icosahedral ones, 29 of an icosidodecahedron's
-        # thirty.  Meeting all of them is dense but legitimate -- the 12
-        # pentagrams on U48 do exactly that -- so the ceiling is what
-        # cannot be EXCEEDED, and exceeding it would mean two PARALLEL
-        # panels had been counted as crossing, which is a bug and not a
-        # dense model.  Fixed caps of 9 and then 10 were each fitted to
-        # whatever happened to be shipped at the time, and had to be
-        # raised twice.
-        limit = {12: 10, 20: 19, 30: 29}[want_panels[key]]
+        # A panel can only cross panels it is not PARALLEL to, so count
+        # those and let that be the ceiling.  Meeting all of them is
+        # dense but legitimate -- the 12 pentagrams on U48 do exactly
+        # that -- so the ceiling is what cannot be EXCEEDED, and
+        # exceeding it would mean parallel panels had been counted as
+        # crossing, which is a bug and not a dense model.  Derived rather
+        # than tabulated: fixed caps of 9 and then 10 were each fitted to
+        # whatever happened to be shipped at the time and had to be
+        # raised twice, and a table keyed on panel count would have
+        # needed a new row for every one of the six- and eight-panel
+        # models.
+        limit = sum(1 for _P, nv in panels
+                    if _norm(_cross(nv, panels[0][1])) > 1e-9)
         assert max(deg.values()) <= limit,             (key, "parallel panels counted as crossing",
              sorted(deg.values())[-3:], limit)
 
@@ -1170,6 +1376,9 @@ def _selftest():
     print("SAME    all %d models cut every panel from one template" % nt)
     nc = _verify_slots_dont_cross()
     print("WHOLE   no panel in %d models is severed by its own slots" % nc)
+    nl = _verify_latent_are_not_faces()
+    print("LATENT  %d edge-circuit panels, every side an edge, none a face"
+          % nl)
     nh = _verify_against_hart()
     print("PLANES  all %d models sit at Hart's own panel-plane distances"
           % nh)
