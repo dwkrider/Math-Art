@@ -726,18 +726,7 @@ if _IN_BLENDER:
                     "The single patch the Weierstrass integral "
                     "produces, before any reflection"),
                    ('UNIT', "Unit",
-                    "The smallest assembly that reads as the surface"),
-                   ('BLOCK', "Block",
-                    "The unit repeated, showing the surface tiling"),
-                   ('CONJUGATE', "Conjugate",
-                    "The conjugate surface -- also triply periodic and "
-                    "of genus 3, but shaped like an array of singly "
-                    "periodic Scherk surfaces rather than crossed "
-                    "sheets. At the octagonal case (modulus 1, branch "
-                    "0.25) it is congruent to the original"),
-                   ('CONJUGATE_BLOCK', "Conjugate Block",
-                    "The conjugate repeated, the array of Scherk-like "
-                    "towers Weber shows")],
+                    "The smallest assembly that reads as the surface")],
             default='UNIT',
             description="Which pre-defined assembly to build. The exact "
                         "surfaces are grown from a fundamental piece by "

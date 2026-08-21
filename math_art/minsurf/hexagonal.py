@@ -864,7 +864,10 @@ def clp_assembly(P):
     zext = float(P[..., 2].max() - P[..., 2].min())
     t1 = np.eye(4); t1[:3, 3] = [2.0 * trans[0], -2.0 * trans[1], 0.0]
     t2 = np.eye(4); t2[:3, 3] = [2.0 * trans[0], 2.0 * trans[1], 0.0]
-    t3 = np.eye(4); t3[:3, 3] = [0.0, 0.0, 4.0 * zext]
+    # 2 * zext, not 4.  The z period was measured off the assembled
+    # unit -- translate it and count coinciding vertices -- and peaks at
+    # HALF the unit's own height, not at its full height.
+    t3 = np.eye(4); t3[:3, 3] = [0.0, 0.0, 2.0 * zext]
 
     s1 = [np.eye(4)]
     s1 = s1 + [m(x, refl) for x in s1]
@@ -887,8 +890,26 @@ def clp_assembly(P):
             'BLOCK': (s6, B)}
 
 
-CLP_ARRANGEMENTS = ('PATCH', 'UNIT', 'BLOCK',
-                    'CONJUGATE', 'CONJUGATE_BLOCK')
+# Only the two that are VERIFIED CONNECTED.  A triply periodic minimal
+# surface is connected, so a build that falls into pieces is wrong
+# however plausible it looks, and three of the five did:
+#
+#   PATCH            1 component   ok
+#   UNIT             1 component   ok  (and matches Weber's render)
+#   BLOCK            2 components  WRONG
+#   CONJUGATE        2 components  WRONG
+#   CONJUGATE_BLOCK  3 components  WRONG
+#
+# The cause is measured, not guessed.  Translate the assembled unit and
+# count vertices that coincide with the original: z peaks sharply (673
+# hits at half the unit's height, 606 at a quarter), but NO in-plane
+# translation scores more than 14 out of 24455.  There is no pure
+# translation carrying the unit onto itself sideways -- which fits what
+# the notebook does, since its fr5 translates the two HALVES by
+# different vectors rather than the assembly by one.  So the in-plane
+# repetition is a screw or glide, and treating it as a translation
+# leaves the copies not touching.
+CLP_ARRANGEMENTS = ('PATCH', 'UNIT')
 
 
 def _clp_far_point(nu, nv, x_at, y_to, theta=0.0):
@@ -1441,7 +1462,7 @@ def _selftest():
           "straight edges become planar, top edge %.0e -> %.0e %s"
           % (swapped, top_o, top_c, 'OK' if good else 'FAIL'))
 
-    Vc, fc_ = spec_build('CLP', 1, 40, 1.0, 0.0, 'CONJUGATE')
+    Vc, fc_ = spec_build('CLP', 1, 40, 1.0, 0.0, 'UNIT')
     ec = {}
     for f in fc_:
         for i in range(len(f)):
@@ -1451,8 +1472,30 @@ def _selftest():
     overc = sum(1 for c in ec.values() if c > 2)
     good = len(fc_) > 0 and overc == 0
     ok &= good
-    print("hexagonal: CLP conjugate unit %d verts %d faces, over-shared "
-          "%d %s" % (len(Vc), len(fc_), overc, 'OK' if good else 'FAIL'))
+    # A triply periodic minimal surface is CONNECTED.  This is the
+    # check that caught three of the five arrangements being wrong --
+    # they were manifold and looked plausible, and still fell into two
+    # or three pieces, which no TPMS does.
+    par = list(range(len(Vc)))
+
+    def _find(x):
+        while par[x] != x:
+            par[x] = par[par[x]]
+            x = par[x]
+        return x
+
+    for f in fc_:
+        r = _find(int(f[0]))
+        for x in f[1:]:
+            t = _find(int(x))
+            if t != r:
+                par[t] = r
+    ncomp = len({_find(i) for i in range(len(Vc))})
+    good = good and ncomp == 1
+    ok &= ncomp == 1
+    print("hexagonal: CLP unit %d verts %d faces, over-shared %d, "
+          "components %d %s"
+          % (len(Vc), len(fc_), overc, ncomp, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
