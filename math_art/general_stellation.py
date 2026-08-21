@@ -24,9 +24,15 @@ API:
   named_presets(seed_name) -> [(key, title, code, note), ...]  (verified)
   build_named(seed_name, key) -> (V, F)  convenience for the presets
 Built-in seeds (SEEDS): 'icosahedron', 'dodecahedron', 'cuboctahedron',
-'rhombic_triacontahedron' (constructed as the polar dual of the
-icosidodecahedron).  Custom convex seeds: pass a vertex array (origin
-must be interior; at most 60 face planes).
+'rhombic_triacontahedron', 'rhombic_dodecahedron' and
+'triakis_tetrahedron' (the last three constructed as polar duals of the
+icosidodecahedron, cuboctahedron and truncated tetrahedron), plus
+'dodecahedron_tetrahedral' -- the dodecahedron with its symmetry
+RESTRICTED to the tetrahedral subgroup, which is what makes the
+tetrahedral stellations possible: under its own icosahedral group the
+twelve face planes form a single orbit and no merely-tetrahedral
+stellation can be selected.  Custom convex seeds: pass a vertex array
+(origin must be interior; at most 60 face planes).
 
 Verification (via _selftest()):  for every seed the self-test
 checks that the core cell reproduces the seed exactly, and validates the
@@ -50,6 +56,7 @@ References (mathematics implemented here):
     the compound of five cubes in the rhombic triacontahedron.
 """
 
+import itertools
 import math
 import random
 from collections import deque, defaultdict, Counter
@@ -144,11 +151,48 @@ def _rhombic_triacontahedron_V():
     return N / D[:, None]
 
 
+def _rhombic_dodecahedron_V():
+    """RD as the polar dual of the cuboctahedron -- the same trick the RT
+    uses, one symmetry down."""
+    W = _cuboctahedron_V()
+    N, D = hull_planes(W)
+    return N / D[:, None]
+
+
+def _triakis_tetrahedron_V():
+    """The simplest Archimedean dual: the polar dual of the truncated
+    tetrahedron."""
+    a = 1.0 / 3.0
+    W = []
+    for sx, sy, sz in ((1, 1, 1), (1, -1, -1), (-1, 1, -1), (-1, -1, 1)):
+        for perm in ((a, sy * 1.0, sz * 1.0), (sx * 1.0, a, sz * 1.0),
+                     (sx * 1.0, sy * 1.0, a)):
+            W.append([perm[0] * sx if abs(perm[0]) == a else perm[0],
+                      perm[1], perm[2]])
+    # truncated tetrahedron: all permutations of (+-1, +-1, +-3) with an
+    # even number of minus signs, scaled
+    W = []
+    for sx in (1, -1):
+        for sy in (1, -1):
+            for sz in (1, -1):
+                if sx * sy * sz < 0:
+                    continue
+                for perm in range(3):
+                    v = [sx * 1.0, sy * 1.0, sz * 3.0]
+                    v = v[-perm:] + v[:-perm] if perm else v
+                    W.append([v[0] * (1 if perm == 0 else 1), v[1], v[2]])
+    W = np.asarray(W, float)
+    N, D = hull_planes(W)
+    return N / D[:, None]
+
+
 _SEED_BUILDERS = {
     'icosahedron': _icosahedron_V,
     'dodecahedron': _dodecahedron_V,
     'cuboctahedron': _cuboctahedron_V,
     'rhombic_triacontahedron': _rhombic_triacontahedron_V,
+    'rhombic_dodecahedron': _rhombic_dodecahedron_V,
+    'triakis_tetrahedron': _triakis_tetrahedron_V,
 }
 
 
@@ -214,7 +258,8 @@ def _facet_cycle(pts, outward, eps=1e-9):
 # --------------------------------------------------------------------------
 class StellationEngine(object):
 
-    def __init__(self, V, name='custom', big=_BIG, verbose=False):
+    def __init__(self, V, name='custom', big=_BIG, verbose=False,
+                 subgroup=None):
         V = np.asarray(V, float)
         N, D = hull_planes(V)
         if len(N) > 60:
@@ -231,6 +276,8 @@ class StellationEngine(object):
         self._points()
         self._enumerate()
         self._symmetry()
+        if subgroup:
+            self._restrict(subgroup)
         self._orbits()
 
     # ---- seed faces (vertex rings per plane) -----------------------------
@@ -384,6 +431,36 @@ class StellationEngine(object):
         self.rotations = list(rots.values())
         self.impropers = list(imps.values())
 
+    def _restrict(self, subgroup):
+        """Keep only the symmetries in a named SUBGROUP of the seed's own
+        group, so the cells fall into finer orbits.
+
+        The tetrahedral stellations of the dodecahedron need exactly this:
+        `_symmetry` always finds the FULL group from the vertex set, which
+        for the dodecahedron is icosahedral, and under it the twelve face
+        planes form one orbit -- there is then no way to make a stellation
+        that is merely tetrahedral.  Restricting to the tetrahedral
+        subgroup splits that orbit and the finer stellations appear.
+
+        A rotation belongs to the tetrahedral subgroup when it maps the
+        chosen tetrahedron's four vertex directions onto themselves.
+        """
+        if subgroup not in ('tetrahedral', 'chiral_tetrahedral'):
+            raise ValueError('unknown subgroup %r' % (subgroup,))
+        T = np.array([[1.0, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]])
+        T = T / np.linalg.norm(T[0])
+
+        def keeps(R):
+            RT = T @ R.T
+            d2 = ((RT[:, None, :] - T[None, :, :]) ** 2).sum(-1)
+            return bool(d2.min(axis=1).max() < 1e-9)
+
+        self.rotations = [R for R in self.rotations if keeps(R)]
+        self.impropers = ([] if subgroup == 'chiral_tetrahedral'
+                          else [R for R in self.impropers if keeps(R)])
+        if not self.rotations:
+            raise ValueError('the subgroup is trivial for this seed')
+
     def _plane_perm(self, R):
         RN = self.N @ R.T
         d2 = ((RN[:, None, :] - self.N[None, :, :]) ** 2).sum(-1)
@@ -450,6 +527,72 @@ class StellationEngine(object):
         self.rot_orbits = rot_orbs
         self.labels = [sh['label'] for sh in shells]
         self.shell_by_label = {sh['label']: sh for sh in shells}
+
+    # ---- support ---------------------------------------------------------
+    def support(self):
+        """Which cells each cell RESTS ON, as {cell: frozenset(cells)}.
+
+        Pawley's rule for a non-reentrant ("fully supported") stellation
+        is that "for a volume to be included in a stellation all those
+        volumes on the lower courses on which it rests must also be
+        included", and he draws the relation as a stack of bricks.  It
+        does not have to be read off that drawing: it is geometry.  Two
+        cells share a facet exactly when their sign vectors differ in ONE
+        plane, and the one on the inner side of that plane is the lower.
+        `power` counts the planes a cell lies outside of, so the lower
+        cell is simply the one whose power is smaller.
+
+        Reading it from the diagram is in fact unreliable -- Pawley draws
+        bricks A, C, J and N BROKEN so that a three-dimensional stack
+        fits on the page, so horizontal overlap there is not the resting
+        relation.  Computing it sidesteps that entirely.
+        """
+        if getattr(self, '_support', None) is not None:
+            return self._support
+        keys = list(self.cells.keys())
+        idx = {s: i for i, s in enumerate(keys)}
+        A = np.array(keys, np.int8)
+        pw = np.array([self.cells[s]['power'] for s in keys])
+        out = {}
+        for i, s in enumerate(keys):
+            diff = (A != A[i]).sum(axis=1)
+            nb = np.flatnonzero((diff == 1) & (pw < pw[i]))
+            out[s] = frozenset(keys[j] for j in nb)
+        self._support = out
+        return out
+
+    def is_fully_supported(self, cellset):
+        """True when every cell present also has everything it rests on."""
+        sup = self.support()
+        cs = set(cellset)
+        return all(sup[s] <= cs for s in cs)
+
+    def support_closure(self, cellset):
+        """Add whatever is needed to make a cell set fully supported."""
+        sup = self.support()
+        out = set(cellset)
+        frontier = list(out)
+        while frontier:
+            s = frontier.pop()
+            for t in sup[s]:
+                if t not in out:
+                    out.add(t)
+                    frontier.append(t)
+        return frozenset(out)
+
+    def shell_support(self):
+        """The same relation lifted to shells: {label: set(labels)}."""
+        sup = self.support()
+        owner = {}
+        for sh in self.shells:
+            for s in sh['cells']:
+                owner[s] = sh['label']
+        out = {sh['label']: set() for sh in self.shells}
+        for s, below in sup.items():
+            for t in below:
+                if owner[t] != owner[s]:
+                    out[owner[s]].add(owner[t])
+        return out
 
     # ---- cell-code handling ----------------------------------------------
     def cells_of_code(self, cell_code):
@@ -611,20 +754,140 @@ _DUVAL_BY_POWER_SIZE = {
 _ENGINE_CACHE = {}
 
 
-def stellations_of(seed, verbose=False):
+# Seeds that are a named seed PLUS a symmetry restriction.  The
+# tetrahedral stellations of the dodecahedron are the reason the
+# subgroup machinery exists: under the dodecahedron's own icosahedral
+# group its twelve face planes form a single orbit, and only the
+# tetrahedral subgroup splits them finely enough for these to appear.
+# --------------------------------------------------------------------------
+# Smith's units for the triakis tetrahedron
+# --------------------------------------------------------------------------
+# A. G. Smith, "Stellations of the triakis tetrahedron", Math. Gazette 49
+# (1965), 135-143, divides the arrangement into nine units A..I and gives
+# five rules for combining them.  His units are this engine's shells, one
+# for one, matched by size and by radius order:
+#
+#   A=a(1)  B=s01  C=s02(12)  D=s03(6)  E=s04(4)  F=s05  G=s06(12)
+#   H=s07(12)  I=s08
+#
+# The two CHIRAL units confirm it independently: Smith marks exactly F
+# and I "left and right", and the engine's only two chiral shells are
+# s05 and s08, both 24 = 2x12.
+#
+# One number needs care.  Smith's table totals 99 and the engine reports
+# 107 cells, which looks like a discrepancy and is not: his column counts
+# UNITS, the engine counts CELLS, and his unit B is 4 units of 3 cells.
+# Both come to 1+12+12+6+4+24+12+12+24 = 107.
+SMITH_UNITS = {'A': 'a', 'B': 's01', 'C': 's02', 'D': 's03', 'E': 's04',
+               'F': 's05', 'G': 's06', 'H': 's07', 'I': 's08'}
+
+#: Smith's combination rules, as predicates on a set of unit letters
+SMITH_RULES = (
+    ('C or D implies B', lambda s: not (s & {'C', 'D'}) or 'B' in s),
+    ('G or H implies F', lambda s: not (s & {'G', 'H'}) or 'F' in s),
+    ('E implies C', lambda s: 'E' not in s or 'C' in s),
+    ('F implies D', lambda s: 'F' not in s or 'D' in s),
+    ('I implies G or H', lambda s: 'I' not in s or bool(s & {'G', 'H'})),
+)
+
+#: the six Smith illustrates, "such that the external surface of each
+#: solid is as completely as possible covered in the next"
+SMITH_MAIN_LINE = ('A', 'AB', 'ABCD', 'ABCDEF', 'ABCDEFGH', 'ABCDEFGHI')
+
+
+def smith_stellations():
+    """Every unit set satisfying Smith's rules -- his 28."""
+    out = []
+    letters = 'BCDEFGHI'
+    for r in range(len(letters) + 1):
+        for c in itertools.combinations(letters, r):
+            s = set(c) | {'A'}
+            if all(fn(s) for _n, fn in SMITH_RULES):
+                out.append(''.join(sorted(s)))
+    return out
+
+
+def smith_code(units):
+    """Smith's unit letters -> a code this engine's build() accepts."""
+    return [SMITH_UNITS[u] for u in sorted(set(units))]
+
+
+# --------------------------------------------------------------------------
+# Pawley's volume letters for the rhombic triacontahedron
+# --------------------------------------------------------------------------
+# G. S. Pawley, "The 227 Triacontahedra", Geometriae Dedicata 4 (1975),
+# 221-232, labels the elementary volumes of the RT's plane arrangement
+# A..Z plus the Scandinavian AE, OE, AA, and stacks them as bricks in his
+# figure 2 with the innermost at the bottom.  The engine finds 29 shells
+# for the same seed and Pawley uses 29 letters, so the two decompositions
+# should correspond -- and they do, anchored by a fact that cannot be
+# coincidence:
+#
+#   Pawley names NINE volumes that do not span a plane of symmetry --
+#   A, C, E, G, J, L, M, S, X -- and the engine finds exactly NINE
+#   chiral shells.  Ordering his stack outward and the engine's shells by
+#   radius, ALL NINE chiral positions land on each other.
+#
+# Reading his stack from the centre out (his AA is the core):
+#
+#   AA | OE | AE | Y Z | W X | T U V | R S | Q O P | N L M | K J H I |
+#   G E F | C D B | A
+#
+# against the engine's a, s01 .. s28.  Within a row the chiral flag fixes
+# the assignment where it can: s06=X, s11=S, s20=J, s27=C, s28=A are
+# forced outright, and {s15,s16}={L,M}, {s22,s24}={E,G} are fixed as
+# pairs with their non-chiral row-mates s17=N, s23=F.
+#
+# This is what makes Pawley's noble pair reachable.  He states that
+# "Suw and A(bcdek) are the two isohedral-isogonal polyhedra", i.e. the
+# two NOBLE stellations of the RT -- Hart's K and 2B.
+PAWLEY_ROWS = [
+    ('a', ['AA']),
+    ('s01', ['OE']),
+    ('s02', ['AE']),
+    ('s03 s04', ['Y', 'Z']),
+    ('s05 s06', ['W', 'X']),
+    ('s07 s08 s09', ['T', 'U', 'V']),
+    ('s10 s11', ['R', 'S']),
+    ('s12 s13 s14', ['Q', 'O', 'P']),
+    ('s15 s16 s17', ['L', 'M', 'N']),
+    ('s18 s19 s20 s21', ['K', 'H', 'I', 'J']),
+    ('s22 s23 s24', ['E', 'F', 'G']),
+    ('s25 s26 s27', ['D', 'B', 'C']),
+    ('s28', ['A']),
+]
+
+#: the nine volumes Pawley says do not span a mirror plane
+PAWLEY_CHIRAL = ('A', 'C', 'E', 'G', 'J', 'L', 'M', 'S', 'X')
+
+#: the shells those nine correspond to, forced by the chiral flags
+PAWLEY_CHIRAL_SHELLS = ('s06', 's11', 's15', 's16', 's20', 's22', 's24',
+                        's27', 's28')
+
+
+_SEED_SUBGROUPS = {
+    'dodecahedron_tetrahedral': ('dodecahedron', 'tetrahedral'),
+}
+
+
+def stellations_of(seed, verbose=False, subgroup=None):
     """Return a StellationEngine for a convex seed.
 
     seed: a name from the built-in library ('icosahedron', 'dodecahedron',
     'cuboctahedron', 'rhombic_triacontahedron'), a (V, F) pair, or a bare
     vertex array (faces are recomputed from the hull either way)."""
+    if isinstance(seed, str) and seed.lower() in _SEED_SUBGROUPS:
+        seed, subgroup = _SEED_SUBGROUPS[seed.lower()]
     if isinstance(seed, str):
-        key = seed.lower()
+        key = seed.lower() if not subgroup else '%s@%s' % (seed.lower(),
+                                                           subgroup)
         if key not in _ENGINE_CACHE:
-            if key not in _SEED_BUILDERS:
+            if seed.lower() not in _SEED_BUILDERS:
                 raise KeyError('unknown seed %r (have %s)'
                                % (seed, sorted(_SEED_BUILDERS)))
             _ENGINE_CACHE[key] = StellationEngine(
-                _SEED_BUILDERS[key](), name=key, verbose=verbose)
+                _SEED_BUILDERS[seed.lower()](), name=key, verbose=verbose,
+                subgroup=subgroup)
         return _ENGINE_CACHE[key]
     if isinstance(seed, tuple) and len(seed) == 2:
         return StellationEngine(np.asarray(seed[0], float), name='custom',
@@ -921,7 +1184,21 @@ def five_cubes_cells(engine):
 # code entries: shell labels, 'all', or ('hand', shell_label, hand_index)
 # for one hand of a chiral shell.  Shell labels are the engine's generic
 # ones (deterministic: sorted by power, then mean radius).
-SEEDS = ('icosahedron', 'dodecahedron', 'cuboctahedron',
+#
+# Two of the icosahedron's stellations are NOBLE -- isohedral and
+# isogonal at once, the property that singles out the nine regulars --
+# and Coxeter, Du Val, Flather & Petrie's letters name them directly:
+# D = a+b+c+d and H = every cell.  Because the engine's own orbit table
+# prints its generic labels against Du Val's (s01=b, s02=c, s03=d, ...),
+# those two need no shell hunting; they are read off it.
+#
+# The other two noble stellations Hart lists are of the rhombic
+# triacontahedron and are named K and 2B in MESSER's notation, which is a
+# different enumeration from the shells this engine finds.  Without that
+# paper there is no way to say which cells they are, so they are absent
+# rather than guessed -- see BACKLOG.md.
+SEEDS = ('icosahedron', 'dodecahedron', 'dodecahedron_tetrahedral',
+         'cuboctahedron', 'rhombic_dodecahedron', 'triakis_tetrahedron',
          'rhombic_triacontahedron')
 
 NAMED_PRESETS = {
@@ -937,11 +1214,26 @@ NAMED_PRESETS = {
         ('five_tetrahedra', 'Compound of five tetrahedra (chiral)',
          ['a', 's01', 's02', 's03', 's04', 's05', ('hand', 's07', 0)],
          'Du Val Ef1 with one hand of f1; Crennell 47'),
+        # Both noble stellations have 60 true vertices, each on three of
+        # the twenty face planes, so each dual is a 60-TRIANGLE faceting
+        # of the dodecahedron -- and the dodecahedral vertex set carries
+        # exactly two of those, one per stellation.  They are built by
+        # `mesh.noble_faceting_add`, and `noble_faceting_generator.
+        # noble_dual_index` re-derives which is which rather than
+        # trusting an enumeration order.  Note the dual cannot be had by
+        # reciprocating what `build` emits: that is the VISIBLE
+        # BOUNDARY, whose corners include every intersection point of
+        # the surface and not just the polyhedron's own vertices.
+        ('duval_d', 'Du Val D (noble stellation)',
+         ['a', 's01', 's02', 's03'],
+         'noble -- isohedral AND isogonal; Du Val D = a+b+c+d; '
+         'dual is Dodecahedron faceting 2'),
         ('great', 'Great icosahedron',
          ['a', 's01', 's02', 's03', 's04', 's05', 's06', 's07', 's08',
           's09'], 'Du Val G; Crennell 7'),
         ('final', 'Final stellation (echidnahedron)', ['all'],
-         'Du Val H; Crennell 8'),
+         'Du Val H; Crennell 8; the other noble icosahedral stellation; '
+         'dual is Dodecahedron faceting 5'),
     ],
     'dodecahedron': [
         ('core', 'Dodecahedron', ['a'], 'Platonic seed'),
@@ -962,6 +1254,44 @@ NAMED_PRESETS = {
          ['a', 's01', 's02'], 'Wenninger 43'),
         ('final', 'Final stellation of the cuboctahedron', ['all'], ''),
     ],
+    'rhombic_dodecahedron': [
+        ('core', 'Rhombic dodecahedron', ['a'], 'Catalan seed'),
+        ('first', "First stellation (Escher's solid)", ['a', 's01'],
+         "the stellated rhombic dodecahedron of Escher's Waterfall"),
+        ('second', 'Second stellation', ['a', 's01', 's02'], ''),
+        ('final', 'Third (final) stellation', ['all'], ''),
+    ],
+    'triakis_tetrahedron': [
+        ('core', 'Triakis tetrahedron', ['a'],
+         'the simplest Archimedean dual'),
+        ('first', 'First stellation', ['a', 's01'], ''),
+        ('second', 'Second stellation', ['a', 's01', 's02'], ''),
+        ('third', 'Third stellation', ['a', 's01', 's02', 's03'], ''),
+        ('fourth', 'Fourth stellation',
+         ['a', 's01', 's02', 's03', 's04', 's05'],
+         'the chiral shell s05 enters here'),
+        ('fifth', 'Fifth stellation',
+         ['a', 's01', 's02', 's03', 's04', 's05', 's06'], ''),
+        # Smith's fifth main-line solid, ABCDEFGH -- the cumulative
+        # sequence above skips it because it adds s06 and s07 together
+        ('smith_gh', 'Smith ABCDEFGH (main line)',
+         ['a', 's01', 's02', 's03', 's04', 's05', 's06', 's07'],
+         'fifth of Smith 1965 main-line sequence'),
+        ('final', 'Final stellation', ['all'], ''),
+    ],
+    'dodecahedron_tetrahedral': [
+        ('core', 'Dodecahedron', ['a'],
+         'Platonic seed, under the tetrahedral subgroup'),
+        ('first', 'First tetrahedral stellation', ['a', 's01'], ''),
+        # There was a 'second' here, ['a','s01','s02'].  It built a solid
+        # geometrically IDENTICAL to 'first' -- s02 lies inside the hull
+        # of a+s01, so adding it moves no visible face.  Only three
+        # distinct closed stellations exist for this seed at shell
+        # granularity (core, first, final); Hart's 39 are cut finer than
+        # whole shells and need his diagrams.  _verify_presets_distinct()
+        # now fails on any repeat of this.
+        ('final', 'Final stellation', ['all'], ''),
+    ],
     'rhombic_triacontahedron': [
         ('core', 'Rhombic triacontahedron', ['a'],
          'Catalan seed (dual icosidodecahedron)'),
@@ -975,7 +1305,27 @@ NAMED_PRESETS = {
          ['a', 's01', 's02', 's03', 's04', 's05', 's06', 's07', 's08',
           's09', 's10', 's11', 's13', 's14', 's15', 's18'],
          'dual great icosidodecahedron; density 7'),
-        ('final', 'Final stellation of the RT', ['all'], ''),
+        # Pawley 1975 names "Suw and A(bcdek)" as the two isohedral-
+        # isogonal -- i.e. NOBLE -- stellations of the RT, which are the
+        # forms Hart calls K and 2B.  Taking the computed support closure
+        # of each (see StellationEngine.support) gives:
+        #   Suw       -> S U V W X Y Z AE OE AA, ten shells
+        #   A(bcdek)  -> every shell, i.e. the final stellation below
+        # so only the first needs a new entry.
+        # Both have 120 true vertices, each on three of the thirty face
+        # planes, so each dual is a 120-TRIANGLE faceting of the
+        # icosidodecahedron.  Unlike the icosahedral pair that is not
+        # forced by counting -- the icosidodecahedron carries four such
+        # -- so `noble_faceting_generator.noble_dual_index` matches them
+        # face-set for face-set.
+        ('noble_suw', 'Noble stellation Suw (Pawley)',
+         ['a', 's01', 's02', 's03', 's04', 's05', 's06', 's08', 's09',
+          's11'],
+         'isohedral and isogonal; Pawley 1975, Hart K; dual is '
+         'Icosidodecahedron faceting 6'),
+        ('final', 'Final stellation of the RT', ['all'],
+         'also Pawley A(bcdek), Hart 2B; dual is Icosidodecahedron '
+         'faceting 9'),
     ],
 }
 
@@ -1297,6 +1647,193 @@ def _verify_rt(ck):
     print()
 
 
+def _verify_presets_close(ck):
+    """Every named preset must be a genuine stellation: a closed surface
+    with every edge in exactly two faces.
+
+    Not every set of shells is one.  Taking the dodecahedron's size-6
+    tetrahedral shell WITHOUT the shell beneath it gives chi = 8 and six
+    edges with four faces round them -- cells touching along edges rather
+    than a supported solid.  This check is what caught that, and it is
+    the check any new preset has to pass.
+    """
+    print('named presets: closed surfaces')
+    for seed in SEEDS:
+        for key, title, code, _note in named_presets(seed):
+            V, F = build_named(seed, key)
+            st = surface_stats(V, F)
+            ck(st['chi'] == 2 and st['closed_2'] and not st['nan'],
+               '%s/%s closed (chi=%d, edges %s)'
+               % (seed, key, st['chi'], sorted(st['edge_mult'])))
+    print()
+
+
+def _verify_presets_distinct(ck):
+    """No two presets of a seed may build the same solid.
+
+    Closing is necessary but not sufficient: a shell lying INSIDE the
+    hull of the shells beneath it closes perfectly well and moves no
+    visible face, so the preset is a duplicate entry in the menu that
+    silently does nothing.  `dodecahedron_tetrahedral`'s 'second' was
+    exactly that -- identical to 'first' -- and shipped for some time,
+    because every check being run asked whether a preset was a valid
+    surface and none asked whether it was a NEW one.
+
+    The signature has to cover FACES as well as vertices, and both of the
+    obvious cheaper choices give false alarms:
+
+    * V/E/F counts alone -- `dodecahedron_tetrahedral`'s 'first' and
+      'final' both have 32 vertices and 60 faces and are different
+      solids;
+    * vertex radii alone -- the small stellated dodecahedron and the
+      great dodecahedron are built on the SAME twelve icosahedral
+      vertices and differ only in how the faces run, as do the five- and
+      ten-tetrahedra compounds.
+
+    So compare the vertex radius spectrum together with the face centroid
+    spectrum, which separates solids that share a vertex set.
+    """
+    print('named presets: pairwise distinct')
+    for seed in SEEDS:
+        seen = {}
+        for key, _title, _code, _note in named_presets(seed):
+            V, F = build_named(seed, key)
+
+            def _rad(p):
+                return round(math.sqrt(sum(c * c for c in p)), 6)
+            cen = []
+            for f in F:
+                m = [sum(V[i][k] for i in f) / len(f) for k in range(3)]
+                cen.append((len(f), _rad(m)))
+            sig = (tuple(sorted(_rad(v) for v in V)), tuple(sorted(cen)))
+            ck(sig not in seen,
+               '%s/%s distinct from %s' % (seed, key, seen.get(sig, '-')))
+            seen[sig] = key
+    print()
+
+
+def _verify_smith_correspondence(ck):
+    """Smith's nine units are this engine's nine triakis shells.
+
+    Two independent checks.  First the CHIRALITY: Smith marks exactly two
+    units "left and right", F and I, and the engine finds exactly two
+    chiral shells, which must be the ones his letters map to.  Second the
+    COUNT: applying his five combination rules to subsets of his units
+    must reproduce his own total of 28, and must contain the six he
+    illustrates.
+    """
+    print('Smith 1965 correspondence (triakis tetrahedron)')
+    eng = stellations_of('triakis_tetrahedron')
+    by_label = {sh['label']: sh for sh in eng.shells}
+    ck(len(eng.shells) == len(SMITH_UNITS),
+       'nine units, nine shells (%d vs %d)'
+       % (len(SMITH_UNITS), len(eng.shells)))
+    chiral = {sh['label'] for sh in eng.shells if sh['chiral']}
+    want = {SMITH_UNITS['F'], SMITH_UNITS['I']}
+    ck(chiral == want,
+       "Smith's two 'left and right' units F, I are the chiral shells "
+       '%s (got %s)' % (sorted(want), sorted(chiral)))
+    sizes = {u: by_label[l]['size'] for u, l in SMITH_UNITS.items()}
+    ck(sizes['C'] == 12 and sizes['D'] == 6 and sizes['E'] == 4,
+       "Smith's C, D, E sizes 12, 6, 4 match (got %d, %d, %d)"
+       % (sizes['C'], sizes['D'], sizes['E']))
+    ck(sum(sizes.values()) == 107,
+       'cells total 107 both ways (got %d)' % sum(sizes.values()))
+    found = smith_stellations()
+    ck(len(found) == 28,
+       "Smith's rules give his 28 stellations (got %d)" % len(found))
+    ck(all(m in found for m in SMITH_MAIN_LINE),
+       'and include all six of his main-line solids')
+    print()
+
+
+def _verify_support(ck):
+    """The computed support relation reproduces Pawley's brick stack.
+
+    Support is geometry, not a picture: two cells share a facet exactly
+    when their sign vectors differ in one plane, and the lower is the one
+    with the smaller power.  Lifting that to shells must reproduce the
+    layering of Pawley's figure 2 -- and it does, row for row, ending
+    with his outermost volume A resting on exactly B, C and D.
+
+    This matters because reading the figure directly is unreliable: he
+    draws bricks A, C, J and N BROKEN to fit a 3-D stack on the page, so
+    horizontal overlap there is not the resting relation.
+    """
+    print('support relation (rhombic triacontahedron)')
+    eng = stellations_of('rhombic_triacontahedron')
+    ss = eng.shell_support()
+    letter = {}
+    for row, vols in PAWLEY_ROWS:
+        for sh, v in zip(row.split(), vols):
+            letter[sh] = v
+    inv = {v: k for k, v in letter.items()}
+    ck(ss[inv['AA']] == set(), 'the core rests on nothing')
+    ck(ss[inv['OE']] == {inv['AA']}, 'OE rests on the core')
+    ck(ss[inv['A']] == {inv['B'], inv['C'], inv['D']},
+       "Pawley's outermost volume A rests on exactly B, C, D")
+    # every shell except the core must rest on something strictly lower
+    bad = [l for l in eng.labels if l != 'a' and not ss[l]]
+    ck(not bad, 'every shell above the core rests on something (%s)' % bad)
+
+    # and the two noble stellations Pawley names must close up
+    for key in ('noble_suw', 'final'):
+        V, F = build_named('rhombic_triacontahedron', key)
+        st = surface_stats(V, F)
+        ck(st['closed_2'] and st['chi'] == 2,
+           'rhombic_triacontahedron/%s closes (chi=%d)' % (key, st['chi']))
+    # A(bcdek) closes back to the whole cell set, which is the final
+    # stellation -- so Pawley's second noble form is the one already
+    # shipped, and only Suw needed adding
+    cl = eng.support_closure(set().union(
+        *[eng.shell_by_label[inv[v]]['cells']
+          for v in ('A', 'B', 'C', 'D', 'E', 'K')]))
+    ck(len(cl) == len(eng.cells),
+       'A(bcdek) supports out to the final stellation (%d of %d cells)'
+       % (len(cl), len(eng.cells)))
+    print()
+
+
+def _verify_pawley_correspondence(ck):
+    """The engine's RT shells line up with Pawley's volume letters.
+
+    The evidence is the chirality pattern.  Pawley names nine volumes
+    that do not span a plane of symmetry; the engine independently finds
+    nine chiral shells; and laying his brick stack against the engine's
+    radius ordering puts all nine on each other.  Nine coincidences in a
+    row is a correspondence, so this test pins it down and will fail if
+    either side is ever renumbered.
+    """
+    print('Pawley 1975 correspondence (rhombic triacontahedron)')
+    eng = stellations_of('rhombic_triacontahedron')
+    got = tuple(sh['label'] for sh in eng.shells if sh['chiral'])
+    ck(len(eng.shells) == 29,
+       'engine finds 29 shells, Pawley uses 29 volume letters (got %d)'
+       % len(eng.shells))
+    ck(len(PAWLEY_CHIRAL) == 9, 'Pawley names nine non-mirror volumes')
+    ck(got == PAWLEY_CHIRAL_SHELLS,
+       'the nine chiral shells are %s' % (', '.join(PAWLEY_CHIRAL_SHELLS)))
+    # the row table must name every shell exactly once
+    named = [s for row, _v in PAWLEY_ROWS for s in row.split()]
+    ck(len(named) == len(set(named)) == 29,
+       'the row table names all 29 shells once (%d)' % len(named))
+    letters = [v for _r, vs in PAWLEY_ROWS for v in vs]
+    ck(len(letters) == len(set(letters)) == 29,
+       'and all 29 of Pawley volume letters once (%d)' % len(letters))
+    # every chiral shell must sit in a row whose letters include a
+    # chiral volume, and vice versa
+    ok = True
+    for row, vs in PAWLEY_ROWS:
+        shells = row.split()
+        nchir = sum(1 for s in shells
+                    if s in PAWLEY_CHIRAL_SHELLS)
+        nvol = sum(1 for v in vs if v in PAWLEY_CHIRAL)
+        if nchir != nvol:
+            ok = False
+    ck(ok, 'each row has as many chiral shells as chiral volumes')
+    print()
+
+
 def _self_test():
     print('GENERAL STELLATION ENGINE -- verification transcript')
     print()
@@ -1305,6 +1842,11 @@ def _self_test():
     _verify_dodecahedron(ck)
     _verify_cuboctahedron(ck)
     _verify_rt(ck)
+    _verify_presets_close(ck)
+    _verify_presets_distinct(ck)
+    _verify_smith_correspondence(ck)
+    _verify_pawley_correspondence(ck)
+    _verify_support(ck)
     print('=' * 74)
     if ck.fails:
         print('RESULT: FAIL (%d)' % len(ck.fails))
@@ -1371,7 +1913,7 @@ if _IN_BLENDER:
                    ('WIREFRAME', "Wireframe",
                     "Mesh edges only, displayed as a wireframe")],
             default='SOLID')
-        border: FloatProperty(name="Border", default=0.3, min=0.02, max=0.95,
+        border: FloatProperty(name="Border", default=0.06, min=0.005, max=1.0,
                               description="Leonardo face frame width")
         thickness: FloatProperty(name="Thickness", default=0.05, min=0.001,
                                  max=1.0, description="Panel/strut thickness")

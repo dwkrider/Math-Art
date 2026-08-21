@@ -4,11 +4,13 @@
 # Zonohedra (Minkowski sums of line segments) from vector stars, after
 # Antiprism's `zono` program:
 #
-# - General mode: convex hull of all subset sums of the star vectors
-#   (robust for any star; coplanar hull triangles are merged into the
-#   zonohedron's rhombi/zonogons). Classic stars included: cube axes,
-#   cube diagonals (rhombic dodecahedron), icosahedral axes (rhombic
-#   triacontahedron), dodecahedral axes (rhombic enneacontahedron).
+# - General mode: the faces are enumerated directly from the star by
+#   `polyhedra/zonotope.py` -- one face per pair of zones, opening into a
+#   2m-gon where m zones are coplanar. That replaced a convex hull of all
+#   2^n subset sums, which was exact but capped this path at thirteen
+#   vectors. Classic stars included: cube axes, cube diagonals (rhombic
+#   dodecahedron), icosahedral axes (rhombic triacontahedron),
+#   dodecahedral axes (rhombic enneacontahedron).
 # - Polar zonohedra and rhombic spirallohedra: a direct port of
 #   Antiprism's make_polar_zonohedron (base/zonohedron.cc), including
 #   the spiral-width option -- `zono -P 12,4` is the Rhombic
@@ -34,6 +36,11 @@ bl_info = {
 
 import math
 from math import cos, sin, pi, gcd
+
+try:
+    from .polyhedra import zonotope as _zt
+except ImportError:                       # flat-file / headless import
+    from polyhedra import zonotope as _zt
 
 PHI = (1 + 5 ** 0.5) / 2
 
@@ -240,9 +247,9 @@ if _IN_BLENDER:
                     "segment per face")],
             default='SOLID')
         border: FloatProperty(
-            name="Border", default=0.3, min=0.02, max=0.95,
-            description="Leonardo face frame width (fraction of "
-                        "the face)")
+            name="Border", default=0.06, min=0.005, max=1.0,
+            description="Leonardo face frame width, the same on every "
+                        "face whatever its size")
         thickness: FloatProperty(
             name="Thickness", default=0.05, min=0.001, max=1.0,
             description="Panel / strut thickness for the Leonardo "
@@ -289,28 +296,17 @@ if _IN_BLENDER:
                     bm.to_mesh(me)
                     bm.free()
                 else:
-                    nv = self.n if kind == 'RANDOM' else None
-                    star = star_vectors(kind, n=min(self.n, 13),
+                    # The faces come straight out of the star (see
+                    # polyhedra/zonotope.py), so there is no 2^n subset-sum
+                    # enumeration and no cap on the number of vectors --
+                    # this path used to stop at thirteen.
+                    star = star_vectors(kind, n=self.n,
                                         seed=self.rand_seed)
-                    if kind == 'RANDOM' and self.n > 13:
-                        self.report({'WARNING'},
-                                    "random star capped at 13 vectors")
-                    pts = subset_sums(star)
+                    verts, faces = _zt.zonotope(star)
                     me = bpy.data.meshes.new("Zonohedron")
-                    bm = bmesh.new()
-                    vlist = [bm.verts.new(tuple(p)) for p in pts]
-                    out = bmesh.ops.convex_hull(bm, input=vlist)
-                    inner = [v for v in bm.verts
-                             if v not in set(out["geom"])
-                             and isinstance(v, bmesh.types.BMVert)]
-                    unused = [v for v in bm.verts if not v.link_faces]
-                    bmesh.ops.delete(bm, geom=unused, context='VERTS')
-                    bmesh.ops.dissolve_limit(
-                        bm, angle_limit=math.radians(0.5),
-                        verts=bm.verts[:], edges=bm.edges[:])
-                    bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
-                    bm.to_mesh(me)
-                    bm.free()
+                    me.from_pydata([tuple(v) for v in verts], [],
+                                   [tuple(f) for f in faces])
+                    me.validate(clean_customdata=True)
             except ValueError as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}

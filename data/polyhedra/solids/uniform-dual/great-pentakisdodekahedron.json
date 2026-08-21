@@ -1,0 +1,1209 @@
+{
+  "schema_version": "0.2.0",
+  "slug": "great-pentakisdodekahedron",
+  "name": "Great pentakisdodekahedron",
+  "alternate_names": [],
+  "families": [
+    "uniform-dual",
+    "star"
+  ],
+  "ids": {
+    "uniform": null,
+    "wenninger": null,
+    "coxeter_clm": null,
+    "mccooey": "GreatPentakisdodekahedron",
+    "johnson": null,
+    "netlib": null,
+    "bowers": null,
+    "wikipedia": null,
+    "wolfram": null,
+    "dual_of_uniform": "U58"
+  },
+  "notation": {
+    "schlafli": null,
+    "wythoff": null,
+    "coxeter_diagram": null,
+    "conway": "d2 5 | 5/3",
+    "vertex_configuration": [],
+    "face_configuration": [
+      "V10/3.10/3.5"
+    ]
+  },
+  "symmetry": {
+    "schoenflies": "Ih",
+    "orbifold": "*532",
+    "coxeter": "[3,5]",
+    "hermann_mauguin": "m-3-5",
+    "order": 120,
+    "rotation_group": "I",
+    "rotation_order": 60,
+    "chiral": false,
+    "transitivity": {
+      "vertex": false,
+      "edge": false,
+      "face": true
+    },
+    "orbits": {
+      "vertices": 2,
+      "edges": 2,
+      "faces": 1
+    }
+  },
+  "combinatorics": {
+    "counts": {
+      "vertices": 24,
+      "edges": 90,
+      "faces": 60
+    },
+    "faces_by_type": [
+      {
+        "schlafli": "{3}",
+        "sides": 3,
+        "count": 60,
+        "regular": false
+      }
+    ],
+    "vertex_types": [],
+    "euler_characteristic": -6,
+    "orientable": true,
+    "genus": 4,
+    "density": null,
+    "convex": false,
+    "self_dual": false,
+    "dual": "small-stellated-truncated-dodecahedron",
+    "vertex_density": [
+      1,
+      3
+    ],
+    "convex_hull": {
+      "is_self": false,
+      "slug": "icosahedron",
+      "counts": {
+        "vertices": 12,
+        "edges": 30,
+        "faces": 20
+      }
+    },
+    "dual_unbounded": false
+  },
+  "metrics": {
+    "normalization": "midradius_1",
+    "edge_length": null,
+    "edge_lengths_uniform": false,
+    "circumradius": null,
+    "midradius": {
+      "value": 0.9999999999999996,
+      "exact": "1",
+      "source": "pslq"
+    },
+    "inradius": [
+      {
+        "face": "{3}",
+        "exact": "sqrt(5330-410*sqrt(5))/82",
+        "value": 0.8101464796227518
+      }
+    ],
+    "surface_area": null,
+    "volume": null,
+    "isoperimetric_quotient": null,
+    "dihedral_angles": [
+      {
+        "between": [
+          "{3}",
+          "{3}"
+        ],
+        "exact": "acos((-24+5*sqrt(5))/41)",
+        "degrees": 108.22049068083183,
+        "radians": 1.8888038805043552
+      }
+    ],
+    "angular_defect": [
+      {
+        "vertex_orbit": 0,
+        "degrees": 329.7415549104349,
+        "radians": 5.7550758138327645,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 1,
+        "degrees": -509.74155491043547,
+        "radians": -8.896668467422568,
+        "exact": null
+      }
+    ],
+    "solid_angle": [
+      {
+        "vertex_orbit": 0,
+        "steradians": 0.019241441752398065
+      },
+      {
+        "vertex_orbit": 1,
+        "steradians": 6.321668190684381
+      }
+    ],
+    "biscribed": {
+      "is_biscribed": false,
+      "circumradius": null,
+      "inradius": null,
+      "ratio": null,
+      "has_biscribed_form": null,
+      "biscribed_form": null
+    },
+    "measures_note": "Area and volume are omitted: the faces self-intersect, so both depend on a convention (net area vs. density-weighted vs. outer solid region). Record them only alongside an explicit convention field."
+  },
+  "geometry": {
+    "length_unit": "midradius_1",
+    "centroid": [
+      0,
+      0,
+      0
+    ],
+    "orientation": "inherited from its dual, reciprocated about the common midsphere",
+    "constants": {
+      "C0": {
+        "exact": "sqrt(25-10*sqrt(5))/5",
+        "value": 0.324919696232906,
+        "source": "pslq"
+      },
+      "C1": {
+        "exact": "sqrt(50-10*sqrt(5))/10",
+        "value": 0.525731112119127,
+        "source": "pslq"
+      },
+      "C2": {
+        "exact": "(-1+sqrt(5))/2",
+        "value": 0.618033988749894,
+        "source": "pslq"
+      },
+      "C3": {
+        "exact": "sqrt(50+10*sqrt(5))/10",
+        "value": 0.850650808352035,
+        "source": "pslq"
+      },
+      "C4": {
+        "exact": "sqrt(50-10*sqrt(5))/5",
+        "value": 1.051462224238264,
+        "source": "pslq"
+      },
+      "C5": {
+        "exact": "sqrt(10-2*sqrt(5))/2",
+        "value": 1.175570504584937,
+        "source": "pslq"
+      },
+      "C6": {
+        "exact": "sqrt(5+2*sqrt(5))",
+        "value": 3.077683537175244,
+        "source": "pslq"
+      },
+      "C7": {
+        "exact": "sqrt(50+22*sqrt(5))/2",
+        "value": 4.979796569765524,
+        "source": "pslq"
+      },
+      "C8": {
+        "exact": "(5+3*sqrt(5))/2",
+        "value": 5.854101966249647,
+        "source": "pslq"
+      },
+      "C9": {
+        "exact": "sqrt(130+58*sqrt(5))/2",
+        "value": 8.057480106940764,
+        "source": "pslq"
+      },
+      "C10": {
+        "exact": "5+2*sqrt(5)",
+        "value": 9.472135954999532,
+        "source": "pslq"
+      },
+      "C11": {
+        "exact": "sqrt(50+22*sqrt(5))",
+        "value": 9.95959313953104,
+        "source": "pslq"
+      },
+      "C12": {
+        "exact": "sqrt(250+110*sqrt(5))/2",
+        "value": 11.135163644116075,
+        "source": "pslq"
+      }
+    },
+    "vertices": [
+      [
+        -2e-15,
+        9.95959313953104,
+        -4.979796569765524
+      ],
+      [
+        -5.854101966249647,
+        -8.057480106940764,
+        -4.97979656976553
+      ],
+      [
+        5.854101966249641,
+        -8.057480106940764,
+        -4.97979656976553
+      ],
+      [
+        9.472135954999532,
+        3.077683537175244,
+        -4.979796569765536
+      ],
+      [
+        -9.472135954999523,
+        -3.077683537175242,
+        4.979796569765526
+      ],
+      [
+        -9.472135954999557,
+        3.077683537175245,
+        -4.979796569765554
+      ],
+      [
+        -5.854101966249672,
+        8.057480106940798,
+        4.979796569765543
+      ],
+      [
+        9.472135954999583,
+        -3.077683537175257,
+        4.97979656976556
+      ],
+      [
+        -2e-15,
+        5e-15,
+        -11.135163644116075
+      ],
+      [
+        5.85410196624967,
+        8.057480106940801,
+        4.979796569765546
+      ],
+      [
+        -2e-15,
+        0.0,
+        11.135163644116085
+      ],
+      [
+        -2e-15,
+        -9.959593139531089,
+        4.979796569765536
+      ],
+      [
+        -2e-15,
+        -1e-15,
+        1.175570504584937
+      ],
+      [
+        0.999999999999993,
+        -0.324919696232906,
+        0.525731112119127
+      ],
+      [
+        -0.999999999999997,
+        -0.324919696232906,
+        0.525731112119127
+      ],
+      [
+        -0.618033988749894,
+        0.850650808352035,
+        0.525731112119127
+      ],
+      [
+        0.61803398874989,
+        -0.850650808352037,
+        -0.525731112119135
+      ],
+      [
+        0.61803398874989,
+        0.850650808352035,
+        0.525731112119127
+      ],
+      [
+        0.999999999999993,
+        0.324919696232903,
+        -0.525731112119135
+      ],
+      [
+        -0.618033988749894,
+        -0.850650808352037,
+        -0.525731112119135
+      ],
+      [
+        -2e-15,
+        -1.051462224238264,
+        0.525731112119127
+      ],
+      [
+        -0.999999999999997,
+        0.324919696232903,
+        -0.525731112119135
+      ],
+      [
+        -2e-15,
+        1.051462224238261,
+        -0.525731112119135
+      ],
+      [
+        -2e-15,
+        -1e-15,
+        -1.175570504584944
+      ]
+    ],
+    "vertices_exact": [
+      [
+        "0",
+        "C11",
+        "-C7"
+      ],
+      [
+        "-C8",
+        "-C9",
+        "-C7"
+      ],
+      [
+        "C8",
+        "-C9",
+        "-C7"
+      ],
+      [
+        "C10",
+        "C6",
+        "-C7"
+      ],
+      [
+        "-C10",
+        "-C6",
+        "C7"
+      ],
+      [
+        "-C10",
+        "C6",
+        "-C7"
+      ],
+      [
+        "-C8",
+        "C9",
+        "C7"
+      ],
+      [
+        "C10",
+        "-C6",
+        "C7"
+      ],
+      [
+        "0",
+        "0",
+        "-C12"
+      ],
+      [
+        "C8",
+        "C9",
+        "C7"
+      ],
+      [
+        "0",
+        "0",
+        "C12"
+      ],
+      [
+        "0",
+        "-C11",
+        "C7"
+      ],
+      [
+        "0",
+        "0",
+        "C5"
+      ],
+      [
+        "1",
+        "-C0",
+        "C1"
+      ],
+      [
+        "-1",
+        "-C0",
+        "C1"
+      ],
+      [
+        "-C2",
+        "C3",
+        "C1"
+      ],
+      [
+        "C2",
+        "-C3",
+        "-C1"
+      ],
+      [
+        "C2",
+        "C3",
+        "C1"
+      ],
+      [
+        "1",
+        "C0",
+        "-C1"
+      ],
+      [
+        "-C2",
+        "-C3",
+        "-C1"
+      ],
+      [
+        "0",
+        "-C4",
+        "C1"
+      ],
+      [
+        "-1",
+        "C0",
+        "-C1"
+      ],
+      [
+        "0",
+        "C4",
+        "-C1"
+      ],
+      [
+        "0",
+        "0",
+        "-C5"
+      ]
+    ],
+    "face_angles": [
+      {
+        "face_orbit": 0,
+        "sides": 3,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 6.051689017913051,
+            "radians": 0.10562189866936485,
+            "count": 1,
+            "exact": "acos((1+4*sqrt(5))/10)",
+            "source": "pslq"
+          },
+          {
+            "degrees": 86.97415549104355,
+            "radians": 1.5179853774602154,
+            "count": 2,
+            "exact": "acos((5-2*sqrt(5))/10)",
+            "source": "pslq"
+          }
+        ]
+      }
+    ],
+    "faces": [
+      [
+        12,
+        13,
+        0
+      ],
+      [
+        14,
+        12,
+        0
+      ],
+      [
+        1,
+        13,
+        12
+      ],
+      [
+        1,
+        12,
+        15
+      ],
+      [
+        13,
+        16,
+        0
+      ],
+      [
+        12,
+        14,
+        2
+      ],
+      [
+        17,
+        12,
+        2
+      ],
+      [
+        1,
+        18,
+        13
+      ],
+      [
+        19,
+        14,
+        0
+      ],
+      [
+        3,
+        15,
+        12
+      ],
+      [
+        4,
+        16,
+        13
+      ],
+      [
+        3,
+        12,
+        20
+      ],
+      [
+        4,
+        13,
+        17
+      ],
+      [
+        14,
+        21,
+        2
+      ],
+      [
+        1,
+        15,
+        22
+      ],
+      [
+        16,
+        19,
+        0
+      ],
+      [
+        12,
+        17,
+        5
+      ],
+      [
+        13,
+        18,
+        6
+      ],
+      [
+        14,
+        19,
+        7
+      ],
+      [
+        20,
+        12,
+        5
+      ],
+      [
+        20,
+        13,
+        6
+      ],
+      [
+        15,
+        14,
+        7
+      ],
+      [
+        3,
+        21,
+        15
+      ],
+      [
+        4,
+        23,
+        16
+      ],
+      [
+        22,
+        17,
+        2
+      ],
+      [
+        1,
+        22,
+        18
+      ],
+      [
+        8,
+        17,
+        13
+      ],
+      [
+        9,
+        21,
+        14
+      ],
+      [
+        22,
+        15,
+        7
+      ],
+      [
+        10,
+        19,
+        16
+      ],
+      [
+        8,
+        13,
+        20
+      ],
+      [
+        9,
+        14,
+        20
+      ],
+      [
+        10,
+        16,
+        18
+      ],
+      [
+        17,
+        18,
+        5
+      ],
+      [
+        18,
+        23,
+        6
+      ],
+      [
+        19,
+        23,
+        7
+      ],
+      [
+        3,
+        20,
+        19
+      ],
+      [
+        4,
+        17,
+        22
+      ],
+      [
+        21,
+        22,
+        2
+      ],
+      [
+        8,
+        14,
+        15
+      ],
+      [
+        15,
+        21,
+        11
+      ],
+      [
+        9,
+        16,
+        23
+      ],
+      [
+        10,
+        18,
+        22
+      ],
+      [
+        8,
+        20,
+        14
+      ],
+      [
+        17,
+        15,
+        11
+      ],
+      [
+        9,
+        20,
+        16
+      ],
+      [
+        10,
+        21,
+        19
+      ],
+      [
+        16,
+        20,
+        5
+      ],
+      [
+        8,
+        15,
+        17
+      ],
+      [
+        9,
+        23,
+        21
+      ],
+      [
+        23,
+        22,
+        7
+      ],
+      [
+        19,
+        20,
+        6
+      ],
+      [
+        3,
+        19,
+        21
+      ],
+      [
+        4,
+        22,
+        23
+      ],
+      [
+        18,
+        16,
+        5
+      ],
+      [
+        18,
+        17,
+        11
+      ],
+      [
+        23,
+        18,
+        11
+      ],
+      [
+        23,
+        19,
+        6
+      ],
+      [
+        10,
+        22,
+        21
+      ],
+      [
+        21,
+        23,
+        11
+      ]
+    ],
+    "faces_wound": "each face is its true winding cycle; windings are coherent (every edge traversed once in each direction)"
+  },
+  "face_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59
+      ]
+    ],
+    "polygon_type": {
+      "3": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59
+      ]
+    },
+    "antipodal": [
+      [
+        0,
+        59
+      ],
+      [
+        1,
+        56
+      ],
+      [
+        2,
+        49
+      ],
+      [
+        3,
+        41
+      ],
+      [
+        4,
+        40
+      ],
+      [
+        5,
+        34
+      ],
+      [
+        6,
+        57
+      ],
+      [
+        7,
+        27
+      ],
+      [
+        8,
+        55
+      ],
+      [
+        9,
+        23
+      ],
+      [
+        10,
+        22
+      ],
+      [
+        11,
+        53
+      ],
+      [
+        12,
+        52
+      ],
+      [
+        13,
+        17
+      ],
+      [
+        14,
+        45
+      ],
+      [
+        15,
+        44
+      ],
+      [
+        16,
+        35
+      ],
+      [
+        18,
+        33
+      ],
+      [
+        19,
+        50
+      ],
+      [
+        20,
+        38
+      ],
+      [
+        21,
+        54
+      ],
+      [
+        24,
+        51
+      ],
+      [
+        25,
+        31
+      ],
+      [
+        26,
+        46
+      ],
+      [
+        28,
+        47
+      ],
+      [
+        29,
+        48
+      ],
+      [
+        30,
+        58
+      ],
+      [
+        32,
+        39
+      ],
+      [
+        36,
+        37
+      ],
+      [
+        42,
+        43
+      ]
+    ]
+  },
+  "vertex_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ],
+      [
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23
+      ]
+    ]
+  },
+  "edge_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        3,
+        7,
+        9,
+        13,
+        16,
+        17,
+        23,
+        25,
+        27,
+        29,
+        31,
+        39,
+        41,
+        44,
+        46,
+        47,
+        49,
+        58,
+        60,
+        62,
+        64,
+        66,
+        68,
+        71,
+        79,
+        81,
+        83,
+        85,
+        86
+      ],
+      [
+        1,
+        2,
+        4,
+        5,
+        6,
+        8,
+        10,
+        11,
+        12,
+        14,
+        15,
+        18,
+        19,
+        20,
+        21,
+        22,
+        24,
+        26,
+        28,
+        30,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        40,
+        42,
+        43,
+        45,
+        48,
+        50,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        59,
+        61,
+        63,
+        65,
+        67,
+        69,
+        70,
+        72,
+        73,
+        74,
+        75,
+        76,
+        77,
+        78,
+        80,
+        82,
+        84,
+        87,
+        88,
+        89
+      ]
+    ]
+  },
+  "space_filling": null,
+  "construction": {
+    "generator": "math_art.uniform_polyhedra_generator",
+    "operator_id": "mesh.uniform_polyhedron_add",
+    "conway_from": {
+      "operator": "dual",
+      "seed": "small-stellated-truncated-dodecahedron"
+    },
+    "wythoff_from": null
+  },
+  "provenance": {
+    "coordinates": "derived: polar reciprocal of Small Stellated Truncated Dodecahedron about their common midsphere",
+    "sources": [
+      "E. Catalan, 'Memoire sur la theorie des polyedres', J. Ecole Polytechnique 41 (1865), 1-71.",
+      "M. Wenninger, 'Dual Models', Cambridge (1983).",
+      "Z. Har'El, 'Uniform Solution for Uniform Polyhedra', Geometriae Dedicata 47 (1993), 57-110 (dual names and prototiles)."
+    ],
+    "cross_checked": [],
+    "verified": {
+      "euler": true,
+      "closed_manifold": true,
+      "faces_planar": true,
+      "radii_match_exact": true,
+      "dual_reciprocal": true,
+      "tolerance": 1e-09
+    }
+  }
+}

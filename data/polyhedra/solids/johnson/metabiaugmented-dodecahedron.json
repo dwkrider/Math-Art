@@ -1,0 +1,791 @@
+{
+  "schema_version": "0.2.0",
+  "slug": "metabiaugmented-dodecahedron",
+  "name": "Metabiaugmented Dodecahedron",
+  "alternate_names": [],
+  "families": [
+    "johnson",
+    "convex"
+  ],
+  "ids": {
+    "johnson": "J60",
+    "uniform": null,
+    "wenninger": null,
+    "coxeter_clm": null,
+    "mccooey": "MetabiaugmentedDodecahedron",
+    "netlib": null,
+    "bowers": null,
+    "wikipedia": null,
+    "wolfram": null
+  },
+  "notation": {
+    "schlafli": null,
+    "wythoff": null,
+    "coxeter_diagram": null,
+    "conway": null,
+    "vertex_configuration": [],
+    "face_configuration": null
+  },
+  "symmetry": {
+    "schoenflies": "C2v",
+    "orbifold": "*22",
+    "coxeter": "[2]",
+    "hermann_mauguin": "2mm",
+    "order": 4,
+    "rotation_group": "C2",
+    "rotation_order": 2,
+    "chiral": false,
+    "transitivity": {
+      "vertex": false,
+      "edge": false,
+      "face": false
+    },
+    "orbits": {
+      "vertices": 8,
+      "edges": 13,
+      "faces": 7
+    }
+  },
+  "combinatorics": {
+    "counts": {
+      "vertices": 22,
+      "edges": 40,
+      "faces": 20
+    },
+    "faces_by_type": [
+      {
+        "schlafli": "{3}",
+        "sides": 3,
+        "count": 10,
+        "regular": true
+      },
+      {
+        "schlafli": "{5}",
+        "sides": 5,
+        "count": 10,
+        "regular": true
+      }
+    ],
+    "vertex_types": [],
+    "euler_characteristic": 2,
+    "orientable": true,
+    "genus": 0,
+    "density": 1,
+    "convex": true,
+    "self_dual": false,
+    "dual": null,
+    "vertex_density": 1,
+    "convex_hull": {
+      "is_self": true,
+      "slug": null,
+      "counts": {
+        "vertices": 22,
+        "edges": 40,
+        "faces": 20
+      }
+    },
+    "dual_unbounded": false
+  },
+  "metrics": {
+    "normalization": "edge_length_1",
+    "edge_length": {
+      "value": 1.0000000000000004,
+      "exact": "1",
+      "source": "pslq"
+    },
+    "edge_lengths_uniform": true,
+    "circumradius": null,
+    "midradius": null,
+    "inradius": null,
+    "surface_area": {
+      "value": 21.534901024811827,
+      "exact": null
+    },
+    "volume": {
+      "value": 8.26612462541627,
+      "exact": "(25+11*sqrt(5))/6",
+      "source": "pslq"
+    },
+    "isoperimetric_quotient": {
+      "value": 0.7737980494649332,
+      "exact": null
+    },
+    "dihedral_angles": [
+      {
+        "between": [
+          "{3}",
+          "{3}"
+        ],
+        "exact": "acos(-sqrt(5)/3)",
+        "degrees": 138.18968510422155,
+        "radians": 2.411864997362829
+      },
+      {
+        "between": [
+          "{3}",
+          "{5}"
+        ],
+        "exact": "acos(-sqrt(195-6*sqrt(5))/15)",
+        "degrees": 153.9424193177275,
+        "radians": 2.6868020755800677
+      },
+      {
+        "between": [
+          "{5}",
+          "{5}"
+        ],
+        "exact": "acos(-sqrt(5)/5)",
+        "degrees": 116.56505117707799,
+        "radians": 2.0344439357957027
+      }
+    ],
+    "angular_defect": [
+      {
+        "vertex_orbit": 0,
+        "degrees": 24.000000000000085,
+        "radians": 0.41887902047864056,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 1,
+        "degrees": 24.000000000000135,
+        "radians": 0.41887902047864145,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 2,
+        "degrees": 24.000000000000135,
+        "radians": 0.41887902047864145,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 3,
+        "degrees": 36.00000000000005,
+        "radians": 0.6283185307179595,
+        "exact": "acos((1+sqrt(5))/4)",
+        "source": "pslq"
+      },
+      {
+        "vertex_orbit": 4,
+        "degrees": 35.9999999999999,
+        "radians": 0.6283185307179568,
+        "exact": "acos((1+sqrt(5))/4)",
+        "source": "pslq"
+      },
+      {
+        "vertex_orbit": 5,
+        "degrees": 35.9999999999999,
+        "radians": 0.6283185307179568,
+        "exact": "acos((1+sqrt(5))/4)",
+        "source": "pslq"
+      },
+      {
+        "vertex_orbit": 6,
+        "degrees": 35.9999999999999,
+        "radians": 0.6283185307179568,
+        "exact": "acos((1+sqrt(5))/4)",
+        "source": "pslq"
+      },
+      {
+        "vertex_orbit": 7,
+        "degrees": 59.999999999999524,
+        "radians": 1.0471975511965894,
+        "exact": "acos(1/2)",
+        "source": "pslq"
+      }
+    ],
+    "solid_angle": [
+      {
+        "vertex_orbit": 0,
+        "steradians": 3.53672777713908
+      },
+      {
+        "vertex_orbit": 1,
+        "steradians": 3.536727777139082
+      },
+      {
+        "vertex_orbit": 2,
+        "steradians": 3.5367277771390806
+      },
+      {
+        "vertex_orbit": 3,
+        "steradians": 2.9617391537973132
+      },
+      {
+        "vertex_orbit": 4,
+        "steradians": 2.9617391537973177
+      },
+      {
+        "vertex_orbit": 5,
+        "steradians": 2.961739153797317
+      },
+      {
+        "vertex_orbit": 6,
+        "steradians": 2.961739153797317
+      },
+      {
+        "vertex_orbit": 7,
+        "steradians": 2.634547026044767
+      }
+    ],
+    "biscribed": {
+      "is_biscribed": false,
+      "circumradius": null,
+      "inradius": null,
+      "ratio": null,
+      "has_biscribed_form": null,
+      "biscribed_form": null
+    }
+  },
+  "geometry": {
+    "length_unit": "edge",
+    "centroid": [
+      0,
+      0,
+      0
+    ],
+    "orientation": "as produced by the construction, centred at the centroid",
+    "constants": {},
+    "vertices": [
+      [
+        -0.745633940238588,
+        -0.833227166744262,
+        -0.769844112607902
+      ],
+      [
+        -0.745633940238588,
+        -0.833227166744262,
+        0.848189876141992
+      ],
+      [
+        -0.745633940238588,
+        0.784806822005632,
+        -0.769844112607902
+      ],
+      [
+        -0.745633940238588,
+        0.784806822005632,
+        0.848189876141992
+      ],
+      [
+        0.872400048511307,
+        -0.833227166744262,
+        -0.769844112607902
+      ],
+      [
+        0.872400048511307,
+        -0.833227166744262,
+        0.848189876141992
+      ],
+      [
+        0.872400048511307,
+        0.784806822005632,
+        -0.769844112607902
+      ],
+      [
+        0.872400048511307,
+        0.784806822005632,
+        0.848189876141992
+      ],
+      [
+        0.06338305413636,
+        -0.524210172369315,
+        -1.269844112607902
+      ],
+      [
+        -0.43661694586364,
+        -1.333227166744262,
+        0.039172881767045
+      ],
+      [
+        -1.245633940238587,
+        -0.024210172369315,
+        -0.460827118232955
+      ],
+      [
+        0.06338305413636,
+        -0.524210172369315,
+        1.348189876141992
+      ],
+      [
+        -0.43661694586364,
+        1.284806822005632,
+        0.039172881767045
+      ],
+      [
+        1.372400048511307,
+        -0.024210172369315,
+        -0.460827118232955
+      ],
+      [
+        0.06338305413636,
+        0.475789827630685,
+        -1.269844112607902
+      ],
+      [
+        0.56338305413636,
+        -1.333227166744262,
+        0.039172881767045
+      ],
+      [
+        -1.245633940238587,
+        -0.024210172369315,
+        0.539172881767045
+      ],
+      [
+        0.06338305413636,
+        0.475789827630685,
+        1.348189876141992
+      ],
+      [
+        0.56338305413636,
+        1.284806822005632,
+        0.039172881767045
+      ],
+      [
+        1.372400048511307,
+        -0.024210172369315,
+        0.539172881767045
+      ],
+      [
+        0.06338305413636,
+        1.370217018630598,
+        -0.822630517107943
+      ],
+      [
+        -1.331044136863553,
+        -0.886013571244303,
+        0.039172881767045
+      ]
+    ],
+    "vertices_exact": null,
+    "face_angles": [
+      {
+        "face_orbit": 0,
+        "sides": 5,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 107.99999999999997,
+            "radians": 1.8849555921538754,
+            "count": 5,
+            "exact": "acos((1-sqrt(5))/4)",
+            "source": "pslq"
+          }
+        ]
+      },
+      {
+        "face_orbit": 1,
+        "sides": 5,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 107.99999999999999,
+            "radians": 1.8849555921538756,
+            "count": 5,
+            "exact": "acos((1-sqrt(5))/4)",
+            "source": "pslq"
+          }
+        ]
+      },
+      {
+        "face_orbit": 2,
+        "sides": 5,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 108.00000000000003,
+            "radians": 1.8849555921538763,
+            "count": 5,
+            "exact": "acos((1-sqrt(5))/4)",
+            "source": "pslq"
+          }
+        ]
+      },
+      {
+        "face_orbit": 3,
+        "sides": 5,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 108.00000000000003,
+            "radians": 1.8849555921538763,
+            "count": 5,
+            "exact": "acos((1-sqrt(5))/4)",
+            "source": "pslq"
+          }
+        ]
+      },
+      {
+        "face_orbit": 4,
+        "sides": 3,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 59.99999999999993,
+            "radians": 1.0471975511965965,
+            "count": 3,
+            "exact": "acos(1/2)",
+            "source": "pslq"
+          }
+        ]
+      },
+      {
+        "face_orbit": 5,
+        "sides": 3,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 59.999999999999986,
+            "radians": 1.0471975511965974,
+            "count": 3,
+            "exact": "acos(1/2)",
+            "source": "pslq"
+          }
+        ]
+      },
+      {
+        "face_orbit": 6,
+        "sides": 3,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 59.99999999999993,
+            "radians": 1.0471975511965965,
+            "count": 3,
+            "exact": "acos(1/2)",
+            "source": "pslq"
+          }
+        ]
+      }
+    ],
+    "faces": [
+      [
+        14,
+        8,
+        0,
+        10,
+        2
+      ],
+      [
+        15,
+        9,
+        0,
+        8,
+        4
+      ],
+      [
+        3,
+        16,
+        1,
+        11,
+        17
+      ],
+      [
+        5,
+        11,
+        1,
+        9,
+        15
+      ],
+      [
+        3,
+        12,
+        2,
+        10,
+        16
+      ],
+      [
+        18,
+        12,
+        3,
+        17,
+        7
+      ],
+      [
+        5,
+        15,
+        4,
+        13,
+        19
+      ],
+      [
+        6,
+        13,
+        4,
+        8,
+        14
+      ],
+      [
+        17,
+        11,
+        5,
+        19,
+        7
+      ],
+      [
+        19,
+        13,
+        6,
+        18,
+        7
+      ],
+      [
+        6,
+        14,
+        20
+      ],
+      [
+        14,
+        2,
+        20
+      ],
+      [
+        2,
+        12,
+        20
+      ],
+      [
+        12,
+        18,
+        20
+      ],
+      [
+        18,
+        6,
+        20
+      ],
+      [
+        16,
+        10,
+        21
+      ],
+      [
+        10,
+        0,
+        21
+      ],
+      [
+        0,
+        9,
+        21
+      ],
+      [
+        9,
+        1,
+        21
+      ],
+      [
+        1,
+        16,
+        21
+      ]
+    ],
+    "faces_wound": "each face is its true winding cycle; windings are coherent (every edge traversed once in each direction)"
+  },
+  "face_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        4
+      ],
+      [
+        1,
+        2,
+        5,
+        7
+      ],
+      [
+        3,
+        9
+      ],
+      [
+        6,
+        8
+      ],
+      [
+        10,
+        13,
+        17,
+        19
+      ],
+      [
+        11,
+        12,
+        15,
+        16
+      ],
+      [
+        14,
+        18
+      ]
+    ],
+    "polygon_type": {
+      "3": [
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19
+      ],
+      "5": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    }
+  },
+  "vertex_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        12,
+        14,
+        16
+      ],
+      [
+        1,
+        6,
+        9,
+        18
+      ],
+      [
+        2,
+        10
+      ],
+      [
+        3,
+        8
+      ],
+      [
+        4,
+        17
+      ],
+      [
+        5,
+        19
+      ],
+      [
+        7,
+        11,
+        13,
+        15
+      ],
+      [
+        20,
+        21
+      ]
+    ]
+  },
+  "edge_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        9,
+        17
+      ],
+      [
+        2,
+        4,
+        18,
+        19
+      ],
+      [
+        3
+      ],
+      [
+        5,
+        11,
+        22,
+        26
+      ],
+      [
+        6,
+        10,
+        20,
+        27
+      ],
+      [
+        7,
+        13
+      ],
+      [
+        8,
+        12,
+        21,
+        23
+      ],
+      [
+        14,
+        16,
+        24,
+        28
+      ],
+      [
+        15,
+        29
+      ],
+      [
+        25
+      ],
+      [
+        30,
+        33,
+        36,
+        37
+      ],
+      [
+        31,
+        34,
+        38,
+        39
+      ],
+      [
+        32,
+        35
+      ]
+    ]
+  },
+  "space_filling": null,
+  "construction": {
+    "generator": "math_art.regular_solids_generator",
+    "operator_id": "mesh.regular_solid_add",
+    "conway_from": null,
+    "wythoff_from": null
+  },
+  "provenance": {
+    "coordinates": "derived: composed from exact unit-edge pyramids, cupolae and rotundae (J84-J92 by regular-face relaxation), via math_art.regular_solids_generator",
+    "sources": [
+      "N. W. Johnson, 'Convex polyhedra with regular faces', Canadian Journal of Mathematics 18 (1966), 169-200.",
+      "V. A. Zalgaller, 'Convex Polyhedra with Regular Faces', Consultants Bureau (1969) (completeness)."
+    ],
+    "cross_checked": [
+      {
+        "source": "mccooey",
+        "agrees": true,
+        "detail": "full match: radii dev 0.00e+00, distance dev 0.00e+00, dihedral dev 0.0e+00 deg (scale 1.000000)"
+      }
+    ],
+    "verified": {
+      "euler": true,
+      "closed_manifold": true,
+      "faces_planar": true,
+      "radii_match_exact": true,
+      "dual_reciprocal": true,
+      "tolerance": 1e-09
+    }
+  }
+}

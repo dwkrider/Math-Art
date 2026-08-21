@@ -60,6 +60,88 @@ def hull_faces(V):
     return planes
 
 
+def halfspace_vertices(planes, tol=1e-7):
+    """Vertices of the polyhedron { x : n . x <= d } for `planes` given as
+    (n, d) with n a unit normal.
+
+    Every vertex is the meet of three of the planes, so solve each triple
+    by Cramer's rule and keep the points no plane excludes.  Bounded
+    inputs only -- an unbounded intersection simply yields the vertices
+    it does have, which for the callers here (a solid's own face planes,
+    with some removed) is always a bounded body.
+    """
+    pts = []
+    n = len(planes)
+    for a, b, c in itertools.combinations(range(n), 3):
+        (na, da), (nb, db), (nc, dc) = planes[a], planes[b], planes[c]
+        det = (na[0] * (nb[1] * nc[2] - nb[2] * nc[1])
+               - na[1] * (nb[0] * nc[2] - nb[2] * nc[0])
+               + na[2] * (nb[0] * nc[1] - nb[1] * nc[0]))
+        if abs(det) < 1e-9:
+            continue                       # the three planes share a line
+        x = (da * (nb[1] * nc[2] - nb[2] * nc[1])
+             - na[1] * (db * nc[2] - dc * nb[2])
+             + na[2] * (db * nc[1] - dc * nb[1])) / det
+        y = (na[0] * (db * nc[2] - dc * nb[2])
+             - da * (nb[0] * nc[2] - nb[2] * nc[0])
+             + na[2] * (nb[0] * dc - nc[0] * db)) / det
+        z = (na[0] * (nb[1] * dc - nc[1] * db)
+             - na[1] * (nb[0] * dc - nc[0] * db)
+             + da * (nb[0] * nc[1] - nb[1] * nc[0])) / det
+        p = (x, y, z)
+        if all(sum(m[i] * p[i] for i in range(3)) <= d + tol
+               for m, d in planes):
+            pts.append(p)
+    # weld duplicates: a vertex where four or more planes meet is found
+    # once per triple through it
+    out = []
+    for p in pts:
+        if not any(all(abs(p[i] - q[i]) < 1e-6 for i in range(3))
+                   for q in out):
+            out.append(p)
+    return out
+
+
+def face_planes(V, F):
+    """Outward unit normals and origin distances of every face."""
+    out = []
+    for f in F:
+        nx = [0.0, 0.0, 0.0]              # Newell, so non-planar input is
+        for k in range(len(f)):           # still given a sane normal
+            a, b = V[f[k]], V[f[(k + 1) % len(f)]]
+            nx[0] += (a[1] - b[1]) * (a[2] + b[2])
+            nx[1] += (a[2] - b[2]) * (a[0] + b[0])
+            nx[2] += (a[0] - b[0]) * (a[1] + b[1])
+        ln = math.sqrt(sum(x * x for x in nx))
+        if ln < 1e-12:
+            continue
+        nx = [x / ln for x in nx]
+        cen = [sum(V[i][k] for i in f) / len(f) for k in range(3)]
+        d = sum(nx[k] * cen[k] for k in range(3))
+        if d < 0:                          # orient outward from the origin
+            nx = [-x for x in nx]
+            d = -d
+        out.append((nx, d))
+    return out
+
+
+def polar_dual(V, F, radius=1.0):
+    """Dual by polar reciprocation in the sphere of the given radius: one
+    dual vertex per face, at r^2 n / d.
+
+    The origin must be inside the body (every face distance positive),
+    which is what makes the map well defined; the dual's faces are
+    recovered by hulling the poles.
+    """
+    poles = []
+    for nx, d in face_planes(V, F):
+        if d <= 1e-12:
+            raise ValueError("a face plane passes through the centre, so "
+                             "the polar dual is unbounded")
+        poles.append(tuple(radius * radius * c / d for c in nx))
+    return poles, hull_faces(poles)
+
+
 def _selftest():
     ok = True
     from math import sqrt
@@ -109,6 +191,36 @@ def _selftest():
     good = worst <= 1e-9
     ok &= good
     print(f"hull: every face plane is supporting (worst {worst:.2e}) "
+          f"{'OK' if good else 'FAIL'}")
+
+    # Half-space intersection: a solid's own face planes must give that
+    # solid's vertices back.
+    bad = []
+    for name, pts, nv in (('cube', cube, 8), ('octa', octa, 6),
+                          ('icosa', ico, 12)):
+        f = hull_faces(pts)
+        got = halfspace_vertices(face_planes(pts, f))
+        if len(got) != nv:
+            bad.append(f"{name}:{len(got)}!={nv}")
+    good = not bad
+    ok &= good
+    print(f"hull: half-space intersection recovers the seed's vertices "
+          f"{'OK' if good else 'FAIL ' + ','.join(bad)}")
+
+    # Polar duality: cube <-> octahedron, and dualizing twice returns the
+    # original up to scale.
+    dv, df = polar_dual(cube, hull_faces(cube))
+    good = len(dv) == 6 and len(df) == 8
+    ok &= good
+    print(f"hull: the cube's polar dual is an octahedron "
+          f"{'OK' if good else 'FAIL'}")
+    ddv, _ddf = polar_dual(dv, df)
+    s = sqrt(sum(c * c for c in cube[0])) / sqrt(sum(c * c for c in ddv[0]))
+    worst = max(min(max(abs(p[k] * s - q[k]) for k in range(3))
+                    for q in cube) for p in ddv)
+    good = worst < 1e-9
+    ok &= good
+    print(f"hull: dualizing twice returns the original (worst {worst:.2e}) "
           f"{'OK' if good else 'FAIL'}")
 
     print("RESULT:", "OK" if ok else "FAIL")

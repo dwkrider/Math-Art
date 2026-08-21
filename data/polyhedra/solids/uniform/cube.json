@@ -1,0 +1,463 @@
+{
+  "schema_version": "0.2.0",
+  "slug": "cube",
+  "name": "Cube",
+  "alternate_names": [
+    "Hexahedron",
+    "Regular hexahedron",
+    "Square prism"
+  ],
+  "families": [
+    "uniform",
+    "convex",
+    "platonic",
+    "regular",
+    "zonohedron",
+    "space-filling",
+    "prism"
+  ],
+  "ids": {
+    "uniform": "U6",
+    "wenninger": "W3",
+    "coxeter_clm": 18,
+    "mccooey": "Cube",
+    "johnson": null,
+    "netlib": 1,
+    "bowers": "cube",
+    "wikipedia": "Cube",
+    "wolfram": "Cube"
+  },
+  "notation": {
+    "schlafli": "{4,3}",
+    "wythoff": "3 | 2 4",
+    "coxeter_diagram": "x4o3o",
+    "conway": "C",
+    "vertex_configuration": [
+      "(4.4.4)"
+    ],
+    "face_configuration": null
+  },
+  "symmetry": {
+    "schoenflies": "Oh",
+    "orbifold": "*432",
+    "coxeter": "[3,4]",
+    "hermann_mauguin": "m-3m",
+    "order": 48,
+    "rotation_group": "O",
+    "rotation_order": 24,
+    "chiral": false,
+    "transitivity": {
+      "vertex": true,
+      "edge": true,
+      "face": true
+    },
+    "orbits": {
+      "vertices": 1,
+      "edges": 1,
+      "faces": 1
+    }
+  },
+  "combinatorics": {
+    "counts": {
+      "vertices": 8,
+      "edges": 12,
+      "faces": 6
+    },
+    "faces_by_type": [
+      {
+        "schlafli": "{4}",
+        "sides": 4,
+        "count": 6,
+        "regular": true
+      }
+    ],
+    "vertex_types": [
+      {
+        "configuration": "(4.4.4)",
+        "count": 8
+      }
+    ],
+    "euler_characteristic": 2,
+    "orientable": true,
+    "genus": 0,
+    "density": 1,
+    "convex": true,
+    "self_dual": false,
+    "dual": "octahedron",
+    "vertex_density": 1,
+    "convex_hull": {
+      "is_self": true,
+      "slug": null,
+      "counts": {
+        "vertices": 8,
+        "edges": 12,
+        "faces": 6
+      }
+    },
+    "dual_unbounded": false
+  },
+  "metrics": {
+    "normalization": "edge_length_1",
+    "edge_length": {
+      "value": 1.0,
+      "exact": "1",
+      "source": "pslq"
+    },
+    "edge_lengths_uniform": true,
+    "circumradius": {
+      "value": 0.8660254037844375,
+      "exact": "sqrt(3)/2",
+      "source": "pslq"
+    },
+    "midradius": {
+      "value": 0.7071067811865468,
+      "exact": "sqrt(2)/2",
+      "source": "pslq"
+    },
+    "inradius": [
+      {
+        "face": "{4}",
+        "exact": "1/2",
+        "value": 0.4999999999999995
+      }
+    ],
+    "surface_area": {
+      "value": 5.9999999999999805,
+      "exact": "6",
+      "source": "pslq"
+    },
+    "volume": {
+      "value": 0.999999999999995,
+      "exact": "1",
+      "source": "pslq"
+    },
+    "isoperimetric_quotient": {
+      "value": 0.5235987755982987,
+      "exact": null
+    },
+    "dihedral_angles": [
+      {
+        "between": [
+          "{4}",
+          "{4}"
+        ],
+        "exact": "acos(0)",
+        "degrees": 90.00000000000003,
+        "radians": 1.570796326794897
+      }
+    ],
+    "angular_defect": [
+      {
+        "vertex_orbit": 0,
+        "degrees": 89.99999999999994,
+        "radians": 1.5707963267948957,
+        "exact": "acos(0)",
+        "source": "pslq"
+      }
+    ],
+    "solid_angle": [
+      {
+        "vertex_orbit": 0,
+        "steradians": 1.5707963267948977
+      }
+    ],
+    "biscribed": {
+      "is_biscribed": true,
+      "circumradius": 0.8660254037844375,
+      "inradius": 0.4999999999999995,
+      "ratio": 0.577350269189626,
+      "has_biscribed_form": true,
+      "biscribed_form": null
+    }
+  },
+  "geometry": {
+    "length_unit": "edge",
+    "centroid": [
+      0,
+      0,
+      0
+    ],
+    "orientation": "as produced by the Wythoff construction, centred at the centroid",
+    "constants": {},
+    "vertices": [
+      [
+        0.499999999999999,
+        0.499999999999999,
+        0.499999999999999
+      ],
+      [
+        -0.499999999999999,
+        0.499999999999999,
+        0.499999999999999
+      ],
+      [
+        0.499999999999999,
+        -0.499999999999999,
+        0.499999999999999
+      ],
+      [
+        -0.499999999999999,
+        -0.499999999999999,
+        0.499999999999999
+      ],
+      [
+        0.499999999999999,
+        0.5,
+        -0.499999999999999
+      ],
+      [
+        -0.499999999999999,
+        0.5,
+        -0.499999999999999
+      ],
+      [
+        0.5,
+        -0.499999999999999,
+        -0.499999999999999
+      ],
+      [
+        -0.5,
+        -0.499999999999999,
+        -0.499999999999999
+      ]
+    ],
+    "vertices_exact": [
+      [
+        "1/2",
+        "1/2",
+        "1/2"
+      ],
+      [
+        "-1/2",
+        "1/2",
+        "1/2"
+      ],
+      [
+        "1/2",
+        "-1/2",
+        "1/2"
+      ],
+      [
+        "-1/2",
+        "-1/2",
+        "1/2"
+      ],
+      [
+        "1/2",
+        "1/2",
+        "-1/2"
+      ],
+      [
+        "-1/2",
+        "1/2",
+        "-1/2"
+      ],
+      [
+        "1/2",
+        "-1/2",
+        "-1/2"
+      ],
+      [
+        "-1/2",
+        "-1/2",
+        "-1/2"
+      ]
+    ],
+    "face_angles": [
+      {
+        "face_orbit": 0,
+        "sides": 4,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 90.0,
+            "radians": 1.5707963267948966,
+            "count": 4,
+            "exact": "acos(0)",
+            "source": "pslq"
+          }
+        ]
+      }
+    ],
+    "faces": [
+      [
+        2,
+        0,
+        1,
+        3
+      ],
+      [
+        5,
+        1,
+        0,
+        4
+      ],
+      [
+        4,
+        0,
+        2,
+        6
+      ],
+      [
+        7,
+        3,
+        1,
+        5
+      ],
+      [
+        6,
+        2,
+        3,
+        7
+      ],
+      [
+        7,
+        5,
+        4,
+        6
+      ]
+    ],
+    "faces_wound": "each face is its true winding cycle; windings are coherent (every edge traversed once in each direction)"
+  },
+  "face_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    ],
+    "polygon_type": {
+      "4": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ]
+    },
+    "antipodal": [
+      [
+        0,
+        5
+      ],
+      [
+        1,
+        4
+      ],
+      [
+        2,
+        3
+      ]
+    ]
+  },
+  "vertex_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7
+      ]
+    ]
+  },
+  "edge_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11
+      ]
+    ]
+  },
+  "space_filling": {
+    "fills_space_alone": true,
+    "parallelohedron": true,
+    "honeycomb": {
+      "name": "Cubic honeycomb",
+      "schlafli": "{4,3,4}",
+      "cells_per_edge": 4,
+      "space_group": "Pm-3m",
+      "space_group_number": 221
+    },
+    "lattice": {
+      "type": "primitive cubic",
+      "basis": [
+        [
+          1.0,
+          0.0,
+          0.0
+        ],
+        [
+          0.0,
+          1.0,
+          0.0
+        ],
+        [
+          0.0,
+          0.0,
+          1.0
+        ]
+      ]
+    },
+    "cells_per_lattice_point": 1,
+    "orientations": 1,
+    "requires_reflections": false,
+    "note": "One of Fedorov's five parallelohedra."
+  },
+  "construction": {
+    "generator": "math_art.uniform_polyhedra_generator",
+    "operator_id": "mesh.uniform_polyhedron_add",
+    "conway_from": null,
+    "wythoff_from": {
+      "schwarz": "O_1",
+      "symbol": "3 | 2 4"
+    }
+  },
+  "provenance": {
+    "coordinates": "derived: Wythoff kaleidoscopic construction from the Schwarz triangle, via math_art.uniform_polyhedra_generator",
+    "sources": [
+      "H. S. M. Coxeter, M. S. Longuet-Higgins, J. C. P. Miller, 'Uniform polyhedra', Phil. Trans. R. Soc. A 246 (1954), 401-450.",
+      "J. Skilling, 'The complete set of uniform polyhedra', Phil. Trans. R. Soc. A 278 (1975), 111-135 (completeness).",
+      "Z. Har'El, 'Uniform Solution for Uniform Polyhedra', Geometriae Dedicata 47 (1993), 57-110.",
+      "M. Wenninger, 'Polyhedron Models', Cambridge (1971), model 3."
+    ],
+    "cross_checked": [
+      {
+        "source": "mccooey",
+        "agrees": true,
+        "detail": "full match: radii dev 0.00e+00, distance dev 0.00e+00, dihedral dev 0.0e+00 deg (scale 1.000000)"
+      },
+      {
+        "source": "harel-1993",
+        "agrees": true,
+        "detail": "Euler characteristic matches (chi = 2)"
+      }
+    ],
+    "verified": {
+      "euler": true,
+      "closed_manifold": true,
+      "faces_planar": true,
+      "radii_match_exact": true,
+      "dual_reciprocal": true,
+      "tolerance": 1e-09
+    }
+  }
+}

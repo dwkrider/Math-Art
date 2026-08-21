@@ -1990,8 +1990,8 @@ if _IN_BLENDER:
             name="Separate Meshes", default=False,
             description="Output each face segment as its own mesh "
                         "object (Face Segments style)")
-        border: FloatProperty(name="Border", default=0.3, min=0.02,
-                              max=0.95)
+        border: FloatProperty(name="Border", default=0.06, min=0.005,
+                              max=1.0)
         thickness: FloatProperty(name="Thickness", default=0.05,
                                  min=0.001, max=1.0)
         strut_radius: FloatProperty(

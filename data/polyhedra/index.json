@@ -1,0 +1,7855 @@
+{
+  "schema_version": "0.2.0",
+  "database_version": "0.1.0",
+  "updated": "2026-08-21",
+  "normalization_default": "edge_length_1",
+  "families": {
+    "platonic": "The 5 regular convex solids",
+    "archimedean": "The 13 semiregular convex solids (vertex-transitive, regular faces)",
+    "catalan": "The 13 duals of the Archimedean solids",
+    "kepler-poinsot": "The 4 regular star polyhedra",
+    "uniform": "The 75 uniform polyhedra (U1-U75) plus the prism/antiprism families",
+    "uniform-dual": "Duals of the uniform polyhedra",
+    "johnson": "The 92 convex solids with regular faces (J1-J92)",
+    "prism": "Prisms and antiprisms",
+    "dipyramid": "Dipyramids and trapezohedra",
+    "zonohedron": "Zonohedra",
+    "goldberg": "Goldberg polyhedra and geodesic duals",
+    "stellation": "Stellations",
+    "toroid": "Toroidal polyhedra",
+    "canonical": "Canonical (midsphere) forms"
+  },
+  "count": 314,
+  "entries": [
+    {
+      "slug": "augmented-dodecahedron",
+      "name": "Augmented Dodecahedron",
+      "path": "solids/johnson/augmented-dodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 21,
+        "edges": 35,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J58"
+      }
+    },
+    {
+      "slug": "augmented-hexagonal-prism",
+      "name": "Augmented Hexagonal Prism",
+      "path": "solids/johnson/augmented-hexagonal-prism.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 13,
+        "edges": 22,
+        "faces": 11
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J54"
+      }
+    },
+    {
+      "slug": "augmented-pentagonal-prism",
+      "name": "Augmented Pentagonal Prism",
+      "path": "solids/johnson/augmented-pentagonal-prism.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 11,
+        "edges": 19,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J52"
+      }
+    },
+    {
+      "slug": "augmented-sphenocorona",
+      "name": "Augmented Sphenocorona",
+      "path": "solids/johnson/augmented-sphenocorona.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 11,
+        "edges": 26,
+        "faces": 17
+      },
+      "symmetry": {
+        "schoenflies": "Cs",
+        "orbifold": "*11",
+        "order": 2
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J87"
+      }
+    },
+    {
+      "slug": "augmented-triangular-prism",
+      "name": "Augmented Triangular Prism",
+      "path": "solids/johnson/augmented-triangular-prism.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 7,
+        "edges": 13,
+        "faces": 8
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J49"
+      }
+    },
+    {
+      "slug": "augmented-tridiminished-icosahedron",
+      "name": "Augmented Tridiminished Icosahedron",
+      "path": "solids/johnson/augmented-tridiminished-icosahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 18,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J64"
+      }
+    },
+    {
+      "slug": "augmented-truncated-cube",
+      "name": "Augmented Truncated Cube",
+      "path": "solids/johnson/augmented-truncated-cube.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 28,
+        "edges": 48,
+        "faces": 22
+      },
+      "symmetry": {
+        "schoenflies": "C4v",
+        "orbifold": "*44",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J66"
+      }
+    },
+    {
+      "slug": "augmented-truncated-dodecahedron",
+      "name": "Augmented Truncated Dodecahedron",
+      "path": "solids/johnson/augmented-truncated-dodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 65,
+        "edges": 105,
+        "faces": 42
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J68"
+      }
+    },
+    {
+      "slug": "augmented-truncated-tetrahedron",
+      "name": "Augmented Truncated Tetrahedron",
+      "path": "solids/johnson/augmented-truncated-tetrahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 15,
+        "edges": 27,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J65"
+      }
+    },
+    {
+      "slug": "biaugmented-pentagonal-prism",
+      "name": "Biaugmented Pentagonal Prism",
+      "path": "solids/johnson/biaugmented-pentagonal-prism.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 23,
+        "faces": 13
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J53"
+      }
+    },
+    {
+      "slug": "biaugmented-triangular-prism",
+      "name": "Biaugmented Triangular Prism",
+      "path": "solids/johnson/biaugmented-triangular-prism.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 17,
+        "faces": 11
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J50"
+      }
+    },
+    {
+      "slug": "biaugmented-truncated-cube",
+      "name": "Biaugmented Truncated Cube",
+      "path": "solids/johnson/biaugmented-truncated-cube.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 60,
+        "faces": 30
+      },
+      "symmetry": {
+        "schoenflies": "D4h",
+        "orbifold": "*224",
+        "order": 16
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J67"
+      }
+    },
+    {
+      "slug": "bigyrate-diminished-rhombicosidodecahedron",
+      "name": "Bigyrate Diminished Rhombicosidodecahedron",
+      "path": "solids/johnson/bigyrate-diminished-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 55,
+        "edges": 105,
+        "faces": 52
+      },
+      "symmetry": {
+        "schoenflies": "Cs",
+        "orbifold": "*11",
+        "order": 2
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J79"
+      }
+    },
+    {
+      "slug": "bilunabirotunda",
+      "name": "Bilunabirotunda",
+      "path": "solids/johnson/bilunabirotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 26,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "D2h",
+        "orbifold": "*222",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J91"
+      }
+    },
+    {
+      "slug": "biscribed-disdyakis-dodecahedron",
+      "name": "Biscribed Disdyakis Dodecahedron",
+      "path": "solids/biscribed/biscribed-disdyakis-dodecahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 26,
+        "edges": 72,
+        "faces": 48
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-disdyakis-triacontahedron",
+      "name": "Biscribed Disdyakis Triacontahedron",
+      "path": "solids/biscribed/biscribed-disdyakis-triacontahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 62,
+        "edges": 180,
+        "faces": 120
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-dual-hexpropello-cube",
+      "name": "Biscribed Dual Hexpropello Cube",
+      "path": "solids/biscribed/biscribed-dual-hexpropello-cube.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 84,
+        "faces": 56
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-dual-hexpropello-dodecahedron",
+      "name": "Biscribed Dual Hexpropello Dodecahedron",
+      "path": "solids/biscribed/biscribed-dual-hexpropello-dodecahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 72,
+        "edges": 210,
+        "faces": 140
+      },
+      "symmetry": {
+        "schoenflies": "C298156827",
+        "orbifold": "298156827298156827",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-dual-snub-truncated-icosahedron",
+      "name": "Biscribed Dual Snub Truncated Icosahedron",
+      "path": "solids/biscribed/biscribed-dual-snub-truncated-icosahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 272,
+        "edges": 450,
+        "faces": 180
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-dual-snub-truncated-octahedron",
+      "name": "Biscribed Dual Snub Truncated Octahedron",
+      "path": "solids/biscribed/biscribed-dual-snub-truncated-octahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 110,
+        "edges": 180,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-hexpropello-cube",
+      "name": "Biscribed Hexpropello Cube",
+      "path": "solids/biscribed/biscribed-hexpropello-cube.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 56,
+        "edges": 84,
+        "faces": 30
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-hexpropello-dodecahedron",
+      "name": "Biscribed Hexpropello Dodecahedron",
+      "path": "solids/biscribed/biscribed-hexpropello-dodecahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 140,
+        "edges": 210,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-l-propello-l-snub-cube",
+      "name": "Biscribed L-Propello L-Snub Cube",
+      "path": "solids/biscribed/biscribed-l-propello-l-snub-cube.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 144,
+        "edges": 300,
+        "faces": 158
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-l-propello-r-pentagonal-icositetrahedron",
+      "name": "Biscribed L-Propello R-Pentagonal Icositetrahedron",
+      "path": "solids/biscribed/biscribed-l-propello-r-pentagonal-icositetrahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 158,
+        "edges": 300,
+        "faces": 144
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-orthokis-propello-cube",
+      "name": "Biscribed Orthokis Propello Cube",
+      "path": "solids/biscribed/biscribed-orthokis-propello-cube.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 38,
+        "edges": 84,
+        "faces": 48
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-orthokis-propello-dodecahedron",
+      "name": "Biscribed Orthokis Propello Dodecahedron",
+      "path": "solids/biscribed/biscribed-orthokis-propello-dodecahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 92,
+        "edges": 210,
+        "faces": 120
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-orthotruncated-propello-icosahedron",
+      "name": "Biscribed Orthotruncated Propello Icosahedron",
+      "path": "solids/biscribed/biscribed-orthotruncated-propello-icosahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 210,
+        "faces": 92
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-orthotruncated-propello-octahedron",
+      "name": "Biscribed Orthotruncated Propello Octahedron",
+      "path": "solids/biscribed/biscribed-orthotruncated-propello-octahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 84,
+        "faces": 38
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-pentagonal-hexecontahedron",
+      "name": "Biscribed Pentagonal Hexecontahedron",
+      "path": "solids/biscribed/biscribed-pentagonal-hexecontahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 92,
+        "edges": 150,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-pentagonal-icositetrahedron",
+      "name": "Biscribed Pentagonal Icositetrahedron",
+      "path": "solids/biscribed/biscribed-pentagonal-icositetrahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 38,
+        "edges": 60,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-pentakis-dodecahedron",
+      "name": "Biscribed Pentakis Dodecahedron",
+      "path": "solids/biscribed/biscribed-pentakis-dodecahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 90,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-cube",
+      "name": "Biscribed Propello Cube",
+      "path": "solids/biscribed/biscribed-propello-cube.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 60,
+        "faces": 30
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-disdyakis-dodecahedron",
+      "name": "Biscribed Propello Disdyakis Dodecahedron",
+      "path": "solids/biscribed/biscribed-propello-disdyakis-dodecahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 170,
+        "edges": 360,
+        "faces": 192
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-disdyakis-triacontahedron",
+      "name": "Biscribed Propello Disdyakis Triacontahedron",
+      "path": "solids/biscribed/biscribed-propello-disdyakis-triacontahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 422,
+        "edges": 900,
+        "faces": 480
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-dodecahedron",
+      "name": "Biscribed Propello Dodecahedron",
+      "path": "solids/biscribed/biscribed-propello-dodecahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 80,
+        "edges": 150,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-icosahedron",
+      "name": "Biscribed Propello Icosahedron",
+      "path": "solids/biscribed/biscribed-propello-icosahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 72,
+        "edges": 150,
+        "faces": 80
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-octahedron",
+      "name": "Biscribed Propello Octahedron",
+      "path": "solids/biscribed/biscribed-propello-octahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-pentakis-dodecahedron",
+      "name": "Biscribed Propello Pentakis Dodecahedron",
+      "path": "solids/biscribed/biscribed-propello-pentakis-dodecahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 212,
+        "edges": 450,
+        "faces": 240
+      },
+      "symmetry": {
+        "schoenflies": "C210828714",
+        "orbifold": "210828714210828714",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-tetrahedron",
+      "name": "Biscribed Propello Tetrahedron",
+      "path": "solids/biscribed/biscribed-propello-tetrahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 30,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "T",
+        "orbifold": "332",
+        "order": 12
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-tetrakis-hexahedron",
+      "name": "Biscribed Propello Tetrakis Hexahedron",
+      "path": "solids/biscribed/biscribed-propello-tetrakis-hexahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 86,
+        "edges": 180,
+        "faces": 96
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-truncated-cuboctahedron",
+      "name": "Biscribed Propello Truncated Cuboctahedron",
+      "path": "solids/biscribed/biscribed-propello-truncated-cuboctahedron.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 192,
+        "edges": 360,
+        "faces": 170
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-truncated-icosahedron",
+      "name": "Biscribed Propello Truncated Icosahedron",
+      "path": "solids/biscribed/biscribed-propello-truncated-icosahedron.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 240,
+        "edges": 450,
+        "faces": 212
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-truncated-icosidodecahedron",
+      "name": "Biscribed Propello Truncated Icosidodecahedron",
+      "path": "solids/biscribed/biscribed-propello-truncated-icosidodecahedron.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 480,
+        "edges": 900,
+        "faces": 422
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-propello-truncated-octahedron",
+      "name": "Biscribed Propello Truncated Octahedron",
+      "path": "solids/biscribed/biscribed-propello-truncated-octahedron.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 96,
+        "edges": 180,
+        "faces": 86
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-snub-cube",
+      "name": "Biscribed Snub Cube",
+      "path": "solids/biscribed/biscribed-snub-cube.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 60,
+        "faces": 38
+      },
+      "symmetry": {
+        "schoenflies": "C298156827",
+        "orbifold": "298156827298156827",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-snub-dodecahedron",
+      "name": "Biscribed Snub Dodecahedron",
+      "path": "solids/biscribed/biscribed-snub-dodecahedron.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 92
+      },
+      "symmetry": {
+        "schoenflies": "C298156827",
+        "orbifold": "298156827298156827",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-snub-truncated-icosahedron",
+      "name": "Biscribed Snub Truncated Icosahedron",
+      "path": "solids/biscribed/biscribed-snub-truncated-icosahedron.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 180,
+        "edges": 450,
+        "faces": 272
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-snub-truncated-octahedron",
+      "name": "Biscribed Snub Truncated Octahedron",
+      "path": "solids/biscribed/biscribed-snub-truncated-octahedron.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 72,
+        "edges": 180,
+        "faces": 110
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-tetrakis-hexahedron",
+      "name": "Biscribed Tetrakis Hexahedron",
+      "path": "solids/biscribed/biscribed-tetrakis-hexahedron.json",
+      "families": [
+        "biscribed",
+        "convex",
+        "biscribed-dual"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 36,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-truncated-cuboctahedron",
+      "name": "Biscribed Truncated Cuboctahedron",
+      "path": "solids/biscribed/biscribed-truncated-cuboctahedron.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 72,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-truncated-icosahedron",
+      "name": "Biscribed Truncated Icosahedron",
+      "path": "solids/biscribed/biscribed-truncated-icosahedron.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 90,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-truncated-icosidodecahedron",
+      "name": "Biscribed Truncated Icosidodecahedron",
+      "path": "solids/biscribed/biscribed-truncated-icosidodecahedron.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 62
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "biscribed-truncated-octahedron",
+      "name": "Biscribed Truncated Octahedron",
+      "path": "solids/biscribed/biscribed-truncated-octahedron.json",
+      "families": [
+        "biscribed",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 36,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "C298156827h",
+        "orbifold": "298156827*",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "borromean-toroid",
+      "name": "Borromean Toroid",
+      "path": "solids/toroid/borromean-toroid.json",
+      "families": [
+        "toroid",
+        "genus-1"
+      ],
+      "counts": {
+        "vertices": 36,
+        "edges": 72,
+        "faces": 36
+      },
+      "symmetry": {
+        "schoenflies": "Th",
+        "orbifold": "3*2",
+        "order": 24
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "csaszar-polyhedron",
+      "name": "Csaszar Polyhedron",
+      "path": "solids/toroid/csaszar-polyhedron.json",
+      "families": [
+        "toroid",
+        "genus-1"
+      ],
+      "counts": {
+        "vertices": 7,
+        "edges": 21,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "C2",
+        "orbifold": "22",
+        "order": 2
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "cube",
+      "name": "Cube",
+      "path": "solids/uniform/cube.json",
+      "families": [
+        "uniform",
+        "convex",
+        "platonic",
+        "regular",
+        "zonohedron",
+        "space-filling",
+        "prism"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 12,
+        "faces": 6
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "octahedron",
+      "ids": {
+        "uniform": "U6",
+        "wenninger": "W3",
+        "netlib": 1,
+        "bowers": "cube"
+      }
+    },
+    {
+      "slug": "cubitruncated-cuboctahedron",
+      "name": "Cubitruncated Cuboctahedron",
+      "path": "solids/uniform/cubitruncated-cuboctahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 72,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "C298156827h",
+        "orbifold": "298156827*",
+        "order": 48
+      },
+      "convex": false,
+      "density": 4,
+      "dual": "tetradyakishexahedron",
+      "ids": {
+        "uniform": "U16",
+        "wenninger": "W79"
+      }
+    },
+    {
+      "slug": "cuboctahedron",
+      "name": "Cuboctahedron",
+      "path": "solids/uniform/cuboctahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean",
+        "quasiregular"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 24,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "rhombic-dodecahedron",
+      "ids": {
+        "uniform": "U7",
+        "wenninger": "W11",
+        "netlib": 10,
+        "bowers": "co"
+      }
+    },
+    {
+      "slug": "cubohemioctahedron",
+      "name": "Cubohemioctahedron",
+      "path": "solids/uniform/cubohemioctahedron.json",
+      "families": [
+        "uniform",
+        "star",
+        "hemipolyhedron"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 24,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "hexahemioctacron",
+      "ids": {
+        "uniform": "U15",
+        "wenninger": "W78"
+      }
+    },
+    {
+      "slug": "decagonal-antiprism",
+      "name": "Decagonal Antiprism",
+      "path": "solids/prism-family/decagonal-antiprism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "antiprism",
+        "chiral-family"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 40,
+        "faces": 22
+      },
+      "symmetry": {
+        "schoenflies": "C210828714h",
+        "orbifold": "210828714*",
+        "order": 40
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "decagonal-trapezohedron",
+      "ids": {}
+    },
+    {
+      "slug": "decagonal-dipyramid",
+      "name": "Decagonal Dipyramid",
+      "path": "solids/prism-family/decagonal-dipyramid.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 30,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "D10h",
+        "orbifold": "*2210",
+        "order": 40
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "decagonal-prism",
+      "ids": {}
+    },
+    {
+      "slug": "decagonal-prism",
+      "name": "Decagonal Prism",
+      "path": "solids/prism-family/decagonal-prism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "prism"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 30,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "D10h",
+        "orbifold": "*2210",
+        "order": 40
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "decagonal-dipyramid",
+      "ids": {}
+    },
+    {
+      "slug": "decagonal-trapezohedron",
+      "name": "Decagonal Trapezohedron",
+      "path": "solids/prism-family/decagonal-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 22,
+        "edges": 40,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "D10d",
+        "orbifold": "2*10",
+        "order": 40
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "decagonal-antiprism",
+      "ids": {}
+    },
+    {
+      "slug": "deltoidal-hexecontahedron",
+      "name": "Deltoidal hexecontahedron",
+      "path": "solids/uniform-dual/deltoidal-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 62,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "C298156827h",
+        "orbifold": "298156827*",
+        "order": 120
+      },
+      "convex": true,
+      "density": null,
+      "dual": "rhombicosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "deltoidal-icositetrahedron",
+      "name": "Deltoidal icositetrahedron",
+      "path": "solids/uniform-dual/deltoidal-icositetrahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 26,
+        "edges": 48,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": null,
+      "dual": "rhombicuboctahedron",
+      "ids": {}
+    },
+    {
+      "slug": "diminished-rhombicosidodecahedron",
+      "name": "Diminished Rhombicosidodecahedron",
+      "path": "solids/johnson/diminished-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 55,
+        "edges": 105,
+        "faces": 52
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J76"
+      }
+    },
+    {
+      "slug": "disdyakisdodecahedron",
+      "name": "Disdyakisdodecahedron",
+      "path": "solids/uniform-dual/disdyakisdodecahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 26,
+        "edges": 72,
+        "faces": 48
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": null,
+      "dual": "truncated-cuboctahedron",
+      "ids": {}
+    },
+    {
+      "slug": "disdyakistriacontahedron",
+      "name": "Disdyakistriacontahedron",
+      "path": "solids/uniform-dual/disdyakistriacontahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 62,
+        "edges": 180,
+        "faces": 120
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": null,
+      "dual": "truncated-icosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "disphenocingulum",
+      "name": "Disphenocingulum",
+      "path": "solids/johnson/disphenocingulum.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 38,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "D2d",
+        "orbifold": "2*2",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J90"
+      }
+    },
+    {
+      "slug": "ditrigonal-dodecadodecahedron",
+      "name": "Ditrigonal Dodecadodecahedron",
+      "path": "solids/uniform/ditrigonal-dodecadodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 60,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 4,
+      "dual": "medial-triambic-icosahedron",
+      "ids": {
+        "uniform": "U41",
+        "wenninger": "W80"
+      }
+    },
+    {
+      "slug": "dodecadodecahedron",
+      "name": "Dodecadodecahedron",
+      "path": "solids/uniform/dodecadodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 3,
+      "dual": "medial-rhombic-triacontahedron",
+      "ids": {
+        "uniform": "U36",
+        "wenninger": "W73"
+      }
+    },
+    {
+      "slug": "dodecagonal-antiprism",
+      "name": "Dodecagonal Antiprism",
+      "path": "solids/prism-family/dodecagonal-antiprism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "antiprism",
+        "chiral-family"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 48,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "C210828714v",
+        "orbifold": "*210828714210828714",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "dodecagonal-trapezohedron",
+      "ids": {}
+    },
+    {
+      "slug": "dodecagonal-dipyramid",
+      "name": "Dodecagonal Dipyramid",
+      "path": "solids/prism-family/dodecagonal-dipyramid.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 36,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "D12h",
+        "orbifold": "*2212",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "dodecagonal-prism",
+      "ids": {}
+    },
+    {
+      "slug": "dodecagonal-prism",
+      "name": "Dodecagonal Prism",
+      "path": "solids/prism-family/dodecagonal-prism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "prism"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 36,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "D12h",
+        "orbifold": "*2212",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "dodecagonal-dipyramid",
+      "ids": {}
+    },
+    {
+      "slug": "dodecagonal-trapezohedron",
+      "name": "Dodecagonal Trapezohedron",
+      "path": "solids/prism-family/dodecagonal-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 26,
+        "edges": 48,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "D12d",
+        "orbifold": "2*12",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "dodecagonal-antiprism",
+      "ids": {}
+    },
+    {
+      "slug": "dodecahedron",
+      "name": "Dodecahedron",
+      "path": "solids/uniform/dodecahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "platonic",
+        "regular"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 30,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "icosahedron",
+      "ids": {
+        "uniform": "U23",
+        "wenninger": "W5",
+        "netlib": 3,
+        "bowers": "doe"
+      }
+    },
+    {
+      "slug": "elongated-pentagonal-bipyramid",
+      "name": "Elongated Pentagonal Bipyramid",
+      "path": "solids/johnson/elongated-pentagonal-bipyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 25,
+        "faces": 15
+      },
+      "symmetry": {
+        "schoenflies": "D5h",
+        "orbifold": "*225",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J16"
+      }
+    },
+    {
+      "slug": "elongated-pentagonal-cupola",
+      "name": "Elongated Pentagonal Cupola",
+      "path": "solids/johnson/elongated-pentagonal-cupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 25,
+        "edges": 45,
+        "faces": 22
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J20"
+      }
+    },
+    {
+      "slug": "elongated-pentagonal-gyrobicupola",
+      "name": "Elongated Pentagonal Gyrobicupola",
+      "path": "solids/johnson/elongated-pentagonal-gyrobicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "C298156827h",
+        "orbifold": "298156827*",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J39"
+      }
+    },
+    {
+      "slug": "elongated-pentagonal-gyrobirotunda",
+      "name": "Elongated Pentagonal Gyrobirotunda",
+      "path": "solids/johnson/elongated-pentagonal-gyrobirotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 40,
+        "edges": 80,
+        "faces": 42
+      },
+      "symmetry": {
+        "schoenflies": "D5d",
+        "orbifold": "2*5",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J43"
+      }
+    },
+    {
+      "slug": "elongated-pentagonal-gyrocupolarotunda",
+      "name": "Elongated Pentagonal Gyrocupolarotunda",
+      "path": "solids/johnson/elongated-pentagonal-gyrocupolarotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 35,
+        "edges": 70,
+        "faces": 37
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J41"
+      }
+    },
+    {
+      "slug": "elongated-pentagonal-orthobicupola",
+      "name": "Elongated Pentagonal Orthobicupola",
+      "path": "solids/johnson/elongated-pentagonal-orthobicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "D5h",
+        "orbifold": "*225",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J38"
+      }
+    },
+    {
+      "slug": "elongated-pentagonal-orthobirotunda",
+      "name": "Elongated Pentagonal Orthobirotunda",
+      "path": "solids/johnson/elongated-pentagonal-orthobirotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 40,
+        "edges": 80,
+        "faces": 42
+      },
+      "symmetry": {
+        "schoenflies": "C298156827h",
+        "orbifold": "298156827*",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J42"
+      }
+    },
+    {
+      "slug": "elongated-pentagonal-orthocupolarotunda",
+      "name": "Elongated Pentagonal Orthocupolarotunda",
+      "path": "solids/johnson/elongated-pentagonal-orthocupolarotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 35,
+        "edges": 70,
+        "faces": 37
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J40"
+      }
+    },
+    {
+      "slug": "elongated-pentagonal-pyramid",
+      "name": "Elongated Pentagonal Pyramid",
+      "path": "solids/johnson/elongated-pentagonal-pyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 11,
+        "edges": 20,
+        "faces": 11
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J9"
+      }
+    },
+    {
+      "slug": "elongated-pentagonal-rotunda",
+      "name": "Elongated Pentagonal Rotunda",
+      "path": "solids/johnson/elongated-pentagonal-rotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 55,
+        "faces": 27
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J21"
+      }
+    },
+    {
+      "slug": "elongated-square-bipyramid",
+      "name": "Elongated Square Bipyramid",
+      "path": "solids/johnson/elongated-square-bipyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 20,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "D4h",
+        "orbifold": "*224",
+        "order": 16
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J15"
+      }
+    },
+    {
+      "slug": "elongated-square-cupola",
+      "name": "Elongated Square Cupola",
+      "path": "solids/johnson/elongated-square-cupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 36,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "C4v",
+        "orbifold": "*44",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J19"
+      }
+    },
+    {
+      "slug": "elongated-square-gyrobicupola",
+      "name": "Elongated Square Gyrobicupola",
+      "path": "solids/johnson/elongated-square-gyrobicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 48,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "D4d",
+        "orbifold": "2*4",
+        "order": 16
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J37"
+      }
+    },
+    {
+      "slug": "elongated-square-pyramid",
+      "name": "Elongated Square Pyramid",
+      "path": "solids/johnson/elongated-square-pyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 9,
+        "edges": 16,
+        "faces": 9
+      },
+      "symmetry": {
+        "schoenflies": "C4v",
+        "orbifold": "*44",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J8"
+      }
+    },
+    {
+      "slug": "elongated-triangular-bipyramid",
+      "name": "Elongated Triangular Bipyramid",
+      "path": "solids/johnson/elongated-triangular-bipyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 15,
+        "faces": 9
+      },
+      "symmetry": {
+        "schoenflies": "D3h",
+        "orbifold": "*223",
+        "order": 12
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J14"
+      }
+    },
+    {
+      "slug": "elongated-triangular-cupola",
+      "name": "Elongated Triangular Cupola",
+      "path": "solids/johnson/elongated-triangular-cupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 15,
+        "edges": 27,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J18"
+      }
+    },
+    {
+      "slug": "elongated-triangular-gyrobicupola",
+      "name": "Elongated Triangular Gyrobicupola",
+      "path": "solids/johnson/elongated-triangular-gyrobicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 36,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "D3d",
+        "orbifold": "2*3",
+        "order": 12
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J36"
+      }
+    },
+    {
+      "slug": "elongated-triangular-orthobicupola",
+      "name": "Elongated Triangular Orthobicupola",
+      "path": "solids/johnson/elongated-triangular-orthobicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 36,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "D3h",
+        "orbifold": "*223",
+        "order": 12
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J35"
+      }
+    },
+    {
+      "slug": "elongated-triangular-pyramid",
+      "name": "Elongated Triangular Pyramid",
+      "path": "solids/johnson/elongated-triangular-pyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 7,
+        "edges": 12,
+        "faces": 7
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J7"
+      }
+    },
+    {
+      "slug": "enneagonal-antiprism",
+      "name": "Enneagonal Antiprism",
+      "path": "solids/prism-family/enneagonal-antiprism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "antiprism",
+        "chiral-family"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 36,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "D9d",
+        "orbifold": "2*9",
+        "order": 36
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "enneagonal-trapezohedron",
+      "ids": {}
+    },
+    {
+      "slug": "enneagonal-dipyramid",
+      "name": "Enneagonal Dipyramid",
+      "path": "solids/prism-family/enneagonal-dipyramid.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 11,
+        "edges": 27,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "D9h",
+        "orbifold": "*229",
+        "order": 36
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "enneagonal-prism",
+      "ids": {}
+    },
+    {
+      "slug": "enneagonal-prism",
+      "name": "Enneagonal Prism",
+      "path": "solids/prism-family/enneagonal-prism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "prism"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 27,
+        "faces": 11
+      },
+      "symmetry": {
+        "schoenflies": "D9h",
+        "orbifold": "*229",
+        "order": 36
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "enneagonal-dipyramid",
+      "ids": {}
+    },
+    {
+      "slug": "enneagonal-trapezohedron",
+      "name": "Enneagonal Trapezohedron",
+      "path": "solids/prism-family/enneagonal-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 36,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "D9d",
+        "orbifold": "2*9",
+        "order": 36
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "enneagonal-antiprism",
+      "ids": {}
+    },
+    {
+      "slug": "geodesic-icosahedron-2v",
+      "name": "Geodesic Icosahedron 2v",
+      "path": "solids/geodesic/geodesic-icosahedron-2v.json",
+      "families": [
+        "geodesic",
+        "convex",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 42,
+        "edges": 120,
+        "faces": 80
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "geodesic-icosahedron-3v",
+      "name": "Geodesic Icosahedron 3v",
+      "path": "solids/geodesic/geodesic-icosahedron-3v.json",
+      "families": [
+        "geodesic",
+        "convex",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 92,
+        "edges": 270,
+        "faces": 180
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "geodesic-icosahedron-4v",
+      "name": "Geodesic Icosahedron 4v",
+      "path": "solids/geodesic/geodesic-icosahedron-4v.json",
+      "families": [
+        "geodesic",
+        "convex",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 162,
+        "edges": 480,
+        "faces": 320
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "geodesic-octahedron-2v",
+      "name": "Geodesic Octahedron 2v",
+      "path": "solids/geodesic/geodesic-octahedron-2v.json",
+      "families": [
+        "geodesic",
+        "convex",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 48,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "geodesic-octahedron-3v",
+      "name": "Geodesic Octahedron 3v",
+      "path": "solids/geodesic/geodesic-octahedron-3v.json",
+      "families": [
+        "geodesic",
+        "convex",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 38,
+        "edges": 108,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "geodesic-octahedron-4v",
+      "name": "Geodesic Octahedron 4v",
+      "path": "solids/geodesic/geodesic-octahedron-4v.json",
+      "families": [
+        "geodesic",
+        "convex",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 66,
+        "edges": 192,
+        "faces": 128
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "geodesic-tetrahedron-2v",
+      "name": "Geodesic Tetrahedron 2v",
+      "path": "solids/geodesic/geodesic-tetrahedron-2v.json",
+      "families": [
+        "geodesic",
+        "convex",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 24,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "Td",
+        "orbifold": "*332",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "geodesic-tetrahedron-3v",
+      "name": "Geodesic Tetrahedron 3v",
+      "path": "solids/geodesic/geodesic-tetrahedron-3v.json",
+      "families": [
+        "geodesic",
+        "convex",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 54,
+        "faces": 36
+      },
+      "symmetry": {
+        "schoenflies": "Td",
+        "orbifold": "*332",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "geodesic-tetrahedron-4v",
+      "name": "Geodesic Tetrahedron 4v",
+      "path": "solids/geodesic/geodesic-tetrahedron-4v.json",
+      "families": [
+        "geodesic",
+        "convex",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 34,
+        "edges": 96,
+        "faces": 64
+      },
+      "symmetry": {
+        "schoenflies": "Td",
+        "orbifold": "*332",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "great-cubicuboctahedron",
+      "name": "Great Cubicuboctahedron",
+      "path": "solids/uniform/great-cubicuboctahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 48,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": 4,
+      "dual": "great-hexacronic-icositetrahedron",
+      "ids": {
+        "uniform": "U14",
+        "wenninger": "W77"
+      }
+    },
+    {
+      "slug": "great-deltoidal-hexecontahedron",
+      "name": "Great deltoidal hexecontahedron",
+      "path": "solids/uniform-dual/great-deltoidal-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 62,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "nonconvex-great-rhombicosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-deltoidal-icositetrahedron",
+      "name": "Great deltoidal icositetrahedron",
+      "path": "solids/uniform-dual/great-deltoidal-icositetrahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 26,
+        "edges": 48,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "nonconvex-great-rhombicuboctahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-dirhombicosidodecahedron",
+      "name": "Great Dirhombicosidodecahedron",
+      "path": "solids/uniform/great-dirhombicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 240,
+        "faces": 124
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-dirhombicosidodecacron",
+      "ids": {
+        "uniform": "U75",
+        "wenninger": "W119"
+      }
+    },
+    {
+      "slug": "great-disdyakisdodecahedron",
+      "name": "Great disdyakisdodecahedron",
+      "path": "solids/uniform-dual/great-disdyakisdodecahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 26,
+        "edges": 72,
+        "faces": 48
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-truncated-cuboctahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-disdyakistriacontahedron",
+      "name": "Great disdyakistriacontahedron",
+      "path": "solids/uniform-dual/great-disdyakistriacontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 62,
+        "edges": 180,
+        "faces": 120
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-truncated-icosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-ditrigonal-dodecacronic-hexecontahedron",
+      "name": "Great ditrigonal dodecacronic hexecontahedron",
+      "path": "solids/uniform-dual/great-ditrigonal-dodecacronic-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 44,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-ditrigonal-dodecicosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-ditrigonal-dodecicosidodecahedron",
+      "name": "Great Ditrigonal Dodecicosidodecahedron",
+      "path": "solids/uniform/great-ditrigonal-dodecicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 44
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 4,
+      "dual": "great-ditrigonal-dodecacronic-hexecontahedron",
+      "ids": {
+        "uniform": "U42",
+        "wenninger": "W81"
+      }
+    },
+    {
+      "slug": "great-ditrigonal-icosidodecahedron",
+      "name": "Great Ditrigonal Icosidodecahedron",
+      "path": "solids/uniform/great-ditrigonal-icosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 60,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 6,
+      "dual": "great-triambic-icosahedron",
+      "ids": {
+        "uniform": "U47",
+        "wenninger": "W87"
+      }
+    },
+    {
+      "slug": "great-dodecacronic-hexecontahedron",
+      "name": "Great dodecacronic hexecontahedron",
+      "path": "solids/uniform-dual/great-dodecacronic-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 44,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-dodecicosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-dodecahedron",
+      "name": "Great Dodecahedron",
+      "path": "solids/uniform/great-dodecahedron.json",
+      "families": [
+        "uniform",
+        "kepler-poinsot",
+        "regular",
+        "star"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 30,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 3,
+      "dual": "small-stellated-dodecahedron",
+      "ids": {
+        "uniform": "U35",
+        "wenninger": "W21",
+        "netlib": 6,
+        "bowers": "gad"
+      }
+    },
+    {
+      "slug": "great-dodecahemicosahedron",
+      "name": "Great Dodecahemicosahedron",
+      "path": "solids/uniform/great-dodecahemicosahedron.json",
+      "families": [
+        "uniform",
+        "star",
+        "hemipolyhedron"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 22
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-dodecahemicosacron",
+      "ids": {
+        "uniform": "U65",
+        "wenninger": "W102"
+      }
+    },
+    {
+      "slug": "great-dodecahemidodecahedron",
+      "name": "Great Dodecahemidodecahedron",
+      "path": "solids/uniform/great-dodecahemidodecahedron.json",
+      "families": [
+        "uniform",
+        "star",
+        "hemipolyhedron"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-dodecahemidodecacron",
+      "ids": {
+        "uniform": "U70",
+        "wenninger": "W107"
+      }
+    },
+    {
+      "slug": "great-dodecicosacron",
+      "name": "Great dodecicosacron",
+      "path": "solids/uniform-dual/great-dodecicosacron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-dodecicosahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-dodecicosahedron",
+      "name": "Great Dodecicosahedron",
+      "path": "solids/uniform/great-dodecicosahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-dodecicosacron",
+      "ids": {
+        "uniform": "U63",
+        "wenninger": "W101"
+      }
+    },
+    {
+      "slug": "great-dodecicosidodecahedron",
+      "name": "Great Dodecicosidodecahedron",
+      "path": "solids/uniform/great-dodecicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 44
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 10,
+      "dual": "great-dodecacronic-hexecontahedron",
+      "ids": {
+        "uniform": "U61",
+        "wenninger": "W99"
+      }
+    },
+    {
+      "slug": "great-hexacronic-icositetrahedron",
+      "name": "Great hexacronic icositetrahedron",
+      "path": "solids/uniform-dual/great-hexacronic-icositetrahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 48,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-cubicuboctahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-hexagonal-hexecontahedron",
+      "name": "Great hexagonal hexecontahedron",
+      "path": "solids/uniform-dual/great-hexagonal-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 104,
+        "edges": 180,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "C5",
+        "orbifold": "55",
+        "order": 240
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-snub-dodecicosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-icosacronic-hexecontahedron",
+      "name": "Great icosacronic hexecontahedron",
+      "path": "solids/uniform-dual/great-icosacronic-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 52,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-icosicosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-icosahedron",
+      "name": "Great Icosahedron",
+      "path": "solids/uniform/great-icosahedron.json",
+      "families": [
+        "uniform",
+        "kepler-poinsot",
+        "regular",
+        "star",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 30,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 7,
+      "dual": "great-stellated-dodecahedron",
+      "ids": {
+        "uniform": "U53",
+        "wenninger": "W41",
+        "netlib": 8,
+        "bowers": "gike"
+      }
+    },
+    {
+      "slug": "great-icosicosidodecahedron",
+      "name": "Great Icosicosidodecahedron",
+      "path": "solids/uniform/great-icosicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 52
+      },
+      "symmetry": {
+        "schoenflies": "C210828714h",
+        "orbifold": "210828714*",
+        "order": 120
+      },
+      "convex": false,
+      "density": 6,
+      "dual": "great-icosacronic-hexecontahedron",
+      "ids": {
+        "uniform": "U48",
+        "wenninger": "W88"
+      }
+    },
+    {
+      "slug": "great-icosidodecahedron",
+      "name": "Great Icosidodecahedron",
+      "path": "solids/uniform/great-icosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 7,
+      "dual": "great-rhombic-triacontahedron",
+      "ids": {
+        "uniform": "U54",
+        "wenninger": "W94"
+      }
+    },
+    {
+      "slug": "great-icosihemidodecahedron",
+      "name": "Great Icosihemidodecahedron",
+      "path": "solids/uniform/great-icosihemidodecahedron.json",
+      "families": [
+        "uniform",
+        "star",
+        "hemipolyhedron"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-icosihemidodecacron",
+      "ids": {
+        "uniform": "U71",
+        "wenninger": "W106"
+      }
+    },
+    {
+      "slug": "great-inverted-pentagonal-hexecontahedron",
+      "name": "Great inverted pentagonal hexecontahedron",
+      "path": "solids/uniform-dual/great-inverted-pentagonal-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 92,
+        "edges": 150,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "C298156827",
+        "orbifold": "298156827298156827",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-inverted-snub-icosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-inverted-snub-icosidodecahedron",
+      "name": "Great Inverted Snub Icosidodecahedron",
+      "path": "solids/uniform/great-inverted-snub-icosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 92
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": 13,
+      "dual": "great-inverted-pentagonal-hexecontahedron",
+      "ids": {
+        "uniform": "U69",
+        "wenninger": "W116"
+      }
+    },
+    {
+      "slug": "great-pentagonal-hexecontahedron",
+      "name": "Great pentagonal hexecontahedron",
+      "path": "solids/uniform-dual/great-pentagonal-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 92,
+        "edges": 150,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-snub-icosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-pentagrammic-hexecontahedron",
+      "name": "Great pentagrammic hexecontahedron",
+      "path": "solids/uniform-dual/great-pentagrammic-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 92,
+        "edges": 150,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-retrosnub-icosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-pentakisdodekahedron",
+      "name": "Great pentakisdodekahedron",
+      "path": "solids/uniform-dual/great-pentakisdodekahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 90,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-stellated-truncated-dodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-retrosnub-icosidodecahedron",
+      "name": "Great Retrosnub Icosidodecahedron",
+      "path": "solids/uniform/great-retrosnub-icosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 92
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": 37,
+      "dual": "great-pentagrammic-hexecontahedron",
+      "ids": {
+        "uniform": "U74",
+        "wenninger": "W117"
+      }
+    },
+    {
+      "slug": "great-rhombic-triacontahedron",
+      "name": "Great rhombic triacontahedron",
+      "path": "solids/uniform-dual/great-rhombic-triacontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 60,
+        "faces": 30
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-icosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-rhombidodecacron",
+      "name": "Great rhombidodecacron",
+      "path": "solids/uniform-dual/great-rhombidodecacron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 42,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-rhombidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-rhombidodecahedron",
+      "name": "Great Rhombidodecahedron",
+      "path": "solids/uniform/great-rhombidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 42
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-rhombidodecacron",
+      "ids": {
+        "uniform": "U73",
+        "wenninger": "W109"
+      }
+    },
+    {
+      "slug": "great-rhombihexacron",
+      "name": "Great rhombihexacron",
+      "path": "solids/uniform-dual/great-rhombihexacron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 48,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-rhombihexahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-rhombihexahedron",
+      "name": "Great Rhombihexahedron",
+      "path": "solids/uniform/great-rhombihexahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 48,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-rhombihexacron",
+      "ids": {
+        "uniform": "U21",
+        "wenninger": "W103"
+      }
+    },
+    {
+      "slug": "great-snub-dodecicosidodecahedron",
+      "name": "Great Snub Dodecicosidodecahedron",
+      "path": "solids/uniform/great-snub-dodecicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 180,
+        "faces": 104
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 10,
+      "dual": "great-hexagonal-hexecontahedron",
+      "ids": {
+        "uniform": "U64",
+        "wenninger": "W115"
+      }
+    },
+    {
+      "slug": "great-snub-icosidodecahedron",
+      "name": "Great Snub Icosidodecahedron",
+      "path": "solids/uniform/great-snub-icosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 92
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": 7,
+      "dual": "great-pentagonal-hexecontahedron",
+      "ids": {
+        "uniform": "U57",
+        "wenninger": "W113"
+      }
+    },
+    {
+      "slug": "great-stellapentakisdodecahedron",
+      "name": "Great stellapentakisdodecahedron",
+      "path": "solids/uniform-dual/great-stellapentakisdodecahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 90,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "truncated-great-icosahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-stellated-dodecahedron",
+      "name": "Great Stellated Dodecahedron",
+      "path": "solids/uniform/great-stellated-dodecahedron.json",
+      "families": [
+        "uniform",
+        "kepler-poinsot",
+        "regular",
+        "star",
+        "stellation"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 30,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 7,
+      "dual": "great-icosahedron",
+      "ids": {
+        "uniform": "U52",
+        "wenninger": "W22",
+        "netlib": 7,
+        "bowers": "gissid"
+      }
+    },
+    {
+      "slug": "great-stellated-truncated-dodecahedron",
+      "name": "Great Stellated Truncated Dodecahedron",
+      "path": "solids/uniform/great-stellated-truncated-dodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 90,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 13,
+      "dual": "great-triakisicosahedron",
+      "ids": {
+        "uniform": "U66",
+        "wenninger": "W104"
+      }
+    },
+    {
+      "slug": "great-triakisicosahedron",
+      "name": "Great triakisicosahedron",
+      "path": "solids/uniform-dual/great-triakisicosahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 90,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-stellated-truncated-dodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-triakisoctahedron",
+      "name": "Great triakisoctahedron",
+      "path": "solids/uniform-dual/great-triakisoctahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 36,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "stellated-truncated-hexahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-triambic-icosahedron",
+      "name": "Great triambic icosahedron",
+      "path": "solids/uniform-dual/great-triambic-icosahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 60,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "great-ditrigonal-icosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "great-truncated-cuboctahedron",
+      "name": "Great Truncated Cuboctahedron",
+      "path": "solids/uniform/great-truncated-cuboctahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 72,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": 1,
+      "dual": "great-disdyakisdodecahedron",
+      "ids": {
+        "uniform": "U20",
+        "wenninger": "W93"
+      }
+    },
+    {
+      "slug": "great-truncated-icosidodecahedron",
+      "name": "Great Truncated Icosidodecahedron",
+      "path": "solids/uniform/great-truncated-icosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 62
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 13,
+      "dual": "great-disdyakistriacontahedron",
+      "ids": {
+        "uniform": "U68",
+        "wenninger": "W108"
+      }
+    },
+    {
+      "slug": "gyrate-bidiminished-rhombicosidodecahedron",
+      "name": "Gyrate Bidiminished Rhombicosidodecahedron",
+      "path": "solids/johnson/gyrate-bidiminished-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 50,
+        "edges": 90,
+        "faces": 42
+      },
+      "symmetry": {
+        "schoenflies": "Cs",
+        "orbifold": "*11",
+        "order": 2
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J82"
+      }
+    },
+    {
+      "slug": "gyrate-rhombicosidodecahedron",
+      "name": "Gyrate Rhombicosidodecahedron",
+      "path": "solids/johnson/gyrate-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 62
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J72"
+      }
+    },
+    {
+      "slug": "gyrobifastigium",
+      "name": "Gyrobifastigium",
+      "path": "solids/johnson/gyrobifastigium.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 14,
+        "faces": 8
+      },
+      "symmetry": {
+        "schoenflies": "D2d",
+        "orbifold": "2*2",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J26"
+      }
+    },
+    {
+      "slug": "gyroelongated-pentagonal-bicupola",
+      "name": "Gyroelongated Pentagonal Bicupola",
+      "path": "solids/johnson/gyroelongated-pentagonal-bicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 70,
+        "faces": 42
+      },
+      "symmetry": {
+        "schoenflies": "C298156827",
+        "orbifold": "298156827298156827",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J46"
+      }
+    },
+    {
+      "slug": "gyroelongated-pentagonal-birotunda",
+      "name": "Gyroelongated Pentagonal Birotunda",
+      "path": "solids/johnson/gyroelongated-pentagonal-birotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 40,
+        "edges": 90,
+        "faces": 52
+      },
+      "symmetry": {
+        "schoenflies": "D5",
+        "orbifold": "225",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J48"
+      }
+    },
+    {
+      "slug": "gyroelongated-pentagonal-cupola",
+      "name": "Gyroelongated Pentagonal Cupola",
+      "path": "solids/johnson/gyroelongated-pentagonal-cupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 25,
+        "edges": 55,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J24"
+      }
+    },
+    {
+      "slug": "gyroelongated-pentagonal-cupolarotunda",
+      "name": "Gyroelongated Pentagonal Cupolarotunda",
+      "path": "solids/johnson/gyroelongated-pentagonal-cupolarotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 35,
+        "edges": 80,
+        "faces": 47
+      },
+      "symmetry": {
+        "schoenflies": "C298156827",
+        "orbifold": "298156827298156827",
+        "order": 5
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J47"
+      }
+    },
+    {
+      "slug": "gyroelongated-pentagonal-pyramid",
+      "name": "Gyroelongated Pentagonal Pyramid",
+      "path": "solids/johnson/gyroelongated-pentagonal-pyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 11,
+        "edges": 25,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J11"
+      }
+    },
+    {
+      "slug": "gyroelongated-pentagonal-rotunda",
+      "name": "Gyroelongated Pentagonal Rotunda",
+      "path": "solids/johnson/gyroelongated-pentagonal-rotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 65,
+        "faces": 37
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J25"
+      }
+    },
+    {
+      "slug": "gyroelongated-square-bicupola",
+      "name": "Gyroelongated Square Bicupola",
+      "path": "solids/johnson/gyroelongated-square-bicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 56,
+        "faces": 34
+      },
+      "symmetry": {
+        "schoenflies": "D4",
+        "orbifold": "224",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J45"
+      }
+    },
+    {
+      "slug": "gyroelongated-square-bipyramid",
+      "name": "Gyroelongated Square Bipyramid",
+      "path": "solids/johnson/gyroelongated-square-bipyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 24,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "D4d",
+        "orbifold": "2*4",
+        "order": 16
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J17"
+      }
+    },
+    {
+      "slug": "gyroelongated-square-cupola",
+      "name": "Gyroelongated Square Cupola",
+      "path": "solids/johnson/gyroelongated-square-cupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 44,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "C298156827v",
+        "orbifold": "*298156827298156827",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J23"
+      }
+    },
+    {
+      "slug": "gyroelongated-square-pyramid",
+      "name": "Gyroelongated Square Pyramid",
+      "path": "solids/johnson/gyroelongated-square-pyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 9,
+        "edges": 20,
+        "faces": 13
+      },
+      "symmetry": {
+        "schoenflies": "C4v",
+        "orbifold": "*44",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J10"
+      }
+    },
+    {
+      "slug": "gyroelongated-triangular-bicupola",
+      "name": "Gyroelongated Triangular Bicupola",
+      "path": "solids/johnson/gyroelongated-triangular-bicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 42,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "D3",
+        "orbifold": "223",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J44"
+      }
+    },
+    {
+      "slug": "gyroelongated-triangular-cupola",
+      "name": "Gyroelongated Triangular Cupola",
+      "path": "solids/johnson/gyroelongated-triangular-cupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 15,
+        "edges": 33,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J22"
+      }
+    },
+    {
+      "slug": "hebesphenomegacorona",
+      "name": "Hebesphenomegacorona",
+      "path": "solids/johnson/hebesphenomegacorona.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 33,
+        "faces": 21
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J89"
+      }
+    },
+    {
+      "slug": "hendecagonal-antiprism",
+      "name": "Hendecagonal Antiprism",
+      "path": "solids/prism-family/hendecagonal-antiprism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "antiprism",
+        "chiral-family"
+      ],
+      "counts": {
+        "vertices": 22,
+        "edges": 44,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "D11d",
+        "orbifold": "2*11",
+        "order": 44
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "hendecagonal-trapezohedron",
+      "ids": {}
+    },
+    {
+      "slug": "hendecagonal-dipyramid",
+      "name": "Hendecagonal Dipyramid",
+      "path": "solids/prism-family/hendecagonal-dipyramid.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 13,
+        "edges": 33,
+        "faces": 22
+      },
+      "symmetry": {
+        "schoenflies": "D11h",
+        "orbifold": "*2211",
+        "order": 44
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "hendecagonal-prism",
+      "ids": {}
+    },
+    {
+      "slug": "hendecagonal-prism",
+      "name": "Hendecagonal Prism",
+      "path": "solids/prism-family/hendecagonal-prism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "prism"
+      ],
+      "counts": {
+        "vertices": 22,
+        "edges": 33,
+        "faces": 13
+      },
+      "symmetry": {
+        "schoenflies": "C298156827v",
+        "orbifold": "*298156827298156827",
+        "order": 44
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "hendecagonal-dipyramid",
+      "ids": {}
+    },
+    {
+      "slug": "hendecagonal-trapezohedron",
+      "name": "Hendecagonal Trapezohedron",
+      "path": "solids/prism-family/hendecagonal-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 44,
+        "faces": 22
+      },
+      "symmetry": {
+        "schoenflies": "D11d",
+        "orbifold": "2*11",
+        "order": 44
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "hendecagonal-antiprism",
+      "ids": {}
+    },
+    {
+      "slug": "heptagonal-antiprism",
+      "name": "Heptagonal Antiprism",
+      "path": "solids/prism-family/heptagonal-antiprism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "antiprism",
+        "chiral-family"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 28,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "D7d",
+        "orbifold": "2*7",
+        "order": 28
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "heptagonal-trapezohedron",
+      "ids": {}
+    },
+    {
+      "slug": "heptagonal-dipyramid",
+      "name": "Heptagonal Dipyramid",
+      "path": "solids/prism-family/heptagonal-dipyramid.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 9,
+        "edges": 21,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "D7h",
+        "orbifold": "*227",
+        "order": 28
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "heptagonal-prism",
+      "ids": {}
+    },
+    {
+      "slug": "heptagonal-prism",
+      "name": "Heptagonal Prism",
+      "path": "solids/prism-family/heptagonal-prism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "prism"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 21,
+        "faces": 9
+      },
+      "symmetry": {
+        "schoenflies": "C210828714v",
+        "orbifold": "*210828714210828714",
+        "order": 28
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "heptagonal-dipyramid",
+      "ids": {}
+    },
+    {
+      "slug": "heptagonal-trapezohedron",
+      "name": "Heptagonal Trapezohedron",
+      "path": "solids/prism-family/heptagonal-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 28,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "D7d",
+        "orbifold": "2*7",
+        "order": 28
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "heptagonal-antiprism",
+      "ids": {}
+    },
+    {
+      "slug": "hexagonal-antiprism",
+      "name": "Hexagonal Antiprism",
+      "path": "solids/prism-family/hexagonal-antiprism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "antiprism",
+        "chiral-family"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 24,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "D6d",
+        "orbifold": "2*6",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "hexagonal-trapezohedron",
+      "ids": {}
+    },
+    {
+      "slug": "hexagonal-dipyramid",
+      "name": "Hexagonal Dipyramid",
+      "path": "solids/prism-family/hexagonal-dipyramid.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 18,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "D6h",
+        "orbifold": "*226",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "hexagonal-prism",
+      "ids": {}
+    },
+    {
+      "slug": "hexagonal-prism",
+      "name": "Hexagonal Prism",
+      "path": "solids/prism-family/hexagonal-prism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "prism"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 18,
+        "faces": 8
+      },
+      "symmetry": {
+        "schoenflies": "D6h",
+        "orbifold": "*226",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "hexagonal-dipyramid",
+      "ids": {}
+    },
+    {
+      "slug": "hexagonal-trapezohedron",
+      "name": "Hexagonal Trapezohedron",
+      "path": "solids/prism-family/hexagonal-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 24,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "D6d",
+        "orbifold": "2*6",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "hexagonal-antiprism",
+      "ids": {}
+    },
+    {
+      "slug": "icosahedron",
+      "name": "Icosahedron",
+      "path": "solids/uniform/icosahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "platonic",
+        "regular",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 30,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "dodecahedron",
+      "ids": {
+        "uniform": "U22",
+        "wenninger": "W4",
+        "netlib": 4,
+        "bowers": "ike"
+      }
+    },
+    {
+      "slug": "icosidodecadodecahedron",
+      "name": "Icosidodecadodecahedron",
+      "path": "solids/uniform/icosidodecadodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 44
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 4,
+      "dual": "medial-icosacronic-hexecontahedron",
+      "ids": {
+        "uniform": "U44",
+        "wenninger": "W83"
+      }
+    },
+    {
+      "slug": "icosidodecahedron",
+      "name": "Icosidodecahedron",
+      "path": "solids/uniform/icosidodecahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean",
+        "quasiregular"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "rhombic-triacontahedron",
+      "ids": {
+        "uniform": "U24",
+        "wenninger": "W12",
+        "netlib": 16,
+        "bowers": "id"
+      }
+    },
+    {
+      "slug": "icositruncated-dodecadodecahedron",
+      "name": "Icositruncated Dodecadodecahedron",
+      "path": "solids/uniform/icositruncated-dodecadodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 44
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 4,
+      "dual": "tridyakisicosahedron",
+      "ids": {
+        "uniform": "U45",
+        "wenninger": "W84"
+      }
+    },
+    {
+      "slug": "inverted-snub-dodecadodecahedron",
+      "name": "Inverted Snub Dodecadodecahedron",
+      "path": "solids/uniform/inverted-snub-dodecadodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 84
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": 9,
+      "dual": "medial-inverted-pentagonal-hexecontahedron",
+      "ids": {
+        "uniform": "U60",
+        "wenninger": "W114"
+      }
+    },
+    {
+      "slug": "iris-toroid-7",
+      "name": "Iris Toroid 7",
+      "path": "solids/toroid/iris-toroid-7.json",
+      "families": [
+        "toroid",
+        "genus-1"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 35,
+        "faces": 21
+      },
+      "symmetry": {
+        "schoenflies": "D7h",
+        "orbifold": "*227",
+        "order": 28
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "iris-toroid-8",
+      "name": "Iris Toroid 8",
+      "path": "solids/toroid/iris-toroid-8.json",
+      "families": [
+        "toroid",
+        "genus-1"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 40,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "D8h",
+        "orbifold": "*228",
+        "order": 32
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "medial-deltoidal-hexecontahedron",
+      "name": "Medial deltoidal hexecontahedron",
+      "path": "solids/uniform-dual/medial-deltoidal-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 54,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "rhombidodecadodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "medial-disdyakistriacontahedron",
+      "name": "Medial disdyakistriacontahedron",
+      "path": "solids/uniform-dual/medial-disdyakistriacontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 54,
+        "edges": 180,
+        "faces": 120
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "truncated-dodecadodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "medial-hexagonal-hexecontahedron",
+      "name": "Medial hexagonal hexecontahedron",
+      "path": "solids/uniform-dual/medial-hexagonal-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 104,
+        "edges": 180,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": "snub-icosidodecadodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "medial-icosacronic-hexecontahedron",
+      "name": "Medial icosacronic hexecontahedron",
+      "path": "solids/uniform-dual/medial-icosacronic-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 44,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "icosidodecadodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "medial-inverted-pentagonal-hexecontahedron",
+      "name": "Medial inverted pentagonal hexecontahedron",
+      "path": "solids/uniform-dual/medial-inverted-pentagonal-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 84,
+        "edges": 150,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": "inverted-snub-dodecadodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "medial-pentagonal-hexecontahedron",
+      "name": "Medial pentagonal hexecontahedron",
+      "path": "solids/uniform-dual/medial-pentagonal-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 84,
+        "edges": 150,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": "snub-dodecadodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "medial-rhombic-triacontahedron",
+      "name": "Medial rhombic triacontahedron",
+      "path": "solids/uniform-dual/medial-rhombic-triacontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 60,
+        "faces": 30
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "dodecadodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "medial-triambic-icosahedron",
+      "name": "Medial triambic icosahedron",
+      "path": "solids/uniform-dual/medial-triambic-icosahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 60,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "ditrigonal-dodecadodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "metabiaugmented-dodecahedron",
+      "name": "Metabiaugmented Dodecahedron",
+      "path": "solids/johnson/metabiaugmented-dodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 22,
+        "edges": 40,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J60"
+      }
+    },
+    {
+      "slug": "metabiaugmented-hexagonal-prism",
+      "name": "Metabiaugmented Hexagonal Prism",
+      "path": "solids/johnson/metabiaugmented-hexagonal-prism.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 26,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J56"
+      }
+    },
+    {
+      "slug": "metabiaugmented-truncated-dodecahedron",
+      "name": "Metabiaugmented Truncated Dodecahedron",
+      "path": "solids/johnson/metabiaugmented-truncated-dodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 70,
+        "edges": 120,
+        "faces": 52
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J70"
+      }
+    },
+    {
+      "slug": "metabidiminished-icosahedron",
+      "name": "Metabidiminished Icosahedron",
+      "path": "solids/johnson/metabidiminished-icosahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 20,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J62"
+      }
+    },
+    {
+      "slug": "metabidiminished-rhombicosidodecahedron",
+      "name": "Metabidiminished Rhombicosidodecahedron",
+      "path": "solids/johnson/metabidiminished-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 50,
+        "edges": 90,
+        "faces": 42
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J81"
+      }
+    },
+    {
+      "slug": "metabigyrate-rhombicosidodecahedron",
+      "name": "Metabigyrate Rhombicosidodecahedron",
+      "path": "solids/johnson/metabigyrate-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 62
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J74"
+      }
+    },
+    {
+      "slug": "metagyrate-diminished-rhombicosidodecahedron",
+      "name": "Metagyrate Diminished Rhombicosidodecahedron",
+      "path": "solids/johnson/metagyrate-diminished-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 55,
+        "edges": 105,
+        "faces": 52
+      },
+      "symmetry": {
+        "schoenflies": "Cs",
+        "orbifold": "*11",
+        "order": 2
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J78"
+      }
+    },
+    {
+      "slug": "nonconvex-great-rhombicosidodecahedron",
+      "name": "Nonconvex Great Rhombicosidodecahedron",
+      "path": "solids/uniform/nonconvex-great-rhombicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 62
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 13,
+      "dual": "great-deltoidal-hexecontahedron",
+      "ids": {
+        "uniform": "U67",
+        "wenninger": "W105"
+      }
+    },
+    {
+      "slug": "nonconvex-great-rhombicuboctahedron",
+      "name": "Nonconvex Great Rhombicuboctahedron",
+      "path": "solids/uniform/nonconvex-great-rhombicuboctahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 48,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": 5,
+      "dual": "great-deltoidal-icositetrahedron",
+      "ids": {
+        "uniform": "U17",
+        "wenninger": "W85"
+      }
+    },
+    {
+      "slug": "octagonal-antiprism",
+      "name": "Octagonal Antiprism",
+      "path": "solids/prism-family/octagonal-antiprism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "antiprism",
+        "chiral-family"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 32,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "D8d",
+        "orbifold": "2*8",
+        "order": 32
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "octagonal-trapezohedron",
+      "ids": {}
+    },
+    {
+      "slug": "octagonal-dipyramid",
+      "name": "Octagonal Dipyramid",
+      "path": "solids/prism-family/octagonal-dipyramid.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 24,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "D8h",
+        "orbifold": "*228",
+        "order": 32
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "octagonal-prism",
+      "ids": {}
+    },
+    {
+      "slug": "octagonal-prism",
+      "name": "Octagonal Prism",
+      "path": "solids/prism-family/octagonal-prism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "prism"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 24,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "D8h",
+        "orbifold": "*228",
+        "order": 32
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "octagonal-dipyramid",
+      "ids": {}
+    },
+    {
+      "slug": "octagonal-trapezohedron",
+      "name": "Octagonal Trapezohedron",
+      "path": "solids/prism-family/octagonal-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 32,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "D8d",
+        "orbifold": "2*8",
+        "order": 32
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "octagonal-antiprism",
+      "ids": {}
+    },
+    {
+      "slug": "octahedron",
+      "name": "Octahedron",
+      "path": "solids/uniform/octahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "platonic",
+        "regular",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 6,
+        "edges": 12,
+        "faces": 8
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "cube",
+      "ids": {
+        "uniform": "U5",
+        "wenninger": "W2",
+        "netlib": 2,
+        "bowers": "oct"
+      }
+    },
+    {
+      "slug": "octahemioctahedron",
+      "name": "Octahemioctahedron",
+      "path": "solids/uniform/octahemioctahedron.json",
+      "families": [
+        "uniform",
+        "star",
+        "hemipolyhedron"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 24,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "octahemioctacron",
+      "ids": {
+        "uniform": "U3",
+        "wenninger": "W68"
+      }
+    },
+    {
+      "slug": "parabiaugmented-dodecahedron",
+      "name": "Parabiaugmented Dodecahedron",
+      "path": "solids/johnson/parabiaugmented-dodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 22,
+        "edges": 40,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "D5d",
+        "orbifold": "2*5",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J59"
+      }
+    },
+    {
+      "slug": "parabiaugmented-hexagonal-prism",
+      "name": "Parabiaugmented Hexagonal Prism",
+      "path": "solids/johnson/parabiaugmented-hexagonal-prism.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 26,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "D2d",
+        "orbifold": "2*2",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J55"
+      }
+    },
+    {
+      "slug": "parabiaugmented-truncated-dodecahedron",
+      "name": "Parabiaugmented Truncated Dodecahedron",
+      "path": "solids/johnson/parabiaugmented-truncated-dodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 70,
+        "edges": 120,
+        "faces": 52
+      },
+      "symmetry": {
+        "schoenflies": "D5d",
+        "orbifold": "2*5",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J69"
+      }
+    },
+    {
+      "slug": "parabidiminished-rhombicosidodecahedron",
+      "name": "Parabidiminished Rhombicosidodecahedron",
+      "path": "solids/johnson/parabidiminished-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 50,
+        "edges": 90,
+        "faces": 42
+      },
+      "symmetry": {
+        "schoenflies": "D5d",
+        "orbifold": "2*5",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J80"
+      }
+    },
+    {
+      "slug": "parabigyrate-rhombicosidodecahedron",
+      "name": "Parabigyrate Rhombicosidodecahedron",
+      "path": "solids/johnson/parabigyrate-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 62
+      },
+      "symmetry": {
+        "schoenflies": "C298156827v",
+        "orbifold": "*298156827298156827",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J73"
+      }
+    },
+    {
+      "slug": "paragyrate-diminished-rhombicosidodecahedron",
+      "name": "Paragyrate Diminished Rhombicosidodecahedron",
+      "path": "solids/johnson/paragyrate-diminished-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 55,
+        "edges": 105,
+        "faces": 52
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J77"
+      }
+    },
+    {
+      "slug": "pentagonal-antiprism",
+      "name": "Pentagonal Antiprism",
+      "path": "solids/prism-family/pentagonal-antiprism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "antiprism",
+        "chiral-family"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 20,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "D5d",
+        "orbifold": "2*5",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "pentagonal-trapezohedron",
+      "ids": {}
+    },
+    {
+      "slug": "pentagonal-bipyramid",
+      "name": "Pentagonal Bipyramid",
+      "path": "solids/johnson/pentagonal-bipyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 7,
+        "edges": 15,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "D5h",
+        "orbifold": "*225",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J13"
+      }
+    },
+    {
+      "slug": "pentagonal-cupola",
+      "name": "Pentagonal Cupola",
+      "path": "solids/johnson/pentagonal-cupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 15,
+        "edges": 25,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J5"
+      }
+    },
+    {
+      "slug": "pentagonal-dipyramid",
+      "name": "Pentagonal Dipyramid",
+      "path": "solids/prism-family/pentagonal-dipyramid.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 7,
+        "edges": 15,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "D5h",
+        "orbifold": "*225",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "pentagonal-prism",
+      "ids": {}
+    },
+    {
+      "slug": "pentagonal-gyrobicupola",
+      "name": "Pentagonal Gyrobicupola",
+      "path": "solids/johnson/pentagonal-gyrobicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 40,
+        "faces": 22
+      },
+      "symmetry": {
+        "schoenflies": "D5d",
+        "orbifold": "2*5",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J31"
+      }
+    },
+    {
+      "slug": "pentagonal-gyrocupolarotunda",
+      "name": "Pentagonal Gyrocupolarotunda",
+      "path": "solids/johnson/pentagonal-gyrocupolarotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 25,
+        "edges": 50,
+        "faces": 27
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J33"
+      }
+    },
+    {
+      "slug": "pentagonal-hexecontahedron",
+      "name": "Pentagonal hexecontahedron",
+      "path": "solids/uniform-dual/pentagonal-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 92,
+        "edges": 150,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": null,
+      "dual": "snub-dodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "pentagonal-icositetrahedron",
+      "name": "Pentagonal icositetrahedron",
+      "path": "solids/uniform-dual/pentagonal-icositetrahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 38,
+        "edges": 60,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": null,
+      "dual": "snub-cube",
+      "ids": {}
+    },
+    {
+      "slug": "pentagonal-orthobicupola",
+      "name": "Pentagonal Orthobicupola",
+      "path": "solids/johnson/pentagonal-orthobicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 40,
+        "faces": 22
+      },
+      "symmetry": {
+        "schoenflies": "D5h",
+        "orbifold": "*225",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J30"
+      }
+    },
+    {
+      "slug": "pentagonal-orthobirotunda",
+      "name": "Pentagonal Orthobirotunda",
+      "path": "solids/johnson/pentagonal-orthobirotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "D5h",
+        "orbifold": "*225",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J34"
+      }
+    },
+    {
+      "slug": "pentagonal-orthocupolarotunda",
+      "name": "Pentagonal Orthocupolarotunda",
+      "path": "solids/johnson/pentagonal-orthocupolarotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 25,
+        "edges": 50,
+        "faces": 27
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J32"
+      }
+    },
+    {
+      "slug": "pentagonal-prism",
+      "name": "Pentagonal Prism",
+      "path": "solids/prism-family/pentagonal-prism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "prism"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 15,
+        "faces": 7
+      },
+      "symmetry": {
+        "schoenflies": "D5h",
+        "orbifold": "*225",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "pentagonal-dipyramid",
+      "ids": {}
+    },
+    {
+      "slug": "pentagonal-pyramid",
+      "name": "Pentagonal Pyramid",
+      "path": "solids/johnson/pentagonal-pyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 6,
+        "edges": 10,
+        "faces": 6
+      },
+      "symmetry": {
+        "schoenflies": "C5v",
+        "orbifold": "*55",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J2"
+      }
+    },
+    {
+      "slug": "pentagonal-rotunda",
+      "name": "Pentagonal Rotunda",
+      "path": "solids/johnson/pentagonal-rotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 35,
+        "faces": 17
+      },
+      "symmetry": {
+        "schoenflies": "C298156827h",
+        "orbifold": "298156827*",
+        "order": 10
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J6"
+      }
+    },
+    {
+      "slug": "pentagonal-trapezohedron",
+      "name": "Pentagonal Trapezohedron",
+      "path": "solids/prism-family/pentagonal-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 20,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "D5d",
+        "orbifold": "2*5",
+        "order": 20
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "pentagonal-antiprism",
+      "ids": {}
+    },
+    {
+      "slug": "pentakisdodecahedron",
+      "name": "Pentakisdodecahedron",
+      "path": "solids/uniform-dual/pentakisdodecahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 90,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": null,
+      "dual": "truncated-icosahedron",
+      "ids": {}
+    },
+    {
+      "slug": "regular-toroid",
+      "name": "Regular Toroid",
+      "path": "solids/toroid/regular-toroid.json",
+      "families": [
+        "toroid",
+        "genus-1"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 54,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "rhombic-dodecahedron",
+      "name": "Rhombic dodecahedron",
+      "path": "solids/uniform-dual/rhombic-dodecahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 24,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": null,
+      "dual": "cuboctahedron",
+      "ids": {}
+    },
+    {
+      "slug": "rhombic-enneacontahedron",
+      "name": "Rhombic Enneacontahedron",
+      "path": "solids/zonohedron/rhombic-enneacontahedron.json",
+      "families": [
+        "zonohedron",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 92,
+        "edges": 180,
+        "faces": 90
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "rhombic-triacontahedron",
+      "name": "Rhombic triacontahedron",
+      "path": "solids/uniform-dual/rhombic-triacontahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 60,
+        "faces": 30
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": null,
+      "dual": "icosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "rhombicosacron",
+      "name": "Rhombicosacron",
+      "path": "solids/uniform-dual/rhombicosacron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 50,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "rhombicosahedron",
+      "ids": {}
+    },
+    {
+      "slug": "rhombicosahedron",
+      "name": "Rhombicosahedron",
+      "path": "solids/uniform/rhombicosahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 50
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "rhombicosacron",
+      "ids": {
+        "uniform": "U56",
+        "wenninger": "W96"
+      }
+    },
+    {
+      "slug": "rhombicosidodecahedron",
+      "name": "Rhombicosidodecahedron",
+      "path": "solids/uniform/rhombicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 62
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "deltoidal-hexecontahedron",
+      "ids": {
+        "uniform": "U27",
+        "wenninger": "W14",
+        "netlib": 19,
+        "bowers": "srid"
+      }
+    },
+    {
+      "slug": "rhombicuboctahedron",
+      "name": "Rhombicuboctahedron",
+      "path": "solids/uniform/rhombicuboctahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 48,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "deltoidal-icositetrahedron",
+      "ids": {
+        "uniform": "U10",
+        "wenninger": "W13",
+        "netlib": 13,
+        "bowers": "sirco"
+      }
+    },
+    {
+      "slug": "rhombidodecadodecahedron",
+      "name": "Rhombidodecadodecahedron",
+      "path": "solids/uniform/rhombidodecadodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 54
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 3,
+      "dual": "medial-deltoidal-hexecontahedron",
+      "ids": {
+        "uniform": "U38",
+        "wenninger": "W76"
+      }
+    },
+    {
+      "slug": "small-cubicuboctahedron",
+      "name": "Small Cubicuboctahedron",
+      "path": "solids/uniform/small-cubicuboctahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 48,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": 2,
+      "dual": "small-hexacronic-icositetrahedron",
+      "ids": {
+        "uniform": "U13",
+        "wenninger": "W69"
+      }
+    },
+    {
+      "slug": "small-ditrigonal-dodecacronic-hexecontahedron",
+      "name": "Small ditrigonal dodecacronic hexecontahedron",
+      "path": "solids/uniform-dual/small-ditrigonal-dodecacronic-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 44,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-ditrigonal-dodecicosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "small-ditrigonal-dodecicosidodecahedron",
+      "name": "Small Ditrigonal Dodecicosidodecahedron",
+      "path": "solids/uniform/small-ditrigonal-dodecicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 44
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 4,
+      "dual": "small-ditrigonal-dodecacronic-hexecontahedron",
+      "ids": {
+        "uniform": "U43",
+        "wenninger": "W82"
+      }
+    },
+    {
+      "slug": "small-ditrigonal-icosidodecahedron",
+      "name": "Small Ditrigonal Icosidodecahedron",
+      "path": "solids/uniform/small-ditrigonal-icosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 60,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 2,
+      "dual": "small-triambic-icosahedron",
+      "ids": {
+        "uniform": "U30",
+        "wenninger": "W70"
+      }
+    },
+    {
+      "slug": "small-dodecacronic-hexecontahedron",
+      "name": "Small dodecacronic hexecontahedron",
+      "path": "solids/uniform-dual/small-dodecacronic-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 44,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-dodecicosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "small-dodecahemicosahedron",
+      "name": "Small Dodecahemicosahedron",
+      "path": "solids/uniform/small-dodecahemicosahedron.json",
+      "families": [
+        "uniform",
+        "star",
+        "hemipolyhedron"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 22
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-dodecahemicosacron",
+      "ids": {
+        "uniform": "U62",
+        "wenninger": "W100"
+      }
+    },
+    {
+      "slug": "small-dodecahemidodecahedron",
+      "name": "Small Dodecahemidodecahedron",
+      "path": "solids/uniform/small-dodecahemidodecahedron.json",
+      "families": [
+        "uniform",
+        "star",
+        "hemipolyhedron"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-dodecahemidodecacron",
+      "ids": {
+        "uniform": "U51",
+        "wenninger": "W91"
+      }
+    },
+    {
+      "slug": "small-dodecicosacron",
+      "name": "Small dodecicosacron",
+      "path": "solids/uniform-dual/small-dodecicosacron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-dodecicosahedron",
+      "ids": {}
+    },
+    {
+      "slug": "small-dodecicosahedron",
+      "name": "Small Dodecicosahedron",
+      "path": "solids/uniform/small-dodecicosahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-dodecicosacron",
+      "ids": {
+        "uniform": "U50",
+        "wenninger": "W90"
+      }
+    },
+    {
+      "slug": "small-dodecicosidodecahedron",
+      "name": "Small Dodecicosidodecahedron",
+      "path": "solids/uniform/small-dodecicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 44
+      },
+      "symmetry": {
+        "schoenflies": "C298156827v",
+        "orbifold": "*298156827298156827",
+        "order": 120
+      },
+      "convex": false,
+      "density": 2,
+      "dual": "small-dodecacronic-hexecontahedron",
+      "ids": {
+        "uniform": "U33",
+        "wenninger": "W72"
+      }
+    },
+    {
+      "slug": "small-hexacronic-icositetrahedron",
+      "name": "Small hexacronic icositetrahedron",
+      "path": "solids/uniform-dual/small-hexacronic-icositetrahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 48,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-cubicuboctahedron",
+      "ids": {}
+    },
+    {
+      "slug": "small-hexagonal-hexecontahedron",
+      "name": "Small hexagonal hexecontahedron",
+      "path": "solids/uniform-dual/small-hexagonal-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 112,
+        "edges": 180,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-snub-icosicosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "small-hexagrammic-hexecontahedron",
+      "name": "Small hexagrammic hexecontahedron",
+      "path": "solids/uniform-dual/small-hexagrammic-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 112,
+        "edges": 180,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-retrosnub-icosicosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "small-icosacronic-hexecontahedron",
+      "name": "Small icosacronic hexecontahedron",
+      "path": "solids/uniform-dual/small-icosacronic-hexecontahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 52,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-icosicosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "small-icosicosidodecahedron",
+      "name": "Small Icosicosidodecahedron",
+      "path": "solids/uniform/small-icosicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 52
+      },
+      "symmetry": {
+        "schoenflies": "C298156827h",
+        "orbifold": "298156827*",
+        "order": 120
+      },
+      "convex": false,
+      "density": 2,
+      "dual": "small-icosacronic-hexecontahedron",
+      "ids": {
+        "uniform": "U31",
+        "wenninger": "W71"
+      }
+    },
+    {
+      "slug": "small-icosihemidodecahedron",
+      "name": "Small Icosihemidodecahedron",
+      "path": "solids/uniform/small-icosihemidodecahedron.json",
+      "families": [
+        "uniform",
+        "star",
+        "hemipolyhedron"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-icosihemidodecacron",
+      "ids": {
+        "uniform": "U49",
+        "wenninger": "W89"
+      }
+    },
+    {
+      "slug": "small-retrosnub-icosicosidodecahedron",
+      "name": "Small Retrosnub Icosicosidodecahedron",
+      "path": "solids/uniform/small-retrosnub-icosicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 180,
+        "faces": 112
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 38,
+      "dual": "small-hexagrammic-hexecontahedron",
+      "ids": {
+        "uniform": "U72",
+        "wenninger": "W118"
+      }
+    },
+    {
+      "slug": "small-rhombidodecacron",
+      "name": "Small rhombidodecacron",
+      "path": "solids/uniform-dual/small-rhombidodecacron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 42,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-rhombidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "small-rhombidodecahedron",
+      "name": "Small Rhombidodecahedron",
+      "path": "solids/uniform/small-rhombidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 42
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-rhombidodecacron",
+      "ids": {
+        "uniform": "U39",
+        "wenninger": "W74"
+      }
+    },
+    {
+      "slug": "small-rhombihexacron",
+      "name": "Small rhombihexacron",
+      "path": "solids/uniform-dual/small-rhombihexacron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 48,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-rhombihexahedron",
+      "ids": {}
+    },
+    {
+      "slug": "small-rhombihexahedron",
+      "name": "Small Rhombihexahedron",
+      "path": "solids/uniform/small-rhombihexahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 48,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-rhombihexacron",
+      "ids": {
+        "uniform": "U18",
+        "wenninger": "W86"
+      }
+    },
+    {
+      "slug": "small-snub-icosicosidodecahedron",
+      "name": "Small Snub Icosicosidodecahedron",
+      "path": "solids/uniform/small-snub-icosicosidodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 180,
+        "faces": 112
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 2,
+      "dual": "small-hexagonal-hexecontahedron",
+      "ids": {
+        "uniform": "U32",
+        "wenninger": "W110"
+      }
+    },
+    {
+      "slug": "small-stellapentakisdodecahedron",
+      "name": "Small stellapentakisdodecahedron",
+      "path": "solids/uniform-dual/small-stellapentakisdodecahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 90,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "truncated-great-dodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "small-stellated-dodecahedron",
+      "name": "Small Stellated Dodecahedron",
+      "path": "solids/uniform/small-stellated-dodecahedron.json",
+      "families": [
+        "uniform",
+        "kepler-poinsot",
+        "regular",
+        "star",
+        "stellation"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 30,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 3,
+      "dual": "great-dodecahedron",
+      "ids": {
+        "uniform": "U34",
+        "wenninger": "W20",
+        "netlib": 5,
+        "bowers": "sissid"
+      }
+    },
+    {
+      "slug": "small-stellated-truncated-dodecahedron",
+      "name": "Small Stellated Truncated Dodecahedron",
+      "path": "solids/uniform/small-stellated-truncated-dodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 90,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 9,
+      "dual": "great-pentakisdodekahedron",
+      "ids": {
+        "uniform": "U58",
+        "wenninger": "W97"
+      }
+    },
+    {
+      "slug": "small-triambic-icosahedron",
+      "name": "Small triambic icosahedron",
+      "path": "solids/uniform-dual/small-triambic-icosahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 60,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "small-ditrigonal-icosidodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "snub-cube",
+      "name": "Snub Cube",
+      "path": "solids/uniform/snub-cube.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 60,
+        "faces": 38
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "pentagonal-icositetrahedron",
+      "ids": {
+        "uniform": "U12",
+        "wenninger": "W17",
+        "bowers": "snic"
+      }
+    },
+    {
+      "slug": "snub-disphenoid",
+      "name": "Snub Disphenoid",
+      "path": "solids/johnson/snub-disphenoid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 18,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "D2d",
+        "orbifold": "2*2",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J84"
+      }
+    },
+    {
+      "slug": "snub-dodecadodecahedron",
+      "name": "Snub Dodecadodecahedron",
+      "path": "solids/uniform/snub-dodecadodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 84
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": 3,
+      "dual": "medial-pentagonal-hexecontahedron",
+      "ids": {
+        "uniform": "U40",
+        "wenninger": "W111"
+      }
+    },
+    {
+      "slug": "snub-dodecahedron",
+      "name": "Snub Dodecahedron",
+      "path": "solids/uniform/snub-dodecahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean",
+        "chiral"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 92
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "pentagonal-hexecontahedron",
+      "ids": {
+        "uniform": "U29",
+        "wenninger": "W18",
+        "bowers": "snid"
+      }
+    },
+    {
+      "slug": "snub-icosidodecadodecahedron",
+      "name": "Snub Icosidodecadodecahedron",
+      "path": "solids/uniform/snub-icosidodecadodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 180,
+        "faces": 104
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": 4,
+      "dual": "medial-hexagonal-hexecontahedron",
+      "ids": {
+        "uniform": "U46",
+        "wenninger": "W112"
+      }
+    },
+    {
+      "slug": "snub-square-antiprism",
+      "name": "Snub Square Antiprism",
+      "path": "solids/johnson/snub-square-antiprism.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 40,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "D4d",
+        "orbifold": "2*4",
+        "order": 16
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J85"
+      }
+    },
+    {
+      "slug": "sphenocorona",
+      "name": "Sphenocorona",
+      "path": "solids/johnson/sphenocorona.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 22,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J86"
+      }
+    },
+    {
+      "slug": "sphenomegacorona",
+      "name": "Sphenomegacorona",
+      "path": "solids/johnson/sphenomegacorona.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 28,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "C2v",
+        "orbifold": "*22",
+        "order": 4
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J88"
+      }
+    },
+    {
+      "slug": "square-antiprism",
+      "name": "Square Antiprism",
+      "path": "solids/prism-family/square-antiprism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "antiprism",
+        "chiral-family"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 16,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "D4d",
+        "orbifold": "2*4",
+        "order": 16
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "square-trapezohedron",
+      "ids": {}
+    },
+    {
+      "slug": "square-cupola",
+      "name": "Square Cupola",
+      "path": "solids/johnson/square-cupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 20,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "C4v",
+        "orbifold": "*44",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J4"
+      }
+    },
+    {
+      "slug": "square-gyrobicupola",
+      "name": "Square Gyrobicupola",
+      "path": "solids/johnson/square-gyrobicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 32,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "D4d",
+        "orbifold": "2*4",
+        "order": 16
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J29"
+      }
+    },
+    {
+      "slug": "square-orthobicupola",
+      "name": "Square Orthobicupola",
+      "path": "solids/johnson/square-orthobicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 32,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "D4h",
+        "orbifold": "*224",
+        "order": 16
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J28"
+      }
+    },
+    {
+      "slug": "square-pyramid",
+      "name": "Square Pyramid",
+      "path": "solids/johnson/square-pyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 5,
+        "edges": 8,
+        "faces": 5
+      },
+      "symmetry": {
+        "schoenflies": "C4v",
+        "orbifold": "*44",
+        "order": 8
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J1"
+      }
+    },
+    {
+      "slug": "square-trapezohedron",
+      "name": "Square Trapezohedron",
+      "path": "solids/prism-family/square-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 16,
+        "faces": 8
+      },
+      "symmetry": {
+        "schoenflies": "D4d",
+        "orbifold": "2*4",
+        "order": 16
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "square-antiprism",
+      "ids": {}
+    },
+    {
+      "slug": "stellated-truncated-hexahedron",
+      "name": "Stellated Truncated Hexahedron",
+      "path": "solids/uniform/stellated-truncated-hexahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 36,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": 7,
+      "dual": "great-triakisoctahedron",
+      "ids": {
+        "uniform": "U19",
+        "wenninger": "W92"
+      }
+    },
+    {
+      "slug": "szilassi-polyhedron",
+      "name": "Szilassi Polyhedron",
+      "path": "solids/toroid/szilassi-polyhedron.json",
+      "families": [
+        "toroid",
+        "genus-1"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 21,
+        "faces": 7
+      },
+      "symmetry": {
+        "schoenflies": "C2",
+        "orbifold": "22",
+        "order": 2
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "tetradyakishexahedron",
+      "name": "Tetradyakishexahedron",
+      "path": "solids/uniform-dual/tetradyakishexahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 72,
+        "faces": 48
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "cubitruncated-cuboctahedron",
+      "ids": {}
+    },
+    {
+      "slug": "tetrahedron",
+      "name": "Tetrahedron",
+      "path": "solids/uniform/tetrahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "platonic",
+        "regular",
+        "deltahedron"
+      ],
+      "counts": {
+        "vertices": 4,
+        "edges": 6,
+        "faces": 4
+      },
+      "symmetry": {
+        "schoenflies": "Td",
+        "orbifold": "*332",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "tetrahedron",
+      "ids": {
+        "uniform": "U1",
+        "wenninger": "W1",
+        "netlib": 0,
+        "bowers": "tet"
+      }
+    },
+    {
+      "slug": "tetrahemihexahedron",
+      "name": "Tetrahemihexahedron",
+      "path": "solids/uniform/tetrahemihexahedron.json",
+      "families": [
+        "uniform",
+        "star",
+        "hemipolyhedron"
+      ],
+      "counts": {
+        "vertices": 6,
+        "edges": 12,
+        "faces": 7
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": "tetrahemihexacron",
+      "ids": {
+        "uniform": "U4",
+        "wenninger": "W67"
+      }
+    },
+    {
+      "slug": "tetrakishexahedron",
+      "name": "Tetrakishexahedron",
+      "path": "solids/uniform-dual/tetrakishexahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 36,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": null,
+      "dual": "truncated-octahedron",
+      "ids": {}
+    },
+    {
+      "slug": "triakisicosahedron",
+      "name": "Triakisicosahedron",
+      "path": "solids/uniform-dual/triakisicosahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 90,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": null,
+      "dual": "truncated-dodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "triakisoctahedron",
+      "name": "Triakisoctahedron",
+      "path": "solids/uniform-dual/triakisoctahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 36,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": null,
+      "dual": "truncated-cube",
+      "ids": {}
+    },
+    {
+      "slug": "triakistetrahedron",
+      "name": "Triakistetrahedron",
+      "path": "solids/uniform-dual/triakistetrahedron.json",
+      "families": [
+        "uniform-dual",
+        "catalan",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 18,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "Td",
+        "orbifold": "*332",
+        "order": 24
+      },
+      "convex": true,
+      "density": null,
+      "dual": "truncated-tetrahedron",
+      "ids": {}
+    },
+    {
+      "slug": "triangular-bipyramid",
+      "name": "Triangular Bipyramid",
+      "path": "solids/johnson/triangular-bipyramid.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 5,
+        "edges": 9,
+        "faces": 6
+      },
+      "symmetry": {
+        "schoenflies": "D3h",
+        "orbifold": "*223",
+        "order": 12
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J12"
+      }
+    },
+    {
+      "slug": "triangular-cupola",
+      "name": "Triangular Cupola",
+      "path": "solids/johnson/triangular-cupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 9,
+        "edges": 15,
+        "faces": 8
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J3"
+      }
+    },
+    {
+      "slug": "triangular-dipyramid",
+      "name": "Triangular Dipyramid",
+      "path": "solids/prism-family/triangular-dipyramid.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "dipyramid"
+      ],
+      "counts": {
+        "vertices": 5,
+        "edges": 9,
+        "faces": 6
+      },
+      "symmetry": {
+        "schoenflies": "D3h",
+        "orbifold": "*223",
+        "order": 12
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "triangular-prism",
+      "ids": {}
+    },
+    {
+      "slug": "triangular-hebesphenorotunda",
+      "name": "Triangular Hebesphenorotunda",
+      "path": "solids/johnson/triangular-hebesphenorotunda.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 36,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J92"
+      }
+    },
+    {
+      "slug": "triangular-orthobicupola",
+      "name": "Triangular Orthobicupola",
+      "path": "solids/johnson/triangular-orthobicupola.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 24,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "D3h",
+        "orbifold": "*223",
+        "order": 12
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J27"
+      }
+    },
+    {
+      "slug": "triangular-prism",
+      "name": "Triangular Prism",
+      "path": "solids/prism-family/triangular-prism.json",
+      "families": [
+        "prism-family",
+        "convex",
+        "prism"
+      ],
+      "counts": {
+        "vertices": 6,
+        "edges": 9,
+        "faces": 5
+      },
+      "symmetry": {
+        "schoenflies": "D3h",
+        "orbifold": "*223",
+        "order": 12
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "triangular-dipyramid",
+      "ids": {}
+    },
+    {
+      "slug": "triaugmented-dodecahedron",
+      "name": "Triaugmented Dodecahedron",
+      "path": "solids/johnson/triaugmented-dodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 23,
+        "edges": 45,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J61"
+      }
+    },
+    {
+      "slug": "triaugmented-hexagonal-prism",
+      "name": "Triaugmented Hexagonal Prism",
+      "path": "solids/johnson/triaugmented-hexagonal-prism.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 15,
+        "edges": 30,
+        "faces": 17
+      },
+      "symmetry": {
+        "schoenflies": "D3h",
+        "orbifold": "*223",
+        "order": 12
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J57"
+      }
+    },
+    {
+      "slug": "triaugmented-triangular-prism",
+      "name": "Triaugmented Triangular Prism",
+      "path": "solids/johnson/triaugmented-triangular-prism.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 9,
+        "edges": 21,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "D3h",
+        "orbifold": "*223",
+        "order": 12
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J51"
+      }
+    },
+    {
+      "slug": "triaugmented-truncated-dodecahedron",
+      "name": "Triaugmented Truncated Dodecahedron",
+      "path": "solids/johnson/triaugmented-truncated-dodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 75,
+        "edges": 135,
+        "faces": 62
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J71"
+      }
+    },
+    {
+      "slug": "tridiminished-icosahedron",
+      "name": "Tridiminished Icosahedron",
+      "path": "solids/johnson/tridiminished-icosahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 9,
+        "edges": 15,
+        "faces": 8
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J63"
+      }
+    },
+    {
+      "slug": "tridiminished-rhombicosidodecahedron",
+      "name": "Tridiminished Rhombicosidodecahedron",
+      "path": "solids/johnson/tridiminished-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 45,
+        "edges": 75,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J83"
+      }
+    },
+    {
+      "slug": "tridyakisicosahedron",
+      "name": "Tridyakisicosahedron",
+      "path": "solids/uniform-dual/tridyakisicosahedron.json",
+      "families": [
+        "uniform-dual",
+        "star"
+      ],
+      "counts": {
+        "vertices": 44,
+        "edges": 180,
+        "faces": 120
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": "icositruncated-dodecadodecahedron",
+      "ids": {}
+    },
+    {
+      "slug": "trigyrate-rhombicosidodecahedron",
+      "name": "Trigyrate Rhombicosidodecahedron",
+      "path": "solids/johnson/trigyrate-rhombicosidodecahedron.json",
+      "families": [
+        "johnson",
+        "convex"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 62
+      },
+      "symmetry": {
+        "schoenflies": "C3v",
+        "orbifold": "*33",
+        "order": 6
+      },
+      "convex": true,
+      "density": 1,
+      "dual": null,
+      "ids": {
+        "johnson": "J75"
+      }
+    },
+    {
+      "slug": "truncated-cube",
+      "name": "Truncated Cube",
+      "path": "solids/uniform/truncated-cube.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 36,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "triakisoctahedron",
+      "ids": {
+        "uniform": "U9",
+        "wenninger": "W8",
+        "netlib": 11,
+        "bowers": "tic"
+      }
+    },
+    {
+      "slug": "truncated-cuboctahedron",
+      "name": "Truncated Cuboctahedron",
+      "path": "solids/uniform/truncated-cuboctahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean",
+        "zonohedron"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 72,
+        "faces": 26
+      },
+      "symmetry": {
+        "schoenflies": "C298156827h",
+        "orbifold": "298156827*",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "disdyakisdodecahedron",
+      "ids": {
+        "uniform": "U11",
+        "wenninger": "W15",
+        "bowers": "girco"
+      }
+    },
+    {
+      "slug": "truncated-dodecadodecahedron",
+      "name": "Truncated Dodecadodecahedron",
+      "path": "solids/uniform/truncated-dodecadodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 54
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 3,
+      "dual": "medial-disdyakistriacontahedron",
+      "ids": {
+        "uniform": "U59",
+        "wenninger": "W98"
+      }
+    },
+    {
+      "slug": "truncated-dodecahedron",
+      "name": "Truncated Dodecahedron",
+      "path": "solids/uniform/truncated-dodecahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 90,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "triakisicosahedron",
+      "ids": {
+        "uniform": "U26",
+        "wenninger": "W10",
+        "netlib": 17,
+        "bowers": "tid"
+      }
+    },
+    {
+      "slug": "truncated-great-dodecahedron",
+      "name": "Truncated Great Dodecahedron",
+      "path": "solids/uniform/truncated-great-dodecahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 90,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 3,
+      "dual": "small-stellapentakisdodecahedron",
+      "ids": {
+        "uniform": "U37",
+        "wenninger": "W75"
+      }
+    },
+    {
+      "slug": "truncated-great-icosahedron",
+      "name": "Truncated Great Icosahedron",
+      "path": "solids/uniform/truncated-great-icosahedron.json",
+      "families": [
+        "uniform",
+        "star"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 90,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": 7,
+      "dual": "great-stellapentakisdodecahedron",
+      "ids": {
+        "uniform": "U55",
+        "wenninger": "W95"
+      }
+    },
+    {
+      "slug": "truncated-icosahedron",
+      "name": "Truncated Icosahedron",
+      "path": "solids/uniform/truncated-icosahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean",
+        "goldberg",
+        "fullerene"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 90,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "pentakisdodecahedron",
+      "ids": {
+        "uniform": "U25",
+        "wenninger": "W9",
+        "netlib": 18,
+        "bowers": "ti"
+      }
+    },
+    {
+      "slug": "truncated-icosidodecahedron",
+      "name": "Truncated Icosidodecahedron",
+      "path": "solids/uniform/truncated-icosidodecahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean",
+        "zonohedron"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 62
+      },
+      "symmetry": {
+        "schoenflies": "C210828714v",
+        "orbifold": "*210828714210828714",
+        "order": 120
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "disdyakistriacontahedron",
+      "ids": {
+        "uniform": "U28",
+        "wenninger": "W16",
+        "bowers": "grid"
+      }
+    },
+    {
+      "slug": "truncated-octahedron",
+      "name": "Truncated Octahedron",
+      "path": "solids/uniform/truncated-octahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean",
+        "zonohedron",
+        "space-filling",
+        "permutohedron"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 36,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "tetrakishexahedron",
+      "ids": {
+        "uniform": "U8",
+        "wenninger": "W7",
+        "netlib": 12,
+        "bowers": "toe"
+      }
+    },
+    {
+      "slug": "truncated-tetrahedron",
+      "name": "Truncated Tetrahedron",
+      "path": "solids/uniform/truncated-tetrahedron.json",
+      "families": [
+        "uniform",
+        "convex",
+        "archimedean"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 18,
+        "faces": 8
+      },
+      "symmetry": {
+        "schoenflies": "Td",
+        "orbifold": "*332",
+        "order": 24
+      },
+      "convex": true,
+      "density": 1,
+      "dual": "triakistetrahedron",
+      "ids": {
+        "uniform": "U2",
+        "wenninger": "W6",
+        "netlib": 9,
+        "bowers": "tut"
+      }
+    }
+  ]
+}

@@ -1,0 +1,1261 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/dwkrider/Math-Art/data/polyhedra/schema/polyhedron.schema.json",
+  "title": "Polyhedron record",
+  "description": "One polyhedron: identity, cross-references, notation, symmetry, combinatorics, metrics and geometry. Every numeric measure is stored as a measure object carrying both an exact closed form and its floating-point value.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "slug",
+    "name",
+    "families",
+    "ids",
+    "notation",
+    "symmetry",
+    "combinatorics",
+    "metrics",
+    "geometry",
+    "provenance"
+  ],
+  "additionalProperties": false,
+  "$defs": {
+    "measure": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "A scalar with an exact closed form. `exact` uses a small fixed language: integers, + - * / and unary minus, parentheses, sqrt(), acos(), asin(), atan(), sin(), cos(), tan(), and the constants pi and phi. It must evaluate to `value`; tools/polydb_validate.py enforces that.",
+      "required": [
+        "value"
+      ],
+      "properties": {
+        "exact": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "note": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "description": "Where the exact form came from: 'classical' (a published construction), 'mccooey' (confirmed against McCooey's published closed form), or 'pslq' (recovered by integer-relation detection from our own derived coordinates and verified by re-evaluation). Recorded per value so a reader can weigh each one."
+        }
+      },
+      "additionalProperties": false
+    },
+    "slugref": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Slug of another record. May name a polyhedron not yet in the database; the validator only checks reciprocity when the target exists."
+    }
+  },
+  "properties": {
+    "schema_version": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string",
+      "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$",
+      "description": "Globally unique key across the whole database, regardless of which family folder the file sits in."
+    },
+    "name": {
+      "type": "string",
+      "description": "Preferred English name."
+    },
+    "alternate_names": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "families": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      },
+      "description": "Classification tags; keys of index.json's `families` map. A solid may belong to several (the cube is platonic, uniform, zonohedron and space-filling)."
+    },
+    "ids": {
+      "type": "object",
+      "description": "Cross-references into the standard enumerations and the databases surveyed. Null where the solid is not in that enumeration.",
+      "properties": {
+        "wenninger": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Wenninger, Polyhedron Models / Dual Models, e.g. 'W9'."
+        },
+        "uniform": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Uniform polyhedron number U1-U75 (Maeder/Kaleido ordering)."
+        },
+        "johnson": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Johnson solid number J1-J92."
+        },
+        "netlib": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Index in the netlib polyhedra database (0-141)."
+        },
+        "coxeter_clm": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Figure number in Coxeter, Longuet-Higgins & Miller (1954)."
+        },
+        "bowers": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Official Bowers-style acronym, e.g. 'sissid'."
+        },
+        "wikipedia": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "English Wikipedia page title."
+        },
+        "wolfram": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Wolfram PolyhedronData entity name."
+        },
+        "mccooey": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Page stem at dmccooey.com/polyhedra/."
+        }
+      },
+      "additionalProperties": {
+        "type": [
+          "string",
+          "integer",
+          "null"
+        ]
+      }
+    },
+    "notation": {
+      "type": "object",
+      "description": "The symbolic descriptions. These are the compact identities the netlib records carry only partially.",
+      "properties": {
+        "schlafli": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Schlafli symbol, e.g. '{4,3}', 't{3,5}', '{5/2,5}'."
+        },
+        "wythoff": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Wythoff symbol, e.g. '2 5 | 3'. Bar-first marks a snub."
+        },
+        "coxeter_diagram": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Linear Coxeter-Dynkin diagram in x/o ringed notation, e.g. 'o5x3x'."
+        },
+        "conway": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Conway polyhedron notation, e.g. 'tI'."
+        },
+        "vertex_configuration": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "One entry per vertex orbit, e.g. ['5.6.6']. Star faces use fractions, e.g. '(5/2)^5'."
+        },
+        "face_configuration": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "description": "Dual of vertex_configuration; used for face-transitive solids (Catalans), e.g. 'V3.10.10'."
+        }
+      },
+      "additionalProperties": false
+    },
+    "symmetry": {
+      "type": "object",
+      "description": "The point group, in every notation the local sources use. Cromwell (1997) Appendix I is the concordance between these columns.",
+      "required": [
+        "schoenflies",
+        "orbifold",
+        "order"
+      ],
+      "properties": {
+        "schoenflies": {
+          "type": "string",
+          "description": "Schoenflies symbol, e.g. 'Ih', 'Oh', 'D5d'."
+        },
+        "orbifold": {
+          "type": "string",
+          "description": "Conway-Thurston orbifold signature, e.g. '*532', '532', '2*3'."
+        },
+        "coxeter": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Coxeter bracket notation, e.g. '[5,3]', '[3,4]+'."
+        },
+        "hermann_mauguin": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Crystallographic (international) symbol, e.g. 'm-3m'."
+        },
+        "order": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Order of the full symmetry group."
+        },
+        "rotation_group": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Schoenflies symbol of the rotation subgroup."
+        },
+        "rotation_order": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "chiral": {
+          "type": "boolean",
+          "description": "True when the group contains no reflections, so the solid comes in two enantiomorphs."
+        },
+        "transitivity": {
+          "type": "object",
+          "description": "Isogonal / isotoxal / isohedral. All three true and faces regular means regular.",
+          "properties": {
+            "vertex": {
+              "type": "boolean"
+            },
+            "edge": {
+              "type": "boolean"
+            },
+            "face": {
+              "type": "boolean"
+            }
+          },
+          "additionalProperties": false
+        },
+        "orbits": {
+          "type": "object",
+          "description": "Number of symmetry orbits of each element type.",
+          "properties": {
+            "vertices": {
+              "type": "integer"
+            },
+            "edges": {
+              "type": "integer"
+            },
+            "faces": {
+              "type": "integer"
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "combinatorics": {
+      "type": "object",
+      "required": [
+        "counts",
+        "euler_characteristic",
+        "convex",
+        "dual"
+      ],
+      "properties": {
+        "counts": {
+          "type": "object",
+          "required": [
+            "vertices",
+            "edges",
+            "faces"
+          ],
+          "properties": {
+            "vertices": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "edges": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "faces": {
+              "type": "integer",
+              "minimum": 1
+            }
+          },
+          "additionalProperties": false
+        },
+        "faces_by_type": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "schlafli",
+              "sides",
+              "count"
+            ],
+            "properties": {
+              "schlafli": {
+                "type": "string",
+                "description": "e.g. '{6}' or '{5/2}'."
+              },
+              "sides": {
+                "type": "integer",
+                "minimum": 3
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "regular": {
+                "type": "boolean"
+              },
+              "star_density": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Denominator d of a {n/d} star face."
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "vertex_types": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "configuration",
+              "count"
+            ],
+            "properties": {
+              "configuration": {
+                "type": "string"
+              },
+              "count": {
+                "type": "integer",
+                "minimum": 1
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "euler_characteristic": {
+          "type": "integer",
+          "description": "V - E + F. Negative for star polyhedra and toroids."
+        },
+        "orientable": {
+          "type": "boolean"
+        },
+        "genus": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Orientable genus; chi = 2 - 2g. Null when non-orientable."
+        },
+        "density": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Covering density. 1 for convex solids; null when undefined (hemipolyhedra, whose faces pass through the centre)."
+        },
+        "convex": {
+          "type": "boolean"
+        },
+        "self_dual": {
+          "type": "boolean"
+        },
+        "dual": {
+          "$ref": "#/$defs/slugref"
+        },
+        "chiral_partner": {
+          "$ref": "#/$defs/slugref",
+          "description": "The opposite enantiomorph, for chiral solids."
+        },
+        "vertex_density": {
+          "type": [
+            "integer",
+            "array",
+            "null"
+          ],
+          "description": "Har'El's d: how many times the vertex figure winds about its vertex. 1 for every convex solid, so it discriminates only among the star uniforms -- where d = 0 marks exactly those that cannot be built by the Wythoff construction directly. An integer when every vertex agrees, otherwise one entry per vertex orbit. Distinct from combinatorics.density, which is the covering density of the whole solid. Reference: Har'El (1993), section 3.",
+          "items": {
+            "type": [
+              "integer",
+              "null"
+            ]
+          }
+        },
+        "convex_hull": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "description": "The convex hull of the vertex set. `is_self` is true for a convex solid. For a star solid the hull is the organising key of the classical catalogues -- Wenninger embeds each dual's faces in the stellation pattern of the dual of its convex hull.",
+          "additionalProperties": false,
+          "properties": {
+            "is_self": {
+              "type": "boolean"
+            },
+            "slug": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Matched against this database when the hull is a solid it contains."
+            },
+            "counts": {
+              "type": [
+                "object",
+                "null"
+              ],
+              "additionalProperties": false,
+              "properties": {
+                "vertices": {
+                  "type": "integer"
+                },
+                "edges": {
+                  "type": "integer"
+                },
+                "faces": {
+                  "type": "integer"
+                }
+              }
+            }
+          }
+        },
+        "dual_unbounded": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "True when the polar dual has vertices at infinity, because some face's plane passes through the centre. This is exactly the hemipolyhedron condition, so it is COMPUTED, not curated. Where it is true, `dual` names a figure that is not a bounded polyhedron and this database stores no record for it."
+        }
+      },
+      "additionalProperties": false
+    },
+    "metrics": {
+      "type": "object",
+      "required": [
+        "normalization"
+      ],
+      "properties": {
+        "normalization": {
+          "enum": [
+            "edge_length_1",
+            "midradius_1",
+            "circumradius_1",
+            "inradius_1",
+            "volume_1"
+          ],
+          "description": "The scale the stored coordinates are in. edge_length_1 for solids with equal edges; midradius_1 otherwise, because it makes a dual pair exactly reciprocal in the unit sphere."
+        },
+        "edge_length": {
+          "$ref": "#/$defs/measure"
+        },
+        "edge_lengths_uniform": {
+          "type": "boolean"
+        },
+        "edge_lengths": {
+          "type": "array",
+          "description": "Per edge-orbit lengths, for solids whose edges are not all equal (Catalans, canonical forms).",
+          "items": {
+            "$ref": "#/$defs/measure"
+          }
+        },
+        "circumradius": {
+          "$ref": "#/$defs/measure",
+          "description": "Centre to vertex. Null when the vertices are not cospherical."
+        },
+        "midradius": {
+          "$ref": "#/$defs/measure",
+          "description": "Centre to edge midpoint (the midsphere). Null when edge midpoints are not cospherical."
+        },
+        "inradius": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Centre to face plane, one entry per face type. A measure object with a `face` tag naming which type it belongs to.",
+          "items": {
+            "type": "object",
+            "required": [
+              "face",
+              "value"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "face": {
+                "type": "string",
+                "description": "Face type, e.g. '{6}'."
+              },
+              "exact": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "value": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "surface_area": {
+          "$ref": "#/$defs/measure"
+        },
+        "volume": {
+          "$ref": "#/$defs/measure"
+        },
+        "isoperimetric_quotient": {
+          "$ref": "#/$defs/measure",
+          "description": "36*pi*V^2/A^3; 1 for the sphere. A single sphericity number that sorts the whole database."
+        },
+        "measures_note": {
+          "type": "string",
+          "description": "Required when area or volume is null: says why, e.g. self-intersecting faces make them convention-dependent."
+        },
+        "dihedral_angles": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "between"
+            ],
+            "properties": {
+              "between": {
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "string"
+                }
+              },
+              "exact": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "degrees": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "radians": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              }
+            },
+            "additionalProperties": false
+          }
+        },
+        "angular_defect": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "2*pi minus the face angles meeting at a vertex, one entry per vertex symmetry orbit. Per-orbit deliberately: by Descartes' theorem the TOTAL defect is 4*pi for every genus-0 solid, so a total would carry nothing the Euler characteristic does not. Signed, and may be negative or zero at a star vertex.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "vertex_orbit",
+              "degrees"
+            ],
+            "properties": {
+              "vertex_orbit": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "degrees": {
+                "type": "number"
+              },
+              "radians": {
+                "type": "number"
+              },
+              "exact": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "source": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "solid_angle": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Solid angle subtended at a vertex, in steradians, one entry per vertex symmetry orbit, computed by fan-triangulating the vertex figure (Van Oosterom & Strackee, 1983). Signed. Null for a vertex whose link is not a single cycle, and convention-dependent where the vertex figure winds more than once -- see combinatorics.vertex_density.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "vertex_orbit"
+            ],
+            "properties": {
+              "vertex_orbit": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "steradians": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "biscribed": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "description": "A solid is BISCRIBED when all its vertices lie on a circumsphere AND all its face planes are tangent to a CONCENTRIC insphere. Computed: it holds exactly when `circumradius` is non-null and a single inradius serves every face type. Among the uniform polyhedra this picks out precisely the nine regular solids, since differing face types sit at differing distances. The ratio r/R is the shape parameter the literature quotes. `has_biscribed_form` records whether a biscribed variant of the same combinatorial type EXISTS -- a negative here is a real theorem, not a gap: the rectified solids (cuboctahedron, icosidodecahedron) have no free parameter and two unequal face-orbit distances, so no biscribed form exists at all.",
+          "properties": {
+            "is_biscribed": {
+              "type": "boolean"
+            },
+            "circumradius": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "inradius": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "ratio": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "description": "r/R."
+            },
+            "has_biscribed_form": {
+              "type": [
+                "boolean",
+                "null"
+              ]
+            },
+            "biscribed_form": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Slug of the biscribed variant of this combinatorial type, when this record is not itself biscribed."
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "geometry": {
+      "type": "object",
+      "required": [
+        "vertices",
+        "faces"
+      ],
+      "properties": {
+        "length_unit": {
+          "type": "string",
+          "description": "What 1.0 means, matching `metrics.normalization`."
+        },
+        "centroid": {
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
+        },
+        "orientation": {
+          "type": "string",
+          "description": "Which symmetry axes lie along the coordinate axes. Fixing this is what makes two records comparable and compounds constructible."
+        },
+        "constants": {
+          "type": "object",
+          "description": "Optional named constants, in McCooey's style, for records where naming the repeated radicals makes the vertex table readable.",
+          "additionalProperties": {
+            "$ref": "#/$defs/measure"
+          }
+        },
+        "vertices": {
+          "type": "array",
+          "minItems": 4,
+          "items": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "number"
+            }
+          }
+        },
+        "faces": {
+          "type": "array",
+          "minItems": 4,
+          "description": "Vertex indices in winding order. Star faces are stored as their TRUE winding cycle (a {5/2} is a 5-cycle in step-2 order), never as a convex outline. Windings must be coherent: each edge is traversed once in each direction.",
+          "items": {
+            "type": "array",
+            "minItems": 3,
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "vertices_exact": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Exact vertex coordinates, parallel to `vertices` and in the same order. Each entry is three expression strings in the exact language, which may additionally reference a name defined in `constants` (McCooey's convention: name the awkward radicals once, then write the table against them). The validator evaluates every entry and requires it to reproduce the float in `vertices`, so the two can never drift. Null where no exact form exists -- the snub solids and the elementary Johnson solids J84-J92, whose coordinates are roots of irreducible cubics and higher.",
+          "items": {
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "faces_wound": {
+          "type": "string"
+        },
+        "edges": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Optional. Edges are derivable from the face cycles; store them only when a record needs an explicit ordering.",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "face_angles": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "description": "Interior angles of each face, one entry per face symmetry orbit (faces in an orbit are congruent). This is the datum Wenninger's Dual Models tabulates for every solid, and it is what distinguishes the Catalans, the uniform duals and the Johnson solids, whose faces are not regular. For a star face the angle is the one at the STAR POINT (36 degrees for a pentagram), since faces are stored as true winding cycles.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "face_orbit",
+              "sides",
+              "angles"
+            ],
+            "properties": {
+              "face_orbit": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "sides": {
+                "type": "integer",
+                "minimum": 3
+              },
+              "regular": {
+                "type": "boolean"
+              },
+              "angles": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "degrees",
+                    "count"
+                  ],
+                  "properties": {
+                    "degrees": {
+                      "type": "number"
+                    },
+                    "radians": {
+                      "type": "number"
+                    },
+                    "count": {
+                      "type": "integer",
+                      "minimum": 1,
+                      "description": "How many corners of the face carry this angle."
+                    },
+                    "exact": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "source": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "face_groups": {
+      "type": "object",
+      "description": "Named ways of partitioning the faces. `faces_by_type` says how MANY faces of each kind there are; this says WHICH. All of these are computed, not curated.",
+      "properties": {
+        "symmetry_orbit": {
+          "type": "array",
+          "description": "Faces equivalent under the symmetry group -- the canonical grouping. One entry per orbit; a face-transitive solid has exactly one.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "polygon_type": {
+          "type": "object",
+          "description": "Face indices keyed by number of sides.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "coplanar": {
+          "type": "array",
+          "description": "Sets of two or more faces sharing a plane. This is what distinguishes the stellations, whose faces lie in the face planes of a core solid, and the hemipolyhedra, whose faces pass through the centre.",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        "antipodal": {
+          "type": "array",
+          "description": "Face pairs exchanged by the central inversion; present only when the group contains it.",
+          "items": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "vertex_groups": {
+      "type": "object",
+      "description": "The same idea for vertices and edges: symmetry orbits, computed from the detected group.",
+      "properties": {
+        "symmetry_orbit": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "edge_groups": {
+      "type": "object",
+      "properties": {
+        "symmetry_orbit": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "construction": {
+      "type": "object",
+      "description": "How this repository's own generators produce the solid; the link from the database back to math_art/.",
+      "properties": {
+        "generator": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Module path, e.g. 'math_art.uniform_polyhedra_generator'."
+        },
+        "operator_id": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Blender operator idname, e.g. 'mesh.uniform_polyhedron_add'."
+        },
+        "conway_from": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "operator": {
+              "type": "string"
+            },
+            "seed": {
+              "type": "string"
+            }
+          },
+          "additionalProperties": false
+        },
+        "wythoff_from": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "schwarz": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Schwarz triangle, e.g. '(2 3 5)'."
+            },
+            "symbol": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "coordinates",
+        "sources"
+      ],
+      "properties": {
+        "coordinates": {
+          "type": "string",
+          "description": "How the coordinates in this file were obtained. Records must be DERIVED, not transcribed: several of the surveyed databases carry usage restrictions, and this repository is published publicly. Cross-check against them, cite them, do not copy them."
+        },
+        "sources": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string"
+          },
+          "description": "Real mathematical attribution: the mathematician, the paper or book, the year."
+        },
+        "verified": {
+          "type": "object",
+          "description": "Claims recomputed by tools/polydb_validate.py. Do not hand-set these to true.",
+          "properties": {
+            "euler": {
+              "type": "boolean"
+            },
+            "closed_manifold": {
+              "type": "boolean"
+            },
+            "faces_planar": {
+              "type": "boolean"
+            },
+            "radii_match_exact": {
+              "type": "boolean"
+            },
+            "dual_reciprocal": {
+              "type": "boolean"
+            },
+            "tolerance": {
+              "type": "number"
+            }
+          },
+          "additionalProperties": false
+        },
+        "cross_checked": {
+          "type": "array",
+          "description": "Independent sources this solid's geometry was checked against, and the result. Agreement here is what raises a record above a single unverified derivation.",
+          "items": {
+            "type": "object",
+            "required": [
+              "source",
+              "agrees"
+            ],
+            "additionalProperties": false,
+            "properties": {
+              "source": {
+                "type": "string",
+                "description": "e.g. 'mccooey', 'netlib', 'harel-1993'."
+              },
+              "agrees": {
+                "type": "boolean"
+              },
+              "detail": {
+                "type": "string",
+                "description": "What was compared and the deviation."
+              }
+            }
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "space_filling": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "description": "Whether and how the solid tiles three-dimensional space. Curated, because this is not readable off a vertex table -- but curated WITH PARAMETERS so the claim is falsifiable: for a lattice filling, |det(lattice.basis)| must equal volume * cells_per_lattice_point at this record's normalisation, and tools/polydb_validate.py checks it. A plain boolean is not enough: the regular octahedron does not tile space alone but does with tetrahedra, and tiling by TRANSLATIONS alone (a parallelohedron -- Fedorov proved there are exactly five) is a strictly stronger property than tiling.",
+      "additionalProperties": false,
+      "required": [
+        "fills_space_alone"
+      ],
+      "properties": {
+        "fills_space_alone": {
+          "type": "boolean",
+          "description": "True when congruent copies of this solid alone tile space with no gaps."
+        },
+        "parallelohedron": {
+          "type": "boolean",
+          "description": "True when copies tile space by TRANSLATIONS alone. Exactly five exist (Fedorov 1885): cube, hexagonal prism, rhombic dodecahedron, elongated dodecahedron, truncated octahedron."
+        },
+        "honeycomb": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "description": "The tiling it forms.",
+          "properties": {
+            "name": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "schlafli": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "cells_per_edge": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "How many cells meet along an edge of the honeycomb."
+            },
+            "space_group": {
+              "type": [
+                "string",
+                "null"
+              ],
+              "description": "Hermann-Mauguin symbol."
+            },
+            "space_group_number": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "International Tables number, 1-230."
+            }
+          }
+        },
+        "lattice": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "basis": {
+              "type": [
+                "array",
+                "null"
+              ],
+              "minItems": 3,
+              "maxItems": 3,
+              "description": "Three translation vectors AT THIS RECORD'S NORMALISATION.",
+              "items": {
+                "type": "array",
+                "minItems": 3,
+                "maxItems": 3,
+                "items": {
+                  "type": "number"
+                }
+              }
+            }
+          }
+        },
+        "cells_per_lattice_point": {
+          "type": [
+            "integer",
+            "null"
+          ]
+        },
+        "orientations": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "Distinct cell orientations the tiling needs."
+        },
+        "requires_reflections": {
+          "type": [
+            "boolean",
+            "null"
+          ],
+          "description": "True when mirror-image copies are needed as well."
+        },
+        "combination_fillings": {
+          "type": "array",
+          "description": "Tilings this solid forms TOGETHER WITH others, when it cannot tile alone.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "with"
+            ],
+            "properties": {
+              "with": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "ratio": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "honeycomb": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              },
+              "schlafli": {
+                "type": [
+                  "string",
+                  "null"
+                ]
+              }
+            }
+          }
+        },
+        "note": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}
