@@ -855,7 +855,7 @@ def boundary_loops(verts, tris, smooth=2):
     return rim_curve.boundary_loops(verts, tris, smooth=smooth)
 
 
-@_geom_cache.memoise
+@_geom_cache.memoise(version=1)
 def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3):
     """Mesh the zero level set of a preset. Returns (verts, tris).
     marching_tets simply leaves the level set open where it crosses

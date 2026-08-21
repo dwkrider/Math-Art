@@ -1051,27 +1051,22 @@ def clp_conjugate(nu, nv, maxlen=6):
     return P, stages, B
 
 
-def spec_build(key, cells, res_per_cell, scale, theta,
-               arrangement='UNIT'):
-    """Cached wrapper -- see `_spec_build` for the construction.
+def _spec_state(key, *_a, **_k):
+    """The shape moduli `spec_build` reads but does not take.
 
-    NOT memoised on the arguments alone.  CLP's two shape moduli live
-    in `_SPECS`, set by `clp_params`, so they do not appear in this
-    signature; a cache keyed on the arguments would hand back the old
-    surface after the modulus changed.  The key carries them explicitly.
+    CLP is a two-parameter family and those parameters live in `_SPECS`,
+    set by `clp_params`, so they never appear in the signature.  Without
+    them in the key the cache returns the previous surface after the
+    modulus changes.
     """
     sp = _SPECS[key]
-    ck = ('hexagonal.spec_build', key, tuple(np.ravel(cells))
-          if isinstance(cells, (tuple, list)) else cells,
-          int(res_per_cell), float(scale), float(theta), arrangement,
-          complex(sp['tau']), float(sp['a']), complex(sp.get('const', 0)))
-    return _geom_cache.cached(
-        ck, lambda: _spec_build(key, cells, res_per_cell, scale, theta,
-                                arrangement))
+    return (complex(sp['tau']), float(sp['a']),
+            complex(sp.get('const', 0)))
 
 
-def _spec_build(key, cells, res_per_cell, scale, theta,
-                arrangement='UNIT'):
+@_geom_cache.memoise(version=1, extra=_spec_state)
+def spec_build(key, cells, res_per_cell, scale, theta,
+               arrangement='UNIT'):
     """Builder for one theta-family row, matching the TPMS_EXACT
     signature.  Falls back to the honest fundamental piece whenever the
     reflection group does not close on a rank-3 period lattice, which is
@@ -1215,6 +1210,10 @@ def _weld(V, Q, tol):
     return Vw, Qw[good]
 
 
+# A pure function of its arguments -- the H row's tau and branch
+# value are module CONSTANTS, not the mutable moduli CLP carries --
+# so it needs no `extra` hook.
+@_geom_cache.memoise(version=1)
 def h_build(cells, res_per_cell, scale, theta):
     """Build the exact Schwarz H surface, centred and fitted to a 2 m
     cube times `scale`.  Signature matches the other TPMS_EXACT

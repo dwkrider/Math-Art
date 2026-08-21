@@ -617,7 +617,7 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
     return G, wrap_u, wrap_v
 
 
-@_geom_cache.memoise
+@_geom_cache.memoise(version=1)
 def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
                      with_uv=False, cells=(1, 1)):
     """Mesh (V, quads) for `kind`; with_uv=True additionally returns a
