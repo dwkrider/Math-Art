@@ -188,6 +188,82 @@ def _tetra_rotations():
     return out
 
 
+def dihedral_rotations(n):
+    """D_n as rotation matrices: n turns about z and n half-turns across.
+
+    Skilling's entries 20-25 are the four infinite prism and antiprism
+    families, and they are the only rows that need a group outside
+    T/O/I.  Entry 20 is "any prism repeated r times by successive
+    rotations of 2 pi / n r about the n-fold prism axis", which is a
+    cyclic group acting on a prism; adding the half-turns gives the
+    dihedral case that entries 22 and 24 use.
+    """
+    out = [_rot((0.0, 0.0, 1.0), 2 * math.pi * k / n) for k in range(n)]
+    out += [_rot((math.cos(math.pi * k / n), math.sin(math.pi * k / n), 0.0),
+                 math.pi) for k in range(n)]
+    return out
+
+
+def cyclic_rotations(n):
+    """C_n -- n turns about z."""
+    return [_rot((0.0, 0.0, 1.0), 2 * math.pi * k / n) for k in range(n)]
+
+
+def prism_family(n, r, anti=False, reflect=False, phase=0.0):
+    """Skilling 20-25: a prism or antiprism repeated r times about its
+    own axis.
+
+    Entry 20/24: the constituent is turned by successive 2 pi / (n r),
+    giving 2r copies when a vertical mirror is added and r without.  The
+    count is what Skilling tabulates, and it is the reason these are
+    families rather than models -- both n and r are free.
+    """
+    V, F = prism_solid(n, anti)
+    comps = []
+    seen = set()
+    steps = 2 * r if reflect else r
+    for k in range(steps):
+        a = math.radians(phase) + 2 * math.pi * k / (n * steps)
+        R = _rot((0.0, 0.0, 1.0), a)
+        W = [tuple(R @ np.array(v, float)) for v in V]
+        if reflect and k % 2:
+            W = [(x, -y, z) for x, y, z in W]
+        key = frozenset(tuple(np.round(w, 4)) for w in W)
+        if key in seen:
+            continue
+        seen.add(key)
+        comps.append((W, [list(f) for f in F]))
+    return comps
+
+
+# --- Skilling's Table 1, entries 20-25 ------------------------------------
+# The four infinite families.  Skilling's own summary calls them "two
+# infinite families of prism compounds and two infinite families of
+# antiprism compounds", parametric in the side count n AND the repeat
+# count r, which is why they are not rows of fixed models: entry 20 gives
+# 2r constituents and 21 gives r, for every n and r.
+#
+#   20  prism,     C_nh used, 2r constituents, rotational freedom
+#   21  prism,     C_nh used,  r constituents, the special case
+#   22  antiprism, S_2n used, 2r constituents, rotational freedom
+#   23  antiprism, S_2n used,  r constituents, the special case
+#
+#: key -> (antiprism?, reflect? -> 2r rather than r)
+FAMILIES = {
+    'S20_PRISM_FAMILY': (False, True),
+    'S21_PRISM_FAMILY': (False, False),
+    'S22_ANTI_FAMILY': (True, True),
+    'S23_ANTI_FAMILY': (True, False),
+}
+
+FAMILY_LABELS = [
+    ('S20_PRISM_FAMILY', "Skilling 20: 2r Prisms (free)"),
+    ('S21_PRISM_FAMILY', "Skilling 21: r Prisms"),
+    ('S22_ANTI_FAMILY', "Skilling 22: 2r Antiprisms (free)"),
+    ('S23_ANTI_FAMILY', "Skilling 23: r Antiprisms"),
+]
+
+
 def _with_inversion(rots):
     """A rotation group extended by the centre, giving the full group.
 
@@ -1250,7 +1326,7 @@ COMPOUNDS = [
     ('DODECA_ICOSA', "Dodecahedron + Icosahedron"),
     ('PRISM_DUAL', "Prism + Dual Dipyramid"),
     ('ANTIPRISM_DUAL', "Antiprism + Dual Trapezohedron"),
-] + list(INSCRIBED) \
+] + list(FAMILY_LABELS) + list(INSCRIBED) \
     + [(k, lbl) for k, lbl, *_rest in ENANTIOMORPHS] \
     + [(k, lbl) for k, lbl, *_rest in FREE_COMPOUNDS]     + [(k, lbl) for k, lbl, *_rest in SUBGROUP_COMPOUNDS] \
     + [(k, lbl) for k, lbl, *_rest in AXIS_COMPOUNDS]
@@ -1261,7 +1337,8 @@ _INSCRIBED_KEYS = {k for k, _lbl in INSCRIBED}
 SIDED = {'PRISM_DUAL': False, 'ANTIPRISM_DUAL': True}
 
 
-def build_compound(kind, phase=None, sides=5):
+
+def build_compound(kind, phase=None, sides=5, repeat=2):
     """Return a list of components, each (V, F).
 
     `phase` overrides a named compound's own turn angle, which is what
@@ -1269,6 +1346,10 @@ def build_compound(kind, phase=None, sides=5):
     away from the named angle the components separate and the count
     generally rises.
     """
+    if kind in FAMILIES:
+        anti, reflect = FAMILIES[kind]
+        return prism_family(sides, repeat, anti=anti, reflect=reflect,
+                            phase=0.0 if phase is None else phase)
     if kind in SIDED:
         return prism_and_dual(sides, anti=SIDED[kind])
     if kind in _INSCRIBED_KEYS:

@@ -142,6 +142,11 @@ if _IN_BLENDER:
             description="Side count of the prism or antiprism, for the "
                         "two compounds built from one. Hart draws prisms "
                         "for 3 to 10 sides and antiprisms for 4 to 10")
+        repeat: IntProperty(
+            name="Repeat", default=2, min=1, max=12,
+            description="Repeat count r for Skilling's four infinite "
+                        "prism and antiprism families, which are "
+                        "parametric in both the side count and r")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def execute(self, context):
@@ -149,6 +154,7 @@ if _IN_BLENDER:
                 axis_kind = any(self.compound == r[0] for r in AXIS_COMPOUNDS)
                 comps = build_compound(
                     self.compound, sides=self.sides,
+                    repeat=self.repeat,
                     phase=self.phase if axis_kind and self.phase else None)
             except Exception as e:      # noqa: BLE001
                 self.report({'ERROR'}, str(e))
@@ -277,6 +283,22 @@ def _selftest():
                 (grp, order, axis, 'not a rotation axis of the group')
     print("AXES  every declared component and group axis verified against "
           "the solid it belongs to")
+
+    # --- Skilling 20-25, the four infinite families ---------------------
+    # Not models but families, parametric in the side count n AND the
+    # repeat count r: entry 20 gives 2r constituents and 21 gives r, for
+    # every n and r.  Assert that across a grid rather than at one point,
+    # because a construction that happened to be right at r = 2 and wrong
+    # elsewhere would be the easy mistake here.
+    for k, lbl in _cmp.FAMILY_LABELS:
+        _anti, reflect = _cmp.FAMILIES[k]
+        for n in (3, 5, 6, 8):
+            for r in (1, 2, 3, 4):
+                got = len(build_compound(k, sides=n, repeat=r))
+                want = 2 * r if reflect else r
+                assert got == want, (k, n, r, got, want)
+    print("FAMILIES  Skilling 20-23 over n=3,5,6,8 and r=1..4: "
+          "2r and r constituents as tabulated")
 
     # --- Skilling 46-67, tetrahedral symmetry embedded ------------------
     # The constituent is placed in its own standard frame and orbited;
