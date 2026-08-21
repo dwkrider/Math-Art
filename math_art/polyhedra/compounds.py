@@ -250,7 +250,85 @@ COMPONENT_AXES['ANTI5_2'] = {5: (0.0, 0.0, 1.0)}
 del _n, _m
 
 
+def to_standard_frame(V, F):
+    """Turn a solid so an orthogonal triple of its own half-turn axes
+    lies on the coordinate axes.
+
+    Constituents that come from elsewhere are not in this module's frame
+    -- `build_uniform` derives its mirrors from the Wythoff symbol, and
+    the stored snub coordinates use a third orientation.  Orbiting an
+    unaligned constituent silently returns the wrong count (a solid with
+    O_h symmetry gave 15 copies under I_h instead of 5, because only an
+    order-8 subgroup was actually shared), so the frame has to be fixed
+    before the orbit, not assumed.
+
+    Both O and I contain orthogonal triples of half-turn axes, and every
+    such triple is equivalent under the group, so any one will do: the
+    compound is only defined up to conjugacy anyway.
+    """
+    S = {tuple(np.round(v, 4)) for v in V}
+    cands = [np.array(v, float) for v in V]
+    for f in F:
+        cands.append(np.array([sum(V[i][k] for i in f) / len(f)
+                               for k in range(3)]))
+        for i in range(len(f)):
+            a, b = V[f[i]], V[f[(i + 1) % len(f)]]
+            cands.append(np.array([(a[k] + b[k]) / 2.0 for k in range(3)]))
+    axes = []                             # (max rotation order, axis)
+    for d in cands:
+        ln = np.linalg.norm(d)
+        if ln < 1e-9:
+            continue
+        d = d / ln
+        if any(abs(abs(float(d @ e)) - 1) < 1e-6 for _o, e in axes):
+            continue
+        best = 0
+        for n in (2, 3, 4, 5):
+            R = _rot(d, 2 * math.pi / n)
+            if {tuple(np.round(R @ np.array(v, float), 4))
+                    for v in V} == S:
+                best = n
+        if best:
+            axes.append((best, d))
+    # Take the HIGHEST-order orthogonal pair available.  For an
+    # octahedral solid that means its four-fold axes: the tetrahedral
+    # subgroup shared with an icosahedral group has its half-turns on
+    # exactly those, so landing on an orthogonal pair of ordinary
+    # two-folds instead leaves the solid 45 degrees out and the orbit
+    # returns 15 copies where Skilling says 5.
+    for order in (5, 4, 3, 2):
+        sel = [d for o, d in axes if o == order]
+        for i, a in enumerate(sel):
+            for b in sel[i + 1:]:
+                if abs(float(a @ b)) > 1e-6:
+                    continue
+                M = np.array([b, np.cross(a, b), a])
+                if np.linalg.det(M) < 0:
+                    M = np.array([b, np.cross(b, a), a])
+                return ([tuple(M @ np.array(v, float)) for v in V],
+                        [list(f) for f in F])
+    raise ValueError('the solid has no orthogonal pair of rotation axes')
+
+
+def _uniform_component(u):
+    """Uniform polyhedron U<u> as (V, F), for use as a constituent.
+
+    Imported LAZILY: `uniform_polyhedra_generator` imports from this
+    package, so a module-level import here would close the cycle.
+    """
+    try:
+        from .. import uniform_polyhedra_generator as _uni
+    except ImportError:                   # flat import (test runner)
+        import uniform_polyhedra_generator as _uni
+    row = next(r for r in _uni.UNIFORMS if r[0] == u)
+    V, faces = _uni.build_uniform(row[2], row[3])
+    return to_standard_frame([tuple(float(c) for c in v) for v in V],
+                             [list(f) for f, _d in faces])
+
+
 def _component(kind):
+    if kind.startswith('U') and kind[1:].isdigit():
+        return _uniform_component(int(kind[1:]))
     if kind.startswith('PRISM'):
         spec = kind[5:]
         if '_' in spec:                    # PRISM<n>_<m>, a star prism
@@ -817,6 +895,50 @@ ENANTIOMORPHS = [
 
 _ENANT_BY_KEY = {r[0]: r for r in ENANTIOMORPHS}
 
+
+# --- Skilling's Table 1, entries 46-67 ------------------------------------
+# "Tetrahedral symmetry embedded in octahedral or icosahedral symmetry".
+# The constituent is simply PLACED IN ITS OWN STANDARD FRAME and orbited
+# under the compound group -- no axis to choose, no phase.  The count
+# then falls out of what the two groups share:
+#
+#   O_h constituent in I_h : they share T_h, 120/24 =  5
+#   I_h constituent in O_h : they share T_h,  48/24 =  2
+#   I_h constituent in I_h : a DIFFERENT icosahedral group sharing only
+#                            T_h,                120/24 =  5
+#   T_d constituent in O_h : share T_d,          48/24 =  2
+#   T_d constituent in I    : share T,            60/12 =  5
+#   T_d constituent in I_h  : share T,           120/12 = 10
+#
+# The one thing that has to be right is the FRAME -- see
+# `to_standard_frame`, without which these came out 15, 24, 30 and 60.
+def subgroup_compound(component, group):
+    """A constituent in its own standard frame, orbited under `group`."""
+    return _orbit(_component(component), GROUPS[group]())
+
+
+#: (key, label, component, group, Skilling's constituent count)
+SUBGROUP_COMPOUNDS = [
+    ('S46_ICOSA', "Skilling 46: 2 Icosahedra (Oh)", 'U22', 'Oh', 2),
+    ('S47_ICOSA', "Skilling 47: 5 Icosahedra (Ih)", 'U22', 'Ih', 5),
+    ('S54_TRUNCTET', "Skilling 54: 2 Truncated Tetrahedra (Oh)",
+     'U2', 'Oh', 2),
+    ('S55_TRUNCTET', "Skilling 55: 5 Truncated Tetrahedra (I)",
+     'U2', 'I', 5),
+    ('S56_TRUNCTET', "Skilling 56: 10 Truncated Tetrahedra (Ih)",
+     'U2', 'Ih', 10),
+    ('S57_TRUNCCUBE', "Skilling 57: 5 Truncated Cubes", 'U9', 'Ih', 5),
+    ('S58_STELLTRUNCHEX',
+     "Skilling 58: 5 Stellated Truncated Hexahedra", 'U19', 'Ih', 5),
+    ('S59_CUBOCTA', "Skilling 59: 5 Cuboctahedra", 'U7', 'Ih', 5),
+    ('S62_RHOMBICUBOCTA', "Skilling 62: 5 Rhombicuboctahedra",
+     'U10', 'Ih', 5),
+    ('S67_NONCONVEX_GRCO',
+     "Skilling 67: 5 Nonconvex Great Rhombicuboctahedra", 'U17', 'Ih', 5),
+]
+
+_SUBGROUP_BY_KEY = {r[0]: r for r in SUBGROUP_COMPOUNDS}
+
 #: Hart's "central freedom" cubes -- (key, label, group, count)
 FREE_COMPOUNDS = [
     ('HC_12CUBES_FREE', "Hart: 12 Cubes, central freedom", 'T', 12),
@@ -994,7 +1116,7 @@ COMPOUNDS = [
     ('ANTIPRISM_DUAL', "Antiprism + Dual Trapezohedron"),
 ] + list(INSCRIBED) \
     + [(k, lbl) for k, lbl, *_rest in ENANTIOMORPHS] \
-    + [(k, lbl) for k, lbl, *_rest in FREE_COMPOUNDS] \
+    + [(k, lbl) for k, lbl, *_rest in FREE_COMPOUNDS]     + [(k, lbl) for k, lbl, *_rest in SUBGROUP_COMPOUNDS] \
     + [(k, lbl) for k, lbl, *_rest in AXIS_COMPOUNDS]
 
 _INSCRIBED_KEYS = {k for k, _lbl in INSCRIBED}
@@ -1017,6 +1139,9 @@ def build_compound(kind, phase=None, sides=5):
         return inscribed(kind)
     if kind in _ENANT_BY_KEY:
         return enantiomorph_pair(_ENANT_BY_KEY[kind][2])
+    if kind in _SUBGROUP_BY_KEY:
+        _k, _lbl, comp, grp, _n = _SUBGROUP_BY_KEY[kind]
+        return subgroup_compound(comp, grp)
     if kind in _FREE_BY_KEY:
         _k, _lbl, grp, _n = _FREE_BY_KEY[kind]
         return free_orientation_compound(

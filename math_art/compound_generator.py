@@ -278,6 +278,26 @@ def _selftest():
     print("AXES  every declared component and group axis verified against "
           "the solid it belongs to")
 
+    # --- Skilling 46-67, tetrahedral symmetry embedded ------------------
+    # The constituent is placed in its own standard frame and orbited;
+    # the count is whatever the two groups share.  What has to be right
+    # is the FRAME, and getting it wrong is silent -- an unaligned
+    # constituent still builds, still looks like a compound, and returns
+    # 15, 24, 30 or 60 copies where Skilling says 5, 2, 5 or 10.  So
+    # assert his counts, and separately assert that the aligner really
+    # put an orthogonal pair of rotation axes on the coordinate axes.
+    for k, lbl, comp, grp, want in _cmp.SUBGROUP_COMPOUNDS:
+        comps = build_compound(k)
+        assert len(comps) == want, (k, len(comps), want)
+        V, F = _cmp._component(comp)
+        for axis in ((0.0, 0.0, 1.0), (1.0, 0.0, 0.0)):
+            R = _cmp._rot(axis, _math.pi)
+            S = {tuple(np.round(v, 4)) for v in V}
+            assert {tuple(np.round(R @ np.array(v, float), 4))
+                    for v in V} == S, (k, comp, axis, 'frame not aligned')
+    print("SUBGROUP  Skilling 46-67 sample: constituents aligned and "
+          "orbited, all counts as tabulated")
+
     # --- Hart's central-freedom cubes -----------------------------------
     # Nothing is aligned, so the stabilizer is trivial and the count is
     # the whole group order.  Checking that it holds at SEVERAL angles is
