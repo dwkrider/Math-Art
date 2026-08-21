@@ -313,6 +313,18 @@ FACE_SOURCES = {
     # carries the same 0.7658 class as U38, so they are one placement.
     'U38PEN': ('5/2 5 | 2', ['5/2', '5', '2'], 5, 0),
     'U48PEN': ('3/2 5 | 3', ['3/2', '5', '3'], 5, 0),
+    # A square is plainly visible on U44 even though its face list is 12
+    # pentagons + 12 pentagrams + 20 hexagons and contains no square at
+    # all.  It is real, and it is not a face: U44's 120 EDGES outline 30
+    # planar squares, one per two-fold axis, as four-cycles of the edge
+    # graph.  They are exactly the 30 square faces of the rhombicosahedron
+    # (U56) -- same 120 corner points to five decimals -- and that
+    # arrangement is congruent to U38's, which is S30.  So the square is
+    # Hart's thirty-square model, already shipped: plane distance 0.8452,
+    # circumradius 0.5345, four slits at radius 0.38835, 36 degrees
+    # between crossing panels.  Looking for a square FACE misses this
+    # entirely; the panel a slide-together needs is a planar circuit, and
+    # a face is only the commonest way to get one.
 
     # The twelve DECAGONS of the truncated great dodecahedron stand in
     # exactly the planes of Hart's star-decagon model, at exactly its
