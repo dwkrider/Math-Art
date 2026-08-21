@@ -108,7 +108,7 @@ def _unit(a):
 # they should miss; shrink it and they float free.
 MODELS = [
     ('T20', "20 Triangles", 'ICOSA', 3, 1, 0.61, 12.0),
-    ('S30', "30 Squares", 'ID30', 4, 1, 0.60, 18.0),
+    ('S30', "30 Squares", 'U38SQ', 4, 1, 1.00, 0.0),
     ('P12', "12 Pentagons", 'DODECA', 5, 1, 1.38, 20.0),
     ('D12', "12 Decagons", 'DODECA', 10, 1, 1.30, 9.0),
     ('H20', "20 Hexagons", 'ICOSA', 6, 1, 0.59, 10.0),
@@ -126,7 +126,10 @@ _MODEL_OFFSET = {}
 def _plane_offset(kind):
     if kind in _MODEL_OFFSET:
         return _MODEL_OFFSET[kind]
-    if kind == 'ID30':
+    if kind == 'U38SQ':
+        nv, cen, _e, _r = u38_square_frames()[0]
+        val = abs(_dot(nv, cen))
+    elif kind == 'ID30':
         val = 1.0
     else:
         V, F = _seeds.seed_poly('ICOSA' if kind == 'ICOSA' else 'DODECA')
@@ -145,6 +148,8 @@ def plane_normals(kind):
     if kind == 'DODECA':
         V, F = _seeds.seed_poly('DODECA')
         return [n for n, _d in _hull.face_planes(V, F)]
+    if kind == 'U38SQ':
+        return [nv for nv, _c, _e, _r in u38_square_frames()]
     if kind == 'ID30':
         # the thirty 2-fold axes: midpoints of an icosahedron's edges
         V, F = _seeds.seed_poly('ICOSA')
@@ -159,6 +164,72 @@ def plane_normals(kind):
                 out.append(_unit(_add(V[a], V[b])))
         return out
     raise ValueError(kind)
+
+
+def u38_square_frames():
+    """The thirty squares of the rhombidodecadodecahedron (U38), each as
+    (normal, centre, e1, circumradius).
+
+    This is where the thirty-square slide-together's panels belong: one
+    panel per square face of U38, in that square's own plane and turned
+    to that square's own corners.  The normals are the icosahedral
+    two-fold axes, which the old `ID30` code already had right; what it
+    got wrong was everything else about the placement.
+
+    Two things this fixes.  The plane distance is **0.8452** of the
+    circumradius, not the 1.0 the old code assumed, so every panel sat
+    too far out.  And the in-plane orientation now comes from the square
+    itself: `_polygon` builds its reference direction from a fixed global
+    axis, which is NOT equivariant, so one `turn` value cannot orient
+    thirty symmetry-related panels consistently -- they came out rotated
+    at assorted angles, which is what made the arrangement wrong however
+    the turn was tuned.
+    """
+    try:
+        from . import uniform_polyhedra_generator as _uni
+    except ImportError:                    # flat import (test runner)
+        import uniform_polyhedra_generator as _uni
+    V, faces = _uni.build_uniform('5/2 5 | 2', ['5/2', '5', '2'])
+    V = [tuple(float(c) for c in v) for v in V]
+    R = max(_norm(v) for v in V)
+    out = []
+    for f, _dens in faces:
+        if len(f) != 4:
+            continue
+        P = [tuple(c / R for c in V[i]) for i in f]
+        cen = [sum(p[k] for p in P) / 4.0 for k in range(3)]
+        nrm = _unit(_cross(_sub(P[1], P[0]), _sub(P[2], P[0])))
+        if _dot(nrm, cen) < 0:
+            nrm = _mul(nrm, -1.0)
+        e1 = _unit(_sub(P[0], cen))
+        out.append((nrm, cen, e1, _norm(_sub(P[0], cen))))
+    if len(out) != 30:
+        raise ValueError('expected 30 squares on U38, found %d' % len(out))
+    return out
+
+
+def _polygon_in_frame(n, d, radius, normal, e1, cen, turn):
+    """A regular {n/d} outline in a frame taken FROM THE SOLID.
+
+    Same shape as `_polygon` but with the in-plane axes supplied rather
+    than invented, so symmetry-related panels really are symmetry-related.
+    """
+    e2 = _cross(normal, e1)
+    t = math.radians(turn)
+
+    def at(rad, ang):
+        return _add(cen, _add(_mul(e1, rad * math.cos(ang)),
+                              _mul(e2, rad * math.sin(ang))))
+    if d == 1:
+        return [at(radius, t + 2 * math.pi * k / n) for k in range(n)]
+    inner = radius * (math.cos(math.pi * d / n)
+                      / math.cos(math.pi * (d - 1) / n))
+    pts = []
+    for k in range(n):
+        a = t + 2 * math.pi * k / n
+        pts.append(at(radius, a))
+        pts.append(at(inner, a + math.pi / n))
+    return pts
 
 
 def _polygon(n, d, radius, normal, turn, offset=0.0):
@@ -321,14 +392,28 @@ def _slit_outline(P, nrm, cuts, width):
     return out
 
 
+def model_panels(key, radius_scale=1.0, turn_delta=0.0):
+    """The bare panels of a model, before any slit is cut.
+
+    Shared by `build_model` and the self-test.  They used to build panels
+    separately, which let the test check a DIFFERENT arrangement from the
+    one shipped -- it kept passing while the thirty squares were placed
+    wrongly.
+    """
+    _key, _lbl, axes, n, d, rad, turn = _MODEL[key]
+    if axes == 'U38SQ':
+        return [(_polygon_in_frame(n, d, r0 * radius_scale, nv, e1, cen,
+                                   turn + turn_delta), nv)
+                for nv, cen, e1, r0 in u38_square_frames()]
+    off = _plane_offset(axes)
+    return [(_polygon(n, d, rad * radius_scale, nv, turn + turn_delta,
+                      off), nv)
+            for nv in plane_normals(axes)]
+
+
 def build_model(key, radius_scale=1.0, turn_delta=0.0, slit_width=0.05):
     """Panels of a slide-together as a list of outlines with normals."""
-    key, _lbl, axes, n, d, rad, turn = _MODEL[key]
-    normals = plane_normals(axes)
-    r = rad * radius_scale
-    off = _plane_offset(axes)
-    panels = [(_polygon(n, d, r, nv, turn + turn_delta, off), nv)
-              for nv in normals]
+    panels = model_panels(key, radius_scale, turn_delta)
     cx = crossings(panels)
     # The chord runs from end_lo to end_hi through BOTH panels, so those
     # ends are exactly where a slit can enter.  Cutting the two panels
@@ -524,8 +609,7 @@ def _selftest():
 
         # the panels must actually interlock -- a slide-together with no
         # crossings is just a heap of loose polygons
-        raw = [(_polygon(n, d, _r, nv, _t, _plane_offset(axes)), nv)
-               for nv in normals]
+        raw = model_panels(key)
         cx = crossings(raw)
         assert cx, (key, "no panel crossings: nothing would interlock")
 
