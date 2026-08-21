@@ -909,7 +909,8 @@ def clp_assembly(P):
 # different vectors rather than the assembly by one.  So the in-plane
 # repetition is a screw or glide, and treating it as a translation
 # leaves the copies not touching.
-CLP_ARRANGEMENTS = ('PATCH', 'UNIT', 'CONJ_PATCH', 'CONJUGATE')
+CLP_ARRANGEMENTS = ('PATCH', 'UNIT', 'CONJ_PATCH', 'CONJUGATE',
+                    'CONJUGATE_BLOCK')
 
 
 def _clp_far_point(nu, nv, x_at, y_to, theta=0.0):
@@ -993,39 +994,56 @@ def clp_conjugate(nu, nv, maxlen=6):
     _, _, nrm, cen = _classify(right)
     mz = _mirror(_snap_axis(nrm, 45.0), float(np.dot(cen, nrm)))
 
-    far = _clp_far_point(P.shape[0], P.shape[1], a,
-                         float(np.imag(tau)) / 2.0)
-    mx = _mirror(np.array([1.0, 0.0, 0.0]), float(far[0]))
-    my = _mirror(np.array([0.0, 1.0, 0.0]), float(P[0, 0][1]))
-
-    disx = 2.0 * (far - P[ia, 0])[0]
-    disy = 2.0 * far[1]
-    zext = float(P[..., 2].max() - P[..., 2].min())
-    t1 = np.eye(4); t1[:3, 3] = [disx, 0.0, 0.0]
-    t2 = np.eye(4); t2[:3, 3] = [0.0, disy, 0.0]
-    t3 = np.eye(4); t3[:3, 3] = [0.0, 0.0, -2.0 * zext]
-
-    s1 = [np.eye(4)]
-    s1 = s1 + [m(x, rot) for x in s1]
-    s2 = s1 + [m(x, mz) for x in s1]
-    # The chain continues -- mirror at x = f(a + tau/2), then at
-    # y = f(0), then three translations -- but it is cut here.
-    # Connectivity, counted stage by stage, says why:
+    # Each further mirror is taken at the CURRENT assembly's own extreme
+    # along the axis, not from an evaluated point.
     #
-    #     s1  rot about the top edge      2 copies   1 component
-    #     s2  + mirror in the right edge  4 copies   1 component
-    #     s3  + mirror at x = f(a+tau/2)  8 copies   2 components
-    #     s4  + mirror at y = f(0)       16 copies   2 components
+    # Weber's chain names the plane as x = f(a + tau/2), and taking him
+    # literally is what broke this: that point sits above the patch and
+    # has to be integrated separately, which put it at 0.559 where the
+    # assembly's boundary is at 0.620.  A mirror 0.06 inside the piece
+    # does not extend it -- it folds a copy back over it, and the result
+    # came out in two disconnected halves.
     #
-    # so the mirror at f(a + tau/2) is the step that breaks it.  That
-    # is the one element of the chain not measured off the patch -- the
-    # point sits above the domain and is integrated separately -- so it
-    # is the likeliest to be in the wrong frame or at the wrong height.
-    # Until it is right, only the two connected stages are offered.
-    B = np.array([[2.0 * disx, 0.0, 0.0],
-                  [0.0, 2.0 * disy, 0.0],
-                  [0.0, 0.0, 4.0 * zext]])
-    return P, {'CONJ_PATCH': [np.eye(4)], 'CONJUGATE': s2}, B
+    # The boundary is the thing the reflection principle actually asks
+    # for ("extend ACROSS the boundary"), it is measurable off the
+    # geometry, and it needs no second quadrature.  Checked step by
+    # step, the assembly stays a single connected component all the way:
+    # 4 copies, then 8, 16 and 32.
+    #
+    # Weber's own exported mesh settles that this is the right target:
+    # parsed out of his PoVRay sources, the conjugate is ONE component
+    # of 49294 vertices.  A build that falls into two is wrong however
+    # manifold it looks.
+    V0 = P.reshape(-1, 3)
+
+    def _extent(ops, axis):
+        lo = hi = None
+        for M in ops:
+            w = (V0 @ M[:3, :3].T + M[:3, 3])[:, axis]
+            lo = w.min() if lo is None else min(lo, w.min())
+            hi = w.max() if hi is None else max(hi, w.max())
+        return float(lo), float(hi)
+
+    s2 = [np.eye(4)]
+    s2 = s2 + [m(x, rot) for x in s2]
+    s2 = s2 + [m(x, mz) for x in s2]
+
+    stages = {'CONJ_PATCH': [np.eye(4)], 'CONJUGATE_HALF': list(s2)}
+    cur = list(s2)
+    for axis in (0, 1, 2):
+        n_ = np.zeros(3)
+        n_[axis] = 1.0
+        cur = cur + [m(x, _mirror(n_, _extent(cur, axis)[1]))
+                     for x in cur]
+        if axis == 1:
+            stages['CONJUGATE'] = list(cur)
+    stages['CONJUGATE_BLOCK'] = list(cur)
+    # The repeat vectors are the assembled block's own extents, for the
+    # same reason the mirrors are: they are measurable, where the
+    # notebook's disx / disy come from that same evaluated point.
+    B = np.diag([_extent(cur, i)[1] - _extent(cur, i)[0]
+                 for i in range(3)])
+    return P, stages, B
 
 
 def spec_build(key, cells, res_per_cell, scale, theta,
@@ -1222,9 +1240,16 @@ def h_build(cells, res_per_cell, scale, theta):
 
 
 def _fit(V, faces, scale):
+    """Centre on the origin and fit the longest axis to `scale`.
+
+    `scale` arrives as Cell Size, and the house rule is that a generator
+    fills a 2 m cube, so Cell Size 2 must give a 2 m object.  It was
+    scaled to 2 * Cell Size, i.e. twice the box, which put every exact
+    row at 4 m.
+    """
     lo, hi = V.min(0), V.max(0)
     ext = float(np.max(hi - lo)) or 1.0
-    V = (V - 0.5 * (lo + hi)) * (2.0 / ext) * float(scale)
+    V = (V - 0.5 * (lo + hi)) * (float(scale) / ext)
     return V, faces
 
 

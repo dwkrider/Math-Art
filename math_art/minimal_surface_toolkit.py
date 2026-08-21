@@ -94,6 +94,7 @@ from .minsurf.plateau import (_SEIFERT_MAX_ITERS, _quads_to_tris,
                               fair_grid_columns, mesh_area, minimize_area,
                               relax_normal_flow, resample_loop, torus_knot)
 from .minsurf.hexagonal import clp_params as _clp_params
+from .minsurf.tpms import clip_to_sphere as _clip_to_sphere
 from .minsurf.tpms import (TPMS, TPMS2_HEX_LATTICE, TPMS_EXACT,
                            TPMS_EXACT_ARRANGEMENTS,
                            _PGD_PRESET_ANGLE, _f_p, build_tpms,
@@ -174,6 +175,32 @@ if _IN_BLENDER:
         su.update_tag()
         obj.location = context.scene.cursor.location
         return obj
+
+    def _maybe_clip(op, verts, faces):
+        """Clip to an inscribed sphere, if the operator asks for it.
+
+        The radius is a FRACTION of the block's own half-extent rather
+        than a length, so it keeps meaning when the cell count or cell
+        size changes -- 1.0 is the largest sphere the block contains.
+
+        Clipping opens an edge where a periodic surface had none, which
+        is what makes the option worth having: switch the rim curve on
+        as well and the cut is swept into the wire that rims it.
+        """
+        if not getattr(op, 'clip_sphere', False):
+            return verts, faces
+        V = np.asarray(verts, dtype=float)
+        if not len(V):
+            return verts, faces
+        half = 0.5 * float(np.max(V.max(0) - V.min(0)))
+        r = float(op.clip_radius) * half
+        out_v, out_f = _clip_to_sphere(V, faces, r)
+        if not len(out_f):
+            op.report({'WARNING'},
+                      "Sphere clip removed the whole surface; raise "
+                      "Sphere Radius")
+            return verts, faces
+        return out_v, out_f
 
     def _solidify(obj, thickness, crease=True):
         """Give `obj` a shell, and sharpen the band around its open edge.
@@ -470,6 +497,19 @@ if _IN_BLENDER:
                         "curvature folds through itself; the operator "
                         "measures that and warns with the thickness the "
                         "current resolution can carry")
+        clip_sphere: BoolProperty(
+            name="Clip to Sphere", default=False,
+            description="Cut the surface to an inscribed sphere. The "
+                        "cut is solved on the sphere rather than "
+                        "following whole faces, so the edge comes out "
+                        "smooth -- switch the rim curve on as well and "
+                        "it is swept into a wire around the ball")
+        clip_radius: FloatProperty(
+            name="Sphere Radius", default=0.85, min=0.05, max=1.0,
+            step=1, precision=3,
+            description="Radius of that sphere as a fraction of the "
+                        "block's own half-size, so it keeps its meaning "
+                        "when the cell count or cell size changes")
         shade_smooth: BoolProperty(
             name="Smooth Shading", default=True,
             description="Shade the surface smooth. Turn it off to read "
@@ -643,6 +683,19 @@ if _IN_BLENDER:
                         "radius of curvature folds through itself; the "
                         "operator measures that and warns with the "
                         "thickness the current resolution can carry")
+        clip_sphere: BoolProperty(
+            name="Clip to Sphere", default=False,
+            description="Cut the surface to an inscribed sphere. The "
+                        "cut is solved on the sphere rather than "
+                        "following whole faces, so the edge comes out "
+                        "smooth -- switch the rim curve on as well and "
+                        "it is swept into a wire around the ball")
+        clip_radius: FloatProperty(
+            name="Sphere Radius", default=0.85, min=0.05, max=1.0,
+            step=1, precision=3,
+            description="Radius of that sphere as a fraction of the "
+                        "block's own half-size, so it keeps its meaning "
+                        "when the cell count or cell size changes")
         shade_smooth: BoolProperty(
             name="Smooth Shading", default=True,
             description="Shade the surface smooth. Turn it off to read "
@@ -672,6 +725,7 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, "Empty level set")
                 return {'CANCELLED'}
             label = TPMS[self.surface][0]
+            verts, tris = _maybe_clip(self, verts, tris)
             obj = _new_object(context, label, verts, tris,
                               smooth=self.shade_smooth)
             if self.thickness > 0:
@@ -692,7 +746,7 @@ if _IN_BLENDER:
             lay.use_property_split = True
             for k in ('surface', 'cells', 'resolution', 'cell_size',
                       'thickness', 'level_offset', 'cell_aspect',
-                      'shade_smooth'):
+                      'clip_sphere', 'clip_radius', 'shade_smooth'):
                 lay.prop(self, k)
             _rim.draw_rim(lay, self)
 
@@ -842,6 +896,19 @@ if _IN_BLENDER:
                         "radius of curvature folds through itself; the "
                         "operator measures that and warns with the "
                         "thickness the current resolution can carry")
+        clip_sphere: BoolProperty(
+            name="Clip to Sphere", default=False,
+            description="Cut the surface to an inscribed sphere. The "
+                        "cut is solved on the sphere rather than "
+                        "following whole faces, so the edge comes out "
+                        "smooth -- switch the rim curve on as well and "
+                        "it is swept into a wire around the ball")
+        clip_radius: FloatProperty(
+            name="Sphere Radius", default=0.85, min=0.05, max=1.0,
+            step=1, precision=3,
+            description="Radius of that sphere as a fraction of the "
+                        "block's own half-size, so it keeps its meaning "
+                        "when the cell count or cell size changes")
         shade_smooth: BoolProperty(
             name="Smooth Shading", default=True,
             description="Shade the surface smooth. Turn it off to read "
@@ -919,6 +986,7 @@ if _IN_BLENDER:
                 if len(tris) == 0:
                     self.report({'ERROR'}, "Empty surface")
                     return {'CANCELLED'}
+                verts, tris = _maybe_clip(self, verts, tris)
                 obj = _new_object(context, label, verts, tris,
                                   smooth=self.shade_smooth)
                 if self.thickness > 0:
@@ -953,6 +1021,7 @@ if _IN_BLENDER:
                     self.report({'ERROR'}, "Empty level set")
                     return {'CANCELLED'}
                 label = TPMS[surf][0]
+                verts, tris = _maybe_clip(self, verts, tris)
                 obj = _new_object(context, label, verts, tris,
                                   smooth=self.shade_smooth)
                 if self.thickness > 0:
@@ -1062,6 +1131,7 @@ if _IN_BLENDER:
                     # sampling cell) and neither exists for a surface
                     # integrated from its Weierstrass data.
                     for k in ('resolution', 'cell_size', 'thickness',
+                              'clip_sphere', 'clip_radius',
                               'shade_smooth'):
                         lay.prop(self, k)
                     return
@@ -1070,7 +1140,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'cells_v', text="Cells Y")
                 lay.prop(self, 'cells_w', text="Cells Z")
                 for k in ('resolution', 'cell_size', 'thickness',
-                          'level_offset', 'cell_aspect', 'shade_smooth'):
+                          'level_offset', 'cell_aspect', 'clip_sphere',
+                          'clip_radius', 'shade_smooth'):
                     lay.prop(self, k)
                 return
             mesh_only = self.surface in MESH_PARAM

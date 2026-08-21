@@ -660,6 +660,93 @@ def _edge_points(keys, npt, sub, k0, xs, ys, zs, ny, nz):
     return pa + t[:, None] * (pb - pa)
 
 
+def clip_to_sphere(verts, faces, radius):
+    """Clip a mesh to the ball of radius `radius` about the origin.
+
+    Sutherland-Hodgman against the sphere, one face at a time: corners
+    inside are kept, and where an edge crosses, the crossing point is
+    solved for exactly (|a + t(b - a)| = r is a quadratic in t) rather
+    than approximated.  So the cut edge lies ON the sphere and comes out
+    smooth, instead of following the face boundaries in a staircase the
+    way dropping whole faces would.
+
+    A clipped surface has an open edge where it had none, which is
+    exactly what the rim curve is for -- sweeping a tube along it gives
+    the wire-rimmed sphere of TPMS that this option exists to make.
+
+    Returns (verts, faces); faces may be triangles or larger polygons.
+    """
+    V = np.asarray(verts, dtype=float)
+    r = float(radius)
+    if r <= 0.0 or not len(V):
+        return verts, faces
+    d = np.linalg.norm(V, axis=1) - r          # <= 0 is inside
+
+    out_v = [tuple(p) for p in V]
+    cache = {}
+
+    def cross(i, j):
+        """Where segment i->j meets the sphere, cached per edge."""
+        key = (i, j) if i < j else (j, i)
+        hit = cache.get(key)
+        if hit is not None:
+            return hit
+        a_, b_ = V[key[0]], V[key[1]]
+        e = b_ - a_
+        qa = float(e @ e)
+        qb = 2.0 * float(a_ @ e)
+        qc = float(a_ @ a_) - r * r
+        t = 0.5
+        if abs(qa) > 1e-30:
+            disc = qb * qb - 4.0 * qa * qc
+            if disc >= 0.0:
+                sq = math.sqrt(disc)
+                for cand in ((-qb - sq) / (2.0 * qa),
+                             (-qb + sq) / (2.0 * qa)):
+                    if -1e-9 <= cand <= 1.0 + 1e-9:
+                        t = min(1.0, max(0.0, cand))
+                        break
+        out_v.append(tuple(a_ + t * e))
+        idx = len(out_v) - 1
+        cache[key] = idx
+        return idx
+
+    out_f = []
+    for f in faces:
+        n = len(f)
+        if n < 3:
+            continue
+        idx = [int(k) for k in f]
+        if all(d[k] <= 0.0 for k in idx):
+            out_f.append(tuple(idx))
+            continue
+        if all(d[k] > 0.0 for k in idx):
+            continue
+        poly = []
+        for k in range(n):
+            a_i, b_i = idx[k], idx[(k + 1) % n]
+            ain, bin_ = d[a_i] <= 0.0, d[b_i] <= 0.0
+            if ain:
+                poly.append(a_i)
+            if ain != bin_:
+                poly.append(cross(a_i, b_i))
+        # drop repeats the clip can produce when a corner sits on the
+        # sphere; a polygon needs three distinct corners to be a face
+        clean = []
+        for k in poly:
+            if not clean or k != clean[-1]:
+                clean.append(k)
+        if len(clean) > 1 and clean[0] == clean[-1]:
+            clean.pop()
+        if len(clean) >= 3:
+            out_f.append(tuple(clean))
+
+    used = sorted({k for f in out_f for k in f})
+    remap = {k: i for i, k in enumerate(used)}
+    return ([out_v[k] for k in used],
+            [tuple(remap[k] for k in f) for f in out_f])
+
+
 def _cells_xyz(cells):
     """Coerce a cell count to a (cx, cy, cz) triple.  A plain int means a
     symmetric cx = cy = cz block (kept for internal callers/tests); a tuple
