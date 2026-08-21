@@ -67,6 +67,26 @@ def _hull_faces(V):
     return planes
 
 
+def _midradius(V, F):
+    """Radius of the sphere the edges are tangent to (distance to an edge
+    LINE, not to its midpoint)."""
+    edges = set()
+    for f in F:
+        for a, b in zip(f, list(f[1:]) + [f[0]]):
+            edges.add((min(a, b), max(a, b)))
+    best = None
+    for a, b in edges:
+        p0, p1 = V[a], V[b]
+        d = [p1[i] - p0[i] for i in range(3)]
+        L = math.sqrt(sum(x * x for x in d)) or 1.0
+        cr = [(-p0[1]) * d[2] - (-p0[2]) * d[1],
+              (-p0[2]) * d[0] - (-p0[0]) * d[2],
+              (-p0[0]) * d[1] - (-p0[1]) * d[0]]
+        r = math.sqrt(sum(x * x for x in cr)) / L
+        best = r if best is None else min(best, r)
+    return best or 1.0
+
+
 def _dodeca():
     V = [(x, y, z) for x in (-1, 1) for y in (-1, 1) for z in (-1, 1)]
     for a in (-1 / PHI, 1 / PHI):
@@ -181,5 +201,21 @@ def build_compound(kind):
     if kind == 'CUBE_OCTA':
         return [cube, scaled(octa, 1.5)]
     if kind == 'DODECA_ICOSA':
-        return [_dodeca(), scaled(_icosa(), PHI)]
+        # Build the icosahedron FROM the dodecahedron's face axes rather than
+        # from a separately written vertex table.  `_dodeca` and `_icosa` list
+        # their cyclic permutations in opposite senses, so pairing them
+        # directly leaves the two components rotated 26.565 deg = atan(1/2)
+        # apart: a valid figure, but not the dual compound, and its symmetry
+        # collapses from Ih to Th.  Deriving one from the other cannot drift.
+        dv, df = _dodeca()
+        axes = []
+        for f in df:
+            c = [sum(dv[k][t] for k in f) / len(f) for t in range(3)]
+            L = math.sqrt(sum(x * x for x in c)) or 1.0
+            axes.append(tuple(x / L for x in c))
+        # scale so both components share a midsphere -- the canonical dual
+        # compound, with each solid's edges crossing the other's
+        iv, ifc = axes, _hull_faces(axes)
+        s = _midradius(dv, df) / _midradius(iv, ifc)
+        return [(dv, df), ([tuple(s * c for c in v) for v in iv], ifc)]
     raise ValueError(kind)
