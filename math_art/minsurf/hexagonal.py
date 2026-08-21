@@ -726,7 +726,85 @@ def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
     return np.real(F)
 
 
-def spec_build(key, cells, res_per_cell, scale, theta):
+def clp_assembly(P):
+    """The copy set for CLP, following Weber's chain literally.
+
+    Group closure plus reduction modulo a lattice is the wrong tool for
+    this one, and the notebook says why:
+
+        fr1  = fr0 u reflect(fr0, plane of the top edge)
+        fr2  = fr1 u rotate(fr1, line fc(0)-fc(a))
+        fr3  = fr2 u rotate(fr2, line fc(.5)-fc(a))
+        fr3b =      rotate(fr3, line fc(0)-fc(i y1))
+        fr4  = fr3 u fr3b
+        fr5  = fr4 u translate(fr3,  2(1,-1,0)*trans)
+                   u translate(fr3b, 2(1, 1,0)*trans)
+        fr6  = fr5 u translate(fr5, (0,0,2 y1))
+
+    The step that breaks the generic scheme is fr5: it translates the
+    two HALVES by different vectors.  That is not a lattice acting on
+    the cell, so reducing copies modulo any lattice identifies copies
+    that are not equivalent -- which is what left flat plate where the
+    surface should saddle, and made the over-shared edge count wander
+    with resolution.
+
+    Every element is measured off the patch, so nothing here depends on
+    Weber's choice of origin: the mirror is the plane of the top edge,
+    each axis is the chord between two boundary corners, and `trans` is
+    the image of z = .5 relative to the image of z = 0.
+    """
+    def m(*mats):
+        out = np.eye(4)
+        for M in mats:
+            out = M @ out
+        return out
+
+    top = P[:, -1]
+    _, _, nrm, cen = _classify(top)
+    refl = _mirror(_snap_axis(nrm, 45.0), float(np.dot(cen, nrm)))
+
+    bl, br = P[0, 0], P[-1, 0]                   # images of z = 0, z = .5
+    xs = _spec_nodes('CLP', P.shape[0])[0]
+    ia = int(np.argmin(np.abs(xs - _SPECS['CLP']['splits'][0])))
+    ba = P[ia, 0]                                # image of z = a
+    tl = P[0, -1]                                # image of z = i y1
+
+    rot1 = _halfturn(bl, _snap_axis(ba - bl, 45.0))
+    rot2 = _halfturn(br, _snap_axis(ba - br, 45.0))
+    rot3 = _halfturn(bl, _snap_axis(tl - bl, 45.0))
+
+    trans = br - bl
+    zext = float(P[..., 2].max() - P[..., 2].min())
+    t1 = np.eye(4); t1[:3, 3] = [2.0 * trans[0], -2.0 * trans[1], 0.0]
+    t2 = np.eye(4); t2[:3, 3] = [2.0 * trans[0], 2.0 * trans[1], 0.0]
+    t3 = np.eye(4); t3[:3, 3] = [0.0, 0.0, 4.0 * zext]
+
+    s1 = [np.eye(4)]
+    s1 = s1 + [m(x, refl) for x in s1]
+    s2 = s1 + [m(x, rot1) for x in s1]
+    s3 = s2 + [m(x, rot2) for x in s2]
+    s3b = [m(x, rot3) for x in s3]
+    s4 = s3 + s3b
+    s5 = s4 + [m(x, t1) for x in s3] + [m(x, t2) for x in s3b]
+    s6 = s5 + [m(x, t3) for x in s5]
+    # the block repeats on these three vectors
+    B = np.array([[4.0 * trans[0], 0.0, 0.0],
+                  [0.0, 4.0 * trans[1], 0.0],
+                  [0.0, 0.0, 8.0 * zext]])
+    # Weber exports exactly these three stages (his FR0a / FR0b / FR0c),
+    # and they are the useful ones to look at: the piece the mathematics
+    # produces, the smallest assembly that reads as the surface, and the
+    # block that shows it repeating.
+    return {'PATCH': ([np.eye(4)], B),
+            'UNIT': (s4, B),
+            'BLOCK': (s6, B)}
+
+
+CLP_ARRANGEMENTS = ('PATCH', 'UNIT', 'BLOCK')
+
+
+def spec_build(key, cells, res_per_cell, scale, theta,
+               arrangement='UNIT'):
     """Builder for one theta-family row, matching the TPMS_EXACT
     signature.  Falls back to the honest fundamental piece whenever the
     reflection group does not close on a rank-3 period lattice, which is
@@ -740,11 +818,22 @@ def spec_build(key, cells, res_per_cell, scale, theta):
     nv = max(24, int(round(res_per_cell)))
     named = abs(float(theta)) < 1e-9
     P = _spec_patch(key, nu, nv, None if named else float(theta))
-    lat = _SPECS[key].get('lattice')
-    built = _assemble(
-        P, gens=spec_generators(key, P)[0],
-        lattice=None if lat is None else lat(P, _SPECS[key]['tau'])
-    ) if named else None
+    built = None
+    if named and key == 'CLP':
+        ops, B = clp_assembly(P)[arrangement]
+        V0 = P.reshape(-1, 3)
+        Q0 = _patch_quads(P.shape[0], P.shape[1])
+        Vs, Qs, base = [], [], 0
+        for M in ops:
+            Vs.append(_apply(M, V0))
+            q = Q0 + base
+            if np.linalg.det(M[:3, :3]) < 0.0:
+                q = q[:, ::-1]
+            Qs.append(q)
+            base += len(V0)
+        built = (np.concatenate(Vs, 0), np.concatenate(Qs, 0), B)
+    elif named:
+        built = _assemble(P, gens=spec_generators(key, P)[0])
     if built is None:
         V = P.reshape(-1, 3)
         Q = _patch_quads(P.shape[0], P.shape[1])

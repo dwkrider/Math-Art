@@ -94,6 +94,7 @@ from .minsurf.plateau import (_SEIFERT_MAX_ITERS, _quads_to_tris,
                               fair_grid_columns, mesh_area, minimize_area,
                               relax_normal_flow, resample_loop, torus_knot)
 from .minsurf.tpms import (TPMS, TPMS2_HEX_LATTICE, TPMS_EXACT,
+                           TPMS_EXACT_ARRANGEMENTS,
                            _PGD_PRESET_ANGLE, _f_p, build_tpms,
                            build_tpms_exact, marching_tets,
                            tpms2_DEFAULT_OFFSET, tpms2_LATTICE)
@@ -383,16 +384,29 @@ if _IN_BLENDER:
         # Weierstrass P/Gyroid/D (Bonnet angle) is listed LAST
         exact_items = [(k, v[0], v[0]) for k, v in TPMS_EXACT.items()]
         tpms_items = [(k, v[0], v[0]) for k, v in TPMS.items()
-                      if k not in _NOT_TRIPLY] + exact_items
+                      if k not in _NOT_TRIPLY]
         if tpms_items:
             _PERIODIC_ITEMS['TRIPLY'] = tpms_items
             _PERIODIC_ALL.extend(tpms_items)
             _PERIODICITY_ITEMS.append(
                 ('TRIPLY', "Triply Periodic (TPMS)",
-                 f"Triply periodic minimal surfaces: the exact "
-                 f"P/Gyroid/D associate family + "
-                 f"{len(tpms_items) - len(exact_items)} nodal "
-                 f"approximations"))
+                 f"{len(tpms_items)} triply periodic minimal surfaces "
+                 f"as published nodal (level-set) approximations"))
+        # A FOURTH entry, beside singly / doubly / triply: the surfaces
+        # built by integrating the Weierstrass representation instead of
+        # approximating it with a trigonometric polynomial.  They differ
+        # from the nodal rows in kind, not just in accuracy -- each is
+        # assembled from a fundamental piece by its own symmetry group,
+        # so each carries an Arrangement rather than a cell count, and
+        # Schwarz H and CLP have no nodal form at all.
+        if exact_items:
+            _PERIODIC_ITEMS['EXACT'] = exact_items
+            _PERIODIC_ALL.extend(exact_items)
+            _PERIODICITY_ITEMS.append(
+                ('EXACT', "Exact (Weierstrass)",
+                 f"{len(exact_items)} surfaces integrated exactly from "
+                 f"their Weierstrass data and assembled by reflection, "
+                 f"rather than approximated by a nodal polynomial"))
         if not _PERIODICITY_ITEMS:
             _PERIODICITY_ITEMS.append(
                 ('TRIPLY', "Triply Periodic (TPMS)", "TPMS"))
@@ -684,6 +698,20 @@ if _IN_BLENDER:
         surface: EnumProperty(
             name="Surface",
             items=_periodic_surface_items)
+        arrangement: EnumProperty(
+            name="Arrangement",
+            items=[('PATCH', "Fundamental Piece",
+                    "The single patch the Weierstrass integral "
+                    "produces, before any reflection"),
+                   ('UNIT', "Unit",
+                    "The smallest assembly that reads as the surface"),
+                   ('BLOCK', "Block",
+                    "The unit repeated, showing the surface tiling")],
+            default='UNIT',
+            description="Which pre-defined assembly to build. The exact "
+                        "surfaces are grown from a fundamental piece by "
+                        "their own symmetry group, so these stages -- "
+                        "not a cell count -- are the natural sizes")
         # -- Weierstrass (singly / doubly) parameters
         output: EnumProperty(
             name="Output",
@@ -836,7 +864,10 @@ if _IN_BLENDER:
                 else:                                   # CUSTOM: exact morph
                     verts, tris = build_tpms_exact(
                         surf, cxyz, self.resolution, self.cell_size,
-                        self.assoc_angle)
+                        self.assoc_angle,
+                        arrangement=(self.arrangement
+                                     if surf in TPMS_EXACT_ARRANGEMENTS
+                                     else None))
                     label = TPMS_EXACT[surf][0]
                 if len(tris) == 0:
                     self.report({'ERROR'}, "Empty surface")
@@ -947,7 +978,8 @@ if _IN_BLENDER:
         def _draw_body(self, lay):
             lay.prop(self, 'periodicity')
             lay.prop(self, 'surface')
-            if (self.periodicity == 'TRIPLY' or self.surface in TPMS
+            if (self.periodicity in ('TRIPLY', 'EXACT')
+                    or self.surface in TPMS
                     or self.surface in TPMS_EXACT):
                 if self.surface == 'PGD':
                     # exact P/Gyroid/D: named preset first, then always show
@@ -967,6 +999,8 @@ if _IN_BLENDER:
                     # only control it has, and only zero is the named
                     # surface -- the rest of the family is not periodic
                     lay.prop(self, 'assoc_angle')
+                    if self.surface in TPMS_EXACT_ARRANGEMENTS:
+                        lay.prop(self, 'arrangement')
                 # triply: three independent per-axis counts (x, y, z)
                 lay.prop(self, 'cells_u', text="Cells X")
                 lay.prop(self, 'cells_v', text="Cells Y")

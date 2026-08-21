@@ -738,6 +738,9 @@ from . import weierstrass as _we_pgd
 from . import hexagonal as _we_hex
 
 # key -> (menu label, builder(cells, res_per_cell, scale, theta))
+# Rows that offer named assemblies, and the names they offer.
+TPMS_EXACT_ARRANGEMENTS = {'CLP': _we_hex.CLP_ARRANGEMENTS}
+
 TPMS_EXACT = {
     'PGD': ("Schwarz P-Gyroid-D (exact, Bonnet angle)", _we_pgd.pgd_build),
     # Schwarz H has no published nodal formula at all -- it is the one
@@ -749,8 +752,9 @@ TPMS_EXACT = {
     # see the note above _SPECS in hexagonal.py for why its four
     # boundary curves cannot close it.
     'CLP': (_we_hex._SPECS['CLP']['label'],
-            lambda cells, res, scale, theta: _we_hex.spec_build(
-                'CLP', cells, res, scale, theta)),
+            lambda cells, res, scale, theta, arrangement='UNIT':
+                _we_hex.spec_build('CLP', cells, res, scale, theta,
+                                   arrangement)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
@@ -763,9 +767,18 @@ _PGD_PRESET_ANGLE = {
 }
 
 
-def build_tpms_exact(kind, cells, res_per_cell, scale, theta):
+def build_tpms_exact(kind, cells, res_per_cell, scale, theta,
+                     arrangement=None):
+    """Build an exact-Weierstrass row.  `arrangement` selects among a
+    row's pre-defined assemblies where it has them; rows that do not
+    take one simply ignore it."""
     label, builder = TPMS_EXACT[kind]
-    return builder(cells, res_per_cell, scale, theta)
+    if arrangement is None:
+        return builder(cells, res_per_cell, scale, theta)
+    try:
+        return builder(cells, res_per_cell, scale, theta, arrangement)
+    except TypeError:
+        return builder(cells, res_per_cell, scale, theta)
 
 
 def _selftest():
