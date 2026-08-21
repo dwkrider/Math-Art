@@ -96,15 +96,65 @@ except ImportError:
 
 if _IN_BLENDER:
 
-    def _grouped_enum_items():
-        """COMPOUNDS as enum items, grouped under family headings."""
-        items = []
-        for heading, rows in _cmp.compound_groups():
-            if items:
-                items.append(None)                 # separator
-            items.append(("", heading, ""))        # heading
-            items.extend((k, lbl, "") for k, lbl in rows)
-        return items
+    # --- the two-stage selector -----------------------------------------
+    # Stage one picks a family, stage two the compound within it.  117
+    # entries in one dropdown was seven columns of unordered names.
+    #
+    # The compound list therefore has to be a CALLBACK, and two things
+    # about Blender's dynamic enums shape the rest of this:
+    #
+    #  * the returned strings must be kept alive or the labels come back
+    #    corrupted, hence `_ITEM_CACHE`;
+    #  * `default=` is not allowed on a callback enum, so the initial
+    #    value is whatever sits at index 0 -- and if that is a heading,
+    #    the operator starts with an EMPTY selection.  Hence the "All
+    #    families" entry and the fallback in `execute`.
+    #
+    # "All families" is the default deliberately.  It keeps the whole
+    # list reachable in one place, and it keeps
+    # `polyhedron_compound_add(compound='S19_...')` working from a script
+    # without naming the family -- which is how the docs' variant
+    # machinery and every existing call reach this operator.
+    _ITEM_CACHE = {}
+
+    def _family_items(self, context):
+        got = _ITEM_CACHE.get('_families')
+        if got is None:
+            got = [('ALL', "All families",
+                    "Every compound, grouped under its family")]
+            got += [(key, head, "%d compounds" % len(rows))
+                    for key, head, rows in _cmp.compound_families()]
+            _ITEM_CACHE['_families'] = got
+        return got
+
+    def _compound_items(self, context):
+        # self is None when the property is introspected off the type,
+        # which is how the docs tooling enumerates variants -- answer
+        # with the whole list there rather than with nothing.
+        fam = getattr(self, 'family', 'ALL') if self is not None else 'ALL'
+        got = _ITEM_CACHE.get(fam)
+        if got is None:
+            if fam == 'ALL':
+                got = []
+                for _key, head, rows in _cmp.compound_families():
+                    if got:
+                        got.append(None)               # separator
+                    got.append(("", head, ""))         # heading
+                    got.extend((k, lbl, "") for k, lbl in rows)
+            else:
+                rows = next((r for k, _h, r in _cmp.compound_families()
+                             if k == fam), [])
+                got = [(k, lbl, "") for k, lbl in rows]
+            _ITEM_CACHE[fam] = got
+        return got
+
+    def _first_compound(fam):
+        """The first real (non-heading) key of a family."""
+        for it in _compound_items(None, None) if fam == 'ALL' else \
+                _ITEM_CACHE.get(fam, []):
+            if it and it[0]:
+                return it[0]
+        return 'STELLA'
 
     _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
                 (0.30, 0.69, 0.42), (0.95, 0.77, 0.29),
@@ -132,15 +182,14 @@ if _IN_BLENDER:
         bl_label = "Polyhedron Compound"
         bl_options = {'REGISTER', 'UNDO'}
 
-        # Grouped, not flat.  117 entries in the order the source tables
-        # happened to be concatenated ran Skilling 62, 67, 18, 48 down
-        # consecutive columns; an empty identifier gives a heading and a
-        # None a separator, so the families read as families.  The
-        # default has to be named explicitly now, since the first item is
-        # a heading rather than a compound.
+        family: EnumProperty(
+            name="Family", items=_family_items,
+            description="Which family of compounds to choose from. "
+                        "Narrowing this shortens the list below")
         compound: EnumProperty(
-            name="Compound", default='STELLA',
-            items=_grouped_enum_items())
+            name="Compound", items=_compound_items,
+            description="Which compound to build, within the family "
+                        "above")
         separate: BoolProperty(
             name="Separate Objects", default=False,
             description="One object per component instead of a single "
@@ -166,10 +215,16 @@ if _IN_BLENDER:
         scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
 
         def execute(self, context):
+            # A callback enum takes no `default=`, so on first use the
+            # value is index 0 -- a heading in "All families" mode, whose
+            # identifier is the empty string.  The UI never lets a
+            # heading be picked, so this only ever fires on that first
+            # call, but it fires every time the operator is run fresh.
+            key = self.compound or _first_compound(self.family)
             try:
-                axis_kind = any(self.compound == r[0] for r in AXIS_COMPOUNDS)
+                axis_kind = any(key == r[0] for r in AXIS_COMPOUNDS)
                 comps = build_compound(
-                    self.compound, sides=self.sides,
+                    key, sides=self.sides,
                     repeat=self.repeat,
                     phase=self.phase if axis_kind and self.phase else None)
             except Exception as e:      # noqa: BLE001
@@ -178,7 +233,7 @@ if _IN_BLENDER:
             # normalise the whole compound to fit a 2 m cube
             mx = max(abs(c) for V, _F in comps for v in V for c in v) or 1.0
             s = self.scale / mx
-            label = dict(COMPOUNDS)[self.compound]
+            label = dict(COMPOUNDS)[key]
             for o in context.selected_objects:
                 o.select_set(False)
             first = None

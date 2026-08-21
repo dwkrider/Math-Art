@@ -1579,6 +1579,40 @@ _GROUP_ORDER = [
 ]
 
 
+#: heading -> the enum key the family selector uses.  Written out rather
+#: than slugged from the heading so that rewording a heading cannot
+#: silently change a key and invalidate a saved .blend or a script.
+_FAMILY_KEYS = {
+    'Classical compounds': 'CLASSICAL',
+    'A solid with its dual': 'DUAL_PAIR',
+    'One solid inscribed in another': 'INSCRIBED',
+    'Regular solids on shared axes': 'AXES',
+    "Hart's cube compounds": 'HART_CUBES',
+    'Skilling 1-19: miscellaneous': 'SK_1_19',
+    'Skilling 20-25: prism symmetry in prism symmetry': 'SK_20_25',
+    'Skilling 26-45: prism symmetry in octahedral or icosahedral':
+        'SK_26_45',
+    'Skilling 46-67: tetrahedral symmetry in octahedral or icosahedral':
+        'SK_46_67',
+    'Skilling 68-75: duplication of enantiomorphs': 'SK_68_75',
+}
+
+
+def compound_families():
+    """The families as [(key, heading, [(compound key, label), ...]), ...].
+
+    The two-stage selector's first stage.  Keys come from `_FAMILY_KEYS`
+    so that rewording a heading does not invalidate a saved file.
+    """
+    out = []
+    for heading, rows in compound_groups():
+        key = _FAMILY_KEYS.get(heading)
+        if key is None:                    # the 'Other' catch-all
+            key = 'OTHER'
+        out.append((key, heading, rows))
+    return out
+
+
 def _skilling_number(label):
     """The Table 1 row a label names, or None."""
     if not label.startswith('Skilling '):
