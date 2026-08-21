@@ -692,6 +692,59 @@ _ENGINE_CACHE = {}
 # subgroup machinery exists: under the dodecahedron's own icosahedral
 # group its twelve face planes form a single orbit, and only the
 # tetrahedral subgroup splits them finely enough for these to appear.
+# --------------------------------------------------------------------------
+# Pawley's volume letters for the rhombic triacontahedron
+# --------------------------------------------------------------------------
+# G. S. Pawley, "The 227 Triacontahedra", Geometriae Dedicata 4 (1975),
+# 221-232, labels the elementary volumes of the RT's plane arrangement
+# A..Z plus the Scandinavian AE, OE, AA, and stacks them as bricks in his
+# figure 2 with the innermost at the bottom.  The engine finds 29 shells
+# for the same seed and Pawley uses 29 letters, so the two decompositions
+# should correspond -- and they do, anchored by a fact that cannot be
+# coincidence:
+#
+#   Pawley names NINE volumes that do not span a plane of symmetry --
+#   A, C, E, G, J, L, M, S, X -- and the engine finds exactly NINE
+#   chiral shells.  Ordering his stack outward and the engine's shells by
+#   radius, ALL NINE chiral positions land on each other.
+#
+# Reading his stack from the centre out (his AA is the core):
+#
+#   AA | OE | AE | Y Z | W X | T U V | R S | Q O P | N L M | K J H I |
+#   G E F | C D B | A
+#
+# against the engine's a, s01 .. s28.  Within a row the chiral flag fixes
+# the assignment where it can: s06=X, s11=S, s20=J, s27=C, s28=A are
+# forced outright, and {s15,s16}={L,M}, {s22,s24}={E,G} are fixed as
+# pairs with their non-chiral row-mates s17=N, s23=F.
+#
+# This is what makes Pawley's noble pair reachable.  He states that
+# "Suw and A(bcdek) are the two isohedral-isogonal polyhedra", i.e. the
+# two NOBLE stellations of the RT -- Hart's K and 2B.
+PAWLEY_ROWS = [
+    ('a', ['AA']),
+    ('s01', ['OE']),
+    ('s02', ['AE']),
+    ('s03 s04', ['Y', 'Z']),
+    ('s05 s06', ['W', 'X']),
+    ('s07 s08 s09', ['T', 'U', 'V']),
+    ('s10 s11', ['R', 'S']),
+    ('s12 s13 s14', ['Q', 'O', 'P']),
+    ('s15 s16 s17', ['L', 'M', 'N']),
+    ('s18 s19 s20 s21', ['K', 'H', 'I', 'J']),
+    ('s22 s23 s24', ['E', 'F', 'G']),
+    ('s25 s26 s27', ['D', 'B', 'C']),
+    ('s28', ['A']),
+]
+
+#: the nine volumes Pawley says do not span a mirror plane
+PAWLEY_CHIRAL = ('A', 'C', 'E', 'G', 'J', 'L', 'M', 'S', 'X')
+
+#: the shells those nine correspond to, forced by the chiral flags
+PAWLEY_CHIRAL_SHELLS = ('s06', 's11', 's15', 's16', 's20', 's22', 's24',
+                        's27', 's28')
+
+
 _SEED_SUBGROUPS = {
     'dodecahedron_tetrahedral': ('dodecahedron', 'tetrahedral'),
 }
@@ -1502,6 +1555,46 @@ def _verify_presets_distinct(ck):
     print()
 
 
+def _verify_pawley_correspondence(ck):
+    """The engine's RT shells line up with Pawley's volume letters.
+
+    The evidence is the chirality pattern.  Pawley names nine volumes
+    that do not span a plane of symmetry; the engine independently finds
+    nine chiral shells; and laying his brick stack against the engine's
+    radius ordering puts all nine on each other.  Nine coincidences in a
+    row is a correspondence, so this test pins it down and will fail if
+    either side is ever renumbered.
+    """
+    print('Pawley 1975 correspondence (rhombic triacontahedron)')
+    eng = stellations_of('rhombic_triacontahedron')
+    got = tuple(sh['label'] for sh in eng.shells if sh['chiral'])
+    ck(len(eng.shells) == 29,
+       'engine finds 29 shells, Pawley uses 29 volume letters (got %d)'
+       % len(eng.shells))
+    ck(len(PAWLEY_CHIRAL) == 9, 'Pawley names nine non-mirror volumes')
+    ck(got == PAWLEY_CHIRAL_SHELLS,
+       'the nine chiral shells are %s' % (', '.join(PAWLEY_CHIRAL_SHELLS)))
+    # the row table must name every shell exactly once
+    named = [s for row, _v in PAWLEY_ROWS for s in row.split()]
+    ck(len(named) == len(set(named)) == 29,
+       'the row table names all 29 shells once (%d)' % len(named))
+    letters = [v for _r, vs in PAWLEY_ROWS for v in vs]
+    ck(len(letters) == len(set(letters)) == 29,
+       'and all 29 of Pawley volume letters once (%d)' % len(letters))
+    # every chiral shell must sit in a row whose letters include a
+    # chiral volume, and vice versa
+    ok = True
+    for row, vs in PAWLEY_ROWS:
+        shells = row.split()
+        nchir = sum(1 for s in shells
+                    if s in PAWLEY_CHIRAL_SHELLS)
+        nvol = sum(1 for v in vs if v in PAWLEY_CHIRAL)
+        if nchir != nvol:
+            ok = False
+    ck(ok, 'each row has as many chiral shells as chiral volumes')
+    print()
+
+
 def _self_test():
     print('GENERAL STELLATION ENGINE -- verification transcript')
     print()
@@ -1512,6 +1605,7 @@ def _self_test():
     _verify_rt(ck)
     _verify_presets_close(ck)
     _verify_presets_distinct(ck)
+    _verify_pawley_correspondence(ck)
     print('=' * 74)
     if ck.fails:
         print('RESULT: FAIL (%d)' % len(ck.fails))
