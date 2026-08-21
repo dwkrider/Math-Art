@@ -20,6 +20,11 @@
 import math
 import numpy as np
 
+try:
+    from .. import geom_cache as _geom_cache
+except ImportError:  # flat import outside the package
+    import geom_cache as _geom_cache
+
 TAU = 2.0 * math.pi
 
 
@@ -859,6 +864,28 @@ def _cells_xyz(cells):
 
 
 def build_tpms(kind, cells, res_per_cell, scale, offset=0.0, aspect=1.0):
+    """Cached wrapper -- see `_build_tpms` for the construction.
+
+    NOT memoised on the arguments alone.  Two of the things the mesh
+    depends on are module state rather than parameters: the row's
+    lattice matrix in `tpms2_LATTICE` and its built-in level offset in
+    `tpms2_DEFAULT_OFFSET`.  Keying on the signature alone hands back
+    the previous mesh after either changes -- which is exactly what the
+    hexagonal-cell check in the toolkit's self-test caught, getting a
+    cubic cell back after installing a hex lattice.  Both go in the key.
+    """
+    lat = tpms2_LATTICE.get(kind)
+    ck = ('tpms.build_tpms', kind,
+          tuple(cells) if isinstance(cells, (tuple, list)) else cells,
+          int(res_per_cell), float(scale), float(offset), float(aspect),
+          None if lat is None else tuple(map(tuple, lat)),
+          float(tpms2_DEFAULT_OFFSET.get(kind, 0.0)))
+    return _geom_cache.cached(
+        ck, lambda: _build_tpms(kind, cells, res_per_cell, scale,
+                                offset, aspect))
+
+
+def _build_tpms(kind, cells, res_per_cell, scale, offset=0.0, aspect=1.0):
     """Nodal TPMS mesh.  `cells` is an int (symmetric block) or a
     (cx, cy, cz) triple: the block spans cx x cy x cz unit cells, one
     independent count per lattice axis.  For the singly periodic Scherk

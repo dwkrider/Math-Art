@@ -23,6 +23,11 @@
 import math
 import numpy as np
 
+try:
+    from .. import geom_cache as _geom_cache
+except ImportError:  # flat import outside the package
+    import geom_cache as _geom_cache
+
 
 _PHI = (1.0 + math.sqrt(5.0)) / 2.0          # golden ratio
 
@@ -850,6 +855,7 @@ def boundary_loops(verts, tris, smooth=2):
     return rim_curve.boundary_loops(verts, tris, smooth=smooth)
 
 
+@_geom_cache.memoise
 def build_algebraic(kind, res, mu=1.3, clip=0.0, scale=1.0, fold=3):
     """Mesh the zero level set of a preset. Returns (verts, tris).
     marching_tets simply leaves the level set open where it crosses

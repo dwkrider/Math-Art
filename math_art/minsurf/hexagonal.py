@@ -61,6 +61,11 @@ import math
 
 import numpy as np
 
+try:
+    from .. import geom_cache as _geom_cache
+except ImportError:  # flat import outside the package
+    import geom_cache as _geom_cache
+
 # --------------------------------------------------------------------
 # Weierstrass data
 # --------------------------------------------------------------------
@@ -1048,6 +1053,25 @@ def clp_conjugate(nu, nv, maxlen=6):
 
 def spec_build(key, cells, res_per_cell, scale, theta,
                arrangement='UNIT'):
+    """Cached wrapper -- see `_spec_build` for the construction.
+
+    NOT memoised on the arguments alone.  CLP's two shape moduli live
+    in `_SPECS`, set by `clp_params`, so they do not appear in this
+    signature; a cache keyed on the arguments would hand back the old
+    surface after the modulus changed.  The key carries them explicitly.
+    """
+    sp = _SPECS[key]
+    ck = ('hexagonal.spec_build', key, tuple(np.ravel(cells))
+          if isinstance(cells, (tuple, list)) else cells,
+          int(res_per_cell), float(scale), float(theta), arrangement,
+          complex(sp['tau']), float(sp['a']), complex(sp.get('const', 0)))
+    return _geom_cache.cached(
+        ck, lambda: _spec_build(key, cells, res_per_cell, scale, theta,
+                                arrangement))
+
+
+def _spec_build(key, cells, res_per_cell, scale, theta,
+                arrangement='UNIT'):
     """Builder for one theta-family row, matching the TPMS_EXACT
     signature.  Falls back to the honest fundamental piece whenever the
     reflection group does not close on a rank-3 period lattice, which is
@@ -1530,6 +1554,27 @@ def _selftest():
     print("hexagonal: CLP unit %d verts %d faces, over-shared %d, "
           "components %d %s"
           % (len(Vc), len(fc_), overc, ncomp, 'OK' if good else 'FAIL'))
+
+    # The cache in front of spec_build must notice CLP's moduli, which
+    # are module state rather than arguments.  A cache keyed on the
+    # signature alone would hand back the previous surface after the
+    # modulus changed -- silently, and looking perfectly reasonable.
+    clp_params(2.0, 0.15)
+    Va, _ = spec_build('CLP', 1, 40, 2.0, 0.0, 'UNIT')
+    clp_params(0.4, 0.15)
+    Vb, _ = spec_build('CLP', 1, 40, 2.0, 0.0, 'UNIT')
+    clp_params(2.0, 0.15)
+    Vc, _ = spec_build('CLP', 1, 40, 2.0, 0.0, 'UNIT')
+    ba = np.asarray(Va, float).max(0) - np.asarray(Va, float).min(0)
+    bb = np.asarray(Vb, float).max(0) - np.asarray(Vb, float).min(0)
+    moved = float(np.max(np.abs(ba - bb)))
+    back = float(np.max(np.abs(np.asarray(Va, float)
+                               - np.asarray(Vc, float))))
+    good = moved > 1e-6 and back < 1e-12
+    ok &= good
+    print("hexagonal: changing the modulus invalidates the cache "
+          "(bbox moves %.4f) and returning to it hits again (%.1e) %s"
+          % (moved, back, 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:
