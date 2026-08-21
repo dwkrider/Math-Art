@@ -528,6 +528,72 @@ class StellationEngine(object):
         self.labels = [sh['label'] for sh in shells]
         self.shell_by_label = {sh['label']: sh for sh in shells}
 
+    # ---- support ---------------------------------------------------------
+    def support(self):
+        """Which cells each cell RESTS ON, as {cell: frozenset(cells)}.
+
+        Pawley's rule for a non-reentrant ("fully supported") stellation
+        is that "for a volume to be included in a stellation all those
+        volumes on the lower courses on which it rests must also be
+        included", and he draws the relation as a stack of bricks.  It
+        does not have to be read off that drawing: it is geometry.  Two
+        cells share a facet exactly when their sign vectors differ in ONE
+        plane, and the one on the inner side of that plane is the lower.
+        `power` counts the planes a cell lies outside of, so the lower
+        cell is simply the one whose power is smaller.
+
+        Reading it from the diagram is in fact unreliable -- Pawley draws
+        bricks A, C, J and N BROKEN so that a three-dimensional stack
+        fits on the page, so horizontal overlap there is not the resting
+        relation.  Computing it sidesteps that entirely.
+        """
+        if getattr(self, '_support', None) is not None:
+            return self._support
+        keys = list(self.cells.keys())
+        idx = {s: i for i, s in enumerate(keys)}
+        A = np.array(keys, np.int8)
+        pw = np.array([self.cells[s]['power'] for s in keys])
+        out = {}
+        for i, s in enumerate(keys):
+            diff = (A != A[i]).sum(axis=1)
+            nb = np.flatnonzero((diff == 1) & (pw < pw[i]))
+            out[s] = frozenset(keys[j] for j in nb)
+        self._support = out
+        return out
+
+    def is_fully_supported(self, cellset):
+        """True when every cell present also has everything it rests on."""
+        sup = self.support()
+        cs = set(cellset)
+        return all(sup[s] <= cs for s in cs)
+
+    def support_closure(self, cellset):
+        """Add whatever is needed to make a cell set fully supported."""
+        sup = self.support()
+        out = set(cellset)
+        frontier = list(out)
+        while frontier:
+            s = frontier.pop()
+            for t in sup[s]:
+                if t not in out:
+                    out.add(t)
+                    frontier.append(t)
+        return frozenset(out)
+
+    def shell_support(self):
+        """The same relation lifted to shells: {label: set(labels)}."""
+        sup = self.support()
+        owner = {}
+        for sh in self.shells:
+            for s in sh['cells']:
+                owner[s] = sh['label']
+        out = {sh['label']: set() for sh in self.shells}
+        for s, below in sup.items():
+            for t in below:
+                if owner[t] != owner[s]:
+                    out[owner[s]].add(owner[t])
+        return out
+
     # ---- cell-code handling ----------------------------------------------
     def cells_of_code(self, cell_code):
         if isinstance(cell_code, str):
@@ -1227,7 +1293,19 @@ NAMED_PRESETS = {
          ['a', 's01', 's02', 's03', 's04', 's05', 's06', 's07', 's08',
           's09', 's10', 's11', 's13', 's14', 's15', 's18'],
          'dual great icosidodecahedron; density 7'),
-        ('final', 'Final stellation of the RT', ['all'], ''),
+        # Pawley 1975 names "Suw and A(bcdek)" as the two isohedral-
+        # isogonal -- i.e. NOBLE -- stellations of the RT, which are the
+        # forms Hart calls K and 2B.  Taking the computed support closure
+        # of each (see StellationEngine.support) gives:
+        #   Suw       -> S U V W X Y Z AE OE AA, ten shells
+        #   A(bcdek)  -> every shell, i.e. the final stellation below
+        # so only the first needs a new entry.
+        ('noble_suw', 'Noble stellation Suw (Pawley)',
+         ['a', 's01', 's02', 's03', 's04', 's05', 's06', 's08', 's09',
+          's11'],
+         'isohedral and isogonal; Pawley 1975, one of Hart K / 2B'),
+        ('final', 'Final stellation of the RT', ['all'],
+         'also Pawley A(bcdek), the other noble RT stellation'),
     ],
 }
 
@@ -1649,6 +1727,53 @@ def _verify_smith_correspondence(ck):
     print()
 
 
+def _verify_support(ck):
+    """The computed support relation reproduces Pawley's brick stack.
+
+    Support is geometry, not a picture: two cells share a facet exactly
+    when their sign vectors differ in one plane, and the lower is the one
+    with the smaller power.  Lifting that to shells must reproduce the
+    layering of Pawley's figure 2 -- and it does, row for row, ending
+    with his outermost volume A resting on exactly B, C and D.
+
+    This matters because reading the figure directly is unreliable: he
+    draws bricks A, C, J and N BROKEN to fit a 3-D stack on the page, so
+    horizontal overlap there is not the resting relation.
+    """
+    print('support relation (rhombic triacontahedron)')
+    eng = stellations_of('rhombic_triacontahedron')
+    ss = eng.shell_support()
+    letter = {}
+    for row, vols in PAWLEY_ROWS:
+        for sh, v in zip(row.split(), vols):
+            letter[sh] = v
+    inv = {v: k for k, v in letter.items()}
+    ck(ss[inv['AA']] == set(), 'the core rests on nothing')
+    ck(ss[inv['OE']] == {inv['AA']}, 'OE rests on the core')
+    ck(ss[inv['A']] == {inv['B'], inv['C'], inv['D']},
+       "Pawley's outermost volume A rests on exactly B, C, D")
+    # every shell except the core must rest on something strictly lower
+    bad = [l for l in eng.labels if l != 'a' and not ss[l]]
+    ck(not bad, 'every shell above the core rests on something (%s)' % bad)
+
+    # and the two noble stellations Pawley names must close up
+    for key in ('noble_suw', 'final'):
+        V, F = build_named('rhombic_triacontahedron', key)
+        st = surface_stats(V, F)
+        ck(st['closed_2'] and st['chi'] == 2,
+           'rhombic_triacontahedron/%s closes (chi=%d)' % (key, st['chi']))
+    # A(bcdek) closes back to the whole cell set, which is the final
+    # stellation -- so Pawley's second noble form is the one already
+    # shipped, and only Suw needed adding
+    cl = eng.support_closure(set().union(
+        *[eng.shell_by_label[inv[v]]['cells']
+          for v in ('A', 'B', 'C', 'D', 'E', 'K')]))
+    ck(len(cl) == len(eng.cells),
+       'A(bcdek) supports out to the final stellation (%d of %d cells)'
+       % (len(cl), len(eng.cells)))
+    print()
+
+
 def _verify_pawley_correspondence(ck):
     """The engine's RT shells line up with Pawley's volume letters.
 
@@ -1701,6 +1826,7 @@ def _self_test():
     _verify_presets_distinct(ck)
     _verify_smith_correspondence(ck)
     _verify_pawley_correspondence(ck)
+    _verify_support(ck)
     print('=' * 74)
     if ck.fails:
         print('RESULT: FAIL (%d)' % len(ck.fails))
