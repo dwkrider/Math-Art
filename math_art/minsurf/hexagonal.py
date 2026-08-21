@@ -458,16 +458,34 @@ def _apply(M, V):
 # the piece and saying so is the same choice already made for the
 # gyroid, whose chiral cell cannot be closed either.
 #
-# The LIDINOID and RPD rows are kept here as data but are NOT
-# registered.  Both domains carry theta zeros ON their boundary, and
-# unlike H's -- which sits at a corner and yields to one substitution --
-# these sit in the interior of an edge, where the integrand along a row
-# becomes a spike of width equal to the offset from the edge.  On a
-# uniform grid that is mis-integrated badly enough that the patch
-# diameter does not converge (Lidinoid 311 -> 206 -> 137 as the grid
-# refines; rPD 5.7 -> 5.5 -> 5.0).  Shipping either would mean shipping
-# a surface known to be wrong.  The fix is per-surface grading into
-# those points, exactly what `_domain_u` does for H; see BACKLOG.
+# LIDINOID, RPD and CLP_HANDLE are kept here as data but are NOT
+# registered, and they all fail for ONE reason, now that CLP has shown
+# what the fix looks like.
+#
+# A theta factor with a negative exponent puts a pole of the integrand
+# on the domain boundary.  H has exactly one, at a CORNER, and it yields
+# to a single substitution in one variable (`_domain_u`).  CLP has one
+# in the INTERIOR of an edge, which needed the domain split there and
+# each half graded into it -- and once that was done, CLP converged and
+# assembled.
+#
+# These three have several at once, and in both variables:
+#
+#   Lidinoid   zeros at z = 0 and 1/2 on y = 0, and again on y = Im(tau)
+#   rPD        zeros at z = 0, 1 on y = 0 and at 1/2 + tau/2 on the top
+#   CLP_HANDLE poles at THREE corners -- 0, 1/2 and tau/2 -- plus zeros
+#              at a and 1/2 + tau/2
+#
+# The current grading handles splits along x only.  Until it grades
+# toward several points and in y as well, the patches do not converge:
+# Lidinoid 449 -> 297 -> 198 as the grid refines, rPD 283 -> 188 -> 125,
+# CLP_HANDLE a diameter of 12 to 37 with mean |H| * d between 1.8 and
+# 111.  Shipping any of them would mean shipping a surface known to be
+# wrong.  See BACKLOG for the resume note.
+#
+# The genus-4 row's PERIOD PROBLEM is nonetheless solved and captured:
+# `_CLP_HANDLE_SOLVED` holds Weber's converged (rho, a) against tau, so
+# whoever fixes the quadrature will not have to re-derive them.
 
 def _log_theta(D, q):
     """log theta11 over a grid, unwrapped to a continuous branch."""
@@ -542,6 +560,25 @@ _SPECS = {
         xlim=(0.0, 1.0), ylim=lambda t: (0.0, np.imag(t)),
         theta=math.radians(64.2098),
         nb="Triply_Lidinoid.nb"),
+    # Genus 4: CLP with a handle added.  Six theta factors at half
+    # powers instead of CLP's four, and a genuine period problem -- but
+    # Weber solved it and tabulated the answers, so `_CLP_HANDLE_SOLVED`
+    # carries his (rho, a) against tau rather than re-deriving them.
+    # The two ends of that table are named on his page: tau = 4i is near
+    # the singly periodic Scherk surface, tau = 0.2i near the doubly
+    # periodic one.
+    'CLP_HANDLE': dict(
+        label="CLP with Handle (exact, genus 4)",
+        tau=1.5j, a=0.2423350072589261, rho=0.9999597719688196,
+        terms=lambda a, tau: ((a, 0.5), (0.0, -0.5), (-a, 0.5),
+                              (0.5, -0.5), (tau / 2.0, -0.5),
+                              (0.5 + tau / 2.0, 0.5)),
+        # rho * g1 with g1 = (-1 + i)/sqrt(2) = exp(3 i pi / 4)
+        const=0j,
+        xlim=(0.0, 0.5), ylim=lambda t: (0.0, np.imag(t) / 2.0),
+        splits=(0.2423350072589261,), split_edge='y0',
+        theta=0.0, snap_deg=45.0,
+        nb="CLP( g=4) lines.nb"),
     'RPD': dict(
         label="rPD deformation (exact, rhombohedral)",
         tau=4.0 * 0.3908504810515956j, a=0.5,
@@ -622,6 +659,39 @@ def spec_generators(key, P, tol=1e-3):
         else:
             kinds.append((name, 'neither', min(straight, planar)))
     return gens, kinds
+
+
+# Weber's solved period problem for the genus-4 surface: tau -> (rho, a).
+# The pair has to satisfy two period conditions simultaneously and is
+# found by a root solve; these are his converged values.
+_CLP_HANDLE_SOLVED = {
+    4.0: (0.999999999086189, 0.24999702350529662),      # near singly Scherk
+    2.0: (0.9999982556507706, 0.24840528944694143),
+    1.5: (0.9999597719688196, 0.2423350072589261),
+    1.0: (0.9991279448306104, 0.21380383880954626),
+    0.5: (0.9922207028102443, 0.11670790344759747),
+    0.25: (0.9920496300782162, 0.0543101456973969),
+    0.2: (0.992994526285588, 0.042770615365203),        # near doubly Scherk
+}
+
+
+def clp_handle_params(tau_im):
+    """Set the genus-4 row to the solved (rho, a) nearest `tau_im`.
+
+    The period problem is not re-solved here.  Interpolating between
+    Weber's converged pairs would give a surface that fails to close,
+    so the nearest tabulated tau is used and returned, and the caller
+    can say which one it got.
+    """
+    key = min(_CLP_HANDLE_SOLVED, key=lambda k: abs(k - float(tau_im)))
+    rho, a = _CLP_HANDLE_SOLVED[key]
+    sp = _SPECS['CLP_HANDLE']
+    sp['tau'] = complex(0.0, key)
+    sp['a'] = a
+    sp['rho'] = rho
+    sp['splits'] = (a,)
+    sp['const'] = complex(np.log(complex(rho)) + 3j * np.pi / 4.0)
+    return key, rho, a
 
 
 def _spec_nodes(key, nu):
