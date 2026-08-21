@@ -94,6 +94,10 @@ from .minsurf.tpms import (TPMS, TPMS2_HEX_LATTICE, TPMS_EXACT,
                            tpms2_DEFAULT_OFFSET, tpms2_LATTICE)
 # the catalog module itself, for the self-test's CHM-modulus reference
 from .minsurf import zoo as _zoo
+# the parametric module itself, to read back what the last equal-area
+# resample achieved (LAST_EQ_AREA_COV is rebound per build, so it has to
+# be read through the module rather than imported by value)
+from .minsurf import parametric as _pm
 
 TAU = 2.0 * math.pi
 
@@ -370,6 +374,14 @@ if _IN_BLENDER:
                    ('NURBS', "NURBS", "Compact NURBS surface patch "
                                       "(control grid = Resolution U x V)")],
             default='MESH')
+        equal_areas: BoolProperty(
+            name="Equal Areas", default=False,
+            description="Space the grid lines by equal surface area "
+                        "instead of equal parameter, so faces come out "
+                        "the same size instead of bunching where the "
+                        "parametrization contracts. Reports the spread "
+                        "it achieved, and leaves the surface alone if "
+                        "it cannot improve on the plain grid")
         res_u: IntProperty(name="Resolution U", default=64, min=8, max=512)
         res_v: IntProperty(name="Resolution V", default=64, min=8, max=512)
         ctrl_u: IntProperty(
@@ -448,23 +460,27 @@ if _IN_BLENDER:
                     and surf not in MESH_PARAM:
                 G, wrap_u, wrap_v = build_parametric_grid(
                     surf, self.ctrl_u, self.ctrl_v,
-                    self.order, self.radius, self.scale, theta)
+                    self.order, self.radius, self.scale, theta,
+                    equal_areas=self.equal_areas)
                 if wrap_u:          # drop duplicated periodic endpoint
                     G = G[:-1]
                 if wrap_v:
                     G = G[:, :-1]
                 _nurbs_grid_object(context, label, G,
                                    cyclic_u=wrap_u, cyclic_v=wrap_v)
+                self._report_equal_areas()
             else:
                 out = build_parametric(surf, self.res_u,
                                        self.res_v, self.order,
                                        self.radius, self.scale, theta,
-                                       with_uv=True, cells=(self.storeys, 1))
+                                       with_uv=True, cells=(self.storeys, 1),
+                                       equal_areas=self.equal_areas)
                 V, quads = out[0], out[1]
                 cuv = out[2] if len(out) > 2 else None
                 obj = _new_object(context, label, V, quads,
                                   weld=1e-5 * max(1.0, self.scale),
                                   loop_uv=cuv)
+                self._report_equal_areas()
                 if lattice:
                     try:
                         from .styles import cell_lattice
@@ -477,6 +493,38 @@ if _IN_BLENDER:
                         "tune it in the modifier properties or apply "
                         "to make it permanent")
             return {'FINISHED'}
+
+        def _report_equal_areas(self):
+            """Say what the equal-area pass actually achieved.
+
+            Three outcomes, all worth distinguishing: it improved the
+            spread (report by how much), it could not improve on the
+            plain grid and stood down (Costa punctures its ends at
+            interior points, so resampled cells bridge a hole), or the
+            surface never reaches the grid seam at all because it is
+            built as a finished mesh."""
+            if not self.equal_areas:
+                return
+            cov = getattr(_pm, 'LAST_EQ_AREA_COV', None)
+            if cov is None:
+                self.report({'WARNING'},
+                            "Equal Areas does not apply to this surface: "
+                            "it is assembled as a finished mesh rather "
+                            "than sampled on a parameter grid")
+                return
+            before, after, applied = cov
+            if not applied:
+                self.report({'WARNING'},
+                            "Equal Areas left this surface alone: its "
+                            "domain is punctured, and equalizing made "
+                            f"the area spread worse (stayed at "
+                            f"{before:.3f})")
+            else:
+                gain = before / after if after > 1e-9 else float('inf')
+                self.report({'INFO'},
+                            f"equal areas: face-area spread "
+                            f"{before:.3f} -> {after:.4f} ({gain:.0f}x "
+                            f"more even)")
 
         def draw(self, context):
             lay = self.layout
@@ -496,6 +544,7 @@ if _IN_BLENDER:
             else:
                 lay.prop(self, 'res_u')
                 lay.prop(self, 'res_v')
+            lay.prop(self, 'equal_areas')
             if self.surface in COUNT_PARAM:
                 lay.prop(self, 'order', text=COUNT_PARAM[self.surface])
             elif self.surface not in ANGLE_PARAM:

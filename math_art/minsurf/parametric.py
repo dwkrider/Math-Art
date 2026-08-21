@@ -27,7 +27,19 @@ TAU = 2.0 * math.pi
 from . import weierstrass as _we
 from .domain import (_center_fit, _circularize_outer, _inliers,
                      _largest_component, _puncture_mask, _smooth_boundary,
-                     _torus_grid)
+                     _torus_grid, area_cov, equal_area_resample)
+
+# How finely the domain is sampled before equal-area resampling measures
+# the area element on it.  The measurement is only as good as the grid it
+# is taken on, so this is deliberately well above any usable output
+# resolution; `build_parametric` also honours 4x the request, whichever
+# is larger, and caps at that.
+_EQ_AREA_FINE = 256
+
+# (cov_before, cov_after) of the last equal-area resample, so the
+# operator can report what it actually achieved instead of claiming
+# success blind.  None when the last build did not resample.
+LAST_EQ_AREA_COV = None
 from .elliptic import _SQUARE, _Lattice
 from .tpms import TPMS, TPMS_EXACT
 
@@ -594,12 +606,34 @@ def _tilt_scherk_doubly(nu, nv, rho, scale, cells_u, cells_v,
 
 
 
-def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
+def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0,
+                          equal_areas=False):
     """(nu, nv, 3) point grid plus wrap flags, centered and fit to a 2 m
-    cube. (Used for NURBS output; end clipping is a mesh-only operation.)"""
+    cube. (Used for NURBS output; end clipping is a mesh-only operation.)
+
+    `equal_areas` spaces the control grid by equal surface area rather
+    than equal parameter, which is usually what you want of a NURBS
+    control net too -- it puts control points where the surface actually
+    is instead of bunching them where the parametrization contracts."""
     if kind in MESH_PARAM:
         raise ValueError(f"{kind} has no NURBS/grid form; use mesh output")
-    G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta)
+    global LAST_EQ_AREA_COV
+    LAST_EQ_AREA_COV = None
+    if equal_areas:
+        fu = max(nu, min(4 * nu, _EQ_AREA_FINE))
+        fv = max(nv, min(4 * nv, _EQ_AREA_FINE))
+        Gf, wrap_u, wrap_v, clipf = _raw_grid(kind, fu, fv, order, radius,
+                                              theta)
+        G, clip, cov0, cov1 = equal_area_resample(Gf, nu, nv, clipf)
+        if cov1 >= cov0:                       # do no harm -- see below
+            G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order,
+                                                radius, theta)
+            LAST_EQ_AREA_COV = (cov0, cov0, False)
+        else:
+            LAST_EQ_AREA_COV = (cov0, cov1, True)
+    else:
+        G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius,
+                                            theta)
     nu, nv = G.shape[:2]           # the grid may resize itself (odd rows)
     flat = G.reshape(-1, 3)
     if isinstance(clip, np.ndarray):
@@ -613,7 +647,7 @@ def build_parametric_grid(kind, nu, nv, order, radius, scale, theta=0.0):
 
 
 def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
-                     with_uv=False, cells=(1, 1)):
+                     with_uv=False, cells=(1, 1), equal_areas=False):
     """Mesh (V, quads) for `kind`; with_uv=True additionally returns a
     per-face-corner UV array (sum of face lengths, 2).  Minimal
     surfaces are conformally parametrized by their Weierstrass data,
@@ -630,6 +664,13 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
     All arraying happens in the surface's true period scale BEFORE
     _center_fit normalizes the whole (tiled) object into the 2 m cube.
     A plain int is accepted as (cells, 1)."""
+    # Cleared HERE, not at the grid seam below: several surfaces return
+    # early (the Scherk graphs, the finished 2-D lattice meshes, the
+    # towers) and never reach it, and a stale value from the previous
+    # build would have the operator report an equalization that this one
+    # never performed.  None means "the option did not apply".
+    global LAST_EQ_AREA_COV
+    LAST_EQ_AREA_COV = None
     if isinstance(cells, (int, float)):
         cells = (int(cells), 1)
     cells_u = int(max(1, cells[0]))
@@ -706,8 +747,31 @@ def build_parametric(kind, nu, nv, order, radius, scale, theta=0.0,
     if kind in PERIODIC_COPIES_1D:
         copies = cells_u
         nu = max(3, nu * cells_u)
-    G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius, theta,
-                                        copies=copies)
+    if equal_areas:
+        # Sample the domain far more densely than asked, measure the area
+        # element on that fine grid, then lay the requested nu x nv lines
+        # at equal quantiles of it (see domain.equal_area_resample).  The
+        # oversampling is what makes the measured density trustworthy.
+        fu = max(nu, min(4 * nu, _EQ_AREA_FINE))
+        fv = max(nv, min(4 * nv, _EQ_AREA_FINE))
+        Gf, wrap_u, wrap_v, clipf = _raw_grid(kind, fu, fv, order, radius,
+                                              theta, copies=copies)
+        G, clip, cov0, cov1 = equal_area_resample(Gf, nu, nv, clipf)
+        if cov1 >= cov0:
+            # Do no harm.  A surface whose live domain is not simply a
+            # rectangle -- Costa punctures its ends at INTERIOR points --
+            # can end up worse: concentrating samples in the live region
+            # leaves the cells that bridge a hole enormous.  Equalizing is
+            # an improvement or it does not happen.
+            G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order,
+                                                radius, theta,
+                                                copies=copies)
+            LAST_EQ_AREA_COV = (cov0, cov0, False)
+        else:
+            LAST_EQ_AREA_COV = (cov0, cov1, True)
+    else:
+        G, wrap_u, wrap_v, clip = _raw_grid(kind, nu, nv, order, radius,
+                                            theta, copies=copies)
     # trust the grid's own dimensions: a builder may return a different
     # size than requested (the Bjorling strip forces an odd row count so
     # a column lands on the seed axis).  Indexing the quads/UVs with the
