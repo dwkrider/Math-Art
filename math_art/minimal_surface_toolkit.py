@@ -565,7 +565,7 @@ if _IN_BLENDER:
             name="Cells", default=1, min=1, max=4,
             description="Number of unit cells per axis")
         resolution: IntProperty(
-            name="Resolution / Cell", default=100, min=8, max=500,
+            name="Resolution / Cell", default=50, min=8, max=500,
             soft_max=200,
             description="Sample grid resolution per unit cell. Cost is "
                         "cubic in this and the extraction runs over the "
@@ -725,7 +725,7 @@ if _IN_BLENDER:
                         "the raw Bonnet angle")
         # -- TPMS (triply) parameters (cells come from cells_u/v/w above)
         resolution: IntProperty(
-            name="Resolution / Cell", default=100, min=8, max=500,
+            name="Resolution / Cell", default=50, min=8, max=500,
             soft_max=200,
             description="Sample grid resolution per unit cell. Cost is "
                         "cubic in this and the extraction runs over the "
