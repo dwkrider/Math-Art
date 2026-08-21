@@ -973,6 +973,22 @@ TPMS_EXACT = {
             lambda cells, res, scale, theta, arrangement='UNIT':
                 _we_hex.spec_build('CLP', cells, res, scale, theta,
                                    arrangement)),
+    # The three rows that the generalised quadrature grading unblocked.
+    # See the note above `_SPECS` in hexagonal.py for what each can do:
+    # CLP with a handle assembles a connected cell, the other two ship
+    # the exact fundamental piece for reasons that are properties of the
+    # surfaces rather than of the code.
+    'CLP_HANDLE': (_we_hex._SPECS['CLP_HANDLE']['label'],
+                   lambda cells, res, scale, theta:
+                       _we_hex.spec_build('CLP_HANDLE', cells, res,
+                                          scale, theta)),
+    'LIDINOID': (_we_hex._SPECS['LIDINOID']['label'],
+                 lambda cells, res, scale, theta:
+                     _we_hex.spec_build('LIDINOID', cells, res, scale,
+                                        theta)),
+    'RPD': (_we_hex._SPECS['RPD']['label'],
+            lambda cells, res, scale, theta:
+                _we_hex.spec_build('RPD', cells, res, scale, theta)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;

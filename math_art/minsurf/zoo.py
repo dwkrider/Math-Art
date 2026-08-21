@@ -992,6 +992,43 @@ WE_SURFACES = {
         'cycles': lambda p: [(r, 0.1) for r in _enc_roots(p['n'])],
         'test_order': 2,             # order 2 -> n = 2
     },
+    'JEENER': {
+        # Jeener's flower: the Weierstrass data f = z^2, g = z, which
+        # integrates in closed form to
+        #     x = Re(w^3/3 - w^5/5)
+        #     y = Re(i (w^3/3 + w^5/5))
+        #     z = Re(w^4/2)
+        # -- an algebraic minimal surface of degree 5, explored and
+        # engraved ("Petale") by Patrice Jeener.  In this catalog's
+        # (g, dh) convention f = z^n becomes dh = 2 g f = 2 z^(n+1),
+        # which is what the row carries; n = 2 is Jeener's own case and
+        # n = 0 degenerates to Enneper, so the order slider walks a
+        # one-parameter family of flowers with more and more petals.
+        #
+        # There is a BRANCH POINT at w = 0: dh vanishes to order n+1
+        # while g has a simple zero, so the induced metric goes like
+        # |w|^(2n) and the immersion is branched at the flower's
+        # centre.  That is a property of the surface, not a defect --
+        # it is why the petals meet in a point rather than a disk --
+        # and it is why this row is a plain simply connected disk with
+        # no period conditions to close.
+        'label': "Jeener's Flower",
+        'family': 'CLASSICAL',
+        'g': lambda z, p: z,
+        'dh': lambda z, p: 2.0 * z ** (p['n'] + 1),
+        'domain': ('disk', 0.0, lambda p: p['reach']),
+        'p_from': lambda order, radius: {
+            'n': int(min(max(order + 1, 1), 10)),
+            'reach': min(max(radius, 0.4), 3.0)},
+        'count': "Flower order (n)",
+        'clip': False,
+        # the immersion grows like r^(n+2) toward the disk edge, so the
+        # samples must bunch there or the petals read as facets
+        'radial_grade': 'rim',
+        'res_boost': (1.5, 1.8),
+        'associate': True,       # simply connected: every period is 0
+        'test_order': 1,         # order 1 -> n = 2, Jeener's own case
+    },
     # TODO(zoo) -- harvested but deliberately NOT shipped (would be
     # mislabeled / rough; honesty gate):
     #   * Higher-genus Chen-Gackstatter towers -- both the hyperelliptic
@@ -2576,6 +2613,32 @@ def _selftest():
         ok &= good
         print(f"periods {key:15s}: max|Re oint phi| = {worst:.2e} "
               f"{'OK' if good else 'FAIL'}")
+    # Jeener's flower: the row is given as Weierstrass data, but the
+    # source states the immersion in CLOSED FORM, so check the two
+    # against each other rather than merely confirming the row builds.
+    # This is the only gate that would catch the (g, dh) <-> (f, g)
+    # conversion being off by a power -- dh = 2 g f, not f -- which
+    # produces a perfectly good minimal surface that is not this one.
+    spec = WE_SURFACES['JEENER']
+    p = spec['p_from'](spec['test_order'], 1.2)
+    phi = we._phi_fn(spec, p, 0.0)
+    zr = np.random.default_rng(20260821)
+    zs = (zr.uniform(-1.4, 1.4, 300) + 1j * zr.uniform(-1.4, 1.4, 300))
+    zs = zs[np.abs(zs) > 0.05]
+    got = np.asarray(phi(zs))
+    # d/dw of (Re(w^3/3 - w^5/5), Re(i(w^3/3 + w^5/5)), Re(w^4/2))
+    want = np.stack([zs ** 2 - zs ** 4,
+                     1j * (zs ** 2 + zs ** 4),
+                     2.0 * zs ** 3], axis=-1)
+    jd = float(np.max(np.abs(got - want))) / float(np.max(np.abs(want)))
+    # and phi.phi = 0 is what makes it conformal, hence minimal
+    conf = float(np.max(np.abs((want * want).sum(-1))))
+    jgood = jd < 1e-12 and conf < 1e-9
+    ok &= jgood
+    print(f"jeener flower: phi vs the closed form Re(w^3/3 - w^5/5) "
+          f"etc. = {jd:.2e}, |sum phi_i^2| = {conf:.2e} "
+          f"{'OK' if jgood else 'FAIL'}")
+
     # Karcher unequal-wing tower: the period-closure gate above only checks
     # alpha = 0 (the p_from default).  Sweep the whole alpha range at several
     # n, integrating the real horizontal periods around every end by contour,

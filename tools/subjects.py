@@ -85,7 +85,17 @@ PARAMS = {
     "mesh.minimal_knot_span_add": dict(p=2, q=3),
     "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE'),
     "mesh.algebraic_surface_add": dict(preset='CLEBSCH'),
+    # The default octahedral quartic is a lumpy blob at icon size.  The
+    # rounded dodecahedron is the member that says "this is a Platonic
+    # symmetry group applied to an algebraic surface" at a glance, and
+    # its twelve bowed pentagons are unmistakable in silhouette.
+    "mesh.goursat_surface_add": dict(family='DODEC6',
+                                     preset='DODEC_ROUNDED'),
     "mesh.curiosity_surface_add": dict(surface='FRESNEL'),
+    # Tannery's pear is the one with a shape of its own: the two
+    # conical tips read instantly, where Zoll's surface is a slightly
+    # dented ball and the Darboux sweep needs its parameters explained.
+    "mesh.encyclopedia_surface_add": dict(preset='TANNERY_PEAR'),
     "mesh.ruled_surface_add": dict(mode='HYPERBOLOID', output='RODS',
                                    family='BOTH'),
     "mesh.spherical_harmonic_add": dict(form='OFFSET', degree=4, order=2),
@@ -328,6 +338,7 @@ VARIANT_SELECTOR = {
     "mesh.seifert_surface_add": "preset",
     "mesh.topological_surface_add": "preset",
     "mesh.curiosity_surface_add": "surface",
+    "mesh.encyclopedia_surface_add": "preset",
     "mesh.helical_surface_add": "surface",
     "mesh.hyperbolic_surface_add": "preset",
     "mesh.delaunay_surface_add": "mode",
@@ -456,6 +467,7 @@ VARIANT_GROUP = {
     "mesh.parametric_minimal_add": ("family", "surface"),
     "mesh.periodic_minimal_add": ("periodicity", "surface"),
     "mesh.algebraic_surface_add": ("family", "preset"),
+    "mesh.goursat_surface_add": ("family", "preset"),
 }
 
 # Groups to render, where a two-level selector reaches further than the
@@ -522,6 +534,9 @@ VARIANT_MAX = {
     # 10 classical + 63 Hauser; the Hauser family is a named gallery
     # and a partial one would misrepresent it.
     "mesh.algebraic_surface_add": 96,
+    # 22 named members across four symmetry groups; the point of the
+    # page is that the whole classification is here, so do not truncate.
+    "mesh.goursat_surface_add": 96,
 }
 
 # Galleries whose entries are combinations of properties rather than

@@ -176,6 +176,70 @@ def build_roman(nu, nv):
     return _rp2_quotient(nu, nv, _roman_pt, 0.25)
 
 
+# ----------------------------------------------------------------------
+# the Veronese surface and its shadows
+# ----------------------------------------------------------------------
+# Veronese's map sends the unit sphere to R^6 by
+#     (u, v, w) -> a(u^2, v^2, w^2, vw, wu, uv)
+# Every coordinate is even, so antipodes land on the same point and the
+# map factors through the projective plane -- and it is INJECTIVE there,
+# so RP^2 is genuinely embedded, with no self-intersection anywhere.  The
+# image lies in the hyperplane x1 + x2 + x3 = a, so really in R^5, and
+# the further projection (x2-x1, x4, x5, x6) is still injective: RP^2
+# embeds in R^4.
+#
+# It does NOT embed in R^3, and that is the point of the construction.
+# Every linear projection of the Veronese surface into three dimensions
+# has singularities, and those projections are exactly the classical
+# STEINER SURFACES.  Taking Mathcurve's own two named projections,
+#     (x4, x5, x6)      -> Steiner's Roman surface
+#     (x4, x5, x3 - x1) -> the cross-cap
+# they differ only in the third coordinate, so rotating between them,
+#     P(t) = (x4, x5, cos t . x6 + sin t . (x3 - x1)),
+# is precisely an orthogonal projection of the R^4 embedding
+# (x3-x1, x4, x5, x6) along the turning direction
+# (-sin t, 0, 0, cos t).  The angle slider is therefore not an
+# interpolation between two unrelated formulas: it turns the embedded
+# projective plane in four-space and shows its three-dimensional shadow,
+# which is a Steiner surface at every angle.
+#
+# References:
+# - G. Veronese (1854-1917); see M. Berger, "Geometry Revealed",
+#   Springer 2010, p. 47, and the Wikipedia entry "Veronese surface".
+# - R. Ferreol, "Encyclopedie des formes mathematiques remarquables",
+#   mathcurve.com, chapters "surface de Veronese" and "surface de
+#   Steiner" -- the two named projections used as the endpoints here.
+# - J. Steiner, the Roman surface (1844).
+
+def veronese6(u, v, w, a=1.0):
+    """The Veronese map into R^6, as (x1..x6)."""
+    return np.stack([a * u * u, a * v * v, a * w * w,
+                     a * v * w, a * w * u, a * u * v], axis=-1)
+
+
+def _steiner_pt(angle):
+    """fn(theta, phi) for the Steiner surface at projection angle
+    `angle`; 0 is the Roman surface, pi/2 the cross-cap."""
+    ca, sa = math.cos(angle), math.sin(angle)
+
+    def fn(th, ph):
+        cp, sp = np.cos(ph), np.sin(ph)
+        u, v, w = np.cos(th) * cp, np.sin(th) * cp, sp + 0.0 * th
+        return (v * w, w * u, ca * u * v + sa * (w * w - u * u))
+    return fn
+
+
+def build_steiner(nu, nv, angle=0.0):
+    """Mesh the Steiner surface at projection angle `angle`.
+
+    Uses the same RP^2 quotient grid as the Roman surface (of which
+    this is the angle-0 member), so the result closes with Euler
+    characteristic 1 by construction.
+    """
+    nu += (-nu) % 4            # quarter-offset grid: need 4 | nu
+    return _rp2_quotient(nu, nv, _steiner_pt(float(angle)), 0.25)
+
+
 def build_boy(ntheta, nrings):
     """Boy's surface via the Bryant-Kusner parametrization on the unit
     disk (polar grid), with the boundary circle glued antipodally
@@ -528,6 +592,76 @@ def _selftest():
     ok &= good
     print("topology: control -- an orientable surface still reads as "
           "two-sided %s" % ('OK' if good else 'FAIL'))
+
+    # ---- the Veronese surface and its Steiner shadows ---------------
+    rng = np.random.default_rng(20260821)
+
+    # 1. The Veronese map factors through RP^2 -- every coordinate is
+    #    even, so antipodes coincide.  This is what makes it a map OF
+    #    the projective plane rather than of the sphere.
+    p = rng.normal(size=(3, 500))
+    p /= np.linalg.norm(p, axis=0)
+    anti = float(np.max(np.abs(veronese6(*p) - veronese6(*(-p)))))
+
+    # 2. ...and it is INJECTIVE there, so RP^2 is genuinely EMBEDDED in
+    #    R^6 (really R^5, since x1+x2+x3 = a).  Measured directly: over
+    #    many random pairs, two points that are not antipodal never come
+    #    closer in the image than their RP^2 distance allows.  This is
+    #    the claim that fails for every R^3 projection below, which is
+    #    the whole reason the Steiner surfaces have singularities.
+    q = rng.normal(size=(3, 400))
+    q /= np.linalg.norm(q, axis=0)
+    A, B = veronese6(*p[:, :400]), veronese6(*q)
+    img = np.linalg.norm(A - B, axis=-1)
+    # RP^2 distance: 0 iff the points agree up to sign
+    dom = np.minimum(np.linalg.norm(p[:, :400] - q, axis=0),
+                     np.linalg.norm(p[:, :400] + q, axis=0))
+    far = dom > 1e-3
+    ratio = float(np.min(img[far] / dom[far]))
+    plane = float(np.max(np.abs(veronese6(*p)[:, :3].sum(-1) - 1.0)))
+    good = anti < 1e-14 and ratio > 0.1 and plane < 1e-14
+    ok &= good
+    print("topology: the Veronese map factors through RP^2 (%.1e) and "
+          "embeds it in the hyperplane x1+x2+x3 = a (%.1e), separation "
+          "ratio %.3f %s" % (anti, plane, ratio, 'OK' if good else 'FAIL'))
+
+    # 3. The angle-0 shadow IS the Roman surface already shipped --
+    #    exactly, not merely similarly.  That is what ties the family to
+    #    a surface whose own quartic identity is checked next.
+    th = rng.uniform(0.0, TAU, 300)
+    ph = rng.uniform(0.05, math.pi / 2, 300)
+    r0 = np.stack(np.broadcast_arrays(*_roman_pt(th, ph)), axis=-1)
+    s0 = np.stack(np.broadcast_arrays(*_steiner_pt(0.0)(th, ph)), axis=-1)
+    d0 = float(np.max(np.abs(r0 - s0)))
+    # Steiner's Roman surface satisfies x^2y^2 + y^2z^2 + z^2x^2 = a xyz
+    x, y, z = r0[:, 0], r0[:, 1], r0[:, 2]
+    quart = float(np.max(np.abs(x * x * y * y + y * y * z * z
+                                + z * z * x * x - x * y * z)))
+    good = d0 < 1e-14 and quart < 1e-14
+    ok &= good
+    print("topology: the angle-0 Steiner shadow is the Roman surface "
+          "(%.1e) and obeys its quartic (%.1e) %s"
+          % (d0, quart, 'OK' if good else 'FAIL'))
+
+    # 4. Every shadow is a closed one-sided surface with chi = 1 -- a
+    #    projective plane, at every angle, not just at the two named
+    #    ones.  chi is the sharp gate: a projection that degenerated
+    #    (collapsing the surface onto a curve or a double cover) would
+    #    still mesh and would still look plausible.
+    bad = []
+    for ang in np.linspace(0.0, math.pi, 7):
+        V, F = build_steiner(40, 22, float(ang))
+        c = _chi(V, F)
+        if c != 1:
+            bad.append('%.2f:chi=%d' % (ang, c))
+        elif _orientable(F):
+            bad.append('%.2f:two-sided' % ang)
+        elif not np.all(np.isfinite(V)):
+            bad.append('%.2f:non-finite' % ang)
+    ok &= not bad
+    print("topology: 7 Steiner shadows are all closed one-sided "
+          "surfaces with chi = 1 %s"
+          % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:

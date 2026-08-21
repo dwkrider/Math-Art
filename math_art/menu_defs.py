@@ -68,6 +68,10 @@ SURFACES = Menu(
         _e("object.minimal_span", 'OUTLINER_OB_SURFACE'),
         _e("mesh.seifert_surface_add", 'MOD_SIMPLIFY', "Seifert Surface"),
         _e("mesh.algebraic_surface_add", 'SURFACE_NSURFACE'),
+        # the algebraic surfaces carrying a Platonic symmetry group;
+        # a family browser rather than a fixed list, so it is its own
+        # operator instead of another family inside the one above.
+        _e("mesh.goursat_surface_add", 'MESH_ICOSPHERE'),
         _e("mesh.topological_surface_add", 'MESH_TORUS'),
         _e("mesh.minimal_surface_polyhedron_add", 'MESH_UVSPHERE'),
         _e("mesh.squeeze_add", 'MOD_SIMPLEDEFORM'),
@@ -76,6 +80,7 @@ SURFACES = Menu(
         _e("mesh.ruled_surface_add", 'MOD_SCREW'),
         _e("mesh.dform_add", 'MOD_CLOTH', "D-Form"),
         _e("mesh.curiosity_surface_add", 'SURFACE_DATA'),
+        _e("mesh.encyclopedia_surface_add", 'SURFACE_NCURVE'),
         _e("mesh.invariant_manifold_add", 'SURFACE_NSURFACE'),
         _e("mesh.supershape_add", 'SURFACE_NSPHERE'),
         _e("mesh.spherical_harmonic_add", 'SURFACE_NSPHERE'),

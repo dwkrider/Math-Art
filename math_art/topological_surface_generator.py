@@ -9,6 +9,13 @@
 #     closed-form immersion) and the figure-8 / twisted-torus form.
 #   * Cross-cap and Steiner's Roman surface -- the two classical
 #     immersions of the real projective plane RP^2.
+#   * The Steiner family -- the shadows in 3-space of the VERONESE
+#     surface, which embeds RP^2 in R^4 with no self-intersection at
+#     all.  Turning the projection direction sweeps continuously from
+#     the Roman surface (angle 0) to the cross-cap (angle 90 degrees),
+#     with a Steiner surface at every angle in between; that no shadow
+#     is ever free of singularities is the theorem, not a limitation of
+#     the parametrisation.
 #   * Boy's surface via the Bryant-Kusner parametrization (an RP^2
 #     immersion with no pinch points).
 #   * Orientable genus-g handlebody surfaces, meshed implicitly with
@@ -32,7 +39,14 @@
 # - Klein bottle: F. Klein (1882). Boy's surface: W. Boy, Math. Ann.
 #   57 (1903), here via the R. Bryant - R. Kusner parametrization.
 # - Cross-cap and Roman surface: two immersions of RP^2 due to
-#   J. Steiner (Rome, 1844). Mobius band: A. F. Mobius (1858).
+#   J. Steiner (Rome, 1844).
+# - Veronese surface: G. Veronese (1854-1917); see M. Berger,
+#   "Geometry Revealed", Springer 2010, p. 47.  The two named
+#   projections used as the endpoints of the Steiner family here are
+#   from R. Ferreol, "Encyclopedie des formes mathematiques
+#   remarquables", mathcurve.com, chapter "surface de Veronese"; a
+#   converted copy is in research/books/
+#   mathcurve_encyclopedie_formes_mathematiques/. Mobius band: A. F. Mobius (1858).
 # - Sudanese Mobius band: H. B. Lawson, "Complete Minimal Surfaces in
 #   S^3", Ann. of Math. 92 (1970), 335-374; named for Sue Goodman
 #   and Daniel Asimov (cf. G. Francis, "A Topological Picturebook",
@@ -50,12 +64,15 @@ bl_info = {
                    "genus-g handlebodies, solid twisted strips",
     "category": "Add Mesh",
 }
+import math
+
 import numpy as np
 
 # The mathematics lives in the sibling `minsurf` engine package;
 # this module is the Blender layer over it.
 try:
     from .minsurf.topology import (build_boy, build_crosscap,
+                                   build_steiner,
                                        build_genus, build_klein_bottle,
                                       build_nonorientable,
                                        build_nonorientable,
@@ -64,6 +81,7 @@ try:
                                        build_twist_strip, edge_face_counts)
 except ImportError:  # flat import outside the package
     from minsurf.topology import (build_boy, build_crosscap,
+                                  build_steiner,
                                       build_genus, build_klein_bottle,
                                       build_klein_figure8, build_roman,
                                       build_sudanese_mobius,
@@ -177,6 +195,10 @@ PRESET_ITEMS = [
      "Standard cross-cap immersion of the projective plane"),
     ('ROMAN', "Roman Surface",
      "Steiner's Roman surface (projective plane)"),
+    ('STEINER', "Steiner Surface (Veronese shadow)",
+     "The shadow in 3-space of the Veronese surface, which embeds the "
+     "projective plane in R^4. Turning the projection sweeps from the "
+     "Roman surface at 0 degrees to the cross-cap at 90"),
     ('BOY', "Boy's Surface",
      "Boy's surface, Bryant-Kusner parametrization"),
     ('NONORIENT', "Non-Orientable Genus-k",
@@ -190,7 +212,8 @@ PRESET_ITEMS = [
      "Solid closed strip with n half-twists; n = 1 is a Mobius band"),
 ]
 
-_IMMERSIONS = {'KLEIN', 'KLEIN8', 'SUDANESE', 'CROSSCAP', 'ROMAN', 'BOY'}
+_IMMERSIONS = {'KLEIN', 'KLEIN8', 'SUDANESE', 'CROSSCAP', 'ROMAN', 'BOY',
+               'STEINER'}
 
 
 if _IN_BLENDER:
@@ -228,6 +251,13 @@ if _IN_BLENDER:
         res_v: IntProperty(
             name="Resolution V", default=48, min=4, max=512,
             description="Samples along v (across / radial)")
+        steiner_angle: FloatProperty(
+            name="Projection Angle", default=0.0, min=-180.0, max=180.0,
+            description="Direction, in degrees, from which the "
+                        "Veronese surface's four-dimensional embedding "
+                        "is projected into 3-space: 0 gives Steiner's "
+                        "Roman surface, 90 the cross-cap, and every "
+                        "angle between gives another Steiner surface")
         genus: IntProperty(
             name="Genus", default=2, min=1, max=5,
             description="Number of handles (verified for 1-5)")
@@ -282,6 +312,10 @@ if _IN_BLENDER:
             elif p == 'ROMAN':
                 V, F = build_roman(self.res_u, self.res_v)
                 name = "Roman Surface"
+            elif p == 'STEINER':
+                V, F = build_steiner(self.res_u, self.res_v,
+                                     math.radians(self.steiner_angle))
+                name = "Steiner Surface"
             elif p == 'BOY':
                 V, F = build_boy(self.res_u, self.res_v)
                 name = "Boy Surface"
@@ -338,6 +372,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'strip_thickness')
                 lay.prop(self, 'ridge')
             else:
+                if p == 'STEINER':
+                    lay.prop(self, 'steiner_angle')
                 lay.prop(self, 'res_u')
                 lay.prop(self, 'res_v')
                 lay.prop(self, 'thickness')
@@ -400,6 +436,12 @@ def _selftest():
     stats("roman", V, F, 1)
     V, F = build_boy(64, 24)
     stats("boy", V, F, 1)
+    # every Steiner shadow of the Veronese surface is a projective
+    # plane, so chi = 1 at every projection angle -- not just at the
+    # two named ones
+    for deg in (0, 30, 45, 90, 135, 180):
+        V, F = build_steiner(64, 24, math.radians(deg))
+        stats("steiner@%d" % deg, V, F, 1)
     for g in (1, 2, 3):
         V, F = build_genus(g, cell=0.125)
         stats(f"genus-{g}", V, [tuple(t) for t in F], 2 - 2 * g)

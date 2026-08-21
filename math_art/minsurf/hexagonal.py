@@ -463,34 +463,71 @@ def _apply(M, V):
 # the piece and saying so is the same choice already made for the
 # gyroid, whose chiral cell cannot be closed either.
 #
-# LIDINOID, RPD and CLP_HANDLE are kept here as data but are NOT
-# registered, and they all fail for ONE reason, now that CLP has shown
-# what the fix looks like.
+# LIDINOID, RPD and CLP_HANDLE were long kept here as data but NOT
+# registered, all three blocked on ONE thing, and it is now fixed.
 #
-# A theta factor with a negative exponent puts a pole of the integrand
-# on the domain boundary.  H has exactly one, at a CORNER, and it yields
-# to a single substitution in one variable (`_domain_u`).  CLP has one
-# in the INTERIOR of an edge, which needed the domain split there and
-# each half graded into it -- and once that was done, CLP converged and
-# assembled.
+# A theta factor puts a singularity of the integrand wherever its theta
+# vanishes -- on the lattice, so on the domain boundary and often at a
+# corner.  H has exactly one, and it yields to a single substitution in
+# one variable (`_domain_u`).  CLP has one in the INTERIOR of an edge,
+# which needed the domain split there and each half graded into it.
+# Both were hand-declared, one `splits` tuple along one edge.
 #
-# These three have several at once, and in both variables:
+# These three have several at once, and in BOTH variables, which no
+# such tuple can express:
 #
 #   Lidinoid   zeros at z = 0 and 1/2 on y = 0, and again on y = Im(tau)
 #   rPD        zeros at z = 0, 1 on y = 0 and at 1/2 + tau/2 on the top
 #   CLP_HANDLE poles at THREE corners -- 0, 1/2 and tau/2 -- plus zeros
 #              at a and 1/2 + tau/2
 #
-# The current grading handles splits along x only.  Until it grades
-# toward several points and in y as well, the patches do not converge:
-# Lidinoid 449 -> 297 -> 198 as the grid refines, rPD 283 -> 188 -> 125,
-# CLP_HANDLE a diameter of 12 to 37 with mean |H| * d between 1.8 and
-# 111.  Shipping any of them would mean shipping a surface known to be
-# wrong.  See BACKLOG for the resume note.
+# So the singular points are no longer declared at all: they are DERIVED
+# from the terms and the lattice (`spec_singularities`), each gets its
+# own substitution power from its own exponent, and both axes are graded
+# toward all of them, including the case the old code could not express
+# at all -- a segment with a singular point at EACH end, which is
+# graded from both ends into the middle.  With that in place:
 #
-# The genus-4 row's PERIOD PROBLEM is nonetheless solved and captured:
-# `_CLP_HANDLE_SOLVED` holds Weber's converged (rho, a) against tau, so
-# whoever fixes the quadrature will not have to re-derive them.
+#           patch diameter           |H| * d, n = 60 -> 140
+#   CLP     0.7436 (unchanged)       1.3e-3 -> 2.2e-4     O(h^2)
+#   Lidinoid    1.877 -> 1.901       9.7e-2 -> 1.8e-2     O(h^2)
+#   CLP+handle  1.055 -> 1.060       9.6e-3 -> 1.3e-3     O(h^2)
+#   rPD         3.996 -> 4.173       8.9e-1 -> 1.5e-1     O(h^2)
+#
+# against diameters that used to GROW without limit as the grid refined
+# (Lidinoid 449 -> 297 -> 198, rPD 283 -> 188 -> 125).  Conformality,
+# |E - G| / (E + G), falls at the same second-order rate on all four.
+#
+# A WARNING for whoever measures this next.  The blow-up that first
+# suggested these were still broken after the fix was a measurement
+# artifact: `np.gradient(P)` with unit index spacing on a GRADED grid
+# differentiates against the index, not the parameter, and reports mean
+# |H| * d growing from 44 to 1129 on a patch that is in fact converging
+# to minimal.  Pass the node arrays -- `np.gradient(P, xs, axis=0)` --
+# or the number is meaningless.
+#
+# What each row can then do differs, and only the first is a full cell:
+#
+#   CLP_HANDLE  all FIVE boundary curves classify (at n >~ 130; below
+#       that the second half of the y = 0 edge is still short of
+#       tolerance and the build falls back).  It assembles, and the
+#       assembly is ONE CONNECTED COMPONENT -- the gate that condemned
+#       three of CLP's five arrangements.  This is the genus-4 surface,
+#       and its period problem was already solved: `_CLP_HANDLE_SOLVED`
+#       carries Weber's converged (rho, a) against tau.
+#   rPD  three of its four edges are exact mirrors, at 1e-13 to 1e-18.
+#       The fourth -- the right edge, the far end of a domain two unit
+#       cells wide -- is at 2.2e-2 and falls only like 1/n (5.0e-2,
+#       3.5e-2, 2.2e-2, 1.5e-2, 1.1e-2 for n = 60..340), so it does not
+#       reach the 1e-3 the classifier wants at any usable resolution.
+#       The fundamental piece ships; the cell does not.
+#   Lidinoid  its edge residuals PLATEAU at 2.4e-2 and do not fall with
+#       the grid at all, which says this is not quadrature error.  It is
+#       the same situation as the gyroid: at a generic associate angle
+#       (here 64.2098 degrees) a straight line becomes neither a
+#       straight line nor a planar geodesic, so there is no reflection
+#       generator to find and `_assemble` is right to decline.  The
+#       fundamental piece is the honest object and is what ships.
 
 def _log_theta(D, q):
     """log theta11 over a grid, unwrapped to a continuous branch."""
@@ -699,48 +736,225 @@ def clp_handle_params(tau_im):
     return key, rho, a
 
 
-def _spec_nodes(key, nu):
-    """The x nodes and their dx/du weights for a spec patch."""
+def _sing_power(c):
+    """Substitution power for an integrand that behaves like s^(-|c|).
+
+    The substitution s = u^m turns s^(-|c|) ds = m u^(m - 1 - m|c|) du,
+    which is bounded as soon as m >= 1/(1 - |c|).  So one line covers
+    every exponent the family uses: 1/2 wants m = 2, 2/3 wants m = 3,
+    1/3 wants m = 2 (1.5 rounded up).  |c| >= 1 would not be integrable
+    at all and no substitution would save it; those return 0 and the
+    caller leaves the axis uniform rather than pretending.
+    """
+    c = abs(float(c))
+    if c < 1e-12:
+        return 1                                # not singular
+    if c >= 1.0 - 1e-12:
+        return 0                                # not integrable
+    return max(2, int(math.ceil(1.0 / (1.0 - c) - 1e-12)))
+
+
+def spec_singularities(key):
+    """Every point of the domain rectangle where the integrand blows up,
+    as {(x, y): exponent}.
+
+    This used to be hand-declared, one `splits` tuple per surface along
+    one edge, and that is why three of the four rows in `_SPECS` could
+    not be shipped: they have singular points at several places at once
+    and in BOTH variables, which no single tuple could express.
+
+    They are found rather than declared.  g = exp(sum c_k log theta11(z
+    - shift_k)), and theta11 has a simple zero at every point of the
+    lattice {m + n tau}, so g behaves like s^(sum c) in the distance s
+    to each translate shift_k + m + n tau.  W carries both g and 1/g, so
+    the integrand goes like s^(-|sum c|) there whichever way the sign
+    falls.  Exponents at a shared point ADD, and a point where they
+    cancel is not singular at all -- which is why they are accumulated
+    before being turned into a power.
+    """
+    sp = _SPECS[key]
+    tau, a = sp['tau'], sp['a']
+    x0, x1 = sp['xlim']
+    y0, y1 = sp['ylim'](tau)
+    ty = float(np.imag(tau))
+    pad = 1e-9
+    acc = {}
+    for shift, c in sp['terms'](a, tau):
+        sx, sy = float(np.real(shift)), float(np.imag(shift))
+        # every lattice translate that can land in the rectangle
+        for n in range(int(math.floor((y0 - sy) / ty)) - 1,
+                       int(math.ceil((y1 - sy) / ty)) + 2):
+            py = sy + n * ty
+            if not (y0 - pad <= py <= y1 + pad):
+                continue
+            for m in range(int(math.floor(x0 - sx - n * float(np.real(tau))))
+                           - 1,
+                           int(math.ceil(x1 - sx - n * float(np.real(tau))))
+                           + 2):
+                px = sx + m + n * float(np.real(tau))
+                if not (x0 - pad <= px <= x1 + pad):
+                    continue
+                k = (round(px, 12), round(py, 12))
+                acc[k] = acc.get(k, 0.0) + float(c)
+    return {k: v for k, v in acc.items() if abs(v) > 1e-12}
+
+
+def _graded_axis(lo, hi, sing, n, tiny=1e-6):
+    """Nodes and dt/du weights on [lo, hi], graded into each singular
+    coordinate in `sing` ({coordinate: exponent}).
+
+    Returns (t, w) with t ascending.  The quadrature must then run in
+    the substituted variable u -- putting these nodes into a rule over t
+    buys nothing, which is the mistake that cost an earlier debugging
+    pass on the hexagonal patch.
+
+    Three cases per segment, and the third is the one the old
+    single-split code could not express:
+
+      neither end singular   a uniform grid
+      one end singular       graded into that end
+      BOTH ends singular     split at the midpoint and grade each half
+                             into its own end
+
+    Segments with a singular point at each end are the norm for these
+    surfaces -- CLP with a handle has its whole left edge between two of
+    them -- and grading such a segment into only one end leaves the
+    other sampled at its worst.
+    """
+    lo, hi = float(lo), float(hi)
+    cuts = sorted({lo, hi} | {float(p) for p in sing
+                              if lo + 1e-12 < float(p) < hi - 1e-12})
+    pieces = []
+    for i in range(len(cuts) - 1):
+        A, B = cuts[i], cuts[i + 1]
+        mA = _sing_power(sing.get(_near(A, sing), 0.0))
+        mB = _sing_power(sing.get(_near(B, sing), 0.0))
+        if mA > 1 and mB > 1:
+            mid = 0.5 * (A + B)
+            pieces.append((A, mid, mA, 'lo'))
+            pieces.append((mid, B, mB, 'hi'))
+        elif mA > 1:
+            pieces.append((A, B, mA, 'lo'))
+        elif mB > 1:
+            pieces.append((A, B, mB, 'hi'))
+        else:
+            pieces.append((A, B, 1, None))
+
+    seg = int(max(4, round(n / max(1, len(pieces)))))
+    ts, ws, dus = [], [], []
+    for A, B, m, side in pieces:
+        h = abs(B - A)
+        if m <= 1 or h < 1e-15:
+            t = np.linspace(A, B, seg)
+            w = np.ones_like(t)
+            du = h / max(seg - 1, 1)
+        else:
+            r = h ** (1.0 / m)
+            if side == 'hi':                    # grade into B
+                u = np.linspace(r, 0.0, seg)
+                u[-1] = r * tiny
+                t, w = B - u ** m, m * u ** (m - 1)
+            else:                               # grade into A
+                u = np.linspace(0.0, r, seg)
+                u[0] = r * tiny
+                t, w = A + u ** m, m * u ** (m - 1)
+            du = r / max(seg - 1, 1)
+        order = np.argsort(t)
+        ts.append(t[order])
+        ws.append(np.abs(w[order]))
+        dus.append(du)
+    t = np.concatenate(ts)
+    w = np.concatenate(ws)
+    keep = np.concatenate([[True], np.diff(t) > 1e-14])
+    # Where each surviving piece starts and how long it is, so the
+    # caller can integrate it in ITS OWN u with that piece's uniform
+    # step.  See `_piece_integral` for why that beats one global rule.
+    starts = np.cumsum([0] + [len(a) for a in ts])[:-1]
+    idx = np.cumsum(keep) - 1
+    spans = []
+    for p, s in enumerate(starts):
+        e = s + len(ts[p])
+        sub = keep[s:e]
+        if not sub.any():
+            continue
+        spans.append((int(idx[s + int(np.argmax(sub))]),
+                      int(sub.sum()), float(dus[p])))
+    return t[keep], w[keep], spans
+
+
+def _axis_integral(V, t, w, scale=1.0):
+    """Cumulative trapezoid of W along axis 0 in the GRADED variable.
+
+    `V` is W already multiplied by the dt/du weights, so the rule is
+    taken against a uniform du -- recovered here as the node spacing
+    over the average weight.  When the axis is not graded (every weight
+    1) this is exactly the plain trapezoid in t.
+
+    A piecewise version of this was tried and reverted, on the theory
+    that mixing two substitutions across a piece junction costs an
+    order.  It does not pay: integrating each graded piece separately in
+    its own u left rPD's right-edge residual NON-MONOTONE in the grid
+    (4.2e-3 at n = 60, 2.0e-2 at 100, 1.3e-1 at 160), where this rule
+    has it falling steadily (5.0e-2, 3.5e-2, 2.2e-2, 1.5e-2, 1.1e-2 up
+    to n = 340).  A rule that gets worse as the grid refines is worse
+    than a slow one, whatever its order is on paper.
+    """
+    sh = (slice(None),) + (None,) * (V.ndim - 1)
+    du = np.diff(t) / np.maximum(0.5 * (w[:-1] + w[1:]), 1e-300)
+    return np.cumsum(0.5 * (V[:-1] + V[1:]) * (du[sh] * scale), axis=0)
+
+
+def _near(v, keys, tol=1e-9):
+    """The key of `keys` closest to `v`, or `v` itself if none is."""
+    best, bd = v, tol
+    for k in keys:
+        d = abs(float(k) - float(v))
+        if d <= bd:
+            best, bd = k, d
+    return best
+
+
+def _spec_axes(key, nu, nv):
+    """The graded (x nodes, x weights, y nodes, y weights) for a patch.
+
+    Both axes are graded toward every singular coordinate.  The y axis
+    matters for two separate reasons, and only the first is obvious:
+    the left edge is the column actually integrated in y, so a singular
+    point on it must be graded into or that one integral is wrong; but
+    the y grid is SHARED by every row, so pulling samples toward a
+    singular height also thins the rows that pass close to a singularity
+    sitting anywhere else on that height.  rPD is the case that shows
+    it -- its right edge classified as no symmetry element at all
+    (residual 5e-2, falling only like 1/n) purely because the rows near
+    its top corner were sampled too coarsely to integrate accurately.
+    """
     sp = _SPECS[key]
     x0, x1 = sp['xlim']
-    cuts = [x0] + [float(c) for c in sp.get('splits', ())] + [x1]
-    seg = int(max(4, round(nu / (len(cuts) - 1))))
-    # Each segment is graded into the branch point it ENDS at, and the
-    # row quadrature runs in the graded variable.  Placing a node on the
-    # branch point without doing this is worse than not splitting at
-    # all: it samples the integrand at its worst and the patch grows
-    # without bound (diameter 11 -> 7.4 -> 5.0 as the grid refined).
-    #
-    # The theta factor there carries exponent -1/2, so the integrand
-    # goes like s^(-1/2) in the distance s to the point; substituting
-    # s = u^2 gives s^(-1/2) ds/du = 2, bounded, and the ordinary
-    # trapezoid is second order again.  Same idea as `_domain_u`, one
-    # power different.
-    pieces, weights = [], []
-    for i in range(len(cuts) - 1):
-        lo, hi = cuts[i], cuts[i + 1]
-        at_hi = (i + 1) < len(cuts) - 1        # a split ends this piece
-        at_lo = i > 0
-        w = math.sqrt(abs(hi - lo))
-        if at_hi:
-            u = np.linspace(w, 0.0, seg)
-            u[-1] = w * 1e-6
-            xp, dxdu = hi - u ** 2, 2.0 * u
-        elif at_lo:
-            u = np.linspace(0.0, w, seg)
-            u[0] = w * 1e-6
-            xp, dxdu = lo + u ** 2, 2.0 * u
-        else:
-            xp = np.linspace(lo, hi, seg)
-            dxdu = np.ones_like(xp)
-        order = np.argsort(xp)
-        pieces.append(xp[order])
-        weights.append(np.abs(dxdu[order]))
-    xs = np.concatenate(pieces)
-    wts = np.concatenate(weights)
-    keep = np.concatenate([[True], np.diff(xs) > 1e-14])
-    xs, wts = xs[keep], wts[keep]
-    return xs, wts
+    y0, y1 = sp['ylim'](sp['tau'])
+    sing = spec_singularities(key)
+
+    xsing = {}
+    for (px, _py), c in sing.items():
+        xsing[px] = max(xsing.get(px, 0.0), abs(c))
+    # a spec may also FORCE a cut that is not singular, so that a
+    # boundary curve splits exactly on a node (CLP's y = 0 edge is two
+    # different symmetry elements either side of x = a)
+    for c in sp.get('splits', ()):
+        xsing.setdefault(round(float(c), 12), 0.0)
+
+    ysing = {}
+    for (_px, py), c in sing.items():
+        ysing[py] = max(ysing.get(py, 0.0), abs(c))
+
+    xs, wx, xspan = _graded_axis(x0, x1, xsing, nu)
+    ys, wy, yspan = _graded_axis(y0, y1, ysing, nv)
+    return xs, wx, xspan, ys, wy, yspan
+
+
+def _spec_nodes(key, nu):
+    """The x nodes and their dx/du weights for a spec patch."""
+    xs, wx, _xspan, _ys, _wy, _yspan = _spec_axes(key, nu, 8)
+    return xs, wx
 
 
 def clp_params(tau_im=2.0, a=0.15):
@@ -783,15 +997,17 @@ def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
     # thing -- his XR is the union of ranges over Sort[{0, a, .5}] --
     # and it is not cosmetic: the sub-curves either side of a split are
     # different symmetry elements, and a node has to separate them.
-    xs, wts = _spec_nodes(key, nu)
+    xs, wts, xspan, ys, wys, yspan = _spec_axes(key, nu, nv)
 
     # BOTH ends of the y range are held off the edge, not just the
     # bottom.  The theta factors vanish on the lattice, and for the
     # Lidinoid and rPD the domain reaches a second row of lattice points
     # at the top -- offsetting only the bottom left those on the
     # boundary, and the patch diameter then grew without limit as the
-    # grid refined instead of converging.
-    ys = np.linspace(y0 + eps, y1 - eps, int(nv))
+    # grid refined instead of converging.  The grading already stops a
+    # hair short of any singular end; this pushes the plain ends off
+    # too, so no surface can put a sample exactly on a lattice zero.
+    ys = np.clip(ys, y0 + eps, y1 - eps)
     Z = xs[:, None] + 1j * ys[None, :]
 
     q = np.exp(1j * np.pi * tau)
@@ -804,17 +1020,12 @@ def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
                   np.ones_like(g)], axis=-1) * np.exp(1j * ang)
 
     F = np.zeros((len(xs), len(ys), 3), dtype=complex)
-    dy = ys[1] - ys[0]
-    col = W[0]
-    F[0, 1:] = np.cumsum(0.5 * (col[:-1] + col[1:]) * (1j * dy), axis=0)
-    # Rows integrate in the graded variable: dx = (dx/du) du, so the
-    # trapezoid is taken on W * dx/du against a uniform du, recovered
-    # here as the ratio of the actual node spacing to the weight.
-    du = np.diff(xs) / np.maximum(
-        0.5 * (wts[:-1] + wts[1:]), 1e-300)
+    # The left-edge column integrates up in y (dz = i dy), then every
+    # row integrates outward in x from it.  Both run piecewise in the
+    # graded variable -- see `_piece_integral`.
+    F[0, 1:] = _axis_integral(W[0] * wys[:, None], ys, wys, scale=1j)
     V = W * wts[:, None, None]
-    F[1:] = F[0][None, :, :] + np.cumsum(
-        0.5 * (V[:-1] + V[1:]) * du[:, None, None], axis=0)
+    F[1:] = F[0][None, :, :] + _axis_integral(V, xs, wts)
     return np.real(F)
 
 
@@ -1419,23 +1630,31 @@ def _selftest():
     # principle would not apply at all.
     prev = prevm = None
     for n in (40, 60, 90):
+        # The NODE ARRAYS go to np.gradient, not just the axis.  Both
+        # axes are graded, so differentiating against the index instead
+        # measures the grid rather than the surface: it reported this
+        # very patch, which is converging to minimal at second order, as
+        # having mean |H| * d of 1.55 and RISING.
+        xs, _wx, _xp, ys, _wy, _yp = _spec_axes('CLP', n, n)
         P = _spec_patch('CLP', n, n)
-        Pu, Pv = np.gradient(P, axis=0), np.gradient(P, axis=1)
+        Pu = np.gradient(P, xs, axis=0)
+        Pv = np.gradient(P, ys, axis=1)
         nn = np.cross(Pu, Pv)
         nn = nn / np.maximum(np.linalg.norm(nn, axis=-1, keepdims=True),
                              1e-300)
         E = np.sum(Pu * Pu, -1)
         F = np.sum(Pu * Pv, -1)
         G = np.sum(Pv * Pv, -1)
-        L = np.sum(np.gradient(Pu, axis=0) * nn, -1)
-        M = np.sum(np.gradient(Pu, axis=1) * nn, -1)
-        N = np.sum(np.gradient(Pv, axis=1) * nn, -1)
+        L = np.sum(np.gradient(Pu, xs, axis=0) * nn, -1)
+        M = np.sum(np.gradient(Pu, ys, axis=1) * nn, -1)
+        N = np.sum(np.gradient(Pv, ys, axis=1) * nn, -1)
         den = 2.0 * (E * G - F * F)
         Hc = (E * N - 2.0 * F * M + G * L) / np.where(
             np.abs(den) < 1e-300, 1e-300, den)
         fl = P.reshape(-1, 3)
         diam = float(np.linalg.norm(fl.max(0) - fl.min(0)))
-        mean = float(np.mean(np.abs(Hc[3:-3, 3:-3]))) * diam
+        k = max(3, n // 8)
+        mean = float(np.median(np.abs(Hc[k:-k, k:-k]))) * diam
         # A PLANE is minimal, so "mean curvature is zero" cannot on its
         # own say the surface is right -- and for a while it did not:
         # evaluating CLP's theta with H's nome returned a nearly
@@ -1492,6 +1711,80 @@ def _selftest():
     # over-shared count above wanders with resolution instead of
     # sitting at zero the way H's does.  Reported rather than asserted,
     # so the debt stays visible; see BACKLOG.
+
+    # The three rows the generalised grading unblocked.  Each is gated
+    # on the thing that was actually broken -- the QUADRATURE -- rather
+    # than on assembling, because two of them are not supposed to
+    # assemble (see the note above `_SPECS`).  Two measurements, both
+    # taken with the node arrays passed to `np.gradient`: without them
+    # it differentiates against the grid INDEX, and on a graded grid
+    # that reports a converging patch as wildly non-minimal.
+    for key, want in (('LIDINOID', 0.35), ('CLP_HANDLE', 0.06),
+                      ('RPD', 2.0)):
+        rows = []
+        for n in (60, 100):
+            xs, _wx, _xp, ys, _wy, _yp = _spec_axes(key, n, n)
+            P = _spec_patch(key, n, n)
+            Pu = np.gradient(P, xs, axis=0)
+            Pv = np.gradient(P, ys, axis=1)
+            nn = np.cross(Pu, Pv)
+            nn = nn / np.maximum(
+                np.linalg.norm(nn, axis=-1, keepdims=True), 1e-300)
+            E = np.sum(Pu * Pu, -1)
+            F = np.sum(Pu * Pv, -1)
+            G = np.sum(Pv * Pv, -1)
+            L = np.sum(np.gradient(Pu, xs, axis=0) * nn, -1)
+            M = np.sum(np.gradient(Pu, ys, axis=1) * nn, -1)
+            N = np.sum(np.gradient(Pv, ys, axis=1) * nn, -1)
+            den = 2.0 * (E * G - F * F)
+            Hc = (E * N - 2.0 * F * M + G * L) / np.where(
+                np.abs(den) < 1e-300, 1e-300, den)
+            fl = P.reshape(-1, 3)
+            diam = float(np.linalg.norm(fl.max(0) - fl.min(0)))
+            k = max(4, n // 8)
+            rows.append((diam,
+                         float(np.median(np.abs(Hc[k:-k, k:-k]))) * diam,
+                         float(np.median((np.abs(E - G)
+                                          / (E + G))[k:-k, k:-k]))))
+        (d0, h0, c0), (d1, h1, c1) = rows
+        # the diameter must SETTLE (it used to grow without limit), and
+        # both minimality and conformality must FALL with the grid
+        good = (abs(d1 - d0) / max(d1, 1e-30) < 0.05
+                and h1 < h0 and c1 < c0 and h1 < want)
+        ok &= good
+        print("hexagonal: %s diam %.4f -> %.4f, med|H|*d %.2e -> %.2e, "
+              "|E-G|/(E+G) %.2e -> %.2e %s"
+              % (key, d0, d1, h0, h1, c0, c1, 'OK' if good else 'FAIL'))
+
+    # CLP with a handle is the one of the three that assembles, and a
+    # triply periodic minimal surface is CONNECTED -- the gate that
+    # condemned three of CLP's five arrangements, so it is the gate this
+    # has to pass before it can be registered as a cell.  It needs
+    # n >~ 130 for its fifth boundary curve to classify; below that it
+    # falls back to the piece, which is correct behaviour, not a
+    # failure.
+    V, faces = spec_build('CLP_HANDLE', 1, 160, 1.0, 0.0)
+    key_r = np.round(np.asarray(V) / 1e-6).astype(np.int64)
+    _u, inv = np.unique(key_r, axis=0, return_inverse=True)
+    par = list(range(int(inv.max()) + 1))
+
+    def _find(a):
+        while par[a] != a:
+            par[a] = par[par[a]]
+            a = par[a]
+        return a
+
+    for f in faces:
+        r = [_find(int(inv[i])) for i in f]
+        for x in r[1:]:
+            if x != r[0]:
+                par[x] = r[0]
+    ncomp = len({_find(i) for i in range(len(par))})
+    good = ncomp == 1 and len(faces) > 100000
+    ok &= good
+    print("hexagonal: CLP with handle assembles %d verts %d faces into "
+          "%d component(s) %s"
+          % (len(V), len(faces), ncomp, 'OK' if good else 'FAIL'))
 
     # The conjugate.  It is a different surface, not a re-view of the
     # same one, so it gets its own check: the page says it "usually

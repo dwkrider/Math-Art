@@ -808,6 +808,86 @@ for _key, _label, _g, _shape, _clip, _fn in _NAMED:
     PRESETS[_key] = (_label, _fn, _shape, _clip)
 
 
+# ======================================================================
+# Named surfaces from Ferreol's Encyclopedie des formes mathematiques
+# ======================================================================
+# Four classical implicit surfaces, each carrying a property that is
+# exactly checkable and that IS the reason the surface has a name.  The
+# self-test gates on that property rather than on "it meshed", because a
+# mistyped exponent moves the zero set without raising anything:
+#
+#   Cartan's umbrella   an ISOLATED LINE.  Every point of Oz satisfies
+#       z(x^2+y^2) = x^3, yet no neighbourhood of a point of Oz other
+#       than the origin meets the rest of the surface -- the handle of
+#       the umbrella.  Gated by evaluating on Oz and by confirming the
+#       canopy is the cone over an Agnesi cubic.
+#   Cassini surface     its LEVEL CURVES ARE CASSINI OVALS.  The level
+#       z is the oval with parameter b = z, so the section y = 0 splits
+#       into the circle x^2+z^2 = a^2 and the conjugate hyperbola
+#       x^2-z^2 = a^2.  Both are gated exactly.
+#   Cassini of revolution   the BIFOCAL equation r r' = b^2 with foci at
+#       (+-a, 0, 0).  Gated by measuring the two distances.
+#   Titeica's surface   the affine sphere xyz = a^3: the Gauss curvature
+#       at M is proportional to the fourth power of the distance from a
+#       fixed centre to the tangent plane at M.  Gated by computing K
+#       and d from the graph z = a^3/(xy) and confirming d^4/K = 27a^6
+#       is genuinely constant.  (The source prints 26a^6, which does not
+#       follow from the K and d it prints on the same line; 27 does, and
+#       27 is what the surface has.)
+#
+# References:
+# - R. Ferreol, "Encyclopedie des formes mathematiques remarquables",
+#   mathcurve.com -- the chapters "parapluie de Cartan", "surface de
+#   Cassini", "surface de Titeica".  A converted copy of the whole
+#   encyclopedia is in research/books/
+#   mathcurve_encyclopedie_formes_mathematiques/.
+# - H. Cartan and H. Whitney, 1957 -- the umbrella; cf. Whitney's own
+#   umbrella x^2 = y^2 z, already in the Hauser block above.
+# - G. D. Cassini, the ovals of 1680; the surface is the classical
+#   three-dimensional generalisation of them.
+# - G. Titeica, "Sur une nouvelle classe de surfaces", Rend. Circ. Mat.
+#   Palermo 25 (1908) 180-187 -- the affine spheres of 1907.
+
+
+def _f_cartan(x, y, z, mu):
+    # z(x^2+y^2) = x^3.  The cone over an Agnesi cubic, with the whole
+    # of Oz in the zero set but isolated from the canopy.
+    return z * (x * x + y * y) - x * x * x
+
+
+def _f_cassini(x, y, z, mu):
+    # ((x+a)^2+y^2)((x-a)^2+y^2) = z^4: the surface whose horizontal
+    # sections are the Cassini ovals of parameter b = z.
+    a = 1.0
+    return (((x + a) ** 2 + y * y) * ((x - a) ** 2 + y * y) - z ** 4)
+
+
+def _f_cassini_rev(x, y, z, mu):
+    # (x^2+y^2+z^2+a^2)^2 = b^4 + 4a^2 x^2: a Cassini oval revolved
+    # about its long axis.  b is taken in the window a < b < a sqrt2,
+    # where the surface is a single peanut rather than two lobes.
+    a, b = 1.0, 1.2
+    return (x * x + y * y + z * z + a * a) ** 2 - b ** 4 - 4.0 * a * a * x * x
+
+
+def _f_titeica(x, y, z, mu):
+    # xyz = a^3, the cubic affine sphere.
+    a = 1.0
+    return x * y * z - a ** 3
+
+
+_MATHCURVE = (
+    ('CARTAN', "Cartan's Umbrella", 'BOX', 1.4, _f_cartan),
+    ('CASSINI', "Cassini Surface", 'BOX', 1.7, _f_cassini),
+    ('CASSINI_REV', "Cassini Surface of Revolution", 'BOX', 1.2,
+     _f_cassini_rev),
+    ('TITEICA', "Titeica Surface", 'BOX', 2.6, _f_titeica),
+)
+
+for _key, _label, _shape, _clip, _fn in _MATHCURVE:
+    PRESETS[_key] = (_label, _fn, _shape, _clip)
+
+
 # Which family each preset belongs to.  The operator turns this into a
 # Family dropdown that filters the Surface list: an 80-entry flat enum
 # is unusable, and the families are how the sources group them anyway.
@@ -816,6 +896,7 @@ FAMILIES = (
     ('HAUSER', "Hauser Gallery"),
     ('RECORD', "Record Nodal Surfaces"),
     ('NAMED', "Named Implicit Surfaces"),
+    ('MATHCURVE', "Encyclopedia Surfaces"),
 )
 
 # Sampling resolution each family wants by default.
@@ -838,6 +919,7 @@ SURFACE_FAMILY = {k: 'CLASSICAL' for k in
 SURFACE_FAMILY.update({k: 'HAUSER' for (k, _l, _e, _s, _c, _f) in _HAUSER})
 SURFACE_FAMILY.update({k: 'RECORD' for (k, _l, _s, _c, _f) in _RECORD})
 SURFACE_FAMILY.update({k: 'NAMED' for (k, _l, _g, _s, _c, _f) in _NAMED})
+SURFACE_FAMILY.update({k: 'MATHCURVE' for (k, _l, _s, _c, _f) in _MATHCURVE})
 
 
 def boundary_loops(verts, tris, smooth=2):
@@ -1040,6 +1122,95 @@ def _selftest():
     ok &= not bad
     print("algebraic: rim curve spans exactly the open edge %s"
           % ('OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # The encyclopedia surfaces are named for a property, not for a
+    # shape, so each is gated on its own property.  Every one of these
+    # is an exact identity that a mistyped exponent destroys while
+    # leaving a perfectly meshable surface behind.
+    checks = []
+
+    # Cartan: the whole of Oz lies on it, and the canopy is the cone
+    # over the Agnesi cubic -- i.e. the cartesian and the parametric
+    # forms agree, (u cos v, u sin v, u cos^3 v).
+    zs = rng.uniform(-3.0, 3.0, 200)
+    checks.append(("Cartan umbrella contains the isolated line Oz",
+                   float(np.max(np.abs(_f_cartan(0.0 * zs, 0.0 * zs, zs,
+                                                 1.3))))))
+    uu = rng.uniform(0.2, 2.0, 200)
+    vv = rng.uniform(0.0, 2.0 * math.pi, 200)
+    checks.append(("Cartan umbrella is the cone over an Agnesi cubic",
+                   float(np.max(np.abs(_f_cartan(
+                       uu * np.cos(vv), uu * np.sin(vv),
+                       uu * np.cos(vv) ** 3, 1.3))))))
+
+    # Cassini: the section y = 0 is the circle x^2+z^2 = a^2 united
+    # with the conjugate hyperbola x^2-z^2 = a^2 -- both exactly.
+    tt = rng.uniform(0.0, 2.0 * math.pi, 200)
+    checks.append(("Cassini section y=0 contains the circle x^2+z^2=a^2",
+                   float(np.max(np.abs(_f_cassini(np.cos(tt), 0.0 * tt,
+                                                  np.sin(tt), 1.3))))))
+    tt = rng.uniform(-1.2, 1.2, 200)
+    checks.append(("Cassini section y=0 contains x^2-z^2=a^2",
+                   float(np.max(np.abs(_f_cassini(np.cosh(tt), 0.0 * tt,
+                                                  np.sinh(tt), 1.3))))))
+    # and the level curve at height z IS the Cassini oval of parameter
+    # b = z: the product of the distances to (+-a, 0) equals z^2.
+    px, py = rng.uniform(-2.0, 2.0, (2, 200))
+    d1 = np.hypot(px + 1.0, py)
+    d2 = np.hypot(px - 1.0, py)
+    lvl = np.sqrt(d1 * d2)                   # the height whose oval this is
+    checks.append(("Cassini level curves are Cassini ovals rr' = z^2",
+                   float(np.max(np.abs(_f_cassini(px, py, lvl, 1.3))))
+                   / float(np.max(d1 * d2)) ** 2))
+
+    # Cassini of revolution: the bifocal equation r r' = b^2.
+    a_, b_ = 1.0, 1.2
+    th = rng.uniform(0.0, math.pi, 300)
+    ph = rng.uniform(0.0, 2.0 * math.pi, 300)
+    # The polar form about the focal axis Ox is r^4 - 2a^2 r^2 cos2t
+    # + a^4 = b^4, so solve it for r on each ray.
+    ct = np.cos(th)
+    c2t = 2.0 * ct * ct - 1.0                # cos 2t
+    disc = b_ ** 4 - a_ ** 4 * (1.0 - c2t * c2t)
+    r2 = a_ * a_ * c2t + np.sqrt(np.maximum(disc, 0.0))
+    keep = r2 > 1e-9
+    r = np.sqrt(r2[keep])
+    px = r * ct[keep]
+    py = r * np.sin(th[keep]) * np.cos(ph[keep])
+    pz = r * np.sin(th[keep]) * np.sin(ph[keep])
+    rr = (np.sqrt((px + a_) ** 2 + py * py + pz * pz)
+          * np.sqrt((px - a_) ** 2 + py * py + pz * pz))
+    checks.append(("Cassini of revolution obeys the bifocal rr' = b^2",
+                   float(np.max(np.abs(rr - b_ * b_)))))
+    checks.append(("Cassini of revolution: those points are on it",
+                   float(np.max(np.abs(_f_cassini_rev(px, py, pz, 1.3))))))
+
+    # Titeica: on the graph z = a^3/(xy) the Gauss curvature K and the
+    # distance d from the origin to the tangent plane satisfy
+    # d^4 / K = 27 a^6 -- constant, which is the DEFINITION of a
+    # Titeica surface (the source prints 26; 27 is what its own K and d
+    # give, and what the surface has).
+    a_ = 1.0
+    px, py = rng.uniform(0.6, 2.2, (2, 300))
+    pz = a_ ** 3 / (px * py)
+    p_ = -a_ ** 3 / (px ** 2 * py)           # z_x
+    q_ = -a_ ** 3 / (px * py ** 2)           # z_y
+    r_ = 2.0 * a_ ** 3 / (px ** 3 * py)      # z_xx
+    s_ = a_ ** 3 / (px ** 2 * py ** 2)       # z_xy
+    t_ = 2.0 * a_ ** 3 / (px * py ** 3)      # z_yy
+    Kt = (r_ * t_ - s_ * s_) / (1.0 + p_ * p_ + q_ * q_) ** 2
+    dt = np.abs(p_ * px + q_ * py - pz) / np.sqrt(p_ * p_ + q_ * q_ + 1.0)
+    ratio = dt ** 4 / Kt
+    checks.append(("Titeica surface has d^4/K = 27 a^6 constant",
+                   float(np.max(np.abs(ratio - 27.0 * a_ ** 6)))
+                   / (27.0 * a_ ** 6)))
+    checks.append(("Titeica: those graph points satisfy xyz = a^3",
+                   float(np.max(np.abs(_f_titeica(px, py, pz, 1.3))))))
+
+    worst = ['%s:%.1e' % (n, d) for n, d in checks if not (d < 1e-10)]
+    ok &= not worst
+    print("algebraic: %d encyclopedia-surface properties hold %s"
+          % (len(checks), 'OK' if not worst else 'FAIL ' + ','.join(worst)))
 
     orphan = sorted(set(PRESETS) - set(SURFACE_FAMILY))
     fams = {f for f, _ in FAMILIES}
