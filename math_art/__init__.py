@@ -74,6 +74,7 @@ _MODULE_NAMES = [
     'stellation_engine',
     'general_stellation',
     'other_polyhedra_generator',
+    'noble_faceting_generator',
     'canonical_polyhedra_generator',
     'attractor_generator',
     'dual_helix_generator',

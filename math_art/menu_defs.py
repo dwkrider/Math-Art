@@ -103,6 +103,7 @@ POLYHEDRA = Menu(
         _e("mesh.canonical_polyhedron_add", 'MESH_ICOSPHERE'),
         _e("mesh.icosahedron_stellation_add", 'MESH_ICOSPHERE'),
         _e("mesh.general_stellation_add", 'MESH_ICOSPHERE'),
+        _e("mesh.noble_faceting_add", 'MESH_ICOSPHERE'),
         _e("mesh.star_prism_add", 'MESH_CYLINDER'),
         _e("mesh.conway_add", 'MESH_ICOSPHERE'),
         _e("mesh.zonohedron_add", 'MESH_UVSPHERE'),

@@ -25,6 +25,11 @@ dicts); the rig helpers at the bottom appear only when bpy is present.
 # should show what you get when you click the entry -- so only the ones
 # whose defaults under-sell them are listed.
 PARAMS = {
+    # A bare noble faceting is a self-intersecting wireframe-ish solid
+    # and reads as mush when shaded; the great dodecahedron -- faceting
+    # 1 of the icosahedral vertex set -- has big obvious pentagons and
+    # says "this is a polyhedron through someone else's vertices".
+    "mesh.noble_faceting_add": dict(seed='ICOSA', index=1),
     # -- solids ---------------------------------------------------
     # A bare tetrahedron reads as a flat triangle at icon size; the
     # dodecahedron's pentagons say "regular solid" at a glance.  (The
@@ -375,6 +380,7 @@ VARIANT_SELECTOR = {
     "mesh.biscribed_solid_add": "solid",
     "mesh.icosahedron_stellation_add": "solid",
     "mesh.general_stellation_add": "seed",
+    "mesh.noble_faceting_add": "seed",
     "mesh.star_prism_add": "form",
     "mesh.polyhedral_torus_add": "tiling",
     "mesh.interlocking_add": "family",
