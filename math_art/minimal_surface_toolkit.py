@@ -93,6 +93,7 @@ from .minsurf.plateau import (_SEIFERT_MAX_ITERS, _quads_to_tris,
                               build_seifert_span_grid, fair_grid_2d,
                               fair_grid_columns, mesh_area, minimize_area,
                               relax_normal_flow, resample_loop, torus_knot)
+from .minsurf.hexagonal import clp_params as _clp_params
 from .minsurf.tpms import (TPMS, TPMS2_HEX_LATTICE, TPMS_EXACT,
                            TPMS_EXACT_ARRANGEMENTS,
                            _PGD_PRESET_ANGLE, _f_p, build_tpms,
@@ -399,14 +400,35 @@ if _IN_BLENDER:
         # assembled from a fundamental piece by its own symmetry group,
         # so each carries an Arrangement rather than a cell count, and
         # Schwarz H and CLP have no nodal form at all.
-        if exact_items:
-            _PERIODIC_ITEMS['EXACT'] = exact_items
-            _PERIODIC_ALL.extend(exact_items)
+        # CLP is split off into a FIFTH entry of its own.  The others
+        # are single surfaces (or, for P/Gyroid/D, one associate family
+        # sampled by an angle); CLP is a two-parameter family whose
+        # shape genuinely changes with the torus modulus and the branch
+        # value, and it carries named assemblies instead of a cell
+        # count.  Sharing a dropdown entry with the fixed surfaces would
+        # mean showing its two shape sliders on rows that have no such
+        # parameters.
+        fam_items = [it for it in exact_items
+                     if it[0] in TPMS_EXACT_ARRANGEMENTS]
+        fixed_items = [it for it in exact_items
+                       if it[0] not in TPMS_EXACT_ARRANGEMENTS]
+        if fixed_items:
+            _PERIODIC_ITEMS['EXACT'] = fixed_items
+            _PERIODIC_ALL.extend(fixed_items)
             _PERIODICITY_ITEMS.append(
                 ('EXACT', "Exact (Weierstrass)",
-                 f"{len(exact_items)} surfaces integrated exactly from "
+                 f"{len(fixed_items)} surfaces integrated exactly from "
                  f"their Weierstrass data and assembled by reflection, "
                  f"rather than approximated by a nodal polynomial"))
+        if fam_items:
+            _PERIODIC_ITEMS['EXACT_FAMILY'] = fam_items
+            _PERIODIC_ALL.extend(fam_items)
+            _PERIODICITY_ITEMS.append(
+                ('EXACT_FAMILY', "Exact Family (shape parameters)",
+                 f"{len(fam_items)} exact surfaces that are FAMILIES "
+                 f"rather than single surfaces: their shape is driven "
+                 f"by moduli, and they are built at named assemblies "
+                 f"instead of a cell count"))
         if not _PERIODICITY_ITEMS:
             _PERIODICITY_ITEMS.append(
                 ('TRIPLY', "Triply Periodic (TPMS)", "TPMS"))
@@ -712,6 +734,20 @@ if _IN_BLENDER:
                         "surfaces are grown from a fundamental piece by "
                         "their own symmetry group, so these stages -- "
                         "not a cell count -- are the natural sizes")
+        clp_tau: FloatProperty(
+            name="Modulus", default=2.0, min=0.05, max=8.0, step=10,
+            precision=3,
+            description="Im(tau), the torus modulus. CLP is a "
+                        "two-parameter family; Weber publishes renders "
+                        "at (tau, branch) = (0.4, 0.15), (2.0, 0.15) "
+                        "and (1.0, 0.25)")
+        clp_branch: FloatProperty(
+            name="Branch Value", default=0.15, min=0.02, max=0.48,
+            step=1, precision=3,
+            description="The branch value a. At tau = 1 and a = 0.25 "
+                        "the four branch points sit at the vertices of "
+                        "a regular octagon and the surface is "
+                        "self-conjugate")
         # -- Weierstrass (singly / doubly) parameters
         output: EnumProperty(
             name="Output",
@@ -862,6 +898,8 @@ if _IN_BLENDER:
                                              aspect=self.cell_aspect)
                     label = TPMS[nk][0]
                 else:                                   # CUSTOM: exact morph
+                    if surf == 'CLP':
+                        _clp_params(self.clp_tau, self.clp_branch)
                     verts, tris = build_tpms_exact(
                         surf, cxyz, self.resolution, self.cell_size,
                         self.assoc_angle,
@@ -978,7 +1016,7 @@ if _IN_BLENDER:
         def _draw_body(self, lay):
             lay.prop(self, 'periodicity')
             lay.prop(self, 'surface')
-            if (self.periodicity in ('TRIPLY', 'EXACT')
+            if (self.periodicity in ('TRIPLY', 'EXACT', 'EXACT_FAMILY')
                     or self.surface in TPMS
                     or self.surface in TPMS_EXACT):
                 if self.surface == 'PGD':
@@ -1001,6 +1039,23 @@ if _IN_BLENDER:
                     lay.prop(self, 'assoc_angle')
                     if self.surface in TPMS_EXACT_ARRANGEMENTS:
                         lay.prop(self, 'arrangement')
+                    if self.surface == 'CLP':
+                        lay.prop(self, 'clp_tau')
+                        lay.prop(self, 'clp_branch')
+                if self.surface in TPMS_EXACT:
+                    # No cell counts here.  These are grown from a
+                    # fundamental piece by their own symmetry group, not
+                    # arrayed on a lattice, so an X/Y/Z count has
+                    # nothing to act on -- the Arrangement above is what
+                    # sets the size.  Level Offset and Cell Aspect go
+                    # too: both are properties of a NODAL field (the
+                    # constant c in F = c, and the c/a ratio of the
+                    # sampling cell) and neither exists for a surface
+                    # integrated from its Weierstrass data.
+                    for k in ('resolution', 'cell_size', 'thickness',
+                              'shade_smooth'):
+                        lay.prop(self, k)
+                    return
                 # triply: three independent per-axis counts (x, y, z)
                 lay.prop(self, 'cells_u', text="Cells X")
                 lay.prop(self, 'cells_v', text="Cells Y")

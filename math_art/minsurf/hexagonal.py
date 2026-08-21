@@ -482,7 +482,7 @@ def _log_theta(D, q):
 #         associate angle, omega sign, notebook)
 _SPECS = {
     'CLP': dict(
-        label="Schwarz CLP (exact, fundamental piece)",
+        label="Schwarz CLP (exact)",
         tau=2.0j, a=0.15,
         terms=lambda a, tau: ((a, -0.5), (-a, 0.5),
                               (a - tau / 2.0, 0.5), (-a - tau / 2.0, -0.5)),
@@ -668,6 +668,23 @@ def _spec_nodes(key, nu):
     return xs, wts
 
 
+def clp_params(tau_im=2.0, a=0.15):
+    """Override CLP's two shape parameters.
+
+    CLP is a two-parameter family -- Weber's notebook is called
+    CLP-generic for that reason -- and he publishes renders at
+    (tau, a) = (0.4, 0.15), (2.0, 0.15) and (1.0, 0.25).  The last is
+    the square case, where the four branch values sit at the vertices of
+    a regular octagon and the surface is self-conjugate.  Scale is a
+    third parameter and is handled by the caller, not here.
+    """
+    sp = _SPECS['CLP']
+    sp['tau'] = complex(0.0, float(tau_im))
+    sp['a'] = float(a)
+    sp['splits'] = (float(a),)
+    return sp
+
+
 def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
     """Fundamental patch for one of the theta-family surfaces.
 
@@ -765,7 +782,7 @@ def clp_assembly(P):
 
     bl, br = P[0, 0], P[-1, 0]                   # images of z = 0, z = .5
     xs = _spec_nodes('CLP', P.shape[0])[0]
-    ia = int(np.argmin(np.abs(xs - _SPECS['CLP']['splits'][0])))
+    ia = int(np.argmin(np.abs(xs - _SPECS['CLP']['a'])))
     ba = P[ia, 0]                                # image of z = a
     tl = P[0, -1]                                # image of z = i y1
 
