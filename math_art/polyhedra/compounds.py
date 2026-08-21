@@ -1497,17 +1497,38 @@ AXIS_COMPOUNDS = [
     # the stabilizer is the whole group and the compound collapses to a
     # single cube.  Each angle below was found by scanning and is checked
     # against Hart's own count.
+    #
+    # THE FREE ROWS NOW SIT AT HART'S OWN ANGLE.  A row with rotational
+    # freedom has no canonical turn, and these carried 11.0 degrees --
+    # picked only to be generic, i.e. to be far from any special
+    # position.  Generic is exactly what looks WRONG: the cubes land at
+    # no relation to each other and the compound reads as a heap.  Hart
+    # models each family at a chosen angle, so the angles below are his,
+    # recovered from the X3D models in `research/data/hart/x3d` by
+    # solving for the turn whose compound has the same set of pairwise
+    # angles between cube axes as his.  Each is confirmed a second way,
+    # against the full vertex set: same count, and the same
+    # rotation-invariant distance spectrum to 2e-3.
+    #
+    # The named (D_n) rows already agreed with Hart before this and are
+    # unchanged -- 3 Cubes with cubes_S4_D4, 4 Cubes with cubes_S4_D3,
+    # 6 Cubes 2-fold with cubes_S4_D2, 15 Cubes with cubes_A5_D2 -- which
+    # is the check that the CONSTRUCTION was right all along and only the
+    # free angles were arbitrary.  (That data is gitignored, so this is
+    # recorded here rather than left to a test that cannot run.)
     ('HC_6CUBES_C4', "Hart: 6 Cubes, 4-fold (free)",
-     'CUBE', 'O', 4, 4, 11.0, 6),
+     'CUBE', 'O', 4, 4, 27.8171, 6),              # cubes_S4_C4
     ('HC_3CUBES', "Hart: 3 Cubes", 'CUBE', 'O', 4, 4, 45.0, 3),
-    ('HC_8CUBES', "Hart: 8 Cubes (free)", 'CUBE', 'O', 3, 3, 11.0, 8),
+    ('HC_8CUBES', "Hart: 8 Cubes (free)",
+     'CUBE', 'O', 3, 3, 48.5451, 8),              # cubes_S4_C3
     ('HC_4CUBES', "Hart: 4 Cubes (Bakos')", 'CUBE', 'O', 3, 3, 60.0, 4),
     ('HC_12CUBES_C2', "Hart: 12 Cubes (free)",
-     'CUBE', 'O', 2, 2, 11.0, 12),
+     'CUBE', 'O', 2, 2, 28.6480, 12),             # cubes_S4_C2_A
     ('HC_6CUBES_D2', "Hart: 6 Cubes, 2-fold", 'CUBE', 'O', 2, 2, 90.0, 6),
-    ('HC_20CUBES', "Hart: 20 Cubes (free)", 'CUBE', 'I', 3, 3, 11.0, 20),
+    ('HC_20CUBES', "Hart: 20 Cubes (free)",
+     'CUBE', 'I', 3, 3, 68.1469, 20),             # cubes_A5_C3
     ('HC_30CUBES_C2', "Hart: 30 Cubes (free)",
-     'CUBE', 'I', 2, 2, 11.0, 30),
+     'CUBE', 'I', 2, 2, 129.2706, 30),            # cubes_A5_C2_A_alt1
     ('HC_15CUBES', "Hart: 15 Cubes", 'CUBE', 'I', 2, 2, 45.0, 15),
     # 22.2388..., computed rather than written down: it is the turn about
     # a three-fold axis carrying a cube EDGE half-turn axis onto an
@@ -1516,10 +1537,12 @@ AXIS_COMPOUNDS = [
     # the icosahedral prism rows look impossible.
     ('HC_10CUBES', "Hart: 10 Cubes", 'CUBE', 'I', 3, 3,
      perp_phase_from('CUBE', 'I', 3, 3, (1.0, -1.0, 0.0)), 10),
+    # and it agrees with Hart's cubes_A5_D3_b (not _a: he models both
+    # embeddings of D_3, and this is the second).
     ('HC_4CUBES_T', "Hart: 4 Cubes, tetrahedral (free)",
-     'CUBE', 'T', 3, 3, 11.0, 4),
+     'CUBE', 'T', 3, 3, 34.3833, 4),              # cubes_A4_C3
     ('HC_6CUBES_T', "Hart: 6 Cubes, tetrahedral (free)",
-     'CUBE', 'T', 2, 2, 11.0, 6),
+     'CUBE', 'T', 2, 2, 22.0834, 6),              # cubes_A4_C2
 
     ('S28_5_3ANTI', "Skilling 28: 12 Pentagrammic Crossed Antiprisms (free)",
      'ANTI5_3', 'Ih', 5, 5, 9.0, 12),
