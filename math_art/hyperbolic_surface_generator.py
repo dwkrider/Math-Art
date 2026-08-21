@@ -556,6 +556,7 @@ if _IN_BLENDER:
         rim_smooth: _rim.rim_smooth_prop()
         rim_profile: _rim.rim_profile_prop()
         rim_twist: _rim.rim_twist_prop()
+        rim_reeds: _rim.rim_reeds_prop()
 
         preset: EnumProperty(
             name="Surface",
@@ -628,7 +629,8 @@ if _IN_BLENDER:
                     _rim.add_rim_from_object(
                         context, _ob, _ob.name,
                         self.rim_thickness, self.rim_smooth,
-                        self.rim_profile, twist=self.rim_twist)
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
             return {'FINISHED'}
 
         def draw(self, context):
