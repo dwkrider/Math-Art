@@ -131,6 +131,9 @@ MODELS = [
      1.00, 0.0),
     ('PG12D', "12 Pentagrams (great icosicosidodeca)", 'U48PEN', 5, 2,
      1.00, 0.0),
+    # the convex decagon in the star-decagon planes
+    ('D12C', "12 Decagons (truncated great dodeca)", 'U37DEC', 10, 1,
+     1.00, 0.0),
 ]
 
 _MODEL = {m[0]: m for m in MODELS}
@@ -310,7 +313,31 @@ FACE_SOURCES = {
     # carries the same 0.7658 class as U38, so they are one placement.
     'U38PEN': ('5/2 5 | 2', ['5/2', '5', '2'], 5, 0),
     'U48PEN': ('3/2 5 | 3', ['3/2', '5', '3'], 5, 0),
+
+    # The twelve DECAGONS of the truncated great dodecahedron stand in
+    # exactly the planes of Hart's star-decagon model, at exactly its
+    # circumradius (0.5067 / 0.8621) -- the convex decagon drawn where he
+    # draws the {10/3}.  A duplicate test that keyed on plane distance
+    # alone therefore threw it away as "already shipped as SD12", which
+    # it is not: same planes, different polygon.  The two are not even
+    # turned alike, so the frames have to come from U37 itself rather
+    # than be borrowed from U73.
+    'U37DEC': ('2 5/2 | 5', ['2', '5/2', '5'], 10),
 }
+
+# Four more placements pass every test above and are still NOT models,
+# which is worth recording so they are not rediscovered and retried: the
+# 20 triangles of U54 (9 crossings a panel), the 12 pentagons of U47
+# (10), the 20 hexagons of U44 (9) and those of U48 (15).  Each is
+# congruent panel to panel, each crosses a fixed number of neighbours,
+# and each is cut from one template -- but on every panel the slots
+# CROSS ONE ANOTHER inside the polygon, so cutting them would sever the
+# panel into loose pieces.  `_verify_slots_dont_cross` is the test.
+# This is a property of the placement, not of the cut: it is unchanged
+# from a slit width of 0.01 down to 0.0003, and the slot mouths are far
+# apart on the rim (0.24 to 0.44).  What is too dense is the number of
+# neighbours, which puts more slots into a panel than its area can hold
+# without them meeting.
 
 # The TWELVE PENTAGONS are the only model Hart names no solid for -- he
 # says just "a close cousin is this one, made of twelve regular
@@ -1000,12 +1027,50 @@ def _verify_one_template():
     return checked
 
 
+def _verify_slots_dont_cross():
+    """No panel's slots may cut across one another.
+
+    Each slot runs from a point on the rim inward to the midpoint of the
+    chord it shares with a neighbour.  If two of those paths meet inside
+    the panel, the two cuts sever it: what should be one piece falls into
+    several, and the model cannot be made from it at any slit width.
+    This is the test the four rejected placements fail -- and they fail
+    it on every panel, not on a few -- so it is the reason they are not
+    in MODELS, rather than being merely dense.
+
+    It is a check on the ARRANGEMENT, and one no other test here makes.
+    Congruent panels, a fixed number of neighbours and a single template
+    all hold perfectly well for a panel that has been cut to bits.
+    """
+    for key, _lbl, _ax, _n, _d, _r, _t in MODELS:
+        panels = model_panels(key)
+        cuts = [[] for _ in panels]
+        for i, j, mid, lo, hi in crossings(panels):
+            cuts[i].append((hi, mid))
+            cuts[j].append((lo, mid))
+        for idx, (_P, nv) in enumerate(panels):
+            c = cuts[idx]
+            for a in range(len(c)):
+                for b in range(a + 1, len(c)):
+                    r1 = _sub(c[a][1], c[a][0])
+                    r2 = _sub(c[b][1], c[b][0])
+                    den = _dot(_cross(r1, r2), nv)
+                    if abs(den) < 1e-12:
+                        continue
+                    w = _sub(c[b][0], c[a][0])
+                    s = _dot(_cross(w, r2), nv) / den
+                    u = _dot(_cross(w, r1), nv) / den
+                    assert not (1e-6 < s < 1 - 1e-6
+                                and 1e-6 < u < 1 - 1e-6),                         (key, "two slots cut across each other", idx)
+    return len(MODELS)
+
+
 def _selftest():
     want_panels = {'T20': 20, 'S30': 30, 'P12': 12, 'D12': 12,
                    'H20': 20, 'SD12': 12, 'PG12': 12,
                    'T20B': 20, 'H20B': 20, 'S30B': 30, 'P12B': 12,
                    'D12B': 12, 'P12C': 12, 'PG12C': 12, 'P12D': 12,
-                   'PG12D': 12}
+                   'PG12D': 12, 'D12C': 12}
     for key, lbl, axes, n, d, _r, _t in MODELS:
         normals = plane_normals(axes)
         assert len(normals) == want_panels[key], (key, len(normals))
@@ -1042,12 +1107,20 @@ def _selftest():
         assert len(deg) == want_panels[key],             (key, "a panel crosses nothing", len(deg))
         assert min(deg.values()) >= 3, (key, "a panel is barely held",
                                         sorted(deg.values())[:3])
-        # 10 because that is what Hart's own star-decagon model does --
-        # twelve large {10/3} panels each crossing ten of the other
-        # eleven.  The old cap of 9 was fitted to the earlier, wrong
-        # placement and would now reject the correct one.
-        assert max(deg.values()) <= 10,             (key, "panels saw through far too many neighbours",
-             sorted(deg.values())[-3:])
+        # A panel can only cross panels it is not parallel to, so the
+        # ceiling is the size of the largest non-parallel set: 10 of the
+        # twelve dodecahedral planes (every face has an opposite), 19 of
+        # the twenty icosahedral ones, 29 of an icosidodecahedron's
+        # thirty.  Meeting all of them is dense but legitimate -- the 12
+        # pentagrams on U48 do exactly that -- so the ceiling is what
+        # cannot be EXCEEDED, and exceeding it would mean two PARALLEL
+        # panels had been counted as crossing, which is a bug and not a
+        # dense model.  Fixed caps of 9 and then 10 were each fitted to
+        # whatever happened to be shipped at the time, and had to be
+        # raised twice.
+        limit = {12: 10, 20: 19, 30: 29}[want_panels[key]]
+        assert max(deg.values()) <= limit,             (key, "parallel panels counted as crossing",
+             sorted(deg.values())[-3:], limit)
 
         # No panel outline may cross itself.  This is the check that
         # matters most: a self-crossing loop is still a "face" as far as
@@ -1083,6 +1156,8 @@ def _selftest():
     print("SLITS   no slit extends beyond its own panel")
     nt = _verify_one_template()
     print("SAME    all %d models cut every panel from one template" % nt)
+    nc = _verify_slots_dont_cross()
+    print("WHOLE   no panel in %d models is severed by its own slots" % nc)
     nh = _verify_against_hart()
     print("PLANES  all %d models sit at Hart's own panel-plane distances"
           % nh)
