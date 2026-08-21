@@ -370,10 +370,19 @@ def profile_points(half, kind, twist=0.0):
     w = 0.5 * h                              # wall / flange
     c = 0.5 * w                              # half the cross-bar
     if kind == 'C':
-        # square with a bite out of the +X side: a channel whose
-        # opening faces away from the surface
-        pts = ((-h, -h), (h, -h), (h, -h + w), (-h + w, -h + w),
-               (-h + w, h - w), (h, h - w), (h, h), (-h, h))
+        # Square with a bite out of the -X side.
+        #
+        # The bite is authored on -X, not +X, and that is worth
+        # recording because the arithmetic says the opposite: +X is the
+        # outward conormal, measured to agree with "away from the
+        # object's bulk" on 100% of rim samples for both a flat patch
+        # and the exact Schwarz H cell.  On screen, though, the channel
+        # built that way faces INTO the surface.  The rendered result is
+        # what this option is for, so the section follows the render and
+        # this note follows the discrepancy: something between the
+        # conormal and the eye reverses, and it has not been run down.
+        pts = ((h, -h), (-h, -h), (-h, -h + w), (h - w, -h + w),
+               (h - w, h - w), (-h, h - w), (-h, h), (h, h))
     elif kind == 'H':
         # two uprights joined by a cross-bar, so the openings face
         # +Y and -Y -- along the surface normal, above and below it
@@ -483,11 +492,22 @@ def sweep_profile(pts, closed, out, half, kind, twist=0.0, scale=None):
     Y = np.cross(T, X)
     S = profile_points(half, kind, twist)
     m = len(S)
-    sc = (np.ones(len(P)) if scale is None
-          else np.asarray(scale, float))[:, None]
+    if scale is None:
+        SX = np.repeat(S[None, :, 0], len(P), axis=0)
+        SY = np.repeat(S[None, :, 1], len(P), axis=0)
+    else:
+        # Reeding is milled into the OUTWARD face only, the way a coin
+        # is: the ridges stand proud on the outside and the inner face
+        # of the band stays flat against the surface.  Scaling the whole
+        # section instead would pump it in and out on all four sides and
+        # read as a bobbled tube rather than a reeded edge.
+        sc = np.asarray(scale, float)[:, None]
+        SX = np.where(S[None, :, 0] > 0.0, S[None, :, 0] * sc,
+                      S[None, :, 0])
+        SY = np.repeat(S[None, :, 1], len(P), axis=0)
     V = (P[:, None, :]
-         + (S[None, :, 0] * sc)[:, :, None] * X[:, None, :]
-         + (S[None, :, 1] * sc)[:, :, None] * Y[:, None, :]).reshape(-1, 3)
+         + SX[:, :, None] * X[:, None, :]
+         + SY[:, :, None] * Y[:, None, :]).reshape(-1, 3)
     n = len(P)
     rings = n if closed else n - 1
     F = []
@@ -1129,7 +1149,7 @@ def _selftest():
     # not be delivered through Blender's curve bevel: aimed by per-point
     # tilt, the C's spine came out on the OUTWARD side at 94% of samples
     # on a real three-dimensional rim.
-    for kind, want_x, want_y in (('C', -1, 0), ('H', 0, 0),
+    for kind, want_x, want_y in (('C', 1, 0), ('H', 0, 0),
                                  ('SQUARE', 0, 0)):
         S = profile_points(0.05, kind)
         cx, cy = section_centroid(S)
@@ -1157,11 +1177,11 @@ def _selftest():
         S2 = np.stack([rel[i] @ X[i], rel[i] @ Y[i]], axis=1)
         cxs.append(section_centroid(S2)[0])
     off = np.array(cxs) / 0.05
-    good = float(np.max(off)) < -0.1
+    good = float(np.min(off)) > 0.1
     ok &= good
-    print("rim_curve: swept C spine sits %.3f thicknesses inward "
+    print("rim_curve: swept C spine sits %.3f thicknesses to +conormal "
           "(worst %.3f) %s"
-          % (float(off.mean()), float(np.max(off)),
+          % (float(off.mean()), float(np.min(off)),
              'OK' if good else 'FAIL'))
 
     # the H's openings must face along the normal, not across it

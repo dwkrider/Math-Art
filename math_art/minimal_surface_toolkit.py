@@ -425,6 +425,22 @@ if _IN_BLENDER:
         bl_idname = "mesh.parametric_minimal_add"
         bl_label = "Minimal Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        thickness: FloatProperty(
+            name="Thickness", default=0.0, min=0.0, max=1.0, step=1,
+            precision=3,
+            description="If > 0, add a Solidify modifier with this "
+                        "thickness, turning the surface into a shell. A "
+                        "shell thicker than twice the local radius of "
+                        "curvature folds through itself; the operator "
+                        "measures that and warns with the thickness the "
+                        "current resolution can carry")
+        shade_smooth: BoolProperty(
+            name="Smooth Shading", default=True,
+            description="Shade the surface smooth. Turn it off to read "
+                        "the actual sample grid, or for a deliberately "
+                        "faceted look. With Thickness on, smooth "
+                        "shading also creases the cut edge so the shell "
+                        "does not appear rounded over")
         rim: _rim.rim_prop()
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
@@ -509,9 +525,13 @@ if _IN_BLENDER:
                                        with_uv=True, cells=(self.storeys, 1))
                 V, quads = out[0], out[1]
                 cuv = out[2] if len(out) > 2 else None
-                _new_object(context, label, V, quads,
-                            weld=1e-5 * max(1.0, self.scale),
-                            loop_uv=cuv)
+                obj = _new_object(context, label, V, quads,
+                                  weld=1e-5 * max(1.0, self.scale),
+                                  loop_uv=cuv, smooth=self.shade_smooth)
+                if self.thickness > 0:
+                    _check_thickness(self, V, quads, self.thickness)
+                    _solidify(obj, self.thickness,
+                              crease=self.shade_smooth)
             if self.rim:
                 _ob = context.active_object
                 if _ob is not None:
@@ -546,6 +566,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
             lay.prop(self, 'scale')
+            lay.prop(self, 'thickness')
+            lay.prop(self, 'shade_smooth')
             _rim.draw_rim(lay, self)
 
     class MESH_OT_tpms_add(bpy.types.Operator):
@@ -892,9 +914,13 @@ if _IN_BLENDER:
                                        cells=(cu, cv))
                 V, quads = out[0], out[1]
                 cuv = out[2] if len(out) > 2 else None
-                _new_object(context, label, V, quads,
-                            weld=1e-5 * max(1.0, self.scale),
-                            loop_uv=cuv, smooth=self.shade_smooth)
+                obj = _new_object(context, label, V, quads,
+                                  weld=1e-5 * max(1.0, self.scale),
+                                  loop_uv=cuv, smooth=self.shade_smooth)
+                if self.thickness > 0:
+                    _check_thickness(self, V, quads, self.thickness)
+                    _solidify(obj, self.thickness,
+                              crease=self.shade_smooth)
             if self.rim:
                 _ob = context.active_object
                 if _ob is not None:
@@ -976,6 +1002,7 @@ if _IN_BLENDER:
                 lay.prop(self, 'assoc_angle')
             lay.prop(self, 'radius')
             lay.prop(self, 'scale')
+            lay.prop(self, 'thickness')
             lay.prop(self, 'shade_smooth')
 
     class OBJECT_OT_minimal_span(bpy.types.Operator):
