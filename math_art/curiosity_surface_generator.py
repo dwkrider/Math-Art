@@ -42,7 +42,18 @@
 #    torus rather than from a memorised parametrisation, so the
 #    defining circle property is inherited rather than asserted.
 #
-# 5. Three classical odds and ends, each built from its DEFINITION
+# 5. Zoll surfaces -- Tannery's pear (1892), its two-lobed
+#    "hourglass", and Zoll's own surface (1903).  On a round sphere
+#    every geodesic closes up, which is a very fragile thing to ask of
+#    a surface; for a long time the sphere was the only known answer,
+#    and these are the next two.  Tannery's is the revolution of half a
+#    Gerono lemniscate stretched by 2 sqrt2, and all its geodesics are
+#    closed algebraic curves of the same length 2 pi a as a meridian --
+#    but it has a conical point at each tip.  Zoll's is the smooth
+#    answer to that.  The mathematics and the gates live in
+#    `math_art/surfaces/encyclopedia.py`.
+#
+# 6. Three classical odds and ends, each built from its DEFINITION
 #    rather than from a remembered equation, and each checked against an
 #    independent statement of the same surface:
 #      Bohemian dome -- a circle swept along a circle in a perpendicular
@@ -54,6 +65,15 @@
 #      Gabriel's horn -- y = 1/x revolved; checked on the property that
 #        makes it famous, finite volume pi(1 - 1/L) with a lateral area
 #        that diverges like 2 pi ln L.
+#
+# References for 5: J. Tannery, Bulletin des sciences mathematiques,
+#    2e serie, 16 (1892) 190.  O. Zoll, "Ueber Flaechen mit Scharen
+#    geschlossener geodaetischer Linien", Mathematische Annalen 57
+#    (1903) 108-133.  A. L. Besse, "Manifolds all of whose Geodesics
+#    are Closed", Springer 1978.  Parametrisations from R. Ferreol,
+#    "Encyclopedie des formes mathematiques remarquables",
+#    mathcurve.com, chapter "poire de Tannery"; a converted copy is in
+#    research/books/mathcurve_encyclopedie_formes_mathematiques/.
 #
 # References for 4: C. Dupin, "Applications de Geometrie et de
 #    Mechanique", Paris 1822.  B. Odehnal, "Ortho-Circles of Dupin
@@ -69,12 +89,17 @@ bl_info = {
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Math Art > Surfaces",
     "description": "Fresnel's elasticity surface, the paper bag "
-                   "surface, the trihyperboloid and the Dupin "
-                   "cyclides",
+                   "surface, the trihyperboloid, the Dupin "
+                   "cyclides and the Zoll surfaces",
     "category": "Add Mesh",
 }
 
 import math
+
+try:
+    from .surfaces.encyclopedia import build_zoll
+except ImportError:                       # flat import outside the package
+    from surfaces.encyclopedia import build_zoll
 
 try:
     import bpy
@@ -410,7 +435,17 @@ if _IN_BLENDER:
                     "touches itself on the axis"),
                    ('CYCLIDE_SPINDLE', "Dupin Cyclide (spindle)",
                     "Inversion of a spindle torus (R < r), the "
-                    "self-intersecting one")],
+                    "self-intersecting one"),
+                   ('TANNERY_PEAR', "Tannery's Pear",
+                    "A Zoll surface: every geodesic closes up, and all "
+                    "but one have the same length 2 pi a as a "
+                    "meridian. Both tips are conical points"),
+                   ('TANNERY_HOURGLASS', "Tannery's Hourglass",
+                    "The whole Gerono lemniscate revolved instead of "
+                    "half of it: two pears meeting tip to tip"),
+                   ('ZOLL', "Zoll's Surface",
+                    "Zoll's 1903 answer to Tannery: smooth, not a "
+                    "round sphere, and still every geodesic closes")],
             default='FRESNEL')
         semi_a: FloatProperty(
             name="Semi-Axis A", default=1.0, min=0.01, max=10.0,
@@ -503,6 +538,14 @@ if _IN_BLENDER:
                     self.cyclide_centre, self.cyclide_power,
                     2 * res, res)
                 name = "Dupin Cyclide (%s)" % kind.lower()
+            elif self.surface in ('TANNERY_PEAR', 'TANNERY_HOURGLASS',
+                                  'ZOLL'):
+                V, faces = build_zoll(self.surface, a=self.semi_a,
+                                      res_u=res, res_v=2 * res)
+                verts = [tuple(map(float, v)) for v in V]
+                name = {'TANNERY_PEAR': "Tannery's Pear",
+                        'TANNERY_HOURGLASS': "Tannery's Hourglass",
+                        'ZOLL': "Zoll's Surface"}[self.surface]
             else:
                 verts, faces = build_trihyperboloid(2 * res, res)
                 name = "Trihyperboloid"

@@ -3,7 +3,18 @@
 #
 # Part of the Math Art surfaces engine (`math_art/surfaces/`).  Python +
 # numpy only -- no `bpy` -- so the engine imports and self-tests
-# headlessly; the registered operator stays in its flat generator module.
+# headlessly; the registered operators stay in their flat generator
+# modules.
+#
+# These four briefly had an operator of their own, grouped because they
+# came out of one book.  That is a bibliographic reason, not a
+# mathematical one, and they are now served by the two operators whose
+# subject each actually is: the Zoll surfaces by
+# `curiosity_surface_generator` (Miscellaneous Surfaces), where the
+# other classical named parametric surfaces live, and the Darboux
+# surface by `helical_surface_generator` (Swept Surfaces), whose three
+# existing formulas it generalises.  This module keeps the mathematics
+# and the gates for both.
 #
 # Four surfaces (in two groups), each named for a property rather than a
 # shape, and each gated on that property:
@@ -329,7 +340,9 @@ def build_darboux(motion='GENERAL', generatrix='CIRCLE', size=0.45,
 # ----------------------------------------------------------------------
 # the operator's table
 # ----------------------------------------------------------------------
-#: key -> (label, group, description)
+#: key -> (label, group, description).  Kept as the engine's own index
+#: of what it holds -- the self-test walks it -- now that the two host
+#: operators each carry only their own half in their enums.
 PRESETS = {
     'TANNERY_PEAR': (
         "Tannery's Pear", 'ZOLL',

@@ -93,10 +93,6 @@ PARAMS = {
     "mesh.goursat_surface_add": dict(family='DODEC6',
                                      preset='DODEC_PENTAGONS'),
     "mesh.curiosity_surface_add": dict(surface='FRESNEL'),
-    # Tannery's pear is the one with a shape of its own: the two
-    # conical tips read instantly, where Zoll's surface is a slightly
-    # dented ball and the Darboux sweep needs its parameters explained.
-    "mesh.encyclopedia_surface_add": dict(preset='TANNERY_PEAR'),
     "mesh.ruled_surface_add": dict(mode='HYPERBOLOID', output='RODS',
                                    family='BOTH'),
     "mesh.spherical_harmonic_add": dict(form='OFFSET', degree=4, order=2),
@@ -339,7 +335,6 @@ VARIANT_SELECTOR = {
     "mesh.seifert_surface_add": "preset",
     "mesh.topological_surface_add": "preset",
     "mesh.curiosity_surface_add": "surface",
-    "mesh.encyclopedia_surface_add": "preset",
     "mesh.helical_surface_add": "surface",
     "mesh.hyperbolic_surface_add": "preset",
     "mesh.delaunay_surface_add": "mode",

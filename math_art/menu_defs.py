@@ -80,7 +80,6 @@ SURFACES = Menu(
         _e("mesh.ruled_surface_add", 'MOD_SCREW'),
         _e("mesh.dform_add", 'MOD_CLOTH', "D-Form"),
         _e("mesh.curiosity_surface_add", 'SURFACE_DATA'),
-        _e("mesh.encyclopedia_surface_add", 'SURFACE_NCURVE'),
         _e("mesh.invariant_manifold_add", 'SURFACE_NSURFACE'),
         _e("mesh.supershape_add", 'SURFACE_NSPHERE'),
         _e("mesh.spherical_harmonic_add", 'SURFACE_NSPHERE'),

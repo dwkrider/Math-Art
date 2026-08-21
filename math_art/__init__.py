@@ -105,7 +105,6 @@ _MODULE_NAMES = [
     'helical_surface_generator',
     'ruled_surface_generator',
     'curiosity_surface_generator',
-    'encyclopedia_surface_generator',
     'supershape_generator',
     'spherical_harmonic_generator',
     'orbital_generator',
