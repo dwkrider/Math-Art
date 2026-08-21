@@ -57,7 +57,14 @@ PARAMS = {
     "mesh.twelve_faced_add": dict(solid='PYRITOHEDRON', shape=0.35),
     # Thirty squares is the slide-together everyone recognises, and the
     # colour rotation is how the paper models are actually made.
-    "mesh.slide_together_add": dict(model='S30', colors=True,
+    # The twenty triangles, not the thirty squares.  Once the squares
+    # were placed correctly on the rhombidodecadodecahedron they pack
+    # almost closed, and at 128 px the icon became a pale ball with no
+    # hint of what the generator does.  The triangle model keeps Hart's
+    # "prominent stars" open, so the panels and the interlocking stay
+    # legible.  Thickness is nudged up from the operator default of 0.01,
+    # which suits a printable template but vanishes at icon size.
+    "mesh.slide_together_add": dict(model='T20', colors=True,
                                     thickness=0.03),
     # The uniform operator's whole point is what lies beyond the
     # Platonics, so it gets a Kepler-Poinsot star rather than another
