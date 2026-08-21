@@ -1803,10 +1803,15 @@ def case_tp_scale(config):
     P = resample_closed(braid_closure_points(parse_letters('AAA')), 192)
     alex0 = M.alexander10(P)
     t0 = _timer()
-    out_d, info_d = tpm.tighten_link([P], iters=80, solver="dense")
+    # rel_tol=0 disables the plateau stop: this case compares the two
+    # solvers over a FIXED 80 iterations (see "iters_agreement" below),
+    # and an early exit would let them stop at different points
+    out_d, info_d = tpm.tighten_link([P], iters=80, solver="dense",
+                                     rel_tol=0.0)
     wall_d = _timer() - t0
     t0 = _timer()
-    out_l, info_l = tpm.tighten_link([P], iters=80, solver="lagged")
+    out_l, info_l = tpm.tighten_link([P], iters=80, solver="lagged",
+                                     rel_tol=0.0)
     wall_l = _timer() - t0
     mets["E_dense_192"] = info_d["E"]
     mets["E_lagged_192"] = info_l["E"]
