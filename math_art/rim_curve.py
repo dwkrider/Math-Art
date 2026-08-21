@@ -305,6 +305,11 @@ if _IN_BLENDER:
         return FloatProperty(
             name="Rim Thickness", default=RIM_THICKNESS_DEFAULT,
             min=0.0, max=1.0,
+            # step is in hundredths, so 1 is a 0.01 increment per drag
+            # tick.  The useful range of this value is roughly 0.005 to
+            # 0.05 on a surface fitted to a 2 m cube, and the default
+            # unit step ran through all of it in a few pixels.
+            step=1, precision=3,
             description="Bevel radius of the rim tube (0 leaves a "
                         "bare curve)")
 
@@ -325,9 +330,30 @@ if _IN_BLENDER:
                     "Round tube -- the curve's own bevel depth"),
                    ('SQUARE', "Square",
                     "Square tube, swept from a four-point bevel "
-                    "object that is created alongside and hidden")],
+                    "object that is created alongside and hidden"),
+                   ('C', "Channel (C)",
+                    "Blocky C, opening facing away from the surface -- "
+                    "a channel the edge sits inside"),
+                   ('H', "Beam (H)",
+                    "Blocky H, openings facing along the surface above "
+                    "and below it -- an I-beam edge"),
+                   ('NONE', "Curve Only",
+                    "No sweep at all: the bare rim curve, which "
+                    "renders as nothing but can be bevelled by hand, "
+                    "used as a path, or exported as the edge itself")],
             default='ROUND',
             description="Cross-section swept along the rim")
+
+    def rim_twist_prop():
+        return FloatProperty(
+            name="Rim Twist", default=0.0, min=-180.0, max=180.0,
+            step=100, precision=1, subtype='ANGLE',
+            description="Rotate the swept profile about the rim. Only "
+                        "matters for the profiles that are not "
+                        "symmetric -- the C and the H -- where it "
+                        "decides which way the opening faces; the "
+                        "swept frame follows the curve's own twist, "
+                        "which is not something the surface fixes")
 
     def _square_bevel(name, half):
         """A closed square used as a curve's bevel object.
@@ -337,27 +363,67 @@ if _IN_BLENDER:
         made per rim and hidden.  It is parented to the rim so deleting
         the surface takes the whole assembly with it.
         """
+        return _profile_bevel(name, half, 'SQUARE')
+
+    def _profile_points(half, kind):
+        """The cross-section, as a closed polygon in the profile plane.
+
+        The swept frame puts the profile's +X on one side of the rim and
+        +Y along the surface's own thickness direction, so an opening on
+        +X faces away from the edge and openings on +-Y face along it.
+        Which way round that lands depends on the curve's twist, so the
+        Rim Twist control rotates the whole profile if it comes out
+        mirrored.
+
+        Wall thickness is half the half-width throughout, which keeps
+        the arms of a C and the flanges of an H visibly solid at the
+        thicknesses these rims are actually used at.
+        """
+        h = float(half)
+        w = 0.5 * h                              # wall / flange
+        c = 0.5 * w                              # half the cross-bar
+        if kind == 'C':
+            # square with a bite out of the +X side: a channel whose
+            # opening faces away from the surface
+            return ((-h, -h), (h, -h), (h, -h + w), (-h + w, -h + w),
+                    (-h + w, h - w), (h, h - w), (h, h), (-h, h))
+        if kind == 'H':
+            # two uprights joined by a cross-bar, so the openings face
+            # +Y and -Y
+            return ((-h, -h), (-h + w, -h), (-h + w, -c), (h - w, -c),
+                    (h - w, -h), (h, -h), (h, h), (h - w, h),
+                    (h - w, c), (-h + w, c), (-h + w, h), (-h, h))
+        return ((-h, -h), (h, -h), (h, h), (-h, h))
+
+    def _profile_bevel(name, half, kind):
         cu = bpy.data.curves.new(name, 'CURVE')
         cu.dimensions = '2D'
+        pts = _profile_points(half, kind)
         sp = cu.splines.new('POLY')
-        sp.points.add(3)
-        for i, (x, y) in enumerate(((-half, -half), (half, -half),
-                                    (half, half), (-half, half))):
+        sp.points.add(len(pts) - 1)
+        for i, (x, y) in enumerate(pts):
             sp.points[i].co = (x, y, 0.0, 1.0)
         sp.use_cyclic_u = True
         return bpy.data.objects.new(name, cu)
 
     def draw_rim(layout, op):
-        """The three controls, shown only when the rim is on."""
+        """The rim controls, shown only when the rim is on."""
         layout.prop(op, 'rim')
-        if getattr(op, 'rim', False):
-            layout.prop(op, 'rim_thickness')
-            if hasattr(op, 'rim_profile'):
-                layout.prop(op, 'rim_profile')
-            layout.prop(op, 'rim_smooth')
+        if not getattr(op, 'rim', False):
+            return
+        layout.prop(op, 'rim_thickness')
+        if hasattr(op, 'rim_profile'):
+            layout.prop(op, 'rim_profile')
+            # twist only does anything to a profile that is not
+            # symmetric under a quarter turn
+            if (hasattr(op, 'rim_twist')
+                    and getattr(op, 'rim_profile', '') in ('C', 'H')):
+                layout.prop(op, 'rim_twist')
+        layout.prop(op, 'rim_smooth')
 
     def add_rim_curve(context, obj, label, verts, faces, thickness=None,
-                      smooth=None, profile='ROUND', method='RELAXED'):
+                      smooth=None, profile='ROUND', method='RELAXED',
+                      twist=0.0):
         """Sweep a bevelled curve along the mesh's open edge.
 
         `method` is chosen by the CALLING GENERATOR, not by the user --
@@ -398,13 +464,22 @@ if _IN_BLENDER:
         cu.dimensions = '3D'
         cu.fill_mode = 'FULL'
         cu.use_fill_caps = True
-        if profile == 'SQUARE':
-            bev = _square_bevel(label + " Rim Profile", float(thickness))
+        if profile in ('SQUARE', 'C', 'H'):
+            bev = _profile_bevel(label + " Rim Profile",
+                                 float(thickness), profile)
             context.collection.objects.link(bev)
             bev.hide_viewport = True
             bev.hide_render = True
             cu.bevel_mode = 'OBJECT'
             cu.bevel_object = bev
+        elif profile == 'NONE':
+            # No sweep: the rim stays a bare curve.  A zero bevel depth
+            # is the whole of it -- there is no surface to fill or cap.
+            # (fill_mode has no 'NONE' on a 3D curve; the enum there is
+            # FULL / BACK / FRONT / HALF, and setting it would raise.)
+            bev = None
+            cu.bevel_depth = 0.0
+            cu.use_fill_caps = False
         else:
             bev = None
             cu.bevel_depth = float(thickness)
@@ -423,6 +498,12 @@ if _IN_BLENDER:
         # BEZIER handles to round the corners between samples without
         # moving them.
         cu.resolution_u = 6
+        # A constant tilt on every control point turns the swept profile
+        # bodily about the rim.  It is the only handle on which way an
+        # asymmetric section faces, because the zero-tilt frame comes
+        # from Blender's own minimum-twist normal and is not something
+        # the surface determines.
+        tw = float(twist)
         for pts, closed in loops:
             if method == 'ANCHORED':
                 sp = cu.splines.new('BEZIER')
@@ -432,17 +513,19 @@ if _IN_BLENDER:
                     bp.co = (float(q[0]), float(q[1]), float(q[2]))
                     bp.handle_left_type = 'AUTO'
                     bp.handle_right_type = 'AUTO'
+                    bp.tilt = tw
             else:
                 sp = cu.splines.new('POLY')
                 sp.points.add(len(pts) - 1)
                 for i, q in enumerate(pts):
                     sp.points[i].co = (float(q[0]), float(q[1]),
                                        float(q[2]), 1.0)
+                    sp.points[i].tilt = tw
             sp.use_cyclic_u = bool(closed)
 
         rim = bpy.data.objects.new(label + " Rim", cu)
         context.collection.objects.link(rim)
-        if profile == 'SQUARE':
+        if profile in ('SQUARE', 'C', 'H'):
             # A square tube shaded smooth is a round tube: the shading
             # averages across the four corners and erases the only
             # thing that makes the profile square.  Splitting edges
@@ -463,7 +546,8 @@ if _IN_BLENDER:
         return len(loops)
 
     def add_rim_from_object(context, obj, label, thickness=None,
-                            smooth=None, profile=None, method=None):
+                            smooth=None, profile=None, method=None,
+                            twist=0.0):
         """Same, reading the geometry back off an existing mesh object.
 
         For generators that build their object through a path this
@@ -481,7 +565,7 @@ if _IN_BLENDER:
         if method is None:
             method = 'RELAXED'
         return add_rim_curve(context, obj, label, verts, faces,
-                             thickness, smooth, profile, method)
+                             thickness, smooth, profile, method, twist)
 
 
 def _selftest():

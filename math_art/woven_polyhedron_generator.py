@@ -611,6 +611,7 @@ if _IN_BLENDER:
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
         rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
         # These rims are coarse polygons with real corners, so they get
         # the anchored fit; the level-set generators keep the default.
 
@@ -750,7 +751,8 @@ if _IN_BLENDER:
                     _rim.add_rim_from_object(
                         context, _ob, _ob.name,
                         self.rim_thickness, self.rim_smooth,
-                        self.rim_profile, 'ANCHORED')
+                        self.rim_profile, 'ANCHORED',
+                        twist=self.rim_twist)
             return {'FINISHED'}
 
         def draw(self, context):

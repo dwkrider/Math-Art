@@ -271,6 +271,7 @@ if _IN_BLENDER:
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
         rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
 
         def draw(self, context):
             lay = self.layout
@@ -302,7 +303,8 @@ if _IN_BLENDER:
             if self.rim:
                 nrim = _rim.add_rim_from_object(
                     context, obj, label, self.rim_thickness,
-                    self.rim_smooth)
+                    self.rim_smooth, self.rim_profile,
+                    twist=self.rim_twist)
             self.report({'INFO'},
                         f"{label}: a={a:.3f}, {len(me.vertices)} verts, "
                         f"{len(me.polygons)} faces"

@@ -251,6 +251,7 @@ if _IN_BLENDER:
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()
         rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
 
         def execute(self, context):
             # belt and braces against a stale enum index: the
@@ -280,7 +281,7 @@ if _IN_BLENDER:
                 nrim = _rim.add_rim_curve(
                     context, obj, label, verts, tris,
                     self.rim_thickness, self.rim_smooth,
-                    self.rim_profile)
+                    self.rim_profile, twist=self.rim_twist)
             self.report({'INFO'},
                         f"{label}: {len(me.vertices)} verts, "
                         f"{len(me.polygons)} faces"
