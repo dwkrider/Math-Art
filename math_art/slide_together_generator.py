@@ -114,6 +114,15 @@ MODELS = [
     ('H20', "20 Hexagons", 'U50HEX', 6, 1, 1.00, 0.0),
     ('SD12', "12 Star Decagons {10/3}", 'U73DEC', 10, 3, 1.00, 0.0),
     ('PG12', "12 Pentagrams", 'U54PEN', 5, 2, 1.00, 0.0),
+    # beyond Hart's seven -- see FACE_SOURCES
+    ('T20B', "20 Triangles (great ditrigonal)", 'U42TRI', 3, 1, 1.00, 0.0),
+    ('H20B', "20 Hexagons (icositruncated)", 'U45HEX', 6, 1, 1.00, 0.0),
+    ('S30B', "30 Squares (truncated dodecadodeca)", 'U59SQ', 4, 1,
+     1.00, 0.0),
+    ('P12B', "12 Pentagons (great dodecicosidodeca)", 'U61PEN', 5, 1,
+     1.00, 0.0),
+    ('D12B', "12 Decagons (great truncated icosidodeca)", 'U68DEC', 10, 1,
+     1.00, 0.0),
 ]
 
 _MODEL = {m[0]: m for m in MODELS}
@@ -249,6 +258,27 @@ FACE_SOURCES = {
     # "part of the great dodecahemidodecahedron and the great
     # icosidodecahedron" -- U54 is 20 triangles + 12 pentagrams.
     'U54PEN': ('2 | 3 5/2', ['2', '3', '5/2'], 5),
+
+    # --- beyond Hart's seven -------------------------------------------
+    # Found by sweeping every face class of every Star (Icosahedral)
+    # uniform for a placement that behaves like a slide-together: panels
+    # all congruent, every panel crossing the SAME number of others, and
+    # the slit outlines simple.  The sweep recovers all seven of Hart's,
+    # which is what makes its other answers worth trusting.  These five
+    # are the ones in his structural range -- 3 to 5 neighbours per panel,
+    # the hand-assemblable band -- at plane distances none of his use.
+    #
+    # Not shipped, and worth not retrying: the 12 pentagons and 12
+    # pentagrams on U30 and the {10/3} decagrams on U42 all give
+    # SELF-CROSSING outlines once slit, and a self-crossing loop is still
+    # a face to Blender, which tessellates it into slivers.  A further 15
+    # placements are geometrically fine but put 9 or 10 crossings on every
+    # panel; Hart has one such model, so they are dense rather than wrong.
+    'U42TRI': ('3 5 | 5/3', ['3', '5', '5/3'], 3),
+    'U45HEX': ('3 5 5/3 |', ['3', '5', '5/3'], 6),
+    'U59SQ': ('2 5 5/3 |', ['2', '5', '5/3'], 4),
+    'U61PEN': ('5/2 3 | 5/3', ['5/2', '3', '5/3'], 5),
+    'U68DEC': ('2 3 5/3 |', ['2', '3', '5/3'], 10),
 }
 
 # The TWELVE PENTAGONS are the only model Hart names no solid for -- he
@@ -784,7 +814,9 @@ def _verify_against_hart():
 
 def _selftest():
     want_panels = {'T20': 20, 'S30': 30, 'P12': 12, 'D12': 12,
-                   'H20': 20, 'SD12': 12, 'PG12': 12}
+                   'H20': 20, 'SD12': 12, 'PG12': 12,
+                   'T20B': 20, 'H20B': 20, 'S30B': 30, 'P12B': 12,
+                   'D12B': 12}
     for key, lbl, axes, n, d, _r, _t in MODELS:
         normals = plane_normals(axes)
         assert len(normals) == want_panels[key], (key, len(normals))
