@@ -384,6 +384,23 @@ def _selftest():
     # means, whose symmetry includes a horizontal mirror that this one
     # lacks; keeping the check makes that groundwork honest rather than
     # dead.
+    # Both antiprisms on the pentagram: Coxeter's 'first' (aligned bases,
+    # D_5h, Skilling 44/45) and 'second' (staggered, D_5d, 28/29).  They
+    # are distinguished by the horizontal mirror, and by the circumradius
+    # CLM's rho^2 = 1/(3 -+ a) predicts -- 0.656431 against 0.587785.
+    import numpy as _np
+    for fn, want_r, want_mirror in ((_cmp.star_antiprism_second, 0.656431,
+                                     True),
+                                    (_cmp.star_antiprism_solid, 0.587785,
+                                     False)):
+        V, F = fn(5, 2 if fn is _cmp.star_antiprism_second else 3)
+        assert abs(_math.dist((0, 0, 0), V[0]) - want_r) < 1e-6, \
+            (fn.__name__, _math.dist((0, 0, 0), V[0]), want_r)
+        S = {tuple(_np.round(v, 4)) for v in V}
+        mir = {tuple(_np.round((v[0], v[1], -v[2]), 4)) for v in V}
+        assert (mir == S) is want_mirror, \
+            (fn.__name__, 'horizontal mirror', mir == S, want_mirror)
+
     V, F = _cmp.star_antiprism_solid(5, 3)
     assert len(V) == 10 and len(F) == 12, (len(V), len(F))
     assert sorted(len(f) for f in F) == [3] * 10 + [5] * 2, \

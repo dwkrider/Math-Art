@@ -246,6 +246,7 @@ del _n
 for _n, _m in ((5, 2), (10, 3)):
     COMPONENT_AXES['PRISM%d_%d' % (_n, _m)] = {_n: (0.0, 0.0, 1.0)}
 COMPONENT_AXES['ANTI5_3'] = {5: (0.0, 0.0, 1.0)}
+COMPONENT_AXES['ANTI5_2'] = {5: (0.0, 0.0, 1.0)}
 del _n, _m
 
 
@@ -260,6 +261,12 @@ def _component(kind):
         spec = kind[4:]
         if '_' in spec:                    # ANTI<n>_<m>, a star antiprism
             n, m = (int(t) for t in spec.split('_'))
+            # Skilling's rows 22/24 give the rule and it drives the
+            # choice here: | 2 2 n/m is D_nd for m ODD and D_nh for m
+            # EVEN, and those are the staggered and aligned-base solids
+            # respectively.  So the symbol picks the construction.
+            if m % 2 == 0:
+                return star_antiprism_second(n, m)
             return star_antiprism_solid(n, m)
         return prism_solid(int(spec), anti=True)
     tetra, cube, octa = _seeds()
@@ -352,6 +359,10 @@ def perpendicular_phase(component, group, comp_order, group_order):
     # azimuth; an antiprism's bisect a top and a bottom vertex and so sit
     # half a step round, at pi/2n.  Using the vertex azimuth for both
     # silently mis-phases every antiprism row by that half step.
+    #
+    # NB this pi/2n rule assumes a STAGGERED antiprism.  It is wrong for
+    # the aligned-base second antiprism (`star_antiprism_second`), whose
+    # rows pass an explicit axis to `perp_phase_from` instead.
     a0 = (math.pi / (2.0 * int(component[4:]))
           if component.startswith('ANTI') else 0.0)
     ref = A @ np.array([math.cos(a0), math.sin(a0), 0.0])
@@ -370,6 +381,36 @@ def perpendicular_phase(component, group, comp_order, group_order):
         raise ValueError('%s has no half-turn axis perpendicular to its '
                          '%d-fold axis' % (group, group_order))
     return best
+
+
+def perp_half_turn_axis(component, comp_order):
+    """A half-turn axis of the component perpendicular to its own
+    `comp_order` axis, found from the solid rather than written down.
+
+    The cube's are tidy -- (1, -1, 0) and friends -- but the icosahedral
+    solids' are not: the dodecahedron's, perpendicular to its three-fold
+    axis, points along (-0.809017, 0.309017, 0.5).  Rather than paste
+    that in, walk the edge midpoints and keep the first direction whose
+    half-turn maps the vertex set to itself.
+    """
+    V, F = _component(component)
+    ax = np.array(COMPONENT_AXES[component][comp_order], float)
+    ax = ax / np.linalg.norm(ax)
+    S = {tuple(np.round(v, 4)) for v in V}
+    for f in F:
+        for i in range(len(f)):
+            a, b = V[f[i]], V[f[(i + 1) % len(f)]]
+            m = np.array([(a[k] + b[k]) / 2.0 for k in range(3)])
+            ln = np.linalg.norm(m)
+            if ln < 1e-9 or abs(float((m / ln) @ ax)) > 1e-6:
+                continue
+            d = m / ln
+            R = _rot(d, math.pi)
+            if {tuple(np.round(R @ np.array(v, float), 4))
+                    for v in V} == S:
+                return d
+    raise ValueError('%s has no half-turn axis perpendicular to its '
+                     '%d-fold axis' % (component, comp_order))
 
 
 def perp_phase_from(component, group, comp_order, group_order, ref):
@@ -512,6 +553,51 @@ def star_prism_solid(n, m):
     top = [(k * m) % n for k in range(n)]        # the star circuit
     F = [top, [n + i for i in reversed(top)]]
     F += [[k, (k + m) % n, n + (k + m) % n, n + k] for k in range(n)]
+    return V, F
+
+
+def star_antiprism_second(n, m):
+    """The 'second' antiprism on {n/m} -- Coxeter's s'{2/p}.
+
+    CLM section 10 shows that setting b = c = 0 in equation (10.3) leaves
+    [(X+1)^2 - a^2]^2 = 0 with a = 2 cos(pi/p), so rho^2 = 1/(3 -+ a) --
+    TWO roots, rho being the circumradius of the VERTEX FIGURE, a
+    trapezoid of sides 1, 1, 1, a.  The crossed trapezoid needs a < 1, so
+    the second solution exists only for 2 < p < 3; p = 5/2 qualifies.
+
+    Converting rho to the polyhedron: the neighbours of a vertex lie on a
+    circle of radius rho at distance sqrt(1 - rho^2) from it, so the
+    circumradius is R = 1/(2 sqrt(1 - rho^2)).  The two roots then give
+
+        1/(3+a): R = 0.587785, rings offset pi/n, lateral gap 3pi/n
+        1/(3-a): R = 0.656431, rings offset 0,    lateral gap 2pi/n
+
+    and the second of those is this function.  **Its two bases are
+    azimuthally ALIGNED, not staggered** -- which is the whole point,
+    because a horizontal mirror then maps one base onto the other and the
+    symmetry is D_nh rather than the D_nd of an ordinary antiprism.  That
+    is exactly the symmetry Skilling's Table 1 records for entries 44/45,
+    and it is why no re-wiring of the staggered form can produce them.
+    """
+    if math.gcd(n, m) != 1 or not 1 < m < n - 1:
+        raise ValueError('{%d/%d} is not a star polygon' % (n, m))
+    m = min(m, n - m)
+    a = 2.0 * math.cos(math.pi * m / n)
+    if a >= 1.0:
+        raise ValueError('{%d/%d} admits no second antiprism (a = %.4f, '
+                         'the crossed trapezoid needs a < 1)' % (n, m, a))
+    R = 0.5 / math.sin(m * math.pi / n)
+    h2 = 1.0 - 2.0 * R * R * (1.0 - math.cos(2.0 * math.pi / n))
+    if h2 <= 1e-12:
+        raise ValueError('{%d/%d} admits no second antiprism' % (n, m))
+    h = math.sqrt(h2)
+    V = [(R * math.cos(2 * math.pi * k / n),
+          R * math.sin(2 * math.pi * k / n), h / 2.0) for k in range(n)]
+    V += [(x, y, -h / 2.0) for x, y, _z in V]      # bases ALIGNED
+    star = [(k * m) % n for k in range(n)]
+    F = [star, [n + i for i in reversed(star)]]
+    F += [[k, (k + m) % n, n + (k + 1) % n] for k in range(n)]
+    F += [[n + k, n + (k + m) % n, (k + 1) % n] for k in range(n)]
     return V, F
 
 
@@ -831,6 +917,14 @@ AXIS_COMPOUNDS = [
     ('H_5ICOSA', "5 Icosahedra", 'ICOSA', 'I', 2, 2, 90.0, 5),
     ('H_6ICOSA', "6 Icosahedra", 'ICOSA', 'I', 5, 5, 36.0, 6),
     ('H_10ICOSA', "10 Icosahedra", 'ICOSA', 'I', 3, 3, 60.0, 10),
+    # 104.4775... = the perpendicular-alignment angle PLUS 60.  The bare
+    # angle is the fully aligned position, where all ten copies coincide
+    # and one dodecahedron comes back; a further 60 degrees is a distinct
+    # placement because the dodecahedron's period about a three-fold axis
+    # is 120, not 60.  Same shape of trap as the cube's D4 row.
+    ('H_10DODECA', "10 Dodecahedra", 'DODECA', 'I', 3, 3,
+     perp_phase_from('DODECA', 'I', 3, 3,
+                     perp_half_turn_axis('DODECA', 3)) + 60.0, 10),
 
     # --- Hart's compounds of cubes ------------------------------------
     # Hart labels these "count | G x I / H x I", which IS the
@@ -875,6 +969,14 @@ AXIS_COMPOUNDS = [
      'ANTI5_3', 'Ih', 5, 5, 9.0, 12),
     ('S29_5_3ANTI', "Skilling 29: 6 Pentagrammic Crossed Antiprisms",
      'ANTI5_3', 'Ih', 5, 5, 18.0, 6),
+    ('S44_5_2ANTI', "Skilling 44: 6 Pentagrammic Antiprisms (I)",
+     'ANTI5_2', 'I', 5, 5,
+     perp_phase_from('ANTI5_2', 'I', 5, 5,
+                     perp_half_turn_axis('ANTI5_2', 5)), 6),
+    ('S45_5_2ANTI', "Skilling 45: 12 Pentagrammic Antiprisms (Ih)",
+     'ANTI5_2', 'Ih', 5, 5,
+     perp_phase_from('ANTI5_2', 'Ih', 5, 5,
+                     perp_half_turn_axis('ANTI5_2', 5)), 12),
 ]
 
 _AXIS_BY_KEY = {r[0]: r for r in AXIS_COMPOUNDS}
