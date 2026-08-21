@@ -184,10 +184,12 @@ if _IN_BLENDER:
         an empty string.  Landing on the family's first entry is both
         the fix and the obvious behaviour.
 
-        The resolution moves too: the record nodal surfaces are packed
-        with double points and need a finer grid than the rest (this
-        overwrites a hand-set resolution, which is the intent -- the
-        family switch is a change of subject).
+        The resolution moves with it, to whatever the incoming family
+        asks for -- overwriting a hand-set value, which is the intent,
+        since a family switch is a change of subject.  Every family
+        wants the same 120 today, so this is currently a no-op; it stays
+        because the per-family override is the right place to put a
+        surface that turns out to need more.
         """
         key, res = _family_default(self.family)
         if self.preset != key:
@@ -219,9 +221,11 @@ if _IN_BLENDER:
         resolution: IntProperty(
             name="Resolution", default=FAMILY_RESOLUTION_DEFAULT,
             min=16, max=256,
-            description="Sample grid resolution per axis (algebraic "
-                        "surfaces need more than TPMS; the record "
-                        "nodal surfaces need more again)")
+            description="Sample grid resolution per axis. Algebraic "
+                        "surfaces need more of it than the periodic "
+                        "ones: their interest is usually a cusp, a "
+                        "self-intersection or a double point, and a "
+                        "coarse grid rounds exactly those away")
         scale: FloatProperty(
             name="Scale", default=1.0, min=0.01, max=100.0)
         mu: FloatProperty(

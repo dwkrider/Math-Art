@@ -813,12 +813,18 @@ FAMILIES = (
     ('NAMED', "Named Implicit Surfaces"),
 )
 
-# Sampling resolution each family wants by default.  The record nodal
-# surfaces are degree 7 to 10 and carry hundreds of double points packed
-# into a small region; at the general-purpose 80 that structure turns to
-# mush, and the whole point of them is the singularities.
-FAMILY_RESOLUTION_DEFAULT = 80
-FAMILY_RESOLUTION = {'RECORD': 120}
+# Sampling resolution each family wants by default.
+#
+# 120 throughout.  It was 80 in general and 120 only for the record nodal
+# surfaces, on the grounds that those are degree 7 to 10 with hundreds of
+# double points packed into a small region and turn to mush at 80.  That
+# reasoning was sound but too narrow: the Hauser gallery is full of
+# surfaces with cusps, self-intersections and thin sheets that 80 also
+# blurs, and a surface whose whole interest is a singularity is the rule
+# in this table rather than the exception.  Per-family overrides stay
+# available for anything that later turns out to want more.
+FAMILY_RESOLUTION_DEFAULT = 120
+FAMILY_RESOLUTION = {}
 
 
 SURFACE_FAMILY = {k: 'CLASSICAL' for k in
