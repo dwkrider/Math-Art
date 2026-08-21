@@ -1,0 +1,446 @@
+{
+  "schema_version": "0.2.0",
+  "slug": "pentagonal-dipyramid",
+  "name": "Pentagonal Dipyramid",
+  "alternate_names": [],
+  "families": [
+    "prism-family",
+    "convex",
+    "dipyramid"
+  ],
+  "ids": {
+    "uniform": null,
+    "wenninger": null,
+    "coxeter_clm": null,
+    "mccooey": "PentagonalDipyramid",
+    "johnson": null,
+    "netlib": null,
+    "bowers": null,
+    "wikipedia": null,
+    "wolfram": null
+  },
+  "notation": {
+    "schlafli": null,
+    "wythoff": null,
+    "coxeter_diagram": null,
+    "conway": "dP5",
+    "vertex_configuration": [],
+    "face_configuration": null
+  },
+  "symmetry": {
+    "schoenflies": "D5h",
+    "orbifold": "*225",
+    "coxeter": "[2,5]",
+    "hermann_mauguin": "-10m2",
+    "order": 20,
+    "rotation_group": "D5",
+    "rotation_order": 10,
+    "chiral": false,
+    "transitivity": {
+      "vertex": false,
+      "edge": false,
+      "face": true
+    },
+    "orbits": {
+      "vertices": 2,
+      "edges": 2,
+      "faces": 1
+    }
+  },
+  "combinatorics": {
+    "counts": {
+      "vertices": 7,
+      "edges": 15,
+      "faces": 10
+    },
+    "faces_by_type": [
+      {
+        "schlafli": "{3}",
+        "sides": 3,
+        "count": 10,
+        "regular": false
+      }
+    ],
+    "vertex_types": [],
+    "euler_characteristic": 2,
+    "orientable": true,
+    "genus": 0,
+    "density": 1,
+    "convex": true,
+    "self_dual": false,
+    "dual": "pentagonal-prism",
+    "vertex_density": 1,
+    "convex_hull": {
+      "is_self": true,
+      "slug": null,
+      "counts": {
+        "vertices": 7,
+        "edges": 15,
+        "faces": 10
+      }
+    },
+    "dual_unbounded": false
+  },
+  "metrics": {
+    "normalization": "midradius_1",
+    "edge_length": null,
+    "edge_lengths_uniform": false,
+    "circumradius": null,
+    "midradius": {
+      "value": 1.0000000000000002,
+      "exact": "1",
+      "source": "pslq"
+    },
+    "inradius": [
+      {
+        "face": "{3}",
+        "exact": "sqrt(1066+82*sqrt(5))/41",
+        "value": 0.8621037223969757
+      }
+    ],
+    "surface_area": {
+      "value": 14.337810467434842,
+      "exact": "sqrt(1100-400*sqrt(5))",
+      "source": "pslq"
+    },
+    "volume": {
+      "value": 4.120226591665967,
+      "exact": "10*(-1+sqrt(5))/3",
+      "source": "pslq"
+    },
+    "isoperimetric_quotient": {
+      "value": 0.6513974730701271,
+      "exact": null
+    },
+    "dihedral_angles": [
+      {
+        "between": [
+          "{3}",
+          "{3}"
+        ],
+        "exact": "acos((-11-4*sqrt(5))/41)",
+        "degrees": 119.10723136586952,
+        "radians": 2.078813350269086
+      }
+    ],
+    "angular_defect": [
+      {
+        "vertex_orbit": 0,
+        "degrees": 80.84720722355898,
+        "radians": 1.4110499570932475,
+        "exact": "acos((-1+5*sqrt(5))/64)",
+        "source": "pslq"
+      },
+      {
+        "vertex_orbit": 1,
+        "degrees": 157.8819819411026,
+        "radians": 2.7555604144464683,
+        "exact": null
+      }
+    ],
+    "solid_angle": [
+      {
+        "vertex_orbit": 0,
+        "steradians": 2.0320680938967586
+      },
+      {
+        "vertex_orbit": 1,
+        "steradians": 0.9692887905760521
+      }
+    ],
+    "biscribed": {
+      "is_biscribed": false,
+      "circumradius": null,
+      "inradius": null,
+      "ratio": null,
+      "has_biscribed_form": null,
+      "biscribed_form": null
+    }
+  },
+  "geometry": {
+    "length_unit": "midradius_1",
+    "centroid": [
+      0,
+      0,
+      0
+    ],
+    "orientation": "principal axis along z, centred at the centroid",
+    "constants": {
+      "C0": {
+        "exact": "(3-sqrt(5))/2",
+        "value": 0.381966011250105,
+        "source": "pslq"
+      },
+      "C1": {
+        "exact": "sqrt(5-2*sqrt(5))",
+        "value": 0.726542528005361,
+        "source": "pslq"
+      },
+      "C2": {
+        "exact": "sqrt(10-2*sqrt(5))/2",
+        "value": 1.175570504584946,
+        "source": "pslq"
+      },
+      "C3": {
+        "exact": "-1+sqrt(5)",
+        "value": 1.23606797749979,
+        "source": "pslq"
+      },
+      "C4": {
+        "exact": "sqrt(50+10*sqrt(5))/5",
+        "value": 1.70130161670408,
+        "source": "pslq"
+      }
+    },
+    "vertices": [
+      [
+        1.0,
+        0.726542528005361,
+        0.0
+      ],
+      [
+        -0.381966011250105,
+        1.175570504584946,
+        0.0
+      ],
+      [
+        -1.23606797749979,
+        0.0,
+        0.0
+      ],
+      [
+        -0.381966011250105,
+        -1.175570504584946,
+        0.0
+      ],
+      [
+        1.0,
+        -0.726542528005361,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.70130161670408
+      ],
+      [
+        0.0,
+        0.0,
+        -1.70130161670408
+      ]
+    ],
+    "vertices_exact": [
+      [
+        "1",
+        "C1",
+        "0"
+      ],
+      [
+        "-C0",
+        "C2",
+        "0"
+      ],
+      [
+        "-C3",
+        "0",
+        "0"
+      ],
+      [
+        "-C0",
+        "-C2",
+        "0"
+      ],
+      [
+        "1",
+        "-C1",
+        "0"
+      ],
+      [
+        "0",
+        "0",
+        "C4"
+      ],
+      [
+        "0",
+        "0",
+        "-C4"
+      ]
+    ],
+    "face_angles": [
+      {
+        "face_orbit": 0,
+        "sides": 3,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 40.423603611779484,
+            "radians": 0.7055249785466237,
+            "count": 1,
+            "exact": "acos((1+5*sqrt(5))/16)",
+            "source": "pslq"
+          },
+          {
+            "degrees": 69.78819819411025,
+            "radians": 1.2180338375215847,
+            "count": 2,
+            "exact": "acos((5-sqrt(5))/8)",
+            "source": "pslq"
+          }
+        ]
+      }
+    ],
+    "faces": [
+      [
+        0,
+        5,
+        4
+      ],
+      [
+        0,
+        1,
+        5
+      ],
+      [
+        1,
+        2,
+        5
+      ],
+      [
+        2,
+        3,
+        5
+      ],
+      [
+        3,
+        4,
+        5
+      ],
+      [
+        0,
+        4,
+        6
+      ],
+      [
+        0,
+        6,
+        1
+      ],
+      [
+        1,
+        6,
+        2
+      ],
+      [
+        2,
+        6,
+        3
+      ],
+      [
+        3,
+        6,
+        4
+      ]
+    ],
+    "faces_wound": "each face is its true winding cycle; windings are coherent (every edge traversed once in each direction)"
+  },
+  "face_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    ],
+    "polygon_type": {
+      "3": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ]
+    }
+  },
+  "vertex_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3,
+        4
+      ],
+      [
+        5,
+        6
+      ]
+    ]
+  },
+  "edge_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        4,
+        6,
+        8,
+        10,
+        11,
+        12,
+        13,
+        14
+      ],
+      [
+        2,
+        3,
+        5,
+        7,
+        9
+      ]
+    ]
+  },
+  "space_filling": null,
+  "construction": {
+    "generator": "math_art.regular_solids_generator",
+    "operator_id": "mesh.regular_solid_add",
+    "conway_from": {
+      "operator": "dual",
+      "seed": "pentagonal-prism"
+    },
+    "wythoff_from": null
+  },
+  "provenance": {
+    "coordinates": "derived: polar reciprocal of the pentagonal-prism about its midsphere",
+    "sources": [
+      "H. S. M. Coxeter, 'Regular Polytopes', 3rd ed., Dover (1973), ch. 2 (the prisms and antiprisms as the two infinite families of uniform polyhedra).",
+      "Z. Har'El, 'Uniform Solution for Uniform Polyhedra', Geometriae Dedicata 47 (1993), Appendix II Table 4 (dihedral uniform polyhedra)."
+    ],
+    "cross_checked": [
+      {
+        "source": "mccooey",
+        "agrees": true,
+        "detail": "full match: radii dev 1.01e-09, distance dev 6.82e-10, dihedral dev 0.0e+00 deg (scale 1.175571)"
+      }
+    ],
+    "verified": {
+      "euler": true,
+      "closed_manifold": true,
+      "faces_planar": true,
+      "radii_match_exact": true,
+      "dual_reciprocal": true,
+      "tolerance": 1e-09
+    }
+  }
+}

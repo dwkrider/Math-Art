@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/dwkrider/Math-Art/data/polyhedra/schema/index.schema.json",
+  "title": "Polyhedron database index",
+  "description": "Enumerates every record and carries enough of each to search, filter and sort the whole database without opening the individual files.",
+  "type": "object",
+  "required": ["schema_version", "database_version", "count", "entries"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {"type": "string"},
+    "database_version": {"type": "string"},
+    "updated": {"type": "string", "description": "ISO date of the last regeneration."},
+    "normalization_default": {"type": "string"},
+    "families": {
+      "type": "object",
+      "description": "Family tag -> one-line description. The closed vocabulary for a record's `families` array.",
+      "additionalProperties": {"type": "string"}
+    },
+    "count": {"type": "integer", "minimum": 0, "description": "Must equal entries.length; the validator checks it."},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slug", "name", "path", "families", "counts"],
+        "additionalProperties": false,
+        "properties": {
+          "slug": {"type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$"},
+          "name": {"type": "string"},
+          "path": {"type": "string", "description": "Path to the record, relative to data/polyhedra/."},
+          "families": {"type": "array", "items": {"type": "string"}},
+          "counts": {
+            "type": "object",
+            "required": ["vertices", "edges", "faces"],
+            "additionalProperties": false,
+            "properties": {
+              "vertices": {"type": "integer"},
+              "edges": {"type": "integer"},
+              "faces": {"type": "integer"}
+            }
+          },
+          "symmetry": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "schoenflies": {"type": "string"},
+              "orbifold": {"type": "string"},
+              "order": {"type": "integer"}
+            }
+          },
+          "convex": {"type": "boolean"},
+          "density": {"type": ["integer", "null"]},
+          "dual": {"type": ["string", "null"]},
+          "ids": {"type": "object", "additionalProperties": {"type": ["string", "integer"]}}
+        }
+      }
+    }
+  }
+}
