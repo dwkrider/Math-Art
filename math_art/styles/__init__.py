@@ -12,6 +12,10 @@ not beside a particular seed family.
     facet_style     the shell dissected into one segment per face, each
                     side wall mitred at half the dihedral angle so
                     neighbouring segments meet flush.
+    cell_lattice    the surface coarsened into cells and replaced by its
+                    dual, whose edges become struts and whose faces are
+                    dropped -- a sparse Voronoi-like openwork net.  A
+                    live modifier stack rather than built geometry.
 
 Unlike the engine packages (`ifs`, `knots`, `minsurf`, `patterns`,
 `polyhedra`, `seifert`), these touch `bpy`: they build objects, not just
