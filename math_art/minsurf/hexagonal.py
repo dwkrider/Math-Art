@@ -909,7 +909,7 @@ def clp_assembly(P):
 # different vectors rather than the assembly by one.  So the in-plane
 # repetition is a screw or glide, and treating it as a translation
 # leaves the copies not touching.
-CLP_ARRANGEMENTS = ('PATCH', 'UNIT')
+CLP_ARRANGEMENTS = ('PATCH', 'UNIT', 'CONJ_PATCH', 'CONJUGATE')
 
 
 def _clp_far_point(nu, nv, x_at, y_to, theta=0.0):
@@ -1008,15 +1008,24 @@ def clp_conjugate(nu, nv, maxlen=6):
     s1 = [np.eye(4)]
     s1 = s1 + [m(x, rot) for x in s1]
     s2 = s1 + [m(x, mz) for x in s1]
-    s3 = s2 + [m(x, mx) for x in s2]
-    s4 = s3 + [m(x, my) for x in s3]
-    s5 = s4 + [m(x, t1) for x in s4]
-    s6 = s5 + [m(x, t2) for x in s5]
-    s7 = s6 + [m(x, t3) for x in s6]
+    # The chain continues -- mirror at x = f(a + tau/2), then at
+    # y = f(0), then three translations -- but it is cut here.
+    # Connectivity, counted stage by stage, says why:
+    #
+    #     s1  rot about the top edge      2 copies   1 component
+    #     s2  + mirror in the right edge  4 copies   1 component
+    #     s3  + mirror at x = f(a+tau/2)  8 copies   2 components
+    #     s4  + mirror at y = f(0)       16 copies   2 components
+    #
+    # so the mirror at f(a + tau/2) is the step that breaks it.  That
+    # is the one element of the chain not measured off the patch -- the
+    # point sits above the domain and is integrated separately -- so it
+    # is the likeliest to be in the wrong frame or at the wrong height.
+    # Until it is right, only the two connected stages are offered.
     B = np.array([[2.0 * disx, 0.0, 0.0],
                   [0.0, 2.0 * disy, 0.0],
                   [0.0, 0.0, 4.0 * zext]])
-    return P, {'UNIT': s4, 'BLOCK': s7}, B
+    return P, {'CONJ_PATCH': [np.eye(4)], 'CONJUGATE': s2}, B
 
 
 def spec_build(key, cells, res_per_cell, scale, theta,
@@ -1035,9 +1044,9 @@ def spec_build(key, cells, res_per_cell, scale, theta,
     named = abs(float(theta)) < 1e-9
     P = _spec_patch(key, nu, nv, None if named else float(theta))
     built = None
-    if named and key == 'CLP' and arrangement.startswith('CONJUGATE'):
+    if named and key == 'CLP' and arrangement.startswith('CONJ'):
         P, sets, B = clp_conjugate(nu, nv)
-        ops = sets['BLOCK' if arrangement.endswith('BLOCK') else 'UNIT']
+        ops = sets[arrangement]
         V0 = P.reshape(-1, 3)
         Q0 = _patch_quads(P.shape[0], P.shape[1])
         Vs, Qs, base = [], [], 0

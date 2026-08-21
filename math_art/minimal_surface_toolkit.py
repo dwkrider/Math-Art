@@ -424,7 +424,7 @@ if _IN_BLENDER:
             _PERIODIC_ITEMS['EXACT_FAMILY'] = fam_items
             _PERIODIC_ALL.extend(fam_items)
             _PERIODICITY_ITEMS.append(
-                ('EXACT_FAMILY', "Exact Family (shape parameters)",
+                ('EXACT_FAMILY', "Exact (Deformable)",
                  f"{len(fam_items)} exact surfaces that are FAMILIES "
                  f"rather than single surfaces: their shape is driven "
                  f"by moduli, and they are built at named assemblies "
@@ -726,7 +726,18 @@ if _IN_BLENDER:
                     "The single patch the Weierstrass integral "
                     "produces, before any reflection"),
                    ('UNIT', "Unit",
-                    "The smallest assembly that reads as the surface")],
+                    "The smallest assembly that reads as the surface"),
+                   ('CONJ_PATCH', "Conjugate Piece",
+                    "The fundamental piece of the CONJUGATE surface -- "
+                    "the same Weierstrass data read from the real part "
+                    "instead of the imaginary one"),
+                   ('CONJUGATE', "Conjugate",
+                    "The conjugate assembled as far as it is verified "
+                    "connected. It is a different surface, not a "
+                    "re-view: shaped like singly periodic Scherk "
+                    "surfaces rather than crossed sheets, and at the "
+                    "octagonal case (modulus 1, branch 0.25) it is "
+                    "congruent to the original")],
             default='UNIT',
             description="Which pre-defined assembly to build. The exact "
                         "surfaces are grown from a fundamental piece by "
