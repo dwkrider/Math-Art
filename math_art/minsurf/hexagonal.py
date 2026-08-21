@@ -78,12 +78,26 @@ _COEF = ((-1.0) ** _N) * _Q ** ((_N + 0.5) ** 2)
 _K = np.pi * (2 * _N + 1).astype(float)
 
 
-def _theta11(z):
+def _theta11(z, q=None):
     """The odd Jacobi theta function in Weber's normalisation, period 1
     in z:  theta11(z, tau) = 2 sum (-1)^n q^((n+1/2)^2) sin((2n+1) pi z).
+
+    `q` is the nome exp(i pi tau).  It is a PARAMETER, not the module
+    constant, because the surfaces on this branch do not share a torus:
+    H sits on tau = i, CLP on 2i, and the Lidinoid and rPD on moduli
+    fixed by their own period conditions.  Evaluating one surface's
+    theta with another's nome silently returns a nearly constant Gauss
+    map, and a constant Gauss map is a PLANE -- which passes a mean
+    curvature test perfectly while being the wrong surface entirely.
     """
-    ang = np.multiply.outer(np.asarray(z, dtype=complex), _K)
-    return 2.0 * np.sum(_COEF * np.sin(ang), axis=-1)
+    if q is None:
+        coef, k = _COEF, _K
+    else:
+        n = np.arange(_TERMS)
+        coef = ((-1.0) ** n) * q ** ((n + 0.5) ** 2)
+        k = np.pi * (2 * n + 1).astype(float)
+    ang = np.multiply.outer(np.asarray(z, dtype=complex), k)
+    return 2.0 * np.sum(coef * np.sin(ang), axis=-1)
 
 
 def _log_g2(D, Z):
@@ -405,6 +419,185 @@ def _apply(M, V):
     return V @ M[:3, :3].T + M[:3, 3]
 
 
+# ====================================================================
+# The rest of the theta-function family: CLP, the Lidinoid, rPD
+# ====================================================================
+# Every Gauss map on this branch of the catalogue is a product of powers
+# of theta11 at shifted arguments, so all of them are the SAME object
+# written with different exponents:
+#
+#     log g(z) = const + sum_i  c_i * log theta11(z - p_i).
+#
+# Writing it that way is what makes one engine serve four surfaces.  It
+# also makes the branch tractable: each log theta11 is unwrapped along
+# the grid on its own, and a sum of continuous functions is continuous,
+# so no separate reasoning is needed per surface about where the cuts
+# of a fractional power fall.
+#
+# The data is Weber's, from the notebooks named against each row.  The
+# tau values are his and are not round numbers -- the Lidinoid's is
+# fixed by the associate angle that closes its periods (Weyhaupt 2008),
+# and rPD's by the rhombohedral cell -- so they are carried verbatim
+# rather than re-derived.
+#
+# WHAT ACTUALLY SHIPS, and why the other two do not.
+#
+# CLP integrates cleanly: its patch is minimal to 1e-14 and all four of
+# its boundary curves classify at machine precision.  It is registered,
+# as the exact FUNDAMENTAL PIECE rather than as a filled cell, because
+# the four boundary curves generate a group whose translations have rank
+# ONE (along z alone).  Weber's own assembly uses axes that are not
+# boundary curves at all -- a diagonal through the images of z = 0 and
+# z = a, and a mirror plane partway up the patch -- so the generic
+# "reflect across the four edges" assembly cannot close it.  Building
+# the piece and saying so is the same choice already made for the
+# gyroid, whose chiral cell cannot be closed either.
+#
+# The LIDINOID and RPD rows are kept here as data but are NOT
+# registered.  Both domains carry theta zeros ON their boundary, and
+# unlike H's -- which sits at a corner and yields to one substitution --
+# these sit in the interior of an edge, where the integrand along a row
+# becomes a spike of width equal to the offset from the edge.  On a
+# uniform grid that is mis-integrated badly enough that the patch
+# diameter does not converge (Lidinoid 311 -> 206 -> 137 as the grid
+# refines; rPD 5.7 -> 5.5 -> 5.0).  Shipping either would mean shipping
+# a surface known to be wrong.  The fix is per-surface grading into
+# those points, exactly what `_domain_u` does for H; see BACKLOG.
+
+def _log_theta(D, q):
+    """log theta11 over a grid, unwrapped to a continuous branch."""
+    L = np.log(_theta11(D, q))
+    im = np.imag(L)
+    im[0] = np.unwrap(im[0])
+    im = np.unwrap(im, axis=0)
+    return np.real(L) + 1j * im
+
+
+# key -> (label, tau, [(shift, exponent), ...], const, xlim, ylim,
+#         associate angle, omega sign, notebook)
+_SPECS = {
+    'CLP': dict(
+        label="Schwarz CLP (exact, fundamental piece)",
+        tau=2.0j, a=0.15,
+        terms=lambda a, tau: ((a, -0.5), (-a, 0.5),
+                              (a - tau / 2.0, 0.5), (-a - tau / 2.0, -0.5)),
+        const=0.5 * 1j * math.pi / 2.0,          # log sqrt(i)
+        xlim=(0.0, 0.5), ylim=lambda t: (0.0, np.imag(t) / 4.0),
+        # Weber plots CLP from the IMAGINARY part, i.e. the conjugate
+        # surface; Im(int w) = Re(int e^{-i pi/2} w), so it is simply
+        # the associate at -90 degrees and needs no separate code path.
+        theta=-math.pi / 2.0,
+        nb="Triply_SchwarzCLP.nb"),
+    'LIDINOID': dict(
+        label="Lidinoid (exact)",
+        tau=1j * math.tan(math.radians(90.0 - 64.2098)),
+        a=0.25,
+        terms=lambda a, tau: ((0.0, 2.0 / 3.0), (0.5, -2.0 / 3.0)),
+        # rho = e^{i pi/2}, chosen by Weber so the g dh and dh/g flat
+        # structures are congruent after a translation
+        const=(2.0 / 3.0) * (1j * math.pi / 2.0),
+        xlim=(0.0, 1.0), ylim=lambda t: (0.0, np.imag(t)),
+        theta=math.radians(64.2098),
+        nb="Triply_Lidinoid.nb"),
+    'RPD': dict(
+        label="rPD deformation (exact, rhombohedral)",
+        tau=4.0 * 0.3908504810515956j, a=0.5,
+        terms=lambda a, tau: ((0.0, -2.0 / 3.0),
+                              (a + tau / 2.0, 1.0 / 3.0),
+                              (a - tau / 2.0, 1.0 / 3.0)),
+        const=0.0,
+        xlim=(-0.5, 1.5), ylim=lambda t: (0.0, np.imag(t) / 2.0),
+        theta=math.pi / 2.0,
+        nb="Triply_Gyroid_AssociateRPD.nb"),
+}
+
+
+def _spec_patch(key, nu, nv, theta=None, eps=1e-7):
+    """Fundamental patch for one of the theta-family surfaces.
+
+    The branch points all sit on the y = 0 edge of the domain -- they
+    are the lattice zeros of the theta factors -- so the grid starts a
+    hair above it, exactly as Weber's notebooks do.  That keeps every
+    integrand finite without needing a substitution per surface; the
+    price is that the patch boundary approximates y = 0 rather than
+    reaching it, and the error is O(sqrt(eps)) for a square-root
+    factor, which at 1e-7 is well under the tolerance the reflection
+    generators are classified with.
+    """
+    sp = _SPECS[key]
+    tau, a = sp['tau'], sp['a']
+    x0, x1 = sp['xlim']
+    y0, y1 = sp['ylim'](tau)
+    ang = sp['theta'] if theta is None else float(theta)
+
+    xs = np.linspace(x0, x1, int(nu))
+    # BOTH ends of the y range are held off the edge, not just the
+    # bottom.  The theta factors vanish on the lattice, and for the
+    # Lidinoid and rPD the domain reaches a second row of lattice points
+    # at the top -- offsetting only the bottom left those on the
+    # boundary, and the patch diameter then grew without limit as the
+    # grid refined instead of converging.
+    ys = np.linspace(y0 + eps, y1 - eps, int(nv))
+    Z = xs[:, None] + 1j * ys[None, :]
+
+    q = np.exp(1j * np.pi * tau)
+    L = np.full(Z.shape, sp['const'], dtype=complex)
+    for shift, c in sp['terms'](a, tau):
+        L = L + c * _log_theta(Z - shift, q)
+    g = np.exp(L)
+    inv = 1.0 / g
+    W = np.stack([0.5 * (inv - g), 0.5j * (inv + g),
+                  np.ones_like(g)], axis=-1) * np.exp(1j * ang)
+
+    F = np.zeros((len(xs), len(ys), 3), dtype=complex)
+    dy = ys[1] - ys[0]
+    col = W[0]
+    F[0, 1:] = np.cumsum(0.5 * (col[:-1] + col[1:]) * (1j * dy), axis=0)
+    dx = np.diff(xs)[:, None, None]
+    F[1:] = F[0][None, :, :] + np.cumsum(
+        0.5 * (W[:-1] + W[1:]) * dx, axis=0)
+    return np.real(F)
+
+
+def spec_build(key, cells, res_per_cell, scale, theta):
+    """Builder for one theta-family row, matching the TPMS_EXACT
+    signature.  Falls back to the honest fundamental piece whenever the
+    reflection group does not close on a rank-3 period lattice, which is
+    the same rule the P/Gyroid/D builder follows for its non-periodic
+    angles."""
+    if isinstance(cells, (tuple, list)):
+        cx, cy, cz = (int(max(1, c)) for c in (list(cells) + [1, 1, 1])[:3])
+    else:
+        cx = cy = cz = max(1, int(cells))
+    nu = max(24, int(round(res_per_cell)))
+    nv = max(24, int(round(res_per_cell)))
+    named = abs(float(theta)) < 1e-9
+    P = _spec_patch(key, nu, nv, None if named else float(theta))
+    built = _assemble(P) if named else None
+    if built is None:
+        V = P.reshape(-1, 3)
+        Q = _patch_quads(P.shape[0], P.shape[1])
+        return _fit(V, [tuple(int(x) for x in q) for q in Q], scale)
+    V, Q, B = built
+    span = float(np.max(np.linalg.norm(B, axis=1)))
+    V, Q = _weld(V, Q, 1e-4 * span)
+    if cx > 1 or cy > 1 or cz > 1:
+        Vp, Qp, base = [], [], 0
+        for i in range(cx):
+            for j in range(cy):
+                for k in range(cz):
+                    off = ((i - 0.5 * (cx - 1)) * B[0]
+                           + (j - 0.5 * (cy - 1)) * B[1]
+                           + (k - 0.5 * (cz - 1)) * B[2])
+                    Vp.append(V + off)
+                    Qp.append(Q + base)
+                    base += len(V)
+        V = np.concatenate(Vp, axis=0)
+        Q = np.concatenate(Qp, axis=0)
+        V, Q = _weld(V, Q, 1e-4 * span)
+    return _fit(V, [tuple(int(x) for x in q) for q in Q], scale)
+
+
 def h_unit(nu, nv, theta, maxlen=8):
     """One translational unit cell of the surface, welded.
 
@@ -417,7 +610,18 @@ def h_unit(nu, nv, theta, maxlen=8):
     Returns (verts, quads, lattice) with the lattice as a 3x3 of row
     vectors, or None if the construction failed to close up.
     """
-    P = h_patch(nu, nv, theta)
+    return _assemble(h_patch(nu, nv, theta), maxlen=maxlen)
+
+
+def _assemble(P, maxlen=8):
+    """Reflect a fundamental patch out into one translational cell.
+
+    Shared by every surface in this module: the Schwarz principle does
+    not care which Weierstrass data produced the patch, only what its
+    boundary curves are.  Returns None when the group does not close on
+    a rank-3 lattice, which the caller reads as "not periodic at this
+    angle" rather than as a failure.
+    """
     gens, kinds = h_generators(P)
     if len(gens) < 4:
         return None
@@ -659,6 +863,69 @@ def _selftest():
           "%d, 2x1x1 -> %d faces %s"
           % (len(V), len(faces), frac, over, len(faces2),
              'OK' if good else 'FAIL'))
+
+    # CLP: the second surface on this branch with no published nodal
+    # formula.  Its patch is gated the same way H's is -- minimality
+    # measured off the mesh, and every boundary curve classifiable as a
+    # straight line or a planar geodesic, without which the reflection
+    # principle would not apply at all.
+    prev = prevm = None
+    for n in (40, 60, 90):
+        P = _spec_patch('CLP', n, n)
+        Pu, Pv = np.gradient(P, axis=0), np.gradient(P, axis=1)
+        nn = np.cross(Pu, Pv)
+        nn = nn / np.maximum(np.linalg.norm(nn, axis=-1, keepdims=True),
+                             1e-300)
+        E = np.sum(Pu * Pu, -1)
+        F = np.sum(Pu * Pv, -1)
+        G = np.sum(Pv * Pv, -1)
+        L = np.sum(np.gradient(Pu, axis=0) * nn, -1)
+        M = np.sum(np.gradient(Pu, axis=1) * nn, -1)
+        N = np.sum(np.gradient(Pv, axis=1) * nn, -1)
+        den = 2.0 * (E * G - F * F)
+        Hc = (E * N - 2.0 * F * M + G * L) / np.where(
+            np.abs(den) < 1e-300, 1e-300, den)
+        fl = P.reshape(-1, 3)
+        diam = float(np.linalg.norm(fl.max(0) - fl.min(0)))
+        mean = float(np.mean(np.abs(Hc[3:-3, 3:-3]))) * diam
+        # A PLANE is minimal, so "mean curvature is zero" cannot on its
+        # own say the surface is right -- and for a while it did not:
+        # evaluating CLP's theta with H's nome returned a nearly
+        # constant Gauss map, whose image is a flat sheet, and that
+        # sailed through a curvature gate at 1e-14 while being the wrong
+        # object entirely.  So the patch must also be genuinely
+        # three-dimensional: the smallest singular value of the centred
+        # point cloud, against the largest, is a scale-free measure of
+        # how far it is from lying in a plane.
+        c = fl - fl.mean(0)
+        nonplanar = float(np.linalg.svd(c, compute_uv=False)[2]
+                          / np.linalg.svd(c, compute_uv=False)[0])
+        steady = prev is None or abs(diam - prev) < 5e-3
+        falling = prevm is None or mean < prevm
+        good = steady and falling and nonplanar > 0.05
+        ok &= good
+        print("hexagonal: CLP %3dx%3d diam %.5f mean|H|*d %.2e "
+              "nonplanar %.4f %s"
+              % (n, n, diam, mean, nonplanar, 'OK' if good else 'FAIL'))
+        prev, prevm = diam, mean
+
+    P = _spec_patch('CLP', 70, 70)
+    gens, kinds = h_generators(P)
+    good = len(gens) == 4
+    ok &= good
+    print("hexagonal: CLP boundary %s %s"
+          % (", ".join("%s=%s(%.0e)" % k for k in kinds),
+             'OK' if good else 'FAIL'))
+
+    # ... and it must build.  Only the fundamental piece: the four
+    # boundary curves generate translations of rank 1, so `_assemble`
+    # declines and `spec_build` falls back, which is the intended and
+    # documented behaviour rather than a failure.
+    V, faces = spec_build('CLP', 1, 40, 1.0, 0.0)
+    good = len(V) > 0 and len(faces) > 0
+    ok &= good
+    print("hexagonal: CLP piece %d verts %d faces %s"
+          % (len(V), len(faces), 'OK' if good else 'FAIL'))
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:

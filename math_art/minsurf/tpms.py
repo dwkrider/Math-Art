@@ -744,6 +744,13 @@ TPMS_EXACT = {
     # row here that could not have been reached any other way, so it is
     # exact-Weierstrass or nothing.
     'H': ("Schwarz H (exact, hexagonal)", _we_hex.h_build),
+    # CLP is the other D1 entry with no published nodal formula.  It
+    # builds the exact fundamental piece rather than a filled cell --
+    # see the note above _SPECS in hexagonal.py for why its four
+    # boundary curves cannot close it.
+    'CLP': (_we_hex._SPECS['CLP']['label'],
+            lambda cells, res, scale, theta: _we_hex.spec_build(
+                'CLP', cells, res, scale, theta)),
 }
 
 # named-preset -> Bonnet angle (radians).  P and D reassemble a filled cell;
