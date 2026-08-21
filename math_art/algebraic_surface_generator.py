@@ -309,9 +309,16 @@ if _IN_BLENDER:
                             else float(getattr(self, attr)))
                      for attr, _l, kind, _d, _lo, _hi, _dsc
                      in preset_params(key)}
-            # `mu` and `fold` stay named arguments: they were public
-            # before this table existed and scripted calls use them.
-            extra.pop('mu', None)
+            # `mu` and `fold` stay NAMED arguments of build_algebraic:
+            # they were public before this table existed and scripted
+            # calls pass them by name.  So they must be dropped from the
+            # forwarded set -- leaving either in gives the builder two
+            # values for the same keyword, which is a TypeError, and is
+            # exactly what the extension gate caught on the monkey
+            # saddle.  Their VALUES still come from the operator's own
+            # properties just below, so nothing is lost.
+            for _shared in ('mu', 'fold'):
+                extra.pop(_shared, None)
             verts, tris = build_algebraic(
                 key, self.resolution, mu=self.mu,
                 clip=self.clip, scale=self.scale, fold=self.fold,
@@ -381,8 +388,81 @@ if _IN_BLENDER:
 
 
 def _selftest():
-    # standalone smoke test of the numeric core (requires the
-    # Minimal Surface Toolkit importable as a sibling)
+    """Two gates: every preset meshes, and every PARAMETERISED preset
+    survives the exact call the operator makes.
+
+    The second exists because the first cannot see the bug it catches.
+    `PRESET_PARAMS` forwards a preset's declared parameters as keyword
+    arguments, but `mu` and `fold` are ALSO named arguments of
+    `build_algebraic` -- they were public before the table existed --
+    so a row declaring either sends the builder two values for one
+    keyword and raises.  That shipped, and only the (slow, Blender-only)
+    extension test caught it, on the monkey saddle.  This reproduces the
+    operator's forwarding exactly, headlessly, over every row.
+    """
+    ok = True
+    bad = []
     for kind in PRESETS:
         V, T = build_algebraic(kind, 40)
-        print(f"{kind:10s}: {len(V):6d} verts {len(T):6d} tris")
+        if len(T) < 100 or not np.all(np.isfinite(V)):
+            bad.append('%s:%d tris' % (kind, len(T)))
+    ok &= not bad
+    print("algebraic_generator: %d presets mesh %s"
+          % (len(PRESETS), 'OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    # exactly what `execute` builds and forwards, for every row that
+    # declares anything -- including the shared-name drop
+    def _call(kind, rows, factor):
+        """Build as the operator does, with each declared parameter at
+        its default (factor 0) or moved off it (factor > 0)."""
+        extra, mu, fold = {}, 1.3, 3
+        for attr, _l, knd, dflt, lo, hi, _d in rows:
+            v = float(dflt) + factor * (float(hi) - float(dflt))
+            v = int(round(v)) if knd == 'INT' else v
+            extra[attr] = v
+            if attr == 'mu':
+                mu = float(v)
+            elif attr == 'fold':
+                fold = int(v)
+        for shared in ('mu', 'fold'):
+            extra.pop(shared, None)
+        return build_algebraic(kind, 40, mu=mu, clip=0.0, scale=1.0,
+                               fold=fold, **extra)
+
+    # At the DECLARED DEFAULTS the row must reproduce its own surface,
+    # so geometry is required.  Away from them it must not RAISE -- but
+    # geometry is not required and must not be asserted: a family is
+    # continuous in its coefficients and most of that space has no real
+    # points inside the clip ball at all.  The operator reports "Empty
+    # level set" and cancels, which is correct.  Demanding geometry here
+    # instead was this test's own first bug, and it failed 15 rows that
+    # were behaving exactly as designed.
+    bad = []
+    for kind in PRESETS:
+        rows = preset_params(kind)
+        if not rows:
+            continue
+        try:
+            V, T = _call(kind, rows, 0.0)
+        except Exception as exc:                     # pragma: no cover
+            bad.append('%s@default:%s' % (kind, exc))
+            continue
+        if len(T) < 100 or not np.all(np.isfinite(V)):
+            bad.append('%s@default:%d tris' % (kind, len(T)))
+        for factor in (0.02, 0.5):
+            try:
+                V, _T = _call(kind, rows, factor)
+            except Exception as exc:                 # pragma: no cover
+                bad.append('%s@%.2f:%s' % (kind, factor, exc))
+                continue
+            if len(V) and not np.all(np.isfinite(V)):
+                bad.append('%s@%.2f:non-finite' % (kind, factor))
+    n = sum(1 for k in PRESETS if preset_params(k))
+    ok &= not bad
+    print("algebraic_generator: %d parameterised presets survive the "
+          "operator's own call %s"
+          % (n, 'OK' if not bad else 'FAIL ' + ','.join(bad)))
+
+    print("RESULT:", "OK" if ok else "FAIL")
+    if not ok:
+        raise AssertionError("algebraic generator self-test failed")
