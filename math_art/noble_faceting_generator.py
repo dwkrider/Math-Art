@@ -523,8 +523,13 @@ if _IN_BLENDER:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
             V = [tuple(c * self.scale for c in v) for v in V]
-            _v, found = facetings_of(self.seed)
-            name = "Noble Faceting %d/%d" % (
+            # count from the SAME list the mesh was built from -- asking
+            # for the one-orbit list here labelled a two-orbit faceting
+            # "4/4" when there are sixteen, and wrapped the number
+            # against the wrong total
+            _v, found = facetings_of(self.seed, self.orbits)
+            name = "%s %d/%d" % (
+                "Noble Faceting" if self.orbits <= 1 else "Faceting",
                 self.index % len(found) + 1, len(found))
             if _shell is not None:
                 obj = _shell.apply(self, context, V, F, name)
