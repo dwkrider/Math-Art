@@ -85,12 +85,13 @@ PARAMS = {
     "mesh.minimal_knot_span_add": dict(p=2, q=3),
     "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE'),
     "mesh.algebraic_surface_add": dict(preset='CLEBSCH'),
-    # The default octahedral quartic is a lumpy blob at icon size.  The
-    # rounded dodecahedron is the member that says "this is a Platonic
-    # symmetry group applied to an algebraic surface" at a glance, and
-    # its twelve bowed pentagons are unmistakable in silhouette.
+    # The default octahedral quartic is a lumpy blob at icon size, and
+    # the rounded dodecahedron is nearly a ball.  The icosidodecahedral
+    # PENTAGON sextic is the member that reads as a symmetry group at a
+    # glance: twelve separate caps sitting on the pentagonal faces, with
+    # the thirty nodes between them visible in silhouette.
     "mesh.goursat_surface_add": dict(family='DODEC6',
-                                     preset='DODEC_ROUNDED'),
+                                     preset='DODEC_PENTAGONS'),
     "mesh.curiosity_surface_add": dict(surface='FRESNEL'),
     # Tannery's pear is the one with a shape of its own: the two
     # conical tips read instantly, where Zoll's surface is a slightly
