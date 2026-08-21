@@ -78,6 +78,7 @@
     "convex": true,
     "self_dual": false,
     "dual": "hexagonal-trapezohedron",
+    "coincident_vertices": 0,
     "vertex_density": 1,
     "convex_hull": {
       "is_self": true,
@@ -524,6 +525,7 @@
       ]
     ]
   },
+  "compound": null,
   "space_filling": null,
   "construction": {
     "generator": "math_art.regular_solids_generator",

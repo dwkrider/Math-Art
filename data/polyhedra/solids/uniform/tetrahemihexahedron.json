@@ -30,13 +30,13 @@
     "face_configuration": null
   },
   "symmetry": {
-    "schoenflies": "Oh",
-    "orbifold": "*432",
-    "coxeter": "[3,4]",
-    "hermann_mauguin": "m-3m",
-    "order": 48,
-    "rotation_group": "O",
-    "rotation_order": 24,
+    "schoenflies": "Td",
+    "orbifold": "*332",
+    "coxeter": "[3,3]",
+    "hermann_mauguin": "-43m",
+    "order": 24,
+    "rotation_group": "T",
+    "rotation_order": 12,
     "chiral": false,
     "transitivity": {
       "vertex": true,
@@ -82,6 +82,7 @@
     "convex": false,
     "self_dual": false,
     "dual": "tetrahemihexacron",
+    "coincident_vertices": 0,
     "vertex_density": null,
     "convex_hull": {
       "is_self": false,

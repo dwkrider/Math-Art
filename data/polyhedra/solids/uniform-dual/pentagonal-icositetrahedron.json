@@ -72,6 +72,7 @@
     "convex": true,
     "self_dual": false,
     "dual": "snub-cube",
+    "coincident_vertices": 0,
     "vertex_density": 1,
     "convex_hull": {
       "is_self": true,
@@ -755,7 +756,13 @@
       "M. Wenninger, 'Dual Models', Cambridge (1983).",
       "Z. Har'El, 'Uniform Solution for Uniform Polyhedra', Geometriae Dedicata 47 (1993), 57-110 (dual names and prototiles)."
     ],
-    "cross_checked": [],
+    "cross_checked": [
+      {
+        "source": "mccooey",
+        "agrees": true,
+        "detail": "full match: radii dev 1.58e-10, distance dev 8.45e-10, dihedral dev 0.0e+00 deg (scale 0.801781)"
+      }
+    ],
     "verified": {
       "euler": true,
       "closed_manifold": true,

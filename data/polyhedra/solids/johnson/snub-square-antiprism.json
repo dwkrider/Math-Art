@@ -74,6 +74,7 @@
     "convex": true,
     "self_dual": false,
     "dual": null,
+    "coincident_vertices": 0,
     "vertex_density": 1,
     "convex_hull": {
       "is_self": true,
@@ -618,7 +619,13 @@
       "N. W. Johnson, 'Convex polyhedra with regular faces', Canadian Journal of Mathematics 18 (1966), 169-200.",
       "V. A. Zalgaller, 'Convex Polyhedra with Regular Faces', Consultants Bureau (1969) (completeness)."
     ],
-    "cross_checked": [],
+    "cross_checked": [
+      {
+        "source": "mccooey",
+        "agrees": true,
+        "detail": "full match: radii dev 0.00e+00, distance dev 0.00e+00, dihedral dev 0.0e+00 deg (scale 1.000000)"
+      }
+    ],
     "verified": {
       "euler": true,
       "closed_manifold": true,
