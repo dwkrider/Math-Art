@@ -1312,12 +1312,20 @@ NAMED_PRESETS = {
         #   Suw       -> S U V W X Y Z AE OE AA, ten shells
         #   A(bcdek)  -> every shell, i.e. the final stellation below
         # so only the first needs a new entry.
+        # Both have 120 true vertices, each on three of the thirty face
+        # planes, so each dual is a 120-TRIANGLE faceting of the
+        # icosidodecahedron.  Unlike the icosahedral pair that is not
+        # forced by counting -- the icosidodecahedron carries four such
+        # -- so `noble_faceting_generator.noble_dual_index` matches them
+        # face-set for face-set.
         ('noble_suw', 'Noble stellation Suw (Pawley)',
          ['a', 's01', 's02', 's03', 's04', 's05', 's06', 's08', 's09',
           's11'],
-         'isohedral and isogonal; Pawley 1975, one of Hart K / 2B'),
+         'isohedral and isogonal; Pawley 1975, Hart K; dual is '
+         'Icosidodecahedron faceting 6'),
         ('final', 'Final stellation of the RT', ['all'],
-         'also Pawley A(bcdek), the other noble RT stellation'),
+         'also Pawley A(bcdek), Hart 2B; dual is Icosidodecahedron '
+         'faceting 9'),
     ],
 }
 

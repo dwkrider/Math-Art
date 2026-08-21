@@ -348,6 +348,14 @@ COMPONENT_AXES = {
     # catches it.
     'DODECA': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0), 5: (0.0, PHI, 1.0)},
     'ICOSA': {2: (0.0, 0.0, 1.0), 3: (1.0, 1.0, 1.0), 5: (0.0, 1.0, PHI)},
+    # The tetrahemihexahedron, for Skilling's entry 19.  It stands on the
+    # octahedron's own six vertices and twelve edges -- it keeps four of
+    # the eight triangles and adds the three equatorial squares -- so its
+    # three-fold axes are the octahedron's, the body diagonals.  Only the
+    # scale differs (circumradius 1 against the octahedron's sqrt(3)),
+    # which is why entry 19 and entry 14 come out sharing a skeleton only
+    # after both are normalised.
+    'U4': {3: (1.0, 1.0, 1.0)},
 }
 
 #: prisms and antiprisms as components, keyed PRISM<n> / ANTI<n>.  Their
@@ -630,6 +638,142 @@ def perp_half_turn_axis(component, comp_order):
                 return d
     raise ValueError('%s has no half-turn axis perpendicular to its '
                      '%d-fold axis' % (component, comp_order))
+
+
+def vertex_mirror_phases(component, group, comp_order, group_order):
+    """Turns about the aligned axis that put a constituent VERTEX on one
+    of the group's MIRROR PLANES, in closed form.
+
+    This is the condition behind Skilling's octahedral special cases, and
+    he says so himself: the footnotes to entries 15 and 16 read "oriented
+    as in Fig. 5(a)/(b) with its vertices on icosahedral mirror planes".
+    Putting a vertex on a mirror doubles that vertex's stabilizer, which
+    halves the number of DISTINCT vertices -- from 120 to 60 -- and that
+    is what his "constituents per vertex" column is counting.
+
+    Whether the constituent COUNT also halves is a separate matter and
+    is what tells his rows apart: the same construction gives 10 copies
+    at two of these turns (15 and 16, genuinely different compounds --
+    they share not one vertex), 20 copies with two meeting at every
+    vertex at a third (14), and 5 at a fourth (17, the classical
+    compound).  So the turns are derived here and the rows select among
+    them; none of the four is a fitted constant.
+
+    Closed form rather than a scan, because a scan is exactly what fails
+    on this family -- these turns are 22.238756... and 67.908424..., and
+    a search on any round grid reports them unreachable.  Writing the
+    turned vertex with Rodrigues' formula,
+
+        v(t) = cos t * u + sin t * (n x u) + (1 - cos t)(n.u) n
+
+    the condition m.v(t) = 0 for a mirror normal m is
+    P cos t + Q sin t + C = 0 with P = m.u - (n.u)(m.n),
+    Q = m.(n x u) and C = (n.u)(m.n) -- one phase-shifted cosine, solved
+    directly.
+    """
+    G = GROUPS[group]()
+    mirrors = []
+    for M in G:
+        if np.linalg.det(M) > 0 or abs(np.trace(M) - 1.0) > 1e-7:
+            continue                      # keep plane reflections only
+        w, vec = np.linalg.eig(M)
+        ax = np.real(vec[:, int(np.argmin(np.real(w)))])
+        ax = ax / np.linalg.norm(ax)
+        if not any(min(np.linalg.norm(ax - b), np.linalg.norm(ax + b))
+                   < 1e-6 for b in mirrors):
+            mirrors.append(ax)
+    ca = np.array(COMPONENT_AXES[component][comp_order], float)
+    ga = np.array(GROUP_AXES[group][group_order], float)
+    n = ga / np.linalg.norm(ga)
+    A = _align_rotation(ca / np.linalg.norm(ca), n)
+    V, _F = _component(component)
+    us = []
+    for v in V:
+        q = A @ np.array(v, float)
+        q = q / np.linalg.norm(q)
+        if not any(np.linalg.norm(q - b) < 1e-6 for b in us):
+            us.append(q)
+    period = 360.0 / comp_order
+    out = []
+    for u in us:
+        nu = float(n @ u)
+        cr = np.cross(n, u)
+        for m in mirrors:
+            P = float(m @ u) - nu * float(m @ n)
+            Q = float(m @ cr)
+            C = nu * float(m @ n)
+            R = math.hypot(P, Q)
+            if R < 1e-12 or abs(C) > R + 1e-12:
+                continue                  # this vertex never reaches it
+            ph = math.atan2(Q, P)
+            for s in (1.0, -1.0):
+                t = math.degrees(ph + s * math.acos(
+                    max(-1.0, min(1.0, -C / R))))
+                t %= period
+                if not any(min(abs(t - x), period - abs(t - x)) < 1e-6
+                           for x in out):
+                    out.append(t)
+    return sorted(out)
+
+
+def vertex_pairing_phases(component, group, comp_order, group_order):
+    """Turns about the aligned axis at which a vertex of one constituent
+    lands exactly on a vertex of ANOTHER.
+
+    The mirror rule above cannot serve for Skilling's entry 19, because
+    that compound's group is I, which has no mirrors at all.  What fixes
+    its one free angle is his own sentence: "the polyhedron vertices
+    coincide in pairs, each vertex of one class coalescing with one of
+    the other, so true uniformity is recovered."  That is this condition,
+    and it is what rescues a constituent which is only BI-uniform in the
+    group used -- the tetrahemihexahedron's six vertices split into two
+    classes under the C_3 about a triangular face, and only the pairing
+    puts them back into one.
+
+    Same closed form as `vertex_mirror_phases`, one conjugation deeper.
+    For a group element g the requirement g.v_i(t) = v_j(t) forces the
+    n-components to agree first, and that projection is again a single
+    phase-shifted cosine in t; each root is then checked as a full vector
+    equation, since agreeing along n is necessary and not sufficient.
+    """
+    G = GROUPS[group]()
+    ca = np.array(COMPONENT_AXES[component][comp_order], float)
+    ga = np.array(GROUP_AXES[group][group_order], float)
+    n = ga / np.linalg.norm(ga)
+    A = _align_rotation(ca / np.linalg.norm(ca), n)
+    V, _F = _component(component)
+    us = []
+    for v in V:
+        q = A @ np.array(v, float)
+        q = q / np.linalg.norm(q)
+        if not any(np.linalg.norm(q - b) < 1e-6 for b in us):
+            us.append(q)
+    period = 360.0 / comp_order
+    out = []
+    for g in G:
+        ng = g.T @ n
+        for ui in us:
+            perp = ui - float(n @ ui) * n
+            cr = np.cross(n, ui)
+            for uj in us:
+                P = float(ng @ perp)
+                Q = float(ng @ cr)
+                C = float(n @ ui) * float(ng @ n) - float(n @ uj)
+                R = math.hypot(P, Q)
+                if R < 1e-12 or abs(C) > R + 1e-12:
+                    continue
+                ph = math.atan2(Q, P)
+                for s in (1.0, -1.0):
+                    t = math.degrees(ph + s * math.acos(
+                        max(-1.0, min(1.0, -C / R))))
+                    M = _rot(n, math.radians(t))
+                    if np.linalg.norm(g @ (M @ ui) - M @ uj) > 1e-7:
+                        continue          # met along n only, not in full
+                    t %= period
+                    if not any(min(abs(t - x), period - abs(t - x)) < 1e-5
+                               for x in out):
+                        out.append(t)
+    return sorted(out)
 
 
 def perp_phase_from(component, group, comp_order, group_order, ref):
@@ -1267,13 +1411,57 @@ AXIS_COMPOUNDS = [
      60.0, 4),
     ('S13_OCTA', "Skilling 13: 20 Octahedra, Ih (free)",
      'OCTA', 'Ih', 3, 3, 11.0, 20),
-    # Entry 15 (and its partner 16, the other orientation of Skilling's
-    # figure 5, which needs that figure to tell apart).  The angle is the
-    # icosahedral 22.2388... again, so a scan on any round grid reports
-    # this row unreachable.
+    # Entries 14, 15 and 16 are the special positions of 13, and all
+    # three are the SAME geometric condition: the octahedron's vertices
+    # land on icosahedral mirror planes, which is what Skilling's own
+    # footnotes to 15 and 16 say.  `vertex_mirror_phases` solves for
+    # those turns in closed form and returns six, of which
+    #
+    #   [0]  0.000000   5 octahedra           entry 17
+    #   [1] 22.238756  10 octahedra           entry 15, figure 5(a)
+    #   [2] 44.477512   5 octahedra           entry 17 again
+    #   [3] 67.908424  20, two per vertex     entry 14
+    #   [4] 82.238756  10 octahedra           entry 16, figure 5(b)
+    #   [5] 96.569089  20, two per vertex     entry 14 again
+    #
+    # so the rows below select among derived turns rather than carrying
+    # fitted constants.  15 and 16 are genuinely different compounds and
+    # not one solid turned: they share not a single vertex, which is the
+    # check that stands in for reading figure 5.  Entry 15 keeps its
+    # older, independent derivation via the half-turn axis, and the
+    # self-test asserts the two agree -- two routes to one angle being
+    # worth more than either alone.
+    ('S14_OCTA', "Skilling 14: 20 Octahedra, Ih (two per vertex)",
+     'OCTA', 'Ih', 3, 3, vertex_mirror_phases('OCTA', 'Ih', 3, 3)[3], 20),
     ('S15_OCTA', "Skilling 15: 10 Octahedra, Ih", 'OCTA', 'Ih', 3, 3,
      perp_phase_from('OCTA', 'Ih', 3, 3,
                      perp_half_turn_axis('OCTA', 3)), 10),
+    ('S16_OCTA', "Skilling 16: 10 Octahedra, Ih (second orientation)",
+     'OCTA', 'Ih', 3, 3, vertex_mirror_phases('OCTA', 'Ih', 3, 3)[4], 10),
+    # Entry 19, the one compound Skilling says CANNOT be had by adding
+    # symmetry to a group in which the constituent is uniform.  His own
+    # paragraph is the construction: each tetrahemihexahedron has one of
+    # its four triangles normal to an icosahedral three-fold axis, so the
+    # symmetry actually used is that C_3 -- order 3, whence 60/3 = 20
+    # copies -- and in it the constituent is only BI-uniform, its six
+    # vertices splitting into those on that triangle and those not.
+    # Uniformity comes back because the vertices coincide in pairs, and
+    # THAT is what fixes the free turn: see `vertex_pairing_phases`.
+    #
+    # Two of its roots give 20 copies, and they are the two
+    # enantiomorphous forms Skilling says the compound has, the group
+    # being I and not I_h -- one is exactly the mirror image of the
+    # other, sharing all 60 squares and not one of the 80 triangles.
+    #
+    # The construction is confirmed by something outside it: he records
+    # that this compound's 60 vertices and 240 edges are shared with the
+    # compound of 20 octahedra, and normalised, entry 19's skeleton and
+    # entry 14's agree exactly -- two different constituents, two
+    # different groups (I against I_h) and two different angle rules
+    # landing on one skeleton.
+    ('S19_TETRAHEMIHEX',
+     "Skilling 19: 20 Tetrahemihexahedra, I (two per vertex)",
+     'U4', 'I', 3, 3, vertex_pairing_phases('U4', 'I', 3, 3)[-2], 20),
 
     # --- compounds of the other regulars ------------------------------
     # Reachable only after the dodecahedron's five-fold axis was

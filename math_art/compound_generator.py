@@ -323,6 +323,85 @@ def _selftest():
             S = {tuple(np.round(v, 4)) for v in V}
             assert {tuple(np.round(R @ np.array(v, float), 4))
                     for v in V} == S, (k, comp, axis, 'frame not aligned')
+    # --- Skilling's special positions, 13-16 and 19 ---------------------
+    # Counts alone cannot separate these: 13 and 14 are both 20 copies,
+    # 15 and 16 both 10.  What separates them is his CONSTITUENTS PER
+    # VERTEX column, so assert that instead -- it is the quantity the
+    # special angles exist to produce.
+    per_vertex = {'S13_OCTA': 1, 'S14_OCTA': 2, 'S15_OCTA': 1,
+                  'S16_OCTA': 1, 'S19_TETRAHEMIHEX': 2}
+    for k, want in per_vertex.items():
+        cnt = {}
+        for V, _F in build_compound(k):
+            for v in V:
+                key = tuple(round(c, 5) for c in v)
+                cnt[key] = cnt.get(key, 0) + 1
+        assert set(cnt.values()) == {want}, \
+            (k, 'constituents per vertex', sorted(set(cnt.values())), want)
+
+    # Entry 15's angle has two independent derivations -- the half-turn
+    # axis rule it has always used, and the mirror-plane rule Skilling's
+    # own footnote describes.  They must agree; two routes to one angle
+    # is worth more than either alone.
+    mirror = _cmp.vertex_mirror_phases('OCTA', 'Ih', 3, 3)
+    older = _cmp.perp_phase_from('OCTA', 'Ih', 3, 3,
+                                 _cmp.perp_half_turn_axis('OCTA', 3))
+    assert abs(mirror[1] - older) < 1e-6, (mirror[1], older)
+
+    # 15 and 16 are Skilling's figure 5(a) and 5(b): two DIFFERENT
+    # compounds, not one solid turned.  Not sharing a single vertex is
+    # what stands in for reading that figure.
+    def vset(k):
+        pts = [v for V, _F in build_compound(k) for v in V]
+        R = max(_math.dist((0, 0, 0), v) for v in pts)
+        return {tuple(round(c / R, 5) for c in v) for v in pts}
+
+    assert not (vset('S15_OCTA') & vset('S16_OCTA')), \
+        'Skilling 15 and 16 should share no vertex'
+
+    # Skilling records that entry 19's 60 vertices and 240 edges are
+    # shared with the compound of 20 octahedra, entry 14.  That is a
+    # cross-check from outside either construction: different
+    # constituents, different groups (I against I_h) and different angle
+    # rules, landing on one skeleton.
+    def eset(k):
+        comps = build_compound(k)
+        pts = [v for V, _F in comps for v in V]
+        R = max(_math.dist((0, 0, 0), v) for v in pts)
+        out = set()
+        for V, F in comps:
+            for f in F:
+                for i in range(len(f)):
+                    a = tuple(round(c / R, 5) for c in V[f[i]])
+                    b = tuple(round(c / R, 5)
+                              for c in V[f[(i + 1) % len(f)]])
+                    out.add((min(a, b), max(a, b)))
+        return out
+
+    assert vset('S14_OCTA') == vset('S19_TETRAHEMIHEX'), \
+        'Skilling 19 should share entry 14 vertices'
+    assert eset('S14_OCTA') == eset('S19_TETRAHEMIHEX'), \
+        'Skilling 19 should share entry 14 edges'
+    assert len(vset('S19_TETRAHEMIHEX')) == 60, 'entry 19 wants 60 vertices'
+    assert len(eset('S19_TETRAHEMIHEX')) == 240, 'entry 19 wants 240 edges'
+
+    # Entry 19's group is I, not I_h, so Skilling says it "exists in two
+    # enantiomorphous forms".  Its angle rule returns exactly two roots
+    # giving 20 copies, and they are mirror images of one another.
+    pair = _cmp.vertex_pairing_phases('U4', 'I', 3, 3)[-2:]
+    faces = []
+    for ph in pair:
+        faces.append({frozenset(tuple(round(c, 5) for c in V[i])
+                                for i in f)
+                      for V, F in _cmp.build_axis_compound('U4', 'I', 3, 3,
+                                                           ph)
+                      for f in F})
+    assert faces[0] != faces[1], 'entry 19 roots should be distinct'
+    flip = {frozenset((-x, y, z) for (x, y, z) in f) for f in faces[0]}
+    assert flip == faces[1], 'entry 19 roots should be enantiomorphs'
+    print("SPECIAL   Skilling 13-16 and 19: per-vertex counts as "
+          "tabulated, 19 shares 14's 60 vertices and 240 edges")
+
     print("SUBGROUP  Skilling 46-67 sample: constituents aligned and "
           "orbited, all counts as tabulated")
 
