@@ -435,7 +435,7 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe")],
             default='SOLID')
         border: FloatProperty(name="Border", default=0.3,
-                              min=0.02, max=0.95)
+                              min=0.02, max=1.0)
         thickness: FloatProperty(name="Thickness", default=0.04,
                                  min=0.001, max=1.0)
         strut_radius: FloatProperty(

@@ -17,9 +17,16 @@
 # Links (multi-component curves) get their own operator, Tight Link:
 # the same energy's inter-component terms keep components from passing
 # through each other, each component keeps its own length, and the
-# pairwise linking numbers are asserted unchanged.  Above 400 total
-# samples the flow switches to the lagged-factorization solver
-# (measured against the exact dense path; see knots/tangent_point.py).
+# pairwise linking numbers are asserted unchanged.
+#
+# The flow runs to a measured plateau rather than a fixed iteration
+# count, so the iteration property is a ceiling and not a target: the
+# presets that settle quickly stop on their own, and the ones that do
+# not are allowed the steps they actually need.  That matters more than
+# it sounds -- at the old ceiling of 100 the Whitehead link stopped
+# mid-flow at ropelength 111, where running on to its plateau reaches
+# 68.  See `knots/tangent_point.py` for the solver and the stopping
+# rule.
 #
 # References:
 # - G. Buck and J. Orloff, "A simple energy function for knots",
@@ -57,8 +64,8 @@ from .knots import (KNOTS, alexander_link_from_curves,
                     tighten_link)
 
 
-def build_tight_knot(braid, samples=140, iters=60, mirror=False,
-                     scale=1.0):
+def build_tight_knot(braid, samples=140, iters=250, mirror=False,
+                     scale=1.0, coarse_to_fine=False):
     """Seed the braid closure, run the tangent-point flow, and
     normalize the result to fit the standard 2 m cube (centered at the
     origin, max coordinate 1) times `scale`.
@@ -72,22 +79,28 @@ def build_tight_knot(braid, samples=140, iters=60, mirror=False,
     P = resample_closed(braid_closure_points(word), samples)
     if mirror:
         P = P * np.array([1.0, 1.0, -1.0])
-    if samples > 400:
-        # beyond the dense operator ceiling: the lagged-factorization
-        # solver (same math, factorization reused across iterations;
-        # measured ~2x per iteration, converged energy equal to the
-        # dense path to ~1e-6 -- see the tp_scale bench case).  At or
-        # below 400 the exact dense path runs, byte-identical to the
-        # original operator behaviour.
-        comps, info = tighten_link([P], iters=iters, solver="lagged")
+    coarse_iters = 0
+    if coarse_to_fine and iters > 0:
+        # a single component is a one-component link, and the link path
+        # reproduces the knot path bitwise (asserted in the engine's
+        # self-test), so the continuation helper serves both
+        comps, cinfo = _coarse_first([P], samples, iters, "lagged")
         P = comps[0]
-    else:
-        P, info = tighten(P, iters=iters)
+        coarse_iters = cinfo["iters_run"]
+    # the lagged-factorization solver at every resolution: the O(n^3)
+    # refactorization is the flow's dominant cost even after the block
+    # elimination, and reusing one factorization across a few iterations
+    # removes most of it.  It lands on the dense path's answer (the
+    # self-test holds the two to 1e-4 on converged energy, and measured
+    # ropelength agrees to ~1e-3 across the presets) at ~4x the
+    # per-iteration speed.
+    P, info = tighten(P, iters=iters, solver="lagged")
     P = P - P.mean(axis=0)
     m = float(np.abs(P).max())
     if m > 1e-12:
         P = P * (scale / m)
     info = dict(info)
+    info["coarse_iters"] = coarse_iters
     info["thickness"] = gm_thickness(P)
     info["ropelength"] = gm_ropelength(P)
     return P, info
@@ -103,6 +116,38 @@ LINK_PRESETS = {
     'WHITEHEAD': 'aBaBa',
     'BORROMEAN': 'aBaBaB',
 }
+
+
+def _coarse_first(comps, samples, iters, solver_name, ratio=2,
+                  cap_frac=0.4):
+    """Coarse-to-fine continuation: tighten at reduced resolution, carry
+    the result up to full resolution, and let the caller finish there.
+
+    The expensive part of one of these flows is the REARRANGEMENT, not
+    the final polish -- strands have to slide past one another before
+    the shape can close in, and that motion takes about the same number
+    of iterations at any resolution while each iteration costs far less
+    at half of it.  Handover is a plain arclength resample, which places
+    every new vertex on the coarse polygon, so the transfer perturbs the
+    curve only by the corner-cutting of the new chords; the caller
+    re-checks the linking matrix after the fine stage regardless.
+
+    Measured against the flat flow at equal tolerance, it is worth
+    having but NOT worth defaulting to.  Wall clock: Torus(2,4) 1.09s
+    -> 0.85s, Whitehead 5.06 -> 4.16, Borromean 5.51 -> 4.78, Chain a
+    wash, and Hopf 1.39 -> 1.92 -- SLOWER, because a link that settles
+    in sixty iterations gains nothing from a cheap warm-up and pays for
+    it twice.  Converged energy is consistently 0.1-1.4% higher, though
+    ropelength lands within 0.3% either way and the topology gate has
+    never tripped.  Which case a seed falls into is not known before
+    running it, so this is a switch rather than a rule.
+
+    Returns (comps_at_full_resolution, coarse_info)."""
+    coarse = resample_loops(comps, max(32, int(samples // ratio)))
+    coarse, info = tighten_link(
+        coarse, iters=max(1, int(round(iters * cap_frac))),
+        solver=solver_name)
+    return resample_loops(coarse, samples), info
 
 
 def _chain_circles(k, spacing=1.4, samples=80):
@@ -122,16 +167,16 @@ def _chain_circles(k, spacing=1.4, samples=80):
     return comps
 
 
-def build_tight_link(seed, samples=80, iters=100, solver='AUTO',
-                     scale=1.0, chain_length=3):
+def build_tight_link(seed, samples=80, iters=300, solver='AUTO',
+                     scale=1.0, chain_length=3, coarse_to_fine=False):
     """Seed a link (preset braid word, custom braid word, or geometric
     chain), run the multi-component tangent-point flow, and normalize
     the whole link to the standard 2 m cube times `scale`.
 
-    `solver='AUTO'` uses the exact dense path up to 400 total samples
-    and the lagged-factorization path above (measured to agree with
-    dense on converged energy and to preserve topology; see
-    knots.tangent_point).  Returns (comps, info); info records the
+    `solver='AUTO'` takes the lagged-factorization path at every size
+    (measured to agree with the exact dense path on converged energy and
+    to preserve topology; see knots.tangent_point); pass 'DENSE' for the
+    reference path.  Returns (comps, info); info records the
     linking matrix before/after (they must be equal -- checked here),
     the link thickness/ropelength of the normalized link, and the flow
     record."""
@@ -149,10 +194,14 @@ def build_tight_link(seed, samples=80, iters=100, solver='AUTO',
         raise ValueError(f"{total} total samples is beyond the "
                          "supported range (1600)")
     if solver == 'AUTO':
-        solver_name = 'dense' if total <= 400 else 'lagged'
+        solver_name = 'lagged'
     else:
         solver_name = solver.lower()
     lk0, _dev0 = linking_matrix(comps)
+    coarse_iters = 0
+    if coarse_to_fine and iters > 0:
+        comps, cinfo = _coarse_first(comps, samples, iters, solver_name)
+        coarse_iters = cinfo["iters_run"]
     comps, info = tighten_link(comps, iters=iters, solver=solver_name)
     lk1, _dev1 = linking_matrix(comps)
     if not np.array_equal(lk0, lk1):
@@ -166,6 +215,7 @@ def build_tight_link(seed, samples=80, iters=100, solver='AUTO',
         comps = [Q * (scale / m) for Q in comps]
     info = dict(info)
     info["solver"] = solver_name
+    info["coarse_iters"] = coarse_iters
     info["linking_matrix"] = lk1.tolist()
     info["thickness"] = gm_thickness_link(comps)
     info["ropelength"] = gm_ropelength_link(comps)
@@ -209,16 +259,23 @@ if _IN_BLENDER:
                         "their inverses (used for Custom)")
         samples: IntProperty(
             name="Curve Samples", default=140, min=48, max=800,
-            description="Polyline resolution; up to 400 the exact "
-                        "dense solver runs, above that the "
-                        "accelerated (lagged-factorization) solver")
+            description="Polyline resolution of the rope")
         iters: IntProperty(
-            name="Tighten Iterations", default=60, min=0, max=500,
-            description="Tangent-point flow steps (the flow usually "
-                        "converges in a few tens; 0 shows the seed)")
+            name="Tighten Iterations", default=250, min=0, max=1000,
+            description="Ceiling on tangent-point flow steps; the flow "
+                        "stops on its own once tightening has "
+                        "plateaued, so raising this costs nothing for "
+                        "knots that settle early (0 shows the seed)")
         mirror: BoolProperty(
             name="Mirror", default=False,
             description="Mirror image of the knot")
+        coarse_to_fine: BoolProperty(
+            name="Coarse First", default=False,
+            description="Tighten at half resolution before finishing "
+                        "at full resolution: quicker on knots that "
+                        "need a long rearrangement, no help on the "
+                        "ones that settle quickly, and about 1 per "
+                        "cent looser in energy")
         output: EnumProperty(
             name="Output",
             items=[('BEZIER', "Bezier Curve", "auto-smoothed"),
@@ -249,7 +306,8 @@ if _IN_BLENDER:
             try:
                 P, info = build_tight_knot(
                     braid, self.samples, self.iters,
-                    mirror=self.mirror, scale=self.scale)
+                    mirror=self.mirror, scale=self.scale,
+                    coarse_to_fine=self.coarse_to_fine)
             except (ValueError, KeyError) as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -308,8 +366,8 @@ if _IN_BLENDER:
             lay.prop(self, 'knot')
             if self.knot == 'CUSTOM':
                 lay.prop(self, 'braid')
-            for k in ('samples', 'iters', 'mirror', 'output',
-                      'auto_radius'):
+            for k in ('samples', 'iters', 'coarse_to_fine', 'mirror',
+                      'output', 'auto_radius'):
                 lay.prop(self, k)
             if not self.auto_radius:
                 lay.prop(self, 'radius')
@@ -354,13 +412,23 @@ if _IN_BLENDER:
             description="Number of rings in the chain")
         samples: IntProperty(
             name="Samples Per Component", default=80, min=32, max=400,
-            description="Polyline resolution per component (larger "
-                        "links switch to the accelerated solver "
-                        "automatically)")
+            description="Polyline resolution per component")
         iters: IntProperty(
-            name="Tighten Iterations", default=100, min=0, max=500,
-            description="Tangent-point flow steps (links typically "
-                        "converge in a few tens; 0 shows the seed)")
+            name="Tighten Iterations", default=300, min=0, max=1000,
+            description="Ceiling on tangent-point flow steps; the flow "
+                        "stops on its own once tightening has "
+                        "plateaued, so raising this costs nothing for "
+                        "links that settle early (0 shows the seed). "
+                        "The Whitehead link is the slow one, needing "
+                        "about 270")
+        coarse_to_fine: BoolProperty(
+            name="Coarse First", default=False,
+            description="Tighten at half resolution before finishing "
+                        "at full resolution: quicker on links that "
+                        "need a long rearrangement (Whitehead, "
+                        "Borromean), no help on the ones that settle "
+                        "quickly, and about 1 per cent looser in "
+                        "energy")
         output: EnumProperty(
             name="Output",
             items=[('BEZIER', "Bezier Curve", "auto-smoothed"),
@@ -390,7 +458,8 @@ if _IN_BLENDER:
             try:
                 comps, info = build_tight_link(
                     seed, self.samples, self.iters,
-                    scale=self.scale, chain_length=self.chain_length)
+                    scale=self.scale, chain_length=self.chain_length,
+                    coarse_to_fine=self.coarse_to_fine)
             except (ValueError, KeyError, RuntimeError) as e:
                 self.report({'ERROR'}, str(e))
                 return {'CANCELLED'}
@@ -462,7 +531,8 @@ if _IN_BLENDER:
                 lay.prop(self, 'braid')
             if self.link == 'CHAIN':
                 lay.prop(self, 'chain_length')
-            for k in ('samples', 'iters', 'output', 'auto_radius'):
+            for k in ('samples', 'iters', 'coarse_to_fine', 'output',
+                      'auto_radius'):
                 lay.prop(self, k)
             if not self.auto_radius:
                 lay.prop(self, 'radius')
@@ -553,6 +623,32 @@ def _selftest():
     ok &= good
     print(f"tight_link: chain lk pattern {lkc[np.triu_indices(3, 1)].tolist()}"
           f", knot braid rejected {'OK' if good else 'FAIL'}")
+
+    # The flow must stop ITSELF.  Given a ceiling far above what the
+    # shape needs, it should report a plateau and leave budget unspent;
+    # the iteration property is a ceiling, not a target, and the raised
+    # defaults are only safe because of that.
+    comps, lp = build_tight_link('HOPF', samples=40, iters=400)
+    good = (lp["stop_reason"] == "plateau" and lp["iters_run"] < 400
+            and lp["E"] < lp["E0"])
+    ok &= good
+    print(f"tight_link: stops on plateau at {lp['iters_run']}/400 "
+          f"({lp['stop_reason']}) {'OK' if good else 'FAIL'}")
+
+    # The coarse-to-fine continuation hands the shape over by resampling
+    # at a different resolution, and the new chords cut corners -- so
+    # gate it on topology, not just on the energy going down.
+    comps, lcf = build_tight_link('HOPF', samples=48, iters=40,
+                                  coarse_to_fine=True)
+    lkcf = np.asarray(lcf["linking_matrix"])
+    X = np.concatenate(comps, axis=0)
+    good = (abs(int(lkcf[0, 1])) == 1 and lcf["coarse_iters"] > 0
+            and lcf["inter_gap_min"] > 0.0 and lcf["E"] < lcf["E0"]
+            and abs(float(np.abs(X).max()) - 1.0) < 1e-9)
+    ok &= good
+    print(f"tight_link: coarse-to-fine lk={int(lkcf[0, 1]):+d} kept "
+          f"({lcf['coarse_iters']} coarse + {lcf['iters_run']} fine) "
+          f"{'OK' if good else 'FAIL'}")
 
     print("RESULT:", "OK" if ok else "FAIL")
     if not ok:

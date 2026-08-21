@@ -1,0 +1,555 @@
+{
+  "schema_version": "0.2.0",
+  "slug": "biscribed-propello-tetrahedron",
+  "name": "Biscribed Propello Tetrahedron",
+  "alternate_names": [],
+  "families": [
+    "biscribed",
+    "convex",
+    "chiral"
+  ],
+  "ids": {
+    "uniform": null,
+    "wenninger": null,
+    "coxeter_clm": null,
+    "mccooey": "BiscribedPropelloTetrahedron",
+    "johnson": null,
+    "netlib": null,
+    "bowers": null,
+    "wikipedia": null,
+    "wolfram": null
+  },
+  "notation": {
+    "schlafli": null,
+    "wythoff": null,
+    "coxeter_diagram": null,
+    "conway": null,
+    "vertex_configuration": [],
+    "face_configuration": null
+  },
+  "symmetry": {
+    "schoenflies": "T",
+    "orbifold": "332",
+    "coxeter": "[3,3]+",
+    "hermann_mauguin": "23",
+    "order": 12,
+    "rotation_group": "T",
+    "rotation_order": 12,
+    "chiral": true,
+    "transitivity": {
+      "vertex": false,
+      "edge": false,
+      "face": false
+    },
+    "orbits": {
+      "vertices": 2,
+      "edges": 3,
+      "faces": 2
+    }
+  },
+  "combinatorics": {
+    "counts": {
+      "vertices": 16,
+      "edges": 30,
+      "faces": 16
+    },
+    "faces_by_type": [
+      {
+        "schlafli": "{3}",
+        "sides": 3,
+        "count": 4,
+        "regular": false
+      },
+      {
+        "schlafli": "{4}",
+        "sides": 4,
+        "count": 12,
+        "regular": false
+      }
+    ],
+    "vertex_types": [],
+    "euler_characteristic": 2,
+    "orientable": true,
+    "genus": 0,
+    "density": 1,
+    "convex": true,
+    "self_dual": false,
+    "dual": null,
+    "vertex_density": 1,
+    "convex_hull": {
+      "is_self": true,
+      "slug": null,
+      "counts": {
+        "vertices": 16,
+        "edges": 30,
+        "faces": 16
+      }
+    },
+    "dual_unbounded": false
+  },
+  "metrics": {
+    "normalization": "circumradius_1",
+    "edge_length": null,
+    "edge_lengths_uniform": false,
+    "circumradius": {
+      "value": 1.0000000000000002,
+      "exact": "1",
+      "source": "pslq"
+    },
+    "midradius": null,
+    "inradius": [
+      {
+        "face": "{3}",
+        "exact": null,
+        "value": 0.7979597195456817
+      },
+      {
+        "face": "{4}",
+        "exact": null,
+        "value": 0.7979597195456821
+      }
+    ],
+    "surface_area": {
+      "value": 10.081294830388078,
+      "exact": null
+    },
+    "volume": {
+      "value": 2.6814890651712684,
+      "exact": null
+    },
+    "isoperimetric_quotient": {
+      "value": 0.7936983657203485,
+      "exact": null
+    },
+    "dihedral_angles": [
+      {
+        "between": [
+          "{3}",
+          "{4}"
+        ],
+        "exact": null,
+        "degrees": 138.6211707844639,
+        "radians": 2.419395843158266
+      },
+      {
+        "between": [
+          "{4}",
+          "{4}"
+        ],
+        "exact": null,
+        "degrees": 117.07198444230967,
+        "radians": 2.043291590361881
+      },
+      {
+        "between": [
+          "{4}",
+          "{4}"
+        ],
+        "exact": null,
+        "degrees": 126.57820461584122,
+        "radians": 2.2092064318095135
+      }
+    ],
+    "angular_defect": [
+      {
+        "vertex_orbit": 0,
+        "degrees": 35.321898689545286,
+        "radians": 0.6164834301884357,
+        "exact": null
+      },
+      {
+        "vertex_orbit": 1,
+        "degrees": 48.22603377015159,
+        "radians": 0.8417030744671194,
+        "exact": null
+      }
+    ],
+    "solid_angle": [
+      {
+        "vertex_orbit": 0,
+        "steradians": 2.988282117495842
+      },
+      {
+        "vertex_orbit": 1,
+        "steradians": 2.808104401308344
+      }
+    ],
+    "biscribed": {
+      "is_biscribed": true,
+      "circumradius": 1.0000000000000002,
+      "inradius": 0.7979597195456817,
+      "ratio": 0.7979597195456815,
+      "has_biscribed_form": true,
+      "biscribed_form": null,
+      "note": "A biscribed solid: it trades the regular faces of its Archimedean namesake for concentric circum- and inspheres."
+    }
+  },
+  "geometry": {
+    "length_unit": "circumradius_1",
+    "centroid": [
+      0,
+      0,
+      0
+    ],
+    "orientation": "as produced by the biscribed solver, centred at the centroid",
+    "constants": {},
+    "vertices": [
+      [
+        0.577350269189626,
+        0.577350269189626,
+        0.577350269189626
+      ],
+      [
+        0.577350269189626,
+        -0.577350269189626,
+        -0.577350269189626
+      ],
+      [
+        -0.577350269189626,
+        0.577350269189626,
+        -0.577350269189626
+      ],
+      [
+        -0.577350269189626,
+        -0.577350269189626,
+        0.577350269189626
+      ],
+      [
+        0.893285911422363,
+        0.447594291856692,
+        -0.041226573367478
+      ],
+      [
+        0.447594291856692,
+        0.041226573367478,
+        -0.893285911422363
+      ],
+      [
+        0.041226573367478,
+        0.893285911422363,
+        -0.447594291856692
+      ],
+      [
+        -0.041226573367478,
+        0.893285911422363,
+        0.447594291856692
+      ],
+      [
+        -0.893285911422363,
+        0.447594291856692,
+        0.041226573367478
+      ],
+      [
+        -0.447594291856692,
+        0.041226573367478,
+        0.893285911422363
+      ],
+      [
+        0.447594291856692,
+        -0.041226573367478,
+        0.893285911422363
+      ],
+      [
+        0.041226573367478,
+        -0.893285911422363,
+        0.447594291856692
+      ],
+      [
+        0.893285911422363,
+        -0.447594291856692,
+        0.041226573367478
+      ],
+      [
+        -0.041226573367478,
+        -0.893285911422363,
+        -0.447594291856692
+      ],
+      [
+        -0.893285911422363,
+        -0.447594291856692,
+        -0.041226573367478
+      ],
+      [
+        -0.447594291856692,
+        -0.041226573367478,
+        -0.893285911422363
+      ]
+    ],
+    "vertices_exact": null,
+    "face_angles": [
+      {
+        "face_orbit": 0,
+        "sides": 3,
+        "regular": true,
+        "angles": [
+          {
+            "degrees": 60.00000000000001,
+            "radians": 1.0471975511965979,
+            "count": 3,
+            "exact": "acos(1/2)",
+            "source": "pslq"
+          }
+        ]
+      },
+      {
+        "face_orbit": 1,
+        "sides": 4,
+        "regular": false,
+        "angles": [
+          {
+            "degrees": 71.77396622984851,
+            "radians": 1.2526920279260776,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 84.1130168850758,
+            "radians": 1.4680490884301574,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 95.88698311492415,
+            "radians": 1.6735435651596346,
+            "count": 1,
+            "exact": null
+          },
+          {
+            "degrees": 108.22603377015157,
+            "radians": 1.8889006256637169,
+            "count": 1,
+            "exact": null
+          }
+        ]
+      }
+    ],
+    "faces": [
+      [
+        4,
+        5,
+        6
+      ],
+      [
+        4,
+        12,
+        1,
+        5
+      ],
+      [
+        5,
+        15,
+        2,
+        6
+      ],
+      [
+        6,
+        7,
+        0,
+        4
+      ],
+      [
+        7,
+        8,
+        9
+      ],
+      [
+        7,
+        6,
+        2,
+        8
+      ],
+      [
+        8,
+        14,
+        3,
+        9
+      ],
+      [
+        9,
+        10,
+        0,
+        7
+      ],
+      [
+        10,
+        11,
+        12
+      ],
+      [
+        10,
+        9,
+        3,
+        11
+      ],
+      [
+        11,
+        13,
+        1,
+        12
+      ],
+      [
+        12,
+        4,
+        0,
+        10
+      ],
+      [
+        13,
+        14,
+        15
+      ],
+      [
+        13,
+        11,
+        3,
+        14
+      ],
+      [
+        14,
+        8,
+        2,
+        15
+      ],
+      [
+        15,
+        5,
+        1,
+        13
+      ]
+    ],
+    "faces_wound": "each face is its true winding cycle; windings are coherent (every edge traversed once in each direction)"
+  },
+  "face_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        4,
+        8,
+        12
+      ],
+      [
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15
+      ]
+    ],
+    "polygon_type": {
+      "3": [
+        0,
+        4,
+        8,
+        12
+      ],
+      "4": [
+        1,
+        2,
+        3,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        13,
+        14,
+        15
+      ]
+    }
+  },
+  "vertex_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        3
+      ],
+      [
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15
+      ]
+    ]
+  },
+  "edge_groups": {
+    "symmetry_orbit": [
+      [
+        0,
+        1,
+        2,
+        12,
+        13,
+        14,
+        21,
+        22,
+        23,
+        27,
+        28,
+        29
+      ],
+      [
+        3,
+        6,
+        9,
+        16,
+        19,
+        25
+      ],
+      [
+        4,
+        5,
+        7,
+        8,
+        10,
+        11,
+        15,
+        17,
+        18,
+        20,
+        24,
+        26
+      ]
+    ]
+  },
+  "space_filling": null,
+  "construction": {
+    "generator": "math_art.biscribed_solids_generator",
+    "operator_id": "mesh.biscribed_solid_add",
+    "conway_from": null,
+    "wythoff_from": null
+  },
+  "provenance": {
+    "coordinates": "derived: biscribed solver -- the family's shape parameter(s) adjusted until every face-orbit plane distance is equal, giving concentric circum- and inspheres (r/R = 0.797959720)",
+    "sources": [
+      "D. McCooey, 'Biscribed (Non-)Chiral Solids', Visual Polyhedra (the enumeration followed here).",
+      "G. W. Hart, 'Canonical Polyhedra' (the propello and whirl Conway operators used as bases)."
+    ],
+    "cross_checked": [],
+    "verified": {
+      "euler": true,
+      "closed_manifold": true,
+      "faces_planar": true,
+      "radii_match_exact": true,
+      "dual_reciprocal": true,
+      "tolerance": 1e-09
+    }
+  }
+}
