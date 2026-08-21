@@ -56,6 +56,7 @@ References (mathematics implemented here):
     the compound of five cubes in the rhombic triacontahedron.
 """
 
+import itertools
 import math
 import random
 from collections import deque, defaultdict, Counter
@@ -693,6 +694,59 @@ _ENGINE_CACHE = {}
 # group its twelve face planes form a single orbit, and only the
 # tetrahedral subgroup splits them finely enough for these to appear.
 # --------------------------------------------------------------------------
+# Smith's units for the triakis tetrahedron
+# --------------------------------------------------------------------------
+# A. G. Smith, "Stellations of the triakis tetrahedron", Math. Gazette 49
+# (1965), 135-143, divides the arrangement into nine units A..I and gives
+# five rules for combining them.  His units are this engine's shells, one
+# for one, matched by size and by radius order:
+#
+#   A=a(1)  B=s01  C=s02(12)  D=s03(6)  E=s04(4)  F=s05  G=s06(12)
+#   H=s07(12)  I=s08
+#
+# The two CHIRAL units confirm it independently: Smith marks exactly F
+# and I "left and right", and the engine's only two chiral shells are
+# s05 and s08, both 24 = 2x12.
+#
+# One number needs care.  Smith's table totals 99 and the engine reports
+# 107 cells, which looks like a discrepancy and is not: his column counts
+# UNITS, the engine counts CELLS, and his unit B is 4 units of 3 cells.
+# Both come to 1+12+12+6+4+24+12+12+24 = 107.
+SMITH_UNITS = {'A': 'a', 'B': 's01', 'C': 's02', 'D': 's03', 'E': 's04',
+               'F': 's05', 'G': 's06', 'H': 's07', 'I': 's08'}
+
+#: Smith's combination rules, as predicates on a set of unit letters
+SMITH_RULES = (
+    ('C or D implies B', lambda s: not (s & {'C', 'D'}) or 'B' in s),
+    ('G or H implies F', lambda s: not (s & {'G', 'H'}) or 'F' in s),
+    ('E implies C', lambda s: 'E' not in s or 'C' in s),
+    ('F implies D', lambda s: 'F' not in s or 'D' in s),
+    ('I implies G or H', lambda s: 'I' not in s or bool(s & {'G', 'H'})),
+)
+
+#: the six Smith illustrates, "such that the external surface of each
+#: solid is as completely as possible covered in the next"
+SMITH_MAIN_LINE = ('A', 'AB', 'ABCD', 'ABCDEF', 'ABCDEFGH', 'ABCDEFGHI')
+
+
+def smith_stellations():
+    """Every unit set satisfying Smith's rules -- his 28."""
+    out = []
+    letters = 'BCDEFGHI'
+    for r in range(len(letters) + 1):
+        for c in itertools.combinations(letters, r):
+            s = set(c) | {'A'}
+            if all(fn(s) for _n, fn in SMITH_RULES):
+                out.append(''.join(sorted(s)))
+    return out
+
+
+def smith_code(units):
+    """Smith's unit letters -> a code this engine's build() accepts."""
+    return [SMITH_UNITS[u] for u in sorted(set(units))]
+
+
+# --------------------------------------------------------------------------
 # Pawley's volume letters for the rhombic triacontahedron
 # --------------------------------------------------------------------------
 # G. S. Pawley, "The 227 Triacontahedra", Geometriae Dedicata 4 (1975),
@@ -1140,6 +1194,11 @@ NAMED_PRESETS = {
          'the chiral shell s05 enters here'),
         ('fifth', 'Fifth stellation',
          ['a', 's01', 's02', 's03', 's04', 's05', 's06'], ''),
+        # Smith's fifth main-line solid, ABCDEFGH -- the cumulative
+        # sequence above skips it because it adds s06 and s07 together
+        ('smith_gh', 'Smith ABCDEFGH (main line)',
+         ['a', 's01', 's02', 's03', 's04', 's05', 's06', 's07'],
+         'fifth of Smith 1965 main-line sequence'),
         ('final', 'Final stellation', ['all'], ''),
     ],
     'dodecahedron_tetrahedral': [
@@ -1555,6 +1614,41 @@ def _verify_presets_distinct(ck):
     print()
 
 
+def _verify_smith_correspondence(ck):
+    """Smith's nine units are this engine's nine triakis shells.
+
+    Two independent checks.  First the CHIRALITY: Smith marks exactly two
+    units "left and right", F and I, and the engine finds exactly two
+    chiral shells, which must be the ones his letters map to.  Second the
+    COUNT: applying his five combination rules to subsets of his units
+    must reproduce his own total of 28, and must contain the six he
+    illustrates.
+    """
+    print('Smith 1965 correspondence (triakis tetrahedron)')
+    eng = stellations_of('triakis_tetrahedron')
+    by_label = {sh['label']: sh for sh in eng.shells}
+    ck(len(eng.shells) == len(SMITH_UNITS),
+       'nine units, nine shells (%d vs %d)'
+       % (len(SMITH_UNITS), len(eng.shells)))
+    chiral = {sh['label'] for sh in eng.shells if sh['chiral']}
+    want = {SMITH_UNITS['F'], SMITH_UNITS['I']}
+    ck(chiral == want,
+       "Smith's two 'left and right' units F, I are the chiral shells "
+       '%s (got %s)' % (sorted(want), sorted(chiral)))
+    sizes = {u: by_label[l]['size'] for u, l in SMITH_UNITS.items()}
+    ck(sizes['C'] == 12 and sizes['D'] == 6 and sizes['E'] == 4,
+       "Smith's C, D, E sizes 12, 6, 4 match (got %d, %d, %d)"
+       % (sizes['C'], sizes['D'], sizes['E']))
+    ck(sum(sizes.values()) == 107,
+       'cells total 107 both ways (got %d)' % sum(sizes.values()))
+    found = smith_stellations()
+    ck(len(found) == 28,
+       "Smith's rules give his 28 stellations (got %d)" % len(found))
+    ck(all(m in found for m in SMITH_MAIN_LINE),
+       'and include all six of his main-line solids')
+    print()
+
+
 def _verify_pawley_correspondence(ck):
     """The engine's RT shells line up with Pawley's volume letters.
 
@@ -1605,6 +1699,7 @@ def _self_test():
     _verify_rt(ck)
     _verify_presets_close(ck)
     _verify_presets_distinct(ck)
+    _verify_smith_correspondence(ck)
     _verify_pawley_correspondence(ck)
     print('=' * 74)
     if ck.fails:
