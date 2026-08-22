@@ -2050,6 +2050,8 @@ if _IN_BLENDER:
             default='', options={'HIDDEN', 'SKIP_SAVE'},
             description="Preset whose motif shape is in use, kept "
                         "when the preset label drops to Custom")
+        user_edited: BoolProperty(default=False,
+                                  options={'HIDDEN', 'SKIP_SAVE'})
 
         def _on_preset(self, context):
             if self.preset in PRESETS:
@@ -2064,7 +2066,10 @@ if _IN_BLENDER:
             # plane family of a preset should re-lay THAT preset's
             # part into the new family, which is the whole point of
             # being able to edit one.
-            if not self.syncing and self.preset != 'CUSTOM':
+            if self.syncing:
+                return
+            self.user_edited = True
+            if self.preset != 'CUSTOM':
                 self.preset = 'CUSTOM'
 
         preset: EnumProperty(
@@ -2219,6 +2224,22 @@ if _IN_BLENDER:
             # preset already wrote them through _on_preset, so forcing
             # them again here would undo any edit the moment the redo
             # panel re-ran -- which is what made a preset a mode.
+            #
+            # Except on the very first run. Blender does not call an
+            # update callback for a property's DEFAULT, so a fresh Add
+            # never fired _on_preset and the default preset was laid
+            # into whatever family the family enum defaulted to --
+            # Frabjous, a 30-plane part, arriving in the 60-plane
+            # family until you switched preset away and back. So sync
+            # here too, but only while the user has not touched
+            # anything: once they have, user_edited is set, the preset
+            # has already dropped to Custom, and this does nothing.
+            if self.preset in PRESETS and not self.user_edited:
+                g, f, _mb = PRESETS[self.preset]
+                self.syncing = True
+                self.group, self.family = g, f
+                self.syncing = False
+                self.base_motif = self.preset
             key = (self.preset if self.preset in PRESETS
                    else self.base_motif)
             motif_builder = (PRESETS[key][2] if key in PRESETS
