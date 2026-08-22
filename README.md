@@ -1,6 +1,6 @@
 # Math Art — Blender Extension
 
-A Blender **4.2+ / 5.x** extension bundling **125+ generators** for
+A Blender **4.2+ / 5.x** extension bundling **130+ generators** for
 mathematical sculpture: minimal surfaces, polyhedra (Platonic through
 Archimedean to four‑dimensional polytopes), knots and links, fractals,
 woven and tangled compounds, hyperbolic tilings, and much more. Each
