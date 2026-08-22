@@ -504,18 +504,48 @@ def _ribbon(path, widths):
 
 def demo_motif(d=1.0):
     """Default motif: a flat C-shaped ribbon arc in the local xy
-    plane -- with 3-fold in-plane replication this gives the curved
-    'rivers' of Hart's Twisted Rivers, Knotted Sea."""
+    plane, barbed into an arrow at one end -- with 3-fold in-plane
+    replication this gives the curved 'rivers' of Hart's Twisted
+    Rivers, Knotted Sea.
+
+    The arrowhead is not decoration.  Once the motif is replicated
+    into sixty planes the copies are all congruent, so a plain arc
+    gives the eye nothing to tell one end of a part from the other,
+    and nothing to tell a sculpture from its mirror image.  With one
+    end barbed you can follow a single part through the tangle, see
+    which end meets which vertex, and read the handedness off the
+    swirl direction at a glance -- which matters here, because these
+    groups are rotation groups and the mirror image is a different
+    sculpture, not the same one seen from behind.
+    """
     r_mid = 0.52 * d
     a0, a1 = math.radians(15), math.radians(200)
-    steps = 28
+    steps = 96
+    # Fractions of the way along the arc: where the shaft ends, where
+    # the barbs sit, and the point itself. The head is kept SHORT --
+    # under a tenth of the arc. A longer one looked right laid out
+    # flat but spanned close to thirty degrees of a curve that only
+    # turns 185, so the head bent round with the arc and read as a
+    # blob rather than a point.
+    t_neck, t_barb = 0.885, 0.915
+    w_shaft, w_head, w_tip = 0.052 * d, 0.125 * d, 0.003 * d
     path = []
     widths = []
     for i in range(steps + 1):
         t = i / steps
         ang = a0 + (a1 - a0) * t
         path.append((r_mid * cos(ang), r_mid * sin(ang)))
-        widths.append(0.075 * d * (0.25 + 0.75 * sin(pi * t)))
+        if t <= t_neck:
+            # shaft: the original swelling profile, scaled to the neck
+            u = t / t_neck
+            widths.append(w_shaft * (0.45 + 0.8 * sin(pi * u * 0.8)))
+        elif t <= t_barb:
+            widths.append(w_head)
+        else:
+            # straight taper to the point, so the two head edges are
+            # lines rather than curves and the tip is properly sharp
+            u = (t - t_barb) / (1.0 - t_barb)
+            widths.append(w_head + (w_tip - w_head) * u)
     return _ribbon(path, widths)
 
 
@@ -2007,7 +2037,38 @@ if _IN_BLENDER:
         bl_label = "Symmetric Sculpture"
         bl_options = {'REGISTER', 'UNDO'}
 
+        # Editing any of the geometry settings drops the preset label
+        # to Custom while KEEPING what is on screen, so a preset is a
+        # starting point you can edit rather than a mode that locks the
+        # rest of the panel. ``syncing`` stops the two update callbacks
+        # from calling each other: choosing a preset writes group and
+        # family, which would otherwise immediately reset the preset to
+        # Custom again.
+        syncing: BoolProperty(default=False,
+                              options={'HIDDEN', 'SKIP_SAVE'})
+        base_motif: StringProperty(
+            default='', options={'HIDDEN', 'SKIP_SAVE'},
+            description="Preset whose motif shape is in use, kept "
+                        "when the preset label drops to Custom")
+
+        def _on_preset(self, context):
+            if self.preset in PRESETS:
+                g, f, _mb = PRESETS[self.preset]
+                self.syncing = True
+                self.group, self.family = g, f
+                self.syncing = False
+                self.base_motif = self.preset
+
+        def _to_custom(self, context):
+            # base_motif is deliberately NOT cleared: changing the
+            # plane family of a preset should re-lay THAT preset's
+            # part into the new family, which is the whole point of
+            # being able to edit one.
+            if not self.syncing and self.preset != 'CUSTOM':
+                self.preset = 'CUSTOM'
+
         preset: EnumProperty(
+            update=_on_preset,
             name="Preset",
             items=[('FRABJOUS', "Frabjous",
                     "After Frabjous (2003): 30 S-shaped parts in "
@@ -2039,12 +2100,18 @@ if _IN_BLENDER:
                     "3-fold ones. Traced from the cutting template, "
                     "with both tips pinned on their symmetry axes"),
                    ('CUSTOM', "Custom",
-                    "Choose the group and plane family yourself; "
-                    "starts from the demo arc motif")],
+                    "Choose the group and plane family yourself. "
+                    "Starts from the demo arc motif -- barbed at one "
+                    "end so you can tell the two ends apart once it "
+                    "is replicated. Editing any setting of a preset "
+                    "switches to Custom and keeps that preset's "
+                    "motif, so a preset can be edited rather than "
+                    "only used as-is")],
             default='FRABJOUS',
             description="Sculpture setups after Hart's pieces; the "
                         "motif stays editable afterwards")
         group: EnumProperty(
+            update=_to_custom,
             name="Symmetry Group",
             items=[('ICOSA', "Icosahedral (60)",
                     "60 rotations -- Hart's usual choice"),
@@ -2054,6 +2121,7 @@ if _IN_BLENDER:
             description="Rotation group whose plane orbit the motif is "
                         "replicated across")
         family: EnumProperty(
+            update=_to_custom,
             name="Plane Family",
             items=_family_items, default=3,
             description="Which orbit of planes to fill. The list "
@@ -2139,6 +2207,7 @@ if _IN_BLENDER:
                         "material so the editable motif reads through "
                         "them; off = the sculpture's real material")
         motif_object: StringProperty(
+            update=_to_custom,
             name="Motif Object", default="",
             description="Mesh object to replicate instead of the "
                         "preset motif -- draw it flat on the XY "
@@ -2146,10 +2215,14 @@ if _IN_BLENDER:
                         "own motif")
 
         def execute(self, context):
-            motif_builder = demo_motif
-            if self.preset in PRESETS:
-                g, f, motif_builder = PRESETS[self.preset]
-                self.group, self.family = g, f
+            # group and family are whatever the panel says. Choosing a
+            # preset already wrote them through _on_preset, so forcing
+            # them again here would undo any edit the moment the redo
+            # panel re-ran -- which is what made a preset a mode.
+            key = (self.preset if self.preset in PRESETS
+                   else self.base_motif)
+            motif_builder = (PRESETS[key][2] if key in PRESETS
+                             else demo_motif)
             kind, family = self.group, self.family
             if (kind, family) not in _AXES:
                 family = 'P3'
@@ -2499,9 +2572,11 @@ if _IN_BLENDER:
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'preset')
-            if self.preset == 'CUSTOM':
-                lay.prop(self, 'group')
-                lay.prop(self, 'family')
+            # Always shown. Hiding these behind Custom meant a preset
+            # could not be used as a starting point: you could see what
+            # it had chosen only by leaving it.
+            lay.prop(self, 'group')
+            lay.prop(self, 'family')
             # what gets replicated, straight after which planes it is
             # replicated into
             lay.prop_search(self, 'motif_object', bpy.data, 'objects')
