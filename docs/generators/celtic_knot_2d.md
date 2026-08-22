@@ -67,17 +67,37 @@ Renders of each selectable option:
 
 <table>
 <tr>
-<td align="center"><img src="../images/variants/celtic_knot_2d__PLAIN.png" width="200"><br><sub>Plain Plait</sub></td>
-<td align="center"><img src="../images/variants/celtic_knot_2d__CROSSBREAK.png" width="200"><br><sub>Cross Break</sub></td>
-<td align="center"><img src="../images/variants/celtic_knot_2d__PANEL.png" width="200"><br><sub>Framed Panel</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__SQUARE.png" width="200"><br><sub>Square Grid</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__TRIANGLE.png" width="200"><br><sub>Triangular (3.3.3.3.3.3)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__HEX.png" width="200"><br><sub>Hexagonal (6.6.6)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/celtic_knot_2d__TRIQUETRA.png" width="200"><br><sub>Triquetra (Trinity)</sub></td>
-<td align="center"><img src="../images/variants/celtic_knot_2d__JOSEPHINE.png" width="200"><br><sub>Josephine Knot</sub></td>
-<td align="center"><img src="../images/variants/celtic_knot_2d__KELLS_BORDER.png" width="200"><br><sub>Kells Border</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__SNUBSQUARE.png" width="200"><br><sub>Snub Square (3.3.4.3.4)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__TRIHEX.png" width="200"><br><sub>Trihexagonal (3.6.3.6)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__TRUNCHEX.png" width="200"><br><sub>Truncated Hexagonal (3.12.12)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/celtic_knot_2d__CARPET.png" width="200"><br><sub>Carpet Page</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__SNUBHEX.png" width="200"><br><sub>Snub Hexagonal (3.3.3.3.6)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__ELONGTRI.png" width="200"><br><sub>Elongated Triangular (3.3.3.4.4)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__RHOMBITRIHEX.png" width="200"><br><sub>Rhombitrihexagonal (3.4.6.4)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/celtic_knot_2d__TRUNCSQ.png" width="200"><br><sub>Truncated Square (4.8.8)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__TRUNCTRIHEX.png" width="200"><br><sub>Truncated Trihexagonal (4.6.12)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__RHOMBILLE.png" width="200"><br><sub>Rhombille (dual 3.6.3.6)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/celtic_knot_2d__CAIRO.png" width="200"><br><sub>Cairo Pentagonal (dual 3.3.4.3.4)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__FLORET.png" width="200"><br><sub>Floret Pentagonal (dual 3.3.3.3.6)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__PRISMATIC.png" width="200"><br><sub>Prismatic Pentagonal (dual 3.3.3.4.4)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/celtic_knot_2d__DELTOIDAL.png" width="200"><br><sub>Deltoidal Trihexagonal (dual 3.4.6.4)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__TRIAKIS.png" width="200"><br><sub>Triakis Triangular (dual 3.12.12)</sub></td>
+<td align="center"><img src="../images/variants/celtic_knot_2d__TETRAKIS.png" width="200"><br><sub>Tetrakis Square (dual 4.8.8)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/celtic_knot_2d__KISRHOMBILLE.png" width="200"><br><sub>Kisrhombille (dual 4.6.12)</sub></td>
 </tr>
 </table>
 

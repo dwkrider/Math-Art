@@ -453,7 +453,9 @@ VARIANT_SELECTOR = {
     "mesh.voderberg_add": "kind",
     "mesh.spiral_tiling_add": "family",
     "mesh.islamic_pattern_add": "preset",
-    "mesh.celtic_knot_2d_add": "preset",
+    "mesh.celtic_knot_2d_add": "substrate",
+    "mesh.transpolyhedron_add": "seed",
+    "mesh.slide_together_add": "model",
     "mesh.over_under_screen_add": "weave",
     "mesh.knot_carpet_add": "source",
     "mesh.modular_screen_add": "preset",
@@ -506,6 +508,9 @@ VARIANT_GROUP_ONLY = {
 # Kwargs applied to every variant of a generator, where the gallery
 # needs a setting held constant to stay comparable.
 VARIANT_COMMON = {
+    # span the substrates with the 3D woven interlace (the operator's
+    # interlace_mode defaults to FLAT, but the woven form is what reads).
+    "mesh.celtic_knot_2d_add": dict(interlace_mode='WOVEN'),
     "mesh.minimal_surface_polyhedron_add": dict(mode='SADDLE'),
     "mesh.bubble_cluster_add": dict(separate=True, color=True),
     "mesh.sphericon_add": dict(coloring='NONE'),

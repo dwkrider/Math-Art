@@ -42,6 +42,47 @@ The twenty seeds built here are George Hart's named examples. Because a solid an
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/transpolyhedron__TETRA.png" width="200"><br><sub>Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__DODECA.png" width="200"><br><sub>Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/transpolyhedron__TT.png" width="200"><br><sub>Truncated Tetrahedron</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__CO.png" width="200"><br><sub>Cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__TC.png" width="200"><br><sub>Truncated Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/transpolyhedron__TO.png" width="200"><br><sub>Truncated Octahedron</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__RCO.png" width="200"><br><sub>Rhombicuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__TCO.png" width="200"><br><sub>Truncated Cuboctahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/transpolyhedron__SC.png" width="200"><br><sub>Snub Cube</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__ID.png" width="200"><br><sub>Icosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__TD.png" width="200"><br><sub>Truncated Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/transpolyhedron__TI.png" width="200"><br><sub>Truncated Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__RID.png" width="200"><br><sub>Rhombicosidodecahedron</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__TID.png" width="200"><br><sub>Truncated Icosidodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/transpolyhedron__SD.png" width="200"><br><sub>Snub Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__P5.png" width="200"><br><sub>Pentagonal Prism</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__P7.png" width="200"><br><sub>Heptagonal Prism</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/transpolyhedron__A5.png" width="200"><br><sub>Pentagonal Antiprism</sub></td>
+<td align="center"><img src="../images/variants/transpolyhedron__A7.png" width="200"><br><sub>Heptagonal Antiprism</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **In plain terms.** Think of a cube and its partner shape, the octahedron: put a dot at the centre of each of the cube's faces and connect them, and you get an octahedron. Every polyhedron has such a partner, its *dual*. Imagine slowly morphing the cube into its octahedron: the cube's square faces shrink toward little points while the octahedron's triangles swell up out of nowhere, and in between the two sets of faces there is a gap. A transpolyhedron is one snapshot of that morph, with the gap neatly filled by small rectangles — one for each edge of the original. Slide the dial and you slide along the morph, from "almost all cube" through a balanced mix to "almost all octahedron."

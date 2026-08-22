@@ -37,6 +37,48 @@ Hart described seven — 20 triangles, 30 squares, 12 pentagons, 12 decagons, 20
 
 <!-- /options -->
 
+## Variants
+
+Renders of each selectable option:
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/slide_together__T20.png" width="200"><br><sub>20 Triangles</sub></td>
+<td align="center"><img src="../images/variants/slide_together__S30.png" width="200"><br><sub>30 Squares</sub></td>
+<td align="center"><img src="../images/variants/slide_together__P12.png" width="200"><br><sub>12 Pentagons</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/slide_together__D12.png" width="200"><br><sub>12 Decagons</sub></td>
+<td align="center"><img src="../images/variants/slide_together__H20.png" width="200"><br><sub>20 Hexagons</sub></td>
+<td align="center"><img src="../images/variants/slide_together__SD12.png" width="200"><br><sub>12 Star Decagons {10/3}</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/slide_together__PG12.png" width="200"><br><sub>12 Pentagrams</sub></td>
+<td align="center"><img src="../images/variants/slide_together__T20B.png" width="200"><br><sub>20 Triangles (great ditrigonal)</sub></td>
+<td align="center"><img src="../images/variants/slide_together__H20B.png" width="200"><br><sub>20 Hexagons (icositruncated)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/slide_together__S30B.png" width="200"><br><sub>30 Squares (truncated dodecadodeca)</sub></td>
+<td align="center"><img src="../images/variants/slide_together__P12B.png" width="200"><br><sub>12 Pentagons (great dodecicosidodeca)</sub></td>
+<td align="center"><img src="../images/variants/slide_together__D12B.png" width="200"><br><sub>12 Decagons (great truncated icosidodeca)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/slide_together__P12C.png" width="200"><br><sub>12 Pentagons (rhombidodecadodeca)</sub></td>
+<td align="center"><img src="../images/variants/slide_together__PG12C.png" width="200"><br><sub>12 Pentagrams (rhombidodecadodeca)</sub></td>
+<td align="center"><img src="../images/variants/slide_together__P12D.png" width="200"><br><sub>12 Pentagons (great icosicosidodeca)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/slide_together__PG12D.png" width="200"><br><sub>12 Pentagrams (great icosicosidodeca)</sub></td>
+<td align="center"><img src="../images/variants/slide_together__D12C.png" width="200"><br><sub>12 Decagons (truncated great dodeca)</sub></td>
+<td align="center"><img src="../images/variants/slide_together__O6.png" width="200"><br><sub>6 Octagons (rhombicuboctahedron)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/slide_together__T8.png" width="200"><br><sub>8 Triangles (great rhombihexahedron)</sub></td>
+<td align="center"><img src="../images/variants/slide_together__S6.png" width="200"><br><sub>6 Squares (great rhombihexahedron)</sub></td>
+<td align="center"><img src="../images/variants/slide_together__P12F.png" width="200"><br><sub>12 Pentagons (icosahedron)</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **In plain terms.** Think of joining two stiff cards without glue: cut a slot halfway into each from opposite edges, then slide one card's slot into the other's — they wedge together at the crossing, the way the cardboard dividers in a wine box or an egg carton grip each other. A slide-together does this many times over. One regular polygon is copied into every "face plane" of a symmetric solid — the twenty faces of an icosahedron, say — with every copy tilted the same way, and wherever two copies cross they are slotted into one another. Because each panel is trapped by all its neighbours at once, the whole assembly holds itself together with nothing but the slots. Everything below works out *where* two panels cross and *how deep* to cut each slit so the pieces come to rest halfway.
