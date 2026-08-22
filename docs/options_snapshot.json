@@ -343,6 +343,7 @@
    "Curve Samples",
    "Tighten Iterations",
    "Mirror",
+   "Coarse First",
    "Output",
    "Radius From Thickness",
    "Tube Radius",
@@ -359,6 +360,7 @@
    "Chain Rings",
    "Samples Per Component",
    "Tighten Iterations",
+   "Coarse First",
    "Output",
    "Radius From Thickness",
    "Tube Radius",
@@ -426,14 +428,26 @@
  "mesh.algebraic_surface_add": {
   "label": "Algebraic Surface",
   "options": [
+   "Family",
    "Preset",
    "Resolution",
    "Scale",
-   "Kummer Mu",
-   "Fold n",
+   "Node Sharpness",
+   "Folds",
+   "k",
+   "k'",
+   "k''",
+   "k'''",
+   "Size",
    "Clip Override",
    "Thickness",
-   "Smooth Shading"
+   "Smooth Shading",
+   "Rim Curve",
+   "Rim Thickness",
+   "Rim Smoothing",
+   "Rim Profile",
+   "Rim Twist",
+   "Reeds"
   ]
  },
  "mesh.antoine_add": {
@@ -511,6 +525,9 @@
    "lambda",
    "Degree n",
    "r2 = c",
+   "d0",
+   "d1",
+   "d_inf",
    "Domain Extent",
    "U Resolution",
    "V Resolution",
@@ -677,6 +694,12 @@
    "Semi-Axis C",
    "Height Coefficient",
    "Crimp Coefficient",
+   "Swept Circle",
+   "Horn Length",
+   "Ring Radius",
+   "Tube Radius",
+   "Inversion Centre",
+   "Inversion Radius",
    "Resolution",
    "Smooth Shading",
    "Thickness",
@@ -684,14 +707,34 @@
   ]
  },
  "mesh.delaunay_surface_add": {
-  "label": "Delaunay Surface",
+  "label": "CMC Surfaces",
   "options": [
    "Surface",
+   "Output",
+   "Line Width",
+   "Conic Positions",
    "Neck Radius",
    "Periods",
+   "Lobes",
+   "Winding",
+   "Shape",
+   "Spin",
    "Profile Samples",
    "Revolution Samples",
    "Height",
+   "Preset",
+   "Necksize",
+   "Lobes",
+   "Covers",
+   "Second Bubble Lobes",
+   "Second Bubble Covers",
+   "Second Bubble Shift",
+   "Delaunay Periods",
+   "Surroundings",
+   "Bubble Shift",
+   "Bubble Spin",
+   "Closure l",
+   "Lobes",
    "Smooth Shading",
    "Scale"
   ]
@@ -880,9 +923,24 @@
   ]
  },
  "mesh.helical_surface_add": {
-  "label": "Helical Surface",
+  "label": "Swept Surface",
   "options": [
+   "Rim Curve",
+   "Rim Thickness",
+   "Rim Smoothing",
+   "Rim Profile",
+   "Rim Twist",
+   "Reeds",
    "Surface",
+   "Motion",
+   "Generatrix",
+   "Curve Size",
+   "Curve Ratio",
+   "Path Radius",
+   "Pitch",
+   "Tumble",
+   "Tumbles",
+   "Turns",
    "Torsion",
    "Extent",
    "Whorls",
@@ -898,7 +956,7 @@
   ]
  },
  "mesh.hopf_torus_add": {
-  "label": "Hopf Torus",
+  "label": "Hopf & Willmore Tori",
   "options": [
    "Curve on S^2",
    "Curve Samples",
@@ -907,8 +965,15 @@
    "Lobes",
    "Amplitude",
    "Ellipse Squash",
-   "Winding m",
-   "Lobes n",
+   "Winding",
+   "Lobes",
+   "Family",
+   "Lobes",
+   "Winding",
+   "Shape",
+   "Branch",
+   "Phase",
+   "High Wrap",
    "Shade Smooth",
    "Scale"
   ]
@@ -934,10 +999,17 @@
  "mesh.hyperbolic_surface_add": {
   "label": "Hyperbolic Surface",
   "options": [
+   "Rim Curve",
+   "Rim Thickness",
+   "Rim Smoothing",
+   "Rim Profile",
+   "Rim Twist",
+   "Reeds",
    "Surface",
    "U Resolution",
    "V Resolution",
    "Twist",
+   "Crossing Angle",
    "Breather b",
    "Waist / Girth",
    "Scale",
@@ -1263,6 +1335,12 @@
  "mesh.minimal_knot_span_add": {
   "label": "Knot to Knot Surface",
   "options": [
+   "Rim Curve",
+   "Rim Thickness",
+   "Rim Smoothing",
+   "Rim Profile",
+   "Rim Twist",
+   "Reeds",
    "Knot p",
    "Knot q",
    "Circle Radius",
@@ -1348,6 +1426,24 @@
    "Segments",
    "Sharp Edges",
    "Scale"
+  ]
+ },
+ "mesh.noble_faceting_add": {
+  "label": "Noble Faceting",
+  "options": [
+   "Vertices",
+   "Faceting",
+   "Face Orbits",
+   "Scale",
+   "Style",
+   "Border",
+   "Thickness",
+   "Strut Radius",
+   "Node Radius",
+   "Depth",
+   "Bevel Gap",
+   "Explode",
+   "Separate Meshes"
   ]
  },
  "mesh.notable_polyhedron_add": {
@@ -1455,9 +1551,21 @@
  "mesh.parametric_minimal_add": {
   "label": "Minimal Surfaces",
   "options": [
+   "Thickness",
+   "Clip to Sphere",
+   "Sphere Radius",
+   "Smooth Shading",
+   "Rim Curve",
+   "Rim Thickness",
+   "Rim Smoothing",
+   "Rim Profile",
+   "Rim Twist",
+   "Reeds",
    "Family",
    "Surface",
+   "Style",
    "Output",
+   "Equal Areas",
    "Resolution U",
    "Resolution V",
    "Control Points U",
@@ -1466,14 +1574,28 @@
    "Storeys",
    "Domain Radius",
    "Associate Angle",
-   "Scale"
+   "Scale",
+   "Cell Size",
+   "Strut Thickness",
+   "Smoothing",
+   "Keep Boundaries",
+   "Even Thickness"
   ]
  },
  "mesh.periodic_minimal_add": {
   "label": "Minimal Surfaces (Periodic)",
   "options": [
+   "Rim Curve",
+   "Rim Thickness",
+   "Rim Smoothing",
+   "Rim Profile",
+   "Rim Twist",
+   "Reeds",
    "Periodicity",
    "Surface",
+   "Arrangement",
+   "Modulus",
+   "Branch Value",
    "Output",
    "Resolution U",
    "Resolution V",
@@ -1490,6 +1612,9 @@
    "Resolution / Cell",
    "Cell Size",
    "Thickness",
+   "Clip to Sphere",
+   "Sphere Radius",
+   "Smooth Shading",
    "Level Offset",
    "Cell Aspect (c/a)",
    "Scale"
@@ -1582,8 +1707,12 @@
  "mesh.polyhedron_compound_add": {
   "label": "Polyhedron Compound",
   "options": [
+   "Family",
    "Compound",
    "Separate Objects",
+   "Turn",
+   "Sides",
+   "Repeat",
    "Scale"
   ]
  },
@@ -2055,7 +2184,21 @@
    "Disk Rings",
    "Scale",
    "Add Knot Curve",
+   "Rim Profile",
    "Knot Tube Radius"
+  ]
+ },
+ "mesh.slide_together_add": {
+  "label": "Slide-Together",
+  "options": [
+   "Model",
+   "Panel Size",
+   "Turn",
+   "Slit Width",
+   "Thickness",
+   "Colours",
+   "Separate Panels",
+   "Scale"
   ]
  },
  "mesh.snowflake_add": {
@@ -2114,6 +2257,24 @@
    "Scale",
    "Thickness",
    "Smooth Shading"
+  ]
+ },
+ "mesh.spherical_surface_add": {
+  "label": "Spherical Surface",
+  "options": [
+   "Surface",
+   "Profile a",
+   "End Trim",
+   "Segments",
+   "Rings",
+   "Scale",
+   "Smooth Shading",
+   "Rim Curve",
+   "Rim Thickness",
+   "Rim Smoothing",
+   "Rim Profile",
+   "Rim Twist",
+   "Reeds"
   ]
  },
  "mesh.sphericon_add": {
@@ -2330,7 +2491,11 @@
    "Surface",
    "Resolution U",
    "Resolution V",
+   "Projection Angle",
    "Genus",
+   "Cross-Caps k",
+   "Cross-Cap Size",
+   "Cross-Cap Pinch",
    "Half-Twists",
    "Strip Width",
    "Strip Thickness",
@@ -2345,6 +2510,24 @@
   "options": [
    "Solid",
    "Scale"
+  ]
+ },
+ "mesh.transpolyhedron_add": {
+  "label": "Transpolyhedron",
+  "options": [
+   "Seed",
+   "Blend",
+   "Colours",
+   "Scale",
+   "Style",
+   "Border",
+   "Thickness",
+   "Strut Radius",
+   "Node Radius",
+   "Depth",
+   "Bevel Gap",
+   "Explode",
+   "Separate Meshes"
   ]
  },
  "mesh.turks_head_add": {
@@ -2362,6 +2545,29 @@
    "Rope Sides",
    "Color Cords",
    "Scale"
+  ]
+ },
+ "mesh.twelve_faced_add": {
+  "label": "Twelve-Faced Solid",
+  "options": [
+   "Solid",
+   "Shape",
+   "Tilt",
+   "Skew",
+   "Zigzag",
+   "Waist",
+   "Height",
+   "Stretch",
+   "Scale",
+   "Style",
+   "Border",
+   "Thickness",
+   "Strut Radius",
+   "Node Radius",
+   "Depth",
+   "Bevel Gap",
+   "Explode",
+   "Separate Meshes"
   ]
  },
  "mesh.twisted_torus_add": {
@@ -2501,6 +2707,12 @@
  "mesh.woven_polyhedron_add": {
   "label": "Twisted Polyhedron",
   "options": [
+   "Rim Curve",
+   "Rim Thickness",
+   "Rim Smoothing",
+   "Rim Profile",
+   "Rim Twist",
+   "Reeds",
    "Outer Solid",
    "Frequency",
    "Inner Spin",
@@ -2520,6 +2732,28 @@
    "Smoothing",
    "Smooth Shading",
    "Scale"
+  ]
+ },
+ "mesh.zonish_add": {
+  "label": "Zonohedrification",
+  "options": [
+   "Mode",
+   "Seed",
+   "Zones From",
+   "Zone Length",
+   "Explode",
+   "Colour By",
+   "Separate Blocks",
+   "Scale",
+   "Style",
+   "Border",
+   "Thickness",
+   "Strut Radius",
+   "Node Radius",
+   "Depth",
+   "Bevel Gap",
+   "Explode",
+   "Separate Meshes"
   ]
  },
  "mesh.zonohedron_add": {
@@ -2564,6 +2798,12 @@
  "object.minimal_span": {
   "label": "Span Minimal Surface",
   "options": [
+   "Rim Curve",
+   "Rim Thickness",
+   "Rim Smoothing",
+   "Rim Profile",
+   "Rim Twist",
+   "Reeds",
    "Boundary Samples",
    "Interior Rings",
    "Solver Iterations",

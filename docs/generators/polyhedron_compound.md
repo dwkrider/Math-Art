@@ -32,6 +32,8 @@ The icosahedral ones are the striking members: **five tetrahedra**, whose union 
 
 Renders of each selectable option:
 
+### CLASSICAL
+
 <table>
 <tr>
 <td align="center"><img src="../images/variants/polyhedron_compound__STELLA.png" width="200"><br><sub>Stella Octangula (2 Tetrahedra)</sub></td>
@@ -41,10 +43,101 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/polyhedron_compound__5CUBES.png" width="200"><br><sub>Compound of 5 Cubes</sub></td>
 <td align="center"><img src="../images/variants/polyhedron_compound__5OCTA.png" width="200"><br><sub>Compound of 5 Octahedra</sub></td>
+</tr>
+</table>
+
+### DUAL_PAIR
+
+<table>
+<tr>
 <td align="center"><img src="../images/variants/polyhedron_compound__CUBE_OCTA.png" width="200"><br><sub>Cube + Octahedron</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__DODECA_ICOSA.png" width="200"><br><sub>Dodecahedron + Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__PRISM_DUAL.png" width="200"><br><sub>Prism + Dual Dipyramid</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/polyhedron_compound__DODECA_ICOSA.png" width="200"><br><sub>Dodecahedron + Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__ANTIPRISM_DUAL.png" width="200"><br><sub>Antiprism + Dual Trapezohedron</sub></td>
+</tr>
+</table>
+
+### INSCRIBED
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__INS_TETRA_CUBE.png" width="200"><br><sub>Tetrahedron Inscribed in Cube</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__INS_2TETRA_CUBE.png" width="200"><br><sub>Two Tetrahedra Inscribed in Cube</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__INS_CUBE_DODECA.png" width="200"><br><sub>Cube Inscribed in Dodecahedron</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__INS_TETRA_DODECA.png" width="200"><br><sub>Tetrahedron Inscribed in Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__INS_ICOSA_OCTA.png" width="200"><br><sub>Icosahedron Inscribed in Octahedron</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__INS_2ICOSA_OCTA.png" width="200"><br><sub>Two Icosahedra Inscribed in Octahedron</sub></td>
+</tr>
+</table>
+
+### AXES
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_2TETRA.png" width="200"><br><sub>2 Tetrahedra (Stella Octangula)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_5TETRA.png" width="200"><br><sub>5 Tetrahedra</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_5CUBES.png" width="200"><br><sub>5 Cubes</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_5OCTA.png" width="200"><br><sub>5 Octahedra</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_2DODECA.png" width="200"><br><sub>2 Dodecahedra (Octahedral)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_2ICOSA.png" width="200"><br><sub>2 Icosahedra (Octahedral)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_5DODECA.png" width="200"><br><sub>5 Dodecahedra</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_12DODECA.png" width="200"><br><sub>12 Dodecahedra (Octahedral)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_12ICOSA.png" width="200"><br><sub>12 Icosahedra (Octahedral)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_12CUBES.png" width="200"><br><sub>12 Cubes (Octahedral)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_12TETRA.png" width="200"><br><sub>12 Tetrahedra (Octahedral)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_12ICOSA_4.png" width="200"><br><sub>12 Icosahedra (4-fold)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_30CUBES.png" width="200"><br><sub>30 Cubes (Icosahedral)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_60DODECA.png" width="200"><br><sub>60 Dodecahedra (Icosahedral)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_6DODECA.png" width="200"><br><sub>6 Dodecahedra</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_5ICOSA.png" width="200"><br><sub>5 Icosahedra</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_6ICOSA.png" width="200"><br><sub>6 Icosahedra</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_10ICOSA.png" width="200"><br><sub>10 Icosahedra</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__H_10DODECA.png" width="200"><br><sub>10 Dodecahedra</sub></td>
+</tr>
+</table>
+
+### HART_CUBES
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_12CUBES_FREE.png" width="200"><br><sub>Hart: 12 Cubes, central freedom</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_24CUBES.png" width="200"><br><sub>Hart: 24 Cubes, central freedom</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_60CUBES.png" width="200"><br><sub>Hart: 60 Cubes, central freedom</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_6CUBES_C4.png" width="200"><br><sub>Hart: 6 Cubes, 4-fold (free)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_3CUBES.png" width="200"><br><sub>Hart: 3 Cubes</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_8CUBES.png" width="200"><br><sub>Hart: 8 Cubes (free)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_4CUBES.png" width="200"><br><sub>Hart: 4 Cubes (Bakos')</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_12CUBES_C2.png" width="200"><br><sub>Hart: 12 Cubes (free)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_6CUBES_D2.png" width="200"><br><sub>Hart: 6 Cubes, 2-fold</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_20CUBES.png" width="200"><br><sub>Hart: 20 Cubes (free)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_30CUBES_C2.png" width="200"><br><sub>Hart: 30 Cubes (free)</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_15CUBES.png" width="200"><br><sub>Hart: 15 Cubes</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_10CUBES.png" width="200"><br><sub>Hart: 10 Cubes</sub></td>
+<td align="center"><img src="../images/variants/polyhedron_compound__HC_4CUBES_T.png" width="200"><br><sub>Hart: 4 Cubes, tetrahedral (free)</sub></td>
 </tr>
 </table>
 

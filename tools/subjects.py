@@ -386,7 +386,6 @@ VARIANT_SELECTOR = {
     "mesh.conway_add": "example",
     "mesh.polytwister_add": "shape",
     "mesh.toroidal_polyhedron_add": "solid",
-    "mesh.polyhedron_compound_add": "compound",
     "mesh.notable_polyhedron_add": "solid",
     "mesh.biscribed_solid_add": "solid",
     "mesh.icosahedron_stellation_add": "solid",
@@ -491,6 +490,7 @@ VARIANT_GROUP = {
     "mesh.parametric_minimal_add": ("family", "surface"),
     "mesh.periodic_minimal_add": ("periodicity", "surface"),
     "mesh.algebraic_surface_add": ("family", "preset"),
+    "mesh.polyhedron_compound_add": ("family", "compound"),
 }
 
 # Groups to render, where a two-level selector reaches further than the
@@ -1201,6 +1201,15 @@ if _IN_BLENDER:
         return {fam: _pairs(items)
                 for fam, items in m._PRESET_ITEMS_FAM.items()}
 
+    def _groups_compound():
+        # Compound is a two-stage family -> compound selector, exactly
+        # like uniform/canonical above; its catalogue is the authority
+        # (both enums are dynamic callbacks).  compound_families() is
+        # [(family key, heading, [(compound key, label), ...]), ...].
+        m = _mod("compound_generator")
+        return {key: _pairs(rows)
+                for key, _head, rows in m._cmp.compound_families()}
+
     GROUP_RESOLVER = {
         "mesh.regular_solid_add": _groups_regular_solid,
         "mesh.uniform_polyhedron_add":
@@ -1210,6 +1219,7 @@ if _IN_BLENDER:
         "mesh.parametric_minimal_add": _groups_parametric,
         "mesh.periodic_minimal_add": _groups_periodic,
         "mesh.algebraic_surface_add": _groups_algebraic,
+        "mesh.polyhedron_compound_add": _groups_compound,
     }
 
     def _static_enum_items(op, prop):

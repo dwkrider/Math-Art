@@ -50,7 +50,12 @@ Renders of each selectable option:
 <tr>
 <td align="center"><img src="../images/variants/general_stellation__icosahedron.png" width="200"><br><sub>Icosahedron</sub></td>
 <td align="center"><img src="../images/variants/general_stellation__dodecahedron.png" width="200"><br><sub>Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/general_stellation__dodecahedron_tetrahedral.png" width="200"><br><sub>Dodecahedron Tetrahedral</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/general_stellation__cuboctahedron.png" width="200"><br><sub>Cuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/general_stellation__rhombic_dodecahedron.png" width="200"><br><sub>Rhombic Dodecahedron</sub></td>
+<td align="center"><img src="../images/variants/general_stellation__triakis_tetrahedron.png" width="200"><br><sub>Triakis Tetrahedron</sub></td>
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/general_stellation__rhombic_triacontahedron.png" width="200"><br><sub>Rhombic Triacontahedron</sub></td>

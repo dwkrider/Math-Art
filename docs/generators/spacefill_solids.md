@@ -51,10 +51,12 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/spacefill_solids__RHOMBDODEC.png" width="200"><br><sub>Rhombic Dodecahedra</sub></td>
-<td align="center"><img src="../images/variants/spacefill_solids__OBTET.png" width="200"><br><sub>Obtetrahedrille</sub></td>
-<td align="center"><img src="../images/variants/spacefill_solids__SPIRAL3.png" width="200"><br><sub>Rhombic Spirallohedra (3-Armed)</sub></td>
+<td align="center"><img src="../images/variants/spacefill_solids__HEXPRISM.png" width="200"><br><sub>Hexagonal Prisms</sub></td>
+<td align="center"><img src="../images/variants/spacefill_solids__ELONGDODEC.png" width="200"><br><sub>Elongated Dodecahedra</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/spacefill_solids__OBTET.png" width="200"><br><sub>Obtetrahedrille</sub></td>
+<td align="center"><img src="../images/variants/spacefill_solids__SPIRAL3.png" width="200"><br><sub>Rhombic Spirallohedra (3-Armed)</sub></td>
 <td align="center"><img src="../images/variants/spacefill_solids__SPIRAL4.png" width="200"><br><sub>Rhombic Spirallohedra (4-Armed)</sub></td>
 </tr>
 </table>

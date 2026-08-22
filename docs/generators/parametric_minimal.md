@@ -58,6 +58,9 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/parametric_minimal__CATHEL.png" width="200"><br><sub>Catenoid-Helicoid (associate)</sub></td>
 <td align="center"><img src="../images/variants/parametric_minimal__RICHMOND_K.png" width="200"><br><sub>Richmond (generalized, g = z^k)</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/parametric_minimal__JEENER.png" width="200"><br><sub>Jeener's Flower</sub></td>
+</tr>
 </table>
 
 ### Tori (genus 1)

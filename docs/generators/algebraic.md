@@ -38,6 +38,8 @@ Classical **algebraic surfaces** — the shapes carved out by a single polynomia
 
 Renders of each selectable option:
 
+### Classical
+
 <table>
 <tr>
 <td align="center"><img src="../images/variants/algebraic__CLEBSCH.png" width="200"><br><sub>Clebsch Diagonal Cubic</sub></td>
@@ -56,6 +58,184 @@ Renders of each selectable option:
 </tr>
 <tr>
 <td align="center"><img src="../images/variants/algebraic__MONKEY.png" width="200"><br><sub>Monkey Saddle (n-fold)</sub></td>
+</tr>
+</table>
+
+### Hauser Gallery
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CALYX.png" width="200"><br><sub>Calyx</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CALYPSO.png" width="200"><br><sub>Calypso</sub></td>
+<td align="center"><img src="../images/variants/algebraic__COLUMPIUS.png" width="200"><br><sub>Columpius</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CUBE.png" width="200"><br><sub>Cube</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DATTEL.png" width="200"><br><sub>Dattel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DAISY.png" width="200"><br><sub>Daisy</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__DISTEL.png" width="200"><br><sub>Distel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DURCHBLICK.png" width="200"><br><sub>Durchblick</sub></td>
+<td align="center"><img src="../images/variants/algebraic__EISTUETE.png" width="200"><br><sub>Eistuete</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__EVE.png" width="200"><br><sub>Eve</sub></td>
+<td align="center"><img src="../images/variants/algebraic__FLIRT.png" width="200"><br><sub>Flirt</sub></td>
+<td align="center"><img src="../images/variants/algebraic__GEISHA.png" width="200"><br><sub>Geisha</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__HARLEKIN.png" width="200"><br><sub>Harlekin</sub></td>
+<td align="center"><img src="../images/variants/algebraic__HELIX.png" width="200"><br><sub>Helix</sub></td>
+<td align="center"><img src="../images/variants/algebraic__HERZ.png" width="200"><br><sub>Herz</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__HIMMEL_UND_HOELLE.png" width="200"><br><sub>Himmel und Hoelle</sub></td>
+<td align="center"><img src="../images/variants/algebraic__KOLIBRI.png" width="200"><br><sub>Kolibri</sub></td>
+<td align="center"><img src="../images/variants/algebraic__LEOPOLD.png" width="200"><br><sub>Leopold</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__OCTDONG.png" width="200"><br><sub>Octdong</sub></td>
+<td align="center"><img src="../images/variants/algebraic__PLOP.png" width="200"><br><sub>Plop</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SEEPFERDCHEN.png" width="200"><br><sub>Seepferdchen</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__SOFA.png" width="200"><br><sub>Sofa</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SOLITUDE.png" width="200"><br><sub>Solitude</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SUESS.png" width="200"><br><sub>Suess</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TANZ.png" width="200"><br><sub>Tanz</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TAUBE.png" width="200"><br><sub>Taube</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SPITZ.png" width="200"><br><sub>Spitz</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TOBEL.png" width="200"><br><sub>Tobel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VIS_A_VIS.png" width="200"><br><sub>Vis a vis</sub></td>
+<td align="center"><img src="../images/variants/algebraic__WEDELN.png" width="200"><br><sub>Wedeln</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__WINDKANAL.png" width="200"><br><sub>Windkanal</sub></td>
+<td align="center"><img src="../images/variants/algebraic__XANO.png" width="200"><br><sub>Xano</sub></td>
+<td align="center"><img src="../images/variants/algebraic__ZITRUS.png" width="200"><br><sub>Zitrus</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__DROMEDAR.png" width="200"><br><sub>Dromedar</sub></td>
+<td align="center"><img src="../images/variants/algebraic__ZEPPELIN.png" width="200"><br><sub>Zeppelin</sub></td>
+<td align="center"><img src="../images/variants/algebraic__MICHELANGELO.png" width="200"><br><sub>Michelangelo</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__STERN.png" width="200"><br><sub>Stern</sub></td>
+<td align="center"><img src="../images/variants/algebraic__LIMAO.png" width="200"><br><sub>Limao</sub></td>
+<td align="center"><img src="../images/variants/algebraic__WHITNEY.png" width="200"><br><sub>Whitney</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__BUGGLE.png" width="200"><br><sub>Buggle</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DIABOLO.png" width="200"><br><sub>Diabolo</sub></td>
+<td align="center"><img src="../images/variants/algebraic__DULLO.png" width="200"><br><sub>Dullo</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__MIAU.png" width="200"><br><sub>Miau</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TRICHTER.png" width="200"><br><sub>Trichter</sub></td>
+<td align="center"><img src="../images/variants/algebraic__NEPALI.png" width="200"><br><sub>Nepali</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__PILZCHEN.png" width="200"><br><sub>Pilzchen</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SUBWAY.png" width="200"><br><sub>Subway</sub></td>
+<td align="center"><img src="../images/variants/algebraic__POLSTERZIPF.png" width="200"><br><sub>Polsterzipf</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CRIXXI.png" width="200"><br><sub>Crixxi</sub></td>
+<td align="center"><img src="../images/variants/algebraic__BERG.png" width="200"><br><sub>Berg</sub></td>
+<td align="center"><img src="../images/variants/algebraic__GUPF.png" width="200"><br><sub>Gupf</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__KEGEL.png" width="200"><br><sub>Kegel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__WIGWAM.png" width="200"><br><sub>Wigwam</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TUELLE.png" width="200"><br><sub>Tuelle</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__PIPE.png" width="200"><br><sub>Pipe</sub></td>
+<td align="center"><img src="../images/variants/algebraic__FANFARE.png" width="200"><br><sub>Fanfare</sub></td>
+<td align="center"><img src="../images/variants/algebraic__KREUZ.png" width="200"><br><sub>Kreuz</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__SPINDEL.png" width="200"><br><sub>Spindel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TWILIGHT.png" width="200"><br><sub>Twilight</sub></td>
+<td align="center"><img src="../images/variants/algebraic__UFO.png" width="200"><br><sub>Ufo</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__ZECK.png" width="200"><br><sub>Zeck</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SATTEL.png" width="200"><br><sub>Sattel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__SCHNEEFLOCKE.png" width="200"><br><sub>Schneeflocke</sub></td>
+</tr>
+</table>
+
+### Record Nodal Surfaces
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__LABS.png" width="200"><br><sub>Labs Septic (99 nodes)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__ENDRASS.png" width="200"><br><sub>Endrass Octic (168 nodes)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__BARTH_DECIC.png" width="200"><br><sub>Barth Decic (345 nodes)</sub></td>
+</tr>
+</table>
+
+### Named Implicit Surfaces
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__VMM_PRETZEL.png" width="200"><br><sub>Pretzel</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VMM_BRETZEL2.png" width="200"><br><sub>Bretzel2</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VMM_BRETZEL5.png" width="200"><br><sub>Bretzel5</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__VMM_PILZ.png" width="200"><br><sub>Pilz Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VMM_ORTHOCIRCLES.png" width="200"><br><sub>Orthocircles</sub></td>
+<td align="center"><img src="../images/variants/algebraic__VMM_DECOCUBE.png" width="200"><br><sub>Deco-Cube</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__VMM_JOIN2TORI.png" width="200"><br><sub>Join of Two Tori</sub></td>
+</tr>
+</table>
+
+### Encyclopedia Surfaces
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__CARTAN.png" width="200"><br><sub>Cartan's Umbrella</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CASSINI.png" width="200"><br><sub>Cassini Surface</sub></td>
+<td align="center"><img src="../images/variants/algebraic__CASSINI_REV.png" width="200"><br><sub>Cassini Surface of Revolution</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TITEICA.png" width="200"><br><sub>Titeica Surface</sub></td>
+</tr>
+</table>
+
+### Goursat (Octahedral)
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__OCT_CUBOCTA.png" width="200"><br><sub>Cuboctahedral Quartic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__OCT_CUBOCTA_NODES.png" width="200"><br><sub>Quartic with 12 Cuboctahedral Nodes</sub></td>
+<td align="center"><img src="../images/variants/algebraic__OCT_OCTA_EDGES.png" width="200"><br><sub>Octahedron-Edge Quartic</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__OCT_CUBE_DIAGONALS.png" width="200"><br><sub>Cube-Diagonal Quartic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__OCT_CUBE_EDGES.png" width="200"><br><sub>Cube-Edge Quartic</sub></td>
+<td align="center"><img src="../images/variants/algebraic__OCT_CUBE_MEDIANS.png" width="200"><br><sub>Cube-Median Quartic</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__OCT_TRIANGLES.png" width="200"><br><sub>Cuboctahedral Triangle Quartic</sub></td>
+</tr>
+</table>
+
+### Goursat (Tetrahedral)
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/algebraic__TET_TITEICA.png" width="200"><br><sub>Titeica Cubic (k' = 0)</sub></td>
+<td align="center"><img src="../images/variants/algebraic__TET_FOUR_SHEETS.png" width="200"><br><sub>Tetrahedral Cubic (k < 0)</sub></td>
 </tr>
 </table>
 

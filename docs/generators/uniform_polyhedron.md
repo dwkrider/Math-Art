@@ -196,6 +196,14 @@ Renders of each selectable option:
 </tr>
 </table>
 
+### SKILLING
+
+<table>
+<tr>
+<td align="center"><img src="../images/variants/uniform_polyhedron__76.png" width="200"><br><sub>U76  Great Disnub Dirhombidodecahedron</sub></td>
+</tr>
+</table>
+
 ## How it works
 
 **In plain terms.** Fold three mirrors into a triangular kaleidoscope and drop a single bead inside. The mirrors multiply the bead into a symmetric spray of copies, and if you join the copies up you get a polyhedron — *every* vertex looks the same, because each is just a reflected image of that one bead. Slide the bead to a different spot in the triangle and you get a different solid: near a corner, a truncated shape; dead centre, a rounder one; and so on. That is the whole trick behind this generator. The only twist is that a flat kaleidoscope tiles the plane, whereas we want a *closed* solid, so the mirror-triangle is drawn on the surface of a sphere instead of on paper — and only a handful of triangle shapes tile a sphere exactly, which is exactly why there are only finitely many of these solids. Let a mirror-triangle's corners be "sharper than they look" (a star-shaped triangle that wraps around more than once) and you pick up the spiky star members too.

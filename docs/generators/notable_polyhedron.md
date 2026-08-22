@@ -59,12 +59,21 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/notable_polyhedron__ASSOCIAHEDRON.png" width="200"><br><sub>Associahedron (3D, K5)</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="../images/variants/notable_polyhedron__KLEIN.png" width="200"><br><sub>Klein Regular Map {3,7} (genus 3)</sub></td>
-<td align="center"><img src="../images/variants/notable_polyhedron__MAP64.png" width="200"><br><sub>Regular Map {6,4} (genus 6)</sub></td>
-<td align="center"><img src="../images/variants/notable_polyhedron__MAP46.png" width="200"><br><sub>Regular Map {4,6} (genus 6)</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__SHARP.png" width="200"><br><sub>Sharpohedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__TETRA_STELLATED_ICOSA.png" width="200"><br><sub>Tetrahedrally Stellated Icosahedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__TETRA_TRUNCATED_DODECA.png" width="200"><br><sub>Tetrahedrally Truncated Dodecahedron</sub></td>
 </tr>
 <tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__SELF_DUAL_16.png" width="200"><br><sub>Self-Dual 16-Hedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__PSEUDO_GRCO.png" width="200"><br><sub>Pseudo Great Rhombicuboctahedron</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__KLEIN.png" width="200"><br><sub>Klein Regular Map {3,7} (genus 3)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/notable_polyhedron__MAP64.png" width="200"><br><sub>Regular Map {6,4} (genus 6)</sub></td>
+<td align="center"><img src="../images/variants/notable_polyhedron__MAP46.png" width="200"><br><sub>Regular Map {4,6} (genus 6)</sub></td>
 <td align="center"><img src="../images/variants/notable_polyhedron__HEPTDODEC_A.png" width="200"><br><sub>Heptagonal Dodecahedron A (genus 2)</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/notable_polyhedron__HEPTDODEC_C.png" width="200"><br><sub>Heptagonal Dodecahedron C (genus 2)</sub></td>
 </tr>
 </table>

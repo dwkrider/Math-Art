@@ -46,8 +46,11 @@ Renders of each selectable option:
 
 <table>
 <tr>
+<td align="center"><img src="../images/variants/helical_surface__DARBOUX.png" width="200"><br><sub>Darboux Surface</sub></td>
 <td align="center"><img src="../images/variants/helical_surface__HYPERBOLIC_HELICOID.png" width="200"><br><sub>Hyperbolic Helicoid</sub></td>
 <td align="center"><img src="../images/variants/helical_surface__SEASHELL.png" width="200"><br><sub>Seashell</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="../images/variants/helical_surface__CORKSCREW.png" width="200"><br><sub>Corkscrew</sub></td>
 </tr>
 </table>

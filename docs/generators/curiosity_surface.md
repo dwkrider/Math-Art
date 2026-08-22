@@ -44,6 +44,21 @@ Renders of each selectable option:
 <td align="center"><img src="../images/variants/curiosity_surface__PAPERBAG.png" width="200"><br><sub>Paper Bag Surface</sub></td>
 <td align="center"><img src="../images/variants/curiosity_surface__TRIHYPERBOLOID.png" width="200"><br><sub>Trihyperboloid</sub></td>
 </tr>
+<tr>
+<td align="center"><img src="../images/variants/curiosity_surface__BOHEMIAN.png" width="200"><br><sub>Bohemian Dome</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__ASTROIDAL.png" width="200"><br><sub>Astroidal Ellipsoid</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__GABRIEL.png" width="200"><br><sub>Gabriel's Horn</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_RING.png" width="200"><br><sub>Dupin Cyclide (ring)</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_HORN.png" width="200"><br><sub>Dupin Cyclide (horn)</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__CYCLIDE_SPINDLE.png" width="200"><br><sub>Dupin Cyclide (spindle)</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="../images/variants/curiosity_surface__TANNERY_PEAR.png" width="200"><br><sub>Tannery's Pear</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__TANNERY_HOURGLASS.png" width="200"><br><sub>Tannery's Hourglass</sub></td>
+<td align="center"><img src="../images/variants/curiosity_surface__ZOLL.png" width="200"><br><sub>Zoll's Surface</sub></td>
+</tr>
 </table>
 
 ## How it works

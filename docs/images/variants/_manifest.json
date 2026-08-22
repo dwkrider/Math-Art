@@ -11,6 +11,42 @@
   [
    "TRIHYPERBOLOID",
    "Trihyperboloid"
+  ],
+  [
+   "BOHEMIAN",
+   "Bohemian Dome"
+  ],
+  [
+   "ASTROIDAL",
+   "Astroidal Ellipsoid"
+  ],
+  [
+   "GABRIEL",
+   "Gabriel's Horn"
+  ],
+  [
+   "CYCLIDE_RING",
+   "Dupin Cyclide (ring)"
+  ],
+  [
+   "CYCLIDE_HORN",
+   "Dupin Cyclide (horn)"
+  ],
+  [
+   "CYCLIDE_SPINDLE",
+   "Dupin Cyclide (spindle)"
+  ],
+  [
+   "TANNERY_PEAR",
+   "Tannery's Pear"
+  ],
+  [
+   "TANNERY_HOURGLASS",
+   "Tannery's Hourglass"
+  ],
+  [
+   "ZOLL",
+   "Zoll's Surface"
   ]
  ],
  "geodesic": [
@@ -157,6 +193,11 @@
   [
    "RICHMOND_K",
    "Richmond (generalized, g = z^k)",
+   "Classical"
+  ],
+  [
+   "JEENER",
+   "Jeener's Flower",
    "Classical"
   ],
   [
@@ -619,7 +660,32 @@
   [
    "PGD",
    "Schwarz P-Gyroid-D (exact, Bonnet angle)",
-   "Triply Periodic (TPMS)"
+   "Exact (Weierstrass)"
+  ],
+  [
+   "H",
+   "Schwarz H (exact, hexagonal)",
+   "Exact (Weierstrass)"
+  ],
+  [
+   "CLP_HANDLE",
+   "CLP with Handle (exact, genus 4)",
+   "Exact (Weierstrass)"
+  ],
+  [
+   "LIDINOID_1",
+   "Lidinoid (exact)",
+   "Exact (Weierstrass)"
+  ],
+  [
+   "RPD",
+   "rPD deformation (exact, rhombohedral)",
+   "Exact (Weierstrass)"
+  ],
+  [
+   "CLP",
+   "Schwarz CLP (exact)",
+   "Exact (Deformable)"
   ]
  ],
  "seifert": [
@@ -671,43 +737,483 @@
  "algebraic": [
   [
    "CLEBSCH",
-   "Clebsch Diagonal Cubic"
+   "Clebsch Diagonal Cubic",
+   "Classical"
   ],
   [
    "CAYLEY",
-   "Cayley Nodal Cubic"
+   "Cayley Nodal Cubic",
+   "Classical"
   ],
   [
    "KUMMER",
-   "Kummer Quartic"
+   "Kummer Quartic",
+   "Classical"
   ],
   [
    "BARTH",
-   "Barth Sextic"
+   "Barth Sextic",
+   "Classical"
   ],
   [
    "TOGLIATTI",
-   "Togliatti Quintic"
+   "Togliatti Quintic",
+   "Classical"
   ],
   [
    "HEART",
-   "Taubin Heart"
+   "Taubin Heart",
+   "Classical"
   ],
   [
    "DINGDONG",
-   "Ding-dong"
+   "Ding-dong",
+   "Classical"
   ],
   [
    "CHMUTOV",
-   "Chmutov Sextic"
+   "Chmutov Sextic",
+   "Classical"
   ],
   [
    "TANGLE",
-   "Tangle Cube"
+   "Tangle Cube",
+   "Classical"
   ],
   [
    "MONKEY",
-   "Monkey Saddle (n-fold)"
+   "Monkey Saddle (n-fold)",
+   "Classical"
+  ],
+  [
+   "CALYX",
+   "Calyx",
+   "Hauser Gallery"
+  ],
+  [
+   "CALYPSO",
+   "Calypso",
+   "Hauser Gallery"
+  ],
+  [
+   "COLUMPIUS",
+   "Columpius",
+   "Hauser Gallery"
+  ],
+  [
+   "CUBE",
+   "Cube",
+   "Hauser Gallery"
+  ],
+  [
+   "DATTEL",
+   "Dattel",
+   "Hauser Gallery"
+  ],
+  [
+   "DAISY",
+   "Daisy",
+   "Hauser Gallery"
+  ],
+  [
+   "DISTEL",
+   "Distel",
+   "Hauser Gallery"
+  ],
+  [
+   "DURCHBLICK",
+   "Durchblick",
+   "Hauser Gallery"
+  ],
+  [
+   "EISTUETE",
+   "Eistuete",
+   "Hauser Gallery"
+  ],
+  [
+   "EVE",
+   "Eve",
+   "Hauser Gallery"
+  ],
+  [
+   "FLIRT",
+   "Flirt",
+   "Hauser Gallery"
+  ],
+  [
+   "GEISHA",
+   "Geisha",
+   "Hauser Gallery"
+  ],
+  [
+   "HARLEKIN",
+   "Harlekin",
+   "Hauser Gallery"
+  ],
+  [
+   "HELIX",
+   "Helix",
+   "Hauser Gallery"
+  ],
+  [
+   "HERZ",
+   "Herz",
+   "Hauser Gallery"
+  ],
+  [
+   "HIMMEL_UND_HOELLE",
+   "Himmel und Hoelle",
+   "Hauser Gallery"
+  ],
+  [
+   "KOLIBRI",
+   "Kolibri",
+   "Hauser Gallery"
+  ],
+  [
+   "LEOPOLD",
+   "Leopold",
+   "Hauser Gallery"
+  ],
+  [
+   "OCTDONG",
+   "Octdong",
+   "Hauser Gallery"
+  ],
+  [
+   "PLOP",
+   "Plop",
+   "Hauser Gallery"
+  ],
+  [
+   "SEEPFERDCHEN",
+   "Seepferdchen",
+   "Hauser Gallery"
+  ],
+  [
+   "SOFA",
+   "Sofa",
+   "Hauser Gallery"
+  ],
+  [
+   "SOLITUDE",
+   "Solitude",
+   "Hauser Gallery"
+  ],
+  [
+   "SUESS",
+   "Suess",
+   "Hauser Gallery"
+  ],
+  [
+   "TANZ",
+   "Tanz",
+   "Hauser Gallery"
+  ],
+  [
+   "TAUBE",
+   "Taube",
+   "Hauser Gallery"
+  ],
+  [
+   "SPITZ",
+   "Spitz",
+   "Hauser Gallery"
+  ],
+  [
+   "TOBEL",
+   "Tobel",
+   "Hauser Gallery"
+  ],
+  [
+   "VIS_A_VIS",
+   "Vis a vis",
+   "Hauser Gallery"
+  ],
+  [
+   "WEDELN",
+   "Wedeln",
+   "Hauser Gallery"
+  ],
+  [
+   "WINDKANAL",
+   "Windkanal",
+   "Hauser Gallery"
+  ],
+  [
+   "XANO",
+   "Xano",
+   "Hauser Gallery"
+  ],
+  [
+   "ZITRUS",
+   "Zitrus",
+   "Hauser Gallery"
+  ],
+  [
+   "DROMEDAR",
+   "Dromedar",
+   "Hauser Gallery"
+  ],
+  [
+   "ZEPPELIN",
+   "Zeppelin",
+   "Hauser Gallery"
+  ],
+  [
+   "MICHELANGELO",
+   "Michelangelo",
+   "Hauser Gallery"
+  ],
+  [
+   "STERN",
+   "Stern",
+   "Hauser Gallery"
+  ],
+  [
+   "LIMAO",
+   "Limao",
+   "Hauser Gallery"
+  ],
+  [
+   "WHITNEY",
+   "Whitney",
+   "Hauser Gallery"
+  ],
+  [
+   "BUGGLE",
+   "Buggle",
+   "Hauser Gallery"
+  ],
+  [
+   "DIABOLO",
+   "Diabolo",
+   "Hauser Gallery"
+  ],
+  [
+   "DULLO",
+   "Dullo",
+   "Hauser Gallery"
+  ],
+  [
+   "MIAU",
+   "Miau",
+   "Hauser Gallery"
+  ],
+  [
+   "TRICHTER",
+   "Trichter",
+   "Hauser Gallery"
+  ],
+  [
+   "NEPALI",
+   "Nepali",
+   "Hauser Gallery"
+  ],
+  [
+   "PILZCHEN",
+   "Pilzchen",
+   "Hauser Gallery"
+  ],
+  [
+   "SUBWAY",
+   "Subway",
+   "Hauser Gallery"
+  ],
+  [
+   "POLSTERZIPF",
+   "Polsterzipf",
+   "Hauser Gallery"
+  ],
+  [
+   "CRIXXI",
+   "Crixxi",
+   "Hauser Gallery"
+  ],
+  [
+   "BERG",
+   "Berg",
+   "Hauser Gallery"
+  ],
+  [
+   "GUPF",
+   "Gupf",
+   "Hauser Gallery"
+  ],
+  [
+   "KEGEL",
+   "Kegel",
+   "Hauser Gallery"
+  ],
+  [
+   "WIGWAM",
+   "Wigwam",
+   "Hauser Gallery"
+  ],
+  [
+   "TUELLE",
+   "Tuelle",
+   "Hauser Gallery"
+  ],
+  [
+   "PIPE",
+   "Pipe",
+   "Hauser Gallery"
+  ],
+  [
+   "FANFARE",
+   "Fanfare",
+   "Hauser Gallery"
+  ],
+  [
+   "KREUZ",
+   "Kreuz",
+   "Hauser Gallery"
+  ],
+  [
+   "SPINDEL",
+   "Spindel",
+   "Hauser Gallery"
+  ],
+  [
+   "TWILIGHT",
+   "Twilight",
+   "Hauser Gallery"
+  ],
+  [
+   "UFO",
+   "Ufo",
+   "Hauser Gallery"
+  ],
+  [
+   "ZECK",
+   "Zeck",
+   "Hauser Gallery"
+  ],
+  [
+   "SATTEL",
+   "Sattel",
+   "Hauser Gallery"
+  ],
+  [
+   "SCHNEEFLOCKE",
+   "Schneeflocke",
+   "Hauser Gallery"
+  ],
+  [
+   "LABS",
+   "Labs Septic (99 nodes)",
+   "Record Nodal Surfaces"
+  ],
+  [
+   "ENDRASS",
+   "Endrass Octic (168 nodes)",
+   "Record Nodal Surfaces"
+  ],
+  [
+   "BARTH_DECIC",
+   "Barth Decic (345 nodes)",
+   "Record Nodal Surfaces"
+  ],
+  [
+   "VMM_PRETZEL",
+   "Pretzel",
+   "Named Implicit Surfaces"
+  ],
+  [
+   "VMM_BRETZEL2",
+   "Bretzel2",
+   "Named Implicit Surfaces"
+  ],
+  [
+   "VMM_BRETZEL5",
+   "Bretzel5",
+   "Named Implicit Surfaces"
+  ],
+  [
+   "VMM_PILZ",
+   "Pilz Surface",
+   "Named Implicit Surfaces"
+  ],
+  [
+   "VMM_ORTHOCIRCLES",
+   "Orthocircles",
+   "Named Implicit Surfaces"
+  ],
+  [
+   "VMM_DECOCUBE",
+   "Deco-Cube",
+   "Named Implicit Surfaces"
+  ],
+  [
+   "VMM_JOIN2TORI",
+   "Join of Two Tori",
+   "Named Implicit Surfaces"
+  ],
+  [
+   "CARTAN",
+   "Cartan's Umbrella",
+   "Encyclopedia Surfaces"
+  ],
+  [
+   "CASSINI",
+   "Cassini Surface",
+   "Encyclopedia Surfaces"
+  ],
+  [
+   "CASSINI_REV",
+   "Cassini Surface of Revolution",
+   "Encyclopedia Surfaces"
+  ],
+  [
+   "TITEICA",
+   "Titeica Surface",
+   "Encyclopedia Surfaces"
+  ],
+  [
+   "OCT_CUBOCTA",
+   "Cuboctahedral Quartic",
+   "Goursat (Octahedral)"
+  ],
+  [
+   "OCT_CUBOCTA_NODES",
+   "Quartic with 12 Cuboctahedral Nodes",
+   "Goursat (Octahedral)"
+  ],
+  [
+   "OCT_OCTA_EDGES",
+   "Octahedron-Edge Quartic",
+   "Goursat (Octahedral)"
+  ],
+  [
+   "OCT_CUBE_DIAGONALS",
+   "Cube-Diagonal Quartic",
+   "Goursat (Octahedral)"
+  ],
+  [
+   "OCT_CUBE_EDGES",
+   "Cube-Edge Quartic",
+   "Goursat (Octahedral)"
+  ],
+  [
+   "OCT_CUBE_MEDIANS",
+   "Cube-Median Quartic",
+   "Goursat (Octahedral)"
+  ],
+  [
+   "OCT_TRIANGLES",
+   "Cuboctahedral Triangle Quartic",
+   "Goursat (Octahedral)"
+  ],
+  [
+   "TET_TITEICA",
+   "Titeica Cubic (k' = 0)",
+   "Goursat (Tetrahedral)"
+  ],
+  [
+   "TET_FOUR_SHEETS",
+   "Tetrahedral Cubic (k < 0)",
+   "Goursat (Tetrahedral)"
   ]
  ],
  "topological": [
@@ -732,8 +1238,16 @@
    "Roman Surface"
   ],
   [
+   "STEINER",
+   "Steiner Surface (Veronese shadow)"
+  ],
+  [
    "BOY",
    "Boy's Surface"
+  ],
+  [
+   "NONORIENT",
+   "Non-Orientable Genus-k"
   ],
   [
    "GENUS",
@@ -1507,6 +2021,14 @@
   [
    "RHOMBDODEC",
    "Rhombic Dodecahedra"
+  ],
+  [
+   "HEXPRISM",
+   "Hexagonal Prisms"
+  ],
+  [
+   "ELONGDODEC",
+   "Elongated Dodecahedra"
   ],
   [
    "OBTET",
@@ -2294,6 +2816,10 @@
   ]
  ],
  "helical_surface": [
+  [
+   "DARBOUX",
+   "Darboux Surface"
+  ],
   [
    "HYPERBOLIC_HELICOID",
    "Hyperbolic Helicoid"
@@ -4256,8 +4782,20 @@
    "Dodecahedron"
   ],
   [
+   "dodecahedron_tetrahedral",
+   "Dodecahedron Tetrahedral"
+  ],
+  [
    "cuboctahedron",
    "Cuboctahedron"
+  ],
+  [
+   "rhombic_dodecahedron",
+   "Rhombic Dodecahedron"
+  ],
+  [
+   "triakis_tetrahedron",
+   "Triakis Tetrahedron"
   ],
   [
    "rhombic_triacontahedron",
@@ -5034,6 +5572,26 @@
    "Associahedron (3D, K5)"
   ],
   [
+   "SHARP",
+   "Sharpohedron"
+  ],
+  [
+   "TETRA_STELLATED_ICOSA",
+   "Tetrahedrally Stellated Icosahedron"
+  ],
+  [
+   "TETRA_TRUNCATED_DODECA",
+   "Tetrahedrally Truncated Dodecahedron"
+  ],
+  [
+   "SELF_DUAL_16",
+   "Self-Dual 16-Hedron"
+  ],
+  [
+   "PSEUDO_GRCO",
+   "Pseudo Great Rhombicuboctahedron"
+  ],
+  [
    "KLEIN",
    "Klein Regular Map {3,7} (genus 3)"
   ],
@@ -5225,31 +5783,243 @@
  "polyhedron_compound": [
   [
    "STELLA",
-   "Stella Octangula (2 Tetrahedra)"
+   "Stella Octangula (2 Tetrahedra)",
+   "CLASSICAL"
   ],
   [
    "5TETRA",
-   "Compound of 5 Tetrahedra"
+   "Compound of 5 Tetrahedra",
+   "CLASSICAL"
   ],
   [
    "10TETRA",
-   "Compound of 10 Tetrahedra"
+   "Compound of 10 Tetrahedra",
+   "CLASSICAL"
   ],
   [
    "5CUBES",
-   "Compound of 5 Cubes"
+   "Compound of 5 Cubes",
+   "CLASSICAL"
   ],
   [
    "5OCTA",
-   "Compound of 5 Octahedra"
+   "Compound of 5 Octahedra",
+   "CLASSICAL"
   ],
   [
    "CUBE_OCTA",
-   "Cube + Octahedron"
+   "Cube + Octahedron",
+   "DUAL_PAIR"
   ],
   [
    "DODECA_ICOSA",
-   "Dodecahedron + Icosahedron"
+   "Dodecahedron + Icosahedron",
+   "DUAL_PAIR"
+  ],
+  [
+   "PRISM_DUAL",
+   "Prism + Dual Dipyramid",
+   "DUAL_PAIR"
+  ],
+  [
+   "ANTIPRISM_DUAL",
+   "Antiprism + Dual Trapezohedron",
+   "DUAL_PAIR"
+  ],
+  [
+   "INS_TETRA_CUBE",
+   "Tetrahedron Inscribed in Cube",
+   "INSCRIBED"
+  ],
+  [
+   "INS_2TETRA_CUBE",
+   "Two Tetrahedra Inscribed in Cube",
+   "INSCRIBED"
+  ],
+  [
+   "INS_CUBE_DODECA",
+   "Cube Inscribed in Dodecahedron",
+   "INSCRIBED"
+  ],
+  [
+   "INS_TETRA_DODECA",
+   "Tetrahedron Inscribed in Dodecahedron",
+   "INSCRIBED"
+  ],
+  [
+   "INS_ICOSA_OCTA",
+   "Icosahedron Inscribed in Octahedron",
+   "INSCRIBED"
+  ],
+  [
+   "INS_2ICOSA_OCTA",
+   "Two Icosahedra Inscribed in Octahedron",
+   "INSCRIBED"
+  ],
+  [
+   "H_2TETRA",
+   "2 Tetrahedra (Stella Octangula)",
+   "AXES"
+  ],
+  [
+   "H_5TETRA",
+   "5 Tetrahedra",
+   "AXES"
+  ],
+  [
+   "H_5CUBES",
+   "5 Cubes",
+   "AXES"
+  ],
+  [
+   "H_5OCTA",
+   "5 Octahedra",
+   "AXES"
+  ],
+  [
+   "H_2DODECA",
+   "2 Dodecahedra (Octahedral)",
+   "AXES"
+  ],
+  [
+   "H_2ICOSA",
+   "2 Icosahedra (Octahedral)",
+   "AXES"
+  ],
+  [
+   "H_5DODECA",
+   "5 Dodecahedra",
+   "AXES"
+  ],
+  [
+   "H_12DODECA",
+   "12 Dodecahedra (Octahedral)",
+   "AXES"
+  ],
+  [
+   "H_12ICOSA",
+   "12 Icosahedra (Octahedral)",
+   "AXES"
+  ],
+  [
+   "H_12CUBES",
+   "12 Cubes (Octahedral)",
+   "AXES"
+  ],
+  [
+   "H_12TETRA",
+   "12 Tetrahedra (Octahedral)",
+   "AXES"
+  ],
+  [
+   "H_12ICOSA_4",
+   "12 Icosahedra (4-fold)",
+   "AXES"
+  ],
+  [
+   "H_30CUBES",
+   "30 Cubes (Icosahedral)",
+   "AXES"
+  ],
+  [
+   "H_60DODECA",
+   "60 Dodecahedra (Icosahedral)",
+   "AXES"
+  ],
+  [
+   "H_6DODECA",
+   "6 Dodecahedra",
+   "AXES"
+  ],
+  [
+   "H_5ICOSA",
+   "5 Icosahedra",
+   "AXES"
+  ],
+  [
+   "H_6ICOSA",
+   "6 Icosahedra",
+   "AXES"
+  ],
+  [
+   "H_10ICOSA",
+   "10 Icosahedra",
+   "AXES"
+  ],
+  [
+   "H_10DODECA",
+   "10 Dodecahedra",
+   "AXES"
+  ],
+  [
+   "HC_12CUBES_FREE",
+   "Hart: 12 Cubes, central freedom",
+   "HART_CUBES"
+  ],
+  [
+   "HC_24CUBES",
+   "Hart: 24 Cubes, central freedom",
+   "HART_CUBES"
+  ],
+  [
+   "HC_60CUBES",
+   "Hart: 60 Cubes, central freedom",
+   "HART_CUBES"
+  ],
+  [
+   "HC_6CUBES_C4",
+   "Hart: 6 Cubes, 4-fold (free)",
+   "HART_CUBES"
+  ],
+  [
+   "HC_3CUBES",
+   "Hart: 3 Cubes",
+   "HART_CUBES"
+  ],
+  [
+   "HC_8CUBES",
+   "Hart: 8 Cubes (free)",
+   "HART_CUBES"
+  ],
+  [
+   "HC_4CUBES",
+   "Hart: 4 Cubes (Bakos')",
+   "HART_CUBES"
+  ],
+  [
+   "HC_12CUBES_C2",
+   "Hart: 12 Cubes (free)",
+   "HART_CUBES"
+  ],
+  [
+   "HC_6CUBES_D2",
+   "Hart: 6 Cubes, 2-fold",
+   "HART_CUBES"
+  ],
+  [
+   "HC_20CUBES",
+   "Hart: 20 Cubes (free)",
+   "HART_CUBES"
+  ],
+  [
+   "HC_30CUBES_C2",
+   "Hart: 30 Cubes (free)",
+   "HART_CUBES"
+  ],
+  [
+   "HC_15CUBES",
+   "Hart: 15 Cubes",
+   "HART_CUBES"
+  ],
+  [
+   "HC_10CUBES",
+   "Hart: 10 Cubes",
+   "HART_CUBES"
+  ],
+  [
+   "HC_4CUBES_T",
+   "Hart: 4 Cubes, tetrahedral (free)",
+   "HART_CUBES"
   ]
  ],
  "polystix": [
@@ -6281,6 +7051,11 @@
    "75",
    "U75  Great Dirhombicosidodecahedron",
    "STAR_I"
+  ],
+  [
+   "76",
+   "U76  Great Disnub Dirhombidodecahedron",
+   "SKILLING"
   ]
  ],
  "voderberg": [
@@ -6531,6 +7306,32 @@
   [
    "ELASTIC_TORUS",
    "Elastic Torus (S3)"
+  ]
+ ],
+ "noble_faceting": [
+  [
+   "ICOSA",
+   "Icosahedron (12 vertices)"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron (20 vertices)"
+  ],
+  [
+   "CUBE",
+   "Cube (8 vertices)"
+  ],
+  [
+   "OCTA",
+   "Octahedron (6 vertices)"
+  ],
+  [
+   "ICOSIDODECA",
+   "Icosidodecahedron (30 vertices)"
+  ],
+  [
+   "TRUNCTETRA",
+   "Truncated Tetrahedron (12 vertices)"
   ]
  ]
 }
