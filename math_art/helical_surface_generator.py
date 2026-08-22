@@ -1,6 +1,21 @@
 
-# Helical Surfaces generator for Blender: three classic
-# helical / spiral parametric surfaces.
+# Swept Surfaces generator for Blender: surfaces traced by a curve
+# moving through space.
+#
+# The organising idea is DARBOUX's: a surface swept by a rigid curve --
+# kinematically, the trace of an unbending wire carried through space --
+# is a union of congruent copies of that curve, and the classical
+# families are all special cases of the one construction.  Translate the
+# wire and you get a translation surface; spin it about a fixed axis and
+# you get a surface of revolution; screw it and you get a helicoid.  A
+# general rigid motion gives none of the three, and that is what the
+# DARBOUX mode builds: the wire spins about the axis while tumbling, and
+# its centre rides a circle.  The mathematics and the congruence gate
+# live in `math_art/surfaces/encyclopedia.py`.
+#
+# The other three modes are fixed formulas rather than motions.  They
+# are what this module shipped before Darboux gave it a general case,
+# and they keep their own parameters:
 #
 #   HYPERBOLIC_HELICOID -- the helicoid's hyperbolic cousin,
 #     a twisted band whose points all share the denominator
@@ -22,6 +37,12 @@
 # single vertex with a triangle fan.
 #
 # References:
+# - G. Darboux, "Lecons sur la theorie generale des surfaces", 1887-96
+#   -- the surfaces swept by a rigid curve.  The classification of the
+#   three special motions followed here is from R. Ferreol,
+#   "Encyclopedie des formes mathematiques remarquables", mathcurve.com,
+#   chapter "surface de Darboux"; a converted copy is in
+#   research/books/mathcurve_encyclopedie_formes_mathematiques/.
 # - The helicoid is a classical minimal and ruled surface
 #   (J. B. C. Meusnier, 1776); the hyperbolic helicoid, conical
 #   seashell and twisted-sphere forms here are standard parametric
@@ -30,19 +51,29 @@
 #   (3rd ed., 2006), and J. Meier's gallery (3d-meier.de).
 
 bl_info = {
-    "name": "Helical Surfaces",
+    "name": "Swept Surfaces",
     "author": "Math Art project",
     "version": (1, 0, 0),
     "blender": (4, 2, 0),
     "location": "View3D > Add > Mesh > Math Art > Surfaces",
-    "description": "Hyperbolic helicoid, seashell and "
-                   "corkscrew parametric surfaces",
+    "description": "Darboux surfaces swept by a rigid curve, plus "
+                   "the hyperbolic helicoid, seashell and corkscrew",
     "category": "Add Mesh",
 }
 
 import math
 
 import numpy as np
+
+try:
+    from .surfaces.encyclopedia import build_darboux
+except ImportError:                       # flat import outside the package
+    from surfaces.encyclopedia import build_darboux
+
+try:
+    from . import rim_curve as _rim
+except ImportError:  # flat import outside the package
+    import rim_curve as _rim
 
 try:
     import bpy
@@ -157,6 +188,11 @@ def build_corkscrew(a=1.0, b=0.3, res=96):
 
 
 _SURFACES = [
+    ('DARBOUX', "Darboux Surface",
+     "A rigid curve swept by a motion. Translation, revolution and "
+     "screw motions give translation surfaces, surfaces of revolution "
+     "and helicoids; a general motion gives a Darboux surface that is "
+     "none of the three"),
     ('HYPERBOLIC_HELICOID', "Hyperbolic Helicoid",
      "Twisted band with torsion tau over the shared "
      "denominator 1 + cosh(u) cosh(v)"),
@@ -170,16 +206,89 @@ _SURFACES = [
 if _IN_BLENDER:
 
     class MESH_OT_helical_surface_add(bpy.types.Operator):
-        """Add a classic helical parametric surface: the
-        hyperbolic helicoid, a conical seashell, or the
-        corkscrew surface (twisted sphere)"""
+        """Add a surface swept by a curve moving through space: a
+        Darboux surface (a rigid curve carried by a motion, of which
+        translation surfaces, surfaces of revolution and helicoids are
+        the special cases), or one of three classic helical formulas --
+        the hyperbolic helicoid, a conical seashell, or the corkscrew
+        surface (twisted sphere)"""
+        # The id stays `helical_surface_add`: renaming it would break
+        # every script, menu entry and subject table that names it, and
+        # the label is what the user actually reads.
         bl_idname = "mesh.helical_surface_add"
-        bl_label = "Helical Surface"
+        bl_label = "Swept Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
+        rim_reeds: _rim.rim_reeds_prop()
 
         surface: EnumProperty(
             name="Surface", items=_SURFACES,
             default='HYPERBOLIC_HELICOID')
+        motion: EnumProperty(
+            name="Motion",
+            items=[('GENERAL', "General Darboux Motion",
+                    "Spin about the axis while tumbling, with the "
+                    "curve's centre riding a circle: neither a "
+                    "translation surface, nor a surface of revolution, "
+                    "nor a helicoid"),
+                   ('TRANSLATION', "Translation",
+                    "Slide the curve along a straight line"),
+                   ('REVOLUTION', "Revolution",
+                    "Spin the curve about a fixed axis"),
+                   ('HELICOID', "Helicoidal",
+                    "Screw the curve about a fixed axis")],
+            default='GENERAL',
+            description="How the rigid curve is carried through space "
+                        "(Darboux surface only)")
+        generatrix: EnumProperty(
+            name="Generatrix",
+            items=[('CIRCLE', "Circle",
+                    "A circular generatrix; under a rotation this "
+                    "gives a cyclic surface"),
+                   ('ELLIPSE', "Ellipse", "An elliptical generatrix"),
+                   ('LEMNISCATE', "Gerono Lemniscate",
+                    "A figure-eight generatrix"),
+                   ('ASTROID', "Astroid",
+                    "A four-cusped generatrix"),
+                   ('SEGMENT', "Segment",
+                    "A straight generatrix, which makes the result a "
+                    "ruled surface")],
+            default='CIRCLE',
+            description="The rigid curve that is swept (Darboux only)")
+        curve_size: FloatProperty(
+            name="Curve Size", default=0.45, min=0.02, max=5.0,
+            description="Size of the swept curve (Darboux only)")
+        curve_ratio: FloatProperty(
+            name="Curve Ratio", default=0.5, min=0.02, max=5.0,
+            description="Minor-to-major ratio of an elliptical "
+                        "generatrix (Darboux only)")
+        path_radius: FloatProperty(
+            name="Path Radius", default=1.0, min=0.0, max=10.0,
+            description="Radius of the circle the curve's centre rides "
+                        "(Darboux only)")
+        pitch: FloatProperty(
+            name="Pitch", default=0.4, min=-5.0, max=5.0,
+            description="Rise per radian for the translation and screw "
+                        "motions (Darboux only)")
+        tilt: FloatProperty(
+            name="Tumble", default=0.6, min=0.0, max=3.14,
+            description="How far the curve tips out of its plane as it "
+                        "goes round; 0 collapses the general motion "
+                        "back to a plain revolution (Darboux only)")
+        wobbles: IntProperty(
+            name="Tumbles", default=3, min=1, max=24,
+            description="How many times the curve tips back and forth "
+                        "per revolution (Darboux only)")
+        turns: FloatProperty(
+            name="Turns", default=1.0, min=0.05, max=12.0,
+            description="How far the motion runs, in revolutions. A "
+                        "whole number closes the sweep and welds the "
+                        "seam; anything else leaves it open (Darboux "
+                        "only)")
         tau: FloatProperty(
             name="Torsion", default=2.5, min=0.0, max=20.0,
             description="Torsion tau of the hyperbolic "
@@ -225,7 +334,17 @@ if _IN_BLENDER:
                              min=0.01, max=100.0)
 
         def execute(self, context):
-            if self.surface == 'HYPERBOLIC_HELICOID':
+            if self.surface == 'DARBOUX':
+                V, faces = build_darboux(
+                    motion=self.motion, generatrix=self.generatrix,
+                    size=self.curve_size, ratio=self.curve_ratio,
+                    radius=self.path_radius, pitch=self.pitch,
+                    tilt=self.tilt, wobbles=self.wobbles,
+                    turns=self.turns, res_u=self.resolution,
+                    res_v=2 * self.resolution)
+                verts = [tuple(map(float, v)) for v in V]
+                name = "Darboux Surface"
+            elif self.surface == 'HYPERBOLIC_HELICOID':
                 verts, faces = build_hyperbolic_helicoid(
                     self.tau, self.extent, self.resolution)
                 name = "Hyperbolic Helicoid"
@@ -266,13 +385,32 @@ if _IN_BLENDER:
             self.report({'INFO'},
                         f"{name}: V={len(me.vertices)} "
                         f"F={len(me.polygons)}")
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
             return {'FINISHED'}
 
         def draw(self, context):
             lay = self.layout
             lay.use_property_split = True
             lay.prop(self, 'surface')
-            if self.surface == 'HYPERBOLIC_HELICOID':
+            if self.surface == 'DARBOUX':
+                keys = ('motion', 'generatrix', 'curve_size')
+                if self.generatrix == 'ELLIPSE':
+                    keys += ('curve_ratio',)
+                if self.motion in ('GENERAL', 'TRANSLATION'):
+                    keys += ('path_radius',)
+                if self.motion in ('TRANSLATION', 'HELICOID'):
+                    keys += ('pitch',)
+                if self.motion == 'GENERAL':
+                    keys += ('tilt', 'wobbles')
+                keys += ('turns',)
+            elif self.surface == 'HYPERBOLIC_HELICOID':
                 keys = ('tau', 'extent')
             elif self.surface == 'SEASHELL':
                 keys = ('whorls', 'aspect', 'height',
@@ -283,6 +421,7 @@ if _IN_BLENDER:
                              'thickness', 'scale'):
                 lay.prop(self, k)
 
+            _rim.draw_rim(lay, self)
     def _menu_func(self, context):
         self.layout.operator("mesh.helical_surface_add",
                              icon='MOD_SCREW')

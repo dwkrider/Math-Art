@@ -1,4 +1,9 @@
 
+try:
+    from . import rim_curve as _rim
+except ImportError:  # flat import outside the package
+    import rim_curve as _rim
+
 # Seifert Surface Generator for Blender
 #
 # Builds Seifert surfaces (and the other Kauffman-state spanning surfaces) of
@@ -159,60 +164,24 @@ except ImportError:
 
 if _IN_BLENDER:
 
-    def _boundary_loops_from_faces(faces):
-        """Ordered boundary vertex loops from a polygon face list."""
-        count = {}
-        for vs in faces:
-            for a in range(len(vs)):
-                e = tuple(sorted((vs[a], vs[(a + 1) % len(vs)])))
-                count[e] = count.get(e, 0) + 1
-        adj = {}
-        for (a, b), c in count.items():
-            if c == 1:
-                adj.setdefault(a, []).append(b)
-                adj.setdefault(b, []).append(a)
-        loops = []
-        unvisited = set(adj.keys())
-        while unvisited:
-            start = unvisited.pop()
-            loop = [start]
-            prev, cur = None, start
-            while True:
-                nxts = [v for v in adj[cur] if v != prev and v in unvisited] \
-                    or [v for v in adj[cur] if v != prev]
-                if not nxts:
-                    break
-                prev, cur = cur, nxts[0]
-                if cur == start:
-                    break
-                loop.append(cur)
-                unvisited.discard(cur)
-            if len(loop) > 2:
-                loops.append(loop)
-        return loops
+    def _add_knot_curve(context, obj, verts, faces, radius,
+                        profile='ROUND'):
+        """Bevelled curve along each boundary loop -- here, the link.
 
-    def _add_knot_curve(context, obj, verts, faces, radius):
-        """Create a bevelled POLY curve along each boundary loop (the link)."""
-        loops = _boundary_loops_from_faces(faces)
-        if not loops:
-            return None
-        cu = bpy.data.curves.new("Knot", 'CURVE')
-        cu.dimensions = '3D'
-        cu.bevel_depth = radius
-        cu.use_fill_caps = True
-        for loop in loops:
-            sp = cu.splines.new('POLY')
-            sp.points.add(len(loop) - 1)
-            flat = []
-            for vi in loop:
-                x, y, z = verts[vi]
-                flat.extend((x, y, z, 1.0))
-            sp.points.foreach_set('co', flat)
-            sp.use_cyclic_u = True
-        knot = bpy.data.objects.new("Knot", cu)
-        context.collection.objects.link(knot)
-        knot.parent = obj
-        knot.matrix_parent_inverse.identity()
+        Shares `rim_curve` with every other generator that sweeps a
+        tube along an open edge, so the extraction and the sweep cannot
+        drift apart.  One thing is deliberately NOT shared: the
+        smoothing.  Everywhere else the boundary is a stair-step
+        through a sample grid and wants smoothing; here the boundary IS
+        the knot, exact geometry that the surface was built to span, so
+        smoothing it would move the link off the curve the user asked
+        for.  Hence smooth=0, always.
+        """
+        n = _rim.add_rim_curve(context, obj, "Knot", verts, faces,
+                               thickness=radius, smooth=0,
+                               profile=profile, method='ANCHORED')
+        return n or None
+
         knot.location = (0, 0, 0)
         return knot
 
@@ -310,6 +279,7 @@ if _IN_BLENDER:
             name="Add Knot Curve", default=True,
             description="Also create a bevelled curve along the knot/link "
                         "(the surface boundary)")
+        knot_profile: _rim.rim_profile_prop()
         knot_radius: FloatProperty(name="Knot Tube Radius", default=0.02,
                                    min=0.0, max=0.5)
 
@@ -373,9 +343,8 @@ if _IN_BLENDER:
 
             if self.add_knot_curve:
                 knot = _add_knot_curve(context, obj, verts, faces,
-                                       self.knot_radius)
-                if knot is not None:
-                    knot.location = obj.location
+                                       self.knot_radius,
+                                       self.knot_profile)
 
             if info.orientable:
                 shape = f"orientable, genus {genus}"
@@ -410,7 +379,8 @@ if _IN_BLENDER:
                 box.prop(self, k)
             box = lay.box()
             box.label(text="Output")
-            for k in ('scale', 'add_knot_curve', 'knot_radius'):
+            for k in ('scale', 'add_knot_curve', 'knot_radius',
+                      'knot_profile'):
                 box.prop(self, k)
 
     class MESH_OT_seifert_minimize(bpy.types.Operator):
@@ -491,19 +461,25 @@ if _IN_BLENDER:
             me.vertices.foreach_set('co', flat)
             me.update()
             out = mesh.vertices
+            # refresh the knot curve to follow the minimised surface.
+            # It is a BEZIER spline now (rim_curve sweeps those, so the
+            # tube stays smooth without moving off the link), so the
+            # points are bezier_points and the handles have to be
+            # recomputed -- foreach_set on `points` would silently miss.
             for ch in obj.children:
-                if ch.type == 'CURVE':
-                    loops = _boundary_loops_from_faces(faces)
-                    if len(loops) == len(ch.data.splines):
-                        for sp, loop in zip(ch.data.splines, loops):
-                            if len(sp.points) != len(loop):
-                                continue
-                            fl = []
-                            for vi in loop:
-                                x, y, z = out[vi]
-                                fl.extend((float(x), float(y), float(z), 1.0))
-                            sp.points.foreach_set('co', fl)
-                    ch.data.update_tag()
+                if ch.type != 'CURVE':
+                    continue
+                loops = _rim.boundary_index_loops(faces)
+                if len(loops) == len(ch.data.splines):
+                    for sp, (idx, _closed) in zip(ch.data.splines, loops):
+                        if len(sp.bezier_points) != len(idx):
+                            continue
+                        for bp, vi in zip(sp.bezier_points, idx):
+                            x, y, z = out[int(vi)]
+                            bp.co = (float(x), float(y), float(z))
+                            bp.handle_left_type = 'AUTO'
+                            bp.handle_right_type = 'AUTO'
+                ch.data.update_tag()
             self.report({'INFO'},
                         f"area {before:.3f} -> {after:.3f} "
                         f"({100 * (1 - after / max(before, 1e-9)):.1f}% less)")

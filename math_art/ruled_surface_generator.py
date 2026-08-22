@@ -30,8 +30,9 @@
 #     n-fold-symmetric rosette), swept with a tangent+vertical ruling.
 #   CONOID        -- right conoids S=(v cos u, v sin u, h(u)):
 #     Plucker's conoid / cylindroid (h = c sin 2u), the n-fold
-#     generalization, the Wallis conical edge, and the Whitney
-#     umbrella (a pinch-point ruled surface).
+#     generalization, the Wallis conical edge, Zindler's conoid
+#     (h = a tan 2u, the cubic ruled surface z(x^2-y^2) = 2axy) and
+#     the Whitney umbrella (a pinch-point ruled surface).
 #   TANGENT_DEV   -- the tangent developable of a circular helix,
 #     T(u,v) = c(u) + v c'(u): a flat-unrollable (developable) surface
 #     whose edge of regression is the helix itself.
@@ -65,6 +66,12 @@
 # - J. Plucker, "On a New Geometry of Space" (1865); H. Whitney,
 #   "The general type of singularity of a set of 2n-1 smooth
 #   functions of n variables" (1943).
+# - K. Zindler (1866-1934), the conoid z = a tan 2 theta; see
+#   R. Ferreol, "Encyclopedie des formes mathematiques remarquables",
+#   mathcurve.com, chapter "conoide de Zindler", for the cartesian
+#   form and the tangentoid-crown directrix used here.  A converted
+#   copy of the encyclopedia is in research/books/
+#   mathcurve_encyclopedie_formes_mathematiques/.
 # - S. A. Coons, "Surfaces for Computer-Aided Design of Space Forms,"
 #   MIT Project MAC TR-41 (1967) -- the bilinear patch.
 # - Torus knots (p, q): classical; see e.g. C. C. Adams, "The Knot
@@ -415,7 +422,42 @@ def build_conoid(kind='PLUCKER', amp=0.5, folds=2, wallis_a=1.0,
         PLUCKER  h = amp sin(2u)            (Plucker's cylindroid)
         NFOLD    h = amp sin(folds*u)       (n-leaved conoid)
         WALLIS   h = amp sqrt(a^2 - b^2 cos^2 u)   (Wallis conical edge)
+        ZINDLER  h = amp tan(folds*u)       (Zindler's conoid)
         WHITNEY  S = (u v, u, v^2)          (pinch-point umbrella)"""
+    if kind == 'ZINDLER':
+        # Zindler's conoid, z = a tan(n theta) -- cartesian
+        # z(x^2 - y^2) = 2 a x y for the classical n = 2.  Its height is
+        # UNBOUNDED at the 2n asymptotes theta = (2k+1) pi / (2n), so
+        # sampling theta uniformly (as every other conoid here does)
+        # would spend the whole mesh on a pair of spikes and still clip
+        # them.  Sample the HEIGHT uniformly instead and invert the
+        # tangent: exact, bounded, and it grades the angular samples
+        # toward the asymptotes automatically, which is where the sheet
+        # actually turns.
+        #
+        # Each of the 2n branches is its own open patch.  They meet only
+        # along Oz, which is not a defect: Oz is the conoid's double
+        # line, and the directrix -- a tangentoid crown -- really does
+        # have 2n separate branches.
+        n = max(1, int(folds))
+        cap = 2.0 * extent                     # vertical reach
+        a = max(1e-6, abs(amp))
+        h = np.linspace(-cap, cap, res_u)
+        vv = np.linspace(-extent, extent, res_v + 1)
+        verts, faces = [], []
+        for k in range(2 * n):
+            u = (np.arctan(h / a) + k * math.pi) / n
+            cu, su = np.cos(u), np.sin(u)
+            P = np.empty((res_u, res_v + 1, 3))
+            for j, t in enumerate(vv):
+                P[:, j, 0] = t * cu
+                P[:, j, 1] = t * su
+                P[:, j, 2] = h
+            V, F = _mesh_grid(P)
+            off = len(verts)
+            verts.extend(V)
+            faces.extend([[i + off for i in f] for f in F])
+        return verts, faces
     if kind == 'WHITNEY':
         s = np.linspace(-extent, extent, res_u)
         v = np.linspace(-extent, extent, res_v + 1)
@@ -445,6 +487,20 @@ def build_conoid(kind='PLUCKER', amp=0.5, folds=2, wallis_a=1.0,
 
 def rulings_conoid(kind='PLUCKER', amp=0.5, folds=2, wallis_a=1.0,
                    wallis_b=0.6, extent=1.0, n=48):
+    if kind == 'ZINDLER':
+        # same height-first sampling as the surface, so the rods land on
+        # the rulings the mesh actually shows
+        m = max(1, int(folds))
+        cap, a = 2.0 * extent, max(1e-6, abs(amp))
+        segs = []
+        for k in range(2 * m):
+            for i in range(n):
+                hgt = -cap + 2.0 * cap * i / max(1, n - 1)
+                u = (math.atan(hgt / a) + k * math.pi) / m
+                cu, su = math.cos(u), math.sin(u)
+                segs.append(((-extent * cu, -extent * su, hgt),
+                             (extent * cu, extent * su, hgt)))
+        return segs
     if kind == 'WHITNEY':
         segs = []
         for i in range(n + 1):
@@ -695,6 +751,9 @@ _CONOID_KINDS = [
     ('NFOLD', "n-Fold Conoid", "h = amp sin(folds * u)"),
     ('WALLIS', "Wallis Conical Edge",
      "h = amp sqrt(a^2 - b^2 cos^2 u)"),
+    ('ZINDLER', "Zindler Conoid",
+     "h = a tan(folds * u): the cubic ruled surface "
+     "z(x^2 - y^2) = 2 a x y, with Oz as its double line"),
     ('WHITNEY', "Whitney Umbrella",
      "S = (uv, u, v^2): a pinch-point ruled surface"),
 ]
@@ -844,7 +903,10 @@ def _boundary_loops(op):
     rail0 = [s[0] for s in segs]
     rail1 = [s[1] for s in segs]
     closed = (m in ('HYPERBOLOID', 'KNOT_SPAN', 'TWIST_STRIP')
-              or (m == 'CONOID' and op.conoid_kind != 'WHITNEY'))
+              # Zindler's directrix has 2n separate branches running off
+              # to infinity, so its rails are open like Whitney's
+              or (m == 'CONOID'
+                  and op.conoid_kind not in ('WHITNEY', 'ZINDLER')))
     return [(rail0, closed), (rail1, closed)]
 
 
@@ -1139,7 +1201,7 @@ if _IN_BLENDER:
             elif m == 'CONOID':
                 lay.prop(self, 'conoid_kind')
                 keys = ('amp',)
-                if self.conoid_kind == 'NFOLD':
+                if self.conoid_kind in ('NFOLD', 'ZINDLER'):
                     keys += ('folds',)
                 elif self.conoid_kind == 'WALLIS':
                     keys += ('wallis_a', 'wallis_b')
@@ -1214,6 +1276,8 @@ def _selftest():
         ("nfold", lambda: build_conoid('NFOLD', folds=5, res_u=48,
                                        res_v=8)),
         ("wallis", lambda: build_conoid('WALLIS', res_u=48, res_v=8)),
+        ("zindler", lambda: build_conoid('ZINDLER', folds=2, res_u=48,
+                                         res_v=8)),
         ("whitney", lambda: build_conoid('WHITNEY', res_u=32,
                                          res_v=8)),
         ("tangent dev", lambda: build_tangent_developable(res_u=64,
@@ -1246,6 +1310,45 @@ def _selftest():
         assert valid, f"{label}: face index out of range"
         print(f"{label}: V={len(verts)} F={len(faces)} "
               f"finite={finite} indices_ok={valid}")
+
+    # Zindler's conoid is defined by a cartesian equation, so gate on
+    # it rather than on "it meshed": for n = 2 every vertex must
+    # satisfy z(x^2 - y^2) = 2 a x y exactly, and for general n the
+    # cylindrical z = a tan(n theta).  Sampling the height and
+    # inverting the tangent (rather than sampling theta) is what makes
+    # the mesh bounded, and this is the check that the inversion is
+    # right way round -- a sign slip there produces a plausible
+    # crown-shaped surface that is simply a different conoid.
+    for n_ in (1, 2, 3):
+        a_ = 0.5
+        verts, _f = build_conoid('ZINDLER', amp=a_, folds=n_,
+                                 extent=1.0, res_u=41, res_v=6)
+        V = np.asarray(verts, dtype=float)
+        # every ruling passes through the axis, and on Oz -- the
+        # conoid's double line -- theta is undefined, so those points
+        # carry no cylindrical identity to check
+        V = V[np.hypot(V[:, 0], V[:, 1]) > 1e-9]
+        th = np.arctan2(V[:, 1], V[:, 0])
+        # tan(n theta) blows up at the asymptotes; compare as
+        # z cos(n th) == a sin(n th), which is the same identity
+        # cleared of its denominator and finite everywhere
+        resid = np.abs(V[:, 2] * np.cos(n_ * th) - a_ * np.sin(n_ * th))
+        assert np.max(resid) < 1e-9, (n_, float(np.max(resid)))
+        if n_ == 1:
+            # n = 1 degenerates to the equilateral hyperbolic
+            # paraboloid x z = a y
+            hyp = np.abs(V[:, 0] * V[:, 2] - a_ * V[:, 1])
+            assert np.max(hyp) < 1e-9, float(np.max(hyp))
+        if n_ == 2:
+            cart = np.abs(V[:, 2] * (V[:, 0] ** 2 - V[:, 1] ** 2)
+                          - 2.0 * a_ * V[:, 0] * V[:, 1])
+            assert np.max(cart) < 1e-9, float(np.max(cart))
+        # 2n branches, each an open patch -- and the height really is
+        # bounded, which is the whole point of the sampling
+        assert np.max(np.abs(V[:, 2])) <= 2.0 + 1e-9
+    print("zindler conoid: z = a tan(n theta) holds for n = 1, 2, 3, "
+          "xz = ay at n = 1, z(x^2-y^2) = 2axy at n = 2, height "
+          "bounded  OK")
 
     # the waist radius of the stick hyperboloid must equal R cos(tw/2)
     R, tw = 1.0, 120.0

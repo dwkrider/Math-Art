@@ -105,6 +105,11 @@ import math
 
 import numpy as np
 
+try:
+    from . import rim_curve as _rim
+except ImportError:  # flat import outside the package
+    import rim_curve as _rim
+
 
 def _pseudosphere(U, V, twist=0.0, a=0.5, breather_a=0.4,
                   amsler_angle=90.0):
@@ -546,6 +551,12 @@ if _IN_BLENDER:
         bl_idname = "mesh.hyperbolic_surface_add"
         bl_label = "Hyperbolic Surface"
         bl_options = {'REGISTER', 'UNDO'}
+        rim: _rim.rim_prop()
+        rim_thickness: _rim.rim_thickness_prop()
+        rim_smooth: _rim.rim_smooth_prop()
+        rim_profile: _rim.rim_profile_prop()
+        rim_twist: _rim.rim_twist_prop()
+        rim_reeds: _rim.rim_reeds_prop()
 
         preset: EnumProperty(
             name="Surface",
@@ -612,6 +623,14 @@ if _IN_BLENDER:
             self.report({'INFO'},
                         f"{label}: V={len(me.vertices)} "
                         f"F={len(me.polygons)}")
+            if self.rim:
+                _ob = context.active_object
+                if _ob is not None:
+                    _rim.add_rim_from_object(
+                        context, _ob, _ob.name,
+                        self.rim_thickness, self.rim_smooth,
+                        self.rim_profile, twist=self.rim_twist,
+                        reeds=self.rim_reeds)
             return {'FINISHED'}
 
         def draw(self, context):
@@ -634,6 +653,7 @@ if _IN_BLENDER:
             lay.prop(self, 'scale')
             lay.prop(self, 'shade_smooth')
 
+            _rim.draw_rim(lay, self)
     def _menu_func(self, context):
         self.layout.operator("mesh.hyperbolic_surface_add",
                              icon='MESH_CAPSULE')
