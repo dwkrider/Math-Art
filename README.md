@@ -21,7 +21,9 @@ underlying mathematics, and full references.
 
 ## Install
 
-1. Grab the latest **`dist/math_art-*.zip`** (or build it, below).
+1. Download the latest **`math_art-*.zip`** from the
+   **[Releases page](https://github.com/dwkrider/Math-Art/releases/latest)**
+   (or build it, below).
 2. In Blender: **Edit ▸ Preferences ▸ Get Extensions**, open the **⌄**
    menu (top‑right) ▸ **Install from Disk…**, and choose the zip — or
    simply drag the zip into the Blender window.

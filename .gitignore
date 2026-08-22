@@ -3,8 +3,9 @@ __pycache__/
 *.blend
 *.blend1
 *.stl
-# Local/test extension builds. Committed release zips live in dist/ (tracked).
+# Local extension builds. Distribution is via GitHub Releases, not the repo.
 dev/
+dist/
 TODO.md
 BACKLOG.md
 renders/**
