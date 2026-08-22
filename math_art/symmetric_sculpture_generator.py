@@ -1409,11 +1409,115 @@ def whimsy_motif(d=1.0):
     return polygon_with_holes(outer, holes)
 
 
+# Hart's Solar Flair part, traced from the cutting template and
+# fitted into the face plane of the pentagonal hexecontahedron.
+# Coordinates are the plane's local (x, y) in units of the plane
+# distance d.
+#
+# Solar Flair (2007) is a five-foot stainless sculpture in Topeka of
+# sixty identical flat pieces, and Hart describes the connectivity
+# exactly: they are "joined together with stainless steel bolts and
+# brackets at twenty 3-fold and twelve 5-fold vertices.  Each part
+# connects from one type of vertex to the other, passing through the
+# interior en route."  Sixty parts with one end at each kind of
+# vertex is 60 = 20x3 = 12x5, which balances, and it is the same
+# two-tip structure that pins Whimsy in this family.
+#
+# So the placement is forced, not chosen: the part's two sharp tips
+# land on the piercings of the nearest 5-fold and 3-fold axes, and
+# two point correspondences fix scale, rotation and position
+# together.  Both tips sit on their axis to machine precision.
+#
+# That is the whole reason this piece is here.  An earlier attempt at
+# a Paradise preset scaled its hook tips to Frabjous's phi^2 radius
+# instead, on the grounds that both are ICOSA/P2 -- but Paradise's
+# parts mate at cut NOTCHES partway along the arm, not at the tips,
+# so the radius was inherited from a part that meets its neighbours
+# somewhere else, and the sculpture came out wrong in the viewport.
+# A tip that sits on a symmetry axis is a fact about the sculpture; a
+# radius copied from a different sculpture is a guess.
+#
+# Which tip goes where follows Whimsy's convention -- the sharper tip
+# to the 5-fold hub (22.1 deg against 29.5) -- and that assignment
+# also scores best on the module's own near_mating_edges test, 89
+# edges bedding against a neighbouring plane where the alternatives
+# give 69 and 56.  The reflection is settled by the same test.
+#
+# STILL PROVISIONAL: the tips are pinned but the arm between them is
+# only as good as the trace, and the angles at the straight-cut
+# joints are measured rather than exact.  See
+# research/projects/symm_sculpt/.
+
+_SOLAR_FLAIR_OUTER = (
+    (+0.232879, -0.366051), (+0.152055, -0.468391), (+0.056150, -0.473175),
+    (+0.019542, -0.473688), (-0.034639, -0.472101), (-0.081885, -0.467206),
+    (-0.124049, -0.458707), (-0.147680, -0.451755), (-0.170548, -0.443335),
+    (-0.213268, -0.423236), (-0.247598, -0.402025), (-0.272022, -0.383629),
+    (-0.287895, -0.369865), (-0.302343, -0.355506), (-0.315357, -0.340571),
+    (-0.326928, -0.325081), (-0.337048, -0.309054), (-0.345706, -0.292511),
+    (-0.352895, -0.275472), (-0.358606, -0.257956), (-0.362829, -0.239984),
+    (-0.365556, -0.221575), (-0.366779, -0.202748), (-0.366487, -0.183525),
+    (-0.364673, -0.163924), (-0.358317, -0.129381), (-0.347437, -0.094473),
+    (-0.333145, -0.060526), (-0.302695, +0.000306), (-0.275896, +0.047671),
+    (-0.240665, +0.099688), (-0.182155, +0.175292), (-0.042054, +0.261243),
+    (-0.013374, +0.277260), (-0.010245, +0.277565), (-0.008666, +0.274551),
+    (-0.063641, +0.084803), (-0.143917, +0.026036), (-0.180773, -0.004215),
+    (-0.196206, -0.018894), (-0.213573, -0.037635), (-0.229613, -0.057550),
+    (-0.246152, -0.080482), (-0.259425, -0.101353), (-0.269797, -0.121025),
+    (-0.275889, -0.135512), (-0.282055, -0.155164), (-0.286316, -0.175991),
+    (-0.289292, -0.202674), (-0.288847, -0.222305), (-0.285711, -0.238985),
+    (-0.284076, -0.242094), (-0.223821, -0.223144), (-0.211528, -0.254822),
+    (-0.268153, -0.280017), (-0.240242, -0.314427), (-0.226280, -0.325930),
+    (-0.213023, -0.334490), (-0.194709, -0.343982), (-0.175423, -0.351677),
+    (-0.159987, -0.356214), (-0.139177, -0.359671), (-0.112410, -0.359518),
+    (-0.081185, -0.355214), (-0.045962, -0.346891), (-0.007200, -0.334680),
+    (+0.034642, -0.318713), (+0.079103, -0.299124), (+0.128331, -0.275063),
+    (+0.235712, -0.358949),
+)
+
+_SOLAR_FLAIR_HOLE_A = (
+    (+0.138981, -0.356976), (+0.124780, -0.347097), (+0.042424, -0.375332),
+    (+0.019445, -0.382912), (-0.001007, -0.389336), (-0.019549, -0.394781),
+    (-0.036795, -0.399427), (-0.053360, -0.403454), (-0.069860, -0.407039),
+    (-0.081766, -0.410146), (-0.009923, -0.416366), (+0.009244, -0.416877),
+    (+0.023745, -0.416818), (+0.034340, -0.416491), (+0.044838, -0.415913),
+    (+0.055371, -0.415076), (+0.066070, -0.413974), (+0.080820, -0.412079),
+    (+0.095793, -0.409817), (+0.109656, -0.407576), (+0.118435, -0.405808),
+    (+0.120857, -0.405134), (+0.123620, -0.404072), (+0.125625, -0.402864),
+    (+0.127195, -0.401414), (+0.153397, -0.367236),
+)
+
+_SOLAR_FLAIR_HOLE_B = (
+    (-0.088710, +0.177388), (-0.122361, +0.156736), (-0.132416, +0.149949),
+    (-0.137420, +0.145872), (-0.140697, +0.142815), (-0.145970, +0.137319),
+    (-0.152202, +0.130244), (-0.173144, +0.105355), (-0.188261, +0.086698),
+    (-0.202199, +0.068459), (-0.212744, +0.053831), (-0.227985, +0.031221),
+    (-0.243093, +0.007033), (-0.255006, -0.016173), (-0.237351, +0.005072),
+    (-0.226020, +0.017843), (-0.209456, +0.035011), (-0.191566, +0.052038),
+    (-0.172716, +0.068600), (-0.153274, +0.084371), (-0.133605, +0.099026),
+    (-0.112568, +0.113309), (-0.108280, +0.117071), (-0.105586, +0.121093),
+    (-0.102922, +0.127124), (-0.094063, +0.153344),
+)
+
+
+def solar_flair_motif(d=1.0):
+    """One of the sixty flat pieces of Hart's Solar Flair (2007),
+    traced from the cutting template: a long pierced arm running from
+    a 5-fold hub to a 3-fold corner in a face plane of the pentagonal
+    hexecontahedron, with both tips on their symmetry axes.  See the
+    note above for how the placement is pinned."""
+    outer = [(x * d, y * d) for x, y in _SOLAR_FLAIR_OUTER]
+    holes = [[(x * d, y * d) for x, y in _SOLAR_FLAIR_HOLE_A],
+             [(x * d, y * d) for x, y in _SOLAR_FLAIR_HOLE_B]]
+    return polygon_with_holes(outer, holes)
+
+
 # preset -> (group, plane family, motif builder)
 PRESETS = {
     'FRABJOUS': ('ICOSA', 'P2', frabjous_motif),
     'KRULL': ('ICOSA', 'P5', krull_motif),
     'WHIMSY': ('ICOSA', 'P1', whimsy_motif),
+    'SOLAR_FLAIR': ('ICOSA', 'P1', solar_flair_motif),
 }
 
 
@@ -1911,6 +2015,13 @@ if _IN_BLENDER:
                     "template -- a curved band with two teardrop "
                     "openings, tipped so five meet at each 5-fold "
                     "hub and three at each 3-fold corner"),
+                   ('SOLAR_FLAIR', "Solar Flair",
+                    "After Solar Flair (2007): 60 pierced arms in "
+                    "the face planes of the pentagonal "
+                    "hexecontahedron, each running from one of the "
+                    "twelve 5-fold vertices to one of the twenty "
+                    "3-fold ones. Traced from the cutting template, "
+                    "with both tips pinned on their symmetry axes"),
                    ('CUSTOM', "Custom",
                     "Choose the group and plane family yourself; "
                     "starts from the demo arc motif")],
