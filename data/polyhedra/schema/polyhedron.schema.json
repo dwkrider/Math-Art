@@ -483,6 +483,13 @@
             "null"
           ],
           "description": "True when the polar dual has vertices at infinity, because some face's plane passes through the centre. This is exactly the hemipolyhedron condition, so it is COMPUTED, not curated. Where it is true, `dual` names a figure that is not a bounded polyhedron and this database stores no record for it."
+        },
+        "coincident_vertices": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "description": "How many COMBINATORIAL vertices share a location with another and were merged in the stored table. Nonzero for some star-polyhedron duals: the dual of a solid with coplanar faces has one vertex per face, but coplanar faces reciprocate to the SAME point. McCooey's published tables show the same thing -- e.g. the great hexagonal hexecontahedron lists 104 vertices at only 92 distinct positions. `counts.vertices` is the number of distinct POINTS; add this to recover the combinatorial count, which is what makes the dual reciprocal."
         }
       },
       "additionalProperties": false
@@ -1254,6 +1261,174 @@
         },
         "source": {
           "type": "string"
+        }
+      }
+    },
+    "compound": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "description": "Present when the record is a COMPOUND: several polyhedra sharing a centre. A compound is a set of solids, not one, so its surface is disconnected and several single-solid invariants change meaning -- `euler_characteristic` is the SUM over components, `genus` is null, and `dual` is normally null. The manifold and winding checks still apply, but per component.",
+      "required": [
+        "component_count"
+      ],
+      "properties": {
+        "component_count": {
+          "type": "integer",
+          "minimum": 2
+        },
+        "components": {
+          "type": "array",
+          "description": "One entry per component. `faces` indexes into the record's own face list, so the parts stay separable after coincident vertices are welded (five cubes share a dodecahedron's twenty vertices).",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "slug": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "The component solid, when it is a record in this database."
+              },
+              "counts": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "vertices": {
+                    "type": "integer"
+                  },
+                  "edges": {
+                    "type": "integer"
+                  },
+                  "faces": {
+                    "type": "integer"
+                  }
+                }
+              },
+              "faces": {
+                "type": "array",
+                "items": {
+                  "type": "integer",
+                  "minimum": 0
+                }
+              }
+            }
+          }
+        },
+        "components_congruent": {
+          "type": "boolean",
+          "description": "True when every component is the same solid (an interpenetrating compound); false for a dual pair."
+        },
+        "enumeration": {
+          "type": "array",
+          "description": "Catalogue cross-references. An ARRAY, and never the record's identity, because the compound catalogues are not a single sequence: Skilling (1976) is complete for UNIFORM compounds only, Harman's rule generates families with no canonical numbering, and the spin families are continuously parameterised so no enumeration exists even in principle. A compound in no catalogue is still a valid record.",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "catalogue"
+            ],
+            "properties": {
+              "catalogue": {
+                "type": "string",
+                "description": "e.g. 'skilling-1976', 'coxeter-regular', 'harman-1974'."
+              },
+              "index": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Index within that catalogue, e.g. 'UC20', or Harman's nX/mY notation."
+              },
+              "via": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "Intermediary source, where the original is unpublished -- Harman's work is known only through Hart."
+              },
+              "complete_for": {
+                "type": [
+                  "string",
+                  "null"
+                ],
+                "description": "What the catalogue is complete FOR, if it claims completeness. Always qualified."
+              }
+            }
+          }
+        },
+        "parameters": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "description": "Continuous families have a free rotation angle; a member is identified only by its parameter. Special values collapse components.",
+          "properties": {
+            "free": {
+              "type": "boolean"
+            },
+            "angle_degrees": {
+              "type": [
+                "number",
+                "null"
+              ]
+            },
+            "repeat": {
+              "type": [
+                "integer",
+                "null"
+              ],
+              "description": "The r in Skilling's infinite prism/antiprism families."
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        },
+        "discovered_by": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "first_published": {
+          "type": [
+            "string",
+            "null"
+          ],
+          "description": "Year, or 'unpublished (YEAR)'."
+        },
+        "axis_alignment": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "additionalProperties": false,
+          "description": "Which rotation axes of the component and of the whole compound coincide. Harman's notation nX/mY names exactly this pairing. DERIVED from the geometry, not transcribed: `harman_style` is written in his form but is not claimed to match his own labelling, since verifying that would mean copying his table.",
+          "properties": {
+            "component_axis_order": {
+              "type": "integer"
+            },
+            "compound_axis_order": {
+              "type": "integer"
+            },
+            "component_group": {
+              "type": "string"
+            },
+            "compound_group": {
+              "type": "string"
+            },
+            "harman_style": {
+              "type": "string"
+            },
+            "note": {
+              "type": "string"
+            }
+          }
         }
       }
     }

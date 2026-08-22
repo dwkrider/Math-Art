@@ -69,9 +69,23 @@ def parse_mccooey(text):
     name = text.strip().splitlines()[0].strip() if text.strip() else None
     for line in text.splitlines():
         s = line.strip()
+        # Layout A: "C0 = 0.809... = (1 + sqrt(5)) / 4" on one line.
         m = re.match(r"^(C\d+)\s*=\s*(%s)\s*=\s*(.+)$" % _NUM, s)
         if m:
             consts[m.group(1)] = (float(m.group(2)), m.group(3).strip())
+            continue
+        # Layout B: the decimals are listed first, then the exact forms are
+        # repeated further down, one per line. Pages for the harder solids use
+        # this; treating it as unparseable loses the whole file, which is why
+        # several duals looked like they had "no cached source".
+        m = re.match(r"^(C\d+)\s*=\s*(.+)$", s)
+        if m:
+            key, rhs = m.group(1), m.group(2).strip()
+            try:
+                consts[key] = (float(rhs), consts.get(key, (None, None))[1])
+            except ValueError:
+                dec = consts.get(key, (None, None))[0]
+                consts[key] = (dec, rhs)
             continue
         m = re.match(r"^V(\d+)\s*=\s*\(([^)]*)\)\s*$", s)
         if m:
@@ -234,6 +248,26 @@ def _dihedral_multiset(V, F, nd=6):
     return sorted(out)
 
 
+def _weld(V, F=None, nd=7):
+    """Merge coincident vertices, remapping faces if given."""
+    key, remap, out = {}, [], []
+    for v in V:
+        k = tuple(round(float(c), nd) + 0.0 for c in v)
+        if k not in key:
+            key[k] = len(out)
+            out.append(tuple(float(c) for c in v))
+        remap.append(key[k])
+    if F is None:
+        return out, None
+    faces = []
+    for f in F:
+        g = [remap[i] for i in f]
+        h = [g[i] for i in range(len(g)) if g[i] != g[(i - 1) % len(g)]]
+        if len(h) >= 3:
+            faces.append(h)
+    return out, faces
+
+
 def same_shape(V1, V2, F1=None, F2=None, tol=1e-7):
     """True when two solids are the same polyhedron up to rotation, reflection,
     vertex order and uniform scale.
@@ -246,6 +280,13 @@ def same_shape(V1, V2, F1=None, F2=None, tol=1e-7):
     separates them. Without faces the result is only a vertex-arrangement
     match, and says so.
     """
+    # Weld both sides first. Some star duals genuinely have COINCIDENT
+    # vertices -- the great hexagonal hexecontahedron lists 104 vertices at 92
+    # distinct positions, and McCooey's published table shows the same -- so a
+    # welded table and an unwelded one describe the same solid and must not be
+    # reported as a count mismatch.
+    V1, F1 = _weld(V1, F1)
+    V2, F2 = _weld(V2, F2)
     if len(V1) != len(V2):
         return False, "vertex count %d vs %d" % (len(V1), len(V2))
     r1, d1 = _invariants(V1)

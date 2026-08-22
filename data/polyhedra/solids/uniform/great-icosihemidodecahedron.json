@@ -82,6 +82,7 @@
     "convex": false,
     "self_dual": false,
     "dual": "great-icosihemidodecacron",
+    "coincident_vertices": 0,
     "vertex_density": null,
     "convex_hull": {
       "is_self": false,

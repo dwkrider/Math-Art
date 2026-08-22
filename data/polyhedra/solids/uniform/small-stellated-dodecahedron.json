@@ -78,6 +78,7 @@
     "convex": false,
     "self_dual": false,
     "dual": "great-dodecahedron",
+    "coincident_vertices": 0,
     "vertex_density": 1,
     "convex_hull": {
       "is_self": false,

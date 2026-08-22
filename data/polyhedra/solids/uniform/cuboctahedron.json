@@ -85,6 +85,7 @@
     "convex": true,
     "self_dual": false,
     "dual": "rhombic-dodecahedron",
+    "coincident_vertices": 0,
     "vertex_density": 1,
     "convex_hull": {
       "is_self": true,

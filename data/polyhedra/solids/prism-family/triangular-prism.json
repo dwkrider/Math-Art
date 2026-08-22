@@ -77,6 +77,7 @@
     "convex": true,
     "self_dual": false,
     "dual": "triangular-dipyramid",
+    "coincident_vertices": 0,
     "vertex_density": 1,
     "convex_hull": {
       "is_self": true,
@@ -376,6 +377,7 @@
       ]
     ]
   },
+  "compound": null,
   "space_filling": {
     "fills_space_alone": true,
     "parallelohedron": false,
