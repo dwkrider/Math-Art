@@ -970,6 +970,7 @@ if _IN_BLENDER:
             description="Morton shape parameter")
         mode: EnumProperty(
             name="Mode",
+            description="How much to reshape the raw Morton knot",
             items=[('SMOOTH', "Smooth-Rolling",
                     "Morph onto the two-disk roller "
                     "(constant-height rolling)"),
@@ -1004,13 +1005,18 @@ if _IN_BLENDER:
                         "a setting would cost rolling accuracy)")
         samples: IntProperty(
             name="Curve Samples", default=512, min=128,
-            max=1024)
+            max=1024,
+            description="Number of points along the centreline curve")
         sides: IntProperty(
-            name="Tube Sides", default=16, min=6, max=48)
+            name="Tube Sides", default=16, min=6, max=48,
+            description="Number of sides around the tube cross-section")
         smooth: BoolProperty(name="Smooth Shading",
-                             default=True)
+                             default=True,
+                             description="Shade the tube smoothly "
+                                         "rather than faceted")
         scale: FloatProperty(name="Scale", default=1.0,
-                             min=0.01, max=100.0)
+                             min=0.01, max=100.0,
+                             description="Overall size of the knot")
 
         def execute(self, context):
             p = self.p - (1 - self.p % 2)   # force odd

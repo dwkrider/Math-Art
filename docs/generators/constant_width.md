@@ -25,7 +25,7 @@ The **Meissner tetrahedron** is the celebrated one. Take a Reuleaux tetrahedron 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Shape | Meissner Tetrahedron | Meissner Tetrahedron, Reuleaux Solid of Revolution, Reuleaux Tetrahedron. |
+| Shape | Meissner Tetrahedron | Which constant-width solid to build. Meissner Tetrahedron, Reuleaux Solid of Revolution, Reuleaux Tetrahedron. |
 | Polygon Sides | 3 | Sides of the Reuleaux polygon (forced odd) Range 3-15. |
 | Width | 2 | The constant width (rolling height) Range 0.05-100. |
 | Smoothness | 6 | Icosphere subdivisions for the Boolean tetra (higher = smoother, slower; 8 is very heavy) Range 4-8. |

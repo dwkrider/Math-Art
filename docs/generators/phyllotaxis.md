@@ -26,10 +26,10 @@ The spiral packing of a sunflower head, a pine cone or a daisy — florets place
 | Option | Default | Description |
 | --- | --- | --- |
 | Florets | 500 | Number of florets placed by the golden-angle spiral Range 1-4000. |
-| Form | Disk (sunflower) | Disk (sunflower), Dome (cactus), Cone, Sphere (pineapple), Crest (cristate). |
-| Floret | Seed Bump | Seed Bump, Areole Spike, Disc Floret. |
-| Output | Floret Solids | Floret Solids, Points Only. |
-| Handedness | Right | Right, Left. |
+| Form | Disk (sunflower) | Surface the florets are placed on. Disk (sunflower), Dome (cactus), Cone, Sphere (pineapple), Crest (cristate). |
+| Floret | Seed Bump | Shape placed at each floret point. Seed Bump, Areole Spike, Disc Floret. |
+| Output | Floret Solids | Floret solids, or just the center points for instancing. Floret Solids, Points Only. |
+| Handedness | Right | Winding direction of the spiral. Right, Left. |
 | Divergence | 137.508 | Angle between successive florets in degrees (137.50776 = the golden angle; small detunings change the parastichy counts) Range 1-179. |
 | Height | 0.8 | Height of the dome / cone / crest (ignored for Disk and Sphere) Range 0-4. |
 | Crest Waves | 3 | Number of parallel ridges across the Crest form Range 0.5-12. |
@@ -40,9 +40,9 @@ The spiral packing of a sunflower head, a pine cone or a daisy — florets place
 | Bump Flatten | 0.55 | Seed-bump thickness along the normal (1 = a full sphere) Range 0.05-1. |
 | Bump Detail | 1 | Icosphere subdivisions for the seed bumps Range 0-3. |
 | Segments | 12 | Sides of the spike / disc florets Range 3-48. |
-| Color By | Parastichy Arms | Parastichy Arms, Radial Rings, Uniform. |
+| Color By | Parastichy Arms | How the florets are colored. Parastichy Arms, Radial Rings, Uniform. |
 | Parastichy k | 13 | Which spiral-arm family to color; a Fibonacci number (8, 13, 21, 34...) matches the natural parastichies Range 1-144. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the floret solids smooth rather than faceted |
 | Scale | 1 | Multiplier on the normalized size (1.0 fits a 2 m cube centered on the origin) Range 0.01-100. |
 
 <!-- /options -->

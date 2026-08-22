@@ -436,6 +436,7 @@ if _IN_BLENDER:
 
         family: EnumProperty(
             name="Family",
+            description="Which interlocking-block family to build",
             items=[
                 ('TETRA', "Interlocking Tetrahedra",
                  "The canonical layer of regular tetrahedra in two "
@@ -500,13 +501,16 @@ if _IN_BLENDER:
                  "translation 'boat'); guaranteed non-overlapping")],
             default='TETRA')
 
-        nx: IntProperty(name="Cells X", default=4, min=1, max=16)
-        ny: IntProperty(name="Cells Y", default=4, min=1, max=16)
+        nx: IntProperty(name="Cells X", default=4, min=1, max=16,
+                        description="Number of cells along X")
+        ny: IntProperty(name="Cells Y", default=4, min=1, max=16,
+                        description="Number of cells along Y")
         nz: IntProperty(name="Cells Z", default=2, min=1, max=8,
                         description="Layers (tetroctahedrille only)")
 
         profile: EnumProperty(
             name="Profile",
+            description="Edge-deformation profile of the Escher block",
             items=[('SINE', "Sine (Osteomorphic)",
                     "Sinusoidal edge -> saddle block"),
                    ('TENT', "Tent (Versatile)", "Tented edge"),
@@ -518,12 +522,18 @@ if _IN_BLENDER:
             description="Escher edge-deformation depth (interlock "
                         "depth)")
         samples: IntProperty(name="Edge Samples", default=8, min=2,
-                             max=24)
+                             max=24,
+                             description="Samples along each deformed "
+                                         "edge of the Escher block")
         height: FloatProperty(name="Block Height", default=1.0,
-                              min=0.2, max=4.0)
+                              min=0.2, max=4.0,
+                              description="Height of the lofted Escher "
+                                          "block")
 
         sl_mode: EnumProperty(
             name="SL Mode",
+            description="Whether to build a single SL block, an engaged "
+                        "pair, or the periodic square strand",
             items=[('BLOCK', "Single Block",
                     "One SL octocube (S + L tetracubes)"),
                    ('ENGAGEMENT', "Engaged Pair",
@@ -556,6 +566,8 @@ if _IN_BLENDER:
 
         dome_seed: EnumProperty(
             name="Seed",
+            description="Seed polyhedron whose faces become the dome "
+                        "blocks",
             items=[('ICOSA', "Icosahedron", "20 triangular blocks"),
                    ('DODECA', "Dodecahedron",
                     "12 pentagonal blocks")],
@@ -583,6 +595,7 @@ if _IN_BLENDER:
                                          "2 m cube)")
         colour_mode: EnumProperty(
             name="Colouring",
+            description="How the assembly is coloured",
             items=[('TYPE', "By Block Type",
                     "Two-tone by Truchet colour / block role"),
                    ('FRAME', "Highlight Frame",

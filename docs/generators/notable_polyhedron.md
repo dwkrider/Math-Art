@@ -26,9 +26,9 @@ The **Schönhardt polyhedron** is a twisted octahedron that cannot be cut into t
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Solid | Final Stellation of Icosahedron | Final Stellation of Icosahedron, Schonhardt Polyhedron, Jessen's Orthogonal Icosahedron, Durer's Solid, Bilinski Dodecahedron, Escher's Solid, Tetrated Dodecahedron, 132-Pentagon Polyhedron, and 6 more. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
-| Border | 0.3 | Leonardo face frame width (fraction of the face) Range 0.02-0.95. |
+| Solid | Final Stellation of Icosahedron | Which notable polyhedron to build. Final Stellation of Icosahedron, Schonhardt Polyhedron, Jessen's Orthogonal Icosahedron, Durer's Solid, Bilinski Dodecahedron, Escher's Solid, Tetrated Dodecahedron, 132-Pentagon Polyhedron, and 11 more. |
+| Style | Solid | How the polyhedron is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Border | 0.06 | Leonardo face frame width, the same on every face Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
@@ -36,7 +36,7 @@ The **Schönhardt polyhedron** is a twisted octahedron that cannot be cut into t
 | Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
 | Explode | 0.1 | Move segments outward Range 0-5. |
 | Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 

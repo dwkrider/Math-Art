@@ -33,14 +33,14 @@ Going beyond the icosahedron is not simply a matter of changing a constant. The 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Seed | Icosahedron | Icosahedron, Dodecahedron, Cuboctahedron, Rhombic Triacontahedron. |
-| Stellation |  | -- |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe. |
-| Border | 0.3 | Leonardo face frame width Range 0.02-0.95. |
+| Seed | Icosahedron | Base polyhedron whose face-plane arrangement is stellated. Icosahedron, Dodecahedron, Dodecahedron Tetrahedral, Cuboctahedron, Rhombic Dodecahedron, Triakis Tetrahedron, Rhombic Triacontahedron. |
+| Stellation |  | Which named stellation of the seed to build |
+| Style | Solid | How the stellation is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe. |
+| Border | 0.06 | Leonardo face frame width Range 0.005-1. |
 | Thickness | 0.05 | Panel/strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

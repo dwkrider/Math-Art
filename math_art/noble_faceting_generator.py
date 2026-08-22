@@ -511,7 +511,8 @@ if _IN_BLENDER:
                         "Smith's, whose faces are equilateral triangles "
                         "and alternate-sided hexagons")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         if _shell is not None:
             __annotations__.update(_shell.style_properties())

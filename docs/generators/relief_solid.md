@@ -26,80 +26,80 @@ That is not a matter of convenience. By Gauss's *Theorema Egregium* a sphere can
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | Planet | Custom, Planet, Asteroid, Harmonic Ball, Shagreen, Wallpaper Torus, Elliptic Torus, Ocean Torus, and 15 more. |
-| Base | Sphere (geodesic) | Sphere (geodesic), Torus, Cylinder. |
+| Preset | Planet | Load a ready-made surface and pattern; Custom leaves the controls below untouched. Custom, Planet, Asteroid, Harmonic Ball, Shagreen, Wallpaper Torus, Elliptic Torus, Ocean Torus, and 15 more. |
+| Base | Sphere (geodesic) | Which closed surface to carve the relief onto. Sphere (geodesic), Torus, Cylinder. |
 | Subdivisions | 5 | Icosphere subdivisions. Each step quadruples the faces: 5 is about 10k vertices, 7 is 164k Range 1-7. |
 | Detail | 128 | Grid resolution around the torus or along the cylinder Range 12-512. |
-| Ring Radius | 1 | Range 0.1-10. |
-| Tube Radius | 0.4 | Range 0.02-5. |
-| Height | 2 | Range 0.1-20. |
-| Radius | 0.7 | Range 0.05-10. |
-| Pattern | Fractal | Fractal, Cellular, Gabor Weave, Spherical Harmonic, Wallpaper Group, Weierstrass P, Truchet, Seigaiha, and 9 more. |
-| Fractal | Fractional Brownian | Fractional Brownian, Weierstrass-Mandelbrot. |
-| Hurst | 0.7 | Range 0.05-0.99. |
-| Fractal Dimension | 2.3 | Range 2.01-2.95. |
-| Octaves | 8 | Range 1-16. |
-| Lacunarity | 2 | Range 1.2-4. |
-| fBm Modes | 240 | Range 16-1200. |
-| Feature Scale | 1 | Range 0.05-20. |
-| Points | 120 | Range 4-2000. |
-| Cells | Cell Walls | Cell Walls, Domes, Second Nearest. |
-| Wall Profile | 1 | Range 0.2-4. |
-| Pitch | 6 | Range 0.5-40. |
-| Bandwidth | 0.35 | Range 0.05-1. |
-| Direction Spread | 3.1416 | Range 0-3.1416. |
+| Ring Radius | 1 | Radius from the torus centre to the middle of its tube Range 0.1-10. |
+| Tube Radius | 0.4 | Radius of the torus tube Range 0.02-5. |
+| Height | 2 | Height of the cylinder Range 0.1-20. |
+| Radius | 0.7 | Radius of the cylinder Range 0.05-10. |
+| Pattern | Fractal | Which pattern to evaluate over the surface. Fractal, Cellular, Gabor Weave, Spherical Harmonic, Wallpaper Group, Weierstrass P, Truchet, Seigaiha, and 9 more. |
+| Fractal | Fractional Brownian | Which fractal construction supplies the field. Fractional Brownian, Weierstrass-Mandelbrot. |
+| Hurst | 0.7 | Fractional Brownian roughness: lower is rougher, higher is smoother Range 0.05-0.99. |
+| Fractal Dimension | 2.3 | Fractal dimension of the Weierstrass-Mandelbrot field; higher is more crumpled Range 2.01-2.95. |
+| Octaves | 8 | Number of frequency bands summed into the fractal Range 1-16. |
+| Lacunarity | 2 | Frequency ratio between successive octaves Range 1.2-4. |
+| fBm Modes | 240 | Number of random Fourier modes summed for the fBm field Range 16-1200. |
+| Feature Scale | 1 | Overall size of the field features; larger stretches the pattern Range 0.05-20. |
+| Points | 120 | Number of feature points scattered through space Range 4-2000. |
+| Cells | Cell Walls | Which Worley distance to plot: cell walls, nearest, or second nearest. Cell Walls, Domes, Second Nearest. |
+| Wall Profile | 1 | Sharpness of the cell-wall profile Range 0.2-4. |
+| Pitch | 6 | Spatial frequency (pitch) of the Gabor weave Range 0.5-40. |
+| Bandwidth | 0.35 | Bandwidth of the Gabor kernel; wider blurs the pitch Range 0.05-1. |
+| Direction Spread | 3.1416 | Angular spread of the Gabor kernel directions; 0 is aligned, pi is isotropic Range 0-3.1416. |
 | Regime | Maze | Where in the feed/kill plane the chemistry sits. These pairs are the ones that live on a MESH, which is not the region that lives on a grid. Spots, Solitons, Mitosis, Worms, Maze, Coral, Holes. |
 | Steps | 4000 | Reaction-diffusion is grown, not evaluated Range 100-30000. |
 | Feature Size | 0.35 | Diffusion per step; larger spreads the pattern into bigger blobs Range 0.05-1.2. |
 | Repeats Around | 2 | Copies of the pattern around the ring Range 0.25-24. |
 | Repeats Across | 1 | Copies across the tube Range 0.25-24. |
-| Plane Group | P4M | P1, P2, PM, PG, CM, PMM, PMG, PGG, and 9 more. |
-| Detail | 3 | Range 1-8. |
-| Function | Weierstrass P | Weierstrass P, Weierstrass P', Weierstrass zeta, Jacobi theta. |
-| Height From | Riemann Sphere | Riemann Sphere, Real Part, Imaginary Part, Modulus. |
+| Plane Group | P4M | Which of the 17 wallpaper symmetry groups the pattern obeys. P1, P2, PM, PG, CM, PMM, PMG, PGG, and 9 more. |
+| Detail | 3 | Highest harmonic used to build the wallpaper pattern Range 1-8. |
+| Function | Weierstrass P | Which elliptic function supplies the height; only P and P' are doubly periodic. Weierstrass P, Weierstrass P', Weierstrass zeta, Jacobi theta. |
+| Height From | Riemann Sphere | Which part of the complex value to take as height. Riemann Sphere, Real Part, Imaginary Part, Modulus. |
 | Conformal Lattice | On | Set the lattice to the torus's own conformal modulus, so the function sits on the shape it belongs to rather than an arbitrary square |
-| Lattice Skew | 0 | Range -2-2. |
-| Lattice Ratio | 1 | Range 0.05-4. |
-| Cells | 6 | Range 1-32. |
-| Lane Width | 0.3 | Range 0.02-1. |
-| Straight Tiles | 0 | Range 0-1. |
-| Arcs | 3 | Range 1-12. |
-| Crown | 0.55 | Range 0.1-1. |
-| Rim | 0.08 | Range 0-0.5. |
+| Lattice Skew | 0 | Real part (skew) of the lattice modulus when not using the conformal lattice Range -2-2. |
+| Lattice Ratio | 1 | Imaginary part (ratio) of the lattice modulus when not using the conformal lattice Range 0.05-4. |
+| Cells | 6 | Number of tiles across the pattern Range 1-32. |
+| Lane Width | 0.3 | Width of the Truchet lanes Range 0.02-1. |
+| Straight Tiles | 0 | Fraction of tiles that run straight rather than curving Range 0-1. |
+| Arcs | 3 | Number of concentric arcs per Seigaiha scale Range 1-12. |
+| Crown | 0.55 | Height of each Seigaiha scale; snaps so the stagger closes Range 0.1-1. |
+| Rim | 0.08 | Width of the flat rim around each Seigaiha scale Range 0-0.5. |
 | Sea Grid | 256 | Lattice the sea is synthesised on before being sampled onto the surface Range 64-512. |
 | Patch | 100 | Physical size of the sea being simulated; with the wind speed it decides how many waves cross it Range 5-1000. |
-| Wind | 8 | Range 1-30. |
-| Wind Direction | 0 | Range -6.2832-6.2832. |
+| Wind | 8 | Wind speed driving the sea; higher raises longer waves Range 1-30. |
+| Wind Direction | 0 | Direction the wind blows across the sea Range -6.2832-6.2832. |
 | Choppiness | 0 | Measured in cusp limits: 1 puts the steepest crest exactly at the Stokes cusp Range 0-3. |
-| Sources | 4 | Range 1-32. |
-| Wavelength | 0.35 | Range 0.01-8. |
+| Sources | 4 | Number of ripple sources on the surface Range 1-32. |
+| Wavelength | 0.35 | Distance between successive wave crests Range 0.01-8. |
 | Decay | 0 | Fades each wavefront with distance from its source Range 0-4. |
-| Steepness | 0 | Range 0-1. |
-| Waves | 1 | Range 1-12. |
-| Axis Spread | 0 | Range 0-1. |
-| Kernel Radius | 0.12 | Range 0.01-2. |
-| Kernel | Wyvill | Wyvill, Gaussian, Blinn, Cosine, Wendland, Cone. |
-| Merge | Merge | Merge, Sum. |
+| Steepness | 0 | How peaked the wave crests are Range 0-1. |
+| Waves | 1 | Number of zonal wave trains about the axis Range 1-12. |
+| Axis Spread | 0 | How far the extra wave trains tilt off the axis Range 0-1. |
+| Kernel Radius | 0.12 | Radius of the kernel raised at each scattered point Range 0.01-2. |
+| Kernel | Wyvill | Falloff shape of the bump raised at each scattered point. Wyvill, Gaussian, Blinn, Cosine, Wendland, Cone. |
+| Merge | Merge | How overlapping scatter bumps combine. Merge, Sum. |
 | Scale | 6 | How many wave periods span the object Range 1-30. |
 | Terrace | 0 | Flattens the field toward plateaus, which turns interference into something that reads as tiling Range 0-6. |
 | Break Symmetry | 0 | Perturbs the axes. Any value above zero destroys the exact icosahedral symmetry, deliberately Range 0-0.5. |
-| Group | *532 - full icosahedral (Ih) | 332 - tetrahedral (T), *332 - full tetrahedral (Td), 432 - octahedral (O), *432 - full octahedral (Oh), 532 - icosahedral (I), *532 - full icosahedral (Ih), 3*2 - pyritohedral (Th). |
-| Wave Scale | 4 | Range 0.5-20. |
-| Seed Waves | 5 | Range 1-16. |
-| Seed | Plane Waves | Plane Waves, Packets. |
-| Degree l | 4 | Range 0-24. |
-| Order m | 2 | Range -24-24. |
-| m | 3 | Range 0-16. |
-| n | 2 | Range 0-16. |
-| k | 1 | Range 0-16. |
-| Phase | 0 | Range -6.2832-6.2832. |
-| Profile | None | None, Abs, Ridge, Gamma, Scurve, Terrace, Clamp. |
-| Amount | 1 | Range 0.05-4. |
-| Relief Depth | 0.05 | Range 0-4. |
-| Seed | 1 | Range 0-100000. |
-| Fit | 2 m Cube | 2 m Cube, None. |
-| Scale | 1 | Range 0.01-100. |
-| Smooth Shading | On | -- |
+| Group | *532 - full icosahedral (Ih) | Which spherical symmetry group the field is made invariant under. 332 - tetrahedral (T), *332 - full tetrahedral (Td), 432 - octahedral (O), *432 - full octahedral (Oh), 532 - icosahedral (I), *532 - full icosahedral (Ih), 3*2 - pyritohedral (Th). |
+| Wave Scale | 4 | Spatial frequency of the symmetric waves; higher is finer Range 0.5-20. |
+| Seed Waves | 5 | Number of seed waves averaged over the symmetry group Range 1-16. |
+| Seed | Plane Waves | Whether the seed is smooth plane waves or localised packets. Plane Waves, Packets. |
+| Degree l | 4 | Degree l of the spherical harmonic Range 0-24. |
+| Order m | 2 | Order m of the spherical harmonic (clamped to \|m\| <= l) Range -24-24. |
+| m | 3 | Mode number m: angular order for the torus mode, or first lattice index Range 0-16. |
+| n | 2 | Mode number n: second index of the torus or lattice mode Range 0-16. |
+| k | 1 | Mode number k: third index of the lattice wave Range 0-16. |
+| Phase | 0 | Phase offset of the wave or mode Range -6.2832-6.2832. |
+| Profile | None | Transfer profile reshaping the field before it is carved. None, Abs, Ridge, Gamma, Scurve, Terrace, Clamp. |
+| Amount | 1 | Strength of the transfer profile Range 0.05-4. |
+| Relief Depth | 0.05 | How far the relief rises above or sinks below the surface Range 0-4. |
+| Seed | 1 | Random seed for the field Range 0-100000. |
+| Fit | 2 m Cube | Whether to rescale the result to fit a 2 m cube. 2 m Cube, None. |
+| Scale | 1 | Uniform scale applied to the final mesh Range 0.01-100. |
+| Smooth Shading | On | Shade the surface smooth rather than faceted |
 
 <!-- /options -->
 

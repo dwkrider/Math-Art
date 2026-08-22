@@ -32,7 +32,7 @@ These are worth having because a single dial slides continuously between named s
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Solid | Pyritohedron | Pyritohedron, Tetartoid, Hexagonal Scalenohedron, Ditrigonal Dipyramid, Hexagonal Dipyramid, Elongated Dodecahedron, Trapezo-Rhombic Dodecahedron. |
+| Solid | Pyritohedron | Which twelve-faced solid to build. Pyritohedron, Tetartoid, Hexagonal Scalenohedron, Ditrigonal Dipyramid, Hexagonal Dipyramid, Elongated Dodecahedron, Trapezo-Rhombic Dodecahedron. |
 | Shape | 0.618034 | Pyritohedron dial: 0 is the cube, 1/phi (0.618) the regular dodecahedron, 1 the rhombic dodecahedron Range 0-1. |
 | Tilt | 0.55 | Tetartoid face direction, second component Range 0.05-1.5. |
 | Skew | 0.15 | Tetartoid face direction, third component. Zero puts the face plane back on a mirror and the solid stops being chiral Range 0-1. |
@@ -40,8 +40,8 @@ These are worth having because a single dial slides continuously between named s
 | Waist | 0.62 | Inner radius of the ditrigonal hexagon's short alternate vertices Range 0.1-1. |
 | Height | 1.4 | Apex height above the equator Range 0.1-6. |
 | Stretch | 0.5 | Depth of the prism inserted into the rhombic dodecahedron; zero gives it back unchanged Range 0-3. |
-| Scale | 1 | Range 0.01-100. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
+| Style | Solid | Finish for the shell: solid, Leonardo panels, struts, ball-and-stick, wireframe, or face segments. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
 | Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Struts styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |

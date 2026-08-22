@@ -28,11 +28,11 @@ The Seifert generator builds the orientable spanning surface (**Seifert surface*
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | Trefoil (3_1) | Custom braid, Trefoil (3_1), Figure-8 (4_1), Cinquefoil (5_1), (2,7) torus knot 7_1, (3,4) torus knot 8_19, Granny knot, Square knot, and 4 more. |
+| Preset | Trefoil (3_1) | Choose a classic knot/link, a torus knot, or a custom braid word. Custom braid, Trefoil (3_1), Figure-8 (4_1), Cinquefoil (5_1), (2,7) torus knot 7_1, (3,4) torus knot 8_19, Granny knot, Square knot, and 4 more. |
 | Braid Word | `AAA` | Letters: A = right-hand crossing of strands 1-2, a = left-hand; B/b = strands 2-3, ...; 'A3' repeats. Or signed integers '1 -2 1 -2' |
-| Torus p | 3 | Range 2-8. |
-| Torus q | 4 | Range 2-12. |
-| Surface | Seifert (oriented) | Seifert (oriented), Turnback state, Min-crosscap state. |
+| Torus p | 3 | First parameter of the (p,q) torus knot Range 2-8. |
+| Torus q | 4 | Second parameter of the (p,q) torus knot Range 2-12. |
+| Surface | Seifert (oriented) | Which spanning surface of the link to build. Seifert (oriented), Turnback state, Min-crosscap state. |
 | Relax Steps | 100 | Particle-model membrane relaxation -- neighbour attraction and pairwise repulsion round the knot out Range 0-1000. |
 | Refine Levels | 2 | Catmull-Clark subdivision levels (1 interactive, 2 export; each level roughly quadruples the mesh) Range 0-3. |
 | Fair Steps | 10 | Implicit mean-curvature fairing with the knot rim pinned -- drives the surface to a discrete minimal surface Range 0-60. |
@@ -46,7 +46,8 @@ The Seifert generator builds the orientable spanning surface (**Seifert surface*
 | Disk Rings | 2 | Annular rings outside each disk's square core Range 1-8. |
 | Scale | 1 | Size multiplier; 1 fits the surface in a 2-unit cube Range 0.01-100. |
 | Add Knot Curve | On | Also create a bevelled curve along the knot/link (the surface boundary) |
-| Knot Tube Radius | 0.02 | Range 0-0.5. |
+| Rim Profile | Circular | Cross-section swept along the rim. Circular, Square, Channel (C), Beam (H), Reeded, Curve Only. |
+| Knot Tube Radius | 0.02 | Bevel radius of the knot boundary curve Range 0-0.5. |
 
 <!-- /options -->
 

@@ -309,7 +309,8 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         solid: EnumProperty(name="Solid", items=SOLIDS,
-                            default='PYRITOHEDRON')
+                            default='PYRITOHEDRON',
+                            description="Which twelve-faced solid to build")
         shape: FloatProperty(
             name="Shape", default=1.0 / PHI, min=0.0, max=1.0,
             description="Pyritohedron dial: 0 is the cube, 1/phi (0.618) "
@@ -337,7 +338,8 @@ if _IN_BLENDER:
             name="Stretch", default=0.5, min=0.0, max=3.0,
             description="Depth of the prism inserted into the rhombic "
                         "dodecahedron; zero gives it back unchanged")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size multiplier")
         __annotations__.update(_shell.style_properties())
 
         def execute(self, context):

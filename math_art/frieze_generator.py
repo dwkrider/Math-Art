@@ -129,9 +129,11 @@ if _IN_BLENDER:
                     "Frieze %s, orbifold %s" %
                     (k, pc.FRIEZE_NAMES[k][1]))
                    for k in pc.FRIEZE_ORDER],
-            default='p2mm')
+            default='p2mm',
+            description="Which of the 7 frieze (strip) groups to repeat with")
         motif_kind: EnumProperty(
             name="Motif",
+            description="Shape replicated along the strip",
             items=[('ARROW', "Arrow", "Arrow with unequal barbs"),
                    ('F', "F", "Asymmetric F"),
                    ('L', "L", "L-tromino"),
@@ -150,9 +152,12 @@ if _IN_BLENDER:
             name="Object",
             description="Object whose mesh is used as the motif. Leave "
                         "empty to use the active or selected mesh")
-        reps: IntProperty(name="Repeats", default=6, min=1, max=60)
+        reps: IntProperty(name="Repeats", default=6, min=1, max=60,
+                          description="Number of times the cell repeats "
+                                      "along the strip")
         color_by: EnumProperty(
             name="Color By",
+            description="How the replicated faces are colored",
             items=[('COPY', "Symmetry Copy",
                     "Each frieze copy a distinct color"),
                    ('OP', "Operation Type",

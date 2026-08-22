@@ -22,14 +22,14 @@ This generator draws the trajectory of a chaotic dynamical system as a curve. It
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Attractor | Lorenz | Aizawa, Anishchenko-Astakhov, Arneodo, Bouali, Burke-Shaw, Chen-Celikovsky, Chen-Lee, Chua, and 31 more. |
+| Attractor | Lorenz | Which strange-attractor system to integrate and draw. Aizawa, Anishchenko-Astakhov, Arneodo, Bouali, Burke-Shaw, Chen-Celikovsky, Chen-Lee, Chua, and 31 more. |
 | Steps | 0 | Integration steps (0 = preset default) Range 0-200000. |
 | Time Step Scale | 1 | Multiplier on the preset's integration step Range 0.05-10. |
 | Size | 2 | Largest bounding-box extent Range 0.1-1000. |
-| Spline | Poly | Poly, Bezier. |
+| Spline | Poly | Spline type used for the trajectory curve. Poly, Bezier. |
 | Resample | 0 | Resample to N evenly spaced points (0 = raw integration points; even spacing disables speed taper) Range 0-20000. |
 | Tube Radius | 0.05 | Curve bevel depth (0 = wire only) Range 0-10. |
-| Bevel Resolution | 4 | Range 0-16. |
+| Bevel Resolution | 4 | Segments around the tube cross-section Range 0-16. |
 | Speed Taper | 0 | Thicken the tube where the flow is slow (0 = uniform radius) Range 0-1. |
 | Profile Sides | 0 | Polygonal tube cross-section with N flat sides (0 = round; e.g. 5 gives the pentagon profile used in the reference lorentz.blend) Range 0-12. |
 

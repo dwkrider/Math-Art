@@ -28,7 +28,7 @@ Vladimir Arnold conjectured in 1995 that such a body could exist. Gábor Domokos
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Form | Gömböc | Gömböc, Domokos-Varkonyi (2006), Analytic - Sloan I, Analytic - Sloan II. |
+| Form | Gömböc | Which gomboc construction to build. Gömböc, Domokos-Varkonyi (2006), Analytic - Sloan I, Analytic - Sloan II. |
 | Edge Rounding | 0.09 | Fabricated: heat-kernel rounding radius (radians on the sphere of normals); smaller keeps the tennis-ball seam edges crisper (below ~0.07 the digitisation noise returns) Range 0.07-0.25. |
 | Subdivisions | 6 | Fabricated: icosphere subdivisions of the normal sphere (6 = 40962 vertices) Range 3-7. |
 | Separatrix c | 0.275 | Domokos-Varkonyi: shapes the tennis-ball-seam separatrix (~0.275 is the paper's value) Range 0.1-3. |
@@ -37,7 +37,7 @@ Vladimir Arnold conjectured in 1995 that such a body could exist. Gábor Domokos
 | Rings | 128 | Segments from pole to pole Range 8-400. |
 | Segments | 176 | Segments around the axis Range 8-512. |
 | Sharp Edges | On | Mark the solid's fold curves sharp (and creased). The Gomboc and its relatives carry a ridge where the two monostatic lobes meet. The surface is smooth everywhere else, so shading straight across the fold rounds off the one feature that defines the shape |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

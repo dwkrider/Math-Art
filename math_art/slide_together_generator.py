@@ -881,7 +881,9 @@ if _IN_BLENDER:
         bl_label = "Slide-Together"
         bl_options = {'REGISTER', 'UNDO'}
 
-        model: EnumProperty(name="Model", items=ITEMS, default='S30')
+        model: EnumProperty(name="Model", items=ITEMS, default='S30',
+                            description="Which slide-together model to "
+                                        "build")
         panel_size: FloatProperty(
             name="Panel Size", default=1.0, min=0.3, max=2.5,
             description="Scale every panel about its own centre. Larger "
@@ -905,7 +907,8 @@ if _IN_BLENDER:
         separate: BoolProperty(
             name="Separate Panels", default=False,
             description="One object per panel instead of a single mesh")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             try:

@@ -23,7 +23,7 @@ These are forms cut from *one* flat sheet, slit and coiled, with nothing glued a
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Form | Spiral Sculpture | Spiral Sculpture, Closed Ring. |
+| Form | Spiral Sculpture | Which Koman developable sculpture to build. Spiral Sculpture, Closed Ring. |
 | Blades | 80 | Segments of the slit ribbon Range 5-200. |
 | Growth | 0.034 | Shrink or grow each segment geometrically along the ribbon. The radius goes as h/2, so this is what opens the coil into a spiral -- the parameter Koman himself varied Range -0.12-0.12. |
 | Blades per Turn | 30 | Spiral: how many blades make one full turn Range 6-90. |
@@ -37,8 +37,8 @@ These are forms cut from *one* flat sheet, slit and coiled, with nothing glued a
 | Tongue Lean | 0.42 | Ring: how far each tongue leans as it rides up on the ones beneath it Range 0-1.2. |
 | Hole | 0.45 | Ring: inner radius as a fraction of the tongue length Range 0.05-2. |
 | Samples | 5 | Subdivisions along each blade or arch Range 1-24. |
-| Scale | 1 | Range 0.01-100. |
-| Shade Smooth | Off | -- |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
+| Shade Smooth | Off | Shade the surface smooth |
 | Sharp Folds | On | Mark the folds sharp (and creased) so smooth shading does not round them off |
 
 <!-- /options -->

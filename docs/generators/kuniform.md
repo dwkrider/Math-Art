@@ -25,10 +25,10 @@ They occupy an appealing middle ground: regular enough to look deliberate, irreg
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Tiling | 3.3.3.3.3.3 / 3.3.3.4.4 (a) | 3.3.3.3.3.3 / 3.3.3.4.4 (a), 3.3.3.3.3.3 / 3.3.3.4.4 (b), 4.4.4.4 / 3.3.3.4.4 (a), 4.4.4.4 / 3.3.3.4.4 (b), 3.6.3.6 / 3.3.3.3.6, 3.6.3.6 / 3.3.6.6. |
-| Cells X | 5 | Range 1-40. |
-| Cells Y | 5 | Range 1-40. |
-| Color By | By Sides | By Sides, By Tile Type, Uniform. |
+| Tiling | 3.3.3.3.3.3 / 3.3.3.4.4 (a) | Which k-uniform tiling to build. 3.3.3.3.3.3 / 3.3.3.4.4 (a), 3.3.3.3.3.3 / 3.3.3.4.4 (b), 4.4.4.4 / 3.3.3.4.4 (a), 4.4.4.4 / 3.3.3.4.4 (b), 3.6.3.6 / 3.3.3.3.6, 3.6.3.6 / 3.3.6.6. |
+| Cells X | 5 | Number of lattice cells along X Range 1-40. |
+| Cells Y | 5 | Number of lattice cells along Y Range 1-40. |
+| Color By | By Sides | How the tiles are colored. By Sides, By Tile Type, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Trim Boundary | Off | Clip the patch to a clean rectangle |

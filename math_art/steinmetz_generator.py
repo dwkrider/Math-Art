@@ -222,7 +222,9 @@ if _IN_BLENDER:
                    ('TRICYLINDER', "Tricylinder",
                     "Three mutually perpendicular cylinders -- a rounded "
                     "cube with twelve curved edges")],
-            default='BICYLINDER')
+            default='BICYLINDER',
+            description="Intersect two cylinders (bicylinder) or three "
+                        "(tricylinder)")
         radius: FloatProperty(
             name="Radius", default=1.0, min=0.05, max=100.0,
             description="Common cylinder radius")

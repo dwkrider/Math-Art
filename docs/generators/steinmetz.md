@@ -23,7 +23,7 @@ Two cylinders give the **bicylinder** — a shape bounded by two cylindrical lun
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Shape | Bicylinder (Steinmetz) | Bicylinder (Steinmetz), Tricylinder. |
+| Shape | Bicylinder (Steinmetz) | Intersect two cylinders (bicylinder) or three (tricylinder). Bicylinder (Steinmetz), Tricylinder. |
 | Radius | 1 | Common cylinder radius Range 0.05-100. |
 | Sharp Edges | On | Mark the solid's fold curves sharp (and creased). Two cylinders meet along a pair of planar ellipse-like edges; three meet along twelve. The surface is smooth everywhere else, so shading straight across the fold rounds off the one feature that defines the shape |
 | Segments | 64 | Cylinder segments (mesh resolution) Range 8-512. |

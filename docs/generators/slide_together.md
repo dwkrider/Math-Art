@@ -26,14 +26,14 @@ Hart described seven — 20 triangles, 30 squares, 12 pentagons, 12 decagons, 20
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Model | 30 Squares | 20 Triangles, 30 Squares, 12 Pentagons, 12 Decagons, 20 Hexagons, 12 Star Decagons {10/3}, 12 Pentagrams, 20 Triangles (great ditrigonal), and 13 more. |
+| Model | 30 Squares | Which slide-together model to build. 20 Triangles, 30 Squares, 12 Pentagons, 12 Decagons, 20 Hexagons, 12 Star Decagons {10/3}, 12 Pentagrams, 20 Triangles (great ditrigonal), and 13 more. |
 | Panel Size | 1 | Scale every panel about its own centre. Larger panels overlap more deeply, which is what makes the model hold together Range 0.3-2.5. |
 | Turn | 0 | Turn every panel in its own plane, away from the angle the model is built at Range -90-90. |
 | Slit Width | 0.01 | Width of the cut slots. Zero leaves the panels uncut, showing the bare arrangement Range 0-0.3. |
 | Thickness | 0.01 | Panel thickness (0 leaves them as flat faces) Range 0-0.3. |
 | Colours | On | Colour the panels in rotation, the way the paper models are made |
 | Separate Panels | Off | One object per panel instead of a single mesh |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

@@ -332,6 +332,8 @@ if _IN_BLENDER:
 
         preset: EnumProperty(
             name="Surface",
+            description="Which constant-positive-curvature surface to "
+                        "build",
             items=[('SPHERE', "Sphere (K = +1)",
                     "a = 1: the round sphere"),
                    ('SPINDLE', "Spherical Spindle (K = +1)",
@@ -366,8 +368,10 @@ if _IN_BLENDER:
             name="Rings", default=64, min=6, max=512,
             description="Divisions along the meridian")
         scale: FloatProperty(name="Scale", default=1.0,
-                             min=0.01, max=100.0)
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+                             min=0.01, max=100.0,
+                             description="Overall size multiplier")
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the surface smooth")
         rim: _rim.rim_prop()
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()

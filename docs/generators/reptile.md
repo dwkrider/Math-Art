@@ -25,9 +25,9 @@ Applying the dissection repeatedly is the **deflation** of a substitution tiling
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Rep-Tile | L-Tromino (rep-4) | L-Tromino (rep-4), Sphinx Hexiamond (rep-4), L-Tetromino (rep-4), P-Pentomino (rep-4), Right Triangle (rep-2). |
+| Rep-Tile | L-Tromino (rep-4) | Which rep-tile to substitute. L-Tromino (rep-4), Sphinx Hexiamond (rep-4), L-Tetromino (rep-4), P-Pentomino (rep-4), Right Triangle (rep-2). |
 | Iterations | 3 | Deflation depth (tile count is N**iterations, N = 4 for the rep-4 tiles, 2 for the triangle) Range 0-7. |
-| Color By | By Orientation | By Orientation, Uniform. |
+| Color By | By Orientation | How the tiles are colored. By Orientation, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Trim Boundary | Off | Clip the patch to a clean central rectangle |

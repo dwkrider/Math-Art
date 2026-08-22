@@ -26,24 +26,24 @@ These are the surfaces Ulrich Pinkall used in 1985 to construct Willmore tori of
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Curve on S^2 | Wavy (m-lobed) | Circle, Wavy (m-lobed), Ellipse, Trefoil-like, Elastica (Willmore), Constrained Elastica, Hopf Band. |
+| Curve on S^2 | Wavy (m-lobed) | Closed curve on S^2 whose Hopf preimage is built. Circle, Wavy (m-lobed), Ellipse, Trefoil-like, Elastica (Willmore), Constrained Elastica, Hopf Band. |
 | Curve Samples | 200 | Samples along gamma (the torus meridians) Range 12-2000. |
 | Fibre Samples | 64 | Samples around each Hopf fibre (the torus longitudes) Range 6-512. |
-| Mean Colatitude | 90 | Mean colatitude of gamma on S^2 (deg); hidden for the elastica presets Range 10-170. |
+| Mean Colatitude | 90 | Mean colatitude of gamma on S^2 (deg) Range 10-170. |
 | Lobes | 3 | Number of lobes (WAVY / TREFOIL) Range 1-12. |
 | Amplitude | 35 | Lobe amplitude in colatitude (deg) Range 0-80. |
 | Ellipse Squash | 0.5 | Ellipse eccentricity (ELLIPSE) Range 0-0.95. |
-| Winding | 1 | Elastica (Willmore): numerator m of the monodromy m/n Range 1-20. |
-| Lobes | 3 | Elastica (Willmore): denominator n of the monodromy m/n; n lobes, m/n must lie in (0, 2-sqrt 2) Range 2-40. |
-| Family | Willmore | Constrained Elastica: Willmore (mu = -G/2), Free elastica (mu = 0), Elastic (custom shape), Constrained elastic (lambda != 0). |
-| Lobes | 3 | Constrained Elastica: lobe count n of the constrained elastic curve Range 2-24. |
-| Winding | 1 | Constrained Elastica: winding w, coprime to the lobe count Range 1-23. |
-| Shape | 0.55 | Constrained Elastica: lattice shape parameter (custom families only) Range 0.05-3.0. |
-| Branch | Upper (gentler) | Constrained Elastica: Upper (gentler root) or Lower (curlier root). |
-| Phase | 0.5 | Constrained Elastica: phase x0 as a fraction of the imaginary half-period; 0.5 is lambda = 0, off-centre sweeps genuinely constrained curves Range 0.02-0.98. |
-| High Wrap | Off | Constrained Elastica: use the high-wrap closure branch m = 2n + w. |
-| Shade Smooth | On | -- |
-| Scale | 1 | Range 0.01-100. |
+| Winding | 1 | Numerator of the elastica's monodromy m/n: one lobe carries the frame 2 pi m/n around the axis, so the closed curve accumulates m full turns Range 1-20. |
+| Lobes | 3 | Denominator of the monodromy m/n: the curve has n lobes.  m/n must lie in (0, 2-sqrt 2) Range 2-40. |
+| Family | Willmore | How the constrained elastic curve's shape is solved (Constrained Elastica preset). Willmore, Free elastica, Elastic (custom shape), Constrained elastic. |
+| Lobes | 3 | Lobe count n of the constrained elastic curve Range 2-24. |
+| Winding | 1 | Winding w, coprime to the lobe count Range 1-23. |
+| Shape | 0.55 | Lattice shape parameter (custom families only) Range 0.05-3. |
+| Branch | Upper (gentler) | Which root of the shape equation to use: the gentler or the curlier curve. Upper (gentler), Lower (curlier). |
+| Phase | 0.5 | Phase x0 as a fraction of the imaginary half-period; 0.5 is lambda = 0, off-centre sweeps genuinely constrained curves Range 0.02-0.98. |
+| High Wrap | Off | Use the high-wrap branch m = 2n + w |
+| Shade Smooth | On | Smooth-shade the torus surface |
+| Scale | 1 | Overall size of the torus Range 0.01-100. |
 
 <!-- /options -->
 

@@ -29,10 +29,10 @@ The physical sequel is better still. Penrose tilings show sharp diffraction peak
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Tiling | Penrose Rhombs (P3) | Penrose Rhombs (P3), Penrose Kite & Dart (P2), Ammann-Beenker (Octagonal), Hat (Einstein Monotile), Turtle, Chevron, Comet, Custom Tile(a,b), and 1 more. |
+| Tiling | Penrose Rhombs (P3) | Which aperiodic tiling to build. Penrose Rhombs (P3), Penrose Kite & Dart (P2), Ammann-Beenker (Octagonal), Hat (Einstein Monotile), Turtle, Chevron, Comet, Custom Tile(a,b), and 1 more. |
 | P2 Seed | Sun (Five Kites) | Central patch the Penrose kite & dart deflation starts from (only affects the P2 tiling). Sun (Five Kites), Star (Five Darts), Cartwheel. |
 | Generations | 4 | Deflation / grid depth (each Penrose step multiplies the tile count by roughly phi^2) Range 0-7. |
-| Color By | By Tile Type | By Tile Type, By Cluster, By Supertile Level, Uniform. |
+| Color By | By Tile Type | How the tiles are colored. By Tile Type, By Cluster, By Supertile Level, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Trim Boundary | Off | Clip the roughly-circular patch to a clean central rectangle, removing the ragged edge |

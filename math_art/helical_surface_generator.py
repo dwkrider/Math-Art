@@ -227,7 +227,8 @@ if _IN_BLENDER:
 
         surface: EnumProperty(
             name="Surface", items=_SURFACES,
-            default='HYPERBOLIC_HELICOID')
+            default='HYPERBOLIC_HELICOID',
+            description="Which swept surface to build")
         motion: EnumProperty(
             name="Motion",
             items=[('GENERAL', "General Darboux Motion",
@@ -325,13 +326,15 @@ if _IN_BLENDER:
             description="Segments along each parametric "
                         "direction")
         smooth: BoolProperty(name="Smooth Shading",
-                             default=True)
+                             default=True,
+                             description="Shade the surface smooth")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="Solidify modifier thickness (0 = raw "
                         "surface)")
         scale: FloatProperty(name="Scale", default=1.0,
-                             min=0.01, max=100.0)
+                             min=0.01, max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             if self.surface == 'DARBOUX':

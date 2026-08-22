@@ -98,18 +98,23 @@ if _IN_BLENDER:
 
         preset: EnumProperty(
             name="Preset",
+            description="Preset polylink arrangement (Custom to set the "
+                        "parameters by hand)",
             items=[('CUSTOM', "Custom", "")] +
                   [(k, v[0], "") for k, v in PRESETS.items()],
             default='T4', update=_preset_chosen)
         kind: EnumProperty(
             name="Solid",
+            description="Platonic solid whose face planes host the "
+                        "polygon frames",
             items=[('TETRA', "Tetrahedron", ""), ('CUBE', "Cube", ""),
                    ('OCTA', "Octahedron", ""),
                    ('DODECA', "Dodecahedron", ""),
                    ('ICOSA', "Icosahedron", "")],
             default='TETRA')
         size: FloatProperty(name="Frame Size", default=1.55,
-                            min=0.5, max=4.0)
+                            min=0.5, max=4.0,
+                            description="Size of each polygon frame")
         rotation: FloatProperty(
             name="Rotation", default=30.0, min=-90.0, max=90.0,
             description="Turn of each frame about its face normal (deg)")
@@ -119,6 +124,8 @@ if _IN_BLENDER:
                         "(negative = toward the centre)")
         link_shape: EnumProperty(
             name="Link Shape",
+            description="Shape of each link: flat polygon frame, wavy "
+                        "circle, or torus knot",
             items=[('POLYGON', "Polygon Frame",
                     "Flat polygon frames (Hart's polylinks)"),
                    ('WAVE', "Wavy Circle",
@@ -144,19 +151,26 @@ if _IN_BLENDER:
             name="Knot q Factor", default=1, min=1, max=8,
             description="q = factor x face side count")
         tube_sides: bpy.props.IntProperty(name="Tube Sides",
-                                          default=8, min=3, max=24)
+                                          default=8, min=3, max=24,
+                                          description="Sides of the swept "
+                                                      "tube cross-section "
+                                                      "(wavy / knot links)")
         segments: bpy.props.IntProperty(
             name="Link Segments", default=128, min=24, max=512,
             description="Samples along wavy / knot centerlines")
         width: FloatProperty(name="Frame Width", default=0.14,
-                             min=0.02, max=0.9)
+                             min=0.02, max=0.9,
+                             description="Width of each polygon frame bar")
         thickness: FloatProperty(name="Frame Thickness", default=0.10,
-                                 min=0.01, max=1.0)
+                                 min=0.01, max=1.0,
+                                 description="Thickness of each frame bar "
+                                             "or swept tube")
         antipodal: BoolProperty(
             name="Antipodal Half", default=False,
             description="Use only one face of each antipodal pair")
         coloring: EnumProperty(
             name="Coloring",
+            description="How the frames are coloured",
             items=[('FRAME', "Per Link", "One material per frame, for "
                     "visibility (view with Material Preview or Solid "
                     "shading set to Material color)"),
@@ -166,7 +180,9 @@ if _IN_BLENDER:
                    ('NONE', "None", "No materials")],
             default='FRAME')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube)")
 
         _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
                     (0.95, 0.77, 0.29), (0.30, 0.69, 0.42),

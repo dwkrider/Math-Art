@@ -31,9 +31,26 @@ def strip_display(text):
     return re.sub(r"\$\$.*?\$\$", " ", text, flags=re.DOTALL)
 
 
+def math_only(text):
+    """Blank out everything that is NOT inside math, preserving length and
+    newlines (so line numbers still line up).  The math-specific checks run
+    against this so a literal `|` escaped for a Markdown table cell (\\|) in
+    a generated Options row is not mistaken for a norm bar in math."""
+    mask = [" "] * len(text)
+    for pat, flags in ((r"\$\$.*?\$\$", re.DOTALL),
+                       (r"(?<!\$)\$[^$\n]+\$(?!\$)", 0)):
+        for m in re.finditer(pat, text, flags):
+            mask[m.start():m.end()] = text[m.start():m.end()]
+    for i, c in enumerate(text):
+        if c == "\n":
+            mask[i] = "\n"
+    return "".join(mask)
+
+
 def check(path):
     name = os.path.basename(path)
     text = open(path, encoding="utf-8").read()
+    mtext = math_only(text)   # math-only view for the math-specific checks
     problems = []
 
     # 1. over-escaped backslash runs.  Three or more in a row is always
@@ -73,7 +90,7 @@ def check(path):
     #    identifiers out of math: use a symbol and name the identifier in
     #    prose (backticks).  The pattern matches the escaped form too,
     #    because `\_` still contains a literal `_`.
-    for m in re.finditer(r"\\text[a-z]*\{[^}]*_[^}]*\}", text):
+    for m in re.finditer(r"\\text[a-z]*\{[^}]*_[^}]*\}", mtext):
         line = text.count("\n", 0, m.start()) + 1
         problems.append((line, "underscore inside `%s` -- breaks on GitHub; "
                          "use a symbol in math, name the identifier in prose"
@@ -84,7 +101,7 @@ def check(path):
     #    use \mathrm{...} instead; definition macros are blocked for safety.
     for m in re.finditer(r"\\(operatorname|def|newcommand|renewcommand|gdef"
                          r"|let|input|include|require|catcode"
-                         r"|DeclareMathOperator)\b", text):
+                         r"|DeclareMathOperator)\b", mtext):
         line = text.count("\n", 0, m.start()) + 1
         problems.append((line, "GitHub-disallowed macro `\\%s` "
                          "(use \\mathrm{} for operator names)" % m.group(1)))
@@ -93,7 +110,7 @@ def check(path):
     #    \{ \} \| to { } | before MathJax, so \left\{ becomes the invalid
     #    \left{ ("Missing delimiter for \left") and bare \{...\} lose their
     #    braces.  Use the command forms \lbrace \rbrace \Vert, which survive.
-    for m in re.finditer(r"\\[{}|]", text):
+    for m in re.finditer(r"\\[{}|]", mtext):
         line = text.count("\n", 0, m.start()) + 1
         sym = {"{": "\\lbrace", "}": "\\rbrace", "|": "\\Vert"}[m.group(0)[1]]
         problems.append((line, "escaped `%s` in math -- GitHub eats the "

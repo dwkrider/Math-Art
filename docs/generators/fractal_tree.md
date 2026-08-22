@@ -21,8 +21,8 @@ Parametric $n$-ary fractal trees, a botanist's bifurcating tree, and hanging mob
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Tree | Tree, Mobile, Honda. |
-| Plate | II - axis preserved | I - axis lost, II - axis preserved, III - cone to flat crown, IV - branching angle, V - constant axiality, VI conic - strong dominance, VI flat - weak dominance, Custom. |
+| Mode | Tree | Which construction to build. Tree, Mobile, Honda. |
+| Plate | II - axis preserved | Honda's published plate parameter set (or Custom to use the sliders). I - axis lost, II - axis preserved, III - cone to flat crown, IV - branching angle, V - constant axiality, VI conic - strong dominance, VI flat - weak dominance, Custom. |
 | Theta 1 | 0 | First branching angle (degrees) Range -90-90. |
 | Theta 2 | -45 | Second branching angle (degrees) Range -90-90. |
 | R1 | 0.9 | Length ratio of the first daughter Range 0.1-1. |
@@ -40,7 +40,7 @@ Parametric $n$-ary fractal trees, a botanist's bifurcating tree, and hanging mob
 | Trunk Radius | 0.06 | Bevel radius at the trunk; limbs taper by Ratio per generation (0 = wire) Range 0-10. |
 | Leaf Spheres | Off | Merge a small icosphere at each final tip (Tree mode; forces mesh output) |
 | Sphere Size | 0.12 | Radius of the leaf spheres / mobile weights Range 0.001-10. |
-| Output | Mesh | Mesh, Curve. |
+| Output | Mesh | Result as a mesh or a bevelled curve (spheres force mesh output). Mesh, Curve. |
 
 <!-- /options -->
 

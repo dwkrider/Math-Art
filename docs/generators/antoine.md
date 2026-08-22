@@ -31,10 +31,10 @@ There is no mode to choose — the generator always builds the same nested-chain
 | Chain Links | 6 | Tori per chain (rounded up to an even number so the chain closes) Range 4-12. |
 | Link Overlap | 0.62 | Child ring radius as a fraction of the centre spacing; raised automatically per link count so adjacent rings stay linked Range 0.45-0.85. |
 | Tube Ratio | 0.28 | Tube radius as a fraction of ring radius Range 0.05-0.5. |
-| Ring Segments | 28 | Range 6-96. |
-| Tube Segments | 10 | Range 4-48. |
-| Scale | 1 | Range 0.01-100. |
-| Smooth Shading | On | -- |
+| Ring Segments | 28 | Segments around each torus's core circle Range 6-96. |
+| Tube Segments | 10 | Segments around each torus's tube cross-section Range 4-48. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
+| Smooth Shading | On | Shade the tori smooth rather than faceted |
 
 <!-- /options -->
 

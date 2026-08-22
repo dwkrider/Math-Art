@@ -78,24 +78,24 @@ families are single reference blocks.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Family | Interlocking Tetrahedra | Interlocking Tetrahedra, Escher / Osteomorphic, Versatile Blocks, Interlocking Cubes, Interlocking Octahedra, Bisquare Blocks, Rhom Block (single), Rhom Block Obverse (single), and 6 more. |
-| Cells X | 4 | Range 1-16. |
-| Cells Y | 4 | Range 1-16. |
+| Family | Interlocking Tetrahedra | Which interlocking-block family to build. Interlocking Tetrahedra, Escher / Osteomorphic, Versatile Blocks, Interlocking Cubes, Interlocking Octahedra, Bisquare Blocks, Rhom Block (single), Rhom Block Obverse (single), and 6 more. |
+| Cells X | 4 | Number of cells along X Range 1-16. |
+| Cells Y | 4 | Number of cells along Y Range 1-16. |
 | Cells Z | 2 | Layers (tetroctahedrille only) Range 1-8. |
-| Profile | Sine (Osteomorphic) | Sine (Osteomorphic), Tent (Versatile), S-Curve, Step. |
+| Profile | Sine (Osteomorphic) | Edge-deformation profile of the Escher block. Sine (Osteomorphic), Tent (Versatile), S-Curve, Step. |
 | Deform Depth | 0.18 | Escher edge-deformation depth (interlock depth) Range 0-0.45. |
-| Edge Samples | 8 | Range 2-24. |
-| Block Height | 1 | Range 0.2-4. |
-| SL Mode | Square Strand | Single Block, Engaged Pair, Square Strand. |
+| Edge Samples | 8 | Samples along each deformed edge of the Escher block Range 2-24. |
+| Block Height | 1 | Height of the lofted Escher block Range 0.2-4. |
+| SL Mode | Square Strand | Whether to build a single SL block, an engaged pair, or the periodic square strand. Single Block, Engaged Pair, Square Strand. |
 | Engagement | a  (Rz-90, T 1 -1 0) | Engagement used for the Engaged Pair mode. a  (Rz-90, T 1 -1 0), h  (Rx180, T 2 0 0), s  (Rx180 Rz-90, T 1 1 -1), t  (Rx180 Rz90, T 1 -1 1), d  (T 2 0 -1), y  (Rz90, T 1 1 -2). |
 | Frame Order | 0 | Square strand (a h^2n)^4: n=0 is the tight a4 loop, n>=1 nests larger square frames Range 0-4. |
-| Seed | Icosahedron | Icosahedron, Dodecahedron. |
+| Seed | Icosahedron | Seed polyhedron whose faces become the dome blocks. Icosahedron, Dodecahedron. |
 | Edge Deform | 0.18 | Tangential push of each shared edge at the middle shell (the interlock depth) Range 0-0.5. |
 | Shell Thickness | 0.15 | Inner/outer shell offset about the sphere Range 0.03-0.5. |
 | Cells | 32 | Number of hendecahedra in the interlocking cluster Range 1-200. |
 | Gap Factor | 0.94 | Scale of each block about its centroid (1.0 = blocks touch) Range 0.3-1. |
 | Scale | 1 | Overall scale (1.0 fits a 2 m cube) Range 0.01-100. |
-| Colouring | By Block Type | By Block Type, Highlight Frame, None. |
+| Colouring | By Block Type | How the assembly is coloured. By Block Type, Highlight Frame, None. |
 | Separate Objects | Off | Output each element of the pattern as its own mesh object |
 
 <!-- /options -->

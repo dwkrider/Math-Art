@@ -25,19 +25,19 @@ Strands weaving over and under along the edges of a framework mesh — a port of
 | --- | --- | --- |
 | Framework | Icosahedron | Mesh the strands weave along. Icosahedron, Dodecahedron, Cube, Octahedron, Tetrahedron, Active Object. |
 | Remesh | None | Pre-process the framework before weaving. None, Edge Subdivide, Medial. |
-| Weave | Celtic | Celtic, Twill. |
+| Weave | Celtic | Crossing pattern the strands follow. Celtic, Twill. |
 | Twist Proportion | 1 | Fraction of edges that cross (Celtic only); the rest pass straight through Range 0-1. |
-| Output | Pipes | Bezier Strands, Pipes, Ribbons. |
+| Output | Pipes | Geometry produced for the strands. Bezier Strands, Pipes, Ribbons. |
 | Weave Up | 0.12 | Lift of a strand crossing over Range 0-2. |
 | Weave Down | 0.12 | Drop of a strand crossing under Range 0-2. |
-| Handles | Auto | Auto, Aligned. |
+| Handles | Auto | How the strand curve control points are set. Auto, Aligned. |
 | Crossing Angle | 0.785398 | Aligned handles: angle between strands at a crossing Range 0-1.5708. |
 | Crossing Strength | 0.25 | Aligned handles: control point length Range 0-5. |
 | Pipe Radius | 0.05 | Bevel radius of the pipes Range 0.001-1. |
-| Bevel Resolution | 4 | Range 1-12. |
+| Bevel Resolution | 4 | Roundness of the pipe cross-section Range 1-12. |
 | Ribbon Length | 0.9 | Fraction along faces the ribbon runs Range 0.05-1. |
 | Ribbon Breadth | 0.5 | Ribbon width as a fraction across faces Range 0.05-1. |
-| Coloring | Per Strand | Per Strand, Per Braid, None. |
+| Coloring | Per Strand | How strands are assigned materials. Per Strand, Per Braid, None. |
 | Scale | 1 | Built-in frameworks: half-size of the bounding cube Range 0.01-100. |
 
 <!-- /options -->

@@ -25,11 +25,11 @@ The tile's remarkable property is that **two copies can completely enclose a thi
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Tiling | Classic Double Spiral | Classic Double Spiral, Spiral (Enclosure Order), Radial Rings. |
+| Tiling | Classic Double Spiral | Which Voderberg tiling to build: classic double spiral, enclosure-order spiral, or radial rings. Classic Double Spiral, Spiral (Enclosure Order), Radial Rings. |
 | Arms / Order | 2 | Goldberg spiral order for the Spiral kind (a pair of tiles encloses this many; 1 = classic). Every Voderberg spiral here is a two-arm double spiral -- higher r-armed monohedral spirals are not constructible by this method Range 1-8. |
 | Coils | 4 | Number of coronas the spiral winds out to Range 1-20. |
 | Tile Angle (beta) | 132 | Obtuse notch angle of the deformable enneagon in degrees (111..153); 132 is the classic Voderberg Range 111-153. |
-| Color By | By Arm | By Arm, By Tile Type, Uniform. |
+| Color By | By Arm | How tiles are colored: by spiral arm, by enneagon orientation, or one uniform material. By Arm, By Tile Type, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Separate Tiles | Off | Output each tile as its own mesh object (parented to an empty) so tiles can be edited individually |

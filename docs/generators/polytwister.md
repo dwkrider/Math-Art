@@ -26,13 +26,13 @@ The idea is a substitution. A polyhedron is an intersection of half-spaces, one 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Polytwister | Cubetwister | Dyadic Twister (n), Tetratwister, Quasitetratwister, Bloated Tetratwister, Cubetwister, Quasicubetwister, Bloated Cubetwister, Octatwister, and 14 more. |
+| Polytwister | Cubetwister | Which polytwister to build. Dyadic Twister (n), Tetratwister, Quasitetratwister, Bloated Tetratwister, Cubetwister, Quasicubetwister, Bloated Cubetwister, Octatwister, and 14 more. |
 | Dyadic n | 5 | Number of cycloplanes (DYADIC only) Range 3-24. |
 | Slice w | 0 | 4D->3D cross-section coordinate; key this to animate the polytwister through its cells Range -3-3. |
 | Cylinder Segments | 24 | Facets per cycloplane cylinder (resolution vs. Boolean cost; the quasi/bloated/great twisters union many solids and get slow at high values) Range 8-160. |
 | Recenter | Off | Recenter the cross-section on its bounding box (off keeps a consistent centre across a w-sweep) |
-| Shade Smooth | Off | -- |
-| Scale | 1 | Range 0.01-100. |
+| Shade Smooth | Off | Shade the surface smooth |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 

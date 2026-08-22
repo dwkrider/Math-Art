@@ -114,16 +114,21 @@ if _IN_BLENDER:
                            "where they first touch"),
                    ('PYTHAGORAS', "Pythagoras Tree", "Squares on the "
                                   "legs of a right triangle")],
-            default='COLONIZE')
+            default='COLONIZE',
+            description="Which growth algorithm builds the structure")
 
         # -- COLONIZE
         envelope: EnumProperty(
             name="Envelope",
             items=[(k, k.title(), f"Attractors fill a {k.lower()}")
                    for k in g3.ENVELOPES],
-            default='CROWN')
+            default='CROWN',
+            description="Shape the attractor cloud fills; its outline alone "
+                        "sets the tree's habit")
         attractors: IntProperty(name="Attractors", default=700,
-                                min=20, max=6000)
+                                min=20, max=6000,
+                                description="Number of attractor points the "
+                                            "branches grow toward")
         trunk: FloatProperty(
             name="Trunk", default=0.5, min=0.0, max=2.0,
             description="How far the crown sits above the root. Without "
@@ -135,7 +140,9 @@ if _IN_BLENDER:
                         "exceed the trunk gap, or nothing in the crown "
                         "can see the root and the tree never starts")
         kill: FloatProperty(name="Kill Radius", default=0.14,
-                            min=0.01, max=1.0)
+                            min=0.01, max=1.0,
+                            description="How close a branch tip must reach an "
+                                        "attractor to consume it")
         gravity: FloatProperty(
             name="Gravity", default=0.0, min=-2.0, max=2.0,
             description="Bias along the axis. Negative gives the "
@@ -143,7 +150,9 @@ if _IN_BLENDER:
                         "down and out")
 
         # -- SELFORG
-        steps: IntProperty(name="Steps", default=10, min=1, max=18)
+        steps: IntProperty(name="Steps", default=10, min=1, max=18,
+                           description="Number of growth cycles the tree runs "
+                                       "through")
         lam: FloatProperty(
             name="Lambda", default=0.5, min=0.05, max=0.95,
             description="Borchert-Honda resource split. Above 0.5 the "
@@ -151,27 +160,37 @@ if _IN_BLENDER:
                         "conifer); below, the laterals win and it is "
                         "decurrent (a spreading crown)")
         branch_angle: FloatProperty(name="Branch Angle", default=42.0,
-                                    min=5.0, max=89.0)
+                                    min=5.0, max=89.0,
+                                    description="Angle a new lateral branch "
+                                                "makes with its parent, in "
+                                                "degrees")
 
         # -- DLA
         walkers: IntProperty(name="Walkers", default=700, min=20,
-                             max=6000)
+                             max=6000,
+                             description="Number of random walkers released "
+                                         "to aggregate onto the cluster")
         dla_dim: EnumProperty(
             name="Dimension",
             items=[('2', "2-D", "Planar cluster"),
                    ('3', "3-D", "Spatial cluster")],
-            default='3')
+            default='3',
+            description="Whether walkers aggregate in a plane or in space")
         seed_kind: EnumProperty(
             name="Seed",
             items=[(k, k.title(), f"Nucleate on a {k.lower()}")
                    for k in g3.SEEDS],
-            default='POINT')
+            default='POINT',
+            description="Shape of the initial nucleus the cluster grows from")
         stickiness: FloatProperty(
             name="Stickiness", default=1.0, min=0.02, max=1.0,
             description="Below 1 a walker may refuse and keep going, so "
                         "it packs deeper: wispy dendrite at 1, compact "
                         "moss well below")
-        lattice: IntProperty(name="Lattice", default=44, min=12, max=140)
+        lattice: IntProperty(name="Lattice", default=44, min=12, max=140,
+                             description="Size of the region the walkers roam; "
+                                         "larger gives more room and a looser "
+                                         "cluster")
         dla_kind: EnumProperty(
             name="Walk",
             items=[('LATTICE', "Lattice", "Witten-Sander's original: "
@@ -182,29 +201,42 @@ if _IN_BLENDER:
                            "contact sticking. No direction is "
                            "privileged, so the dendrites wander "
                            "smoothly instead of turning square corners")],
-            default='LATTICE')
+            default='LATTICE',
+            description="Whether walkers step on a cubic lattice or move in "
+                        "continuous directions")
         particle: FloatProperty(
             name="Particle Radius", default=0.5, min=0.1, max=3.0,
             description="Off-lattice only. Every bond comes out at one "
                         "particle diameter")
 
         # -- PYTHAGORAS
-        depth: IntProperty(name="Depth", default=9, min=1, max=14)
+        depth: IntProperty(name="Depth", default=9, min=1, max=14,
+                           description="Number of generations of squares to "
+                                       "grow")
         alpha: FloatProperty(name="Apex Angle", default=45.0,
-                             min=5.0, max=85.0)
+                             min=5.0, max=85.0,
+                             description="Apex angle of the right triangle "
+                                         "sitting on each square, in degrees")
         roll: FloatProperty(
             name="Roll", default=0.0, min=0.0, max=90.0,
             description="Rotate each generation out of its parent's "
                         "plane, turning the relief into a spatial figure")
         jitter: FloatProperty(name="Angle Jitter", default=0.0,
-                              min=0.0, max=30.0)
+                              min=0.0, max=30.0,
+                              description="Random variation added to the apex "
+                                          "angle each generation, in degrees")
 
         # -- shared
-        seed: IntProperty(name="Seed", default=0, min=0, max=10000)
+        seed: IntProperty(name="Seed", default=0, min=0, max=10000,
+                          description="Random seed for the stochastic steps")
         radius: FloatProperty(name="Branch Radius", default=0.02,
-                              min=0.0005, max=0.5)
+                              min=0.0005, max=0.5,
+                              description="Bevel radius of the thickest "
+                                          "branch")
         resolution: IntProperty(name="Bevel Resolution", default=2,
-                                min=0, max=16)
+                                min=0, max=16,
+                                description="Subdivisions around the round "
+                                            "branch cross-section")
         murray: FloatProperty(
             name="Pipe Exponent", default=g3.MURRAY, min=1.5, max=4.0,
             description="r^n = r1^n + r2^n. 2 conserves cross-sectional "
@@ -215,7 +247,9 @@ if _IN_BLENDER:
                         "born with zero size AND zero rate, so sweeping "
                         "this is continuous -- keyframe it")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Uniform scale of the finished "
+                                         "structure")
 
         def execute(self, context):
             name = f"Growth {self.mode.title()}"

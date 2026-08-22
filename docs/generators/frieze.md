@@ -23,11 +23,11 @@ A **frieze group** is the symmetry group of a strip pattern — one that repeats
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Group | Spinning jump  (p2mm) | Hop  (p1), Step (glide)  (p11g), Sidle (vertical mirror)  (p1m1), Jump (horizontal mirror)  (p11m), Spinning hop (180)  (p2), Spinning sidle  (p2mg), Spinning jump  (p2mm). |
-| Motif | Arrow | Arrow, F, L, Comma, Zig, Triangle, Object. |
+| Group | Spinning jump  (p2mm) | Which of the 7 frieze (strip) groups to repeat with. Hop  (p1), Step (glide)  (p11g), Sidle (vertical mirror)  (p1m1), Jump (horizontal mirror)  (p11m), Spinning hop (180)  (p2), Spinning sidle  (p2mg), Spinning jump  (p2mm). |
+| Motif | Arrow | Shape replicated along the strip. Arrow, F, L, Comma, Zig, Triangle, Object. |
 | Object | empty | Object whose mesh is used as the motif. Leave empty to use the active or selected mesh |
-| Repeats | 6 | Range 1-60. |
-| Color By | Symmetry Copy | Symmetry Copy, Operation Type, Handedness, Repeat. |
+| Repeats | 6 | Number of times the cell repeats along the strip Range 1-60. |
+| Color By | Symmetry Copy | How the replicated faces are colored. Symmetry Copy, Operation Type, Handedness, Repeat. |
 | Margin | 0 | Spacing around each unit, as a fraction of its size (0 = flush) Range 0-3. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes into a relief Range 0-1. |
 | Separate Cells | Off | Output each unit as its own mesh object (parented to an empty) so cells can be edited individually |

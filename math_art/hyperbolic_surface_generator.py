@@ -560,12 +560,17 @@ if _IN_BLENDER:
 
         preset: EnumProperty(
             name="Surface",
+            description="Which constant-negative-curvature surface to build",
             items=[(k, v[0], v[0]) for k, v in PRESETS.items()],
             default='PSEUDOSPHERE')
         ures: IntProperty(name="U Resolution", default=64, min=8,
-                          max=400)
+                          max=400,
+                          description="Mesh divisions along the surface's "
+                                      "u direction")
         vres: IntProperty(name="V Resolution", default=96, min=8,
-                          max=400)
+                          max=400,
+                          description="Mesh divisions along the surface's "
+                                      "v direction")
         twist: FloatProperty(
             name="Twist", default=0.2, min=0.0, max=2.0,
             description="Helical shear of Dini's surface "
@@ -588,8 +593,11 @@ if _IN_BLENDER:
                         "radius; the spindle is r = a sinh(u) and needs "
                         "a < 1, its equator sitting at sqrt(1 - a^2)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                            max=100.0)
-        shade_smooth: BoolProperty(name="Smooth Shading", default=True)
+                            max=100.0,
+                            description="Overall size of the surface")
+        shade_smooth: BoolProperty(name="Smooth Shading", default=True,
+                                   description="Shade the surface smoothly "
+                                               "rather than faceted")
 
         def execute(self, context):
             label = PRESETS[self.preset][0]

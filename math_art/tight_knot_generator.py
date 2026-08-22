@@ -252,7 +252,10 @@ if _IN_BLENDER:
         bl_label = "Tight Knot"
         bl_options = {'REGISTER', 'UNDO'}
 
-        knot: EnumProperty(name="Knot", items=_ITEMS, default='3_1')
+        knot: EnumProperty(
+            name="Knot", items=_ITEMS, default='3_1',
+            description="Knot to build, seeded from its minimum braid "
+                        "(Custom uses the braid word below)")
         braid: StringProperty(
             name="Braid Word", default="abaBcBC",
             description="Letters a..z are braid generators, A..Z "
@@ -282,6 +285,7 @@ if _IN_BLENDER:
                    ('POLY', "Poly Curve", ""),
                    ('NURBS', "NURBS Curve", ""),
                    ('MESH', "Mesh Tube", "swept tube mesh")],
+            description="Curve type, or a swept mesh tube, for the rope",
             default='BEZIER')
         auto_radius: BoolProperty(
             name="Radius From Thickness", default=True,
@@ -294,11 +298,16 @@ if _IN_BLENDER:
             description="Curve bevel depth / tube radius (when not "
                         "taken from the thickness)")
         resolution: IntProperty(name="Bevel Resolution", default=6,
-                                min=1, max=16)
+                                min=1, max=16,
+                                description="Smoothness of the round bevel "
+                                            "on curve output")
         tube_sides: IntProperty(name="Tube Sides", default=12,
-                                min=3, max=32)
+                                min=3, max=32,
+                                description="Number of sides around the "
+                                            "swept tube (Mesh output)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             braid = (self.braid if self.knot == 'CUSTOM'
@@ -387,6 +396,7 @@ if _IN_BLENDER:
 
         link: EnumProperty(
             name="Link",
+            description="Link to build (Custom uses the braid word below)",
             items=[('HOPF', "Hopf Link",
                     "Two circles, linking number 1 -- relaxes to two "
                     "round circles in perpendicular planes"),
@@ -435,6 +445,7 @@ if _IN_BLENDER:
                    ('POLY', "Poly Curve", ""),
                    ('NURBS', "NURBS Curve", ""),
                    ('MESH', "Mesh Tube", "swept tube mesh")],
+            description="Curve type, or a swept mesh tube, for the rope",
             default='BEZIER')
         auto_radius: BoolProperty(
             name="Radius From Thickness", default=True,
@@ -447,11 +458,16 @@ if _IN_BLENDER:
             description="Curve bevel depth / tube radius (when not "
                         "taken from the thickness)")
         resolution: IntProperty(name="Bevel Resolution", default=6,
-                                min=1, max=16)
+                                min=1, max=16,
+                                description="Smoothness of the round bevel "
+                                            "on curve output")
         tube_sides: IntProperty(name="Tube Sides", default=12,
-                                min=3, max=32)
+                                min=3, max=32,
+                                description="Number of sides around the "
+                                            "swept tube (Mesh output)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             seed = (self.braid if self.link == 'CUSTOM' else self.link)

@@ -25,10 +25,10 @@ The pentagon count is the interesting one. Reinhardt found the first 5 in 1918, 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Tiling | Triangle | Triangle, Quadrilateral, Pentagon Type 1, Pentagon Type 2, Pentagon Type 5, Hexagon Type 1, Hexagon Type 2. |
-| Cells X | 5 | Range 1-40. |
-| Cells Y | 5 | Range 1-40. |
-| Color By | By Tile Type | By Sides, By Tile Type, Uniform. |
+| Tiling | Triangle | Which single-prototile tiling to build. Triangle, Quadrilateral, Pentagon Type 1, Pentagon Type 2, Pentagon Type 5, Hexagon Type 1, Hexagon Type 2. |
+| Cells X | 5 | Number of unit cells along X Range 1-40. |
+| Cells Y | 5 | Number of unit cells along Y Range 1-40. |
+| Color By | By Tile Type | How tile materials are assigned. By Sides, By Tile Type, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Trim Boundary | Off | Clip the patch to a clean rectangle, removing the ragged edge and stray boundary tiles |

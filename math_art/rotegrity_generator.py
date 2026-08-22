@@ -94,7 +94,8 @@ if _IN_BLENDER:
             items=[('ICOSA', "Icosahedron", ""), ('OCTA', "Octahedron", ""),
                    ('TETRA', "Tetrahedron", ""), ('CUBE', "Cube", ""),
                    ('DODECA', "Dodecahedron", "")],
-            default='ICOSA')
+            default='ICOSA',
+            description="Spherical polyhedron whose edges become straps")
         freq: IntProperty(
             name="Geodesic Frequency", default=2, min=1, max=8,
             description="Subdivision of triangular seeds")
@@ -105,12 +106,17 @@ if _IN_BLENDER:
             name="Extension", default=0.35, min=0.0, max=1.0,
             description="Lengthening of each strap beyond its edge")
         width: FloatProperty(name="Strap Width", default=0.06,
-                             min=0.005, max=0.4)
+                             min=0.005, max=0.4,
+                             description="Width of each strap")
         thickness: FloatProperty(name="Strap Thickness", default=0.025,
-                                 min=0.002, max=0.2)
-        segments: IntProperty(name="Segments", default=12, min=4, max=64)
+                                 min=0.002, max=0.2,
+                                 description="Thickness of each strap")
+        segments: IntProperty(name="Segments", default=12, min=4, max=64,
+                              description="Lengthwise subdivisions along "
+                                          "each strap")
         coloring: EnumProperty(
             name="Coloring",
+            description="How straps are assigned materials",
             items=[('LENGTH', "By Strap Length",
                     "One material per strap length class -- geodesic "
                     "breakdowns give a few distinct lengths, colored "
@@ -122,7 +128,8 @@ if _IN_BLENDER:
                    ('NONE', "None", "No materials")],
             default='LENGTH')
         scale: FloatProperty(name="Radius", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall radius of the sphere")
 
         _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
                     (0.95, 0.77, 0.29), (0.30, 0.69, 0.42),

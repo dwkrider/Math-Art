@@ -101,20 +101,23 @@ if _IN_BLENDER:
                     "Mutually tangent Soddy spheres"),
                    ('GASKET', "Gasket (2D)",
                     "Apollonian circles in the plane")],
-            default='PACKING')
+            default='PACKING',
+            description="Build a 3D sphere packing or a 2D circle gasket")
         gasket_style: EnumProperty(
             name="Circle Style",
             items=[('FILLED', "Filled Discs",
                     "Each circle a flat filled face (2D)"),
                    ('TUBE', "Tube Rings",
                     "Each circle a raised tube ring (2D)")],
-            default='FILLED')
+            default='FILLED',
+            description="How the 2D gasket circles are drawn")
         color_by: EnumProperty(
             name="Color By",
             items=[('SIZE', "Size", "Color by circle/sphere radius"),
                    ('DEPTH', "Depth", "Color by inscription generation"),
                    ('UNIFORM', "Uniform", "A single color")],
-            default='SIZE')
+            default='SIZE',
+            description="What the circle/sphere colours are keyed to")
         depth: IntProperty(
             name="Depth", default=6, min=1, max=16,
             description="Gap-filling generations (packing fills largest-"
@@ -141,12 +144,18 @@ if _IN_BLENDER:
             description="Icosphere subdivision level (packing mode); "
                         "higher rounds spheres so tangent spheres touch")
         ring_seg: IntProperty(name="Ring Segments", default=20,
-                              min=6, max=64)
+                              min=6, max=64,
+                              description="Segments around each circle ring")
         tube_seg: IntProperty(name="Tube Segments", default=8,
-                              min=4, max=32)
+                              min=4, max=32,
+                              description="Segments around the ring's tube "
+                                          "cross-section")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                            max=100.0)
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+                            max=100.0,
+                            description="Overall size; fits the result into "
+                                        "a 2 m cube times this factor")
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the surfaces smooth")
         separate_levels: BoolProperty(
             name="Separate Levels", default=False,
             description="Output each inscription level as its own object "

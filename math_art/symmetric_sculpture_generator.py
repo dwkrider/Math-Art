@@ -1923,7 +1923,9 @@ if _IN_BLENDER:
                     "60 rotations -- Hart's usual choice"),
                    ('OCTA', "Octahedral (24)", "24 rotations"),
                    ('TETRA', "Tetrahedral (12)", "12 rotations")],
-            default='ICOSA')
+            default='ICOSA',
+            description="Rotation group whose plane orbit the motif is "
+                        "replicated across")
         family: EnumProperty(
             name="Plane Family",
             items=_family_items, default=3,

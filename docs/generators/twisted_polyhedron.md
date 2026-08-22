@@ -24,6 +24,12 @@ The outer solid can be any of the five Platonic solids, all thirteen Archimedean
 
 | Option | Default | Description |
 | --- | --- | --- |
+| Rim Curve | Off | Sweep a tube along the open edge of the surface. That edge is a stair-step through the sample grid, so the tube both tidies it and gives the surface a deliberate border; a closed surface has no edge and gets no curve |
+| Rim Thickness | 0.01 | Bevel radius of the rim tube (0 leaves a bare curve) Range 0-1. |
+| Rim Smoothing | 3 | Taubin smoothing passes along the rim before it is swept. Unlike a plain Laplacian this does not shrink the curve, so the tube stays on the edge however many passes you use; 0 follows the sample grid exactly Range 0-40. |
+| Rim Profile | Circular | Cross-section swept along the rim. Circular, Square, Channel (C), Beam (H), Reeded, Curve Only. |
+| Rim Twist | 0 | Rotate the swept profile about the rim. Set it to 180 to reverse which way a channel opens or which face a reed is milled into. Which way looks right is not fixed by the surface: the same outward direction reads as out of an Enneper edge and into a clipped periodic cell, so this is the control for it Range -180-180. |
+| Reeds | 120 | Number of ridges milled across a reeded rim, counted around the whole edge. The rim is re-sampled to carry them, so they are spaced by arc length rather than by the surface's grid Range 4-2000. |
 | Outer Solid | Dodecahedron | Solid on the outside; its dual is woven on the inside (switching loads that solid's default parameters). Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Truncated Tetrahedron, Cuboctahedron, Truncated Cube, and 11 more. |
 | Frequency | 2 | Geodesic breakdown frequency (Geodesic Sphere only): higher = more, smaller faces Range 1-8. |
 | Inner Spin | 90 | Spin of every inner polygon about its face normal (degrees); folds with the inner polygon's rotational symmetry Range -720-720. |
@@ -41,8 +47,8 @@ The outer solid can be any of the five Platonic solids, all thirteen Archimedean
 | Ribbon Segments | 14 | Lengthwise segments per ribbon Range 2-40. |
 | Thickness | 0.03 | Solidify shell thickness (0 = no Solidify modifier) Range 0-0.5. |
 | Smoothing | 2 | Subdivision-Surface levels rounding the corners (0 = no Subdivision modifier) Range 0-4. |
-| Smooth Shading | On | -- |
-| Scale | 1 | Range 0.01-100. |
+| Smooth Shading | On | Smooth-shade the woven surface |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 

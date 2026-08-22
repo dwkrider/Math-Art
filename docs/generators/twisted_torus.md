@@ -22,17 +22,17 @@ A regular polygon swept around a ring while it slowly turns, so its flat faces s
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Polygon Sides | 3 | Range 2-16. |
+| Polygon Sides | 3 | Number of sides on the swept polygon profile Range 2-16. |
 | Twist Steps | 1 | Total twist in units of 360/n degrees; gcd(n, steps) helical bands result Range -8-8. |
 | Triangle Shrink | 1 | Shrink of each polygon side about its midpoint. 1 = sides share edges (one contiguous mesh); less than 1 separates the swept sheets into one mesh object per helical band Range 0.3-1. |
 | Sheet Thickness | 0.06 | Thickness of the separated sheets (shrink < 1) Range 0.005-0.5. |
-| Ring Radius | 1.6 | Range 0.2-20. |
-| Profile Radius | 0.55 | Range 0.02-5. |
+| Ring Radius | 1.6 | Radius of the ring the profile is swept around Range 0.2-20. |
+| Profile Radius | 0.55 | Radius of the polygon profile cross-section Range 0.02-5. |
 | Corner Rounding | 0 | 0 = crisp polygon, 1 = circle Range 0-1. |
-| Ring Segments | 192 | Range 16-512. |
+| Ring Segments | 192 | Number of sweep steps around the ring Range 16-512. |
 | Profile Subdivision | 2 | Points per polygon side Range 1-16. |
-| Coloring | Per Strip | Per Strip, Per Band, None. |
-| Scale | 1 | Range 0.01-100. |
+| Coloring | Per Strip | How the helical bands are colored. Per Strip, Per Band, None. |
+| Scale | 1 | Overall size of the torus Range 0.01-100. |
 
 <!-- /options -->
 

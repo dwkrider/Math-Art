@@ -26,14 +26,14 @@ Regular $\lbrace p,q\rbrace$ tilings of the hyperbolic plane -- $q$ regular $p$-
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Form | Regular {p,q} | Regular {p,q}, Truncated t{p,q}, Rectified r{p,q}, Bitruncated t{q,p}, Cantellated rr{p,q}, Omnitruncated tr{p,q}, Snub sr{p,q}. |
+| Form | Regular {p,q} | Which Wythoff uniform form to build. Regular {p,q}, Truncated t{p,q}, Rectified r{p,q}, Bitruncated t{q,p}, Cantellated rr{p,q}, Omnitruncated tr{p,q}, Snub sr{p,q}. |
 | p | 7 | Order of the first corner (p-gon symmetry) Range 3-12. |
 | q | 3 | Order of the second corner (q around a vertex) Range 3-12. |
 | r | 2 | Order of the third corner (2 = right triangle, the classic regular families) Range 2-12. |
-| Model | Poincare Disk | Poincare Disk, Klein Disk, Hemisphere, Pseudosphere. |
+| Model | Poincare Disk | Disk or curved 3D model the tiling is drawn in. Poincare Disk, Klein Disk, Hemisphere, Pseudosphere. |
 | Depth | 14 | Reflection word length explored Range 1-60. |
 | Max Group Elements | 8000 | Cap on triangle-group elements generated Range 10-40000. |
-| Color By | By Sides | By Sides, By Tile Type, Parity (Alternating), Uniform. |
+| Color By | By Sides | How the tiles are colored. By Sides, By Tile Type, Parity (Alternating), Uniform. |
 | Hide Off-Parity Tiles | Off | In Parity color mode, omit the 'off' (second) parity class so only the 'on' tiles render, leaving a sparse alternating pattern |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles (flat models) Range 0-0.45. |
 | Relief Height | 0 | 0 = flat tiling; > 0 extrudes each tile into a raised plaque (flat models) Range 0-2. |

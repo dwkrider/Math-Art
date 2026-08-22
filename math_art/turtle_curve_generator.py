@@ -220,6 +220,7 @@ if _IN_BLENDER:
 
         mode: EnumProperty(
             name="Mode",
+            description="Which turtle-path construction to build",
             items=[('EDGE', "Koch Teragon", "Edge rewriting: a segment is "
                             "replaced by a scaled copy of a generator"),
                    ('FOLD', "Paper Fold", "Dragon family, with a "
@@ -237,6 +238,8 @@ if _IN_BLENDER:
         # -- EDGE
         teragon: EnumProperty(
             name="Generator",
+            description="Koch generator replacing each segment (Koch "
+                        "Teragon mode)",
             items=[(k, k.replace("_", " ").title(), k)
                    for k in sorted(koch.TERAGONS)],
             default='KOCH')
@@ -249,7 +252,9 @@ if _IN_BLENDER:
             description="Cesaro's free apex angle. 60 gives von Koch's "
                         "original; approaching 90 makes it a spike")
         use_alpha: BoolProperty(
-            name="Override Bump Angle", default=False)
+            name="Override Bump Angle", default=False,
+            description="Use the Bump Angle below instead of the "
+                        "generator's built-in apex angle")
         outward: BoolProperty(
             name="Outward", default=True,
             description="Signed teragon: outward gives the snowflake, "
@@ -258,6 +263,8 @@ if _IN_BLENDER:
         # -- FOLD
         fold: EnumProperty(
             name="Fold",
+            description="Which paper-folding dragon curve to build "
+                        "(Paper Fold mode)",
             items=[(k, k.replace("_", " ").title(), k)
                    for k in sorted(koch.FOLDS)],
             default='DRAGON')
@@ -270,6 +277,7 @@ if _IN_BLENDER:
         # -- FASS
         fass: EnumProperty(
             name="Curve",
+            description="Which space-filling FASS curve to build",
             items=[(k, k.replace("_", " ").title(), k)
                    for k in sorted(koch.FASS)],
             default='HILBERT')
@@ -277,11 +285,15 @@ if _IN_BLENDER:
         # -- WORD
         word: EnumProperty(
             name="Sequence",
+            description="Which combinatorial sequence drives the turns "
+                        "(Word Curve mode)",
             items=[(k, k.replace("_", " ").title(), k)
                    for k in sorted(words.WORDS)],
             default='FIBONACCI')
         mapping: EnumProperty(
             name="Turn Rule",
+            description="How each term of the sequence is turned into a "
+                        "turn",
             items=[('ALTERNATE', "Alternate", "Turn on a zero term, "
                                 "alternating by position parity -- the "
                                 "Fibonacci word fractal rule"),
@@ -290,7 +302,9 @@ if _IN_BLENDER:
                    ('SCALED', "Scaled", "Turn proportional to the term")],
             default='ALTERNATE')
         count: IntProperty(
-            name="Terms", default=800, min=4, max=200000)
+            name="Terms", default=800, min=4, max=200000,
+            description="Number of sequence terms to draw (Word Curve "
+                        "mode)")
         word_defaults: BoolProperty(
             name="Recommended Settings", default=True,
             description="Use the angle and turn rule under which this "
@@ -310,16 +324,22 @@ if _IN_BLENDER:
         # -- NODE
         preset: EnumProperty(
             name="Preset",
+            description="Which L-system preset to interpret (Node "
+                        "Rewriting mode)",
             items=lambda self, ctx: _NODE_ITEMS,
             default=None)
 
         # -- shared
-        iters: IntProperty(name="Iterations", default=4, min=0, max=20)
+        iters: IntProperty(name="Iterations", default=4, min=0, max=20,
+                           description="Number of rewriting / subdivision "
+                                       "iterations")
         angle: FloatProperty(
-            name="Angle", default=90.0, min=-180.0, max=180.0)
+            name="Angle", default=90.0, min=-180.0, max=180.0,
+            description="Turn angle at each step, in degrees")
 
         output: EnumProperty(
             name="Output",
+            description="How to lift the flat path into geometry",
             items=[('CURVE', "Bevelled Curve", "A round tube along the "
                              "path"),
                    ('ISLAND', "Filled Island", "The enclosed area as a "
@@ -336,9 +356,14 @@ if _IN_BLENDER:
                                 "makes an open figure printable")],
             default='CURVE')
         radius: FloatProperty(name="Tube Radius", default=0.01,
-                              min=0.0001, max=1.0)
+                              min=0.0001, max=1.0,
+                              description="Radius of the round tube along "
+                                          "the path (Bevelled Curve "
+                                          "output)")
         resolution: IntProperty(name="Bevel Resolution", default=2,
-                                min=0, max=16)
+                                min=0, max=16,
+                                description="Smoothness of the tube's "
+                                            "round cross-section")
         height: FloatProperty(name="Height", default=0.01,
                               min=0.0001, max=5.0,
                               description="Finished thickness of the "
@@ -351,7 +376,9 @@ if _IN_BLENDER:
                         "cos(angle/2) of its width. Rounding keeps the "
                         "cross-section even; 0 keeps corners exact")
         fillet_segments: IntProperty(name="Corner Segments", default=4,
-                                     min=1, max=16)
+                                     min=1, max=16,
+                                     description="Number of segments used "
+                                                 "to round each corner")
 
         # -- mitred relief
         band: FloatProperty(
@@ -376,9 +403,14 @@ if _IN_BLENDER:
                            min=0.01, max=2.0,
                            description="Height of the curve above the plate")
         plate: FloatProperty(name="Plate Thickness", default=0.04,
-                             min=0.005, max=0.5)
+                             min=0.005, max=0.5,
+                             description="Thickness of the base plate "
+                                         "under the scaffold")
         column_radius: FloatProperty(name="Column Radius", default=0.012,
-                                     min=0.002, max=0.2)
+                                     min=0.002, max=0.2,
+                                     description="Radius of the columns "
+                                                 "holding the path above "
+                                                 "the plate")
         column_every: IntProperty(
             name="Column Every", default=8, min=1, max=200,
             description="One column every N path points")
@@ -386,16 +418,25 @@ if _IN_BLENDER:
         # -- assembly
         assembly: EnumProperty(
             name="Assembly",
+            description="How to repeat the figure into a solid "
+                        "arrangement",
             items=[('NONE', "Single", "One copy"),
                    ('AXIS', "About an Axis", "N copies rotated about Z"),
                    ('CUBE', "Cube Faces", "One copy on each face of a "
                             "cube -- what turns a flat figure into a "
                             "solid object")],
             default='NONE')
-        copies: IntProperty(name="Copies", default=6, min=2, max=64)
+        copies: IntProperty(name="Copies", default=6, min=2, max=64,
+                            description="Number of copies rotated about "
+                                        "the axis (About an Axis "
+                                        "assembly)")
         spin: FloatProperty(name="Phase", default=0.0,
-                            min=-180.0, max=180.0)
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+                            min=-180.0, max=180.0,
+                            description="Starting rotation of the axis "
+                                        "assembly, in degrees")
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size; 1 fits the 2 m "
+                                         "cube")
 
         def _kwargs(self):
             rev = []

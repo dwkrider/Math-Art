@@ -167,6 +167,7 @@ if _IN_BLENDER:
 
         mode: EnumProperty(
             name="Mode",
+            description="Which Willmore-energy surface to build",
             items=[
                 ('TORUS', "Willmore Torus (Clifford)",
                  "Flow a torus to the Willmore minimizer: the Clifford "
@@ -222,9 +223,11 @@ if _IN_BLENDER:
             name="Iterations", default=400, min=20, max=2000,
             description="Descent budget; the flow stops early at its "
                         "stationary point")
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the surface smooth")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size multiplier")
 
         def execute(self, context):
             try:

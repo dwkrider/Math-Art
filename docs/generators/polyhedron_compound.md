@@ -24,9 +24,13 @@ The icosahedral ones are the striking members: **five tetrahedra**, whose union 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Compound | Stella Octangula (2 Tetrahedra) | Stella Octangula (2 Tetrahedra), Compound of 5 Tetrahedra, Compound of 10 Tetrahedra, Compound of 5 Cubes, Compound of 5 Octahedra, Cube + Octahedron, Dodecahedron + Icosahedron. |
+| Family |  | Which family of compounds to choose from. Narrowing this shortens the list below |
+| Compound |  | Which compound to build, within the family above |
 | Separate Objects | Off | One object per component instead of a single coloured mesh |
-| Scale | 1 | Range 0.01-100. |
+| Turn | 0 | Turn each component about the axis it was aligned on. The named compounds sit at one angle; away from it the components separate and the count usually rises, which is the rotational freedom several of these families have Range -180-180. |
+| Sides | 5 | Side count of the prism or antiprism, for the two compounds built from one. Hart draws prisms for 3 to 10 sides and antiprisms for 4 to 10 Range 3-24. |
+| Repeat | 2 | Repeat count r for Skilling's four infinite prism and antiprism families, which are parametric in both the side count and r Range 1-12. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube, centered at the origin) Range 0.01-100. |
 
 <!-- /options -->
 

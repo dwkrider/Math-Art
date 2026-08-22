@@ -737,6 +737,7 @@ if _IN_BLENDER:
         preset: EnumProperty(
             name="Base Points",
             items=[(k, k.title(), v) for k, v in _PROVIDERS.items()],
+            description="Set of base points on S^2 whose fibres are drawn",
             default='LATITUDES')
         n_lat: IntProperty(
             name="Latitudes / Rings", default=6, min=1, max=48,
@@ -771,21 +772,27 @@ if _IN_BLENDER:
                    ('POLY', "Poly Curve", ""),
                    ('NURBS', "NURBS Curve", ""),
                    ('MESH', "Mesh Tube", "swept tube mesh")],
+            description="Curve type, or a swept mesh tube, for the fibres",
             default='MESH')
         radius: FloatProperty(
             name="Tube Radius", default=0.02, min=0.0, max=1.0,
             step=1, precision=3,
             description="Curve bevel depth / tube radius")
         resolution: IntProperty(name="Bevel Resolution", default=4,
-                                min=1, max=16)
+                                min=1, max=16,
+                                description="Smoothness of the round bevel "
+                                            "on curve output")
         tube_sides: IntProperty(name="Tube Sides", default=8,
-                                min=3, max=32)
+                                min=3, max=32,
+                                description="Number of sides around each "
+                                            "swept tube (Mesh output)")
         color_fibers: BoolProperty(
             name="Colour by Base Point", default=True,
             description="One material per fibre, hue from longitude "
                         "and value from latitude of its base point")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the fibre set")
 
         def execute(self, context):
             import numpy as np
@@ -909,6 +916,7 @@ if _IN_BLENDER:
 
         preset: EnumProperty(
             name="Curve on S^2",
+            description="Closed curve on S^2 whose Hopf preimage is built",
             items=[('CIRCLE', "Circle", "latitude circle -> torus "
                     "of revolution filled by Villarceau circles"),
                    ('WAVY', "Wavy (m-lobed)", "m-fold undulating "
@@ -957,6 +965,8 @@ if _IN_BLENDER:
                         "has n lobes.  m/n must lie in (0, 2-sqrt 2)")
         cw_family: EnumProperty(
             name="Family",
+            description="How the constrained elastic curve's shape is "
+                        "solved (Constrained Elastica preset)",
             items=[('WILLMORE', "Willmore",
                     "shape solved so the torus is WILLMORE (mu = -G/2) "
                     "-- the same surfaces the Elastica preset builds, "
@@ -982,6 +992,8 @@ if _IN_BLENDER:
             description="Lattice shape parameter (custom families only)")
         cw_branch: EnumProperty(
             name="Branch",
+            description="Which root of the shape equation to use: the "
+                        "gentler or the curlier curve",
             items=[('UPPER', "Upper (gentler)", "the gentler root"),
                    ('LOWER', "Lower (curlier)", "the curlier root")],
             default='UPPER')
@@ -993,9 +1005,12 @@ if _IN_BLENDER:
         cw_high_wrap: BoolProperty(
             name="High Wrap", default=False,
             description="Use the high-wrap branch m = 2n + w")
-        shade_smooth: BoolProperty(name="Shade Smooth", default=True)
+        shade_smooth: BoolProperty(
+            name="Shade Smooth", default=True,
+            description="Smooth-shade the torus surface")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the torus")
 
         def execute(self, context):
             import numpy as np

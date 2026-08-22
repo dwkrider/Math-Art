@@ -1065,9 +1065,11 @@ if _IN_BLENDER:
         bl_label = "Notable Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
-        solid: EnumProperty(name="Solid", items=ITEMS)
+        solid: EnumProperty(name="Solid", items=ITEMS,
+                            description="Which notable polyhedron to build")
         style: EnumProperty(
             name="Style",
+            description="How the polyhedron is rendered",
             items=[('SOLID', "Solid", ""),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo Style "
@@ -1108,7 +1110,8 @@ if _IN_BLENDER:
         facet_separate: BoolProperty(
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size multiplier")
 
         def execute(self, context):
             V, F = build(self.solid)

@@ -1056,7 +1056,8 @@ if _IN_BLENDER:
                    ('ICOSA', "Icosahedron", ""),
                    ('ACTIVE', "Active Object",
                     "One bubble per vertex of the active mesh")],
-            default='ICOSA')
+            default='ICOSA',
+            description="Mesh whose points each carry one bubble")
         radius_mode: EnumProperty(
             name="Radii",
             items=[('UNIFORM', "Same Radius",
@@ -1065,7 +1066,9 @@ if _IN_BLENDER:
                    ('LOCAL', "From Neighbour Distance",
                     "Each bubble's radius follows its own mean "
                     "distance to its neighbours")],
-            default='UNIFORM')
+            default='UNIFORM',
+            description="Give every bubble the same radius or scale each "
+                        "to its local spacing")
         factor: FloatProperty(
             name="Radius Factor", default=0.62, min=0.1, max=2.0,
             description="Bubble radius as a fraction of the "
@@ -1096,9 +1099,12 @@ if _IN_BLENDER:
                         "polyhedron as a separate mesh (needs "
                         "interior points, e.g. a lattice seed "
                         "via Active Object)")
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the bubble surfaces smooth")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size; fits the cluster "
+                                         "into a 2 m cube times this factor")
 
         def execute(self, context):
             if self.seed == 'ACTIVE':
@@ -1304,7 +1310,8 @@ if _IN_BLENDER:
                     "central Plateau border that ends in two "
                     "tetrahedral points where four triple lines "
                     "meet at arccos(-1/3) ~ 109.47 degrees")],
-            default='DOUBLE')
+            default='DOUBLE',
+            description="How many bubbles to relax to equilibrium")
         ratio: FloatProperty(
             name="Volume Ratio", default=0.75, min=0.4, max=1.0,
             description="Double bubble: small/large radius ratio "
@@ -1360,7 +1367,8 @@ if _IN_BLENDER:
                     "pressure jump across it")),
             default='BUBBLE',
             description="Material scheme for the generated films")
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the bubble surfaces smooth")
         sharp_edges: BoolProperty(
             name="Sharp Creases", default=True,
             description="Mark the Plateau borders sharp (and "
@@ -1370,7 +1378,9 @@ if _IN_BLENDER:
                         "Subdivision Surface keep the fold instead "
                         "of rounding it into a bulge")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size; fits the cluster "
+                                         "into a 2 m cube times this factor")
 
         def execute(self, context):
             if self.bubbles == 'SINGLE':

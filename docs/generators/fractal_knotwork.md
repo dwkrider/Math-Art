@@ -30,13 +30,13 @@ Because the substrate is self-similar, so is the interlace. Every deeper generat
 | Substrate | Kite f-tiling (6-fold) | The self-similar tiling the knotwork is woven over (one crossing per tiling edge). Kite f-tiling (6-fold), Kite f-tiling (8-fold), Kite f-tiling (12-fold), Golden-triangle spiral, Golden-triangle spiral (2-arm), Equilateral spiral (5-fold). |
 | Iterations | 3 | Fractal depth: each generation adds a finer halo of smaller cords and crossings (5+ is heavy) Range 0-6. |
 | Cord Width | 0.05 | Cord width as a fraction of the LOCAL tile edge (the cords taper with the fractal scale) Range 0.05-0.85. |
-| Style | Smooth | Angular, Smooth. |
+| Style | Smooth | Cord shape: straight mitered or curved. Angular, Smooth. |
 | Smoothness | 6 | Spline subdivisions per cord segment (smooth) Range 2-16. |
 | Interlace | Flat Knotwork | How the over/under weave is rendered (TUBE always weaves in z). Flat Knotwork, Woven (3D). |
 | Weave Height | 0.07 | Woven z amplitude as a fraction of the local tile edge (woven ribbon / tube / curve) Range 0-1. |
-| Output | Ribbon Mesh | Ribbon Mesh, Round Tube, Centerline Curves. |
+| Output | Ribbon Mesh | Geometry type for the woven cords. Ribbon Mesh, Round Tube, Centerline Curves. |
 | Tube Sides | 12 | Facets around the tube cross-section Range 3-32. |
-| Color By | By Component | Uniform, By Component, Over/Under. |
+| Color By | By Component | How the cords are colored. Uniform, By Component, Over/Under. |
 | Scale | 1 | Overall size multiplier (1 = fit the 2 m cube) Range 0.05-10. |
 
 <!-- /options -->

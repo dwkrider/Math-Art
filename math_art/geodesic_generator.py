@@ -428,7 +428,9 @@ if _IN_BLENDER:
                     "Square-grid subdivision -> quad-faced geodesic"),
                    ('RT', "Rhombic Triacontahedron (quad geodesic)",
                     "Rhombus-grid subdivision -> quad-faced geodesic")],
-            default='ICOSA')
+            default='ICOSA',
+            description="Seed polyhedron whose faces are subdivided and "
+                        "projected to the sphere")
         geo_class: EnumProperty(
             name="Class",
             items=[('I', "Class I (f,0)",
@@ -444,7 +446,8 @@ if _IN_BLENDER:
                     "General chiral Goldberg-Coxeter breakdown with "
                     "h = Frequency and the k below (h != k, k > 0); "
                     "convex-hulled")],
-            default='I')
+            default='I',
+            description="Goldberg-Coxeter breakdown class of the subdivision")
         frequency: IntProperty(
             name="Frequency", default=3, min=1, max=16,
             description="Breakdown frequency f (= h for Class III): "
@@ -467,7 +470,8 @@ if _IN_BLENDER:
                     "Keep faces whose centroid lies above "
                     "z = -0.25 R (a clean strut ring on the "
                     "3v icosahedron)")],
-            default='FULL')
+            default='FULL',
+            description="Keep the full sphere or cut it down to a dome")
         base_ring: BoolProperty(
             name="Base Ring", default=False,
             description="Thicken the open rim into a flat ring band "
@@ -491,18 +495,25 @@ if _IN_BLENDER:
                    ('PANELS', "Panels",
                     "Each triangle inset about its centroid with a "
                     "gap and slight thickness")],
-            default='SHELL')
+            default='SHELL',
+            description="How the geodesic is rendered as geometry")
         radius: FloatProperty(name="Radius", default=1.0, min=0.01,
-                              max=100.0)
+                              max=100.0, description="Sphere radius")
         thickness: FloatProperty(
             name="Thickness", default=0.05, min=0.0, max=1.0,
             description="Shell / panel thickness (0 = single surface)")
         border: FloatProperty(name="Border", default=0.06, min=0.005,
-                              max=1.0)
+                              max=1.0,
+                              description="Frame width left around each "
+                                          "open panel in the Leonardo style")
         strut_radius: FloatProperty(name="Strut Radius", default=0.02,
-                                    min=0.001, max=0.5)
+                                    min=0.001, max=0.5,
+                                    description="Radius of the edge "
+                                                "cylinders in Ball and Stick")
         node_radius: FloatProperty(name="Node Radius", default=0.035,
-                                   min=0.001, max=0.5)
+                                   min=0.001, max=0.5,
+                                   description="Radius of the vertex "
+                                               "spheres in Ball and Stick")
         gap: FloatProperty(
             name="Panel Gap", default=0.15, min=0.0, max=0.9,
             description="Fraction each panel is shrunk about its "

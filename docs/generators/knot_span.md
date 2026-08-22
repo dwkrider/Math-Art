@@ -23,16 +23,22 @@ This generator builds the classic Plateau-problem demonstration: the minimal sur
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Knot p | 2 | Range 1-8. |
+| Rim Curve | Off | Sweep a tube along the open edge of the surface. That edge is a stair-step through the sample grid, so the tube both tidies it and gives the surface a deliberate border; a closed surface has no edge and gets no curve |
+| Rim Thickness | 0.01 | Bevel radius of the rim tube (0 leaves a bare curve) Range 0-1. |
+| Rim Smoothing | 3 | Taubin smoothing passes along the rim before it is swept. Unlike a plain Laplacian this does not shrink the curve, so the tube stays on the edge however many passes you use; 0 follows the sample grid exactly Range 0-40. |
+| Rim Profile | Circular | Cross-section swept along the rim. Circular, Square, Channel (C), Beam (H), Reeded, Curve Only. |
+| Rim Twist | 0 | Rotate the swept profile about the rim. Set it to 180 to reverse which way a channel opens or which face a reed is milled into. Which way looks right is not fixed by the surface: the same outward direction reads as out of an Enneper edge and into a clipped periodic cell, so this is the control for it Range -180-180. |
+| Reeds | 120 | Number of ridges milled across a reeded rim, counted around the whole edge. The rim is re-sampled to carry them, so they are spaced by arc length rather than by the surface's grid Range 4-2000. |
+| Knot p | 2 | p of the inner (p, q) torus knot; with q it picks which knot spans to the circle Range 1-8. |
 | Knot q | 3 | q of the inner torus knot; 0 degenerates it to a flat circle (radius 3 x Knot Scale) wound p times Range 0-9. |
-| Circle Radius | 4.5 | Range 1-20. |
-| Knot Scale | 1 | Range 0.1-5. |
+| Circle Radius | 4.5 | Radius of the round outer boundary circle Range 1-20. |
+| Knot Scale | 1 | Overall size of the inner torus knot Range 0.1-5. |
 | Inner Height | 1 | Scale of the inner boundary's vertical oscillation, independent of its radius (0 flattens it into a wavy-radius ring) Range 0-5. |
 | Inner Lift | 0 | Shift the inner boundary up or down; with two circles this makes a catenoid-style span Range -10-10. |
 | Inner Rotation | 0 | Rotate the inner boundary about the vertical axis relative to the outer one, twisting the ruling between them Range -6.28319-6.28319. |
-| Boundary Samples | 96 | Range 32-512. |
-| Interior Rings | 16 | Range 4-128. |
-| Solver Iterations | 2 | Range 1-200. |
+| Boundary Samples | 96 | Number of points sampled around each boundary loop Range 32-512. |
+| Interior Rings | 16 | Number of concentric interior rings spanning between the two boundaries Range 4-128. |
+| Solver Iterations | 2 | Number of area-minimization passes the solver runs Range 1-200. |
 | NURBS Output | Off | Emit a compact NURBS surface (control grid = the solver grid) instead of a dense mesh. Where the surface curls tightly (e.g. near a knot) the NURBS may ripple; raise rings/samples or use mesh output |
 | Outer Knot q | 0 | The outer boundary as a (p, q) torus knot; 0 keeps the flat round circle (a circle is the degenerate q = 0 knot) Range 0-9. |
 | Outer Knot p | 0 | p of the outer boundary; 0 matches the inner knot's p (which keeps the ruling lined up) Range 0-8. |

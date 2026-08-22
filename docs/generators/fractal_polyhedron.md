@@ -24,21 +24,21 @@ The construction follows the fractal-polyhedron pages of George W. Hart — a co
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Solid | Cube | Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
-| Anchors | Vertices | Vertices, Faces, Edges. |
-| Generations | 3 | Range 1-7. |
-| Child Scale | 0.5 | Range 0.1-0.9. |
+| Solid | Cube | Platonic solid used as the repeating unit. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
+| Anchors | Vertices | Where each generation places its child copies on the parent solid. Vertices, Faces, Edges. |
+| Generations | 3 | Number of recursive levels to build Range 1-7. |
+| Child Scale | 0.5 | Size of each child copy relative to its parent Range 0.1-0.9. |
 | Spread | 1.27 | Distance multiplier from parent to children Range 0.5-3. |
 | Keep Parents | On | Keep every generation (off = only the last, e.g. the Sierpinski gasket) |
 | Push | 0 | Extra shift of each child along its anchor direction (in parent-size units) Range -1-2. |
 | Twist | 0 | Rotation of each child about its anchor direction (cumulative per generation) Range -180-180. |
-| Child Rotate X | 0 | Range -180-180. |
-| Child Rotate Y | 0 | Range -180-180. |
-| Child Rotate Z | 0 | Range -180-180. |
+| Child Rotate X | 0 | Extra rotation of each child about the X axis (cumulative per generation) Range -180-180. |
+| Child Rotate Y | 0 | Extra rotation of each child about the Y axis (cumulative per generation) Range -180-180. |
+| Child Rotate Z | 0 | Extra rotation of each child about the Z axis (cumulative per generation) Range -180-180. |
 | Crystal | Off | Haüy/Fathauer fractal-crystal growth: stack scaled copies face-to-face on every free face of the previous generation (after R.-J. Haüy 1784; R. Fathauer, Bridges 2008/2013). Off, Cube s=1/2 (Octahedron), Cube s=1/3 (Rhombic Dodecahedron), Haüy Octahedron (s=1), Dodecafoam (s=phi^-2), Dodecahedron s=1/2 (Icosahedron), Icosahedron s=phi^-2 (Sierpinski Pent), Hex Prism s=1/2 (Dipyramid), and 2 more. |
 | Hull Shell | Off | Add the convex hull of the cluster as a translucent shell so the crystal form reads clearly |
-| Coloring | Per Generation | Per Generation, None. |
-| Scale | 1 | Range 0.01-100. |
+| Coloring | Per Generation | Whether to assign a material per generation or leave the mesh unmaterialed. Per Generation, None. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 
 <!-- /options -->
 

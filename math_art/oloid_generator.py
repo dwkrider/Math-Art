@@ -81,6 +81,7 @@ if _IN_BLENDER:
 
         kind: EnumProperty(
             name="Shape",
+            description="Which developable / ruled shape to build",
             items=[('OLOID', "Oloid",
                     "Convex hull of two perpendicular circles "
                     "through each other's centre (exact ruled "
@@ -103,7 +104,9 @@ if _IN_BLENDER:
                     "(rulings across a double-loop edge)")],
             default='OLOID')
         segments: IntProperty(name="Segments", default=96, min=12,
-                              max=512)
+                              max=512,
+                              description="Number of segments around the "
+                                          "circles")
         separation: FloatProperty(
             name="Separation", default=1.0, min=0.0, max=3.0,
             description="Distance between the circle centres "
@@ -121,7 +124,8 @@ if _IN_BLENDER:
                         "(wobbler); != 1 stretches them to ellipses "
                         "(ellipsoloid)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size multiplier")
         sharp_edges: BoolProperty(
             name="Sharp Circle Edges", default=True,
             description="Mark the two circular arcs sharp (and "

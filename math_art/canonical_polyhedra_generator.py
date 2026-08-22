@@ -117,10 +117,15 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         family: EnumProperty(name="Family", items=_family_items,
-                             update=_family_update)
-        solid: EnumProperty(name="Solid", items=_solid_items)
+                             update=_family_update,
+                             description="Which family of canonical "
+                                         "polyhedra to choose from")
+        solid: EnumProperty(name="Solid", items=_solid_items,
+                            description="Which polyhedron in the family "
+                                        "to build")
         style: EnumProperty(
             name="Style",
+            description="How the polyhedron is rendered",
             items=[('SOLID', "Solid", ""),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo modifier"),
@@ -157,7 +162,8 @@ if _IN_BLENDER:
         facet_separate: BoolProperty(
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             fam = self.family or (_FAMILIES[0][0] if _FAMILIES else '')

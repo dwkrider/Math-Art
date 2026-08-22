@@ -255,7 +255,8 @@ if _IN_BLENDER:
                    ('REULEAUX', "Reuleaux Tetrahedron",
                     "Intersection of four balls; NOT quite constant "
                     "width (its edges bulge) -- the starting point")],
-            default='MEISSNER')
+            default='MEISSNER',
+            description="Which constant-width solid to build")
         poly_n: IntProperty(
             name="Polygon Sides", default=3, min=3, max=15,
             description="Sides of the Reuleaux polygon (forced odd)")

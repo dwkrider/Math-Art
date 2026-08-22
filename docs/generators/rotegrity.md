@@ -23,15 +23,15 @@ A rotegrity (also **nexorade**) strap-sphere: every edge of a spherical polyhedr
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Seed | Icosahedron | Icosahedron, Octahedron, Tetrahedron, Cube, Dodecahedron. |
+| Seed | Icosahedron | Spherical polyhedron whose edges become straps. Icosahedron, Octahedron, Tetrahedron, Cube, Dodecahedron. |
 | Geodesic Frequency | 2 | Subdivision of triangular seeds Range 1-8. |
 | Twist | 18 | Rotation of each strap about its midpoint (deg) Range -60-60. |
 | Extension | 0.35 | Lengthening of each strap beyond its edge Range 0-1. |
-| Strap Width | 0.06 | Range 0.005-0.4. |
-| Strap Thickness | 0.025 | Range 0.002-0.2. |
-| Segments | 12 | Range 4-64. |
-| Coloring | By Strap Length | By Strap Length, Per Strap, None. |
-| Radius | 1 | Range 0.01-100. |
+| Strap Width | 0.06 | Width of each strap Range 0.005-0.4. |
+| Strap Thickness | 0.025 | Thickness of each strap Range 0.002-0.2. |
+| Segments | 12 | Lengthwise subdivisions along each strap Range 4-64. |
+| Coloring | By Strap Length | How straps are assigned materials. By Strap Length, Per Strap, None. |
+| Radius | 1 | Overall radius of the sphere Range 0.01-100. |
 
 <!-- /options -->
 

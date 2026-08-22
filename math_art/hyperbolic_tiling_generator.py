@@ -239,7 +239,9 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         form: EnumProperty(name="Form", items=FORM_ITEMS,
-                           default='REGULAR')
+                           default='REGULAR',
+                           description="Which Wythoff uniform form to "
+                                       "build")
         p: IntProperty(
             name="p", default=7, min=3, max=12,
             description="Order of the first corner (p-gon symmetry)")
@@ -251,7 +253,9 @@ if _IN_BLENDER:
             description="Order of the third corner (2 = right triangle, "
                         "the classic regular families)")
         model: EnumProperty(name="Model", items=MODEL_ITEMS,
-                            default='POINCARE')
+                            default='POINCARE',
+                            description="Disk or curved 3D model the "
+                                        "tiling is drawn in")
         depth: IntProperty(
             name="Depth", default=14, min=1, max=60,
             description="Reflection word length explored")
@@ -270,7 +274,8 @@ if _IN_BLENDER:
                     "alternates cleanly only for even q (bipartite), "
                     "shows a frustration seam for odd q"),
                    ('UNIFORM', "Uniform", "A single material")],
-            default='SIDES')
+            default='SIDES',
+            description="How the tiles are colored")
         hide_off_parity: BoolProperty(
             name="Hide Off-Parity Tiles", default=False,
             description="In Parity color mode, omit the 'off' (second) "

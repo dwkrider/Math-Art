@@ -23,14 +23,26 @@ Classical **algebraic surfaces** — the shapes carved out by a single polynomia
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | Clebsch Diagonal Cubic | Clebsch Diagonal Cubic, Cayley Nodal Cubic, Kummer Quartic, Barth Sextic, Togliatti Quintic, Taubin Heart, Ding-dong, Chmutov Sextic, and 2 more. |
-| Resolution | 80 | Sample grid resolution per axis (algebraic surfaces need more than TPMS) Range 16-256. |
-| Scale | 1 | Range 0.01-100. |
-| Kummer Mu | 1.3 | Kummer quartic parameter (node sharpness); used by the Kummer preset only Range 1.05-2. |
-| Fold n | 3 | Saddle fold count: 2 = ordinary saddle, 3 = monkey saddle, higher = n-fold saddles; Monkey Saddle preset only Range 2-8. |
+| Family | Classical | Which group of surfaces to choose from; filters the Preset list. Classical, Hauser Gallery, Record Nodal Surfaces, Named Implicit Surfaces, Encyclopedia Surfaces, Goursat (Octahedral), Goursat (Tetrahedral), Goursat (Dodecahedral). |
+| Preset |  | The surface to build; the tooltip gives its defining equation where one is printed |
+| Resolution | 120 | Sample grid resolution per axis. Algebraic surfaces need more of it than the periodic ones: their interest is usually a cusp, a self-intersection or a double point, and a coarse grid rounds exactly those away Range 16-256. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
+| Node Sharpness | 1.3 | Kummer quartic parameter (node sharpness) Range 1.05-2. |
+| Folds | 3 | Saddle fold count: 2 = ordinary saddle, 3 = monkey saddle, higher = n-fold saddles Range 2-8. |
+| k | 0 | Family coefficient Range -40-40. |
+| k' | 0 | Family coefficient Range -40-40. |
+| k'' | 0 | Family coefficient Range -100-100. |
+| k''' | 0 | Family coefficient Range -200-200. |
+| Size | 1 | The length the family's coefficients are measured against; it changes how much of the surface the clip ball shows, not the size of the finished object Range 0.05-10. |
 | Clip Override | 0 | Clip ball radius / box half-extent; 0 uses the preset default Range 0-20. |
 | Thickness | 0 | If > 0, add a Solidify modifier with this thickness Range 0-1. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the surface smooth |
+| Rim Curve | Off | Sweep a tube along the open edge of the surface. That edge is a stair-step through the sample grid, so the tube both tidies it and gives the surface a deliberate border; a closed surface has no edge and gets no curve |
+| Rim Thickness | 0.01 | Bevel radius of the rim tube (0 leaves a bare curve) Range 0-1. |
+| Rim Smoothing | 3 | Taubin smoothing passes along the rim before it is swept. Unlike a plain Laplacian this does not shrink the curve, so the tube stays on the edge however many passes you use; 0 follows the sample grid exactly Range 0-40. |
+| Rim Profile | Circular | Cross-section swept along the rim. Circular, Square, Channel (C), Beam (H), Reeded, Curve Only. |
+| Rim Twist | 0 | Rotate the swept profile about the rim. Set it to 180 to reverse which way a channel opens or which face a reed is milled into. Which way looks right is not fixed by the surface: the same outward direction reads as out of an Enneper edge and into a clipped periodic cell, so this is the control for it Range -180-180. |
+| Reeds | 120 | Number of ridges milled across a reeded rim, counted around the whole edge. The rim is re-sampled to carry them, so they are spaced by arc length rather than by the surface's grid Range 4-2000. |
 
 <!-- /options -->
 

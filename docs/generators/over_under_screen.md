@@ -30,7 +30,7 @@ The difficulty, and the interest, is that a woven screen is not really woven her
 | Grid Height | 5 | Cells down Range 1-30. |
 | Cell Size | 1 | Edge length of one lattice cell (the whole screen is refit to the 2 m cube) Range 0.1-10. |
 | Weave | Plain | Weave draft (TWILL / BASKET apply to the ribbons mode only). Plain, Twill 2/2, Basket 2/2. |
-| Surface | Membrane | Ribbons, Membrane, Minimal (Taut). |
+| Surface | Membrane | Screen construction: separate ribbons or the woven membrane web. Ribbons, Membrane, Minimal (Taut). |
 | Strand Width | 0.33 | Ribbon width as a fraction of the ribbon pitch (also sets the opening size) Range 0.15-0.9. |
 | Weave Depth | 0.18 | Peak-to-peak front-to-back amplitude as a fraction of a cell (2h) Range 0-2. |
 | Resolution | 10 | Tessellation (sets the subdivision depth of the patch network) Range 4-48. |
@@ -39,7 +39,7 @@ The difficulty, and the interest, is that a woven screen is not really woven her
 | Relax Iterations | 12 | Extra fairing passes (taut mode) Range 1-60. |
 | Backing Slab | Off | Add a slab behind the screen |
 | Base Thickness | 0.1 | Backing slab thickness (fraction of a cell) Range 0.01-1. |
-| Color By | Uniform | Uniform, By Element, By Height. |
+| Color By | Uniform | How the screen is colored. Uniform, By Element, By Height. |
 | Separate Parts | Off | One object per part (each ribbon / the membrane and slab) |
 | Scale | 1 | Overall size (1 = fit the 2 m cube) Range 0.05-10. |
 

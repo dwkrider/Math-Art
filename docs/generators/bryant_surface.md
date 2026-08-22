@@ -26,8 +26,8 @@ $H=1$ is the distinguished value in hyperbolic space the way $H=0$ is in Euclide
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Catenoid Cousin | Catenoid Cousin, Enneper Cousin, Polynomial Data, Trinoid. |
-| Model | Poincare Ball | Poincare Ball, Klein Ball, Hyperboloid. |
+| Surface | Catenoid Cousin | Which Bryant CMC-1 surface family to build. Catenoid Cousin, Enneper Cousin, Polynomial Data, Trinoid. |
+| Model | Poincare Ball | Model of hyperbolic space the surface is drawn in. Poincare Ball, Klein Ball, Hyperboloid. |
 | mu | -0.3 | Catenoid-cousin parameter, mu > -1/2 and mu != 0.  Total curvature is -4 pi (2 mu + 1); the profile is embedded below 0 and has one self-intersection above it Range -0.49-3. |
 | lambda | 1 | Enneper-cousin parameter (only its modulus matters, so it is taken real and positive) Range 0.05-6. |
 | Degree n | 1 | r1 = z^n in the Theorem B data; n = 1 reproduces Enneper's cousin Range 1-6. |
@@ -36,11 +36,11 @@ $H=1$ is the distinguished value in hyperbolic space the way $H=0$ is in Euclide
 | d1 | 0.18 | Modulus of the end at z = 1; set all three equal for a symmetric trinoid (embedded below 0.2332, self-intersecting above) Range 0.01-1.2. |
 | d_inf | 0.2 | Modulus of the end at z = infinity Range 0.01-1.2. |
 | Domain Extent | 1 | Scales the parameter domain: larger reaches further out towards the sphere at infinity Range 0.1-3. |
-| U Resolution | 96 | Range 8-400. |
-| V Resolution | 96 | Range 8-400. |
+| U Resolution | 96 | Mesh divisions along the u parameter Range 8-400. |
+| V Resolution | 96 | Mesh divisions along the v parameter Range 8-400. |
 | ODE Steps | 64 | RK4 steps per ray for the Theorem B integration Range 8-512. |
-| Smooth Shading | On | -- |
-| Scale | 1 | Range 0.01-100. |
+| Smooth Shading | On | Shade the surface smooth rather than faceted |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

@@ -24,19 +24,19 @@ Its striking feature is arithmetic rather than geometric. If the starting curvat
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Sphere Packing (3D) | Sphere Packing (3D), Gasket (2D). |
-| Circle Style | Filled Discs | Filled Discs, Tube Rings. |
-| Color By | Size | Size, Depth, Uniform. |
+| Mode | Sphere Packing (3D) | Build a 3D sphere packing or a 2D circle gasket. Sphere Packing (3D), Gasket (2D). |
+| Circle Style | Filled Discs | How the 2D gasket circles are drawn. Filled Discs, Tube Rings. |
+| Color By | Size | What the circle/sphere colours are keyed to. Size, Depth, Uniform. |
 | Depth | 6 | Gap-filling generations (packing fills largest-first to Max Count; a sphere packing never fills space fully -- the gaps are a fractal) Range 1-16. |
 | Min Radius | 0 | Stop inscribing below this radius (0 = per-mode default) Range 0-0.5. |
 | Max Count | 40000 | Hard cap on circles/spheres (packing fills the largest this many) Range 10-200000. |
 | Ring Tube | 0.06 | Tube radius as a fraction of circle radius (gasket Tube Rings style) Range 0.01-0.5. |
 | Sphere Inflate | 1 | Grow spheres slightly to fuse contacts for printing (packing mode) Range 1-1.15. |
 | Sphere Resolution | 1 | Icosphere subdivision level (packing mode); higher rounds spheres so tangent spheres touch Range 1-5. |
-| Ring Segments | 20 | Range 6-64. |
-| Tube Segments | 8 | Range 4-32. |
-| Scale | 1 | Range 0.01-100. |
-| Smooth Shading | On | -- |
+| Ring Segments | 20 | Segments around each circle ring Range 6-64. |
+| Tube Segments | 8 | Segments around the ring's tube cross-section Range 4-32. |
+| Scale | 1 | Overall size; fits the result into a 2 m cube times this factor Range 0.01-100. |
+| Smooth Shading | On | Shade the surfaces smooth |
 | Separate Levels | Off | Output each inscription level as its own object (parented to an empty) so a level can be hidden or deleted individually |
 
 <!-- /options -->

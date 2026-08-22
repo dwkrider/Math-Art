@@ -24,17 +24,17 @@ Tissue grown by **cell division**. A map L-system rewrites a planar map — a ne
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Cellular Layer | Cellular Layer, Cell Ball. |
+| Mode | Cellular Layer | Grow a flat sheet or a closed ball of cells. Cellular Layer, Cell Ball. |
 | Divisions | 5 | Map L-systems divide by ELAPSED TIME, not by cell size, so the dial is a step count. Every cell divides once per step, so cell count doubles Range 1-9. |
 | Periclinal / Anticlinal | 1 | The one shape dial. A periclinal wall lies parallel to the surface and thickens the tissue; an anticlinal one is perpendicular and extends it. Below about 1.25 the sheet stays convex, above 2 it dishes in Range 0.05-8. |
-| Plane Jitter | 0.25 | Range 0-1.2. |
-| Seed | 0 | Range 0-10000. |
+| Plane Jitter | 0.25 | Random tilt applied to each division plane Range 0-1.2. |
+| Seed | 0 | Random seed for the division planes Range 0-10000. |
 | Turgor | 0.02 | Each cell pushes out with p = nRT/(A h), so a small cell pushes harder. That single term is what equalises cell size -- no rule says cells should be similar Range 0-0.3. |
-| Wall Stiffness | 0.6 | Range 0.05-2. |
-| Relax Steps | 60 | Range 0-600. |
+| Wall Stiffness | 0.6 | How strongly the cell walls resist stretching during relaxation Range 0.05-2. |
+| Relax Steps | 60 | Pressure-relaxation iterations after each division Range 0-600. |
 | Wall Inset | 0.14 | Shrink each cell toward its centroid so the gaps become walls -- what turns a tiling into an openwork screen Range 0-0.45. |
-| Thickness | 0 | Range 0-1. |
-| Scale | 1 | Range 0.01-100. |
+| Thickness | 0 | Extrude the sheet to this thickness (0 keeps it flat) Range 0-1. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

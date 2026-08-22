@@ -29,8 +29,8 @@ Because a noble solid's vertices form a single orbit of its symmetry group and i
 | Vertices | Icosahedron (12 vertices) | Which solid's vertices to run new faces through. Icosahedron (12 vertices), Dodecahedron (20 vertices), Cube (8 vertices), Octahedron (6 vertices), Icosidodecahedron (30 vertices), Truncated Tetrahedron (12 vertices). |
 | Faceting | 0 | Which of the noble facetings of that vertex set to build; they are found in plane order and the count differs per seed, so this wraps Range 0-63. |
 | Face Orbits | 1 | How many orbits of faces a faceting may use. One keeps every result noble -- isohedral and isogonal at once. Two also finds the isogonal solids whose faces come in two shapes, such as Smith's, whose faces are equilateral triangles and alternate-sided hexagons Range 1-2. |
-| Scale | 1 | Range 0.01-100. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
+| Style | Solid | Finish for the shell: solid, Leonardo panels, struts, ball-and-stick, wireframe, or face segments. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
 | Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Struts styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |

@@ -21,24 +21,24 @@ This generator builds multi-component links and knot connected sums as rope curv
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | Hopf Link | Hopf Link, Solomon's Link, Whitehead Link, Borromean Rings, Borromean Crest, Torus Link (p,q), Chain, Connect Sum. |
+| Preset | Hopf Link | Which link or connect-sum construction to build. Hopf Link, Solomon's Link, Whitehead Link, Borromean Rings, Borromean Crest, Torus Link (p,q), Chain, Connect Sum. |
 | p | 2 | Windings around the torus axis Range 1-16. |
 | q | 4 | Windings around the torus tube Range 1-32. |
 | Rings | 5 | Rings in the chain Range 2-50. |
-| Knot A | 3.1 | 3.1, 4.1, 5.1, 5.2, 6.1, 6.2, 6.3, 7.1, and 241 more. |
-| Knot B | 3.1 | 3.1, 4.1, 5.1, 5.2, 6.1, 6.2, 6.3, 7.1, and 241 more. |
+| Knot A | 3.1 | First prime-knot summand of the connect sum. 3.1, 4.1, 5.1, 5.2, 6.1, 6.2, 6.3, 7.1, and 241 more. |
+| Knot B | 3.1 | Second prime-knot summand of the connect sum. 3.1, 4.1, 5.1, 5.2, 6.1, 6.2, 6.3, 7.1, and 241 more. |
 | Mirror Second Knot | Off | Mirror the second summand (e.g. square knot instead of granny knot) |
 | Axis Ratio a/b | 1.618 | Ellipse semi-axis ratio; larger gives more clearance between the rings Range 1.05-4. |
 | Weave Depth | 0.35 | Height of the over/under weave bumps Range 0.05-1. |
-| Samples / Component | 160 | Range 40-1000. |
+| Samples / Component | 160 | Points sampled along each link component Range 40-1000. |
 | Relax Iterations | 100 | Smoothing + repulsion rounds for the presets that are rope-relaxed (0 shows the raw construction) Range 0-600. |
 | Strand Clearance | 0.35 | Repulsion distance while relaxing Range 0.05-1. |
 | Color Components | On | One material with a distinct color per link component |
-| Output | Bezier Curve | Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
+| Output | Bezier Curve | Curve type, or a swept tube mesh, for the output. Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
 | Rope Radius | 0.08 | Curve bevel depth / tube radius Range 0-1. |
-| Bevel Resolution | 6 | Range 1-16. |
-| Tube Sides | 12 | Range 3-32. |
-| Scale | 1 | Range 0.01-100. |
+| Bevel Resolution | 6 | Roundness of the curve's bevelled rope Range 1-16. |
+| Tube Sides | 12 | Number of sides around the swept tube mesh Range 3-32. |
+| Scale | 1 | Overall size; fits the result into a 2 m cube times this factor Range 0.01-100. |
 
 <!-- /options -->
 

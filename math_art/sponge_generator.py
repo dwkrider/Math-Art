@@ -101,13 +101,16 @@ if _IN_BLENDER:
                    ('CANTOR', "Cantor Dust",
                     "Only the 8 corners kept: a cloud of separate "
                     "cubes")],
-            default='MENGER')
+            default='MENGER',
+            description="Which subtractive volume fractal to build")
         level: IntProperty(
             name="Level", default=3, min=0, max=6,
             description="Recursion depth (grid sponges are capped "
                         "per kind to keep meshes manageable)")
         size: FloatProperty(name="Size", default=2.0, min=0.05,
-                            max=100.0)
+                            max=100.0,
+                            description="Overall edge length of the "
+                                        "fractal")
 
         def execute(self, context):
             lv = min(self.level, MAX_LEVEL[self.kind])

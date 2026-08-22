@@ -24,8 +24,8 @@ The **Császár polyhedron** has 7 vertices, 21 edges and 14 triangles, and **no
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Solid | Csaszar Polyhedron | Csaszar Polyhedron, Szilassi Polyhedron, Regular-Faced Toroid, Knotted Dodecahedron, Borromean Rings, Heptagonal Iris Toroid, Octagonal Iris Toroid. |
-| Scale | 1 | Range 0.01-100. |
+| Solid | Csaszar Polyhedron | Which toroidal (genus-1) polyhedron to build. Csaszar Polyhedron, Szilassi Polyhedron, Regular-Faced Toroid, Knotted Dodecahedron, Borromean Rings, Heptagonal Iris Toroid, Octagonal Iris Toroid. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 
 <!-- /options -->
 

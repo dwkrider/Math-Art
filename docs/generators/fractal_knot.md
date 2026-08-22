@@ -26,16 +26,16 @@ This is the satellite-knot route to a fractal knot, distinct from the planar til
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Base Knot | Trefoil | Trefoil, Cinquefoil (5,2), (3,4) Torus Knot, Unknot (circle base). |
+| Base Knot | Trefoil | Starting knot that gets recursively cabled. Trefoil, Cinquefoil (5,2), (3,4) Torus Knot, Unknot (circle base). |
 | Cable Levels | 2 | How many times to cable the base knot Range 0-4. |
 | First Winding | 7 | Turns of the first cable around the base Range 2-40. |
 | Winding Multiplier | 5 | Winding turns multiply by this each level Range 2-9. |
 | First Radius | 0.24 | Radius of the first cable (relative) Range 0.02-0.6. |
 | Radius Ratio | 0.4 | Cable radius shrinks by this each level Range 0.15-0.7. |
 | Samples | 3000 | Points along the curve (must exceed the highest winding number several times over) Range 400-12000. |
-| Tube Radius | 0.02 | Range 0-0.3. |
-| Bevel Resolution | 3 | Range 0-12. |
-| Scale | 1 | Range 0.01-100. |
+| Tube Radius | 0.02 | Thickness of the swept tube; 0 leaves a bare curve Range 0-0.3. |
+| Bevel Resolution | 3 | Roundness of the tube cross-section Range 0-12. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

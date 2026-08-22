@@ -23,21 +23,21 @@ There is no mode to choose here — the sculpture is always the same two-spiral 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Outer Radius | 1 | Range 0.05-20. |
-| Inner Radius | 0.35 | Range 0.01-20. |
+| Outer Radius | 1 | Radius of the outer helix Range 0.05-20. |
+| Inner Radius | 0.35 | Radius of the inner helix Range 0.01-20. |
 | Join Radius | 0.75 | Radius where the two helices meet at the top and bottom Range 0.02-20. |
-| Half Height | 1.25664 | Range 0.05-20. |
-| Outer Turns | 1.5 | Range 0.5-12. |
+| Half Height | 1.25664 | Half the total height of the loop (peak to centre) Range 0.05-20. |
+| Outer Turns | 1.5 | Number of turns in the outer helix Range 0.5-12. |
 | Inner Turns | 2.5 | Snapped so the turn counts sum to a whole number when Auto Close is on Range 0.5-12. |
 | Auto Close | On | Adjust the inner turns so the loop closes exactly (outer + inner turns must be a whole number) |
 | Height Profile | 1 | Exponent of the cosine height profile (1 = the original; higher flattens the middle, lower sharpens it) Range 0.25-4. |
-| Segments Per Turn | 120 | Range 16-720. |
-| Spline | NURBS | NURBS, Poly, Bezier. |
+| Segments Per Turn | 120 | Points sampled per turn along each helix Range 16-720. |
+| Spline | NURBS | Curve type used for the resulting spline. NURBS, Poly, Bezier. |
 | Tube Major Axis | 0.09 | Half-width of the elliptical tube profile (0 = wire only) Range 0-2. |
 | Tube Minor Axis | 0.045 | Half-height of the elliptical tube profile Range 0-2. |
 | Profile Rotation | 0 | Rotation of the ellipse in the tube cross-section (degrees) Range -90-90. |
-| Profile Resolution | 6 | Range 1-32. |
-| Scale | 1 | Range 0.01-100. |
+| Profile Resolution | 6 | Resolution of the swept tube profile curve Range 1-32. |
+| Scale | 1 | Overall scale factor Range 0.01-100. |
 
 <!-- /options -->
 

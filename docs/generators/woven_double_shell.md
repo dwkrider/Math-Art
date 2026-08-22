@@ -37,12 +37,12 @@ Two concentric spheres of rope rosettes tied into one woven fabric: a medallion 
 | Samples | 160 | Beads per outer medallion (sets the global bead spacing) Range 48-400. |
 | Bridge Samples | 24 | Bezier samples per bridge before resampling Range 8-64. |
 | Rope Radius | 0.02 | Rope tube radius (outer sphere radius = 1) Range 0.005-0.12. |
-| Tube Sides | 10 | Range 3-32. |
+| Tube Sides | 10 | Sides of each rope tube cross-section Range 3-32. |
 | Weave Gap | 0 | Radial over/under separation at crossings; 0 = off (no over/under push). Positive values are floored at the rope diameter Range 0-0.4. |
 | Clearance | 0.03 | Strand-strand repulsion (intersection avoidance); 0 = off (ropes may intersect). Positive values floored at the rope diameter Range 0-0.4. |
 | Relax Iterations | 120 | Bead/stick relaxation steps (0 = the raw radial weave seed) Range 0-400. |
-| Output | Rope Tubes | Rope Tubes, Ribbon Straps, Centerline Curves. |
-| Color By | By Strand | By Strand, Uniform, By Element. |
+| Output | Rope Tubes | Geometry produced for each strand. Rope Tubes, Ribbon Straps, Centerline Curves. |
+| Color By | By Strand | How strand materials are assigned. By Strand, Uniform, By Element. |
 | Separate Strands | Off | One object per closed strand |
 
 <!-- /options -->

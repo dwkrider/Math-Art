@@ -26,7 +26,7 @@ None of these is drawn from a formula — the surface is relaxed under the same 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Liquid Bridge | Liquid Bridge, Sessile Drop, Film on Sphere, Film on Column. |
+| Surface | Liquid Bridge | Which capillary surface to build. Liquid Bridge, Sessile Drop, Film on Sphere, Film on Column. |
 | Volume Factor | 1.15 | Bridge volume as a fraction of the cylinder volume: 1 = cylinder, ~0.809 = catenoid (at the default aspect), more = unduloid barrel, less = nodoid neck Range 0.55-1.8. |
 | Half-Height / Radius | 0.5 | Ring half-separation over ring radius (0.6627 is the Goldschmidt limit beyond which no catenoid spans the rings) Range 0.15-0.66. |
 | Contact Angle | 60 | Young contact angle in degrees (< 90 wets the floor, > 90 beads up) Range 15-165. |
@@ -38,9 +38,9 @@ None of these is drawn from a formula — the surface is relaxed under the same 
 | Resolution | 48 | Vertices around the rim / contact line Range 16-128. |
 | Evolve Iterations | 800 | Constrained area-descent iterations (0 shows the raw seed) Range 0-5000. |
 | Optimizer | Conjugate Gradient | Outer descent algorithm for the constrained evolution (BRIDGE and DROP modes; films always use CG). Conjugate Gradient, L-BFGS (Laplacian-seeded). |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the surface smooth |
 | Sharp Rims | On | Crease the surface's boundary rims -- the bridge's pinned rings, the drop's contact line, the film's frame ring and free contact line -- so a Subdivision Surface keeps them pinned to the rings / floor / wall instead of shrinking the open boundary |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

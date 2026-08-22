@@ -23,13 +23,13 @@ A **layer group** is the three-dimensional cousin of the [wallpaper groups](wall
 
 | Option | Default | Description |
 | --- | --- | --- |
-| In-plane Group | p4  (442) | p1  (o), p2  (2222), pm  (**), pg  (xx), cm  (*x), pmm  (*2222), pmg  (22*), pgg  (22x), and 9 more. |
-| Z-Symmetry | Horizontal Mirror | None, Horizontal Mirror, 2-fold In-plane Axis, Inversion Centre. |
-| Motif | Arrow | Arrow, F, L, Comma, Zig, Triangle, Object. |
+| In-plane Group | p4  (442) | Which of the 17 wallpaper groups tiles the plane. p1  (o), p2  (2222), pm  (**), pg  (xx), cm  (*x), pmm  (*2222), pmg  (22*), pgg  (22x), and 9 more. |
+| Z-Symmetry | Horizontal Mirror | Extra symmetry added through the third axis. None, Horizontal Mirror, 2-fold In-plane Axis, Inversion Centre. |
+| Motif | Arrow | Shape tiled through the group, or another object's mesh. Arrow, F, L, Comma, Zig, Triangle, Object. |
 | Object | empty | Object whose mesh is used as the motif. Leave empty to use the active or selected mesh |
-| Cells X | 3 | Range 1-30. |
-| Cells Y | 3 | Range 1-30. |
-| Color By | Symmetry Copy | Symmetry Copy, Operation Type, Handedness, Lattice Cell. |
+| Cells X | 3 | Number of unit cells along X Range 1-30. |
+| Cells Y | 3 | Number of unit cells along Y Range 1-30. |
+| Color By | Symmetry Copy | How the symmetry copies are colored. Symmetry Copy, Operation Type, Handedness, Lattice Cell. |
 | Margin | 0 | Spacing around each unit, as a fraction of its size (0 = flush) Range 0-3. |
 | Relief Height | 0.3 | Relief depth for built-in motifs (a layer pattern needs real 3D height to show) Range 0.02-2. |
 | Separate Cells | Off | Output each unit as its own mesh object (parented to an empty) so cells can be edited individually |

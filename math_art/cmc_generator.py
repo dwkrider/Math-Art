@@ -887,7 +887,8 @@ if _IN_BLENDER:
                     "Soap film spanning a fixed tilted ring and a "
                     "vertical column, the free boundary sliding on "
                     "the column to meet it at 90 degrees")],
-            default='BRIDGE')
+            default='BRIDGE',
+            description="Which capillary surface to build")
         volume_factor: FloatProperty(
             name="Volume Factor", default=1.15, min=0.55, max=1.8,
             description="Bridge volume as a fraction of the cylinder "
@@ -954,7 +955,8 @@ if _IN_BLENDER:
             description="Outer descent algorithm for the "
                         "constrained evolution (BRIDGE and DROP "
                         "modes; films always use CG)")
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the surface smooth")
         sharp_edges: BoolProperty(
             name="Sharp Rims", default=True,
             description="Crease the surface's boundary rims -- the "
@@ -964,7 +966,8 @@ if _IN_BLENDER:
                         "keeps them pinned to the rings / floor / "
                         "wall instead of shrinking the open boundary")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def _optimizer(self):
             return "lbfgs" if self.optimizer == 'LBFGS' else None

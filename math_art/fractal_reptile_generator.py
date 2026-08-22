@@ -1308,7 +1308,9 @@ if _IN_BLENDER:
                     "per pair of top substitution digits, showing the "
                     "outer copies and their nested sub-copies"),
                    ('UNIFORM', "Uniform", "A single material")],
-            default='TYPE')
+            default='TYPE',
+            description="How tiles are colored: by generation / "
+                        "substitution digits, or one uniform material")
         margin: FloatProperty(
             name="Margin", default=0.0, min=0.0, max=0.45,
             description="Inset each tile toward its centroid, leaving "

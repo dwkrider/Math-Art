@@ -920,19 +920,26 @@ if _IN_BLENDER:
         bl_label = "Icosahedron Stellation"
         bl_options = {'REGISTER', 'UNDO'}
 
-        solid: EnumProperty(name="Stellation", items=_ITEMS, default='8')
+        solid: EnumProperty(
+            name="Stellation", items=_ITEMS, default='8',
+            description="Which stellation to build, by Crennell index 1-59, "
+                        "or Custom to pick Du Val shells by hand")
         # custom Du Val shell toggles (used when solid == 'CUSTOM')
-        sh_a: BoolProperty(name="a (core)", default=True)
-        sh_b: BoolProperty(name="b", default=True)
-        sh_c: BoolProperty(name="c", default=False)
-        sh_d: BoolProperty(name="d", default=False)
-        sh_e1: BoolProperty(name="e1", default=False)
-        sh_e2: BoolProperty(name="e2", default=False)
-        sh_f1: BoolProperty(name="f1 (chiral)", default=False)
-        sh_f2: BoolProperty(name="f2", default=False)
-        sh_g1: BoolProperty(name="g1", default=False)
-        sh_g2: BoolProperty(name="g2", default=False)
-        sh_g3: BoolProperty(name="g3 (outer)", default=False)
+        _SH_DESC = ("Fill this Du Val cell shell when building a custom "
+                    "stellation (inner shell a to outer shell g3)")
+        sh_a: BoolProperty(name="a (core)", default=True, description=_SH_DESC)
+        sh_b: BoolProperty(name="b", default=True, description=_SH_DESC)
+        sh_c: BoolProperty(name="c", default=False, description=_SH_DESC)
+        sh_d: BoolProperty(name="d", default=False, description=_SH_DESC)
+        sh_e1: BoolProperty(name="e1", default=False, description=_SH_DESC)
+        sh_e2: BoolProperty(name="e2", default=False, description=_SH_DESC)
+        sh_f1: BoolProperty(name="f1 (chiral)", default=False,
+                            description=_SH_DESC)
+        sh_f2: BoolProperty(name="f2", default=False, description=_SH_DESC)
+        sh_g1: BoolProperty(name="g1", default=False, description=_SH_DESC)
+        sh_g2: BoolProperty(name="g2", default=False, description=_SH_DESC)
+        sh_g3: BoolProperty(name="g3 (outer)", default=False,
+                            description=_SH_DESC)
         style: EnumProperty(
             name="Style",
             items=[('SOLID', "Solid", ""),
@@ -944,7 +951,10 @@ if _IN_BLENDER:
                     "as small spheres (ball-and-stick model)"),
                    ('WIREFRAME', "Wireframe",
                     "Mesh edges only, displayed as a wireframe")],
-            default='SOLID')
+            default='SOLID',
+            description="How to render the stellation: solid faces, open "
+                        "Leonardo panels, struts, ball-and-stick or "
+                        "wireframe")
         border: FloatProperty(name="Border", default=0.06, min=0.005, max=1.0,
                               description="Leonardo face frame width")
         thickness: FloatProperty(name="Thickness", default=0.05, min=0.001,
@@ -956,7 +966,8 @@ if _IN_BLENDER:
             name="Node Radius", default=0.035, min=0.0, max=0.5,
             description="Ball-and-stick vertex sphere radius "
                         "(0 = no nodes)")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Uniform scale of the finished solid")
 
         def _code(self):
             if self.solid == 'CUSTOM':

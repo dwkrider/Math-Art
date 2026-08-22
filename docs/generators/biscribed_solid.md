@@ -24,10 +24,10 @@ Restoring that second property means deforming the solid until the face orbits a
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Solid | Biscribed Truncated Octahedron | Biscribed Truncated Octahedron, Biscribed Truncated Icosahedron, Biscribed Truncated Cuboctahedron, Biscribed Truncated Icosidodecahedron, Biscribed Snub Cube, Biscribed Snub Dodecahedron, Biscribed Tetrakis Hexahedron, Biscribed Pentakis Dodecahedron, and 31 more. |
-| Coloring | By Face Size | By Face Size, None. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
-| Border | 0.3 | Leonardo face frame width Range 0.02-0.95. |
+| Solid | Biscribed Truncated Octahedron | Which biscribed solid (or its dual) to build. Biscribed Truncated Octahedron, Biscribed Truncated Icosahedron, Biscribed Truncated Cuboctahedron, Biscribed Truncated Icosidodecahedron, Biscribed Snub Cube, Biscribed Snub Dodecahedron, Biscribed Tetrakis Hexahedron, Biscribed Pentakis Dodecahedron, and 31 more. |
+| Coloring | By Face Size | Color faces by their number of sides, or leave them uncolored. By Face Size, None. |
+| Style | Solid | How the polyhedron is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Border | 0.06 | Leonardo face frame width Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
@@ -35,7 +35,7 @@ Restoring that second property means deforming the solid until the face orbits a
 | Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
 | Explode | 0.1 | Move segments outward Range 0-5. |
 | Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

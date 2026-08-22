@@ -29,17 +29,17 @@ The tiling wrap works because a torus *is* the plane modulo a lattice. A periodi
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Pattern | Polygon Ring | Polygon Ring, Uniform Tiling. |
+| Pattern | Polygon Ring | Whether to build a polygon-ring toroid or wrap a uniform tiling onto the torus. Polygon Ring, Uniform Tiling. |
 | Segments | 12 | Sections around the major circle Range 3-64. |
-| Cross-section Sides | 4 | Range 3-32. |
+| Cross-section Sides | 4 | Number of sides of each polygon cross-section Range 3-32. |
 | Antiprism Ring | Off | Half-step twist between sections (triangular faces) instead of a prism ring (quads) |
-| Tiling | Hexagonal (6.6.6) | Triangular (3.3.3.3.3.3), Square (4.4.4.4), Hexagonal (6.6.6), Trihexagonal (3.6.3.6), Snub Square (3.3.4.3.4), Snub Hexagonal (3.3.3.3.6), Elongated Triangular (3.3.3.4.4), Rhombitrihexagonal (3.4.6.4), and 10 more. |
+| Tiling | Hexagonal (6.6.6) | Which uniform plane tiling to wrap onto the torus. Triangular (3.3.3.3.3.3), Square (4.4.4.4), Hexagonal (6.6.6), Trihexagonal (3.6.3.6), Snub Square (3.3.4.3.4), Snub Hexagonal (3.3.3.3.6), Elongated Triangular (3.3.3.4.4), Rhombitrihexagonal (3.4.6.4), and 10 more. |
 | Cells Around | 12 | Tiling periods around the major circle Range 3-64. |
 | Cells Through | 6 | Tiling periods around the minor circle (tube) Range 2-48. |
-| Major Radius | 1 | Range 0.1-10. |
-| Minor Radius | 0.4 | Range 0.02-5. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
-| Border | 0.3 | Leonardo face frame width Range 0.02-0.95. |
+| Major Radius | 1 | Radius of the torus ring Range 0.1-10. |
+| Minor Radius | 0.4 | Radius of the torus tube Range 0.02-5. |
+| Style | Solid | How the torus surface is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Border | 0.06 | Leonardo face frame width Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
@@ -47,7 +47,7 @@ The tiling wrap works because a torus *is* the plane modulo a lattice. A periodi
 | Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
 | Explode | 0 | Move segments outward Range 0-5. |
 | Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 
 <!-- /options -->
 

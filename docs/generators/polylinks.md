@@ -27,22 +27,22 @@ The classic tangles are 4 triangles (tetrahedron), 6 squares (cube), 8 or 20 tri
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | 4 Triangles | Custom, 4 Triangles, 6 Squares, 8 Triangles, 6 Pentagons, 12 Pentagons, 20 Triangles. |
-| Solid | Tetrahedron | Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
-| Frame Size | 1.55 | Range 0.5-4. |
+| Preset | 4 Triangles | Preset polylink arrangement (Custom to set the parameters by hand). Custom, 4 Triangles, 6 Squares, 8 Triangles, 6 Pentagons, 12 Pentagons, 20 Triangles. |
+| Solid | Tetrahedron | Platonic solid whose face planes host the polygon frames. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
+| Frame Size | 1.55 | Size of each polygon frame Range 0.5-4. |
 | Plane Offset | -0.45 | Push of each frame along its normal (negative = toward the centre) Range -2-2. |
-| Link Shape | Polygon Frame | Polygon Frame, Wavy Circle, Torus Knot. |
+| Link Shape | Polygon Frame | Shape of each link: flat polygon frame, wavy circle, or torus knot. Polygon Frame, Wavy Circle, Torus Knot. |
 | Wave Amplitude | 0.35 | Radial wave amplitude (wavy circle) or knot minor radius Range 0-2. |
 | Wave Factor | 1 | Wave frequency in multiples of the face side count Range 1-8. |
 | Knot p | 2 | Windings around the face axis Range 1-8. |
 | Knot q Factor | 1 | q = factor x face side count Range 1-8. |
-| Tube Sides | 8 | Range 3-24. |
+| Tube Sides | 8 | Sides of the swept tube cross-section (wavy / knot links) Range 3-24. |
 | Link Segments | 128 | Samples along wavy / knot centerlines Range 24-512. |
-| Frame Width | 0.14 | Range 0.02-0.9. |
-| Frame Thickness | 0.1 | Range 0.01-1. |
+| Frame Width | 0.14 | Width of each polygon frame bar Range 0.02-0.9. |
+| Frame Thickness | 0.1 | Thickness of each frame bar or swept tube Range 0.01-1. |
 | Antipodal Half | Off | Use only one face of each antipodal pair |
-| Coloring | Per Link | Per Link, Per Parallel Pair, None. |
-| Scale | 1 | Range 0.01-100. |
+| Coloring | Per Link | How the frames are coloured. Per Link, Per Parallel Pair, None. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 
 <!-- /options -->
 

@@ -29,38 +29,38 @@ This operator lives under *Add ▸ Mesh ▸ Math Art ▸ Fractals* and, because 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Source | Preset | Preset, Text Block. |
-| System | Koch Snowflake | Sierpinski Arrowhead, Cesaro Curve, Heighway Dragon, Twindragon, Gosper (Flowsnake), Hilbert Curve (2-D), Hilbert Curve (3-D), Koch Snowflake, and 49 more. |
+| Source | Preset | Where the grammar comes from: a shipped preset or a grammar you wrote in a text block. Preset, Text Block. |
+| System | Koch Snowflake | Which shipped grammar to build, grouped as curves, plants and trees. Sierpinski Arrowhead, Cesaro Curve, Heighway Dragon, Twindragon, Gosper (Flowsnake), Hilbert Curve (2-D), Hilbert Curve (3-D), Koch Snowflake, and 49 more. |
 | Grammar Parameters | On | Expose the free parameters the grammar declares with #param |
-| P0 | 0 | -- |
-| P1 | 0 | -- |
-| P2 | 0 | -- |
-| P3 | 0 | -- |
-| P4 | 0 | -- |
-| P5 | 0 | -- |
-| P6 | 0 | -- |
-| P7 | 0 | -- |
-| C0 |  | -- |
-| C1 |  | -- |
-| C2 |  | -- |
-| C3 |  | -- |
+| P0 | 0 | Numeric grammar parameter; its label, range and step come from the selected grammar's #param line |
+| P1 | 0 | Numeric grammar parameter; its label, range and step come from the selected grammar's #param line |
+| P2 | 0 | Numeric grammar parameter; its label, range and step come from the selected grammar's #param line |
+| P3 | 0 | Numeric grammar parameter; its label, range and step come from the selected grammar's #param line |
+| P4 | 0 | Numeric grammar parameter; its label, range and step come from the selected grammar's #param line |
+| P5 | 0 | Numeric grammar parameter; its label, range and step come from the selected grammar's #param line |
+| P6 | 0 | Numeric grammar parameter; its label, range and step come from the selected grammar's #param line |
+| P7 | 0 | Numeric grammar parameter; its label, range and step come from the selected grammar's #param line |
+| C0 |  | Grammar choice parameter; its label and options come from the selected grammar's #param line |
+| C1 |  | Grammar choice parameter; its label and options come from the selected grammar's #param line |
+| C2 |  | Grammar choice parameter; its label and options come from the selected grammar's #param line |
+| C3 |  | Grammar choice parameter; its label and options come from the selected grammar's #param line |
 | Grammar | empty | Name of a text block holding an L-system grammar |
 | Iterations | -1 | Rewrite depth (-1 = the preset's own default). Clamped when the predicted size would be unreasonable Range -1-24. |
 | Seed | 0 | Random seed for stochastic productions Range 0-10000. |
 | Module Budget | 300000 | Refuse to derive a word longer than this Range 1000-5000000. |
-| Output | Bevelled Curve | Bevelled Curve, Skeleton Mesh. |
+| Output | Bevelled Curve | Emit the L-system as a bevelled curve or as a skeleton mesh. Bevelled Curve, Skeleton Mesh. |
 | Tube Radius | 0.01 | Bevel radius at the widest point (0 = bare curve) Range 0-0.5. |
-| Bevel Resolution | 2 | Range 0-12. |
+| Bevel Resolution | 2 | Subdivisions around the round bevel cross-section; higher is smoother Range 0-12. |
 | Round Corners | 0.25 | Round each corner by this fraction of the shorter adjacent segment. Blender places a bevel profile in the plane BISECTING two segments rather than mitring it, so a sharp corner pinches the tube to cos(angle/2) of its width -- half, at a 120-degree Koch turn. Rounding spreads the turn and keeps the cross-section even; 0 keeps corners exact Range 0-0.5. |
 | Taper | On | Let the '!' symbol drive per-point radius |
 | Tip Radius | 0.15 | Smallest radius as a fraction of the trunk. Da Vinci's width law over a deep tree spans a 300:1 range, so the outer branches would otherwise render below one pixel. Raising this keeps the taper's order while making them visible; 0 gives the untouched law Range 0-1. |
 | Filled Blades | On | Emit '{ . }' polygon captures as filled mesh leaves and petals |
 | Angle Override | -1 | Default turn angle in degrees (-1 = the grammar's own) Range -1-180. |
-| Scale | 1 | Range 0.01-100. |
-| Development | Auto | Auto, Series, Final Only. |
+| Scale | 1 | Uniform scale of the finished figure Range 0.01-100. |
+| Development | Auto | Whether to draw the whole generation-by-generation series or only the final generation. Auto, Series, Final Only. |
 | Show Grammar | Off | Display the selected preset's grammar -- its axiom, productions and directives -- in the redo panel |
-| Tropism | Off | Bend each segment toward a fixed direction, by alpha = e \Vert H x T\Vert -- gravity or light |
-| Direction | 0, 0, -1 | -- |
+| Tropism | Off | Bend each segment toward a fixed direction, by alpha = e \|H x T\| -- gravity or light |
+| Direction | 0, 0, -1 | Direction each segment bends toward when tropism is on (e.g. straight down for gravity) |
 | Elasticity | 0.22 | Susceptibility to bending; published values run 0.14 to 0.40 Range 0-1. |
 
 <!-- /options -->

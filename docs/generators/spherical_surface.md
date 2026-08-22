@@ -24,13 +24,13 @@ These are the surfaces of **constant positive Gaussian curvature** ($K = +1$). *
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Sphere (K = +1) | Sphere (K = +1), Spherical Spindle (K = +1), Spherical Bulge (K = +1), Sievert's Surface (K = +1). |
+| Surface | Sphere (K = +1) | Which constant-positive-curvature surface to build. Sphere (K = +1), Spherical Spindle (K = +1), Spherical Bulge (K = +1), Sievert's Surface (K = +1). |
 | Profile a | 0 | Meridian amplitude a in f(u) = a cos(u); 0 uses the preset's own value. Below 1 gives a spindle, above 1 a bulge, exactly 1 the sphere Range 0-4. |
 | End Trim | 0.32 | How far short of its two ends Sievert's surface is cut. Its height runs off logarithmically there, so the surface is infinitely long and some trim is compulsory; this is the shape control, not a fudge (Sievert only) Range 0.02-1.4. |
 | Segments | 96 | Divisions around the axis Range 8-512. |
 | Rings | 64 | Divisions along the meridian Range 6-512. |
-| Scale | 1 | Range 0.01-100. |
-| Smooth Shading | On | -- |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
+| Smooth Shading | On | Shade the surface smooth |
 | Rim Curve | Off | Sweep a tube along the open edge of the surface. That edge is a stair-step through the sample grid, so the tube both tidies it and gives the surface a deliberate border; a closed surface has no edge and gets no curve |
 | Rim Thickness | 0.01 | Bevel radius of the rim tube (0 leaves a bare curve) Range 0-1. |
 | Rim Smoothing | 3 | Taubin smoothing passes along the rim before it is swept. Unlike a plain Laplacian this does not shrink the curve, so the tube stays on the edge however many passes you use; 0 follows the sample grid exactly Range 0-40. |

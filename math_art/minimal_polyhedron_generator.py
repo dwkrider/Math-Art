@@ -259,6 +259,7 @@ if _IN_BLENDER:
 
         seed: EnumProperty(
             name="Seed",
+            description="Polyhedron whose faces are pierced and relaxed",
             items=[('CUBE', "Cube", "the classic Form 6 setup"),
                    ('TETRA', "Tetrahedron", ""),
                    ('OCTA', "Octahedron", ""),
@@ -269,6 +270,7 @@ if _IN_BLENDER:
             default='CUBE')
         mode: EnumProperty(
             name="Mode",
+            description="Whether faces are pierced open or dented inward",
             items=[('HOLES', "Face Openings",
                     "Pierce each face near its centre; the hole "
                     "rims tighten as the membrane relaxes"),
@@ -292,6 +294,7 @@ if _IN_BLENDER:
                         "face's inradius (0 = no holes)")
         pattern: EnumProperty(
             name="Openings",
+            description="Which faces receive an opening",
             items=[('ALL', "Every Face", ""),
                    ('ALTERNATE', "Every Other Face", ""),
                    ('NONE', "None", "just relax the solid")],
@@ -325,9 +328,12 @@ if _IN_BLENDER:
             name="Thickness", default=0.08, min=0.0, max=1.0,
             description="Solidify modifier thickness (0 = raw "
                         "surface)")
-        smooth: BoolProperty(name="Smooth Shading", default=False)
+        smooth: BoolProperty(name="Smooth Shading", default=False,
+                             description="Shade the surface smoothly "
+                                         "rather than faceted")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the form")
 
         def execute(self, context):
             if self.seed == 'ACTIVE':

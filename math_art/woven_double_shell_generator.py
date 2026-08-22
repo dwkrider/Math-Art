@@ -330,7 +330,8 @@ if _IN_BLENDER:
             name="Rope Radius", default=0.02, min=0.005, max=0.12,
             description="Rope tube radius (outer sphere radius = 1)")
         tube_sides: IntProperty(
-            name="Tube Sides", default=10, min=3, max=32)
+            name="Tube Sides", default=10, min=3, max=32,
+            description="Sides of each rope tube cross-section")
         weave_gap: FloatProperty(
             name="Weave Gap", default=0.0, min=0.0, max=0.4,
             description="Radial over/under separation at crossings; "
@@ -347,6 +348,7 @@ if _IN_BLENDER:
                         "radial weave seed)")
         output: EnumProperty(
             name="Output",
+            description="Geometry produced for each strand",
             items=[('TUBE', "Rope Tubes",
                     "One welded round tube per strand"),
                    ('RIBBON', "Ribbon Straps",
@@ -356,6 +358,7 @@ if _IN_BLENDER:
             default='TUBE')
         color_by: EnumProperty(
             name="Color By",
+            description="How strand materials are assigned",
             items=[('STRAND', "By Strand",
                     "A distinct color per closed strand"),
                    ('UNIFORM', "Uniform", "A single material"),

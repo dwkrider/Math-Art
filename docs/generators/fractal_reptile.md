@@ -33,7 +33,7 @@ That substitution does something neat. A [rep-tile](reptile.md) dissects into sc
 | Mirror | Off | Reflect the tile (the seed pages' mirror variant) |
 | Iterations | 6 | Growth depth; each generation glues a 1/sqrt2-scaled child to every exposed leg (capped to keep the mesh manageable) Range 0-14. |
 | Holes | 0 | Fractal-gasket option (Fathauer): drop this many of the rep-N substitution digits/maps at every level, leaving (N-holes)^k cells with self-similar holes; 0 = solid rep-tile (ignored by the Right Triangle f-tiling) Range 0-6. |
-| Color By | By Level | By Level, Uniform. |
+| Color By | By Level | How tiles are colored: by generation / substitution digits, or one uniform material. By Level, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Separate Tiles | Off | Output each tile as its own mesh object |

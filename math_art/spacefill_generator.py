@@ -165,7 +165,9 @@ if _IN_BLENDER:
                     "Four-armed rhombic spirallohedra S(12,3) "
                     "after Russell Towle, interlocking on their "
                     "translation lattice")],
-            default='OCTET')
+            default='OCTET',
+            description="Which space-filling honeycomb to build, one "
+                        "solid per lattice cell")
         nx: IntProperty(name="Cells X", default=3, min=1, max=12,
                         description="Lattice cells along X")
         ny: IntProperty(name="Cells Y", default=3, min=1, max=12,
@@ -189,7 +191,9 @@ if _IN_BLENDER:
                    ('BALLSTICK', "Ball and Stick",
                     "Edges as solid cylindrical struts and vertices "
                     "as small spheres (ball-and-stick model)")],
-            default='SOLID')
+            default='SOLID',
+            description="How to render each cell: plain solid, open da "
+                        "Vinci panels, or ball-and-stick struts")
         border: FloatProperty(
             name="Border", default=0.06, min=0.005, max=1.0,
             description="Leonardo face frame width, the same on every "

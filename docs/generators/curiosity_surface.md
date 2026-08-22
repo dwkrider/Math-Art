@@ -21,16 +21,22 @@ Three classic surfaces from the geometry literature: Fresnel's **elasticity surf
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Fresnel Elasticity Surface | Fresnel Elasticity Surface, Paper Bag Surface, Trihyperboloid. |
+| Surface | Fresnel Elasticity Surface | Which classic surface to build. Fresnel Elasticity Surface, Paper Bag Surface, Trihyperboloid, Bohemian Dome, Astroidal Ellipsoid, Gabriel's Horn, Dupin Cyclide (ring), Dupin Cyclide (horn), and 4 more. |
 | Semi-Axis A | 1 | Fresnel semi-axis along X Range 0.01-10. |
 | Semi-Axis B | 1.5 | Fresnel semi-axis along Y Range 0.01-10. |
 | Semi-Axis C | 2 | Fresnel semi-axis along Z Range 0.01-10. |
 | Height Coefficient | 2.47 | Coefficient a in z = a v^2 (2.47 in the classic plot) Range 0.01-10. |
 | Crimp Coefficient | -1.26 | Coefficient b in y = (v + b u) sin u (-1.26 in the classic plot) Range -10-10. |
+| Swept Circle | 0.7 | Radius c of the moving circle (Bohemian dome only) Range 0.01-10. |
+| Horn Length | 6 | Upper limit L of x in y = 1/x; the enclosed volume tends to pi as L grows while the lateral area diverges (Gabriel's horn only) Range 1.2-200. |
+| Ring Radius | 1 | Radius R of the torus centre circle (Dupin cyclides only) Range 0.05-10. |
+| Tube Radius | 0.45 | Tube radius r of the torus; the ring / horn / spindle type overrides it where the type fixes the ratio (Dupin cyclides only) Range 0.01-10. |
+| Inversion Centre | 1.9 | Centre of inversion on the x-axis; it must not lie on the torus, or the image runs off to infinity (Dupin cyclides only) Range -10-10. |
+| Inversion Radius | 1.6 | Radius of the sphere of inversion (Dupin cyclides only) Range 0.05-10. |
 | Resolution | 48 | Rings across the surface (twice as many segments around) Range 6-256. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the surface smooth |
 | Thickness | 0 | Solidify modifier thickness (0 = raw surface) Range 0-1. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

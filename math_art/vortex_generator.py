@@ -229,6 +229,7 @@ if _IN_BLENDER:
 
         seed: EnumProperty(
             name="Seed",
+            description="Which polyhedron the vortices are built on",
             items=[('TETRA', "Tetrahedron", ""),
                    ('CUBE', "Cube", ""),
                    ('OCTA', "Octahedron", ""),
@@ -259,7 +260,8 @@ if _IN_BLENDER:
         reverse: BoolProperty(
             name="Reverse Swirl", default=False,
             description="Mirror the vortex chirality")
-        smooth: BoolProperty(name="Smooth Shading", default=False)
+        smooth: BoolProperty(name="Smooth Shading", default=False,
+                             description="Shade the surface smooth")
         sharp_spokes: BoolProperty(
             name="Sharp Spokes", default=True,
             description="Mark the bent spokes sharp (and creased). "
@@ -272,7 +274,8 @@ if _IN_BLENDER:
             description="Solidify modifier thickness (0 = raw "
                         "surface)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size multiplier")
 
         def execute(self, context):
             V, F = _seed(self.seed)

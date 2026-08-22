@@ -29,41 +29,41 @@ The six modes are kept separate because there are genuinely six different ways t
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Koch Teragon | Koch Teragon, Paper Fold, FASS Curve, Word Curve, Spirolateral, Node Rewriting. |
-| Generator | Koch | Antikoch, Cesaro, Eleven, Koch, Koch Square, Levy, Minkowski, Quadkoch, and 1 more. |
+| Mode | Koch Teragon | Which turtle-path construction to build. Koch Teragon, Paper Fold, FASS Curve, Word Curve, Spirolateral, Node Rewriting. |
+| Generator | Koch | Koch generator replacing each segment (Koch Teragon mode). Antikoch, Cesaro, Eleven, Koch, Koch Square, Levy, Minkowski, Quadkoch, and 1 more. |
 | Initiator Sides | 3 | Regular polygon the generator is applied to; 2 gives a single open segment Range 2-24. |
 | Bump Angle | 60 | Cesaro's free apex angle. 60 gives von Koch's original; approaching 90 makes it a spike Range 1-89. |
-| Override Bump Angle | Off | -- |
+| Override Bump Angle | Off | Use the Bump Angle below instead of the generator's built-in apex angle |
 | Outward | On | Signed teragon: outward gives the snowflake, inward the antisnowflake |
-| Fold | Dragon | Dragon, Fudgeflake, Levy Fold, Terdragon, Twindragon. |
+| Fold | Dragon | Which paper-folding dragon curve to build (Paper Fold mode). Dragon, Fudgeflake, Levy Fold, Terdragon, Twindragon. |
 | Unfold | 1 | Angle of the newest fold only, as a fraction. 0 is the previous generation, 1 this one -- sweep it to animate the curve unfolding Range 0-1. |
-| Curve | Hilbert | E Curve, Gosper, Hilbert, Moore, Peano, Sierpinski Fass. |
-| Sequence | Fibonacci | Abacaba, Digit Sum, Fibonacci, Kolakoski, Prime, Ruler, Sturmian, Thue Morse. |
-| Turn Rule | Alternate | Alternate, Signed, Gated, Scaled. |
-| Terms | 800 | Range 4-200000. |
+| Curve | Hilbert | Which space-filling FASS curve to build. E Curve, Gosper, Hilbert, Moore, Peano, Sierpinski Fass. |
+| Sequence | Fibonacci | Which combinatorial sequence drives the turns (Word Curve mode). Abacaba, Digit Sum, Fibonacci, Kolakoski, Prime, Ruler, Sturmian, Thue Morse. |
+| Turn Rule | Alternate | How each term of the sequence is turned into a turn. Alternate, Signed, Gated, Scaled. |
+| Terms | 800 | Number of sequence terms to draw (Word Curve mode) Range 4-200000. |
 | Recommended Settings | On | Use the angle and turn rule under which this sequence draws its intended figure. Most other combinations degenerate into a zigzag along one axis; turn this off to explore anyway |
 | Order | 5 | Segments of length 1..n in each block Range 1-24. |
 | Reversals | empty | Comma-separated 1-based step numbers whose turn is reversed (Krawczyk's enumeration) |
-| Preset |  | -- |
-| Iterations | 4 | Range 0-20. |
-| Angle | 90 | Range -180-180. |
-| Output | Bevelled Curve | Bevelled Curve, Filled Island, Extruded Prism, Plain Mesh, Mitred Relief, Scaffold on Columns. |
-| Tube Radius | 0.01 | Range 0.0001-1. |
-| Bevel Resolution | 2 | Range 0-16. |
+| Preset |  | Which L-system preset to interpret (Node Rewriting mode) |
+| Iterations | 4 | Number of rewriting / subdivision iterations Range 0-20. |
+| Angle | 90 | Turn angle at each step, in degrees Range -180-180. |
+| Output | Bevelled Curve | How to lift the flat path into geometry. Bevelled Curve, Filled Island, Extruded Prism, Plain Mesh, Mitred Relief, Scaffold on Columns. |
+| Tube Radius | 0.01 | Radius of the round tube along the path (Bevelled Curve output) Range 0.0001-1. |
+| Bevel Resolution | 2 | Smoothness of the tube's round cross-section Range 0-16. |
 | Height | 0.01 | Finished thickness of the prism, plate to plate Range 0.0001-5. |
 | Round Corners | 0.25 | Blender places a bevel profile in the plane BISECTING two segments rather than mitring it, so a sharp corner pinches the tube to cos(angle/2) of its width. Rounding keeps the cross-section even; 0 keeps corners exact Range 0-0.5. |
-| Corner Segments | 4 | Range 1-16. |
+| Corner Segments | 4 | Number of segments used to round each corner Range 1-16. |
 | Band Width | 0.06 | Width of the ribbon. The joints are MITRED: the offset at a corner runs along the bisector at w/2 / cos(angle/2), so there is no notch Range 0.002-1. |
 | Height Step | 0.02 | Height added per right-angle of turning. This is what makes it a relief rather than an extrusion -- the surface terraces as the curve winds. 0 gives a constant-height prism Range 0-0.5. |
 | Miter Limit | 4 | Cap on the mitre extension. It diverges at a hairpin, so without a limit one corner flies off to infinity Range 1-20. |
 | Stand-off | 0.35 | Height of the curve above the plate Range 0.01-2. |
-| Plate Thickness | 0.04 | Range 0.005-0.5. |
-| Column Radius | 0.012 | Range 0.002-0.2. |
+| Plate Thickness | 0.04 | Thickness of the base plate under the scaffold Range 0.005-0.5. |
+| Column Radius | 0.012 | Radius of the columns holding the path above the plate Range 0.002-0.2. |
 | Column Every | 8 | One column every N path points Range 1-200. |
-| Assembly | Single | Single, About an Axis, Cube Faces. |
-| Copies | 6 | Range 2-64. |
-| Phase | 0 | Range -180-180. |
-| Scale | 1 | Range 0.01-100. |
+| Assembly | Single | How to repeat the figure into a solid arrangement. Single, About an Axis, Cube Faces. |
+| Copies | 6 | Number of copies rotated about the axis (About an Axis assembly) Range 2-64. |
+| Phase | 0 | Starting rotation of the axis assembly, in degrees Range -180-180. |
+| Scale | 1 | Overall size; 1 fits the 2 m cube Range 0.01-100. |
 
 <!-- /options -->
 

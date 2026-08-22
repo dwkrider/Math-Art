@@ -101,6 +101,7 @@ if _IN_BLENDER:
 
         mode: EnumProperty(
             name="Mode",
+            description="Grow a flat sheet or a closed ball of cells",
             items=[('LAYER', "Cellular Layer", "A flat sheet -- the "
                              "fern-gametophyte case"),
                    ('BALL', "Cell Ball", "The same division on a closed "
@@ -121,8 +122,12 @@ if _IN_BLENDER:
                         "extends it. Below about 1.25 the sheet stays "
                         "convex, above 2 it dishes in")
         jitter: FloatProperty(name="Plane Jitter", default=0.25,
-                              min=0.0, max=1.2)
-        seed: IntProperty(name="Seed", default=0, min=0, max=10000)
+                              min=0.0, max=1.2,
+                              description="Random tilt applied to each "
+                                          "division plane")
+        seed: IntProperty(name="Seed", default=0, min=0, max=10000,
+                          description="Random seed for the division "
+                                      "planes")
 
         pressure: FloatProperty(
             name="Turgor", default=0.02, min=0.0, max=0.3,
@@ -131,9 +136,15 @@ if _IN_BLENDER:
                         "what equalises cell size -- no rule says cells "
                         "should be similar")
         stiffness: FloatProperty(name="Wall Stiffness", default=0.6,
-                                 min=0.05, max=2.0)
+                                 min=0.05, max=2.0,
+                                 description="How strongly the cell "
+                                             "walls resist stretching "
+                                             "during relaxation")
         relax_steps: IntProperty(name="Relax Steps", default=60,
-                                 min=0, max=600)
+                                 min=0, max=600,
+                                 description="Pressure-relaxation "
+                                             "iterations after each "
+                                             "division")
 
         inset: FloatProperty(
             name="Wall Inset", default=0.14, min=0.0, max=0.45,
@@ -141,9 +152,12 @@ if _IN_BLENDER:
                         "gaps become walls -- what turns a tiling into "
                         "an openwork screen")
         thickness: FloatProperty(name="Thickness", default=0.0,
-                                 min=0.0, max=1.0)
+                                 min=0.0, max=1.0,
+                                 description="Extrude the sheet to this "
+                                             "thickness (0 keeps it flat)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             try:

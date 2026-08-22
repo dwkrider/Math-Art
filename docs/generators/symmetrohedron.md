@@ -22,19 +22,19 @@ A **symmetrohedron** (Craig Kaplan and George Hart) is built by pinning regular 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Symmetry | Icosahedral (5,3,2) | Icosahedral (5,3,2), Octahedral (4,3,2), Tetrahedral (3,3,2). |
+| Symmetry | Icosahedral (5,3,2) | Symmetry group whose rotation axes carry the polygons. Icosahedral (5,3,2), Octahedral (4,3,2), Tetrahedral (3,3,2). |
 | Axis-1 Multiplier | 1 | Polygon = multiplier x axis order sides (0 = no polygon on this class) Range 0-4. |
-| Axis-2 Multiplier | 1 | Range 0-4. |
-| Axis-3 Multiplier | 0 | Range 0-4. |
-| Axis-1 Size | 0.45 | Range 0.05-0.98. |
-| Axis-2 Size | 0.31 | Range 0.05-0.98. |
-| Axis-3 Size | 0.3 | Range 0.05-0.98. |
-| Axis-1 Phase | 0 | Range -90-90. |
-| Axis-2 Phase | 0 | Range -90-90. |
-| Axis-3 Phase | 0 | Range -90-90. |
-| Coloring | By Face Size | By Face Size, None. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
-| Border | 0.3 | Leonardo face frame width (fraction of the face) Range 0.02-0.95. |
+| Axis-2 Multiplier | 1 | Polygon on the second axis class = multiplier x axis order sides (0 = none) Range 0-4. |
+| Axis-3 Multiplier | 0 | Polygon on the third (2-fold) axis class = multiplier x 2 sides (0 = none) Range 0-4. |
+| Axis-1 Size | 0.45 | Size of the first-class polygons, as a radius on the unit sphere Range 0.05-0.98. |
+| Axis-2 Size | 0.31 | Size of the second-class polygons, as a radius on the unit sphere Range 0.05-0.98. |
+| Axis-3 Size | 0.3 | Size of the third-class polygons, as a radius on the unit sphere Range 0.05-0.98. |
+| Axis-1 Phase | 0 | Rotation of the first-class polygons about their axis, in degrees Range -90-90. |
+| Axis-2 Phase | 0 | Rotation of the second-class polygons about their axis, in degrees Range -90-90. |
+| Axis-3 Phase | 0 | Rotation of the third-class polygons about their axis, in degrees Range -90-90. |
+| Coloring | By Face Size | Assign a material per face size, or leave unpainted. By Face Size, None. |
+| Style | Solid | How the hull is rendered: solid, open panels, struts, ball-and-stick, wireframe, or face segments. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Wireframe styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
@@ -42,7 +42,7 @@ A **symmetrohedron** (Craig Kaplan and George Hart) is built by pinning regular 
 | Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
 | Explode | 0.1 | Move segments outward Range 0-5. |
 | Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the polyhedron Range 0.01-100. |
 
 <!-- /options -->
 

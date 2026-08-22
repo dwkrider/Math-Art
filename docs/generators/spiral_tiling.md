@@ -28,12 +28,12 @@ Unlike the [Voderberg spiral](voderberg.md), which is monohedral and made of con
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Family | Golden Triangle | Equilateral (plastic number), Golden Triangle, Isosceles, side-to-side (B = C), Isosceles, side-to-base (A = B), Isosceles, base-to-side (A = C), Right, leg-to-hypotenuse (C = 90), Right, hypotenuse-to-leg (B = 90), Any Isosceles (m = n = 2), and 2 more. |
+| Family | Golden Triangle | Prototile-angle family: fixes the triangle's shape and how the spiral winds. Equilateral (plastic number), Golden Triangle, Isosceles, side-to-side (B = C), Isosceles, side-to-base (A = B), Isosceles, base-to-side (A = C), Right, leg-to-hypotenuse (C = 90), Right, hypotenuse-to-leg (B = 90), Any Isosceles (m = n = 2), and 2 more. |
 | n | 3 | Number of reduced triangles mated before one shares an edge with the starting triangle; sets the spiral pitch (fixed families override this) Range 1-24. |
 | Arms (m) | 1 | Number of spiral arms in one direction; the closure becomes n*A + B = 360/m Range 1-16. |
 | Angle | 50 | Controlling angle in degrees for the continuous families: the isosceles side angle C (= A) for Any Isosceles, the angle A for the Regular m-gon, or the angle C for General Range 1-179. |
 | Rings | 3 | How many scale levels to build outward from the prototile; the spiral is always carried inward far enough to converge on the singular point Range 1-10. |
-| Color By | By Ring / Size | By Arm, By Ring / Size, Uniform. |
+| Color By | By Ring / Size | How tiles are colored: by spiral arm, by size ring, or one uniform material. By Arm, By Ring / Size, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Separate Tiles | Off | Output each tile as its own mesh object (parented to an empty) so tiles can be edited individually |

@@ -1899,10 +1899,15 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         seed: EnumProperty(name="Seed", items=_SEED_ITEMS,
-                           update=_seed_update)
-        stellation: EnumProperty(name="Stellation", items=_stell_items)
+                           update=_seed_update,
+                           description="Base polyhedron whose face-plane "
+                                       "arrangement is stellated")
+        stellation: EnumProperty(name="Stellation", items=_stell_items,
+                                 description="Which named stellation of the "
+                                             "seed to build")
         style: EnumProperty(
             name="Style",
+            description="How the stellation is rendered",
             items=[('SOLID', "Solid", ""),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo modifier"),
@@ -1924,7 +1929,8 @@ if _IN_BLENDER:
             name="Node Radius", default=0.035, min=0.0, max=0.5,
             description="Ball-and-stick vertex sphere radius "
                         "(0 = no nodes)")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             seed = self.seed or SEEDS[0]

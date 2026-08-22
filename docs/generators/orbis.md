@@ -28,9 +28,9 @@ The generator has no separate modes — it always builds the same object, a genu
 | Tube Radius | 0.35 | Ring thickness (fraction of the ring radius) Range 0.02-0.49. |
 | Hinge Angle | 45 | Dihedral angle between the two ring planes at the hinge (about 45 degrees on the original Orbis; 180 = coplanar figure-eight) Range 5-180. |
 | Join Depth | 0.5 | Depth of the surface weld where the two tube surfaces are pushed past tangency at the contact spot, as a fraction of the tube radius (small = a shallow glued joint) Range 0.05-1. |
-| Ring Segments | 96 | Range 12-512. |
-| Tube Segments | 32 | Range 6-128. |
-| Scale | 1 | Range 0.01-100. |
+| Ring Segments | 96 | Segments around each ring Range 12-512. |
+| Tube Segments | 32 | Segments around the tube cross-section Range 6-128. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 

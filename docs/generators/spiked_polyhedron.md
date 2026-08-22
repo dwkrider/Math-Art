@@ -22,7 +22,7 @@ A family of augmented and folded Platonic sculptures. **Spiked** raises a pyrami
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Form | Folded Rhombic Hexecontahedron | Spiked Polyhedron, Hyperbolic Polyhedron, Folded Rhombic Hexecontahedron, Rhombic Hexecontahedron. |
+| Form | Folded Rhombic Hexecontahedron | Which polyhedron family to build. Spiked Polyhedron, Hyperbolic Polyhedron, Folded Rhombic Hexecontahedron, Rhombic Hexecontahedron. |
 | Seed | Icosahedron | Base solid (Platonic, or a Goldberg polyhedron). Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Goldberg Sphere. |
 | Frequency | 2 | Goldberg seed only: GP(f,0) frequency; f=2 gives 12 pentagons + 30 hexagons Range 1-8. |
 | Seed | Dodecahedron | Base Platonic solid. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
@@ -32,14 +32,14 @@ A family of augmented and folded Platonic sculptures. **Spiked** raises a pyrami
 | Resolution | 12 | Subdivision of each face Range 2-48. |
 | Mid Scale | 1 | Radial scale of the rhombus mid vertices (1 = rhombic hexecontahedron) Range 0.5-2. |
 | Top Scale | 1.05 | Radial scale of the rhombus tips; 1 is the flat rhombic hexecontahedron, ~1.05 a gentle fold Range 0.5-2. |
-| Coloring | None | By Face Group, None. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe. |
-| Border | 0.3 | Range 0.02-0.95. |
-| Thickness | 0.04 | Range 0.001-1. |
+| Coloring | None | How faces are assigned materials. By Face Group, None. |
+| Style | Solid | How the polyhedron surface is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe. |
+| Border | 0.3 | Width of the open-face panel frame (Leonardo style) Range 0.02-1. |
+| Thickness | 0.04 | Panel or strut thickness (Leonardo and Struts styles) Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
 | Smooth Shading | On | Hyperbolic preset only |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the solid Range 0.01-100. |
 
 <!-- /options -->
 

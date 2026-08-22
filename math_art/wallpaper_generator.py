@@ -179,9 +179,11 @@ if _IN_BLENDER:
             items=[(g, "%s  (%s)" % (g, _SIG[g]),
                     "Wallpaper group %s, orbifold %s" % (g, _SIG[g]))
                    for g in IUC_ORDER],
-            default='p4m')
+            default='p4m',
+            description="Which of the 17 wallpaper groups to tile with")
         motif_kind: EnumProperty(
             name="Motif",
+            description="Shape replicated in each fundamental domain",
             items=[('ARROW', "Arrow", "Arrow with unequal barbs"),
                    ('F', "F", "Asymmetric F"),
                    ('L', "L", "L-tromino"),
@@ -197,10 +199,13 @@ if _IN_BLENDER:
             name="Object",
             description="Object whose mesh is used as the motif. Leave "
                         "empty to use the active or selected mesh")
-        nx: IntProperty(name="Cells X", default=3, min=1, max=30)
-        ny: IntProperty(name="Cells Y", default=3, min=1, max=30)
+        nx: IntProperty(name="Cells X", default=3, min=1, max=30,
+                        description="Number of lattice cells along X")
+        ny: IntProperty(name="Cells Y", default=3, min=1, max=30,
+                        description="Number of lattice cells along Y")
         color_by: EnumProperty(
             name="Color By",
+            description="How the replicated faces are colored",
             items=[('COPY', "Symmetry Copy",
                     "Each point-group copy a distinct color "
                     "(pinwheel around rotation centres)"),

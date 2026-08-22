@@ -936,13 +936,19 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         mode: EnumProperty(name="Surface", items=_MODES,
-                           default='HYPERBOLOID')
+                           default='HYPERBOLOID',
+                           description="Which ruled-surface family to "
+                                       "build")
         conoid_kind: EnumProperty(name="Conoid", items=_CONOID_KINDS,
-                                  default='PLUCKER')
+                                  default='PLUCKER',
+                                  description="Which right conoid to "
+                                              "build (Conoid mode)")
 
         # shared geometry
         radius: FloatProperty(name="Radius", default=1.0, min=0.01,
-                              max=20.0)
+                              max=20.0,
+                              description="Radius of the base circle or "
+                                          "helix the rulings spring from")
         height: FloatProperty(name="Half Height", default=1.0,
                               min=0.05, max=20.0,
                               description="Half the axial height "
@@ -962,10 +968,17 @@ if _IN_BLENDER:
                                          "string sculpture)")
         # helical cone
         cone_height: FloatProperty(name="Height", default=2.5,
-                                   min=0.1, max=30.0)
-        flutes: IntProperty(name="Flutes", default=6, min=0, max=64)
+                                   min=0.1, max=30.0,
+                                   description="Total height of the cone, "
+                                               "base to apex")
+        flutes: IntProperty(name="Flutes", default=6, min=0, max=64,
+                            description="Number of helical flutes "
+                                        "(ridges) around the cone")
         flute_depth: FloatProperty(name="Flute Depth", default=0.18,
-                                   min=0.0, max=0.9)
+                                   min=0.0, max=0.9,
+                                   description="Depth of the flutes at "
+                                               "the base, fading to "
+                                               "arrises at the apex")
         cone_twist: FloatProperty(name="Spiral Twist", default=2.0,
                                   min=-12.0, max=12.0,
                                   description="Turns the flutes wind "
@@ -979,30 +992,51 @@ if _IN_BLENDER:
                                  description="Amplitude of the second "
                                              "(planetary) helix")
         orbit_turns: FloatProperty(name="Orbit Turns", default=1.0,
-                                   min=-8.0, max=8.0)
+                                   min=-8.0, max=8.0,
+                                   description="Turns of the secondary "
+                                               "planetary helix over the "
+                                               "height")
         # spiral
         tightness: FloatProperty(name="Spiral Tightness", default=0.15,
                                  min=-0.6, max=0.6,
                                  description="Log-spiral growth k "
                                              "(0 = circle)")
         slope: FloatProperty(name="Ruling Slope", default=1.0,
-                             min=-6.0, max=6.0)
+                             min=-6.0, max=6.0,
+                             description="Vertical rise of the rulings; "
+                                         "in Helicoid mode tilts them off "
+                                         "horizontal (0 = right helicoid)")
         turns: FloatProperty(name="Turns", default=2.0, min=0.1,
-                             max=12.0)
+                             max=12.0,
+                             description="Number of turns of the base "
+                                         "curve or helix")
         petals: IntProperty(name="Symmetry", default=1, min=1, max=16,
                             description="Rosette fold count of the "
                                         "base curve (1 = plain "
                                         "spiral)")
         petal_amp: FloatProperty(name="Rosette Amount", default=0.0,
-                                 min=0.0, max=1.0)
+                                 min=0.0, max=1.0,
+                                 description="Depth of the rosette lobes "
+                                             "on the spiral base curve "
+                                             "(0 = plain spiral)")
         # conoid
         amp: FloatProperty(name="Amplitude", default=0.5, min=0.0,
-                           max=4.0)
-        folds: IntProperty(name="Folds", default=3, min=1, max=16)
+                           max=4.0,
+                           description="Height amplitude of the conoid's "
+                                       "rise and fall")
+        folds: IntProperty(name="Folds", default=3, min=1, max=16,
+                           description="Number of lobes for the n-fold "
+                                       "and Zindler conoids")
         wallis_a: FloatProperty(name="Wallis a", default=1.0,
-                                min=0.05, max=4.0)
+                                min=0.05, max=4.0,
+                                description="Wallis conical edge "
+                                            "parameter a, in "
+                                            "sqrt(a^2 - b^2 cos^2 u)")
         wallis_b: FloatProperty(name="Wallis b", default=0.6,
-                                min=0.0, max=4.0)
+                                min=0.0, max=4.0,
+                                description="Wallis conical edge "
+                                            "parameter b, in "
+                                            "sqrt(a^2 - b^2 cos^2 u)")
         # helix-based
         pitch: FloatProperty(name="Pitch", default=0.4, min=-4.0,
                              max=4.0,
@@ -1012,27 +1046,51 @@ if _IN_BLENDER:
                              description="Inner offset from the "
                                          "cuspidal edge")
         inner: FloatProperty(name="Inner Radius", default=0.0,
-                             min=0.0, max=10.0)
+                             min=0.0, max=10.0,
+                             description="Radius of the hole where the "
+                                         "helicoid rulings start "
+                                         "(0 = full disc)")
         # twist strip
         width: FloatProperty(name="Strip Half-Width", default=0.4,
-                             min=0.02, max=5.0)
+                             min=0.02, max=5.0,
+                             description="Half-width of the twisted "
+                                         "strip; keep below the radius")
         half_twists: IntProperty(name="Half Twists", default=1,
-                                 min=0, max=12)
+                                 min=0, max=12,
+                                 description="Number of half-twists; odd "
+                                             "gives a one-sided Mobius "
+                                             "band")
         # hypar
-        hy_a: FloatProperty(name="a", default=1.0, min=0.05, max=6.0)
-        hy_b: FloatProperty(name="b", default=1.0, min=0.05, max=6.0)
+        hy_a: FloatProperty(name="a", default=1.0, min=0.05, max=6.0,
+                            description="Width scale a in "
+                                        "z = c((x/a)^2 - (y/b)^2)")
+        hy_b: FloatProperty(name="b", default=1.0, min=0.05, max=6.0,
+                            description="Width scale b in "
+                                        "z = c((x/a)^2 - (y/b)^2)")
         hy_c: FloatProperty(name="Saddle Height", default=1.0,
-                            min=0.05, max=6.0)
+                            min=0.05, max=6.0,
+                            description="Vertical scale c of the saddle")
         use_corners: BoolProperty(name="From 4 Corner Points",
-                                  default=False)
+                                  default=False,
+                                  description="Build the hypar as a "
+                                              "bilinear patch spanning "
+                                              "four skew corner points")
         p00: FloatVectorProperty(name="P00", size=3,
-                                 default=(-1.0, -1.0, -1.0))
+                                 default=(-1.0, -1.0, -1.0),
+                                 description="Corner point of the "
+                                             "bilinear patch (s=0, t=0)")
         p10: FloatVectorProperty(name="P10", size=3,
-                                 default=(1.0, -1.0, 1.0))
+                                 default=(1.0, -1.0, 1.0),
+                                 description="Corner point of the "
+                                             "bilinear patch (s=1, t=0)")
         p01: FloatVectorProperty(name="P01", size=3,
-                                 default=(-1.0, 1.0, 1.0))
+                                 default=(-1.0, 1.0, 1.0),
+                                 description="Corner point of the "
+                                             "bilinear patch (s=0, t=1)")
         p11: FloatVectorProperty(name="P11", size=3,
-                                 default=(1.0, 1.0, -1.0))
+                                 default=(1.0, 1.0, -1.0),
+                                 description="Corner point of the "
+                                             "bilinear patch (s=1, t=1)")
         # concentric torus-knot span
         knot_p: IntProperty(name="Knot p", default=2, min=1, max=8,
                             description="Times the knots wind around "
@@ -1042,7 +1100,9 @@ if _IN_BLENDER:
                                         "around the tube; 0 makes it a "
                                         "flat circle wound p times")
         knot_scale: FloatProperty(name="Inner Scale", default=1.0,
-                                  min=0.1, max=5.0)
+                                  min=0.1, max=5.0,
+                                  description="Overall size of the inner "
+                                              "torus knot")
         knot_tube: FloatProperty(name="Inner Tube", default=1.0,
                                  min=0.0, max=5.0,
                                  description="Tube radius of the inner "
@@ -1074,7 +1134,9 @@ if _IN_BLENDER:
                                               "degenerates it to a "
                                               "circle")
         knot_outer_scale: FloatProperty(name="Outer Scale",
-                                        default=2.0, min=0.1, max=10.0)
+                                        default=2.0, min=0.1, max=10.0,
+                                        description="Overall size of the "
+                                                    "outer torus knot")
         knot_outer_tube: FloatProperty(name="Outer Tube", default=1.0,
                                        min=0.0, max=5.0,
                                        description="Tube radius of the "
@@ -1097,11 +1159,16 @@ if _IN_BLENDER:
                                 description="Half-length of the "
                                             "rulings / patch extent")
         res_u: IntProperty(name="Resolution U", default=120, min=6,
-                           max=800)
+                           max=800,
+                           description="Samples around the surface, along "
+                                       "the base curve")
         res_v: IntProperty(name="Resolution V", default=20, min=1,
-                           max=200)
+                           max=200,
+                           description="Samples across the rulings")
         output: EnumProperty(
             name="Output",
+            description="Build the filled surface, or its straight "
+                        "rulings as solid rods or bare curves",
             items=[('SURFACE', "Surface",
                     "The filled ruled surface"),
                    ('RODS', "Rulings as Rods",
@@ -1112,22 +1179,29 @@ if _IN_BLENDER:
                     "edges (no faces)")],
             default='SURFACE')
         n_rods: IntProperty(name="Rod Count", default=48, min=3,
-                            max=400)
+                            max=400,
+                            description="Number of rulings drawn in rods "
+                                        "or bare-curves output")
         rod_radius: FloatProperty(name="Rod Radius", default=0.02,
-                                  min=0.002, max=0.3)
+                                  min=0.002, max=0.3,
+                                  description="Radius of each rod in rods "
+                                              "output")
         show_boundaries: BoolProperty(
             name="Include Boundary Curves", default=True,
             description="Add the directrix / rail curves the rulings "
                         "are strung between (the two torus knots, the "
                         "hyperboloid's end circles, etc.) to the rods / "
                         "bare-curves output")
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the surface smooth")
         thickness: FloatProperty(name="Thickness", default=0.0,
                                  min=0.0, max=1.0,
                                  description="Solidify thickness "
                                              "(surface modes)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size; 1 fits the "
+                                         "2 m cube")
 
         def execute(self, context):
             verts, faces, name = _build_surface(self)

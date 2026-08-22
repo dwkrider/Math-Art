@@ -27,17 +27,18 @@ The same tangent-point energy does the work, and the same guarantee applies — 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Link | Hopf Link | Hopf Link, Torus Link (2,4), Whitehead Link, Borromean Rings, Chain, Custom Braid. |
+| Link | Hopf Link | Link to build (Custom uses the braid word below). Hopf Link, Torus Link (2,4), Whitehead Link, Borromean Rings, Chain, Custom Braid. |
 | Braid Word | `aa` | Letters a..z are braid generators, A..Z their inverses (used for Custom; must close to a link) |
 | Chain Rings | 3 | Number of rings in the chain Range 2-8. |
-| Samples Per Component | 80 | Polyline resolution per component (larger links switch to the accelerated solver automatically) Range 32-400. |
-| Tighten Iterations | 100 | Tangent-point flow steps (links typically converge in a few tens; 0 shows the seed) Range 0-500. |
-| Output | Bezier Curve | Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
+| Samples Per Component | 80 | Polyline resolution per component Range 32-400. |
+| Tighten Iterations | 300 | Ceiling on tangent-point flow steps; the flow stops on its own once tightening has plateaued, so raising this costs nothing for links that settle early (0 shows the seed). The Whitehead link is the slow one, needing about 270 Range 0-1000. |
+| Coarse First | Off | Tighten at half resolution before finishing at full resolution: quicker on links that need a long rearrangement (Whitehead, Borromean), no help on the ones that settle quickly, and about 1 per cent looser in energy |
+| Output | Bezier Curve | Curve type, or a swept mesh tube, for the rope. Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
 | Radius From Thickness | On | Set the rope radius to the measured Gonzalez-Maddocks thickness of the tight link (the maximal embedded tube) |
 | Tube Radius | 0.08 | Curve bevel depth / tube radius (when not taken from the thickness) Range 0-1. |
-| Bevel Resolution | 6 | Range 1-16. |
-| Tube Sides | 12 | Range 3-32. |
-| Scale | 1 | Range 0.01-100. |
+| Bevel Resolution | 6 | Smoothness of the round bevel on curve output Range 1-16. |
+| Tube Sides | 12 | Number of sides around the swept tube (Mesh output) Range 3-32. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

@@ -87,18 +87,26 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         outer_radius: FloatProperty(name="Outer Radius", default=1.0,
-                                    min=0.05, max=20.0)
+                                    min=0.05, max=20.0,
+                                    description="Radius of the outer "
+                                                "helix")
         inner_radius: FloatProperty(name="Inner Radius", default=0.35,
-                                    min=0.01, max=20.0)
+                                    min=0.01, max=20.0,
+                                    description="Radius of the inner "
+                                                "helix")
         join_radius: FloatProperty(
             name="Join Radius", default=0.75, min=0.02, max=20.0,
             description="Radius where the two helices meet at the "
                         "top and bottom")
         half_height: FloatProperty(name="Half Height",
                                    default=2 * pi / 5, min=0.05,
-                                   max=20.0)
+                                   max=20.0,
+                                   description="Half the total height of "
+                                               "the loop (peak to centre)")
         outer_turns: FloatProperty(name="Outer Turns", default=1.5,
-                                   min=0.5, max=12.0, step=25)
+                                   min=0.5, max=12.0, step=25,
+                                   description="Number of turns in the "
+                                               "outer helix")
         inner_turns: FloatProperty(
             name="Inner Turns", default=2.5, min=0.5, max=12.0,
             step=25,
@@ -115,9 +123,12 @@ if _IN_BLENDER:
                         "(1 = the original; higher flattens the "
                         "middle, lower sharpens it)")
         seg_per_turn: IntProperty(name="Segments Per Turn",
-                                  default=120, min=16, max=720)
+                                  default=120, min=16, max=720,
+                                  description="Points sampled per turn "
+                                              "along each helix")
         spline_type: EnumProperty(
             name="Spline",
+            description="Curve type used for the resulting spline",
             items=[('NURBS', "NURBS", "smooth, as in the original"),
                    ('POLY', "Poly", ""),
                    ('BEZIER', "Bezier", "auto handles")],
@@ -137,9 +148,12 @@ if _IN_BLENDER:
             description="Rotation of the ellipse in the tube "
                         "cross-section (degrees)")
         resolution: IntProperty(name="Profile Resolution", default=6,
-                                min=1, max=32)
+                                min=1, max=32,
+                                description="Resolution of the swept tube "
+                                            "profile curve")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall scale factor")
 
         def execute(self, context):
             inner = self.inner_turns

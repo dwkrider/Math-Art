@@ -272,8 +272,11 @@ if _IN_BLENDER:
         bl_label = "Voderberg Tiling"
         bl_options = {'REGISTER', 'UNDO'}
 
-        kind: EnumProperty(name="Tiling", items=KIND_ITEMS,
-                           default='CLASSIC')
+        kind: EnumProperty(
+            name="Tiling", items=KIND_ITEMS, default='CLASSIC',
+            description="Which Voderberg tiling to build: classic "
+                        "double spiral, enclosure-order spiral, or "
+                        "radial rings")
         arms: IntProperty(
             name="Arms / Order", default=2, min=1, max=8,
             description="Goldberg spiral order for the Spiral kind (a "
@@ -298,7 +301,9 @@ if _IN_BLENDER:
                     "interlocking enneagon orientations (apex-in V vs "
                     "apex-out A) that reveal the tile boundaries"),
                    ('UNIFORM', "Uniform", "A single material")],
-            default='ARM')
+            default='ARM',
+            description="How tiles are colored: by spiral arm, by "
+                        "enneagon orientation, or one uniform material")
         margin: FloatProperty(
             name="Margin", default=0.0, min=0.0, max=0.45,
             description="Inset each tile toward its centroid, leaving "

@@ -21,9 +21,9 @@ An inflorescence is a cluster of flowers, and the fifteen classical kinds — ra
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Source | Architecture | Architecture, Species. |
-| Architecture | Raceme | Capitulum (head), Corymb (flat-topped raceme), Cyme, Dibotryoid (double raceme), Dichasium (forked cyme), Monochasium (helicoid cyme), Panicle, Pleiochasium, and 7 more. |
-| Species | Lilac (Syringa vulgaris) | Capsella bursa-pastoris, Crocus, Lilac (Syringa vulgaris), Lychnis coronaria. |
+| Source | Architecture | Build a generic Table 3.1 architecture or a published species reconstruction. Architecture, Species. |
+| Architecture | Raceme | Which Table 3.1 inflorescence architecture to build. Capitulum (head), Corymb (flat-topped raceme), Cyme, Dibotryoid (double raceme), Dichasium (forked cyme), Monochasium (helicoid cyme), Panicle, Pleiochasium, and 7 more. |
+| Species | Lilac (Syringa vulgaris) | Which published species reconstruction to build. Capsella bursa-pastoris, Crocus, Lilac (Syringa vulgaris), Lychnis coronaria. |
 | Orders | 3 | Recursion depth; order 0 is the main axis Range 1-6. |
 | Nodes | 6 | Internodes on the main axis Range 1-24. |
 | Branch Angle | -1 | Degrees (-1 = the architecture's own) Range -1-90. |
@@ -32,13 +32,13 @@ An inflorescence is a cluster of flowers, and the fifteen classical kinds — ra
 | Rate u | 1 | Age gained per internode along an axis Range 0-10. |
 | Rate v | 1 | Age gained per branching order Range 0-10. |
 | Bloom | 1 | Reveal flowers up to this point in the flowering sequence -- keyframe it to animate the bloom running through the structure Range 0-1. |
-| Flowers | On | -- |
+| Flowers | On | Add drawn geometry at each flower position |
 | Branch Mapping | On | Treat a short axis as the TOP of a long one of the same order, so gradients align distally |
-| Stem Radius | 0.01 | Range 0.0001-0.5. |
-| Bevel Resolution | 2 | Range 0-16. |
+| Stem Radius | 0.01 | Bevel depth of the stem tubes Range 0.0001-0.5. |
+| Bevel Resolution | 2 | Roundness of the stem tubes Range 0-16. |
 | Order Taper | 0.7 | Stem radius ratio between successive orders Range 0.1-1. |
-| Flower Size | 0.03 | Range 0.001-0.5. |
-| Scale | 1 | Range 0.01-100. |
+| Flower Size | 0.03 | Size of the marker drawn at each flower Range 0.001-0.5. |
+| Scale | 1 | Overall size; fits the result into a 2 m cube times this factor Range 0.01-100. |
 
 <!-- /options -->
 

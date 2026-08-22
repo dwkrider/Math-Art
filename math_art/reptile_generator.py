@@ -220,7 +220,8 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         kind: EnumProperty(name="Rep-Tile", items=KIND_ITEMS,
-                           default='L_TROMINO')
+                           default='L_TROMINO',
+                           description="Which rep-tile to substitute")
         iterations: IntProperty(
             name="Iterations", default=3, min=0, max=7,
             description="Deflation depth (tile count is N**iterations, "
@@ -231,7 +232,8 @@ if _IN_BLENDER:
                     "Material per sub-tile orientation, revealing the "
                     "substitution structure"),
                    ('UNIFORM', "Uniform", "A single material")],
-            default='TYPE')
+            default='TYPE',
+            description="How the tiles are colored")
         margin: FloatProperty(
             name="Margin", default=0.0, min=0.0, max=0.45,
             description="Inset each tile toward its centroid, leaving "

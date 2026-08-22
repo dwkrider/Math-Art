@@ -22,11 +22,20 @@ This generator builds triply-periodic minimal surfaces (TPMS) — the space-fill
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Periodicity | Singly Periodic | Translational symmetry of the surface: singly / doubly periodic (Weierstrass-Enneper) or triply periodic (TPMS); filters the Surface list. Singly Periodic, Doubly Periodic, Triply Periodic (TPMS). |
-| Surface |  | -- |
-| Output | Mesh | Mesh, NURBS. |
-| Resolution U | 64 | Range 8-512. |
-| Resolution V | 64 | Range 8-512. |
+| Rim Curve | Off | Sweep a tube along the open edge of the surface. That edge is a stair-step through the sample grid, so the tube both tidies it and gives the surface a deliberate border; a closed surface has no edge and gets no curve |
+| Rim Thickness | 0.01 | Bevel radius of the rim tube (0 leaves a bare curve) Range 0-1. |
+| Rim Smoothing | 3 | Taubin smoothing passes along the rim before it is swept. Unlike a plain Laplacian this does not shrink the curve, so the tube stays on the edge however many passes you use; 0 follows the sample grid exactly Range 0-40. |
+| Rim Profile | Circular | Cross-section swept along the rim. Circular, Square, Channel (C), Beam (H), Reeded, Curve Only. |
+| Rim Twist | 0 | Rotate the swept profile about the rim. Set it to 180 to reverse which way a channel opens or which face a reed is milled into. Which way looks right is not fixed by the surface: the same outward direction reads as out of an Enneper edge and into a clipped periodic cell, so this is the control for it Range -180-180. |
+| Reeds | 120 | Number of ridges milled across a reeded rim, counted around the whole edge. The rim is re-sampled to carry them, so they are spaced by arc length rather than by the surface's grid Range 4-2000. |
+| Periodicity | Singly Periodic | Translational symmetry of the surface: singly / doubly periodic (Weierstrass-Enneper) or triply periodic (TPMS); filters the Surface list. Singly Periodic, Doubly Periodic, Triply Periodic (TPMS), Exact (Weierstrass), Exact (Deformable). |
+| Surface |  | The specific periodic surface to build, from the chosen Periodicity |
+| Arrangement | Unit | Which pre-defined assembly to build. The exact surfaces are grown from a fundamental piece by their own symmetry group, so these stages -- not a cell count -- are the natural sizes. Fundamental Piece, Unit, Conjugate Piece, Conjugate. |
+| Modulus | 2 | Im(tau), the torus modulus. CLP is a two-parameter family; Weber publishes renders at (tau, branch) = (0.4, 0.15), (2.0, 0.15) and (1.0, 0.25) Range 0.05-8. |
+| Branch Value | 0.15 | The branch value a. At tau = 1 and a = 0.25 the four branch points sit at the vertices of a regular octagon and the surface is self-conjugate Range 0.02-0.48. |
+| Output | Mesh | Emit a dense polygon mesh or a compact NURBS surface patch. Mesh, NURBS. |
+| Resolution U | 64 | Mesh sample count across the U parameter direction Range 8-512. |
+| Resolution V | 64 | Mesh sample count across the V parameter direction Range 8-512. |
 | Control Points U | 24 | NURBS control grid size in U Range 6-128. |
 | Control Points V | 24 | NURBS control grid size in V Range 6-128. |
 | Order / Count | 1 | Period count / lattice modulus where the surface uses it (e.g. saddle-tower wing count) Range 1-12. |
@@ -37,9 +46,12 @@ This generator builds triply-periodic minimal surfaces (TPMS) — the space-fill
 | Domain Radius | 1.2 | Extent of the parameter domain Range 0.2-4. |
 | Associate Angle | 0 | Bonnet associate family angle; for the Karcher saddle tower it is the wing-clustering angle alpha Range 0-1.5708. |
 | Preset | Schwarz P | Iconic P / Gyroid / D by name, or Custom to drive the raw Bonnet angle. Schwarz P, Gyroid, Schwarz D, Custom angle. |
-| Resolution / Cell | 28 | Sample grid resolution per unit cell Range 8-80. |
+| Resolution / Cell | 50 | Sample grid resolution per unit cell. Cost is cubic in this and the extraction runs over the whole block, so a 3x3x3 array at 300 is a very different proposition from a single cell at 300 Range 8-200. |
 | Cell Size | 2 | Edge length of one unit cell in Blender units Range 0.1-100. |
-| Thickness | 0 | If > 0, add a Solidify modifier with this thickness Range 0-1. |
+| Thickness | 0 | If > 0, add a Solidify modifier with this thickness. A shell thicker than twice the local radius of curvature folds through itself; the operator measures that and warns with the thickness the current resolution can carry Range 0-1. |
+| Clip to Sphere | Off | Cut the surface to an inscribed sphere. The cut is solved on the sphere rather than following whole faces, so the edge comes out smooth -- switch the rim curve on as well and it is swept into a wire around the ball |
+| Sphere Radius | 0.85 | Radius of that sphere as a fraction of the block's own half-size, so it keeps its meaning when the cell count or cell size changes Range 0.05-1. |
+| Smooth Shading | On | Shade the surface smooth. Turn it off to read the actual sample grid -- useful for judging whether the resolution is high enough, and for a deliberately faceted look. With Thickness on, smooth shading also creases the cut edge so the shell does not appear rounded over |
 | Level Offset | 0 | Constant c in F(x,y,z) = c, relative to the published surface: 0 keeps the (approximately) minimal member, nonzero sweeps the field's offset companion family Range -3-3. |
 | Cell Aspect (c/a) | 1 | Height-to-width ratio of the unit cell: 1 is the published cell; other values stretch the lattice tetragonally (tP/tD/tG-style cells) Range 0.25-4. |
 | Scale | 1 | Multiplier on the normalized size (1.0 = a 2 m cube, centered on the origin) Range 0.01-100. |

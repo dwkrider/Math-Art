@@ -966,8 +966,12 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         family: EnumProperty(name="Family", items=_family_items,
-                             update=_family_update)
-        solid: EnumProperty(name="Solid", items=_solid_items)
+                             update=_family_update,
+                             description="Category of uniform polyhedron "
+                                         "to choose from")
+        solid: EnumProperty(name="Solid", items=_solid_items,
+                            description="Which uniform polyhedron to "
+                                        "build")
         dual: BoolProperty(
             name="Dual", default=False,
             description="Build the dual by polar reciprocation (the "
@@ -976,10 +980,13 @@ if _IN_BLENDER:
                         "truncated")
         coloring: EnumProperty(
             name="Coloring",
+            description="Whether to colour faces by their number of "
+                        "sides",
             items=[('SIDES', "By Face Size", ""), ('NONE', "None", "")],
             default='SIDES')
         style: EnumProperty(
             name="Style",
+            description="How the polyhedron surface is rendered",
             items=[('SOLID', "Solid", "Plain closed polyhedron"),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo Style "
@@ -1019,7 +1026,9 @@ if _IN_BLENDER:
         facet_separate: BoolProperty(
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube)")
 
         def draw(self, context):
             lay = self.layout
@@ -1129,15 +1138,24 @@ if _IN_BLENDER:
         bl_label = "Star Prism / Antiprism"
         bl_options = {'REGISTER', 'UNDO'}
 
-        form: EnumProperty(name="Form", items=_STAR_FORMS, default='PRISM')
-        sides: IntProperty(name="Sides (p)", default=5, min=3, max=32)
+        form: EnumProperty(name="Form", items=_STAR_FORMS, default='PRISM',
+                           description="Which star form to build: prism, "
+                                       "antiprism, dipyramid or "
+                                       "trapezohedron")
+        sides: IntProperty(name="Sides (p)", default=5, min=3, max=32,
+                           description="Number of points p of the star "
+                                       "polygon base")
         step: IntProperty(name="Step (q)", default=2, min=1, max=15,
                           description="Star density; {p/q}, coprime with p")
         coloring: EnumProperty(
             name="Coloring",
+            description="Whether to colour faces by their number of "
+                        "sides",
             items=[('SIDES', "By Face Size", ""), ('NONE', "None", "")],
             default='SIDES')
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube)")
 
         def execute(self, context):
             q = valid_star_step(self.sides, self.step)

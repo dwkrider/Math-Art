@@ -32,12 +32,12 @@ Because every copy brings its own gaps, the process never terminates. The limit 
 | Width Telescope | 0 | Per-level width factor; 0 = automatic (follow each copy's true geometric scale) Range 0-1. |
 | Width Blend | 0.5 | Taper the strand width gradually across the joins between nesting levels; 0 = abrupt steps Range 0-1. |
 | Samples | 6 | Catmull-Rom subdivisions per control segment Range 2-16. |
-| Output | Round Tube | Round Tube, Ribbon, Centerline Curve. |
-| Interlace | Woven (3D) | Woven (3D), Flat Knotwork. |
+| Output | Round Tube | Geometry type for the strand. Round Tube, Ribbon, Centerline Curve. |
+| Interlace | Woven (3D) | Weave the strand in 3D, or cut the under-strand for flat knotwork. Woven (3D), Flat Knotwork. |
 | Weave Height | 0.09 | Z amplitude of the weave at a root-level crossing; telescopes with depth Range 0-0.5. |
 | Relief Height | 0 | 0 = flat ribbon; > 0 extrudes the ribbon (ribbon output) Range 0-0.5. |
 | Tube Sides | 12 | Facets around the tube cross-section Range 3-32. |
-| Color By | Substitution Level | Substitution Level, Uniform. |
+| Color By | Substitution Level | Assign a material per nesting level or one uniform material. Substitution Level, Uniform. |
 
 <!-- /options -->
 

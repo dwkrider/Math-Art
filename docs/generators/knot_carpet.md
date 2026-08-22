@@ -26,27 +26,27 @@ The point is the inversion. **No loop is knotted on its own** — every componen
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Lattice | Square | Square, Triangular, Curvilinear, Sphere, Polyhedral, Tiling, Torus, UV Mesh. |
+| Lattice | Square | Arrangement of tiles or surface that carries the woven loops. Square, Triangular, Curvilinear, Sphere, Polyhedral, Tiling, Torus, UV Mesh. |
 | Sphere Tiling | Geodesic Icosahedron | The spherical tiling carrying the loops: vertex-centred medallions on a geodesic icosahedron, or face-centred medallions on a Platonic / Archimedean solid (the spherical regular / Archimedean tilings). Geodesic Icosahedron, Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Truncated Tetrahedron, Cuboctahedron, and 11 more. |
 | Sphere Frequency | 2 | Geodesic subdivision frequency of the icosahedral scaffold (sphere lattice); 10 x freq^2 + 2 loops Range 1-6. |
 | Solid | Icosahedron | The polyhedron carrying the loops: one woven medallion per real face of a Platonic / Archimedean / Catalan solid or Escher's Solid, keeping the solid's true 3-D geometry. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Truncated Tetrahedron, Cuboctahedron, Truncated Cube, and 26 more. |
 | Tiling | Square (4.4.4.4) | The underlying tiling (one medallion per tile). Triangular (3.3.3.3.3.3), Square (4.4.4.4), Hexagonal (6.6.6), Trihexagonal (3.6.3.6), Snub Square (3.3.4.3.4), Snub Hexagonal (3.3.3.3.6), Elongated Triangular (3.3.3.4.4), Rhombitrihexagonal (3.4.6.4), and 11 more. |
 | Torus Tiling | Square (4.4.4.4) | The uniform tiling wrapped onto the torus (one woven medallion per tile); SQUARE reproduces the square-lattice torus. Triangular (3.3.3.3.3.3), Square (4.4.4.4), Hexagonal (6.6.6), Trihexagonal (3.6.3.6), Snub Square (3.3.4.3.4), Snub Hexagonal (3.3.3.3.6), Elongated Triangular (3.3.3.4.4), Rhombitrihexagonal (3.4.6.4), and 10 more. |
 | Symmetry | 4 | k-fold symmetry of each loop (rosette lobes; 4 suits the square lattice, 3 or 6 the triangular) Range 2-12. |
-| Tiles X | 3 | Range 1-12. |
-| Tiles Y | 3 | Range 1-12. |
+| Tiles X | 3 | Number of tiles across in X Range 1-12. |
+| Tiles Y | 3 | Number of tiles across in Y Range 1-12. |
 | Rosette Amplitude | 0.1 | Lobe depth of the k-fold rosette; 0 = plain circles Range 0-0.35. |
 | Overlap | 1.15 | Loop radius as a multiple of half the neighbour spacing (> 1 so loops interlock) Range 1.02-1.35. |
 | Samples | 192 | Polyline samples per loop Range 48-512. |
 | Cord Width | 0.12 | Ribbon width in loop-spacing units Range 0.02-0.4. |
 | Cord Width | 0.05 | Cord (leading) width in loop-spacing units; the tiles are the holes between the cords (Faces output) Range 0.01-0.4. |
-| Style | Angular | Angular, Smooth. |
+| Style | Angular | Keep the loops angular or smooth them with splines. Angular, Smooth. |
 | Smoothness | 6 | Spline subdivisions per control segment (smooth) Range 2-16. |
 | Interlace (Weave) | On | Weave the loops over and under (alternating link) |
-| Interlace Mode | Flat Knotwork | Flat Knotwork, Woven (3D). |
+| Interlace Mode | Flat Knotwork | Flat 2D knotwork or a raised 3D woven surface. Flat Knotwork, Woven (3D). |
 | Weave Height | 0.05 | Z amplitude of the woven loops (woven only) Range 0-0.4. |
-| Color By | By Loop | Uniform, By Loop, Over/Under. |
-| Output | Ribbon Mesh | Ribbon Mesh, Tube (Rope), Centerline Curves, Faces (Mosaic). |
+| Color By | By Loop | How the loops are coloured. Uniform, By Loop, Over/Under. |
+| Output | Ribbon Mesh | Geometry produced for the carpet. Ribbon Mesh, Tube (Rope), Centerline Curves, Faces (Mosaic). |
 | Tile Color | By Shape | How the mosaic tiles are coloured (Faces output). Uniform, By Shape. |
 | Include Ribbons | On | Emit the flat cords too, so the strand network shows as the uniform-width leading between the tiles (Faces output); off = tiles only |
 | Tile Height | 0 | Raise each tile into a solid prism this tall above the cord plane (Faces output); 0 = flat Range 0-1. |
@@ -58,7 +58,7 @@ The point is the inversion. **No loop is knotted on its own** — every componen
 | Weave Gap | 0.1 | Minimum z separation kept between the over and under strand at each crossing during relaxation Range 0.02-0.4. |
 | Relief Height | 0 | 0 = flat ribbons; > 0 extrudes the loops Range 0-1. |
 | Backing Slab | Off | Add a slab behind the carpet |
-| Base Thickness | 0.06 | Range 0.01-0.5. |
+| Base Thickness | 0.06 | Thickness of the backing slab Range 0.01-0.5. |
 | Torus Major R | 1 | Major radius of the torus (nx cells run the long way around it); torus lattice only Range 0.2-5. |
 | Torus Minor r | 0.5 | Minor (tube) radius of the torus (ny cells go around the tube); relief/weave push outward from it; torus lattice only Range 0.05-3. |
 | Target Mesh | empty | Mesh object with UV coordinates to weave the carpet onto (UV Mesh lattice); the flat carpet is sampled through this mesh's UV map |

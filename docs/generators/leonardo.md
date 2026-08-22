@@ -21,7 +21,7 @@ Leonardo Style is a *style* — it restyles the object you already have rather t
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Border | 0.3 | Face frame width (fraction of the face) Range 0.02-0.95. |
+| Border | 0.06 | Face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.06 | Panel thickness Range 0.001-1. |
 
 <!-- /options -->

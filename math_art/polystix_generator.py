@@ -186,13 +186,16 @@ if _IN_BLENDER:
             name="Preset",
             items=[('CUSTOM', "Custom", "")] +
                   [(k, v[0], "") for k, v in PRESETS.items()],
-            default='PENCILS', update=_preset_chosen)
+            default='PENCILS', update=_preset_chosen,
+            description="Ready-made packing setups; Custom keeps your "
+                        "own settings")
         packing: EnumProperty(
             name="Packing",
             items=[(k, PACKINGS[k]['label'], "")
                    for k in ('TETRASTIX', 'HEMISTIX', 'HEXASTIX',
                              'TRISTIX', 'SIGMA')],
-            default='HEXASTIX')
+            default='HEXASTIX',
+            description="Which invariant cubic rod packing to build")
         cross_section: EnumProperty(
             name="Cross Section",
             items=[('PRISM', "Native Prism",
@@ -201,7 +204,8 @@ if _IN_BLENDER:
                     "so flats face the interpenetrating rods"),
                    ('CYLINDER', "Round Cylinder",
                     "Circular rods (n-gon tube)")],
-            default='PRISM')
+            default='PRISM',
+            description="Shape of each rod's cross-section")
         fill: FloatProperty(
             name="Fill", default=0.98, min=0.02, max=1.2,
             description="Rod radius as a fraction of the just-touching "
@@ -216,7 +220,8 @@ if _IN_BLENDER:
                    ('RHOMBIC_DODECA', "Rhombic Dodecahedron", ""),
                    ('TRUNC_OCTA', "Truncated Octahedron", ""),
                    ('SPHERE', "Sphere", "")],
-            default='RHOMBIC_DODECA')
+            default='RHOMBIC_DODECA',
+            description="Shape the infinite packing is trimmed to")
         handedness: EnumProperty(
             name="Handedness",
             items=[('RIGHT', "Right", ""), ('LEFT', "Left (mirror)", "")],
@@ -224,7 +229,9 @@ if _IN_BLENDER:
             description="Mirror the packing (flips the chiral "
                         "enantiomorph of tristix / +Sigma)")
         tube_sides: IntProperty(name="Tube Sides", default=16,
-                                min=3, max=48)
+                                min=3, max=48,
+                                description="Cross-section segments of "
+                                            "each round rod")
         overhang: FloatProperty(
             name="Overhang", default=0.0, min=-4.0, max=8.0,
             description="Extend each rod past the interleaved core by "
@@ -240,15 +247,19 @@ if _IN_BLENDER:
         loop_segments: IntProperty(
             name="Loop Smoothness", default=12, min=2, max=48,
             description="Samples along each connecting arc")
-        cap_ends: BoolProperty(name="Cap Ends", default=True)
+        cap_ends: BoolProperty(name="Cap Ends", default=True,
+                               description="Close the open ends of the rods")
         coloring: EnumProperty(
             name="Coloring",
             items=[('DIRECTION', "Per Direction",
                     "One material per rod direction (3 or 4 colours)"),
                    ('NONE', "None", "")],
-            default='DIRECTION')
+            default='DIRECTION',
+            description="How the rods are coloured")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size; fits the result into "
+                                         "a 2 m cube times this factor")
 
         @classmethod
         def _material_for(cls, i):

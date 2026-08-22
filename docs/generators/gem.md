@@ -23,17 +23,17 @@ This is the faceter's own coordinate system, not a modeller's. A cutting machine
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Cut | Round Brilliant | Round Brilliant, Old European Cut, Portuguese Cut, Single (Eight) Cut, Standard Round Brilliant, Tolkowsky Brilliant, Asscher (Square Emerald), Baguette, and 11 more. |
+| Cut | Round Brilliant | Faceting design to cut, grouped by family in the catalogue. Round Brilliant, Old European Cut, Portuguese Cut, Single (Eight) Cut, Standard Round Brilliant, Tolkowsky Brilliant, Asscher (Square Emerald), Baguette, and 11 more. |
 | Viewing Rig | Custom | Lighting to build around the stone. Custom leaves the scene alone; the others hide whichever rig they replace rather than deleting it. Custom, Gem Studio, ASET Rig. |
-| Scale | 1 | Range 0.01-100. |
-| Table | 57 | Range 49-70. |
+| Scale | 1 | Overall size of the stone Range 0.01-100. |
+| Table | 57 | Diameter of the flat top facet, as a percentage of the girdle width Range 49-70. |
 | Crown Angle | 34.5 | Degrees above the girdle plane (IDC Excellent: 32.0 to 36.0) Range 26-40. |
 | Pavilion Angle | 40.75 | Degrees below the girdle plane (IDC Excellent: 40.6 to 41.8) Range 38.5-43.1. |
-| Girdle | 3 | Range 0.5-7.5. |
+| Girdle | 3 | Thickness of the girdle band, as a percentage of the girdle width Range 0.5-7.5. |
 | Culet | 0 | 0 gives a pointed culet and 57 facets; any larger value adds a culet facet, giving 58 Range 0-10. |
 | Star Length | 55 | How far the stars reach from the table edge towards the girdle Range 5-95. |
 | Lower Halves | 78 | How far the lower halves reach from the girdle towards the culet Range 5-95. |
-| Girdle Facets | 16 | Range 8-128. |
+| Girdle Facets | 16 | Number of facets around the girdle band Range 8-128. |
 | Size (mm) | 6.5 | Real diameter. Reported as a carat weight only -- the mesh is still fitted to the 2 m cube Range 0.1-100. |
 | Material | Diamond | Sets the refractive index, the dispersion that makes the fire, the absorption that makes the colour, and the density that sets carat weight. Moissanite (synthetic), Diamond, Cubic Zirconia, Zircon (high), Sphene (titanite), Demantoid Garnet (andradite), YAG (synthetic), Almandine Garnet, and 14 more. |
 | Assign Material | On | Build and assign a dispersion shader for the chosen species |

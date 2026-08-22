@@ -26,7 +26,7 @@ Its geometry is startlingly concrete: **any two distinct fibres are linked exact
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Base Points | Latitudes | Latitudes, Flower, Greatcircle, Fibonacci, Tetra, Octa, Cube, Icosa, and 1 more. |
+| Base Points | Latitudes | Set of base points on S^2 whose fibres are drawn. Latitudes, Flower, Greatcircle, Fibonacci, Tetra, Octa, Cube, Icosa, and 1 more. |
 | Latitudes / Rings | 6 | Circles of latitude (LATITUDES), or the point budget for the Fibonacci sphere Range 1-48. |
 | Fibres | 24 | Fibres per latitude (LATITUDES), or the total number of fibres for FLOWER / GREATCIRCLE / FIBONACCI presets Range 1-200. |
 | Samples | 160 | Points per fibre Range 24-1024. |
@@ -34,12 +34,12 @@ Its geometry is startlingly concrete: **any two distinct fibres are linked exact
 | Wind Q | 1 | Winding rate of the second phase Range 1-12. |
 | Colat Min | 20 | Smallest colatitude (deg) for latitude / flower / great-circle presets Range 1-179. |
 | Colat Max | 160 | Largest colatitude (deg) Range 1-179. |
-| Output | Mesh Tube | Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
+| Output | Mesh Tube | Curve type, or a swept mesh tube, for the fibres. Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
 | Tube Radius | 0.02 | Curve bevel depth / tube radius Range 0-1. |
-| Bevel Resolution | 4 | Range 1-16. |
-| Tube Sides | 8 | Range 3-32. |
+| Bevel Resolution | 4 | Smoothness of the round bevel on curve output Range 1-16. |
+| Tube Sides | 8 | Number of sides around each swept tube (Mesh output) Range 3-32. |
 | Colour by Base Point | On | One material per fibre, hue from longitude and value from latitude of its base point |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the fibre set Range 0.01-100. |
 
 <!-- /options -->
 

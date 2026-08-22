@@ -23,16 +23,16 @@ A **cabochon** is domed and polished smooth — the oldest way of finishing a ge
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Shape | Cabochon | Bullet Cabochon, Double Cabochon, Hexagonal Cabochon, High Cabochon, Lentil Cabochon, Oval Cabochon, Cabochon, Sugarloaf. |
+| Shape | Cabochon | Cabochon outline and dome profile to build. Bullet Cabochon, Double Cabochon, Hexagonal Cabochon, High Cabochon, Lentil Cabochon, Oval Cabochon, Cabochon, Sugarloaf. |
 | Length / Width | 0 | 0 uses the preset's own outline Range 0-4. |
 | Dome Height | 0 | As a fraction of the width; 0 uses the preset's. Asterism and chatoyancy need a tall dome to gather their reflections into a line Range 0-2. |
 | Dome Shape | 0 | The profile's superellipse exponent: below 2 is pointed like a sugarloaf, 2 is a hemisphere, above 2 is a flatter cabochon. 0 uses the preset Range 0-6. |
-| Rings | 24 | Range 3-200. |
-| Segments | 64 | Range 6-512. |
-| Scale | 1 | Range 0.01-100. |
+| Rings | 24 | Number of latitude rings up the dome Range 3-200. |
+| Segments | 64 | Number of segments around the outline Range 6-512. |
+| Scale | 1 | Overall size of the stone Range 0.01-100. |
 | Material | Ruby (corundum) | Cabochons are cut for material that facets would waste -- opaque or translucent, or phenomenal. Moissanite (synthetic), Diamond, Cubic Zirconia, Zircon (high), Sphene (titanite), Demantoid Garnet (andradite), YAG (synthetic), Almandine Garnet, and 14 more. |
-| Assign Material | On | -- |
-| Size (mm) | 8 | Range 0.1-100. |
+| Assign Material | On | Build and assign a material for the chosen species |
+| Size (mm) | 8 | Real size in millimetres, used to scale the material's colour Range 0.1-100. |
 | Viewing Rig | Custom | Lighting to build around the stone. Custom leaves the scene alone. Custom, Gem Studio, ASET Rig. |
 
 <!-- /options -->

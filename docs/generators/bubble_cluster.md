@@ -24,16 +24,16 @@ Where two bubbles overlap the interface obeys the **Young-Laplace** rule: equal 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Seed | Icosahedron | Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Active Object. |
-| Radii | Same Radius | Same Radius, From Neighbour Distance. |
+| Seed | Icosahedron | Mesh whose points each carry one bubble. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Active Object. |
+| Radii | Same Radius | Give every bubble the same radius or scale each to its local spacing. Same Radius, From Neighbour Distance. |
 | Radius Factor | 0.62 | Bubble radius as a fraction of the mean neighbour distance (above 0.5 neighbouring bubbles merge) Range 0.1-2. |
 | Subdivisions | 2 | Icosphere subdivisions per bubble Range 1-5. |
 | Interior Films | On | Include the soap films between touching bubbles (merged mesh only; separate bubbles always carry their walls, keeping each one closed) |
 | Separate Bubble Meshes | On | One mesh object per bubble (its outer cap plus its films), parented to an empty |
 | Color Bubbles | Off | Give each bubble its own material color |
 | Intersection Polyhedra | Off | For every bubble fully enclosed by films, add its flat-walled cell polyhedron as a separate mesh (needs interior points, e.g. a lattice seed via Active Object) |
-| Smooth Shading | On | -- |
-| Scale | 1 | Range 0.01-100. |
+| Smooth Shading | On | Shade the bubble surfaces smooth |
+| Scale | 1 | Overall size; fits the cluster into a 2 m cube times this factor Range 0.01-100. |
 
 <!-- /options -->
 

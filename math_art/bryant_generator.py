@@ -382,6 +382,7 @@ if _IN_BLENDER:
 
         mode: EnumProperty(
             name="Surface",
+            description="Which Bryant CMC-1 surface family to build",
             items=[('CATENOID_COUSIN', "Catenoid Cousin",
                     "Bryant's Example 2: a CMC-1 surface of revolution, "
                     "embedded for -1/2 < mu < 0 and once "
@@ -404,6 +405,8 @@ if _IN_BLENDER:
             default='CATENOID_COUSIN')
         model: EnumProperty(
             name="Model",
+            description="Model of hyperbolic space the surface is drawn "
+                        "in",
             items=[('POINCARE', "Poincare Ball",
                     "conformal unit-ball model: angles are true and the "
                     "whole surface fits in the picture"),
@@ -452,16 +455,23 @@ if _IN_BLENDER:
             description="Scales the parameter domain: larger reaches "
                         "further out towards the sphere at infinity")
         ures: IntProperty(name="U Resolution", default=96, min=8,
-                          max=400)
+                          max=400,
+                          description="Mesh divisions along the u "
+                                      "parameter")
         vres: IntProperty(name="V Resolution", default=96, min=8,
-                          max=400)
+                          max=400,
+                          description="Mesh divisions along the v "
+                                      "parameter")
         ode_steps: IntProperty(
             name="ODE Steps", default=64, min=8, max=512,
             description="RK4 steps per ray for the Theorem B "
                         "integration")
-        shade_smooth: BoolProperty(name="Smooth Shading", default=True)
+        shade_smooth: BoolProperty(
+            name="Smooth Shading", default=True,
+            description="Shade the surface smooth rather than faceted")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             mu = self.mu

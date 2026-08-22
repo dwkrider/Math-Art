@@ -32,12 +32,12 @@ That single idea, now called **polygons in contact** (PIC), explains why the ban
 | Contact Angle | 30 | Angle (degrees) of the rays to each edge; the primary knob -- small = spiky, large = obtuse Range 10-80. |
 | Star Density d | 3 | Density of the {n/d} star polygon (STAR motif); larger d gives sharper, more overlapping points Range 2-6. |
 | Rosette Core | 0.4 | Inner-polygon radius of the rosette as a fraction of the apothem (controls the central star size); 0 = Kaplan's proportion Range 0-0.95. |
-| Cells X | 5 | Range 1-40. |
-| Cells Y | 5 | Range 1-40. |
+| Cells X | 5 | Number of substrate tiles across X Range 1-40. |
+| Cells Y | 5 | Number of substrate tiles across Y Range 1-40. |
 | Girih Generations | 4 | Inflation depth of the quasiperiodic Penrose girih patch (GIRIH substrate); higher = larger patch, more tiles Range 1-6. |
 | Trim Boundary | On | Clip the strapwork to a clean central rectangle, removing the ragged edge |
 | Ribbon Width | 0.14 | Width of the strapwork ribbons (edge units) Range 0.01-0.6. |
-| Color By | By Star Order | Uniform, By Tile, By Star Order, By Ribbon. |
+| Color By | By Star Order | How the strapwork ribbons are colored. Uniform, By Tile, By Star Order, By Ribbon. |
 | Curved Ribbons | Off | Flow each band along a Catmull-Rom spline through its nodes instead of straight segments |
 | Smoothness | 8 | Spline subdivisions per band segment (curved ribbons only) Range 2-32. |
 | Output | Ribbon Mesh | Build filled ribbon meshes or the band centerlines as curve splines. Ribbon Mesh, Centerline Curves. |
@@ -46,7 +46,7 @@ That single idea, now called **polygons in contact** (PIC), explains why the ban
 | Weave Height | 0.05 | Z amplitude of the woven ribbons at crossings (WOVEN interlace only) Range 0-0.5. |
 | Relief Height | 0 | 0 = flat ribbons; > 0 extrudes the strapwork Range 0-2. |
 | Backing Slab | Off | Add a slab behind raised strapwork (relief only) |
-| Base Thickness | 0.08 | Range 0.01-1. |
+| Base Thickness | 0.08 | Thickness of the backing slab behind the strapwork Range 0.01-1. |
 | Separate Motifs | Off | Output each tile's motif as its own mesh object (parented to an empty) |
 
 <!-- /options -->

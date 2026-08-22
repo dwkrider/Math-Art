@@ -635,7 +635,8 @@ if _IN_BLENDER:
                     "Straight mitered cords with sharp corners"),
                    ('SMOOTH', "Smooth",
                     "Catmull-Rom curved cords")],
-            default='SMOOTH')
+            default='SMOOTH',
+            description="Cord shape: straight mitered or curved")
         smoothness: IntProperty(
             name="Smoothness", default=6, min=2, max=16,
             description="Spline subdivisions per cord segment (smooth)")
@@ -660,7 +661,8 @@ if _IN_BLENDER:
                     "Woven all-quad rope tubes (smooth-shaded)"),
                    ('CURVE', "Centerline Curves",
                     "Woven cord centerlines as a curve object")],
-            default='RIBBON')
+            default='RIBBON',
+            description="Geometry type for the woven cords")
         tube_sides: IntProperty(
             name="Tube Sides", default=12, min=3, max=32,
             description="Facets around the tube cross-section")
@@ -671,7 +673,8 @@ if _IN_BLENDER:
                     "A distinct color per link component"),
                    ('CHECKER', "Over/Under",
                     "Two-tone by the alternating weave")],
-            default='LOOP')
+            default='LOOP',
+            description="How the cords are colored")
         scale: FloatProperty(
             name="Scale", default=1.0, min=0.05, max=10.0,
             description="Overall size multiplier (1 = fit the 2 m "

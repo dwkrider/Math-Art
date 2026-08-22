@@ -26,18 +26,18 @@ Supported compounds are 2 tetrahedra (the stella octangula), 5 and 10 tetrahedra
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Compound | 5 Tetrahedra | 5 Tetrahedra, 2 Tetrahedra, 10 Tetrahedra, 3 Cubes, 5 Cubes, 5 Octahedra. |
-| Style | Hollow Faces (da Vinci) | Hollow Faces (da Vinci), Edge Struts, Ball and Stick. |
+| Compound | 5 Tetrahedra | Which polyhedral compound to weave. 5 Tetrahedra, 2 Tetrahedra, 10 Tetrahedra, 3 Cubes, 5 Cubes, 5 Octahedra. |
+| Style | Hollow Faces (da Vinci) | How each component's frame is built. Hollow Faces (da Vinci), Edge Struts, Ball and Stick. |
 | Frame Width | 0.22 | Hollow-face ring width (fraction of the face) Range 0.02-0.9. |
-| Frame Thickness | 0.1 | Range 0.01-1. |
+| Frame Thickness | 0.1 | Thickness of the hollow-face frames Range 0.01-1. |
 | Cap Size | 1 | How far the edge struts stop short of each vertex (in strut thicknesses); the faceted knuckle fills the joint Range 0.3-3. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
 | Component Rotation | 0 | Rotate every component about its own symmetry axis (explores Lang-style polypolyhedra variants) Range -180-180. |
 | Component Size | 1 | Scale of each component about the centre Range 0.5-2. |
 | Spin | 0 | Extra rotation of the whole compound about its main symmetry axis Range -180-180. |
-| Coloring | Per Component | Per Component, None. |
-| Scale | 1 | Range 0.01-100. |
+| Coloring | Per Component | How components are assigned materials. Per Component, None. |
+| Scale | 1 | Overall size of the compound Range 0.01-100. |
 
 <!-- /options -->
 

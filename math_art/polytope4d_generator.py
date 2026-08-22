@@ -379,7 +379,9 @@ if _IN_BLENDER:
                    ('CELL24', "24-cell", "24 vertices, 96 edges"),
                    ('CELL120', "120-cell", "600 vertices, 1200 edges"),
                    ('CELL600', "600-cell", "120 vertices, 720 edges")],
-            default='CELL8')
+            default='CELL8',
+            description="Which of the six regular convex 4-polytopes to "
+                        "project into 3D")
         style: EnumProperty(
             name="Edges",
             items=[('CURVED', "Curved (stereographic)",
@@ -388,7 +390,9 @@ if _IN_BLENDER:
                    ('STRAIGHT', "Straight (perspective)",
                     "Direct 4D perspective projection; small distance "
                     "approaches a Schlegel diagram")],
-            default='CURVED')
+            default='CURVED',
+            description="Straight 4D perspective edges, or great-circle "
+                        "arcs from stereographic projection")
         proj_dist: FloatProperty(
             name="Projection Distance", default=1.05, min=1.001, max=10.0,
             description="Eye distance along w for STRAIGHT edges (near 1 "
@@ -397,26 +401,42 @@ if _IN_BLENDER:
                         "off the distance). Curved mode always uses the "
                         "exact stereographic projection")
         rot_xw: FloatProperty(name="Rotate XW", default=0.0,
-                              min=-180.0, max=180.0)
+                              min=-180.0, max=180.0,
+                              description="Rotation in the XW plane before "
+                              "projecting from 4D, in degrees")
         rot_yw: FloatProperty(name="Rotate YW", default=0.0,
-                              min=-180.0, max=180.0)
+                              min=-180.0, max=180.0,
+                              description="Rotation in the YW plane before "
+                              "projecting from 4D, in degrees")
         rot_zw: FloatProperty(name="Rotate ZW", default=0.0,
-                              min=-180.0, max=180.0)
+                              min=-180.0, max=180.0,
+                              description="Rotation in the ZW plane before "
+                              "projecting from 4D, in degrees")
         rot_xy: FloatProperty(name="Rotate XY", default=0.0,
-                              min=-180.0, max=180.0)
+                              min=-180.0, max=180.0,
+                              description="Rotation in the XY plane before "
+                              "projecting from 4D, in degrees")
         arc_segments: IntProperty(
             name="Arc Segments", default=12, min=1, max=48,
             description="Samples per edge (curved edges and tapering)")
         radius: FloatProperty(name="Strut Radius", default=0.03,
-                              min=0.002, max=0.5, step=1, precision=3)
-        sides: IntProperty(name="Strut Sides", default=6, min=3, max=16)
+                              min=0.002, max=0.5, step=1, precision=3,
+                              description="Radius of the edge struts")
+        sides: IntProperty(name="Strut Sides", default=6, min=3, max=16,
+                           description="Cross-section sides of each round "
+                           "strut (Ball and Stick style)")
         taper: BoolProperty(
             name="Taper With Projection", default=True,
             description="Scale strut thickness by the local projection "
                         "factor (near-the-pole features fatter)")
-        vertex_spheres: BoolProperty(name="Vertex Spheres", default=True)
+        vertex_spheres: BoolProperty(name="Vertex Spheres", default=True,
+                                     description="Place a sphere at each "
+                                     "vertex")
         sphere_factor: FloatProperty(name="Sphere Size", default=1.6,
-                                     min=1.0, max=4.0)
+                                     min=1.0, max=4.0,
+                                     description="Vertex sphere size "
+                                     "relative to the strut radius (Ball "
+                                     "and Stick style)")
         render: EnumProperty(
             name="Style",
             items=[('EDGES', "Struts",
@@ -438,16 +458,20 @@ if _IN_BLENDER:
                     "styles, since stereographic projection maps "
                     "the circle through a face's vertices to a "
                     "circle)")],
-            default='EDGES')
+            default='EDGES',
+            description="How the projected framework is built: struts, "
+                        "ball-and-stick, wireframe, or open panels")
         border: FloatProperty(
             name="Border", default=0.06, min=0.005, max=1.0,
             description="Leonardo panel frame width (fraction of "
                         "face whatever its size")
         panel_thickness: FloatProperty(
             name="Panel Thickness", default=0.03, min=0.002, max=0.5,
-            step=1, precision=3)
+            step=1, precision=3,
+            description="Thickness of the Leonardo face panels")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the framework")
         half: BoolProperty(
             name="Half (Cutaway)", default=False,
             description="Keep only the elements on one side of the "

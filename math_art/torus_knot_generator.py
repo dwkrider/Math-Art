@@ -86,6 +86,7 @@ if _IN_BLENDER:
             description="Points per component")
         output: EnumProperty(
             name="Output",
+            description="Curve type, or a swept tube mesh, to create",
             items=[('BEZIER', "Bezier Curve", "auto-smoothed"),
                    ('POLY', "Poly Curve", ""),
                    ('NURBS', "NURBS Curve", ""),
@@ -96,15 +97,20 @@ if _IN_BLENDER:
             step=1, precision=3,
             description="Curve bevel depth / tube radius")
         resolution: IntProperty(name="Bevel Resolution", default=6,
-                                min=1, max=16)
+                                min=1, max=16,
+                                description="Roundness of the tube "
+                                            "cross-section")
         tube_sides: IntProperty(name="Tube Sides", default=12,
-                                min=3, max=32)
+                                min=3, max=32,
+                                description="Number of sides around the "
+                                            "mesh-tube cross-section")
         color_components: BoolProperty(
             name="Color Components", default=True,
             description="One material with a distinct color per "
                         "link component (links only)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             import numpy as np

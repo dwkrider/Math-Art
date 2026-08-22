@@ -23,15 +23,15 @@ The Mandelbulb (Daniel White and Paul Nylander, 2009) is the best-known attempt 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Fractal | Mandelbulb | Mandelbulb, Quaternion Julia, Mandelbox. |
+| Fractal | Mandelbulb | Which escape-time fractal to build. Mandelbulb, Quaternion Julia, Mandelbox. |
 | Resolution | 96 | Sample grid cells per axis (cost grows as the cube; 96-160 is a good range) Range 24-256. |
 | Bulb Power | 8 | Exponent p of the Mandelbulb map (8 is the classic bulb); ignored by other presets Range 2-16. |
 | Iterations | 0 | Orbit iterations (0 = per-preset default); more sharpens the boundary but adds cost Range 0-32. |
 | Julia Slice (w) | 0 | Which w = const 3D slice of the 4D quaternion Julia set to mesh Range -1.5-1.5. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 | Largest Part Only | On | Keep only the largest connected component, dropping isolated specks |
 | Thickness | 0 | If > 0, add a Solidify modifier of this thickness (for a shell / printing) Range 0-1. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the surface smooth |
 
 <!-- /options -->
 

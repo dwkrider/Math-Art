@@ -69,24 +69,32 @@ if _IN_BLENDER:
                    ('COMPOUND', "Compound", "A rachis bearing leaflets, "
                                 "graded by the apical delay and "
                                 "elongation rate")],
-            default='SIMPLE')
+            default='SIMPLE',
+            description="Build a single blade, or a compound leaf of "
+                        "leaflets borne on a rachis")
         shape: EnumProperty(
             name="Shape",
             items=[(k, v["label"], v["label"])
                    for k, v in sorted(lv.LEAF_SHAPES.items())],
-            default='OVATE')
+            default='OVATE',
+            description="Outline the blade grows toward, from the "
+                        "leaf-shape library")
         steps: IntProperty(
             name="Growth Steps", default=10, min=2, max=14,
             description="Plastochrons of marginal growth")
         samples: IntProperty(
-            name="Outline Points", default=96, min=12, max=1024)
+            name="Outline Points", default=96, min=12, max=1024,
+            description="Number of points sampled around the blade "
+                        "outline")
 
         row: EnumProperty(
             name="Table 5.2 Row",
             items=[(str(i), r["label"], f"apical delay {r['delay']}, "
                     f"elongation rate {r['rate']}")
                    for i, r in enumerate(lv.COMPOUND)],
-            default='2')
+            default='2',
+            description="Compound leaf: preset apical delay and "
+                        "elongation rate from ABOP Table 5.2")
         use_row: BoolProperty(
             name="Use Table Row", default=True,
             description="Take the apical delay and elongation rate from "
@@ -99,11 +107,17 @@ if _IN_BLENDER:
             description="Internode elongation per plastochron; higher "
                         "grades the leaflets more steeply")
         plastochrons: IntProperty(name="Plastochrons", default=14,
-                                  min=1, max=40)
+                                  min=1, max=40,
+                                  description="Compound leaf: growth steps "
+                                  "run; more steps add more leaflet pairs")
         leaflet_angle: FloatProperty(name="Leaflet Angle", default=42.0,
-                                     min=0.0, max=90.0)
+                                     min=0.0, max=90.0,
+                                     description="Angle each leaflet makes "
+                                     "with the rachis, in degrees")
         leaflet_scale: FloatProperty(name="Leaflet Size", default=0.3,
-                                     min=0.02, max=1.0)
+                                     min=0.02, max=1.0,
+                                     description="Size of each leaflet "
+                                     "relative to the whole leaf")
 
         veins: BoolProperty(
             name="Venation", default=False,
@@ -119,11 +133,18 @@ if _IN_BLENDER:
                               "attracts every vein in its relative "
                               "neighbourhood, so veins meet and close "
                               "loops -- the areoles of a dicot leaf")],
-            default='CLOSED')
+            default='CLOSED',
+            description="Grow the veins as a branching tree (open) or a "
+                        "looped network (closed)")
         vein_sources: IntProperty(name="Auxin Sources", default=450,
-                                  min=20, max=4000)
+                                  min=20, max=4000,
+                                  description="Number of auxin sources "
+                                  "scattered in the blade to draw veins "
+                                  "toward")
         vein_step: FloatProperty(name="Vein Step", default=0.025,
-                                 min=0.004, max=0.2)
+                                 min=0.004, max=0.2,
+                                 description="Distance a vein grows toward "
+                                 "its attracting sources each step")
         vein_kill: FloatProperty(
             name="Kill Radius", default=0.05, min=0.005, max=0.5,
             description="A source is consumed once a vein reaches this "
@@ -131,12 +152,19 @@ if _IN_BLENDER:
                         "the network is, because it is what stops veins "
                         "crowding")
         vein_influence: FloatProperty(name="Influence Radius", default=0.35,
-                                      min=0.02, max=2.0)
+                                      min=0.02, max=2.0,
+                                      description="How far a source can "
+                                      "reach to attract a growing vein tip")
         vein_radius: FloatProperty(name="Vein Radius", default=0.006,
-                                   min=0.0005, max=0.1)
-        vein_seed: IntProperty(name="Seed", default=0, min=0, max=10000)
+                                   min=0.0005, max=0.1,
+                                   description="Bevel radius of the vein "
+                                   "tubes")
+        vein_seed: IntProperty(name="Seed", default=0, min=0, max=10000,
+                               description="Random seed for scattering the "
+                               "auxin sources")
 
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size of the leaf")
 
         def execute(self, context):
             name = "Leaf"

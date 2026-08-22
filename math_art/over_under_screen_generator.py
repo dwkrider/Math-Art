@@ -1227,7 +1227,9 @@ if _IN_BLENDER:
                    ('MINIMAL', "Minimal (Taut)",
                     "The membrane tautened by extra non-shrinking "
                     "(Taubin) fairing")],
-            default='MEMBRANE')
+            default='MEMBRANE',
+            description="Screen construction: separate ribbons or the "
+                        "woven membrane web")
         strand_width: FloatProperty(
             name="Strand Width", default=0.33, min=0.15, max=0.9,
             description="Ribbon width as a fraction of the ribbon "
@@ -1267,7 +1269,8 @@ if _IN_BLENDER:
                     "risers, merges, bridges, arches"),
                    ('HEIGHT', "By Height",
                     "Palette bands by surface height")],
-            default='UNIFORM')
+            default='UNIFORM',
+            description="How the screen is colored")
         separate: BoolProperty(
             name="Separate Parts", default=False,
             description="One object per part (each ribbon / the "

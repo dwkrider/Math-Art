@@ -24,17 +24,17 @@ Every knot in the classical tables is here, named by its `n.k` catalogue number 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Knot | 3.1 | Custom braid, 3.1, 4.1, 5.1, 5.2, 6.1, 6.2, 6.3, and 242 more. |
+| Knot | 3.1 | Which prime knot to build, or Custom for a typed braid word. Custom braid, 3.1, 4.1, 5.1, 5.2, 6.1, 6.2, 6.3, and 242 more. |
 | Braid Word | `AAA` | Letters a..z are braid generators, A..Z their inverses (used for Custom) |
-| Curve Samples | 240 | Range 60-1000. |
+| Curve Samples | 240 | Number of points sampled along the knot Range 60-1000. |
 | Relax Iterations | 150 | Smoothing + self-repulsion rounds (0 shows the raw braid closure) Range 0-600. |
 | Strand Clearance | 0.35 | Self-repulsion distance while relaxing Range 0.05-1. |
 | Mirror | Off | Mirror image of the knot |
-| Output | Bezier Curve | Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
+| Output | Bezier Curve | Curve type to build, or a swept tube mesh. Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
 | Tube Radius | 0.08 | Curve bevel depth / tube radius Range 0-1. |
-| Bevel Resolution | 6 | Range 1-16. |
-| Tube Sides | 12 | Range 3-32. |
-| Scale | 1 | Range 0.01-100. |
+| Bevel Resolution | 6 | Smoothness of the round bevel along the curve Range 1-16. |
+| Tube Sides | 12 | Number of sides around the swept tube Range 3-32. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

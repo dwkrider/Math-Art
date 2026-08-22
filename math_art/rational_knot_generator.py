@@ -554,6 +554,8 @@ if _IN_BLENDER:
 
         preset: EnumProperty(
             name="Preset",
+            description="Ready-made knot; Custom uses Family and "
+                        "Notation",
             items=[('FIG8', "Figure-Eight 4_1 -- rational [2 2]", ""),
                    ('TREFOIL', "Trefoil 3_1 -- rational [3]", ""),
                    ('K5_2', "5_2 -- rational [3 2]", ""),
@@ -567,6 +569,7 @@ if _IN_BLENDER:
             default='FIG8')
         family: EnumProperty(
             name="Family",
+            description="Which knot family to build",
             items=[('RATIONAL', "Rational (2-bridge)",
                     "Conway continued fraction [a1 a2 ...]"),
                    ('PRETZEL', "Pretzel",
@@ -598,6 +601,7 @@ if _IN_BLENDER:
                         "(strand-gap units, before fitting)")
         output: EnumProperty(
             name="Output",
+            description="Woven rope tube mesh, or a curve",
             items=[('MESH', "Mesh Tube", "swept woven rope"),
                    ('BEZIER', "Bezier Curve", "auto-smoothed"),
                    ('POLY', "Poly Curve", "")],
@@ -607,15 +611,20 @@ if _IN_BLENDER:
             step=1, precision=3,
             description="Curve bevel depth / tube radius (m)")
         resolution: IntProperty(name="Bevel Resolution", default=6,
-                                min=1, max=16)
+                                min=1, max=16,
+                                description="Smoothness of the round "
+                                            "bevel along the curve")
         tube_sides: IntProperty(name="Tube Sides", default=12,
-                                min=3, max=32)
+                                min=3, max=32,
+                                description="Number of sides around the "
+                                            "swept tube")
         color_components: BoolProperty(
             name="Color Components", default=True,
             description="One material with a distinct color per "
                         "link component (links only)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             fam, nota = ((self.family, self.notation)

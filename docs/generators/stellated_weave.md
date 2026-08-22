@@ -22,8 +22,8 @@ Twelve folded strips that interlock along the pentagram planes of a small stella
 | Option | Default | Description |
 | --- | --- | --- |
 | Strip Width | 0.12 | Width of the folded strips; all mitres recompute Range 0.02-0.32. |
-| Coloring | Per Strip | Per Strip, None. |
-| Scale | 1 | Range 0.01-100. |
+| Coloring | Per Strip | Give each of the 12 strips its own material, or leave the weave unmaterialed. Per Strip, None. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube, centered at the origin) Range 0.01-100. |
 
 <!-- /options -->
 

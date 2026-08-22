@@ -22,7 +22,7 @@ The Scherk-Collins generator builds the saddle-chain toroid sculptures that Carl
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | Default | Default, Hyperbolic Hexagon, Minimal Trefoil, Monkey-Saddle Trefoil, Heptoroid, Scherk Tower (straight), Demo 1, Demo 2, and 13 more. |
+| Preset | Default | Start from a named sculpture, or Default for the program defaults. Default, Hyperbolic Hexagon, Minimal Trefoil, Monkey-Saddle Trefoil, Heptoroid, Scherk Tower (straight), Demo 1, Demo 2, and 13 more. |
 | Branches | 2 | Order of the saddles (# of branches) Range 1-10. |
 | Storeys | 2 | Number of hole/saddle storeys Range 1-16. |
 | Storey Height | 1.5 | Height of one storey Range 0.1-5. |
@@ -35,10 +35,10 @@ The Scherk-Collins generator builds the saddle-chain toroid sculptures that Carl
 | Warp | 0 | Bend of the tower towards an arch/toroid (degrees; 360 = closed ring) Range 0-1080. |
 | Phase | 0.5 | Shift the holes along an open tower, in storeys (0 = a flange at each end; 0.5 = a half-hole at each end). No effect on closed rings. Range 0-0.999. |
 | Detail | 5 | Grid detail (tessellation density) Range 1-16. |
-| Stretch X | 1 | Range 0.2-5. |
-| Stretch Y | 1 | Range 0.2-5. |
-| Stretch Z | 1 | Range 0.2-5. |
-| Overall Scale | 1 | Range 0.05-10. |
+| Stretch X | 1 | Stretch factor along the X axis Range 0.2-5. |
+| Stretch Y | 1 | Stretch factor along the Y axis Range 0.2-5. |
+| Stretch Z | 1 | Stretch factor along the Z axis Range 0.2-5. |
+| Overall Scale | 1 | Overall size of the sculpture Range 0.05-10. |
 | NURBS Output | Off | Output a compact NURBS surface (mid-surface only; thickness and rim bulge do not apply) |
 | NURBS Detail | 2 | Control-point density used for NURBS output (the NURBS surface stays smooth at low values) Range 1-16. |
 

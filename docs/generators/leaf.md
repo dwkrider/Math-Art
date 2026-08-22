@@ -20,26 +20,26 @@ A leaf as solid, solidifiable geometry — a simple blade or a compound leaf —
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Simple | Simple, Compound. |
-| Shape | Ovate | Cordate (heart-shaped), Elliptic, Lanceolate, Obovate, Ovate, Reniform (kidney), Rose leaflet. |
+| Mode | Simple | Build a single blade, or a compound leaf of leaflets borne on a rachis. Simple, Compound. |
+| Shape | Ovate | Outline the blade grows toward, from the leaf-shape library. Cordate (heart-shaped), Elliptic, Lanceolate, Obovate, Ovate, Reniform (kidney), Rose leaflet. |
 | Growth Steps | 10 | Plastochrons of marginal growth Range 2-14. |
-| Outline Points | 96 | Range 12-1024. |
-| Table 5.2 Row | D=2  R=1.36 | D=0  R=2.00, D=1  R=1.50, D=2  R=1.36, D=4  R=1.23, D=7  R=1.17. |
+| Outline Points | 96 | Number of points sampled around the blade outline Range 12-1024. |
+| Table 5.2 Row | D=2  R=1.36 | Compound leaf: preset apical delay and elongation rate from ABOP Table 5.2. D=0  R=2.00, D=1  R=1.50, D=2  R=1.36, D=4  R=1.23, D=7  R=1.17. |
 | Use Table Row | On | Take the apical delay and elongation rate from Table 5.2 rather than setting them by hand |
 | Apical Delay | 2 | Plastochrons between successive leaflet pairs Range 0-12. |
 | Elongation Rate | 1.36 | Internode elongation per plastochron; higher grades the leaflets more steeply Range 1-3. |
-| Plastochrons | 14 | Range 1-40. |
-| Leaflet Angle | 42 | Range 0-90. |
-| Leaflet Size | 0.3 | Range 0.02-1. |
+| Plastochrons | 14 | Compound leaf: growth steps run; more steps add more leaflet pairs Range 1-40. |
+| Leaflet Angle | 42 | Angle each leaflet makes with the rachis, in degrees Range 0-90. |
+| Leaflet Size | 0.3 | Size of each leaflet relative to the whole leaf Range 0.02-1. |
 | Venation | Off | Grow a vein network into the blade by space colonization (Runions et al., 2005) |
-| Venation Type | Closed (reticulate) | Open (dichotomous), Closed (reticulate). |
-| Auxin Sources | 450 | Range 20-4000. |
-| Vein Step | 0.025 | Range 0.004-0.2. |
+| Venation Type | Closed (reticulate) | Grow the veins as a branching tree (open) or a looped network (closed). Open (dichotomous), Closed (reticulate). |
+| Auxin Sources | 450 | Number of auxin sources scattered in the blade to draw veins toward Range 20-4000. |
+| Vein Step | 0.025 | Distance a vein grows toward its attracting sources each step Range 0.004-0.2. |
 | Kill Radius | 0.05 | A source is consumed once a vein reaches this close. It is the control that sets how fine the network is, because it is what stops veins crowding Range 0.005-0.5. |
-| Influence Radius | 0.35 | Range 0.02-2. |
-| Vein Radius | 0.006 | Range 0.0005-0.1. |
-| Seed | 0 | Range 0-10000. |
-| Scale | 1 | Range 0.01-100. |
+| Influence Radius | 0.35 | How far a source can reach to attract a growing vein tip Range 0.02-2. |
+| Vein Radius | 0.006 | Bevel radius of the vein tubes Range 0.0005-0.1. |
+| Seed | 0 | Random seed for scattering the auxin sources Range 0-10000. |
+| Scale | 1 | Overall size of the leaf Range 0.01-100. |
 
 <!-- /options -->
 

@@ -21,7 +21,7 @@ Strahler is a *style* — it restyles the branching object you already have rath
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Thickness | Thickness, Colour, Prune. |
+| Mode | Thickness | What to do with the computed order: set thickness, write a color attribute, or prune low orders. Thickness, Colour, Prune. |
 | Base Radius | 1 | Radius at the highest order present Range 0-10. |
 | Area Exponent | 0.5 | r ~ (order/max)^p; 0.5 conserves cross-sectional area between orders (da Vinci) Range 0.05-2. |
 | Keep Order >= | 2 | Prune mode: discard branches below this order Range 1-12. |

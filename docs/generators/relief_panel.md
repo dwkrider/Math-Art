@@ -27,105 +27,105 @@ The design idea the generator turns on is that ridges which fan, split and sweep
 | Option | Default | Description |
 | --- | --- | --- |
 | Load Preset | Drapery | Named starting point. Choosing one fills in the controls below, so switching to Custom keeps what you were looking at. Custom, Drapery, Dunes, Pond, Terrain, Bands, Chladni Plate, Chladni (Melted), and 17 more. |
-| Shape | Rect | Rect, Disc, Ellipse, Rounded Rect. |
-| Width | 2 | Range 0.01-100. |
+| Shape | Rect | Outline the relief is carved into. Rect, Disc, Ellipse, Rounded Rect. |
+| Width | 2 | Width of the panel; its height follows from Aspect Range 0.01-100. |
 | Aspect | 1 | Height / width. The vertical sample count is derived from this so cells stay square Range 0.05-20. |
 | Resolution | 256 | Samples across the width; the vertical count follows from Aspect Range 8-1024. |
 | Border | 0 | Raised-cosine margin fading the relief to a flat rim (fraction of the short side) Range 0-0.5. |
 | Tiling | None | Constrain the pattern so the panel abuts copies of itself invisibly. Suppresses Warp, which cannot be made periodic. None, Translation, Mirror, Alternating. |
-| Pattern | Wave Train | Directional Wave, Wave Train, Radial Ripple, Fractal (fBm), Chladni Plate, Drumhead, Rectangular Membrane, Zernike, and 13 more. |
-| Wavelength | 0.5 | Range 0.005-20. |
-| Angle | 0 | Range -6.2832-6.2832. |
+| Pattern | Wave Train | Base pattern whose value becomes the panel height. Directional Wave, Wave Train, Radial Ripple, Fractal (fBm), Chladni Plate, Drumhead, Rectangular Membrane, Zernike, and 13 more. |
+| Wavelength | 0.5 | Distance between successive crests of the wave or ripple Range 0.005-20. |
+| Angle | 0 | Direction the wave travels across the panel Range -6.2832-6.2832. |
 | Steepness | 0 | Sharpen crests and broaden troughs, toward the trochoidal profile of a real wave Range 0-1. |
-| Waves | 3 | Range 1-24. |
-| Spread | 0.4 | Range 0-3.1416. |
-| Sources | 3 | Range 1-32. |
-| Seed | 1 | Range 0-100000. |
+| Waves | 3 | Number of overlapping waves in the train Range 1-24. |
+| Spread | 0.4 | Angular spread of directions the waves fan across Range 0-3.1416. |
+| Sources | 3 | Number of ripple sources whose circular wavefronts interfere Range 1-32. |
+| Seed | 1 | Random seed for the pattern's placement and phases Range 0-100000. |
 | Tile Across | 1 | Copies of the panel to lay out. The run is one mesh with no joint in it, which is what the seamless basis was for, and each copy keeps the size a single panel would have Range 1-16. |
-| Tile Down | 1 | Range 1-16. |
+| Tile Down | 1 | Copies of the panel laid out downward, joined into one mesh Range 1-16. |
 | Prefilter | 1 | Average this many sub-samples per axis. Point sampling shows a pattern only what lands exactly on the grid, so a feature finer than the sample pitch snaps to the nearest sample and staircases. Costs its square in evaluations Range 1-4. |
-| Fractal | Fractional Brownian | Fractional Brownian, Weierstrass-Mandelbrot. |
-| Hurst | 0.7 | Range 0.05-0.99. |
-| Fractal Dimension | 2.3 | Range 2.01-2.95. |
-| Octaves | 8 | Range 1-16. |
+| Fractal | Fractional Brownian | Which fractal construction builds the surface. Fractional Brownian, Weierstrass-Mandelbrot. |
+| Hurst | 0.7 | Hurst exponent of the fractional-Brownian surface; lower is rougher Range 0.05-0.99. |
+| Fractal Dimension | 2.3 | Fractal dimension of the Weierstrass-Mandelbrot surface; higher is rougher Range 2.01-2.95. |
+| Octaves | 8 | Number of frequency octaves summed into the fractal Range 1-16. |
 | Wind Anisotropy | 0 | Concentrate the fractal spectrum around one direction, so crests run transverse to it as a dune field's do. 0 is isotropic Range 0-1. |
-| Wind Direction | 0 | Range -6.2832-6.2832. |
-| Drum | Equilateral Triangle | Equilateral Triangle, Ellipse (Mathieu), L-Shape, Circle, Isospectral A, Isospectral B. |
-| Ellipse Ratio | 0.6 | Range 0.1-1. |
+| Wind Direction | 0 | Direction the anisotropic fractal spectrum is concentrated along Range -6.2832-6.2832. |
+| Drum | Equilateral Triangle | Membrane outline whose vibration mode is solved. Equilateral Triangle, Ellipse (Mathieu), L-Shape, Circle, Isospectral A, Isospectral B. |
+| Ellipse Ratio | 0.6 | Minor-to-major axis ratio of the elliptical membrane Range 0.1-1. |
 | Solve Grid | 48 | Grid the eigenproblem is solved on. The cost is cubic in the sample count, so this is the expensive number, not the panel resolution Range 20-96. |
-| Cells | Cell Walls | Cell Walls, Domes, Second Nearest, Mounds, Flat Cells. |
+| Cells | Cell Walls | Which Worley distance measure the cells are drawn from. Cell Walls, Domes, Second Nearest, Mounds, Flat Cells. |
 | Jitter | 1 | 0 puts the feature points on a regular lattice, giving identical cells Range 0-1. |
-| Wall Profile | 1 | Range 0.2-4. |
+| Wall Profile | 1 | Sharpness of the Worley cell walls Range 0.2-4. |
 | Regime | Maze | Where in the feed/kill plane the chemistry sits. Outside a narrow diagonal band every seed decays and the panel comes out blank. Spots, Solitons, Mitosis, Worms, Maze, Coral, Holes. |
 | Steps | 6000 | Reaction-diffusion is grown, not evaluated; this is how long it runs Range 100-40000. |
 | Blobs Across | 12 | How many pattern features span the panel. Sets the simulation lattice; the panel resolution only decides how finely the finished skin is sampled Range 3-50. |
-| Seeding | Scattered | Scattered, Central (Pearson). |
-| Group | P4M | P1, P2, PM, PG, CM, PMM, PMG, PGG, and 9 more. |
-| Waves | 6 | Range 1-24. |
-| Cells Across | 2 | Range 0.5-12. |
-| Detail | 3 | Range 1-8. |
+| Seeding | Scattered | How the reaction-diffusion pattern is seeded. Scattered, Central (Pearson). |
+| Group | P4M | Plane symmetry group the wallpaper field is invariant under. P1, P2, PM, PG, CM, PMM, PMG, PGG, and 9 more. |
+| Waves | 6 | Number of plane waves summed into the symmetric field Range 1-24. |
+| Cells Across | 2 | How many symmetry cells span the panel Range 0.5-12. |
+| Detail | 3 | Highest spatial frequency mixed into the field Range 1-8. |
 | Wave Directions | 5 | Directions spread over a half-turn, so five give a ten-fold pattern. Five-fold order is impossible for any lattice, which is why it cannot repeat Range 2-17. |
-| Scale | 6 | Range 1-30. |
-| Terrace | 0 | Range 0-6. |
+| Scale | 6 | Scale of the quasicrystal pattern across the panel Range 1-30. |
+| Terrace | 0 | Terracing of the quasicrystal, from smooth to stepped Range 0-6. |
 | Patch | 100 | Physical size of the sea being simulated. With the wind speed this decides how many waves cross it Range 5-1000. |
-| Wind | 8 | Range 1-30. |
+| Wind | 8 | Wind speed driving the ocean spectrum; faster raises bigger waves Range 1-30. |
 | Choppiness | 0 | Measured in cusp limits: 1 puts the steepest crest exactly at the Stokes cusp, above that the sharpest crests break Range 0-3. |
-| Sea Grid | 256 | Range 64-512. |
-| Pitch | 8 | Range 1-60. |
+| Sea Grid | 256 | Resolution of the ocean simulation grid Range 64-512. |
+| Pitch | 8 | Carrier frequency of the Gabor-noise weave Range 1-60. |
 | Bandwidth | 0.3 | Envelope width as a fraction of the carrier. Well under 1, or the band is as wide as the frequency it is centred on Range 0.05-1. |
 | Pierce | Off | Open the panel right through where the field is low, turning a relief into a screen |
-| Open Below | 0.35 | Range 0-1. |
-| Invert | Off | -- |
+| Open Below | 0.35 | Field height below which the panel is opened right through Range 0-1. |
+| Invert | Off | Pierce where the field is high instead of low |
 | Smallest Hole | 8 | Holes smaller than this many samples are filled in; a threshold near the mean otherwise opens pinholes nothing can manufacture Range 1-200. |
-| Function | Weierstrass P | Weierstrass P, Weierstrass P', Weierstrass zeta, Jacobi theta. |
-| Height From | Riemann Sphere | Riemann Sphere, Real Part, Imaginary Part, Modulus. |
-| Lattice Skew | 0 | Range -2-2. |
-| Lattice Ratio | 1 | Range 0.05-4. |
-| Periods | 1 | Range 0.25-8. |
-| Cells | 6 | Range 1-64. |
+| Function | Weierstrass P | Which elliptic function supplies the height. Weierstrass P, Weierstrass P', Weierstrass zeta, Jacobi theta. |
+| Height From | Riemann Sphere | Which part of the complex value becomes the height. Riemann Sphere, Real Part, Imaginary Part, Modulus. |
+| Lattice Skew | 0 | Real part of the period ratio; skews the lattice Range -2-2. |
+| Lattice Ratio | 1 | Imaginary part of the period ratio; sets the lattice aspect Range 0.05-4. |
+| Periods | 1 | How many lattice periods span the panel Range 0.25-8. |
+| Cells | 6 | Number of tile cells across the panel Range 1-64. |
 | Lane Width | 0.25 | Width of the Truchet arc lane, as a fraction of the cell Range 0.02-1. |
 | Straight Tiles | 0 | Fraction of cells drawn with crossing straight lanes instead of arcs. A second tile on the same edge convention, so the lanes still join smoothly Range 0-1. |
-| Arcs | 3 | Range 1-12. |
+| Arcs | 3 | Number of concentric arcs in each Seigaiha scale Range 1-12. |
 | Crown | 0.55 | Fraction of each circle left visible by the row in front Range 0.1-1. |
 | Rim | 0.08 | Width of the edge where a scale laps over the one behind, as a fraction of its radius. Zero is a vertical wall, which no grid can place cleanly Range 0-0.5. |
 | Exact Plate Solve | On | Solve the real free-plate eigenproblem (Rayleigh-Ritz). Off uses Rayleigh's cosine approximation with a freely mixable blend |
 | Mode | 6 | Which plate mode, counting from the first non-rigid-body figure Range 1-40. |
 | Poisson Ratio | 0.225 | Material constant. Ritz used 0.225 to match Chladni's glass plates; metals are near 0.33 Range 0-0.49. |
 | Basis Size | 10 | Ritz basis order; the eigenproblem is (n+1)^2 square Range 4-16. |
-| Mode m | 2 | Range 0-24. |
-| Mode n | 3 | Range 0-24. |
+| Mode m | 2 | First index of the vibration mode Range 0-24. |
+| Mode n | 3 | Second index of the vibration mode Range 0-24. |
 | Blend | 1 | Mix of the swapped cosine pair. For a real plate this is not free: equal-parity pairs occur only at +1 and -1, at two different frequencies Range -1-1. |
-| Zernike n | 4 | Range 0-20. |
-| Zernike m | 2 | Range -20-20. |
-| Beam Waist | 0.5 | Range 0.05-2. |
+| Zernike n | 4 | Radial order of the Zernike aberration mode Range 0-20. |
+| Zernike m | 2 | Azimuthal frequency of the Zernike aberration mode Range -20-20. |
+| Beam Waist | 0.5 | Width of the Gaussian beam envelope Range 0.05-2. |
 | Object | empty | Scene object to imprint (defaults to the active object) |
-| Mode | Splat | Splat, Merge, Drape, Press, Engrave. |
-| Points | Surface samples | Surface samples, Vertices. |
-| Sample Count | 2000 | Range 8-200000. |
-| Kernel | Gaussian | Blinn blobby, Cauchy, Cone, Cosine bump, Epanechnikov, Gaussian, Triweight, Wendland, and 1 more. |
+| Mode | Splat | How the source object is turned into a height field. Splat, Merge, Drape, Press, Engrave. |
+| Points | Surface samples | Whether to sample the object's surface or use its vertices. Surface samples, Vertices. |
+| Sample Count | 2000 | Number of surface samples drawn from the object Range 8-200000. |
+| Kernel | Gaussian | Falloff kernel raised at each point. Blinn blobby, Cauchy, Cone, Cosine bump, Epanechnikov, Gaussian, Triweight, Wendland, and 1 more. |
 | Radius | 0 | Kernel radius; 0 uses the density-estimation rule sigma = spread * N^(-1/6) Range 0-10. |
 | Merge | 0 | Round the seam where merged bumps meet (Merge mode) Range 0-1. |
-| Falloff Power | 2 | Range 0.5-8. |
-| Groove Width | 0.08 | Range 0.002-1. |
-| Compression | Histogram | Histogram, Gradient domain, None. |
-| Attenuation | 0.1 | Range 0.001-2. |
-| Compression | 0.85 | Range 0.1-1. |
-| Point Process | Blue noise | Blue noise, Halton, Uniform random. |
-| Point Count | 120 | Range 2-20000. |
-| Orientation | Constant | Constant, Radial, Tangent, Spiral, Curl (flow), Gradient. |
-| Field Scale | 0.5 | Range 0.05-8. |
-| Swirl | 1 | Range -8-8. |
+| Falloff Power | 2 | Falloff exponent of the interpolation weighting (Drape mode) Range 0.5-8. |
+| Groove Width | 0.08 | Width of the groove cut along the object's outline (Engrave mode) Range 0.002-1. |
+| Compression | Histogram | How the ray-cast depth is compressed to read as relief. Histogram, Gradient domain, None. |
+| Attenuation | 0.1 | Gradient attenuation threshold in gradient-domain compression Range 0.001-2. |
+| Compression | 0.85 | Gradient compression exponent in gradient-domain compression Range 0.1-1. |
+| Point Process | Blue noise | How the scattered points are distributed. Blue noise, Halton, Uniform random. |
+| Point Count | 120 | Number of points scattered across the panel Range 2-20000. |
+| Orientation | Constant | Direction field that steers the pattern across the panel. Constant, Radial, Tangent, Spiral, Curl (flow), Gradient. |
+| Field Scale | 0.5 | Scale of the orientation field's variation Range 0.05-8. |
+| Swirl | 1 | How tightly the spiral orientation twists Range -8-8. |
 | Warp | 0 | Displace the coordinates the pattern is evaluated at -- what turns a regular field into flowing cloth Range 0-2. |
-| Warp Steps | 2 | Range 1-4. |
-| Profile | None | None, Ridges, Valleys, Gamma, S-Curve, Terrace, Clamp. |
-| Amount | 1 | Range 0.05-4. |
-| Levels | 6 | Range 2-64. |
-| Relief Depth | 0.25 | Range 0-10. |
-| Form | Slab | Slab, Sheet. |
-| Base | 0.1 | Range 0-10. |
-| Fit | Footprint | Footprint, 2 m Cube, None. |
-| Scale | 1 | Range 0.01-100. |
-| Smooth Shading | On | -- |
+| Warp Steps | 2 | Number of times the domain warp is applied Range 1-4. |
+| Profile | None | Transfer curve reshaping the height profile. None, Ridges, Valleys, Gamma, S-Curve, Terrace, Clamp. |
+| Amount | 1 | Strength of the profile transfer Range 0.05-4. |
+| Levels | 6 | Number of contour steps the terrace transfer quantises to Range 2-64. |
+| Relief Depth | 0.25 | Peak-to-trough height of the carved relief Range 0-10. |
+| Form | Slab | Whether the panel is a solid slab or an open sheet. Slab, Sheet. |
+| Base | 0.1 | Thickness of the flat backing behind the relief (Slab form) Range 0-10. |
+| Fit | Footprint | How the finished panel is scaled to fit. Footprint, 2 m Cube, None. |
+| Scale | 1 | Uniform scale applied to the finished panel Range 0.01-100. |
+| Smooth Shading | On | Shade the surface smoothly rather than faceted |
 
 <!-- /options -->
 

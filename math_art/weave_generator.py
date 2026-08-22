@@ -170,12 +170,16 @@ if _IN_BLENDER:
             items=[('CUBE', "Cube", ""), ('ICOSA', "Icosahedron", ""),
                    ('OCTA', "Octahedron", ""), ('TETRA', "Tetrahedron", ""),
                    ('DODECA', "Dodecahedron", "")],
+            description="Seed polyhedron whose flags the weave is walked over",
             default='CUBE')
         freq: IntProperty(
             name="Geodesic Frequency", default=1, min=1, max=6,
             description="Subdivision of triangular seeds")
         pattern_preset: EnumProperty(name="Pattern Preset", items=PATTERNS,
                                      default='vfe',
+                                     description="Ready-made weave pattern; "
+                                                 "Custom keeps the pattern "
+                                                 "field below",
                                      update=_pattern_chosen)
         pattern: StringProperty(
             name="Pattern", default="vfe",
@@ -187,15 +191,24 @@ if _IN_BLENDER:
                    ('TUBE', "Tube (Rope)",
                     "Round tubes -- the weave as rope with rounded "
                     "clasps")],
+            description="Sweep each strand as a flat ribbon or a round "
+                        "rope tube",
             default='RIBBON')
         width: FloatProperty(name="Strand Width", default=0.10,
-                             min=0.005, max=0.5)
+                             min=0.005, max=0.5,
+                             description="Width of the flat ribbon strands")
         thickness: FloatProperty(name="Strand Thickness", default=0.03,
-                                 min=0.002, max=0.2)
+                                 min=0.002, max=0.2,
+                                 description="Thickness of the flat ribbon "
+                                             "strands")
         tube_radius: FloatProperty(name="Tube Radius", default=0.03,
-                                   min=0.005, max=0.2)
+                                   min=0.005, max=0.2,
+                                   description="Radius of the round rope "
+                                               "tubes")
         tube_sides: IntProperty(name="Tube Sides", default=10,
-                                min=3, max=32)
+                                min=3, max=32,
+                                description="Number of sides around each "
+                                            "rope tube")
         relax_iters: IntProperty(
             name="Relax Iterations", default=0, min=0, max=500,
             description="Relax the strand centerlines together so the "
@@ -210,9 +223,13 @@ if _IN_BLENDER:
             description="Alternating radial offset at pattern points "
                         "(set 0 when the pattern's 'up' values weave)")
         subdiv: IntProperty(name="Path Subdivision", default=6,
-                            min=1, max=24)
+                            min=1, max=24,
+                            description="How finely each strand path is "
+                                        "subdivided")
         smooth_rounds: IntProperty(name="Smoothing", default=2,
-                                   min=0, max=10)
+                                   min=0, max=10,
+                                   description="Number of smoothing passes "
+                                               "over the strand paths")
         coloring: EnumProperty(
             name="Coloring",
             items=[('STRAND', "Per Strand",
@@ -220,9 +237,11 @@ if _IN_BLENDER:
                     "Material Preview or Solid shading set to "
                     "Material color)"),
                    ('NONE', "None", "No materials")],
+            description="Whether to give each strand its own material",
             default='STRAND')
         scale: FloatProperty(name="Radius", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall radius of the woven model")
 
         _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
                     (0.95, 0.77, 0.29), (0.30, 0.69, 0.42),

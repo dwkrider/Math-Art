@@ -25,11 +25,11 @@ These matter because the 75 uniform polyhedra are only the *finite* part of the 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Form | Prism | Prism, Antiprism, Dipyramid, Trapezohedron. |
-| Sides (p) | 5 | Range 3-32. |
+| Form | Prism | Which star form to build: prism, antiprism, dipyramid or trapezohedron. Prism, Antiprism, Dipyramid, Trapezohedron. |
+| Sides (p) | 5 | Number of points p of the star polygon base Range 3-32. |
 | Step (q) | 2 | Star density; {p/q}, coprime with p Range 1-15. |
-| Coloring | By Face Size | By Face Size, None. |
-| Scale | 1 | Range 0.01-100. |
+| Coloring | By Face Size | Whether to colour faces by their number of sides. By Face Size, None. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 
 <!-- /options -->
 

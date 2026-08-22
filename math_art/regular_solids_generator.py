@@ -1931,8 +1931,11 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         family: EnumProperty(name="Family", items=FAMILIES,
-                             default='PLATONIC', update=_family_update)
-        solid: EnumProperty(name="Solid", items=_solid_items)
+                             default='PLATONIC', update=_family_update,
+                             description="Family of solids to choose from")
+        solid: EnumProperty(name="Solid", items=_solid_items,
+                            description="Which solid within the chosen "
+                                        "family to build")
         n: IntProperty(name="Sides", default=6, min=3, max=32,
                        description="Prism / antiprism base sides")
         canonicalize: BoolProperty(
@@ -1946,7 +1949,9 @@ if _IN_BLENDER:
                         "trapezohedra); the exact families are left "
                         "untouched")
         canon_iters: IntProperty(name="Canonical Iterations", default=250,
-                                 min=5, max=3000)
+                                 min=5, max=3000,
+                                 description="Number of Hart "
+                                             "canonicalization passes")
         handedness: EnumProperty(
             name="Handedness",
             items=[('RIGHT', "Right-Handed", "As constructed"),
@@ -1977,7 +1982,8 @@ if _IN_BLENDER:
                    ('FACETS', "Face Segments",
                     "Split the shell into one thick plate per face, "
                     "padded apart and optionally exploded outward")],
-            default='SOLID')
+            default='SOLID',
+            description="How the solid is rendered as geometry")
         facet_depth: FloatProperty(
             name="Depth", default=0.15, min=0.01, max=2.0,
             description="How far each face is extruded inward (Face "
@@ -1991,9 +1997,13 @@ if _IN_BLENDER:
             description="Output each face segment as its own mesh "
                         "object (Face Segments style)")
         border: FloatProperty(name="Border", default=0.06, min=0.005,
-                              max=1.0)
+                              max=1.0,
+                              description="Frame width left around each "
+                                          "open panel in the Leonardo style")
         thickness: FloatProperty(name="Thickness", default=0.05,
-                                 min=0.001, max=1.0)
+                                 min=0.001, max=1.0,
+                                 description="Shell / panel / wire "
+                                             "thickness")
         strut_radius: FloatProperty(
             name="Strut Radius", default=0.02, min=0.001, max=0.5,
             description="Ball-and-stick edge cylinder radius")
@@ -2008,7 +2018,8 @@ if _IN_BLENDER:
                     "Conway generator; view with Material Preview "
                     "or Solid shading set to Material color)"),
                    ('NONE', "None", "")],
-            default='SIDES')
+            default='SIDES',
+            description="How the faces are coloured")
         pieces: IntProperty(
             name="Congruent Pieces", default=1, min=1, max=60,
             description="Split the shell into this many congruent, "
@@ -2022,7 +2033,9 @@ if _IN_BLENDER:
                         "its centroid direction so the split is "
                         "visible")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size; fits the result into "
+                                         "a 2 m cube times this factor")
 
         _PALETTE = {3: (0.90, 0.36, 0.23), 4: (0.27, 0.52, 0.79),
                     5: (0.30, 0.69, 0.42), 6: (0.95, 0.77, 0.29),

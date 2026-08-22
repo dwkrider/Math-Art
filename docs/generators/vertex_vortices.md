@@ -24,15 +24,15 @@ Every original edge yields exactly one saddle patch, and every spoke borders exa
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Seed | Dodecahedron | Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Cuboctahedron, Truncated Octahedron, Snub Cube, and 4 more. |
+| Seed | Dodecahedron | Which polyhedron the vortices are built on. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Cuboctahedron, Truncated Octahedron, Snub Cube, and 4 more. |
 | Bend | 0.2 | Sideways bend of each spoke, as a fraction of its length (about 0.11 in the original sculpture) Range 0-0.6. |
 | Spoke Samples | 12 | Subdivisions of each bent spoke Range 3-48. |
 | Solver Iterations | 30 | Plateau area-minimization iterations per patch Range 0-200. |
 | Reverse Swirl | Off | Mirror the vortex chirality |
-| Smooth Shading | Off | -- |
+| Smooth Shading | Off | Shade the surface smooth |
 | Sharp Spokes | On | Mark the bent spokes sharp (and creased). Each spoke borders exactly two saddle patches and is a genuine fold between them, so with smooth shading on it should stay crisp rather than round over |
 | Thickness | 0 | Solidify modifier thickness (0 = raw surface) Range 0-1. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 

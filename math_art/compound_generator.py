@@ -212,7 +212,10 @@ if _IN_BLENDER:
             description="Repeat count r for Skilling's four infinite "
                         "prism and antiprism families, which are "
                         "parametric in both the side count and r")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall size (1.0 fits a 2 m cube, centered "
+                        "at the origin)")
 
         def execute(self, context):
             # A callback enum takes no `default=`, so on first use the

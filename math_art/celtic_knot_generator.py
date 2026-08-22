@@ -677,6 +677,7 @@ if _IN_BLENDER:
             description="Pre-process the framework before weaving")
         weave_type: EnumProperty(
             name="Weave",
+            description="Crossing pattern the strands follow",
             items=[("CELTIC", "Celtic",
                     "Plain weaving: alternating crossings"),
                    ("TWILL", "Twill",
@@ -688,6 +689,7 @@ if _IN_BLENDER:
                         "only); the rest pass straight through")
         output: EnumProperty(
             name="Output",
+            description="Geometry produced for the strands",
             items=[("BEZIER", "Bezier Strands", "Bare curves"),
                    ("PIPE", "Pipes",
                     "Curves beveled into round tubes"),
@@ -701,6 +703,7 @@ if _IN_BLENDER:
             description="Drop of a strand crossing under")
         handle_type: EnumProperty(
             name="Handles",
+            description="How the strand curve control points are set",
             items=[("AUTO", "Auto", "Automatic control points"),
                    ("ALIGNED", "Aligned",
                     "Fixed crossing angle control points")],
@@ -718,7 +721,8 @@ if _IN_BLENDER:
             name="Pipe Radius", default=0.05, min=0.001, max=1.0,
             description="Bevel radius of the pipes")
         resolution: IntProperty(
-            name="Bevel Resolution", default=4, min=1, max=12)
+            name="Bevel Resolution", default=4, min=1, max=12,
+            description="Roundness of the pipe cross-section")
         length: FloatProperty(
             name="Ribbon Length", default=0.9, min=0.05, max=1.0,
             description="Fraction along faces the ribbon runs")
@@ -727,6 +731,7 @@ if _IN_BLENDER:
             description="Ribbon width as a fraction across faces")
         coloring: EnumProperty(
             name="Coloring",
+            description="How strands are assigned materials",
             items=[("STRAND", "Per Strand",
                     "A distinct material per strand"),
                    ("BRAID", "Per Braid",

@@ -345,8 +345,12 @@ if _IN_BLENDER:
         bl_label = "Toroidal Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
-        solid: EnumProperty(name="Solid", items=TOROID_ITEMS)
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        solid: EnumProperty(name="Solid", items=TOROID_ITEMS,
+                            description="Which toroidal (genus-1) "
+                                        "polyhedron to build")
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube)")
 
         def execute(self, context):
             V, F = build_toroid(self.solid)
@@ -390,6 +394,8 @@ if _IN_BLENDER:
 
         mode: EnumProperty(
             name="Pattern",
+            description="Whether to build a polygon-ring toroid or wrap "
+                        "a uniform tiling onto the torus",
             items=[('RING', "Polygon Ring",
                     "A ring of congruent polygon cross-sections"),
                    ('TILING', "Uniform Tiling",
@@ -398,13 +404,17 @@ if _IN_BLENDER:
         segments: IntProperty(name="Segments", default=12, min=3, max=64,
                               description="Sections around the major circle")
         sides: IntProperty(name="Cross-section Sides", default=4, min=3,
-                           max=32)
+                           max=32,
+                           description="Number of sides of each polygon "
+                                       "cross-section")
         antiprism: BoolProperty(
             name="Antiprism Ring", default=False,
             description="Half-step twist between sections (triangular "
                         "faces) instead of a prism ring (quads)")
         tiling: EnumProperty(name="Tiling", items=TORUS_TILING_ITEMS,
-                             default='HEX')
+                             default='HEX',
+                             description="Which uniform plane tiling to "
+                                         "wrap onto the torus")
         cells_u: IntProperty(
             name="Cells Around", default=12, min=3, max=64,
             description="Tiling periods around the major circle")
@@ -412,11 +422,14 @@ if _IN_BLENDER:
             name="Cells Through", default=6, min=2, max=48,
             description="Tiling periods around the minor circle (tube)")
         major: FloatProperty(name="Major Radius", default=1.0, min=0.1,
-                             max=10.0)
+                             max=10.0,
+                             description="Radius of the torus ring")
         minor: FloatProperty(name="Minor Radius", default=0.4, min=0.02,
-                             max=5.0)
+                             max=5.0,
+                             description="Radius of the torus tube")
         style: EnumProperty(
             name="Style",
+            description="How the torus surface is rendered",
             items=[('SOLID', "Solid", "Plain closed torus"),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo Style "
@@ -456,7 +469,9 @@ if _IN_BLENDER:
         facet_separate: BoolProperty(
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube)")
 
         def execute(self, context):
             if self.mode == 'TILING':

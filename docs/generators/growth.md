@@ -32,33 +32,33 @@ Form decided by the **environment** rather than by a grammar. The [L-system](lsy
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Space Colonization | Space Colonization, Self-Organizing, Diffusion-Limited, Pythagoras Tree. |
-| Envelope | Crown | Sphere, Crown, Cone, Box, Cylinder, Mushroom. |
-| Attractors | 700 | Range 20-6000. |
+| Mode | Space Colonization | Which growth algorithm builds the structure. Space Colonization, Self-Organizing, Diffusion-Limited, Pythagoras Tree. |
+| Envelope | Crown | Shape the attractor cloud fills; its outline alone sets the tree's habit. Sphere, Crown, Cone, Box, Cylinder, Mushroom. |
+| Attractors | 700 | Number of attractor points the branches grow toward Range 20-6000. |
 | Trunk | 0.5 | How far the crown sits above the root. Without a gap the tree forks from the ground and the envelope's effect is washed out Range 0-2. |
 | Influence | 0.75 | How far an attractor can reach. It has to exceed the trunk gap, or nothing in the crown can see the root and the tree never starts Range 0.05-3. |
-| Kill Radius | 0.14 | Range 0.01-1. |
+| Kill Radius | 0.14 | How close a branch tip must reach an attractor to consume it Range 0.01-1. |
 | Gravity | 0 | Bias along the axis. Negative gives the mycelial variant -- the same algorithm growing down and out Range -2-2. |
-| Steps | 10 | Range 1-18. |
+| Steps | 10 | Number of growth cycles the tree runs through Range 1-18. |
 | Lambda | 0.5 | Borchert-Honda resource split. Above 0.5 the main axis wins and the tree is excurrent (a conifer); below, the laterals win and it is decurrent (a spreading crown) Range 0.05-0.95. |
-| Branch Angle | 42 | Range 5-89. |
-| Walkers | 700 | Range 20-6000. |
-| Dimension | 3-D | 2-D, 3-D. |
-| Seed | Point | Point, Line, Ring, Disk, Sphere. |
+| Branch Angle | 42 | Angle a new lateral branch makes with its parent, in degrees Range 5-89. |
+| Walkers | 700 | Number of random walkers released to aggregate onto the cluster Range 20-6000. |
+| Dimension | 3-D | Whether walkers aggregate in a plane or in space. 2-D, 3-D. |
+| Seed | Point | Shape of the initial nucleus the cluster grows from. Point, Line, Ring, Disk, Sphere. |
 | Stickiness | 1 | Below 1 a walker may refuse and keep going, so it packs deeper: wispy dendrite at 1, compact moss well below Range 0.02-1. |
-| Lattice | 44 | Range 12-140. |
-| Walk | Lattice | Lattice, Off-Lattice. |
+| Lattice | 44 | Size of the region the walkers roam; larger gives more room and a looser cluster Range 12-140. |
+| Walk | Lattice | Whether walkers step on a cubic lattice or move in continuous directions. Lattice, Off-Lattice. |
 | Particle Radius | 0.5 | Off-lattice only. Every bond comes out at one particle diameter Range 0.1-3. |
-| Depth | 9 | Range 1-14. |
-| Apex Angle | 45 | Range 5-85. |
+| Depth | 9 | Number of generations of squares to grow Range 1-14. |
+| Apex Angle | 45 | Apex angle of the right triangle sitting on each square, in degrees Range 5-85. |
 | Roll | 0 | Rotate each generation out of its parent's plane, turning the relief into a spatial figure Range 0-90. |
-| Angle Jitter | 0 | Range 0-30. |
-| Seed | 0 | Range 0-10000. |
-| Branch Radius | 0.02 | Range 0.0005-0.5. |
-| Bevel Resolution | 2 | Range 0-16. |
+| Angle Jitter | 0 | Random variation added to the apex angle each generation, in degrees Range 0-30. |
+| Seed | 0 | Random seed for the stochastic steps Range 0-10000. |
+| Branch Radius | 0.02 | Bevel radius of the thickest branch Range 0.0005-0.5. |
+| Bevel Resolution | 2 | Subdivisions around the round branch cross-section Range 0-16. |
 | Pipe Exponent | 2.5 | r^n = r1^n + r2^n. 2 conserves cross-sectional area; measured trees run nearer 2.5 Range 1.5-4. |
 | Growth Time | 1 | Freeze a developmental stage. Every element is born with zero size AND zero rate, so sweeping this is continuous -- keyframe it Range 0-1. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Uniform scale of the finished structure Range 0.01-100. |
 
 <!-- /options -->
 

@@ -24,7 +24,7 @@ Curvature Color is a *style* — it recolours the object you already have rather
 | --- | --- | --- |
 | Smoothing | 2 | Laplacian smoothing passes applied to the curvature field (uniform weights) Range 0-50. |
 | Normalize | Percentile | How to pick the curvature value mapped to full red/blue. Percentile, Manual. |
-| Percentile | 90 | Percentile of \Vert curvature\Vert clamped to full color (auto normalization) Range 50-100. |
+| Percentile | 90 | Percentile of \|curvature\| clamped to full color (auto normalization) Range 50-100. |
 | Clamp | 1 | Curvature value mapped to full color (manual normalization) |
 | Invert | Off | Swap the roles of the two ramp ends |
 | Positive | 0.784, 0.188, 0.188 | Ramp end for positive curvature Range 0-1. |

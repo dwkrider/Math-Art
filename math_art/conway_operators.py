@@ -183,7 +183,9 @@ if _IN_BLENDER:
                 self.notation = self.example
 
         example: EnumProperty(name="Example", items=EXAMPLES,
-                              default='tI', update=_example_chosen)
+                              default='tI', update=_example_chosen,
+                              description="Ready-made notation string; "
+                                          "sets Notation when chosen")
         notation: StringProperty(
             name="Notation", default="tI",
             description="Operators then seed, applied right to left")
@@ -198,11 +200,17 @@ if _IN_BLENDER:
                     "not) -- a warning is shown if it cannot converge"),
                    ('SPHERE', "Spherized", "Project vertices to a sphere"),
                    ('RAW', "Raw", "Whatever the operators produce")],
-            default='CANON')
+            default='CANON',
+            description="Geometry post-processing applied after the "
+                        "operator string")
         iterations: IntProperty(name="Canonical Iterations", default=200,
-                                min=5, max=2000)
+                                min=5, max=2000,
+                                description="Number of Hart "
+                                            "canonicalization passes")
         kis_height: FloatProperty(name="Kis Height", default=0.25,
-                                  min=-1.0, max=2.0)
+                                  min=-1.0, max=2.0,
+                                  description="How far the kis operator "
+                                              "raises each face apex")
         coloring: EnumProperty(
             name="Coloring",
             items=[('SIDES', "Colored (by face sides)",
@@ -210,7 +218,8 @@ if _IN_BLENDER:
                     "display (view with Material Preview or Solid "
                     "shading set to Material color)"),
                    ('NONE', "None", "No materials")],
-            default='SIDES')
+            default='SIDES',
+            description="How faces are assigned materials")
         uv_map: BoolProperty(
             name="Spherical UV Map", default=True,
             description="Smooth equirectangular UVs projected from the "
@@ -232,7 +241,8 @@ if _IN_BLENDER:
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
                     "segment per face")],
-            default='SOLID')
+            default='SOLID',
+            description="How the polyhedron is built and displayed")
         border: FloatProperty(
             name="Border", default=0.06, min=0.005, max=1.0,
             description="Leonardo face frame width, the same on every "
@@ -260,7 +270,9 @@ if _IN_BLENDER:
         facet_separate: BoolProperty(
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01,
+                             max=100.0,
+                             description="Overall size of the result")
 
         # Hart-style palette per face size; golden-angle HSV fallback
         _PALETTE = {3: (0.90, 0.36, 0.23), 4: (0.27, 0.52, 0.79),

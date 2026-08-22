@@ -24,16 +24,16 @@ Every edge is claimed by exactly one of its two faces and bows toward that face'
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Seed | Cube | Cube, Rhombic Dodecahedron, Truncated Octahedron, Hexagonal Prism, Active Object. |
+| Seed | Cube | Which polyhedron to squeeze. Cube, Rhombic Dodecahedron, Truncated Octahedron, Hexagonal Prism, Active Object. |
 | Bend | 0.45 | Inward bend of each edge, as a fraction of the distance from the edge midpoint to its face centre Range 0-0.95. |
 | Edge Samples | 12 | Subdivisions of each bent edge Range 3-48. |
 | Rings | 10 | Concentric rings toward each face centre Range 2-48. |
 | Solver Iterations | 30 | Plateau area-minimization iterations per face Range 0-200. |
 | Alternate Pattern | Off | Flip which edge pair each face claims |
-| Smooth Shading | Off | -- |
+| Smooth Shading | Off | Shade the surface smooth |
 | Sharp Bent Edges | On | Mark the bent frames sharp (and creased). They are where two face membranes meet, so with smooth shading on they should stay crisp rather than round over -- the squeeze is the shape |
 | Thickness | 0 | Solidify modifier thickness (0 = raw surface) Range 0-1. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 

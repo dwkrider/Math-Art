@@ -22,16 +22,16 @@ A perforated spherical shell that, lit from its north pole, casts a shadow repro
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Pattern | Square Grid | Square Grid, Polar Grid, {p,q} Tiling, Beach Ball, Flower Lattice. |
+| Pattern | Square Grid | Planar pattern the shell's shadow reproduces. Square Grid, Polar Grid, {p,q} Tiling, Beach Ball, Flower Lattice. |
 | Bowl | Off | Open bowl instead of a full sphere: the shell stops just above the pattern with a solid rim band and an open top |
 | Petals | 8 | Petals per flower (Flower Lattice) Range 3-16. |
-| Sphere Radius | 1 | Range 0.05-100. |
+| Sphere Radius | 1 | Radius of the sphere shell Range 0.05-100. |
 | Shell Thickness | 0.05 | Radial wall thickness Range 0.001-1. |
 | Strip Width | 0.35 | Material strip width as a fraction of the pattern cell (grid spacing, ring gap, tile edge, lune slot) Range 0.05-0.95. |
 | Pattern Extent | 3 | Radius of the plane pattern disc in sphere radii; the shell is solid above the matching latitude (the cap holding the projection point) Range 1-10. |
 | Grid Spacing | 0.6 | Grid line spacing in sphere radii Range 0.1-5. |
-| Rings | 4 | Range 1-24. |
-| Rays | 8 | Range 1-64. |
+| Rings | 4 | Number of concentric rings in the shadow (Polar Grid) Range 1-24. |
+| Rays | 8 | Number of radial rays in the shadow (Polar Grid) Range 1-64. |
 | p | 4 | Tile polygon sides (2 = hosohedron) Range 2-5. |
 | q | 3 | Tiles per vertex (needs 1/p + 1/q > 1/2; clamped if not) Range 3-8. |
 | Gores | 8 | Number of solid lunes Range 2-64. |

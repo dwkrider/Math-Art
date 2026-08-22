@@ -208,7 +208,10 @@ if _IN_BLENDER:
                               "material to read"),
                    ('PRUNE', "Prune", "Delete everything below a minimum "
                              "order -- the printable simplification")],
-            default='RADIUS')
+            default='RADIUS',
+            description="What to do with the computed order: set "
+                        "thickness, write a color attribute, or prune "
+                        "low orders")
         base_radius: FloatProperty(
             name="Base Radius", default=1.0, min=0.0, max=10.0,
             description="Radius at the highest order present")

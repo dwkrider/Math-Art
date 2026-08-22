@@ -25,37 +25,37 @@ Tony Wills invented them and John Sharp brought them to the mathematical-art com
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Seam (two sheets) | Seam (two sheets), Anti (holes joined), Truncated (sliced polyhedron), Folded Vesica Piscis. |
+| Mode | Seam (two sheets) | Construction to use: two-sheet seam, anti-D-form, truncated polyhedron, or folded vesica. Seam (two sheets), Anti (holes joined), Truncated (sliced polyhedron), Folded Vesica Piscis. |
 | Disc Offset u | 0.5 | Half the distance between the two disc centres. u = 0.5 is the true Vesica Piscis, where each circle passes through the other's centre Range 0.06-0.94. |
 | Apex Height | -1 | Height of the cone apexes. Leave at -1 for the height whose unrolled creases are exactly circular; the fold only exists up to h = 1 - u^2 Range -1-1. |
-| Piece A | Ellipse | Ellipse, Superellipse, Egg / Oval, Rounded Polygon, Cassinian Oval. |
-| Piece B | Egg / Oval | Ellipse, Superellipse, Egg / Oval, Rounded Polygon, Cassinian Oval. |
+| Piece A | Ellipse | Outline shape of the first sheet. Ellipse, Superellipse, Egg / Oval, Rounded Polygon, Cassinian Oval. |
+| Piece B | Egg / Oval | Outline shape of the second sheet. Ellipse, Superellipse, Egg / Oval, Rounded Polygon, Cassinian Oval. |
 | A Aspect | 0.6 | Width-to-length ratio of the first outline Range 0.1-1. |
 | B Aspect | 0.8 | Width-to-length ratio of the second outline Range 0.1-1. |
 | Superellipse n | 3 | Lame exponent: 2 is an ellipse, higher is squarer Range 1.05-8. |
 | Egg Bias | 0.35 | How far the widest point moves off the short axis Range 0-0.8. |
-| A Sides | 3 | Range 3-12. |
-| B Sides | 5 | Range 3-12. |
+| A Sides | 3 | Number of sides when the first outline is a rounded polygon Range 3-12. |
+| B Sides | 5 | Number of sides when the second outline is a rounded polygon Range 3-12. |
 | Corner Radius | 0.35 | Rounding of the polygon corners Range 0.02-0.95. |
 | Cassini b/a | 1.6 | Below sqrt(2) = 1.414 the oval is waisted, so it is no longer convex and the D-form theorems no longer apply Range 1.02-3. |
-| Seed Polyhedron | Cube | Cube, Tetrahedron, Octahedron, Dodecahedron, Icosahedron. |
-| Cut Edges | Band (two caps) | Band (two caps), All edges, Sharpest first. |
+| Seed Polyhedron | Cube | Truncated mode: convex polyhedron whose edges are rounded into developable bands. Cube, Tetrahedron, Octahedron, Dodecahedron, Icosahedron. |
+| Cut Edges | Band (two caps) | Truncated mode: which edges of the seed polyhedron get cut. Band (two caps), All edges, Sharpest first. |
 | Truncation Rounds | 4 | How many times the surviving sharp edges are cut again. The sequence smooths like Chaikin corner cutting, so a handful already reads as a developable band Range 0-12. |
 | Cut Depth | 0.28 | How deep each cut goes, as a fraction of the room available before it would reach the next vertex Range 0.02-0.9. |
 | Hole A | Ellipse | Outline of the first piece's hole. In ANTI the HOLES are glued, so these two are the pair whose perimeters get matched. Ellipse, Superellipse, Egg / Oval, Rounded Polygon, Cassinian Oval. |
-| Hole B | Ellipse | Ellipse, Superellipse, Egg / Oval, Rounded Polygon, Cassinian Oval. |
-| Hole A Aspect | 0.6 | Range 0.1-1. |
-| Hole B Aspect | 1 | Range 0.1-1. |
+| Hole B | Ellipse | Anti mode: outline of the second piece's hole (the holes are the glued pair). Ellipse, Superellipse, Egg / Oval, Rounded Polygon, Cassinian Oval. |
+| Hole A Aspect | 0.6 | Width-to-length ratio of the first piece's hole Range 0.1-1. |
+| Hole B Aspect | 1 | Width-to-length ratio of the second piece's hole Range 0.1-1. |
 | Hole Size | 0.4 | Hole size relative to the rim. Clamped so the hole always fits inside its own piece Range 0.1-0.8. |
 | Seam Segments | 72 | Vertices shared by the two pieces along the seam Range 16-240. |
 | Join Offset | 0.25 | Where the two outlines first meet. This is the shape control: it cannot change the total curvature (always 4*pi) but it slides it around the seam, often changing the form completely Range 0-1. |
 | Flip Second Piece | Off | Glue the second outline the other way round, giving a more twisted form from the same pair |
 | Solver Quality | 900 | Solver iteration budget. Raise it if the form looks creased or the report shows high strain. Above 72 segments the solve is done coarse-first and resampled up, so raising the segment count costs resolution but not convergence Range 120-4000. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 | Flat Development | Off | Also add the two pieces laid out flat -- the exact shapes to cut out and glue |
 | Sharp Seam | On | Mark the seam as a sharp edge (and a subdivision crease). A D-form is smooth everywhere EXCEPT the seam, which is where all of its curvature sits, so shading it smooth across the join is wrong -- it is a real crease in the paper |
 | Seam Curvature Attribute | On | Store the angle defect at each seam vertex as a 'mu' colour attribute; it is zero away from the seam and sums to 4*pi along it |
-| Shade Smooth | On | -- |
+| Shade Smooth | On | Shade the surface smooth |
 
 <!-- /options -->
 

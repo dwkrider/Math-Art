@@ -23,23 +23,23 @@ The six **regular convex 4-polytopes** — the 5-cell, tesseract (8-cell), 16-ce
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Polytope | Tesseract (8-cell) | 5-cell, Tesseract (8-cell), 16-cell, 24-cell, 120-cell, 600-cell. |
-| Edges | Curved (stereographic) | Curved (stereographic), Straight (perspective). |
+| Polytope | Tesseract (8-cell) | Which of the six regular convex 4-polytopes to project into 3D. 5-cell, Tesseract (8-cell), 16-cell, 24-cell, 120-cell, 600-cell. |
+| Edges | Curved (stereographic) | Straight 4D perspective edges, or great-circle arcs from stereographic projection. Curved (stereographic), Straight (perspective). |
 | Projection Distance | 1.05 | Eye distance along w for STRAIGHT edges (near 1 = Schlegel diagram; for the 5/16/600-cell a vertex sits at w=1, so rotate a little or back off the distance). Curved mode always uses the exact stereographic projection Range 1.001-10. |
-| Rotate XW | 0 | Range -180-180. |
-| Rotate YW | 0 | Range -180-180. |
-| Rotate ZW | 0 | Range -180-180. |
-| Rotate XY | 0 | Range -180-180. |
+| Rotate XW | 0 | Rotation in the XW plane before projecting from 4D, in degrees Range -180-180. |
+| Rotate YW | 0 | Rotation in the YW plane before projecting from 4D, in degrees Range -180-180. |
+| Rotate ZW | 0 | Rotation in the ZW plane before projecting from 4D, in degrees Range -180-180. |
+| Rotate XY | 0 | Rotation in the XY plane before projecting from 4D, in degrees Range -180-180. |
 | Arc Segments | 12 | Samples per edge (curved edges and tapering) Range 1-48. |
-| Strut Radius | 0.03 | Range 0.002-0.5. |
-| Strut Sides | 6 | Range 3-16. |
+| Strut Radius | 0.03 | Radius of the edge struts Range 0.002-0.5. |
+| Strut Sides | 6 | Cross-section sides of each round strut (Ball and Stick style) Range 3-16. |
 | Taper With Projection | On | Scale strut thickness by the local projection factor (near-the-pole features fatter) |
-| Vertex Spheres | On | -- |
-| Sphere Size | 1.6 | Range 1-4. |
-| Style | Struts | Struts, Ball and Stick, Wireframe, Leonardo (da Vinci). |
-| Border | 0.35 | Leonardo panel frame width (fraction of the face) Range 0.02-0.95. |
-| Panel Thickness | 0.03 | Range 0.002-0.5. |
-| Scale | 1 | Range 0.01-100. |
+| Vertex Spheres | On | Place a sphere at each vertex |
+| Sphere Size | 1.6 | Vertex sphere size relative to the strut radius (Ball and Stick style) Range 1-4. |
+| Style | Struts | How the projected framework is built: struts, ball-and-stick, wireframe, or open panels. Struts, Ball and Stick, Wireframe, Leonardo (da Vinci). |
+| Border | 0.06 | Leonardo panel frame width (fraction of face whatever its size Range 0.005-1. |
+| Panel Thickness | 0.03 | Thickness of the Leonardo face panels Range 0.002-0.5. |
+| Scale | 1 | Overall size of the framework Range 0.01-100. |
 | Half (Cutaway) | Off | Keep only the elements on one side of the equatorial hyperplane (w <= 0, equator included) before projection -- Segerman's legible 'half of a 24/120/600-cell' models |
 | Dual Compound | Off | Also build the dual polytope (5<->5, 8<->16, 24<->24, 120<->600), its vertices at this polytope's cell centers, in a second material slot |
 | Hopf Rings | 0 | 120-cell only: render N of the 12 rings of 10 dodecahedral cells that partition the 120-cell along Hopf fibers, as solid shrunken cells with one material per ring Range 0-12. |

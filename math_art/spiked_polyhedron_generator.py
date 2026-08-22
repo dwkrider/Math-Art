@@ -365,6 +365,7 @@ if _IN_BLENDER:
 
         preset: EnumProperty(
             name="Form",
+            description="Which polyhedron family to build",
             items=[('SPIKED', "Spiked Polyhedron",
                     "Pyramid on every face; the icosahedron at "
                     "height sqrt(6)/3 gives a 60-face deltahedron "
@@ -417,6 +418,7 @@ if _IN_BLENDER:
                         "a gentle fold")
         coloring: EnumProperty(
             name="Coloring",
+            description="How faces are assigned materials",
             items=[('GROUP', "By Face Group",
                     "One material per seed face (12-color "
                     "palette)"),
@@ -424,6 +426,7 @@ if _IN_BLENDER:
             default='NONE')
         style: EnumProperty(
             name="Style",
+            description="How the polyhedron surface is rendered",
             items=[('SOLID', "Solid", ""),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels"),
@@ -435,9 +438,13 @@ if _IN_BLENDER:
                     "Mesh edges only, displayed as a wireframe")],
             default='SOLID')
         border: FloatProperty(name="Border", default=0.3,
-                              min=0.02, max=1.0)
+                              min=0.02, max=1.0,
+                              description="Width of the open-face panel "
+                                          "frame (Leonardo style)")
         thickness: FloatProperty(name="Thickness", default=0.04,
-                                 min=0.001, max=1.0)
+                                 min=0.001, max=1.0,
+                                 description="Panel or strut thickness "
+                                             "(Leonardo and Struts styles)")
         strut_radius: FloatProperty(
             name="Strut Radius", default=0.02, min=0.001, max=0.5,
             description="Ball-and-stick edge cylinder radius")
@@ -449,7 +456,8 @@ if _IN_BLENDER:
             name="Smooth Shading", default=True,
             description="Hyperbolic preset only")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the solid")
 
         def execute(self, context):
             p = self.preset

@@ -26,9 +26,9 @@ That is the reverse of the usual arrangement. A Koch snowflake has a fractal bou
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Tiling | Kite (6-fold) | Kite (6-fold), Kite (8-fold), Kite (12-fold), Triangle Segment (s=6), Triangle Segment (s=8), Triangle Segment (s=12), Trapezoid Segment (u=6), Trapezoid Segment (u=10). |
+| Tiling | Kite (6-fold) | Which Fathauer f-tiling to build. Kite (6-fold), Kite (8-fold), Kite (12-fold), Triangle Segment (s=6), Triangle Segment (s=8), Triangle Segment (s=12), Trapezoid Segment (u=6), Trapezoid Segment (u=10). |
 | Iterations | 4 | Growth depth; each generation surrounds every exposed tip with its fan of s-scaled tiles (deep growth is capped to keep the mesh manageable) Range 0-9. |
-| Color By | By Level | By Level, Uniform. |
+| Color By | By Level | How the tiles are colored. By Level, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Separate Tiles | Off | Output each tile as its own mesh object (parented to an empty) so tiles can be edited individually |

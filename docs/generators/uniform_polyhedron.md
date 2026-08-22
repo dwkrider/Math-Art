@@ -25,12 +25,12 @@ What makes them a single family rather than a list is that nearly all are produc
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Family |  | -- |
-| Solid |  | -- |
+| Family |  | Category of uniform polyhedron to choose from |
+| Solid |  | Which uniform polyhedron to build |
 | Dual | Off | Build the dual by polar reciprocation (the Catalan / Kepler-Poinsot / 'cronic' star duals). Hemipolyhedra have vertices at infinity, drawn truncated |
-| Coloring | By Face Size | By Face Size, None. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
-| Border | 0.3 | Leonardo face frame width Range 0.02-0.95. |
+| Coloring | By Face Size | Whether to colour faces by their number of sides. By Face Size, None. |
+| Style | Solid | How the polyhedron surface is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Border | 0.06 | Leonardo face frame width Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
@@ -38,7 +38,7 @@ What makes them a single family rather than a list is that nearly all are produc
 | Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
 | Explode | 0.1 | Move segments outward Range 0-5. |
 | Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 
 <!-- /options -->
 

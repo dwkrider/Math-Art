@@ -31,7 +31,7 @@ The same energy, constrained instead by fixed area and volume, is the **Helfrich
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Willmore Torus (Clifford) | Willmore Torus (Clifford), Vesicle (red blood cell), Inflated Ring. |
+| Mode | Willmore Torus (Clifford) | Which Willmore-energy surface to build. Willmore Torus (Clifford), Vesicle (red blood cell), Inflated Ring. |
 | Resolution | 48 | Vertices around the major circle (tube gets half); vesicles use the sphere subdivision below instead Range 24-96. |
 | Sphere Subdivision | 3 | Icosphere subdivision for the vesicle seed (162 / 642 / 2562 vertices) Range 2-4. |
 | Start Ratio | 3 | Major/minor ratio of the starting torus -- the flow forgets it, which is the point; watch a fat or thin torus find sqrt(2) Range 1.6-6. |
@@ -39,8 +39,8 @@ The same energy, constrained instead by fixed area and volume, is the **Helfrich
 | Seed | Oblate (discocyte) | Which side of the oblate/prolate energy barrier the descent starts on. Oblate (discocyte), Prolate (capsule). |
 | Spontaneous Curvature | 1 | Prescribed mean curvature h0 of the (H - h0)^2 energy (RING mode; also biases VESICLE branches) Range 0-2.5. |
 | Iterations | 400 | Descent budget; the flow stops early at its stationary point Range 20-2000. |
-| Smooth Shading | On | -- |
-| Scale | 1 | Range 0.01-100. |
+| Smooth Shading | On | Shade the surface smooth |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 

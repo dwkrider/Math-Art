@@ -25,10 +25,10 @@ Their **duals**, the 8 Laves tilings, are the other half of the family: not vert
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Tiling | Rhombitrihexagonal (3.4.6.4) | Triangular (3.3.3.3.3.3), Square (4.4.4.4), Hexagonal (6.6.6), Trihexagonal (3.6.3.6), Snub Square (3.3.4.3.4), Snub Hexagonal (3.3.3.3.6), Elongated Triangular (3.3.3.4.4), Rhombitrihexagonal (3.4.6.4), and 11 more. |
-| Cells X | 5 | Range 1-40. |
-| Cells Y | 5 | Range 1-40. |
-| Color By | By Sides | By Sides, By Tile Type, Uniform. |
+| Tiling | Rhombitrihexagonal (3.4.6.4) | Which of the 19 uniform tilings to build. Triangular (3.3.3.3.3.3), Square (4.4.4.4), Hexagonal (6.6.6), Trihexagonal (3.6.3.6), Snub Square (3.3.4.3.4), Snub Hexagonal (3.3.3.3.6), Elongated Triangular (3.3.3.4.4), Rhombitrihexagonal (3.4.6.4), and 11 more. |
+| Cells X | 5 | Number of unit cells along X Range 1-40. |
+| Cells Y | 5 | Number of unit cells along Y Range 1-40. |
+| Color By | By Sides | How tile materials are assigned. By Sides, By Tile Type, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Trim Boundary | Off | Clip the patch to a clean rectangle, removing the ragged edge and stray boundary tiles |

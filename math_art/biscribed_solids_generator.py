@@ -1319,13 +1319,17 @@ if _IN_BLENDER:
 
         solid: EnumProperty(
             name="Solid",
+            description="Which biscribed solid (or its dual) to build",
             items=[(sid, lbl, "") for sid, lbl, _b, _d in _BISCRIBED])
         coloring: EnumProperty(
             name="Coloring",
+            description="Color faces by their number of sides, or leave "
+                        "them uncolored",
             items=[('SIDES', "By Face Size", ""), ('NONE', "None", "")],
             default='SIDES')
         style: EnumProperty(
             name="Style",
+            description="How the polyhedron is rendered",
             items=[('SOLID', "Solid", "Plain closed polyhedron"),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo Style "
@@ -1365,7 +1369,8 @@ if _IN_BLENDER:
         facet_separate: BoolProperty(
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size of the result")
 
         def draw(self, context):
             lay = self.layout

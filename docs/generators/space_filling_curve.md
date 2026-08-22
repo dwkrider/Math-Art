@@ -24,15 +24,15 @@ Three families are offered: the open **Hilbert** curve, the closed **Moore** cur
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Curve | Hilbert 3D | Hilbert 3D, Moore 3D, Hilbert 2D, Moore 2D, Gilbert 3D, Gilbert 2D. |
+| Curve | Hilbert 3D | Which space-filling curve and dimension to build. Hilbert 3D, Moore 3D, Hilbert 2D, Moore 2D, Gilbert 3D, Gilbert 2D. |
 | Cells W | 12 | Gilbert grid width Range 1-64. |
 | Cells H | 8 | Gilbert grid height Range 1-64. |
 | Cells D | 4 | Gilbert grid depth (even sizes recommended in 3D) Range 1-64. |
 | Order | 3 | Recursion depth; 3D point count is 8^order (3D capped at 5) Range 1-6. |
 | Tube Radius | 0.03 | Curve bevel depth (0 = wire only) Range 0-0.5. |
 | Corner Rounding | 1 | Chaikin corner-cutting passes Range 0-3. |
-| Bevel Resolution | 4 | Range 1-12. |
-| Size | 2 | Range 0.05-100. |
+| Bevel Resolution | 4 | Segments around the tube cross-section Range 1-12. |
+| Size | 2 | Overall extent of the curve Range 0.05-100. |
 
 <!-- /options -->
 

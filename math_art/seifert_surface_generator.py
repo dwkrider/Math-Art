@@ -206,6 +206,8 @@ if _IN_BLENDER:
 
         preset: EnumProperty(
             name="Preset",
+            description="Choose a classic knot/link, a torus knot, or a "
+                        "custom braid word",
             items=[('CUSTOM', "Custom braid", "Use the braid word below")] +
                   [(k, v[0], f"braid {v[1]}") for k, v in PRESETS.items()] +
                   [('TORUS', "Torus knot (p,q)", "Torus-knot braid")],
@@ -216,11 +218,16 @@ if _IN_BLENDER:
                         "a = left-hand; B/b = strands 2-3, ...; 'A3' repeats. "
                         "Or signed integers '1 -2 1 -2'")
         torus_p: IntProperty(name="Torus p", default=3, min=2, max=8,
-                             update=_preset_chosen)
+                             update=_preset_chosen,
+                             description="First parameter of the (p,q) "
+                                         "torus knot")
         torus_q: IntProperty(name="Torus q", default=4, min=2, max=12,
-                             update=_preset_chosen)
+                             update=_preset_chosen,
+                             description="Second parameter of the (p,q) "
+                                         "torus knot")
         surface_type: EnumProperty(
             name="Surface",
+            description="Which spanning surface of the link to build",
             items=[
                 ('SEIFERT', "Seifert (oriented)",
                  "Seifert's algorithm: the orientable spanning surface"),
@@ -281,7 +288,9 @@ if _IN_BLENDER:
                         "(the surface boundary)")
         knot_profile: _rim.rim_profile_prop()
         knot_radius: FloatProperty(name="Knot Tube Radius", default=0.02,
-                                   min=0.0, max=0.5)
+                                   min=0.0, max=0.5,
+                                   description="Bevel radius of the knot "
+                                               "boundary curve")
 
         def execute(self, context):
             if sv is None:

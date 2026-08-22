@@ -216,7 +216,9 @@ if _IN_BLENDER:
         bl_label = "Zonohedron"
         bl_options = {'REGISTER', 'UNDO'}
 
-        kind: EnumProperty(name="Star", items=KINDS, default='SPIRAL')
+        kind: EnumProperty(name="Star", items=KINDS, default='SPIRAL',
+                           description="Vector star the zonohedron is "
+                                       "built from")
         n: IntProperty(
             name="Vectors", default=12, min=3, max=64,
             description="Number of star vectors (polar/spiral/random)")
@@ -226,9 +228,12 @@ if _IN_BLENDER:
         pitch: FloatProperty(
             name="Pitch", default=55.0, min=5.0, max=85.0,
             description="Polar star pitch angle from the axis (degrees)")
-        rand_seed: IntProperty(name="Random Seed", default=1, min=0)
+        rand_seed: IntProperty(name="Random Seed", default=1, min=0,
+                               description="Seed for the random star "
+                                           "vectors")
         style: EnumProperty(
             name="Style",
+            description="How the zonohedron is rendered",
             items=[('SOLID', "Solid", "Plain closed zonohedron"),
                    ('LEONARDO', "Leonardo (da Vinci)",
                     "Open-faced panels via the shared Leonardo "
@@ -273,7 +278,8 @@ if _IN_BLENDER:
         facet_separate: BoolProperty(
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size multiplier")
 
         def execute(self, context):
             kind = self.kind

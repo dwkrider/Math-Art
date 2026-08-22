@@ -24,15 +24,15 @@ This generator builds a smooth-rolling $(p,2)$ torus knot, after Brodeur, Viduli
 | --- | --- | --- |
 | Lobes p | 3 | Odd (p,2) torus knot parameter (3 = trefoil; even values are rounded down) Range 3-9. |
 | Shape a | 0.5 | Morton shape parameter Range 0.15-0.9. |
-| Mode | Smooth-Rolling | Smooth-Rolling, Stretched, Morton. |
+| Mode | Smooth-Rolling | How much to reshape the raw Morton knot. Smooth-Rolling, Stretched, Morton. |
 | Tube Radius | 0.05 | Tube radius, in units of the (unit-scale) curve Range 0.005-0.3. |
 | Optimize For Thickness | On | Rebalance the interior so the THICK solid's centre of mass (fused strands weigh once) sits at the rolling centre |
 | Min Gap | 0.02 | Minimum surface-to-surface gap between strands of the thick knot (0 = strands may touch and fuse) Range 0-0.5. |
-| Smoothness | 600 | Interior fairing weight: higher gives wider, calmer interior curves at the cost of knot-shape fidelity Range 50-5000. |
-| Curve Samples | 512 | Range 128-1024. |
-| Tube Sides | 16 | Range 6-48. |
-| Smooth Shading | On | -- |
-| Scale | 1 | Range 0.01-100. |
+| Smoothness | 1 | How hard to fair the interior of the curve: 0 leaves the raw optimized shape, 1 is the measured sweet spot, higher trades knot-shape fidelity for a calmer sweep (the flow backs off on its own if a setting would cost rolling accuracy) Range 0-4. |
+| Curve Samples | 512 | Number of points along the centreline curve Range 128-1024. |
+| Tube Sides | 16 | Number of sides around the tube cross-section Range 6-48. |
+| Smooth Shading | On | Shade the tube smoothly rather than faceted |
+| Scale | 1 | Overall size of the knot Range 0.01-100. |
 
 <!-- /options -->
 

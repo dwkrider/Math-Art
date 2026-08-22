@@ -34,11 +34,11 @@ The consequence is startling. With all the crossings collapsed into a single poi
 | Petal Radius | 1 | Radius of the circle of petal tips Range 0.05-10. |
 | Height Spread | 0.35 | Half-range of the strand heights at the centre; raise it (or thin the tube) for many petals Range 0.02-2. |
 | Samples / Petal | 64 | Curve samples per petal Range 8-512. |
-| Output | Bezier Curve | Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
+| Output | Bezier Curve | Curve type, or a swept tube mesh, to create. Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
 | Tube Radius | 0.035 | Curve bevel depth / tube radius (keep below half the centre height gap spread/(N-1)) Range 0-1. |
-| Bevel Resolution | 6 | Range 1-16. |
-| Tube Sides | 12 | Range 3-32. |
-| Scale | 1 | Range 0.01-100. |
+| Bevel Resolution | 6 | Roundness of the tube cross-section Range 1-16. |
+| Tube Sides | 12 | Number of sides around the mesh-tube cross-section Range 3-32. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

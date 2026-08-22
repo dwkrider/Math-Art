@@ -21,7 +21,7 @@ The edge framework of a $\lbrace p,q,r\rbrace$ regular honeycomb of hyperbolic 3
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Honeycomb | {4,3,5} Order-5 Cubic | {4,3,5} Order-5 Cubic, {5,3,4} Order-4 Dodecahedral, {3,5,3} Icosahedral, {5,3,5} Order-5 Dodecahedral, {6,3,3} Hexagonal Tiling Cells, {3,3,6} Order-6 Tetrahedral, Custom {p,q,r}. |
+| Honeycomb | {4,3,5} Order-5 Cubic | Which {p,q,r} honeycomb to build. {4,3,5} Order-5 Cubic, {5,3,4} Order-4 Dodecahedral, {3,5,3} Icosahedral, {5,3,5} Order-5 Dodecahedral, {6,3,3} Hexagonal Tiling Cells, {3,3,6} Order-6 Tetrahedral, Custom {p,q,r}. |
 | p | 4 | Cell face size (cells are {p,q}) Range 3-12. |
 | q | 3 | Faces per cell vertex Range 3-12. |
 | r | 5 | Cells around each edge Range 3-12. |
@@ -29,10 +29,10 @@ The edge framework of a $\lbrace p,q,r\rbrace$ regular honeycomb of hyperbolic 3
 | Edge Cap | 15000 | Stop the group walk early past this many edges Range 10-200000. |
 | Radius Cutoff | 0.97 | Cull struts whose midpoint lies outside this ball radius Range 0.5-0.999. |
 | Strut Thickness | 0.07 | Strut radius before the conformal thinning (a strut at the ball center gets half this) Range 0.005-0.5. |
-| Strut Sides | 6 | Range 3-16. |
+| Strut Sides | 6 | Facets around each strut cross-section Range 3-16. |
 | Arc Segments | 8 | Samples per geodesic strut (long near-boundary edges need the curvature) Range 1-32. |
 | Node Spheres | On | Spheres at the honeycomb vertices, scaled by the same conformal factor (skipped for ideal-vertex honeycombs like {3,3,6}) |
-| Sphere Size | 1.6 | Range 1-4. |
+| Sphere Size | 1.6 | Node sphere radius relative to the local strut thickness Range 1-4. |
 | Ball Radius | 1 | Overall scale: radius of the Poincare ball Range 0.01-100. |
 
 <!-- /options -->

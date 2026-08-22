@@ -23,7 +23,7 @@ Sailors have tied these decorative knots for centuries and describe them by exac
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Ring (Flat Mat) | Ring (Flat Mat), Cylinder, Torus, Sphere. |
+| Surface | Ring (Flat Mat) | Which surface the cord is wound on. Ring (Flat Mat), Cylinder, Torus, Sphere. |
 | Leads | 3 | Passes the long way around (the braid's strand count); gcd(leads, bights) cords Range 2-12. |
 | Bights | 5 | Scallops along each edge; coprime to leads gives a single cord Range 1-24. |
 | Radius | 0.8 | Main radius of the surface the cord is wound on Range 0.05-10. |
@@ -32,9 +32,9 @@ Sailors have tied these decorative knots for centuries and describe them by exac
 | Samples | 512 | Points per cord Range 96-2048. |
 | Weave Depth | 0.07 | Over/under amplitude along the surface normal (floored at 1.3 x tube radius so the strands clear each other) Range 0-0.5. |
 | Rope Radius | 0.055 | Radius of the swept rope tube Range 0.005-0.5. |
-| Rope Sides | 12 | Range 3-32. |
+| Rope Sides | 12 | Sides of the rope tube cross-section Range 3-32. |
 | Color Cords | On | One material with a distinct color per cord (multi-cord Turk's heads only) |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 

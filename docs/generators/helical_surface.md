@@ -24,7 +24,22 @@ Each is built by a pure-Python parametrization; seams where a parameter wraps ar
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Hyperbolic Helicoid | Hyperbolic Helicoid, Seashell, Corkscrew. |
+| Rim Curve | Off | Sweep a tube along the open edge of the surface. That edge is a stair-step through the sample grid, so the tube both tidies it and gives the surface a deliberate border; a closed surface has no edge and gets no curve |
+| Rim Thickness | 0.01 | Bevel radius of the rim tube (0 leaves a bare curve) Range 0-1. |
+| Rim Smoothing | 3 | Taubin smoothing passes along the rim before it is swept. Unlike a plain Laplacian this does not shrink the curve, so the tube stays on the edge however many passes you use; 0 follows the sample grid exactly Range 0-40. |
+| Rim Profile | Circular | Cross-section swept along the rim. Circular, Square, Channel (C), Beam (H), Reeded, Curve Only. |
+| Rim Twist | 0 | Rotate the swept profile about the rim. Set it to 180 to reverse which way a channel opens or which face a reed is milled into. Which way looks right is not fixed by the surface: the same outward direction reads as out of an Enneper edge and into a clipped periodic cell, so this is the control for it Range -180-180. |
+| Reeds | 120 | Number of ridges milled across a reeded rim, counted around the whole edge. The rim is re-sampled to carry them, so they are spaced by arc length rather than by the surface's grid Range 4-2000. |
+| Surface | Hyperbolic Helicoid | Which swept surface to build. Darboux Surface, Hyperbolic Helicoid, Seashell, Corkscrew. |
+| Motion | General Darboux Motion | How the rigid curve is carried through space (Darboux surface only). General Darboux Motion, Translation, Revolution, Helicoidal. |
+| Generatrix | Circle | The rigid curve that is swept (Darboux only). Circle, Ellipse, Gerono Lemniscate, Astroid, Segment. |
+| Curve Size | 0.45 | Size of the swept curve (Darboux only) Range 0.02-5. |
+| Curve Ratio | 0.5 | Minor-to-major ratio of an elliptical generatrix (Darboux only) Range 0.02-5. |
+| Path Radius | 1 | Radius of the circle the curve's centre rides (Darboux only) Range 0-10. |
+| Pitch | 0.4 | Rise per radian for the translation and screw motions (Darboux only) Range -5-5. |
+| Tumble | 0.6 | How far the curve tips out of its plane as it goes round; 0 collapses the general motion back to a plain revolution (Darboux only) Range 0-3.14. |
+| Tumbles | 3 | How many times the curve tips back and forth per revolution (Darboux only) Range 1-24. |
+| Turns | 1 | How far the motion runs, in revolutions. A whole number closes the sweep and welds the seam; anything else leaves it open (Darboux only) Range 0.05-12. |
 | Torsion | 2.5 | Torsion tau of the hyperbolic helicoid (turns per unit of the spine parameter) Range 0-20. |
 | Extent | 4 | Half-range of both parameters of the hyperbolic helicoid Range 0.5-10. |
 | Whorls | 2 | Number of turns of the shell spiral Range 1-8. |
@@ -34,9 +49,9 @@ Each is built by a pure-Python parametrization; seams where a parameter wraps ar
 | Sphere Radius | 0.5 | Radius a of the twisted sphere Range 0.01-10. |
 | Twist Rise | 0.3 | Axial rise b per radian of twist Range 0-5. |
 | Resolution | 96 | Segments along each parametric direction Range 8-512. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the surface smooth |
 | Thickness | 0 | Solidify modifier thickness (0 = raw surface) Range 0-1. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

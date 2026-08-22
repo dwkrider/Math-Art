@@ -83,7 +83,10 @@ if _IN_BLENDER:
                    ('FACETS', "Face Segments",
                     "Split into one inward-extruded, mitre-beveled "
                     "segment per face")],
-            default='SOLID')
+            default='SOLID',
+            description="Finish for the polyhedron: solid, Leonardo "
+                        "panels, struts, ball-and-stick, wireframe, or "
+                        "face segments")
         border: FloatProperty(
             name="Border", default=0.06, min=0.005, max=1.0,
             description="Leonardo face frame width, the same on every "
@@ -112,7 +115,9 @@ if _IN_BLENDER:
             name="Separate Meshes", default=False,
             description="Each face segment as its own object")
         scale: FloatProperty(name="Scale", default=1.0, min=0.001,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube, centered at the origin)")
 
         def execute(self, context):
             pts = fcc_points(self.root)

@@ -446,7 +446,8 @@ if _IN_BLENDER:
                    ('ZOLL', "Zoll's Surface",
                     "Zoll's 1903 answer to Tannery: smooth, not a "
                     "round sphere, and still every geodesic closes")],
-            default='FRESNEL')
+            default='FRESNEL',
+            description="Which classic surface to build")
         semi_a: FloatProperty(
             name="Semi-Axis A", default=1.0, min=0.01, max=10.0,
             description="Fresnel semi-axis along X")
@@ -498,13 +499,15 @@ if _IN_BLENDER:
             name="Resolution", default=48, min=6, max=256,
             description="Rings across the surface (twice as "
                         "many segments around)")
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the surface smooth")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="Solidify modifier thickness (0 = raw "
                         "surface)")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             res = self.resolution

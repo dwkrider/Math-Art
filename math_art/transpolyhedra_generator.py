@@ -320,7 +320,10 @@ if _IN_BLENDER:
                         "dual's and one for the connecting rectangles, so "
                         "the three families the construction puts together "
                         "can be told apart")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall size (1.0 fits a 2 m cube, centered "
+                        "at the origin)")
         __annotations__.update(_shell.style_properties())
 
         def execute(self, context):

@@ -26,8 +26,8 @@ The most striking members are the **Lissajous knots** (Bogle, Hearst, Jones and 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | Lissajous (3,2,7) | Lissajous (3,2,7), Fourier (1,1,2) Trefoil, Chebyshev Trefoil (3,4,5), Billiard (3,2,7), Custom. |
-| Family | Lissajous | Lissajous, Fourier, Chebyshev, Billiard. |
+| Preset | Lissajous (3,2,7) | Ready-made harmonic knot; Custom keeps the values below. Lissajous (3,2,7), Fourier (1,1,2) Trefoil, Chebyshev Trefoil (3,4,5), Billiard (3,2,7), Custom. |
+| Family | Lissajous | Which harmonic curve family to trace. Lissajous, Fourier, Chebyshev, Billiard. |
 | nx / a | 3 | x frequency (Chebyshev: degree a) Range 1-32. |
 | ny / b | 2 | y frequency (Chebyshev: degree b) Range 1-32. |
 | nz / c | 7 | z frequency (Chebyshev: degree c) Range 1-32. |
@@ -38,11 +38,11 @@ The most striking members are the **Lissajous knots** (Bogle, Hearst, Jones and 
 | Z Harmonic 2 Freq | 2 | Fourier only: frequency of the second z cosine Range 1-32. |
 | Z Harmonic 2 Phase | 1.4 | Fourier only: phase of the second z cosine Range -10-10. |
 | Samples | 1000 | Points along the curve Range 100-8000. |
-| Output | Bezier Curve | Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
+| Output | Bezier Curve | Curve type to build, or a swept tube mesh. Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
 | Tube Radius | 0.05 | Curve bevel depth / tube radius Range 0-1. |
-| Bevel Resolution | 6 | Range 1-16. |
-| Tube Sides | 12 | Range 3-32. |
-| Scale | 1 | Range 0.01-100. |
+| Bevel Resolution | 6 | Smoothness of the round bevel along the curve Range 1-16. |
+| Tube Sides | 12 | Number of sides around the swept tube Range 3-32. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

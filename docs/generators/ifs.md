@@ -28,30 +28,30 @@ Attractors of iterated function systems, in two and three dimensions, across thr
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | IFS Attractor | IFS Attractor, Self-Affine Tile. |
-| Tile | ABC tile (1,2,4) | ABC tile (1,2,3), ABC tile (1,2,4), ABC tile (1,2,8) - self-similar, ABC tile (1,3,6), ABC tile (1,3,4), ABC tile (2,2,3), Twindragon A (0,0) - non-fractal (a cube), Twindragon B (-1,1), and 6 more. |
-| Tile Output | Voxels | Voxels, Smooth Contour, Exact Level-k Cubes. |
+| Mode | IFS Attractor | Whether to build an affine IFS attractor or a self-affine lattice tile. IFS Attractor, Self-Affine Tile. |
+| Tile | ABC tile (1,2,4) | Which self-affine lattice tile to build. ABC tile (1,2,3), ABC tile (1,2,4), ABC tile (1,2,8) - self-similar, ABC tile (1,3,6), ABC tile (1,3,4), ABC tile (2,2,3), Twindragon A (0,0) - non-fractal (a cube), Twindragon B (-1,1), and 6 more. |
+| Tile Output | Voxels | How the self-affine tile is turned into a mesh. Voxels, Smooth Contour, Exact Level-k Cubes. |
 | Level | 0 | Exact mode only: radix depth; 0 picks a level landing in the 30k-300k cell band Range 0-24. |
 | Holes | 0 | Drop this many digits at every level, turning the tile into a gasket Range 0-6. |
-| Dimension | 3D | 3D, 2D. |
-| System |  | -- |
-| Output |  | -- |
-| Seed Solid | Tetrahedron | Tetrahedron, Cube, Octahedron. |
+| Dimension | 3D | Whether the IFS attractor fills three dimensions or is planar. 3D, 2D. |
+| System |  | IFS whose attractor to build (Custom uses the Maps field) |
+| Output |  | How the IFS attractor is rendered |
+| Seed Solid | Tetrahedron | Solid placed at each word in the deterministic solid-copies output. Tetrahedron, Cube, Octahedron. |
 | Depth | 5 | Solid-copies depth; the count is maps^depth and is capped automatically Range 1-12. |
 | Points | 400000 | Chaos-game sample count Range 10000-5000000. |
 | Resolution | 128 | Voxel / density grid resolution per axis Range 16-256. |
 | Plane Resolution | 512 | In-plane grid resolution for a planar system; a plane affords far more of it than a volume can Range 32-2048. |
 | Cover | 0.9 | Smooth contour: the fraction of the sampled mass the surface encloses Range 0.1-0.999. |
 | Min Points per Cell | 1 | Voxel mode: cells with fewer points than this are left empty Range 1-200. |
-| Maps | `0.5 0 0 0 0.5 0 0 0 0.5 | 0.5 0.5 0.5 | 1; 0.5 0 0 0 0.5 0 0 0 0.5 | -0.5 -0.5 0.5 | 1; 0.5 0 0 0 0.5 0 0 0 0.5 | 0.5 -0.5 -0.5 | 1; 0.5 0 0 0 0.5 0 0 0 0.5 | -0.5 0.5 -0.5 | 1` | Custom affine maps: nine matrix entries \Vert three translations \Vert probability, one map per semicolon |
+| Maps | `0.5 0 0 0 0.5 0 0 0 0.5 | 0.5 0.5 0.5 | 1; 0.5 0 0 0 0.5 0 0 0 0.5 | -0.5 -0.5 0.5 | 1; 0.5 0 0 0 0.5 0 0 0 0.5 | 0.5 -0.5 -0.5 | 1; 0.5 0 0 0 0.5 0 0 0 0.5 | -0.5 0.5 -0.5 | 1` | Custom affine maps: nine matrix entries \| three translations \| probability, one map per semicolon |
 | Seed | 0 | Chaos-game random seed; the same seed always gives the same mesh Range 0-99999. |
 | Polygon Sides | 3 | The n-gon the Sierpinski-in-3D construction is built on; the paper derives its ratio for the triangle and notes the construction applies to every n >= 3 Range 3-10. |
 | Polygon Ratio | 0.666667 | Contraction ratio toward each vertex; 2/3 is the triangle value at which the pieces meet, and 1/2 would give a Cantor set Range 0.35-0.95. |
 | Reverse | Off | Replace every map f by -f: the neighbour maps are unchanged, so the dimension and the boundary structure survive, but the shape does not |
 | Largest Piece Only | Off | Smooth contour: discard all but the biggest connected piece |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube) Range 0.01-100. |
 | Thickness | 0 | If > 0, add a Solidify modifier with this thickness Range 0-1. |
-| Smooth Shading | Off | -- |
+| Smooth Shading | Off | Shade the mesh smooth |
 
 <!-- /options -->
 

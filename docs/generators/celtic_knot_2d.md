@@ -27,16 +27,16 @@ The elegant reading is Jablan's: a barrier is a **mirror**, and the cord is a li
 | Option | Default | Description |
 | --- | --- | --- |
 | Substrate | Square Grid | The graph the cord lives on: the square grid, or a tiling's medial graph (Mercat's knot on any graph). Square Grid, Triangular (3.3.3.3.3.3), Hexagonal (6.6.6), Snub Square (3.3.4.3.4), Trihexagonal (3.6.3.6), Truncated Hexagonal (3.12.12), Snub Hexagonal (3.3.3.3.6), Elongated Triangular (3.3.3.4.4), and 11 more. |
-| Grid Width | 5 | Range 1-40. |
-| Grid Height | 5 | Range 1-40. |
+| Grid Width | 5 | Number of cells across the panel (square grid) Range 1-40. |
+| Grid Height | 5 | Number of cells down the panel (square grid) Range 1-40. |
 | Trim Boundary | On | Keep only tiling faces inside a clean central rectangle (tiling substrates) |
 | Border | On | Ring the panel with barriers (bordered knot); off = an open, tileable plait |
 | Barriers | Preset | Source of the internal barriers that carve the knot. Preset, Procedural, Random. |
-| Panel | Plain Plait | Plain Plait, Cross Break, Framed Panel, Triquetra (Trinity), Josephine Knot, Kells Border, Carpet Page. |
+| Panel | Plain Plait | Named barrier panel to carve (Preset barriers). Plain Plait, Cross Break, Framed Panel, Triquetra (Trinity), Josephine Knot, Kells Border, Carpet Page. |
 | Wall Spacing | 2 | Internal walls every this many cells (procedural) Range 1-20. |
-| Vertical Walls | On | -- |
-| Horizontal Walls | On | -- |
-| Seed | 0 | Range 0-100000. |
+| Vertical Walls | On | Place vertical internal walls (procedural) |
+| Horizontal Walls | On | Place horizontal internal walls (procedural) |
+| Seed | 0 | Random seed for the barrier layout (random) Range 0-100000. |
 | Barrier Density | 0.25 | Fraction of internal walls made barriers (random) Range 0-1. |
 | Single Cord | Off | Adjust random barriers to weave one continuous closed cord where feasible |
 | Symmetry |  | Replicate the procedural / random barrier seed under a point group about the panel centre, so the knot comes out balanced (Cn rotational, Dn rotational + mirror) |
@@ -45,18 +45,18 @@ The elegant reading is Jablan's: a barrier is a **mirror**, and the cord is a li
 | Tube Sides | 16 | Facets around the tube / rope cross-section Range 3-64. |
 | Rope Strands | 3 | Number of twisted sub-strands (rope profile) Range 2-5. |
 | Rope Twist | 8 | Rope sub-strand twist, radians per unit length Range 0-40. |
-| Style | Smooth | Angular, Smooth. |
+| Style | Smooth | Straight mitered cords or smooth curved cords. Angular, Smooth. |
 | Smoothness | 8 | Spline subdivisions per cord segment (smooth) Range 2-32. |
 | Corner Style | Rounded | Shape of the U-turn where a smooth cord reflects off a wall. Rounded, Pointed (Lenticular). |
 | Corner Tightness | 0.5 | How sharp the pointed leaf turn is (0 = the round cap, 1 = a sharp tip) Range 0-1. |
 | Interlace (Weave) | On | Weave the cords over and under (alternating knotwork) |
-| Interlace Mode | Flat Knotwork | Flat Knotwork, Woven (3D). |
+| Interlace Mode | Flat Knotwork | Flat 2D interlace, or a raised 3D woven surface. Flat Knotwork, Woven (3D). |
 | Weave Height | 0.06 | Z amplitude of the woven cords (woven only) Range 0-0.5. |
-| Color By | By Cord | Uniform, By Cord, Over/Under. |
-| Output | Ribbon Mesh | Ribbon Mesh, Centerline Curves. |
+| Color By | By Cord | How the cords are coloured. Uniform, By Cord, Over/Under. |
+| Output | Ribbon Mesh | Emit filled cord ribbons or the cord centerline curves. Ribbon Mesh, Centerline Curves. |
 | Relief Height | 0 | 0 = flat ribbons; > 0 extrudes the cords Range 0-2. |
 | Backing Slab | Off | Add a slab behind the knot |
-| Base Thickness | 0.08 | Range 0.01-1. |
+| Base Thickness | 0.08 | Thickness of the extruded base / backing slab Range 0.01-1. |
 | Separate Cords | Off | Output each closed cord as its own object |
 
 <!-- /options -->

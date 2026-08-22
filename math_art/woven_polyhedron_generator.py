@@ -688,9 +688,11 @@ if _IN_BLENDER:
             description="Subdivision-Surface levels rounding the "
                         "corners (0 = no Subdivision modifier)")
         smooth_shading: BoolProperty(
-            name="Smooth Shading", default=True)
+            name="Smooth Shading", default=True,
+            description="Smooth-shade the woven surface")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size multiplier")
 
         def _woven_mesh(self, swap):
             """Build + weld a woven mesh with the given rail pairing;

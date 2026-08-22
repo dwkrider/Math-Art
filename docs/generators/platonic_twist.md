@@ -24,16 +24,16 @@ The result is a single, exactly welded shell — an airy, paper-sculpture-like f
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Solid | Cube | Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
-| Face Shrink | 0.55 | Range 0.1-0.95. |
+| Solid | Cube | Platonic solid whose faces and edges are twisted. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron. |
+| Face Shrink | 0.55 | How far each face plate is shrunk toward its centre Range 0.1-0.95. |
 | Face Push | 0.35 | Separation of the faces from the solid Range 0-2. |
 | Half Twists | 1 | Half turns of each connecting ribbon Range 0-4. |
-| Ribbon Bulge | 0.35 | Range 0-1.5. |
+| Ribbon Bulge | 0.35 | How far each ribbon bows outward between the plates Range 0-1.5. |
 | Smooth Joins (C1) | On | Ribbons leave and arrive within the plate planes (tangent-continuous, no crease); off reverts to creased joins with sharp edges |
-| Ribbon Rows | 16 | Range 4-64. |
-| Ribbon Columns | 6 | Range 2-24. |
+| Ribbon Rows | 16 | Mesh divisions along the length of each ribbon Range 4-64. |
+| Ribbon Columns | 6 | Mesh divisions across the width of each ribbon Range 2-24. |
 | Thickness | 0.04 | Solidify modifier thickness (0 = pure surface) Range 0-0.5. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the sculpture Range 0.01-100. |
 
 <!-- /options -->
 

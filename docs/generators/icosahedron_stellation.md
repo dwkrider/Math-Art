@@ -26,24 +26,24 @@ The number is a convention, not a fact of nature — different rules give differ
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Stellation |  8. Final stellation (echidnahedron) | 1. Icosahedron,  2. First stellation (triakis / small triambic),  3. Compound of 5 octahedra,  4. Third stellation,  5. Du Val E,  6. Second stellation,  7. Great icosahedron,  8. Final stellation (echidnahedron), and 52 more. |
-| a (core) | On | -- |
-| b | On | -- |
-| c | Off | -- |
-| d | Off | -- |
-| e1 | Off | -- |
-| e2 | Off | -- |
-| f1 (chiral) | Off | -- |
-| f2 | Off | -- |
-| g1 | Off | -- |
-| g2 | Off | -- |
-| g3 (outer) | Off | -- |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe. |
-| Border | 0.3 | Leonardo face frame width Range 0.02-0.95. |
+| Stellation |  8. Final stellation (echidnahedron) | Which stellation to build, by Crennell index 1-59, or Custom to pick Du Val shells by hand.  1. Icosahedron,  2. First stellation (triakis / small triambic),  3. Compound of 5 octahedra,  4. Third stellation,  5. Du Val E,  6. Second stellation,  7. Great icosahedron,  8. Final stellation (echidnahedron), and 52 more. |
+| a (core) | On | Fill this Du Val cell shell when building a custom stellation (inner shell a to outer shell g3) |
+| b | On | Fill this Du Val cell shell when building a custom stellation (inner shell a to outer shell g3) |
+| c | Off | Fill this Du Val cell shell when building a custom stellation (inner shell a to outer shell g3) |
+| d | Off | Fill this Du Val cell shell when building a custom stellation (inner shell a to outer shell g3) |
+| e1 | Off | Fill this Du Val cell shell when building a custom stellation (inner shell a to outer shell g3) |
+| e2 | Off | Fill this Du Val cell shell when building a custom stellation (inner shell a to outer shell g3) |
+| f1 (chiral) | Off | Fill this Du Val cell shell when building a custom stellation (inner shell a to outer shell g3) |
+| f2 | Off | Fill this Du Val cell shell when building a custom stellation (inner shell a to outer shell g3) |
+| g1 | Off | Fill this Du Val cell shell when building a custom stellation (inner shell a to outer shell g3) |
+| g2 | Off | Fill this Du Val cell shell when building a custom stellation (inner shell a to outer shell g3) |
+| g3 (outer) | Off | Fill this Du Val cell shell when building a custom stellation (inner shell a to outer shell g3) |
+| Style | Solid | How to render the stellation: solid faces, open Leonardo panels, struts, ball-and-stick or wireframe. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe. |
+| Border | 0.06 | Leonardo face frame width Range 0.005-1. |
 | Thickness | 0.05 | Panel/strut thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Uniform scale of the finished solid Range 0.01-100. |
 
 <!-- /options -->
 

@@ -23,7 +23,7 @@ The double and triple bubbles are the interesting cases. That the familiar doubl
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Bubbles | Double Bubble | Single Bubble, Double Bubble, Triple Bubble. |
+| Bubbles | Double Bubble | How many bubbles to relax to equilibrium. Single Bubble, Double Bubble, Triple Bubble. |
 | Volume Ratio | 0.75 | Double bubble: small/large radius ratio (1 = symmetric, flat interface).  Triple bubble: volume grading V1:V2:V3 = ratio : 1 : (2 - ratio); 1 = equal cells with planar films Range 0.4-1. |
 | Seed Squash | 0.15 | Anisotropic distortion of the seed before relaxing -- the evolution visibly pulls it back to the equilibrium (0 starts at the closed form) Range 0-0.4. |
 | Resolution | 48 | Vertices around the Plateau border (double bubble) / icosphere resolution (single) Range 16-128. |
@@ -31,9 +31,9 @@ The double and triple bubbles are the interesting cases. That the familiar doubl
 | Groom Every | 4 | Run label-aware mesh grooming (edge flips + tangential smoothing) every N iterations (0 = off; the default 4 measurably tightens the Plateau angles at equal cost) Range 0-50. |
 | Optimizer | Conjugate Gradient | Outer descent algorithm for the volume-constrained evolution. Conjugate Gradient, L-BFGS (Laplacian-seeded). |
 | Color | Per Bubble | Material scheme for the generated films. None, Per Bubble, By Pressure. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the bubble surfaces smooth |
 | Sharp Creases | On | Mark the Plateau borders sharp (and creased): every edge where films of different region pairs meet, read off the evolver's own labels, so smooth shading and Subdivision Surface keep the fold instead of rounding it into a bulge |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size; fits the cluster into a 2 m cube times this factor Range 0.01-100. |
 
 <!-- /options -->
 

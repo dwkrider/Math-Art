@@ -506,6 +506,7 @@ if _IN_BLENDER:
 
         kind: EnumProperty(
             name="Solid",
+            description="Platonic solid used as the repeating unit",
             items=[('TETRA', "Tetrahedron", ""), ('CUBE', "Cube", ""),
                    ('OCTA', "Octahedron", ""),
                    ('DODECA', "Dodecahedron", ""),
@@ -513,14 +514,20 @@ if _IN_BLENDER:
             default='CUBE')
         mode: EnumProperty(
             name="Anchors",
+            description="Where each generation places its child copies "
+                        "on the parent solid",
             items=[('VERTS', "Vertices", "children at vertices"),
                    ('FACES', "Faces", "children at face centres"),
                    ('EDGES', "Edges", "children at edge midpoints")],
             default='VERTS')
         generations: IntProperty(name="Generations", default=3,
-                                 min=1, max=7)
+                                 min=1, max=7,
+                                 description="Number of recursive levels "
+                                             "to build")
         child_scale: FloatProperty(name="Child Scale", default=0.5,
-                                   min=0.1, max=0.9)
+                                   min=0.1, max=0.9,
+                                   description="Size of each child copy "
+                                               "relative to its parent")
         spread: FloatProperty(
             name="Spread", default=1.27, min=0.5, max=3.0,
             description="Distance multiplier from parent to children")
@@ -537,11 +544,20 @@ if _IN_BLENDER:
             description="Rotation of each child about its anchor "
                         "direction (cumulative per generation)")
         rot_x: FloatProperty(name="Child Rotate X", default=0.0,
-                             min=-180.0, max=180.0)
+                             min=-180.0, max=180.0,
+                             description="Extra rotation of each child "
+                                         "about the X axis (cumulative "
+                                         "per generation)")
         rot_y: FloatProperty(name="Child Rotate Y", default=0.0,
-                             min=-180.0, max=180.0)
+                             min=-180.0, max=180.0,
+                             description="Extra rotation of each child "
+                                         "about the Y axis (cumulative "
+                                         "per generation)")
         rot_z: FloatProperty(name="Child Rotate Z", default=0.0,
-                             min=-180.0, max=180.0)
+                             min=-180.0, max=180.0,
+                             description="Extra rotation of each child "
+                                         "about the Z axis (cumulative "
+                                         "per generation)")
         crystal: EnumProperty(
             name="Crystal",
             description="Haüy/Fathauer fractal-crystal growth: stack "
@@ -589,13 +605,17 @@ if _IN_BLENDER:
                         "clearly")
         coloring: EnumProperty(
             name="Coloring",
+            description="Whether to assign a material per generation or "
+                        "leave the mesh unmaterialed",
             items=[('GEN', "Per Generation",
                     "One material per generation (view with Material "
                     "Preview or Solid shading set to Material color)"),
                    ('NONE', "None", "No materials")],
             default='GEN')
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube)")
 
         _PALETTE = [(0.85, 0.82, 0.75), (0.90, 0.36, 0.23),
                     (0.27, 0.52, 0.79), (0.95, 0.77, 0.29),

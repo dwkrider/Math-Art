@@ -23,20 +23,20 @@ A geodesic sphere is the familiar triangulated dome: start from a Platonic solid
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Base | Icosahedron | Icosahedron, Octahedron, Tetrahedron, Cube (quad geodesic), Rhombic Triacontahedron (quad geodesic). |
-| Class | Class I (f,0) | Class I (f,0), Class II (f,f), Class III (h,k). |
+| Base | Icosahedron | Seed polyhedron whose faces are subdivided and projected to the sphere. Icosahedron, Octahedron, Tetrahedron, Cube (quad geodesic), Rhombic Triacontahedron (quad geodesic). |
+| Class | Class I (f,0) | Goldberg-Coxeter breakdown class of the subdivision. Class I (f,0), Class II (f,f), Class III (h,k). |
 | Frequency | 3 | Breakdown frequency f (= h for Class III): Class I gives (f,0), Class II gives (f,f) Range 1-16. |
 | k (Class III) | 1 | Second Goldberg-Coxeter index for Class III (the chiral (h,k) breakdown, h = Frequency) Range 1-15. |
 | Dual (Goldberg) | Off | Output the dual polyhedron -- hexagons and twelve pentagons (a Goldberg polyhedron / geodesic's honeycomb) instead of triangles |
-| Cut | Full Sphere | Full Sphere, Hemisphere Dome, 5/8 Dome. |
+| Cut | Full Sphere | Keep the full sphere or cut it down to a dome. Full Sphere, Hemisphere Dome, 5/8 Dome. |
 | Base Ring | Off | Thicken the open rim into a flat ring band (domes are left open like real domes) |
 | Ring Width | 0.1 | Radial width of the base ring band Range 0.005-1. |
-| Style | Shell | Shell, Struts, Ball and Stick, Leonardo (da Vinci), Panels. |
-| Radius | 1 | Range 0.01-100. |
+| Style | Shell | How the geodesic is rendered as geometry. Shell, Struts, Ball and Stick, Leonardo (da Vinci), Panels. |
+| Radius | 1 | Sphere radius Range 0.01-100. |
 | Thickness | 0.05 | Shell / panel thickness (0 = single surface) Range 0-1. |
-| Border | 0.3 | Range 0.02-0.95. |
-| Strut Radius | 0.02 | Range 0.001-0.5. |
-| Node Radius | 0.035 | Range 0.001-0.5. |
+| Border | 0.06 | Frame width left around each open panel in the Leonardo style Range 0.005-1. |
+| Strut Radius | 0.02 | Radius of the edge cylinders in Ball and Stick Range 0.001-0.5. |
+| Node Radius | 0.035 | Radius of the vertex spheres in Ball and Stick Range 0.001-0.5. |
 | Panel Gap | 0.15 | Fraction each panel is shrunk about its centroid Range 0-0.9. |
 
 <!-- /options -->

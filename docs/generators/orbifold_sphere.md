@@ -24,7 +24,7 @@ A sphere stamped with a comma-shaped motif repeated under a chosen spherical sym
 | --- | --- | --- |
 | Signature | 532 - icosahedral (I) | Spherical symmetry type by Conway orbifold signature. nn - cyclic (Cn), *nn - pyramidal (Cnv), n* - Cnh, nx - rotoreflection (S2n), 22n - dihedral (Dn), 2*n - antiprismatic (Dnd), *22n - prismatic (Dnh), 332 - tetrahedral (T), and 6 more. |
 | n | 6 | Order of the main axis for the seven infinite families (ignored by the seven oddities) Range 1-32. |
-| Sphere Radius | 1 | Range 0.01-100. |
+| Sphere Radius | 1 | Radius of the decorated sphere Range 0.01-100. |
 | Sphere Resolution | 48 | Longitudinal segments of the sphere shell Range 8-256. |
 | Shell Thickness | 0.03 | Wall thickness of the hollow sphere (0 = solid ball); negative relief deeper than the wall cuts comma-shaped holes right through the shell Range 0-10. |
 | Motif Size | 0.25 | Overall size of the comma motif Range 0.01-10. |

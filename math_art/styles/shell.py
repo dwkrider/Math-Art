@@ -62,8 +62,11 @@ def style_properties():
     if not _IN_BLENDER:
         return {}
     return {
-        'style': EnumProperty(name="Style", items=STYLE_ITEMS,
-                              default='SOLID'),
+        'style': EnumProperty(
+            name="Style", items=STYLE_ITEMS, default='SOLID',
+            description="Finish for the shell: solid, Leonardo panels, "
+                        "struts, ball-and-stick, wireframe, or face "
+                        "segments"),
         'border': FloatProperty(
             name="Border", default=0.06, min=0.005, max=1.0,
             description="Leonardo face frame width, the same on every "

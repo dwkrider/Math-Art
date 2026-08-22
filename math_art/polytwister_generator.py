@@ -545,6 +545,7 @@ if _IN_BLENDER:
 
         shape: EnumProperty(
             name="Polytwister",
+            description="Which polytwister to build",
             items=([('DYADIC', "Dyadic Twister (n)",
                      "Order-n dyadic twister (dyster)")]
                    + [(k, label, f"{acr} — {label}")
@@ -567,9 +568,11 @@ if _IN_BLENDER:
             name="Recenter", default=False,
             description="Recenter the cross-section on its bounding box "
                         "(off keeps a consistent centre across a w-sweep)")
-        shade_smooth: BoolProperty(name="Shade Smooth", default=False)
+        shade_smooth: BoolProperty(name="Shade Smooth", default=False,
+                                   description="Shade the surface smooth")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size multiplier")
 
         def execute(self, context):
             import numpy as np

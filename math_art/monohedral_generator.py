@@ -324,9 +324,13 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         tiling: EnumProperty(name="Tiling", items=_items(),
-                             default='TRIANGLE')
-        nx: IntProperty(name="Cells X", default=5, min=1, max=40)
-        ny: IntProperty(name="Cells Y", default=5, min=1, max=40)
+                             default='TRIANGLE',
+                             description="Which single-prototile tiling "
+                                         "to build")
+        nx: IntProperty(name="Cells X", default=5, min=1, max=40,
+                        description="Number of unit cells along X")
+        ny: IntProperty(name="Cells Y", default=5, min=1, max=40,
+                        description="Number of unit cells along Y")
         color_by: EnumProperty(
             name="Color By",
             items=[('SIDES', "By Sides",
@@ -334,7 +338,8 @@ if _IN_BLENDER:
                    ('TYPE', "By Tile Type",
                     "Material per tile orientation orbit in the cell"),
                    ('UNIFORM', "Uniform", "A single material")],
-            default='TYPE')
+            default='TYPE',
+            description="How tile materials are assigned")
         margin: FloatProperty(
             name="Margin", default=0.0, min=0.0, max=0.45,
             description="Inset each tile toward its centroid, leaving "

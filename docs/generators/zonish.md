@@ -26,15 +26,15 @@ This operator offers that construction and two relatives that share the same sta
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Mode | Zonohedron | Zonohedron, Zonish, Dissection. |
+| Mode | Zonohedron | Which zonish construction to build. Zonohedron, Zonish, Dissection. |
 | Seed | Icosahedron | Convex solid whose directions become the zones. Tetrahedron, Cube, Octahedron, Dodecahedron, Icosahedron, Truncated Tetrahedron, Cuboctahedron, Truncated Cube, and 14 more. |
 | Zones From | Vertices | Which of the seed's directions become zones. Hart's zonohedrification uses the vertices. Vertices, Face Normals, Edges. |
 | Zone Length | 0.5 | Length of each added zone relative to the seed. Small values barely bevel the seed; large ones swamp it and the result tends to the zonohedron Range 0.02-4. |
 | Explode | 0 | Push the dissection's blocks out along their own centres, opening the solid up to show how it is built Range 0-4. |
 | Colour By | None | What the face colours mean. None, Zone Pair, Face Size, Block. |
 | Separate Blocks | Off | One object per block instead of a single mesh |
-| Scale | 1 | Range 0.01-100. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
+| Style | Solid | Finish for the shell: solid, Leonardo panels, struts, ball-and-stick, wireframe, or face segments. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
 | Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Struts styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |

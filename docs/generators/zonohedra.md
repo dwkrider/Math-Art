@@ -22,13 +22,13 @@ A **zonohedron** is a convex solid whose every face is centrally symmetric (a po
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Star | Rhombic Spirallohedron | Polar Zonohedron, Rhombic Spirallohedron, Rhombic Dodecahedron, Rhombic Triacontahedron, Rhombic Enneacontahedron, Cube, Random Star. |
+| Star | Rhombic Spirallohedron | Vector star the zonohedron is built from. Polar Zonohedron, Rhombic Spirallohedron, Rhombic Dodecahedron, Rhombic Triacontahedron, Rhombic Enneacontahedron, Cube, Random Star. |
 | Vectors | 12 | Number of star vectors (polar/spiral/random) Range 3-64. |
 | Spiral Width | 4 | Spirallohedron spiral width (zono -P n,w) Range 1-31. |
 | Pitch | 55 | Polar star pitch angle from the axis (degrees) Range 5-85. |
-| Random Seed | 1 | -- |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
-| Border | 0.3 | Leonardo face frame width (fraction of the face) Range 0.02-0.95. |
+| Random Seed | 1 | Seed for the random star vectors |
+| Style | Solid | How the zonohedron is rendered. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Wireframe styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
@@ -36,7 +36,7 @@ A **zonohedron** is a convex solid whose every face is centrally symmetric (a po
 | Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
 | Explode | 0.1 | Move segments outward Range 0-5. |
 | Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 
 <!-- /options -->
 

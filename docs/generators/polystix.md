@@ -23,20 +23,20 @@ They are the rod packings of crystallography, cut down to a finite sculptural ce
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | Hexagonal Pencils (hexastix) | Custom, Hexagonal Pencils (hexastix), Cylinder Bundle (hexastix), Tetrastix Cubes, Tristix (chiral triangles), +Sigma bundle (chiral), Hexastix Knot (linked loops). |
-| Packing | Hexastix - hexagonal rods, 4 directions (pencils) | Tetrastix - square rods, 3 directions, Hemistix - square rods, 3 directions (chiral), Hexastix - hexagonal rods, 4 directions (pencils), Tristix / +Omega - triangular rods, 4 dir (chiral), +Sigma - hexagonal rods, 4 directions (chiral). |
-| Cross Section | Native Prism | Native Prism, Round Cylinder. |
+| Preset | Hexagonal Pencils (hexastix) | Ready-made packing setups; Custom keeps your own settings. Custom, Hexagonal Pencils (hexastix), Cylinder Bundle (hexastix), Tetrastix Cubes, Tristix (chiral triangles), +Sigma bundle (chiral), Hexastix Knot (linked loops). |
+| Packing | Hexastix - hexagonal rods, 4 directions (pencils) | Which invariant cubic rod packing to build. Tetrastix - square rods, 3 directions, Hemistix - square rods, 3 directions (chiral), Hexastix - hexagonal rods, 4 directions (pencils), Tristix / +Omega - triangular rods, 4 dir (chiral), +Sigma - hexagonal rods, 4 directions (chiral). |
+| Cross Section | Native Prism | Shape of each rod's cross-section. Native Prism, Round Cylinder. |
 | Fill | 0.98 | Rod radius as a fraction of the just-touching radius for this packing (1.0 = rods touch) Range 0.02-1.2. |
 | Extent | 4 | Number of lattice cells the arrangement spans (more = more rods) Range 1-10. |
-| Clip Volume | Rhombic Dodecahedron | Cube, Rhombic Dodecahedron, Truncated Octahedron, Sphere. |
+| Clip Volume | Rhombic Dodecahedron | Shape the infinite packing is trimmed to. Cube, Rhombic Dodecahedron, Truncated Octahedron, Sphere. |
 | Handedness | Right | Mirror the packing (flips the chiral enantiomorph of tristix / +Sigma). Right, Left (mirror). |
-| Tube Sides | 16 | Range 3-48. |
+| Tube Sides | 16 | Cross-section segments of each round rod Range 3-48. |
 | Overhang | 0 | Extend each rod past the interleaved core by this many cells at both ends (negative retracts the rods to expose the weave) Range -4-8. |
 | Connect Loops | Off | Fuse the protruding rod ends into continuous knots/links: 'half loops' join same-axis neighbours, 'twists' join crossing neighbours (after Widmark 2021). Rods become round tubes; overhang is forced on so the ends can meet |
 | Loop Smoothness | 12 | Samples along each connecting arc Range 2-48. |
-| Cap Ends | On | -- |
-| Coloring | Per Direction | Per Direction, None. |
-| Scale | 1 | Range 0.01-100. |
+| Cap Ends | On | Close the open ends of the rods |
+| Coloring | Per Direction | How the rods are coloured. Per Direction, None. |
+| Scale | 1 | Overall size; fits the result into a 2 m cube times this factor Range 0.01-100. |
 
 <!-- /options -->
 

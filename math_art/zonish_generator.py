@@ -302,7 +302,8 @@ if _IN_BLENDER:
         bl_label = "Zonish Polyhedron"
         bl_options = {'REGISTER', 'UNDO'}
 
-        mode: EnumProperty(name="Mode", items=MODES, default='ZONOHEDRON')
+        mode: EnumProperty(name="Mode", items=MODES, default='ZONOHEDRON',
+                           description="Which zonish construction to build")
         seed: EnumProperty(
             name="Seed", items=SEED_ITEMS, default='ICOSA',
             description="Convex solid whose directions become the zones")
@@ -326,7 +327,8 @@ if _IN_BLENDER:
         separate: BoolProperty(
             name="Separate Blocks", default=False,
             description="One object per block instead of a single mesh")
-        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0)
+        scale: FloatProperty(name="Scale", default=1.0, min=0.01, max=100.0,
+                             description="Overall size multiplier")
         __annotations__.update(_shell.style_properties())
 
         def execute(self, context):

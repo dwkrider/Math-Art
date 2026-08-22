@@ -24,13 +24,13 @@ The **oloid** (Paul Schatz, 1929) is the convex hull of two unit circles that si
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Shape | Oloid | Oloid, Two-Circle Roller / Wobbler, Anti-Oloid, Ruled Circle Strip, Ruled Mobius Strip. |
-| Segments | 96 | Range 12-512. |
+| Shape | Oloid | Which developable / ruled shape to build. Oloid, Two-Circle Roller / Wobbler, Anti-Oloid, Ruled Circle Strip, Ruled Mobius Strip. |
+| Segments | 96 | Number of segments around the circles Range 12-512. |
 | Separation | 1 | Distance between the circle centres (ruled strip) Range 0-3. |
 | Inclination | 0 | Tilt of the second circle (degrees) Range -90-90. |
 | Phase | 0 | Ruling offset around the second circle (fraction of a turn) Range -0.5-0.5. |
 | Disc Aspect | 1 | Two-circle roller: 1.0 = round discs (wobbler); != 1 stretches them to ellipses (ellipsoloid) Range 0.25-4. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
 | Sharp Circle Edges | On | Mark the two circular arcs sharp (and creased). The oloid and the two-circle roller are convex hulls, so the developable band folds back on itself along each circle -- those arcs are real edges and shading smooth across them rounds the whole form off. The ruled strips have no such fold and are left alone |
 
 <!-- /options -->

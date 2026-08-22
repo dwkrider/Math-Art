@@ -243,7 +243,8 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         preset: EnumProperty(name="Surface", items=PRESET_ITEMS,
-                             default='KLEIN')
+                             default='KLEIN',
+                             description="Which topological surface to build")
         res_u: IntProperty(
             name="Resolution U", default=96, min=8, max=512,
             description="Samples along u (around); for the genus "
@@ -281,19 +282,24 @@ if _IN_BLENDER:
             name="Half-Twists", default=1, min=0, max=12,
             description="Half-twists per revolution; 1 = Mobius band")
         strip_width: FloatProperty(
-            name="Strip Width", default=0.6, min=0.05, max=2.0)
+            name="Strip Width", default=0.6, min=0.05, max=2.0,
+            description="Width of the twisted strip's band")
         strip_thickness: FloatProperty(
-            name="Strip Thickness", default=0.18, min=0.01, max=1.0)
+            name="Strip Thickness", default=0.18, min=0.01, max=1.0,
+            description="Thickness of the solid strip")
         ridge: BoolProperty(
             name="Center Ridge", default=False,
             description="Raised ridge along the strip center line")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
         thickness: FloatProperty(
             name="Thickness", default=0.0, min=0.0, max=1.0,
             description="Immersed surfaces only: 0 = raw surface, "
                         "> 0 = Solidify modifier of this thickness")
-        smooth: BoolProperty(name="Smooth Shading", default=True)
+        smooth: BoolProperty(name="Smooth Shading", default=True,
+                             description="Shade the surface smooth "
+                                         "rather than faceted")
 
         def execute(self, context):
             p = self.preset

@@ -21,7 +21,7 @@ A perforated architectural screen wall in the modular-constructivist tradition o
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Design | Saddle Lattice (after Design 5) | Saddle Lattice (after Design 5), Pinwheel (chiral), Bilayer Weave (after Design 1), Woven Undulation, Diagonal Brace, Relief Wall (after Design 6), Hypar (Carlberg). |
+| Design | Saddle Lattice (after Design 5) | Which screen design and module to tile. Saddle Lattice (after Design 5), Pinwheel (chiral), Bilayer Weave (after Design 1), Woven Undulation, Diagonal Brace, Relief Wall (after Design 6), Hypar (Carlberg). |
 | Cells X | 5 | Modules across Range 1-24. |
 | Cells Y | 5 | Modules down Range 1-24. |
 | Relief Depth | 0.5 | Undulation amplitude of the module Range 0.02-2. |
@@ -35,9 +35,9 @@ A perforated architectural screen wall in the modular-constructivist tradition o
 | Resolution | 6 | Samples per cell; higher gives rounder apertures and smoother webbing Range 3-12. |
 | Rim Bulge | 0.6 | Round the aperture and border edges into a bull-nose (0 = square-cut vertical rim) Range 0-1. |
 | Rim Segments | 3 | Facets across the rounded rim Range 2-6. |
-| Form | Flat Panel | Flat Panel, Curved Screen, Column. |
+| Form | Flat Panel | Whether the screen stays flat, curves onto a cylinder, or closes into a column. Flat Panel, Curved Screen, Column. |
 | Wrap Angle | 120 | Arc the curved screen spans, in degrees Range 10-350. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the surface smooth |
 | Scale | 1 | Multiplier on the normalized size (1.0 fits a 2 m cube centered on the origin) Range 0.01-100. |
 
 <!-- /options -->

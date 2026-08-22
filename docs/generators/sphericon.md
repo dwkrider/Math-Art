@@ -27,8 +27,8 @@ Take the solid of revolution of a regular $n$-gon about one of its axes of symme
 | Polygon Sides | 4 | n: sides of the regular polygon revolved into the roller (4 = classic sphericon, 7 = heptagonal sphericon) Range 3-24. |
 | Rotation Steps | 1 | k: the second half is turned by k x 360/n degrees so the polygon cross-section lands on itself (1 = the fundamental sphericon) Range 1-23. |
 | Segments | 96 | Angular resolution over each half turn Range 6-512. |
-| Coloring | Per Conical Band | Per Conical Band, Single Material. |
-| Smooth Shading | On | -- |
+| Coloring | Per Conical Band | Give each conical band its own color, or use one material for the whole roller. Per Conical Band, Single Material. |
+| Smooth Shading | On | Smooth-shade the curved surface while keeping the band folds crisp |
 | Sharp Edges | On | Mark the solid's fold curves sharp (and creased). A sphericon is two half-cones turned against each other; the rims where they meet are real edges. The surface is smooth everywhere else, so shading straight across the fold rounds off the one feature that defines the shape |
 | Scale | 1 | Multiplier on the normalized size (1.0 = a 2 m cube, centered on the origin) Range 0.01-100. |
 | Side Curve | 0 | Curve the cone sides: 0 = straight sphericon, > 0 = convex 'femisphere', < 0 = concave Range -0.5-0.5. |

@@ -22,17 +22,21 @@ The classic **topology menagerie**: Klein bottles, the two $\mathbb{RP}^2$ immer
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Surface | Klein Bottle | Klein Bottle, Klein Bottle (Figure-8), Sudanese Mobius Band, Cross-Cap, Roman Surface, Boy's Surface, Genus-g Surface, Twisted Strip (solid). |
+| Surface | Klein Bottle | Which topological surface to build. Klein Bottle, Klein Bottle (Figure-8), Sudanese Mobius Band, Cross-Cap, Roman Surface, Steiner Surface (Veronese shadow), Boy's Surface, Non-Orientable Genus-k, and 2 more. |
 | Resolution U | 96 | Samples along u (around); for the genus surface, implicit grid density Range 8-512. |
 | Resolution V | 48 | Samples along v (across / radial) Range 4-512. |
+| Projection Angle | 0 | Direction, in degrees, from which the Veronese surface's four-dimensional embedding is projected into 3-space: 0 gives Steiner's Roman surface, 90 the cross-cap, and every angle between gives another Steiner surface Range -180-180. |
 | Genus | 2 | Number of handles (verified for 1-5) Range 1-5. |
+| Cross-Caps k | 3 | Number of cross-caps: N_k has Euler characteristic 2 - k. 1 = projective plane, 2 = Klein bottle, 3 = Dyck's surface Range 1-8. |
+| Cross-Cap Size | 0 | Radius of the disk each cross-cap replaces; 0 sizes it from k, large for one cap and small enough to keep several clear of one another Range 0-1.2. |
+| Cross-Cap Pinch | 0.55 | How far each cross-cap is lifted over its double-point segment; 0 leaves the two sheets coincident and unreadable Range 0-1.5. |
 | Half-Twists | 1 | Half-twists per revolution; 1 = Mobius band Range 0-12. |
-| Strip Width | 0.6 | Range 0.05-2. |
-| Strip Thickness | 0.18 | Range 0.01-1. |
+| Strip Width | 0.6 | Width of the twisted strip's band Range 0.05-2. |
+| Strip Thickness | 0.18 | Thickness of the solid strip Range 0.01-1. |
 | Center Ridge | Off | Raised ridge along the strip center line |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 | Thickness | 0 | Immersed surfaces only: 0 = raw surface, > 0 = Solidify modifier of this thickness Range 0-1. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the surface smooth rather than faceted |
 
 <!-- /options -->
 

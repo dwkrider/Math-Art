@@ -24,22 +24,22 @@ The seed's flag (barycentric) subdivision is walked by a small pattern program; 
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Seed | Cube | Cube, Icosahedron, Octahedron, Tetrahedron, Dodecahedron. |
+| Seed | Cube | Seed polyhedron whose flags the weave is walked over. Cube, Icosahedron, Octahedron, Tetrahedron, Dodecahedron. |
 | Geodesic Frequency | 1 | Subdivision of triangular seeds Range 1-6. |
-| Pattern Preset | Classic Weave (vfe) | Custom, Classic Weave (vfe), Corner Weave (FEV), Vertex Rings (1,1,1V), Face Rings (1,1,1F), Face Pairs (1,1,1FFE), Curved (1,1,1::::::FEV), Raised Weave (0,1,0:0.12FEV), and 2 more. |
-| Pattern | `vfe` | [C\Vert L][bV,bE,bF][:up,side,along...]steps[tl\Vert tr\Vert tb] -- steps from V E F v e f R - |
-| Output | Ribbon | Ribbon, Tube (Rope). |
-| Strand Width | 0.1 | Range 0.005-0.5. |
-| Strand Thickness | 0.03 | Range 0.002-0.2. |
-| Tube Radius | 0.03 | Range 0.005-0.2. |
-| Tube Sides | 10 | Range 3-32. |
+| Pattern Preset | Classic Weave (vfe) | Ready-made weave pattern; Custom keeps the pattern field below. Custom, Classic Weave (vfe), Corner Weave (FEV), Vertex Rings (1,1,1V), Face Rings (1,1,1F), Face Pairs (1,1,1FFE), Curved (1,1,1::::::FEV), Raised Weave (0,1,0:0.12FEV), and 2 more. |
+| Pattern | `vfe` | [C\|L][bV,bE,bF][:up,side,along...]steps[tl\|tr\|tb] -- steps from V E F v e f R - |
+| Output | Ribbon | Sweep each strand as a flat ribbon or a round rope tube. Ribbon, Tube (Rope). |
+| Strand Width | 0.1 | Width of the flat ribbon strands Range 0.005-0.5. |
+| Strand Thickness | 0.03 | Thickness of the flat ribbon strands Range 0.002-0.2. |
+| Tube Radius | 0.03 | Radius of the round rope tubes Range 0.005-0.2. |
+| Tube Sides | 10 | Number of sides around each rope tube Range 3-32. |
 | Relax Iterations | 0 | Relax the strand centerlines together so the ropes round their clasps and keep clear of each other (0 = off) Range 0-500. |
 | Rope Clearance | 0 | Target centre-to-centre strand clearance when relaxing (0 = auto, 2.2 x tube radius) Range 0-0.5. |
 | Weave Amplitude | 0.05 | Alternating radial offset at pattern points (set 0 when the pattern's 'up' values weave) Range 0-0.3. |
-| Path Subdivision | 6 | Range 1-24. |
-| Smoothing | 2 | Range 0-10. |
-| Coloring | Per Strand | Per Strand, None. |
-| Radius | 1 | Range 0.01-100. |
+| Path Subdivision | 6 | How finely each strand path is subdivided Range 1-24. |
+| Smoothing | 2 | Number of smoothing passes over the strand paths Range 0-10. |
+| Coloring | Per Strand | Whether to give each strand its own material. Per Strand, None. |
+| Radius | 1 | Overall radius of the woven model Range 0.01-100. |
 
 <!-- /options -->
 

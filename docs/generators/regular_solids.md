@@ -23,25 +23,25 @@ A complete *Add Regular Solid*, organised by family: the five **Platonic** solid
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Family | Platonic | Platonic, Archimedean, Catalan, Kepler-Poinsot, Prisms & Antiprisms, Johnson, Archimedean-Catalan Hulls, Propellor Solids, and 5 more. |
-| Solid |  | -- |
+| Family | Platonic | Family of solids to choose from. Platonic, Archimedean, Catalan, Kepler-Poinsot, Prisms & Antiprisms, Johnson, Archimedean-Catalan Hulls, Propellor Solids, and 5 more. |
+| Solid |  | Which solid within the chosen family to build |
 | Sides | 6 | Prism / antiprism base sides Range 3-32. |
 | Canonicalize | On | Hart canonicalization: reshape so all edges are tangent to a common sphere and every face is planar. The natural finishing step for the Conway-derived families (Archimedean, Catalan, hulls, propellor, truncated / rectified Archimedean, chamfered, dipyramids / trapezohedra); the exact families are left untouched |
-| Canonical Iterations | 250 | Range 5-3000. |
+| Canonical Iterations | 250 | Number of Hart canonicalization passes Range 5-3000. |
 | Handedness | Right-Handed | Which of the two mirror forms of this chiral solid to build. Right-Handed, Left-Handed. |
 | Stellated | Off | Replace each face with a pyramid to the intersection of its neighbours' planes (octahedron gives the stella octangula, dodecahedron the small stellated dodecahedron) |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Style | Solid | How the solid is rendered as geometry. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
 | Depth | 0.15 | How far each face is extruded inward (Face Segments style) Range 0.01-2. |
 | Bevel Gap | 0 | Shift the mitre bevels inward to open a gap between neighbouring segments (0 = flush) Range 0-0.5. |
 | Separate Meshes | Off | Output each face segment as its own mesh object (Face Segments style) |
-| Border | 0.3 | Range 0.02-0.95. |
-| Thickness | 0.05 | Range 0.001-1. |
+| Border | 0.06 | Frame width left around each open panel in the Leonardo style Range 0.005-1. |
+| Thickness | 0.05 | Shell / panel / wire thickness Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
-| Coloring | By Face Size | By Face Size, None. |
+| Coloring | By Face Size | How the faces are coloured. By Face Size, None. |
 | Congruent Pieces | 1 | Split the shell into this many congruent, connected pieces (rotated copies of one another; each is a separate object for printing and reassembly). 1 = single object Range 1-60. |
 | Explode | 0.1 | Move each piece / face segment outward along its centroid direction so the split is visible Range 0-5. |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size; fits the result into a 2 m cube times this factor Range 0.01-100. |
 
 <!-- /options -->
 

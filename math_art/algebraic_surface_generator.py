@@ -244,7 +244,8 @@ if _IN_BLENDER:
                         "self-intersection or a double point, and a "
                         "coarse grid rounds exactly those away")
         scale: FloatProperty(
-            name="Scale", default=1.0, min=0.01, max=100.0)
+            name="Scale", default=1.0, min=0.01, max=100.0,
+            description="Overall size of the result")
         # The parameterised presets declare what they take in
         # `PRESET_PARAMS`, and these are the slots that carry it.  The
         # LABEL each is drawn under is the declaring row's, so adding a
@@ -287,7 +288,8 @@ if _IN_BLENDER:
             description="If > 0, add a Solidify modifier with this "
                         "thickness")
         smooth: BoolProperty(
-            name="Smooth Shading", default=True)
+            name="Smooth Shading", default=True,
+            description="Shade the surface smooth")
         rim: _rim.rim_prop()
         rim_thickness: _rim.rim_thickness_prop()
         rim_smooth: _rim.rim_smooth_prop()

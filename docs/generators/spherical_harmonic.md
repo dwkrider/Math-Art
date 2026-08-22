@@ -24,28 +24,28 @@ For the radial part that turns an angular lobe picture into an actual wavefuncti
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Form | Offset Sphere | Offset Sphere, Absolute (lobes), Signed lobes, Bourke Family. |
+| Form | Offset Sphere | Radial surface to build: offset sphere, absolute or sign-split lobes, or a Bourke harmonic. Offset Sphere, Absolute (lobes), Signed lobes, Bourke Family. |
 | Degree l | 3 | Degree l of the harmonic: the surface has l nodal circles in total Range 0-12. |
-| Order m | 2 | Order m of the harmonic; clamped to \Vert m\Vert <= l Range -12-12. |
+| Order m | 2 | Order m of the harmonic; clamped to \|m\| <= l Range -12-12. |
 | Base Radius | 1 | Offset form: the undeformed sphere radius Range 0.05-10. |
 | Amplitude | 0.6 | Offset form: how strongly Y_l^m deforms the sphere Range -5-5. |
 | Nodal Gap | 0.02 | Absolute/signed forms: radius added at the nodal circles so they do not pinch to a point Range 0-0.5. |
 | Split Lobes | Off | Signed form: separate the lobes into loose parts instead of joining them at the nodes |
-| Bourke Set | Bourke 4-1-4-1 | Bourke 4-1-4-1, Bourke 2-1-2-1, Bourke 1-2-2-2, Bourke 3-2-2-3, Bourke 5-1-3-1, Bourke 2-3-4-1, Custom. |
-| m0 | 4 | Range 0-8. |
-| m1 | 1 | Range 0-8. |
-| m2 | 4 | Range 0-8. |
-| m3 | 1 | Range 0-8. |
-| m4 | 4 | Range 0-8. |
-| m5 | 1 | Range 0-8. |
-| m6 | 4 | Range 0-8. |
-| m7 | 1 | Range 0-8. |
-| Absolute Radius | Off | Bourke form: use \Vert r\Vert, so the surface cannot fold through the origin |
-| Resolution (polar) | 128 | Range 8-1024. |
-| Resolution (azimuth) | 256 | Range 8-1024. |
-| Scale | 1 | Range 0.01-100. |
+| Bourke Set | Bourke 4-1-4-1 | Bourke form: preset eight-integer parameter set, or Custom to set m0-m7 by hand. Bourke 4-1-4-1, Bourke 2-1-2-1, Bourke 1-2-2-2, Bourke 3-2-2-3, Bourke 5-1-3-1, Bourke 2-3-4-1, Custom. |
+| m0 | 4 | Bourke form: frequency of the first sine term in phi Range 0-8. |
+| m1 | 1 | Bourke form: exponent of the first sine term in phi Range 0-8. |
+| m2 | 4 | Bourke form: frequency of the cosine term in phi Range 0-8. |
+| m3 | 1 | Bourke form: exponent of the cosine term in phi Range 0-8. |
+| m4 | 4 | Bourke form: frequency of the sine term in theta Range 0-8. |
+| m5 | 1 | Bourke form: exponent of the sine term in theta Range 0-8. |
+| m6 | 4 | Bourke form: frequency of the cosine term in theta Range 0-8. |
+| m7 | 1 | Bourke form: exponent of the cosine term in theta Range 0-8. |
+| Absolute Radius | Off | Bourke form: use \|r\|, so the surface cannot fold through the origin |
+| Resolution (polar) | 128 | Number of subdivisions from pole to pole Range 8-1024. |
+| Resolution (azimuth) | 256 | Number of subdivisions around the azimuth Range 8-1024. |
+| Scale | 1 | Overall size of the surface Range 0.01-100. |
 | Thickness | 0 | If > 0, add a Solidify modifier with this thickness Range 0-1. |
-| Smooth Shading | On | -- |
+| Smooth Shading | On | Shade the surface smooth |
 
 <!-- /options -->
 

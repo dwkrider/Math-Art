@@ -29,8 +29,8 @@ The twenty seeds built here are George Hart's named examples. Because a solid an
 | Seed | Cuboctahedron | Polyhedron to transform. A solid and its dual give the same transpolyhedron, so only one of each dual pair is listed. Tetrahedron, Cube, Dodecahedron, Truncated Tetrahedron, Cuboctahedron, Truncated Cube, Truncated Octahedron, Rhombicuboctahedron, and 12 more. |
 | Blend | 0.5 | Where to stop between the seed and its dual. Near 0 the seed's faces dominate and the dual's are specks; near 1 the reverse. Both ends are degenerate, so the range stops short of them Range 0.02-0.98. |
 | Colours | On | One material for the seed's faces, one for the dual's and one for the connecting rectangles, so the three families the construction puts together can be told apart |
-| Scale | 1 | Range 0.01-100. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube, centered at the origin) Range 0.01-100. |
+| Style | Solid | Finish for the shell: solid, Leonardo panels, struts, ball-and-stick, wireframe, or face segments. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
 | Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Struts styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |

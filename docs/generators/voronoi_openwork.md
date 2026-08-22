@@ -30,8 +30,8 @@ Voronoi Openwork is a *style* — it reworks the object you already have rather 
 | Subdivisions | 2 | Refinement of the surface before clipping (smoother hole rims) Range 0-4. |
 | Thickness | 0.03 | Solidify modifier thickness (0 = raw surface) Range 0-1. |
 | Keep Boundary Frame | On | Treat the mesh's own open boundary as strut material, keeping a solid frame around open surfaces |
-| Random Seed | 1 | -- |
-| Smooth Shading | On | -- |
+| Random Seed | 1 | Seed for the random seed placement (vary for a different hole layout) |
+| Smooth Shading | On | Smooth-shade the perforated surface |
 
 <!-- /options -->
 

@@ -25,11 +25,11 @@ The interesting control is **edge deformation**. A prototile's boundary edges co
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Tiling | 2-fold (p2) | Translation (p1), 2-fold (p2), Glide (pg), Double Glide (pgg), Rhombic (cmm), 4-fold (p4), 4-fold Mirror (p4g), 4-fold Kaleidoscope (p4m), and 5 more. |
-| Cells X | 4 | Range 1-30. |
-| Cells Y | 4 | Range 1-30. |
+| Tiling | 2-fold (p2) | Wallpaper symmetry type of the isohedral tiling. Translation (p1), 2-fold (p2), Glide (pg), Double Glide (pgg), Rhombic (cmm), 4-fold (p4), 4-fold Mirror (p4g), 4-fold Kaleidoscope (p4m), and 5 more. |
+| Cells X | 4 | Number of lattice cells along X Range 1-30. |
+| Cells Y | 4 | Number of lattice cells along Y Range 1-30. |
 | Edge Shape | 0 | Edge deformation: 0 = straight polygon tiling, non-zero = Escher-like interlocking curved tiles Range -1-1. |
-| Color By | By Tile Type | By Sides, By Tile Type, Uniform. |
+| Color By | By Tile Type | How the tiles are colored. By Sides, By Tile Type, Uniform. |
 | Margin | 0 | Inset each tile toward its centroid, leaving grout lines between tiles Range 0-0.45. |
 | Relief Height | 0 | 0 = flat 2D mesh; > 0 extrudes each tile Range 0-2. |
 | Trim Boundary | Off | Clip the patch to a clean rectangle, removing the ragged edge and stray boundary tiles |

@@ -435,7 +435,9 @@ if _IN_BLENDER:
         bl_options = {'REGISTER', 'UNDO'}
 
         preset: EnumProperty(name="Design", items=PRESET_ITEMS,
-                             default='DESIGN5')
+                             default='DESIGN5',
+                             description="Which screen design and module "
+                                         "to tile")
         nx: IntProperty(name="Cells X", default=5, min=1, max=24,
                         description="Modules across")
         ny: IntProperty(name="Cells Y", default=5, min=1, max=24,
@@ -486,6 +488,8 @@ if _IN_BLENDER:
             description="Facets across the rounded rim")
         curvature: EnumProperty(
             name="Form",
+            description="Whether the screen stays flat, curves onto a "
+                        "cylinder, or closes into a column",
             items=[('FLAT', "Flat Panel", "A flat screen wall"),
                    ('CURVED', "Curved Screen",
                     "Bend the panel onto a cylinder through the wrap "
@@ -498,7 +502,8 @@ if _IN_BLENDER:
             name="Wrap Angle", default=120.0, min=10.0, max=350.0,
             description="Arc the curved screen spans, in degrees",
             subtype='ANGLE' if False else 'NONE')
-        smooth_shading: BoolProperty(name="Smooth Shading", default=True)
+        smooth_shading: BoolProperty(name="Smooth Shading", default=True,
+                                     description="Shade the surface smooth")
         scale: FloatProperty(
             name="Scale", default=1.0, min=0.01, max=100.0,
             description="Multiplier on the normalized size (1.0 fits a "

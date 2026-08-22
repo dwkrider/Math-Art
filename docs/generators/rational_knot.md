@@ -26,19 +26,19 @@ woven over/under diagram -- rope tube mesh or curve.
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Preset | Figure-Eight 4_1 -- rational [2 2] | Figure-Eight 4_1 -- rational [2 2], Trefoil 3_1 -- rational [3], 5_2 -- rational [3 2], 6_1 Stevedore -- twist n=4, 7_2 -- twist n=5, Pretzel (3,5,7), Pretzel (-2,3,7), Pretzel (2,2,2) -- 3-component link, and 1 more. |
-| Family | Rational (2-bridge) | Rational (2-bridge), Pretzel, Twist Knot. |
+| Preset | Figure-Eight 4_1 -- rational [2 2] | Ready-made knot; Custom uses Family and Notation. Figure-Eight 4_1 -- rational [2 2], Trefoil 3_1 -- rational [3], 5_2 -- rational [3 2], 6_1 Stevedore -- twist n=4, 7_2 -- twist n=5, Pretzel (3,5,7), Pretzel (-2,3,7), Pretzel (2,2,2) -- 3-component link, and 1 more. |
+| Family | Rational (2-bridge) | Which knot family to build. Rational (2-bridge), Pretzel, Twist Knot. |
 | Notation | `2 2` | Signed integers, space or comma separated: continued fraction for RATIONAL, twist counts for PRETZEL, a single n for TWIST |
 | Twist Length | 0.8 | Advance per half-twist relative to the strand gap (crossing size) Range 0.5-2.5. |
 | Region Spacing | 2.4 | Distance between pretzel twist regions (strand-gap units) Range 1.4-6. |
 | Samples | 10 | Sample density: points per strand-gap of arclength Range 6-40. |
 | Weave Depth | 0.4 | Over/under lift at each crossing (strand-gap units, before fitting) Range 0-2. |
-| Output | Mesh Tube | Mesh Tube, Bezier Curve, Poly Curve. |
+| Output | Mesh Tube | Woven rope tube mesh, or a curve. Mesh Tube, Bezier Curve, Poly Curve. |
 | Tube Radius | 0.05 | Curve bevel depth / tube radius (m) Range 0-0.5. |
-| Bevel Resolution | 6 | Range 1-16. |
-| Tube Sides | 12 | Range 3-32. |
+| Bevel Resolution | 6 | Smoothness of the round bevel along the curve Range 1-16. |
+| Tube Sides | 12 | Number of sides around the swept tube Range 3-32. |
 | Color Components | On | One material with a distinct color per link component (links only) |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

@@ -536,7 +536,9 @@ if _IN_BLENDER:
                         "filters the Surface list")
         surface: EnumProperty(
             name="Surface",
-            items=_surface_items)
+            items=_surface_items,
+            description="The specific minimal surface to build, from the "
+                        "chosen Family")
         style: EnumProperty(
             name="Style",
             items=[('SOLID', "Solid", "The surface itself, as a "
@@ -544,13 +546,17 @@ if _IN_BLENDER:
                    ('LATTICE', "Cell Lattice",
                     "A sparse openwork net of struts along the cells "
                     "of the surface's dual, as a live modifier stack")],
-            default='SOLID')
+            default='SOLID',
+            description="Build the surface as a solid sheet or as an "
+                        "openwork lattice of struts along its dual")
         output: EnumProperty(
             name="Output",
             items=[('MESH', "Mesh", "Dense polygon mesh"),
                    ('NURBS', "NURBS", "Compact NURBS surface patch "
                                       "(control grid = Resolution U x V)")],
-            default='MESH')
+            default='MESH',
+            description="Emit a dense polygon mesh or a compact NURBS "
+                        "surface patch")
         equal_areas: BoolProperty(
             name="Equal Areas", default=False,
             description="Space the grid lines by equal surface area "
@@ -559,8 +565,12 @@ if _IN_BLENDER:
                         "parametrization contracts. Reports the spread "
                         "it achieved, and leaves the surface alone if "
                         "it cannot improve on the plain grid")
-        res_u: IntProperty(name="Resolution U", default=64, min=8, max=512)
-        res_v: IntProperty(name="Resolution V", default=64, min=8, max=512)
+        res_u: IntProperty(name="Resolution U", default=64, min=8, max=512,
+                           description="Mesh sample count across the U "
+                                       "parameter direction")
+        res_v: IntProperty(name="Resolution V", default=64, min=8, max=512,
+                           description="Mesh sample count across the V "
+                                       "parameter direction")
         ctrl_u: IntProperty(
             name="Control Points U", default=24, min=6, max=128,
             description="NURBS control grid size in U")
@@ -892,7 +902,9 @@ if _IN_BLENDER:
                         "periodic (TPMS); filters the Surface list")
         surface: EnumProperty(
             name="Surface",
-            items=_periodic_surface_items)
+            items=_periodic_surface_items,
+            description="The specific periodic surface to build, from the "
+                        "chosen Periodicity")
         arrangement: EnumProperty(
             name="Arrangement",
             items=[('PATCH', "Fundamental Piece",
@@ -935,9 +947,15 @@ if _IN_BLENDER:
             name="Output",
             items=[('MESH', "Mesh", "Dense polygon mesh"),
                    ('NURBS', "NURBS", "Compact NURBS surface patch")],
-            default='MESH')
-        res_u: IntProperty(name="Resolution U", default=64, min=8, max=512)
-        res_v: IntProperty(name="Resolution V", default=64, min=8, max=512)
+            default='MESH',
+            description="Emit a dense polygon mesh or a compact NURBS "
+                        "surface patch")
+        res_u: IntProperty(name="Resolution U", default=64, min=8, max=512,
+                           description="Mesh sample count across the U "
+                                       "parameter direction")
+        res_v: IntProperty(name="Resolution V", default=64, min=8, max=512,
+                           description="Mesh sample count across the V "
+                                       "parameter direction")
         ctrl_u: IntProperty(
             name="Control Points U", default=24, min=6, max=128,
             description="NURBS control grid size in U")
@@ -1307,11 +1325,15 @@ if _IN_BLENDER:
         rim_reeds: _rim.rim_reeds_prop()
 
         samples: IntProperty(
-            name="Boundary Samples", default=128, min=16, max=512)
+            name="Boundary Samples", default=128, min=16, max=512,
+            description="Number of points sampled around each boundary loop")
         rings: IntProperty(
-            name="Interior Rings", default=24, min=3, max=128)
+            name="Interior Rings", default=24, min=3, max=128,
+            description="Number of concentric interior rings spanning the "
+                        "surface between the boundaries")
         iterations: IntProperty(
-            name="Solver Iterations", default=40, min=1, max=200)
+            name="Solver Iterations", default=40, min=1, max=200,
+            description="Number of area-minimization passes the solver runs")
         output_nurbs: BoolProperty(
             name="NURBS Output", default=False,
             description="Emit a compact NURBS surface (control grid = the "
@@ -1396,16 +1418,20 @@ if _IN_BLENDER:
         rim_twist: _rim.rim_twist_prop()
         rim_reeds: _rim.rim_reeds_prop()
 
-        p: IntProperty(name="Knot p", default=2, min=1, max=8)
+        p: IntProperty(name="Knot p", default=2, min=1, max=8,
+                       description="p of the inner (p, q) torus knot; with q "
+                                   "it picks which knot spans to the circle")
         q: IntProperty(
             name="Knot q", default=3, min=0, max=9,
             description="q of the inner torus knot; 0 degenerates "
                         "it to a flat circle (radius 3 x Knot "
                         "Scale) wound p times")
         circle_radius: FloatProperty(
-            name="Circle Radius", default=4.5, min=1.0, max=20.0)
+            name="Circle Radius", default=4.5, min=1.0, max=20.0,
+            description="Radius of the round outer boundary circle")
         knot_scale: FloatProperty(
-            name="Knot Scale", default=1.0, min=0.1, max=5.0)
+            name="Knot Scale", default=1.0, min=0.1, max=5.0,
+            description="Overall size of the inner torus knot")
         inner_height: FloatProperty(
             name="Inner Height", default=1.0, min=0.0, max=5.0,
             description="Scale of the inner boundary's vertical "
@@ -1423,10 +1449,14 @@ if _IN_BLENDER:
                         "vertical axis relative to the outer one, "
                         "twisting the ruling between them")
         samples: IntProperty(
-            name="Boundary Samples", default=96, min=32, max=512)
-        rings: IntProperty(name="Interior Rings", default=16, min=4, max=128)
+            name="Boundary Samples", default=96, min=32, max=512,
+            description="Number of points sampled around each boundary loop")
+        rings: IntProperty(name="Interior Rings", default=16, min=4, max=128,
+                           description="Number of concentric interior rings "
+                                       "spanning between the two boundaries")
         iterations: IntProperty(
-            name="Solver Iterations", default=2, min=1, max=200)
+            name="Solver Iterations", default=2, min=1, max=200,
+            description="Number of area-minimization passes the solver runs")
         output_nurbs: BoolProperty(
             name="NURBS Output", default=False,
             description="Emit a compact NURBS surface (control grid = the "

@@ -28,12 +28,12 @@ The two whole numbers $p$ and $q$ are the whole design: they say how many times 
 | Major Radius | 0.7 | Torus centre-line radius Range 0.05-10. |
 | Minor Radius | 0.3 | Torus tube radius the knot lies on Range 0.01-10. |
 | Samples | 192 | Points per component Range 24-2048. |
-| Output | Bezier Curve | Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
+| Output | Bezier Curve | Curve type, or a swept tube mesh, to create. Bezier Curve, Poly Curve, NURBS Curve, Mesh Tube. |
 | Tube Radius | 0.08 | Curve bevel depth / tube radius Range 0-1. |
-| Bevel Resolution | 6 | Range 1-16. |
-| Tube Sides | 12 | Range 3-32. |
+| Bevel Resolution | 6 | Roundness of the tube cross-section Range 1-16. |
+| Tube Sides | 12 | Number of sides around the mesh-tube cross-section Range 3-32. |
 | Color Components | On | One material with a distinct color per link component (links only) |
-| Scale | 1 | Range 0.01-100. |
+| Scale | 1 | Overall size of the result Range 0.01-100. |
 
 <!-- /options -->
 

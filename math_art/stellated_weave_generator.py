@@ -144,9 +144,13 @@ if _IN_BLENDER:
                     "view with Material Preview or Solid shading "
                     "set to Material color)"),
                    ('NONE', "None", "No materials")],
-            default='STRIP')
+            default='STRIP',
+            description="Give each of the 12 strips its own material, "
+                        "or leave the weave unmaterialed")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size (1.0 fits a 2 m "
+                                         "cube, centered at the origin)")
 
         _PALETTE = [(0.90, 0.36, 0.23), (0.27, 0.52, 0.79),
                     (0.95, 0.77, 0.29), (0.30, 0.69, 0.42),

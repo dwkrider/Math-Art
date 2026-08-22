@@ -485,9 +485,13 @@ if _IN_BLENDER:
                     "Willmore torus with constant mean curvature in the "
                     "round 3-sphere (Heller), which no rolling conic "
                     "reaches")],
-            default='UNDULOID')
+            default='UNDULOID',
+            description="Which member of the constant-mean-curvature "
+                        "family of revolution to build")
         output: EnumProperty(
             name="Output",
+            description="Build the surface itself, or draw Delaunay's "
+                        "rolling-conic construction",
             items=[('SURFACE', "Surface", "the CMC surface of "
                     "revolution itself"),
                    ('ROULETTE', "Rolling Conic", "Delaunay's 1841 "
@@ -551,9 +555,13 @@ if _IN_BLENDER:
                         "projection pole, giving the stacked-bubble "
                         "views of Heller's Figure 1")
         ures: IntProperty(name="Profile Samples", default=200, min=16,
-                          max=2000)
+                          max=2000,
+                          description="Number of samples along the "
+                                      "meridian profile")
         vres: IntProperty(name="Revolution Samples", default=64, min=6,
-                          max=512)
+                          max=512,
+                          description="Number of samples around the "
+                                      "axis of revolution")
         height: FloatProperty(
             name="Height", default=2.5, min=0.2, max=40.0,
             description="Extent of the cylinder and catenoid, which "
@@ -563,6 +571,8 @@ if _IN_BLENDER:
         # labels stay plain nouns.
         bub_preset: EnumProperty(
             name="Preset",
+            description="Ready-made bubbleton; Custom uses the sliders "
+                        "below",
             items=[('CUSTOM', "Custom", "use the sliders below"),
                    ('CYL2', "Cylinder, 2 lobes",
                     "the classic bubbleton: a two-lobed bubble on a "
@@ -637,9 +647,12 @@ if _IN_BLENDER:
                         "the lobe count: the torus closes after n "
                         "periods of the profile")
 
-        shade_smooth: BoolProperty(name="Smooth Shading", default=True)
+        shade_smooth: BoolProperty(
+            name="Smooth Shading", default=True,
+            description="Shade the surface smooth rather than faceted")
         scale: FloatProperty(name="Scale", default=1.0, min=0.01,
-                             max=100.0)
+                             max=100.0,
+                             description="Overall size of the result")
 
         def execute(self, context):
             if self.mode == 'BUBBLETON':

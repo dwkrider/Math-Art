@@ -21,8 +21,8 @@ A **Waterman polyhedron** (Steve Waterman) is the convex hull of a cluster of eq
 | Option | Default | Description |
 | --- | --- | --- |
 | Root | 10 | Radius^2 / 2 of the ball of FCC points Range 1-1000. |
-| Style | Solid | Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
-| Border | 0.3 | Leonardo face frame width (fraction of the face) Range 0.02-0.95. |
+| Style | Solid | Finish for the polyhedron: solid, Leonardo panels, struts, ball-and-stick, wireframe, or face segments. Solid, Leonardo (da Vinci), Struts, Ball and Stick, Wireframe, Face Segments. |
+| Border | 0.06 | Leonardo face frame width, the same on every face whatever its size Range 0.005-1. |
 | Thickness | 0.05 | Panel / strut thickness for the Leonardo and Wireframe styles Range 0.001-1. |
 | Strut Radius | 0.02 | Ball-and-stick edge cylinder radius Range 0.001-0.5. |
 | Node Radius | 0.035 | Ball-and-stick vertex sphere radius (0 = no nodes) Range 0-0.5. |
@@ -30,7 +30,7 @@ A **Waterman polyhedron** (Steve Waterman) is the convex hull of a cluster of eq
 | Bevel Gap | 0 | Gap between face segments Range 0-0.5. |
 | Explode | 0.1 | Move segments outward Range 0-5. |
 | Separate Meshes | Off | Each face segment as its own object |
-| Scale | 1 | Range 0.001-100. |
+| Scale | 1 | Overall size (1.0 fits a 2 m cube, centered at the origin) Range 0.001-100. |
 
 <!-- /options -->
 

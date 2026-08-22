@@ -24,13 +24,13 @@ The reason a rule this simple works is that snowflake growth is genuinely a diff
 
 | Option | Default | Description |
 | --- | --- | --- |
-| Habit | Stellar Dendrite | Stellar Dendrite, Fern Dendrite, Sectored Plate, Hexagonal Plate, Stellar Plate. |
+| Habit | Stellar Dendrite | Snow-crystal habit to grow. Stellar Dendrite, Fern Dendrite, Sectored Plate, Hexagonal Plate, Stellar Plate. |
 | Radius | 70 | Lattice radius in cells; growth stops when the crystal nears this edge Range 16-180. |
 | Max Steps | 6000 | Cap on automaton steps (growth usually stops earlier when it reaches the radius) Range 100-40000. |
 | Base Thickness | 0.4 | Prism height of a just-frozen cell (relative to cell size, before the fit to 2 m) Range 0.02-3. |
 | Mass Relief | 0.6 | Extra height per unit of ice mass above 1, giving the ridges and plateaus Range 0-3. |
-| Scale | 1 | Range 0.01-100. |
-| Smooth Shading | Off | -- |
+| Scale | 1 | Overall size multiplier Range 0.01-100. |
+| Smooth Shading | Off | Shade the surface smooth |
 
 <!-- /options -->
 
