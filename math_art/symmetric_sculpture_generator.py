@@ -1618,6 +1618,12 @@ except ImportError:
 if _IN_BLENDER:
 
     _NG_NAME = "Math Art Symmetric Sculpture"
+    # Bump whenever the node graph or its sockets change. The group is
+    # a scene datablock: it outlives the add-on, survives reinstalling
+    # the zip, and gets saved into the .blend. Reuse therefore has to
+    # be an exact match on this stamp and nothing else -- see
+    # _node_group.
+    _NG_VERSION = 3
 
     # Blender only borrows the strings a dynamic enum callback
     # returns, so the list has to stay alive on the Python side or
@@ -1899,15 +1905,33 @@ if _IN_BLENDER:
         (Translucent), realize, weld, extrude radially from the origin
         (preserves planarity), and lift the result clear of the
         motif."""
+        # Reuse is keyed on a version stamp, not on sniffing the
+        # sockets. The old sniff asked for a Shell socket with
+        # min_value < 0 while the builder below creates it with
+        # min_value = 0.0, so a group could never match the test that
+        # made it: every single Add built another one, and a scene
+        # collected Math Art Symmetric Sculpture.001, .002, .003...
+        #
+        # Worse than the litter, the sniff could still match a group
+        # left behind by an EARLIER version of the add-on -- those did
+        # allow a negative Shell -- so after reinstalling the zip the
+        # new code would happily adopt an old graph whose insides it
+        # no longer agreed with, and the modifier quietly output
+        # nothing. That is the sculpture that fails to appear after a
+        # delete-reinstall-rerun.
         for ng in bpy.data.node_groups:
-            if (ng.name.startswith(_NG_NAME)
-                    and ng.type == 'GEOMETRY'
-                    and any(it.name == 'Translucent'
-                            for it in ng.interface.items_tree)
-                    and any(it.name == 'Shell' and it.min_value < 0
-                            for it in ng.interface.items_tree)):
+            if (ng.type == 'GEOMETRY'
+                    and ng.get("math_art_ng_version") == _NG_VERSION):
                 return ng
+        # Clear out our own orphans while we are here: same name, no
+        # users, no fake user. Anything still driving a modifier has
+        # users >= 1 and is left alone.
+        for ng in list(bpy.data.node_groups):
+            if (ng.name.startswith(_NG_NAME) and ng.users == 0
+                    and not ng.use_fake_user):
+                bpy.data.node_groups.remove(ng)
         ng = bpy.data.node_groups.new(_NG_NAME, 'GeometryNodeTree')
+        ng["math_art_ng_version"] = _NG_VERSION
         face = ng.interface.new_socket
         face("Geometry", in_out='INPUT',
              socket_type='NodeSocketGeometry')
