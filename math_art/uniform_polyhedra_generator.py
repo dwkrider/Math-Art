@@ -541,19 +541,30 @@ def build_dual(V, faces, big=6.0):
     return poles, out
 
 
-def valid_star_step(p, q):
-    """Coerce (p, q) to a valid star-polygon step: 1 <= q < p/2, coprime
-    with p ({p/q} and {p/(p-q)} are the same star, so q is folded into
-    range; a non-coprime q is nudged to the nearest coprime, falling back
-    to 1 = a convex prism)."""
+def valid_star_step(p, q, fold=True):
+    """Coerce (p, q) to a valid star-polygon step: coprime with p, and by
+    default folded to 1 <= q < p/2 because {p/q} and {p/(p-q)} are the same
+    star polygon.  A non-coprime q is nudged to the nearest coprime, falling
+    back to 1 = a convex prism.
+
+    Pass `fold=False` to keep a RETROGRADE step q > p/2.  The two describe the
+    same polygon but not the same antiprism: an antiprism's bases are rotated
+    relative to each other, so the retrograde form joins them the other way
+    round and is a distinct uniform solid -- {5/2} gives the pentagrammic
+    antiprism (density 2) and {5/3} the pentagrammic CROSSED antiprism
+    (density 3).  Har'El's Appendix II Table 4 lists both.  Folding is right
+    for prisms, dipyramids and trapezohedra, whose geometry depends only on
+    the base polygon.
+    """
     q = max(1, min(int(q), p - 1))
-    if q > p / 2:                        # {p/q} == {p/(p-q)}
+    if fold and q > p / 2:               # {p/q} == {p/(p-q)}
         q = p - q
     q = max(1, q)
     if math.gcd(p, q) != 1:
+        hi = p // 2 if fold else p - 1
         for delta in range(1, p):
             for cand in (q - delta, q + delta):
-                if 1 <= cand <= p // 2 and math.gcd(p, cand) == 1:
+                if 1 <= cand <= hi and math.gcd(p, cand) == 1:
                     return cand
         return 1
     return q
@@ -580,12 +591,64 @@ def build_star_prism(p, q, scale=1.0):
     return verts, faces
 
 
+def _crossed_antiprism(p, qb, scale=1.0):
+    """The crossed {p/(p-qb)} antiprism on a {p/qb} base, or None.
+
+    Unlike an ordinary antiprism the two bases are IN PHASE -- offset 0, not
+    pi/p -- and each base edge, which spans qb ring steps, is capped by an apex
+    on the OPPOSITE ring at the midpoint of that span.  That needs qb even, so
+    the midpoint lands on a ring position.  The height then follows from
+    "lateral edge = base edge"; if that has no real solution the form does not
+    exist and None is returned.
+
+    Derived from, and checked against, the component inside Skilling's
+    compounds 44 and 45: at unit edge that measures ring radius 0.525731,
+    half-height 0.393076 and circumradius 0.656431, which this reproduces.
+    """
+    if qb % 2 or qb < 2 or math.gcd(p, qb) != 1:
+        return None
+    m = qb // 2                                   # apex is qb/2 steps along
+    R = scale / (2.0 * math.sin(qb * math.pi / p))
+    base = 2.0 * R * math.sin(qb * math.pi / p)   # == scale, by construction
+    # horizontal chord from a base vertex to the apex, m steps away
+    chord = 2.0 * R * math.sin(m * math.pi / p)
+    v2 = base * base - chord * chord
+    if v2 <= 1e-15:
+        return None
+    h = math.sqrt(v2) / 2.0                       # half-height
+    top = [(R * math.cos(2 * math.pi * k / p),
+            R * math.sin(2 * math.pi * k / p), h) for k in range(p)]
+    bot = [(R * math.cos(2 * math.pi * k / p),
+            R * math.sin(2 * math.pi * k / p), -h) for k in range(p)]
+    verts = top + bot                             # T_k = k, B_k = p + k
+    faces = []
+    for k in range(p):
+        faces.append(([k, p + (k + m) % p, (k + qb) % p], 1))
+        faces.append(([p + k, (k + m) % p, p + (k + qb) % p], 1))
+    d = p - qb                                    # the retrograde density
+    faces.append(([(qb * k) % p for k in range(p)], d))
+    faces.append(([p + (qb * k) % p for k in range(p)][::-1], d))
+    return verts, faces
+
+
 def build_star_antiprism(p, q, scale=1.0):
     """Uniform {p/q} star antiprism: two star-polygon bases (bottom rotated by
     pi/p) joined by 2p lateral triangles.  The lateral-triangle apex is the
     perpendicular-bisector-plane vertex (equal lateral edges), and the height
     solves the uniform condition (lateral edge = base edge) when real, else
-    falls back to a valid crossed/retrograde form.  V=2p, E=4p, F=2p+2."""
+    falls back to a valid crossed/retrograde form.  V=2p, E=4p, F=2p+2.
+
+    A RETROGRADE step q > p/2 gives the CROSSED antiprism, a distinct uniform
+    solid -- {5/2} is the pentagrammic antiprism (density 2), {5/3} the
+    pentagrammic crossed antiprism (density 3); Har'El's Appendix II Table 4
+    lists both.  It is built by `_crossed_antiprism` below, because it is not a
+    member of this function's family: its two bases are IN PHASE rather than
+    rotated by pi/p.  Note that simply not folding q does not produce it -- it
+    would relabel the density while leaving the solid unchanged."""
+    if p > 2 and q > p / 2.0 and math.gcd(p, int(q)) == 1:
+        out = _crossed_antiprism(p, p - int(q), scale)
+        if out is not None:
+            return out
     q = valid_star_step(p, q)
     R = scale / (2.0 * math.sin(q * math.pi / p))
     if p % 2 == 1:                                   # apex shift s: 2s == q-1

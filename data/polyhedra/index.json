@@ -19,7 +19,7 @@
     "toroid": "Toroidal polyhedra",
     "canonical": "Canonical (midsphere) forms"
   },
-  "count": 447,
+  "count": 448,
   "entries": [
     {
       "slug": "10-dodecahedra",
@@ -6987,6 +6987,30 @@
       },
       "convex": false,
       "density": 2,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "pentagrammic-crossed-antiprism",
+      "name": "Pentagrammic Crossed Antiprism",
+      "path": "solids/prism-family/pentagrammic-crossed-antiprism.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 20,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "D5h",
+        "orbifold": "*225",
+        "order": 20
+      },
+      "convex": false,
+      "density": 3,
       "dual": null,
       "ids": {}
     },

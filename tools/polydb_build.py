@@ -148,13 +148,17 @@ def exact_vertices(V):
     return consts, rows
 
 
-def cross_check(V, mccooey_stem, netlib_num=None):
+def cross_check(V, mccooey_stem, netlib_num=None, F=None):
+    """Compare against the cached sources. Pass F whenever the faces are known:
+    without them the test can only confirm the VERTEX ARRANGEMENT, which
+    distinct solids share, and the record then records a weaker result than it
+    could."""
     out = []
     p = CC.parse_mccooey(CC.fetch_mccooey(mccooey_stem)) if mccooey_stem else None
     if p:
         M = CC.mccooey_numeric(p)
         if M:
-            ok, detail = CC.same_shape(V, M, None, p.get("faces"))
+            ok, detail = CC.same_shape(V, M, F, p.get("faces"))
             out.append({"source": "mccooey", "agrees": bool(ok), "detail": detail})
     nl = CC.fetch_netlib(netlib_num) if netlib_num is not None else None
     if nl:
@@ -531,7 +535,7 @@ def build_uniform(spec):
         meta["sources"].append(
             "M. Wenninger, 'Polyhedron Models', Cambridge (1971), model %d."
             % h["wenninger"])
-    meta["cross_checked"] = cross_check(V, spec["mccooey"])
+    meta["cross_checked"] = cross_check(V, spec["mccooey"], F=F)
     if h:
         agrees = (h.get("chi") is None
                   or h["chi"] == len(V) - len(ME.edges_of(F)) + len(F))
@@ -570,7 +574,7 @@ def build_johnson(num, name):
             "Bureau (1969) (completeness).",
         ],
     }
-    meta["cross_checked"] = cross_check(V, meta["ids"]["mccooey"])
+    meta["cross_checked"] = cross_check(V, meta["ids"]["mccooey"], F=F)
     return assemble(V, F, meta)
 
 
@@ -671,7 +675,7 @@ def build_dual(spec, existing):
             "Dedicata 47 (1993), 57-110 (dual names and prototiles).",
         ],
     }
-    meta["cross_checked"] = cross_check(DV, meta["ids"]["mccooey"])
+    meta["cross_checked"] = cross_check(DV, meta["ids"]["mccooey"], F=DF)
     return assemble(DV, DF, meta)
 
 
@@ -796,22 +800,20 @@ def build_prism_family(kind, n, dual, existing):
             "Dedicata 47 (1993), Appendix II Table 4 (dihedral uniform polyhedra).",
         ],
     }
-    meta["cross_checked"] = cross_check(V, meta["ids"]["mccooey"])
+    meta["cross_checked"] = cross_check(V, meta["ids"]["mccooey"], F=F)
     return assemble(V, F, meta)
 
 
 # {p/q} bases for the star prism families.
 #
-# (5, 3) is deliberately ABSENT. As a polygon {5/3} is {5/2} traversed the
-# other way, so the {5/3} PRISM, dipyramid and trapezohedron are the same
-# solids as the {5/2} ones and would be duplicate records. The pentagrammic
-# CROSSED antiprism {5/3} genuinely is distinct -- Har'El's Table 4 gives it
-# density 3 against the {5/2} antiprism's 2 -- but
-# `uniform_polyhedra_generator.build_star_antiprism` currently returns
-# identical geometry for q = 2 and q = 3, so it cannot be built correctly.
-# Emitting it would mean shipping one shape under two names with two
-# different densities. See BACKLOG.
+# (5, 3) is included for the ANTIPRISM only: as a polygon {5/3} is {5/2}
+# traversed the other way, so the {5/3} prism, dipyramid and trapezohedron are
+# the same solids as the {5/2} ones and would be duplicate records. The
+# pentagrammic CROSSED antiprism is genuinely distinct -- its two bases are in
+# phase rather than rotated by pi/p -- and is built by
+# `uniform_polyhedra_generator._crossed_antiprism`.
 STAR_PRISM_PQ = ((5, 2), (7, 2), (7, 3), (8, 3), (10, 3))
+STAR_ANTIPRISM_ONLY_PQ = ((5, 3),)
 
 
 def stage_star_prism(limit=None):
@@ -831,8 +833,13 @@ def stage_star_prism(limit=None):
     ORD = {5: "Pentagrammic", 7: "Heptagrammic", 8: "Octagrammic",
            10: "Decagrammic"}
     out = []
-    for (p, q) in STAR_PRISM_PQ[:limit]:
-        for kind in ("prism", "antiprism", "dipyramid", "trapezohedron"):
+    jobs = [(p, q, k) for (p, q) in STAR_PRISM_PQ
+            for k in ("prism", "antiprism", "dipyramid", "trapezohedron")]
+    # retrograde steps give a distinct ANTIPRISM only; the other three would
+    # duplicate the folded base's records
+    jobs += [(p, q, "antiprism") for (p, q) in STAR_ANTIPRISM_ONLY_PQ]
+    for (p, q, kind) in jobs[:limit]:
+        if True:
             word = ORD.get(p)
             if not word:
                 continue
@@ -980,7 +987,7 @@ def stage_biscribed(limit=None):
                 "Conway operators used as bases).",
             ],
         }
-        meta["cross_checked"] = cross_check(V, meta["ids"]["mccooey"])
+        meta["cross_checked"] = cross_check(V, meta["ids"]["mccooey"], F=F)
         try:
             rec = assemble(V, F, meta)
         except Exception as exc:                            # noqa: BLE001
@@ -1130,7 +1137,7 @@ def stage_zonohedron(limit=None):
                 "P. R. Cromwell, 'Polyhedra', Cambridge (1997), ch. 4.",
             ],
         }
-        meta["cross_checked"] = cross_check(V, meta["ids"]["mccooey"])
+        meta["cross_checked"] = cross_check(V, meta["ids"]["mccooey"], F=F)
         try:
             out.append(assemble(V, F, meta))
         except Exception as exc:                            # noqa: BLE001

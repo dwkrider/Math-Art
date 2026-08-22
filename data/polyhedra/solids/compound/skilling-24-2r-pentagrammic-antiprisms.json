@@ -1253,7 +1253,7 @@
     "component_count": 4,
     "components": [
       {
-        "slug": null,
+        "slug": "pentagrammic-crossed-antiprism",
         "counts": {
           "vertices": 10,
           "edges": 20,
@@ -1275,7 +1275,7 @@
         ]
       },
       {
-        "slug": null,
+        "slug": "pentagrammic-crossed-antiprism",
         "counts": {
           "vertices": 10,
           "edges": 20,
@@ -1297,7 +1297,7 @@
         ]
       },
       {
-        "slug": null,
+        "slug": "pentagrammic-crossed-antiprism",
         "counts": {
           "vertices": 10,
           "edges": 20,
@@ -1319,7 +1319,7 @@
         ]
       },
       {
-        "slug": null,
+        "slug": "pentagrammic-crossed-antiprism",
         "counts": {
           "vertices": 10,
           "edges": 20,
