@@ -2187,6 +2187,23 @@ if _IN_BLENDER:
         # sculpture it comes from would be a trap.  Shell is a radial
         # fraction, so at the plane it works out to Shell x Distance,
         # and changing Shell rebuilds the part with it.
+        show_crossings: BoolProperty(
+            name="Mark Crossings", default=True,
+            description="Ring the guide-line crossings where three "
+                        "or more planes meet -- the points a motif's "
+                        "corners want to sit on. The marker is an "
+                        "n-gon with one side per plane, so a triangle "
+                        "is a 3-plane point and a pentagon a 5-plane "
+                        "one, and each carries a vertex at the exact "
+                        "crossing to snap to")
+        crossing_min_planes: IntProperty(
+            name="Mark From", default=3, min=3, max=8,
+            description="Only mark crossings where at least this "
+                        "many planes meet. Three-plane points vastly "
+                        "outnumber the rest -- a wide guide disc can "
+                        "carry hundreds of them against a handful of "
+                        "five-plane hubs -- so raise this to pick the "
+                        "hubs out of the crowd")
         show_polyhedron: BoolProperty(
             name="Show Defining Polyhedron", default=False,
             description="Add the semi-transparent solid whose "
@@ -2328,6 +2345,58 @@ if _IN_BLENDER:
             guides.matrix_world = Matrix.Identity(4)
             guides.display_type = 'WIRE'
             guides.hide_render = True
+
+            # Crossing markers. Where k guide lines cross, k+1 planes
+            # of the family meet and k+1 parts converge, so these are
+            # the points a corner has to land on for the joint to
+            # close. Two-plane crossings are left unmarked: every pair
+            # of lines makes one and they are everywhere, which is
+            # noise rather than information.
+            #
+            # The marker is an (k+1)-gon -- a triangle at a 3-plane
+            # point, a pentagon at a 5-plane one -- because the count
+            # IS the thing you are looking for, and reading it off the
+            # shape beats counting lines by eye in a stellation
+            # pattern dense enough to be worth drawing at all. Each
+            # marker also carries a loose vertex dead on the crossing,
+            # so vertex snapping puts a motif corner exactly there.
+            if self.show_crossings:
+                cross = crossing_points(kind, family, d, extent,
+                                        self.guide_rings)
+                cverts = []
+                cedges = []
+                for cx, cy, k in cross:
+                    planes = k + 1
+                    if planes < max(3, self.crossing_min_planes):
+                        continue
+                    # Size climbs steeply with order so a pentagon
+                    # reads as a hub from across the viewport even
+                    # when it is one marker in eight hundred.
+                    rad = 0.016 * d * (planes - 2) ** 0.85
+                    base = len(cverts)
+                    cverts.append((cx, cy, 0.0))       # snap target
+                    for t in range(planes):
+                        ang = 2.0 * pi * t / planes + pi / 2.0
+                        cverts.append((cx + rad * cos(ang),
+                                       cy + rad * sin(ang), 0.0))
+                    for t in range(planes):
+                        cedges.append((base + 1 + t,
+                                       base + 1 + (t + 1) % planes))
+                cme = bpy.data.meshes.new("SymSculpt Crossings")
+                cme.from_pydata(cverts, cedges, [])
+                cme.update()
+                marks = bpy.data.objects.new("SymSculpt Crossings",
+                                             cme)
+                context.collection.objects.link(marks)
+                marks.matrix_world = Matrix.Identity(4)
+                marks.display_type = 'WIRE'
+                marks.hide_render = True
+                n3 = sum(1 for _x, _y, k in cross if k + 1 == 3)
+                n5 = sum(1 for _x, _y, k in cross if k + 1 == 5)
+                if n3 or n5:
+                    self.report({'INFO'},
+                                f"{n3} three-plane and {n5} "
+                                f"five-plane crossings marked")
 
             # the sculpture: one point per rotation, euler attribute
             # Drop rotations that would land the motif exactly where
@@ -2602,7 +2671,8 @@ if _IN_BLENDER:
             # replicated into
             lay.prop_search(self, 'motif_object', bpy.data, 'objects')
             for k in ('distance', 'shell', 'guide_extent',
-                      'guide_rings', 'show_polyhedron', 'lift',
+                      'guide_rings', 'show_crossings',
+                      'crossing_min_planes', 'show_polyhedron', 'lift',
                       'translucent', 'show_part'):
                 lay.prop(self, k)
 
