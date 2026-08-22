@@ -300,11 +300,22 @@ def family_polyhedron(kind, family, d=1.0):
 def crossing_points(kind, family, d=1.0, extent=3.2, rings=0):
     """Where the drawn guide lines cross, as (x, y, lines).
 
-    These are the points a motif's corners want to sit on: a crossing
-    of k guide lines is a point where k+1 planes of the family meet,
-    so k+1 parts converge there and the joint closes exactly.  `lines`
-    is that k, which is what distinguishes a plain corner from a hub
-    where a whole rosette meets.
+    A crossing of k guide lines is a point where k+1 planes of the
+    family meet, and `lines` is that k.
+
+    That is NOT the same as k+1 parts meeting there, and the
+    difference matters: k+1 planes through a point is necessary for
+    k+1 parts to converge, but not sufficient.  Each of those planes
+    carries a copy of the motif, but the copy in plane P has its
+    corner at g(X) where g is the rotation carrying this plane to P --
+    so all k+1 corners land on X only if every such g FIXES X, which
+    happens only when X lies on the rotation axis.  Off-axis, the
+    copies each have a corner somewhere near X and none of them at it.
+
+    On ICOSA/P1 the gap is stark: of the eight 5-plane crossings only
+    three carry five parts, and of 552 three-plane crossings only six
+    carry three.  Use crossing_parts() for the number that actually
+    meet.
 
     Derived from the segments stellation_lines actually emits, so
     thinning the pattern with `rings` thins the crossings with it."""
@@ -338,6 +349,33 @@ def crossing_points(kind, family, d=1.0, extent=3.2, rings=0):
         k = sum(1 for A, B, C in lines
                 if abs(A * x + B * y - C) < 1e-6)
         out.append((x, y, k))
+    return out
+
+
+def crossing_parts(kind, family, crossings, d=1.0):
+    """How many parts actually meet at each crossing.
+
+    The stabiliser of the point under the rotation group: a copy of
+    the motif has a corner at X exactly when the rotation that placed
+    it fixes X, so the count is the number of group elements fixing
+    it.  1 means nothing converges there, whatever the guide lines
+    look like -- see crossing_points for why the two counts differ.
+    """
+    a, _n = plane_normals(kind, family)
+    u, v = _frame(a)
+    rots = group_rotations(kind)
+    out = []
+    for x, y, _k in crossings:
+        P = (a[0] * d + x * u[0] + y * v[0],
+             a[1] * d + x * u[1] + y * v[1],
+             a[2] * d + x * u[2] + y * v[2])
+        n = 0
+        for R in rots:
+            Q = _apply(R, P)
+            if (abs(Q[0] - P[0]) < 1e-6 and abs(Q[1] - P[1]) < 1e-6
+                    and abs(Q[2] - P[2]) < 1e-6):
+                n += 1
+        out.append(n)
     return out
 
 
@@ -2189,21 +2227,21 @@ if _IN_BLENDER:
         # and changing Shell rebuilds the part with it.
         show_crossings: BoolProperty(
             name="Mark Crossings", default=True,
-            description="Ring the guide-line crossings where three "
-                        "or more planes meet -- the points a motif's "
-                        "corners want to sit on. The marker is an "
-                        "n-gon with one side per plane, so a triangle "
-                        "is a 3-plane point and a pentagon a 5-plane "
-                        "one, and each carries a vertex at the exact "
-                        "crossing to snap to")
+            description="Ring the points where parts of the finished "
+                        "sculpture actually meet -- the ones a motif "
+                        "corner can be snapped to. The marker is an "
+                        "n-gon with one side per part, so a triangle "
+                        "is where three meet and a pentagon where "
+                        "five do, and each carries a vertex on the "
+                        "point to snap to. Lines crossing is NOT "
+                        "enough: five planes through a point only "
+                        "bring five parts together if the point is "
+                        "on the 5-fold axis, and most are not")
         crossing_min_planes: IntProperty(
             name="Mark From", default=3, min=3, max=8,
-            description="Only mark crossings where at least this "
-                        "many planes meet. Three-plane points vastly "
-                        "outnumber the rest -- a wide guide disc can "
-                        "carry hundreds of them against a handful of "
-                        "five-plane hubs -- so raise this to pick the "
-                        "hubs out of the crowd")
+            description="Only mark points where at least this many "
+                        "parts meet. Raise it to pick the five-fold "
+                        "hubs out of the three-fold corners")
         show_polyhedron: BoolProperty(
             name="Show Defining Polyhedron", default=False,
             description="Add the semi-transparent solid whose "
@@ -2363,15 +2401,14 @@ if _IN_BLENDER:
             if self.show_crossings:
                 cross = crossing_points(kind, family, d, extent,
                                         self.guide_rings)
+                nparts = crossing_parts(kind, family, cross, d)
                 cverts = []
                 cedges = []
-                for cx, cy, k in cross:
-                    planes = k + 1
+                for (cx, cy, _k), planes in zip(cross, nparts):
                     if planes < max(3, self.crossing_min_planes):
                         continue
-                    # Size climbs steeply with order so a pentagon
-                    # reads as a hub from across the viewport even
-                    # when it is one marker in eight hundred.
+                    # Size climbs steeply with order so a hub
+                    # reads from across the viewport.
                     rad = 0.016 * d * (planes - 2) ** 0.85
                     base = len(cverts)
                     cverts.append((cx, cy, 0.0))       # snap target
@@ -2391,8 +2428,8 @@ if _IN_BLENDER:
                 marks.matrix_world = Matrix.Identity(4)
                 marks.display_type = 'WIRE'
                 marks.hide_render = True
-                n3 = sum(1 for _x, _y, k in cross if k + 1 == 3)
-                n5 = sum(1 for _x, _y, k in cross if k + 1 == 5)
+                n3 = sum(1 for q in nparts if q == 3)
+                n5 = sum(1 for q in nparts if q == 5)
                 if n3 or n5:
                     self.report({'INFO'},
                                 f"{n3} three-plane and {n5} "
@@ -3002,6 +3039,20 @@ def _selftest():
     # the crossings must include the points the designs are drawn to:
     # on the triacontahedral planes, phi^2 out along local x (where
     # three Frabjous tips meet) and phi along local y (the vortices)
+    # crossings: planes meeting is not parts meeting
+    _cr = crossing_points('ICOSA', 'P1', 1.0, 2.4)
+    _np = crossing_parts('ICOSA', 'P1', _cr, 1.0)
+    _five = [(c, n) for c, n in zip(_cr, _np) if c[2] + 1 == 5]
+    _hub = [1 for _c, n in _five if n == 5]
+    print(f"ICOSA/P1: {len(_five)} five-plane crossings, "
+          f"{len(_hub)} of them real 5-part hubs "
+          f"{'OK' if 0 < len(_hub) < len(_five) else 'BAD'}")
+    assert 0 < len(_hub) < len(_five), (
+        "a 5-plane crossing is not automatically a 5-part hub; if "
+        "every one of them were, the stabiliser test would be broken")
+    for _c, _n in zip(_cr, _np):
+        assert 1 <= _n <= _c[2] + 1, "parts meeting exceeds planes"
+
     cr = crossing_points('ICOSA', 'P2', 1.0, 3.2)
     got = {(round(x, 5), round(y, 5)): k for x, y, k in cr}
     ok = ((round(PHI * PHI, 5), 0.0) in got
