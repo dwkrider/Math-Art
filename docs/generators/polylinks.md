@@ -81,11 +81,11 @@ A ring of these rotated corners, together with an inner ring shrunk by $(1-\text
 
 **Wavy circle.** Instead of the polygon, a circle of radius $r = s\,\lVert V_{f_0}-c\rVert$ is drawn in the face plane with a radially modulated radius
 
-$$r(t) = r + A\cos(\text{frq}\cdot t),\qquad \text{frq} = \text{wave\_factor}\cdot m,$$
+$$r(t) = r + A\cos(\text{frq}\cdot t),\qquad \text{frq} = w\cdot m,$$
 
-so the ring has $m$ (or a multiple of $m$) lobes matching the polygon's symmetry, and neighbouring wavy rings weave through each other.
+where $w$ is the `wave_factor`, so the ring has $m$ (or a multiple of $m$) lobes matching the polygon's symmetry, and neighbouring wavy rings weave through each other.
 
-**Torus knot.** A $(p,q)$ torus knot is traced about the face axis, with $q = \text{knot\_q\_factor}\cdot m$ and minor radius $r_2 = A$:
+**Torus knot.** A $(p,q)$ torus knot is traced about the face axis, with $q = c\cdot m$ (with $c$ the `knot_q_factor`) and minor radius $r_2 = A$:
 
 $$P(t) = c_{\text{en}} + (r + r_2\cos qt)\big(\cos pt\,\hat x_N + \sin pt\,\hat y_N\big) + r_2\sin qt\;n,$$
 

@@ -1,8 +1,11 @@
 """Lint the LaTeX in the generator doc pages.
 
-GitHub renders `$...$` and `$$...$$` with MathJax and does NOT unescape
-backslashes first, so what is in the file is what MathJax sees.  Two
-mistakes are easy to make and invisible in the source:
+GitHub renders `$...$` and `$$...$$` with MathJax.  Backslash *runs*
+(`\\\\`) and command names (`\\alpha`) pass through unchanged, but the
+Markdown layer still unescapes single-character escapes like `\\_` before
+MathJax runs -- so an escaped underscore inside `\\text{}` does NOT
+survive (see check 5).  Mistakes that are easy to make and invisible in
+the source:
 
   * `\\\\\\\\` (four backslashes) where `\\\\` (two) is meant.  MathJax
     reads two row separators and inserts a blank row in the matrix.
@@ -62,6 +65,19 @@ def check(path):
     for m in re.finditer(r"\\,\$", text):
         line = text.count("\n", 0, m.start()) + 1
         problems.append((line, "thin space `\\,` right before closing $"))
+
+    # 5. an underscore inside \text{} (or \textbf/\texttt/... ).  GitHub's
+    #    Markdown consumes the backslash of an escaped `\_` before MathJax
+    #    runs, so BOTH `\text{a_b}` and `\text{a\_b}` reach MathJax as a raw
+    #    `_` in text mode -> "'_' allowed only in math mode".  Keep code
+    #    identifiers out of math: use a symbol and name the identifier in
+    #    prose (backticks).  The pattern matches the escaped form too,
+    #    because `\_` still contains a literal `_`.
+    for m in re.finditer(r"\\text[a-z]*\{[^}]*_[^}]*\}", text):
+        line = text.count("\n", 0, m.start()) + 1
+        problems.append((line, "underscore inside `%s` -- breaks on GitHub; "
+                         "use a symbol in math, name the identifier in prose"
+                         % m.group(0)[:36]))
 
     return name, problems
 

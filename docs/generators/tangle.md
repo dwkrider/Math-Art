@@ -77,7 +77,7 @@ Each component is then drawn in one of three styles.
 
 **Hollow Faces (da Vinci).** Two scaled copies of the polyhedron are made, one at radius $1+\tfrac{\text{thickness}}{2}$ and one at $1-\tfrac{\text{thickness}}{2}$; adjacent panels share these scaled vertices, so the joints along edges and at vertices are exact watertight mitres. Within each face a hole is inset by the factor $(1-\text{width})$ toward the face centroid, and the panel is the shell between the outer surface, the inner surface and the hole rim — the open "vacuus" panels Leonardo drew for Pacioli's *De divina proportione*.
 
-**Edge Struts.** Each edge becomes a square-section stick trimmed back from both endpoints by $s = \min(\text{thickness}\cdot\text{cap\_size},\,0.35\,\ell)$ (with $\ell$ the edge length) and closed with flat end caps. At every vertex the surrounding strut-cap corners are collected and filled with their **convex hull**, giving a clean faceted knuckle at the joint.
+**Edge Struts.** Each edge becomes a square-section stick trimmed back from both endpoints by $s = \min(\text{thickness}\cdot k,\,0.35\,\ell)$ (with $\ell$ the edge length and $k$ the `cap_size`) and closed with flat end caps. At every vertex the surrounding strut-cap corners are collected and filled with their **convex hull**, giving a clean faceted knuckle at the joint.
 
 **Ball and Stick.** Each edge becomes a round cylinder of radius **Strut Radius** and each vertex a small sphere of radius **Node Radius** (0 omits the balls) — the familiar molecular-model rendering, built through the repo's shared `ball_and_stick` module. It reads the same rotated component edges as the strut style, only rounding the sections and capping the joints with spheres instead of hull knuckles.
 
