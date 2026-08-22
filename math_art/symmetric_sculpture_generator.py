@@ -1505,6 +1505,16 @@ def whimsy_motif(d=1.0):
 # A tip that sits on a symmetry axis is a fact about the sculpture; a
 # radius copied from a different sculpture is a guess.
 #
+# WHICH points, not just which kind. The two feet land on a specific
+# pair of meeting points, chosen by searching every 5-part point
+# against every 3-part point in the guide disc (4 x 5, both
+# reflections) and scoring how nearly the four tip edges fall along
+# the guide lines through their point. The winner leaves 4.4, 9.9,
+# 1.96 and 3.34 degrees; the pair that looked obvious -- the two
+# nearest the plane centre -- leaves 8.2, 28.2, 9.3 and 35.1, which
+# is what "close but not lining up" looked like in the viewport.
+# The part is 1.39x the size that pairing implied.
+#
 # Which foot goes where: the NARROW one to the 5-fold hub, the FAT
 # one to the 3-fold corner.  Five parts crowd a 5-fold vertex and
 # only three a 3-fold, so the wider foot goes where there is room --
@@ -1533,54 +1543,54 @@ def whimsy_motif(d=1.0):
 # research/projects/symm_sculpt/.
 
 _SOLAR_FLAIR_OUTER = (
-    (-0.008622, +0.284838), (+0.072111, +0.387391), (+0.168091, +0.392328),
-    (+0.204729, +0.392899), (+0.258959, +0.391395), (+0.306253, +0.386569),
-    (+0.348466, +0.378129), (+0.372128, +0.371208), (+0.395029, +0.362816),
-    (+0.437816, +0.342766), (+0.472209, +0.321591), (+0.496682, +0.303217),
-    (+0.512590, +0.289466), (+0.527073, +0.275117), (+0.540121, +0.260190),
-    (+0.551726, +0.244705), (+0.561880, +0.228680), (+0.570571, +0.212136),
-    (+0.577793, +0.195094), (+0.583536, +0.177572), (+0.587790, +0.159591),
-    (+0.590548, +0.141171), (+0.591802, +0.122329), (+0.591539, +0.103090),
-    (+0.589754, +0.083469), (+0.583447, +0.048887), (+0.572612, +0.013932),
-    (+0.558361, -0.020066), (+0.527979, -0.080998), (+0.501231, -0.128445),
-    (+0.466051, -0.180561), (+0.407609, -0.256321), (+0.267522, -0.342563),
-    (+0.238843, -0.358638), (+0.235712, -0.358949), (+0.234127, -0.355934),
-    (+0.288853, -0.165939), (+0.369106, -0.106997), (+0.405946, -0.076663),
-    (+0.421370, -0.061947), (+0.438722, -0.043163), (+0.454745, -0.023206),
-    (+0.471262, -0.000229), (+0.484514, +0.020681), (+0.494864, +0.040386),
-    (+0.500939, +0.054895), (+0.507080, +0.074573), (+0.511312, +0.095424),
-    (+0.514249, +0.122135), (+0.513773, +0.141782), (+0.510608, +0.158471),
-    (+0.508967, +0.161580), (+0.448690, +0.142520), (+0.436337, +0.174206),
-    (+0.492971, +0.199511), (+0.464983, +0.233907), (+0.450991, +0.245398),
-    (+0.437709, +0.253944), (+0.419365, +0.263416), (+0.400051, +0.271087),
-    (+0.384594, +0.275604), (+0.363761, +0.279032), (+0.336972, +0.278837),
-    (+0.305727, +0.274481), (+0.270487, +0.266096), (+0.231711, +0.253814),
-    (+0.189858, +0.237768), (+0.145389, +0.218093), (+0.096157, +0.193935),
-    (-0.011446, +0.277725),
+    (+0.863618, +0.136447), (+0.743934, -0.000150), (+0.610204, +0.000011),
+    (+0.559253, +0.001898), (+0.484008, +0.007955), (+0.418644, +0.018120),
+    (+0.360604, +0.032936), (+0.328231, +0.044284), (+0.297023, +0.057620),
+    (+0.239035, +0.088611), (+0.192794, +0.120550), (+0.160131, +0.147872),
+    (+0.139032, +0.168143), (+0.119957, +0.189141), (+0.102918, +0.210837),
+    (+0.087925, +0.233203), (+0.074988, +0.256214), (+0.064122, +0.279838),
+    (+0.055333, +0.304047), (+0.048635, +0.328815), (+0.044039, +0.354111),
+    (+0.041554, +0.379908), (+0.041190, +0.406182), (+0.042963, +0.432896),
+    (+0.046878, +0.460030), (+0.058172, +0.507621), (+0.075785, +0.555400),
+    (+0.098074, +0.601600), (+0.144748, +0.684045), (+0.185387, +0.748018),
+    (+0.238083, +0.817862), (+0.324833, +0.918859), (+0.525799, +1.028448),
+    (+0.566825, +1.048687), (+0.571199, +1.048890), (+0.573181, +1.044585),
+    (+0.483238, +0.784582), (+0.367411, +0.708550), (+0.314002, +0.669094),
+    (+0.291493, +0.649774), (+0.266007, +0.624942), (+0.242283, +0.598383),
+    (+0.217651, +0.567664), (+0.197707, +0.539578), (+0.181884, +0.512954),
+    (+0.172381, +0.493238), (+0.162408, +0.466343), (+0.155003, +0.437680),
+    (+0.148968, +0.400778), (+0.148192, +0.373443), (+0.151369, +0.350021),
+    (+0.153422, +0.345581), (+0.238573, +0.367657), (+0.253421, +0.322724),
+    (+0.172874, +0.291704), (+0.209249, +0.241862), (+0.227851, +0.224871),
+    (+0.245681, +0.212025), (+0.270478, +0.197521), (+0.296755, +0.185449),
+    (+0.317902, +0.178042), (+0.346600, +0.171755), (+0.383839, +0.170066),
+    (+0.427574, +0.173833), (+0.477155, +0.182907), (+0.531934, +0.197137),
+    (+0.591264, +0.216372), (+0.654495, +0.240458), (+0.724673, +0.270425),
+    (+0.868062, +0.146124),
 )
 
 _SOLAR_FLAIR_HOLE_A = (
-    (+0.085370, +0.275901), (+0.099599, +0.266036), (+0.181981, +0.294423),
-    (+0.204968, +0.302046), (+0.225427, +0.308507), (+0.243977, +0.313985),
-    (+0.261230, +0.318662), (+0.277803, +0.322719), (+0.294311, +0.326332),
-    (+0.306223, +0.329460), (+0.234309, +0.335574), (+0.215125, +0.336056),
-    (+0.200611, +0.335974), (+0.190008, +0.335630), (+0.179502, +0.335035),
-    (+0.168961, +0.334181), (+0.158255, +0.333062), (+0.143495, +0.331142),
-    (+0.128513, +0.328855), (+0.114641, +0.326590), (+0.105858, +0.324807),
-    (+0.103435, +0.324129), (+0.100671, +0.323061), (+0.098666, +0.321849),
-    (+0.097097, +0.320396), (+0.070926, +0.286148),
+    (+0.733666, +0.155741), (+0.714616, +0.170489), (+0.598066, +0.137071),
+    (+0.565566, +0.128160), (+0.536665, +0.120678), (+0.510488, +0.114424),
+    (+0.486172, +0.109187), (+0.462847, +0.104762), (+0.439644, +0.100949),
+    (+0.422863, +0.097474), (+0.522343, +0.083717), (+0.548965, +0.081644),
+    (+0.569139, +0.080697), (+0.583897, +0.080399), (+0.598539, +0.080457),
+    (+0.613249, +0.080873), (+0.628207, +0.081645), (+0.648858, +0.083233),
+    (+0.669843, +0.085315), (+0.689284, +0.087447), (+0.701619, +0.089282),
+    (+0.705036, +0.090047), (+0.708955, +0.091329), (+0.711829, +0.092867),
+    (+0.714116, +0.094771), (+0.752987, +0.140445),
 )
 
 _SOLAR_FLAIR_HOLE_B = (
-    (+0.314088, -0.258564), (+0.347735, -0.237842), (+0.357788, -0.231033),
-    (+0.362790, -0.226945), (+0.366065, -0.223880), (+0.371334, -0.218372),
-    (+0.377560, -0.211281), (+0.398481, -0.186338), (+0.413582, -0.167642),
-    (+0.427504, -0.149365), (+0.438035, -0.134708), (+0.453254, -0.112055),
-    (+0.468337, -0.087823), (+0.480224, -0.064579), (+0.462587, -0.085869),
-    (+0.451266, -0.098669), (+0.434715, -0.115877), (+0.416836, -0.132947),
-    (+0.397996, -0.149552), (+0.378562, -0.165367), (+0.358899, -0.180065),
-    (+0.337866, -0.194393), (+0.333580, -0.198165), (+0.330890, -0.202195),
-    (+0.328233, -0.208235), (+0.319408, -0.234491),
+    (+0.454949, +0.915134), (+0.406679, +0.888802), (+0.392212, +0.880076),
+    (+0.384962, +0.874761), (+0.380187, +0.870742), (+0.372463, +0.863473),
+    (+0.363293, +0.854076), (+0.332397, +0.820947), (+0.310046, +0.796072),
+    (+0.289364, +0.771694), (+0.273659, +0.752098), (+0.250854, +0.721734),
+    (+0.228123, +0.689166), (+0.209905, +0.657737), (+0.235970, +0.686030),
+    (+0.252637, +0.702988), (+0.276894, +0.725688), (+0.302987, +0.748100),
+    (+0.330380, +0.769795), (+0.358542, +0.790349), (+0.386939, +0.809335),
+    (+0.417214, +0.827705), (+0.423445, +0.832633), (+0.427478, +0.838036),
+    (+0.431612, +0.846235), (+0.445795, +0.882073),
 )
 
 
@@ -1883,6 +1893,26 @@ if _IN_BLENDER:
                                     f'["{socket}"]')
         drv.expression = "lift"
         return fc
+
+    def _spike_material():
+        """Transparent, so the cone shows the wedge without hiding
+        the parts that fill it."""
+        name = "SymSculpt Spike"
+        mat = bpy.data.materials.get(name)
+        if mat is not None:
+            return mat
+        mat = bpy.data.materials.new(name)
+        rgb = (0.95, 0.75, 0.20)
+        mat.diffuse_color = (*rgb, 0.22)
+        mat.use_nodes = True
+        mat.blend_method = 'BLEND'
+        bsdf = mat.node_tree.nodes.get("Principled BSDF")
+        if bsdf is not None:
+            bsdf.inputs["Base Color"].default_value = (*rgb, 1.0)
+            bsdf.inputs["Roughness"].default_value = 0.4
+            if "Alpha" in bsdf.inputs:
+                bsdf.inputs["Alpha"].default_value = 0.22
+        return mat
 
     def _crossing_material():
         name = "SymSculpt Crossings"
@@ -2288,11 +2318,14 @@ if _IN_BLENDER:
             name="Show Defining Polyhedron", default=False,
             description="Add the semi-transparent solid whose "
                         "extended face planes are this plane family, "
-                        "and mark every crossing of the guide lines "
-                        "with a coloured disc -- the points a motif's "
-                        "corners should sit on, since a crossing of "
-                        "k lines is where k+1 planes meet and k+1 "
-                        "parts converge. Colour is the orbit: two "
+                        "and draw the spike the sculpture forms at "
+                        "each point where parts meet: a hollow cone "
+                        "with one side per part, its edges along the "
+                        "creases where consecutive parts join, so it "
+                        "points the way the real spike points. "
+                        "Transparent, so it shows the wedge a corner "
+                        "has to fill without hiding it. Colour is "
+                        "the orbit: two "
                         "crossings share one exactly when a rotation "
                         "of the sculpture carries one onto the other, "
                         "so they play the same role. Balls of that "
@@ -2653,87 +2686,103 @@ if _IN_BLENDER:
                 solid.parent = obj
                 solid.matrix_parent_inverse = Matrix.Identity(4)
 
-                rball = 0.035 * d
-                cross = crossing_points(kind, family, d, extent,
+                # A hollow cone at every point where parts really
+                # meet, in place of the balls that used to sit on
+                # every guide crossing -- hundreds of them, most on
+                # points where nothing converges.
+                #
+                # N sides for the N parts that converge, and the sides
+                # are not decoration: the edges run along the creases
+                # where consecutive parts meet, which are the
+                # intersection lines of their two planes. So the cone
+                # is the spike the finished sculpture actually forms
+                # there, pointing the way the real one points, and a
+                # motif corner snapped to the apex has the wedge it
+                # has to fill drawn around it.
+                # Computed here, not borrowed from the crossing
+                # markers above: that block is behind its own toggle,
+                # and reaching into it left this one raising NameError
+                # whenever the markers were switched off.
+                _allx = crossing_points(kind, family, d, extent,
                                         self.guide_rings)
-                orbit, cgroup = crossing_orbits(kind, family, cross, d)
-
-                pts_by_g = {}
-                for p, g in orbit:
-                    pts_by_g.setdefault(g, []).append(p)
-                marks_by_g = {}
-                for (x, y, _k), g in zip(cross, cgroup):
-                    marks_by_g.setdefault(g, []).append((x, y))
-
-                # If there are too many to draw, drop whole orbits
-                # from the outside in.  Truncating mid-orbit would
-                # leave a group half-drawn, which reads as a gap in
-                # the symmetry rather than as something left out.
-                order = sorted(pts_by_g, key=lambda g: min(
-                    sum(c * c for c in p) for p in pts_by_g[g]))
-                kept, total = [], 0
-                for g in order:
-                    if (len(kept) >= _MAX_ORBITS
-                            or total + len(pts_by_g[g]) > _MAX_MARKS):
+                _allq = crossing_parts(kind, family, _allx, d)
+                meet = [(c, q) for c, q in zip(_allx, _allq)
+                        if q >= max(3, self.crossing_min_planes)]
+                kverts, kfaces = [], []
+                L = 0.30 * d
+                for (cx, cy, _k), npl in meet:
+                    P = (a[0] * d + cx * u[0] + cy * v[0],
+                         a[1] * d + cx * u[1] + cy * v[1],
+                         a[2] * d + cx * u[2] + cy * v[2])
+                    axis = _normalize(P)
+                    # the planes of the family that pass through P
+                    thru = [n for n in normals
+                            if abs(n[0] * P[0] + n[1] * P[1]
+                                   + n[2] * P[2] - d) < 1e-6 * max(1.0, d)]
+                    if len(thru) < 3:
                         continue
-                    kept.append(g)
-                    total += len(pts_by_g[g])
-                dropped = len(pts_by_g) - len(kept)
-                if dropped:
-                    self.report(
-                        {'WARNING'},
-                        f"{len(pts_by_g)} orbits over {len(orbit)} "
-                        f"points is past what the aid draws "
-                        f"({_MAX_ORBITS} orbits, {_MAX_MARKS} "
-                        f"points) -- showing the {len(kept)} nearest "
-                        f"the centre, holding back {dropped}; raise "
-                        f"Guide Rings or lower Guide Extent to thin "
-                        f"the pattern")
-
-                # Number what is actually shown, innermost first.  The
-                # orbit id is only a discovery order, so carrying the
-                # original through would label 55 objects with numbers
-                # running to 295 and read as missing ones.
-                label = {g: i for i, g in enumerate(kept)}
-
-                # one object per orbit, so a group can be switched off
-                # on its own from the outliner
-                orb_coll = bpy.data.collections.new("SymSculpt Orbits")
-                context.collection.children.link(orb_coll)
-                made = []
-                for g in kept:
-                    i = label[g]
-                    b = _build_marker_object(
-                        f"SymSculpt Orbit {i:02d} Balls",
-                        [(i, _ball(p, rball)) for p in pts_by_g[g]],
-                        0.45)
-                    made.append((b, True))
-                    if marks_by_g.get(g):
-                        m = _build_marker_object(
-                            f"SymSculpt Orbit {i:02d} Marks",
-                            [(i, _disc((x, y, 1e-3 * d), rball))
-                             for x, y in marks_by_g[g]], 1.0)
-                        made.append((m, False))
-                for o, rides_lift in made:
-                    orb_coll.objects.link(o)
-                    o.matrix_world = Matrix.Identity(4)
-                    o.hide_render = True
-                    o.parent = obj
-                    o.matrix_parent_inverse = Matrix.Identity(4)
-                    # the balls belong to the sculpture and rise with
-                    # it; the discs belong to the flat guide diagram
-                    # and stay down at the origin with it
-                    if rides_lift and lift_socket is not None:
-                        _drive_z_from_lift(o, obj, mod.name,
+                    # order them by angle about the axis, so that
+                    # "adjacent" means adjacent around the spike
+                    e1 = _normalize(_frame(axis)[0])
+                    e2 = (axis[1] * e1[2] - axis[2] * e1[1],
+                          axis[2] * e1[0] - axis[0] * e1[2],
+                          axis[0] * e1[1] - axis[1] * e1[0])
+                    def _bearing(n):
+                        return math.atan2(n[0] * e2[0] + n[1] * e2[1]
+                                          + n[2] * e2[2],
+                                          n[0] * e1[0] + n[1] * e1[1]
+                                          + n[2] * e1[2])
+                    thru = sorted(thru, key=_bearing)
+                    dirs = []
+                    for i in range(len(thru)):
+                        n1 = thru[i]
+                        n2 = thru[(i + 1) % len(thru)]
+                        e = (n1[1] * n2[2] - n1[2] * n2[1],
+                             n1[2] * n2[0] - n1[0] * n2[2],
+                             n1[0] * n2[1] - n1[1] * n2[0])
+                        if sqrt(sum(c * c for c in e)) < 1e-9:
+                            continue
+                        e = _normalize(e)
+                        # inward: the spike points out, its edges run
+                        # back towards the body of the sculpture
+                        if (e[0] * axis[0] + e[1] * axis[1]
+                                + e[2] * axis[2]) > 0:
+                            e = (-e[0], -e[1], -e[2])
+                        dirs.append(e)
+                    if len(dirs) < 3:
+                        continue
+                    apex = len(kverts)
+                    kverts.append(P)
+                    for e in dirs:
+                        kverts.append((P[0] + L * e[0], P[1] + L * e[1],
+                                       P[2] + L * e[2]))
+                    m = len(dirs)
+                    for i in range(m):
+                        kfaces.append([apex, apex + 1 + i,
+                                       apex + 1 + (i + 1) % m])
+                if kfaces:
+                    kme = bpy.data.meshes.new("SymSculpt Spikes")
+                    kme.from_pydata(kverts, [], kfaces)
+                    kme.validate()
+                    kme.update()
+                    kme.materials.append(_spike_material())
+                    spikes = bpy.data.objects.new("SymSculpt Spikes",
+                                                  kme)
+                    context.collection.objects.link(spikes)
+                    spikes.matrix_world = Matrix.Identity(4)
+                    spikes.hide_render = True
+                    spikes.parent = obj
+                    spikes.matrix_parent_inverse = Matrix.Identity(4)
+                    if lift_socket is not None:
+                        _drive_z_from_lift(spikes, obj, mod.name,
                                            lift_socket)
                 if lift_socket is not None:
                     _drive_z_from_lift(solid, obj, mod.name,
                                        lift_socket)
                 self.report(
                     {'INFO'},
-                    f"{len(cross)} guide crossings in "
-                    f"{len(pts_by_g)} orbits; drawing {len(kept)} of "
-                    f"them, {total} points in space")
+                    f"{len(meet)} points where parts meet, "
+                    f"{len(kfaces)} spike faces")
 
             for o in context.selected_objects:
                 o.select_set(False)
