@@ -185,7 +185,7 @@ below.
 
 ## The corpus
 
-**314 records**, all passing the validator. Built by `tools/polydb_build.py`
+**431 records**, all passing the validator. Built by `tools/polydb_build.py`
 in stages:
 
 | Stage | Records | What |
@@ -198,6 +198,7 @@ in stages:
 | `toroid` | 6 | genus-1 solids, Csaszar and Szilassi among them |
 | `zonohedron` | 1 | the rhombic enneacontahedron (the others are already records) |
 | `geodesic` | 9 | class-I geodesic spheres, frequency 2-4, on three bases |
+| `compound` | 117 | Coxeter's regular, Skilling's uniform, Hart/Harman |
 | `link` | -- | post-pass resolving cross-references |
 
 Four kinds of record are deliberately absent, each for a stated reason:
@@ -218,10 +219,6 @@ Four kinds of record are deliberately absent, each for a stated reason:
 
 ### Not attempted, and why
 
-- **Compounds.** A compound is a *set* of polyhedra, not one: its surface is
-  disconnected, so the closed-manifold check and the whole
-  one-solid-one-record model do not apply. Supporting them means a
-  `components` model first.
 - **Stellations.** The engine exists (`math_art/general_stellation.py`), but
   the counts are unstable in the literature -- the triakis tetrahedron is
   variously 21, 28 or 138 stellations depending on whose rules are applied,

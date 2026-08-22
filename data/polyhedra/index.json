@@ -19,8 +19,448 @@
     "toroid": "Toroidal polyhedra",
     "canonical": "Canonical (midsphere) forms"
   },
-  "count": 314,
+  "count": 447,
   "entries": [
+    {
+      "slug": "10-dodecahedra",
+      "name": "10 Dodecahedra",
+      "path": "solids/compound/10-dodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 200,
+        "edges": 300,
+        "faces": 120
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "10-icosahedra",
+      "name": "10 Icosahedra",
+      "path": "solids/compound/10-icosahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 300,
+        "faces": 200
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "12-cubes",
+      "name": "12 Cubes (Octahedral)",
+      "path": "solids/compound/12-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 78,
+        "edges": 144,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "12-dodecahedra",
+      "name": "12 Dodecahedra (Octahedral)",
+      "path": "solids/compound/12-dodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 192,
+        "edges": 360,
+        "faces": 144
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "12-icosahedra-4-fold",
+      "name": "12 Icosahedra (4-fold)",
+      "path": "solids/compound/12-icosahedra-4-fold.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 126,
+        "edges": 360,
+        "faces": 240
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "12-icosahedra-octahedral",
+      "name": "12 Icosahedra (Octahedral)",
+      "path": "solids/compound/12-icosahedra-octahedral.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 144,
+        "edges": 360,
+        "faces": 240
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "12-tetrahedra",
+      "name": "12 Tetrahedra (Octahedral)",
+      "path": "solids/compound/12-tetrahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 72,
+        "faces": 48
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "2-dodecahedra",
+      "name": "2 Dodecahedra (Octahedral)",
+      "path": "solids/compound/2-dodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 60,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "2-icosahedra",
+      "name": "2 Icosahedra (Octahedral)",
+      "path": "solids/compound/2-icosahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 60,
+        "faces": 40
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "2-tetrahedra",
+      "name": "2 Tetrahedra (Stella Octangula)",
+      "path": "solids/compound/2-tetrahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 12,
+        "faces": 8
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "30-cubes",
+      "name": "30 Cubes (Icosahedral)",
+      "path": "solids/compound/30-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 240,
+        "edges": 360,
+        "faces": 180
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "5-cubes",
+      "name": "5 Cubes",
+      "path": "solids/compound/5-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 60,
+        "faces": 30
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "5-dodecahedra",
+      "name": "5 Dodecahedra",
+      "path": "solids/compound/5-dodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 80,
+        "edges": 150,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "5-icosahedra",
+      "name": "5 Icosahedra",
+      "path": "solids/compound/5-icosahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 100
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "5-octahedra",
+      "name": "5 Octahedra",
+      "path": "solids/compound/5-octahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 40
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "5-tetrahedra",
+      "name": "5 Tetrahedra",
+      "path": "solids/compound/5-tetrahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 30,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "6-dodecahedra",
+      "name": "6 Dodecahedra",
+      "path": "solids/compound/6-dodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "6-icosahedra",
+      "name": "6 Icosahedra",
+      "path": "solids/compound/6-icosahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 72,
+        "edges": 180,
+        "faces": 120
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "60-dodecahedra",
+      "name": "60 Dodecahedra (Icosahedral)",
+      "path": "solids/compound/60-dodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 1140,
+        "edges": 1800,
+        "faces": 720
+      },
+      "symmetry": {
+        "schoenflies": "C298156827h",
+        "orbifold": "298156827*",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "antiprism-dual-trapezohedron",
+      "name": "Antiprism + Dual Trapezohedron",
+      "path": "solids/compound/antiprism-dual-trapezohedron.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 22,
+        "edges": 40,
+        "faces": 22
+      },
+      "symmetry": {
+        "schoenflies": "D5d",
+        "orbifold": "2*5",
+        "order": 20
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
     {
       "slug": "augmented-dodecahedron",
       "name": "Augmented Dodecahedron",
@@ -1324,6 +1764,94 @@
       "ids": {}
     },
     {
+      "slug": "compound-of-10-tetrahedra",
+      "name": "Compound of 10 Tetrahedra",
+      "path": "solids/compound/compound-of-10-tetrahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 60,
+        "faces": 40
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "compound-of-5-cubes",
+      "name": "Compound of 5 Cubes",
+      "path": "solids/compound/compound-of-5-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 60,
+        "faces": 30
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "compound-of-5-octahedra",
+      "name": "Compound of 5 Octahedra",
+      "path": "solids/compound/compound-of-5-octahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 40
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "compound-of-5-tetrahedra",
+      "name": "Compound of 5 Tetrahedra",
+      "path": "solids/compound/compound-of-5-tetrahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 30,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
       "slug": "csaszar-polyhedron",
       "name": "Csaszar Polyhedron",
       "path": "solids/toroid/csaszar-polyhedron.json",
@@ -1378,6 +1906,50 @@
         "netlib": 1,
         "bowers": "cube"
       }
+    },
+    {
+      "slug": "cube-inscribed-in-dodecahedron",
+      "name": "Cube Inscribed in Dodecahedron",
+      "path": "solids/compound/cube-inscribed-in-dodecahedron.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 42,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "Th",
+        "orbifold": "3*2",
+        "order": 24
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "cube-octahedron",
+      "name": "Cube + Octahedron",
+      "path": "solids/compound/cube-octahedron.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 24,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
     },
     {
       "slug": "cubitruncated-cuboctahedron",
@@ -1557,6 +2129,102 @@
       "convex": true,
       "density": 1,
       "dual": "decagonal-antiprism",
+      "ids": {}
+    },
+    {
+      "slug": "decagrammic-antiprism",
+      "name": "Decagrammic Antiprism",
+      "path": "solids/prism-family/decagrammic-antiprism.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 40,
+        "faces": 22
+      },
+      "symmetry": {
+        "schoenflies": "D10d",
+        "orbifold": "2*10",
+        "order": 40
+      },
+      "convex": false,
+      "density": 3,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "decagrammic-dipyramid",
+      "name": "Decagrammic Dipyramid",
+      "path": "solids/prism-family/decagrammic-dipyramid.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 30,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "D10h",
+        "orbifold": "*2210",
+        "order": 40
+      },
+      "convex": false,
+      "density": 3,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "decagrammic-prism",
+      "name": "Decagrammic Prism",
+      "path": "solids/prism-family/decagrammic-prism.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 30,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "D10h",
+        "orbifold": "*2210",
+        "order": 40
+      },
+      "convex": false,
+      "density": 3,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "decagrammic-trapezohedron",
+      "name": "Decagrammic Trapezohedron",
+      "path": "solids/prism-family/decagrammic-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 22,
+        "edges": 40,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "D10d",
+        "orbifold": "2*10",
+        "order": 40
+      },
+      "convex": false,
+      "density": 3,
+      "dual": null,
       "ids": {}
     },
     {
@@ -1883,6 +2551,28 @@
         "netlib": 3,
         "bowers": "doe"
       }
+    },
+    {
+      "slug": "dodecahedron-icosahedron",
+      "name": "Dodecahedron + Icosahedron",
+      "path": "solids/compound/dodecahedron-icosahedron.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 60,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
     },
     {
       "slug": "elongated-pentagonal-bipyramid",
@@ -3105,14 +3795,14 @@
         "star"
       ],
       "counts": {
-        "vertices": 104,
+        "vertices": 92,
         "edges": 180,
         "faces": 60
       },
       "symmetry": {
-        "schoenflies": "C5",
-        "orbifold": "55",
-        "order": 240
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
       },
       "convex": false,
       "density": null,
@@ -3531,9 +4221,9 @@
         "faces": 104
       },
       "symmetry": {
-        "schoenflies": "Ih",
-        "orbifold": "*532",
-        "order": 120
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
       },
       "convex": false,
       "density": 10,
@@ -4146,6 +4836,336 @@
       }
     },
     {
+      "slug": "hart-10-cubes",
+      "name": "Hart: 10 Cubes",
+      "path": "solids/compound/hart-10-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 80,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-12-cubes",
+      "name": "Hart: 12 Cubes",
+      "path": "solids/compound/hart-12-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 96,
+        "edges": 144,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-12-cubes-central-freedom",
+      "name": "Hart: 12 Cubes, central freedom",
+      "path": "solids/compound/hart-12-cubes-central-freedom.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 96,
+        "edges": 144,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "Th",
+        "orbifold": "3*2",
+        "order": 24
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-15-cubes",
+      "name": "Hart: 15 Cubes",
+      "path": "solids/compound/hart-15-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 90
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-20-cubes",
+      "name": "Hart: 20 Cubes",
+      "path": "solids/compound/hart-20-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 140,
+        "edges": 240,
+        "faces": 120
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-24-cubes-central-freedom",
+      "name": "Hart: 24 Cubes, central freedom",
+      "path": "solids/compound/hart-24-cubes-central-freedom.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 192,
+        "edges": 288,
+        "faces": 144
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-3-cubes",
+      "name": "Hart: 3 Cubes",
+      "path": "solids/compound/hart-3-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 36,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-30-cubes",
+      "name": "Hart: 30 Cubes",
+      "path": "solids/compound/hart-30-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 240,
+        "edges": 360,
+        "faces": 180
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-4-cubes",
+      "name": "Hart: 4 Cubes (Bakos')",
+      "path": "solids/compound/hart-4-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 48,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-4-cubes-tetrahedral",
+      "name": "Hart: 4 Cubes, tetrahedral",
+      "path": "solids/compound/hart-4-cubes-tetrahedral.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 32,
+        "edges": 48,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Th",
+        "orbifold": "3*2",
+        "order": 24
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-6-cubes-2-fold",
+      "name": "Hart: 6 Cubes, 2-fold",
+      "path": "solids/compound/hart-6-cubes-2-fold.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 72,
+        "faces": 36
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-6-cubes-4-fold",
+      "name": "Hart: 6 Cubes, 4-fold",
+      "path": "solids/compound/hart-6-cubes-4-fold.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 72,
+        "faces": 36
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-6-cubes-tetrahedral",
+      "name": "Hart: 6 Cubes, tetrahedral",
+      "path": "solids/compound/hart-6-cubes-tetrahedral.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 72,
+        "faces": 36
+      },
+      "symmetry": {
+        "schoenflies": "Th",
+        "orbifold": "3*2",
+        "order": 24
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-60-cubes-central-freedom",
+      "name": "Hart: 60 Cubes, central freedom",
+      "path": "solids/compound/hart-60-cubes-central-freedom.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 480,
+        "edges": 720,
+        "faces": 360
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "hart-8-cubes",
+      "name": "Hart: 8 Cubes",
+      "path": "solids/compound/hart-8-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 56,
+        "edges": 96,
+        "faces": 48
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
       "slug": "hebesphenomegacorona",
       "name": "Hebesphenomegacorona",
       "path": "solids/johnson/hebesphenomegacorona.json",
@@ -4365,6 +5385,102 @@
       "ids": {}
     },
     {
+      "slug": "heptagrammic-antiprism",
+      "name": "Heptagrammic Antiprism",
+      "path": "solids/prism-family/heptagrammic-antiprism.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 28,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "C298156827v",
+        "orbifold": "*298156827298156827",
+        "order": 28
+      },
+      "convex": false,
+      "density": 2,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "heptagrammic-dipyramid",
+      "name": "Heptagrammic Dipyramid",
+      "path": "solids/prism-family/heptagrammic-dipyramid.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 9,
+        "edges": 21,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "D7h",
+        "orbifold": "*227",
+        "order": 28
+      },
+      "convex": false,
+      "density": 2,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "heptagrammic-prism",
+      "name": "Heptagrammic Prism",
+      "path": "solids/prism-family/heptagrammic-prism.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 14,
+        "edges": 21,
+        "faces": 9
+      },
+      "symmetry": {
+        "schoenflies": "D7h",
+        "orbifold": "*227",
+        "order": 28
+      },
+      "convex": false,
+      "density": 2,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "heptagrammic-trapezohedron",
+      "name": "Heptagrammic Trapezohedron",
+      "path": "solids/prism-family/heptagrammic-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 28,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "D7d",
+        "orbifold": "2*7",
+        "order": 28
+      },
+      "convex": false,
+      "density": 2,
+      "dual": null,
+      "ids": {}
+    },
+    {
       "slug": "hexagonal-antiprism",
       "name": "Hexagonal Antiprism",
       "path": "solids/prism-family/hexagonal-antiprism.json",
@@ -4493,6 +5609,28 @@
       }
     },
     {
+      "slug": "icosahedron-inscribed-in-octahedron",
+      "name": "Icosahedron Inscribed in Octahedron",
+      "path": "solids/compound/icosahedron-inscribed-in-octahedron.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 42,
+        "faces": 28
+      },
+      "symmetry": {
+        "schoenflies": "Th",
+        "orbifold": "3*2",
+        "order": 24
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
       "slug": "icosidodecadodecahedron",
       "name": "Icosidodecadodecahedron",
       "path": "solids/uniform/icosidodecadodecahedron.json",
@@ -4614,9 +5752,9 @@
         "faces": 21
       },
       "symmetry": {
-        "schoenflies": "D7h",
-        "orbifold": "*227",
-        "order": 28
+        "schoenflies": "D7",
+        "orbifold": "227",
+        "order": 14
       },
       "convex": false,
       "density": null,
@@ -4637,9 +5775,9 @@
         "faces": 24
       },
       "symmetry": {
-        "schoenflies": "D8h",
-        "orbifold": "*228",
-        "order": 32
+        "schoenflies": "D8",
+        "orbifold": "228",
+        "order": 16
       },
       "convex": false,
       "density": null,
@@ -5152,6 +6290,102 @@
       "convex": true,
       "density": 1,
       "dual": "octagonal-antiprism",
+      "ids": {}
+    },
+    {
+      "slug": "octagrammic-antiprism",
+      "name": "Octagrammic Antiprism",
+      "path": "solids/prism-family/octagrammic-antiprism.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 32,
+        "faces": 18
+      },
+      "symmetry": {
+        "schoenflies": "D8d",
+        "orbifold": "2*8",
+        "order": 32
+      },
+      "convex": false,
+      "density": 3,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "octagrammic-dipyramid",
+      "name": "Octagrammic Dipyramid",
+      "path": "solids/prism-family/octagrammic-dipyramid.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 24,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "D8h",
+        "orbifold": "*228",
+        "order": 32
+      },
+      "convex": false,
+      "density": 3,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "octagrammic-prism",
+      "name": "Octagrammic Prism",
+      "path": "solids/prism-family/octagrammic-prism.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 16,
+        "edges": 24,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "D8h",
+        "orbifold": "*228",
+        "order": 32
+      },
+      "convex": false,
+      "density": 3,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "octagrammic-trapezohedron",
+      "name": "Octagrammic Trapezohedron",
+      "path": "solids/prism-family/octagrammic-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 18,
+        "edges": 32,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "D8d",
+        "orbifold": "2*8",
+        "order": 32
+      },
+      "convex": false,
+      "density": 3,
+      "dual": null,
       "ids": {}
     },
     {
@@ -5733,6 +6967,102 @@
       "ids": {}
     },
     {
+      "slug": "pentagrammic-antiprism",
+      "name": "Pentagrammic Antiprism",
+      "path": "solids/prism-family/pentagrammic-antiprism.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 20,
+        "faces": 12
+      },
+      "symmetry": {
+        "schoenflies": "D5d",
+        "orbifold": "2*5",
+        "order": 20
+      },
+      "convex": false,
+      "density": 2,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "pentagrammic-dipyramid",
+      "name": "Pentagrammic Dipyramid",
+      "path": "solids/prism-family/pentagrammic-dipyramid.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 7,
+        "edges": 15,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "D5h",
+        "orbifold": "*225",
+        "order": 20
+      },
+      "convex": false,
+      "density": 2,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "pentagrammic-prism",
+      "name": "Pentagrammic Prism",
+      "path": "solids/prism-family/pentagrammic-prism.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 10,
+        "edges": 15,
+        "faces": 7
+      },
+      "symmetry": {
+        "schoenflies": "D5h",
+        "orbifold": "*225",
+        "order": 20
+      },
+      "convex": false,
+      "density": 2,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "pentagrammic-trapezohedron",
+      "name": "Pentagrammic Trapezohedron",
+      "path": "solids/prism-family/pentagrammic-trapezohedron.json",
+      "families": [
+        "prism-family",
+        "star",
+        "uniform"
+      ],
+      "counts": {
+        "vertices": 12,
+        "edges": 20,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "C298156827v",
+        "orbifold": "*298156827298156827",
+        "order": 20
+      },
+      "convex": false,
+      "density": 2,
+      "dual": null,
+      "ids": {}
+    },
+    {
       "slug": "pentakisdodecahedron",
       "name": "Pentakisdodecahedron",
       "path": "solids/uniform-dual/pentakisdodecahedron.json",
@@ -5754,6 +7084,28 @@
       "convex": true,
       "density": null,
       "dual": "truncated-icosahedron",
+      "ids": {}
+    },
+    {
+      "slug": "prism-dual-dipyramid",
+      "name": "Prism + Dual Dipyramid",
+      "path": "solids/compound/prism-dual-dipyramid.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 17,
+        "edges": 30,
+        "faces": 17
+      },
+      "symmetry": {
+        "schoenflies": "D5h",
+        "orbifold": "*225",
+        "order": 20
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
       "ids": {}
     },
     {
@@ -5982,6 +7334,1502 @@
         "uniform": "U38",
         "wenninger": "W76"
       }
+    },
+    {
+      "slug": "skilling-1-6-tetrahedra-td",
+      "name": "Skilling 1: 6 Tetrahedra, Td",
+      "path": "solids/compound/skilling-1-6-tetrahedra-td.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 36,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Td",
+        "orbifold": "*332",
+        "order": 24
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-10-4-octahedra-th",
+      "name": "Skilling 10: 4 Octahedra, Th",
+      "path": "solids/compound/skilling-10-4-octahedra-th.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 48,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Th",
+        "orbifold": "3*2",
+        "order": 24
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-11-8-octahedra-oh",
+      "name": "Skilling 11: 8 Octahedra, Oh",
+      "path": "solids/compound/skilling-11-8-octahedra-oh.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 96,
+        "faces": 64
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-12-4-octahedra-oh",
+      "name": "Skilling 12: 4 Octahedra, Oh",
+      "path": "solids/compound/skilling-12-4-octahedra-oh.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 48,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-13-20-octahedra-ih",
+      "name": "Skilling 13: 20 Octahedra, Ih",
+      "path": "solids/compound/skilling-13-20-octahedra-ih.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 240,
+        "faces": 160
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-14-20-octahedra-ih",
+      "name": "Skilling 14: 20 Octahedra, Ih (two per vertex)",
+      "path": "solids/compound/skilling-14-20-octahedra-ih.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 240,
+        "faces": 160
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-15-10-octahedra-ih",
+      "name": "Skilling 15: 10 Octahedra, Ih",
+      "path": "solids/compound/skilling-15-10-octahedra-ih.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 80
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-16-10-octahedra-ih",
+      "name": "Skilling 16: 10 Octahedra, Ih (second orientation)",
+      "path": "solids/compound/skilling-16-10-octahedra-ih.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 80
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-18-5-tetrahemihexahedra",
+      "name": "Skilling 18: 5 Tetrahemihexahedra (I)",
+      "path": "solids/compound/skilling-18-5-tetrahemihexahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 60,
+        "faces": 35
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-19-20-tetrahemihexahedra-i",
+      "name": "Skilling 19: 20 Tetrahemihexahedra, I (two per vertex)",
+      "path": "solids/compound/skilling-19-20-tetrahemihexahedra-i.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 240,
+        "faces": 140
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-2-12-tetrahedra-oh",
+      "name": "Skilling 2: 12 Tetrahedra, Oh",
+      "path": "solids/compound/skilling-2-12-tetrahedra-oh.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 72,
+        "faces": 48
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-20-2r-prisms",
+      "name": "Skilling 20: 2r Prisms",
+      "path": "solids/compound/skilling-20-2r-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 40,
+        "edges": 60,
+        "faces": 28
+      },
+      "symmetry": {
+        "schoenflies": "D20h",
+        "orbifold": "*2220",
+        "order": 80
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-21-r-prisms",
+      "name": "Skilling 21: r Prisms",
+      "path": "solids/compound/skilling-21-r-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 30,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "D10h",
+        "orbifold": "*2210",
+        "order": 40
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-22-2r-antiprisms",
+      "name": "Skilling 22: 2r Antiprisms",
+      "path": "solids/compound/skilling-22-2r-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 40,
+        "edges": 80,
+        "faces": 48
+      },
+      "symmetry": {
+        "schoenflies": "D20h",
+        "orbifold": "*2220",
+        "order": 80
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-23-r-antiprisms",
+      "name": "Skilling 23: r Antiprisms",
+      "path": "solids/compound/skilling-23-r-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 40,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "D10h",
+        "orbifold": "*2210",
+        "order": 40
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-24-2r-pentagrammic-antiprisms",
+      "name": "Skilling 24: 2r Pentagrammic Antiprisms (free, Sides=5)",
+      "path": "solids/compound/skilling-24-2r-pentagrammic-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 40,
+        "edges": 80,
+        "faces": 48
+      },
+      "symmetry": {
+        "schoenflies": "D20h",
+        "orbifold": "*2220",
+        "order": 80
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-25-r-pentagrammic-antiprisms",
+      "name": "Skilling 25: r Pentagrammic Antiprisms (Sides=5)",
+      "path": "solids/compound/skilling-25-r-pentagrammic-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 40,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "D10h",
+        "orbifold": "*2210",
+        "order": 40
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-26-12-pentagonal-antiprisms",
+      "name": "Skilling 26: 12 Pentagonal Antiprisms",
+      "path": "solids/compound/skilling-26-12-pentagonal-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 240,
+        "faces": 144
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-27-6-pentagonal-antiprisms",
+      "name": "Skilling 27: 6 Pentagonal Antiprisms",
+      "path": "solids/compound/skilling-27-6-pentagonal-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-28-12-pentagrammic-crossed-antiprisms",
+      "name": "Skilling 28: 12 Pentagrammic Crossed Antiprisms",
+      "path": "solids/compound/skilling-28-12-pentagrammic-crossed-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 240,
+        "faces": 144
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-29-6-pentagrammic-crossed-antiprisms",
+      "name": "Skilling 29: 6 Pentagrammic Crossed Antiprisms",
+      "path": "solids/compound/skilling-29-6-pentagrammic-crossed-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-3-6-tetrahedra-oh",
+      "name": "Skilling 3: 6 Tetrahedra, Oh",
+      "path": "solids/compound/skilling-3-6-tetrahedra-oh.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 36,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-30-4-triangular-prisms",
+      "name": "Skilling 30: 4 Triangular Prisms (O)",
+      "path": "solids/compound/skilling-30-4-triangular-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 36,
+        "faces": 20
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-31-8-triangular-prisms",
+      "name": "Skilling 31: 8 Triangular Prisms (Oh)",
+      "path": "solids/compound/skilling-31-8-triangular-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 72,
+        "faces": 40
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-32-10-triangular-prisms",
+      "name": "Skilling 32: 10 Triangular Prisms (I)",
+      "path": "solids/compound/skilling-32-10-triangular-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 90,
+        "faces": 50
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-33-20-triangular-prisms",
+      "name": "Skilling 33: 20 Triangular Prisms (Ih)",
+      "path": "solids/compound/skilling-33-20-triangular-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 180,
+        "faces": 100
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-34-6-pentagonal-prisms",
+      "name": "Skilling 34: 6 Pentagonal Prisms (I)",
+      "path": "solids/compound/skilling-34-6-pentagonal-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 90,
+        "faces": 42
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-35-12-pentagonal-prisms",
+      "name": "Skilling 35: 12 Pentagonal Prisms (Ih)",
+      "path": "solids/compound/skilling-35-12-pentagonal-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 180,
+        "faces": 84
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-36-6-pentagrammic-prisms",
+      "name": "Skilling 36: 6 Pentagrammic Prisms (I)",
+      "path": "solids/compound/skilling-36-6-pentagrammic-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 90,
+        "faces": 42
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-37-12-pentagrammic-prisms",
+      "name": "Skilling 37: 12 Pentagrammic Prisms (Ih)",
+      "path": "solids/compound/skilling-37-12-pentagrammic-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 180,
+        "faces": 84
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-38-4-hexagonal-prisms",
+      "name": "Skilling 38: 4 Hexagonal Prisms (Oh)",
+      "path": "solids/compound/skilling-38-4-hexagonal-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 72,
+        "faces": 32
+      },
+      "symmetry": {
+        "schoenflies": "C298156827v",
+        "orbifold": "*298156827298156827",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-39-10-hexagonal-prisms",
+      "name": "Skilling 39: 10 Hexagonal Prisms (Ih)",
+      "path": "solids/compound/skilling-39-10-hexagonal-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 80
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-40-6-decagonal-prisms",
+      "name": "Skilling 40: 6 Decagonal Prisms (Ih)",
+      "path": "solids/compound/skilling-40-6-decagonal-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "C298156827v",
+        "orbifold": "*298156827298156827",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-41-6-decagrammic-prisms",
+      "name": "Skilling 41: 6 Decagrammic Prisms (Ih)",
+      "path": "solids/compound/skilling-41-6-decagrammic-prisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-42-3-square-antiprisms",
+      "name": "Skilling 42: 3 Square Antiprisms (O)",
+      "path": "solids/compound/skilling-42-3-square-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 48,
+        "faces": 30
+      },
+      "symmetry": {
+        "schoenflies": "O",
+        "orbifold": "432",
+        "order": 24
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-43-6-square-antiprisms",
+      "name": "Skilling 43: 6 Square Antiprisms (Oh)",
+      "path": "solids/compound/skilling-43-6-square-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 96,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-44-6-pentagrammic-antiprisms",
+      "name": "Skilling 44: 6 Pentagrammic Antiprisms (I)",
+      "path": "solids/compound/skilling-44-6-pentagrammic-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 72
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-45-12-pentagrammic-antiprisms",
+      "name": "Skilling 45: 12 Pentagrammic Antiprisms (Ih)",
+      "path": "solids/compound/skilling-45-12-pentagrammic-antiprisms.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 240,
+        "faces": 144
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-46-2-icosahedra",
+      "name": "Skilling 46: 2 Icosahedra (Oh)",
+      "path": "solids/compound/skilling-46-2-icosahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 60,
+        "faces": 40
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-47-5-icosahedra",
+      "name": "Skilling 47: 5 Icosahedra (Ih)",
+      "path": "solids/compound/skilling-47-5-icosahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 100
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-48-2-great-dodecahedra",
+      "name": "Skilling 48: 2 Great Dodecahedra (Oh)",
+      "path": "solids/compound/skilling-48-2-great-dodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 60,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-49-5-great-dodecahedra",
+      "name": "Skilling 49: 5 Great Dodecahedra (Ih)",
+      "path": "solids/compound/skilling-49-5-great-dodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-50-2-small-stellated-dodecahedra",
+      "name": "Skilling 50: 2 Small Stellated Dodecahedra (Oh)",
+      "path": "solids/compound/skilling-50-2-small-stellated-dodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 60,
+        "faces": 24
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-51-5-small-stellated-dodecahedra",
+      "name": "Skilling 51: 5 Small Stellated Dodecahedra (Ih)",
+      "path": "solids/compound/skilling-51-5-small-stellated-dodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-52-2-great-icosahedra",
+      "name": "Skilling 52: 2 Great Icosahedra (Oh)",
+      "path": "solids/compound/skilling-52-2-great-icosahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 60,
+        "faces": 40
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-53-5-great-icosahedra",
+      "name": "Skilling 53: 5 Great Icosahedra (Ih)",
+      "path": "solids/compound/skilling-53-5-great-icosahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 150,
+        "faces": 100
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-54-2-truncated-tetrahedra",
+      "name": "Skilling 54: 2 Truncated Tetrahedra (Oh)",
+      "path": "solids/compound/skilling-54-2-truncated-tetrahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 24,
+        "edges": 36,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-55-5-truncated-tetrahedra",
+      "name": "Skilling 55: 5 Truncated Tetrahedra (I)",
+      "path": "solids/compound/skilling-55-5-truncated-tetrahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 90,
+        "faces": 40
+      },
+      "symmetry": {
+        "schoenflies": "I",
+        "orbifold": "532",
+        "order": 60
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-56-10-truncated-tetrahedra",
+      "name": "Skilling 56: 10 Truncated Tetrahedra (Ih)",
+      "path": "solids/compound/skilling-56-10-truncated-tetrahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 80
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-57-5-truncated-cubes",
+      "name": "Skilling 57: 5 Truncated Cubes",
+      "path": "solids/compound/skilling-57-5-truncated-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 70
+      },
+      "symmetry": {
+        "schoenflies": "C210828714v",
+        "orbifold": "*210828714210828714",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-58-5-stellated-truncated-hexahedra",
+      "name": "Skilling 58: 5 Stellated Truncated Hexahedra",
+      "path": "solids/compound/skilling-58-5-stellated-truncated-hexahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 180,
+        "faces": 70
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-59-5-cuboctahedra",
+      "name": "Skilling 59: 5 Cuboctahedra",
+      "path": "solids/compound/skilling-59-5-cuboctahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 70
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-60-5-cubohemioctahedra",
+      "name": "Skilling 60: 5 Cubohemioctahedra",
+      "path": "solids/compound/skilling-60-5-cubohemioctahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 50
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-61-5-octahemioctahedra",
+      "name": "Skilling 61: 5 Octahemioctahedra",
+      "path": "solids/compound/skilling-61-5-octahemioctahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 60,
+        "edges": 120,
+        "faces": 60
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-62-5-rhombicuboctahedra",
+      "name": "Skilling 62: 5 Rhombicuboctahedra",
+      "path": "solids/compound/skilling-62-5-rhombicuboctahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 240,
+        "faces": 130
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-63-5-small-rhombihexahedra",
+      "name": "Skilling 63: 5 Small Rhombihexahedra",
+      "path": "solids/compound/skilling-63-5-small-rhombihexahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 240,
+        "faces": 90
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-64-5-small-cubicuboctahedra",
+      "name": "Skilling 64: 5 Small Cubicuboctahedra",
+      "path": "solids/compound/skilling-64-5-small-cubicuboctahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 240,
+        "faces": 100
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-65-5-great-cubicuboctahedra",
+      "name": "Skilling 65: 5 Great Cubicuboctahedra",
+      "path": "solids/compound/skilling-65-5-great-cubicuboctahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 240,
+        "faces": 100
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-66-5-great-rhombihexahedra",
+      "name": "Skilling 66: 5 Great Rhombihexahedra",
+      "path": "solids/compound/skilling-66-5-great-rhombihexahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 240,
+        "faces": 90
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-67-5-nonconvex-great-rhombicuboctahedra",
+      "name": "Skilling 67: 5 Nonconvex Great Rhombicuboctahedra",
+      "path": "solids/compound/skilling-67-5-nonconvex-great-rhombicuboctahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 240,
+        "faces": 130
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-68-2-snub-cubes",
+      "name": "Skilling 68: 2 Snub Cubes",
+      "path": "solids/compound/skilling-68-2-snub-cubes.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 48,
+        "edges": 120,
+        "faces": 76
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-69-2-snub-dodecahedra",
+      "name": "Skilling 69: 2 Snub Dodecahedra",
+      "path": "solids/compound/skilling-69-2-snub-dodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 300,
+        "faces": 184
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-70-2-great-snub-icosidodecahedra",
+      "name": "Skilling 70: 2 Great Snub Icosidodecahedra",
+      "path": "solids/compound/skilling-70-2-great-snub-icosidodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 300,
+        "faces": 184
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-71-2-great-inverted-snub-icosidodecahedra",
+      "name": "Skilling 71: 2 Great Inverted Snub Icosidodecahedra",
+      "path": "solids/compound/skilling-71-2-great-inverted-snub-icosidodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 300,
+        "faces": 184
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-72-2-great-retrosnub-icosidodecahedra",
+      "name": "Skilling 72: 2 Great Retrosnub Icosidodecahedra",
+      "path": "solids/compound/skilling-72-2-great-retrosnub-icosidodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 300,
+        "faces": 184
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-73-2-snub-dodecadodecahedra",
+      "name": "Skilling 73: 2 Snub Dodecadodecahedra",
+      "path": "solids/compound/skilling-73-2-snub-dodecadodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 300,
+        "faces": 168
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-74-2-inverted-snub-dodecadodecahedra",
+      "name": "Skilling 74: 2 Inverted Snub Dodecadodecahedra",
+      "path": "solids/compound/skilling-74-2-inverted-snub-dodecadodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 300,
+        "faces": 168
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "skilling-75-2-snub-icosidodecadodecahedra",
+      "name": "Skilling 75: 2 Snub Icosidodecadodecahedra",
+      "path": "solids/compound/skilling-75-2-snub-icosidodecadodecahedra.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 120,
+        "edges": 360,
+        "faces": 208
+      },
+      "symmetry": {
+        "schoenflies": "Ih",
+        "orbifold": "*532",
+        "order": 120
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
     },
     {
       "slug": "small-cubicuboctahedron",
@@ -6268,7 +9116,7 @@
         "star"
       ],
       "counts": {
-        "vertices": 112,
+        "vertices": 92,
         "edges": 180,
         "faces": 60
       },
@@ -6291,7 +9139,7 @@
         "star"
       ],
       "counts": {
-        "vertices": 112,
+        "vertices": 92,
         "edges": 180,
         "faces": 60
       },
@@ -6994,6 +9842,28 @@
       "ids": {}
     },
     {
+      "slug": "stella-octangula",
+      "name": "Stella Octangula (2 Tetrahedra)",
+      "path": "solids/compound/stella-octangula.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 12,
+        "faces": 8
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
       "slug": "stellated-truncated-hexahedron",
       "name": "Stellated Truncated Hexahedron",
       "path": "solids/uniform/stellated-truncated-hexahedron.json",
@@ -7097,6 +9967,50 @@
       }
     },
     {
+      "slug": "tetrahedron-inscribed-in-cube",
+      "name": "Tetrahedron Inscribed in Cube",
+      "path": "solids/compound/tetrahedron-inscribed-in-cube.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 18,
+        "faces": 10
+      },
+      "symmetry": {
+        "schoenflies": "Td",
+        "orbifold": "*332",
+        "order": 24
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "tetrahedron-inscribed-in-dodecahedron",
+      "name": "Tetrahedron Inscribed in Dodecahedron",
+      "path": "solids/compound/tetrahedron-inscribed-in-dodecahedron.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 20,
+        "edges": 36,
+        "faces": 16
+      },
+      "symmetry": {
+        "schoenflies": "T",
+        "orbifold": "332",
+        "order": 12
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
       "slug": "tetrahemihexahedron",
       "name": "Tetrahemihexahedron",
       "path": "solids/uniform/tetrahemihexahedron.json",
@@ -7111,9 +10025,9 @@
         "faces": 7
       },
       "symmetry": {
-        "schoenflies": "Oh",
-        "orbifold": "*432",
-        "order": 48
+        "schoenflies": "Td",
+        "orbifold": "*332",
+        "order": 24
       },
       "convex": false,
       "density": null,
@@ -7850,6 +10764,50 @@
         "netlib": 9,
         "bowers": "tut"
       }
+    },
+    {
+      "slug": "two-icosahedra-inscribed-in-octahedron",
+      "name": "Two Icosahedra Inscribed in Octahedron",
+      "path": "solids/compound/two-icosahedra-inscribed-in-octahedron.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 30,
+        "edges": 72,
+        "faces": 48
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
+    },
+    {
+      "slug": "two-tetrahedra-inscribed-in-cube",
+      "name": "Two Tetrahedra Inscribed in Cube",
+      "path": "solids/compound/two-tetrahedra-inscribed-in-cube.json",
+      "families": [
+        "compound"
+      ],
+      "counts": {
+        "vertices": 8,
+        "edges": 24,
+        "faces": 14
+      },
+      "symmetry": {
+        "schoenflies": "Oh",
+        "orbifold": "*432",
+        "order": 48
+      },
+      "convex": false,
+      "density": null,
+      "dual": null,
+      "ids": {}
     }
   ]
 }

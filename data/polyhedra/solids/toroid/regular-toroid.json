@@ -80,6 +80,7 @@
     "convex": false,
     "self_dual": false,
     "dual": null,
+    "coincident_vertices": 0,
     "vertex_density": [
       1,
       0,

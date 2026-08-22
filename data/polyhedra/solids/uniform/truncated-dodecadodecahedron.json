@@ -81,6 +81,7 @@
     "convex": false,
     "self_dual": false,
     "dual": "medial-disdyakistriacontahedron",
+    "coincident_vertices": 0,
     "vertex_density": 0,
     "convex_hull": {
       "is_self": false,

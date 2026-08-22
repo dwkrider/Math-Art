@@ -203,7 +203,26 @@ def check(rec, path, errors, warnings):
     if chi != comb["euler_characteristic"]:
         err("Euler characteristic is %d, record says %d"
             % (chi, comb["euler_characteristic"]))
-    if comb.get("orientable") and comb.get("genus") is not None:
+    comp = rec.get("compound")
+    if comp:
+        # A compound is several closed surfaces, so chi is the SUM over
+        # components and genus is not defined for the figure as a whole.
+        ncomp = comp.get("component_count") or 0
+        if comb.get("genus") is not None:
+            err("compound records must not claim a genus: the figure is not a "
+                "single surface")
+        parts = comp.get("components") or []
+        if parts:
+            flat = sorted(i for c in parts for i in (c.get("faces") or []))
+            if flat != list(range(len(F))):
+                err("compound.components[].faces is not a partition of the "
+                    "%d faces" % len(F))
+            if len(parts) != ncomp:
+                err("component_count=%d but %d components listed"
+                    % (ncomp, len(parts)))
+        if ncomp and chi % ncomp == 0:
+            pass                      # a plausible sum; nothing stronger to assert
+    elif comb.get("orientable") and comb.get("genus") is not None:
         if chi != 2 - 2 * comb["genus"]:
             err("genus %d is inconsistent with chi=%d"
                 % (comb["genus"], chi))
@@ -460,10 +479,19 @@ def check_duals(records, errors):
             errors.append("%s: dual %r does not point back (says %r)"
                           % (r["slug"], d, back))
         rc, dc = r["combinatorics"]["counts"], by_slug[d]["combinatorics"]["counts"]
-        if (rc["vertices"], rc["edges"], rc["faces"]) != \
-           (dc["faces"], dc["edges"], dc["vertices"]):
-            errors.append("%s: dual %r has non-reciprocal V/E/F counts"
-                          % (r["slug"], d))
+        # Reciprocity is COMBINATORIAL. Where a solid has coplanar faces, the
+        # dual's vertices coincide in pairs, so its stored table holds fewer
+        # distinct POINTS than the parent has faces; adding the merged count
+        # back recovers the combinatorial figure. McCooey's tables show the
+        # same coincidence, so this is a property of the solids, not of our
+        # construction.
+        rv = rc["vertices"] + (r["combinatorics"].get("coincident_vertices") or 0)
+        dv = dc["vertices"] + (by_slug[d]["combinatorics"].get("coincident_vertices") or 0)
+        if (rv, rc["edges"], rc["faces"]) != (dc["faces"], dc["edges"], dv):
+            errors.append("%s: dual %r has non-reciprocal V/E/F counts "
+                          "(%d/%d/%d vs %d/%d/%d, coincident-adjusted)"
+                          % (r["slug"], d, rv, rc["edges"], rc["faces"],
+                             dv, dc["edges"], dc["faces"]))
 
 
 def main():

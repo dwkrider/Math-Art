@@ -27,14 +27,14 @@
     "face_configuration": null
   },
   "symmetry": {
-    "schoenflies": "D8h",
-    "orbifold": "*228",
-    "coxeter": "[2,8]",
-    "hermann_mauguin": "8/mmm",
-    "order": 32,
+    "schoenflies": "D8",
+    "orbifold": "228",
+    "coxeter": "[2,8]+",
+    "hermann_mauguin": "822",
+    "order": 16,
     "rotation_group": "D8",
     "rotation_order": 16,
-    "chiral": false,
+    "chiral": true,
     "transitivity": {
       "vertex": true,
       "edge": false,
@@ -74,6 +74,7 @@
     "convex": false,
     "self_dual": false,
     "dual": null,
+    "coincident_vertices": 0,
     "vertex_density": 0,
     "convex_hull": {
       "is_self": false,

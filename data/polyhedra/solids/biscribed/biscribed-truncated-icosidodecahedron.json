@@ -80,6 +80,7 @@
     "convex": true,
     "self_dual": false,
     "dual": null,
+    "coincident_vertices": 0,
     "vertex_density": 1,
     "convex_hull": {
       "is_self": true,
@@ -1925,7 +1926,13 @@
       "D. McCooey, 'Biscribed (Non-)Chiral Solids', Visual Polyhedra (the enumeration followed here).",
       "G. W. Hart, 'Canonical Polyhedra' (the propello and whirl Conway operators used as bases)."
     ],
-    "cross_checked": [],
+    "cross_checked": [
+      {
+        "source": "mccooey",
+        "agrees": true,
+        "detail": "full match: radii dev 2.40e-10, distance dev 8.70e-10, dihedral dev 0.0e+00 deg (scale 0.947140)"
+      }
+    ],
     "verified": {
       "euler": true,
       "closed_manifold": true,
