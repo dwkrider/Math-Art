@@ -2354,6 +2354,15 @@ if _IN_BLENDER:
                         "enough: five planes through a point only "
                         "bring five parts together if the point is "
                         "on the 5-fold axis, and most are not")
+        show_leaders: BoolProperty(
+            name="Link Cones to Markers", default=False,
+            description="Draw a line from each marker on the flat "
+                        "guide diagram to the spike cone it stands "
+                        "for out on the sculpture, so you can see "
+                        "which point of the diagram is which point of "
+                        "the solid. Baked at the lift the sculpture "
+                        "is built with -- drag the modifier's Lift "
+                        "afterwards and the lines no longer reach")
         crossing_min_planes: IntProperty(
             name="Mark From", default=3, min=3, max=8,
             description="Only mark points where at least this many "
@@ -2825,6 +2834,34 @@ if _IN_BLENDER:
                     if lift_socket is not None:
                         _drive_z_from_lift(spikes, obj, mod.name,
                                            lift_socket)
+                # Leaders: flat marker up to the cone it stands for.
+                # Static, and they have to be: the cone rides the lift
+                # driver while the marker stays down with the guide
+                # diagram, so the two ends move differently and no
+                # single object transform can stretch between them.
+                # The lift in force at build time is baked in instead.
+                if self.show_leaders:
+                    lz = lift_z if self.lift else 0.0
+                    lverts, ledges = [], []
+                    for (cx, cy, _k), npl in meet:
+                        P = (a[0] * d + cx * u[0] + cy * v[0],
+                             a[1] * d + cx * u[1] + cy * v[1],
+                             a[2] * d + cx * u[2] + cy * v[2])
+                        lverts.append((cx, cy, 0.0))
+                        lverts.append((P[0], P[1], P[2] + lz))
+                        ledges.append((len(lverts) - 2, len(lverts) - 1))
+                    if ledges:
+                        lme = bpy.data.meshes.new("SymSculpt Leaders")
+                        lme.from_pydata(lverts, ledges, [])
+                        lme.update()
+                        leads = bpy.data.objects.new(
+                            "SymSculpt Leaders", lme)
+                        context.collection.objects.link(leads)
+                        leads.matrix_world = Matrix.Identity(4)
+                        leads.display_type = 'WIRE'
+                        leads.hide_render = True
+                        leads.parent = obj
+                        leads.matrix_parent_inverse = Matrix.Identity(4)
                 if lift_socket is not None:
                     _drive_z_from_lift(solid, obj, mod.name,
                                        lift_socket)
@@ -2858,7 +2895,8 @@ if _IN_BLENDER:
             lay.prop_search(self, 'motif_object', bpy.data, 'objects')
             for k in ('distance', 'shell', 'guide_extent',
                       'guide_rings', 'show_crossings',
-                      'crossing_min_planes', 'show_polyhedron', 'lift',
+                      'crossing_min_planes', 'show_polyhedron',
+                      'show_leaders', 'lift',
                       'translucent', 'show_part'):
                 lay.prop(self, k)
 
