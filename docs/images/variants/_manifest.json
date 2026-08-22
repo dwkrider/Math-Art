@@ -4436,32 +4436,80 @@
  ],
  "celtic_knot_2d": [
   [
-   "PLAIN",
-   "Plain Plait"
+   "SQUARE",
+   "Square Grid"
   ],
   [
-   "CROSSBREAK",
-   "Cross Break"
+   "TRIANGLE",
+   "Triangular (3.3.3.3.3.3)"
   ],
   [
-   "PANEL",
-   "Framed Panel"
+   "HEX",
+   "Hexagonal (6.6.6)"
   ],
   [
-   "TRIQUETRA",
-   "Triquetra (Trinity)"
+   "SNUBSQUARE",
+   "Snub Square (3.3.4.3.4)"
   ],
   [
-   "JOSEPHINE",
-   "Josephine Knot"
+   "TRIHEX",
+   "Trihexagonal (3.6.3.6)"
   ],
   [
-   "KELLS_BORDER",
-   "Kells Border"
+   "TRUNCHEX",
+   "Truncated Hexagonal (3.12.12)"
   ],
   [
-   "CARPET",
-   "Carpet Page"
+   "SNUBHEX",
+   "Snub Hexagonal (3.3.3.3.6)"
+  ],
+  [
+   "ELONGTRI",
+   "Elongated Triangular (3.3.3.4.4)"
+  ],
+  [
+   "RHOMBITRIHEX",
+   "Rhombitrihexagonal (3.4.6.4)"
+  ],
+  [
+   "TRUNCSQ",
+   "Truncated Square (4.8.8)"
+  ],
+  [
+   "TRUNCTRIHEX",
+   "Truncated Trihexagonal (4.6.12)"
+  ],
+  [
+   "RHOMBILLE",
+   "Rhombille (dual 3.6.3.6)"
+  ],
+  [
+   "CAIRO",
+   "Cairo Pentagonal (dual 3.3.4.3.4)"
+  ],
+  [
+   "FLORET",
+   "Floret Pentagonal (dual 3.3.3.3.6)"
+  ],
+  [
+   "PRISMATIC",
+   "Prismatic Pentagonal (dual 3.3.3.4.4)"
+  ],
+  [
+   "DELTOIDAL",
+   "Deltoidal Trihexagonal (dual 3.4.6.4)"
+  ],
+  [
+   "TRIAKIS",
+   "Triakis Triangular (dual 3.12.12)"
+  ],
+  [
+   "TETRAKIS",
+   "Tetrakis Square (dual 4.8.8)"
+  ],
+  [
+   "KISRHOMBILLE",
+   "Kisrhombille (dual 4.6.12)"
   ]
  ],
  "cmc_capillary": [
@@ -7332,6 +7380,174 @@
   [
    "TRUNCTETRA",
    "Truncated Tetrahedron (12 vertices)"
+  ]
+ ],
+ "slide_together": [
+  [
+   "T20",
+   "20 Triangles"
+  ],
+  [
+   "S30",
+   "30 Squares"
+  ],
+  [
+   "P12",
+   "12 Pentagons"
+  ],
+  [
+   "D12",
+   "12 Decagons"
+  ],
+  [
+   "H20",
+   "20 Hexagons"
+  ],
+  [
+   "SD12",
+   "12 Star Decagons {10/3}"
+  ],
+  [
+   "PG12",
+   "12 Pentagrams"
+  ],
+  [
+   "T20B",
+   "20 Triangles (great ditrigonal)"
+  ],
+  [
+   "H20B",
+   "20 Hexagons (icositruncated)"
+  ],
+  [
+   "S30B",
+   "30 Squares (truncated dodecadodeca)"
+  ],
+  [
+   "P12B",
+   "12 Pentagons (great dodecicosidodeca)"
+  ],
+  [
+   "D12B",
+   "12 Decagons (great truncated icosidodeca)"
+  ],
+  [
+   "P12C",
+   "12 Pentagons (rhombidodecadodeca)"
+  ],
+  [
+   "PG12C",
+   "12 Pentagrams (rhombidodecadodeca)"
+  ],
+  [
+   "P12D",
+   "12 Pentagons (great icosicosidodeca)"
+  ],
+  [
+   "PG12D",
+   "12 Pentagrams (great icosicosidodeca)"
+  ],
+  [
+   "D12C",
+   "12 Decagons (truncated great dodeca)"
+  ],
+  [
+   "O6",
+   "6 Octagons (rhombicuboctahedron)"
+  ],
+  [
+   "T8",
+   "8 Triangles (great rhombihexahedron)"
+  ],
+  [
+   "S6",
+   "6 Squares (great rhombihexahedron)"
+  ],
+  [
+   "P12F",
+   "12 Pentagons (icosahedron)"
+  ]
+ ],
+ "transpolyhedron": [
+  [
+   "TETRA",
+   "Tetrahedron"
+  ],
+  [
+   "CUBE",
+   "Cube"
+  ],
+  [
+   "DODECA",
+   "Dodecahedron"
+  ],
+  [
+   "TT",
+   "Truncated Tetrahedron"
+  ],
+  [
+   "CO",
+   "Cuboctahedron"
+  ],
+  [
+   "TC",
+   "Truncated Cube"
+  ],
+  [
+   "TO",
+   "Truncated Octahedron"
+  ],
+  [
+   "RCO",
+   "Rhombicuboctahedron"
+  ],
+  [
+   "TCO",
+   "Truncated Cuboctahedron"
+  ],
+  [
+   "SC",
+   "Snub Cube"
+  ],
+  [
+   "ID",
+   "Icosidodecahedron"
+  ],
+  [
+   "TD",
+   "Truncated Dodecahedron"
+  ],
+  [
+   "TI",
+   "Truncated Icosahedron"
+  ],
+  [
+   "RID",
+   "Rhombicosidodecahedron"
+  ],
+  [
+   "TID",
+   "Truncated Icosidodecahedron"
+  ],
+  [
+   "SD",
+   "Snub Dodecahedron"
+  ],
+  [
+   "P5",
+   "Pentagonal Prism"
+  ],
+  [
+   "P7",
+   "Heptagonal Prism"
+  ],
+  [
+   "A5",
+   "Pentagonal Antiprism"
+  ],
+  [
+   "A7",
+   "Heptagonal Antiprism"
   ]
  ]
 }
